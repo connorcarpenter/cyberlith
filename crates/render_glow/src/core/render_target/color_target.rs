@@ -1,12 +1,11 @@
 use glow::HasContext;
 
-use render_api::{base::CubeSide, components::Viewport};
+use render_api::{components::Viewport};
 
-use crate::core::{
-    ClearState, Context, GpuColorTexture, GpuTexture2D, GpuTexture2DArray, GpuTextureCube,
+use crate::{renderer::RenderTargetExt, core::{
+    ClearState, Context, GpuColorTexture, GpuTexture2D,
     RenderTarget, TextureDataType, WriteMask,
-};
-use crate::renderer::RenderTargetExt;
+}};
 
 ///
 /// Adds additional functionality to clear, read from and write to a texture.
@@ -29,8 +28,6 @@ impl<'a> RenderTargetExt for ColorTarget<'a> {
     fn width(&self) -> u32 {
         match self.target {
             GpuColorTexture::Single(texture) => texture.width(),
-            GpuColorTexture::Array { texture, .. } => texture.width(),
-            GpuColorTexture::CubeMap { texture, .. } => texture.width(),
         }
     }
 
@@ -41,8 +38,6 @@ impl<'a> RenderTargetExt for ColorTarget<'a> {
     fn height(&self) -> u32 {
         match self.target {
             GpuColorTexture::Single(texture) => texture.height(),
-            GpuColorTexture::Array { texture, .. } => texture.height(),
-            GpuColorTexture::CubeMap { texture, .. } => texture.height(),
         }
     }
 
@@ -59,24 +54,6 @@ impl<'a> ColorTarget<'a> {
     pub(in crate::core) fn new_texture2d(texture: &'a GpuTexture2D) -> Self {
         ColorTarget {
             target: GpuColorTexture::Single(texture),
-        }
-    }
-
-    pub(in crate::core) fn new_texture_cube_map(
-        texture: &'a GpuTextureCube,
-        sides: &'a [CubeSide],
-    ) -> Self {
-        ColorTarget {
-            target: GpuColorTexture::CubeMap { texture, sides },
-        }
-    }
-
-    pub(in crate::core) fn new_texture_2d_array(
-        texture: &'a GpuTexture2DArray,
-        layers: &'a [u32],
-    ) -> Self {
-        ColorTarget {
-            target: GpuColorTexture::Array { texture, layers },
         }
     }
 
@@ -126,26 +103,6 @@ impl<'a> ColorTarget<'a> {
             GpuColorTexture::Single(texture) => unsafe {
                 context.draw_buffers(&[glow::COLOR_ATTACHMENT0]);
                 texture.bind_as_color_target(0, 0);
-            },
-            GpuColorTexture::Array { texture, layers } => unsafe {
-                context.draw_buffers(
-                    &(0..layers.len())
-                        .map(|i| glow::COLOR_ATTACHMENT0 + i as u32)
-                        .collect::<Vec<u32>>(),
-                );
-                (0..layers.len()).for_each(|channel| {
-                    texture.bind_as_color_target(layers[channel], channel as u32, 0);
-                });
-            },
-            GpuColorTexture::CubeMap { texture, sides } => unsafe {
-                context.draw_buffers(
-                    &(0..sides.len())
-                        .map(|i| glow::COLOR_ATTACHMENT0 + i as u32)
-                        .collect::<Vec<u32>>(),
-                );
-                (0..sides.len()).for_each(|channel| {
-                    texture.bind_as_color_target(sides[channel], channel as u32, 0);
-                });
             },
         }
     }

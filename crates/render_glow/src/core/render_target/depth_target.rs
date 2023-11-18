@@ -1,10 +1,9 @@
-use render_api::{base::CubeSide, components::Viewport};
+use render_api::components::Viewport;
 
-use crate::core::{
-    ClearState, GpuDepthTexture, GpuDepthTexture2D, GpuDepthTexture2DArray, GpuDepthTextureCube,
+use crate::{core::{
+    ClearState, GpuDepthTexture, GpuDepthTexture2D,
     RenderTarget,
-};
-use crate::renderer::RenderTargetExt;
+}, renderer::RenderTargetExt};
 
 ///
 /// Adds additional functionality to clear, read from and write to a texture.
@@ -24,8 +23,6 @@ impl<'a> RenderTargetExt for DepthTarget<'a> {
     fn width(&self) -> u32 {
         match &self.target {
             GpuDepthTexture::Single(texture) => texture.width(),
-            GpuDepthTexture::Array { texture, .. } => texture.width(),
-            GpuDepthTexture::CubeMap { texture, .. } => texture.width(),
         }
     }
 
@@ -35,8 +32,6 @@ impl<'a> RenderTargetExt for DepthTarget<'a> {
     fn height(&self) -> u32 {
         match &self.target {
             GpuDepthTexture::Single(texture) => texture.height(),
-            GpuDepthTexture::Array { texture, .. } => texture.height(),
-            GpuDepthTexture::CubeMap { texture, .. } => texture.height(),
         }
     }
     ///
@@ -52,24 +47,6 @@ impl<'a> DepthTarget<'a> {
     pub(in crate::core) fn new_texture2d(texture: &'a GpuDepthTexture2D) -> Self {
         Self {
             target: GpuDepthTexture::Single(texture),
-        }
-    }
-
-    pub(in crate::core) fn new_texture_cube_map(
-        texture: &'a GpuDepthTextureCube,
-        side: CubeSide,
-    ) -> Self {
-        Self {
-            target: GpuDepthTexture::CubeMap { texture, side },
-        }
-    }
-
-    pub(in crate::core) fn new_texture_2d_array(
-        texture: &'a GpuDepthTexture2DArray,
-        layer: u32,
-    ) -> Self {
-        Self {
-            target: GpuDepthTexture::Array { texture, layer },
         }
     }
 
@@ -110,12 +87,6 @@ impl<'a> DepthTarget<'a> {
         match &self.target {
             GpuDepthTexture::Single(texture) => {
                 texture.bind_as_depth_target();
-            }
-            GpuDepthTexture::Array { texture, layer } => {
-                texture.bind_as_depth_target(*layer);
-            }
-            GpuDepthTexture::CubeMap { texture, side } => {
-                texture.bind_as_depth_target(*side);
             }
         }
     }

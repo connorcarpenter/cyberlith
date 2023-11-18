@@ -1,5 +1,5 @@
 use math::Vec3;
-use render_api::{base::CubeSide, components::Viewport};
+use render_api::components::Viewport;
 
 use crate::core::{Context, DataType, Program, RenderStates, TextureDataType, VertexBuffer};
 
@@ -30,45 +30,6 @@ pub fn apply_effect(
             fragment_shader_source.to_owned(),
             |program| {
                 use_uniforms(program);
-                program.use_vertex_attribute("position", &position_buffer);
-                program.draw_arrays(render_states, viewport, 3);
-            },
-        )
-        .expect("Failed compiling shader");
-}
-
-///
-/// Applies a 2D/screen space effect to the given viewport of the given side of a cube map.
-/// The fragment shader get the 3D position (specified by `in vec3 pos;`) of the fragment on the cube with minimum position `(-1, -1, -1)` and maximum position `(1, 1, 1)`.
-///
-pub fn apply_cube_effect(
-    side: CubeSide,
-    fragment_shader_source: &str,
-    render_states: RenderStates,
-    viewport: Viewport,
-    use_uniforms: impl FnOnce(&Program),
-) {
-    let position_buffer = full_screen_buffer();
-    Context::get()
-        .program(
-            "
-            uniform vec3 direction;
-            uniform vec3 up;
-            in vec3 position;
-            out vec3 pos;
-            void main()
-            {
-                vec3 right = cross(direction, up);
-                pos = up * position.y + right * position.x + direction;
-                gl_Position = vec4(position, 1.0);
-            }
-        "
-            .to_owned(),
-            fragment_shader_source.to_owned(),
-            |program| {
-                use_uniforms(program);
-                program.use_uniform("direction", side.direction());
-                program.use_uniform("up", side.up());
                 program.use_vertex_attribute("position", &position_buffer);
                 program.draw_arrays(render_states, viewport, 3);
             },
