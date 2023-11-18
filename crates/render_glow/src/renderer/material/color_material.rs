@@ -39,7 +39,10 @@ impl ColorMaterial {
         Self {
             color: cpu_material.albedo,
             texture,
-            render_states: RenderStates::default(),
+            render_states: RenderStates {
+                cull: Cull::Back,
+                ..Default::default()
+            }
         }
     }
 
