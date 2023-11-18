@@ -108,7 +108,7 @@ impl RenderObjectSingle {
         transform: Mat4,
     ) {
         let fragment_shader = material.fragment_shader(lights);
-        let vertex_shader = Self::vertex_shader_source(mesh, fragment_shader.attributes);
+        let vertex_shader = Self::vertex_shader_source(fragment_shader.attributes);
 
         Context::get()
             .program(vertex_shader, fragment_shader.source, |program| {
@@ -152,7 +152,7 @@ impl RenderObjectSingle {
         mesh.draw(program, render_states, camera, attributes);
     }
 
-    fn vertex_shader_source(mesh: &GpuMesh, required_attributes: FragmentAttributes) -> String {
+    fn vertex_shader_source(required_attributes: FragmentAttributes) -> String {
         format!(
             "{}{}{}",
             if required_attributes.normal {
@@ -185,7 +185,7 @@ impl RenderObjectInstanced {
 
         let fragment_shader = material.fragment_shader(lights);
         let vertex_shader_source =
-            Self::vertex_shader_source(mesh, fragment_shader.attributes, &instance_buffers);
+            Self::vertex_shader_source(fragment_shader.attributes, &instance_buffers);
         Context::get()
             .program(vertex_shader_source, fragment_shader.source, |program| {
                 material.use_uniforms(program, render_camera, lights);
@@ -243,7 +243,6 @@ impl RenderObjectInstanced {
     }
 
     fn vertex_shader_source(
-        mesh: &GpuMesh,
         required_attributes: FragmentAttributes,
         instance_buffers: &HashMap<String, InstanceBuffer>,
     ) -> String {

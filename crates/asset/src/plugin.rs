@@ -4,7 +4,5 @@ use bevy_app::{App, Plugin};
 pub struct AssetPlugin;
 
 impl Plugin for AssetPlugin {
-    fn build(&self, app: &mut App) {
-
-    }
+    fn build(&self, app: &mut App) {}
 }

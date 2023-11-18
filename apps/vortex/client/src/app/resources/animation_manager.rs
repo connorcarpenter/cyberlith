@@ -1117,10 +1117,7 @@ impl AnimationManager {
                                 world,
                                 &vertex_manager,
                                 *preview_current_frame_entity,
-                                Some((
-                                    preview_next_frame_entity,
-                                    interp_amount,
-                                )),
+                                Some((preview_next_frame_entity, interp_amount)),
                                 root_3d_vertex,
                                 &frame_pos,
                                 &render_layer,

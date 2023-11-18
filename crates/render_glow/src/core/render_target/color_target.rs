@@ -1,11 +1,14 @@
 use glow::HasContext;
 
-use render_api::{components::Viewport};
+use render_api::components::Viewport;
 
-use crate::{renderer::RenderTargetExt, core::{
-    ClearState, Context, GpuColorTexture, GpuTexture2D,
-    RenderTarget, TextureDataType, WriteMask,
-}};
+use crate::{
+    core::{
+        ClearState, Context, GpuColorTexture, GpuTexture2D, RenderTarget, TextureDataType,
+        WriteMask,
+    },
+    renderer::RenderTargetExt,
+};
 
 ///
 /// Adds additional functionality to clear, read from and write to a texture.

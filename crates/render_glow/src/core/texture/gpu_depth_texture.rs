@@ -1,4 +1,3 @@
-
 use crate::core::{GpuDepthTexture2D, Program};
 
 ///
@@ -11,11 +10,8 @@ pub struct GpuDepthTexture<'a> {
 }
 
 impl<'a> GpuDepthTexture<'a> {
-
     pub fn new(inner: &'a GpuDepthTexture2D) -> Self {
-        Self {
-            inner
-        }
+        Self { inner }
     }
 
     ///

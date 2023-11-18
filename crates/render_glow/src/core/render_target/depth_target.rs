@@ -1,9 +1,9 @@
 use render_api::components::Viewport;
 
-use crate::{core::{
-    ClearState, GpuDepthTexture, GpuDepthTexture2D,
-    RenderTarget,
-}, renderer::RenderTargetExt};
+use crate::{
+    core::{ClearState, GpuDepthTexture, GpuDepthTexture2D, RenderTarget},
+    renderer::RenderTargetExt,
+};
 
 ///
 /// Adds additional functionality to clear, read from and write to a texture.

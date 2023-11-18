@@ -1,6 +1,6 @@
-use math::*;
+use math::Vec3;
 
-use crate::base::{AxisAlignedBoundingBox, Color, Error, Indices, Positions, Result};
+use crate::base::{AxisAlignedBoundingBox, Error, Indices, Positions, Result};
 
 ///
 /// A CPU-side version of a triangle mesh.

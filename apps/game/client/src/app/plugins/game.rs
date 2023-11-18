@@ -1,10 +1,10 @@
+use asset::MeshFile;
 use bevy_app::{App, Plugin, Startup, Update};
 use bevy_ecs::{
     component::Component,
     query::With,
     system::{Commands, Local, Query, ResMut},
 };
-use asset::MeshFile;
 
 use math::Vec3;
 

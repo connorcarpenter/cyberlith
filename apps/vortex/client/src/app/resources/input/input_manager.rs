@@ -93,7 +93,6 @@ impl Default for InputManager {
 }
 
 impl InputManager {
-
     pub fn dragging_is_enabled(&self) -> bool {
         self.vertex_dragging_enabled
     }
@@ -635,15 +634,9 @@ impl InputManager {
                 select_shape_visibilities[0].visible = true; // select circle is visible
                 select_shape_visibilities[1].visible = false; // no select triangle visible
                 select_shape_visibilities[2].visible = match current_file_type {
-                    FileExtension::Anim => {
-                        false
-                    },
-                    FileExtension::Skel => {
-                        tab_manager.has_focus() && self.vertex_dragging_enabled
-                    }
-                    _ => {
-                        tab_manager.has_focus()
-                    }
+                    FileExtension::Anim => false,
+                    FileExtension::Skel => tab_manager.has_focus() && self.vertex_dragging_enabled,
+                    _ => tab_manager.has_focus(),
                 };
             }
             Some((selected_edge_entity, CanvasShape::Edge)) => {

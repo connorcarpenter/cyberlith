@@ -124,7 +124,7 @@ impl FromPbrMaterial for PbrMaterial {
 
 impl Material for PbrMaterial {
     fn fragment_shader(&self, lights: &[&dyn Light]) -> FragmentShader {
-        let mut attributes = FragmentAttributes {
+        let attributes = FragmentAttributes {
             position: true,
             normal: true,
             ..FragmentAttributes::NONE

@@ -1,4 +1,4 @@
-use math::{Vec2, Vec3};
+use math::Vec3;
 
 use crate::{
     assets::AssetHash,

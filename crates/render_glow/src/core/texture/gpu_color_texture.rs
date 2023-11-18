@@ -1,4 +1,3 @@
-
 use crate::core::{GpuTexture2D, Program};
 
 ///
@@ -12,11 +11,8 @@ pub struct GpuColorTexture<'a> {
 }
 
 impl<'a> GpuColorTexture<'a> {
-
     pub fn new(inner: &'a GpuTexture2D) -> Self {
-        Self {
-            inner
-        }
+        Self { inner }
     }
 
     ///

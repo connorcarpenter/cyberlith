@@ -103,8 +103,7 @@ impl AnimInputManager {
             .unwrap()
             .current_tab_entity()
             .unwrap();
-        let mut animation_manager =
-            world.get_resource_mut::<AnimationManager>().unwrap();
+        let mut animation_manager = world.get_resource_mut::<AnimationManager>().unwrap();
         if let Some((prev_index, next_index)) =
             animation_manager.framing_navigate(&current_file_entity, dir)
         {
@@ -112,14 +111,13 @@ impl AnimInputManager {
                 tab_manager.current_tab_execute_anim_action(
                     world,
                     input_manager,
-                    AnimAction::SelectFrame(
-                        current_file_entity,
-                        next_index,
-                        prev_index,
-                    ),
+                    AnimAction::SelectFrame(current_file_entity, next_index, prev_index),
                 );
             });
-            world.get_resource_mut::<Canvas>().unwrap().queue_resync_shapes();
+            world
+                .get_resource_mut::<Canvas>()
+                .unwrap()
+                .queue_resync_shapes();
         }
     }
 
