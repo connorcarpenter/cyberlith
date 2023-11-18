@@ -145,7 +145,7 @@ impl<'a> RenderTarget<'a> {
     pub fn copy_from(
         &self,
         color_texture: GpuTexture2D,
-        depth_texture: GpuDepthTexture,
+        depth_texture: GpuDepthTexture2D,
         viewport: Viewport,
         write_mask: WriteMask,
     ) -> &Self {
@@ -217,7 +217,7 @@ impl<'a> RenderTarget<'a> {
     /// Copies the content of the depth texture
     /// to the part of this render target specified by the [Viewport].
     ///
-    pub fn copy_from_depth(&self, depth_texture: GpuDepthTexture, viewport: Viewport) -> &Self {
+    pub fn copy_from_depth(&self, depth_texture: GpuDepthTexture2D, viewport: Viewport) -> &Self {
         self.write(|| {
             let fragment_shader_source = format!(
                 "{}\n

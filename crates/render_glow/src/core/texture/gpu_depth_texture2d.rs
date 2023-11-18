@@ -2,7 +2,7 @@ use glow::HasContext;
 
 use render_api::base::*;
 
-use crate::core::{texture::*, Context, DepthTarget};
+use crate::core::{texture::*, Context, DepthTarget, Program};
 
 ///
 /// A 2D depth texture that can be rendered into and read from. See also [RenderTarget] and [DepthTarget].
@@ -74,6 +74,26 @@ impl GpuDepthTexture2D {
             Context::get().bind_texture(glow::TEXTURE_2D, Some(self.id));
         }
     }
+
+    ///
+    /// Returns the fragment shader source for using this texture in a shader.
+    ///
+    pub fn fragment_shader_source(&self) -> String {
+        "
+            uniform sampler2D depthMap;
+            float sample_depth(vec2 uv)
+            {
+                return texture(depthMap, uv).x;
+            }"
+        .to_owned()
+    }
+
+    ///
+    /// Sends the uniform data needed for this texture to the fragment shader.
+    ///
+    pub fn use_uniforms(&self, program: &Program) {
+        program.use_depth_texture("depthMap", self);
+    }
 }
 
 impl From<&CpuTexture2D> for GpuDepthTexture2D {
@@ -92,3 +112,33 @@ impl Drop for GpuDepthTexture2D {
         }
     }
 }
+
+//pub fn new(inner: &'a GpuDepthTexture2D) -> Self {
+//         Self { inner }
+//     }
+//
+//     ///
+//     /// Returns the width of the depth texture in texels.
+//     ///
+//     pub fn width(&self) -> u32 {
+//         self.inner.width()
+//     }
+//
+//     ///
+//     /// Returns the height of the depth texture in texels.
+//     ///
+//     pub fn height(&self) -> u32 {
+//         self.inner.height()
+//     }
+//
+//
+//     ///
+//     /// The resolution of the underlying texture if there is any.
+//     ///
+//     pub fn resolution(&self) -> (u32, u32) {
+//         (self.inner.width(), self.inner.height())
+//     }
+//
+//     pub fn bind_as_depth_target(&self) {
+//         self.inner.bind_as_depth_target();
+//     }

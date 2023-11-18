@@ -1,7 +1,7 @@
 use render_api::components::Viewport;
 
 use crate::{
-    core::{ClearState, GpuDepthTexture, GpuDepthTexture2D, RenderTarget},
+    core::{ClearState, GpuDepthTexture2D, RenderTarget},
     renderer::RenderTargetExt,
 };
 
@@ -13,7 +13,7 @@ use crate::{
 ///
 #[derive(Clone)]
 pub struct DepthTarget<'a> {
-    target: GpuDepthTexture<'a>,
+    target: &'a GpuDepthTexture2D,
 }
 
 impl<'a> RenderTargetExt for DepthTarget<'a> {
@@ -42,7 +42,7 @@ impl<'a> RenderTargetExt for DepthTarget<'a> {
 impl<'a> DepthTarget<'a> {
     pub(in crate::core) fn new_texture2d(texture: &'a GpuDepthTexture2D) -> Self {
         Self {
-            target: GpuDepthTexture::new(texture),
+            target: texture,
         }
     }
 
@@ -69,7 +69,7 @@ impl<'a> DepthTarget<'a> {
     /// Copies the content of the depth texture
     /// to the part of this depth target specified by the [Viewport].
     ///
-    pub fn copy_from(&self, depth_texture: GpuDepthTexture, viewport: Viewport) -> &Self {
+    pub fn copy_from(&self, depth_texture: GpuDepthTexture2D, viewport: Viewport) -> &Self {
         self.as_render_target()
             .copy_from_depth(depth_texture, viewport);
         self
