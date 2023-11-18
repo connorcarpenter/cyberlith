@@ -4,9 +4,9 @@ uniform mat4 modelMatrix;
 in vec3 position;
 
 // Rename these values to indicate that this is instance-level transforms here
-in vec4 row1;
-in vec4 row2;
-in vec4 row3;
+in vec4 transform_row1;
+in vec4 transform_row2;
+in vec4 transform_row3;
 
 out vec3 pos;
 
@@ -25,10 +25,10 @@ void main()
 
     #ifdef USE_INSTANCE_TRANSFORMS
     mat4 transform;
-    transform[0] = vec4(row1.x, row2.x, row3.x, 0.0);
-    transform[1] = vec4(row1.y, row2.y, row3.y, 0.0);
-    transform[2] = vec4(row1.z, row2.z, row3.z, 0.0);
-    transform[3] = vec4(row1.w, row2.w, row3.w, 1.0);
+    transform[0] = vec4(transform_row1.x, transform_row2.x, transform_row3.x, 0.0);
+    transform[1] = vec4(transform_row1.y, transform_row2.y, transform_row3.y, 0.0);
+    transform[2] = vec4(transform_row1.z, transform_row2.z, transform_row3.z, 0.0);
+    transform[3] = vec4(transform_row1.w, transform_row2.w, transform_row3.w, 1.0);
     local2World *= transform;
     #endif
 

@@ -224,9 +224,9 @@ impl RenderObjectInstanced {
         program.use_uniform("modelMatrix", transform);
 
         for attribute_name in [
-            "row1",
-            "row2",
-            "row3",
+            "transform_row1",
+            "transform_row2",
+            "transform_row3",
         ] {
             if program.requires_attribute(attribute_name) {
                 program.use_instance_attribute(
@@ -268,18 +268,18 @@ impl RenderObjectInstanced {
         let mut instance_buffers: HashMap<String, InstanceBuffer> = Default::default();
 
         {
-            let mut row1 = Vec::new();
-            let mut row2 = Vec::new();
-            let mut row3 = Vec::new();
+            let mut transform_row1 = Vec::new();
+            let mut transform_row2 = Vec::new();
+            let mut transform_row3 = Vec::new();
             for transformation in indices.iter().map(|i| instances.transformations[*i]) {
-                row1.push(transformation.row(0));
-                row2.push(transformation.row(1));
-                row3.push(transformation.row(2));
+                transform_row1.push(transformation.row(0));
+                transform_row2.push(transformation.row(1));
+                transform_row3.push(transformation.row(2));
             }
 
-            instance_buffers.insert("row1".to_string(), InstanceBuffer::new_with_data(&row1));
-            instance_buffers.insert("row2".to_string(), InstanceBuffer::new_with_data(&row2));
-            instance_buffers.insert("row3".to_string(), InstanceBuffer::new_with_data(&row3));
+            instance_buffers.insert("transform_row1".to_string(), InstanceBuffer::new_with_data(&transform_row1));
+            instance_buffers.insert("transform_row2".to_string(), InstanceBuffer::new_with_data(&transform_row2));
+            instance_buffers.insert("transform_row3".to_string(), InstanceBuffer::new_with_data(&transform_row3));
         }
 
         instance_buffers
