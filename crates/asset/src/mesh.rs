@@ -28,6 +28,7 @@ impl From<MeshFile> for CpuMesh {
         let file_path = format!("assets/{}", &mesh_file.path);
 
         let data = fs::read(file_path).expect("unable to read file");
+        //let data = include_bytes!("cube.mesh");
 
         let mut bit_reader = BitReader::new(&data);
 

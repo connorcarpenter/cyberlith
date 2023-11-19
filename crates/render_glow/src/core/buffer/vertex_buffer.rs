@@ -2,7 +2,7 @@ use super::Buffer;
 use crate::core::*;
 
 ///
-/// A buffer containing per vertex data, for example positions, normals, uv coordinates or colors.
+/// A buffer containing per vertex data, for example positions
 /// To send this data to a shader, use the [Program::use_vertex_attribute] method.
 ///
 pub struct VertexBuffer {
