@@ -15,6 +15,7 @@ members = [
     "crates/input",
     "crates/filetypes",
     "crates/asset",
+    "crates/glow",
 ]
 # any crates with conflicting dependencies / feature flags cannot be put here
 default-members = [
