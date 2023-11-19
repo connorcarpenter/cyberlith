@@ -65,9 +65,6 @@ mod inner {
                 .get_extension("OES_texture_float_linear")
                 .map_err(|e| WindowError::OESTextureFloatNotSupported(format!(": {:?}", e)))?;
             webgl_context
-                .get_extension("OES_texture_half_float_linear")
-                .map_err(|e| WindowError::OESTextureFloatNotSupported(format!(": {:?}", e)))?;
-            webgl_context
                 .get_extension("OES_standard_derivatives")
                 .map_err(|e| WindowError::OESStandardDerivativesNotSupported(format!(": {:?}", e)))?;
 
