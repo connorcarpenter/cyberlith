@@ -165,21 +165,9 @@ pub enum Blend {
 }
 
 impl Blend {
-    ///
-    /// Standard OpenGL transparency blending parameters which, for the usual case of being able to see through objects, does not work on web.
-    /// In that case, use [Blend::TRANSPARENCY] instead which works the same way on desktop and web.
-    ///
-    pub const STANDARD_TRANSPARENCY: Self = Self::Enabled {
-        source_rgb_multiplier: BlendMultiplierType::SrcAlpha,
-        source_alpha_multiplier: BlendMultiplierType::One,
-        destination_rgb_multiplier: BlendMultiplierType::OneMinusSrcAlpha,
-        destination_alpha_multiplier: BlendMultiplierType::Zero,
-        rgb_equation: BlendEquationType::Add,
-        alpha_equation: BlendEquationType::Add,
-    };
 
     ///
-    /// Transparency blending parameters that works on both desktop and web. For the standard OpenGL parameters, see [Blend::STANDARD_TRANSPARENCY].
+    /// Transparency blending parameters that works on both desktop and web.
     ///
     pub const TRANSPARENCY: Self = Self::Enabled {
         source_rgb_multiplier: BlendMultiplierType::SrcAlpha,
