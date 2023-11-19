@@ -1,10 +1,9 @@
 use render_api::{base::*, components::Camera};
 
-use crate::{core::*, renderer::*};
+use crate::core::*;
 
 pub struct GpuMesh {
     positions: VertexBuffer,
-    normals: VertexBuffer,
     pub(crate) aabb: AxisAlignedBoundingBox,
 }
 
@@ -18,7 +17,6 @@ impl GpuMesh {
         Self {
             aabb,
             positions: VertexBuffer::new_with_data(&cpu_mesh.to_vertices()),
-            normals: VertexBuffer::new_with_data(&cpu_mesh.compute_normals()),
         }
     }
 
@@ -27,9 +25,8 @@ impl GpuMesh {
         program: &Program,
         render_states: RenderStates,
         camera: &Camera,
-        attributes: FragmentAttributes,
     ) {
-        self.use_attributes(program, attributes);
+        self.use_attributes(program);
         program.draw_arrays(
             render_states,
             camera.viewport_or_default(),
@@ -42,10 +39,9 @@ impl GpuMesh {
         program: &Program,
         render_states: RenderStates,
         camera: &Camera,
-        attributes: FragmentAttributes,
         instance_count: u32,
     ) {
-        self.use_attributes(program, attributes);
+        self.use_attributes(program);
 
         program.draw_arrays_instanced(
             render_states,
@@ -55,14 +51,7 @@ impl GpuMesh {
         );
     }
 
-    fn use_attributes(&self, program: &Program, attributes: FragmentAttributes) {
+    fn use_attributes(&self, program: &Program) {
         program.use_vertex_attribute("position", &self.positions);
-
-        if attributes.normal {
-            program.use_vertex_attribute_if_required(
-                "normal",
-                &self.normals
-            );
-        }
     }
 }

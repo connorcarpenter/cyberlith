@@ -6,19 +6,15 @@
 pub struct FragmentAttributes {
     /// Position in world space: `in vec3 pos;`
     pub position: bool,
-    /// Normal: `in vec3 nor;`,
-    pub normal: bool,
 }
 
 impl FragmentAttributes {
     /// All attributes
     pub const ALL: Self = Self {
         position: true,
-        normal: true,
     };
     /// No attributes
     pub const NONE: Self = Self {
         position: false,
-        normal: false,
     };
 }

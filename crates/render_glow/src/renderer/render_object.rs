@@ -8,7 +8,7 @@ use render_api::{
 
 use crate::{
     core::{Context, InstanceBuffer, Program, RenderStates},
-    renderer::{FragmentAttributes, GpuMesh, Instances, Light, Material, RenderCamera},
+    renderer::{GpuMesh, Instances, Light, Material, RenderCamera},
 };
 
 // Render Object
@@ -108,7 +108,7 @@ impl RenderObjectSingle {
         transform: Mat4,
     ) {
         let fragment_shader = material.fragment_shader(lights);
-        let vertex_shader = Self::vertex_shader_source(fragment_shader.attributes);
+        let vertex_shader = Self::vertex_shader_source();
 
         Context::get()
             .program(vertex_shader, fragment_shader.source, |program| {
@@ -117,7 +117,6 @@ impl RenderObjectSingle {
                     program,
                     material.render_states(),
                     render_camera,
-                    fragment_shader.attributes,
                     mesh,
                     transform,
                 );
@@ -129,16 +128,13 @@ impl RenderObjectSingle {
         program: &Program,
         render_states: RenderStates,
         render_camera: &'a RenderCamera<'a>,
-        attributes: FragmentAttributes,
         mesh: &'a GpuMesh,
         transform: Mat4,
     ) {
         let camera = render_camera.camera;
 
-        if attributes.normal {
-            let inverse = transform.inverse();
-            program.use_uniform_if_required("normalMatrix", inverse.transpose());
-        }
+        let inverse = transform.inverse();
+        program.use_uniform_if_required("normalMatrix", inverse.transpose());
 
         program.use_uniform(
             "viewProjection",
@@ -149,17 +145,12 @@ impl RenderObjectSingle {
         );
         program.use_uniform("modelMatrix", transform);
 
-        mesh.draw(program, render_states, camera, attributes);
+        mesh.draw(program, render_states, camera);
     }
 
-    fn vertex_shader_source(required_attributes: FragmentAttributes) -> String {
+    fn vertex_shader_source() -> String {
         format!(
-            "{}{}{}",
-            if required_attributes.normal {
-                "#define USE_NORMALS\n"
-            } else {
-                ""
-            },
+            "{}{}",
             include_str!("../core/shared.frag"),
             include_str!("geometry/shaders/mesh.vert"),
         )
@@ -185,7 +176,7 @@ impl RenderObjectInstanced {
 
         let fragment_shader = material.fragment_shader(lights);
         let vertex_shader_source =
-            Self::vertex_shader_source(fragment_shader.attributes);
+            Self::vertex_shader_source();
         Context::get()
             .program(vertex_shader_source, fragment_shader.source, |program| {
                 material.use_uniforms(program, render_camera, lights);
@@ -193,7 +184,6 @@ impl RenderObjectInstanced {
                     program,
                     material.render_states(),
                     render_camera,
-                    fragment_shader.attributes,
                     mesh,
                     &instance_buffers,
                     instances.count(),
@@ -206,7 +196,6 @@ impl RenderObjectInstanced {
         program: &Program,
         render_states: RenderStates,
         render_camera: &'a RenderCamera<'a>,
-        attributes: FragmentAttributes,
         mesh: &'a GpuMesh,
         instance_buffers: &HashMap<String, InstanceBuffer>,
         instance_count: u32,
@@ -236,20 +225,13 @@ impl RenderObjectInstanced {
                 );
             }
         }
-        mesh.draw_instanced(program, render_states, camera, attributes, instance_count);
+        mesh.draw_instanced(program, render_states, camera, instance_count);
     }
 
-    fn vertex_shader_source(
-        required_attributes: FragmentAttributes,
-    ) -> String {
+    fn vertex_shader_source() -> String {
         format!(
-            "{}{}{}{}",
+            "{}{}{}",
             "#define USE_INSTANCE_TRANSFORMS\n",
-            if required_attributes.normal {
-                "#define USE_NORMALS\n"
-            } else {
-                ""
-            },
             include_str!("../core/shared.frag"),
             include_str!("geometry/shaders/mesh.vert"),
         )

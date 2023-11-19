@@ -27,10 +27,10 @@ impl From<MeshFile> for CpuMesh {
     fn from(mesh_file: MeshFile) -> Self {
         let file_path = format!("assets/{}", &mesh_file.path);
 
-        let data = fs::read(file_path).expect("unable to read file");
-        //let data = include_bytes!("cube.mesh");
+        //let data = fs::read(file_path).expect("unable to read file");
+        let data = include_bytes!("cube.mesh");
 
-        let mut bit_reader = BitReader::new(&data);
+        let mut bit_reader = BitReader::new(data);
 
         let mesh_actions =
             filetypes::MeshAction::read(&mut bit_reader).expect("unable to read mesh file");

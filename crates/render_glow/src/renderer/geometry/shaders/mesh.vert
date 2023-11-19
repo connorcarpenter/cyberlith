@@ -10,11 +10,8 @@ in vec4 transform_row3;
 
 out vec3 pos;
 
-#ifdef USE_NORMALS
 uniform mat4 normalMatrix;
-in vec3 normal;
-out vec3 nor;
-#endif
+flat out mat3 normalMat;
 
 void main()
 {
@@ -37,13 +34,9 @@ void main()
     pos = worldPosition.xyz;
 
     // *** NORMAL ***
-    #ifdef USE_NORMALS
     #ifdef USE_INSTANCE_TRANSFORMS
-    mat3 normalMat = mat3(transpose(inverse(local2World)));
+    normalMat = mat3(transpose(inverse(local2World)));
     #else
-    mat3 normalMat = mat3(normalMatrix);
-    #endif
-    nor = normalize(normalMat * normal);
-
+    normalMat = mat3(normalMatrix);
     #endif
 }

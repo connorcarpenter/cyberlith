@@ -42,6 +42,8 @@ pub enum WindowError {
     ColorBufferFloatNotSupported(String),
     #[error("unable to get OES_texture_float extension for the given canvas, maybe the browser doesn't support OES_texture_float: {0}")]
     OESTextureFloatNotSupported(String),
+    #[error("unable to get OES_standard_derivatives extension for the given canvas, maybe the browser doesn't support OES_standard_derivatives: {0}")]
+    OESStandardDerivativesNotSupported(String),
     #[error("error in three-d")]
     ThreeDError(#[from] CoreError),
 }

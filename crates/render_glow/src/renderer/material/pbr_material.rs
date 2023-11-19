@@ -81,7 +81,6 @@ impl Material for PbrMaterial {
     fn fragment_shader(&self, lights: &[&dyn Light]) -> FragmentShader {
         let attributes = FragmentAttributes {
             position: true,
-            normal: true,
             ..FragmentAttributes::NONE
         };
         let mut output = lights_shader_source(lights);

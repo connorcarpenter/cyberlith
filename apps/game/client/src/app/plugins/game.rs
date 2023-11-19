@@ -3,7 +3,7 @@ use bevy_app::{App, Plugin, Startup, Update};
 use bevy_ecs::{
     component::Component,
     query::With,
-    system::{Commands, Local, Query, ResMut},
+    system::{NonSendMut, Commands, Local, Query, ResMut},
 };
 
 use math::Vec3;
@@ -52,7 +52,6 @@ impl Plugin for GamePlugin {
             //         .in_set(ReceiveEvents),
             // )
             .add_systems(Update, step)
-            .add_systems(Update, rotate)
             .add_systems(Update, draw);
     }
 }
@@ -151,11 +150,16 @@ fn setup(
         .insert(layer);
 }
 
-fn step(mut cube_q: Query<&mut Transform, With<CubeMarker>>, mut rotation: Local<f32>) {
+fn step(frame_input: NonSendMut<FrameInput<()>>, mut cube_q: Query<&mut Transform, With<CubeMarker>>, mut rotation: Local<f32>) {
+
+    //info!("elapsed time: {}", frame_input.elapsed_time);
+
+    let elapsed_time = (frame_input.elapsed_time / 16.0) as f32;
+
     if *rotation == 0.0 {
         *rotation = 0.01;
     } else {
-        *rotation += 1.0;
+        *rotation += 1.0 * elapsed_time;
         if *rotation > 359.0 {
             *rotation = 0.01;
         }
@@ -165,16 +169,13 @@ fn step(mut cube_q: Query<&mut Transform, With<CubeMarker>>, mut rotation: Local
     let y = f32::to_radians(*rotation).sin() * 100.0;
 
     for mut transform in cube_q.iter_mut() {
+        // rotate position
         transform.translation.x = x;
         transform.translation.y = y;
-    }
-}
 
-fn rotate(mut query: Query<&mut Transform, With<CubeMarker>>) {
-    for mut transform in &mut query {
-        transform.rotate_x(0.01);
-        transform.rotate_y(0.02);
-        //transform.rotate_y(0.011);
+        // rotate model
+        transform.rotate_x(0.01 * elapsed_time);
+        transform.rotate_y(0.02 * elapsed_time);
     }
 }
 

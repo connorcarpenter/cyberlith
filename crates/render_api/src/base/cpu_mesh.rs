@@ -59,31 +59,6 @@ impl CpuMesh {
     }
 
     ///
-    /// Computes the per vertex normals and updates the normals of the mesh.
-    /// It will override the current normals if they already exist.
-    ///
-    pub fn compute_normals(&self) -> Vec<Vec3> {
-        let mut normals = vec![Vec3::ZERO; self.vertices.len()];
-        self.for_each_triangle(|i0, i1, i2| {
-            let normal = {
-                let p0 = self.vertices[i0];
-                let p1 = self.vertices[i1];
-                let p2 = self.vertices[i2];
-                (p1 - p0).cross(p2 - p0)
-            };
-            normals[i0] += normal;
-            normals[i1] += normal;
-            normals[i2] += normal;
-        });
-
-        for n in normals.iter_mut() {
-            *n = n.normalize();
-        }
-
-        normals
-    }
-
-    ///
     /// Iterates over all triangles in this mesh and calls the callback function with the three indices, one for each vertex in the triangle.
     ///
     pub fn for_each_triangle(&self, mut callback: impl FnMut(usize, usize, usize)) {
