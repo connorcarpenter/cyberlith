@@ -141,15 +141,6 @@ pub trait HasContext {
 
     unsafe fn get_shader_info_log(&self, shader: Self::Shader) -> String;
 
-    unsafe fn get_tex_image(
-        &self,
-        target: u32,
-        level: i32,
-        format: u32,
-        ty: u32,
-        pixels: PixelPackData,
-    );
-
     unsafe fn create_program(&self) -> Result<Self::Program, String>;
 
     unsafe fn is_program(&self, program: Self::Program) -> bool;
@@ -167,14 +158,6 @@ pub trait HasContext {
     unsafe fn get_program_link_status(&self, program: Self::Program) -> bool;
 
     unsafe fn get_program_info_log(&self, program: Self::Program) -> String;
-
-    unsafe fn get_program_resource_i32(
-        &self,
-        program: Self::Program,
-        interface: u32,
-        index: u32,
-        properties: &[u32],
-    ) -> Vec<i32>;
 
     unsafe fn get_active_uniforms(&self, program: Self::Program) -> u32;
 
@@ -205,14 +188,6 @@ pub trait HasContext {
         size: i32,
     );
 
-    unsafe fn bind_vertex_buffer(
-        &self,
-        binding_index: u32,
-        buffer: Option<Buffer>,
-        offset: i32,
-        stride: i32,
-    );
-
     unsafe fn bind_framebuffer(&self, target: u32, framebuffer: Option<Self::Framebuffer>);
 
     unsafe fn bind_renderbuffer(&self, target: u32, renderbuffer: Option<Self::Renderbuffer>);
@@ -241,21 +216,15 @@ pub trait HasContext {
 
     unsafe fn supports_f64_precision() -> bool;
 
-    unsafe fn clear_depth_f64(&self, depth: f64);
-
     unsafe fn clear_depth_f32(&self, depth: f32);
 
     unsafe fn clear_stencil(&self, stencil: i32);
 
     unsafe fn clear(&self, mask: u32);
 
-    unsafe fn patch_parameter_i32(&self, parameter: u32, value: i32);
-
     unsafe fn pixel_store_i32(&self, parameter: u32, value: i32);
 
     unsafe fn pixel_store_bool(&self, parameter: u32, value: bool);
-
-    unsafe fn bind_frag_data_location(&self, program: Self::Program, color_number: u32, name: &str);
 
     unsafe fn buffer_data_size(&self, target: u32, size: i32, usage: u32);
 
@@ -266,8 +235,6 @@ pub trait HasContext {
     unsafe fn buffer_sub_data_u8_slice(&self, target: u32, offset: i32, src_data: &[u8]);
 
     unsafe fn get_buffer_sub_data(&self, target: u32, offset: i32, dst_data: &mut [u8]);
-
-    unsafe fn buffer_storage(&self, target: u32, size: i32, data: Option<&[u8]>, flags: u32);
 
     unsafe fn check_framebuffer_status(&self, target: u32) -> u32;
 
@@ -369,43 +336,17 @@ pub trait HasContext {
 
     unsafe fn disable(&self, parameter: u32);
 
-    unsafe fn disable_draw_buffer(&self, parameter: u32, draw_buffer: u32);
-
     unsafe fn disable_vertex_attrib_array(&self, index: u32);
-
-    unsafe fn dispatch_compute(&self, groups_x: u32, groups_y: u32, groups_z: u32);
-
-    unsafe fn dispatch_compute_indirect(&self, offset: i32);
 
     unsafe fn draw_arrays(&self, mode: u32, first: i32, count: i32);
 
     unsafe fn draw_arrays_instanced(&self, mode: u32, first: i32, count: i32, instance_count: i32);
-
-    unsafe fn draw_arrays_instanced_base_instance(
-        &self,
-        mode: u32,
-        first: i32,
-        count: i32,
-        instance_count: i32,
-        base_instance: u32,
-    );
-
-    unsafe fn draw_arrays_indirect_offset(&self, mode: u32, offset: i32);
 
     unsafe fn draw_buffer(&self, buffer: u32);
 
     unsafe fn draw_buffers(&self, buffers: &[u32]);
 
     unsafe fn draw_elements(&self, mode: u32, count: i32, element_type: u32, offset: i32);
-
-    unsafe fn draw_elements_base_vertex(
-        &self,
-        mode: u32,
-        count: i32,
-        element_type: u32,
-        offset: i32,
-        base_vertex: i32,
-    );
 
     unsafe fn draw_elements_instanced(
         &self,
@@ -416,34 +357,9 @@ pub trait HasContext {
         instance_count: i32,
     );
 
-    unsafe fn draw_elements_instanced_base_vertex(
-        &self,
-        mode: u32,
-        count: i32,
-        element_type: u32,
-        offset: i32,
-        instance_count: i32,
-        base_vertex: i32,
-    );
-
-    unsafe fn draw_elements_instanced_base_vertex_base_instance(
-        &self,
-        mode: u32,
-        count: i32,
-        element_type: u32,
-        offset: i32,
-        instance_count: i32,
-        base_vertex: i32,
-        base_instance: u32,
-    );
-
-    unsafe fn draw_elements_indirect_offset(&self, mode: u32, element_type: u32, offset: i32);
-
     unsafe fn enable(&self, parameter: u32);
 
     unsafe fn is_enabled(&self, parameter: u32) -> bool;
-
-    unsafe fn enable_draw_buffer(&self, parameter: u32, draw_buffer: u32);
 
     unsafe fn enable_vertex_array_attrib(&self, vao: Self::VertexArray, index: u32);
 
@@ -459,14 +375,6 @@ pub trait HasContext {
         renderbuffer: Option<Self::Renderbuffer>,
     );
 
-    unsafe fn framebuffer_texture(
-        &self,
-        target: u32,
-        attachment: u32,
-        texture: Option<Self::Texture>,
-        level: i32,
-    );
-
     unsafe fn framebuffer_texture_2d(
         &self,
         target: u32,
@@ -474,16 +382,6 @@ pub trait HasContext {
         texture_target: u32,
         texture: Option<Self::Texture>,
         level: i32,
-    );
-
-    unsafe fn framebuffer_texture_3d(
-        &self,
-        target: u32,
-        attachment: u32,
-        texture_target: u32,
-        texture: Option<Self::Texture>,
-        level: i32,
-        layer: i32,
     );
 
     unsafe fn framebuffer_texture_layer(
@@ -579,36 +477,11 @@ pub trait HasContext {
 
     unsafe fn sampler_parameter_f32(&self, sampler: Self::Sampler, name: u32, value: f32);
 
-    unsafe fn sampler_parameter_f32_slice(&self, sampler: Self::Sampler, name: u32, value: &[f32]);
-
     unsafe fn sampler_parameter_i32(&self, sampler: Self::Sampler, name: u32, value: i32);
 
     unsafe fn generate_mipmap(&self, target: u32);
 
     unsafe fn generate_texture_mipmap(&self, texture: Self::Texture);
-
-    unsafe fn tex_image_1d(
-        &self,
-        target: u32,
-        level: i32,
-        internal_format: i32,
-        width: i32,
-        border: i32,
-        format: u32,
-        ty: u32,
-        pixels: Option<&[u8]>,
-    );
-
-    unsafe fn compressed_tex_image_1d(
-        &self,
-        target: u32,
-        level: i32,
-        internal_format: i32,
-        width: i32,
-        border: i32,
-        image_size: i32,
-        pixels: &[u8],
-    );
 
     unsafe fn tex_image_2d(
         &self,
@@ -621,16 +494,6 @@ pub trait HasContext {
         format: u32,
         ty: u32,
         pixels: Option<&[u8]>,
-    );
-
-    unsafe fn tex_image_2d_multisample(
-        &self,
-        target: u32,
-        samples: i32,
-        internal_format: i32,
-        width: i32,
-        height: i32,
-        fixed_sample_locations: bool,
     );
 
     unsafe fn compressed_tex_image_2d(
@@ -672,8 +535,6 @@ pub trait HasContext {
         pixels: &[u8],
     );
 
-    unsafe fn tex_storage_1d(&self, target: u32, levels: i32, internal_format: u32, width: i32);
-
     unsafe fn tex_storage_2d(
         &self,
         target: u32,
@@ -681,16 +542,6 @@ pub trait HasContext {
         internal_format: u32,
         width: i32,
         height: i32,
-    );
-
-    unsafe fn tex_storage_2d_multisample(
-        &self,
-        target: u32,
-        samples: i32,
-        internal_format: u32,
-        width: i32,
-        height: i32,
-        fixed_sample_locations: bool,
     );
 
     unsafe fn tex_storage_3d(
@@ -877,38 +728,15 @@ pub trait HasContext {
         v: &[f32],
     );
 
-    unsafe fn unmap_buffer(&self, target: u32);
-
     unsafe fn cull_face(&self, value: u32);
 
     unsafe fn color_mask(&self, red: bool, green: bool, blue: bool, alpha: bool);
-
-    unsafe fn color_mask_draw_buffer(
-        &self,
-        buffer: u32,
-        red: bool,
-        green: bool,
-        blue: bool,
-        alpha: bool,
-    );
 
     unsafe fn depth_mask(&self, value: bool);
 
     unsafe fn blend_color(&self, red: f32, green: f32, blue: f32, alpha: f32);
 
     unsafe fn line_width(&self, width: f32);
-
-    unsafe fn map_buffer_range(
-        &self,
-        target: u32,
-        offset: i32,
-        length: i32,
-        access: u32,
-    ) -> *mut u8;
-
-    unsafe fn flush_mapped_buffer_range(&self, target: u32, offset: i32, length: i32);
-
-    unsafe fn invalidate_buffer_sub_data(&self, target: u32, offset: i32, length: i32);
 
     unsafe fn invalidate_framebuffer(&self, target: u32, attachments: &[u32]);
 
@@ -931,10 +759,6 @@ pub trait HasContext {
     unsafe fn tex_parameter_i32(&self, target: u32, parameter: u32, value: i32);
 
     unsafe fn texture_parameter_i32(&self, texture: Self::Texture, parameter: u32, value: i32);
-
-    unsafe fn tex_parameter_f32_slice(&self, target: u32, parameter: u32, values: &[f32]);
-
-    unsafe fn tex_parameter_i32_slice(&self, target: u32, parameter: u32, values: &[i32]);
 
     unsafe fn tex_sub_image_2d(
         &self,
@@ -1009,13 +833,7 @@ pub trait HasContext {
 
     unsafe fn depth_range_f32(&self, near: f32, far: f32);
 
-    unsafe fn depth_range_f64(&self, near: f64, far: f64);
-
-    unsafe fn depth_range_f64_slice(&self, first: u32, count: i32, values: &[[f64; 2]]);
-
     unsafe fn scissor(&self, x: i32, y: i32, width: i32, height: i32);
-
-    unsafe fn scissor_slice(&self, first: u32, count: i32, scissors: &[[i32; 4]]);
 
     unsafe fn vertex_array_attrib_binding_f32(
         &self,
@@ -1079,32 +897,6 @@ pub trait HasContext {
         offset: i32,
     );
 
-    unsafe fn vertex_attrib_pointer_f64(
-        &self,
-        index: u32,
-        size: i32,
-        data_type: u32,
-        stride: i32,
-        offset: i32,
-    );
-
-    unsafe fn vertex_attrib_format_f32(
-        &self,
-        index: u32,
-        size: i32,
-        data_type: u32,
-        normalized: bool,
-        relative_offset: u32,
-    );
-
-    unsafe fn vertex_attrib_format_i32(
-        &self,
-        index: u32,
-        size: i32,
-        data_type: u32,
-        relative_offset: u32,
-    );
-
     unsafe fn vertex_attrib_1_f32(&self, index: u32, x: f32);
 
     unsafe fn vertex_attrib_2_f32(&self, index: u32, x: f32, y: f32);
@@ -1121,42 +913,16 @@ pub trait HasContext {
 
     unsafe fn vertex_attrib_4_f32_slice(&self, index: u32, v: &[f32]);
 
-    unsafe fn vertex_attrib_binding(&self, attrib_index: u32, binding_index: u32);
-
-    unsafe fn vertex_binding_divisor(&self, binding_index: u32, divisor: u32);
-
     unsafe fn viewport(&self, x: i32, y: i32, width: i32, height: i32);
-
-    unsafe fn viewport_f32_slice(&self, first: u32, count: i32, values: &[[f32; 4]]);
 
     unsafe fn blend_equation(&self, mode: u32);
 
-    unsafe fn blend_equation_draw_buffer(&self, draw_buffer: u32, mode: u32);
-
     unsafe fn blend_equation_separate(&self, mode_rgb: u32, mode_alpha: u32);
-
-    unsafe fn blend_equation_separate_draw_buffer(
-        &self,
-        buffer: u32,
-        mode_rgb: u32,
-        mode_alpha: u32,
-    );
 
     unsafe fn blend_func(&self, src: u32, dst: u32);
 
-    unsafe fn blend_func_draw_buffer(&self, draw_buffer: u32, src: u32, dst: u32);
-
     unsafe fn blend_func_separate(
         &self,
-        src_rgb: u32,
-        dst_rgb: u32,
-        src_alpha: u32,
-        dst_alpha: u32,
-    );
-
-    unsafe fn blend_func_separate_draw_buffer(
-        &self,
-        draw_buffer: u32,
         src_rgb: u32,
         dst_rgb: u32,
         src_alpha: u32,
@@ -1175,60 +941,9 @@ pub trait HasContext {
 
     unsafe fn stencil_op_separate(&self, face: u32, stencil_fail: u32, depth_fail: u32, pass: u32);
 
-    unsafe fn debug_message_control(
-        &self,
-        source: u32,
-        msg_type: u32,
-        severity: u32,
-        ids: &[u32],
-        enabled: bool,
-    );
-
-    unsafe fn debug_message_insert<S>(
-        &self,
-        source: u32,
-        msg_type: u32,
-        id: u32,
-        severity: u32,
-        msg: S,
-    ) where
-        S: AsRef<str>;
-
-    unsafe fn debug_message_callback<F>(&mut self, callback: F)
-    where
-        F: FnMut(u32, u32, u32, u32, &str) + 'static;
-
-    unsafe fn get_debug_message_log(&self, count: u32) -> Vec<DebugMessageLogEntry>;
-
-    unsafe fn push_debug_group<S>(&self, source: u32, id: u32, message: S)
-    where
-        S: AsRef<str>;
-
-    unsafe fn pop_debug_group(&self);
-
-    unsafe fn object_label<S>(&self, identifier: u32, name: u32, label: Option<S>)
-    where
-        S: AsRef<str>;
-
-    unsafe fn get_object_label(&self, identifier: u32, name: u32) -> String;
-
-    unsafe fn object_ptr_label<S>(&self, sync: Self::Fence, label: Option<S>)
-    where
-        S: AsRef<str>;
-
-    unsafe fn get_object_ptr_label(&self, sync: Self::Fence) -> String;
-
     unsafe fn get_uniform_block_index(&self, program: Self::Program, name: &str) -> Option<u32>;
 
     unsafe fn uniform_block_binding(&self, program: Self::Program, index: u32, binding: u32);
-
-    unsafe fn get_shader_storage_block_index(
-        &self,
-        program: Self::Program,
-        name: &str,
-    ) -> Option<u32>;
-
-    unsafe fn shader_storage_block_binding(&self, program: Self::Program, index: u32, binding: u32);
 
     unsafe fn read_buffer(&self, src: u32);
 
@@ -1247,16 +962,7 @@ pub trait HasContext {
 
     unsafe fn end_query(&self, target: u32);
 
-    unsafe fn query_counter(&self, query: Self::Query, target: u32);
-
     unsafe fn get_query_parameter_u32(&self, query: Self::Query, parameter: u32) -> u32;
-
-    unsafe fn get_query_parameter_u64_with_offset(
-        &self,
-        query: Self::Query,
-        parameter: u32,
-        offset: usize,
-    );
 
     unsafe fn delete_transform_feedback(&self, transform_feedback: Self::TransformFeedback);
 
@@ -1288,21 +994,6 @@ pub trait HasContext {
         program: Self::Program,
         index: u32,
     ) -> Option<ActiveTransformFeedback>;
-
-    unsafe fn memory_barrier(&self, barriers: u32);
-
-    unsafe fn memory_barrier_by_region(&self, barriers: u32);
-
-    unsafe fn bind_image_texture(
-        &self,
-        unit: u32,
-        texture: Self::Texture,
-        level: i32,
-        layered: bool,
-        layer: i32,
-        access: u32,
-        format: u32,
-    );
 
     unsafe fn max_shader_compiler_threads(&self, count: u32);
 }

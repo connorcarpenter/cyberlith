@@ -11,6 +11,7 @@ render_api = { path = "../render_api" }
 render_glow = { path = "../render_glow" }
 math = { path = "../math" }
 input = { path = "../input" }
+egui_glow = { path = "../egui_glow" }
 
 # External Crates
 bevy_app = { version = "0.11", default-features = false }
@@ -18,6 +19,5 @@ bevy_ecs = { version = "0.11", default-features = false }
 bevy_log = { version = "0.11", default-features = false }
 bevy_utils = { version = "0.11", default-features = false }
 egui = { version = "0.22" }
-egui_glow = { version = "0.22" }
 # egui_extras = { version = "0.21.0" }
 winit = { version = "0.28" }

@@ -16,6 +16,7 @@ members = [
     "crates/filetypes",
     "crates/asset",
     "crates/glow",
+    "crates/egui_glow",
 ]
 # any crates with conflicting dependencies / feature flags cannot be put here
 default-members = [
