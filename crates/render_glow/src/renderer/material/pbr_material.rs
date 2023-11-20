@@ -72,7 +72,7 @@ impl Material for PbrMaterial {
 
     fn use_uniforms(&self, program: &Program, camera: &RenderCamera, lights: &[&dyn Light]) {
         if !lights.is_empty() {
-            program.use_uniform_if_required("cameraPosition", camera.transform.translation);
+            program.use_uniform_if_required("camera_position", camera.transform.translation);
             for (i, light) in lights.iter().enumerate() {
                 light.use_uniforms(program, i as u32);
             }

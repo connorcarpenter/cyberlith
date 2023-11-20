@@ -47,7 +47,7 @@ impl GpuMesh {
     }
 
     fn use_attributes(&self, program: &Program) {
-        program.use_vertex_attribute("position", &self.positions);
+        program.use_vertex_attribute("vert_position", &self.positions);
 
         // TODO: will need to pass "face_id" in here ... ?
     }

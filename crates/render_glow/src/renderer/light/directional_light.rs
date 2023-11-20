@@ -164,7 +164,6 @@ impl Light for DirectionalLightImpl {
             self.light.color.to_vec3() * self.light.intensity,
         );
         let mut light_dir = self.light.direction.normalize();
-        light_dir.z *= -1.0;
         program.use_uniform(&format!("direction{}", i), light_dir);
     }
 }

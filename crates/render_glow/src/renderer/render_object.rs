@@ -17,7 +17,6 @@ pub struct RenderObject<'a> {
     mesh: &'a GpuMesh,
     material: &'a dyn Material,
     transforms: Vec<Mat4>,
-    will_instance: bool,
     instanced_aabb: Option<AxisAlignedBoundingBox>,
 }
 
@@ -27,58 +26,34 @@ impl<'a> RenderObject<'a> {
             mesh,
             material,
             transforms: Vec::new(),
-            will_instance: false,
             instanced_aabb: None,
         }
     }
 
     pub fn add_transform(&mut self, transform: &'a Transform) {
         self.transforms.push(transform.compute_matrix());
-        if self.transforms.len() > 1 {
-            self.will_instance = true;
-        }
     }
 
     pub fn render(self, render_camera: &'a RenderCamera<'a>, lights: &[&dyn Light]) {
-        if self.will_instance {
-            RenderObjectInstanced::render(
-                render_camera,
-                lights,
-                self.mesh,
-                self.material,
-                self.transforms,
-            );
-        } else {
-            RenderObjectSingle::render(
-                render_camera,
-                lights,
-                self.mesh,
-                self.material,
-                self.transforms[0],
-            );
-        }
+        RenderObjectInstanced::render(
+            render_camera,
+            lights,
+            self.mesh,
+            self.material,
+            self.transforms,
+        );
     }
 
     pub fn aabb(&self) -> AxisAlignedBoundingBox {
-        if self.will_instance {
-            if self.instanced_aabb.is_none() {
-                panic!(
-                    "must call 'finalize()' on an instanced render object before calling 'aabb()'!"
-                );
-            }
-            self.instanced_aabb.unwrap()
-        } else {
-            let mut aabb = self.mesh.aabb;
-            aabb.transform(&self.transforms[0]);
-            aabb
+        if self.instanced_aabb.is_none() {
+            panic!(
+                "must call 'finalize()' on an instanced render object before calling 'aabb()'!"
+            );
         }
+        self.instanced_aabb.unwrap()
     }
 
     pub fn finalize(&mut self) {
-        if !self.will_instance {
-            // non-instanced render objects don't need to do anything at the moment
-            return;
-        }
 
         if self.instanced_aabb.is_some() {
             panic!("shouldn't call finalize twice on an instanced mesh...");
@@ -93,64 +68,6 @@ impl<'a> RenderObject<'a> {
             }
             Some(aabb)
         };
-    }
-}
-
-// Non-instanced rendering
-struct RenderObjectSingle;
-
-impl RenderObjectSingle {
-    fn render<'a>(
-        render_camera: &'a RenderCamera<'a>,
-        lights: &[&dyn Light],
-        mesh: &'a GpuMesh,
-        material: &'a dyn Material,
-        transform: Mat4,
-    ) {
-        let fragment_shader = material.fragment_shader(lights);
-        let vertex_shader = Self::vertex_shader_source();
-
-        Context::get()
-            .program(vertex_shader, fragment_shader.source, |program| {
-                material.use_uniforms(program, render_camera, lights);
-                Self::draw(
-                    program,
-                    material.render_states(),
-                    render_camera,
-                    mesh,
-                    transform,
-                );
-            })
-            .expect("Failed compiling shader");
-    }
-
-    fn draw<'a>(
-        program: &Program,
-        render_states: RenderStates,
-        render_camera: &'a RenderCamera<'a>,
-        mesh: &'a GpuMesh,
-        transform: Mat4,
-    ) {
-        let camera = render_camera.camera;
-
-        program.use_uniform(
-            "viewProjection",
-            render_camera
-                .projection
-                .projection_matrix(&camera.viewport_or_default())
-                * render_camera.transform.view_matrix(),
-        );
-        program.use_uniform("modelMatrix", transform);
-
-        mesh.draw(program, render_states, camera);
-    }
-
-    fn vertex_shader_source() -> String {
-        format!(
-            "{}{}",
-            include_str!("../shaders/shared.frag"),
-            include_str!("../shaders/mesh.vert"),
-        )
     }
 }
 
@@ -197,7 +114,6 @@ impl RenderObjectInstanced {
         instance_count: u32,
     ) {
         let camera = render_camera.camera;
-        let transform = Mat4::IDENTITY;
 
         program.use_uniform(
             "viewProjection",
@@ -206,7 +122,6 @@ impl RenderObjectInstanced {
                 .projection_matrix(&camera.viewport_or_default())
                 * render_camera.transform.view_matrix(),
         );
-        program.use_uniform("modelMatrix", transform);
 
         for attribute_name in ["transform_row1", "transform_row2", "transform_row3"] {
             if program.requires_attribute(attribute_name) {
@@ -222,8 +137,7 @@ impl RenderObjectInstanced {
 
     fn vertex_shader_source() -> String {
         format!(
-            "{}{}{}",
-            "#define USE_INSTANCE_TRANSFORMS\n",
+            "{}{}",
             include_str!("../shaders/shared.frag"),
             include_str!("../shaders/mesh.vert"),
         )
