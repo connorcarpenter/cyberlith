@@ -133,7 +133,7 @@ impl Light for DirectionalLightImpl {
                     uniform vec3 color{};
                     uniform vec3 direction{};
         
-                    vec3 calculate_lighting{}(vec3 surface_color, vec3 position, vec3 normal, vec3 view_direction, float metallic, float roughness, float occlusion)
+                    vec3 calculate_lighting{}(vec3 surface_color, vec3 position, vec3 normal, vec3 view_direction, float metallic, float roughness)
                     {{
                         return calculate_light(color{}, direction{}, surface_color, view_direction, normal, metallic, roughness)
                             * calculate_shadow(shadowMap{}, shadowMVP{}, position);
@@ -146,7 +146,7 @@ impl Light for DirectionalLightImpl {
                     uniform vec3 color{};
                     uniform vec3 direction{};
         
-                    vec3 calculate_lighting{}(vec3 surface_color, vec3 position, vec3 normal, vec3 view_direction, float metallic, float roughness, float occlusion)
+                    vec3 calculate_lighting{}(vec3 surface_color, vec3 position, vec3 normal, vec3 view_direction, float metallic, float roughness)
                     {{
                         return calculate_light(color{}, direction{}, surface_color, view_direction, normal, metallic, roughness);
                     }}
@@ -163,6 +163,8 @@ impl Light for DirectionalLightImpl {
             &format!("color{}", i),
             self.light.color.to_vec3() * self.light.intensity,
         );
-        program.use_uniform(&format!("direction{}", i), self.light.direction.normalize());
+        let mut light_dir = self.light.direction.normalize();
+        light_dir.z *= -1.0;
+        program.use_uniform(&format!("direction{}", i), light_dir);
     }
 }

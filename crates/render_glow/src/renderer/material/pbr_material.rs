@@ -25,47 +25,26 @@ pub struct PbrMaterial {
 impl PbrMaterial {
     ///
     /// Constructs a new physical material from a [CpuMaterial].
-    /// If the input contains an [CpuMaterial::occlusion_metallic_roughness_texture], this texture is used for both
-    /// [PbrMaterial::metallic_roughness_texture] and [PbrMaterial::occlusion_texture] while any [CpuMaterial::metallic_roughness_texture] or [CpuMaterial::occlusion_texture] are ignored.
-    /// Tries to infer whether this material is transparent or opaque from the alpha value of the albedo color and the alpha values in the albedo texture.
-    /// Since this is not always correct, it is preferred to use [PbrMaterial::new_opaque] or [PbrMaterial::new_transparent].
-    ///
     pub fn new(cpu_material: &CpuMaterial) -> Self {
-        Self::new_internal(cpu_material, super::is_transparent(cpu_material))
+        Self::new_internal(cpu_material)
     }
 
     /// Constructs a new opaque physical material from a [CpuMaterial].
-    /// If the input contains an [CpuMaterial::occlusion_metallic_roughness_texture], this texture is used for both
-    /// [PbrMaterial::metallic_roughness_texture] and [PbrMaterial::occlusion_texture] while any [CpuMaterial::metallic_roughness_texture] or [CpuMaterial::occlusion_texture] are ignored.
     pub fn new_opaque(cpu_material: &CpuMaterial) -> Self {
-        Self::new_internal(cpu_material, false)
+        Self::new_internal(cpu_material)
     }
 
-    /// Constructs a new transparent physical material from a [CpuMaterial].
-    /// If the input contains an [CpuMaterial::occlusion_metallic_roughness_texture], this texture is used for both
-    /// [PbrMaterial::metallic_roughness_texture] and [PbrMaterial::occlusion_texture] while any [CpuMaterial::metallic_roughness_texture] or [CpuMaterial::occlusion_texture] are ignored.
-    pub fn new_transparent(cpu_material: &CpuMaterial) -> Self {
-        Self::new_internal(cpu_material, true)
-    }
-
-    fn new_internal(cpu_material: &CpuMaterial, is_transparent: bool) -> Self {
+    fn new_internal(cpu_material: &CpuMaterial) -> Self {
         Self {
             name: cpu_material.name.clone(),
             albedo: cpu_material.albedo,
             metallic: cpu_material.metallic,
             roughness: cpu_material.roughness,
-            render_states: if is_transparent {
-                RenderStates {
-                    write_mask: WriteMask::COLOR,
-                    blend: Blend::TRANSPARENCY,
-                    ..Default::default()
-                }
-            } else {
+            render_states:
                 RenderStates {
                     cull: Cull::Back,
                     ..Default::default()
-                }
-            },
+                },
             emissive: cpu_material.emissive,
         }
     }

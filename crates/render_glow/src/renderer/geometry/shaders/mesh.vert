@@ -9,9 +9,6 @@ in vec4 transform_row3;
 
 out vec3 pos;
 
-uniform mat4 normalMatrix;
-flat out mat3 normalMat;
-
 void main()
 {
     // *** POSITION ***
@@ -31,11 +28,4 @@ void main()
     gl_Position = viewProjection * worldPosition;
 
     pos = worldPosition.xyz;
-
-    // *** NORMAL ***
-    #ifdef USE_INSTANCE_TRANSFORMS
-    normalMat = mat3(transpose(inverse(local2World)));
-    #else
-    normalMat = mat3(normalMatrix);
-    #endif
 }

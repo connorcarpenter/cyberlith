@@ -138,7 +138,7 @@
 //                     uniform vec3 position{};
 //                     uniform float cutoff{};
 //                     uniform vec3 direction{};
-//                     vec3 calculate_lighting{}(vec3 surface_color, vec3 position, vec3 normal, vec3 view_direction, float metallic, float roughness, float occlusion)
+//                     vec3 calculate_lighting{}(vec3 surface_color, vec3 position, vec3 normal, vec3 view_direction, float metallic, float roughness)
 //                     {{
 //                         vec3 light_direction = position{} - position;
 //                         float distance = length(light_direction);
@@ -166,7 +166,7 @@
 //                     uniform vec3 position{};
 //                     uniform float cutoff{};
 //                     uniform vec3 direction{};
-//                     vec3 calculate_lighting{}(vec3 surface_color, vec3 position, vec3 normal, vec3 view_direction, float metallic, float roughness, float occlusion)
+//                     vec3 calculate_lighting{}(vec3 surface_color, vec3 position, vec3 normal, vec3 view_direction, float metallic, float roughness)
 //                     {{
 //                         vec3 light_direction = position{} - position;
 //                         float distance = length(light_direction);

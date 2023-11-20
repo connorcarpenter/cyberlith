@@ -11,39 +11,36 @@ vec3 fresnel_schlick_roughness(vec3 F0, float cosTheta, float roughness)
 }
 
 // simple phong specular calculation with normalization
-vec3 phong_specular(in vec3 V, in vec3 L, in vec3 N, in vec3 specular_fresnel, in float roughness)
+vec3 phong_specular(in vec3 view_dir, in vec3 light_dir, in vec3 normal, in vec3 specular_fresnel, in float roughness)
 {
-    vec3 R = reflect(-L, N);
-    float VdR = max(0.0, dot(V, R));
+    vec3 reflectance = reflect(-light_dir, normal);
+    float view_dot_reflectance = max(0.0, dot(view_dir, reflectance));
 
     float k = 1.999 / (roughness * roughness);
 
-    return min(1.0, 3.0 * 0.0398 * k) * pow(VdR, min(10000.0, k)) * specular_fresnel;
+    return min(1.0, 3.0 * 0.0398 * k) * pow(view_dot_reflectance, min(10000.0, k)) * specular_fresnel;
 }
 
-// L - light_direction
-// V - view direction
-// N - normal
-vec3 calculate_light(vec3 light_color, vec3 L, vec3 surface_color, vec3 V, vec3 N, float metallic, float roughness)
+vec3 calculate_light(vec3 light_color, vec3 light_dir, vec3 surface_color, vec3 view_dir, vec3 normal, float metallic, float roughness)
 {
     // compute material reflectance
-    float NdL = max(0.001, dot(N, L));
-    float NdV = max(0.001, dot(N, V));
+    float normal_dot_light_dir = max(0.001, dot(normal, light_dir));
+    float normal_dot_view_dir = max(0.001, dot(normal, view_dir));
 
     // mix between metal and non-metal material, for non-metal
-    // constant base specular factor of 0.04 grey is used
-    vec3 F0 = mix(vec3(0.04), surface_color, metallic);
+    // constant base specular factor of 0.0 white is used
+    vec3 F0 = mix(vec3(0.0), surface_color, metallic);
 
     // specular reflectance with PHONG
-    vec3 specular_fresnel = fresnel_schlick_roughness(F0, NdV, roughness);
-    vec3 specular = phong_specular(V, L, N, specular_fresnel, roughness);
+    vec3 specular_fresnel = fresnel_schlick_roughness(F0, normal_dot_view_dir, roughness);
+    vec3 specular = phong_specular(view_dir, light_dir, normal, specular_fresnel, roughness);
 
     // diffuse is common for any model
     vec3 diffuse_fresnel = 1.0 - specular_fresnel;
     vec3 diffuse = diffuse_fresnel * mix(surface_color, vec3(0.0), metallic) / PI;
     
     // final result
-    return (diffuse + specular) * light_color * NdL;
+    return (diffuse + specular) * light_color * normal_dot_light_dir;
 }
 
 vec3 attenuate(vec3 light_color, vec3 attenuation, float distance)

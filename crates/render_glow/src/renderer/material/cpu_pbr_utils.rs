@@ -9,7 +9,3 @@ pub trait FromPbrMaterial: Sized {
     ///
     fn from_cpu_material(cpu_material: &CpuMaterial) -> Self;
 }
-
-pub fn is_transparent(cpu_material: &CpuMaterial) -> bool {
-    cpu_material.albedo.a != 255
-}

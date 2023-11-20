@@ -6,7 +6,7 @@ use crate::renderer::Light;
 ///
 /// The shader function has the following signature:
 /// ```no_rust
-/// vec3 calculate_lighting(vec3 camera_position, vec3 surface_color, vec3 position, vec3 normal, float metallic, float roughness, float occlusion)
+/// vec3 calculate_lighting(vec3 camera_position, vec3 surface_color, vec3 position, vec3 normal, float metallic, float roughness)
 /// ```
 ///
 pub fn lights_shader_source(lights: &[&dyn Light]) -> String {
@@ -16,11 +16,11 @@ pub fn lights_shader_source(lights: &[&dyn Light]) -> String {
     let mut dir_fun = String::new();
     for (i, light) in lights.iter().enumerate() {
         shader_source.push_str(&light.shader_source(i as u32));
-        dir_fun.push_str(&format!("color += calculate_lighting{}(surface_color, position, normal, view_direction, metallic, roughness, occlusion);\n", i))
+        dir_fun.push_str(&format!("color += calculate_lighting{}(surface_color, position, normal, view_direction, metallic, roughness);\n", i))
     }
     shader_source.push_str(&format!(
         "
-            vec3 calculate_lighting(vec3 camera_position, vec3 surface_color, vec3 position, vec3 normal, float metallic, float roughness, float occlusion)
+            vec3 calculate_lighting(vec3 camera_position, vec3 surface_color, vec3 position, vec3 normal, float metallic, float roughness)
             {{
                 vec3 color = vec3(0.0, 0.0, 0.0);
                 vec3 view_direction = normalize(camera_position - position);

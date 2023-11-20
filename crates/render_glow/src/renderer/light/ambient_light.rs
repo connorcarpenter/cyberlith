@@ -26,9 +26,9 @@ impl<'a> Light for AmbientLightImpl {
         format!(
             "
                 uniform vec3 ambientColor;
-                vec3 calculate_lighting{}(vec3 surface_color, vec3 position, vec3 normal, vec3 view_direction, float metallic, float roughness, float occlusion)
+                vec3 calculate_lighting{}(vec3 surface_color, vec3 position, vec3 normal, vec3 view_direction, float metallic, float roughness)
                 {{
-                    return occlusion * ambientColor * mix(surface_color, vec3(0.0), metallic);
+                    return ambientColor * mix(surface_color, vec3(0.0), metallic);
                 }}
 
             ", i)

@@ -133,9 +133,6 @@ impl RenderObjectSingle {
     ) {
         let camera = render_camera.camera;
 
-        let inverse = transform.inverse();
-        program.use_uniform_if_required("normalMatrix", inverse.transpose());
-
         program.use_uniform(
             "viewProjection",
             render_camera

@@ -19,10 +19,6 @@ pub struct CpuMaterial {
     pub roughness: f32,
     /// Color of light shining from an object.
     pub emissive: Color,
-    /// The index of refraction for this material
-    pub index_of_refraction: f32,
-    /// A value in the range `[0..1]` specifying how transmissive the material surface is.
-    pub transmission: f32,
 }
 
 impl Default for CpuMaterial {
@@ -33,8 +29,6 @@ impl Default for CpuMaterial {
             metallic: 0.0,
             roughness: 1.0,
             emissive: Color::BLACK,
-            index_of_refraction: 1.5,
-            transmission: 0.0,
         }
     }
 }
