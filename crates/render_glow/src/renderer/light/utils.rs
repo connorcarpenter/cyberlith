@@ -11,8 +11,8 @@ use crate::renderer::Light;
 ///
 pub fn lights_shader_source(lights: &[&dyn Light]) -> String {
     let mut shader_source = String::new();
-    shader_source.push_str(include_str!("../../core/shared.frag"));
-    shader_source.push_str(include_str!("../light/shaders/light_shared.frag"));
+    shader_source.push_str(include_str!("../../shaders/shared.frag"));
+    shader_source.push_str(include_str!("../../shaders/light_shared.frag"));
     let mut dir_fun = String::new();
     for (i, light) in lights.iter().enumerate() {
         shader_source.push_str(&light.shader_source(i as u32));

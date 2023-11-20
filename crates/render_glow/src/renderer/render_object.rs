@@ -148,8 +148,8 @@ impl RenderObjectSingle {
     fn vertex_shader_source() -> String {
         format!(
             "{}{}",
-            include_str!("../core/shared.frag"),
-            include_str!("geometry/shaders/mesh.vert"),
+            include_str!("../shaders/shared.frag"),
+            include_str!("../shaders/mesh.vert"),
         )
     }
 }
@@ -224,8 +224,8 @@ impl RenderObjectInstanced {
         format!(
             "{}{}{}",
             "#define USE_INSTANCE_TRANSFORMS\n",
-            include_str!("../core/shared.frag"),
-            include_str!("geometry/shaders/mesh.vert"),
+            include_str!("../shaders/shared.frag"),
+            include_str!("../shaders/mesh.vert"),
         )
     }
 

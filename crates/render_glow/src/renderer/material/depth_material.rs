@@ -25,7 +25,7 @@ impl FromPbrMaterial for DepthMaterial {
 impl Material for DepthMaterial {
     fn fragment_shader(&self, _lights: &[&dyn Light]) -> FragmentShader {
         FragmentShader {
-            source: include_str!("shaders/depth_material.frag").to_string(),
+            source: include_str!("../../shaders/depth_material.frag").to_string(),
             attributes: FragmentAttributes {
                 position: true,
                 ..FragmentAttributes::NONE

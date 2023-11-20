@@ -22,7 +22,7 @@ impl FxaaEffect {
             &format!(
                 "{}\n{}",
                 color_texture.fragment_shader_source(),
-                include_str!("shaders/fxaa_effect.frag")
+                include_str!("../../shaders/fxaa_effect.frag")
             ),
             RenderStates {
                 write_mask: WriteMask::COLOR,
