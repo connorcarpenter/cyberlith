@@ -68,7 +68,7 @@ impl From<Arrow2d> for CpuMesh {
             Vec3::new(head_point_x, head_width, 0.0),
         ];
 
-        let indices =vec![0, 2, 1, 2, 0, 3, 4, 1, 2, 4, 5, 1, 4, 2, 6];
+        let indices = vec![0, 2, 1, 2, 0, 3, 4, 1, 2, 4, 5, 1, 4, 2, 6];
 
         Self::from_indices(&positions, &indices)
     }

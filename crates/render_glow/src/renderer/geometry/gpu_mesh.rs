@@ -20,12 +20,7 @@ impl GpuMesh {
         }
     }
 
-    pub fn draw(
-        &self,
-        program: &Program,
-        render_states: RenderStates,
-        camera: &Camera,
-    ) {
+    pub fn draw(&self, program: &Program, render_states: RenderStates, camera: &Camera) {
         self.use_attributes(program);
         program.draw_arrays(
             render_states,

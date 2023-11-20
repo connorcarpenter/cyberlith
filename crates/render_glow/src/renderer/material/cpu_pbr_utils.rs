@@ -1,4 +1,3 @@
-
 use render_api::base::CpuMaterial;
 
 ///

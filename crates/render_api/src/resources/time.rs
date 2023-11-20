@@ -9,9 +9,7 @@ pub struct Time {
 
 impl Default for Time {
     fn default() -> Self {
-        Self {
-            elapsed: 0.0,
-        }
+        Self { elapsed: 0.0 }
     }
 }
 

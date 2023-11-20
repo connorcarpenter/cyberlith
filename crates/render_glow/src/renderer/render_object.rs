@@ -175,8 +175,7 @@ impl RenderObjectInstanced {
         let instance_buffers = Self::create_instance_buffers(&instances);
 
         let fragment_shader = material.fragment_shader(lights);
-        let vertex_shader_source =
-            Self::vertex_shader_source();
+        let vertex_shader_source = Self::vertex_shader_source();
         Context::get()
             .program(vertex_shader_source, fragment_shader.source, |program| {
                 material.use_uniforms(program, render_camera, lights);
@@ -212,11 +211,7 @@ impl RenderObjectInstanced {
         );
         program.use_uniform("modelMatrix", transform);
 
-        for attribute_name in [
-            "transform_row1",
-            "transform_row2",
-            "transform_row3",
-        ] {
+        for attribute_name in ["transform_row1", "transform_row2", "transform_row3"] {
             if program.requires_attribute(attribute_name) {
                 program.use_instance_attribute(
                     attribute_name,
@@ -259,9 +254,18 @@ impl RenderObjectInstanced {
                 transform_row3.push(transformation.row(2));
             }
 
-            instance_buffers.insert("transform_row1".to_string(), InstanceBuffer::new_with_data(&transform_row1));
-            instance_buffers.insert("transform_row2".to_string(), InstanceBuffer::new_with_data(&transform_row2));
-            instance_buffers.insert("transform_row3".to_string(), InstanceBuffer::new_with_data(&transform_row3));
+            instance_buffers.insert(
+                "transform_row1".to_string(),
+                InstanceBuffer::new_with_data(&transform_row1),
+            );
+            instance_buffers.insert(
+                "transform_row2".to_string(),
+                InstanceBuffer::new_with_data(&transform_row2),
+            );
+            instance_buffers.insert(
+                "transform_row3".to_string(),
+                InstanceBuffer::new_with_data(&transform_row3),
+            );
         }
 
         instance_buffers

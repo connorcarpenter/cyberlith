@@ -30,10 +30,12 @@ impl From<Cylinder> for CpuMesh {
             for j in 0..angle_subdivisions {
                 indices.push((i * angle_subdivisions + j) as usize);
                 indices.push((i * angle_subdivisions + (j + 1) % angle_subdivisions) as usize);
-                indices.push(((i + 1) * angle_subdivisions + (j + 1) % angle_subdivisions) as usize);
+                indices
+                    .push(((i + 1) * angle_subdivisions + (j + 1) % angle_subdivisions) as usize);
 
                 indices.push((i * angle_subdivisions + j) as usize);
-                indices.push(((i + 1) * angle_subdivisions + (j + 1) % angle_subdivisions) as usize);
+                indices
+                    .push(((i + 1) * angle_subdivisions + (j + 1) % angle_subdivisions) as usize);
                 indices.push(((i + 1) * angle_subdivisions + j) as usize);
             }
         }

@@ -1,8 +1,7 @@
-
 use math::{Mat2, Mat3, Mat4, Quat, Vec2, Vec3, Vec4};
-use render_api::base::{Color};
+use render_api::base::Color;
 
-use crate::core::{DataType};
+use crate::core::DataType;
 
 ///
 /// Possible types that can be send as a uniform to a shader (a variable that is uniformly available when processing all vertices and fragments).

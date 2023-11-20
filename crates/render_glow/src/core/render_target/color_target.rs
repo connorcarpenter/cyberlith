@@ -3,10 +3,7 @@ use glow::HasContext;
 use render_api::components::Viewport;
 
 use crate::{
-    core::{
-        ClearState, Context, GpuTexture2D, RenderTarget, TextureDataType,
-        WriteMask,
-    },
+    core::{ClearState, Context, GpuTexture2D, RenderTarget, TextureDataType, WriteMask},
     renderer::RenderTargetExt,
 };
 
@@ -49,9 +46,7 @@ impl<'a> RenderTargetExt for ColorTarget<'a> {
 
 impl<'a> ColorTarget<'a> {
     pub(in crate::core) fn new_texture2d(texture: &'a GpuTexture2D) -> Self {
-        ColorTarget {
-            target: texture,
-        }
+        ColorTarget { target: texture }
     }
 
     ///

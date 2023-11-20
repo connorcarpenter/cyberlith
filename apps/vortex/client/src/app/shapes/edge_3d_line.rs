@@ -53,7 +53,7 @@ impl From<Line3d> for CpuMesh {
             Vec3::new(1.0, cy, cz),
         ];
 
-        let indices =vec![
+        let indices = vec![
             0, 2, 1, 3, 5, 4, 0, 1, 3, 3, 1, 4, 1, 2, 4, 4, 2, 5, 2, 0, 5, 5, 0, 3,
         ];
 

@@ -3,10 +3,7 @@ use std::fs;
 use naia_serde::BitReader;
 
 use math::Vec3;
-use render_api::{
-    base::CpuMesh,
-    AssetHash,
-};
+use render_api::{base::CpuMesh, AssetHash};
 
 #[derive(Hash)]
 pub struct MeshFile {

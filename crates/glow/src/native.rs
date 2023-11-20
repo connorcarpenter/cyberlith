@@ -1,5 +1,8 @@
-
-use std::{ffi::{CStr, CString}, collections::HashSet, num::NonZeroU32};
+use std::{
+    collections::HashSet,
+    ffi::{CStr, CString},
+    num::NonZeroU32,
+};
 
 use super::*;
 use crate::{gl46 as native_gl, version::Version};

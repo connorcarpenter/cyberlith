@@ -31,7 +31,6 @@ impl std::fmt::Debug for CpuMesh {
 }
 
 impl CpuMesh {
-
     pub fn from_vertices(vertices: Vec<Vec3>) -> Self {
         Self { vertices }
     }
@@ -80,7 +79,10 @@ impl CpuMesh {
     pub fn validate(&self) -> Result<()> {
         let vertex_count = self.vertex_count();
         let positions = self.vertices.len();
-        info!("validating mesh with {} vertices and {} positions", vertex_count, positions);
+        info!(
+            "validating mesh with {} vertices and {} positions",
+            vertex_count, positions
+        );
         let buffer_check = |length: Option<usize>, name: &str| -> Result<()> {
             if let Some(length) = length {
                 if length < vertex_count {

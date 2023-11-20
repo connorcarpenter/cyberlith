@@ -6,8 +6,8 @@ use std::cell::RefCell;
 use web_sys::{
     self, HtmlCanvasElement, HtmlImageElement, HtmlVideoElement, ImageBitmap,
     WebGl2RenderingContext, WebGlBuffer, WebGlFramebuffer, WebGlProgram, WebGlQuery,
-    WebGlRenderbuffer, WebGlSampler, WebGlShader, WebGlSync, WebGlTexture,
-    WebGlTransformFeedback, WebGlUniformLocation, WebGlVertexArrayObject,
+    WebGlRenderbuffer, WebGlSampler, WebGlShader, WebGlSync, WebGlTexture, WebGlTransformFeedback,
+    WebGlUniformLocation, WebGlVertexArrayObject,
 };
 
 #[cfg(web_sys_unstable_apis)]
@@ -243,7 +243,6 @@ macro_rules! build_extensions {
 }
 
 impl Context {
-
     pub fn from_webgl2_context(context: WebGl2RenderingContext) -> Self {
         let (extensions, supported_extensions) = build_extensions!(context, WebGl2RenderingContext);
 
@@ -288,15 +287,16 @@ impl Context {
         pixels: &ImageBitmap,
     ) {
         // TODO: Handle return value?
-        self.raw.tex_image_2d_with_u32_and_u32_and_image_bitmap(
-            target,
-            level,
-            internal_format,
-            format,
-            ty,
-            pixels,
-        )
-        .unwrap();
+        self.raw
+            .tex_image_2d_with_u32_and_u32_and_image_bitmap(
+                target,
+                level,
+                internal_format,
+                format,
+                ty,
+                pixels,
+            )
+            .unwrap();
     }
 
     /// WebGL2 Only
@@ -311,18 +311,19 @@ impl Context {
         ty: u32,
         pixels: &ImageBitmap,
     ) {
-        self.raw.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_image_bitmap(
-                    target,
-                    level,
-                    internal_format,
-                    width,
-                    height,
-                    0, // required to be zero
-                    format,
-                    ty,
-                    pixels,
-                )
-                .unwrap();
+        self.raw
+            .tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_image_bitmap(
+                target,
+                level,
+                internal_format,
+                width,
+                height,
+                0, // required to be zero
+                format,
+                ty,
+                pixels,
+            )
+            .unwrap();
     }
 
     pub unsafe fn tex_image_2d_with_html_canvas(
@@ -334,15 +335,16 @@ impl Context {
         ty: u32,
         canvas: &HtmlCanvasElement,
     ) {
-        self.raw.tex_image_2d_with_u32_and_u32_and_html_canvas_element(
-                    target,
-                    level,
-                    internal_format,
-                    format,
-                    ty,
-                    canvas,
-                )
-                .unwrap();
+        self.raw
+            .tex_image_2d_with_u32_and_u32_and_html_canvas_element(
+                target,
+                level,
+                internal_format,
+                format,
+                ty,
+                canvas,
+            )
+            .unwrap();
     }
 
     /// WebGL2 Only
@@ -357,18 +359,19 @@ impl Context {
         ty: u32,
         canvas: &HtmlCanvasElement,
     ) {
-        self.raw.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_html_canvas_element(
-                    target,
-                    level,
-                    internal_format,
-                    width,
-                    height,
-                    0,  // required to be zero
-                    format,
-                    ty,
-                    canvas,
-                )
-                .unwrap();
+        self.raw
+            .tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_html_canvas_element(
+                target,
+                level,
+                internal_format,
+                width,
+                height,
+                0, // required to be zero
+                format,
+                ty,
+                canvas,
+            )
+            .unwrap();
     }
 
     pub unsafe fn tex_image_2d_with_html_image(
@@ -380,15 +383,16 @@ impl Context {
         ty: u32,
         image: &HtmlImageElement,
     ) {
-        self.raw.tex_image_2d_with_u32_and_u32_and_html_image_element(
-                    target,
-                    level,
-                    internal_format,
-                    format,
-                    ty,
-                    image,
-                )
-                .unwrap();
+        self.raw
+            .tex_image_2d_with_u32_and_u32_and_html_image_element(
+                target,
+                level,
+                internal_format,
+                format,
+                ty,
+                image,
+            )
+            .unwrap();
     }
 
     /// WebGL2 Only
@@ -403,18 +407,19 @@ impl Context {
         ty: u32,
         image: &HtmlImageElement,
     ) {
-        self.raw.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_html_image_element(
-                    target,
-                    level,
-                    internal_format,
-                    width,
-                    height,
-                    0,  // required to be zero
-                    format,
-                    ty,
-                    image,
-                )
-                .unwrap();
+        self.raw
+            .tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_html_image_element(
+                target,
+                level,
+                internal_format,
+                width,
+                height,
+                0, // required to be zero
+                format,
+                ty,
+                image,
+            )
+            .unwrap();
     }
 
     pub unsafe fn tex_image_2d_with_html_video(
@@ -426,15 +431,16 @@ impl Context {
         ty: u32,
         video: &HtmlVideoElement,
     ) {
-        self.raw.tex_image_2d_with_u32_and_u32_and_html_video_element(
-                    target,
-                    level,
-                    internal_format,
-                    format,
-                    ty,
-                    video,
-                )
-                .unwrap();
+        self.raw
+            .tex_image_2d_with_u32_and_u32_and_html_video_element(
+                target,
+                level,
+                internal_format,
+                format,
+                ty,
+                video,
+            )
+            .unwrap();
     }
 
     /// WebGL2 Only
@@ -449,18 +455,19 @@ impl Context {
         ty: u32,
         video: &HtmlVideoElement,
     ) {
-        self.raw.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_html_video_element(
-                    target,
-                    level,
-                    internal_format,
-                    width,
-                    height,
-                    0,  // required to be zero
-                    format,
-                    ty,
-                    video,
-                )
-                .unwrap();
+        self.raw
+            .tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_html_video_element(
+                target,
+                level,
+                internal_format,
+                width,
+                height,
+                0, // required to be zero
+                format,
+                ty,
+                video,
+            )
+            .unwrap();
     }
 
     #[cfg(web_sys_unstable_apis)]
@@ -473,15 +480,16 @@ impl Context {
         ty: u32,
         video_frame: &VideoFrame,
     ) {
-        self.raw.tex_image_2d_with_u32_and_u32_and_video_frame(
-                    target,
-                    level,
-                    internal_format,
-                    format,
-                    ty,
-                    video_frame,
-                )
-                .unwrap();
+        self.raw
+            .tex_image_2d_with_u32_and_u32_and_video_frame(
+                target,
+                level,
+                internal_format,
+                format,
+                ty,
+                video_frame,
+            )
+            .unwrap();
     }
 
     #[cfg(web_sys_unstable_apis)]
@@ -497,18 +505,19 @@ impl Context {
         ty: u32,
         video_frame: &VideoFrame,
     ) {
-        self.raw.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_video_frame(
-                    target,
-                    level,
-                    internal_format,
-                    width,
-                    height,
-                    0,
-                    format,
-                    ty,
-                    video_frame,
-                )
-                .unwrap();
+        self.raw
+            .tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_video_frame(
+                target,
+                level,
+                internal_format,
+                width,
+                height,
+                0,
+                format,
+                ty,
+                video_frame,
+            )
+            .unwrap();
     }
 
     pub unsafe fn tex_sub_image_2d_with_image_bitmap(
@@ -521,10 +530,11 @@ impl Context {
         ty: u32,
         image: &ImageBitmap,
     ) {
-        self.raw.tex_sub_image_2d_with_u32_and_u32_and_image_bitmap(
-                    target, level, x_offset, y_offset, format, ty, image,
-                )
-                .unwrap(); // TODO: Handle return value?
+        self.raw
+            .tex_sub_image_2d_with_u32_and_u32_and_image_bitmap(
+                target, level, x_offset, y_offset, format, ty, image,
+            )
+            .unwrap(); // TODO: Handle return value?
     }
 
     /// WebGL2 Only
@@ -540,12 +550,11 @@ impl Context {
         ty: u32,
         image: &ImageBitmap,
     ) {
-        
-                self.raw.tex_sub_image_2d_with_i32_and_i32_and_u32_and_type_and_image_bitmap(
-                    target, level, x_offset, y_offset, width, height, format, ty, image,
-                )
-                .unwrap(); // TODO: Handle return value?
-
+        self.raw
+            .tex_sub_image_2d_with_i32_and_i32_and_u32_and_type_and_image_bitmap(
+                target, level, x_offset, y_offset, width, height, format, ty, image,
+            )
+            .unwrap(); // TODO: Handle return value?
     }
 
     pub unsafe fn tex_sub_image_2d_with_html_canvas(
@@ -558,12 +567,11 @@ impl Context {
         ty: u32,
         image: &HtmlCanvasElement,
     ) {
-        
-                self.raw.tex_sub_image_2d_with_u32_and_u32_and_html_canvas_element(
-                    target, level, x_offset, y_offset, format, ty, image,
-                )
-                .unwrap(); // TODO: Handle return value?
-
+        self.raw
+            .tex_sub_image_2d_with_u32_and_u32_and_html_canvas_element(
+                target, level, x_offset, y_offset, format, ty, image,
+            )
+            .unwrap(); // TODO: Handle return value?
     }
 
     /// WebGL2 Only
@@ -579,12 +587,11 @@ impl Context {
         ty: u32,
         image: &HtmlCanvasElement,
     ) {
-        
-                self.raw.tex_sub_image_2d_with_i32_and_i32_and_u32_and_type_and_html_canvas_element(
-                    target, level, x_offset, y_offset, width, height, format, ty, image,
-                )
-                .unwrap(); // TODO: Handle return value?
-
+        self.raw
+            .tex_sub_image_2d_with_i32_and_i32_and_u32_and_type_and_html_canvas_element(
+                target, level, x_offset, y_offset, width, height, format, ty, image,
+            )
+            .unwrap(); // TODO: Handle return value?
     }
 
     pub unsafe fn tex_sub_image_2d_with_html_image(
@@ -597,12 +604,11 @@ impl Context {
         ty: u32,
         image: &HtmlImageElement,
     ) {
-        
-                self.raw.tex_sub_image_2d_with_u32_and_u32_and_html_image_element(
-                    target, level, x_offset, y_offset, format, ty, image,
-                )
-                .unwrap(); // TODO: Handle return value?
-
+        self.raw
+            .tex_sub_image_2d_with_u32_and_u32_and_html_image_element(
+                target, level, x_offset, y_offset, format, ty, image,
+            )
+            .unwrap(); // TODO: Handle return value?
     }
 
     /// WebGL2 Only
@@ -618,12 +624,11 @@ impl Context {
         ty: u32,
         image: &HtmlImageElement,
     ) {
-        
-                self.raw.tex_sub_image_2d_with_i32_and_i32_and_u32_and_type_and_html_image_element(
-                    target, level, x_offset, y_offset, width, height, format, ty, image,
-                )
-                .unwrap(); // TODO: Handle return value?
-
+        self.raw
+            .tex_sub_image_2d_with_i32_and_i32_and_u32_and_type_and_html_image_element(
+                target, level, x_offset, y_offset, width, height, format, ty, image,
+            )
+            .unwrap(); // TODO: Handle return value?
     }
 
     pub unsafe fn tex_sub_image_2d_with_html_video(
@@ -636,12 +641,11 @@ impl Context {
         ty: u32,
         image: &HtmlVideoElement,
     ) {
-        
-                self.raw.tex_sub_image_2d_with_u32_and_u32_and_html_video_element(
-                    target, level, x_offset, y_offset, format, ty, image,
-                )
-                .unwrap(); // TODO: Handle return value?
-
+        self.raw
+            .tex_sub_image_2d_with_u32_and_u32_and_html_video_element(
+                target, level, x_offset, y_offset, format, ty, image,
+            )
+            .unwrap(); // TODO: Handle return value?
     }
 
     /// WebGL2 Only
@@ -657,12 +661,11 @@ impl Context {
         ty: u32,
         image: &HtmlVideoElement,
     ) {
-        
-                self.raw.tex_sub_image_2d_with_i32_and_i32_and_u32_and_type_and_html_video_element(
-                    target, level, x_offset, y_offset, width, height, format, ty, image,
-                )
-                .unwrap(); // TODO: Handle return value?
-
+        self.raw
+            .tex_sub_image_2d_with_i32_and_i32_and_u32_and_type_and_html_video_element(
+                target, level, x_offset, y_offset, width, height, format, ty, image,
+            )
+            .unwrap(); // TODO: Handle return value?
     }
 
     #[cfg(web_sys_unstable_apis)]
@@ -678,18 +681,17 @@ impl Context {
         ty: u32,
         video_frame: &VideoFrame,
     ) {
-        
-                self.raw.tex_sub_image_2d_with_u32_and_u32_and_video_frame(
-                    target,
-                    level,
-                    x_offset,
-                    y_offset,
-                    format,
-                    ty,
-                    video_frame,
-                )
-                .unwrap(); // TODO: Handle return value?
-
+        self.raw
+            .tex_sub_image_2d_with_u32_and_u32_and_video_frame(
+                target,
+                level,
+                x_offset,
+                y_offset,
+                format,
+                ty,
+                video_frame,
+            )
+            .unwrap(); // TODO: Handle return value?
     }
 
     #[cfg(web_sys_unstable_apis)]
@@ -706,20 +708,19 @@ impl Context {
         ty: u32,
         video_frame: &VideoFrame,
     ) {
-        
-                self.raw.tex_sub_image_2d_with_i32_and_i32_and_u32_and_type_and_video_frame(
-                    target,
-                    level,
-                    x_offset,
-                    y_offset,
-                    width,
-                    height,
-                    format,
-                    ty,
-                    video_frame,
-                )
-                .unwrap(); // TODO: Handle return value?
-
+        self.raw
+            .tex_sub_image_2d_with_i32_and_i32_and_u32_and_type_and_video_frame(
+                target,
+                level,
+                x_offset,
+                y_offset,
+                width,
+                height,
+                format,
+                ty,
+                video_frame,
+            )
+            .unwrap(); // TODO: Handle return value?
     }
 
     /// WebGL2 Only
@@ -736,21 +737,20 @@ impl Context {
         ty: u32,
         image: &ImageBitmap,
     ) {
-        
-                self.raw.tex_image_3d_with_image_bitmap(
-                    target,
-                    level,
-                    internal_format,
-                    width,
-                    height,
-                    depth,
-                    border,
-                    format,
-                    ty,
-                    image,
-                )
-                .unwrap(); // TODO: Handle return value?
-
+        self.raw
+            .tex_image_3d_with_image_bitmap(
+                target,
+                level,
+                internal_format,
+                width,
+                height,
+                depth,
+                border,
+                format,
+                ty,
+                image,
+            )
+            .unwrap(); // TODO: Handle return value?
     }
 
     /// WebGL2 Only
@@ -767,21 +767,20 @@ impl Context {
         ty: u32,
         image: &HtmlCanvasElement,
     ) {
-        
-                self.raw.tex_image_3d_with_html_canvas_element(
-                    target,
-                    level,
-                    internal_format,
-                    width,
-                    height,
-                    depth,
-                    border,
-                    format,
-                    ty,
-                    image,
-                )
-                .unwrap(); // TODO: Handle return value?
-
+        self.raw
+            .tex_image_3d_with_html_canvas_element(
+                target,
+                level,
+                internal_format,
+                width,
+                height,
+                depth,
+                border,
+                format,
+                ty,
+                image,
+            )
+            .unwrap(); // TODO: Handle return value?
     }
 
     /// WebGL2 Only
@@ -798,21 +797,20 @@ impl Context {
         ty: u32,
         image: &HtmlImageElement,
     ) {
-        
-                self.raw.tex_image_3d_with_html_image_element(
-                    target,
-                    level,
-                    internal_format,
-                    width,
-                    height,
-                    depth,
-                    border,
-                    format,
-                    ty,
-                    image,
-                )
-                .unwrap(); // TODO: Handle return value?
-
+        self.raw
+            .tex_image_3d_with_html_image_element(
+                target,
+                level,
+                internal_format,
+                width,
+                height,
+                depth,
+                border,
+                format,
+                ty,
+                image,
+            )
+            .unwrap(); // TODO: Handle return value?
     }
 
     /// WebGL2 Only
@@ -829,21 +827,20 @@ impl Context {
         ty: u32,
         image: &HtmlVideoElement,
     ) {
-        
-                self.raw.tex_image_3d_with_html_video_element(
-                    target,
-                    level,
-                    internal_format,
-                    width,
-                    height,
-                    depth,
-                    border,
-                    format,
-                    ty,
-                    image,
-                )
-                .unwrap(); // TODO: Handle return value?
-
+        self.raw
+            .tex_image_3d_with_html_video_element(
+                target,
+                level,
+                internal_format,
+                width,
+                height,
+                depth,
+                border,
+                format,
+                ty,
+                image,
+            )
+            .unwrap(); // TODO: Handle return value?
     }
 
     #[cfg(web_sys_unstable_apis)]
@@ -861,21 +858,20 @@ impl Context {
         ty: u32,
         video_frame: &VideoFrame,
     ) {
-        
-                self.raw.tex_image_3d_with_video_frame(
-                    target,
-                    level,
-                    internal_format,
-                    width,
-                    height,
-                    depth,
-                    border,
-                    format,
-                    ty,
-                    video_frame,
-                )
-                .unwrap(); // TODO: Handle return value?
-
+        self.raw
+            .tex_image_3d_with_video_frame(
+                target,
+                level,
+                internal_format,
+                width,
+                height,
+                depth,
+                border,
+                format,
+                ty,
+                video_frame,
+            )
+            .unwrap(); // TODO: Handle return value?
     }
 
     /// WebGL2 Only
@@ -893,13 +889,12 @@ impl Context {
         ty: u32,
         image: &ImageBitmap,
     ) {
-        
-                self.raw.tex_sub_image_3d_with_image_bitmap(
-                    target, level, x_offset, y_offset, z_offset, width, height, depth, format, ty,
-                    image,
-                )
-                .unwrap(); // TODO: Handle return value?
-
+        self.raw
+            .tex_sub_image_3d_with_image_bitmap(
+                target, level, x_offset, y_offset, z_offset, width, height, depth, format, ty,
+                image,
+            )
+            .unwrap(); // TODO: Handle return value?
     }
 
     /// WebGL2 Only
@@ -917,13 +912,12 @@ impl Context {
         ty: u32,
         image: &HtmlCanvasElement,
     ) {
-        
-                self.raw.tex_sub_image_3d_with_html_canvas_element(
-                    target, level, x_offset, y_offset, z_offset, width, height, depth, format, ty,
-                    image,
-                )
-                .unwrap(); // TODO: Handle return value?
-
+        self.raw
+            .tex_sub_image_3d_with_html_canvas_element(
+                target, level, x_offset, y_offset, z_offset, width, height, depth, format, ty,
+                image,
+            )
+            .unwrap(); // TODO: Handle return value?
     }
 
     /// WebGL2 Only
@@ -941,13 +935,12 @@ impl Context {
         ty: u32,
         image: &HtmlImageElement,
     ) {
-        
-                self.raw.tex_sub_image_3d_with_html_image_element(
-                    target, level, x_offset, y_offset, z_offset, width, height, depth, format, ty,
-                    image,
-                )
-                .unwrap(); // TODO: Handle return value?
-
+        self.raw
+            .tex_sub_image_3d_with_html_image_element(
+                target, level, x_offset, y_offset, z_offset, width, height, depth, format, ty,
+                image,
+            )
+            .unwrap(); // TODO: Handle return value?
     }
 
     /// WebGL2 Only
@@ -965,13 +958,12 @@ impl Context {
         ty: u32,
         image: &HtmlVideoElement,
     ) {
-        
-                self.raw.tex_sub_image_3d_with_html_video_element(
-                    target, level, x_offset, y_offset, z_offset, width, height, depth, format, ty,
-                    image,
-                )
-                .unwrap(); // TODO: Handle return value?
-
+        self.raw
+            .tex_sub_image_3d_with_html_video_element(
+                target, level, x_offset, y_offset, z_offset, width, height, depth, format, ty,
+                image,
+            )
+            .unwrap(); // TODO: Handle return value?
     }
 
     #[cfg(web_sys_unstable_apis)]
@@ -990,21 +982,21 @@ impl Context {
         ty: u32,
         video_frame: &VideoFrame,
     ) {
-        
-                self.raw.tex_sub_image_3d_with_video_frame(
-                    target,
-                    level,
-                    x_offset,
-                    y_offset,
-                    z_offset,
-                    width,
-                    height,
-                    depth,
-                    format,
-                    ty,
-                    video_frame,
-                )
-                .unwrap(); // TODO: Handle return value?
+        self.raw
+            .tex_sub_image_3d_with_video_frame(
+                target,
+                level,
+                x_offset,
+                y_offset,
+                z_offset,
+                width,
+                height,
+                depth,
+                format,
+                ty,
+                video_frame,
+            )
+            .unwrap(); // TODO: Handle return value?
     }
 
     pub unsafe fn framebuffer_texture_multiview_ovr(
@@ -1254,27 +1246,29 @@ impl HasContext for Context {
         if self.extensions.khr_parallel_shader_compile.is_none() {
             panic!("Parallel shader compile is not supported")
         }
-        
-        self.raw.get_shader_parameter(raw_shader, COMPLETION_STATUS)
-        .as_bool()
-        .unwrap_or(false)
+
+        self.raw
+            .get_shader_parameter(raw_shader, COMPLETION_STATUS)
+            .as_bool()
+            .unwrap_or(false)
     }
 
     unsafe fn get_shader_compile_status(&self, shader: Self::Shader) -> bool {
         let shaders = self.shaders.borrow();
         let raw_shader = shaders.get_unchecked(shader);
-        
-                self.raw.get_shader_parameter(raw_shader, COMPILE_STATUS)
 
-        .as_bool()
-        .unwrap_or(false)
+        self.raw
+            .get_shader_parameter(raw_shader, COMPILE_STATUS)
+            .as_bool()
+            .unwrap_or(false)
     }
 
     unsafe fn get_shader_info_log(&self, shader: Self::Shader) -> String {
         let shaders = self.shaders.borrow();
         let raw_shader = shaders.get_unchecked(shader);
-        self.raw.get_shader_info_log(raw_shader)
-        .unwrap_or_else(|| String::from(""))
+        self.raw
+            .get_shader_info_log(raw_shader)
+            .unwrap_or_else(|| String::from(""))
     }
 
     unsafe fn create_program(&self) -> Result<Self::Program, String> {
@@ -1333,37 +1327,39 @@ impl HasContext for Context {
         if self.extensions.khr_parallel_shader_compile.is_none() {
             panic!("Parallel shader compile is not supported")
         }
-        
-                self.raw.get_program_parameter(raw_program, COMPLETION_STATUS)
 
-        .as_bool()
-        .unwrap_or(false)
+        self.raw
+            .get_program_parameter(raw_program, COMPLETION_STATUS)
+            .as_bool()
+            .unwrap_or(false)
     }
 
     unsafe fn get_program_link_status(&self, program: Self::Program) -> bool {
         let programs = self.programs.borrow();
         let raw_program = programs.get_unchecked(program);
-        
-                self.raw.get_program_parameter(raw_program, LINK_STATUS)
 
-        .as_bool()
-        .unwrap_or(false)
+        self.raw
+            .get_program_parameter(raw_program, LINK_STATUS)
+            .as_bool()
+            .unwrap_or(false)
     }
 
     unsafe fn get_program_info_log(&self, program: Self::Program) -> String {
         let programs = self.programs.borrow();
         let raw_program = programs.get_unchecked(program);
-        self.raw.get_program_info_log(raw_program)
-        .unwrap_or_else(|| String::from(""))
+        self.raw
+            .get_program_info_log(raw_program)
+            .unwrap_or_else(|| String::from(""))
     }
 
     unsafe fn get_active_uniforms(&self, program: Self::Program) -> u32 {
         let programs = self.programs.borrow();
         let raw_program = programs.get_unchecked(program);
-        self.raw.get_program_parameter(raw_program, WebGl2RenderingContext::ACTIVE_UNIFORMS)
-        .as_f64()
-        .map(|v| v as u32)
-        .unwrap_or(0)
+        self.raw
+            .get_program_parameter(raw_program, WebGl2RenderingContext::ACTIVE_UNIFORMS)
+            .as_f64()
+            .map(|v| v as u32)
+            .unwrap_or(0)
     }
 
     unsafe fn get_active_uniform(
@@ -1373,14 +1369,14 @@ impl HasContext for Context {
     ) -> Option<ActiveUniform> {
         let programs = self.programs.borrow();
         let raw_program = programs.get_unchecked(program);
-        
-                self.raw.get_active_uniform(raw_program, index)
-                    .map(|au| ActiveUniform {
-                        size: au.size(),
-                        utype: au.type_(),
-                        name: au.name(),
-                    })
 
+        self.raw
+            .get_active_uniform(raw_program, index)
+            .map(|au| ActiveUniform {
+                size: au.size(),
+                utype: au.type_(),
+                name: au.name(),
+            })
     }
 
     unsafe fn use_program(&self, program: Option<Self::Program>) {
@@ -1436,9 +1432,9 @@ impl HasContext for Context {
     ) {
         let buffers = self.buffers.borrow();
         let raw_buffer = buffer.map(|b| buffers.get_unchecked(b));
-        
-                self.raw.bind_buffer_range_with_i32_and_i32(target, index, raw_buffer, offset, size);
 
+        self.raw
+            .bind_buffer_range_with_i32_and_i32(target, index, raw_buffer, offset, size);
     }
 
     unsafe fn bind_framebuffer(&self, target: u32, framebuffer: Option<Self::Framebuffer>) {
@@ -1466,11 +1462,9 @@ impl HasContext for Context {
         mask: u32,
         filter: u32,
     ) {
-        
-                self.raw.blit_framebuffer(
-                    src_x0, src_y0, src_x1, src_y1, dst_x0, dst_y0, dst_x1, dst_y1, mask, filter,
-                );
-
+        self.raw.blit_framebuffer(
+            src_x0, src_y0, src_x1, src_y1, dst_x0, dst_y0, dst_x1, dst_y1, mask, filter,
+        );
     }
 
     unsafe fn create_vertex_array(&self) -> Result<Self::VertexArray, String> {
@@ -1531,10 +1525,9 @@ impl HasContext for Context {
     }
 
     unsafe fn buffer_data_u8_slice(&self, target: u32, data: &[u8], usage: u32) {
-        
-                let array = js_sys::Uint8Array::view(data);
-                self.raw.buffer_data_with_array_buffer_view(target, &array, usage);
-
+        let array = js_sys::Uint8Array::view(data);
+        self.raw
+            .buffer_data_with_array_buffer_view(target, &array, usage);
     }
 
     unsafe fn named_buffer_data_u8_slice(&self, _buffer: Self::Buffer, _data: &[u8], _usage: u32) {
@@ -1542,17 +1535,15 @@ impl HasContext for Context {
     }
 
     unsafe fn buffer_sub_data_u8_slice(&self, target: u32, offset: i32, src_data: &[u8]) {
-        
-                let array = js_sys::Uint8Array::view(src_data);
-                self.raw.buffer_sub_data_with_i32_and_array_buffer_view(target, offset, &array);
-
+        let array = js_sys::Uint8Array::view(src_data);
+        self.raw
+            .buffer_sub_data_with_i32_and_array_buffer_view(target, offset, &array);
     }
 
     unsafe fn get_buffer_sub_data(&self, target: u32, offset: i32, dst_data: &mut [u8]) {
-        
-                let array = js_sys::Uint8Array::view(dst_data);
-                self.raw.get_buffer_sub_data_with_i32_and_array_buffer_view(target, offset, &array);
-
+        let array = js_sys::Uint8Array::view(dst_data);
+        self.raw
+            .get_buffer_sub_data_with_i32_and_array_buffer_view(target, offset, &array);
     }
 
     unsafe fn check_framebuffer_status(&self, target: u32) -> u32 {
@@ -1560,21 +1551,18 @@ impl HasContext for Context {
     }
 
     unsafe fn clear_buffer_i32_slice(&self, target: u32, draw_buffer: u32, values: &[i32]) {
-        
-                self.raw.clear_bufferiv_with_i32_array(target, draw_buffer as i32, values);
-
+        self.raw
+            .clear_bufferiv_with_i32_array(target, draw_buffer as i32, values);
     }
 
     unsafe fn clear_buffer_u32_slice(&self, target: u32, draw_buffer: u32, values: &[u32]) {
-        
-                self.raw.clear_bufferuiv_with_u32_array(target, draw_buffer as i32, values)
-
+        self.raw
+            .clear_bufferuiv_with_u32_array(target, draw_buffer as i32, values)
     }
 
     unsafe fn clear_buffer_f32_slice(&self, target: u32, draw_buffer: u32, values: &[f32]) {
-        
-                self.raw.clear_bufferfv_with_f32_array(target, draw_buffer as i32, values)
-
+        self.raw
+            .clear_bufferfv_with_f32_array(target, draw_buffer as i32, values)
     }
 
     unsafe fn clear_buffer_depth_stencil(
@@ -1584,25 +1572,24 @@ impl HasContext for Context {
         depth: f32,
         stencil: i32,
     ) {
-        
-                self.raw.clear_bufferfi(target, draw_buffer as i32, depth, stencil)
-
+        self.raw
+            .clear_bufferfi(target, draw_buffer as i32, depth, stencil)
     }
 
     unsafe fn client_wait_sync(&self, fence: Self::Fence, flags: u32, timeout: i32) -> u32 {
         let fences = self.fences.borrow();
         let raw_fence = fences.get_unchecked(fence);
-        
-                self.raw.client_wait_sync_with_u32(raw_fence, flags, timeout as u32)
 
+        self.raw
+            .client_wait_sync_with_u32(raw_fence, flags, timeout as u32)
     }
 
     unsafe fn wait_sync(&self, fence: Self::Fence, flags: u32, timeout: u64) {
         let fences = self.fences.borrow();
         let raw_fence = fences.get_unchecked(fence);
-        
-                self.raw.wait_sync_with_i32(raw_fence, flags, timeout as i32)
 
+        self.raw
+            .wait_sync_with_i32(raw_fence, flags, timeout as i32)
     }
 
     unsafe fn copy_buffer_sub_data(
@@ -1613,10 +1600,9 @@ impl HasContext for Context {
         dst_offset: i32,
         size: i32,
     ) {
-        self.raw
-                .copy_buffer_sub_data_with_i32_and_i32_and_i32(
-                    src_target, dst_target, src_offset, dst_offset, size,
-                );
+        self.raw.copy_buffer_sub_data_with_i32_and_i32_and_i32(
+            src_target, dst_target, src_offset, dst_offset, size,
+        );
     }
 
     unsafe fn copy_image_sub_data(
@@ -1651,9 +1637,8 @@ impl HasContext for Context {
         height: i32,
         border: i32,
     ) {
-        
-                self.raw.copy_tex_image_2d(target, level, internal_format, x, y, width, height, border);
-
+        self.raw
+            .copy_tex_image_2d(target, level, internal_format, x, y, width, height, border);
     }
 
     unsafe fn copy_tex_sub_image_2d(
@@ -1667,9 +1652,8 @@ impl HasContext for Context {
         width: i32,
         height: i32,
     ) {
-        
-                self.raw.copy_tex_sub_image_2d(target, level, x_offset, y_offset, x, y, width, height);
-
+        self.raw
+            .copy_tex_sub_image_2d(target, level, x_offset, y_offset, x, y, width, height);
     }
 
     unsafe fn copy_tex_sub_image_3d(
@@ -1684,11 +1668,9 @@ impl HasContext for Context {
         width: i32,
         height: i32,
     ) {
-        
-                self.raw.copy_tex_sub_image_3d(
-                    target, level, x_offset, y_offset, z_offset, x, y, width, height,
-                );
-
+        self.raw.copy_tex_sub_image_3d(
+            target, level, x_offset, y_offset, z_offset, x, y, width, height,
+        );
     }
 
     unsafe fn delete_buffer(&self, buffer: Self::Buffer) {
@@ -1753,31 +1735,25 @@ impl HasContext for Context {
     }
 
     unsafe fn draw_arrays_instanced(&self, mode: u32, first: i32, count: i32, instance_count: i32) {
-        
-                self.raw.draw_arrays_instanced(mode as u32, first, count, instance_count)
-
+        self.raw
+            .draw_arrays_instanced(mode as u32, first, count, instance_count)
     }
 
     unsafe fn draw_buffer(&self, draw_buffer: u32) {
-        
-                self.raw.draw_buffers(&Array::of1(&draw_buffer.into()));
-
+        self.raw.draw_buffers(&Array::of1(&draw_buffer.into()));
     }
 
     unsafe fn draw_buffers(&self, buffers: &[u32]) {
-        
-                let js_buffers = Array::new();
-                for &b in buffers {
-                    js_buffers.push(&b.into());
-                }
-                self.raw.draw_buffers(&js_buffers);
-
+        let js_buffers = Array::new();
+        for &b in buffers {
+            js_buffers.push(&b.into());
+        }
+        self.raw.draw_buffers(&js_buffers);
     }
 
     unsafe fn draw_elements(&self, mode: u32, count: i32, element_type: u32, offset: i32) {
-        
-                self.raw.draw_elements_with_i32(mode as u32, count, element_type as u32, offset);
-
+        self.raw
+            .draw_elements_with_i32(mode as u32, count, element_type as u32, offset);
     }
 
     unsafe fn draw_elements_instanced(
@@ -1788,15 +1764,13 @@ impl HasContext for Context {
         offset: i32,
         instance_count: i32,
     ) {
-        
-                self.raw.draw_elements_instanced_with_i32(
-                    mode as u32,
-                    count,
-                    element_type as u32,
-                    offset,
-                    instance_count,
-                );
-
+        self.raw.draw_elements_instanced_with_i32(
+            mode as u32,
+            count,
+            element_type as u32,
+            offset,
+            instance_count,
+        );
     }
 
     unsafe fn enable(&self, parameter: u32) {
@@ -1829,11 +1803,11 @@ impl HasContext for Context {
         let renderbuffers = self.renderbuffers.borrow();
         let raw_renderbuffer = renderbuffer.map(|r| renderbuffers.get_unchecked(r));
         self.raw.framebuffer_renderbuffer(
-                target,
-                attachment,
-                renderbuffer_target,
-                raw_renderbuffer,
-            );
+            target,
+            attachment,
+            renderbuffer_target,
+            raw_renderbuffer,
+        );
     }
 
     unsafe fn framebuffer_texture_2d(
@@ -1846,9 +1820,9 @@ impl HasContext for Context {
     ) {
         let textures = self.textures.borrow();
         let raw_texture = texture.map(|t| textures.get_unchecked(t));
-        
-                self.raw.framebuffer_texture_2d(target, attachment, texture_target, raw_texture, level);
 
+        self.raw
+            .framebuffer_texture_2d(target, attachment, texture_target, raw_texture, level);
     }
 
     unsafe fn framebuffer_texture_layer(
@@ -1861,9 +1835,9 @@ impl HasContext for Context {
     ) {
         let textures = self.textures.borrow();
         let raw_texture = texture.map(|t| textures.get_unchecked(t));
-        
-                self.raw.framebuffer_texture_layer(target, attachment, raw_texture, level, layer);
 
+        self.raw
+            .framebuffer_texture_layer(target, attachment, raw_texture, level, layer);
     }
 
     unsafe fn front_face(&self, value: u32) {
@@ -1875,31 +1849,34 @@ impl HasContext for Context {
     }
 
     unsafe fn get_tex_parameter_i32(&self, target: u32, parameter: u32) -> i32 {
-        self.raw.get_tex_parameter(target, parameter)
-        .as_f64()
-        .map(|v| v as i32)
-        // Errors will be caught by the browser or through `get_error`
-        // so return a default instead
-        .unwrap_or(0)
+        self.raw
+            .get_tex_parameter(target, parameter)
+            .as_f64()
+            .map(|v| v as i32)
+            // Errors will be caught by the browser or through `get_error`
+            // so return a default instead
+            .unwrap_or(0)
     }
 
     unsafe fn get_buffer_parameter_i32(&self, target: u32, parameter: u32) -> i32 {
-        self.raw.get_buffer_parameter(target, parameter)
-        .as_f64()
-        .map(|v| v as i32)
-        // Errors will be caught by the browser or through `get_error`
-        // so return a default instead
-        .unwrap_or(0)
+        self.raw
+            .get_buffer_parameter(target, parameter)
+            .as_f64()
+            .map(|v| v as i32)
+            // Errors will be caught by the browser or through `get_error`
+            // so return a default instead
+            .unwrap_or(0)
     }
 
     unsafe fn get_parameter_i32(&self, parameter: u32) -> i32 {
-        self.raw.get_parameter(parameter)
-        .unwrap()
-        .as_f64()
-        .map(|v| v as i32)
-        // Errors will be caught by the browser or through `get_error`
-        // so return a default instead
-        .unwrap_or(0)
+        self.raw
+            .get_parameter(parameter)
+            .unwrap()
+            .as_f64()
+            .map(|v| v as i32)
+            // Errors will be caught by the browser or through `get_error`
+            // so return a default instead
+            .unwrap_or(0)
     }
 
     unsafe fn get_parameter_i32_slice(&self, parameter: u32, v: &mut [i32]) {
@@ -1913,18 +1890,18 @@ impl HasContext for Context {
     }
 
     unsafe fn get_parameter_f32(&self, parameter: u32) -> f32 {
-        self.raw.get_parameter(parameter)
-        .unwrap()
-        .as_f64()
-        .map(|v| v as f32)
-        // Errors will be caught by the browser or through `get_error`
-        // so return a default instead
-        .unwrap_or(0.0)
+        self.raw
+            .get_parameter(parameter)
+            .unwrap()
+            .as_f64()
+            .map(|v| v as f32)
+            // Errors will be caught by the browser or through `get_error`
+            // so return a default instead
+            .unwrap_or(0.0)
     }
 
     unsafe fn get_parameter_f32_slice(&self, parameter: u32, v: &mut [f32]) {
-        let value = self.raw.get_parameter(parameter)
-        .unwrap();
+        let value = self.raw.get_parameter(parameter).unwrap();
         use wasm_bindgen::JsCast;
         if let Some(value) = value.as_f64() {
             v[0] = value as f32;
@@ -1934,31 +1911,34 @@ impl HasContext for Context {
     }
 
     unsafe fn get_parameter_indexed_i32(&self, parameter: u32, index: u32) -> i32 {
-        self.raw.get_indexed_parameter(parameter, index)
-        .unwrap()
-        .as_f64()
-        .map(|v| v as i32)
-        // Errors will be caught by the browser or through `get_error`
-        // so return a default instead
-        .unwrap_or(0)
+        self.raw
+            .get_indexed_parameter(parameter, index)
+            .unwrap()
+            .as_f64()
+            .map(|v| v as i32)
+            // Errors will be caught by the browser or through `get_error`
+            // so return a default instead
+            .unwrap_or(0)
     }
 
     unsafe fn get_parameter_indexed_string(&self, parameter: u32, index: u32) -> String {
-        self.raw.get_indexed_parameter(parameter, index)
-        .unwrap()
-        .as_string()
-        // Errors will be caught by the browser or through `get_error`
-        // so return a default instead
-        .unwrap_or_else(|| String::from(""))
+        self.raw
+            .get_indexed_parameter(parameter, index)
+            .unwrap()
+            .as_string()
+            // Errors will be caught by the browser or through `get_error`
+            // so return a default instead
+            .unwrap_or_else(|| String::from(""))
     }
 
     unsafe fn get_parameter_string(&self, parameter: u32) -> String {
-        self.raw.get_parameter(parameter)
-        .unwrap()
-        .as_string()
-        // Errors will be caught by the browser or through `get_error`
-        // so return a default instead
-        .unwrap_or_else(|| String::from(""))
+        self.raw
+            .get_parameter(parameter)
+            .unwrap()
+            .as_string()
+            // Errors will be caught by the browser or through `get_error`
+            // so return a default instead
+            .unwrap_or_else(|| String::from(""))
     }
 
     unsafe fn get_uniform_location(
@@ -1985,20 +1965,19 @@ impl HasContext for Context {
     unsafe fn bind_attrib_location(&self, program: Self::Program, index: u32, name: &str) {
         let programs = self.programs.borrow();
         let raw_program = programs.get_unchecked(program);
-        
-                self.raw.bind_attrib_location(raw_program, index, name)
 
+        self.raw.bind_attrib_location(raw_program, index, name)
     }
 
     unsafe fn get_active_attributes(&self, program: Self::Program) -> u32 {
         let programs = self.programs.borrow();
         let raw_program = programs.get_unchecked(program);
-        
-                self.raw.get_program_parameter(raw_program, WebGl2RenderingContext::ACTIVE_ATTRIBUTES)
 
-        .as_f64()
-        .map(|v| v as u32)
-        .unwrap_or(0)
+        self.raw
+            .get_program_parameter(raw_program, WebGl2RenderingContext::ACTIVE_ATTRIBUTES)
+            .as_f64()
+            .map(|v| v as u32)
+            .unwrap_or(0)
     }
 
     unsafe fn get_active_attribute(
@@ -2008,24 +1987,24 @@ impl HasContext for Context {
     ) -> Option<ActiveAttribute> {
         let programs = self.programs.borrow();
         let raw_program = programs.get_unchecked(program);
-        
-                self.raw.get_active_attrib(raw_program, index)
-                    .map(|au| ActiveAttribute {
-                        size: au.size(),
-                        atype: au.type_(),
-                        name: au.name(),
-                    })
 
+        self.raw
+            .get_active_attrib(raw_program, index)
+            .map(|au| ActiveAttribute {
+                size: au.size(),
+                atype: au.type_(),
+                name: au.name(),
+            })
     }
 
     unsafe fn get_sync_status(&self, fence: Self::Fence) -> u32 {
         let fences = self.fences.borrow();
         let raw_fence = fences.get_unchecked(fence);
         self.raw
-                .get_sync_parameter(raw_fence, SYNC_STATUS)
-                .as_f64()
-                .map(|v| v as u32)
-                .unwrap_or(UNSIGNALED)
+            .get_sync_parameter(raw_fence, SYNC_STATUS)
+            .as_f64()
+            .map(|v| v as u32)
+            .unwrap_or(UNSIGNALED)
     }
 
     unsafe fn is_sync(&self, fence: Self::Fence) -> bool {
@@ -2041,9 +2020,8 @@ impl HasContext for Context {
         width: i32,
         height: i32,
     ) {
-        
-                self.raw.renderbuffer_storage(target, internal_format, width, height);
-
+        self.raw
+            .renderbuffer_storage(target, internal_format, width, height);
     }
 
     unsafe fn renderbuffer_storage_multisample(
@@ -2054,37 +2032,26 @@ impl HasContext for Context {
         width: i32,
         height: i32,
     ) {
-        
-                self.raw.renderbuffer_storage_multisample(
-                    target,
-                    samples,
-                    internal_format,
-                    width,
-                    height,
-                );
-
+        self.raw
+            .renderbuffer_storage_multisample(target, samples, internal_format, width, height);
     }
 
     unsafe fn sampler_parameter_f32(&self, sampler: Self::Sampler, name: u32, value: f32) {
         let samplers = self.samplers.borrow();
         let raw_sampler = samplers.get_unchecked(sampler);
-        
-                self.raw.sampler_parameterf(raw_sampler, name, value);
 
+        self.raw.sampler_parameterf(raw_sampler, name, value);
     }
 
     unsafe fn sampler_parameter_i32(&self, sampler: Self::Sampler, name: u32, value: i32) {
         let samplers = self.samplers.borrow();
         let raw_sampler = samplers.get_unchecked(sampler);
-        
-                self.raw.sampler_parameteri(raw_sampler, name, value);
 
+        self.raw.sampler_parameteri(raw_sampler, name, value);
     }
 
     unsafe fn generate_mipmap(&self, target: u32) {
-        
-                self.raw.generate_mipmap(target);
-
+        self.raw.generate_mipmap(target);
     }
 
     unsafe fn generate_texture_mipmap(&self, _texture: Self::Texture) {
@@ -2104,21 +2071,21 @@ impl HasContext for Context {
         pixels: Option<&[u8]>,
     ) {
         let pixels = pixels.map(|bytes| texture_data_view(ty, bytes));
-        
-                // TODO: Handle return value?
-                self.raw.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_opt_array_buffer_view(
-                    target,
-                    level,
-                    internal_format,
-                    width,
-                    height,
-                    border,
-                    format,
-                    ty,
-                    pixels.as_ref(),
-                )
-                .unwrap();
 
+        // TODO: Handle return value?
+        self.raw
+            .tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_opt_array_buffer_view(
+                target,
+                level,
+                internal_format,
+                width,
+                height,
+                border,
+                format,
+                ty,
+                pixels.as_ref(),
+            )
+            .unwrap();
     }
 
     unsafe fn compressed_tex_image_2d(
@@ -2133,16 +2100,15 @@ impl HasContext for Context {
         pixels: &[u8],
     ) {
         let src_data = js_sys::Uint8Array::view(pixels);
-        self.raw
-                .compressed_tex_image_2d_with_array_buffer_view(
-                    target,
-                    level,
-                    internal_format as u32,
-                    width,
-                    height,
-                    border,
-                    &src_data,
-                );
+        self.raw.compressed_tex_image_2d_with_array_buffer_view(
+            target,
+            level,
+            internal_format as u32,
+            width,
+            height,
+            border,
+            &src_data,
+        );
     }
 
     unsafe fn tex_image_3d(
@@ -2158,23 +2124,22 @@ impl HasContext for Context {
         ty: u32,
         pixels: Option<&[u8]>,
     ) {
-        
-                let pixels = pixels.map(|bytes| texture_data_view(ty, bytes));
-                // TODO: Handle return value?
-                self.raw.tex_image_3d_with_opt_array_buffer_view(
-                    target,
-                    level,
-                    internal_format,
-                    width,
-                    height,
-                    depth,
-                    border,
-                    format,
-                    ty,
-                    pixels.as_ref(),
-                )
-                .unwrap();
-
+        let pixels = pixels.map(|bytes| texture_data_view(ty, bytes));
+        // TODO: Handle return value?
+        self.raw
+            .tex_image_3d_with_opt_array_buffer_view(
+                target,
+                level,
+                internal_format,
+                width,
+                height,
+                depth,
+                border,
+                format,
+                ty,
+                pixels.as_ref(),
+            )
+            .unwrap();
     }
 
     unsafe fn compressed_tex_image_3d(
@@ -2190,17 +2155,16 @@ impl HasContext for Context {
         pixels: &[u8],
     ) {
         let src_data = js_sys::Uint8Array::view(pixels);
-        self.raw
-                .compressed_tex_image_3d_with_array_buffer_view(
-                    target,
-                    level,
-                    internal_format as u32,
-                    width,
-                    height,
-                    depth,
-                    border,
-                    &src_data,
-                );
+        self.raw.compressed_tex_image_3d_with_array_buffer_view(
+            target,
+            level,
+            internal_format as u32,
+            width,
+            height,
+            depth,
+            border,
+            &src_data,
+        );
     }
 
     unsafe fn tex_storage_2d(
@@ -2211,9 +2175,8 @@ impl HasContext for Context {
         width: i32,
         height: i32,
     ) {
-        
-                self.raw.tex_storage_2d(target, levels, internal_format, width, height);
-
+        self.raw
+            .tex_storage_2d(target, levels, internal_format, width, height);
     }
 
     unsafe fn tex_storage_3d(
@@ -2225,9 +2188,8 @@ impl HasContext for Context {
         height: i32,
         depth: i32,
     ) {
-        
-                self.raw.tex_storage_3d(target, levels, internal_format, width, height, depth);
-
+        self.raw
+            .tex_storage_3d(target, levels, internal_format, width, height, depth);
     }
 
     unsafe fn uniform_1_i32(&self, uniform_location: Option<&Self::UniformLocation>, x: i32) {
@@ -2269,9 +2231,7 @@ impl HasContext for Context {
         uniform_location: Option<&Self::UniformLocation>,
         v: &[i32],
     ) {
-        
-                self.raw.uniform1iv_with_i32_array(uniform_location, v)
-
+        self.raw.uniform1iv_with_i32_array(uniform_location, v)
     }
 
     unsafe fn uniform_2_i32_slice(
@@ -2279,9 +2239,7 @@ impl HasContext for Context {
         uniform_location: Option<&Self::UniformLocation>,
         v: &[i32],
     ) {
-        
-                self.raw.uniform2iv_with_i32_array(uniform_location, v)
-
+        self.raw.uniform2iv_with_i32_array(uniform_location, v)
     }
 
     unsafe fn uniform_3_i32_slice(
@@ -2289,9 +2247,7 @@ impl HasContext for Context {
         uniform_location: Option<&Self::UniformLocation>,
         v: &[i32],
     ) {
-        
-                self.raw.uniform3iv_with_i32_array(uniform_location, v)
-
+        self.raw.uniform3iv_with_i32_array(uniform_location, v)
     }
 
     unsafe fn uniform_4_i32_slice(
@@ -2299,9 +2255,7 @@ impl HasContext for Context {
         uniform_location: Option<&Self::UniformLocation>,
         v: &[i32],
     ) {
-        
-                self.raw.uniform4iv_with_i32_array(uniform_location, v)
-
+        self.raw.uniform4iv_with_i32_array(uniform_location, v)
     }
 
     unsafe fn uniform_1_u32(&self, uniform_location: Option<&Self::UniformLocation>, x: u32) {
@@ -2343,9 +2297,7 @@ impl HasContext for Context {
         uniform_location: Option<&Self::UniformLocation>,
         v: &[u32],
     ) {
-        
-                self.raw.uniform1uiv_with_u32_array(uniform_location, v)
-
+        self.raw.uniform1uiv_with_u32_array(uniform_location, v)
     }
 
     unsafe fn uniform_2_u32_slice(
@@ -2353,9 +2305,7 @@ impl HasContext for Context {
         uniform_location: Option<&Self::UniformLocation>,
         v: &[u32],
     ) {
-        
-                self.raw.uniform2uiv_with_u32_array(uniform_location, v)
-
+        self.raw.uniform2uiv_with_u32_array(uniform_location, v)
     }
 
     unsafe fn uniform_3_u32_slice(
@@ -2363,9 +2313,7 @@ impl HasContext for Context {
         uniform_location: Option<&Self::UniformLocation>,
         v: &[u32],
     ) {
-        
-                self.raw.uniform3uiv_with_u32_array(uniform_location, v)
-
+        self.raw.uniform3uiv_with_u32_array(uniform_location, v)
     }
 
     unsafe fn uniform_4_u32_slice(
@@ -2373,9 +2321,7 @@ impl HasContext for Context {
         uniform_location: Option<&Self::UniformLocation>,
         v: &[u32],
     ) {
-        
-                self.raw.uniform4uiv_with_u32_array(uniform_location, v)
-
+        self.raw.uniform4uiv_with_u32_array(uniform_location, v)
     }
 
     unsafe fn uniform_1_f32(&self, uniform_location: Option<&Self::UniformLocation>, x: f32) {
@@ -2417,9 +2363,7 @@ impl HasContext for Context {
         uniform_location: Option<&Self::UniformLocation>,
         v: &[f32],
     ) {
-        
-                self.raw.uniform1fv_with_f32_array(uniform_location, v)
-
+        self.raw.uniform1fv_with_f32_array(uniform_location, v)
     }
 
     unsafe fn uniform_2_f32_slice(
@@ -2427,9 +2371,7 @@ impl HasContext for Context {
         uniform_location: Option<&Self::UniformLocation>,
         v: &[f32],
     ) {
-        
-                self.raw.uniform2fv_with_f32_array(uniform_location, v)
-
+        self.raw.uniform2fv_with_f32_array(uniform_location, v)
     }
 
     unsafe fn uniform_3_f32_slice(
@@ -2437,9 +2379,7 @@ impl HasContext for Context {
         uniform_location: Option<&Self::UniformLocation>,
         v: &[f32],
     ) {
-        
-                self.raw.uniform3fv_with_f32_array(uniform_location, v)
-
+        self.raw.uniform3fv_with_f32_array(uniform_location, v)
     }
 
     unsafe fn uniform_4_f32_slice(
@@ -2447,9 +2387,7 @@ impl HasContext for Context {
         uniform_location: Option<&Self::UniformLocation>,
         v: &[f32],
     ) {
-        
-                self.raw.uniform4fv_with_f32_array(uniform_location, v)
-
+        self.raw.uniform4fv_with_f32_array(uniform_location, v)
     }
 
     unsafe fn uniform_matrix_2_f32_slice(
@@ -2458,9 +2396,8 @@ impl HasContext for Context {
         transpose: bool,
         v: &[f32],
     ) {
-        
-                self.raw.uniform_matrix2fv_with_f32_array(uniform_location, transpose, v)
-
+        self.raw
+            .uniform_matrix2fv_with_f32_array(uniform_location, transpose, v)
     }
 
     unsafe fn uniform_matrix_2x3_f32_slice(
@@ -2469,9 +2406,8 @@ impl HasContext for Context {
         transpose: bool,
         v: &[f32],
     ) {
-        
-                self.raw.uniform_matrix2x3fv_with_f32_array(uniform_location, transpose, v)
-
+        self.raw
+            .uniform_matrix2x3fv_with_f32_array(uniform_location, transpose, v)
     }
 
     unsafe fn uniform_matrix_2x4_f32_slice(
@@ -2480,9 +2416,8 @@ impl HasContext for Context {
         transpose: bool,
         v: &[f32],
     ) {
-        
-                self.raw.uniform_matrix2x4fv_with_f32_array(uniform_location, transpose, v)
-
+        self.raw
+            .uniform_matrix2x4fv_with_f32_array(uniform_location, transpose, v)
     }
 
     unsafe fn uniform_matrix_3x2_f32_slice(
@@ -2491,9 +2426,8 @@ impl HasContext for Context {
         transpose: bool,
         v: &[f32],
     ) {
-        
-                self.raw.uniform_matrix3x2fv_with_f32_array(uniform_location, transpose, v)
-
+        self.raw
+            .uniform_matrix3x2fv_with_f32_array(uniform_location, transpose, v)
     }
 
     unsafe fn uniform_matrix_3_f32_slice(
@@ -2502,9 +2436,8 @@ impl HasContext for Context {
         transpose: bool,
         v: &[f32],
     ) {
-        
-                self.raw.uniform_matrix3fv_with_f32_array(uniform_location, transpose, v)
-
+        self.raw
+            .uniform_matrix3fv_with_f32_array(uniform_location, transpose, v)
     }
 
     unsafe fn uniform_matrix_3x4_f32_slice(
@@ -2513,9 +2446,8 @@ impl HasContext for Context {
         transpose: bool,
         v: &[f32],
     ) {
-        
-                self.raw.uniform_matrix3x4fv_with_f32_array(uniform_location, transpose, v)
-
+        self.raw
+            .uniform_matrix3x4fv_with_f32_array(uniform_location, transpose, v)
     }
 
     unsafe fn uniform_matrix_4x2_f32_slice(
@@ -2524,9 +2456,8 @@ impl HasContext for Context {
         transpose: bool,
         v: &[f32],
     ) {
-        
-                self.raw.uniform_matrix4x2fv_with_f32_array(uniform_location, transpose, v)
-
+        self.raw
+            .uniform_matrix4x2fv_with_f32_array(uniform_location, transpose, v)
     }
 
     unsafe fn uniform_matrix_4x3_f32_slice(
@@ -2535,9 +2466,8 @@ impl HasContext for Context {
         transpose: bool,
         v: &[f32],
     ) {
-        
-                self.raw.uniform_matrix4x3fv_with_f32_array(uniform_location, transpose, v)
-
+        self.raw
+            .uniform_matrix4x3fv_with_f32_array(uniform_location, transpose, v)
     }
 
     unsafe fn uniform_matrix_4_f32_slice(
@@ -2546,9 +2476,8 @@ impl HasContext for Context {
         transpose: bool,
         v: &[f32],
     ) {
-        
-                self.raw.uniform_matrix4fv_with_f32_array(uniform_location, transpose, v)
-
+        self.raw
+            .uniform_matrix4fv_with_f32_array(uniform_location, transpose, v)
     }
 
     unsafe fn cull_face(&self, value: u32) {
@@ -2572,13 +2501,13 @@ impl HasContext for Context {
     }
 
     unsafe fn invalidate_framebuffer(&self, target: u32, attachments: &[u32]) {
-        
-                let js_attachments = Array::new();
-                for &a in attachments {
-                    js_attachments.push(&a.into());
-                }
-                self.raw.invalidate_framebuffer(target, &js_attachments).unwrap();
-
+        let js_attachments = Array::new();
+        for &a in attachments {
+            js_attachments.push(&a.into());
+        }
+        self.raw
+            .invalidate_framebuffer(target, &js_attachments)
+            .unwrap();
     }
 
     unsafe fn polygon_offset(&self, factor: f32, units: f32) {
@@ -2646,28 +2575,37 @@ impl HasContext for Context {
         ty: u32,
         pixels: PixelUnpackData,
     ) {
-        
-                match pixels {
-                    PixelUnpackData::BufferOffset(offset) => self.raw.tex_sub_image_2d_with_i32_and_i32_and_u32_and_type_and_i32(
-                            target,
-                            level,
-                            x_offset,
-                            y_offset,
-                            width,
-                            height,
-                            format,
-                            ty,
-                            offset as i32,
-                        ),
-                    PixelUnpackData::Slice(data) => {
-                        let data = texture_data_view(ty, data);
-                        self.raw.tex_sub_image_2d_with_i32_and_i32_and_u32_and_type_and_opt_array_buffer_view(
-                            target, level, x_offset, y_offset, width, height, format, ty, Some(&data),
-                        )
-                    }
-                }
-                .unwrap(); // TODO: Handle return value?
-
+        match pixels {
+            PixelUnpackData::BufferOffset(offset) => self
+                .raw
+                .tex_sub_image_2d_with_i32_and_i32_and_u32_and_type_and_i32(
+                    target,
+                    level,
+                    x_offset,
+                    y_offset,
+                    width,
+                    height,
+                    format,
+                    ty,
+                    offset as i32,
+                ),
+            PixelUnpackData::Slice(data) => {
+                let data = texture_data_view(ty, data);
+                self.raw
+                    .tex_sub_image_2d_with_i32_and_i32_and_u32_and_type_and_opt_array_buffer_view(
+                        target,
+                        level,
+                        x_offset,
+                        y_offset,
+                        width,
+                        height,
+                        format,
+                        ty,
+                        Some(&data),
+                    )
+            }
+        }
+        .unwrap(); // TODO: Handle return value?
     }
 
     unsafe fn texture_sub_image_3d(
@@ -2699,24 +2637,26 @@ impl HasContext for Context {
         pixels: CompressedPixelUnpackData,
     ) {
         match pixels {
-                CompressedPixelUnpackData::BufferRange(range) => self.raw.compressed_tex_sub_image_2d_with_i32_and_i32(
-                        target,
-                        level,
-                        x_offset,
-                        y_offset,
-                        width,
-                        height,
-                        format,
-                        (range.end - range.start) as i32,
-                        range.start as i32,
-                    ),
-                CompressedPixelUnpackData::Slice(data) => {
-                    let data = texture_data_view(BYTE, data);
-                    self.raw.compressed_tex_sub_image_2d_with_array_buffer_view(
-                        target, level, x_offset, y_offset, width, height, format, &data,
-                    )
-                }
+            CompressedPixelUnpackData::BufferRange(range) => {
+                self.raw.compressed_tex_sub_image_2d_with_i32_and_i32(
+                    target,
+                    level,
+                    x_offset,
+                    y_offset,
+                    width,
+                    height,
+                    format,
+                    (range.end - range.start) as i32,
+                    range.start as i32,
+                )
             }
+            CompressedPixelUnpackData::Slice(data) => {
+                let data = texture_data_view(BYTE, data);
+                self.raw.compressed_tex_sub_image_2d_with_array_buffer_view(
+                    target, level, x_offset, y_offset, width, height, format, &data,
+                )
+            }
+        }
     }
 
     unsafe fn tex_sub_image_3d(
@@ -2733,40 +2673,38 @@ impl HasContext for Context {
         ty: u32,
         pixels: PixelUnpackData,
     ) {
-        
-                match pixels {
-                    PixelUnpackData::BufferOffset(offset) => self.raw.tex_sub_image_3d_with_i32(
-                        target,
-                        level,
-                        x_offset,
-                        y_offset,
-                        z_offset,
-                        width,
-                        height,
-                        depth,
-                        format,
-                        ty,
-                        offset as i32,
-                    ),
-                    PixelUnpackData::Slice(slice) => {
-                        let slice = texture_data_view(ty, slice);
-                        self.raw.tex_sub_image_3d_with_opt_array_buffer_view(
-                            target,
-                            level,
-                            x_offset,
-                            y_offset,
-                            z_offset,
-                            width,
-                            height,
-                            depth,
-                            format,
-                            ty,
-                            Some(&slice),
-                        )
-                    }
-                }
-                .unwrap(); // TODO: Handle return value?
-
+        match pixels {
+            PixelUnpackData::BufferOffset(offset) => self.raw.tex_sub_image_3d_with_i32(
+                target,
+                level,
+                x_offset,
+                y_offset,
+                z_offset,
+                width,
+                height,
+                depth,
+                format,
+                ty,
+                offset as i32,
+            ),
+            PixelUnpackData::Slice(slice) => {
+                let slice = texture_data_view(ty, slice);
+                self.raw.tex_sub_image_3d_with_opt_array_buffer_view(
+                    target,
+                    level,
+                    x_offset,
+                    y_offset,
+                    z_offset,
+                    width,
+                    height,
+                    depth,
+                    format,
+                    ty,
+                    Some(&slice),
+                )
+            }
+        }
+        .unwrap(); // TODO: Handle return value?
     }
 
     unsafe fn compressed_tex_sub_image_3d(
@@ -2783,27 +2721,29 @@ impl HasContext for Context {
         pixels: CompressedPixelUnpackData,
     ) {
         match pixels {
-                CompressedPixelUnpackData::BufferRange(range) => self.raw.compressed_tex_sub_image_3d_with_i32_and_i32(
-                        target,
-                        level,
-                        x_offset,
-                        y_offset,
-                        z_offset,
-                        width,
-                        height,
-                        depth,
-                        format,
-                        (range.end - range.start) as i32,
-                        range.start as i32,
-                    ),
-                CompressedPixelUnpackData::Slice(data) => {
-                    let data = texture_data_view(BYTE, data);
-                    self.raw.compressed_tex_sub_image_3d_with_array_buffer_view(
-                        target, level, x_offset, y_offset, z_offset, width, height, depth, format,
-                        &data,
-                    )
-                }
+            CompressedPixelUnpackData::BufferRange(range) => {
+                self.raw.compressed_tex_sub_image_3d_with_i32_and_i32(
+                    target,
+                    level,
+                    x_offset,
+                    y_offset,
+                    z_offset,
+                    width,
+                    height,
+                    depth,
+                    format,
+                    (range.end - range.start) as i32,
+                    range.start as i32,
+                )
             }
+            CompressedPixelUnpackData::Slice(data) => {
+                let data = texture_data_view(BYTE, data);
+                self.raw.compressed_tex_sub_image_3d_with_array_buffer_view(
+                    target, level, x_offset, y_offset, z_offset, width, height, depth, format,
+                    &data,
+                )
+            }
+        }
     }
 
     unsafe fn depth_func(&self, func: u32) {
@@ -2883,7 +2823,7 @@ impl HasContext for Context {
         offset: i32,
     ) {
         self.raw
-                .vertex_attrib_pointer_with_i32(index, size, data_type, normalized, stride, offset);
+            .vertex_attrib_pointer_with_i32(index, size, data_type, normalized, stride, offset);
     }
 
     unsafe fn vertex_attrib_pointer_i32(
@@ -2894,9 +2834,8 @@ impl HasContext for Context {
         stride: i32,
         offset: i32,
     ) {
-        
-                self.raw.vertex_attrib_i_pointer_with_i32(index, size, data_type, stride, offset)
-
+        self.raw
+            .vertex_attrib_i_pointer_with_i32(index, size, data_type, stride, offset)
     }
 
     unsafe fn vertex_attrib_1_f32(&self, index: u32, x: f32) {
@@ -2947,11 +2886,11 @@ impl HasContext for Context {
         dst_alpha: u32,
     ) {
         self.raw.blend_func_separate(
-                src_rgb as u32,
-                dst_rgb as u32,
-                src_alpha as u32,
-                dst_alpha as u32,
-            );
+            src_rgb as u32,
+            dst_rgb as u32,
+            src_alpha as u32,
+            dst_alpha as u32,
+        );
     }
 
     unsafe fn blend_equation(&self, mode: u32) {
@@ -2959,9 +2898,8 @@ impl HasContext for Context {
     }
 
     unsafe fn blend_equation_separate(&self, mode_rgb: u32, mode_alpha: u32) {
-        
-                self.raw.blend_equation_separate(mode_rgb as u32, mode_alpha as u32)
-
+        self.raw
+            .blend_equation_separate(mode_rgb as u32, mode_alpha as u32)
     }
 
     unsafe fn stencil_func(&self, func: u32, reference: i32, mask: u32) {
@@ -2969,9 +2907,8 @@ impl HasContext for Context {
     }
 
     unsafe fn stencil_func_separate(&self, face: u32, func: u32, reference: i32, mask: u32) {
-        
-                self.raw.stencil_func_separate(face as u32, func as u32, reference, mask)
-
+        self.raw
+            .stencil_func_separate(face as u32, func as u32, reference, mask)
     }
 
     unsafe fn stencil_mask(&self, mask: u32) {
@@ -2983,18 +2920,17 @@ impl HasContext for Context {
     }
 
     unsafe fn stencil_op(&self, stencil_fail: u32, depth_fail: u32, pass: u32) {
-        
-                self.raw.stencil_op(stencil_fail as u32, depth_fail as u32, pass as u32)
-
+        self.raw
+            .stencil_op(stencil_fail as u32, depth_fail as u32, pass as u32)
     }
 
     unsafe fn stencil_op_separate(&self, face: u32, stencil_fail: u32, depth_fail: u32, pass: u32) {
         self.raw.stencil_op_separate(
-                face as u32,
-                stencil_fail as u32,
-                depth_fail as u32,
-                pass as u32,
-            );
+            face as u32,
+            stencil_fail as u32,
+            depth_fail as u32,
+            pass as u32,
+        );
     }
 
     unsafe fn get_uniform_block_index(&self, program: Self::Program, name: &str) -> Option<u32> {
@@ -3009,11 +2945,9 @@ impl HasContext for Context {
     }
 
     unsafe fn uniform_block_binding(&self, program: Self::Program, index: u32, binding: u32) {
-        
-                let programs = self.programs.borrow();
-                let raw_program = programs.get_unchecked(program);
-                self.raw.uniform_block_binding(raw_program, index, binding);
-
+        let programs = self.programs.borrow();
+        let raw_program = programs.get_unchecked(program);
+        self.raw.uniform_block_binding(raw_program, index, binding);
     }
 
     unsafe fn read_buffer(&self, src: u32) {
@@ -3031,22 +2965,23 @@ impl HasContext for Context {
         pixels: PixelPackData,
     ) {
         match pixels {
-            PixelPackData::BufferOffset(offset) => self.raw
-                    .read_pixels_with_i32(x, y, width, height, format, gltype, offset as i32)
-                    .unwrap(),
+            PixelPackData::BufferOffset(offset) => self
+                .raw
+                .read_pixels_with_i32(x, y, width, height, format, gltype, offset as i32)
+                .unwrap(),
             PixelPackData::Slice(bytes) => {
                 let data = texture_data_view(gltype, bytes);
                 self.raw
-                        .read_pixels_with_opt_array_buffer_view(
-                            x,
-                            y,
-                            width,
-                            height,
-                            format,
-                            gltype,
-                            Some(&data),
-                        )
-                        .unwrap();
+                    .read_pixels_with_opt_array_buffer_view(
+                        x,
+                        y,
+                        width,
+                        height,
+                        format,
+                        gltype,
+                        Some(&data),
+                    )
+                    .unwrap();
             }
         }
     }
@@ -3111,10 +3046,10 @@ impl HasContext for Context {
         let queries = self.queries.borrow();
         let raw_query = queries.get_unchecked(query);
         self.raw
-                .get_query_parameter(raw_query, parameter)
-                .as_f64()
-                .map(|v| v as u32)
-                .unwrap_or(0)
+            .get_query_parameter(raw_query, parameter)
+            .as_f64()
+            .map(|v| v as u32)
+            .unwrap_or(0)
     }
 
     unsafe fn create_transform_feedback(&self) -> Result<Self::TransformFeedback, String> {
@@ -3144,9 +3079,9 @@ impl HasContext for Context {
         let transform_feedbacks = self.transform_feedbacks.borrow();
         let raw_transform_feedback =
             transform_feedback.map(|tf| transform_feedbacks.get_unchecked(tf));
-        
-                self.raw.bind_transform_feedback(target, raw_transform_feedback)
 
+        self.raw
+            .bind_transform_feedback(target, raw_transform_feedback)
     }
 
     unsafe fn begin_transform_feedback(&self, primitive_mode: u32) {
@@ -3173,13 +3108,13 @@ impl HasContext for Context {
     ) {
         let programs = self.programs.borrow();
         let raw_program = programs.get_unchecked(program);
-        
-                let js_varyings = Array::new();
-                for &v in varyings {
-                    js_varyings.push(&v.into());
-                }
-                self.raw.transform_feedback_varyings(raw_program, &js_varyings, buffer_mode);
 
+        let js_varyings = Array::new();
+        for &v in varyings {
+            js_varyings.push(&v.into());
+        }
+        self.raw
+            .transform_feedback_varyings(raw_program, &js_varyings, buffer_mode);
     }
 
     unsafe fn get_transform_feedback_varying(
@@ -3190,12 +3125,12 @@ impl HasContext for Context {
         let programs = self.programs.borrow();
         let raw_program = programs.get_unchecked(program);
         self.raw
-                .get_transform_feedback_varying(raw_program, index)
-                .map(|info| ActiveTransformFeedback {
-                    size: info.size(),
-                    tftype: info.type_(),
-                    name: info.name(),
-                })
+            .get_transform_feedback_varying(raw_program, index)
+            .map(|info| ActiveTransformFeedback {
+                size: info.size(),
+                tftype: info.type_(),
+                name: info.name(),
+            })
     }
 
     unsafe fn get_active_uniform_block_parameter_i32(
@@ -3208,13 +3143,13 @@ impl HasContext for Context {
         let raw_program = programs.get_unchecked(program);
 
         self.raw
-                .get_active_uniform_block_parameter(raw_program, uniform_block_index, parameter)
-                .unwrap()
-                .as_f64()
-                .map(|v| v as i32)
-                // Errors will be caught by the browser or through `get_error`
-                // so return a default instead
-                .unwrap_or(0)
+            .get_active_uniform_block_parameter(raw_program, uniform_block_index, parameter)
+            .unwrap()
+            .as_f64()
+            .map(|v| v as i32)
+            // Errors will be caught by the browser or through `get_error`
+            // so return a default instead
+            .unwrap_or(0)
     }
 
     unsafe fn get_active_uniform_block_parameter_i32_slice(
@@ -3227,24 +3162,24 @@ impl HasContext for Context {
         let programs = self.programs.borrow();
         let raw_program = programs.get_unchecked(program);
 
-        
-                let value = self.raw.get_active_uniform_block_parameter(raw_program, uniform_block_index, parameter)
-                    .unwrap();
+        let value = self
+            .raw
+            .get_active_uniform_block_parameter(raw_program, uniform_block_index, parameter)
+            .unwrap();
 
-                use wasm_bindgen::JsCast;
-                if let Some(value) = value.as_f64() {
-                    out[0] = value as i32;
-                } else if let Some(values) = value.dyn_ref::<js_sys::Uint32Array>() {
-                    // To maintain compatibility with the pointers returned by
-                    // desktop GL, which are signed, an extra copy is needed
-                    // here.
-                    values
-                        .to_vec()
-                        .into_iter()
-                        .zip(out.iter_mut())
-                        .for_each(|(val, target)| *target = val as i32)
-                }
-
+        use wasm_bindgen::JsCast;
+        if let Some(value) = value.as_f64() {
+            out[0] = value as i32;
+        } else if let Some(values) = value.dyn_ref::<js_sys::Uint32Array>() {
+            // To maintain compatibility with the pointers returned by
+            // desktop GL, which are signed, an extra copy is needed
+            // here.
+            values
+                .to_vec()
+                .into_iter()
+                .zip(out.iter_mut())
+                .for_each(|(val, target)| *target = val as i32)
+        }
     }
     unsafe fn get_active_uniform_block_name(
         &self,
@@ -3255,8 +3190,8 @@ impl HasContext for Context {
         let raw_program = programs.get_unchecked(program);
 
         self.raw
-                .get_active_uniform_block_name(raw_program, uniform_block_index)
-                .unwrap()
+            .get_active_uniform_block_name(raw_program, uniform_block_index)
+            .unwrap()
     }
 
     unsafe fn max_shader_compiler_threads(&self, _count: u32) {

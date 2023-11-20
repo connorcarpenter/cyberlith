@@ -1,9 +1,6 @@
 use math::Vec3;
 
-use crate::{
-    assets::AssetHash,
-    base::CpuMesh,
-};
+use crate::{assets::AssetHash, base::CpuMesh};
 
 // Circle
 #[derive(Hash)]

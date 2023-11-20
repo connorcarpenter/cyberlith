@@ -165,7 +165,6 @@ pub enum Blend {
 }
 
 impl Blend {
-
     ///
     /// Transparency blending parameters that works on both desktop and web.
     ///

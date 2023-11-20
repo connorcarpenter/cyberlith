@@ -1,4 +1,3 @@
-
 use math::{Quat, Vec2, Vec3, Vec4};
 use render_api::base::Color;
 

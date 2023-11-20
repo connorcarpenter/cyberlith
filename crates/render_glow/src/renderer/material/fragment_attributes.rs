@@ -10,11 +10,7 @@ pub struct FragmentAttributes {
 
 impl FragmentAttributes {
     /// All attributes
-    pub const ALL: Self = Self {
-        position: true,
-    };
+    pub const ALL: Self = Self { position: true };
     /// No attributes
-    pub const NONE: Self = Self {
-        position: false,
-    };
+    pub const NONE: Self = Self { position: false };
 }

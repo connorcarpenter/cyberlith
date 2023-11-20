@@ -1,13 +1,12 @@
-
 use bevy_app::{App, Plugin, Startup, Update};
 use bevy_ecs::{
     component::Component,
     query::With,
-    system::{Res, Commands, Local, Query, ResMut},
+    system::{Commands, Local, Query, Res, ResMut},
 };
 
-use math::Vec3;
 use asset::MeshFile;
+use math::Vec3;
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
     components::{
@@ -15,7 +14,7 @@ use render_api::{
         OrthographicProjection, PointLight, Projection, RenderLayer, RenderLayers,
         RenderObjectBundle, RenderTarget, Transform, Viewport, Visibility,
     },
-    resources::{Time, RenderFrame, WindowSettings},
+    resources::{RenderFrame, Time, WindowSettings},
     shapes, Assets, Handle,
 };
 
@@ -150,8 +149,11 @@ fn setup(
         .insert(layer);
 }
 
-fn step(time: Res<Time>, mut cube_q: Query<&mut Transform, With<CubeMarker>>, mut rotation: Local<f32>) {
-
+fn step(
+    time: Res<Time>,
+    mut cube_q: Query<&mut Transform, With<CubeMarker>>,
+    mut rotation: Local<f32>,
+) {
     //info!("elapsed time: {}", frame_input.elapsed_time);
 
     let elapsed_time = (time.get_elapsed() / 16.0) as f32;

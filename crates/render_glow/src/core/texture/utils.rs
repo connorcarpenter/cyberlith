@@ -14,21 +14,11 @@ pub fn generate() -> glow::Texture {
     }
 }
 
-pub fn set_parameters(
-    target: u32,
-) {
+pub fn set_parameters(target: u32) {
     unsafe {
         let context = Context::get();
-        context.tex_parameter_i32(
-            target,
-            glow::TEXTURE_MIN_FILTER,
-            glow::NEAREST as i32,
-        );
-        context.tex_parameter_i32(
-            target,
-            glow::TEXTURE_MAG_FILTER,
-            glow::NEAREST as i32,
-        );
+        context.tex_parameter_i32(target, glow::TEXTURE_MIN_FILTER, glow::NEAREST as i32);
+        context.tex_parameter_i32(target, glow::TEXTURE_MAG_FILTER, glow::NEAREST as i32);
         // context.tex_parameter_i32(target, glow::TEXTURE_WRAP_S, wrapping_from(wrap_s));
         // context.tex_parameter_i32(target, glow::TEXTURE_WRAP_T, wrapping_from(wrap_t));
         // if let Some(r) = wrap_r {

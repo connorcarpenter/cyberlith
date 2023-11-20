@@ -5,17 +5,13 @@
 #![allow(clippy::missing_safety_doc)]
 #![allow(clippy::pedantic)] // For anyone using pedantic and a source dep, this is needed
 
-
-
-
 mod version;
 pub use version::Version;
 mod constants;
 pub use constants::*;
 
-use std::collections::HashSet;
 use core::{fmt::Debug, hash::Hash};
-
+use std::collections::HashSet;
 
 #[cfg(not(target_arch = "wasm32"))]
 mod native;

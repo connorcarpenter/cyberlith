@@ -17,16 +17,11 @@ impl GpuDepthTexture2D {
     ///
     /// Constructs a new 2D depth texture.
     ///
-    pub fn new<T: DepthTextureDataType>(
-        width: u32,
-        height: u32,
-    ) -> Self {
+    pub fn new<T: DepthTextureDataType>(width: u32, height: u32) -> Self {
         let id = generate();
         let texture = Self { id, width, height };
         texture.bind();
-        set_parameters(
-            glow::TEXTURE_2D,
-        );
+        set_parameters(glow::TEXTURE_2D);
         unsafe {
             Context::get().tex_storage_2d(
                 glow::TEXTURE_2D,
@@ -98,10 +93,7 @@ impl GpuDepthTexture2D {
 
 impl From<&CpuTexture2D> for GpuDepthTexture2D {
     fn from(cpu_data: &CpuTexture2D) -> Self {
-        Self::new::<f32>(
-            cpu_data.width(),
-            cpu_data.height(),
-        )
+        Self::new::<f32>(cpu_data.width(), cpu_data.height())
     }
 }
 

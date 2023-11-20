@@ -1,4 +1,3 @@
-
 use crate::core::DepthDataType;
 
 /// The basic data type used for each pixel in a depth texture.

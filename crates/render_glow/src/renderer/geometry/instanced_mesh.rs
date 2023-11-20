@@ -1,6 +1,6 @@
 use math::Mat4;
 
-use crate::renderer::{RendererError};
+use crate::renderer::RendererError;
 
 ///
 /// Defines the attributes for the instances of the model defined in [InstancedMesh] or [InstancedModel].

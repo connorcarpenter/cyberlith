@@ -1,4 +1,3 @@
-
 use math::*;
 use render_api::base::Color;
 

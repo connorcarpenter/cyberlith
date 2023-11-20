@@ -41,9 +41,7 @@ impl<'a> RenderTargetExt for DepthTarget<'a> {
 
 impl<'a> DepthTarget<'a> {
     pub(in crate::core) fn new_texture2d(texture: &'a GpuDepthTexture2D) -> Self {
-        Self {
-            target: texture,
-        }
+        Self { target: texture }
     }
 
     ///

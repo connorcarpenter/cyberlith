@@ -2,7 +2,10 @@ use glow::HasContext;
 
 use render_api::base::{CpuTexture2D, CpuTextureData, CpuTextureDataType};
 
-use crate::core::{flip_y, format_from_data_type, to_byte_slice, ColorTarget, Context, TextureDataType, generate, set_parameters, check_data_length, Program};
+use crate::core::{
+    check_data_length, flip_y, format_from_data_type, generate, set_parameters, to_byte_slice,
+    ColorTarget, Context, Program, TextureDataType,
+};
 
 ///
 /// A 2D texture, basically an image that is transferred to the GPU.
@@ -30,10 +33,7 @@ impl GpuTexture2D {
     }
 
     fn new_with_data<T: TextureDataType>(cpu_texture: &CpuTexture2D, data: &[T]) -> Self {
-        let mut texture = Self::new_empty::<T>(
-            cpu_texture.width(),
-            cpu_texture.height(),
-        );
+        let mut texture = Self::new_empty::<T>(cpu_texture.width(), cpu_texture.height());
         texture.fill(data);
         texture
     }
@@ -48,10 +48,7 @@ impl GpuTexture2D {
     }
 
     fn new_empty_from_cpu_typed<T: TextureDataType>(cpu_texture: &CpuTexture2D) -> Self {
-        Self::new_empty::<T>(
-            cpu_texture.width(),
-            cpu_texture.height(),
-        )
+        Self::new_empty::<T>(cpu_texture.width(), cpu_texture.height())
     }
 
     ///
@@ -59,10 +56,7 @@ impl GpuTexture2D {
     /// The format is determined by the generic [TextureDataType] parameter
     /// (for example, if [u8; 4] is specified, the format is RGBA and the data type is byte).
     ///
-    pub fn new_empty<T: TextureDataType>(
-        width: u32,
-        height: u32,
-    ) -> Self {
+    pub fn new_empty<T: TextureDataType>(width: u32, height: u32) -> Self {
         let id = generate();
         let texture = Self {
             id,
@@ -71,9 +65,7 @@ impl GpuTexture2D {
             data_byte_size: std::mem::size_of::<T>(),
         };
         texture.bind();
-        set_parameters(
-            glow::TEXTURE_2D,
-        );
+        set_parameters(glow::TEXTURE_2D);
         unsafe {
             Context::get().tex_storage_2d(
                 glow::TEXTURE_2D,
