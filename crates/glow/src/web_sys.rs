@@ -1747,26 +1747,32 @@ impl HasContext for Context {
     unsafe fn multi_draw_arrays_instanced(
         &self,
         mode: u32,
-        firsts_list: &mut [i32],
+        firsts_list: &[i32],
         firsts_offset: u32,
-        counts_list: &mut [i32],
+        counts_list: &[i32],
         counts_offset: u32,
-        instance_counts_list: &mut [i32],
+        instance_counts_list: &[i32],
         instance_counts_offset: u32,
         drawcount: i32,
     ) {
-        if let Some(ext) = &self.extensions.webgl_multi_draw {
-            ext.multi_draw_arrays_instanced_webgl_with_i32_array_and_i32_array_and_i32_array(
-                mode,
-                firsts_list,
-                firsts_offset,
-                counts_list,
-                counts_offset,
-                instance_counts_list,
-                instance_counts_offset,
-                drawcount,
-            );
-        }
+        let Some(ext) = &self.extensions.webgl_multi_draw else {
+            panic!("Multi draw is not supported");
+        };
+
+        let mut firsts_list = *firsts_list;
+        let mut counts_list = *counts_list;
+        let mut instance_counts_list = *instance_counts_list;
+
+        ext.multi_draw_arrays_instanced_webgl_with_i32_array_and_i32_array_and_i32_array(
+            mode,
+            &mut firsts_list,
+            firsts_offset,
+            &mut counts_list,
+            counts_offset,
+            &mut instance_counts_list,
+            instance_counts_offset,
+            drawcount,
+        );
     }
 
     unsafe fn draw_buffer(&self, draw_buffer: u32) {

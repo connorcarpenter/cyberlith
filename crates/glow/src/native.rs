@@ -2408,4 +2408,28 @@ impl HasContext for Context {
             gl.MaxShaderCompilerThreadsARB(count);
         }
     }
+
+    unsafe fn multi_draw_arrays_instanced(
+        &self,
+        mode: u32,
+        firsts_list: &[i32],
+        firsts_offset: u32,
+        counts_list: &[i32],
+        counts_offset: u32,
+        instance_counts_list: &[i32],
+        instance_counts_offset: u32,
+        drawcount: i32,
+    ) {
+        let gl = &self.raw;
+
+        let data: Vec<u8> = vec![0,0,0]; // bytes for the draw calls // TODO!
+        let stride: i32 = 0; // TODO!
+
+        gl.MultiDrawArraysIndirect(
+            mode,
+            data.as_ptr() as *const std::ffi::c_void,
+            drawcount,
+            stride,
+        );
+    }
 }
