@@ -338,6 +338,18 @@ pub trait HasContext {
 
     unsafe fn draw_arrays_instanced(&self, mode: u32, first: i32, count: i32, instance_count: i32);
 
+    unsafe fn multi_draw_arrays_instanced(
+        &self,
+        mode: u32,
+        firsts_list: &mut [i32],
+        firsts_offset: u32,
+        counts_list: &mut [i32],
+        counts_offset: u32,
+        instance_counts_list: &mut [i32],
+        instance_counts_offset: u32,
+        drawcount: i32,
+    );
+
     unsafe fn draw_buffer(&self, buffer: u32);
 
     unsafe fn draw_buffers(&self, buffers: &[u32]);

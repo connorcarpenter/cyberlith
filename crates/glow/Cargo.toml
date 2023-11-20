@@ -48,6 +48,7 @@ features = [
   "WebGlTransformFeedback",
   "WebGlUniformLocation",
   "WebGlVertexArrayObject",
+  "WebglMultiDraw",
   "Window",
 
   "AngleInstancedArrays",

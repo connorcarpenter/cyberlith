@@ -51,6 +51,7 @@ struct Extensions {
     pub webgl_depth_texture: Option<web_sys::WebglDepthTexture>,
     pub webgl_draw_buffers: Option<web_sys::WebglDrawBuffers>,
     pub webgl_lose_context: Option<web_sys::WebglLoseContext>,
+    pub webgl_multi_draw: Option<web_sys::WebglMultiDraw>,
 }
 
 type TrackedResource<K, V> = RefCell<SlotMap<K, V>>;
@@ -228,6 +229,10 @@ macro_rules! build_extensions {
             webgl_lose_context: get_extension::<web_sys::WebglLoseContext>(
                 &$context,
                 "WEBGL_lose_context",
+            ),
+            webgl_multi_draw: get_extension::<web_sys::WebglMultiDraw>(
+                &$context,
+                "WEBGL_multi_draw",
             ),
         };
 
@@ -1737,6 +1742,31 @@ impl HasContext for Context {
     unsafe fn draw_arrays_instanced(&self, mode: u32, first: i32, count: i32, instance_count: i32) {
         self.raw
             .draw_arrays_instanced(mode as u32, first, count, instance_count)
+    }
+
+    unsafe fn multi_draw_arrays_instanced(
+        &self,
+        mode: u32,
+        firsts_list: &mut [i32],
+        firsts_offset: u32,
+        counts_list: &mut [i32],
+        counts_offset: u32,
+        instance_counts_list: &mut [i32],
+        instance_counts_offset: u32,
+        drawcount: i32,
+    ) {
+        if let Some(ext) = &self.extensions.webgl_multi_draw {
+            ext.multi_draw_arrays_instanced_webgl_with_i32_array_and_i32_array_and_i32_array(
+                mode,
+                firsts_list,
+                firsts_offset,
+                counts_list,
+                counts_offset,
+                instance_counts_list,
+                instance_counts_offset,
+                drawcount,
+            );
+        }
     }
 
     unsafe fn draw_buffer(&self, draw_buffer: u32) {
