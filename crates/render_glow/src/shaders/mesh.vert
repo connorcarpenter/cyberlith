@@ -1,12 +1,12 @@
 
 uniform mat4 viewProjection;
-in vec3 vert_position;
+in vec3 vertex_world_position;
 
 in vec4 transform_row1;
 in vec4 transform_row2;
 in vec4 transform_row3;
 
-out vec3 frag_position;
+out vec3 vertex_view_position;
 
 void main()
 {
@@ -16,9 +16,9 @@ void main()
     transform[2] = vec4(transform_row1.z, transform_row2.z, transform_row3.z, 0.0);
     transform[3] = vec4(transform_row1.w, transform_row2.w, transform_row3.w, 1.0);
 
-    vec4 worldPosition = transform * vec4(vert_position, 1.);
+    vec4 worldPosition = transform * vec4(vertex_world_position, 1.);
     worldPosition /= worldPosition.w;
     gl_Position = viewProjection * worldPosition;
 
-    frag_position = worldPosition.xyz;
+    vertex_view_position = worldPosition.xyz;
 }
