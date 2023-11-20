@@ -61,8 +61,6 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
-    mut ambient_lights: ResMut<Assets<AmbientLight>>,
-    mut dir_lights: ResMut<Assets<DirectionalLight>>,
 ) {
     let layer = RenderLayers::layer(0);
 
@@ -124,17 +122,17 @@ fn setup(
     //     .insert(layer);
     // ambient light
     commands
-        .spawn(ambient_lights.add(AmbientLight::new(0.1, Color::WHITE)))
+        .spawn(AmbientLight::new(0.1, Color::WHITE))
         .insert(layer);
     // directional light
-    let light_source = Vec3::new(500.0, 00.0, 00.0);
+    let light_source = Vec3::new(500.0, 500.0, 1000.0);
     let light_target = Vec3::ZERO;
     commands
-        .spawn(dir_lights.add(DirectionalLight::new(
+        .spawn(DirectionalLight::new(
             2.0,
             Color::WHITE,
             light_target - light_source,
-        )))
+        ))
         .insert(layer);
     // point light
     // commands.spawn(PointLight::new(Vec3::new(0.0, 0.0, 100.0), 3.0, Color::WHITE, Default::default()))
@@ -219,9 +217,9 @@ pub fn draw(
         Option<&RenderLayer>,
     )>,
     // Lights
-    ambient_lights_q: Query<(&Handle<AmbientLight>, Option<&RenderLayer>)>,
+    ambient_lights_q: Query<(&AmbientLight, Option<&RenderLayer>)>,
     point_lights_q: Query<(&PointLight, Option<&RenderLayer>)>,
-    directional_lights_q: Query<(&Handle<DirectionalLight>, Option<&RenderLayer>)>,
+    directional_lights_q: Query<(&DirectionalLight, Option<&RenderLayer>)>,
 ) {
     // Aggregate Cameras
     for (camera, transform, projection, render_layer_opt) in cameras_q.iter() {
@@ -237,13 +235,13 @@ pub fn draw(
     }
 
     // Aggregate Directional Lights
-    for (handle, render_layer_opt) in directional_lights_q.iter() {
-        render_frame.draw_directional_light(render_layer_opt, handle);
+    for (dir_light, render_layer_opt) in directional_lights_q.iter() {
+        render_frame.draw_directional_light(render_layer_opt, dir_light);
     }
 
     // Aggregate Ambient Lights
-    for (handle, render_layer_opt) in ambient_lights_q.iter() {
-        render_frame.draw_ambient_light(render_layer_opt, handle);
+    for (ambient_light, render_layer_opt) in ambient_lights_q.iter() {
+        render_frame.draw_ambient_light(render_layer_opt, ambient_light);
     }
 
     // Aggregate RenderObjects

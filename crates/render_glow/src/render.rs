@@ -12,7 +12,7 @@ use crate::{
     asset_mapping::AssetMapping,
     core::{GpuDepthTexture2D, GpuTexture2D, RenderTarget},
     renderer::{
-        AmbientLightImpl, DirectionalLightImpl, GpuMesh, Material, RenderPass, RenderTargetExt,
+        GpuMesh, Material, RenderPass, RenderTargetExt,
     },
     window::FrameInput,
 };
@@ -25,8 +25,6 @@ pub fn render(
     materials: Res<AssetMapping<CpuMaterial, Box<dyn Material>>>,
     textures: ResMut<AssetMapping<CpuTexture2D, GpuTexture2D>>,
     depth_textures: ResMut<AssetMapping<CpuTexture2D, GpuDepthTexture2D>>,
-    directional_lights: ResMut<AssetMapping<DirectionalLight, DirectionalLightImpl>>,
-    ambient_lights: ResMut<AssetMapping<AmbientLight, AmbientLightImpl>>,
 ) {
     let mut layer_to_order: Vec<Vec<usize>> = Vec::with_capacity(RenderLayers::TOTAL_LAYERS);
     layer_to_order.resize(RenderLayers::TOTAL_LAYERS, Vec::new());
@@ -64,36 +62,32 @@ pub fn render(
     }
 
     // Aggregate Directional Lights
-    for (render_layer, light_handle) in frame_contents.directional_lights.iter() {
+    for (render_layer, dir_light) in frame_contents.directional_lights.iter() {
         for camera_index in layer_to_order[*render_layer].iter().map(|x| *x) {
             if camera_work[camera_index].is_none() {
                 panic!("Found DirectionalLight with RenderLayer not associated with any Camera!");
             }
 
-            let directional_light_impl = directional_lights.get(light_handle).unwrap();
-
             camera_work[camera_index]
                 .as_mut()
                 .unwrap()
                 .lights
-                .push(directional_light_impl);
+                .push(dir_light);
         }
     }
 
     // Aggregate Ambient Lights
-    for (render_layer, light_handle) in frame_contents.ambient_lights.iter() {
+    for (render_layer, ambient_light) in frame_contents.ambient_lights.iter() {
         for camera_index in layer_to_order[*render_layer].iter().map(|x| *x) {
             if camera_work[camera_index].is_none() {
-                panic!("Found DirectionalLight with RenderLayer not associated with any Camera!");
+                panic!("Found AmbientLight with RenderLayer not associated with any Camera!");
             }
-
-            let ambient_light_impl = ambient_lights.get(light_handle).unwrap();
 
             camera_work[camera_index]
                 .as_mut()
                 .unwrap()
                 .lights
-                .push(ambient_light_impl);
+                .push(ambient_light);
         }
     }
 

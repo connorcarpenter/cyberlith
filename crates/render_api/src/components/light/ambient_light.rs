@@ -1,4 +1,5 @@
 use std::hash::{Hash, Hasher};
+use bevy_ecs::component::Component;
 
 use crate::{base::Color, AssetHash};
 
@@ -6,12 +7,10 @@ use crate::{base::Color, AssetHash};
 /// A light which shines on all surfaces.
 /// Can be uniform (a light that shines equally on any surface) or calculated from an environment map using the [CpuTextureCube] struct.
 ///
-#[derive(Clone, Debug, Hash)]
+#[derive(Clone, Copy, Debug, Hash, Component)]
 pub struct AmbientLight {
     pub color: AmbientLightColor,
 }
-
-impl AssetHash<AmbientLight> for AmbientLight {}
 
 impl AmbientLight {
     pub fn none() -> Self {

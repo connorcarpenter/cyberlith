@@ -50,19 +50,19 @@ impl RenderFrame {
     pub fn draw_directional_light(
         &mut self,
         render_layer_opt: Option<&RenderLayer>,
-        handle: &Handle<DirectionalLight>,
+        light: &DirectionalLight,
     ) {
         let id = convert_wrapper(render_layer_opt.copied());
-        self.contents.directional_lights.push((id, handle.clone()));
+        self.contents.directional_lights.push((id, *light));
     }
 
     pub fn draw_ambient_light(
         &mut self,
         render_layer_opt: Option<&RenderLayer>,
-        handle: &Handle<AmbientLight>,
+        light: &AmbientLight,
     ) {
         let id = convert_wrapper(render_layer_opt.copied());
-        self.contents.ambient_lights.push((id, handle.clone()));
+        self.contents.ambient_lights.push((id, *light));
     }
 
     pub fn draw_object(
@@ -82,8 +82,8 @@ impl RenderFrame {
 pub struct RenderFrameContents {
     pub cameras: Vec<(usize, Camera, Transform, Projection)>,
     pub point_lights: Vec<(usize, PointLight)>,
-    pub directional_lights: Vec<(usize, Handle<DirectionalLight>)>,
-    pub ambient_lights: Vec<(usize, Handle<AmbientLight>)>,
+    pub directional_lights: Vec<(usize, DirectionalLight)>,
+    pub ambient_lights: Vec<(usize, AmbientLight)>,
     pub objects: Vec<(usize, Handle<CpuMesh>, Handle<CpuMaterial>, Transform)>,
 }
 

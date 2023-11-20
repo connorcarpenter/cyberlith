@@ -19,8 +19,6 @@ impl Plugin for RenderApiPlugin {
             .init_resource::<Assets<CpuMesh>>()
             .init_resource::<Assets<CpuMaterial>>()
             .init_resource::<Assets<CpuTexture2D>>()
-            .init_resource::<Assets<AmbientLight>>()
-            .init_resource::<Assets<DirectionalLight>>()
             .init_resource::<RenderFrame>()
             .init_resource::<Time>();
 

@@ -1,27 +1,9 @@
-use bevy_ecs::component::Component;
 
-use render_api::components::{AmbientLight, AmbientLightColor};
+use render_api::components::AmbientLight;
 
 use crate::{core::*, renderer::*};
 
-///
-/// A light which shines on all surfaces.
-/// Can be uniform (a light that shines equally on any surface) or calculated from an environment map using the [Environment] struct.
-///
-#[derive(Component)]
-pub struct AmbientLightImpl {
-    pub color: AmbientLightColor,
-}
-
-impl From<&AmbientLight> for AmbientLightImpl {
-    fn from(ambient_light: &AmbientLight) -> Self {
-        Self {
-            color: ambient_light.color,
-        }
-    }
-}
-
-impl<'a> Light for AmbientLightImpl {
+impl<'a> Light for AmbientLight {
     fn shader_source(&self, i: u32) -> String {
         format!(
             "
@@ -38,13 +20,5 @@ impl<'a> Light for AmbientLightImpl {
             "ambientColor",
             self.color.color.to_vec3() * self.color.intensity,
         );
-    }
-}
-
-impl Default for AmbientLightImpl {
-    fn default() -> Self {
-        Self {
-            color: AmbientLightColor::default(),
-        }
     }
 }
