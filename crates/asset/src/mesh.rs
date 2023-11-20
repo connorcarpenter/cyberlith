@@ -58,6 +58,7 @@ impl From<MeshFile> for CpuMesh {
                     let vertex_b = vertices[vertex_b_id as usize];
                     let vertex_c = vertices[vertex_c_id as usize];
 
+                    // TODO: probably need to pass in the face_id here, for vertex attributes
                     positions.push(vertex_a);
                     positions.push(vertex_b);
                     positions.push(vertex_c);

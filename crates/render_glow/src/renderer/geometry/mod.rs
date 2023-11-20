@@ -5,7 +5,7 @@
 //!
 
 pub use gpu_mesh::*;
-pub use instanced_mesh::*;
+pub use instances::*;
 
 mod gpu_mesh;
-mod instanced_mesh;
+mod instances;

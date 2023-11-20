@@ -3,7 +3,6 @@ uniform mat4 viewProjection;
 uniform mat4 modelMatrix;
 in vec3 position;
 
-// Rename these values to indicate that this is instance-level transforms here
 in vec4 transform_row1;
 in vec4 transform_row2;
 in vec4 transform_row3;
