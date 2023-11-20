@@ -2422,14 +2422,59 @@ impl HasContext for Context {
     ) {
         let gl = &self.raw;
 
-        let data: Vec<u8> = vec![0,0,0]; // bytes for the draw calls // TODO!
-        let stride: i32 = 0; // TODO!
+        let mut data: Vec<u8> = Vec::new();
+
+        for draw_index in 0usize..drawcount as usize {
+            let firsts_index = draw_index + firsts_offset as usize;
+            let counts_index = draw_index + counts_offset as usize;
+            let instance_counts_index = draw_index + instance_counts_offset as usize;
+
+            let first = firsts_list[firsts_index];
+            let count = counts_list[counts_index];
+            let instance_count = instance_counts_list[instance_counts_index];
+
+            let command = DrawArraysIndirectCommand::new(
+                count as u32,
+                instance_count as u32,
+                first as u32,
+                0 // TODO: what value goes here???
+            );
+
+            data.extend(&command.to_bytes());
+        }
 
         gl.MultiDrawArraysIndirect(
             mode,
             data.as_ptr() as *const std::ffi::c_void,
             drawcount,
-            stride,
+            0, // docs say a stride of 0 means that the commands are tightly packed
         );
+    }
+}
+
+struct DrawArraysIndirectCommand {
+    count: u32,
+    instance_count: u32,
+    first: u32,
+    base_instance: u32,
+}
+
+impl DrawArraysIndirectCommand {
+    fn new(count: u32, instance_count: u32, first: u32, base_instance: u32) -> Self {
+        Self {
+            count,
+            instance_count,
+            first,
+            base_instance,
+        }
+    }
+
+    fn to_bytes(&self) -> Vec<u8> {
+        let mut bytes = Vec::new();
+        bytes.extend_from_slice(&self.count.to_ne_bytes());
+        bytes.extend_from_slice(&self.instance_count.to_ne_bytes());
+        bytes.extend_from_slice(&self.first.to_ne_bytes());
+        bytes.extend_from_slice(&self.base_instance.to_ne_bytes());
+        bytes
     }
 }
