@@ -15,7 +15,6 @@ use web_sys::VideoFrame;
 
 #[derive(Debug)]
 enum RawRenderingContext {
-    WebGl1(WebGlRenderingContext),
     WebGl2(WebGl2RenderingContext),
 }
 
@@ -249,31 +248,6 @@ macro_rules! build_extensions {
 }
 
 impl Context {
-    pub fn from_webgl1_context(context: WebGlRenderingContext) -> Self {
-        let (extensions, supported_extensions) = build_extensions!(context, WebGlRenderingContext);
-
-        // Retrieve and parse `GL_VERSION`
-        let raw_string = context.get_parameter(VERSION).unwrap().as_string().unwrap();
-        let version = Version::parse(&raw_string).unwrap();
-
-        Self {
-            raw: RawRenderingContext::WebGl1(context),
-            extensions,
-            supported_extensions,
-            version,
-            shaders: tracked_resource(),
-            programs: tracked_resource(),
-            buffers: tracked_resource(),
-            vertex_arrays: tracked_resource(),
-            textures: tracked_resource(),
-            samplers: tracked_resource(),
-            fences: tracked_resource(),
-            framebuffers: tracked_resource(),
-            renderbuffers: tracked_resource(),
-            queries: tracked_resource(),
-            transform_feedbacks: tracked_resource(),
-        }
-    }
 
     pub fn from_webgl2_context(context: WebGl2RenderingContext) -> Self {
         let (extensions, supported_extensions) = build_extensions!(context, WebGl2RenderingContext);
@@ -319,18 +293,6 @@ impl Context {
         pixels: &ImageBitmap,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                // TODO: Handle return value?
-                gl.tex_image_2d_with_u32_and_u32_and_image_bitmap(
-                    target,
-                    level,
-                    internal_format,
-                    format,
-                    ty,
-                    pixels,
-                )
-                .unwrap();
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 // TODO: Handle return value?
                 gl.tex_image_2d_with_u32_and_u32_and_image_bitmap(
@@ -359,9 +321,6 @@ impl Context {
         pixels: &ImageBitmap,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(_) => {
-                panic!("Width and height not supported")
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 // TODO: Handle return value?
                 gl.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_image_bitmap(
@@ -390,18 +349,6 @@ impl Context {
         canvas: &HtmlCanvasElement,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                // TODO: Handle return value?
-                gl.tex_image_2d_with_u32_and_u32_and_canvas(
-                    target,
-                    level,
-                    internal_format,
-                    format,
-                    ty,
-                    canvas,
-                )
-                .unwrap();
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 // TODO: Handle return value?
                 gl.tex_image_2d_with_u32_and_u32_and_html_canvas_element(
@@ -430,9 +377,6 @@ impl Context {
         canvas: &HtmlCanvasElement,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(_) => {
-                panic!("Width and height not supported")
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 // TODO: Handle return value?
                 gl.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_html_canvas_element(
@@ -461,18 +405,6 @@ impl Context {
         image: &HtmlImageElement,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                // TODO: Handle return value?
-                gl.tex_image_2d_with_u32_and_u32_and_image(
-                    target,
-                    level,
-                    internal_format,
-                    format,
-                    ty,
-                    image,
-                )
-                .unwrap();
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 // TODO: Handle return value?
                 gl.tex_image_2d_with_u32_and_u32_and_html_image_element(
@@ -501,9 +433,6 @@ impl Context {
         image: &HtmlImageElement,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(_) => {
-                panic!("Width and height not supported")
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 // TODO: Handle return value?
                 gl.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_html_image_element(
@@ -532,18 +461,6 @@ impl Context {
         video: &HtmlVideoElement,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                // TODO: Handle return value?
-                gl.tex_image_2d_with_u32_and_u32_and_video(
-                    target,
-                    level,
-                    internal_format,
-                    format,
-                    ty,
-                    video,
-                )
-                .unwrap();
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 // TODO: Handle return value?
                 gl.tex_image_2d_with_u32_and_u32_and_html_video_element(
@@ -572,9 +489,6 @@ impl Context {
         video: &HtmlVideoElement,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(_) => {
-                panic!("Width and height not supported")
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 // TODO: Handle return value?
                 gl.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_html_video_element(
@@ -604,18 +518,6 @@ impl Context {
         video_frame: &VideoFrame,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                // TODO: Handle return value?
-                gl.tex_image_2d_with_u32_and_u32_and_video_frame(
-                    target,
-                    level,
-                    internal_format,
-                    format,
-                    ty,
-                    video_frame,
-                )
-                .unwrap();
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 // TODO: Handle return value?
                 gl.tex_image_2d_with_u32_and_u32_and_video_frame(
@@ -645,9 +547,6 @@ impl Context {
         video_frame: &VideoFrame,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(_) => {
-                panic!("Width and height not supported")
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 // TODO: Handle return value?
                 gl.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_video_frame(
@@ -677,12 +576,6 @@ impl Context {
         image: &ImageBitmap,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                gl.tex_sub_image_2d_with_u32_and_u32_and_image_bitmap(
-                    target, level, x_offset, y_offset, format, ty, image,
-                )
-                .unwrap(); // TODO: Handle return value?
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.tex_sub_image_2d_with_u32_and_u32_and_image_bitmap(
                     target, level, x_offset, y_offset, format, ty, image,
@@ -706,9 +599,6 @@ impl Context {
         image: &ImageBitmap,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(_) => {
-                panic!("Width and height not supported")
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.tex_sub_image_2d_with_i32_and_i32_and_u32_and_type_and_image_bitmap(
                     target, level, x_offset, y_offset, width, height, format, ty, image,
@@ -729,12 +619,6 @@ impl Context {
         image: &HtmlCanvasElement,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                gl.tex_sub_image_2d_with_u32_and_u32_and_canvas(
-                    target, level, x_offset, y_offset, format, ty, image,
-                )
-                .unwrap(); // TODO: Handle return value?
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.tex_sub_image_2d_with_u32_and_u32_and_html_canvas_element(
                     target, level, x_offset, y_offset, format, ty, image,
@@ -758,9 +642,6 @@ impl Context {
         image: &HtmlCanvasElement,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(_) => {
-                panic!("Width and height not supported")
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.tex_sub_image_2d_with_i32_and_i32_and_u32_and_type_and_html_canvas_element(
                     target, level, x_offset, y_offset, width, height, format, ty, image,
@@ -781,12 +662,6 @@ impl Context {
         image: &HtmlImageElement,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                gl.tex_sub_image_2d_with_u32_and_u32_and_image(
-                    target, level, x_offset, y_offset, format, ty, image,
-                )
-                .unwrap(); // TODO: Handle return value?
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.tex_sub_image_2d_with_u32_and_u32_and_html_image_element(
                     target, level, x_offset, y_offset, format, ty, image,
@@ -810,9 +685,6 @@ impl Context {
         image: &HtmlImageElement,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(_) => {
-                panic!("Width and height not supported")
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.tex_sub_image_2d_with_i32_and_i32_and_u32_and_type_and_html_image_element(
                     target, level, x_offset, y_offset, width, height, format, ty, image,
@@ -833,12 +705,6 @@ impl Context {
         image: &HtmlVideoElement,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                gl.tex_sub_image_2d_with_u32_and_u32_and_video(
-                    target, level, x_offset, y_offset, format, ty, image,
-                )
-                .unwrap(); // TODO: Handle return value?
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.tex_sub_image_2d_with_u32_and_u32_and_html_video_element(
                     target, level, x_offset, y_offset, format, ty, image,
@@ -862,9 +728,6 @@ impl Context {
         image: &HtmlVideoElement,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(_) => {
-                panic!("Width and height not supported")
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.tex_sub_image_2d_with_i32_and_i32_and_u32_and_type_and_html_video_element(
                     target, level, x_offset, y_offset, width, height, format, ty, image,
@@ -888,18 +751,6 @@ impl Context {
         video_frame: &VideoFrame,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                gl.tex_sub_image_2d_with_u32_and_u32_and_video_frame(
-                    target,
-                    level,
-                    x_offset,
-                    y_offset,
-                    format,
-                    ty,
-                    video_frame,
-                )
-                .unwrap(); // TODO: Handle return value?
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.tex_sub_image_2d_with_u32_and_u32_and_video_frame(
                     target,
@@ -930,9 +781,6 @@ impl Context {
         video_frame: &VideoFrame,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(_) => {
-                panic!("Width and height not supported")
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.tex_sub_image_2d_with_i32_and_i32_and_u32_and_type_and_video_frame(
                     target,
@@ -965,7 +813,6 @@ impl Context {
         image: &ImageBitmap,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(_) => panic!("3D images not supported"),
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.tex_image_3d_with_image_bitmap(
                     target,
@@ -999,7 +846,6 @@ impl Context {
         image: &HtmlCanvasElement,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(_) => panic!("3D images not supported"),
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.tex_image_3d_with_html_canvas_element(
                     target,
@@ -1033,7 +879,6 @@ impl Context {
         image: &HtmlImageElement,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(_) => panic!("3D images not supported"),
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.tex_image_3d_with_html_image_element(
                     target,
@@ -1067,7 +912,6 @@ impl Context {
         image: &HtmlVideoElement,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(_) => panic!("3D images not supported"),
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.tex_image_3d_with_html_video_element(
                     target,
@@ -1102,7 +946,6 @@ impl Context {
         video_frame: &VideoFrame,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(_) => panic!("3D images not supported"),
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.tex_image_3d_with_video_frame(
                     target,
@@ -1137,7 +980,6 @@ impl Context {
         image: &ImageBitmap,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(_) => panic!("3D images not supported"),
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.tex_sub_image_3d_with_image_bitmap(
                     target, level, x_offset, y_offset, z_offset, width, height, depth, format, ty,
@@ -1164,7 +1006,6 @@ impl Context {
         image: &HtmlCanvasElement,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(_) => panic!("3D images not supported"),
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.tex_sub_image_3d_with_html_canvas_element(
                     target, level, x_offset, y_offset, z_offset, width, height, depth, format, ty,
@@ -1191,7 +1032,6 @@ impl Context {
         image: &HtmlImageElement,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(_) => panic!("3D images not supported"),
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.tex_sub_image_3d_with_html_image_element(
                     target, level, x_offset, y_offset, z_offset, width, height, depth, format, ty,
@@ -1218,7 +1058,6 @@ impl Context {
         image: &HtmlVideoElement,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(_) => panic!("3D images not supported"),
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.tex_sub_image_3d_with_html_video_element(
                     target, level, x_offset, y_offset, z_offset, width, height, depth, format, ty,
@@ -1246,7 +1085,6 @@ impl Context {
         video_frame: &VideoFrame,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(_) => panic!("3D images not supported"),
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.tex_sub_image_3d_with_video_frame(
                     target,
@@ -1278,9 +1116,6 @@ impl Context {
         let textures = self.textures.borrow();
         let raw_texture = texture.map(|t| textures.get_unchecked(t));
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => {
-                panic!("OVR_multiview2 is not supported in WebGL1")
-            }
             RawRenderingContext::WebGl2(ref _gl) => {
                 if let Some(ext) = &self.extensions.ovr_multiview2 {
                     ext.framebuffer_texture_multiview_ovr(
@@ -1298,7 +1133,6 @@ impl Context {
 
     pub unsafe fn bind_external_framebuffer(&self, target: u32, framebuffer: &WebGlFramebuffer) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.bind_framebuffer(target, Some(framebuffer)),
             RawRenderingContext::WebGl2(ref gl) => gl.bind_framebuffer(target, Some(framebuffer)),
         }
     }
@@ -1387,7 +1221,6 @@ impl HasContext for Context {
 
     unsafe fn create_framebuffer(&self) -> Result<Self::Framebuffer, String> {
         let raw_framebuffer = match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.create_framebuffer(),
             RawRenderingContext::WebGl2(ref gl) => gl.create_framebuffer(),
         };
 
@@ -1404,7 +1237,6 @@ impl HasContext for Context {
         let framebuffers = self.framebuffers.borrow_mut();
         if let Some(ref f) = framebuffers.get(framebuffer) {
             match self.raw {
-                RawRenderingContext::WebGl1(ref gl) => gl.is_framebuffer(Some(f)),
                 RawRenderingContext::WebGl2(ref gl) => gl.is_framebuffer(Some(f)),
             }
         } else {
@@ -1414,9 +1246,6 @@ impl HasContext for Context {
 
     unsafe fn create_query(&self) -> Result<Self::Query, String> {
         let raw_query = match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => {
-                return Err(String::from("Query objects are not supported"));
-            }
             RawRenderingContext::WebGl2(ref gl) => gl.create_query(),
         };
 
@@ -1431,7 +1260,6 @@ impl HasContext for Context {
 
     unsafe fn create_renderbuffer(&self) -> Result<Self::Renderbuffer, String> {
         let raw_renderbuffer = match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.create_renderbuffer(),
             RawRenderingContext::WebGl2(ref gl) => gl.create_renderbuffer(),
         };
 
@@ -1448,7 +1276,6 @@ impl HasContext for Context {
         let renderbuffers = self.renderbuffers.borrow_mut();
         if let Some(ref r) = renderbuffers.get(renderbuffer) {
             match self.raw {
-                RawRenderingContext::WebGl1(ref gl) => gl.is_renderbuffer(Some(r)),
                 RawRenderingContext::WebGl2(ref gl) => gl.is_renderbuffer(Some(r)),
             }
         } else {
@@ -1458,7 +1285,6 @@ impl HasContext for Context {
 
     unsafe fn create_sampler(&self) -> Result<Self::Sampler, String> {
         let raw_sampler = match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => panic!("Sampler objects are not supported"),
             RawRenderingContext::WebGl2(ref gl) => gl.create_sampler(),
         };
 
@@ -1473,7 +1299,6 @@ impl HasContext for Context {
 
     unsafe fn create_shader(&self, shader_type: u32) -> Result<Self::Shader, String> {
         let raw_shader = match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.create_shader(shader_type as u32),
             RawRenderingContext::WebGl2(ref gl) => gl.create_shader(shader_type as u32),
         };
 
@@ -1490,7 +1315,6 @@ impl HasContext for Context {
         let shaders = self.shaders.borrow_mut();
         if let Some(ref s) = shaders.get(shader) {
             match self.raw {
-                RawRenderingContext::WebGl1(ref gl) => gl.is_shader(Some(s)),
                 RawRenderingContext::WebGl2(ref gl) => gl.is_shader(Some(s)),
             }
         } else {
@@ -1500,7 +1324,6 @@ impl HasContext for Context {
 
     unsafe fn create_texture(&self) -> Result<Self::Texture, String> {
         let raw_texture = match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.create_texture(),
             RawRenderingContext::WebGl2(ref gl) => gl.create_texture(),
         };
 
@@ -1521,7 +1344,6 @@ impl HasContext for Context {
         let textures = self.textures.borrow_mut();
         if let Some(ref t) = textures.get(texture) {
             match self.raw {
-                RawRenderingContext::WebGl1(ref gl) => gl.is_texture(Some(t)),
                 RawRenderingContext::WebGl2(ref gl) => gl.is_texture(Some(t)),
             }
         } else {
@@ -1533,7 +1355,6 @@ impl HasContext for Context {
         let mut shaders = self.shaders.borrow_mut();
         if let Some(ref s) = shaders.remove(shader) {
             match self.raw {
-                RawRenderingContext::WebGl1(ref gl) => gl.delete_shader(Some(s)),
                 RawRenderingContext::WebGl2(ref gl) => gl.delete_shader(Some(s)),
             }
         }
@@ -1543,7 +1364,6 @@ impl HasContext for Context {
         let shaders = self.shaders.borrow();
         let raw_shader = shaders.get_unchecked(shader);
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.shader_source(raw_shader, source),
             RawRenderingContext::WebGl2(ref gl) => gl.shader_source(raw_shader, source),
         }
     }
@@ -1552,7 +1372,6 @@ impl HasContext for Context {
         let shaders = self.shaders.borrow();
         let raw_shader = shaders.get_unchecked(shader);
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.compile_shader(raw_shader),
             RawRenderingContext::WebGl2(ref gl) => gl.compile_shader(raw_shader),
         }
     }
@@ -1564,9 +1383,6 @@ impl HasContext for Context {
             panic!("Parallel shader compile is not supported")
         }
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                gl.get_shader_parameter(raw_shader, COMPLETION_STATUS)
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.get_shader_parameter(raw_shader, COMPLETION_STATUS)
             }
@@ -1579,9 +1395,6 @@ impl HasContext for Context {
         let shaders = self.shaders.borrow();
         let raw_shader = shaders.get_unchecked(shader);
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                gl.get_shader_parameter(raw_shader, COMPILE_STATUS)
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.get_shader_parameter(raw_shader, COMPILE_STATUS)
             }
@@ -1594,7 +1407,6 @@ impl HasContext for Context {
         let shaders = self.shaders.borrow();
         let raw_shader = shaders.get_unchecked(shader);
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.get_shader_info_log(raw_shader),
             RawRenderingContext::WebGl2(ref gl) => gl.get_shader_info_log(raw_shader),
         }
         .unwrap_or_else(|| String::from(""))
@@ -1613,7 +1425,6 @@ impl HasContext for Context {
 
     unsafe fn create_program(&self) -> Result<Self::Program, String> {
         let raw_program = match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.create_program(),
             RawRenderingContext::WebGl2(ref gl) => gl.create_program(),
         };
 
@@ -1630,7 +1441,6 @@ impl HasContext for Context {
         let programs = self.programs.borrow_mut();
         if let Some(ref p) = programs.get(program) {
             match self.raw {
-                RawRenderingContext::WebGl1(ref gl) => gl.is_program(Some(p)),
                 RawRenderingContext::WebGl2(ref gl) => gl.is_program(Some(p)),
             }
         } else {
@@ -1642,7 +1452,6 @@ impl HasContext for Context {
         let mut programs = self.programs.borrow_mut();
         if let Some(ref p) = programs.remove(program) {
             match self.raw {
-                RawRenderingContext::WebGl1(ref gl) => gl.delete_program(Some(p)),
                 RawRenderingContext::WebGl2(ref gl) => gl.delete_program(Some(p)),
             }
         }
@@ -1654,7 +1463,6 @@ impl HasContext for Context {
         let raw_program = programs.get_unchecked(program);
         let raw_shader = shaders.get_unchecked(shader);
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.attach_shader(raw_program, raw_shader),
             RawRenderingContext::WebGl2(ref gl) => gl.attach_shader(raw_program, raw_shader),
         }
     }
@@ -1665,7 +1473,6 @@ impl HasContext for Context {
         let raw_program = programs.get_unchecked(program);
         let raw_shader = shaders.get_unchecked(shader);
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.detach_shader(raw_program, raw_shader),
             RawRenderingContext::WebGl2(ref gl) => gl.detach_shader(raw_program, raw_shader),
         }
     }
@@ -1674,7 +1481,6 @@ impl HasContext for Context {
         let programs = self.programs.borrow();
         let raw_program = programs.get_unchecked(program);
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.link_program(raw_program),
             RawRenderingContext::WebGl2(ref gl) => gl.link_program(raw_program),
         }
     }
@@ -1686,9 +1492,6 @@ impl HasContext for Context {
             panic!("Parallel shader compile is not supported")
         }
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                gl.get_program_parameter(raw_program, COMPLETION_STATUS)
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.get_program_parameter(raw_program, COMPLETION_STATUS)
             }
@@ -1701,9 +1504,6 @@ impl HasContext for Context {
         let programs = self.programs.borrow();
         let raw_program = programs.get_unchecked(program);
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                gl.get_program_parameter(raw_program, LINK_STATUS)
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.get_program_parameter(raw_program, LINK_STATUS)
             }
@@ -1716,7 +1516,6 @@ impl HasContext for Context {
         let programs = self.programs.borrow();
         let raw_program = programs.get_unchecked(program);
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.get_program_info_log(raw_program),
             RawRenderingContext::WebGl2(ref gl) => gl.get_program_info_log(raw_program),
         }
         .unwrap_or_else(|| String::from(""))
@@ -1736,9 +1535,6 @@ impl HasContext for Context {
         let programs = self.programs.borrow();
         let raw_program = programs.get_unchecked(program);
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                gl.get_program_parameter(raw_program, WebGlRenderingContext::ACTIVE_UNIFORMS)
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.get_program_parameter(raw_program, WebGl2RenderingContext::ACTIVE_UNIFORMS)
             }
@@ -1756,14 +1552,6 @@ impl HasContext for Context {
         let programs = self.programs.borrow();
         let raw_program = programs.get_unchecked(program);
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                gl.get_active_uniform(raw_program, index)
-                    .map(|au| ActiveUniform {
-                        size: au.size(),
-                        utype: au.type_(),
-                        name: au.name(),
-                    })
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.get_active_uniform(raw_program, index)
                     .map(|au| ActiveUniform {
@@ -1779,14 +1567,12 @@ impl HasContext for Context {
         let programs = self.programs.borrow();
         let raw_program = program.map(|p| programs.get_unchecked(p));
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.use_program(raw_program),
             RawRenderingContext::WebGl2(ref gl) => gl.use_program(raw_program),
         }
     }
 
     unsafe fn create_buffer(&self) -> Result<Self::Buffer, String> {
         let raw_buffer = match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.create_buffer(),
             RawRenderingContext::WebGl2(ref gl) => gl.create_buffer(),
         };
 
@@ -1807,7 +1593,6 @@ impl HasContext for Context {
         let buffers = self.buffers.borrow_mut();
         if let Some(ref b) = buffers.get(buffer) {
             match self.raw {
-                RawRenderingContext::WebGl1(ref gl) => gl.is_buffer(Some(b)),
                 RawRenderingContext::WebGl2(ref gl) => gl.is_buffer(Some(b)),
             }
         } else {
@@ -1819,7 +1604,6 @@ impl HasContext for Context {
         let buffers = self.buffers.borrow();
         let raw_buffer = buffer.map(|b| buffers.get_unchecked(b));
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.bind_buffer(target, raw_buffer),
             RawRenderingContext::WebGl2(ref gl) => gl.bind_buffer(target, raw_buffer),
         }
     }
@@ -1828,9 +1612,6 @@ impl HasContext for Context {
         let buffers = self.buffers.borrow();
         let raw_buffer = buffer.map(|b| buffers.get_unchecked(b));
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => {
-                panic!("bind_buffer_base not supported on webgl1")
-            }
             RawRenderingContext::WebGl2(ref gl) => gl.bind_buffer_base(target, index, raw_buffer),
         }
     }
@@ -1846,9 +1627,6 @@ impl HasContext for Context {
         let buffers = self.buffers.borrow();
         let raw_buffer = buffer.map(|b| buffers.get_unchecked(b));
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => {
-                panic!("bind_buffer_range not supported on webgl1");
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.bind_buffer_range_with_i32_and_i32(target, index, raw_buffer, offset, size);
             }
@@ -1869,7 +1647,6 @@ impl HasContext for Context {
         let framebuffers = self.framebuffers.borrow();
         let raw_framebuffer = framebuffer.map(|f| framebuffers.get_unchecked(f));
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.bind_framebuffer(target, raw_framebuffer),
             RawRenderingContext::WebGl2(ref gl) => gl.bind_framebuffer(target, raw_framebuffer),
         }
     }
@@ -1878,7 +1655,6 @@ impl HasContext for Context {
         let renderbuffers = self.renderbuffers.borrow();
         let raw_renderbuffer = renderbuffer.map(|r| renderbuffers.get_unchecked(r));
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.bind_renderbuffer(target, raw_renderbuffer),
             RawRenderingContext::WebGl2(ref gl) => gl.bind_renderbuffer(target, raw_renderbuffer),
         }
     }
@@ -1897,9 +1673,6 @@ impl HasContext for Context {
         filter: u32,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => {
-                panic!("framebuffer blitting usupported in webgl1")
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.blit_framebuffer(
                     src_x0, src_y0, src_x1, src_y1, dst_x0, dst_y0, dst_x1, dst_y1, mask, filter,
@@ -1910,12 +1683,6 @@ impl HasContext for Context {
 
     unsafe fn create_vertex_array(&self) -> Result<Self::VertexArray, String> {
         let raw_vertex_array = match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => {
-                match &self.extensions.oes_vertex_array_object {
-                    Some(extension) => extension.create_vertex_array_oes(),
-                    None => panic!("Vertex array objects are not supported"),
-                }
-            }
             RawRenderingContext::WebGl2(ref gl) => gl.create_vertex_array(),
         };
 
@@ -1932,12 +1699,6 @@ impl HasContext for Context {
         let mut vertex_arrays = self.vertex_arrays.borrow_mut();
         if let Some(ref va) = vertex_arrays.remove(vertex_array) {
             match self.raw {
-                RawRenderingContext::WebGl1(ref _gl) => {
-                    match &self.extensions.oes_vertex_array_object {
-                        Some(extension) => extension.delete_vertex_array_oes(Some(va)),
-                        None => panic!("Vertex array objects are not supported"),
-                    }
-                }
                 RawRenderingContext::WebGl2(ref gl) => gl.delete_vertex_array(Some(va)),
             }
         }
@@ -1947,19 +1708,12 @@ impl HasContext for Context {
         let vertex_arrays = self.vertex_arrays.borrow();
         let raw_vertex_array = vertex_array.map(|va| vertex_arrays.get_unchecked(va));
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => {
-                match &self.extensions.oes_vertex_array_object {
-                    Some(extension) => extension.bind_vertex_array_oes(raw_vertex_array),
-                    None => panic!("Vertex array objects are not supported"),
-                }
-            }
             RawRenderingContext::WebGl2(ref gl) => gl.bind_vertex_array(raw_vertex_array),
         }
     }
 
     unsafe fn clear_color(&self, red: f32, green: f32, blue: f32, alpha: f32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.clear_color(red, green, blue, alpha),
             RawRenderingContext::WebGl2(ref gl) => gl.clear_color(red, green, blue, alpha),
         }
     }
@@ -1974,21 +1728,18 @@ impl HasContext for Context {
 
     unsafe fn clear_depth_f32(&self, depth: f32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.clear_depth(depth),
             RawRenderingContext::WebGl2(ref gl) => gl.clear_depth(depth),
         }
     }
 
     unsafe fn clear_stencil(&self, stencil: i32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.clear_stencil(stencil),
             RawRenderingContext::WebGl2(ref gl) => gl.clear_stencil(stencil),
         }
     }
 
     unsafe fn clear(&self, mask: u32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.clear(mask),
             RawRenderingContext::WebGl2(ref gl) => gl.clear(mask),
         }
     }
@@ -1999,14 +1750,12 @@ impl HasContext for Context {
 
     unsafe fn pixel_store_i32(&self, parameter: u32, value: i32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.pixel_storei(parameter, value),
             RawRenderingContext::WebGl2(ref gl) => gl.pixel_storei(parameter, value),
         }
     }
 
     unsafe fn pixel_store_bool(&self, parameter: u32, value: bool) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.pixel_storei(parameter, value as i32),
             RawRenderingContext::WebGl2(ref gl) => gl.pixel_storei(parameter, value as i32),
         }
     }
@@ -2022,17 +1771,12 @@ impl HasContext for Context {
 
     unsafe fn buffer_data_size(&self, target: u32, size: i32, usage: u32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.buffer_data_with_i32(target, size, usage),
             RawRenderingContext::WebGl2(ref gl) => gl.buffer_data_with_i32(target, size, usage),
         }
     }
 
     unsafe fn buffer_data_u8_slice(&self, target: u32, data: &[u8], usage: u32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                let array = js_sys::Uint8Array::view(data);
-                gl.buffer_data_with_array_buffer_view(target, &array, usage);
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 let array = js_sys::Uint8Array::view(data);
                 gl.buffer_data_with_array_buffer_view(target, &array, usage);
@@ -2046,10 +1790,6 @@ impl HasContext for Context {
 
     unsafe fn buffer_sub_data_u8_slice(&self, target: u32, offset: i32, src_data: &[u8]) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                let array = js_sys::Uint8Array::view(src_data);
-                gl.buffer_sub_data_with_i32_and_array_buffer_view(target, offset, &array);
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 let array = js_sys::Uint8Array::view(src_data);
                 gl.buffer_sub_data_with_i32_and_array_buffer_view(target, offset, &array);
@@ -2059,7 +1799,6 @@ impl HasContext for Context {
 
     unsafe fn get_buffer_sub_data(&self, target: u32, offset: i32, dst_data: &mut [u8]) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => panic!("get_buffer_sub_data not supported"),
             RawRenderingContext::WebGl2(ref gl) => {
                 let array = js_sys::Uint8Array::view(dst_data);
                 gl.get_buffer_sub_data_with_i32_and_array_buffer_view(target, offset, &array);
@@ -2073,16 +1812,12 @@ impl HasContext for Context {
 
     unsafe fn check_framebuffer_status(&self, target: u32) -> u32 {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.check_framebuffer_status(target),
             RawRenderingContext::WebGl2(ref gl) => gl.check_framebuffer_status(target),
         }
     }
 
     unsafe fn clear_buffer_i32_slice(&self, target: u32, draw_buffer: u32, values: &[i32]) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => {
-                panic!("Clear buffer with `i32` slice is not supported");
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.clear_bufferiv_with_i32_array(target, draw_buffer as i32, values);
             }
@@ -2091,9 +1826,6 @@ impl HasContext for Context {
 
     unsafe fn clear_buffer_u32_slice(&self, target: u32, draw_buffer: u32, values: &[u32]) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => {
-                panic!("Clear buffer with `u32` slice is not supported")
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.clear_bufferuiv_with_u32_array(target, draw_buffer as i32, values)
             }
@@ -2102,9 +1834,6 @@ impl HasContext for Context {
 
     unsafe fn clear_buffer_f32_slice(&self, target: u32, draw_buffer: u32, values: &[f32]) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => {
-                panic!("Clear buffer with `f32` slice is not supported")
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.clear_bufferfv_with_f32_array(target, draw_buffer as i32, values)
             }
@@ -2119,9 +1848,6 @@ impl HasContext for Context {
         stencil: i32,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => {
-                panic!("Clear buffer depth stencil is not supported")
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.clear_bufferfi(target, draw_buffer as i32, depth, stencil)
             }
@@ -2132,7 +1858,6 @@ impl HasContext for Context {
         let fences = self.fences.borrow();
         let raw_fence = fences.get_unchecked(fence);
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => panic!("Client wait sync is not supported"),
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.client_wait_sync_with_u32(raw_fence, flags, timeout as u32)
             }
@@ -2143,7 +1868,6 @@ impl HasContext for Context {
         let fences = self.fences.borrow();
         let raw_fence = fences.get_unchecked(fence);
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => panic!("Wait sync is not supported"),
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.wait_sync_with_i32(raw_fence, flags, timeout as i32)
             }
@@ -2159,7 +1883,6 @@ impl HasContext for Context {
         size: i32,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => panic!("Copy buffer subdata is not supported"),
             RawRenderingContext::WebGl2(ref gl) => gl
                 .copy_buffer_sub_data_with_i32_and_i32_and_i32(
                     src_target, dst_target, src_offset, dst_offset, size,
@@ -2200,9 +1923,6 @@ impl HasContext for Context {
         border: i32,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                gl.copy_tex_image_2d(target, level, internal_format, x, y, width, height, border);
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.copy_tex_image_2d(target, level, internal_format, x, y, width, height, border);
             }
@@ -2221,9 +1941,6 @@ impl HasContext for Context {
         height: i32,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                gl.copy_tex_sub_image_2d(target, level, x_offset, y_offset, x, y, width, height);
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.copy_tex_sub_image_2d(target, level, x_offset, y_offset, x, y, width, height);
             }
@@ -2243,9 +1960,6 @@ impl HasContext for Context {
         height: i32,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => {
-                panic!("Copy tex subimage 3D is not supported");
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.copy_tex_sub_image_3d(
                     target, level, x_offset, y_offset, z_offset, x, y, width, height,
@@ -2258,7 +1972,6 @@ impl HasContext for Context {
         let mut buffers = self.buffers.borrow_mut();
         if let Some(ref b) = buffers.remove(buffer) {
             match self.raw {
-                RawRenderingContext::WebGl1(ref gl) => gl.delete_buffer(Some(b)),
                 RawRenderingContext::WebGl2(ref gl) => gl.delete_buffer(Some(b)),
             }
         }
@@ -2268,7 +1981,6 @@ impl HasContext for Context {
         let mut framebuffers = self.framebuffers.borrow_mut();
         if let Some(ref f) = framebuffers.remove(framebuffer) {
             match self.raw {
-                RawRenderingContext::WebGl1(ref gl) => gl.delete_framebuffer(Some(f)),
                 RawRenderingContext::WebGl2(ref gl) => gl.delete_framebuffer(Some(f)),
             }
         }
@@ -2278,7 +1990,6 @@ impl HasContext for Context {
         let mut queries = self.queries.borrow_mut();
         if let Some(ref r) = queries.remove(query) {
             match self.raw {
-                RawRenderingContext::WebGl1(ref _gl) => panic!("Query objects are not supported"),
                 RawRenderingContext::WebGl2(ref gl) => gl.delete_query(Some(r)),
             }
         }
@@ -2288,7 +1999,6 @@ impl HasContext for Context {
         let mut renderbuffers = self.renderbuffers.borrow_mut();
         if let Some(ref r) = renderbuffers.remove(renderbuffer) {
             match self.raw {
-                RawRenderingContext::WebGl1(ref gl) => gl.delete_renderbuffer(Some(r)),
                 RawRenderingContext::WebGl2(ref gl) => gl.delete_renderbuffer(Some(r)),
             }
         }
@@ -2298,7 +2008,6 @@ impl HasContext for Context {
         let mut samplers = self.samplers.borrow_mut();
         if let Some(ref s) = samplers.remove(sampler) {
             match self.raw {
-                RawRenderingContext::WebGl1(ref _gl) => panic!("Samplers are not supported"),
                 RawRenderingContext::WebGl2(ref gl) => gl.delete_sampler(Some(s)),
             }
         }
@@ -2308,7 +2017,6 @@ impl HasContext for Context {
         let mut fences = self.fences.borrow_mut();
         if let Some(ref f) = fences.remove(fence) {
             match self.raw {
-                RawRenderingContext::WebGl1(ref _gl) => panic!("Fences are not supported"),
                 RawRenderingContext::WebGl2(ref gl) => gl.delete_sync(Some(f)),
             }
         }
@@ -2318,7 +2026,6 @@ impl HasContext for Context {
         let mut textures = self.textures.borrow_mut();
         if let Some(ref t) = textures.remove(texture) {
             match self.raw {
-                RawRenderingContext::WebGl1(ref gl) => gl.delete_texture(Some(t)),
                 RawRenderingContext::WebGl2(ref gl) => gl.delete_texture(Some(t)),
             }
         }
@@ -2326,7 +2033,6 @@ impl HasContext for Context {
 
     unsafe fn disable(&self, parameter: u32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.disable(parameter),
             RawRenderingContext::WebGl2(ref gl) => gl.disable(parameter),
         }
     }
@@ -2337,7 +2043,6 @@ impl HasContext for Context {
 
     unsafe fn disable_vertex_attrib_array(&self, index: u32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.disable_vertex_attrib_array(index),
             RawRenderingContext::WebGl2(ref gl) => gl.disable_vertex_attrib_array(index),
         }
     }
@@ -2352,19 +2057,12 @@ impl HasContext for Context {
 
     unsafe fn draw_arrays(&self, mode: u32, first: i32, count: i32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.draw_arrays(mode as u32, first, count),
             RawRenderingContext::WebGl2(ref gl) => gl.draw_arrays(mode as u32, first, count),
         }
     }
 
     unsafe fn draw_arrays_instanced(&self, mode: u32, first: i32, count: i32, instance_count: i32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => match &self.extensions.angle_instanced_arrays {
-                Some(extension) => {
-                    extension.draw_arrays_instanced_angle(mode as u32, first, count, instance_count)
-                }
-                None => panic!("Draw arrays instanced is not supported"),
-            },
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.draw_arrays_instanced(mode as u32, first, count, instance_count)
             }
@@ -2388,13 +2086,6 @@ impl HasContext for Context {
 
     unsafe fn draw_buffer(&self, draw_buffer: u32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => {
-                if let Some(ext) = &self.extensions.webgl_draw_buffers {
-                    ext.draw_buffers_webgl(&Array::of1(&draw_buffer.into()))
-                } else {
-                    panic!("webgl1 WEBGL_draw_buffers extension not available");
-                }
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.draw_buffers(&Array::of1(&draw_buffer.into()));
             }
@@ -2403,17 +2094,6 @@ impl HasContext for Context {
 
     unsafe fn draw_buffers(&self, buffers: &[u32]) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => {
-                if let Some(ext) = &self.extensions.webgl_draw_buffers {
-                    let js_buffers = Array::new();
-                    for &b in buffers {
-                        js_buffers.push(&b.into());
-                    }
-                    ext.draw_buffers_webgl(&Array::of1(&js_buffers))
-                } else {
-                    panic!("webgl1 WEBGL_draw_buffers extension not available");
-                }
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 let js_buffers = Array::new();
                 for &b in buffers {
@@ -2426,9 +2106,6 @@ impl HasContext for Context {
 
     unsafe fn draw_elements(&self, mode: u32, count: i32, element_type: u32, offset: i32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                gl.draw_elements_with_i32(mode as u32, count, element_type as u32, offset);
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.draw_elements_with_i32(mode as u32, count, element_type as u32, offset);
             }
@@ -2455,16 +2132,6 @@ impl HasContext for Context {
         instance_count: i32,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => match &self.extensions.angle_instanced_arrays {
-                None => panic!("Draw elements instanced is not supported"),
-                Some(extension) => extension.draw_elements_instanced_angle_with_i32(
-                    mode as u32,
-                    count,
-                    element_type as u32,
-                    offset,
-                    instance_count,
-                ),
-            },
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.draw_elements_instanced_with_i32(
                     mode as u32,
@@ -2508,14 +2175,12 @@ impl HasContext for Context {
 
     unsafe fn enable(&self, parameter: u32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.enable(parameter),
             RawRenderingContext::WebGl2(ref gl) => gl.enable(parameter),
         }
     }
 
     unsafe fn is_enabled(&self, parameter: u32) -> bool {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.is_enabled(parameter),
             RawRenderingContext::WebGl2(ref gl) => gl.is_enabled(parameter),
         }
     }
@@ -2530,14 +2195,12 @@ impl HasContext for Context {
 
     unsafe fn enable_vertex_attrib_array(&self, index: u32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.enable_vertex_attrib_array(index),
             RawRenderingContext::WebGl2(ref gl) => gl.enable_vertex_attrib_array(index),
         }
     }
 
     unsafe fn flush(&self) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.flush(),
             RawRenderingContext::WebGl2(ref gl) => gl.flush(),
         }
     }
@@ -2552,12 +2215,6 @@ impl HasContext for Context {
         let renderbuffers = self.renderbuffers.borrow();
         let raw_renderbuffer = renderbuffer.map(|r| renderbuffers.get_unchecked(r));
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.framebuffer_renderbuffer(
-                target,
-                attachment,
-                renderbuffer_target,
-                raw_renderbuffer,
-            ),
             RawRenderingContext::WebGl2(ref gl) => gl.framebuffer_renderbuffer(
                 target,
                 attachment,
@@ -2588,9 +2245,6 @@ impl HasContext for Context {
         let textures = self.textures.borrow();
         let raw_texture = texture.map(|t| textures.get_unchecked(t));
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                gl.framebuffer_texture_2d(target, attachment, texture_target, raw_texture, level);
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.framebuffer_texture_2d(target, attachment, texture_target, raw_texture, level);
             }
@@ -2620,9 +2274,6 @@ impl HasContext for Context {
         let textures = self.textures.borrow();
         let raw_texture = texture.map(|t| textures.get_unchecked(t));
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => {
-                panic!("Framebuffer texture layer is not supported");
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.framebuffer_texture_layer(target, attachment, raw_texture, level, layer);
             }
@@ -2631,21 +2282,18 @@ impl HasContext for Context {
 
     unsafe fn front_face(&self, value: u32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.front_face(value as u32),
             RawRenderingContext::WebGl2(ref gl) => gl.front_face(value as u32),
         }
     }
 
     unsafe fn get_error(&self) -> u32 {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.get_error(),
             RawRenderingContext::WebGl2(ref gl) => gl.get_error(),
         }
     }
 
     unsafe fn get_tex_parameter_i32(&self, target: u32, parameter: u32) -> i32 {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.get_tex_parameter(target, parameter),
             RawRenderingContext::WebGl2(ref gl) => gl.get_tex_parameter(target, parameter),
         }
         .as_f64()
@@ -2657,7 +2305,6 @@ impl HasContext for Context {
 
     unsafe fn get_buffer_parameter_i32(&self, target: u32, parameter: u32) -> i32 {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.get_buffer_parameter(target, parameter),
             RawRenderingContext::WebGl2(ref gl) => gl.get_buffer_parameter(target, parameter),
         }
         .as_f64()
@@ -2669,7 +2316,6 @@ impl HasContext for Context {
 
     unsafe fn get_parameter_i32(&self, parameter: u32) -> i32 {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.get_parameter(parameter),
             RawRenderingContext::WebGl2(ref gl) => gl.get_parameter(parameter),
         }
         .unwrap()
@@ -2682,7 +2328,6 @@ impl HasContext for Context {
 
     unsafe fn get_parameter_i32_slice(&self, parameter: u32, v: &mut [i32]) {
         let value = match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.get_parameter(parameter),
             RawRenderingContext::WebGl2(ref gl) => gl.get_parameter(parameter),
         }
         .unwrap();
@@ -2696,7 +2341,6 @@ impl HasContext for Context {
 
     unsafe fn get_parameter_f32(&self, parameter: u32) -> f32 {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.get_parameter(parameter),
             RawRenderingContext::WebGl2(ref gl) => gl.get_parameter(parameter),
         }
         .unwrap()
@@ -2709,7 +2353,6 @@ impl HasContext for Context {
 
     unsafe fn get_parameter_f32_slice(&self, parameter: u32, v: &mut [f32]) {
         let value = match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.get_parameter(parameter),
             RawRenderingContext::WebGl2(ref gl) => gl.get_parameter(parameter),
         }
         .unwrap();
@@ -2723,9 +2366,6 @@ impl HasContext for Context {
 
     unsafe fn get_parameter_indexed_i32(&self, parameter: u32, index: u32) -> i32 {
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => {
-                panic!("Get parameter indexed is not supported")
-            }
             RawRenderingContext::WebGl2(ref gl) => gl.get_indexed_parameter(parameter, index),
         }
         .unwrap()
@@ -2738,9 +2378,6 @@ impl HasContext for Context {
 
     unsafe fn get_parameter_indexed_string(&self, parameter: u32, index: u32) -> String {
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => {
-                panic!("Get parameter indexed is not supported")
-            }
             RawRenderingContext::WebGl2(ref gl) => gl.get_indexed_parameter(parameter, index),
         }
         .unwrap()
@@ -2752,7 +2389,6 @@ impl HasContext for Context {
 
     unsafe fn get_parameter_string(&self, parameter: u32) -> String {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.get_parameter(parameter),
             RawRenderingContext::WebGl2(ref gl) => gl.get_parameter(parameter),
         }
         .unwrap()
@@ -2770,7 +2406,6 @@ impl HasContext for Context {
         let programs = self.programs.borrow();
         let raw_program = programs.get_unchecked(program);
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.get_uniform_location(raw_program, name),
             RawRenderingContext::WebGl2(ref gl) => gl.get_uniform_location(raw_program, name),
         }
     }
@@ -2779,7 +2414,6 @@ impl HasContext for Context {
         let programs = self.programs.borrow();
         let raw_program = programs.get_unchecked(program);
         let attrib_location = match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.get_attrib_location(raw_program, name),
             RawRenderingContext::WebGl2(ref gl) => gl.get_attrib_location(raw_program, name),
         };
         if attrib_location < 0 {
@@ -2793,9 +2427,6 @@ impl HasContext for Context {
         let programs = self.programs.borrow();
         let raw_program = programs.get_unchecked(program);
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                gl.bind_attrib_location(raw_program, index, name)
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.bind_attrib_location(raw_program, index, name)
             }
@@ -2806,9 +2437,6 @@ impl HasContext for Context {
         let programs = self.programs.borrow();
         let raw_program = programs.get_unchecked(program);
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                gl.get_program_parameter(raw_program, WebGlRenderingContext::ACTIVE_ATTRIBUTES)
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.get_program_parameter(raw_program, WebGl2RenderingContext::ACTIVE_ATTRIBUTES)
             }
@@ -2826,14 +2454,6 @@ impl HasContext for Context {
         let programs = self.programs.borrow();
         let raw_program = programs.get_unchecked(program);
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                gl.get_active_attrib(raw_program, index)
-                    .map(|au| ActiveAttribute {
-                        size: au.size(),
-                        atype: au.type_(),
-                        name: au.name(),
-                    })
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.get_active_attrib(raw_program, index)
                     .map(|au| ActiveAttribute {
@@ -2849,7 +2469,6 @@ impl HasContext for Context {
         let fences = self.fences.borrow();
         let raw_fence = fences.get_unchecked(fence);
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => panic!("Sync is not supported"),
             RawRenderingContext::WebGl2(ref gl) => gl
                 .get_sync_parameter(raw_fence, SYNC_STATUS)
                 .as_f64()
@@ -2862,7 +2481,6 @@ impl HasContext for Context {
         let fences = self.fences.borrow();
         let raw_fence = fences.get_unchecked(fence);
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => panic!("Sync is not supported"),
             RawRenderingContext::WebGl2(ref gl) => gl.is_sync(Some(raw_fence)),
         }
     }
@@ -2875,9 +2493,6 @@ impl HasContext for Context {
         height: i32,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                gl.renderbuffer_storage(target, internal_format, width, height);
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.renderbuffer_storage(target, internal_format, width, height);
             }
@@ -2893,9 +2508,6 @@ impl HasContext for Context {
         height: i32,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => {
-                panic!("Renderbuffer storage multisample is not supported");
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.renderbuffer_storage_multisample(
                     target,
@@ -2912,9 +2524,6 @@ impl HasContext for Context {
         let samplers = self.samplers.borrow();
         let raw_sampler = samplers.get_unchecked(sampler);
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => {
-                panic!("Samper parameter for `f32` is not supported")
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.sampler_parameterf(raw_sampler, name, value);
             }
@@ -2934,9 +2543,6 @@ impl HasContext for Context {
         let samplers = self.samplers.borrow();
         let raw_sampler = samplers.get_unchecked(sampler);
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => {
-                panic!("Samper parameter for `i32` is not supported")
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.sampler_parameteri(raw_sampler, name, value);
             }
@@ -2945,9 +2551,6 @@ impl HasContext for Context {
 
     unsafe fn generate_mipmap(&self, target: u32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                gl.generate_mipmap(target);
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.generate_mipmap(target);
             }
@@ -2999,21 +2602,6 @@ impl HasContext for Context {
     ) {
         let pixels = pixels.map(|bytes| texture_data_view(ty, bytes));
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                // TODO: Handle return value?
-                gl.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_opt_array_buffer_view(
-                    target,
-                    level,
-                    internal_format,
-                    width,
-                    height,
-                    border,
-                    format,
-                    ty,
-                    pixels.as_ref(),
-                )
-                .unwrap();
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 // TODO: Handle return value?
                 gl.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_opt_array_buffer_view(
@@ -3057,16 +2645,6 @@ impl HasContext for Context {
     ) {
         let src_data = js_sys::Uint8Array::view(pixels);
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl
-                .compressed_tex_image_2d_with_array_buffer_view(
-                    target,
-                    level,
-                    internal_format as u32,
-                    width,
-                    height,
-                    border,
-                    &src_data,
-                ),
             RawRenderingContext::WebGl2(ref gl) => gl
                 .compressed_tex_image_2d_with_array_buffer_view(
                     target,
@@ -3094,7 +2672,6 @@ impl HasContext for Context {
         pixels: Option<&[u8]>,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => panic!("3d textures are not supported"),
             RawRenderingContext::WebGl2(ref gl) => {
                 let pixels = pixels.map(|bytes| texture_data_view(ty, bytes));
                 // TODO: Handle return value?
@@ -3129,9 +2706,6 @@ impl HasContext for Context {
     ) {
         let src_data = js_sys::Uint8Array::view(pixels);
         match self.raw {
-            RawRenderingContext::WebGl1(_) => {
-                panic!("Compressed 3D textures are not supported.")
-            }
             RawRenderingContext::WebGl2(ref gl) => gl
                 .compressed_tex_image_3d_with_array_buffer_view(
                     target,
@@ -3165,7 +2739,6 @@ impl HasContext for Context {
         height: i32,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => panic!("Tex storage 2D is not supported"),
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.tex_storage_2d(target, levels, internal_format, width, height);
             }
@@ -3194,7 +2767,6 @@ impl HasContext for Context {
         depth: i32,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => panic!("Tex storage 3D is not supported"),
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.tex_storage_3d(target, levels, internal_format, width, height, depth);
             }
@@ -3203,7 +2775,6 @@ impl HasContext for Context {
 
     unsafe fn uniform_1_i32(&self, uniform_location: Option<&Self::UniformLocation>, x: i32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.uniform1i(uniform_location, x),
             RawRenderingContext::WebGl2(ref gl) => gl.uniform1i(uniform_location, x),
         }
     }
@@ -3215,7 +2786,6 @@ impl HasContext for Context {
         y: i32,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.uniform2i(uniform_location, x, y),
             RawRenderingContext::WebGl2(ref gl) => gl.uniform2i(uniform_location, x, y),
         }
     }
@@ -3228,7 +2798,6 @@ impl HasContext for Context {
         z: i32,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.uniform3i(uniform_location, x, y, z),
             RawRenderingContext::WebGl2(ref gl) => gl.uniform3i(uniform_location, x, y, z),
         }
     }
@@ -3242,7 +2811,6 @@ impl HasContext for Context {
         w: i32,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.uniform4i(uniform_location, x, y, z, w),
             RawRenderingContext::WebGl2(ref gl) => gl.uniform4i(uniform_location, x, y, z, w),
         }
     }
@@ -3253,9 +2821,6 @@ impl HasContext for Context {
         v: &[i32],
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                gl.uniform1iv_with_i32_array(uniform_location, v)
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.uniform1iv_with_i32_array(uniform_location, v)
             }
@@ -3268,9 +2833,6 @@ impl HasContext for Context {
         v: &[i32],
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                gl.uniform2iv_with_i32_array(uniform_location, v)
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.uniform2iv_with_i32_array(uniform_location, v)
             }
@@ -3283,9 +2845,6 @@ impl HasContext for Context {
         v: &[i32],
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                gl.uniform3iv_with_i32_array(uniform_location, v)
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.uniform3iv_with_i32_array(uniform_location, v)
             }
@@ -3298,9 +2857,6 @@ impl HasContext for Context {
         v: &[i32],
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                gl.uniform4iv_with_i32_array(uniform_location, v)
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.uniform4iv_with_i32_array(uniform_location, v)
             }
@@ -3309,7 +2865,6 @@ impl HasContext for Context {
 
     unsafe fn uniform_1_u32(&self, uniform_location: Option<&Self::UniformLocation>, x: u32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => panic!("Unsigned uniforms are not supported"),
             RawRenderingContext::WebGl2(ref gl) => gl.uniform1ui(uniform_location, x),
         }
     }
@@ -3321,7 +2876,6 @@ impl HasContext for Context {
         y: u32,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => panic!("Unsigned uniforms are not supported"),
             RawRenderingContext::WebGl2(ref gl) => gl.uniform2ui(uniform_location, x, y),
         }
     }
@@ -3334,7 +2888,6 @@ impl HasContext for Context {
         z: u32,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => panic!("Unsigned uniforms are not supported"),
             RawRenderingContext::WebGl2(ref gl) => gl.uniform3ui(uniform_location, x, y, z),
         }
     }
@@ -3348,7 +2901,6 @@ impl HasContext for Context {
         w: u32,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => panic!("Unsigned uniforms are not supported"),
             RawRenderingContext::WebGl2(ref gl) => gl.uniform4ui(uniform_location, x, y, z, w),
         }
     }
@@ -3359,9 +2911,6 @@ impl HasContext for Context {
         v: &[u32],
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => {
-                panic!("Unsigned uniforms are not supported");
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.uniform1uiv_with_u32_array(uniform_location, v)
             }
@@ -3374,9 +2923,6 @@ impl HasContext for Context {
         v: &[u32],
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => {
-                panic!("Unsigned uniforms are not supported");
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.uniform2uiv_with_u32_array(uniform_location, v)
             }
@@ -3389,9 +2935,6 @@ impl HasContext for Context {
         v: &[u32],
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => {
-                panic!("Unsigned uniforms are not supported");
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.uniform3uiv_with_u32_array(uniform_location, v)
             }
@@ -3404,9 +2947,6 @@ impl HasContext for Context {
         v: &[u32],
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => {
-                panic!("Unsigned uniforms are not supported");
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.uniform4uiv_with_u32_array(uniform_location, v)
             }
@@ -3415,7 +2955,6 @@ impl HasContext for Context {
 
     unsafe fn uniform_1_f32(&self, uniform_location: Option<&Self::UniformLocation>, x: f32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.uniform1f(uniform_location, x),
             RawRenderingContext::WebGl2(ref gl) => gl.uniform1f(uniform_location, x),
         }
     }
@@ -3427,7 +2966,6 @@ impl HasContext for Context {
         y: f32,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.uniform2f(uniform_location, x, y),
             RawRenderingContext::WebGl2(ref gl) => gl.uniform2f(uniform_location, x, y),
         }
     }
@@ -3440,7 +2978,6 @@ impl HasContext for Context {
         z: f32,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.uniform3f(uniform_location, x, y, z),
             RawRenderingContext::WebGl2(ref gl) => gl.uniform3f(uniform_location, x, y, z),
         }
     }
@@ -3454,7 +2991,6 @@ impl HasContext for Context {
         w: f32,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.uniform4f(uniform_location, x, y, z, w),
             RawRenderingContext::WebGl2(ref gl) => gl.uniform4f(uniform_location, x, y, z, w),
         }
     }
@@ -3465,9 +3001,6 @@ impl HasContext for Context {
         v: &[f32],
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                gl.uniform1fv_with_f32_array(uniform_location, v)
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.uniform1fv_with_f32_array(uniform_location, v)
             }
@@ -3480,9 +3013,6 @@ impl HasContext for Context {
         v: &[f32],
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                gl.uniform2fv_with_f32_array(uniform_location, v)
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.uniform2fv_with_f32_array(uniform_location, v)
             }
@@ -3495,9 +3025,6 @@ impl HasContext for Context {
         v: &[f32],
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                gl.uniform3fv_with_f32_array(uniform_location, v)
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.uniform3fv_with_f32_array(uniform_location, v)
             }
@@ -3510,9 +3037,6 @@ impl HasContext for Context {
         v: &[f32],
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                gl.uniform4fv_with_f32_array(uniform_location, v)
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.uniform4fv_with_f32_array(uniform_location, v)
             }
@@ -3526,9 +3050,6 @@ impl HasContext for Context {
         v: &[f32],
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                gl.uniform_matrix2fv_with_f32_array(uniform_location, transpose, v)
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.uniform_matrix2fv_with_f32_array(uniform_location, transpose, v)
             }
@@ -3542,9 +3063,6 @@ impl HasContext for Context {
         v: &[f32],
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                panic!("2x3 matrices not supported in uniforms");
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.uniform_matrix2x3fv_with_f32_array(uniform_location, transpose, v)
             }
@@ -3558,9 +3076,6 @@ impl HasContext for Context {
         v: &[f32],
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                panic!("2x4 matrices not supported in uniforms");
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.uniform_matrix2x4fv_with_f32_array(uniform_location, transpose, v)
             }
@@ -3574,9 +3089,6 @@ impl HasContext for Context {
         v: &[f32],
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                panic!("3x2 matrices not supported in uniforms");
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.uniform_matrix3x2fv_with_f32_array(uniform_location, transpose, v)
             }
@@ -3590,9 +3102,6 @@ impl HasContext for Context {
         v: &[f32],
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                gl.uniform_matrix3fv_with_f32_array(uniform_location, transpose, v)
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.uniform_matrix3fv_with_f32_array(uniform_location, transpose, v)
             }
@@ -3606,9 +3115,6 @@ impl HasContext for Context {
         v: &[f32],
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                panic!("3x4 matrices not supported in uniforms");
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.uniform_matrix3x4fv_with_f32_array(uniform_location, transpose, v)
             }
@@ -3622,9 +3128,6 @@ impl HasContext for Context {
         v: &[f32],
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                panic!("4x2 matrices not supported in uniforms");
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.uniform_matrix4x2fv_with_f32_array(uniform_location, transpose, v)
             }
@@ -3638,9 +3141,6 @@ impl HasContext for Context {
         v: &[f32],
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                panic!("4x3 matrices not supported in uniforms");
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.uniform_matrix4x3fv_with_f32_array(uniform_location, transpose, v)
             }
@@ -3654,9 +3154,6 @@ impl HasContext for Context {
         v: &[f32],
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                gl.uniform_matrix4fv_with_f32_array(uniform_location, transpose, v)
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.uniform_matrix4fv_with_f32_array(uniform_location, transpose, v)
             }
@@ -3669,14 +3166,12 @@ impl HasContext for Context {
 
     unsafe fn cull_face(&self, value: u32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.cull_face(value as u32),
             RawRenderingContext::WebGl2(ref gl) => gl.cull_face(value as u32),
         }
     }
 
     unsafe fn color_mask(&self, red: bool, green: bool, blue: bool, alpha: bool) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.color_mask(red, green, blue, alpha),
             RawRenderingContext::WebGl2(ref gl) => gl.color_mask(red, green, blue, alpha),
         }
     }
@@ -3694,21 +3189,18 @@ impl HasContext for Context {
 
     unsafe fn depth_mask(&self, value: bool) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.depth_mask(value),
             RawRenderingContext::WebGl2(ref gl) => gl.depth_mask(value),
         }
     }
 
     unsafe fn blend_color(&self, red: f32, green: f32, blue: f32, alpha: f32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.blend_color(red, green, blue, alpha),
             RawRenderingContext::WebGl2(ref gl) => gl.blend_color(red, green, blue, alpha),
         }
     }
 
     unsafe fn line_width(&self, width: f32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.line_width(width),
             RawRenderingContext::WebGl2(ref gl) => gl.line_width(width),
         }
     }
@@ -3733,9 +3225,6 @@ impl HasContext for Context {
 
     unsafe fn invalidate_framebuffer(&self, target: u32, attachments: &[u32]) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => {
-                panic!("Invalidate framebuffer is not supported");
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 let js_attachments = Array::new();
                 for &a in attachments {
@@ -3748,7 +3237,6 @@ impl HasContext for Context {
 
     unsafe fn polygon_offset(&self, factor: f32, units: f32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.polygon_offset(factor, units),
             RawRenderingContext::WebGl2(ref gl) => gl.polygon_offset(factor, units),
         }
     }
@@ -3761,7 +3249,6 @@ impl HasContext for Context {
 
     unsafe fn finish(&self) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.finish(),
             RawRenderingContext::WebGl2(ref gl) => gl.finish(),
         }
     }
@@ -3770,7 +3257,6 @@ impl HasContext for Context {
         let textures = self.textures.borrow();
         let raw_texture = texture.map(|t| textures.get_unchecked(t));
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.bind_texture(target, raw_texture),
             RawRenderingContext::WebGl2(ref gl) => gl.bind_texture(target, raw_texture),
         }
     }
@@ -3779,21 +3265,18 @@ impl HasContext for Context {
         let samplers = self.samplers.borrow();
         let raw_sampler = sampler.map(|s| samplers.get_unchecked(s));
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => panic!("Bind sampler is not supported"),
             RawRenderingContext::WebGl2(ref gl) => gl.bind_sampler(unit, raw_sampler),
         }
     }
 
     unsafe fn active_texture(&self, unit: u32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.active_texture(unit),
             RawRenderingContext::WebGl2(ref gl) => gl.active_texture(unit),
         }
     }
 
     unsafe fn fence_sync(&self, condition: u32, flags: u32) -> Result<Self::Fence, String> {
         let raw_fence = match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => panic!("Fences are not supported"),
             RawRenderingContext::WebGl2(ref gl) => gl.fence_sync(condition as u32, flags),
         };
         match raw_fence {
@@ -3807,14 +3290,12 @@ impl HasContext for Context {
 
     unsafe fn tex_parameter_f32(&self, target: u32, parameter: u32, value: f32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.tex_parameterf(target, parameter, value),
             RawRenderingContext::WebGl2(ref gl) => gl.tex_parameterf(target, parameter, value),
         }
     }
 
     unsafe fn tex_parameter_i32(&self, target: u32, parameter: u32, value: i32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.tex_parameteri(target, parameter, value),
             RawRenderingContext::WebGl2(ref gl) => gl.tex_parameteri(target, parameter, value),
         }
     }
@@ -3845,20 +3326,6 @@ impl HasContext for Context {
         pixels: PixelUnpackData,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                match pixels {
-                    PixelUnpackData::BufferOffset(_) => {
-                        panic!("Sub image 2D pixel buffer offset is not supported");
-                    }
-                    PixelUnpackData::Slice(data) => {
-                        let data = texture_data_view(ty, data);
-                        gl.tex_sub_image_2d_with_i32_and_i32_and_u32_and_type_and_opt_array_buffer_view(
-                            target, level, x_offset, y_offset, width, height, format, ty, Some(&data),
-                        )
-                    }
-                }
-                .unwrap(); // TODO: Handle return value?
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 match pixels {
                     PixelUnpackData::BufferOffset(offset) => gl
@@ -3914,17 +3381,6 @@ impl HasContext for Context {
         pixels: CompressedPixelUnpackData,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => match pixels {
-                CompressedPixelUnpackData::BufferRange(_) => {
-                    panic!("Compressed sub image 2D pixel buffer range is not supported");
-                }
-                CompressedPixelUnpackData::Slice(data) => {
-                    let data = texture_data_view(BYTE, data);
-                    gl.compressed_tex_sub_image_2d_with_array_buffer_view(
-                        target, level, x_offset, y_offset, width, height, format, &data,
-                    )
-                }
-            },
             RawRenderingContext::WebGl2(ref gl) => match pixels {
                 CompressedPixelUnpackData::BufferRange(range) => gl
                     .compressed_tex_sub_image_2d_with_i32_and_i32(
@@ -3963,9 +3419,6 @@ impl HasContext for Context {
         pixels: PixelUnpackData,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => {
-                panic!("Sub image 3D is not supported");
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 match pixels {
                     PixelUnpackData::BufferOffset(offset) => gl.tex_sub_image_3d_with_i32(
@@ -4017,9 +3470,6 @@ impl HasContext for Context {
         pixels: CompressedPixelUnpackData,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => {
-                panic!("Compressed sub image 3D is not supported");
-            }
             RawRenderingContext::WebGl2(ref gl) => match pixels {
                 CompressedPixelUnpackData::BufferRange(range) => gl
                     .compressed_tex_sub_image_3d_with_i32_and_i32(
@@ -4048,14 +3498,12 @@ impl HasContext for Context {
 
     unsafe fn depth_func(&self, func: u32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.depth_func(func as u32),
             RawRenderingContext::WebGl2(ref gl) => gl.depth_func(func as u32),
         }
     }
 
     unsafe fn depth_range_f32(&self, near: f32, far: f32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.depth_range(near, far),
             RawRenderingContext::WebGl2(ref gl) => gl.depth_range(near, far),
         }
     }
@@ -4070,7 +3518,6 @@ impl HasContext for Context {
 
     unsafe fn scissor(&self, x: i32, y: i32, width: i32, height: i32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.scissor(x, y, width, height),
             RawRenderingContext::WebGl2(ref gl) => gl.scissor(x, y, width, height),
         }
     }
@@ -4132,10 +3579,6 @@ impl HasContext for Context {
 
     unsafe fn vertex_attrib_divisor(&self, index: u32, divisor: u32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => match &self.extensions.angle_instanced_arrays {
-                None => panic!("Vertex attrib divisor is not supported"),
-                Some(extension) => extension.vertex_attrib_divisor_angle(index, divisor),
-            },
             RawRenderingContext::WebGl2(ref gl) => gl.vertex_attrib_divisor(index, divisor),
         }
     }
@@ -4150,8 +3593,6 @@ impl HasContext for Context {
         offset: i32,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl
-                .vertex_attrib_pointer_with_i32(index, size, data_type, normalized, stride, offset),
             RawRenderingContext::WebGl2(ref gl) => gl
                 .vertex_attrib_pointer_with_i32(index, size, data_type, normalized, stride, offset),
         }
@@ -4166,9 +3607,6 @@ impl HasContext for Context {
         offset: i32,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => {
-                panic!("Integer vertex attrib pointer is not supported")
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.vertex_attrib_i_pointer_with_i32(index, size, data_type, stride, offset)
             }
@@ -4209,56 +3647,48 @@ impl HasContext for Context {
 
     unsafe fn vertex_attrib_1_f32(&self, index: u32, x: f32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.vertex_attrib1f(index, x),
             RawRenderingContext::WebGl2(ref gl) => gl.vertex_attrib1f(index, x),
         }
     }
 
     unsafe fn vertex_attrib_2_f32(&self, index: u32, x: f32, y: f32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.vertex_attrib2f(index, x, y),
             RawRenderingContext::WebGl2(ref gl) => gl.vertex_attrib2f(index, x, y),
         }
     }
 
     unsafe fn vertex_attrib_3_f32(&self, index: u32, x: f32, y: f32, z: f32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.vertex_attrib3f(index, x, y, z),
             RawRenderingContext::WebGl2(ref gl) => gl.vertex_attrib3f(index, x, y, z),
         }
     }
 
     unsafe fn vertex_attrib_4_f32(&self, index: u32, x: f32, y: f32, z: f32, w: f32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.vertex_attrib4f(index, x, y, z, w),
             RawRenderingContext::WebGl2(ref gl) => gl.vertex_attrib4f(index, x, y, z, w),
         }
     }
 
     unsafe fn vertex_attrib_1_f32_slice(&self, index: u32, v: &[f32]) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.vertex_attrib1fv_with_f32_array(index, v),
             RawRenderingContext::WebGl2(ref gl) => gl.vertex_attrib1fv_with_f32_array(index, v),
         }
     }
 
     unsafe fn vertex_attrib_2_f32_slice(&self, index: u32, v: &[f32]) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.vertex_attrib2fv_with_f32_array(index, v),
             RawRenderingContext::WebGl2(ref gl) => gl.vertex_attrib2fv_with_f32_array(index, v),
         }
     }
 
     unsafe fn vertex_attrib_3_f32_slice(&self, index: u32, v: &[f32]) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.vertex_attrib3fv_with_f32_array(index, v),
             RawRenderingContext::WebGl2(ref gl) => gl.vertex_attrib3fv_with_f32_array(index, v),
         }
     }
 
     unsafe fn vertex_attrib_4_f32_slice(&self, index: u32, v: &[f32]) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.vertex_attrib4fv_with_f32_array(index, v),
             RawRenderingContext::WebGl2(ref gl) => gl.vertex_attrib4fv_with_f32_array(index, v),
         }
     }
@@ -4273,7 +3703,6 @@ impl HasContext for Context {
 
     unsafe fn viewport(&self, x: i32, y: i32, width: i32, height: i32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.viewport(x, y, width, height),
             RawRenderingContext::WebGl2(ref gl) => gl.viewport(x, y, width, height),
         }
     }
@@ -4284,7 +3713,6 @@ impl HasContext for Context {
 
     unsafe fn blend_func(&self, src: u32, dst: u32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.blend_func(src as u32, dst as u32),
             RawRenderingContext::WebGl2(ref gl) => gl.blend_func(src as u32, dst as u32),
         }
     }
@@ -4301,12 +3729,6 @@ impl HasContext for Context {
         dst_alpha: u32,
     ) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.blend_func_separate(
-                src_rgb as u32,
-                dst_rgb as u32,
-                src_alpha as u32,
-                dst_alpha as u32,
-            ),
             RawRenderingContext::WebGl2(ref gl) => gl.blend_func_separate(
                 src_rgb as u32,
                 dst_rgb as u32,
@@ -4329,7 +3751,6 @@ impl HasContext for Context {
 
     unsafe fn blend_equation(&self, mode: u32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.blend_equation(mode as u32),
             RawRenderingContext::WebGl2(ref gl) => gl.blend_equation(mode as u32),
         }
     }
@@ -4340,9 +3761,6 @@ impl HasContext for Context {
 
     unsafe fn blend_equation_separate(&self, mode_rgb: u32, mode_alpha: u32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                gl.blend_equation_separate(mode_rgb as u32, mode_alpha as u32)
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.blend_equation_separate(mode_rgb as u32, mode_alpha as u32)
             }
@@ -4360,16 +3778,12 @@ impl HasContext for Context {
 
     unsafe fn stencil_func(&self, func: u32, reference: i32, mask: u32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.stencil_func(func as u32, reference, mask),
             RawRenderingContext::WebGl2(ref gl) => gl.stencil_func(func as u32, reference, mask),
         }
     }
 
     unsafe fn stencil_func_separate(&self, face: u32, func: u32, reference: i32, mask: u32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                gl.stencil_func_separate(face as u32, func as u32, reference, mask)
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.stencil_func_separate(face as u32, func as u32, reference, mask)
             }
@@ -4378,23 +3792,18 @@ impl HasContext for Context {
 
     unsafe fn stencil_mask(&self, mask: u32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.stencil_mask(mask),
             RawRenderingContext::WebGl2(ref gl) => gl.stencil_mask(mask),
         }
     }
 
     unsafe fn stencil_mask_separate(&self, face: u32, mask: u32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.stencil_mask_separate(face as u32, mask),
             RawRenderingContext::WebGl2(ref gl) => gl.stencil_mask_separate(face as u32, mask),
         }
     }
 
     unsafe fn stencil_op(&self, stencil_fail: u32, depth_fail: u32, pass: u32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => {
-                gl.stencil_op(stencil_fail as u32, depth_fail as u32, pass as u32)
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.stencil_op(stencil_fail as u32, depth_fail as u32, pass as u32)
             }
@@ -4403,12 +3812,6 @@ impl HasContext for Context {
 
     unsafe fn stencil_op_separate(&self, face: u32, stencil_fail: u32, depth_fail: u32, pass: u32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.stencil_op_separate(
-                face as u32,
-                stencil_fail as u32,
-                depth_fail as u32,
-                pass as u32,
-            ),
             RawRenderingContext::WebGl2(ref gl) => gl.stencil_op_separate(
                 face as u32,
                 stencil_fail as u32,
@@ -4490,7 +3893,6 @@ impl HasContext for Context {
         let programs = self.programs.borrow();
         let raw_program = programs.get_unchecked(program);
         let index = match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => panic!("Uniform blocks are not supported"),
             RawRenderingContext::WebGl2(ref gl) => gl.get_uniform_block_index(raw_program, name),
         };
         if index == INVALID_INDEX {
@@ -4502,9 +3904,6 @@ impl HasContext for Context {
 
     unsafe fn uniform_block_binding(&self, program: Self::Program, index: u32, binding: u32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => {
-                panic!("Uniform buffer bindings are not supported")
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 let programs = self.programs.borrow();
                 let raw_program = programs.get_unchecked(program);
@@ -4532,7 +3931,6 @@ impl HasContext for Context {
 
     unsafe fn read_buffer(&self, src: u32) {
         match self.raw {
-            RawRenderingContext::WebGl1(..) => panic!("read_buffer is not supported by WebGL1"),
             RawRenderingContext::WebGl2(ref gl) => gl.read_buffer(src),
         }
     }
@@ -4549,9 +3947,6 @@ impl HasContext for Context {
     ) {
         match pixels {
             PixelPackData::BufferOffset(offset) => match self.raw {
-                RawRenderingContext::WebGl1(ref _gl) => {
-                    panic!("Read pixels into buffer offset is not supported")
-                }
                 RawRenderingContext::WebGl2(ref gl) => gl
                     .read_pixels_with_i32(x, y, width, height, format, gltype, offset as i32)
                     .unwrap(),
@@ -4559,17 +3954,6 @@ impl HasContext for Context {
             PixelPackData::Slice(bytes) => {
                 let data = texture_data_view(gltype, bytes);
                 match self.raw {
-                    RawRenderingContext::WebGl1(ref gl) => gl
-                        .read_pixels_with_opt_array_buffer_view(
-                            x,
-                            y,
-                            width,
-                            height,
-                            format,
-                            gltype,
-                            Some(&data),
-                        )
-                        .unwrap(),
                     RawRenderingContext::WebGl2(ref gl) => gl
                         .read_pixels_with_opt_array_buffer_view(
                             x,
@@ -4607,7 +3991,6 @@ impl HasContext for Context {
         let programs = self.programs.borrow();
         let raw_program = programs.get_unchecked(program);
         let value = match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.get_uniform(&raw_program, location),
             RawRenderingContext::WebGl2(ref gl) => gl.get_uniform(&raw_program, location),
         };
         use wasm_bindgen::JsCast;
@@ -4627,7 +4010,6 @@ impl HasContext for Context {
         let programs = self.programs.borrow();
         let raw_program = programs.get_unchecked(program);
         let value = match self.raw {
-            RawRenderingContext::WebGl1(ref gl) => gl.get_uniform(&raw_program, location),
             RawRenderingContext::WebGl2(ref gl) => gl.get_uniform(&raw_program, location),
         };
         use wasm_bindgen::JsCast;
@@ -4642,14 +4024,12 @@ impl HasContext for Context {
         let queries = self.queries.borrow();
         let raw_query = queries.get_unchecked(query);
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => panic!("Query objects are not supported"),
             RawRenderingContext::WebGl2(ref gl) => gl.begin_query(target, raw_query),
         }
     }
 
     unsafe fn end_query(&self, target: u32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => panic!("Query objects are not supported"),
             RawRenderingContext::WebGl2(ref gl) => gl.end_query(target),
         }
     }
@@ -4662,7 +4042,6 @@ impl HasContext for Context {
         let queries = self.queries.borrow();
         let raw_query = queries.get_unchecked(query);
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => panic!("Query objects are not supported"),
             RawRenderingContext::WebGl2(ref gl) => gl
                 .get_query_parameter(raw_query, parameter)
                 .as_f64()
@@ -4682,9 +4061,6 @@ impl HasContext for Context {
 
     unsafe fn create_transform_feedback(&self) -> Result<Self::TransformFeedback, String> {
         let raw_transform_feedback = match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => {
-                panic!("TransformFeedback objects are not supported")
-            }
             RawRenderingContext::WebGl2(ref gl) => gl.create_transform_feedback(),
         };
 
@@ -4701,9 +4077,6 @@ impl HasContext for Context {
         let mut transform_feedbacks = self.transform_feedbacks.borrow_mut();
         if let Some(ref t) = transform_feedbacks.remove(transform_feedback) {
             match self.raw {
-                RawRenderingContext::WebGl1(ref _gl) => {
-                    panic!("TransformFeedback objects are not supported")
-                }
                 RawRenderingContext::WebGl2(ref gl) => gl.delete_transform_feedback(Some(t)),
             }
         }
@@ -4718,9 +4091,6 @@ impl HasContext for Context {
         let raw_transform_feedback =
             transform_feedback.map(|tf| transform_feedbacks.get_unchecked(tf));
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => {
-                panic!("TransformFeedback objects are not supported")
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 gl.bind_transform_feedback(target, raw_transform_feedback)
             }
@@ -4729,36 +4099,24 @@ impl HasContext for Context {
 
     unsafe fn begin_transform_feedback(&self, primitive_mode: u32) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => {
-                panic!("TransformFeedback objects are not supported")
-            }
             RawRenderingContext::WebGl2(ref gl) => gl.begin_transform_feedback(primitive_mode),
         }
     }
 
     unsafe fn end_transform_feedback(&self) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => {
-                panic!("TransformFeedback objects are not supported")
-            }
             RawRenderingContext::WebGl2(ref gl) => gl.end_transform_feedback(),
         }
     }
 
     unsafe fn pause_transform_feedback(&self) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => {
-                panic!("TransformFeedback objects are not supported")
-            }
             RawRenderingContext::WebGl2(ref gl) => gl.pause_transform_feedback(),
         }
     }
 
     unsafe fn resume_transform_feedback(&self) {
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => {
-                panic!("TransformFeedback objects are not supported")
-            }
             RawRenderingContext::WebGl2(ref gl) => gl.resume_transform_feedback(),
         }
     }
@@ -4772,9 +4130,6 @@ impl HasContext for Context {
         let programs = self.programs.borrow();
         let raw_program = programs.get_unchecked(program);
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => {
-                panic!("TransformFeedback objects are not supported")
-            }
             RawRenderingContext::WebGl2(ref gl) => {
                 let js_varyings = Array::new();
                 for &v in varyings {
@@ -4793,9 +4148,6 @@ impl HasContext for Context {
         let programs = self.programs.borrow();
         let raw_program = programs.get_unchecked(program);
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => {
-                panic!("TransformFeedback objects are not supported")
-            }
             RawRenderingContext::WebGl2(ref gl) => gl
                 .get_transform_feedback_varying(raw_program, index)
                 .map(|info| ActiveTransformFeedback {
@@ -4837,7 +4189,6 @@ impl HasContext for Context {
         let raw_program = programs.get_unchecked(program);
 
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => panic!("Uniform blocks are not supported"),
             RawRenderingContext::WebGl2(ref gl) => gl
                 .get_active_uniform_block_parameter(raw_program, uniform_block_index, parameter)
                 .unwrap()
@@ -4860,7 +4211,6 @@ impl HasContext for Context {
         let raw_program = programs.get_unchecked(program);
 
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => panic!("Uniform blocks are not supported"),
             RawRenderingContext::WebGl2(ref gl) => {
                 let value = gl
                     .get_active_uniform_block_parameter(raw_program, uniform_block_index, parameter)
@@ -4891,7 +4241,6 @@ impl HasContext for Context {
         let raw_program = programs.get_unchecked(program);
 
         match self.raw {
-            RawRenderingContext::WebGl1(ref _gl) => panic!("Uniform blocks are not supported"),
             RawRenderingContext::WebGl2(ref gl) => gl
                 .get_active_uniform_block_name(raw_program, uniform_block_index)
                 .unwrap(),

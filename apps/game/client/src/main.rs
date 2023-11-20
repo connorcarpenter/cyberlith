@@ -9,5 +9,9 @@ cfg_if! {
         fn main() {
             app::build().run();
         }
+    } else {
+        fn main() {
+
+        }
     }
 }

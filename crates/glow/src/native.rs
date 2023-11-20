@@ -1,8 +1,8 @@
+
+use std::{ptr, ffi::{CStr, CString}, collections::HashSet, num::NonZeroU32};
+
 use super::*;
 use crate::{gl46 as native_gl, version::Version};
-use std::ffi::CStr;
-use std::ptr;
-use std::{collections::HashSet, ffi::CString, num::NonZeroU32};
 
 #[derive(Default)]
 struct Constants {
