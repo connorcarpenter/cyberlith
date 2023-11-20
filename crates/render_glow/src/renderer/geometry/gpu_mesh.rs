@@ -50,7 +50,7 @@ impl GpuMesh {
 
     fn use_attributes(&self, program: &Program) {
         program.use_vertex_attribute("vertex_world_position", &self.positions);
-        program.use_vertex_attribute("vertex_world_normal", &self.positions);
+        program.use_vertex_attribute_if_required("vertex_world_normal", &self.normals);
 
         // TODO: will need to pass "face_id" in here ... ?
     }
