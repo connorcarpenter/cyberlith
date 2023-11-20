@@ -100,4 +100,25 @@ impl CpuMesh {
 
         Ok(())
     }
+
+    ///
+    /// Computes the per vertex normals and updates the normals of the mesh.
+    /// It will override the current normals if they already exist.
+    ///
+    pub fn compute_normals(&self) -> Vec<Vec3> {
+        let mut normals = Vec::new();
+        self.for_each_triangle(|i0, i1, i2| {
+            let normal = {
+                let p0 = self.vertices[i0];
+                let p1 = self.vertices[i1];
+                let p2 = self.vertices[i2];
+                (p1 - p0).cross(p2 - p0)
+            };
+            normals.push(normal);
+            normals.push(normal);
+            normals.push(normal);
+        });
+
+        normals
+    }
 }

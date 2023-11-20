@@ -93,7 +93,7 @@ fn setup(
             material: red_mat_handle,
             transform: Transform::from_scale(Vec3::splat(50.0))
                 .with_translation(Vec3::new(0.0, 0.0, 70.0))
-                .with_rotation(Quat::from_axis_angle(Vec3::Z, f32::to_radians(180.0))),
+                .with_rotation(Quat::from_axis_angle(Vec3::X, f32::to_radians(90.0))),
             ..Default::default()
         })
         //.insert(CubeMarker)
@@ -105,7 +105,7 @@ fn setup(
             material: blue_mat_handle,
             transform: Transform::from_scale(Vec3::splat(30.0))
                 .with_translation(Vec3::new(100.0, 0.0, 70.0))
-                .with_rotation(Quat::from_axis_angle(Vec3::Z, f32::to_radians(180.0))),
+                .with_rotation(Quat::from_axis_angle(Vec3::X, f32::to_radians(90.0))),
             ..Default::default()
         })
         .insert(layer);
@@ -116,7 +116,7 @@ fn setup(
             material: blue_mat_handle,
             transform: Transform::from_scale(Vec3::splat(30.0))
                 .with_translation(Vec3::new(0.0, 100.0, 70.0))
-                .with_rotation(Quat::from_axis_angle(Vec3::Z, f32::to_radians(180.0))),
+                .with_rotation(Quat::from_axis_angle(Vec3::X, f32::to_radians(90.0))),
             ..Default::default()
         })
         .insert(layer);
@@ -199,7 +199,7 @@ fn step(
     for mut point_light in light_q.iter_mut() {
         point_light.position.x = x;
         point_light.position.y = y;
-        point_light.position.z = 100.0;
+        point_light.position.z = 70.0;
     }
 }
 

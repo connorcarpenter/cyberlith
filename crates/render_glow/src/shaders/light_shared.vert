@@ -1,10 +1,4 @@
 
-struct BaseLight
-{
-    vec3 color;
-    float intensity;
-};
-
 vec3 fresnel_schlick_roughness(vec3 F0, float cosTheta, float roughness)
 {
     return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(saturate(1.0 - cosTheta), 5.0);
@@ -23,8 +17,11 @@ vec3 phong_specular(in vec3 view_dir, in vec3 light_dir, in vec3 normal, in vec3
 
 vec3 calculate_light(vec3 light_color, vec3 light_dir, vec3 surface_color, vec3 view_dir, vec3 normal, float metallic, float roughness)
 {
+    // convert from right-handed y-up to left-handed z-up
+    vec3 new_light_dir = vec3(light_dir.x, light_dir.z, -light_dir.y);
+
     // compute material reflectance
-    float normal_dot_light_dir = max(0.001, dot(normal, light_dir));
+    float normal_dot_light_dir = max(0.001, dot(normal, new_light_dir));
     float normal_dot_view_dir = max(0.001, dot(normal, view_dir));
 
     // mix between metal and non-metal material, for non-metal
@@ -33,7 +30,7 @@ vec3 calculate_light(vec3 light_color, vec3 light_dir, vec3 surface_color, vec3 
 
     // specular reflectance with PHONG
     vec3 specular_fresnel = fresnel_schlick_roughness(F0, normal_dot_view_dir, roughness);
-    vec3 specular = phong_specular(view_dir, light_dir, normal, specular_fresnel, roughness);
+    vec3 specular = phong_specular(view_dir, new_light_dir, normal, specular_fresnel, roughness);
 
     // diffuse is common for any model
     vec3 diffuse_fresnel = 1.0 - specular_fresnel;

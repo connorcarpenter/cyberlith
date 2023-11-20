@@ -62,8 +62,7 @@ impl Material for PbrMaterial {
             position: true,
             ..FragmentAttributes::NONE
         };
-        let mut output = lights_shader_source(lights);
-        output.push_str(include_str!("../../shaders/physical_material.frag"));
+        let output = include_str!("../../shaders/physical_material.frag").to_string();
         FragmentShader {
             source: output,
             attributes,

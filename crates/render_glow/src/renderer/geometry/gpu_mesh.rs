@@ -4,6 +4,7 @@ use crate::core::*;
 
 pub struct GpuMesh {
     positions: VertexBuffer,
+    normals: VertexBuffer,
     pub(crate) aabb: AxisAlignedBoundingBox,
 }
 
@@ -17,6 +18,7 @@ impl GpuMesh {
         Self {
             aabb,
             positions: VertexBuffer::new_with_data(&cpu_mesh.to_vertices()),
+            normals: VertexBuffer::new_with_data(&cpu_mesh.compute_normals()),
         }
     }
 
@@ -48,6 +50,7 @@ impl GpuMesh {
 
     fn use_attributes(&self, program: &Program) {
         program.use_vertex_attribute("vertex_world_position", &self.positions);
+        program.use_vertex_attribute("vertex_world_normal", &self.positions);
 
         // TODO: will need to pass "face_id" in here ... ?
     }

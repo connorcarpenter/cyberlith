@@ -10,6 +10,7 @@ use crate::{
     core::{Context, InstanceBuffer, Program, RenderStates},
     renderer::{GpuMesh, Instances, Light, Material, RenderCamera},
 };
+use crate::renderer::lights_shader_source;
 
 // Render Object
 #[derive(Clone)]
@@ -89,7 +90,7 @@ impl RenderObjectInstanced {
         let instance_buffers = Self::create_instance_buffers(&instances);
 
         let fragment_shader = material.fragment_shader(lights);
-        let vertex_shader_source = Self::vertex_shader_source();
+        let vertex_shader_source = Self::vertex_shader_source(lights);
         Context::get()
             .program(vertex_shader_source, fragment_shader.source, |program| {
                 material.use_uniforms(program, render_camera, lights);
@@ -135,12 +136,12 @@ impl RenderObjectInstanced {
         mesh.draw_instanced(program, render_states, camera, instance_count);
     }
 
-    fn vertex_shader_source() -> String {
-        format!(
-            "{}{}",
-            include_str!("../shaders/shared.frag"),
-            include_str!("../shaders/mesh.vert"),
-        )
+    fn vertex_shader_source(lights: &[&dyn Light]) -> String {
+
+        let mut output = lights_shader_source(lights);
+        output.push_str(include_str!("../shaders/mesh.vert"));
+
+        output
     }
 
     ///
