@@ -5,20 +5,17 @@ use bevy_ecs::{
     system::{Commands, Local, Query, Res, ResMut},
 };
 
-use asset::MeshFile;
 use math::{Quat, Vec3};
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
     components::{
         AmbientLight, Camera, CameraBundle, ClearOperation, DirectionalLight,
-        OrthographicProjection, PointLight, Projection, RenderLayer, RenderLayers,
-        RenderObjectBundle, RenderTarget, Transform, Viewport, Visibility,
+        OrthographicProjection, PerspectiveProjection, PointLight, Projection, RenderLayer,
+        RenderLayers, RenderObjectBundle, RenderTarget, Transform, Viewport, Visibility,
     },
     resources::{RenderFrame, Time, WindowSettings},
     shapes, Assets, Handle,
 };
-use render_api::components::PerspectiveProjection;
-use render_api::shapes::{Cube, Sphere};
 
 #[derive(Component)]
 pub struct CubeMarker;
@@ -67,8 +64,8 @@ fn setup(
     // load assets
     //let file_cube_mesh = MeshFile::load("cube.mesh");
     //let file_cube_mesh_handle = meshes.add(file_cube_mesh);
-    let sphere_mesh_handle = meshes.add(Sphere::new(10));
-    let sphere_mesh_handle2 = meshes.add(Sphere::new(8));
+    let sphere_mesh_handle = meshes.add(shapes::Sphere::new(10));
+    let sphere_mesh_handle2 = meshes.add(shapes::Sphere::new(8));
 
     let red_mat_handle = materials.add(Color::from_rgb_f32(1.0, 0.0, 0.0));
     let blue_mat_handle = materials.add(Color::from_rgb_f32(0.0, 0.0, 1.0));

@@ -5,7 +5,6 @@ use crate::{
     assets::Assets,
     base::{CpuMaterial, CpuMesh, CpuTexture2D},
     base_set::{Draw, RenderSync},
-    components::{AmbientLight, DirectionalLight},
     resources::{RenderFrame, Time},
     Render,
 };

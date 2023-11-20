@@ -6,11 +6,11 @@ use render_api::{
     components::{CameraProjection, Transform},
 };
 
+use crate::renderer::lights_shader_source;
 use crate::{
     core::{Context, InstanceBuffer, Program, RenderStates},
     renderer::{GpuMesh, Instances, Light, Material, RenderCamera},
 };
-use crate::renderer::lights_shader_source;
 
 // Render Object
 #[derive(Clone)]
@@ -47,15 +47,12 @@ impl<'a> RenderObject<'a> {
 
     pub fn aabb(&self) -> AxisAlignedBoundingBox {
         if self.instanced_aabb.is_none() {
-            panic!(
-                "must call 'finalize()' on an instanced render object before calling 'aabb()'!"
-            );
+            panic!("must call 'finalize()' on an instanced render object before calling 'aabb()'!");
         }
         self.instanced_aabb.unwrap()
     }
 
     pub fn finalize(&mut self) {
-
         if self.instanced_aabb.is_some() {
             panic!("shouldn't call finalize twice on an instanced mesh...");
         }
@@ -89,7 +86,7 @@ impl RenderObjectInstanced {
 
         let instance_buffers = Self::create_instance_buffers(&instances);
 
-        let fragment_shader = material.fragment_shader(lights);
+        let fragment_shader = material.fragment_shader();
         let vertex_shader_source = Self::vertex_shader_source(lights);
         Context::get()
             .program(vertex_shader_source, fragment_shader.source, |program| {
@@ -137,7 +134,6 @@ impl RenderObjectInstanced {
     }
 
     fn vertex_shader_source(lights: &[&dyn Light]) -> String {
-
         let mut output = lights_shader_source(lights);
         output.push_str(include_str!("../shaders/mesh.vert"));
 

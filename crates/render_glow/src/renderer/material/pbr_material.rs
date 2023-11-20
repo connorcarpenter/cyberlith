@@ -40,11 +40,10 @@ impl PbrMaterial {
             albedo: cpu_material.albedo,
             metallic: cpu_material.metallic,
             roughness: cpu_material.roughness,
-            render_states:
-                RenderStates {
-                    cull: Cull::Back,
-                    ..Default::default()
-                },
+            render_states: RenderStates {
+                cull: Cull::Back,
+                ..Default::default()
+            },
             emissive: cpu_material.emissive,
         }
     }
@@ -57,7 +56,7 @@ impl FromPbrMaterial for PbrMaterial {
 }
 
 impl Material for PbrMaterial {
-    fn fragment_shader(&self, lights: &[&dyn Light]) -> FragmentShader {
+    fn fragment_shader(&self) -> FragmentShader {
         let attributes = FragmentAttributes {
             position: true,
             ..FragmentAttributes::NONE

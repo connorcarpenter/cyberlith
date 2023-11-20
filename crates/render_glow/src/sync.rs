@@ -3,7 +3,6 @@ use bevy_ecs::{change_detection::DetectChanges, system::ResMut};
 
 use render_api::{
     base::{CpuMaterial, CpuMesh, CpuTexture2D},
-    components::{AmbientLight, DirectionalLight},
     Assets, RenderSync,
 };
 

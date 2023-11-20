@@ -1,8 +1,8 @@
+use bevy_ecs::component::Component;
 use std::{
     default::Default,
     hash::{Hash, Hasher},
 };
-use bevy_ecs::component::Component;
 
 use math::Vec3;
 

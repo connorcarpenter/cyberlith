@@ -1,13 +1,11 @@
-
 use render_api::components::DirectionalLight;
 
-use crate::core::{Program};
-use crate::renderer::{Light};
+use crate::core::Program;
+use crate::renderer::Light;
 
 impl Light for DirectionalLight {
     fn shader_source(&self, i: u32) -> String {
-
-            format!(
+        format!(
                 "
                     uniform vec3 color{};
                     uniform vec3 direction{};

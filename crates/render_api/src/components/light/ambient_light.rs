@@ -1,7 +1,8 @@
 use std::hash::{Hash, Hasher};
+
 use bevy_ecs::component::Component;
 
-use crate::{base::Color, AssetHash};
+use crate::base::Color;
 
 ///
 /// A light which shines on all surfaces.

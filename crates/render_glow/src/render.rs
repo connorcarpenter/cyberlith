@@ -2,18 +2,14 @@ use bevy_ecs::system::{NonSendMut, Res, ResMut};
 
 use render_api::{
     base::{CpuMaterial, CpuMesh, CpuTexture2D},
-    components::{
-        AmbientLight, Camera, DirectionalLight, RenderLayers, RenderTarget as CameraRenderTarget,
-    },
+    components::{Camera, RenderLayers, RenderTarget as CameraRenderTarget},
     resources::RenderFrame,
 };
 
 use crate::{
     asset_mapping::AssetMapping,
     core::{GpuDepthTexture2D, GpuTexture2D, RenderTarget},
-    renderer::{
-        GpuMesh, Material, RenderPass, RenderTargetExt,
-    },
+    renderer::{GpuMesh, Material, RenderPass, RenderTargetExt},
     window::FrameInput,
 };
 

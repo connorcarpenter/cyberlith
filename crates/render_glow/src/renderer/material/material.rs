@@ -13,7 +13,7 @@ pub trait Material: Send + Sync {
     /// Returns a [FragmentShader], ie. the fragment shader source for this material
     /// and a [FragmentAttributes] struct that describes which fragment attributes are required for rendering with this material.
     ///
-    fn fragment_shader(&self, lights: &[&dyn Light]) -> FragmentShader;
+    fn fragment_shader(&self) -> FragmentShader;
 
     ///
     /// Sends the uniform data needed for this material to the fragment shader.

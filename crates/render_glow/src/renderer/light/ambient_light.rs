@@ -1,4 +1,3 @@
-
 use render_api::components::AmbientLight;
 
 use crate::{core::*, renderer::*};
