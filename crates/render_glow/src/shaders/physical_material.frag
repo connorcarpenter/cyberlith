@@ -21,7 +21,7 @@ void main()
 
     vec3 total_emissive = emissive.rgb;
 
-    outColor.rgb = total_emissive + calculate_lighting(camera_position, surface_color.rgb, frag_position, normal, metallic_factor, roughness_factor);
+    outColor.rgb = total_emissive + calculate_total_light(camera_position, surface_color.rgb, frag_position, normal, metallic_factor, roughness_factor);
     outColor.rgb = reinhard_tone_mapping(outColor.rgb);
     outColor.rgb = srgb_from_rgb(outColor.rgb);
     outColor.a = surface_color.a;

@@ -12,7 +12,7 @@ impl Light for PointLight {
             uniform vec3 attenuation{};
             uniform vec3 position{};
 
-            vec3 calculate_lighting{}(vec3 surface_color, vec3 position, vec3 normal, vec3 view_direction, float metallic, float roughness)
+            vec3 calculate_light_{}(vec3 surface_color, vec3 position, vec3 normal, vec3 view_direction, float metallic, float roughness)
             {{
                 vec3 light_direction = position{} - position;
                 float distance = length(light_direction);
