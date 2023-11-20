@@ -18,7 +18,7 @@ vec3 phong_specular(in vec3 view_dir, in vec3 light_dir, in vec3 normal, in vec3
 vec3 calculate_light(vec3 light_color, vec3 light_dir, vec3 surface_color, vec3 view_dir, vec3 normal, float metallic, float roughness)
 {
     // convert from right-handed y-up to left-handed z-up
-    vec3 new_light_dir = vec3(light_dir.x, light_dir.z, -light_dir.y);
+    vec3 new_light_dir = vec3(light_dir.x, -light_dir.z, -light_dir.y);
 
     // compute material reflectance
     float normal_dot_light_dir = max(0.001, dot(normal, new_light_dir));

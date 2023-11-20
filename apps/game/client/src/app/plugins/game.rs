@@ -18,7 +18,7 @@ use render_api::{
     shapes, Assets, Handle,
 };
 use render_api::components::PerspectiveProjection;
-use render_api::shapes::Sphere;
+use render_api::shapes::{Cube, Sphere};
 
 #[derive(Component)]
 pub struct CubeMarker;
@@ -89,6 +89,7 @@ fn setup(
     // top left cube (RED)
     commands
         .spawn(RenderObjectBundle {
+            //mesh: meshes.add(Cube),
             mesh: sphere_mesh_handle,
             material: red_mat_handle,
             transform: Transform::from_scale(Vec3::splat(50.0))
@@ -96,47 +97,48 @@ fn setup(
                 .with_rotation(Quat::from_axis_angle(Vec3::X, f32::to_radians(90.0))),
             ..Default::default()
         })
-        //.insert(CubeMarker)
+        .insert(CubeMarker)
         .insert(layer);
     // top right cube
-    commands
-        .spawn(RenderObjectBundle {
-            mesh: sphere_mesh_handle2,
-            material: blue_mat_handle,
-            transform: Transform::from_scale(Vec3::splat(30.0))
-                .with_translation(Vec3::new(100.0, 0.0, 70.0))
-                .with_rotation(Quat::from_axis_angle(Vec3::X, f32::to_radians(90.0))),
-            ..Default::default()
-        })
-        .insert(layer);
-    // bottom left cube
-    commands
-        .spawn(RenderObjectBundle {
-            mesh: sphere_mesh_handle2,
-            material: blue_mat_handle,
-            transform: Transform::from_scale(Vec3::splat(30.0))
-                .with_translation(Vec3::new(0.0, 100.0, 70.0))
-                .with_rotation(Quat::from_axis_angle(Vec3::X, f32::to_radians(90.0))),
-            ..Default::default()
-        })
-        .insert(layer);
+    // commands
+    //     .spawn(RenderObjectBundle {
+    //         mesh: sphere_mesh_handle2,
+    //         material: blue_mat_handle,
+    //         transform: Transform::from_scale(Vec3::splat(10.0))
+    //             .with_translation(Vec3::new(100.0, 0.0, 70.0))
+    //             .with_rotation(Quat::from_axis_angle(Vec3::X, f32::to_radians(90.0))),
+    //         ..Default::default()
+    //     })
+    //     .insert(CubeMarker)
+    //     .insert(layer);
+    // // bottom left cube
+    // commands
+    //     .spawn(RenderObjectBundle {
+    //         mesh: sphere_mesh_handle2,
+    //         material: blue_mat_handle,
+    //         transform: Transform::from_scale(Vec3::splat(30.0))
+    //             .with_translation(Vec3::new(0.0, 100.0, 70.0))
+    //             .with_rotation(Quat::from_axis_angle(Vec3::X, f32::to_radians(90.0))),
+    //         ..Default::default()
+    //     })
+    //     .insert(layer);
     // ambient light
     commands
         .spawn(ambient_lights.add(AmbientLight::new(0.1, Color::WHITE)))
         .insert(layer);
     // directional light
-    // let light_source = Vec3::new(0.0, 500.0, 10000.0);
-    // let light_target = Vec3::ZERO;
-    // commands
-    //     .spawn(dir_lights.add(DirectionalLight::new(
-    //         2.0,
-    //         Color::WHITE,
-    //         light_target - light_source,
-    //     )))
-    //     .insert(layer);
-    // point light
-    commands.spawn(PointLight::new(Vec3::new(0.0, 0.0, 100.0), 3.0, Color::WHITE, Default::default()))
+    let light_source = Vec3::new(500.0, 00.0, 00.0);
+    let light_target = Vec3::ZERO;
+    commands
+        .spawn(dir_lights.add(DirectionalLight::new(
+            2.0,
+            Color::WHITE,
+            light_target - light_source,
+        )))
         .insert(layer);
+    // point light
+    // commands.spawn(PointLight::new(Vec3::new(0.0, 0.0, 100.0), 3.0, Color::WHITE, Default::default()))
+    //     .insert(layer);
     // camera
     commands
         .spawn(CameraBundle {
@@ -167,7 +169,7 @@ fn setup(
 fn step(
     time: Res<Time>,
     mut cube_q: Query<&mut Transform, With<CubeMarker>>,
-    mut light_q: Query<&mut PointLight>,
+    // mut light_q: Query<&mut PointLight>,
     mut rotation: Local<f32>,
 ) {
     //info!("elapsed time: {}", frame_input.elapsed_time);
@@ -183,24 +185,25 @@ fn step(
         }
     }
 
-    let x = f32::to_radians(*rotation).cos() * 300.0;
-    let y = f32::to_radians(*rotation).sin() * 300.0;
+    let x = f32::to_radians(*rotation).cos() * 100.0;
+    let y = f32::to_radians(*rotation).sin() * 100.0;
 
-    // for mut transform in cube_q.iter_mut() {
-    //     // rotate position
-    //     transform.translation.x = x;
-    //     transform.translation.y = y;
-    //
-    //     // rotate model
-    //     transform.rotate_x(0.01 * elapsed_time);
-    //     transform.rotate_y(0.02 * elapsed_time);
-    // }
+    for mut transform in cube_q.iter_mut() {
+        // rotate position
+        transform.translation.x = x;
+        transform.translation.y = y;
+        // transform.translation.z = 200.0;
 
-    for mut point_light in light_q.iter_mut() {
-        point_light.position.x = x;
-        point_light.position.y = y;
-        point_light.position.z = 70.0;
+        // rotate model
+        transform.rotate_x(0.01 * elapsed_time);
+        transform.rotate_y(0.02 * elapsed_time);
     }
+
+    // for mut point_light in light_q.iter_mut() {
+    //     point_light.position.x = x;
+    //     point_light.position.y = y;
+    //     point_light.position.z = 200.0;
+    // }
 }
 
 pub fn draw(
