@@ -1,5 +1,4 @@
-use super::Buffer;
-use crate::core::*;
+use crate::core::{Buffer, BufferDataType};
 
 ///
 /// A buffer containing per vertex data, for example positions
@@ -10,14 +9,6 @@ pub struct VertexBuffer {
 }
 
 impl VertexBuffer {
-    ///
-    /// Creates a new empty vertex buffer.
-    ///
-    pub fn new() -> Self {
-        Self {
-            buffer: Buffer::new(),
-        }
-    }
 
     ///
     /// Creates a new vertex buffer and fills it with the given data. The data should be in the same format as specified in the shader.

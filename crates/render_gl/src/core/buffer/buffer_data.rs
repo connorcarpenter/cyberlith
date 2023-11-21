@@ -1,7 +1,7 @@
-use math::*;
+use math::{Quat, Vec2, Vec3, Vec4};
 use render_api::base::Color;
 
-use crate::core::*;
+use crate::core::{DataType, PrimitiveDataType};
 
 /// The basic data type used for each element in a [VertexBuffer] or [InstanceBuffer].
 pub trait BufferDataType: DataType {}

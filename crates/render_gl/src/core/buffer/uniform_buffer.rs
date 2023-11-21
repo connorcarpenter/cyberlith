@@ -1,13 +1,13 @@
-use gl::HasContext;
+use gl::{HasContext, Buffer as GlBuffer};
 
-use crate::core::*;
+use crate::core::{Context, to_byte_slice};
 
 ///
 /// A buffer for transferring a set of uniform variables to the shader program
 /// (see also [use_uniform_block](crate::core::Program::use_uniform_block)).
 ///
 pub struct UniformBuffer {
-    id: gl::Buffer,
+    id: GlBuffer,
     offsets: Vec<usize>,
     data: Vec<f32>,
 }

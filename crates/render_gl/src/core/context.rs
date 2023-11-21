@@ -92,7 +92,7 @@ impl Context {
             callback(&program);
             programs.insert(key, program);
             if programs.len() > 1 {
-                panic!("we are aiming for a single program for now. what happened?");
+                panic!("we are aiming for a single program. what happened?");
             }
         }
         Ok(())

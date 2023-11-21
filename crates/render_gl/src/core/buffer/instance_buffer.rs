@@ -1,4 +1,4 @@
-use crate::core::*;
+use crate::core::{Buffer, BufferDataType};
 
 ///
 /// A buffer containing per instance data.
@@ -9,14 +9,6 @@ pub struct InstanceBuffer {
 }
 
 impl InstanceBuffer {
-    ///
-    /// Creates a new empty instance buffer.
-    ///
-    pub fn new() -> Self {
-        Self {
-            buffer: Buffer::new(),
-        }
-    }
 
     ///
     /// Creates a new instance buffer and fills it with the given data. The data should be in the same format as specified in the shader.

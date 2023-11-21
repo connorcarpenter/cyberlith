@@ -1,9 +1,9 @@
-use gl::HasContext;
+use gl::{HasContext, Buffer as GlBuffer};
 
-use crate::core::*;
+use crate::core::{BufferDataType, Context, to_byte_slice};
 
 pub struct Buffer {
-    id: gl::Buffer,
+    id: GlBuffer,
     attribute_count: u32,
     pub data_type: u32,
     pub data_size: u32,
