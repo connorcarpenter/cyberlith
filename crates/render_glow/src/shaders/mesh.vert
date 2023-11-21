@@ -27,7 +27,7 @@ void main()
     world_position /= world_position.w;
     vec3 transformed_vertex_world_position = world_position.xyz;
 
-    // TODO: send this via a uniform instead of calculating here!
+    // TODO: send this via a uniform instead of calculating here?
     mat3 normal_matrix = mat3(transpose(inverse(transform)));
     vec3 transformed_vertex_world_normal = normalize(normal_matrix * vertex_world_normal);
 
