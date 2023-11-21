@@ -103,10 +103,10 @@ impl DrawArraysIndirectCommand {
 
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::new();
-        bytes.extend_from_slice(&self.count.to_ne_bytes());
-        bytes.extend_from_slice(&self.instance_count.to_ne_bytes());
-        bytes.extend_from_slice(&self.first.to_ne_bytes());
-        bytes.extend_from_slice(&self.base_instance.to_ne_bytes());
+        bytes.extend_from_slice(&self.count.to_le_bytes());
+        bytes.extend_from_slice(&self.instance_count.to_le_bytes());
+        bytes.extend_from_slice(&self.first.to_le_bytes());
+        bytes.extend_from_slice(&self.base_instance.to_le_bytes());
         bytes
     }
 }

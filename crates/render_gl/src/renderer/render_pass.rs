@@ -6,13 +6,13 @@ use render_api::{
     Handle,
 };
 
-use crate::renderer::{GpuMesh, Light, Material, RenderCamera, RenderObject};
+use crate::{renderer::{Light, Material, RenderCamera, RenderObject}, GpuMesh};
 
 // Render Pass
 pub struct RenderPass<'a> {
     pub camera: RenderCamera<'a>,
     pub lights: Vec<&'a dyn Light>,
-    objects: HashMap<(Handle<CpuMesh>, Handle<CpuMaterial>), RenderObject<'a>>,
+    objects: HashMap<Handle<CpuMaterial>, RenderObject>,
 }
 
 impl<'a> RenderPass<'a> {
@@ -32,26 +32,21 @@ impl<'a> RenderPass<'a> {
         &mut self,
         mesh_handle: &Handle<CpuMesh>,
         mat_handle: &Handle<CpuMaterial>,
-        mesh: &'a GpuMesh,
-        mat: &'a dyn Material,
         transform: &'a Transform,
     ) {
-        let key = (*mesh_handle, *mat_handle);
-        if let Some(object) = self.objects.get_mut(&key) {
-            object.add_transform(transform);
+        if let Some(object) = self.objects.get_mut(mat_handle) {
+            object.add_transform(mesh_handle, transform);
             return;
         } else {
-            let mut object = RenderObject::new(mesh, mat);
-            object.add_transform(transform);
-            self.objects.insert(key, object);
+            let mut object = RenderObject::new();
+            object.add_transform(mesh_handle, transform);
+            self.objects.insert(*mat_handle, object);
             return;
         }
     }
 
-    pub fn take(self) -> (RenderCamera<'a>, Vec<&'a dyn Light>, Vec<RenderObject<'a>>) {
-        let objects: Vec<RenderObject<'a>> =
-            self.objects.into_iter().map(|(_, object)| object).collect();
-        (self.camera, self.lights, objects)
+    pub fn take(self) -> (RenderCamera<'a>, Vec<&'a dyn Light>, HashMap<Handle<CpuMaterial>, RenderObject>) {
+        (self.camera, self.lights, self.objects)
     }
 
     pub fn process_camera(render: &RenderCamera<'a>) -> &'a Camera {

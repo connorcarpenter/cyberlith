@@ -1,8 +1,7 @@
-use bevy_log::info;
 
 use math::Vec3;
 
-use crate::base::{AxisAlignedBoundingBox, Error, Result};
+use crate::base::AxisAlignedBoundingBox;
 
 ///
 /// A CPU-side version of a triangle mesh.

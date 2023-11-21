@@ -3,6 +3,7 @@ use std::{
     ffi::{CStr, CString},
     num::NonZeroU32,
 };
+use log::info;
 
 use super::*;
 use crate::{gl46 as native_gl, version::Version};
@@ -2415,19 +2416,26 @@ impl HasContext for Context {
         draw_commands: Vec<DrawArraysIndirectCommand>,
     ) {
         let gl = &self.raw;
-        let draw_count = draw_commands.len();
 
-        let mut data: Vec<u8> = Vec::new();
+        if gl.MultiDrawArraysIndirect_is_loaded() {
+            let draw_count = draw_commands.len();
 
-        for draw_command in draw_commands {
-            data.extend(&draw_command.to_bytes());
+            let mut data: Vec<u8> = Vec::new();
+
+            for draw_command in draw_commands {
+                data.extend(&draw_command.to_bytes());
+            }
+
+            info!("about to call MultiDrawArraysIndirect");
+
+            gl.MultiDrawArraysIndirect(
+                mode,
+                data.as_ptr() as *const std::ffi::c_void,
+                draw_count as i32,
+                0, // docs say a stride of 0 means that the commands are tightly packed
+            );
+        } else {
+            panic!("MultiDrawArraysIndirect not supported");
         }
-
-        gl.MultiDrawArraysIndirect(
-            mode,
-            data.as_ptr() as *const std::ffi::c_void,
-            draw_count as i32,
-            0, // docs say a stride of 0 means that the commands are tightly packed
-        );
     }
 }

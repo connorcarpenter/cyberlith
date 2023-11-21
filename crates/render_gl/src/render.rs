@@ -6,7 +6,7 @@ use render_api::{
     resources::RenderFrame,
 };
 
-use crate::{asset_mapping::AssetMapping, core::{GpuDepthTexture2D, GpuTexture2D, RenderTarget}, GpuMeshManager, renderer::{GpuMesh, Material, RenderPass, RenderTargetExt}, window::FrameInput};
+use crate::{asset_mapping::AssetMapping, core::{GpuDepthTexture2D, GpuTexture2D, RenderTarget}, GpuMeshManager, renderer::{Material, RenderPass, RenderTargetExt}, window::FrameInput};
 
 pub fn render(
     mut render_frame: ResMut<RenderFrame>,
@@ -89,14 +89,9 @@ pub fn render(
                 panic!("Found render object with RenderLayer not associated with any Camera!");
             }
 
-            let mesh = gpu_mesh_manager.get(mesh_handle).unwrap();
-            let mat = materials.get(mat_handle).unwrap();
-
             camera_work[camera_index].as_mut().unwrap().add_object(
                 mesh_handle,
                 mat_handle,
-                mesh,
-                mat.as_ref(),
                 transform,
             );
         }
@@ -124,6 +119,6 @@ pub fn render(
         // Clear the color and depth of the screen render target using the camera's clear color
         render_target.clear((&render_pass.camera.camera.clear_operation).into());
 
-        render_target.render(render_pass);
+        render_target.render(&gpu_mesh_manager, &materials, render_pass);
     }
 }

@@ -10,17 +10,18 @@ pub fn cmp_render_order(
     obj0: &RenderObject,
     obj1: &RenderObject,
 ) -> std::cmp::Ordering {
-    let distance_a = camera
-        .transform
-        .translation
-        .distance_squared(obj0.aabb().center());
-    let distance_b = camera
-        .transform
-        .translation
-        .distance_squared(obj1.aabb().center());
-    if distance_a.is_nan() || distance_b.is_nan() {
-        distance_a.is_nan().cmp(&distance_b.is_nan()) // whatever - just save us from panicing on unwrap below
-    } else {
-        distance_a.partial_cmp(&distance_b).unwrap()
-    }
+    todo!()
+    // let distance_a = camera
+    //     .transform
+    //     .translation
+    //     .distance_squared(obj0.aabb().center());
+    // let distance_b = camera
+    //     .transform
+    //     .translation
+    //     .distance_squared(obj1.aabb().center());
+    // if distance_a.is_nan() || distance_b.is_nan() {
+    //     distance_a.is_nan().cmp(&distance_b.is_nan()) // whatever - just save us from panicing on unwrap below
+    // } else {
+    //     distance_a.partial_cmp(&distance_b).unwrap()
+    // }
 }

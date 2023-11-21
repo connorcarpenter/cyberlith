@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::RwLock};
 
-use gl::HasContext;
+use gl::{DrawArraysIndirectCommand, HasContext};
 
 use render_api::components::Viewport;
 
@@ -392,6 +392,32 @@ impl Program {
         self.use_program();
         unsafe {
             context.draw_arrays_instanced(gl::TRIANGLES, 0, count as i32, instance_count as i32);
+            context.bind_buffer(gl::ELEMENT_ARRAY_BUFFER, None);
+            for location in self.attributes.values() {
+                context.disable_vertex_attrib_array(*location);
+            }
+            context.bind_vertex_array(None);
+        }
+        self.unuse_program();
+
+        #[cfg(debug_assertions)]
+        context
+            .error_check()
+            .expect("Unexpected rendering error occured")
+    }
+
+    pub fn multi_draw_arrays_indirect(
+        &self,
+        render_states: RenderStates,
+        viewport: Viewport,
+        draw_commands: Vec<DrawArraysIndirectCommand>,
+    ) {
+        let context = Context::get();
+        context.set_viewport(viewport);
+        context.set_render_states(render_states);
+        self.use_program();
+        unsafe {
+            context.multi_draw_arrays_instanced(gl::TRIANGLES, draw_commands);
             context.bind_buffer(gl::ELEMENT_ARRAY_BUFFER, None);
             for location in self.attributes.values() {
                 context.disable_vertex_attrib_array(*location);

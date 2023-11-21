@@ -6,7 +6,7 @@ use render_api::{
     Assets, RenderSync,
 };
 
-use crate::{asset_mapping::AssetMapping, core::{GpuDepthTexture2D, GpuTexture2D}, GpuMeshManager, renderer::{GpuMesh, Material, PbrMaterial}};
+use crate::{asset_mapping::AssetMapping, core::{GpuDepthTexture2D, GpuTexture2D}, GpuMeshManager, renderer::{Material, PbrMaterial}};
 
 pub struct SyncPlugin;
 
@@ -37,16 +37,14 @@ fn sync_mesh_assets(
     let added_handles = cpu_assets.flush_added();
     for added_handle in added_handles {
         let cpu_data = cpu_assets.get(&added_handle).unwrap();
-        let gpu_data = GpuMesh::new(cpu_data);
-        gpu_mesh_manager.insert(added_handle, gpu_data);
+        gpu_mesh_manager.insert(added_handle, cpu_data);
     }
 
     // Handle Changed Meshes
     let changed_handles = cpu_assets.flush_changed();
     for changed_handle in changed_handles {
         let cpu_data = cpu_assets.get(&changed_handle).unwrap();
-        let gpu_data = GpuMesh::new(cpu_data);
-        gpu_mesh_manager.insert(changed_handle, gpu_data);
+        gpu_mesh_manager.insert(changed_handle, cpu_data);
     }
 
     // Handle Removed Meshes

@@ -59,10 +59,10 @@ const ROOM_WIDTH: f32 = 300.0;
 const ROOM_DEPTH: f32 = 300.0;
 const ROOM_HEIGHT: f32 = 200.0;
 const GRAVITY: f32 = 0.1;
-const BALL_COUNT: u32 = 1000;
+const BALL_COUNT: u32 = 100;
 const BALL_SIZE: f32 = 10.0;
-const MESH_COUNT: u32 = 100;
-const MAX_VELOCITY: f32 = 20.0;
+const MESH_COUNT: u32 = 2;
+const MAX_VELOCITY: f32 = 10.0;
 
 #[derive(Component)]
 struct Velocity(Vec3);
@@ -115,16 +115,16 @@ fn setup(
     }
 
     // plane
-    commands
-        .spawn(RenderObjectBundle {
-            mesh: meshes.add(shapes::Square),
-            material: materials.add(Color::from_rgb_f32(0.5, 0.5, 0.5)),
-            transform: Transform::from_scale(Vec3::new(ROOM_WIDTH, ROOM_DEPTH, 1.0))
-                .with_translation(Vec3::new(0.0, 0.0, 0.0)),
-            ..Default::default()
-        })
-        //.insert(CubeMarker)
-        .insert(layer);
+    // commands
+    //     .spawn(RenderObjectBundle {
+    //         mesh: meshes.add(shapes::Square),
+    //         material: materials.add(Color::from_rgb_f32(0.5, 0.5, 0.5)),
+    //         transform: Transform::from_scale(Vec3::new(ROOM_WIDTH, ROOM_DEPTH, 1.0))
+    //             .with_translation(Vec3::new(0.0, 0.0, 0.0)),
+    //         ..Default::default()
+    //     })
+    //     //.insert(CubeMarker)
+    //     .insert(layer);
 
     // ambient light
     commands

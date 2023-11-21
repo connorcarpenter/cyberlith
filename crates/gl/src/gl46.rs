@@ -4897,6 +4897,7 @@ unsafe fn call_atomic_ptr_15arg<Ret, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O
 pub use struct_commands::*;
 pub mod struct_commands {
     //! Contains the [`GlFns`] type for using the struct GL loader.
+    use log::info;
     use super::*;
     impl GlFns {
         /// Constructs a new struct with all pointers loaded by the `get_proc_address` given.
@@ -22157,6 +22158,8 @@ pub mod struct_commands {
             drawcount: GLsizei,
             stride: GLsizei,
         ) {
+            info!("inside MultiDrawArraysIndirect");
+
             #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
             {
                 trace!(

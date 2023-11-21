@@ -1,26 +1,22 @@
+use std::collections::HashMap;
+use render_api::base::CpuMaterial;
+
 use render_api::components::Viewport;
 
-use crate::renderer::{cmp_render_order, RenderPass};
+use crate::{AssetMapping, GpuMeshManager};
+use crate::renderer::{cmp_render_order, Material, RenderObjectInstanced, RenderPass};
 
 pub trait RenderTargetExt {
     fn width(&self) -> u32;
     fn height(&self) -> u32;
     fn write(&self, render: impl FnOnce()) -> &Self;
 
-    fn render(&self, render_pass: RenderPass) -> &Self {
+    fn render(&self, gpu_mesh_manager: &GpuMeshManager, materials: &AssetMapping<CpuMaterial, Box<dyn Material>>, render_pass: RenderPass) -> &Self {
         let (camera, lights, mut objects) = render_pass.take();
 
-        // Forward
-        for object in objects.iter_mut() {
-            object.finalize();
-        }
-
-        // we sort here front->back in order to take advantage of depth-test culling
-        objects.sort_by(|a, b| cmp_render_order(&camera, a, b));
-
         self.write(|| {
-            for object in objects {
-                object.render(&camera, &lights);
+            for (mat_handle, object) in objects {
+                RenderObjectInstanced::render(gpu_mesh_manager, materials, &camera, &lights, mat_handle, object);
             }
         });
         self
