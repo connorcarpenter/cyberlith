@@ -4,6 +4,7 @@ use bevy_ecs::{
     query::With,
     system::{Commands, Local, Query, Res, ResMut},
 };
+use rand::Rng;
 
 use math::{Quat, Vec3};
 use render_api::{
@@ -18,7 +19,7 @@ use render_api::{
 };
 
 #[derive(Component)]
-pub struct CubeMarker;
+pub struct BallMarker;
 
 pub struct GamePlugin;
 
@@ -54,6 +55,16 @@ impl Plugin for GamePlugin {
     }
 }
 
+const ROOM_WIDTH: f32 = 300.0;
+const ROOM_DEPTH: f32 = 300.0;
+const ROOM_HEIGHT: f32 = 200.0;
+const GRAVITY: f32 = 0.1;
+const BALL_COUNT: u32 = 100;
+const BALL_SIZE: f32 = 10.0;
+
+#[derive(Component)]
+struct Velocity(Vec3);
+
 fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<CpuMesh>>,
@@ -75,48 +86,40 @@ fn setup(
         .spawn(RenderObjectBundle {
             mesh: meshes.add(shapes::Square),
             material: materials.add(Color::from_rgb_f32(0.5, 0.5, 0.5)),
-            transform: Transform::from_scale(Vec3::new(300.0, 300.0, 1.0))
+            transform: Transform::from_scale(Vec3::new(ROOM_WIDTH, ROOM_DEPTH, 1.0))
                 .with_translation(Vec3::new(0.0, 0.0, 0.0)),
             ..Default::default()
         })
         //.insert(CubeMarker)
         .insert(layer);
-    // top left cube (RED)
-    commands
-        .spawn(RenderObjectBundle {
-            //mesh: meshes.add(shapes::Cube),
-            mesh: sphere_mesh_handle,
-            material: red_mat_handle,
-            transform: Transform::from_scale(Vec3::splat(50.0))
-                .with_translation(Vec3::new(0.0, 0.0, 70.0))
-                .with_rotation(Quat::from_axis_angle(Vec3::X, f32::to_radians(90.0))),
-            ..Default::default()
-        })
-        .insert(CubeMarker)
-        .insert(layer);
-    // top right cube
-    // commands
-    //     .spawn(RenderObjectBundle {
-    //         mesh: sphere_mesh_handle2,
-    //         material: blue_mat_handle,
-    //         transform: Transform::from_scale(Vec3::splat(10.0))
-    //             .with_translation(Vec3::new(100.0, 0.0, 70.0))
-    //             .with_rotation(Quat::from_axis_angle(Vec3::X, f32::to_radians(90.0))),
-    //         ..Default::default()
-    //     })
-    //     .insert(CubeMarker)
-    //     .insert(layer);
-    // // bottom left cube
-    // commands
-    //     .spawn(RenderObjectBundle {
-    //         mesh: sphere_mesh_handle2,
-    //         material: blue_mat_handle,
-    //         transform: Transform::from_scale(Vec3::splat(30.0))
-    //             .with_translation(Vec3::new(0.0, 100.0, 70.0))
-    //             .with_rotation(Quat::from_axis_angle(Vec3::X, f32::to_radians(90.0))),
-    //         ..Default::default()
-    //     })
-    //     .insert(layer);
+
+    let mut rng = rand::thread_rng();
+
+    // ballz
+    for _ in 0..BALL_COUNT {
+
+        let x = rng.gen_range(-ROOM_WIDTH .. ROOM_WIDTH);
+        let y = rng.gen_range(-ROOM_DEPTH .. ROOM_DEPTH);
+        let z = rng.gen_range(BALL_SIZE .. ROOM_HEIGHT);
+
+        let vx = rng.gen_range(-2.0 .. 2.0);
+        let vy = rng.gen_range(-2.0 .. 2.0);
+        let vz = rng.gen_range(-1.0 .. 1.0);
+
+        commands
+            .spawn(RenderObjectBundle {
+                //mesh: meshes.add(shapes::Cube),
+                mesh: sphere_mesh_handle,
+                material: red_mat_handle,
+                transform: Transform::from_scale(Vec3::splat(BALL_SIZE))
+                    .with_translation(Vec3::new(x,y,z)),
+                ..Default::default()
+            })
+            .insert(BallMarker)
+            .insert(Velocity(Vec3::new(vx,vy,vz)))
+            .insert(layer);
+    }
+
     // ambient light
     commands
         .spawn(AmbientLight::new(0.1, Color::WHITE))
@@ -134,6 +137,7 @@ fn setup(
     // point light
     // commands.spawn(PointLight::new(Vec3::new(0.0, 0.0, 100.0), 3.0, Color::WHITE, Default::default()))
     //     .insert(layer);
+
     // camera
     commands
         .spawn(CameraBundle {
@@ -163,7 +167,7 @@ fn setup(
 
 fn step(
     time: Res<Time>,
-    mut cube_q: Query<&mut Transform, With<CubeMarker>>,
+    mut ball_q: Query<(&mut Velocity, &mut Transform), With<BallMarker>>,
     // mut light_q: Query<&mut PointLight>,
     mut rotation: Local<f32>,
 ) {
@@ -180,18 +184,35 @@ fn step(
         }
     }
 
-    let x = f32::to_radians(*rotation).cos() * 100.0;
-    let y = f32::to_radians(*rotation).sin() * 100.0;
+    for (mut velocity, mut transform) in ball_q.iter_mut() {
+        transform.translation.x += velocity.0.x;
+        transform.translation.y += velocity.0.y;
+        transform.translation.z += velocity.0.z;
 
-    for mut transform in cube_q.iter_mut() {
-        // rotate position
-        transform.translation.x = x;
-        transform.translation.y = y;
-        // transform.translation.z = 200.0;
+        velocity.0.z -= GRAVITY;
 
-        // rotate model
-        transform.rotate_x(0.01 * elapsed_time);
-        transform.rotate_y(0.02 * elapsed_time);
+        if transform.translation.z < BALL_SIZE {
+            velocity.0.z = -velocity.0.z;
+            transform.translation.z = BALL_SIZE;
+        }
+
+        // keep within room X, Y
+        if transform.translation.x < -ROOM_WIDTH + BALL_SIZE {
+            velocity.0.x = -velocity.0.x;
+            transform.translation.x = -ROOM_WIDTH + BALL_SIZE;
+        }
+        if transform.translation.x > ROOM_WIDTH - BALL_SIZE {
+            velocity.0.x = -velocity.0.x;
+            transform.translation.x = ROOM_WIDTH - BALL_SIZE;
+        }
+        if transform.translation.y < -ROOM_DEPTH + BALL_SIZE {
+            velocity.0.y = -velocity.0.y;
+            transform.translation.y = -ROOM_DEPTH + BALL_SIZE;
+        }
+        if transform.translation.y > ROOM_DEPTH - BALL_SIZE {
+            velocity.0.y = -velocity.0.y;
+            transform.translation.y = ROOM_DEPTH - BALL_SIZE;
+        }
     }
 
     // for mut point_light in light_q.iter_mut() {

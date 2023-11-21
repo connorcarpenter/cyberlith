@@ -32,10 +32,13 @@ render_gl = { path = "../../../crates/render_gl", optional = true }
 
 # External Crates
 naia-bevy-client = { path = "../../../../naia/adapters/bevy/client", features = ["transport_webrtc"] }
+
 bevy_app = { version = "0.11", default-features=false }
 bevy_ecs = { version = "0.11", default-features=false }
 bevy_log = { version = "0.11", default-features=false }
+
 cfg-if = { version = "1.0" }
+rand = { version = "0.8.5" }
 
 # Wasm Only
 [target.'cfg(target_arch = "wasm32")'.dependencies]
