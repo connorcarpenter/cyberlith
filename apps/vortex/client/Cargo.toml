@@ -20,7 +20,7 @@ crate-type = ["cdylib", "rlib"]
 vortex_proto = { path = "../proto" }
 math = { path = "../../../crates/math" }
 render_api = { path = "../../../crates/render_api" }
-render_glow = { path = "../../../crates/render_glow" }
+render_gl = { path = "../../../crates/render_gl" }
 render_egui = { path = "../../../crates/render_egui" }
 input = { path = "../../../crates/input" }
 

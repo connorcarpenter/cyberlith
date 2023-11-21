@@ -1,8 +1,8 @@
 use input::{
-    Key as RenderGlowKey, Modifiers as RenderGlowModifiers, MouseButton as RenderGlowMouseButton,
+    Key as RenderglKey, Modifiers as RenderglModifiers, MouseButton as RenderglMouseButton,
 };
 
-pub fn glow_to_egui_key(key: &RenderGlowKey) -> egui::Key {
+pub fn gl_to_egui_key(key: &RenderglKey) -> egui::Key {
     use egui::Key;
     use input::Key::*;
     match key {
@@ -60,7 +60,7 @@ pub fn glow_to_egui_key(key: &RenderGlowKey) -> egui::Key {
     }
 }
 
-pub fn glow_to_egui_modifiers(modifiers: &RenderGlowModifiers) -> egui::Modifiers {
+pub fn gl_to_egui_modifiers(modifiers: &RenderglModifiers) -> egui::Modifiers {
     egui::Modifiers {
         alt: modifiers.alt,
         ctrl: modifiers.ctrl,
@@ -70,10 +70,10 @@ pub fn glow_to_egui_modifiers(modifiers: &RenderGlowModifiers) -> egui::Modifier
     }
 }
 
-pub fn glow_to_egui_mouse_button(button: &RenderGlowMouseButton) -> egui::PointerButton {
+pub fn gl_to_egui_mouse_button(button: &RenderglMouseButton) -> egui::PointerButton {
     match button {
-        RenderGlowMouseButton::Left => egui::PointerButton::Primary,
-        RenderGlowMouseButton::Right => egui::PointerButton::Secondary,
-        RenderGlowMouseButton::Middle => egui::PointerButton::Middle,
+        RenderglMouseButton::Left => egui::PointerButton::Primary,
+        RenderglMouseButton::Right => egui::PointerButton::Secondary,
+        RenderglMouseButton::Middle => egui::PointerButton::Middle,
     }
 }

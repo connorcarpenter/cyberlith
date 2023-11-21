@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-# should never include "render_glow" or "render_wgpu" here!
+# should never include "render_gl" or "render_wgpu" here!
 
 filetypes = { path = "../filetypes", features = ["read"] }
 render_api = { path = "../render_api" }

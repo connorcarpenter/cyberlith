@@ -7,7 +7,7 @@ edition = "2021"
 publish = false
 
 [features]
-glow_renderer = [ "render_glow" ]
+gl_renderer = [ "render_gl" ]
 wgpu_renderer = [ ]
 
 [[bin]]
@@ -27,8 +27,8 @@ render_api = { path = "../../../crates/render_api" }
 input = { path = "../../../crates/input" }
 asset = { path = "../../../crates/asset" }
 
-# `render_glow` and `render_wgpu` SHOULD *ALWAYS* be optional
-render_glow = { path = "../../../crates/render_glow", optional = true }
+# `render_gl` and `render_wgpu` SHOULD *ALWAYS* be optional
+render_gl = { path = "../../../crates/render_gl", optional = true }
 
 # External Crates
 naia-bevy-client = { path = "../../../../naia/adapters/bevy/client", features = ["transport_webrtc"] }

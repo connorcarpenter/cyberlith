@@ -3,16 +3,16 @@ use std::{cell::RefCell, ops::Deref};
 use bevy_ecs::system::Resource;
 use bevy_log::info;
 use egui::PlatformOutput;
-use egui_glow::{glow, Painter};
+use egui_gl::{gl, Painter};
 
 use input::{IncomingEvent, Modifiers};
 use render_api::components::Viewport;
-use render_glow::{
+use render_gl::{
     core::Context,
     window::{FrameInput, OutgoingEvent},
 };
 
-use crate::{glow_to_egui_key, glow_to_egui_modifiers, glow_to_egui_mouse_button};
+use crate::{gl_to_egui_key, gl_to_egui_modifiers, gl_to_egui_mouse_button};
 
 #[derive(Resource)]
 pub struct EguiContext(pub egui::Context);
@@ -85,7 +85,7 @@ impl GUI {
             }),
             pixels_per_point: Some(device_pixel_ratio as f32),
             time: Some(accumulated_time_in_ms * 0.001),
-            modifiers: glow_to_egui_modifiers(&self.modifiers),
+            modifiers: gl_to_egui_modifiers(&self.modifiers),
             events: events
                 .iter()
                 .filter_map(|event| match event {
@@ -96,9 +96,9 @@ impl GUI {
                     } => {
                         if !*handled {
                             Some(egui::Event::Key {
-                                key: glow_to_egui_key(kind),
+                                key: gl_to_egui_key(kind),
                                 pressed: true,
-                                modifiers: glow_to_egui_modifiers(modifiers),
+                                modifiers: gl_to_egui_modifiers(modifiers),
                                 repeat: false,
                             })
                         } else {
@@ -112,9 +112,9 @@ impl GUI {
                     } => {
                         if !*handled {
                             Some(egui::Event::Key {
-                                key: glow_to_egui_key(kind),
+                                key: gl_to_egui_key(kind),
                                 pressed: false,
-                                modifiers: glow_to_egui_modifiers(modifiers),
+                                modifiers: gl_to_egui_modifiers(modifiers),
                                 repeat: false,
                             })
                         } else {
@@ -133,9 +133,9 @@ impl GUI {
                                     x: position.0 as f32,
                                     y: position.1 as f32,
                                 },
-                                button: glow_to_egui_mouse_button(button),
+                                button: gl_to_egui_mouse_button(button),
                                 pressed: true,
-                                modifiers: glow_to_egui_modifiers(modifiers),
+                                modifiers: gl_to_egui_modifiers(modifiers),
                             })
                         } else {
                             None
@@ -153,9 +153,9 @@ impl GUI {
                                     x: position.0 as f32,
                                     y: position.1 as f32,
                                 },
-                                button: glow_to_egui_mouse_button(button),
+                                button: gl_to_egui_mouse_button(button),
                                 pressed: false,
-                                modifiers: glow_to_egui_modifiers(modifiers),
+                                modifiers: gl_to_egui_modifiers(modifiers),
                             })
                         } else {
                             None
@@ -234,12 +234,12 @@ impl GUI {
         #[cfg(not(target_arch = "wasm32"))]
         #[allow(unsafe_code)]
         unsafe {
-            use glow::HasContext as _;
-            self.painter.borrow().gl().disable(glow::FRAMEBUFFER_SRGB);
+            use gl::HasContext as _;
+            self.painter.borrow().gl().disable(gl::FRAMEBUFFER_SRGB);
         }
     }
 
-    pub fn add_texture(&mut self, native: glow::Texture) -> egui::TextureId {
+    pub fn add_texture(&mut self, native: gl::Texture) -> egui::TextureId {
         self.painter.borrow_mut().register_native_texture(native)
     }
 
@@ -247,7 +247,7 @@ impl GUI {
         self.painter.borrow_mut().free_texture(native_id);
     }
 
-    pub fn replace_texture(&mut self, id: egui::TextureId, texture: glow::Texture) {
+    pub fn replace_texture(&mut self, id: egui::TextureId, texture: gl::Texture) {
         self.painter
             .borrow_mut()
             .replace_native_texture(id, texture);

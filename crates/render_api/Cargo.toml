@@ -9,7 +9,7 @@ publish = false
 
 [dependencies]
 # Internal Crates
-# THIS SHOULD *NEVER* include render_glow, render_wgpu, or render_egui
+# THIS SHOULD *NEVER* include render_gl, render_wgpu, or render_egui
 math = { path = "../../crates/math" }
 
 # External Crates
