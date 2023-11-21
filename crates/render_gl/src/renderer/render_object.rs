@@ -60,7 +60,7 @@ impl<'a> RenderObject<'a> {
         self.instanced_aabb = {
             let mut aabb = AxisAlignedBoundingBox::EMPTY;
             for i in 0..self.transforms.len() as usize {
-                let mut aabb2 = self.mesh.aabb;
+                let mut aabb2 = self.mesh.aabb();
                 aabb2.transform(&(self.transforms[i]));
                 aabb.expand_with_aabb(&aabb2);
             }
@@ -81,8 +81,6 @@ impl RenderObjectInstanced {
         transforms: Vec<Mat4>,
     ) {
         let instances = Instances::new(transforms);
-        #[cfg(debug_assertions)]
-        instances.validate().expect("invalid instances");
 
         let instance_buffers = Self::create_instance_buffers(&instances);
 

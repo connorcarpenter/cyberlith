@@ -1,5 +1,6 @@
-pub use asset_mapping::AssetMapping;
-pub use plugin::RenderGlPlugin;
+pub use asset_mapping::*;
+pub use plugin::*;
+pub use gpu_mesh_manager::*;
 
 mod asset_mapping;
 mod base_set;
@@ -8,6 +9,7 @@ mod plugin;
 mod render;
 mod runner;
 mod sync;
+mod gpu_mesh_manager;
 
 pub mod core;
 pub mod renderer;

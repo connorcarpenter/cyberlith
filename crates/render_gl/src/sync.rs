@@ -6,11 +6,7 @@ use render_api::{
     Assets, RenderSync,
 };
 
-use crate::{
-    asset_mapping::AssetMapping,
-    core::{GpuDepthTexture2D, GpuTexture2D},
-    renderer::{GpuMesh, Material, PbrMaterial},
-};
+use crate::{asset_mapping::AssetMapping, core::{GpuDepthTexture2D, GpuTexture2D}, GpuMeshManager, renderer::{GpuMesh, Material, PbrMaterial}};
 
 pub struct SyncPlugin;
 
@@ -18,7 +14,7 @@ impl Plugin for SyncPlugin {
     fn build(&self, app: &mut App) {
         app
             // Resources
-            .init_resource::<AssetMapping<CpuMesh, GpuMesh>>()
+            .init_resource::<GpuMeshManager>()
             .init_resource::<AssetMapping<CpuMaterial, Box<dyn Material>>>()
             .init_resource::<AssetMapping<CpuTexture2D, GpuTexture2D>>()
             .init_resource::<AssetMapping<CpuTexture2D, GpuDepthTexture2D>>()
@@ -31,7 +27,7 @@ impl Plugin for SyncPlugin {
 
 fn sync_mesh_assets(
     mut cpu_assets: ResMut<Assets<CpuMesh>>,
-    mut gpu_assets: ResMut<AssetMapping<CpuMesh, GpuMesh>>,
+    mut gpu_mesh_manager: ResMut<GpuMeshManager>,
 ) {
     if !cpu_assets.is_changed() {
         return;
@@ -42,7 +38,7 @@ fn sync_mesh_assets(
     for added_handle in added_handles {
         let cpu_data = cpu_assets.get(&added_handle).unwrap();
         let gpu_data = GpuMesh::new(cpu_data);
-        gpu_assets.insert(added_handle, gpu_data);
+        gpu_mesh_manager.insert(added_handle, gpu_data);
     }
 
     // Handle Changed Meshes
@@ -50,13 +46,13 @@ fn sync_mesh_assets(
     for changed_handle in changed_handles {
         let cpu_data = cpu_assets.get(&changed_handle).unwrap();
         let gpu_data = GpuMesh::new(cpu_data);
-        gpu_assets.insert(changed_handle, gpu_data);
+        gpu_mesh_manager.insert(changed_handle, gpu_data);
     }
 
     // Handle Removed Meshes
     let removed_handles = cpu_assets.flush_removed();
     for removed_handle in removed_handles {
-        gpu_assets.remove(&removed_handle);
+        gpu_mesh_manager.remove(&removed_handle);
     }
 }
 

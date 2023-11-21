@@ -74,34 +74,6 @@ impl CpuMesh {
     }
 
     ///
-    /// Returns an error if the mesh is not valid.
-    ///
-    pub fn validate(&self) -> Result<()> {
-        let vertex_count = self.vertex_count();
-        let positions = self.vertices.len();
-        info!(
-            "validating mesh with {} vertices and {} positions",
-            vertex_count, positions
-        );
-        let buffer_check = |length: Option<usize>, name: &str| -> Result<()> {
-            if let Some(length) = length {
-                if length < vertex_count {
-                    Err(Error::InvalidBufferLength(
-                        name.to_string(),
-                        vertex_count,
-                        length,
-                    ))?;
-                }
-            }
-            Ok(())
-        };
-
-        buffer_check(Some(self.vertices.len()), "position")?;
-
-        Ok(())
-    }
-
-    ///
     /// Computes the per vertex normals and updates the normals of the mesh.
     /// It will override the current normals if they already exist.
     ///

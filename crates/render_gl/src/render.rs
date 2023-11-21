@@ -6,18 +6,13 @@ use render_api::{
     resources::RenderFrame,
 };
 
-use crate::{
-    asset_mapping::AssetMapping,
-    core::{GpuDepthTexture2D, GpuTexture2D, RenderTarget},
-    renderer::{GpuMesh, Material, RenderPass, RenderTargetExt},
-    window::FrameInput,
-};
+use crate::{asset_mapping::AssetMapping, core::{GpuDepthTexture2D, GpuTexture2D, RenderTarget}, GpuMeshManager, renderer::{GpuMesh, Material, RenderPass, RenderTargetExt}, window::FrameInput};
 
 pub fn render(
     mut render_frame: ResMut<RenderFrame>,
     frame_input: NonSendMut<FrameInput<()>>,
     // Resources
-    meshes: Res<AssetMapping<CpuMesh, GpuMesh>>,
+    gpu_mesh_manager: Res<GpuMeshManager>,
     materials: Res<AssetMapping<CpuMaterial, Box<dyn Material>>>,
     textures: ResMut<AssetMapping<CpuTexture2D, GpuTexture2D>>,
     depth_textures: ResMut<AssetMapping<CpuTexture2D, GpuDepthTexture2D>>,
@@ -94,7 +89,7 @@ pub fn render(
                 panic!("Found render object with RenderLayer not associated with any Camera!");
             }
 
-            let mesh = meshes.get(mesh_handle).unwrap();
+            let mesh = gpu_mesh_manager.get(mesh_handle).unwrap();
             let mat = materials.get(mat_handle).unwrap();
 
             camera_work[camera_index].as_mut().unwrap().add_object(
