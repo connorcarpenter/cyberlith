@@ -59,8 +59,10 @@ const ROOM_WIDTH: f32 = 300.0;
 const ROOM_DEPTH: f32 = 300.0;
 const ROOM_HEIGHT: f32 = 200.0;
 const GRAVITY: f32 = 0.1;
-const BALL_COUNT: u32 = 100;
+const BALL_COUNT: u32 = 1000;
 const BALL_SIZE: f32 = 10.0;
+const MESH_COUNT: u32 = 100;
+const MAX_VELOCITY: f32 = 20.0;
 
 #[derive(Component)]
 struct Velocity(Vec3);
@@ -72,30 +74,17 @@ fn setup(
 ) {
     let layer = RenderLayers::layer(0);
 
-    // load assets
-    //let file_cube_mesh = MeshFile::load("cube.mesh");
-    //let file_cube_mesh_handle = meshes.add(file_cube_mesh);
-    let sphere_mesh_handle = meshes.add(shapes::Sphere::new(10));
-    let sphere_mesh_handle2 = meshes.add(shapes::Sphere::new(8));
+    let mut sphere_mesh_handles = Vec::new();
+    for i in 0..MESH_COUNT {
+        sphere_mesh_handles.push(meshes.add(shapes::Sphere::new((i + 4) as u16)));
+    }
 
     let red_mat_handle = materials.add(Color::from_rgb_f32(1.0, 0.0, 0.0));
-    let blue_mat_handle = materials.add(Color::from_rgb_f32(0.0, 0.0, 1.0));
-
-    // plane
-    commands
-        .spawn(RenderObjectBundle {
-            mesh: meshes.add(shapes::Square),
-            material: materials.add(Color::from_rgb_f32(0.5, 0.5, 0.5)),
-            transform: Transform::from_scale(Vec3::new(ROOM_WIDTH, ROOM_DEPTH, 1.0))
-                .with_translation(Vec3::new(0.0, 0.0, 0.0)),
-            ..Default::default()
-        })
-        //.insert(CubeMarker)
-        .insert(layer);
 
     let mut rng = rand::thread_rng();
 
     // ballz
+    let mut mesh_index = 0;
     for _ in 0..BALL_COUNT {
 
         let x = rng.gen_range(-ROOM_WIDTH .. ROOM_WIDTH);
@@ -109,7 +98,7 @@ fn setup(
         commands
             .spawn(RenderObjectBundle {
                 //mesh: meshes.add(shapes::Cube),
-                mesh: sphere_mesh_handle,
+                mesh: sphere_mesh_handles[mesh_index],
                 material: red_mat_handle,
                 transform: Transform::from_scale(Vec3::splat(BALL_SIZE))
                     .with_translation(Vec3::new(x,y,z)),
@@ -118,7 +107,24 @@ fn setup(
             .insert(BallMarker)
             .insert(Velocity(Vec3::new(vx,vy,vz)))
             .insert(layer);
+
+        mesh_index += 1;
+        if mesh_index >= sphere_mesh_handles.len() {
+            mesh_index = 0;
+        }
     }
+
+    // plane
+    commands
+        .spawn(RenderObjectBundle {
+            mesh: meshes.add(shapes::Square),
+            material: materials.add(Color::from_rgb_f32(0.5, 0.5, 0.5)),
+            transform: Transform::from_scale(Vec3::new(ROOM_WIDTH, ROOM_DEPTH, 1.0))
+                .with_translation(Vec3::new(0.0, 0.0, 0.0)),
+            ..Default::default()
+        })
+        //.insert(CubeMarker)
+        .insert(layer);
 
     // ambient light
     commands
@@ -175,14 +181,14 @@ fn step(
 
     let elapsed_time = (time.get_elapsed() / 16.0) as f32;
 
-    if *rotation == 0.0 {
-        *rotation = 0.01;
-    } else {
-        *rotation += 1.0 * elapsed_time;
-        if *rotation > 359.0 {
-            *rotation = 0.01;
-        }
-    }
+    // if *rotation == 0.0 {
+    //     *rotation = 0.01;
+    // } else {
+    //     *rotation += 1.0 * elapsed_time;
+    //     if *rotation > 359.0 {
+    //         *rotation = 0.01;
+    //     }
+    // }
 
     for (mut velocity, mut transform) in ball_q.iter_mut() {
         transform.translation.x += velocity.0.x;
@@ -212,6 +218,10 @@ fn step(
         if transform.translation.y > ROOM_DEPTH - BALL_SIZE {
             velocity.0.y = -velocity.0.y;
             transform.translation.y = ROOM_DEPTH - BALL_SIZE;
+        }
+
+        if velocity.0.z > MAX_VELOCITY {
+            velocity.0.z = MAX_VELOCITY;
         }
     }
 
