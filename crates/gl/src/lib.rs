@@ -83,6 +83,34 @@ pub enum CompressedPixelUnpackData<'a> {
     Slice(&'a [u8]),
 }
 
+// these fields are ordered according to spec: https://docs.gl/gl4/glMultiDrawArraysIndirect
+pub struct DrawArraysIndirectCommand {
+    count: u32,
+    instance_count: u32,
+    first: u32,
+    base_instance: u32,
+}
+
+impl DrawArraysIndirectCommand {
+    pub fn new(count: u32, instance_count: u32, first: u32, base_instance: u32) -> Self {
+        Self {
+            count,
+            instance_count,
+            first,
+            base_instance,
+        }
+    }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut bytes = Vec::new();
+        bytes.extend_from_slice(&self.count.to_ne_bytes());
+        bytes.extend_from_slice(&self.instance_count.to_ne_bytes());
+        bytes.extend_from_slice(&self.first.to_ne_bytes());
+        bytes.extend_from_slice(&self.base_instance.to_ne_bytes());
+        bytes
+    }
+}
+
 pub trait HasContext {
     type Shader: Copy + Clone + Debug + Eq + Hash + Ord + PartialEq + PartialOrd;
     type Program: Copy + Clone + Debug + Eq + Hash + Ord + PartialEq + PartialOrd;
@@ -341,13 +369,7 @@ pub trait HasContext {
     unsafe fn multi_draw_arrays_instanced(
         &self,
         mode: u32,
-        firsts_list: &[i32],
-        firsts_offset: u32,
-        counts_list: &[i32],
-        counts_offset: u32,
-        instance_counts_list: &[i32],
-        instance_counts_offset: u32,
-        drawcount: i32,
+        draw_commands: Vec<DrawArraysIndirectCommand>,
     );
 
     unsafe fn draw_buffer(&self, buffer: u32);
