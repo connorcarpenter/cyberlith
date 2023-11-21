@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use gl::DrawArraysIndirectCommand;
 
-use math::Mat4;
+use math::{Mat4, Vec4};
 use render_api::{base::AxisAlignedBoundingBox, components::{CameraProjection, Transform}, Handle};
 use render_api::base::{CpuMaterial, CpuMesh};
 use render_api::components::Camera;
@@ -31,39 +31,47 @@ impl RenderObject{
 
     pub fn to_commands(self, gpu_mesh_manager: &GpuMeshManager) -> (Vec<DrawArraysIndirectCommand>, HashMap<String, InstanceBuffer>) {
 
-        let mut instance_buffers: HashMap<String, InstanceBuffer> = Default::default();
+        let mut mesh_handle_transform_map = self.mesh_handle_transform_map;
+
+        let mut instance_buffers: HashMap<String, Vec<Vec4>> = Default::default();
+        instance_buffers.insert("transform_row1".to_string(), Vec::new());
+        instance_buffers.insert("transform_row2".to_string(), Vec::new());
+        instance_buffers.insert("transform_row3".to_string(), Vec::new());
 
         let mut commands = Vec::new();
         let mut base_instance = 0;
-        for (mesh_handle, transforms) in self.mesh_handle_transform_map {
+
+        let mut mesh_handles = mesh_handle_transform_map.keys().map(|handle| *handle).collect::<Vec<_>>();
+        mesh_handles.sort();
+
+        for mesh_handle in mesh_handles {
+            let transforms = mesh_handle_transform_map.remove(&mesh_handle).unwrap();
             let gpu_mesh = gpu_mesh_manager.get(&mesh_handle).unwrap();
 
             let count = gpu_mesh.count();
             let instance_count = transforms.len();
             let first = gpu_mesh.first();
 
-            commands.push((mesh_handle, DrawArraysIndirectCommand::new(
+            commands.push(DrawArraysIndirectCommand::new(
                 count as u32,
                 instance_count as u32,
                 first as u32,
                 base_instance as u32,
-            )));
+            ));
 
             base_instance += instance_count;
 
             Self::instance_buffers_add(&mut instance_buffers, transforms);
         }
 
-        commands.sort_by(|(a, _), (b, _)| a.cmp(b));
-
-        // strip the handles from the commands
-        let commands: Vec<DrawArraysIndirectCommand> = commands.into_iter().map(|(_, command)| command).collect();
+        // convert instance buffers into instance buffers
+        let instance_buffers = instance_buffers.into_iter().map(|(name, data)| (name, InstanceBuffer::new_with_data(&data))).collect();
 
         (commands, instance_buffers)
     }
 
 
-    fn instance_buffers_add(instance_buffers: &mut HashMap<String, InstanceBuffer>, transforms: Vec<Mat4>) {
+    fn instance_buffers_add(instance_buffers: &mut HashMap<String, Vec<Vec4>>, transforms: Vec<Mat4>) {
         let indices = {
             // No need to order, just return the indices as is.
             (0..transforms.len()).collect::<Vec<usize>>()
@@ -80,18 +88,14 @@ impl RenderObject{
                 transform_row3.push(transformation.row(2));
             }
 
-            instance_buffers.insert(
-                "transform_row1".to_string(),
-                InstanceBuffer::new_with_data(&transform_row1),
-            );
-            instance_buffers.insert(
-                "transform_row2".to_string(),
-                InstanceBuffer::new_with_data(&transform_row2),
-            );
-            instance_buffers.insert(
-                "transform_row3".to_string(),
-                InstanceBuffer::new_with_data(&transform_row3),
-            );
+            let instance_buffer = instance_buffers.get_mut("transform_row1").unwrap();
+            instance_buffer.extend(transform_row1);
+
+            let instance_buffer = instance_buffers.get_mut("transform_row2").unwrap();
+            instance_buffer.extend(transform_row2);
+
+            let instance_buffer = instance_buffers.get_mut("transform_row3").unwrap();
+            instance_buffer.extend(transform_row3);
         }
     }
 }

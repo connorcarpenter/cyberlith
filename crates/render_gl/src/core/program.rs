@@ -39,6 +39,7 @@ impl Program {
 
             let header: &str = if context.version().is_embedded {
                 "#version 300 es
+                    #extension GL_ANGLE_multi_draw : require
                     #ifdef GL_FRAGMENT_PRECISION_HIGH
                         precision highp float;
                         precision highp int;
@@ -51,7 +52,8 @@ impl Program {
                         precision mediump sampler3D;
                     #endif\n"
             } else {
-                "#version 330 core\n"
+                "#version 330 core\
+                    #extension GL_ANGLE_multi_draw : require\n"
             };
             let vertex_shader_source = format!("{}{}", header, vertex_shader_source);
             let fragment_shader_source = format!("{}{}", header, fragment_shader_source);
@@ -375,10 +377,6 @@ impl Program {
             .expect("Unexpected rendering error occured")
     }
 
-    ///
-    /// Same as [Program::draw_arrays] except it renders 'instance_count' instances of the same set of triangles.
-    /// Use the [Program::use_instance_attribute], method to send unique data for each instance to the shader.
-    ///
     pub fn draw_arrays_instanced(
         &self,
         render_states: RenderStates,
