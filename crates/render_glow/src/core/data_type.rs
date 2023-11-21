@@ -454,13 +454,7 @@ impl DataType for Color {
     fn send_uniform(location: &UniformLocation, data: &[Self]) {
         let data = data
             .iter()
-            .flat_map(|v| {
-                [
-                    v.r as f32 / 255.0,
-                    v.g as f32 / 255.0,
-                    v.b as f32 / 255.0,
-                ]
-            })
+            .flat_map(|v| [v.r as f32 / 255.0, v.g as f32 / 255.0, v.b as f32 / 255.0])
             .collect::<Vec<_>>();
         f32::send_uniform_with_type(location, &data, UniformType::Vec3)
     }

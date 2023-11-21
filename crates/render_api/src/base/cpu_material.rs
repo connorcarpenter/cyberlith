@@ -1,9 +1,7 @@
-
 use crate::base::Color;
 
 #[derive(Debug, Clone)]
 pub struct CpuMaterial {
-
     pub name: String,
     pub diffuse: Color,
     pub emissive: Color,

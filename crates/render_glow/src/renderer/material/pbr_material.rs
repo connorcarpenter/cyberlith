@@ -88,7 +88,6 @@ impl Default for PbrMaterial {
             emissive: Color::BLACK,
             shininess: 32.0,
             render_states: RenderStates::default(),
-
         }
     }
 }
