@@ -1,5 +1,5 @@
 pub use asset_mapping::AssetMapping;
-pub use plugin::RenderglPlugin;
+pub use plugin::RenderGlPlugin;
 
 mod asset_mapping;
 mod base_set;

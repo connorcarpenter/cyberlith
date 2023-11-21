@@ -7,12 +7,12 @@ use bevy_ecs::schedule::{ExecutorKind, Schedule};
 use render_api::{Render, Window};
 
 use crate::{
-    base_set::glInput, input, render::render, runner::runner_func, sync::SyncPlugin, window,
+    base_set::GlInput, input, render::render, runner::runner_func, sync::SyncPlugin, window,
 };
 
-pub struct RenderglPlugin;
+pub struct RenderGlPlugin;
 
-impl Plugin for RenderglPlugin {
+impl Plugin for RenderGlPlugin {
     fn build(&self, app: &mut App) {
         app
             // Plugins
@@ -25,16 +25,16 @@ impl Plugin for RenderglPlugin {
             // Systems
             .add_systems(PreStartup, window::sync)
             .add_systems(First, window::sync)
-            .add_systems(glInput, input::run)
+            .add_systems(GlInput, input::run)
             .add_systems(Render, render);
 
         let mut order = app.world.resource_mut::<MainScheduleOrder>();
-        order.insert_after(PreUpdate, glInput);
+        order.insert_after(PreUpdate, GlInput);
 
         let make_single_threaded_fn = |schedule: &mut Schedule| {
             schedule.set_executor_kind(ExecutorKind::SingleThreaded);
         };
-        app.edit_schedule(glInput, make_single_threaded_fn.clone());
+        app.edit_schedule(GlInput, make_single_threaded_fn.clone());
     }
 }
 

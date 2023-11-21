@@ -18,43 +18,36 @@ impl AssetHash<CpuMaterial> for Color {}
 
 impl Color {
     /// Opaque red
-    pub const RED: Color = Color::new_opaque(255, 0, 0);
+    pub const RED: Color = Color::new(255, 0, 0);
     /// Opaque green
-    pub const GREEN: Color = Color::new_opaque(0, 255, 0);
+    pub const GREEN: Color = Color::new(0, 255, 0);
     /// Opaque light green
-    pub const LIGHT_GREEN: Color = Color::new_opaque(16, 255, 16);
+    pub const LIGHT_GREEN: Color = Color::new(16, 255, 16);
     /// Opaque dark green
-    pub const DARK_GREEN: Color = Color::new_opaque(0, 16, 0);
+    pub const DARK_GREEN: Color = Color::new(0, 16, 0);
     /// Opaque blue
-    pub const BLUE: Color = Color::new_opaque(0, 64, 255);
+    pub const BLUE: Color = Color::new(0, 64, 255);
     /// Opaque light blue
-    pub const LIGHT_BLUE: Color = Color::new_opaque(0, 32, 255);
+    pub const LIGHT_BLUE: Color = Color::new(0, 32, 255);
     /// Opaque dark blue
-    pub const DARK_BLUE: Color = Color::new_opaque(0, 48, 192);
+    pub const DARK_BLUE: Color = Color::new(0, 48, 192);
     /// Opaque aqua
-    pub const AQUA: Color = Color::new_opaque(0, 255, 255);
+    pub const AQUA: Color = Color::new(0, 255, 255);
     /// Opaque white
-    pub const WHITE: Color = Color::new_opaque(255, 255, 255);
+    pub const WHITE: Color = Color::new(255, 255, 255);
     /// Opaque black
-    pub const BLACK: Color = Color::new_opaque(0, 0, 0);
+    pub const BLACK: Color = Color::new(0, 0, 0);
     /// Opaque dark gray
-    pub const LIGHT_GRAY: Color = Color::new_opaque(64, 64, 64);
+    pub const LIGHT_GRAY: Color = Color::new(64, 64, 64);
     /// Opaque gray
-    pub const GRAY: Color = Color::new_opaque(40, 40, 40);
+    pub const GRAY: Color = Color::new(40, 40, 40);
     /// Opaque light gray
-    pub const DARK_GRAY: Color = Color::new_opaque(16, 16, 16);
-
-    ///
-    /// Creates a new color with the given values.
-    ///
-    pub const fn new(r: u8, g: u8, b: u8, a: u8) -> Self {
-        Self { r, g, b }
-    }
+    pub const DARK_GRAY: Color = Color::new(16, 16, 16);
 
     ///
     /// Creates a new color with the given red, green and blue values
     ///
-    pub const fn new_opaque(r: u8, g: u8, b: u8) -> Self {
+    pub const fn new(r: u8, g: u8, b: u8) -> Self {
         Self { r, g, b }
     }
 

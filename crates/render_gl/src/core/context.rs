@@ -20,7 +20,7 @@ pub static mut CONTEXT: Option<Context> = None;
 #[derive(Clone)]
 pub struct Context {
     context: Arc<gl::Context>,
-    pub(super) vao: gl::VertexArray,
+    vao: gl::VertexArray,
     programs: Arc<RwLock<HashMap<(String, String), Program>>>,
 }
 
@@ -69,6 +69,10 @@ impl Context {
         }
     }
 
+    pub fn vao(&self) -> gl::VertexArray {
+        self.vao
+    }
+
     ///
     /// Compiles a [Program] with the given vertex and fragment shader source and stores it for later use.
     /// If it has already been created, then it is just returned.
@@ -87,6 +91,9 @@ impl Context {
             let program = Program::from_source(&key.0, &key.1)?;
             callback(&program);
             programs.insert(key, program);
+            if programs.len() > 1 {
+                panic!("we are aiming for a single program for now. what happened?");
+            }
         }
         Ok(())
     }

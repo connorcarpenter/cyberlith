@@ -267,7 +267,7 @@ impl Program {
             buffer.bind();
             let loc = self.location(name);
             unsafe {
-                context.bind_vertex_array(Some(context.vao));
+                context.bind_vertex_array(Some(context.vao()));
                 context.enable_vertex_attrib_array(loc);
                 if buffer.data_type() == gl::UNSIGNED_SHORT
                     || buffer.data_type() == gl::SHORT
@@ -319,7 +319,7 @@ impl Program {
             buffer.bind();
             let loc = self.location(name);
             unsafe {
-                context.bind_vertex_array(Some(context.vao));
+                context.bind_vertex_array(Some(context.vao()));
                 context.enable_vertex_attrib_array(loc);
                 if buffer.data_type() == gl::UNSIGNED_SHORT
                     || buffer.data_type() == gl::SHORT

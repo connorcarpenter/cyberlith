@@ -1029,7 +1029,7 @@ fn set_face_3d_colors(
         return;
     };
     let background_color = palette_color_q.get(*background_color_entity).unwrap();
-    let bckg_mat_handle = materials.add(Color::new_opaque(
+    let bckg_mat_handle = materials.add(Color::new(
         *background_color.r,
         *background_color.g,
         *background_color.b,
@@ -1046,7 +1046,7 @@ fn set_face_3d_colors(
             let face_color = face_color_q.get(*face_color_entity).unwrap();
             let palette_color_entity = face_color.palette_color_entity.get(client).unwrap();
             let palette_color = palette_color_q.get(palette_color_entity).unwrap();
-            new_mat_handle = materials.add(Color::new_opaque(
+            new_mat_handle = materials.add(Color::new(
                 *palette_color.r,
                 *palette_color.g,
                 *palette_color.b,
@@ -1104,7 +1104,7 @@ fn set_icon_face_colors(
 
         let palette_color_entity = icon_face.palette_color_entity.get(client).unwrap();
         let palette_color = palette_color_q.get(palette_color_entity).unwrap();
-        new_mat_handle = materials.add(Color::new_opaque(
+        new_mat_handle = materials.add(Color::new(
             *palette_color.r,
             *palette_color.g,
             *palette_color.b,
