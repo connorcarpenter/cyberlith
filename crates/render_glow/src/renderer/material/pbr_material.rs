@@ -10,16 +10,11 @@ use crate::{core::*, renderer::*};
 pub struct PbrMaterial {
     /// Name.
     pub name: String,
-    /// Albedo base color, also called diffuse color. Assumed to be in linear color space.
-    pub albedo: Color,
-    /// A value in the range `[0..1]` specifying how metallic the surface is.
-    pub metallic: f32,
-    /// A value in the range `[0..1]` specifying how rough the surface is.
-    pub roughness: f32,
+    pub diffuse: Color,
+    pub emissive: Color,
+    pub shininess: f32,
     /// Render states.
     pub render_states: RenderStates,
-    /// Color of light shining from an object.
-    pub emissive: Color,
 }
 
 impl PbrMaterial {
@@ -37,14 +32,13 @@ impl PbrMaterial {
     fn new_internal(cpu_material: &CpuMaterial) -> Self {
         Self {
             name: cpu_material.name.clone(),
-            albedo: cpu_material.albedo,
-            metallic: cpu_material.metallic,
-            roughness: cpu_material.roughness,
+            diffuse: cpu_material.diffuse,
+            emissive: cpu_material.emissive,
+            shininess: cpu_material.shininess,
             render_states: RenderStates {
                 cull: Cull::Back,
                 ..Default::default()
             },
-            emissive: cpu_material.emissive,
         }
     }
 }
@@ -70,15 +64,15 @@ impl Material for PbrMaterial {
 
     fn use_uniforms(&self, program: &Program, camera: &RenderCamera, lights: &[&dyn Light]) {
         if !lights.is_empty() {
-            program.use_uniform_if_required("camera_position", camera.transform.translation);
             for (i, light) in lights.iter().enumerate() {
                 light.use_uniforms(program, i as u32);
             }
-            program.use_uniform("metallic", self.metallic);
-            program.use_uniform_if_required("roughness", self.roughness);
         }
-        program.use_uniform("albedo", self.albedo);
-        program.use_uniform("emissive", self.emissive);
+        program.use_uniform_if_required("camera_position", camera.transform.translation);
+
+        program.use_uniform("material_color", self.diffuse);
+        program.use_uniform("material_emissive", self.emissive);
+        program.use_uniform("material_shininess", self.shininess);
     }
 
     fn render_states(&self) -> RenderStates {
@@ -90,11 +84,11 @@ impl Default for PbrMaterial {
     fn default() -> Self {
         Self {
             name: "default".to_string(),
-            albedo: Color::WHITE,
-            metallic: 0.0,
-            roughness: 1.0,
-            render_states: RenderStates::default(),
+            diffuse: Color::WHITE,
             emissive: Color::BLACK,
+            shininess: 32.0,
+            render_states: RenderStates::default(),
+
         }
     }
 }

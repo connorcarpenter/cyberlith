@@ -12,8 +12,6 @@ pub struct Color {
     pub g: u8,
     /// Blue component
     pub b: u8,
-    /// Alpha component
-    pub a: u8,
 }
 
 impl AssetHash<CpuMaterial> for Color {}
@@ -50,37 +48,25 @@ impl Color {
     /// Creates a new color with the given values.
     ///
     pub const fn new(r: u8, g: u8, b: u8, a: u8) -> Self {
-        Self { r, g, b, a }
+        Self { r, g, b }
     }
 
     ///
-    /// Creates a new color with the given red, green and blue values and an alpha value of 255.
+    /// Creates a new color with the given red, green and blue values
     ///
     pub const fn new_opaque(r: u8, g: u8, b: u8) -> Self {
-        Self { r, g, b, a: 255 }
+        Self { r, g, b }
     }
 
     ///
     /// Creates a new color from three float elements where each element are in the range `0.0..=1.0`.
     ///
-    pub fn from_rgb_slice(rgba: &[f32; 3]) -> Self {
+    pub fn from_rgb_slice(rgb: &[f32; 3]) -> Self {
         Self {
-            r: (rgba[0] * 255.0) as u8,
-            g: (rgba[1] * 255.0) as u8,
-            b: (rgba[2] * 255.0) as u8,
+            r: (rgb[0] * 255.0) as u8,
+            g: (rgb[1] * 255.0) as u8,
+            b: (rgb[2] * 255.0) as u8,
             ..Default::default()
-        }
-    }
-
-    ///
-    /// Creates a new color from four float elements where each element are in the range `0.0..=1.0`.
-    ///
-    pub fn from_rgba_slice(rgba: &[f32; 4]) -> Self {
-        Self {
-            r: (rgba[0] * 255.0) as u8,
-            g: (rgba[1] * 255.0) as u8,
-            b: (rgba[2] * 255.0) as u8,
-            a: (rgba[3] * 255.0) as u8,
         }
     }
 
@@ -93,32 +79,12 @@ impl Color {
         )
     }
 
-    /// Convert to [`Vec4`] by mapping each component to the range `0.0..=1.0`.
-    pub fn to_vec4(&self) -> Vec4 {
-        Vec4::new(
-            self.r as f32 / 255.0,
-            self.g as f32 / 255.0,
-            self.b as f32 / 255.0,
-            self.a as f32 / 255.0,
-        )
-    }
-
     /// Convert to a slice by mapping the red, green and blue component to the range `0.0..=1.0`.
     pub fn to_rgb_slice(&self) -> [f32; 3] {
         [
             self.r as f32 / 255.0,
             self.g as f32 / 255.0,
             self.b as f32 / 255.0,
-        ]
-    }
-
-    /// Convert to a slice by mapping each component to the range `0.0..=1.0`.
-    pub fn to_rgba_slice(&self) -> [f32; 4] {
-        [
-            self.r as f32 / 255.0,
-            self.g as f32 / 255.0,
-            self.b as f32 / 255.0,
-            self.a as f32 / 255.0,
         ]
     }
 
@@ -135,11 +101,5 @@ impl Color {
 impl Default for Color {
     fn default() -> Self {
         Color::WHITE
-    }
-}
-
-impl From<[f32; 4]> for Color {
-    fn from(rgba: [f32; 4]) -> Self {
-        Self::from_rgba_slice(&rgba)
     }
 }

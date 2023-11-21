@@ -84,7 +84,7 @@ fn setup(
     // top left cube (RED)
     commands
         .spawn(RenderObjectBundle {
-            //mesh: meshes.add(Cube),
+            //mesh: meshes.add(shapes::Cube),
             mesh: sphere_mesh_handle,
             material: red_mat_handle,
             transform: Transform::from_scale(Vec3::splat(50.0))
@@ -122,7 +122,7 @@ fn setup(
         .spawn(AmbientLight::new(0.1, Color::WHITE))
         .insert(layer);
     // directional light
-    let light_source = Vec3::new(500.0, 500.0, 1000.0);
+    let light_source = Vec3::new(-500.0, 500.0, 200.0);
     let light_target = Vec3::ZERO;
     commands
         .spawn(DirectionalLight::new(

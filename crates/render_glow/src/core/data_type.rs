@@ -459,11 +459,10 @@ impl DataType for Color {
                     v.r as f32 / 255.0,
                     v.g as f32 / 255.0,
                     v.b as f32 / 255.0,
-                    v.a as f32 / 255.0,
                 ]
             })
             .collect::<Vec<_>>();
-        f32::send_uniform_with_type(location, &data, UniformType::Vec4)
+        f32::send_uniform_with_type(location, &data, UniformType::Vec3)
     }
 }
 

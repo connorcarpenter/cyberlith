@@ -114,7 +114,7 @@ impl RenderObjectInstanced {
         let camera = render_camera.camera;
 
         program.use_uniform(
-            "viewProjection",
+            "view_projection",
             render_camera
                 .projection
                 .projection_matrix(&camera.viewport_or_default())

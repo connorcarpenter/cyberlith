@@ -1,9 +1,9 @@
 
-flat in vec4 inColor;
+flat in vec3 color;
 
-layout (location = 0) out vec4 outColor;
+layout (location = 0) out vec3 final_color;
 
 void main()
 {
-    outColor = inColor;
+    final_color = color;
 }
