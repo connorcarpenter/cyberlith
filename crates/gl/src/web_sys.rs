@@ -1766,7 +1766,7 @@ impl HasContext for Context {
             instance_counts_list.push(command.instance_count as i32);
         }
 
-        info!("calling multi_draw_arrays({:?}, {:?}, {:?}, {:?})", firsts_list, counts_list, instance_counts_list, draw_count);
+        // info!("calling multi_draw_arrays({:?}, {:?}, {:?}, {:?})", firsts_list, counts_list, instance_counts_list, draw_count);
 
         ext.multi_draw_arrays_instanced_webgl_with_i32_array_and_i32_array_and_i32_array(
             mode,

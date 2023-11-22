@@ -105,6 +105,24 @@ impl GpuTexture2D {
         }
     }
 
+    pub fn fill_pure<T: TextureDataType>(&mut self, data: &[T]) {
+        check_data_length::<T>(self.width, self.height, 1, self.data_byte_size, data.len());
+        self.bind();
+        unsafe {
+            Context::get().tex_sub_image_2d(
+                gl::TEXTURE_2D,
+                0,
+                0,
+                0,
+                self.width as i32,
+                self.height as i32,
+                format_from_data_type::<T>(),
+                T::data_type(),
+                gl::PixelUnpackData::Slice(to_byte_slice(&data)),
+            );
+        }
+    }
+
     ///
     /// Returns a [ColorTarget] which can be used to clear, write to and read from the given mip level of this texture.
     /// Combine this together with a [DepthTarget] with [RenderTarget::new] to be able to write to both a depth and color target at the same time.

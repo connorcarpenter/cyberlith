@@ -7,6 +7,7 @@ use render_api::base::{CpuMaterial, CpuMesh};
 use render_api::components::Camera;
 
 use crate::{AssetMapping, core::{Context, InstanceBuffer, Program, RenderStates}, GpuMesh, GpuMeshManager, renderer::{Instances, lights_shader_source, Light, Material, RenderCamera}};
+use crate::core::GpuTexture2D;
 
 // Render Object
 #[derive(Clone)]
@@ -29,17 +30,14 @@ impl RenderObject{
         map.push(transform.compute_matrix());
     }
 
-    pub fn to_commands(self, gpu_mesh_manager: &GpuMeshManager) -> (Vec<DrawArraysIndirectCommand>, HashMap<String, InstanceBuffer>) {
+    pub fn to_commands(self, gpu_mesh_manager: &GpuMeshManager) -> (Vec<DrawArraysIndirectCommand>, Vec<[f32; 4]>, usize) {
 
         let mut mesh_handle_transform_map = self.mesh_handle_transform_map;
 
-        let mut instance_buffers: HashMap<String, Vec<Vec4>> = Default::default();
-        instance_buffers.insert("transform_row1".to_string(), Vec::new());
-        instance_buffers.insert("transform_row2".to_string(), Vec::new());
-        instance_buffers.insert("transform_row3".to_string(), Vec::new());
-
         let mut commands = Vec::new();
+        let mut transform_rows = Vec::new();
         let mut base_instance = 0;
+        let mut max_instance_count = 0;
 
         let mut mesh_handles = mesh_handle_transform_map.keys().map(|handle| *handle).collect::<Vec<_>>();
         mesh_handles.sort();
@@ -50,6 +48,7 @@ impl RenderObject{
 
             let count = gpu_mesh.count();
             let instance_count = transforms.len();
+            max_instance_count = max_instance_count.max(instance_count);
             let first = gpu_mesh.first();
 
             commands.push(DrawArraysIndirectCommand::new(
@@ -61,17 +60,32 @@ impl RenderObject{
 
             base_instance += instance_count;
 
-            Self::instance_buffers_add(&mut instance_buffers, transforms);
+            let transform_row = Self::get_transform_row(transforms);
+            transform_rows.push(transform_row);
         }
 
-        // convert instance buffers into instance buffers
-        let instance_buffers = instance_buffers.into_iter().map(|(name, data)| (name, InstanceBuffer::new_with_data(&data))).collect();
+        // convert transform rows to grid
+        let mut transform_grid: Vec<[f32; 4]> = Vec::new();
+        let transform_grid_width = max_instance_count * 3;
+        for transform_row in transform_rows {
+            let row_count = transform_row.len();
+            let pad_count = transform_grid_width - row_count;
+            for transform_cell in transform_row {
+                transform_grid.push(transform_cell);
+            }
+            for _ in 0..pad_count {
+                transform_grid.push([0.0; 4]);
+            }
+        }
 
-        (commands, instance_buffers)
+        (commands, transform_grid, max_instance_count)
     }
 
 
-    fn instance_buffers_add(instance_buffers: &mut HashMap<String, Vec<Vec4>>, transforms: Vec<Mat4>) {
+    fn get_transform_row(transforms: Vec<Mat4>) -> Vec<[f32; 4]> {
+
+        let mut transform_row = Vec::new();
+
         let indices = {
             // No need to order, just return the indices as is.
             (0..transforms.len()).collect::<Vec<usize>>()
@@ -79,24 +93,14 @@ impl RenderObject{
 
         // Next, we can compute the instance buffers with that ordering.
         {
-            let mut transform_row1 = Vec::new();
-            let mut transform_row2 = Vec::new();
-            let mut transform_row3 = Vec::new();
             for transformation in indices.iter().map(|i| transforms[*i]) {
-                transform_row1.push(transformation.row(0));
-                transform_row2.push(transformation.row(1));
-                transform_row3.push(transformation.row(2));
+                transform_row.push(transformation.row(0).to_array());
+                transform_row.push(transformation.row(1).to_array());
+                transform_row.push(transformation.row(2).to_array());
             }
-
-            let instance_buffer = instance_buffers.get_mut("transform_row1").unwrap();
-            instance_buffer.extend(transform_row1);
-
-            let instance_buffer = instance_buffers.get_mut("transform_row2").unwrap();
-            instance_buffer.extend(transform_row2);
-
-            let instance_buffer = instance_buffers.get_mut("transform_row3").unwrap();
-            instance_buffer.extend(transform_row3);
         }
+
+        transform_row
     }
 }
 
@@ -112,7 +116,7 @@ impl RenderObjectInstanced {
         mat_handle: Handle<CpuMaterial>,
         object: RenderObject,
     ) {
-        let (commands, instance_buffers) = object.to_commands(gpu_mesh_manager);
+        let (commands, transform_grid, max_instances) = object.to_commands(gpu_mesh_manager);
         let material = materials.get(&mat_handle).unwrap();
 
         let render_states = material.render_states();
@@ -130,15 +134,17 @@ impl RenderObjectInstanced {
                         * render_camera.transform.view_matrix(),
                 );
 
-                for attribute_name in ["transform_row1", "transform_row2", "transform_row3"] {
-                    if program.requires_attribute(attribute_name) {
-                        program.use_instance_attribute(
-                            attribute_name,
-                            instance_buffers
-                                .get(attribute_name).unwrap_or_else(|| panic!("the render call requires the {} instance buffer which is missing on the given geometry", attribute_name)),
-                        );
-                    }
-                }
+                let texture_width = (3 * max_instances as u32);
+                let texture_height = (commands.len() as u32);
+
+                program.use_uniform("transform_texture_width", texture_width as f32);
+                program.use_uniform("transform_texture_height", texture_height as f32);
+
+                let mut transform_texture = GpuTexture2D::new_empty::<[f32; 4]>(texture_width, texture_height);
+                transform_texture.fill_pure(&transform_grid);
+
+                program.use_texture("transform_texture", &transform_texture);
+
                 gpu_mesh_manager.draw(program, render_states, render_camera.camera, commands);
 
             })

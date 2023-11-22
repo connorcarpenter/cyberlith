@@ -52,8 +52,7 @@ impl Program {
                         precision mediump sampler3D;
                     #endif\n"
             } else {
-                "#version 330 core\
-                    #extension GL_ANGLE_multi_draw : require\n"
+                "#version 330 core\n"
             };
             let vertex_shader_source = format!("{}{}", header, vertex_shader_source);
             let fragment_shader_source = format!("{}{}", header, fragment_shader_source);
@@ -104,6 +103,10 @@ impl Program {
                 if let Some(gl::ActiveAttribute { name, .. }) =
                     context.get_active_attribute(id, i)
                 {
+                    if name == "gl_InstanceID" || name == "gl_DrawID" {
+                        continue;
+                    }
+
                     let location = context.get_attrib_location(id, &name).unwrap_or_else(|| {
                         panic!("Could not get the location of uniform {}", name)
                     });
