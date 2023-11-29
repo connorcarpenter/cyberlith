@@ -2426,14 +2426,26 @@ impl HasContext for Context {
                 data.extend(&draw_command.to_bytes());
             }
 
-            info!("about to call MultiDrawArraysIndirect");
+            let mut buffer = 0;
+            gl.GenBuffers(1, &mut buffer);
+            let indirect_buffer = non_zero_gl_name(buffer);
+            gl.BindBuffer(DRAW_INDIRECT_BUFFER, indirect_buffer.get());
+            gl.BufferData(
+                DRAW_INDIRECT_BUFFER,
+                (draw_count * std::mem::size_of::<DrawArraysIndirectCommand>()) as isize,
+                data.as_ptr() as *const std::ffi::c_void,
+                DYNAMIC_DRAW,
+            );
 
             gl.MultiDrawArraysIndirect(
                 mode,
-                data.as_ptr() as *const std::ffi::c_void,
+                0 as *const std::ffi::c_void,
                 draw_count as i32,
                 0, // docs say a stride of 0 means that the commands are tightly packed
             );
+
+            gl.BindBuffer(DRAW_INDIRECT_BUFFER, 0);
+            gl.DeleteBuffers(1, &indirect_buffer.get());
         } else {
             panic!("MultiDrawArraysIndirect not supported");
         }

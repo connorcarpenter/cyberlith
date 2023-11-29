@@ -40,19 +40,12 @@ impl Program {
             let header: &str = if context.version().is_embedded {
                 "#version 300 es
                     #extension GL_ANGLE_multi_draw : require
-                    #ifdef GL_FRAGMENT_PRECISION_HIGH
-                        precision highp float;
-                        precision highp int;
-                        precision highp sampler2DArray;
-                        precision highp sampler3D;
-                    #else
-                        precision mediump float;
-                        precision mediump int;
-                        precision mediump sampler2DArray;
-                        precision mediump sampler3D;
-                    #endif\n"
+                    precision mediump float;
+                    precision mediump int;
+                    precision mediump sampler2DArray;
+                    precision mediump sampler3D;\n"
             } else {
-                "#version 330 core\n"
+                "#version 460 core\n"
             };
             let vertex_shader_source = format!("{}{}", header, vertex_shader_source);
             let fragment_shader_source = format!("{}{}", header, fragment_shader_source);

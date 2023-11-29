@@ -22158,8 +22158,6 @@ pub mod struct_commands {
             drawcount: GLsizei,
             stride: GLsizei,
         ) {
-            info!("inside MultiDrawArraysIndirect");
-
             #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
             {
                 trace!(

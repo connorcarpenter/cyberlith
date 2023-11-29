@@ -59,9 +59,9 @@ const ROOM_WIDTH: f32 = 300.0;
 const ROOM_DEPTH: f32 = 300.0;
 const ROOM_HEIGHT: f32 = 200.0;
 const GRAVITY: f32 = 0.1;
-const BALL_COUNT: u32 = 2000;
+const BALL_COUNT: u32 = 1000;
 const BALL_SIZE: f32 = 10.0;
-const MESH_COUNT: u32 = 50;
+const MESH_COUNT: u32 = 30;
 const MAX_VELOCITY: f32 = 10.0;
 
 #[derive(Component)]

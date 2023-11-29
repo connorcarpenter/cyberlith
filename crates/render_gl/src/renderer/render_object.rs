@@ -36,7 +36,6 @@ impl RenderObject{
 
         let mut commands = Vec::new();
         let mut transform_rows = Vec::new();
-        let mut base_instance = 0;
         let mut max_instance_count = 0;
 
         let mut mesh_handles = mesh_handle_transform_map.keys().map(|handle| *handle).collect::<Vec<_>>();
@@ -55,10 +54,8 @@ impl RenderObject{
                 count as u32,
                 instance_count as u32,
                 first as u32,
-                base_instance as u32,
+                0,
             ));
-
-            base_instance += instance_count;
 
             let transform_row = Self::get_transform_row(transforms);
             transform_rows.push(transform_row);
