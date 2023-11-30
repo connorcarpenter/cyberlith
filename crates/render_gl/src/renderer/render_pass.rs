@@ -1,12 +1,10 @@
-use std::collections::HashMap;
-
 use render_api::{
     base::{CpuMaterial, CpuMesh},
     components::{Camera, Projection, Transform},
     Handle,
 };
 
-use crate::{renderer::{Light, Material, RenderCamera, RenderObject}, GpuMesh};
+use crate::renderer::{Light, RenderCamera, RenderObject};
 
 // Render Pass
 pub struct RenderPass<'a> {

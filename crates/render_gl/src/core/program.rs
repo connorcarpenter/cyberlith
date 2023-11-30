@@ -93,8 +93,7 @@ impl Program {
             let num_attribs = context.get_active_attributes(id);
             let mut attributes = HashMap::new();
             for i in 0..num_attribs {
-                if let Some(gl::ActiveAttribute { name, .. }) =
-                    context.get_active_attribute(id, i)
+                if let Some(gl::ActiveAttribute { name, .. }) = context.get_active_attribute(id, i)
                 {
                     if name == "gl_InstanceID" || name == "gl_DrawID" {
                         continue;

@@ -3,7 +3,6 @@ use std::{
     ffi::{CStr, CString},
     num::NonZeroU32,
 };
-use log::info;
 
 use super::*;
 use crate::{gl46 as native_gl, version::Version};

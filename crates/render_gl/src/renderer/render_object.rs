@@ -3,12 +3,17 @@ use std::collections::HashMap;
 use gl::DrawArraysIndirectCommand;
 
 use math::Mat4;
-use render_api::{base::AxisAlignedBoundingBox, components::{CameraProjection, Transform}, Handle};
-use render_api::base::{CpuMaterial, CpuMesh};
-use render_api::components::Camera;
+use render_api::{
+    base::{CpuMaterial, CpuMesh},
+    components::{CameraProjection, Transform},
+    Handle,
+};
 
-use crate::{AssetMapping, core::{Context, InstanceBuffer, Program, RenderStates}, GpuMaterial, GpuMaterialManager, GpuMesh, GpuMeshManager, renderer::{Instances, lights_shader_source, Light, Material, RenderCamera}};
-use crate::core::GpuTexture2D;
+use crate::{
+    core::{Context, GpuTexture2D},
+    renderer::{lights_shader_source, Light, RenderCamera},
+    GpuMaterialManager, GpuMeshManager,
+};
 
 // Render Object
 #[derive(Clone)]
@@ -16,30 +21,42 @@ pub struct RenderObject {
     mesh_handle_transform_map: HashMap<Handle<CpuMesh>, Vec<(Handle<CpuMaterial>, Mat4)>>,
 }
 
-impl RenderObject{
+impl RenderObject {
     pub fn new() -> Self {
         Self {
             mesh_handle_transform_map: HashMap::new(),
         }
     }
 
-    pub fn add_transform(&mut self, mesh_handle: &Handle<CpuMesh>, mat_handle: &Handle<CpuMaterial>, transform: &Transform) {
+    pub fn add_transform(
+        &mut self,
+        mesh_handle: &Handle<CpuMesh>,
+        mat_handle: &Handle<CpuMaterial>,
+        transform: &Transform,
+    ) {
         if !self.mesh_handle_transform_map.contains_key(mesh_handle) {
-            self.mesh_handle_transform_map.insert(*mesh_handle, Vec::new());
+            self.mesh_handle_transform_map
+                .insert(*mesh_handle, Vec::new());
         }
         let map = self.mesh_handle_transform_map.get_mut(mesh_handle).unwrap();
         map.push((*mat_handle, transform.compute_matrix()));
     }
 
-    pub fn to_commands(self, gpu_mesh_manager: &GpuMeshManager, gpu_mat_manager: &GpuMaterialManager) -> (Vec<DrawArraysIndirectCommand>, GpuTexture2D, usize) {
-
+    pub fn to_commands(
+        self,
+        gpu_mesh_manager: &GpuMeshManager,
+        gpu_mat_manager: &GpuMaterialManager,
+    ) -> (Vec<DrawArraysIndirectCommand>, GpuTexture2D) {
         let mut mesh_handle_transform_map = self.mesh_handle_transform_map;
 
         let mut commands = Vec::new();
         let mut instances_rows = Vec::new();
         let mut max_instance_count = 0;
 
-        let mut mesh_handles = mesh_handle_transform_map.keys().map(|handle| *handle).collect::<Vec<_>>();
+        let mut mesh_handles = mesh_handle_transform_map
+            .keys()
+            .map(|handle| *handle)
+            .collect::<Vec<_>>();
         mesh_handles.sort();
 
         for mesh_handle in mesh_handles {
@@ -77,16 +94,18 @@ impl RenderObject{
         }
 
         let texture_width = instance_grid_width as u32;
-        let texture_height = (commands.len() as u32);
-        let mut instances_texture = GpuTexture2D::new_empty::<[f32; 4]>(texture_width, texture_height);
+        let texture_height = commands.len() as u32;
+        let mut instances_texture =
+            GpuTexture2D::new_empty::<[f32; 4]>(texture_width, texture_height);
         instances_texture.fill_pure(&instances_grid);
 
-        (commands, instances_texture, max_instance_count)
+        (commands, instances_texture)
     }
 
-
-    fn get_instance_row(gpu_mat_manager: &GpuMaterialManager, instances: Vec<(Handle<CpuMaterial>, Mat4)>) -> Vec<[f32; 4]> {
-
+    fn get_instance_row(
+        gpu_mat_manager: &GpuMaterialManager,
+        instances: Vec<(Handle<CpuMaterial>, Mat4)>,
+    ) -> Vec<[f32; 4]> {
         let mut instance_row = Vec::new();
 
         let indices = {
@@ -97,11 +116,9 @@ impl RenderObject{
         // Next, we can compute the instance buffers with that ordering.
         {
             for (mat_handle, transformation) in indices.iter().map(|i| instances[*i]) {
-
                 instance_row.push(transformation.row(0).to_array());
                 instance_row.push(transformation.row(1).to_array());
                 instance_row.push(transformation.row(2).to_array());
-
 
                 let mat_index = gpu_mat_manager.get(&mat_handle).unwrap();
                 instance_row.push([mat_index.index() as f32, 0.0, 0.0, 0.0]);
@@ -123,7 +140,8 @@ impl RenderObjectInstanced {
         lights: &[&dyn Light],
         object: RenderObject,
     ) {
-        let (commands, instance_texture, max_instances) = object.to_commands(gpu_mesh_manager, gpu_material_manager);
+        let (commands, instance_texture) =
+            object.to_commands(gpu_mesh_manager, gpu_material_manager);
 
         let render_states = gpu_material_manager.render_states();
         let fragment_shader = gpu_material_manager.fragment_shader();
@@ -140,16 +158,9 @@ impl RenderObjectInstanced {
                         * render_camera.transform.view_matrix(),
                 );
 
-                let texture_width = (3 * max_instances as u32);
-                let texture_height = (commands.len() as u32);
-
-                //program.use_uniform("instance_texture_width", texture_width as f32);
-                //program.use_uniform("instance_texture_height", texture_height as f32);
-
                 program.use_texture("instance_texture", &instance_texture);
 
                 gpu_mesh_manager.draw(program, render_states, render_camera.camera, commands);
-
             })
             .expect("Failed compiling shader");
     }

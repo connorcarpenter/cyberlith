@@ -9,7 +9,6 @@ pub struct VertexBuffer {
 }
 
 impl VertexBuffer {
-
     pub fn new() -> Self {
         Self {
             buffer: Buffer::new(),

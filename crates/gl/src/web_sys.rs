@@ -1,6 +1,7 @@
 use super::*;
 
 use js_sys::{self, Array};
+use log::info;
 use slotmap::{new_key_type, SlotMap};
 use std::cell::RefCell;
 use web_sys::{
@@ -9,7 +10,6 @@ use web_sys::{
     WebGlRenderbuffer, WebGlSampler, WebGlShader, WebGlSync, WebGlTexture, WebGlTransformFeedback,
     WebGlUniformLocation, WebGlVertexArrayObject,
 };
-use log::info;
 
 #[cfg(web_sys_unstable_apis)]
 use web_sys::VideoFrame;

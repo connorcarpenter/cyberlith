@@ -1,12 +1,18 @@
 use bevy_ecs::system::{NonSendMut, Res, ResMut};
 
 use render_api::{
-    base::{CpuMaterial, CpuMesh, CpuTexture2D},
+    base::CpuTexture2D,
     components::{Camera, RenderLayers, RenderTarget as CameraRenderTarget},
     resources::RenderFrame,
 };
 
-use crate::{asset_mapping::AssetMapping, core::{GpuDepthTexture2D, GpuTexture2D, RenderTarget}, GpuMaterialManager, GpuMeshManager, renderer::{Material, RenderPass, RenderTargetExt}, window::FrameInput};
+use crate::{
+    asset_mapping::AssetMapping,
+    core::{GpuDepthTexture2D, GpuTexture2D, RenderTarget},
+    renderer::{RenderPass, RenderTargetExt},
+    window::FrameInput,
+    GpuMaterialManager, GpuMeshManager,
+};
 
 pub fn render(
     mut render_frame: ResMut<RenderFrame>,

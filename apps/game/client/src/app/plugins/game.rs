@@ -86,14 +86,13 @@ fn setup(
     // ballz
     let mut mesh_index = 0;
     for _ in 0..BALL_COUNT {
+        let x = rng.gen_range(-ROOM_WIDTH..ROOM_WIDTH);
+        let y = rng.gen_range(-ROOM_DEPTH..ROOM_DEPTH);
+        let z = rng.gen_range(BALL_SIZE..ROOM_HEIGHT);
 
-        let x = rng.gen_range(-ROOM_WIDTH .. ROOM_WIDTH);
-        let y = rng.gen_range(-ROOM_DEPTH .. ROOM_DEPTH);
-        let z = rng.gen_range(BALL_SIZE .. ROOM_HEIGHT);
-
-        let vx = rng.gen_range(-2.0 .. 2.0);
-        let vy = rng.gen_range(-2.0 .. 2.0);
-        let vz = rng.gen_range(-1.0 .. 1.0);
+        let vx = rng.gen_range(-2.0..2.0);
+        let vy = rng.gen_range(-2.0..2.0);
+        let vz = rng.gen_range(-1.0..1.0);
 
         commands
             .spawn(RenderObjectBundle {
@@ -101,11 +100,11 @@ fn setup(
                 mesh: sphere_mesh_handles[mesh_index],
                 material: red_mat_handle,
                 transform: Transform::from_scale(Vec3::splat(BALL_SIZE))
-                    .with_translation(Vec3::new(x,y,z)),
+                    .with_translation(Vec3::new(x, y, z)),
                 ..Default::default()
             })
             .insert(BallMarker)
-            .insert(Velocity(Vec3::new(vx,vy,vz)))
+            .insert(Velocity(Vec3::new(vx, vy, vz)))
             .insert(layer);
 
         mesh_index += 1;

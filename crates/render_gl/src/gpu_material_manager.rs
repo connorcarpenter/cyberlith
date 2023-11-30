@@ -1,11 +1,13 @@
 use std::{collections::HashMap, default::Default};
 
 use bevy_ecs::system::Resource;
-use gl::DrawArraysIndirectCommand;
 
-use render_api::{base::{CpuMaterial, AxisAlignedBoundingBox}, Handle, components::Camera};
+use render_api::{base::CpuMaterial, Handle};
 
-use crate::{core::{Program, GpuTexture2D, RenderStates, Cull}, renderer::{FragmentAttributes, FragmentShader, Light, RenderCamera}};
+use crate::{
+    core::{Cull, GpuTexture2D, Program, RenderStates},
+    renderer::{FragmentAttributes, FragmentShader, Light, RenderCamera},
+};
 
 #[derive(Resource)]
 pub struct GpuMaterialManager {
@@ -31,12 +33,16 @@ impl Default for GpuMaterialManager {
 
 impl GpuMaterialManager {
     pub fn insert(&mut self, handle: Handle<CpuMaterial>, cpu_material: &CpuMaterial) {
-
         let new_index = self.cpu_materials.len();
         let gpu_material = GpuMaterial::new(new_index / 2);
         self.assets.insert(handle, gpu_material);
 
-        let first = [cpu_material.diffuse.r as f32 / 255.0, cpu_material.diffuse.g as f32 / 255.0, cpu_material.diffuse.b as f32 / 255.0, cpu_material.emissive];
+        let first = [
+            cpu_material.diffuse.r as f32 / 255.0,
+            cpu_material.diffuse.g as f32 / 255.0,
+            cpu_material.diffuse.b as f32 / 255.0,
+            cpu_material.emissive,
+        ];
         let second = [cpu_material.shininess, 0.0, 0.0, 0.0];
         self.cpu_materials.push(first);
         self.cpu_materials.push(second);
@@ -45,7 +51,10 @@ impl GpuMaterialManager {
     }
 
     fn gpu_sync(&mut self) {
-        self.gpu_materials = Some(GpuTexture2D::new_empty::<[f32; 4]>(self.cpu_materials.len() as u32, 1));
+        self.gpu_materials = Some(GpuTexture2D::new_empty::<[f32; 4]>(
+            self.cpu_materials.len() as u32,
+            1,
+        ));
         let gpu_materials = self.gpu_materials.as_mut().unwrap();
         gpu_materials.fill_pure(&self.cpu_materials);
     }
@@ -95,9 +104,7 @@ pub struct GpuMaterial {
 
 impl GpuMaterial {
     pub fn new(index: usize) -> Self {
-        Self {
-            index,
-        }
+        Self { index }
     }
 
     pub fn index(&self) -> usize {

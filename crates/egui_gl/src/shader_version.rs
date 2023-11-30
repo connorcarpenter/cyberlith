@@ -21,8 +21,7 @@ pub enum ShaderVersion {
 impl ShaderVersion {
     pub fn get(gl: &gl::Context) -> Self {
         use gl::HasContext as _;
-        let shading_lang_string =
-            unsafe { gl.get_parameter_string(gl::SHADING_LANGUAGE_VERSION) };
+        let shading_lang_string = unsafe { gl.get_parameter_string(gl::SHADING_LANGUAGE_VERSION) };
         let shader_version = Self::parse(&shading_lang_string);
         log::debug!(
             "Shader version: {:?} ({:?}).",

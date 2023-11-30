@@ -6,7 +6,11 @@ use render_api::{
     Assets, RenderSync,
 };
 
-use crate::{asset_mapping::AssetMapping, core::{GpuDepthTexture2D, GpuTexture2D}, GpuMaterialManager, GpuMeshManager, renderer::{Material, PbrMaterial}};
+use crate::{
+    asset_mapping::AssetMapping,
+    core::{GpuDepthTexture2D, GpuTexture2D},
+    GpuMaterialManager, GpuMeshManager,
+};
 
 pub struct SyncPlugin;
 

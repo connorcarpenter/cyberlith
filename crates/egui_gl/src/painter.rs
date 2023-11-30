@@ -285,8 +285,7 @@ impl Painter {
         self.gl.color_mask(true, true, true, true);
 
         self.gl.enable(gl::BLEND);
-        self.gl
-            .blend_equation_separate(gl::FUNC_ADD, gl::FUNC_ADD);
+        self.gl.blend_equation_separate(gl::FUNC_ADD, gl::FUNC_ADD);
         self.gl.blend_func_separate(
             // egui outputs colors with premultiplied alpha:
             gl::ONE,
@@ -550,16 +549,10 @@ impl Painter {
                 options.minification.gl_code() as i32,
             );
 
-            self.gl.tex_parameter_i32(
-                gl::TEXTURE_2D,
-                gl::TEXTURE_WRAP_S,
-                gl::CLAMP_TO_EDGE as i32,
-            );
-            self.gl.tex_parameter_i32(
-                gl::TEXTURE_2D,
-                gl::TEXTURE_WRAP_T,
-                gl::CLAMP_TO_EDGE as i32,
-            );
+            self.gl
+                .tex_parameter_i32(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_EDGE as i32);
+            self.gl
+                .tex_parameter_i32(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::CLAMP_TO_EDGE as i32);
             check_for_gl_error!(&self.gl, "tex_parameter");
 
             let (internal_format, src_format) = if self.is_webgl_1 {
@@ -738,9 +731,7 @@ pub fn clear(gl: &gl::Context, screen_size_in_pixels: [u32; 2], clear_color: [f3
 impl Drop for Painter {
     fn drop(&mut self) {
         if !self.destroyed {
-            log::warn!(
-                "You forgot to call destroy() on the egui gl painter. Resources will leak!"
-            );
+            log::warn!("You forgot to call destroy() on the egui gl painter. Resources will leak!");
         }
     }
 }

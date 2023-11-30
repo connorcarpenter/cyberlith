@@ -5,11 +5,13 @@ use gl::DrawArraysIndirectCommand;
 
 use math::Vec3;
 
-use render_api::{base::{CpuMesh, AxisAlignedBoundingBox}, Handle};
-use render_api::components::Camera;
+use render_api::{
+    components::Camera,
+    base::{AxisAlignedBoundingBox, CpuMesh},
+    Handle,
+};
 
-use crate::{core::VertexBuffer};
-use crate::core::{Program, RenderStates};
+use crate::core::{Program, VertexBuffer, RenderStates};
 
 #[derive(Resource)]
 pub struct GpuMeshManager {
@@ -34,7 +36,6 @@ impl Default for GpuMeshManager {
 
 impl GpuMeshManager {
     pub fn insert(&mut self, handle: Handle<CpuMesh>, cpu_mesh: &CpuMesh) {
-
         let new_cpu_vertices = cpu_mesh.to_vertices();
         let new_cpu_normals = cpu_mesh.compute_normals();
         let new_aabb = cpu_mesh.compute_aabb();
@@ -105,11 +106,7 @@ pub struct GpuMesh {
 
 impl GpuMesh {
     pub fn new(first: usize, count: usize, aabb: AxisAlignedBoundingBox) -> Self {
-        Self {
-            first,
-            count,
-            aabb,
-        }
+        Self { first, count, aabb }
     }
 
     pub fn aabb(&self) -> AxisAlignedBoundingBox {
@@ -124,7 +121,6 @@ impl GpuMesh {
         self.count
     }
 }
-
 
 //pub fn aabb(&self) -> AxisAlignedBoundingBox {
 //         self.aabb

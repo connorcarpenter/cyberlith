@@ -1,6 +1,6 @@
-use gl::{HasContext, Buffer as GlBuffer};
+use gl::{Buffer as GlBuffer, HasContext};
 
-use crate::core::{Context, to_byte_slice};
+use crate::core::{to_byte_slice, Context};
 
 ///
 /// A buffer for transferring a set of uniform variables to the shader program
