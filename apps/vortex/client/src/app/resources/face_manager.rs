@@ -206,15 +206,16 @@ impl FaceManager {
         let vertex_2d_b = vertex_manager.vertex_entity_3d_to_2d(&vertex_3d_b).unwrap();
         let vertex_2d_c = vertex_manager.vertex_entity_3d_to_2d(&vertex_3d_c).unwrap();
 
+        let mat_handle = materials.add(CpuMaterial::new(FaceIcon2d::COLOR, 0.0, 0.0));
+
         let entity_2d = commands
             .spawn_empty()
             .insert(FaceIcon2d::new(vertex_2d_a, vertex_2d_b, vertex_2d_c))
             .insert(RenderObjectBundle::equilateral_triangle(
                 meshes,
-                materials,
+                &mat_handle,
                 Vec2::ZERO,
                 FaceIcon2d::SIZE,
-                FaceIcon2d::COLOR,
                 Some(1),
             ))
             .insert(camera_manager.layer_2d)
@@ -415,13 +416,14 @@ impl FaceManager {
         face_3d_entity: Entity,
         positions: [Vec3; 3],
     ) {
+        let mat_handle = materials.add(CpuMaterial::new(Face3dLocal::COLOR, 0.0, 0.0));
+
         commands
             .entity(face_3d_entity)
             .insert(RenderObjectBundle::world_triangle(
                 meshes,
-                materials,
+                &mat_handle,
                 positions,
-                Face3dLocal::COLOR,
             ))
             .insert(camera_manager.layer_3d)
             .insert(Face3dLocal)

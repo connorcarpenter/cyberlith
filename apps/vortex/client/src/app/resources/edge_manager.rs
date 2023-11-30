@@ -421,10 +421,12 @@ impl EdgeManager {
         let default_draw = file_type == FileExtension::Mesh;
 
         // create new 2d edge, add local components to 3d edge
+        let mat_handle = materials.add(CpuMaterial::new(Vertex2d::ENABLED_COLOR, 0.0, 0.0));
         let new_edge_2d_entity = self.edge_3d_postprocess(
             commands,
             meshes,
             materials,
+            &mat_handle,
             camera_manager,
             vertex_manager,
             Some(face_manager),
@@ -434,7 +436,6 @@ impl EdgeManager {
             child_vertex_2d_entity,
             child_vertex_3d_entity,
             Some(file_entity),
-            Vertex2d::ENABLED_COLOR,
             file_type == FileExtension::Skel,
             edge_angle,
             default_draw,
@@ -450,6 +451,7 @@ impl EdgeManager {
         commands: &mut Commands,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
+        material: &Handle<CpuMaterial>,
         camera_manager: &CameraManager,
         vertex_manager: &mut VertexManager,
         face_manager_opt: Option<&mut FaceManager>,
@@ -459,28 +461,28 @@ impl EdgeManager {
         vertex_b_2d_entity: Entity,
         vertex_b_3d_entity: Entity,
         ownership_opt: Option<Entity>,
-        color: Color,
         arrows_not_lines: bool,
         edge_angle_opt: Option<f32>,
         default_draw: bool,
     ) -> Entity {
+
+        let mat_handle_dark_blue = materials.add(CpuMaterial::new(Color::DARK_BLUE, 0.0, 0.0));
+
         // edge 3d
         let shape_components = if arrows_not_lines {
             create_3d_edge_diamond(
                 meshes,
-                materials,
+                material,
                 Vec3::ZERO,
                 Vec3::X,
-                color,
                 Edge3dLocal::NORMAL_THICKNESS,
             )
         } else {
             create_3d_edge_line(
                 meshes,
-                materials,
+                material,
                 Vec3::ZERO,
                 Vec3::X,
-                color,
                 Edge3dLocal::NORMAL_THICKNESS,
             )
         };
@@ -495,22 +497,20 @@ impl EdgeManager {
             let shape_components = if arrows_not_lines {
                 create_2d_edge_arrow(
                     meshes,
-                    materials,
+                    material,
                     Vec2::ZERO,
                     Vec2::X,
                     0.0,
-                    color,
                     Edge2dLocal::NORMAL_THICKNESS,
                     2.0,
                 )
             } else {
                 create_2d_edge_line(
                     meshes,
-                    materials,
+                    material,
                     Vec2::ZERO,
                     Vec2::X,
                     0.0,
-                    color,
                     Edge2dLocal::NORMAL_THICKNESS,
                 )
             };
@@ -535,11 +535,10 @@ impl EdgeManager {
         let edge_angle_entities_opt = if let Some(_edge_angle) = edge_angle_opt {
             let shape_components = create_2d_edge_line(
                 meshes,
-                materials,
+                &mat_handle_dark_blue,
                 Vec2::ZERO,
                 Vec2::X,
                 0.0,
-                Color::DARK_BLUE,
                 Edge2dLocal::NORMAL_THICKNESS,
             );
             let edge_angle_line_entity = commands
@@ -554,11 +553,10 @@ impl EdgeManager {
                         .spawn_empty()
                         .insert(RenderObjectBundle::circle(
                             meshes,
-                            materials,
+                            &mat_handle_dark_blue,
                             Vec2::ZERO,
                             1.0,
                             Vertex2d::SUBDIVISIONS,
-                            Color::DARK_BLUE,
                             None,
                         ))
                         .insert(camera_manager.layer_2d)

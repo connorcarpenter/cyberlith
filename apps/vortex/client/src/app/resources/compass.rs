@@ -5,11 +5,7 @@ use bevy_ecs::{
 };
 
 use math::{Vec2, Vec3};
-use render_api::{
-    base::{Color, CpuMaterial, CpuMesh},
-    components::Transform,
-    Assets,
-};
+use render_api::{base::{Color, CpuMaterial, CpuMesh}, components::Transform, Assets, Handle};
 
 use vortex_proto::components::Vertex3d;
 
@@ -144,19 +140,21 @@ impl Compass {
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
     ) {
+        let mat_handle = materials.add(CpuMaterial::new(Color::WHITE, 0.0, 0.0));
         let (root_vertex_2d_entity, vertex_3d_entity, _, _) = vertex_manager.new_local_vertex(
             commands,
             camera_manager,
             edge_manager,
             meshes,
             materials,
+            &mat_handle,
             None,
             Vec3::ZERO,
-            Color::WHITE,
             None,
         );
         self.compass_vertices_3d.push(vertex_3d_entity);
 
+        let mat_handle = materials.add(CpuMaterial::new(Color::RED, 0.0, 0.0));
         self.new_compass_arm(
             commands,
             camera_manager,
@@ -164,11 +162,12 @@ impl Compass {
             edge_manager,
             meshes,
             materials,
+            &mat_handle,
             root_vertex_2d_entity,
             Vec3::new(100.0, 0.0, 0.0),
-            Color::RED,
         );
 
+        let mat_handle = materials.add(CpuMaterial::new(Color::GREEN, 0.0, 0.0));
         self.new_compass_arm(
             commands,
             camera_manager,
@@ -176,11 +175,12 @@ impl Compass {
             edge_manager,
             meshes,
             materials,
+            &mat_handle,
             root_vertex_2d_entity,
             Vec3::new(0.0, 100.0, 0.0),
-            Color::GREEN,
         );
 
+        let mat_handle = materials.add(CpuMaterial::new(Color::LIGHT_BLUE, 0.0, 0.0));
         self.new_compass_arm(
             commands,
             camera_manager,
@@ -188,9 +188,9 @@ impl Compass {
             edge_manager,
             meshes,
             materials,
+            &mat_handle,
             root_vertex_2d_entity,
             Vec3::new(0.0, 0.0, 100.0),
-            Color::LIGHT_BLUE,
         );
     }
 
@@ -202,9 +202,9 @@ impl Compass {
         edge_manager: &mut EdgeManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
+        material: &Handle<CpuMaterial>,
         root_vertex_2d_entity: Entity,
         position: Vec3,
-        color: Color,
     ) {
         let (_, vertex_3d_entity, _, _) = vertex_manager.new_local_vertex(
             commands,
@@ -212,9 +212,9 @@ impl Compass {
             edge_manager,
             meshes,
             materials,
+            material,
             Some(root_vertex_2d_entity),
             position,
-            color,
             None,
         );
         self.compass_vertices_3d.push(vertex_3d_entity);

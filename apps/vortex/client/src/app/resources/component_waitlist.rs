@@ -698,17 +698,16 @@ impl ComponentWaitlist {
                     Some(_) => Vertex2d::ENABLED_COLOR,
                     None => Vertex2d::ROOT_COLOR,
                 };
-
+                let mat_handle = materials.add(CpuMaterial::new(color, 0.0, 0.0));
                 vertex_manager.vertex_3d_postprocess(
                     commands,
                     meshes,
-                    materials,
+                    &mat_handle,
                     camera_manager,
                     entity,
                     parent_3d_entity_opt,
                     parent_3d_entity_opt.is_none(),
                     Some(file_entity),
-                    color,
                     false,
                 );
             }
@@ -717,17 +716,17 @@ impl ComponentWaitlist {
                     panic!("vertex manager not available");
                 };
                 let color = Vertex2d::ENABLED_COLOR;
+                let mat_handle = materials.add(CpuMaterial::new(color, 0.0, 0.0));
 
                 vertex_manager.vertex_3d_postprocess(
                     commands,
                     meshes,
-                    materials,
+                    &mat_handle,
                     camera_manager,
                     entity,
                     None,
                     false,
                     Some(file_entity),
-                    color,
                     true,
                 );
             }
@@ -741,10 +740,12 @@ impl ComponentWaitlist {
                 let start_2d = vertex_manager.vertex_entity_3d_to_2d(&start_3d).unwrap();
                 let end_2d = vertex_manager.vertex_entity_3d_to_2d(&end_3d).unwrap();
 
+                let mat_handle = materials.add(CpuMaterial::new(Vertex2d::ENABLED_COLOR, 0.0, 0.0));
                 edge_manager.edge_3d_postprocess(
                     commands,
                     meshes,
                     materials,
+                    &mat_handle,
                     camera_manager,
                     vertex_manager,
                     None,
@@ -754,7 +755,6 @@ impl ComponentWaitlist {
                     end_2d,
                     end_3d,
                     Some(file_entity),
-                    Vertex2d::ENABLED_COLOR,
                     true,
                     Some(edge_angle),
                     false,
@@ -773,10 +773,12 @@ impl ComponentWaitlist {
                 let start_2d = vertex_manager.vertex_entity_3d_to_2d(&start_3d).unwrap();
                 let end_2d = vertex_manager.vertex_entity_3d_to_2d(&end_3d).unwrap();
 
+                let mat_handle = materials.add(CpuMaterial::new(Vertex2d::ENABLED_COLOR, 0.0, 0.0));
                 edge_manager.edge_3d_postprocess(
                     commands,
                     meshes,
                     materials,
+                    &mat_handle,
                     camera_manager,
                     vertex_manager,
                     Some(face_manager),
@@ -786,7 +788,6 @@ impl ComponentWaitlist {
                     end_2d,
                     end_3d,
                     Some(file_entity),
-                    Vertex2d::ENABLED_COLOR,
                     false,
                     None,
                     true,
@@ -841,32 +842,33 @@ impl ComponentWaitlist {
                     panic!("icon manager not available");
                 };
 
-                let color = Vertex2d::ENABLED_COLOR;
+                let mat_handle = materials.add(CpuMaterial::new(Vertex2d::ENABLED_COLOR, 0.0, 0.0));
 
                 icon_manager.vertex_postprocess(
                     commands,
                     meshes,
-                    materials,
+                    &mat_handle,
                     Some(file_entity),
                     Some(frame_entity),
                     entity,
-                    color,
                 );
             }
             (FileExtension::Icon, ComponentData::IconEdge(frame_entity, start, end)) => {
                 let Some(icon_manager) = icon_manager_opt else {
                     panic!("icon manager not available");
                 };
+
+                let mat_handle = materials.add(CpuMaterial::new(Vertex2d::ENABLED_COLOR, 0.0, 0.0));
+
                 icon_manager.edge_postprocess(
                     commands,
                     meshes,
-                    materials,
+                    &mat_handle,
                     Some(file_entity),
                     Some(frame_entity),
                     entity,
                     start,
                     end,
-                    Vertex2d::ENABLED_COLOR,
                 );
             }
             (

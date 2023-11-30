@@ -223,7 +223,7 @@ impl IconManager {
         let mut edge_entities = HashSet::new();
 
         // material
-        let mat_handle_gray = materials.add(Color::GRAY);
+        let mat_handle_gray = materials.add(CpuMaterial::new(Color::GRAY, 0.0, 0.0));
 
         // collect grid vertices
         for vertex_entity in self.grid_vertices.iter() {
@@ -358,9 +358,9 @@ impl IconManager {
         let mut face_keys = HashSet::new();
 
         // material
-        let mat_handle_white = materials.add(Color::WHITE);
-        let mat_handle_light_gray = materials.add(Color::LIGHT_GRAY);
-        let mat_handle_gray = materials.add(Color::GRAY);
+        let mat_handle_white = materials.add(CpuMaterial::new(Color::WHITE, 0.0, 0.0));
+        let mat_handle_light_gray = materials.add(CpuMaterial::new(Color::LIGHT_GRAY, 0.0, 0.0));
+        let mat_handle_gray = materials.add(CpuMaterial::new(Color::GRAY, 0.0, 0.0));
 
         // collect grid vertices
         for vertex_entity in self.grid_vertices.iter() {
@@ -606,6 +606,8 @@ impl IconManager {
     ) {
         self.render_layer = RenderLayers::layer(4);
 
+        let mat_handle_white = materials.add(CpuMaterial::new(Color::WHITE, 0.0, 0.0));
+
         // light
         {
             commands
@@ -631,11 +633,10 @@ impl IconManager {
         {
             let mut select_circle_components = RenderObjectBundle::circle(
                 meshes,
-                materials,
+                &mat_handle_white,
                 Vec2::ZERO,
                 SelectCircle::RADIUS,
                 Vertex2d::SUBDIVISIONS,
-                Color::WHITE,
                 Some(1),
             );
             select_circle_components.visibility.visible = false;
@@ -652,10 +653,9 @@ impl IconManager {
         {
             let mut select_triangle_components = RenderObjectBundle::equilateral_triangle(
                 meshes,
-                materials,
+                &mat_handle_white,
                 Vec2::ZERO,
                 SelectTriangle::SIZE,
-                Color::WHITE,
                 Some(1),
             );
             select_triangle_components.visibility.visible = false;
@@ -672,11 +672,10 @@ impl IconManager {
         {
             let mut select_line_components = create_2d_edge_line(
                 meshes,
-                materials,
+                &mat_handle_white,
                 Vec2::ZERO,
                 Vec2::X,
                 0.0,
-                Color::WHITE,
                 SelectLine::THICKNESS,
             );
             select_line_components.visibility.visible = false;
@@ -704,33 +703,31 @@ impl IconManager {
         let grid_size: f32 = 100.0;
         let neg_grid_size: f32 = -grid_size;
 
+        let mat_handle = materials.add(CpuMaterial::new(Color::LIGHT_GRAY, 0.0, 0.0));
+
         let vertex_entity_a = self.new_local_vertex(
             commands,
             meshes,
-            materials,
+            &mat_handle,
             Vec2::new(neg_grid_size, neg_grid_size),
-            Color::LIGHT_GRAY,
         );
         let vertex_entity_b = self.new_local_vertex(
             commands,
             meshes,
-            materials,
+            &mat_handle,
             Vec2::new(grid_size, neg_grid_size),
-            Color::LIGHT_GRAY,
         );
         let vertex_entity_c = self.new_local_vertex(
             commands,
             meshes,
-            materials,
+            &mat_handle,
             Vec2::new(grid_size, grid_size),
-            Color::LIGHT_GRAY,
         );
         let vertex_entity_d = self.new_local_vertex(
             commands,
             meshes,
-            materials,
+            &mat_handle,
             Vec2::new(neg_grid_size, grid_size),
-            Color::LIGHT_GRAY,
         );
         self.grid_vertices.push(vertex_entity_a);
         self.grid_vertices.push(vertex_entity_b);
@@ -740,34 +737,30 @@ impl IconManager {
         self.new_local_edge(
             commands,
             meshes,
-            materials,
+            &mat_handle,
             vertex_entity_a,
             vertex_entity_b,
-            Color::LIGHT_GRAY,
         );
         self.new_local_edge(
             commands,
             meshes,
-            materials,
+            &mat_handle,
             vertex_entity_b,
             vertex_entity_c,
-            Color::LIGHT_GRAY,
         );
         self.new_local_edge(
             commands,
             meshes,
-            materials,
+            &mat_handle,
             vertex_entity_c,
             vertex_entity_d,
-            Color::LIGHT_GRAY,
         );
         self.new_local_edge(
             commands,
             meshes,
-            materials,
+            &mat_handle,
             vertex_entity_d,
             vertex_entity_a,
-            Color::LIGHT_GRAY,
         );
     }
 
@@ -775,9 +768,8 @@ impl IconManager {
         &mut self,
         commands: &mut Commands,
         meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
+        material: &Handle<CpuMaterial>,
         position: Vec2,
-        color: Color,
     ) -> Entity {
         // vertex
         let mut vertex_component = IconVertex::new(0, 0);
@@ -788,11 +780,10 @@ impl IconManager {
         self.vertex_postprocess(
             commands,
             meshes,
-            materials,
+            material,
             None,
             None,
             new_vertex_entity,
-            color,
         );
 
         commands.entity(new_vertex_entity).insert(LocalShape);
@@ -804,23 +795,21 @@ impl IconManager {
         &mut self,
         commands: &mut Commands,
         meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
+        material: &Handle<CpuMaterial>,
         vertex_entity_a: Entity,
         vertex_entity_b: Entity,
-        color: Color,
     ) -> Entity {
         let new_edge_entity = commands.spawn_empty().id();
 
         self.edge_postprocess(
             commands,
             meshes,
-            materials,
+            material,
             None,
             None,
             new_edge_entity,
             vertex_entity_a,
             vertex_entity_b,
-            color,
         );
 
         commands.entity(new_edge_entity).insert(LocalShape);
@@ -1187,14 +1176,14 @@ impl IconManager {
         entities_to_release.push(new_vertex_entity);
 
         // add local components to vertex
+        let mat_handle = materials.add(CpuMaterial::new(Vertex2d::ENABLED_COLOR, 0.0, 0.0));
         self.vertex_postprocess(
             commands,
             meshes,
-            materials,
+            &mat_handle,
             Some(*file_entity),
             Some(*frame_entity),
             new_vertex_entity,
-            Vertex2d::ENABLED_COLOR,
         );
 
         return new_vertex_entity;
@@ -1204,21 +1193,19 @@ impl IconManager {
         &mut self,
         commands: &mut Commands,
         meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
+        material: &Handle<CpuMaterial>,
         file_entity_opt: Option<Entity>,
         frame_entity_opt: Option<Entity>,
         vertex_entity: Entity,
-        color: Color,
     ) {
         commands
             .entity(vertex_entity)
             .insert(RenderObjectBundle::circle(
                 meshes,
-                materials,
+                material,
                 Vec2::ZERO,
                 Vertex2d::RADIUS,
                 Vertex2d::SUBDIVISIONS,
-                color,
                 None,
             ))
             .insert(self.render_layer);
@@ -1391,16 +1378,18 @@ impl IconManager {
             .id();
 
         // add local components to edge
+
+        let mat_handle = materials.add(CpuMaterial::new(Vertex2d::ENABLED_COLOR, 0.0, 0.0));
+
         self.edge_postprocess(
             commands,
             meshes,
-            materials,
+            &mat_handle,
             Some(*file_entity),
             Some(*frame_entity),
             new_edge_entity,
             *vertex_entity_a,
             *vertex_entity_b,
-            Vertex2d::ENABLED_COLOR,
         );
 
         entities_to_release.push(new_edge_entity);
@@ -1412,22 +1401,20 @@ impl IconManager {
         &mut self,
         commands: &mut Commands,
         meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
+        material: &Handle<CpuMaterial>,
         file_entity_opt: Option<Entity>,
         frame_entity_opt: Option<Entity>,
         edge_entity: Entity,
         vertex_entity_a: Entity,
         vertex_entity_b: Entity,
-        color: Color,
     ) {
         // edge
         let shape_components = create_2d_edge_line(
             meshes,
-            materials,
+            material,
             Vec2::ZERO,
             Vec2::X,
             0.0,
-            color,
             Edge2dLocal::NORMAL_THICKNESS,
         );
         commands
@@ -1605,15 +1592,16 @@ impl IconManager {
 
         // local face needs to have it's own button mesh, matching the vertices
 
+        let mat_handle = materials.add(CpuMaterial::new(Color::GRAY, 0.0, 0.0));
+
         let new_entity = commands
             .spawn_empty()
             .insert(IconLocalFace::new(vertex_a, vertex_b, vertex_c))
             .insert(RenderObjectBundle::equilateral_triangle(
                 meshes,
-                materials,
+                &mat_handle,
                 Vec2::ZERO,
                 FaceIcon2d::SIZE,
-                Color::GRAY,
                 Some(1),
             ))
             .insert(self.render_layer)
@@ -1827,13 +1815,13 @@ impl IconManager {
         positions: [Vec2; 3],
     ) {
         let positions = positions.map(|vec2| vec2.extend(0.0));
+        let mat_handle = materials.add(CpuMaterial::new(Face3dLocal::COLOR, 0.0, 0.0));
         commands
             .entity(net_face_entity)
             .insert(RenderObjectBundle::world_triangle(
                 meshes,
-                materials,
+                &mat_handle,
                 positions,
-                Face3dLocal::COLOR,
             ))
             .insert(self.render_layer);
 
@@ -2380,10 +2368,10 @@ impl IconManager {
             let render_layer = self.render_layer;
             let point_mesh_handle = meshes.add(Circle::new(Vertex2d::SUBDIVISIONS));
             let line_mesh_handle = meshes.add(Line);
-            let mat_handle_white = materials.add(Color::WHITE);
-            let mat_handle_gray = materials.add(Color::GRAY);
-            let mat_handle_dark_gray = materials.add(Color::DARK_GRAY);
-            let mat_handle_light_gray = materials.add(Color::LIGHT_GRAY);
+            let mat_handle_white = materials.add(CpuMaterial::new(Color::WHITE, 0.0, 0.0));
+            let mat_handle_gray = materials.add(CpuMaterial::new(Color::GRAY, 0.0, 0.0));
+            let mat_handle_dark_gray = materials.add(CpuMaterial::new(Color::DARK_GRAY, 0.0, 0.0));
+            let mat_handle_light_gray = materials.add(CpuMaterial::new(Color::LIGHT_GRAY, 0.0, 0.0));
 
             for (frame_index, frame_pos) in frame_rects.iter().enumerate() {
                 // frame_index 0 is preview frame

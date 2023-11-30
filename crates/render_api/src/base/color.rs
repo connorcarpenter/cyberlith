@@ -14,7 +14,7 @@ pub struct Color {
     pub b: u8,
 }
 
-impl AssetHash<CpuMaterial> for Color {}
+//impl AssetHash<CpuMaterial> for Color {}
 
 impl Color {
     /// Opaque red

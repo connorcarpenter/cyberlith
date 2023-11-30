@@ -1,18 +1,12 @@
 use math::Vec2;
-use render_api::{
-    base::{Color, CpuMaterial, CpuMesh},
-    components::{RenderObjectBundle, Transform},
-    shapes::{set_2d_line_transform, Line},
-    Assets,
-};
+use render_api::{base::{Color, CpuMaterial, CpuMesh}, components::{RenderObjectBundle, Transform}, shapes::{set_2d_line_transform, Line}, Assets, Handle};
 
 pub fn create_2d_edge_line(
     meshes: &mut Assets<CpuMesh>,
-    materials: &mut Assets<CpuMaterial>,
+    material: &Handle<CpuMaterial>,
     start: Vec2,
     end: Vec2,
     depth: f32,
-    color: Color,
     thickness: f32,
 ) -> RenderObjectBundle {
     let mesh = meshes.add(Line);
@@ -21,7 +15,7 @@ pub fn create_2d_edge_line(
     set_2d_line_transform(&mut transform, start, end, depth);
     RenderObjectBundle {
         mesh,
-        material: materials.add(color),
+        material: *material,
         transform,
         ..Default::default()
     }

@@ -26,11 +26,10 @@ pub struct RenderObjectBundle {
 impl RenderObjectBundle {
     pub fn circle(
         meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
+        material: &Handle<CpuMaterial>,
         position: Vec2,
         radius: f32,
         subdivisions: u16,
-        color: Color,
         outline: Option<u8>,
     ) -> Self {
         let mesh = if let Some(_thickness) = outline {
@@ -43,7 +42,7 @@ impl RenderObjectBundle {
 
         Self {
             mesh,
-            material: materials.add(color),
+            material: *material,
             transform: Transform::from_translation_2d(position).with_scale(Vec3::splat(radius)),
             ..Default::default()
         }
@@ -51,28 +50,25 @@ impl RenderObjectBundle {
 
     pub fn square(
         meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
+        material: &Handle<CpuMaterial>,
         position: Vec2,
         size: f32,
-        color: Color,
         outline_only: bool,
     ) -> Self {
         Self::rectangle(
             meshes,
-            materials,
+            material,
             position,
             Vec2::splat(size),
-            color,
             outline_only,
         )
     }
 
     pub fn rectangle(
         meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
+        material: &Handle<CpuMaterial>,
         position: Vec2,
         size: Vec2,
-        color: Color,
         outline_only: bool,
     ) -> Self {
         if outline_only {
@@ -82,7 +78,7 @@ impl RenderObjectBundle {
             ));
             Self {
                 mesh,
-                material: materials.add(color),
+                material: *material,
                 transform: Transform::from_translation_2d(position),
                 ..Default::default()
             }
@@ -90,7 +86,7 @@ impl RenderObjectBundle {
             let mesh = meshes.add(shapes::Square::new());
             Self {
                 mesh,
-                material: materials.add(color),
+                material: *material,
                 transform: Transform::from_translation_2d(position).with_scale(size.extend(0.0)),
                 ..Default::default()
             }
@@ -99,18 +95,17 @@ impl RenderObjectBundle {
 
     pub fn line(
         meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
+        material: &Handle<CpuMaterial>,
         start: Vec2,
         end: Vec2,
         depth: f32,
-        color: Color,
     ) -> Self {
         let mesh = meshes.add(shapes::Line);
         let mut transform = Transform::default();
         set_2d_line_transform(&mut transform, start, end, depth);
         Self {
             mesh,
-            material: materials.add(color),
+            material: *material,
             transform,
             ..Default::default()
         }
@@ -118,16 +113,15 @@ impl RenderObjectBundle {
 
     pub fn sphere(
         meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
+        material: &Handle<CpuMaterial>,
         position: Vec3,
         radius: f32,
         subdivisions: u16,
-        color: Color,
     ) -> Self {
         let mesh = meshes.add(shapes::Sphere::new(subdivisions));
         Self {
             mesh,
-            material: materials.add(color),
+            material: *material,
             transform: Transform::from_translation(position).with_scale(Vec3::splat(radius)),
             ..Default::default()
         }
@@ -135,15 +129,14 @@ impl RenderObjectBundle {
 
     pub fn cube(
         meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
+        material: &Handle<CpuMaterial>,
         position: Vec3,
         size: f32,
-        color: Color,
     ) -> Self {
         let mesh = meshes.add(shapes::Cube);
         Self {
             mesh,
-            material: materials.add(color),
+            material: *material,
             transform: Transform::from_translation(position).with_scale(Vec3::splat(size)),
             ..Default::default()
         }
@@ -151,15 +144,14 @@ impl RenderObjectBundle {
 
     pub fn world_triangle(
         meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
+        material: &Handle<CpuMaterial>,
         positions: [Vec3; 3],
-        color: Color,
     ) -> Self {
         let (mesh, center) = Self::world_triangle_mesh(positions);
 
         Self {
             mesh: meshes.add_unique(mesh),
-            material: materials.add(color),
+            material: *material,
             transform: Transform::from_translation(center),
             ..Default::default()
         }
@@ -190,10 +182,9 @@ impl RenderObjectBundle {
 
     pub fn equilateral_triangle(
         meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
+        material: &Handle<CpuMaterial>,
         position: Vec2,
         size: f32,
-        color: Color,
         outline: Option<u8>,
     ) -> Self {
         let mesh = if let Some(_thickness) = outline {
@@ -206,7 +197,7 @@ impl RenderObjectBundle {
 
         Self {
             mesh,
-            material: materials.add(color),
+            material: *material,
             transform: Transform::from_translation_2d(position).with_scale(Vec3::splat(size)),
             ..Default::default()
         }

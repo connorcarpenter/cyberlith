@@ -99,6 +99,8 @@ fn setup_2d_scene(
 ) {
     camera_manager.layer_2d = RenderLayers::layer(2);
 
+    let mat_handle_white = materials.add(CpuMaterial::new(Color::WHITE, 0.0, 0.0));
+
     // light
     {
         commands
@@ -127,11 +129,10 @@ fn setup_2d_scene(
     {
         let mut select_circle_components = RenderObjectBundle::circle(
             meshes,
-            materials,
+            &mat_handle_white,
             Vec2::ZERO,
             SelectCircle::RADIUS,
             Vertex2d::SUBDIVISIONS,
-            Color::WHITE,
             Some(1),
         );
         select_circle_components.visibility.visible = false;
@@ -148,10 +149,9 @@ fn setup_2d_scene(
     {
         let mut select_triangle_components = RenderObjectBundle::equilateral_triangle(
             meshes,
-            materials,
+            &mat_handle_white,
             Vec2::ZERO,
             SelectTriangle::SIZE,
-            Color::WHITE,
             Some(1),
         );
         select_triangle_components.visibility.visible = false;
@@ -168,11 +168,10 @@ fn setup_2d_scene(
     {
         let mut select_line_components = create_2d_edge_line(
             meshes,
-            materials,
+            &mat_handle_white,
             Vec2::ZERO,
             Vec2::X,
             0.0,
-            Color::WHITE,
             SelectLine::THICKNESS,
         );
         select_line_components.visibility.visible = false;

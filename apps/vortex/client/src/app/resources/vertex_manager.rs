@@ -74,9 +74,9 @@ impl Default for VertexManager {
 
 impl VertexManager {
     pub fn setup(&mut self, materials: &mut Assets<CpuMaterial>) {
-        self.mat_enabled_vertex = materials.add(Vertex2d::ENABLED_COLOR);
-        self.mat_disabled_vertex = materials.add(Vertex2d::DISABLED_COLOR);
-        self.mat_root_vertex = materials.add(Vertex2d::ROOT_COLOR);
+        self.mat_enabled_vertex = materials.add(CpuMaterial::new(Vertex2d::ENABLED_COLOR, 0.0, 0.0));
+        self.mat_disabled_vertex = materials.add(CpuMaterial::new(Vertex2d::DISABLED_COLOR, 0.0, 0.0));
+        self.mat_root_vertex = materials.add(CpuMaterial::new(Vertex2d::ROOT_COLOR, 0.0, 0.0));
     }
 
     pub fn queue_resync(&mut self) {
@@ -310,16 +310,20 @@ impl VertexManager {
         entities_to_release.push(new_vertex_3d_entity);
 
         // create new 2d vertex, add local components to 3d vertex
+        let mat_handle = materials.add(CpuMaterial::new(
+            Vertex2d::ENABLED_COLOR,
+            0.0,
+            0.0,
+        ));
         let new_vertex_2d_entity = self.vertex_3d_postprocess(
             commands,
             meshes,
-            materials,
+            &mat_handle,
             camera_manager,
             new_vertex_3d_entity,
             parent_vertex_3d_entity_opt,
             false,
             Some(file_entity),
-            Vertex2d::ENABLED_COLOR,
             file_type == FileExtension::Mesh,
         );
 
@@ -409,13 +413,12 @@ impl VertexManager {
         &mut self,
         commands: &mut Commands,
         meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
+        material: &Handle<CpuMaterial>,
         camera_manager: &CameraManager,
         vertex_3d_entity: Entity,
         parent_vertex_3d_entity_opt: Option<Entity>,
         is_root: bool,
         ownership_opt: Option<Entity>,
-        color: Color,
         default_draw: bool,
     ) -> Entity {
         // vertex 3d
@@ -423,11 +426,10 @@ impl VertexManager {
             .entity(vertex_3d_entity)
             .insert(RenderObjectBundle::sphere(
                 meshes,
-                materials,
+                material,
                 Vec3::ZERO,
                 Vertex2d::RADIUS,
                 Vertex2d::SUBDIVISIONS,
-                color,
             ))
             .insert(camera_manager.layer_3d);
 
@@ -435,11 +437,10 @@ impl VertexManager {
         let vertex_2d_entity = commands
             .spawn(RenderObjectBundle::circle(
                 meshes,
-                materials,
+                material,
                 Vec2::ZERO,
                 Vertex2d::RADIUS,
                 Vertex2d::SUBDIVISIONS,
-                color,
                 None,
             ))
             .insert(camera_manager.layer_2d)
@@ -523,9 +524,9 @@ impl VertexManager {
         edge_manager: &mut EdgeManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
+        material: &Handle<CpuMaterial>,
         parent_vertex_2d_entity_opt: Option<Entity>,
         position: Vec3,
-        color: Color,
         edge_angle_opt: Option<f32>,
     ) -> (Entity, Entity, Option<Entity>, Option<Entity>) {
         // vertex 3d
@@ -543,13 +544,12 @@ impl VertexManager {
         let new_vertex_2d_entity = self.vertex_3d_postprocess(
             commands,
             meshes,
-            materials,
+            material,
             camera_manager,
             new_vertex_3d_entity,
             parent_vertex_3d_entity_opt,
             false,
             None,
-            color,
             true,
         );
 
@@ -584,6 +584,7 @@ impl VertexManager {
                 commands,
                 meshes,
                 materials,
+                material,
                 camera_manager,
                 self,
                 None,
@@ -593,7 +594,6 @@ impl VertexManager {
                 new_vertex_2d_entity,
                 new_vertex_3d_entity,
                 None,
-                color,
                 false,
                 edge_angle_opt,
                 true,

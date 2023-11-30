@@ -785,7 +785,7 @@ fn file_ext_specific_sync_tabs_shape_colors(
                 face_color_q,
             ) = system_state.get_mut(world);
 
-            let gray_mat_handle = materials.add(Color::LIGHT_GRAY);
+            let gray_mat_handle = materials.add(CpuMaterial::new(Color::LIGHT_GRAY, 0.0, 0.0));
             for mut mat_handle in edge_2d_q.iter_mut() {
                 *mat_handle = gray_mat_handle;
             }
@@ -907,7 +907,7 @@ fn file_ext_specific_sync_tabs_shape_colors(
             let (mut materials, mut edge_2d_q, mut face_2d_q, mut face_3d_q) =
                 system_state.get_mut(world);
 
-            let enabled_mat_handle = materials.add(Vertex2d::ENABLED_COLOR);
+            let enabled_mat_handle = materials.add(CpuMaterial::new(Vertex2d::ENABLED_COLOR, 0.0, 0.0));
 
             for mut mat_handle in edge_2d_q.iter_mut() {
                 *mat_handle = enabled_mat_handle;
@@ -1029,11 +1029,11 @@ fn set_face_3d_colors(
         return;
     };
     let background_color = palette_color_q.get(*background_color_entity).unwrap();
-    let bckg_mat_handle = materials.add(Color::new(
+    let bckg_mat_handle = materials.add(CpuMaterial::new(Color::new(
         *background_color.r,
         *background_color.g,
         *background_color.b,
-    ));
+    ), 0.0, 0.0));
 
     for (face_3d_entity, mut face_3d_material, owned_by_file) in face_3d_q.iter_mut() {
         if owned_by_file.file_entity != mesh_file_entity {
@@ -1046,11 +1046,11 @@ fn set_face_3d_colors(
             let face_color = face_color_q.get(*face_color_entity).unwrap();
             let palette_color_entity = face_color.palette_color_entity.get(client).unwrap();
             let palette_color = palette_color_q.get(palette_color_entity).unwrap();
-            new_mat_handle = materials.add(Color::new(
+            new_mat_handle = materials.add(CpuMaterial::new(Color::new(
                 *palette_color.r,
                 *palette_color.g,
                 *palette_color.b,
-            ));
+            ), 0.0, 0.0));
         } else {
             // use background color
             new_mat_handle = bckg_mat_handle;
@@ -1104,11 +1104,11 @@ fn set_icon_face_colors(
 
         let palette_color_entity = icon_face.palette_color_entity.get(client).unwrap();
         let palette_color = palette_color_q.get(palette_color_entity).unwrap();
-        new_mat_handle = materials.add(Color::new(
+        new_mat_handle = materials.add(CpuMaterial::new(Color::new(
             *palette_color.r,
             *palette_color.g,
             *palette_color.b,
-        ));
+        ), 0.0, 0.0));
 
         *net_face_material = new_mat_handle;
 

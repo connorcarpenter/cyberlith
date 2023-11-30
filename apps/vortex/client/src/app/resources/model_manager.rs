@@ -471,6 +471,7 @@ impl ModelManager {
         net_transform_entity: Entity,
     ) {
         // translation control
+        let mat_handle = materials.add(CpuMaterial::new(Color::LIGHT_BLUE, 0.0, 0.0));
         let (translation_entity_2d, translation_entity_3d, _) = Self::new_net_transform_control(
             commands,
             camera_manager,
@@ -478,13 +479,14 @@ impl ModelManager {
             edge_manager,
             meshes,
             materials,
+            &mat_handle,
             net_transform_entity,
             None,
-            Color::LIGHT_BLUE,
             NetTransformControlType::Translation,
         );
 
         // rotation control
+        let mat_handle = materials.add(CpuMaterial::new(Color::RED, 0.0, 0.0));
         let (rotation_entity_vert_2d, rotation_entity_vert_3d, Some((rotation_entity_edge_3d, rotation_entity_edge_2d))) = Self::new_net_transform_control(
             commands,
             camera_manager,
@@ -492,15 +494,16 @@ impl ModelManager {
             edge_manager,
             meshes,
             materials,
+            &mat_handle,
             net_transform_entity,
             Some(translation_entity_2d),
-            Color::RED,
             NetTransformControlType::RotationVertex,
         ) else {
             panic!("should def have an edge here");
         };
 
         // scale x control
+        let mat_handle = materials.add(CpuMaterial::new(Color::WHITE, 0.0, 0.0));
         let (scale_x_entity_2d, scale_x_entity_3d, Some((scale_x_entity_edge_3d, _))) = Self::new_net_transform_control(
             commands,
             camera_manager,
@@ -508,9 +511,9 @@ impl ModelManager {
             edge_manager,
             meshes,
             materials,
+            &mat_handle,
             net_transform_entity,
             Some(translation_entity_2d),
-            Color::WHITE,
             NetTransformControlType::Scale(ScaleAxis::X),
         ) else {
             panic!("should def have an edge here");
@@ -524,9 +527,9 @@ impl ModelManager {
             edge_manager,
             meshes,
             materials,
+            &mat_handle,
             net_transform_entity,
             Some(translation_entity_2d),
-            Color::WHITE,
             NetTransformControlType::Scale(ScaleAxis::Y),
         ) else {
             panic!("should def have an edge here");
@@ -540,9 +543,9 @@ impl ModelManager {
             edge_manager,
             meshes,
             materials,
+            &mat_handle,
             net_transform_entity,
             Some(translation_entity_2d),
-            Color::WHITE,
             NetTransformControlType::Scale(ScaleAxis::Z),
         ) else {
             panic!("should def have an edge here");
@@ -577,9 +580,9 @@ impl ModelManager {
         edge_manager: &mut EdgeManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
+        material: &Handle<CpuMaterial>,
         transform_entity: Entity,
         translation_entity_2d_opt: Option<Entity>,
-        color: Color,
         control_type: NetTransformControlType,
     ) -> (Entity, Entity, Option<(Entity, Entity)>) {
         let edge_angle_opt = match control_type {
@@ -594,9 +597,9 @@ impl ModelManager {
                 edge_manager,
                 meshes,
                 materials,
+                material,
                 translation_entity_2d_opt,
                 Vec3::ZERO,
-                color,
                 edge_angle_opt,
             );
 

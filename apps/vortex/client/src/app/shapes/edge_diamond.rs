@@ -1,16 +1,11 @@
 use math::Vec3;
-use render_api::{
-    base::{Color, CpuMaterial, CpuMesh},
-    components::{RenderObjectBundle, Transform},
-    AssetHash, Assets,
-};
+use render_api::{base::{Color, CpuMaterial, CpuMesh}, components::{RenderObjectBundle, Transform}, AssetHash, Assets, Handle};
 
 pub fn create_3d_edge_diamond(
     meshes: &mut Assets<CpuMesh>,
-    materials: &mut Assets<CpuMaterial>,
+    material: &Handle<CpuMaterial>,
     start: Vec3,
     end: Vec3,
-    color: Color,
     thickness: f32,
 ) -> RenderObjectBundle {
     let mesh = meshes.add(Diamond3d);
@@ -20,7 +15,7 @@ pub fn create_3d_edge_diamond(
         .with_scale(Vec3::new(distance, thickness, thickness));
     RenderObjectBundle {
         mesh,
-        material: materials.add(color),
+        material: *material,
         transform,
         ..Default::default()
     }
