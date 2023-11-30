@@ -8,12 +8,9 @@ use crate::{core::*, renderer::*};
 ///
 #[derive(Clone)]
 pub struct PbrMaterial {
-    /// Name.
-    pub name: String,
     pub diffuse: Color,
-    pub emissive: Color,
+    pub emissive: f32,
     pub shininess: f32,
-    /// Render states.
     pub render_states: RenderStates,
 }
 
@@ -31,7 +28,6 @@ impl PbrMaterial {
 
     fn new_internal(cpu_material: &CpuMaterial) -> Self {
         Self {
-            name: cpu_material.name.clone(),
             diffuse: cpu_material.diffuse,
             emissive: cpu_material.emissive,
             shininess: cpu_material.shininess,
@@ -83,9 +79,8 @@ impl Material for PbrMaterial {
 impl Default for PbrMaterial {
     fn default() -> Self {
         Self {
-            name: "default".to_string(),
             diffuse: Color::WHITE,
-            emissive: Color::BLACK,
+            emissive: 0.0,
             shininess: 32.0,
             render_states: RenderStates::default(),
         }

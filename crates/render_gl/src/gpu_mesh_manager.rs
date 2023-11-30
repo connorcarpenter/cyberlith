@@ -78,8 +78,6 @@ impl GpuMeshManager {
 
         program.use_vertex_attribute("vertex_world_position", gpu_positions);
         program.use_vertex_attribute_if_required("vertex_world_normal", gpu_normals);
-
-        // TODO: will need to pass "face_id" in here ... ?
     }
 
     pub fn draw(

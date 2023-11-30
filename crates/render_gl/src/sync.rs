@@ -6,7 +6,7 @@ use render_api::{
     Assets, RenderSync,
 };
 
-use crate::{asset_mapping::AssetMapping, core::{GpuDepthTexture2D, GpuTexture2D}, GpuMeshManager, renderer::{Material, PbrMaterial}};
+use crate::{asset_mapping::AssetMapping, core::{GpuDepthTexture2D, GpuTexture2D}, GpuMaterialManager, GpuMeshManager, renderer::{Material, PbrMaterial}};
 
 pub struct SyncPlugin;
 
@@ -15,7 +15,7 @@ impl Plugin for SyncPlugin {
         app
             // Resources
             .init_resource::<GpuMeshManager>()
-            .init_resource::<AssetMapping<CpuMaterial, Box<dyn Material>>>()
+            .init_resource::<GpuMaterialManager>()
             .init_resource::<AssetMapping<CpuTexture2D, GpuTexture2D>>()
             .init_resource::<AssetMapping<CpuTexture2D, GpuDepthTexture2D>>()
             // Systems
@@ -56,7 +56,7 @@ fn sync_mesh_assets(
 
 fn sync_material_assets(
     mut cpu_assets: ResMut<Assets<CpuMaterial>>,
-    mut gpu_assets: ResMut<AssetMapping<CpuMaterial, Box<dyn Material>>>,
+    mut gpu_material_manager: ResMut<GpuMaterialManager>,
 ) {
     if !cpu_assets.is_changed() {
         return;
@@ -66,22 +66,20 @@ fn sync_material_assets(
     let added_handles = cpu_assets.flush_added();
     for added_handle in added_handles {
         let cpu_data = cpu_assets.get(&added_handle).unwrap();
-        let gpu_data = PbrMaterial::new(cpu_data);
-        gpu_assets.insert(added_handle, Box::new(gpu_data));
+        gpu_material_manager.insert(added_handle, cpu_data);
     }
 
     // Handle Changed Materials
     let changed_handles = cpu_assets.flush_changed();
     for changed_handle in changed_handles {
         let cpu_data = cpu_assets.get(&changed_handle).unwrap();
-        let gpu_data = PbrMaterial::new(cpu_data);
-        gpu_assets.insert(changed_handle, Box::new(gpu_data));
+        gpu_material_manager.insert(changed_handle, cpu_data);
     }
 
     // Handle Removed Materials
     let removed_handles = cpu_assets.flush_removed();
     for removed_handle in removed_handles {
-        gpu_assets.remove(&removed_handle);
+        gpu_material_manager.remove(&removed_handle);
     }
 }
 
