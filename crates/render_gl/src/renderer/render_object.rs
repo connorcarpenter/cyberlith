@@ -134,13 +134,13 @@ impl RenderObjectInstanced {
                 let texture_width = (3 * max_instances as u32);
                 let texture_height = (commands.len() as u32);
 
-                program.use_uniform("transform_texture_width", texture_width as f32);
-                program.use_uniform("transform_texture_height", texture_height as f32);
+                program.use_uniform("instance_texture_width", texture_width as f32);
+                program.use_uniform("instance_texture_height", texture_height as f32);
 
-                let mut transform_texture = GpuTexture2D::new_empty::<[f32; 4]>(texture_width, texture_height);
-                transform_texture.fill_pure(&transform_grid);
+                let mut instances_texture = GpuTexture2D::new_empty::<[f32; 4]>(texture_width, texture_height);
+                instances_texture.fill_pure(&transform_grid);
 
-                program.use_texture("transform_texture", &transform_texture);
+                program.use_texture("instance_texture", &instances_texture);
 
                 gpu_mesh_manager.draw(program, render_states, render_camera.camera, commands);
 
