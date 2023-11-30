@@ -601,7 +601,6 @@ impl IconManager {
         commands: &mut Commands,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
-        ambient_lights: &mut Assets<AmbientLight>,
         texture_size: &Vec2,
         canvas_texture_handle: Handle<CpuTexture2D>,
     ) {
@@ -610,7 +609,7 @@ impl IconManager {
         // light
         {
             commands
-                .spawn(ambient_lights.add(AmbientLight::new(1.0, Color::WHITE)))
+                .spawn(AmbientLight::new(1.0, Color::WHITE))
                 .insert(self.render_layer);
         }
 

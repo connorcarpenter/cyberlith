@@ -91,9 +91,6 @@ impl Context {
             let program = Program::from_source(&key.0, &key.1)?;
             callback(&program);
             programs.insert(key, program);
-            if programs.len() > 1 {
-                panic!("we are aiming for a single program. what happened?");
-            }
         }
         Ok(())
     }

@@ -46,9 +46,9 @@ pub fn draw(
         With<DefaultDraw>,
     >,
     // Lights
-    ambient_lights_q: Query<(&Handle<AmbientLight>, Option<&RenderLayer>)>,
+    ambient_lights_q: Query<(&AmbientLight, Option<&RenderLayer>)>,
     point_lights_q: Query<(&PointLight, Option<&RenderLayer>)>,
-    directional_lights_q: Query<(&Handle<DirectionalLight>, Option<&RenderLayer>)>,
+    directional_lights_q: Query<(&DirectionalLight, Option<&RenderLayer>)>,
 ) {
     // Aggregate Cameras
     for (camera, transform, projection, render_layer_opt) in cameras_q.iter() {
@@ -59,18 +59,18 @@ pub fn draw(
     }
 
     // Aggregate Point Lights
-    for (point_light, render_layer_opt) in point_lights_q.iter() {
-        render_frame.draw_point_light(render_layer_opt, point_light);
+    for (light, render_layer_opt) in point_lights_q.iter() {
+        render_frame.draw_point_light(render_layer_opt, light);
     }
 
     // Aggregate Directional Lights
-    for (handle, render_layer_opt) in directional_lights_q.iter() {
-        render_frame.draw_directional_light(render_layer_opt, handle);
+    for (light, render_layer_opt) in directional_lights_q.iter() {
+        render_frame.draw_directional_light(render_layer_opt, light);
     }
 
     // Aggregate Ambient Lights
-    for (handle, render_layer_opt) in ambient_lights_q.iter() {
-        render_frame.draw_ambient_light(render_layer_opt, handle);
+    for (light, render_layer_opt) in ambient_lights_q.iter() {
+        render_frame.draw_ambient_light(render_layer_opt, light);
     }
 
     let Some(current_file_entity) = tab_manager.current_tab_entity() else {
