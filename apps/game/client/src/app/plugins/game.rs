@@ -5,7 +5,7 @@ use bevy_ecs::{
     system::{Commands, Local, Query, Res, ResMut},
 };
 
-use asset::MeshFile;
+use asset::{MeshFile, SkeletonData, SkeletonFile};
 use math::Vec3;
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
@@ -63,6 +63,7 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
+    mut skeletons: ResMut<Assets<SkeletonData>>,
 ) {
     let layer = RenderLayers::layer(0);
 
@@ -70,6 +71,9 @@ fn setup(
 
     let file_cube_mesh = MeshFile::load("cube.mesh");
     let file_cube_mesh_handle = meshes.add(file_cube_mesh);
+
+    let file_human_skel = SkeletonFile::load("human.skel");
+    let file_human_skel_handle = skeletons.add(file_human_skel);
 
     // model
     commands
@@ -120,7 +124,7 @@ fn setup(
                 target: RenderTarget::Screen,
                 ..Default::default()
             },
-            transform: Transform::from_xyz(0.0, 500.0, 500.0).looking_at(Vec3::ZERO, Vec3::Z),
+            transform: Transform::from_xyz(500.0, 500.0, 500.0).looking_at(Vec3::ZERO, Vec3::Z),
             projection:
             Projection::Orthographic(
                 OrthographicProjection {

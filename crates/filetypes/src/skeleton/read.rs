@@ -40,7 +40,6 @@ impl SkelAction {
                 None
             };
             let vertex_name_opt = Option::<String>::de(bit_reader)?;
-            let edge_name_opt = Option::<String>::de(bit_reader)?;
 
             output.push(Self::Vertex(
                 x,
@@ -48,7 +47,6 @@ impl SkelAction {
                 z,
                 parent_and_angle_opt,
                 vertex_name_opt,
-                edge_name_opt,
             ));
         }
         Ok(output)

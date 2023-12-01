@@ -21,13 +21,13 @@ impl MeshFile {
 }
 
 impl From<MeshFile> for CpuMesh {
-    fn from(mesh_file: MeshFile) -> Self {
-        let file_path = format!("assets/{}", &mesh_file.path);
+    fn from(file: MeshFile) -> Self {
+        let file_path = format!("assets/{}", &file.path);
 
-        //let data = fs::read(file_path).expect("unable to read file");
-        let data = include_bytes!("cube.mesh");
+        let data = fs::read(file_path).expect("unable to read file");
+        //let data = include_bytes!("cube.mesh");
 
-        let mut bit_reader = BitReader::new(data);
+        let mut bit_reader = BitReader::new(&data);
 
         let mesh_actions =
             filetypes::MeshAction::read(&mut bit_reader).expect("unable to read mesh file");
@@ -37,7 +37,7 @@ impl From<MeshFile> for CpuMesh {
         for action in mesh_actions {
             match action {
                 filetypes::MeshAction::Vertex(x, y, z) => {
-                    println!("Vertex: {}, {}, {}", x, y, z);
+                    // println!("Vertex: {}, {}, {}", x, y, z);
                     let vertex = Vec3::new(x as f32, y as f32, z as f32);
                     vertices.push(vertex);
                 }
@@ -50,15 +50,15 @@ impl From<MeshFile> for CpuMesh {
                     _,
                     _,
                 ) => {
-                    println!(
-                        "Face: {}, {}, {}, {}",
-                        face_id, vertex_a_id, vertex_b_id, vertex_c_id
-                    );
+                    // println!(
+                    //     "Face: {}, {}, {}, {}",
+                    //     face_id, vertex_a_id, vertex_b_id, vertex_c_id
+                    // );
                     let vertex_a = vertices[vertex_a_id as usize];
                     let vertex_b = vertices[vertex_b_id as usize];
                     let vertex_c = vertices[vertex_c_id as usize];
 
-                    // TODO: probably need to pass in the face_id here, for vertex attributes
+                    // TODO: probably need to pass in the face_id here, for vertex attributes?
                     positions.push(vertex_a);
                     positions.push(vertex_b);
                     positions.push(vertex_c);

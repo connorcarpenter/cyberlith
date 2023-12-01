@@ -30,7 +30,7 @@ impl SkelWriter {
     fn new_default_actions(&self) -> Vec<SkelAction> {
         let mut output = Vec::new();
 
-        output.push(SkelAction::Vertex(0, 0, 0, None, None, None));
+        output.push(SkelAction::Vertex(0, 0, 0, None, None));
 
         output
     }
@@ -54,7 +54,7 @@ impl SkelWriter {
 
         let mut output = Vec::new();
 
-        ///////////////////////////////  id,   x,   y,   z, Option<parent_entity, angle>, vertex_name, edge_name ///////////////////
+        ///////////////////////////////  id,   x,   y,   z, Option<parent_entity, angle>, vertex_name ///////////////////
         let mut map: HashMap<
             Entity,
             (
@@ -63,7 +63,6 @@ impl SkelWriter {
                 i16,
                 i16,
                 Option<(Entity, SerdeRotation)>,
-                Option<String>,
                 Option<String>,
             ),
         > = HashMap::new();
@@ -105,22 +104,6 @@ impl SkelWriter {
                 }
             };
 
-            let edge_name_opt: Option<String> = {
-                if let Some((_, edge_entity)) = parent_and_edge_entity_opt {
-                    if let Ok(shape_name) = shape_name_q.get(edge_entity) {
-                        if shape_name.value.len() > 0 {
-                            Some((*shape_name.value).clone())
-                        } else {
-                            None
-                        }
-                    } else {
-                        None
-                    }
-                } else {
-                    None
-                }
-            };
-
             let parent_entity_opt =
                 parent_and_edge_entity_opt.map(|(parent_entity, edge_entity)| {
                     let Ok(edge_angle) = edge_angle_q.get(edge_entity) else {
@@ -139,17 +122,16 @@ impl SkelWriter {
                     vertex.z(),
                     parent_entity_opt,
                     vertex_name_opt,
-                    edge_name_opt,
                 ),
             );
             vertices.push(*entity);
         }
 
         for entity in vertices.iter() {
-            let (_, x, y, z, parent_entity_opt, vertex_name_opt, edge_name_opt) =
+            let (_, x, y, z, parent_entity_opt, vertex_name_opt) =
                 map.get(entity).unwrap();
             let parent_id = parent_entity_opt.map(|(parent_entity, angle)| {
-                let (parent_id, _, _, _, _, _, _) = map.get(&parent_entity).unwrap();
+                let (parent_id, _, _, _, _, _) = map.get(&parent_entity).unwrap();
                 (*parent_id as u16, angle)
             });
             let vertex_info = SkelAction::Vertex(
@@ -158,7 +140,6 @@ impl SkelWriter {
                 *z,
                 parent_id.map(|(id, rot)| (id, convert_into_rotation(rot))),
                 vertex_name_opt.clone(),
-                edge_name_opt.clone(),
             );
             output.push(vertex_info);
         }
@@ -205,12 +186,11 @@ impl SkelReader {
             i16,
             Option<(u16, SerdeRotation)>,
             Option<String>,
-            Option<String>,
         )> = Vec::new();
 
         for action in actions {
             match action {
-                SkelAction::Vertex(x, y, z, parent_id_opt, vertex_name_opt, edge_name_opt) => {
+                SkelAction::Vertex(x, y, z, parent_id_opt, vertex_name_opt) => {
                     let entity_id = commands.spawn_empty().enable_replication(&mut server).id();
                     info!(
                         "spawning vertex (id {:?}, entity: {:?}, parent_id_opt: {:?})",
@@ -229,7 +209,6 @@ impl SkelReader {
                             z,
                             parent_id_opt.map(|(id, rot)| (id, convert_from_rotation(rot))),
                             vertex_name_opt,
-                            edge_name_opt,
                         ));
                     } else {
                         // root node should always be at 0,0,0 ... you can refactor these files later
@@ -240,14 +219,13 @@ impl SkelReader {
                             0,
                             parent_id_opt.map(|(id, rot)| (id, convert_from_rotation(rot))),
                             vertex_name_opt,
-                            edge_name_opt,
                         ));
                     }
                 }
             }
         }
 
-        for (entity, x, y, z, parent_id_opt, vertex_name_opt, edge_name_opt) in entities.iter() {
+        for (entity, x, y, z, parent_id_opt, vertex_name_opt) in entities.iter() {
             commands.entity(*entity).insert(Vertex3d::new(*x, *y, *z));
 
             if let Some(vertex_name) = vertex_name_opt {
@@ -257,7 +235,7 @@ impl SkelReader {
             }
 
             if let Some((parent_id, edge_angle)) = parent_id_opt {
-                let Some((parent_entity, _, _, _, _, _, _)) = entities.get(*parent_id as usize) else {
+                let Some((parent_entity, _, _, _, _, _)) = entities.get(*parent_id as usize) else {
                     panic!("parent_id {:?} not found", parent_id);
                 };
 
@@ -272,12 +250,6 @@ impl SkelReader {
                     .insert(edge_component)
                     .insert(EdgeAngle::new_complete(*edge_angle))
                     .id();
-
-                if let Some(edge_name) = edge_name_opt {
-                    commands
-                        .entity(edge_entity)
-                        .insert(ShapeName::new(edge_name.clone()));
-                }
 
                 output.push((*entity, Some((edge_entity, *parent_entity))));
             } else {
