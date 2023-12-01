@@ -47,14 +47,9 @@ impl FromPbrMaterial for PbrMaterial {
 
 impl Material for PbrMaterial {
     fn fragment_shader(&self) -> FragmentShader {
-        let attributes = FragmentAttributes {
-            position: true,
-            ..FragmentAttributes::NONE
-        };
         let output = include_str!("../../shaders/physical_material.frag").to_string();
         FragmentShader {
             source: output,
-            attributes,
         }
     }
 

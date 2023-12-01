@@ -5,6 +5,4 @@ use crate::renderer::FragmentAttributes;
 pub struct FragmentShader {
     /// The fragment shader source code
     pub source: String,
-    /// The attributes used by this fragment shader, ie. the input from the vertex shader.
-    pub attributes: FragmentAttributes,
 }
