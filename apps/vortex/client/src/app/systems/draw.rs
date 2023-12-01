@@ -94,7 +94,7 @@ pub fn draw(
         if !visibility.visible {
             continue;
         }
-        render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, transform);
+        render_frame.draw_mesh(render_layer_opt, mesh_handle, mat_handle, transform);
     }
 }
 
@@ -201,7 +201,7 @@ fn draw_vertices_and_edges_inner(world: &mut World, current_file: FileExtension)
         );
 
         // can't we ONLY draw this when 3d mode is enabled?
-        render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, transform);
+        render_frame.draw_mesh(render_layer_opt, mesh_handle, &mat_handle, transform);
 
         // draw vertex 2d
         let Some(vertex_2d_entity) = vertex_manager.vertex_entity_3d_to_2d(&vertex_3d_entity) else {
@@ -210,7 +210,7 @@ fn draw_vertices_and_edges_inner(world: &mut World, current_file: FileExtension)
 
         let (mesh_handle, transform, render_layer_opt) = objects_q.get(vertex_2d_entity).unwrap();
         // can't we ONLY draw this when 2d mode is enabled?
-        render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, transform);
+        render_frame.draw_mesh(render_layer_opt, mesh_handle, &mat_handle, transform);
     }
 
     // draw edges
@@ -236,13 +236,13 @@ fn draw_vertices_and_edges_inner(world: &mut World, current_file: FileExtension)
             edge_is_enabled,
         );
 
-        render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, transform);
+        render_frame.draw_mesh(render_layer_opt, mesh_handle, &mat_handle, transform);
 
         // draw edge 2d
         let Some(edge_2d_entity) = edge_manager.edge_entity_3d_to_2d(&edge_3d_entity) else {continue};
 
         let (mesh_handle, transform, render_layer_opt) = objects_q.get(edge_2d_entity).unwrap();
-        render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, transform);
+        render_frame.draw_mesh(render_layer_opt, mesh_handle, &mat_handle, transform);
 
         if edge_angles_are_visible && edge_is_enabled {
             // draw edge angles

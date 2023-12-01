@@ -1264,7 +1264,7 @@ impl ModelManager {
                 let (mesh_handle, transform, render_layer_opt) =
                     objects_q.get(data.entity_2d).unwrap();
                 let mat_handle = materials_q.get(data.entity_2d).unwrap();
-                render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, transform);
+                render_frame.draw_mesh(render_layer_opt, mesh_handle, mat_handle, transform);
 
                 for edge_3d_entity in data.edges_3d.iter() {
                     let edge_2d_entity = edge_manager.edge_entity_3d_to_2d(edge_3d_entity).unwrap();
@@ -1277,7 +1277,7 @@ impl ModelManager {
                 let (mesh_handle, transform, render_layer_opt) =
                     objects_q.get(*edge_2d_entity).unwrap();
                 let mat_handle = materials_q.get(*edge_2d_entity).unwrap();
-                render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, transform);
+                render_frame.draw_mesh(render_layer_opt, mesh_handle, mat_handle, transform);
             }
 
             // draw edge angles (net transform controls (rotation only))
@@ -1316,7 +1316,7 @@ impl ModelManager {
 
                     let (mesh_handle, transform, render_layer_opt) =
                         objects_q.get(edge_2d_entity).unwrap();
-                    render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, transform);
+                    render_frame.draw_mesh(render_layer_opt, mesh_handle, &mat_handle, transform);
                 }
             }
 
@@ -1328,7 +1328,7 @@ impl ModelManager {
                         let (mesh_handle, transform, render_layer_opt) =
                             objects_q.get(select_line_entity).unwrap();
                         let mat_handle = materials_q.get(select_line_entity).unwrap();
-                        render_frame.draw_object(
+                        render_frame.draw_mesh(
                             render_layer_opt,
                             mesh_handle,
                             &mat_handle,
@@ -1342,7 +1342,7 @@ impl ModelManager {
                         let (mesh_handle, transform, render_layer_opt) =
                             objects_q.get(select_circle_entity).unwrap();
                         let mat_handle = materials_q.get(select_circle_entity).unwrap();
-                        render_frame.draw_object(
+                        render_frame.draw_mesh(
                             render_layer_opt,
                             mesh_handle,
                             &mat_handle,
@@ -1566,7 +1566,7 @@ impl ModelManager {
                     set_2d_line_transform(&mut line_transform, start, end, depth);
 
                     // draw edge
-                    render_frame.draw_object(
+                    render_frame.draw_mesh(
                         Some(&render_layer),
                         &line_mesh,
                         &line_mat,
@@ -1651,7 +1651,7 @@ impl ModelManager {
 
                 let (mesh_handle, mat_handle, transform, render_layer_opt) =
                     objects_q.get(*vertex_3d_entity).unwrap();
-                render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, transform);
+                render_frame.draw_mesh(render_layer_opt, mesh_handle, mat_handle, transform);
 
                 for edge_3d_entity in data.edges_3d.iter() {
                     edge_3d_entities.insert(*edge_3d_entity);
@@ -1662,7 +1662,7 @@ impl ModelManager {
             for edge_3d_entity in edge_3d_entities.iter() {
                 let (mesh_handle, mat_handle, transform, render_layer_opt) =
                     objects_q.get(*edge_3d_entity).unwrap();
-                render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, transform);
+                render_frame.draw_mesh(render_layer_opt, mesh_handle, mat_handle, transform);
             }
 
             if let Some(skel_file_entity) = skel_file_entity_opt {
@@ -1688,7 +1688,7 @@ impl ModelManager {
 
                     let (mesh_handle, _, transform, render_layer_opt) =
                         objects_q.get(edge_3d_entity).unwrap();
-                    render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, transform);
+                    render_frame.draw_mesh(render_layer_opt, mesh_handle, &mat_handle, transform);
                 }
             }
         }
@@ -1858,7 +1858,7 @@ impl ModelManager {
             let face_transform = Transform::from(face_affine);
 
             // draw face
-            render_frame.draw_object(
+            render_frame.draw_mesh(
                 Some(&render_layer),
                 mesh_handle,
                 mat_handle,

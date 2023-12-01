@@ -2,7 +2,6 @@ use std::fs;
 
 use naia_serde::BitReader;
 
-use math::Vec3;
 use render_api::{AssetHash};
 
 #[derive(Hash)]

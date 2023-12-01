@@ -6,7 +6,7 @@ use math::{Vec2, Vec3};
 
 use crate::{
     assets::Handle,
-    base::{Color, CpuMaterial, CpuMesh},
+    base::{CpuMaterial, CpuMesh},
     components::Visibility,
     shapes,
     shapes::set_2d_line_transform,

@@ -17,11 +17,11 @@ use crate::{
 
 // Render Object
 #[derive(Clone)]
-pub struct RenderObject {
+pub struct RenderMeshes {
     mesh_handle_transform_map: HashMap<Handle<CpuMesh>, Vec<(Handle<CpuMaterial>, Mat4)>>,
 }
 
-impl RenderObject {
+impl RenderMeshes {
     pub fn new() -> Self {
         Self {
             mesh_handle_transform_map: HashMap::new(),
@@ -42,7 +42,39 @@ impl RenderObject {
         map.push((*mat_handle, transform.compute_matrix()));
     }
 
-    pub fn to_commands(
+    pub fn render<'a>(
+        gpu_mesh_manager: &'a GpuMeshManager,
+        gpu_material_manager: &'a GpuMaterialManager,
+        render_camera: &'a RenderCamera<'a>,
+        lights: &[&dyn Light],
+        meshes: RenderMeshes,
+    ) {
+        let (commands, instance_texture) =
+            meshes.to_commands(gpu_mesh_manager, gpu_material_manager);
+
+        let render_states = gpu_material_manager.render_states();
+        let fragment_shader = gpu_material_manager.fragment_shader();
+        let vertex_shader_source = Self::vertex_shader_source(lights);
+        Context::get()
+            .program(vertex_shader_source, fragment_shader.source, |program| {
+                gpu_material_manager.use_uniforms(program, render_camera, lights);
+
+                program.use_uniform(
+                    "view_projection",
+                    render_camera
+                        .projection
+                        .projection_matrix(&render_camera.camera.viewport_or_default())
+                        * render_camera.transform.view_matrix(),
+                );
+
+                program.use_texture("instance_texture", &instance_texture);
+
+                gpu_mesh_manager.draw(program, render_states, render_camera.camera, commands);
+            })
+            .expect("Failed compiling shader");
+    }
+
+    fn to_commands(
         self,
         gpu_mesh_manager: &GpuMeshManager,
         gpu_mat_manager: &GpuMaterialManager,
@@ -126,43 +158,6 @@ impl RenderObject {
         }
 
         instance_row
-    }
-}
-
-// Instanced rendering
-pub struct RenderObjectInstanced;
-
-impl RenderObjectInstanced {
-    pub fn render<'a>(
-        gpu_mesh_manager: &'a GpuMeshManager,
-        gpu_material_manager: &'a GpuMaterialManager,
-        render_camera: &'a RenderCamera<'a>,
-        lights: &[&dyn Light],
-        object: RenderObject,
-    ) {
-        let (commands, instance_texture) =
-            object.to_commands(gpu_mesh_manager, gpu_material_manager);
-
-        let render_states = gpu_material_manager.render_states();
-        let fragment_shader = gpu_material_manager.fragment_shader();
-        let vertex_shader_source = Self::vertex_shader_source(lights);
-        Context::get()
-            .program(vertex_shader_source, fragment_shader.source, |program| {
-                gpu_material_manager.use_uniforms(program, render_camera, lights);
-
-                program.use_uniform(
-                    "view_projection",
-                    render_camera
-                        .projection
-                        .projection_matrix(&render_camera.camera.viewport_or_default())
-                        * render_camera.transform.view_matrix(),
-                );
-
-                program.use_texture("instance_texture", &instance_texture);
-
-                gpu_mesh_manager.draw(program, render_states, render_camera.camera, commands);
-            })
-            .expect("Failed compiling shader");
     }
 
     fn vertex_shader_source(lights: &[&dyn Light]) -> String {

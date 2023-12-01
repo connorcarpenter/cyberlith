@@ -4,13 +4,13 @@ use render_api::{
     Handle,
 };
 
-use crate::renderer::{Light, RenderCamera, RenderObject};
+use crate::renderer::{Light, RenderCamera, RenderMeshes};
 
 // Render Pass
 pub struct RenderPass<'a> {
     pub camera: RenderCamera<'a>,
     pub lights: Vec<&'a dyn Light>,
-    objects: RenderObject,
+    meshes: RenderMeshes,
 }
 
 impl<'a> RenderPass<'a> {
@@ -22,21 +22,21 @@ impl<'a> RenderPass<'a> {
         Self {
             camera: RenderCamera::new(camera, transform, projection),
             lights: Vec::new(),
-            objects: RenderObject::new(),
+            meshes: RenderMeshes::new(),
         }
     }
 
-    pub fn add_object(
+    pub fn add_mesh(
         &mut self,
         mesh_handle: &Handle<CpuMesh>,
         mat_handle: &Handle<CpuMaterial>,
         transform: &'a Transform,
     ) {
-        self.objects.add_transform(mesh_handle, mat_handle, transform);
+        self.meshes.add_transform(mesh_handle, mat_handle, transform);
     }
 
-    pub fn take(self) -> (RenderCamera<'a>, Vec<&'a dyn Light>, RenderObject) {
-        (self.camera, self.lights, self.objects)
+    pub fn take(self) -> (RenderCamera<'a>, Vec<&'a dyn Light>, RenderMeshes) {
+        (self.camera, self.lights, self.meshes)
     }
 
     pub fn process_camera(render: &RenderCamera<'a>) -> &'a Camera {

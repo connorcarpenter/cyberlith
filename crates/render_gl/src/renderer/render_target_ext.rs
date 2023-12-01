@@ -1,7 +1,7 @@
 use render_api::components::Viewport;
 
 use crate::{
-    renderer::{RenderObjectInstanced, RenderPass},
+    renderer::{RenderPass, RenderMeshes},
     GpuMaterialManager, GpuMeshManager,
 };
 
@@ -19,7 +19,7 @@ pub trait RenderTargetExt {
         let (camera, lights, object) = render_pass.take();
 
         self.write(|| {
-            RenderObjectInstanced::render(
+            RenderMeshes::render(
                 gpu_mesh_manager,
                 gpu_material_manager,
                 &camera,

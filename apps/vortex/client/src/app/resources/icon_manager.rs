@@ -275,7 +275,7 @@ impl IconManager {
 
             // draw
             let mesh_handle = mesh_q.get(*edge_entity).unwrap();
-            render_frame.draw_object(
+            render_frame.draw_mesh(
                 Some(&self.render_layer),
                 mesh_handle,
                 &mat_handle_gray,
@@ -301,7 +301,7 @@ impl IconManager {
             let mesh_handle = mesh_q.get(face_entity).unwrap();
             let mat_handle = mat_q.get(face_entity).unwrap();
             let transform = transform_q.get(face_entity).unwrap();
-            render_frame.draw_object(
+            render_frame.draw_mesh(
                 Some(&self.render_layer),
                 mesh_handle,
                 &mat_handle,
@@ -406,7 +406,7 @@ impl IconManager {
                 continue;
             }
 
-            render_frame.draw_object(
+            render_frame.draw_mesh(
                 Some(&self.render_layer),
                 mesh_handle,
                 &mat_handle_light_gray,
@@ -457,7 +457,7 @@ impl IconManager {
                 &mat_handle_light_gray
             };
 
-            render_frame.draw_object(
+            render_frame.draw_mesh(
                 Some(&self.render_layer),
                 mesh_handle,
                 &mat_handle,
@@ -507,7 +507,7 @@ impl IconManager {
             let mut face_transform = transform_q.get_mut(face_entity).unwrap();
             face_transform.translation = center_translation;
 
-            render_frame.draw_object(
+            render_frame.draw_mesh(
                 Some(&self.render_layer),
                 mesh_handle,
                 &mat_handle,
@@ -526,7 +526,7 @@ impl IconManager {
                 transform.translation = vertex_translation;
                 transform.translation.z += 1.0;
 
-                render_frame.draw_object(
+                render_frame.draw_mesh(
                     Some(&self.render_layer),
                     mesh_handle,
                     &mat_handle_white,
@@ -547,7 +547,7 @@ impl IconManager {
                     vertex_translation.z + 1.0,
                 );
 
-                render_frame.draw_object(
+                render_frame.draw_mesh(
                     Some(&self.render_layer),
                     mesh_handle,
                     &mat_handle_white,
@@ -568,7 +568,7 @@ impl IconManager {
                 transform.scale.x = edge_transform.scale.x;
                 transform.scale.y = edge_transform.scale.y + 2.0;
 
-                render_frame.draw_object(
+                render_frame.draw_mesh(
                     Some(&self.render_layer),
                     mesh_handle,
                     &mat_handle_white,
@@ -585,7 +585,7 @@ impl IconManager {
                 transform.translation = face_translation;
                 transform.translation.z += 1.0;
 
-                render_frame.draw_object(
+                render_frame.draw_mesh(
                     Some(&self.render_layer),
                     mesh_handle,
                     &mat_handle_white,
@@ -2546,7 +2546,7 @@ impl IconManager {
             vertex_pos.y *= size_ratio.y;
             let vertex_pos = *frame_pos + vertex_pos;
             let transform = Transform::from_translation_2d(vertex_pos);
-            render_frame.draw_object(
+            render_frame.draw_mesh(
                 Some(&self.render_layer),
                 point_mesh_handle,
                 mat_handle_gray,
@@ -2581,7 +2581,7 @@ impl IconManager {
             set_2d_line_transform(&mut edge_transform, start_pos, end_pos, 1.0);
 
             // draw
-            render_frame.draw_object(
+            render_frame.draw_mesh(
                 Some(&self.render_layer),
                 line_mesh_handle,
                 mat_handle_gray,
@@ -2633,7 +2633,7 @@ impl IconManager {
 
             let transform = Transform::from_translation_2d(translation).with_scale(scale);
 
-            render_frame.draw_object(
+            render_frame.draw_mesh(
                 Some(&self.render_layer),
                 mesh_handle,
                 &mat_handle,
@@ -2807,5 +2807,5 @@ fn draw_line(
     let mut transform = Transform::default();
     transform.scale.y = thickness;
     set_2d_line_transform(&mut transform, start, end, 0.0);
-    render_frame.draw_object(Some(render_layer), mesh_handle, mat_handle, &transform);
+    render_frame.draw_mesh(Some(render_layer), mesh_handle, mat_handle, &transform);
 }

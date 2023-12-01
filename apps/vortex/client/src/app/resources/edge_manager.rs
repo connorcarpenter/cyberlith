@@ -861,7 +861,7 @@ impl EdgeManager {
         for entity in [base_circle_entity, angle_edge_entity, end_circle_entity] {
             let (mesh_handle, transform, render_layer_opt) = objects_q.get(entity).unwrap();
             let mat_handle = materials_q.get(entity).unwrap();
-            render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, transform);
+            render_frame.draw_mesh(render_layer_opt, mesh_handle, &mat_handle, transform);
         }
     }
 

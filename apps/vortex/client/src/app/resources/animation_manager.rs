@@ -1348,7 +1348,7 @@ impl AnimationManager {
             let adjust = Vec2::new(0.0, self.frame_size.y * 0.5);
             let child_position = coords + *frame_pos + adjust;
             let child_transform = Transform::from_translation_2d(child_position);
-            render_frame.draw_object(
+            render_frame.draw_mesh(
                 Some(render_layer),
                 point_mesh_handle,
                 &mat_handle_green,
@@ -1358,7 +1358,7 @@ impl AnimationManager {
             // draw edge 2d
             let mut line_transform = Transform::default();
             set_2d_line_transform(&mut line_transform, *parent_pos, child_position, 0.0);
-            render_frame.draw_object(
+            render_frame.draw_mesh(
                 Some(render_layer),
                 line_mesh_handle,
                 &mat_handle_green,
@@ -1625,7 +1625,7 @@ fn draw_line(
     let mut transform = Transform::default();
     transform.scale.y = thickness;
     set_2d_line_transform(&mut transform, start, end, 0.0);
-    render_frame.draw_object(Some(render_layer), mesh_handle, mat_handle, &transform);
+    render_frame.draw_mesh(Some(render_layer), mesh_handle, mat_handle, &transform);
 }
 
 fn sync_edge_angle(

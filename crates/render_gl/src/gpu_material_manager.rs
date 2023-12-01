@@ -6,7 +6,7 @@ use render_api::{base::CpuMaterial, Handle};
 
 use crate::{
     core::{Cull, GpuTexture2D, Program, RenderStates},
-    renderer::{FragmentAttributes, FragmentShader, Light, RenderCamera},
+    renderer::{FragmentShader, Light, RenderCamera},
 };
 
 #[derive(Resource)]
@@ -63,9 +63,9 @@ impl GpuMaterialManager {
         self.assets.get(&handle)
     }
 
-    pub fn remove(&mut self, handle: &Handle<CpuMaterial>) -> Option<GpuMaterial> {
+    pub fn remove(&mut self, _handle: &Handle<CpuMaterial>) -> Option<GpuMaterial> {
         todo!();
-        self.assets.remove(handle)
+        self.assets.remove(_handle)
     }
 
     pub fn fragment_shader(&self) -> FragmentShader {

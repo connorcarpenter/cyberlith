@@ -147,7 +147,7 @@ fn setup(
 
 fn step(
     time: Res<Time>,
-    mut object_q: Query<(&mut Transform), With<ObjectMarker>>,
+    mut object_q: Query<&mut Transform, With<ObjectMarker>>,
     mut rotation: Local<f32>,
 ) {
     let elapsed_time = (time.get_elapsed() / 16.0) as f32;
@@ -211,11 +211,11 @@ pub fn draw(
         render_frame.draw_ambient_light(render_layer_opt, ambient_light);
     }
 
-    // Aggregate RenderObjects
+    // Aggregate Meshes
     for (mesh_handle, mat_handle, transform, visibility, render_layer_opt) in objects_q.iter() {
         if !visibility.visible {
             continue;
         }
-        render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, transform);
+        render_frame.draw_mesh(render_layer_opt, mesh_handle, mat_handle, transform);
     }
 }

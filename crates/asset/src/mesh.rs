@@ -42,7 +42,7 @@ impl From<MeshFile> for CpuMesh {
                     vertices.push(vertex);
                 }
                 filetypes::MeshAction::Face(
-                    face_id,
+                    _face_id,
                     vertex_a_id,
                     vertex_b_id,
                     vertex_c_id,

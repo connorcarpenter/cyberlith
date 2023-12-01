@@ -88,14 +88,14 @@ pub fn render(
         }
     }
 
-    // Aggregate RenderObjects
-    for (render_layer, mesh_handle, mat_handle, transform) in frame_contents.objects.iter() {
+    // Aggregate Meshes
+    for (render_layer, mesh_handle, mat_handle, transform) in frame_contents.meshes.iter() {
         for camera_index in layer_to_order[*render_layer].iter().map(|x| *x) {
             if camera_work[camera_index].is_none() {
                 panic!("Found render object with RenderLayer not associated with any Camera!");
             }
 
-            camera_work[camera_index].as_mut().unwrap().add_object(
+            camera_work[camera_index].as_mut().unwrap().add_mesh(
                 mesh_handle,
                 mat_handle,
                 transform,

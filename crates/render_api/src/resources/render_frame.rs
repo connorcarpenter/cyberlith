@@ -65,7 +65,7 @@ impl RenderFrame {
         self.contents.ambient_lights.push((id, *light));
     }
 
-    pub fn draw_object(
+    pub fn draw_mesh(
         &mut self,
         render_layer_opt: Option<&RenderLayer>,
         mesh_handle: &Handle<CpuMesh>,
@@ -74,7 +74,7 @@ impl RenderFrame {
     ) {
         let id = convert_wrapper(render_layer_opt.copied());
         self.contents
-            .objects
+            .meshes
             .push((id, mesh_handle.clone(), mat_handle.clone(), *transform));
     }
 }
@@ -84,7 +84,7 @@ pub struct RenderFrameContents {
     pub point_lights: Vec<(usize, PointLight)>,
     pub directional_lights: Vec<(usize, DirectionalLight)>,
     pub ambient_lights: Vec<(usize, AmbientLight)>,
-    pub objects: Vec<(usize, Handle<CpuMesh>, Handle<CpuMaterial>, Transform)>,
+    pub meshes: Vec<(usize, Handle<CpuMesh>, Handle<CpuMaterial>, Transform)>,
 }
 
 impl Default for RenderFrameContents {
@@ -94,7 +94,7 @@ impl Default for RenderFrameContents {
             point_lights: Vec::new(),
             directional_lights: Vec::new(),
             ambient_lights: Vec::new(),
-            objects: Vec::new(),
+            meshes: Vec::new(),
         }
     }
 }

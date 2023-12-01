@@ -68,9 +68,9 @@ impl GpuMeshManager {
         self.assets.get(&handle)
     }
 
-    pub fn remove(&mut self, handle: &Handle<CpuMesh>) -> Option<GpuMesh> {
+    pub fn remove(&mut self, _handle: &Handle<CpuMesh>) -> Option<GpuMesh> {
         todo!();
-        self.assets.remove(handle)
+        self.assets.remove(_handle)
     }
 
     pub fn use_attributes(&self, program: &Program) {

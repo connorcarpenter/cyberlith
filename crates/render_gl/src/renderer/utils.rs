@@ -1,4 +1,4 @@
-use crate::renderer::{RenderCamera, RenderObject};
+use crate::renderer::{RenderCamera, RenderMeshes};
 
 ///
 /// Compare function for sorting objects based on distance from the camera.
@@ -6,9 +6,9 @@ use crate::renderer::{RenderCamera, RenderObject};
 /// then transparent objects from farthest away to closest to the camera.
 ///
 pub fn cmp_render_order(
-    camera: &RenderCamera,
-    obj0: &RenderObject,
-    obj1: &RenderObject,
+    _camera: &RenderCamera,
+    _obj0: &RenderMeshes,
+    _obj1: &RenderMeshes,
 ) -> std::cmp::Ordering {
     todo!()
     // let distance_a = camera
