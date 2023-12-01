@@ -4,9 +4,9 @@ use bevy_ecs::{
     query::With,
     system::{Commands, Local, Query, Res, ResMut},
 };
-use rand::Rng;
 
-use math::{Quat, Vec3};
+use asset::MeshFile;
+use math::Vec3;
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
     components::{
@@ -19,7 +19,7 @@ use render_api::{
 };
 
 #[derive(Component)]
-pub struct BallMarker;
+pub struct ObjectMarker;
 
 pub struct GamePlugin;
 
@@ -58,14 +58,6 @@ impl Plugin for GamePlugin {
 const ROOM_WIDTH: f32 = 300.0;
 const ROOM_DEPTH: f32 = 300.0;
 const ROOM_HEIGHT: f32 = 200.0;
-const GRAVITY: f32 = 0.1;
-const BALL_COUNT: u32 = 1;
-const BALL_SIZE: f32 = 40.0;
-const MESH_COUNT: u32 = 1;
-const MAX_VELOCITY: f32 = 10.0;
-
-#[derive(Component)]
-struct Velocity(Vec3);
 
 fn setup(
     mut commands: Commands,
@@ -74,55 +66,33 @@ fn setup(
 ) {
     let layer = RenderLayers::layer(0);
 
-    let mut sphere_mesh_handles = Vec::new();
-    for i in 0..MESH_COUNT {
-        sphere_mesh_handles.push(meshes.add(shapes::Sphere::new((i + 4) as u16)));
-    }
+    let red_mat_handle = materials.add(CpuMaterial::new(Color::RED, 0.0, 32.0, 0.5));
 
-    let red_mat_handle = materials.add(CpuMaterial::new(Color::RED, 0.0, 0.0));
+    let file_cube_mesh = MeshFile::load("cube.mesh");
+    let file_cube_mesh_handle = meshes.add(file_cube_mesh);
 
-    let mut rng = rand::thread_rng();
-
-    // ballz
-    let mut mesh_index = 0;
-    for _ in 0..BALL_COUNT {
-        let x = rng.gen_range(-ROOM_WIDTH..ROOM_WIDTH);
-        let y = rng.gen_range(-ROOM_DEPTH..ROOM_DEPTH);
-        let z = rng.gen_range(BALL_SIZE..ROOM_HEIGHT);
-
-        let vx = rng.gen_range(-2.0..2.0);
-        let vy = rng.gen_range(-2.0..2.0);
-        let vz = rng.gen_range(-1.0..1.0);
-
-        commands
-            .spawn(RenderObjectBundle {
-                //mesh: meshes.add(shapes::Cube),
-                mesh: sphere_mesh_handles[mesh_index],
-                material: red_mat_handle,
-                transform: Transform::from_scale(Vec3::splat(BALL_SIZE))
-                    .with_translation(Vec3::new(x, y, z)),
-                ..Default::default()
-            })
-            .insert(BallMarker)
-            .insert(Velocity(Vec3::new(vx, vy, vz)))
-            .insert(layer);
-
-        mesh_index += 1;
-        if mesh_index >= sphere_mesh_handles.len() {
-            mesh_index = 0;
-        }
-    }
+    // model
+    commands
+        .spawn(RenderObjectBundle {
+            //mesh: meshes.add(shapes::Cube),
+            mesh: file_cube_mesh_handle,
+            material: red_mat_handle,
+            transform: Transform::from_scale(Vec3::splat(1.0))
+                .with_translation(Vec3::splat(0.0)),
+            ..Default::default()
+        })
+        .insert(ObjectMarker)
+        .insert(layer);
 
     // plane
     commands
         .spawn(RenderObjectBundle {
             mesh: meshes.add(shapes::Square),
-            material: materials.add(CpuMaterial::new(Color::LIGHT_GRAY, 0.0, 0.0)),
+            material: materials.add(CpuMaterial::new(Color::LIGHT_GRAY, 0.0, 0.0, 0.0)),
             transform: Transform::from_scale(Vec3::new(ROOM_WIDTH, ROOM_DEPTH, 1.0))
                 .with_translation(Vec3::new(0.0, 0.0, 0.0)),
             ..Default::default()
         })
-        //.insert(CubeMarker)
         .insert(layer);
 
     // ambient light
@@ -139,9 +109,6 @@ fn setup(
             light_target - light_source,
         ))
         .insert(layer);
-    // point light
-    // commands.spawn(PointLight::new(Vec3::new(0.0, 0.0, 100.0), 3.0, Color::WHITE, Default::default()))
-    //     .insert(layer);
 
     // camera
     commands
@@ -155,80 +122,45 @@ fn setup(
             },
             transform: Transform::from_xyz(0.0, 500.0, 500.0).looking_at(Vec3::ZERO, Vec3::Z),
             projection:
-            // Projection::Orthographic(
-            //     OrthographicProjection {
-            //         near: 0.1,
-            //         far: 10000.0,
-            //         ..Default::default()
-            //     }),
-                Projection::Perspective(PerspectiveProjection {
-                            fov: std::f32::consts::PI / 4.0,
-                            near: 0.1,
-                            far: 10000.0,
-                           }),
+            Projection::Orthographic(
+                OrthographicProjection {
+                    near: 0.1,
+                    far: 10000.0,
+                    ..Default::default()
+                }),
+            //     Projection::Perspective(PerspectiveProjection {
+            //                 fov: std::f32::consts::PI / 4.0,
+            //                 near: 0.1,
+            //                 far: 10000.0,
+            //                }),
         })
         .insert(layer);
 }
 
 fn step(
     time: Res<Time>,
-    mut ball_q: Query<(&mut Velocity, &mut Transform), With<BallMarker>>,
-    // mut light_q: Query<&mut PointLight>,
+    mut object_q: Query<(&mut Transform), With<ObjectMarker>>,
     mut rotation: Local<f32>,
 ) {
-    //info!("elapsed time: {}", frame_input.elapsed_time);
-
     let elapsed_time = (time.get_elapsed() / 16.0) as f32;
 
-    // if *rotation == 0.0 {
-    //     *rotation = 0.01;
-    // } else {
-    //     *rotation += 1.0 * elapsed_time;
-    //     if *rotation > 359.0 {
-    //         *rotation = 0.01;
-    //     }
-    // }
-
-    for (mut velocity, mut transform) in ball_q.iter_mut() {
-        transform.translation.x += velocity.0.x;
-        transform.translation.y += velocity.0.y;
-        transform.translation.z += velocity.0.z;
-
-        velocity.0.z -= GRAVITY;
-
-        if transform.translation.z < BALL_SIZE {
-            velocity.0.z = -velocity.0.z;
-            transform.translation.z = BALL_SIZE;
-        }
-
-        // keep within room X, Y
-        if transform.translation.x < -ROOM_WIDTH + BALL_SIZE {
-            velocity.0.x = -velocity.0.x;
-            transform.translation.x = -ROOM_WIDTH + BALL_SIZE;
-        }
-        if transform.translation.x > ROOM_WIDTH - BALL_SIZE {
-            velocity.0.x = -velocity.0.x;
-            transform.translation.x = ROOM_WIDTH - BALL_SIZE;
-        }
-        if transform.translation.y < -ROOM_DEPTH + BALL_SIZE {
-            velocity.0.y = -velocity.0.y;
-            transform.translation.y = -ROOM_DEPTH + BALL_SIZE;
-        }
-        if transform.translation.y > ROOM_DEPTH - BALL_SIZE {
-            velocity.0.y = -velocity.0.y;
-            transform.translation.y = ROOM_DEPTH - BALL_SIZE;
-        }
-
-        if velocity.0.z > MAX_VELOCITY {
-            velocity.0.z = MAX_VELOCITY;
+    if *rotation == 0.0 {
+        *rotation = 0.01;
+    } else {
+        *rotation += 1.0 * elapsed_time;
+        if *rotation > 359.0 {
+            *rotation = 0.01;
         }
     }
 
-    // for mut point_light in light_q.iter_mut() {
-    //     point_light.position.x = x;
-    //     point_light.position.y = y;
-    //     point_light.position.z = 200.0;
-    // }
+    for mut transform in object_q.iter_mut() {
+        transform.translation.x = f32::to_radians(*rotation).cos() * 100.0;
+        transform.translation.y = f32::to_radians(*rotation).sin() * 100.0;
+        transform.translation.z = 50.0;
+
+        transform.rotate_x(0.01 * elapsed_time);
+        transform.rotate_y(0.02 * elapsed_time);
+    }
 }
 
 pub fn draw(
