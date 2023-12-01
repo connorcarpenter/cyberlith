@@ -6,13 +6,13 @@ use math::Vec3;
 use render_api::{AssetHash};
 
 #[derive(Hash)]
-pub struct SkeletonFile {
+pub struct PaletteFile {
     path: String,
 }
 
-impl AssetHash<SkeletonData> for SkeletonFile {}
+impl AssetHash<PaletteData> for PaletteFile {}
 
-impl SkeletonFile {
+impl PaletteFile {
     pub fn load(path: &str) -> Self {
         Self {
             path: path.to_string(),
@@ -21,11 +21,11 @@ impl SkeletonFile {
 }
 
 
-pub struct SkeletonData {
+pub struct PaletteData {
 
 }
 
-impl Default for SkeletonData {
+impl Default for PaletteData {
     fn default() -> Self {
         Self {
 
@@ -33,26 +33,25 @@ impl Default for SkeletonData {
     }
 }
 
-impl SkeletonData {
+impl PaletteData {
 
 }
 
-impl From<SkeletonFile> for SkeletonData {
-    fn from(file: SkeletonFile) -> Self {
+impl From<PaletteFile> for PaletteData {
+    fn from(file: PaletteFile) -> Self {
         let file_path = format!("assets/{}", &file.path);
 
         let data = fs::read(file_path).expect("unable to read file");
-        //let data = include_bytes!("cube.mesh");
 
         let mut bit_reader = BitReader::new(&data);
 
         let actions =
-            filetypes::SkelAction::read(&mut bit_reader).expect("unable to parse file");
+            filetypes::PaletteAction::read(&mut bit_reader).expect("unable to parse file");
 
         for action in actions {
             match action {
-                filetypes::SkelAction::Vertex(x, y, z, parent_opt, name_opt) => {
-                    println!("Vertex: ({}, {}, {}), parent: {:?}, name: {:?}", x, y, z, parent_opt, name_opt);
+                filetypes::PaletteAction::Color(r, g, b) => {
+                    println!("Color: ({}, {}, {})", r, g, b);
                 }
             }
         }

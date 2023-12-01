@@ -29,12 +29,12 @@ impl From<MeshFile> for CpuMesh {
 
         let mut bit_reader = BitReader::new(&data);
 
-        let mesh_actions =
-            filetypes::MeshAction::read(&mut bit_reader).expect("unable to read mesh file");
+        let actions =
+            filetypes::MeshAction::read(&mut bit_reader).expect("unable to parse file");
 
         let mut vertices = Vec::new();
         let mut positions = Vec::new();
-        for action in mesh_actions {
+        for action in actions {
             match action {
                 filetypes::MeshAction::Vertex(x, y, z) => {
                     // println!("Vertex: {}, {}, {}", x, y, z);
@@ -63,7 +63,9 @@ impl From<MeshFile> for CpuMesh {
                     positions.push(vertex_b);
                     positions.push(vertex_c);
                 }
-                _ => {}
+                filetypes::MeshAction::Edge(_, _) => {
+                    // do nothing
+                }
             }
         }
 

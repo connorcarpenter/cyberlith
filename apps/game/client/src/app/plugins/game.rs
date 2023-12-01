@@ -5,7 +5,7 @@ use bevy_ecs::{
     system::{Commands, Local, Query, Res, ResMut},
 };
 
-use asset::{MeshFile, SkeletonData, SkeletonFile};
+use asset::{MeshFile, PaletteData, PaletteFile, SkeletonData, SkeletonFile};
 use math::Vec3;
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
@@ -64,6 +64,7 @@ fn setup(
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
     mut skeletons: ResMut<Assets<SkeletonData>>,
+    mut palettes: ResMut<Assets<PaletteData>>,
 ) {
     let layer = RenderLayers::layer(0);
 
@@ -74,6 +75,9 @@ fn setup(
 
     let file_human_skel = SkeletonFile::load("human.skel");
     let file_human_skel_handle = skeletons.add(file_human_skel);
+
+    let file_3bit_palette = PaletteFile::load("3bit.palette");
+    let file_3bit_palette_handle = palettes.add(file_3bit_palette);
 
     // model
     commands
