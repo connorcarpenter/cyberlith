@@ -79,7 +79,7 @@ fn setup(
         sphere_mesh_handles.push(meshes.add(shapes::Sphere::new((i + 4) as u16)));
     }
 
-    let red_mat_handle = materials.add(Color::from_rgb_f32(1.0, 0.0, 0.0));
+    let red_mat_handle = materials.add(CpuMaterial::new(Color::RED, 0.0, 0.0));
 
     let mut rng = rand::thread_rng();
 
@@ -117,7 +117,7 @@ fn setup(
     commands
         .spawn(RenderObjectBundle {
             mesh: meshes.add(shapes::Square),
-            material: materials.add(Color::from_rgb_f32(0.5, 0.5, 0.5)),
+            material: materials.add(CpuMaterial::new(Color::LIGHT_GRAY, 0.0, 0.0)),
             transform: Transform::from_scale(Vec3::new(ROOM_WIDTH, ROOM_DEPTH, 1.0))
                 .with_translation(Vec3::new(0.0, 0.0, 0.0)),
             ..Default::default()

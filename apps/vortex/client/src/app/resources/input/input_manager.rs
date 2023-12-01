@@ -326,14 +326,15 @@ impl InputManager {
             }
         }
 
-        let edge_transform = transform_q.get(*edge_2d_entity).unwrap();
-        let edge_start = edge_transform.translation.truncate();
-        let edge_end = get_2d_line_transform_endpoint(&edge_transform);
+        if let Ok(edge_transform) = transform_q.get(*edge_2d_entity) {
+            let edge_start = edge_transform.translation.truncate();
+            let edge_end = get_2d_line_transform_endpoint(&edge_transform);
 
-        let distance = distance_to_2d_line(*mouse_position, edge_start, edge_end);
-        if distance < *least_distance {
-            *least_distance = distance;
-            *least_entity = Some((*edge_2d_entity, CanvasShape::Edge));
+            let distance = distance_to_2d_line(*mouse_position, edge_start, edge_end);
+            if distance < *least_distance {
+                *least_distance = distance;
+                *least_entity = Some((*edge_2d_entity, CanvasShape::Edge));
+            }
         }
     }
 
