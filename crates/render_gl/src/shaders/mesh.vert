@@ -74,10 +74,19 @@ void main()
     vec4 material_data2 = get_material_data(material_index, 1);
     vec3 material_color = vec3(material_data1.x, material_data1.y, material_data1.z);
     float material_emissive = material_data1.w;
-    float material_shininess = material_data2.x;
+    float material_shine_size = max(1.0, material_data2.x);
+    float material_shine_amount = material_data2.y;
+    vec2 material_shine = vec2(material_shine_size, material_shine_amount);
 
     // color
-    color = (material_emissive * material_color) + calculate_total_light(camera_position, transformed_vertex_world_position, transformed_vertex_world_normal, material_color, material_shininess);
+    color = (material_emissive * material_color);
+    color = color + calculate_total_light(
+        camera_position,
+        transformed_vertex_world_position,
+        transformed_vertex_world_normal,
+        material_color,
+        material_shine
+    );
     color = reinhard_tone_mapping(color);
     color = srgb_from_rgb(color);
 }

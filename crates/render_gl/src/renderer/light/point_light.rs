@@ -12,7 +12,7 @@ impl Light for PointLight {
             uniform vec3 light_attenuation_{};
             uniform vec3 light_position_{};
 
-            vec3 calculate_light_{}(vec3 position, vec3 normal, vec3 view_direction, vec3 material_color, float material_shininess)
+            vec3 calculate_single_light_{}(vec3 position, vec3 normal, vec3 view_direction, vec3 material_color, vec2 material_shine)
             {{
                 vec3 light_direction = light_position_{} - position;
                 float distance = length(light_direction);
@@ -20,7 +20,7 @@ impl Light for PointLight {
                 light_direction = vec3(light_direction.x, -light_direction.z, -light_direction.y);
 
                 vec3 light_color = attenuate(light_color_{}, light_attenuation_{}, distance);
-                return calculate_light(light_color, light_direction, view_direction, normal, material_color, material_shininess);
+                return calculate_light(light_color, light_direction, view_direction, normal, material_color, material_shine);
             }}
         
         ", i, i, i, i, i, i, i)

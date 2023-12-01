@@ -30,7 +30,7 @@ impl PbrMaterial {
         Self {
             diffuse: cpu_material.diffuse,
             emissive: cpu_material.emissive,
-            shininess: cpu_material.shininess,
+            shininess: cpu_material.shine_size,
             render_states: RenderStates {
                 cull: Cull::Back,
                 ..Default::default()

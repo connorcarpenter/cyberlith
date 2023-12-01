@@ -206,7 +206,7 @@ impl FaceManager {
         let vertex_2d_b = vertex_manager.vertex_entity_3d_to_2d(&vertex_3d_b).unwrap();
         let vertex_2d_c = vertex_manager.vertex_entity_3d_to_2d(&vertex_3d_c).unwrap();
 
-        let mat_handle = materials.add(CpuMaterial::new(FaceIcon2d::COLOR, 0.0, 0.0));
+        let mat_handle = materials.add(CpuMaterial::new(FaceIcon2d::COLOR, 0.0, 0.0, 0.0));
 
         let entity_2d = commands
             .spawn_empty()
@@ -416,7 +416,7 @@ impl FaceManager {
         face_3d_entity: Entity,
         positions: [Vec3; 3],
     ) {
-        let mat_handle = materials.add(CpuMaterial::new(Face3dLocal::COLOR, 0.0, 0.0));
+        let mat_handle = materials.add(CpuMaterial::new(Face3dLocal::COLOR, 0.0, 0.0, 0.0));
 
         commands
             .entity(face_3d_entity)

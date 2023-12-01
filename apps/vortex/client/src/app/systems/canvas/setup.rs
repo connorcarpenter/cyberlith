@@ -10,6 +10,7 @@ use render_api::{
     },
     Assets, Handle,
 };
+use render_api::components::DirectionalLight;
 use render_egui::EguiUserTextures;
 
 use crate::app::{
@@ -99,7 +100,7 @@ fn setup_2d_scene(
 ) {
     camera_manager.layer_2d = RenderLayers::layer(2);
 
-    let mat_handle_white = materials.add(CpuMaterial::new(Color::WHITE, 0.0, 0.0));
+    let mat_handle_white = materials.add(CpuMaterial::new(Color::WHITE, 0.0, 0.0, 0.0));
 
     // light
     {
@@ -197,9 +198,10 @@ fn setup_3d_scene(
     commands
         .spawn(AmbientLight::new(0.01, Color::WHITE))
         .insert(camera_manager.layer_3d);
+    // directional light
     commands
-        .spawn(PointLight {
-            position: Vec3::new(60.0, 60.0, 90.0),
+        .spawn(DirectionalLight {
+            direction: Vec3::new(60.0, 60.0, 90.0),
             color: Color::WHITE,
             intensity: 0.2,
             ..Default::default()

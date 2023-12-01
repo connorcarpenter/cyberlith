@@ -1010,10 +1010,10 @@ impl AnimationManager {
             let camera_3d_entity = camera_manager.camera_3d_entity().unwrap();
             let point_mesh_handle = meshes.add(Circle::new(Vertex2d::SUBDIVISIONS));
             let line_mesh_handle = meshes.add(Line);
-            let mat_handle_white = materials.add(CpuMaterial::new(Color::WHITE, 0.0, 0.0));
-            let mat_handle_gray = materials.add(CpuMaterial::new(Color::GRAY, 0.0, 0.0));
-            let mat_handle_dark_gray = materials.add(CpuMaterial::new(Color::DARK_GRAY, 0.0, 0.0));
-            let mat_handle_green = materials.add(CpuMaterial::new(Color::GREEN, 0.0, 0.0));
+            let mat_handle_white = materials.add(CpuMaterial::new(Color::WHITE, 0.0, 0.0, 0.0));
+            let mat_handle_gray = materials.add(CpuMaterial::new(Color::GRAY, 0.0, 0.0, 0.0));
+            let mat_handle_dark_gray = materials.add(CpuMaterial::new(Color::DARK_GRAY, 0.0, 0.0, 0.0));
+            let mat_handle_green = materials.add(CpuMaterial::new(Color::GREEN, 0.0, 0.0, 0.0));
 
             for (frame_index, frame_pos) in frame_rects.iter().enumerate() {
                 // frame_index 0 is preview frame

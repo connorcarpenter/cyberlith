@@ -785,7 +785,7 @@ fn file_ext_specific_sync_tabs_shape_colors(
                 face_color_q,
             ) = system_state.get_mut(world);
 
-            let gray_mat_handle = materials.add(CpuMaterial::new(Color::LIGHT_GRAY, 0.0, 0.0));
+            let gray_mat_handle = materials.add(CpuMaterial::new(Color::LIGHT_GRAY, 0.0, 0.0, 0.0));
             for mut mat_handle in edge_2d_q.iter_mut() {
                 *mat_handle = gray_mat_handle;
             }
@@ -907,7 +907,7 @@ fn file_ext_specific_sync_tabs_shape_colors(
             let (mut materials, mut edge_2d_q, mut face_2d_q, mut face_3d_q) =
                 system_state.get_mut(world);
 
-            let enabled_mat_handle = materials.add(CpuMaterial::new(Vertex2d::ENABLED_COLOR, 0.0, 0.0));
+            let enabled_mat_handle = materials.add(CpuMaterial::new(Vertex2d::ENABLED_COLOR, 0.0, 0.0, 0.0));
 
             for mut mat_handle in edge_2d_q.iter_mut() {
                 *mat_handle = enabled_mat_handle;
@@ -1033,7 +1033,7 @@ fn set_face_3d_colors(
         *background_color.r,
         *background_color.g,
         *background_color.b,
-    ), 0.0, 0.0));
+    ), 0.0, 0.0, 0.0));
 
     for (face_3d_entity, mut face_3d_material, owned_by_file) in face_3d_q.iter_mut() {
         if owned_by_file.file_entity != mesh_file_entity {
@@ -1050,7 +1050,7 @@ fn set_face_3d_colors(
                 *palette_color.r,
                 *palette_color.g,
                 *palette_color.b,
-            ), 0.0, 0.0));
+            ), 0.0, 0.0, 0.0));
         } else {
             // use background color
             new_mat_handle = bckg_mat_handle;
@@ -1108,7 +1108,7 @@ fn set_icon_face_colors(
             *palette_color.r,
             *palette_color.g,
             *palette_color.b,
-        ), 0.0, 0.0));
+        ), 0.0, 0.0, 0.0));
 
         *net_face_material = new_mat_handle;
 

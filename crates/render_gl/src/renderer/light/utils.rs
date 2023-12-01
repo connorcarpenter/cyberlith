@@ -7,11 +7,11 @@ pub fn lights_shader_source(lights: &[&dyn Light]) -> String {
     let mut dir_fun = String::new();
     for (i, light) in lights.iter().enumerate() {
         shader_source.push_str(&light.shader_source(i as u32));
-        dir_fun.push_str(&format!("color += calculate_light_{}(position, normal, view_direction, material_color, material_shininess);\n", i))
+        dir_fun.push_str(&format!("color += calculate_single_light_{}(position, normal, view_direction, material_color, material_shine);\n", i))
     }
     shader_source.push_str(&format!(
         "
-            vec3 calculate_total_light(vec3 camera_position, vec3 position, vec3 normal, vec3 material_color, float material_shininess)
+            vec3 calculate_total_light(vec3 camera_position, vec3 position, vec3 normal, vec3 material_color, vec2 material_shine)
             {{
                 vec3 color = vec3(0.0, 0.0, 0.0);
                 vec3 view_direction = normalize(camera_position - position);

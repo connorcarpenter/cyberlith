@@ -74,9 +74,9 @@ impl Default for VertexManager {
 
 impl VertexManager {
     pub fn setup(&mut self, materials: &mut Assets<CpuMaterial>) {
-        self.mat_enabled_vertex = materials.add(CpuMaterial::new(Vertex2d::ENABLED_COLOR, 0.0, 0.0));
-        self.mat_disabled_vertex = materials.add(CpuMaterial::new(Vertex2d::DISABLED_COLOR, 0.0, 0.0));
-        self.mat_root_vertex = materials.add(CpuMaterial::new(Vertex2d::ROOT_COLOR, 0.0, 0.0));
+        self.mat_enabled_vertex = materials.add(CpuMaterial::new(Vertex2d::ENABLED_COLOR, 0.0, 0.0, 0.0));
+        self.mat_disabled_vertex = materials.add(CpuMaterial::new(Vertex2d::DISABLED_COLOR, 0.0, 0.0, 0.0));
+        self.mat_root_vertex = materials.add(CpuMaterial::new(Vertex2d::ROOT_COLOR, 0.0, 0.0, 0.0));
     }
 
     pub fn queue_resync(&mut self) {
@@ -313,7 +313,7 @@ impl VertexManager {
         let mat_handle = materials.add(CpuMaterial::new(
             Vertex2d::ENABLED_COLOR,
             0.0,
-            0.0,
+            0.0, 0.0
         ));
         let new_vertex_2d_entity = self.vertex_3d_postprocess(
             commands,

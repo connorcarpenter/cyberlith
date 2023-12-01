@@ -43,7 +43,7 @@ impl GpuMaterialManager {
             cpu_material.diffuse.b as f32 / 255.0,
             cpu_material.emissive,
         ];
-        let second = [cpu_material.shininess, 0.0, 0.0, 0.0];
+        let second = [cpu_material.shine_size, cpu_material.shine_amount, 0.0, 0.0];
         self.cpu_materials.push(first);
         self.cpu_materials.push(second);
 
@@ -69,14 +69,9 @@ impl GpuMaterialManager {
     }
 
     pub fn fragment_shader(&self) -> FragmentShader {
-        let attributes = FragmentAttributes {
-            position: true,
-            ..FragmentAttributes::NONE
-        };
         let output = include_str!("shaders/physical_material.frag").to_string();
         FragmentShader {
             source: output,
-            attributes,
         }
     }
 

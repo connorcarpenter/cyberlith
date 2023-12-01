@@ -421,7 +421,7 @@ impl EdgeManager {
         let default_draw = file_type == FileExtension::Mesh;
 
         // create new 2d edge, add local components to 3d edge
-        let mat_handle = materials.add(CpuMaterial::new(Vertex2d::ENABLED_COLOR, 0.0, 0.0));
+        let mat_handle = materials.add(CpuMaterial::new(Vertex2d::ENABLED_COLOR, 0.0, 0.0, 0.0));
         let new_edge_2d_entity = self.edge_3d_postprocess(
             commands,
             meshes,
@@ -466,7 +466,7 @@ impl EdgeManager {
         default_draw: bool,
     ) -> Entity {
 
-        let mat_handle_dark_blue = materials.add(CpuMaterial::new(Color::DARK_BLUE, 0.0, 0.0));
+        let mat_handle_dark_blue = materials.add(CpuMaterial::new(Color::DARK_BLUE, 0.0, 0.0, 0.0));
 
         // edge 3d
         let shape_components = if arrows_not_lines {

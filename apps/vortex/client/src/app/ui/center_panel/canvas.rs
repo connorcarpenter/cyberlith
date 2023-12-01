@@ -118,6 +118,7 @@ pub fn render_canvas(ui: &mut Ui, world: &mut World) {
 
                     if canvas.is_visible() {
                         let image = Image::new(texture_id, texture_size)
+                            .bg_fill(Color32::BLACK)
                             .uv(Rect::from_min_max(pos2(0.0, 1.0), pos2(1.0, 0.0)))
                             .sense(egui::Sense::click_and_drag());
                         let canvas_response = ui.add_enabled(true, image);

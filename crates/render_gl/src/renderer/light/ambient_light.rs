@@ -7,7 +7,7 @@ impl<'a> Light for AmbientLight {
         format!(
             "
                 uniform vec3 light_color_{};
-                vec3 calculate_light_{}(vec3 position, vec3 normal, vec3 view_direction, vec3 material_color, float material_shininess)
+                vec3 calculate_single_light_{}(vec3 position, vec3 normal, vec3 view_direction, vec3 material_color, vec2 material_shine)
                 {{
                     return light_color_{} * material_color;
                 }}

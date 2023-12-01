@@ -1,5 +1,5 @@
 
-vec3 calculate_light(vec3 light_color, vec3 light_dir, vec3 view_dir, vec3 normal, vec3 material_color, float material_shininess)
+vec3 calculate_light(vec3 light_color, vec3 light_dir, vec3 view_dir, vec3 normal, vec3 material_color, vec2 material_shine)
 {
     // diffuse
     float diffuse_strength = max(dot(normal, light_dir), 0.0);
@@ -7,9 +7,10 @@ vec3 calculate_light(vec3 light_color, vec3 light_dir, vec3 view_dir, vec3 norma
 
     // specular
     vec3 reflect_dir = reflect(-light_dir, normal);
-    float specular_strength = pow(max(dot(view_dir, reflect_dir), 0.0), material_shininess);
-    // 0.5 here should be a material property
-    vec3 specular_color = 0.5 * specular_strength * light_color;
+    float shine_size = material_shine.x;
+    float shine_amount = material_shine.y;
+    float specular_strength = pow(max(dot(view_dir, reflect_dir), 0.0), shine_size);
+    vec3 specular_color = shine_amount * specular_strength * light_color;
 
     return diffuse_color + specular_color;
 }
