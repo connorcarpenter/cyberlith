@@ -23,7 +23,9 @@ use crate::common::{FileTransformEntityType, SerdeQuat};
 pub enum ModelAction {
     // path, file_name
     SkelFile(String, String),
+    // path, file_name, file_type
     SkinOrSceneFile(String, String, FileTransformEntityType),
+    // file index, name, x, y, z, scale_x, scale_y, scale_z, rotation
     NetTransform(u16, String, i16, i16, i16, f32, f32, f32, SerdeQuat),
 }
 

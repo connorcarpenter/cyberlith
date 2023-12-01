@@ -20,7 +20,9 @@ use crate::common::{FileTransformEntityType, SerdeQuat};
 
 #[derive(Clone)]
 pub enum SceneAction {
+    // path, file_name, file_type
     SkinOrSceneFile(String, String, FileTransformEntityType),
+    // file index, x, y, z, scale_x, scale_y, scale_z, rotation
     NetTransform(u16, i16, i16, i16, f32, f32, f32, SerdeQuat),
 }
 

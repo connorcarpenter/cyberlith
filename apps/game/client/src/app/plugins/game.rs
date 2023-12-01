@@ -5,7 +5,7 @@ use bevy_ecs::{
     system::{Commands, Local, Query, Res, ResMut},
 };
 
-use asset::{MeshFile, PaletteData, PaletteFile, SkeletonData, SkeletonFile};
+use asset::{MeshFile, PaletteData, PaletteFile, SkeletonData, SkeletonFile, AnimationFile, IconFile, SkinFile, ModelFile, SceneFile, AnimationData, IconData, SkinData, ModelData, SceneData};
 use math::Vec3;
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
@@ -65,25 +65,44 @@ fn setup(
     mut materials: ResMut<Assets<CpuMaterial>>,
     mut skeletons: ResMut<Assets<SkeletonData>>,
     mut palettes: ResMut<Assets<PaletteData>>,
+    mut animations: ResMut<Assets<AnimationData>>,
+    mut icons: ResMut<Assets<IconData>>,
+    mut skins: ResMut<Assets<SkinData>>,
+    mut models: ResMut<Assets<ModelData>>,
+    mut scenes: ResMut<Assets<SceneData>>,
 ) {
     let layer = RenderLayers::layer(0);
 
     let red_mat_handle = materials.add(CpuMaterial::new(Color::RED, 0.0, 32.0, 0.5));
 
-    let file_cube_mesh = MeshFile::load("cube.mesh");
-    let file_cube_mesh_handle = meshes.add(file_cube_mesh);
+    let cube_mesh = MeshFile::load("cube.mesh");
+    let cube_mesh_handle = meshes.add(cube_mesh);
 
-    let file_human_skel = SkeletonFile::load("human.skel");
-    let file_human_skel_handle = skeletons.add(file_human_skel);
+    let human_skel = SkeletonFile::load("human.skel");
+    let human_skel_handle = skeletons.add(human_skel);
 
-    let file_3bit_palette = PaletteFile::load("3bit.palette");
-    let file_3bit_palette_handle = palettes.add(file_3bit_palette);
+    let threebit_palette = PaletteFile::load("3bit.palette");
+    let threebit_palette_handle = palettes.add(threebit_palette);
+
+    let human_walk_anim = AnimationFile::load("human_walk.anim");
+    let human_walk_anim_handle = animations.add(human_walk_anim);
+
+    let letters_icon = IconFile::load("letters.icon");
+    let letters_icon_handle = icons.add(letters_icon);
+
+    let head_skin = SkinFile::load("head.skin");
+    let head_skin_handle = skins.add(head_skin);
+
+    let human_model = ModelFile::load("human.model");
+    let human_model_handle = models.add(human_model);
+
+    let head_scene = SceneFile::load("head.scene");
+    let head_scene_handle = scenes.add(head_scene);
 
     // model
     commands
         .spawn(RenderObjectBundle {
-            //mesh: meshes.add(shapes::Cube),
-            mesh: file_cube_mesh_handle,
+            mesh: cube_mesh_handle,
             material: red_mat_handle,
             transform: Transform::from_scale(Vec3::splat(1.0))
                 .with_translation(Vec3::splat(0.0)),
