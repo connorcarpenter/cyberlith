@@ -3,7 +3,7 @@ use std::fs;
 use naia_serde::BitReader;
 
 use math::Vec3;
-use render_api::{base::CpuMesh, AssetHash};
+use render_api::{base::CpuMesh, AssetHash, Handle};
 
 use crate::asset_dependency::AssetDependency;
 
@@ -18,7 +18,13 @@ impl Default for MeshFile {
 }
 
 impl MeshFile {
-
+    pub(crate) fn get_cpu_mesh_handle(&self) -> Option<&Handle<CpuMesh>> {
+        if let AssetDependency::<CpuMesh>::Handle(handle) = &self.path {
+            Some(handle)
+        } else {
+            None
+        }
+    }
 }
 
 impl AssetHash<MeshFile> for String {}

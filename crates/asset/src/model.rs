@@ -6,7 +6,7 @@ use math::{Quat, Vec3};
 
 use render_api::{AssetHash, components::Transform, Handle};
 
-use crate::{asset_dependency::{AssetDependency, SkinOrScene}, AssetHandle, SceneData, SkeletonData, SkinData};
+use crate::{asset_handle::AssetHandleImpl, asset_dependency::{SkinOrSceneHandle, AssetDependency, SkinOrScene}, AssetHandle, SceneData, SkeletonData, SkinData};
 
 impl AssetHash<ModelData> for String {}
 
@@ -23,7 +23,7 @@ impl Default for ModelData {
 }
 
 impl ModelData {
-    pub fn load_dependencies(&self, handle: Handle<Self>, dependencies: &mut Vec<(AssetHandle, String)>) {
+    pub(crate) fn load_dependencies(&self, handle: Handle<Self>, dependencies: &mut Vec<(AssetHandle, String)>) {
         {
             let AssetDependency::<SkeletonData>::Path(path) = &self.skeleton_file else {
                 panic!("expected path right after load");
@@ -44,6 +44,29 @@ impl ModelData {
                 }
             }
         }
+    }
+
+    pub(crate) fn finish_dependency(&mut self, dependency_path: String, dependency_handle: AssetHandle) {
+        match dependency_handle.to_impl() {
+            AssetHandleImpl::Skeleton(handle) => {
+                self.skeleton_file.load_handle(handle);
+            }
+            AssetHandleImpl::Skin(handle) => {
+                let handle = SkinOrSceneHandle::Skin(handle);
+                self.finish_skin_or_scene_dependency(dependency_path, handle);
+            }
+            AssetHandleImpl::Scene(handle) => {
+                let handle = SkinOrSceneHandle::Scene(handle);
+                self.finish_skin_or_scene_dependency(dependency_path, handle);
+            }
+            _ => {
+                panic!("unexpected type of handle");
+            }
+        }
+    }
+
+    fn finish_skin_or_scene_dependency(&mut self, dependency_path: String, handle: SkinOrSceneHandle) {
+        todo!();
     }
 }
 

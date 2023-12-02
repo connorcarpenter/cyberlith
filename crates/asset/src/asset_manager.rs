@@ -1,6 +1,8 @@
 use bevy_ecs::system::Resource;
 
 use render_api::{Assets, Handle, base::{CpuMaterial, CpuMesh}};
+use render_api::components::{RenderLayer, Transform};
+use render_api::resources::RenderFrame;
 
 use crate::{asset_handle::AssetHandleImpl, AnimationData, AssetHandle, IconData, MeshFile, ModelData, PaletteData, SceneData, SkeletonData, SkinData};
 
@@ -123,17 +125,8 @@ impl AssetManager {
 
     fn finish_dependency(&mut self, principal_handle: AssetHandle, dependency_string: String, dependency_handle: AssetHandle) {
         match principal_handle.to_impl() {
-            AssetHandleImpl::Mesh(principal_handle) => {
-                let mut data = self.meshes.get_mut(&principal_handle).unwrap();
-                data.finish_dependency(dependency_string, dependency_handle);
-            },
-            AssetHandleImpl::Skeleton(principal_handle) => {
-                let mut data = self.skeletons.get_mut(&principal_handle).unwrap();
-                data.finish_dependency(dependency_string, dependency_handle);
-            },
-            AssetHandleImpl::Palette(principal_handle) => {
-                let mut data = self.palettes.get_mut(&principal_handle).unwrap();
-                data.finish_dependency(dependency_string, dependency_handle);
+            AssetHandleImpl::Mesh(_) | AssetHandleImpl::Skeleton(_) | AssetHandleImpl::Palette(_) => {
+                panic!("unexpected dependency for this type of asset")
             },
             AssetHandleImpl::Animation(principal_handle) => {
                 let mut data = self.animations.get_mut(&principal_handle).unwrap();
@@ -155,6 +148,21 @@ impl AssetManager {
                 let mut data = self.scenes.get_mut(&principal_handle).unwrap();
                 data.finish_dependency(dependency_string, dependency_handle);
             },
+        }
+    }
+
+    pub fn draw_mesh(
+        &self,
+        render_frame: &mut RenderFrame,
+        mesh_handle: &Handle<MeshFile>,
+        mat_handle: &Handle<CpuMaterial>,
+        transform: &Transform,
+        render_layer_opt: Option<&RenderLayer>,
+    ) {
+        if let Some(mesh_file) = self.meshes.get(mesh_handle) {
+            if let Some(cpu_mesh_handle) = mesh_file.get_cpu_mesh_handle() {
+                render_frame.draw_mesh(render_layer_opt, cpu_mesh_handle, mat_handle, transform);
+            }
         }
     }
 }

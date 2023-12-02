@@ -5,6 +5,7 @@ use naia_serde::BitReader;
 use render_api::{AssetHash, Handle};
 
 use crate::{asset_dependency::AssetDependency, AssetHandle, SkeletonData};
+use crate::asset_handle::AssetHandleImpl;
 
 impl AssetHash<AnimationData> for String {}
 
@@ -19,11 +20,22 @@ impl Default for AnimationData {
 }
 
 impl AnimationData {
-    pub fn load_dependencies(&self, handle: Handle<Self>, dependencies: &mut Vec<(AssetHandle, String)>) {
+    pub(crate) fn load_dependencies(&self, handle: Handle<Self>, dependencies: &mut Vec<(AssetHandle, String)>) {
         let AssetDependency::<SkeletonData>::Path(path) = &self.skeleton_file else {
             panic!("expected path right after load");
         };
         dependencies.push((handle.into(), path.clone()));
+    }
+
+    pub(crate) fn finish_dependency(&mut self, _dependency_path: String, dependency_handle: AssetHandle) {
+        match dependency_handle.to_impl() {
+            AssetHandleImpl::Skeleton(handle) => {
+                self.skeleton_file.load_handle(handle);
+            }
+            _ => {
+                panic!("unexpected type of handle");
+            }
+        }
     }
 }
 

@@ -69,9 +69,7 @@ fn setup(
 
     let red_mat_handle = materials.add(CpuMaterial::new(Color::RED, 0.0, 32.0, 0.5));
 
-    let cube_mesh = MeshFile::load("cube.mesh");
-    let cube_mesh_handle = meshes.add(cube_mesh);
-
+    let cube_mesh_handle: Handle<MeshFile> = asset_manager.load("cube.mesh").into();
     let human_skel_handle = asset_manager.load("human.skel");
     let threebit_palette_handle = asset_manager.load("3bit.palette");
     let human_walk_anim_handle = asset_manager.load("human_walk.anim");
@@ -82,13 +80,12 @@ fn setup(
 
     // model
     commands
-        .spawn(RenderObjectBundle {
-            mesh: cube_mesh_handle,
-            material: red_mat_handle,
-            transform: Transform::from_scale(Vec3::splat(1.0))
-                .with_translation(Vec3::splat(0.0)),
-            ..Default::default()
-        })
+        .spawn_empty()
+        .insert(cube_mesh_handle)
+        .insert(red_mat_handle)
+        .insert(Transform::from_scale(Vec3::splat(1.0))
+            .with_translation(Vec3::splat(0.0)))
+        .insert(Visibility::default())
         .insert(ObjectMarker)
         .insert(layer);
 
@@ -172,12 +169,20 @@ fn step(
 }
 
 pub fn draw(
+    asset_manager: Res<AssetManager>,
     mut render_frame: ResMut<RenderFrame>,
     // Cameras
     cameras_q: Query<(&Camera, &Transform, &Projection, Option<&RenderLayer>)>,
-    // Objects
-    objects_q: Query<(
+    // Meshes
+    cpu_meshes_q: Query<(
         &Handle<CpuMesh>,
+        &Handle<CpuMaterial>,
+        &Transform,
+        &Visibility,
+        Option<&RenderLayer>,
+    )>,
+    file_meshes_q: Query<(
+        &Handle<MeshFile>,
         &Handle<CpuMaterial>,
         &Transform,
         &Visibility,
@@ -211,11 +216,19 @@ pub fn draw(
         render_frame.draw_ambient_light(render_layer_opt, ambient_light);
     }
 
-    // Aggregate Meshes
-    for (mesh_handle, mat_handle, transform, visibility, render_layer_opt) in objects_q.iter() {
+    // Aggregate Cpu Meshes
+    for (mesh_handle, mat_handle, transform, visibility, render_layer_opt) in cpu_meshes_q.iter() {
         if !visibility.visible {
             continue;
         }
         render_frame.draw_mesh(render_layer_opt, mesh_handle, mat_handle, transform);
+    }
+
+    // Aggregate File Meshes
+    for (mesh_handle, mat_handle, transform, visibility, render_layer_opt) in file_meshes_q.iter() {
+        if !visibility.visible {
+            continue;
+        }
+        asset_manager.draw_mesh(&mut render_frame, mesh_handle, mat_handle, transform, render_layer_opt);
     }
 }

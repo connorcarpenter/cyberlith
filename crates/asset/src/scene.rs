@@ -5,9 +5,10 @@ use naia_serde::BitReader;
 use filetypes::FileTransformEntityType;
 use math::{Quat, Vec3};
 use render_api::{AssetHash, components::Transform, Handle};
-use crate::asset_dependency::{AssetDependency, SkinOrScene};
+use crate::asset_dependency::{AssetDependency, SkinOrScene, SkinOrSceneHandle};
 
 use crate::{AssetHandle, SkinData};
+use crate::asset_handle::AssetHandleImpl;
 
 impl AssetHash<SceneData> for String {}
 
@@ -23,7 +24,7 @@ impl Default for SceneData {
 }
 
 impl SceneData {
-    pub fn load_dependencies(&self, handle: Handle<Self>, dependencies: &mut Vec<(AssetHandle, String)>) {
+    pub(crate) fn load_dependencies(&self, handle: Handle<Self>, dependencies: &mut Vec<(AssetHandle, String)>) {
         for file in self.skin_or_scene_files.iter() {
             match file {
                 SkinOrScene::Skin(AssetDependency::<SkinData>::Path(path)) => {
@@ -37,6 +38,26 @@ impl SceneData {
                 }
             }
         }
+    }
+
+    pub(crate) fn finish_dependency(&mut self, dependency_path: String, dependency_handle: AssetHandle) {
+        match dependency_handle.to_impl() {
+            AssetHandleImpl::Skin(handle) => {
+                let handle = SkinOrSceneHandle::Skin(handle);
+                self.finish_skin_or_scene_dependency(dependency_path, handle);
+            }
+            AssetHandleImpl::Scene(handle) => {
+                let handle = SkinOrSceneHandle::Scene(handle);
+                self.finish_skin_or_scene_dependency(dependency_path, handle);
+            }
+            _ => {
+                panic!("unexpected type of handle");
+            }
+        }
+    }
+
+    fn finish_skin_or_scene_dependency(&mut self, dependency_path: String, handle: SkinOrSceneHandle) {
+        todo!();
     }
 }
 

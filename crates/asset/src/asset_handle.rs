@@ -88,5 +88,12 @@ impl From<Handle<SceneData>> for AssetHandle {
     }
 }
 
-
+impl Into<Handle<MeshFile>> for AssetHandle {
+    fn into(self) -> Handle<MeshFile> {
+        match self.inner {
+            AssetHandleImpl::Mesh(handle) => handle,
+            _ => panic!("unexpected handle"),
+        }
+    }
+}
 
