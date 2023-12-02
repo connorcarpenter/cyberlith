@@ -6,40 +6,52 @@ use render_api::{AssetHash};
 
 impl AssetHash<SkinData> for String {}
 
-pub struct SkinData {
-
-}
-
 impl Default for SkinData {
     fn default() -> Self {
-        Self {
-
-        }
+        panic!("");
     }
+}
+
+pub struct SkinData {
+    palette_file: String,
+    mesh_file: String,
 }
 
 impl SkinData {
 
+    pub fn mesh_file_path(&self) -> &str {
+        &self.mesh_file
+    }
+
+    pub fn load_dependencies(&self, dependencies: &mut Vec<String>) {
+        dependencies.push(self.palette_file.clone());
+    }
 }
 
 impl From<String> for SkinData {
     fn from(path: String) -> Self {
         let file_path = format!("assets/{}", path);
 
-        let data = fs::read(file_path).expect("unable to read file");
+        let Ok(data) = fs::read(&file_path) else {
+            panic!("unable to read file: {:?}", &file_path);
+        };
 
         let mut bit_reader = BitReader::new(&data);
 
         let actions =
             filetypes::SkinAction::read(&mut bit_reader).expect("unable to parse file");
 
+        let mut palette_file_opt = None;
+        let mut mesh_file_opt = None;
         for action in actions {
             match action {
                 filetypes::SkinAction::PaletteFile(path, file_name) => {
                     println!("PaletteFile: {}/{}", path, file_name);
+                    palette_file_opt = Some(format!("{}/{}", path, file_name));
                 }
                 filetypes::SkinAction::MeshFile(path, file_name) => {
                     println!("MeshFile: {}/{}", path, file_name);
+                    mesh_file_opt = Some(format!("{}/{}", path, file_name));
                 }
                 filetypes::SkinAction::BackgroundColor(color_index) => {
                     println!("BackgroundColor: {}", color_index);
@@ -53,7 +65,8 @@ impl From<String> for SkinData {
         // todo: lots here
 
         Self {
-
+            palette_file: palette_file_opt.unwrap(),
+            mesh_file: mesh_file_opt.unwrap(),
         }
     }
 }

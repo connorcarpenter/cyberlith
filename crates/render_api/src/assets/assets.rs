@@ -28,6 +28,12 @@ pub trait AssetHash<T>: Any + Hash + Into<T> {
 }
 
 impl<T> Assets<T> {
+
+    pub fn has<L: AssetHash<T>>(&mut self, asset: L) -> bool {
+        let key = asset.get_key();
+        self.keys.contains_key(&key)
+    }
+
     pub fn add<L: AssetHash<T>>(&mut self, asset: L) -> Handle<T> {
         let key = asset.get_key();
 

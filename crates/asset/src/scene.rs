@@ -2,42 +2,53 @@ use std::fs;
 
 use naia_serde::BitReader;
 
-use render_api::{AssetHash};
+use filetypes::FileTransformEntityType;
+use math::{Quat, Vec3};
+use render_api::{AssetHash, components::Transform};
 
 impl AssetHash<SceneData> for String {}
 
 pub struct SceneData {
-
+    skin_or_scene_files: Vec<(String, String, FileTransformEntityType)>,
+    net_transforms: Vec<(usize, Transform)>,
 }
 
 impl Default for SceneData {
     fn default() -> Self {
-        Self {
-
-        }
+        panic!("");
     }
 }
 
 impl SceneData {
-
+    pub fn load_dependencies(&self, dependencies: &mut Vec<String>) {
+        for (path, file_name, _) in self.skin_or_scene_files.iter() {
+            dependencies.push(format!("{}/{}", path, file_name));
+        }
+    }
 }
 
 impl From<String> for SceneData {
     fn from(path: String) -> Self {
         let file_path = format!("assets/{}", path);
 
-        let data = fs::read(file_path).expect("unable to read file");
+        let Ok(data) = fs::read(&file_path) else {
+            panic!("unable to read file: {:?}", &file_path);
+        };
 
         let mut bit_reader = BitReader::new(&data);
 
         let actions =
             filetypes::SceneAction::read(&mut bit_reader).expect("unable to parse file");
 
+        let mut skin_or_scene_files = Vec::new();
+        let mut net_transforms = Vec::new();
         let mut file_index = 0;
         for action in actions {
             match action {
                 filetypes::SceneAction::SkinOrSceneFile(path, name, file_type) => {
                     println!("SkinOrSceneFile {} : {}/{}. Type: {:?}", file_index, path, name, file_type);
+
+                    skin_or_scene_files.push((path, name, file_type));
 
                     file_index += 1;
                 }
@@ -47,6 +58,10 @@ impl From<String> for SceneData {
                              x, y, z,
                              scale_x, scale_y, scale_z,
                              rotation.x, rotation.y, rotation.z, rotation.w);
+                    let transform = Transform::from_translation(Vec3::new(x as f32, y as f32, z as f32))
+                        .with_scale(Vec3::new(scale_x, scale_y, scale_z))
+                        .with_rotation(Quat::from_xyzw(rotation.x, rotation.y, rotation.z, rotation.w));
+                    net_transforms.push((file_index as usize, transform));
                 }
             }
         }
@@ -54,7 +69,8 @@ impl From<String> for SceneData {
         // todo: lots here
 
         Self {
-
+            skin_or_scene_files,
+            net_transforms,
         }
     }
 }

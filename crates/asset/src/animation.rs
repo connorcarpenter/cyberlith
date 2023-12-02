@@ -7,36 +7,40 @@ use render_api::{AssetHash};
 impl AssetHash<AnimationData> for String {}
 
 pub struct AnimationData {
-
+    skeleton_file: String,
 }
 
 impl Default for AnimationData {
     fn default() -> Self {
-        Self {
-
-        }
+        panic!("");
     }
 }
 
 impl AnimationData {
-
+    pub fn load_dependencies(&self, dependencies: &mut Vec<String>) {
+        dependencies.push(self.skeleton_file.clone());
+    }
 }
 
 impl From<String> for AnimationData {
     fn from(path: String) -> Self {
         let file_path = format!("assets/{}", path);
 
-        let data = fs::read(file_path).expect("unable to read file");
+        let Ok(data) = fs::read(&file_path) else {
+            panic!("unable to read file: {:?}", &file_path);
+        };
 
         let mut bit_reader = BitReader::new(&data);
 
         let actions =
             filetypes::AnimAction::read(&mut bit_reader).expect("unable to parse file");
 
+        let mut skel_file_opt = None;
         for action in actions {
             match action {
                 filetypes::AnimAction::SkelFile(path, file_name) => {
                     println!("SkelFile: {}/{}", path, file_name);
+                    skel_file_opt = Some(format!("{}/{}", path, file_name));
                 }
                 filetypes::AnimAction::ShapeIndex(name) => {
                     println!("ShapeIndex: {}", name);
@@ -53,7 +57,7 @@ impl From<String> for AnimationData {
         // todo: lots here
 
         Self {
-
+            skeleton_file: skel_file_opt.unwrap(),
         }
     }
 }
