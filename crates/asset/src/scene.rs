@@ -4,21 +4,7 @@ use naia_serde::BitReader;
 
 use render_api::{AssetHash};
 
-#[derive(Hash)]
-pub struct SceneFile {
-    path: String,
-}
-
-impl AssetHash<SceneData> for SceneFile {}
-
-impl SceneFile {
-    pub fn load(path: &str) -> Self {
-        Self {
-            path: path.to_string(),
-        }
-    }
-}
-
+impl AssetHash<SceneData> for String {}
 
 pub struct SceneData {
 
@@ -36,9 +22,9 @@ impl SceneData {
 
 }
 
-impl From<SceneFile> for SceneData {
-    fn from(file: SceneFile) -> Self {
-        let file_path = format!("assets/{}", &file.path);
+impl From<String> for SceneData {
+    fn from(path: String) -> Self {
+        let file_path = format!("assets/{}", path);
 
         let data = fs::read(file_path).expect("unable to read file");
 

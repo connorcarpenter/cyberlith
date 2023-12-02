@@ -7,6 +7,8 @@ mod icon;
 mod skin;
 mod model;
 mod scene;
+mod asset_manager;
+mod asset_handle;
 
 pub use mesh::*;
 pub use plugin::*;
@@ -17,3 +19,5 @@ pub use icon::*;
 pub use skin::*;
 pub use model::*;
 pub use scene::*;
+pub use asset_manager::*;
+pub use asset_handle::*;

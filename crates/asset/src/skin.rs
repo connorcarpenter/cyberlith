@@ -4,21 +4,7 @@ use naia_serde::BitReader;
 
 use render_api::{AssetHash};
 
-#[derive(Hash)]
-pub struct SkinFile {
-    path: String,
-}
-
-impl AssetHash<SkinData> for SkinFile {}
-
-impl SkinFile {
-    pub fn load(path: &str) -> Self {
-        Self {
-            path: path.to_string(),
-        }
-    }
-}
-
+impl AssetHash<SkinData> for String {}
 
 pub struct SkinData {
 
@@ -36,9 +22,9 @@ impl SkinData {
 
 }
 
-impl From<SkinFile> for SkinData {
-    fn from(file: SkinFile) -> Self {
-        let file_path = format!("assets/{}", &file.path);
+impl From<String> for SkinData {
+    fn from(path: String) -> Self {
+        let file_path = format!("assets/{}", path);
 
         let data = fs::read(file_path).expect("unable to read file");
 

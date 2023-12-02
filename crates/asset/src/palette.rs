@@ -2,23 +2,9 @@ use std::fs;
 
 use naia_serde::BitReader;
 
-use render_api::{AssetHash};
+use render_api::AssetHash;
 
-#[derive(Hash)]
-pub struct PaletteFile {
-    path: String,
-}
-
-impl AssetHash<PaletteData> for PaletteFile {}
-
-impl PaletteFile {
-    pub fn load(path: &str) -> Self {
-        Self {
-            path: path.to_string(),
-        }
-    }
-}
-
+impl AssetHash<PaletteData> for String {}
 
 pub struct PaletteData {
 
@@ -36,9 +22,9 @@ impl PaletteData {
 
 }
 
-impl From<PaletteFile> for PaletteData {
-    fn from(file: PaletteFile) -> Self {
-        let file_path = format!("assets/{}", &file.path);
+impl From<String> for PaletteData {
+    fn from(path: String) -> Self {
+        let file_path = format!("assets/{}", path);
 
         let data = fs::read(file_path).expect("unable to read file");
 

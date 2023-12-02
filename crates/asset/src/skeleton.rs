@@ -4,21 +4,7 @@ use naia_serde::BitReader;
 
 use render_api::{AssetHash};
 
-#[derive(Hash)]
-pub struct SkeletonFile {
-    path: String,
-}
-
-impl AssetHash<SkeletonData> for SkeletonFile {}
-
-impl SkeletonFile {
-    pub fn load(path: &str) -> Self {
-        Self {
-            path: path.to_string(),
-        }
-    }
-}
-
+impl AssetHash<SkeletonData> for String {}
 
 pub struct SkeletonData {
 
@@ -36,9 +22,9 @@ impl SkeletonData {
 
 }
 
-impl From<SkeletonFile> for SkeletonData {
-    fn from(file: SkeletonFile) -> Self {
-        let file_path = format!("assets/{}", &file.path);
+impl From<String> for SkeletonData {
+    fn from(path: String) -> Self {
+        let file_path = format!("assets/{}", path);
 
         let data = fs::read(file_path).expect("unable to read file");
         //let data = include_bytes!("cube.mesh");

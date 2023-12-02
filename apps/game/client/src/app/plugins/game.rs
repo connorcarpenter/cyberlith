@@ -5,7 +5,7 @@ use bevy_ecs::{
     system::{Commands, Local, Query, Res, ResMut},
 };
 
-use asset::{MeshFile, PaletteData, PaletteFile, SkeletonData, SkeletonFile, AnimationFile, IconFile, SkinFile, ModelFile, SceneFile, AnimationData, IconData, SkinData, ModelData, SceneData};
+use asset::{MeshFile, AssetManager};
 use math::Vec3;
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
@@ -63,13 +63,7 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
-    mut skeletons: ResMut<Assets<SkeletonData>>,
-    mut palettes: ResMut<Assets<PaletteData>>,
-    mut animations: ResMut<Assets<AnimationData>>,
-    mut icons: ResMut<Assets<IconData>>,
-    mut skins: ResMut<Assets<SkinData>>,
-    mut models: ResMut<Assets<ModelData>>,
-    mut scenes: ResMut<Assets<SceneData>>,
+    mut asset_manager: ResMut<AssetManager>,
 ) {
     let layer = RenderLayers::layer(0);
 
@@ -78,26 +72,13 @@ fn setup(
     let cube_mesh = MeshFile::load("cube.mesh");
     let cube_mesh_handle = meshes.add(cube_mesh);
 
-    let human_skel = SkeletonFile::load("human.skel");
-    let human_skel_handle = skeletons.add(human_skel);
-
-    let threebit_palette = PaletteFile::load("3bit.palette");
-    let threebit_palette_handle = palettes.add(threebit_palette);
-
-    let human_walk_anim = AnimationFile::load("human_walk.anim");
-    let human_walk_anim_handle = animations.add(human_walk_anim);
-
-    let letters_icon = IconFile::load("letters.icon");
-    let letters_icon_handle = icons.add(letters_icon);
-
-    let head_skin = SkinFile::load("head.skin");
-    let head_skin_handle = skins.add(head_skin);
-
-    let human_model = ModelFile::load("human.model");
-    let human_model_handle = models.add(human_model);
-
-    let head_scene = SceneFile::load("head.scene");
-    let head_scene_handle = scenes.add(head_scene);
+    let human_skel_handle = asset_manager.load("human.skel");
+    let threebit_palette_handle = asset_manager.load("3bit.palette");
+    let human_walk_anim_handle = asset_manager.load("human_walk.anim");
+    let letters_icon_handle = asset_manager.load("letters.icon");
+    let head_skin_handle = asset_manager.load("head.skin");
+    let human_model_handle = asset_manager.load("human.model");
+    let head_scene_handle = asset_manager.load("head.scene");
 
     // model
     commands
