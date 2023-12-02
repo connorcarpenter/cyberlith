@@ -4,7 +4,7 @@ use naia_serde::BitReader;
 
 use render_api::{AssetHash, Handle};
 
-use crate::AssetHandle;
+use crate::{asset_dependency::AssetDependency, AssetHandle, MeshFile, PaletteData};
 
 impl AssetHash<SkinData> for String {}
 
@@ -15,19 +15,22 @@ impl Default for SkinData {
 }
 
 pub struct SkinData {
-    palette_file: String,
-    mesh_file: String,
+    mesh_file: AssetDependency<MeshFile>,
+    palette_file: AssetDependency<PaletteData>,
 }
 
 impl SkinData {
 
-    pub fn mesh_file_path(&self) -> &str {
-        &self.mesh_file
-    }
-
     pub fn load_dependencies(&self, handle: Handle<Self>, dependencies: &mut Vec<(AssetHandle, String)>) {
-        dependencies.push((handle.into(), self.mesh_file.clone()));
-        dependencies.push((handle.into(), self.palette_file.clone()));
+        let AssetDependency::<MeshFile>::Path(path) = &self.mesh_file else {
+            panic!("expected path right after load");
+        };
+        dependencies.push((handle.into(), path.clone()));
+
+        let AssetDependency::<PaletteData>::Path(path) = &self.palette_file else {
+            panic!("expected path right after load");
+        };
+        dependencies.push((handle.into(), path.clone()));
     }
 }
 
@@ -68,8 +71,8 @@ impl From<String> for SkinData {
         // todo: lots here
 
         Self {
-            palette_file: palette_file_opt.unwrap(),
-            mesh_file: mesh_file_opt.unwrap(),
+            mesh_file: AssetDependency::Path(mesh_file_opt.unwrap()),
+            palette_file: AssetDependency::Path(palette_file_opt.unwrap()),
         }
     }
 }

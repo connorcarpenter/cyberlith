@@ -4,12 +4,12 @@ use naia_serde::BitReader;
 
 use render_api::{AssetHash, Handle};
 
-use crate::AssetHandle;
+use crate::{asset_dependency::AssetDependency, AssetHandle, SkeletonData};
 
 impl AssetHash<AnimationData> for String {}
 
 pub struct AnimationData {
-    skeleton_file: String,
+    skeleton_file: AssetDependency<SkeletonData>,
 }
 
 impl Default for AnimationData {
@@ -20,7 +20,10 @@ impl Default for AnimationData {
 
 impl AnimationData {
     pub fn load_dependencies(&self, handle: Handle<Self>, dependencies: &mut Vec<(AssetHandle, String)>) {
-        dependencies.push((handle.into(), self.skeleton_file.clone()));
+        let AssetDependency::<SkeletonData>::Path(path) = &self.skeleton_file else {
+            panic!("expected path right after load");
+        };
+        dependencies.push((handle.into(), path.clone()));
     }
 }
 
@@ -59,7 +62,7 @@ impl From<String> for AnimationData {
         // todo: lots here
 
         Self {
-            skeleton_file: skel_file_opt.unwrap(),
+            skeleton_file: AssetDependency::Path(skel_file_opt.unwrap()),
         }
     }
 }

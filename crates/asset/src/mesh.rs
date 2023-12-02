@@ -5,8 +5,10 @@ use naia_serde::BitReader;
 use math::Vec3;
 use render_api::{base::CpuMesh, AssetHash};
 
+use crate::asset_dependency::AssetDependency;
+
 pub struct MeshFile {
-    path: String,
+    path: AssetDependency<CpuMesh>,
 }
 
 impl Default for MeshFile {
@@ -24,14 +26,17 @@ impl AssetHash<MeshFile> for String {}
 impl From<String> for MeshFile {
     fn from(path: String) -> Self {
         Self {
-            path
+            path: AssetDependency::Path(path),
         }
     }
 }
 
 impl From<MeshFile> for CpuMesh {
     fn from(file: MeshFile) -> Self {
-        let file_path = format!("assets/{}", &file.path);
+        let AssetDependency::<CpuMesh>::Path(path) = &file.path else {
+            panic!("expected path right after load");
+        };
+        let file_path = format!("assets/{}", path);
 
         let Ok(data) = fs::read(&file_path) else {
             panic!("unable to read file: {:?}", &file_path);

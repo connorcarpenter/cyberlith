@@ -9,6 +9,7 @@ mod model;
 mod scene;
 mod asset_manager;
 mod asset_handle;
+mod asset_dependency;
 
 pub use mesh::*;
 pub use plugin::*;
@@ -21,3 +22,4 @@ pub use model::*;
 pub use scene::*;
 pub use asset_manager::*;
 pub use asset_handle::*;
+pub use asset_dependency::*;

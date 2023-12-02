@@ -2,12 +2,17 @@ use std::fs;
 
 use naia_serde::BitReader;
 
-use render_api::AssetHash;
+use render_api::{AssetHash, Handle, base::CpuMaterial};
 
 impl AssetHash<PaletteData> for String {}
 
-pub struct PaletteData {
+pub(crate) enum PaletteColor {
+    Raw(u8, u8, u8),
+    Material(Handle<CpuMaterial>),
+}
 
+pub struct PaletteData {
+    colors: Vec<PaletteColor>,
 }
 
 impl Default for PaletteData {
@@ -33,18 +38,18 @@ impl From<String> for PaletteData {
         let actions =
             filetypes::PaletteAction::read(&mut bit_reader).expect("unable to parse file");
 
+        let mut colors = Vec::new();
         for action in actions {
             match action {
                 filetypes::PaletteAction::Color(r, g, b) => {
                     println!("Color: ({}, {}, {})", r, g, b);
+                    colors.push(PaletteColor::Raw(r, g, b));
                 }
             }
         }
 
-        // todo: lots here
-
         Self {
-
+            colors
         }
     }
 }

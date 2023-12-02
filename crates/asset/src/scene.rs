@@ -5,13 +5,14 @@ use naia_serde::BitReader;
 use filetypes::FileTransformEntityType;
 use math::{Quat, Vec3};
 use render_api::{AssetHash, components::Transform, Handle};
+use crate::asset_dependency::{AssetDependency, SkinOrScene};
 
-use crate::AssetHandle;
+use crate::{AssetHandle, SkinData};
 
 impl AssetHash<SceneData> for String {}
 
 pub struct SceneData {
-    skin_or_scene_files: Vec<(String, String, FileTransformEntityType)>,
+    skin_or_scene_files: Vec<SkinOrScene>,
     net_transforms: Vec<(usize, Transform)>,
 }
 
@@ -23,8 +24,18 @@ impl Default for SceneData {
 
 impl SceneData {
     pub fn load_dependencies(&self, handle: Handle<Self>, dependencies: &mut Vec<(AssetHandle, String)>) {
-        for (path, file_name, _) in self.skin_or_scene_files.iter() {
-            dependencies.push((handle.into(), format!("{}/{}", path, file_name)));
+        for file in self.skin_or_scene_files.iter() {
+            match file {
+                SkinOrScene::Skin(AssetDependency::<SkinData>::Path(path)) => {
+                    dependencies.push((handle.into(), path.clone()));
+                }
+                SkinOrScene::Scene(AssetDependency::<SceneData>::Path(path)) => {
+                    dependencies.push((handle.into(), path.clone()));
+                }
+                _ => {
+                    panic!("expected unloaded (no handles!) skin or scene file");
+                }
+            }
         }
     }
 }
@@ -50,7 +61,16 @@ impl From<String> for SceneData {
                 filetypes::SceneAction::SkinOrSceneFile(path, name, file_type) => {
                     println!("SkinOrSceneFile {} : {}/{}. Type: {:?}", file_index, path, name, file_type);
 
-                    skin_or_scene_files.push((path, name, file_type));
+                    let asset_dependency = match file_type {
+                        FileTransformEntityType::Skin => {
+                            SkinOrScene::Skin(AssetDependency::<SkinData>::Path(format!("{}/{}", path, name)))
+                        }
+                        FileTransformEntityType::Scene => {
+                            SkinOrScene::Scene(AssetDependency::<SceneData>::Path(format!("{}/{}", path, name)))
+                        }
+                    };
+
+                    skin_or_scene_files.push(asset_dependency);
 
                     file_index += 1;
                 }

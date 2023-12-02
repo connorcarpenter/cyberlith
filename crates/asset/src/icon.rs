@@ -4,12 +4,12 @@ use naia_serde::BitReader;
 
 use render_api::{AssetHash, Handle};
 
-use crate::AssetHandle;
+use crate::{AssetHandle, PaletteData, asset_dependency::AssetDependency};
 
 impl AssetHash<IconData> for String {}
 
 pub struct IconData {
-    palette_file: String,
+    palette_file: AssetDependency<PaletteData>,
 }
 
 impl Default for IconData {
@@ -20,7 +20,10 @@ impl Default for IconData {
 
 impl IconData {
     pub fn load_dependencies(&self, handle: Handle<Self>, dependencies: &mut Vec<(AssetHandle, String)>) {
-        dependencies.push((handle.into(), self.palette_file.clone()));
+        let AssetDependency::<PaletteData>::Path(path) = &self.palette_file else {
+            panic!("expected path right after load");
+        };
+        dependencies.push((handle.into(), path.clone()));
     }
 }
 
@@ -70,7 +73,7 @@ impl From<String> for IconData {
         // todo: lots here
 
         Self {
-            palette_file: palette_file_opt.unwrap(),
+            palette_file: AssetDependency::Path(palette_file_opt.unwrap()),
         }
     }
 }
