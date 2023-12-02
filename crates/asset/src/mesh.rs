@@ -5,17 +5,26 @@ use naia_serde::BitReader;
 use math::Vec3;
 use render_api::{base::CpuMesh, AssetHash};
 
-#[derive(Hash)]
 pub struct MeshFile {
     path: String,
 }
 
-impl AssetHash<CpuMesh> for MeshFile {}
+impl Default for MeshFile {
+    fn default() -> Self {
+        panic!("");
+    }
+}
 
 impl MeshFile {
-    pub fn load(path: &str) -> Self {
+
+}
+
+impl AssetHash<MeshFile> for String {}
+
+impl From<String> for MeshFile {
+    fn from(path: String) -> Self {
         Self {
-            path: path.to_string(),
+            path
         }
     }
 }

@@ -2,7 +2,9 @@ use std::fs;
 
 use naia_serde::BitReader;
 
-use render_api::{AssetHash};
+use render_api::{AssetHash, Handle};
+
+use crate::AssetHandle;
 
 impl AssetHash<AnimationData> for String {}
 
@@ -17,8 +19,8 @@ impl Default for AnimationData {
 }
 
 impl AnimationData {
-    pub fn load_dependencies(&self, dependencies: &mut Vec<String>) {
-        dependencies.push(self.skeleton_file.clone());
+    pub fn load_dependencies(&self, handle: Handle<Self>, dependencies: &mut Vec<(AssetHandle, String)>) {
+        dependencies.push((handle.into(), self.skeleton_file.clone()));
     }
 }
 

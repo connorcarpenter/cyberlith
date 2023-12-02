@@ -1,13 +1,20 @@
 
 use render_api::Handle;
 
-use crate::{AnimationData, IconData, ModelData, PaletteData, SceneData, SkeletonData, SkinData};
+use crate::{AnimationData, IconData, MeshFile, ModelData, PaletteData, SceneData, SkeletonData, SkinData};
 
 pub struct AssetHandle {
     inner: AssetHandleImpl,
 }
 
+impl AssetHandle {
+    pub(crate) fn to_impl(self) -> AssetHandleImpl {
+        self.inner
+    }
+}
+
 pub(crate) enum AssetHandleImpl {
+    Mesh(Handle<MeshFile>),
     Skeleton(Handle<SkeletonData>),
     Palette(Handle<PaletteData>),
     Animation(Handle<AnimationData>),
@@ -15,6 +22,14 @@ pub(crate) enum AssetHandleImpl {
     Skin(Handle<SkinData>),
     Model(Handle<ModelData>),
     Scene(Handle<SceneData>),
+}
+
+impl From<Handle<MeshFile>> for AssetHandle {
+    fn from(handle: Handle<MeshFile>) -> Self {
+        Self {
+            inner: AssetHandleImpl::Mesh(handle),
+        }
+    }
 }
 
 impl From<Handle<SkeletonData>> for AssetHandle {

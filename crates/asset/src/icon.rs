@@ -2,7 +2,9 @@ use std::fs;
 
 use naia_serde::BitReader;
 
-use render_api::{AssetHash};
+use render_api::{AssetHash, Handle};
+
+use crate::AssetHandle;
 
 impl AssetHash<IconData> for String {}
 
@@ -17,8 +19,8 @@ impl Default for IconData {
 }
 
 impl IconData {
-    pub fn load_dependencies(&self, dependencies: &mut Vec<String>) {
-        dependencies.push(self.palette_file.clone());
+    pub fn load_dependencies(&self, handle: Handle<Self>, dependencies: &mut Vec<(AssetHandle, String)>) {
+        dependencies.push((handle.into(), self.palette_file.clone()));
     }
 }
 

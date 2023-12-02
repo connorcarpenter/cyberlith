@@ -4,7 +4,9 @@ use naia_serde::BitReader;
 use filetypes::FileTransformEntityType;
 use math::{Quat, Vec3};
 
-use render_api::{AssetHash, components::Transform};
+use render_api::{AssetHash, components::Transform, Handle};
+
+use crate::AssetHandle;
 
 impl AssetHash<ModelData> for String {}
 
@@ -21,11 +23,11 @@ impl Default for ModelData {
 }
 
 impl ModelData {
-    pub fn load_dependencies(&self, dependencies: &mut Vec<String>) {
-        dependencies.push(self.skeleton_file.clone());
+    pub fn load_dependencies(&self, handle: Handle<Self>, dependencies: &mut Vec<(AssetHandle, String)>) {
+        dependencies.push((handle.into(), self.skeleton_file.clone()));
 
         for (path, file_name, _) in self.skin_or_scene_files.iter() {
-            dependencies.push(format!("{}/{}", path, file_name));
+            dependencies.push((handle.into(), format!("{}/{}", path, file_name)));
         }
     }
 }

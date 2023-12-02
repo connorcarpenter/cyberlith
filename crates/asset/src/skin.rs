@@ -2,7 +2,9 @@ use std::fs;
 
 use naia_serde::BitReader;
 
-use render_api::{AssetHash};
+use render_api::{AssetHash, Handle};
+
+use crate::AssetHandle;
 
 impl AssetHash<SkinData> for String {}
 
@@ -23,8 +25,9 @@ impl SkinData {
         &self.mesh_file
     }
 
-    pub fn load_dependencies(&self, dependencies: &mut Vec<String>) {
-        dependencies.push(self.palette_file.clone());
+    pub fn load_dependencies(&self, handle: Handle<Self>, dependencies: &mut Vec<(AssetHandle, String)>) {
+        dependencies.push((handle.into(), self.mesh_file.clone()));
+        dependencies.push((handle.into(), self.palette_file.clone()));
     }
 }
 
