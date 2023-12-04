@@ -2,6 +2,7 @@ use render_api::Handle;
 
 use crate::{SceneData, SkinData};
 
+#[derive(Debug)]
 pub(crate) enum AssetDependency<T> {
     Path(String),
     Handle(Handle<T>),

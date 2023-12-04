@@ -7,7 +7,7 @@ use std::{
 
 use bevy_ecs::component::Component;
 
-#[derive(Default, Component)]
+#[derive(Default, Component, Debug)]
 pub struct Handle<T> {
     pub id: u64,
     phantom_t: PhantomData<T>,

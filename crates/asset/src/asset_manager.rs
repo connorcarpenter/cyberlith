@@ -1,8 +1,7 @@
-use bevy_ecs::system::Resource;
+use bevy_ecs::system::{ResMut, Resource};
+use bevy_log::warn;
 
-use render_api::{Assets, Handle, base::{CpuMaterial, CpuMesh}};
-use render_api::components::{RenderLayer, Transform};
-use render_api::resources::RenderFrame;
+use render_api::{Assets, Handle, base::{CpuMaterial, CpuMesh}, components::{RenderLayer, Transform}, resources::RenderFrame};
 
 use crate::{asset_handle::AssetHandleImpl, AnimationData, AssetHandle, IconData, MeshFile, ModelData, PaletteData, SceneData, SkeletonData, SkinData};
 
@@ -151,6 +150,34 @@ impl AssetManager {
         }
     }
 
+    pub fn sync(
+        mut asset_manager: ResMut<Self>,
+        mut meshes: ResMut<Assets<CpuMesh>>,
+        mut materials: ResMut<Assets<CpuMaterial>>,
+    ) {
+        asset_manager.sync_meshes(&mut meshes);
+        asset_manager.sync_materials(&mut materials);
+    }
+
+    fn sync_meshes(&mut self, meshes: &mut Assets<CpuMesh>) {
+        if self.queued_meshes.is_empty() {
+            return;
+        }
+
+        for mesh_handle in self.queued_meshes.drain(..) {
+            let mesh_file = self.meshes.get_mut(&mesh_handle).unwrap();
+            mesh_file.load_cpu_mesh(meshes);
+        }
+    }
+
+    fn sync_materials(&mut self, materials: &mut Assets<CpuMaterial>) {
+        if self.queued_palettes.is_empty() {
+            return;
+        }
+
+        todo!();
+    }
+
     pub fn draw_mesh(
         &self,
         render_frame: &mut RenderFrame,
@@ -162,7 +189,12 @@ impl AssetManager {
         if let Some(mesh_file) = self.meshes.get(mesh_handle) {
             if let Some(cpu_mesh_handle) = mesh_file.get_cpu_mesh_handle() {
                 render_frame.draw_mesh(render_layer_opt, cpu_mesh_handle, mat_handle, transform);
+            } else {
+                warn!("mesh file not loaded 1: {:?}", mesh_handle);
             }
+        }
+        else {
+            warn!("mesh file not loaded 2: {:?}", mesh_handle);
         }
     }
 }

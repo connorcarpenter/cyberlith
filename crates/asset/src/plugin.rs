@@ -1,4 +1,4 @@
-use bevy_app::{App, Plugin};
+use bevy_app::{App, Plugin, Update};
 
 use crate::AssetManager;
 
@@ -8,6 +8,7 @@ pub struct AssetPlugin;
 impl Plugin for AssetPlugin {
     fn build(&self, app: &mut App) {
         app
-            .init_resource::<AssetManager>();
+            .init_resource::<AssetManager>()
+            .add_systems(Update, AssetManager::sync);
     }
 }

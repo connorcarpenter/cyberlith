@@ -3,10 +3,14 @@ use std::fs;
 use naia_serde::BitReader;
 
 use math::Vec3;
-use render_api::{base::CpuMesh, AssetHash, Handle};
+use render_api::{base::CpuMesh, AssetHash, Handle, Assets};
 
 use crate::asset_dependency::AssetDependency;
 
+#[derive(Hash)]
+struct MeshFilePath(String);
+
+#[derive(Debug)]
 pub struct MeshFile {
     path: AssetDependency<CpuMesh>,
 }
@@ -25,8 +29,17 @@ impl MeshFile {
             None
         }
     }
+
+    pub(crate) fn load_cpu_mesh(&mut self, meshes: &mut Assets<CpuMesh>) {
+        let AssetDependency::<CpuMesh>::Path(path) = &self.path else {
+            panic!("expected handle right after load");
+        };
+        let cpu_mesh_handle = meshes.add(MeshFilePath(path.clone()));
+        self.path.load_handle(cpu_mesh_handle);
+    }
 }
 
+impl AssetHash<CpuMesh> for MeshFilePath {}
 impl AssetHash<MeshFile> for String {}
 
 impl From<String> for MeshFile {
@@ -37,11 +50,9 @@ impl From<String> for MeshFile {
     }
 }
 
-impl From<MeshFile> for CpuMesh {
-    fn from(file: MeshFile) -> Self {
-        let AssetDependency::<CpuMesh>::Path(path) = &file.path else {
-            panic!("expected path right after load");
-        };
+impl From<MeshFilePath> for CpuMesh {
+    fn from(file_path: MeshFilePath) -> Self {
+        let path = file_path.0;
         let file_path = format!("assets/{}", path);
 
         let Ok(data) = fs::read(&file_path) else {
