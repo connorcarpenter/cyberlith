@@ -6,7 +6,7 @@ use math::{Quat, Vec3};
 
 use render_api::{AssetHash, components::Transform, Handle};
 
-use crate::{asset_handle::AssetHandleImpl, asset_dependency::{SkinOrSceneHandle, AssetDependency, SkinOrScene}, AssetHandle, SceneData, SkeletonData, SkinData};
+use crate::{scene::finish_skin_or_scene_dependency, asset_handle::AssetHandleImpl, asset_dependency::{SkinOrSceneHandle, AssetDependency, SkinOrScene}, AssetHandle, SceneData, SkeletonData, SkinData};
 
 impl AssetHash<ModelData> for String {}
 
@@ -53,20 +53,16 @@ impl ModelData {
             }
             AssetHandleImpl::Skin(handle) => {
                 let handle = SkinOrSceneHandle::Skin(handle);
-                self.finish_skin_or_scene_dependency(dependency_path, handle);
+                finish_skin_or_scene_dependency(&mut self.skin_or_scene_files, dependency_path, handle);
             }
             AssetHandleImpl::Scene(handle) => {
                 let handle = SkinOrSceneHandle::Scene(handle);
-                self.finish_skin_or_scene_dependency(dependency_path, handle);
+                finish_skin_or_scene_dependency(&mut self.skin_or_scene_files, dependency_path, handle);
             }
             _ => {
                 panic!("unexpected type of handle");
             }
         }
-    }
-
-    fn finish_skin_or_scene_dependency(&mut self, dependency_path: String, handle: SkinOrSceneHandle) {
-        todo!();
     }
 }
 

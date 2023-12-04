@@ -5,10 +5,8 @@ use naia_serde::BitReader;
 use filetypes::FileTransformEntityType;
 use math::{Quat, Vec3};
 use render_api::{AssetHash, components::Transform, Handle};
-use crate::asset_dependency::{AssetDependency, SkinOrScene, SkinOrSceneHandle};
 
-use crate::{AssetHandle, SkinData};
-use crate::asset_handle::AssetHandleImpl;
+use crate::{AssetHandle, SkinData, asset_handle::AssetHandleImpl, asset_dependency::{AssetDependency, SkinOrScene, SkinOrSceneHandle}};
 
 impl AssetHash<SceneData> for String {}
 
@@ -44,20 +42,49 @@ impl SceneData {
         match dependency_handle.to_impl() {
             AssetHandleImpl::Skin(handle) => {
                 let handle = SkinOrSceneHandle::Skin(handle);
-                self.finish_skin_or_scene_dependency(dependency_path, handle);
+                finish_skin_or_scene_dependency(&mut self.skin_or_scene_files, dependency_path, handle);
             }
             AssetHandleImpl::Scene(handle) => {
                 let handle = SkinOrSceneHandle::Scene(handle);
-                self.finish_skin_or_scene_dependency(dependency_path, handle);
+                finish_skin_or_scene_dependency(&mut self.skin_or_scene_files, dependency_path, handle);
             }
             _ => {
                 panic!("unexpected type of handle");
             }
         }
     }
+}
 
-    fn finish_skin_or_scene_dependency(&mut self, dependency_path: String, handle: SkinOrSceneHandle) {
-        todo!();
+pub(crate) fn finish_skin_or_scene_dependency(skin_or_scene_files: &mut Vec<SkinOrScene>, dependency_path: String, handle: SkinOrSceneHandle) {
+
+    let mut found = false;
+    for file in skin_or_scene_files.iter_mut() {
+        match file {
+            SkinOrScene::Skin(AssetDependency::<SkinData>::Path(path)) => {
+                if path == &dependency_path {
+                    let SkinOrSceneHandle::Skin(handle) = handle else {
+                        panic!("expected skin handle");
+                    };
+                    *file = SkinOrScene::Skin(AssetDependency::<SkinData>::Handle(handle));
+                    found = true;
+                    break;
+                }
+            }
+            SkinOrScene::Scene(AssetDependency::<SceneData>::Path(path)) => {
+                if path == &dependency_path {
+                    let SkinOrSceneHandle::Scene(handle) = handle else {
+                        panic!("expected scene handle");
+                    };
+                    *file = SkinOrScene::Scene(AssetDependency::<SceneData>::Handle(handle));
+                    found = true;
+                    break;
+                }
+            }
+            _ => {}
+        }
+    }
+    if !found {
+        panic!("unable to find dependency path for: {:?}", &dependency_path);
     }
 }
 
