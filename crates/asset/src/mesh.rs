@@ -31,6 +31,13 @@ impl MeshFile {
         }
     }
 
+    pub(crate) fn has_cpu_mesh(&self) -> bool {
+        if let AssetDependency::<CpuMesh>::Handle(_) = &self.path {
+            return true;
+        }
+        return false;
+    }
+
     pub(crate) fn load_cpu_mesh(&mut self, meshes: &mut Assets<CpuMesh>) {
         let AssetDependency::<CpuMesh>::Path(path) = &self.path else {
             panic!("expected handle right after load");

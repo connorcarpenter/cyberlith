@@ -51,6 +51,10 @@ impl CpuMesh {
         self.face_indices = Some(face_indices);
     }
 
+    pub fn is_skinnable(&self) -> bool {
+        self.face_indices.is_some()
+    }
+
     pub fn vertices(&self) -> Vec<Vec3> {
         self.vertices.clone()
     }
