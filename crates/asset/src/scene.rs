@@ -15,6 +15,7 @@ impl AssetHash<SceneData> for String {}
 pub struct SceneData {
     skin_or_scene_files: Vec<SkinOrScene>,
     net_transforms: Vec<(usize, Transform)>,
+    computed_components: Option<Vec<(SkinOrSceneHandle, Transform)>>
 }
 
 impl Default for SceneData {
@@ -55,23 +56,41 @@ impl SceneData {
                 panic!("unexpected type of handle");
             }
         }
+
+        if self.all_dependencies_loaded() {
+            // compute components
+            let mut components = Vec::new();
+            for (file_index, transform) in self.net_transforms.iter() {
+                let file = &self.skin_or_scene_files[*file_index];
+                match file {
+                    SkinOrScene::Skin(AssetDependency::<SkinData>::Handle(handle)) => {
+                        components.push((SkinOrSceneHandle::Skin(*handle), *transform));
+                    }
+                    SkinOrScene::Scene(AssetDependency::<SceneData>::Handle(handle)) => {
+                        components.push((SkinOrSceneHandle::Scene(*handle), *transform));
+                    }
+                    _ => panic!("impossible"),
+                }
+            }
+            self.computed_components = Some(components);
+        }
     }
 
-    pub(crate) fn get_components(&self) -> Vec<(SkinOrSceneHandle, Transform)> {
-        let mut components = Vec::new();
-        for (file_index, transform) in self.net_transforms.iter() {
-            let file = &self.skin_or_scene_files[*file_index];
+    fn all_dependencies_loaded(&self) -> bool {
+        for file in self.skin_or_scene_files.iter() {
             match file {
-                SkinOrScene::Skin(AssetDependency::<SkinData>::Handle(handle)) => {
-                    components.push((SkinOrSceneHandle::Skin(*handle), *transform));
+                SkinOrScene::Skin(AssetDependency::<SkinData>::Handle(_)) => {}
+                SkinOrScene::Scene(AssetDependency::<SceneData>::Handle(_)) => {}
+                _ => {
+                    return false;
                 }
-                SkinOrScene::Scene(AssetDependency::<SceneData>::Handle(handle)) => {
-                    components.push((SkinOrSceneHandle::Scene(*handle), *transform));
-                }
-                _ => {}
             }
         }
-        components
+        true
+    }
+
+    pub(crate) fn get_components(&self) -> Option<&Vec<(SkinOrSceneHandle, Transform)>> {
+        self.computed_components.as_ref()
     }
 }
 
@@ -164,6 +183,7 @@ impl From<String> for SceneData {
         Self {
             skin_or_scene_files,
             net_transforms,
+            computed_components: None,
         }
     }
 }

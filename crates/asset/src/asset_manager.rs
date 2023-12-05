@@ -184,6 +184,12 @@ impl AssetManager {
             AssetHandleImpl::Model(principal_handle) => {
                 let mut data = self.models.get_mut(&principal_handle).unwrap();
                 data.finish_dependency(dependency_string, dependency_handle);
+
+                if data.all_dependencies_loaded() {
+                    let skeleton_handle = data.get_skeleton_handle();
+                    let skeleton_data = self.skeletons.get(&skeleton_handle).unwrap();
+                    data.compute_components(skeleton_data);
+                }
             },
             AssetHandleImpl::Scene(principal_handle) => {
                 let mut data = self.scenes.get_mut(&principal_handle).unwrap();
@@ -336,17 +342,48 @@ impl AssetManager {
             warn!("scene data not loaded 1: {:?}", scene_handle.id);
             return;
         };
-        let scene_components = scene_data.get_components();
+        let Some(scene_components) = scene_data.get_components() else {
+            // not yet completely loaded
+            return;
+        };
         for (skin_or_scene_handle, mut component_transform) in scene_components {
+
+            component_transform = component_transform.multiply(parent_transform);
+
             match skin_or_scene_handle {
                 SkinOrSceneHandle::Skin(skin_handle) => {
-                    component_transform = component_transform.multiply(parent_transform);
-
                     self.draw_skin(render_frame, &skin_handle, &component_transform, render_layer_opt);
                 }
                 SkinOrSceneHandle::Scene(scene_handle) => {
-                    component_transform = component_transform.multiply(parent_transform);
+                    self.draw_scene(render_frame, &scene_handle, &component_transform, render_layer_opt);
+                }
+            }
+        }
+    }
 
+    pub fn draw_model(
+        &self,
+        render_frame: &mut RenderFrame,
+        model_handle: &Handle<ModelData>,
+        parent_transform: &Transform,
+        render_layer_opt: Option<&RenderLayer>,
+    ) {
+        let Some(model_data) = self.models.get(model_handle) else {
+            warn!("model data not loaded 1: {:?}", model_handle.id);
+            return;
+        };
+        let Some(model_components) = model_data.get_components() else {
+            // not yet loaded all
+            return;
+        };
+        for (skin_or_scene_handle, mut component_transform) in model_components {
+            component_transform = component_transform.multiply(parent_transform);
+
+            match skin_or_scene_handle {
+                SkinOrSceneHandle::Skin(skin_handle) => {
+                    self.draw_skin(render_frame, &skin_handle, &component_transform, render_layer_opt);
+                }
+                SkinOrSceneHandle::Scene(scene_handle) => {
                     self.draw_scene(render_frame, &scene_handle, &component_transform, render_layer_opt);
                 }
             }

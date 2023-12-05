@@ -4,7 +4,7 @@ use bevy_log::info;
 
 use naia_serde::BitReader;
 
-use render_api::{AssetHash};
+use render_api::{AssetHash, components::Transform};
 
 impl AssetHash<SkeletonData> for String {}
 
@@ -19,7 +19,9 @@ impl Default for SkeletonData {
 }
 
 impl SkeletonData {
-
+    pub(crate) fn get_bone_transform(&self, bone_name: &str) -> Option<&Transform> {
+        todo!()
+    }
 }
 
 impl From<String> for SkeletonData {
@@ -29,7 +31,6 @@ impl From<String> for SkeletonData {
         let Ok(data) = fs::read(&file_path) else {
             panic!("unable to read file: {:?}", &file_path);
         };
-        //let data = include_bytes!("cube.mesh");
 
         let mut bit_reader = BitReader::new(&data);
 

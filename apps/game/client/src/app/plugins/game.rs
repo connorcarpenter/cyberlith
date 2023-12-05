@@ -5,7 +5,7 @@ use bevy_ecs::{
     system::{Commands, Local, Query, Res, ResMut},
 };
 
-use asset::{MeshFile, AssetManager, AssetHandle, SkinData, SceneData};
+use asset::{MeshFile, AssetManager, AssetHandle, SkinData, SceneData, ModelData};
 use math::Vec3;
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
@@ -75,13 +75,13 @@ fn setup(
     // let human_walk_anim_handle = asset_manager.load("human_walk.anim");
     // let letters_icon_handle = asset_manager.load("letters.icon");
     // let head_skin_handle: Handle<SkinData> = asset_manager.load("head.skin");
-    // let human_model_handle = asset_manager.load("human.model");
-    let head_scene_handle: Handle<SceneData> = asset_manager.load("head.scene");
+    let human_model_handle: Handle<ModelData> = asset_manager.load("human.model");
+    //let head_scene_handle: Handle<SceneData> = asset_manager.load("head.scene");
 
     // model
     commands
         .spawn_empty()
-        .insert(head_scene_handle)
+        .insert(human_model_handle)
         .insert(Transform::from_scale(Vec3::splat(1.0))
             .with_translation(Vec3::splat(0.0)))
         .insert(Visibility::default())
@@ -180,8 +180,8 @@ pub fn draw(
         &Visibility,
         Option<&RenderLayer>,
     )>,
-    scenes_q: Query<(
-        &Handle<SceneData>,
+    models_q: Query<(
+        &Handle<ModelData>,
         &Transform,
         &Visibility,
         Option<&RenderLayer>,
@@ -223,10 +223,10 @@ pub fn draw(
     }
 
     // Aggregate File Meshes
-    for (scene_handle, transform, visibility, render_layer_opt) in scenes_q.iter() {
+    for (model_handle, transform, visibility, render_layer_opt) in models_q.iter() {
         if !visibility.visible {
             continue;
         }
-        asset_manager.draw_scene(&mut render_frame, scene_handle, transform, render_layer_opt);
+        asset_manager.draw_model(&mut render_frame, model_handle, transform, render_layer_opt);
     }
 }

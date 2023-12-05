@@ -16,6 +16,7 @@ pub struct ModelData {
     skeleton_file: AssetDependency<SkeletonData>,
     skin_or_scene_files: Vec<SkinOrScene>,
     net_transforms: Vec<(usize, String, Transform)>,
+    computed_components: Option<Vec<(SkinOrSceneHandle, Transform)>>,
 }
 
 impl Default for ModelData {
@@ -65,6 +66,63 @@ impl ModelData {
                 panic!("unexpected type of handle");
             }
         }
+    }
+
+    pub(crate) fn all_dependencies_loaded(&self) -> bool {
+
+        // check skeleton
+        let AssetDependency::<SkeletonData>::Handle(_) = &self.skeleton_file else {
+            return false;
+        };
+
+        // check components
+        for file in self.skin_or_scene_files.iter() {
+            match file {
+                SkinOrScene::Skin(AssetDependency::<SkinData>::Handle(_)) => {}
+                SkinOrScene::Scene(AssetDependency::<SceneData>::Handle(_)) => {}
+                _ => {
+                    return false;
+                }
+            }
+        }
+        true
+    }
+
+    pub(crate) fn compute_components(&mut self, skeleton_data: &SkeletonData) {
+        // compute components
+        let mut components = Vec::new();
+        for (file_index, bone_name, transform) in self.net_transforms.iter() {
+
+            let Some(bone_transform) = skeleton_data.get_bone_transform(bone_name) else {
+                panic!("unable to find bone in skeleton of name: {}", bone_name);
+            };
+
+            let transform = transform.multiply(bone_transform);
+
+            let file = &self.skin_or_scene_files[*file_index];
+            match file {
+                SkinOrScene::Skin(AssetDependency::<SkinData>::Handle(handle)) => {
+                    components.push((SkinOrSceneHandle::Skin(*handle), transform));
+                }
+                SkinOrScene::Scene(AssetDependency::<SceneData>::Handle(handle)) => {
+                    components.push((SkinOrSceneHandle::Scene(*handle), transform));
+                }
+                _ => panic!("checking for all dependencies loaded should have caught this!"),
+            }
+        }
+        self.computed_components = Some(components);
+    }
+
+    pub(crate) fn get_skeleton_handle(&self) -> Handle<SkeletonData> {
+        if let AssetDependency::<SkeletonData>::Handle(handle) = &self.skeleton_file {
+            *handle
+        } else {
+            panic!("expected skeleton handle");
+        }
+    }
+
+    pub(crate) fn get_components(&self) -> Option<&Vec<(SkinOrSceneHandle, Transform)>> {
+        self.computed_components.as_ref()
     }
 }
 
@@ -126,6 +184,7 @@ impl From<String> for ModelData {
             skeleton_file: AssetDependency::Path(skel_file_opt.unwrap()),
             skin_or_scene_files,
             net_transforms,
+            computed_components: None,
         }
     }
 }
