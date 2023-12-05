@@ -3,6 +3,7 @@ use render_api::{
     components::{Camera, Projection, Transform},
     Handle,
 };
+use render_api::resources::MaterialOrSkinHandle;
 
 use crate::renderer::{Light, RenderCamera, RenderMeshes};
 
@@ -29,10 +30,10 @@ impl<'a> RenderPass<'a> {
     pub fn add_mesh(
         &mut self,
         mesh_handle: &Handle<CpuMesh>,
-        mat_handle: &Handle<CpuMaterial>,
+        mat_handle: &MaterialOrSkinHandle,
         transform: &'a Transform,
     ) {
-        self.meshes.add_transform(mesh_handle, mat_handle, transform);
+        self.meshes.add_instance(mesh_handle, mat_handle, transform);
     }
 
     pub fn take(self) -> (RenderCamera<'a>, Vec<&'a dyn Light>, RenderMeshes) {

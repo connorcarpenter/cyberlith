@@ -5,7 +5,7 @@ use bevy_ecs::system::Resource;
 use render_api::{base::CpuMaterial, Handle};
 
 use crate::{
-    core::{Cull, GpuTexture2D, Program, RenderStates},
+    core::{GpuTexture2D, Program},
     renderer::{FragmentShader, Light, RenderCamera},
 };
 
@@ -14,7 +14,6 @@ pub struct GpuMaterialManager {
     assets: HashMap<Handle<CpuMaterial>, GpuMaterial>,
     gpu_materials: Option<GpuTexture2D>,
     cpu_materials: Vec<[f32; 4]>,
-    render_states: RenderStates,
 }
 
 impl Default for GpuMaterialManager {
@@ -23,10 +22,6 @@ impl Default for GpuMaterialManager {
             assets: HashMap::new(),
             gpu_materials: None,
             cpu_materials: Vec::new(),
-            render_states: RenderStates {
-                cull: Cull::Back,
-                ..Default::default()
-            },
         }
     }
 }
@@ -86,10 +81,6 @@ impl GpuMaterialManager {
         //program.use_uniform("material_texture_width", self.cpu_materials.len() as f32);
 
         program.use_texture("material_texture", self.gpu_materials.as_ref().unwrap());
-    }
-
-    pub fn render_states(&self) -> RenderStates {
-        self.render_states
     }
 }
 

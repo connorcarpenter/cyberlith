@@ -1,11 +1,12 @@
+use std::collections::HashMap;
 use std::fs;
 
 use naia_serde::BitReader;
 
-use render_api::{AssetHash, Handle};
+use render_api::{AssetHash, Assets, Handle};
+use render_api::base::{CpuMaterial, CpuSkin};
 
-use crate::{asset_dependency::AssetDependency, AssetHandle, MeshFile, PaletteData};
-use crate::asset_handle::AssetHandleImpl;
+use crate::{asset_handle::AssetHandleImpl, asset_dependency::AssetDependency, AssetHandle, MeshFile, PaletteData};
 
 impl AssetHash<SkinData> for String {}
 
@@ -15,9 +16,26 @@ impl Default for SkinData {
     }
 }
 
+#[derive(Debug)]
 pub struct SkinData {
     mesh_file: AssetDependency<MeshFile>,
     palette_file: AssetDependency<PaletteData>,
+    cpu_skin_handle: Option<Handle<CpuSkin>>,
+    color_ids: Vec<u8>,
+}
+
+impl SkinData {
+    pub(crate) fn get_mesh_file_handle(&self) -> Option<&Handle<MeshFile>> {
+        if let AssetDependency::<MeshFile>::Handle(handle) = &self.mesh_file {
+            Some(handle)
+        } else {
+            None
+        }
+    }
+
+    pub(crate) fn get_cpu_skin_handle(&self) -> Option<&Handle<CpuSkin>> {
+        self.cpu_skin_handle.as_ref()
+    }
 }
 
 impl SkinData {
@@ -34,18 +52,33 @@ impl SkinData {
         dependencies.push((handle.into(), path.clone()));
     }
 
-    pub(crate) fn finish_dependency(&mut self, _dependency_path: String, dependency_handle: AssetHandle) {
+    pub(crate) fn finish_dependency(&mut self, _dependency_path: String, dependency_handle: AssetHandle) -> Option<Handle<PaletteData>> {
         match dependency_handle.to_impl() {
             AssetHandleImpl::Mesh(handle) => {
                 self.mesh_file.load_handle(handle);
+                return None;
             }
             AssetHandleImpl::Palette(handle) => {
-                self.palette_file.load_handle(handle);
+                self.palette_file.load_handle(handle.clone());
+                return Some(handle);
             }
             _ => {
                 panic!("unexpected type of handle");
             }
         }
+    }
+
+    pub(crate) fn load_cpu_skin(&mut self, skins: &mut Assets<CpuSkin>, palette_data: Vec<Handle<CpuMaterial>>) {
+        let mut new_skin = CpuSkin::default();
+
+        for color_id in &self.color_ids {
+            let color_id = *color_id as usize;
+            let cpu_material_handle = palette_data[color_id].clone();
+            new_skin.add(cpu_material_handle);
+        }
+
+        let new_handle = skins.add_unique(new_skin);
+        self.cpu_skin_handle = Some(new_handle);
     }
 }
 
@@ -62,6 +95,9 @@ impl From<String> for SkinData {
         let actions =
             filetypes::SkinAction::read(&mut bit_reader).expect("unable to parse file");
 
+        let mut skin_colors = HashMap::new();
+        let mut bck_color_index = None;
+        let mut max_face_id = 0;
         let mut palette_file_opt = None;
         let mut mesh_file_opt = None;
         for action in actions {
@@ -76,18 +112,32 @@ impl From<String> for SkinData {
                 }
                 filetypes::SkinAction::BackgroundColor(color_index) => {
                     println!("BackgroundColor: {}", color_index);
+                    bck_color_index = Some(color_index);
                 }
                 filetypes::SkinAction::SkinColor(face_index, color_index) => {
                     println!("SkinColor: face_index: {}, color_index: {}", face_index, color_index);
+                    if face_index > max_face_id {
+                        max_face_id = face_index;
+                    }
+                    skin_colors.insert(face_index, color_index);
                 }
             }
         }
 
-        // todo: lots here
+        let mut color_ids = Vec::new();
+        for face_index in 0..=max_face_id {
+            if let Some(color_index) = skin_colors.get(&face_index) {
+                color_ids.push(*color_index);
+            } else {
+                color_ids.push(bck_color_index.unwrap());
+            }
+        }
 
         Self {
             mesh_file: AssetDependency::Path(mesh_file_opt.unwrap()),
             palette_file: AssetDependency::Path(palette_file_opt.unwrap()),
+            cpu_skin_handle: None,
+            color_ids,
         }
     }
 }

@@ -5,7 +5,7 @@ use bevy_ecs::{
     system::{Commands, Local, Query, Res, ResMut},
 };
 
-use asset::{MeshFile, AssetManager};
+use asset::{MeshFile, AssetManager, AssetHandle, SkinData};
 use math::Vec3;
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
@@ -69,19 +69,19 @@ fn setup(
 
     let red_mat_handle = materials.add(CpuMaterial::new(Color::RED, 0.0, 32.0, 0.5));
 
-    let cube_mesh_handle: Handle<MeshFile> = asset_manager.load("cube.mesh").into();
-    let human_skel_handle = asset_manager.load("human.skel");
-    let threebit_palette_handle = asset_manager.load("3bit.palette");
-    let human_walk_anim_handle = asset_manager.load("human_walk.anim");
-    let letters_icon_handle = asset_manager.load("letters.icon");
-    let head_skin_handle = asset_manager.load("head.skin");
-    let human_model_handle = asset_manager.load("human.model");
-    let head_scene_handle = asset_manager.load("head.scene");
+    let cube_mesh_handle: Handle<MeshFile> = asset_manager.load("cube.mesh");
+    // let human_skel_handle = asset_manager.load("human.skel");
+    // let threebit_palette_handle = asset_manager.load("3bit.palette");
+    // let human_walk_anim_handle = asset_manager.load("human_walk.anim");
+    // let letters_icon_handle = asset_manager.load("letters.icon");
+    let head_skin_handle: Handle<SkinData> = asset_manager.load("head.skin");
+    // let human_model_handle = asset_manager.load("human.model");
+    // let head_scene_handle = asset_manager.load("head.scene");
 
     // model
     commands
         .spawn_empty()
-        .insert(cube_mesh_handle)
+        .insert(head_skin_handle)
         .insert(red_mat_handle)
         .insert(Transform::from_scale(Vec3::splat(1.0))
             .with_translation(Vec3::splat(0.0)))
@@ -182,8 +182,7 @@ pub fn draw(
         Option<&RenderLayer>,
     )>,
     file_meshes_q: Query<(
-        &Handle<MeshFile>,
-        &Handle<CpuMaterial>,
+        &Handle<SkinData>,
         &Transform,
         &Visibility,
         Option<&RenderLayer>,
@@ -225,10 +224,10 @@ pub fn draw(
     }
 
     // Aggregate File Meshes
-    for (mesh_handle, mat_handle, transform, visibility, render_layer_opt) in file_meshes_q.iter() {
+    for (skin_handle, transform, visibility, render_layer_opt) in file_meshes_q.iter() {
         if !visibility.visible {
             continue;
         }
-        asset_manager.draw_mesh(&mut render_frame, mesh_handle, mat_handle, transform, render_layer_opt);
+        asset_manager.draw_skin(&mut render_frame, skin_handle, transform, render_layer_opt);
     }
 }

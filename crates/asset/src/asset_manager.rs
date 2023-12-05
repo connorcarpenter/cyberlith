@@ -1,7 +1,9 @@
+use std::collections::HashMap;
 use bevy_ecs::system::{ResMut, Resource};
 use bevy_log::warn;
 
 use render_api::{Assets, Handle, base::{CpuMaterial, CpuMesh}, components::{RenderLayer, Transform}, resources::RenderFrame};
+use render_api::base::CpuSkin;
 
 use crate::{asset_handle::AssetHandleImpl, AnimationData, AssetHandle, IconData, MeshFile, ModelData, PaletteData, SceneData, SkeletonData, SkinData};
 
@@ -19,6 +21,8 @@ pub struct AssetManager {
     // mesh file name, skin handle
     queued_meshes: Vec<Handle<MeshFile>>,
     queued_palettes: Vec<Handle<PaletteData>>,
+    skins_waiting_on_palettes: HashMap<Handle<PaletteData>, Handle<SkinData>>,
+    ready_skins: Vec<(Handle<SkinData>, Handle<PaletteData>)>,
 }
 
 impl Default for AssetManager {
@@ -35,12 +39,14 @@ impl Default for AssetManager {
 
             queued_meshes: Vec::new(),
             queued_palettes: Vec::new(),
+            skins_waiting_on_palettes: HashMap::new(),
+            ready_skins: Vec::new(),
         }
     }
 }
 
 impl AssetManager {
-    pub fn load(&mut self, path: &str) -> AssetHandle {
+    pub fn load<T: From<AssetHandle>>(&mut self, path: &str) -> T {
         let file_ext = path.split('.').last().unwrap();
         let path_string = path.to_string();
 
@@ -53,16 +59,21 @@ impl AssetManager {
                 if !existed {
                     self.queued_meshes.push(handle.clone());
                 }
-                handle.into()
+                let asset_handle: AssetHandle = handle.into();
+                asset_handle.into()
             },
-            "skel" => self.skeletons.add(path_string).into(),
+            "skel" => {
+                let asset_handle: AssetHandle = self.skeletons.add(path_string).into();
+                asset_handle.into()
+            },
             "palette" => {
                 let existed = self.palettes.has(path_string.clone());
                 let handle = self.palettes.add(path_string);
                 if !existed {
                     self.queued_palettes.push(handle.clone());
                 }
-                handle.into()
+                let asset_handle: AssetHandle = handle.into();
+                asset_handle.into()
             },
             "anim" => {
                 let existed = self.animations.has(path_string.clone());
@@ -71,7 +82,8 @@ impl AssetManager {
                     let data = self.animations.get(&handle).unwrap();
                     data.load_dependencies(handle, &mut dependencies);
                 }
-                handle.into()
+                let asset_handle: AssetHandle = handle.into();
+                asset_handle.into()
             },
             "icon" => {
                 let existed = self.icons.has(path_string.clone());
@@ -80,7 +92,8 @@ impl AssetManager {
                     let data = self.icons.get(&handle).unwrap();
                     data.load_dependencies(handle, &mut dependencies);
                 }
-                handle.into()
+                let asset_handle: AssetHandle = handle.into();
+                asset_handle.into()
             },
             "skin" => {
                 let existed = self.skins.has(path_string.clone());
@@ -89,7 +102,8 @@ impl AssetManager {
                     let data = self.skins.get(&handle).unwrap();
                     data.load_dependencies(handle, &mut dependencies);
                 }
-                handle.into()
+                let asset_handle: AssetHandle = handle.into();
+                asset_handle.into()
             },
             "model" => {
                 let existed = self.models.has(path_string.clone());
@@ -98,7 +112,8 @@ impl AssetManager {
                     let data = self.models.get(&handle).unwrap();
                     data.load_dependencies(handle, &mut dependencies);
                 }
-                handle.into()
+                let asset_handle: AssetHandle = handle.into();
+                asset_handle.into()
             },
             "scene" => {
                 let existed = self.scenes.has(path_string.clone());
@@ -107,7 +122,8 @@ impl AssetManager {
                     let data = self.scenes.get(&handle).unwrap();
                     data.load_dependencies(handle, &mut dependencies);
                 }
-                handle.into()
+                let asset_handle: AssetHandle = handle.into();
+                asset_handle.into()
             },
             _ => panic!("Unknown file extension: {}", file_ext),
         };
@@ -137,7 +153,11 @@ impl AssetManager {
             },
             AssetHandleImpl::Skin(principal_handle) => {
                 let mut data = self.skins.get_mut(&principal_handle).unwrap();
-                data.finish_dependency(dependency_string, dependency_handle);
+                if let Some(palette_handle) = data.finish_dependency(dependency_string, dependency_handle) {
+                    if self.palette_has_cpu_materials(&palette_handle) {
+                        self.ready_skins.push((principal_handle, palette_handle));
+                    }
+                }
             },
             AssetHandleImpl::Model(principal_handle) => {
                 let mut data = self.models.get_mut(&principal_handle).unwrap();
@@ -154,9 +174,11 @@ impl AssetManager {
         mut asset_manager: ResMut<Self>,
         mut meshes: ResMut<Assets<CpuMesh>>,
         mut materials: ResMut<Assets<CpuMaterial>>,
+        mut skins: ResMut<Assets<CpuSkin>>,
     ) {
         asset_manager.sync_meshes(&mut meshes);
         asset_manager.sync_materials(&mut materials);
+        asset_manager.sync_skins(&mut skins);
     }
 
     fn sync_meshes(&mut self, meshes: &mut Assets<CpuMesh>) {
@@ -175,8 +197,34 @@ impl AssetManager {
             return;
         }
 
-        todo!();
+        let palette_handles = std::mem::take(&mut self.queued_palettes);
+
+        for palette_handle in &palette_handles {
+            let palette_data = self.palettes.get_mut(palette_handle).unwrap();
+            palette_data.load_cpu_materials(materials);
+        }
+
+        for palette_handle in &palette_handles {
+            if let Some(skin_handle) = self.skins_waiting_on_palettes.remove(palette_handle) {
+                self.ready_skins.push((skin_handle, palette_handle.clone()));
+            }
+        }
     }
+
+    fn sync_skins(&mut self, skins: &mut Assets<CpuSkin>) {
+        if self.ready_skins.is_empty() {
+            return;
+        }
+
+        for (skin_handle, palette_handle) in std::mem::take(&mut self.ready_skins) {
+            let skin_data = self.skins.get_mut(&skin_handle).unwrap();
+            let palette_data = self.palettes.get(&palette_handle).unwrap();
+            let cpu_material_handles = palette_data.get_cpu_material_handles();
+            skin_data.load_cpu_skin(skins, cpu_material_handles);
+        }
+    }
+
+    // Drawing
 
     pub fn draw_mesh(
         &self,
@@ -186,15 +234,49 @@ impl AssetManager {
         transform: &Transform,
         render_layer_opt: Option<&RenderLayer>,
     ) {
-        if let Some(mesh_file) = self.meshes.get(mesh_handle) {
-            if let Some(cpu_mesh_handle) = mesh_file.get_cpu_mesh_handle() {
-                render_frame.draw_mesh(render_layer_opt, cpu_mesh_handle, mat_handle, transform);
-            } else {
-                warn!("mesh file not loaded 1: {:?}", mesh_handle);
-            }
-        }
-        else {
+        let Some(mesh_file) = self.meshes.get(mesh_handle) else {
+            warn!("mesh file not loaded 1: {:?}", mesh_handle);
+            return;
+        };
+        let Some(cpu_mesh_handle) = mesh_file.get_cpu_mesh_handle() else {
             warn!("mesh file not loaded 2: {:?}", mesh_handle);
-        }
+            return;
+        };
+        render_frame.draw_mesh(render_layer_opt, cpu_mesh_handle, mat_handle, transform);
+    }
+
+    pub fn draw_skin(
+        &self,
+        render_frame: &mut RenderFrame,
+        skin_handle: &Handle<SkinData>,
+        transform: &Transform,
+        render_layer_opt: Option<&RenderLayer>,
+    ) {
+        let Some(skin_data) = self.skins.get(skin_handle) else {
+            warn!("skin data not loaded 1: {:?}", skin_handle);
+            return;
+        };
+        let Some(mesh_file_handle) = skin_data.get_mesh_file_handle() else {
+            warn!("skin file not loaded 2: {:?}", skin_handle);
+            return;
+        };
+        let Some(mesh_file) = self.meshes.get(mesh_file_handle) else {
+            warn!("skin file not loaded 3: {:?}", skin_handle);
+            return;
+        };
+        let Some(cpu_mesh_handle) = mesh_file.get_cpu_mesh_handle() else {
+            warn!("skin file not loaded 4: {:?}", skin_handle);
+            return;
+        };
+        let Some(cpu_skin_handle) = skin_data.get_cpu_skin_handle() else {
+            warn!("skin data not loaded 5: {:?}", skin_handle);
+            return;
+        };
+        render_frame.draw_skinned_mesh(render_layer_opt, cpu_mesh_handle, cpu_skin_handle, transform);
+    }
+
+    fn palette_has_cpu_materials(&self, palette_handle: &Handle<PaletteData>) -> bool {
+        let palette_data = self.palettes.get(palette_handle).unwrap();
+        palette_data.has_cpu_materials()
     }
 }

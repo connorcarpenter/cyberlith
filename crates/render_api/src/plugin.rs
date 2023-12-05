@@ -3,7 +3,7 @@ use bevy_ecs::schedule::{ExecutorKind, Schedule};
 
 use crate::{
     assets::Assets,
-    base::{CpuMaterial, CpuMesh, CpuTexture2D},
+    base::{CpuSkin, CpuMaterial, CpuMesh, CpuTexture2D},
     base_set::{Draw, RenderSync},
     resources::{RenderFrame, Time},
     Render,
@@ -18,6 +18,7 @@ impl Plugin for RenderApiPlugin {
             .init_resource::<Assets<CpuMesh>>()
             .init_resource::<Assets<CpuMaterial>>()
             .init_resource::<Assets<CpuTexture2D>>()
+            .init_resource::<Assets<CpuSkin>>()
             .init_resource::<RenderFrame>()
             .init_resource::<Time>();
 

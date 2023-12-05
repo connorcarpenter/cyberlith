@@ -24,6 +24,8 @@ pub(crate) enum AssetHandleImpl {
     Scene(Handle<SceneData>),
 }
 
+// Handle<T> -> AssetHandle
+
 impl From<Handle<MeshFile>> for AssetHandle {
     fn from(handle: Handle<MeshFile>) -> Self {
         Self {
@@ -88,10 +90,75 @@ impl From<Handle<SceneData>> for AssetHandle {
     }
 }
 
-impl Into<Handle<MeshFile>> for AssetHandle {
-    fn into(self) -> Handle<MeshFile> {
-        match self.inner {
+// AssetHandle -> Handle<T>
+
+impl From<AssetHandle> for Handle<MeshFile> {
+    fn from(value: AssetHandle) -> Self {
+        match value.inner {
             AssetHandleImpl::Mesh(handle) => handle,
+            _ => panic!("unexpected handle"),
+        }
+    }
+}
+
+impl From<AssetHandle> for Handle<PaletteData> {
+    fn from(value: AssetHandle) -> Self {
+        match value.inner {
+            AssetHandleImpl::Palette(handle) => handle,
+            _ => panic!("unexpected handle"),
+        }
+    }
+}
+
+impl From<AssetHandle> for Handle<SkeletonData> {
+    fn from(value: AssetHandle) -> Self {
+        match value.inner {
+            AssetHandleImpl::Skeleton(handle) => handle,
+            _ => panic!("unexpected handle"),
+        }
+    }
+}
+
+impl From<AssetHandle> for Handle<AnimationData> {
+    fn from(value: AssetHandle) -> Self {
+        match value.inner {
+            AssetHandleImpl::Animation(handle) => handle,
+            _ => panic!("unexpected handle"),
+        }
+    }
+}
+
+impl From<AssetHandle> for Handle<IconData> {
+    fn from(value: AssetHandle) -> Self {
+        match value.inner {
+            AssetHandleImpl::Icon(handle) => handle,
+            _ => panic!("unexpected handle"),
+        }
+    }
+}
+
+impl From<AssetHandle> for Handle<SkinData> {
+    fn from(value: AssetHandle) -> Self {
+        match value.inner {
+            AssetHandleImpl::Skin(handle) => handle,
+            _ => panic!("unexpected handle"),
+        }
+    }
+}
+
+impl From<AssetHandle> for Handle<ModelData> {
+    fn from(value: AssetHandle) -> Self {
+        match value.inner {
+            AssetHandleImpl::Model(handle) => handle,
+            _ => panic!("unexpected handle"),
+        }
+    }
+}
+
+impl From<AssetHandle> for Handle<SceneData> {
+    fn from(value: AssetHandle) -> Self {
+        match value.inner {
+            AssetHandleImpl::Scene(handle) => handle,
             _ => panic!("unexpected handle"),
         }
     }

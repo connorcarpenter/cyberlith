@@ -1,16 +1,14 @@
 use bevy_app::{App, Plugin};
 use bevy_ecs::{change_detection::DetectChanges, system::ResMut};
+use bevy_ecs::system::Res;
 
 use render_api::{
     base::{CpuMaterial, CpuMesh, CpuTexture2D},
     Assets, RenderSync,
 };
+use render_api::base::CpuSkin;
 
-use crate::{
-    asset_mapping::AssetMapping,
-    core::{GpuDepthTexture2D, GpuTexture2D},
-    GpuMaterialManager, GpuMeshManager,
-};
+use crate::{asset_mapping::AssetMapping, core::{GpuDepthTexture2D, GpuTexture2D}, GpuMaterialManager, GpuMeshManager, GpuSkinManager};
 
 pub struct SyncPlugin;
 
@@ -20,11 +18,13 @@ impl Plugin for SyncPlugin {
             // Resources
             .init_resource::<GpuMeshManager>()
             .init_resource::<GpuMaterialManager>()
+            .init_resource::<GpuSkinManager>()
             .init_resource::<AssetMapping<CpuTexture2D, GpuTexture2D>>()
             .init_resource::<AssetMapping<CpuTexture2D, GpuDepthTexture2D>>()
             // Systems
             .add_systems(RenderSync, sync_mesh_assets)
             .add_systems(RenderSync, sync_material_assets)
+            .add_systems(RenderSync, sync_skin_assets)
             .add_systems(RenderSync, sync_texture_2d_assets);
     }
 }
@@ -123,5 +123,35 @@ fn sync_texture_2d_assets(
     for removed_handle in removed_handles {
         gpu_assets.remove(&removed_handle);
         gpu_depth_assets.remove(&removed_handle);
+    }
+}
+
+fn sync_skin_assets(
+    gpu_mat_manager: Res<GpuMaterialManager>,
+    mut cpu_assets: ResMut<Assets<CpuSkin>>,
+    mut gpu_skin_manager: ResMut<GpuSkinManager>,
+) {
+    if !cpu_assets.is_changed() {
+        return;
+    }
+
+    // Handle Added Skins
+    let added_handles = cpu_assets.flush_added();
+    for added_handle in added_handles {
+        let cpu_data = cpu_assets.get(&added_handle).unwrap();
+        gpu_skin_manager.insert(&gpu_mat_manager, added_handle, cpu_data);
+    }
+
+    // Handle Changed Materials
+    let changed_handles = cpu_assets.flush_changed();
+    for changed_handle in changed_handles {
+        let cpu_data = cpu_assets.get(&changed_handle).unwrap();
+        gpu_skin_manager.insert(&gpu_mat_manager, changed_handle, cpu_data);
+    }
+
+    // Handle Removed Materials
+    let removed_handles = cpu_assets.flush_removed();
+    for removed_handle in removed_handles {
+        gpu_skin_manager.remove(&removed_handle);
     }
 }

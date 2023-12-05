@@ -10,6 +10,7 @@ use crate::{
     },
     Handle,
 };
+use crate::base::CpuSkin;
 
 #[derive(Resource)]
 pub struct RenderFrame {
@@ -75,8 +76,27 @@ impl RenderFrame {
         let id = convert_wrapper(render_layer_opt.copied());
         self.contents
             .meshes
-            .push((id, mesh_handle.clone(), mat_handle.clone(), *transform));
+            .push((id, mesh_handle.clone(), MaterialOrSkinHandle::Material(mat_handle.clone()), *transform));
     }
+
+    pub fn draw_skinned_mesh(
+        &mut self,
+        render_layer_opt: Option<&RenderLayer>,
+        mesh_handle: &Handle<CpuMesh>,
+        skin_handle: &Handle<CpuSkin>,
+        transform: &Transform,
+    ) {
+        let id = convert_wrapper(render_layer_opt.copied());
+        self.contents
+            .meshes
+            .push((id, mesh_handle.clone(), MaterialOrSkinHandle::Skin(skin_handle.clone()), *transform));
+    }
+}
+
+#[derive(Clone, Copy)]
+pub enum MaterialOrSkinHandle {
+    Material(Handle<CpuMaterial>),
+    Skin(Handle<CpuSkin>),
 }
 
 pub struct RenderFrameContents {
@@ -84,7 +104,7 @@ pub struct RenderFrameContents {
     pub point_lights: Vec<(usize, PointLight)>,
     pub directional_lights: Vec<(usize, DirectionalLight)>,
     pub ambient_lights: Vec<(usize, AmbientLight)>,
-    pub meshes: Vec<(usize, Handle<CpuMesh>, Handle<CpuMaterial>, Transform)>,
+    pub meshes: Vec<(usize, Handle<CpuMesh>, MaterialOrSkinHandle, Transform)>,
 }
 
 impl Default for RenderFrameContents {
