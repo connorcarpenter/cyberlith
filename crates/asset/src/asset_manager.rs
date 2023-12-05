@@ -156,6 +156,8 @@ impl AssetManager {
                 if let Some(palette_handle) = data.finish_dependency(dependency_string, dependency_handle) {
                     if self.palette_has_cpu_materials(&palette_handle) {
                         self.ready_skins.push((principal_handle, palette_handle));
+                    } else {
+                        self.skins_waiting_on_palettes.insert(palette_handle, principal_handle);
                     }
                 }
             },
