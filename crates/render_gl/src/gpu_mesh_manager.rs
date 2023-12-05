@@ -89,7 +89,7 @@ impl GpuMeshManager {
         let gpu_face_indices = self.gpu_face_indices.as_ref().unwrap();
 
         program.use_vertex_attribute("vertex_world_position", gpu_positions);
-        program.use_vertex_attribute_if_required("vertex_world_normal", gpu_normals);
+        program.use_vertex_attribute("vertex_world_normal", gpu_normals);
         program.use_vertex_attribute("vertex_face_index", gpu_face_indices);
     }
 

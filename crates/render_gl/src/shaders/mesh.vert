@@ -8,7 +8,7 @@ uniform sampler2D skin_texture;
 
 in vec3 vertex_world_position;
 in vec3 vertex_world_normal;
-in int vertex_face_index;
+in uint vertex_face_index;
 
 flat out vec3 color;
 
@@ -43,7 +43,7 @@ vec4 get_material_data(int material_index, int row_index) {
     return result;
 }
 
-int get_skin_material_index(int skin_index, int vertex_face_index) {
+int get_skin_material_index(uint vertex_face_index, int skin_index) {
 
     vec4 result = texelFetch(
         skin_texture,
@@ -88,7 +88,7 @@ void main()
 
     if (has_skin) {
         int skin_index = int(instance_data.y);
-        material_index = get_skin_material_index(skin_index, vertex_face_index);
+        material_index = get_skin_material_index(vertex_face_index, skin_index);
     } else {
         material_index = int(instance_data.y);
     }

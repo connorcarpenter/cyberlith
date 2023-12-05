@@ -96,7 +96,7 @@ impl RenderMeshes {
             .keys()
             .map(|handle| *handle)
             .collect::<Vec<_>>();
-        mesh_handles.sort();
+        mesh_handles.sort(); // TODO: is this still necessary??
 
         for mesh_handle in mesh_handles {
             let instances = mesh_handle_transform_map.remove(&mesh_handle).unwrap();
@@ -118,7 +118,7 @@ impl RenderMeshes {
             instances_rows.push(instance_row);
         }
 
-        // convert transform rows to grid
+        // convert instance rows to grid
         let mut instances_grid: Vec<[f32; 4]> = Vec::new();
         let instance_grid_width = max_instance_count * 4;
         for instance_row in instances_rows {
@@ -162,12 +162,12 @@ impl RenderMeshes {
 
                 match mat_handle {
                     MaterialOrSkinHandle::Material(mat_handle) => {
-                        let has_skin = 0.0;
+                        let has_skin = -100.0;
                         let mat_index = gpu_mat_manager.get(&mat_handle).unwrap();
                         instance_row.push([has_skin, mat_index.index() as f32, 0.0, 0.0]);
                     }
                     MaterialOrSkinHandle::Skin(skin_handle) => {
-                        let has_skin = 1.0;
+                        let has_skin = 100.0;
                         let skin_index = gpu_skin_manager.get(&skin_handle).unwrap();
                         instance_row.push([has_skin, skin_index.index() as f32, 0.0, 0.0]);
                     }

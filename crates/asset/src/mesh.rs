@@ -1,4 +1,5 @@
 use std::fs;
+use bevy_log::info;
 
 use naia_serde::BitReader;
 
@@ -65,6 +66,8 @@ impl From<MeshFilePath> for CpuMesh {
         let actions =
             filetypes::MeshAction::read(&mut bit_reader).expect("unable to parse file");
 
+        info!("--- reading mesh file: {} ---", &path);
+
         let mut vertices = Vec::new();
         let mut positions = Vec::new();
         let mut face_indices = Vec::new();
@@ -96,6 +99,8 @@ impl From<MeshFilePath> for CpuMesh {
                     positions.push(vertex_b);
                     positions.push(vertex_c);
 
+                    info!("face_id: {}", face_id);
+
                     face_indices.push(face_id);
                     face_indices.push(face_id);
                     face_indices.push(face_id);
@@ -105,6 +110,8 @@ impl From<MeshFilePath> for CpuMesh {
                 }
             }
         }
+
+        info!("--- done reading mesh file ---");
 
         let mut mesh = CpuMesh::from_vertices(positions);
         mesh.add_face_indices(face_indices);
