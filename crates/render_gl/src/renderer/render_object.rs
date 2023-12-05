@@ -48,6 +48,9 @@ impl RenderMeshes {
         lights: &[&dyn Light],
         meshes: RenderMeshes,
     ) {
+        if !gpu_skin_manager.is_ready() {
+            return;
+        }
         let (commands, instance_texture) =
             meshes.to_commands(gpu_mesh_manager, gpu_material_manager, gpu_skin_manager);
 
@@ -60,6 +63,7 @@ impl RenderMeshes {
         Context::get()
             .program(vertex_shader_source, fragment_shader.source, |program| {
                 gpu_material_manager.use_uniforms(program, render_camera, lights);
+                gpu_skin_manager.use_uniforms(program);
 
                 program.use_uniform(
                     "view_projection",

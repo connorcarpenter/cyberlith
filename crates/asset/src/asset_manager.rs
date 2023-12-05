@@ -179,8 +179,8 @@ impl AssetManager {
         mut skins: ResMut<Assets<CpuSkin>>,
     ) {
         asset_manager.sync_meshes(&mut meshes);
-        asset_manager.sync_materials(&mut materials);
-        asset_manager.sync_skins(&mut skins);
+        asset_manager.sync_palettes(&mut materials);
+        asset_manager.sync_skins(&materials, &mut skins);
     }
 
     fn sync_meshes(&mut self, meshes: &mut Assets<CpuMesh>) {
@@ -194,7 +194,7 @@ impl AssetManager {
         }
     }
 
-    fn sync_materials(&mut self, materials: &mut Assets<CpuMaterial>) {
+    fn sync_palettes(&mut self, materials: &mut Assets<CpuMaterial>) {
         if self.queued_palettes.is_empty() {
             return;
         }
@@ -213,7 +213,7 @@ impl AssetManager {
         }
     }
 
-    fn sync_skins(&mut self, skins: &mut Assets<CpuSkin>) {
+    fn sync_skins(&mut self, materials: &Assets<CpuMaterial>, skins: &mut Assets<CpuSkin>) {
         if self.ready_skins.is_empty() {
             return;
         }
@@ -221,8 +221,12 @@ impl AssetManager {
         for (skin_handle, palette_handle) in std::mem::take(&mut self.ready_skins) {
             let skin_data = self.skins.get_mut(&skin_handle).unwrap();
             let palette_data = self.palettes.get(&palette_handle).unwrap();
-            let cpu_material_handles = palette_data.get_cpu_material_handles();
-            skin_data.load_cpu_skin(skins, cpu_material_handles);
+            if skin_data.load_cpu_skin(materials, skins, palette_data) {
+                // success!
+            } else {
+                warn!("skin data not loaded, re-queuing");
+                self.ready_skins.push((skin_handle, palette_handle));
+            }
         }
     }
 

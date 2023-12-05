@@ -57,7 +57,6 @@ impl From<String> for IconData {
         for action in actions {
             match action {
                 filetypes::IconAction::PaletteFile(path, file_name) => {
-                    println!("PaletteFile: {}/{}", path, file_name);
                     palette_file_opt = Some(format!("{}/{}", path, file_name));
                 }
                 filetypes::IconAction::Frame(frame_actions) => {

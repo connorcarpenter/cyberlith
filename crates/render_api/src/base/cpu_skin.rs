@@ -17,7 +17,7 @@ impl Default for CpuSkin {
 }
 
 impl CpuSkin {
-    pub fn add(&mut self, material: Handle<CpuMaterial>) {
+    pub fn add_face_color(&mut self, material: Handle<CpuMaterial>) {
         self.face_to_material.push(material);
     }
 

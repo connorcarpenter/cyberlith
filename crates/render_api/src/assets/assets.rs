@@ -85,6 +85,10 @@ impl<T> Assets<T> {
         self.assets.get_mut(&handle.id)
     }
 
+    pub fn added_was_flushed(&self, handle: &Handle<T>) -> bool {
+        self.assets.contains_key(&handle.id) && !self.added_ids.contains(&handle.id)
+    }
+
     pub fn flush_added(&mut self) -> Vec<Handle<T>> {
         let output = (&self.added_ids)
             .into_iter()

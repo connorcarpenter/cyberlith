@@ -56,7 +56,7 @@ impl GpuSkinManager {
     fn raw_skin_data(&self, gpu_material_manager: &GpuMaterialManager) -> Vec<u8> {
         let mut output = Vec::new();
         for skin in &self.cpu_skins {
-            write_raw_data(gpu_material_manager,  skin.face_to_material_list(), self.biggest_skin, &mut output);
+            write_raw_data(gpu_material_manager,  skin, self.biggest_skin, &mut output);
         }
         output
     }
@@ -80,9 +80,14 @@ impl GpuSkinManager {
     pub fn use_uniforms(&self, program: &Program) {
         program.use_texture("skin_texture", self.gpu_skins.as_ref().unwrap());
     }
+
+    pub fn is_ready(&self) -> bool {
+        self.gpu_skins.is_some()
+    }
 }
 
-fn write_raw_data(gpu_material_manager: &GpuMaterialManager, skin_list: &Vec<Handle<CpuMaterial>>, biggest_skin: usize, output: &mut Vec<u8>) {
+fn write_raw_data(gpu_material_manager: &GpuMaterialManager, skin: &CpuSkin, biggest_skin: usize, output: &mut Vec<u8>) {
+    let skin_list = skin.face_to_material_list();
     let mut skin_count = 0;
     for mat_handle in skin_list {
         let mat = gpu_material_manager.get(mat_handle).unwrap();

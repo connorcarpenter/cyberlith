@@ -2,13 +2,13 @@
 uniform mat4 view_projection;
 uniform vec3 camera_position;
 
-//uniform float instance_texture_width;
-//uniform float instance_texture_height;
 uniform sampler2D instance_texture;
 uniform sampler2D material_texture;
+uniform sampler2D skin_texture;
 
 in vec3 vertex_world_position;
 in vec3 vertex_world_normal;
+in int vertex_face_index;
 
 flat out vec3 color;
 
@@ -43,6 +43,20 @@ vec4 get_material_data(int material_index, int row_index) {
     return result;
 }
 
+int get_skin_material_index(int skin_index, int vertex_face_index) {
+
+    vec4 result = texelFetch(
+        skin_texture,
+        ivec2(
+            vertex_face_index,
+            skin_index
+        ),
+        0
+    );
+
+    return int(result.x);
+}
+
 void main()
 {
     vec4 transform_row1 = get_transform(0);
@@ -69,7 +83,16 @@ void main()
     vec3 transformed_vertex_world_normal = normalize(normal_matrix * vertex_world_normal);
 
     // material
-    highp int material_index = int(instance_data.x);
+    bool has_skin = instance_data.x > 0.0;
+    int material_index;
+
+    if (has_skin) {
+        int skin_index = int(instance_data.y);
+        material_index = get_skin_material_index(skin_index, vertex_face_index);
+    } else {
+        material_index = int(instance_data.y);
+    }
+
     vec4 material_data1 = get_material_data(material_index, 0);
     vec4 material_data2 = get_material_data(material_index, 1);
     vec3 material_color = vec3(material_data1.x, material_data1.y, material_data1.z);

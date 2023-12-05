@@ -67,6 +67,7 @@ impl From<MeshFilePath> for CpuMesh {
 
         let mut vertices = Vec::new();
         let mut positions = Vec::new();
+        let mut face_indices = Vec::new();
         for action in actions {
             match action {
                 filetypes::MeshAction::Vertex(x, y, z) => {
@@ -75,7 +76,7 @@ impl From<MeshFilePath> for CpuMesh {
                     vertices.push(vertex);
                 }
                 filetypes::MeshAction::Face(
-                    _face_id,
+                    face_id,
                     vertex_a_id,
                     vertex_b_id,
                     vertex_c_id,
@@ -91,10 +92,13 @@ impl From<MeshFilePath> for CpuMesh {
                     let vertex_b = vertices[vertex_b_id as usize];
                     let vertex_c = vertices[vertex_c_id as usize];
 
-                    // TODO: probably need to pass in the face_id here, for vertex attributes?
                     positions.push(vertex_a);
                     positions.push(vertex_b);
                     positions.push(vertex_c);
+
+                    face_indices.push(face_id);
+                    face_indices.push(face_id);
+                    face_indices.push(face_id);
                 }
                 filetypes::MeshAction::Edge(_, _) => {
                     // do nothing
@@ -102,6 +106,8 @@ impl From<MeshFilePath> for CpuMesh {
             }
         }
 
-        CpuMesh::from_vertices(positions)
+        let mut mesh = CpuMesh::from_vertices(positions);
+        mesh.add_face_indices(face_indices);
+        mesh
     }
 }

@@ -1,4 +1,5 @@
 use std::fs;
+use bevy_log::info;
 
 use naia_serde::BitReader;
 
@@ -15,6 +16,15 @@ pub(crate) enum PaletteColor {
 #[derive(Debug)]
 pub struct PaletteData {
     colors: Vec<PaletteColor>,
+}
+
+impl PaletteData {
+    pub(crate) fn get_cpu_mat_handle(&self, index: usize) -> Handle<CpuMaterial> {
+        let PaletteColor::Material(handle) = &self.colors[index] else {
+            panic!("expected material");
+        };
+        handle.clone()
+    }
 }
 
 impl PaletteData {
@@ -35,16 +45,6 @@ impl PaletteData {
             let cpu_material_handle = materials.add(CpuMaterial::new(Color::new(*r, *g, *b), 0.0, 0.0, 0.0));
             *color = PaletteColor::Material(cpu_material_handle);
         }
-    }
-
-    pub(crate) fn get_cpu_material_handles(&self) -> Vec<Handle<CpuMaterial>> {
-        self.colors.iter().map(|color| {
-            if let PaletteColor::Material(handle) = color {
-                *handle
-            } else {
-                panic!("should only load once!");
-            }
-        }).collect::<Vec<_>>()
     }
 }
 
@@ -67,15 +67,19 @@ impl From<String> for PaletteData {
         let actions =
             filetypes::PaletteAction::read(&mut bit_reader).expect("unable to parse file");
 
+        info!("--- reading palette: {} ---", path);
+
         let mut colors = Vec::new();
         for action in actions {
             match action {
                 filetypes::PaletteAction::Color(r, g, b) => {
-                    println!("Color: ({}, {}, {})", r, g, b);
+                    info!("loaded color {} : ({}, {}, {})", colors.len(), r, g, b);
                     colors.push(PaletteColor::Raw(r, g, b));
                 }
             }
         }
+
+        info!("--- done reading palette ---");
 
         Self {
             colors

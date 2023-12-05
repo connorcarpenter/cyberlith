@@ -67,9 +67,9 @@ fn setup(
 ) {
     let layer = RenderLayers::layer(0);
 
-    let red_mat_handle = materials.add(CpuMaterial::new(Color::RED, 0.0, 32.0, 0.5));
+    //let red_mat_handle = materials.add(CpuMaterial::new(Color::RED, 0.0, 32.0, 0.5));
 
-    let cube_mesh_handle: Handle<MeshFile> = asset_manager.load("cube.mesh");
+    //let cube_mesh_handle: Handle<MeshFile> = asset_manager.load("cube.mesh");
     // let human_skel_handle = asset_manager.load("human.skel");
     // let threebit_palette_handle = asset_manager.load("3bit.palette");
     // let human_walk_anim_handle = asset_manager.load("human_walk.anim");
@@ -82,7 +82,6 @@ fn setup(
     commands
         .spawn_empty()
         .insert(head_skin_handle)
-        .insert(red_mat_handle)
         .insert(Transform::from_scale(Vec3::splat(1.0))
             .with_translation(Vec3::splat(0.0)))
         .insert(Visibility::default())
@@ -93,7 +92,7 @@ fn setup(
     commands
         .spawn(RenderObjectBundle {
             mesh: meshes.add(shapes::Square),
-            material: materials.add(CpuMaterial::new(Color::LIGHT_GRAY, 0.0, 0.0, 0.0)),
+            material: materials.add(CpuMaterial::new(Color::DARK_BLUE, 0.0, 0.0, 0.0)),
             transform: Transform::from_scale(Vec3::new(ROOM_WIDTH, ROOM_DEPTH, 1.0))
                 .with_translation(Vec3::new(0.0, 0.0, 0.0)),
             ..Default::default()
