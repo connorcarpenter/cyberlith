@@ -1,11 +1,11 @@
 use std::collections::HashMap;
+
 use bevy_ecs::system::{ResMut, Resource};
 use bevy_log::warn;
 
-use render_api::{Assets, Handle, base::{CpuMaterial, CpuMesh}, components::{RenderLayer, Transform}, resources::RenderFrame};
-use render_api::base::CpuSkin;
+use render_api::{base::CpuSkin, Assets, Handle, base::{CpuMaterial, CpuMesh}, components::{RenderLayer, Transform}, resources::RenderFrame};
 
-use crate::{asset_handle::AssetHandleImpl, AnimationData, AssetHandle, IconData, MeshFile, ModelData, PaletteData, SceneData, SkeletonData, SkinData};
+use crate::{asset_dependency::SkinOrSceneHandle, asset_handle::AssetHandleImpl, AnimationData, AssetHandle, IconData, MeshFile, ModelData, PaletteData, SceneData, SkeletonData, SkinData};
 
 #[derive(Resource)]
 pub struct AssetManager {
@@ -21,8 +21,8 @@ pub struct AssetManager {
     // mesh file name, skin handle
     queued_meshes: Vec<Handle<MeshFile>>,
     queued_palettes: Vec<Handle<PaletteData>>,
-    skins_waiting_on_palettes: HashMap<Handle<PaletteData>, Handle<SkinData>>,
-    skins_waiting_on_meshes: HashMap<Handle<MeshFile>, Handle<SkinData>>,
+    skins_waiting_on_palettes: HashMap<Handle<PaletteData>, Vec<Handle<SkinData>>>,
+    skins_waiting_on_meshes: HashMap<Handle<MeshFile>, Vec<Handle<SkinData>>>,
     ready_skins: Vec<Handle<SkinData>>,
 }
 
@@ -162,10 +162,18 @@ impl AssetManager {
                     let palette_handle = data.get_palette_file_handle().unwrap().clone();
 
                     if !self.palette_has_cpu_materials(&palette_handle) {
-                        self.skins_waiting_on_palettes.insert(palette_handle, principal_handle);
+                        if !self.skins_waiting_on_palettes.contains_key(&palette_handle) {
+                            self.skins_waiting_on_palettes.insert(palette_handle.clone(), Vec::new());
+                        }
+                        let skin_list = self.skins_waiting_on_palettes.get_mut(&palette_handle).unwrap();
+                        skin_list.push(principal_handle);
                     }
                     if !self.mesh_file_has_cpu_mesh(&mesh_handle) {
-                        self.skins_waiting_on_meshes.insert(mesh_handle, principal_handle);
+                        if !self.skins_waiting_on_meshes.contains_key(&mesh_handle) {
+                            self.skins_waiting_on_meshes.insert(mesh_handle.clone(), Vec::new());
+                        }
+                        let skin_list = self.skins_waiting_on_meshes.get_mut(&mesh_handle).unwrap();
+                        skin_list.push(principal_handle);
                     }
 
                     if self.skin_is_ready(&principal_handle) {
@@ -208,9 +216,11 @@ impl AssetManager {
         }
 
         for mesh_handle in &mesh_handles {
-            if let Some(skin_handle) = self.skins_waiting_on_meshes.remove(mesh_handle) {
-                if self.skin_is_ready(&skin_handle) {
-                    self.ready_skins.push(skin_handle);
+            if let Some(skin_list) = self.skins_waiting_on_meshes.remove(mesh_handle) {
+                for skin_handle in skin_list {
+                    if self.skin_is_ready(&skin_handle) {
+                        self.ready_skins.push(skin_handle);
+                    }
                 }
             }
         }
@@ -229,9 +239,11 @@ impl AssetManager {
         }
 
         for palette_handle in &palette_handles {
-            if let Some(skin_handle) = self.skins_waiting_on_palettes.remove(palette_handle) {
-                if self.skin_is_ready(&skin_handle) {
-                    self.ready_skins.push(skin_handle);
+            if let Some(skin_list) = self.skins_waiting_on_palettes.remove(palette_handle) {
+                for skin_handle in skin_list {
+                    if self.skin_is_ready(&skin_handle) {
+                        self.ready_skins.push(skin_handle);
+                    }
                 }
             }
         }
@@ -256,7 +268,7 @@ impl AssetManager {
             if skin_data.load_cpu_skin(materials, skins, mesh_data, palette_data) {
                 // success!
             } else {
-                warn!("skin data not loaded, re-queuing");
+                warn!("skin data {} not loaded, re-queuing", skin_handle.id);
                 self.ready_skins.push(skin_handle);
             }
         }
@@ -273,11 +285,11 @@ impl AssetManager {
         render_layer_opt: Option<&RenderLayer>,
     ) {
         let Some(mesh_file) = self.meshes.get(mesh_handle) else {
-            warn!("mesh file not loaded 1: {:?}", mesh_handle);
+            warn!("mesh file not loaded 1: {:?}", mesh_handle.id);
             return;
         };
         let Some(cpu_mesh_handle) = mesh_file.get_cpu_mesh_handle() else {
-            warn!("mesh file not loaded 2: {:?}", mesh_handle);
+            warn!("mesh file not loaded 2: {:?}", mesh_handle.id);
             return;
         };
         render_frame.draw_mesh(render_layer_opt, cpu_mesh_handle, mat_handle, transform);
@@ -291,27 +303,57 @@ impl AssetManager {
         render_layer_opt: Option<&RenderLayer>,
     ) {
         let Some(skin_data) = self.skins.get(skin_handle) else {
-            warn!("skin data not loaded 1: {:?}", skin_handle);
+            warn!("skin data {:?} not loaded 1", skin_handle.id);
             return;
         };
         let Some(mesh_file_handle) = skin_data.get_mesh_file_handle() else {
-            warn!("skin file not loaded 2: {:?}", skin_handle);
+            warn!("skin data {:?} not loaded 2", skin_handle.id);
             return;
         };
         let Some(mesh_file) = self.meshes.get(mesh_file_handle) else {
-            warn!("skin file not loaded 3: {:?}", skin_handle);
+            warn!("skin data {:?} not loaded 3", skin_handle.id);
             return;
         };
         let Some(cpu_mesh_handle) = mesh_file.get_cpu_mesh_handle() else {
-            warn!("skin file not loaded 4: {:?}", skin_handle);
+            warn!("skin data {:?} not loaded 4", skin_handle.id);
             return;
         };
         let Some(cpu_skin_handle) = skin_data.get_cpu_skin_handle() else {
-            warn!("skin data not loaded 5: {:?}", skin_handle);
+            warn!("skin data {} not loaded 5", skin_handle.id);
             return;
         };
         render_frame.draw_skinned_mesh(render_layer_opt, cpu_mesh_handle, cpu_skin_handle, transform);
     }
+
+    pub fn draw_scene(
+        &self,
+        render_frame: &mut RenderFrame,
+        scene_handle: &Handle<SceneData>,
+        parent_transform: &Transform,
+        render_layer_opt: Option<&RenderLayer>,
+    ) {
+        let Some(scene_data) = self.scenes.get(scene_handle) else {
+            warn!("scene data not loaded 1: {:?}", scene_handle.id);
+            return;
+        };
+        let scene_components = scene_data.get_components();
+        for (skin_or_scene_handle, mut component_transform) in scene_components {
+            match skin_or_scene_handle {
+                SkinOrSceneHandle::Skin(skin_handle) => {
+                    component_transform = component_transform.multiply(parent_transform);
+
+                    self.draw_skin(render_frame, &skin_handle, &component_transform, render_layer_opt);
+                }
+                SkinOrSceneHandle::Scene(scene_handle) => {
+                    component_transform = component_transform.multiply(parent_transform);
+
+                    self.draw_scene(render_frame, &scene_handle, &component_transform, render_layer_opt);
+                }
+            }
+        }
+    }
+
+    //
 
     fn palette_has_cpu_materials(&self, palette_handle: &Handle<PaletteData>) -> bool {
         let data = self.palettes.get(palette_handle).unwrap();

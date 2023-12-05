@@ -1,5 +1,7 @@
 use std::fs;
 
+use bevy_log::info;
+
 use naia_serde::BitReader;
 
 use render_api::{AssetHash};
@@ -37,7 +39,7 @@ impl From<String> for SkeletonData {
         for action in actions {
             match action {
                 filetypes::SkelAction::Vertex(x, y, z, parent_opt, name_opt) => {
-                    println!("Vertex: ({}, {}, {}), parent: {:?}, name: {:?}", x, y, z, parent_opt, name_opt);
+                    info!("Vertex: ({}, {}, {}), parent: {:?}, name: {:?}", x, y, z, parent_opt, name_opt);
                 }
             }
         }

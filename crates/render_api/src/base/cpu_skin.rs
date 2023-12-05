@@ -4,7 +4,7 @@ use bevy_log::info;
 
 use crate::{AssetHash, base::CpuMaterial, Handle};
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct CpuSkin {
     // index in this Vec is FaceId of mesh
     face_to_material: Vec<Handle<CpuMaterial>>,

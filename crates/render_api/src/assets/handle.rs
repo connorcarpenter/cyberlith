@@ -7,7 +7,8 @@ use std::{
 
 use bevy_ecs::component::Component;
 
-#[derive(Default, Component, Debug)]
+// instead of deriving Debug, just use handle.id when printing ..
+#[derive(Default, Component)]
 pub struct Handle<T> {
     pub id: u64,
     phantom_t: PhantomData<T>,

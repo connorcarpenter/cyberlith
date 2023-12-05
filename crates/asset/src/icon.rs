@@ -1,5 +1,7 @@
 use std::fs;
 
+use bevy_log::info;
+
 use naia_serde::BitReader;
 
 use render_api::{AssetHash, Handle};
@@ -60,21 +62,23 @@ impl From<String> for IconData {
                     palette_file_opt = Some(format!("{}/{}", path, file_name));
                 }
                 filetypes::IconAction::Frame(frame_actions) => {
-                    println!("Frame: {}", frame_index);
+                    info!("- Frame Start: {} -", frame_index);
 
                     for frame_action in frame_actions {
                         match frame_action {
                             filetypes::IconFrameAction::Vertex(x, y) => {
-                                println!("Vertex: ({}, {})", x, y);
+                                info!("Vertex: ({}, {})", x, y);
                             }
                             filetypes::IconFrameAction::Edge(vertex_1_id, vertex_2_id) => {
-                                println!("Edge: ({}, {})", vertex_1_id, vertex_2_id);
+                                info!("Edge: ({}, {})", vertex_1_id, vertex_2_id);
                             }
                             filetypes::IconFrameAction::Face(order_index, palette_index, vertex_1_id, vertex_2_id, vertex_3_id, edge_1_id, edge_2_id, edge_3_id) => {
-                                println!("Face: ({}, {}, {}, {}, {}, {}, {}, {})", order_index, palette_index, vertex_1_id, vertex_2_id, vertex_3_id, edge_1_id, edge_2_id, edge_3_id);
+                                info!("Face: ({}, {}, {}, {}, {}, {}, {}, {})", order_index, palette_index, vertex_1_id, vertex_2_id, vertex_3_id, edge_1_id, edge_2_id, edge_3_id);
                             }
                         }
                     }
+
+                    info!("- Frame End -");
 
                     frame_index += 1;
                 }

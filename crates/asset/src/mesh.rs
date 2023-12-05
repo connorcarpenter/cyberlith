@@ -11,7 +11,6 @@ use crate::asset_dependency::AssetDependency;
 #[derive(Hash)]
 struct MeshFilePath(String);
 
-#[derive(Debug)]
 pub struct MeshFile {
     path: AssetDependency<CpuMesh>,
 }
@@ -81,7 +80,7 @@ impl From<MeshFilePath> for CpuMesh {
         for action in actions {
             match action {
                 filetypes::MeshAction::Vertex(x, y, z) => {
-                    // println!("Vertex: {}, {}, {}", x, y, z);
+                    // info!("Vertex: {}, {}, {}", x, y, z);
                     let vertex = Vec3::new(x as f32, y as f32, z as f32);
                     vertices.push(vertex);
                 }
@@ -94,7 +93,7 @@ impl From<MeshFilePath> for CpuMesh {
                     _,
                     _,
                 ) => {
-                    // println!(
+                    // info!(
                     //     "Face: {}, {}, {}, {}",
                     //     face_id, vertex_a_id, vertex_b_id, vertex_c_id
                     // );

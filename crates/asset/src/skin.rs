@@ -16,7 +16,6 @@ impl Default for SkinData {
     }
 }
 
-#[derive(Debug)]
 pub struct SkinData {
     mesh_file: AssetDependency<MeshFile>,
     palette_file: AssetDependency<PaletteData>,

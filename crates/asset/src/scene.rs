@@ -1,5 +1,7 @@
 use std::fs;
 
+use bevy_log::info;
+
 use naia_serde::BitReader;
 
 use filetypes::FileTransformEntityType;
@@ -41,6 +43,7 @@ impl SceneData {
     pub(crate) fn finish_dependency(&mut self, dependency_path: String, dependency_handle: AssetHandle) {
         match dependency_handle.to_impl() {
             AssetHandleImpl::Skin(handle) => {
+                info!("finished scene dependency for skin: {}, path: {}", &handle.id, &dependency_path);
                 let handle = SkinOrSceneHandle::Skin(handle);
                 finish_skin_or_scene_dependency(&mut self.skin_or_scene_files, dependency_path, handle);
             }
@@ -52,6 +55,23 @@ impl SceneData {
                 panic!("unexpected type of handle");
             }
         }
+    }
+
+    pub(crate) fn get_components(&self) -> Vec<(SkinOrSceneHandle, Transform)> {
+        let mut components = Vec::new();
+        for (file_index, transform) in self.net_transforms.iter() {
+            let file = &self.skin_or_scene_files[*file_index];
+            match file {
+                SkinOrScene::Skin(AssetDependency::<SkinData>::Handle(handle)) => {
+                    components.push((SkinOrSceneHandle::Skin(*handle), *transform));
+                }
+                SkinOrScene::Scene(AssetDependency::<SceneData>::Handle(handle)) => {
+                    components.push((SkinOrSceneHandle::Scene(*handle), *transform));
+                }
+                _ => {}
+            }
+        }
+        components
     }
 }
 
@@ -101,13 +121,15 @@ impl From<String> for SceneData {
         let actions =
             filetypes::SceneAction::read(&mut bit_reader).expect("unable to parse file");
 
+        info!("--- reading scene: {} ---", path);
+
         let mut skin_or_scene_files = Vec::new();
         let mut net_transforms = Vec::new();
         let mut file_index = 0;
         for action in actions {
             match action {
                 filetypes::SceneAction::SkinOrSceneFile(path, name, file_type) => {
-                    println!("SkinOrSceneFile {} : {}/{}. Type: {:?}", file_index, path, name, file_type);
+                    info!("SkinOrSceneFile {} - type: {:?}, path: {}/{}. ", file_index, file_type, path, name);
 
                     let asset_dependency = match file_type {
                         FileTransformEntityType::Skin => {
@@ -123,7 +145,8 @@ impl From<String> for SceneData {
                     file_index += 1;
                 }
                 filetypes::SceneAction::NetTransform(file_index, x, y, z, scale_x, scale_y, scale_z, rotation) => {
-                    println!("NetTransform {} : position ({} {} {}), scale: ({} {} {}), rotation: ({}, {}, {}, {})",
+                    info!("NetTransform {} : file_index: {}, position ({} {} {}), scale: ({} {} {}), rotation: ({}, {}, {}, {})",
+                             net_transforms.len(),
                              file_index,
                              x, y, z,
                              scale_x, scale_y, scale_z,
@@ -136,7 +159,7 @@ impl From<String> for SceneData {
             }
         }
 
-        // todo: lots here
+        info!("--- done reading scene ---");
 
         Self {
             skin_or_scene_files,

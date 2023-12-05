@@ -1,5 +1,7 @@
 use std::fs;
 
+use bevy_log::info;
+
 use naia_serde::BitReader;
 
 use render_api::{AssetHash, Handle};
@@ -56,16 +58,16 @@ impl From<String> for AnimationData {
         for action in actions {
             match action {
                 filetypes::AnimAction::SkelFile(path, file_name) => {
-                    println!("SkelFile: {}/{}", path, file_name);
+                    info!("SkelFile: {}/{}", path, file_name);
                     skel_file_opt = Some(format!("{}/{}", path, file_name));
                 }
                 filetypes::AnimAction::ShapeIndex(name) => {
-                    println!("ShapeIndex: {}", name);
+                    info!("ShapeIndex: {}", name);
                 }
                 filetypes::AnimAction::Frame(rotation_map, transition_time) => {
-                    println!("Frame: {:?}ms", transition_time.get_duration_ms());
+                    info!("Frame: {:?}ms", transition_time.get_duration_ms());
                     for (key, value) in rotation_map {
-                        println!("index: {} . rotation: ({:?}, {:?}, {:?}, {:?})", key, value.x, value.y, value.z, value.w);
+                        info!("index: {} . rotation: ({:?}, {:?}, {:?}, {:?})", key, value.x, value.y, value.z, value.w);
                     }
                 }
             }

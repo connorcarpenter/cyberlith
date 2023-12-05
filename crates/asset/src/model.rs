@@ -1,5 +1,7 @@
 use std::fs;
 
+use bevy_log::info;
+
 use naia_serde::BitReader;
 use filetypes::FileTransformEntityType;
 use math::{Quat, Vec3};
@@ -86,11 +88,11 @@ impl From<String> for ModelData {
         for action in actions {
             match action {
                 filetypes::ModelAction::SkelFile(path, file_name) => {
-                    println!("SkelFile: {}/{}", path, file_name);
+                    info!("SkelFile: {}/{}", path, file_name);
                     skel_file_opt = Some(format!("{}/{}", path, file_name));
                 }
                 filetypes::ModelAction::SkinOrSceneFile(path, name, file_type) => {
-                    println!("SkinOrSceneFile {} : {}/{}. Type: {:?}", file_index, path, name, file_type);
+                    info!("SkinOrSceneFile {} : {}/{}. Type: {:?}", file_index, path, name, file_type);
 
                     let asset_dependency = match file_type {
                         FileTransformEntityType::Skin => {
@@ -106,7 +108,7 @@ impl From<String> for ModelData {
                     file_index += 1;
                 }
                 filetypes::ModelAction::NetTransform(file_index, name, x, y, z, scale_x, scale_y, scale_z, rotation) => {
-                    println!("NetTransform {} : {}, position ({} {} {}), scale: ({} {} {}), rotation: ({}, {}, {}, {})",
+                    info!("NetTransform {} : {}, position ({} {} {}), scale: ({} {} {}), rotation: ({}, {}, {}, {})",
                              file_index,
                              name,
                              x, y, z,

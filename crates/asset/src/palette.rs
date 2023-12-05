@@ -7,13 +7,11 @@ use render_api::{AssetHash, Handle, base::{Color, CpuMaterial}, Assets};
 
 impl AssetHash<PaletteData> for String {}
 
-#[derive(Debug)]
 pub(crate) enum PaletteColor {
     Raw(u8, u8, u8),
     Material(Handle<CpuMaterial>),
 }
 
-#[derive(Debug)]
 pub struct PaletteData {
     colors: Vec<PaletteColor>,
 }
