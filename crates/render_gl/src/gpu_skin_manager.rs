@@ -42,7 +42,7 @@ impl GpuSkinManager {
     }
 
     fn gpu_sync(&mut self, gpu_material_manager: &GpuMaterialManager) {
-        self.gpu_skins = Some(GpuTexture2D::new_empty::<u8>(
+        self.gpu_skins = Some(GpuTexture2D::new_empty::<f32>(
             self.biggest_skin as u32,
             self.cpu_skins.len() as u32,
         ));
@@ -53,7 +53,7 @@ impl GpuSkinManager {
         gpu_materials.fill_pure(&skin_data);
     }
 
-    fn raw_skin_data(&self, gpu_material_manager: &GpuMaterialManager) -> Vec<u8> {
+    fn raw_skin_data(&self, gpu_material_manager: &GpuMaterialManager) -> Vec<f32> {
         let mut output = Vec::new();
         for skin in &self.cpu_skins {
             write_raw_data(gpu_material_manager,  skin, self.biggest_skin, &mut output);
@@ -86,18 +86,24 @@ impl GpuSkinManager {
     }
 }
 
-fn write_raw_data(gpu_material_manager: &GpuMaterialManager, skin: &CpuSkin, biggest_skin: usize, output: &mut Vec<u8>) {
+fn write_raw_data(gpu_material_manager: &GpuMaterialManager, skin: &CpuSkin, biggest_skin: usize, output: &mut Vec<f32>) {
+    //info!("write_raw_data() .. biggest_skin: {}", biggest_skin);
+
+    let mut temp = Vec::new();
+
     let skin_list = skin.face_to_material_list();
-    let mut skin_count = 0;
     for mat_handle in skin_list {
         let mat = gpu_material_manager.get(mat_handle).unwrap();
         let index = mat.index();
-        output.push(index as u8);
-        skin_count += 1;
+        temp.push(index as f32);
     }
-    for _ in skin_count..biggest_skin {
-        output.push(0);
+    for _ in temp.len()..biggest_skin {
+        temp.push(0.0);
     }
+
+    //info!("data size: {}", temp.len());
+
+    output.extend(temp);
 }
 
 pub struct GpuSkin {
