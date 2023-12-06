@@ -372,7 +372,54 @@ impl AssetManager {
             warn!("model data not loaded 1: {:?}", model_handle.id);
             return;
         };
-        let Some(model_components) = model_data.get_components() else {
+        let Some(model_components) = model_data.get_components_ref() else {
+            // not yet loaded all
+            return;
+        };
+        for (skin_or_scene_handle, mut component_transform) in model_components {
+            component_transform = component_transform.multiply(parent_transform);
+
+            match skin_or_scene_handle {
+                SkinOrSceneHandle::Skin(skin_handle) => {
+                    self.draw_skin(render_frame, &skin_handle, &component_transform, render_layer_opt);
+                }
+                SkinOrSceneHandle::Scene(scene_handle) => {
+                    self.draw_scene(render_frame, &scene_handle, &component_transform, render_layer_opt);
+                }
+            }
+        }
+    }
+
+    pub fn draw_animated_model(
+        &self,
+        render_frame: &mut RenderFrame,
+        model_handle: &Handle<ModelData>,
+        animation_handle: &Handle<AnimationData>,
+        parent_transform: &Transform,
+        frame_time_ms: f32,
+        render_layer_opt: Option<&RenderLayer>,
+    ) {
+        let Some(model_data) = self.models.get(model_handle) else {
+            warn!("model data not loaded 1: {:?}", model_handle.id);
+            return;
+        };
+        let Some(animation_data) = self.animations.get(animation_handle) else {
+            warn!("animation data not loaded 1: {:?}", animation_handle.id);
+            return;
+        };
+        let skeleton_handle = {
+            let skeleton_handle_1 = model_data.get_skeleton_handle();
+            let skeleton_handle_2 = animation_data.get_skeleton_handle();
+            if skeleton_handle_1 != skeleton_handle_2 {
+                panic!("skeleton mismatch: {:?} != {:?}", skeleton_handle_1.id, skeleton_handle_2.id);
+            }
+            skeleton_handle_1
+        };
+        let Some(skeleton_data) = self.skeletons.get(&skeleton_handle) else {
+            warn!("skeleton data not loaded 1: {:?}", skeleton_handle.id);
+            return;
+        };
+        let Some(model_components) = animation_data.get_animated_components(skeleton_data, model_data, frame_time_ms) else {
             // not yet loaded all
             return;
         };

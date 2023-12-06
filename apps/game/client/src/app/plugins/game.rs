@@ -5,7 +5,7 @@ use bevy_ecs::{
     system::{Commands, Local, Query, Res, ResMut},
 };
 
-use asset::{MeshFile, AssetManager, AssetHandle, SkinData, SceneData, ModelData};
+use asset::{MeshFile, AssetManager, AssetHandle, SkinData, SceneData, ModelData, AnimationData};
 use math::{Quat, Vec3};
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
@@ -59,6 +59,12 @@ const ROOM_WIDTH: f32 = 300.0;
 const ROOM_DEPTH: f32 = 300.0;
 const ROOM_HEIGHT: f32 = 200.0;
 
+#[derive(Component)]
+pub struct WalkAnimation {
+    handle: Handle<AnimationData>,
+    time_elapsed_ms: f32,
+}
+
 fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<CpuMesh>>,
@@ -72,7 +78,7 @@ fn setup(
     //let cube_mesh_handle: Handle<MeshFile> = asset_manager.load("cube.mesh");
     // let human_skel_handle = asset_manager.load("human.skel");
     // let threebit_palette_handle = asset_manager.load("3bit.palette");
-    // let human_walk_anim_handle = asset_manager.load("human_walk.anim");
+    let human_walk_anim_handle: Handle<AnimationData> = asset_manager.load("human_walk.anim");
     // let letters_icon_handle = asset_manager.load("letters.icon");
     // let head_skin_handle: Handle<SkinData> = asset_manager.load("head.skin");
     let human_model_handle: Handle<ModelData> = asset_manager.load("human.model");
@@ -82,6 +88,10 @@ fn setup(
     commands
         .spawn_empty()
         .insert(human_model_handle)
+        .insert(WalkAnimation {
+            handle: human_walk_anim_handle,
+            time_elapsed_ms: 0.0,
+        })
         .insert(Transform::from_scale(Vec3::splat(1.0))
             .with_translation(Vec3::splat(0.0))
             .with_rotation(Quat::from_rotation_z(f32::to_radians(90.0))))
@@ -147,6 +157,7 @@ fn step(
     time: Res<Time>,
     mut object_q: Query<&mut Transform, With<ObjectMarker>>,
     mut rotation: Local<f32>,
+    mut anim_q: Query<&mut WalkAnimation>,
 ) {
     let elapsed_time = (time.get_elapsed() / 16.0) as f32;
 
@@ -167,6 +178,14 @@ fn step(
         //transform.rotate_x(0.01 * elapsed_time);
         //transform.rotate_z(0.02 * elapsed_time);
     }
+
+    for mut anim in anim_q.iter_mut() {
+        anim.time_elapsed_ms += elapsed_time;
+        // TODO: get the animation data to determine the "end" of the animation
+        if anim.time_elapsed_ms > 1000.0 {
+            anim.time_elapsed_ms = 0.0;
+        }
+    }
 }
 
 pub fn draw(
@@ -184,6 +203,7 @@ pub fn draw(
     )>,
     models_q: Query<(
         &Handle<ModelData>,
+        &WalkAnimation,
         &Transform,
         &Visibility,
         Option<&RenderLayer>,
@@ -225,10 +245,10 @@ pub fn draw(
     }
 
     // Aggregate File Meshes
-    for (model_handle, transform, visibility, render_layer_opt) in models_q.iter() {
+    for (model_handle, walk_anim, transform, visibility, render_layer_opt) in models_q.iter() {
         if !visibility.visible {
             continue;
         }
-        asset_manager.draw_model(&mut render_frame, model_handle, transform, render_layer_opt);
+        asset_manager.draw_animated_model(&mut render_frame, model_handle, &walk_anim.handle, transform, walk_anim.time_elapsed_ms, render_layer_opt);
     }
 }

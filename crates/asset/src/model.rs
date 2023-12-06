@@ -88,6 +88,14 @@ impl ModelData {
         true
     }
 
+    pub(crate) fn get_skeleton_handle(&self) -> Handle<SkeletonData> {
+        if let AssetDependency::<SkeletonData>::Handle(handle) = &self.skeleton_file {
+            *handle
+        } else {
+            panic!("expected skeleton handle");
+        }
+    }
+
     pub(crate) fn compute_components(&mut self, skeleton_data: &SkeletonData) {
         // compute components
         let mut components = Vec::new();
@@ -113,16 +121,30 @@ impl ModelData {
         self.computed_components = Some(components);
     }
 
-    pub(crate) fn get_skeleton_handle(&self) -> Handle<SkeletonData> {
-        if let AssetDependency::<SkeletonData>::Handle(handle) = &self.skeleton_file {
-            *handle
-        } else {
-            panic!("expected skeleton handle");
-        }
+    pub(crate) fn get_components_ref(&self) -> Option<&Vec<(SkinOrSceneHandle, Transform)>> {
+        self.computed_components.as_ref()
     }
 
-    pub(crate) fn get_components(&self) -> Option<&Vec<(SkinOrSceneHandle, Transform)>> {
-        self.computed_components.as_ref()
+    pub(crate) fn get_components_copied(&self) -> Vec<(SkinOrSceneHandle, String, Transform)> {
+        let mut output = Vec::new();
+
+        for (file_index, bone_name, transform) in self.net_transforms.iter() {
+            let file = &self.skin_or_scene_files[*file_index];
+            let skin_or_scene_handle = match file {
+                SkinOrScene::Skin(AssetDependency::<SkinData>::Handle(handle)) => {
+                    SkinOrSceneHandle::Skin(*handle)
+                }
+                SkinOrScene::Scene(AssetDependency::<SceneData>::Handle(handle)) => {
+                    SkinOrSceneHandle::Scene(*handle)
+                }
+                _ => {
+                    continue;
+                }
+            };
+            output.push((skin_or_scene_handle, bone_name.clone(), *transform));
+        }
+
+        output
     }
 }
 

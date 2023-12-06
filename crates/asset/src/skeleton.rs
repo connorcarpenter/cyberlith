@@ -4,7 +4,7 @@ use bevy_log::info;
 
 use naia_serde::BitReader;
 
-use math::{quat_from_spin_direction, Vec3};
+use math::{Quat, quat_from_spin_direction, Vec3};
 use render_api::{AssetHash, components::Transform};
 
 impl AssetHash<SkeletonData> for String {}
@@ -25,6 +25,10 @@ impl Default for SkeletonData {
 impl SkeletonData {
     pub(crate) fn get_bone_transform(&self, bone_name: &str) -> Option<&Transform> {
         self.bone_map.get(bone_name)
+    }
+
+    pub(crate) fn get_interpolated_skeleton(&self, interpolated_rotations: HashMap<String, Quat>) -> HashMap<String, Transform> {
+        todo!()
     }
 }
 
