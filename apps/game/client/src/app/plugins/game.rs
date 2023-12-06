@@ -5,7 +5,7 @@ use bevy_ecs::{
     system::{Commands, Local, Query, Res, ResMut},
 };
 
-use asset::{MeshFile, AssetManager, AssetHandle, SkinData, SceneData, ModelData, AnimationData};
+use asset::{MeshFile, AssetManager, AssetHandle, SkinData, SceneData, ModelData, AnimationData, IconData};
 use math::{Quat, Vec3};
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
@@ -60,9 +60,8 @@ const ROOM_DEPTH: f32 = 300.0;
 const ROOM_HEIGHT: f32 = 200.0;
 
 #[derive(Component)]
-pub struct WalkAnimation {
-    handle: Handle<AnimationData>,
-    time_elapsed_ms: f32,
+pub struct IconAnimation {
+    subimage_index: f32,
 }
 
 fn setup(
@@ -78,19 +77,18 @@ fn setup(
     //let cube_mesh_handle: Handle<MeshFile> = asset_manager.load("cube.mesh");
     // let human_skel_handle = asset_manager.load("human.skel");
     // let threebit_palette_handle = asset_manager.load("3bit.palette");
-    let human_walk_anim_handle: Handle<AnimationData> = asset_manager.load("human_walk.anim");
-    // let letters_icon_handle = asset_manager.load("letters.icon");
+    // let human_walk_anim_handle: Handle<AnimationData> = asset_manager.load("human_walk.anim");
+    let letters_icon_handle: Handle<IconData> = asset_manager.load("letters.icon");
     // let head_skin_handle: Handle<SkinData> = asset_manager.load("head.skin");
-    let human_model_handle: Handle<ModelData> = asset_manager.load("human.model");
+    // let human_model_handle: Handle<ModelData> = asset_manager.load("human.model");
     //let head_scene_handle: Handle<SceneData> = asset_manager.load("head.scene");
 
     // model
     commands
         .spawn_empty()
-        .insert(human_model_handle)
-        .insert(WalkAnimation {
-            handle: human_walk_anim_handle,
-            time_elapsed_ms: 0.0,
+        .insert(letters_icon_handle)
+        .insert(IconAnimation {
+            subimage_index: 0.0,
         })
         .insert(Transform::from_scale(Vec3::splat(1.0))
             .with_translation(Vec3::splat(0.0))
@@ -158,7 +156,7 @@ fn step(
     asset_manager: Res<AssetManager>,
     mut object_q: Query<&mut Transform, With<ObjectMarker>>,
     mut rotation: Local<f32>,
-    mut anim_q: Query<&mut WalkAnimation>,
+    mut icon_q: Query<(&Handle<IconData>, &mut IconAnimation)>,
 ) {
     let elapsed_time = time.get_elapsed();
 
@@ -180,14 +178,14 @@ fn step(
         transform.rotation = Quat::from_rotation_z(f32::to_radians(*rotation + 90.0));
     }
 
-    for mut anim in anim_q.iter_mut() {
+    for (handle, mut anim) in icon_q.iter_mut() {
 
-        anim.time_elapsed_ms += (0.32 * elapsed_time);
+        anim.subimage_index += (0.32 * elapsed_time);
 
-        let anim_duration = asset_manager.get_animation_duration(&anim.handle);
+        let subimage_count = asset_manager.get_icon_subimage_count(handle) as f32;
 
-        while anim.time_elapsed_ms > anim_duration {
-            anim.time_elapsed_ms -= anim_duration;
+        while anim.subimage_index >= subimage_count {
+            anim.subimage_index -= subimage_count;
         }
     }
 }
@@ -205,9 +203,9 @@ pub fn draw(
         &Visibility,
         Option<&RenderLayer>,
     )>,
-    models_q: Query<(
-        &Handle<ModelData>,
-        &WalkAnimation,
+    icons_q: Query<(
+        &Handle<IconData>,
+        &IconAnimation,
         &Transform,
         &Visibility,
         Option<&RenderLayer>,
@@ -249,10 +247,10 @@ pub fn draw(
     }
 
     // Aggregate File Meshes
-    for (model_handle, walk_anim, transform, visibility, render_layer_opt) in models_q.iter() {
+    for (icon_handle, icon_anim, transform, visibility, render_layer_opt) in icons_q.iter() {
         if !visibility.visible {
             continue;
         }
-        asset_manager.draw_animated_model(&mut render_frame, model_handle, &walk_anim.handle, transform, walk_anim.time_elapsed_ms, render_layer_opt);
+        asset_manager.draw_icon(&mut render_frame, icon_handle, icon_anim.subimage_index as usize, transform, render_layer_opt);
     }
 }

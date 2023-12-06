@@ -1,18 +1,19 @@
-use std::fs;
+use std::{collections::HashMap, fs};
 
 use bevy_log::info;
 
 use naia_serde::BitReader;
+use math::Vec3;
 
-use render_api::{AssetHash, Handle};
+use render_api::{AssetHash, Assets, Handle, base::{CpuMaterial, CpuMesh, CpuSkin}};
 
-use crate::{AssetHandle, PaletteData, asset_dependency::AssetDependency};
-use crate::asset_handle::AssetHandleImpl;
+use crate::{asset_handle::AssetHandleImpl, AssetHandle, PaletteData, asset_dependency::AssetDependency};
 
 impl AssetHash<IconData> for String {}
 
 pub struct IconData {
     palette_file: AssetDependency<PaletteData>,
+    frames: Vec<Frame>,
 }
 
 impl Default for IconData {
@@ -39,6 +40,104 @@ impl IconData {
             }
         }
     }
+
+    pub(crate) fn get_cpu_mesh_and_skin_handles(&self, subimage_index: usize) -> Option<(Handle<CpuMesh>, Handle<CpuSkin>)> {
+        let frame = &self.frames[subimage_index];
+        if frame.has_cpu_mesh_handle() && frame.has_cpu_skin_handle() {
+            return Some((frame.get_cpu_mesh_handle().unwrap().clone(), frame.get_cpu_skin_handle().unwrap().clone()));
+        }
+        return None;
+    }
+
+    pub(crate) fn get_subimage_count(&self) -> usize {
+        self.frames.len()
+    }
+}
+
+struct Frame {
+    cpu_mesh: Option<CpuMesh>,
+    cpu_mesh_handle: Option<Handle<CpuMesh>>,
+    cpu_skin_handle: Option<Handle<CpuSkin>>,
+    face_color_ids: Vec<(u16, u8)>,
+}
+
+impl Frame {
+    fn new(cpu_mesh: CpuMesh, face_color_ids: Vec<(u16, u8)>) -> Self {
+        Self {
+            cpu_mesh: Some(cpu_mesh),
+            cpu_mesh_handle: None,
+            cpu_skin_handle: None,
+            face_color_ids,
+        }
+    }
+
+    fn get_cpu_mesh_handle(&self) -> Option<&Handle<CpuMesh>> {
+        self.cpu_mesh_handle.as_ref()
+    }
+
+    fn has_cpu_mesh_handle(&self) -> bool {
+        self.cpu_mesh_handle.is_some()
+    }
+
+    fn load_cpu_mesh_handle(&mut self, meshes: &mut Assets<CpuMesh>) {
+        let cpu_mesh = self.cpu_mesh.take().unwrap();
+        let cpu_mesh_handle = meshes.add_unique(cpu_mesh);
+        self.cpu_mesh_handle = Some(cpu_mesh_handle);
+    }
+
+    fn has_cpu_skin_handle(&self) -> bool {
+        self.cpu_skin_handle.is_some()
+    }
+
+    fn get_cpu_skin_handle(&self) -> Option<&Handle<CpuSkin>> {
+        self.cpu_skin_handle.as_ref()
+    }
+
+    pub(crate) fn load_cpu_skin(
+        &mut self,
+        materials: &Assets<CpuMaterial>,
+        skins: &mut Assets<CpuSkin>,
+        palette_data: &PaletteData
+    ) -> bool {
+        let mut new_skin = CpuSkin::default();
+
+        let mut biggest_face_id = 0;
+        let mesh_face_ids = self.cpu_mesh.as_ref().unwrap().face_indices();
+        for index in 0..mesh_face_ids.len() / 3 {
+            let face_id = mesh_face_ids[index * 3];
+
+            if face_id > biggest_face_id {
+                biggest_face_id = face_id;
+            }
+        }
+
+        let mut map = HashMap::new();
+        for (face_id, color_id) in &self.face_color_ids {
+            map.insert(*face_id, *color_id);
+        }
+        for index in 0..=biggest_face_id {
+            let Some(color_id) = map.get(&index) else {
+                panic!("invalid face id, {}", index);
+            };
+
+            let cpu_material_handle = palette_data.get_cpu_mat_handle(*color_id as usize);
+
+            if !materials.added_was_flushed(&cpu_material_handle) {
+                // still waiting on the CpuMaterial to be loaded into a GpuMaterial ... need to wait
+                return false;
+            }
+
+            new_skin.add_face_color(cpu_material_handle);
+        }
+
+        new_skin.log();
+
+        let new_handle = skins.add_unique(new_skin);
+        self.cpu_skin_handle = Some(new_handle);
+
+        // success!
+        return true;
+    }
 }
 
 impl From<String> for IconData {
@@ -55,32 +154,66 @@ impl From<String> for IconData {
             filetypes::IconAction::read(&mut bit_reader).expect("unable to parse file");
 
         let mut palette_file_opt = None;
-        let mut frame_index = 0;
+        let mut frames = Vec::new();
         for action in actions {
             match action {
                 filetypes::IconAction::PaletteFile(path, file_name) => {
                     palette_file_opt = Some(format!("{}/{}", path, file_name));
                 }
                 filetypes::IconAction::Frame(frame_actions) => {
-                    info!("- Frame Start: {} -", frame_index);
+                    info!("- Frame Start: {} -", frames.len());
+
+                    let mut vertices = Vec::new();
+                    let mut positions = Vec::new();
+                    let mut face_indices = Vec::new();
+                    let mut face_color_ids = Vec::new();
 
                     for frame_action in frame_actions {
                         match frame_action {
                             filetypes::IconFrameAction::Vertex(x, y) => {
                                 info!("Vertex: ({}, {})", x, y);
+                                let vertex = Vec3::new(x as f32, y as f32, 0.0);
+                                vertices.push(vertex);
                             }
-                            filetypes::IconFrameAction::Edge(vertex_1_id, vertex_2_id) => {
-                                info!("Edge: ({}, {})", vertex_1_id, vertex_2_id);
+                            filetypes::IconFrameAction::Face(
+                                face_id,
+                                color_index,
+                                vertex_a_id,
+                                vertex_b_id,
+                                vertex_c_id,
+                                _,
+                                _,
+                                _
+                            ) => {
+                                let vertex_a = vertices[vertex_a_id as usize];
+                                let vertex_b = vertices[vertex_b_id as usize];
+                                let vertex_c = vertices[vertex_c_id as usize];
+
+                                positions.push(vertex_a);
+                                positions.push(vertex_b);
+                                positions.push(vertex_c);
+
+                                info!("face_id: {}", face_id);
+
+                                face_indices.push(face_id);
+                                face_indices.push(face_id);
+                                face_indices.push(face_id);
+
+                                face_color_ids.push((face_id, color_index));
                             }
-                            filetypes::IconFrameAction::Face(order_index, palette_index, vertex_1_id, vertex_2_id, vertex_3_id, edge_1_id, edge_2_id, edge_3_id) => {
-                                info!("Face: ({}, {}, {}, {}, {}, {}, {}, {})", order_index, palette_index, vertex_1_id, vertex_2_id, vertex_3_id, edge_1_id, edge_2_id, edge_3_id);
+                            filetypes::IconFrameAction::Edge(_, _) => {
+                                // do nothing
                             }
                         }
                     }
 
-                    info!("- Frame End -");
+                    let mut mesh = CpuMesh::from_vertices(positions);
+                    mesh.add_face_indices(face_indices);
 
-                    frame_index += 1;
+                    let frame = Frame::new(mesh, face_color_ids);
+                    frames.push(frame);
+
+                    info!("- Frame End -");
                 }
             }
         }
@@ -89,6 +222,7 @@ impl From<String> for IconData {
 
         Self {
             palette_file: AssetDependency::Path(palette_file_opt.unwrap()),
+            frames,
         }
     }
 }

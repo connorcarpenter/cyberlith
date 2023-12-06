@@ -152,7 +152,7 @@ impl From<String> for SkinData {
         let actions =
             filetypes::SkinAction::read(&mut bit_reader).expect("unable to parse file");
 
-        let mut skin_colors = Vec::new();
+        let mut face_color_ids = Vec::new();
         let mut bck_color_index = None;
         let mut palette_file_opt = None;
         let mut mesh_file_opt = None;
@@ -168,7 +168,7 @@ impl From<String> for SkinData {
                     bck_color_index = Some(color_index);
                 }
                 filetypes::SkinAction::SkinColor(face_index, color_index) => {
-                    skin_colors.push((face_index, color_index));
+                    face_color_ids.push((face_index, color_index));
                 }
             }
         }
@@ -187,7 +187,7 @@ impl From<String> for SkinData {
             palette_file: AssetDependency::Path(palette_file_opt.unwrap()),
             cpu_skin_handle: None,
             bckg_color_id: bck_color_index.unwrap(),
-            face_color_ids: skin_colors,
+            face_color_ids,
         }
     }
 }

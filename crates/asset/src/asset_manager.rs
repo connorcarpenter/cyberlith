@@ -280,6 +280,11 @@ impl AssetManager {
         }
     }
 
+    pub fn get_icon_subimage_count(&self, handle: &Handle<IconData>) -> usize {
+        let data = self.icons.get(handle).unwrap();
+        data.get_subimage_count()
+    }
+
     pub fn get_animation_duration(&self, handle: &Handle<AnimationData>) -> f32 {
         let data = self.animations.get(handle).unwrap();
         data.get_duration()
@@ -304,6 +309,25 @@ impl AssetManager {
             return;
         };
         render_frame.draw_mesh(render_layer_opt, cpu_mesh_handle, mat_handle, transform);
+    }
+
+    pub fn draw_icon(
+        &self,
+        render_frame: &mut RenderFrame,
+        icon_handle: &Handle<IconData>,
+        subimage_index: usize,
+        transform: &Transform,
+        render_layer_opt: Option<&RenderLayer>,
+    ) {
+        let Some(icon_data) = self.icons.get(icon_handle) else {
+            warn!("icon data not loaded 1: {:?}", icon_handle.id);
+            return;
+        };
+        let Some((cpu_mesh_handle, cpu_skin_handle)) = icon_data.get_cpu_mesh_and_skin_handles(subimage_index) else {
+            warn!("icon data not loaded 2: {:?}", icon_handle.id);
+            return;
+        };
+        render_frame.draw_skinned_mesh(render_layer_opt, &cpu_mesh_handle, &cpu_skin_handle, transform);
     }
 
     pub fn draw_skin(
