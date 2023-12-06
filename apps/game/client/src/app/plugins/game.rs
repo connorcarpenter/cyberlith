@@ -84,7 +84,7 @@ fn setup(
         .insert(human_model_handle)
         .insert(Transform::from_scale(Vec3::splat(1.0))
             .with_translation(Vec3::splat(0.0))
-            .with_rotation(Quat::from_rotation_z(f32::to_radians(22.5))))
+            .with_rotation(Quat::from_rotation_z(f32::to_radians(90.0))))
         .insert(Visibility::default())
         .insert(ObjectMarker)
         .insert(layer);
@@ -104,6 +104,7 @@ fn setup(
     commands
         .spawn(AmbientLight::new(0.1, Color::WHITE))
         .insert(layer);
+
     // directional light
     let light_source = Vec3::new(-500.0, 500.0, 200.0);
     let light_target = Vec3::ZERO;
@@ -125,7 +126,7 @@ fn setup(
                 target: RenderTarget::Screen,
                 ..Default::default()
             },
-            transform: Transform::from_xyz(500.0, 500.0, 500.0).looking_at(Vec3::ZERO, Vec3::Z),
+            transform: Transform::from_xyz(0.0, 400.0, 400.0).looking_at(Vec3::ZERO, Vec3::Z),
             projection:
             Projection::Orthographic(
                 OrthographicProjection {
