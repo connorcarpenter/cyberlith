@@ -67,11 +67,11 @@ impl SkeletonData {
         let original_child_displacement = *original_child_pos - *original_parent_pos;
         let rotated_child_displacement = child_rotation * original_child_displacement;
         let rotated_child_pos = rotated_parent_pos + rotated_child_displacement;
+        let original_bone_rotation = quat_from_spin_direction(*spin, Vec3::X, original_child_displacement);
 
         if let Some(name) = name_opt {
-            let edge_quat = quat_from_spin_direction(*spin, Vec3::X, original_child_displacement);
             let child_transform = Transform::from_translation(rotated_parent_pos)
-                .with_rotation(child_rotation * edge_quat);
+                .with_rotation(child_rotation * original_bone_rotation);
             output.insert(name.clone(), child_transform);
         }
 
