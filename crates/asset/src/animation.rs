@@ -27,19 +27,19 @@ impl Default for AnimationData {
 struct Frame {
     duration_ms: f32,
     // bone index, rotation
-    rotations: Vec<(String, Quat)>,
+    rotations: HashMap<String, Quat>,
 }
 
 impl Frame {
     pub fn new(duration_ms: f32) -> Self {
         Self {
             duration_ms,
-            rotations: Vec::new(),
+            rotations: HashMap::new(),
         }
     }
 
     pub(crate) fn add_rotation(&mut self, bone_name: String, rotation: Quat) {
-        self.rotations.push((bone_name, rotation));
+        self.rotations.insert(bone_name, rotation);
     }
 }
 
@@ -125,22 +125,10 @@ impl AnimationData {
         let next_frame = &self.frames[next_frame_index];
 
         let mut interpolated_rotations = HashMap::new();
-        let max_rotations = current_frame.rotations.len().max(next_frame.rotations.len());
-        for rot_index in 0..max_rotations {
 
-            let mut bone_name_opt = None;
-            let current_rotation = {
-                if let Some((bone_name, current_rot)) = current_frame.rotations.get(rot_index) {
-                    bone_name_opt = Some(bone_name.clone());
-                    *current_rot
-                } else {
-                    Quat::IDENTITY
-                }
-            };
-
+        for (bone_name, current_rotation) in current_frame.rotations.iter() {
             let next_rotation = {
-                if let Some((bone_name, next_rot)) = next_frame.rotations.get(rot_index) {
-                    bone_name_opt = Some(bone_name.clone());
+                if let Some(next_rot) = next_frame.rotations.get(bone_name) {
                     *next_rot
                 } else {
                     Quat::IDENTITY
@@ -149,9 +137,23 @@ impl AnimationData {
 
             let interpolated_rotation = current_rotation.slerp(next_rotation, interpolation);
 
-            let bone_name = bone_name_opt.expect("bone name not found");
+            interpolated_rotations.insert(bone_name.clone(), interpolated_rotation);
+        }
 
-            interpolated_rotations.insert(bone_name, interpolated_rotation);
+        for (bone_name, next_rotation) in next_frame.rotations.iter() {
+            if !interpolated_rotations.contains_key(bone_name) {
+                let current_rotation = {
+                    if let Some(current_rot) = current_frame.rotations.get(bone_name) {
+                        *current_rot
+                    } else {
+                        Quat::IDENTITY
+                    }
+                };
+
+                let interpolated_rotation = current_rotation.slerp(*next_rotation, interpolation);
+
+                interpolated_rotations.insert(bone_name.clone(), interpolated_rotation);
+            }
         }
 
         skeleton_data.get_interpolated_skeleton(interpolated_rotations)

@@ -99,21 +99,21 @@ impl ModelData {
     pub(crate) fn compute_components(&mut self, skeleton_data: &SkeletonData) {
         // compute components
         let mut components = Vec::new();
-        for (file_index, bone_name, transform) in self.net_transforms.iter() {
+        for (file_index, bone_name, component_transform) in self.net_transforms.iter() {
 
             let Some(bone_transform) = skeleton_data.get_bone_transform(bone_name) else {
                 panic!("unable to find bone in skeleton of name: {}", bone_name);
             };
 
-            let transform = transform.multiply(bone_transform);
+            let final_transform = component_transform.multiply(bone_transform);
 
             let file = &self.skin_or_scene_files[*file_index];
             match file {
                 SkinOrScene::Skin(AssetDependency::<SkinData>::Handle(handle)) => {
-                    components.push((SkinOrSceneHandle::Skin(*handle), transform));
+                    components.push((SkinOrSceneHandle::Skin(*handle), final_transform));
                 }
                 SkinOrScene::Scene(AssetDependency::<SceneData>::Handle(handle)) => {
-                    components.push((SkinOrSceneHandle::Scene(*handle), transform));
+                    components.push((SkinOrSceneHandle::Scene(*handle), final_transform));
                 }
                 _ => panic!("checking for all dependencies loaded should have caught this!"),
             }
