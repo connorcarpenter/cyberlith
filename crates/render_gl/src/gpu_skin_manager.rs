@@ -84,6 +84,16 @@ impl GpuSkinManager {
     pub fn is_ready(&self) -> bool {
         self.gpu_skins.is_some()
     }
+
+    pub fn get_ready(&mut self) {
+        if self.gpu_skins.is_some() {
+            return;
+        }
+        self.gpu_skins = Some(GpuTexture2D::new_empty::<f32>(
+            0,
+            0,
+        ));
+    }
 }
 
 fn write_raw_data(gpu_material_manager: &GpuMaterialManager, skin: &CpuSkin, biggest_skin: usize, output: &mut Vec<f32>) {

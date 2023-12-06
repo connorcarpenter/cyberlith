@@ -131,6 +131,10 @@ fn sync_skin_assets(
     mut cpu_assets: ResMut<Assets<CpuSkin>>,
     mut gpu_skin_manager: ResMut<GpuSkinManager>,
 ) {
+    if !gpu_skin_manager.is_ready() {
+        gpu_skin_manager.get_ready();
+    }
+
     if !cpu_assets.is_changed() {
         return;
     }
