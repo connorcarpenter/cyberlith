@@ -125,10 +125,22 @@ impl AnimationData {
         let next_frame = &self.frames[next_frame_index];
 
         let mut interpolated_rotations = HashMap::new();
-        for rot_index in 0..current_frame.rotations.len() {
-            let (bone_index, current_rotation) = &current_frame.rotations[rot_index];
+        let max_rotations = current_frame.rotations.len().max(next_frame.rotations.len());
+        for rot_index in 0..max_rotations {
+
+            let mut bone_index = 0;
+            let current_rotation = {
+                if let Some((bone_index_t, current_rot)) = current_frame.rotations.get(rot_index) {
+                    bone_index = *bone_index_t;
+                    *current_rot
+                } else {
+                    Quat::IDENTITY
+                }
+            };
+
             let next_rotation = {
-                if let Some((_, next_rot)) = next_frame.rotations.get(rot_index) {
+                if let Some((bone_index_t, next_rot)) = next_frame.rotations.get(rot_index) {
+                    bone_index = *bone_index_t;
                     *next_rot
                 } else {
                     Quat::IDENTITY
@@ -137,7 +149,7 @@ impl AnimationData {
 
             let interpolated_rotation = current_rotation.slerp(next_rotation, interpolation);
 
-            let bone_name = &self.bone_names[*bone_index];
+            let bone_name = &self.bone_names[bone_index];
 
             interpolated_rotations.insert(bone_name.clone(), interpolated_rotation);
         }
@@ -180,7 +192,7 @@ impl From<String> for AnimationData {
                     total_animation_time_ms += transition_time;
                     for (name_index, rotation) in rotation_map {
                         info!("name_index: {} . rotation: ({:?}, {:?}, {:?}, {:?})", name_index, rotation.x, rotation.y, rotation.z, rotation.w);
-                        frame.add_rotation(name_index as usize, Quat::from_xyzw(rotation.x, rotation.y, rotation.z, rotation. w));
+                        frame.add_rotation(name_index as usize, Quat::from_xyzw(rotation.x, rotation.y, rotation.z, rotation.w));
 
                     }
                     frames.push(frame);

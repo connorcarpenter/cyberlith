@@ -56,7 +56,6 @@ impl SkeletonData {
         };
         let (original_parent_pos, _, _) = &self.vertices[*parent_vertex_id];
         let original_child_displacement = *original_child_pos - *original_parent_pos;
-        //let mut child_rotation = quat_from_spin_direction(*spin, Vec3::X, original_child_displacement);
 
         let mut child_rotation = if let Some(name) = name_opt {
             if let Some(interpolated_rotation) = interpolated_rotations.get(name) {
@@ -76,8 +75,8 @@ impl SkeletonData {
         if let Some(name) = name_opt {
             let child_transform = Transform::from_translation(rotated_parent_position)
                 .with_rotation(
-                    child_rotation *
-                        quat_from_spin_direction(*spin, Vec3::X, original_child_displacement)
+                    (child_rotation *
+                        quat_from_spin_direction(*spin, Vec3::X, original_child_displacement)).normalize()
                 );
             output.insert(name.clone(), child_transform);
         }
