@@ -435,7 +435,7 @@ impl ModelInputManager {
                 );
                 let target_direction = (new_3d_position - new_transform.translation).normalize();
                 let rotation_angle =
-                    quat_from_spin_direction(edge_angle, Vec3::Z, target_direction);
+                    quat_from_spin_direction(edge_angle, Vec3::X, target_direction);
                 new_transform.rotation = rotation_angle;
             }
             (CanvasShape::Edge, NetTransformControlType::RotationEdge) => {
@@ -469,8 +469,8 @@ impl ModelInputManager {
                 edge_angle.set_radians(new_angle);
 
                 // set transform
-                let (_, old_direction) = spin_direction_from_quat(Vec3::Z, new_transform.rotation);
-                let rotation_angle = quat_from_spin_direction(new_angle, Vec3::Z, old_direction);
+                let (_, old_direction) = spin_direction_from_quat(Vec3::X, new_transform.rotation);
+                let rotation_angle = quat_from_spin_direction(new_angle, Vec3::X, old_direction);
                 new_transform.rotation = rotation_angle;
             }
             (CanvasShape::Vertex, NetTransformControlType::Scale(axis)) => {

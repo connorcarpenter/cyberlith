@@ -40,7 +40,7 @@ impl PaletteData {
             let PaletteColor::Raw(r, g, b) = color else {
                 panic!("should only load once!");
             };
-            let cpu_material_handle = materials.add(CpuMaterial::new(Color::new(*r, *g, *b), 0.0, 0.0, 0.0));
+            let cpu_material_handle = materials.add(CpuMaterial::new(Color::new(*r, *g, *b), 0.0, 32.0, 0.5));
             *color = PaletteColor::Material(cpu_material_handle);
         }
     }

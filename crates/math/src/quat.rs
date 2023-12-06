@@ -240,11 +240,11 @@ mod tests {
         println!("original_spin: {:?}", original_spin);
 
         let quat =
-            quat_from_spin_direction(f32::to_radians(original_spin), Vec3::Z, original_direction);
+            quat_from_spin_direction(f32::to_radians(original_spin), Vec3::X, original_direction);
 
         println!("quat: {:?}", quat);
 
-        let (output_spin, output_direction) = spin_direction_from_quat(Vec3::Z, quat);
+        let (output_spin, output_direction) = spin_direction_from_quat(Vec3::X, quat);
         let output_spin = output_spin.to_degrees();
 
         println!("output_direction: {:?}", output_direction);

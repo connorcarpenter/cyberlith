@@ -6,7 +6,7 @@ use bevy_ecs::{
 };
 
 use asset::{MeshFile, AssetManager, AssetHandle, SkinData, SceneData, ModelData};
-use math::Vec3;
+use math::{Quat, Vec3};
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
     components::{
@@ -83,7 +83,8 @@ fn setup(
         .spawn_empty()
         .insert(human_model_handle)
         .insert(Transform::from_scale(Vec3::splat(1.0))
-            .with_translation(Vec3::splat(0.0)))
+            .with_translation(Vec3::splat(0.0))
+            .with_rotation(Quat::from_rotation_z(f32::to_radians(22.5))))
         .insert(Visibility::default())
         .insert(ObjectMarker)
         .insert(layer);
@@ -92,7 +93,7 @@ fn setup(
     commands
         .spawn(RenderObjectBundle {
             mesh: meshes.add(shapes::Square),
-            material: materials.add(CpuMaterial::new(Color::RED, 0.0, 0.0, 0.0)),
+            material: materials.add(CpuMaterial::new(Color::DARK_GRAY, 0.0, 0.0, 0.0)),
             transform: Transform::from_scale(Vec3::new(ROOM_WIDTH, ROOM_DEPTH, 1.0))
                 .with_translation(Vec3::new(0.0, 0.0, 0.0)),
             ..Default::default()
@@ -162,8 +163,8 @@ fn step(
         transform.translation.y = f32::to_radians(*rotation).sin() * 100.0;
         transform.translation.z = 50.0;
 
-        transform.rotate_x(0.01 * elapsed_time);
-        transform.rotate_y(0.02 * elapsed_time);
+        //transform.rotate_x(0.01 * elapsed_time);
+        //transform.rotate_z(0.02 * elapsed_time);
     }
 }
 
