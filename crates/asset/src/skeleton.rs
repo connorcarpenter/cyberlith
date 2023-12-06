@@ -36,7 +36,7 @@ impl SkeletonData {
 
         if let Some(children) = self.vertex_parent_map.get(&self.root_vertex_id) {
             for child_id in children {
-                self.recurse(Vec3::ZERO, Quat::IDENTITY, *child_id, &interpolated_rotations, &mut output);
+                self.recurse(Vec3::ZERO, Vec3::ZERO, Quat::IDENTITY, *child_id, &interpolated_rotations, &mut output);
             }
         }
 
@@ -45,16 +45,16 @@ impl SkeletonData {
 
     fn recurse(
         &self,
+        original_parent_pos: Vec3,
         rotated_parent_pos: Vec3,
         parent_rotation: Quat,
         vertex_id: usize,
         interpolated_rotations: &HashMap<String, Quat>,
         output: &mut HashMap<String, Transform>,
     ) {
-        let (original_child_pos, Some((parent_vertex_id, spin)), name_opt) = &self.vertices[vertex_id] else {
+        let (original_child_pos, Some((_, spin)), name_opt) = &self.vertices[vertex_id] else {
             panic!("impossible");
         };
-        let (original_parent_pos, _, _) = &self.vertices[*parent_vertex_id];
 
         let mut child_rotation = Quat::IDENTITY;
         if let Some(name) = name_opt {
@@ -64,7 +64,7 @@ impl SkeletonData {
         }
 
         let child_rotation = (parent_rotation * child_rotation).normalize();
-        let original_child_displacement = *original_child_pos - *original_parent_pos;
+        let original_child_displacement = *original_child_pos - original_parent_pos;
         let rotated_child_displacement = child_rotation * original_child_displacement;
         let rotated_child_pos = rotated_parent_pos + rotated_child_displacement;
         let original_bone_rotation = quat_from_spin_direction(*spin, Vec3::X, original_child_displacement);
@@ -77,7 +77,7 @@ impl SkeletonData {
 
         if let Some(children) = self.vertex_parent_map.get(&vertex_id) {
             for child_id in children {
-                self.recurse(rotated_child_pos, child_rotation, *child_id, interpolated_rotations, output);
+                self.recurse(*original_child_pos, rotated_child_pos, child_rotation, *child_id, interpolated_rotations, output);
             }
         }
     }

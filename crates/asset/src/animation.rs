@@ -14,7 +14,6 @@ impl AssetHash<AnimationData> for String {}
 
 pub struct AnimationData {
     skeleton_file: AssetDependency<SkeletonData>,
-    bone_names: Vec<String>,
     frames: Vec<Frame>,
     total_duration: f32,
 }
@@ -28,7 +27,7 @@ impl Default for AnimationData {
 struct Frame {
     duration_ms: f32,
     // bone index, rotation
-    rotations: Vec<(usize, Quat)>,
+    rotations: Vec<(String, Quat)>,
 }
 
 impl Frame {
@@ -39,8 +38,8 @@ impl Frame {
         }
     }
 
-    pub(crate) fn add_rotation(&mut self, bone_index: usize, rotation: Quat) {
-        self.rotations.push((bone_index, rotation));
+    pub(crate) fn add_rotation(&mut self, bone_name: String, rotation: Quat) {
+        self.rotations.push((bone_name, rotation));
     }
 }
 
@@ -79,6 +78,7 @@ impl AnimationData {
         let model_components = model_data.get_components_copied();
 
         let (frame_index, next_frame_index, interpolation) = self.get_frame_stats(frame_elapsed_ms);
+        //info!("frame_index: {}, next_frame_index: {}, interpolation: {}", frame_index, next_frame_index, interpolation);
 
         let interpolated_skeleton = self.get_interpolated_skeleton(skeleton_data, frame_index, next_frame_index, interpolation);
 
@@ -128,10 +128,10 @@ impl AnimationData {
         let max_rotations = current_frame.rotations.len().max(next_frame.rotations.len());
         for rot_index in 0..max_rotations {
 
-            let mut bone_index = 0;
+            let mut bone_name_opt = None;
             let current_rotation = {
-                if let Some((bone_index_t, current_rot)) = current_frame.rotations.get(rot_index) {
-                    bone_index = *bone_index_t;
+                if let Some((bone_name, current_rot)) = current_frame.rotations.get(rot_index) {
+                    bone_name_opt = Some(bone_name.clone());
                     *current_rot
                 } else {
                     Quat::IDENTITY
@@ -139,8 +139,8 @@ impl AnimationData {
             };
 
             let next_rotation = {
-                if let Some((bone_index_t, next_rot)) = next_frame.rotations.get(rot_index) {
-                    bone_index = *bone_index_t;
+                if let Some((bone_name, next_rot)) = next_frame.rotations.get(rot_index) {
+                    bone_name_opt = Some(bone_name.clone());
                     *next_rot
                 } else {
                     Quat::IDENTITY
@@ -149,9 +149,9 @@ impl AnimationData {
 
             let interpolated_rotation = current_rotation.slerp(next_rotation, interpolation);
 
-            let bone_name = &self.bone_names[bone_index];
+            let bone_name = bone_name_opt.expect("bone name not found");
 
-            interpolated_rotations.insert(bone_name.clone(), interpolated_rotation);
+            interpolated_rotations.insert(bone_name, interpolated_rotation);
         }
 
         skeleton_data.get_interpolated_skeleton(interpolated_rotations)
@@ -172,7 +172,7 @@ impl From<String> for AnimationData {
             filetypes::AnimAction::read(&mut bit_reader).expect("unable to parse file");
 
         let mut skel_file_opt = None;
-        let mut names = Vec::new();
+        let mut name_map = HashMap::new();
         let mut frames = Vec::new();
         let mut total_animation_time_ms = 0.0;
         for action in actions {
@@ -182,8 +182,8 @@ impl From<String> for AnimationData {
                     skel_file_opt = Some(format!("{}/{}", path, file_name));
                 }
                 filetypes::AnimAction::ShapeIndex(name) => {
-                    info!("ShapeIndex: {}", name);
-                    names.push(name);
+                    //info!("ShapeIndex {}: {}", names.len(), name);
+                    name_map.insert(name_map.len() as u16, name);
                 }
                 filetypes::AnimAction::Frame(rotation_map, transition_time) => {
                     info!("Frame {}: {:?}ms", frames.len(), transition_time.get_duration_ms());
@@ -191,8 +191,12 @@ impl From<String> for AnimationData {
                     let mut frame = Frame::new(transition_time);
                     total_animation_time_ms += transition_time;
                     for (name_index, rotation) in rotation_map {
-                        info!("name_index: {} . rotation: ({:?}, {:?}, {:?}, {:?})", name_index, rotation.x, rotation.y, rotation.z, rotation.w);
-                        frame.add_rotation(name_index as usize, Quat::from_xyzw(rotation.x, rotation.y, rotation.z, rotation.w));
+                        let name = name_map.get(&name_index).unwrap().clone();
+                        info!("name: {} . rotation: ({:?}, {:?}, {:?}, {:?})", &name, rotation.x, rotation.y, rotation.z, rotation.w);
+                        frame.add_rotation(
+                            name,
+                            Quat::from_xyzw(rotation.x, rotation.y, rotation.z, rotation.w)
+                        );
 
                     }
                     frames.push(frame);
@@ -200,11 +204,8 @@ impl From<String> for AnimationData {
             }
         }
 
-        // todo: lots here
-
         Self {
             skeleton_file: AssetDependency::Path(skel_file_opt.unwrap()),
-            bone_names: names,
             frames,
             total_duration: total_animation_time_ms,
         }
