@@ -136,7 +136,7 @@ fn setup(
                 target: RenderTarget::Screen,
                 ..Default::default()
             },
-            transform: Transform::from_xyz(0.0, 200.0, 400.0).looking_at(Vec3::ZERO, Vec3::Z),
+            transform: Transform::from_xyz(400.0, 400.0, 400.0).looking_at(Vec3::ZERO, Vec3::Z),
             projection:
             Projection::Orthographic(
                 OrthographicProjection {
@@ -165,7 +165,7 @@ fn step(
     if *rotation == 0.0 {
         *rotation = 0.01;
     } else {
-        *rotation += 0.04 * elapsed_time;
+        *rotation += 0.03 * elapsed_time;
         if *rotation > 359.0 {
             *rotation = 0.01;
         }
@@ -182,7 +182,7 @@ fn step(
 
     for mut anim in anim_q.iter_mut() {
 
-        anim.time_elapsed_ms += (0.49 * elapsed_time);
+        anim.time_elapsed_ms += (0.32 * elapsed_time);
 
         let anim_duration = asset_manager.get_animation_duration(&anim.handle);
 
