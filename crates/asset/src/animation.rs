@@ -16,6 +16,7 @@ pub struct AnimationData {
     skeleton_file: AssetDependency<SkeletonData>,
     bone_names: Vec<String>,
     frames: Vec<Frame>,
+    total_duration: f32,
 }
 
 impl Default for AnimationData {
@@ -70,6 +71,10 @@ impl AnimationData {
         }
     }
 
+    pub fn get_duration(&self) -> f32 {
+        self.total_duration
+    }
+
     pub(crate) fn get_animated_components(&self, skeleton_data: &SkeletonData, model_data: &ModelData, frame_elapsed_ms: f32) -> Option<Vec<(SkinOrSceneHandle, Transform)>> {
         let model_components = model_data.get_components_copied();
 
@@ -122,9 +127,15 @@ impl AnimationData {
         let mut interpolated_rotations = HashMap::new();
         for rot_index in 0..current_frame.rotations.len() {
             let (bone_index, current_rotation) = &current_frame.rotations[rot_index];
-            let (_, next_rotation) = &next_frame.rotations[rot_index];
+            let next_rotation = {
+                if let Some((_, next_rot)) = next_frame.rotations.get(rot_index) {
+                    *next_rot
+                } else {
+                    Quat::IDENTITY
+                }
+            };
 
-            let interpolated_rotation = current_rotation.slerp(*next_rotation, interpolation);
+            let interpolated_rotation = current_rotation.slerp(next_rotation, interpolation);
 
             let bone_name = &self.bone_names[*bone_index];
 
@@ -183,6 +194,7 @@ impl From<String> for AnimationData {
             skeleton_file: AssetDependency::Path(skel_file_opt.unwrap()),
             bone_names: names,
             frames,
+            total_duration: total_animation_time_ms,
         }
     }
 }

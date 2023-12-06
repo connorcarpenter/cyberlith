@@ -94,7 +94,7 @@ fn setup(
         })
         .insert(Transform::from_scale(Vec3::splat(1.0))
             .with_translation(Vec3::splat(0.0))
-            .with_rotation(Quat::from_rotation_z(f32::to_radians(90.0))))
+            .with_rotation(Quat::from_rotation_z(f32::to_radians(0.0))))
         .insert(Visibility::default())
         .insert(ObjectMarker)
         .insert(layer);
@@ -136,7 +136,7 @@ fn setup(
                 target: RenderTarget::Screen,
                 ..Default::default()
             },
-            transform: Transform::from_xyz(0.0, 400.0, 400.0).looking_at(Vec3::ZERO, Vec3::Z),
+            transform: Transform::from_xyz(400.0, 400.0, 400.0).looking_at(Vec3::ZERO, Vec3::Z),
             projection:
             Projection::Orthographic(
                 OrthographicProjection {
@@ -155,6 +155,7 @@ fn setup(
 
 fn step(
     time: Res<Time>,
+    asset_manager: Res<AssetManager>,
     mut object_q: Query<&mut Transform, With<ObjectMarker>>,
     mut rotation: Local<f32>,
     mut anim_q: Query<&mut WalkAnimation>,
@@ -171,8 +172,8 @@ fn step(
     }
 
     for mut transform in object_q.iter_mut() {
-        transform.translation.x = f32::to_radians(*rotation).cos() * 100.0;
-        transform.translation.y = f32::to_radians(*rotation).sin() * 100.0;
+        // transform.translation.x = f32::to_radians(*rotation).cos() * 100.0;
+        // transform.translation.y = f32::to_radians(*rotation).sin() * 100.0;
         transform.translation.z = 50.0;
 
         //transform.rotate_x(0.01 * elapsed_time);
@@ -180,10 +181,13 @@ fn step(
     }
 
     for mut anim in anim_q.iter_mut() {
+
         anim.time_elapsed_ms += elapsed_time;
-        // TODO: get the animation data to determine the "end" of the animation
-        if anim.time_elapsed_ms > 1000.0 {
-            anim.time_elapsed_ms = 0.0;
+
+        let anim_duration = asset_manager.get_animation_duration(&anim.handle);
+
+        while anim.time_elapsed_ms > anim_duration {
+            anim.time_elapsed_ms -= anim_duration;
         }
     }
 }

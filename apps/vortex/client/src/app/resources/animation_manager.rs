@@ -762,7 +762,6 @@ impl AnimationManager {
                     warn!("Edge3d entity {:?} has no Transform", edge_3d_entity);
                     continue;
                 };
-                edge_3d_transform.translation = rotated_parent_pos;
 
                 // get edge angle
                 let edge_spin = match edge_angle_q.get(edge_3d_entity) {

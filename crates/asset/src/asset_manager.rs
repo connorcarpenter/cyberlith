@@ -280,6 +280,11 @@ impl AssetManager {
         }
     }
 
+    pub fn get_animation_duration(&self, handle: &Handle<AnimationData>) -> f32 {
+        let data = self.animations.get(handle).unwrap();
+        data.get_duration()
+    }
+
     // Drawing
 
     pub fn draw_mesh(
