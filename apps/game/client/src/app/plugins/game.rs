@@ -105,7 +105,7 @@ fn setup(
             mesh: meshes.add(shapes::Square),
             material: materials.add(CpuMaterial::new(Color::DARK_GRAY, 0.0, 0.0, 0.0)),
             transform: Transform::from_scale(Vec3::new(ROOM_WIDTH, ROOM_DEPTH, 1.0))
-                .with_translation(Vec3::new(0.0, 0.0, 0.0)),
+                .with_translation(Vec3::new(0.0, 0.0, 45.0)),
             ..Default::default()
         })
         .insert(layer);
@@ -136,7 +136,7 @@ fn setup(
                 target: RenderTarget::Screen,
                 ..Default::default()
             },
-            transform: Transform::from_xyz(400.0, 400.0, 400.0).looking_at(Vec3::ZERO, Vec3::Z),
+            transform: Transform::from_xyz(0.0, 200.0, 400.0).looking_at(Vec3::ZERO, Vec3::Z),
             projection:
             Projection::Orthographic(
                 OrthographicProjection {
@@ -160,29 +160,29 @@ fn step(
     mut rotation: Local<f32>,
     mut anim_q: Query<&mut WalkAnimation>,
 ) {
-    let elapsed_time = (time.get_elapsed() / 16.0) as f32;
+    let elapsed_time = time.get_elapsed();
 
     if *rotation == 0.0 {
         *rotation = 0.01;
     } else {
-        *rotation += 1.0 * elapsed_time;
+        *rotation += 0.04 * elapsed_time;
         if *rotation > 359.0 {
             *rotation = 0.01;
         }
     }
 
     for mut transform in object_q.iter_mut() {
-        // transform.translation.x = f32::to_radians(*rotation).cos() * 100.0;
-        // transform.translation.y = f32::to_radians(*rotation).sin() * 100.0;
+        transform.translation.x = f32::to_radians(*rotation).cos() * 250.0;
+        transform.translation.y = f32::to_radians(*rotation).sin() * 250.0;
         transform.translation.z = 50.0;
 
         //transform.rotate_x(0.01 * elapsed_time);
-        //transform.rotate_z(0.02 * elapsed_time);
+        transform.rotation = Quat::from_rotation_z(f32::to_radians(*rotation + 90.0));
     }
 
     for mut anim in anim_q.iter_mut() {
 
-        anim.time_elapsed_ms += elapsed_time;
+        anim.time_elapsed_ms += (0.49 * elapsed_time);
 
         let anim_duration = asset_manager.get_animation_duration(&anim.handle);
 
