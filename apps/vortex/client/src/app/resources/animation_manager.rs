@@ -711,7 +711,7 @@ impl AnimationManager {
             let original_child_pos = vertex_3d.as_vec3();
 
             // a lot of this should be refactored to share code with edge_manager.rs
-            let mut rotation = Quat::IDENTITY;
+            let mut child_rotation = Quat::IDENTITY;
             if let Ok(name_component) = name_q.get(*child_vertex_3d_entity) {
                 let name = (*name_component.value).clone();
                 if let Some(rotation_entity) = self.vertex_names.get(&(frame_entity, name.clone()))
@@ -719,8 +719,8 @@ impl AnimationManager {
                     if let Ok((anim_rotation, mut local_anim_rotation)) =
                         rotation_q.get_mut(*rotation_entity)
                     {
-                        rotation = anim_rotation.get_rotation();
-                        local_anim_rotation.last_synced_quat = rotation;
+                        child_rotation = anim_rotation.get_rotation();
+                        local_anim_rotation.last_synced_quat = child_rotation;
                     }
                 }
                 if let Some((interp_frame_entity, interp_amount)) = interp_opt {
@@ -736,14 +736,14 @@ impl AnimationManager {
                         Quat::IDENTITY
                     };
 
-                    rotation = rotation.slerp(interp_rotation, interp_amount);
+                    child_rotation = child_rotation.slerp(interp_rotation, interp_amount);
                 }
             }
 
-            let rotation = (parent_rotation * rotation).normalize();
-            let displacement = original_child_pos - original_parent_pos;
-            let rotated_displacement = rotation * displacement;
-            let rotated_child_pos = rotated_parent_pos + rotated_displacement;
+            let child_rotation = (parent_rotation * child_rotation).normalize();
+            let original_child_displacement = original_child_pos - original_parent_pos;
+            let rotated_child_displacement = child_rotation * original_child_displacement;
+            let rotated_child_pos = rotated_parent_pos + rotated_child_displacement;
 
             // update vertex transform
             let Ok(mut vertex_3d_transform) = transform_q.get_mut(*child_vertex_3d_entity) else {
@@ -776,7 +776,7 @@ impl AnimationManager {
                 );
 
                 edge_3d_transform.translation = rotated_parent_pos;
-                edge_3d_transform.rotation = rotation * edge_quat;
+                edge_3d_transform.rotation = child_rotation * edge_quat;
                 edge_3d_transform.scale.x = scale;
 
                 // update edge angle 2d representation
@@ -786,8 +786,8 @@ impl AnimationManager {
                     visibility_q,
                     camera_3d_scale,
                     edge_3d_entity,
-                    rotation,
-                    displacement.normalize(),
+                    child_rotation,
+                    original_child_displacement.normalize(),
                     edge_spin,
                 );
             }
@@ -808,7 +808,7 @@ impl AnimationManager {
                 *child_vertex_3d_entity,
                 original_child_pos,
                 rotated_child_pos,
-                rotation,
+                child_rotation,
             );
         }
     }

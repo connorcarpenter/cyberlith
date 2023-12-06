@@ -186,7 +186,7 @@ impl From<String> for AnimationData {
                     names.push(name);
                 }
                 filetypes::AnimAction::Frame(rotation_map, transition_time) => {
-                    info!("Frame: {:?}ms", transition_time.get_duration_ms());
+                    info!("Frame {}: {:?}ms", frames.len(), transition_time.get_duration_ms());
                     let transition_time = transition_time.get_duration_ms() as f32;
                     let mut frame = Frame::new(transition_time);
                     total_animation_time_ms += transition_time;

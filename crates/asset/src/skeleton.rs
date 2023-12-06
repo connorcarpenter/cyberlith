@@ -45,7 +45,7 @@ impl SkeletonData {
 
     fn recurse(
         &self,
-        rotated_parent_position: Vec3,
+        rotated_parent_pos: Vec3,
         parent_rotation: Quat,
         vertex_id: usize,
         interpolated_rotations: &HashMap<String, Quat>,
@@ -55,35 +55,29 @@ impl SkeletonData {
             panic!("impossible");
         };
         let (original_parent_pos, _, _) = &self.vertices[*parent_vertex_id];
-        let original_child_displacement = *original_child_pos - *original_parent_pos;
 
-        let mut child_rotation = if let Some(name) = name_opt {
+        let mut child_rotation = Quat::IDENTITY;
+        if let Some(name) = name_opt {
             if let Some(interpolated_rotation) = interpolated_rotations.get(name) {
-                *interpolated_rotation
-            } else {
-                Quat::IDENTITY
+                child_rotation = *interpolated_rotation;
             }
-        } else {
-            Quat::IDENTITY
-        };
+        }
 
-        child_rotation = (parent_rotation * child_rotation).normalize();
-
+        let child_rotation = (parent_rotation * child_rotation).normalize();
+        let original_child_displacement = *original_child_pos - *original_parent_pos;
         let rotated_child_displacement = child_rotation * original_child_displacement;
-        let rotated_child_position = rotated_parent_position + rotated_child_displacement;
+        let rotated_child_pos = rotated_parent_pos + rotated_child_displacement;
 
         if let Some(name) = name_opt {
-            let child_transform = Transform::from_translation(rotated_parent_position)
-                .with_rotation(
-                    (child_rotation *
-                        quat_from_spin_direction(*spin, Vec3::X, original_child_displacement)).normalize()
-                );
+            let edge_quat = quat_from_spin_direction(*spin, Vec3::X, original_child_displacement);
+            let child_transform = Transform::from_translation(rotated_parent_pos)
+                .with_rotation(child_rotation * edge_quat);
             output.insert(name.clone(), child_transform);
         }
 
         if let Some(children) = self.vertex_parent_map.get(&vertex_id) {
             for child_id in children {
-                self.recurse(rotated_child_position, child_rotation, *child_id, interpolated_rotations, output);
+                self.recurse(rotated_child_pos, child_rotation, *child_id, interpolated_rotations, output);
             }
         }
     }
