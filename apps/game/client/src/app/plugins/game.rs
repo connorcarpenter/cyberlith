@@ -60,8 +60,9 @@ const ROOM_DEPTH: f32 = 300.0;
 const ROOM_HEIGHT: f32 = 200.0;
 
 #[derive(Component)]
-pub struct IconAnimation {
-    subimage_index: f32,
+pub struct WalkAnimation {
+    anim_handle: Handle<AnimationData>,
+    image_index: f32,
 }
 
 fn setup(
@@ -77,18 +78,19 @@ fn setup(
     //let cube_mesh_handle: Handle<MeshFile> = asset_manager.load("cube.mesh");
     // let human_skel_handle = asset_manager.load("human.skel");
     // let threebit_palette_handle = asset_manager.load("3bit.palette");
-    // let human_walk_anim_handle: Handle<AnimationData> = asset_manager.load("human_walk.anim");
-    let letters_icon_handle: Handle<IconData> = asset_manager.load("letters.icon");
+    let human_walk_anim_handle: Handle<AnimationData> = asset_manager.load("human_walk.anim");
+    //let letters_icon_handle: Handle<IconData> = asset_manager.load("letters.icon");
     // let head_skin_handle: Handle<SkinData> = asset_manager.load("head.skin");
-    // let human_model_handle: Handle<ModelData> = asset_manager.load("human.model");
+    let human_model_handle: Handle<ModelData> = asset_manager.load("human.model");
     //let head_scene_handle: Handle<SceneData> = asset_manager.load("head.scene");
 
     // model
     commands
         .spawn_empty()
-        .insert(letters_icon_handle)
-        .insert(IconAnimation {
-            subimage_index: 0.0,
+        .insert(human_model_handle)
+        .insert(WalkAnimation {
+            anim_handle: human_walk_anim_handle,
+            image_index: 0.0,
         })
         .insert(Transform::from_scale(Vec3::splat(1.0))
             .with_translation(Vec3::splat(0.0))
@@ -156,7 +158,7 @@ fn step(
     asset_manager: Res<AssetManager>,
     mut object_q: Query<&mut Transform, With<ObjectMarker>>,
     mut rotation: Local<f32>,
-    mut icon_q: Query<(&Handle<IconData>, &mut IconAnimation)>,
+    mut icon_q: Query<&mut WalkAnimation>,
 ) {
     let elapsed_time = time.get_elapsed();
 
@@ -178,14 +180,14 @@ fn step(
         transform.rotation = Quat::from_rotation_z(f32::to_radians(*rotation + 90.0));
     }
 
-    for (handle, mut anim) in icon_q.iter_mut() {
+    for mut anim in icon_q.iter_mut() {
 
-        anim.subimage_index += (0.001 * elapsed_time);
+        anim.image_index += (0.4 * elapsed_time);
 
-        let subimage_count = asset_manager.get_icon_subimage_count(handle) as f32;
+        let subimage_count = asset_manager.get_animation_duration(&anim.anim_handle) as f32;
 
-        while anim.subimage_index >= subimage_count {
-            anim.subimage_index -= subimage_count;
+        while anim.image_index >= subimage_count {
+            anim.image_index -= subimage_count;
         }
     }
 }
@@ -203,9 +205,9 @@ pub fn draw(
         &Visibility,
         Option<&RenderLayer>,
     )>,
-    icons_q: Query<(
-        &Handle<IconData>,
-        &IconAnimation,
+    models_q: Query<(
+        &Handle<ModelData>,
+        &WalkAnimation,
         &Transform,
         &Visibility,
         Option<&RenderLayer>,
@@ -246,11 +248,11 @@ pub fn draw(
         render_frame.draw_mesh(render_layer_opt, mesh_handle, mat_handle, transform);
     }
 
-    // Aggregate File Meshes
-    for (icon_handle, icon_anim, transform, visibility, render_layer_opt) in icons_q.iter() {
+    // Aggregate Models
+    for (model_handle, walk_anim, transform, visibility, render_layer_opt) in models_q.iter() {
         if !visibility.visible {
             continue;
         }
-        asset_manager.draw_icon(&mut render_frame, icon_handle, icon_anim.subimage_index as usize, transform, render_layer_opt);
+        asset_manager.draw_animated_model(&mut render_frame, model_handle, &walk_anim.anim_handle, transform, walk_anim.image_index, render_layer_opt);
     }
 }
