@@ -23,6 +23,41 @@ impl Default for IconData {
 }
 
 impl IconData {
+    pub(crate) fn get_palette_file_handle(&self) -> Option<&Handle<PaletteData>> {
+        if let AssetDependency::<PaletteData>::Handle(handle) = &self.palette_file {
+            Some(handle)
+        } else {
+            None
+        }
+    }
+
+    pub(crate) fn has_all_cpu_meshes(&self) -> bool {
+        for frame in &self.frames {
+            if !frame.has_cpu_mesh_handle() {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    pub(crate) fn load_cpu_meshes(&mut self, meshes: &mut Assets<CpuMesh>) {
+        info!("icon: load_cpu_meshes");
+        for frame in &mut self.frames {
+            frame.load_cpu_mesh_handle(meshes);
+        }
+    }
+
+    pub(crate) fn load_cpu_skins(&mut self, meshes: &Assets<CpuMesh>, materials: &Assets<CpuMaterial>, skins: &mut Assets<CpuSkin>, palette_data: &PaletteData) -> bool {
+        for frame in &mut self.frames {
+            if !frame.has_cpu_skin_handle() {
+                if !frame.load_cpu_skin(meshes, materials, skins, palette_data) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
     pub(crate) fn load_dependencies(&self, handle: Handle<Self>, dependencies: &mut Vec<(AssetHandle, String)>) {
         let AssetDependency::<PaletteData>::Path(path) = &self.palette_file else {
             panic!("expected path right after load");
@@ -34,11 +69,19 @@ impl IconData {
         match dependency_handle.to_impl() {
             AssetHandleImpl::Palette(handle) => {
                 self.palette_file.load_handle(handle);
+                info!("icon: load_palette");
             }
             _ => {
                 panic!("unexpected type of handle");
             }
         }
+    }
+
+    pub(crate) fn has_all_dependencies(&self) -> bool {
+        if let AssetDependency::<PaletteData>::Handle(_) = &self.palette_file {
+            return true;
+        }
+        return false;
     }
 
     pub(crate) fn get_cpu_mesh_and_skin_handles(&self, subimage_index: usize) -> Option<(Handle<CpuMesh>, Handle<CpuSkin>)> {
@@ -95,6 +138,7 @@ impl Frame {
 
     pub(crate) fn load_cpu_skin(
         &mut self,
+        meshes: &Assets<CpuMesh>,
         materials: &Assets<CpuMaterial>,
         skins: &mut Assets<CpuSkin>,
         palette_data: &PaletteData
@@ -102,7 +146,16 @@ impl Frame {
         let mut new_skin = CpuSkin::default();
 
         let mut biggest_face_id = 0;
-        let mesh_face_ids = self.cpu_mesh.as_ref().unwrap().face_indices();
+        let mesh_face_ids = if let Some(cpu_mesh) = self.cpu_mesh.as_ref() {
+            cpu_mesh.face_indices()
+        } else {
+            if let Some(cpu_mesh_handle) = self.cpu_mesh_handle.as_ref() {
+                let cpu_mesh = meshes.get(cpu_mesh_handle).unwrap();
+                cpu_mesh.face_indices()
+            } else {
+                panic!("no cpu mesh or handle");
+            }
+        };
         for index in 0..mesh_face_ids.len() / 3 {
             let face_id = mesh_face_ids[index * 3];
 

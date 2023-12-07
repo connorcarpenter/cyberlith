@@ -8,14 +8,6 @@ use render_api::{AssetHash, Assets, Handle, base::{CpuMaterial, CpuMesh, CpuSkin
 
 use crate::{asset_handle::AssetHandleImpl, asset_dependency::AssetDependency, AssetHandle, MeshFile, PaletteData};
 
-impl AssetHash<SkinData> for String {}
-
-impl Default for SkinData {
-    fn default() -> Self {
-        panic!("");
-    }
-}
-
 pub struct SkinData {
     mesh_file: AssetDependency<MeshFile>,
     palette_file: AssetDependency<PaletteData>,
@@ -23,6 +15,14 @@ pub struct SkinData {
     bckg_color_id: u8,
     // face_index, color_index
     face_color_ids: Vec<(u16, u8)>,
+}
+
+impl AssetHash<SkinData> for String {}
+
+impl Default for SkinData {
+    fn default() -> Self {
+        panic!("");
+    }
 }
 
 impl SkinData {
@@ -45,9 +45,6 @@ impl SkinData {
     pub(crate) fn get_cpu_skin_handle(&self) -> Option<&Handle<CpuSkin>> {
         self.cpu_skin_handle.as_ref()
     }
-}
-
-impl SkinData {
 
     pub(crate) fn load_dependencies(&self, handle: Handle<Self>, dependencies: &mut Vec<(AssetHandle, String)>) {
         let AssetDependency::<MeshFile>::Path(path) = &self.mesh_file else {

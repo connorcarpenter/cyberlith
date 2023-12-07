@@ -21,8 +21,11 @@ pub struct AssetManager {
     // mesh file name, skin handle
     queued_meshes: Vec<Handle<MeshFile>>,
     queued_palettes: Vec<Handle<PaletteData>>,
+    queued_icons: Vec<Handle<IconData>>,
+    icons_waiting_on_palettes: HashMap<Handle<PaletteData>, Vec<Handle<IconData>>>,
     skins_waiting_on_palettes: HashMap<Handle<PaletteData>, Vec<Handle<SkinData>>>,
     skins_waiting_on_meshes: HashMap<Handle<MeshFile>, Vec<Handle<SkinData>>>,
+    ready_icons: Vec<Handle<IconData>>,
     ready_skins: Vec<Handle<SkinData>>,
 }
 
@@ -40,8 +43,11 @@ impl Default for AssetManager {
 
             queued_meshes: Vec::new(),
             queued_palettes: Vec::new(),
+            queued_icons: Vec::new(),
+            icons_waiting_on_palettes: HashMap::new(),
             skins_waiting_on_palettes: HashMap::new(),
             skins_waiting_on_meshes: HashMap::new(),
+            ready_icons: Vec::new(),
             ready_skins: Vec::new(),
         }
     }
@@ -91,6 +97,7 @@ impl AssetManager {
                 let existed = self.icons.has(path_string.clone());
                 let handle = self.icons.add(path_string);
                 if !existed {
+                    self.queued_icons.push(handle.clone());
                     let data = self.icons.get(&handle).unwrap();
                     data.load_dependencies(handle, &mut dependencies);
                 }
@@ -152,14 +159,30 @@ impl AssetManager {
             AssetHandleImpl::Icon(principal_handle) => {
                 let mut data = self.icons.get_mut(&principal_handle).unwrap();
                 data.finish_dependency(dependency_string, dependency_handle);
+                if data.has_all_dependencies() {
+
+                    let palette_handle = data.get_palette_file_handle().unwrap().clone();
+
+                    if !self.palette_has_cpu_materials(&palette_handle) {
+                        if !self.icons_waiting_on_palettes.contains_key(&palette_handle) {
+                            self.icons_waiting_on_palettes.insert(palette_handle.clone(), Vec::new());
+                        }
+                        let icon_list = self.icons_waiting_on_palettes.get_mut(&palette_handle).unwrap();
+                        icon_list.push(principal_handle);
+                    }
+
+                    if self.icon_is_ready(&principal_handle) {
+                        self.ready_icons.push(principal_handle);
+                    }
+                }
             },
             AssetHandleImpl::Skin(principal_handle) => {
                 let mut data = self.skins.get_mut(&principal_handle).unwrap();
                 data.finish_dependency(dependency_string, dependency_handle);
                 if data.has_all_dependencies() {
 
-                    let mesh_handle = data.get_mesh_file_handle().unwrap().clone();
                     let palette_handle = data.get_palette_file_handle().unwrap().clone();
+                    let mesh_handle = data.get_mesh_file_handle().unwrap().clone();
 
                     if !self.palette_has_cpu_materials(&palette_handle) {
                         if !self.skins_waiting_on_palettes.contains_key(&palette_handle) {
@@ -205,8 +228,11 @@ impl AssetManager {
         mut skins: ResMut<Assets<CpuSkin>>,
     ) {
         asset_manager.sync_meshes(&mut meshes);
+        asset_manager.sync_icons(&mut meshes);
         asset_manager.sync_palettes(&mut materials);
         asset_manager.sync_skins(&meshes, &materials, &mut skins);
+        asset_manager.sync_icon_skins(&meshes, &materials, &mut skins);
+
     }
 
     fn sync_meshes(&mut self, meshes: &mut Assets<CpuMesh>) {
@@ -252,6 +278,14 @@ impl AssetManager {
                     }
                 }
             }
+
+            if let Some(icon_list) = self.icons_waiting_on_palettes.remove(palette_handle) {
+                for icon_handle in icon_list {
+                    if self.icon_is_ready(&icon_handle) {
+                        self.ready_icons.push(icon_handle);
+                    }
+                }
+            }
         }
     }
 
@@ -276,6 +310,45 @@ impl AssetManager {
             } else {
                 warn!("skin data {} not loaded, re-queuing", skin_handle.id);
                 self.ready_skins.push(skin_handle);
+            }
+        }
+    }
+
+    fn sync_icons(&mut self, meshes: &mut Assets<CpuMesh>) {
+        if self.queued_icons.is_empty() {
+            return;
+        }
+
+        let icon_handles = std::mem::take(&mut self.queued_icons);
+
+        for icon_handle in &icon_handles {
+            let icon_data = self.icons.get_mut(&icon_handle).unwrap();
+            icon_data.load_cpu_meshes(meshes);
+        }
+
+        for icon_handle in &icon_handles {
+            if self.icon_is_ready(icon_handle) {
+                self.ready_icons.push(*icon_handle);
+            }
+        }
+    }
+
+    fn sync_icon_skins(&mut self, meshes: &Assets<CpuMesh>, materials: &Assets<CpuMaterial>, skins: &mut Assets<CpuSkin>) {
+        if self.ready_icons.is_empty() {
+            return;
+        }
+
+        for icon_handle in std::mem::take(&mut self.ready_icons) {
+            let icon_data = self.icons.get_mut(&icon_handle).unwrap();
+
+            let palette_handle = icon_data.get_palette_file_handle().unwrap();
+            let palette_data = self.palettes.get(palette_handle).unwrap();
+
+            if icon_data.load_cpu_skins(meshes, materials, skins, palette_data) {
+                // success!
+            } else {
+                warn!("icon data {} not loaded, re-queuing", icon_handle.id);
+                self.ready_icons.push(icon_handle);
             }
         }
     }
@@ -476,6 +549,17 @@ impl AssetManager {
     fn mesh_file_has_cpu_mesh(&self, mesh_handle: &Handle<MeshFile>) -> bool {
         let data = self.meshes.get(mesh_handle).unwrap();
         data.has_cpu_mesh()
+    }
+
+    fn icon_is_ready(&self, icon_handle: &Handle<IconData>) -> bool {
+        let data = self.icons.get(icon_handle).unwrap();
+
+        let palette_handle = data.get_palette_file_handle().unwrap();
+
+        if data.has_all_cpu_meshes() && self.palette_has_cpu_materials(palette_handle) {
+            return true;
+        }
+        return false;
     }
 
     fn skin_is_ready(&self, skin_handle: &Handle<SkinData>) -> bool {

@@ -180,7 +180,7 @@ fn step(
 
     for (handle, mut anim) in icon_q.iter_mut() {
 
-        anim.subimage_index += (0.32 * elapsed_time);
+        anim.subimage_index += (0.001 * elapsed_time);
 
         let subimage_count = asset_manager.get_icon_subimage_count(handle) as f32;
 
