@@ -18,5 +18,4 @@ bevy_app = { version = "0.11", default-features=false }
 bevy_ecs = { version = "0.11", default-features=false }
 bevy_log = { version = "0.11", default-features=false }
 bevy_utils = { version = "0.11" }
-cfg-if = { version = "1.0" }
 thiserror = "1"

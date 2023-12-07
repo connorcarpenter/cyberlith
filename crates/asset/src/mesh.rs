@@ -1,4 +1,4 @@
-use std::fs;
+
 use bevy_log::info;
 
 use naia_serde::BitReader;
@@ -62,7 +62,7 @@ impl From<MeshFilePath> for CpuMesh {
         let path = file_path.0;
         let file_path = format!("assets/{}", path);
 
-        let Ok(data) = fs::read(&file_path) else {
+        let Ok(data) = web_fs::read(&file_path) else {
             panic!("unable to read file: {:?}", &file_path);
         };
         //let data = include_bytes!("cube.mesh");

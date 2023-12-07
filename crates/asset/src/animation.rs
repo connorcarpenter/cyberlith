@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::fs;
 
 use bevy_log::info;
 
@@ -164,7 +163,7 @@ impl From<String> for AnimationData {
     fn from(path: String) -> Self {
         let file_path = format!("assets/{}", path);
 
-        let Ok(data) = fs::read(&file_path) else {
+        let Ok(data) = web_fs::read(&file_path) else {
             panic!("unable to read file: {:?}", &file_path);
         };
 

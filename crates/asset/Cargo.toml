@@ -9,6 +9,7 @@ edition = "2021"
 filetypes = { path = "../filetypes", features = ["read"] }
 render_api = { path = "../render_api" }
 math = { path = "../math" }
+web_fs = { path = "../../../web_fs" }
 
 bevy_app = { version = "0.11", default-features = false }
 bevy_ecs = { version = "0.11", default-features = false }
