@@ -153,11 +153,11 @@ impl AssetManager {
                 panic!("unexpected dependency for this type of asset")
             },
             AssetHandleImpl::Animation(principal_handle) => {
-                let mut data = self.animations.get_mut(&principal_handle).unwrap();
+                let data = self.animations.get_mut(&principal_handle).unwrap();
                 data.finish_dependency(dependency_string, dependency_handle);
             },
             AssetHandleImpl::Icon(principal_handle) => {
-                let mut data = self.icons.get_mut(&principal_handle).unwrap();
+                let data = self.icons.get_mut(&principal_handle).unwrap();
                 data.finish_dependency(dependency_string, dependency_handle);
                 if data.has_all_dependencies() {
 
@@ -177,7 +177,7 @@ impl AssetManager {
                 }
             },
             AssetHandleImpl::Skin(principal_handle) => {
-                let mut data = self.skins.get_mut(&principal_handle).unwrap();
+                let data = self.skins.get_mut(&principal_handle).unwrap();
                 data.finish_dependency(dependency_string, dependency_handle);
                 if data.has_all_dependencies() {
 
@@ -205,7 +205,7 @@ impl AssetManager {
                 }
             },
             AssetHandleImpl::Model(principal_handle) => {
-                let mut data = self.models.get_mut(&principal_handle).unwrap();
+                let data = self.models.get_mut(&principal_handle).unwrap();
                 data.finish_dependency(dependency_string, dependency_handle);
 
                 if data.all_dependencies_loaded() {
@@ -215,7 +215,7 @@ impl AssetManager {
                 }
             },
             AssetHandleImpl::Scene(principal_handle) => {
-                let mut data = self.scenes.get_mut(&principal_handle).unwrap();
+                let data = self.scenes.get_mut(&principal_handle).unwrap();
                 data.finish_dependency(dependency_string, dependency_handle);
             },
         }

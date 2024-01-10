@@ -22,4 +22,3 @@ pub use model::*;
 pub use scene::*;
 pub use asset_manager::*;
 pub use asset_handle::*;
-pub use asset_dependency::*;

@@ -23,7 +23,7 @@ pub fn update_component_events(
     shape_name_q: Query<&ShapeName>,
 ) {
     let mut modified_content_entities = Vec::new();
-    for events in event_reader.iter() {
+    for events in event_reader.read() {
         // on FileSystemEntry Update Event
         for (user_key, entity) in events.read::<FileSystemEntry>() {
             let username = user_manager

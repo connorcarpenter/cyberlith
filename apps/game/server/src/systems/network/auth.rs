@@ -5,7 +5,7 @@ use naia_bevy_server::{events::AuthEvents, Server};
 use game_proto::messages::Auth;
 
 pub fn auth_events(mut server: Server, mut event_reader: EventReader<AuthEvents>) {
-    for events in event_reader.iter() {
+    for events in event_reader.read() {
         for (user_key, auth) in events.read::<Auth>() {
             if auth.username == "charlie" && auth.password == "12345" {
                 // Accept incoming connection

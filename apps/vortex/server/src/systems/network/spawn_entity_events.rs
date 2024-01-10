@@ -17,7 +17,7 @@ use crate::resources::{
 };
 
 pub fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent>) {
-    for SpawnEntityEvent(_user_key, entity) in event_reader.iter() {
+    for SpawnEntityEvent(_user_key, entity) in event_reader.read() {
         info!("entity: `{:?}`, spawned", entity);
     }
 }
@@ -56,7 +56,7 @@ pub fn despawn_entity_events(
 ) {
     let mut despawned_entities = Vec::new();
 
-    for DespawnEntityEvent(user_key, entity) in event_reader.iter() {
+    for DespawnEntityEvent(user_key, entity) in event_reader.read() {
         let Some(user_session_data) = user_manager.user_session_data(user_key) else {
             panic!("user not found");
         };

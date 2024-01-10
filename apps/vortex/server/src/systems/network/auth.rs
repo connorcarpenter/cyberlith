@@ -11,7 +11,7 @@ pub fn auth_events(
     mut event_reader: EventReader<AuthEvents>,
     mut user_manager: ResMut<UserManager>,
 ) {
-    for events in event_reader.iter() {
+    for events in event_reader.read() {
         for (user_key, auth) in events.read::<Auth>() {
             if user_manager.validate_user(&auth.username, &auth.password) {
                 // Store user information

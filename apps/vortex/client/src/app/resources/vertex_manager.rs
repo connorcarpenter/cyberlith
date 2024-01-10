@@ -11,7 +11,7 @@ use naia_bevy_client::{Client, CommandsExt, Replicate, ReplicationConfig};
 
 use math::{convert_3d_to_2d, Vec2, Vec3};
 use render_api::{
-    base::{Color, CpuMaterial, CpuMesh},
+    base::{CpuMaterial, CpuMesh},
     components::{Camera, CameraProjection, Projection, RenderObjectBundle, Transform, Visibility},
     Assets, Handle,
 };

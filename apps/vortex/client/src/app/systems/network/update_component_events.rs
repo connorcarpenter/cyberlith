@@ -49,7 +49,7 @@ pub fn update_component_events(world: &mut World) {
         |world, mut events_reader_state: Mut<CachedUpdateComponentEventsState>| {
             let mut event_reader = events_reader_state.event_state.get_mut(world);
 
-            for events in event_reader.iter() {
+            for events in event_reader.read() {
                 events_collection.push(events.clone());
             }
         },

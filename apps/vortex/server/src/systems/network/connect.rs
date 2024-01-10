@@ -15,7 +15,7 @@ pub fn connect_events(
     mut user_manager: ResMut<UserManager>,
     mut git_manager: ResMut<GitManager>,
 ) {
-    for ConnectEvent(user_key) in event_reader.iter() {
+    for ConnectEvent(user_key) in event_reader.read() {
         let address = server.user(user_key).address();
 
         info!("Server connected to: {}", address);

@@ -4,13 +4,12 @@ use bevy_log::info;
 use math::{Vec2, Vec3};
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh, CpuTexture2D},
-    components::{
-        AmbientLight, Camera, CameraBundle, ClearOperation, OrthographicProjection, PointLight,
+    components::{DirectionalLight,
+        AmbientLight, Camera, CameraBundle, ClearOperation, OrthographicProjection,
         Projection, RenderLayers, RenderObjectBundle, RenderTarget, Transform, Viewport,
     },
     Assets, Handle,
 };
-use render_api::components::DirectionalLight;
 use render_egui::EguiUserTextures;
 
 use crate::app::{

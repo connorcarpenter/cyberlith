@@ -45,7 +45,7 @@ pub fn remove_component_events(world: &mut World) {
         |world, mut events_reader_state: Mut<CachedRemoveComponentEventsState>| {
             let mut events_reader = events_reader_state.event_state.get_mut(world);
 
-            for events in events_reader.iter() {
+            for events in events_reader.read() {
                 events_collection.push(events.clone_new());
             }
         },
@@ -95,7 +95,7 @@ pub fn remove_file_component_events(
     mut parent_q: Query<&mut FileSystemParent>,
     mut fs_state_q: Query<&mut FileSystemUiState>,
 ) {
-    for event in entry_events.iter() {
+    for event in entry_events.read() {
         let entity = event.entity;
 
         info!("entity: `{:?}`, removed FileSystemEntry", entity);
@@ -103,7 +103,7 @@ pub fn remove_file_component_events(
         file_manager.on_file_delete(&mut client, &mut tab_manager, &entity);
     }
 
-    for event in root_child_events.iter() {
+    for event in root_child_events.read() {
         let entity = event.entity;
 
         info!("entity: `{:?}`, removed FileSystemRootChild", entity);
@@ -114,7 +114,7 @@ pub fn remove_file_component_events(
         parent.remove_child(&entity);
     }
 
-    for event in child_events.iter() {
+    for event in child_events.read() {
         let entity = event.entity;
 
         info!("entity: `{:?}`, removed FileSystemChild", entity);
@@ -128,7 +128,7 @@ pub fn remove_file_component_events(
         parent.remove_child(&entity);
     }
 
-    for event in cl_events.iter() {
+    for event in cl_events.read() {
         let entity = event.entity;
 
         info!("entity: `{:?}`, removed ChangelistEntry", entity);
@@ -144,7 +144,7 @@ pub fn remove_file_component_events(
             }
         }
     }
-    for event in dependencies_events.iter() {
+    for event in dependencies_events.read() {
         let entity = event.entity;
 
         info!("entity: `{:?}`, removed FileDependency", entity);
@@ -169,7 +169,7 @@ pub fn remove_shape_component_events(
     mut face_manager: ResMut<FaceManager>,
     mut meshes: ResMut<Assets<CpuMesh>>,
 ) {
-    for event in shape_name_events.iter() {
+    for event in shape_name_events.read() {
         let entity = event.entity;
 
         let name = (*event.component.value).clone();
@@ -180,7 +180,7 @@ pub fn remove_shape_component_events(
         );
     }
 
-    for event in vertex_events.iter() {
+    for event in vertex_events.read() {
         let entity = event.entity;
         info!("entity: `{:?}`, removed Vertex3d", entity);
 
@@ -191,7 +191,7 @@ pub fn remove_shape_component_events(
             &entity,
         );
     }
-    for event in edge_events.iter() {
+    for event in edge_events.read() {
         let entity = event.entity;
         info!("entity: `{:?}`, removed Edge3d", entity);
 
@@ -204,7 +204,7 @@ pub fn remove_shape_component_events(
             &entity,
         );
     }
-    for event in face_events.iter() {
+    for event in face_events.read() {
         let entity = event.entity;
 
         info!("entity: `{:?}`, removed Face3d", entity);
@@ -225,26 +225,26 @@ pub fn remove_icon_component_events(
     mut icon_manager: ResMut<IconManager>,
     mut meshes: ResMut<Assets<CpuMesh>>,
 ) {
-    for event in vertex_events.iter() {
+    for event in vertex_events.read() {
         let entity = event.entity;
         info!("entity: `{:?}`, removed IconVertex", entity);
 
         icon_manager.cleanup_deleted_vertex(&entity);
     }
-    for event in edge_events.iter() {
+    for event in edge_events.read() {
         let entity = event.entity;
         info!("entity: `{:?}`, removed IconEdge", entity);
 
         icon_manager.cleanup_deleted_edge(&mut commands, &entity);
     }
-    for event in face_events.iter() {
+    for event in face_events.read() {
         let entity = event.entity;
 
         info!("entity: `{:?}`, removed IconFace", entity);
 
         icon_manager.cleanup_deleted_net_face(&mut commands, &mut meshes, &entity);
     }
-    for event in frame_events.iter() {
+    for event in frame_events.read() {
         let entity = event.entity;
         info!("entity: `{:?}`, removed IconFrame", entity);
 
@@ -260,7 +260,7 @@ pub fn remove_animation_component_events(
     client: Client,
     mut animation_manager: ResMut<AnimationManager>,
 ) {
-    for event in anim_frame_events.iter() {
+    for event in anim_frame_events.read() {
         let entity = event.entity;
         info!("entity: `{:?}`, removed AnimFrame", entity);
 
@@ -268,7 +268,7 @@ pub fn remove_animation_component_events(
 
         animation_manager.deregister_frame(&file_entity, &entity);
     }
-    for event in anim_rotation_events.iter() {
+    for event in anim_rotation_events.read() {
         let entity = event.entity;
         info!("entity: `{:?}`, removed AnimRotation", entity);
 
@@ -284,7 +284,7 @@ pub fn remove_color_component_events(
     mut palette_manager: ResMut<PaletteManager>,
     mut skin_manager: ResMut<SkinManager>,
 ) {
-    for event in palette_events.iter() {
+    for event in palette_events.read() {
         let entity = event.entity;
         info!("entity: `{:?}`, removed PaletteColor", entity);
 
@@ -294,14 +294,14 @@ pub fn remove_color_component_events(
         palette_manager.deregister_color(&file_entity, &entity, color_index);
     }
 
-    for event in bck_color_events.iter() {
+    for event in bck_color_events.read() {
         let entity = event.entity;
         info!("entity: `{:?}`, removed BackgroundSkinColor", entity);
 
         skin_manager.deregister_bckg_color(&entity);
     }
 
-    for event in face_color_events.iter() {
+    for event in face_color_events.read() {
         let entity = event.entity;
         info!("entity: `{:?}`, removed FaceColor", entity);
 
@@ -318,7 +318,7 @@ pub fn remove_model_component_events(
     mut edge_manager: ResMut<EdgeManager>,
     mut model_manager: ResMut<ModelManager>,
 ) {
-    for event in net_transform_events.iter() {
+    for event in net_transform_events.read() {
         let entity = event.entity;
         info!("entity: `{:?}`, removed NetTransform", entity);
 

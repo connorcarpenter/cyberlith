@@ -81,7 +81,7 @@ pub fn queue_shape_color_resync(
     mut event_reader: EventReader<ShapeColorResyncEvent>,
 ) {
     let mut did_receive = false;
-    for _event in event_reader.iter() {
+    for _event in event_reader.read() {
         did_receive = true;
     }
     if did_receive {

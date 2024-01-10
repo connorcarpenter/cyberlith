@@ -54,15 +54,15 @@ pub fn auth_events(world: &mut World) {
             let (mut granted_events, mut denied_events, mut reset_events) =
                 events_reader_state.event_state.get_mut(world);
 
-            for EntityAuthGrantedEvent(entity) in granted_events.iter() {
+            for EntityAuthGrantedEvent(entity) in granted_events.read() {
                 auth_granted_events.push(*entity);
             }
 
-            for EntityAuthDeniedEvent(entity) in denied_events.iter() {
+            for EntityAuthDeniedEvent(entity) in denied_events.read() {
                 auth_denied_events.push(*entity);
             }
 
-            for EntityAuthResetEvent(entity) in reset_events.iter() {
+            for EntityAuthResetEvent(entity) in reset_events.read() {
                 auth_reset_events.push(*entity);
             }
         },

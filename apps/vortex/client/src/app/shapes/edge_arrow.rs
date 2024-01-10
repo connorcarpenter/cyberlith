@@ -1,5 +1,5 @@
 use math::{Vec2, Vec3};
-use render_api::{base::{Color, CpuMaterial, CpuMesh}, components::{RenderObjectBundle, Transform}, shapes::set_2d_line_transform, AssetHash, Assets, Handle};
+use render_api::{base::{CpuMaterial, CpuMesh}, components::{RenderObjectBundle, Transform}, shapes::set_2d_line_transform, AssetHash, Assets, Handle};
 
 pub fn create_2d_edge_arrow(
     meshes: &mut Assets<CpuMesh>,

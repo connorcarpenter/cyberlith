@@ -1,9 +1,9 @@
 use render_api::{
-    base::{CpuMaterial, CpuMesh},
+    base::CpuMesh,
     components::{Camera, Projection, Transform},
     Handle,
+    resources::MaterialOrSkinHandle,
 };
-use render_api::resources::MaterialOrSkinHandle;
 
 use crate::renderer::{Light, RenderCamera, RenderMeshes};
 

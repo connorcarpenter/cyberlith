@@ -49,7 +49,7 @@ pub fn insert_component_events(world: &mut World) {
         |world, mut events_reader_state: Mut<CachedInsertComponentEventsState>| {
             let mut events_reader = events_reader_state.event_state.get_mut(world);
 
-            for events in events_reader.iter() {
+            for events in events_reader.read() {
                 events_collection.push(events.clone());
             }
         },
@@ -112,7 +112,7 @@ pub fn insert_file_component_events(
     fs_dependency_q: Query<&FileDependency>,
 ) {
     // on FileSystemEntry Insert Event
-    for event in fs_entry_events.iter() {
+    for event in fs_entry_events.read() {
         let user_key = event.user_key;
         let entity = event.entity;
         info!("inserted FileSystemEntry");
@@ -131,7 +131,7 @@ pub fn insert_file_component_events(
     }
 
     // on FileSystemRootChild Insert Event
-    for event in fs_root_child_events.iter() {
+    for event in fs_root_child_events.read() {
         let user_key = event.user_key;
         let entity = event.entity;
         info!("inserted FileSystemRootChild");
@@ -149,7 +149,7 @@ pub fn insert_file_component_events(
     }
 
     // on FileSystemChild Insert Event
-    for event in fs_child_events.iter() {
+    for event in fs_child_events.read() {
         let user_key = event.user_key;
         let entity = event.entity;
         info!("entity `{:?}` inserted FileSystemChild", entity);
@@ -172,7 +172,7 @@ pub fn insert_file_component_events(
     }
 
     // on FileDependency Insert Event
-    for event in fs_dependency_events.iter() {
+    for event in fs_dependency_events.read() {
         let user_key = event.user_key;
         let entity = event.entity;
 
@@ -221,7 +221,7 @@ pub fn insert_vertex_component_events(
     mut vert_root_events: EventReader<InsertComponentEvent<VertexRoot>>,
 ) {
     // on Vertex3D Insert Event
-    for event in vert_3d_events.iter() {
+    for event in vert_3d_events.read() {
         let entity = event.entity;
         info!("entity: `{:?}`, inserted Vertex3d", entity);
 
@@ -236,7 +236,7 @@ pub fn insert_vertex_component_events(
     }
 
     // on VertexRoot Insert Event
-    for event in vert_root_events.iter() {
+    for event in vert_root_events.read() {
         let entity = event.entity;
         info!("entity: `{:?}`, inserted VertexRoot", entity);
 
@@ -260,7 +260,7 @@ pub fn insert_edge_component_events(
     edge_3d_q: Query<&Edge3d>,
 ) {
     // on Edge3d Insert Event
-    for event in edge_3d_events.iter() {
+    for event in edge_3d_events.read() {
         let edge_entity = event.entity;
         info!("entity: `{:?}`, inserted Edge3d", edge_entity);
 
@@ -291,7 +291,7 @@ pub fn insert_face_component_events(
     face_3d_q: Query<&Face3d>,
 ) {
     // on Face3d Insert Event
-    for event in face_3d_events.iter() {
+    for event in face_3d_events.read() {
         let entity = event.entity;
         let face_3d = face_3d_q.get(entity).unwrap();
 
@@ -340,7 +340,7 @@ pub fn insert_shape_component_events(
     shape_name_q: Query<&ShapeName>,
 ) {
     // on FileType Insert Event
-    for event in file_type_events.iter() {
+    for event in file_type_events.read() {
         let entity = event.entity;
 
         let file_type_value = *file_type_q.get(entity).unwrap().value;
@@ -361,7 +361,7 @@ pub fn insert_shape_component_events(
     }
 
     // on OwnedByFile Insert Event
-    for event in owned_by_file_events.iter() {
+    for event in owned_by_file_events.read() {
         let user_key = event.user_key;
         let entity = event.entity;
         let file_entity = owned_by_file_q
@@ -393,7 +393,7 @@ pub fn insert_shape_component_events(
     }
 
     // on ShapeName Insert Event
-    for event in shape_name_events.iter() {
+    for event in shape_name_events.read() {
         let entity = event.entity;
         let shape_name = (*shape_name_q.get(entity).unwrap().value).clone();
 
@@ -451,7 +451,7 @@ pub fn insert_icon_component_events(
     mut frame_q: Query<&mut IconFrame>,
 ) {
     // on IconVertex Insert Event
-    for event in vertex_events.iter() {
+    for event in vertex_events.read() {
         let entity = event.entity;
         info!("entity: `{:?}`, inserted IconVertex", entity);
 
@@ -469,7 +469,7 @@ pub fn insert_icon_component_events(
     }
 
     // on IconEdge Insert Event
-    for event in edge_events.iter() {
+    for event in edge_events.read() {
         let entity = event.entity;
         info!("entity: `{:?}`, inserted IconEdge", entity);
 
@@ -494,7 +494,7 @@ pub fn insert_icon_component_events(
     }
 
     // on IconFace Insert Event
-    for event in face_events.iter() {
+    for event in face_events.read() {
         let entity = event.entity;
         let face = face_q.get(entity).unwrap();
 
@@ -533,7 +533,7 @@ pub fn insert_icon_component_events(
     }
 
     // on IconFrame Insert Event
-    for event in frame_events.iter() {
+    for event in frame_events.read() {
         let user_key = event.user_key;
         let frame_entity = event.entity;
         info!("entity: `{:?}`, inserted IconFrame", frame_entity);
@@ -577,7 +577,7 @@ pub fn insert_animation_component_events(
     rot_q: Query<&AnimRotation>,
 ) {
     // on AnimFrame Insert Event
-    for event in frame_events.iter() {
+    for event in frame_events.read() {
         let user_key = event.user_key;
         let frame_entity = event.entity;
         info!("entity: `{:?}`, inserted AnimFrame", frame_entity);
@@ -613,7 +613,7 @@ pub fn insert_animation_component_events(
     }
 
     // on AnimRotation Insert Event
-    for event in rotation_events.iter() {
+    for event in rotation_events.read() {
         let user_key = event.user_key;
         let rot_entity = event.entity;
 
@@ -657,7 +657,7 @@ pub fn insert_palette_component_events(
     mut color_q: Query<&mut PaletteColor>,
 ) {
     // on PaletteColor Insert Event
-    for event in color_events.iter() {
+    for event in color_events.read() {
         let user_key = event.user_key;
         let color_entity = event.entity;
         info!("entity: `{:?}`, inserted PaletteColor", color_entity);
@@ -706,7 +706,7 @@ pub fn insert_skin_component_events(
     color_q: Query<&FaceColor>,
 ) {
     // on BackgroundSkinColor Insert Event
-    for event in bckg_events.iter() {
+    for event in bckg_events.read() {
         let user_key = event.user_key;
         let color_entity = event.entity;
         info!("entity: `{:?}`, inserted BackgroundSkinColor", color_entity);
@@ -733,7 +733,7 @@ pub fn insert_skin_component_events(
         git_manager.on_client_modify_file(&mut commands, &mut server, &project_key, &file_key);
     }
     // on FaceColor Insert Event
-    for event in color_events.iter() {
+    for event in color_events.read() {
         let user_key = event.user_key;
         let color_entity = event.entity;
         info!("entity: `{:?}`, inserted FaceColor", color_entity);
@@ -772,7 +772,7 @@ pub fn insert_model_component_events(
     mut component_waitlist: ResMut<ComponentWaitlist>,
 ) {
     // on NetTransform Insert Event
-    for event in transform_events.iter() {
+    for event in transform_events.read() {
         let entity = event.entity;
 
         info!("entity: `{:?}`, inserted NetTransform", entity,);
@@ -788,7 +788,7 @@ pub fn insert_model_component_events(
     }
 
     // on SkinOrSceneEntity Insert Event
-    for event in skin_or_scene_events.iter() {
+    for event in skin_or_scene_events.read() {
         let entity = event.entity;
 
         info!("entity: `{:?}`, inserted SkinOrSceneEntity", entity,);

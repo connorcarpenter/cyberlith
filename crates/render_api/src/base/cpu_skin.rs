@@ -1,8 +1,7 @@
-use std::hash::Hash;
 
 use bevy_log::info;
 
-use crate::{AssetHash, base::CpuMaterial, Handle};
+use crate::{base::CpuMaterial, Handle};
 
 #[derive(Clone)]
 pub struct CpuSkin {

@@ -10,7 +10,7 @@ pub fn connect_events(
     mut event_reader: EventReader<ConnectEvent>,
     mut state: ResMut<UiState>,
 ) {
-    for _ in event_reader.iter() {
+    for _ in event_reader.read() {
         let server_address = client.server_address().unwrap();
         info!("Client connected to: {}", server_address);
         state.logged_in = true;

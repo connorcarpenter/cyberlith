@@ -21,7 +21,7 @@ pub fn message_events(
     mut cl_manager: ResMut<ChangelistManager>,
     file_key_q: Query<&FileKey>,
 ) {
-    for events in event_reader.iter() {
+    for events in event_reader.read() {
         // Changelist Message
         for (user_key, message) in events.read::<FileActionChannel, ChangelistMessage>() {
             info!(

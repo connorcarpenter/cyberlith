@@ -6,7 +6,7 @@ use vortex_proto::messages::Auth;
 use crate::app::events::LoginEvent;
 
 pub fn login(mut client: Client, mut login_events: EventReader<LoginEvent>) {
-    for login_event in login_events.iter() {
+    for login_event in login_events.read() {
         info!(
             "Connecting to Server with username: {}, password: {}",
             login_event.username, login_event.password

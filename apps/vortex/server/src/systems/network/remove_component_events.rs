@@ -9,7 +9,7 @@ use vortex_proto::components::{
 };
 
 pub fn remove_component_events(mut event_reader: EventReader<RemoveComponentEvents>) {
-    for events in event_reader.iter() {
+    for events in event_reader.read() {
         for (_user_key, _entity, _component) in events.read::<FileSystemRootChild>() {
             info!("removed FileSystemRootChild component from entity");
             // TODO!
