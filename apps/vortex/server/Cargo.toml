@@ -15,9 +15,9 @@ filetypes = { path = "../../../crates/filetypes", features = ["read", "write"] }
 math = { path = "../../../crates/math" }
 
 # These are the official Bevy crates, going forward, we can use them because the Server isn't built for Wasm
-bevy_app = { version = "0.11", default-features=false }
-bevy_ecs = { version = "0.11", default-features=false }
-bevy_log = { version = "0.11", default-features=false }
+bevy_app = { version = "0.12.1", default-features=false }
+bevy_ecs = { version = "0.12.1", default-features=false }
+bevy_log = { version = "0.12.1", default-features=false }
 
 # External crates
 git2 = { version = "0.17" }

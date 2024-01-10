@@ -14,8 +14,8 @@ math = { path = "../../crates/math" }
 
 # External Crates
 # should be very light on the number of dependencies
-bevy_app = { version = "0.11", default-features=false }
-bevy_ecs = { version = "0.11", default-features=false }
-bevy_log = { version = "0.11", default-features=false }
-bevy_utils = { version = "0.11" }
+bevy_app = { version = "0.12.1", default-features=false }
+bevy_ecs = { version = "0.12.1", default-features=false }
+bevy_log = { version = "0.12.1", default-features=false }
+bevy_utils = { version = "0.12.1" }
 thiserror = "1"

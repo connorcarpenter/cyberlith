@@ -5,6 +5,6 @@ edition = "2021"
 
 [dependencies]
 glam = { version = "0.23" }
-naia-serde = { version = "0.18", path = "../../../naia/shared/serde"}
+naia-serde = { path = "../../../naia/shared/serde" }
 log = { version = "0.4" }
 rand = { version = "0.8.5" }

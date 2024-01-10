@@ -11,8 +11,8 @@ render_api = { path = "../render_api" }
 math = { path = "../math" }
 web_fs = { path = "../../../web_fs" }
 
-bevy_app = { version = "0.11", default-features = false }
-bevy_ecs = { version = "0.11", default-features = false }
-bevy_log = { version = "0.11", default-features=false }
+bevy_app = { version = "0.12.1", default-features = false }
+bevy_ecs = { version = "0.12.1", default-features = false }
+bevy_log = { version = "0.12.1", default-features=false }
 
 naia-serde = { path = "../../../naia/shared/serde" }
