@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use bevy_ecs::prelude::{Component, Entity};
 
-use vortex_proto::{
+use editor_proto::{
     components::{ChangelistStatus, EntryKind},
     messages::ChangelistAction,
 };

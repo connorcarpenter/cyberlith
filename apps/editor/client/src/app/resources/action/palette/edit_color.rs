@@ -4,7 +4,7 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 
-use vortex_proto::components::PaletteColor;
+use editor_proto::components::PaletteColor;
 
 use crate::app::resources::action::palette::PaletteAction;
 

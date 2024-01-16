@@ -8,7 +8,7 @@ use naia_bevy_client::Client;
 
 use render_api::{base::CpuMesh, components::Transform, Assets, Handle};
 
-use vortex_proto::components::{Face3d, Vertex3d};
+use editor_proto::components::{Face3d, Vertex3d};
 
 use crate::app::{resources::{
     action::shape::ShapeAction, canvas::Canvas, face_manager::FaceManager,

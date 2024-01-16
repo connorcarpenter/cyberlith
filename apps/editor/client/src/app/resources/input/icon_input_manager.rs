@@ -17,7 +17,7 @@ use render_api::{
     shapes::{distance_to_2d_line, get_2d_line_transform_endpoint},
 };
 
-use vortex_proto::components::{IconEdge, IconFace, IconVertex};
+use editor_proto::components::{IconEdge, IconFace, IconVertex};
 
 use crate::app::{
     components::{

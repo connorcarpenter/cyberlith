@@ -10,7 +10,7 @@ use bevy_log::info;
 
 use naia_bevy_server::{events::InsertComponentEvents, Replicate, Server};
 
-use vortex_proto::{
+use editor_proto::{
     components::{
         AnimFrame, AnimRotation, BackgroundSkinColor, Edge3d, Face3d, FaceColor, FileDependency,
         FileExtension, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, IconEdge,

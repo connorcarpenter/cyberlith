@@ -1,5 +1,5 @@
 [package]
-name = "vortex_server"
+name = "editor_server"
 version = "0.1.0"
 authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
 workspace = "../../.."
@@ -9,7 +9,7 @@ publish = false
 [features]
 
 [dependencies]
-vortex_proto = { path = "../proto" }
+editor_proto = { path = "../proto" }
 naia-bevy-server = { path = "../../../../naia/adapters/bevy/server", features = [ "transport_webrtc" ] }
 filetypes = { path = "../../../crates/filetypes", features = ["read", "write"] }
 math = { path = "../../../crates/math" }

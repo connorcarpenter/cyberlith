@@ -7,7 +7,7 @@ use bevy_log::info;
 
 use naia_bevy_client::Client;
 
-use vortex_proto::components::IconFace;
+use editor_proto::components::IconFace;
 
 use crate::app::{
     plugin::Main,

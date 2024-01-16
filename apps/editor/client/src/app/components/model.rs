@@ -2,7 +2,7 @@ use bevy_ecs::{entity::Entity, prelude::Component};
 
 use render_api::components::Transform;
 
-use vortex_proto::components::NetTransform;
+use editor_proto::components::NetTransform;
 
 #[derive(Clone, Copy)]
 pub enum ScaleAxis {

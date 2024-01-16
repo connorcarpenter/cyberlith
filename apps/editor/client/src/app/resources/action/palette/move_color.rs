@@ -6,7 +6,7 @@ use bevy_log::{info, warn};
 
 use naia_bevy_client::{Client, CommandsExt};
 
-use vortex_proto::components::PaletteColor;
+use editor_proto::components::PaletteColor;
 
 use crate::app::{resources::{action::palette::PaletteAction, palette_manager::PaletteManager}, plugin::Main};
 

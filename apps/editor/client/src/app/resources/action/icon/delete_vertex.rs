@@ -6,7 +6,7 @@ use bevy_log::info;
 
 use naia_bevy_client::Client;
 
-use vortex_proto::components::{IconEdge, IconFace, IconVertex};
+use editor_proto::components::{IconEdge, IconFace, IconVertex};
 
 use crate::app::{
     components::IconVertexActionData,

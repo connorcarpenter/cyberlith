@@ -11,7 +11,7 @@ use naia_bevy_server::{BitReader, CommandsExt, ReplicationConfig, Server};
 
 use filetypes::PaletteAction;
 
-use vortex_proto::components::PaletteColor;
+use editor_proto::components::PaletteColor;
 
 use crate::{
     files::FileWriter,

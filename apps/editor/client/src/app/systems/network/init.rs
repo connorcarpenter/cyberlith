@@ -3,7 +3,7 @@ use bevy_log::info;
 
 use naia_bevy_client::{transport::webrtc, Client};
 
-use vortex_proto::messages::Auth;
+use editor_proto::messages::Auth;
 
 use crate::app::{events::LoginEvent, plugin::Main};
 

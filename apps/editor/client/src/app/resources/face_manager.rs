@@ -17,7 +17,7 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::{Face3d, FileExtension, OwnedByFile};
+use editor_proto::components::{Face3d, FileExtension, OwnedByFile};
 
 use crate::app::{
     components::{DefaultDraw, Face3dLocal, FaceIcon2d, OwnedByFileLocal},

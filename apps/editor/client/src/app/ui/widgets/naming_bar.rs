@@ -9,7 +9,7 @@ use render_egui::{
     egui::{Align, Button, Frame, Layout, TextEdit, Ui},
 };
 
-use vortex_proto::components::{FileExtension, ShapeName};
+use editor_proto::components::{FileExtension, ShapeName};
 
 use crate::app::{
     resources::{

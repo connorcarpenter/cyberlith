@@ -9,7 +9,7 @@ use render_egui::{
     egui::{Align, Button, Frame, Layout, TextEdit, Ui},
 };
 
-use vortex_proto::components::AnimFrame;
+use editor_proto::components::AnimFrame;
 
 use crate::app::resources::{animation_manager::AnimationManager, tab_manager::TabManager};
 

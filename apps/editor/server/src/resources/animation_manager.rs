@@ -9,7 +9,7 @@ use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, Server};
 
-use vortex_proto::components::AnimFrame;
+use editor_proto::components::AnimFrame;
 
 pub struct RotationData {
     frame_entity: Entity,

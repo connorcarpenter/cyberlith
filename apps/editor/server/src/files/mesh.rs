@@ -11,7 +11,7 @@ use naia_bevy_server::{BitReader, CommandsExt, ReplicationConfig, Server};
 
 use filetypes::MeshAction;
 
-use vortex_proto::components::{Edge3d, Face3d, FileExtension, FileType, Vertex3d};
+use editor_proto::components::{Edge3d, Face3d, FileExtension, FileType, Vertex3d};
 
 use crate::{
     files::{FileWriter, ShapeTypeData},

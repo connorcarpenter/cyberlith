@@ -20,7 +20,7 @@ use render_api::{
     Assets, Handle,
 };
 
-use vortex_proto::components::{
+use editor_proto::components::{
     Edge3d, EdgeAngle, FileExtension, FileType, OwnedByFile, ShapeName,
 };
 

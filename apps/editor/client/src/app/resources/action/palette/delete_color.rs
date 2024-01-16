@@ -8,7 +8,7 @@ use naia_bevy_client::{Client, CommandsExt};
 
 use render_egui::egui::Color32;
 
-use vortex_proto::components::PaletteColor;
+use editor_proto::components::PaletteColor;
 
 use crate::app::{resources::{action::palette::PaletteAction, palette_manager::PaletteManager}, plugin::Main};
 

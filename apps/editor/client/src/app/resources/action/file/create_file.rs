@@ -6,7 +6,7 @@ use bevy_log::info;
 
 use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 
-use vortex_proto::components::{
+use editor_proto::components::{
     ChangelistEntry, EntryKind, FileExtension, FileSystemChild, FileSystemEntry,
     FileSystemRootChild,
 };

@@ -6,7 +6,7 @@ use bevy_log::info;
 
 use naia_bevy_server::{events::MessageEvents, Server};
 
-use vortex_proto::{
+use editor_proto::{
     channels::{FileActionChannel, TabActionChannel},
     messages::{ChangelistMessage, TabCloseMessage, TabOpenMessage},
     resources::FileKey,

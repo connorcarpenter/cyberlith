@@ -10,7 +10,7 @@ use render_api::{
     components::Transform,
     Assets,
 };
-use vortex_proto::components::Vertex3d;
+use editor_proto::components::Vertex3d;
 
 use crate::app::resources::{
     camera_manager::CameraManager, edge_manager::EdgeManager, vertex_manager::VertexManager,

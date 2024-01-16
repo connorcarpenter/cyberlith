@@ -9,7 +9,7 @@ use naia_bevy_server::{
     Server,
 };
 
-use vortex_proto::components::{AnimFrame, ChangelistEntry, IconFrame, PaletteColor};
+use editor_proto::components::{AnimFrame, ChangelistEntry, IconFrame, PaletteColor};
 
 use crate::resources::{
     AnimationManager, GitManager, IconManager, PaletteManager, ShapeManager, SkinManager,

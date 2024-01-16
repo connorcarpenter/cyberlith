@@ -11,7 +11,7 @@ use naia_bevy_client::{
     Client,
 };
 
-use vortex_proto::components::{
+use editor_proto::components::{
     AnimFrame, AnimRotation, BackgroundSkinColor, Edge3d, Face3d, FaceColor, FileDependency,
     FileSystemEntry, IconEdge, IconFace, IconFrame, IconVertex, NetTransform, OwnedByFile,
     PaletteColor, Vertex3d,

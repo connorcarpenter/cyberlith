@@ -11,7 +11,7 @@ use render_egui::{
     egui,
     egui::{NumExt, Response, Rounding, Sense, Stroke, TextStyle, Ui, WidgetText},
 };
-use vortex_proto::{
+use editor_proto::{
     channels::FileActionChannel,
     components::{ChangelistEntry, ChangelistStatus, EntryKind},
     messages::{ChangelistAction, ChangelistMessage},

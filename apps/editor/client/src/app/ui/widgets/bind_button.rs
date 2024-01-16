@@ -13,7 +13,7 @@ use render_egui::{
     egui::{Button, Direction, Frame, Layout, Ui},
 };
 
-use vortex_proto::components::{FileDependency, FileExtension};
+use editor_proto::components::{FileDependency, FileExtension};
 
 use crate::app::{
     resources::file_manager::FileManager,

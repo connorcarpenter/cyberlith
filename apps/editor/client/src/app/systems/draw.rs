@@ -16,7 +16,7 @@ use render_api::{
     Handle,
 };
 
-use vortex_proto::components::{Edge3d, FileExtension, ShapeName, Vertex3d, VertexRoot};
+use editor_proto::components::{Edge3d, FileExtension, ShapeName, Vertex3d, VertexRoot};
 
 use crate::app::{
     components::DefaultDraw,

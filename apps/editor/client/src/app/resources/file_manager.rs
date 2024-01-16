@@ -7,7 +7,7 @@ use bevy_ecs::{
 
 use naia_bevy_client::Client;
 
-use vortex_proto::{
+use editor_proto::{
     components::{FileExtension, FileSystemChild, FileSystemEntry},
     resources::FileKey,
 };

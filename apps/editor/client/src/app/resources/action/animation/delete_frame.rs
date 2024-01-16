@@ -6,7 +6,7 @@ use bevy_log::info;
 
 use naia_bevy_client::{Client, CommandsExt};
 
-use vortex_proto::components::AnimRotation;
+use editor_proto::components::AnimRotation;
 
 use crate::app::{resources::{action::animation::AnimAction, animation_manager::AnimationManager}, plugin::Main};
 

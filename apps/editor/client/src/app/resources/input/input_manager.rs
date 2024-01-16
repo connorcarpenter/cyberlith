@@ -15,7 +15,7 @@ use render_api::{
     shapes::{distance_to_2d_line, get_2d_line_transform_endpoint, set_2d_line_transform},
 };
 
-use vortex_proto::components::{FileExtension, ShapeName, Vertex3d, VertexRoot};
+use editor_proto::components::{FileExtension, ShapeName, Vertex3d, VertexRoot};
 
 use crate::app::{
     components::{

@@ -5,7 +5,7 @@ use render_egui::{
     egui::{Frame, Margin, Ui},
 };
 
-use vortex_proto::components::FileExtension;
+use editor_proto::components::FileExtension;
 
 use crate::app::resources::toolbar::Toolbar;
 

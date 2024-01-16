@@ -2,7 +2,7 @@ use bevy_ecs::prelude::{Entity, World};
 
 use render_api::components::Transform;
 
-use vortex_proto::components::FileExtension;
+use editor_proto::components::FileExtension;
 
 use crate::app::resources::{
     action::{

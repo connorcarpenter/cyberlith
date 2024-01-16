@@ -1,6 +1,6 @@
 use bevy_ecs::entity::Entity;
 
-use vortex_proto::components::EntryKind;
+use editor_proto::components::EntryKind;
 
 #[derive(Clone)]
 pub struct FileTree {

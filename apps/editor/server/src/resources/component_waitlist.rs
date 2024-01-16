@@ -5,7 +5,7 @@ use bevy_log::info;
 
 use naia_bevy_server::Server;
 
-use vortex_proto::{
+use editor_proto::{
     components::FileExtension,
     resources::{DependencyMap, FileKey},
 };

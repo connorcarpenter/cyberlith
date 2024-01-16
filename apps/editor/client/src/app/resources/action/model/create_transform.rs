@@ -1,7 +1,7 @@
 use bevy_ecs::system::{Query, Res, SystemState};
 use bevy_ecs::{entity::Entity, prelude::World, world::Mut};
 use bevy_log::info;
-use vortex_proto::components::ShapeName;
+use editor_proto::components::ShapeName;
 
 use crate::app::resources::{
     action::model::ModelAction, canvas::Canvas, edge_manager::EdgeManager, input::InputManager,

@@ -8,7 +8,7 @@ use bevy_log::{info, warn};
 
 use naia_bevy_server::{CommandsExt, Server};
 
-use vortex_proto::components::IconFrame;
+use editor_proto::components::IconFrame;
 
 pub struct IconVertexData {
     edges: HashSet<Entity>,

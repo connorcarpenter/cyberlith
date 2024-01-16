@@ -16,7 +16,7 @@ use render_api::{
     Assets, Handle,
 };
 
-use vortex_proto::components::{
+use editor_proto::components::{
     Face3d, FileExtension, FileType, OwnedByFile, Vertex3d, VertexRoot,
 };
 

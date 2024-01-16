@@ -6,7 +6,7 @@ use bevy_log::info;
 
 use naia_bevy_client::Client;
 
-use vortex_proto::components::Edge3d;
+use editor_proto::components::Edge3d;
 
 use crate::app::{plugin::Main, resources::{
     action::shape::{

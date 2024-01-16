@@ -17,7 +17,7 @@ use render_api::{
     shapes::{angle_between, get_2d_line_transform_endpoint, normalize_angle},
 };
 
-use vortex_proto::components::{EdgeAngle, VertexRoot};
+use editor_proto::components::{EdgeAngle, VertexRoot};
 
 use crate::app::{
     plugin::Main,

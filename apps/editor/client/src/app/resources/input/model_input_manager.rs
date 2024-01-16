@@ -17,7 +17,7 @@ use render_api::{
     shapes::{angle_between, get_2d_line_transform_endpoint, normalize_angle},
 };
 
-use vortex_proto::components::{
+use editor_proto::components::{
     EdgeAngle, FileExtension, NetTransform, ShapeName, Vertex3d, VertexRoot,
 };
 

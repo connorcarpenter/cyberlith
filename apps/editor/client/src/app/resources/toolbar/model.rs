@@ -7,7 +7,7 @@ use bevy_ecs::{
 
 use render_egui::egui::Ui;
 
-use vortex_proto::components::ShapeName;
+use editor_proto::components::ShapeName;
 
 use crate::app::{
     resources::{

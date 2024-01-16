@@ -1,6 +1,6 @@
 use bevy_ecs::{entity::Entity, system::Commands};
 
-use vortex_proto::components::FileSystemEntry;
+use editor_proto::components::FileSystemEntry;
 
 use crate::app::components::file_system::{FileSystemParent, FileSystemUiState};
 

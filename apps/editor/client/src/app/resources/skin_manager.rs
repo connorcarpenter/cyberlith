@@ -15,7 +15,7 @@ use render_egui::{
     egui::{Align, Color32, Frame, Layout, PointerButton, Sense, Ui, Vec2},
 };
 
-use vortex_proto::components::{BackgroundSkinColor, FaceColor, FileExtension, PaletteColor};
+use editor_proto::components::{BackgroundSkinColor, FaceColor, FileExtension, PaletteColor};
 
 use crate::app::{
     events::ShapeColorResyncEvent,

@@ -12,7 +12,7 @@ use input::{InputAction, Key, MouseButton};
 use math::Vec2;
 use render_api::components::{Transform, Visibility};
 
-use vortex_proto::components::{AnimRotation, ShapeName, VertexRoot};
+use editor_proto::components::{AnimRotation, ShapeName, VertexRoot};
 
 use crate::app::{
     components::{Edge2dLocal, LocalShape, Vertex2d},

@@ -9,7 +9,7 @@ use bevy_log::info;
 
 use naia_bevy_server::{Server, UserKey};
 
-use vortex_proto::{resources::FileKey, types::TabId};
+use editor_proto::{resources::FileKey, types::TabId};
 
 use crate::{
     files::despawn_file_content_entities,

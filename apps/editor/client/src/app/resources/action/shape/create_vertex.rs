@@ -12,7 +12,7 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::FileExtension;
+use editor_proto::components::FileExtension;
 
 use crate::app::{
     components::VertexTypeData,

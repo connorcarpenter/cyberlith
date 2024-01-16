@@ -11,7 +11,7 @@ use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 
 use math::Quat;
 
-use vortex_proto::{
+use editor_proto::{
     components::{EntryKind, FileDependency, FileExtension, FileType, OwnedByFile},
     resources::FileKey,
 };
@@ -350,7 +350,7 @@ pub fn add_file_dependency(
 
 // quat map
 pub fn convert_into_quat_map(
-    input: HashMap<u16, vortex_proto::SerdeQuat>,
+    input: HashMap<u16, editor_proto::SerdeQuat>,
 ) -> HashMap<u16, filetypes::SerdeQuat> {
     let mut output = HashMap::new();
     for (key, value) in input.iter() {
@@ -362,7 +362,7 @@ pub fn convert_into_quat_map(
 
 // transition
 pub fn convert_into_transition(
-    input: vortex_proto::components::Transition,
+    input: editor_proto::components::Transition,
 ) -> filetypes::Transition {
     let duration_ms = input.get_duration_ms();
     filetypes::Transition::new(duration_ms)
@@ -370,25 +370,25 @@ pub fn convert_into_transition(
 
 pub fn convert_from_transition(
     input: filetypes::Transition,
-) -> vortex_proto::components::Transition {
+) -> editor_proto::components::Transition {
     let duration_ms = input.get_duration_ms();
-    vortex_proto::components::Transition::new(duration_ms)
+    editor_proto::components::Transition::new(duration_ms)
 }
 
 // quat
-pub fn convert_into_quat(input: vortex_proto::SerdeQuat) -> filetypes::SerdeQuat {
+pub fn convert_into_quat(input: editor_proto::SerdeQuat) -> filetypes::SerdeQuat {
     let quat: Quat = input.into();
     filetypes::SerdeQuat::from_xyzw(quat.x, quat.y, quat.z, quat.w)
 }
 
-pub fn convert_from_quat(input: filetypes::SerdeQuat) -> vortex_proto::SerdeQuat {
+pub fn convert_from_quat(input: filetypes::SerdeQuat) -> editor_proto::SerdeQuat {
     let quat = Quat::from_xyzw(input.x, input.y, input.z, input.w);
-    vortex_proto::SerdeQuat::from(quat)
+    editor_proto::SerdeQuat::from(quat)
 }
 
 // rotation
 pub fn convert_into_rotation(
-    input: vortex_proto::components::SerdeRotation,
+    input: editor_proto::components::SerdeRotation,
 ) -> filetypes::SerdeRotation {
     let radians = input.get_radians();
     filetypes::SerdeRotation::from_radians(radians)
@@ -396,20 +396,20 @@ pub fn convert_into_rotation(
 
 pub fn convert_from_rotation(
     input: filetypes::SerdeRotation,
-) -> vortex_proto::components::SerdeRotation {
+) -> editor_proto::components::SerdeRotation {
     let radians = input.get_radians();
-    vortex_proto::components::SerdeRotation::from_radians(radians)
+    editor_proto::components::SerdeRotation::from_radians(radians)
 }
 
 // transform type
 pub fn convert_into_transform_type(
-    input: vortex_proto::components::NetTransformEntityType,
+    input: editor_proto::components::NetTransformEntityType,
 ) -> filetypes::FileTransformEntityType {
     match input {
-        vortex_proto::components::NetTransformEntityType::Skin => {
+        editor_proto::components::NetTransformEntityType::Skin => {
             filetypes::FileTransformEntityType::Skin
         }
-        vortex_proto::components::NetTransformEntityType::Scene => {
+        editor_proto::components::NetTransformEntityType::Scene => {
             filetypes::FileTransformEntityType::Scene
         }
         _ => {
@@ -420,13 +420,13 @@ pub fn convert_into_transform_type(
 
 pub fn convert_from_transform_type(
     input: filetypes::FileTransformEntityType,
-) -> vortex_proto::components::NetTransformEntityType {
+) -> editor_proto::components::NetTransformEntityType {
     match input {
         filetypes::FileTransformEntityType::Skin => {
-            vortex_proto::components::NetTransformEntityType::Skin
+            editor_proto::components::NetTransformEntityType::Skin
         }
         filetypes::FileTransformEntityType::Scene => {
-            vortex_proto::components::NetTransformEntityType::Scene
+            editor_proto::components::NetTransformEntityType::Scene
         }
     }
 }

@@ -3,7 +3,7 @@ use bevy_ecs::{entity::Entity, prelude::Component};
 use math::Vec3;
 use render_api::base::Color;
 
-use vortex_proto::components::FileExtension;
+use editor_proto::components::FileExtension;
 
 // Just a marker, to distinguish from 3d version
 #[derive(Component)]

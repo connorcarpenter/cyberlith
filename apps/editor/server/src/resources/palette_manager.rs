@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use bevy_ecs::{entity::Entity, prelude::Query, system::Resource};
 
-use vortex_proto::components::PaletteColor;
+use editor_proto::components::PaletteColor;
 
 pub struct FileColorData {
     // color entity -> color data

@@ -6,7 +6,7 @@ use bevy_log::{info, warn};
 
 use naia_bevy_client::{Client, CommandsExt};
 
-use vortex_proto::components::IconFrame;
+use editor_proto::components::IconFrame;
 
 use crate::app::{resources::{action::icon::IconAction, icon_manager::IconManager}, plugin::Main};
 

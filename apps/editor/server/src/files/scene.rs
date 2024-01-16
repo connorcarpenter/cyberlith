@@ -11,7 +11,7 @@ use naia_bevy_server::{BitReader, CommandsExt, ReplicationConfig, Server};
 
 use filetypes::{FileTransformEntityType, SceneAction};
 
-use vortex_proto::{
+use editor_proto::{
     components::{
         FileExtension, FileType, NetTransform, NetTransformEntityType, OwnedByFile,
         SkinOrSceneEntity,

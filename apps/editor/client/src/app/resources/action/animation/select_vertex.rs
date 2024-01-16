@@ -6,7 +6,7 @@ use bevy_log::info;
 
 use naia_bevy_client::Client;
 
-use vortex_proto::components::ShapeName;
+use editor_proto::components::ShapeName;
 
 use crate::app::{resources::{
     action::{animation::AnimAction, shape::entity_request_release},

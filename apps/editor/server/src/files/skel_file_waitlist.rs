@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use bevy_ecs::{entity::Entity, system::Resource};
 use bevy_log::info;
 
-use vortex_proto::resources::DependencyMap;
+use editor_proto::resources::DependencyMap;
 
 use crate::{files::ShapeType, resources::ShapeManager};
 

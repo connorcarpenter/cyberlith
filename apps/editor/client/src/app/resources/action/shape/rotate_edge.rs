@@ -4,7 +4,7 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 
-use vortex_proto::components::EdgeAngle;
+use editor_proto::components::EdgeAngle;
 
 use crate::app::resources::{
     action::shape::ShapeAction, canvas::Canvas, edge_manager::EdgeManager,

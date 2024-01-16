@@ -24,7 +24,7 @@ use render_api::{
     Assets, Handle,
 };
 
-use vortex_proto::components::{
+use editor_proto::components::{
     Edge3d, EdgeAngle, Face3d, FileExtension, FileType, NetTransform, NetTransformEntityType,
     OwnedByFile, ShapeName, SkinOrSceneEntity, Vertex3d,
 };

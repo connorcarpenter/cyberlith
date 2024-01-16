@@ -7,7 +7,7 @@ use bevy_log::info;
 
 use naia_bevy_server::{RoomKey, Server, UserKey};
 
-use vortex_proto::resources::FileKey;
+use editor_proto::resources::FileKey;
 
 use crate::files::ShapeType;
 

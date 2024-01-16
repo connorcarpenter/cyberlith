@@ -1,7 +1,7 @@
 use bevy_ecs::{entity::Entity, world::World};
 use render_egui::egui::{Align, Layout, Ui};
 
-use vortex_proto::components::{EntryKind, FileSystemEntry};
+use editor_proto::components::{EntryKind, FileSystemEntry};
 
 use crate::app::{
     components::file_system::{FileSystemParent, FileSystemUiState},

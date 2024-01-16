@@ -11,7 +11,7 @@ use naia_bevy_client::{events::UpdateComponentEvents, Client};
 
 use render_api::{base::CpuMesh, components::Transform, Assets, Handle};
 
-use vortex_proto::components::{
+use editor_proto::components::{
     AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, EdgeAngle, Face3d, FaceColor,
     FileSystemChild, FileSystemEntry, FileSystemRootChild, IconFrame, PaletteColor, ShapeName,
     Vertex3d,

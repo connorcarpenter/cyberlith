@@ -6,7 +6,7 @@ use bevy_log::info;
 
 use naia_bevy_server::{events::UpdateComponentEvents, CommandsExt, EntityAuthStatus, Server};
 
-use vortex_proto::components::{
+use editor_proto::components::{
     AnimFrame, AnimRotation, BackgroundSkinColor, EdgeAngle, FaceColor, FileSystemChild,
     FileSystemEntry, IconFace, IconFrame, IconVertex, NetTransform, PaletteColor, ShapeName,
     Vertex3d,

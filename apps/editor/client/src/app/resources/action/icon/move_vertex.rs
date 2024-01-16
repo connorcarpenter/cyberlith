@@ -8,7 +8,7 @@ use naia_bevy_client::Client;
 
 use render_api::{base::CpuMesh, components::Transform, Assets, Handle};
 
-use vortex_proto::components::{IconFace, IconVertex};
+use editor_proto::components::{IconFace, IconVertex};
 
 use crate::app::{resources::{action::icon::IconAction, canvas::Canvas, icon_manager::IconManager}, plugin::Main};
 

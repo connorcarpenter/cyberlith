@@ -4,7 +4,7 @@ use bevy_ecs::{entity::Entity, system::Commands};
 
 use naia_bevy_server::{Server, UserKey};
 
-use vortex_proto::{components::EntryKind, resources::FileKey};
+use editor_proto::{components::EntryKind, resources::FileKey};
 
 use crate::resources::{GitManager, TabManager, UserManager};
 

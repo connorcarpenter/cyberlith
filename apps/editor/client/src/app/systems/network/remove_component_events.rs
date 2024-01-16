@@ -9,7 +9,7 @@ use naia_bevy_client::{events::RemoveComponentEvents, Client, Replicate};
 
 use render_api::{base::CpuMesh, Assets};
 
-use vortex_proto::components::{
+use editor_proto::components::{
     AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, ChangelistStatus, Edge3d,
     Face3d, FaceColor, FileDependency, FileSystemChild, FileSystemEntry, FileSystemRootChild,
     IconEdge, IconFace, IconFrame, IconVertex, NetTransform, PaletteColor, ShapeName, Vertex3d,

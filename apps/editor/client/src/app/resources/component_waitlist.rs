@@ -13,7 +13,7 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::{
+use editor_proto::{
     components::{FileExtension, IconVertex, NetTransformEntityType, Vertex3d},
     resources::DependencyMap,
 };

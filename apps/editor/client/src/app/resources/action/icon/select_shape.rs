@@ -7,7 +7,7 @@ use bevy_log::info;
 
 use naia_bevy_client::{Client, CommandsExt};
 
-use vortex_proto::components::{FileExtension, IconFace};
+use editor_proto::components::{FileExtension, IconFace};
 
 use crate::app::{
     events::ShapeColorResyncEvent,

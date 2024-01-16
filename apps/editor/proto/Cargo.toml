@@ -1,5 +1,5 @@
 [package]
-name = "vortex_proto"
+name = "editor_proto"
 version = "0.1.0"
 authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
 workspace = "../../.."

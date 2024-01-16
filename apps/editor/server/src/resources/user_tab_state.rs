@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use vortex_proto::{resources::FileKey, types::TabId};
+use editor_proto::{resources::FileKey, types::TabId};
 
 pub struct UserTabState {
     tabs: HashMap<TabId, FileKey>,

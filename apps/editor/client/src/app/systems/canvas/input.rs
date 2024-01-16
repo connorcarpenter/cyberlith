@@ -4,7 +4,7 @@ use bevy_ecs::{
 };
 
 use input::Input;
-use vortex_proto::components::FileExtension;
+use editor_proto::components::FileExtension;
 
 use crate::app::resources::{
     canvas::Canvas, file_manager::FileManager, icon_manager::IconManager, input::InputManager,

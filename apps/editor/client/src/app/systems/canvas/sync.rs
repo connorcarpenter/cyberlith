@@ -15,7 +15,7 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::{
+use editor_proto::components::{
     AnimFrame, EdgeAngle, FileExtension, IconFrame, PaletteColor, Vertex3d,
 };
 

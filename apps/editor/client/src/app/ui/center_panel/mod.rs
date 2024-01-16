@@ -6,7 +6,7 @@ use bevy_ecs::world::World;
 
 use render_egui::{egui, egui::Frame};
 
-use vortex_proto::components::FileExtension;
+use editor_proto::components::FileExtension;
 
 use crate::app::{
     resources::{

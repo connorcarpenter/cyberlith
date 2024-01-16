@@ -7,7 +7,7 @@ use bevy_log::info;
 
 use naia_bevy_client::Client;
 
-use vortex_proto::components::{FaceColor, FileExtension};
+use editor_proto::components::{FaceColor, FileExtension};
 
 use crate::app::{resources::{
     action::{shape::entity_request_release, skin::SkinAction},

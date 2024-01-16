@@ -1,5 +1,5 @@
 [package]
-name = "vortex_client"
+name = "editor_client"
 version = "0.1.0"
 authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
 workspace = "../../.."
@@ -17,7 +17,7 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 # Internal Crates
-vortex_proto = { path = "../proto" }
+editor_proto = { path = "../proto" }
 math = { path = "../../../crates/math" }
 render_api = { path = "../../../crates/render_api" }
 render_gl = { path = "../../../crates/render_gl" }

@@ -24,7 +24,7 @@ use render_api::{
     Assets, Handle,
 };
 
-use vortex_proto::components::{IconEdge, IconFace, IconFrame, IconVertex, OwnedByFile};
+use editor_proto::components::{IconEdge, IconFace, IconFrame, IconVertex, OwnedByFile};
 
 use crate::app::{
     components::{

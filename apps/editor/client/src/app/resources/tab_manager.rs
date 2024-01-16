@@ -19,7 +19,7 @@ use render_egui::{
     egui::{vec2, Id, NumExt, Rect, Response, Rounding, Sense, Stroke, TextStyle, Ui, WidgetText},
 };
 
-use vortex_proto::{
+use editor_proto::{
     channels::TabActionChannel,
     components::{
         BackgroundSkinColor, ChangelistStatus, FaceColor, FileExtension, FileSystemEntry, IconFace,

@@ -5,7 +5,7 @@ use bevy_ecs::{
 
 use naia_bevy_server::UserKey;
 
-use vortex_proto::messages::{ChangelistAction, ChangelistMessage};
+use editor_proto::messages::{ChangelistAction, ChangelistMessage};
 
 use crate::resources::GitManager;
 

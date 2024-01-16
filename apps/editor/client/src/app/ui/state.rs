@@ -4,7 +4,7 @@ use bevy_ecs::{entity::Entity, system::Resource};
 
 use render_egui::egui::Pos2;
 
-use vortex_proto::components::FileExtension;
+use editor_proto::components::FileExtension;
 
 use crate::app::ui::text_input_modal::TextInputModal;
 

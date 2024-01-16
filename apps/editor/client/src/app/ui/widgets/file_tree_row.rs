@@ -16,7 +16,7 @@ use render_egui::{
     },
 };
 
-use vortex_proto::components::{
+use editor_proto::components::{
     ChangelistStatus, EntryKind, FileExtension, FileSystemChild, FileSystemEntry,
     FileSystemRootChild,
 };

@@ -11,7 +11,7 @@ use naia_bevy_server::{BitReader, CommandsExt, ReplicationConfig, Server};
 
 use filetypes::AnimAction;
 
-use vortex_proto::{
+use editor_proto::{
     components::{AnimFrame, AnimRotation, FileExtension, Transition},
     resources::FileKey,
     SerdeQuat,

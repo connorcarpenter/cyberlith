@@ -8,7 +8,7 @@ use bevy_log::{info, warn};
 
 use naia_bevy_client::{Client, CommandsExt};
 
-use vortex_proto::components::BackgroundSkinColor;
+use editor_proto::components::BackgroundSkinColor;
 
 use crate::app::{
     plugin::Main,

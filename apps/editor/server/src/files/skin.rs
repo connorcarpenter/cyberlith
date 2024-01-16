@@ -11,7 +11,7 @@ use naia_bevy_server::{BitReader, CommandsExt, ReplicationConfig, Server};
 
 use filetypes::SkinAction;
 
-use vortex_proto::{
+use editor_proto::{
     components::{BackgroundSkinColor, FaceColor, FileExtension, PaletteColor},
     resources::FileKey,
 };

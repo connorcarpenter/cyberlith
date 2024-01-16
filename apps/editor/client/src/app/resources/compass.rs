@@ -7,7 +7,7 @@ use bevy_ecs::{
 use math::{Vec2, Vec3};
 use render_api::{base::{Color, CpuMaterial, CpuMesh}, components::Transform, Assets, Handle};
 
-use vortex_proto::components::Vertex3d;
+use editor_proto::components::Vertex3d;
 
 use crate::app::resources::{
     camera_manager::CameraManager, canvas::Canvas, edge_manager::EdgeManager,

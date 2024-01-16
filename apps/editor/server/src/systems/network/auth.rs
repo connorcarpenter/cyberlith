@@ -2,7 +2,7 @@ use bevy_ecs::{event::EventReader, system::ResMut};
 
 use naia_bevy_server::{events::AuthEvents, Server};
 
-use vortex_proto::messages::Auth;
+use editor_proto::messages::Auth;
 
 use crate::resources::UserManager;
 

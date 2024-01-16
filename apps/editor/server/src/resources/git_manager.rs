@@ -14,7 +14,7 @@ use git2::{Cred, Repository, Tree};
 
 use naia_bevy_server::{BigMap, CommandsExt, ReplicationConfig, RoomKey, Server, UserKey};
 
-use vortex_proto::{
+use editor_proto::{
     components::{
         BackgroundSkinColor, EntryKind, FaceColor, FileExtension, FileSystemChild, FileSystemEntry,
         FileSystemRootChild, IconFace,

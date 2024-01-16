@@ -2,7 +2,7 @@ use bevy_ecs::system::{Query, Res, ResMut};
 
 use render_api::components::{Camera, Projection, Transform};
 
-use vortex_proto::components::FileExtension;
+use editor_proto::components::FileExtension;
 
 use crate::app::resources::{
     animation_manager::AnimationManager, camera_manager::CameraManager, canvas::Canvas,

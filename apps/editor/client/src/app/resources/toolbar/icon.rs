@@ -9,7 +9,7 @@ use render_egui::{
     egui::{Align, Color32, Frame, Layout, Margin, PointerButton, Sense, Ui, Vec2},
 };
 
-use vortex_proto::components::{FileExtension, PaletteColor};
+use editor_proto::components::{FileExtension, PaletteColor};
 
 use crate::app::resources::{
     action::icon::IconAction, file_manager::FileManager, icon_manager::IconManager,

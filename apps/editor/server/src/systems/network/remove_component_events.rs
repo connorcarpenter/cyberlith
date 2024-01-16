@@ -3,7 +3,7 @@ use bevy_log::info;
 
 use naia_bevy_server::events::RemoveComponentEvents;
 
-use vortex_proto::components::{
+use editor_proto::components::{
     AnimFrame, AnimRotation, Edge3d, Face3d, FileSystemChild, FileSystemRootChild, IconEdge,
     IconFace, IconFrame, IconVertex, PaletteColor, ShapeName, Vertex3d, VertexRoot,
 };

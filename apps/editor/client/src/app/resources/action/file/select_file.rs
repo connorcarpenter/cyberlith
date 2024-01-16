@@ -8,7 +8,7 @@ use bevy_ecs::{
 
 use naia_bevy_client::{Client, CommandsExt};
 
-use vortex_proto::components::{ChangelistEntry, ChangelistStatus};
+use editor_proto::components::{ChangelistEntry, ChangelistStatus};
 
 use crate::app::{
     components::file_system::{ChangelistUiState, FileSystemUiState},

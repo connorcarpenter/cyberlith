@@ -17,7 +17,7 @@ use render_egui::{
     },
 };
 
-use vortex_proto::components::PaletteColor;
+use editor_proto::components::PaletteColor;
 
 use crate::app::{plugin::Main, resources::{
     action::palette::PaletteAction, tab_manager::TabManager, toolbar::Toolbar,

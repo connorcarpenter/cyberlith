@@ -7,7 +7,7 @@ use bevy_log::info;
 
 use naia_bevy_client::Client;
 
-use vortex_proto::components::{FileExtension, NetTransformEntityType, SkinOrSceneEntity};
+use editor_proto::components::{FileExtension, NetTransformEntityType, SkinOrSceneEntity};
 
 use crate::app::{resources::{
     action::model::ModelAction, canvas::Canvas, edge_manager::EdgeManager, input::InputManager,

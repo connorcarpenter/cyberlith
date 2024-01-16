@@ -1,6 +1,6 @@
 use bevy_ecs::prelude::{Entity, World};
 
-use vortex_proto::components::EntryKind;
+use editor_proto::components::EntryKind;
 
 use crate::app::resources::{
     action::{

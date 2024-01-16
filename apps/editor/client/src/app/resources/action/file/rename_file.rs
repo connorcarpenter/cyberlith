@@ -3,7 +3,7 @@ use bevy_ecs::{
     system::SystemState,
 };
 
-use vortex_proto::components::FileSystemEntry;
+use editor_proto::components::FileSystemEntry;
 
 use crate::app::resources::action::file::FileAction;
 

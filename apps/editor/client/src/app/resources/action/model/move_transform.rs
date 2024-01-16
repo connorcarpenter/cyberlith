@@ -4,7 +4,7 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 
-use vortex_proto::components::NetTransform;
+use editor_proto::components::NetTransform;
 
 use crate::app::{
     components::NetTransformLocal,
