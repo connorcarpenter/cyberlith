@@ -1,17 +1,17 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Vortex Client [RUN]" type="CargoCommandRunConfiguration" factoryName="Cargo Command" singleton="false">
+  <configuration default="false" name="Editor Client [RUN]" type="CargoCommandRunConfiguration" factoryName="Cargo Command" singleton="false">
     <option name="command" value="run" />
-    <option name="workingDirectory" value="file://$PROJECT_DIR$/apps/vortex/client" />
-    <option name="channel" value="DEFAULT" />
-    <option name="requiredFeatures" value="false" />
-    <option name="allFeatures" value="false" />
-    <option name="emulateTerminal" value="false" />
-    <option name="withSudo" value="false" />
-    <option name="buildTarget" value="REMOTE" />
-    <option name="backtrace" value="SHORT" />
+    <option name="workingDirectory" value="file://$PROJECT_DIR$/apps/editor/client" />
     <envs>
       <env name="CONFIG_ENV" value="config_local" />
     </envs>
+    <option name="emulateTerminal" value="false" />
+    <option name="channel" value="DEFAULT" />
+    <option name="requiredFeatures" value="false" />
+    <option name="allFeatures" value="false" />
+    <option name="withSudo" value="false" />
+    <option name="buildTarget" value="REMOTE" />
+    <option name="backtrace" value="SHORT" />
     <option name="isRedirectInput" value="false" />
     <option name="redirectInputPath" value="" />
     <method v="2">
