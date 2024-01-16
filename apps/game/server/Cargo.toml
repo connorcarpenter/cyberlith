@@ -10,7 +10,7 @@ publish = false
 
 
 [dependencies]
-game_proto = { path = "../proto" }
+game_proto = { path = "proto" }
 naia-bevy-server = { path = "../../../../naia/adapters/bevy/server", features = [ "transport_webrtc" ] }
 
 # These are the official Bevy crates, we can use them because the Server isn't built for Wasm
