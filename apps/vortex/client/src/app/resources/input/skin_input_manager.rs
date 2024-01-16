@@ -64,7 +64,7 @@ impl SkinInputManager {
     pub(crate) fn handle_delete_key_press(world: &mut World, input_manager: &mut InputManager) {
         match input_manager.selected_shape {
             Some((face_2d_entity, CanvasShape::Face)) => {
-                // let mut system_state: SystemState<(Commands, Client, Res<FaceManager>, Res<SkinManager>)> =
+                // let mut system_state: SystemState<(Commands, Client<Main>, Res<FaceManager>, Res<SkinManager>)> =
                 //     SystemState::new(world);
                 // let (mut commands, mut client, face_manager, skin_manager) = system_state.get_mut(world);
 

@@ -39,6 +39,7 @@ use crate::app::{
         tab_manager::TabManager,
         vertex_manager::VertexManager,
     },
+    plugin::Main,
 };
 
 #[derive(Clone, Copy)]
@@ -700,7 +701,7 @@ impl InputManager {
         world: &mut World,
         vertex_2d_entity: &Entity,
     ) {
-        let mut system_state: SystemState<(Commands, Client, Res<VertexManager>)> =
+        let mut system_state: SystemState<(Commands, Client<Main>, Res<VertexManager>)> =
             SystemState::new(world);
         let (mut commands, mut client, vertex_manager) = system_state.get_mut(world);
 
@@ -762,7 +763,7 @@ impl InputManager {
 
         let mut system_state: SystemState<(
             Commands,
-            Client,
+            Client<Main>,
             Res<CameraManager>,
             ResMut<VertexManager>,
             ResMut<Canvas>,

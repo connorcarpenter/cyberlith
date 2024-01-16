@@ -37,6 +37,7 @@ use crate::app::{
         },
         BindingState, UiState,
     },
+    plugin::Main,
 };
 
 pub struct FileTreeRowUiWidget;
@@ -73,7 +74,7 @@ impl FileTreeRowUiWidget {
 
         let (mut row_rect, row_response) = ui.allocate_at_least(desired_size, Sense::click());
 
-        let mut system_state: SystemState<(Commands, Client, Query<&mut FileSystemUiState>)> =
+        let mut system_state: SystemState<(Commands, Client<Main>, Query<&mut FileSystemUiState>)> =
             SystemState::new(world);
         let (mut commands, client, fs_query) = system_state.get_mut(world);
         let auth_status = commands.entity(*row_entity).authority(&client);
@@ -372,7 +373,7 @@ impl FileTreeRowUiWidget {
         // continue
         let mut is_denied = false;
         {
-            let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
+            let mut system_state: SystemState<(Commands, Client<Main>)> = SystemState::new(world);
             let (mut commands, client) = system_state.get_mut(world);
 
             if let Some(authority) = commands.entity(*row_entity).authority(&client) {
@@ -396,7 +397,7 @@ impl FileTreeRowUiWidget {
 
         // add to tabs
         if file_ext.can_io() {
-            let mut system_state: SystemState<(Client, ResMut<TabManager>)> =
+            let mut system_state: SystemState<(Client<Main>, ResMut<TabManager>)> =
                 SystemState::new(world);
             let (mut client, mut tab_manager) = system_state.get_mut(world);
 
@@ -414,7 +415,7 @@ impl FileTreeRowUiWidget {
 
     pub fn on_click_new_file(world: &mut World, row_entity: &Entity, is_root_dir: bool) {
         world.resource_scope(|world, mut ui_state: Mut<UiState>| {
-            let mut system_state: SystemState<(Client, Query<(&FileSystemEntry, Option<&FileSystemChild>, Option<&FileSystemRootChild>, &mut FileSystemUiState)>)> =
+            let mut system_state: SystemState<(Client<Main>, Query<(&FileSystemEntry, Option<&FileSystemChild>, Option<&FileSystemRootChild>, &mut FileSystemUiState)>)> =
                 SystemState::new(world);
             let (client, mut fs_query) = system_state.get_mut(world);
             let Ok((entry, dir_child_opt, root_child_opt, mut entry_ui_state)) = fs_query.get_mut(*row_entity) else {
@@ -439,7 +440,7 @@ impl FileTreeRowUiWidget {
 
     pub fn on_click_new_directory(world: &mut World, row_entity: &Entity, is_root_dir: bool) {
         world.resource_scope(|world, mut ui_state: Mut<UiState>| {
-            let mut system_state: SystemState<(Client, Query<(&FileSystemEntry, Option<&FileSystemChild>, Option<&FileSystemRootChild>, &mut FileSystemUiState)>)> =
+            let mut system_state: SystemState<(Client<Main>, Query<(&FileSystemEntry, Option<&FileSystemChild>, Option<&FileSystemRootChild>, &mut FileSystemUiState)>)> =
                 SystemState::new(world);
             let (client, mut fs_query) = system_state.get_mut(world);
             let Ok((entry, dir_child_opt, root_child_opt, mut entry_ui_state)) = fs_query.get_mut(*row_entity) else {
@@ -463,7 +464,7 @@ impl FileTreeRowUiWidget {
     }
 
     fn get_directory_entity_opt(
-        client: &Client,
+        client: &Client<Main>,
         entry: &FileSystemEntry,
         row_entity: &Entity,
         dir_child_opt: Option<&FileSystemChild>,
@@ -661,7 +662,7 @@ impl FileTreeRowUiWidget {
         entry_name: &str,
     ) {
         let mut system_state: SystemState<(
-            Client,
+            Client<Main>,
             Res<FileManager>,
             Query<&FileSystemParent>,
             Query<&FileSystemEntry>,

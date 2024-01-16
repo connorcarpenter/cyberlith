@@ -15,6 +15,7 @@ use crate::app::{
         action::skin::SkinAction, canvas::Canvas, face_manager::FaceManager,
         skin_manager::SkinManager,
     },
+    plugin::Main,
 };
 
 pub(crate) fn execute(world: &mut World, action: SkinAction) -> Vec<SkinAction> {
@@ -28,7 +29,7 @@ pub(crate) fn execute(world: &mut World, action: SkinAction) -> Vec<SkinAction> 
     );
     let mut system_state: SystemState<(
         Commands,
-        Client,
+        Client<Main>,
         ResMut<Canvas>,
         Res<FaceManager>,
         ResMut<SkinManager>,

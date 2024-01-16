@@ -23,6 +23,7 @@ use crate::app::{
         shape_data::FaceKey,
         vertex_manager::VertexManager,
     },
+    plugin::Main,
 };
 
 pub(crate) fn execute(
@@ -51,7 +52,7 @@ pub(crate) fn execute(
         FileExtension::Skel => {
             let mut system_state: SystemState<(
                 Commands,
-                Client,
+                Client<Main>,
                 ResMut<Canvas>,
                 ResMut<VertexManager>,
                 ResMut<EdgeManager>,
@@ -149,7 +150,7 @@ pub(crate) fn execute(
         FileExtension::Mesh => {
             let mut system_state: SystemState<(
                 Commands,
-                Client,
+                Client<Main>,
                 ResMut<Canvas>,
                 ResMut<VertexManager>,
                 ResMut<EdgeManager>,
@@ -267,7 +268,7 @@ pub(crate) fn execute(
 
 fn handle_common_vertex_despawn(
     commands: &mut Commands,
-    client: &mut Client,
+    client: &mut Client<Main>,
     canvas: &mut Canvas,
     input_manager: &mut InputManager,
     vertex_manager: &mut VertexManager,
@@ -299,7 +300,7 @@ fn handle_common_vertex_despawn(
 }
 
 fn convert_vertices_to_tree(
-    client: &Client,
+    client: &Client<Main>,
     vertex_manager: &VertexManager,
     parent_3d_entity: &Entity,
     vertex_3d_q: &Query<(Entity, &Vertex3d)>,

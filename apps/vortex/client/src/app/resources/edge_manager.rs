@@ -40,6 +40,7 @@ use crate::app::{
     shapes::{
         create_2d_edge_arrow, create_2d_edge_line, create_3d_edge_diamond, create_3d_edge_line,
     },
+    plugin::Main,
 };
 
 #[derive(Resource)]
@@ -375,7 +376,7 @@ impl EdgeManager {
     pub fn create_networked_edge(
         &mut self,
         commands: &mut Commands,
-        client: &mut Client,
+        client: &mut Client<Main>,
         camera_manager: &mut CameraManager,
         vertex_manager: &mut VertexManager,
         face_manager: &mut FaceManager,
@@ -405,7 +406,7 @@ impl EdgeManager {
         let new_edge_3d_entity = commands
             .spawn_empty()
             .enable_replication(client)
-            .configure_replication(ReplicationConfig::Delegated)
+            .configure_replication::<Main>(ReplicationConfig::Delegated)
             .insert(new_edge_3d_component)
             .insert(owned_by_file_component)
             .insert(FileType::new(file_type))

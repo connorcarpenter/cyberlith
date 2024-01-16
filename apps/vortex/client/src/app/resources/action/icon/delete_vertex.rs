@@ -19,6 +19,7 @@ use crate::app::{
         icon_manager::IconManager,
         shape_data::CanvasShape,
     },
+    plugin::Main,
 };
 
 pub(crate) fn execute(
@@ -34,7 +35,7 @@ pub(crate) fn execute(
 
     let mut system_state: SystemState<(
         Commands,
-        Client,
+        Client<Main>,
         Query<(Entity, &IconVertex)>,
         Query<&IconEdge>,
         Query<&IconFace>,
@@ -126,7 +127,7 @@ pub(crate) fn execute(
 
 fn handle_vertex_despawn(
     commands: &mut Commands,
-    client: &mut Client,
+    client: &mut Client<Main>,
     icon_manager: &mut IconManager,
     vertex_entity: Entity,
     vertex_to_select_opt: Option<(Entity, CanvasShape)>,

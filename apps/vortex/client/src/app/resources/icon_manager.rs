@@ -41,6 +41,7 @@ use crate::app::{
         tab_manager::TabManager,
     },
     shapes::create_2d_edge_line,
+    plugin::Main,
 };
 
 #[derive(Resource)]
@@ -1032,7 +1033,7 @@ impl IconManager {
         world: &mut World,
         vertex_entity: &Entity,
     ) {
-        let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
+        let mut system_state: SystemState<(Commands, Client<Main>)> = SystemState::new(world);
         let (mut commands, mut client) = system_state.get_mut(world);
 
         // delete vertex
@@ -1152,7 +1153,7 @@ impl IconManager {
     pub fn create_networked_vertex(
         &mut self,
         commands: &mut Commands,
-        client: &mut Client,
+        client: &mut Client<Main>,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
         file_entity: &Entity,
@@ -1168,7 +1169,7 @@ impl IconManager {
         let new_vertex_entity = commands
             .spawn_empty()
             .enable_replication(client)
-            .configure_replication(ReplicationConfig::Delegated)
+            .configure_replication::<Main>(ReplicationConfig::Delegated)
             .insert(vertex_component)
             .insert(owned_by_file_component)
             .id();
@@ -1226,7 +1227,7 @@ impl IconManager {
 
     pub fn on_vertex_moved(
         &self,
-        client: &Client,
+        client: &Client<Main>,
         meshes: &mut Assets<CpuMesh>,
         mesh_handle_q: &Query<&Handle<CpuMesh>>,
         face_q: &Query<&IconFace>,
@@ -1353,7 +1354,7 @@ impl IconManager {
     pub fn create_networked_edge(
         &mut self,
         commands: &mut Commands,
-        client: &mut Client,
+        client: &mut Client<Main>,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
         vertex_entity_a: &Entity,
@@ -1372,7 +1373,7 @@ impl IconManager {
         let new_edge_entity = commands
             .spawn_empty()
             .enable_replication(client)
-            .configure_replication(ReplicationConfig::Delegated)
+            .configure_replication::<Main>(ReplicationConfig::Delegated)
             .insert(new_edge_component)
             .insert(owned_by_file_component)
             .id();
@@ -1694,7 +1695,7 @@ impl IconManager {
 
         let mut system_state: SystemState<(
             Commands,
-            Client,
+            Client<Main>,
             ResMut<Assets<CpuMesh>>,
             ResMut<Assets<CpuMaterial>>,
             Query<&Transform>,
@@ -1730,7 +1731,7 @@ impl IconManager {
     pub fn create_networked_face(
         &mut self,
         commands: &mut Commands,
-        client: &mut Client,
+        client: &mut Client<Main>,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
         transform_q: &Query<&Transform>,
@@ -1786,7 +1787,7 @@ impl IconManager {
         let face_net_entity = commands
             .spawn_empty()
             .enable_replication(client)
-            .configure_replication(ReplicationConfig::Delegated)
+            .configure_replication::<Main>(ReplicationConfig::Delegated)
             .insert(owned_by_file_component)
             .insert(OwnedByFileLocal::new(*file_entity))
             .insert(face_component)
@@ -2139,7 +2140,7 @@ impl IconManager {
 
     pub fn framing_resync_frame_order(
         &mut self,
-        client: &Client,
+        client: &Client<Main>,
         frame_q: &Query<(Entity, &IconFrame)>,
     ) {
         if self.resync_frame_order.is_empty() {
@@ -2155,7 +2156,7 @@ impl IconManager {
     pub fn framing_insert_frame(
         &mut self,
         commands: &mut Commands,
-        client: &mut Client,
+        client: &mut Client<Main>,
         file_entity: Entity,
         frame_index: usize,
     ) -> Entity {
@@ -2164,7 +2165,7 @@ impl IconManager {
         let entity_id = commands
             .spawn_empty()
             .enable_replication(client)
-            .configure_replication(ReplicationConfig::Delegated)
+            .configure_replication::<Main>(ReplicationConfig::Delegated)
             .insert(frame_component)
             .id();
 
@@ -2176,7 +2177,7 @@ impl IconManager {
 
     fn framing_recalc_order(
         &mut self,
-        client: &Client,
+        client: &Client<Main>,
         file_entity: &Entity,
         frame_q: &Query<(Entity, &IconFrame)>,
     ) {
@@ -2512,7 +2513,7 @@ impl IconManager {
         mat_handle_gray: &Handle<CpuMaterial>,
     ) {
         let mut system_state: SystemState<(
-            Client,
+            Client<Main>,
             ResMut<RenderFrame>,
             Query<(Entity, &IconVertex)>,
             Query<&OwnedByFileLocal>,

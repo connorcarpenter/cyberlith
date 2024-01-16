@@ -9,7 +9,7 @@ use naia_bevy_client::Client;
 
 use vortex_proto::components::{FaceColor, FileExtension};
 
-use crate::app::resources::{
+use crate::app::{resources::{
     action::{shape::entity_request_release, skin::SkinAction},
     canvas::Canvas,
     face_manager::FaceManager,
@@ -18,7 +18,7 @@ use crate::app::resources::{
     palette_manager::PaletteManager,
     shape_data::CanvasShape,
     skin_manager::SkinManager,
-};
+}, plugin::Main};
 
 pub fn execute(
     world: &mut World,
@@ -34,7 +34,7 @@ pub fn execute(
 
     let mut system_state: SystemState<(
         Commands,
-        Client,
+        Client<Main>,
         ResMut<Canvas>,
         Res<FileManager>,
         Res<FaceManager>,

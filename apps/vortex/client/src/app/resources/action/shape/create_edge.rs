@@ -14,7 +14,7 @@ use render_api::{
 
 use vortex_proto::components::FileExtension;
 
-use crate::app::resources::{
+use crate::app::{resources::{
     action::{
         shape::{select_shape::deselect_selected_shape, ShapeAction},
         ActionStack,
@@ -27,7 +27,7 @@ use crate::app::resources::{
     shape_data::{CanvasShape, FaceKey},
     shape_manager::ShapeManager,
     vertex_manager::VertexManager,
-};
+}, plugin::Main};
 
 pub(crate) fn execute(
     world: &mut World,
@@ -62,7 +62,7 @@ pub(crate) fn execute(
     {
         let mut system_state: SystemState<(
             Commands,
-            Client,
+            Client<Main>,
             ResMut<CameraManager>,
             ResMut<Canvas>,
             ResMut<VertexManager>,
@@ -159,7 +159,7 @@ pub(crate) fn execute(
 
     // release all non-selected shapes
     {
-        let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
+        let mut system_state: SystemState<(Commands, Client<Main>)> = SystemState::new(world);
         let (mut commands, mut client) = system_state.get_mut(world);
 
         for entity_to_release in entities_to_release {
@@ -178,7 +178,7 @@ pub(crate) fn execute(
         if let Some(vertex_2d_entities) = face_to_create_opt {
             let mut system_state: SystemState<(
                 Commands,
-                Client,
+                Client<Main>,
                 ResMut<CameraManager>,
                 ResMut<VertexManager>,
                 ResMut<EdgeManager>,

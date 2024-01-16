@@ -6,9 +6,9 @@ use bevy_log::info;
 
 use naia_bevy_client::{Client, CommandsExt};
 
-use crate::app::resources::{
+use crate::app::{resources::{
     action::icon::IconAction, icon_manager::IconManager, input::IconInputManager,
-};
+}, plugin::Main};
 
 pub fn execute(
     world: &mut World,
@@ -21,7 +21,7 @@ pub fn execute(
 
     info!("DeleteFrame({:?}, {:?})", file_entity, frame_index);
 
-    let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
+    let mut system_state: SystemState<(Commands, Client<Main>)> = SystemState::new(world);
     let (mut commands, client) = system_state.get_mut(world);
 
     let frame_entity = icon_manager
@@ -41,7 +41,7 @@ pub fn execute(
     // copy rotations to store in undo/redo
     let copied_shapes = IconInputManager::pack_shape_data(world, icon_manager, &file_entity);
 
-    let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
+    let mut system_state: SystemState<(Commands, Client<Main>)> = SystemState::new(world);
     let (mut commands, mut client) = system_state.get_mut(world);
 
     // despawn

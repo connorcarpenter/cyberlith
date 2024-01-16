@@ -24,22 +24,23 @@ use crate::app::{
         input::InputManager, model_manager::ModelManager, palette_manager::PaletteManager,
         skin_manager::SkinManager, tab_manager::TabManager, vertex_manager::VertexManager,
     },
+    plugin::Main,
 };
 
 #[derive(Resource)]
 struct CachedRemoveComponentEventsState {
-    event_state: SystemState<EventReader<'static, 'static, RemoveComponentEvents>>,
+    event_state: SystemState<EventReader<'static, 'static, RemoveComponentEvents<Main>>>,
 }
 
 pub fn remove_component_event_startup(world: &mut World) {
-    let initial_state: SystemState<EventReader<RemoveComponentEvents>> = SystemState::new(world);
+    let initial_state: SystemState<EventReader<RemoveComponentEvents<Main>>> = SystemState::new(world);
     world.insert_resource(CachedRemoveComponentEventsState {
         event_state: initial_state,
     });
 }
 
 pub fn remove_component_events(world: &mut World) {
-    let mut events_collection: Vec<RemoveComponentEvents> = Vec::new();
+    let mut events_collection: Vec<RemoveComponentEvents<Main>> = Vec::new();
 
     world.resource_scope(
         |world, mut events_reader_state: Mut<CachedRemoveComponentEventsState>| {
@@ -73,7 +74,7 @@ pub fn remove_component_events(world: &mut World) {
     }
 }
 
-fn remove_component_event<T: Replicate>(world: &mut World, events: &RemoveComponentEvents) {
+fn remove_component_event<T: Replicate>(world: &mut World, events: &RemoveComponentEvents<Main>) {
     let mut system_state: SystemState<EventWriter<RemoveComponentEvent<T>>> =
         SystemState::new(world);
     let mut event_writer = system_state.get_mut(world);
@@ -89,7 +90,7 @@ pub fn remove_file_component_events(
     mut child_events: EventReader<RemoveComponentEvent<FileSystemChild>>,
     mut cl_events: EventReader<RemoveComponentEvent<ChangelistEntry>>,
     mut dependencies_events: EventReader<RemoveComponentEvent<FileDependency>>,
-    mut client: Client,
+    mut client: Client<Main>,
     mut file_manager: ResMut<FileManager>,
     mut tab_manager: ResMut<TabManager>,
     mut parent_q: Query<&mut FileSystemParent>,
@@ -214,7 +215,7 @@ pub fn remove_shape_component_events(
 }
 
 pub fn remove_icon_component_events(
-    client: Client,
+    client: Client<Main>,
 
     mut vertex_events: EventReader<RemoveComponentEvent<IconVertex>>,
     mut edge_events: EventReader<RemoveComponentEvent<IconEdge>>,
@@ -257,7 +258,7 @@ pub fn remove_icon_component_events(
 pub fn remove_animation_component_events(
     mut anim_frame_events: EventReader<RemoveComponentEvent<AnimFrame>>,
     mut anim_rotation_events: EventReader<RemoveComponentEvent<AnimRotation>>,
-    client: Client,
+    client: Client<Main>,
     mut animation_manager: ResMut<AnimationManager>,
 ) {
     for event in anim_frame_events.read() {
@@ -280,7 +281,7 @@ pub fn remove_color_component_events(
     mut palette_events: EventReader<RemoveComponentEvent<PaletteColor>>,
     mut bck_color_events: EventReader<RemoveComponentEvent<BackgroundSkinColor>>,
     mut face_color_events: EventReader<RemoveComponentEvent<FaceColor>>,
-    client: Client,
+    client: Client<Main>,
     mut palette_manager: ResMut<PaletteManager>,
     mut skin_manager: ResMut<SkinManager>,
 ) {

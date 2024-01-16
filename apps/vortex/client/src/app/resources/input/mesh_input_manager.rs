@@ -21,6 +21,7 @@ use crate::app::{
         face_manager::FaceManager, input::InputManager, shape_data::CanvasShape,
         tab_manager::TabManager, vertex_manager::VertexManager,
     },
+    plugin::Main,
 };
 
 pub struct MeshInputManager;
@@ -94,7 +95,7 @@ impl MeshInputManager {
                 input_manager.handle_delete_vertex_action(world, &vertex_2d_entity)
             }
             Some((edge_2d_entity, CanvasShape::Edge)) => {
-                let mut system_state: SystemState<(Commands, Client, Res<EdgeManager>)> =
+                let mut system_state: SystemState<(Commands, Client<Main>, Res<EdgeManager>)> =
                     SystemState::new(world);
                 let (mut commands, mut client, edge_manager) = system_state.get_mut(world);
 
@@ -129,7 +130,7 @@ impl MeshInputManager {
                 input_manager.selected_shape = None;
             }
             Some((face_2d_entity, CanvasShape::Face)) => {
-                let mut system_state: SystemState<(Commands, Client, Res<FaceManager>)> =
+                let mut system_state: SystemState<(Commands, Client<Main>, Res<FaceManager>)> =
                     SystemState::new(world);
                 let (mut commands, mut client, face_manager) = system_state.get_mut(world);
 

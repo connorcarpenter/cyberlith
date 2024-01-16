@@ -3,10 +3,10 @@ use bevy_log::info;
 
 use naia_bevy_client::events::DisconnectEvent;
 
-use crate::app::ui::{LoggingInState, UiState};
+use crate::app::{ui::{LoggingInState, UiState}, plugin::Main};
 
 pub fn disconnect_events(
-    mut event_reader: EventReader<DisconnectEvent>,
+    mut event_reader: EventReader<DisconnectEvent<Main>>,
     mut state: ResMut<UiState>,
 ) {
     for _ in event_reader.read() {

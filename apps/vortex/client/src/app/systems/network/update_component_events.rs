@@ -1,3 +1,4 @@
+
 use bevy_ecs::{
     event::EventReader,
     prelude::EventWriter,
@@ -28,22 +29,23 @@ use crate::app::{
         palette_manager::PaletteManager,
         vertex_manager::VertexManager,
     },
+    plugin::Main
 };
 
 #[derive(Resource)]
 struct CachedUpdateComponentEventsState {
-    event_state: SystemState<EventReader<'static, 'static, UpdateComponentEvents>>,
+    event_state: SystemState<EventReader<'static, 'static, UpdateComponentEvents<Main>>>,
 }
 
 pub fn update_component_event_startup(world: &mut World) {
-    let initial_state: SystemState<EventReader<UpdateComponentEvents>> = SystemState::new(world);
+    let initial_state: SystemState<EventReader<UpdateComponentEvents<Main>>> = SystemState::new(world);
     world.insert_resource(CachedUpdateComponentEventsState {
         event_state: initial_state,
     });
 }
 
 pub fn update_component_events(world: &mut World) {
-    let mut events_collection: Vec<UpdateComponentEvents> = Vec::new();
+    let mut events_collection: Vec<UpdateComponentEvents<Main>> = Vec::new();
 
     world.resource_scope(
         |world, mut events_reader_state: Mut<CachedUpdateComponentEventsState>| {
@@ -56,7 +58,7 @@ pub fn update_component_events(world: &mut World) {
     );
     for events in events_collection {
         let mut system_state: SystemState<(
-            Client,
+            Client<Main>,
             ResMut<FileManager>,
             Query<(&FileSystemEntry, Option<&FileSystemChild>)>,
             Query<&mut FileSystemEntryLocal>,
@@ -118,7 +120,7 @@ pub fn update_component_events(world: &mut World) {
         }
 
         let mut system_state: SystemState<(
-            Client,
+            Client<Main>,
             ResMut<Canvas>,
             Res<VertexManager>,
             Res<FaceManager>,

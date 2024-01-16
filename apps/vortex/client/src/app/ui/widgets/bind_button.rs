@@ -17,7 +17,7 @@ use vortex_proto::components::{FileDependency, FileExtension};
 
 use crate::app::{
     resources::file_manager::FileManager,
-    ui::{BindingState, UiState},
+    ui::{BindingState, UiState}, plugin::Main,
 };
 
 pub fn render_simple_bind(
@@ -101,7 +101,7 @@ pub fn create_networked_dependency(
     dependency_file_entity: &Entity,
 ) {
     // send message to server
-    let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
+    let mut system_state: SystemState<(Commands, Client<Main>)> = SystemState::new(world);
     let (mut commands, mut client) = system_state.get_mut(world);
 
     let mut component = FileDependency::new();
@@ -112,7 +112,7 @@ pub fn create_networked_dependency(
     let dependency_entity = commands
         .spawn_empty()
         .enable_replication(&mut client)
-        .configure_replication(ReplicationConfig::Delegated)
+        .configure_replication::<Main>(ReplicationConfig::Delegated)
         .insert(component)
         .id();
 
@@ -125,7 +125,7 @@ pub fn create_networked_dependency(
         &dependency_file_entity,
     );
 
-    let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
+    let mut system_state: SystemState<(Commands, Client<Main>)> = SystemState::new(world);
     let (mut commands, mut client) = system_state.get_mut(world);
 
     commands

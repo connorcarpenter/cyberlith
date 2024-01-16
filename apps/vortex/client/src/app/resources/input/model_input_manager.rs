@@ -32,6 +32,7 @@ use crate::app::{
         edge_manager::EdgeManager, file_manager::FileManager, input::InputManager,
         model_manager::ModelManager, shape_data::CanvasShape, tab_manager::TabManager,
     },
+    plugin::Main,
 };
 
 pub struct ModelInputManager;
@@ -332,7 +333,7 @@ impl ModelInputManager {
     ) {
         let mut system_state: SystemState<(
             Commands,
-            Client,
+            Client<Main>,
             Res<ModelManager>,
             Query<&Vertex3d>,
             Query<&EdgeAngle>,

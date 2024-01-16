@@ -6,7 +6,7 @@ use bevy_log::info;
 
 use naia_bevy_client::{Client, CommandsExt};
 
-use crate::app::resources::{action::palette::PaletteAction, palette_manager::PaletteManager};
+use crate::app::{plugin::Main, resources::{action::palette::PaletteAction, palette_manager::PaletteManager}};
 
 pub fn execute(
     world: &mut World,
@@ -22,7 +22,7 @@ pub fn execute(
         file_entity, last_color_index, next_color_index
     );
 
-    let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
+    let mut system_state: SystemState<(Commands, Client<Main>)> = SystemState::new(world);
     let (mut commands, mut client) = system_state.get_mut(world);
 
     // release the last color entity

@@ -19,9 +19,9 @@ use render_egui::{
 
 use vortex_proto::components::PaletteColor;
 
-use crate::app::resources::{
+use crate::app::{plugin::Main, resources::{
     action::palette::PaletteAction, tab_manager::TabManager, toolbar::Toolbar,
-};
+}};
 
 #[derive(Resource)]
 pub struct PaletteManager {
@@ -191,7 +191,7 @@ impl PaletteManager {
 
     pub fn resync_color_order(
         &mut self,
-        client: &Client,
+        client: &Client<Main>,
         color_q: &Query<(Entity, &PaletteColor)>,
     ) {
         if self.resync_color_order.is_empty() {
@@ -205,7 +205,7 @@ impl PaletteManager {
 
     fn recalc_order(
         &mut self,
-        client: &Client,
+        client: &Client<Main>,
         file_entity: &Entity,
         color_q: &Query<(Entity, &PaletteColor)>,
     ) {
@@ -241,7 +241,7 @@ impl PaletteManager {
     pub fn insert_color(
         &mut self,
         commands: &mut Commands,
-        client: &mut Client,
+        client: &mut Client<Main>,
         file_entity: Entity,
         color_index: usize,
         color: Color32,
@@ -252,7 +252,7 @@ impl PaletteManager {
         let entity_id = commands
             .spawn_empty()
             .enable_replication(client)
-            .configure_replication(ReplicationConfig::Delegated)
+            .configure_replication::<Main>(ReplicationConfig::Delegated)
             .insert(color_component)
             .id();
 
@@ -938,7 +938,7 @@ pub(crate) fn palette_file_delete_color(palette_manager: &mut PaletteManager, wo
     };
     let current_file_entity = *current_file_entity;
 
-    let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
+    let mut system_state: SystemState<(Commands, Client<Main>)> = SystemState::new(world);
     let (mut commands, client) = system_state.get_mut(world);
 
     // delete color

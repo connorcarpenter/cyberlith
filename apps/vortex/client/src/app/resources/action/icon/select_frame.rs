@@ -6,7 +6,7 @@ use bevy_log::info;
 
 use naia_bevy_client::{Client, CommandsExt};
 
-use crate::app::resources::{action::icon::IconAction, icon_manager::IconManager};
+use crate::app::{plugin::Main, resources::{action::icon::IconAction, icon_manager::IconManager}};
 
 pub fn execute(
     world: &mut World,
@@ -22,7 +22,7 @@ pub fn execute(
         file_entity, last_frame_index, next_frame_index
     );
 
-    let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
+    let mut system_state: SystemState<(Commands, Client<Main>)> = SystemState::new(world);
     let (mut commands, mut client) = system_state.get_mut(world);
 
     // release the last frame entity

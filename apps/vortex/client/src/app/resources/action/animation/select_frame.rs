@@ -6,7 +6,7 @@ use bevy_log::info;
 
 use naia_bevy_client::{Client, CommandsExt};
 
-use crate::app::resources::{action::animation::AnimAction, animation_manager::AnimationManager};
+use crate::app::{resources::{action::animation::AnimAction, animation_manager::AnimationManager}, plugin::Main};
 
 pub fn execute(world: &mut World, action: AnimAction) -> Vec<AnimAction> {
     let AnimAction::SelectFrame(file_entity, next_frame_index, last_frame_index) = action else {
@@ -18,7 +18,7 @@ pub fn execute(world: &mut World, action: AnimAction) -> Vec<AnimAction> {
         file_entity, last_frame_index, next_frame_index
     );
 
-    let mut system_state: SystemState<(Commands, Client, ResMut<AnimationManager>)> =
+    let mut system_state: SystemState<(Commands, Client<Main>, ResMut<AnimationManager>)> =
         SystemState::new(world);
     let (mut commands, mut client, mut animation_manager) = system_state.get_mut(world);
 

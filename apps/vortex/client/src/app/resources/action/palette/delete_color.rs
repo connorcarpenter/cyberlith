@@ -10,7 +10,7 @@ use render_egui::egui::Color32;
 
 use vortex_proto::components::PaletteColor;
 
-use crate::app::resources::{action::palette::PaletteAction, palette_manager::PaletteManager};
+use crate::app::{resources::{action::palette::PaletteAction, palette_manager::PaletteManager}, plugin::Main};
 
 pub fn execute(
     world: &mut World,
@@ -23,7 +23,7 @@ pub fn execute(
 
     info!("DeleteColor({:?}, {:?})", file_entity, color_index);
 
-    let mut system_state: SystemState<(Commands, Client, Query<&PaletteColor>)> =
+    let mut system_state: SystemState<(Commands, Client<Main>, Query<&PaletteColor>)> =
         SystemState::new(world);
     let (mut commands, mut client, color_q) = system_state.get_mut(world);
 

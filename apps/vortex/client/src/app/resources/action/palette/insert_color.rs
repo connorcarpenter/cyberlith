@@ -9,7 +9,7 @@ use naia_bevy_client::{Client, CommandsExt};
 
 use render_egui::egui::Color32;
 
-use crate::app::resources::{action::palette::PaletteAction, palette_manager::PaletteManager};
+use crate::app::{resources::{action::palette::PaletteAction, palette_manager::PaletteManager}, plugin::Main};
 
 pub fn execute(
     world: &mut World,
@@ -28,7 +28,7 @@ pub fn execute(
     let last_color_index: usize;
 
     {
-        let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
+        let mut system_state: SystemState<(Commands, Client<Main>)> = SystemState::new(world);
         let (mut commands, mut client) = system_state.get_mut(world);
 
         last_color_index = palette_manager.current_color_index();

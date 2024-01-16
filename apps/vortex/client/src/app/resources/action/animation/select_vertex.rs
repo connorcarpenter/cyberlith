@@ -8,7 +8,7 @@ use naia_bevy_client::Client;
 
 use vortex_proto::components::ShapeName;
 
-use crate::app::resources::{
+use crate::app::{resources::{
     action::{animation::AnimAction, shape::entity_request_release},
     animation_manager::AnimationManager,
     canvas::Canvas,
@@ -16,7 +16,7 @@ use crate::app::resources::{
     input::InputManager,
     shape_data::CanvasShape,
     vertex_manager::VertexManager,
-};
+}, plugin::Main};
 
 pub fn execute(
     world: &mut World,
@@ -32,7 +32,7 @@ pub fn execute(
 
     let mut system_state: SystemState<(
         Commands,
-        Client,
+        Client<Main>,
         ResMut<Canvas>,
         Res<VertexManager>,
         Res<EdgeManager>,

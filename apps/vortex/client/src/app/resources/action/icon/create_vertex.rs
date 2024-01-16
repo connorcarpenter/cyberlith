@@ -12,7 +12,7 @@ use render_api::{
     Assets,
 };
 
-use crate::app::resources::{
+use crate::app::{resources::{
     action::{
         icon::{select_shape::deselect_selected_shape, IconAction},
         ActionStack,
@@ -20,7 +20,7 @@ use crate::app::resources::{
     icon_data::IconFaceKey,
     icon_manager::IconManager,
     shape_data::CanvasShape,
-};
+}, plugin::Main};
 
 pub(crate) fn execute(
     world: &mut World,
@@ -42,7 +42,7 @@ pub(crate) fn execute(
 
     let mut system_state: SystemState<(
         Commands,
-        Client,
+        Client<Main>,
         ResMut<Assets<CpuMesh>>,
         ResMut<Assets<CpuMaterial>>,
     )> = SystemState::new(world);
@@ -79,7 +79,7 @@ pub(crate) fn execute(
 
     let mut system_state: SystemState<(
         Commands,
-        Client,
+        Client<Main>,
         ResMut<Assets<CpuMesh>>,
         ResMut<Assets<CpuMaterial>>,
         Query<&Transform>,
@@ -152,7 +152,7 @@ pub(crate) fn execute(
 
     // release all non-selected vertices
     {
-        let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
+        let mut system_state: SystemState<(Commands, Client<Main>)> = SystemState::new(world);
         let (mut commands, mut client) = system_state.get_mut(world);
 
         for entity_to_release in entities_to_release {

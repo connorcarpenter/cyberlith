@@ -10,7 +10,7 @@ use render_api::{base::CpuMesh, components::Transform, Assets, Handle};
 
 use vortex_proto::components::{IconFace, IconVertex};
 
-use crate::app::resources::{action::icon::IconAction, canvas::Canvas, icon_manager::IconManager};
+use crate::app::{resources::{action::icon::IconAction, canvas::Canvas, icon_manager::IconManager}, plugin::Main};
 
 pub(crate) fn execute(
     world: &mut World,
@@ -23,7 +23,7 @@ pub(crate) fn execute(
 
     info!("MoveVertex({:?}, _, _, {})", vertex_entity, already_moved);
     let mut system_state: SystemState<(
-        Client,
+        Client<Main>,
         ResMut<Canvas>,
         ResMut<Assets<CpuMesh>>,
         Query<&Handle<CpuMesh>>,

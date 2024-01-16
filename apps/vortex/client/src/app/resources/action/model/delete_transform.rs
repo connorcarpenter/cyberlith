@@ -9,10 +9,10 @@ use naia_bevy_client::Client;
 
 use vortex_proto::components::{FileExtension, NetTransformEntityType, SkinOrSceneEntity};
 
-use crate::app::resources::{
+use crate::app::{resources::{
     action::model::ModelAction, canvas::Canvas, edge_manager::EdgeManager, input::InputManager,
     model_manager::ModelManager, vertex_manager::VertexManager,
-};
+}, plugin::Main};
 
 pub fn execute(
     world: &mut World,
@@ -27,7 +27,7 @@ pub fn execute(
 
     let mut system_state: SystemState<(
         Commands,
-        Client,
+        Client<Main>,
         ResMut<Canvas>,
         ResMut<InputManager>,
         ResMut<VertexManager>,

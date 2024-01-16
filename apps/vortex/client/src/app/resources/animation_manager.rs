@@ -42,6 +42,7 @@ use crate::app::{
         tab_manager::TabManager,
         vertex_manager::VertexManager,
     },
+    plugin::Main,
 };
 
 struct FrameData {
@@ -336,7 +337,7 @@ impl AnimationManager {
     pub fn create_networked_rotation(
         &mut self,
         commands: &mut Commands,
-        client: &mut Client,
+        client: &mut Client<Main>,
         frame_entity: Entity,
         name: String,
         rotation: Quat,
@@ -346,7 +347,7 @@ impl AnimationManager {
         let new_rotation_entity = commands
             .spawn_empty()
             .enable_replication(client)
-            .configure_replication(ReplicationConfig::Delegated)
+            .configure_replication::<Main>(ReplicationConfig::Delegated)
             .insert(component)
             .id();
 
@@ -395,7 +396,7 @@ impl AnimationManager {
 
         let mut system_state: SystemState<(
             Commands,
-            Client,
+            Client<Main>,
             ResMut<Canvas>,
             Res<CameraManager>,
             Res<VertexManager>,
@@ -528,7 +529,7 @@ impl AnimationManager {
 
         let mut system_state: SystemState<(
             Commands,
-            Client,
+            Client<Main>,
             ResMut<Canvas>,
             Res<VertexManager>,
             Res<EdgeManager>,
@@ -819,7 +820,7 @@ impl AnimationManager {
         frame_entity: Entity,
         shape_name: String,
         mut commands: &mut Commands,
-        mut client: &mut Client,
+        mut client: &mut Client<Main>,
         rotation_q: &mut Query<(&mut AnimRotation, &LocalAnimRotation)>,
         rotation_entity_opt: Option<Entity>,
         rotation_angle: Quat,
@@ -850,7 +851,7 @@ impl AnimationManager {
 
     fn rotation_has_auth(
         commands: &mut Commands,
-        client: &mut Client,
+        client: &mut Client<Main>,
         rotation_entity: Entity,
     ) -> bool {
         let auth_status = commands.entity(rotation_entity).authority(&client).unwrap();
@@ -1428,7 +1429,7 @@ impl AnimationManager {
 
     pub fn framing_resync_frame_order(
         &mut self,
-        client: &Client,
+        client: &Client<Main>,
         frame_q: &Query<(Entity, &AnimFrame)>,
     ) {
         if self.resync_frame_order.is_empty() {
@@ -1444,7 +1445,7 @@ impl AnimationManager {
     pub fn framing_insert_frame(
         &mut self,
         commands: &mut Commands,
-        client: &mut Client,
+        client: &mut Client<Main>,
         file_entity: Entity,
         frame_index: usize,
     ) -> Entity {
@@ -1453,7 +1454,7 @@ impl AnimationManager {
         let entity_id = commands
             .spawn_empty()
             .enable_replication(client)
-            .configure_replication(ReplicationConfig::Delegated)
+            .configure_replication::<Main>(ReplicationConfig::Delegated)
             .insert(frame_component)
             .id();
 
@@ -1465,7 +1466,7 @@ impl AnimationManager {
 
     fn framing_recalc_order(
         &mut self,
-        client: &Client,
+        client: &Client<Main>,
         file_entity: &Entity,
         frame_q: &Query<(Entity, &AnimFrame)>,
     ) {

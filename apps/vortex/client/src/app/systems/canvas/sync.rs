@@ -38,6 +38,7 @@ use crate::app::{
         tab_manager::TabManager,
         vertex_manager::VertexManager,
     },
+    plugin::Main,
 };
 
 pub fn queue_resyncs(
@@ -469,7 +470,7 @@ pub fn sync_faces(
 }
 
 pub fn update_animation(
-    client: Client,
+    client: Client<Main>,
     mut canvas: ResMut<Canvas>,
     file_manager: Res<FileManager>,
     tab_manager: Res<TabManager>,
@@ -489,7 +490,7 @@ pub fn update_animation(
 }
 
 pub fn update_icon(
-    client: Client,
+    client: Client<Main>,
     file_manager: Res<FileManager>,
     tab_manager: Res<TabManager>,
     mut icon_manager: ResMut<IconManager>,
@@ -508,7 +509,7 @@ pub fn update_icon(
 }
 
 pub fn update_palette(
-    client: Client,
+    client: Client<Main>,
     file_manager: Res<FileManager>,
     tab_manager: Res<TabManager>,
     mut palette_manager: ResMut<PaletteManager>,

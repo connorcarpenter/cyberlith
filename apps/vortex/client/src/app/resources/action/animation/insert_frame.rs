@@ -8,7 +8,7 @@ use bevy_log::info;
 
 use naia_bevy_client::{Client, CommandsExt};
 
-use crate::app::resources::{action::animation::AnimAction, animation_manager::AnimationManager};
+use crate::app::{resources::{action::animation::AnimAction, animation_manager::AnimationManager}, plugin::Main};
 
 pub fn execute(world: &mut World, action: AnimAction) -> Vec<AnimAction> {
     let AnimAction::InsertFrame(file_entity, frame_index, content_opt) = action else {
@@ -25,7 +25,7 @@ pub fn execute(world: &mut World, action: AnimAction) -> Vec<AnimAction> {
     let mut entities_to_release = Vec::new();
 
     {
-        let mut system_state: SystemState<(Commands, Client, ResMut<AnimationManager>)> =
+        let mut system_state: SystemState<(Commands, Client<Main>, ResMut<AnimationManager>)> =
             SystemState::new(world);
         let (mut commands, mut client, mut animation_manager) = system_state.get_mut(world);
 
@@ -67,7 +67,7 @@ pub fn execute(world: &mut World, action: AnimAction) -> Vec<AnimAction> {
     }
 
     {
-        let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
+        let mut system_state: SystemState<(Commands, Client<Main>)> = SystemState::new(world);
         let (mut commands, mut client) = system_state.get_mut(world);
 
         for entity in entities_to_release {

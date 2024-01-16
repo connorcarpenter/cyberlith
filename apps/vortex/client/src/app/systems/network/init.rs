@@ -1,11 +1,13 @@
 use bevy_ecs::event::EventReader;
 use bevy_log::info;
+
 use naia_bevy_client::{transport::webrtc, Client};
+
 use vortex_proto::messages::Auth;
 
-use crate::app::events::LoginEvent;
+use crate::app::{events::LoginEvent, plugin::Main};
 
-pub fn login(mut client: Client, mut login_events: EventReader<LoginEvent>) {
+pub fn login(mut client: Client<Main>, mut login_events: EventReader<LoginEvent>) {
     for login_event in login_events.read() {
         info!(
             "Connecting to Server with username: {}, password: {}",

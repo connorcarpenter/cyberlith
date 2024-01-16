@@ -26,6 +26,7 @@ use crate::app::{
         tab_manager::TabManager,
         vertex_manager::VertexManager,
     },
+    plugin::Main,
 };
 
 pub struct AnimInputManager;
@@ -550,7 +551,7 @@ impl AnimInputManager {
         };
         let current_file_entity = *current_file_entity;
 
-        let mut system_state: SystemState<(Commands, Client, Res<AnimationManager>)> =
+        let mut system_state: SystemState<(Commands, Client<Main>, Res<AnimationManager>)> =
             SystemState::new(world);
         let (mut commands, client, animation_manager) = system_state.get_mut(world);
 

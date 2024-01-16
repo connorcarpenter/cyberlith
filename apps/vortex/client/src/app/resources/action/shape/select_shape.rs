@@ -7,11 +7,11 @@ use bevy_log::info;
 
 use naia_bevy_client::{Client, CommandsExt};
 
-use crate::app::resources::{
+use crate::app::{resources::{
     action::shape::ShapeAction, canvas::Canvas, edge_manager::EdgeManager,
     face_manager::FaceManager, input::InputManager, shape_data::CanvasShape,
     shape_manager::ShapeManager, vertex_manager::VertexManager,
-};
+}, plugin::Main};
 
 pub(crate) fn execute(
     world: &mut World,
@@ -26,7 +26,7 @@ pub(crate) fn execute(
 
     let mut system_state: SystemState<(
         Commands,
-        Client,
+        Client<Main>,
         ResMut<Canvas>,
         Res<VertexManager>,
         Res<EdgeManager>,
@@ -78,7 +78,7 @@ pub(crate) fn execute(
 
 pub fn entity_request_release(
     commands: &mut Commands,
-    mut client: &mut Client,
+    mut client: &mut Client<Main>,
     entity_to_request: Option<Entity>,
     entity_to_release: Option<Entity>,
 ) {

@@ -43,29 +43,31 @@ use crate::app::{
         vertex_manager::VertexManager,
     },
     systems::file_post_process,
+    plugin::Main,
 };
 
 #[derive(Resource)]
 struct CachedInsertComponentEventsState {
-    event_state: SystemState<EventReader<'static, 'static, InsertComponentEvents>>,
+    event_state: SystemState<EventReader<'static, 'static, InsertComponentEvents<Main>>>,
 }
 
 pub fn insert_component_event_startup(world: &mut World) {
-    let initial_state: SystemState<EventReader<InsertComponentEvents>> = SystemState::new(world);
+    let initial_state: SystemState<EventReader<InsertComponentEvents<Main>>> = SystemState::new(world);
     world.insert_resource(CachedInsertComponentEventsState {
         event_state: initial_state,
     });
 }
 
 pub fn insert_component_events(world: &mut World) {
-    let mut events_collection: Vec<InsertComponentEvents> = Vec::new();
+    let mut events_collection: Vec<InsertComponentEvents<Main>> = Vec::new();
 
     world.resource_scope(
         |world, mut events_reader_state: Mut<CachedInsertComponentEventsState>| {
             let mut events_reader = events_reader_state.event_state.get_mut(world);
 
             for events in events_reader.read() {
-                events_collection.push(events.clone());
+                let events_clone: InsertComponentEvents<Main> = events.clone();
+                events_collection.push(events_clone);
             }
         },
     );
@@ -98,7 +100,7 @@ pub fn insert_component_events(world: &mut World) {
     }
 }
 
-fn insert_component_event<T: Replicate>(world: &mut World, events: &InsertComponentEvents) {
+fn insert_component_event<T: Replicate>(world: &mut World, events: &InsertComponentEvents<Main>) {
     let mut system_state: SystemState<EventWriter<InsertComponentEvent<T>>> =
         SystemState::new(world);
     let mut event_writer = system_state.get_mut(world);
@@ -110,7 +112,7 @@ fn insert_component_event<T: Replicate>(world: &mut World, events: &InsertCompon
 
 pub fn insert_file_component_events(
     mut commands: Commands,
-    client: Client,
+    client: Client<Main>,
     mut file_manager: ResMut<FileManager>,
     mut tab_manager: ResMut<TabManager>,
     mut entry_events: EventReader<InsertComponentEvent<FileSystemEntry>>,
@@ -211,7 +213,7 @@ pub fn insert_file_component_events(
 pub fn insert_changelist_entry_events(
     mut commands: Commands,
     mut file_manager: ResMut<FileManager>,
-    client: Client,
+    client: Client<Main>,
     mut events: EventReader<InsertComponentEvent<ChangelistEntry>>,
     changelist_q: Query<&ChangelistEntry>,
     fs_q: Query<(&FileSystemEntry, Option<&FileSystemChild>)>,
@@ -336,7 +338,7 @@ pub fn insert_vertex_events(
 
 pub fn insert_edge_events(
     mut commands: Commands,
-    client: Client,
+    client: Client<Main>,
     mut edge_3d_events: EventReader<InsertComponentEvent<Edge3d>>,
     mut edge_angle_events: EventReader<InsertComponentEvent<EdgeAngle>>,
 
@@ -419,7 +421,7 @@ pub fn insert_edge_events(
 
 pub fn insert_face_events(
     mut commands: Commands,
-    client: Client,
+    client: Client<Main>,
     mut face_3d_events: EventReader<InsertComponentEvent<Face3d>>,
     mut camera_manager: ResMut<CameraManager>,
     mut canvas: ResMut<Canvas>,
@@ -497,7 +499,7 @@ pub fn insert_face_events(
 
 pub fn insert_icon_vertex_events(
     mut commands: Commands,
-    client: Client,
+    client: Client<Main>,
     mut vertex_events: EventReader<InsertComponentEvent<IconVertex>>,
 
     mut camera_manager: ResMut<CameraManager>,
@@ -547,7 +549,7 @@ pub fn insert_icon_vertex_events(
 
 pub fn insert_icon_edge_events(
     mut commands: Commands,
-    client: Client,
+    client: Client<Main>,
     mut edge_events: EventReader<InsertComponentEvent<IconEdge>>,
 
     mut camera_manager: ResMut<CameraManager>,
@@ -602,7 +604,7 @@ pub fn insert_icon_edge_events(
 
 pub fn insert_icon_face_events(
     mut commands: Commands,
-    client: Client,
+    client: Client<Main>,
     mut face_events: EventReader<InsertComponentEvent<IconFace>>,
 
     mut camera_manager: ResMut<CameraManager>,
@@ -685,7 +687,7 @@ pub fn insert_icon_face_events(
 }
 
 pub fn insert_icon_frame_events(
-    client: Client,
+    client: Client<Main>,
     mut frame_events: EventReader<InsertComponentEvent<IconFrame>>,
     mut icon_manager: ResMut<IconManager>,
 
@@ -707,7 +709,7 @@ pub fn insert_icon_frame_events(
 
 pub fn insert_owned_by_file_events(
     mut commands: Commands,
-    client: Client,
+    client: Client<Main>,
     mut owned_by_events: EventReader<InsertComponentEvent<OwnedByFile>>,
 
     // for vertices
@@ -806,7 +808,7 @@ pub fn insert_file_type_events(
 
 pub fn insert_animation_events(
     mut commands: Commands,
-    client: Client,
+    client: Client<Main>,
     mut animation_manager: ResMut<AnimationManager>,
     mut frame_events: EventReader<InsertComponentEvent<AnimFrame>>,
     mut rotation_events: EventReader<InsertComponentEvent<AnimRotation>>,
@@ -848,7 +850,7 @@ pub fn insert_animation_events(
 }
 
 pub fn insert_palette_events(
-    client: Client,
+    client: Client<Main>,
     mut color_events: EventReader<InsertComponentEvent<PaletteColor>>,
     mut palette_manager: ResMut<PaletteManager>,
     color_q: Query<&PaletteColor>,
@@ -871,7 +873,7 @@ pub fn insert_palette_events(
 }
 
 pub fn insert_skin_events(
-    client: Client,
+    client: Client<Main>,
     mut bckg_color_events: EventReader<InsertComponentEvent<BackgroundSkinColor>>,
     mut color_events: EventReader<InsertComponentEvent<FaceColor>>,
     mut skin_manager: ResMut<SkinManager>,
@@ -927,7 +929,7 @@ pub fn insert_model_events(
     mut skin_or_scene_events: EventReader<InsertComponentEvent<SkinOrSceneEntity>>,
 
     mut commands: Commands,
-    client: Client,
+    client: Client<Main>,
     mut camera_manager: ResMut<CameraManager>,
     mut canvas: ResMut<Canvas>,
     mut vertex_manager: ResMut<VertexManager>,

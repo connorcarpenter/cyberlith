@@ -8,7 +8,7 @@ use naia_bevy_client::{Client, CommandsExt};
 
 use vortex_proto::components::IconFrame;
 
-use crate::app::resources::{action::icon::IconAction, icon_manager::IconManager};
+use crate::app::{resources::{action::icon::IconAction, icon_manager::IconManager}, plugin::Main};
 
 pub fn execute(
     world: &mut World,
@@ -24,7 +24,7 @@ pub fn execute(
         file_entity, current_frame_index, next_frame_index
     );
 
-    let mut system_state: SystemState<(Commands, Client, Query<&mut IconFrame>)> =
+    let mut system_state: SystemState<(Commands, Client<Main>, Query<&mut IconFrame>)> =
         SystemState::new(world);
     let (mut commands, mut client, mut frame_q) = system_state.get_mut(world);
 

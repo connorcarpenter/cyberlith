@@ -34,6 +34,7 @@ use crate::app::{
         input::InputManager,
         shape_data::{CanvasShape, FaceKey, Vertex3dData},
     },
+    plugin::Main,
 };
 
 #[derive(Resource)]
@@ -283,7 +284,7 @@ impl VertexManager {
     pub fn create_networked_vertex(
         &mut self,
         commands: &mut Commands,
-        client: &mut Client,
+        client: &mut Client<Main>,
         camera_manager: &mut CameraManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
@@ -301,7 +302,7 @@ impl VertexManager {
         let new_vertex_3d_entity = commands
             .spawn_empty()
             .enable_replication(client)
-            .configure_replication(ReplicationConfig::Delegated)
+            .configure_replication::<Main>(ReplicationConfig::Delegated)
             .insert(Vertex3d::from_vec3(position))
             .insert(owned_by_file_component)
             .insert(FileType::new(file_type))
@@ -334,7 +335,7 @@ impl VertexManager {
         &mut self,
         action_stack: &mut ActionStack<ShapeAction>,
         commands: &mut Commands,
-        client: &mut Client,
+        client: &mut Client<Main>,
         camera_manager: &mut CameraManager,
         edge_manager: &mut EdgeManager,
         face_manager: &mut FaceManager,
@@ -616,7 +617,7 @@ impl VertexManager {
 
     pub fn on_vertex_3d_moved(
         &self,
-        client: &Client,
+        client: &Client<Main>,
         face_manager: &FaceManager,
         meshes: &mut Assets<CpuMesh>,
         mesh_handle_q: &Query<&Handle<CpuMesh>>,

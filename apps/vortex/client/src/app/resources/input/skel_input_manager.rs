@@ -20,6 +20,7 @@ use render_api::{
 use vortex_proto::components::{EdgeAngle, VertexRoot};
 
 use crate::app::{
+    plugin::Main,
     components::{Edge2dLocal, LocalShape, Vertex2d, VertexTypeData},
     resources::{
         action::shape::ShapeAction, canvas::Canvas, edge_manager::EdgeManager, input::InputManager,
@@ -201,7 +202,7 @@ impl SkelInputManager {
 
                 let mut system_state: SystemState<(
                     Commands,
-                    Client,
+                    Client<Main>,
                     ResMut<EdgeManager>,
                     ResMut<Canvas>,
                     Query<&Transform>,

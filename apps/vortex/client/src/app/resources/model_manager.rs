@@ -42,6 +42,7 @@ use crate::app::{
     },
     transform_from_endpoints_and_spin,
     ui::{widgets::create_networked_dependency, BindingState, UiState},
+    plugin::Main,
 };
 
 pub struct NetTransformData {
@@ -363,7 +364,7 @@ impl ModelManager {
     ) -> Entity {
         let mut system_state: SystemState<(
             Commands,
-            Client,
+            Client<Main>,
             ResMut<Canvas>,
             ResMut<CameraManager>,
             ResMut<VertexManager>,
@@ -410,7 +411,7 @@ impl ModelManager {
         let new_net_transform_entity = commands
             .spawn_empty()
             .enable_replication(&mut client)
-            .configure_replication(ReplicationConfig::Delegated)
+            .configure_replication::<Main>(ReplicationConfig::Delegated)
             .insert(NetTransform::new(
                 SerdeQuat::from(Quat::IDENTITY),
                 0.0,
@@ -448,7 +449,7 @@ impl ModelManager {
 
         //
 
-        let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
+        let mut system_state: SystemState<(Commands, Client<Main>)> = SystemState::new(world);
         let (mut commands, mut client) = system_state.get_mut(world);
 
         commands
@@ -1358,7 +1359,7 @@ impl ModelManager {
             // draw models in correct positions
             let mut system_state: SystemState<(
                 ResMut<RenderFrame>,
-                Client,
+                Client<Main>,
                 Res<FileManager>,
                 Res<CameraManager>,
                 Res<VertexManager>,
@@ -1423,7 +1424,7 @@ impl ModelManager {
         file_entity: &Entity,
         file_is_model: bool,
         render_frame: &mut RenderFrame,
-        client: &Client,
+        client: &Client<Main>,
         file_manager: &FileManager,
         vertex_3d_q: &Query<&Vertex3d>,
         edge_q: &Query<(&OwnedByFileLocal, &Edge3dLocal), With<Edge3d>>,
@@ -1490,7 +1491,7 @@ impl ModelManager {
     fn render_2d_skins_super_recursive(
         &self,
         render_frame: &mut RenderFrame,
-        client: &Client,
+        client: &Client<Main>,
         file_manager: &FileManager,
         vertex_3d_q: &Query<&Vertex3d>,
         edge_q: &Query<(&OwnedByFileLocal, &Edge3dLocal), With<Edge3d>>,
@@ -1698,7 +1699,7 @@ impl ModelManager {
 
             let mut system_state: SystemState<(
                 ResMut<RenderFrame>,
-                Client,
+                Client<Main>,
                 Res<FileManager>,
                 Res<CameraManager>,
                 Query<&Vertex3d>,
@@ -1746,7 +1747,7 @@ impl ModelManager {
         file_is_model: bool,
         render_frame: &mut RenderFrame,
         render_layer: &RenderLayer,
-        client: &Client,
+        client: &Client<Main>,
         file_manager: &FileManager,
         camera_manager: &CameraManager,
         vertex_3d_q: &Query<&Vertex3d>,

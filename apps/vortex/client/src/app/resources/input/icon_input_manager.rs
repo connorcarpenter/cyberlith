@@ -33,6 +33,7 @@ use crate::app::{
         shape_data::CanvasShape,
         tab_manager::TabManager,
     },
+    plugin::Main,
 };
 
 pub struct IconInputManager;
@@ -156,7 +157,7 @@ impl IconInputManager {
                 icon_manager.handle_delete_vertex_action(world, &vertex_entity)
             }
             Some((edge_entity, CanvasShape::Edge)) => {
-                let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
+                let mut system_state: SystemState<(Commands, Client<Main>)> = SystemState::new(world);
                 let (mut commands, mut client) = system_state.get_mut(world);
 
                 // check whether we can delete edge
@@ -185,7 +186,7 @@ impl IconInputManager {
                 icon_manager.selected_shape = None;
             }
             Some((local_face_entity, CanvasShape::Face)) => {
-                let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
+                let mut system_state: SystemState<(Commands, Client<Main>)> = SystemState::new(world);
                 let (mut commands, mut client) = system_state.get_mut(world);
 
                 let net_face_entity = icon_manager
@@ -399,7 +400,7 @@ impl IconInputManager {
 
         let mut system_state: SystemState<(
             Commands,
-            Client,
+            Client<Main>,
             ResMut<Canvas>,
             Query<&mut IconVertex>,
             Query<&Transform>,
@@ -805,7 +806,7 @@ impl IconInputManager {
             .unwrap();
 
         let mut system_state: SystemState<(
-            Client,
+            Client<Main>,
             Query<(Entity, &IconVertex), Without<LocalShape>>,
             Query<(Entity, &IconEdge), Without<LocalShape>>,
             Query<&IconFace>,
@@ -884,7 +885,7 @@ impl IconInputManager {
         };
         let current_file_entity = *current_file_entity;
 
-        let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
+        let mut system_state: SystemState<(Commands, Client<Main>)> = SystemState::new(world);
         let (mut commands, client) = system_state.get_mut(world);
 
         // delete vertex

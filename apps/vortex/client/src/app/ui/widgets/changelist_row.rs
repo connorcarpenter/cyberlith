@@ -24,6 +24,7 @@ use crate::app::{
         FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, FILE_ROW_COLORS_UNSELECTED,
         TEXT_COLORS_HOVER, TEXT_COLORS_SELECTED, TEXT_COLORS_UNSELECTED,
     },
+    plugin::Main
 };
 
 pub struct ChangelistRowUiWidget;
@@ -32,7 +33,7 @@ impl ChangelistRowUiWidget {
     pub fn render_row(ui: &mut Ui, world: &mut World, row_entity: Entity) {
         let mut system_state: SystemState<(
             Commands,
-            Client,
+            Client<Main>,
             Query<(&ChangelistEntry, &ChangelistUiState)>,
         )> = SystemState::new(world);
         let (mut commands, client, query) = system_state.get_mut(world);
@@ -223,7 +224,7 @@ impl ChangelistRowUiWidget {
     pub fn on_row_click(world: &mut World, row_entity: &Entity) {
         let has_auth: bool;
         {
-            let mut system_state: SystemState<(Commands, Client, Query<&ChangelistEntry>)> =
+            let mut system_state: SystemState<(Commands, Client<Main>, Query<&ChangelistEntry>)> =
                 SystemState::new(world);
             let (mut commands, client, query) = system_state.get_mut(world);
 
@@ -275,7 +276,7 @@ impl ChangelistRowUiWidget {
         action: ChangelistAction,
         opt_str: Option<&str>,
     ) {
-        let mut system_state: SystemState<Client> = SystemState::new(world);
+        let mut system_state: SystemState<Client<Main>> = SystemState::new(world);
         let mut client = system_state.get_mut(world);
 
         let mut message = ChangelistMessage::new(action, opt_str);

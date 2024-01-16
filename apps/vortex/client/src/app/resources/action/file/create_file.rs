@@ -28,6 +28,7 @@ use crate::app::{
         tab_manager::TabManager,
     },
     systems::file_post_process,
+    plugin::Main,
 };
 
 pub(crate) fn execute(
@@ -44,7 +45,7 @@ pub(crate) fn execute(
 
     let mut system_state: SystemState<(
         Commands,
-        Client,
+        Client<Main>,
         ResMut<FileManager>,
         ResMut<TabManager>,
         Query<(Entity, &mut FileSystemUiState)>,
@@ -116,7 +117,7 @@ pub(crate) fn execute(
 fn create_fs_entry(
     action_stack: &mut ActionStack<FileAction>,
     commands: &mut Commands,
-    client: &mut Client,
+    client: &mut Client<Main>,
     file_manager: &mut FileManager,
     parent: &mut FileSystemParent,
     parent_entity_opt: Option<Entity>,
@@ -129,7 +130,7 @@ fn create_fs_entry(
     let entity_id = commands
         .spawn_empty()
         .enable_replication(client)
-        .configure_replication(ReplicationConfig::Delegated)
+        .configure_replication::<Main>(ReplicationConfig::Delegated)
         .id();
 
     let entry = FileSystemEntry::new(new_file_name, entry_kind);

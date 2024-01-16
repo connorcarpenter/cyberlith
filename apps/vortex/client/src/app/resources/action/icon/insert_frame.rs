@@ -23,6 +23,7 @@ use crate::app::{
         action::icon::IconAction, icon_data::IconFaceKey, icon_manager::IconManager,
         icon_manager::IconShapeData,
     },
+    plugin::Main,
 };
 
 pub fn execute(
@@ -44,7 +45,7 @@ pub fn execute(
     let mut entities_to_release = Vec::new();
 
     {
-        let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
+        let mut system_state: SystemState<(Commands, Client<Main>)> = SystemState::new(world);
         let (mut commands, mut client) = system_state.get_mut(world);
 
         last_frame_index = icon_manager.current_frame_index();
@@ -65,7 +66,7 @@ pub fn execute(
         if let Some(content) = content_opt {
             let mut system_state: SystemState<(
                 Commands,
-                Client,
+                Client<Main>,
                 ResMut<Assets<CpuMesh>>,
                 ResMut<Assets<CpuMaterial>>,
             )> = SystemState::new(world);
@@ -132,7 +133,7 @@ pub fn execute(
 
             let mut system_state: SystemState<(
                 Commands,
-                Client,
+                Client<Main>,
                 ResMut<Assets<CpuMesh>>,
                 ResMut<Assets<CpuMaterial>>,
                 Query<&Transform>,
@@ -226,7 +227,7 @@ pub fn execute(
     }
 
     {
-        let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
+        let mut system_state: SystemState<(Commands, Client<Main>)> = SystemState::new(world);
         let (mut commands, mut client) = system_state.get_mut(world);
 
         for entity in entities_to_release {

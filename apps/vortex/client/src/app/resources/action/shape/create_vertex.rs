@@ -29,6 +29,7 @@ use crate::app::{
         shape_data::{CanvasShape, FaceKey},
         vertex_manager::VertexManager,
     },
+    plugin::Main,
 };
 
 pub(crate) fn execute(
@@ -49,7 +50,7 @@ pub(crate) fn execute(
 
     let mut system_state: SystemState<(
         Commands,
-        Client,
+        Client<Main>,
         ResMut<Canvas>,
         ResMut<CameraManager>,
         ResMut<VertexManager>,
@@ -132,7 +133,7 @@ pub(crate) fn execute(
 
     let mut system_state: SystemState<(
         Commands,
-        Client,
+        Client<Main>,
         ResMut<Canvas>,
         ResMut<CameraManager>,
         ResMut<VertexManager>,
@@ -284,7 +285,7 @@ pub(crate) fn execute(
 
     // release all non-selected vertices
     {
-        let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
+        let mut system_state: SystemState<(Commands, Client<Main>)> = SystemState::new(world);
         let (mut commands, mut client) = system_state.get_mut(world);
 
         for entity_to_release in entities_to_release {

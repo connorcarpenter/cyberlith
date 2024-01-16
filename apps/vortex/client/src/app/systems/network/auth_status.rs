@@ -24,22 +24,23 @@ use crate::app::{
         face_manager::FaceManager, shape_manager::ShapeManager, tab_manager::TabManager,
         vertex_manager::VertexManager,
     },
+    plugin::Main,
 };
 
 #[derive(Resource)]
 struct CachedAuthEventsState {
     event_state: SystemState<(
-        EventReader<'static, 'static, EntityAuthGrantedEvent>,
-        EventReader<'static, 'static, EntityAuthDeniedEvent>,
-        EventReader<'static, 'static, EntityAuthResetEvent>,
+        EventReader<'static, 'static, EntityAuthGrantedEvent<Main>>,
+        EventReader<'static, 'static, EntityAuthDeniedEvent<Main>>,
+        EventReader<'static, 'static, EntityAuthResetEvent<Main>>,
     )>,
 }
 
 pub fn auth_event_startup(world: &mut World) {
     let event_state = SystemState::<(
-        EventReader<EntityAuthGrantedEvent>,
-        EventReader<EntityAuthDeniedEvent>,
-        EventReader<EntityAuthResetEvent>,
+        EventReader<EntityAuthGrantedEvent<Main>>,
+        EventReader<EntityAuthDeniedEvent<Main>>,
+        EventReader<EntityAuthResetEvent<Main>>,
     )>::new(world);
     world.insert_resource(CachedAuthEventsState { event_state });
 }
@@ -54,16 +55,16 @@ pub fn auth_events(world: &mut World) {
             let (mut granted_events, mut denied_events, mut reset_events) =
                 events_reader_state.event_state.get_mut(world);
 
-            for EntityAuthGrantedEvent(entity) in granted_events.read() {
-                auth_granted_events.push(*entity);
+            for event in granted_events.read() {
+                auth_granted_events.push(event.entity);
             }
 
-            for EntityAuthDeniedEvent(entity) in denied_events.read() {
-                auth_denied_events.push(*entity);
+            for event in denied_events.read() {
+                auth_denied_events.push(event.entity);
             }
 
-            for EntityAuthResetEvent(entity) in reset_events.read() {
-                auth_reset_events.push(*entity);
+            for event in reset_events.read() {
+                auth_reset_events.push(event.entity);
             }
         },
     );
@@ -76,7 +77,7 @@ pub fn auth_events(world: &mut World) {
     }
 
     let mut system_state: SystemState<(
-        Client,
+        Client<Main>,
         ResMut<FileActions>,
         ResMut<TabManager>,
         Res<VertexManager>,
@@ -150,7 +151,7 @@ pub fn auth_events(world: &mut World) {
 }
 
 fn process_entity_auth_status(
-    client: &Client,
+    client: &Client<Main>,
     file_actions: &mut FileActions,
     tab_manager: &mut TabManager,
     vertex_manager: &VertexManager,

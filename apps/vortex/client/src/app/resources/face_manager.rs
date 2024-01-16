@@ -29,6 +29,7 @@ use crate::app::{
         shape_data::{CanvasShape, FaceData, FaceKey},
         vertex_manager::VertexManager,
     },
+    plugin::Main,
 };
 
 #[derive(Resource)]
@@ -296,7 +297,7 @@ impl FaceManager {
 
         let mut system_state: SystemState<(
             Commands,
-            Client,
+            Client<Main>,
             Res<CameraManager>,
             ResMut<Assets<CpuMesh>>,
             ResMut<Assets<CpuMaterial>>,
@@ -327,7 +328,7 @@ impl FaceManager {
     pub fn create_networked_face(
         &mut self,
         commands: &mut Commands,
-        client: &mut Client,
+        client: &mut Client<Main>,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
         camera_manager: &CameraManager,
@@ -389,7 +390,7 @@ impl FaceManager {
         let face_3d_entity = commands
             .spawn_empty()
             .enable_replication(client)
-            .configure_replication(ReplicationConfig::Delegated)
+            .configure_replication::<Main>(ReplicationConfig::Delegated)
             .insert(owned_by_file_component)
             .insert(OwnedByFileLocal::new(file_entity))
             .insert(face_3d_component)

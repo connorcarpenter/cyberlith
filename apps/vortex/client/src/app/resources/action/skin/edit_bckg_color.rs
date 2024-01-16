@@ -11,6 +11,7 @@ use naia_bevy_client::{Client, CommandsExt};
 use vortex_proto::components::BackgroundSkinColor;
 
 use crate::app::{
+    plugin::Main,
     events::ShapeColorResyncEvent,
     resources::{action::skin::SkinAction, canvas::Canvas, skin_manager::SkinManager},
 };
@@ -27,7 +28,7 @@ pub(crate) fn execute(
     info!("EditBckgColor(new_color: `{:?}`)", new_palette_color_entity);
     let mut system_state: SystemState<(
         Commands,
-        Client,
+        Client<Main>,
         ResMut<Canvas>,
         ResMut<SkinManager>,
         EventWriter<ShapeColorResyncEvent>,

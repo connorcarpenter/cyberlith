@@ -9,10 +9,10 @@ use naia_bevy_client::Client;
 
 use vortex_proto::components::{AnimRotation, ShapeName};
 
-use crate::app::resources::{
+use crate::app::{resources::{
     action::animation::AnimAction, animation_manager::AnimationManager, canvas::Canvas,
     vertex_manager::VertexManager,
-};
+}, plugin::Main};
 
 pub fn execute(world: &mut World, tab_file_entity: Entity, action: AnimAction) -> Vec<AnimAction> {
     let AnimAction::RotateVertex(vertex_2d_entity, old_angle_opt, new_angle_opt) = action else {
@@ -26,7 +26,7 @@ pub fn execute(world: &mut World, tab_file_entity: Entity, action: AnimAction) -
 
     let mut system_state: SystemState<(
         Commands,
-        Client,
+        Client<Main>,
         ResMut<Canvas>,
         Res<VertexManager>,
         ResMut<AnimationManager>,

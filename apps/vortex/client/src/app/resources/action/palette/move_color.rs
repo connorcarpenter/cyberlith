@@ -8,7 +8,7 @@ use naia_bevy_client::{Client, CommandsExt};
 
 use vortex_proto::components::PaletteColor;
 
-use crate::app::resources::{action::palette::PaletteAction, palette_manager::PaletteManager};
+use crate::app::{resources::{action::palette::PaletteAction, palette_manager::PaletteManager}, plugin::Main};
 
 pub fn execute(
     world: &mut World,
@@ -24,7 +24,7 @@ pub fn execute(
         file_entity, current_color_index, next_color_index
     );
 
-    let mut system_state: SystemState<(Commands, Client, Query<&mut PaletteColor>)> =
+    let mut system_state: SystemState<(Commands, Client<Main>, Query<&mut PaletteColor>)> =
         SystemState::new(world);
     let (mut commands, mut client, mut color_q) = system_state.get_mut(world);
 

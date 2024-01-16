@@ -11,6 +11,7 @@ use crate::app::{
     resources::{
         action::model::ModelAction, canvas::Canvas, input::InputManager, shape_data::CanvasShape,
     },
+    plugin::Main,
 };
 
 pub(crate) fn execute(
@@ -26,7 +27,7 @@ pub(crate) fn execute(
 
     let mut system_state: SystemState<(
         Commands,
-        Client,
+        Client<Main>,
         ResMut<Canvas>,
         Query<&NetTransformControl>,
     )> = SystemState::new(world);

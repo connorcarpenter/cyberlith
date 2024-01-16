@@ -15,6 +15,7 @@ use crate::app::{
         action::icon::IconAction, file_manager::FileManager, icon_manager::IconManager,
         palette_manager::PaletteManager, shape_data::CanvasShape,
     },
+    plugin::Main,
 };
 
 pub(crate) fn execute(
@@ -29,7 +30,7 @@ pub(crate) fn execute(
 
     info!("SelectShape({:?})", shape_entity_opt);
 
-    let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
+    let mut system_state: SystemState<(Commands, Client<Main>)> = SystemState::new(world);
     let (mut commands, mut client) = system_state.get_mut(world);
 
     // Deselect all selected shapes, select the new selected shapes
@@ -64,7 +65,7 @@ pub(crate) fn execute(
 
         if let Some(net_face_entity) = icon_manager.face_entity_local_to_net(&local_face_entity) {
             let mut system_state: SystemState<(
-                Client,
+                Client<Main>,
                 Query<&mut IconFace>,
                 EventWriter<ShapeColorResyncEvent>,
             )> = SystemState::new(world);
@@ -108,7 +109,7 @@ pub(crate) fn execute(
 
 pub fn entity_request_release(
     commands: &mut Commands,
-    mut client: &mut Client,
+    mut client: &mut Client<Main>,
     entity_to_request: Option<Entity>,
     entity_to_release: Option<Entity>,
 ) {

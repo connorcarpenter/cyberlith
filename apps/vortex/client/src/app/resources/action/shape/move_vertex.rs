@@ -10,10 +10,10 @@ use render_api::{base::CpuMesh, components::Transform, Assets, Handle};
 
 use vortex_proto::components::{Face3d, Vertex3d};
 
-use crate::app::resources::{
+use crate::app::{resources::{
     action::shape::ShapeAction, canvas::Canvas, face_manager::FaceManager,
     vertex_manager::VertexManager,
-};
+}, plugin::Main};
 
 pub(crate) fn execute(world: &mut World, action: ShapeAction) -> Vec<ShapeAction> {
     let ShapeAction::MoveVertex(vertex_2d_entity, old_position, new_position, already_moved) = action else {
@@ -25,7 +25,7 @@ pub(crate) fn execute(world: &mut World, action: ShapeAction) -> Vec<ShapeAction
         vertex_2d_entity, already_moved
     );
     let mut system_state: SystemState<(
-        Client,
+        Client<Main>,
         ResMut<Canvas>,
         ResMut<Assets<CpuMesh>>,
         ResMut<VertexManager>,

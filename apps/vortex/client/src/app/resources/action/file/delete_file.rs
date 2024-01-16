@@ -11,6 +11,7 @@ use vortex_proto::components::{
 };
 
 use crate::app::{
+    plugin::Main,
     components::file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
     resources::{
         action::file::{
@@ -35,7 +36,7 @@ pub(crate) fn execute(
     info!("DeleteFile({:?})", file_entity);
     let mut system_state: SystemState<(
         Commands,
-        Client,
+        Client<Main>,
         ResMut<FileManager>,
         ResMut<TabManager>,
         Query<(Entity, &mut FileSystemUiState)>,
@@ -128,7 +129,7 @@ pub(crate) fn execute(
 }
 
 pub(crate) fn convert_contents_to_slim_tree(
-    client: &Client,
+    client: &Client<Main>,
     parent_entity: &Entity,
     fs_query: &Query<(
         &FileSystemEntry,

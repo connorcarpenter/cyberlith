@@ -12,7 +12,7 @@ use vortex_proto::components::{ChangelistEntry, ChangelistStatus};
 
 use crate::app::{
     components::file_system::{ChangelistUiState, FileSystemUiState},
-    resources::action::file::FileAction,
+    resources::action::file::FileAction, plugin::Main
 };
 
 pub fn execute(world: &mut World, action: FileAction) -> Vec<FileAction> {
@@ -22,7 +22,7 @@ pub fn execute(world: &mut World, action: FileAction) -> Vec<FileAction> {
 
     let mut system_state: SystemState<(
         Commands,
-        Client,
+        Client<Main>,
         Query<(Entity, &mut FileSystemUiState)>,
         Query<(Entity, &ChangelistEntry, &mut ChangelistUiState)>,
     )> = SystemState::new(world);
@@ -47,7 +47,7 @@ pub fn execute(world: &mut World, action: FileAction) -> Vec<FileAction> {
 }
 
 pub fn select_files(
-    client: &mut Client,
+    client: &mut Client<Main>,
     fs_query: &mut Query<(Entity, &mut FileSystemUiState)>,
     cl_query: &mut Query<(Entity, &ChangelistEntry, &mut ChangelistUiState)>,
     row_entities: &Vec<Entity>,
@@ -75,7 +75,7 @@ pub fn select_files(
 }
 
 pub fn deselect_all_selected_files(
-    client: &mut Client,
+    client: &mut Client<Main>,
     fs_query: &mut Query<(Entity, &mut FileSystemUiState)>,
     cl_query: &mut Query<(Entity, &ChangelistEntry, &mut ChangelistUiState)>,
 ) -> (Vec<Entity>, HashSet<Entity>) {
@@ -109,7 +109,7 @@ pub fn deselect_all_selected_files(
 
 pub fn request_entities(
     commands: &mut Commands,
-    client: &mut Client,
+    client: &mut Client<Main>,
     entities_to_request: HashSet<Entity>,
 ) {
     for file_entity in entities_to_request {
@@ -123,7 +123,7 @@ pub fn request_entities(
 
 pub fn release_entities(
     commands: &mut Commands,
-    client: &mut Client,
+    client: &mut Client<Main>,
     entities_to_release: HashSet<Entity>,
 ) {
     for file_entity in entities_to_release {

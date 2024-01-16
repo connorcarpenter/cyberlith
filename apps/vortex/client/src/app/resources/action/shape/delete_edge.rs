@@ -8,7 +8,7 @@ use naia_bevy_client::Client;
 
 use vortex_proto::components::Edge3d;
 
-use crate::app::resources::{
+use crate::app::{plugin::Main, resources::{
     action::shape::{
         select_shape::{entity_request_release, select_shape},
         ShapeAction,
@@ -19,7 +19,7 @@ use crate::app::resources::{
     input::InputManager,
     shape_data::CanvasShape,
     vertex_manager::VertexManager,
-};
+}};
 
 pub(crate) fn execute(
     world: &mut World,
@@ -33,7 +33,7 @@ pub(crate) fn execute(
     info!("DeleteEdge(edge_2d_entity: `{:?}`)", edge_2d_entity);
     let mut system_state: SystemState<(
         Commands,
-        Client,
+        Client<Main>,
         ResMut<Canvas>,
         ResMut<VertexManager>,
         ResMut<EdgeManager>,

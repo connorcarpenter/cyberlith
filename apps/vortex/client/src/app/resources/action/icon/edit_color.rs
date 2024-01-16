@@ -10,6 +10,7 @@ use naia_bevy_client::Client;
 use vortex_proto::components::IconFace;
 
 use crate::app::{
+    plugin::Main,
     events::ShapeColorResyncEvent,
     resources::{action::icon::IconAction, icon_manager::IconManager},
 };
@@ -28,7 +29,7 @@ pub(crate) fn execute(
         local_face_entity, new_palette_color_opt
     );
     let mut system_state: SystemState<(
-        Client,
+        Client<Main>,
         EventWriter<ShapeColorResyncEvent>,
         Query<&mut IconFace>,
     )> = SystemState::new(world);

@@ -23,6 +23,7 @@ use crate::app::{
         action::skin::SkinAction, file_manager::FileManager, input::InputManager,
         palette_manager::PaletteManager, shape_data::CanvasShape,
     },
+    plugin::Main,
 };
 
 #[derive(Resource)]
@@ -58,7 +59,7 @@ impl SkinManager {
 
     pub(crate) fn background_color_index(
         &self,
-        client: &Client,
+        client: &Client<Main>,
         file_entity: &Entity,
         bck_color_q: &Query<&BackgroundSkinColor>,
         palette_q: &Query<&PaletteColor>,
@@ -92,7 +93,7 @@ impl SkinManager {
         palette_color_entity: Entity,
     ) -> Entity {
         info!("creating networked face color!");
-        let mut system_state: SystemState<(Commands, Client, EventWriter<ShapeColorResyncEvent>)> =
+        let mut system_state: SystemState<(Commands, Client<Main>, EventWriter<ShapeColorResyncEvent>)> =
             SystemState::new(world);
         let (mut commands, mut client, mut shape_color_resync_events) = system_state.get_mut(world);
 
@@ -105,7 +106,7 @@ impl SkinManager {
         let face_color_entity = commands
             .spawn_empty()
             .enable_replication(&mut client)
-            .configure_replication(ReplicationConfig::Delegated)
+            .configure_replication::<Main>(ReplicationConfig::Delegated)
             .insert(component)
             .id();
 
@@ -177,7 +178,7 @@ impl SkinManager {
     fn init_background_color(&mut self, world: &mut World, current_file_entity: &Entity) {
         let mut system_state: SystemState<(
             Commands,
-            Client,
+            Client<Main>,
             Res<FileManager>,
             Res<PaletteManager>,
             EventWriter<ShapeColorResyncEvent>,
@@ -212,7 +213,7 @@ impl SkinManager {
         let bck_color_entity = commands
             .spawn_empty()
             .enable_replication(&mut client)
-            .configure_replication(ReplicationConfig::Delegated)
+            .configure_replication::<Main>(ReplicationConfig::Delegated)
             .insert(component)
             .id();
 
@@ -238,7 +239,7 @@ impl SkinManager {
         let mut color_index_picked = None;
 
         let mut system_state: SystemState<(
-            Client,
+            Client<Main>,
             Res<FileManager>,
             Res<PaletteManager>,
             Query<&BackgroundSkinColor>,

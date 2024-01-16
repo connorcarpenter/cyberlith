@@ -6,7 +6,7 @@ use bevy_ecs::{
 
 use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus};
 
-use crate::app::resources::{
+use crate::app::{plugin::Main, resources::{
     action::{
         animation::AnimAction,
         file::{FileAction, FileActions},
@@ -21,7 +21,7 @@ use crate::app::resources::{
     input::InputManager,
     palette_manager::PaletteManager,
     tab_manager::TabManager,
-};
+}};
 
 pub trait Action: Clone {
     fn entity_update_auth_status_impl(
@@ -189,7 +189,7 @@ impl<A: Action> ActionStack<A> {
     }
 
     pub fn should_be_enabled(world: &mut World, entities: &Vec<Entity>) -> bool {
-        let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
+        let mut system_state: SystemState<(Commands, Client<Main>)> = SystemState::new(world);
         let (mut commands, client) = system_state.get_mut(world);
 
         for entity in entities {

@@ -59,6 +59,7 @@ use crate::app::{
         },
         UiState,
     },
+    plugin::Main,
 };
 
 pub struct TabState {
@@ -258,7 +259,7 @@ impl TabManager {
         self.content_has_focus = focus;
     }
 
-    pub fn open_tab(&mut self, client: &mut Client, row_entity: &Entity, file_ext: FileExtension) {
+    pub fn open_tab(&mut self, client: &mut Client<Main>, row_entity: &Entity, file_ext: FileExtension) {
         if self.tab_map.contains_key(row_entity) {
             self.select_tab(row_entity);
         } else {
@@ -289,7 +290,7 @@ impl TabManager {
         }
     }
 
-    pub fn close_tab(&mut self, client: &mut Client, row_entity: &Entity) {
+    pub fn close_tab(&mut self, client: &mut Client<Main>, row_entity: &Entity) {
         // remove tab
         let tab_state = self.tab_map.remove(row_entity).unwrap();
         self.tab_order.remove(tab_state.order);
@@ -488,14 +489,14 @@ impl TabManager {
         self.current_tab = None;
     }
 
-    fn close_all_tabs(&mut self, client: &mut Client) {
+    fn close_all_tabs(&mut self, client: &mut Client<Main>) {
         let all_tabs = self.tab_order.clone();
         for entity in all_tabs {
             self.close_tab(client, &entity);
         }
     }
 
-    fn close_all_tabs_except(&mut self, client: &mut Client, row_entity: &Entity) {
+    fn close_all_tabs_except(&mut self, client: &mut Client<Main>, row_entity: &Entity) {
         self.close_all_tabs(client);
         if !self.tab_map.contains_key(row_entity) {
             panic!("row entity not in tab map!")
@@ -503,7 +504,7 @@ impl TabManager {
         self.select_tab(row_entity);
     }
 
-    fn close_all_tabs_left_of(&mut self, client: &mut Client, row_entity: &Entity) {
+    fn close_all_tabs_left_of(&mut self, client: &mut Client<Main>, row_entity: &Entity) {
         let tab_state = self.tab_map.get(row_entity).unwrap();
         let order = tab_state.order;
         let mut tabs_to_close: Vec<Entity> = Vec::new();
@@ -517,7 +518,7 @@ impl TabManager {
         }
     }
 
-    fn close_all_tabs_right_of(&mut self, client: &mut Client, row_entity: &Entity) {
+    fn close_all_tabs_right_of(&mut self, client: &mut Client<Main>, row_entity: &Entity) {
         let tab_state = self.tab_map.get(row_entity).unwrap();
         let order = tab_state.order;
         let mut tabs_to_close: Vec<Entity> = Vec::new();
@@ -533,7 +534,7 @@ impl TabManager {
 
     fn render_tabs(
         &mut self,
-        client: &mut Client,
+        client: &mut Client<Main>,
         ui: &mut Ui,
         file_q: &Query<(&FileSystemEntry, &FileSystemUiState)>,
     ) {
@@ -701,7 +702,7 @@ impl TabManager {
         });
     }
 
-    fn execute_tab_action(&mut self, client: &mut Client, tab_action: Option<TabAction>) {
+    fn execute_tab_action(&mut self, client: &mut Client<Main>, tab_action: Option<TabAction>) {
         match tab_action {
             None => {}
             Some(TabAction::Select(row_entity)) => {
@@ -730,7 +731,7 @@ pub fn render_tab_bar(ui: &mut Ui, world: &mut World) {
     egui::TopBottomPanel::top("tab_bar").show_inside(ui, |ui| {
         egui::menu::bar(ui, |ui| {
             let mut system_state: SystemState<(
-                Client,
+                Client<Main>,
                 ResMut<TabManager>,
                 Query<(&FileSystemEntry, &FileSystemUiState)>,
             )> = SystemState::new(world);
@@ -751,7 +752,7 @@ fn file_ext_specific_sync_tabs_shape_colors(
     match file_ext {
         FileExtension::Skin => {
             let mut system_state: SystemState<(
-                Client,
+                Client<Main>,
                 Res<FileManager>,
                 Res<FaceManager>,
                 Res<PaletteManager>,
@@ -806,7 +807,7 @@ fn file_ext_specific_sync_tabs_shape_colors(
         }
         FileExtension::Model | FileExtension::Scene => {
             let mut system_state: SystemState<(
-                Client,
+                Client<Main>,
                 Res<FileManager>,
                 Res<PaletteManager>,
                 Res<SkinManager>,
@@ -852,7 +853,7 @@ fn file_ext_specific_sync_tabs_shape_colors(
         }
         FileExtension::Icon => {
             let mut system_state: SystemState<(
-                Client,
+                Client<Main>,
                 Res<FileManager>,
                 Res<IconManager>,
                 Res<PaletteManager>,
@@ -924,7 +925,7 @@ fn file_ext_specific_sync_tabs_shape_colors(
 
 fn set_face_3d_colors_recursive(
     current_file_entity: &Entity,
-    client: &Client,
+    client: &Client<Main>,
     file_manager: &FileManager,
     palette_manager: &PaletteManager,
     skin_manager: &SkinManager,
@@ -989,7 +990,7 @@ fn set_face_3d_colors_recursive(
 
 fn set_face_3d_colors(
     skin_file_entity: &Entity,
-    client: &Client,
+    client: &Client<Main>,
     file_manager: &FileManager,
     palette_manager: &PaletteManager,
     skin_manager: &SkinManager,
@@ -1068,7 +1069,7 @@ fn set_face_3d_colors(
 
 fn set_icon_face_colors(
     icon_file_entity: &Entity,
-    client: &Client,
+    client: &Client<Main>,
     file_manager: &FileManager,
     palette_manager: &PaletteManager,
     materials: &mut Assets<CpuMaterial>,

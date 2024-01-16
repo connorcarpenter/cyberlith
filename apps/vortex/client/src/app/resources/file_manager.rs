@@ -12,7 +12,7 @@ use vortex_proto::{
     resources::FileKey,
 };
 
-use crate::app::resources::tab_manager::TabManager;
+use crate::app::{resources::tab_manager::TabManager, plugin::Main};
 
 struct ChangelistData {
     changelist_entity: Entity,
@@ -79,7 +79,7 @@ impl FileManager {
 
     pub fn on_file_delete(
         &mut self,
-        client: &mut Client,
+        client: &mut Client<Main>,
         tab_manager: &mut TabManager,
         file_entity: &Entity,
     ) {
@@ -271,7 +271,7 @@ impl FileManager {
 }
 
 pub fn get_full_path(
-    client: &Client,
+    client: &Client<Main>,
     fs_q: &Query<(&FileSystemEntry, Option<&FileSystemChild>)>,
     file_entity: Entity,
 ) -> String {
