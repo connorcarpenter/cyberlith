@@ -2,10 +2,10 @@
 cfg_if! {
     if #[cfg(target_arch = "wasm32")] {
         mod wasm;
-        pub use self::wasm::*;
+        pub(crate) use self::wasm::*;
     }
     else {
         mod native;
-        pub use self::native::*;
+        pub(crate) use self::native::*;
     }
 }

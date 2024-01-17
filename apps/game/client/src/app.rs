@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::time::Duration;
 
 use game_engine::{
@@ -14,7 +15,7 @@ use game_engine::{
         shapes, Assets, Handle,
     },
     EnginePlugin,
-    http::{HttpRequest, HttpResponse},
+    http::{HttpRequest, HttpClient, HttpKey},
     naia::Timer,
 };
 
@@ -23,7 +24,6 @@ use bevy_ecs::{
     component::Component,
     query::With,
     system::{Commands, Local, Query, Res, ResMut, Resource},
-    entity::Entity,
 };
 use bevy_log::info;
 
@@ -42,11 +42,12 @@ pub fn build() -> App {
         .add_systems(Update, draw)
         // Http
         .init_resource::<ApiTimer>()
-        .add_systems(Update, (send_request, handle_response))
+        .add_systems(Update, send_recv_http)
     ;
     app
 }
 
+// ApiTimer
 #[derive(Resource)]
 pub struct ApiTimer(pub Timer);
 
@@ -56,21 +57,58 @@ impl Default for ApiTimer {
     }
 }
 
-fn send_request(mut commands: Commands, mut timer: ResMut<ApiTimer>) {
+// Http systems
+fn send_recv_http(mut timer: ResMut<ApiTimer>, mut http_client: ResMut<HttpClient>, mut key_store: Local<HashSet<HttpKey>>) {
+    // send
     if timer.0.ringing() {
         timer.0.reset();
 
-        commands.spawn(HttpRequest::get("https://api.ipify.org?format=json"));
+        let key = http_client.send(HttpRequest::get("https://api.ipify.org?format=json"));
+        key_store.insert(key);
     }
-}
 
-fn handle_response(mut commands: Commands, responses: Query<(Entity, &HttpResponse)>) {
-    for (entity, response) in responses.iter() {
-        let Some(text) = response.text() else {
-            panic!("no text in response");
-        };
-        info!("response: {:?}", text);
-        commands.entity(entity).despawn();
+    // recv
+    let mut received_keys = Vec::new();
+    for key in key_store.iter() {
+        if let Some(result) = http_client.recv(key) {
+            match result {
+                Ok(response) => {
+                    let Some(text) = response.text() else {
+                        panic!("no text in response");
+                    };
+                    info!("response: {:?}", text);
+                }
+                Err(error) => {
+                    info!("error: {:?}", error);
+                }
+            }
+
+            received_keys.push(*key);
+        }
+    }
+
+
+    // recv all
+    for (key, result) in http_client.recv_all() {
+        match result {
+            Ok(response) => {
+                let Some(text) = response.text() else {
+                    panic!("no text in response");
+                };
+                info!("uncaught response: {:?}", text);
+            }
+            Err(error) => {
+                info!("uncaught error: {:?}", error);
+
+            }
+        }
+
+        received_keys.push(key);
+    }
+
+    // remove received keys from list
+    for key in received_keys {
+        key_store.remove(&key);
     }
 }
 

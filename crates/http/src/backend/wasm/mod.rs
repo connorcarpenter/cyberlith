@@ -1,64 +1,36 @@
 
 use bevy_tasks::AsyncComputeTaskPool;
-use bevy_ecs::{
-    component::Component,
-    system::{Commands, Query},
-    entity::Entity,
-    query::Without,
-};
 use ehttp::Response;
 use crossbeam_channel::{bounded, Receiver};
 
-use crate::{HttpRequest, HttpResponse};
+use crate::{HttpRequest, HttpResponse, HttpResponseError};
 
-#[derive(Component)]
-pub struct RequestTask(pub Receiver<Result<Response, ehttp::Error>>);
+pub(crate) struct RequestTask(pub Receiver<Result<Response, ehttp::Error>>);
 
-pub fn handle_request(
-    mut commands: Commands,
-    requests: Query<(Entity, &HttpRequest), Without<RequestTask>>,
-) {
+pub(crate) fn send_request(
+    request: HttpRequest,
+) -> RequestTask {
     let thread_pool = AsyncComputeTaskPool::get();
-    for (entity, request) in requests.iter() {
 
-        let req = request.clone();
+    let inner_request = request.0;
 
-        let (tx, task) = bounded(1);
-        thread_pool
-            .spawn(async move {
-                let response = ehttp::fetch_async(req.0).await;
-                tx.send(response).ok();
-            })
-            .detach();
+    let (tx, task) = bounded(1);
+    thread_pool
+        .spawn(async move {
+            let response = ehttp::fetch_async(inner_request).await;
+            tx.send(response).ok();
+        })
+        .detach();
 
-        commands
-            .entity(entity)
-            .remove::<HttpRequest>()
-            .insert(RequestTask(task));
-    }
+    RequestTask(task)
 }
 
-pub fn handle_response(
-    mut commands: Commands,
-    mut request_tasks: Query<(Entity, &mut RequestTask)>,
-) {
-    for (entity, task) in request_tasks.iter_mut() {
-
-        if let Ok(result) = task.0.try_recv() {
-            match result {
-                Ok(res) => {
-                    commands
-                        .entity(entity)
-                        .insert(HttpResponse(res))
-                        .remove::<RequestTask>();
-                }
-                Err(e) => {
-                    commands
-                        .entity(entity)
-                        .insert(crate::HttpResponseError(e))
-                        .remove::<RequestTask>();
-                }
-            }
-        }
+pub(crate) fn poll_task(
+    task: &mut RequestTask,
+) -> Option<Result<HttpResponse, HttpResponseError>> {
+    match task.0.try_recv() {
+        Ok(Ok(response)) => Some(Ok(HttpResponse(response))),
+        Ok(Err(error)) => Some(Err(HttpResponseError(error))),
+        Err(_) => None,
     }
 }
