@@ -4,7 +4,7 @@ pub use ehttp;
 use bevy_tasks::{AsyncComputeTaskPool, Task};
 use bevy_ecs::{
     component::Component,
-    system::{Commands, Query, ResMut, Resource},
+    system::{Commands, Query},
     entity::Entity,
     query::Without,
 };
@@ -20,45 +20,8 @@ pub struct HttpClientPlugin;
 
 impl Plugin for HttpClientPlugin {
     fn build(&self, app: &mut App) {
-        if !app.world.contains_resource::<HttpClientSetting>() {
-            app.init_resource::<HttpClientSetting>();
-        }
         app.add_systems(Update, (handle_request, handle_response));
         app.add_plugins(bevy_core::TaskPoolPlugin::default());
-    }
-}
-
-/// The setting of http client.
-/// can set the max concurrent request.
-#[derive(Resource)]
-pub struct HttpClientSetting {
-    /// max concurrent request
-    pub max_concurrent: usize,
-    current_clients: usize,
-}
-
-impl Default for HttpClientSetting {
-    fn default() -> Self {
-        Self {
-            max_concurrent: 5,
-            current_clients: 0,
-        }
-    }
-}
-
-impl HttpClientSetting {
-    /// create a new http client setting
-    pub fn new(max_concurrent: usize) -> Self {
-        Self {
-            max_concurrent,
-            current_clients: 0,
-        }
-    }
-
-    /// check if the client is available
-    #[inline]
-    pub fn is_available(&self) -> bool {
-        self.current_clients < self.max_concurrent
     }
 }
 
@@ -102,41 +65,37 @@ pub struct RequestTask(pub Task<Result<Response, ehttp::Error>>);
 
 fn handle_request(
     mut commands: Commands,
-    mut req_res: ResMut<HttpClientSetting>,
     requests: Query<(Entity, &HttpRequest), Without<RequestTask>>,
 ) {
     let thread_pool = AsyncComputeTaskPool::get();
     for (entity, request) in requests.iter() {
-        if req_res.is_available() {
-            let req = request.clone();
 
-            // wasm
-            #[cfg(target_family = "wasm")]
-            let (tx, task) = bounded(1);
-            #[cfg(target_family = "wasm")]
-            thread_pool
-                .spawn(async move {
-                    let response = ehttp::fetch_async(req.0).await;
-                    tx.send(response).ok();
-                })
-                .detach();
+        let req = request.clone();
 
-            // native
-            #[cfg(not(target_family = "wasm"))]
-            let task = thread_pool.spawn(async { ehttp::fetch_async(req.0).await });
+        // wasm
+        #[cfg(target_family = "wasm")]
+        let (tx, task) = bounded(1);
+        #[cfg(target_family = "wasm")]
+        thread_pool
+            .spawn(async move {
+                let response = ehttp::fetch_async(req.0).await;
+                tx.send(response).ok();
+            })
+            .detach();
 
-            commands
-                .entity(entity)
-                .remove::<HttpRequest>()
-                .insert(RequestTask(task));
-            req_res.current_clients += 1;
-        }
+        // native
+        #[cfg(not(target_family = "wasm"))]
+        let task = thread_pool.spawn(async { ehttp::fetch_async(req.0).await });
+
+        commands
+            .entity(entity)
+            .remove::<HttpRequest>()
+            .insert(RequestTask(task));
     }
 }
 
 fn handle_response(
     mut commands: Commands,
-    mut req_res: ResMut<HttpClientSetting>,
     mut request_tasks: Query<(Entity, &mut RequestTask)>,
 ) {
     for (entity, mut task) in request_tasks.iter_mut() {
@@ -157,8 +116,6 @@ fn handle_response(
                         .remove::<RequestTask>();
                 }
             }
-
-            req_res.current_clients -= 1;
         }
 
         #[cfg(not(target_family = "wasm"))]
@@ -177,8 +134,6 @@ fn handle_response(
                         .remove::<RequestTask>();
                 }
             }
-
-            req_res.current_clients -= 1;
         }
     }
 }
