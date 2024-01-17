@@ -1,7 +1,8 @@
-
 use render_api::Handle;
 
-use crate::{AnimationData, IconData, MeshFile, ModelData, PaletteData, SceneData, SkeletonData, SkinData};
+use crate::{
+    AnimationData, IconData, MeshFile, ModelData, PaletteData, SceneData, SkeletonData, SkinData,
+};
 
 pub struct AssetHandle {
     inner: AssetHandleImpl,
@@ -163,4 +164,3 @@ impl From<AssetHandle> for Handle<SceneData> {
         }
     }
 }
-

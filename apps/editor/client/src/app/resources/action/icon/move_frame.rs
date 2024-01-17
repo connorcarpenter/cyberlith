@@ -8,7 +8,10 @@ use naia_bevy_client::{Client, CommandsExt};
 
 use editor_proto::components::IconFrame;
 
-use crate::app::{resources::{action::icon::IconAction, icon_manager::IconManager}, plugin::Main};
+use crate::app::{
+    plugin::Main,
+    resources::{action::icon::IconAction, icon_manager::IconManager},
+};
 
 pub fn execute(
     world: &mut World,

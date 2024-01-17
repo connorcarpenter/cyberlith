@@ -10,8 +10,8 @@ use naia_bevy_client::Client;
 use editor_proto::components::IconFace;
 
 use crate::app::{
-    plugin::Main,
     events::ShapeColorResyncEvent,
+    plugin::Main,
     resources::{action::icon::IconAction, icon_manager::IconManager},
 };
 

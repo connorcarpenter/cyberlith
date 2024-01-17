@@ -4,13 +4,13 @@ use bevy_ecs::{
     world::World,
 };
 
+use editor_proto::components::Vertex3d;
 use math::Vec3;
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
     components::Transform,
     Assets,
 };
-use editor_proto::components::Vertex3d;
 
 use crate::app::resources::{
     camera_manager::CameraManager, edge_manager::EdgeManager, vertex_manager::VertexManager,
@@ -67,7 +67,7 @@ impl Grid {
         materials: &mut Assets<CpuMaterial>,
     ) {
         // forward point
-        let mat_handle = materials.add(CpuMaterial::new(Color::RED, 0.0 ,0.0, 0.0));
+        let mat_handle = materials.add(CpuMaterial::new(Color::RED, 0.0, 0.0, 0.0));
         let (_, fwd_vertex_3d_entity, _, _) = vertex_manager.new_local_vertex(
             commands,
             camera_manager,

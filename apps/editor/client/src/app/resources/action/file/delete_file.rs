@@ -11,8 +11,8 @@ use editor_proto::components::{
 };
 
 use crate::app::{
-    plugin::Main,
     components::file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
+    plugin::Main,
     resources::{
         action::file::{
             select_file::{request_entities, select_files},

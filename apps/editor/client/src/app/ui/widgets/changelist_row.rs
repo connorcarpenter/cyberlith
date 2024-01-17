@@ -7,24 +7,24 @@ use bevy_log::info;
 
 use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus};
 
-use render_egui::{
-    egui,
-    egui::{NumExt, Response, Rounding, Sense, Stroke, TextStyle, Ui, WidgetText},
-};
 use editor_proto::{
     channels::FileActionChannel,
     components::{ChangelistEntry, ChangelistStatus, EntryKind},
     messages::{ChangelistAction, ChangelistMessage},
 };
+use render_egui::{
+    egui,
+    egui::{NumExt, Response, Rounding, Sense, Stroke, TextStyle, Ui, WidgetText},
+};
 
 use crate::app::{
     components::file_system::ChangelistUiState,
+    plugin::Main,
     resources::action::file::{FileAction, FileActions},
     ui::widgets::colors::{
         FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, FILE_ROW_COLORS_UNSELECTED,
         TEXT_COLORS_HOVER, TEXT_COLORS_SELECTED, TEXT_COLORS_UNSELECTED,
     },
-    plugin::Main
 };
 
 pub struct ChangelistRowUiWidget;

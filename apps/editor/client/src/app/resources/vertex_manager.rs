@@ -25,6 +25,7 @@ use crate::app::{
         DefaultDraw, Edge3dLocal, EdgeAngleLocal, LocalShape, OwnedByFileLocal, Vertex2d,
         VertexEntry,
     },
+    plugin::Main,
     resources::{
         action::{shape::ShapeAction, ActionStack},
         camera_manager::CameraManager,
@@ -34,7 +35,6 @@ use crate::app::{
         input::InputManager,
         shape_data::{CanvasShape, FaceKey, Vertex3dData},
     },
-    plugin::Main,
 };
 
 #[derive(Resource)]
@@ -75,8 +75,10 @@ impl Default for VertexManager {
 
 impl VertexManager {
     pub fn setup(&mut self, materials: &mut Assets<CpuMaterial>) {
-        self.mat_enabled_vertex = materials.add(CpuMaterial::new(Vertex2d::ENABLED_COLOR, 0.0, 0.0, 0.0));
-        self.mat_disabled_vertex = materials.add(CpuMaterial::new(Vertex2d::DISABLED_COLOR, 0.0, 0.0, 0.0));
+        self.mat_enabled_vertex =
+            materials.add(CpuMaterial::new(Vertex2d::ENABLED_COLOR, 0.0, 0.0, 0.0));
+        self.mat_disabled_vertex =
+            materials.add(CpuMaterial::new(Vertex2d::DISABLED_COLOR, 0.0, 0.0, 0.0));
         self.mat_root_vertex = materials.add(CpuMaterial::new(Vertex2d::ROOT_COLOR, 0.0, 0.0, 0.0));
     }
 
@@ -311,11 +313,7 @@ impl VertexManager {
         entities_to_release.push(new_vertex_3d_entity);
 
         // create new 2d vertex, add local components to 3d vertex
-        let mat_handle = materials.add(CpuMaterial::new(
-            Vertex2d::ENABLED_COLOR,
-            0.0,
-            0.0, 0.0
-        ));
+        let mat_handle = materials.add(CpuMaterial::new(Vertex2d::ENABLED_COLOR, 0.0, 0.0, 0.0));
         let new_vertex_2d_entity = self.vertex_3d_postprocess(
             commands,
             meshes,

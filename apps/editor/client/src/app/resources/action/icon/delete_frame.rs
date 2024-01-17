@@ -6,9 +6,10 @@ use bevy_log::info;
 
 use naia_bevy_client::{Client, CommandsExt};
 
-use crate::app::{resources::{
-    action::icon::IconAction, icon_manager::IconManager, input::IconInputManager,
-}, plugin::Main};
+use crate::app::{
+    plugin::Main,
+    resources::{action::icon::IconAction, icon_manager::IconManager, input::IconInputManager},
+};
 
 pub fn execute(
     world: &mut World,

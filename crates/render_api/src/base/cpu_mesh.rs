@@ -36,7 +36,10 @@ impl std::fmt::Debug for CpuMesh {
 
 impl CpuMesh {
     pub fn from_vertices(vertices: Vec<Vec3>) -> Self {
-        Self { vertices, face_indices: None }
+        Self {
+            vertices,
+            face_indices: None,
+        }
     }
 
     pub fn from_indices(vertices: &[Vec3], indices: &[usize]) -> Self {

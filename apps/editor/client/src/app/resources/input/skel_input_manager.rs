@@ -20,8 +20,8 @@ use render_api::{
 use editor_proto::components::{EdgeAngle, VertexRoot};
 
 use crate::app::{
-    plugin::Main,
     components::{Edge2dLocal, LocalShape, Vertex2d, VertexTypeData},
+    plugin::Main,
     resources::{
         action::shape::ShapeAction, canvas::Canvas, edge_manager::EdgeManager, input::InputManager,
         shape_data::CanvasShape, tab_manager::TabManager,

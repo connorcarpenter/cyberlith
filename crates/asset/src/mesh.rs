@@ -1,10 +1,9 @@
-
 use bevy_log::info;
 
 use naia_serde::BitReader;
 
 use math::Vec3;
-use render_api::{base::CpuMesh, AssetHash, Handle, Assets};
+use render_api::{base::CpuMesh, AssetHash, Assets, Handle};
 
 use crate::asset_dependency::AssetDependency;
 
@@ -69,8 +68,7 @@ impl From<MeshFilePath> for CpuMesh {
 
         let mut bit_reader = BitReader::new(&data);
 
-        let actions =
-            filetypes::MeshAction::read(&mut bit_reader).expect("unable to parse file");
+        let actions = filetypes::MeshAction::read(&mut bit_reader).expect("unable to parse file");
 
         info!("--- reading mesh file: {} ---", &path);
 

@@ -19,12 +19,12 @@ use editor_proto::components::{
 
 use crate::app::{
     components::OwnedByFileLocal,
+    plugin::Main,
     resources::{
         action::file::FileActions, animation_manager::AnimationManager, edge_manager::EdgeManager,
         face_manager::FaceManager, shape_manager::ShapeManager, tab_manager::TabManager,
         vertex_manager::VertexManager,
     },
-    plugin::Main,
 };
 
 #[derive(Resource)]

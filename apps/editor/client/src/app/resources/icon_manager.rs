@@ -32,6 +32,7 @@ use crate::app::{
         LocalShape, OwnedByFileLocal, SelectCircle, SelectLine, SelectTriangle, Vertex2d,
     },
     events::ShapeColorResyncEvent,
+    plugin::Main,
     resources::{
         action::icon::IconAction,
         canvas::Canvas,
@@ -41,7 +42,6 @@ use crate::app::{
         tab_manager::TabManager,
     },
     shapes::create_2d_edge_line,
-    plugin::Main,
 };
 
 #[derive(Resource)]
@@ -360,7 +360,8 @@ impl IconManager {
 
         // material
         let mat_handle_white = materials.add(CpuMaterial::new(Color::WHITE, 0.0, 0.0, 0.0));
-        let mat_handle_light_gray = materials.add(CpuMaterial::new(Color::LIGHT_GRAY, 0.0, 0.0, 0.0));
+        let mat_handle_light_gray =
+            materials.add(CpuMaterial::new(Color::LIGHT_GRAY, 0.0, 0.0, 0.0));
         let mat_handle_gray = materials.add(CpuMaterial::new(Color::GRAY, 0.0, 0.0, 0.0));
 
         // collect grid vertices
@@ -778,14 +779,7 @@ impl IconManager {
         vertex_component.set_vec2(&position);
         let new_vertex_entity = commands.spawn_empty().insert(vertex_component).id();
 
-        self.vertex_postprocess(
-            commands,
-            meshes,
-            material,
-            None,
-            None,
-            new_vertex_entity,
-        );
+        self.vertex_postprocess(commands, meshes, material, None, None, new_vertex_entity);
 
         commands.entity(new_vertex_entity).insert(LocalShape);
 
@@ -2371,8 +2365,10 @@ impl IconManager {
             let line_mesh_handle = meshes.add(Line);
             let mat_handle_white = materials.add(CpuMaterial::new(Color::WHITE, 0.0, 0.0, 0.0));
             let mat_handle_gray = materials.add(CpuMaterial::new(Color::GRAY, 0.0, 0.0, 0.0));
-            let mat_handle_dark_gray = materials.add(CpuMaterial::new(Color::DARK_GRAY, 0.0, 0.0, 0.0));
-            let mat_handle_light_gray = materials.add(CpuMaterial::new(Color::LIGHT_GRAY, 0.0, 0.0, 0.0));
+            let mat_handle_dark_gray =
+                materials.add(CpuMaterial::new(Color::DARK_GRAY, 0.0, 0.0, 0.0));
+            let mat_handle_light_gray =
+                materials.add(CpuMaterial::new(Color::LIGHT_GRAY, 0.0, 0.0, 0.0));
 
             for (frame_index, frame_pos) in frame_rects.iter().enumerate() {
                 // frame_index 0 is preview frame

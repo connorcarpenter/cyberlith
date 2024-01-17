@@ -5,9 +5,13 @@ use bevy_log::info;
 use naia_serde::BitReader;
 
 use math::Quat;
-use render_api::{AssetHash, Handle, components::Transform};
+use render_api::{components::Transform, AssetHash, Handle};
 
-use crate::{asset_dependency::{AssetDependency, SkinOrSceneHandle}, AssetHandle, ModelData, SkeletonData, asset_handle::AssetHandleImpl};
+use crate::{
+    asset_dependency::{AssetDependency, SkinOrSceneHandle},
+    asset_handle::AssetHandleImpl,
+    AssetHandle, ModelData, SkeletonData,
+};
 
 impl AssetHash<AnimationData> for String {}
 
@@ -43,14 +47,22 @@ impl Frame {
 }
 
 impl AnimationData {
-    pub(crate) fn load_dependencies(&self, handle: Handle<Self>, dependencies: &mut Vec<(AssetHandle, String)>) {
+    pub(crate) fn load_dependencies(
+        &self,
+        handle: Handle<Self>,
+        dependencies: &mut Vec<(AssetHandle, String)>,
+    ) {
         let AssetDependency::<SkeletonData>::Path(path) = &self.skeleton_file else {
             panic!("expected path right after load");
         };
         dependencies.push((handle.into(), path.clone()));
     }
 
-    pub(crate) fn finish_dependency(&mut self, _dependency_path: String, dependency_handle: AssetHandle) {
+    pub(crate) fn finish_dependency(
+        &mut self,
+        _dependency_path: String,
+        dependency_handle: AssetHandle,
+    ) {
         match dependency_handle.to_impl() {
             AssetHandleImpl::Skeleton(handle) => {
                 self.skeleton_file.load_handle(handle);
@@ -73,17 +85,29 @@ impl AnimationData {
         self.total_duration
     }
 
-    pub(crate) fn get_animated_components(&self, skeleton_data: &SkeletonData, model_data: &ModelData, frame_elapsed_ms: f32) -> Option<Vec<(SkinOrSceneHandle, Transform)>> {
+    pub(crate) fn get_animated_components(
+        &self,
+        skeleton_data: &SkeletonData,
+        model_data: &ModelData,
+        frame_elapsed_ms: f32,
+    ) -> Option<Vec<(SkinOrSceneHandle, Transform)>> {
         let model_components = model_data.get_components_copied();
 
         let (frame_index, next_frame_index, interpolation) = self.get_frame_stats(frame_elapsed_ms);
         //info!("frame_index: {}, next_frame_index: {}, interpolation: {}", frame_index, next_frame_index, interpolation);
 
-        let interpolated_skeleton = self.get_interpolated_skeleton(skeleton_data, frame_index, next_frame_index, interpolation);
+        let interpolated_skeleton = self.get_interpolated_skeleton(
+            skeleton_data,
+            frame_index,
+            next_frame_index,
+            interpolation,
+        );
 
         let mut output = Vec::new();
         for (component_handle, bone_name, child_transform) in model_components {
-            let parent_transform = interpolated_skeleton.get(&bone_name).expect("bone name not found in skeleton");
+            let parent_transform = interpolated_skeleton
+                .get(&bone_name)
+                .expect("bone name not found in skeleton");
             let final_transform = child_transform.multiply(parent_transform);
             output.push((component_handle, final_transform));
         }
@@ -106,7 +130,6 @@ impl AnimationData {
                     frame_index += 1;
                     continue;
                 }
-
             } else {
                 let mut next_frame_index = frame_index + 1;
                 if next_frame_index >= self.frames.len() {
@@ -117,9 +140,13 @@ impl AnimationData {
         }
     }
 
-    fn get_interpolated_skeleton(&self, skeleton_data: &SkeletonData, frame_index: usize, next_frame_index: usize, interpolation: f32) -> HashMap<String, Transform> {
-
-
+    fn get_interpolated_skeleton(
+        &self,
+        skeleton_data: &SkeletonData,
+        frame_index: usize,
+        next_frame_index: usize,
+        interpolation: f32,
+    ) -> HashMap<String, Transform> {
         let current_frame = &self.frames[frame_index];
         let next_frame = &self.frames[next_frame_index];
 
@@ -169,8 +196,7 @@ impl From<String> for AnimationData {
 
         let mut bit_reader = BitReader::new(&data);
 
-        let actions =
-            filetypes::AnimAction::read(&mut bit_reader).expect("unable to parse file");
+        let actions = filetypes::AnimAction::read(&mut bit_reader).expect("unable to parse file");
 
         let mut skel_file_opt = None;
         let mut name_map = HashMap::new();
@@ -187,18 +213,24 @@ impl From<String> for AnimationData {
                     name_map.insert(name_map.len() as u16, name);
                 }
                 filetypes::AnimAction::Frame(rotation_map, transition_time) => {
-                    info!("Frame {}: {:?}ms", frames.len(), transition_time.get_duration_ms());
+                    info!(
+                        "Frame {}: {:?}ms",
+                        frames.len(),
+                        transition_time.get_duration_ms()
+                    );
                     let transition_time = transition_time.get_duration_ms() as f32;
                     let mut frame = Frame::new(transition_time);
                     total_animation_time_ms += transition_time;
                     for (name_index, rotation) in rotation_map {
                         let name = name_map.get(&name_index).unwrap().clone();
-                        info!("name: {} . rotation: ({:?}, {:?}, {:?}, {:?})", &name, rotation.x, rotation.y, rotation.z, rotation.w);
+                        info!(
+                            "name: {} . rotation: ({:?}, {:?}, {:?}, {:?})",
+                            &name, rotation.x, rotation.y, rotation.z, rotation.w
+                        );
                         frame.add_rotation(
                             name,
-                            Quat::from_xyzw(rotation.x, rotation.y, rotation.z, rotation.w)
+                            Quat::from_xyzw(rotation.x, rotation.y, rotation.z, rotation.w),
                         );
-
                     }
                     frames.push(frame);
                 }

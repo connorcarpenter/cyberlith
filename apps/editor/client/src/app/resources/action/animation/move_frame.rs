@@ -8,7 +8,10 @@ use naia_bevy_client::{Client, CommandsExt};
 
 use editor_proto::components::AnimFrame;
 
-use crate::app::{resources::{action::animation::AnimAction, animation_manager::AnimationManager}, plugin::Main};
+use crate::app::{
+    plugin::Main,
+    resources::{action::animation::AnimAction, animation_manager::AnimationManager},
+};
 
 pub fn execute(world: &mut World, action: AnimAction) -> Vec<AnimAction> {
     let AnimAction::MoveFrame(file_entity, current_frame_index, next_frame_index) = action else {

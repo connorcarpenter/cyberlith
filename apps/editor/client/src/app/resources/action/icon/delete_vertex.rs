@@ -10,6 +10,7 @@ use editor_proto::components::{IconEdge, IconFace, IconVertex};
 
 use crate::app::{
     components::IconVertexActionData,
+    plugin::Main,
     resources::{
         action::icon::{
             select_shape::{entity_request_release, select_shape},
@@ -19,7 +20,6 @@ use crate::app::{
         icon_manager::IconManager,
         shape_data::CanvasShape,
     },
-    plugin::Main,
 };
 
 pub(crate) fn execute(

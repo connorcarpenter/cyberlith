@@ -55,13 +55,7 @@ impl RenderObjectBundle {
         size: f32,
         outline_only: bool,
     ) -> Self {
-        Self::rectangle(
-            meshes,
-            material,
-            position,
-            Vec2::splat(size),
-            outline_only,
-        )
+        Self::rectangle(meshes, material, position, Vec2::splat(size), outline_only)
     }
 
     pub fn rectangle(

@@ -1,20 +1,23 @@
-
 use bevy_log::info;
 
 use naia_serde::BitReader;
 
 use filetypes::FileTransformEntityType;
 use math::{Quat, Vec3};
-use render_api::{AssetHash, components::Transform, Handle};
+use render_api::{components::Transform, AssetHash, Handle};
 
-use crate::{AssetHandle, SkinData, asset_handle::AssetHandleImpl, asset_dependency::{AssetDependency, SkinOrScene, SkinOrSceneHandle}};
+use crate::{
+    asset_dependency::{AssetDependency, SkinOrScene, SkinOrSceneHandle},
+    asset_handle::AssetHandleImpl,
+    AssetHandle, SkinData,
+};
 
 impl AssetHash<SceneData> for String {}
 
 pub struct SceneData {
     skin_or_scene_files: Vec<SkinOrScene>,
     net_transforms: Vec<(usize, Transform)>,
-    computed_components: Option<Vec<(SkinOrSceneHandle, Transform)>>
+    computed_components: Option<Vec<(SkinOrSceneHandle, Transform)>>,
 }
 
 impl Default for SceneData {
@@ -24,7 +27,11 @@ impl Default for SceneData {
 }
 
 impl SceneData {
-    pub(crate) fn load_dependencies(&self, handle: Handle<Self>, dependencies: &mut Vec<(AssetHandle, String)>) {
+    pub(crate) fn load_dependencies(
+        &self,
+        handle: Handle<Self>,
+        dependencies: &mut Vec<(AssetHandle, String)>,
+    ) {
         for file in self.skin_or_scene_files.iter() {
             match file {
                 SkinOrScene::Skin(AssetDependency::<SkinData>::Path(path)) => {
@@ -40,16 +47,31 @@ impl SceneData {
         }
     }
 
-    pub(crate) fn finish_dependency(&mut self, dependency_path: String, dependency_handle: AssetHandle) {
+    pub(crate) fn finish_dependency(
+        &mut self,
+        dependency_path: String,
+        dependency_handle: AssetHandle,
+    ) {
         match dependency_handle.to_impl() {
             AssetHandleImpl::Skin(handle) => {
-                info!("finished scene dependency for skin: {}, path: {}", &handle.id, &dependency_path);
+                info!(
+                    "finished scene dependency for skin: {}, path: {}",
+                    &handle.id, &dependency_path
+                );
                 let handle = SkinOrSceneHandle::Skin(handle);
-                finish_skin_or_scene_dependency(&mut self.skin_or_scene_files, dependency_path, handle);
+                finish_skin_or_scene_dependency(
+                    &mut self.skin_or_scene_files,
+                    dependency_path,
+                    handle,
+                );
             }
             AssetHandleImpl::Scene(handle) => {
                 let handle = SkinOrSceneHandle::Scene(handle);
-                finish_skin_or_scene_dependency(&mut self.skin_or_scene_files, dependency_path, handle);
+                finish_skin_or_scene_dependency(
+                    &mut self.skin_or_scene_files,
+                    dependency_path,
+                    handle,
+                );
             }
             _ => {
                 panic!("unexpected type of handle");
@@ -93,8 +115,11 @@ impl SceneData {
     }
 }
 
-pub(crate) fn finish_skin_or_scene_dependency(skin_or_scene_files: &mut Vec<SkinOrScene>, dependency_path: String, handle: SkinOrSceneHandle) {
-
+pub(crate) fn finish_skin_or_scene_dependency(
+    skin_or_scene_files: &mut Vec<SkinOrScene>,
+    dependency_path: String,
+    handle: SkinOrSceneHandle,
+) {
     let mut found = false;
     for file in skin_or_scene_files.iter_mut() {
         match file {
@@ -136,8 +161,7 @@ impl From<String> for SceneData {
 
         let mut bit_reader = BitReader::new(&data);
 
-        let actions =
-            filetypes::SceneAction::read(&mut bit_reader).expect("unable to parse file");
+        let actions = filetypes::SceneAction::read(&mut bit_reader).expect("unable to parse file");
 
         info!("--- reading scene: {} ---", path);
 
@@ -147,31 +171,50 @@ impl From<String> for SceneData {
         for action in actions {
             match action {
                 filetypes::SceneAction::SkinOrSceneFile(path, name, file_type) => {
-                    info!("SkinOrSceneFile {} - type: {:?}, path: {}/{}. ", file_index, file_type, path, name);
+                    info!(
+                        "SkinOrSceneFile {} - type: {:?}, path: {}/{}. ",
+                        file_index, file_type, path, name
+                    );
 
-                    let asset_dependency = match file_type {
-                        FileTransformEntityType::Skin => {
-                            SkinOrScene::Skin(AssetDependency::<SkinData>::Path(format!("{}/{}", path, name)))
-                        }
-                        FileTransformEntityType::Scene => {
-                            SkinOrScene::Scene(AssetDependency::<SceneData>::Path(format!("{}/{}", path, name)))
-                        }
-                    };
+                    let asset_dependency =
+                        match file_type {
+                            FileTransformEntityType::Skin => {
+                                SkinOrScene::Skin(AssetDependency::<SkinData>::Path(format!(
+                                    "{}/{}",
+                                    path, name
+                                )))
+                            }
+                            FileTransformEntityType::Scene => SkinOrScene::Scene(
+                                AssetDependency::<SceneData>::Path(format!("{}/{}", path, name)),
+                            ),
+                        };
 
                     skin_or_scene_files.push(asset_dependency);
 
                     file_index += 1;
                 }
-                filetypes::SceneAction::NetTransform(file_index, x, y, z, scale_x, scale_y, scale_z, rotation) => {
+                filetypes::SceneAction::NetTransform(
+                    file_index,
+                    x,
+                    y,
+                    z,
+                    scale_x,
+                    scale_y,
+                    scale_z,
+                    rotation,
+                ) => {
                     info!("NetTransform {} : file_index: {}, position ({} {} {}), scale: ({} {} {}), rotation: ({}, {}, {}, {})",
                              net_transforms.len(),
                              file_index,
                              x, y, z,
                              scale_x, scale_y, scale_z,
                              rotation.x, rotation.y, rotation.z, rotation.w);
-                    let transform = Transform::from_translation(Vec3::new(x as f32, y as f32, z as f32))
-                        .with_scale(Vec3::new(scale_x, scale_y, scale_z))
-                        .with_rotation(Quat::from_xyzw(rotation.x, rotation.y, rotation.z, rotation.w));
+                    let transform =
+                        Transform::from_translation(Vec3::new(x as f32, y as f32, z as f32))
+                            .with_scale(Vec3::new(scale_x, scale_y, scale_z))
+                            .with_rotation(Quat::from_xyzw(
+                                rotation.x, rotation.y, rotation.z, rotation.w,
+                            ));
                     net_transforms.push((file_index as usize, transform));
                 }
             }

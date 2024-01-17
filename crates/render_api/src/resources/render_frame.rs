@@ -2,6 +2,7 @@ use std::default::Default;
 
 use bevy_ecs::system::Resource;
 
+use crate::base::CpuSkin;
 use crate::{
     base::{CpuMaterial, CpuMesh},
     components::{
@@ -10,7 +11,6 @@ use crate::{
     },
     Handle,
 };
-use crate::base::CpuSkin;
 
 #[derive(Resource)]
 pub struct RenderFrame {
@@ -74,9 +74,12 @@ impl RenderFrame {
         transform: &Transform,
     ) {
         let id = convert_wrapper(render_layer_opt.copied());
-        self.contents
-            .meshes
-            .push((id, mesh_handle.clone(), MaterialOrSkinHandle::Material(mat_handle.clone()), *transform));
+        self.contents.meshes.push((
+            id,
+            mesh_handle.clone(),
+            MaterialOrSkinHandle::Material(mat_handle.clone()),
+            *transform,
+        ));
     }
 
     pub fn draw_skinned_mesh(
@@ -87,9 +90,12 @@ impl RenderFrame {
         transform: &Transform,
     ) {
         let id = convert_wrapper(render_layer_opt.copied());
-        self.contents
-            .meshes
-            .push((id, mesh_handle.clone(), MaterialOrSkinHandle::Skin(skin_handle.clone()), *transform));
+        self.contents.meshes.push((
+            id,
+            mesh_handle.clone(),
+            MaterialOrSkinHandle::Skin(skin_handle.clone()),
+            *transform,
+        ));
     }
 }
 

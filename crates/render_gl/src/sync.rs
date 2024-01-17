@@ -1,14 +1,18 @@
 use bevy_app::{App, Plugin};
-use bevy_ecs::{change_detection::DetectChanges, system::ResMut};
 use bevy_ecs::system::Res;
+use bevy_ecs::{change_detection::DetectChanges, system::ResMut};
 
+use render_api::base::CpuSkin;
 use render_api::{
     base::{CpuMaterial, CpuMesh, CpuTexture2D},
     Assets, RenderSync,
 };
-use render_api::base::CpuSkin;
 
-use crate::{asset_mapping::AssetMapping, core::{GpuDepthTexture2D, GpuTexture2D}, GpuMaterialManager, GpuMeshManager, GpuSkinManager};
+use crate::{
+    asset_mapping::AssetMapping,
+    core::{GpuDepthTexture2D, GpuTexture2D},
+    GpuMaterialManager, GpuMeshManager, GpuSkinManager,
+};
 
 pub struct SyncPlugin;
 

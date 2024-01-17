@@ -6,12 +6,12 @@ use gl::DrawArraysIndirectCommand;
 use math::Vec3;
 
 use render_api::{
-    components::Camera,
     base::{AxisAlignedBoundingBox, CpuMesh},
+    components::Camera,
     Handle,
 };
 
-use crate::core::{Program, VertexBuffer, RenderStates};
+use crate::core::{Program, RenderStates, VertexBuffer};
 
 #[derive(Resource)]
 pub struct GpuMeshManager {

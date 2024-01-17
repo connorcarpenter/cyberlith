@@ -1,4 +1,3 @@
-
 use crate::core::{DataType, PrimitiveDataType};
 
 /// The basic data type used for each channel of each pixel in a texture.

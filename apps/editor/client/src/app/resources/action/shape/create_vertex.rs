@@ -16,6 +16,7 @@ use editor_proto::components::FileExtension;
 
 use crate::app::{
     components::VertexTypeData,
+    plugin::Main,
     resources::{
         action::{
             shape::{select_shape::deselect_selected_shape, ShapeAction},
@@ -29,7 +30,6 @@ use crate::app::{
         shape_data::{CanvasShape, FaceKey},
         vertex_manager::VertexManager,
     },
-    plugin::Main,
 };
 
 pub(crate) fn execute(

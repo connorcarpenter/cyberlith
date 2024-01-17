@@ -3,7 +3,10 @@ use bevy_log::info;
 
 use naia_bevy_client::events::RejectEvent;
 
-use crate::app::{ui::{LoggingInState, UiState}, plugin::Main};
+use crate::app::{
+    plugin::Main,
+    ui::{LoggingInState, UiState},
+};
 
 pub fn reject_events(mut event_reader: EventReader<RejectEvent<Main>>, mut state: ResMut<UiState>) {
     for _ in event_reader.read() {

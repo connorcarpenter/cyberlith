@@ -1,12 +1,12 @@
-use std::{collections::HashMap, fs};
 use std::collections::HashSet;
+use std::{collections::HashMap, fs};
 
 use bevy_log::info;
 
 use naia_serde::BitReader;
 
-use math::{Quat, quat_from_spin_direction, Vec3};
-use render_api::{AssetHash, components::Transform};
+use math::{quat_from_spin_direction, Quat, Vec3};
+use render_api::{components::Transform, AssetHash};
 
 impl AssetHash<SkeletonData> for String {}
 
@@ -31,12 +31,22 @@ impl SkeletonData {
         self.bone_transform_map.get(bone_name)
     }
 
-    pub(crate) fn get_interpolated_skeleton(&self, interpolated_rotations: HashMap<String, Quat>) -> HashMap<String, Transform> {
+    pub(crate) fn get_interpolated_skeleton(
+        &self,
+        interpolated_rotations: HashMap<String, Quat>,
+    ) -> HashMap<String, Transform> {
         let mut output = HashMap::new();
 
         if let Some(children) = self.vertex_parent_map.get(&self.root_vertex_id) {
             for child_id in children {
-                self.recurse(Vec3::ZERO, Vec3::ZERO, Quat::IDENTITY, *child_id, &interpolated_rotations, &mut output);
+                self.recurse(
+                    Vec3::ZERO,
+                    Vec3::ZERO,
+                    Quat::IDENTITY,
+                    *child_id,
+                    &interpolated_rotations,
+                    &mut output,
+                );
             }
         }
 
@@ -67,7 +77,8 @@ impl SkeletonData {
         let original_child_displacement = *original_child_pos - original_parent_pos;
         let rotated_child_displacement = child_rotation * original_child_displacement;
         let rotated_child_pos = rotated_parent_pos + rotated_child_displacement;
-        let original_bone_rotation = quat_from_spin_direction(*spin, Vec3::X, original_child_displacement);
+        let original_bone_rotation =
+            quat_from_spin_direction(*spin, Vec3::X, original_child_displacement);
 
         if let Some(name) = name_opt {
             let child_transform = Transform::from_translation(rotated_parent_pos)
@@ -77,7 +88,14 @@ impl SkeletonData {
 
         if let Some(children) = self.vertex_parent_map.get(&vertex_id) {
             for child_id in children {
-                self.recurse(*original_child_pos, rotated_child_pos, child_rotation, *child_id, interpolated_rotations, output);
+                self.recurse(
+                    *original_child_pos,
+                    rotated_child_pos,
+                    child_rotation,
+                    *child_id,
+                    interpolated_rotations,
+                    output,
+                );
             }
         }
     }
@@ -93,18 +111,23 @@ impl From<String> for SkeletonData {
 
         let mut bit_reader = BitReader::new(&data);
 
-        let actions =
-            filetypes::SkelAction::read(&mut bit_reader).expect("unable to parse file");
+        let actions = filetypes::SkelAction::read(&mut bit_reader).expect("unable to parse file");
 
         let mut vertices = Vec::new();
         for action in actions {
             match action {
                 filetypes::SkelAction::Vertex(x, y, z, parent_opt, name_opt) => {
-                    info!("Vertex: ({}, {}, {}), parent: {:?}, name: {:?}", x, y, z, parent_opt, name_opt);
-                    let parent_opt = parent_opt.map(|(parent_id, rotation)| {
-                        (parent_id as usize, rotation.get_radians())
-                    });
-                    vertices.push((Vec3::new(x as f32, y as f32, z as f32), parent_opt, name_opt));
+                    info!(
+                        "Vertex: ({}, {}, {}), parent: {:?}, name: {:?}",
+                        x, y, z, parent_opt, name_opt
+                    );
+                    let parent_opt = parent_opt
+                        .map(|(parent_id, rotation)| (parent_id as usize, rotation.get_radians()));
+                    vertices.push((
+                        Vec3::new(x as f32, y as f32, z as f32),
+                        parent_opt,
+                        name_opt,
+                    ));
                 }
             }
         }
@@ -118,7 +141,8 @@ impl From<String> for SkeletonData {
                 let (parent_position, _, _) = vertices[parent_id];
                 let direction = *vertex_position - parent_position;
                 let rotation = quat_from_spin_direction(spin, Vec3::X, direction);
-                let transform = Transform::from_translation(parent_position).with_rotation(rotation);
+                let transform =
+                    Transform::from_translation(parent_position).with_rotation(rotation);
                 bone_map.insert(name.clone(), transform);
             } else {
                 if parent_opt.is_none() {
@@ -127,7 +151,9 @@ impl From<String> for SkeletonData {
             }
 
             if let Some((parent_id, _)) = parent_opt {
-                let parent_set = vertex_parent_map.entry(*parent_id).or_insert(HashSet::new());
+                let parent_set = vertex_parent_map
+                    .entry(*parent_id)
+                    .or_insert(HashSet::new());
                 parent_set.insert(vertex_index);
             }
         }

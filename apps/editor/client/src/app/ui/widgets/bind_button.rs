@@ -16,8 +16,9 @@ use render_egui::{
 use editor_proto::components::{FileDependency, FileExtension};
 
 use crate::app::{
+    plugin::Main,
     resources::file_manager::FileManager,
-    ui::{BindingState, UiState}, plugin::Main,
+    ui::{BindingState, UiState},
 };
 
 pub fn render_simple_bind(

@@ -12,15 +12,18 @@ use render_api::{
     Assets,
 };
 
-use crate::app::{resources::{
-    action::{
-        icon::{select_shape::deselect_selected_shape, IconAction},
-        ActionStack,
+use crate::app::{
+    plugin::Main,
+    resources::{
+        action::{
+            icon::{select_shape::deselect_selected_shape, IconAction},
+            ActionStack,
+        },
+        icon_data::IconFaceKey,
+        icon_manager::IconManager,
+        shape_data::CanvasShape,
     },
-    icon_data::IconFaceKey,
-    icon_manager::IconManager,
-    shape_data::CanvasShape,
-}, plugin::Main};
+};
 
 pub(crate) fn execute(
     world: &mut World,

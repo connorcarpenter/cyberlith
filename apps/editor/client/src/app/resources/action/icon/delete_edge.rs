@@ -8,14 +8,17 @@ use naia_bevy_client::Client;
 
 use editor_proto::components::{IconEdge, IconFace};
 
-use crate::app::{resources::{
-    action::icon::{
-        select_shape::{entity_request_release, select_shape},
-        IconAction,
+use crate::app::{
+    plugin::Main,
+    resources::{
+        action::icon::{
+            select_shape::{entity_request_release, select_shape},
+            IconAction,
+        },
+        icon_manager::IconManager,
+        shape_data::CanvasShape,
     },
-    icon_manager::IconManager,
-    shape_data::CanvasShape,
-}, plugin::Main};
+};
 
 pub(crate) fn execute(
     world: &mut World,
@@ -27,8 +30,12 @@ pub(crate) fn execute(
     };
 
     info!("DeleteEdge(edge_entity: `{:?}`)", edge_entity);
-    let mut system_state: SystemState<(Commands, Client<Main>, Query<&IconEdge>, Query<&IconFace>)> =
-        SystemState::new(world);
+    let mut system_state: SystemState<(
+        Commands,
+        Client<Main>,
+        Query<&IconEdge>,
+        Query<&IconFace>,
+    )> = SystemState::new(world);
     let (mut commands, mut client, edge_q, face_q) = system_state.get_mut(world);
 
     let edge = edge_q.get(edge_entity).unwrap();

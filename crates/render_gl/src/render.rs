@@ -6,7 +6,13 @@ use render_api::{
     resources::RenderFrame,
 };
 
-use crate::{asset_mapping::AssetMapping, core::{GpuDepthTexture2D, GpuTexture2D, RenderTarget}, renderer::{RenderPass, RenderTargetExt}, window::FrameInput, GpuMaterialManager, GpuMeshManager, GpuSkinManager};
+use crate::{
+    asset_mapping::AssetMapping,
+    core::{GpuDepthTexture2D, GpuTexture2D, RenderTarget},
+    renderer::{RenderPass, RenderTargetExt},
+    window::FrameInput,
+    GpuMaterialManager, GpuMeshManager, GpuSkinManager,
+};
 
 pub fn render(
     mut render_frame: ResMut<RenderFrame>,
@@ -120,6 +126,11 @@ pub fn render(
         // Clear the color and depth of the screen render target using the camera's clear color
         render_target.clear((&render_pass.camera.camera.clear_operation).into());
 
-        render_target.render(&gpu_mesh_manager, &gpu_material_manager, &gpu_skin_manager, render_pass);
+        render_target.render(
+            &gpu_mesh_manager,
+            &gpu_material_manager,
+            &gpu_skin_manager,
+            render_pass,
+        );
     }
 }

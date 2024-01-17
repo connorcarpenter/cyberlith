@@ -4,9 +4,15 @@ use bevy_log::info;
 
 use naia_serde::BitReader;
 
-use render_api::{AssetHash, Assets, Handle, base::{CpuMaterial, CpuMesh, CpuSkin}};
+use render_api::{
+    base::{CpuMaterial, CpuMesh, CpuSkin},
+    AssetHash, Assets, Handle,
+};
 
-use crate::{asset_handle::AssetHandleImpl, asset_dependency::AssetDependency, AssetHandle, MeshFile, PaletteData};
+use crate::{
+    asset_dependency::AssetDependency, asset_handle::AssetHandleImpl, AssetHandle, MeshFile,
+    PaletteData,
+};
 
 pub struct SkinData {
     mesh_file: AssetDependency<MeshFile>,
@@ -46,7 +52,11 @@ impl SkinData {
         self.cpu_skin_handle.as_ref()
     }
 
-    pub(crate) fn load_dependencies(&self, handle: Handle<Self>, dependencies: &mut Vec<(AssetHandle, String)>) {
+    pub(crate) fn load_dependencies(
+        &self,
+        handle: Handle<Self>,
+        dependencies: &mut Vec<(AssetHandle, String)>,
+    ) {
         let AssetDependency::<MeshFile>::Path(path) = &self.mesh_file else {
             panic!("expected path right after load");
         };
@@ -58,7 +68,11 @@ impl SkinData {
         dependencies.push((handle.into(), path.clone()));
     }
 
-    pub(crate) fn finish_dependency(&mut self, _dependency_path: String, dependency_handle: AssetHandle) {
+    pub(crate) fn finish_dependency(
+        &mut self,
+        _dependency_path: String,
+        dependency_handle: AssetHandle,
+    ) {
         match dependency_handle.to_impl() {
             AssetHandleImpl::Mesh(handle) => {
                 self.mesh_file.load_handle(handle);
@@ -86,7 +100,7 @@ impl SkinData {
         materials: &Assets<CpuMaterial>,
         skins: &mut Assets<CpuSkin>,
         mesh_data: &CpuMesh,
-        palette_data: &PaletteData
+        palette_data: &PaletteData,
     ) -> bool {
         let mut new_skin = CpuSkin::default();
 
@@ -146,8 +160,7 @@ impl From<String> for SkinData {
 
         let mut bit_reader = BitReader::new(&data);
 
-        let actions =
-            filetypes::SkinAction::read(&mut bit_reader).expect("unable to parse file");
+        let actions = filetypes::SkinAction::read(&mut bit_reader).expect("unable to parse file");
 
         let mut face_color_ids = Vec::new();
         let mut bck_color_index = None;
@@ -169,7 +182,6 @@ impl From<String> for SkinData {
                 }
             }
         }
-
 
         info!("--- reading skin: {} ---", path);
 

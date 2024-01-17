@@ -16,5 +16,5 @@ mod sync;
 pub use asset_mapping::*;
 pub use gpu_material_manager::*;
 pub use gpu_mesh_manager::*;
-pub use plugin::*;
 pub use gpu_skin_manager::*;
+pub use plugin::*;

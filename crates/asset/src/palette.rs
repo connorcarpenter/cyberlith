@@ -1,9 +1,11 @@
-
 use bevy_log::info;
 
 use naia_serde::BitReader;
 
-use render_api::{AssetHash, Handle, base::{Color, CpuMaterial}, Assets};
+use render_api::{
+    base::{Color, CpuMaterial},
+    AssetHash, Assets, Handle,
+};
 
 impl AssetHash<PaletteData> for String {}
 
@@ -40,7 +42,8 @@ impl PaletteData {
             let PaletteColor::Raw(r, g, b) = color else {
                 panic!("should only load once!");
             };
-            let cpu_material_handle = materials.add(CpuMaterial::new(Color::new(*r, *g, *b), 0.0, 32.0, 0.5));
+            let cpu_material_handle =
+                materials.add(CpuMaterial::new(Color::new(*r, *g, *b), 0.0, 32.0, 0.5));
             *color = PaletteColor::Material(cpu_material_handle);
         }
     }
@@ -79,8 +82,6 @@ impl From<String> for PaletteData {
 
         info!("--- done reading palette ---");
 
-        Self {
-            colors
-        }
+        Self { colors }
     }
 }

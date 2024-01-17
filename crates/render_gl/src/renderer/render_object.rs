@@ -4,13 +4,17 @@ use gl::DrawArraysIndirectCommand;
 
 use math::Mat4;
 use render_api::{
-    resources::MaterialOrSkinHandle,
     base::CpuMesh,
     components::{CameraProjection, Transform},
+    resources::MaterialOrSkinHandle,
     Handle,
 };
 
-use crate::{core::{Cull, RenderStates, Context, GpuTexture2D}, renderer::{lights_shader_source, Light, RenderCamera}, GpuMaterialManager, GpuMeshManager, GpuSkinManager};
+use crate::{
+    core::{Context, Cull, GpuTexture2D, RenderStates},
+    renderer::{lights_shader_source, Light, RenderCamera},
+    GpuMaterialManager, GpuMeshManager, GpuSkinManager,
+};
 
 // Render Object
 #[derive(Clone)]

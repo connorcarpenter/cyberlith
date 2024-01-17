@@ -3,7 +3,7 @@ use bevy_ecs::schedule::{ExecutorKind, Schedule};
 
 use crate::{
     assets::Assets,
-    base::{CpuSkin, CpuMaterial, CpuMesh, CpuTexture2D},
+    base::{CpuMaterial, CpuMesh, CpuSkin, CpuTexture2D},
     base_set::{Draw, RenderSync},
     resources::{RenderFrame, Time},
     Render,

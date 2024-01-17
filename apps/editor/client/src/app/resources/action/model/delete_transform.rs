@@ -9,10 +9,13 @@ use naia_bevy_client::Client;
 
 use editor_proto::components::{FileExtension, NetTransformEntityType, SkinOrSceneEntity};
 
-use crate::app::{resources::{
-    action::model::ModelAction, canvas::Canvas, edge_manager::EdgeManager, input::InputManager,
-    model_manager::ModelManager, vertex_manager::VertexManager,
-}, plugin::Main};
+use crate::app::{
+    plugin::Main,
+    resources::{
+        action::model::ModelAction, canvas::Canvas, edge_manager::EdgeManager, input::InputManager,
+        model_manager::ModelManager, vertex_manager::VertexManager,
+    },
+};
 
 pub fn execute(
     world: &mut World,

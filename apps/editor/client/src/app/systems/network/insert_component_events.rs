@@ -27,6 +27,7 @@ use crate::app::{
         ChangelistUiState, FileSystemEntryLocal, FileSystemParent, FileSystemUiState,
     },
     events::{InsertComponentEvent, ShapeColorResyncEvent},
+    plugin::Main,
     resources::{
         animation_manager::AnimationManager,
         camera_manager::CameraManager,
@@ -43,7 +44,6 @@ use crate::app::{
         vertex_manager::VertexManager,
     },
     systems::file_post_process,
-    plugin::Main,
 };
 
 #[derive(Resource)]
@@ -52,7 +52,8 @@ struct CachedInsertComponentEventsState {
 }
 
 pub fn insert_component_event_startup(world: &mut World) {
-    let initial_state: SystemState<EventReader<InsertComponentEvents<Main>>> = SystemState::new(world);
+    let initial_state: SystemState<EventReader<InsertComponentEvents<Main>>> =
+        SystemState::new(world);
     world.insert_resource(CachedInsertComponentEventsState {
         event_state: initial_state,
     });

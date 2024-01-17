@@ -19,11 +19,5 @@ use crate::common::SerdeRotation;
 #[derive(Debug)]
 pub enum SkelAction {
     //////// x,   y,   z, Option<parent_id, angle>, vertex_name //
-    Vertex(
-        i16,
-        i16,
-        i16,
-        Option<(u16, SerdeRotation)>,
-        Option<String>,
-    ),
+    Vertex(i16, i16, i16, Option<(u16, SerdeRotation)>, Option<String>),
 }

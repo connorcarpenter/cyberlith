@@ -19,11 +19,11 @@ use render_api::{
 
 use crate::app::{
     events::ShapeColorResyncEvent,
+    plugin::Main,
     resources::{
         action::icon::IconAction, icon_data::IconFaceKey, icon_manager::IconManager,
         icon_manager::IconShapeData,
     },
-    plugin::Main,
 };
 
 pub fn execute(

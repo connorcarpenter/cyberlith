@@ -48,9 +48,7 @@ impl FromPbrMaterial for PbrMaterial {
 impl Material for PbrMaterial {
     fn fragment_shader(&self) -> FragmentShader {
         let output = include_str!("../../shaders/physical_material.frag").to_string();
-        FragmentShader {
-            source: output,
-        }
+        FragmentShader { source: output }
     }
 
     fn use_uniforms(&self, program: &Program, camera: &RenderCamera, lights: &[&dyn Light]) {

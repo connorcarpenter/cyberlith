@@ -22,6 +22,7 @@ use crate::app::{
         Edge2dLocal, FaceIcon2d, LocalShape, SelectCircle, SelectTriangle, Vertex2d, VertexTypeData,
     },
     get_new_3d_position,
+    plugin::Main,
     resources::{
         action::shape::ShapeAction,
         camera_manager::CameraAngle,
@@ -39,7 +40,6 @@ use crate::app::{
         tab_manager::TabManager,
         vertex_manager::VertexManager,
     },
-    plugin::Main,
 };
 
 #[derive(Clone, Copy)]

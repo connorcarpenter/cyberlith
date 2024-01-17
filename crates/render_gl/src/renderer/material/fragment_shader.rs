@@ -1,4 +1,3 @@
-
 /// Description of a fragment shader
 #[derive(Debug, Clone)]
 pub struct FragmentShader {

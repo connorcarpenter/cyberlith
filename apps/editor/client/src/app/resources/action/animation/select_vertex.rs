@@ -8,15 +8,18 @@ use naia_bevy_client::Client;
 
 use editor_proto::components::ShapeName;
 
-use crate::app::{resources::{
-    action::{animation::AnimAction, shape::entity_request_release},
-    animation_manager::AnimationManager,
-    canvas::Canvas,
-    edge_manager::EdgeManager,
-    input::InputManager,
-    shape_data::CanvasShape,
-    vertex_manager::VertexManager,
-}, plugin::Main};
+use crate::app::{
+    plugin::Main,
+    resources::{
+        action::{animation::AnimAction, shape::entity_request_release},
+        animation_manager::AnimationManager,
+        canvas::Canvas,
+        edge_manager::EdgeManager,
+        input::InputManager,
+        shape_data::CanvasShape,
+        vertex_manager::VertexManager,
+    },
+};
 
 pub fn execute(
     world: &mut World,

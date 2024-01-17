@@ -27,12 +27,12 @@ use crate::app::{
         NetTransformLocal, OwnedByFileLocal, ScaleAxis, Vertex2d,
     },
     get_new_3d_position,
+    plugin::Main,
     resources::{
         action::model::ModelAction, camera_manager::CameraManager, canvas::Canvas,
         edge_manager::EdgeManager, file_manager::FileManager, input::InputManager,
         model_manager::ModelManager, shape_data::CanvasShape, tab_manager::TabManager,
     },
-    plugin::Main,
 };
 
 pub struct ModelInputManager;

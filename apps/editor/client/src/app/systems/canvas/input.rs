@@ -3,8 +3,8 @@ use bevy_ecs::{
     world::{Mut, World},
 };
 
-use input::Input;
 use editor_proto::components::FileExtension;
+use input::Input;
 
 use crate::app::resources::{
     canvas::Canvas, file_manager::FileManager, icon_manager::IconManager, input::InputManager,

@@ -1,4 +1,3 @@
-
 use bevy_ecs::{
     event::EventReader,
     prelude::EventWriter,
@@ -20,6 +19,7 @@ use editor_proto::components::{
 use crate::app::{
     components::file_system::{ChangelistUiState, FileSystemEntryLocal},
     events::ShapeColorResyncEvent,
+    plugin::Main,
     resources::{
         animation_manager::AnimationManager,
         canvas::Canvas,
@@ -29,7 +29,6 @@ use crate::app::{
         palette_manager::PaletteManager,
         vertex_manager::VertexManager,
     },
-    plugin::Main
 };
 
 #[derive(Resource)]
@@ -38,7 +37,8 @@ struct CachedUpdateComponentEventsState {
 }
 
 pub fn update_component_event_startup(world: &mut World) {
-    let initial_state: SystemState<EventReader<UpdateComponentEvents<Main>>> = SystemState::new(world);
+    let initial_state: SystemState<EventReader<UpdateComponentEvents<Main>>> =
+        SystemState::new(world);
     world.insert_resource(CachedUpdateComponentEventsState {
         event_state: initial_state,
     });

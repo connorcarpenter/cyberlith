@@ -6,22 +6,25 @@ use bevy_ecs::{
 
 use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus};
 
-use crate::app::{plugin::Main, resources::{
-    action::{
-        animation::AnimAction,
-        file::{FileAction, FileActions},
-        icon::IconAction,
-        model::ModelAction,
-        palette::PaletteAction,
-        shape::ShapeAction,
-        skin::SkinAction,
+use crate::app::{
+    plugin::Main,
+    resources::{
+        action::{
+            animation::AnimAction,
+            file::{FileAction, FileActions},
+            icon::IconAction,
+            model::ModelAction,
+            palette::PaletteAction,
+            shape::ShapeAction,
+            skin::SkinAction,
+        },
+        file_manager::FileManager,
+        icon_manager::IconManager,
+        input::InputManager,
+        palette_manager::PaletteManager,
+        tab_manager::TabManager,
     },
-    file_manager::FileManager,
-    icon_manager::IconManager,
-    input::InputManager,
-    palette_manager::PaletteManager,
-    tab_manager::TabManager,
-}};
+};
 
 pub trait Action: Clone {
     fn entity_update_auth_status_impl(

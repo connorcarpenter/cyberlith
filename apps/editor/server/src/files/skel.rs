@@ -128,8 +128,7 @@ impl SkelWriter {
         }
 
         for entity in vertices.iter() {
-            let (_, x, y, z, parent_entity_opt, vertex_name_opt) =
-                map.get(entity).unwrap();
+            let (_, x, y, z, parent_entity_opt, vertex_name_opt) = map.get(entity).unwrap();
             let parent_id = parent_entity_opt.map(|(parent_entity, angle)| {
                 let (parent_id, _, _, _, _, _) = map.get(&parent_entity).unwrap();
                 (*parent_id as u16, angle)

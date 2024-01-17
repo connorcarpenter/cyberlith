@@ -10,6 +10,7 @@ use editor_proto::components::{Edge3d, EdgeAngle, FileExtension, FileType, Verte
 
 use crate::app::{
     components::{VertexEntry, VertexTypeData},
+    plugin::Main,
     resources::{
         action::shape::{
             select_shape::{entity_request_release, select_shape},
@@ -23,7 +24,6 @@ use crate::app::{
         shape_data::FaceKey,
         vertex_manager::VertexManager,
     },
-    plugin::Main,
 };
 
 pub(crate) fn execute(

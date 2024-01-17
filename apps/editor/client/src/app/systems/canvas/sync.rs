@@ -22,6 +22,7 @@ use editor_proto::components::{
 use crate::app::{
     components::{Edge2dLocal, Edge3dLocal, FaceIcon2d, LocalShape},
     events::ShapeColorResyncEvent,
+    plugin::Main,
     resources::{
         animation_manager::{get_root_vertex, AnimationManager},
         camera_manager::CameraManager,
@@ -38,7 +39,6 @@ use crate::app::{
         tab_manager::TabManager,
         vertex_manager::VertexManager,
     },
-    plugin::Main,
 };
 
 pub fn queue_resyncs(

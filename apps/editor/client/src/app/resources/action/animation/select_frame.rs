@@ -6,7 +6,10 @@ use bevy_log::info;
 
 use naia_bevy_client::{Client, CommandsExt};
 
-use crate::app::{resources::{action::animation::AnimAction, animation_manager::AnimationManager}, plugin::Main};
+use crate::app::{
+    plugin::Main,
+    resources::{action::animation::AnimAction, animation_manager::AnimationManager},
+};
 
 pub fn execute(world: &mut World, action: AnimAction) -> Vec<AnimAction> {
     let AnimAction::SelectFrame(file_entity, next_frame_index, last_frame_index) = action else {

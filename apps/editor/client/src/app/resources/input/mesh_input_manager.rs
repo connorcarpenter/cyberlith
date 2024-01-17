@@ -16,12 +16,12 @@ use editor_proto::components::VertexRoot;
 
 use crate::app::{
     components::{Edge2dLocal, FaceIcon2d, LocalShape, Vertex2d, VertexTypeData},
+    plugin::Main,
     resources::{
         action::shape::ShapeAction, canvas::Canvas, edge_manager::EdgeManager,
         face_manager::FaceManager, input::InputManager, shape_data::CanvasShape,
         tab_manager::TabManager, vertex_manager::VertexManager,
     },
-    plugin::Main,
 };
 
 pub struct MeshInputManager;

@@ -3,9 +3,18 @@ use std::collections::HashMap;
 use bevy_ecs::system::{ResMut, Resource};
 use bevy_log::warn;
 
-use render_api::{base::CpuSkin, Assets, Handle, base::{CpuMaterial, CpuMesh}, components::{RenderLayer, Transform}, resources::RenderFrame};
+use render_api::{
+    base::CpuSkin,
+    base::{CpuMaterial, CpuMesh},
+    components::{RenderLayer, Transform},
+    resources::RenderFrame,
+    Assets, Handle,
+};
 
-use crate::{asset_dependency::SkinOrSceneHandle, asset_handle::AssetHandleImpl, AnimationData, AssetHandle, IconData, MeshFile, ModelData, PaletteData, SceneData, SkeletonData, SkinData};
+use crate::{
+    asset_dependency::SkinOrSceneHandle, asset_handle::AssetHandleImpl, AnimationData, AssetHandle,
+    IconData, MeshFile, ModelData, PaletteData, SceneData, SkeletonData, SkinData,
+};
 
 #[derive(Resource)]
 pub struct AssetManager {
@@ -69,11 +78,11 @@ impl AssetManager {
                 }
                 let asset_handle: AssetHandle = handle.into();
                 asset_handle.into()
-            },
+            }
             "skel" => {
                 let asset_handle: AssetHandle = self.skeletons.add(path_string).into();
                 asset_handle.into()
-            },
+            }
             "palette" => {
                 let existed = self.palettes.has(path_string.clone());
                 let handle = self.palettes.add(path_string);
@@ -82,7 +91,7 @@ impl AssetManager {
                 }
                 let asset_handle: AssetHandle = handle.into();
                 asset_handle.into()
-            },
+            }
             "anim" => {
                 let existed = self.animations.has(path_string.clone());
                 let handle = self.animations.add(path_string);
@@ -92,7 +101,7 @@ impl AssetManager {
                 }
                 let asset_handle: AssetHandle = handle.into();
                 asset_handle.into()
-            },
+            }
             "icon" => {
                 let existed = self.icons.has(path_string.clone());
                 let handle = self.icons.add(path_string);
@@ -103,7 +112,7 @@ impl AssetManager {
                 }
                 let asset_handle: AssetHandle = handle.into();
                 asset_handle.into()
-            },
+            }
             "skin" => {
                 let existed = self.skins.has(path_string.clone());
                 let handle = self.skins.add(path_string);
@@ -113,7 +122,7 @@ impl AssetManager {
                 }
                 let asset_handle: AssetHandle = handle.into();
                 asset_handle.into()
-            },
+            }
             "model" => {
                 let existed = self.models.has(path_string.clone());
                 let handle = self.models.add(path_string);
@@ -123,7 +132,7 @@ impl AssetManager {
                 }
                 let asset_handle: AssetHandle = handle.into();
                 asset_handle.into()
-            },
+            }
             "scene" => {
                 let existed = self.scenes.has(path_string.clone());
                 let handle = self.scenes.add(path_string);
@@ -133,7 +142,7 @@ impl AssetManager {
                 }
                 let asset_handle: AssetHandle = handle.into();
                 asset_handle.into()
-            },
+            }
             _ => panic!("Unknown file extension: {}", file_ext),
         };
 
@@ -147,27 +156,37 @@ impl AssetManager {
         asset_handle
     }
 
-    fn finish_dependency(&mut self, principal_handle: AssetHandle, dependency_string: String, dependency_handle: AssetHandle) {
+    fn finish_dependency(
+        &mut self,
+        principal_handle: AssetHandle,
+        dependency_string: String,
+        dependency_handle: AssetHandle,
+    ) {
         match principal_handle.to_impl() {
-            AssetHandleImpl::Mesh(_) | AssetHandleImpl::Skeleton(_) | AssetHandleImpl::Palette(_) => {
+            AssetHandleImpl::Mesh(_)
+            | AssetHandleImpl::Skeleton(_)
+            | AssetHandleImpl::Palette(_) => {
                 panic!("unexpected dependency for this type of asset")
-            },
+            }
             AssetHandleImpl::Animation(principal_handle) => {
                 let data = self.animations.get_mut(&principal_handle).unwrap();
                 data.finish_dependency(dependency_string, dependency_handle);
-            },
+            }
             AssetHandleImpl::Icon(principal_handle) => {
                 let data = self.icons.get_mut(&principal_handle).unwrap();
                 data.finish_dependency(dependency_string, dependency_handle);
                 if data.has_all_dependencies() {
-
                     let palette_handle = data.get_palette_file_handle().unwrap().clone();
 
                     if !self.palette_has_cpu_materials(&palette_handle) {
                         if !self.icons_waiting_on_palettes.contains_key(&palette_handle) {
-                            self.icons_waiting_on_palettes.insert(palette_handle.clone(), Vec::new());
+                            self.icons_waiting_on_palettes
+                                .insert(palette_handle.clone(), Vec::new());
                         }
-                        let icon_list = self.icons_waiting_on_palettes.get_mut(&palette_handle).unwrap();
+                        let icon_list = self
+                            .icons_waiting_on_palettes
+                            .get_mut(&palette_handle)
+                            .unwrap();
                         icon_list.push(principal_handle);
                     }
 
@@ -175,25 +194,29 @@ impl AssetManager {
                         self.ready_icons.push(principal_handle);
                     }
                 }
-            },
+            }
             AssetHandleImpl::Skin(principal_handle) => {
                 let data = self.skins.get_mut(&principal_handle).unwrap();
                 data.finish_dependency(dependency_string, dependency_handle);
                 if data.has_all_dependencies() {
-
                     let palette_handle = data.get_palette_file_handle().unwrap().clone();
                     let mesh_handle = data.get_mesh_file_handle().unwrap().clone();
 
                     if !self.palette_has_cpu_materials(&palette_handle) {
                         if !self.skins_waiting_on_palettes.contains_key(&palette_handle) {
-                            self.skins_waiting_on_palettes.insert(palette_handle.clone(), Vec::new());
+                            self.skins_waiting_on_palettes
+                                .insert(palette_handle.clone(), Vec::new());
                         }
-                        let skin_list = self.skins_waiting_on_palettes.get_mut(&palette_handle).unwrap();
+                        let skin_list = self
+                            .skins_waiting_on_palettes
+                            .get_mut(&palette_handle)
+                            .unwrap();
                         skin_list.push(principal_handle);
                     }
                     if !self.mesh_file_has_cpu_mesh(&mesh_handle) {
                         if !self.skins_waiting_on_meshes.contains_key(&mesh_handle) {
-                            self.skins_waiting_on_meshes.insert(mesh_handle.clone(), Vec::new());
+                            self.skins_waiting_on_meshes
+                                .insert(mesh_handle.clone(), Vec::new());
                         }
                         let skin_list = self.skins_waiting_on_meshes.get_mut(&mesh_handle).unwrap();
                         skin_list.push(principal_handle);
@@ -203,7 +226,7 @@ impl AssetManager {
                         self.ready_skins.push(principal_handle);
                     }
                 }
-            },
+            }
             AssetHandleImpl::Model(principal_handle) => {
                 let data = self.models.get_mut(&principal_handle).unwrap();
                 data.finish_dependency(dependency_string, dependency_handle);
@@ -213,11 +236,11 @@ impl AssetManager {
                     let skeleton_data = self.skeletons.get(&skeleton_handle).unwrap();
                     data.compute_components(skeleton_data);
                 }
-            },
+            }
             AssetHandleImpl::Scene(principal_handle) => {
                 let data = self.scenes.get_mut(&principal_handle).unwrap();
                 data.finish_dependency(dependency_string, dependency_handle);
-            },
+            }
         }
     }
 
@@ -232,7 +255,6 @@ impl AssetManager {
         asset_manager.sync_palettes(&mut materials);
         asset_manager.sync_skins(&meshes, &materials, &mut skins);
         asset_manager.sync_icon_skins(&meshes, &materials, &mut skins);
-
     }
 
     fn sync_meshes(&mut self, meshes: &mut Assets<CpuMesh>) {
@@ -289,7 +311,12 @@ impl AssetManager {
         }
     }
 
-    fn sync_skins(&mut self,  meshes: &Assets<CpuMesh>, materials: &Assets<CpuMaterial>, skins: &mut Assets<CpuSkin>) {
+    fn sync_skins(
+        &mut self,
+        meshes: &Assets<CpuMesh>,
+        materials: &Assets<CpuMaterial>,
+        skins: &mut Assets<CpuSkin>,
+    ) {
         if self.ready_skins.is_empty() {
             return;
         }
@@ -333,7 +360,12 @@ impl AssetManager {
         }
     }
 
-    fn sync_icon_skins(&mut self, meshes: &Assets<CpuMesh>, materials: &Assets<CpuMaterial>, skins: &mut Assets<CpuSkin>) {
+    fn sync_icon_skins(
+        &mut self,
+        meshes: &Assets<CpuMesh>,
+        materials: &Assets<CpuMaterial>,
+        skins: &mut Assets<CpuSkin>,
+    ) {
         if self.ready_icons.is_empty() {
             return;
         }
@@ -400,7 +432,12 @@ impl AssetManager {
             warn!("icon data not loaded 2: {:?}", icon_handle.id);
             return;
         };
-        render_frame.draw_skinned_mesh(render_layer_opt, &cpu_mesh_handle, &cpu_skin_handle, transform);
+        render_frame.draw_skinned_mesh(
+            render_layer_opt,
+            &cpu_mesh_handle,
+            &cpu_skin_handle,
+            transform,
+        );
     }
 
     pub fn draw_skin(
@@ -430,7 +467,12 @@ impl AssetManager {
             warn!("skin data {} not loaded 5", skin_handle.id);
             return;
         };
-        render_frame.draw_skinned_mesh(render_layer_opt, cpu_mesh_handle, cpu_skin_handle, transform);
+        render_frame.draw_skinned_mesh(
+            render_layer_opt,
+            cpu_mesh_handle,
+            cpu_skin_handle,
+            transform,
+        );
     }
 
     pub fn draw_scene(
@@ -449,15 +491,24 @@ impl AssetManager {
             return;
         };
         for (skin_or_scene_handle, mut component_transform) in scene_components {
-
             component_transform = component_transform.multiply(parent_transform);
 
             match skin_or_scene_handle {
                 SkinOrSceneHandle::Skin(skin_handle) => {
-                    self.draw_skin(render_frame, &skin_handle, &component_transform, render_layer_opt);
+                    self.draw_skin(
+                        render_frame,
+                        &skin_handle,
+                        &component_transform,
+                        render_layer_opt,
+                    );
                 }
                 SkinOrSceneHandle::Scene(scene_handle) => {
-                    self.draw_scene(render_frame, &scene_handle, &component_transform, render_layer_opt);
+                    self.draw_scene(
+                        render_frame,
+                        &scene_handle,
+                        &component_transform,
+                        render_layer_opt,
+                    );
                 }
             }
         }
@@ -483,10 +534,20 @@ impl AssetManager {
 
             match skin_or_scene_handle {
                 SkinOrSceneHandle::Skin(skin_handle) => {
-                    self.draw_skin(render_frame, &skin_handle, &component_transform, render_layer_opt);
+                    self.draw_skin(
+                        render_frame,
+                        &skin_handle,
+                        &component_transform,
+                        render_layer_opt,
+                    );
                 }
                 SkinOrSceneHandle::Scene(scene_handle) => {
-                    self.draw_scene(render_frame, &scene_handle, &component_transform, render_layer_opt);
+                    self.draw_scene(
+                        render_frame,
+                        &scene_handle,
+                        &component_transform,
+                        render_layer_opt,
+                    );
                 }
             }
         }
@@ -513,7 +574,10 @@ impl AssetManager {
             let skeleton_handle_1 = model_data.get_skeleton_handle();
             let skeleton_handle_2 = animation_data.get_skeleton_handle();
             if skeleton_handle_1 != skeleton_handle_2 {
-                panic!("skeleton mismatch: {:?} != {:?}", skeleton_handle_1.id, skeleton_handle_2.id);
+                panic!(
+                    "skeleton mismatch: {:?} != {:?}",
+                    skeleton_handle_1.id, skeleton_handle_2.id
+                );
             }
             skeleton_handle_1
         };
@@ -530,10 +594,20 @@ impl AssetManager {
 
             match skin_or_scene_handle {
                 SkinOrSceneHandle::Skin(skin_handle) => {
-                    self.draw_skin(render_frame, &skin_handle, &component_transform, render_layer_opt);
+                    self.draw_skin(
+                        render_frame,
+                        &skin_handle,
+                        &component_transform,
+                        render_layer_opt,
+                    );
                 }
                 SkinOrSceneHandle::Scene(scene_handle) => {
-                    self.draw_scene(render_frame, &scene_handle, &component_transform, render_layer_opt);
+                    self.draw_scene(
+                        render_frame,
+                        &scene_handle,
+                        &component_transform,
+                        render_layer_opt,
+                    );
                 }
             }
         }
@@ -568,7 +642,9 @@ impl AssetManager {
         let mesh_handle = data.get_mesh_file_handle().unwrap();
         let palette_handle = data.get_palette_file_handle().unwrap();
 
-        if self.mesh_file_has_cpu_mesh(mesh_handle) && self.palette_has_cpu_materials(palette_handle) {
+        if self.mesh_file_has_cpu_mesh(mesh_handle)
+            && self.palette_has_cpu_materials(palette_handle)
+        {
             return true;
         }
         return false;

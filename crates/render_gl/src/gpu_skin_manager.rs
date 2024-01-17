@@ -4,7 +4,11 @@ use bevy_ecs::system::Resource;
 
 use render_api::{base::CpuSkin, Handle};
 
-use crate::{core::{GpuTexture2D, Program}, GpuMaterialManager, renderer::FragmentShader};
+use crate::{
+    core::{GpuTexture2D, Program},
+    renderer::FragmentShader,
+    GpuMaterialManager,
+};
 
 #[derive(Resource)]
 pub struct GpuSkinManager {
@@ -26,7 +30,12 @@ impl Default for GpuSkinManager {
 }
 
 impl GpuSkinManager {
-    pub fn insert(&mut self, gpu_material_manager: &GpuMaterialManager, handle: Handle<CpuSkin>, cpu_skin: &CpuSkin) {
+    pub fn insert(
+        &mut self,
+        gpu_material_manager: &GpuMaterialManager,
+        handle: Handle<CpuSkin>,
+        cpu_skin: &CpuSkin,
+    ) {
         let new_index = self.cpu_skins.len();
         let gpu_skin = GpuSkin::new(new_index);
         self.assets.insert(handle, gpu_skin);
@@ -56,7 +65,7 @@ impl GpuSkinManager {
     fn raw_skin_data(&self, gpu_material_manager: &GpuMaterialManager) -> Vec<f32> {
         let mut output = Vec::new();
         for skin in &self.cpu_skins {
-            write_raw_data(gpu_material_manager,  skin, self.biggest_skin, &mut output);
+            write_raw_data(gpu_material_manager, skin, self.biggest_skin, &mut output);
         }
         output
     }
@@ -72,9 +81,7 @@ impl GpuSkinManager {
 
     pub fn fragment_shader(&self) -> FragmentShader {
         let output = include_str!("shaders/physical_material.frag").to_string();
-        FragmentShader {
-            source: output,
-        }
+        FragmentShader { source: output }
     }
 
     pub fn use_uniforms(&self, program: &Program) {
@@ -89,14 +96,16 @@ impl GpuSkinManager {
         if self.gpu_skins.is_some() {
             return;
         }
-        self.gpu_skins = Some(GpuTexture2D::new_empty::<f32>(
-            0,
-            0,
-        ));
+        self.gpu_skins = Some(GpuTexture2D::new_empty::<f32>(0, 0));
     }
 }
 
-fn write_raw_data(gpu_material_manager: &GpuMaterialManager, skin: &CpuSkin, biggest_skin: usize, output: &mut Vec<f32>) {
+fn write_raw_data(
+    gpu_material_manager: &GpuMaterialManager,
+    skin: &CpuSkin,
+    biggest_skin: usize,
+    output: &mut Vec<f32>,
+) {
     //info!("write_raw_data() .. biggest_skin: {}", biggest_skin);
 
     let mut temp = Vec::new();

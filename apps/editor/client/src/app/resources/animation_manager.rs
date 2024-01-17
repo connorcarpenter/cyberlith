@@ -34,6 +34,7 @@ use editor_proto::components::{
 use crate::app::{
     components::{Edge2dLocal, LocalAnimRotation, Vertex2d},
     get_new_3d_position,
+    plugin::Main,
     resources::{
         camera_manager::{set_camera_transform, CameraManager},
         canvas::Canvas,
@@ -42,7 +43,6 @@ use crate::app::{
         tab_manager::TabManager,
         vertex_manager::VertexManager,
     },
-    plugin::Main,
 };
 
 struct FrameData {
@@ -1012,7 +1012,8 @@ impl AnimationManager {
             let line_mesh_handle = meshes.add(Line);
             let mat_handle_white = materials.add(CpuMaterial::new(Color::WHITE, 0.0, 0.0, 0.0));
             let mat_handle_gray = materials.add(CpuMaterial::new(Color::GRAY, 0.0, 0.0, 0.0));
-            let mat_handle_dark_gray = materials.add(CpuMaterial::new(Color::DARK_GRAY, 0.0, 0.0, 0.0));
+            let mat_handle_dark_gray =
+                materials.add(CpuMaterial::new(Color::DARK_GRAY, 0.0, 0.0, 0.0));
             let mat_handle_green = materials.add(CpuMaterial::new(Color::GREEN, 0.0, 0.0, 0.0));
 
             for (frame_index, frame_pos) in frame_rects.iter().enumerate() {

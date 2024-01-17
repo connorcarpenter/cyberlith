@@ -11,8 +11,8 @@ use naia_bevy_client::{Client, CommandsExt};
 use editor_proto::components::BackgroundSkinColor;
 
 use crate::app::{
-    plugin::Main,
     events::ShapeColorResyncEvent,
+    plugin::Main,
     resources::{action::skin::SkinAction, canvas::Canvas, skin_manager::SkinManager},
 };
 

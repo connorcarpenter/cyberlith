@@ -18,13 +18,13 @@ use editor_proto::components::{
 use crate::app::{
     components::file_system::{FileSystemParent, FileSystemUiState},
     events::RemoveComponentEvent,
+    plugin::Main,
     resources::{
         animation_manager::AnimationManager, canvas::Canvas, edge_manager::EdgeManager,
         face_manager::FaceManager, file_manager::FileManager, icon_manager::IconManager,
         input::InputManager, model_manager::ModelManager, palette_manager::PaletteManager,
         skin_manager::SkinManager, tab_manager::TabManager, vertex_manager::VertexManager,
     },
-    plugin::Main,
 };
 
 #[derive(Resource)]
@@ -33,7 +33,8 @@ struct CachedRemoveComponentEventsState {
 }
 
 pub fn remove_component_event_startup(world: &mut World) {
-    let initial_state: SystemState<EventReader<RemoveComponentEvents<Main>>> = SystemState::new(world);
+    let initial_state: SystemState<EventReader<RemoveComponentEvents<Main>>> =
+        SystemState::new(world);
     world.insert_resource(CachedRemoveComponentEventsState {
         event_state: initial_state,
     });

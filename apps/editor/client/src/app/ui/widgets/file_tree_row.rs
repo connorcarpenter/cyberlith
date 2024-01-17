@@ -25,6 +25,7 @@ use crate::app::{
     components::file_system::{
         ContextMenuAction, FileSystemParent, FileSystemUiState, ModalRequestType,
     },
+    plugin::Main,
     resources::{
         action::file::{FileAction, FileActions},
         file_manager::FileManager,
@@ -37,7 +38,6 @@ use crate::app::{
         },
         BindingState, UiState,
     },
-    plugin::Main,
 };
 
 pub struct FileTreeRowUiWidget;

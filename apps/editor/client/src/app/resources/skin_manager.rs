@@ -19,11 +19,11 @@ use editor_proto::components::{BackgroundSkinColor, FaceColor, FileExtension, Pa
 
 use crate::app::{
     events::ShapeColorResyncEvent,
+    plugin::Main,
     resources::{
         action::skin::SkinAction, file_manager::FileManager, input::InputManager,
         palette_manager::PaletteManager, shape_data::CanvasShape,
     },
-    plugin::Main,
 };
 
 #[derive(Resource)]
@@ -93,8 +93,11 @@ impl SkinManager {
         palette_color_entity: Entity,
     ) -> Entity {
         info!("creating networked face color!");
-        let mut system_state: SystemState<(Commands, Client<Main>, EventWriter<ShapeColorResyncEvent>)> =
-            SystemState::new(world);
+        let mut system_state: SystemState<(
+            Commands,
+            Client<Main>,
+            EventWriter<ShapeColorResyncEvent>,
+        )> = SystemState::new(world);
         let (mut commands, mut client, mut shape_color_resync_events) = system_state.get_mut(world);
 
         let mut component = FaceColor::new();

@@ -4,9 +4,10 @@ use bevy_log::info;
 use math::{Vec2, Vec3};
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh, CpuTexture2D},
-    components::{DirectionalLight,
-        AmbientLight, Camera, CameraBundle, ClearOperation, OrthographicProjection,
-        Projection, RenderLayers, RenderObjectBundle, RenderTarget, Transform, Viewport,
+    components::{
+        AmbientLight, Camera, CameraBundle, ClearOperation, DirectionalLight,
+        OrthographicProjection, Projection, RenderLayers, RenderObjectBundle, RenderTarget,
+        Transform, Viewport,
     },
     Assets, Handle,
 };

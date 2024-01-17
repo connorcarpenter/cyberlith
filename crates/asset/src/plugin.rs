@@ -7,8 +7,7 @@ pub struct AssetPlugin;
 
 impl Plugin for AssetPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .init_resource::<AssetManager>()
+        app.init_resource::<AssetManager>()
             .add_systems(Update, AssetManager::sync);
     }
 }

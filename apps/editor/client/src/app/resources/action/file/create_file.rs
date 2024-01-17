@@ -15,6 +15,7 @@ use crate::app::{
     components::file_system::{
         ChangelistUiState, FileSystemEntryLocal, FileSystemParent, FileSystemUiState,
     },
+    plugin::Main,
     resources::{
         action::{
             file::{
@@ -28,7 +29,6 @@ use crate::app::{
         tab_manager::TabManager,
     },
     systems::file_post_process,
-    plugin::Main,
 };
 
 pub(crate) fn execute(

@@ -5,7 +5,11 @@ use bevy_ecs::{
 };
 
 use math::{Vec2, Vec3};
-use render_api::{base::{Color, CpuMaterial, CpuMesh}, components::Transform, Assets, Handle};
+use render_api::{
+    base::{Color, CpuMaterial, CpuMesh},
+    components::Transform,
+    Assets, Handle,
+};
 
 use editor_proto::components::Vertex3d;
 

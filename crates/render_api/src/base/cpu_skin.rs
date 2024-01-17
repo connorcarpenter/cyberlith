@@ -1,4 +1,3 @@
-
 use bevy_log::info;
 
 use crate::{base::CpuMaterial, Handle};

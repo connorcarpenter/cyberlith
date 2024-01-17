@@ -10,10 +10,13 @@ use render_api::{base::CpuMesh, components::Transform, Assets, Handle};
 
 use editor_proto::components::{Face3d, Vertex3d};
 
-use crate::app::{resources::{
-    action::shape::ShapeAction, canvas::Canvas, face_manager::FaceManager,
-    vertex_manager::VertexManager,
-}, plugin::Main};
+use crate::app::{
+    plugin::Main,
+    resources::{
+        action::shape::ShapeAction, canvas::Canvas, face_manager::FaceManager,
+        vertex_manager::VertexManager,
+    },
+};
 
 pub(crate) fn execute(world: &mut World, action: ShapeAction) -> Vec<ShapeAction> {
     let ShapeAction::MoveVertex(vertex_2d_entity, old_position, new_position, already_moved) = action else {

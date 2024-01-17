@@ -2,12 +2,17 @@ use std::{collections::HashMap, fs};
 
 use bevy_log::info;
 
-use naia_serde::BitReader;
 use math::Vec3;
+use naia_serde::BitReader;
 
-use render_api::{AssetHash, Assets, Handle, base::{CpuMaterial, CpuMesh, CpuSkin}};
+use render_api::{
+    base::{CpuMaterial, CpuMesh, CpuSkin},
+    AssetHash, Assets, Handle,
+};
 
-use crate::{asset_handle::AssetHandleImpl, AssetHandle, PaletteData, asset_dependency::AssetDependency};
+use crate::{
+    asset_dependency::AssetDependency, asset_handle::AssetHandleImpl, AssetHandle, PaletteData,
+};
 
 impl AssetHash<IconData> for String {}
 
@@ -47,7 +52,13 @@ impl IconData {
         }
     }
 
-    pub(crate) fn load_cpu_skins(&mut self, meshes: &Assets<CpuMesh>, materials: &Assets<CpuMaterial>, skins: &mut Assets<CpuSkin>, palette_data: &PaletteData) -> bool {
+    pub(crate) fn load_cpu_skins(
+        &mut self,
+        meshes: &Assets<CpuMesh>,
+        materials: &Assets<CpuMaterial>,
+        skins: &mut Assets<CpuSkin>,
+        palette_data: &PaletteData,
+    ) -> bool {
         for frame in &mut self.frames {
             if !frame.has_cpu_skin_handle() {
                 if !frame.load_cpu_skin(meshes, materials, skins, palette_data) {
@@ -58,14 +69,22 @@ impl IconData {
         return true;
     }
 
-    pub(crate) fn load_dependencies(&self, handle: Handle<Self>, dependencies: &mut Vec<(AssetHandle, String)>) {
+    pub(crate) fn load_dependencies(
+        &self,
+        handle: Handle<Self>,
+        dependencies: &mut Vec<(AssetHandle, String)>,
+    ) {
         let AssetDependency::<PaletteData>::Path(path) = &self.palette_file else {
             panic!("expected path right after load");
         };
         dependencies.push((handle.into(), path.clone()));
     }
 
-    pub(crate) fn finish_dependency(&mut self, _dependency_path: String, dependency_handle: AssetHandle) {
+    pub(crate) fn finish_dependency(
+        &mut self,
+        _dependency_path: String,
+        dependency_handle: AssetHandle,
+    ) {
         match dependency_handle.to_impl() {
             AssetHandleImpl::Palette(handle) => {
                 self.palette_file.load_handle(handle);
@@ -84,10 +103,16 @@ impl IconData {
         return false;
     }
 
-    pub(crate) fn get_cpu_mesh_and_skin_handles(&self, subimage_index: usize) -> Option<(Handle<CpuMesh>, Handle<CpuSkin>)> {
+    pub(crate) fn get_cpu_mesh_and_skin_handles(
+        &self,
+        subimage_index: usize,
+    ) -> Option<(Handle<CpuMesh>, Handle<CpuSkin>)> {
         let frame = &self.frames[subimage_index];
         if frame.has_cpu_mesh_handle() && frame.has_cpu_skin_handle() {
-            return Some((frame.get_cpu_mesh_handle().unwrap().clone(), frame.get_cpu_skin_handle().unwrap().clone()));
+            return Some((
+                frame.get_cpu_mesh_handle().unwrap().clone(),
+                frame.get_cpu_skin_handle().unwrap().clone(),
+            ));
         }
         return None;
     }
@@ -141,7 +166,7 @@ impl Frame {
         meshes: &Assets<CpuMesh>,
         materials: &Assets<CpuMaterial>,
         skins: &mut Assets<CpuSkin>,
-        palette_data: &PaletteData
+        palette_data: &PaletteData,
     ) -> bool {
         let mut new_skin = CpuSkin::default();
 
@@ -203,8 +228,7 @@ impl From<String> for IconData {
 
         let mut bit_reader = BitReader::new(&data);
 
-        let actions =
-            filetypes::IconAction::read(&mut bit_reader).expect("unable to parse file");
+        let actions = filetypes::IconAction::read(&mut bit_reader).expect("unable to parse file");
 
         let mut palette_file_opt = None;
         let mut frames = Vec::new();
@@ -236,7 +260,7 @@ impl From<String> for IconData {
                                 vertex_c_id,
                                 _,
                                 _,
-                                _
+                                _,
                             ) => {
                                 let vertex_a = vertices[vertex_a_id as usize];
                                 let vertex_b = vertices[vertex_b_id as usize];

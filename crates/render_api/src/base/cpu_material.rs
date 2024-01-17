@@ -1,7 +1,6 @@
 use std::hash::{Hash, Hasher};
 
-use crate::{AssetHash, base::Color};
-
+use crate::{base::Color, AssetHash};
 
 #[derive(Debug, Clone)]
 pub struct CpuMaterial {

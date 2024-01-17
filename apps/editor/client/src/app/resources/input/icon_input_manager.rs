@@ -24,6 +24,7 @@ use crate::app::{
         Edge2dLocal, FaceIcon2d, IconEdgeLocal, IconLocalFace, IconVertexActionData, LocalShape,
         OwnedByFileLocal, Vertex2d,
     },
+    plugin::Main,
     resources::{
         action::icon::IconAction,
         camera_manager::CameraManager,
@@ -33,7 +34,6 @@ use crate::app::{
         shape_data::CanvasShape,
         tab_manager::TabManager,
     },
-    plugin::Main,
 };
 
 pub struct IconInputManager;
@@ -157,7 +157,8 @@ impl IconInputManager {
                 icon_manager.handle_delete_vertex_action(world, &vertex_entity)
             }
             Some((edge_entity, CanvasShape::Edge)) => {
-                let mut system_state: SystemState<(Commands, Client<Main>)> = SystemState::new(world);
+                let mut system_state: SystemState<(Commands, Client<Main>)> =
+                    SystemState::new(world);
                 let (mut commands, mut client) = system_state.get_mut(world);
 
                 // check whether we can delete edge
@@ -186,7 +187,8 @@ impl IconInputManager {
                 icon_manager.selected_shape = None;
             }
             Some((local_face_entity, CanvasShape::Face)) => {
-                let mut system_state: SystemState<(Commands, Client<Main>)> = SystemState::new(world);
+                let mut system_state: SystemState<(Commands, Client<Main>)> =
+                    SystemState::new(world);
                 let (mut commands, mut client) = system_state.get_mut(world);
 
                 let net_face_entity = icon_manager

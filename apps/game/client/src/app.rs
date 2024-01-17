@@ -1,24 +1,29 @@
-
-use game_engine::{asset::{AssetManager, ModelData, AnimationData}, EnginePlugin, math::{Quat, Vec3}, render::{
-    base::{Color, CpuMaterial, CpuMesh},
-    components::{
-        AmbientLight, Camera, CameraBundle, ClearOperation, DirectionalLight,
-        OrthographicProjection, PointLight, Projection, RenderLayer,
-        RenderLayers, RenderObjectBundle, RenderTarget, Transform, Viewport, Visibility,
+use game_engine::{
+    asset::{AnimationData, AssetManager, ModelData},
+    math::{Quat, Vec3},
+    render::{
+        base::{Color, CpuMaterial, CpuMesh},
+        components::{
+            AmbientLight, Camera, CameraBundle, ClearOperation, DirectionalLight,
+            OrthographicProjection, PointLight, Projection, RenderLayer, RenderLayers,
+            RenderObjectBundle, RenderTarget, Transform, Viewport, Visibility,
+        },
+        resources::{RenderFrame, Time, WindowSettings},
+        shapes, Assets, Handle,
     },
-    resources::{RenderFrame, Time, WindowSettings},
-    shapes, Assets, Handle,
-}};
+    EnginePlugin,
+};
 
-use     bevy_app::{App, Startup, Update};
-use bevy_ecs::{component::Component,
-          query::With,
-          system::{Commands, Local, Query, Res, ResMut}};
+use bevy_app::{App, Startup, Update};
+use bevy_ecs::{
+    component::Component,
+    query::With,
+    system::{Commands, Local, Query, Res, ResMut},
+};
 
 pub fn build() -> App {
     let mut app = App::default();
-    app
-        .add_plugins(EnginePlugin)
+    app.add_plugins(EnginePlugin)
         // Add Window Settings Plugin
         .insert_resource(WindowSettings {
             title: "Cyberlith".to_string(),
@@ -72,9 +77,11 @@ fn setup(
             anim_handle: human_walk_anim_handle,
             image_index: 0.0,
         })
-        .insert(Transform::from_scale(Vec3::splat(1.0))
-            .with_translation(Vec3::splat(0.0))
-            .with_rotation(Quat::from_rotation_z(f32::to_radians(0.0))))
+        .insert(
+            Transform::from_scale(Vec3::splat(1.0))
+                .with_translation(Vec3::splat(0.0))
+                .with_rotation(Quat::from_rotation_z(f32::to_radians(0.0))),
+        )
         .insert(Visibility::default())
         .insert(ObjectMarker)
         .insert(layer);
@@ -117,13 +124,11 @@ fn setup(
                 ..Default::default()
             },
             transform: Transform::from_xyz(400.0, 400.0, 400.0).looking_at(Vec3::ZERO, Vec3::Z),
-            projection:
-            Projection::Orthographic(
-                OrthographicProjection {
-                    near: 0.1,
-                    far: 10000.0,
-                    ..Default::default()
-                }),
+            projection: Projection::Orthographic(OrthographicProjection {
+                near: 0.1,
+                far: 10000.0,
+                ..Default::default()
+            }),
             //     Projection::Perspective(PerspectiveProjection {
             //                 fov: std::f32::consts::PI / 4.0,
             //                 near: 0.1,
@@ -161,7 +166,6 @@ fn step(
     }
 
     for mut anim in icon_q.iter_mut() {
-
         anim.image_index += 0.4 * elapsed_time;
 
         let subimage_count = asset_manager.get_animation_duration(&anim.anim_handle) as f32;
@@ -233,6 +237,13 @@ pub fn draw(
         if !visibility.visible {
             continue;
         }
-        asset_manager.draw_animated_model(&mut render_frame, model_handle, &walk_anim.anim_handle, transform, walk_anim.image_index, render_layer_opt);
+        asset_manager.draw_animated_model(
+            &mut render_frame,
+            model_handle,
+            &walk_anim.anim_handle,
+            transform,
+            walk_anim.image_index,
+            render_layer_opt,
+        );
     }
 }

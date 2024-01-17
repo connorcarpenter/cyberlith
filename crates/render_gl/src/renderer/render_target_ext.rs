@@ -1,6 +1,9 @@
 use render_api::components::Viewport;
 
-use crate::{renderer::{RenderPass, RenderMeshes}, GpuMaterialManager, GpuMeshManager, GpuSkinManager};
+use crate::{
+    renderer::{RenderMeshes, RenderPass},
+    GpuMaterialManager, GpuMeshManager, GpuSkinManager,
+};
 
 pub trait RenderTargetExt {
     fn width(&self) -> u32;

@@ -10,7 +10,10 @@ use render_egui::egui::Color32;
 
 use editor_proto::components::PaletteColor;
 
-use crate::app::{resources::{action::palette::PaletteAction, palette_manager::PaletteManager}, plugin::Main};
+use crate::app::{
+    plugin::Main,
+    resources::{action::palette::PaletteAction, palette_manager::PaletteManager},
+};
 
 pub fn execute(
     world: &mut World,

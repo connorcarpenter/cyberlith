@@ -1,5 +1,9 @@
 use math::Vec3;
-use render_api::{base::{CpuMaterial, CpuMesh}, components::{RenderObjectBundle, Transform}, AssetHash, Assets, Handle};
+use render_api::{
+    base::{CpuMaterial, CpuMesh},
+    components::{RenderObjectBundle, Transform},
+    AssetHash, Assets, Handle,
+};
 
 pub fn create_3d_edge_diamond(
     meshes: &mut Assets<CpuMesh>,

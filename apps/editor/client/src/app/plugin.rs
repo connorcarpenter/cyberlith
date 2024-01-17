@@ -62,7 +62,10 @@ impl Plugin for VortexPlugin {
                 ..Default::default()
             })
             // Networking Plugin
-            .add_plugins(ClientPlugin::<Main>::new(ClientConfig::default(), protocol()))
+            .add_plugins(ClientPlugin::<Main>::new(
+                ClientConfig::default(),
+                protocol(),
+            ))
             .add_event::<LoginEvent>()
             // Networking Systems
             .add_systems(Update, network::login)

@@ -11,11 +11,11 @@ use editor_proto::components::FaceColor;
 
 use crate::app::{
     events::ShapeColorResyncEvent,
+    plugin::Main,
     resources::{
         action::skin::SkinAction, canvas::Canvas, face_manager::FaceManager,
         skin_manager::SkinManager,
     },
-    plugin::Main,
 };
 
 pub(crate) fn execute(world: &mut World, action: SkinAction) -> Vec<SkinAction> {

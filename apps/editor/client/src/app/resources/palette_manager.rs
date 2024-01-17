@@ -19,9 +19,10 @@ use render_egui::{
 
 use editor_proto::components::PaletteColor;
 
-use crate::app::{plugin::Main, resources::{
-    action::palette::PaletteAction, tab_manager::TabManager, toolbar::Toolbar,
-}};
+use crate::app::{
+    plugin::Main,
+    resources::{action::palette::PaletteAction, tab_manager::TabManager, toolbar::Toolbar},
+};
 
 #[derive(Resource)]
 pub struct PaletteManager {

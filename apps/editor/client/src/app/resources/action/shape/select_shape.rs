@@ -7,11 +7,14 @@ use bevy_log::info;
 
 use naia_bevy_client::{Client, CommandsExt};
 
-use crate::app::{resources::{
-    action::shape::ShapeAction, canvas::Canvas, edge_manager::EdgeManager,
-    face_manager::FaceManager, input::InputManager, shape_data::CanvasShape,
-    shape_manager::ShapeManager, vertex_manager::VertexManager,
-}, plugin::Main};
+use crate::app::{
+    plugin::Main,
+    resources::{
+        action::shape::ShapeAction, canvas::Canvas, edge_manager::EdgeManager,
+        face_manager::FaceManager, input::InputManager, shape_data::CanvasShape,
+        shape_manager::ShapeManager, vertex_manager::VertexManager,
+    },
+};
 
 pub(crate) fn execute(
     world: &mut World,

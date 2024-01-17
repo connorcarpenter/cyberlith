@@ -12,7 +12,7 @@ use editor_proto::{
     resources::FileKey,
 };
 
-use crate::app::{resources::tab_manager::TabManager, plugin::Main};
+use crate::app::{plugin::Main, resources::tab_manager::TabManager};
 
 struct ChangelistData {
     changelist_entity: Entity,

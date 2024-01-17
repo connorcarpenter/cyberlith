@@ -16,6 +16,7 @@ use editor_proto::components::{AnimRotation, ShapeName, VertexRoot};
 
 use crate::app::{
     components::{Edge2dLocal, LocalShape, Vertex2d},
+    plugin::Main,
     resources::{
         action::animation::AnimAction,
         animation_manager::AnimationManager,
@@ -26,7 +27,6 @@ use crate::app::{
         tab_manager::TabManager,
         vertex_manager::VertexManager,
     },
-    plugin::Main,
 };
 
 pub struct AnimInputManager;

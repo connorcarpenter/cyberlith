@@ -9,16 +9,19 @@ use naia_bevy_client::Client;
 
 use editor_proto::components::{FaceColor, FileExtension};
 
-use crate::app::{resources::{
-    action::{shape::entity_request_release, skin::SkinAction},
-    canvas::Canvas,
-    face_manager::FaceManager,
-    file_manager::FileManager,
-    input::InputManager,
-    palette_manager::PaletteManager,
-    shape_data::CanvasShape,
-    skin_manager::SkinManager,
-}, plugin::Main};
+use crate::app::{
+    plugin::Main,
+    resources::{
+        action::{shape::entity_request_release, skin::SkinAction},
+        canvas::Canvas,
+        face_manager::FaceManager,
+        file_manager::FileManager,
+        input::InputManager,
+        palette_manager::PaletteManager,
+        shape_data::CanvasShape,
+        skin_manager::SkinManager,
+    },
+};
 
 pub fn execute(
     world: &mut World,

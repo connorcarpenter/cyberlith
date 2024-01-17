@@ -3,7 +3,10 @@ use bevy_log::info;
 
 use naia_bevy_client::{events::ConnectEvent, Client};
 
-use crate::app::{ui::{LoggingInState, UiState}, plugin::Main};
+use crate::app::{
+    plugin::Main,
+    ui::{LoggingInState, UiState},
+};
 
 pub fn connect_events(
     client: Client<Main>,

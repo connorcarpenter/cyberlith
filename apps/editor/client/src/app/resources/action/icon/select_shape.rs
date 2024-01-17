@@ -11,11 +11,11 @@ use editor_proto::components::{FileExtension, IconFace};
 
 use crate::app::{
     events::ShapeColorResyncEvent,
+    plugin::Main,
     resources::{
         action::icon::IconAction, file_manager::FileManager, icon_manager::IconManager,
         palette_manager::PaletteManager, shape_data::CanvasShape,
     },
-    plugin::Main,
 };
 
 pub(crate) fn execute(

@@ -8,18 +8,21 @@ use naia_bevy_client::Client;
 
 use editor_proto::components::Edge3d;
 
-use crate::app::{plugin::Main, resources::{
-    action::shape::{
-        select_shape::{entity_request_release, select_shape},
-        ShapeAction,
+use crate::app::{
+    plugin::Main,
+    resources::{
+        action::shape::{
+            select_shape::{entity_request_release, select_shape},
+            ShapeAction,
+        },
+        canvas::Canvas,
+        edge_manager::EdgeManager,
+        face_manager::FaceManager,
+        input::InputManager,
+        shape_data::CanvasShape,
+        vertex_manager::VertexManager,
     },
-    canvas::Canvas,
-    edge_manager::EdgeManager,
-    face_manager::FaceManager,
-    input::InputManager,
-    shape_data::CanvasShape,
-    vertex_manager::VertexManager,
-}};
+};
 
 pub(crate) fn execute(
     world: &mut World,

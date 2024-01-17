@@ -26,6 +26,7 @@ use editor_proto::components::{
 
 use crate::app::{
     components::{DefaultDraw, Edge2dLocal, Edge3dLocal, LocalShape, OwnedByFileLocal, Vertex2d},
+    plugin::Main,
     resources::{
         camera_manager::CameraManager,
         canvas::Canvas,
@@ -40,7 +41,6 @@ use crate::app::{
     shapes::{
         create_2d_edge_arrow, create_2d_edge_line, create_3d_edge_diamond, create_3d_edge_line,
     },
-    plugin::Main,
 };
 
 #[derive(Resource)]
@@ -466,7 +466,6 @@ impl EdgeManager {
         edge_angle_opt: Option<f32>,
         default_draw: bool,
     ) -> Entity {
-
         let mat_handle_dark_blue = materials.add(CpuMaterial::new(Color::DARK_BLUE, 0.0, 0.0, 0.0));
 
         // edge 3d

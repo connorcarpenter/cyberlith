@@ -8,10 +8,10 @@ use naia_bevy_client::{Client, CommandsExt};
 
 use crate::app::{
     components::NetTransformControl,
+    plugin::Main,
     resources::{
         action::model::ModelAction, canvas::Canvas, input::InputManager, shape_data::CanvasShape,
     },
-    plugin::Main,
 };
 
 pub(crate) fn execute(

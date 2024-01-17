@@ -21,6 +21,7 @@ use editor_proto::components::{Face3d, FileExtension, OwnedByFile};
 
 use crate::app::{
     components::{DefaultDraw, Face3dLocal, FaceIcon2d, OwnedByFileLocal},
+    plugin::Main,
     resources::{
         camera_manager::CameraManager,
         canvas::Canvas,
@@ -29,7 +30,6 @@ use crate::app::{
         shape_data::{CanvasShape, FaceData, FaceKey},
         vertex_manager::VertexManager,
     },
-    plugin::Main,
 };
 
 #[derive(Resource)]

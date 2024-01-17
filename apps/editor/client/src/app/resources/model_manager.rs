@@ -34,6 +34,7 @@ use crate::app::{
         Edge2dLocal, Edge3dLocal, EdgeAngleLocal, LocalShape, NetTransformControl,
         NetTransformControlType, NetTransformLocal, OwnedByFileLocal, ScaleAxis, Vertex2d,
     },
+    plugin::Main,
     resources::{
         action::model::ModelAction, camera_manager::CameraManager, canvas::Canvas,
         compass::Compass, edge_manager::edge_is_enabled, edge_manager::EdgeManager,
@@ -42,7 +43,6 @@ use crate::app::{
     },
     transform_from_endpoints_and_spin,
     ui::{widgets::create_networked_dependency, BindingState, UiState},
-    plugin::Main,
 };
 
 pub struct NetTransformData {
