@@ -9,6 +9,3 @@ mod backend;
 pub use plugin::HttpClientPlugin;
 pub use request::HttpRequest;
 pub use response::{HttpResponse, HttpResponseError};
-pub use backend::*;
-
-pub use ehttp;

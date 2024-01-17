@@ -2,7 +2,7 @@ use bevy_ecs::component::Component;
 use ehttp::Request;
 
 #[derive(Component, Debug, Clone)]
-pub struct HttpRequest(pub Request);
+pub struct HttpRequest(pub(crate) Request);
 
 impl HttpRequest {
     pub fn new(request: Request) -> Self {

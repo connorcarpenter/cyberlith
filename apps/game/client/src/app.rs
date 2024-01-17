@@ -14,7 +14,7 @@ use game_engine::{
         shapes, Assets, Handle,
     },
     EnginePlugin,
-    http::{ehttp, HttpRequest, HttpResponse},
+    http::{HttpRequest, HttpResponse},
     naia::Timer,
 };
 
@@ -60,14 +60,16 @@ fn send_request(mut commands: Commands, mut timer: ResMut<ApiTimer>) {
     if timer.0.ringing() {
         timer.0.reset();
 
-        let req = ehttp::Request::get("https://api.ipify.org?format=json");
-        commands.spawn(HttpRequest(req));
+        commands.spawn(HttpRequest::get("https://api.ipify.org?format=json"));
     }
 }
 
 fn handle_response(mut commands: Commands, responses: Query<(Entity, &HttpResponse)>) {
     for (entity, response) in responses.iter() {
-        info!("response: {:?}", response.0.text());
+        let Some(text) = response.text() else {
+            panic!("no text in response");
+        };
+        info!("response: {:?}", text);
         commands.entity(entity).despawn();
     }
 }
