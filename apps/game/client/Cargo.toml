@@ -26,5 +26,11 @@ game_engine = { path = "../engine" }
 # External
 bevy_app = { version = "0.12.1", default-features=false }
 bevy_ecs = { version = "0.12.1", default-features=false }
+bevy_time = { version = "0.12.1", default-features=false }
+bevy_log = { version = "0.12.1", default-features=false }
+
 rand = { version = "0.8.5" }
 cfg-if = { version = "1.0" }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = { version = "0.2.84", features = [ "serde-serialize" ] }

@@ -18,12 +18,18 @@ use bevy_app::{App, Startup, Update};
 use bevy_ecs::{
     component::Component,
     query::With,
-    system::{Commands, Local, Query, Res, ResMut},
+    system::{Commands, Local, Query, Res, ResMut, Resource},
+    entity::Entity,
 };
+use bevy_time::{Timer, TimerMode, Time as BevyTime};
+
+use game_engine::http::{ehttp, HttpRequest, HttpResponse};
+use bevy_log::info;
 
 pub fn build() -> App {
     let mut app = App::default();
     app.add_plugins(EnginePlugin)
+        .add_plugins(bevy_time::TimePlugin::default())
         // Add Window Settings Plugin
         .insert_resource(WindowSettings {
             title: "Cyberlith".to_string(),
@@ -33,8 +39,37 @@ pub fn build() -> App {
         // Systems
         .add_systems(Startup, setup)
         .add_systems(Update, step)
-        .add_systems(Update, draw);
+        .add_systems(Update, draw)
+        // Http
+        .init_resource::<ApiTimer>()
+        .add_systems(Update, (send_request, handle_response))
+    ;
     app
+}
+
+#[derive(Resource)]
+pub struct ApiTimer(pub Timer);
+
+impl Default for ApiTimer {
+    fn default() -> Self {
+        Self(Timer::from_seconds(1.0, TimerMode::Repeating))
+    }
+}
+
+fn send_request(mut commands: Commands, time: Res<BevyTime>, mut timer: ResMut<ApiTimer>) {
+    timer.0.tick(time.delta());
+
+    if timer.0.just_finished() {
+        let req = ehttp::Request::get("https://api.ipify.org?format=json");
+        commands.spawn(HttpRequest(req));
+    }
+}
+
+fn handle_response(mut commands: Commands, responses: Query<(Entity, &HttpResponse)>) {
+    for (entity, response) in responses.iter() {
+        info!("response: {:?}", response.0.text());
+        commands.entity(entity).despawn();
+    }
 }
 
 #[derive(Component)]
@@ -63,20 +98,20 @@ fn setup(
     //let cube_mesh_handle: Handle<MeshFile> = asset_manager.load("cube.mesh");
     // let human_skel_handle = asset_manager.load("human.skel");
     // let threebit_palette_handle = asset_manager.load("3bit.palette");
-    let human_walk_anim_handle: Handle<AnimationData> = asset_manager.load("human_walk.anim");
+    // let human_walk_anim_handle: Handle<AnimationData> = asset_manager.load("human_walk.anim");
     //let letters_icon_handle: Handle<IconData> = asset_manager.load("letters.icon");
     // let head_skin_handle: Handle<SkinData> = asset_manager.load("head.skin");
-    let human_model_handle: Handle<ModelData> = asset_manager.load("human.model");
+    // let human_model_handle: Handle<ModelData> = asset_manager.load("human.model");
     //let head_scene_handle: Handle<SceneData> = asset_manager.load("head.scene");
 
     // model
     commands
         .spawn_empty()
-        .insert(human_model_handle)
-        .insert(WalkAnimation {
-            anim_handle: human_walk_anim_handle,
-            image_index: 0.0,
-        })
+        // .insert(human_model_handle)
+        // .insert(WalkAnimation {
+        //     anim_handle: human_walk_anim_handle,
+        //     image_index: 0.0,
+        // })
         .insert(
             Transform::from_scale(Vec3::splat(1.0))
                 .with_translation(Vec3::splat(0.0))

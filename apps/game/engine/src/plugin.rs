@@ -2,6 +2,7 @@ use bevy_app::{App, Plugin};
 use bevy_log::LogPlugin;
 
 use asset::AssetPlugin;
+use http::HttpClientPlugin;
 use input::InputPlugin;
 use render_api::RenderApiPlugin;
 
@@ -19,6 +20,7 @@ impl Plugin for EnginePlugin {
             .add_plugins(RendererPlugin)
             // Add misc crates Plugins
             .add_plugins(InputPlugin)
-            .add_plugins(AssetPlugin);
+            .add_plugins(AssetPlugin)
+            .add_plugins(HttpClientPlugin);
     }
 }
