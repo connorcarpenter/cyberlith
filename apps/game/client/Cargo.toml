@@ -26,7 +26,6 @@ game_engine = { path = "../engine" }
 # External
 bevy_app = { version = "0.12.1", default-features=false }
 bevy_ecs = { version = "0.12.1", default-features=false }
-bevy_time = { version = "0.12.1", default-features=false }
 bevy_log = { version = "0.12.1", default-features=false }
 
 rand = { version = "0.8.5" }

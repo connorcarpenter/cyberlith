@@ -22,6 +22,8 @@ http = { path = "../../../crates/http" }
 render_gl = { path = "../../../crates/render_gl", optional = true }
 
 # External Crates
+naia-bevy-client = { path = "../../../../naia/adapters/bevy/client", features = ["transport_webrtc"] }
+
 bevy_app = { version = "0.12.1", default-features=false }
 bevy_ecs = { version = "0.12.1", default-features=false }
 bevy_log = { version = "0.12.1", default-features=false }

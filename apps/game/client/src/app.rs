@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use game_engine::{
     asset::{AnimationData, AssetManager, ModelData},
     math::{Quat, Vec3},
@@ -12,6 +14,8 @@ use game_engine::{
         shapes, Assets, Handle,
     },
     EnginePlugin,
+    http::{ehttp, HttpRequest, HttpResponse},
+    naia::Timer,
 };
 
 use bevy_app::{App, Startup, Update};
@@ -21,15 +25,11 @@ use bevy_ecs::{
     system::{Commands, Local, Query, Res, ResMut, Resource},
     entity::Entity,
 };
-use bevy_time::{Timer, TimerMode, Time as BevyTime};
-
-use game_engine::http::{ehttp, HttpRequest, HttpResponse};
 use bevy_log::info;
 
 pub fn build() -> App {
     let mut app = App::default();
     app.add_plugins(EnginePlugin)
-        .add_plugins(bevy_time::TimePlugin::default())
         // Add Window Settings Plugin
         .insert_resource(WindowSettings {
             title: "Cyberlith".to_string(),
@@ -52,14 +52,14 @@ pub struct ApiTimer(pub Timer);
 
 impl Default for ApiTimer {
     fn default() -> Self {
-        Self(Timer::from_seconds(1.0, TimerMode::Repeating))
+        Self(Timer::new(Duration::from_millis(1000)))
     }
 }
 
-fn send_request(mut commands: Commands, time: Res<BevyTime>, mut timer: ResMut<ApiTimer>) {
-    timer.0.tick(time.delta());
+fn send_request(mut commands: Commands, mut timer: ResMut<ApiTimer>) {
+    if timer.0.ringing() {
+        timer.0.reset();
 
-    if timer.0.just_finished() {
         let req = ehttp::Request::get("https://api.ipify.org?format=json");
         commands.spawn(HttpRequest(req));
     }

@@ -21,3 +21,6 @@ pub mod render {
 pub mod http {
     pub use http::*;
 }
+pub mod naia {
+    pub use naia_bevy_client::*;
+}
