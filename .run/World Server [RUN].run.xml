@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Editor Proto [BUILD]" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
-    <option name="command" value="build" />
-    <option name="workingDirectory" value="file://$PROJECT_DIR$/apps/editor/proto" />
+  <configuration default="false" name="World Server [RUN]" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
+    <option name="command" value="run --no-default-features" />
+    <option name="workingDirectory" value="file://$PROJECT_DIR$/apps/game/world" />
     <envs />
     <option name="emulateTerminal" value="false" />
     <option name="channel" value="DEFAULT" />
