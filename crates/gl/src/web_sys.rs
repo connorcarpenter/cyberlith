@@ -1,7 +1,6 @@
 use super::*;
 
 use js_sys::{self, Array};
-use log::info;
 use slotmap::{new_key_type, SlotMap};
 use std::cell::RefCell;
 use web_sys::{

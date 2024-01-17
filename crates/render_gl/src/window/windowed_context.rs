@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use winit::window::Window;
 
-use render_api::resources::{HardwareAcceleration, SurfaceSettings};
+use render_api::resources::SurfaceSettings;
 
 use crate::core::Context;
 
@@ -87,6 +87,7 @@ mod inner {
 
 #[cfg(not(target_arch = "wasm32"))]
 mod inner {
+    use render_api::resources::HardwareAcceleration;
     use glutin::surface::*;
 
     use super::*;
