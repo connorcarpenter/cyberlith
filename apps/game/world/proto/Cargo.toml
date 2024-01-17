@@ -1,5 +1,5 @@
 [package]
-name = "game_proto"
+name = "world_proto"
 version = "0.1.0"
 authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
 workspace = "../../../.."

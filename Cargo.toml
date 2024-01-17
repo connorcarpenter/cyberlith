@@ -3,8 +3,13 @@ resolver = "2"
 # all crates should be listed here
 members = [
     "apps/game/client",
-    "apps/game/server/proto",
-    "apps/game/server",
+    "apps/game/engine",
+    "apps/game/orchestrator",
+    "apps/game/region",
+    "apps/game/world/proto",
+    "apps/game/world",
+    "apps/game/session/proto",
+    "apps/game/session",
     "apps/editor/client",
     "apps/editor/server/proto",
     "apps/editor/server",

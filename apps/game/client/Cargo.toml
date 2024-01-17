@@ -7,8 +7,8 @@ edition = "2021"
 publish = false
 
 [features]
-gl_renderer = [ "render_gl" ]
-wgpu_renderer = [ ]
+gl_renderer = [ "game_engine/gl_renderer" ]
+wgpu_renderer = [ "game_engine/wgpu_renderer" ]
 
 [[bin]]
 name = "app"
@@ -20,26 +20,11 @@ path = "src/lib.rs"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-# Internal Crates
-game_proto = { path = "../server/proto" }
-math = { path = "../../../crates/math" }
-render_api = { path = "../../../crates/render_api" }
-input = { path = "../../../crates/input" }
-asset = { path = "../../../crates/asset" }
+# Internal
+game_engine = { path = "../engine" }
 
-# `render_gl` and `render_wgpu` SHOULD *ALWAYS* be optional
-render_gl = { path = "../../../crates/render_gl", optional = true }
-
-# External Crates
-naia-bevy-client = { path = "../../../../naia/adapters/bevy/client", features = ["transport_webrtc"] }
-
+# External
 bevy_app = { version = "0.12.1", default-features=false }
 bevy_ecs = { version = "0.12.1", default-features=false }
-bevy_log = { version = "0.12.1", default-features=false }
-
-cfg-if = { version = "1.0" }
 rand = { version = "0.8.5" }
-
-# Wasm Only
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-wasm-bindgen = { version = "0.2.84", features = [ "serde-serialize" ] }
+cfg-if = { version = "1.0" }

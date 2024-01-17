@@ -1,0 +1,33 @@
+[package]
+name = "game_engine"
+version = "0.1.0"
+authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
+workspace = "../../.."
+edition = "2021"
+publish = false
+
+[features]
+gl_renderer = [ "render_gl" ]
+wgpu_renderer = [ ]
+
+[dependencies]
+# Internal Crates
+math = { path = "../../../crates/math" }
+render_api = { path = "../../../crates/render_api" }
+input = { path = "../../../crates/input" }
+asset = { path = "../../../crates/asset" }
+
+# `render_gl` and `render_wgpu` SHOULD *ALWAYS* be optional
+render_gl = { path = "../../../crates/render_gl", optional = true }
+
+# External Crates
+bevy_app = { version = "0.12.1", default-features=false }
+bevy_ecs = { version = "0.12.1", default-features=false }
+bevy_log = { version = "0.12.1", default-features=false }
+
+cfg-if = { version = "1.0" }
+rand = { version = "0.8.5" }
+
+# Wasm Only
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = { version = "0.2.84", features = [ "serde-serialize" ] }

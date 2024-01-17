@@ -1,63 +1,43 @@
-use bevy_app::{App, Plugin, Startup, Update};
-use bevy_ecs::{
-    component::Component,
-    query::With,
-    system::{Commands, Local, Query, Res, ResMut},
-};
 
-use asset::{MeshFile, AssetManager, AssetHandle, SkinData, SceneData, ModelData, AnimationData, IconData};
-use math::{Quat, Vec3};
-use render_api::{
+use game_engine::{asset::{AssetManager, ModelData, AnimationData}, EnginePlugin, math::{Quat, Vec3}, render::{
     base::{Color, CpuMaterial, CpuMesh},
     components::{
         AmbientLight, Camera, CameraBundle, ClearOperation, DirectionalLight,
-        OrthographicProjection, PerspectiveProjection, PointLight, Projection, RenderLayer,
+        OrthographicProjection, PointLight, Projection, RenderLayer,
         RenderLayers, RenderObjectBundle, RenderTarget, Transform, Viewport, Visibility,
     },
     resources::{RenderFrame, Time, WindowSettings},
     shapes, Assets, Handle,
-};
+}};
+
+use     bevy_app::{App, Startup, Update};
+use bevy_ecs::{component::Component,
+          query::With,
+          system::{Commands, Local, Query, Res, ResMut}};
+
+pub fn build() -> App {
+    let mut app = App::default();
+    app
+        .add_plugins(EnginePlugin)
+        // Add Window Settings Plugin
+        .insert_resource(WindowSettings {
+            title: "Cyberlith".to_string(),
+            max_size: Some((1280, 720)),
+            ..Default::default()
+        })
+        // Systems
+        .add_systems(Startup, setup)
+        .add_systems(Update, step)
+        .add_systems(Update, draw);
+    app
+}
 
 #[derive(Component)]
 pub struct ObjectMarker;
 
-pub struct GamePlugin;
-
-impl Plugin for GamePlugin {
-    fn build(&self, app: &mut App) {
-        app
-            // Add Window Settings Plugin
-            .insert_resource(WindowSettings {
-                title: "Cyberlith".to_string(),
-                max_size: Some((1280, 720)),
-                ..Default::default()
-            })
-            // Add Naia Client Plugin
-            // .add_plugin(NaiaClientPlugin::new(
-            //     NaiaClientConfig::default(),
-            //     protocol(),
-            // ))
-            // Startup Systems
-            // .add_startup_system(network::init)
-            .add_systems(Startup, setup)
-            // Receive Client Events
-            // .add_systems(
-            //     (
-            //         network::connect_events,
-            //         network::disconnect_events,
-            //         network::reject_events,
-            //         network::error_events,
-            //     )
-            //         .in_set(ReceiveEvents),
-            // )
-            .add_systems(Update, step)
-            .add_systems(Update, draw);
-    }
-}
-
 const ROOM_WIDTH: f32 = 300.0;
 const ROOM_DEPTH: f32 = 300.0;
-const ROOM_HEIGHT: f32 = 200.0;
+// const ROOM_HEIGHT: f32 = 200.0;
 
 #[derive(Component)]
 pub struct WalkAnimation {
@@ -182,7 +162,7 @@ fn step(
 
     for mut anim in icon_q.iter_mut() {
 
-        anim.image_index += (0.4 * elapsed_time);
+        anim.image_index += 0.4 * elapsed_time;
 
         let subimage_count = asset_manager.get_animation_duration(&anim.anim_handle) as f32;
 
