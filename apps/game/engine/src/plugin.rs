@@ -4,6 +4,7 @@ use bevy_log::LogPlugin;
 use asset::AssetPlugin;
 use http::HttpClientPlugin;
 use input::InputPlugin;
+use orchestrator_client::OrchestratorClientPlugin;
 use render_api::RenderApiPlugin;
 
 use crate::renderer::RendererPlugin;
@@ -21,6 +22,7 @@ impl Plugin for EnginePlugin {
             // Add misc crates Plugins
             .add_plugins(InputPlugin)
             .add_plugins(AssetPlugin)
-            .add_plugins(HttpClientPlugin);
+            .add_plugins(HttpClientPlugin)
+            .add_plugins(OrchestratorClientPlugin);
     }
 }

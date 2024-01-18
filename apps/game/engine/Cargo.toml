@@ -18,6 +18,8 @@ input = { path = "../../../crates/input" }
 asset = { path = "../../../crates/asset" }
 http = { path = "../../../crates/http" }
 
+orchestrator_client = { path = "../orchestrator/client" }
+
 # `render_gl` and `render_wgpu` SHOULD *ALWAYS* be optional
 render_gl = { path = "../../../crates/render_gl", optional = true }
 

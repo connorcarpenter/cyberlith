@@ -5,3 +5,6 @@ authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
 workspace = "../../.."
 edition = "2021"
 publish = false
+
+[dependencies]
+orchestrator_proto = { path = "proto" }

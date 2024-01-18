@@ -1,5 +1,13 @@
-use std::collections::HashSet;
+
 use std::time::Duration;
+
+use bevy_app::{App, Startup, Update};
+use bevy_ecs::{
+    component::Component,
+    query::With,
+    system::{Commands, Local, Query, Res, ResMut, Resource},
+};
+use bevy_log::info;
 
 use game_engine::{
     asset::{AnimationData, AssetManager, ModelData},
@@ -15,17 +23,11 @@ use game_engine::{
         shapes, Assets, Handle,
     },
     EnginePlugin,
-    http::{HttpRequest, HttpClient, HttpKey},
+    orchestrator::OrchestratorClient,
     naia::Timer,
 };
 
-use bevy_app::{App, Startup, Update};
-use bevy_ecs::{
-    component::Component,
-    query::With,
-    system::{Commands, Local, Query, Res, ResMut, Resource},
-};
-use bevy_log::info;
+use super::{global::Global, connection::ConnectionState};
 
 pub fn build() -> App {
     let mut app = App::default();
@@ -42,7 +44,8 @@ pub fn build() -> App {
         .add_systems(Update, draw)
         // Http
         .init_resource::<ApiTimer>()
-        .add_systems(Update, send_recv_http)
+        .add_systems(Update, handle_connection)
+        .init_resource::<Global>()
     ;
     app
 }
@@ -57,58 +60,39 @@ impl Default for ApiTimer {
     }
 }
 
-// Http systems
-fn send_recv_http(mut timer: ResMut<ApiTimer>, mut http_client: ResMut<HttpClient>, mut key_store: Local<HashSet<HttpKey>>) {
-    // send
+fn handle_connection(
+    mut global: ResMut<Global>,
+    mut timer: ResMut<ApiTimer>,
+    mut client: OrchestratorClient,
+) {
     if timer.0.ringing() {
         timer.0.reset();
-
-        let key = http_client.send(HttpRequest::get("https://api.ipify.org?format=json"));
-        key_store.insert(key);
+    } else {
+        return;
     }
 
-    // recv
-    let mut received_keys = Vec::new();
-    for key in key_store.iter() {
-        if let Some(result) = http_client.recv(key) {
-            match result {
-                Ok(response) => {
-                    let Some(text) = response.text() else {
-                        panic!("no text in response");
-                    };
-                    info!("response: {:?}", text);
-                }
-                Err(error) => {
-                    info!("error: {:?}", error);
-                }
-            }
-
-            received_keys.push(*key);
+    match global.connection_state {
+        ConnectionState::Disconnected => {
+            let key = client.login("charlie", "12345");
+            global.connection_state = ConnectionState::SentToOrchestrator(key);
         }
-    }
-
-
-    // recv all
-    for (key, result) in http_client.recv_all() {
-        match result {
-            Ok(response) => {
-                let Some(text) = response.text() else {
-                    panic!("no text in response");
-                };
-                info!("uncaught response: {:?}", text);
-            }
-            Err(error) => {
-                info!("uncaught error: {:?}", error);
-
+        ConnectionState::SentToOrchestrator(key) => {
+            if let Some(result) = client.recv(&key) {
+                match result {
+                    Ok(response) => {
+                        info!("Response: {:?}", response);
+                        global.connection_state = ConnectionState::Connected;
+                    }
+                    Err(_) => {
+                        info!("resending..");
+                        global.connection_state = ConnectionState::Disconnected;
+                    }
+                }
             }
         }
-
-        received_keys.push(key);
-    }
-
-    // remove received keys from list
-    for key in received_keys {
-        key_store.remove(&key);
+        ConnectionState::Connected => {
+            info!("Connected!")
+        }
     }
 }
 
