@@ -9,11 +9,11 @@ impl HttpRequest {
         Self(request)
     }
 
-    pub fn get(url: impl ToString) -> Self {
+    pub fn get(url: &str) -> Self {
         Self(Request::get(url))
     }
 
-    pub fn post(url: &str, body: Vec<u8>) -> Self {
-        Self(Request::post(url, body))
+    pub fn post(url: &str, body: Box<[u8]>) -> Self {
+        Self(Request::post(url, body.to_vec()))
     }
 }

@@ -2,12 +2,12 @@ use std::collections::HashMap;
 
 use bevy_ecs::{change_detection::ResMut, system::Resource};
 
-use crate::{HttpKey, HttpRequest, backend::RequestTask, HttpResponse, HttpResponseError, backend::{send_request, poll_task}};
+use crate::{ResponseKey, HttpRequest, backend::RequestTask, HttpResponse, HttpResponseError, backend::{send_request, poll_task}, ClientHttpRequest, ClientHttpResponse};
 
 #[derive(Resource)]
 pub struct HttpClient {
-    tasks: HashMap<HttpKey, RequestTask>,
-    results: HashMap<HttpKey, Result<HttpResponse, HttpResponseError>>,
+    tasks: HashMap<u64, RequestTask>,
+    results: HashMap<u64, Result<HttpResponse, HttpResponseError>>,
     current_index: u64,
 }
 
@@ -23,43 +23,43 @@ impl Default for HttpClient {
 
 impl HttpClient {
 
-    pub fn send(&mut self, request: HttpRequest) -> HttpKey {
-        let task = send_request(request);
+    pub fn send<Q: ClientHttpRequest>(&mut self, url: &str, req: Q) -> ResponseKey<Q::Response> {
+
+        let http_request = HttpRequest::post(url, req.to_bytes());
+
+        let task = send_request(http_request);
 
         let key = self.next_key();
 
-        self.tasks.insert(key, task);
+        self.tasks.insert(key.id, task);
 
         key
     }
 
-    pub fn recv(&mut self, key: &HttpKey) -> Option<Result<HttpResponse, HttpResponseError>> {
-        if let Some(result) = self.results.remove(key) {
-            return Some(result);
+    pub fn recv<S: ClientHttpResponse>(&mut self, key: &ResponseKey<S>) -> Option<Result<S, HttpResponseError>> {
+        if let Some(result) = self.results.remove(&key.id) {
+            match result {
+                Ok(response) => {
+                    Some(Ok(S::from(response)))
+                }
+                Err(err) => Some(Err(err)),
+            }
         } else {
             return None;
         }
     }
 
-    pub fn recv_all(&mut self) -> Vec<(HttpKey, Result<HttpResponse, HttpResponseError>)> {
-        let mut results = Vec::new();
-        for (key, result) in self.results.drain() {
-            results.push((key, result));
-        }
-        results
-    }
-
-    fn next_key(&mut self) -> HttpKey {
-        let old_index = self.current_index;
+    fn next_key<S: ClientHttpResponse>(&mut self) -> ResponseKey<S> {
+        let next_index = self.current_index;
         self.current_index = self.current_index.wrapping_add(1);
-        HttpKey(old_index)
+        ResponseKey::new(next_index)
     }
 
-    pub(crate) fn tasks_iter_mut(&mut self) -> impl Iterator<Item = (&HttpKey, &mut RequestTask)> {
+    pub(crate) fn tasks_iter_mut(&mut self) -> impl Iterator<Item = (&u64, &mut RequestTask)> {
         self.tasks.iter_mut()
     }
 
-    pub(crate) fn accept_result(&mut self, key: HttpKey, result: Result<HttpResponse, HttpResponseError>) {
+    pub(crate) fn accept_result(&mut self, key: u64, result: Result<HttpResponse, HttpResponseError>) {
         self.tasks.remove(&key);
         self.results.insert(key, result);
     }

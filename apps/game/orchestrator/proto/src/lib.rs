@@ -1,10 +1,13 @@
-pub struct LoginRequest {
-    pub username: String,
-    pub password: String,
-}
+mod request;
+pub use request::*;
 
-impl LoginRequest {
-    pub fn new(username: String, password: String) -> Self {
-        Self { username, password }
-    }
-}
+mod response;
+pub use response::*;
+
+#[cfg(feature = "client")]
+mod client;
+
+#[cfg(feature = "client")]
+pub use client::*;
+
+

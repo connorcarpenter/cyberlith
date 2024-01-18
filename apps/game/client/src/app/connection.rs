@@ -1,8 +1,8 @@
-use game_engine::orchestrator::OrchestratorRequestKey;
+use game_engine::{http::ResponseKey, orchestrator::LoginResponse};
 
-#[derive(Clone, Copy, Eq, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub enum ConnectionState {
     Disconnected,
-    SentToOrchestrator(OrchestratorRequestKey),
+    SentToOrchestrator(ResponseKey<LoginResponse>),
     Connected,
 }

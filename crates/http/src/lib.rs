@@ -6,10 +6,12 @@ mod request;
 mod response;
 mod backend;
 mod client;
-mod handle;
+mod key;
+mod handler;
 
 pub use plugin::HttpClientPlugin;
 pub use request::HttpRequest;
 pub use response::{HttpResponse, HttpResponseError};
 pub use client::HttpClient;
-pub use handle::HttpKey;
+pub use key::ResponseKey;
+pub use handler::{ClientHttpRequest, ClientHttpResponse};

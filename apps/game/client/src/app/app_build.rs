@@ -23,8 +23,9 @@ use game_engine::{
         shapes, Assets, Handle,
     },
     EnginePlugin,
-    orchestrator::OrchestratorClient,
     naia::Timer,
+    http::HttpClient,
+    orchestrator::LoginRequest,
 };
 
 use super::{global::Global, connection::ConnectionState};
@@ -63,7 +64,7 @@ impl Default for ApiTimer {
 fn handle_connection(
     mut global: ResMut<Global>,
     mut timer: ResMut<ApiTimer>,
-    mut client: OrchestratorClient,
+    mut client: ResMut<HttpClient>,
 ) {
     if timer.0.ringing() {
         timer.0.reset();
@@ -71,16 +72,17 @@ fn handle_connection(
         return;
     }
 
-    match global.connection_state {
+    match &global.connection_state {
         ConnectionState::Disconnected => {
-            let key = client.login("charlie", "12345");
+            let request = LoginRequest::new("charlie", "12345");
+            let key = client.send("http://127.0.0.1:4001", request);
             global.connection_state = ConnectionState::SentToOrchestrator(key);
         }
         ConnectionState::SentToOrchestrator(key) => {
-            if let Some(result) = client.recv(&key) {
+            if let Some(result) = client.recv(key) {
                 match result {
                     Ok(response) => {
-                        info!("Response: {:?}", response);
+                        info!("Response: {:?}", response.token);
                         global.connection_state = ConnectionState::Connected;
                     }
                     Err(_) => {

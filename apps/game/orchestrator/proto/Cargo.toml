@@ -5,3 +5,10 @@ authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
 workspace = "../../../.."
 edition = "2021"
 publish = false
+
+[features]
+client = [ "http" ]
+
+[dependencies]
+naia-serde = { path = "../../../../../naia/shared/serde" }
+http = { path = "../../../../crates/http", optional = true }
