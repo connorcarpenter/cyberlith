@@ -16,7 +16,7 @@ math = { path = "../../../crates/math" }
 render_api = { path = "../../../crates/render_api" }
 input = { path = "../../../crates/input" }
 asset = { path = "../../../crates/asset" }
-http = { path = "../../../crates/http" }
+http = { path = "../../../crates/bevy_http_client" }
 
 orchestrator_proto = { path = "../orchestrator/proto", features = ["client"] }
 

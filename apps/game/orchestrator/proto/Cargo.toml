@@ -11,4 +11,4 @@ client = [ "http" ]
 
 [dependencies]
 naia-serde = { path = "../../../../../naia/shared/serde" }
-http = { path = "../../../../crates/http", optional = true }
+http = { path = "../../../../crates/bevy_http_client", optional = true }
