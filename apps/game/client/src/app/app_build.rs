@@ -24,7 +24,7 @@ use game_engine::{
     },
     EnginePlugin,
     naia::Timer,
-    http::HttpClient,
+    bevy_http_client::HttpClient,
     orchestrator::LoginRequest,
 };
 

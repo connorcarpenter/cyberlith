@@ -18,8 +18,8 @@ pub mod math {
 pub mod render {
     pub use render_api::*;
 }
-pub mod http {
-    pub use http::*;
+pub mod bevy_http_client {
+    pub use bevy_http_client::*;
 }
 pub mod naia {
     pub use naia_bevy_client::*;

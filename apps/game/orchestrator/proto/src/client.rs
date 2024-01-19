@@ -1,6 +1,6 @@
 use naia_serde::{BitReader, SerdeInternal};
 
-use http::{ClientHttpRequest, ClientHttpResponse, HttpResponse};
+use bevy_http_client::{ClientHttpRequest, ClientHttpResponse, HttpResponse};
 
 use crate::{LoginRequest, LoginResponse};
 

@@ -2,7 +2,7 @@ use bevy_app::{App, Plugin};
 use bevy_log::LogPlugin;
 
 use asset::AssetPlugin;
-use http::HttpClientPlugin;
+use bevy_http_client::HttpClientPlugin;
 use input::InputPlugin;
 use render_api::RenderApiPlugin;
 
