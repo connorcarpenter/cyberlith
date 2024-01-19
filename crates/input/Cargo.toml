@@ -2,6 +2,7 @@
 name = "input"
 version = "0.1.0"
 edition = "2021"
+workspace = "../.."
 
 [dependencies]
 # should never include "render_gl" or "render_wgpu" here!
