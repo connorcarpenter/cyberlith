@@ -1,33 +1,66 @@
 use std::{
-    net::{SocketAddr, TcpListener, TcpStream},
-    pin::Pin,
-    task::{Context, Poll},
+    net::{SocketAddr, TcpListener, TcpStream}, collections::HashMap, pin::Pin, str::FromStr,
 };
 
 use async_dup::Arc;
-use http::{header, HeaderValue, Response};
-use log::info;
+use http::{header, HeaderMap, HeaderName, HeaderValue, Method};
+use log::{info, warn};
 use smol::{
-    io::{AsyncBufReadExt, AsyncWriteExt, BufReader, Lines},
-    prelude::*,
+    io::{AsyncWriteExt, AsyncReadExt, BufReader},
     Async,
+    lock::RwLock,
+    future::Future,
+    stream::StreamExt,
 };
 
-use crate::executor;
+use crate::{executor, Request, Response};
 
-pub fn start_server(
+pub struct Server {
     socket_addr: SocketAddr,
-) {
-    executor::spawn(async move {
-        listen(socket_addr).await;
-    })
-    .detach();
+    endpoints: HashMap<String, Box<dyn 'static + Send + Sync + Fn(Request) -> Pin<Box<dyn 'static + Send + Sync + Future<Output = Result<Response, ()>>>>>>
+}
+
+impl Server {
+    pub fn new(
+        socket_addr: SocketAddr,
+    ) -> Self {
+        Server {
+            socket_addr,
+            endpoints: HashMap::new(),
+        }
+    }
+
+    pub fn start(
+        self,
+    ) {
+        let self_ref = Arc::new(RwLock::new(self));
+        executor::spawn(async move {
+            listen(self_ref).await;
+        })
+            .detach();
+    }
+
+    pub fn endpoint<T: 'static + Send + Sync + Future<Output = Result<Response, ()>>>(
+        &mut self,
+        method: Method,
+        path: &str,
+        handler: fn(Request) -> T
+    ) {
+        let endpoint_path = format!("{} /{}", method, path);
+
+        info!("endpoint: {}", endpoint_path);
+        self.endpoints.insert(
+            endpoint_path,
+            Box::new(move |n| Box::pin(handler(n))),
+        );
+    }
 }
 
 /// Listens for incoming connections and serves them.
 async fn listen(
-    socket_addr: SocketAddr,
+    server: Arc<RwLock<Server>>,
 ) {
+    let socket_addr = server.read().await.socket_addr;
     let listener = Async::<TcpListener>::bind(socket_addr)
         .expect("unable to bind a TCP Listener to the supplied socket address");
     info!(
@@ -40,121 +73,192 @@ async fn listen(
 
     loop {
         // Accept the next connection.
-        let (response_stream, _) = listener
+        let (response_stream, incoming_address) = listener
             .accept()
             .await
             .expect("was not able to accept the incoming stream from the listener");
 
+        info!("received request from {}", incoming_address);
+
+        let self_clone = server.clone();
+
         // Spawn a background task serving this connection.
         executor::spawn(async move {
-            serve(Arc::new(response_stream)).await;
+            serve(self_clone, Arc::new(response_stream)).await;
         })
         .detach();
     }
 }
 
+#[derive(PartialEq, Eq)]
+enum ReadState {
+    MatchingUrl,
+    ReadingHeaders,
+    ReadingBody,
+    Finished,
+    Error,
+}
+
 /// Reads a request from the client and sends it a response.
-async fn serve(mut stream: Arc<Async<TcpStream>>) {
-    info!("serving");
-
-    let remote_addr = stream
-        .get_ref()
-        .local_addr()
-        .expect("stream does not have a local address");
-    let mut success: bool = false;
-    let mut headers_read: bool = false;
+async fn serve(
+    server: Arc<RwLock<Server>>,
+    mut response_stream: Arc<Async<TcpStream>>
+) {
+    let mut method: Option<Method> = None;
+    let mut uri: Option<String> = None;
+    let mut endpoint_key: Option<String> = None;
     let mut content_length: Option<usize> = None;
-    let mut rtc_url_match = false;
     let mut body: Vec<u8> = Vec::new();
+    let mut header_map = HeaderMap::new();
 
-    let buf_reader = BufReader::new(stream.clone());
+    let mut read_state = ReadState::MatchingUrl;
+
+    let buf_reader = BufReader::new(response_stream.clone());
+
     let mut bytes = buf_reader.bytes();
-    {
-        let mut line: Vec<u8> = Vec::new();
-        while let Some(byte) = bytes.next().await {
-            let byte = byte.expect("unable to read a byte from incoming stream");
 
-            if headers_read {
-                if let Some(content_length) = content_length {
-                    body.push(byte);
+    let mut line: Vec<u8> = Vec::new();
 
-                    if body.len() >= content_length {
-                        success = true;
-                        break;
-                    }
-                } else {
-                    info!("request was missing Content-Length header");
+    loop {
+        let Some(byte) = bytes.next().await else {
+            info!("no more bytes!");
+            break;
+        };
+
+        let byte = byte.expect("unable to read a byte from incoming stream");
+
+        if read_state == ReadState::ReadingBody {
+            info!("read byte from body");
+
+            if let Some(content_length) = content_length {
+                body.push(byte);
+
+                if body.len() >= content_length {
+                    read_state = ReadState::Finished;
+                    info!("finished reading body");
                     break;
                 }
-            }
 
-            if byte == b'\r' {
                 continue;
-            } else if byte == b'\n' {
-                let mut str = String::from_utf8(line.clone())
-                    .expect("unable to parse string from UTF-8 bytes");
-                line.clear();
-
-                if rtc_url_match {
-                    if str.to_lowercase().starts_with("content-length: ") {
-                        let (_, last) = str.split_at(16);
-                        str = last.to_string();
-                        content_length = str.parse::<usize>().ok();
-                    } else if str.is_empty() {
-                        headers_read = true;
-                    }
-                } else if str.starts_with(
-                    "some_random_path"
-                ) {
-                    rtc_url_match = true;
-                }
             } else {
-                line.push(byte);
+                info!("request was missing Content-Length header");
+                read_state = ReadState::Error;
+                break;
             }
         }
 
-        if success {
-            success = false;
+        if byte == b'\r' {
+            continue;
+        } else if byte == b'\n' {
+            let str = String::from_utf8(line.clone())
+                .expect("unable to parse string from UTF-8 bytes");
+            line.clear();
 
-            let mut lines = body.lines();
+            info!("read: {}", str);
 
-            info!("sending out request");
-            match outwards_request(&mut lines).await {
-                Ok(mut response) => {
-                    info!("received out request");
-                    success = true;
-
-                    response.headers_mut().insert(
-                        header::ACCESS_CONTROL_ALLOW_ORIGIN,
-                        HeaderValue::from_static("*"),
-                    );
-
-                    let mut out = response_header_to_vec(&response);
-                    out.extend_from_slice(response.body().as_bytes());
-
-                    info!("Successful  request from {}", remote_addr);
-
-                    stream
-                        .write_all(&out)
-                        .await
-                        .expect("found an error while writing to a stream");
+            match read_state {
+                ReadState::MatchingUrl => {
+                    let parts = str.split(" ").collect::<Vec<&str>>();
+                    let key = format!("{} {}", parts[0], parts[1]);
+                    let server = server.read().await;
+                    if server.endpoints.contains_key(&key) {
+                        read_state = ReadState::ReadingHeaders;
+                        endpoint_key = Some(key);
+                        method = Some(Method::from_str(parts[0]).unwrap());
+                        uri = Some(parts[1].to_string());
+                    } else {
+                        info!("no endpoint found for {}", key);
+                        read_state = ReadState::Error;
+                        break;
+                    }
                 }
-                Err(err) => {
-                    info!(
-                        "Invalid request from {}",
-                        remote_addr,
-                    );
+                ReadState::ReadingHeaders => {
+                    if str.is_empty() {
+
+                        info!("finished reading headers.");
+
+                        read_state = ReadState::ReadingBody;
+
+                        if content_length.unwrap() == 0 {
+                            read_state = ReadState::Finished;
+                            info!("no body to read. finished.");
+                            break;
+                        } else {
+                            continue;
+                        }
+                    } else {
+                        let parts = str.split(": ").collect::<Vec<&str>>();
+                        header_map.insert(
+                            HeaderName::from_str(parts[0]).unwrap(),
+                            HeaderValue::from_str(parts[1]).unwrap(),
+                        );
+                        if parts[0].to_lowercase() == "content-length" {
+                            content_length = Some(parts[1].parse().unwrap());
+                        }
+                    }
+                }
+                _ => {
+                    warn!("shouldn't be in this state");
+                    return send_404(response_stream).await;
                 }
             }
+        } else {
+            line.push(byte);
         }
     }
 
-    if !success {
-        stream.write_all(RESPONSE_BAD).await.expect("found");
+    if read_state != ReadState::Finished {
+        return send_404(response_stream).await;
     }
 
-    stream.flush().await.expect("unable to flush the stream");
-    stream.close().await.expect("unable to close the stream");
+    // done reading //
+
+    // cast to request //
+    let Some(method) = method else {
+        warn!("unable to parse method");
+        return send_404(response_stream).await;
+    };
+    let Some(uri) = uri else {
+        warn!("unable to parse uri");
+        return send_404(response_stream).await;
+    };
+    let Ok(body) = String::from_utf8(body) else {
+        warn!("unable to parse body as UTF-8");
+        return send_404(response_stream).await;
+    };
+    let mut request = Request::new(body);
+    *request.method_mut() = method;
+    *request.uri_mut() = uri.parse().unwrap();
+    *request.headers_mut() = header_map;
+
+    let endpoint_key = endpoint_key.unwrap();
+    let server = server.read().await;
+    let endpoint = server.endpoints.get(&endpoint_key).unwrap();
+
+    let response_result = endpoint(request).await;
+
+    match response_result {
+        Ok(mut response) => {
+
+            response.headers_mut().insert(
+                header::ACCESS_CONTROL_ALLOW_ORIGIN,
+                HeaderValue::from_static("*"),
+            );
+
+            let mut response_bytes = response_header_to_vec(&response);
+            response_bytes.extend_from_slice(response.body().as_bytes());
+            response_stream
+                .write_all(&response_bytes)
+                .await
+                .expect("found an error while writing to a stream");
+
+            response_stream.flush().await.expect("unable to flush the stream");
+            response_stream.close().await.expect("unable to close the stream");
+        }
+        Err(_e) => {
+            return send_404(response_stream).await;
+        }
+    }
 }
 
 const RESPONSE_BAD: &[u8] = br#"
@@ -164,50 +268,24 @@ Content-Length: 0
 Access-Control-Allow-Origin: *
 "#;
 
-struct RequestBuffer<'a, R: AsyncBufRead + Unpin> {
-    buffer: &'a mut Lines<R>,
-    add_newline: bool,
+async fn send_404(mut response_stream: Arc<Async<TcpStream>>) {
+    response_stream.write_all(RESPONSE_BAD).await.unwrap();
+    response_stream.flush().await.expect("unable to flush the stream");
+    response_stream.close().await.expect("unable to close the stream");
 }
 
-impl<'a, R: AsyncBufRead + Unpin> RequestBuffer<'a, R> {
-    fn new(buf: &'a mut Lines<R>) -> Self {
-        RequestBuffer {
-            add_newline: false,
-            buffer: buf,
-        }
-    }
-}
-
-type ReqError = std::io::Error;
-
-const NEWLINE_STR: &str = "\n";
-
-async fn outwards_request<R: AsyncBufRead + Unpin>(lines: &mut Lines<R>) -> Result<Response<String>, ()> {
-    info!("in out request");
-    Ok(Response::builder()
-        .header(header::CONTENT_TYPE, "application/json")
-        .body("some_body".to_string())
-        .expect("could not construct session response"))
-}
-
-fn response_header_to_vec<T>(r: &Response<T>) -> Vec<u8> {
+fn response_header_to_vec(r: &Response) -> Vec<u8> {
     let v = Vec::with_capacity(120);
     let mut c = std::io::Cursor::new(v);
     write_response_header(r, &mut c).expect("unable to write response header to stream");
     c.into_inner()
 }
 
-fn write_response_header<T>(
-    r: &Response<T>,
+fn write_response_header(
+    r: &Response,
     mut io: impl std::io::Write,
 ) -> std::io::Result<usize> {
     let mut len = 0;
-    macro_rules! w {
-        ($x:expr) => {
-            io.write_all($x)?;
-            len += $x.len();
-        };
-    }
 
     let status = r.status();
     let code = status.as_str();
@@ -232,7 +310,7 @@ fn write_response_header<T>(
     Ok(len)
 }
 
-fn write_line(io: &mut dyn std::io::Write, len: &mut usize, mut buf: &[u8]) -> std::io::Result<()> {
+fn write_line(io: &mut dyn std::io::Write, len: &mut usize, buf: &[u8]) -> std::io::Result<()> {
     io.write_all(buf)?;
     *len += buf.len();
     Ok(())
