@@ -78,7 +78,7 @@ async fn listen(
             .await
             .expect("was not able to accept the incoming stream from the listener");
 
-        info!("received request from {}", incoming_address);
+        //info!("received request from {}", incoming_address);
 
         let self_clone = server.clone();
 
@@ -128,20 +128,20 @@ async fn serve(
         let byte = byte.expect("unable to read a byte from incoming stream");
 
         if read_state == ReadState::ReadingBody {
-            info!("read byte from body");
+            //info!("read byte from body");
 
             if let Some(content_length) = content_length {
                 body.push(byte);
 
                 if body.len() >= content_length {
                     read_state = ReadState::Finished;
-                    info!("finished reading body");
+                    //info!("finished reading body");
                     break;
                 }
 
                 continue;
             } else {
-                info!("request was missing Content-Length header");
+                warn!("request was missing Content-Length header");
                 read_state = ReadState::Error;
                 break;
             }
@@ -154,7 +154,7 @@ async fn serve(
                 .expect("unable to parse string from UTF-8 bytes");
             line.clear();
 
-            info!("read: {}", str);
+            //info!("read: {}", str);
 
             match read_state {
                 ReadState::MatchingUrl => {
@@ -167,7 +167,7 @@ async fn serve(
                         method = Some(Method::from_str(parts[0]).unwrap());
                         uri = Some(parts[1].to_string());
                     } else {
-                        info!("no endpoint found for {}", key);
+                        warn!("no endpoint found for {}", key);
                         read_state = ReadState::Error;
                         break;
                     }
@@ -175,13 +175,13 @@ async fn serve(
                 ReadState::ReadingHeaders => {
                     if str.is_empty() {
 
-                        info!("finished reading headers.");
+                        //info!("finished reading headers.");
 
                         read_state = ReadState::ReadingBody;
 
                         if content_length.unwrap() == 0 {
                             read_state = ReadState::Finished;
-                            info!("no body to read. finished.");
+                            //info!("no body to read. finished.");
                             break;
                         } else {
                             continue;

@@ -7,6 +7,7 @@ members = [
     "apps/game/orchestrator",
     "apps/game/orchestrator/proto",
     "apps/game/region",
+    "apps/game/region/proto",
     "apps/game/world/proto",
     "apps/game/world",
     "apps/game/session/proto",

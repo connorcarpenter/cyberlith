@@ -5,7 +5,7 @@ use simple_logger::SimpleLogger;
 
 use http_server::{Server, Method, Request, Response, ResponseBuilder};
 
-const ADDRESS: &str = "127.0.0.1:14197";
+const ADDRESS: &str = "127.0.0.1:14198";
 
 pub fn main() {
     SimpleLogger::new()
@@ -13,7 +13,7 @@ pub fn main() {
         .init()
         .expect("A logger was already initialized");
 
-    info!("Orchestrator starting up...");
+    info!("Region Server starting up...");
     let socket_addr: SocketAddr = ADDRESS.parse().unwrap();
 
     let mut server = Server::new(socket_addr);
@@ -26,13 +26,11 @@ pub fn main() {
     }
 }
 
-async fn login(incoming_request: Request) -> Result<Response, ()> {
+async fn login(_request: Request) -> Result<Response, ()> {
     info!("Login request received");
-
     let response = ResponseBuilder::new()
         .status(200)
         .body("".to_string())
         .unwrap();
-
     Ok(response)
 }
