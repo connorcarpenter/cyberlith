@@ -179,7 +179,12 @@ async fn serve(
 
                         read_state = ReadState::ReadingBody;
 
-                        if content_length.unwrap() == 0 {
+                        let Some(content_length) = content_length else {
+                            warn!("request was missing Content-Length header");
+                            read_state = ReadState::Error;
+                            break;
+                        };
+                        if content_length == 0 {
                             read_state = ReadState::Finished;
                             //info!("no body to read. finished.");
                             break;

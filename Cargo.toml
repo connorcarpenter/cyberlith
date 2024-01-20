@@ -26,6 +26,7 @@ members = [
     "crates/egui_gl",
     "crates/bevy_http_client",
     "crates/http_server",
+    "crates/http_client",
 ]
 # any crates with conflicting dependencies / feature flags cannot be put here
 default-members = [

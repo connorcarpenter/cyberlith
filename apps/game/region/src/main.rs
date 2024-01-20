@@ -32,5 +32,6 @@ async fn login(_request: Request) -> Result<Response, ()> {
         .status(200)
         .body("".to_string())
         .unwrap();
+    info!("Login response sent");
     Ok(response)
 }
