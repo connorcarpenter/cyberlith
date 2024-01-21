@@ -28,8 +28,6 @@ impl HttpClient {
 
     pub fn send<Q: ApiRequest>(&mut self, addr: &SocketAddr, req: Q) -> ResponseKey<Q::Response> {
 
-        // TODO: specify url in Q impl
-        // TODO: specify method in Q impl
         let url = format!("http://{}/{}", addr, Q::path());
         let http_request = Request::new(Q::method(), &url, req.to_bytes().to_vec());
         info!("Sending request to: {:?}", url);
