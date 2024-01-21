@@ -10,7 +10,7 @@ cfg_if! {
 
         #[wasm_bindgen(start)]
         pub fn main() -> Result<(), JsValue> {
-            app::build().run();
+            app::run();
 
             Ok(())
         }

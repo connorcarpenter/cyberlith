@@ -27,9 +27,9 @@ use game_engine::{
     orchestrator::LoginRequest,
 };
 
-use super::{global::Global, connection::ConnectionState};
+use super::{global::Global, connection_state::ConnectionState};
 
-pub fn build() -> App {
+pub fn run() {
     let mut app = App::default();
     app.add_plugins(EnginePlugin)
         // Add Window Settings Plugin
@@ -47,7 +47,7 @@ pub fn build() -> App {
         .add_systems(Update, handle_connection)
         .init_resource::<Global>()
     ;
-    app
+    app.run();
 }
 
 // ApiTimer

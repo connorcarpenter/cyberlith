@@ -1,6 +1,6 @@
 use bevy_ecs::system::Resource;
 
-use super::connection::ConnectionState;
+use super::connection_state::ConnectionState;
 
 #[derive(Resource)]
 pub struct Global {

@@ -1,6 +1,5 @@
-mod components;
-mod resources;
-mod systems;
+
+mod network;
 
 use std::time::Duration;
 
@@ -11,9 +10,6 @@ use bevy_log::LogPlugin;
 use naia_bevy_server::{Plugin as ServerPlugin, ReceiveEvents, ServerConfig};
 
 use session_proto::protocol;
-use systems::network;
-
-
 
 fn main() {
 
