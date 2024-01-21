@@ -1,11 +1,15 @@
 use std::{collections::HashMap, net::SocketAddr};
 
 use bevy_ecs::{change_detection::ResMut, system::Resource};
-
-use http_common::{ApiRequest, ApiResponse, Request, Response, ResponseError};
 use log::info;
 
-use crate::{ResponseKey, backend::RequestTask, backend::{send_request, poll_task}};
+use http_common::{ApiRequest, ApiResponse, Request, Response, ResponseError};
+
+use crate::{
+    backend::RequestTask,
+    backend::{poll_task, send_request},
+    ResponseKey,
+};
 
 #[derive(Resource)]
 pub struct HttpClient {
@@ -25,9 +29,7 @@ impl Default for HttpClient {
 }
 
 impl HttpClient {
-
     pub fn send<Q: ApiRequest>(&mut self, addr: &SocketAddr, req: Q) -> ResponseKey<Q::Response> {
-
         let url = format!("http://{}/{}", addr, Q::path());
         let http_request = Request::new(Q::method(), &url, req.to_bytes().to_vec());
         info!("Sending request to: {:?}", url);
@@ -41,7 +43,10 @@ impl HttpClient {
         key
     }
 
-    pub fn recv<S: ApiResponse>(&mut self, key: &ResponseKey<S>) -> Option<Result<S, ResponseError>> {
+    pub fn recv<S: ApiResponse>(
+        &mut self,
+        key: &ResponseKey<S>,
+    ) -> Option<Result<S, ResponseError>> {
         if let Some(result) = self.results.remove(&key.id) {
             match result {
                 Ok(response) => {
@@ -73,9 +78,7 @@ impl HttpClient {
     }
 }
 
-pub(crate) fn client_update(
-    mut client: ResMut<HttpClient>,
-) {
+pub(crate) fn client_update(mut client: ResMut<HttpClient>) {
     let mut finished_tasks = Vec::new();
     for (key, task) in client.tasks_iter_mut() {
         if let Some(result) = poll_task(task) {

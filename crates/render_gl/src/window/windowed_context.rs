@@ -87,8 +87,8 @@ mod inner {
 
 #[cfg(not(target_arch = "wasm32"))]
 mod inner {
-    use render_api::resources::HardwareAcceleration;
     use glutin::surface::*;
+    use render_api::resources::HardwareAcceleration;
 
     use super::*;
     ///

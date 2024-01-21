@@ -4,7 +4,9 @@ use once_cell::sync::Lazy;
 use smol::{block_on, future, Executor, Task};
 
 /// TODO: make description
-pub(crate) fn spawn<T: Send + 'static>(future: impl Future<Output = T> + Send + 'static) -> Task<T> {
+pub(crate) fn spawn<T: Send + 'static>(
+    future: impl Future<Output = T> + Send + 'static,
+) -> Task<T> {
     static GLOBAL: Lazy<Executor<'_>> = Lazy::new(|| {
         for n in 1..=4 {
             thread::Builder::new()

@@ -11,6 +11,9 @@ pub struct ResponseKey<S: ApiResponse> {
 
 impl<S: ApiResponse> ResponseKey<S> {
     pub fn new(id: u64) -> Self {
-        Self { id, phantom_s: PhantomData }
+        Self {
+            id,
+            phantom_s: PhantomData,
+        }
     }
 }

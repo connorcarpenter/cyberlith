@@ -1,4 +1,3 @@
-
 mod network;
 
 use std::time::Duration;
@@ -12,7 +11,6 @@ use naia_bevy_server::{Plugin as ServerPlugin, ReceiveEvents, ServerConfig};
 use world_proto::protocol;
 
 fn main() {
-
     // Build App
     App::default()
         // Plugins

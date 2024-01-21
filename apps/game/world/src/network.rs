@@ -1,7 +1,11 @@
 use bevy_ecs::event::EventReader;
 use bevy_log::info;
 
-use naia_bevy_server::{transport::webrtc, Server, events::{AuthEvents, DisconnectEvent, ErrorEvent, ConnectEvent}};
+use naia_bevy_server::{
+    events::{AuthEvents, ConnectEvent, DisconnectEvent, ErrorEvent},
+    transport::webrtc,
+    Server,
+};
 
 use world_proto::messages::Auth;
 

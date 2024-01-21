@@ -1,6 +1,6 @@
 use std::{net::SocketAddr, str::FromStr};
 
-use log::{info, LevelFilter, warn};
+use log::{info, warn, LevelFilter};
 use simple_logger::SimpleLogger;
 
 use http_client::HttpClient;
@@ -42,7 +42,10 @@ async fn login(incoming_request: OrchLoginReq) -> Result<OrchLoginRes, ()> {
         return Err(());
     };
 
-    info!("Received login response from region server: {}", outgoing_response.token);
+    info!(
+        "Received login response from region server: {}",
+        outgoing_response.token
+    );
 
     info!("Sending login response to client");
 

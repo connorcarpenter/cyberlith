@@ -1,15 +1,17 @@
 use std::{
-    net::{SocketAddr, TcpListener, TcpStream}, collections::{HashMap, BTreeMap}, pin::Pin,
+    collections::{BTreeMap, HashMap},
+    net::{SocketAddr, TcpListener, TcpStream},
+    pin::Pin,
 };
 
 use async_dup::Arc;
 use log::{info, warn};
 use smol::{
-    io::{AsyncWriteExt, AsyncReadExt, BufReader},
-    Async,
-    lock::RwLock,
     future::Future,
+    io::{AsyncReadExt, AsyncWriteExt, BufReader},
+    lock::RwLock,
     stream::StreamExt,
+    Async,
 };
 
 use http_common::{ApiRequest, ApiResponse, Method, Request, Response};
@@ -18,27 +20,34 @@ use crate::executor;
 
 pub struct Server {
     socket_addr: SocketAddr,
-    endpoints: HashMap<String, Box<dyn 'static + Send + Sync + Fn(Request) -> Pin<Box<dyn 'static + Send + Sync + Future<Output = Result<Response, ()>>>>>>
+    endpoints: HashMap<
+        String,
+        Box<
+            dyn 'static
+                + Send
+                + Sync
+                + Fn(
+                    Request,
+                )
+                    -> Pin<Box<dyn 'static + Send + Sync + Future<Output = Result<Response, ()>>>>,
+        >,
+    >,
 }
 
 impl Server {
-    pub fn new(
-        socket_addr: SocketAddr,
-    ) -> Self {
+    pub fn new(socket_addr: SocketAddr) -> Self {
         Server {
             socket_addr,
             endpoints: HashMap::new(),
         }
     }
 
-    pub fn start(
-        self,
-    ) {
+    pub fn start(self) {
         let self_ref = Arc::new(RwLock::new(self));
         executor::spawn(async move {
             listen(self_ref).await;
         })
-            .detach();
+        .detach();
     }
 
     pub fn endpoint<
@@ -46,7 +55,7 @@ impl Server {
         TypeResponse: 'static + Send + Sync + Future<Output = Result<TypeRequest::Response, ()>>,
     >(
         &mut self,
-        handler: fn(TypeRequest) -> TypeResponse
+        handler: fn(TypeRequest) -> TypeResponse,
     ) {
         let method = TypeRequest::method();
         let path = TypeRequest::path();
@@ -55,10 +64,7 @@ impl Server {
 
         info!("endpoint: {}", endpoint_path);
         let new_endpoint = endpoint_2::<TypeRequest, TypeResponse>(handler);
-        self.endpoints.insert(
-            endpoint_path,
-            new_endpoint,
-        );
+        self.endpoints.insert(endpoint_path, new_endpoint);
     }
 }
 
@@ -66,39 +72,38 @@ fn endpoint_2<
     TypeRequest: 'static + ApiRequest,
     TypeResponse: 'static + Send + Sync + Future<Output = Result<TypeRequest::Response, ()>>,
 >(
-    handler: fn(TypeRequest) -> TypeResponse
-) -> Box<dyn 'static + Send + Sync + Fn(Request) -> Pin<Box<dyn 'static + Send + Sync + Future<Output = Result<Response, ()>>>>> {
-    Box::new(
-        move |pure_request: Request| {
-            let Ok(typed_request) = TypeRequest::from_request(pure_request) else {
+    handler: fn(TypeRequest) -> TypeResponse,
+) -> Box<
+    dyn 'static
+        + Send
+        + Sync
+        + Fn(Request) -> Pin<Box<dyn 'static + Send + Sync + Future<Output = Result<Response, ()>>>>,
+> {
+    Box::new(move |pure_request: Request| {
+        let Ok(typed_request) = TypeRequest::from_request(pure_request) else {
                 panic!("unable to convert request to typed request, handle this better in future!");
             };
 
-            let typed_future = handler(typed_request);
+        let typed_future = handler(typed_request);
 
-            // convert typed future to pure future
-            let pure_future = async move {
-                let typed_response = typed_future.await;
-                match typed_response {
-                    Ok(typed_response) => {
-                        let pure_response = typed_response.to_response();
-                        Ok(pure_response)
-                    }
-                    Err(_) => {
-                        Err(())
-                    }
+        // convert typed future to pure future
+        let pure_future = async move {
+            let typed_response = typed_future.await;
+            match typed_response {
+                Ok(typed_response) => {
+                    let pure_response = typed_response.to_response();
+                    Ok(pure_response)
                 }
-            };
+                Err(_) => Err(()),
+            }
+        };
 
-            Box::pin(pure_future)
-        }
-    )
+        Box::pin(pure_future)
+    })
 }
 
 /// Listens for incoming connections and serves them.
-async fn listen(
-    server: Arc<RwLock<Server>>,
-) {
+async fn listen(server: Arc<RwLock<Server>>) {
     let socket_addr = server.read().await.socket_addr;
     let listener = Async::<TcpListener>::bind(socket_addr)
         .expect("unable to bind a TCP Listener to the supplied socket address");
@@ -139,10 +144,7 @@ enum ReadState {
 }
 
 /// Reads a request from the client and sends it a response.
-async fn serve(
-    server: Arc<RwLock<Server>>,
-    mut response_stream: Arc<Async<TcpStream>>
-) {
+async fn serve(server: Arc<RwLock<Server>>, mut response_stream: Arc<Async<TcpStream>>) {
     let mut method: Option<Method> = None;
     let mut uri: Option<String> = None;
     let mut endpoint_key: Option<String> = None;
@@ -189,8 +191,8 @@ async fn serve(
         if byte == b'\r' {
             continue;
         } else if byte == b'\n' {
-            let str = String::from_utf8(line.clone())
-                .expect("unable to parse string from UTF-8 bytes");
+            let str =
+                String::from_utf8(line.clone()).expect("unable to parse string from UTF-8 bytes");
             line.clear();
 
             //info!("read: {}", str);
@@ -213,7 +215,6 @@ async fn serve(
                 }
                 ReadState::ReadingHeaders => {
                     if str.is_empty() {
-
                         //info!("finished reading headers.");
 
                         read_state = ReadState::ReadingBody;
@@ -232,10 +233,7 @@ async fn serve(
                         }
                     } else {
                         let parts = str.split(": ").collect::<Vec<&str>>();
-                        header_map.insert(
-                            parts[0].to_string(),
-                            parts[1].to_string(),
-                        );
+                        header_map.insert(parts[0].to_string(), parts[1].to_string());
                         if parts[0].to_lowercase() == "content-length" {
                             content_length = Some(parts[1].parse().unwrap());
                         }
@@ -277,11 +275,9 @@ async fn serve(
 
     match response_result {
         Ok(mut response) => {
-
-            response.headers.insert(
-                "Access-Control-Allow-Origin".to_string(),
-                "*".to_string(),
-            );
+            response
+                .headers
+                .insert("Access-Control-Allow-Origin".to_string(), "*".to_string());
 
             let mut response_bytes = response_header_to_vec(&response);
             response_bytes.extend_from_slice(&response.body);
@@ -290,8 +286,14 @@ async fn serve(
                 .await
                 .expect("found an error while writing to a stream");
 
-            response_stream.flush().await.expect("unable to flush the stream");
-            response_stream.close().await.expect("unable to close the stream");
+            response_stream
+                .flush()
+                .await
+                .expect("unable to flush the stream");
+            response_stream
+                .close()
+                .await
+                .expect("unable to close the stream");
         }
         Err(_e) => {
             return send_404(response_stream).await;
@@ -308,8 +310,14 @@ Access-Control-Allow-Origin: *
 
 async fn send_404(mut response_stream: Arc<Async<TcpStream>>) {
     response_stream.write_all(RESPONSE_BAD).await.unwrap();
-    response_stream.flush().await.expect("unable to flush the stream");
-    response_stream.close().await.expect("unable to close the stream");
+    response_stream
+        .flush()
+        .await
+        .expect("unable to flush the stream");
+    response_stream
+        .close()
+        .await
+        .expect("unable to close the stream");
 }
 
 fn response_header_to_vec(r: &Response) -> Vec<u8> {
@@ -319,10 +327,7 @@ fn response_header_to_vec(r: &Response) -> Vec<u8> {
     c.into_inner()
 }
 
-fn write_response_header(
-    r: &Response,
-    mut io: impl std::io::Write,
-) -> std::io::Result<usize> {
+fn write_response_header(r: &Response, mut io: impl std::io::Write) -> std::io::Result<usize> {
     let mut len = 0;
 
     let status = r.status;

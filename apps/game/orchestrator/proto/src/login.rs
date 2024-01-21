@@ -11,7 +11,10 @@ pub struct LoginRequest {
 
 impl LoginRequest {
     pub fn new(username: &str, password: &str) -> Self {
-        Self { username: username.to_string(), password: password.to_string() }
+        Self {
+            username: username.to_string(),
+            password: password.to_string(),
+        }
     }
 }
 
@@ -23,7 +26,9 @@ pub struct LoginResponse {
 
 impl LoginResponse {
     pub fn new(token: &str) -> Self {
-        Self { token: token.to_string() }
+        Self {
+            token: token.to_string(),
+        }
     }
 }
 
@@ -40,6 +45,4 @@ impl ApiRequest for LoginRequest {
     }
 }
 
-impl ApiResponse for LoginResponse {
-
-}
+impl ApiResponse for LoginResponse {}

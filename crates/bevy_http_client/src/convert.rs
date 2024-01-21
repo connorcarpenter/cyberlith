@@ -41,7 +41,6 @@ pub(crate) fn method_http_to_ehttp(http_method: &Method) -> Result<String, ()> {
 }
 
 pub(crate) fn response_ehttp_to_http(ehttp_res: ehttp::Response) -> Result<Response, ()> {
-
     let mut http_res = Response::default();
     http_res.body = ehttp_res.bytes;
     http_res.url = ehttp_res.url;

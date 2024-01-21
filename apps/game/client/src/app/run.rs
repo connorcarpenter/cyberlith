@@ -10,7 +10,10 @@ use bevy_log::info;
 
 use game_engine::{
     asset::{AnimationData, AssetManager, ModelData},
+    bevy_http_client::HttpClient,
     math::{Quat, Vec3},
+    naia::Timer,
+    orchestrator::LoginRequest,
     render::{
         base::{Color, CpuMaterial, CpuMesh},
         components::{
@@ -22,12 +25,9 @@ use game_engine::{
         shapes, Assets, Handle,
     },
     EnginePlugin,
-    naia::Timer,
-    bevy_http_client::HttpClient,
-    orchestrator::LoginRequest,
 };
 
-use super::{global::Global, connection_state::ConnectionState};
+use super::{connection_state::ConnectionState, global::Global};
 
 pub fn run() {
     let mut app = App::default();
@@ -45,8 +45,7 @@ pub fn run() {
         // Http
         .init_resource::<ApiTimer>()
         .add_systems(Update, handle_connection)
-        .init_resource::<Global>()
-    ;
+        .init_resource::<Global>();
     app.run();
 }
 
