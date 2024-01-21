@@ -25,5 +25,5 @@ pub mod naia {
     pub use naia_bevy_client::*;
 }
 pub mod orchestrator {
-    pub use orchestrator_proto::*;
+    pub use orchestrator_http_proto::*;
 }

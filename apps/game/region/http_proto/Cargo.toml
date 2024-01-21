@@ -1,5 +1,5 @@
 [package]
-name = "world_proto"
+name = "region_server_http_proto"
 version = "0.1.0"
 authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
 workspace = "../../../.."
@@ -9,7 +9,5 @@ publish = false
 [features]
 
 [dependencies]
-naia-bevy-shared = { path = "../../../../../naia/adapters/bevy/shared" }
-
-cfg-if = { version = "1.0" }
-log = { version = "0.4" }
+naia-serde = { path = "../../../../../naia/shared/serde" }
+http_common = { path = "../../../../crates/http_common" }

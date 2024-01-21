@@ -1,0 +1,21 @@
+[package]
+name = "bevy_http_server"
+version = "0.1.0"
+edition = "2021"
+workspace = "../.."
+
+[dependencies]
+http_common = { path = "../../crates/http_common"}
+naia-serde = { path = "../../../naia/shared/serde" }
+
+bevy_tasks = { version = "0.12.1", default-features = false, features = ["multi-threaded"] }
+bevy_ecs = { version = "0.12.1", default-features = false }
+bevy_app = { version = "0.12.1", default-features = false }
+bevy_core = { version = "0.12.1", default-features = false }
+
+futures-channel = { version = "0.3", features = ["sink"] }
+futures-core = { version = "0.3" }
+futures-util = { version = "0.3", features = ["sink"] }
+
+cfg-if = { version = "1.0" }
+log = { version = "0.4.17" }

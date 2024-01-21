@@ -1,5 +1,5 @@
 [package]
-name = "session_proto"
+name = "session_server_naia_proto"
 version = "0.1.0"
 authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
 workspace = "../../../.."

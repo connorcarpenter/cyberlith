@@ -1,5 +1,5 @@
 [package]
-name = "region_server_proto"
+name = "session_server_http_proto"
 version = "0.1.0"
 authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
 workspace = "../../../.."

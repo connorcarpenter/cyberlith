@@ -7,8 +7,8 @@ edition = "2021"
 publish = false
 
 [dependencies]
-orchestrator_proto = { path = "proto" }
-region_server_proto = { path = "../region/proto" }
+orchestrator_http_proto = { path = "http_proto" }
+region_server_http_proto = { path = "../region/http_proto" }
 http_server = { path = "../../../crates/http_server" }
 http_client = { path = "../../../crates/http_client" }
 

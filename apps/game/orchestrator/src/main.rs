@@ -6,8 +6,8 @@ use simple_logger::SimpleLogger;
 use http_client::HttpClient;
 use http_server::Server;
 
-use orchestrator_proto::{LoginRequest as OrchLoginReq, LoginResponse as OrchLoginRes};
-use region_server_proto::LoginRequest as RegLoginReq;
+use orchestrator_http_proto::{LoginRequest as OrchLoginReq, LoginResponse as OrchLoginRes};
+use region_server_http_proto::LoginRequest as RegLoginReq;
 
 const ADDRESS: &str = "127.0.0.1:14197";
 

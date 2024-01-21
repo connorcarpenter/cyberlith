@@ -7,7 +7,7 @@ edition = "2021"
 publish = false
 
 [dependencies]
-region_server_proto = { path = "proto" }
+region_server_http_proto = { path = "http_proto" }
 http_server = { path = "../../../crates/http_server" }
 
 log = { version = "0.4", features = [] }
