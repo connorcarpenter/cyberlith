@@ -7,8 +7,7 @@ edition = "2021"
 publish = false
 
 [features]
-client = [ "bevy_http_client" ]
 
 [dependencies]
 naia-serde = { path = "../../../../../naia/shared/serde" }
-bevy_http_client = { path = "../../../../crates/bevy_http_client", optional = true }
+http_common = { path = "../../../../crates/http_common" }

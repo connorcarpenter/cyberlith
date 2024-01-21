@@ -18,7 +18,7 @@ input = { path = "../../../crates/input" }
 asset = { path = "../../../crates/asset" }
 bevy_http_client = { path = "../../../crates/bevy_http_client" }
 
-orchestrator_proto = { path = "../orchestrator/proto", features = ["client"] }
+orchestrator_proto = { path = "../orchestrator/proto" }
 
 # `render_gl` and `render_wgpu` SHOULD *ALWAYS* be optional
 render_gl = { path = "../../../crates/render_gl", optional = true }

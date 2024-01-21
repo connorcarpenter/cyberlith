@@ -1,5 +1,4 @@
-
-use std::time::Duration;
+use std::{net::SocketAddr, str::FromStr, time::Duration};
 
 use bevy_app::{App, Startup, Update};
 use bevy_ecs::{
@@ -75,7 +74,8 @@ fn handle_connection(
     match &global.connection_state {
         ConnectionState::Disconnected => {
             let request = LoginRequest::new("charlie", "12345");
-            let key = client.send("http://127.0.0.1:4001", request);
+            let socket_addr = SocketAddr::from_str("127.0.0.1:14197").unwrap();
+            let key = client.send(&socket_addr, request);
             global.connection_state = ConnectionState::SentToOrchestrator(key);
         }
         ConnectionState::SentToOrchestrator(key) => {

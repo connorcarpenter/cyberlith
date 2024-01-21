@@ -10,3 +10,4 @@ publish = false
 
 [dependencies]
 naia-serde = { path = "../../../../../naia/shared/serde" }
+http_common = { path = "../../../../crates/http_common" }

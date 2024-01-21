@@ -1,13 +1,16 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, net::SocketAddr};
 
 use bevy_ecs::{change_detection::ResMut, system::Resource};
 
-use crate::{ResponseKey, HttpRequest, backend::RequestTask, HttpResponse, HttpResponseError, backend::{send_request, poll_task}, ClientHttpRequest, ClientHttpResponse};
+use http_common::{ApiRequest, ApiResponse, Request, Response, ResponseError};
+use log::info;
+
+use crate::{ResponseKey, backend::RequestTask, backend::{send_request, poll_task}};
 
 #[derive(Resource)]
 pub struct HttpClient {
     tasks: HashMap<u64, RequestTask>,
-    results: HashMap<u64, Result<HttpResponse, HttpResponseError>>,
+    results: HashMap<u64, Result<Response, ResponseError>>,
     current_index: u64,
 }
 
@@ -23,9 +26,13 @@ impl Default for HttpClient {
 
 impl HttpClient {
 
-    pub fn send<Q: ClientHttpRequest>(&mut self, url: &str, req: Q) -> ResponseKey<Q::Response> {
+    pub fn send<Q: ApiRequest>(&mut self, addr: &SocketAddr, req: Q) -> ResponseKey<Q::Response> {
 
-        let http_request = HttpRequest::post(url, req.to_bytes());
+        // TODO: specify url in Q impl
+        // TODO: specify method in Q impl
+        let url = format!("http://{}/{}", addr, Q::path());
+        let http_request = Request::new(Q::method(), &url, req.to_bytes().to_vec());
+        info!("Sending request to: {:?}", url);
 
         let task = send_request(http_request);
 
@@ -36,11 +43,14 @@ impl HttpClient {
         key
     }
 
-    pub fn recv<S: ClientHttpResponse>(&mut self, key: &ResponseKey<S>) -> Option<Result<S, HttpResponseError>> {
+    pub fn recv<S: ApiResponse>(&mut self, key: &ResponseKey<S>) -> Option<Result<S, ResponseError>> {
         if let Some(result) = self.results.remove(&key.id) {
             match result {
                 Ok(response) => {
-                    Some(Ok(S::from(response)))
+                    let Ok(api_response) = S::from_response(response) else {
+                        return Some(Err(ResponseError::SerdeError));
+                    };
+                    Some(Ok(api_response))
                 }
                 Err(err) => Some(Err(err)),
             }
@@ -49,7 +59,7 @@ impl HttpClient {
         }
     }
 
-    fn next_key<S: ClientHttpResponse>(&mut self) -> ResponseKey<S> {
+    fn next_key<S: ApiResponse>(&mut self) -> ResponseKey<S> {
         let next_index = self.current_index;
         self.current_index = self.current_index.wrapping_add(1);
         ResponseKey::new(next_index)
@@ -59,7 +69,7 @@ impl HttpClient {
         self.tasks.iter_mut()
     }
 
-    pub(crate) fn accept_result(&mut self, key: u64, result: Result<HttpResponse, HttpResponseError>) {
+    pub(crate) fn accept_result(&mut self, key: u64, result: Result<Response, ResponseError>) {
         self.tasks.remove(&key);
         self.results.insert(key, result);
     }

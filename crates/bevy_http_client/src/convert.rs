@@ -1,4 +1,3 @@
-
 use http_common::{Method, Request, Response};
 
 // pub(crate) fn request_ehttp_to_http(ehttp_req: ehttp::Request) -> Result<Request, ()> {

@@ -5,6 +5,7 @@ edition = "2021"
 workspace = "../.."
 
 [dependencies]
+http_common = { path = "../../crates/http_common"}
 naia-serde = { path = "../../../naia/shared/serde" }
 
 bevy_tasks = { version = "0.12.1", default-features = false, features = ["multi-threaded"] }
@@ -13,6 +14,7 @@ bevy_app = { version = "0.12.1", default-features = false }
 bevy_core = { version = "0.12.1", default-features = false }
 
 cfg-if = { version = "1.0" }
+log = "0.4.17"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 crossbeam-channel = "0.5.7"

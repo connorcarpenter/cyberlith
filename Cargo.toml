@@ -27,6 +27,7 @@ members = [
     "crates/bevy_http_client",
     "crates/http_server",
     "crates/http_client",
+    "crates/http_common",
 ]
 # any crates with conflicting dependencies / feature flags cannot be put here
 default-members = [

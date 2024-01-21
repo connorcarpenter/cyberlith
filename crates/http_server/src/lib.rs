@@ -1,9 +1,7 @@
 
-pub use http::Method;
-
 mod executor;
-mod server;
-mod types;
 
+mod server;
 pub use server::*;
-pub use types::*;
+
+pub use http_common::{Request, Response, Method};

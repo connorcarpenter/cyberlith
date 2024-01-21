@@ -9,5 +9,6 @@ publish = false
 [dependencies]
 region_server_proto = { path = "proto" }
 http_server = { path = "../../../crates/http_server" }
+
 log = { version = "0.4", features = [] }
 simple_logger = { version = "4.0", default-features = false, features = ["timestamps"] }

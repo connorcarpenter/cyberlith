@@ -1,9 +1,8 @@
 use std::{
-    net::{SocketAddr, TcpListener, TcpStream}, collections::HashMap, pin::Pin, str::FromStr,
+    net::{SocketAddr, TcpListener, TcpStream}, collections::{HashMap, BTreeMap}, pin::Pin,
 };
 
 use async_dup::Arc;
-use http::{header, HeaderMap, HeaderName, HeaderValue, Method};
 use log::{info, warn};
 use smol::{
     io::{AsyncWriteExt, AsyncReadExt, BufReader},
@@ -13,7 +12,9 @@ use smol::{
     stream::StreamExt,
 };
 
-use crate::{executor, Request, Response};
+use http_common::{ApiRequest, ApiResponse, Method, Request, Response};
+
+use crate::executor;
 
 pub struct Server {
     socket_addr: SocketAddr,
@@ -40,20 +41,58 @@ impl Server {
             .detach();
     }
 
-    pub fn endpoint<T: 'static + Send + Sync + Future<Output = Result<Response, ()>>>(
+    pub fn endpoint<
+        TypeRequest: 'static + ApiRequest,
+        TypeResponse: 'static + Send + Sync + Future<Output = Result<TypeRequest::Response, ()>>,
+    >(
         &mut self,
-        method: Method,
-        path: &str,
-        handler: fn(Request) -> T
+        handler: fn(TypeRequest) -> TypeResponse
     ) {
-        let endpoint_path = format!("{} /{}", method, path);
+        let method = TypeRequest::method();
+        let path = TypeRequest::path();
+
+        let endpoint_path = format!("{} /{}", method.as_str(), path);
 
         info!("endpoint: {}", endpoint_path);
+        let new_endpoint = endpoint_2::<TypeRequest, TypeResponse>(handler);
         self.endpoints.insert(
             endpoint_path,
-            Box::new(move |n| Box::pin(handler(n))),
+            new_endpoint,
         );
     }
+}
+
+fn endpoint_2<
+    TypeRequest: 'static + ApiRequest,
+    TypeResponse: 'static + Send + Sync + Future<Output = Result<TypeRequest::Response, ()>>,
+>(
+    handler: fn(TypeRequest) -> TypeResponse
+) -> Box<dyn 'static + Send + Sync + Fn(Request) -> Pin<Box<dyn 'static + Send + Sync + Future<Output = Result<Response, ()>>>>> {
+    Box::new(
+        move |pure_request: Request| {
+            let Ok(typed_request) = TypeRequest::from_request(pure_request) else {
+                panic!("unable to convert request to typed request, handle this better in future!");
+            };
+
+            let typed_future = handler(typed_request);
+
+            // convert typed future to pure future
+            let pure_future = async move {
+                let typed_response = typed_future.await;
+                match typed_response {
+                    Ok(typed_response) => {
+                        let pure_response = typed_response.to_response();
+                        Ok(pure_response)
+                    }
+                    Err(_) => {
+                        Err(())
+                    }
+                }
+            };
+
+            Box::pin(pure_future)
+        }
+    )
 }
 
 /// Listens for incoming connections and serves them.
@@ -73,7 +112,7 @@ async fn listen(
 
     loop {
         // Accept the next connection.
-        let (response_stream, incoming_address) = listener
+        let (response_stream, _incoming_address) = listener
             .accept()
             .await
             .expect("was not able to accept the incoming stream from the listener");
@@ -109,7 +148,7 @@ async fn serve(
     let mut endpoint_key: Option<String> = None;
     let mut content_length: Option<usize> = None;
     let mut body: Vec<u8> = Vec::new();
-    let mut header_map = HeaderMap::new();
+    let mut header_map = BTreeMap::<String, String>::new();
 
     let mut read_state = ReadState::MatchingUrl;
 
@@ -194,8 +233,8 @@ async fn serve(
                     } else {
                         let parts = str.split(": ").collect::<Vec<&str>>();
                         header_map.insert(
-                            HeaderName::from_str(parts[0]).unwrap(),
-                            HeaderValue::from_str(parts[1]).unwrap(),
+                            parts[0].to_string(),
+                            parts[1].to_string(),
                         );
                         if parts[0].to_lowercase() == "content-length" {
                             content_length = Some(parts[1].parse().unwrap());
@@ -227,14 +266,8 @@ async fn serve(
         warn!("unable to parse uri");
         return send_404(response_stream).await;
     };
-    let Ok(body) = String::from_utf8(body) else {
-        warn!("unable to parse body as UTF-8");
-        return send_404(response_stream).await;
-    };
-    let mut request = Request::new(body);
-    *request.method_mut() = method;
-    *request.uri_mut() = uri.parse().unwrap();
-    *request.headers_mut() = header_map;
+    let mut request = Request::new(method, &uri, body);
+    request.headers = header_map;
 
     let endpoint_key = endpoint_key.unwrap();
     let server = server.read().await;
@@ -245,13 +278,13 @@ async fn serve(
     match response_result {
         Ok(mut response) => {
 
-            response.headers_mut().insert(
-                header::ACCESS_CONTROL_ALLOW_ORIGIN,
-                HeaderValue::from_static("*"),
+            response.headers.insert(
+                "Access-Control-Allow-Origin".to_string(),
+                "*".to_string(),
             );
 
             let mut response_bytes = response_header_to_vec(&response);
-            response_bytes.extend_from_slice(response.body().as_bytes());
+            response_bytes.extend_from_slice(&response.body);
             response_stream
                 .write_all(&response_bytes)
                 .await
@@ -292,10 +325,10 @@ fn write_response_header(
 ) -> std::io::Result<usize> {
     let mut len = 0;
 
-    let status = r.status();
-    let code = status.as_str();
-    let reason = status.canonical_reason().unwrap_or("Unknown");
-    let headers = r.headers();
+    let status = r.status;
+    let code = status.to_string();
+    let reason = "Unknown";
+    let headers = &r.headers;
 
     write_line(&mut io, &mut len, b"HTTP/1.1 ")?;
     write_line(&mut io, &mut len, code.as_bytes())?;

@@ -3,7 +3,9 @@ use std::net::SocketAddr;
 use log::{info, LevelFilter};
 use simple_logger::SimpleLogger;
 
-use http_server::{Server, Method, Request, Response, ResponseBuilder};
+use http_server::Server;
+
+use region_server_proto::{LoginRequest, LoginResponse};
 
 const ADDRESS: &str = "127.0.0.1:14198";
 
@@ -17,7 +19,7 @@ pub fn main() {
     let socket_addr: SocketAddr = ADDRESS.parse().unwrap();
 
     let mut server = Server::new(socket_addr);
-    server.endpoint(Method::POST, "login", login);
+    server.endpoint(login);
     server.start();
 
     loop {
@@ -26,12 +28,10 @@ pub fn main() {
     }
 }
 
-async fn login(_request: Request) -> Result<Response, ()> {
+async fn login(_incoming_request: LoginRequest) -> Result<LoginResponse, ()> {
     info!("Login request received");
-    let response = ResponseBuilder::new()
-        .status(200)
-        .body("".to_string())
-        .unwrap();
-    info!("Login response sent");
-    Ok(response)
+
+    info!("Sending login response to orchestrator");
+
+    Ok(LoginResponse::new("yeet from regionserver!"))
 }

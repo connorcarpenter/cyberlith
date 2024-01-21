@@ -5,8 +5,10 @@ edition = "2021"
 workspace = "../.."
 
 [dependencies]
+http_common = { path = "../../crates/http_common" }
+
 naia-serde = { path = "../../../naia/shared/serde" }
+
 cfg-if = { version = "1.0" }
 futures-lite = { version = "1.11.3" }
 ehttp = { version = "0.3.0", features = ["native-async"] }
-http = { version = "0.2" }
