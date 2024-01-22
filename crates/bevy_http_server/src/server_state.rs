@@ -1,111 +1,115 @@
 use std::{
     collections::{BTreeMap, HashMap},
     net::{SocketAddr, TcpListener, TcpStream},
-    pin::Pin,
+    any::TypeId
 };
 
 use async_dup::Arc;
 use log::{info, warn};
-use smol::{
-    future::Future,
-    io::{AsyncReadExt, AsyncWriteExt, BufReader},
-    lock::RwLock,
-    stream::StreamExt,
-    Async,
-};
+use smol::{channel::{Receiver, Sender}, io::{AsyncReadExt, AsyncWriteExt, BufReader}, lock::RwLock, stream::StreamExt, Async, channel};
 
-use http_common::{ApiRequest, ApiResponse, Method, Request, Response};
+use bevy_http_shared::Protocol;
+
+use http_common::{Method, Request, Response};
 
 use crate::executor;
 
-pub struct Server {
-    socket_addr: SocketAddr,
-    endpoints: HashMap<
-        String,
-        Box<
-            dyn 'static
-                + Send
-                + Sync
-                + Fn(
-                    Request,
-                )
-                    -> Pin<Box<dyn 'static + Send + Sync + Future<Output = Result<Response, ()>>>>,
-        >,
-    >,
+struct KeyMaker {
+    current_index: u64,
 }
 
-impl Server {
-    pub fn new(socket_addr: SocketAddr) -> Self {
-        Server {
-            socket_addr,
-            endpoints: HashMap::new(),
+impl KeyMaker {
+    pub fn new() -> Self {
+        Self {
+            current_index: 0,
         }
     }
 
-    pub fn start(self) {
-        let self_ref = Arc::new(RwLock::new(self));
-        executor::spawn(async move {
-            listen(self_ref).await;
-        })
-        .detach();
-    }
-
-    pub fn endpoint<
-        TypeRequest: 'static + ApiRequest,
-        TypeResponse: 'static + Send + Sync + Future<Output = Result<TypeRequest::Response, ()>>,
-    >(
-        &mut self,
-        handler: fn(TypeRequest) -> TypeResponse,
-    ) {
-        let method = TypeRequest::method();
-        let path = TypeRequest::path();
-
-        let endpoint_path = format!("{} /{}", method.as_str(), path);
-
-        info!("endpoint: {}", endpoint_path);
-        let new_endpoint = endpoint_2::<TypeRequest, TypeResponse>(handler);
-        self.endpoints.insert(endpoint_path, new_endpoint);
+    pub fn next_key_id(&mut self) -> u64 {
+        let next_index = self.current_index;
+        self.current_index = self.current_index.wrapping_add(1);
+        next_index
     }
 }
 
-fn endpoint_2<
-    TypeRequest: 'static + ApiRequest,
-    TypeResponse: 'static + Send + Sync + Future<Output = Result<TypeRequest::Response, ()>>,
->(
-    handler: fn(TypeRequest) -> TypeResponse,
-) -> Box<
-    dyn 'static
-        + Send
-        + Sync
-        + Fn(Request) -> Pin<Box<dyn 'static + Send + Sync + Future<Output = Result<Response, ()>>>>,
-> {
-    Box::new(move |pure_request: Request| {
-        let Ok(typed_request) = TypeRequest::from_request(pure_request) else {
-                panic!("unable to convert request to typed request, handle this better in future!");
-            };
+pub struct ServerState {
+    protocol: Protocol,
+    request_senders: HashMap<TypeId, Sender<(u64, SocketAddr, Request)>>,
+    main_response_receiver: Option<Receiver<(u64, Response)>>,
+    response_senders: HashMap<u64, Sender<Response>>,
+    key_maker: KeyMaker,
+}
 
-        let typed_future = handler(typed_request);
+impl ServerState {
+    pub fn new(protocol: Protocol) -> (Self, HashMap<TypeId, Receiver<(u64, SocketAddr, Request)>>, Sender<(u64, Response)>) {
 
-        // convert typed future to pure future
-        let pure_future = async move {
-            let typed_response = typed_future.await;
-            match typed_response {
-                Ok(typed_response) => {
-                    let pure_response = typed_response.to_response();
-                    Ok(pure_response)
-                }
-                Err(_) => Err(()),
-            }
+        // Requests
+        let mut request_senders = HashMap::new();
+        let mut request_receivers = HashMap::new();
+        let types = protocol.get_all_types();
+        for type_id in types {
+
+            let (request_sender, request_receiver) = channel::unbounded();
+
+            request_senders.insert(type_id, request_sender);
+            request_receivers.insert(type_id, request_receiver);
+        }
+
+        // Responses
+        let (response_sender, response_receiver) = channel::unbounded();
+
+        let me = Self {
+            protocol,
+            request_senders,
+            main_response_receiver: Some(response_receiver),
+            response_senders: HashMap::new(),
+            key_maker: KeyMaker::new(),
         };
 
-        Box::pin(pure_future)
-    })
+        (me, request_receivers, response_sender)
+    }
+
+    pub fn listen(self, addr: SocketAddr) {
+        let ServerState {
+            protocol,
+            request_senders,
+            main_response_receiver,
+            response_senders,
+            key_maker,
+        } = self;
+
+        let main_response_receiver = main_response_receiver.unwrap();
+        let response_senders = Arc::new(RwLock::new(response_senders));
+        let response_senders_clone = response_senders.clone();
+        let key_maker = Arc::new(RwLock::new(key_maker));
+
+        // needs protocol, request senders, and response senders
+        executor::spawn(async move {
+            listen(addr, protocol, request_senders, response_senders_clone, key_maker).await;
+        })
+            .detach();
+
+        executor::spawn(async move {
+            process_responses(main_response_receiver, response_senders).await;
+        })
+            .detach();
+    }
+
+    pub fn take_main_response_receiver(&mut self) -> Receiver<(u64, Response)> {
+        self.main_response_receiver.take().expect("Listening more than once?")
+    }
 }
 
 /// Listens for incoming connections and serves them.
-async fn listen(server: Arc<RwLock<Server>>) {
-    let socket_addr = server.read().await.socket_addr;
-    let listener = Async::<TcpListener>::bind(socket_addr)
+// needs protocol, request senders, and response senders
+async fn listen(
+    listen_address: SocketAddr,
+    protocol: Protocol,
+    request_senders: HashMap<TypeId, Sender<(u64, SocketAddr, Request)>>,
+    response_senders_map: Arc<RwLock<HashMap<u64, Sender<Response>>>>,
+    key_maker: Arc<RwLock<KeyMaker>>,
+) {
+    let listener = Async::<TcpListener>::bind(listen_address)
         .expect("unable to bind a TCP Listener to the supplied socket address");
     info!(
         "HTTP Listening at http://{}/",
@@ -115,22 +119,52 @@ async fn listen(server: Arc<RwLock<Server>>) {
             .expect("Listener does not have a local address"),
     );
 
+    let protocol = Arc::new(protocol);
+    let request_senders = Arc::new(request_senders);
+
     loop {
         // Accept the next connection.
-        let (response_stream, _incoming_address) = listener
+        let (response_stream, incoming_address) = listener
             .accept()
             .await
             .expect("was not able to accept the incoming stream from the listener");
 
-        //info!("received request from {}", incoming_address);
+        info!("received request from {} .. making new thread to serve this connection", incoming_address);
 
-        let self_clone = server.clone();
+        let protocol_clone = protocol.clone();
+        let request_senders_clone = request_senders.clone();
+        let response_senders_map_clone = response_senders_map.clone();
+        let key_maker_clone = key_maker.clone();
 
         // Spawn a background task serving this connection.
         executor::spawn(async move {
-            serve(self_clone, Arc::new(response_stream)).await;
+            serve(
+                Arc::new(response_stream),
+                incoming_address,
+                protocol_clone,
+                request_senders_clone,
+                response_senders_map_clone,
+                key_maker_clone,
+            ).await;
         })
-        .detach();
+            .detach();
+    }
+}
+
+// needs response_senders
+async fn process_responses(
+    response_receiver: Receiver<(u64, Response)>,
+    response_senders_map: Arc<RwLock<HashMap<u64, Sender<Response>>>>
+) {
+
+    loop {
+        let (response_id, response) = response_receiver.recv().await.expect("unable to receive response");
+        let mut response_senders = response_senders_map.write().await;
+
+        let Some(response_sender) = response_senders.remove(&response_id) else {
+            panic!("received response for unknown response id: {}", response_id);
+        };
+        response_sender.try_send(response).expect("unable to send response");
     }
 }
 
@@ -144,10 +178,18 @@ enum ReadState {
 }
 
 /// Reads a request from the client and sends it a response.
-async fn serve(server: Arc<RwLock<Server>>, mut response_stream: Arc<Async<TcpStream>>) {
+// needs protocol, request senders, and response senders
+async fn serve(
+    mut response_stream: Arc<Async<TcpStream>>,
+    request_addr: SocketAddr,
+    protocol: Arc<Protocol>,
+    request_senders: Arc<HashMap<TypeId, Sender<(u64, SocketAddr, Request)>>>,
+    response_senders: Arc<RwLock<HashMap<u64, Sender<Response>>>>,
+    key_maker: Arc<RwLock<KeyMaker>>,
+) {
     let mut method: Option<Method> = None;
     let mut uri: Option<String> = None;
-    let mut endpoint_key: Option<String> = None;
+    let mut request_id: Option<TypeId> = None;
     let mut content_length: Option<usize> = None;
     let mut body: Vec<u8> = Vec::new();
     let mut header_map = BTreeMap::<String, String>::new();
@@ -176,7 +218,7 @@ async fn serve(server: Arc<RwLock<Server>>, mut response_stream: Arc<Async<TcpSt
 
                 if body.len() >= content_length {
                     read_state = ReadState::Finished;
-                    //info!("finished reading body");
+                    info!("finished reading body");
                     break;
                 }
 
@@ -195,16 +237,21 @@ async fn serve(server: Arc<RwLock<Server>>, mut response_stream: Arc<Async<TcpSt
                 String::from_utf8(line.clone()).expect("unable to parse string from UTF-8 bytes");
             line.clear();
 
-            //info!("read: {}", str);
+            info!("read: {}", str);
 
             match read_state {
                 ReadState::MatchingUrl => {
                     let parts = str.split(" ").collect::<Vec<&str>>();
                     let key = format!("{} {}", parts[0], parts[1]);
-                    let server = server.read().await;
-                    if server.endpoints.contains_key(&key) {
+
+                    info!("attempting to match url. endpoint key is: {}", key);
+
+                    info!("got server, checking.");
+
+                    if protocol.has_endpoint_key(&key) {
                         read_state = ReadState::ReadingHeaders;
-                        endpoint_key = Some(key);
+                        let request_id_temp = protocol.get_request_id(&key).unwrap();
+                        request_id = Some(request_id_temp);
                         method = Some(Method::from_str(parts[0]).unwrap());
                         uri = Some(parts[1].to_string());
                     } else {
@@ -215,7 +262,7 @@ async fn serve(server: Arc<RwLock<Server>>, mut response_stream: Arc<Async<TcpSt
                 }
                 ReadState::ReadingHeaders => {
                     if str.is_empty() {
-                        //info!("finished reading headers.");
+                        info!("finished reading headers.");
 
                         read_state = ReadState::ReadingBody;
 
@@ -226,7 +273,7 @@ async fn serve(server: Arc<RwLock<Server>>, mut response_stream: Arc<Async<TcpSt
                         };
                         if content_length == 0 {
                             read_state = ReadState::Finished;
-                            //info!("no body to read. finished.");
+                            info!("no body to read. finished.");
                             break;
                         } else {
                             continue;
@@ -255,6 +302,8 @@ async fn serve(server: Arc<RwLock<Server>>, mut response_stream: Arc<Async<TcpSt
 
     // done reading //
 
+    info!("done reading request");
+
     // cast to request //
     let Some(method) = method else {
         warn!("unable to parse method");
@@ -264,14 +313,37 @@ async fn serve(server: Arc<RwLock<Server>>, mut response_stream: Arc<Async<TcpSt
         warn!("unable to parse uri");
         return send_404(response_stream).await;
     };
+
+    info!("done casting request");
+
     let mut request = Request::new(method, &uri, body);
     request.headers = header_map;
 
-    let endpoint_key = endpoint_key.unwrap();
-    let server = server.read().await;
-    let endpoint = server.endpoints.get(&endpoint_key).unwrap();
+    let request_id = request_id.unwrap();
 
-    let response_result = endpoint(request).await;
+    info!("sending request");
+
+    let response_receiver = {
+        let mut key_maker = key_maker.write().await;
+        let response_key_id = key_maker.next_key_id();
+
+        let Some(request_sender) = request_senders.get(&request_id) else {
+            panic!("did not register type!");
+        };
+        request_sender.try_send((response_key_id, request_addr, request)).expect("unable to send request");
+
+        let (response_sender, response_receiver) = channel::bounded(1);
+        let mut response_senders = response_senders.write().await;
+        response_senders.insert(response_key_id, response_sender);
+
+        response_receiver
+    };
+
+    info!("waiting for response");
+
+    let response_result = response_receiver.recv().await;
+
+    info!("response received");
 
     match response_result {
         Ok(mut response) => {

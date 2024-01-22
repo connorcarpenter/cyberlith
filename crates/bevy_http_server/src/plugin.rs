@@ -1,15 +1,29 @@
+use std::ops::DerefMut;
+use std::sync::Mutex;
 
 use bevy_app::{App, Plugin, Update};
 
-use crate::server::{server_update, HttpServer};
+use bevy_http_shared::Protocol;
 
-#[derive(Default)]
-pub struct HttpServerPlugin;
+use crate::server::HttpServer;
+
+pub struct HttpServerPlugin {
+    protocol: Mutex<Option<Protocol>>
+}
+
+impl HttpServerPlugin {
+    pub fn new(protocol: Protocol) -> Self {
+        Self {
+            protocol: Mutex::new(Some(protocol)),
+        }
+    }
+}
 
 impl Plugin for HttpServerPlugin {
     fn build(&self, app: &mut App) {
+        let protocol = self.protocol.lock().unwrap().deref_mut().take().unwrap();
+
         app.add_plugins(bevy_core::TaskPoolPlugin::default())
-            .init_resource::<HttpServer>()
-            .add_systems(Update, server_update);
+            .insert_resource(HttpServer::new(protocol));
     }
 }

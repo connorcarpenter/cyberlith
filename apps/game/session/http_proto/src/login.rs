@@ -1,6 +1,6 @@
 use naia_serde::SerdeInternal as Serde;
 
-use http_common::{ApiRequest, ApiResponse, Method};
+use bevy_http_shared::{ApiRequest, ApiResponse, Method};
 
 // Request
 #[derive(Serde, PartialEq, Clone)]

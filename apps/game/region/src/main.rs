@@ -1,11 +1,13 @@
 use std::net::SocketAddr;
 
-use log::{info, LevelFilter};
+use log::{info, LevelFilter, warn};
 use simple_logger::SimpleLogger;
+use http_client::HttpClient;
 
 use http_server::Server;
 
-use region_server_http_proto::{LoginRequest, LoginResponse};
+use region_server_http_proto::{LoginRequest as RegLoginReq, LoginResponse as RegLoginRes};
+use session_server_http_proto::{LoginRequest as SeshLoginReq, LoginResponse as SeshLoginRes};
 
 const ADDRESS: &str = "127.0.0.1:14198";
 
@@ -28,10 +30,24 @@ pub fn main() {
     }
 }
 
-async fn login(_incoming_request: LoginRequest) -> Result<LoginResponse, ()> {
-    info!("Login request received");
+async fn login(incoming_request: RegLoginReq) -> Result<RegLoginRes, ()> {
+    info!("Login request received from orchestrator");
+
+    info!("Sending login request to session server");
+
+    let request = SeshLoginReq::new(&incoming_request.username, &incoming_request.password);
+    let socket_addr = "127.0.0.1:14199".parse().unwrap();
+    let Ok(outgoing_response) = HttpClient::send(&socket_addr, request).await else {
+        warn!("Failed login request to session server");
+        return Err(());
+    };
+
+    info!(
+        "Received login response from session server: {}",
+        outgoing_response.token
+    );
 
     info!("Sending login response to orchestrator");
 
-    Ok(LoginResponse::new("yeet from regionserver!"))
+    Ok(RegLoginRes::new("yeet from regionserver!"))
 }

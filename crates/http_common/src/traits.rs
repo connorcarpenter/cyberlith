@@ -4,12 +4,16 @@ use naia_serde::{BitReader, FileBitWriter, Serde};
 
 use crate::{Method, Request, Response, ResponseError};
 
-pub trait ApiRequest: Serde {
+pub trait ApiRequest: Serde + 'static {
     type Response: ApiResponse;
 
     fn method() -> Method;
 
     fn path() -> &'static str;
+
+    fn endpoint_key() -> String {
+        format!("{} /{}", Self::method().as_str(), Self::path())
+    }
 
     fn to_bytes(&self) -> Box<[u8]> {
         let mut bit_writer = FileBitWriter::new();
