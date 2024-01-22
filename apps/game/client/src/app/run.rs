@@ -5,27 +5,26 @@ use bevy_ecs::{
     component::Component,
     query::With,
     system::{Commands, Local, Query, Res, ResMut, Resource},
+    event::EventReader,
 };
 use bevy_log::info;
 
 use game_engine::{
     asset::{AnimationData, AssetManager, ModelData},
-    bevy_http_client::HttpClient,
+    http::HttpClient,
     math::{Quat, Vec3},
-    naia::Timer,
-    orchestrator::LoginRequest,
-    render::{
-        base::{Color, CpuMaterial, CpuMesh},
-        components::{
-            AmbientLight, Camera, CameraBundle, ClearOperation, DirectionalLight,
-            OrthographicProjection, PointLight, Projection, RenderLayer, RenderLayers,
-            RenderObjectBundle, RenderTarget, Transform, Viewport, Visibility,
-        },
-        resources::{RenderFrame, Time, WindowSettings},
-        shapes, Assets, Handle,
+    naia::{Timer, Client as NaiaClient, transport::webrtc, events::ConnectEvent},
+    session::{messages::Auth as SessionAuth, Session},
+    orchestrator::LoginRequest, render::{
+    base::{Color, CpuMaterial, CpuMesh},
+    components::{
+        AmbientLight, Camera, CameraBundle, ClearOperation, DirectionalLight,
+        OrthographicProjection, PointLight, Projection, RenderLayer, RenderLayers,
+        RenderObjectBundle, RenderTarget, Transform, Viewport, Visibility,
     },
-    EnginePlugin,
-};
+    resources::{RenderFrame, Time, WindowSettings},
+    shapes, Assets, Handle,
+}, EnginePlugin};
 
 use super::{connection_state::ConnectionState, global::Global};
 
@@ -39,12 +38,14 @@ pub fn run() {
             ..Default::default()
         })
         // Systems
-        .add_systems(Startup, setup)
-        .add_systems(Update, step)
-        .add_systems(Update, draw)
+        .add_systems(Startup, scene_setup)
+        .add_systems(Update, scene_step)
+        .add_systems(Update, scene_draw)
         // Http
         .init_resource::<ApiTimer>()
         .add_systems(Update, handle_connection)
+        .add_systems(Update, session_connect_events)
+        // Naia
         .init_resource::<Global>();
     app.run();
 }
@@ -62,7 +63,8 @@ impl Default for ApiTimer {
 fn handle_connection(
     mut global: ResMut<Global>,
     mut timer: ResMut<ApiTimer>,
-    mut client: ResMut<HttpClient>,
+    mut http_client: ResMut<HttpClient>,
+    mut session_client: NaiaClient<Session>,
 ) {
     if timer.0.ringing() {
         timer.0.reset();
@@ -72,28 +74,60 @@ fn handle_connection(
 
     match &global.connection_state {
         ConnectionState::Disconnected => {
+            info!("sending to orchestrator..");
             let request = LoginRequest::new("charlie", "12345");
             let socket_addr = SocketAddr::from_str("127.0.0.1:14197").unwrap();
-            let key = client.send(&socket_addr, request);
+            let key = http_client.send(&socket_addr, request);
             global.connection_state = ConnectionState::SentToOrchestrator(key);
         }
         ConnectionState::SentToOrchestrator(key) => {
-            if let Some(result) = client.recv(key) {
+            if let Some(result) = http_client.recv(key) {
                 match result {
                     Ok(response) => {
-                        info!("Response: {:?}", response.token);
-                        global.connection_state = ConnectionState::Connected;
+                        info!("received from orchestrator: (addr: {:?}, token: {:?})", response.session_server_addr, response.token);
+                        global.connection_state = ConnectionState::ReceivedFromOrchestrator(response.clone());
+
+                        session_client.auth(SessionAuth::new(&response.token));
+                        let server_session_url = format!("http://{}:{}", response.session_server_addr.inner().ip(), response.session_server_addr.inner().port());
+                        info!("connecting to session server: {}", server_session_url);
+                        let socket = webrtc::Socket::new(
+                            &server_session_url, //"http://127.0.0.1:14191",
+                            session_client.socket_config()
+                        );
+                        session_client.connect(socket);
                     }
                     Err(_) => {
-                        info!("resending..");
+                        info!("resending to orchestrator..");
                         global.connection_state = ConnectionState::Disconnected;
                     }
                 }
             }
         }
+        ConnectionState::ReceivedFromOrchestrator(response) => {
+            // waiting for connect event ..
+        }
         ConnectionState::Connected => {
             info!("Connected!")
         }
+    }
+}
+
+fn session_connect_events(
+    mut client: NaiaClient<Session>,
+    mut event_reader: EventReader<ConnectEvent<Session>>,
+    mut global: ResMut<Global>,
+) {
+    for _ in event_reader.read() {
+        let Ok(server_address) = client.server_address() else {
+            panic!("Shouldn't happen");
+        };
+        info!("Client connected to session server at addr: {}", server_address);
+
+        let ConnectionState::ReceivedFromOrchestrator(_) = &global.connection_state else {
+            panic!("Shouldn't happen");
+        };
+
+        global.connection_state = ConnectionState::Connected;
     }
 }
 
@@ -110,7 +144,7 @@ pub struct WalkAnimation {
     image_index: f32,
 }
 
-fn setup(
+fn scene_setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
@@ -198,7 +232,7 @@ fn setup(
         .insert(layer);
 }
 
-fn step(
+fn scene_step(
     time: Res<Time>,
     asset_manager: Res<AssetManager>,
     mut object_q: Query<&mut Transform, With<ObjectMarker>>,
@@ -236,7 +270,7 @@ fn step(
     }
 }
 
-pub fn draw(
+pub fn scene_draw(
     asset_manager: Res<AssetManager>,
     mut render_frame: ResMut<RenderFrame>,
     // Cameras

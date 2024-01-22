@@ -15,10 +15,10 @@ pub fn init(mut server: ResMut<HttpServer>) {
 
 pub fn login_recv(mut server: ResMut<HttpServer>) {
     while let Some((addr, request, response_key)) = server.receive::<LoginRequest>() {
-        info!("Login request received from {} (regionserver?): Login({}, {})", addr, request.username, request.password);
+        info!("Login request received from {} (regionserver?): Login(secret: {}, token: {})", addr, request.region_secret, request.login_token);
 
         info!("Sending login response to region server ..");
 
-        server.respond(response_key, LoginResponse::new("yeet from session!"));
+        server.respond(response_key, LoginResponse);
     }
 }

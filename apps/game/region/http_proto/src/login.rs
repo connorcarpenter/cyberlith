@@ -1,6 +1,6 @@
 use std::net::SocketAddr;
 
-use naia_serde::{BitWrite, SerdeInternal as Serde};
+use naia_serde::{SerdeInternal as Serde};
 
 use http_common::{ApiRequest, ApiResponse, Method};
 use serde::SerdeSocketAddr;
@@ -25,12 +25,14 @@ impl LoginRequest {
 #[derive(Serde, PartialEq, Clone)]
 pub struct LoginResponse {
     pub session_server_addr: SerdeSocketAddr,
+    pub token: String,
 }
 
 impl LoginResponse {
-    pub fn new(session_server_addr: SocketAddr) -> Self {
+    pub fn new(session_server_addr: SocketAddr, token: &str) -> Self {
         Self {
             session_server_addr: SerdeSocketAddr::new(session_server_addr),
+            token: token.to_string(),
         }
     }
 }

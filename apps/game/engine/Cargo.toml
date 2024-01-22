@@ -19,6 +19,7 @@ asset = { path = "../../../crates/asset" }
 bevy_http_client = { path = "../../../crates/bevy_http_client" }
 
 orchestrator_http_proto = { path = "../orchestrator/http_proto" }
+session_server_naia_proto = { path = "../session/naia_proto" }
 
 # `render_gl` and `render_wgpu` SHOULD *ALWAYS* be optional
 render_gl = { path = "../../../crates/render_gl", optional = true }

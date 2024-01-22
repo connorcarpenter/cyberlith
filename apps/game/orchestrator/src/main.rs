@@ -35,19 +35,23 @@ async fn login(incoming_request: OrchLoginReq) -> Result<OrchLoginRes, ()> {
 
     info!("Sending login request to region server");
 
-    let request = RegLoginReq::new(&incoming_request.username, &incoming_request.password);
-    let socket_addr = SocketAddr::from_str("127.0.0.1:14198").unwrap();
-    let Ok(outgoing_response) = HttpClient::send(&socket_addr, request).await else {
+    let region_request = RegLoginReq::new(&incoming_request.username, &incoming_request.password);
+    let region_server_addr = SocketAddr::from_str("127.0.0.1:14198").unwrap();
+    let Ok(region_response) = HttpClient::send(&region_server_addr, region_request).await else {
         warn!("Failed login request to region server");
         return Err(());
     };
 
     info!(
-        "Received login response from region server: {}",
-        outgoing_response.token
+        "Received login response from region server: addr: {:?}, token: {}",
+        region_response.session_server_addr,
+        region_response.token,
     );
 
     info!("Sending login response to client");
 
-    Ok(OrchLoginRes::new("yeet from orchestrator!"))
+    Ok(OrchLoginRes::new(
+        region_response.session_server_addr,
+        region_response.token,
+    ))
 }

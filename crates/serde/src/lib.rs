@@ -2,12 +2,16 @@ use std::net::{Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6};
 
 use naia_serde::{BitReader, BitWrite, ConstBitLength, SerdeErr, SerdeInternal as Serde};
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct SerdeSocketAddr(SocketAddr);
 
 impl SerdeSocketAddr {
     pub fn new(socket_addr: SocketAddr) -> Self {
         Self(socket_addr)
+    }
+
+    pub fn inner(&self) -> SocketAddr {
+        self.0
     }
 }
 

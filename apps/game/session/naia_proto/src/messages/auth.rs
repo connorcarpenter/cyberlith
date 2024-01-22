@@ -2,15 +2,13 @@ use naia_bevy_shared::Message;
 
 #[derive(Message)]
 pub struct Auth {
-    pub username: String,
-    pub password: String,
+    pub token: String,
 }
 
 impl Auth {
-    pub fn new(username: &str, password: &str) -> Self {
+    pub fn new(token: &str) -> Self {
         Self {
-            username: username.to_string(),
-            password: password.to_string(),
+            token: token.to_string(),
         }
     }
 }

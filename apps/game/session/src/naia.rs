@@ -30,7 +30,7 @@ pub fn init(mut server: Server) {
 pub fn auth_events(mut server: Server, mut event_reader: EventReader<AuthEvents>) {
     for events in event_reader.read() {
         for (user_key, auth) in events.read::<Auth>() {
-            if auth.username == "charlie" && auth.password == "12345" {
+            if auth.token == "the_login_token" {
                 // Accept incoming connection
                 server.accept_connection(&user_key);
             } else {

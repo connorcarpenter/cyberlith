@@ -5,8 +5,10 @@ use asset::AssetPlugin;
 use bevy_http_client::HttpClientPlugin;
 use input::InputPlugin;
 use render_api::RenderApiPlugin;
+use naia_bevy_client::{ClientConfig as NaiaClientConfig, Plugin as NaiaClientPlugin};
+use session_server_naia_proto::{protocol as session_server_naia_protocol};
 
-use crate::renderer::RendererPlugin;
+use crate::{renderer::RendererPlugin, session::Session};
 
 pub struct EnginePlugin;
 
@@ -21,6 +23,7 @@ impl Plugin for EnginePlugin {
             // Add misc crates Plugins
             .add_plugins(InputPlugin)
             .add_plugins(AssetPlugin)
-            .add_plugins(HttpClientPlugin);
+            .add_plugins(HttpClientPlugin)
+            .add_plugins(NaiaClientPlugin::<Session>::new(NaiaClientConfig::default(), session_server_naia_protocol()));
     }
 }

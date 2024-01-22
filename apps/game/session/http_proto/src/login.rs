@@ -5,32 +5,22 @@ use bevy_http_shared::{ApiRequest, ApiResponse, Method};
 // Request
 #[derive(Serde, PartialEq, Clone)]
 pub struct LoginRequest {
-    pub username: String,
-    pub password: String,
+    pub region_secret: String,
+    pub login_token: String,
 }
 
 impl LoginRequest {
-    pub fn new(username: &str, password: &str) -> Self {
+    pub fn new(region_secret: &str, login_token: &str) -> Self {
         Self {
-            username: username.to_string(),
-            password: password.to_string(),
+            region_secret: region_secret.to_string(),
+            login_token: login_token.to_string(),
         }
     }
 }
 
 // Response
 #[derive(Serde, PartialEq, Clone)]
-pub struct LoginResponse {
-    pub token: String,
-}
-
-impl LoginResponse {
-    pub fn new(token: &str) -> Self {
-        Self {
-            token: token.to_string(),
-        }
-    }
-}
+pub struct LoginResponse;
 
 // Traits
 impl ApiRequest for LoginRequest {
