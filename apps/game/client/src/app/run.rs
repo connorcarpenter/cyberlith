@@ -13,8 +13,8 @@ use game_engine::{
     asset::{AnimationData, AssetManager, ModelData},
     http::HttpClient,
     math::{Quat, Vec3},
-    naia::{Timer, Client as NaiaClient, transport::webrtc, events::ConnectEvent},
-    session::{messages::Auth as SessionAuth, Session},
+    naia::{Timer, WebrtcSocket},
+    session::{SessionAuth, SessionClient, SessionConnectEvent},
     orchestrator::LoginRequest, render::{
     base::{Color, CpuMaterial, CpuMesh},
     components::{
@@ -64,7 +64,7 @@ fn handle_connection(
     mut global: ResMut<Global>,
     mut timer: ResMut<ApiTimer>,
     mut http_client: ResMut<HttpClient>,
-    mut session_client: NaiaClient<Session>,
+    mut session_client: SessionClient,
 ) {
     if timer.0.ringing() {
         timer.0.reset();
@@ -90,7 +90,7 @@ fn handle_connection(
                         session_client.auth(SessionAuth::new(&response.token));
                         let server_session_url = format!("http://{}:{}", response.session_server_addr.inner().ip(), response.session_server_addr.inner().port());
                         info!("connecting to session server: {}", server_session_url);
-                        let socket = webrtc::Socket::new(
+                        let socket = WebrtcSocket::new(
                             &server_session_url, //"http://127.0.0.1:14191",
                             session_client.socket_config()
                         );
@@ -113,8 +113,8 @@ fn handle_connection(
 }
 
 fn session_connect_events(
-    mut client: NaiaClient<Session>,
-    mut event_reader: EventReader<ConnectEvent<Session>>,
+    client: SessionClient,
+    mut event_reader: EventReader<SessionConnectEvent>,
     mut global: ResMut<Global>,
 ) {
     for _ in event_reader.read() {

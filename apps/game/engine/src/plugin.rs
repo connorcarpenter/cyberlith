@@ -8,7 +8,7 @@ use render_api::RenderApiPlugin;
 use naia_bevy_client::{ClientConfig as NaiaClientConfig, Plugin as NaiaClientPlugin};
 use session_server_naia_proto::{protocol as session_server_naia_protocol};
 
-use crate::{renderer::RendererPlugin, session::Session};
+use crate::{renderer::RendererPlugin, client_markers::Session};
 
 pub struct EnginePlugin;
 
