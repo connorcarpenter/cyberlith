@@ -36,8 +36,8 @@ async fn login(incoming_request: RegLoginReq) -> Result<RegLoginRes, ()> {
     info!("Sending login request to session server");
 
     let request = SeshLoginReq::new(&incoming_request.username, &incoming_request.password);
-    let socket_addr = "127.0.0.1:14199".parse().unwrap();
-    let Ok(outgoing_response) = HttpClient::send(&socket_addr, request).await else {
+    let session_server_http_addr = "127.0.0.1:14199".parse().unwrap();
+    let Ok(outgoing_response) = HttpClient::send(&session_server_http_addr, request).await else {
         warn!("Failed login request to session server");
         return Err(());
     };
@@ -49,5 +49,6 @@ async fn login(incoming_request: RegLoginReq) -> Result<RegLoginRes, ()> {
 
     info!("Sending login response to orchestrator");
 
-    Ok(RegLoginRes::new("yeet from regionserver!"))
+    let session_server_signaling_addr = "127.0.0.1:14200".parse().unwrap();
+    Ok(RegLoginRes::new(session_server_signaling_addr))
 }
