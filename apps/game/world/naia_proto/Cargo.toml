@@ -1,0 +1,15 @@
+[package]
+name = "world_server_naia_proto"
+version = "0.1.0"
+authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
+workspace = "../../../.."
+edition = "2021"
+publish = false
+
+[features]
+
+[dependencies]
+naia-bevy-shared = { path = "../../../../../naia/adapters/bevy/shared" }
+
+cfg-if = { version = "1.0" }
+log = { version = "0.4" }

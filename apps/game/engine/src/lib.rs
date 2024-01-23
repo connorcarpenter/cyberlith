@@ -34,5 +34,7 @@ pub mod session {
     pub use session_server_naia_proto::{messages::{Auth as SessionAuth}};
 }
 pub mod world {
-    pub use super::client_markers::World;
+    pub type WorldClient<'w> = naia_bevy_client::Client<'w, super::client_markers::World>;
+    pub type WorldConnectEvent = naia_bevy_client::events::ConnectEvent<super::client_markers::World>;
+    pub use world_server_naia_proto::{messages::{Auth as WorldAuth}};
 }
