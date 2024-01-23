@@ -190,8 +190,6 @@ async fn serve(
             async move {
                 info!("attempting to match url. endpoint key is: {}", key);
 
-                info!("got server, checking.");
-
                 if protocol_2.has_endpoint_key(&key) {
                     let request_id_temp = protocol_2.get_request_id(&key).unwrap();
                     let mut endpoint_key = endpoint_key_ref_3.write().await;
@@ -211,8 +209,6 @@ async fn serve(
             async move {
                 let endpoint_key = endpoint_key_ref_4.read().await.as_ref().unwrap().clone();
 
-                info!("sending request");
-
                 let response_receiver = {
                     let mut key_maker = keymaker_2.write().await;
                     let response_key_id = key_maker.next_key_id();
@@ -229,11 +225,7 @@ async fn serve(
                     response_receiver
                 };
 
-                info!("waiting for response");
-
                 let response_result = response_receiver.recv().await.map_err(|_| ());
-
-                info!("response received");
 
                 response_result
             }
