@@ -9,10 +9,8 @@ use log::{info, warn};
 use smol::{channel::{Receiver, Sender}, io::{AsyncReadExt, AsyncWriteExt, BufReader}, lock::RwLock, stream::StreamExt, Async, channel};
 
 use bevy_http_shared::Protocol;
-
 use http_common::{Method, Request, Response};
-
-use crate::executor;
+use http_server_shared::executor;
 
 struct KeyMaker {
     current_index: u64,

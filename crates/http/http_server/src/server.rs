@@ -7,16 +7,16 @@ use std::{
 use async_dup::Arc;
 use log::{info, warn};
 use smol::{
+    Async,
     future::Future,
     io::{AsyncReadExt, AsyncWriteExt, BufReader},
     lock::RwLock,
     stream::StreamExt,
-    Async,
 };
 
 use http_common::{ApiRequest, ApiResponse, Method, Request, Response};
 
-use crate::executor;
+use http_server_shared::executor;
 
 pub struct Server {
     socket_addr: SocketAddr,

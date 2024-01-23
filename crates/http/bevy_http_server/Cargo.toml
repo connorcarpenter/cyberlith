@@ -6,8 +6,10 @@ workspace = "../../.."
 
 [dependencies]
 http_common = { path = "../http_common" }
-naia-serde = { path = "../../../../naia/shared/serde" }
 bevy_http_shared = { path = "../bevy_http_shared" }
+http_server_shared = { path = "../http_server_shared" }
+
+naia-serde = { path = "../../../../naia/shared/serde" }
 
 bevy_tasks = { version = "0.12.1", default-features = false, features = ["multi-threaded"] }
 bevy_ecs = { version = "0.12.1", default-features = false }

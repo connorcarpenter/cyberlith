@@ -1,0 +1,9 @@
+[package]
+name = "http_server_shared"
+version = "0.1.0"
+edition = "2021"
+workspace = "../../.."
+
+[dependencies]
+once_cell = { version = "1.4.1" }
+smol = { version = "1.3" }
