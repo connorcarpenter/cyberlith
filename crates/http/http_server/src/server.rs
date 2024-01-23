@@ -137,9 +137,11 @@ async fn serve(
     server: Arc<RwLock<Server>>,
     response_stream: Arc<Async<TcpStream>>
 ) {
+    let endpoint_key_ref: Arc<RwLock<Option<String>>> = Arc::new(RwLock::new(None));
+
     let server_1 = server.clone();
     let server_2 = server.clone();
-    let endpoint_key_ref: Arc<RwLock<Option<String>>> = Arc::new(RwLock::new(None));
+
     let endpoint_key_ref_1 = endpoint_key_ref.clone();
     let endpoint_key_ref_2 = endpoint_key_ref.clone();
 

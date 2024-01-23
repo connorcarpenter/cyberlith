@@ -1,16 +1,16 @@
 use std::{
-    collections::{BTreeMap, HashMap},
+    collections::HashMap,
     net::{SocketAddr, TcpListener, TcpStream},
     any::TypeId
 };
 
 use async_dup::Arc;
-use log::{info, warn};
-use smol::{channel::{Receiver, Sender}, io::{AsyncReadExt, AsyncWriteExt, BufReader}, lock::RwLock, stream::StreamExt, Async, channel};
+use log::info;
+use smol::{channel::{Receiver, Sender}, lock::RwLock, Async, channel};
 
 use bevy_http_shared::Protocol;
-use http_common::{Method, Request, Response};
-use http_server_shared::{executor, ReadState, serve_impl};
+use http_common::{Request, Response};
+use http_server_shared::{executor, serve_impl};
 
 struct KeyMaker {
     current_index: u64,
@@ -172,7 +172,71 @@ async fn serve(
     response_senders: Arc<RwLock<HashMap<u64, Sender<Response>>>>,
     key_maker: Arc<RwLock<KeyMaker>>,
 ) {
-    let mut request_id: Option<TypeId> = None;
+    let endpoint_key_ref: Arc<RwLock<Option<TypeId>>> = Arc::new(RwLock::new(None));
 
-    serve_impl(response_stream).await;
+    let protocol_1 = protocol.clone();
+    let keymaker_1 = key_maker.clone();
+    let request_senders_1 = request_senders.clone();
+    let response_senders_1 = response_senders.clone();
+
+    let endpoint_key_ref_1 = endpoint_key_ref.clone();
+    let endpoint_key_ref_2 = endpoint_key_ref.clone();
+
+    serve_impl(
+        response_stream,
+        |key| {
+            let protocol_2 = protocol_1.clone();
+            let endpoint_key_ref_3 = endpoint_key_ref_1.clone();
+            async move {
+                info!("attempting to match url. endpoint key is: {}", key);
+
+                info!("got server, checking.");
+
+                if protocol_2.has_endpoint_key(&key) {
+                    let request_id_temp = protocol_2.get_request_id(&key).unwrap();
+                    let mut endpoint_key = endpoint_key_ref_3.write().await;
+                    *endpoint_key = Some(request_id_temp);
+                    true
+                } else {
+                    false
+                }
+            }
+        },
+        |request| {
+
+            let endpoint_key_ref_4 = endpoint_key_ref_2.clone();
+            let keymaker_2 = keymaker_1.clone();
+            let request_senders_2 = request_senders_1.clone();
+            let response_senders_2 = response_senders_1.clone();
+            async move {
+                let endpoint_key = endpoint_key_ref_4.read().await.as_ref().unwrap().clone();
+
+                info!("sending request");
+
+                let response_receiver = {
+                    let mut key_maker = keymaker_2.write().await;
+                    let response_key_id = key_maker.next_key_id();
+
+                    let Some(request_sender) = request_senders_2.get(&endpoint_key) else {
+                        panic!("did not register type!");
+                    };
+                    request_sender.try_send((response_key_id, request_addr, request)).expect("unable to send request");
+
+                    let (response_sender, response_receiver) = channel::bounded(1);
+                    let mut response_senders = response_senders_2.write().await;
+                    response_senders.insert(response_key_id, response_sender);
+
+                    response_receiver
+                };
+
+                info!("waiting for response");
+
+                let response_result = response_receiver.recv().await.map_err(|_| ());
+
+                info!("response received");
+
+                response_result
+            }
+        }
+    ).await;
 }
