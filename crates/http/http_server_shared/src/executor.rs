@@ -10,7 +10,7 @@ pub fn spawn<T: Send + 'static>(
     static GLOBAL: Lazy<Executor<'_>> = Lazy::new(|| {
         for n in 1..=4 {
             thread::Builder::new()
-                .name(format!("smol-{}", n))
+                .name(format!("http_server_{}", n))
                 .spawn(|| loop {
                     catch_unwind(|| block_on(GLOBAL.run(future::pending::<()>()))).ok();
                 })
