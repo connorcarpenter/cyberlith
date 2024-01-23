@@ -10,7 +10,7 @@ use smol::{channel::{Receiver, Sender}, io::{AsyncReadExt, AsyncWriteExt, BufRea
 
 use bevy_http_shared::Protocol;
 use http_common::{Method, Request, Response};
-use http_server_shared::executor;
+use http_server_shared::{executor, ReadState};
 
 struct KeyMaker {
     current_index: u64,
@@ -160,15 +160,6 @@ async fn process_responses(
         };
         response_sender.try_send(response).expect("unable to send response");
     }
-}
-
-#[derive(PartialEq, Eq)]
-enum ReadState {
-    MatchingUrl,
-    ReadingHeaders,
-    ReadingBody,
-    Finished,
-    Error,
 }
 
 /// Reads a request from the client and sends it a response.

@@ -16,7 +16,7 @@ use smol::{
 
 use http_common::{ApiRequest, ApiResponse, Method, Request, Response};
 
-use http_server_shared::executor;
+use http_server_shared::{executor, ReadState};
 
 pub struct Server {
     socket_addr: SocketAddr,
@@ -132,15 +132,6 @@ async fn listen(server: Arc<RwLock<Server>>) {
         })
         .detach();
     }
-}
-
-#[derive(PartialEq, Eq)]
-enum ReadState {
-    MatchingUrl,
-    ReadingHeaders,
-    ReadingBody,
-    Finished,
-    Error,
 }
 
 /// Reads a request from the client and sends it a response.
