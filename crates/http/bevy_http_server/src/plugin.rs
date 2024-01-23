@@ -1,7 +1,6 @@
-use std::ops::DerefMut;
-use std::sync::Mutex;
+use std::{ops::DerefMut, sync::Mutex};
 
-use bevy_app::{App, Plugin, Update};
+use bevy_app::{App, Plugin};
 
 use bevy_http_shared::Protocol;
 

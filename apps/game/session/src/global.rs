@@ -25,6 +25,10 @@ impl Global {
         self.world_connect_response_keys.insert(response_key, user_key.clone());
     }
 
+    pub fn remove_world_key(&mut self, response_key: &ClientResponseKey<WorldConnectResponse>) {
+        self.world_connect_response_keys.remove(response_key);
+    }
+
     pub fn world_keys(&self) -> impl Iterator<Item = (&ClientResponseKey<WorldConnectResponse>, &UserKey)> {
         self.world_connect_response_keys.iter()
     }

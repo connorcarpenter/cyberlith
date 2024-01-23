@@ -14,8 +14,10 @@ pub fn world_connect_recv(
     mut http_client: ResMut<HttpClient>,
     mut global: ResMut<Global>,
 ) {
+    let mut received_response_keys = Vec::new();
     for (response_key, user_key) in global.world_keys() {
         if let Some(result) = http_client.recv(response_key) {
+            received_response_keys.push(response_key.clone());
             match result {
                 Ok(response) => {
                     info!("received from regionserver: (addr: {:?}, token: {:?})", response.world_server_addr, response.token);
@@ -31,5 +33,8 @@ pub fn world_connect_recv(
                 }
             }
         }
+    }
+    for response_key in received_response_keys {
+        global.remove_world_key(&response_key);
     }
 }

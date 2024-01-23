@@ -1,13 +1,9 @@
-use std::{net::SocketAddr};
-use std::any::TypeId;
-use std::collections::HashMap;
+use std::{net::SocketAddr, any::TypeId, collections::HashMap};
 
-use async_dup::Arc;
-use bevy_ecs::{change_detection::ResMut, system::Resource};
+use bevy_ecs::system::Resource;
+
 use log::warn;
-
 use smol::channel::{Receiver, Sender};
-use smol::lock::RwLock;
 
 use bevy_http_shared::Protocol;
 use http_common::{ApiRequest, ApiResponse, Request, Response};

@@ -10,4 +10,4 @@ publish = false
 
 [dependencies]
 naia-serde = { path = "../../../../../naia/shared/serde" }
-bevy_http_shared = { path = "../../../../crates/bevy_http_shared" }
+bevy_http_shared = { path = "../../../../crates/http/bevy_http_shared" }

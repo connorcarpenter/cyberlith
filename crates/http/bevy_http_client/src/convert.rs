@@ -19,14 +19,14 @@ pub(crate) fn request_http_to_ehttp(http_req: Request) -> Result<ehttp::Request,
         }
         Method::Post => {
             let Request {
-                method,
-                url,
-                body,
-                headers,
+                method: _,
+                url: http_url,
+                body: http_body,
+                headers: http_headers,
             } = http_req;
-            let body_length = body.len();
-            let mut ehttp_req = ehttp::Request::post(url, body);
-            for (key, value) in headers {
+            let body_length = http_body.len();
+            let mut ehttp_req = ehttp::Request::post(http_url, http_body);
+            for (key, value) in http_headers {
                 ehttp_req.headers.insert(key, value);
             }
             ehttp_req.headers.insert("Content-Length".to_string(), format!("{}", body_length));
@@ -47,15 +47,15 @@ pub(crate) fn request_http_to_ehttp(http_req: Request) -> Result<ehttp::Request,
 //     }
 // }
 
-pub(crate) fn method_http_to_ehttp(http_method: &Method) -> Result<String, ()> {
-    match *http_method {
-        Method::Get => Ok("GET".to_owned()),
-        Method::Post => Ok("POST".to_owned()),
-        Method::Put => Ok("PUT".to_owned()),
-        Method::Delete => Ok("DELETE".to_owned()),
-        _ => Err(()),
-    }
-}
+// pub(crate) fn method_http_to_ehttp(http_method: &Method) -> Result<String, ()> {
+//     match *http_method {
+//         Method::Get => Ok("GET".to_owned()),
+//         Method::Post => Ok("POST".to_owned()),
+//         Method::Put => Ok("PUT".to_owned()),
+//         Method::Delete => Ok("DELETE".to_owned()),
+//         _ => Err(()),
+//     }
+// }
 
 pub(crate) fn response_ehttp_to_http(ehttp_res: ehttp::Response) -> Result<Response, ()> {
     let mut http_res = Response::default();

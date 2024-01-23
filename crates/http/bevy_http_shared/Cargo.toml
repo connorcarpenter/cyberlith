@@ -1,0 +1,9 @@
+[package]
+name = "bevy_http_shared"
+version = "0.1.0"
+edition = "2021"
+workspace = "../../.."
+
+[dependencies]
+http_common = { path = "../http_common" }
+naia-serde = { path = "../../../../naia/shared/serde" }

@@ -2,16 +2,16 @@
 name = "http_server"
 version = "0.1.0"
 authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
-workspace = "../.."
+workspace = "../../.."
 edition = "2021"
 publish = false
 
 [features]
 
 [dependencies]
-http_common = { path = "../../crates/http_common" }
+http_common = { path = "../http_common" }
 
-naia-serde = { path = "../../../naia/shared/serde" }
+naia-serde = { path = "../../../../naia/shared/serde" }
 
 once_cell = { version = "1.4.1" }
 smol = { version = "1.3" }

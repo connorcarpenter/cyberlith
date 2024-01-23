@@ -94,10 +94,6 @@ impl ServerState {
         })
             .detach();
     }
-
-    pub fn take_main_response_receiver(&mut self) -> Receiver<(u64, Response)> {
-        self.main_response_receiver.take().expect("Listening more than once?")
-    }
 }
 
 /// Listens for incoming connections and serves them.

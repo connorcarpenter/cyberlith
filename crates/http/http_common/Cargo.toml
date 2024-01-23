@@ -2,7 +2,7 @@
 name = "http_common"
 version = "0.1.0"
 edition = "2021"
-workspace = "../.."
+workspace = "../../.."
 
 [dependencies]
-naia-serde = { path = "../../../naia/shared/serde" }
+naia-serde = { path = "../../../../naia/shared/serde" }

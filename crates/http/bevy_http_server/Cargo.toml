@@ -2,12 +2,12 @@
 name = "bevy_http_server"
 version = "0.1.0"
 edition = "2021"
-workspace = "../.."
+workspace = "../../.."
 
 [dependencies]
-http_common = { path = "../../crates/http_common"}
-naia-serde = { path = "../../../naia/shared/serde" }
-bevy_http_shared = { path = "../../crates/bevy_http_shared" }
+http_common = { path = "../http_common" }
+naia-serde = { path = "../../../../naia/shared/serde" }
+bevy_http_shared = { path = "../bevy_http_shared" }
 
 bevy_tasks = { version = "0.12.1", default-features = false, features = ["multi-threaded"] }
 bevy_ecs = { version = "0.12.1", default-features = false }

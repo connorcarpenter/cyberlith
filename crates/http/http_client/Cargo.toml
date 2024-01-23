@@ -2,12 +2,12 @@
 name = "http_client"
 version = "0.1.0"
 edition = "2021"
-workspace = "../.."
+workspace = "../../.."
 
 [dependencies]
-http_common = { path = "../../crates/http_common" }
+http_common = { path = "../http_common" }
 
-naia-serde = { path = "../../../naia/shared/serde" }
+naia-serde = { path = "../../../../naia/shared/serde" }
 
 cfg-if = { version = "1.0" }
 futures-lite = { version = "1.11.3" }

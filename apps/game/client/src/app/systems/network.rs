@@ -1,7 +1,7 @@
 use std::{net::SocketAddr, str::FromStr, time::Duration};
 
 use bevy_ecs::{
-    system::{ResMut, Commands, Resource},
+    system::{ResMut, Resource},
     event::EventReader,
 };
 use bevy_log::info;

@@ -1,4 +1,4 @@
-use std::net::SocketAddr;
+
 use bevy_ecs::{event::EventReader, change_detection::ResMut};
 use bevy_log::info;
 
@@ -7,10 +7,12 @@ use naia_bevy_server::{
     transport::webrtc,
     Server,
 };
+
 use bevy_http_client::HttpClient;
 
 use session_server_naia_proto::messages::Auth;
 use region_server_http_proto::WorldConnectRequest;
+
 use crate::global::Global;
 
 pub fn init(mut server: Server) {

@@ -10,8 +10,8 @@ publish = false
 region_server_http_proto = { path = "http_proto" }
 session_server_http_proto = { path = "../session/http_proto" }
 world_server_http_proto = { path = "../world/http_proto" }
-http_server = { path = "../../../crates/http_server" }
-http_client = { path = "../../../crates/http_client" }
+http_server = { path = "../../../crates/http/http_server" }
+http_client = { path = "../../../crates/http/http_client" }
 
 log = { version = "0.4", features = [] }
 simple_logger = { version = "4.0", default-features = false, features = ["timestamps"] }

@@ -26,11 +26,11 @@ members = [
     "crates/asset",
     "crates/gl",
     "crates/egui_gl",
-    "crates/bevy_http_client",
-    "crates/bevy_http_server",
-    "crates/http_server",
-    "crates/http_client",
-    "crates/http_common",
+    "crates/http/bevy_http_client",
+    "crates/http/bevy_http_server",
+    "crates/http/http_server",
+    "crates/http/http_client",
+    "crates/http/http_common",
     "crates/serde",
 ]
 # any crates with conflicting dependencies / feature flags cannot be put here
