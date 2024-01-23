@@ -11,8 +11,8 @@ use naia_bevy_server::{Plugin as NaiaServerPlugin, ReceiveEvents, ServerConfig a
 
 use bevy_http_server::HttpServerPlugin;
 
-use session_server_naia_proto::{protocol as naia_protocol};
-use session_server_http_proto::{protocol as http_protocol};
+use world_server_naia_proto::{protocol as naia_protocol};
+use world_server_http_proto::{protocol as http_protocol};
 
 fn main() {
     // Build App

@@ -9,6 +9,7 @@ publish = false
 [dependencies]
 region_server_http_proto = { path = "http_proto" }
 session_server_http_proto = { path = "../session/http_proto" }
+world_server_http_proto = { path = "../world/http_proto" }
 http_server = { path = "../../../crates/http_server" }
 http_client = { path = "../../../crates/http_client" }
 

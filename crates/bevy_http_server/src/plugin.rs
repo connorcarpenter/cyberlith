@@ -23,7 +23,6 @@ impl Plugin for HttpServerPlugin {
     fn build(&self, app: &mut App) {
         let protocol = self.protocol.lock().unwrap().deref_mut().take().unwrap();
 
-        app.add_plugins(bevy_core::TaskPoolPlugin::default())
-            .insert_resource(HttpServer::new(protocol));
+        app.insert_resource(HttpServer::new(protocol));
     }
 }

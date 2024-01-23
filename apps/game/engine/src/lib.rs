@@ -29,12 +29,23 @@ pub mod orchestrator {
     pub use orchestrator_http_proto::*;
 }
 pub mod session {
-    pub type SessionClient<'w> = naia_bevy_client::Client<'w, super::client_markers::Session>;
-    pub type SessionConnectEvent = naia_bevy_client::events::ConnectEvent<super::client_markers::Session>;
-    pub use session_server_naia_proto::{messages::{Auth as SessionAuth}};
+    use naia_bevy_client::{Client, events::{ConnectEvent, MessageEvents}};
+
+    use super::client_markers::Session;
+
+    pub type SessionClient<'w> = Client<'w, Session>;
+    pub type SessionConnectEvent = ConnectEvent<Session>;
+    pub type SessionMessageEvents = MessageEvents<Session>;
+
+    pub use session_server_naia_proto::{messages::{Auth as SessionAuth, WorldConnectToken}, channels::PrimaryChannel as SessionPrimaryChannel};
 }
 pub mod world {
-    pub type WorldClient<'w> = naia_bevy_client::Client<'w, super::client_markers::World>;
-    pub type WorldConnectEvent = naia_bevy_client::events::ConnectEvent<super::client_markers::World>;
-    pub use world_server_naia_proto::{messages::{Auth as WorldAuth}};
+    use naia_bevy_client::{Client, events::{ConnectEvent}};
+
+    use super::client_markers::World;
+
+    pub type WorldClient<'w> = Client<'w, World>;
+    pub type WorldConnectEvent = ConnectEvent<World>;
+
+    pub use world_server_naia_proto::messages::{Auth as WorldAuth};
 }

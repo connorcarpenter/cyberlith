@@ -12,12 +12,29 @@ use http_common::{Method, Request, Response};
 // }
 
 pub(crate) fn request_http_to_ehttp(http_req: Request) -> Result<ehttp::Request, ()> {
-    Ok(ehttp::Request {
-        method: method_http_to_ehttp(&http_req.method)?,
-        url: http_req.url,
-        body: http_req.body,
-        headers: http_req.headers,
-    })
+    let ehttp_req = match http_req.method {
+        Method::Get => {
+            let ehttp_req = ehttp::Request::get(http_req.url.as_str());
+            ehttp_req
+        }
+        Method::Post => {
+            let Request {
+                method,
+                url,
+                body,
+                headers,
+            } = http_req;
+            let body_length = body.len();
+            let mut ehttp_req = ehttp::Request::post(url, body);
+            for (key, value) in headers {
+                ehttp_req.headers.insert(key, value);
+            }
+            ehttp_req.headers.insert("Content-Length".to_string(), format!("{}", body_length));
+            ehttp_req
+        }
+        _ => panic!("unsupported!"),
+    };
+    Ok(ehttp_req)
 }
 
 // pub(crate) fn method_ehttp_to_http(ehttp_method: String) -> Result<Method, ()> {

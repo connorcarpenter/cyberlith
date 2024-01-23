@@ -4,12 +4,12 @@ use bevy_log::info;
 
 use bevy_http_server::HttpServer;
 
-use session_server_http_proto::{LoginRequest, LoginResponse};
+use world_server_http_proto::{LoginRequest, LoginResponse};
 
 pub fn init(mut server: ResMut<HttpServer>) {
-    info!("Session HTTP Server starting up");
+    info!("World HTTP Server starting up");
 
-    let socket_addr = "127.0.0.1:14199".parse().expect("could not parse HTTP address/port");
+    let socket_addr = "127.0.0.1:14202".parse().expect("could not parse HTTP address/port");
     server.listen(socket_addr);
 }
 

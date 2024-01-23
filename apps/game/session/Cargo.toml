@@ -10,10 +10,14 @@ publish = false
 
 
 [dependencies]
+naia-bevy-server = { path = "../../../../naia/adapters/bevy/server", features = [ "transport_webrtc" ] }
+
+bevy_http_server = { path = "../../../crates/bevy_http_server" }
+bevy_http_client = { path = "../../../crates/bevy_http_client" }
+
 session_server_naia_proto = { path = "naia_proto" }
 session_server_http_proto = { path = "http_proto" }
-naia-bevy-server = { path = "../../../../naia/adapters/bevy/server", features = [ "transport_webrtc" ] }
-bevy_http_server = { path = "../../../crates/bevy_http_server" }
+region_server_http_proto = { path = "../region/http_proto"}
 
 # These are the official Bevy crates, we can use them because the Server isn't built for Wasm
 bevy_app = { version = "0.12.1", default-features=false }

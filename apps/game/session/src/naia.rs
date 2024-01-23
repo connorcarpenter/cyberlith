@@ -1,4 +1,5 @@
-use bevy_ecs::event::EventReader;
+use std::net::SocketAddr;
+use bevy_ecs::{event::EventReader, change_detection::ResMut};
 use bevy_log::info;
 
 use naia_bevy_server::{
@@ -6,8 +7,11 @@ use naia_bevy_server::{
     transport::webrtc,
     Server,
 };
+use bevy_http_client::HttpClient;
 
 use session_server_naia_proto::messages::Auth;
+use region_server_http_proto::WorldConnectRequest;
+use crate::global::Global;
 
 pub fn init(mut server: Server) {
     info!("Session Naia Server starting up");
@@ -41,11 +45,22 @@ pub fn auth_events(mut server: Server, mut event_reader: EventReader<AuthEvents>
     }
 }
 
-pub fn connect_events(server: Server, mut event_reader: EventReader<ConnectEvent>) {
+pub fn connect_events(
+    server: Server,
+    mut event_reader: EventReader<ConnectEvent>,
+    mut http_client: ResMut<HttpClient>,
+    mut global: ResMut<Global>,
+) {
     for ConnectEvent(user_key) in event_reader.read() {
         let address = server.user(user_key).address();
 
         info!("Server connected to: {}", address);
+
+        info!("Sending request for World Server Token to Region Server");
+        let request = WorldConnectRequest::new();
+        let socket_addr = "127.0.0.1:14198".parse().unwrap();
+        let key = http_client.send(&socket_addr, request);
+        global.add_world_key(user_key, key);
     }
 }
 

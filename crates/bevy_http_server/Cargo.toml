@@ -12,7 +12,6 @@ bevy_http_shared = { path = "../../crates/bevy_http_shared" }
 bevy_tasks = { version = "0.12.1", default-features = false, features = ["multi-threaded"] }
 bevy_ecs = { version = "0.12.1", default-features = false }
 bevy_app = { version = "0.12.1", default-features = false }
-bevy_core = { version = "0.12.1", default-features = false }
 
 futures-channel = { version = "0.3", features = ["sink"] }
 futures-core = { version = "0.3" }

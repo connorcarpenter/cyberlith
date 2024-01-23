@@ -5,5 +5,6 @@ pub enum ConnectionState {
     Disconnected,
     SentToOrchestrator(ResponseKey<LoginResponse>),
     ReceivedFromOrchestrator(LoginResponse),
-    Connected,
+    ConnectedToSession,
+    ConnectedToWorld,
 }

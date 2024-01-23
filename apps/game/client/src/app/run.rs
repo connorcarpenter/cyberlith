@@ -22,6 +22,8 @@ pub fn run() {
         .init_resource::<network::ApiTimer>()
         .add_systems(Update, network::handle_connection)
         .add_systems(Update, network::session_connect_events)
+        .add_systems(Update, network::session_message_events)
+        .add_systems(Update, network::world_connect_events)
         .init_resource::<Global>();
     app.run();
 }

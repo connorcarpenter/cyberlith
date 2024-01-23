@@ -1,7 +1,7 @@
 use std::{net::SocketAddr, str::FromStr, time::Duration};
 
 use bevy_ecs::{
-    system::{ResMut, Resource},
+    system::{ResMut, Commands, Resource},
     event::EventReader,
 };
 use bevy_log::info;
@@ -9,8 +9,10 @@ use bevy_log::info;
 use game_engine::{
     http::HttpClient,
     naia::{Timer, WebrtcSocket},
-    session::{SessionAuth, SessionClient, SessionConnectEvent},
-    orchestrator::LoginRequest};
+    session::{WorldConnectToken, SessionAuth, SessionClient, SessionConnectEvent, SessionMessageEvents, SessionPrimaryChannel},
+    orchestrator::LoginRequest,
+    world::{WorldClient, WorldAuth, WorldConnectEvent},
+};
 
 use crate::app::{connection_state::ConnectionState, global::Global};
 
@@ -70,8 +72,11 @@ pub fn handle_connection(
         ConnectionState::ReceivedFromOrchestrator(_response) => {
             // waiting for connect event ..
         }
-        ConnectionState::Connected => {
-            info!("Connected!")
+        ConnectionState::ConnectedToSession => {
+
+        }
+        ConnectionState::ConnectedToWorld => {
+            info!("world : connected!");
         }
     }
 }
@@ -91,6 +96,45 @@ pub fn session_connect_events(
             panic!("Shouldn't happen");
         };
 
-        global.connection_state = ConnectionState::Connected;
+        global.connection_state = ConnectionState::ConnectedToSession;
+    }
+}
+
+pub fn session_message_events(
+    mut world_client: WorldClient,
+    mut event_reader: EventReader<SessionMessageEvents>,
+) {
+    for events in event_reader.read() {
+        for token in events.read::<SessionPrimaryChannel, WorldConnectToken>() {
+            info!("received World Connect Token from Session Server!");
+
+            world_client.auth(WorldAuth::new(&token.token));
+            let world_server_session_url = format!("http://{}:{}", token.world_server_addr.inner().ip(), token.world_server_addr.inner().port());
+            info!("connecting to world server: {}", world_server_session_url);
+            let socket = WebrtcSocket::new(
+                &world_server_session_url, //"http://127.0.0.1:14191",
+                world_client.socket_config()
+            );
+            world_client.connect(socket);
+        }
+    }
+}
+
+pub fn world_connect_events(
+    client: WorldClient,
+    mut event_reader: EventReader<WorldConnectEvent>,
+    mut global: ResMut<Global>,
+) {
+    for _ in event_reader.read() {
+        let Ok(server_address) = client.server_address() else {
+            panic!("Shouldn't happen");
+        };
+        info!("Client connected to world server at addr: {}", server_address);
+
+        let ConnectionState::ConnectedToSession = &global.connection_state else {
+            panic!("Shouldn't happen");
+        };
+
+        global.connection_state = ConnectionState::ConnectedToWorld;
     }
 }
