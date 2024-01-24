@@ -25,6 +25,7 @@ pub fn main() {
     let state = Arc::new(RwLock::new(State::default()));
 
     endpoints::session_register_instance(&mut server, state.clone());
+    endpoints::world_register_instance(&mut server, state.clone());
     endpoints::session_user_login(&mut server, state.clone());
     endpoints::world_user_login(&mut server, state.clone());
 

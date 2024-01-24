@@ -45,8 +45,6 @@ async fn async_impl(
 
     let request = IncomingUserRequest::new(temp_region_secret, temp_token);
 
-    // TODO: this is the part we need to get rid of
-
     let Ok(outgoing_response) = HttpClient::send(&session_server_http_addr, request).await else {
         warn!("Failed incoming user request to session server");
         return Err(());
@@ -55,8 +53,6 @@ async fn async_impl(
     info!("Received incoming user response from session server");
 
     info!("Sending user login response to orchestrator");
-
-    // TODO: end of part we need to get rid of
 
     Ok(SessionUserLoginResponse::new(session_server_signaling_addr, temp_token))
 }
