@@ -1,9 +1,9 @@
 use bevy_http_shared::Protocol;
 
-use crate::LoginRequest;
+use crate::IncomingUserRequest;
 
 pub fn protocol() -> Protocol {
     let mut protocol = Protocol::new();
-    protocol.add_request::<LoginRequest>();
+    protocol.add_request::<IncomingUserRequest>();
     protocol
 }

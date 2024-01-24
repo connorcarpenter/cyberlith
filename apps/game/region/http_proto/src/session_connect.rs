@@ -7,12 +7,12 @@ use serde::SerdeSocketAddr;
 
 // Request
 #[derive(Serde, PartialEq, Clone)]
-pub struct LoginRequest {
+pub struct SessionConnectRequest {
     pub username: String,
     pub password: String,
 }
 
-impl LoginRequest {
+impl SessionConnectRequest {
     pub fn new(username: &str, password: &str) -> Self {
         Self {
             username: username.to_string(),
@@ -23,12 +23,12 @@ impl LoginRequest {
 
 // Response
 #[derive(Serde, PartialEq, Clone)]
-pub struct LoginResponse {
+pub struct SessionConnectResponse {
     pub session_server_addr: SerdeSocketAddr,
     pub token: String,
 }
 
-impl LoginResponse {
+impl SessionConnectResponse {
     pub fn new(session_server_addr: SocketAddr, token: &str) -> Self {
         Self {
             session_server_addr: SerdeSocketAddr::new(session_server_addr),
@@ -38,16 +38,16 @@ impl LoginResponse {
 }
 
 // Traits
-impl ApiRequest for LoginRequest {
-    type Response = LoginResponse;
+impl ApiRequest for SessionConnectRequest {
+    type Response = SessionConnectResponse;
 
     fn method() -> Method {
         Method::Post
     }
 
     fn path() -> &'static str {
-        "login"
+        "session"
     }
 }
 
-impl ApiResponse for LoginResponse {}
+impl ApiResponse for SessionConnectResponse {}

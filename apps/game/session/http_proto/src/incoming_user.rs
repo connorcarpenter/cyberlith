@@ -4,12 +4,12 @@ use bevy_http_shared::{ApiRequest, ApiResponse, Method};
 
 // Request
 #[derive(Serde, PartialEq, Clone)]
-pub struct LoginRequest {
+pub struct IncomingUserRequest {
     pub region_secret: String,
     pub login_token: String,
 }
 
-impl LoginRequest {
+impl IncomingUserRequest {
     pub fn new(region_secret: &str, login_token: &str) -> Self {
         Self {
             region_secret: region_secret.to_string(),
@@ -20,19 +20,19 @@ impl LoginRequest {
 
 // Response
 #[derive(Serde, PartialEq, Clone)]
-pub struct LoginResponse;
+pub struct IncomingUserResponse;
 
 // Traits
-impl ApiRequest for LoginRequest {
-    type Response = LoginResponse;
+impl ApiRequest for IncomingUserRequest {
+    type Response = IncomingUserResponse;
 
     fn method() -> Method {
         Method::Post
     }
 
     fn path() -> &'static str {
-        "login"
+        "incoming_user"
     }
 }
 
-impl ApiResponse for LoginResponse {}
+impl ApiResponse for IncomingUserResponse {}
