@@ -49,3 +49,6 @@ pub mod world {
 
     pub use world_server_naia_proto::messages::{Auth as WorldAuth};
 }
+pub mod config {
+    pub use config::*;
+}

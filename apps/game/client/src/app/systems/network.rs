@@ -1,4 +1,4 @@
-use std::{net::SocketAddr, str::FromStr, time::Duration};
+use std::time::Duration;
 
 use bevy_ecs::{
     system::{ResMut, Resource},
@@ -12,6 +12,7 @@ use game_engine::{
     session::{WorldConnectToken, SessionAuth, SessionClient, SessionConnectEvent, SessionMessageEvents, SessionPrimaryChannel},
     orchestrator::LoginRequest,
     world::{WorldClient, WorldAuth, WorldConnectEvent},
+    config::ORCHESTRATOR_ADDR,
 };
 
 use crate::app::{connection_state::ConnectionState, global::Global};
@@ -42,7 +43,7 @@ pub fn handle_connection(
         ConnectionState::Disconnected => {
             info!("sending to orchestrator..");
             let request = LoginRequest::new("charlie", "12345");
-            let socket_addr = SocketAddr::from_str("127.0.0.1:14197").unwrap();
+            let socket_addr = ORCHESTRATOR_ADDR.parse().unwrap();
             let key = http_client.send(&socket_addr, request);
             global.connection_state = ConnectionState::SentToOrchestrator(key);
         }

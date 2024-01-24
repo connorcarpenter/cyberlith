@@ -5,11 +5,10 @@ use simple_logger::SimpleLogger;
 
 use http_client::HttpClient;
 use http_server::Server;
+use config::ORCHESTRATOR_ADDR;
 
 use orchestrator_http_proto::{LoginRequest as OrchLoginReq, LoginResponse as OrchLoginRes};
 use region_server_http_proto::LoginRequest as RegLoginReq;
-
-const ADDRESS: &str = "127.0.0.1:14197";
 
 pub fn main() {
     SimpleLogger::new()
@@ -18,7 +17,7 @@ pub fn main() {
         .expect("A logger was already initialized");
 
     info!("Orchestrator starting up...");
-    let socket_addr: SocketAddr = ADDRESS.parse().unwrap();
+    let socket_addr: SocketAddr = ORCHESTRATOR_ADDR.parse().unwrap();
 
     let mut server = Server::new(socket_addr);
     server.endpoint(login);

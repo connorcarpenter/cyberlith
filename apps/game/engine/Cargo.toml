@@ -7,6 +7,8 @@ edition = "2021"
 publish = false
 
 [features]
+local = [ "config/local" ]
+prod = [ "config/prod" ]
 gl_renderer = [ "render_gl" ]
 wgpu_renderer = [ ]
 
@@ -17,6 +19,7 @@ render_api = { path = "../../../crates/render_api" }
 input = { path = "../../../crates/input" }
 asset = { path = "../../../crates/asset" }
 bevy_http_client = { path = "../../../crates/http/bevy_http_client" }
+config = { path = "../config", features = ["client"]}
 
 orchestrator_http_proto = { path = "../orchestrator/http_proto" }
 session_server_naia_proto = { path = "../session/naia_proto" }
