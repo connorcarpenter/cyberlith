@@ -1,6 +1,6 @@
 use std::{
     collections::BTreeMap,
-    net::TcpStream,
+    net::{TcpStream, SocketAddr},
 };
 
 use async_dup::Arc;
@@ -20,9 +20,10 @@ pub async fn serve_impl<
     MatchOutput: Future<Output = bool> + 'static,
     RespondOutput: Future<Output = Result<Response, ()>> + 'static,
 >(
+    incoming_address: SocketAddr,
     mut response_stream: Arc<Async<TcpStream>>,
     match_func: impl Fn(String) -> MatchOutput,
-    respond_func: impl Fn(Request) -> RespondOutput,
+    respond_func: impl Fn((SocketAddr, Request)) -> RespondOutput,
 ) {
 
     let mut method: Option<Method> = None;
@@ -146,7 +147,7 @@ pub async fn serve_impl<
     let mut request = Request::new(method, &uri, body);
     request.headers = header_map;
 
-    let response_result = respond_func(request).await;
+    let response_result = respond_func((incoming_address, request)).await;
 
     match response_result {
         Ok(mut response) => {

@@ -24,8 +24,8 @@ pub struct Server {
             dyn 'static
                 + Send
                 + Sync
-                + Fn(
-                    Request,
+                + FnMut(
+                (SocketAddr, Request)
                 )
                     -> Pin<Box<dyn 'static + Send + Sync + Future<Output = Result<Response, ()>>>>,
         >,
@@ -51,9 +51,10 @@ impl Server {
     pub fn endpoint<
         TypeRequest: 'static + ApiRequest,
         TypeResponse: 'static + Send + Sync + Future<Output = Result<TypeRequest::Response, ()>>,
+        Handler: 'static + Send + Sync + FnMut((SocketAddr, TypeRequest)) -> TypeResponse,
     >(
         &mut self,
-        handler: fn(TypeRequest) -> TypeResponse,
+        handler: Handler,
     ) {
         let method = TypeRequest::method();
         let path = TypeRequest::path();
@@ -61,7 +62,7 @@ impl Server {
         let endpoint_path = format!("{} /{}", method.as_str(), path);
 
         info!("endpoint: {}", endpoint_path);
-        let new_endpoint = endpoint_2::<TypeRequest, TypeResponse>(handler);
+        let new_endpoint = endpoint_2::<TypeRequest, TypeResponse, Handler>(handler);
         self.endpoints.insert(endpoint_path, new_endpoint);
     }
 }
@@ -69,20 +70,25 @@ impl Server {
 fn endpoint_2<
     TypeRequest: 'static + ApiRequest,
     TypeResponse: 'static + Send + Sync + Future<Output = Result<TypeRequest::Response, ()>>,
+    Handler: 'static + Send + Sync + FnMut((SocketAddr, TypeRequest)) -> TypeResponse,
 >(
-    handler: fn(TypeRequest) -> TypeResponse,
+    mut handler: Handler,
 ) -> Box<
     dyn 'static
         + Send
         + Sync
-        + Fn(Request) -> Pin<Box<dyn 'static + Send + Sync + Future<Output = Result<Response, ()>>>>,
+        + FnMut((SocketAddr, Request)) -> Pin<Box<dyn 'static + Send + Sync + Future<Output = Result<Response, ()>>>>,
 > {
-    Box::new(move |pure_request: Request| {
+    Box::new(move |args: (SocketAddr, Request)| {
+
+        let addr = args.0;
+        let pure_request = args.1;
+
         let Ok(typed_request) = TypeRequest::from_request(pure_request) else {
                 panic!("unable to convert request to typed request, handle this better in future!");
             };
 
-        let typed_future = handler(typed_request);
+        let typed_future = handler((addr, typed_request));
 
         // convert typed future to pure future
         let pure_future = async move {
@@ -115,7 +121,7 @@ async fn listen(server: Arc<RwLock<Server>>) {
 
     loop {
         // Accept the next connection.
-        let (response_stream, _incoming_address) = listener
+        let (response_stream, incoming_address) = listener
             .accept()
             .await
             .expect("was not able to accept the incoming stream from the listener");
@@ -126,7 +132,7 @@ async fn listen(server: Arc<RwLock<Server>>) {
 
         // Spawn a background task serving this connection.
         executor::spawn(async move {
-            serve(self_clone, Arc::new(response_stream)).await;
+            serve(self_clone, incoming_address, Arc::new(response_stream)).await;
         })
         .detach();
     }
@@ -135,6 +141,7 @@ async fn listen(server: Arc<RwLock<Server>>) {
 /// Reads a request from the client and sends it a response.
 async fn serve(
     server: Arc<RwLock<Server>>,
+    incoming_address: SocketAddr,
     response_stream: Arc<Async<TcpStream>>
 ) {
     let endpoint_key_ref: Arc<RwLock<Option<String>>> = Arc::new(RwLock::new(None));
@@ -146,6 +153,7 @@ async fn serve(
     let endpoint_key_ref_2 = endpoint_key_ref.clone();
 
     serve_impl(
+        incoming_address,
         response_stream,
         |key| {
             let server_3 = server_1.clone();
@@ -161,15 +169,15 @@ async fn serve(
                 }
             }
         },
-        |request| {
+        |(addr, request)| {
             let server_4 = server_2.clone();
             let endpoint_key_ref_4 = endpoint_key_ref_2.clone();
             async move {
                 let endpoint_key = endpoint_key_ref_4.read().await.as_ref().unwrap().clone();
-                let server = server_4.read().await;
-                let endpoint = server.endpoints.get(&endpoint_key).unwrap();
+                let mut server = server_4.write().await;
+                let endpoint = server.endpoints.get_mut(&endpoint_key).unwrap();
 
-                endpoint(request).await
+                endpoint((addr, request)).await
             }
         }
     ).await;

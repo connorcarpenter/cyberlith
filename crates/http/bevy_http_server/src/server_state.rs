@@ -133,8 +133,8 @@ async fn listen(
         // Spawn a background task serving this connection.
         executor::spawn(async move {
             serve(
-                Arc::new(response_stream),
                 incoming_address,
+                Arc::new(response_stream),
                 protocol_clone,
                 request_senders_clone,
                 response_senders_map_clone,
@@ -165,8 +165,8 @@ async fn process_responses(
 /// Reads a request from the client and sends it a response.
 // needs protocol, request senders, and response senders
 async fn serve(
+    incoming_addr: SocketAddr,
     response_stream: Arc<Async<TcpStream>>,
-    request_addr: SocketAddr,
     protocol: Arc<Protocol>,
     request_senders: Arc<HashMap<TypeId, Sender<(u64, SocketAddr, Request)>>>,
     response_senders: Arc<RwLock<HashMap<u64, Sender<Response>>>>,
@@ -183,6 +183,7 @@ async fn serve(
     let endpoint_key_ref_2 = endpoint_key_ref.clone();
 
     serve_impl(
+        incoming_addr,
         response_stream,
         |key| {
             let protocol_2 = protocol_1.clone();
@@ -200,7 +201,7 @@ async fn serve(
                 }
             }
         },
-        |request| {
+        |(req_addr, request)| {
 
             let endpoint_key_ref_4 = endpoint_key_ref_2.clone();
             let keymaker_2 = keymaker_1.clone();
@@ -216,7 +217,7 @@ async fn serve(
                     let Some(request_sender) = request_senders_2.get(&endpoint_key) else {
                         panic!("did not register type!");
                     };
-                    request_sender.try_send((response_key_id, request_addr, request)).expect("unable to send request");
+                    request_sender.try_send((response_key_id, req_addr, request)).expect("unable to send request");
 
                     let (response_sender, response_receiver) = channel::bounded(1);
                     let mut response_senders = response_senders_2.write().await;
