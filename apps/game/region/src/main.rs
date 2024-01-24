@@ -2,15 +2,13 @@ use std::net::SocketAddr;
 
 use log::{info, LevelFilter, warn};
 use simple_logger::SimpleLogger;
+
+use config::REGION_SERVER_ADDR;
 use http_client::HttpClient;
-
 use http_server::Server;
-
 use region_server_http_proto::{LoginRequest as RegLoginReq, LoginResponse as RegLoginRes, WorldConnectRequest, WorldConnectResponse};
 use session_server_http_proto::LoginRequest as SeshLoginReq;
 use world_server_http_proto::LoginRequest as WorldLoginReq;
-
-const ADDRESS: &str = "127.0.0.1:14198";
 
 pub fn main() {
     SimpleLogger::new()
@@ -19,7 +17,7 @@ pub fn main() {
         .expect("A logger was already initialized");
 
     info!("Region Server starting up...");
-    let socket_addr: SocketAddr = ADDRESS.parse().unwrap();
+    let socket_addr: SocketAddr = REGION_SERVER_ADDR.parse().unwrap();
 
     let mut server = Server::new(socket_addr);
     server.endpoint(login);

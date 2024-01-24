@@ -12,6 +12,7 @@ use bevy_http_client::HttpClient;
 
 use session_server_naia_proto::messages::Auth;
 use region_server_http_proto::WorldConnectRequest;
+use config::{SESSION_SERVER_SIGNAL_ADDR, SESSION_SERVER_WEBRTC_ADDR, REGION_SERVER_ADDR};
 
 use crate::global::Global;
 
@@ -19,15 +20,15 @@ pub fn init(mut server: Server) {
     info!("Session Naia Server starting up");
 
     let server_addresses = webrtc::ServerAddrs::new(
-        "127.0.0.1:14200"
+        SESSION_SERVER_SIGNAL_ADDR
             .parse()
             .expect("could not parse Signaling address/port"),
         // IP Address to listen on for UDP WebRTC data channels
-        "127.0.0.1:14201"
+        SESSION_SERVER_WEBRTC_ADDR
             .parse()
             .expect("could not parse WebRTC data address/port"),
         // The public WebRTC IP address to advertise
-        "http://127.0.0.1:14201",
+        format!("http://{}", SESSION_SERVER_WEBRTC_ADDR).as_str(),
     );
     let socket = webrtc::Socket::new(&server_addresses, server.socket_config());
     server.listen(socket);
@@ -60,7 +61,7 @@ pub fn connect_events(
 
         info!("Sending request for World Server Token to Region Server");
         let request = WorldConnectRequest::new();
-        let socket_addr = "127.0.0.1:14198".parse().unwrap();
+        let socket_addr = REGION_SERVER_ADDR.parse().unwrap();
         let key = http_client.send(&socket_addr, request);
         global.add_world_key(user_key, key);
     }

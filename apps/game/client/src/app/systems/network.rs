@@ -58,7 +58,7 @@ pub fn handle_connection(
                         let server_session_url = format!("http://{}:{}", response.session_server_addr.inner().ip(), response.session_server_addr.inner().port());
                         info!("connecting to session server: {}", server_session_url);
                         let socket = WebrtcSocket::new(
-                            &server_session_url, //"http://127.0.0.1:14191",
+                            &server_session_url,
                             session_client.socket_config()
                         );
                         session_client.connect(socket);
@@ -113,7 +113,7 @@ pub fn session_message_events(
             let world_server_session_url = format!("http://{}:{}", token.world_server_addr.inner().ip(), token.world_server_addr.inner().port());
             info!("connecting to world server: {}", world_server_session_url);
             let socket = WebrtcSocket::new(
-                &world_server_session_url, //"http://127.0.0.1:14191",
+                &world_server_session_url,
                 world_client.socket_config()
             );
             world_client.connect(socket);

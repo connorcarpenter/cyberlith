@@ -8,20 +8,21 @@ use naia_bevy_server::{
 };
 
 use world_server_naia_proto::messages::Auth;
+use config::{WORLD_SERVER_SIGNAL_ADDR, WORLD_SERVER_WEBRTC_ADDR};
 
 pub fn init(mut server: Server) {
     info!("World Naia Server starting up");
 
     let server_addresses = webrtc::ServerAddrs::new(
-        "127.0.0.1:14203"
+        WORLD_SERVER_SIGNAL_ADDR
             .parse()
             .expect("could not parse Signaling address/port"),
         // IP Address to listen on for UDP WebRTC data channels
-        "127.0.0.1:14204"
+        WORLD_SERVER_WEBRTC_ADDR
             .parse()
             .expect("could not parse WebRTC data address/port"),
         // The public WebRTC IP address to advertise
-        "http://127.0.0.1:14204",
+        format!("http://{}", WORLD_SERVER_WEBRTC_ADDR).as_str(),
     );
     let socket = webrtc::Socket::new(&server_addresses, server.socket_config());
     server.listen(socket);

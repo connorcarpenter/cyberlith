@@ -1,11 +1,11 @@
-use std::{net::SocketAddr, str::FromStr};
+use std::{net::SocketAddr};
 
 use log::{info, warn, LevelFilter};
 use simple_logger::SimpleLogger;
 
 use http_client::HttpClient;
 use http_server::Server;
-use config::ORCHESTRATOR_ADDR;
+use config::{ORCHESTRATOR_ADDR, REGION_SERVER_ADDR};
 
 use orchestrator_http_proto::{LoginRequest as OrchLoginReq, LoginResponse as OrchLoginRes};
 use region_server_http_proto::LoginRequest as RegLoginReq;
@@ -35,7 +35,7 @@ async fn login(incoming_request: OrchLoginReq) -> Result<OrchLoginRes, ()> {
     info!("Sending login request to region server");
 
     let region_request = RegLoginReq::new(&incoming_request.username, &incoming_request.password);
-    let region_server_addr = SocketAddr::from_str("127.0.0.1:14198").unwrap();
+    let region_server_addr = REGION_SERVER_ADDR.parse().unwrap();
     let Ok(region_response) = HttpClient::send(&region_server_addr, region_request).await else {
         warn!("Failed login request to region server");
         return Err(());
