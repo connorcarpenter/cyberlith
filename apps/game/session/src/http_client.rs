@@ -7,7 +7,7 @@ use bevy_http_client::HttpClient;
 
 use region_server_http_proto::SessionRegisterInstanceRequest;
 use session_server_naia_proto::{channels::PrimaryChannel, messages::WorldConnectToken};
-use config::REGION_SERVER_ADDR;
+use config::{REGION_SERVER_ADDR, SESSION_SERVER_HTTP_ADDR, SESSION_SERVER_SIGNAL_ADDR};
 
 use crate::global::Global;
 
@@ -16,7 +16,10 @@ pub fn register_instance_send(
     mut global: ResMut<Global>,
 ) {
     info!("Sending request to register instance with region server ..");
-    let request = SessionRegisterInstanceRequest::new();
+    let request = SessionRegisterInstanceRequest::new(
+        SESSION_SERVER_HTTP_ADDR.parse().unwrap(),
+        SESSION_SERVER_SIGNAL_ADDR.parse().unwrap(),
+    );
     let socket_addr = REGION_SERVER_ADDR.parse().unwrap();
     let key = http_client.send(&socket_addr, request);
     global.set_register_insance_response_key(key);

@@ -20,7 +20,15 @@ pub fn main() {
     let socket_addr: SocketAddr = ORCHESTRATOR_ADDR.parse().unwrap();
 
     let mut server = Server::new(socket_addr);
-    server.endpoint(login);
+
+    server.endpoint(
+        move |(_addr, req)| {
+            async move {
+                login(req).await
+            }
+        }
+    );
+
     server.start();
 
     loop {
