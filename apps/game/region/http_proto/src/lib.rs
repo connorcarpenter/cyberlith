@@ -1,5 +1,5 @@
-mod session_connect;
-mod world_connect;
+mod session;
+mod world;
 
-pub use session_connect::*;
-pub use world_connect::*;
+pub use session::*;
+pub use world::*;

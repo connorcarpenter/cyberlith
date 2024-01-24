@@ -7,9 +7,9 @@ use serde::SerdeSocketAddr;
 
 // Request
 #[derive(Serde, PartialEq, Clone)]
-pub struct WorldConnectRequest;
+pub struct WorldUserLoginRequest;
 
-impl WorldConnectRequest {
+impl WorldUserLoginRequest {
     pub fn new() -> Self {
         Self
     }
@@ -17,12 +17,12 @@ impl WorldConnectRequest {
 
 // Response
 #[derive(Serde, PartialEq, Clone, Eq, Hash)]
-pub struct WorldConnectResponse {
+pub struct WorldUserLoginResponse {
     pub world_server_addr: SerdeSocketAddr,
     pub token: String,
 }
 
-impl WorldConnectResponse {
+impl WorldUserLoginResponse {
     pub fn new(world_server_addr: SocketAddr, token: &str) -> Self {
         Self {
             world_server_addr: SerdeSocketAddr::new(world_server_addr),
@@ -32,16 +32,16 @@ impl WorldConnectResponse {
 }
 
 // Traits
-impl ApiRequest for WorldConnectRequest {
-    type Response = WorldConnectResponse;
+impl ApiRequest for WorldUserLoginRequest {
+    type Response = WorldUserLoginResponse;
 
     fn method() -> Method {
         Method::Post
     }
 
     fn path() -> &'static str {
-        "world"
+        "world/user_login"
     }
 }
 
-impl ApiResponse for WorldConnectResponse {}
+impl ApiResponse for WorldUserLoginResponse {}

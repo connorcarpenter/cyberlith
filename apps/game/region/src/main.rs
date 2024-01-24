@@ -6,7 +6,7 @@ use simple_logger::SimpleLogger;
 use config::REGION_SERVER_ADDR;
 use http_client::HttpClient;
 use http_server::Server;
-use region_server_http_proto::{SessionConnectRequest as RegSeshConnectReq, SessionConnectResponse as RegSeshConnectRes, WorldConnectRequest as RegWorldConnectReq, WorldConnectResponse as RegWorldConnectRes};
+use region_server_http_proto::{SessionUserLoginRequest as RegSeshUserLoginReq, SessionUserLoginResponse as RegSeshUserLoginRes, WorldUserLoginRequest as RegWorldUserLoginReq, WorldUserLoginResponse as RegWorldUserLoginRes};
 use session_server_http_proto::IncomingUserRequest as SeshIncomingUserReq;
 use world_server_http_proto::IncomingUserRequest as WorldIncomingUserReq;
 
@@ -30,7 +30,7 @@ pub fn main() {
     }
 }
 
-async fn session_connect(incoming_request: RegSeshConnectReq) -> Result<RegSeshConnectRes, ()> {
+async fn session_connect(incoming_request: RegSeshUserLoginReq) -> Result<RegSeshUserLoginRes, ()> {
     info!("session connection request received from orchestrator");
 
     info!("Sending login request to session server");
@@ -56,10 +56,10 @@ async fn session_connect(incoming_request: RegSeshConnectReq) -> Result<RegSeshC
 
     // TODO: end of part we need to get rid of
 
-    Ok(RegSeshConnectRes::new(session_server_signaling_addr, temp_token))
+    Ok(RegSeshUserLoginRes::new(session_server_signaling_addr, temp_token))
 }
 
-async fn world_connect(incoming_request: RegWorldConnectReq) -> Result<RegWorldConnectRes, ()> {
+async fn world_connect(incoming_request: RegWorldUserLoginReq) -> Result<RegWorldUserLoginRes, ()> {
     info!("world connection request received from session server");
 
     info!("sending login request to world server");
@@ -84,5 +84,5 @@ async fn world_connect(incoming_request: RegWorldConnectReq) -> Result<RegWorldC
 
     // TODO: end of part we need to get rid of
 
-    Ok(RegWorldConnectRes::new(world_server_signaling_addr, temp_token))
+    Ok(RegWorldUserLoginRes::new(world_server_signaling_addr, temp_token))
 }

@@ -5,11 +5,11 @@ use naia_bevy_server::UserKey;
 
 use bevy_http_client::{ResponseKey as ClientResponseKey};
 
-use region_server_http_proto::WorldConnectResponse;
+use region_server_http_proto::WorldUserLoginResponse;
 
 #[derive(Resource)]
 pub struct Global {
-    world_connect_response_keys: HashMap<ClientResponseKey<WorldConnectResponse>, UserKey>,
+    world_connect_response_keys: HashMap<ClientResponseKey<WorldUserLoginResponse>, UserKey>,
 }
 
 impl Default for Global {
@@ -21,15 +21,15 @@ impl Default for Global {
 }
 
 impl Global {
-    pub fn add_world_key(&mut self, user_key: &UserKey, response_key: ClientResponseKey<WorldConnectResponse>) {
+    pub fn add_world_key(&mut self, user_key: &UserKey, response_key: ClientResponseKey<WorldUserLoginResponse>) {
         self.world_connect_response_keys.insert(response_key, user_key.clone());
     }
 
-    pub fn remove_world_key(&mut self, response_key: &ClientResponseKey<WorldConnectResponse>) {
+    pub fn remove_world_key(&mut self, response_key: &ClientResponseKey<WorldUserLoginResponse>) {
         self.world_connect_response_keys.remove(response_key);
     }
 
-    pub fn world_keys(&self) -> impl Iterator<Item = (&ClientResponseKey<WorldConnectResponse>, &UserKey)> {
+    pub fn world_keys(&self) -> impl Iterator<Item = (&ClientResponseKey<WorldUserLoginResponse>, &UserKey)> {
         self.world_connect_response_keys.iter()
     }
 }

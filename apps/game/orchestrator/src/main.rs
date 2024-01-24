@@ -8,7 +8,7 @@ use http_server::Server;
 use config::{ORCHESTRATOR_ADDR, REGION_SERVER_ADDR};
 
 use orchestrator_http_proto::{LoginRequest as OrchLoginReq, LoginResponse as OrchLoginRes};
-use region_server_http_proto::SessionConnectRequest as RegLoginReq;
+use region_server_http_proto::SessionUserLoginRequest as RegLoginReq;
 
 pub fn main() {
     SimpleLogger::new()
