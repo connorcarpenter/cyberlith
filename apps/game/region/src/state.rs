@@ -4,7 +4,7 @@ use log::info;
 use session_server_http_proto::HeartbeatRequest as SessionHeartbeatRequest;
 use world_server_http_proto::HeartbeatRequest as WorldHeartbeatRequest;
 use config::REGION_SERVER_SECRET;
-use http_client::HttpClient;
+use http_client::{HttpClient, ResponseError};
 use http_server::Server;
 
 use crate::instances::{SessionInstance, WorldInstance};
@@ -52,8 +52,18 @@ impl State {
                     Ok(_) => {
                         info!("session heartbeat success");
                     },
-                    Err(_) => {
-                        info!("session heartbeat failure");
+                    Err(err) => {
+                        match err {
+                            ResponseError::None => {
+                                info!("session heartbeat failure: None");
+                            }
+                            ResponseError::EhttpError(err_0) => {
+                                info!("session heartbeat failure: EhttpError: {:?}", err_0);
+                            }
+                            ResponseError::SerdeError => {
+                                info!("session heartbeat failure: SerdeError");
+                            }
+                        }
                     }
                 }
             });
@@ -70,8 +80,18 @@ impl State {
                     Ok(_) => {
                         info!("world heartbeat success");
                     },
-                    Err(_) => {
-                        info!("world heartbeat failure");
+                    Err(err) => {
+                        match err {
+                            ResponseError::None => {
+                                info!("world heartbeat failure: None");
+                            }
+                            ResponseError::EhttpError(err_0) => {
+                                info!("world heartbeat failure: EhttpError: {:?}", err_0);
+                            }
+                            ResponseError::SerdeError => {
+                                info!("world heartbeat failure: SerdeError");
+                            }
+                        }
                     }
                 }
             });
