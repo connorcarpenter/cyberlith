@@ -4,7 +4,7 @@ use bevy_log::info;
 
 use bevy_http_server::HttpServer;
 
-use session_server_http_proto::{IncomingUserRequest, IncomingUserResponse};
+use session_server_http_proto::{HeartbeatRequest, HeartbeatResponse, IncomingUserRequest, IncomingUserResponse};
 use config::SESSION_SERVER_HTTP_ADDR;
 
 pub fn init(mut server: ResMut<HttpServer>) {
@@ -21,5 +21,15 @@ pub fn login_recv(mut server: ResMut<HttpServer>) {
         info!("Sending login response to region server ..");
 
         server.respond(response_key, IncomingUserResponse);
+    }
+}
+
+pub fn heartbeat_recv(mut server: ResMut<HttpServer>) {
+    while let Some((addr, request, response_key)) = server.receive::<HeartbeatRequest>() {
+        info!("Heartbeat request received from {} (regionserver?): Login(secret: {})", addr, request.region_secret);
+
+        info!("Sending heartbeat response to region server ..");
+
+        server.respond(response_key, HeartbeatResponse);
     }
 }

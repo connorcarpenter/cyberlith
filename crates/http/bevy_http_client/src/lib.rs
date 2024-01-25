@@ -3,7 +3,6 @@ extern crate cfg_if;
 
 mod backend;
 mod client;
-mod convert;
 mod key;
 mod plugin;
 

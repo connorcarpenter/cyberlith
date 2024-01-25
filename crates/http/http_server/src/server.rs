@@ -48,6 +48,12 @@ impl Server {
         .detach();
     }
 
+    pub fn spawn<T: Send + 'static>(
+        future: impl Future<Output = T> + Send + 'static,
+    ) {
+        executor::spawn(future).detach();
+    }
+
     pub fn endpoint<
         TypeRequest: 'static + ApiRequest,
         TypeResponse: 'static + Send + Sync + Future<Output = Result<TypeRequest::Response, ()>>,

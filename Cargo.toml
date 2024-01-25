@@ -34,6 +34,7 @@ members = [
     "crates/http/http_server_shared",
     "crates/http/http_client",
     "crates/http/http_common",
+    "crates/http/http_client_shared",
     "crates/serde",
 ]
 # any crates with conflicting dependencies / feature flags cannot be put here

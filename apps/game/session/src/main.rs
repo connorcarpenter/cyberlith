@@ -43,6 +43,7 @@ fn main() {
                 naia::disconnect_events,
                 naia::error_events,
                 http_server::login_recv,
+                http_server::heartbeat_recv,
                 http_client::world_connect_recv,
                 http_client::register_instance_recv,
             )

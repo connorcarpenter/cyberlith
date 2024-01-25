@@ -34,5 +34,11 @@ pub fn main() {
     loop {
         std::thread::sleep(std::time::Duration::from_secs(1));
         info!(".");
+
+        let state = state.clone();
+        Server::spawn(async move {
+            let state = state.read().await;
+            state.send_heartbeats().await;
+        });
     }
 }
