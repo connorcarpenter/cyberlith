@@ -1,31 +1,31 @@
-use std::{collections::HashMap, net::SocketAddr};
+use std::{collections::HashMap, net::SocketAddr, time::{Duration, Instant}};
 
 use log::{info, warn};
 
-use config::REGION_SERVER_SECRET;
 use http_client::{HttpClient, ResponseError};
 use http_server::Server;
 
 use session_server_http_proto::HeartbeatRequest as SessionHeartbeatRequest;
 use world_server_http_proto::HeartbeatRequest as WorldHeartbeatRequest;
+use config::REGION_SERVER_SECRET;
 
 use crate::instances::{SessionInstance, WorldInstance};
 
 pub struct State {
+    timeout: Duration,
     session_instances: HashMap<SocketAddr, SessionInstance>,
     world_instances: HashMap<SocketAddr, WorldInstance>,
 }
 
-impl Default for State {
-    fn default() -> Self {
+impl State {
+    pub fn new(timeout: Duration) -> Self {
         State {
+            timeout,
             session_instances: HashMap::new(),
             world_instances: HashMap::new(),
         }
     }
-}
 
-impl State {
     pub fn register_session_instance(&mut self, instance: SessionInstance) {
         self.session_instances.insert(instance.http_addr(), instance);
     }
@@ -42,28 +42,71 @@ impl State {
         self.world_instances.values().next().unwrap()
     }
 
-    pub async fn send_heartbeats(&self) {
+    pub async fn send_heartbeats(&mut self) {
+
+        let now = Instant::now();
+
+        // clean up instances that have disconnected
+        {
+
+            let timeout = self.timeout;
+
+            {
+                let mut disconnected_instances = Vec::new();
+                for (addr, instance) in self.session_instances.iter() {
+                    let last_heard = *instance.last_heard().read().await;
+                    let elapsed = now.duration_since(last_heard);
+                    if elapsed.as_secs() > timeout.as_secs() {
+                        disconnected_instances.push(*addr);
+                    }
+                }
+                for addr in disconnected_instances {
+                    info!("session instance {:?} disconnected", addr);
+                    self.session_instances.remove(&addr);
+                }
+            }
+
+            {
+                let mut disconnected_instances = Vec::new();
+                for (addr, instance) in self.world_instances.iter() {
+                    let last_heard = *instance.last_heard().read().await;
+                    let elapsed = now.duration_since(last_heard);
+                    if elapsed.as_secs() > timeout.as_secs() {
+                        disconnected_instances.push(*addr);
+                    }
+                }
+                for addr in disconnected_instances {
+                    info!("world instance {:?} disconnected", addr);
+                    self.world_instances.remove(&addr);
+                }
+            }
+        }
+
+        // send out heartbeats
         for instance in self.session_instances.values() {
 
             let http_addr = instance.http_addr();
+            let last_heard = instance.last_heard();
 
             Server::spawn(async move {
                 let request =  SessionHeartbeatRequest::new(REGION_SERVER_SECRET);
                 let response = HttpClient::send(&http_addr, request).await;
                 match response {
                     Ok(_) => {
-                        info!("session heartbeat success");
+                        info!("from {:?} - session heartbeat success", http_addr);
+                        let mut last_heard = last_heard.write().await;
+                        *last_heard = Instant::now();
                     },
                     Err(err) => {
                         match err {
                             ResponseError::None => {
-                                warn!("session heartbeat failure: None");
+                                warn!("from {:?} - session heartbeat failure: None", http_addr);
                             }
                             ResponseError::HttpError(err_0) => {
-                                warn!("session heartbeat failure: HttpError: {:?}", err_0);
+                                warn!("from {:?} - session heartbeat failure: HttpError: {:?}", http_addr, err_0);
                             }
                             ResponseError::SerdeError => {
-                                warn!("session heartbeat failure: SerdeError");
+                                warn!("from {:?} - session heartbeat failure: SerdeError", http_addr);
                             }
                         }
                     }
@@ -74,24 +117,27 @@ impl State {
         for instance in self.world_instances.values() {
 
             let http_addr = instance.http_addr();
+            let last_heard = instance.last_heard();
 
             Server::spawn(async move {
                 let request =  WorldHeartbeatRequest::new(REGION_SERVER_SECRET);
                 let response = HttpClient::send(&http_addr, request).await;
                 match response {
                     Ok(_) => {
-                        info!("world heartbeat success");
+                        info!("from {:?} - world heartbeat success", http_addr);
+                        let mut last_heard = last_heard.write().await;
+                        *last_heard = Instant::now();
                     },
                     Err(err) => {
                         match err {
                             ResponseError::None => {
-                                warn!("world heartbeat failure: None");
+                                warn!("from {:?} - world heartbeat failure: None", http_addr);
                             }
                             ResponseError::HttpError(err_0) => {
-                                warn!("world heartbeat failure: HttpError: {:?}", err_0);
+                                warn!("from {:?} - world heartbeat failure: HttpError: {:?}", http_addr, err_0);
                             }
                             ResponseError::SerdeError => {
-                                warn!("world heartbeat failure: SerdeError");
+                                warn!("from {:?} - world heartbeat failure: SerdeError", http_addr);
                             }
                         }
                     }

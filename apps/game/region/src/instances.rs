@@ -1,8 +1,12 @@
-use std::net::SocketAddr;
+
+use std::{time::Instant, net::SocketAddr};
+
+use http_server::{async_dup::Arc, smol::lock::RwLock};
 
 pub struct SessionInstance {
     http_addr: SocketAddr,
     signal_addr: SocketAddr,
+    last_heard: Arc<RwLock<Instant>>,
 }
 
 impl SessionInstance {
@@ -10,6 +14,7 @@ impl SessionInstance {
         Self {
             http_addr,
             signal_addr,
+            last_heard: Arc::new(RwLock::new(Instant::now())),
         }
     }
 
@@ -20,11 +25,16 @@ impl SessionInstance {
     pub fn signal_addr(&self) -> SocketAddr {
         self.signal_addr
     }
+
+    pub fn last_heard(&self) -> Arc<RwLock<Instant>> {
+        self.last_heard.clone()
+    }
 }
 
 pub struct WorldInstance {
     http_addr: SocketAddr,
     signal_addr: SocketAddr,
+    last_heard: Arc<RwLock<Instant>>,
 }
 
 impl WorldInstance {
@@ -32,6 +42,7 @@ impl WorldInstance {
         Self {
             http_addr,
             signal_addr,
+            last_heard: Arc::new(RwLock::new(Instant::now())),
         }
     }
 
@@ -41,5 +52,9 @@ impl WorldInstance {
 
     pub fn signal_addr(&self) -> SocketAddr {
         self.signal_addr
+    }
+
+    pub fn last_heard(&self) -> Arc<RwLock<Instant>> {
+        self.last_heard.clone()
     }
 }

@@ -123,7 +123,7 @@ async fn listen(
             .await
             .expect("was not able to accept the incoming stream from the listener");
 
-        info!("received request from {} .. making new thread to serve this connection", incoming_address);
+        //info!("received request from {} .. making new thread to serve this connection", incoming_address);
 
         let protocol_clone = protocol.clone();
         let request_senders_clone = request_senders.clone();
@@ -189,7 +189,7 @@ async fn serve(
             let protocol_2 = protocol_1.clone();
             let endpoint_key_ref_3 = endpoint_key_ref_1.clone();
             async move {
-                info!("attempting to match url. endpoint key is: {}", key);
+                //info!("attempting to match url. endpoint key is: {}", key);
 
                 if protocol_2.has_endpoint_key(&key) {
                     let request_id_temp = protocol_2.get_request_id(&key).unwrap();

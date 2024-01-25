@@ -16,7 +16,7 @@
       <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
     </method>
   </configuration>
-  <configuration default="false" name="Run World Server" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
+  <configuration default="false" name="Run World Server" type="CargoCommandRunConfiguration" factoryName="Cargo Command" singleton="false">
     <option name="command" value="run --features &quot;local&quot;" />
     <option name="workingDirectory" value="file://$PROJECT_DIR$/apps/game/world" />
     <envs />
