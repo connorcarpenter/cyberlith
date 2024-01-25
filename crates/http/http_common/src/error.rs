@@ -5,6 +5,6 @@ pub enum RequestError {
 
 pub enum ResponseError {
     None,
-    EhttpError(String),
+    HttpError(String),
     SerdeError,
 }

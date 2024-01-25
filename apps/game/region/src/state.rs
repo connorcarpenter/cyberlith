@@ -1,11 +1,13 @@
 use std::{collections::HashMap, net::SocketAddr};
-use log::info;
 
-use session_server_http_proto::HeartbeatRequest as SessionHeartbeatRequest;
-use world_server_http_proto::HeartbeatRequest as WorldHeartbeatRequest;
+use log::{info, warn};
+
 use config::REGION_SERVER_SECRET;
 use http_client::{HttpClient, ResponseError};
 use http_server::Server;
+
+use session_server_http_proto::HeartbeatRequest as SessionHeartbeatRequest;
+use world_server_http_proto::HeartbeatRequest as WorldHeartbeatRequest;
 
 use crate::instances::{SessionInstance, WorldInstance};
 
@@ -55,13 +57,13 @@ impl State {
                     Err(err) => {
                         match err {
                             ResponseError::None => {
-                                info!("session heartbeat failure: None");
+                                warn!("session heartbeat failure: None");
                             }
-                            ResponseError::EhttpError(err_0) => {
-                                info!("session heartbeat failure: EhttpError: {:?}", err_0);
+                            ResponseError::HttpError(err_0) => {
+                                warn!("session heartbeat failure: HttpError: {:?}", err_0);
                             }
                             ResponseError::SerdeError => {
-                                info!("session heartbeat failure: SerdeError");
+                                warn!("session heartbeat failure: SerdeError");
                             }
                         }
                     }
@@ -83,13 +85,13 @@ impl State {
                     Err(err) => {
                         match err {
                             ResponseError::None => {
-                                info!("world heartbeat failure: None");
+                                warn!("world heartbeat failure: None");
                             }
-                            ResponseError::EhttpError(err_0) => {
-                                info!("world heartbeat failure: EhttpError: {:?}", err_0);
+                            ResponseError::HttpError(err_0) => {
+                                warn!("world heartbeat failure: HttpError: {:?}", err_0);
                             }
                             ResponseError::SerdeError => {
-                                info!("world heartbeat failure: SerdeError");
+                                warn!("world heartbeat failure: SerdeError");
                             }
                         }
                     }

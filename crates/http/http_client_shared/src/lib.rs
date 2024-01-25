@@ -21,7 +21,7 @@ pub async fn fetch_async(request: Request) -> Result<Response> {
 }
 
 mod types;
-pub use types::{Error, Result};
+pub use types::Result;
 
 #[cfg(not(target_arch = "wasm32"))]
 mod native;
@@ -35,9 +35,9 @@ pub use web::spawn_future;
 
 /// Helper for constructing [`Request::headers`].
 /// ```
-/// use ehttp::Request;
+/// use http_common::Request;
 /// let request = Request {
-///     headers: ehttp::headers(&[
+///     headers: http_client_shared::headers(&[
 ///         ("Accept", "*/*"),
 ///         ("Content-Type", "text/plain; charset=utf-8"),
 ///     ]),

@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use http_common::{Request, Response};
+use http_common::{Request, Response, ResponseError};
 
 use async_channel::{Receiver, Sender};
 
@@ -24,7 +24,7 @@ pub fn fetch_blocking(request: &Request) -> crate::Result<Response> {
     let (ok, resp) = match resp {
         Ok(resp) => (true, resp),
         Err(ureq::Error::Status(_, resp)) => (false, resp), // Still read the body on e.g. 404
-        Err(ureq::Error::Transport(error)) => return Err(error.to_string()),
+        Err(ureq::Error::Transport(error)) => return Err(ResponseError::HttpError(error.to_string())),
     };
 
     let url = resp.get_url().to_owned();
@@ -43,7 +43,7 @@ pub fn fetch_blocking(request: &Request) -> crate::Result<Response> {
     use std::io::Read;
     reader
         .read_to_end(&mut body)
-        .map_err(|err| err.to_string())?;
+        .map_err(|err| ResponseError::HttpError(err.to_string()))?;
 
     let response = Response {
         url,
@@ -75,5 +75,5 @@ pub(crate) async fn fetch_async(request: Request) -> crate::Result<Response> {
         request,
         Box::new(move |received| tx.send_blocking(received).unwrap()),
     );
-    rx.recv().await.map_err(|err| err.to_string())?
+    rx.recv().await.map_err(|err| err.to_string()).map_err(|estr| ResponseError::HttpError(estr))?
 }

@@ -1,15 +1,16 @@
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::JsFuture;
 
+use http_common::{Request, Response, ResponseError};
+
 use crate::types::PartialResponse;
-use crate::{Request, Response};
 
 /// Only available when compiling for web.
 ///
 /// NOTE: `Ok(…)` is returned on network error.
 /// `Err` is only for failure to use the fetch API.
 pub async fn fetch_async(request: &Request) -> crate::Result<Response> {
-    fetch_jsvalue(request).await.map_err(string_from_js_value)
+    fetch_jsvalue(request).await.map_err(string_from_js_value).map_err(|estr| ResponseError::HttpError(estr))
 }
 
 pub(crate) fn string_from_js_value(value: JsValue) -> String {
@@ -18,7 +19,7 @@ pub(crate) fn string_from_js_value(value: JsValue) -> String {
 
 pub(crate) async fn fetch_base(request: &Request) -> Result<web_sys::Response, JsValue> {
     let mut opts = web_sys::RequestInit::new();
-    opts.method(&request.method);
+    opts.method(request.method.as_str());
     opts.mode(web_sys::RequestMode::Cors);
 
     if !request.body.is_empty() {
@@ -83,7 +84,7 @@ async fn fetch_jsvalue(request: &Request) -> Result<Response, JsValue> {
 
     let array_buffer = JsFuture::from(response.array_buffer()?).await?;
     let uint8_array = js_sys::Uint8Array::new(&array_buffer);
-    let bytes = uint8_array.to_vec();
+    let body = uint8_array.to_vec();
 
     let base = get_response_base(&response)?;
 
@@ -92,7 +93,7 @@ async fn fetch_jsvalue(request: &Request) -> Result<Response, JsValue> {
         ok: base.ok,
         status: base.status,
         status_text: base.status_text,
-        bytes,
+        body,
         headers: base.headers,
     })
 }
