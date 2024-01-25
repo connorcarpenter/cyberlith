@@ -14,7 +14,7 @@ impl HttpClient {
                 Ok(api_res)
             }
             Err(err) => {
-                return Err(ResponseError::HttpError(err));
+                return Err(err);
             }
         }
     }
