@@ -11,12 +11,13 @@ local = [ "config/local" ]
 prod = [ "config/prod" ]
 
 [dependencies]
-region_server_http_proto = { path = "http_proto" }
-session_server_http_proto = { path = "../session/http_proto" }
-world_server_http_proto = { path = "../world/http_proto" }
 http_server = { path = "../../../crates/http/http_server" }
 http_client = { path = "../../../crates/http/http_client" }
 config = { path = "../config", features = ["region"] }
+
+region_server_http_proto = { path = "http_proto" }
+session_server_http_proto = { path = "../session/http_proto" }
+world_server_http_proto = { path = "../world/http_proto" }
 
 log = { version = "0.4", features = [] }
 simple_logger = { version = "4.0", default-features = false, features = ["timestamps"] }

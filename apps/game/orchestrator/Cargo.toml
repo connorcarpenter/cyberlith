@@ -11,11 +11,12 @@ local = [ "config/local" ]
 prod = [ "config/prod" ]
 
 [dependencies]
-orchestrator_http_proto = { path = "http_proto" }
-region_server_http_proto = { path = "../region/http_proto" }
 http_server = { path = "../../../crates/http/http_server" }
 http_client = { path = "../../../crates/http/http_client" }
 config = { path = "../config", features = ["orchestrator"]}
+
+orchestrator_http_proto = { path = "http_proto" }
+region_server_http_proto = { path = "../region/http_proto" }
 
 log = { version = "0.4", features = [] }
 simple_logger = { version = "4.0", default-features = false, features = ["timestamps"] }
