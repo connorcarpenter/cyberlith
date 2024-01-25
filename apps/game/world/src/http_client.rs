@@ -20,14 +20,14 @@ pub fn send_register_instance(
     );
     let socket_addr = REGION_SERVER_ADDR.parse().unwrap();
     let key = http_client.send(&socket_addr, request);
-    global.set_register_insance_response_key(key);
+    global.set_register_instance_response_key(key);
 }
 
 pub fn recv_register_instance_response(
     mut http_client: ResMut<HttpClient>,
     global: ResMut<Global>,
 ) {
-    if let Some(response_key) = global.register_insance_response_key() {
+    if let Some(response_key) = global.register_instance_response_key() {
         if let Some(result) = http_client.recv(response_key) {
             match result {
                 Ok(_response) => {
