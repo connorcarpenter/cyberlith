@@ -41,7 +41,7 @@ async fn async_impl(
     let server_instance = SessionInstance::new(http_addr, signal_addr);
 
     let mut state = state.write().await;
-    state.register_session_instance(incoming_addr, server_instance);
+    state.register_session_instance(server_instance);
 
     info!("Sending register instance response to session server");
 

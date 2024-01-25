@@ -42,7 +42,7 @@ async fn async_impl(
     let server_instance = WorldInstance::new(http_addr, signal_addr);
 
     let mut state = state.write().await;
-    state.register_world_instance(incoming_addr, server_instance);
+    state.register_world_instance(server_instance);
 
     info!("Sending register instance response to world server");
 

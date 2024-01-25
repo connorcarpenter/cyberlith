@@ -17,16 +17,16 @@ impl Default for State {
 }
 
 impl State {
-    pub fn register_session_instance(&mut self, incoming_addr: SocketAddr, instance: SessionInstance) {
-        self.session_instances.insert(incoming_addr, instance);
+    pub fn register_session_instance(&mut self, instance: SessionInstance) {
+        self.session_instances.insert(instance.http_addr(), instance);
     }
 
     pub fn get_available_session_server(&self) -> &SessionInstance {
         self.session_instances.values().next().unwrap()
     }
 
-    pub fn register_world_instance(&mut self, incoming_addr: SocketAddr, instance: WorldInstance) {
-        self.world_instances.insert(incoming_addr, instance);
+    pub fn register_world_instance(&mut self, instance: WorldInstance) {
+        self.world_instances.insert(instance.http_addr(), instance);
     }
 
     pub fn get_available_world_server(&self) -> &WorldInstance {
