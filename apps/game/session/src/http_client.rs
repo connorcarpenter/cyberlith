@@ -11,7 +11,7 @@ use config::{REGION_SERVER_ADDR, SESSION_SERVER_HTTP_ADDR, SESSION_SERVER_SIGNAL
 
 use crate::global::Global;
 
-pub fn register_instance_send(
+pub fn send_register_instance(
     mut http_client: ResMut<HttpClient>,
     mut global: ResMut<Global>,
 ) {
@@ -25,7 +25,7 @@ pub fn register_instance_send(
     global.set_register_insance_response_key(key);
 }
 
-pub fn register_instance_recv(
+pub fn recv_register_instance_response(
     mut http_client: ResMut<HttpClient>,
     global: ResMut<Global>,
 ) {
@@ -43,7 +43,7 @@ pub fn register_instance_recv(
     }
 }
 
-pub fn world_connect_recv(
+pub fn recv_world_connect_response(
     mut server: Server,
     mut http_client: ResMut<HttpClient>,
     mut global: ResMut<Global>,

@@ -14,7 +14,7 @@ pub fn init(mut server: ResMut<HttpServer>) {
     server.listen(socket_addr);
 }
 
-pub fn login_recv(mut server: ResMut<HttpServer>) {
+pub fn recv_login_request(mut server: ResMut<HttpServer>) {
     while let Some((addr, request, response_key)) = server.receive::<IncomingUserRequest>() {
         info!("Login request received from {} (regionserver?): Login(secret: {}, token: {})", addr, request.region_secret, request.login_token);
 
@@ -24,7 +24,7 @@ pub fn login_recv(mut server: ResMut<HttpServer>) {
     }
 }
 
-pub fn heartbeat_recv(mut server: ResMut<HttpServer>) {
+pub fn recv_heartbeat_request(mut server: ResMut<HttpServer>) {
     while let Some((addr, request, response_key)) = server.receive::<HeartbeatRequest>() {
         info!("Heartbeat request received from {} (regionserver?): Login(secret: {})", addr, request.region_secret);
 
