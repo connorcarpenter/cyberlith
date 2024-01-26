@@ -20,6 +20,10 @@ use world_server_http_proto::{protocol as http_protocol};
 use global::Global;
 
 fn main() {
+
+    let registration_resend_rate = Duration::from_secs(5);
+    let region_server_disconnect_timeout = Duration::from_secs(16);
+
     // Build App
     App::default()
         // Plugins
@@ -29,11 +33,10 @@ fn main() {
         .add_plugins(HttpServerPlugin::new(http_protocol()))
         .add_plugins(HttpClientPlugin)
         // Resource
-        .init_resource::<Global>()
+        .insert_resource(Global::new(registration_resend_rate, region_server_disconnect_timeout))
         // Startup System
         .add_systems(Startup, naia::init)
         .add_systems(Startup, http_server::init)
-        .add_systems(Startup, http_client::send_register_instance)
         // Receive Server Events
         .add_systems(
             Update,
@@ -45,6 +48,8 @@ fn main() {
                 http_server::recv_login_request,
                 http_server::recv_heartbeat_request,
                 http_client::recv_register_instance_response,
+                http_client::send_connect_region,
+                http_client::process_region_server_disconnect,
             )
                 .in_set(ReceiveEvents),
         )

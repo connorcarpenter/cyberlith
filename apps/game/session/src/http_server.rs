@@ -7,6 +7,8 @@ use bevy_http_server::HttpServer;
 use session_server_http_proto::{HeartbeatRequest, HeartbeatResponse, IncomingUserRequest, IncomingUserResponse};
 use config::SESSION_SERVER_HTTP_ADDR;
 
+use crate::global::Global;
+
 pub fn init(mut server: ResMut<HttpServer>) {
     info!("Session HTTP Server starting up");
 
@@ -24,12 +26,18 @@ pub fn recv_login_request(mut server: ResMut<HttpServer>) {
     }
 }
 
-pub fn recv_heartbeat_request(mut server: ResMut<HttpServer>) {
+pub fn recv_heartbeat_request(
+    mut server: ResMut<HttpServer>,
+    mut global: ResMut<Global>,
+) {
     while let Some((addr, request, response_key)) = server.receive::<HeartbeatRequest>() {
-        info!("Heartbeat request received from {} (regionserver?): Login(secret: {})", addr, request.region_secret);
+        info!("Heartbeat request received from {}: Login(secret: {})", addr, request.region_secret);
 
-        info!("Sending heartbeat response to region server ..");
+        // setting last heard
+        global.heard_from_region_server();
 
+        // responding
+        // info!("Sending heartbeat response to region server ..");
         server.respond(response_key, HeartbeatResponse);
     }
 }
