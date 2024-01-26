@@ -8,13 +8,15 @@ use serde::SerdeSocketAddr;
 // Request
 #[derive(Serde, PartialEq, Clone)]
 pub struct WorldRegisterInstanceRequest {
+    world_secret: String,
     http_addr: SerdeSocketAddr,
     signal_addr: SerdeSocketAddr,
 }
 
 impl WorldRegisterInstanceRequest {
-    pub fn new(http_addr: SocketAddr, signal_addr: SocketAddr) -> Self {
+    pub fn new(world_secret: &str, http_addr: SocketAddr, signal_addr: SocketAddr) -> Self {
         Self {
+            world_secret: world_secret.to_string(),
             http_addr: SerdeSocketAddr::new(http_addr),
             signal_addr: SerdeSocketAddr::new(signal_addr),
         }

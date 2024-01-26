@@ -8,13 +8,16 @@ use serde::SerdeSocketAddr;
 // Request
 #[derive(Serde, PartialEq, Clone)]
 pub struct SessionUserLoginRequest {
+    orchestrator_secret: String,
+    // TODO: shouldn't send username & password in plaintext here
     pub username: String,
     pub password: String,
 }
 
 impl SessionUserLoginRequest {
-    pub fn new(username: &str, password: &str) -> Self {
+    pub fn new(orchestrator_secret: &str, username: &str, password: &str) -> Self {
         Self {
+            orchestrator_secret: orchestrator_secret.to_string(),
             username: username.to_string(),
             password: password.to_string(),
         }

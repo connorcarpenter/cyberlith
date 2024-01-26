@@ -7,6 +7,7 @@ use serde::SerdeSocketAddr;
 // Request
 #[derive(Serde, PartialEq, Clone)]
 pub struct LoginRequest {
+    // TODO: shouldn't send username & password in plaintext here
     pub username: String,
     pub password: String,
 }

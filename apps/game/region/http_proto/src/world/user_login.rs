@@ -7,11 +7,15 @@ use serde::SerdeSocketAddr;
 
 // Request
 #[derive(Serde, PartialEq, Clone)]
-pub struct WorldUserLoginRequest;
+pub struct WorldUserLoginRequest {
+    session_secret: String,
+}
 
 impl WorldUserLoginRequest {
-    pub fn new() -> Self {
-        Self
+    pub fn new(session_secret: &str) -> Self {
+        Self {
+            session_secret: session_secret.to_string(),
+        }
     }
 }
 

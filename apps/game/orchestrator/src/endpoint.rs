@@ -4,7 +4,7 @@ use http_client::HttpClient;
 
 use http_server::Server;
 
-use config::REGION_SERVER_ADDR;
+use config::{REGION_SERVER_ADDR, ORCHESTRATOR_SECRET};
 
 use orchestrator_http_proto::{LoginRequest, LoginResponse};
 use region_server_http_proto::SessionUserLoginRequest;
@@ -26,7 +26,7 @@ async fn async_impl(incoming_request: LoginRequest) -> Result<LoginResponse, ()>
 
     info!("Sending login request to region server");
 
-    let region_request = SessionUserLoginRequest::new(&incoming_request.username, &incoming_request.password);
+    let region_request = SessionUserLoginRequest::new(ORCHESTRATOR_SECRET, &incoming_request.username, &incoming_request.password);
     let region_server_addr = REGION_SERVER_ADDR.parse().unwrap();
     let Ok(region_response) = HttpClient::send(&region_server_addr, region_request).await else {
         warn!("Failed login request to region server");

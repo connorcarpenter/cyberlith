@@ -23,14 +23,17 @@ pub struct Global {
     world_connect_response_keys: HashMap<ClientResponseKey<WorldUserLoginResponse>, UserKey>,
     registration_resend_rate: Duration,
     region_server_disconnect_timeout: Duration,
+    world_connect_resend_rate: Duration,
     login_tokens: HashSet<String>,
+    worldless_users: HashMap<UserKey, Option<Instant>>,
 }
 
 impl Global {
 
     pub fn new(
         registration_resend_rate: Duration,
-        region_server_disconnect_timeout: Duration
+        region_server_disconnect_timeout: Duration,
+        world_connect_resend_rate: Duration,
     ) -> Self {
         Self {
             region_server_connection_state: ConnectionState::Disconnected,
@@ -40,7 +43,9 @@ impl Global {
             world_connect_response_keys: HashMap::new(),
             registration_resend_rate,
             region_server_disconnect_timeout,
+            world_connect_resend_rate,
             login_tokens: HashSet::new(),
+            worldless_users: HashMap::new(),
         }
     }
 
@@ -96,6 +101,34 @@ impl Global {
     }
 
     // World Keys
+
+    pub fn init_worldless_user(&mut self, user_key: &UserKey) {
+        self.worldless_users.insert(*user_key, None);
+    }
+
+    pub fn add_worldless_user(&mut self, user_key: &UserKey) {
+        self.worldless_users.insert(*user_key, Some(Instant::now()));
+    }
+
+    pub fn take_worldless_users(&mut self) -> Vec<UserKey> {
+        let now = Instant::now();
+
+        let mut worldless_users = Vec::new();
+        for (user_key, last_sent_opt) in self.worldless_users.iter() {
+            if let Some(last_sent) = last_sent_opt {
+                let time_since_last_sent = now.duration_since(*last_sent);
+                if time_since_last_sent >= self.world_connect_resend_rate {
+                    worldless_users.push(*user_key);
+                }
+            } else {
+                worldless_users.push(*user_key);
+            }
+        }
+        for user_key in worldless_users.iter() {
+            self.worldless_users.remove(user_key);
+        }
+        worldless_users
+    }
 
     pub fn add_world_key(&mut self, user_key: &UserKey, response_key: ClientResponseKey<WorldUserLoginResponse>) {
         self.world_connect_response_keys.insert(response_key, user_key.clone());

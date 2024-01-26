@@ -6,9 +6,9 @@ use naia_bevy_server::Server;
 
 use bevy_http_client::{HttpClient, ResponseError};
 
-use region_server_http_proto::SessionRegisterInstanceRequest;
+use region_server_http_proto::{SessionRegisterInstanceRequest, WorldUserLoginRequest};
 use session_server_naia_proto::{channels::PrimaryChannel, messages::WorldConnectToken};
-use config::{REGION_SERVER_ADDR, SESSION_SERVER_HTTP_ADDR, SESSION_SERVER_SIGNAL_ADDR};
+use config::{REGION_SERVER_ADDR, SESSION_SERVER_HTTP_ADDR, SESSION_SERVER_SIGNAL_ADDR, SESSION_SERVER_SECRET};
 
 use crate::global::Global;
 
@@ -28,6 +28,7 @@ pub fn send_connect_region(
 
     //info!("Sending request to register instance with region server ..");
     let request = SessionRegisterInstanceRequest::new(
+        SESSION_SERVER_SECRET,
         SESSION_SERVER_HTTP_ADDR.parse().unwrap(),
         SESSION_SERVER_SIGNAL_ADDR.parse().unwrap(),
     );
@@ -77,12 +78,26 @@ pub fn process_region_server_disconnect(mut global: ResMut<Global>) {
     }
 }
 
+pub fn send_world_connect_request(
+    mut http_client: ResMut<HttpClient>,
+    mut global: ResMut<Global>,
+) {
+    let worldless_users = global.take_worldless_users();
+    for user_key in worldless_users {
+        let request = WorldUserLoginRequest::new(SESSION_SERVER_SECRET);
+        let socket_addr = REGION_SERVER_ADDR.parse().unwrap();
+        let key = http_client.send(&socket_addr, request);
+        global.add_world_key(&user_key, key);
+    }
+}
+
 pub fn recv_world_connect_response(
     mut server: Server,
     mut http_client: ResMut<HttpClient>,
     mut global: ResMut<Global>,
 ) {
     let mut received_response_keys = Vec::new();
+    let mut failed_response_user_keys = Vec::new();
     for (response_key, user_key) in global.world_keys() {
         if let Some(result) = http_client.recv(response_key) {
             received_response_keys.push(response_key.clone());
@@ -98,11 +113,15 @@ pub fn recv_world_connect_response(
                 }
                 Err(_) => {
                     warn!("error receiving message from region server..");
+                    failed_response_user_keys.push(user_key.clone());
                 }
             }
         }
     }
     for response_key in received_response_keys {
         global.remove_world_key(&response_key);
+    }
+    for user_key in failed_response_user_keys {
+        global.add_worldless_user(&user_key);
     }
 }

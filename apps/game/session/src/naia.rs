@@ -8,11 +8,8 @@ use naia_bevy_server::{
     Server,
 };
 
-use bevy_http_client::HttpClient;
-
 use session_server_naia_proto::messages::Auth;
-use region_server_http_proto::WorldUserLoginRequest;
-use config::{SESSION_SERVER_SIGNAL_ADDR, SESSION_SERVER_WEBRTC_ADDR, REGION_SERVER_ADDR};
+use config::{SESSION_SERVER_SIGNAL_ADDR, SESSION_SERVER_WEBRTC_ADDR};
 
 use crate::global::Global;
 
@@ -60,7 +57,6 @@ pub fn auth_events(
 pub fn connect_events(
     server: Server,
     mut event_reader: EventReader<ConnectEvent>,
-    mut http_client: ResMut<HttpClient>,
     mut global: ResMut<Global>,
 ) {
     for ConnectEvent(user_key) in event_reader.read() {
@@ -68,11 +64,7 @@ pub fn connect_events(
 
         info!("Server connected to: {}", address);
 
-        info!("Sending request for World Server Token to Region Server");
-        let request = WorldUserLoginRequest::new();
-        let socket_addr = REGION_SERVER_ADDR.parse().unwrap();
-        let key = http_client.send(&socket_addr, request);
-        global.add_world_key(user_key, key);
+        global.init_worldless_user(user_key);
     }
 }
 

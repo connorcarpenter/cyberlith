@@ -23,6 +23,7 @@ fn main() {
 
     let registration_resend_rate = Duration::from_secs(5);
     let region_server_disconnect_timeout = Duration::from_secs(16);
+    let world_connect_resend_rate = Duration::from_secs(5);
 
     // Build App
     App::default()
@@ -33,7 +34,7 @@ fn main() {
         .add_plugins(HttpServerPlugin::new(http_protocol()))
         .add_plugins(HttpClientPlugin)
         // Resource
-        .insert_resource(Global::new(registration_resend_rate, region_server_disconnect_timeout))
+        .insert_resource(Global::new(registration_resend_rate, region_server_disconnect_timeout, world_connect_resend_rate))
         // Startup System
         .add_systems(Startup, naia::init)
         .add_systems(Startup, http_server::init)
@@ -51,6 +52,7 @@ fn main() {
                 http_client::recv_register_instance_response,
                 http_client::send_connect_region,
                 http_client::process_region_server_disconnect,
+                http_client::send_world_connect_request,
             )
                 .in_set(ReceiveEvents),
         )

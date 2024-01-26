@@ -7,16 +7,22 @@ use serde::SerdeSocketAddr;
 // Request
 #[derive(Serde, PartialEq, Clone)]
 pub struct SessionRegisterInstanceRequest {
+    session_secret: String,
     http_addr: SerdeSocketAddr,
     signal_addr: SerdeSocketAddr,
 }
 
 impl SessionRegisterInstanceRequest {
-    pub fn new(http_addr: SocketAddr, signal_addr: SocketAddr) -> Self {
+    pub fn new(session_secret: &str, http_addr: SocketAddr, signal_addr: SocketAddr) -> Self {
         Self {
+            session_secret: session_secret.to_string(),
             http_addr: SerdeSocketAddr::new(http_addr),
             signal_addr: SerdeSocketAddr::new(signal_addr),
         }
+    }
+
+    pub fn session_secret(&self) -> &str {
+        &self.session_secret
     }
 
     pub fn http_addr(&self) -> SocketAddr {

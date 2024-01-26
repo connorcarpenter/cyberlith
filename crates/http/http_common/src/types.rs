@@ -57,11 +57,20 @@ pub struct Request {
 
 impl Request {
     pub fn new(method: Method, url: &str, body: Vec<u8>) -> Self {
+
+        let mut headers = BTreeMap::new();
+
+        if method == Method::Get && !body.is_empty() {
+            panic!("GET requests cannot have a body");
+        } else {
+            headers.insert("Content-Length".to_string(), body.len().to_string());
+        }
+
         Self {
             method,
             url: url.to_string(),
             body,
-            headers: BTreeMap::new(),
+            headers,
         }
     }
 }
