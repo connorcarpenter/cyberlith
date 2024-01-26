@@ -6,7 +6,7 @@ use log::warn;
 use smol::channel::{Receiver, Sender};
 
 use bevy_http_shared::Protocol;
-use http_common::{ApiRequest, ApiResponse, Request, Response};
+use http_common::{ApiRequest, ApiResponse, Request, Response, ResponseError};
 
 use crate::{ResponseKey, server_state::ServerState};
 
@@ -14,7 +14,7 @@ use crate::{ResponseKey, server_state::ServerState};
 pub struct HttpServer {
     state: Option<ServerState>,
     request_receivers: HashMap<TypeId, Receiver<(u64, SocketAddr, Request)>>,
-    response_sender: Sender<(u64, Response)>,
+    response_sender: Sender<(u64, Result<Response, ResponseError>)>,
     listening: bool,
 }
 
@@ -57,9 +57,16 @@ impl HttpServer {
         }
     }
 
-    pub fn respond<S: ApiResponse>(&mut self, key: ResponseKey<S>, response: S) {
+    pub fn respond<S: ApiResponse>(&mut self, key: ResponseKey<S>, response_result: Result<S, ResponseError>) {
         let id = key.id;
-        let response = response.to_response();
-        self.response_sender.try_send((id, response)).unwrap();
+        let response_result = match response_result {
+            Ok(response) => {
+                Ok(response.to_response())
+            }
+            Err(error) => {
+                Err(error)
+            }
+        };
+        self.response_sender.try_send((id, response_result)).unwrap();
     }
 }

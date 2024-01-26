@@ -4,7 +4,7 @@ use bevy_log::{info, warn};
 
 use naia_bevy_server::Server;
 
-use bevy_http_client::{HttpClient, ResponseError};
+use bevy_http_client::HttpClient;
 
 use region_server_http_proto::{SessionRegisterInstanceRequest, WorldUserLoginRequest};
 use session_server_naia_proto::{channels::PrimaryChannel, messages::WorldConnectToken};
@@ -51,17 +51,7 @@ pub fn recv_register_instance_response(
                     global.set_connected();
                 }
                 Err(error) => {
-                    match error {
-                        ResponseError::HttpError(error_string) => {
-                            warn!("http error: {}", error_string);
-                        }
-                        ResponseError::SerdeError => {
-                            warn!("serde error");
-                        }
-                        ResponseError::None => {
-                            warn!("none error?");
-                        }
-                    }
+                    warn!("error: {}", error.to_string());
                 }
             }
             global.clear_register_instance_response_key();

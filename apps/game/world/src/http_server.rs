@@ -17,8 +17,8 @@ pub fn init(mut server: ResMut<HttpServer>) {
 }
 
 pub fn recv_login_request(
-    mut server: ResMut<HttpServer>,
     mut global: ResMut<Global>,
+    mut server: ResMut<HttpServer>,
 ) {
     while let Some((addr, request, response_key)) = server.receive::<IncomingUserRequest>() {
         info!("Login request received from {}: Login(secret: {}, token: {})", addr, request.region_secret, request.login_token);
@@ -27,13 +27,13 @@ pub fn recv_login_request(
 
         info!("Sending login response to region server ..");
 
-        server.respond(response_key, IncomingUserResponse);
+        server.respond(response_key, Ok(IncomingUserResponse));
     }
 }
 
 pub fn recv_heartbeat_request(
-    mut server: ResMut<HttpServer>,
     mut global: ResMut<Global>,
+    mut server: ResMut<HttpServer>,
 ) {
     while let Some((addr, request, response_key)) = server.receive::<HeartbeatRequest>() {
         info!("Heartbeat request received from {}: (secret: {})", addr, request.region_secret);
@@ -43,6 +43,6 @@ pub fn recv_heartbeat_request(
 
         // responding
         // info!("Sending heartbeat response to region server ..");
-        server.respond(response_key, HeartbeatResponse);
+        server.respond(response_key, Ok(HeartbeatResponse));
     }
 }

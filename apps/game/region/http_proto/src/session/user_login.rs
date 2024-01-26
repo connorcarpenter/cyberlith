@@ -22,6 +22,10 @@ impl SessionUserLoginRequest {
             password: password.to_string(),
         }
     }
+
+    pub fn orchestrator_secret(&self) -> &str {
+        &self.orchestrator_secret
+    }
 }
 
 // Response

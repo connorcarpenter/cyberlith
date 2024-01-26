@@ -12,7 +12,7 @@ use smol::{
     lock::RwLock,
 };
 
-use http_common::{ApiRequest, ApiResponse, Request, Response};
+use http_common::{ApiRequest, ApiResponse, Request, Response, ResponseError};
 
 use http_server_shared::{executor, serve_impl};
 
@@ -27,7 +27,7 @@ pub struct Server {
                 + FnMut(
                 (SocketAddr, Request)
                 )
-                    -> Pin<Box<dyn 'static + Send + Sync + Future<Output = Result<Response, ()>>>>,
+                    -> Pin<Box<dyn 'static + Send + Sync + Future<Output = Result<Response, ResponseError>>>>,
         >,
     >,
 }
@@ -56,7 +56,7 @@ impl Server {
 
     pub fn endpoint<
         TypeRequest: 'static + ApiRequest,
-        TypeResponse: 'static + Send + Sync + Future<Output = Result<TypeRequest::Response, ()>>,
+        TypeResponse: 'static + Send + Sync + Future<Output = Result<TypeRequest::Response, ResponseError>>,
         Handler: 'static + Send + Sync + FnMut((SocketAddr, TypeRequest)) -> TypeResponse,
     >(
         &mut self,
@@ -75,7 +75,7 @@ impl Server {
 
 fn endpoint_2<
     TypeRequest: 'static + ApiRequest,
-    TypeResponse: 'static + Send + Sync + Future<Output = Result<TypeRequest::Response, ()>>,
+    TypeResponse: 'static + Send + Sync + Future<Output = Result<TypeRequest::Response, ResponseError>>,
     Handler: 'static + Send + Sync + FnMut((SocketAddr, TypeRequest)) -> TypeResponse,
 >(
     mut handler: Handler,
@@ -83,7 +83,7 @@ fn endpoint_2<
     dyn 'static
         + Send
         + Sync
-        + FnMut((SocketAddr, Request)) -> Pin<Box<dyn 'static + Send + Sync + Future<Output = Result<Response, ()>>>>,
+        + FnMut((SocketAddr, Request)) -> Pin<Box<dyn 'static + Send + Sync + Future<Output = Result<Response, ResponseError>>>>,
 > {
     Box::new(move |args: (SocketAddr, Request)| {
 
@@ -104,7 +104,7 @@ fn endpoint_2<
                     let pure_response = typed_response.to_response();
                     Ok(pure_response)
                 }
-                Err(_) => Err(()),
+                Err(err) => Err(err),
             }
         };
 

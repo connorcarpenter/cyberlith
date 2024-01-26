@@ -17,6 +17,10 @@ impl WorldUserLoginRequest {
             session_secret: session_secret.to_string(),
         }
     }
+
+    pub fn session_secret(&self) -> &str {
+        &self.session_secret
+    }
 }
 
 // Response

@@ -2,7 +2,7 @@ use std::{collections::HashMap, net::SocketAddr, time::{Duration, Instant}};
 
 use log::{info, warn};
 
-use http_client::{HttpClient, ResponseError};
+use http_client::HttpClient;
 use http_server::Server;
 
 use session_server_http_proto::HeartbeatRequest as SessionHeartbeatRequest;
@@ -98,17 +98,7 @@ impl State {
                         *last_heard = Instant::now();
                     },
                     Err(err) => {
-                        match err {
-                            ResponseError::None => {
-                                warn!("from {:?} - session heartbeat failure: None", http_addr);
-                            }
-                            ResponseError::HttpError(err_0) => {
-                                warn!("from {:?} - session heartbeat failure: HttpError: {:?}", http_addr, err_0);
-                            }
-                            ResponseError::SerdeError => {
-                                warn!("from {:?} - session heartbeat failure: SerdeError", http_addr);
-                            }
-                        }
+                        warn!("from {:?} - session heartbeat failure: {}", http_addr, err.to_string());
                     }
                 }
             });
@@ -129,17 +119,7 @@ impl State {
                         *last_heard = Instant::now();
                     },
                     Err(err) => {
-                        match err {
-                            ResponseError::None => {
-                                warn!("from {:?} - world heartbeat failure: None", http_addr);
-                            }
-                            ResponseError::HttpError(err_0) => {
-                                warn!("from {:?} - world heartbeat failure: HttpError: {:?}", http_addr, err_0);
-                            }
-                            ResponseError::SerdeError => {
-                                warn!("from {:?} - world heartbeat failure: SerdeError", http_addr);
-                            }
-                        }
+                        warn!("from {:?} - world heartbeat failure: {}", http_addr, err.to_string());
                     }
                 }
             });

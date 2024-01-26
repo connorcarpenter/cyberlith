@@ -1,5 +1,6 @@
 use std::net::SocketAddr;
 use log::info;
+use http_client::ResponseError;
 
 use http_server::{async_dup::Arc, Server, smol::lock::RwLock};
 
@@ -28,7 +29,7 @@ async fn async_impl(
     incoming_addr: SocketAddr,
     state: Arc<RwLock<State>>,
     incoming_request: SessionRegisterInstanceRequest
-) -> Result<SessionRegisterInstanceResponse, ()> {
+) -> Result<SessionRegisterInstanceResponse, ResponseError> {
 
     let http_addr = incoming_request.http_addr();
     let signal_addr = incoming_request.signal_addr();

@@ -9,7 +9,7 @@ use log::info;
 use smol::{channel::{Receiver, Sender}, lock::RwLock, Async, channel};
 
 use bevy_http_shared::Protocol;
-use http_common::{Request, Response};
+use http_common::{Request, Response, ResponseError};
 use http_server_shared::{executor, serve_impl};
 
 struct KeyMaker {
@@ -33,13 +33,13 @@ impl KeyMaker {
 pub struct ServerState {
     protocol: Protocol,
     request_senders: HashMap<TypeId, Sender<(u64, SocketAddr, Request)>>,
-    main_response_receiver: Option<Receiver<(u64, Response)>>,
-    response_senders: HashMap<u64, Sender<Response>>,
+    main_response_receiver: Option<Receiver<(u64, Result<Response, ResponseError>)>>,
+    response_senders: HashMap<u64, Sender<Result<Response, ResponseError>>>,
     key_maker: KeyMaker,
 }
 
 impl ServerState {
-    pub fn new(protocol: Protocol) -> (Self, HashMap<TypeId, Receiver<(u64, SocketAddr, Request)>>, Sender<(u64, Response)>) {
+    pub fn new(protocol: Protocol) -> (Self, HashMap<TypeId, Receiver<(u64, SocketAddr, Request)>>, Sender<(u64, Result<Response, ResponseError>)>) {
 
         // Requests
         let mut request_senders = HashMap::new();
@@ -100,7 +100,7 @@ async fn listen(
     listen_address: SocketAddr,
     protocol: Protocol,
     request_senders: HashMap<TypeId, Sender<(u64, SocketAddr, Request)>>,
-    response_senders_map: Arc<RwLock<HashMap<u64, Sender<Response>>>>,
+    response_senders_map: Arc<RwLock<HashMap<u64, Sender<Result<Response, ResponseError>>>>>,
     key_maker: Arc<RwLock<KeyMaker>>,
 ) {
     let listener = Async::<TcpListener>::bind(listen_address)
@@ -147,8 +147,8 @@ async fn listen(
 
 // needs response_senders
 async fn process_responses(
-    response_receiver: Receiver<(u64, Response)>,
-    response_senders_map: Arc<RwLock<HashMap<u64, Sender<Response>>>>
+    response_receiver: Receiver<(u64, Result<Response, ResponseError>)>,
+    response_senders_map: Arc<RwLock<HashMap<u64, Sender<Result<Response, ResponseError>>>>>
 ) {
 
     loop {
@@ -169,7 +169,7 @@ async fn serve(
     response_stream: Arc<Async<TcpStream>>,
     protocol: Arc<Protocol>,
     request_senders: Arc<HashMap<TypeId, Sender<(u64, SocketAddr, Request)>>>,
-    response_senders: Arc<RwLock<HashMap<u64, Sender<Response>>>>,
+    response_senders: Arc<RwLock<HashMap<u64, Sender<Result<Response, ResponseError>>>>>,
     key_maker: Arc<RwLock<KeyMaker>>,
 ) {
     let endpoint_key_ref: Arc<RwLock<Option<TypeId>>> = Arc::new(RwLock::new(None));
@@ -226,7 +226,14 @@ async fn serve(
                     response_receiver
                 };
 
-                let response_result = response_receiver.recv().await.map_err(|_| ());
+                let response_result = match response_receiver.recv().await {
+                    Ok(response_result) => {
+                        response_result
+                    }
+                    Err(_err) => {
+                        Err(ResponseError::ChannelRecvError)
+                    }
+                };
 
                 response_result
             }

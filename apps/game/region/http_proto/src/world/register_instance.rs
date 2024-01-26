@@ -22,6 +22,10 @@ impl WorldRegisterInstanceRequest {
         }
     }
 
+    pub fn world_secret(&self) -> &str {
+        &self.world_secret
+    }
+
     pub fn http_addr(&self) -> SocketAddr {
         self.http_addr.inner()
     }

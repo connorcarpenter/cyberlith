@@ -1,7 +1,7 @@
 
 use log::{info, warn};
 
-use http_client::HttpClient;
+use http_client::{HttpClient, ResponseError};
 use http_server::{async_dup::Arc, Server, smol::lock::RwLock};
 
 use region_server_http_proto::{
@@ -30,13 +30,13 @@ pub fn session_user_login(
 async fn async_impl(
     state: Arc<RwLock<State>>,
     incoming_request: SessionUserLoginRequest
-) -> Result<SessionUserLoginResponse, ()> {
+) -> Result<SessionUserLoginResponse, ResponseError> {
     info!("session user login request received from orchestrator");
 
     let state = state.read().await;
     let Some(session_server) = state.get_available_session_server() else {
-        warn!("No available session server");
-        return Err(());
+        warn!("no available session server");
+        return Err(ResponseError::InternalServerError("no available session server".to_string()));
     };
     let session_server_http_addr = session_server.http_addr();
     let session_server_signaling_addr = session_server.signal_addr();
@@ -49,7 +49,7 @@ async fn async_impl(
 
     let Ok(outgoing_response) = HttpClient::send(&session_server_http_addr, request).await else {
         warn!("Failed incoming user request to session server");
-        return Err(());
+        return Err(ResponseError::InternalServerError("failed incoming user request to session server".to_string()));
     };
 
     info!("Received incoming user response from session server");

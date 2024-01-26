@@ -12,13 +12,13 @@ use smol::{
     stream::StreamExt,
 };
 
-use http_common::{Method, Request, Response};
+use http_common::{Method, Request, Response, ResponseError};
 
 use crate::ReadState;
 
 pub async fn serve_impl<
     MatchOutput: Future<Output = bool> + 'static,
-    RespondOutput: Future<Output = Result<Response, ()>> + 'static,
+    RespondOutput: Future<Output = Result<Response, ResponseError>> + 'static,
 >(
     incoming_address: SocketAddr,
     mut response_stream: Arc<Async<TcpStream>>,

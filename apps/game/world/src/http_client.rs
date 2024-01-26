@@ -2,7 +2,7 @@
 use bevy_ecs::change_detection::ResMut;
 use bevy_log::{info, warn};
 
-use bevy_http_client::{HttpClient, ResponseError};
+use bevy_http_client::HttpClient;
 
 use region_server_http_proto::WorldRegisterInstanceRequest;
 use config::{REGION_SERVER_ADDR, WORLD_SERVER_HTTP_ADDR, WORLD_SERVER_SIGNAL_ADDR, WORLD_SERVER_SECRET};
@@ -48,17 +48,7 @@ pub fn recv_register_instance_response(
                     global.set_connected();
                 }
                 Err(error) => {
-                    match error {
-                        ResponseError::HttpError(error_string) => {
-                            warn!("http error: {}", error_string);
-                        }
-                        ResponseError::SerdeError => {
-                            warn!("serde error");
-                        }
-                        ResponseError::None => {
-                            warn!("none error?");
-                        }
-                    }
+                    warn!("error: {}", error.to_string());
                 }
             }
             global.clear_register_instance_response_key();
