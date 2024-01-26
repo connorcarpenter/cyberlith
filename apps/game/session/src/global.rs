@@ -1,4 +1,5 @@
 use std::{collections::HashMap, time::{Instant, Duration}};
+use std::collections::HashSet;
 
 use bevy_ecs::system::Resource;
 
@@ -22,6 +23,7 @@ pub struct Global {
     world_connect_response_keys: HashMap<ClientResponseKey<WorldUserLoginResponse>, UserKey>,
     registration_resend_rate: Duration,
     region_server_disconnect_timeout: Duration,
+    login_tokens: HashSet<String>,
 }
 
 impl Global {
@@ -38,6 +40,7 @@ impl Global {
             world_connect_response_keys: HashMap::new(),
             registration_resend_rate,
             region_server_disconnect_timeout,
+            login_tokens: HashSet::new(),
         }
     }
 
@@ -104,5 +107,15 @@ impl Global {
 
     pub fn world_keys(&self) -> impl Iterator<Item = (&ClientResponseKey<WorldUserLoginResponse>, &UserKey)> {
         self.world_connect_response_keys.iter()
+    }
+
+    // Client login
+
+    pub fn add_login_token(&mut self, token: &str) {
+        self.login_tokens.insert(token.to_string());
+    }
+
+    pub fn take_login_token(&mut self, token: &str) -> bool {
+        self.login_tokens.remove(token)
     }
 }

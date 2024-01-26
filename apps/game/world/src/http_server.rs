@@ -16,9 +16,14 @@ pub fn init(mut server: ResMut<HttpServer>) {
     server.listen(socket_addr);
 }
 
-pub fn recv_login_request(mut server: ResMut<HttpServer>) {
+pub fn recv_login_request(
+    mut server: ResMut<HttpServer>,
+    mut global: ResMut<Global>,
+) {
     while let Some((addr, request, response_key)) = server.receive::<IncomingUserRequest>() {
-        info!("Login request received from {} (regionserver?): Login(secret: {}, token: {})", addr, request.region_secret, request.login_token);
+        info!("Login request received from {}: Login(secret: {}, token: {})", addr, request.region_secret, request.login_token);
+
+        global.add_login_token(&request.login_token);
 
         info!("Sending login response to region server ..");
 
@@ -31,7 +36,7 @@ pub fn recv_heartbeat_request(
     mut global: ResMut<Global>,
 ) {
     while let Some((addr, request, response_key)) = server.receive::<HeartbeatRequest>() {
-        info!("Heartbeat request received from {}: Login(secret: {})", addr, request.region_secret);
+        info!("Heartbeat request received from {}: (secret: {})", addr, request.region_secret);
 
         // setting last heard
         global.heard_from_region_server();

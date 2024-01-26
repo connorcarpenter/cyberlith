@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::time::{Instant, Duration};
 
 use bevy_ecs::system::Resource;
@@ -19,6 +20,7 @@ pub struct Global {
     register_instance_response_key: Option<ClientResponseKey<WorldRegisterInstanceResponse>>,
     registration_resend_rate: Duration,
     region_server_disconnect_timeout: Duration,
+    login_tokens: HashSet<String>,
 }
 
 impl Global {
@@ -34,6 +36,7 @@ impl Global {
             register_instance_response_key: None,
             registration_resend_rate,
             region_server_disconnect_timeout,
+            login_tokens: HashSet::new(),
         }
     }
 
@@ -85,5 +88,15 @@ impl Global {
 
     pub fn set_disconnected(&mut self) {
         self.region_server_connection_state = ConnectionState::Disconnected;
+    }
+
+    // Client login
+
+    pub fn add_login_token(&mut self, token: &str) {
+        self.login_tokens.insert(token.to_string());
+    }
+
+    pub fn take_login_token(&mut self, token: &str) -> bool {
+        self.login_tokens.remove(token)
     }
 }

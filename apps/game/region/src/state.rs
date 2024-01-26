@@ -30,16 +30,16 @@ impl State {
         self.session_instances.insert(instance.http_addr(), instance);
     }
 
-    pub fn get_available_session_server(&self) -> &SessionInstance {
-        self.session_instances.values().next().unwrap()
+    pub fn get_available_session_server(&self) -> Option<&SessionInstance> {
+        self.session_instances.values().next()
     }
 
     pub fn register_world_instance(&mut self, instance: WorldInstance) {
         self.world_instances.insert(instance.http_addr(), instance);
     }
 
-    pub fn get_available_world_server(&self) -> &WorldInstance {
-        self.world_instances.values().next().unwrap()
+    pub fn get_available_world_server(&self) -> Option<&WorldInstance> {
+        self.world_instances.values().next()
     }
 
     pub async fn send_heartbeats(&mut self) {

@@ -1,6 +1,6 @@
 
 use bevy_ecs::{event::EventReader, change_detection::ResMut};
-use bevy_log::info;
+use bevy_log::{info, warn};
 
 use naia_bevy_server::{
     events::{AuthEvents, ConnectEvent, DisconnectEvent, ErrorEvent},
@@ -34,15 +34,24 @@ pub fn init(mut server: Server) {
     server.listen(socket);
 }
 
-pub fn auth_events(mut server: Server, mut event_reader: EventReader<AuthEvents>) {
+pub fn auth_events(
+    mut global: ResMut<Global>,
+    mut server: Server,
+    mut event_reader: EventReader<AuthEvents>
+) {
     for events in event_reader.read() {
         for (user_key, auth) in events.read::<Auth>() {
-            if auth.token == "the_login_token" {
+            if global.take_login_token(&auth.token) {
+
+                info!("Accepted connection. Token: {}", auth.token);
+
                 // Accept incoming connection
                 server.accept_connection(&user_key);
             } else {
                 // Reject incoming connection
                 server.reject_connection(&user_key);
+
+                warn!("Rejected connection. Token: {}", auth.token);
             }
         }
     }
