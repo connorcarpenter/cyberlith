@@ -9,7 +9,7 @@ use region_server_http_proto::{
     WorldUserLoginResponse,
 };
 use world_server_http_proto::IncomingUserRequest;
-use config::REGION_SERVER_SECRET;
+use config::{REGION_SERVER_SECRET, SESSION_SERVER_SECRET};
 
 use crate::state::State;
 
@@ -31,6 +31,11 @@ async fn async_impl(
     state: Arc<RwLock<State>>,
     incoming_request: WorldUserLoginRequest
 ) -> Result<WorldUserLoginResponse, ResponseError> {
+
+    if incoming_request.session_secret() != SESSION_SERVER_SECRET {
+        warn!("invalid request secret");
+        return Err(ResponseError::Unauthenticated);
+    }
 
     info!("world user login request received from session server");
 

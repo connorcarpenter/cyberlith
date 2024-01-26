@@ -7,7 +7,7 @@ pub enum ResponseError {
     None,
     HttpError(String),
     SerdeError,
-    Unauthorized,
+    Unauthenticated,
     ChannelRecvError,
     InternalServerError(String),
 }
@@ -18,7 +18,7 @@ impl ResponseError {
             ResponseError::None => "None".to_string(),
             ResponseError::HttpError(error) => format!("HttpError: {}", error),
             ResponseError::SerdeError => "SerdeError".to_string(),
-            ResponseError::Unauthorized => "Unauthorized".to_string(),
+            ResponseError::Unauthenticated => "Unauthenticated".to_string(),
             ResponseError::ChannelRecvError => "ChannelRecvError".to_string(),
             ResponseError::InternalServerError(error) => format!("InternalServerError: {}", error),
         }

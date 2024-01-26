@@ -5,7 +5,7 @@ use bevy_http_shared::{ApiRequest, ApiResponse, Method};
 // Request
 #[derive(Serde, PartialEq, Clone)]
 pub struct HeartbeatRequest {
-    pub region_secret: String,
+    region_secret: String,
 }
 
 impl HeartbeatRequest {
@@ -13,6 +13,10 @@ impl HeartbeatRequest {
         Self {
             region_secret: region_secret.to_string(),
         }
+    }
+
+    pub fn region_secret(&self) -> &str {
+        &self.region_secret
     }
 }
 

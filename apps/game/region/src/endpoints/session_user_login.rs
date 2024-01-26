@@ -9,7 +9,7 @@ use region_server_http_proto::{
     SessionUserLoginResponse,
 };
 use session_server_http_proto::IncomingUserRequest;
-use config::REGION_SERVER_SECRET;
+use config::{REGION_SERVER_SECRET, ORCHESTRATOR_SECRET};
 
 use crate::state::State;
 
@@ -31,6 +31,12 @@ async fn async_impl(
     state: Arc<RwLock<State>>,
     incoming_request: SessionUserLoginRequest
 ) -> Result<SessionUserLoginResponse, ResponseError> {
+
+    if incoming_request.orchestrator_secret() != ORCHESTRATOR_SECRET {
+        warn!("invalid request secret");
+        return Err(ResponseError::Unauthenticated);
+    }
+
     info!("session user login request received from orchestrator");
 
     let state = state.read().await;

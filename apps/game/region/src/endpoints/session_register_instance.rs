@@ -1,13 +1,15 @@
 use std::net::SocketAddr;
-use log::info;
-use http_client::ResponseError;
 
+use log::{info, warn};
+
+use http_client::ResponseError;
 use http_server::{async_dup::Arc, Server, smol::lock::RwLock};
 
 use region_server_http_proto::{
     SessionRegisterInstanceRequest,
     SessionRegisterInstanceResponse,
 };
+use config::SESSION_SERVER_SECRET;
 
 use crate::{instances::SessionInstance, state::State};
 
@@ -30,6 +32,11 @@ async fn async_impl(
     state: Arc<RwLock<State>>,
     incoming_request: SessionRegisterInstanceRequest
 ) -> Result<SessionRegisterInstanceResponse, ResponseError> {
+
+    if incoming_request.session_secret() != SESSION_SERVER_SECRET {
+        warn!("invalid request secret");
+        return Err(ResponseError::Unauthenticated);
+    }
 
     let http_addr = incoming_request.http_addr();
     let signal_addr = incoming_request.signal_addr();

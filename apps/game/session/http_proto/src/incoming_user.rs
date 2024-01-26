@@ -5,7 +5,7 @@ use bevy_http_shared::{ApiRequest, ApiResponse, Method};
 // Request
 #[derive(Serde, PartialEq, Clone)]
 pub struct IncomingUserRequest {
-    pub region_secret: String,
+    region_secret: String,
     pub login_token: String,
 }
 
@@ -15,6 +15,10 @@ impl IncomingUserRequest {
             region_secret: region_secret.to_string(),
             login_token: login_token.to_string(),
         }
+    }
+
+    pub fn region_secret(&self) -> &str {
+        &self.region_secret
     }
 }
 
