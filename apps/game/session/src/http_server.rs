@@ -29,7 +29,7 @@ pub fn recv_login_request(
             continue;
         }
 
-        info!("Login request received from region server ({}): Login(token: {})", addr, request.login_token);
+        info!("Login request received from region server: Login(token: {})", request.login_token);
 
         global.add_login_token(&request.login_token);
 
@@ -43,7 +43,7 @@ pub fn recv_heartbeat_request(
     mut global: ResMut<Global>,
     mut server: ResMut<HttpServer>,
 ) {
-    while let Some((addr, request, response_key)) = server.receive::<HeartbeatRequest>() {
+    while let Some((_addr, request, response_key)) = server.receive::<HeartbeatRequest>() {
 
         if request.region_secret() != REGION_SERVER_SECRET {
             warn!("invalid request secret");
@@ -51,7 +51,7 @@ pub fn recv_heartbeat_request(
             continue;
         }
 
-        info!("Heartbeat request received from region server ({})", addr);
+        info!("Heartbeat request received from region server");
 
         // setting last heard
         global.heard_from_region_server();
