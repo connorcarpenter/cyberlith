@@ -2,7 +2,7 @@
 name = "gl"
 version = "0.13.0"
 edition = "2021"
-workspace = "../.."
+workspace = "../../.."
 
 # [package.metadata.docs.rs]
 # default-target = "x86_64-unknown-linux-gnu"

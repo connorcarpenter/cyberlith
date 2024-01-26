@@ -2,7 +2,7 @@
 name = "egui_gl"
 version = "0.23.0"
 edition = "2021"
-workspace = "../.."
+workspace = "../../.."
 
 [features]
 

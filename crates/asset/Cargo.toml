@@ -8,7 +8,7 @@ workspace = "../.."
 # should never include "render_gl" or "render_wgpu" here!
 
 filetypes = { path = "../filetypes", features = ["read"] }
-render_api = { path = "../render_api" }
+render_api = { path = "../render/render_api" }
 math = { path = "../math" }
 web_fs = { path = "../../../web_fs" }
 
