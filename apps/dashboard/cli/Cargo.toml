@@ -1,0 +1,15 @@
+[package]
+name = "dashboard_cli"
+version = "0.1.0"
+authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
+workspace = "../../.."
+edition = "2021"
+publish = false
+
+[features]
+
+[dependencies]
+dashboard_lib = { path = "../lib" }
+clap = { version = "2.33" }
+log = { version = "0.4", features = [] }
+simple_logger = { version = "4.0", default-features = false, features = ["timestamps"] }
