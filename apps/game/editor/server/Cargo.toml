@@ -2,7 +2,7 @@
 name = "editor_server"
 version = "0.1.0"
 authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
-workspace = "../../.."
+workspace = "../../../.."
 edition = "2021"
 publish = false
 
@@ -10,9 +10,9 @@ publish = false
 
 [dependencies]
 editor_proto = { path = "proto" }
-naia-bevy-server = { path = "../../../../naia/adapters/bevy/server", features = [ "transport_webrtc" ] }
-filetypes = { path = "../../../crates/filetypes", features = ["read", "write"] }
-math = { path = "../../../crates/math" }
+naia-bevy-server = { path = "../../../../../naia/adapters/bevy/server", features = [ "transport_webrtc" ] }
+filetypes = { path = "../../../../crates/filetypes", features = ["read", "write"] }
+math = { path = "../../../../crates/math" }
 
 # These are the official Bevy crates, going forward, we can use them because the Server isn't built for Wasm
 bevy_app = { version = "0.12.1", default-features=false }
