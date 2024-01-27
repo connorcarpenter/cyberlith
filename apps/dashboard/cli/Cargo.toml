@@ -10,6 +10,6 @@ publish = false
 
 [dependencies]
 dashboard_lib = { path = "../lib" }
-clap = { version = "2.33" }
+clap = { version = "4.4" }
 log = { version = "0.4", features = [] }
 simple_logger = { version = "4.0", default-features = false, features = ["timestamps"] }

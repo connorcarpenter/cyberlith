@@ -1,6 +1,21 @@
-use clap::App;
+use clap::Command;
 use log::{info, LevelFilter};
 use simple_logger::SimpleLogger;
+
+fn cli() -> Command {
+    Command::new("dashboard_cli")
+        .subcommand_required(true)
+        .arg_required_else_help(true)
+        .allow_external_subcommands(true)
+        .subcommand(
+            Command::new("up")
+                .about("starts live services"),
+        )
+        .subcommand(
+            Command::new("down")
+                .about("down live services"),
+        )
+}
 
 fn main() {
 
@@ -9,27 +24,15 @@ fn main() {
         .init()
         .expect("A logger was already initialized");
 
-    let matches = App::new("dashboard_cli")
-        .version("0.1.0")
-        .author("Connor Carpenter")
-        .subcommand(
-            App::new("up")
-        )
-        .subcommand(
-            App::new("down")
-        )
-        .get_matches();
+    let matches = cli().get_matches();
 
-    match matches.subcommand_name() {
-        Some("up") => {
+    match matches.subcommand() {
+        Some(("up", _sub_matches)) => {
             dashboard_lib::up();
         }
-        Some("down") => {
+        Some(("down", _sub_matches)) => {
             dashboard_lib::down();
         }
-        _ => {
-            // Handle unknown commands or no command provided
-            info!("Invalid command or no command provided");
-        }
+        _ => unreachable!(), // If all subcommands are defined above, anything else is unreachable!()
     }
 }
