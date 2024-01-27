@@ -1,0 +1,26 @@
+[package]
+name = "world_server"
+version = "0.1.0"
+authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
+workspace = "../.."
+edition = "2021"
+publish = false
+
+[features]
+local = [ "config/local" ]
+prod = [ "config/prod" ]
+
+[dependencies]
+naia-bevy-server = { path = "../../../naia/adapters/bevy/server", features = [ "transport_webrtc" ] }
+bevy_http_server = { path = "../../crates/http/bevy_http_server" }
+bevy_http_client = { path = "../../crates/http/bevy_http_client" }
+config = { path = "../config", features = ["world"] }
+
+world_server_naia_proto = { path = "naia_proto" }
+world_server_http_proto = { path = "http_proto" }
+region_server_http_proto = { path = "../region/http_proto" }
+
+# These are the official Bevy crates, we can use them because the Server isn't built for Wasm
+bevy_app = { version = "0.12.1", default-features=false }
+bevy_ecs = { version = "0.12.1", default-features=false }
+bevy_log = { version = "0.12.1", default-features=false }

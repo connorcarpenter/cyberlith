@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Editor Client [RUN]" type="CargoCommandRunConfiguration" factoryName="Cargo Command" singleton="false">
     <option name="command" value="run" />
-    <option name="workingDirectory" value="file://$PROJECT_DIR$/apps/game/editor/client" />
+    <option name="workingDirectory" value="file://$PROJECT_DIR$/apps/editor/client" />
     <envs>
       <env name="CONFIG_ENV" value="config_local" />
     </envs>

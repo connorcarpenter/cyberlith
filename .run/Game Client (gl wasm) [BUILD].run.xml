@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Game Client (gl wasm) [BUILD]" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
     <option name="command" value="build --features &quot;gl_renderer, local&quot; --target &quot;wasm32-unknown-unknown&quot;" />
-    <option name="workingDirectory" value="file://$PROJECT_DIR$/apps/game/client" />
+    <option name="workingDirectory" value="file://$PROJECT_DIR$/apps/client" />
     <envs />
     <option name="emulateTerminal" value="false" />
     <option name="channel" value="DEFAULT" />
