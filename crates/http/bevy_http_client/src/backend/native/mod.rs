@@ -1,14 +1,18 @@
 use bevy_tasks::{AsyncComputeTaskPool, Task};
 use futures_lite::future;
 
-use http_common::{Request, Response, ResponseError};
+use http_common::{Request, RequestOptions, Response, ResponseError};
 
 pub(crate) struct RequestTask(pub(crate) Task<Result<Response, ResponseError>>);
 
-pub(crate) fn send_request(request: Request) -> RequestTask {
+pub(crate) fn send_request(request: Request, request_options_opt: Option<RequestOptions>) -> RequestTask {
     let thread_pool = AsyncComputeTaskPool::get();
 
-    let task = thread_pool.spawn(async { http_client_shared::fetch_async(request).await });
+    let task = if let Some(request_options) = request_options_opt {
+        thread_pool.spawn(async { http_client_shared::fetch_async_with_options(request, request_options).await })
+    } else {
+        thread_pool.spawn(async { http_client_shared::fetch_async(request).await })
+    };
 
     RequestTask(task)
 }

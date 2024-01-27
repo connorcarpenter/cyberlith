@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use http_common::{Request, Response, ResponseError};
+use http_common::{Request, RequestOptions, Response, ResponseError};
 
 use async_channel::{Receiver, Sender};
 
@@ -8,8 +8,15 @@ use async_channel::{Receiver, Sender};
 ///
 /// NOTE: `Ok(…)` is returned on network error.
 /// `Err` is only for failure to use the fetch API.
-pub fn fetch_blocking(request: &Request) -> crate::Result<Response> {
+pub fn fetch_blocking(request: &Request, request_options_opt: Option<RequestOptions>) -> crate::Result<Response> {
+
     let mut req = ureq::request(request.method.as_str(), &request.url);
+
+    if let Some(request_options) = request_options_opt {
+        if let Some(timeout_duration) = request_options.timeout_opt {
+            req = req.timeout(timeout_duration);
+        }
+    }
 
     for header in &request.headers {
         req = req.set(header.0, header.1);
@@ -58,14 +65,14 @@ pub fn fetch_blocking(request: &Request) -> crate::Result<Response> {
 
 // ----------------------------------------------------------------------------
 
-pub(crate) fn fetch(request: Request, on_done: Box<dyn FnOnce(crate::Result<Response>) + Send>) {
+pub(crate) fn fetch(request: Request, request_options_opt: Option<RequestOptions>, on_done: Box<dyn FnOnce(crate::Result<Response>) + Send>) {
     std::thread::Builder::new()
         .name("ehttp".to_owned())
-        .spawn(move || on_done(fetch_blocking(&request)))
+        .spawn(move || on_done(fetch_blocking(&request, request_options_opt)))
         .expect("Failed to spawn ehttp thread");
 }
 
-pub(crate) async fn fetch_async(request: Request) -> crate::Result<Response> {
+pub(crate) async fn fetch_async(request: Request, request_options_opt: Option<RequestOptions>) -> crate::Result<Response> {
     let (tx, rx): (
         Sender<crate::Result<Response>>,
         Receiver<crate::Result<Response>>,
@@ -73,6 +80,7 @@ pub(crate) async fn fetch_async(request: Request) -> crate::Result<Response> {
 
     fetch(
         request,
+        request_options_opt,
         Box::new(move |received| tx.send_blocking(received).unwrap()),
     );
     rx.recv().await.map_err(|err| err.to_string()).map_err(|estr| ResponseError::HttpError(estr))?

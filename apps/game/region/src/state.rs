@@ -2,7 +2,7 @@ use std::{collections::HashMap, net::SocketAddr, time::{Duration, Instant}};
 
 use log::{info, warn};
 
-use http_client::HttpClient;
+use http_client::{HttpClient, RequestOptions};
 use http_server::Server;
 
 use session_server_http_proto::HeartbeatRequest as SessionHeartbeatRequest;
@@ -90,7 +90,10 @@ impl State {
 
             Server::spawn(async move {
                 let request =  SessionHeartbeatRequest::new(REGION_SERVER_SECRET);
-                let response = HttpClient::send(&http_addr, request).await;
+                let options = RequestOptions {
+                    timeout_opt: Some(Duration::from_secs(1)),
+                };
+                let response = HttpClient::send_with_options(&http_addr, request, options).await;
                 match response {
                     Ok(_) => {
                         info!("from {:?} - session heartbeat success", http_addr);
@@ -111,7 +114,10 @@ impl State {
 
             Server::spawn(async move {
                 let request =  WorldHeartbeatRequest::new(REGION_SERVER_SECRET);
-                let response = HttpClient::send(&http_addr, request).await;
+                let options = RequestOptions {
+                    timeout_opt: Some(Duration::from_secs(1)),
+                };
+                let response = HttpClient::send_with_options(&http_addr, request, options).await;
                 match response {
                     Ok(_) => {
                         info!("from {:?} - world heartbeat success", http_addr);

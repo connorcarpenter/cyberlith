@@ -2,4 +2,4 @@
 mod client;
 pub use client::*;
 
-pub use http_common::ResponseError;
+pub use http_common::{ResponseError, RequestOptions};

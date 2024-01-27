@@ -1,17 +1,21 @@
 use bevy_tasks::AsyncComputeTaskPool;
 use crossbeam_channel::{bounded, Receiver};
 
-use http_common::{Request, Response, ResponseError};
+use http_common::{Request, Response, ResponseError, RequestOptions};
 
 pub(crate) struct RequestTask(pub Receiver<Result<Response, ResponseError>>);
 
-pub(crate) fn send_request(request: Request) -> RequestTask {
+pub(crate) fn send_request(request: Request, request_options_opt: Option<RequestOptions>) -> RequestTask {
     let thread_pool = AsyncComputeTaskPool::get();
 
     let (tx, task) = bounded(1);
     thread_pool
         .spawn(async move {
-            let response = http_client_shared::fetch_async(request).await;
+            let response = if let Some(request_options) = request_options_opt {
+                http_client_shared::fetch_async_with_options(request, request_options).await
+            } else {
+                http_client_shared::fetch_async(request).await
+            };
             tx.send(response).ok();
         })
         .detach();

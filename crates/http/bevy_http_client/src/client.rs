@@ -3,7 +3,7 @@ use std::{collections::HashMap, net::SocketAddr};
 use bevy_ecs::{change_detection::ResMut, system::Resource};
 use log::info;
 
-use http_common::{ApiRequest, ApiResponse, Request, Response, ResponseError};
+use http_common::{ApiRequest, ApiResponse, Request, RequestOptions, Response, ResponseError};
 
 use crate::{
     backend::RequestTask,
@@ -34,7 +34,21 @@ impl HttpClient {
         let http_request = Request::new(Q::method(), &url, req.to_bytes().to_vec());
         info!("Sending request to: {:?}", url);
 
-        let task = send_request(http_request);
+        let task = send_request(http_request, None);
+
+        let key = self.next_key();
+
+        self.tasks.insert(key.id, task);
+
+        key
+    }
+
+    pub fn send_with_options<Q: ApiRequest>(&mut self, addr: &SocketAddr, req: Q, req_options: RequestOptions) -> ResponseKey<Q::Response> {
+        let url = format!("http://{}/{}", addr, Q::path());
+        let http_request = Request::new(Q::method(), &url, req.to_bytes().to_vec());
+        info!("Sending request to: {:?}", url);
+
+        let task = send_request(http_request, Some(req_options));
 
         let key = self.next_key();
 

@@ -21,7 +21,7 @@ pub fn recv_login_request(
     mut global: ResMut<Global>,
     mut server: ResMut<HttpServer>
 ) {
-    while let Some((addr, request, response_key)) = server.receive::<IncomingUserRequest>() {
+    while let Some((_addr, request, response_key)) = server.receive::<IncomingUserRequest>() {
 
         if request.region_secret() != REGION_SERVER_SECRET {
             warn!("invalid request secret");
