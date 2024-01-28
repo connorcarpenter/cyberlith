@@ -62,6 +62,22 @@ pub struct VultrOS {
 }
 
 #[derive(Deserialize, Debug)]
+pub struct VultrReservedIpsRoot {
+    pub reserved_ips: Vec<VultrReservedIp>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct VultrReservedIp {
+    pub id: String,
+    pub region: String,
+    pub ip_type: String,
+    pub subnet: String,
+    pub subnet_size: u32,
+    pub label: String,
+    pub instance_id: String,
+}
+
+#[derive(Deserialize, Debug)]
 pub struct VultrSSHKeyRoot {
     pub ssh_key: VultrSSHKey,
 }

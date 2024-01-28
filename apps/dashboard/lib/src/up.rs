@@ -5,59 +5,15 @@ use vultr::{VultrApi, VultrError, VultrInstanceType};
 use openssh::{KnownHosts, SessionBuilder, Error as OpenSshError};
 use async_compat::Compat;
 
-use crate::{executor, get_api_key};
+use crate::{executor, get_api_key, get_static_ip};
 
 pub fn up() {
-    // ssh();
-    // return;
-    info!("Starting vultr instance");
+    info!("Starting instance");
     let result = start_instance();
     match result {
         Ok(instance_id) => info!("Instance started! id is '{}'", instance_id),
         Err(e) => info!("Error starting instance: {:?}", e),
     }
-}
-
-fn ssh() {
-    executor::spawn(Compat::new(async move {
-        let result = ssh_impl().await;
-        match result {
-            Ok(_) => info!("SSH success!"),
-            Err(e) => info!("SSH error: {:?}", e),
-        }
-    }))
-        .detach();
-
-    loop {
-        std::thread::sleep(std::time::Duration::from_secs(5));
-        info!(".");
-    }
-}
-
-async fn ssh_impl() -> Result<(), OpenSshError> {
-
-    let key_path = Path::new("~/Work/cyberlith/.vultr/vultrkey");
-
-    let session = SessionBuilder::default()
-        .known_hosts_check(KnownHosts::Add)
-        .keyfile(key_path)
-        .connect("ssh://root@108.61.202.211")
-        .await?;
-
-    info!("hello?");
-
-    let ls = session.command("ls").output().await?;
-    info!(
-        "{}",
-        String::from_utf8(ls.stdout).expect("server output was not valid UTF-8")
-    );
-
-    let whoami = session.command("whoami").output().await?;
-    assert_eq!(whoami.stdout, b"root\n");
-
-    session.close().await?;
-
-    Ok(())
 }
 
 fn start_instance() -> Result<String, VultrError> {
@@ -107,6 +63,16 @@ fn start_instance() -> Result<String, VultrError> {
     let ssh_key_id = ssh_key.id.clone();
     info!("found ssh key id: {:?}", ssh_key_id);
 
+    // get reserved ip id
+    let reserved_ips = api.get_reserved_ip_list()?;
+    let reserved_ip = reserved_ips
+        .iter()
+        .find(|i| i.label == "Primary")
+        .ok_or(VultrError::Dashboard("No reserved IP found".to_string()))?;
+    let reserved_ip_id = reserved_ip.id.clone();
+    info!("found reserved ip id: {:?}", reserved_ip_id);
+
+    // create instance
     let instance = api
         .create_instance(
             &region_id,
@@ -115,8 +81,8 @@ fn start_instance() -> Result<String, VultrError> {
         )
         .hostname("primaryserver")
         .label("Primary Server")
-
-        .sshkey_id(&ssh_key.id)
+        .reserved_ipv4(reserved_ip_id)
+        .sshkey_id(&ssh_key_id)
         .enable_ipv6(false)
         .backups(false)
         .ddos_protection(false)
@@ -125,50 +91,53 @@ fn start_instance() -> Result<String, VultrError> {
         .run()?;
 
     Ok(instance.id)
+}
 
-    // let account = api.get_account_info()?;
-    // info!("ACCOUNT: {:?}", account);
+fn ssh() {
+    executor::spawn(Compat::new(async move {
+        let result = ssh_impl().await;
+        match result {
+            Ok(_) => info!("SSH success!"),
+            Err(e) => info!("SSH error: {:?}", e),
+        }
+    }))
+        .detach();
 
-    // let new_domain = api.create_dns_domain(domain, None, false)?;
-    // println!("CREATED DOMAIN: {:?}", new_domain);
-    //
-    // let old_domain = api.get_dns_domain(domain)?;
-    // println!("GET DOMAIN: {:?}", old_domain);
-    //
-    // let record = api.create_dns_domain_record(domain, "A", "www", "10.0.0.8", None, None)?;
-    // println!("RECORD CREATED: {:?}", record);
-    //
-    // let records = api.get_dns_domain_records(domain)?;
-    // println!("RECORDS: {:?}", records);
-    //
-    // let record = api.delete_dns_domain_record(domain, &record.id);
-    // println!("RECORD DELETED: {:?}", record);
-    //
-    // let domains = api.get_dns_domain_list()?;
-    // println!("DOMAIN LIST: {:?}", domains);
+    loop {
+        std::thread::sleep(std::time::Duration::from_secs(5));
+        info!(".");
+    }
+}
 
-    // let old_domain = api.delete_dns_domain(domain)?;
-    // println!("DEL DOMAIN: {:?}", old_domain);
+async fn ssh_impl() -> Result<(), OpenSshError> {
 
-    // let regions = api.get_regions()?;
-    // info!("REGIONS: {:?}", regions);
+    let key_path = Path::new("~/Work/cyberlith/.vultr/vultrkey");
 
-    // let plans = api.get_plans()?;
-    // info!("PLANS: {:?}", plans);
+    let ssh_path = format!("ssh://root@{}", get_static_ip());
 
-    // let mut os = api.get_os_list()?;
-    // let ubuntu_list: Vec<VultrOS> = os
-    //     .drain(..)
-    //     .filter(|item| item.family.contains("ubuntu"))
-    //     .collect();
-    // info!("UBUNTU LIST: {:?}", ubuntu_list);
+    let session = SessionBuilder::default()
+        .known_hosts_check(KnownHosts::Add)
+        .keyfile(key_path)
+        .connect(ssh_path)
+        .await?;
 
-    // let ssh_key = api.create_sshkey("test", "xxx")?;
-    // info!("SSH KEY CREATED: {:?}", ssh_key);
-    //
-    // let ssh_key = api.get_sshkey(ssh_key.id)?;
-    // info!("SSH KEY: {:?}", ssh_key);
+    info!("hello?");
 
-    // let ssh_keys = api.get_sshkey_list()?;
-    // info!("SSH KEYS: {:?}", ssh_keys);
+    let ls = session.command("ls").output().await?;
+    info!(
+        "{}",
+        String::from_utf8(ls.stdout).expect("server output was not valid UTF-8")
+    );
+
+    let whoami = session.command("whoami").output().await?;
+    info!(
+        "{}",
+        String::from_utf8(whoami.stdout).expect("server output was not valid UTF-8")
+    );
+
+    session.close().await?;
+
+    info!("closing session");
+
+    Ok(())
 }

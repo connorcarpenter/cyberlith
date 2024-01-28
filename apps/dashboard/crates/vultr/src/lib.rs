@@ -59,23 +59,21 @@ mod data;
 mod instance_type;
 mod vultr_error;
 
+use std::collections::HashMap;
+
 use api_error::VultrApiError;
 use serde::Serialize;
 use serde_json::json;
-use std::collections::HashMap;
 
-pub use builder::create_instance_builder::CreateInstanceBuilder;
-pub use builder::create_instance_builder::LinuxUserScheme;
-pub use builder::update_dns_record::VultrUpdateDnsRecordBuilder;
-pub use data::dns::{
+pub use builder::{create_instance_builder::CreateInstanceBuilder, create_instance_builder::LinuxUserScheme, update_dns_record::VultrUpdateDnsRecordBuilder};
+pub use data::{dns::{
     VultrDomain, VultrDomainRecord, VultrDomainRecordRoot, VultrDomainRecordsRoot, VultrDomainRoot,
     VultrDomainsRoot,
-};
-pub use data::instance::{
+}, instance::{
     VultrAccount, VultrAccountRoot, VultrInstance, VultrInstanceRoot, VultrInstancesRoot, VultrOS,
-    VultrOSRoot, VultrPlan, VultrPlansRoot, VultrRegion, VultrRegionsRoot, VultrSSHKey,
+    VultrOSRoot, VultrPlan, VultrPlansRoot, VultrRegion, VultrRegionsRoot, VultrSSHKey, VultrReservedIp, VultrReservedIpsRoot,
     VultrSSHKeyRoot, VultrSSHKeysRoot,
-};
+}};
 pub use instance_type::VultrInstanceType;
 pub use vultr_error::VultrError;
 
@@ -533,6 +531,17 @@ impl<'a> VultrApi {
             .json::<VultrRegionsRoot>()
             .await?
             .regions)
+    }
+
+    #[cfg(feature = "blocking")]
+    pub fn get_reserved_ip_list(&self) -> Result<Vec<VultrReservedIp>, VultrError> {
+        let url = format!("https://api.vultr.com/v2/reserved-ips");
+        Ok(self.get(&url)?.json::<VultrReservedIpsRoot>()?.reserved_ips)
+    }
+
+    pub async fn get_reserved_ip_list_async(&self) -> Result<Vec<VultrReservedIp>, VultrError> {
+        let url = format!("https://api.vultr.com/v2/reserved-ips");
+        Ok(self.get_async(&url).await?.json::<VultrReservedIpsRoot>().await?.reserved_ips)
     }
 
     #[cfg(feature = "blocking")]
