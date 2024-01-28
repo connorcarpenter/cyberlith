@@ -1,16 +1,63 @@
+use std::path::Path;
+
 use log::info;
-
 use vultr::{VultrApi, VultrError, VultrInstanceType};
+use openssh::{KnownHosts, SessionBuilder, Error as OpenSshError};
+use async_compat::Compat;
 
-use crate::get_api_key;
+use crate::{executor, get_api_key};
 
 pub fn up() {
+    // ssh();
+    // return;
     info!("Starting vultr instance");
     let result = start_instance();
     match result {
         Ok(instance_id) => info!("Instance started! id is '{}'", instance_id),
         Err(e) => info!("Error starting instance: {:?}", e),
     }
+}
+
+fn ssh() {
+    executor::spawn(Compat::new(async move {
+        let result = ssh_impl().await;
+        match result {
+            Ok(_) => info!("SSH success!"),
+            Err(e) => info!("SSH error: {:?}", e),
+        }
+    }))
+        .detach();
+
+    loop {
+        std::thread::sleep(std::time::Duration::from_secs(5));
+        info!(".");
+    }
+}
+
+async fn ssh_impl() -> Result<(), OpenSshError> {
+
+    let key_path = Path::new("~/Work/cyberlith/.vultr/vultrkey");
+
+    let session = SessionBuilder::default()
+        .known_hosts_check(KnownHosts::Add)
+        .keyfile(key_path)
+        .connect("ssh://root@108.61.202.211")
+        .await?;
+
+    info!("hello?");
+
+    let ls = session.command("ls").output().await?;
+    info!(
+        "{}",
+        String::from_utf8(ls.stdout).expect("server output was not valid UTF-8")
+    );
+
+    let whoami = session.command("whoami").output().await?;
+    assert_eq!(whoami.stdout, b"root\n");
+
+    session.close().await?;
+
+    Ok(())
 }
 
 fn start_instance() -> Result<String, VultrError> {
