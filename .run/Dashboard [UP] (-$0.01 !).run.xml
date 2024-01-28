@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Dashboard Down" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
-    <option name="command" value="run down" />
+  <configuration default="false" name="Dashboard [UP] (-$0.01 !)" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
+    <option name="command" value="run up" />
     <option name="workingDirectory" value="file://$PROJECT_DIR$/apps/dashboard/cli" />
     <envs />
     <option name="emulateTerminal" value="true" />

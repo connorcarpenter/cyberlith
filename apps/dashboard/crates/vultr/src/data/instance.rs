@@ -78,6 +78,22 @@ pub struct VultrReservedIp {
 }
 
 #[derive(Deserialize, Debug)]
+pub struct VultrIsosRoot {
+    pub isos: Vec<VultrIso>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct VultrIso {
+    pub id: String,
+    pub date_created: String,
+    pub filename: String,
+    pub size: u32,
+    pub md5sum: String,
+    pub sha512sum: String,
+    pub status: String,
+}
+
+#[derive(Deserialize, Debug)]
 pub struct VultrSSHKeyRoot {
     pub ssh_key: VultrSSHKey,
 }

@@ -72,7 +72,7 @@ pub use data::{dns::{
 }, instance::{
     VultrAccount, VultrAccountRoot, VultrInstance, VultrInstanceRoot, VultrInstancesRoot, VultrOS,
     VultrOSRoot, VultrPlan, VultrPlansRoot, VultrRegion, VultrRegionsRoot, VultrSSHKey, VultrReservedIp, VultrReservedIpsRoot,
-    VultrSSHKeyRoot, VultrSSHKeysRoot,
+    VultrSSHKeyRoot, VultrSSHKeysRoot, VultrIso, VultrIsosRoot,
 }};
 pub use instance_type::VultrInstanceType;
 pub use vultr_error::VultrError;
@@ -542,6 +542,17 @@ impl<'a> VultrApi {
     pub async fn get_reserved_ip_list_async(&self) -> Result<Vec<VultrReservedIp>, VultrError> {
         let url = format!("https://api.vultr.com/v2/reserved-ips");
         Ok(self.get_async(&url).await?.json::<VultrReservedIpsRoot>().await?.reserved_ips)
+    }
+
+    #[cfg(feature = "blocking")]
+    pub fn get_iso_list(&self) -> Result<Vec<VultrIso>, VultrError> {
+        let url = format!("https://api.vultr.com/v2/iso");
+        Ok(self.get(&url)?.json::<VultrIsosRoot>()?.isos)
+    }
+
+    pub async fn get_iso_list_async(&self) -> Result<Vec<VultrIso>, VultrError> {
+        let url = format!("https://api.vultr.com/v2/iso");
+        Ok(self.get_async(&url).await?.json::<VultrIsosRoot>().await?.isos)
     }
 
     #[cfg(feature = "blocking")]

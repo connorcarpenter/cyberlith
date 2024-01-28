@@ -67,14 +67,14 @@ fn start_instance() -> Result<String, VultrError> {
     let plan_id = plan.id.clone();
     info!("found plan id: {:?}", plan_id);
 
-    // get os id
-    let oses = api.get_os_list()?;
-    let os = oses
-        .iter()
-        .find(|o| o.family.contains("ubuntu") && o.arch == "x64" && o.name == "Ubuntu 22.04 LTS x64")
-        .ok_or(VultrError::Dashboard("No OS found".to_string()))?;
-    let os_id = os.id;
-    info!("found OS id: {:?}", os_id);
+    // // get os id
+    // let oses = api.get_os_list()?;
+    // let os = oses
+    //     .iter()
+    //     .find(|o| o.family.contains("ubuntu") && o.arch == "x64" && o.name == "Ubuntu 22.04 LTS x64")
+    //     .ok_or(VultrError::Dashboard("No OS found".to_string()))?;
+    // let os_id = os.id;
+    // info!("found OS id: {:?}", os_id);
 
     // get ssh key id
     let ssh_keys = api.get_sshkey_list()?;
@@ -94,12 +94,21 @@ fn start_instance() -> Result<String, VultrError> {
     let reserved_ip_id = reserved_ip.id.clone();
     info!("found reserved ip id: {:?}", reserved_ip_id);
 
+    // get ubuntu server iso id
+    let isos = api.get_iso_list()?;
+    let iso = isos
+        .iter()
+        .find(|i| i.filename == "ubuntu-22.04.3-live-server-amd64.iso")
+        .ok_or(VultrError::Dashboard("No ISO found".to_string()))?;
+    let iso_id = iso.id.clone();
+    info!("found iso id: {:?}", iso_id);
+
     // create instance
     let instance = api
         .create_instance(
             &region_id,
             &plan_id,
-            VultrInstanceType::OS(os_id),
+            VultrInstanceType::ISO(iso_id),
         )
         .hostname("primaryserver")
         .label("Primary Server")
