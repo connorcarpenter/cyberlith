@@ -2,6 +2,8 @@ use log::info;
 
 use vultr::{VultrApi, VultrError, VultrInstanceType};
 
+use crate::get_api_key;
+
 pub fn up() {
     info!("Starting vultr instance");
     let result = start_instance();
@@ -13,7 +15,7 @@ pub fn up() {
 
 fn start_instance() -> Result<String, VultrError> {
 
-    let api_key = "SNU5BHCV5Y56LAIYUKQPEMEEPZIVIO7APODA";
+    let api_key = get_api_key();
 
     let api = VultrApi::new(api_key);
 

@@ -2,6 +2,8 @@ use log::info;
 
 use vultr::{VultrApi, VultrError};
 
+use crate::get_api_key;
+
 pub fn down() {
     info!("Stopping instance");
     let result = stop_instance();
@@ -12,7 +14,7 @@ pub fn down() {
 }
 
 fn stop_instance() -> Result<(), VultrError> {
-    let api_key = "SNU5BHCV5Y56LAIYUKQPEMEEPZIVIO7APODA";
+    let api_key = get_api_key();
 
     let api = VultrApi::new(api_key);
 
