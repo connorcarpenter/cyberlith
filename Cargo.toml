@@ -6,6 +6,7 @@ members = [
     "apps/config",
     "apps/dashboard/cli",
     "apps/dashboard/lib",
+    "apps/dashboard/crates/vultr",
     "apps/engine",
     "apps/orchestrator",
     "apps/orchestrator/http_proto",

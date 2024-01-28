@@ -1,5 +1,5 @@
 use clap::Command;
-use log::{info, LevelFilter};
+use log::LevelFilter;
 use simple_logger::SimpleLogger;
 
 fn cli() -> Command {

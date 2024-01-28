@@ -10,3 +10,4 @@ publish = false
 
 [dependencies]
 log = { version = "0.4", features = [] }
+vultr = { path = "../crates/vultr", features = ["blocking"] }
