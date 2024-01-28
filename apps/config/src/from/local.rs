@@ -32,4 +32,4 @@ pub const ORCHESTRATOR_SECRET: &str = "bvVKHPxlQ72VBQnSDAZqN0vxZS36Vq3c";
 pub const SESSION_SERVER_SECRET: &str = "zUe6K0RKY03JJMPo3u5SaByfiut0alOW";
 
 #[allow(dead_code)]
-pub const WORLD_SERVER_SECRET: &str = "zUe6K0RKY03JJMPo3u5SaByfiut0alOW";
+pub const WORLD_SERVER_SECRET: &str = "VKHusVjrGh035aSlQ7236bvVxlQ70alOW";

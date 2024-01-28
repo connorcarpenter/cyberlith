@@ -8,12 +8,34 @@ use async_compat::Compat;
 use crate::{executor, get_api_key, get_static_ip};
 
 pub fn up() {
+
+    // thread A:
+
+    // start instance
     info!("Starting instance");
     let result = start_instance();
     match result {
-        Ok(instance_id) => info!("Instance started! id is '{}'", instance_id),
+        Ok(instance_id) => info!("Instance started! id is {:?}", instance_id),
         Err(e) => info!("Error starting instance: {:?}", e),
     }
+
+    // wait for instance to be ready
+
+    // ssh into instance, set up iptables & docker
+
+    // thread B:
+
+    // build all apps in release mode (multithread this??)
+
+    // turn binaries into dockerimages
+
+    // wait for thread A & thread B to finish..
+
+    // scp dockerimages to instance
+
+    // ssh into instance, start docker containers with new images
+
+    // test?
 }
 
 fn start_instance() -> Result<String, VultrError> {
