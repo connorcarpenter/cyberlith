@@ -1,9 +1,10 @@
-use std::path::Path;
+use std::{path::Path, process::Command as LocalCommand, time::Duration};
 
-use log::info;
+use log::{info, warn};
 use vultr::{VultrApi, VultrError, VultrInstanceType};
-use openssh::{KnownHosts, SessionBuilder, Error as OpenSshError, Session};
+use openssh::{KnownHosts, SessionBuilder, Session};
 use async_compat::Compat;
+use crossbeam_channel::bounded;
 
 use crate::{executor, get_api_key, get_static_ip};
 
@@ -13,17 +14,33 @@ pub fn up() {
 
     // start instance
     info!("Starting instance");
-    let result = start_instance();
-    match result {
-        Ok(instance_id) => info!("Instance started! id is {:?}", instance_id),
-        Err(e) => info!("Error starting instance: {:?}", e),
-    }
+    let instance_id = match start_instance() {
+        Ok(instance_id) => {
+            info!("Instance started! id is {:?}", instance_id);
+            instance_id
+        },
+        Err(e) => {
+            warn!("Error starting instance: {:?}", e);
+            return;
+        },
+    };
 
     // wait for instance to be ready
-    todo!();
+    match wait_for_instance_ready(&instance_id) {
+        Ok(_) => info!("Instance ready!"),
+        Err(e) => {
+             warn!("Error waiting for instance: {:?}", e);
+        },
+    }
 
     // ssh into instance, set up iptables & docker
-    ssh_and_run_initial_commands();
+    match ssh_and_run_initial_commands() {
+        Ok(_) => info!("SSH and initial commands completed successfully"),
+        Err(e) => {
+            warn!("SSH and initial commands failed: {:?}", e);
+            return;
+        },
+    }
 
     // thread B:
 
@@ -38,6 +55,8 @@ pub fn up() {
     // ssh into instance, start docker containers with new images
 
     // test?
+
+    info!("Done!");
 }
 
 fn start_instance() -> Result<String, VultrError> {
@@ -126,23 +145,110 @@ fn start_instance() -> Result<String, VultrError> {
     Ok(instance.id)
 }
 
-fn ssh_and_run_initial_commands() {
+fn wait_for_instance_ready(instance_id: &str) -> Result<(), VultrError> {
+    let api_key = get_api_key();
+
+    let api = VultrApi::new(api_key);
+
+    loop {
+
+        match api.get_instance(instance_id) {
+            Ok(instance) => {
+                info!("instance status: {:?}", instance.status);
+
+                if instance.status == "active" {
+                    return Ok(());
+                }
+            }
+            Err(err) => {
+                warn!("error getting instance: {:?}", err);
+                continue;
+            }
+        }
+
+        std::thread::sleep(Duration::from_secs(5));
+    }
+}
+
+fn ssh_and_run_initial_commands() -> Result<(), VultrError> {
+
+    remove_existing_known_host()?;
+
+    loop {
+        match add_known_host() {
+            Ok(()) => break,
+            Err(err) => {
+                warn!("error adding known host: {:?}", err);
+                info!("retrying in 5 seconds..");
+                std::thread::sleep(Duration::from_secs(5));
+                continue;
+            }
+        }
+    }
+
+    let (sender, receiver) = bounded(1);
+
     executor::spawn(Compat::new(async move {
         let result = ssh_and_run_initial_commands_async().await;
-        match result {
-            Ok(_) => info!("SSH success!"),
-            Err(e) => info!("SSH error: {:?}", e),
-        }
+        sender.send(result).expect("failed to send result");
     }))
         .detach();
 
     loop {
-        std::thread::sleep(std::time::Duration::from_secs(5));
-        info!(".");
+        std::thread::sleep(Duration::from_secs(5));
+        if let Ok(result) = receiver.try_recv() {
+            return result;
+        } else {
+            // keep looping till thread finishes
+            continue;
+        }
     }
 }
 
-async fn ssh_and_run_initial_commands_async() -> Result<(), OpenSshError> {
+fn remove_existing_known_host() -> Result<(), VultrError> {
+    let static_ip = get_static_ip();
+    info!("(local) -> ssh-keygen -f /home/connor/.ssh/known_hosts -R {}", get_static_ip());
+    let output = LocalCommand::new("ssh-keygen")
+        .arg("-f")
+        .arg("/home/connor/.ssh/known_hosts")
+        .arg("-R")
+        .arg(static_ip)
+        .output()
+        .expect("failed to execute process");
+
+    if output.status.success() {
+        let result = String::from_utf8_lossy(&output.stdout);
+        info!("(local) <- {}", result);
+        return Ok(());
+    } else {
+        let error_message = String::from_utf8_lossy(&output.stderr);
+        return Err(VultrError::Dashboard(format!("LocalCommand Error: {}", error_message)));
+    }
+}
+
+fn add_known_host() -> Result<(), VultrError> {
+    info!("(local) -> ssh-keyscan -H {} >> /home/connor/.ssh/known_hosts", get_static_ip());
+    let output = LocalCommand::new("ssh-keyscan")
+        .arg("-H")
+        .arg(get_static_ip())
+        .arg(">>")
+        .arg("/home/connor/.ssh/known_hosts")
+        .output()
+        .expect("failed to execute process");
+
+    if output.status.success() {
+        let result = String::from_utf8_lossy(&output.stdout);
+        info!("(local) <- {}", result);
+        return Ok(());
+    } else {
+        let error_message = String::from_utf8_lossy(&output.stderr);
+        return Err(VultrError::Dashboard(format!("LocalCommand Error: {}", error_message)));
+    }
+}
+
+async fn ssh_and_run_initial_commands_async() -> Result<(), VultrError> {
+
+    info!("preparing to SSH into instance");
 
     let key_path = Path::new("~/Work/cyberlith/.vultr/vultrkey");
 
@@ -152,85 +258,102 @@ async fn ssh_and_run_initial_commands_async() -> Result<(), OpenSshError> {
         .known_hosts_check(KnownHosts::Accept)
         .keyfile(key_path)
         .connect(ssh_path)
-        .await?;
+        .await
+        .map_err(|err| VultrError::Dashboard(err.to_string()))?;
 
     setup_iptables(&session).await?;
     setup_docker(&session).await?;
 
-    session.close().await?;
+    session.close()
+        .await
+        .map_err(|err| VultrError::Dashboard(err.to_string()))?;
+
+    info!("SSH session closed");
 
     Ok(())
 }
 
-async fn setup_iptables(session: &Session) -> Result<(), OpenSshError> {
+async fn setup_iptables(session: &Session) -> Result<(), VultrError> {
 
-    info!("// allow established connections");
+    info!("Setting up IPTables");
+
+    info!("# allow established connections");
     run_ssh_command(&session, "sudo iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT").await?;
 
-    info!("// allow ssh");
+    info!("# allow ssh");
     run_ssh_command(&session, "sudo iptables -A INPUT -p tcp --dport ssh -j ACCEPT").await?;
 
-    info!("// allow loopback");
+    info!("# allow loopback");
     run_ssh_command(&session, "sudo iptables -I INPUT 1 -i lo -j ACCEPT").await?;
 
-    info!("// allow port 80 (content server)");
+    info!("# allow port 80 (content server)");
     run_ssh_command(&session, "sudo iptables -A INPUT -p tcp --dport 80 -j ACCEPT").await?;
 
-    info!("// allow port 14197 (orchestrator)");
+    info!("# allow port 14197 (orchestrator)");
     run_ssh_command(&session, "sudo iptables -A INPUT -p tcp --dport 14197 -j ACCEPT").await?;
 
-    info!("// allow port 14200 (session signal)");
+    info!("# allow port 14200 (session signal)");
     run_ssh_command(&session, "sudo iptables -A INPUT -p tcp --dport 14200 -j ACCEPT").await?;
 
-    info!("// allow port 14201 (session webrtc)");
+    info!("# allow port 14201 (session webrtc)");
     run_ssh_command(&session, "sudo iptables -A INPUT -p udp --dport 14201 -j ACCEPT").await?;
 
-    info!("// allow port 14203 (world signal)");
+    info!("# allow port 14203 (world signal)");
     run_ssh_command(&session, "sudo iptables -A INPUT -p tcp --dport 14203 -j ACCEPT").await?;
 
-    info!("// allow port 14204 (world webrtc)");
+    info!("# allow port 14204 (world webrtc)");
     run_ssh_command(&session, "sudo iptables -A INPUT -p udp --dport 14204 -j ACCEPT").await?;
 
     Ok(())
 }
 
-async fn setup_docker(session: &Session) -> Result<(), OpenSshError> {
+async fn setup_docker(session: &Session) -> Result<(), VultrError> {
 
-    info!("// update");
+    info!("# update");
     run_ssh_command(&session, "sudo apt-get update").await?;
 
-    info!("// install dependencies");
+    info!("# install dependencies");
     run_ssh_command(&session, "sudo apt-get install ca-certificates curl -y").await?;
 
-    info!("// install keyring");
+    info!("# install keyring");
     run_ssh_command(&session, "sudo install -m 0755 -d /etc/apt/keyrings").await?;
 
-    info!("// download GPG key and install");
+    info!("# download GPG key and install");
     run_ssh_command(&session, "sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc").await?;
 
-    info!("// set permissions on keyring");
+    info!("# set permissions on keyring");
     run_ssh_command(&session, "sudo chmod a+r /etc/apt/keyrings/docker.asc").await?;
 
-    info!("// add docker to apt sources?");
+    info!("# add docker to apt sources?");
     run_ssh_raw_command(&session, "echo \"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo \"$VERSION_CODENAME\") stable\" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null").await?;
 
-    info!("// update");
+    info!("# update");
     run_ssh_command(&session, "sudo apt-get update").await?;
 
-    info!("// install docker packages");
+    info!("# install docker packages");
     run_ssh_command(&session, "sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y").await?;
 
-    info!("// add user to docker group");
-    run_ssh_command(&session, "sudo usermod -aG docker $USER").await?;
+    info!("# add user to docker group");
+    loop {
+        match run_ssh_command(&session, "sudo usermod -aG docker root").await {
+            Ok(()) => {
+                break;
+            },
+            Err(err) => {
+                warn!("error adding user to docker group: {:?}", err);
+                info!("retrying after 5 seconds..");
+                smol::Timer::after(Duration::from_secs(5)).await;
+            }
+        }
+    }
 
-    info!("// test that docker works without sudo");
+    info!("# test that docker works without sudo");
     run_ssh_command(&session, "docker version").await?;
-
 
     Ok(())
 }
 
-async fn run_ssh_command(session: &Session, command_str: &str) -> Result<(), OpenSshError> {
+async fn run_ssh_command(session: &Session, command_str: &str) -> Result<(), VultrError> {
     info!("-> {}", command_str);
 
     let commands: Vec<String> = command_str.split(" ").map(|thestr| thestr.to_string()).collect();
@@ -240,24 +363,28 @@ async fn run_ssh_command(session: &Session, command_str: &str) -> Result<(), Ope
         command.arg(&commands[i]);
     }
 
-    let output = command.output().await?;
-    info!(
-        "<- {}",
-        String::from_utf8(output.stdout).expect("server output was not valid UTF-8")
-    );
-
-    Ok(())
+    let output = command.output().await.map_err(|err| VultrError::Dashboard(err.to_string()))?;
+    if output.status.success() {
+        let result = String::from_utf8_lossy(&output.stdout);
+        info!("<- {}", result);
+        return Ok(());
+    } else {
+        let error_message = String::from_utf8_lossy(&output.stderr);
+        return Err(VultrError::Dashboard(format!("Command Error: {}", error_message)));
+    }
 }
 
-async fn run_ssh_raw_command(session: &Session, command_str: &str) -> Result<(), OpenSshError> {
+async fn run_ssh_raw_command(session: &Session, command_str: &str) -> Result<(), VultrError> {
     info!("-> {}", command_str);
 
     let mut raw_command = session.raw_command(command_str);
-    let output = raw_command.output().await?;
-    info!(
-        "<- {}",
-        String::from_utf8(output.stdout).expect("server output was not valid UTF-8")
-    );
-
-    Ok(())
+    let output = raw_command.output().await.map_err(|err| VultrError::Dashboard(err.to_string()))?;
+    if output.status.success() {
+        let result = String::from_utf8_lossy(&output.stdout);
+        info!("<- {}", result);
+        return Ok(());
+    } else {
+        let error_message = String::from_utf8_lossy(&output.stderr);
+        return Err(VultrError::Dashboard(format!("Command Error: {}", error_message)));
+    }
 }
