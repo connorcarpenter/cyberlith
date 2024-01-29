@@ -6,7 +6,7 @@ use openssh::{KnownHosts, SessionBuilder, Session};
 use async_compat::Compat;
 use crossbeam_channel::bounded;
 
-use crate::{executor, get_api_key, get_static_ip};
+use crate::{get_api_key, get_static_ip};
 
 pub fn up() {
 

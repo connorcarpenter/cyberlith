@@ -6,6 +6,7 @@ workspace = "../../.."
 
 [dependencies]
 http_common = { path = "../http_common" }
+executor = { path = "../../executor" }
 
 once_cell = { version = "1.4.1" }
 smol = { version = "1.3" }

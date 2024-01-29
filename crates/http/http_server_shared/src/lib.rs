@@ -1,4 +1,7 @@
-pub mod executor;
+
+pub mod executor {
+    pub use executor::*;
+}
 
 mod serve;
 pub use serve::serve_impl;

@@ -40,6 +40,7 @@ members = [
     "crates/http/http_client_shared",
     "crates/serde",
     "crates/crypto",
+    "crates/executor",
 ]
 # any crates with conflicting dependencies / feature flags cannot be put here
 default-members = [
