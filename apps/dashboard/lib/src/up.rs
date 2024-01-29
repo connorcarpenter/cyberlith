@@ -2,7 +2,7 @@ use std::path::Path;
 
 use log::info;
 use vultr::{VultrApi, VultrError, VultrInstanceType};
-use openssh::{KnownHosts, SessionBuilder, Error as OpenSshError};
+use openssh::{KnownHosts, SessionBuilder, Error as OpenSshError, Session};
 use async_compat::Compat;
 
 use crate::{executor, get_api_key, get_static_ip};
@@ -20,8 +20,10 @@ pub fn up() {
     }
 
     // wait for instance to be ready
+    todo!();
 
     // ssh into instance, set up iptables & docker
+    ssh_and_run_initial_commands();
 
     // thread B:
 
@@ -124,9 +126,9 @@ fn start_instance() -> Result<String, VultrError> {
     Ok(instance.id)
 }
 
-fn ssh() {
+fn ssh_and_run_initial_commands() {
     executor::spawn(Compat::new(async move {
-        let result = ssh_impl().await;
+        let result = ssh_and_run_initial_commands_async().await;
         match result {
             Ok(_) => info!("SSH success!"),
             Err(e) => info!("SSH error: {:?}", e),
@@ -140,35 +142,122 @@ fn ssh() {
     }
 }
 
-async fn ssh_impl() -> Result<(), OpenSshError> {
+async fn ssh_and_run_initial_commands_async() -> Result<(), OpenSshError> {
 
     let key_path = Path::new("~/Work/cyberlith/.vultr/vultrkey");
 
     let ssh_path = format!("ssh://root@{}", get_static_ip());
 
     let session = SessionBuilder::default()
-        .known_hosts_check(KnownHosts::Add)
+        .known_hosts_check(KnownHosts::Accept)
         .keyfile(key_path)
         .connect(ssh_path)
         .await?;
 
-    info!("hello?");
-
-    let ls = session.command("ls").output().await?;
-    info!(
-        "{}",
-        String::from_utf8(ls.stdout).expect("server output was not valid UTF-8")
-    );
-
-    let whoami = session.command("whoami").output().await?;
-    info!(
-        "{}",
-        String::from_utf8(whoami.stdout).expect("server output was not valid UTF-8")
-    );
+    setup_iptables(&session).await?;
+    setup_docker(&session).await?;
 
     session.close().await?;
 
-    info!("closing session");
+    Ok(())
+}
+
+async fn setup_iptables(session: &Session) -> Result<(), OpenSshError> {
+
+    info!("// allow established connections");
+    run_ssh_command(&session, "sudo iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT").await?;
+
+    info!("// allow ssh");
+    run_ssh_command(&session, "sudo iptables -A INPUT -p tcp --dport ssh -j ACCEPT").await?;
+
+    info!("// allow loopback");
+    run_ssh_command(&session, "sudo iptables -I INPUT 1 -i lo -j ACCEPT").await?;
+
+    info!("// allow port 80 (content server)");
+    run_ssh_command(&session, "sudo iptables -A INPUT -p tcp --dport 80 -j ACCEPT").await?;
+
+    info!("// allow port 14197 (orchestrator)");
+    run_ssh_command(&session, "sudo iptables -A INPUT -p tcp --dport 14197 -j ACCEPT").await?;
+
+    info!("// allow port 14200 (session signal)");
+    run_ssh_command(&session, "sudo iptables -A INPUT -p tcp --dport 14200 -j ACCEPT").await?;
+
+    info!("// allow port 14201 (session webrtc)");
+    run_ssh_command(&session, "sudo iptables -A INPUT -p udp --dport 14201 -j ACCEPT").await?;
+
+    info!("// allow port 14203 (world signal)");
+    run_ssh_command(&session, "sudo iptables -A INPUT -p tcp --dport 14203 -j ACCEPT").await?;
+
+    info!("// allow port 14204 (world webrtc)");
+    run_ssh_command(&session, "sudo iptables -A INPUT -p udp --dport 14204 -j ACCEPT").await?;
+
+    Ok(())
+}
+
+async fn setup_docker(session: &Session) -> Result<(), OpenSshError> {
+
+    info!("// update");
+    run_ssh_command(&session, "sudo apt-get update").await?;
+
+    info!("// install dependencies");
+    run_ssh_command(&session, "sudo apt-get install ca-certificates curl -y").await?;
+
+    info!("// install keyring");
+    run_ssh_command(&session, "sudo install -m 0755 -d /etc/apt/keyrings").await?;
+
+    info!("// download GPG key and install");
+    run_ssh_command(&session, "sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc").await?;
+
+    info!("// set permissions on keyring");
+    run_ssh_command(&session, "sudo chmod a+r /etc/apt/keyrings/docker.asc").await?;
+
+    info!("// add docker to apt sources?");
+    run_ssh_raw_command(&session, "echo \"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo \"$VERSION_CODENAME\") stable\" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null").await?;
+
+    info!("// update");
+    run_ssh_command(&session, "sudo apt-get update").await?;
+
+    info!("// install docker packages");
+    run_ssh_command(&session, "sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y").await?;
+
+    info!("// add user to docker group");
+    run_ssh_command(&session, "sudo usermod -aG docker $USER").await?;
+
+    info!("// test that docker works without sudo");
+    run_ssh_command(&session, "docker version").await?;
+
+
+    Ok(())
+}
+
+async fn run_ssh_command(session: &Session, command_str: &str) -> Result<(), OpenSshError> {
+    info!("-> {}", command_str);
+
+    let commands: Vec<String> = command_str.split(" ").map(|thestr| thestr.to_string()).collect();
+
+    let mut command = session.command(&commands[0]);
+    for i in 1..commands.len() {
+        command.arg(&commands[i]);
+    }
+
+    let output = command.output().await?;
+    info!(
+        "<- {}",
+        String::from_utf8(output.stdout).expect("server output was not valid UTF-8")
+    );
+
+    Ok(())
+}
+
+async fn run_ssh_raw_command(session: &Session, command_str: &str) -> Result<(), OpenSshError> {
+    info!("-> {}", command_str);
+
+    let mut raw_command = session.raw_command(command_str);
+    let output = raw_command.output().await?;
+    info!(
+        "<- {}",
+        String::from_utf8(output.stdout).expect("server output was not valid UTF-8")
+    );
 
     Ok(())
 }
