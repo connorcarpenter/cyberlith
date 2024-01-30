@@ -1,35 +1,12 @@
 use std::{path::Path, time::Duration};
 
-use async_compat::Compat;
-use crossbeam_channel::bounded;
 use log::{info, warn};
 use openssh::{KnownHosts, Session, SessionBuilder};
 use vultr::VultrError;
 
 use crate::{get_static_ip, utils::{run_ssh_command, run_ssh_raw_command}};
 
-pub fn instance_init() -> Result<(), VultrError> {
-
-    let (sender, receiver) = bounded(1);
-
-    executor::spawn(Compat::new(async move {
-        let result = ssh_and_run_initial_commands_async().await;
-        sender.send(result).expect("failed to send result");
-    }))
-        .detach();
-
-    loop {
-        std::thread::sleep(Duration::from_secs(5));
-        if let Ok(result) = receiver.try_recv() {
-            return result;
-        } else {
-            // keep looping till thread finishes
-            continue;
-        }
-    }
-}
-
-async fn ssh_and_run_initial_commands_async() -> Result<(), VultrError> {
+pub async fn instance_init() -> Result<(), VultrError> {
 
     info!("preparing to SSH into instance");
 

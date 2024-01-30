@@ -2,78 +2,53 @@ mod instance_start;
 mod instance_wait;
 mod instance_init;
 mod ssh_init;
+mod instance_up;
 
-use log::{info, warn};
+use std::{future::Future, time::Duration};
 
-use crate::{
-    up::{
-        instance_start::instance_start,
-        instance_init::instance_init,
-        ssh_init::ssh_init,
-        instance_wait::instance_wait
-    }
-};
+use async_compat::Compat;
+use crossbeam_channel::{bounded, Receiver};
+use log::info;
+use vultr::VultrError;
 
 pub fn up() {
 
-    // thread A:
+    let instance_rcvr = thread_init(instance_up::instance_up);
 
-    // start instance
-    info!("Starting instance");
-    let instance_id = match instance_start() {
-        Ok(instance_id) => {
-            info!("Instance started! id is {:?}", instance_id);
-            instance_id
-        },
-        Err(e) => {
-            warn!("Error starting instance: {:?}", e);
-            return;
-        },
-    };
+    let mut instance_rdy = false;
 
-    // wait for instance to be ready
-    match instance_wait(&instance_id) {
-        Ok(_) => info!("Instance ready!"),
-        Err(e) => {
-            warn!("Error waiting for instance: {:?}", e);
-        },
+    loop {
+        std::thread::sleep(Duration::from_secs(5));
+
+        if !instance_rdy {
+            match instance_rcvr.try_recv() {
+                Ok(_) => instance_rdy = true,
+                Err(e) => {
+                    info!("receiver error: {:?}", e);
+                }
+            }
+        }
+
+        if instance_rdy {
+            break;
+        }
     }
-
-    // init ssh
-    match ssh_init() {
-        Ok(_) => info!("SSH initiated"),
-        Err(e) => {
-            warn!("SSH not initiated.. error: {:?}", e);
-            return;
-        },
-    }
-
-    // ssh into instance, set up iptables & docker
-    match instance_init() {
-        Ok(_) => info!("SSH and initial commands completed successfully"),
-        Err(e) => {
-            warn!("SSH and initial commands failed: {:?}", e);
-            return;
-        },
-    }
-
-    // thread B:
-
-    // build all apps in release mode (multithread this??)
-
-    // turn binaries into dockerimages
-
-    // wait for thread A & thread B to finish..
-
-    // scp dockerimages to instance
-
-    // ssh into instance, start docker containers with new images
-
-    // test?
 
     info!("Done!");
 }
 
+fn thread_init<F: Future<Output=Result<(), VultrError>> + Sized + Send + 'static>(
+    x: fn() -> F
+) -> Receiver<Result<(), VultrError>> {
+    let (sender, receiver) = bounded(1);
 
+    executor::spawn(Compat::new(async move {
+        let result = x().await;
+        sender.send(result).expect("failed to send result");
+    }))
+        .detach();
+
+    receiver
+}
 
 
