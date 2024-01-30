@@ -4,6 +4,7 @@ resolver = "2"
 members = [
     "apps/client",
     "apps/config",
+    "apps/content",
     "apps/dashboard/cli",
     "apps/dashboard/lib",
     "apps/dashboard/crates/vultr",

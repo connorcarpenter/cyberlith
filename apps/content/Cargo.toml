@@ -1,0 +1,22 @@
+[package]
+name = "content_server"
+version = "0.1.0"
+authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
+workspace = "../.."
+edition = "2021"
+publish = false
+
+[features]
+local = [ "config/local" ]
+prod = [ "config/prod" ]
+
+[dependencies]
+http_common = { path = "../../crates/http/http_common" }
+http_server_shared = { path = "../../crates/http/http_server_shared" }
+naia-serde = { path = "../../../naia/shared/serde" }
+config = { path = "../config", features = ["content"]}
+
+log = { version = "0.4", features = [] }
+simple_logger = { version = "4.0", default-features = false, features = ["timestamps"] }
+smol = { version = "1.3" }
+async-dup = { version = "1.2.2" }

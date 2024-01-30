@@ -10,6 +10,7 @@ pub enum ResponseError {
     Unauthenticated,
     ChannelRecvError,
     InternalServerError(String),
+    NotFound,
 }
 
 impl ResponseError {
@@ -21,6 +22,7 @@ impl ResponseError {
             ResponseError::Unauthenticated => "Unauthenticated".to_string(),
             ResponseError::ChannelRecvError => "ChannelRecvError".to_string(),
             ResponseError::InternalServerError(error) => format!("InternalServerError: {}", error),
+            ResponseError::NotFound => "NotFound".to_string(),
         }
     }
 }

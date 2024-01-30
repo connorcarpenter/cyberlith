@@ -1,4 +1,7 @@
 #[allow(dead_code)]
+pub const CONTENT_SERVER_ADDR: &str = "127.0.0.1:14196";
+
+#[allow(dead_code)]
 pub const ORCHESTRATOR_ADDR: &str = "127.0.0.1:14197";
 
 #[allow(dead_code)]
@@ -23,10 +26,13 @@ pub const WORLD_SERVER_SIGNAL_ADDR: &str = "127.0.0.1:14203";
 pub const WORLD_SERVER_WEBRTC_ADDR: &str = "127.0.0.1:14204";
 
 #[allow(dead_code)]
-pub const REGION_SERVER_SECRET: &str = "ArQZmRSf4xvbLVusVjrqGhIaZOExAeIq";
+pub const CLIENT_SECRET: &str = "35aSlQxlQ7RKY03JJMSf4xvbxZGhIaZOE";
 
 #[allow(dead_code)]
 pub const ORCHESTRATOR_SECRET: &str = "bvVKHPxlQ72VBQnSDAZqN0vxZS36Vq3c";
+
+#[allow(dead_code)]
+pub const REGION_SERVER_SECRET: &str = "ArQZmRSf4xvbLVusVjrqGhIaZOExAeIq";
 
 #[allow(dead_code)]
 pub const SESSION_SERVER_SECRET: &str = "zUe6K0RKY03JJMPo3u5SaByfiut0alOW";

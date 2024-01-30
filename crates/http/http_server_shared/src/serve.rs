@@ -99,6 +99,13 @@ pub async fn serve_impl<
 
                         read_state = ReadState::ReadingBody;
 
+                        if let Some(method) = method.clone() {
+                            if method == Method::Get {
+                                read_state = ReadState::Finished;
+                                info!("GET req has no body to read. finished.");
+                                break;
+                            }
+                        }
                         let Some(content_length) = content_length else {
                             warn!("request was missing Content-Length header");
                             read_state = ReadState::Error;
@@ -162,14 +169,7 @@ pub async fn serve_impl<
                 .await
                 .expect("found an error while writing to a stream");
 
-            response_stream
-                .flush()
-                .await
-                .expect("unable to flush the stream");
-            response_stream
-                .close()
-                .await
-                .expect("unable to close the stream");
+            response_stream_flush(response_stream).await;
         }
         Err(_e) => {
             return send_404(response_stream).await;
@@ -186,6 +186,10 @@ Access-Control-Allow-Origin: *
 
 async fn send_404(mut response_stream: Arc<Async<TcpStream>>) {
     response_stream.write_all(RESPONSE_BAD).await.unwrap();
+    response_stream_flush(response_stream).await;
+}
+
+async fn response_stream_flush(mut response_stream: Arc<Async<TcpStream>>) {
     response_stream
         .flush()
         .await

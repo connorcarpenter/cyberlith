@@ -19,6 +19,10 @@ cfg_if! {
         mod world;
         pub use self::world::*;
     }
+    else if #[cfg(feature = "content")] {
+        mod content;
+        pub use self::content::*;
+    }
     else {
         compile_error!("Required to specify a feature flag for the target environment, either 'local' or 'prod'");
     }
