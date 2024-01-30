@@ -1,5 +1,5 @@
 use clap::Command;
-use log::LevelFilter;
+use log::{LevelFilter, warn};
 use simple_logger::SimpleLogger;
 
 fn cli() -> Command {
@@ -26,13 +26,18 @@ fn main() {
 
     let matches = cli().get_matches();
 
-    match matches.subcommand() {
+    let result = match matches.subcommand() {
         Some(("up", _sub_matches)) => {
-            dashboard_lib::up();
+            dashboard_lib::up()
         }
         Some(("down", _sub_matches)) => {
-            dashboard_lib::down();
+            dashboard_lib::down()
         }
         _ => unreachable!(), // If all subcommands are defined above, anything else is unreachable!()
+    };
+
+    match result {
+        Ok(()) => {},
+        Err(e) => warn!("Error: {:?}", e),
     }
 }

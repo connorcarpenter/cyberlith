@@ -1,6 +1,24 @@
+use std::future::Future;
+
+use async_compat::Compat;
+use crossbeam_channel::{bounded, Receiver};
 use log::info;
 use openssh::Session;
 use vultr::VultrError;
+
+pub fn thread_init<F: Future<Output=Result<(), VultrError>> + Sized + Send + 'static>(
+    x: fn() -> F
+) -> Receiver<Result<(), VultrError>> {
+    let (sender, receiver) = bounded(1);
+
+    executor::spawn(Compat::new(async move {
+        let result = x().await;
+        sender.send(result).expect("failed to send result");
+    }))
+        .detach();
+
+    receiver
+}
 
 pub async fn run_ssh_command(session: &Session, command_str: &str) -> Result<(), VultrError> {
     info!("-> {}", command_str);

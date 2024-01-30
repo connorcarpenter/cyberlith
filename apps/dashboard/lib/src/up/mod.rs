@@ -4,15 +4,18 @@ mod instance_init;
 mod ssh_init;
 mod instance_up;
 mod server_build;
+mod containers_up;
 
-use std::{future::Future, time::Duration};
+use std::time::Duration;
 
-use async_compat::Compat;
-use crossbeam_channel::{bounded, Receiver, TryRecvError};
-use log::{info, warn};
+use crossbeam_channel::{Receiver, TryRecvError};
+use log::info;
 use vultr::VultrError;
 
-pub fn up() {
+use crate::up::containers_up::containers_up;
+use crate::utils::thread_init;
+
+pub fn up() -> Result<(), VultrError> {
 
     let instance_rcvr = thread_init(instance_up::instance_up);
     let mut instance_rdy = false;
@@ -35,74 +38,40 @@ pub fn up() {
     loop {
         std::thread::sleep(Duration::from_secs(5));
 
-        if !instance_rdy {
-            match instance_rcvr.try_recv() {
-                Ok(_) => instance_rdy = true,
-                Err(TryRecvError::Disconnected) => warn!("instance receiver disconnected!"),
-                _ => {},
-            }
-        }
-
-        if !content_rdy {
-            match content_rcvr.try_recv() {
-                Ok(_) => content_rdy = true,
-                Err(TryRecvError::Disconnected) => warn!("content receiver disconnected!"),
-                _ => {},
-            }
-        }
-
-        if !orch_rdy {
-            match orch_rcvr.try_recv() {
-                Ok(_) => orch_rdy = true,
-                Err(TryRecvError::Disconnected) => warn!("orch receiver disconnected!"),
-                _ => {},
-            }
-        }
-
-        if !region_rdy {
-            match region_rcvr.try_recv() {
-                Ok(_) => region_rdy = true,
-                Err(TryRecvError::Disconnected) => warn!("region receiver disconnected!"),
-                _ => {},
-            }
-        }
-
-        if !session_rdy {
-            match session_rcvr.try_recv() {
-                Ok(_) => session_rdy = true,
-                Err(TryRecvError::Disconnected) => warn!("session receiver disconnected!"),
-                _ => {},
-            }
-        }
-
-        if !world_rdy {
-            match world_rcvr.try_recv() {
-                Ok(_) => world_rdy = true,
-                Err(TryRecvError::Disconnected) => warn!("world receiver disconnected!"),
-                _ => {},
-            }
-        }
+        check_channel(&instance_rcvr, &mut instance_rdy)?;
+        check_channel(&content_rcvr, &mut content_rdy)?;
+        check_channel(&orch_rcvr, &mut orch_rdy)?;
+        check_channel(&region_rcvr, &mut region_rdy)?;
+        check_channel(&session_rcvr, &mut session_rdy)?;
+        check_channel(&world_rcvr, &mut world_rdy)?;
 
         if instance_rdy && content_rdy && orch_rdy && region_rdy && session_rdy && world_rdy {
             break;
         }
     }
 
+    containers_up()?;
+
     info!("Done!");
+    Ok(())
 }
 
-fn thread_init<F: Future<Output=Result<(), VultrError>> + Sized + Send + 'static>(
-    x: fn() -> F
-) -> Receiver<Result<(), VultrError>> {
-    let (sender, receiver) = bounded(1);
+fn check_channel(
+    rcvr: &Receiver<Result<(), VultrError>>,
+    rdy: &mut bool
+) -> Result<(), VultrError> {
+    if !*rdy {
+        match rcvr.try_recv() {
+            Ok(Ok(())) => *rdy = true,
+            Ok(Err(err)) => return Err(err),
+            Err(TryRecvError::Disconnected) => return Err(VultrError::Dashboard("channel disconnected".to_string())),
+            _ => {},
+        }
+    }
 
-    executor::spawn(Compat::new(async move {
-        let result = x().await;
-        sender.send(result).expect("failed to send result");
-    }))
-        .detach();
-
-    receiver
+    Ok(())
 }
+
+
 
 

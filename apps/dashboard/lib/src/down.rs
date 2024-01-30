@@ -4,13 +4,9 @@ use vultr::{VultrApi, VultrError};
 
 use crate::get_api_key;
 
-pub fn down() {
+pub fn down() -> Result<(), VultrError> {
     info!("Stopping instance");
-    let result = stop_instance();
-    match result {
-        Ok(_) => info!("Instance stopped!"),
-        Err(e) => info!("Error stopping instance: {:?}", e),
-    }
+    stop_instance()
 }
 
 fn stop_instance() -> Result<(), VultrError> {
