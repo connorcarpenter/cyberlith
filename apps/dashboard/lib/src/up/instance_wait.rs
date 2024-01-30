@@ -1,6 +1,8 @@
 use std::time::Duration;
+
 use log::{info, warn};
 use vultr::{VultrApi, VultrError};
+
 use crate::get_api_key;
 
 pub fn instance_wait(instance_id: &str) -> Result<(), VultrError> {

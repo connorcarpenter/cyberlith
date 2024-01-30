@@ -1,5 +1,6 @@
 use log::info;
 use vultr::{VultrApi, VultrError, VultrInstanceType};
+
 use crate::get_api_key;
 
 pub fn instance_start() -> Result<String, VultrError> {
