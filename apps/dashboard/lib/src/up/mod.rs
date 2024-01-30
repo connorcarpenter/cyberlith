@@ -24,7 +24,10 @@ pub fn up() {
             match instance_rcvr.try_recv() {
                 Ok(_) => instance_rdy = true,
                 Err(e) => {
-                    info!("receiver error: {:?}", e);
+                    match e {
+                        crossbeam_channel::TryRecvError::Empty => {},
+                        crossbeam_channel::TryRecvError::Disconnected => info!("receiver error: {:?}", e),
+                    }
                 }
             }
         }

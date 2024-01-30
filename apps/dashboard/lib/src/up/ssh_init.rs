@@ -12,7 +12,8 @@ pub fn ssh_init() -> Result<(), VultrError> {
         match add_known_host() {
             Ok(()) => break,
             Err(err) => {
-                warn!("error adding known host: {:?}", err);
+                warn!("error adding known host .. (expect a number of `getaddrinfo >>: Name or service not known` errors while instance is starting up)");
+                warn!("error: {:?}", err);
                 info!("retrying in 5 seconds..");
                 std::thread::sleep(Duration::from_secs(5));
                 continue;
