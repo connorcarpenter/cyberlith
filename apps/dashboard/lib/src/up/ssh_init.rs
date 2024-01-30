@@ -1,9 +1,10 @@
-use std::{process::Command as LocalCommand, time::Duration};
+use std::time::Duration;
 
 use log::{info, warn};
 use vultr::VultrError;
 
 use crate::get_static_ip;
+use crate::utils::run_command;
 
 pub fn ssh_init() -> Result<(), VultrError> {
     remove_existing_known_host()?;
@@ -25,42 +26,11 @@ pub fn ssh_init() -> Result<(), VultrError> {
 }
 
 fn remove_existing_known_host() -> Result<(), VultrError> {
-    let static_ip = get_static_ip();
-    info!("(local) -> ssh-keygen -f /home/connor/.ssh/known_hosts -R {}", get_static_ip());
-    let output = LocalCommand::new("ssh-keygen")
-        .arg("-f")
-        .arg("/home/connor/.ssh/known_hosts")
-        .arg("-R")
-        .arg(static_ip)
-        .output()
-        .expect("failed to execute process");
-
-    if output.status.success() {
-        let result = String::from_utf8_lossy(&output.stdout);
-        info!("(local) <- {}", result);
-        return Ok(());
-    } else {
-        let error_message = String::from_utf8_lossy(&output.stderr);
-        return Err(VultrError::Dashboard(format!("LocalCommand Error: {}", error_message)));
-    }
+    let command_str = format!("ssh-keygen -f /home/connor/.ssh/known_hosts -R {}", get_static_ip());
+    run_command(command_str.as_str())
 }
 
 fn add_known_host() -> Result<(), VultrError> {
-    info!("(local) -> ssh-keyscan -H {} >> /home/connor/.ssh/known_hosts", get_static_ip());
-    let output = LocalCommand::new("ssh-keyscan")
-        .arg("-H")
-        .arg(get_static_ip())
-        .arg(">>")
-        .arg("/home/connor/.ssh/known_hosts")
-        .output()
-        .expect("failed to execute process");
-
-    if output.status.success() {
-        let result = String::from_utf8_lossy(&output.stdout);
-        info!("(local) <- {}", result);
-        return Ok(());
-    } else {
-        let error_message = String::from_utf8_lossy(&output.stderr);
-        return Err(VultrError::Dashboard(format!("LocalCommand Error: {}", error_message)));
-    }
+    let command_str = format!("ssh-keyscan -H {} >> /home/connor/.ssh/known_hosts", get_static_ip());
+    run_command(command_str.as_str())
 }

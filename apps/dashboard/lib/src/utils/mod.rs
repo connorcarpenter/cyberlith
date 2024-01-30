@@ -1,4 +1,5 @@
 use std::future::Future;
+use std::process::Command;
 
 use async_compat::Compat;
 use crossbeam_channel::{bounded, Receiver};
@@ -18,6 +19,30 @@ pub fn thread_init<F: Future<Output=Result<(), VultrError>> + Sized + Send + 'st
         .detach();
 
     receiver
+}
+
+pub fn run_command(command_str: &str) -> Result<(), VultrError> {
+    info!("(local) -> {}", command_str);
+
+    let commands: Vec<String> = command_str.split(" ").map(|thestr| thestr.to_string()).collect();
+
+    let mut command = Command::new(&commands[0]);
+    for i in 1..commands.len() {
+        command.arg(&commands[i]);
+    }
+
+    let output = command
+        .output()
+        .map_err(|err| VultrError::Dashboard(err.to_string()))?;
+
+    if output.status.success() {
+        let result = String::from_utf8_lossy(&output.stdout);
+        info!("(local) <- {}", result);
+        return Ok(());
+    } else {
+        let error_message = String::from_utf8_lossy(&output.stderr);
+        return Err(VultrError::Dashboard(format!("LocalCommand Error: {}", error_message)));
+    }
 }
 
 pub async fn run_ssh_command(session: &Session, command_str: &str) -> Result<(), VultrError> {
