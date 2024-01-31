@@ -1,3 +1,5 @@
+use std::sync::{Arc, RwLock};
+
 use bevy_app::{
     App, First, Last, Main, MainScheduleOrder, Plugin, PostUpdate, PreStartup, PreUpdate,
     RunFixedUpdateLoop, StateTransition, Update,
@@ -7,13 +9,20 @@ use bevy_ecs::schedule::{ExecutorKind, Schedule};
 use render_api::{Render, Window};
 
 use crate::{
-    base_set::GlInput, input, render::render, runner::runner_func, sync::SyncPlugin, window,
+    base_set::GlInput, input, render::render, runner::{runner_func, STOP_SIGNAL, StopSignal}, sync::SyncPlugin, window,
 };
 
 pub struct RenderGlPlugin;
 
 impl Plugin for RenderGlPlugin {
     fn build(&self, app: &mut App) {
+
+        unsafe {
+            STOP_SIGNAL = Some(Arc::new(RwLock::new(StopSignal {
+                stopped: false,
+            })));
+        }
+
         app
             // Plugins
             .add_plugins(SyncPlugin)

@@ -1,3 +1,5 @@
+use std::sync::{Arc, RwLock};
+
 use bevy_log::info;
 use winit::{
     event::{Event as WinitEvent, TouchPhase, WindowEvent},
@@ -18,7 +20,7 @@ use winit::platform::run_return::EventLoopExtRunReturn;
 #[cfg(target_arch = "wasm32")]
 use winit::platform::web::EventLoopExtWebSys;
 
-use crate::window::{FrameInput, FrameOutput, OutgoingEvent, WindowError, WindowedContext};
+use crate::{window::{FrameInput, FrameOutput, OutgoingEvent, WindowError, WindowedContext}, runner::{StopSignal}};
 
 ///
 /// Window and event handling.
@@ -185,10 +187,19 @@ impl<T: 'static + Clone> Window<T> {
         })
     }
 
+    pub fn wait_for_stop(&self) {
+
+    }
+
     ///
     /// Start the main render loop which calls the `callback` closure each frame.
     ///
-    pub fn render_loop<F: 'static + FnMut(FrameInput<T>) -> FrameOutput>(mut self, mut callback: F) {
+    pub fn render_loop<F: 'static + FnMut(FrameInput<T>) -> FrameOutput>(
+        #[allow(unused_mut)]
+        mut self,
+        stop_signal: Arc<RwLock<StopSignal>>,
+        mut callback: F
+    ) {
         #[cfg(not(target_arch = "wasm32"))]
         let mut last_time = std::time::Instant::now();
         #[cfg(target_arch = "wasm32")]
@@ -203,7 +214,9 @@ impl<T: 'static + Clone> Window<T> {
         let mut modifiers = Modifiers::default();
         let mut first_frame = true;
         let mut mouse_pressed = None;
+        let stop_signal = stop_signal.clone();
         let loop_func = move |event: WinitEvent::<'_, T>, _: &_, control_flow: &mut _| {
+            let stop_signal = stop_signal.clone();
             match event {
                 WinitEvent::UserEvent(t) => {
                     events.push(IncomingEvent::UserEvent(t));
@@ -220,6 +233,12 @@ impl<T: 'static + Clone> Window<T> {
                                 self.closure.as_ref().unchecked_ref(),
                             )
                             .unwrap();
+                    }
+
+                    if let Ok(mut stop_signal) = stop_signal.write() {
+                        stop_signal.stopped = true;
+                    } else {
+                        panic!("failed to write stop signal");
                     }
                 }
                 WinitEvent::MainEventsCleared => {
@@ -281,7 +300,6 @@ impl<T: 'static + Clone> Window<T> {
                                 self.window.set_cursor_icon(cursor_icon);
                             }
                             OutgoingEvent::Exit => {
-                                info!("received exit event");
                                 *control_flow = ControlFlow::Exit;
                             }
                         }
@@ -306,7 +324,10 @@ impl<T: 'static + Clone> Window<T> {
                     WindowEvent::Resized(physical_size) => {
                         self.gl.resize(*physical_size);
                     }
-                    WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
+                    WindowEvent::CloseRequested => {
+                        *control_flow = ControlFlow::Exit;
+                        info!("close requested");
+                    },
                     WindowEvent::KeyboardInput { input, .. } => {
                         if let Some(keycode) = input.virtual_keycode {
                             use event::VirtualKeyCode;

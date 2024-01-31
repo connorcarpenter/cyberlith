@@ -1,6 +1,7 @@
 use bevy_app::{App, Plugin};
 
 use render_gl::RenderGlPlugin;
+pub use render_gl::wait_for_finish;
 
 pub struct RendererPlugin;
 

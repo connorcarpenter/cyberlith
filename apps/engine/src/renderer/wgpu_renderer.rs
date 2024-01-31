@@ -8,3 +8,8 @@ impl Plugin for RendererPlugin {
         todo!();
     }
 }
+
+pub async fn wait_for_finish() {
+    // haven't implemented wgpu renderer yet!
+    todo!();
+}

@@ -52,3 +52,4 @@ pub mod world {
 pub mod config {
     pub use config::*;
 }
+pub use renderer::wait_for_finish;

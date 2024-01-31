@@ -1,7 +1,7 @@
 
 use bevy_app::{App, Startup, Update};
 
-use game_engine::{render::resources::WindowSettings, EnginePlugin};
+use game_engine::{render::resources::WindowSettings, EnginePlugin, wait_for_finish};
 
 use super::{systems::{scene, network}, global::Global};
 
@@ -26,4 +26,9 @@ pub fn run() {
         .add_systems(Update, network::world_connect_events)
         .init_resource::<Global>();
     app.run();
+}
+
+#[allow(dead_code)]
+pub async fn finished() {
+    wait_for_finish().await;
 }

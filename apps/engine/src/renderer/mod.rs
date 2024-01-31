@@ -15,13 +15,13 @@ cfg_if! {
 cfg_if! {
     if #[cfg(feature = "gl_renderer")] {
         mod gl_renderer;
-        pub use gl_renderer::RendererPlugin;
+        pub use gl_renderer::{RendererPlugin, wait_for_finish};
     }
 }
 
 cfg_if! {
     if #[cfg(feature = "wgpu_renderer")] {
         mod wgpu_renderer;
-        pub use wgpu_renderer::RendererPlugin;
+        pub use wgpu_renderer::{RendererPlugin, wait_for_finish};
     }
 }

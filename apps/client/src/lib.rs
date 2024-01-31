@@ -9,10 +9,13 @@ cfg_if! {
         use wasm_bindgen::prelude::*;
 
         #[wasm_bindgen(start)]
-        pub fn main() -> Result<(), JsValue> {
+        pub fn main() {
             app::run();
+        }
 
-            Ok(())
+        #[wasm_bindgen]
+        pub async fn finished() {
+            app::finished().await;
         }
     }
 }

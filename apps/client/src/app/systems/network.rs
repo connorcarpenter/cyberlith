@@ -1,8 +1,9 @@
 use std::time::Duration;
 
+use bevy_app::AppExit;
 use bevy_ecs::{
     system::{ResMut, Resource},
-    event::EventReader,
+    event::{EventReader, EventWriter},
 };
 use bevy_log::info;
 
@@ -23,7 +24,7 @@ pub struct ApiTimer(pub Timer);
 
 impl Default for ApiTimer {
     fn default() -> Self {
-        Self(Timer::new(Duration::from_millis(1000)))
+        Self(Timer::new(Duration::from_millis(5000)))
     }
 }
 
@@ -32,12 +33,17 @@ pub fn handle_connection(
     mut timer: ResMut<ApiTimer>,
     mut http_client: ResMut<HttpClient>,
     mut session_client: SessionClient,
+    mut exit: EventWriter<AppExit>,
 ) {
     if timer.0.ringing() {
         timer.0.reset();
     } else {
         return;
     }
+
+    info!("going to exit app");
+    exit.send(AppExit);
+    return;
 
     match &global.connection_state {
         ConnectionState::Disconnected => {

@@ -18,3 +18,4 @@ pub use gpu_material_manager::*;
 pub use gpu_mesh_manager::*;
 pub use gpu_skin_manager::*;
 pub use plugin::*;
+pub use runner::wait_for_finish;

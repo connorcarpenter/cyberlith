@@ -3,4 +3,4 @@ mod global;
 mod run;
 mod systems;
 
-pub use run::run;
+pub use run::*;
