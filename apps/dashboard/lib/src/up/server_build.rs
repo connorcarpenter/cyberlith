@@ -25,10 +25,10 @@ pub async fn server_build_world() -> Result<(), VultrError> {
 }
 
 async fn server_build_common(dir_name: &str, app_name: &str) -> Result<(), VultrError> {
-    run_command(format!("cd ../../.. && cargo build --release --features local --manifest-path apps/{}/Cargo.toml", dir_name).as_str()).await?;
-    run_command(format!("cd ../../.. && cp target/release/{} {}", app_name, app_name).as_str()).await?;
-    run_command(format!("cd ../../.. && docker build --build-arg server_name={} --progress=plain -t {}_image .", app_name, dir_name).as_str()).await?;
-    run_command(format!("cd ../../.. && rm {}", app_name).as_str()).await?;
+    run_command(app_name, format!("cargo build --release --features local --manifest-path apps/{}/Cargo.toml", dir_name).as_str()).await?;
+    run_command(app_name, format!("cp target/release/{} {}", app_name, app_name).as_str()).await?;
+    run_command(app_name, format!("docker build --build-arg server_name={} --progress=plain -t {}_image .", app_name, dir_name).as_str()).await?;
+    run_command(app_name, format!("rm {}", app_name).as_str()).await?;
 
     info!("server_build_common({}) done!", dir_name);
 

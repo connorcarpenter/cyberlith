@@ -27,10 +27,10 @@ pub async fn ssh_init() -> Result<(), VultrError> {
 
 async fn remove_existing_known_host() -> Result<(), VultrError> {
     let command_str = format!("ssh-keygen -f /home/connor/.ssh/known_hosts -R {}", get_static_ip());
-    run_command(command_str.as_str()).await
+    run_command("SSH_INIT", command_str.as_str()).await
 }
 
 async fn add_known_host() -> Result<(), VultrError> {
     let command_str = format!("ssh-keyscan -H {} >> /home/connor/.ssh/known_hosts", get_static_ip());
-    run_command(command_str.as_str()).await
+    run_command("SSH_INIT", command_str.as_str()).await
 }

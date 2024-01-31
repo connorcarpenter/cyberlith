@@ -1,11 +1,13 @@
 use std::future::Future;
+use std::io::BufRead;
 
 use async_compat::Compat;
 use crossbeam_channel::{bounded, Receiver};
 use log::{info, warn};
 use openssh::Session;
-use subprocess::{Exec, Redirection};
+use subprocess::{Exec,  Redirection};
 use vultr::VultrError;
+use smol::channel::bounded as smol_bounded;
 
 pub fn thread_init<F: Future<Output=Result<(), VultrError>> + Sized + Send + 'static>(
     x: fn() -> F
@@ -35,28 +37,62 @@ pub fn thread_init_compat<F: Future<Output=Result<(), VultrError>> + Sized + Sen
     receiver
 }
 
-pub async fn run_command(command_str: &str) -> Result<(), VultrError> {
+pub async fn run_command(command_name: &str, command_str: &str) -> Result<(), VultrError> {
 
-    info!("(local) -> {}", command_str);
+    info!("({}) -> {}", command_name, command_str);
 
-    let command = Exec::shell(command_str)
-        .stdout(Redirection::Pipe)
-        .stderr(Redirection::Pipe);
-    let data_capture = match command.capture() {
-        Ok(data_capture) => data_capture,
-        Err(err) => {
-            warn!("(local error) <- {}", err);
-            return Err(VultrError::Dashboard(format!("Command Error: {}", err)));
+    let command_name = command_name.to_string();
+    let command_name_clone = command_name.clone();
+    let command_str = command_str.to_string();
+
+    let (sender, receiver) = smol_bounded(1);
+
+    executor::spawn(async move {
+
+        let command_name = command_name_clone;
+
+        let args = command_str.split(" ").map(|thestr| thestr.to_string()).collect::<Vec<String>>();
+
+        let result_to_send = {
+            let mut command = Exec::cmd(&args[0])
+                .args(&args[1..args.len()])
+                .stdout(Redirection::Pipe)
+                .cwd("/home/connor/Work/cyberlith");
+            match command.capture() {
+                Ok(capture) => {
+                    let out = capture.stdout_str();
+                    if out.len() > 0 {
+                        let lines = out.lines().map(String::from).collect::<Vec<String>>();
+                        for line in lines {
+                            info!("({}) <- {}", command_name, line);
+                        }
+                    }
+                    Ok(())
+                }
+                Err(err) => {
+                    Err(VultrError::Dashboard(err.to_string()))
+                }
+            }
+        };
+
+        sender.send(result_to_send).await.expect("failed to send result");
+    }).detach();
+
+    match receiver
+        .recv()
+        .await {
+        Ok(Ok(())) => {
+            // info!("({}) received successful(?) status from command", command_name);
+            Ok(())
         }
-    };
-    if data_capture.success() {
-        let out = data_capture.stdout_str().trim().to_string();
-        info!("(local) <- {}", out);
-        return Ok(());
-    } else {
-        let err = data_capture.stderr_str().trim().to_string();
-        warn!("(local error) <- {}", err);
-        return Err(VultrError::Dashboard(format!("Command Error: {}", err)));
+        Ok(Err(err)) => {
+            warn!("({}) error: {:?}", command_name, err);
+            Err(VultrError::Dashboard(err.to_string()))
+        }
+        Err(err) => {
+            warn!("({}) error: {:?}", command_name, err);
+            Err(VultrError::Dashboard(err.to_string()))
+        }
     }
 }
 
