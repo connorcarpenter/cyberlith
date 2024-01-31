@@ -8,7 +8,7 @@ pub fn spawn<T: Send + 'static>(
     future: impl Future<Output = T> + Send + 'static,
 ) -> Task<T> {
     static GLOBAL: Lazy<Executor<'_>> = Lazy::new(|| {
-        for n in 1..=4 {
+        for n in 1..=8 {
             thread::Builder::new()
                 .name(format!("http_server_{}", n))
                 .spawn(|| loop {

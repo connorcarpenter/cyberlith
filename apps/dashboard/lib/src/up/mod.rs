@@ -13,11 +13,11 @@ use log::info;
 use vultr::VultrError;
 
 use crate::up::containers_up::containers_up;
-use crate::utils::thread_init;
+use crate::utils::{thread_init, thread_init_compat};
 
 pub fn up() -> Result<(), VultrError> {
 
-    let instance_rcvr = thread_init(instance_up::instance_up);
+    let instance_rcvr = thread_init_compat(instance_up::instance_up);
     let mut instance_rdy = false;
 
     let content_rcvr = thread_init(server_build::server_build_content);

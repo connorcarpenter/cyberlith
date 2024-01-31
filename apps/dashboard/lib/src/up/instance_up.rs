@@ -4,6 +4,10 @@ use vultr::VultrError;
 use crate::up::{instance_init::instance_init, instance_start::instance_start, instance_wait::instance_wait, ssh_init::ssh_init};
 
 pub async fn instance_up() -> Result<(), VultrError> {
+
+    // info!("for debugging, pretend that instance is already up! :)");
+    // return Ok(());
+
     // start instance
     info!("Starting instance");
     let instance_id = match instance_start() {
@@ -18,7 +22,7 @@ pub async fn instance_up() -> Result<(), VultrError> {
     };
 
     // wait for instance to be ready
-    match instance_wait(&instance_id) {
+    match instance_wait(&instance_id).await {
         Ok(_) => info!("Instance ready!"),
         Err(e) => {
             warn!("Error waiting for instance: {:?}", e);
@@ -27,7 +31,7 @@ pub async fn instance_up() -> Result<(), VultrError> {
     }
 
     // init ssh
-    match ssh_init() {
+    match ssh_init().await {
         Ok(_) => info!("SSH initiated"),
         Err(e) => {
             warn!("SSH not initiated.. error: {:?}", e);

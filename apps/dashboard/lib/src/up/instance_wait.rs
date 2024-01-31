@@ -5,7 +5,7 @@ use vultr::{VultrApi, VultrError};
 
 use crate::get_api_key;
 
-pub fn instance_wait(instance_id: &str) -> Result<(), VultrError> {
+pub async fn instance_wait(instance_id: &str) -> Result<(), VultrError> {
     let api_key = get_api_key();
 
     let api = VultrApi::new(api_key);
@@ -26,6 +26,6 @@ pub fn instance_wait(instance_id: &str) -> Result<(), VultrError> {
             }
         }
 
-        std::thread::sleep(Duration::from_secs(5));
+        smol::Timer::after(Duration::from_secs(5)).await;
     }
 }
