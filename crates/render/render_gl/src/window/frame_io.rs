@@ -8,6 +8,7 @@ use crate::core::*;
 #[derive(Clone, Debug)]
 pub enum OutgoingEvent {
     CursorChanged(CursorIcon),
+    Exit,
 }
 
 ///

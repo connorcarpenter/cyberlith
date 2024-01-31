@@ -1,3 +1,4 @@
+use bevy_log::info;
 use winit::{
     event::{Event as WinitEvent, TouchPhase, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
@@ -10,6 +11,12 @@ use render_api::{
     components::Viewport,
     resources::{SurfaceSettings, WindowSettings},
 };
+
+#[cfg(not(target_arch = "wasm32"))]
+use winit::platform::run_return::EventLoopExtRunReturn;
+
+#[cfg(target_arch = "wasm32")]
+use winit::platform::web::EventLoopExtWebSys;
 
 use crate::window::{FrameInput, FrameOutput, OutgoingEvent, WindowError, WindowedContext};
 
@@ -181,7 +188,7 @@ impl<T: 'static + Clone> Window<T> {
     ///
     /// Start the main render loop which calls the `callback` closure each frame.
     ///
-    pub fn render_loop<F: 'static + FnMut(FrameInput<T>) -> FrameOutput>(self, mut callback: F) {
+    pub fn render_loop<F: 'static + FnMut(FrameInput<T>) -> FrameOutput>(mut self, mut callback: F) {
         #[cfg(not(target_arch = "wasm32"))]
         let mut last_time = std::time::Instant::now();
         #[cfg(target_arch = "wasm32")]
@@ -196,7 +203,7 @@ impl<T: 'static + Clone> Window<T> {
         let mut modifiers = Modifiers::default();
         let mut first_frame = true;
         let mut mouse_pressed = None;
-        self.event_loop.run(move |event, _, control_flow| {
+        let loop_func = move |event: WinitEvent::<'_, T>, _: &_, control_flow: &mut _| {
             match event {
                 WinitEvent::UserEvent(t) => {
                     events.push(IncomingEvent::UserEvent(t));
@@ -220,9 +227,9 @@ impl<T: 'static + Clone> Window<T> {
                 }
                 WinitEvent::RedrawRequested(_) => {
                     #[cfg(not(target_arch = "wasm32"))]
-                    let now = std::time::Instant::now();
+                        let now = std::time::Instant::now();
                     #[cfg(target_arch = "wasm32")]
-                    let now = instant::Instant::now();
+                        let now = instant::Instant::now();
 
                     let duration = now.duration_since(last_time);
                     last_time = now;
@@ -267,7 +274,20 @@ impl<T: 'static + Clone> Window<T> {
                     };
                     first_frame = false;
                     let frame_output = callback(frame_input);
-                    if frame_output.exit {
+
+                    for event in frame_output.events.unwrap() {
+                        match event {
+                            OutgoingEvent::CursorChanged(cursor_icon) => {
+                                self.window.set_cursor_icon(cursor_icon);
+                            }
+                            OutgoingEvent::Exit => {
+                                info!("received exit event");
+                                *control_flow = ControlFlow::Exit;
+                            }
+                        }
+                    }
+
+                    if frame_output.exit || *control_flow == ControlFlow::Exit {
                         *control_flow = ControlFlow::Exit;
                     } else {
                         if frame_output.swap_buffers {
@@ -279,13 +299,6 @@ impl<T: 'static + Clone> Window<T> {
                         } else {
                             *control_flow = ControlFlow::Poll;
                             self.window.request_redraw();
-                        }
-                        for event in frame_output.events.unwrap() {
-                            match event {
-                                OutgoingEvent::CursorChanged(cursor_icon) => {
-                                    self.window.set_cursor_icon(cursor_icon);
-                                }
-                            }
                         }
                     }
                 }
@@ -513,7 +526,13 @@ impl<T: 'static + Clone> Window<T> {
                 },
                 _ => (),
             }
-        });
+        };
+
+        #[cfg(not(target_arch = "wasm32"))]
+        EventLoop::<T>::run_return(&mut self.event_loop, loop_func);
+
+        #[cfg(target_arch = "wasm32")]
+        EventLoop::<T>::spawn(self.event_loop, loop_func);
     }
 
     ///

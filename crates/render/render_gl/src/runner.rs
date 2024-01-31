@@ -1,4 +1,5 @@
 use bevy_app::App;
+use bevy_log::info;
 
 use render_api::resources::WindowSettings;
 
@@ -32,4 +33,6 @@ pub fn runner_func(mut app: App) {
                 FrameOutput::from(old_frame_input)
             },
     );
+
+    info!("after window.render_loop()!");
 }
