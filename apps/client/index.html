@@ -5,16 +5,94 @@
         <title>Cyberlith Client</title>
     </head>
     <body>
-    <canvas id="canvas"></canvas>
-        <script type="module">
-            import app, { finished } from "./target/app.js";
-            async function start() {
-                await app();
-                console.log("app is running");
-                await finished();
+        <script>
+            window.cybl_module_started = false;
+            async function run() {
+
+                // Create a new canvas element
+                {
+                    let canvasElement = document.createElement("canvas");
+
+                    // Set the id attribute to "canvas"
+                    canvasElement.id = "canvas";
+
+                    // Append the canvas element to the body (or any other desired parent element)
+                    document.body.appendChild(canvasElement);
+                    console.log("canvas element created");
+                }
+
+                window.cybl_has_started = true;
+                console.log("loading app?");
+                await window.cybl_app.default();
+                console.log("starting app")
+                await window.cybl_app.start();
+                console.log("app is started");
+                await window.cybl_app.finished();
                 console.log("app is finished");
+
+                {
+                    let canvasElement = document.getElementById("canvas");
+
+                    // Check if the canvas element exists before attempting to remove it
+                    if (canvasElement) {
+                        // Remove the canvas element from the DOM
+                        canvasElement.parentNode.removeChild(canvasElement);
+                        console.log("canvas element removed");
+                    } else {
+                        console.log("Canvas element not found.");
+                    }
+                }
+                {
+                    let scriptElement = document.getElementById("cybl_module");
+
+                    // Check if the canvas element exists before attempting to remove it
+                    if (scriptElement) {
+                        // Remove the canvas element from the DOM
+                        scriptElement.parentNode.removeChild(scriptElement);
+                        console.log("script element removed");
+                    } else {
+                        console.log("script element not found.");
+                    }
+                }
+
+                window.cybl_app.unload();
+
+                // reset
+                window.cybl_module_started = false;
+                window.cybl_has_started = false;
+                window.cybl_app = null;
             }
-            start();
+            window.cybl_has_started = false;
+            setInterval(() => {
+                if (window.cybl_module_started) {
+                    if (window.cybl_app && !window.cybl_has_started) {
+                        window.cybl_has_started = true;
+                        run();
+                        return;
+                    }
+                } else {
+                    console.log("making module");
+
+                    let scriptElement = document.createElement('script');
+
+                    scriptElement.id = "cybl_module";
+
+                    // Set the content of the script
+                    scriptElement.textContent = `
+                        import("./target/app.js").then(module => {
+                            window.cybl_app = module;
+                            console.log("app is initialized");
+                        });
+                    `;
+
+                    // Append the script element to the document's head or body
+                    document.head.appendChild(scriptElement);
+
+                    window.cybl_module_started = true;
+                    console.log("module made");
+                }
+                console.log("waiting for cybl_run");
+            }, 1000);
         </script>
     </body>
 </html>

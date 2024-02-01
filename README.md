@@ -1,6 +1,17 @@
 # cyberlith
 
-Build Docker image for content_server:
+adding to app.js unloads the memory enough to start app again?
+
 ```
-cargo build --release --features local --manifest-path apps/content/Cargo.toml && cp target/release/content_server content_server && docker build --build-arg server_name=content_server --progress=plain -t content_image . && rm content_server
+function unload() {
+    if (wasm == undefined || wasm == null) {
+        console.log("can't unload");
+        return;
+    }
+    console.log("unloading");
+    console.log(wasm);
+    wasm = undefined;
+}
+
+export { initSync, unload }
 ```

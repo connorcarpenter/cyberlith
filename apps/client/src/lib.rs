@@ -8,8 +8,8 @@ cfg_if! {
 
         use wasm_bindgen::prelude::*;
 
-        #[wasm_bindgen(start)]
-        pub fn main() {
+        #[wasm_bindgen]
+        pub async fn start() {
             app::run();
         }
 

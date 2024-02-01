@@ -36,7 +36,7 @@ pub fn scene_setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
-    mut asset_manager: ResMut<AssetManager>,
+    // mut asset_manager: ResMut<AssetManager>,
 ) {
     let layer = RenderLayers::layer(0);
 
@@ -54,13 +54,15 @@ pub fn scene_setup(
     // model
     commands
         .spawn_empty()
+        .insert(meshes.add(shapes::Cube))
+        .insert(materials.add(CpuMaterial::new(Color::RED, 0.0, 32.0, 0.5)))
         // .insert(human_model_handle)
         // .insert(WalkAnimation {
         //     anim_handle: human_walk_anim_handle,
         //     image_index: 0.0,
         // })
         .insert(
-            Transform::from_scale(Vec3::splat(1.0))
+            Transform::from_scale(Vec3::splat(50.0))
                 .with_translation(Vec3::splat(0.0))
                 .with_rotation(Quat::from_rotation_z(f32::to_radians(0.0))),
         )
@@ -122,10 +124,10 @@ pub fn scene_setup(
 
 pub fn scene_step(
     time: Res<Time>,
-    asset_manager: Res<AssetManager>,
+    // asset_manager: Res<AssetManager>,
     mut object_q: Query<&mut Transform, With<ObjectMarker>>,
     mut rotation: Local<f32>,
-    mut icon_q: Query<&mut WalkAnimation>,
+    // mut icon_q: Query<&mut WalkAnimation>,
 ) {
     let elapsed_time = time.get_elapsed();
 
@@ -147,15 +149,15 @@ pub fn scene_step(
         transform.rotation = Quat::from_rotation_z(f32::to_radians(*rotation + 90.0));
     }
 
-    for mut anim in icon_q.iter_mut() {
-        anim.image_index += 0.4 * elapsed_time;
-
-        let subimage_count = asset_manager.get_animation_duration(&anim.anim_handle) as f32;
-
-        while anim.image_index >= subimage_count {
-            anim.image_index -= subimage_count;
-        }
-    }
+    // for mut anim in icon_q.iter_mut() {
+    //     anim.image_index += 0.4 * elapsed_time;
+    //
+    //     let subimage_count = asset_manager.get_animation_duration(&anim.anim_handle) as f32;
+    //
+    //     while anim.image_index >= subimage_count {
+    //         anim.image_index -= subimage_count;
+    //     }
+    // }
 }
 
 pub fn scene_draw(
@@ -171,13 +173,13 @@ pub fn scene_draw(
         &Visibility,
         Option<&RenderLayer>,
     )>,
-    models_q: Query<(
-        &Handle<ModelData>,
-        &WalkAnimation,
-        &Transform,
-        &Visibility,
-        Option<&RenderLayer>,
-    )>,
+    // models_q: Query<(
+    //     &Handle<ModelData>,
+    //     &WalkAnimation,
+    //     &Transform,
+    //     &Visibility,
+    //     Option<&RenderLayer>,
+    // )>,
     // Lights
     ambient_lights_q: Query<(&AmbientLight, Option<&RenderLayer>)>,
     point_lights_q: Query<(&PointLight, Option<&RenderLayer>)>,
@@ -214,18 +216,18 @@ pub fn scene_draw(
         render_frame.draw_mesh(render_layer_opt, mesh_handle, mat_handle, transform);
     }
 
-    // Aggregate Models
-    for (model_handle, walk_anim, transform, visibility, render_layer_opt) in models_q.iter() {
-        if !visibility.visible {
-            continue;
-        }
-        asset_manager.draw_animated_model(
-            &mut render_frame,
-            model_handle,
-            &walk_anim.anim_handle,
-            transform,
-            walk_anim.image_index,
-            render_layer_opt,
-        );
-    }
+    // // Aggregate Models
+    // for (model_handle, walk_anim, transform, visibility, render_layer_opt) in models_q.iter() {
+    //     if !visibility.visible {
+    //         continue;
+    //     }
+    //     asset_manager.draw_animated_model(
+    //         &mut render_frame,
+    //         model_handle,
+    //         &walk_anim.anim_handle,
+    //         transform,
+    //         walk_anim.image_index,
+    //         render_layer_opt,
+    //     );
+    // }
 }
