@@ -23,12 +23,6 @@ pub async fn server_build_content() -> Result<(), VultrError> {
     // docker build
     run_command("content_server", "docker build --file content.dockerfile --progress=plain -t content_image .").await?;
 
-    // save docker image to file
-    run_command("content_server", "docker save -o content_image.tar content_image:latest").await?;
-
-    // clean up docker image
-    run_command("content_server", "docker rmi content_image:latest").await?;
-
     // clean up files
     run_command("game_client", "rm game_client.html").await?;
     run_command("game_client", "rm game_client.js").await?;
@@ -58,8 +52,6 @@ async fn server_build_common(dir_name: &str, app_name: &str) -> Result<(), Vultr
     run_command(app_name, format!("cargo build --release --features local --manifest-path apps/{}/Cargo.toml", dir_name).as_str()).await?;
     run_command(app_name, format!("cp target/release/{} {}", app_name, app_name).as_str()).await?;
     run_command(app_name, format!("docker build --build-arg server_name={} --progress=plain -t {}_image .", app_name, dir_name).as_str()).await?;
-    run_command(app_name, format!("docker save -o {}_image.tar {}_image:latest", dir_name, dir_name).as_str()).await?;
-    run_command(app_name, format!("docker rmi {}_image:latest", dir_name).as_str()).await?;
     run_command(app_name, format!("rm {}", app_name).as_str()).await?;
 
     info!("server_build_common({}) done!", dir_name);
