@@ -170,8 +170,11 @@ pub async fn serve_impl<
                 .expect("found an error while writing to a stream");
 
             response_stream_flush(response_stream).await;
+
+            // info!("response sent");
         }
-        Err(_e) => {
+        Err(e) => {
+            warn!("error when responding: {:?}", e.to_string());
             return send_404(response_stream).await;
         }
     }

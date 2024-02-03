@@ -14,6 +14,9 @@ pub const SESSION_SERVER_RECV_ADDR: &str = "127.0.0.1";
 pub const WORLD_SERVER_RECV_ADDR: &str = "127.0.0.1";
 
 #[allow(dead_code)]
+pub const CONTENT_SERVER_ASSET_FILE_PATH: &str = "./assets/";
+
+#[allow(dead_code)]
 pub const CONTENT_SERVER_PORT: u16 = 14196;
 
 #[allow(dead_code)]

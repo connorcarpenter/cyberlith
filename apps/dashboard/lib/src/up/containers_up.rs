@@ -105,7 +105,7 @@ async fn remove_network(session: &Session) -> Result<(), VultrError> {
 
 async fn containers_start(session: &Session) -> Result<(), VultrError> {
 
-    container_create_and_start(session, "content", "-p 80:14196/tcp").await?;
+    container_create_and_start(session, "content", "-p 80:80/tcp").await?;
     container_create_and_start(session, "orchestrator", "-p 14197:14197/tcp").await?;
     container_create_and_start(session, "region", "-p 14198:14198/tcp").await?;
     container_create_and_start(session, "session", "-p 14200:14200/tcp -p 14201:14201/udp").await?;

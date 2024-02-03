@@ -14,7 +14,10 @@ pub const SESSION_SERVER_RECV_ADDR: &str = "session_server";
 pub const WORLD_SERVER_RECV_ADDR: &str = "world_server";
 
 #[allow(dead_code)]
-pub const CONTENT_SERVER_PORT: u16 = 14196;
+pub const CONTENT_SERVER_ASSET_FILE_PATH: &str = "/usr/local/bin/assets/";
+
+#[allow(dead_code)]
+pub const CONTENT_SERVER_PORT: u16 = 80;
 
 #[allow(dead_code)]
 pub const ORCHESTRATOR_PORT: u16 = 14197;

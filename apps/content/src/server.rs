@@ -14,6 +14,7 @@ use smol::{
 
 use http_common::{Request, Response, ResponseError};
 use http_server_shared::{executor, serve_impl};
+use config::CONTENT_SERVER_ASSET_FILE_PATH;
 
 pub struct Server {
     socket_addr: SocketAddr,
@@ -78,11 +79,15 @@ fn endpoint_2(
         let pure_future = async move {
             let mut response = Response::default();
 
-            let Ok(bytes) = std::fs::read(format!("./assets/{}", file_name)) else {
+            // info!("reading file: {}", file_name);
+
+            let Ok(bytes) = std::fs::read(format!("{}{}", CONTENT_SERVER_ASSET_FILE_PATH, file_name)) else {
                 return Err(ResponseError::NotFound);
             };
 
             response.body = bytes;
+
+            // info!("adding headers");
 
             // add Content-Type header
             let content_type = match file_name.split('.').last().unwrap() {
@@ -95,6 +100,8 @@ fn endpoint_2(
 
             // add Content-Length header
             response.headers.insert("Content-Length".to_string(), response.body.len().to_string());
+
+            // info!("sending response 1");
 
             return Ok(response);
         };
