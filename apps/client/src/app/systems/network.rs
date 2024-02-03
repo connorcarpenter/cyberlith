@@ -12,7 +12,7 @@ use game_engine::{
     session::{WorldConnectToken, SessionAuth, SessionClient, SessionConnectEvent, SessionMessageEvents, SessionPrimaryChannel},
     orchestrator::LoginRequest,
     world::{WorldClient, WorldAuth, WorldConnectEvent},
-    config::{ORCHESTRATOR_RECV_ADDR, ORCHESTRATOR_PORT},
+    config::{PUBLIC_IP_ADDR, ORCHESTRATOR_PORT},
 };
 
 use crate::app::{connection_state::ConnectionState, global::Global};
@@ -43,7 +43,7 @@ pub fn handle_connection(
         ConnectionState::Disconnected => {
             info!("sending to orchestrator..");
             let request = LoginRequest::new("charlie", "12345");
-            let key = http_client.send(ORCHESTRATOR_RECV_ADDR, ORCHESTRATOR_PORT, request);
+            let key = http_client.send(PUBLIC_IP_ADDR, ORCHESTRATOR_PORT, request);
             global.connection_state = ConnectionState::SentToOrchestrator(key);
         }
         ConnectionState::SentToOrchestrator(key) => {

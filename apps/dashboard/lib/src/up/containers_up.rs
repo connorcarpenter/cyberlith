@@ -89,7 +89,7 @@ async fn images_pull(session: &Session) -> Result<(), VultrError> {
 
 async fn create_network(session: &Session) -> Result<(), VultrError> {
 
-    run_ssh_command(session, "docker network create primary_network").await?
+    run_ssh_command(session, "docker network create primary_network").await?;
 
     Ok(())
 }
