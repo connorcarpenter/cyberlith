@@ -10,8 +10,12 @@ pub fn instance_start() -> Result<String, VultrError> {
     let api = VultrApi::new(api_key);
 
     let instances = api.get_instance_list()?;
-    if instances.len() > 0 {
-        return Err(VultrError::Dashboard("Instance already running".to_string()));
+    if instances.len() == 1 {
+        let instance = instances.get(0).unwrap();
+        return Ok(instance.id.clone());
+    }
+    if instances.len() > 1 {
+        return Err(VultrError::Dashboard("Multiple instances running".to_string()));
     }
 
     // get region id

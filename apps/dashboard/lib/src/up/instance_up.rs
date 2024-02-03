@@ -5,9 +5,6 @@ use crate::up::{instance_init::instance_init, instance_start::instance_start, in
 
 pub async fn instance_up() -> Result<(), VultrError> {
 
-    info!("for debugging, pretend that instance is already up! :)");
-    return Ok(());
-
     // start instance
     info!("Starting instance");
     let instance_id = match instance_start() {

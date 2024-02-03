@@ -1,13 +1,14 @@
-use std::future::Future;
-use std::io::BufRead;
+use std::{future::Future, path::Path};
 
 use async_compat::Compat;
 use crossbeam_channel::{bounded, Receiver};
 use log::{info, warn};
-use openssh::Session;
+use openssh::{KnownHosts, Session, SessionBuilder};
 use subprocess::{Exec,  Redirection};
 use vultr::VultrError;
 use smol::channel::bounded as smol_bounded;
+
+use crate::get_static_ip;
 
 pub fn thread_init<F: Future<Output=Result<(), VultrError>> + Sized + Send + 'static>(
     x: fn() -> F
@@ -54,7 +55,7 @@ pub async fn run_command(command_name: &str, command_str: &str) -> Result<(), Vu
         let args = command_str.split(" ").map(|thestr| thestr.to_string()).collect::<Vec<String>>();
 
         let result_to_send = {
-            let mut command = Exec::cmd(&args[0])
+            let command = Exec::cmd(&args[0])
                 .args(&args[1..args.len()])
                 .stdout(Redirection::Pipe)
                 .cwd("/home/connor/Work/cyberlith");
@@ -94,6 +95,30 @@ pub async fn run_command(command_name: &str, command_str: &str) -> Result<(), Vu
             Err(VultrError::Dashboard(err.to_string()))
         }
     }
+}
+
+pub async fn ssh_session_create() -> Result<Session, VultrError> {
+    info!("preparing to SSH into instance");
+
+    let key_path = Path::new("~/Work/cyberlith/.vultr/vultrkey");
+
+    let ssh_path = format!("ssh://root@{}", get_static_ip());
+
+    let session = SessionBuilder::default()
+        .known_hosts_check(KnownHosts::Accept)
+        .keyfile(key_path)
+        .connect(ssh_path)
+        .await
+        .map_err(|err| VultrError::Dashboard(err.to_string()))?;
+
+    Ok(session)
+}
+
+pub async fn ssh_session_close(session: Session) -> Result<(), VultrError> {
+    session
+        .close()
+        .await
+        .map_err(|err| VultrError::Dashboard(err.to_string()))
 }
 
 pub async fn run_ssh_command(session: &Session, command_str: &str) -> Result<(), VultrError> {

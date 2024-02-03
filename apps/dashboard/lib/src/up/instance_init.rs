@@ -1,34 +1,22 @@
-use std::{path::Path, time::Duration};
+use std::time::Duration;
 
 use log::{info, warn};
-use openssh::{KnownHosts, Session, SessionBuilder};
+use openssh::Session;
 use vultr::VultrError;
 
-use crate::{get_static_ip, utils::{run_ssh_command, run_ssh_raw_command}};
+use crate::utils::{ssh_session_create, run_ssh_command, run_ssh_raw_command, ssh_session_close};
 
 pub async fn instance_init() -> Result<(), VultrError> {
 
-    info!("preparing to SSH into instance");
+    // create ssh session
+    let session = ssh_session_create().await?;
 
-    let key_path = Path::new("~/Work/cyberlith/.vultr/vultrkey");
-
-    let ssh_path = format!("ssh://root@{}", get_static_ip());
-
-    let session = SessionBuilder::default()
-        .known_hosts_check(KnownHosts::Accept)
-        .keyfile(key_path)
-        .connect(ssh_path)
-        .await
-        .map_err(|err| VultrError::Dashboard(err.to_string()))?;
-
+    // ssh actions
     setup_iptables(&session).await?;
     setup_docker(&session).await?;
 
-    session.close()
-        .await
-        .map_err(|err| VultrError::Dashboard(err.to_string()))?;
-
-    info!("SSH session closed");
+    // close ssh session
+    ssh_session_close(session).await?;
 
     Ok(())
 }
