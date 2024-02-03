@@ -7,7 +7,7 @@ pub async fn server_build_content() -> Result<(), VultrError> {
 
     // build client
     run_command("game_client", "cargo build --release --features gl_renderer,prod --manifest-path apps/client/Cargo.toml --target wasm32-unknown-unknown --lib").await?;
-    run_command("game_client", "wasm-bindgen --out-dir target --out-name game_client --target web --no-typescript target/wasm32-unknown-unknown/release/app.wasm").await?;
+    run_command("game_client", "wasm-bindgen --out-dir target --out-name game_client --target web --no-typescript target/wasm32-unknown-unknown/release/game_client.wasm").await?;
 
     // move files to main dir
     run_command("game_client", "cp target/game_client.js game_client.js").await?;

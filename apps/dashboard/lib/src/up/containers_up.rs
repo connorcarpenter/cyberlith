@@ -38,11 +38,11 @@ async fn ssh_into_server_to_pull_and_start_containers() -> Result<(), VultrError
     // ssh in
     let session = ssh_session_create().await?;
 
-    // remove network
-    remove_network(&session).await?;
-
     // stop containers
     containers_stop(&session).await?;
+
+    // remove network
+    remove_network(&session).await?;
 
     // pull images
     images_pull(&session).await?;
@@ -97,7 +97,7 @@ async fn create_network(session: &Session) -> Result<(), VultrError> {
 async fn remove_network(session: &Session) -> Result<(), VultrError> {
 
     if let Err(err) = run_ssh_command(session, "docker network rm primary_network").await {
-        warn!("ignoring error while creating network: {:?}", err);
+        warn!("ignoring error while removing network: {:?}", err);
     }
 
     Ok(())
@@ -105,22 +105,22 @@ async fn remove_network(session: &Session) -> Result<(), VultrError> {
 
 async fn containers_start(session: &Session) -> Result<(), VultrError> {
 
-    container_start(session, "content", "-p 80:14196/tcp").await?;
-    container_start(session, "orchestrator", "-p 14197:14197/tcp").await?;
-    container_start(session, "region", "-p 14198:14198/tcp").await?;
-    container_start(session, "session", "-p 14200:14200/tcp -p 14201:14201/udp").await?;
-    container_start(session, "world", "-p 14203:14203/tcp -p 14204:14204/udp").await?;
+    container_create_and_start(session, "content", "-p 80:14196/tcp").await?;
+    container_create_and_start(session, "orchestrator", "-p 14197:14197/tcp").await?;
+    container_create_and_start(session, "region", "-p 14198:14198/tcp").await?;
+    container_create_and_start(session, "session", "-p 14200:14200/tcp -p 14201:14201/udp").await?;
+    container_create_and_start(session, "world", "-p 14203:14203/tcp -p 14204:14204/udp").await?;
 
     Ok(())
 }
 
 async fn containers_stop(session: &Session) -> Result<(), VultrError> {
 
-    container_stop(session, "content").await?;
-    container_stop(session, "orchestrator").await?;
-    container_stop(session, "region").await?;
-    container_stop(session, "session").await?;
-    container_stop(session, "world").await?;
+    container_stop_and_remove(session, "content").await?;
+    container_stop_and_remove(session, "orchestrator").await?;
+    container_stop_and_remove(session, "region").await?;
+    container_stop_and_remove(session, "session").await?;
+    container_stop_and_remove(session, "world").await?;
 
     Ok(())
 }
@@ -139,14 +139,14 @@ async fn image_pull(session: &Session, image_name: &str) -> Result<(), VultrErro
     Ok(())
 }
 
-async fn container_start(session: &Session, app_name: &str, ports: &str) -> Result<(), VultrError> {
+async fn container_create_and_start(session: &Session, app_name: &str, ports: &str) -> Result<(), VultrError> {
 
     run_ssh_command(session, format!("docker run -d --name {}_server --network primary_network {} sjc.vultrcr.com/primary/{}_image", app_name, ports, app_name).as_str()).await?;
 
     Ok(())
 }
 
-async fn container_stop(session: &Session, app_name: &str) -> Result<(), VultrError> {
+async fn container_stop_and_remove(session: &Session, app_name: &str) -> Result<(), VultrError> {
 
     // kill/stop image
     // TODO: should stop instead of kill?
