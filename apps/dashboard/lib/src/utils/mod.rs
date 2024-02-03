@@ -1,7 +1,7 @@
 use std::{future::Future, path::Path};
 
 use async_compat::Compat;
-use crossbeam_channel::{bounded, Receiver};
+use crossbeam_channel::{bounded, Receiver, TryRecvError};
 use log::{info, warn};
 use openssh::{KnownHosts, Session, SessionBuilder};
 use subprocess::{Exec,  Redirection};
@@ -155,4 +155,20 @@ pub async fn run_ssh_raw_command(session: &Session, command_str: &str) -> Result
         let error_message = String::from_utf8_lossy(&output.stderr);
         return Err(VultrError::Dashboard(format!("Command Error: {}", error_message)));
     }
+}
+
+pub fn check_channel(
+    rcvr: &Receiver<Result<(), VultrError>>,
+    rdy: &mut bool
+) -> Result<(), VultrError> {
+    if !*rdy {
+        match rcvr.try_recv() {
+            Ok(Ok(())) => *rdy = true,
+            Ok(Err(err)) => return Err(err),
+            Err(TryRecvError::Disconnected) => return Err(VultrError::Dashboard("channel disconnected".to_string())),
+            _ => {},
+        }
+    }
+
+    Ok(())
 }

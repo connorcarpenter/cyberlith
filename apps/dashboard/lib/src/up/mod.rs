@@ -3,8 +3,8 @@ mod instance_wait;
 mod instance_init;
 mod ssh_init;
 mod instance_up;
-mod server_build;
-mod containers_up;
+pub mod server_build;
+pub mod containers_up;
 
 use std::time::Duration;
 
@@ -13,7 +13,7 @@ use log::info;
 use vultr::VultrError;
 
 use crate::up::containers_up::containers_up;
-use crate::utils::{thread_init, thread_init_compat};
+use crate::utils::{check_channel, thread_init, thread_init_compat};
 
 pub fn up() -> Result<(), VultrError> {
 
@@ -53,22 +53,6 @@ pub fn up() -> Result<(), VultrError> {
     containers_up()?;
 
     info!("Done!");
-    Ok(())
-}
-
-fn check_channel(
-    rcvr: &Receiver<Result<(), VultrError>>,
-    rdy: &mut bool
-) -> Result<(), VultrError> {
-    if !*rdy {
-        match rcvr.try_recv() {
-            Ok(Ok(())) => *rdy = true,
-            Ok(Err(err)) => return Err(err),
-            Err(TryRecvError::Disconnected) => return Err(VultrError::Dashboard("channel disconnected".to_string())),
-            _ => {},
-        }
-    }
-
     Ok(())
 }
 

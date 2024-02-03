@@ -125,28 +125,28 @@ async fn containers_stop(session: &Session) -> Result<(), VultrError> {
     Ok(())
 }
 
-async fn image_push(image_name: &str) -> Result<(), VultrError> {
+pub async fn image_push(image_name: &str) -> Result<(), VultrError> {
     run_command("containers", format!("docker tag {}_image:latest sjc.vultrcr.com/primary/{}_image:latest", image_name, image_name).as_str()).await?;
     run_command("containers", format!("docker push sjc.vultrcr.com/primary/{}_image:latest", image_name).as_str()).await?;
     run_command("containers", format!("docker rmi {}_image:latest", image_name).as_str()).await?;
     Ok(())
 }
 
-async fn image_pull(session: &Session, image_name: &str) -> Result<(), VultrError> {
+pub async fn image_pull(session: &Session, image_name: &str) -> Result<(), VultrError> {
 
     run_ssh_command(session, format!("docker pull sjc.vultrcr.com/primary/{}_image:latest", image_name).as_str()).await?;
 
     Ok(())
 }
 
-async fn container_create_and_start(session: &Session, app_name: &str, ports: &str) -> Result<(), VultrError> {
+pub async fn container_create_and_start(session: &Session, app_name: &str, ports: &str) -> Result<(), VultrError> {
 
     run_ssh_command(session, format!("docker run -d --name {}_server --network primary_network {} sjc.vultrcr.com/primary/{}_image", app_name, ports, app_name).as_str()).await?;
 
     Ok(())
 }
 
-async fn container_stop_and_remove(session: &Session, app_name: &str) -> Result<(), VultrError> {
+pub async fn container_stop_and_remove(session: &Session, app_name: &str) -> Result<(), VultrError> {
 
     // kill/stop image
     // TODO: should stop instead of kill?

@@ -12,6 +12,10 @@ fn cli() -> Command {
                 .about("starts live services"),
         )
         .subcommand(
+            Command::new("up_content")
+                .about("updates prod content server"),
+        )
+        .subcommand(
             Command::new("down")
                 .about("down live services"),
         )
@@ -29,6 +33,9 @@ fn main() {
     let result = match matches.subcommand() {
         Some(("up", _sub_matches)) => {
             dashboard_lib::up()
+        }
+        Some(("up_content", _sub_matches)) => {
+            dashboard_lib::up_content()
         }
         Some(("down", _sub_matches)) => {
             dashboard_lib::down()

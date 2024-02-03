@@ -52,7 +52,15 @@ impl Server {
         &mut self,
         file_name: &str,
     ) {
-        let endpoint_path = format!("GET /{}", file_name);
+        self.serve_file_masked(file_name, file_name);
+    }
+
+    pub fn serve_file_masked(
+        &mut self,
+        path: &str,
+        file_name: &str,
+    ) {
+        let endpoint_path = format!("GET /{}", path);
 
         info!("will serve file at: {}", endpoint_path);
         let new_endpoint = endpoint_2(file_name);
