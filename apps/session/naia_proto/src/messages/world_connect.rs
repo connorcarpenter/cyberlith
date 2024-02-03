@@ -3,16 +3,14 @@ use naia_bevy_shared::Message;
 
 #[derive(Message)]
 pub struct WorldConnectToken {
-    pub world_server_addr: String,
-    pub world_server_port: u16,
+    pub world_server_public_url: String,
     pub token: String,
 }
 
 impl WorldConnectToken {
-    pub fn new(addr: &str, port: u16, token: &str) -> Self {
+    pub fn new(public_url: &str, token: &str) -> Self {
         Self {
-            world_server_addr: addr.to_string(),
-            world_server_port: port,
+            world_server_public_url: public_url.to_string(),
             token: token.to_string(),
         }
     }

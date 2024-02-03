@@ -22,8 +22,8 @@ pub fn main() {
     let mut server = Server::new(socket_addr);
 
     server.serve_file("index.html");
-    server.serve_file("app.js");
-    server.serve_file("app_bg.wasm");
+    server.serve_file("game_client.js");
+    server.serve_file("game_client_bg.wasm");
 
     server.start();
 

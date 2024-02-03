@@ -9,18 +9,16 @@ pub struct WorldRegisterInstanceRequest {
     world_secret: String,
     http_addr: String,
     http_port: u16,
-    signal_addr: String,
-    signal_port: u16,
+    public_url: String,
 }
 
 impl WorldRegisterInstanceRequest {
-    pub fn new(world_secret: &str, http_addr: &str, http_port: u16, signal_addr: &str, signal_port: u16) -> Self {
+    pub fn new(world_secret: &str, http_addr: &str, http_port: u16, public_url: &str) -> Self {
         Self {
             world_secret: world_secret.to_string(),
             http_addr: http_addr.to_string(),
             http_port,
-            signal_addr: signal_addr.to_string(),
-            signal_port,
+            public_url: public_url.to_string(),
         }
     }
 
@@ -36,12 +34,8 @@ impl WorldRegisterInstanceRequest {
         self.http_port
     }
 
-    pub fn signal_addr(&self) -> String {
-        self.signal_addr.clone()
-    }
-
-    pub fn signal_port(&self) -> u16 {
-        self.signal_port
+    pub fn public_url(&self) -> String {
+        self.public_url.clone()
     }
 }
 

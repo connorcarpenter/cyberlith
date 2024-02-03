@@ -23,16 +23,14 @@ impl LoginRequest {
 // Response
 #[derive(Serde, PartialEq, Clone)]
 pub struct LoginResponse {
-    pub session_server_addr: String,
-    pub session_server_port: u16,
+    pub session_server_public_url: String,
     pub token: String,
 }
 
 impl LoginResponse {
-    pub fn new(session_server_addr: &str, session_server_port: u16, token: &str) -> Self {
+    pub fn new(session_server_public_url: &str, token: &str) -> Self {
         Self {
-            session_server_addr: session_server_addr.to_string(),
-            session_server_port,
+            session_server_public_url: session_server_public_url.to_string(),
             token: token.to_string(),
         }
     }

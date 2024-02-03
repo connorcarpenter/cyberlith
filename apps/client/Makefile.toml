@@ -22,12 +22,12 @@ dependencies = ["install-target-wasm32-unknown-unknown"]
 # Wasm-Bindgen
 [tasks.wasm-bindgen]
 command = "wasm-bindgen"
-args = ["--out-dir", "target", "--out-name", "app", "--target", "web", "--no-typescript", "target/wasm32-unknown-unknown/debug/app.wasm"]
+args = ["--out-dir", "target", "--out-name", "game_client", "--target", "web", "--no-typescript", "target/wasm32-unknown-unknown/debug/game_client.wasm"]
 dependencies = ["cargo-build-wasm", "install-wasm-bindgen-cli"]
 
 [tasks.wasm-bindgen-release]
 command = "wasm-bindgen"
-args = ["--out-dir", "target", "--out-name", "app", "--target", "web", "--no-typescript", "target/wasm32-unknown-unknown/release/app.wasm"]
+args = ["--out-dir", "target", "--out-name", "game_client", "--target", "web", "--no-typescript", "target/wasm32-unknown-unknown/release/game_client.wasm"]
 dependencies = ["cargo-build-wasm-release", "install-wasm-bindgen-cli"]
 
 # Serve

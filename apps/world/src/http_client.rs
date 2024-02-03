@@ -5,7 +5,7 @@ use bevy_log::{info, warn};
 use bevy_http_client::HttpClient;
 
 use region_server_http_proto::WorldRegisterInstanceRequest;
-use config::{REGION_SERVER_RECV_ADDR, REGION_SERVER_PORT, WORLD_SERVER_RECV_ADDR, WORLD_SERVER_HTTP_PORT, WORLD_SERVER_SIGNAL_PORT, WORLD_SERVER_SECRET};
+use config::{REGION_SERVER_RECV_ADDR, REGION_SERVER_PORT, WORLD_SERVER_RECV_ADDR, WORLD_SERVER_HTTP_PORT, WORLD_SERVER_SIGNAL_PORT, WORLD_SERVER_SECRET, PUBLIC_IP_ADDR};
 
 use crate::global::Global;
 
@@ -28,8 +28,7 @@ pub fn send_connect_region(
         WORLD_SERVER_SECRET,
         WORLD_SERVER_RECV_ADDR,
         WORLD_SERVER_HTTP_PORT,
-        WORLD_SERVER_RECV_ADDR,
-        WORLD_SERVER_SIGNAL_PORT,
+        format!("http://{}:{}", PUBLIC_IP_ADDR, WORLD_SERVER_SIGNAL_PORT).as_str(),
     );
     let key = http_client.send(REGION_SERVER_RECV_ADDR, REGION_SERVER_PORT, request);
 

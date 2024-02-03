@@ -47,8 +47,7 @@ async fn async_impl(
 
     let world_server_http_addr = world_server.http_addr();
     let world_server_http_port = world_server.http_port();
-    let world_server_signaling_addr = world_server.signal_addr();
-    let world_server_signaling_port = world_server.signal_port();
+    let world_server_public_url = world_server.public_url();
 
     info!("sending incoming user request to world server");
 
@@ -67,5 +66,5 @@ async fn async_impl(
 
     // TODO: end of part we need to get rid of
 
-    Ok(WorldUserLoginResponse::new(&world_server_signaling_addr, world_server_signaling_port, &temp_token))
+    Ok(WorldUserLoginResponse::new(&world_server_public_url, &temp_token))
 }

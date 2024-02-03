@@ -6,18 +6,16 @@ use http_server::{async_dup::Arc, smol::lock::RwLock};
 pub struct SessionInstance {
     http_addr: String,
     http_port: u16,
-    signal_addr: String,
-    signal_port: u16,
+    public_url: String,
     last_heard: Arc<RwLock<Instant>>,
 }
 
 impl SessionInstance {
-    pub fn new(http_addr: String, http_port: u16, signal_addr: String, signal_port: u16) -> Self {
+    pub fn new(http_addr: String, http_port: u16, public_url: String) -> Self {
         Self {
             http_addr,
             http_port,
-            signal_addr,
-            signal_port,
+            public_url,
             last_heard: Arc::new(RwLock::new(Instant::now())),
         }
     }
@@ -30,12 +28,8 @@ impl SessionInstance {
         self.http_port
     }
 
-    pub fn signal_addr(&self) -> String {
-        self.signal_addr.clone()
-    }
-
-    pub fn signal_port(&self) -> u16 {
-        self.signal_port
+    pub fn public_url(&self) -> String {
+        self.public_url.clone()
     }
 
     pub fn last_heard(&self) -> Arc<RwLock<Instant>> {
@@ -46,18 +40,16 @@ impl SessionInstance {
 pub struct WorldInstance {
     http_addr: String,
     http_port: u16,
-    signal_addr: String,
-    signal_port: u16,
+    public_url: String,
     last_heard: Arc<RwLock<Instant>>,
 }
 
 impl WorldInstance {
-    pub fn new(http_addr: String, http_port: u16, signal_addr: String, signal_port: u16) -> Self {
+    pub fn new(http_addr: String, http_port: u16, public_url: String) -> Self {
         Self {
             http_addr,
             http_port,
-            signal_addr,
-            signal_port,
+            public_url,
             last_heard: Arc::new(RwLock::new(Instant::now())),
         }
     }
@@ -70,12 +62,8 @@ impl WorldInstance {
         self.http_port
     }
 
-    pub fn signal_addr(&self) -> String {
-        self.signal_addr.clone()
-    }
-
-    pub fn signal_port(&self) -> u16 {
-        self.signal_port
+    pub fn public_url(&self) -> String {
+        self.public_url.clone()
     }
 
     pub fn last_heard(&self) -> Arc<RwLock<Instant>> {

@@ -9,8 +9,7 @@ pub struct SessionRegisterInstanceRequest {
     session_secret: String,
     http_addr: String,
     http_port: u16,
-    signal_addr: String,
-    signal_port: u16,
+    public_url: String,
 }
 
 impl SessionRegisterInstanceRequest {
@@ -18,15 +17,13 @@ impl SessionRegisterInstanceRequest {
         session_secret: &str,
         http_addr: &str,
         http_port: u16,
-        signal_addr: &str,
-        signal_port: u16,
+        public_url: &str,
     ) -> Self {
         Self {
             session_secret: session_secret.to_string(),
             http_addr: http_addr.to_string(),
             http_port,
-            signal_addr: signal_addr.to_string(),
-            signal_port,
+            public_url: public_url.to_string(),
         }
     }
 
@@ -42,12 +39,8 @@ impl SessionRegisterInstanceRequest {
         self.http_port
     }
 
-    pub fn signal_addr(&self) -> String {
-        self.signal_addr.clone()
-    }
-
-    pub fn signal_port(&self) -> u16 {
-        self.signal_port.clone()
+    pub fn public_url(&self) -> String {
+        self.public_url.clone()
     }
 }
 

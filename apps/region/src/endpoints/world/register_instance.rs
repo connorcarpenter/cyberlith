@@ -40,15 +40,14 @@ async fn async_impl(
 
     let http_addr = incoming_request.http_addr();
     let http_port = incoming_request.http_port();
-    let signal_addr = incoming_request.signal_addr();
-    let signal_port = incoming_request.signal_port();
+    let public_url = incoming_request.public_url();
 
     info!(
-        "register instance request received from world server: (incoming: {:?}, http: {:?}, signal: {:?})",
-        incoming_addr, http_addr, signal_addr
+        "register instance request received from world server: (incoming: {:?}, http: {:?}, public_url: {:?})",
+        incoming_addr, http_addr, public_url
     );
 
-    let server_instance = WorldInstance::new(http_addr, http_port, signal_addr, signal_port);
+    let server_instance = WorldInstance::new(http_addr, http_port, public_url);
 
     let mut state = state.write().await;
     state.register_world_instance(server_instance);

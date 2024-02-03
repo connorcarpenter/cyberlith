@@ -8,7 +8,7 @@ use bevy_http_client::HttpClient;
 
 use region_server_http_proto::{SessionRegisterInstanceRequest, WorldUserLoginRequest};
 use session_server_naia_proto::{channels::PrimaryChannel, messages::WorldConnectToken};
-use config::{REGION_SERVER_RECV_ADDR, REGION_SERVER_PORT, SESSION_SERVER_RECV_ADDR, SESSION_SERVER_HTTP_PORT, SESSION_SERVER_SIGNAL_PORT, SESSION_SERVER_SECRET};
+use config::{REGION_SERVER_RECV_ADDR, REGION_SERVER_PORT, SESSION_SERVER_RECV_ADDR, SESSION_SERVER_HTTP_PORT, SESSION_SERVER_SIGNAL_PORT, SESSION_SERVER_SECRET, PUBLIC_IP_ADDR};
 
 use crate::global::Global;
 
@@ -31,8 +31,7 @@ pub fn send_connect_region(
         SESSION_SERVER_SECRET,
         SESSION_SERVER_RECV_ADDR,
         SESSION_SERVER_HTTP_PORT,
-        SESSION_SERVER_RECV_ADDR,
-        SESSION_SERVER_SIGNAL_PORT,
+        format!("http://{}:{}", PUBLIC_IP_ADDR, SESSION_SERVER_SIGNAL_PORT).as_str(),
     );
     let key = http_client.send(REGION_SERVER_RECV_ADDR, REGION_SERVER_PORT, request);
 
@@ -93,11 +92,10 @@ pub fn recv_world_connect_response(
             received_response_keys.push(response_key.clone());
             match result {
                 Ok(response) => {
-                    info!("received from regionserver: world_connect(addr: {:?}, token: {:?})", response.world_server_addr, response.token);
+                    info!("received from regionserver: world_connect(public_url: {:?}, token: {:?})", response.world_server_public_url, response.token);
 
                     let token = WorldConnectToken::new(
-                        &response.world_server_addr,
-                        response.world_server_port,
+                        &response.world_server_public_url,
                         &response.token,
                     );
                     server.send_message::<PrimaryChannel, WorldConnectToken>(user_key, &token);

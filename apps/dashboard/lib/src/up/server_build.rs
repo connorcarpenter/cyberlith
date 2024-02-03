@@ -12,7 +12,7 @@ pub async fn server_build_content() -> Result<(), VultrError> {
     // move files to main dir
     run_command("game_client", "cp target/game_client.js game_client.js").await?;
     run_command("game_client", "cp target/game_client_bg.wasm game_client_bg.wasm").await?;
-    run_command("game_client", "cp apps/client/index.html game_client.html").await?;
+    run_command("game_client", "cp apps/client/index.html index.html").await?;
 
     // build content_server
     run_command("content_server", "cargo build --release --features prod --manifest-path apps/content/Cargo.toml").await?;
@@ -24,7 +24,7 @@ pub async fn server_build_content() -> Result<(), VultrError> {
     run_command("content_server", "docker build --file content.dockerfile --progress=plain -t content_image .").await?;
 
     // clean up files
-    run_command("game_client", "rm game_client.html").await?;
+    run_command("game_client", "rm index.html").await?;
     run_command("game_client", "rm game_client.js").await?;
     run_command("game_client", "rm game_client_bg.wasm").await?;
     run_command("content_server", "rm content_server").await?;
