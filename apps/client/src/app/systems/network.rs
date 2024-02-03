@@ -109,7 +109,7 @@ pub fn session_message_events(
             info!("received World Connect Token from Session Server!");
 
             world_client.auth(WorldAuth::new(&token.token));
-            let world_server_session_url = format!("http://{}:{}", token.world_server_addr.inner().ip(), token.world_server_addr.inner().port());
+            let world_server_session_url = format!("http://{}:{}", token.world_server_addr, token.world_server_port);
             info!("connecting to world server: {}", world_server_session_url);
             let socket = WebrtcSocket::new(
                 &world_server_session_url,
