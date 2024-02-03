@@ -40,7 +40,7 @@ pub fn scene_setup(
 ) {
     let layer = RenderLayers::layer(0);
 
-    //let red_mat_handle = materials.add(CpuMaterial::new(Color::RED, 0.0, 32.0, 0.5));
+    let red_mat_handle = materials.add(CpuMaterial::new(Color::RED, 0.0, 32.0, 0.5));
 
     //let cube_mesh_handle: Handle<MeshFile> = asset_manager.load("cube.mesh");
     // let human_skel_handle = asset_manager.load("human.skel");
@@ -54,13 +54,15 @@ pub fn scene_setup(
     // model
     commands
         .spawn_empty()
+        .insert(meshes.add(shapes::Cube))
+        .insert(red_mat_handle)
         // .insert(human_model_handle)
         // .insert(WalkAnimation {
         //     anim_handle: human_walk_anim_handle,
         //     image_index: 0.0,
         // })
         .insert(
-            Transform::from_scale(Vec3::splat(1.0))
+            Transform::from_scale(Vec3::splat(40.0))
                 .with_translation(Vec3::splat(0.0))
                 .with_rotation(Quat::from_rotation_z(f32::to_radians(0.0))),
         )
@@ -122,10 +124,10 @@ pub fn scene_setup(
 
 pub fn scene_step(
     time: Res<Time>,
-    asset_manager: Res<AssetManager>,
+    // asset_manager: Res<AssetManager>,
     mut object_q: Query<&mut Transform, With<ObjectMarker>>,
     mut rotation: Local<f32>,
-    mut icon_q: Query<&mut WalkAnimation>,
+    // mut icon_q: Query<&mut WalkAnimation>,
 ) {
     let elapsed_time = time.get_elapsed();
 
@@ -141,21 +143,22 @@ pub fn scene_step(
     for mut transform in object_q.iter_mut() {
         transform.translation.x = f32::to_radians(*rotation).cos() * 250.0;
         transform.translation.y = f32::to_radians(*rotation).sin() * 250.0;
-        transform.translation.z = 50.0;
+        transform.translation.z = 125.0;
 
-        //transform.rotate_x(0.01 * elapsed_time);
-        transform.rotation = Quat::from_rotation_z(f32::to_radians(*rotation + 90.0));
+        transform.rotate_x(0.001 * elapsed_time);
+        transform.rotate_y(0.002 * elapsed_time);
+        // transform.rotation = Quat::from_rotation_z(f32::to_radians(*rotation + 90.0));
     }
 
-    for mut anim in icon_q.iter_mut() {
-        anim.image_index += 0.4 * elapsed_time;
-
-        let subimage_count = asset_manager.get_animation_duration(&anim.anim_handle) as f32;
-
-        while anim.image_index >= subimage_count {
-            anim.image_index -= subimage_count;
-        }
-    }
+    // for mut anim in icon_q.iter_mut() {
+    //     anim.image_index += 0.4 * elapsed_time;
+    //
+    //     let subimage_count = asset_manager.get_animation_duration(&anim.anim_handle) as f32;
+    //
+    //     while anim.image_index >= subimage_count {
+    //         anim.image_index -= subimage_count;
+    //     }
+    // }
 }
 
 pub fn scene_draw(
@@ -171,13 +174,13 @@ pub fn scene_draw(
         &Visibility,
         Option<&RenderLayer>,
     )>,
-    models_q: Query<(
-        &Handle<ModelData>,
-        &WalkAnimation,
-        &Transform,
-        &Visibility,
-        Option<&RenderLayer>,
-    )>,
+    // models_q: Query<(
+    //     &Handle<ModelData>,
+    //     &WalkAnimation,
+    //     &Transform,
+    //     &Visibility,
+    //     Option<&RenderLayer>,
+    // )>,
     // Lights
     ambient_lights_q: Query<(&AmbientLight, Option<&RenderLayer>)>,
     point_lights_q: Query<(&PointLight, Option<&RenderLayer>)>,
@@ -214,18 +217,18 @@ pub fn scene_draw(
         render_frame.draw_mesh(render_layer_opt, mesh_handle, mat_handle, transform);
     }
 
-    // Aggregate Models
-    for (model_handle, walk_anim, transform, visibility, render_layer_opt) in models_q.iter() {
-        if !visibility.visible {
-            continue;
-        }
-        asset_manager.draw_animated_model(
-            &mut render_frame,
-            model_handle,
-            &walk_anim.anim_handle,
-            transform,
-            walk_anim.image_index,
-            render_layer_opt,
-        );
-    }
+    // // Aggregate Models
+    // for (model_handle, walk_anim, transform, visibility, render_layer_opt) in models_q.iter() {
+    //     if !visibility.visible {
+    //         continue;
+    //     }
+    //     asset_manager.draw_animated_model(
+    //         &mut render_frame,
+    //         model_handle,
+    //         &walk_anim.anim_handle,
+    //         transform,
+    //         walk_anim.image_index,
+    //         render_layer_opt,
+    //     );
+    // }
 }
