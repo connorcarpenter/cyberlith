@@ -1,9 +1,7 @@
-use std::net::SocketAddr;
 
 use naia_serde::{SerdeInternal as Serde};
 
 use http_common::{ApiRequest, ApiResponse, Method};
-use serde::SerdeSocketAddr;
 
 // Request
 #[derive(Serde, PartialEq, Clone)]
@@ -26,14 +24,16 @@ impl WorldUserLoginRequest {
 // Response
 #[derive(Serde, PartialEq, Clone, Eq, Hash)]
 pub struct WorldUserLoginResponse {
-    pub world_server_addr: SerdeSocketAddr,
+    pub world_server_addr: String,
+    pub world_server_port: u16,
     pub token: String,
 }
 
 impl WorldUserLoginResponse {
-    pub fn new(world_server_addr: SocketAddr, token: &str) -> Self {
+    pub fn new(world_server_addr: &str, world_server_port: u16, token: &str) -> Self {
         Self {
-            world_server_addr: SerdeSocketAddr::new(world_server_addr),
+            world_server_addr: world_server_addr.to_string(),
+            world_server_port,
             token: token.to_string(),
         }
     }

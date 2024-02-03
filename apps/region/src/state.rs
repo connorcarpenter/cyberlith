@@ -1,4 +1,4 @@
-use std::{collections::HashMap, net::SocketAddr, time::{Duration, Instant}};
+use std::{collections::HashMap, time::{Duration, Instant}};
 
 use log::{info, warn};
 
@@ -13,8 +13,8 @@ use crate::instances::{SessionInstance, WorldInstance};
 
 pub struct State {
     timeout: Duration,
-    session_instances: HashMap<SocketAddr, SessionInstance>,
-    world_instances: HashMap<SocketAddr, WorldInstance>,
+    session_instances: HashMap<(String, u16), SessionInstance>,
+    world_instances: HashMap<(String, u16), WorldInstance>,
 }
 
 impl State {
@@ -27,7 +27,8 @@ impl State {
     }
 
     pub fn register_session_instance(&mut self, instance: SessionInstance) {
-        self.session_instances.insert(instance.http_addr(), instance);
+        let key = (instance.http_addr(), instance.http_port());
+        self.session_instances.insert(key, instance);
     }
 
     pub fn get_available_session_server(&self) -> Option<&SessionInstance> {
@@ -35,7 +36,8 @@ impl State {
     }
 
     pub fn register_world_instance(&mut self, instance: WorldInstance) {
-        self.world_instances.insert(instance.http_addr(), instance);
+        let key = (instance.http_addr(), instance.http_port());
+        self.world_instances.insert(key, instance);
     }
 
     pub fn get_available_world_server(&self) -> Option<&WorldInstance> {
@@ -57,7 +59,7 @@ impl State {
                     let last_heard = *instance.last_heard().read().await;
                     let elapsed = now.duration_since(last_heard);
                     if elapsed.as_secs() > timeout.as_secs() {
-                        disconnected_instances.push(*addr);
+                        disconnected_instances.push(addr.clone());
                     }
                 }
                 for addr in disconnected_instances {
@@ -72,7 +74,7 @@ impl State {
                     let last_heard = *instance.last_heard().read().await;
                     let elapsed = now.duration_since(last_heard);
                     if elapsed.as_secs() > timeout.as_secs() {
-                        disconnected_instances.push(*addr);
+                        disconnected_instances.push(addr.clone());
                     }
                 }
                 for addr in disconnected_instances {
@@ -85,7 +87,8 @@ impl State {
         // send out heartbeats
         for instance in self.session_instances.values() {
 
-            let http_addr = instance.http_addr();
+            let instance_addr = instance.http_addr();
+            let instance_port = instance.http_port();
             let last_heard = instance.last_heard();
 
             Server::spawn(async move {
@@ -93,15 +96,15 @@ impl State {
                 let options = RequestOptions {
                     timeout_opt: Some(Duration::from_secs(1)),
                 };
-                let response = HttpClient::send_with_options(&http_addr, request, options).await;
+                let response = HttpClient::send_with_options(&instance_addr, instance_port, request, options).await;
                 match response {
                     Ok(_) => {
-                        info!("from {:?} - session heartbeat success", http_addr);
+                        info!("from {:?}:{} - session heartbeat success", instance_addr, instance_port);
                         let mut last_heard = last_heard.write().await;
                         *last_heard = Instant::now();
                     },
                     Err(err) => {
-                        warn!("from {:?} - session heartbeat failure: {}", http_addr, err.to_string());
+                        warn!("from {:?}:{} - session heartbeat failure: {}", instance_addr, instance_port, err.to_string());
                     }
                 }
             });
@@ -109,7 +112,9 @@ impl State {
 
         for instance in self.world_instances.values() {
 
-            let http_addr = instance.http_addr();
+            let instance_addr = instance.http_addr();
+            let instance_port = instance.http_port();
+            
             let last_heard = instance.last_heard();
 
             Server::spawn(async move {
@@ -117,15 +122,15 @@ impl State {
                 let options = RequestOptions {
                     timeout_opt: Some(Duration::from_secs(1)),
                 };
-                let response = HttpClient::send_with_options(&http_addr, request, options).await;
+                let response = HttpClient::send_with_options(&instance_addr, instance_port, request, options).await;
                 match response {
                     Ok(_) => {
-                        info!("from {:?} - world heartbeat success", http_addr);
+                        info!("from {:?}:{} - world heartbeat success", instance_addr, instance_port);
                         let mut last_heard = last_heard.write().await;
                         *last_heard = Instant::now();
                     },
                     Err(err) => {
-                        warn!("from {:?} - world heartbeat failure: {}", http_addr, err.to_string());
+                        warn!("from {:?}:{} - world heartbeat failure: {}", instance_addr, instance_port, err.to_string());
                     }
                 }
             });

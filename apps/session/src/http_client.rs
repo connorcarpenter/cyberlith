@@ -8,7 +8,7 @@ use bevy_http_client::HttpClient;
 
 use region_server_http_proto::{SessionRegisterInstanceRequest, WorldUserLoginRequest};
 use session_server_naia_proto::{channels::PrimaryChannel, messages::WorldConnectToken};
-use config::{REGION_SERVER_ADDR, SESSION_SERVER_HTTP_ADDR, SESSION_SERVER_SIGNAL_ADDR, SESSION_SERVER_SECRET};
+use config::{REGION_SERVER_RECV_ADDR, REGION_SERVER_PORT, SESSION_SERVER_RECV_ADDR, SESSION_SERVER_HTTP_PORT, SESSION_SERVER_SIGNAL_PORT, SESSION_SERVER_SECRET};
 
 use crate::global::Global;
 
@@ -29,11 +29,12 @@ pub fn send_connect_region(
     //info!("Sending request to register instance with region server ..");
     let request = SessionRegisterInstanceRequest::new(
         SESSION_SERVER_SECRET,
-        SESSION_SERVER_HTTP_ADDR.parse().unwrap(),
-        SESSION_SERVER_SIGNAL_ADDR.parse().unwrap(),
+        SESSION_SERVER_RECV_ADDR,
+        SESSION_SERVER_HTTP_PORT,
+        SESSION_SERVER_RECV_ADDR,
+        SESSION_SERVER_SIGNAL_PORT,
     );
-    let socket_addr = REGION_SERVER_ADDR.parse().unwrap();
-    let key = http_client.send(&socket_addr, request);
+    let key = http_client.send(REGION_SERVER_RECV_ADDR, REGION_SERVER_PORT, request);
 
     global.set_register_instance_response_key(key);
     global.sent_to_region_server();
@@ -75,8 +76,7 @@ pub fn send_world_connect_request(
     let worldless_users = global.take_worldless_users();
     for user_key in worldless_users {
         let request = WorldUserLoginRequest::new(SESSION_SERVER_SECRET);
-        let socket_addr = REGION_SERVER_ADDR.parse().unwrap();
-        let key = http_client.send(&socket_addr, request);
+        let key = http_client.send(REGION_SERVER_RECV_ADDR, REGION_SERVER_PORT, request);
         global.add_world_key(&user_key, key);
     }
 }
@@ -96,7 +96,8 @@ pub fn recv_world_connect_response(
                     info!("received from regionserver: world_connect(addr: {:?}, token: {:?})", response.world_server_addr, response.token);
 
                     let token = WorldConnectToken::new(
-                        response.world_server_addr.inner(),
+                        &response.world_server_addr,
+                        response.world_server_port,
                         &response.token,
                     );
                     server.send_message::<PrimaryChannel, WorldConnectToken>(user_key, &token);

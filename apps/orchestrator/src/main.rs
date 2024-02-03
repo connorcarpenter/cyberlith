@@ -6,7 +6,7 @@ use log::{info, LevelFilter};
 use simple_logger::SimpleLogger;
 
 use http_server::Server;
-use config::ORCHESTRATOR_ADDR;
+use config::{ORCHESTRATOR_PORT, SELF_BINDING_ADDR};
 
 pub fn main() {
     SimpleLogger::new()
@@ -15,7 +15,7 @@ pub fn main() {
         .expect("A logger was already initialized");
 
     info!("Orchestrator starting up...");
-    let socket_addr: SocketAddr = ORCHESTRATOR_ADDR.parse().unwrap();
+    let socket_addr: SocketAddr = SocketAddr::new(SELF_BINDING_ADDR.parse().unwrap(), ORCHESTRATOR_PORT);
 
     let mut server = Server::new(socket_addr);
 

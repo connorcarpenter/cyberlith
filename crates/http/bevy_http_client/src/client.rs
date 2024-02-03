@@ -1,4 +1,4 @@
-use std::{collections::HashMap, net::SocketAddr};
+use std::collections::HashMap;
 
 use bevy_ecs::{change_detection::ResMut, system::Resource};
 use log::info;
@@ -29,8 +29,8 @@ impl Default for HttpClient {
 }
 
 impl HttpClient {
-    pub fn send<Q: ApiRequest>(&mut self, addr: &SocketAddr, req: Q) -> ResponseKey<Q::Response> {
-        let url = format!("http://{}/{}", addr, Q::path());
+    pub fn send<Q: ApiRequest>(&mut self, addr: &str, port: u16, req: Q) -> ResponseKey<Q::Response> {
+        let url = format!("http://{}:{}/{}", addr, port, Q::path());
         let http_request = Request::new(Q::method(), &url, req.to_bytes().to_vec());
         info!("Sending request to: {:?}", url);
 
@@ -43,8 +43,8 @@ impl HttpClient {
         key
     }
 
-    pub fn send_with_options<Q: ApiRequest>(&mut self, addr: &SocketAddr, req: Q, req_options: RequestOptions) -> ResponseKey<Q::Response> {
-        let url = format!("http://{}/{}", addr, Q::path());
+    pub fn send_with_options<Q: ApiRequest>(&mut self, addr: &str, port: u16, req: Q, req_options: RequestOptions) -> ResponseKey<Q::Response> {
+        let url = format!("http://{}:{}/{}", addr, port, Q::path());
         let http_request = Request::new(Q::method(), &url, req.to_bytes().to_vec());
         info!("Sending request to: {:?}", url);
 

@@ -1,4 +1,3 @@
-use std::net::SocketAddr;
 
 use naia_serde::{BitReader, FileBitWriter, Serde};
 
@@ -21,8 +20,8 @@ pub trait ApiRequest: Serde + 'static {
         bit_writer.to_bytes()
     }
 
-    fn to_request(&self, socket_addr: &SocketAddr) -> Request {
-        let url = format!("http://{}/{}", socket_addr, Self::path());
+    fn to_request(&self, addr: &str, port: u16) -> Request {
+        let url = format!("http://{}:{}/{}", addr, port, Self::path());
         let bytes = self.to_bytes().to_vec();
         Request::new(Self::method(), &url, bytes)
     }

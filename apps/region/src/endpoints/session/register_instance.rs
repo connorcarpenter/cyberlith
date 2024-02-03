@@ -39,14 +39,16 @@ async fn async_impl(
     }
 
     let http_addr = incoming_request.http_addr();
+    let http_port = incoming_request.http_port();
     let signal_addr = incoming_request.signal_addr();
+    let signal_port = incoming_request.signal_port();
 
     info!(
         "register instance request received from session server: (incoming: {:?}, http: {:?}, signal: {:?})",
         incoming_addr, http_addr, signal_addr
     );
 
-    let server_instance = SessionInstance::new(http_addr, signal_addr);
+    let server_instance = SessionInstance::new(http_addr, http_port, signal_addr, signal_port);
 
     let mut state = state.write().await;
     state.register_session_instance(server_instance);

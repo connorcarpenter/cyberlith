@@ -8,7 +8,7 @@ use log::{info, LevelFilter};
 use simple_logger::SimpleLogger;
 
 use http_server::{Server, async_dup::Arc, smol::lock::RwLock};
-use config::REGION_SERVER_ADDR;
+use config::{SELF_BINDING_ADDR, REGION_SERVER_PORT};
 
 use crate::state::State;
 
@@ -19,7 +19,7 @@ pub fn main() {
         .expect("A logger was already initialized");
 
     info!("Region Server starting up...");
-    let socket_addr: SocketAddr = REGION_SERVER_ADDR.parse().unwrap();
+    let socket_addr: SocketAddr = SocketAddr::new(SELF_BINDING_ADDR.parse().unwrap(), REGION_SERVER_PORT);
 
     let mut server = Server::new(socket_addr);
     let state = Arc::new(RwLock::new(State::new(Duration::from_secs(16))));

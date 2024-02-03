@@ -45,7 +45,9 @@ async fn async_impl(
         return Err(ResponseError::InternalServerError("no available session server".to_string()));
     };
     let session_server_http_addr = session_server.http_addr();
+    let session_server_http_port = session_server.http_port();
     let session_server_signaling_addr = session_server.signal_addr();
+    let session_server_signaling_port = session_server.signal_port();
 
     info!("Sending incoming user request to session server");
 
@@ -53,7 +55,7 @@ async fn async_impl(
 
     let request = IncomingUserRequest::new(REGION_SERVER_SECRET, &temp_token);
 
-    let Ok(outgoing_response) = HttpClient::send(&session_server_http_addr, request).await else {
+    let Ok(outgoing_response) = HttpClient::send(&session_server_http_addr, session_server_http_port, request).await else {
         warn!("Failed incoming user request to session server");
         return Err(ResponseError::InternalServerError("failed incoming user request to session server".to_string()));
     };
@@ -62,5 +64,5 @@ async fn async_impl(
 
     info!("Sending user login response to orchestrator");
 
-    Ok(SessionUserLoginResponse::new(session_server_signaling_addr, &temp_token))
+    Ok(SessionUserLoginResponse::new(&session_server_signaling_addr, session_server_signaling_port, &temp_token))
 }

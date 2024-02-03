@@ -1,9 +1,8 @@
 use std::time::Duration;
 
-use bevy_app::AppExit;
 use bevy_ecs::{
     system::{ResMut, Resource},
-    event::{EventReader, EventWriter},
+    event::EventReader,
 };
 use bevy_log::info;
 
@@ -13,7 +12,7 @@ use game_engine::{
     session::{WorldConnectToken, SessionAuth, SessionClient, SessionConnectEvent, SessionMessageEvents, SessionPrimaryChannel},
     orchestrator::LoginRequest,
     world::{WorldClient, WorldAuth, WorldConnectEvent},
-    config::ORCHESTRATOR_ADDR,
+    config::{ORCHESTRATOR_RECV_ADDR, ORCHESTRATOR_PORT},
 };
 
 use crate::app::{connection_state::ConnectionState, global::Global};
@@ -33,7 +32,6 @@ pub fn handle_connection(
     mut timer: ResMut<ApiTimer>,
     mut http_client: ResMut<HttpClient>,
     mut session_client: SessionClient,
-    mut exit: EventWriter<AppExit>,
 ) {
     if timer.0.ringing() {
         timer.0.reset();
@@ -41,16 +39,11 @@ pub fn handle_connection(
         return;
     }
 
-    info!("going to exit app");
-    exit.send(AppExit);
-    return;
-
     match &global.connection_state {
         ConnectionState::Disconnected => {
             info!("sending to orchestrator..");
             let request = LoginRequest::new("charlie", "12345");
-            let socket_addr = ORCHESTRATOR_ADDR.parse().unwrap();
-            let key = http_client.send(&socket_addr, request);
+            let key = http_client.send(ORCHESTRATOR_RECV_ADDR, ORCHESTRATOR_PORT, request);
             global.connection_state = ConnectionState::SentToOrchestrator(key);
         }
         ConnectionState::SentToOrchestrator(key) => {
@@ -61,7 +54,7 @@ pub fn handle_connection(
                         global.connection_state = ConnectionState::ReceivedFromOrchestrator(response.clone());
 
                         session_client.auth(SessionAuth::new(&response.token));
-                        let server_session_url = format!("http://{}:{}", response.session_server_addr.inner().ip(), response.session_server_addr.inner().port());
+                        let server_session_url = format!("http://{}:{}", response.session_server_addr, response.session_server_port);
                         info!("connecting to session server: {}", server_session_url);
                         let socket = WebrtcSocket::new(
                             &server_session_url,

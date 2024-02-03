@@ -1,4 +1,4 @@
-
+use std::net::SocketAddr;
 use bevy_ecs::{event::EventReader, change_detection::ResMut};
 use bevy_log::{info, warn};
 
@@ -9,7 +9,7 @@ use naia_bevy_server::{
 };
 
 use session_server_naia_proto::messages::Auth;
-use config::{SESSION_SERVER_SIGNAL_ADDR, SESSION_SERVER_WEBRTC_ADDR};
+use config::{PUBLIC_IP_ADDR, SELF_BINDING_ADDR, SESSION_SERVER_SIGNAL_PORT, SESSION_SERVER_WEBRTC_PORT};
 
 use crate::global::Global;
 
@@ -17,15 +17,12 @@ pub fn init(mut server: Server) {
     info!("Session Naia Server starting up");
 
     let server_addresses = webrtc::ServerAddrs::new(
-        SESSION_SERVER_SIGNAL_ADDR
-            .parse()
-            .expect("could not parse Signaling address/port"),
+        // IP Address to listen on for WebRTC signaling
+        SocketAddr::new(SELF_BINDING_ADDR.parse().unwrap(), SESSION_SERVER_SIGNAL_PORT),
         // IP Address to listen on for UDP WebRTC data channels
-        SESSION_SERVER_WEBRTC_ADDR
-            .parse()
-            .expect("could not parse WebRTC data address/port"),
+        SocketAddr::new(SELF_BINDING_ADDR.parse().unwrap(), SESSION_SERVER_WEBRTC_PORT),
         // The public WebRTC IP address to advertise
-        format!("http://{}", SESSION_SERVER_WEBRTC_ADDR).as_str(),
+        format!("http://{}:{}", PUBLIC_IP_ADDR, SESSION_SERVER_WEBRTC_PORT).as_str(),
     );
     let socket = webrtc::Socket::new(&server_addresses, server.socket_config());
     server.listen(socket);

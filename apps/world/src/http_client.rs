@@ -5,7 +5,7 @@ use bevy_log::{info, warn};
 use bevy_http_client::HttpClient;
 
 use region_server_http_proto::WorldRegisterInstanceRequest;
-use config::{REGION_SERVER_ADDR, WORLD_SERVER_HTTP_ADDR, WORLD_SERVER_SIGNAL_ADDR, WORLD_SERVER_SECRET};
+use config::{REGION_SERVER_RECV_ADDR, REGION_SERVER_PORT, WORLD_SERVER_RECV_ADDR, WORLD_SERVER_HTTP_PORT, WORLD_SERVER_SIGNAL_PORT, WORLD_SERVER_SECRET};
 
 use crate::global::Global;
 
@@ -26,11 +26,12 @@ pub fn send_connect_region(
     //info!("Sending request to register instance with region server ..");
     let request = WorldRegisterInstanceRequest::new(
         WORLD_SERVER_SECRET,
-        WORLD_SERVER_HTTP_ADDR.parse().unwrap(),
-        WORLD_SERVER_SIGNAL_ADDR.parse().unwrap(),
+        WORLD_SERVER_RECV_ADDR,
+        WORLD_SERVER_HTTP_PORT,
+        WORLD_SERVER_RECV_ADDR,
+        WORLD_SERVER_SIGNAL_PORT,
     );
-    let socket_addr = REGION_SERVER_ADDR.parse().unwrap();
-    let key = http_client.send(&socket_addr, request);
+    let key = http_client.send(REGION_SERVER_RECV_ADDR, REGION_SERVER_PORT, request);
 
     global.set_register_instance_response_key(key);
     global.sent_to_region_server();

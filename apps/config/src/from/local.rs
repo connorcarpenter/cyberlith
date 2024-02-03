@@ -1,29 +1,47 @@
 #[allow(dead_code)]
-pub const CONTENT_SERVER_ADDR: &str = "127.0.0.1:14196";
+pub const SELF_BINDING_ADDR: &str = "127.0.0.1";
 
 #[allow(dead_code)]
-pub const ORCHESTRATOR_ADDR: &str = "127.0.0.1:14197";
+pub const PUBLIC_IP_ADDR: &str = "127.0.0.1";
 
 #[allow(dead_code)]
-pub const REGION_SERVER_ADDR: &str = "127.0.0.1:14198";
+pub const ORCHESTRATOR_RECV_ADDR: &str = "127.0.0.1";
 
 #[allow(dead_code)]
-pub const SESSION_SERVER_HTTP_ADDR: &str = "127.0.0.1:14199";
+pub const REGION_SERVER_RECV_ADDR: &str = "127.0.0.1";
 
 #[allow(dead_code)]
-pub const SESSION_SERVER_SIGNAL_ADDR: &str = "127.0.0.1:14200";
+pub const SESSION_SERVER_RECV_ADDR: &str = "127.0.0.1";
 
 #[allow(dead_code)]
-pub const SESSION_SERVER_WEBRTC_ADDR: &str = "127.0.0.1:14201";
+pub const WORLD_SERVER_RECV_ADDR: &str = "127.0.0.1";
 
 #[allow(dead_code)]
-pub const WORLD_SERVER_HTTP_ADDR: &str = "127.0.0.1:14202";
+pub const CONTENT_SERVER_PORT: u16 = 14196;
 
 #[allow(dead_code)]
-pub const WORLD_SERVER_SIGNAL_ADDR: &str = "127.0.0.1:14203";
+pub const ORCHESTRATOR_PORT: u16 = 14197;
 
 #[allow(dead_code)]
-pub const WORLD_SERVER_WEBRTC_ADDR: &str = "127.0.0.1:14204";
+pub const REGION_SERVER_PORT: u16 = 14198;
+
+#[allow(dead_code)]
+pub const SESSION_SERVER_HTTP_PORT: u16 = 14199;
+
+#[allow(dead_code)]
+pub const SESSION_SERVER_SIGNAL_PORT: u16 = 14200;
+
+#[allow(dead_code)]
+pub const SESSION_SERVER_WEBRTC_PORT: u16 = 14201;
+
+#[allow(dead_code)]
+pub const WORLD_SERVER_HTTP_PORT: u16 = 14202;
+
+#[allow(dead_code)]
+pub const WORLD_SERVER_SIGNAL_PORT: u16 = 14203;
+
+#[allow(dead_code)]
+pub const WORLD_SERVER_WEBRTC_PORT: u16 = 14204;
 
 #[allow(dead_code)]
 pub const CLIENT_SECRET: &str = "35aSlQxlQ7RKY03JJMSf4xvbxZGhIaZOE";

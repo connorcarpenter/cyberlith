@@ -1,3 +1,4 @@
+use std::net::SocketAddr;
 
 use bevy_ecs::change_detection::ResMut;
 use bevy_log::{info, warn};
@@ -6,14 +7,14 @@ use bevy_http_client::ResponseError;
 use bevy_http_server::HttpServer;
 
 use session_server_http_proto::{HeartbeatRequest, HeartbeatResponse, IncomingUserRequest, IncomingUserResponse};
-use config::{SESSION_SERVER_HTTP_ADDR, REGION_SERVER_SECRET};
+use config::{SELF_BINDING_ADDR, SESSION_SERVER_HTTP_PORT, REGION_SERVER_SECRET};
 
 use crate::global::Global;
 
 pub fn init(mut server: ResMut<HttpServer>) {
     info!("Session HTTP Server starting up");
 
-    let socket_addr = SESSION_SERVER_HTTP_ADDR.parse().expect("could not parse HTTP address/port");
+    let socket_addr = SocketAddr::new(SELF_BINDING_ADDR.parse().unwrap(), SESSION_SERVER_HTTP_PORT);
     server.listen(socket_addr);
 }
 

@@ -1,24 +1,26 @@
-use std::net::SocketAddr;
 
 use naia_serde::{SerdeInternal as Serde};
 
 use http_common::{ApiRequest, ApiResponse, Method};
-use serde::SerdeSocketAddr;
 
 // Request
 #[derive(Serde, PartialEq, Clone)]
 pub struct WorldRegisterInstanceRequest {
     world_secret: String,
-    http_addr: SerdeSocketAddr,
-    signal_addr: SerdeSocketAddr,
+    http_addr: String,
+    http_port: u16,
+    signal_addr: String,
+    signal_port: u16,
 }
 
 impl WorldRegisterInstanceRequest {
-    pub fn new(world_secret: &str, http_addr: SocketAddr, signal_addr: SocketAddr) -> Self {
+    pub fn new(world_secret: &str, http_addr: &str, http_port: u16, signal_addr: &str, signal_port: u16) -> Self {
         Self {
             world_secret: world_secret.to_string(),
-            http_addr: SerdeSocketAddr::new(http_addr),
-            signal_addr: SerdeSocketAddr::new(signal_addr),
+            http_addr: http_addr.to_string(),
+            http_port,
+            signal_addr: signal_addr.to_string(),
+            signal_port,
         }
     }
 
@@ -26,12 +28,20 @@ impl WorldRegisterInstanceRequest {
         &self.world_secret
     }
 
-    pub fn http_addr(&self) -> SocketAddr {
-        self.http_addr.inner()
+    pub fn http_addr(&self) -> String {
+        self.http_addr.clone()
     }
 
-    pub fn signal_addr(&self) -> SocketAddr {
-        self.signal_addr.inner()
+    pub fn http_port(&self) -> u16 {
+        self.http_port
+    }
+
+    pub fn signal_addr(&self) -> String {
+        self.signal_addr.clone()
+    }
+
+    pub fn signal_port(&self) -> u16 {
+        self.signal_port
     }
 }
 
