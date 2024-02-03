@@ -38,11 +38,17 @@ async fn ssh_into_server_to_pull_and_start_containers() -> Result<(), VultrError
     // ssh in
     let session = ssh_session_create().await?;
 
+    // remove network
+    remove_network(&session).await?;
+
     // stop containers
     containers_stop(&session).await?;
 
     // pull images
     images_pull(&session).await?;
+
+    // create network
+    create_network(&session).await?;
 
     // start containers
     containers_start(&session).await?;
@@ -81,13 +87,29 @@ async fn images_pull(session: &Session) -> Result<(), VultrError> {
     Ok(())
 }
 
+async fn create_network(session: &Session) -> Result<(), VultrError> {
+
+    run_ssh_command(session, "docker network create primary_network").await?
+
+    Ok(())
+}
+
+async fn remove_network(session: &Session) -> Result<(), VultrError> {
+
+    if let Err(err) = run_ssh_command(session, "docker network rm primary_network").await {
+        warn!("ignoring error while creating network: {:?}", err);
+    }
+
+    Ok(())
+}
+
 async fn containers_start(session: &Session) -> Result<(), VultrError> {
 
-    container_start(session, "content").await?;
-    container_start(session, "orchestrator").await?;
-    container_start(session, "region").await?;
-    container_start(session, "session").await?;
-    container_start(session, "world").await?;
+    container_start(session, "content", "-p 80:14196/tcp").await?;
+    container_start(session, "orchestrator", "-p 14197:14197/tcp").await?;
+    container_start(session, "region", "-p 14198:14198/tcp").await?;
+    container_start(session, "session", "-p 14200:14200/tcp -p 14201:14201/udp").await?;
+    container_start(session, "world", "-p 14203:14203/tcp -p 14204:14204/udp").await?;
 
     Ok(())
 }
@@ -117,9 +139,9 @@ async fn image_pull(session: &Session, image_name: &str) -> Result<(), VultrErro
     Ok(())
 }
 
-async fn container_start(session: &Session, app_name: &str) -> Result<(), VultrError> {
+async fn container_start(session: &Session, app_name: &str, ports: &str) -> Result<(), VultrError> {
 
-    run_ssh_command(session, format!("docker run -d --name {}_server sjc.vultrcr.com/primary/{}_image", app_name, app_name).as_str()).await?;
+    run_ssh_command(session, format!("docker run -d --name {}_server --network primary_network {} sjc.vultrcr.com/primary/{}_image", app_name, ports, app_name).as_str()).await?;
 
     Ok(())
 }
