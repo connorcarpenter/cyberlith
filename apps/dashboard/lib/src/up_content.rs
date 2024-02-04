@@ -5,7 +5,7 @@ use crossbeam_channel::TryRecvError;
 use log::{info, warn};
 use vultr::VultrError;
 
-use crate::{utils::{check_channel, run_command, run_ssh_command, ssh_session_close, ssh_session_create, thread_init, thread_init_compat}, server_build, containers_up::{container_create_and_start, container_stop_and_remove, image_pull, image_push}};
+use crate::{utils::{check_channel, run_command, run_ssh_command, ssh_session_close, ssh_session_create, thread_init, thread_init_compat}, server_build, containers_up::{container_create_and_start, container_stop_and_remove, image_pull, image_push}, get_container_registry_creds, get_container_registry_url};
 
 pub fn up_content() -> Result<(), VultrError> {
 
@@ -44,8 +44,8 @@ fn containers_up() -> Result<(), VultrError> {
 
 async fn containers_up_impl() -> Result<(), VultrError> {
 
-    // login on client (TODO: abstract away this!)
-    run_command("containers", "docker login https://sjc.vultrcr.com/primary -u 9c02a1b0-c8b0-498a-9b92-28bb6dd14cef -p 7qJZ7EzVFCaMLpax5BL84bj8GZzDDZTb6WzU").await?;
+    // login on client
+    run_command("containers", format!("docker login https://{} {}", get_container_registry_url(), get_container_registry_creds()).as_str()).await?;
 
     // push image
     image_push("content").await?;
@@ -56,8 +56,8 @@ async fn containers_up_impl() -> Result<(), VultrError> {
     // stop container
     container_stop_and_remove(&session, "content").await?;
 
-    // login on server (TODO: abstract away this!)
-    run_ssh_command(&session, "docker login https://sjc.vultrcr.com/primary -u 9c02a1b0-c8b0-498a-9b92-28bb6dd14cef -p 7qJZ7EzVFCaMLpax5BL84bj8GZzDDZTb6WzU").await?;
+    // login on server
+    run_ssh_command(&session, format!("docker login https://{} {}", get_container_registry_url(), get_container_registry_creds()).as_str()).await?;
 
     // pull new image
     image_pull(&session, "content").await?;

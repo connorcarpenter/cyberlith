@@ -6,7 +6,7 @@ use log::{info, warn};
 use openssh::Session;
 use vultr::VultrError;
 
-use crate::utils::{run_command, run_ssh_command, ssh_session_close, ssh_session_create, thread_init_compat};
+use crate::{utils::{run_command, run_ssh_command, ssh_session_close, ssh_session_create, thread_init_compat}, get_container_registry_creds, get_container_registry_url};
 
 pub fn containers_up() -> Result<(), VultrError> {
     let rcvr = thread_init_compat(containers_up_impl);
@@ -53,6 +53,9 @@ async fn ssh_into_server_to_pull_and_start_containers() -> Result<(), VultrError
     // start containers
     containers_start(&session).await?;
 
+    // prune images
+    images_prune(&session).await?;
+
     // close ssh
     ssh_session_close(session).await?;
 
@@ -63,7 +66,7 @@ async fn ssh_into_server_to_pull_and_start_containers() -> Result<(), VultrError
 
 async fn images_push() -> Result<(), VultrError> {
 
-    run_command("containers", "docker login https://sjc.vultrcr.com/primary -u 9c02a1b0-c8b0-498a-9b92-28bb6dd14cef -p 7qJZ7EzVFCaMLpax5BL84bj8GZzDDZTb6WzU").await?;
+    run_command("containers", format!("docker login https://{} {}", get_container_registry_url(), get_container_registry_creds()).as_str()).await?;
 
     image_push("content").await?;
     image_push("orchestrator").await?;
@@ -76,7 +79,7 @@ async fn images_push() -> Result<(), VultrError> {
 
 async fn images_pull(session: &Session) -> Result<(), VultrError> {
 
-    run_ssh_command(&session, "docker login https://sjc.vultrcr.com/primary -u 9c02a1b0-c8b0-498a-9b92-28bb6dd14cef -p 7qJZ7EzVFCaMLpax5BL84bj8GZzDDZTb6WzU").await?;
+    run_ssh_command(&session, format!("docker login https://{} {}", get_container_registry_url(), get_container_registry_creds()).as_str()).await?;
 
     image_pull(session, "content").await?;
     image_pull(session, "orchestrator").await?;
@@ -114,6 +117,13 @@ async fn containers_start(session: &Session) -> Result<(), VultrError> {
     Ok(())
 }
 
+async fn images_prune(session: &Session) -> Result<(), VultrError> {
+
+    run_ssh_command(session, "yes | docker image prune -a").await?;
+
+    Ok(())
+}
+
 async fn containers_stop(session: &Session) -> Result<(), VultrError> {
 
     container_stop_and_remove(session, "content").await?;
@@ -126,35 +136,35 @@ async fn containers_stop(session: &Session) -> Result<(), VultrError> {
 }
 
 pub async fn image_push(image_name: &str) -> Result<(), VultrError> {
-    run_command("containers", format!("docker tag {}_image:latest sjc.vultrcr.com/primary/{}_image:latest", image_name, image_name).as_str()).await?;
-    run_command("containers", format!("docker push sjc.vultrcr.com/primary/{}_image:latest", image_name).as_str()).await?;
+    run_command("containers", format!("docker tag {}_image:latest {}/{}_image:latest", image_name, get_container_registry_url(), image_name).as_str()).await?;
+    run_command("containers", format!("docker push {}/{}_image:latest", get_container_registry_url(), image_name).as_str()).await?;
     run_command("containers", format!("docker rmi {}_image:latest", image_name).as_str()).await?;
     Ok(())
 }
 
 pub async fn image_pull(session: &Session, image_name: &str) -> Result<(), VultrError> {
 
-    run_ssh_command(session, format!("docker pull sjc.vultrcr.com/primary/{}_image:latest", image_name).as_str()).await?;
+    run_ssh_command(session, format!("docker pull {}/{}_image:latest", get_container_registry_url(), image_name).as_str()).await?;
 
     Ok(())
 }
 
 pub async fn container_create_and_start(session: &Session, app_name: &str, ports: &str) -> Result<(), VultrError> {
 
-    run_ssh_command(session, format!("docker run -d --name {}_server --network primary_network {} sjc.vultrcr.com/primary/{}_image", app_name, ports, app_name).as_str()).await?;
+    run_ssh_command(session, format!("docker run -d --name {}_server --network primary_network {} {}/{}_image", app_name, ports, get_container_registry_url(), app_name).as_str()).await?;
 
     Ok(())
 }
 
 pub async fn container_stop_and_remove(session: &Session, app_name: &str) -> Result<(), VultrError> {
 
-    // kill/stop image
+    // kill/stop container
     // TODO: should stop instead of kill?
     if let Err(ignored_err) = run_ssh_command(session, format!("docker kill {}_server", app_name).as_str()).await {
         warn!("ignoring error while killing container: {:?}", ignored_err);
     }
 
-    // remove image
+    // remove container
     if let Err(ignored_err) = run_ssh_command(session, format!("docker rm {}_server", app_name).as_str()).await {
         warn!("ignoring error while removing container: {:?}", ignored_err);
     }
