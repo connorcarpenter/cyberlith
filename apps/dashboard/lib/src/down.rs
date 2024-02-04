@@ -3,12 +3,12 @@ use std::time::Duration;
 use log::info;
 use vultr::{VultrApi, VultrError};
 
-use crate::{utils::{thread_init, check_channel}, get_api_key};
+use crate::{utils::{thread_init_compat, check_channel}, get_api_key};
 
 pub fn down() -> Result<(), VultrError> {
     info!("Stopping instance");
 
-    let rcvr = thread_init(stop_instance);
+    let rcvr = thread_init_compat(stop_instance);
     let mut rdy = false;
 
     loop {
