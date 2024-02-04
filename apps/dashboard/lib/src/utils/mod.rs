@@ -8,8 +8,6 @@ use subprocess::{Exec,  Redirection};
 use vultr::VultrError;
 use smol::channel::bounded as smol_bounded;
 
-use crate::get_static_ip;
-
 pub fn thread_init<F: Future<Output=Result<(), VultrError>> + Sized + Send + 'static>(
     x: fn() -> F
 ) -> Receiver<Result<(), VultrError>> {
@@ -102,7 +100,7 @@ pub async fn ssh_session_create() -> Result<Session, VultrError> {
 
     let key_path = Path::new("~/Work/cyberlith/.vultr/vultrkey");
 
-    let ssh_path = format!("ssh://root@{}", get_static_ip());
+    let ssh_path = "ssh://root@cyberlith.com";
 
     let session_opt;
     loop {

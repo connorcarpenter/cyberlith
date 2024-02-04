@@ -1,12 +1,13 @@
 use std::time::Duration;
 
 use log::{info, warn};
+use openssh::Session;
 use vultr::VultrError;
 
-use crate::get_static_ip;
-use crate::utils::run_command;
+use crate::utils::{run_command, ssh_session_create};
 
-pub async fn ssh_init() -> Result<(), VultrError> {
+pub async fn ssh_init() -> Result<Session, VultrError> {
+
     remove_existing_known_host().await?;
 
     loop {
@@ -22,15 +23,18 @@ pub async fn ssh_init() -> Result<(), VultrError> {
         }
     }
 
-    Ok(())
+    // create ssh session
+    let session = ssh_session_create().await?;
+
+    Ok(session)
 }
 
 async fn remove_existing_known_host() -> Result<(), VultrError> {
-    let command_str = format!("ssh-keygen -f /home/connor/.ssh/known_hosts -R {}", get_static_ip());
-    run_command("SSH_INIT", command_str.as_str()).await
+    let command_str = "ssh-keygen -f /home/connor/.ssh/known_hosts -R cyberlith.com";
+    run_command("SSH_INIT", command_str).await
 }
 
 async fn add_known_host() -> Result<(), VultrError> {
-    let command_str = format!("ssh-keyscan -H {} >> /home/connor/.ssh/known_hosts", get_static_ip());
-    run_command("SSH_INIT", command_str.as_str()).await
+    let command_str = "ssh-keyscan -H cyberlith.com >> /home/connor/.ssh/known_hosts";
+    run_command("SSH_INIT", command_str).await
 }

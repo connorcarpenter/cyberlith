@@ -2,6 +2,7 @@ use log::{info, warn};
 use vultr::VultrError;
 
 use crate::up::{instance_init::instance_init, instance_start::instance_start, instance_wait::instance_wait, ssh_init::ssh_init};
+use crate::utils::ssh_session_close;
 
 pub async fn instance_up() -> Result<(), VultrError> {
 
@@ -27,23 +28,29 @@ pub async fn instance_up() -> Result<(), VultrError> {
         },
     }
 
-    // init ssh
-    match ssh_init().await {
-        Ok(_) => info!("SSH initiated"),
+    // start ssh session
+    let ssh_session = match ssh_init().await {
+        Ok(session) => {
+            info!("SSH initiated");
+            session
+        },
         Err(e) => {
             warn!("SSH not initiated.. error: {:?}", e);
             return Err(e);
         },
-    }
+    };
 
-    // ssh into instance, set up iptables & docker
-    match instance_init().await {
+    // set up docker
+    match instance_init(&ssh_session).await {
         Ok(_) => info!("SSH and initial commands completed successfully"),
         Err(e) => {
             warn!("SSH and initial commands failed: {:?}", e);
             return Err(e);
         },
     }
+
+    // close ssh session
+    ssh_session_close(ssh_session).await?;
 
     Ok(())
 }
