@@ -3,7 +3,7 @@ use log::{LevelFilter, warn};
 use simple_logger::SimpleLogger;
 
 fn cli() -> Command {
-    Command::new("dashboard_cli")
+    Command::new("deploy_cli")
         .subcommand_required(true)
         .arg_required_else_help(true)
         .allow_external_subcommands(true)
@@ -32,13 +32,13 @@ fn main() {
 
     let result = match matches.subcommand() {
         Some(("up", _sub_matches)) => {
-            dashboard_lib::up()
+            deploy_lib::up()
         }
         Some(("up_content", _sub_matches)) => {
-            dashboard_lib::up_content()
+            deploy_lib::up_content()
         }
         Some(("down", _sub_matches)) => {
-            dashboard_lib::down()
+            deploy_lib::down()
         }
         _ => unreachable!(), // If all subcommands are defined above, anything else is unreachable!()
     };

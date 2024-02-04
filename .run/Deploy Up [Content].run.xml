@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Dashboard [DOWN]" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
-    <option name="command" value="run down" />
-    <option name="workingDirectory" value="file://$PROJECT_DIR$/apps/dashboard/cli" />
+  <configuration default="false" name="Deploy Up [Content]" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
+    <option name="command" value="run up_content" />
+    <option name="workingDirectory" value="file://$PROJECT_DIR$/apps/deploy/cli" />
     <envs />
     <option name="emulateTerminal" value="true" />
     <option name="channel" value="DEFAULT" />

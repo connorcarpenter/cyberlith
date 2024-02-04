@@ -1,5 +1,5 @@
 [package]
-name = "dashboard_cli"
+name = "deploy_cli"
 version = "0.1.0"
 authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
 workspace = "../../.."
@@ -9,7 +9,7 @@ publish = false
 [features]
 
 [dependencies]
-dashboard_lib = { path = "../lib" }
+deploy_lib = { path = "../lib" }
 clap = { version = "4.4" }
 log = { version = "0.4", features = [] }
 simple_logger = { version = "4.0", default-features = false, features = ["timestamps"] }
