@@ -8,12 +8,10 @@ pub mod containers_up;
 
 use std::time::Duration;
 
-use crossbeam_channel::{Receiver, TryRecvError};
 use log::info;
 use vultr::VultrError;
 
-use crate::up::containers_up::containers_up;
-use crate::utils::{check_channel, thread_init, thread_init_compat};
+use crate::{utils::{check_channel, thread_init, thread_init_compat}, up::containers_up::containers_up};
 
 pub fn up() -> Result<(), VultrError> {
 

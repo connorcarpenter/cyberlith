@@ -9,7 +9,7 @@ publish = false
 [features]
 
 [dependencies]
-vultr = { path = "../crates/vultr", features = ["blocking"] }
+vultr = { path = "../crates/vultr" }
 executor = { path = "../../../crates/executor" }
 
 openssh = { version = "0.10" }

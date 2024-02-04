@@ -104,7 +104,7 @@ pub async fn ssh_session_create() -> Result<Session, VultrError> {
 
     let ssh_path = format!("ssh://root@{}", get_static_ip());
 
-    let mut session_opt = None;
+    let session_opt;
     loop {
         let session_result = SessionBuilder::default()
             .known_hosts_check(KnownHosts::Accept)

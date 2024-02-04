@@ -1,20 +1,36 @@
-use log::info;
+use std::time::Duration;
 
+use log::info;
 use vultr::{VultrApi, VultrError};
 
-use crate::get_api_key;
+use crate::{utils::{thread_init, check_channel}, get_api_key};
 
 pub fn down() -> Result<(), VultrError> {
     info!("Stopping instance");
-    stop_instance()
+
+    let rcvr = thread_init(stop_instance);
+    let mut rdy = false;
+
+    loop {
+        std::thread::sleep(Duration::from_secs(5));
+
+        check_channel(&rcvr, &mut rdy)?;
+
+        if rdy {
+            break;
+        }
+    }
+
+    info!("Done!");
+    Ok(())
 }
 
-fn stop_instance() -> Result<(), VultrError> {
+async fn stop_instance() -> Result<(), VultrError> {
     let api_key = get_api_key();
 
     let api = VultrApi::new(api_key);
 
-    let instances = api.get_instance_list()?;
+    let instances = api.get_instance_list_async().await?;
     if instances.is_empty() {
         return Err(VultrError::Dashboard("No instances running".to_string()));
     }
@@ -23,7 +39,7 @@ fn stop_instance() -> Result<(), VultrError> {
     }
     let instance = instances.first().unwrap();
 
-    api.delete_instance(instance.id.clone())?;
+    api.delete_instance_async(instance.id.clone()).await?;
 
     Ok(())
 }

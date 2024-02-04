@@ -12,7 +12,7 @@ pub async fn instance_wait(instance_id: &str) -> Result<(), VultrError> {
 
     loop {
 
-        match api.get_instance(instance_id) {
+        match api.get_instance_async(instance_id).await {
             Ok(instance) => {
                 info!("instance status: {:?}", instance.status);
 

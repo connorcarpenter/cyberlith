@@ -9,7 +9,7 @@ pub async fn instance_start() -> Result<String, VultrError> {
 
     let api = VultrApi::new(api_key);
 
-    let instances = api.get_instance_list()?;
+    let instances = api.get_instance_list_async().await?;
     if instances.len() == 1 {
         let instance = instances.get(0).unwrap();
         return Ok(instance.id.clone());
@@ -19,7 +19,7 @@ pub async fn instance_start() -> Result<String, VultrError> {
     }
 
     // get region id
-    let regions = api.get_regions()?;
+    let regions = api.get_regions_async().await?;
     let region = regions
         .iter()
         .find(|r| r.city == "Chicago" && r.country == "US" && r.continent == "North America")
@@ -28,7 +28,7 @@ pub async fn instance_start() -> Result<String, VultrError> {
     info!("found region id: {}", region_id);
 
     // get plan id
-    let plans = api.get_plans()?;
+    let plans = api.get_plans_async().await?;
     let plan = plans
         .iter()
         .find(|p| p.monthly_cost == 5.0 && p.vcpu_count == 1 && p.plan_type == "vc2" && p.ram ==1024 && p.disk == 25.0 && p.bandwidth == 1024.0)
@@ -37,7 +37,7 @@ pub async fn instance_start() -> Result<String, VultrError> {
     info!("found plan id: {:?}", plan_id);
 
     // // get os id
-    let oses = api.get_os_list()?;
+    let oses = api.get_os_list_async().await?;
     let os = oses
         .iter()
         .find(|o| o.family.contains("ubuntu") && o.arch == "x64" && o.name == "Ubuntu 22.04 LTS x64")
@@ -46,7 +46,7 @@ pub async fn instance_start() -> Result<String, VultrError> {
     info!("found OS id: {:?}", os_id);
 
     // get ssh key id
-    let ssh_keys = api.get_sshkey_list()?;
+    let ssh_keys = api.get_sshkey_list_async().await?;
     let ssh_key = ssh_keys
         .iter()
         .find(|k| k.name == "Primary")
@@ -55,7 +55,7 @@ pub async fn instance_start() -> Result<String, VultrError> {
     info!("found ssh key id: {:?}", ssh_key_id);
 
     // get reserved ip id
-    let reserved_ips = api.get_reserved_ip_list()?;
+    let reserved_ips = api.get_reserved_ip_list_async().await?;
     let reserved_ip = reserved_ips
         .iter()
         .find(|i| i.label == "Primary")
@@ -64,7 +64,7 @@ pub async fn instance_start() -> Result<String, VultrError> {
     info!("found reserved ip id: {:?}", reserved_ip_id);
 
     // get firewall group id
-    let firewall_groups = api.get_firewall_group_list()?;
+    let firewall_groups = api.get_firewall_group_list_async().await?;
     let firewall_group = firewall_groups
         .iter()
         .find(|g| g.description == "primary_firewall")
@@ -82,7 +82,7 @@ pub async fn instance_start() -> Result<String, VultrError> {
     // info!("found iso id: {:?}", iso_id);
 
     // create instance
-    let mut instance_opt = None;
+    let instance_opt;
     loop {
         let instance_result = api
             .create_instance(

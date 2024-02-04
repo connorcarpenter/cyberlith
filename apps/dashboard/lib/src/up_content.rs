@@ -1,13 +1,11 @@
 
-
 use std::time::Duration;
 
-use crossbeam_channel::{Receiver, TryRecvError};
+use crossbeam_channel::TryRecvError;
 use log::{info, warn};
 use vultr::VultrError;
-use crate::containers_up::{container_create_and_start, container_stop_and_remove, image_pull, image_push};
-use crate::server_build;
-use crate::utils::{check_channel, run_command, run_ssh_command, ssh_session_close, ssh_session_create, thread_init, thread_init_compat};
+
+use crate::{utils::{check_channel, run_command, run_ssh_command, ssh_session_close, ssh_session_create, thread_init, thread_init_compat}, server_build, containers_up::{container_create_and_start, container_stop_and_remove, image_pull, image_push}};
 
 pub fn up_content() -> Result<(), VultrError> {
 
