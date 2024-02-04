@@ -2,7 +2,7 @@
 pub const SELF_BINDING_ADDR: &str = "0.0.0.0";
 
 #[allow(dead_code)]
-pub const PUBLIC_IP_ADDR: &str = "144.202.63.66";
+pub const PUBLIC_IP_ADDR: &str = "cyberlith.com";
 
 #[allow(dead_code)]
 pub const REGION_SERVER_RECV_ADDR: &str = "region_server";

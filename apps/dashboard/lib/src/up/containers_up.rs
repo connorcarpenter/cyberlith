@@ -119,7 +119,7 @@ async fn containers_start(session: &Session) -> Result<(), VultrError> {
 
 async fn images_prune(session: &Session) -> Result<(), VultrError> {
 
-    run_ssh_command(session, "yes | docker image prune -a").await?;
+    run_ssh_command(session, "echo 'y' | docker image prune -a").await?;
 
     Ok(())
 }
