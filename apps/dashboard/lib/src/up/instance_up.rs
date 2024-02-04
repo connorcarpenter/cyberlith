@@ -7,7 +7,7 @@ pub async fn instance_up() -> Result<(), VultrError> {
 
     // start instance
     info!("Starting instance");
-    let instance_id = match instance_start() {
+    let instance_id = match instance_start().await {
         Ok(instance_id) => {
             info!("Instance started! id is {:?}", instance_id);
             instance_id

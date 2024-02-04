@@ -3,7 +3,7 @@ use vultr::{VultrApi, VultrError, VultrInstanceType};
 
 use crate::get_api_key;
 
-pub fn instance_start() -> Result<String, VultrError> {
+pub async fn instance_start() -> Result<String, VultrError> {
 
     let api_key = get_api_key();
 
@@ -63,6 +63,15 @@ pub fn instance_start() -> Result<String, VultrError> {
     let reserved_ip_id = reserved_ip.id.clone();
     info!("found reserved ip id: {:?}", reserved_ip_id);
 
+    // get firewall group id
+    let firewall_groups = api.get_firewall_group_list()?;
+    let firewall_group = firewall_groups
+        .iter()
+        .find(|g| g.description == "primary_firewall")
+        .ok_or(VultrError::Dashboard("No firewall group found".to_string()))?;
+    let firewall_group_id = firewall_group.id.clone();
+    info!("found firewall group id: {:?}", firewall_group_id);
+
     // get ubuntu server iso id
     // let isos = api.get_iso_list()?;
     // let iso = isos
@@ -73,22 +82,38 @@ pub fn instance_start() -> Result<String, VultrError> {
     // info!("found iso id: {:?}", iso_id);
 
     // create instance
-    let instance = api
-        .create_instance(
-            &region_id,
-            &plan_id,
-            VultrInstanceType::OS(os_id),
-        )
-        .hostname("primaryserver")
-        .label("Primary Server")
-        .reserved_ipv4(reserved_ip_id)
-        .sshkey_id(&ssh_key_id)
-        .enable_ipv6(false)
-        .backups(false)
-        .ddos_protection(false)
-        .activation_email(false)
+    let mut instance_opt = None;
+    loop {
+        let instance_result = api
+            .create_instance(
+                &region_id,
+                &plan_id,
+                VultrInstanceType::OS(os_id),
+            )
+            .hostname("primaryserver")
+            .label("Primary Server")
+            .reserved_ipv4(&reserved_ip_id)
+            .sshkey_id(&ssh_key_id)
+            .firewall_group_id(&firewall_group_id)
+            .enable_ipv6(false)
+            .backups(false)
+            .ddos_protection(false)
+            .activation_email(false)
+            .run_async().await;
+        match instance_result {
+            Ok(instance) => {
+                instance_opt = Some(instance);
+                break;
+            }
+            Err(err) => {
+                info!("error creating instance: {:?}", err);
+                info!("retrying after 5 seconds..");
+                smol::Timer::after(std::time::Duration::from_secs(5)).await;
+                continue;
+            }
+        }
+    }
 
-        .run()?;
-
+    let instance = instance_opt.unwrap();
     Ok(instance.id)
 }

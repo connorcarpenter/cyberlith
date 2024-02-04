@@ -104,14 +104,30 @@ pub async fn ssh_session_create() -> Result<Session, VultrError> {
 
     let ssh_path = format!("ssh://root@{}", get_static_ip());
 
-    let session = SessionBuilder::default()
-        .known_hosts_check(KnownHosts::Accept)
-        .keyfile(key_path)
-        .connect(ssh_path)
-        .await
-        .map_err(|err| VultrError::Dashboard(err.to_string()))?;
+    let mut session_opt = None;
+    loop {
+        let session_result = SessionBuilder::default()
+            .known_hosts_check(KnownHosts::Accept)
+            .keyfile(key_path)
+            .connect(&ssh_path)
+            .await;
+        match session_result {
+            Ok(session) => {
+                session_opt = Some(session);
+                break;
+            }
+            Err(err) => {
+                warn!("error connecting to instance: {:?}", err);
+                warn!("retrying after 5 seconds..");
+                smol::Timer::after(std::time::Duration::from_secs(5)).await;
+                continue;
+            }
+        }
+    }
 
-    Ok(session)
+    info!("SSH session established");
+
+    Ok(session_opt.unwrap())
 }
 
 pub async fn ssh_session_close(session: Session) -> Result<(), VultrError> {

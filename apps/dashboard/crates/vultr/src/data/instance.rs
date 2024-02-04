@@ -78,6 +78,22 @@ pub struct VultrReservedIp {
 }
 
 #[derive(Deserialize, Debug)]
+pub struct VultrFirewallGroupsRoot {
+    pub firewall_groups: Vec<VultrFirewallGroup>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct VultrFirewallGroup {
+    pub id: String,
+    pub description: String,
+    pub date_created: String,
+    pub date_modified: String,
+    pub instance_count: u32,
+    pub rule_count: u32,
+    pub max_rule_count: u32,
+}
+
+#[derive(Deserialize, Debug)]
 pub struct VultrIsosRoot {
     pub isos: Vec<VultrIso>,
 }
