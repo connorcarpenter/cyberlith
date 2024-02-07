@@ -50,7 +50,7 @@ async fn async_impl(
 
     info!("Sending incoming user request to session server");
 
-    let temp_token = crypto::generate_random_token(16);
+    let temp_token = crypto::generate_random_string(16);
 
     let request = IncomingUserRequest::new(REGION_SERVER_SECRET, &temp_token);
 
