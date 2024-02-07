@@ -12,8 +12,8 @@ use naia_bevy_client::{events::InsertComponentEvents, Client, Replicate};
 
 use render_api::{
     base::{CpuMaterial, CpuMesh},
-    Assets,
 };
+use storage::Assets;
 
 use editor_proto::components::{
     AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, ChangelistStatus, Edge3d,

@@ -2,13 +2,13 @@ use std::{collections::HashMap, fs};
 
 use bevy_log::info;
 
-use math::Vec3;
 use naia_serde::BitReader;
 
+use math::Vec3;
 use render_api::{
     base::{CpuMaterial, CpuMesh, CpuSkin},
-    AssetHash, Assets, Handle,
 };
+use storage::{AssetHash, Assets, Handle};
 
 use crate::{
     asset_dependency::AssetDependency, asset_handle::AssetHandleImpl, AssetHandle, PaletteData,

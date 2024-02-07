@@ -6,11 +6,11 @@ workspace = "../.."
 
 [dependencies]
 # should never include "render_gl" or "render_wgpu" here!
-
 filetypes = { path = "../filetypes", features = ["read"] }
 render_api = { path = "../render/render_api" }
 math = { path = "../math" }
 web_fs = { path = "../../../web_fs" }
+storage = { path = "../storage" }
 
 bevy_app = { version = "0.12.1", default-features = false }
 bevy_ecs = { version = "0.12.1", default-features = false }

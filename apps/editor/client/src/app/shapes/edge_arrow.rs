@@ -3,8 +3,8 @@ use render_api::{
     base::{CpuMaterial, CpuMesh},
     components::{RenderObjectBundle, Transform},
     shapes::set_2d_line_transform,
-    AssetHash, Assets, Handle,
 };
+use storage::{AssetHash, Assets, Handle};
 
 pub fn create_2d_edge_arrow(
     meshes: &mut Assets<CpuMesh>,

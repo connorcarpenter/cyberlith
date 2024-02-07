@@ -2,14 +2,14 @@ use std::default::Default;
 
 use bevy_ecs::system::Resource;
 
-use crate::base::CpuSkin;
+use storage::Handle;
+
 use crate::{
-    base::{CpuMaterial, CpuMesh},
+    base::{CpuMaterial, CpuSkin, CpuMesh},
     components::{
         AmbientLight, Camera, DirectionalLight, PointLight, Projection, RenderLayer, RenderLayers,
         Transform,
     },
-    Handle,
 };
 
 #[derive(Resource)]

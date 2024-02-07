@@ -17,8 +17,8 @@ use render_api::{
         angle_between, get_2d_line_transform_endpoint, set_2d_line_transform,
         set_2d_line_transform_from_angle,
     },
-    Assets, Handle,
 };
+use storage::{Assets, Handle};
 
 use editor_proto::components::{
     Edge3d, EdgeAngle, FileExtension, FileType, OwnedByFile, ShapeName,

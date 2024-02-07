@@ -14,8 +14,8 @@ use render_api::{
     base::{CpuMaterial, CpuMesh},
     components::{RenderObjectBundle, Transform, Visibility},
     shapes::{HollowTriangle, Triangle},
-    Assets,
 };
+use storage::Assets;
 
 use editor_proto::components::{Face3d, FileExtension, OwnedByFile};
 

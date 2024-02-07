@@ -1,10 +1,8 @@
-use std::collections::HashMap;
-use std::default::Default;
-use std::marker::PhantomData;
+use std::{collections::HashMap, default::Default, marker::PhantomData};
 
 use bevy_ecs::system::Resource;
 
-use render_api::Handle;
+use storage::Handle;
 
 #[derive(Resource)]
 pub struct AssetMapping<T, U> {

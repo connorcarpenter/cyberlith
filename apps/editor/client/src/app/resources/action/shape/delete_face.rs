@@ -4,7 +4,8 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 
-use render_api::{base::CpuMesh, Assets};
+use render_api::base::CpuMesh;
+use storage::Assets;
 
 use crate::app::resources::{
     action::shape::ShapeAction, face_manager::FaceManager, shape_data::CanvasShape,

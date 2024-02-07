@@ -12,7 +12,6 @@ use bevy_log::warn;
 use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 
 use math::{convert_3d_to_2d, Affine3A, Mat4, Quat, SerdeQuat, Vec3};
-
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
     components::{
@@ -21,8 +20,8 @@ use render_api::{
     resources::RenderFrame,
     shapes,
     shapes::set_2d_line_transform,
-    Assets, Handle,
 };
+use storage::{Assets, Handle};
 
 use editor_proto::components::{
     Edge3d, EdgeAngle, Face3d, FileExtension, FileType, NetTransform, NetTransformEntityType,

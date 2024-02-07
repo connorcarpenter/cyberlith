@@ -6,9 +6,10 @@ use bevy_log::info;
 
 use naia_bevy_client::Client;
 
-use render_api::{base::CpuMesh, components::Transform, Assets, Handle};
+use render_api::{base::CpuMesh, components::Transform};
 
 use editor_proto::components::{Face3d, Vertex3d};
+use storage::{Assets, Handle};
 
 use crate::app::{
     plugin::Main,

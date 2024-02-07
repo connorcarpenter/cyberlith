@@ -2,10 +2,8 @@ use bevy_log::info;
 
 use naia_serde::BitReader;
 
-use render_api::{
-    base::{Color, CpuMaterial},
-    AssetHash, Assets, Handle,
-};
+use render_api::base::{Color, CpuMaterial};
+use storage::{AssetHash, Assets, Handle};
 
 impl AssetHash<PaletteData> for String {}
 

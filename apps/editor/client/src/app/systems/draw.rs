@@ -13,8 +13,8 @@ use render_api::{
         Visibility,
     },
     resources::RenderFrame,
-    Handle,
 };
+use storage::Handle;
 
 use editor_proto::components::{Edge3d, FileExtension, ShapeName, Vertex3d, VertexRoot};
 

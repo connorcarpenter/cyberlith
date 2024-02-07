@@ -7,7 +7,8 @@ use bevy_log::info;
 
 use naia_bevy_client::{events::RemoveComponentEvents, Client, Replicate};
 
-use render_api::{base::CpuMesh, Assets};
+use render_api::{base::CpuMesh};
+use storage::Assets;
 
 use editor_proto::components::{
     AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, ChangelistStatus, Edge3d,

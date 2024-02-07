@@ -2,7 +2,8 @@ use std::{collections::HashMap, default::Default};
 
 use bevy_ecs::system::Resource;
 
-use render_api::{base::CpuMaterial, Handle};
+use render_api::base::CpuMaterial;
+use storage::Handle;
 
 use crate::{
     core::{GpuTexture2D, Program},

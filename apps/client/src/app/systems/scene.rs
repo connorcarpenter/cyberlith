@@ -6,7 +6,7 @@ use bevy_ecs::{
 };
 
 use game_engine::{
-    asset::{AnimationData, AssetManager, ModelData},
+    asset::{AnimationData, AssetManager},
     math::{Quat, Vec3},
     render::{
         base::{Color, CpuMaterial, CpuMesh},
@@ -16,8 +16,8 @@ use game_engine::{
             RenderObjectBundle, RenderTarget, Transform, Viewport, Visibility,
         },
         resources::{RenderFrame, Time},
-        shapes, Assets, Handle,
-    }};
+        shapes
+    }, storage::{Assets, Handle},};
 
 #[derive(Component)]
 pub struct ObjectMarker;

@@ -5,7 +5,8 @@ use bevy_log::info;
 use naia_serde::BitReader;
 
 use math::Quat;
-use render_api::{components::Transform, AssetHash, Handle};
+use render_api::components::Transform;
+use storage::{AssetHash, Handle};
 
 use crate::{
     asset_dependency::{AssetDependency, SkinOrSceneHandle},

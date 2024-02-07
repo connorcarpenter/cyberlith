@@ -1,8 +1,9 @@
 use bevy_app::{App, Last, MainScheduleOrder, Plugin};
 use bevy_ecs::schedule::{ExecutorKind, Schedule};
 
+use storage::Assets;
+
 use crate::{
-    assets::Assets,
     base::{CpuMaterial, CpuMesh, CpuSkin, CpuTexture2D},
     base_set::{Draw, RenderSync},
     resources::{RenderFrame, Time},

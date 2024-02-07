@@ -6,7 +6,8 @@ use bevy_log::info;
 
 use naia_bevy_client::Client;
 
-use render_api::{base::CpuMesh, components::Transform, Assets, Handle};
+use render_api::{base::CpuMesh, components::Transform};
+use storage::{Assets, Handle};
 
 use editor_proto::components::{IconFace, IconVertex};
 

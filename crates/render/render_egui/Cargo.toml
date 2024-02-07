@@ -12,6 +12,7 @@ render_gl = { path = "../render_gl" }
 math = { path = "../../math" }
 input = { path = "../../input" }
 egui_gl = { path = "../egui_gl" }
+storage = { path = "../../storage" }
 
 # External Crates
 bevy_app = { version = "0.12.1", default-features = false }

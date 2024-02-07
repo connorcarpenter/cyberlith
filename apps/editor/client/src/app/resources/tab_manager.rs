@@ -12,12 +12,12 @@ use naia_bevy_client::Client;
 use render_api::{
     base::{Color, CpuMaterial},
     components::Visibility,
-    Assets, Handle,
 };
 use render_egui::{
     egui,
     egui::{vec2, Id, NumExt, Rect, Response, Rounding, Sense, Stroke, TextStyle, Ui, WidgetText},
 };
+use storage::{Assets, Handle};
 
 use editor_proto::{
     channels::TabActionChannel,

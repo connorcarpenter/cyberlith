@@ -4,13 +4,14 @@ use bevy_ecs::{
     world::World,
 };
 
-use editor_proto::components::Vertex3d;
 use math::Vec3;
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
     components::Transform,
-    Assets,
 };
+use storage::Assets;
+
+use editor_proto::components::Vertex3d;
 
 use crate::app::resources::{
     camera_manager::CameraManager, edge_manager::EdgeManager, vertex_manager::VertexManager,

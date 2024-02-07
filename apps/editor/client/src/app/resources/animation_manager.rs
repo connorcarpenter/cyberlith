@@ -24,8 +24,8 @@ use render_api::{
         angle_between, get_2d_line_transform_endpoint, rotation_diff, set_2d_line_transform,
         set_2d_line_transform_from_angle, Circle, Line,
     },
-    Assets, Handle,
 };
+use storage::{Assets, Handle};
 
 use editor_proto::components::{
     AnimFrame, AnimRotation, EdgeAngle, FileExtension, ShapeName, Transition, Vertex3d, VertexRoot,

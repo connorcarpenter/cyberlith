@@ -21,8 +21,8 @@ use render_api::{
     },
     resources::RenderFrame,
     shapes::{set_2d_line_transform, Circle, HollowTriangle, Line, Triangle},
-    Assets, Handle,
 };
+use storage::{Assets, Handle};
 
 use editor_proto::components::{IconEdge, IconFace, IconFrame, IconVertex, OwnedByFile};
 

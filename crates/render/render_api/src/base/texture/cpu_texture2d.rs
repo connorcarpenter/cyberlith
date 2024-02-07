@@ -1,5 +1,6 @@
-use crate::{assets::AssetHash, base::CpuTextureDataType};
+use storage::AssetHash;
 
+use crate::{base::CpuTextureDataType};
 use super::CpuTextureData;
 
 ///

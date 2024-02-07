@@ -9,8 +9,8 @@ use naia_bevy_client::{Client, CommandsExt};
 use render_api::{
     base::{CpuMaterial, CpuMesh},
     components::Transform,
-    Assets,
 };
+use storage::Assets;
 
 use crate::app::{
     plugin::Main,

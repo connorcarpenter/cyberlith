@@ -14,8 +14,8 @@ use math::Vec2;
 use render_api::{
     base::{CpuMaterial, CpuMesh},
     components::Transform,
-    Assets,
 };
+use storage::Assets;
 
 use crate::app::{
     events::ShapeColorResyncEvent,

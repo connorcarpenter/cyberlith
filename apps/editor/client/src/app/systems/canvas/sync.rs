@@ -12,8 +12,8 @@ use input::Input;
 use render_api::{
     base::{CpuMaterial, CpuMesh},
     components::{Transform, Visibility},
-    Assets,
 };
+use storage::Assets;
 
 use editor_proto::components::{
     AnimFrame, EdgeAngle, FileExtension, IconFrame, PaletteColor, Vertex3d,

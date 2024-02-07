@@ -1,4 +1,4 @@
-use render_api::Handle;
+use storage::Handle;
 
 use crate::{SceneData, SkinData};
 

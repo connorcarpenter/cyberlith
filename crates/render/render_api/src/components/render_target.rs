@@ -1,4 +1,6 @@
-use crate::{base::CpuTexture2D, Handle};
+use storage::Handle;
+
+use crate::{base::CpuTexture2D};
 
 // Render Target
 #[derive(Clone, Copy)]

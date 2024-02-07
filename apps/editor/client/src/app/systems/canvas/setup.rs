@@ -9,9 +9,9 @@ use render_api::{
         OrthographicProjection, Projection, RenderLayers, RenderObjectBundle, RenderTarget,
         Transform, Viewport,
     },
-    Assets, Handle,
 };
 use render_egui::EguiUserTextures;
+use storage::{Assets, Handle};
 
 use crate::app::{
     components::{DefaultDraw, SelectCircle, SelectLine, SelectTriangle, Vertex2d},

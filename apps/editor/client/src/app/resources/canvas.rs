@@ -2,7 +2,8 @@ use bevy_ecs::system::Resource;
 
 use math::Vec2;
 
-use render_api::{base::CpuTexture2D, Handle};
+use render_api::{base::CpuTexture2D};
+use storage::Handle;
 
 use crate::app::resources::{
     animation_manager::AnimationManager, edge_manager::EdgeManager, icon_manager::IconManager,

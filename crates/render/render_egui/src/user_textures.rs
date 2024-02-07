@@ -2,7 +2,8 @@ use std::collections::{HashMap, HashSet};
 
 use bevy_ecs::system::Resource;
 
-use render_api::{base::CpuTexture2D, Handle};
+use render_api::base::CpuTexture2D;
+use storage::Handle;
 
 /// A resource for storing `bevy_egui` user textures.
 #[derive(Clone, Resource, Default)]

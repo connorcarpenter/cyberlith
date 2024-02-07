@@ -13,8 +13,8 @@ use math::{convert_3d_to_2d, Vec2, Vec3};
 use render_api::{
     base::{CpuMaterial, CpuMesh},
     components::{Camera, CameraProjection, Projection, RenderObjectBundle, Transform, Visibility},
-    Assets, Handle,
 };
+use storage::{Assets, Handle};
 
 use editor_proto::components::{
     Face3d, FileExtension, FileType, OwnedByFile, Vertex3d, VertexRoot,

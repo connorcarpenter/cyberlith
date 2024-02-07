@@ -4,10 +4,8 @@ use bevy_log::info;
 
 use naia_serde::BitReader;
 
-use render_api::{
-    base::{CpuMaterial, CpuMesh, CpuSkin},
-    AssetHash, Assets, Handle,
-};
+use render_api::base::{CpuMaterial, CpuMesh, CpuSkin};
+use storage::{AssetHash, Assets, Handle};
 
 use crate::{
     asset_dependency::AssetDependency, asset_handle::AssetHandleImpl, AssetHandle, MeshFile,

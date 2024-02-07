@@ -1,4 +1,4 @@
-use render_api::Handle;
+use storage::Handle;
 
 use crate::{
     AnimationData, IconData, MeshFile, ModelData, PaletteData, SceneData, SkeletonData, SkinData,

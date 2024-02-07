@@ -2,11 +2,8 @@ use std::collections::HashMap;
 
 use bevy_log::warn;
 
-use render_api::{
-    base::CpuSkin,
-    base::{CpuMaterial, CpuMesh},
-    Assets, Handle,
-};
+use render_api::base::{CpuMaterial, CpuSkin, CpuMesh};
+use storage::{Assets, Handle};
 
 use crate::{
     asset_handle::AssetHandleImpl, AnimationData, AssetHandle,

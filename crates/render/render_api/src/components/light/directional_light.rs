@@ -1,12 +1,14 @@
-use bevy_ecs::component::Component;
 use std::{
     default::Default,
     hash::{Hash, Hasher},
 };
 
-use math::Vec3;
+use bevy_ecs::component::Component;
 
-use crate::{base::Color, AssetHash};
+use math::Vec3;
+use storage::AssetHash;
+
+use crate::{base::Color};
 
 ///
 /// A light which shines in the given direction.

@@ -7,11 +7,8 @@ use bevy_ecs::{
 use bevy_log::{info, warn};
 
 use math::{Vec2, Vec3};
-
-use render_api::{
-    base::{CpuMaterial, CpuMesh},
-    Assets,
-};
+use render_api::base::{CpuMaterial, CpuMesh};
+use storage::Assets;
 
 use editor_proto::{
     components::{FileExtension, IconVertex, NetTransformEntityType, Vertex3d},

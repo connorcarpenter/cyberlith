@@ -3,16 +3,14 @@ use std::default::Default;
 use bevy_ecs::bundle::Bundle;
 
 use math::{Vec2, Vec3};
+use storage::{Assets, Handle};
 
 use crate::{
-    assets::Handle,
     base::{CpuMaterial, CpuMesh},
     components::Visibility,
     shapes,
     shapes::set_2d_line_transform,
-    Assets,
 };
-
 use super::transform::Transform;
 
 #[derive(Default, Bundle)]

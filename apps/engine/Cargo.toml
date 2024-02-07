@@ -20,6 +20,7 @@ input = { path = "../../crates/input" }
 asset = { path = "../../crates/asset" }
 bevy_http_client = { path = "../../crates/http/bevy_http_client" }
 config = { path = "../config", features = ["client"]}
+storage = { path = "../../crates/storage" }
 
 orchestrator_http_proto = { path = "../orchestrator/http_proto" }
 session_server_naia_proto = { path = "../session/naia_proto" }

@@ -4,7 +4,8 @@ use naia_serde::BitReader;
 
 use filetypes::FileTransformEntityType;
 use math::{Quat, Vec3};
-use render_api::{components::Transform, AssetHash, Handle};
+use render_api::components::Transform;
+use storage::{AssetHash, Handle};
 
 use crate::{
     asset_dependency::{AssetDependency, SkinOrScene, SkinOrSceneHandle},

@@ -1,12 +1,13 @@
-use std::collections::HashSet;
-use std::{collections::HashMap, fs};
+
+use std::{collections::{HashMap, HashSet}, fs};
 
 use bevy_log::info;
 
 use naia_serde::BitReader;
 
 use math::{quat_from_spin_direction, Quat, Vec3};
-use render_api::{components::Transform, AssetHash};
+use render_api::components::Transform;
+use storage::AssetHash;
 
 impl AssetHash<SkeletonData> for String {}
 

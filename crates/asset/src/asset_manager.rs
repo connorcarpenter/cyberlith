@@ -6,8 +6,8 @@ use render_api::{
     base::{CpuMaterial, CpuMesh},
     components::{RenderLayer, Transform},
     resources::RenderFrame,
-    Assets, Handle,
 };
+use storage::{Assets, Handle};
 
 use crate::{
     AnimationData, AssetHandle,

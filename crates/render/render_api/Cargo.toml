@@ -11,6 +11,7 @@ publish = false
 # Internal Crates
 # THIS SHOULD *NEVER* include render_gl, render_wgpu, or render_egui
 math = { path = "../../math" }
+storage = { path = "../../storage" }
 
 # External Crates
 # should be very light on the number of dependencies

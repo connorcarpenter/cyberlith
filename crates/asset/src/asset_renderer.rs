@@ -5,8 +5,8 @@ use render_api::{
     base::CpuMaterial,
     components::{RenderLayer, Transform},
     resources::RenderFrame,
-    Handle,
 };
+use storage::Handle;
 
 use crate::{asset_store::AssetStore, asset_dependency::SkinOrSceneHandle, AnimationData, IconData, MeshFile, ModelData, SceneData, SkinData};
 

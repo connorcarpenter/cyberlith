@@ -8,8 +8,8 @@ use math::{Vec2, Vec3};
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
     components::Transform,
-    Assets, Handle,
 };
+use storage::{Assets, Handle};
 
 use editor_proto::components::Vertex3d;
 

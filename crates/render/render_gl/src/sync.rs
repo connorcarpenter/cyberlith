@@ -1,12 +1,11 @@
 use bevy_app::{App, Plugin};
-use bevy_ecs::system::Res;
-use bevy_ecs::{change_detection::DetectChanges, system::ResMut};
+use bevy_ecs::{change_detection::DetectChanges, system::{ResMut, Res}};
 
-use render_api::base::CpuSkin;
 use render_api::{
-    base::{CpuMaterial, CpuMesh, CpuTexture2D},
-    Assets, RenderSync,
+    base::{CpuMaterial, CpuSkin, CpuMesh, CpuTexture2D},
+    RenderSync,
 };
+use storage::Assets;
 
 use crate::{
     asset_mapping::AssetMapping,

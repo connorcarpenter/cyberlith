@@ -3,8 +3,8 @@ use render_api::{
     base::{CpuMaterial, CpuMesh},
     components::{RenderObjectBundle, Transform},
     shapes::{set_2d_line_transform, Line},
-    Assets, Handle,
 };
+use storage::{Assets, Handle};
 
 pub fn create_2d_edge_line(
     meshes: &mut Assets<CpuMesh>,

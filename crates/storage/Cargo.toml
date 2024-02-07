@@ -1,0 +1,9 @@
+[package]
+name = "storage"
+version = "0.1.0"
+edition = "2021"
+workspace = "../.."
+
+[dependencies]
+bevy_ecs = { version = "0.12.1", default-features=false }
+log = { version = "0.4" }

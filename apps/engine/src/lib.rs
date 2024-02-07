@@ -52,4 +52,7 @@ pub mod world {
 pub mod config {
     pub use config::*;
 }
+pub mod storage {
+    pub use storage::*;
+}
 pub use renderer::wait_for_finish;

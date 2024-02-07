@@ -3,7 +3,8 @@ use bevy_log::info;
 use naia_serde::BitReader;
 
 use math::Vec3;
-use render_api::{base::CpuMesh, AssetHash, Assets, Handle};
+use render_api::base::CpuMesh;
+use storage::{AssetHash, Assets, Handle};
 
 use crate::asset_dependency::AssetDependency;
 

@@ -8,13 +8,13 @@ use math::Vec2;
 use render_api::{
     base::CpuTexture2D,
     components::{Camera, Projection, Transform},
-    Assets,
 };
 use render_egui::{
     egui,
     egui::{pos2, Color32, Frame, Id, Image, Rect, Ui},
     EguiUserTextures,
 };
+use storage::Assets;
 
 use crate::app::{
     resources::{
