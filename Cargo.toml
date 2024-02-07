@@ -27,7 +27,7 @@ members = [
     "crates/render/render_egui",
     "crates/math",
     "crates/input",
-    "crates/filetypes",
+    "crates/asset/filetypes",
     "crates/asset",
     "crates/render/gl",
     "crates/render/egui_gl",

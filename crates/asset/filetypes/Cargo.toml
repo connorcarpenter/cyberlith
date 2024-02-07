@@ -2,13 +2,13 @@
 name = "filetypes"
 version = "0.1.0"
 edition = "2021"
-workspace = "../.."
+workspace = "../../.."
 
 [features]
 read = []
 write = []
 
 [dependencies]
-naia-serde = { path = "../../../naia/shared/serde" }
+naia-serde = { path = "../../../../naia/shared/serde" }
 cfg-if = { version = "1.0" }
 log = { version = "0.4" }
