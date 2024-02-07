@@ -15,7 +15,7 @@ use render_api::{
     components::{RenderObjectBundle, Transform, Visibility},
     shapes::{HollowTriangle, Triangle},
 };
-use storage::Assets;
+use storage::Storage;
 
 use editor_proto::components::{Face3d, FileExtension, OwnedByFile};
 
@@ -158,8 +158,8 @@ impl FaceManager {
         camera_manager: &CameraManager,
         vertex_manager: &mut VertexManager,
         edge_manager: &mut EdgeManager,
-        meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
+        meshes: &mut Storage<CpuMesh>,
+        materials: &mut Storage<CpuMaterial>,
     ) {
         if self.new_face_keys.is_empty() {
             return;
@@ -189,8 +189,8 @@ impl FaceManager {
         camera_manager: &CameraManager,
         vertex_manager: &mut VertexManager,
         edge_manager: &mut EdgeManager,
-        meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
+        meshes: &mut Storage<CpuMesh>,
+        materials: &mut Storage<CpuMaterial>,
         file_entity: Entity,
         face_key: &FaceKey,
     ) -> Entity {
@@ -299,8 +299,8 @@ impl FaceManager {
             Commands,
             Client<Main>,
             Res<CameraManager>,
-            ResMut<Assets<CpuMesh>>,
-            ResMut<Assets<CpuMaterial>>,
+            ResMut<Storage<CpuMesh>>,
+            ResMut<Storage<CpuMaterial>>,
             Query<&Transform>,
         )> = SystemState::new(world);
         let (mut commands, mut client, camera_manager, mut meshes, mut materials, transform_q) =
@@ -329,8 +329,8 @@ impl FaceManager {
         &mut self,
         commands: &mut Commands,
         client: &mut Client<Main>,
-        meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
+        meshes: &mut Storage<CpuMesh>,
+        materials: &mut Storage<CpuMaterial>,
         camera_manager: &CameraManager,
         transform_q: &Query<&Transform>,
         face_key: &FaceKey,
@@ -410,8 +410,8 @@ impl FaceManager {
     pub fn face_3d_postprocess(
         &mut self,
         commands: &mut Commands,
-        meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
+        meshes: &mut Storage<CpuMesh>,
+        materials: &mut Storage<CpuMaterial>,
         camera_manager: &CameraManager,
         face_key: &FaceKey,
         face_3d_entity: Entity,
@@ -456,7 +456,7 @@ impl FaceManager {
     pub(crate) fn cleanup_deleted_face_3d(
         &mut self,
         commands: &mut Commands,
-        meshes: &mut Assets<CpuMesh>,
+        meshes: &mut Storage<CpuMesh>,
         face_3d_entity: &Entity,
     ) {
         // unregister face

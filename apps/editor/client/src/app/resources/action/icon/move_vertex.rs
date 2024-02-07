@@ -7,7 +7,7 @@ use bevy_log::info;
 use naia_bevy_client::Client;
 
 use render_api::{base::CpuMesh, components::Transform};
-use storage::{Assets, Handle};
+use storage::{Storage, Handle};
 
 use editor_proto::components::{IconFace, IconVertex};
 
@@ -29,7 +29,7 @@ pub(crate) fn execute(
     let mut system_state: SystemState<(
         Client<Main>,
         ResMut<Canvas>,
-        ResMut<Assets<CpuMesh>>,
+        ResMut<Storage<CpuMesh>>,
         Query<&Handle<CpuMesh>>,
         Query<&IconFace>,
         Query<&mut Transform>,

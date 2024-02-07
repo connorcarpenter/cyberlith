@@ -5,12 +5,12 @@ use bevy_ecs::system::Resource;
 use crate::Handle;
 
 #[derive(Resource)]
-pub struct AssetMapping<T, U> {
+pub struct SideStorage<T, U> {
     assets: HashMap<Handle<T>, U>,
     phantom_t: PhantomData<T>,
 }
 
-impl<T, U> AssetMapping<T, U> {
+impl<T, U> SideStorage<T, U> {
     pub fn insert(&mut self, handle: Handle<T>, i12n: U) {
         self.assets.insert(handle, i12n);
     }
@@ -24,7 +24,7 @@ impl<T, U> AssetMapping<T, U> {
     }
 }
 
-impl<T, U> Default for AssetMapping<T, U> {
+impl<T, U> Default for SideStorage<T, U> {
     fn default() -> Self {
         Self {
             assets: HashMap::new(),

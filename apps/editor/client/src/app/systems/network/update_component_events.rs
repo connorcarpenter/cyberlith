@@ -9,7 +9,7 @@ use bevy_log::info;
 use naia_bevy_client::{events::UpdateComponentEvents, Client};
 
 use render_api::{base::CpuMesh, components::Transform};
-use storage::{Assets, Handle};
+use storage::{Storage, Handle};
 
 use editor_proto::components::{
     AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, EdgeAngle, Face3d, FaceColor,
@@ -128,7 +128,7 @@ pub fn update_component_events(world: &mut World) {
             ResMut<IconManager>,
             ResMut<AnimationManager>,
             ResMut<PaletteManager>,
-            ResMut<Assets<CpuMesh>>,
+            ResMut<Storage<CpuMesh>>,
             Query<&AnimFrame>,
             Query<&IconFrame>,
             Query<&PaletteColor>,

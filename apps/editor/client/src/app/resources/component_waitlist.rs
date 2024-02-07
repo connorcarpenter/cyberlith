@@ -8,7 +8,7 @@ use bevy_log::{info, warn};
 
 use math::{Vec2, Vec3};
 use render_api::base::{CpuMaterial, CpuMesh};
-use storage::Assets;
+use storage::Storage;
 
 use editor_proto::{
     components::{FileExtension, IconVertex, NetTransformEntityType, Vertex3d},
@@ -317,8 +317,8 @@ impl ComponentWaitlist {
     pub fn process_inserts(
         &mut self,
         commands: &mut Commands,
-        meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
+        meshes: &mut Storage<CpuMesh>,
+        materials: &mut Storage<CpuMaterial>,
         camera_manager: &mut CameraManager,
         canvas: &mut Canvas,
         vertex_manager_opt: &mut Option<&mut VertexManager>,
@@ -354,8 +354,8 @@ impl ComponentWaitlist {
     pub fn process_insert(
         &mut self,
         commands: &mut Commands,
-        meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
+        meshes: &mut Storage<CpuMesh>,
+        materials: &mut Storage<CpuMaterial>,
         camera_manager: &mut CameraManager,
         canvas: &mut Canvas,
         vertex_manager_opt: &mut Option<&mut VertexManager>,
@@ -668,8 +668,8 @@ impl ComponentWaitlist {
     fn process_complete(
         &mut self,
         commands: &mut Commands,
-        meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
+        meshes: &mut Storage<CpuMesh>,
+        materials: &mut Storage<CpuMaterial>,
         camera_manager: &mut CameraManager,
         canvas: &mut Canvas,
         vertex_manager_opt: &mut Option<&mut VertexManager>,

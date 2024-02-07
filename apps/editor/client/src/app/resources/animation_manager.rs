@@ -25,7 +25,7 @@ use render_api::{
         set_2d_line_transform_from_angle, Circle, Line,
     },
 };
-use storage::{Assets, Handle};
+use storage::{Storage, Handle};
 
 use editor_proto::components::{
     AnimFrame, AnimRotation, EdgeAngle, FileExtension, ShapeName, Transition, Vertex3d, VertexRoot,
@@ -997,8 +997,8 @@ impl AnimationManager {
             let mut system_state: SystemState<(
                 ResMut<RenderFrame>,
                 Res<CameraManager>,
-                ResMut<Assets<CpuMesh>>,
-                ResMut<Assets<CpuMaterial>>,
+                ResMut<Storage<CpuMesh>>,
+                ResMut<Storage<CpuMaterial>>,
                 Query<(&mut Camera, &mut Projection, &mut Transform)>,
             )> = SystemState::new(world);
             let (mut render_frame, camera_manager, mut meshes, mut materials, mut camera_q) =

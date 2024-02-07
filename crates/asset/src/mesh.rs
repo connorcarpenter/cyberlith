@@ -4,7 +4,7 @@ use naia_serde::BitReader;
 
 use math::Vec3;
 use render_api::base::CpuMesh;
-use storage::{AssetHash, Assets, Handle};
+use storage::{AssetHash, Storage, Handle};
 
 use crate::asset_dependency::AssetDependency;
 
@@ -37,7 +37,7 @@ impl MeshFile {
         return false;
     }
 
-    pub(crate) fn load_cpu_mesh(&mut self, meshes: &mut Assets<CpuMesh>) {
+    pub(crate) fn load_cpu_mesh(&mut self, meshes: &mut Storage<CpuMesh>) {
         let AssetDependency::<CpuMesh>::Path(path) = &self.path else {
             panic!("expected handle right after load");
         };

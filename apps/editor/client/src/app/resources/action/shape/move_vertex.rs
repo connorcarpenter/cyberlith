@@ -7,9 +7,9 @@ use bevy_log::info;
 use naia_bevy_client::Client;
 
 use render_api::{base::CpuMesh, components::Transform};
+use storage::{Storage, Handle};
 
 use editor_proto::components::{Face3d, Vertex3d};
-use storage::{Assets, Handle};
 
 use crate::app::{
     plugin::Main,
@@ -31,7 +31,7 @@ pub(crate) fn execute(world: &mut World, action: ShapeAction) -> Vec<ShapeAction
     let mut system_state: SystemState<(
         Client<Main>,
         ResMut<Canvas>,
-        ResMut<Assets<CpuMesh>>,
+        ResMut<Storage<CpuMesh>>,
         ResMut<VertexManager>,
         Res<FaceManager>,
         Query<&Handle<CpuMesh>>,

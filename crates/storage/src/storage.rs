@@ -10,7 +10,7 @@ use bevy_ecs::system::Resource;
 use super::Handle;
 
 #[derive(Default, Resource)]
-pub struct Assets<T> {
+pub struct Storage<T> {
     keys: HashMap<(TypeId, u64), Handle<T>>,
     assets: HashMap<u64, T>,
     last_id: u64,
@@ -27,7 +27,7 @@ pub trait AssetHash<T>: Any + Hash + Into<T> {
     }
 }
 
-impl<T> Assets<T> {
+impl<T> Storage<T> {
     pub fn has<L: AssetHash<T>>(&mut self, asset: L) -> bool {
         let key = asset.get_key();
         self.keys.contains_key(&key)

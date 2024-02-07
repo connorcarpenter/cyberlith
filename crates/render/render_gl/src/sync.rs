@@ -5,7 +5,7 @@ use render_api::{
     base::{CpuMaterial, CpuMesh, CpuSkin, CpuTexture2D},
     RenderSync,
 };
-use storage::{Assets, AssetMapping};
+use storage::{Storage, SideStorage};
 
 use crate::{
     core::{GpuDepthTexture2D, GpuTexture2D},
@@ -21,8 +21,8 @@ impl Plugin for SyncPlugin {
             .init_resource::<GpuMeshManager>()
             .init_resource::<GpuMaterialManager>()
             .init_resource::<GpuSkinManager>()
-            .init_resource::<AssetMapping<CpuTexture2D, GpuTexture2D>>()
-            .init_resource::<AssetMapping<CpuTexture2D, GpuDepthTexture2D>>()
+            .init_resource::<SideStorage<CpuTexture2D, GpuTexture2D>>()
+            .init_resource::<SideStorage<CpuTexture2D, GpuDepthTexture2D>>()
             // Systems
             .add_systems(RenderSync, sync_mesh_assets)
             .add_systems(RenderSync, sync_material_assets)
@@ -32,7 +32,7 @@ impl Plugin for SyncPlugin {
 }
 
 fn sync_mesh_assets(
-    mut cpu_assets: ResMut<Assets<CpuMesh>>,
+    mut cpu_assets: ResMut<Storage<CpuMesh>>,
     mut gpu_mesh_manager: ResMut<GpuMeshManager>,
 ) {
     if !cpu_assets.is_changed() {
@@ -61,7 +61,7 @@ fn sync_mesh_assets(
 }
 
 fn sync_material_assets(
-    mut cpu_assets: ResMut<Assets<CpuMaterial>>,
+    mut cpu_assets: ResMut<Storage<CpuMaterial>>,
     mut gpu_material_manager: ResMut<GpuMaterialManager>,
 ) {
     if !cpu_assets.is_changed() {
@@ -90,9 +90,9 @@ fn sync_material_assets(
 }
 
 fn sync_texture_2d_assets(
-    mut cpu_assets: ResMut<Assets<CpuTexture2D>>,
-    mut gpu_assets: ResMut<AssetMapping<CpuTexture2D, GpuTexture2D>>,
-    mut gpu_depth_assets: ResMut<AssetMapping<CpuTexture2D, GpuDepthTexture2D>>,
+    mut cpu_assets: ResMut<Storage<CpuTexture2D>>,
+    mut gpu_assets: ResMut<SideStorage<CpuTexture2D, GpuTexture2D>>,
+    mut gpu_depth_assets: ResMut<SideStorage<CpuTexture2D, GpuDepthTexture2D>>,
 ) {
     if !cpu_assets.is_changed() {
         return;
@@ -130,7 +130,7 @@ fn sync_texture_2d_assets(
 
 fn sync_skin_assets(
     gpu_mat_manager: Res<GpuMaterialManager>,
-    mut cpu_assets: ResMut<Assets<CpuSkin>>,
+    mut cpu_assets: ResMut<Storage<CpuSkin>>,
     mut gpu_skin_manager: ResMut<GpuSkinManager>,
 ) {
     if !gpu_skin_manager.is_ready() {

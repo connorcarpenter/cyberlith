@@ -14,7 +14,7 @@ use render_api::{
     base::{CpuMaterial, CpuMesh},
     components::{Camera, CameraProjection, Projection, RenderObjectBundle, Transform, Visibility},
 };
-use storage::{Assets, Handle};
+use storage::{Storage, Handle};
 
 use editor_proto::components::{
     Face3d, FileExtension, FileType, OwnedByFile, Vertex3d, VertexRoot,
@@ -74,7 +74,7 @@ impl Default for VertexManager {
 }
 
 impl VertexManager {
-    pub fn setup(&mut self, materials: &mut Assets<CpuMaterial>) {
+    pub fn setup(&mut self, materials: &mut Storage<CpuMaterial>) {
         self.mat_enabled_vertex =
             materials.add(CpuMaterial::new(Vertex2d::ENABLED_COLOR, 0.0, 0.0, 0.0));
         self.mat_disabled_vertex =
@@ -288,8 +288,8 @@ impl VertexManager {
         commands: &mut Commands,
         client: &mut Client<Main>,
         camera_manager: &mut CameraManager,
-        meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
+        meshes: &mut Storage<CpuMesh>,
+        materials: &mut Storage<CpuMaterial>,
         file_type: FileExtension,
         file_entity: Entity,
         parent_vertex_3d_entity_opt: Option<Entity>,
@@ -337,8 +337,8 @@ impl VertexManager {
         camera_manager: &mut CameraManager,
         edge_manager: &mut EdgeManager,
         face_manager: &mut FaceManager,
-        meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
+        meshes: &mut Storage<CpuMesh>,
+        materials: &mut Storage<CpuMaterial>,
         parent_vertex_2d_entity: Entity,
         parent_vertex_3d_entity: Entity,
         children: Vec<VertexEntry>,
@@ -411,7 +411,7 @@ impl VertexManager {
     pub fn vertex_3d_postprocess(
         &mut self,
         commands: &mut Commands,
-        meshes: &mut Assets<CpuMesh>,
+        meshes: &mut Storage<CpuMesh>,
         material: &Handle<CpuMaterial>,
         camera_manager: &CameraManager,
         vertex_3d_entity: Entity,
@@ -521,8 +521,8 @@ impl VertexManager {
         commands: &mut Commands,
         camera_manager: &mut CameraManager,
         edge_manager: &mut EdgeManager,
-        meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
+        meshes: &mut Storage<CpuMesh>,
+        materials: &mut Storage<CpuMaterial>,
         material: &Handle<CpuMaterial>,
         parent_vertex_2d_entity_opt: Option<Entity>,
         position: Vec3,
@@ -617,7 +617,7 @@ impl VertexManager {
         &self,
         client: &Client<Main>,
         face_manager: &FaceManager,
-        meshes: &mut Assets<CpuMesh>,
+        meshes: &mut Storage<CpuMesh>,
         mesh_handle_q: &Query<&Handle<CpuMesh>>,
         face_3d_q: &Query<&Face3d>,
         transform_q: &mut Query<&mut Transform>,

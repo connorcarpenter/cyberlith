@@ -18,7 +18,7 @@ use render_api::{
         set_2d_line_transform_from_angle,
     },
 };
-use storage::{Assets, Handle};
+use storage::{Storage, Handle};
 
 use editor_proto::components::{
     Edge3d, EdgeAngle, FileExtension, FileType, OwnedByFile, ShapeName,
@@ -380,8 +380,8 @@ impl EdgeManager {
         camera_manager: &mut CameraManager,
         vertex_manager: &mut VertexManager,
         face_manager: &mut FaceManager,
-        meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
+        meshes: &mut Storage<CpuMesh>,
+        materials: &mut Storage<CpuMaterial>,
         parent_vertex_2d_entity: Entity,
         parent_vertex_3d_entity: Entity,
         child_vertex_2d_entity: Entity,
@@ -450,8 +450,8 @@ impl EdgeManager {
     pub fn edge_3d_postprocess(
         &mut self,
         commands: &mut Commands,
-        meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
+        meshes: &mut Storage<CpuMesh>,
+        materials: &mut Storage<CpuMaterial>,
         material: &Handle<CpuMaterial>,
         camera_manager: &CameraManager,
         vertex_manager: &mut VertexManager,

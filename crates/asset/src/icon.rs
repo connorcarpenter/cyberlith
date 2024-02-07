@@ -8,7 +8,7 @@ use math::Vec3;
 use render_api::{
     base::{CpuMaterial, CpuMesh, CpuSkin},
 };
-use storage::{AssetHash, Assets, Handle};
+use storage::{AssetHash, Storage, Handle};
 
 use crate::{
     asset_dependency::AssetDependency, asset_handle::AssetHandleImpl, AssetHandle, PaletteData,
@@ -45,7 +45,7 @@ impl IconData {
         return true;
     }
 
-    pub(crate) fn load_cpu_meshes(&mut self, meshes: &mut Assets<CpuMesh>) {
+    pub(crate) fn load_cpu_meshes(&mut self, meshes: &mut Storage<CpuMesh>) {
         info!("icon: load_cpu_meshes");
         for frame in &mut self.frames {
             frame.load_cpu_mesh_handle(meshes);
@@ -54,9 +54,9 @@ impl IconData {
 
     pub(crate) fn load_cpu_skins(
         &mut self,
-        meshes: &Assets<CpuMesh>,
-        materials: &Assets<CpuMaterial>,
-        skins: &mut Assets<CpuSkin>,
+        meshes: &Storage<CpuMesh>,
+        materials: &Storage<CpuMaterial>,
+        skins: &mut Storage<CpuSkin>,
         palette_data: &PaletteData,
     ) -> bool {
         for frame in &mut self.frames {
@@ -147,7 +147,7 @@ impl Frame {
         self.cpu_mesh_handle.is_some()
     }
 
-    fn load_cpu_mesh_handle(&mut self, meshes: &mut Assets<CpuMesh>) {
+    fn load_cpu_mesh_handle(&mut self, meshes: &mut Storage<CpuMesh>) {
         let cpu_mesh = self.cpu_mesh.take().unwrap();
         let cpu_mesh_handle = meshes.add_unique(cpu_mesh);
         self.cpu_mesh_handle = Some(cpu_mesh_handle);
@@ -163,9 +163,9 @@ impl Frame {
 
     pub(crate) fn load_cpu_skin(
         &mut self,
-        meshes: &Assets<CpuMesh>,
-        materials: &Assets<CpuMaterial>,
-        skins: &mut Assets<CpuSkin>,
+        meshes: &Storage<CpuMesh>,
+        materials: &Storage<CpuMaterial>,
+        skins: &mut Storage<CpuSkin>,
         palette_data: &PaletteData,
     ) -> bool {
         let mut new_skin = CpuSkin::default();

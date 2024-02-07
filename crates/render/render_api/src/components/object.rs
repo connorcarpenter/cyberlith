@@ -3,7 +3,7 @@ use std::default::Default;
 use bevy_ecs::bundle::Bundle;
 
 use math::{Vec2, Vec3};
-use storage::{Assets, Handle};
+use storage::{Storage, Handle};
 
 use crate::{
     base::{CpuMaterial, CpuMesh},
@@ -23,7 +23,7 @@ pub struct RenderObjectBundle {
 
 impl RenderObjectBundle {
     pub fn circle(
-        meshes: &mut Assets<CpuMesh>,
+        meshes: &mut Storage<CpuMesh>,
         material: &Handle<CpuMaterial>,
         position: Vec2,
         radius: f32,
@@ -47,7 +47,7 @@ impl RenderObjectBundle {
     }
 
     pub fn square(
-        meshes: &mut Assets<CpuMesh>,
+        meshes: &mut Storage<CpuMesh>,
         material: &Handle<CpuMaterial>,
         position: Vec2,
         size: f32,
@@ -57,7 +57,7 @@ impl RenderObjectBundle {
     }
 
     pub fn rectangle(
-        meshes: &mut Assets<CpuMesh>,
+        meshes: &mut Storage<CpuMesh>,
         material: &Handle<CpuMaterial>,
         position: Vec2,
         size: Vec2,
@@ -86,7 +86,7 @@ impl RenderObjectBundle {
     }
 
     pub fn line(
-        meshes: &mut Assets<CpuMesh>,
+        meshes: &mut Storage<CpuMesh>,
         material: &Handle<CpuMaterial>,
         start: Vec2,
         end: Vec2,
@@ -104,7 +104,7 @@ impl RenderObjectBundle {
     }
 
     pub fn sphere(
-        meshes: &mut Assets<CpuMesh>,
+        meshes: &mut Storage<CpuMesh>,
         material: &Handle<CpuMaterial>,
         position: Vec3,
         radius: f32,
@@ -120,7 +120,7 @@ impl RenderObjectBundle {
     }
 
     pub fn cube(
-        meshes: &mut Assets<CpuMesh>,
+        meshes: &mut Storage<CpuMesh>,
         material: &Handle<CpuMaterial>,
         position: Vec3,
         size: f32,
@@ -135,7 +135,7 @@ impl RenderObjectBundle {
     }
 
     pub fn world_triangle(
-        meshes: &mut Assets<CpuMesh>,
+        meshes: &mut Storage<CpuMesh>,
         material: &Handle<CpuMaterial>,
         positions: [Vec3; 3],
     ) -> Self {
@@ -173,7 +173,7 @@ impl RenderObjectBundle {
     }
 
     pub fn equilateral_triangle(
-        meshes: &mut Assets<CpuMesh>,
+        meshes: &mut Storage<CpuMesh>,
         material: &Handle<CpuMaterial>,
         position: Vec2,
         size: f32,

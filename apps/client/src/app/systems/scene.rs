@@ -17,7 +17,7 @@ use game_engine::{
         },
         resources::{RenderFrame, Time},
         shapes
-    }, storage::{Assets, Handle},};
+    }, storage::{Storage, Handle},};
 
 #[derive(Component)]
 pub struct ObjectMarker;
@@ -34,8 +34,8 @@ pub struct WalkAnimation {
 
 pub fn scene_setup(
     mut commands: Commands,
-    mut meshes: ResMut<Assets<CpuMesh>>,
-    mut materials: ResMut<Assets<CpuMaterial>>,
+    mut meshes: ResMut<Storage<CpuMesh>>,
+    mut materials: ResMut<Storage<CpuMaterial>>,
     mut asset_manager: ResMut<AssetManager>,
 ) {
     let layer = RenderLayers::layer(0);

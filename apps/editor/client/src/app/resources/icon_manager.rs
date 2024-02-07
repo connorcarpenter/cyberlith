@@ -22,7 +22,7 @@ use render_api::{
     resources::RenderFrame,
     shapes::{set_2d_line_transform, Circle, HollowTriangle, Line, Triangle},
 };
-use storage::{Assets, Handle};
+use storage::{Storage, Handle};
 
 use editor_proto::components::{IconEdge, IconFace, IconFrame, IconVertex, OwnedByFile};
 
@@ -193,7 +193,7 @@ impl IconManager {
         let mut system_state: SystemState<(
             ResMut<RenderFrame>,
             Res<TabManager>,
-            ResMut<Assets<CpuMaterial>>,
+            ResMut<Storage<CpuMaterial>>,
             Query<(Entity, &OwnedByFileLocal), With<IconFace>>,
             Query<&IconVertex>,
             Query<&Handle<CpuMesh>>,
@@ -319,7 +319,7 @@ impl IconManager {
             Res<Canvas>,
             Res<TabManager>,
             Res<Input>,
-            ResMut<Assets<CpuMaterial>>,
+            ResMut<Storage<CpuMaterial>>,
             Query<(Entity, &OwnedByFileLocal), With<IconVertex>>,
             Query<&IconVertex>,
             Query<&IconLocalFace>,
@@ -601,8 +601,8 @@ impl IconManager {
     pub fn setup_scene(
         &mut self,
         commands: &mut Commands,
-        meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
+        meshes: &mut Storage<CpuMesh>,
+        materials: &mut Storage<CpuMaterial>,
         texture_size: &Vec2,
         canvas_texture_handle: Handle<CpuTexture2D>,
     ) {
@@ -699,8 +699,8 @@ impl IconManager {
     fn setup_grid(
         &mut self,
         commands: &mut Commands,
-        meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
+        meshes: &mut Storage<CpuMesh>,
+        materials: &mut Storage<CpuMaterial>,
     ) {
         let grid_size: f32 = 100.0;
         let neg_grid_size: f32 = -grid_size;
@@ -769,7 +769,7 @@ impl IconManager {
     fn new_local_vertex(
         &mut self,
         commands: &mut Commands,
-        meshes: &mut Assets<CpuMesh>,
+        meshes: &mut Storage<CpuMesh>,
         material: &Handle<CpuMaterial>,
         position: Vec2,
     ) -> Entity {
@@ -789,7 +789,7 @@ impl IconManager {
     fn new_local_edge(
         &mut self,
         commands: &mut Commands,
-        meshes: &mut Assets<CpuMesh>,
+        meshes: &mut Storage<CpuMesh>,
         material: &Handle<CpuMaterial>,
         vertex_entity_a: Entity,
         vertex_entity_b: Entity,
@@ -1148,8 +1148,8 @@ impl IconManager {
         &mut self,
         commands: &mut Commands,
         client: &mut Client<Main>,
-        meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
+        meshes: &mut Storage<CpuMesh>,
+        materials: &mut Storage<CpuMaterial>,
         file_entity: &Entity,
         frame_entity: &Entity,
         position: Vec2,
@@ -1187,7 +1187,7 @@ impl IconManager {
     pub fn vertex_postprocess(
         &mut self,
         commands: &mut Commands,
-        meshes: &mut Assets<CpuMesh>,
+        meshes: &mut Storage<CpuMesh>,
         material: &Handle<CpuMaterial>,
         file_entity_opt: Option<Entity>,
         frame_entity_opt: Option<Entity>,
@@ -1222,7 +1222,7 @@ impl IconManager {
     pub fn on_vertex_moved(
         &self,
         client: &Client<Main>,
-        meshes: &mut Assets<CpuMesh>,
+        meshes: &mut Storage<CpuMesh>,
         mesh_handle_q: &Query<&Handle<CpuMesh>>,
         face_q: &Query<&IconFace>,
         transform_q: &mut Query<&mut Transform>,
@@ -1349,8 +1349,8 @@ impl IconManager {
         &mut self,
         commands: &mut Commands,
         client: &mut Client<Main>,
-        meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
+        meshes: &mut Storage<CpuMesh>,
+        materials: &mut Storage<CpuMaterial>,
         vertex_entity_a: &Entity,
         vertex_entity_b: &Entity,
         file_entity: &Entity,
@@ -1395,7 +1395,7 @@ impl IconManager {
     pub fn edge_postprocess(
         &mut self,
         commands: &mut Commands,
-        meshes: &mut Assets<CpuMesh>,
+        meshes: &mut Storage<CpuMesh>,
         material: &Handle<CpuMaterial>,
         file_entity_opt: Option<Entity>,
         frame_entity_opt: Option<Entity>,
@@ -1547,8 +1547,8 @@ impl IconManager {
     pub fn process_new_local_faces(
         &mut self,
         commands: &mut Commands,
-        meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
+        meshes: &mut Storage<CpuMesh>,
+        materials: &mut Storage<CpuMaterial>,
     ) {
         if self.new_face_keys.is_empty() {
             return;
@@ -1571,8 +1571,8 @@ impl IconManager {
     pub fn process_new_local_face(
         &mut self,
         commands: &mut Commands,
-        meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
+        meshes: &mut Storage<CpuMesh>,
+        materials: &mut Storage<CpuMaterial>,
         file_entity: &Entity,
         frame_entity: &Entity,
         face_key: &IconFaceKey,
@@ -1690,8 +1690,8 @@ impl IconManager {
         let mut system_state: SystemState<(
             Commands,
             Client<Main>,
-            ResMut<Assets<CpuMesh>>,
-            ResMut<Assets<CpuMaterial>>,
+            ResMut<Storage<CpuMesh>>,
+            ResMut<Storage<CpuMaterial>>,
             Query<&Transform>,
             EventWriter<ShapeColorResyncEvent>,
         )> = SystemState::new(world);
@@ -1726,8 +1726,8 @@ impl IconManager {
         &mut self,
         commands: &mut Commands,
         client: &mut Client<Main>,
-        meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
+        meshes: &mut Storage<CpuMesh>,
+        materials: &mut Storage<CpuMaterial>,
         transform_q: &Query<&Transform>,
         face_key: &IconFaceKey,
         edge_entities: [Entity; 3],
@@ -1803,8 +1803,8 @@ impl IconManager {
     pub fn net_face_postprocess(
         &mut self,
         commands: &mut Commands,
-        meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
+        meshes: &mut Storage<CpuMesh>,
+        materials: &mut Storage<CpuMaterial>,
         face_key: &IconFaceKey,
         net_face_entity: Entity,
         positions: [Vec2; 3],
@@ -1845,7 +1845,7 @@ impl IconManager {
     pub(crate) fn cleanup_deleted_net_face(
         &mut self,
         commands: &mut Commands,
-        meshes: &mut Assets<CpuMesh>,
+        meshes: &mut Storage<CpuMesh>,
         net_face_entity: &Entity,
     ) {
         // unregister face
@@ -2355,8 +2355,8 @@ impl IconManager {
             // draw
             let mut system_state: SystemState<(
                 ResMut<RenderFrame>,
-                ResMut<Assets<CpuMesh>>,
-                ResMut<Assets<CpuMaterial>>,
+                ResMut<Storage<CpuMesh>>,
+                ResMut<Storage<CpuMaterial>>,
             )> = SystemState::new(world);
             let (mut render_frame, mut meshes, mut materials) = system_state.get_mut(world);
 

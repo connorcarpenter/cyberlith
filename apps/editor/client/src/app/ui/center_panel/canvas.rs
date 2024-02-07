@@ -14,7 +14,7 @@ use render_egui::{
     egui::{pos2, Color32, Frame, Id, Image, Rect, Ui},
     EguiUserTextures,
 };
-use storage::Assets;
+use storage::Storage;
 
 use crate::app::{
     resources::{
@@ -35,7 +35,7 @@ pub fn render_canvas(ui: &mut Ui, world: &mut World) {
                 ResMut<Canvas>,
                 ResMut<CameraManager>,
                 Res<IconManager>,
-                ResMut<Assets<CpuTexture2D>>,
+                ResMut<Storage<CpuTexture2D>>,
                 ResMut<EguiUserTextures>,
                 ResMut<UiState>,
                 ResMut<Input>,

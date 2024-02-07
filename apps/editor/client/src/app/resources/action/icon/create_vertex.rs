@@ -10,7 +10,7 @@ use render_api::{
     base::{CpuMaterial, CpuMesh},
     components::Transform,
 };
-use storage::Assets;
+use storage::Storage;
 
 use crate::app::{
     plugin::Main,
@@ -46,8 +46,8 @@ pub(crate) fn execute(
     let mut system_state: SystemState<(
         Commands,
         Client<Main>,
-        ResMut<Assets<CpuMesh>>,
-        ResMut<Assets<CpuMaterial>>,
+        ResMut<Storage<CpuMesh>>,
+        ResMut<Storage<CpuMaterial>>,
     )> = SystemState::new(world);
     let (mut commands, mut client, mut meshes, mut materials) = system_state.get_mut(world);
 
@@ -83,8 +83,8 @@ pub(crate) fn execute(
     let mut system_state: SystemState<(
         Commands,
         Client<Main>,
-        ResMut<Assets<CpuMesh>>,
-        ResMut<Assets<CpuMaterial>>,
+        ResMut<Storage<CpuMesh>>,
+        ResMut<Storage<CpuMaterial>>,
         Query<&Transform>,
     )> = SystemState::new(world);
     let (mut commands, mut client, mut meshes, mut materials, transform_q) =

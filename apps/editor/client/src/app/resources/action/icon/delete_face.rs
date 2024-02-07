@@ -5,7 +5,7 @@ use bevy_ecs::{
 use bevy_log::info;
 
 use render_api::base::CpuMesh;
-use storage::Assets;
+use storage::Storage;
 
 use crate::app::resources::{
     action::icon::IconAction, icon_manager::IconManager, shape_data::CanvasShape,
@@ -21,7 +21,7 @@ pub(crate) fn execute(
     };
 
     info!("DeleteFace(local_face_entity: `{:?}`)", local_face_entity);
-    let mut system_state: SystemState<(Commands, ResMut<Assets<CpuMesh>>)> =
+    let mut system_state: SystemState<(Commands, ResMut<Storage<CpuMesh>>)> =
         SystemState::new(world);
     let (mut commands, mut meshes) = system_state.get_mut(world);
 

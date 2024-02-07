@@ -5,7 +5,7 @@ use bevy_ecs::{
 
 use render_api::base::CpuTexture2D;
 use render_gl::{core::GpuTexture2D, window::FrameInput};
-use storage::AssetMapping;
+use storage::SideStorage;
 
 use crate::{EguiContext, EguiUserTextures, GUI};
 
@@ -40,7 +40,7 @@ pub fn draw(
 pub fn sync(
     mut gui: NonSendMut<GUI>,
     mut user_textures: ResMut<EguiUserTextures>,
-    asset_mapping: ResMut<AssetMapping<CpuTexture2D, GpuTexture2D>>,
+    asset_mapping: ResMut<SideStorage<CpuTexture2D, GpuTexture2D>>,
 ) {
     if !user_textures.must_process() {
         return;

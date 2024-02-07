@@ -13,7 +13,7 @@ use naia_bevy_client::{events::InsertComponentEvents, Client, Replicate};
 use render_api::{
     base::{CpuMaterial, CpuMesh},
 };
-use storage::Assets;
+use storage::Storage;
 
 use editor_proto::components::{
     AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, ChangelistStatus, Edge3d,
@@ -284,8 +284,8 @@ pub fn insert_vertex_events(
     mut camera_manager: ResMut<CameraManager>,
     mut canvas: ResMut<Canvas>,
     mut vertex_manager: ResMut<VertexManager>,
-    mut meshes: ResMut<Assets<CpuMesh>>,
-    mut materials: ResMut<Assets<CpuMaterial>>,
+    mut meshes: ResMut<Storage<CpuMesh>>,
+    mut materials: ResMut<Storage<CpuMaterial>>,
     mut component_waitlist: ResMut<ComponentWaitlist>,
 ) {
     // on Vertex3d Insert Event
@@ -349,8 +349,8 @@ pub fn insert_edge_events(
     mut vertex_manager: ResMut<VertexManager>,
     mut edge_manager: ResMut<EdgeManager>,
     mut face_manager: ResMut<FaceManager>,
-    mut meshes: ResMut<Assets<CpuMesh>>,
-    mut materials: ResMut<Assets<CpuMaterial>>,
+    mut meshes: ResMut<Storage<CpuMesh>>,
+    mut materials: ResMut<Storage<CpuMaterial>>,
     mut component_waitlist: ResMut<ComponentWaitlist>,
 
     vertex_3d_q: Query<&Vertex3d>,
@@ -429,8 +429,8 @@ pub fn insert_face_events(
     mut vertex_manager: ResMut<VertexManager>,
     mut edge_manager: ResMut<EdgeManager>,
     mut face_manager: ResMut<FaceManager>,
-    mut meshes: ResMut<Assets<CpuMesh>>,
-    mut materials: ResMut<Assets<CpuMaterial>>,
+    mut meshes: ResMut<Storage<CpuMesh>>,
+    mut materials: ResMut<Storage<CpuMaterial>>,
     mut component_waitlist: ResMut<ComponentWaitlist>,
 
     vertex_3d_q: Query<&Vertex3d>,
@@ -506,8 +506,8 @@ pub fn insert_icon_vertex_events(
     mut camera_manager: ResMut<CameraManager>,
     mut canvas: ResMut<Canvas>,
     mut icon_manager: ResMut<IconManager>,
-    mut meshes: ResMut<Assets<CpuMesh>>,
-    mut materials: ResMut<Assets<CpuMaterial>>,
+    mut meshes: ResMut<Storage<CpuMesh>>,
+    mut materials: ResMut<Storage<CpuMaterial>>,
     mut component_waitlist: ResMut<ComponentWaitlist>,
 
     vertex_q: Query<&IconVertex>,
@@ -556,8 +556,8 @@ pub fn insert_icon_edge_events(
     mut camera_manager: ResMut<CameraManager>,
     mut canvas: ResMut<Canvas>,
     mut icon_manager: ResMut<IconManager>,
-    mut meshes: ResMut<Assets<CpuMesh>>,
-    mut materials: ResMut<Assets<CpuMaterial>>,
+    mut meshes: ResMut<Storage<CpuMesh>>,
+    mut materials: ResMut<Storage<CpuMaterial>>,
     mut component_waitlist: ResMut<ComponentWaitlist>,
 
     vertex_q: Query<&IconVertex>,
@@ -611,8 +611,8 @@ pub fn insert_icon_face_events(
     mut camera_manager: ResMut<CameraManager>,
     mut canvas: ResMut<Canvas>,
     mut icon_manager: ResMut<IconManager>,
-    mut meshes: ResMut<Assets<CpuMesh>>,
-    mut materials: ResMut<Assets<CpuMaterial>>,
+    mut meshes: ResMut<Storage<CpuMesh>>,
+    mut materials: ResMut<Storage<CpuMaterial>>,
     mut component_waitlist: ResMut<ComponentWaitlist>,
     mut shape_color_resync_events: EventWriter<ShapeColorResyncEvent>,
 
@@ -721,8 +721,8 @@ pub fn insert_owned_by_file_events(
     mut face_manager: ResMut<FaceManager>,
     mut model_manager: ResMut<ModelManager>,
     mut icon_manager: ResMut<IconManager>,
-    mut meshes: ResMut<Assets<CpuMesh>>,
-    mut materials: ResMut<Assets<CpuMaterial>>,
+    mut meshes: ResMut<Storage<CpuMesh>>,
+    mut materials: ResMut<Storage<CpuMaterial>>,
     mut component_waitlist: ResMut<ComponentWaitlist>,
 
     owned_by_tab_q: Query<&OwnedByFile>,
@@ -769,8 +769,8 @@ pub fn insert_file_type_events(
     mut edge_manager: ResMut<EdgeManager>,
     mut face_manager: ResMut<FaceManager>,
     mut model_manager: ResMut<ModelManager>,
-    mut meshes: ResMut<Assets<CpuMesh>>,
-    mut materials: ResMut<Assets<CpuMaterial>>,
+    mut meshes: ResMut<Storage<CpuMesh>>,
+    mut materials: ResMut<Storage<CpuMaterial>>,
     mut component_waitlist: ResMut<ComponentWaitlist>,
 
     file_type_q: Query<&FileType>,
@@ -936,8 +936,8 @@ pub fn insert_model_events(
     mut vertex_manager: ResMut<VertexManager>,
     mut edge_manager: ResMut<EdgeManager>,
     mut model_manager: ResMut<ModelManager>,
-    mut meshes: ResMut<Assets<CpuMesh>>,
-    mut materials: ResMut<Assets<CpuMaterial>>,
+    mut meshes: ResMut<Storage<CpuMesh>>,
+    mut materials: ResMut<Storage<CpuMaterial>>,
     mut component_waitlist: ResMut<ComponentWaitlist>,
 
     skin_or_scene_q: Query<&SkinOrSceneEntity>,
@@ -1004,8 +1004,8 @@ pub fn insert_shape_name_events(
     mut vertex_manager: ResMut<VertexManager>,
     mut edge_manager: ResMut<EdgeManager>,
     mut model_manager: ResMut<ModelManager>,
-    mut meshes: ResMut<Assets<CpuMesh>>,
-    mut materials: ResMut<Assets<CpuMaterial>>,
+    mut meshes: ResMut<Storage<CpuMesh>>,
+    mut materials: ResMut<Storage<CpuMaterial>>,
     mut component_waitlist: ResMut<ComponentWaitlist>,
 
     shape_name_q: Query<&ShapeName>,

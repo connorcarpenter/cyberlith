@@ -3,10 +3,10 @@ use render_api::{
     base::{CpuMaterial, CpuMesh},
     components::{RenderObjectBundle, Transform},
 };
-use storage::{AssetHash, Assets, Handle};
+use storage::{AssetHash, Storage, Handle};
 
 pub fn create_3d_edge_line(
-    meshes: &mut Assets<CpuMesh>,
+    meshes: &mut Storage<CpuMesh>,
     material: &Handle<CpuMaterial>,
     start: Vec3,
     end: Vec3,

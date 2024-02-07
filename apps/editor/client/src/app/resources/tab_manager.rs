@@ -17,7 +17,7 @@ use render_egui::{
     egui,
     egui::{vec2, Id, NumExt, Rect, Response, Rounding, Sense, Stroke, TextStyle, Ui, WidgetText},
 };
-use storage::{Assets, Handle};
+use storage::{Storage, Handle};
 
 use editor_proto::{
     channels::TabActionChannel,
@@ -762,7 +762,7 @@ fn file_ext_specific_sync_tabs_shape_colors(
                 Res<FaceManager>,
                 Res<PaletteManager>,
                 Res<SkinManager>,
-                ResMut<Assets<CpuMaterial>>,
+                ResMut<Storage<CpuMaterial>>,
                 Query<&mut Handle<CpuMaterial>, (With<Edge2dLocal>, Without<LocalShape>)>,
                 Query<
                     &mut Handle<CpuMaterial>,
@@ -817,7 +817,7 @@ fn file_ext_specific_sync_tabs_shape_colors(
                 Res<PaletteManager>,
                 Res<SkinManager>,
                 Res<ModelManager>,
-                ResMut<Assets<CpuMaterial>>,
+                ResMut<Storage<CpuMaterial>>,
                 Query<
                     (Entity, &mut Handle<CpuMaterial>, &OwnedByFileLocal),
                     (With<Face3dLocal>, Without<Edge2dLocal>, Without<FaceIcon2d>),
@@ -862,7 +862,7 @@ fn file_ext_specific_sync_tabs_shape_colors(
                 Res<FileManager>,
                 Res<IconManager>,
                 Res<PaletteManager>,
-                ResMut<Assets<CpuMaterial>>,
+                ResMut<Storage<CpuMaterial>>,
                 Query<&mut Handle<CpuMaterial>, (With<IconLocalFace>, Without<IconFace>)>,
                 Query<
                     (
@@ -899,7 +899,7 @@ fn file_ext_specific_sync_tabs_shape_colors(
         }
         _ => {
             let mut system_state: SystemState<(
-                ResMut<Assets<CpuMaterial>>,
+                ResMut<Storage<CpuMaterial>>,
                 Query<&mut Handle<CpuMaterial>, (With<Edge2dLocal>, Without<LocalShape>)>,
                 Query<
                     &mut Handle<CpuMaterial>,
@@ -936,7 +936,7 @@ fn set_face_3d_colors_recursive(
     palette_manager: &PaletteManager,
     skin_manager: &SkinManager,
     model_manager: &ModelManager,
-    materials: &mut Assets<CpuMaterial>,
+    materials: &mut Storage<CpuMaterial>,
     face_3d_q: &mut Query<
         (Entity, &mut Handle<CpuMaterial>, &OwnedByFileLocal),
         (With<Face3dLocal>, Without<Edge2dLocal>, Without<FaceIcon2d>),
@@ -1000,7 +1000,7 @@ fn set_face_3d_colors(
     file_manager: &FileManager,
     palette_manager: &PaletteManager,
     skin_manager: &SkinManager,
-    materials: &mut Assets<CpuMaterial>,
+    materials: &mut Storage<CpuMaterial>,
     face_3d_q: &mut Query<
         (Entity, &mut Handle<CpuMaterial>, &OwnedByFileLocal),
         (With<Face3dLocal>, Without<Edge2dLocal>, Without<FaceIcon2d>),
@@ -1084,7 +1084,7 @@ fn set_icon_face_colors(
     client: &Client<Main>,
     file_manager: &FileManager,
     palette_manager: &PaletteManager,
-    materials: &mut Assets<CpuMaterial>,
+    materials: &mut Storage<CpuMaterial>,
     net_face_q: &mut Query<
         (
             Entity,

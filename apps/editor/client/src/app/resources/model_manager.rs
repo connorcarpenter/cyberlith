@@ -21,7 +21,7 @@ use render_api::{
     shapes,
     shapes::set_2d_line_transform,
 };
-use storage::{Assets, Handle};
+use storage::{Storage, Handle};
 
 use editor_proto::components::{
     Edge3d, EdgeAngle, Face3d, FileExtension, FileType, NetTransform, NetTransformEntityType,
@@ -368,8 +368,8 @@ impl ModelManager {
             ResMut<CameraManager>,
             ResMut<VertexManager>,
             ResMut<EdgeManager>,
-            ResMut<Assets<CpuMesh>>,
-            ResMut<Assets<CpuMaterial>>,
+            ResMut<Storage<CpuMesh>>,
+            ResMut<Storage<CpuMaterial>>,
         )> = SystemState::new(world);
         let (
             mut commands,
@@ -464,8 +464,8 @@ impl ModelManager {
         camera_manager: &mut CameraManager,
         vertex_manager: &mut VertexManager,
         edge_manager: &mut EdgeManager,
-        meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
+        meshes: &mut Storage<CpuMesh>,
+        materials: &mut Storage<CpuMaterial>,
         owning_file_entity: &Entity,
         skel_bone_name_opt: Option<String>,
         net_transform_entity: Entity,
@@ -578,8 +578,8 @@ impl ModelManager {
         camera_manager: &mut CameraManager,
         vertex_manager: &mut VertexManager,
         edge_manager: &mut EdgeManager,
-        meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
+        meshes: &mut Storage<CpuMesh>,
+        materials: &mut Storage<CpuMaterial>,
         material: &Handle<CpuMaterial>,
         transform_entity: Entity,
         translation_entity_2d_opt: Option<Entity>,
@@ -1362,7 +1362,7 @@ impl ModelManager {
                 Res<FileManager>,
                 Res<CameraManager>,
                 Res<VertexManager>,
-                ResMut<Assets<CpuMesh>>,
+                ResMut<Storage<CpuMesh>>,
                 Query<(&Camera, &Projection, &Transform)>,
                 Query<&Vertex3d>,
                 Query<(&OwnedByFileLocal, &Edge3dLocal), With<Edge3d>>,

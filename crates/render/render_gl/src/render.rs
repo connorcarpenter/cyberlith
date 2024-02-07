@@ -5,7 +5,7 @@ use render_api::{
     components::{Camera, RenderLayers, RenderTarget as CameraRenderTarget},
     resources::RenderFrame,
 };
-use storage::AssetMapping;
+use storage::SideStorage;
 
 use crate::{
     core::{GpuDepthTexture2D, GpuTexture2D, RenderTarget},
@@ -21,8 +21,8 @@ pub fn render(
     gpu_mesh_manager: Res<GpuMeshManager>,
     gpu_material_manager: Res<GpuMaterialManager>,
     gpu_skin_manager: Res<GpuSkinManager>,
-    textures: ResMut<AssetMapping<CpuTexture2D, GpuTexture2D>>,
-    depth_textures: ResMut<AssetMapping<CpuTexture2D, GpuDepthTexture2D>>,
+    textures: ResMut<SideStorage<CpuTexture2D, GpuTexture2D>>,
+    depth_textures: ResMut<SideStorage<CpuTexture2D, GpuDepthTexture2D>>,
 ) {
     let mut layer_to_order: Vec<Vec<usize>> = Vec::with_capacity(RenderLayers::TOTAL_LAYERS);
     layer_to_order.resize(RenderLayers::TOTAL_LAYERS, Vec::new());

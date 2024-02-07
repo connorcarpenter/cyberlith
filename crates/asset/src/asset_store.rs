@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use bevy_log::warn;
 
 use render_api::base::{CpuMaterial, CpuSkin, CpuMesh};
-use storage::{Assets, Handle};
+use storage::{Storage, Handle};
 
 use crate::{
     asset_handle::AssetHandleImpl, AnimationData, AssetHandle,
@@ -11,14 +11,14 @@ use crate::{
 };
 
 pub(crate) struct AssetStore {
-    pub(crate) meshes: Assets<MeshFile>,
-    pub(crate) skeletons: Assets<SkeletonData>,
-    pub(crate) palettes: Assets<PaletteData>,
-    pub(crate) animations: Assets<AnimationData>,
-    pub(crate) icons: Assets<IconData>,
-    pub(crate) skins: Assets<SkinData>,
-    pub(crate) models: Assets<ModelData>,
-    pub(crate) scenes: Assets<SceneData>,
+    pub(crate) meshes: Storage<MeshFile>,
+    pub(crate) skeletons: Storage<SkeletonData>,
+    pub(crate) palettes: Storage<PaletteData>,
+    pub(crate) animations: Storage<AnimationData>,
+    pub(crate) icons: Storage<IconData>,
+    pub(crate) skins: Storage<SkinData>,
+    pub(crate) models: Storage<ModelData>,
+    pub(crate) scenes: Storage<SceneData>,
 
     // mesh file name, skin handle
     queued_meshes: Vec<Handle<MeshFile>>,
@@ -34,14 +34,14 @@ pub(crate) struct AssetStore {
 impl Default for AssetStore {
     fn default() -> Self {
         Self {
-            meshes: Assets::default(),
-            skeletons: Assets::default(),
-            palettes: Assets::default(),
-            animations: Assets::default(),
-            icons: Assets::default(),
-            skins: Assets::default(),
-            models: Assets::default(),
-            scenes: Assets::default(),
+            meshes: Storage::default(),
+            skeletons: Storage::default(),
+            palettes: Storage::default(),
+            animations: Storage::default(),
+            icons: Storage::default(),
+            skins: Storage::default(),
+            models: Storage::default(),
+            scenes: Storage::default(),
 
             queued_meshes: Vec::new(),
             queued_palettes: Vec::new(),
@@ -237,7 +237,7 @@ impl AssetStore {
         }
     }
 
-    pub(crate) fn sync_meshes(&mut self, meshes: &mut Assets<CpuMesh>) {
+    pub(crate) fn sync_meshes(&mut self, meshes: &mut Storage<CpuMesh>) {
         if self.queued_meshes.is_empty() {
             return;
         }
@@ -260,7 +260,7 @@ impl AssetStore {
         }
     }
 
-    pub(crate) fn sync_palettes(&mut self, materials: &mut Assets<CpuMaterial>) {
+    pub(crate) fn sync_palettes(&mut self, materials: &mut Storage<CpuMaterial>) {
         if self.queued_palettes.is_empty() {
             return;
         }
@@ -293,9 +293,9 @@ impl AssetStore {
 
     pub(crate) fn sync_skins(
         &mut self,
-        meshes: &Assets<CpuMesh>,
-        materials: &Assets<CpuMaterial>,
-        skins: &mut Assets<CpuSkin>,
+        meshes: &Storage<CpuMesh>,
+        materials: &Storage<CpuMaterial>,
+        skins: &mut Storage<CpuSkin>,
     ) {
         if self.ready_skins.is_empty() {
             return;
@@ -321,7 +321,7 @@ impl AssetStore {
         }
     }
 
-    pub(crate) fn sync_icons(&mut self, meshes: &mut Assets<CpuMesh>) {
+    pub(crate) fn sync_icons(&mut self, meshes: &mut Storage<CpuMesh>) {
         if self.queued_icons.is_empty() {
             return;
         }
@@ -342,9 +342,9 @@ impl AssetStore {
 
     pub(crate) fn sync_icon_skins(
         &mut self,
-        meshes: &Assets<CpuMesh>,
-        materials: &Assets<CpuMaterial>,
-        skins: &mut Assets<CpuSkin>,
+        meshes: &Storage<CpuMesh>,
+        materials: &Storage<CpuMaterial>,
+        skins: &mut Storage<CpuSkin>,
     ) {
         if self.ready_icons.is_empty() {
             return;

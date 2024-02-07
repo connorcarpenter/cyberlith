@@ -11,7 +11,7 @@ use render_api::{
     },
 };
 use render_egui::EguiUserTextures;
-use storage::{Assets, Handle};
+use storage::{Storage, Handle};
 
 use crate::app::{
     components::{DefaultDraw, SelectCircle, SelectLine, SelectTriangle, Vertex2d},
@@ -34,10 +34,10 @@ pub fn setup(
     mut icon_manager: ResMut<IconManager>,
     mut compass: ResMut<Compass>,
     mut grid: ResMut<Grid>,
-    mut textures: ResMut<Assets<CpuTexture2D>>,
+    mut textures: ResMut<Storage<CpuTexture2D>>,
     mut user_textures: ResMut<EguiUserTextures>,
-    mut meshes: ResMut<Assets<CpuMesh>>,
-    mut materials: ResMut<Assets<CpuMaterial>>,
+    mut meshes: ResMut<Storage<CpuMesh>>,
+    mut materials: ResMut<Storage<CpuMaterial>>,
 ) {
     info!("Environment: {}", config.general.env_name);
 
@@ -93,8 +93,8 @@ fn setup_2d_scene(
     commands: &mut Commands,
     camera_manager: &mut CameraManager,
     input_manager: &mut InputManager,
-    meshes: &mut Assets<CpuMesh>,
-    materials: &mut Assets<CpuMaterial>,
+    meshes: &mut Storage<CpuMesh>,
+    materials: &mut Storage<CpuMaterial>,
     texture_size: &Vec2,
     canvas_texture_handle: Handle<CpuTexture2D>,
 ) {
@@ -232,7 +232,7 @@ fn setup_3d_scene(
 
 fn new_render_texture(
     texture_size: &Vec2,
-    textures: &mut Assets<CpuTexture2D>,
+    textures: &mut Storage<CpuTexture2D>,
     user_textures: &mut EguiUserTextures,
 ) -> Handle<CpuTexture2D> {
     // This is the texture that will be rendered to.

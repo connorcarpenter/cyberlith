@@ -9,7 +9,7 @@ use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
     components::Transform,
 };
-use storage::{Assets, Handle};
+use storage::{Storage, Handle};
 
 use editor_proto::components::Vertex3d;
 
@@ -141,8 +141,8 @@ impl Compass {
         camera_manager: &mut CameraManager,
         vertex_manager: &mut VertexManager,
         edge_manager: &mut EdgeManager,
-        meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
+        meshes: &mut Storage<CpuMesh>,
+        materials: &mut Storage<CpuMaterial>,
     ) {
         let mat_handle = materials.add(CpuMaterial::new(Color::WHITE, 0.0, 0.0, 0.0));
         let (root_vertex_2d_entity, vertex_3d_entity, _, _) = vertex_manager.new_local_vertex(
@@ -204,8 +204,8 @@ impl Compass {
         camera_manager: &mut CameraManager,
         vertex_manager: &mut VertexManager,
         edge_manager: &mut EdgeManager,
-        meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
+        meshes: &mut Storage<CpuMesh>,
+        materials: &mut Storage<CpuMaterial>,
         material: &Handle<CpuMaterial>,
         root_vertex_2d_entity: Entity,
         position: Vec3,

@@ -5,7 +5,7 @@ use bevy_log::info;
 use naia_serde::BitReader;
 
 use render_api::base::{CpuMaterial, CpuMesh, CpuSkin};
-use storage::{AssetHash, Assets, Handle};
+use storage::{AssetHash, Storage, Handle};
 
 use crate::{
     asset_dependency::AssetDependency, asset_handle::AssetHandleImpl, AssetHandle, MeshFile,
@@ -95,8 +95,8 @@ impl SkinData {
 
     pub(crate) fn load_cpu_skin(
         &mut self,
-        materials: &Assets<CpuMaterial>,
-        skins: &mut Assets<CpuSkin>,
+        materials: &Storage<CpuMaterial>,
+        skins: &mut Storage<CpuSkin>,
         mesh_data: &CpuMesh,
         palette_data: &PaletteData,
     ) -> bool {

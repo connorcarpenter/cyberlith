@@ -10,7 +10,7 @@ use render_api::{
     base::{CpuMaterial, CpuMesh},
     components::Transform,
 };
-use storage::Assets;
+use storage::Storage;
 
 use editor_proto::components::FileExtension;
 
@@ -56,8 +56,8 @@ pub(crate) fn execute(
         ResMut<VertexManager>,
         ResMut<EdgeManager>,
         ResMut<FaceManager>,
-        ResMut<Assets<CpuMesh>>,
-        ResMut<Assets<CpuMaterial>>,
+        ResMut<Storage<CpuMesh>>,
+        ResMut<Storage<CpuMaterial>>,
     )> = SystemState::new(world);
     let (
         mut commands,
@@ -139,8 +139,8 @@ pub(crate) fn execute(
         ResMut<VertexManager>,
         ResMut<EdgeManager>,
         ResMut<FaceManager>,
-        ResMut<Assets<CpuMesh>>,
-        ResMut<Assets<CpuMaterial>>,
+        ResMut<Storage<CpuMesh>>,
+        ResMut<Storage<CpuMaterial>>,
         Query<&Transform>,
     )> = SystemState::new(world);
     let (

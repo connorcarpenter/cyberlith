@@ -7,7 +7,7 @@ use render_api::{
     components::{RenderLayer, Transform},
     resources::RenderFrame,
 };
-use storage::{Assets, Handle};
+use storage::{Storage, Handle};
 
 use crate::{
     AnimationData, AssetHandle,
@@ -34,9 +34,9 @@ impl AssetManager {
 
     pub fn sync(
         mut asset_manager: ResMut<Self>,
-        mut meshes: ResMut<Assets<CpuMesh>>,
-        mut materials: ResMut<Assets<CpuMaterial>>,
-        mut skins: ResMut<Assets<CpuSkin>>,
+        mut meshes: ResMut<Storage<CpuMesh>>,
+        mut materials: ResMut<Storage<CpuMaterial>>,
+        mut skins: ResMut<Storage<CpuSkin>>,
     ) {
         asset_manager.store.sync_meshes(&mut meshes);
         asset_manager.store.sync_icons(&mut meshes);

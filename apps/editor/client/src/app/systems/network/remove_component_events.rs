@@ -8,7 +8,7 @@ use bevy_log::info;
 use naia_bevy_client::{events::RemoveComponentEvents, Client, Replicate};
 
 use render_api::{base::CpuMesh};
-use storage::Assets;
+use storage::Storage;
 
 use editor_proto::components::{
     AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, ChangelistStatus, Edge3d,
@@ -170,7 +170,7 @@ pub fn remove_shape_component_events(
     mut vertex_manager: ResMut<VertexManager>,
     mut edge_manager: ResMut<EdgeManager>,
     mut face_manager: ResMut<FaceManager>,
-    mut meshes: ResMut<Assets<CpuMesh>>,
+    mut meshes: ResMut<Storage<CpuMesh>>,
 ) {
     for event in shape_name_events.read() {
         let entity = event.entity;
@@ -226,7 +226,7 @@ pub fn remove_icon_component_events(
 
     mut commands: Commands,
     mut icon_manager: ResMut<IconManager>,
-    mut meshes: ResMut<Assets<CpuMesh>>,
+    mut meshes: ResMut<Storage<CpuMesh>>,
 ) {
     for event in vertex_events.read() {
         let entity = event.entity;

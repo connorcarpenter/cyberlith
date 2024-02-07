@@ -3,7 +3,7 @@ use bevy_log::info;
 use naia_serde::BitReader;
 
 use render_api::base::{Color, CpuMaterial};
-use storage::{AssetHash, Assets, Handle};
+use storage::{AssetHash, Storage, Handle};
 
 impl AssetHash<PaletteData> for String {}
 
@@ -35,7 +35,7 @@ impl PaletteData {
         return false;
     }
 
-    pub(crate) fn load_cpu_materials(&mut self, materials: &mut Assets<CpuMaterial>) {
+    pub(crate) fn load_cpu_materials(&mut self, materials: &mut Storage<CpuMaterial>) {
         for color in &mut self.colors {
             let PaletteColor::Raw(r, g, b) = color else {
                 panic!("should only load once!");

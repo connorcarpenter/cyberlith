@@ -1,8 +1,8 @@
 
-mod assets;
+mod storage;
 mod handle;
-mod asset_mapping;
+mod side_storage;
 
-pub use assets::*;
+pub use storage::*;
 pub use handle::*;
-pub use asset_mapping::*;
+pub use side_storage::*;

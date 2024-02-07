@@ -13,7 +13,7 @@ use render_api::{
     base::{CpuMaterial, CpuMesh},
     components::{Transform, Visibility},
 };
-use storage::Assets;
+use storage::Storage;
 
 use editor_proto::components::{
     AnimFrame, EdgeAngle, FileExtension, IconFrame, PaletteColor, Vertex3d,
@@ -534,8 +534,8 @@ pub fn process_faces(
     mut edge_manager: ResMut<EdgeManager>,
     mut face_manager: ResMut<FaceManager>,
     mut icon_manager: ResMut<IconManager>,
-    mut meshes: ResMut<Assets<CpuMesh>>,
-    mut materials: ResMut<Assets<CpuMaterial>>,
+    mut meshes: ResMut<Storage<CpuMesh>>,
+    mut materials: ResMut<Storage<CpuMaterial>>,
 ) {
     face_manager.process_new_faces(
         &mut commands,

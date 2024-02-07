@@ -4,10 +4,10 @@ use render_api::{
     components::{RenderObjectBundle, Transform},
     shapes::{set_2d_line_transform, Line},
 };
-use storage::{Assets, Handle};
+use storage::{Storage, Handle};
 
 pub fn create_2d_edge_line(
-    meshes: &mut Assets<CpuMesh>,
+    meshes: &mut Storage<CpuMesh>,
     material: &Handle<CpuMaterial>,
     start: Vec2,
     end: Vec2,
