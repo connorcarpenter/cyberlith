@@ -10,6 +10,8 @@ mod plugin;
 mod scene;
 mod skeleton;
 mod skin;
+mod asset_renderer;
+mod asset_store;
 
 pub use animation::*;
 pub use asset_handle::*;
