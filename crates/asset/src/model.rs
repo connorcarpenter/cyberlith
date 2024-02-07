@@ -4,7 +4,7 @@ use naia_serde::BitReader;
 
 use render_api::components::Transform;
 use storage::{AssetHash, Handle};
-use filetypes::FileTransformEntityType;
+use asset_io::FileTransformEntityType;
 use math::{Quat, Vec3};
 
 use crate::{
@@ -176,7 +176,7 @@ impl From<String> for ModelData {
 
         let mut bit_reader = BitReader::new(&data);
 
-        let actions = filetypes::ModelAction::read(&mut bit_reader).expect("unable to parse file");
+        let actions = asset_io::ModelAction::read(&mut bit_reader).expect("unable to parse file");
 
         let mut skel_file_opt = None;
         let mut skin_or_scene_files = Vec::new();
@@ -184,11 +184,11 @@ impl From<String> for ModelData {
         let mut file_index = 0;
         for action in actions {
             match action {
-                filetypes::ModelAction::SkelFile(path, file_name) => {
+                asset_io::ModelAction::SkelFile(path, file_name) => {
                     info!("SkelFile: {}/{}", path, file_name);
                     skel_file_opt = Some(format!("{}/{}", path, file_name));
                 }
-                filetypes::ModelAction::SkinOrSceneFile(path, name, file_type) => {
+                asset_io::ModelAction::SkinOrSceneFile(path, name, file_type) => {
                     info!(
                         "SkinOrSceneFile {} : {}/{}. Type: {:?}",
                         file_index, path, name, file_type
@@ -211,7 +211,7 @@ impl From<String> for ModelData {
 
                     file_index += 1;
                 }
-                filetypes::ModelAction::NetTransform(
+                asset_io::ModelAction::NetTransform(
                     file_index,
                     name,
                     x,

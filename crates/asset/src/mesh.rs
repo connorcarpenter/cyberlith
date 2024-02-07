@@ -69,7 +69,7 @@ impl From<MeshFilePath> for CpuMesh {
 
         let mut bit_reader = BitReader::new(&data);
 
-        let actions = filetypes::MeshAction::read(&mut bit_reader).expect("unable to parse file");
+        let actions = asset_io::MeshAction::read(&mut bit_reader).expect("unable to parse file");
 
         info!("--- reading mesh file: {} ---", &path);
 
@@ -78,12 +78,12 @@ impl From<MeshFilePath> for CpuMesh {
         let mut face_indices = Vec::new();
         for action in actions {
             match action {
-                filetypes::MeshAction::Vertex(x, y, z) => {
+                asset_io::MeshAction::Vertex(x, y, z) => {
                     // info!("Vertex: {}, {}, {}", x, y, z);
                     let vertex = Vec3::new(x as f32, y as f32, z as f32);
                     vertices.push(vertex);
                 }
-                filetypes::MeshAction::Face(
+                asset_io::MeshAction::Face(
                     face_id,
                     vertex_a_id,
                     vertex_b_id,
@@ -110,7 +110,7 @@ impl From<MeshFilePath> for CpuMesh {
                     face_indices.push(face_id);
                     face_indices.push(face_id);
                 }
-                filetypes::MeshAction::Edge(_, _) => {
+                asset_io::MeshAction::Edge(_, _) => {
                     // do nothing
                 }
             }

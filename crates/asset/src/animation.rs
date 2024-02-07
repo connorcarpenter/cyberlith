@@ -197,7 +197,7 @@ impl From<String> for AnimationData {
 
         let mut bit_reader = BitReader::new(&data);
 
-        let actions = filetypes::AnimAction::read(&mut bit_reader).expect("unable to parse file");
+        let actions = asset_io::AnimAction::read(&mut bit_reader).expect("unable to parse file");
 
         let mut skel_file_opt = None;
         let mut name_map = HashMap::new();
@@ -205,15 +205,15 @@ impl From<String> for AnimationData {
         let mut total_animation_time_ms = 0.0;
         for action in actions {
             match action {
-                filetypes::AnimAction::SkelFile(path, file_name) => {
+                asset_io::AnimAction::SkelFile(path, file_name) => {
                     info!("SkelFile: {}/{}", path, file_name);
                     skel_file_opt = Some(format!("{}/{}", path, file_name));
                 }
-                filetypes::AnimAction::ShapeIndex(name) => {
+                asset_io::AnimAction::ShapeIndex(name) => {
                     //info!("ShapeIndex {}: {}", names.len(), name);
                     name_map.insert(name_map.len() as u16, name);
                 }
-                filetypes::AnimAction::Frame(rotation_map, transition_time) => {
+                asset_io::AnimAction::Frame(rotation_map, transition_time) => {
                     info!(
                         "Frame {}: {:?}ms",
                         frames.len(),

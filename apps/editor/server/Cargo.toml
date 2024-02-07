@@ -11,7 +11,7 @@ publish = false
 [dependencies]
 editor_proto = { path = "proto" }
 naia-bevy-server = { path = "../../../../naia/adapters/bevy/server", features = [ "transport_webrtc" ] }
-filetypes = { path = "../../../crates/asset/filetypes", features = ["read", "write"] }
+asset_io = { path = "../../../crates/asset/io", features = ["read", "write"] }
 math = { path = "../../../crates/math" }
 
 # These are the official Bevy crates, going forward, we can use them because the Server isn't built for Wasm

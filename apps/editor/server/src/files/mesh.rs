@@ -9,7 +9,7 @@ use bevy_log::info;
 
 use naia_bevy_server::{BitReader, CommandsExt, ReplicationConfig, Server};
 
-use filetypes::MeshAction;
+use asset_io::MeshAction;
 
 use editor_proto::components::{Edge3d, Face3d, FileExtension, FileType, Vertex3d};
 

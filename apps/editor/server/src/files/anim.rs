@@ -9,7 +9,7 @@ use bevy_log::info;
 
 use naia_bevy_server::{BitReader, CommandsExt, ReplicationConfig, Server};
 
-use filetypes::AnimAction;
+use asset_io::AnimAction;
 
 use editor_proto::{
     components::{AnimFrame, AnimRotation, FileExtension, Transition},

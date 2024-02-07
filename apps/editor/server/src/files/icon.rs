@@ -9,7 +9,7 @@ use bevy_log::info;
 
 use naia_bevy_server::{BitReader, CommandsExt, ReplicationConfig, Server};
 
-use filetypes::{IconAction, IconFrameAction};
+use asset_io::{IconAction, IconFrameAction};
 
 use editor_proto::{
     components::{FileExtension, IconEdge, IconFace, IconFrame, IconVertex, PaletteColor},

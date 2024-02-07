@@ -64,14 +64,14 @@ impl From<String> for PaletteData {
         let mut bit_reader = BitReader::new(&data);
 
         let actions =
-            filetypes::PaletteAction::read(&mut bit_reader).expect("unable to parse file");
+            asset_io::PaletteAction::read(&mut bit_reader).expect("unable to parse file");
 
         info!("--- reading palette: {} ---", path);
 
         let mut colors = Vec::new();
         for action in actions {
             match action {
-                filetypes::PaletteAction::Color(r, g, b) => {
+                asset_io::PaletteAction::Color(r, g, b) => {
                     info!("loaded color {} : ({}, {}, {})", colors.len(), r, g, b);
                     colors.push(PaletteColor::Raw(r, g, b));
                 }

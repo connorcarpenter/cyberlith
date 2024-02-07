@@ -228,16 +228,16 @@ impl From<String> for IconData {
 
         let mut bit_reader = BitReader::new(&data);
 
-        let actions = filetypes::IconAction::read(&mut bit_reader).expect("unable to parse file");
+        let actions = asset_io::IconAction::read(&mut bit_reader).expect("unable to parse file");
 
         let mut palette_file_opt = None;
         let mut frames = Vec::new();
         for action in actions {
             match action {
-                filetypes::IconAction::PaletteFile(path, file_name) => {
+                asset_io::IconAction::PaletteFile(path, file_name) => {
                     palette_file_opt = Some(format!("{}/{}", path, file_name));
                 }
-                filetypes::IconAction::Frame(frame_actions) => {
+                asset_io::IconAction::Frame(frame_actions) => {
                     info!("- Frame Start: {} -", frames.len());
 
                     let mut vertices = Vec::new();
@@ -247,12 +247,12 @@ impl From<String> for IconData {
 
                     for frame_action in frame_actions {
                         match frame_action {
-                            filetypes::IconFrameAction::Vertex(x, y) => {
+                            asset_io::IconFrameAction::Vertex(x, y) => {
                                 info!("Vertex: ({}, {})", x, y);
                                 let vertex = Vec3::new(x as f32, y as f32, 0.0);
                                 vertices.push(vertex);
                             }
-                            filetypes::IconFrameAction::Face(
+                            asset_io::IconFrameAction::Face(
                                 face_id,
                                 color_index,
                                 vertex_a_id,
@@ -278,7 +278,7 @@ impl From<String> for IconData {
 
                                 face_color_ids.push((face_id, color_index));
                             }
-                            filetypes::IconFrameAction::Edge(_, _) => {
+                            asset_io::IconFrameAction::Edge(_, _) => {
                                 // do nothing
                             }
                         }
