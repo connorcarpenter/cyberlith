@@ -5,13 +5,13 @@ use render_api::{
     components::{Camera, RenderLayers, RenderTarget as CameraRenderTarget},
     resources::RenderFrame,
 };
+use storage::AssetMapping;
 
 use crate::{
-    asset_mapping::AssetMapping,
     core::{GpuDepthTexture2D, GpuTexture2D, RenderTarget},
-    renderer::{RenderPass, RenderTargetExt},
-    window::FrameInput,
-    GpuMaterialManager, GpuMeshManager, GpuSkinManager,
+    GpuMaterialManager,
+    GpuMeshManager,
+    GpuSkinManager, renderer::{RenderPass, RenderTargetExt}, window::FrameInput,
 };
 
 pub fn render(

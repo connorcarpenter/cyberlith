@@ -2,7 +2,7 @@ use std::{collections::HashMap, default::Default, marker::PhantomData};
 
 use bevy_ecs::system::Resource;
 
-use storage::Handle;
+use crate::Handle;
 
 #[derive(Resource)]
 pub struct AssetMapping<T, U> {
