@@ -39,7 +39,6 @@ members = [
     "crates/http/http_client",
     "crates/http/http_common",
     "crates/http/http_client_shared",
-    "crates/serde",
     "crates/crypto",
     "crates/executor",
     "crates/storage",
