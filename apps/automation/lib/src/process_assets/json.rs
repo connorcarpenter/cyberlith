@@ -1,8 +1,6 @@
-use std::{fs, path::Path};
-use std::fs::File;
-use std::io::Read;
+use std::{fs, fs::File, io::Read, path::Path};
 
-use git2::{Cred, Repository, Tree};
+use git2::{BranchType, Cred, PushOptions, Repository, Tree};
 use log::info;
 
 use crate::CliError;
@@ -16,6 +14,7 @@ pub(crate) fn process_assets() -> Result<(), CliError> {
     let files = load_all_files(root, &repo);
 
     // switch to "json" branch
+    switch_branches(&repo, "json");
 
     // delete all files, push
 
@@ -103,6 +102,73 @@ fn load_all_files(root: &str, repo: &Repository) -> Vec<FileEntry> {
     fill_file_entries_from_git(&mut output, root, &repo, &tree, "");
 
     output
+}
+
+// will create branch if necessary
+fn switch_branches(repo: &Repository, branch_name: &str) {
+
+    let access_token = include_str!("../../../../../.secrets/github_token");
+
+    let mut fetch_options = git2::FetchOptions::new();
+    fetch_options.remote_callbacks(get_remote_callbacks(access_token));
+
+    let mut remote = repo.find_remote("origin").unwrap();
+    remote
+        .fetch(&[branch_name, "main"], Some(&mut fetch_options), None)
+        .unwrap();
+
+    let tracking_branch = format!("refs/remotes/origin/{}", branch_name);
+    let branch_exists = repo.find_reference(&tracking_branch).is_ok();
+
+    if branch_exists {
+        // Remote branch exists, switch to it and pull
+        info!("Remote branch: {:?} exists!", branch_name);
+        let branch_reference = repo.find_reference(&tracking_branch).unwrap();
+        let branch_commit = repo.find_commit(branch_reference.target().unwrap()).unwrap();
+        let local_branch_name = format!("refs/heads/{}", branch_name);
+
+        // Checkout the local branch
+        let local_branch = repo.find_branch(&local_branch_name, BranchType::Local);
+        let mut checkout_builder = git2::build::CheckoutBuilder::new();
+        repo.checkout_tree(branch_commit.as_object(), Some(&mut checkout_builder)).unwrap();
+        repo.set_head(&local_branch_name).unwrap();
+
+        // Pull changes from the remote branch
+        remote.fetch(&[branch_name], Some(&mut fetch_options), None).unwrap();
+    } else {
+        // Remote branch doesn't exist, create and push it
+        info!("remote branch {:?} doesn't exist, creating..", branch_name);
+
+        let branch_reference = repo.head().unwrap();
+        let branch_commit = branch_reference.peel_to_commit().unwrap();
+
+        // Create the local branch
+        let local_branch_name = format!("refs/heads/{}", branch_name);
+        let branch_reference = repo.branch(&local_branch_name, &branch_commit, true).unwrap();
+
+        // Set up tracking to the remote branch
+        repo.reference(
+            &tracking_branch,
+            branch_commit.id(),
+            true,
+            "Setting up tracking branch",
+        ).unwrap();
+
+        // Checkout the new branch
+        let mut checkout_builder = git2::build::CheckoutBuilder::new();
+        repo.checkout_tree(branch_commit.as_object(), Some(&mut checkout_builder)).unwrap();
+        repo.set_head(&local_branch_name).unwrap();
+
+        // Push the new branch to the remote
+        let mut push_options = PushOptions::new();
+        push_options.remote_callbacks(get_remote_callbacks(access_token));
+
+        remote.push(&[&format!("refs/heads/{}:refs/heads/{}", branch_name, branch_name)], Some(&mut push_options)).unwrap();
+
+        info!("Created remote branch: {:?}", branch_name);
+    }
+
+    info!("switched to {:?} branch!", branch_name);
 }
 
 fn get_remote_callbacks(access_token: &str) -> git2::RemoteCallbacks {
