@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Deploy Up [Content]" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
-    <option name="command" value="run up_content" />
+  <configuration default="false" name="Automation - Up [ALL!] (-$0.01 !)" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
+    <option name="command" value="run up" />
     <option name="workingDirectory" value="file://$PROJECT_DIR$/apps/automation/cli" />
     <envs />
     <option name="emulateTerminal" value="false" />
