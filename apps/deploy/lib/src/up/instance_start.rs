@@ -1,21 +1,21 @@
 use log::info;
-use vultr::{VultrApi, VultrError, VultrInstanceType};
+use vultr::{VultrApi, VultrInstanceType};
 
-use crate::get_api_key;
+use crate::{CliError, get_api_key};
 
-pub async fn instance_start() -> Result<String, VultrError> {
+pub async fn instance_start() -> Result<String, CliError> {
 
     let api_key = get_api_key();
 
     let api = VultrApi::new(api_key);
 
-    let instances = api.get_instance_list_async().await?;
+    let instances = api.get_instance_list_async().await.map_err(|e| CliError::from(e))?;
     if instances.len() == 1 {
         let instance = instances.get(0).unwrap();
         return Ok(instance.id.clone());
     }
     if instances.len() > 1 {
-        return Err(VultrError::Dashboard("Multiple instances running".to_string()));
+        return Err(CliError::Message("Multiple instances running".to_string()));
     }
 
     // get region id
@@ -23,7 +23,7 @@ pub async fn instance_start() -> Result<String, VultrError> {
     let region = regions
         .iter()
         .find(|r| r.city == "Chicago" && r.country == "US" && r.continent == "North America")
-        .ok_or(VultrError::Dashboard("No region found".to_string()))?;
+        .ok_or(CliError::Message("No region found".to_string()))?;
     let region_id = region.id.clone();
     info!("found region id: {}", region_id);
 
@@ -32,7 +32,7 @@ pub async fn instance_start() -> Result<String, VultrError> {
     let plan = plans
         .iter()
         .find(|p| p.monthly_cost == 5.0 && p.vcpu_count == 1 && p.plan_type == "vc2" && p.ram ==1024 && p.disk == 25.0 && p.bandwidth == 1024.0)
-        .ok_or(VultrError::Dashboard("No plan found".to_string()))?;
+        .ok_or(CliError::Message("No plan found".to_string()))?;
     let plan_id = plan.id.clone();
     info!("found plan id: {:?}", plan_id);
 
@@ -41,7 +41,7 @@ pub async fn instance_start() -> Result<String, VultrError> {
     let os = oses
         .iter()
         .find(|o| o.family.contains("ubuntu") && o.arch == "x64" && o.name == "Ubuntu 22.04 LTS x64")
-        .ok_or(VultrError::Dashboard("No OS found".to_string()))?;
+        .ok_or(CliError::Message("No OS found".to_string()))?;
     let os_id = os.id;
     info!("found OS id: {:?}", os_id);
 
@@ -50,7 +50,7 @@ pub async fn instance_start() -> Result<String, VultrError> {
     let ssh_key = ssh_keys
         .iter()
         .find(|k| k.name == "Primary")
-        .ok_or(VultrError::Dashboard("No SSH key found".to_string()))?;
+        .ok_or(CliError::Message("No SSH key found".to_string()))?;
     let ssh_key_id = ssh_key.id.clone();
     info!("found ssh key id: {:?}", ssh_key_id);
 
@@ -59,7 +59,7 @@ pub async fn instance_start() -> Result<String, VultrError> {
     let reserved_ip = reserved_ips
         .iter()
         .find(|i| i.label == "Primary")
-        .ok_or(VultrError::Dashboard("No reserved IP found".to_string()))?;
+        .ok_or(CliError::Message("No reserved IP found".to_string()))?;
     let reserved_ip_id = reserved_ip.id.clone();
     info!("found reserved ip id: {:?}", reserved_ip_id);
 
@@ -68,7 +68,7 @@ pub async fn instance_start() -> Result<String, VultrError> {
     let firewall_group = firewall_groups
         .iter()
         .find(|g| g.description == "primary_firewall")
-        .ok_or(VultrError::Dashboard("No firewall group found".to_string()))?;
+        .ok_or(CliError::Message("No firewall group found".to_string()))?;
     let firewall_group_id = firewall_group.id.clone();
     info!("found firewall group id: {:?}", firewall_group_id);
 
@@ -77,7 +77,7 @@ pub async fn instance_start() -> Result<String, VultrError> {
     // let iso = isos
     //     .iter()
     //     .find(|i| i.filename == "ubuntu-22.04.3-live-server-amd64.iso")
-    //     .ok_or(VultrError::Dashboard("No ISO found".to_string()))?;
+    //     .ok_or(CliError::Message("No ISO found".to_string()))?;
     // let iso_id = iso.id.clone();
     // info!("found iso id: {:?}", iso_id);
 

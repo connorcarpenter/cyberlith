@@ -1,11 +1,11 @@
 use std::time::Duration;
 
 use log::{info, warn};
-use vultr::{VultrApi, VultrError};
+use vultr::VultrApi;
 
-use crate::get_api_key;
+use crate::{CliError, get_api_key};
 
-pub async fn instance_wait(instance_id: &str) -> Result<(), VultrError> {
+pub async fn instance_wait(instance_id: &str) -> Result<(), CliError> {
     let api_key = get_api_key();
 
     let api = VultrApi::new(api_key);

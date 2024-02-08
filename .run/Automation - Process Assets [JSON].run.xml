@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Deploy Up [Content]" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
-    <option name="command" value="run up_content" />
+  <configuration default="false" name="Automation - Process Assets [JSON]" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
+    <option name="command" value="run process_assets json" />
     <option name="workingDirectory" value="file://$PROJECT_DIR$/apps/deploy/cli" />
     <envs />
     <option name="emulateTerminal" value="false" />

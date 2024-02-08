@@ -3,7 +3,7 @@
     <option name="command" value="run down" />
     <option name="workingDirectory" value="file://$PROJECT_DIR$/apps/deploy/cli" />
     <envs />
-    <option name="emulateTerminal" value="true" />
+    <option name="emulateTerminal" value="false" />
     <option name="channel" value="DEFAULT" />
     <option name="requiredFeatures" value="false" />
     <option name="allFeatures" value="false" />

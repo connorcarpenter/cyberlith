@@ -3,11 +3,10 @@ use std::time::Duration;
 
 use crossbeam_channel::TryRecvError;
 use log::{info, warn};
-use vultr::VultrError;
 
-use crate::{utils::{check_channel, run_command, run_ssh_command, ssh_session_close, ssh_session_create, thread_init, thread_init_compat}, server_build, containers_up::{container_create_and_start, container_stop_and_remove, image_pull, image_push}, get_container_registry_creds, get_container_registry_url};
+use crate::{utils::{check_channel, run_command, run_ssh_command, ssh_session_close, ssh_session_create, thread_init, thread_init_compat}, server_build, containers_up::{container_create_and_start, container_stop_and_remove, image_pull, image_push}, get_container_registry_creds, get_container_registry_url, CliError};
 
-pub fn up_content() -> Result<(), VultrError> {
+pub fn up_content() -> Result<(), CliError> {
 
     let content_rcvr = thread_init(server_build::server_build_content);
     let mut content_rdy = false;
@@ -28,7 +27,7 @@ pub fn up_content() -> Result<(), VultrError> {
     Ok(())
 }
 
-fn containers_up() -> Result<(), VultrError> {
+fn containers_up() -> Result<(), CliError> {
     let rcvr = thread_init_compat(containers_up_impl);
 
     loop {
@@ -42,7 +41,7 @@ fn containers_up() -> Result<(), VultrError> {
     }
 }
 
-async fn containers_up_impl() -> Result<(), VultrError> {
+async fn containers_up_impl() -> Result<(), CliError> {
 
     // login on client
     run_command("containers", format!("docker login https://{} {}", get_container_registry_url(), get_container_registry_creds()).as_str()).await?;

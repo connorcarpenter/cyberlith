@@ -9,11 +9,10 @@ pub mod containers_up;
 use std::time::Duration;
 
 use log::info;
-use vultr::VultrError;
 
-use crate::{utils::{check_channel, thread_init, thread_init_compat}, up::containers_up::containers_up};
+use crate::{utils::{check_channel, thread_init, thread_init_compat}, up::containers_up::containers_up, CliError};
 
-pub fn up() -> Result<(), VultrError> {
+pub fn up() -> Result<(), CliError> {
 
     let instance_rcvr = thread_init_compat(instance_up::instance_up);
     let mut instance_rdy = false;

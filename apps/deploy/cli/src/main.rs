@@ -1,6 +1,7 @@
 use clap::Command;
-use log::{LevelFilter, warn};
+use log::{info, LevelFilter, warn};
 use simple_logger::SimpleLogger;
+use deploy_lib::CliError;
 
 fn cli() -> Command {
     Command::new("deploy_cli")
@@ -40,7 +41,13 @@ fn main() {
         Some(("down", _sub_matches)) => {
             deploy_lib::down()
         }
-        _ => unreachable!(), // If all subcommands are defined above, anything else is unreachable!()
+        Some((process_assets, sub_matches)) => {
+            info!("Processing assets: {:?}, {:?}", process_assets, sub_matches);
+            Ok(())
+        }
+        _ => {
+            Err(CliError::Message("Invalid subcommand".to_string()))
+        },
     };
 
     match result {

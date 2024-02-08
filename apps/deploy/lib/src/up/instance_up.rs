@@ -1,10 +1,8 @@
 use log::{info, warn};
-use vultr::VultrError;
 
-use crate::up::{instance_init::instance_init, instance_start::instance_start, instance_wait::instance_wait, ssh_init::ssh_init};
-use crate::utils::ssh_session_close;
+use crate::{CliError, utils::ssh_session_close, up::{instance_init::instance_init, instance_start::instance_start, instance_wait::instance_wait, ssh_init::ssh_init}};
 
-pub async fn instance_up() -> Result<(), VultrError> {
+pub async fn instance_up() -> Result<(), CliError> {
 
     // start instance
     info!("Starting instance");

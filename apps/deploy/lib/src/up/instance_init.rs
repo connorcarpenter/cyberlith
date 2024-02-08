@@ -2,18 +2,17 @@ use std::time::Duration;
 
 use log::{info, warn};
 use openssh::Session;
-use vultr::VultrError;
 
-use crate::utils::{run_ssh_command, run_ssh_raw_command};
+use crate::{utils::{run_ssh_command, run_ssh_raw_command}, CliError};
 
-pub async fn instance_init(session: &Session) -> Result<(), VultrError> {
+pub async fn instance_init(session: &Session) -> Result<(), CliError> {
 
     setup_docker(&session).await?;
 
     Ok(())
 }
 
-async fn setup_docker(session: &Session) -> Result<(), VultrError> {
+async fn setup_docker(session: &Session) -> Result<(), CliError> {
 
     //info!("# update");
     run_ssh_command(&session, "sudo apt-get update").await?;
@@ -60,7 +59,7 @@ async fn setup_docker(session: &Session) -> Result<(), VultrError> {
 }
 
 // // this is no loger necessary because Vultrs Firewall Group config handles it, but it may be useful to reference in the future
-// async fn setup_iptables(session: &Session) -> Result<(), VultrError> {
+// async fn setup_iptables(session: &Session) -> Result<(), CliError> {
 //
 //     info!("Setting up IPTables");
 //

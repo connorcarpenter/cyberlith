@@ -2,11 +2,10 @@ use std::time::Duration;
 
 use log::{info, warn};
 use openssh::Session;
-use vultr::VultrError;
 
-use crate::utils::{run_command, ssh_session_create};
+use crate::{utils::{run_command, ssh_session_create}, CliError};
 
-pub async fn ssh_init() -> Result<Session, VultrError> {
+pub async fn ssh_init() -> Result<Session, CliError> {
 
     remove_existing_known_host().await?;
 
@@ -29,12 +28,12 @@ pub async fn ssh_init() -> Result<Session, VultrError> {
     Ok(session)
 }
 
-async fn remove_existing_known_host() -> Result<(), VultrError> {
+async fn remove_existing_known_host() -> Result<(), CliError> {
     let command_str = "ssh-keygen -f /home/connor/.ssh/known_hosts -R cyberlith.com";
     run_command("SSH_INIT", command_str).await
 }
 
-async fn add_known_host() -> Result<(), VultrError> {
+async fn add_known_host() -> Result<(), CliError> {
     let command_str = "ssh-keyscan -H cyberlith.com >> /home/connor/.ssh/known_hosts";
     run_command("SSH_INIT", command_str).await
 }
