@@ -22,7 +22,7 @@ fn cli() -> Command {
         )
         .subcommand(
             Command::new("process_assets")
-                .about("processes assets")
+                .about("processes assets for a given environment")
                 .arg_required_else_help(true)
                 .arg(
                     Arg::new("env")

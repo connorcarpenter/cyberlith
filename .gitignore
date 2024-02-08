@@ -6,5 +6,7 @@ node_modules
 /apps/client/target
 /apps/editor/client/target
 /apps/editor/server/target
+/apps/automation/cli/target
 .ssh/*
 .vultr/*
+.secrets/*
