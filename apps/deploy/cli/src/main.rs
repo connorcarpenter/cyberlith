@@ -1,5 +1,5 @@
-use clap::Command;
-use log::{info, LevelFilter, warn};
+use clap::{Arg, Command};
+use log::{LevelFilter, warn};
 use simple_logger::SimpleLogger;
 use deploy_lib::CliError;
 
@@ -19,6 +19,18 @@ fn cli() -> Command {
         .subcommand(
             Command::new("down")
                 .about("down live services"),
+        )
+        .subcommand(
+            Command::new("process_assets")
+                .about("processes assets")
+                .arg_required_else_help(true)
+                .arg(
+                    Arg::new("env")
+                        .short('e')
+                        .long("env")
+                        .required(true)
+                        .value_parser(["json", "dev", "stage", "prod"])
+                ),
         )
 }
 
@@ -41,9 +53,9 @@ fn main() {
         Some(("down", _sub_matches)) => {
             deploy_lib::down()
         }
-        Some((process_assets, sub_matches)) => {
-            info!("Processing assets: {:?}, {:?}", process_assets, sub_matches);
-            Ok(())
+        Some(("process_assets", sub_matches)) => {
+            let env_val = sub_matches.get_one::<String>("env").unwrap();
+            deploy_lib::process_assets(env_val)
         }
         _ => {
             Err(CliError::Message("Invalid subcommand".to_string()))
