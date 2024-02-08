@@ -1,7 +1,7 @@
 use clap::{Arg, Command};
 use log::{LevelFilter, warn};
 use simple_logger::SimpleLogger;
-use deploy_lib::CliError;
+use automation_lib::CliError;
 
 fn cli() -> Command {
     Command::new("deploy_cli")
@@ -45,17 +45,17 @@ fn main() {
 
     let result = match matches.subcommand() {
         Some(("up", _sub_matches)) => {
-            deploy_lib::up()
+            automation_lib::up()
         }
         Some(("up_content", _sub_matches)) => {
-            deploy_lib::up_content()
+            automation_lib::up_content()
         }
         Some(("down", _sub_matches)) => {
-            deploy_lib::down()
+            automation_lib::down()
         }
         Some(("process_assets", sub_matches)) => {
             let env_val = sub_matches.get_one::<String>("env").unwrap();
-            deploy_lib::process_assets(env_val)
+            automation_lib::process_assets(env_val)
         }
         _ => {
             Err(CliError::Message("Invalid subcommand".to_string()))

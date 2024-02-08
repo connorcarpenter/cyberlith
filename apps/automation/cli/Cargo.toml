@@ -1,5 +1,5 @@
 [package]
-name = "deploy_cli"
+name = "automation_cli"
 version = "0.1.0"
 authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
 workspace = "../../.."
@@ -9,7 +9,7 @@ publish = false
 [features]
 
 [dependencies]
-deploy_lib = { path = "../lib" }
+automation_lib = { path = "../lib" }
 clap = { version = "4.4" }
 log = { version = "0.4", features = [] }
 simple_logger = { version = "4.0", default-features = false, features = ["timestamps"] }

@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Deploy Down [ALL!]" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
     <option name="command" value="run down" />
-    <option name="workingDirectory" value="file://$PROJECT_DIR$/apps/deploy/cli" />
+    <option name="workingDirectory" value="file://$PROJECT_DIR$/apps/automation/cli" />
     <envs />
     <option name="emulateTerminal" value="false" />
     <option name="channel" value="DEFAULT" />
