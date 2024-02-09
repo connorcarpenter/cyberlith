@@ -24,5 +24,3 @@ log = { version = "0.4", features = [] }
 futures-lite = { version = "1.11.3" }
 subprocess = "0.2.9"
 git2 = { version = "0.17" }
-serde = { version = "1.0.189", features = ["derive"] }
-serde_json = { version = "1.0.107" }

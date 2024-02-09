@@ -1,12 +1,12 @@
-use std::{fs, fs::File, io::{Read, Write}, path::Path, collections::HashSet};
-use std::collections::HashMap;
+use std::{fs, fs::File, io::{Read, Write}, path::Path, collections::{HashSet, HashMap}};
 
 use git2::{Cred, PushOptions, Repository, Tree};
 use log::info;
 use crypto::U32Token;
 
-use crate::{process_assets::{convert::{Asset, AssetMeta}, convert}, CliError};
-use crate::process_assets::convert::AssetData;
+use asset_io::json::{Asset, AssetData, AssetMeta};
+
+use crate::{process_assets::convert, CliError};
 
 pub(crate) fn process_assets() -> Result<(), CliError> {
     info!("Processing assets: 'json'");
@@ -122,7 +122,7 @@ fn write_all_files(repo: &Repository, branch_name: &str, file_entries: &Vec<File
         } = process_data;
 
         let mut asset_data = asset_data.clone();
-        asset_data.convert_to_asset_ids(&asset_id_map);
+        // asset_data.convert_to_asset_ids(&asset_id_map);
 
         let asset = Asset {
             meta: AssetMeta {
@@ -132,8 +132,7 @@ fn write_all_files(repo: &Repository, branch_name: &str, file_entries: &Vec<File
             data: asset_data.clone(),
         };
 
-        let mut out_bytes: Vec<u8> = Vec::new();
-        serde_json::to_writer_pretty(&mut out_bytes, &asset).unwrap();
+        let out_bytes: Vec<u8> = asset.to_pretty_json();
 
         let mut file = match File::create(new_full_path) {
             Ok(file) => file,

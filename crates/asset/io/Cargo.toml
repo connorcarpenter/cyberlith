@@ -7,11 +7,16 @@ workspace = "../../.."
 [features]
 read = []
 write = []
-bits = []
-json = []
+bits = [ "naia-serde" ]
+json = [ "serde", "serde_json" ]
 
 [dependencies]
-naia-serde = { path = "../../../../naia/shared/serde" }
-
 cfg-if = { version = "1.0" }
 log = { version = "0.4" }
+
+# for bitwise
+naia-serde = { path = "../../../../naia/shared/serde", optional = true }
+
+# for JSON
+serde = { version = "1.0.189", features = ["derive"], optional = true }
+serde_json = { version = "1.0.107", optional = true}
