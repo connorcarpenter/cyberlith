@@ -36,7 +36,14 @@ fn write_all_files(repo: &Repository, branch_name: &str, file_entries: &Vec<File
     let mut index = repo.index().expect("Failed to open index");
 
     for file_entry in file_entries {
-        let file_path = format!("{}{}.json", file_entry.path, file_entry.name);
+        let mut file_name_split = file_entry.name.split(".");
+        let file_name = file_name_split.next().unwrap();
+        let file_ext = match file_entry.file_ext.as_str() {
+            "skel" => "skeleton",
+            "anim" => "animation",
+            _ => file_entry.file_ext.as_str(),
+        };
+        let file_path = format!("{}{}{}.json", file_entry.path, file_name, file_ext);
         let full_path = format!("{}{}", repo.workdir().unwrap().to_str().unwrap(), file_path);
 
         info!("writing file at path: {}", file_path.as_str());
@@ -50,7 +57,7 @@ fn write_all_files(repo: &Repository, branch_name: &str, file_entries: &Vec<File
             };
 
             let in_bytes = &file_entry.bytes;
-            let out_bytes: Vec<u8> = match file_entry.file_ext.as_str() {
+            let out_bytes: Vec<u8> = match file_ext {
                 "palette" => {
                     convert::palette(in_bytes)
                 }
@@ -66,10 +73,10 @@ fn write_all_files(repo: &Repository, branch_name: &str, file_entries: &Vec<File
                 "model" => {
                     convert::model(in_bytes)
                 }
-                "skel" => {
+                "skeleton" => {
                     convert::skel(in_bytes)
                 }
-                "anim" => {
+                "animation" => {
                     convert::anim(in_bytes)
                 }
                 "icon" => {
