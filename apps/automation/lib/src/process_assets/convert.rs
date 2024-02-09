@@ -67,7 +67,9 @@ pub fn skel(in_bytes: &Vec<u8>) -> Vec<u8> {
 
     for action in actions {
         match action {
-
+            SkelAction::Vertex(x, y, z, parent_id_opt, vertex_name_opt) => {
+                todo!()
+            }
         }
     }
 
@@ -96,7 +98,15 @@ pub fn mesh(in_bytes: &Vec<u8>) -> Vec<u8> {
 
     for action in actions {
         match action {
-
+            MeshAction::Vertex(x, y, z) => {
+                todo!();
+            }
+            MeshAction::Edge(vertex_a, vertex_b) => {
+                todo!();
+            }
+            MeshAction::Face(face_index, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c) => {
+                todo!();
+            }
         }
     }
 
@@ -125,7 +135,15 @@ pub fn anim(in_bytes: &Vec<u8>) -> Vec<u8> {
 
     for action in actions {
         match action {
-
+            AnimAction::SkelFile(path, file_name) => {
+                todo!();
+            }
+            AnimAction::ShapeIndex(shape_name) => {
+                todo!();
+            }
+            AnimAction::Frame(poses, transition) => {
+                todo!();
+            }
         }
     }
 
@@ -154,7 +172,12 @@ pub fn icon(in_bytes: &Vec<u8>) -> Vec<u8> {
 
     for action in actions {
         match action {
-
+            IconAction::PaletteFile(palette_path, palette_file_name) => {
+                todo!();
+            }
+            IconAction::Frame(frame_actions) => {
+                todo!();
+            }
         }
     }
 
@@ -183,7 +206,18 @@ pub fn skin(in_bytes: &Vec<u8>) -> Vec<u8> {
 
     for action in actions {
         match action {
-
+            SkinAction::PaletteFile(path, file_name) => {
+                todo!();
+            }
+            SkinAction::MeshFile(path, file_name) => {
+                todo!();
+            }
+            SkinAction::BackgroundColor(palette_color_index) => {
+                todo!();
+            }
+            SkinAction::SkinColor(face_index, palette_color_index) => {
+                todo!();
+            }
         }
     }
 
@@ -212,7 +246,19 @@ pub fn scene(in_bytes: &Vec<u8>) -> Vec<u8> {
 
     for action in actions {
         match action {
-
+            SceneAction::SkinOrSceneFile(path, file_name, file_type) => {
+                todo!()
+            }
+            SceneAction::NetTransform(file_index,
+                                      x,
+                                      y,
+                                      z,
+                                      scale_x,
+                                      scale_y,
+                                      scale_z,
+                                      rotation) => {
+                todo!()
+            }
         }
     }
 
@@ -241,7 +287,23 @@ pub fn model(in_bytes: &Vec<u8>) -> Vec<u8> {
 
     for action in actions {
         match action {
-
+            ModelAction::SkelFile(path, file_name) => {
+                todo!()
+            }
+            ModelAction::SkinOrSceneFile(path, file_name, file_type) => {
+                todo!()
+            }
+            ModelAction::NetTransform(skin_index,
+                                      vertex_name,
+                                      translation_x,
+                                      translation_y,
+                                      translation_z,
+                                      scale_x,
+                                      scale_y,
+                                      scale_z,
+                                      rotation) => {
+                todo!()
+            }
         }
     }
 
