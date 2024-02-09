@@ -1,6 +1,6 @@
 use naia_serde::BitReader;
 
-use asset_io::{AnimAction, IconAction, IconFrameAction, MeshAction, ModelAction, PaletteAction, SceneAction, SerdeQuat, SerdeRotation, SkelAction, SkinAction};
+use asset_io::{AnimAction, FileTransformEntityType, IconAction, IconFrameAction, MeshAction, ModelAction, PaletteAction, SceneAction, SerdeQuat, SerdeRotation, SkelAction, SkinAction};
 use serde::{Deserialize, Serialize};
 
 // Palette
@@ -191,12 +191,17 @@ pub fn mesh(in_bytes: &Vec<u8>) -> Vec<u8> {
 
 // Animation
 #[derive(Serialize, Deserialize)]
+pub struct AnimFileQuat {
+    x: i8,
+    y: i8,
+    z: i8,
+    w: i8,
+}
+
+#[derive(Serialize, Deserialize)]
 pub struct AnimFilePose {
     edge_id: u16,
-    quat_x: i8,
-    quat_y: i8,
-    quat_z: i8,
-    quat_w: i8,
+    rotation: AnimFileQuat,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -207,7 +212,7 @@ pub struct AnimFileFrame {
 
 #[derive(Serialize, Deserialize)]
 pub struct AnimFile {
-    skeleton_id: String,
+    skeleton_asset_id: String,
     edge_names: Vec<String>,
     frames: Vec<AnimFileFrame>,
 }
@@ -215,7 +220,7 @@ pub struct AnimFile {
 impl AnimFile {
     pub fn new() -> Self {
         Self {
-            skeleton_id: String::new(),
+            skeleton_asset_id: String::new(),
             edge_names: Vec::new(),
             frames: Vec::new(),
         }
@@ -231,7 +236,7 @@ pub fn anim(in_bytes: &Vec<u8>) -> Vec<u8> {
     for action in actions {
         match action {
             AnimAction::SkelFile(path, file_name) => {
-                file.skeleton_id = format!("{}/{}", path, file_name);
+                file.skeleton_asset_id = format!("{}/{}", path, file_name);
             }
             AnimAction::ShapeIndex(shape_name) => {
                 file.edge_names.push(shape_name);
@@ -245,10 +250,12 @@ pub fn anim(in_bytes: &Vec<u8>) -> Vec<u8> {
                 for (shape_index, rotation) in poses {
                     frame.poses.push(AnimFilePose {
                         edge_id: shape_index,
-                        quat_x: (rotation.x * SerdeQuat::MAX_SIZE).round() as i8,
-                        quat_y: (rotation.y * SerdeQuat::MAX_SIZE).round() as i8,
-                        quat_z: (rotation.z * SerdeQuat::MAX_SIZE).round() as i8,
-                        quat_w: (rotation.w * SerdeQuat::MAX_SIZE).round() as i8,
+                        rotation: AnimFileQuat {
+                            x: (rotation.x * SerdeQuat::MAX_SIZE).round() as i8,
+                            y: (rotation.y * SerdeQuat::MAX_SIZE).round() as i8,
+                            z: (rotation.z * SerdeQuat::MAX_SIZE).round() as i8,
+                            w: (rotation.w * SerdeQuat::MAX_SIZE).round() as i8,
+                        },
                     });
                 }
 
@@ -266,7 +273,6 @@ pub struct IconFileFrameVertex {
     pub x: i16,
     pub y: i16,
 }
-
 
 #[derive(Serialize, Deserialize)]
 pub struct IconFileFrameEdge {
@@ -305,14 +311,14 @@ impl IconFileFrame {
 
 #[derive(Serialize, Deserialize)]
 pub struct IconFile {
-    palette_id: String,
+    palette_asset_id: String,
     frames: Vec<IconFileFrame>,
 }
 
 impl IconFile {
     pub fn new() -> Self {
         Self {
-            palette_id: String::new(),
+            palette_asset_id: String::new(),
             frames: Vec::new(),
         }
     }
@@ -327,7 +333,7 @@ pub fn icon(in_bytes: &Vec<u8>) -> Vec<u8> {
     for action in actions {
         match action {
             IconAction::PaletteFile(path, file_name) => {
-                file.palette_id = format!("{}/{}", path, file_name);
+                file.palette_asset_id = format!("{}/{}", path, file_name);
             }
             IconAction::Frame(frame_actions) => {
                 let mut new_frame = IconFileFrame::new();
@@ -387,8 +393,8 @@ pub struct SkinFileFace {
 
 #[derive(Serialize, Deserialize)]
 pub struct SkinFile {
-    palette_id: String,
-    mesh_id: String,
+    palette_asset_id: String,
+    mesh_asset_id: String,
     background_color_id: u8,
     face_colors: Vec<SkinFileFace>,
 }
@@ -396,8 +402,8 @@ pub struct SkinFile {
 impl SkinFile {
     pub fn new() -> Self {
         Self {
-            palette_id: String::new(),
-            mesh_id: String::new(),
+            palette_asset_id: String::new(),
+            mesh_asset_id: String::new(),
             background_color_id: 0,
             face_colors: Vec::new(),
         }
@@ -413,10 +419,10 @@ pub fn skin(in_bytes: &Vec<u8>) -> Vec<u8> {
     for action in actions {
         match action {
             SkinAction::PaletteFile(path, file_name) => {
-                file.palette_id = format!("{}/{}", path, file_name);
+                file.palette_asset_id = format!("{}/{}", path, file_name);
             }
             SkinAction::MeshFile(path, file_name) => {
-                file.mesh_id = format!("{}/{}", path, file_name);
+                file.mesh_asset_id = format!("{}/{}", path, file_name);
             }
             SkinAction::BackgroundColor(palette_color_id) => {
                 file.background_color_id = palette_color_id;
@@ -435,14 +441,45 @@ pub fn skin(in_bytes: &Vec<u8>) -> Vec<u8> {
 
 // Scene
 #[derive(Serialize, Deserialize)]
-pub struct SceneFile {
+pub struct SceneFileComponent {
+    asset_id: String,
+    kind: String,
+}
 
+#[derive(Serialize, Deserialize)]
+pub struct SceneFileTransform {
+    component_id: u16,
+    position: SceneFileTransformPosition,
+    rotation: SceneFileTransformRotation,
+    scale: SceneFileTransformScale,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct SceneFileTransformPosition {
+    x: i16, y: i16, z: i16,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct SceneFileTransformRotation {
+    x: i8, y: i8, z: i8, w: i8,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct SceneFileTransformScale {
+    x: u32, y: u32, z: u32,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct SceneFile {
+    components: Vec<SceneFileComponent>,
+    transforms: Vec<SceneFileTransform>,
 }
 
 impl SceneFile {
     pub fn new() -> Self {
         Self {
-
+            components: Vec::new(),
+            transforms: Vec::new(),
         }
     }
 }
@@ -456,17 +493,44 @@ pub fn scene(in_bytes: &Vec<u8>) -> Vec<u8> {
     for action in actions {
         match action {
             SceneAction::SkinOrSceneFile(path, file_name, file_type) => {
-                todo!()
+                file.components.push(SceneFileComponent {
+                    asset_id: format!("{}/{}", path, file_name),
+                    kind: match file_type {
+                        FileTransformEntityType::Skin => "skin".to_string(),
+                        FileTransformEntityType::Scene => "scene".to_string(),
+                    },
+                });
             }
-            SceneAction::NetTransform(file_index,
-                                      x,
-                                      y,
-                                      z,
-                                      scale_x,
-                                      scale_y,
-                                      scale_z,
-                                      rotation) => {
-                todo!()
+            SceneAction::NetTransform(
+                file_id,
+                x,
+                y,
+                z,
+                scale_x,
+                scale_y,
+                scale_z,
+                rotation
+            ) => {
+                let transform = SceneFileTransform {
+                    component_id: file_id,
+                    position: SceneFileTransformPosition {
+                        x,
+                        y,
+                        z,
+                    },
+                    rotation: SceneFileTransformRotation {
+                        x: (rotation.x * SerdeQuat::MAX_SIZE).round() as i8,
+                        y: (rotation.y * SerdeQuat::MAX_SIZE).round() as i8,
+                        z: (rotation.z * SerdeQuat::MAX_SIZE).round() as i8,
+                        w: (rotation.w * SerdeQuat::MAX_SIZE).round() as i8,
+                    },
+                    scale: SceneFileTransformScale {
+                        x: (scale_x * 100.0) as u32,
+                        y: (scale_y * 100.0) as u32,
+                        z: (scale_z * 100.0) as u32,
+                    },
+                };
+                file.transforms.push(transform);
             }
         }
     }
@@ -476,14 +540,48 @@ pub fn scene(in_bytes: &Vec<u8>) -> Vec<u8> {
 
 // Model
 #[derive(Serialize, Deserialize)]
-pub struct ModelFile {
+pub struct ModelFileComponent {
+    asset_id: String,
+    kind: String,
+}
 
+#[derive(Serialize, Deserialize)]
+pub struct ModelFileTransform {
+    component_id: u16,
+    name: String,
+    position: ModelFileTransformPosition,
+    rotation: ModelFileTransformRotation,
+    scale: ModelFileTransformScale,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct ModelFileTransformPosition {
+    x: i16, y: i16, z: i16,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct ModelFileTransformRotation {
+    x: i8, y: i8, z: i8, w: i8,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct ModelFileTransformScale {
+    x: u32, y: u32, z: u32,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct ModelFile {
+    skeleton_id: String,
+    components: Vec<ModelFileComponent>,
+    transforms: Vec<ModelFileTransform>,
 }
 
 impl ModelFile {
     pub fn new() -> Self {
         Self {
-
+            skeleton_id: String::new(),
+            components: Vec::new(),
+            transforms: Vec::new(),
         }
     }
 }
@@ -497,21 +595,49 @@ pub fn model(in_bytes: &Vec<u8>) -> Vec<u8> {
     for action in actions {
         match action {
             ModelAction::SkelFile(path, file_name) => {
-                todo!()
+                file.skeleton_id = format!("{}/{}", path, file_name);
             }
             ModelAction::SkinOrSceneFile(path, file_name, file_type) => {
-                todo!()
+                file.components.push(ModelFileComponent {
+                    asset_id: format!("{}/{}", path, file_name),
+                    kind: match file_type {
+                        FileTransformEntityType::Skin => "skin".to_string(),
+                        FileTransformEntityType::Scene => "scene".to_string(),
+                    },
+                });
             }
-            ModelAction::NetTransform(skin_index,
-                                      vertex_name,
-                                      translation_x,
-                                      translation_y,
-                                      translation_z,
-                                      scale_x,
-                                      scale_y,
-                                      scale_z,
-                                      rotation) => {
-                todo!()
+            ModelAction::NetTransform(
+                skin_index,
+                vertex_name,
+                translation_x,
+                translation_y,
+                translation_z,
+                scale_x,
+                scale_y,
+                scale_z,
+                rotation
+            ) => {
+                let transform = ModelFileTransform {
+                    component_id: skin_index,
+                    name: vertex_name,
+                    position: ModelFileTransformPosition {
+                        x: translation_x,
+                        y: translation_y,
+                        z: translation_z,
+                    },
+                    rotation: ModelFileTransformRotation {
+                        x: (rotation.x * SerdeQuat::MAX_SIZE).round() as i8,
+                        y: (rotation.y * SerdeQuat::MAX_SIZE).round() as i8,
+                        z: (rotation.z * SerdeQuat::MAX_SIZE).round() as i8,
+                        w: (rotation.w * SerdeQuat::MAX_SIZE).round() as i8,
+                    },
+                    scale: ModelFileTransformScale {
+                        x: (scale_x * 100.0) as u32,
+                        y: (scale_y * 100.0) as u32,
+                        z: (scale_z * 100.0) as u32,
+                    },
+                };
+                file.transforms.push(transform);
             }
         }
     }
