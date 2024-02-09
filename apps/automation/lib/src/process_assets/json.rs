@@ -1,11 +1,12 @@
-use std::{fs, fs::File, io::Read, path::Path};
-use std::io::Write;
+use std::{fs, fs::File, io::{Read, Write}, path::Path, collections::HashSet};
+use std::collections::HashMap;
 
 use git2::{Cred, PushOptions, Repository, Tree};
 use log::info;
+use crypto::U32Token;
 
-use super::convert;
-use crate::CliError;
+use crate::{process_assets::{convert::{Asset, AssetMeta}, convert}, CliError};
+use crate::process_assets::convert::AssetData;
 
 pub(crate) fn process_assets() -> Result<(), CliError> {
     info!("Processing assets: 'json'");
@@ -19,7 +20,7 @@ pub(crate) fn process_assets() -> Result<(), CliError> {
     switch_branches(&repo, "json");
 
     // delete all files, push
-    delete_all_files(&repo, "json", &files);
+    //delete_all_files(&repo, "json", &files);
     push_to_branch(&repo, "json");
 
     // create json file for each previous file
@@ -31,11 +32,35 @@ pub(crate) fn process_assets() -> Result<(), CliError> {
     Ok(())
 }
 
+pub struct ProcessData {
+    pub(crate) asset_id: U32Token,
+    asset_data: AssetData,
+    new_file_path: String,
+    new_full_path: String,
+}
+
 fn write_all_files(repo: &Repository, branch_name: &str, file_entries: &Vec<FileEntry>) {
     let ref_name = format!("refs/heads/{}", branch_name);
     let mut index = repo.index().expect("Failed to open index");
+    let mut asset_ids = HashSet::<U32Token>::new();
+    let mut asset_id_map = HashMap::<String, ProcessData>::new();
 
     for file_entry in file_entries {
+
+        let prev_path = format!("{}/{}", file_entry.path, file_entry.name);
+
+        info!("processing file at path: {}", prev_path);
+
+        let asset_id = {
+            loop {
+                let id = U32Token::get_random();
+                if !asset_ids.contains(&id) {
+                    asset_ids.insert(id);
+                    break id;
+                }
+            }
+        };
+
         let mut file_name_split = file_entry.name.split(".");
         let file_name = file_name_split.next().unwrap();
         let file_ext = match file_entry.file_ext.as_str() {
@@ -43,21 +68,12 @@ fn write_all_files(repo: &Repository, branch_name: &str, file_entries: &Vec<File
             "anim" => "animation",
             _ => file_entry.file_ext.as_str(),
         };
-        let file_path = format!("{}{}{}.json", file_entry.path, file_name, file_ext);
+        let file_path = format!("{}{}.{}.json", file_entry.path, file_name, file_ext);
         let full_path = format!("{}{}", repo.workdir().unwrap().to_str().unwrap(), file_path);
 
-        info!("writing file at path: {}", file_path.as_str());
-
-        let path = Path::new(full_path.as_str());
-
         {
-            let mut file = match File::create(path) {
-                Ok(file) => file,
-                Err(err) => panic!("Failed to create file: {}", err),
-            };
-
             let in_bytes = &file_entry.bytes;
-            let out_bytes: Vec<u8> = match file_ext {
+            let asset_data = match file_ext {
                 "palette" => {
                     convert::palette(in_bytes)
                 }
@@ -83,23 +99,57 @@ fn write_all_files(repo: &Repository, branch_name: &str, file_entries: &Vec<File
                     convert::icon(in_bytes)
                 }
                 _ => {
-                    in_bytes.to_vec()
+                    panic!("Unknown file type: {}", file_ext);
                 }
             };
 
-            match file.write_all(&out_bytes) {
-                Ok(_) => {
-                    info!("wrote file: {}", file_path);
-                }
-                Err(err) => {
-                    info!("failed to write file: {}", err);
-                }
+            asset_id_map.insert(prev_path, ProcessData {
+                asset_id,
+                asset_data,
+                new_file_path: file_path,
+                new_full_path: full_path,
+            });
+        }
+    }
+
+    for (_, process_data) in asset_id_map.iter() {
+
+        let ProcessData {
+            asset_id,
+            asset_data,
+            new_file_path,
+            new_full_path,
+        } = process_data;
+
+        let mut asset_data = asset_data.clone();
+        asset_data.convert_to_asset_ids(&asset_id_map);
+
+        let asset = Asset {
+            meta: AssetMeta {
+                id: asset_id.as_string(),
+                schema_version: 0,
+            },
+            data: asset_data.clone(),
+        };
+
+        let mut out_bytes: Vec<u8> = Vec::new();
+        serde_json::to_writer_pretty(&mut out_bytes, &asset).unwrap();
+
+        let mut file = match File::create(new_full_path) {
+            Ok(file) => file,
+            Err(err) => panic!("Failed to create file: {}", err),
+        };
+        match file.write_all(&out_bytes) {
+            Ok(_) => {
+                info!("wrote file: {}", new_file_path);
+            }
+            Err(err) => {
+                info!("failed to write file: {}", err);
             }
         }
-
         // add to index
         index
-            .add_path(Path::new(&file_path))
+            .add_path(Path::new(new_file_path))
             .expect("Failed to add file to index");
     }
 

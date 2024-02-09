@@ -13,6 +13,7 @@ vultr = { path = "../crates/vultr" }
 executor = { path = "../../../crates/executor" }
 asset_io = { path = "../../../crates/asset/io", features = ["read", "write"] }
 naia-serde = { path = "../../../../naia/shared/serde" }
+crypto = { path = "../../../crates/crypto" }
 
 openssh = { version = "0.10" }
 async-compat = { version = "0.2" }

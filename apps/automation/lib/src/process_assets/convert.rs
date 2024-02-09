@@ -1,17 +1,84 @@
+use std::collections::HashMap;
+
 use naia_serde::BitReader;
 
 use asset_io::{AnimAction, FileTransformEntityType, IconAction, IconFrameAction, MeshAction, ModelAction, PaletteAction, SceneAction, SerdeQuat, SerdeRotation, SkelAction, SkinAction};
 use serde::{Deserialize, Serialize};
 
+use crate::process_assets::json::ProcessData;
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct Asset {
+    pub meta: AssetMeta,
+    pub data: AssetData,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct AssetMeta {
+    pub id: String,
+    pub schema_version: u32,
+}
+
+// Container
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(rename_all = "lowercase")]
+pub enum AssetData {
+    Palette(PaletteFile),
+    Skeleton(SkelFile),
+    Mesh(MeshFile),
+    Animation(AnimFile),
+    Icon(IconFile),
+    Skin(SkinFile),
+    Scene(SceneFile),
+    Model(ModelFile),
+}
+
+impl AssetData {
+    pub(crate) fn convert_to_asset_ids(&mut self, asset_map: &HashMap<String, ProcessData>) {
+        match self {
+            Self::Animation(inner) => {
+                inner.skeleton_asset_id = asset_map.get(&inner.skeleton_asset_id).unwrap().asset_id.as_string();
+            }
+            Self::Icon(inner) => {
+                inner.palette_asset_id = asset_map.get(&inner.palette_asset_id).unwrap().asset_id.as_string();
+            }
+            Self::Palette(_) => {
+                // Do nothing
+            }
+            Self::Skeleton(_) => {
+                // Do nothing
+            }
+            Self::Mesh(_) => {
+                // Do nothing
+            }
+            Self::Skin(inner) => {
+                inner.palette_asset_id = asset_map.get(&inner.palette_asset_id).unwrap().asset_id.as_string();
+                inner.mesh_asset_id = asset_map.get(&inner.mesh_asset_id).unwrap().asset_id.as_string();
+            }
+            Self::Scene(inner) => {
+                for component in &mut inner.components {
+                    component.asset_id = asset_map.get(&component.asset_id).unwrap().asset_id.as_string();
+                }
+            }
+            Self::Model(inner) => {
+                inner.skeleton_id = asset_map.get(&inner.skeleton_id).unwrap().asset_id.as_string();
+                for component in &mut inner.components {
+                    component.asset_id = asset_map.get(&component.asset_id).unwrap().asset_id.as_string();
+                }
+            }
+        }
+    }
+}
+
 // Palette
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct PaletteFileColor {
     pub r: u8,
     pub g: u8,
     pub b: u8,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct PaletteFile {
     pub colors: Vec<PaletteFileColor>,
 }
@@ -24,7 +91,7 @@ impl PaletteFile {
     }
 }
 
-pub fn palette(in_bytes: &Vec<u8>) -> Vec<u8> {
+pub fn palette(in_bytes: &Vec<u8>) -> AssetData {
     let mut bit_reader = BitReader::new(in_bytes);
     let actions = PaletteAction::read(&mut bit_reader).unwrap();
 
@@ -42,19 +109,17 @@ pub fn palette(in_bytes: &Vec<u8>) -> Vec<u8> {
         }
     }
 
-    let mut pretty_json: Vec<u8> = Vec::new();
-    serde_json::to_writer_pretty(&mut pretty_json, &file).unwrap();
-    pretty_json
+    AssetData::Palette(file)
 }
 
 // Skel
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct SkelFileVertexParent {
     id: u16,
     rotation: u8,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct SkelFileVertex {
     x: i16, y: i16, z: i16, parent: Option<SkelFileVertexParent>, name: Option<String>,
 }
@@ -78,7 +143,7 @@ impl SkelFileVertex {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct SkelFile {
     pub vertices: Vec<SkelFileVertex>,
 }
@@ -91,7 +156,7 @@ impl SkelFile {
     }
 }
 
-pub fn skel(in_bytes: &Vec<u8>) -> Vec<u8> {
+pub fn skel(in_bytes: &Vec<u8>) -> AssetData {
     let mut bit_reader = BitReader::new(in_bytes);
     let actions = SkelAction::read(&mut bit_reader).unwrap();
 
@@ -105,14 +170,12 @@ pub fn skel(in_bytes: &Vec<u8>) -> Vec<u8> {
         }
     }
 
-    let mut pretty_json: Vec<u8> = Vec::new();
-    serde_json::to_writer_pretty(&mut pretty_json, &file).unwrap();
-    pretty_json
+    AssetData::Skeleton(file)
 }
 
 // Mesh
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct MeshFileVertex {
     pub x: i16,
     pub y: i16,
@@ -120,13 +183,13 @@ pub struct MeshFileVertex {
 }
 
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct MeshFileEdge {
     pub vertex_a: u16,
     pub vertex_b: u16,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct MeshFileFace {
     pub face_id: u16,
     pub vertex_a: u16,
@@ -137,7 +200,7 @@ pub struct MeshFileFace {
     pub edge_c: u16,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct MeshFile {
     pub vertices: Vec<MeshFileVertex>,
     pub edges: Vec<MeshFileEdge>,
@@ -154,7 +217,7 @@ impl MeshFile {
     }
 }
 
-pub fn mesh(in_bytes: &Vec<u8>) -> Vec<u8> {
+pub fn mesh(in_bytes: &Vec<u8>) -> AssetData {
     let mut bit_reader = BitReader::new(in_bytes);
     let actions = MeshAction::read(&mut bit_reader).unwrap();
 
@@ -190,13 +253,11 @@ pub fn mesh(in_bytes: &Vec<u8>) -> Vec<u8> {
         }
     }
 
-    let mut pretty_json: Vec<u8> = Vec::new();
-    serde_json::to_writer_pretty(&mut pretty_json, &file).unwrap();
-    pretty_json
+    AssetData::Mesh(file)
 }
 
 // Animation
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct AnimFileQuat {
     x: i8,
     y: i8,
@@ -204,19 +265,19 @@ pub struct AnimFileQuat {
     w: i8,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct AnimFilePose {
     edge_id: u16,
     rotation: AnimFileQuat,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct AnimFileFrame {
     poses: Vec<AnimFilePose>,
     transition_ms: u16,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct AnimFile {
     skeleton_asset_id: String,
     edge_names: Vec<String>,
@@ -233,7 +294,7 @@ impl AnimFile {
     }
 }
 
-pub fn anim(in_bytes: &Vec<u8>) -> Vec<u8> {
+pub fn anim(in_bytes: &Vec<u8>) -> AssetData {
     let mut bit_reader = BitReader::new(in_bytes);
     let actions = AnimAction::read(&mut bit_reader).unwrap();
 
@@ -270,25 +331,23 @@ pub fn anim(in_bytes: &Vec<u8>) -> Vec<u8> {
         }
     }
 
-    let mut pretty_json: Vec<u8> = Vec::new();
-    serde_json::to_writer_pretty(&mut pretty_json, &file).unwrap();
-    pretty_json
+    AssetData::Animation(file)
 }
 
 // Icon
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct IconFileFrameVertex {
     pub x: i16,
     pub y: i16,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct IconFileFrameEdge {
     pub vertex_a: u16,
     pub vertex_b: u16,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct IconFileFrameFace {
     pub face_id: u16,
     pub color_id: u8,
@@ -300,7 +359,7 @@ pub struct IconFileFrameFace {
     pub edge_c: u16,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct IconFileFrame {
     pub vertices: Vec<IconFileFrameVertex>,
     pub edges: Vec<IconFileFrameEdge>,
@@ -317,7 +376,7 @@ impl IconFileFrame {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct IconFile {
     palette_asset_id: String,
     frames: Vec<IconFileFrame>,
@@ -332,7 +391,7 @@ impl IconFile {
     }
 }
 
-pub fn icon(in_bytes: &Vec<u8>) -> Vec<u8> {
+pub fn icon(in_bytes: &Vec<u8>) -> AssetData {
     let mut bit_reader = BitReader::new(in_bytes);
     let actions = IconAction::read(&mut bit_reader).unwrap();
 
@@ -389,19 +448,17 @@ pub fn icon(in_bytes: &Vec<u8>) -> Vec<u8> {
         }
     }
 
-    let mut pretty_json: Vec<u8> = Vec::new();
-    serde_json::to_writer_pretty(&mut pretty_json, &file).unwrap();
-    pretty_json
+    AssetData::Icon(file)
 }
 
 // Skin
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct SkinFileFace {
     face_id: u16,
     color_id: u8,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct SkinFile {
     palette_asset_id: String,
     mesh_asset_id: String,
@@ -420,7 +477,7 @@ impl SkinFile {
     }
 }
 
-pub fn skin(in_bytes: &Vec<u8>) -> Vec<u8> {
+pub fn skin(in_bytes: &Vec<u8>) -> AssetData {
     let mut bit_reader = BitReader::new(in_bytes);
     let actions = SkinAction::read(&mut bit_reader).unwrap();
 
@@ -446,19 +503,17 @@ pub fn skin(in_bytes: &Vec<u8>) -> Vec<u8> {
         }
     }
 
-    let mut pretty_json: Vec<u8> = Vec::new();
-    serde_json::to_writer_pretty(&mut pretty_json, &file).unwrap();
-    pretty_json
+    AssetData::Skin(file)
 }
 
 // Scene
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct SceneFileComponent {
     asset_id: String,
     kind: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct SceneFileTransform {
     component_id: u16,
     position: SceneFileTransformPosition,
@@ -466,22 +521,22 @@ pub struct SceneFileTransform {
     scale: SceneFileTransformScale,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct SceneFileTransformPosition {
     x: i16, y: i16, z: i16,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct SceneFileTransformRotation {
     x: i8, y: i8, z: i8, w: i8,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct SceneFileTransformScale {
     x: u32, y: u32, z: u32,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct SceneFile {
     components: Vec<SceneFileComponent>,
     transforms: Vec<SceneFileTransform>,
@@ -496,7 +551,7 @@ impl SceneFile {
     }
 }
 
-pub fn scene(in_bytes: &Vec<u8>) -> Vec<u8> {
+pub fn scene(in_bytes: &Vec<u8>) -> AssetData {
     let mut bit_reader = BitReader::new(in_bytes);
     let actions = SceneAction::read(&mut bit_reader).unwrap();
 
@@ -547,19 +602,17 @@ pub fn scene(in_bytes: &Vec<u8>) -> Vec<u8> {
         }
     }
 
-    let mut pretty_json: Vec<u8> = Vec::new();
-    serde_json::to_writer_pretty(&mut pretty_json, &file).unwrap();
-    pretty_json
+    AssetData::Scene(file)
 }
 
 // Model
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct ModelFileComponent {
     asset_id: String,
     kind: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct ModelFileTransform {
     component_id: u16,
     name: String,
@@ -568,22 +621,22 @@ pub struct ModelFileTransform {
     scale: ModelFileTransformScale,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct ModelFileTransformPosition {
     x: i16, y: i16, z: i16,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct ModelFileTransformRotation {
     x: i8, y: i8, z: i8, w: i8,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct ModelFileTransformScale {
     x: u32, y: u32, z: u32,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct ModelFile {
     skeleton_id: String,
     components: Vec<ModelFileComponent>,
@@ -600,7 +653,7 @@ impl ModelFile {
     }
 }
 
-pub fn model(in_bytes: &Vec<u8>) -> Vec<u8> {
+pub fn model(in_bytes: &Vec<u8>) -> AssetData {
     let mut bit_reader = BitReader::new(in_bytes);
     let actions = ModelAction::read(&mut bit_reader).unwrap();
 
@@ -656,7 +709,5 @@ pub fn model(in_bytes: &Vec<u8>) -> Vec<u8> {
         }
     }
 
-    let mut pretty_json: Vec<u8> = Vec::new();
-    serde_json::to_writer_pretty(&mut pretty_json, &file).unwrap();
-    pretty_json
+    AssetData::Model(file)
 }
