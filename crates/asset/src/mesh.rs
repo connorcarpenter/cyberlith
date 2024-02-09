@@ -65,7 +65,7 @@ impl From<MeshFilePath> for CpuMesh {
         };
         //let data = include_bytes!("cube.mesh");
 
-        let actions = asset_io::MeshAction::read(&data).expect("unable to parse file");
+        let actions = asset_io::bits::MeshAction::read(&data).expect("unable to parse file");
 
         info!("--- reading mesh file: {} ---", &path);
 
@@ -74,12 +74,12 @@ impl From<MeshFilePath> for CpuMesh {
         let mut face_indices = Vec::new();
         for action in actions {
             match action {
-                asset_io::MeshAction::Vertex(x, y, z) => {
+                asset_io::bits::MeshAction::Vertex(x, y, z) => {
                     // info!("Vertex: {}, {}, {}", x, y, z);
                     let vertex = Vec3::new(x as f32, y as f32, z as f32);
                     vertices.push(vertex);
                 }
-                asset_io::MeshAction::Face(
+                asset_io::bits::MeshAction::Face(
                     face_id,
                     vertex_a_id,
                     vertex_b_id,
@@ -106,7 +106,7 @@ impl From<MeshFilePath> for CpuMesh {
                     face_indices.push(face_id);
                     face_indices.push(face_id);
                 }
-                asset_io::MeshAction::Edge(_, _) => {
+                asset_io::bits::MeshAction::Edge(_, _) => {
                     // do nothing
                 }
             }

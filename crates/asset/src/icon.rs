@@ -224,16 +224,16 @@ impl From<String> for IconData {
             panic!("unable to read file: {:?}", &file_path);
         };
 
-        let actions = asset_io::IconAction::read(&data).expect("unable to parse file");
+        let actions = asset_io::bits::IconAction::read(&data).expect("unable to parse file");
 
         let mut palette_file_opt = None;
         let mut frames = Vec::new();
         for action in actions {
             match action {
-                asset_io::IconAction::PaletteFile(path, file_name) => {
+                asset_io::bits::IconAction::PaletteFile(path, file_name) => {
                     palette_file_opt = Some(format!("{}/{}", path, file_name));
                 }
-                asset_io::IconAction::Frame(frame_actions) => {
+                asset_io::bits::IconAction::Frame(frame_actions) => {
                     info!("- Frame Start: {} -", frames.len());
 
                     let mut vertices = Vec::new();
@@ -243,12 +243,12 @@ impl From<String> for IconData {
 
                     for frame_action in frame_actions {
                         match frame_action {
-                            asset_io::IconFrameAction::Vertex(x, y) => {
+                            asset_io::bits::IconFrameAction::Vertex(x, y) => {
                                 info!("Vertex: ({}, {})", x, y);
                                 let vertex = Vec3::new(x as f32, y as f32, 0.0);
                                 vertices.push(vertex);
                             }
-                            asset_io::IconFrameAction::Face(
+                            asset_io::bits::IconFrameAction::Face(
                                 face_id,
                                 color_index,
                                 vertex_a_id,
@@ -274,7 +274,7 @@ impl From<String> for IconData {
 
                                 face_color_ids.push((face_id, color_index));
                             }
-                            asset_io::IconFrameAction::Edge(_, _) => {
+                            asset_io::bits::IconFrameAction::Edge(_, _) => {
                                 // do nothing
                             }
                         }

@@ -9,7 +9,7 @@ use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 
-use asset_io::PaletteAction;
+use asset_io::bits::PaletteAction;
 
 use editor_proto::components::PaletteColor;
 

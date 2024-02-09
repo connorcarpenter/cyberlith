@@ -9,7 +9,7 @@ use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 
-use asset_io::SkinAction;
+use asset_io::bits::SkinAction;
 
 use editor_proto::{
     components::{BackgroundSkinColor, FaceColor, FileExtension, PaletteColor},

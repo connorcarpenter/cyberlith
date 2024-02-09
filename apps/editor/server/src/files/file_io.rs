@@ -351,10 +351,10 @@ pub fn add_file_dependency(
 // quat map
 pub fn convert_into_quat_map(
     input: HashMap<u16, editor_proto::SerdeQuat>,
-) -> HashMap<u16, asset_io::SerdeQuat> {
+) -> HashMap<u16, asset_io::bits::SerdeQuat> {
     let mut output = HashMap::new();
     for (key, value) in input.iter() {
-        let value = asset_io::SerdeQuat::from_xyzw(value.0.x, value.0.y, value.0.z, value.0.w);
+        let value = asset_io::bits::SerdeQuat::from_xyzw(value.0.x, value.0.y, value.0.z, value.0.w);
         output.insert(*key, value);
     }
     output
@@ -363,25 +363,25 @@ pub fn convert_into_quat_map(
 // transition
 pub fn convert_into_transition(
     input: editor_proto::components::Transition,
-) -> asset_io::Transition {
+) -> asset_io::bits::Transition {
     let duration_ms = input.get_duration_ms();
-    asset_io::Transition::new(duration_ms)
+    asset_io::bits::Transition::new(duration_ms)
 }
 
 pub fn convert_from_transition(
-    input: asset_io::Transition,
+    input: asset_io::bits::Transition,
 ) -> editor_proto::components::Transition {
     let duration_ms = input.get_duration_ms();
     editor_proto::components::Transition::new(duration_ms)
 }
 
 // quat
-pub fn convert_into_quat(input: editor_proto::SerdeQuat) -> asset_io::SerdeQuat {
+pub fn convert_into_quat(input: editor_proto::SerdeQuat) -> asset_io::bits::SerdeQuat {
     let quat: Quat = input.into();
-    asset_io::SerdeQuat::from_xyzw(quat.x, quat.y, quat.z, quat.w)
+    asset_io::bits::SerdeQuat::from_xyzw(quat.x, quat.y, quat.z, quat.w)
 }
 
-pub fn convert_from_quat(input: asset_io::SerdeQuat) -> editor_proto::SerdeQuat {
+pub fn convert_from_quat(input: asset_io::bits::SerdeQuat) -> editor_proto::SerdeQuat {
     let quat = Quat::from_xyzw(input.x, input.y, input.z, input.w);
     editor_proto::SerdeQuat::from(quat)
 }
@@ -389,13 +389,13 @@ pub fn convert_from_quat(input: asset_io::SerdeQuat) -> editor_proto::SerdeQuat 
 // rotation
 pub fn convert_into_rotation(
     input: editor_proto::components::SerdeRotation,
-) -> asset_io::SerdeRotation {
+) -> asset_io::bits::SerdeRotation {
     let radians = input.get_radians();
-    asset_io::SerdeRotation::from_radians(radians)
+    asset_io::bits::SerdeRotation::from_radians(radians)
 }
 
 pub fn convert_from_rotation(
-    input: asset_io::SerdeRotation,
+    input: asset_io::bits::SerdeRotation,
 ) -> editor_proto::components::SerdeRotation {
     let radians = input.get_radians();
     editor_proto::components::SerdeRotation::from_radians(radians)
@@ -404,13 +404,13 @@ pub fn convert_from_rotation(
 // transform type
 pub fn convert_into_transform_type(
     input: editor_proto::components::NetTransformEntityType,
-) -> asset_io::FileTransformEntityType {
+) -> asset_io::bits::FileTransformEntityType {
     match input {
         editor_proto::components::NetTransformEntityType::Skin => {
-            asset_io::FileTransformEntityType::Skin
+            asset_io::bits::FileTransformEntityType::Skin
         }
         editor_proto::components::NetTransformEntityType::Scene => {
-            asset_io::FileTransformEntityType::Scene
+            asset_io::bits::FileTransformEntityType::Scene
         }
         _ => {
             panic!("unsupported");
@@ -419,13 +419,13 @@ pub fn convert_into_transform_type(
 }
 
 pub fn convert_from_transform_type(
-    input: asset_io::FileTransformEntityType,
+    input: asset_io::bits::FileTransformEntityType,
 ) -> editor_proto::components::NetTransformEntityType {
     match input {
-        asset_io::FileTransformEntityType::Skin => {
+        asset_io::bits::FileTransformEntityType::Skin => {
             editor_proto::components::NetTransformEntityType::Skin
         }
-        asset_io::FileTransformEntityType::Scene => {
+        asset_io::bits::FileTransformEntityType::Scene => {
             editor_proto::components::NetTransformEntityType::Scene
         }
     }

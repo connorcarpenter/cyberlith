@@ -108,12 +108,12 @@ impl From<String> for SkeletonData {
             panic!("unable to read file: {:?}", &file_path);
         };
 
-        let actions = asset_io::SkelAction::read(&data).expect("unable to parse file");
+        let actions = asset_io::bits::SkelAction::read(&data).expect("unable to parse file");
 
         let mut vertices = Vec::new();
         for action in actions {
             match action {
-                asset_io::SkelAction::Vertex(x, y, z, parent_opt, name_opt) => {
+                asset_io::bits::SkelAction::Vertex(x, y, z, parent_opt, name_opt) => {
                     info!(
                         "Vertex: ({}, {}, {}), parent: {:?}, name: {:?}",
                         x, y, z, parent_opt, name_opt

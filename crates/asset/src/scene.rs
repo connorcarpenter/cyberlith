@@ -1,6 +1,6 @@
 use bevy_log::info;
 
-use asset_io::FileTransformEntityType;
+use asset_io::bits::FileTransformEntityType;
 use math::{Quat, Vec3};
 use render_api::components::Transform;
 use storage::{AssetHash, Handle};
@@ -158,7 +158,7 @@ impl From<String> for SceneData {
             panic!("unable to read file: {:?}", &file_path);
         };
 
-        let actions = asset_io::SceneAction::read(&data).expect("unable to parse file");
+        let actions = asset_io::bits::SceneAction::read(&data).expect("unable to parse file");
 
         info!("--- reading scene: {} ---", path);
 
@@ -167,7 +167,7 @@ impl From<String> for SceneData {
         let mut file_index = 0;
         for action in actions {
             match action {
-                asset_io::SceneAction::SkinOrSceneFile(path, name, file_type) => {
+                asset_io::bits::SceneAction::SkinOrSceneFile(path, name, file_type) => {
                     info!(
                         "SkinOrSceneFile {} - type: {:?}, path: {}/{}. ",
                         file_index, file_type, path, name
@@ -190,7 +190,7 @@ impl From<String> for SceneData {
 
                     file_index += 1;
                 }
-                asset_io::SceneAction::NetTransform(
+                asset_io::bits::SceneAction::NetTransform(
                     file_index,
                     x,
                     y,

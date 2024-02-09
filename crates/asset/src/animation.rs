@@ -193,7 +193,7 @@ impl From<String> for AnimationData {
             panic!("unable to read file: {:?}", &file_path);
         };
 
-        let actions = asset_io::AnimAction::read(&data).expect("unable to parse file");
+        let actions = asset_io::bits::AnimAction::read(&data).expect("unable to parse file");
 
         let mut skel_file_opt = None;
         let mut name_map = HashMap::new();
@@ -201,15 +201,15 @@ impl From<String> for AnimationData {
         let mut total_animation_time_ms = 0.0;
         for action in actions {
             match action {
-                asset_io::AnimAction::SkelFile(path, file_name) => {
+                asset_io::bits::AnimAction::SkelFile(path, file_name) => {
                     info!("SkelFile: {}/{}", path, file_name);
                     skel_file_opt = Some(format!("{}/{}", path, file_name));
                 }
-                asset_io::AnimAction::ShapeIndex(name) => {
+                asset_io::bits::AnimAction::ShapeIndex(name) => {
                     //info!("ShapeIndex {}: {}", names.len(), name);
                     name_map.insert(name_map.len() as u16, name);
                 }
-                asset_io::AnimAction::Frame(rotation_map, transition_time) => {
+                asset_io::bits::AnimAction::Frame(rotation_map, transition_time) => {
                     info!(
                         "Frame {}: {:?}ms",
                         frames.len(),

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use asset_io::{AnimAction, FileTransformEntityType, IconAction, IconFrameAction, MeshAction, ModelAction, PaletteAction, SceneAction, SerdeQuat, SerdeRotation, SkelAction, SkinAction};
+use asset_io::bits::{AnimAction, FileTransformEntityType, IconAction, IconFrameAction, MeshAction, ModelAction, PaletteAction, SceneAction, SerdeQuat, SerdeRotation, SkelAction, SkinAction};
 use serde::{Deserialize, Serialize};
 
 use crate::process_assets::json::ProcessData;

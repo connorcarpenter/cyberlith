@@ -2,7 +2,7 @@ use bevy_log::info;
 
 use render_api::components::Transform;
 use storage::{AssetHash, Handle};
-use asset_io::FileTransformEntityType;
+use asset_io::bits::FileTransformEntityType;
 use math::{Quat, Vec3};
 
 use crate::{
@@ -172,7 +172,7 @@ impl From<String> for ModelData {
             panic!("unable to read file: {:?}", &file_path);
         };
 
-        let actions = asset_io::ModelAction::read(&data).expect("unable to parse file");
+        let actions = asset_io::bits::ModelAction::read(&data).expect("unable to parse file");
 
         let mut skel_file_opt = None;
         let mut skin_or_scene_files = Vec::new();
@@ -180,11 +180,11 @@ impl From<String> for ModelData {
         let mut file_index = 0;
         for action in actions {
             match action {
-                asset_io::ModelAction::SkelFile(path, file_name) => {
+                asset_io::bits::ModelAction::SkelFile(path, file_name) => {
                     info!("SkelFile: {}/{}", path, file_name);
                     skel_file_opt = Some(format!("{}/{}", path, file_name));
                 }
-                asset_io::ModelAction::SkinOrSceneFile(path, name, file_type) => {
+                asset_io::bits::ModelAction::SkinOrSceneFile(path, name, file_type) => {
                     info!(
                         "SkinOrSceneFile {} : {}/{}. Type: {:?}",
                         file_index, path, name, file_type
@@ -207,7 +207,7 @@ impl From<String> for ModelData {
 
                     file_index += 1;
                 }
-                asset_io::ModelAction::NetTransform(
+                asset_io::bits::ModelAction::NetTransform(
                     file_index,
                     name,
                     x,

@@ -7,8 +7,11 @@ workspace = "../../.."
 [features]
 read = []
 write = []
+bits = []
+json = []
 
 [dependencies]
 naia-serde = { path = "../../../../naia/shared/serde" }
+
 cfg-if = { version = "1.0" }
 log = { version = "0.4" }

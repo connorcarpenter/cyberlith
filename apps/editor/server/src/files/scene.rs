@@ -9,7 +9,7 @@ use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 
-use asset_io::{FileTransformEntityType, SceneAction};
+use asset_io::bits::{FileTransformEntityType, SceneAction};
 
 use editor_proto::{
     components::{

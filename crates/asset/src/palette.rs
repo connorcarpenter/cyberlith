@@ -60,14 +60,14 @@ impl From<String> for PaletteData {
         };
 
         let actions =
-            asset_io::PaletteAction::read(&data).expect("unable to parse file");
+            asset_io::bits::PaletteAction::read(&data).expect("unable to parse file");
 
         info!("--- reading palette: {} ---", path);
 
         let mut colors = Vec::new();
         for action in actions {
             match action {
-                asset_io::PaletteAction::Color(r, g, b) => {
+                asset_io::bits::PaletteAction::Color(r, g, b) => {
                     info!("loaded color {} : ({}, {}, {})", colors.len(), r, g, b);
                     colors.push(PaletteColor::Raw(r, g, b));
                 }
