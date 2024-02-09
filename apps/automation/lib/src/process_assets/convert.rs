@@ -1,7 +1,5 @@
 use std::collections::HashMap;
 
-use naia_serde::BitReader;
-
 use asset_io::{AnimAction, FileTransformEntityType, IconAction, IconFrameAction, MeshAction, ModelAction, PaletteAction, SceneAction, SerdeQuat, SerdeRotation, SkelAction, SkinAction};
 use serde::{Deserialize, Serialize};
 
@@ -92,8 +90,7 @@ impl PaletteFile {
 }
 
 pub fn palette(in_bytes: &Vec<u8>) -> AssetData {
-    let mut bit_reader = BitReader::new(in_bytes);
-    let actions = PaletteAction::read(&mut bit_reader).unwrap();
+    let actions = PaletteAction::read(in_bytes).unwrap();
 
     let mut file = PaletteFile::new();
 
@@ -157,8 +154,7 @@ impl SkelFile {
 }
 
 pub fn skel(in_bytes: &Vec<u8>) -> AssetData {
-    let mut bit_reader = BitReader::new(in_bytes);
-    let actions = SkelAction::read(&mut bit_reader).unwrap();
+    let actions = SkelAction::read(in_bytes).unwrap();
 
     let mut file = SkelFile::new();
 
@@ -218,8 +214,7 @@ impl MeshFile {
 }
 
 pub fn mesh(in_bytes: &Vec<u8>) -> AssetData {
-    let mut bit_reader = BitReader::new(in_bytes);
-    let actions = MeshAction::read(&mut bit_reader).unwrap();
+    let actions = MeshAction::read(in_bytes).unwrap();
 
     let mut file = MeshFile::new();
 
@@ -295,8 +290,7 @@ impl AnimFile {
 }
 
 pub fn anim(in_bytes: &Vec<u8>) -> AssetData {
-    let mut bit_reader = BitReader::new(in_bytes);
-    let actions = AnimAction::read(&mut bit_reader).unwrap();
+    let actions = AnimAction::read(in_bytes).unwrap();
 
     let mut file = AnimFile::new();
 
@@ -392,8 +386,7 @@ impl IconFile {
 }
 
 pub fn icon(in_bytes: &Vec<u8>) -> AssetData {
-    let mut bit_reader = BitReader::new(in_bytes);
-    let actions = IconAction::read(&mut bit_reader).unwrap();
+    let actions = IconAction::read(in_bytes).unwrap();
 
     let mut file = IconFile::new();
 
@@ -478,8 +471,7 @@ impl SkinFile {
 }
 
 pub fn skin(in_bytes: &Vec<u8>) -> AssetData {
-    let mut bit_reader = BitReader::new(in_bytes);
-    let actions = SkinAction::read(&mut bit_reader).unwrap();
+    let actions = SkinAction::read(in_bytes).unwrap();
 
     let mut file = SkinFile::new();
 
@@ -552,8 +544,7 @@ impl SceneFile {
 }
 
 pub fn scene(in_bytes: &Vec<u8>) -> AssetData {
-    let mut bit_reader = BitReader::new(in_bytes);
-    let actions = SceneAction::read(&mut bit_reader).unwrap();
+    let actions = SceneAction::read(in_bytes).unwrap();
 
     let mut file = SceneFile::new();
 
@@ -654,8 +645,7 @@ impl ModelFile {
 }
 
 pub fn model(in_bytes: &Vec<u8>) -> AssetData {
-    let mut bit_reader = BitReader::new(in_bytes);
-    let actions = ModelAction::read(&mut bit_reader).unwrap();
+    let actions = ModelAction::read(in_bytes).unwrap();
 
     let mut file = ModelFile::new();
 

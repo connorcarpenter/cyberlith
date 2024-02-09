@@ -3,8 +3,6 @@ use std::{collections::{HashMap, HashSet}, fs};
 
 use bevy_log::info;
 
-use naia_serde::BitReader;
-
 use math::{quat_from_spin_direction, Quat, Vec3};
 use render_api::components::Transform;
 use storage::AssetHash;
@@ -110,9 +108,7 @@ impl From<String> for SkeletonData {
             panic!("unable to read file: {:?}", &file_path);
         };
 
-        let mut bit_reader = BitReader::new(&data);
-
-        let actions = asset_io::SkelAction::read(&mut bit_reader).expect("unable to parse file");
+        let actions = asset_io::SkelAction::read(&data).expect("unable to parse file");
 
         let mut vertices = Vec::new();
         for action in actions {

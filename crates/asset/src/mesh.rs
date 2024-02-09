@@ -1,7 +1,5 @@
 use bevy_log::info;
 
-use naia_serde::BitReader;
-
 use math::Vec3;
 use render_api::base::CpuMesh;
 use storage::{AssetHash, Storage, Handle};
@@ -67,9 +65,7 @@ impl From<MeshFilePath> for CpuMesh {
         };
         //let data = include_bytes!("cube.mesh");
 
-        let mut bit_reader = BitReader::new(&data);
-
-        let actions = asset_io::MeshAction::read(&mut bit_reader).expect("unable to parse file");
+        let actions = asset_io::MeshAction::read(&data).expect("unable to parse file");
 
         info!("--- reading mesh file: {} ---", &path);
 

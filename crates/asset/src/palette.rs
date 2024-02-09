@@ -1,7 +1,5 @@
 use bevy_log::info;
 
-use naia_serde::BitReader;
-
 use render_api::base::{Color, CpuMaterial};
 use storage::{AssetHash, Storage, Handle};
 
@@ -61,10 +59,8 @@ impl From<String> for PaletteData {
             panic!("unable to read file: {:?}", &file_path);
         };
 
-        let mut bit_reader = BitReader::new(&data);
-
         let actions =
-            asset_io::PaletteAction::read(&mut bit_reader).expect("unable to parse file");
+            asset_io::PaletteAction::read(&data).expect("unable to parse file");
 
         info!("--- reading palette: {} ---", path);
 

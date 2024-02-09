@@ -2,8 +2,6 @@ use std::collections::HashMap;
 
 use bevy_log::info;
 
-use naia_serde::BitReader;
-
 use math::Quat;
 use render_api::components::Transform;
 use storage::{AssetHash, Handle};
@@ -195,9 +193,7 @@ impl From<String> for AnimationData {
             panic!("unable to read file: {:?}", &file_path);
         };
 
-        let mut bit_reader = BitReader::new(&data);
-
-        let actions = asset_io::AnimAction::read(&mut bit_reader).expect("unable to parse file");
+        let actions = asset_io::AnimAction::read(&data).expect("unable to parse file");
 
         let mut skel_file_opt = None;
         let mut name_map = HashMap::new();

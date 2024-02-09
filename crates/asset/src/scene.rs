@@ -1,7 +1,5 @@
 use bevy_log::info;
 
-use naia_serde::BitReader;
-
 use asset_io::FileTransformEntityType;
 use math::{Quat, Vec3};
 use render_api::components::Transform;
@@ -160,9 +158,7 @@ impl From<String> for SceneData {
             panic!("unable to read file: {:?}", &file_path);
         };
 
-        let mut bit_reader = BitReader::new(&data);
-
-        let actions = asset_io::SceneAction::read(&mut bit_reader).expect("unable to parse file");
+        let actions = asset_io::SceneAction::read(&data).expect("unable to parse file");
 
         info!("--- reading scene: {} ---", path);
 

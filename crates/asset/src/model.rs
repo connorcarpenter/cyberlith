@@ -1,7 +1,5 @@
 use bevy_log::info;
 
-use naia_serde::BitReader;
-
 use render_api::components::Transform;
 use storage::{AssetHash, Handle};
 use asset_io::FileTransformEntityType;
@@ -174,9 +172,7 @@ impl From<String> for ModelData {
             panic!("unable to read file: {:?}", &file_path);
         };
 
-        let mut bit_reader = BitReader::new(&data);
-
-        let actions = asset_io::ModelAction::read(&mut bit_reader).expect("unable to parse file");
+        let actions = asset_io::ModelAction::read(&data).expect("unable to parse file");
 
         let mut skel_file_opt = None;
         let mut skin_or_scene_files = Vec::new();

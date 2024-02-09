@@ -15,5 +15,3 @@ storage = { path = "../storage" }
 bevy_app = { version = "0.12.1", default-features = false }
 bevy_ecs = { version = "0.12.1", default-features = false }
 bevy_log = { version = "0.12.1", default-features=false }
-
-naia-serde = { path = "../../../naia/shared/serde" }

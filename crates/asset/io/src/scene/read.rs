@@ -7,7 +7,9 @@ use crate::{
 };
 
 impl SceneAction {
-    pub fn read(bit_reader: &mut BitReader) -> Result<Vec<Self>, SerdeErr> {
+    pub fn read(bytes: &[u8]) -> Result<Vec<Self>, SerdeErr> {
+        let mut bit_reader = BitReader::new(bytes);
+        let bit_reader = &mut bit_reader;
         let mut actions = Vec::new();
 
         loop {

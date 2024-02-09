@@ -7,7 +7,7 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 
-use naia_bevy_server::{BitReader, CommandsExt, ReplicationConfig, Server};
+use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 
 use asset_io::AnimAction;
 
@@ -277,9 +277,8 @@ impl AnimReader {
         file_entity: &Entity,
         bytes: &Box<[u8]>,
     ) -> HashMap<Entity, ContentEntityData> {
-        let mut bit_reader = BitReader::new(bytes);
 
-        let Ok(actions) = AnimAction::read(&mut bit_reader) else {
+        let Ok(actions) = AnimAction::read(bytes) else {
             panic!("Error reading .anim file");
         };
 

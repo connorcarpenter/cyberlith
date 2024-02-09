@@ -2,8 +2,6 @@ use std::{collections::HashMap, fs};
 
 use bevy_log::info;
 
-use naia_serde::BitReader;
-
 use render_api::base::{CpuMaterial, CpuMesh, CpuSkin};
 use storage::{AssetHash, Storage, Handle};
 
@@ -156,9 +154,7 @@ impl From<String> for SkinData {
             panic!("unable to read file: {:?}", &file_path);
         };
 
-        let mut bit_reader = BitReader::new(&data);
-
-        let actions = asset_io::SkinAction::read(&mut bit_reader).expect("unable to parse file");
+        let actions = asset_io::SkinAction::read(&data).expect("unable to parse file");
 
         let mut face_color_ids = Vec::new();
         let mut bck_color_index = None;

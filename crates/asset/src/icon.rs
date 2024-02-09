@@ -2,8 +2,6 @@ use std::{collections::HashMap, fs};
 
 use bevy_log::info;
 
-use naia_serde::BitReader;
-
 use math::Vec3;
 use render_api::{
     base::{CpuMaterial, CpuMesh, CpuSkin},
@@ -226,9 +224,7 @@ impl From<String> for IconData {
             panic!("unable to read file: {:?}", &file_path);
         };
 
-        let mut bit_reader = BitReader::new(&data);
-
-        let actions = asset_io::IconAction::read(&mut bit_reader).expect("unable to parse file");
+        let actions = asset_io::IconAction::read(&data).expect("unable to parse file");
 
         let mut palette_file_opt = None;
         let mut frames = Vec::new();
