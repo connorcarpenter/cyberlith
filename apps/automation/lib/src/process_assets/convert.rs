@@ -95,15 +95,46 @@ pub fn skel(in_bytes: &Vec<u8>) -> Vec<u8> {
 }
 
 // Mesh
+
+#[derive(Serialize, Deserialize)]
+pub struct MeshFileVertex {
+    pub x: i16,
+    pub y: i16,
+    pub z: i16,
+}
+
+
+#[derive(Serialize, Deserialize)]
+pub struct MeshFileEdge {
+    pub start: u16,
+    pub end: u16,
+}
+
+
+#[derive(Serialize, Deserialize)]
+pub struct MeshFileFace {
+    pub face_index: u16,
+    pub vertex_a: u16,
+    pub vertex_b: u16,
+    pub vertex_c: u16,
+    pub edge_a: u16,
+    pub edge_b: u16,
+    pub edge_c: u16,
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct MeshFile {
-
+    pub vertices: Vec<MeshFileVertex>,
+    pub edges: Vec<MeshFileEdge>,
+    pub faces: Vec<MeshFileFace>,
 }
 
 impl MeshFile {
     pub fn new() -> Self {
         Self {
-
+            vertices: Vec::new(),
+            edges: Vec::new(),
+            faces: Vec::new(),
         }
     }
 }
@@ -117,13 +148,29 @@ pub fn mesh(in_bytes: &Vec<u8>) -> Vec<u8> {
     for action in actions {
         match action {
             MeshAction::Vertex(x, y, z) => {
-                todo!();
+                file.vertices.push(MeshFileVertex {
+                    x,
+                    y,
+                    z,
+                });
             }
             MeshAction::Edge(vertex_a, vertex_b) => {
-                todo!();
+                file.edges.push(MeshFileEdge {
+                    start: vertex_a,
+                    end: vertex_b,
+                });
+
             }
             MeshAction::Face(face_index, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c) => {
-                todo!();
+                file.faces.push(MeshFileFace {
+                    face_index,
+                    vertex_a,
+                    vertex_b,
+                    vertex_c,
+                    edge_a,
+                    edge_b,
+                    edge_c,
+                });
             }
         }
     }
