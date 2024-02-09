@@ -47,19 +47,31 @@ pub fn palette(in_bytes: &Vec<u8>) -> Vec<u8> {
 
 // Skel
 #[derive(Serialize, Deserialize)]
+pub struct SkelFileVertexParent {
+    id: u16,
+    rotation: u8,
+}
+
+#[derive(Serialize, Deserialize)]
 pub struct SkelFileVertex {
-    x: i16, y: i16, z: i16, parent_opt: Option<(u16, u8)>, name_opt: Option<String>,
+    x: i16, y: i16, z: i16, parent: Option<SkelFileVertexParent>, name: Option<String>,
 }
 
 impl SkelFileVertex {
     pub fn new(x: i16, y: i16, z: i16, parent_opt: Option<(u16, SerdeRotation)>, name_opt: Option<String>) -> Self {
-        let parent_opt = parent_opt.map(|(parent_id, rotation)| (parent_id, rotation.get_inner_value()));
+        let parent = parent_opt
+            .map(|(parent_id, rotation)| {
+                SkelFileVertexParent {
+                    id: parent_id,
+                    rotation: rotation.get_inner_value()
+                }
+            });
         Self {
             x,
             y,
             z,
-            parent_opt,
-            name_opt,
+            parent,
+            name: name_opt,
         }
     }
 }
@@ -106,14 +118,13 @@ pub struct MeshFileVertex {
 
 #[derive(Serialize, Deserialize)]
 pub struct MeshFileEdge {
-    pub start: u16,
-    pub end: u16,
+    pub vertex_a: u16,
+    pub vertex_b: u16,
 }
-
 
 #[derive(Serialize, Deserialize)]
 pub struct MeshFileFace {
-    pub face_index: u16,
+    pub face_id: u16,
     pub vertex_a: u16,
     pub vertex_b: u16,
     pub vertex_c: u16,
@@ -156,14 +167,14 @@ pub fn mesh(in_bytes: &Vec<u8>) -> Vec<u8> {
             }
             MeshAction::Edge(vertex_a, vertex_b) => {
                 file.edges.push(MeshFileEdge {
-                    start: vertex_a,
-                    end: vertex_b,
+                    vertex_a,
+                    vertex_b,
                 });
 
             }
-            MeshAction::Face(face_index, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c) => {
+            MeshAction::Face(face_id, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c) => {
                 file.faces.push(MeshFileFace {
-                    face_index,
+                    face_id,
                     vertex_a,
                     vertex_b,
                     vertex_c,
@@ -182,10 +193,10 @@ pub fn mesh(in_bytes: &Vec<u8>) -> Vec<u8> {
 #[derive(Serialize, Deserialize)]
 pub struct AnimFilePose {
     edge_id: u16,
-    x: i8,
-    y: i8,
-    z: i8,
-    w: i8,
+    quat_x: i8,
+    quat_y: i8,
+    quat_z: i8,
+    quat_w: i8,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -234,10 +245,10 @@ pub fn anim(in_bytes: &Vec<u8>) -> Vec<u8> {
                 for (shape_index, rotation) in poses {
                     frame.poses.push(AnimFilePose {
                         edge_id: shape_index,
-                        x: (rotation.x * SerdeQuat::MAX_SIZE).round() as i8,
-                        y: (rotation.y * SerdeQuat::MAX_SIZE).round() as i8,
-                        z: (rotation.z * SerdeQuat::MAX_SIZE).round() as i8,
-                        w: (rotation.w * SerdeQuat::MAX_SIZE).round() as i8,
+                        quat_x: (rotation.x * SerdeQuat::MAX_SIZE).round() as i8,
+                        quat_y: (rotation.y * SerdeQuat::MAX_SIZE).round() as i8,
+                        quat_z: (rotation.z * SerdeQuat::MAX_SIZE).round() as i8,
+                        quat_w: (rotation.w * SerdeQuat::MAX_SIZE).round() as i8,
                     });
                 }
 
@@ -259,14 +270,14 @@ pub struct IconFileFrameVertex {
 
 #[derive(Serialize, Deserialize)]
 pub struct IconFileFrameEdge {
-    pub start: u16,
-    pub end: u16,
+    pub vertex_a: u16,
+    pub vertex_b: u16,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct IconFileFrameFace {
-    pub face_index: u16,
-    pub palette_color_index: u8,
+    pub face_id: u16,
+    pub color_id: u8,
     pub vertex_a: u16,
     pub vertex_b: u16,
     pub vertex_c: u16,
@@ -331,8 +342,8 @@ pub fn icon(in_bytes: &Vec<u8>) -> Vec<u8> {
                         }
                         IconFrameAction::Edge(start, end) => {
                             new_frame.edges.push(IconFileFrameEdge {
-                                start,
-                                end,
+                                vertex_a: start,
+                                vertex_b: end,
                             });
                         }
                         IconFrameAction::Face(
@@ -346,8 +357,8 @@ pub fn icon(in_bytes: &Vec<u8>) -> Vec<u8> {
                             edge_c_index
                         ) => {
                             new_frame.faces.push(IconFileFrameFace {
-                                face_index,
-                                palette_color_index,
+                                face_id: face_index,
+                                color_id: palette_color_index,
                                 vertex_a: vertex_a_index,
                                 vertex_b: vertex_b_index,
                                 vertex_c: vertex_c_index,
@@ -369,14 +380,26 @@ pub fn icon(in_bytes: &Vec<u8>) -> Vec<u8> {
 
 // Skin
 #[derive(Serialize, Deserialize)]
-pub struct SkinFile {
+pub struct SkinFileFace {
+    face_id: u16,
+    color_id: u8,
+}
 
+#[derive(Serialize, Deserialize)]
+pub struct SkinFile {
+    palette_id: String,
+    mesh_id: String,
+    background_color_id: u8,
+    face_colors: Vec<SkinFileFace>,
 }
 
 impl SkinFile {
     pub fn new() -> Self {
         Self {
-
+            palette_id: String::new(),
+            mesh_id: String::new(),
+            background_color_id: 0,
+            face_colors: Vec::new(),
         }
     }
 }
@@ -390,16 +413,19 @@ pub fn skin(in_bytes: &Vec<u8>) -> Vec<u8> {
     for action in actions {
         match action {
             SkinAction::PaletteFile(path, file_name) => {
-                todo!();
+                file.palette_id = format!("{}/{}", path, file_name);
             }
             SkinAction::MeshFile(path, file_name) => {
-                todo!();
+                file.mesh_id = format!("{}/{}", path, file_name);
             }
-            SkinAction::BackgroundColor(palette_color_index) => {
-                todo!();
+            SkinAction::BackgroundColor(palette_color_id) => {
+                file.background_color_id = palette_color_id;
             }
-            SkinAction::SkinColor(face_index, palette_color_index) => {
-                todo!();
+            SkinAction::SkinColor(face_id, color_id) => {
+                file.face_colors.push(SkinFileFace {
+                    face_id,
+                    color_id,
+                });
             }
         }
     }
