@@ -77,7 +77,7 @@ pub struct SerdeQuat {
 
 impl SerdeQuat {
     const BITS: u8 = 5;
-    const MAX_SIZE: f32 = 32.0;
+    pub const MAX_SIZE: f32 = 32.0;
 
     pub fn from_xyzw(x: f32, y: f32, z: f32, w: f32) -> Self {
         Self { x, y, z, w }

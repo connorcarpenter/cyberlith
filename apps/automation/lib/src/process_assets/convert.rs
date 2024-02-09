@@ -1,6 +1,6 @@
 use naia_serde::BitReader;
 
-use asset_io::{AnimAction, IconAction, MeshAction, ModelAction, PaletteAction, SceneAction, SerdeRotation, SkelAction, SkinAction};
+use asset_io::{AnimAction, IconAction, MeshAction, ModelAction, PaletteAction, SceneAction, SerdeQuat, SerdeRotation, SkelAction, SkinAction};
 use serde::{Deserialize, Serialize};
 
 // Palette
@@ -180,14 +180,33 @@ pub fn mesh(in_bytes: &Vec<u8>) -> Vec<u8> {
 
 // Animation
 #[derive(Serialize, Deserialize)]
-pub struct AnimFile {
+pub struct AnimFilePose {
+    edge_id: u16,
+    x: i8,
+    y: i8,
+    z: i8,
+    w: i8,
+}
 
+#[derive(Serialize, Deserialize)]
+pub struct AnimFileFrame {
+    poses: Vec<AnimFilePose>,
+    transition_ms: u16,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct AnimFile {
+    skel_id: String,
+    edge_names: Vec<String>,
+    frames: Vec<AnimFileFrame>,
 }
 
 impl AnimFile {
     pub fn new() -> Self {
         Self {
-
+            skel_id: String::new(),
+            edge_names: Vec::new(),
+            frames: Vec::new(),
         }
     }
 }
@@ -201,13 +220,28 @@ pub fn anim(in_bytes: &Vec<u8>) -> Vec<u8> {
     for action in actions {
         match action {
             AnimAction::SkelFile(path, file_name) => {
-                todo!();
+                file.skel_id = format!("{}/{}", path, file_name);
             }
             AnimAction::ShapeIndex(shape_name) => {
-                todo!();
+                file.edge_names.push(shape_name);
             }
             AnimAction::Frame(poses, transition) => {
-                todo!();
+                let mut frame = AnimFileFrame {
+                    poses: Vec::new(),
+                    transition_ms: transition.get_duration_ms(),
+                };
+
+                for (shape_index, rotation) in poses {
+                    frame.poses.push(AnimFilePose {
+                        edge_id: shape_index,
+                        x: (rotation.x * SerdeQuat::MAX_SIZE).round() as i8,
+                        y: (rotation.y * SerdeQuat::MAX_SIZE).round() as i8,
+                        z: (rotation.z * SerdeQuat::MAX_SIZE).round() as i8,
+                        w: (rotation.w * SerdeQuat::MAX_SIZE).round() as i8,
+                    });
+                }
+
+                file.frames.push(frame);
             }
         }
     }
