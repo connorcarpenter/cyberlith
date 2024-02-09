@@ -1,6 +1,6 @@
 use naia_serde::BitReader;
 
-use asset_io::{AnimAction, IconAction, MeshAction, ModelAction, PaletteAction, SceneAction, SerdeQuat, SerdeRotation, SkelAction, SkinAction};
+use asset_io::{AnimAction, IconAction, IconFrameAction, MeshAction, ModelAction, PaletteAction, SceneAction, SerdeQuat, SerdeRotation, SkelAction, SkinAction};
 use serde::{Deserialize, Serialize};
 
 // Palette
@@ -196,7 +196,7 @@ pub struct AnimFileFrame {
 
 #[derive(Serialize, Deserialize)]
 pub struct AnimFile {
-    skel_id: String,
+    skeleton_id: String,
     edge_names: Vec<String>,
     frames: Vec<AnimFileFrame>,
 }
@@ -204,7 +204,7 @@ pub struct AnimFile {
 impl AnimFile {
     pub fn new() -> Self {
         Self {
-            skel_id: String::new(),
+            skeleton_id: String::new(),
             edge_names: Vec::new(),
             frames: Vec::new(),
         }
@@ -220,7 +220,7 @@ pub fn anim(in_bytes: &Vec<u8>) -> Vec<u8> {
     for action in actions {
         match action {
             AnimAction::SkelFile(path, file_name) => {
-                file.skel_id = format!("{}/{}", path, file_name);
+                file.skeleton_id = format!("{}/{}", path, file_name);
             }
             AnimAction::ShapeIndex(shape_name) => {
                 file.edge_names.push(shape_name);
@@ -251,14 +251,58 @@ pub fn anim(in_bytes: &Vec<u8>) -> Vec<u8> {
 
 // Icon
 #[derive(Serialize, Deserialize)]
-pub struct IconFile {
+pub struct IconFileFrameVertex {
+    pub x: i16,
+    pub y: i16,
+}
 
+
+#[derive(Serialize, Deserialize)]
+pub struct IconFileFrameEdge {
+    pub start: u16,
+    pub end: u16,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct IconFileFrameFace {
+    pub face_index: u16,
+    pub palette_color_index: u8,
+    pub vertex_a: u16,
+    pub vertex_b: u16,
+    pub vertex_c: u16,
+    pub edge_a: u16,
+    pub edge_b: u16,
+    pub edge_c: u16,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct IconFileFrame {
+    pub vertices: Vec<IconFileFrameVertex>,
+    pub edges: Vec<IconFileFrameEdge>,
+    pub faces: Vec<IconFileFrameFace>,
+}
+
+impl IconFileFrame {
+    pub fn new() -> Self {
+        Self {
+            vertices: Vec::new(),
+            edges: Vec::new(),
+            faces: Vec::new(),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct IconFile {
+    palette_id: String,
+    frames: Vec<IconFileFrame>,
 }
 
 impl IconFile {
     pub fn new() -> Self {
         Self {
-
+            palette_id: String::new(),
+            frames: Vec::new(),
         }
     }
 }
@@ -271,11 +315,51 @@ pub fn icon(in_bytes: &Vec<u8>) -> Vec<u8> {
 
     for action in actions {
         match action {
-            IconAction::PaletteFile(palette_path, palette_file_name) => {
-                todo!();
+            IconAction::PaletteFile(path, file_name) => {
+                file.palette_id = format!("{}/{}", path, file_name);
             }
             IconAction::Frame(frame_actions) => {
-                todo!();
+                let mut new_frame = IconFileFrame::new();
+
+                for frame_action in frame_actions {
+                    match frame_action {
+                        IconFrameAction::Vertex(x, y) => {
+                            new_frame.vertices.push(IconFileFrameVertex {
+                                x,
+                                y,
+                            });
+                        }
+                        IconFrameAction::Edge(start, end) => {
+                            new_frame.edges.push(IconFileFrameEdge {
+                                start,
+                                end,
+                            });
+                        }
+                        IconFrameAction::Face(
+                            face_index,
+                            palette_color_index,
+                            vertex_a_index,
+                            vertex_b_index,
+                            vertex_c_index,
+                            edge_a_index,
+                            edge_b_index,
+                            edge_c_index
+                        ) => {
+                            new_frame.faces.push(IconFileFrameFace {
+                                face_index,
+                                palette_color_index,
+                                vertex_a: vertex_a_index,
+                                vertex_b: vertex_b_index,
+                                vertex_c: vertex_c_index,
+                                edge_a: edge_a_index,
+                                edge_b: edge_b_index,
+                                edge_c: edge_c_index,
+                            });
+                        }
+                    }
+                }
+
+                file.frames.push(new_frame);
             }
         }
     }
