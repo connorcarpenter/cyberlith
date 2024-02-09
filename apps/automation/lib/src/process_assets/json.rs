@@ -26,63 +26,91 @@ pub(crate) fn process_assets() -> Result<(), CliError> {
     write_all_files(&repo, "json", &files);
 
     // push
+    push_to_branch(&repo, "json");
 
     Ok(())
 }
 
-fn write_all_files(repo: &Repository, branch: &str, file_entries: &Vec<FileEntry>) {
-    for file_entry in file_entries {
-        let file_path = format!("{}{}", file_entry.path, file_entry.name);
-        let full_path = format!("{}{}.json", repo.workdir().unwrap().to_str().unwrap(), file_path);
+fn write_all_files(repo: &Repository, branch_name: &str, file_entries: &Vec<FileEntry>) {
+    let ref_name = format!("refs/heads/{}", branch_name);
+    let mut index = repo.index().expect("Failed to open index");
 
-        info!("writing file at path: {}", full_path.as_str());
+    for file_entry in file_entries {
+        let file_path = format!("{}{}.json", file_entry.path, file_entry.name);
+        let full_path = format!("{}{}", repo.workdir().unwrap().to_str().unwrap(), file_path);
+
+        info!("writing file at path: {}", file_path.as_str());
 
         let path = Path::new(full_path.as_str());
-        let mut file = match File::create(path) {
-            Ok(file) => file,
-            Err(err) => panic!("Failed to create file: {}", err),
-        };
 
-        let in_bytes = &file_entry.bytes;
-        let out_bytes: Vec<u8> = match file_entry.file_ext.as_str() {
-            "palette" => {
-                convert::palette(in_bytes)
-            }
-            "scene" => {
-                convert::scene(in_bytes)
-            }
-            "mesh" => {
-                convert::mesh(in_bytes)
-            }
-            "skin" => {
-                convert::skin(in_bytes)
-            }
-            "model" => {
-                convert::model(in_bytes)
-            }
-            "skel" => {
-                convert::skel(in_bytes)
-            }
-            "anim" => {
-                convert::anim(in_bytes)
-            }
-            "icon" => {
-                convert::icon(in_bytes)
-            }
-            _ => {
-                in_bytes.to_vec()
-            }
-        };
+        {
+            let mut file = match File::create(path) {
+                Ok(file) => file,
+                Err(err) => panic!("Failed to create file: {}", err),
+            };
 
-        match file.write_all(&out_bytes) {
-            Ok(_) => {
-                info!("wrote file: {}", full_path);
-            }
-            Err(err) => {
-                info!("failed to write file: {}", err);
+            let in_bytes = &file_entry.bytes;
+            let out_bytes: Vec<u8> = match file_entry.file_ext.as_str() {
+                "palette" => {
+                    convert::palette(in_bytes)
+                }
+                "scene" => {
+                    convert::scene(in_bytes)
+                }
+                "mesh" => {
+                    convert::mesh(in_bytes)
+                }
+                "skin" => {
+                    convert::skin(in_bytes)
+                }
+                "model" => {
+                    convert::model(in_bytes)
+                }
+                "skel" => {
+                    convert::skel(in_bytes)
+                }
+                "anim" => {
+                    convert::anim(in_bytes)
+                }
+                "icon" => {
+                    convert::icon(in_bytes)
+                }
+                _ => {
+                    in_bytes.to_vec()
+                }
+            };
+
+            match file.write_all(&out_bytes) {
+                Ok(_) => {
+                    info!("wrote file: {}", file_path);
+                }
+                Err(err) => {
+                    info!("failed to write file: {}", err);
+                }
             }
         }
+
+        // add to index
+        index
+            .add_path(Path::new(&file_path))
+            .expect("Failed to add file to index");
     }
+
+    let tree_id = index.write_tree().expect("Failed to write index");
+    let tree = repo.find_tree(tree_id).expect("Failed to find tree");
+    let signature = repo.signature().expect("Failed to get signature");
+    let parent_commit = repo.head().expect("Failed to get head").peel_to_commit().expect("Failed to peel to commit");
+
+    let commit_id = repo.commit(
+        Some("HEAD"),
+        &signature,
+        &signature,
+        &format!("committing to {:?}", branch_name),
+        &tree,
+        &[&parent_commit],
+    ).unwrap();
+
+    repo.reference(&ref_name, commit_id, true, "committing to branch").unwrap();
 }
 
 fn push_to_branch(repo: &Repository, branch_name: &str) {
@@ -271,7 +299,6 @@ fn delete_all_files(repo: &Repository, branch_name: &str, file_entries: &Vec<Fil
         index
             .remove_path(Path::new(&file_path))
             .expect("Failed to remove file from index");
-
     }
 
     let tree_id = index.write_tree().expect("Failed to write index");

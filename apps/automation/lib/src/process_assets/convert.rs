@@ -42,7 +42,9 @@ pub fn palette(in_bytes: &Vec<u8>) -> Vec<u8> {
         }
     }
 
-    serde_json::to_vec(&file).unwrap()
+    let mut pretty_json: Vec<u8> = Vec::new();
+    serde_json::to_writer_pretty(&mut pretty_json, &file).unwrap();
+    pretty_json
 }
 
 // Skel
@@ -103,7 +105,9 @@ pub fn skel(in_bytes: &Vec<u8>) -> Vec<u8> {
         }
     }
 
-    serde_json::to_vec(&file).unwrap()
+    let mut pretty_json: Vec<u8> = Vec::new();
+    serde_json::to_writer_pretty(&mut pretty_json, &file).unwrap();
+    pretty_json
 }
 
 // Mesh
@@ -186,7 +190,9 @@ pub fn mesh(in_bytes: &Vec<u8>) -> Vec<u8> {
         }
     }
 
-    serde_json::to_vec(&file).unwrap()
+    let mut pretty_json: Vec<u8> = Vec::new();
+    serde_json::to_writer_pretty(&mut pretty_json, &file).unwrap();
+    pretty_json
 }
 
 // Animation
@@ -264,7 +270,9 @@ pub fn anim(in_bytes: &Vec<u8>) -> Vec<u8> {
         }
     }
 
-    serde_json::to_vec(&file).unwrap()
+    let mut pretty_json: Vec<u8> = Vec::new();
+    serde_json::to_writer_pretty(&mut pretty_json, &file).unwrap();
+    pretty_json
 }
 
 // Icon
@@ -381,7 +389,9 @@ pub fn icon(in_bytes: &Vec<u8>) -> Vec<u8> {
         }
     }
 
-    serde_json::to_vec(&file).unwrap()
+    let mut pretty_json: Vec<u8> = Vec::new();
+    serde_json::to_writer_pretty(&mut pretty_json, &file).unwrap();
+    pretty_json
 }
 
 // Skin
@@ -436,7 +446,9 @@ pub fn skin(in_bytes: &Vec<u8>) -> Vec<u8> {
         }
     }
 
-    serde_json::to_vec(&file).unwrap()
+    let mut pretty_json: Vec<u8> = Vec::new();
+    serde_json::to_writer_pretty(&mut pretty_json, &file).unwrap();
+    pretty_json
 }
 
 // Scene
@@ -535,7 +547,9 @@ pub fn scene(in_bytes: &Vec<u8>) -> Vec<u8> {
         }
     }
 
-    serde_json::to_vec(&file).unwrap()
+    let mut pretty_json: Vec<u8> = Vec::new();
+    serde_json::to_writer_pretty(&mut pretty_json, &file).unwrap();
+    pretty_json
 }
 
 // Model
@@ -642,5 +656,7 @@ pub fn model(in_bytes: &Vec<u8>) -> Vec<u8> {
         }
     }
 
-    serde_json::to_vec(&file).unwrap()
+    let mut pretty_json: Vec<u8> = Vec::new();
+    serde_json::to_writer_pretty(&mut pretty_json, &file).unwrap();
+    pretty_json
 }
