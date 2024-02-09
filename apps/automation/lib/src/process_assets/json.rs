@@ -33,7 +33,9 @@ pub(crate) fn process_assets() -> Result<(), CliError> {
 fn write_all_files(repo: &Repository, branch: &str, file_entries: &Vec<FileEntry>) {
     for file_entry in file_entries {
         let file_path = format!("{}{}", file_entry.path, file_entry.name);
-        let full_path = format!("{}/{}", repo.workdir().unwrap().to_str().unwrap(), file_path);
+        let full_path = format!("{}{}.json", repo.workdir().unwrap().to_str().unwrap(), file_path);
+
+        info!("writing file at path: {}", full_path.as_str());
 
         let path = Path::new(full_path.as_str());
         let mut file = match File::create(path) {
