@@ -1,8 +1,10 @@
 use std::{fs, fs::File, io::Read, path::Path};
+use std::io::Write;
 
-use git2::{BranchType, Cred, PushOptions, Repository, Tree};
+use git2::{Cred, PushOptions, Repository, Tree};
 use log::info;
 
+use super::convert;
 use crate::CliError;
 
 pub(crate) fn process_assets() -> Result<(), CliError> {
@@ -18,43 +20,67 @@ pub(crate) fn process_assets() -> Result<(), CliError> {
 
     // delete all files, push
     delete_all_files(&repo, "json", &files);
-    //commit_to_branch(&repo, "json");
     push_to_branch(&repo, "json");
 
     // create json file for each previous file
+    write_all_files(&repo, "json", &files);
 
     // push
 
     Ok(())
 }
 
-fn commit_to_branch(repo: &Repository, branch_name: &str) {
-    let ref_name = format!("refs/heads/{}", branch_name);
-    let branch_ref = repo.find_reference(&ref_name).expect("Failed to find branch reference");
-    repo.set_head(&ref_name).expect("Failed to set head to the new branch");
-    repo.checkout_head(Some(git2::build::CheckoutBuilder::new().force()))
-        .expect("Failed to checkout the new branch");
+fn write_all_files(repo: &Repository, branch: &str, file_entries: &Vec<FileEntry>) {
+    for file_entry in file_entries {
+        let file_path = format!("{}{}", file_entry.path, file_entry.name);
+        let full_path = format!("{}/{}", repo.workdir().unwrap().to_str().unwrap(), file_path);
 
-    let mut index = repo.index().expect("Failed to get index");
-    let tree_id = index.write_tree().expect("Failed to write tree");
-    let tree = repo.find_tree(tree_id).expect("Failed to find tree");
+        let path = Path::new(full_path.as_str());
+        let mut file = match File::create(path) {
+            Ok(file) => file,
+            Err(err) => panic!("Failed to create file: {}", err),
+        };
 
-    let signature = repo.signature().expect("Failed to get signature");
-    let parent_commit = repo.head().expect("Failed to get head").peel_to_commit().expect("Failed to peel to commit");
+        let in_bytes = &file_entry.bytes;
+        let out_bytes: Vec<u8> = match file_entry.file_ext.as_str() {
+            "palette" => {
+                convert::palette(in_bytes)
+            }
+            "scene" => {
+                convert::scene(in_bytes)
+            }
+            "mesh" => {
+                convert::mesh(in_bytes)
+            }
+            "skin" => {
+                convert::skin(in_bytes)
+            }
+            "model" => {
+                convert::model(in_bytes)
+            }
+            "skel" => {
+                convert::skel(in_bytes)
+            }
+            "anim" => {
+                convert::anim(in_bytes)
+            }
+            "icon" => {
+                convert::icon(in_bytes)
+            }
+            _ => {
+                in_bytes.to_vec()
+            }
+        };
 
-    let commit_id = repo.commit(
-        Some("HEAD"),
-        &signature,
-        &signature,
-        &format!("committing to {:?}", branch_name),
-        &tree,
-        &[&parent_commit],
-    ).unwrap();
-
-    let commit = repo.find_commit(commit_id).unwrap();
-    repo.reference(&format!("refs/heads/{}", branch_name), commit_id, true, "committing to branch").unwrap();
-
-    info!("committed to {:?} branch!", branch_name);
+        match file.write_all(&out_bytes) {
+            Ok(_) => {
+                info!("wrote file: {}", full_path);
+            }
+            Err(err) => {
+                info!("failed to write file: {}", err);
+            }
+        }
+    }
 }
 
 fn push_to_branch(repo: &Repository, branch_name: &str) {
@@ -172,7 +198,6 @@ fn switch_branches(repo: &Repository, branch_name: &str) {
         let branch_commit = repo.find_commit(branch_reference.target().unwrap()).unwrap();
 
         // Checkout the local branch
-        let local_branch = repo.find_branch(&local_branch_name, BranchType::Local);
         let mut checkout_builder = git2::build::CheckoutBuilder::new();
         repo.checkout_tree(branch_commit.as_object(), Some(&mut checkout_builder)).unwrap();
         repo.set_head(&local_branch_name).unwrap();
@@ -185,9 +210,6 @@ fn switch_branches(repo: &Repository, branch_name: &str) {
 
         let branch_reference = repo.head().unwrap();
         let branch_commit = branch_reference.peel_to_commit().unwrap();
-
-        // Create the local branch
-        let branch_reference = repo.branch(&local_branch_name, &branch_commit, true).unwrap();
 
         // Set up tracking to the remote branch
         repo.reference(
@@ -265,7 +287,6 @@ fn delete_all_files(repo: &Repository, branch_name: &str, file_entries: &Vec<Fil
         &[&parent_commit],
     ).unwrap();
 
-    let commit = repo.find_commit(commit_id).unwrap();
     repo.reference(&ref_name, commit_id, true, "committing to branch").unwrap();
 
     info!("committed to {:?} branch!", branch_name);

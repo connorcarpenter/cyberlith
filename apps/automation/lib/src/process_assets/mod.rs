@@ -1,4 +1,5 @@
 mod json;
+mod convert;
 
 use crate::CliError;
 
