@@ -15,7 +15,7 @@ pub struct Asset {
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct AssetMeta {
-    pub id: String,
+    pub asset_id: String,
     pub schema_version: u32,
 }
 

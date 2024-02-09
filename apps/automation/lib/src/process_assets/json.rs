@@ -20,7 +20,7 @@ pub(crate) fn process_assets() -> Result<(), CliError> {
     switch_branches(&repo, "json");
 
     // delete all files, push
-    //delete_all_files(&repo, "json", &files);
+    delete_all_files(&repo, "json", &files);
     push_to_branch(&repo, "json");
 
     // create json file for each previous file
@@ -126,7 +126,7 @@ fn write_all_files(repo: &Repository, branch_name: &str, file_entries: &Vec<File
 
         let asset = Asset {
             meta: AssetMeta {
-                id: asset_id.as_string(),
+                asset_id: asset_id.as_string(),
                 schema_version: 0,
             },
             data: asset_data.clone(),
