@@ -31,6 +31,9 @@ pub struct PaletteFile {
 }
 
 impl PaletteFile {
+
+    pub const CURRENT_SCHEMA_VERSION: u32 = 1;
+
     pub fn new() -> Self {
         Self {
             colors: Vec::new(),

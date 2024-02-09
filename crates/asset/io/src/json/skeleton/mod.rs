@@ -54,15 +54,16 @@ pub struct SkelFile {
 }
 
 impl SkelFile {
-    pub fn add_vertex(&mut self, x: i16, y: i16, z: i16, parent_id_opt: Option<(u16, u8)>, name_opt: Option<String>) {
-        self.vertices.push(SkelFileVertex::new(x, y, z, parent_id_opt, name_opt));
-    }
-}
 
-impl SkelFile {
+    pub const CURRENT_SCHEMA_VERSION: u32 = 1;
+
     pub fn new() -> Self {
         Self {
             vertices: Vec::new(),
         }
+    }
+
+    pub fn add_vertex(&mut self, x: i16, y: i16, z: i16, parent_id_opt: Option<(u16, u8)>, name_opt: Option<String>) {
+        self.vertices.push(SkelFileVertex::new(x, y, z, parent_id_opt, name_opt));
     }
 }

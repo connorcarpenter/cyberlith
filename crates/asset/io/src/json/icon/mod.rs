@@ -1,6 +1,7 @@
 use cfg_if::cfg_if;
 
 use serde::{Deserialize, Serialize};
+use crypto::U32Token;
 
 cfg_if! {
     if #[cfg(feature = "read_json")] {
@@ -90,6 +91,9 @@ pub struct IconFile {
 }
 
 impl IconFile {
+
+    pub const CURRENT_SCHEMA_VERSION: u32 = 1;
+
     pub fn new() -> Self {
         Self {
             palette_asset_id: String::new(),
@@ -97,8 +101,8 @@ impl IconFile {
         }
     }
 
-    pub fn set_palette_asset_id(&mut self, asset_id: &str) {
-        self.palette_asset_id = asset_id.to_string();
+    pub fn set_palette_asset_id(&mut self, asset_id: &U32Token) {
+        self.palette_asset_id = asset_id.as_string();
     }
 
     pub fn add_frame(&mut self, frame: IconFileFrame) {

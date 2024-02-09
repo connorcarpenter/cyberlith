@@ -14,6 +14,8 @@ write_json = [ "serde", "serde_json" ]
 cfg-if = { version = "1.0" }
 log = { version = "0.4" }
 
+crypto = { path = "../../crypto" }
+
 # for BITS
 naia-serde = { path = "../../../../naia/shared/serde", optional = true }
 

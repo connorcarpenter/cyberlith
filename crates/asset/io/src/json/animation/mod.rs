@@ -1,6 +1,7 @@
 use cfg_if::cfg_if;
 
 use serde::{Deserialize, Serialize};
+use crypto::U32Token;
 
 use crate::json::MAX_QUAT_COMPONENT_SIZE;
 
@@ -69,6 +70,9 @@ pub struct AnimFile {
 }
 
 impl AnimFile {
+
+    pub const CURRENT_SCHEMA_VERSION: u32 = 1;
+
     pub fn new() -> Self {
         Self {
             skeleton_asset_id: String::new(),
@@ -77,8 +81,8 @@ impl AnimFile {
         }
     }
 
-    pub fn set_skeleton_asset_id(&mut self, asset_id: &str) {
-        self.skeleton_asset_id = asset_id.to_string();
+    pub fn set_skeleton_asset_id(&mut self, asset_id: &U32Token) {
+        self.skeleton_asset_id = asset_id.as_string();
     }
 
     pub fn add_edge_name(&mut self, name: &str) {

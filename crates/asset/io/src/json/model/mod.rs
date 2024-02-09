@@ -58,6 +58,9 @@ pub struct ModelFile {
 }
 
 impl ModelFile {
+
+    pub const CURRENT_SCHEMA_VERSION: u32 = 1;
+
     pub fn new() -> Self {
         Self {
             skeleton_id: String::new(),

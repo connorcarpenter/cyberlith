@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use bevy_ecs::{
     entity::Entity,
@@ -9,7 +9,8 @@ use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 
-use asset_io::bits::AnimAction;
+use asset_io::json::{AnimFile, AnimFileFrame};
+use crypto::U32Token;
 
 use editor_proto::{
     components::{AnimFrame, AnimRotation, FileExtension, Transition},
@@ -34,7 +35,8 @@ impl AnimWriter {
         world: &mut World,
         project: &Project,
         content_entities: &HashMap<Entity, ContentEntityData>,
-    ) -> Vec<AnimAction> {
+        asset_map: &HashMap<String, U32Token>,
+    ) -> AnimFile {
         let working_file_entries = project.working_file_entries();
 
         let mut skel_dependency_key_opt = None;
@@ -115,21 +117,19 @@ impl AnimWriter {
             }
         }
 
-        let mut actions = Vec::new();
+        let mut file = AnimFile::new();
 
         // Write Skel Dependency
         if let Some(dependency_key) = skel_dependency_key_opt {
             info!("writing dependency: {}", dependency_key.full_path());
-            actions.push(AnimAction::SkelFile(
-                dependency_key.path().to_string(),
-                dependency_key.name().to_string(),
-            ));
+            let asset_id = asset_map.get(dependency_key.full_path().as_str()).unwrap();
+            file.set_skeleton_asset_id(asset_id);
         }
 
-        // Write Shape Names
+        // Write Edge Names
         for shape_name in shape_names {
-            info!("writing shape name: {}", shape_name);
-            actions.push(AnimAction::ShapeIndex(shape_name));
+            info!("writing edge name: {}", shape_name);
+            file.add_edge_name(&shape_name);
         }
 
         // Write Frames
@@ -143,15 +143,20 @@ impl AnimWriter {
                 } else {
                     HashMap::new()
                 };
+
                 info!("push frame action: {}", order);
-                actions.push(AnimAction::Frame(
-                    convert_into_quat_map(poses),
-                    convert_into_transition(transition),
-                ));
+                let mut frame = AnimFileFrame::new(transition.get_duration_ms());
+
+                for (id, quat) in poses {
+                    info!("push pose action: {}", id);
+                    frame.add_pose(id, quat.0.x, quat.0.y, quat.0.z, quat.0.w);
+                }
+
+                file.add_frame(frame);
             }
         }
 
-        actions
+        file
     }
 }
 
@@ -161,21 +166,25 @@ impl FileWriter for AnimWriter {
         world: &mut World,
         project: &Project,
         content_entities: &HashMap<Entity, ContentEntityData>,
+        asset_id: &U32Token,
+        asset_ids: &AssetIdStore,
     ) -> Box<[u8]> {
-        let actions = self.world_to_actions(world, project, content_entities);
-        AnimAction::write(actions)
+        let file = self.world_to_actions(world, project, content_entities, asset_ids);
+        file.write(asset_id)
     }
 
-    fn write_new_default(&self) -> Box<[u8]> {
+    fn write_new_default(
+        &self,
+        asset_ids: &mut AssetIdStore,
+    ) -> Box<[u8]> {
         info!("anim write new default");
         let mut actions = Vec::new();
 
-        actions.push(AnimAction::Frame(
-            HashMap::new(),
-            convert_into_transition(Transition::new(100)),
-        ));
+        let mut file = AnimFile::new();
+        file.add_frame(AnimFileFrame::new(100));
 
-        AnimAction::write(actions)
+        let asset_id = asset_ids.generate_new_unique_id();
+        file.write(asset_id)
     }
 }
 

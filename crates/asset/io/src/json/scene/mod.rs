@@ -93,6 +93,9 @@ impl SceneFile {
 }
 
 impl SceneFile {
+
+    pub const CURRENT_SCHEMA_VERSION: u32 = 1;
+
     pub fn new() -> Self {
         Self {
             components: Vec::new(),

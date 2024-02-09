@@ -1,6 +1,7 @@
 use cfg_if::cfg_if;
 
 use serde::{Deserialize, Serialize};
+use crypto::U32Token;
 
 cfg_if! {
     if #[cfg(feature = "read_json")] {
@@ -33,12 +34,24 @@ pub struct SkinFile {
 }
 
 impl SkinFile {
-    pub fn set_palette_asset_id(&mut self, asset_id: &str) {
-        self.palette_asset_id = asset_id.to_string();
+
+    pub const CURRENT_SCHEMA_VERSION: u32 = 1;
+
+    pub fn new() -> Self {
+        Self {
+            palette_asset_id: String::new(),
+            mesh_asset_id: String::new(),
+            background_color_id: 0,
+            face_colors: Vec::new(),
+        }
     }
 
-    pub fn set_mesh_asset_id(&mut self, asset_id: &str) {
-        self.mesh_asset_id = asset_id.to_string();
+    pub fn set_palette_asset_id(&mut self, asset_id: &U32Token) {
+        self.palette_asset_id = asset_id.as_string();
+    }
+
+    pub fn set_mesh_asset_id(&mut self, asset_id: &U32Token) {
+        self.mesh_asset_id = asset_id.as_string();
     }
 
     pub fn set_background_color_id(&mut self, background_color_id: u8) {
@@ -50,16 +63,5 @@ impl SkinFile {
             face_id,
             color_id,
         });
-    }
-}
-
-impl SkinFile {
-    pub fn new() -> Self {
-        Self {
-            palette_asset_id: String::new(),
-            mesh_asset_id: String::new(),
-            background_color_id: 0,
-            face_colors: Vec::new(),
-        }
     }
 }

@@ -8,6 +8,7 @@ use bevy_ecs::{
 use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
+use crypto::U32Token;
 
 use math::Quat;
 
@@ -34,8 +35,10 @@ pub trait FileWriter: Send + Sync {
         world: &mut World,
         project: &Project,
         content_entities_opt: &HashMap<Entity, ContentEntityData>,
+        asset_id: &AssetId,
+        asset_ids: &AssetIdStore,
     ) -> Box<[u8]>;
-    fn write_new_default(&self) -> Box<[u8]>;
+    fn write_new_default(&self, asset_ids: &mut AssetIdStore) -> Box<[u8]>;
 }
 
 pub trait FileReader: Send + Sync {
