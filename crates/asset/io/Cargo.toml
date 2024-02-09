@@ -5,16 +5,16 @@ edition = "2021"
 workspace = "../../.."
 
 [features]
-read = []
-write = []
-bits = [ "naia-serde" ]
-json = [ "serde", "serde_json" ]
+read_bits = [ "naia-serde" ]
+write_bits = [ "naia-serde" ]
+read_json = [ "serde", "serde_json" ]
+write_json = [ "serde", "serde_json" ]
 
 [dependencies]
 cfg-if = { version = "1.0" }
 log = { version = "0.4" }
 
-# for bitwise
+# for BITS
 naia-serde = { path = "../../../../naia/shared/serde", optional = true }
 
 # for JSON

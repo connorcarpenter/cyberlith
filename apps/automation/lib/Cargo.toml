@@ -11,7 +11,7 @@ publish = false
 [dependencies]
 vultr = { path = "../crates/vultr" }
 executor = { path = "../../../crates/executor" }
-asset_io = { path = "../../../crates/asset/io", features = ["read", "write", "bits", "json"] }
+asset_io = { path = "../../../crates/asset/io", features = ["read_bits", "write_bits", "read_json", "write_json"] }
 crypto = { path = "../../../crates/crypto" }
 
 openssh = { version = "0.10" }

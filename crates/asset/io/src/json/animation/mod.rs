@@ -5,14 +5,14 @@ use serde::{Deserialize, Serialize};
 use crate::json::MAX_QUAT_COMPONENT_SIZE;
 
 cfg_if! {
-    if #[cfg(feature = "read")] {
+    if #[cfg(feature = "read_json")] {
         mod read;
         pub use read::*;
     } else {}
 }
 
 cfg_if! {
-    if #[cfg(feature = "write")] {
+    if #[cfg(feature = "write_json")] {
         mod write;
         pub use write::*;
     } else {}
