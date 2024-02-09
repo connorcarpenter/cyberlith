@@ -1,6 +1,6 @@
 use naia_serde::BitReader;
 
-use asset_io::{AnimAction, IconAction, MeshAction, ModelAction, PaletteAction, SceneAction, SkelAction, SkinAction};
+use asset_io::{AnimAction, IconAction, MeshAction, ModelAction, PaletteAction, SceneAction, SerdeRotation, SkelAction, SkinAction};
 use serde::{Deserialize, Serialize};
 
 // Palette
@@ -47,14 +47,32 @@ pub fn palette(in_bytes: &Vec<u8>) -> Vec<u8> {
 
 // Skel
 #[derive(Serialize, Deserialize)]
-pub struct SkelFile {
+pub struct SkelFileVertex {
+    x: i16, y: i16, z: i16, parent_opt: Option<(u16, u8)>, name_opt: Option<String>,
+}
 
+impl SkelFileVertex {
+    pub fn new(x: i16, y: i16, z: i16, parent_opt: Option<(u16, SerdeRotation)>, name_opt: Option<String>) -> Self {
+        let parent_opt = parent_opt.map(|(parent_id, rotation)| (parent_id, rotation.get_inner_value()));
+        Self {
+            x,
+            y,
+            z,
+            parent_opt,
+            name_opt,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct SkelFile {
+    pub vertices: Vec<SkelFileVertex>,
 }
 
 impl SkelFile {
     pub fn new() -> Self {
         Self {
-
+            vertices: Vec::new(),
         }
     }
 }
@@ -68,7 +86,7 @@ pub fn skel(in_bytes: &Vec<u8>) -> Vec<u8> {
     for action in actions {
         match action {
             SkelAction::Vertex(x, y, z, parent_id_opt, vertex_name_opt) => {
-                todo!()
+                file.vertices.push(SkelFileVertex::new(x, y, z, parent_id_opt, vertex_name_opt));
             }
         }
     }
