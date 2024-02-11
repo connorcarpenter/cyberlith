@@ -42,15 +42,19 @@ impl From<&str> for FileExtension {
     fn from(file_name: &str) -> Self {
         // split file name by '.'
         let split: Vec<_> = file_name.split('.').collect();
-        let ext: &str = split.last().unwrap();
+        let mut ext: &str = split.last().unwrap();
+
+        if ext == "json" {
+            ext = split.get(split.len() - 2).unwrap();
+        }
 
         //info!("file_name: {}, ext: {}", file_name, ext);
 
         // match file extension to enum
         match ext {
-            "skel" => FileExtension::Skel,
+            "skeleton" => FileExtension::Skel,
             "mesh" => FileExtension::Mesh,
-            "anim" => FileExtension::Anim,
+            "animation" => FileExtension::Anim,
             "palette" => FileExtension::Palette,
             "skin" => FileExtension::Skin,
             "model" => FileExtension::Model,

@@ -57,7 +57,13 @@ impl Default for AssetStore {
 
 impl AssetStore {
     pub(crate) fn load<T: From<AssetHandle>>(&mut self, path: &str) -> T {
-        let file_ext = path.split('.').last().unwrap();
+        let split: Vec<_> = path.split('.').collect();
+        let mut file_ext: &str = split.last().unwrap();
+
+        if file_ext == "json" {
+            file_ext = split.get(split.len() - 2).unwrap();
+        }
+
         let path_string = path.to_string();
 
         let mut dependencies = Vec::new();
@@ -72,7 +78,7 @@ impl AssetStore {
                 let asset_handle: AssetHandle = handle.into();
                 asset_handle.into()
             }
-            "skel" => {
+            "skeleton" => {
                 let asset_handle: AssetHandle = self.skeletons.add(path_string).into();
                 asset_handle.into()
             }
@@ -85,7 +91,7 @@ impl AssetStore {
                 let asset_handle: AssetHandle = handle.into();
                 asset_handle.into()
             }
-            "anim" => {
+            "animation" => {
                 let existed = self.animations.has(path_string.clone());
                 let handle = self.animations.add(path_string);
                 if !existed {
