@@ -2,7 +2,6 @@ use cfg_if::cfg_if;
 
 use serde::{Deserialize, Serialize};
 use crypto::U32Token;
-use crate::error::AssetIoError;
 
 use crate::json::MAX_QUAT_COMPONENT_SIZE;
 

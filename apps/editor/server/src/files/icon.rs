@@ -8,6 +8,7 @@ use bevy_ecs::{
 use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
+
 use asset_io::json::{AssetId, IconFile, IconFileFrame};
 
 use editor_proto::{
@@ -331,12 +332,12 @@ impl FileWriter for IconWriter {
 pub struct IconReader;
 
 impl IconReader {
-    fn actions_to_world(
+    fn data_to_world(
         world: &mut World,
         project: &mut Project,
         file_key: &FileKey,
         file_entity: &Entity,
-        actions: Vec<IconAction>,
+        data: &IconFile,
     ) -> HashMap<Entity, ContentEntityData> {
         let mut system_state: SystemState<(Commands, Server, ResMut<IconManager>)> =
             SystemState::new(world);
@@ -497,9 +498,7 @@ impl IconReader {
 
         output
     }
-}
 
-impl IconReader {
     pub fn read(
         &self,
         world: &mut World,
@@ -509,17 +508,19 @@ impl IconReader {
         bytes: &Box<[u8]>,
     ) -> HashMap<Entity, ContentEntityData> {
 
-        let Ok(actions) = IconAction::read(bytes) else {
+        let Ok((meta, data)) = IconFile::read(bytes) else {
             panic!("Error reading .icon file");
         };
 
-        let result = Self::actions_to_world(world, project, file_key, file_entity, actions);
+        if meta.schema_version() != IconFile::CURRENT_SCHEMA_VERSION {
+            panic!("Invalid schema version");
+        }
+
+        let result = Self::data_to_world(world, project, file_key, file_entity, &data);
 
         result
     }
-}
 
-impl IconReader {
     // TODO: move this into the main read functions
     fn post_process_entities(
         icon_manager: &mut IconManager,

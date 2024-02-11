@@ -8,6 +8,7 @@ use bevy_ecs::{
 use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
+
 use asset_io::json::{AssetId, PaletteFile};
 
 use editor_proto::components::PaletteColor;
@@ -75,10 +76,10 @@ impl FileWriter for PaletteWriter {
 pub struct PaletteReader;
 
 impl PaletteReader {
-    fn actions_to_world(
+    fn data_to_world(
         world: &mut World,
         file_entity: &Entity,
-        actions: Vec<PaletteAction>,
+        data: &PaletteFile,
     ) -> HashMap<Entity, ContentEntityData> {
         let mut output = HashMap::new();
         let mut index = 0;
@@ -125,11 +126,15 @@ impl PaletteReader {
         bytes: &Box<[u8]>,
     ) -> HashMap<Entity, ContentEntityData> {
 
-        let Ok(actions) = PaletteAction::read(bytes) else {
+        let Ok((meta, data)) = PaletteFile::read(bytes) else {
             panic!("Error reading .palette file");
         };
 
-        let result = Self::actions_to_world(world, file_entity, actions);
+        if meta.schema_version() != PaletteFile::CURRENT_SCHEMA_VERSION {
+            panic!("Invalid schema version");
+        }
+
+        let result = Self::data_to_world(world, file_entity, &data);
 
         result
     }

@@ -47,6 +47,10 @@ impl AssetMeta {
         AssetId::from_str(&self.asset_id).unwrap()
     }
 
+    pub fn schema_version(&self) -> u32 {
+        self.schema_version
+    }
+
     pub fn read_from_file(bytes: &[u8]) -> Result<Self, AssetIoError> {
         let (meta, _) = Asset::read(bytes)?.deconstruct();
         return Ok(meta);

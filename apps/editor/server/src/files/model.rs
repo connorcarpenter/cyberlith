@@ -8,6 +8,7 @@ use bevy_ecs::{
 use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
+
 use asset_io::json::{AssetId, ModelFile};
 
 use editor_proto::{
@@ -176,12 +177,12 @@ impl FileWriter for ModelWriter {
 pub struct ModelReader;
 
 impl ModelReader {
-    fn actions_to_world(
+    fn data_to_world(
         world: &mut World,
         project: &mut Project,
         file_key: &FileKey,
         file_entity: &Entity,
-        actions: Vec<ModelAction>,
+        data: &ModelFile,
     ) -> HashMap<Entity, ContentEntityData> {
         let mut output = HashMap::new();
 
@@ -304,11 +305,15 @@ impl ModelReader {
         bytes: &Box<[u8]>,
     ) -> HashMap<Entity, ContentEntityData> {
 
-        let Ok(actions) = ModelAction::read(bytes) else {
+        let Ok((meta, data)) = ModelFile::read(bytes) else {
             panic!("Error reading .model file");
         };
 
-        let result = Self::actions_to_world(world, project, file_key, file_entity, actions);
+        if meta.schema_version() != ModelFile::CURRENT_SCHEMA_VERSION {
+            panic!("Invalid schema version");
+        }
+
+        let result = Self::data_to_world(world, project, file_key, file_entity, &data);
 
         result
     }

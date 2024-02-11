@@ -298,6 +298,10 @@ impl AnimReader {
             panic!("Error reading .anim file");
         };
 
+        if meta.schema_version() != AnimFile::CURRENT_SCHEMA_VERSION {
+            panic!("Invalid schema version");
+        }
+
         let result = Self::data_to_world(world, project, file_key, file_entity, &data);
 
         result

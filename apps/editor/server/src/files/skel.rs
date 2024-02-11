@@ -8,7 +8,7 @@ use bevy_ecs::{
 use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
-use asset_io::json::{AnimFile, AnimFileFrame, AssetId, SkelFile};
+use asset_io::json::{AssetId, SkelFile};
 
 use editor_proto::components::{
     Edge3d, EdgeAngle, FileExtension, FileType, SerdeRotation, ShapeName, Vertex3d, VertexRoot,
@@ -168,9 +168,9 @@ impl FileWriter for SkelWriter {
 pub struct SkelReader;
 
 impl SkelReader {
-    fn actions_to_world(
+    fn data_to_world(
         world: &mut World,
-        actions: Vec<SkelAction>,
+        data: &SkelFile,
     ) -> HashMap<Entity, ContentEntityData> {
         let mut system_state: SystemState<(Commands, Server, ResMut<ShapeManager>)> =
             SystemState::new(world);
@@ -295,16 +295,18 @@ impl SkelReader {
 
         new_content_entities
     }
-}
 
-impl SkelReader {
     pub fn read(&self, world: &mut World, bytes: &Box<[u8]>) -> HashMap<Entity, ContentEntityData> {
 
-        let Ok(actions) = SkelAction::read(bytes) else {
+        let Ok((meta, data)) = SkelFile::read(bytes) else {
             panic!("Error reading .skel file");
         };
 
-        let result = Self::actions_to_world(world, actions);
+        if meta.schema_version() != SkelFile::CURRENT_SCHEMA_VERSION {
+            panic!("Invalid schema version");
+        }
+
+        let result = Self::data_to_world(world, &data);
 
         result
     }

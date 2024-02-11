@@ -8,6 +8,7 @@ use bevy_ecs::{
 use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
+
 use asset_io::json::{AssetId, SkinFile};
 
 use editor_proto::{
@@ -153,12 +154,12 @@ impl FileWriter for SkinWriter {
 pub struct SkinReader;
 
 impl SkinReader {
-    fn actions_to_world(
+    fn data_to_world(
         world: &mut World,
         project: &mut Project,
         file_key: &FileKey,
         file_entity: &Entity,
-        actions: Vec<SkinAction>,
+        data: &SkinFile,
     ) -> HashMap<Entity, ContentEntityData> {
         let mut output = HashMap::new();
 
@@ -246,11 +247,15 @@ impl SkinReader {
         bytes: &Box<[u8]>,
     ) -> HashMap<Entity, ContentEntityData> {
 
-        let Ok(actions) = SkinAction::read(bytes) else {
+        let Ok((meta, data)) = SkinFile::read(bytes) else {
             panic!("Error reading .skin file");
         };
 
-        let result = Self::actions_to_world(world, project, file_key, file_entity, actions);
+        if meta.schema_version() != SkinFile::CURRENT_SCHEMA_VERSION {
+            panic!("Invalid schema version");
+        }
+
+        let result = Self::data_to_world(world, project, file_key, file_entity, &data);
 
         result
     }

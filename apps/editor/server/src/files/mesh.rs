@@ -8,6 +8,7 @@ use bevy_ecs::{
 use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
+
 use asset_io::json::{AssetId, MeshFile};
 
 use editor_proto::components::{Edge3d, Face3d, FileExtension, FileType, Vertex3d};
@@ -180,10 +181,10 @@ impl FileWriter for MeshWriter {
 pub struct MeshReader;
 
 impl MeshReader {
-    fn actions_to_world(
+    fn data_to_world(
         world: &mut World,
         file_entity: &Entity,
-        actions: Vec<MeshAction>,
+        data: &MeshFile,
     ) -> HashMap<Entity, ContentEntityData> {
         let mut system_state: SystemState<(Commands, Server, ResMut<ShapeManager>)> =
             SystemState::new(world);
@@ -287,9 +288,7 @@ impl MeshReader {
 
         output
     }
-}
 
-impl MeshReader {
     pub fn read(
         &self,
         world: &mut World,
@@ -297,17 +296,19 @@ impl MeshReader {
         bytes: &Box<[u8]>,
     ) -> HashMap<Entity, ContentEntityData> {
 
-        let Ok(actions) = MeshAction::read(bytes) else {
+        let Ok((meta, data)) = MeshFile::read(bytes) else {
             panic!("Error reading .mesh file");
         };
 
-        let result = Self::actions_to_world(world, file_entity, actions);
+        if meta.schema_version() != MeshFile::CURRENT_SCHEMA_VERSION {
+            panic!("Invalid schema version");
+        }
+
+        let result = Self::data_to_world(world, file_entity, &data);
 
         result
     }
-}
 
-impl MeshReader {
     pub fn post_process_entities(
         shape_manager: &mut ShapeManager,
         file_entity: &Entity,

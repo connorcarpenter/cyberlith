@@ -161,12 +161,12 @@ impl FileWriter for SceneWriter {
 pub struct SceneReader;
 
 impl SceneReader {
-    fn actions_to_world(
+    fn data_to_world(
         world: &mut World,
         project: &mut Project,
         file_key: &FileKey,
         file_entity: &Entity,
-        actions: Vec<SceneAction>,
+        data: &SceneFile,
     ) -> HashMap<Entity, ContentEntityData> {
         let mut output = HashMap::new();
 
@@ -270,11 +270,15 @@ impl SceneReader {
         bytes: &Box<[u8]>,
     ) -> HashMap<Entity, ContentEntityData> {
 
-        let Ok(actions) = SceneAction::read(bytes) else {
+        let Ok((meta, data)) = SceneFile::read(bytes) else {
             panic!("Error reading .scene file");
         };
 
-        let result = Self::actions_to_world(world, project, file_key, file_entity, actions);
+        if meta.schema_version() != SceneFile::CURRENT_SCHEMA_VERSION {
+            panic!("Invalid schema version");
+        }
+
+        let result = Self::data_to_world(world, project, file_key, file_entity, &data);
 
         result
     }
