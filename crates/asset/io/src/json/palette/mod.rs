@@ -38,7 +38,7 @@ pub struct PaletteFile {
 
 impl PaletteFile {
 
-    pub const CURRENT_SCHEMA_VERSION: u32 = 1;
+    pub const CURRENT_SCHEMA_VERSION: u32 = 0;
 
     pub fn new() -> Self {
         Self {

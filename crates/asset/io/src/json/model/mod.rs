@@ -72,7 +72,7 @@ pub struct ModelFile {
 
 impl ModelFile {
 
-    pub const CURRENT_SCHEMA_VERSION: u32 = 1;
+    pub const CURRENT_SCHEMA_VERSION: u32 = 0;
 
     pub fn new() -> Self {
         Self {
