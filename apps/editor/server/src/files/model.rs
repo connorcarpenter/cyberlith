@@ -9,8 +9,6 @@ use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 
-use asset_io::bits::{FileTransformEntityType, ModelAction};
-
 use editor_proto::{
     components::{
         FileExtension, FileType, NetTransform, NetTransformEntityType, OwnedByFile, ShapeName,
@@ -26,6 +24,7 @@ use crate::{
     },
     resources::{ContentEntityData, Project},
 };
+use crate::resources::AssetId;
 
 // Writer
 pub struct ModelWriter;
@@ -161,12 +160,13 @@ impl FileWriter for ModelWriter {
         world: &mut World,
         project: &Project,
         content_entities: &HashMap<Entity, ContentEntityData>,
+        asset_id: &AssetId,
     ) -> Box<[u8]> {
         let actions = self.world_to_actions(world, project, content_entities);
         ModelAction::write(actions)
     }
 
-    fn write_new_default(&self) -> Box<[u8]> {
+    fn write_new_default(&self, project: &mut Project) -> Box<[u8]> {
         let actions = Vec::new();
 
         ModelAction::write(actions)

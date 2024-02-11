@@ -8,8 +8,8 @@ use bevy_ecs::{
 use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
-use crypto::U32Token;
 
+use asset_io::json::AnimFileQuat;
 use math::Quat;
 
 use editor_proto::{
@@ -25,7 +25,7 @@ use crate::{
     },
     resources::{
         AnimationManager, ContentEntityData, IconManager, PaletteManager, Project, ShapeManager,
-        SkinManager,
+        SkinManager, AssetId
     },
 };
 
@@ -36,9 +36,11 @@ pub trait FileWriter: Send + Sync {
         project: &Project,
         content_entities_opt: &HashMap<Entity, ContentEntityData>,
         asset_id: &AssetId,
-        asset_ids: &AssetIdStore,
     ) -> Box<[u8]>;
-    fn write_new_default(&self, asset_ids: &mut AssetIdStore) -> Box<[u8]>;
+    fn write_new_default(
+        &self,
+        project: &mut Project
+    ) -> Box<[u8]>;
 }
 
 pub trait FileReader: Send + Sync {
@@ -81,30 +83,31 @@ impl FileWriter for FileExtension {
         world: &mut World,
         project: &Project,
         content_entities: &HashMap<Entity, ContentEntityData>,
+        asset_id: &AssetId,
     ) -> Box<[u8]> {
         match self {
-            FileExtension::Skel => SkelWriter.write(world, project, content_entities),
-            FileExtension::Mesh => MeshWriter.write(world, project, content_entities),
-            FileExtension::Anim => AnimWriter.write(world, project, content_entities),
-            FileExtension::Palette => PaletteWriter.write(world, project, content_entities),
-            FileExtension::Skin => SkinWriter.write(world, project, content_entities),
-            FileExtension::Model => ModelWriter.write(world, project, content_entities),
-            FileExtension::Scene => SceneWriter.write(world, project, content_entities),
-            FileExtension::Icon => IconWriter.write(world, project, content_entities),
+            FileExtension::Skel => SkelWriter.write(world, project, content_entities, asset_id),
+            FileExtension::Mesh => MeshWriter.write(world, project, content_entities, asset_id),
+            FileExtension::Anim => AnimWriter.write(world, project, content_entities, asset_id),
+            FileExtension::Palette => PaletteWriter.write(world, project, content_entities, asset_id),
+            FileExtension::Skin => SkinWriter.write(world, project, content_entities, asset_id),
+            FileExtension::Model => ModelWriter.write(world, project, content_entities, asset_id),
+            FileExtension::Scene => SceneWriter.write(world, project, content_entities, asset_id),
+            FileExtension::Icon => IconWriter.write(world, project, content_entities, asset_id),
             _ => panic!("File extension {:?} not implemented", self),
         }
     }
 
-    fn write_new_default(&self) -> Box<[u8]> {
+    fn write_new_default(&self, project: &mut Project) -> Box<[u8]> {
         match self {
-            FileExtension::Skel => SkelWriter.write_new_default(),
-            FileExtension::Mesh => MeshWriter.write_new_default(),
-            FileExtension::Anim => AnimWriter.write_new_default(),
-            FileExtension::Palette => PaletteWriter.write_new_default(),
-            FileExtension::Skin => SkinWriter.write_new_default(),
-            FileExtension::Model => ModelWriter.write_new_default(),
-            FileExtension::Scene => SceneWriter.write_new_default(),
-            FileExtension::Icon => IconWriter.write_new_default(),
+            FileExtension::Skel => SkelWriter.write_new_default(project),
+            FileExtension::Mesh => MeshWriter.write_new_default(project),
+            FileExtension::Anim => AnimWriter.write_new_default(project),
+            FileExtension::Palette => PaletteWriter.write_new_default(project),
+            FileExtension::Skin => SkinWriter.write_new_default(project),
+            FileExtension::Model => ModelWriter.write_new_default(project),
+            FileExtension::Scene => SceneWriter.write_new_default(project),
+            FileExtension::Icon => IconWriter.write_new_default(project),
             _ => panic!("File extension {:?} not implemented", self),
         }
     }
@@ -351,69 +354,53 @@ pub fn add_file_dependency(
 
 // conversion
 
-// quat map
-pub fn convert_into_quat_map(
-    input: HashMap<u16, editor_proto::SerdeQuat>,
-) -> HashMap<u16, asset_io::bits::SerdeQuat> {
-    let mut output = HashMap::new();
-    for (key, value) in input.iter() {
-        let value = asset_io::bits::SerdeQuat::from_xyzw(value.0.x, value.0.y, value.0.z, value.0.w);
-        output.insert(*key, value);
-    }
-    output
-}
-
 // transition
-pub fn convert_into_transition(
-    input: editor_proto::components::Transition,
-) -> asset_io::bits::Transition {
-    let duration_ms = input.get_duration_ms();
-    asset_io::bits::Transition::new(duration_ms)
-}
-
-pub fn convert_from_transition(
-    input: asset_io::bits::Transition,
-) -> editor_proto::components::Transition {
-    let duration_ms = input.get_duration_ms();
-    editor_proto::components::Transition::new(duration_ms)
-}
 
 // quat
-pub fn convert_into_quat(input: editor_proto::SerdeQuat) -> asset_io::bits::SerdeQuat {
+pub fn convert_into_quat(input: editor_proto::SerdeQuat) -> AnimFileQuat {
     let quat: Quat = input.into();
-    asset_io::bits::SerdeQuat::from_xyzw(quat.x, quat.y, quat.z, quat.w)
+    AnimFileQuat::from_xyzw(quat.x, quat.y, quat.z, quat.w)
 }
 
-pub fn convert_from_quat(input: asset_io::bits::SerdeQuat) -> editor_proto::SerdeQuat {
-    let quat = Quat::from_xyzw(input.x, input.y, input.z, input.w);
+pub fn convert_from_quat(input: &AnimFileQuat) -> editor_proto::SerdeQuat {
+    let quat = Quat::from_xyzw(input.get_x(), input.get_y(), input.get_z(), input.get_w());
     editor_proto::SerdeQuat::from(quat)
 }
+
+// pub fn convert_into_quat_map(
+//     input: HashMap<u16, editor_proto::SerdeQuat>,
+// ) -> HashMap<u16, AnimFileQuat> {
+//     let mut output = HashMap::new();
+//     for (key, value) in input.iter() {
+//         let value = AnimFileQuat::from_xyzw(value.0.x, value.0.y, value.0.z, value.0.w);
+//         output.insert(*key, value);
+//     }
+//     output
+// }
 
 // rotation
 pub fn convert_into_rotation(
     input: editor_proto::components::SerdeRotation,
-) -> asset_io::bits::SerdeRotation {
-    let radians = input.get_radians();
-    asset_io::bits::SerdeRotation::from_radians(radians)
+) -> u8 {
+    input.to_inner()
 }
 
 pub fn convert_from_rotation(
-    input: asset_io::bits::SerdeRotation,
+    input: u8,
 ) -> editor_proto::components::SerdeRotation {
-    let radians = input.get_radians();
-    editor_proto::components::SerdeRotation::from_radians(radians)
+    editor_proto::components::SerdeRotation::from_inner(input)
 }
 
 // transform type
 pub fn convert_into_transform_type(
     input: editor_proto::components::NetTransformEntityType,
-) -> asset_io::bits::FileTransformEntityType {
+) -> String {
     match input {
         editor_proto::components::NetTransformEntityType::Skin => {
-            asset_io::bits::FileTransformEntityType::Skin
+            "skin".to_string()
         }
         editor_proto::components::NetTransformEntityType::Scene => {
-            asset_io::bits::FileTransformEntityType::Scene
+            "scene".to_string()
         }
         _ => {
             panic!("unsupported");
@@ -422,14 +409,17 @@ pub fn convert_into_transform_type(
 }
 
 pub fn convert_from_transform_type(
-    input: asset_io::bits::FileTransformEntityType,
+    input: &str
 ) -> editor_proto::components::NetTransformEntityType {
     match input {
-        asset_io::bits::FileTransformEntityType::Skin => {
+        "skin" => {
             editor_proto::components::NetTransformEntityType::Skin
         }
-        asset_io::bits::FileTransformEntityType::Scene => {
+        "scene" => {
             editor_proto::components::NetTransformEntityType::Scene
+        }
+        _ => {
+            panic!("not supported");
         }
     }
 }

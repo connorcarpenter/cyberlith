@@ -20,6 +20,8 @@ use crate::{
     files::{despawn_file_content_entities, load_content_entities, FileWriter},
     resources::{ChangelistValue, ContentEntityData, FileEntryValue, FileSpace, GitManager},
 };
+use crate::resources::asset_id_store::AssetIdStore;
+use crate::resources::AssetId;
 
 #[derive(Clone, Copy, Eq, PartialEq, Hash)]
 pub struct ProjectKey(u64);
@@ -50,6 +52,7 @@ pub struct Project {
     room_key: RoomKey,
     master_file_entries: HashMap<FileKey, FileEntryValue>,
     working_file_entries: HashMap<FileKey, FileEntryValue>,
+    asset_id_store: AssetIdStore,
     pub changelist_entries: HashMap<FileKey, ChangelistValue>,
     filespaces: HashMap<FileKey, FileSpace>,
 
@@ -60,6 +63,36 @@ pub struct Project {
 }
 
 impl Project {
+    pub fn new(
+        room_key: RoomKey,
+        file_entries: HashMap<FileKey, FileEntryValue>,
+        repo: Repository,
+        access_token: &str,
+        internal_path: &str,
+    ) -> Self {
+        let working_file_tree = file_entries.clone();
+        Self {
+            room_key,
+            filespaces: HashMap::new(),
+            master_file_entries: file_entries,
+            working_file_entries: working_file_tree,
+            asset_id_store: AssetIdStore::new(),
+            changelist_entries: HashMap::new(),
+            repo: Mutex::new(repo),
+            access_token: access_token.to_string(),
+            branch: "main".to_string(),
+            internal_path: internal_path.to_string(),
+        }
+    }
+
+    pub fn asset_id_store(&self) -> &AssetIdStore {
+        &self.asset_id_store
+    }
+
+    pub fn asset_id_store_mut(&mut self) -> &mut AssetIdStore {
+        &mut self.asset_id_store
+    }
+
     pub(crate) fn file_find_dependency(
         &self,
         file_key: &FileKey,
@@ -77,38 +110,16 @@ impl Project {
         }
         None
     }
-}
-
-impl Project {
-    pub fn new(
-        room_key: RoomKey,
-        file_entries: HashMap<FileKey, FileEntryValue>,
-        repo: Repository,
-        access_token: &str,
-        internal_path: &str,
-    ) -> Self {
-        let working_file_tree = file_entries.clone();
-        Self {
-            room_key,
-            filespaces: HashMap::new(),
-            master_file_entries: file_entries,
-            working_file_entries: working_file_tree,
-            changelist_entries: HashMap::new(),
-            repo: Mutex::new(repo),
-            access_token: access_token.to_string(),
-            branch: "main".to_string(),
-            internal_path: internal_path.to_string(),
-        }
-    }
 
     pub fn write(
         &self,
         world: &mut World,
         file_key: &FileKey,
         content_entities: &HashMap<Entity, ContentEntityData>,
+        asset_id: &AssetId,
     ) -> Box<[u8]> {
         let ext = self.working_file_extension(file_key);
-        return ext.write(world, self, content_entities);
+        return ext.write(world, self, content_entities, asset_id);
     }
 
     pub fn room_key(&self) -> RoomKey {
@@ -265,7 +276,7 @@ impl Project {
             // if file doesn't exist in master tree and no changelist entry exists, then create a changelist entry
             if !file_exists_in_master && !file_exists_in_changelist {
                 let default_file_contents_opt = if file_key.kind() == EntryKind::File {
-                    Some(file_extension.write_new_default())
+                    Some(file_extension.write_new_default(self))
                 } else {
                     None
                 };
@@ -1105,6 +1116,7 @@ impl Project {
             status
         );
         let extension = self.working_file_extension(file_key);
+        let asset_id = self.asset_id_store().id_from_path(&file_key.full_path()).unwrap();
         let changelist_value = self.changelist_entries.get_mut(&file_key).unwrap();
         if changelist_value.has_content() {
             // changelist entry already has content, backed up last time tab closed
@@ -1129,7 +1141,7 @@ impl Project {
 
             // write
             info!("... Generating content ...");
-            let bytes = extension.write(world, self, &content_entities);
+            let bytes = extension.write(world, self, &content_entities, &asset_id);
             let changelist_value = self.changelist_entries.get_mut(&file_key).unwrap();
             changelist_value.set_content(bytes);
         }

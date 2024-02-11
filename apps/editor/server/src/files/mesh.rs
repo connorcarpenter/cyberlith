@@ -9,14 +9,13 @@ use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 
-use asset_io::bits::MeshAction;
-
 use editor_proto::components::{Edge3d, Face3d, FileExtension, FileType, Vertex3d};
 
 use crate::{
     files::{FileWriter, ShapeTypeData},
     resources::{ContentEntityData, Project, ShapeManager},
 };
+use crate::resources::AssetId;
 
 // Writer
 pub struct MeshWriter;
@@ -162,12 +161,13 @@ impl FileWriter for MeshWriter {
         world: &mut World,
         _project: &Project,
         content_entities: &HashMap<Entity, ContentEntityData>,
+        asset_id: &AssetId,
     ) -> Box<[u8]> {
         let actions = self.world_to_actions(world, content_entities);
         MeshAction::write(actions)
     }
 
-    fn write_new_default(&self) -> Box<[u8]> {
+    fn write_new_default(&self, project: &mut Project) -> Box<[u8]> {
         let mut default_actions = Vec::new();
 
         default_actions.push(MeshAction::Vertex(0, 0, 0));

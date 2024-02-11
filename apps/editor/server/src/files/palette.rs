@@ -9,14 +9,13 @@ use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 
-use asset_io::bits::PaletteAction;
-
 use editor_proto::components::PaletteColor;
 
 use crate::{
     files::FileWriter,
     resources::{ContentEntityData, PaletteManager, Project},
 };
+use crate::resources::AssetId;
 
 // Writer
 pub struct PaletteWriter;
@@ -51,6 +50,7 @@ impl FileWriter for PaletteWriter {
         world: &mut World,
         _project: &Project,
         _content_entities: &HashMap<Entity, ContentEntityData>,
+        asset_id: &AssetId,
     ) -> Box<[u8]> {
         let mut action_index = 0;
         let actions = self.world_to_actions(world);
@@ -65,7 +65,7 @@ impl FileWriter for PaletteWriter {
         PaletteAction::write(output_actions)
     }
 
-    fn write_new_default(&self) -> Box<[u8]> {
+    fn write_new_default(&self, project: &mut Project) -> Box<[u8]> {
         let mut actions = Vec::new();
 
         actions.push(PaletteAction::Color(255, 255, 255)); // white

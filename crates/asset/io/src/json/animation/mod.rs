@@ -2,6 +2,7 @@ use cfg_if::cfg_if;
 
 use serde::{Deserialize, Serialize};
 use crypto::U32Token;
+use crate::error::AssetIoError;
 
 use crate::json::MAX_QUAT_COMPONENT_SIZE;
 
@@ -29,10 +30,48 @@ pub struct AnimFileQuat {
     w: i8,
 }
 
+impl AnimFileQuat {
+
+    pub fn from_xyzw(rotation_x: f32, rotation_y: f32, rotation_z: f32, rotation_w: f32) -> Self {
+        Self {
+            x: (rotation_x * MAX_QUAT_COMPONENT_SIZE).round() as i8,
+            y: (rotation_y * MAX_QUAT_COMPONENT_SIZE).round() as i8,
+            z: (rotation_z * MAX_QUAT_COMPONENT_SIZE).round() as i8,
+            w: (rotation_w * MAX_QUAT_COMPONENT_SIZE).round() as i8,
+        }
+    }
+
+    pub fn get_x(&self) -> f32 {
+        self.x as f32 / MAX_QUAT_COMPONENT_SIZE
+    }
+
+    pub fn get_y(&self) -> f32 {
+        self.y as f32 / MAX_QUAT_COMPONENT_SIZE
+    }
+
+    pub fn get_z(&self) -> f32 {
+        self.z as f32 / MAX_QUAT_COMPONENT_SIZE
+    }
+
+    pub fn get_w(&self) -> f32 {
+        self.w as f32 / MAX_QUAT_COMPONENT_SIZE
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone)]
 pub struct AnimFilePose {
     edge_id: u16,
     rotation: AnimFileQuat,
+}
+
+impl AnimFilePose {
+    pub fn get_edge_id(&self) -> u16 {
+        self.edge_id
+    }
+
+    pub fn get_rotation(&self) -> &AnimFileQuat {
+        &self.rotation
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -52,13 +91,16 @@ impl AnimFileFrame {
     pub fn add_pose(&mut self, edge_id: u16, rotation_x: f32, rotation_y: f32, rotation_z: f32, rotation_w: f32) {
         self.poses.push(AnimFilePose {
             edge_id,
-            rotation: AnimFileQuat {
-                x: (rotation_x * MAX_QUAT_COMPONENT_SIZE).round() as i8,
-                y: (rotation_y * MAX_QUAT_COMPONENT_SIZE).round() as i8,
-                z: (rotation_z * MAX_QUAT_COMPONENT_SIZE).round() as i8,
-                w: (rotation_w * MAX_QUAT_COMPONENT_SIZE).round() as i8,
-            },
+            rotation: AnimFileQuat::from_xyzw(rotation_x, rotation_y, rotation_z, rotation_w),
         });
+    }
+
+    pub fn get_poses(&self) -> &Vec<AnimFilePose> {
+        &self.poses
+    }
+
+    pub fn get_transition_ms(&self) -> u16 {
+        self.transition_ms
     }
 }
 
@@ -81,6 +123,18 @@ impl AnimFile {
         }
     }
 
+    pub fn read_from_bytes(bytes: &[u8]) -> Result<Self, AssetIoError> {
+        serde_json::from_slice(bytes).map_err(|e| AssetIoError::Message(e.to_string()))
+    }
+
+    pub fn write_to_bytes(&self) -> Box<[u8]> {
+        serde_json::to_vec_pretty(self).unwrap().into_boxed_slice()
+    }
+
+    pub fn get_skeleton_asset_id(&self) -> U32Token {
+        U32Token::from_str(&self.skeleton_asset_id).unwrap()
+    }
+
     pub fn set_skeleton_asset_id(&mut self, asset_id: &U32Token) {
         self.skeleton_asset_id = asset_id.as_string();
     }
@@ -89,7 +143,15 @@ impl AnimFile {
         self.edge_names.push(name.to_string());
     }
 
+    pub fn get_edge_names(&self) -> &Vec<String> {
+        &self.edge_names
+    }
+
     pub fn add_frame(&mut self, frame: AnimFileFrame) {
         self.frames.push(frame);
+    }
+
+    pub fn get_frames(&self) -> &Vec<AnimFileFrame> {
+        &self.frames
     }
 }

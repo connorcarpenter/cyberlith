@@ -696,7 +696,8 @@ impl GitManager {
         content_entities: &HashMap<Entity, ContentEntityData>,
     ) -> Box<[u8]> {
         let project = self.projects.get(project_key).unwrap();
-        project.write(world, file_key, content_entities)
+        let asset_id = project.asset_id_store().id_from_path(&file_key.full_path()).unwrap();
+        project.write(world, file_key, content_entities, &asset_id)
     }
 
     pub fn working_file_extension(&self, project_key: &ProjectKey, key: &FileKey) -> FileExtension {

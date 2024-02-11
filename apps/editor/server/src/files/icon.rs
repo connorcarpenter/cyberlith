@@ -9,8 +9,6 @@ use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 
-use asset_io::bits::{IconAction, IconFrameAction};
-
 use editor_proto::{
     components::{FileExtension, IconEdge, IconFace, IconFrame, IconVertex, PaletteColor},
     resources::FileKey,
@@ -18,7 +16,7 @@ use editor_proto::{
 
 use crate::{
     files::{add_file_dependency, FileWriter, ShapeType},
-    resources::{ContentEntityData, IconManager, Project},
+    resources::{AssetId, ContentEntityData, IconManager, Project},
 };
 
 #[derive(Clone)]
@@ -312,12 +310,13 @@ impl FileWriter for IconWriter {
         world: &mut World,
         project: &Project,
         content_entities: &HashMap<Entity, ContentEntityData>,
+        asset_id: &AssetId,
     ) -> Box<[u8]> {
         let actions = self.world_to_actions(world, project, content_entities);
         IconAction::write(actions)
     }
 
-    fn write_new_default(&self) -> Box<[u8]> {
+    fn write_new_default(&self, project: &mut Project) -> Box<[u8]> {
         let mut default_actions = Vec::new();
 
         let mut frame_actions = Vec::new();

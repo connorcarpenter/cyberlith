@@ -1,6 +1,6 @@
 
 mod animation;
-pub use animation::{AnimFile, AnimFileFrame};
+pub use animation::{AnimFile, AnimFileFrame, AnimFileQuat};
 
 mod icon;
 pub use icon::{IconFile, IconFileFrame};

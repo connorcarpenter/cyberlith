@@ -9,8 +9,6 @@ use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 
-use asset_io::bits::SkelAction;
-
 use editor_proto::components::{
     Edge3d, EdgeAngle, FileExtension, FileType, SerdeRotation, ShapeName, Vertex3d, VertexRoot,
 };
@@ -22,6 +20,7 @@ use crate::{
     },
     resources::{ContentEntityData, Project, ShapeManager},
 };
+use crate::resources::AssetId;
 
 // Writer
 pub struct SkelWriter;
@@ -153,12 +152,13 @@ impl FileWriter for SkelWriter {
         world: &mut World,
         _project: &Project,
         content_entities: &HashMap<Entity, ContentEntityData>,
+        asset_id: &AssetId,
     ) -> Box<[u8]> {
         let actions = self.world_to_actions(world, content_entities);
         SkelAction::write(actions)
     }
 
-    fn write_new_default(&self) -> Box<[u8]> {
+    fn write_new_default(&self, project: &mut Project) -> Box<[u8]> {
         let actions = self.new_default_actions();
         SkelAction::write(actions)
     }

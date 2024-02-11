@@ -64,6 +64,11 @@ impl SerdeRotation {
     pub fn get_inner_value(&self) -> u8 {
         self.value.to()
     }
+
+    pub fn from_inner_value(value: u8) -> Self {
+        let integer = UnsignedInteger::<6>::new(value);
+        Self { value: integer }
+    }
 }
 
 // SerdeQuat

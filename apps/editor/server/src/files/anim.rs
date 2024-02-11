@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 use bevy_ecs::{
     entity::Entity,
@@ -10,7 +10,6 @@ use bevy_log::info;
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 
 use asset_io::json::{AnimFile, AnimFileFrame};
-use crypto::U32Token;
 
 use editor_proto::{
     components::{AnimFrame, AnimRotation, FileExtension, Transition},
@@ -20,22 +19,22 @@ use editor_proto::{
 
 use crate::{
     files::{
-        add_file_dependency, convert_from_quat, convert_from_transition, convert_into_quat_map,
-        convert_into_transition, FileWriter,
+        add_file_dependency,
+        FileWriter,
     },
-    resources::{AnimationManager, ContentEntityData, Project},
+    resources::{AssetId, AnimationManager, ContentEntityData, Project},
 };
+use crate::files::convert_from_quat;
 
 // Writer
 pub struct AnimWriter;
 
 impl AnimWriter {
-    fn world_to_actions(
+    fn world_to_data(
         &self,
         world: &mut World,
         project: &Project,
         content_entities: &HashMap<Entity, ContentEntityData>,
-        asset_map: &HashMap<String, U32Token>,
     ) -> AnimFile {
         let working_file_entries = project.working_file_entries();
 
@@ -122,8 +121,8 @@ impl AnimWriter {
         // Write Skel Dependency
         if let Some(dependency_key) = skel_dependency_key_opt {
             info!("writing dependency: {}", dependency_key.full_path());
-            let asset_id = asset_map.get(dependency_key.full_path().as_str()).unwrap();
-            file.set_skeleton_asset_id(asset_id);
+            let asset_id = project.asset_id_store().id_from_path(dependency_key.full_path().as_str()).unwrap();
+            file.set_skeleton_asset_id(&asset_id);
         }
 
         // Write Edge Names
@@ -166,25 +165,23 @@ impl FileWriter for AnimWriter {
         world: &mut World,
         project: &Project,
         content_entities: &HashMap<Entity, ContentEntityData>,
-        asset_id: &U32Token,
-        asset_ids: &AssetIdStore,
+        asset_id: &AssetId,
     ) -> Box<[u8]> {
-        let file = self.world_to_actions(world, project, content_entities, asset_ids);
+        let file = self.world_to_data(world, project, content_entities);
         file.write(asset_id)
     }
 
     fn write_new_default(
         &self,
-        asset_ids: &mut AssetIdStore,
+        project: &mut Project,
     ) -> Box<[u8]> {
         info!("anim write new default");
-        let mut actions = Vec::new();
 
         let mut file = AnimFile::new();
         file.add_frame(AnimFileFrame::new(100));
 
-        let asset_id = asset_ids.generate_new_unique_id();
-        file.write(asset_id)
+        let asset_id = project.asset_id_store_mut().generate_new_unique_id();
+        file.write(&asset_id)
     }
 }
 
@@ -192,84 +189,96 @@ impl FileWriter for AnimWriter {
 pub struct AnimReader;
 
 impl AnimReader {
-    fn actions_to_world(
+    fn data_to_world(
         world: &mut World,
         project: &mut Project,
         file_key: &FileKey,
         file_entity: &Entity,
-        actions: Vec<AnimAction>,
+        data: &AnimFile,
     ) -> HashMap<Entity, ContentEntityData> {
         let mut output = HashMap::new();
         let mut shape_name_index = 0;
-        let mut shape_name_map = HashMap::new();
+        let mut shape_name_map: HashMap<u16, String> = HashMap::new();
         let mut frame_index = 0;
 
         let mut system_state: SystemState<(Commands, Server, ResMut<AnimationManager>)> =
             SystemState::new(world);
         let (mut commands, mut server, mut animation_manager) = system_state.get_mut(world);
 
-        for action in actions {
-            match action {
-                AnimAction::SkelFile(skel_path, skel_file_name) => {
-                    let (new_entity, _, new_file_key) = add_file_dependency(
-                        project,
-                        file_key,
-                        file_entity,
-                        &mut commands,
-                        &mut server,
-                        FileExtension::Skel,
-                        &skel_path,
-                        &skel_file_name,
-                    );
-                    output.insert(new_entity, ContentEntityData::new_dependency(new_file_key));
-                }
-                AnimAction::ShapeIndex(shape_name) => {
-                    shape_name_map.insert(shape_name_index, shape_name);
-                    shape_name_index += 1;
-                }
-                AnimAction::Frame(poses, transition) => {
-                    info!("read frame action!");
+        // skeleton file
+        {
+            let asset_id = data.get_skeleton_asset_id();
+            let (skel_path, skel_file_name) = project.asset_id_store().get_path_and_name(&asset_id).unwrap();
+            let (new_entity, _, new_file_key) = add_file_dependency(
+                project,
+                file_key,
+                file_entity,
+                &mut commands,
+                &mut server,
+                FileExtension::Skel,
+                &skel_path,
+                &skel_file_name,
+            );
+            output.insert(new_entity, ContentEntityData::new_dependency(new_file_key));
+        }
+        // shape ids
+        {
+            for shape_name in data.get_edge_names() {
+                shape_name_map.insert(shape_name_index, shape_name.clone());
+                shape_name_index += 1;
+            }
+        }
+        // frames
+        {
+            for frame in data.get_frames() {
+                info!("read frame action!");
+
+                let transition = frame.get_transition_ms();
+
+                let mut component =
+                    AnimFrame::new(frame_index, Transition::new(transition));
+                component.file_entity.set(&server, file_entity);
+                let frame_entity = commands
+                    .spawn_empty()
+                    .enable_replication(&mut server)
+                    .configure_replication(ReplicationConfig::Delegated)
+                    .insert(component)
+                    .id();
+
+                output.insert(frame_entity, ContentEntityData::new_frame());
+
+                animation_manager.on_create_frame(
+                    &file_entity,
+                    &frame_entity,
+                    frame_index as usize,
+                    None,
+                );
+
+                let poses = frame.get_poses();
+
+                for pose in poses {
+                    let shape_index = pose.get_edge_id();
+                    let rotation = pose.get_rotation();
+
+                    let shape_name = shape_name_map.get(&shape_index).unwrap();
 
                     let mut component =
-                        AnimFrame::new(frame_index, convert_from_transition(transition));
-                    component.file_entity.set(&server, file_entity);
-                    let frame_entity = commands
+                        AnimRotation::new(shape_name.clone(), convert_from_quat(rotation));
+                    component.frame_entity.set(&server, &frame_entity);
+
+                    let rotation_entity = commands
                         .spawn_empty()
                         .enable_replication(&mut server)
                         .configure_replication(ReplicationConfig::Delegated)
                         .insert(component)
                         .id();
 
-                    output.insert(frame_entity, ContentEntityData::new_frame());
+                    output.insert(rotation_entity, ContentEntityData::new_rotation());
 
-                    animation_manager.on_create_frame(
-                        &file_entity,
-                        &frame_entity,
-                        frame_index as usize,
-                        None,
-                    );
-
-                    for (shape_index, rotation) in poses {
-                        let shape_name = shape_name_map.get(&shape_index).unwrap();
-
-                        let mut component =
-                            AnimRotation::new(shape_name.clone(), convert_from_quat(rotation));
-                        component.frame_entity.set(&server, &frame_entity);
-
-                        let rotation_entity = commands
-                            .spawn_empty()
-                            .enable_replication(&mut server)
-                            .configure_replication(ReplicationConfig::Delegated)
-                            .insert(component)
-                            .id();
-
-                        output.insert(rotation_entity, ContentEntityData::new_rotation());
-
-                        animation_manager.on_create_rotation(frame_entity, rotation_entity);
-                    }
-
-                    frame_index += 1;
+                    animation_manager.on_create_rotation(frame_entity, rotation_entity);
                 }
+
+                frame_index += 1;
             }
         }
 
@@ -287,11 +296,11 @@ impl AnimReader {
         bytes: &Box<[u8]>,
     ) -> HashMap<Entity, ContentEntityData> {
 
-        let Ok(actions) = AnimAction::read(bytes) else {
+        let Ok(data) = AnimFile::read_from_bytes(bytes) else {
             panic!("Error reading .anim file");
         };
 
-        let result = Self::actions_to_world(world, project, file_key, file_entity, actions);
+        let result = Self::data_to_world(world, project, file_key, file_entity, &data);
 
         result
     }

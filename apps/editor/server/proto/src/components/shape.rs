@@ -205,4 +205,13 @@ impl SerdeRotation {
         let integer = UnsignedInteger::<6>::new(value_u8);
         self.value = integer;
     }
+
+    pub fn to_inner(&self) -> u8 {
+        self.value.to()
+    }
+
+    pub fn from_inner(value: u8) -> Self {
+        let integer = UnsignedInteger::<6>::new(value);
+        Self { value: integer }
+    }
 }
