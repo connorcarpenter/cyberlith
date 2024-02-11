@@ -46,6 +46,11 @@ impl SkelFileVertex {
             name: name_opt,
         }
     }
+
+    pub fn deconstruct(&self) -> (i16, i16, i16, Option<(u16, u8)>, Option<String>) {
+        let parent = self.parent.as_ref().map(|parent| (parent.id, parent.rotation));
+        (self.x, self.y, self.z, parent, self.name.clone())
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -61,6 +66,10 @@ impl SkelFile {
         Self {
             vertices: Vec::new(),
         }
+    }
+
+    pub fn get_vertices(&self) -> &Vec<SkelFileVertex> {
+        &self.vertices
     }
 
     pub fn add_vertex(&mut self, x: i16, y: i16, z: i16, parent_id_opt: Option<(u16, u8)>, name_opt: Option<String>) {

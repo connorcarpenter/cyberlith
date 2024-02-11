@@ -8,6 +8,7 @@ use bevy_ecs::{
 use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
+
 use asset_io::json::{AssetId, SkelFile};
 
 use editor_proto::components::{
@@ -51,7 +52,7 @@ impl SkelWriter {
         let (shape_manager, vertex_q, file_type_q, shape_name_q, edge_angle_q) =
             system_state.get_mut(world);
 
-        let mut output = Vec::new();
+        let mut output = SkelFile::new();
 
         ///////////////////////////////  id,   x,   y,   z, Option<parent_entity, angle>, vertex_name ///////////////////
         let mut map: HashMap<
@@ -132,14 +133,13 @@ impl SkelWriter {
                 let (parent_id, _, _, _, _, _) = map.get(&parent_entity).unwrap();
                 (*parent_id as u16, angle)
             });
-            let vertex_info = SkelAction::Vertex(
+            output.add_vertex(
                 *x,
                 *y,
                 *z,
                 parent_id.map(|(id, rot)| (id, convert_into_rotation(rot))),
-                vertex_name_opt.clone(),
+                vertex_name_opt.clone()
             );
-            output.push(vertex_info);
         }
 
         output
@@ -187,40 +187,38 @@ impl SkelReader {
             Option<String>,
         )> = Vec::new();
 
-        for action in actions {
-            match action {
-                SkelAction::Vertex(x, y, z, parent_id_opt, vertex_name_opt) => {
-                    let entity_id = commands.spawn_empty().enable_replication(&mut server).id();
-                    info!(
-                        "spawning vertex (id {:?}, entity: {:?}, parent_id_opt: {:?})",
-                        entities.len(),
-                        entity_id,
-                        parent_id_opt
-                    );
-                    commands
-                        .entity(entity_id)
-                        .configure_replication(ReplicationConfig::Delegated);
-                    if parent_id_opt.is_some() {
-                        entities.push((
-                            entity_id,
-                            x,
-                            y,
-                            z,
-                            parent_id_opt.map(|(id, rot)| (id, convert_from_rotation(rot))),
-                            vertex_name_opt,
-                        ));
-                    } else {
-                        // root node should always be at 0,0,0 ... you can refactor these files later
-                        entities.push((
-                            entity_id,
-                            0,
-                            0,
-                            0,
-                            parent_id_opt.map(|(id, rot)| (id, convert_from_rotation(rot))),
-                            vertex_name_opt,
-                        ));
-                    }
-                }
+        for vertex in data.get_vertices() {
+            let (x, y, z, parent_id_opt, vertex_name_opt) = vertex.deconstruct();
+
+            let entity_id = commands.spawn_empty().enable_replication(&mut server).id();
+            info!(
+                "spawning vertex (id {:?}, entity: {:?}, parent_id_opt: {:?})",
+                entities.len(),
+                entity_id,
+                parent_id_opt
+            );
+            commands
+                .entity(entity_id)
+                .configure_replication(ReplicationConfig::Delegated);
+            if parent_id_opt.is_some() {
+                entities.push((
+                    entity_id,
+                    x,
+                    y,
+                    z,
+                    parent_id_opt.map(|(id, rot)| (id, convert_from_rotation(rot))),
+                    vertex_name_opt,
+                ));
+            } else {
+                // root node should always be at 0,0,0 ... you can refactor these files later
+                entities.push((
+                    entity_id,
+                    0,
+                    0,
+                    0,
+                    parent_id_opt.map(|(id, rot)| (id, convert_from_rotation(rot))),
+                    vertex_name_opt,
+                ));
             }
         }
 

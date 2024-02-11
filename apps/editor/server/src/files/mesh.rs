@@ -40,12 +40,12 @@ impl MeshWriter {
         let (server, shape_manager, vertex_q, edge_q, face_q, file_type_q) =
             system_state.get_mut(world);
 
-        let mut output = Vec::new();
+        let mut output = MeshFile::new();
 
         /////////////////////////////////////  id /////////////////
         let mut vertex_map: HashMap<Entity, usize> = HashMap::new();
         let mut edge_map: HashMap<Entity, usize> = HashMap::new();
-        let mut face_list: Vec<Option<MeshAction>> = Vec::new();
+        let mut face_list: Vec<Option<(u16, u16, u16, u16, u16, u16, u16)>> = Vec::new();
 
         info!(
             "writing in world_to_actions(), content_entities: `{:?}`",
@@ -58,8 +58,7 @@ impl MeshWriter {
                 // entity is a vertex
                 check_for_mesh_file_type(&file_type_q, entity);
                 vertex_map.insert(*entity, vertex_count);
-                let vertex_info = MeshAction::Vertex(vertex.x(), vertex.y(), vertex.z());
-                output.push(vertex_info);
+                output.add_vertex(vertex.x(), vertex.y(), vertex.z());
                 vertex_count += 1;
             }
         }
@@ -79,8 +78,7 @@ impl MeshWriter {
                 let vertex_b_entity = edge.end.get(&server).unwrap();
                 let vertex_a_id = *vertex_map.get(&vertex_a_entity).unwrap();
                 let vertex_b_id = *vertex_map.get(&vertex_b_entity).unwrap();
-                let edge_info = MeshAction::Edge(vertex_a_id as u16, vertex_b_id as u16);
-                output.push(edge_info);
+                output.add_edge(vertex_a_id as u16, vertex_b_id as u16);
                 edge_count += 1;
             }
         }
@@ -115,7 +113,7 @@ impl MeshWriter {
                 let edge_b_id = *edge_map.get(&edge_b_entity).unwrap();
                 let edge_c_id = *edge_map.get(&edge_c_entity).unwrap();
 
-                let face_info = MeshAction::Face(
+                let face_info = (
                     face_index as u16,
                     vertex_a_id as u16,
                     vertex_b_id as u16,
@@ -134,10 +132,10 @@ impl MeshWriter {
         }
 
         for face_info_opt in face_list {
-            let Some(face_info) = face_info_opt else {
+            let Some((face_id, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c)) = face_info_opt else {
                 panic!("face_list contains None");
             };
-            output.push(face_info);
+            output.add_face(face_id, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c);
         }
 
         output
@@ -194,92 +192,93 @@ impl MeshReader {
         let mut edges = Vec::new();
         let mut output = Vec::new();
 
-        for action in actions {
-            match action {
-                MeshAction::Vertex(x, y, z) => {
-                    let entity_id = commands
-                        .spawn_empty()
-                        .enable_replication(&mut server)
-                        .configure_replication(ReplicationConfig::Delegated)
-                        .insert(Vertex3d::new(x, y, z))
-                        .id();
-                    info!("spawning mesh vertex entity {:?}", entity_id);
-                    vertices.push(entity_id);
-                    output.push((entity_id, ShapeTypeData::Vertex));
-                }
-                MeshAction::Edge(vertex_a_index, vertex_b_index) => {
-                    let Some(vertex_a_entity) = vertices.get(vertex_a_index as usize) else {
-                        panic!("edge's vertex_a_index is `{:?}` and list of vertices is `{:?}`", vertex_a_index, vertices);
-                    };
-                    let Some(vertex_b_entity) = vertices.get(vertex_b_index as usize) else {
-                        panic!("edge's vertex_b_index is `{:?}` and list of vertices is `{:?}`", vertex_b_index, vertices);
-                    };
+        for vertex in data.get_vertices() {
+            let (x, y, z) = vertex.deconstruct();
+            let entity_id = commands
+                .spawn_empty()
+                .enable_replication(&mut server)
+                .configure_replication(ReplicationConfig::Delegated)
+                .insert(Vertex3d::new(x, y, z))
+                .id();
+            info!("spawning mesh vertex entity {:?}", entity_id);
+            vertices.push(entity_id);
+            output.push((entity_id, ShapeTypeData::Vertex));
+        }
+        for edge in data.get_edges() {
+            let (vertex_a_index, vertex_b_index) = edge.deconstruct();
 
-                    let mut edge_component = Edge3d::new();
-                    edge_component.start.set(&server, vertex_a_entity);
-                    edge_component.end.set(&server, vertex_b_entity);
+            let Some(vertex_a_entity) = vertices.get(vertex_a_index as usize) else {
+                panic!("edge's vertex_a_index is `{:?}` and list of vertices is `{:?}`", vertex_a_index, vertices);
+            };
+            let Some(vertex_b_entity) = vertices.get(vertex_b_index as usize) else {
+                panic!("edge's vertex_b_index is `{:?}` and list of vertices is `{:?}`", vertex_b_index, vertices);
+            };
 
-                    let entity_id = commands
-                        .spawn_empty()
-                        .enable_replication(&mut server)
-                        // setting to Delegated to match client-created edges
-                        .configure_replication(ReplicationConfig::Delegated)
-                        .insert(edge_component)
-                        .id();
-                    info!("spawning mesh edge entity {:?}", entity_id);
-                    edges.push(entity_id);
-                    output.push((
-                        entity_id,
-                        ShapeTypeData::Edge(*vertex_a_entity, *vertex_b_entity),
-                    ));
-                }
-                MeshAction::Face(
-                    face_index,
-                    vertex_a_index,
-                    vertex_b_index,
-                    vertex_c_index,
-                    edge_a_index,
-                    edge_b_index,
-                    edge_c_index,
-                ) => {
-                    let vertex_a_entity = *vertices.get(vertex_a_index as usize).unwrap();
-                    let vertex_b_entity = *vertices.get(vertex_b_index as usize).unwrap();
-                    let vertex_c_entity = *vertices.get(vertex_c_index as usize).unwrap();
+            let mut edge_component = Edge3d::new();
+            edge_component.start.set(&server, vertex_a_entity);
+            edge_component.end.set(&server, vertex_b_entity);
 
-                    let edge_a_entity = *edges.get(edge_a_index as usize).unwrap();
-                    let edge_b_entity = *edges.get(edge_b_index as usize).unwrap();
-                    let edge_c_entity = *edges.get(edge_c_index as usize).unwrap();
+            let entity_id = commands
+                .spawn_empty()
+                .enable_replication(&mut server)
+                // setting to Delegated to match client-created edges
+                .configure_replication(ReplicationConfig::Delegated)
+                .insert(edge_component)
+                .id();
+            info!("spawning mesh edge entity {:?}", entity_id);
+            edges.push(entity_id);
+            output.push((
+                entity_id,
+                ShapeTypeData::Edge(*vertex_a_entity, *vertex_b_entity),
+            ));
+        }
+        for face in data.get_faces() {
+            let (
+                face_index,
+                vertex_a_index,
+                vertex_b_index,
+                vertex_c_index,
+                edge_a_index,
+                edge_b_index,
+                edge_c_index
+            ) = face.deconstruct();
 
-                    let mut face_component = Face3d::new();
-                    face_component.vertex_a.set(&server, &vertex_a_entity);
-                    face_component.vertex_b.set(&server, &vertex_b_entity);
-                    face_component.vertex_c.set(&server, &vertex_c_entity);
-                    face_component.edge_a.set(&server, &edge_a_entity);
-                    face_component.edge_b.set(&server, &edge_b_entity);
-                    face_component.edge_c.set(&server, &edge_c_entity);
+            let vertex_a_entity = *vertices.get(vertex_a_index as usize).unwrap();
+            let vertex_b_entity = *vertices.get(vertex_b_index as usize).unwrap();
+            let vertex_c_entity = *vertices.get(vertex_c_index as usize).unwrap();
 
-                    let entity_id = commands
-                        .spawn_empty()
-                        .enable_replication(&mut server)
-                        // setting to Delegated to match client-created faces
-                        .configure_replication(ReplicationConfig::Delegated)
-                        .insert(face_component)
-                        .id();
-                    info!(
-                        "spawning mesh face entity `{:?}`, index is {:?}",
-                        entity_id, face_index
-                    );
-                    output.push((
-                        entity_id,
-                        ShapeTypeData::Face(
-                            face_index as usize,
-                            vertex_a_entity,
-                            vertex_b_entity,
-                            vertex_c_entity,
-                        ),
-                    ));
-                }
-            }
+            let edge_a_entity = *edges.get(edge_a_index as usize).unwrap();
+            let edge_b_entity = *edges.get(edge_b_index as usize).unwrap();
+            let edge_c_entity = *edges.get(edge_c_index as usize).unwrap();
+
+            let mut face_component = Face3d::new();
+            face_component.vertex_a.set(&server, &vertex_a_entity);
+            face_component.vertex_b.set(&server, &vertex_b_entity);
+            face_component.vertex_c.set(&server, &vertex_c_entity);
+            face_component.edge_a.set(&server, &edge_a_entity);
+            face_component.edge_b.set(&server, &edge_b_entity);
+            face_component.edge_c.set(&server, &edge_c_entity);
+
+            let entity_id = commands
+                .spawn_empty()
+                .enable_replication(&mut server)
+                // setting to Delegated to match client-created faces
+                .configure_replication(ReplicationConfig::Delegated)
+                .insert(face_component)
+                .id();
+            info!(
+                "spawning mesh face entity `{:?}`, index is {:?}",
+                entity_id, face_index
+            );
+            output.push((
+                entity_id,
+                ShapeTypeData::Face(
+                    face_index as usize,
+                    vertex_a_entity,
+                    vertex_b_entity,
+                    vertex_c_entity,
+                ),
+            ));
         }
 
         let output = MeshReader::post_process_entities(&mut shape_manager, file_entity, output);

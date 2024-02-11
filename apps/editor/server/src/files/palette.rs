@@ -26,7 +26,7 @@ impl PaletteWriter {
         let mut system_state: SystemState<Query<&PaletteColor>> = SystemState::new(world);
         let color_q = system_state.get_mut(world);
 
-        let mut actions = Vec::new();
+        let mut output = PaletteFile::new();
 
         for color in color_q.iter() {
             let index = *color.index as usize;
@@ -34,14 +34,10 @@ impl PaletteWriter {
             let g = *color.g;
             let b = *color.b;
 
-            if index >= actions.len() {
-                actions.resize(index + 1, None);
-            }
-
-            actions[index] = Some(PaletteAction::Color(r, g, b));
+            output.insert_color(index, r, g, b);
         }
 
-        actions
+        output
     }
 }
 
@@ -88,28 +84,25 @@ impl PaletteReader {
             SystemState::new(world);
         let (mut commands, mut server, mut palette_manager) = system_state.get_mut(world);
 
-        for action in actions {
-            match action {
-                PaletteAction::Color(r, g, b) => {
-                    let mut color_component = PaletteColor::new(index, r, g, b);
-                    color_component
-                        .owning_file_entity
-                        .set(&mut server, file_entity);
-                    let entity_id = commands
-                        .spawn_empty()
-                        .enable_replication(&mut server)
-                        .configure_replication(ReplicationConfig::Delegated)
-                        .insert(color_component)
-                        .id();
-                    info!(
-                        "palette color entity: `{:?}`, rgb:({}, {}, {})",
-                        entity_id, r, g, b
-                    );
-                    output.insert(entity_id, ContentEntityData::new_palette_color());
+        for color in data.get_colors() {
+            let (r, g, b) = color.deconstruct();
+            let mut color_component = PaletteColor::new(index, r, g, b);
+            color_component
+                .owning_file_entity
+                .set(&mut server, file_entity);
+            let entity_id = commands
+                .spawn_empty()
+                .enable_replication(&mut server)
+                .configure_replication(ReplicationConfig::Delegated)
+                .insert(color_component)
+                .id();
+            info!(
+                "palette color entity: `{:?}`, rgb:({}, {}, {})",
+                entity_id, r, g, b
+            );
+            output.insert(entity_id, ContentEntityData::new_palette_color());
 
-                    palette_manager.on_create_color(&file_entity, &entity_id, index as usize, None);
-                }
-            }
+            palette_manager.on_create_color(&file_entity, &entity_id, index as usize, None);
 
             index += 1;
         }
