@@ -2,7 +2,8 @@ use cfg_if::cfg_if;
 
 use serde::{Deserialize, Serialize};
 
-use crate::json::{MAX_QUAT_COMPONENT_SIZE, MAX_SCALE};
+use crate::json::AssetId;
+use crate::json::components::{FileComponentEntry, FileComponentType, FileTransformPosition, FileTransformRotation, FileTransformScale};
 
 cfg_if! {
     if #[cfg(feature = "read_json")] {
@@ -21,39 +22,51 @@ cfg_if! {
 // Model
 
 #[derive(Serialize, Deserialize, Clone)]
-pub struct ModelFileComponent {
-    asset_id: String,
-    kind: String,
-}
-
-#[derive(Serialize, Deserialize, Clone)]
 pub struct ModelFileTransform {
     component_id: u16,
     name: String,
-    position: ModelFileTransformPosition,
-    rotation: ModelFileTransformRotation,
-    scale: ModelFileTransformScale,
+    position: FileTransformPosition,
+    rotation: FileTransformRotation,
+    scale: FileTransformScale,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
-pub struct ModelFileTransformPosition {
-    x: i16, y: i16, z: i16,
-}
+impl ModelFileTransform {
 
-#[derive(Serialize, Deserialize, Clone)]
-pub struct ModelFileTransformRotation {
-    x: i8, y: i8, z: i8, w: i8,
-}
+    pub fn new(component_id: u16, name: &str, position: FileTransformPosition, rotation: FileTransformRotation, scale: FileTransformScale) -> Self {
+        Self {
+            component_id,
+            name: name.to_string(),
+            position,
+            rotation,
+            scale,
+        }
+    }
 
-#[derive(Serialize, Deserialize, Clone)]
-pub struct ModelFileTransformScale {
-    x: u32, y: u32, z: u32,
+    pub fn component_id(&self) -> u16 {
+        self.component_id
+    }
+
+    pub fn name(&self) -> String {
+        self.name.clone()
+    }
+
+    pub fn position(&self) -> FileTransformPosition {
+        self.position.clone()
+    }
+
+    pub fn rotation(&self) -> FileTransformRotation {
+        self.rotation.clone()
+    }
+
+    pub fn scale(&self) -> FileTransformScale {
+        self.scale.clone()
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct ModelFile {
     skeleton_id: String,
-    components: Vec<ModelFileComponent>,
+    components: Vec<FileComponentEntry>,
     transforms: Vec<ModelFileTransform>,
 }
 
@@ -69,15 +82,24 @@ impl ModelFile {
         }
     }
 
-    pub fn set_skeleton_id(&mut self, asset_id: &str) {
-        self.skeleton_id = asset_id.to_string();
+    pub fn get_skeleton_id(&self) -> AssetId {
+        AssetId::from_str(self.skeleton_id.as_str()).unwrap()
     }
 
-    pub fn add_component(&mut self, asset_id: &str, kind: &str) {
-        self.components.push(ModelFileComponent {
-            asset_id: asset_id.to_string(),
-            kind: kind.to_string(),
-        });
+    pub fn set_skeleton_id(&mut self, asset_id: AssetId) {
+        self.skeleton_id = asset_id.as_string();
+    }
+
+    pub fn get_components(&self) -> &Vec<FileComponentEntry> {
+        &self.components
+    }
+
+    pub fn add_component(&mut self, asset_id: AssetId, kind: FileComponentType) {
+        self.components.push(FileComponentEntry::new(asset_id, kind));
+    }
+
+    pub fn get_transforms(&self) -> &Vec<ModelFileTransform> {
+        &self.transforms
     }
 
     pub fn add_transform(
@@ -95,25 +117,12 @@ impl ModelFile {
         rotation_z: f32,
         rotation_w: f32
     ) {
-        self.transforms.push(ModelFileTransform {
+        self.transforms.push(ModelFileTransform::new(
             component_id,
-            name: name.to_string(),
-            position: ModelFileTransformPosition {
-                x,
-                y,
-                z,
-            },
-            rotation: ModelFileTransformRotation {
-                x: (rotation_x * MAX_QUAT_COMPONENT_SIZE).round() as i8,
-                y: (rotation_y * MAX_QUAT_COMPONENT_SIZE).round() as i8,
-                z: (rotation_z * MAX_QUAT_COMPONENT_SIZE).round() as i8,
-                w: (rotation_w * MAX_QUAT_COMPONENT_SIZE).round() as i8,
-            },
-            scale: ModelFileTransformScale {
-                x: (scale_x * MAX_SCALE) as u32,
-                y: (scale_y * MAX_SCALE) as u32,
-                z: (scale_z * MAX_SCALE) as u32,
-            },
-        });
+            name,
+            FileTransformPosition::new(x, y, z),
+            FileTransformRotation::new(rotation_x, rotation_y, rotation_z, rotation_w),
+            FileTransformScale::new(scale_x, scale_y, scale_z)
+        ));
     }
 }

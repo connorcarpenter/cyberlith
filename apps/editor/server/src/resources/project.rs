@@ -1152,7 +1152,7 @@ impl Project {
         output
     }
 
-    pub(crate) fn asset_id_to_file_key(&self, asset_id: &AssetId) -> Option<FileKey> {
+    pub(crate) fn file_key_from_asset_id(&self, asset_id: &AssetId) -> Option<FileKey> {
         self.asset_id_map.get(asset_id).cloned()
     }
 }

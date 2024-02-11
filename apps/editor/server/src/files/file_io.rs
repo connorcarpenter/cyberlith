@@ -9,7 +9,7 @@ use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 
-use asset_io::json::{AnimFileQuat, AssetId, SceneFileComponentType};
+use asset_io::json::{AnimFileQuat, AssetId, FileComponentType};
 use math::Quat;
 
 use editor_proto::{
@@ -390,13 +390,13 @@ pub fn convert_from_rotation(
 // transform type
 pub fn convert_into_component_type(
     input: editor_proto::components::NetTransformEntityType,
-) -> SceneFileComponentType {
+) -> FileComponentType {
     match input {
         editor_proto::components::NetTransformEntityType::Skin => {
-            SceneFileComponentType::Skin
+            FileComponentType::Skin
         }
         editor_proto::components::NetTransformEntityType::Scene => {
-            SceneFileComponentType::Scene
+            FileComponentType::Scene
         }
         _ => {
             panic!("unsupported");
@@ -405,13 +405,13 @@ pub fn convert_into_component_type(
 }
 
 pub fn convert_from_component_type(
-    input: SceneFileComponentType,
+    input: FileComponentType,
 ) -> editor_proto::components::NetTransformEntityType {
     match input {
-        SceneFileComponentType::Skin => {
+        FileComponentType::Skin => {
             editor_proto::components::NetTransformEntityType::Skin
         }
-        SceneFileComponentType::Scene => {
+        FileComponentType::Scene => {
             editor_proto::components::NetTransformEntityType::Scene
         }
         _ => {

@@ -9,7 +9,7 @@ use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 
-use asset_io::json::{AssetId, SceneFile, SceneFileComponentType};
+use asset_io::json::{AssetId, SceneFile, FileComponentType};
 
 use editor_proto::{
     components::{
@@ -184,10 +184,10 @@ impl SceneReader {
             let file_type = component.kind();
             let asset_id = component.asset_id();
             let dependency_file_ext = match file_type {
-                SceneFileComponentType::Skin => FileExtension::Skin,
-                SceneFileComponentType::Scene => FileExtension::Scene,
+                FileComponentType::Skin => FileExtension::Skin,
+                FileComponentType::Scene => FileExtension::Scene,
             };
-            let dependency_file_key = project.asset_id_to_file_key(&asset_id).unwrap();
+            let dependency_file_key = project.file_key_from_asset_id(&asset_id).unwrap();
             let (new_dependency_entity, dependency_file_entity) =
                 add_file_dependency(
                     project,

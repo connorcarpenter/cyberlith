@@ -207,7 +207,7 @@ impl AnimReader {
         // skeleton file
         {
             let asset_id = data.get_skeleton_asset_id();
-            let skel_file_key = project.asset_id_to_file_key(&asset_id).unwrap();
+            let skel_file_key = project.file_key_from_asset_id(&asset_id).unwrap();
             let (new_entity, _) = add_file_dependency(
                 project,
                 file_key,

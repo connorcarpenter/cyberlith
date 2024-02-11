@@ -9,7 +9,7 @@ use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 
-use asset_io::json::{AssetId, ModelFile};
+use asset_io::json::{AssetId, FileComponentType, ModelFile};
 
 use editor_proto::{
     components::{
@@ -18,10 +18,11 @@ use editor_proto::{
     },
     resources::FileKey,
 };
+use math::Quat;
 
 use crate::{
     files::{
-        add_file_dependency, convert_from_quat, convert_from_component_type, convert_into_quat,
+        add_file_dependency, convert_from_component_type,
         convert_into_component_type, FileWriter,
     },
     resources::{ContentEntityData, Project},
@@ -82,15 +83,13 @@ impl ModelWriter {
             }
         }
 
-        let mut actions = Vec::new();
+        let mut data = ModelFile::new();
 
         // Write Skel Dependency
         if let Some(dependency_key) = skel_dependency_key_opt {
             info!("writing skel dependency: {}", dependency_key.full_path());
-            actions.push(ModelAction::SkelFile(
-                dependency_key.path().to_string(),
-                dependency_key.name().to_string(),
-            ));
+            let skel_asset_id = project.asset_id(dependency_key).unwrap();
+            data.set_skeleton_id(skel_asset_id);
         }
 
         // Write Skin Dependencies
@@ -99,11 +98,8 @@ impl ModelWriter {
                 "writing skin/scene dependency: {}",
                 dependency_key.full_path()
             );
-            actions.push(ModelAction::SkinOrSceneFile(
-                dependency_key.path().to_string(),
-                dependency_key.name().to_string(),
-                convert_into_component_type(dependency_type),
-            ));
+            let dependency_asset_id = project.asset_id(dependency_key).unwrap();
+            data.add_component(dependency_asset_id, convert_into_component_type(dependency_type));
         }
 
         // Write NetTransforms
@@ -138,20 +134,24 @@ impl ModelWriter {
                 "writing action for net transform for bone: `{}`, skin index is: {}",
                 bone_name, skin_index
             );
-            actions.push(ModelAction::NetTransform(
+
+            data.add_transform(
                 *skin_index,
-                bone_name,
+                &bone_name,
                 translation_x,
                 translation_y,
                 translation_z,
                 scale_x,
                 scale_y,
                 scale_z,
-                convert_into_quat(rotation),
-            ));
+                rotation.0.x,
+                rotation.0.y,
+                rotation.0.z,
+                rotation.0.w,
+            );
         }
 
-        actions
+        data
     }
 }
 
@@ -191,104 +191,98 @@ impl ModelReader {
 
         let mut skin_files = Vec::new();
 
-        for action in actions {
-            match action {
-                ModelAction::SkelFile(path, file_name) => {
-                    let (new_dependency_entity, _dependency_file_entity, dependency_file_key) =
-                        add_file_dependency(
-                            project,
-                            file_key,
-                            file_entity,
-                            &mut commands,
-                            &mut server,
-                            FileExtension::Skel,
-                            &path,
-                            &file_name,
-                        );
-                    output.insert(
-                        new_dependency_entity,
-                        ContentEntityData::new_dependency(dependency_file_key),
-                    );
-                }
-                ModelAction::SkinOrSceneFile(path, file_name, file_type) => {
-                    let dependency_file_ext = match file_type {
-                        FileTransformEntityType::Skin => FileExtension::Skin,
-                        FileTransformEntityType::Scene => FileExtension::Scene,
-                    };
-                    let (new_dependency_entity, dependency_file_entity, dependency_file_key) =
-                        add_file_dependency(
-                            project,
-                            file_key,
-                            file_entity,
-                            &mut commands,
-                            &mut server,
-                            dependency_file_ext,
-                            &path,
-                            &file_name,
-                        );
-                    output.insert(
-                        new_dependency_entity,
-                        ContentEntityData::new_dependency(dependency_file_key),
-                    );
+        // Get Skeleton Dependency
+        let skel_asset_id = data.get_skeleton_id();
+        let dependency_file_key = project.file_key_from_asset_id(&skel_asset_id).unwrap();
+        let (new_dependency_entity, _dependency_file_entity) =
+            add_file_dependency(
+                project,
+                file_key,
+                file_entity,
+                &mut commands,
+                &mut server,
+                FileExtension::Skel,
+                &dependency_file_key,
+            );
+        output.insert(
+            new_dependency_entity,
+            ContentEntityData::new_dependency(dependency_file_key),
+        );
 
-                    info!(
-                        "reading new skin file at index: {}, entity: `{:?}`",
-                        skin_files.len(),
-                        dependency_file_entity
-                    );
-                    skin_files.push((file_type, dependency_file_entity));
-                }
-                ModelAction::NetTransform(
-                    skin_index,
-                    vertex_name,
-                    translation_x,
-                    translation_y,
-                    translation_z,
-                    scale_x,
-                    scale_y,
-                    scale_z,
-                    rotation,
-                ) => {
-                    let Some((skin_or_scene_type, skin_or_scene_entity)) = skin_files.get(skin_index as usize) else {
-                        panic!("skin index out of bounds");
-                    };
-                    let mut skin_or_scene_component =
-                        SkinOrSceneEntity::new(convert_from_component_type(*skin_or_scene_type));
-                    skin_or_scene_component
-                        .value
-                        .set(&server, skin_or_scene_entity);
-                    info!("reading net transform for bone: `{}`, into world. skin index: {} -> entity: `{:?}`",
-                        vertex_name.clone(),
-                        skin_index,
-                        skin_or_scene_entity);
+        for component in data.get_components() {
+            let dependency_file_ext = match component.kind() {
+                FileComponentType::Skin => FileExtension::Skin,
+                FileComponentType::Scene => FileExtension::Scene,
+            };
+            let dependency_file_key = project.file_key_from_asset_id(&component.asset_id()).unwrap();
+            let (new_dependency_entity, dependency_file_entity) =
+                add_file_dependency(
+                    project,
+                    file_key,
+                    file_entity,
+                    &mut commands,
+                    &mut server,
+                    dependency_file_ext,
+                    &dependency_file_key,
+                );
+            output.insert(
+                new_dependency_entity,
+                ContentEntityData::new_dependency(dependency_file_key),
+            );
 
-                    let mut owning_file_component = OwnedByFile::new();
-                    owning_file_component
-                        .file_entity
-                        .set(&mut server, file_entity);
+            info!(
+                "reading new skin file at index: {}, entity: `{:?}`",
+                skin_files.len(),
+                dependency_file_entity
+            );
+            skin_files.push((component.kind(), dependency_file_entity));
+        }
 
-                    let net_transform_entity = commands
-                        .spawn_empty()
-                        .enable_replication(&mut server)
-                        .configure_replication(ReplicationConfig::Delegated)
-                        .insert(NetTransform::new(
-                            convert_from_quat(rotation),
-                            translation_x as f32,
-                            translation_y as f32,
-                            translation_z as f32,
-                            scale_x,
-                            scale_y,
-                            scale_z,
-                        ))
-                        .insert(ShapeName::new(vertex_name.clone()))
-                        .insert(skin_or_scene_component)
-                        .insert(owning_file_component)
-                        .insert(FileType::new(FileExtension::Model))
-                        .id();
+        for transform in data.get_transforms() {
+            let skin_index = transform.component_id();
+            let translation = transform.position();
+            let rotation = transform.rotation();
+            let scale = transform.scale();
+            let vertex_name = transform.name();
 
-                    output.insert(net_transform_entity, ContentEntityData::new_net_transform());
-                }
-            }
+            let Some((skin_or_scene_type, skin_or_scene_entity)) = skin_files.get(skin_index as usize) else {
+                panic!("skin index out of bounds");
+            };
+            let mut skin_or_scene_component =
+                SkinOrSceneEntity::new(convert_from_component_type(*skin_or_scene_type));
+            skin_or_scene_component
+                .value
+                .set(&server, skin_or_scene_entity);
+            info!("reading net transform for bone: `{}`, into world. skin index: {} -> entity: `{:?}`",
+                vertex_name.clone(),
+                skin_index,
+                skin_or_scene_entity);
+
+            let mut owning_file_component = OwnedByFile::new();
+            owning_file_component
+                .file_entity
+                .set(&mut server, file_entity);
+
+            let net_transform_entity = commands
+                .spawn_empty()
+                .enable_replication(&mut server)
+                .configure_replication(ReplicationConfig::Delegated)
+                .insert(NetTransform::new(
+                    math::SerdeQuat::from(Quat::from_xyzw(rotation.x(), rotation.y(), rotation.z(), rotation.w())),
+                    translation.x() as f32,
+                    translation.y() as f32,
+                    translation.z() as f32,
+                    scale.x(),
+                    scale.y(),
+                    scale.z(),
+                ))
+                .insert(ShapeName::new(vertex_name.clone()))
+                .insert(skin_or_scene_component)
+                .insert(owning_file_component)
+                .insert(FileType::new(FileExtension::Model))
+                .id();
+
+            output.insert(net_transform_entity, ContentEntityData::new_net_transform());
         }
 
         system_state.apply(world);

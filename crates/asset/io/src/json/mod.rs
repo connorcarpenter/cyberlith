@@ -15,7 +15,7 @@ mod palette;
 pub use palette::PaletteFile;
 
 mod scene;
-pub use scene::{SceneFile, SceneFileComponentType};
+pub use scene::SceneFile;
 
 mod skeleton;
 pub use skeleton::SkelFile;
@@ -25,6 +25,9 @@ pub use skin::SkinFile;
 
 mod asset;
 pub use asset::{Asset, AssetMeta, AssetData, AssetId};
+
+mod components;
+pub use components::FileComponentType;
 
 pub const MAX_QUAT_COMPONENT_SIZE: f32 = 32.0;
 pub const MAX_SCALE: f32 = 100.0;
