@@ -9,7 +9,7 @@ use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 
-use asset_io::json::{AnimFile, AnimFileFrame};
+use asset_io::json::{AnimFile, AnimFileFrame, AssetId};
 
 use editor_proto::{
     components::{AnimFrame, AnimRotation, FileExtension, Transition},
@@ -21,10 +21,10 @@ use crate::{
     files::{
         add_file_dependency,
         FileWriter,
+        convert_from_quat,
     },
-    resources::{AssetId, AnimationManager, ContentEntityData, Project},
+    resources::{AnimationManager, ContentEntityData, Project},
 };
-use crate::files::convert_from_quat;
 
 // Writer
 pub struct AnimWriter;
@@ -121,7 +121,7 @@ impl AnimWriter {
         // Write Skel Dependency
         if let Some(dependency_key) = skel_dependency_key_opt {
             info!("writing dependency: {}", dependency_key.full_path());
-            let asset_id = project.asset_id_store().id_from_path(dependency_key.full_path().as_str()).unwrap();
+            let asset_id = project.asset_id(dependency_key).unwrap();
             file.set_skeleton_asset_id(&asset_id);
         }
 
@@ -167,21 +167,20 @@ impl FileWriter for AnimWriter {
         content_entities: &HashMap<Entity, ContentEntityData>,
         asset_id: &AssetId,
     ) -> Box<[u8]> {
-        let file = self.world_to_data(world, project, content_entities);
-        file.write(asset_id)
+        let data = self.world_to_data(world, project, content_entities);
+        data.write(asset_id)
     }
 
     fn write_new_default(
         &self,
-        project: &mut Project,
+        asset_id: &AssetId,
     ) -> Box<[u8]> {
         info!("anim write new default");
 
-        let mut file = AnimFile::new();
-        file.add_frame(AnimFileFrame::new(100));
+        let mut data = AnimFile::new();
+        data.add_frame(AnimFileFrame::new(100));
 
-        let asset_id = project.asset_id_store_mut().generate_new_unique_id();
-        file.write(&asset_id)
+        data.write(asset_id)
     }
 }
 
@@ -208,18 +207,17 @@ impl AnimReader {
         // skeleton file
         {
             let asset_id = data.get_skeleton_asset_id();
-            let (skel_path, skel_file_name) = project.asset_id_store().get_path_and_name(&asset_id).unwrap();
-            let (new_entity, _, new_file_key) = add_file_dependency(
+            let skel_file_key = project.asset_id_to_file_key(&asset_id).unwrap();
+            let (new_entity, _) = add_file_dependency(
                 project,
                 file_key,
                 file_entity,
                 &mut commands,
                 &mut server,
                 FileExtension::Skel,
-                &skel_path,
-                &skel_file_name,
+                &skel_file_key,
             );
-            output.insert(new_entity, ContentEntityData::new_dependency(new_file_key));
+            output.insert(new_entity, ContentEntityData::new_dependency(skel_file_key));
         }
         // shape ids
         {
@@ -296,7 +294,7 @@ impl AnimReader {
         bytes: &Box<[u8]>,
     ) -> HashMap<Entity, ContentEntityData> {
 
-        let Ok(data) = AnimFile::read_from_bytes(bytes) else {
+        let Ok((meta, data)) = AnimFile::read(bytes) else {
             panic!("Error reading .anim file");
         };
 

@@ -9,11 +9,11 @@ use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 
-use asset_io::json::AnimFileQuat;
+use asset_io::json::{AnimFileQuat, AssetId};
 use math::Quat;
 
 use editor_proto::{
-    components::{EntryKind, FileDependency, FileExtension, FileType, OwnedByFile},
+    components::{FileDependency, FileExtension, FileType, OwnedByFile},
     resources::FileKey,
 };
 
@@ -25,7 +25,7 @@ use crate::{
     },
     resources::{
         AnimationManager, ContentEntityData, IconManager, PaletteManager, Project, ShapeManager,
-        SkinManager, AssetId
+        SkinManager,
     },
 };
 
@@ -39,7 +39,7 @@ pub trait FileWriter: Send + Sync {
     ) -> Box<[u8]>;
     fn write_new_default(
         &self,
-        project: &mut Project
+        asset_id: &AssetId,
     ) -> Box<[u8]>;
 }
 
@@ -98,16 +98,16 @@ impl FileWriter for FileExtension {
         }
     }
 
-    fn write_new_default(&self, project: &mut Project) -> Box<[u8]> {
+    fn write_new_default(&self, asset_id: &AssetId) -> Box<[u8]> {
         match self {
-            FileExtension::Skel => SkelWriter.write_new_default(project),
-            FileExtension::Mesh => MeshWriter.write_new_default(project),
-            FileExtension::Anim => AnimWriter.write_new_default(project),
-            FileExtension::Palette => PaletteWriter.write_new_default(project),
-            FileExtension::Skin => SkinWriter.write_new_default(project),
-            FileExtension::Model => ModelWriter.write_new_default(project),
-            FileExtension::Scene => SceneWriter.write_new_default(project),
-            FileExtension::Icon => IconWriter.write_new_default(project),
+            FileExtension::Skel => SkelWriter.write_new_default(asset_id),
+            FileExtension::Mesh => MeshWriter.write_new_default(asset_id),
+            FileExtension::Anim => AnimWriter.write_new_default(asset_id),
+            FileExtension::Palette => PaletteWriter.write_new_default(asset_id),
+            FileExtension::Skin => SkinWriter.write_new_default(asset_id),
+            FileExtension::Model => ModelWriter.write_new_default(asset_id),
+            FileExtension::Scene => SceneWriter.write_new_default(asset_id),
+            FileExtension::Icon => IconWriter.write_new_default(asset_id),
             _ => panic!("File extension {:?} not implemented", self),
         }
     }
@@ -314,12 +314,9 @@ pub fn add_file_dependency(
     commands: &mut Commands,
     server: &mut Server,
     dependency_file_ext: FileExtension,
-    dependency_path: &str,
-    dependency_file_name: &str,
-) -> (Entity, Entity, FileKey) {
-    let dependency_file_key =
-        FileKey::new(&dependency_path, &dependency_file_name, EntryKind::File);
-    let file_extension = project.file_extension(&dependency_file_key).unwrap();
+    dependency_file_key: &FileKey,
+) -> (Entity, Entity) {
+    let file_extension = project.file_extension(dependency_file_key).unwrap();
     if file_extension != dependency_file_ext {
         panic!(
             "new file of type {} is not of the required type: {}",
@@ -328,9 +325,9 @@ pub fn add_file_dependency(
         );
     }
 
-    project.file_add_dependency(file_key, &dependency_file_key);
+    project.file_add_dependency(file_key, dependency_file_key);
 
-    let dependency_file_entity = project.file_entity(&dependency_file_key).unwrap();
+    let dependency_file_entity = project.file_entity(dependency_file_key).unwrap();
 
     info!("creating new FileDependency!");
     let mut component = FileDependency::new();
@@ -348,7 +345,6 @@ pub fn add_file_dependency(
     return (
         dependency_entity,
         dependency_file_entity,
-        dependency_file_key,
     );
 }
 

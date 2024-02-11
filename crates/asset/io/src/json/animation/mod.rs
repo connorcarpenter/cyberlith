@@ -123,14 +123,6 @@ impl AnimFile {
         }
     }
 
-    pub fn read_from_bytes(bytes: &[u8]) -> Result<Self, AssetIoError> {
-        serde_json::from_slice(bytes).map_err(|e| AssetIoError::Message(e.to_string()))
-    }
-
-    pub fn write_to_bytes(&self) -> Box<[u8]> {
-        serde_json::to_vec_pretty(self).unwrap().into_boxed_slice()
-    }
-
     pub fn get_skeleton_asset_id(&self) -> U32Token {
         U32Token::from_str(&self.skeleton_asset_id).unwrap()
     }

@@ -8,6 +8,7 @@ use bevy_ecs::{
 use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
+use asset_io::json::{AssetId, IconFile, IconFileFrame};
 
 use editor_proto::{
     components::{FileExtension, IconEdge, IconFace, IconFrame, IconVertex, PaletteColor},
@@ -16,7 +17,7 @@ use editor_proto::{
 
 use crate::{
     files::{add_file_dependency, FileWriter, ShapeType},
-    resources::{AssetId, ContentEntityData, IconManager, Project},
+    resources::{ContentEntityData, IconManager, Project},
 };
 
 #[derive(Clone)]
@@ -123,12 +124,12 @@ impl IconFrameActionData {
 pub struct IconWriter;
 
 impl IconWriter {
-    fn world_to_actions(
+    fn world_to_data(
         &self,
         world: &mut World,
         project: &Project,
         content_entities: &HashMap<Entity, ContentEntityData>,
-    ) -> Vec<IconAction> {
+    ) -> IconFile {
         let working_file_entries = project.working_file_entries();
 
         let mut actions = Vec::new();
@@ -312,19 +313,17 @@ impl FileWriter for IconWriter {
         content_entities: &HashMap<Entity, ContentEntityData>,
         asset_id: &AssetId,
     ) -> Box<[u8]> {
-        let actions = self.world_to_actions(world, project, content_entities);
-        IconAction::write(actions)
+        let data = self.world_to_data(world, project, content_entities);
+        data.write(asset_id)
     }
 
-    fn write_new_default(&self, project: &mut Project) -> Box<[u8]> {
-        let mut default_actions = Vec::new();
+    fn write_new_default(&self, asset_id: &AssetId) -> Box<[u8]> {
+        let mut data = IconFile::new();
+        let mut frame = IconFileFrame::new();
+        frame.add_vertex(0,0);
+        data.add_frame(frame);
 
-        let mut frame_actions = Vec::new();
-        frame_actions.push(IconFrameAction::Vertex(0, 0));
-
-        default_actions.push(IconAction::Frame(frame_actions));
-
-        IconAction::write(default_actions)
+        data.write(asset_id)
     }
 }
 

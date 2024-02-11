@@ -13,6 +13,7 @@ use bevy_log::info;
 use git2::{Cred, Repository, Tree};
 
 use naia_bevy_server::{BigMap, CommandsExt, ReplicationConfig, RoomKey, Server, UserKey};
+use asset_io::json::AssetMeta;
 
 use editor_proto::{
     components::{
@@ -197,7 +198,7 @@ impl GitManager {
 
                     let face_entity;
 
-                    let file_ext = self.working_file_extension(project_key, file_key);
+                    let file_ext = self.file_extension(project_key, file_key);
                     match file_ext {
                         FileExtension::Skin => {
                             let mesh_file_entity = self
@@ -549,7 +550,7 @@ impl GitManager {
             let head = repo.head().unwrap();
             let tree = head.peel_to_tree().unwrap();
 
-            fill_file_entries_from_git(&mut file_entries, commands, server, &repo, &tree, "", None);
+            fill_file_entries_from_git(&mut file_entries, commands, server, &repo, &tree, "", None, &full_path_str);
         }
 
         // Create new room for user and all their owned entities
@@ -679,12 +680,12 @@ impl GitManager {
     }
 
     pub(crate) fn can_read(&self, project_key: &ProjectKey, key: &FileKey) -> bool {
-        let ext = self.working_file_extension(project_key, key);
+        let ext = self.file_extension(project_key, key);
         return ext.can_io();
     }
 
     pub(crate) fn can_write(&self, project_key: &ProjectKey, key: &FileKey) -> bool {
-        let ext = self.working_file_extension(project_key, key);
+        let ext = self.file_extension(project_key, key);
         return ext.can_io();
     }
 
@@ -696,15 +697,16 @@ impl GitManager {
         content_entities: &HashMap<Entity, ContentEntityData>,
     ) -> Box<[u8]> {
         let project = self.projects.get(project_key).unwrap();
-        let asset_id = project.asset_id_store().id_from_path(&file_key.full_path()).unwrap();
+        let asset_id = project.asset_id(file_key).unwrap();
         project.write(world, file_key, content_entities, &asset_id)
     }
 
-    pub fn working_file_extension(&self, project_key: &ProjectKey, key: &FileKey) -> FileExtension {
+    pub fn file_extension(&self, project_key: &ProjectKey, key: &FileKey) -> FileExtension {
         self.projects
             .get(project_key)
             .unwrap()
-            .working_file_extension(key)
+            .file_extension(key)
+            .unwrap()
     }
 
     pub(crate) fn set_changelist_entry_content(
@@ -738,6 +740,7 @@ fn fill_file_entries_from_git(
     git_tree: &Tree,
     path: &str,
     parent: Option<FileKey>,
+    full_path_str: &str,
 ) -> HashSet<FileKey> {
     let mut output = HashSet::new();
 
@@ -763,10 +766,11 @@ fn fill_file_entries_from_git(
                     &git_children,
                     &new_path,
                     Some(file_key.clone()),
+                    full_path_str,
                 );
 
                 let file_entry_value =
-                    FileEntryValue::new(id, None, parent.clone(), Some(children));
+                    FileEntryValue::new(id, None, None, parent.clone(), Some(children));
                 file_entries.insert(file_key.clone(), file_entry_value);
 
                 output.insert(file_key.clone());
@@ -777,8 +781,17 @@ fn fill_file_entries_from_git(
 
                 let file_key = FileKey::new(path, &name, entry_kind);
                 let file_extension = FileExtension::from(name.as_str());
+
+                let asset_id = {
+                    let bytes = Project::read_from_file(full_path_str, &file_key);
+                    let Ok(asset_meta) = AssetMeta::read_from_file(&bytes) else {
+                        panic!("Could not read AssetMeta from file: {:?}", &file_key);
+                    };
+                    asset_meta.asset_id()
+                };
+
                 let file_entry_value =
-                    FileEntryValue::new(id, Some(file_extension), parent.clone(), None);
+                    FileEntryValue::new(id, Some(asset_id), Some(file_extension), parent.clone(), None);
                 file_entries.insert(file_key.clone(), file_entry_value);
 
                 output.insert(file_key.clone());

@@ -8,6 +8,7 @@ use bevy_ecs::{
 use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
+use asset_io::json::{AssetId, PaletteFile};
 
 use editor_proto::components::PaletteColor;
 
@@ -15,13 +16,12 @@ use crate::{
     files::FileWriter,
     resources::{ContentEntityData, PaletteManager, Project},
 };
-use crate::resources::AssetId;
 
 // Writer
 pub struct PaletteWriter;
 
 impl PaletteWriter {
-    fn world_to_actions(&self, world: &mut World) -> Vec<Option<PaletteAction>> {
+    fn world_to_data(&self, world: &mut World) -> PaletteFile {
         let mut system_state: SystemState<Query<&PaletteColor>> = SystemState::new(world);
         let color_q = system_state.get_mut(world);
 
@@ -52,32 +52,22 @@ impl FileWriter for PaletteWriter {
         _content_entities: &HashMap<Entity, ContentEntityData>,
         asset_id: &AssetId,
     ) -> Box<[u8]> {
-        let mut action_index = 0;
-        let actions = self.world_to_actions(world);
-        let mut output_actions = Vec::new();
-        for action_opt in actions {
-            let Some(action) = action_opt else {
-                panic!("Palette action is missing! index: {}", action_index);
-            };
-            output_actions.push(action);
-            action_index += 1;
-        }
-        PaletteAction::write(output_actions)
+        let data = self.world_to_data(world);
+        data.write(asset_id)
     }
 
-    fn write_new_default(&self, project: &mut Project) -> Box<[u8]> {
-        let mut actions = Vec::new();
+    fn write_new_default(&self, asset_id: &AssetId) -> Box<[u8]> {
 
-        actions.push(PaletteAction::Color(255, 255, 255)); // white
-        actions.push(PaletteAction::Color(0, 0, 0)); // black
-        actions.push(PaletteAction::Color(255, 0, 0)); // red
-        actions.push(PaletteAction::Color(0, 255, 0)); // green
-        actions.push(PaletteAction::Color(0, 0, 255)); // blue
-        actions.push(PaletteAction::Color(255, 255, 0)); // yellow
-        actions.push(PaletteAction::Color(0, 255, 255)); // cyan
-        actions.push(PaletteAction::Color(255, 0, 255)); // magenta
-
-        PaletteAction::write(actions)
+        let mut data = PaletteFile::new();
+        data.add_color(255, 255, 255); // white
+        data.add_color(0, 0, 0); // black
+        data.add_color(255, 0, 0); // red
+        data.add_color(0, 255, 0); // green
+        data.add_color(0, 0, 255); // blue
+        data.add_color(255, 255, 0); // yellow
+        data.add_color(0, 255, 255); // cyan
+        data.add_color(255, 0, 255); // magenta
+        data.write(asset_id)
     }
 }
 

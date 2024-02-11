@@ -8,6 +8,7 @@ use bevy_ecs::{
 use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
+use asset_io::json::{AssetId, ModelFile};
 
 use editor_proto::{
     components::{
@@ -24,18 +25,17 @@ use crate::{
     },
     resources::{ContentEntityData, Project},
 };
-use crate::resources::AssetId;
 
 // Writer
 pub struct ModelWriter;
 
 impl ModelWriter {
-    fn world_to_actions(
+    fn world_to_data(
         &self,
         world: &mut World,
         project: &Project,
         content_entities: &HashMap<Entity, ContentEntityData>,
-    ) -> Vec<ModelAction> {
+    ) -> ModelFile {
         let working_file_entries = project.working_file_entries();
 
         let mut skel_dependency_key_opt = None;
@@ -162,14 +162,13 @@ impl FileWriter for ModelWriter {
         content_entities: &HashMap<Entity, ContentEntityData>,
         asset_id: &AssetId,
     ) -> Box<[u8]> {
-        let actions = self.world_to_actions(world, project, content_entities);
-        ModelAction::write(actions)
+        let data = self.world_to_data(world, project, content_entities);
+        data.write(asset_id)
     }
 
-    fn write_new_default(&self, project: &mut Project) -> Box<[u8]> {
-        let actions = Vec::new();
-
-        ModelAction::write(actions)
+    fn write_new_default(&self, asset_id: &AssetId,) -> Box<[u8]> {
+        let data = ModelFile::new();
+        data.write(asset_id)
     }
 }
 

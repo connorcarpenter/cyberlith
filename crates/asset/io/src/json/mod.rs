@@ -24,7 +24,7 @@ mod skin;
 pub use skin::SkinFile;
 
 mod asset;
-pub use asset::{Asset, AssetMeta, AssetData};
+pub use asset::{Asset, AssetMeta, AssetData, AssetId};
 
 pub const MAX_QUAT_COMPONENT_SIZE: f32 = 32.0;
 pub const MAX_SCALE: f32 = 100.0;

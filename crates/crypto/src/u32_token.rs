@@ -2,7 +2,7 @@ use std::fmt::Debug;
 
 use rand::{Rng, thread_rng};
 
-#[derive(Eq, PartialEq, Hash, Clone, Copy)]
+#[derive(Eq, PartialEq, Hash, Clone, Copy, Ord, PartialOrd)]
 pub struct U32Token {
     value: u32,
 }

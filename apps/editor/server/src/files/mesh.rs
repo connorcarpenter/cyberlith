@@ -8,6 +8,7 @@ use bevy_ecs::{
 use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
+use asset_io::json::{AssetId, MeshFile};
 
 use editor_proto::components::{Edge3d, Face3d, FileExtension, FileType, Vertex3d};
 
@@ -15,17 +16,16 @@ use crate::{
     files::{FileWriter, ShapeTypeData},
     resources::{ContentEntityData, Project, ShapeManager},
 };
-use crate::resources::AssetId;
 
 // Writer
 pub struct MeshWriter;
 
 impl MeshWriter {
-    fn world_to_actions(
+    fn world_to_data(
         &self,
         world: &mut World,
         content_entities: &HashMap<Entity, ContentEntityData>,
-    ) -> Vec<MeshAction> {
+    ) -> MeshFile {
         let content_entities = content_entities.keys().cloned().collect::<Vec<Entity>>();
 
         let mut system_state: SystemState<(
@@ -163,16 +163,16 @@ impl FileWriter for MeshWriter {
         content_entities: &HashMap<Entity, ContentEntityData>,
         asset_id: &AssetId,
     ) -> Box<[u8]> {
-        let actions = self.world_to_actions(world, content_entities);
-        MeshAction::write(actions)
+        let data = self.world_to_data(world, content_entities);
+        data.write(asset_id)
     }
 
-    fn write_new_default(&self, project: &mut Project) -> Box<[u8]> {
-        let mut default_actions = Vec::new();
+    fn write_new_default(&self, asset_id: &AssetId) -> Box<[u8]> {
+        let mut data = MeshFile::new();
 
-        default_actions.push(MeshAction::Vertex(0, 0, 0));
+        data.add_vertex(0, 0, 0);
 
-        MeshAction::write(default_actions)
+        data.write(asset_id)
     }
 }
 

@@ -2,11 +2,14 @@ use std::collections::HashSet;
 
 use bevy_ecs::entity::Entity;
 
+use asset_io::json::AssetId;
+
 use editor_proto::{components::FileExtension, resources::FileKey};
 
 #[derive(Clone)]
 pub struct FileEntryValue {
     entity: Entity,
+    asset_id: Option<AssetId>,
     extension: Option<FileExtension>,
     parent: Option<FileKey>,
     children: Option<HashSet<FileKey>>,
@@ -16,12 +19,14 @@ pub struct FileEntryValue {
 impl FileEntryValue {
     pub fn new(
         entity: Entity,
+        asset_id: Option<AssetId>,
         extension: Option<FileExtension>,
         parent: Option<FileKey>,
         children: Option<HashSet<FileKey>>,
     ) -> Self {
         Self {
             entity,
+            asset_id,
             parent,
             children,
             extension,
@@ -35,6 +40,10 @@ impl FileEntryValue {
 
     pub fn set_entity(&mut self, entity: Entity) {
         self.entity = entity;
+    }
+
+    pub fn asset_id(&self) -> Option<AssetId> {
+        self.asset_id
     }
 
     pub fn extension(&self) -> Option<FileExtension> {

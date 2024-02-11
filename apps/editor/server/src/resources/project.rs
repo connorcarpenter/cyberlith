@@ -9,6 +9,7 @@ use bevy_log::{info, warn};
 use git2::{Repository, Signature};
 
 use naia_bevy_server::{BigMapKey, CommandsExt, RoomKey, Server, UserKey};
+use asset_io::json::AssetId;
 
 use editor_proto::{
     components::{ChangelistEntry, ChangelistStatus, EntryKind, FileExtension, FileSystemEntry},
@@ -20,8 +21,6 @@ use crate::{
     files::{despawn_file_content_entities, load_content_entities, FileWriter},
     resources::{ChangelistValue, ContentEntityData, FileEntryValue, FileSpace, GitManager},
 };
-use crate::resources::asset_id_store::AssetIdStore;
-use crate::resources::AssetId;
 
 #[derive(Clone, Copy, Eq, PartialEq, Hash)]
 pub struct ProjectKey(u64);
@@ -52,7 +51,7 @@ pub struct Project {
     room_key: RoomKey,
     master_file_entries: HashMap<FileKey, FileEntryValue>,
     working_file_entries: HashMap<FileKey, FileEntryValue>,
-    asset_id_store: AssetIdStore,
+    asset_id_map: HashMap<AssetId, FileKey>,
     pub changelist_entries: HashMap<FileKey, ChangelistValue>,
     filespaces: HashMap<FileKey, FileSpace>,
 
@@ -76,21 +75,13 @@ impl Project {
             filespaces: HashMap::new(),
             master_file_entries: file_entries,
             working_file_entries: working_file_tree,
-            asset_id_store: AssetIdStore::new(),
+            asset_id_map: HashMap::new(),
             changelist_entries: HashMap::new(),
             repo: Mutex::new(repo),
             access_token: access_token.to_string(),
             branch: "main".to_string(),
             internal_path: internal_path.to_string(),
         }
-    }
-
-    pub fn asset_id_store(&self) -> &AssetIdStore {
-        &self.asset_id_store
-    }
-
-    pub fn asset_id_store_mut(&mut self) -> &mut AssetIdStore {
-        &mut self.asset_id_store
     }
 
     pub(crate) fn file_find_dependency(
@@ -118,7 +109,7 @@ impl Project {
         content_entities: &HashMap<Entity, ContentEntityData>,
         asset_id: &AssetId,
     ) -> Box<[u8]> {
-        let ext = self.working_file_extension(file_key);
+        let ext = self.file_extension(file_key).unwrap();
         return ext.write(world, self, content_entities, asset_id);
     }
 
@@ -249,7 +240,8 @@ impl Project {
         }
 
         let file_extension = FileExtension::from(name);
-        let file_entry_val = FileEntryValue::new(entity, Some(file_extension), parent, None);
+        let asset_id = self.get_new_unique_asset_id(file_key);
+        let file_entry_val = FileEntryValue::new(entity, Some(asset_id), Some(file_extension), parent, None);
 
         // Add new Entity into Working Tree
         Self::add_to_file_tree(
@@ -276,7 +268,7 @@ impl Project {
             // if file doesn't exist in master tree and no changelist entry exists, then create a changelist entry
             if !file_exists_in_master && !file_exists_in_changelist {
                 let default_file_contents_opt = if file_key.kind() == EntryKind::File {
-                    Some(file_extension.write_new_default(self))
+                    Some(file_extension.write_new_default(&asset_id))
                 } else {
                     None
                 };
@@ -663,7 +655,7 @@ impl Project {
         HashMap<Entity, ContentEntityData>,
         HashMap<Entity, ContentEntityData>,
     ) {
-        let file_extension = self.working_file_extension(file_key);
+        let file_extension = self.file_extension(file_key).unwrap();
         let bytes = self.get_bytes_from_cl_or_fs(file_key);
         if !file_extension.can_io() {
             panic!("can't read file: `{:?}`", file_key.name());
@@ -892,7 +884,7 @@ impl Project {
         let bytes = self.get_bytes_from_cl_or_fs(file_key);
 
         let file_entity = self.file_entity(file_key).unwrap();
-        let file_extension = self.working_file_extension(file_key);
+        let file_extension = self.file_extension(file_key).unwrap();
 
         let content_entities_with_data =
             load_content_entities(world, self, &file_extension, file_key, &file_entity, bytes);
@@ -942,8 +934,12 @@ impl Project {
     }
 
     fn get_file_contents(&self, key: &FileKey) -> Box<[u8]> {
+        Self::read_from_file(&self.internal_path, key)
+    }
+
+    pub(crate) fn read_from_file(full_path_str: &str, key: &FileKey) -> Box<[u8]> {
         let file_path = format!("{}{}", key.path(), key.name());
-        let full_path = format!("{}/{}", self.internal_path, file_path);
+        let full_path = format!("{}/{}", full_path_str, file_path);
         info!("Getting blob for file: {}", full_path);
         let path = Path::new(full_path.as_str());
         let mut file = match File::open(path) {
@@ -956,11 +952,6 @@ impl Project {
             Ok(_) => Box::from(contents),
             Err(err) => panic!("Failed to read file: {}", err),
         }
-    }
-
-    pub(crate) fn working_file_extension(&self, key: &FileKey) -> FileExtension {
-        let value = self.working_file_entries.get(key).unwrap();
-        value.extension().unwrap()
     }
 
     pub(crate) fn set_changelist_entry_content(
@@ -1115,8 +1106,8 @@ impl Project {
             file_key.name(),
             status
         );
-        let extension = self.working_file_extension(file_key);
-        let asset_id = self.asset_id_store().id_from_path(&file_key.full_path()).unwrap();
+        let extension = self.file_extension(file_key).unwrap();
+        let asset_id = self.asset_id(file_key).unwrap();
         let changelist_value = self.changelist_entries.get_mut(&file_key).unwrap();
         if changelist_value.has_content() {
             // changelist entry already has content, backed up last time tab closed
@@ -1145,5 +1136,23 @@ impl Project {
             let changelist_value = self.changelist_entries.get_mut(&file_key).unwrap();
             changelist_value.set_content(bytes);
         }
+    }
+
+    pub(crate) fn asset_id(&self, file_key: &FileKey) -> Option<AssetId> {
+        let file_entry_val = self.working_file_entries.get(file_key)?;
+        file_entry_val.asset_id()
+    }
+
+    pub(crate) fn get_new_unique_asset_id(&mut self, file_key: &FileKey) -> AssetId {
+        let mut output = AssetId::get_random();
+        while self.asset_id_map.contains_key(&output) {
+            output = AssetId::get_random();
+        }
+        self.asset_id_map.insert(output, file_key.clone());
+        output
+    }
+
+    pub(crate) fn asset_id_to_file_key(&self, asset_id: &AssetId) -> Option<FileKey> {
+        self.asset_id_map.get(asset_id).cloned()
     }
 }

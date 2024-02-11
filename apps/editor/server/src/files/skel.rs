@@ -8,6 +8,7 @@ use bevy_ecs::{
 use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
+use asset_io::json::{AnimFile, AnimFileFrame, AssetId, SkelFile};
 
 use editor_proto::components::{
     Edge3d, EdgeAngle, FileExtension, FileType, SerdeRotation, ShapeName, Vertex3d, VertexRoot,
@@ -20,25 +21,24 @@ use crate::{
     },
     resources::{ContentEntityData, Project, ShapeManager},
 };
-use crate::resources::AssetId;
 
 // Writer
 pub struct SkelWriter;
 
 impl SkelWriter {
-    fn new_default_actions(&self) -> Vec<SkelAction> {
-        let mut output = Vec::new();
+    fn new_default_data(&self) -> SkelFile {
+        let mut output = SkelFile::new();
 
-        output.push(SkelAction::Vertex(0, 0, 0, None, None));
+        output.add_vertex(0, 0, 0, None, None);
 
         output
     }
 
-    fn world_to_actions(
+    fn world_to_data(
         &self,
         world: &mut World,
         content_entities: &HashMap<Entity, ContentEntityData>,
-    ) -> Vec<SkelAction> {
+    ) -> SkelFile {
         let content_entities = content_entities.keys().cloned().collect::<Vec<Entity>>();
 
         let mut system_state: SystemState<(
@@ -154,13 +154,13 @@ impl FileWriter for SkelWriter {
         content_entities: &HashMap<Entity, ContentEntityData>,
         asset_id: &AssetId,
     ) -> Box<[u8]> {
-        let actions = self.world_to_actions(world, content_entities);
-        SkelAction::write(actions)
+        let data = self.world_to_data(world, content_entities);
+        data.write(asset_id)
     }
 
-    fn write_new_default(&self, project: &mut Project) -> Box<[u8]> {
-        let actions = self.new_default_actions();
-        SkelAction::write(actions)
+    fn write_new_default(&self, asset_id: &AssetId) -> Box<[u8]> {
+        let data = self.new_default_data();
+        data.write(asset_id)
     }
 }
 

@@ -8,6 +8,7 @@ use bevy_ecs::{
 use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
+use asset_io::json::{AssetId, SceneFile};
 
 use editor_proto::{
     components::{
@@ -24,18 +25,17 @@ use crate::{
     },
     resources::{ContentEntityData, Project},
 };
-use crate::resources::AssetId;
 
 // Writer
 pub struct SceneWriter;
 
 impl SceneWriter {
-    fn world_to_actions(
+    fn world_to_data(
         &self,
         world: &mut World,
         project: &Project,
         content_entities: &HashMap<Entity, ContentEntityData>,
-    ) -> Vec<SceneAction> {
+    ) -> SceneFile {
         let working_file_entries = project.working_file_entries();
 
         let mut skin_dependencies = Vec::new();
@@ -147,14 +147,13 @@ impl FileWriter for SceneWriter {
         content_entities: &HashMap<Entity, ContentEntityData>,
         asset_id: &AssetId,
     ) -> Box<[u8]> {
-        let actions = self.world_to_actions(world, project, content_entities);
-        SceneAction::write(actions)
+        let data = self.world_to_data(world, project, content_entities);
+        data.write(asset_id)
     }
 
-    fn write_new_default(&self, project: &mut Project) -> Box<[u8]> {
-        let actions = Vec::new();
-
-        SceneAction::write(actions)
+    fn write_new_default(&self, asset_id: &AssetId) -> Box<[u8]> {
+        let data = SceneFile::new();
+        data.write(asset_id)
     }
 }
 

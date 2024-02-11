@@ -13,7 +13,6 @@ mod skin_manager;
 mod tab_manager;
 mod user_manager;
 mod user_tab_state;
-mod asset_id_store;
 
 pub use animation_manager::*;
 pub use changelist_manager::*;
@@ -29,4 +28,3 @@ pub use skin_manager::*;
 pub use tab_manager::*;
 pub use user_manager::*;
 pub use user_tab_state::*;
-pub use asset_id_store::*;

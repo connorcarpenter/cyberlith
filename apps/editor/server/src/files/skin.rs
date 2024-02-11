@@ -8,6 +8,7 @@ use bevy_ecs::{
 use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
+use asset_io::json::{AssetId, SkinFile};
 
 use editor_proto::{
     components::{BackgroundSkinColor, FaceColor, FileExtension, PaletteColor},
@@ -18,18 +19,17 @@ use crate::{
     files::{add_file_dependency, FileWriter},
     resources::{ContentEntityData, Project, ShapeManager},
 };
-use crate::resources::AssetId;
 
 // Writer
 pub struct SkinWriter;
 
 impl SkinWriter {
-    fn world_to_actions(
+    fn world_to_data(
         &self,
         world: &mut World,
         project: &Project,
         content_entities: &HashMap<Entity, ContentEntityData>,
-    ) -> Vec<SkinAction> {
+    ) -> SkinFile {
         let working_file_entries = project.working_file_entries();
 
         let mut palette_dependency_key_opt = None;
@@ -139,14 +139,13 @@ impl FileWriter for SkinWriter {
         content_entities: &HashMap<Entity, ContentEntityData>,
         asset_id: &AssetId,
     ) -> Box<[u8]> {
-        let actions = self.world_to_actions(world, project, content_entities);
-        SkinAction::write(actions)
+        let data = self.world_to_data(world, project, content_entities);
+        data.write(asset_id)
     }
 
-    fn write_new_default(&self, project: &mut Project) -> Box<[u8]> {
-        let actions = Vec::new();
-
-        SkinAction::write(actions)
+    fn write_new_default(&self, asset_id: &AssetId) -> Box<[u8]> {
+        let data = SkinFile::new();
+        data.write(asset_id)
     }
 }
 
