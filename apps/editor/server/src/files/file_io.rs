@@ -353,10 +353,6 @@ pub fn add_file_dependency(
 // transition
 
 // quat
-pub fn convert_into_quat(input: editor_proto::SerdeQuat) -> AnimFileQuat {
-    let quat: Quat = input.into();
-    AnimFileQuat::from_xyzw(quat.x, quat.y, quat.z, quat.w)
-}
 
 pub fn convert_from_quat(input: &AnimFileQuat) -> editor_proto::SerdeQuat {
     let quat = Quat::from_xyzw(input.get_x(), input.get_y(), input.get_z(), input.get_w());
@@ -413,9 +409,6 @@ pub fn convert_from_component_type(
         }
         FileComponentType::Scene => {
             editor_proto::components::NetTransformEntityType::Scene
-        }
-        _ => {
-            panic!("not supported");
         }
     }
 }

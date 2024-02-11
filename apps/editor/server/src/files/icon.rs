@@ -36,8 +36,8 @@ struct IconFrameActionData {
     edge_count: usize,
     vertex_map: HashMap<Entity, usize>,
     edge_map: HashMap<Entity, usize>,
-    face_list: Vec<Option<IconFrameAction>>,
-    frame_actions: Vec<IconFrameAction>,
+    face_list: Vec<Option<(u16, u8, u16, u16, u16, u16, u16, u16)>>,
+    frame: IconFileFrame,
 }
 
 impl IconFrameActionData {
@@ -48,7 +48,7 @@ impl IconFrameActionData {
             vertex_map: HashMap::new(),
             edge_map: HashMap::new(),
             face_list: Vec::new(),
-            frame_actions: Vec::new(),
+            frame: IconFileFrame::new(),
         }
     }
 
@@ -56,8 +56,7 @@ impl IconFrameActionData {
         // entity is a vertex
         //info!("add_vertex - {}: `{:?}`", self.vertex_count, vertex_entity);
         self.vertex_map.insert(vertex_entity, self.vertex_count);
-        let vertex_info = IconFrameAction::Vertex(x, y);
-        self.frame_actions.push(vertex_info);
+        self.frame.add_vertex(x, y);
         self.vertex_count += 1;
     }
 
@@ -68,8 +67,7 @@ impl IconFrameActionData {
 
         let vertex_a_id = *self.vertex_map.get(&vertex_a_entity).unwrap();
         let vertex_b_id = *self.vertex_map.get(&vertex_b_entity).unwrap();
-        let edge_info = IconFrameAction::Edge(vertex_a_id as u16, vertex_b_id as u16);
-        self.frame_actions.push(edge_info);
+        self.frame.add_edge(vertex_a_id as u16, vertex_b_id as u16);
         self.edge_count += 1;
     }
 
@@ -91,7 +89,7 @@ impl IconFrameActionData {
         let edge_b_id = *self.edge_map.get(&edge_b_entity).unwrap();
         let edge_c_id = *self.edge_map.get(&edge_c_entity).unwrap();
 
-        let face_info = IconFrameAction::Face(
+        let face_info = (
             face_index,
             palette_color_index,
             vertex_a_id as u16,
@@ -113,10 +111,30 @@ impl IconFrameActionData {
         info!("writing face list: {:?}", face_list);
 
         for face_info_opt in face_list {
-            let Some(face_info) = face_info_opt else {
+            let Some(
+                (
+                    face_id,
+                    color_id,
+                    vertex_a,
+                    vertex_b,
+                    vertex_c,
+                    edge_a,
+                    edge_b,
+                    edge_c
+                )
+            ) = face_info_opt else {
                 panic!("face_list contains None");
             };
-            self.frame_actions.push(face_info);
+            self.frame.add_face(
+                face_id,
+                color_id,
+                vertex_a,
+                vertex_b,
+                vertex_c,
+                edge_a,
+                edge_b,
+                edge_c,
+            );
         }
     }
 }
@@ -133,7 +151,7 @@ impl IconWriter {
     ) -> IconFile {
         let working_file_entries = project.working_file_entries();
 
-        let mut actions = Vec::new();
+        let mut output = IconFile::new();
 
         let mut palette_dependency_key_opt = None;
         let mut vertex_entities = Vec::new();
@@ -184,10 +202,8 @@ impl IconWriter {
         // Write Palette Dependency
         if let Some(dependency_key) = palette_dependency_key_opt {
             info!("writing palette dependency: {}", dependency_key.full_path());
-            actions.push(IconAction::PaletteFile(
-                dependency_key.path().to_string(),
-                dependency_key.name().to_string(),
-            ));
+            let asset_id = project.asset_id(&dependency_key).unwrap();
+            output.set_palette_asset_id(&asset_id);
         }
 
         let mut system_state: SystemState<(
@@ -294,7 +310,7 @@ impl IconWriter {
         while frame_map.contains_key(&frame_index) {
             info!("adding IconAction::Frame({})", frame_index);
             let frame_action_data = frame_map.remove(&frame_index).unwrap();
-            actions.push(IconAction::Frame(frame_action_data.frame_actions));
+            output.add_frame(frame_action_data.frame);
             frame_index += 1;
         }
 
@@ -302,7 +318,7 @@ impl IconWriter {
             panic!("frame_map should be empty!");
         }
 
-        actions
+        output
     }
 }
 
@@ -346,149 +362,135 @@ impl IconReader {
         let mut output = Vec::new();
         let mut frame_index = 0;
 
-        for action in actions {
-            match action {
-                IconAction::PaletteFile(palette_path, palette_file_name) => {
-                    let (new_entity, _, new_file_key) = add_file_dependency(
-                        project,
-                        file_key,
-                        file_entity,
-                        &mut commands,
-                        &mut server,
-                        FileExtension::Palette,
-                        &palette_path,
-                        &palette_file_name,
-                    );
-                    output.push((new_entity, ContentEntityTypeData::Dependency(new_file_key)));
-                }
-                IconAction::Frame(frame_actions) => {
-                    // make frame entity
-                    let mut component = IconFrame::new(frame_index);
-                    component.file_entity.set(&server, file_entity);
-                    let frame_entity = commands
-                        .spawn_empty()
-                        .enable_replication(&mut server)
-                        .configure_replication(ReplicationConfig::Delegated)
-                        .insert(component)
-                        .id();
-                    info!(
-                        "spawning icon frame entity. index: {:?}, entity: `{:?}`",
-                        frame_index, frame_entity
-                    );
+        // Palette Dependency
+        let asset_id = data.get_palette_asset_id();
+        let dependency_key = project.file_key_from_asset_id(&asset_id).unwrap();
+        let (new_entity, _) = add_file_dependency(
+            project,
+            file_key,
+            file_entity,
+            &mut commands,
+            &mut server,
+            FileExtension::Palette,
+            &dependency_key,
+        );
+        output.push((new_entity, ContentEntityTypeData::Dependency(dependency_key)));
 
-                    output.push((frame_entity, ContentEntityTypeData::Frame));
+        // Frames
+        for frame in data.get_frames() {
 
-                    icon_manager.on_create_frame(
-                        &file_entity,
-                        &frame_entity,
-                        frame_index as usize,
-                        None,
-                    );
+            // make frame entity
+            let mut component = IconFrame::new(frame_index);
+            component.file_entity.set(&server, file_entity);
+            let frame_entity = commands
+                .spawn_empty()
+                .enable_replication(&mut server)
+                .configure_replication(ReplicationConfig::Delegated)
+                .insert(component)
+                .id();
+            info!(
+                "spawning icon frame entity. index: {:?}, entity: `{:?}`",
+                frame_index, frame_entity
+            );
 
-                    frame_index += 1;
+            output.push((frame_entity, ContentEntityTypeData::Frame));
 
-                    // make frame contents
-                    let mut vertices = Vec::new();
-                    let mut edges = Vec::new();
+            icon_manager.on_create_frame(
+                &file_entity,
+                &frame_entity,
+                frame_index as usize,
+                None,
+            );
 
-                    for frame_action in frame_actions {
-                        match frame_action {
-                            IconFrameAction::Vertex(x, y) => {
-                                let mut component = IconVertex::new(x, y);
-                                component.frame_entity.set(&server, &frame_entity);
-                                let entity_id = commands
-                                    .spawn_empty()
-                                    .enable_replication(&mut server)
-                                    .configure_replication(ReplicationConfig::Delegated)
-                                    .insert(component)
-                                    .id();
-                                info!("spawning icon vertex entity {:?}", entity_id);
-                                vertices.push(entity_id);
-                                output.push((entity_id, ContentEntityTypeData::Vertex));
-                            }
-                            IconFrameAction::Edge(vertex_a_index, vertex_b_index) => {
-                                let Some(vertex_a_entity) = vertices.get(vertex_a_index as usize) else {
-                                    panic!("edge's vertex_a_index is `{:?}` and list of vertices is `{:?}`", vertex_a_index, vertices);
-                                };
-                                let Some(vertex_b_entity) = vertices.get(vertex_b_index as usize) else {
-                                    panic!("edge's vertex_b_index is `{:?}` and list of vertices is `{:?}`", vertex_b_index, vertices);
-                                };
+            frame_index += 1;
 
-                                let mut edge_component = IconEdge::new();
-                                edge_component.frame_entity.set(&server, &frame_entity);
-                                edge_component.start.set(&server, vertex_a_entity);
-                                edge_component.end.set(&server, vertex_b_entity);
+            // make frame contents
+            let mut vertices = Vec::new();
+            let mut edges = Vec::new();
 
-                                let entity_id = commands
-                                    .spawn_empty()
-                                    .enable_replication(&mut server)
-                                    // setting to Delegated to match client-created edges
-                                    .configure_replication(ReplicationConfig::Delegated)
-                                    .insert(edge_component)
-                                    .id();
-                                info!("spawning mesh edge entity {:?}", entity_id);
-                                edges.push(entity_id);
-                                output.push((
-                                    entity_id,
-                                    ContentEntityTypeData::Edge(*vertex_a_entity, *vertex_b_entity),
-                                ));
-                            }
-                            IconFrameAction::Face(
-                                face_index,
-                                palette_color_index,
-                                vertex_a_index,
-                                vertex_b_index,
-                                vertex_c_index,
-                                edge_a_index,
-                                edge_b_index,
-                                edge_c_index,
-                            ) => {
-                                let vertex_a_entity =
-                                    *vertices.get(vertex_a_index as usize).unwrap();
-                                let vertex_b_entity =
-                                    *vertices.get(vertex_b_index as usize).unwrap();
-                                let vertex_c_entity =
-                                    *vertices.get(vertex_c_index as usize).unwrap();
+            for vertex in frame.get_vertices() {
+                let mut component = IconVertex::new(vertex.x(), vertex.y());
+                component.frame_entity.set(&server, &frame_entity);
+                let entity_id = commands
+                    .spawn_empty()
+                    .enable_replication(&mut server)
+                    .configure_replication(ReplicationConfig::Delegated)
+                    .insert(component)
+                    .id();
+                info!("spawning icon vertex entity {:?}", entity_id);
+                vertices.push(entity_id);
+                output.push((entity_id, ContentEntityTypeData::Vertex));
+            }
+            for edge in frame.get_edges() {
+                let Some(vertex_a_entity) = vertices.get(edge.vertex_a() as usize) else {
+                    panic!("edge's vertex_a_index is `{:?}` and list of vertices is `{:?}`", edge.vertex_a(), vertices);
+                };
+                let Some(vertex_b_entity) = vertices.get(edge.vertex_b() as usize) else {
+                    panic!("edge's vertex_b_index is `{:?}` and list of vertices is `{:?}`", edge.vertex_b(), vertices);
+                };
 
-                                let edge_a_entity = *edges.get(edge_a_index as usize).unwrap();
-                                let edge_b_entity = *edges.get(edge_b_index as usize).unwrap();
-                                let edge_c_entity = *edges.get(edge_c_index as usize).unwrap();
+                let mut edge_component = IconEdge::new();
+                edge_component.frame_entity.set(&server, &frame_entity);
+                edge_component.start.set(&server, vertex_a_entity);
+                edge_component.end.set(&server, vertex_b_entity);
 
-                                let mut face_component = IconFace::new();
-                                face_component.frame_entity.set(&server, &frame_entity);
-                                face_component.vertex_a.set(&server, &vertex_a_entity);
-                                face_component.vertex_b.set(&server, &vertex_b_entity);
-                                face_component.vertex_c.set(&server, &vertex_c_entity);
-                                face_component.edge_a.set(&server, &edge_a_entity);
-                                face_component.edge_b.set(&server, &edge_b_entity);
-                                face_component.edge_c.set(&server, &edge_c_entity);
+                let entity_id = commands
+                    .spawn_empty()
+                    .enable_replication(&mut server)
+                    // setting to Delegated to match client-created edges
+                    .configure_replication(ReplicationConfig::Delegated)
+                    .insert(edge_component)
+                    .id();
+                info!("spawning mesh edge entity {:?}", entity_id);
+                edges.push(entity_id);
+                output.push((
+                    entity_id,
+                    ContentEntityTypeData::Edge(*vertex_a_entity, *vertex_b_entity),
+                ));
+            }
+            for face in frame.get_faces() {
+                let vertex_a_entity =
+                    *vertices.get(face.vertex_a() as usize).unwrap();
+                let vertex_b_entity =
+                    *vertices.get(face.vertex_b() as usize).unwrap();
+                let vertex_c_entity =
+                    *vertices.get(face.vertex_c() as usize).unwrap();
 
-                                let entity_id = commands
-                                    .spawn_empty()
-                                    .enable_replication(&mut server)
-                                    // setting to Delegated to match client-created faces
-                                    .configure_replication(ReplicationConfig::Delegated)
-                                    .insert(face_component)
-                                    .id();
-                                info!(
-                                    "spawning icon face entity `{:?}`, index is {:?}",
-                                    entity_id, face_index
-                                );
-                                output.push((
-                                    entity_id,
-                                    ContentEntityTypeData::Face(
-                                        face_index as usize,
-                                        palette_color_index,
-                                        frame_entity,
-                                        vertex_a_entity,
-                                        vertex_b_entity,
-                                        vertex_c_entity,
-                                    ),
-                                ));
-                            }
-                        }
-                    }
-                }
+                let edge_a_entity = *edges.get(face.edge_a() as usize).unwrap();
+                let edge_b_entity = *edges.get(face.edge_b() as usize).unwrap();
+                let edge_c_entity = *edges.get(face.edge_c() as usize).unwrap();
+
+                let mut face_component = IconFace::new();
+                face_component.frame_entity.set(&server, &frame_entity);
+                face_component.vertex_a.set(&server, &vertex_a_entity);
+                face_component.vertex_b.set(&server, &vertex_b_entity);
+                face_component.vertex_c.set(&server, &vertex_c_entity);
+                face_component.edge_a.set(&server, &edge_a_entity);
+                face_component.edge_b.set(&server, &edge_b_entity);
+                face_component.edge_c.set(&server, &edge_c_entity);
+
+                let entity_id = commands
+                    .spawn_empty()
+                    .enable_replication(&mut server)
+                    // setting to Delegated to match client-created faces
+                    .configure_replication(ReplicationConfig::Delegated)
+                    .insert(face_component)
+                    .id();
+                info!(
+                    "spawning icon face entity `{:?}`, index is {:?}",
+                    entity_id, face.face_id(),
+                );
+                output.push((
+                    entity_id,
+                    ContentEntityTypeData::Face(
+                        face.face_id() as usize,
+                        face.color_id(),
+                        frame_entity,
+                        vertex_a_entity,
+                        vertex_b_entity,
+                        vertex_c_entity,
+                    ),
+                ));
             }
         }
 
