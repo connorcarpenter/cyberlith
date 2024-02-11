@@ -8,7 +8,8 @@ use bevy_ecs::{
 use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
-use asset_io::json::{AssetId, SceneFile};
+
+use asset_io::json::{AssetId, SceneFile, SceneFileComponentType};
 
 use editor_proto::{
     components::{
@@ -17,11 +18,12 @@ use editor_proto::{
     },
     resources::FileKey,
 };
+use math::Quat;
 
 use crate::{
     files::{
-        add_file_dependency, convert_from_quat, convert_from_transform_type, convert_into_quat,
-        convert_into_transform_type, FileWriter,
+        add_file_dependency, convert_from_component_type,
+        convert_into_component_type, FileWriter,
     },
     resources::{ContentEntityData, Project},
 };
@@ -39,7 +41,7 @@ impl SceneWriter {
         let working_file_entries = project.working_file_entries();
 
         let mut skin_dependencies = Vec::new();
-        let mut skin_dependency_to_index = HashMap::new();
+        let mut component_dependency_to_index = HashMap::new();
         let mut net_transform_entities = Vec::new();
 
         for (content_entity, content_data) in content_entities {
@@ -51,7 +53,7 @@ impl SceneWriter {
                     match dependency_file_ext {
                         FileExtension::Skin => {
                             let skin_index = skin_dependencies.len() as u16;
-                            skin_dependency_to_index.insert(dependency_entity, skin_index);
+                            component_dependency_to_index.insert(dependency_entity, skin_index);
                             info!(
                                 "writing skin index for entity: `{:?}`, skin_index: `{}`",
                                 dependency_entity, skin_index
@@ -60,7 +62,7 @@ impl SceneWriter {
                         }
                         FileExtension::Scene => {
                             let skin_index = skin_dependencies.len() as u16;
-                            skin_dependency_to_index.insert(dependency_entity, skin_index);
+                            component_dependency_to_index.insert(dependency_entity, skin_index);
                             skin_dependencies.push((dependency_key, NetTransformEntityType::Scene));
                         }
                         _ => {
@@ -77,19 +79,17 @@ impl SceneWriter {
             }
         }
 
-        let mut actions = Vec::new();
+        let mut output = SceneFile::new();
 
-        // Write Skin/Scene Dependencies
+        // Write Component Dependencies
         for (dependency_key, dependency_type) in skin_dependencies {
             info!(
                 "writing skin/scene dependency: {}",
                 dependency_key.full_path()
             );
-            actions.push(SceneAction::SkinOrSceneFile(
-                dependency_key.path().to_string(),
-                dependency_key.name().to_string(),
-                convert_into_transform_type(dependency_type),
-            ));
+            let dependency_asset_id = project.asset_id(dependency_key).unwrap();
+            let kind = convert_into_component_type(dependency_type);
+            output.add_component(dependency_asset_id, kind);
         }
 
         // Write NetTransforms
@@ -99,16 +99,16 @@ impl SceneWriter {
                 Query<(&NetTransform, &SkinOrSceneEntity)>,
             )> = SystemState::new(world);
             let (server, transform_q) = system_state.get_mut(world);
-            let Ok((transform, skin_or_scene_entity)) = transform_q.get(net_transform_entity) else {
+            let Ok((transform, component_entity_prop)) = transform_q.get(net_transform_entity) else {
                 panic!("Error getting net transform");
             };
-            let skin_entity: Entity = skin_or_scene_entity.value.get(&server).unwrap();
+            let component_entity: Entity = component_entity_prop.value.get(&server).unwrap();
             info!(
-                "in writing net transform, skin entity is: `{:?}`",
-                skin_entity
+                "in writing net transform, component entity is: `{:?}`",
+                component_entity
             );
-            let Some(skin_index) = skin_dependency_to_index.get(&skin_entity) else {
-                panic!("skin entity not found in skin_dependency_to_index: `{:?}`", skin_entity);
+            let Some(component_id) = component_dependency_to_index.get(&component_entity) else {
+                panic!("skin entity not found in component_dependency_to_index: `{:?}`", component_entity);
             };
 
             let translation_x = transform.translation_x();
@@ -120,22 +120,25 @@ impl SceneWriter {
             let rotation = transform.get_rotation_serde();
 
             info!(
-                "writing action for net transform. skin index is: {}",
-                skin_index
+                "writing action for net transform. component index is: {}",
+                component_id
             );
-            actions.push(SceneAction::NetTransform(
-                *skin_index,
+            output.add_transform(
+                *component_id,
                 translation_x,
                 translation_y,
                 translation_z,
                 scale_x,
                 scale_y,
                 scale_z,
-                convert_into_quat(rotation),
-            ));
+                rotation.0.x,
+                rotation.0.y,
+                rotation.0.z,
+                rotation.0.w,
+            );
         }
 
-        actions
+        output
     }
 }
 
@@ -173,87 +176,83 @@ impl SceneReader {
         let mut system_state: SystemState<(Commands, Server)> = SystemState::new(world);
         let (mut commands, mut server) = system_state.get_mut(world);
 
-        let mut skin_files = Vec::new();
+        let mut components = Vec::new();
 
-        for action in actions {
-            match action {
-                SceneAction::SkinOrSceneFile(path, file_name, file_type) => {
-                    let dependency_file_ext = match file_type {
-                        FileTransformEntityType::Skin => FileExtension::Skin,
-                        FileTransformEntityType::Scene => FileExtension::Scene,
-                    };
-                    let (new_dependency_entity, dependency_file_entity, dependency_file_key) =
-                        add_file_dependency(
-                            project,
-                            file_key,
-                            file_entity,
-                            &mut commands,
-                            &mut server,
-                            dependency_file_ext,
-                            &path,
-                            &file_name,
-                        );
-                    output.insert(
-                        new_dependency_entity,
-                        ContentEntityData::new_dependency(dependency_file_key),
-                    );
+        //
 
-                    info!(
-                        "reading new skin file at index: {}, entity: `{:?}`",
-                        skin_files.len(),
-                        dependency_file_entity
-                    );
-                    skin_files.push((file_type, dependency_file_entity));
-                }
-                SceneAction::NetTransform(
-                    skin_index,
-                    translation_x,
-                    translation_y,
-                    translation_z,
-                    scale_x,
-                    scale_y,
-                    scale_z,
-                    rotation,
-                ) => {
-                    let Some((skin_or_scene_type, skin_or_scene_entity)) = skin_files.get(skin_index as usize) else {
-                        panic!("skin index out of bounds");
-                    };
-                    let mut skin_or_scene_component =
-                        SkinOrSceneEntity::new(convert_from_transform_type(*skin_or_scene_type));
-                    skin_or_scene_component
-                        .value
-                        .set(&server, skin_or_scene_entity);
-                    info!(
-                        "reading net transform into world. skin index: {} -> entity: `{:?}`",
-                        skin_index, skin_or_scene_entity
-                    );
+        for component in data.get_components() {
+            let file_type = component.kind();
+            let asset_id = component.asset_id();
+            let dependency_file_ext = match file_type {
+                SceneFileComponentType::Skin => FileExtension::Skin,
+                SceneFileComponentType::Scene => FileExtension::Scene,
+            };
+            let dependency_file_key = project.asset_id_to_file_key(&asset_id).unwrap();
+            let (new_dependency_entity, dependency_file_entity) =
+                add_file_dependency(
+                    project,
+                    file_key,
+                    file_entity,
+                    &mut commands,
+                    &mut server,
+                    dependency_file_ext,
+                    &dependency_file_key,
+                );
+            output.insert(
+                new_dependency_entity,
+                ContentEntityData::new_dependency(dependency_file_key),
+            );
 
-                    let mut owning_file_component = OwnedByFile::new();
-                    owning_file_component
-                        .file_entity
-                        .set(&mut server, file_entity);
+            info!(
+                "reading new component at index: {}, entity: `{:?}`",
+                components.len(),
+                dependency_file_entity
+            );
+            components.push((file_type, dependency_file_entity));
+        }
 
-                    let net_transform_entity = commands
-                        .spawn_empty()
-                        .enable_replication(&mut server)
-                        .configure_replication(ReplicationConfig::Delegated)
-                        .insert(NetTransform::new(
-                            convert_from_quat(rotation),
-                            translation_x as f32,
-                            translation_y as f32,
-                            translation_z as f32,
-                            scale_x,
-                            scale_y,
-                            scale_z,
-                        ))
-                        .insert(skin_or_scene_component)
-                        .insert(owning_file_component)
-                        .insert(FileType::new(FileExtension::Scene))
-                        .id();
+        for transform in data.get_transforms() {
+            let component_index = transform.component_id();
+            let position = transform.position();
+            let scale = transform.scale();
+            let rotation = transform.rotation();
+            let Some((component_type, component_entity)) = components.get(component_index as usize) else {
+                panic!("skin index out of bounds");
+            };
+            let mut skin_or_scene_component =
+                SkinOrSceneEntity::new(convert_from_component_type(*component_type));
+            skin_or_scene_component
+                .value
+                .set(&server, component_entity);
+            info!(
+                "reading net transform into world. skin index: {} -> entity: `{:?}`",
+                component_index, component_entity
+            );
 
-                    output.insert(net_transform_entity, ContentEntityData::new_net_transform());
-                }
-            }
+            let mut owning_file_component = OwnedByFile::new();
+            owning_file_component
+                .file_entity
+                .set(&mut server, file_entity);
+
+            let net_transform_entity = commands
+                .spawn_empty()
+                .enable_replication(&mut server)
+                .configure_replication(ReplicationConfig::Delegated)
+                .insert(NetTransform::new(
+                    math::SerdeQuat::from(Quat::from_xyzw(rotation.x(), rotation.y(), rotation.z(), rotation.w())),
+                    position.x() as f32,
+                    position.y() as f32,
+                    position.z() as f32,
+                    scale.x(),
+                    scale.y(),
+                    scale.z(),
+                ))
+                .insert(skin_or_scene_component)
+                .insert(owning_file_component)
+                .insert(FileType::new(FileExtension::Scene))
+                .id();
+
+            output.insert(net_transform_entity, ContentEntityData::new_net_transform());
         }
 
         system_state.apply(world);

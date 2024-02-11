@@ -21,8 +21,8 @@ use editor_proto::{
 
 use crate::{
     files::{
-        add_file_dependency, convert_from_quat, convert_from_transform_type, convert_into_quat,
-        convert_into_transform_type, FileWriter,
+        add_file_dependency, convert_from_quat, convert_from_component_type, convert_into_quat,
+        convert_into_component_type, FileWriter,
     },
     resources::{ContentEntityData, Project},
 };
@@ -102,7 +102,7 @@ impl ModelWriter {
             actions.push(ModelAction::SkinOrSceneFile(
                 dependency_key.path().to_string(),
                 dependency_key.name().to_string(),
-                convert_into_transform_type(dependency_type),
+                convert_into_component_type(dependency_type),
             ));
         }
 
@@ -253,7 +253,7 @@ impl ModelReader {
                         panic!("skin index out of bounds");
                     };
                     let mut skin_or_scene_component =
-                        SkinOrSceneEntity::new(convert_from_transform_type(*skin_or_scene_type));
+                        SkinOrSceneEntity::new(convert_from_component_type(*skin_or_scene_type));
                     skin_or_scene_component
                         .value
                         .set(&server, skin_or_scene_entity);

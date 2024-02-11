@@ -15,7 +15,7 @@ mod palette;
 pub use palette::PaletteFile;
 
 mod scene;
-pub use scene::SceneFile;
+pub use scene::{SceneFile, SceneFileComponentType};
 
 mod skeleton;
 pub use skeleton::SkelFile;
