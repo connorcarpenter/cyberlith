@@ -67,24 +67,20 @@ impl SkinWriter {
             }
         }
 
-        let mut actions = Vec::new();
+        let mut output = SkinFile::new();
 
         // Write Palette Dependency
         if let Some(dependency_key) = palette_dependency_key_opt {
             info!("writing palette dependency: {}", dependency_key.full_path());
-            actions.push(SkinAction::PaletteFile(
-                dependency_key.path().to_string(),
-                dependency_key.name().to_string(),
-            ));
+            let asset_id = project.asset_id(dependency_key).unwrap();
+            output.set_palette_asset_id(&asset_id);
         }
 
         // Write Mesh Dependency
         if let Some(dependency_key) = mesh_dependency_key_opt {
             info!("writing mesh dependency: {}", dependency_key.full_path());
-            actions.push(SkinAction::MeshFile(
-                dependency_key.path().to_string(),
-                dependency_key.name().to_string(),
-            ));
+            let asset_id = project.asset_id(dependency_key).unwrap();
+            output.set_mesh_asset_id(&asset_id);
         }
 
         // Write Background Color
@@ -103,7 +99,7 @@ impl SkinWriter {
             let palette_color = palette_color_q.get(palette_entity).unwrap();
             let palette_color_index = *palette_color.index;
 
-            actions.push(SkinAction::BackgroundColor(palette_color_index));
+            output.set_background_color_id(palette_color_index);
         }
 
         for face_color_entity in face_color_entities {
@@ -125,10 +121,10 @@ impl SkinWriter {
             let palette_color = palette_color_q.get(palette_entity).unwrap();
             let palette_color_index = *palette_color.index;
 
-            actions.push(SkinAction::SkinColor(face_index, palette_color_index));
+            output.add_face_color(face_index, palette_color_index);
         }
 
-        actions
+        output
     }
 }
 
@@ -166,71 +162,74 @@ impl SkinReader {
         let mut system_state: SystemState<(Commands, Server)> = SystemState::new(world);
         let (mut commands, mut server) = system_state.get_mut(world);
 
-        for action in actions {
-            match action {
-                SkinAction::PaletteFile(palette_path, palette_file_name) => {
-                    let (new_entity, _, new_file_key) = add_file_dependency(
-                        project,
-                        file_key,
-                        file_entity,
-                        &mut commands,
-                        &mut server,
-                        FileExtension::Palette,
-                        &palette_path,
-                        &palette_file_name,
-                    );
-                    output.insert(new_entity, ContentEntityData::new_dependency(new_file_key));
-                }
-                SkinAction::MeshFile(mesh_path, mesh_file_name) => {
-                    let (new_entity, _, new_file_key) = add_file_dependency(
-                        project,
-                        file_key,
-                        file_entity,
-                        &mut commands,
-                        &mut server,
-                        FileExtension::Mesh,
-                        &mesh_path,
-                        &mesh_file_name,
-                    );
-                    output.insert(new_entity, ContentEntityData::new_dependency(new_file_key));
-                }
-                SkinAction::BackgroundColor(palette_index) => {
-                    let mut background_color_component = BackgroundSkinColor::new();
-                    background_color_component
-                        .owning_file_entity
-                        .set(&server, file_entity);
+        // Palette Dependency
+        let palette_asset_id = data.get_palette_asset_id();
+        let dependency_file_key = project.file_key_from_asset_id(&palette_asset_id).unwrap();
+        let (new_entity, _) = add_file_dependency(
+            project,
+            file_key,
+            file_entity,
+            &mut commands,
+            &mut server,
+            FileExtension::Palette,
+            &dependency_file_key,
+        );
+        output.insert(new_entity, ContentEntityData::new_dependency(dependency_file_key));
 
-                    let entity_id = commands
-                        .spawn_empty()
-                        .enable_replication(&mut server)
-                        .configure_replication(ReplicationConfig::Delegated)
-                        .insert(background_color_component)
-                        .id();
-                    info!("spawning background skin color entity {:?}", entity_id);
-                    output.insert(
-                        entity_id,
-                        ContentEntityData::new_background_color(Some(palette_index)),
-                    );
-                }
-                SkinAction::SkinColor(face_index, palette_index) => {
-                    let mut face_color_component = FaceColor::new();
-                    face_color_component
-                        .owning_file_entity
-                        .set(&server, file_entity);
+        // Mesh Dependency
+        let mesh_asset_id = data.get_mesh_asset_id();
+        let dependency_file_key = project.file_key_from_asset_id(&mesh_asset_id).unwrap();
+        let (new_entity, _) = add_file_dependency(
+            project,
+            file_key,
+            file_entity,
+            &mut commands,
+            &mut server,
+            FileExtension::Mesh,
+            &dependency_file_key
+        );
+        output.insert(new_entity, ContentEntityData::new_dependency(dependency_file_key));
 
-                    let entity_id = commands
-                        .spawn_empty()
-                        .enable_replication(&mut server)
-                        .configure_replication(ReplicationConfig::Delegated)
-                        .insert(face_color_component)
-                        .id();
-                    info!("spawning face color entity {:?}", entity_id);
-                    output.insert(
-                        entity_id,
-                        ContentEntityData::new_skin_color(Some((face_index, palette_index))),
-                    );
-                }
-            }
+        // Background Color
+        let bckg_color = data.get_background_color_id();
+        let mut background_color_component = BackgroundSkinColor::new();
+        background_color_component
+            .owning_file_entity
+            .set(&server, file_entity);
+
+        let entity_id = commands
+            .spawn_empty()
+            .enable_replication(&mut server)
+            .configure_replication(ReplicationConfig::Delegated)
+            .insert(background_color_component)
+            .id();
+        info!("spawning background skin color entity {:?}", entity_id);
+        output.insert(
+            entity_id,
+            ContentEntityData::new_background_color(Some(bckg_color)),
+        );
+
+        // Skin Colors
+        for color in data.get_face_colors() {
+            let face_index = color.face_id();
+            let palette_index = color.color_id();
+
+            let mut face_color_component = FaceColor::new();
+            face_color_component
+                .owning_file_entity
+                .set(&server, file_entity);
+
+            let entity_id = commands
+                .spawn_empty()
+                .enable_replication(&mut server)
+                .configure_replication(ReplicationConfig::Delegated)
+                .insert(face_color_component)
+                .id();
+            info!("spawning face color entity {:?}", entity_id);
+            output.insert(
+                entity_id,
+                ContentEntityData::new_skin_color(Some((face_index, palette_index))),
+            );
         }
 
         system_state.apply(world);
