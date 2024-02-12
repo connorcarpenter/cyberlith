@@ -15,6 +15,7 @@ region = []
 session = []
 world = []
 content = []
+asset = []
 
 [dependencies]
 cfg-if = { version = "1.0" }

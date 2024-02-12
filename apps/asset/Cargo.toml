@@ -11,7 +11,12 @@ local = [ "config/local" ]
 prod = [ "config/prod" ]
 
 [dependencies]
-config = { path = "../config", features = ["world"] }
+http_server = { path = "../../crates/http/http_server" }
+http_client = { path = "../../crates/http/http_client" }
+config = { path = "../config", features = ["asset"] }
 
 asset_server_http_proto = { path = "http_proto" }
 region_server_http_proto = { path = "../region/http_proto" }
+
+log = { version = "0.4", features = [] }
+simple_logger = { version = "4.0", default-features = false, features = ["timestamps"] }

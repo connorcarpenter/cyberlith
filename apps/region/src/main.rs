@@ -27,6 +27,7 @@ pub fn main() {
     endpoints::session_register_instance(&mut server, state.clone());
     endpoints::world_register_instance(&mut server, state.clone());
     endpoints::asset_register_instance(&mut server, state.clone());
+
     endpoints::session_user_login(&mut server, state.clone());
     endpoints::world_user_login(&mut server, state.clone());
 
