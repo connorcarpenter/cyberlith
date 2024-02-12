@@ -26,13 +26,14 @@ pub fn main() {
 
     endpoints::session_register_instance(&mut server, state.clone());
     endpoints::world_register_instance(&mut server, state.clone());
+    endpoints::asset_register_instance(&mut server, state.clone());
     endpoints::session_user_login(&mut server, state.clone());
     endpoints::world_user_login(&mut server, state.clone());
 
     server.start();
 
     loop {
-        std::thread::sleep(std::time::Duration::from_secs(5));
+        std::thread::sleep(Duration::from_secs(5));
         info!(".");
 
         let state = state.clone();

@@ -1,0 +1,17 @@
+[package]
+name = "asset_server"
+version = "0.1.0"
+authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
+workspace = "../.."
+edition = "2021"
+publish = false
+
+[features]
+local = [ "config/local" ]
+prod = [ "config/prod" ]
+
+[dependencies]
+config = { path = "../config", features = ["world"] }
+
+asset_server_http_proto = { path = "http_proto" }
+region_server_http_proto = { path = "../region/http_proto" }

@@ -19,6 +19,8 @@ members = [
     "apps/world",
     "apps/world/http_proto",
     "apps/world/naia_proto",
+    "apps/asset",
+    "apps/asset/http_proto",
     "apps/editor/client",
     "apps/editor/server/proto",
     "apps/editor/server",

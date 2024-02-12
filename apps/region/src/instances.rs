@@ -70,3 +70,31 @@ impl WorldInstance {
         self.last_heard.clone()
     }
 }
+
+pub struct AssetInstance {
+    http_addr: String,
+    http_port: u16,
+    last_heard: Arc<RwLock<Instant>>,
+}
+
+impl AssetInstance {
+    pub fn new(http_addr: String, http_port: u16) -> Self {
+        Self {
+            http_addr,
+            http_port,
+            last_heard: Arc::new(RwLock::new(Instant::now())),
+        }
+    }
+
+    pub fn http_addr(&self) -> String {
+        self.http_addr.clone()
+    }
+
+    pub fn http_port(&self) -> u16 {
+        self.http_port
+    }
+
+    pub fn last_heard(&self) -> Arc<RwLock<Instant>> {
+        self.last_heard.clone()
+    }
+}

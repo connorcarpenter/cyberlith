@@ -23,6 +23,10 @@ cfg_if! {
         mod content;
         pub use self::content::*;
     }
+    else if #[cfg(feature = "asset")] {
+        mod asset;
+        pub use self::asset::*;
+    }
     else {
         compile_error!("Required to specify a feature flag for the target environment, either 'local' or 'prod'");
     }
