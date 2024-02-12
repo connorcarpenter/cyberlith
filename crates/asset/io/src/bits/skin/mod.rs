@@ -16,12 +16,14 @@ cfg_if! {
 
 use naia_serde::SerdeInternal as Serde;
 
+use crate::json::AssetId;
+
 #[derive(Clone)]
 pub enum SkinAction {
     // path, file_name
-    PaletteFile(String, String),
+    PaletteFile(AssetId),
     // path, file_name
-    MeshFile(String, String),
+    MeshFile(AssetId),
     // palette color index
     BackgroundColor(u8),
     // mesh face index, palette color index

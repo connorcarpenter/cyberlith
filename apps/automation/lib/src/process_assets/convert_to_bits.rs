@@ -13,6 +13,7 @@ pub(crate) fn palette(data: &PaletteFile) -> Vec<u8> {
 }
 
 pub(crate) fn skeleton(data: &SkelFile) -> Vec<u8> {
+
     let mut actions = Vec::new();
 
     for vertex in data.get_vertices() {
@@ -42,7 +43,20 @@ pub(crate) fn mesh(data: &MeshFile) -> Vec<u8> {
 pub(crate) fn skin(data: &SkinFile) -> Vec<u8> {
     let mut actions = Vec::new();
 
-    todo!();
+    let palette_asset_id = data.get_palette_asset_id();
+    actions.push(SkinAction::PaletteFile(palette_asset_id));
+
+    let mesh_asset_id = data.get_mesh_asset_id();
+    actions.push(SkinAction::MeshFile(mesh_asset_id));
+
+    let background_color = data.get_background_color_id();
+    actions.push(SkinAction::BackgroundColor(background_color));
+
+    for face_color in data.get_face_colors() {
+        let face_id = face_color.face_id();
+        let color_id = face_color.color_id();
+        actions.push(SkinAction::SkinColor(face_id, color_id));
+    }
 
     SkinAction::write(actions).to_vec()
 }

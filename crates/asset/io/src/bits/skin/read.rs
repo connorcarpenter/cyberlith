@@ -1,6 +1,7 @@
 use naia_serde::{BitReader, SerdeErr, SerdeInternal as Serde};
 
 use crate::bits::{skin::SkinActionType, SkinAction};
+use crate::json::AssetId;
 
 impl SkinAction {
     pub fn read(bytes: &[u8]) -> Result<Vec<Self>, SerdeErr> {
@@ -13,14 +14,12 @@ impl SkinAction {
 
             match action_type {
                 SkinActionType::PaletteFile => {
-                    let path = String::de(bit_reader)?;
-                    let file_name = String::de(bit_reader)?;
-                    actions.push(Self::PaletteFile(path, file_name));
+                    let asset_id_val = u32::de(bit_reader)?;
+                    actions.push(Self::PaletteFile(AssetId::from_u32(asset_id_val).unwrap()));
                 }
                 SkinActionType::MeshFile => {
-                    let path = String::de(bit_reader)?;
-                    let file_name = String::de(bit_reader)?;
-                    actions.push(Self::MeshFile(path, file_name));
+                    let asset_id_val = u32::de(bit_reader)?;
+                    actions.push(Self::MeshFile(AssetId::from_u32(asset_id_val).unwrap()));
                 }
                 SkinActionType::BackgroundColor => {
                     let palette_color_index = u8::de(bit_reader)?;

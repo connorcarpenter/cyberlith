@@ -8,15 +8,13 @@ impl SkinAction {
 
         for action in actions {
             match action {
-                Self::PaletteFile(path, file_name) => {
+                Self::PaletteFile(asset_id) => {
                     SkinActionType::PaletteFile.ser(&mut bit_writer);
-                    path.ser(&mut bit_writer);
-                    file_name.ser(&mut bit_writer);
+                    asset_id.as_u32().ser(&mut bit_writer);
                 }
-                Self::MeshFile(path, file_name) => {
+                Self::MeshFile(asset_id) => {
                     SkinActionType::MeshFile.ser(&mut bit_writer);
-                    path.ser(&mut bit_writer);
-                    file_name.ser(&mut bit_writer);
+                    asset_id.as_u32().ser(&mut bit_writer);
                 }
                 Self::BackgroundColor(palette_color_index) => {
                     SkinActionType::BackgroundColor.ser(&mut bit_writer);
