@@ -1,9 +1,8 @@
 use cfg_if::cfg_if;
 
 use serde::{Deserialize, Serialize};
-use crypto::U32Token;
 
-use crate::json::MAX_QUAT_COMPONENT_SIZE;
+use crate::json::{AssetId, MAX_QUAT_COMPONENT_SIZE};
 
 cfg_if! {
     if #[cfg(feature = "read_json")] {
@@ -122,11 +121,19 @@ impl AnimFile {
         }
     }
 
-    pub fn get_skeleton_asset_id(&self) -> U32Token {
-        U32Token::from_str(&self.skeleton_asset_id).unwrap()
+    pub fn dependencies(&self) -> Vec<AssetId> {
+        let mut output = Vec::new();
+
+        output.push(self.get_skeleton_asset_id());
+
+        output
     }
 
-    pub fn set_skeleton_asset_id(&mut self, asset_id: &U32Token) {
+    pub fn get_skeleton_asset_id(&self) -> AssetId {
+        AssetId::from_str(&self.skeleton_asset_id).unwrap()
+    }
+
+    pub fn set_skeleton_asset_id(&mut self, asset_id: &AssetId) {
         self.skeleton_asset_id = asset_id.as_string();
     }
 

@@ -1,3 +1,4 @@
+use cfg_if::cfg_if;
 
 mod animation;
 pub use animation::{AnimFile, AnimFileFrame, AnimFileQuat};
@@ -26,7 +27,14 @@ pub use skin::SkinFile;
 mod asset;
 pub use asset::{Asset, AssetMeta, AssetData, AssetId};
 
+cfg_if! {
+    if #[cfg(feature = "read_json")] {
+        pub use asset::ProcessedAssetMeta;
+    } else {}
+}
+
 mod components;
+
 pub use components::FileComponentType;
 
 pub const MAX_QUAT_COMPONENT_SIZE: f32 = 32.0;

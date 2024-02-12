@@ -1,7 +1,11 @@
-use std::{fs, fs::File, io::Read, path::Path};
+mod convert_to_bits;
 
-use git2::{Cred, FetchOptions, PushOptions, Repository, Signature, Tree};
+use std::{fs, fs::File, io::Read, path::Path};
+use std::io::Write;
+
+use git2::{Cred, FetchOptions, Index, PushOptions, Repository, Signature, Tree};
 use log::info;
+use asset_io::json::{Asset, AssetData, AssetId, AssetMeta, ProcessedAssetMeta};
 
 use crate::CliError;
 
@@ -30,14 +34,14 @@ fn create_processed_assets(env: &str, root: &str, repo: Repository, all_new_unpr
     git_commit(&repo, env, "deleting all unprocessed files");
     git_push(&repo, env);
 
-    // // process each file
-    // write_all_files(&repo, env, &all_new_unprocessed_files);
-    //
-    // // push
-    // push_to_branch(&repo, env);
+    // process each file
+    write_all_new_files(&repo, env, &all_new_unprocessed_files);
+    git_commit(&repo, env, "processing all files");
+    git_push(&repo, env);
 }
 
 fn update_processed_assets(env: &str, root: &str, repo: Repository, all_new_unprocessed_files: Vec<UnprocessedFile>) {
+    todo!();
     info!("branch {} exists, updating..", env);
     // // switch to "env" branch
     // switch_branches(&repo, env);
@@ -110,12 +114,16 @@ fn repo_init(root_dir: &str) -> Repository {
     repo
 }
 
-#[derive(Debug)]
 struct UnprocessedFile {
     path: String,
     name: String,
-    file_ext: String,
     bytes: Vec<u8>,
+}
+
+impl UnprocessedFile {
+    pub fn new(path: &str, name: &str, bytes: Vec<u8>) -> Self {
+        Self { path: path.to_string(), name: name.to_string(), bytes }
+    }
 }
 
 fn load_all_unprocessed_files(root: &str, repo: &Repository) -> Vec<UnprocessedFile> {
@@ -156,17 +164,16 @@ fn collect_unprocessed_files(
             }
             Some(git2::ObjectType::Blob) => {
 
-                let file_ext = name.split(".").last().unwrap();
                 let bytes = get_file_contents(root, path, &name);
+                let bytes_len = bytes.len();
 
-                let file_entry = UnprocessedFile {
-                    path: path.to_string(),
-                    name: name.to_string(),
-                    file_ext: file_ext.to_string(),
+                let file_entry = UnprocessedFile::new(
+                    path,
+                    &name,
                     bytes,
-                };
+                );
 
-                info!("read file: {}, byte_len: {}", file_entry.name, file_entry.bytes.len());
+                info!("read file: {}, byte_len: {}", file_entry.name, bytes_len);
 
                 output.push(file_entry);
             }
@@ -197,15 +204,6 @@ fn get_file_contents(root: &str, path: &str, file: &str) -> Vec<u8> {
 }
 
 fn branch_exists(repo: &Repository, branch_name: &str) -> bool {
-
-    // TODO: do we need to fetch here? before checking?
-    // let mut fetch_options = get_fetch_options();
-    //
-    // let mut remote = repo.find_remote("origin").unwrap();
-    // remote
-    //     .fetch(&[branch_name, "main"], Some(&mut fetch_options), None)
-    //     .unwrap();
-
     let remote_branch = format!("refs/remotes/origin/{}", branch_name);
     repo.find_reference(&remote_branch).is_ok()
 }
@@ -301,6 +299,130 @@ fn git_push(repo: &Repository, branch_name: &str) {
     info!("pushed to remote {:?} branch!", branch_name);
 }
 
+fn write_all_new_files(repo: &Repository, branch_name: &str, unprocessed_files: &Vec<UnprocessedFile>) {
+    let ref_name = format!("refs/heads/{}", branch_name);
+    let mut index = repo.index().expect("Failed to open index");
+
+    for unprocessed_file in unprocessed_files {
+
+        let prev_path = format!("{}/{}", unprocessed_file.path, unprocessed_file.name);
+        info!("processing file at path: {}", prev_path);
+
+        let mut file_name_split = unprocessed_file.name.split(".");
+        let file_name = file_name_split.next().unwrap();
+        let true_file_ext = file_name_split.next().unwrap();
+        let json_file_ext = file_name_split.next().unwrap();
+        if json_file_ext != "json" {
+            panic!("Expected file to be json, got: {}", json_file_ext);
+        }
+
+        let file_path = format!("{}{}.{}", unprocessed_file.path, file_name, true_file_ext);
+        let full_path = format!("{}{}", repo.workdir().unwrap().to_str().unwrap(), file_path);
+
+        let hash = get_asset_hash(&unprocessed_file.bytes);
+
+        let unprocessed_asset = Asset::read(&unprocessed_file.bytes).expect("Failed to read asset");
+
+        let asset_data_type_name = unprocessed_asset.data().type_name();
+        if asset_data_type_name.as_str() != true_file_ext {
+            panic!("Expected file type to be: {}, got: {}", true_file_ext, asset_data_type_name);
+        }
+        let dependencies = get_dependencies(&unprocessed_asset.data());
+
+        // convert asset data to bits
+        let processed_asset_bytes = match unprocessed_asset.data() {
+            AssetData::Palette(data) => {
+                convert_to_bits::palette(data)
+            }
+            AssetData::Scene(data) => {
+                convert_to_bits::scene(data)
+            }
+            AssetData::Mesh(data) => {
+                convert_to_bits::mesh(data)
+            }
+            AssetData::Skin(data) => {
+                convert_to_bits::skin(data)
+            }
+            AssetData::Model(data) => {
+                convert_to_bits::model(data)
+            }
+            AssetData::Skeleton(data) => {
+                convert_to_bits::skeleton(data)
+            }
+            AssetData::Animation(data) => {
+                convert_to_bits::animation(data)
+            }
+            AssetData::Icon(data) => {
+                convert_to_bits::icon(data)
+            }
+        };
+
+        // write new data file
+        write_new_file(&mut index, &file_path, &full_path, processed_asset_bytes);
+
+        // process Asset Meta
+        let meta_file_path = format!("{}.meta", file_path);
+        let meta_full_path = format!("{}.meta", full_path);
+        let processed_meta = process_new_meta_file(&unprocessed_asset.meta(), dependencies, hash);
+        let meta_bytes = processed_meta.write();
+
+        // write new meta file
+        write_new_file(&mut index, &meta_file_path, &meta_full_path, meta_bytes);
+    }
+}
+
+pub type AssetHash = [u8; 32];
+
+pub(crate) fn get_asset_hash(bytes: &[u8]) -> AssetHash {
+    let mut hasher = blake3::Hasher::new();
+    hasher.update(bytes);
+    *hasher.finalize().as_bytes()
+}
+
+fn get_dependencies(data: &AssetData) -> Vec<AssetId> {
+    match data {
+        AssetData::Palette(data) => data.dependencies(),
+        AssetData::Scene(data) => data.dependencies(),
+        AssetData::Mesh(data) => data.dependencies(),
+        AssetData::Skin(data) => data.dependencies(),
+        AssetData::Model(data) => data.dependencies(),
+        AssetData::Skeleton(data) => data.dependencies(),
+        AssetData::Animation(data) => data.dependencies(),
+        AssetData::Icon(data) => data.dependencies(),
+    }
+}
+
+fn process_new_meta_file(unprocessed_meta: &AssetMeta, dependencies: Vec<AssetId>, hash: AssetHash) -> ProcessedAssetMeta {
+    ProcessedAssetMeta::new(
+        unprocessed_meta.asset_id(),
+        1,
+        unprocessed_meta.schema_version(),
+        dependencies,
+        hash.to_vec(),
+    )
+}
+
+fn write_new_file(index: &mut Index, file_path: &str, full_path: &str, bytes: Vec<u8>) {
+    // write data file
+    let mut file = match File::create(full_path) {
+        Ok(file) => file,
+        Err(err) => panic!("Failed to create file: {}", err),
+    };
+    match file.write_all(&bytes) {
+        Ok(_) => {
+            info!("wrote file: {}", file_path);
+        }
+        Err(err) => {
+            info!("failed to write file: {}", err);
+        }
+    }
+    // add to index
+    index
+        .add_path(Path::new(&file_path))
+        .expect("Failed to add file to index");
+    info!("added file to index: {}", file_path);
+}
+
 // use std::{fs, fs::File, io::{Read, Write}, path::Path, collections::{HashSet, HashMap}};
 //
 // use git2::{Cred, PushOptions, Repository, Tree};
@@ -319,142 +441,7 @@ fn git_push(repo: &Repository, branch_name: &str) {
 //     Ok(())
 // }
 //
-// pub struct ProcessData {
-//     pub(crate) asset_id: U32Token,
-//     asset_data: AssetData,
-//     new_file_path: String,
-//     new_full_path: String,
-// }
 //
-// fn write_all_files(repo: &Repository, branch_name: &str, file_entries: &Vec<FileEntry>) {
-//     let ref_name = format!("refs/heads/{}", branch_name);
-//     let mut index = repo.index().expect("Failed to open index");
-//     let mut asset_ids = HashSet::<U32Token>::new();
-//     let mut asset_id_map = HashMap::<String, ProcessData>::new();
-//
-//     for file_entry in file_entries {
-//
-//         let prev_path = format!("{}/{}", file_entry.path, file_entry.name);
-//
-//         info!("processing file at path: {}", prev_path);
-//
-//         let asset_id = {
-//             loop {
-//                 let id = U32Token::get_random();
-//                 if !asset_ids.contains(&id) {
-//                     asset_ids.insert(id);
-//                     break id;
-//                 }
-//             }
-//         };
-//
-//         let mut file_name_split = file_entry.name.split(".");
-//         let file_name = file_name_split.next().unwrap();
-//         let file_ext = match file_entry.file_ext.as_str() {
-//             "skel" => "skeleton",
-//             "anim" => "animation",
-//             _ => file_entry.file_ext.as_str(),
-//         };
-//         let file_path = format!("{}{}.{}.json", file_entry.path, file_name, file_ext);
-//         let full_path = format!("{}{}", repo.workdir().unwrap().to_str().unwrap(), file_path);
-//
-//         {
-//             let in_bytes = &file_entry.bytes;
-//             let asset_data = match file_ext {
-//                 "palette" => {
-//                     convert::palette(in_bytes)
-//                 }
-//                 "scene" => {
-//                     convert::scene(in_bytes)
-//                 }
-//                 "mesh" => {
-//                     convert::mesh(in_bytes)
-//                 }
-//                 "skin" => {
-//                     convert::skin(in_bytes)
-//                 }
-//                 "model" => {
-//                     convert::model(in_bytes)
-//                 }
-//                 "skeleton" => {
-//                     convert::skel(in_bytes)
-//                 }
-//                 "animation" => {
-//                     convert::anim(in_bytes)
-//                 }
-//                 "icon" => {
-//                     convert::icon(in_bytes)
-//                 }
-//                 _ => {
-//                     panic!("Unknown file type: {}", file_ext);
-//                 }
-//             };
-//
-//             asset_id_map.insert(prev_path, ProcessData {
-//                 asset_id,
-//                 asset_data,
-//                 new_file_path: file_path,
-//                 new_full_path: full_path,
-//             });
-//         }
-//     }
-//
-//     for (_, process_data) in asset_id_map.iter() {
-//
-//         let ProcessData {
-//             asset_id,
-//             asset_data,
-//             new_file_path,
-//             new_full_path,
-//         } = process_data;
-//
-//         let mut asset_data = asset_data.clone();
-//         // asset_data.convert_to_asset_ids(&asset_id_map);
-//
-//         let asset = Asset {
-//             meta: AssetMeta {
-//                 asset_id: asset_id.as_string(),
-//                 schema_version: 0,
-//             },
-//             data: asset_data.clone(),
-//         };
-//
-//         let out_bytes: Vec<u8> = asset.to_pretty_json();
-//
-//         let mut file = match File::create(new_full_path) {
-//             Ok(file) => file,
-//             Err(err) => panic!("Failed to create file: {}", err),
-//         };
-//         match file.write_all(&out_bytes) {
-//             Ok(_) => {
-//                 info!("wrote file: {}", new_file_path);
-//             }
-//             Err(err) => {
-//                 info!("failed to write file: {}", err);
-//             }
-//         }
-//         // add to index
-//         index
-//             .add_path(Path::new(new_file_path))
-//             .expect("Failed to add file to index");
-//     }
-//
-//     let tree_id = index.write_tree().expect("Failed to write index");
-//     let tree = repo.find_tree(tree_id).expect("Failed to find tree");
-//     let signature = repo.signature().expect("Failed to get signature");
-//     let parent_commit = repo.head().expect("Failed to get head").peel_to_commit().expect("Failed to peel to commit");
-//
-//     let commit_id = repo.commit(
-//         Some("HEAD"),
-//         &signature,
-//         &signature,
-//         &format!("committing to {:?}", branch_name),
-//         &tree,
-//         &[&parent_commit],
-//     ).unwrap();
-//
-//     repo.reference(&ref_name, commit_id, true, "committing to branch").unwrap();
-// }
 //
 // fn push_to_branch(repo: &Repository, branch_name: &str) {
 //     let access_token = include_str!("../../../../../.secrets/github_token");

@@ -1,7 +1,22 @@
+use cfg_if::cfg_if;
+
+cfg_if! {
+    if #[cfg(feature = "read_json")] {
+        mod read;
+        pub use read::*;
+    } else {}
+}
+
+cfg_if! {
+    if #[cfg(feature = "write_json")] {
+        mod write;
+        pub use write::*;
+    } else {}
+}
+
 use serde::{Deserialize, Serialize};
 use crypto::U32Token;
 
-use crate::error::AssetIoError;
 use crate::json::{skin::SkinFile, scene::SceneFile, model::ModelFile, icon::IconFile, animation::AnimFile, mesh::MeshFile, palette::PaletteFile, skeleton::SkelFile};
 
 pub type AssetId = U32Token;
@@ -20,12 +35,16 @@ impl Asset {
         }
     }
 
-    pub(crate) fn read(bytes: &[u8]) -> Result<Self, AssetIoError> {
-        serde_json::from_slice(bytes).map_err(|e| AssetIoError::Message(e.to_string()))
-    }
-
     pub(crate) fn deconstruct(self) -> (AssetMeta, AssetData) {
         (self.meta, self.data)
+    }
+
+    pub fn meta(&self) -> &AssetMeta {
+        &self.meta
+    }
+
+    pub fn data(&self) -> &AssetData {
+        &self.data
     }
 }
 
@@ -49,11 +68,6 @@ impl AssetMeta {
 
     pub fn schema_version(&self) -> u32 {
         self.schema_version
-    }
-
-    pub fn read_from_file(bytes: &[u8]) -> Result<(Self, String), AssetIoError> {
-        let (meta, data) = Asset::read(bytes)?.deconstruct();
-        return Ok((meta, data.type_name()));
     }
 }
 
@@ -83,6 +97,6 @@ impl AssetData {
             AssetData::Scene(_) => "scene",
             AssetData::Model(_) => "model",
         }
-        .to_string()
+            .to_string()
     }
 }

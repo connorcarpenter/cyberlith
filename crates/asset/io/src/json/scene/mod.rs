@@ -73,6 +73,16 @@ impl SceneFile {
         }
     }
 
+    pub fn dependencies(&self) -> Vec<AssetId> {
+        let mut output = Vec::new();
+
+        for component in &self.components {
+            output.push(component.asset_id());
+        }
+
+        output
+    }
+
     pub fn get_components(&self) -> &Vec<FileComponentEntry> {
         &self.components
     }

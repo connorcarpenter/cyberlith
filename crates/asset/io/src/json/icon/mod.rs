@@ -195,6 +195,14 @@ impl IconFile {
         }
     }
 
+    pub fn dependencies(&self) -> Vec<AssetId> {
+        let mut output = Vec::new();
+
+        output.push(self.get_palette_asset_id());
+
+        output
+    }
+
     pub fn get_palette_asset_id(&self) -> AssetId {
         AssetId::from_str(&self.palette_asset_id).unwrap()
     }

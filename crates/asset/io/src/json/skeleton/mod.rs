@@ -1,6 +1,7 @@
 use cfg_if::cfg_if;
 
 use serde::{Deserialize, Serialize};
+use crate::json::AssetId;
 
 cfg_if! {
     if #[cfg(feature = "read_json")] {
@@ -66,6 +67,10 @@ impl SkelFile {
         Self {
             vertices: Vec::new(),
         }
+    }
+
+    pub fn dependencies(&self) -> Vec<AssetId> {
+        Vec::new()
     }
 
     pub fn get_vertices(&self) -> &Vec<SkelFileVertex> {

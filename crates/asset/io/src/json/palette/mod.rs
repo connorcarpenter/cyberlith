@@ -1,6 +1,7 @@
 use cfg_if::cfg_if;
 
 use serde::{Deserialize, Serialize};
+use crate::json::AssetId;
 
 cfg_if! {
     if #[cfg(feature = "read_json")] {
@@ -44,6 +45,10 @@ impl PaletteFile {
         Self {
             colors: Vec::new(),
         }
+    }
+
+    pub fn dependencies(&self) -> Vec<AssetId> {
+        Vec::new()
     }
 
     pub fn get_colors(&self) -> &Vec<PaletteFileColor> {

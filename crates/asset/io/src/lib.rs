@@ -1,4 +1,5 @@
 mod error;
+pub use error::AssetIoError;
 
 use cfg_if::cfg_if;
 

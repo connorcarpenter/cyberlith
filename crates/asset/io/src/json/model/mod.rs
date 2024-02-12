@@ -82,6 +82,18 @@ impl ModelFile {
         }
     }
 
+    pub fn dependencies(&self) -> Vec<AssetId> {
+        let mut output = Vec::new();
+
+        output.push(self.get_skeleton_id());
+
+        for component in &self.components {
+            output.push(component.asset_id());
+        }
+
+        output
+    }
+
     pub fn get_skeleton_id(&self) -> AssetId {
         AssetId::from_str(self.skeleton_id.as_str()).unwrap()
     }

@@ -29,7 +29,7 @@ fn cli() -> Command {
                         .short('e')
                         .long("env")
                         .required(true)
-                        .value_parser(["json", "dev", "stage", "prod"])
+                        .value_parser(["dev", "stage", "prod", "qwon"])
                 ),
         )
 }
