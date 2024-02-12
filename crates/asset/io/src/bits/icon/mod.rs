@@ -15,30 +15,27 @@ cfg_if! {
 }
 
 use naia_serde::SerdeInternal as Serde;
+use crate::AssetId;
 
 #[derive(Debug, Clone)]
 pub enum IconFrameAction {
     //////// x, y//
     Vertex(i16, i16),
-    //// vertex id1, vertex id2 //
-    Edge(u16, u16),
     //// order_index, palette color index, id1, id2, id3 // (vertex ids) // id4, id5, id6 (edge ids) // TODO: remove order_index?
-    Face(u16, u8, u16, u16, u16, u16, u16, u16),
+    Face(u16, u8, u16, u16, u16),
 }
 
 #[derive(Serde, Clone, PartialEq)]
 enum IconFrameActionType {
     None,
     Vertex,
-    Edge,
     Face,
 }
 
 // Actions
 #[derive(Debug, Clone)]
 pub enum IconAction {
-    // path, file_name
-    PaletteFile(String, String),
+    PaletteFile(AssetId),
     // frame
     Frame(Vec<IconFrameAction>),
 }

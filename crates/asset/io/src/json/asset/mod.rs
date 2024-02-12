@@ -15,11 +15,9 @@ cfg_if! {
 }
 
 use serde::{Deserialize, Serialize};
-use crypto::U32Token;
 
+use crate::AssetId;
 use crate::json::{skin::SkinFile, scene::SceneFile, model::ModelFile, icon::IconFile, animation::AnimFile, mesh::MeshFile, palette::PaletteFile, skeleton::SkelFile};
-
-pub type AssetId = U32Token;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Asset {

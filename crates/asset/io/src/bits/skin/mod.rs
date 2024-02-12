@@ -15,8 +15,7 @@ cfg_if! {
 }
 
 use naia_serde::SerdeInternal as Serde;
-
-use crate::json::AssetId;
+use crate::AssetId;
 
 #[derive(Clone)]
 pub enum SkinAction {

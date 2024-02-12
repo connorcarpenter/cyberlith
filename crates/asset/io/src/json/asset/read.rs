@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{json::{Asset, AssetMeta}, AssetIoError};
-use crate::json::AssetId;
+use crate::{json::{Asset, AssetMeta}, AssetIoError, AssetId};
 
 impl Asset {
     pub fn read(bytes: &[u8]) -> Result<Self, AssetIoError> {

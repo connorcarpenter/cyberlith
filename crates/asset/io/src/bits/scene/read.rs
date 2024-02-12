@@ -20,7 +20,7 @@ impl SceneAction {
                     let path = String::de(bit_reader)?;
                     let file_name = String::de(bit_reader)?;
                     let file_type = FileTransformEntityType::de(bit_reader)?;
-                    actions.push(Self::SkinOrSceneFile(path, file_name, file_type));
+                    actions.push(Self::Component(path, file_name, file_type));
                 }
                 SceneActionType::NetTransform => {
                     let skin_index: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();

@@ -25,7 +25,7 @@ impl ModelAction {
                     let path = String::de(bit_reader)?;
                     let file_name = String::de(bit_reader)?;
                     let file_type = FileTransformEntityType::de(bit_reader)?;
-                    actions.push(ModelAction::SkinOrSceneFile(path, file_name, file_type));
+                    actions.push(ModelAction::Component(path, file_name, file_type));
                 }
                 ModelActionType::NetTransform => {
                     let skin_index: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();

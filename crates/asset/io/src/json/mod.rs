@@ -25,7 +25,7 @@ mod skin;
 pub use skin::SkinFile;
 
 mod asset;
-pub use asset::{Asset, AssetMeta, AssetData, AssetId};
+pub use asset::{Asset, AssetMeta, AssetData};
 
 cfg_if! {
     if #[cfg(feature = "read_json")] {

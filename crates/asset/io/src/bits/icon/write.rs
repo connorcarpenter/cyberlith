@@ -12,10 +12,9 @@ impl IconAction {
 
         for action in actions.iter() {
             match action {
-                Self::PaletteFile(path, file_name) => {
+                Self::PaletteFile(asset_id) => {
                     IconActionType::PaletteFile.ser(&mut bit_writer);
-                    path.ser(&mut bit_writer);
-                    file_name.ser(&mut bit_writer);
+                    asset_id.as_u32().ser(&mut bit_writer);
                 }
                 Self::Frame(frame_actions) => {
                     let mut test_face_index = 0;
@@ -32,22 +31,12 @@ impl IconAction {
                                 VertexSerdeInt::from(*x).ser(&mut bit_writer);
                                 VertexSerdeInt::from(*y).ser(&mut bit_writer);
                             }
-                            IconFrameAction::Edge(vertex_a, vertex_b) => {
-                                // continue bit
-                                IconFrameActionType::Edge.ser(&mut bit_writer);
-
-                                UnsignedVariableInteger::<6>::from(*vertex_a).ser(&mut bit_writer);
-                                UnsignedVariableInteger::<6>::from(*vertex_b).ser(&mut bit_writer);
-                            }
                             IconFrameAction::Face(
                                 face_index,
                                 palette_color_index,
                                 vertex_a,
                                 vertex_b,
                                 vertex_c,
-                                edge_a,
-                                edge_b,
-                                edge_c,
                             ) => {
                                 if *face_index != test_face_index {
                                     panic!(
@@ -64,10 +53,6 @@ impl IconAction {
                                 UnsignedVariableInteger::<6>::from(*vertex_a).ser(&mut bit_writer);
                                 UnsignedVariableInteger::<6>::from(*vertex_b).ser(&mut bit_writer);
                                 UnsignedVariableInteger::<6>::from(*vertex_c).ser(&mut bit_writer);
-
-                                UnsignedVariableInteger::<6>::from(*edge_a).ser(&mut bit_writer);
-                                UnsignedVariableInteger::<6>::from(*edge_b).ser(&mut bit_writer);
-                                UnsignedVariableInteger::<6>::from(*edge_c).ser(&mut bit_writer);
 
                                 test_face_index += 1;
                             }

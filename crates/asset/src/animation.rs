@@ -201,9 +201,9 @@ impl From<String> for AnimationData {
         let mut total_animation_time_ms = 0.0;
         for action in actions {
             match action {
-                asset_io::bits::AnimAction::SkelFile(path, file_name) => {
-                    info!("SkelFile: {}/{}", path, file_name);
-                    skel_file_opt = Some(format!("{}/{}", path, file_name));
+                asset_io::bits::AnimAction::SkelFile(asset_id) => {
+                    info!("SkelFile: {}", asset_id.as_string());
+                    skel_file_opt = Some(todo!());
                 }
                 asset_io::bits::AnimAction::ShapeIndex(name) => {
                     //info!("ShapeIndex {}: {}", names.len(), name);

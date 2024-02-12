@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
+use crate::AssetId;
 
-use crate::json::{AssetId, MAX_QUAT_COMPONENT_SIZE, MAX_SCALE};
+use crate::json::{MAX_QUAT_COMPONENT_SIZE, MAX_SCALE};
 
 
 #[derive(Copy, Clone, Eq, PartialEq)]

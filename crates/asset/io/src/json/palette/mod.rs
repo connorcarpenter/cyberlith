@@ -1,7 +1,7 @@
 use cfg_if::cfg_if;
 
 use serde::{Deserialize, Serialize};
-use crate::json::AssetId;
+use crate::AssetId;
 
 cfg_if! {
     if #[cfg(feature = "read_json")] {

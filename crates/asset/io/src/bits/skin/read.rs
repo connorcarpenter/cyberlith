@@ -1,7 +1,7 @@
 use naia_serde::{BitReader, SerdeErr, SerdeInternal as Serde};
+use crate::AssetId;
 
 use crate::bits::{skin::SkinActionType, SkinAction};
-use crate::json::AssetId;
 
 impl SkinAction {
     pub fn read(bytes: &[u8]) -> Result<Vec<Self>, SerdeErr> {

@@ -5,7 +5,8 @@ use std::io::Write;
 
 use git2::{Cred, FetchOptions, Index, PushOptions, Repository, Signature, Tree};
 use log::info;
-use asset_io::json::{Asset, AssetData, AssetId, AssetMeta, ProcessedAssetMeta};
+use asset_io::AssetId;
+use asset_io::json::{Asset, AssetData, AssetMeta, ProcessedAssetMeta};
 
 use crate::CliError;
 

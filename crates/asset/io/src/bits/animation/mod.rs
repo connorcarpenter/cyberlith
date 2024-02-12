@@ -17,9 +17,9 @@ cfg_if! {
 use std::collections::HashMap;
 
 use naia_serde::{SerdeInternal as Serde, UnsignedVariableInteger};
+use crate::AssetId;
 
 use crate::bits::common::SerdeQuat;
-use crate::json::AssetId;
 
 // Transition
 #[derive(Clone, PartialEq, Serde)]

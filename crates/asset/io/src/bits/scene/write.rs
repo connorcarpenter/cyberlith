@@ -12,10 +12,9 @@ impl SceneAction {
 
         for action in actions {
             match action {
-                Self::SkinOrSceneFile(path, file_name, file_type) => {
+                Self::Component(asset_id, file_type) => {
                     SceneActionType::SkinOrSceneFile.ser(&mut bit_writer);
-                    path.ser(&mut bit_writer);
-                    file_name.ser(&mut bit_writer);
+                    asset_id.as_u32().ser(&mut bit_writer);
                     file_type.ser(&mut bit_writer);
                 }
                 Self::NetTransform(

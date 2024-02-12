@@ -1,4 +1,5 @@
 use naia_serde::{BitReader, SerdeErr, SerdeInternal as Serde, UnsignedVariableInteger};
+use crate::AssetId;
 
 use crate::bits::{
     common::VertexSerdeInt,
@@ -24,9 +25,8 @@ impl IconAction {
             match action_type {
                 IconActionType::None => break 'outer,
                 IconActionType::PaletteFile => {
-                    let path = String::de(bit_reader)?;
-                    let file_name = String::de(bit_reader)?;
-                    output.push(Self::PaletteFile(path, file_name));
+                    let val = u32::de(bit_reader)?;
+                    output.push(Self::PaletteFile(AssetId::from_u32(val).unwrap()));
                 }
                 IconActionType::Frame => {
                     let mut face_index = 0;
@@ -45,14 +45,6 @@ impl IconAction {
 
                                 frame_output.push(IconFrameAction::Vertex(x, y));
                             }
-                            IconFrameActionType::Edge => {
-                                let vertex_a: u16 =
-                                    UnsignedVariableInteger::<6>::de(bit_reader)?.to();
-                                let vertex_b: u16 =
-                                    UnsignedVariableInteger::<6>::de(bit_reader)?.to();
-
-                                frame_output.push(IconFrameAction::Edge(vertex_a, vertex_b));
-                            }
                             IconFrameActionType::Face => {
                                 let palette_color_index = u8::de(bit_reader)?;
 
@@ -63,22 +55,12 @@ impl IconAction {
                                 let vertex_c: u16 =
                                     UnsignedVariableInteger::<6>::de(bit_reader)?.to();
 
-                                let edge_a: u16 =
-                                    UnsignedVariableInteger::<6>::de(bit_reader)?.to();
-                                let edge_b: u16 =
-                                    UnsignedVariableInteger::<6>::de(bit_reader)?.to();
-                                let edge_c: u16 =
-                                    UnsignedVariableInteger::<6>::de(bit_reader)?.to();
-
                                 frame_output.push(IconFrameAction::Face(
                                     face_index,
                                     palette_color_index,
                                     vertex_a,
                                     vertex_b,
                                     vertex_c,
-                                    edge_a,
-                                    edge_b,
-                                    edge_c,
                                 ));
 
                                 face_index += 1;

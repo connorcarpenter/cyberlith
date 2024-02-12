@@ -167,7 +167,7 @@ impl From<String> for SceneData {
         let mut file_index = 0;
         for action in actions {
             match action {
-                asset_io::bits::SceneAction::SkinOrSceneFile(path, name, file_type) => {
+                asset_io::bits::SceneAction::Component(path, name, file_type) => {
                     info!(
                         "SkinOrSceneFile {} - type: {:?}, path: {}/{}. ",
                         file_index, file_type, path, name

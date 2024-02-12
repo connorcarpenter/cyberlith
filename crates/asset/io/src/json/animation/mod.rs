@@ -1,8 +1,9 @@
 use cfg_if::cfg_if;
 
 use serde::{Deserialize, Serialize};
+use crate::AssetId;
 
-use crate::json::{AssetId, MAX_QUAT_COMPONENT_SIZE};
+use crate::json::MAX_QUAT_COMPONENT_SIZE;
 
 cfg_if! {
     if #[cfg(feature = "read_json")] {

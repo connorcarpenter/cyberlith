@@ -1,8 +1,9 @@
 use cfg_if::cfg_if;
 
 use serde::{Deserialize, Serialize};
+use crate::AssetId;
 
-use crate::json::{AssetId, components::{FileComponentType, FileComponentEntry, FileTransformPosition, FileTransformRotation, FileTransformScale}};
+use crate::json::{components::{FileComponentType, FileComponentEntry, FileTransformPosition, FileTransformRotation, FileTransformScale}};
 
 cfg_if! {
     if #[cfg(feature = "read_json")] {

@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use naia_serde::{BitReader, Serde, SerdeErr, UnsignedVariableInteger};
+use crate::AssetId;
 
 use crate::bits::{
     animation::{AnimAction, AnimActionType, Transition},
@@ -18,9 +19,8 @@ impl AnimAction {
 
             match action_type {
                 AnimActionType::SkelFile => {
-                    let path = String::de(bit_reader)?;
-                    let file_name = String::de(bit_reader)?;
-                    actions.push(Self::SkelFile(path, file_name));
+                    let val = u32::de(bit_reader)?;
+                    actions.push(Self::SkelFile(AssetId::from_u32(val).unwrap()));
                 }
                 AnimActionType::ShapeIndex => {
                     let name = String::de(bit_reader)?;

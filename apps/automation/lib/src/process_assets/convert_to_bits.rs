@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use asset_io::{json::{AnimFile, IconFile, MeshFile, ModelFile, PaletteFile, SceneFile, SkelFile, SkinFile}, bits::{AnimAction, IconAction, MeshAction, ModelAction, PaletteAction, SceneAction, SkelAction, SkinAction}};
-use asset_io::bits::{SerdeQuat, SerdeRotation, Transition};
+use asset_io::bits::{FileTransformEntityType, IconFrameAction, SerdeQuat, SerdeRotation, Transition};
+use asset_io::json::FileComponentType;
 
 pub(crate) fn palette(data: &PaletteFile) -> Vec<u8> {
     let mut actions = Vec::new();
@@ -89,7 +90,25 @@ pub(crate) fn animation(data: &AnimFile) -> Vec<u8> {
 pub(crate) fn icon(data: &IconFile) -> Vec<u8> {
     let mut actions = Vec::new();
 
-    todo!();
+    let palette_id = data.get_palette_asset_id();
+    actions.push(IconAction::PaletteFile(palette_id));
+
+    for frame in data.get_frames() {
+        let mut frame_actions = Vec::new();
+        for vertex in frame.get_vertices() {
+            frame_actions.push(IconFrameAction::Vertex(vertex.x(), vertex.y()));
+        }
+        for face in frame.get_faces() {
+            let face_id = face.face_id();
+            let color_id = face.color_id();
+            let vertex_a = face.vertex_a();
+            let vertex_b = face.vertex_b();
+            let vertex_c = face.vertex_c();
+
+            frame_actions.push(IconFrameAction::Face(face_id, color_id, vertex_a, vertex_b, vertex_c));
+        }
+        actions.push(IconAction::Frame(frame_actions));
+    }
 
     IconAction::write(actions).to_vec()
 }
@@ -97,7 +116,30 @@ pub(crate) fn icon(data: &IconFile) -> Vec<u8> {
 pub(crate) fn scene(data: &SceneFile) -> Vec<u8> {
     let mut actions = Vec::new();
 
-    todo!();
+    for component in data.get_components() {
+        let asset_id = component.asset_id();
+        let kind = match component.kind() {
+            FileComponentType::Scene => FileTransformEntityType::Scene,
+            FileComponentType::Skin => FileTransformEntityType::Skin,
+        };
+        actions.push(SceneAction::Component(asset_id, kind));
+    }
+
+    for transform in data.get_transforms() {
+        let component_id = transform.component_id();
+        let position = transform.position();
+        let scale = transform.scale();
+        let rotation = transform.rotation();
+        actions.push(SceneAction::NetTransform(
+            component_id,
+            position.x(),
+            position.y(),
+            position.z(),
+            scale.x(),
+            scale.y(),
+            scale.z(),
+            SerdeQuat::from_xyzw(rotation.x(), rotation.y(), rotation.z(), rotation.w())));
+    }
 
     SceneAction::write(actions).to_vec()
 }
@@ -105,7 +147,35 @@ pub(crate) fn scene(data: &SceneFile) -> Vec<u8> {
 pub(crate) fn model(data: &ModelFile) -> Vec<u8> {
     let mut actions = Vec::new();
 
-    todo!();
+    let skel_id = data.get_skeleton_id();
+    actions.push(ModelAction::SkelFile(skel_id));
+
+    for component in data.get_components() {
+        let asset_id = component.asset_id();
+        let kind = match component.kind() {
+            FileComponentType::Scene => FileTransformEntityType::Scene,
+            FileComponentType::Skin => FileTransformEntityType::Skin,
+        };
+        actions.push(ModelAction::Component(asset_id, kind));
+    }
+
+    for transform in data.get_transforms() {
+        let component_id = transform.component_id();
+        let name = transform.name();
+        let position = transform.position();
+        let scale = transform.scale();
+        let rotation = transform.rotation();
+        actions.push(ModelAction::NetTransform(
+            component_id,
+            name,
+            position.x(),
+            position.y(),
+            position.z(),
+            scale.x(),
+            scale.y(),
+            scale.z(),
+            SerdeQuat::from_xyzw(rotation.x(), rotation.y(), rotation.z(), rotation.w())));
+    }
 
     ModelAction::write(actions).to_vec()
 }

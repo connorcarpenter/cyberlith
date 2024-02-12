@@ -184,7 +184,7 @@ impl From<String> for ModelData {
                     info!("SkelFile: {}/{}", path, file_name);
                     skel_file_opt = Some(format!("{}/{}", path, file_name));
                 }
-                asset_io::bits::ModelAction::SkinOrSceneFile(path, name, file_type) => {
+                asset_io::bits::ModelAction::Component(path, name, file_type) => {
                     info!(
                         "SkinOrSceneFile {} : {}/{}. Type: {:?}",
                         file_index, path, name, file_type

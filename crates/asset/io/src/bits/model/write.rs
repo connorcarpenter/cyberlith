@@ -12,15 +12,13 @@ impl ModelAction {
 
         for action in actions {
             match action {
-                Self::SkelFile(path, file_name) => {
+                Self::SkelFile(asset_id) => {
                     ModelActionType::SkelFile.ser(&mut bit_writer);
-                    path.ser(&mut bit_writer);
-                    file_name.ser(&mut bit_writer);
+                    asset_id.as_u32().ser(&mut bit_writer);
                 }
-                Self::SkinOrSceneFile(path, file_name, file_type) => {
+                Self::Component(asset_id, file_type) => {
                     ModelActionType::SkinFile.ser(&mut bit_writer);
-                    path.ser(&mut bit_writer);
-                    file_name.ser(&mut bit_writer);
+                    asset_id.as_u32().ser(&mut bit_writer);
                     file_type.ser(&mut bit_writer);
                 }
                 Self::NetTransform(
