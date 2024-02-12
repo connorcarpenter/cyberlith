@@ -1,6 +1,6 @@
 use std::{fs, fs::File, io::Read, path::Path};
 
-use git2::{Cred, FetchOptions, PushOptions, Repository, Tree};
+use git2::{Cred, FetchOptions, PushOptions, Repository, Signature, Tree};
 use log::info;
 
 use crate::CliError;
@@ -24,7 +24,12 @@ fn create_processed_assets(env: &str, root: &str, repo: Repository, all_new_unpr
     info!("branch {} doesn't exist, creating..", env);
     // create new branch
     create_branch(&repo, env);
-    //
+
+    // delete all files
+    delete_all_files(&repo, &all_new_unprocessed_files);
+    git_commit(&repo, env, "deleting all unprocessed files");
+    git_push(&repo, env);
+
     // // process each file
     // write_all_files(&repo, env, &all_new_unprocessed_files);
     //
@@ -33,7 +38,7 @@ fn create_processed_assets(env: &str, root: &str, repo: Repository, all_new_unpr
 }
 
 fn update_processed_assets(env: &str, root: &str, repo: Repository, all_new_unprocessed_files: Vec<UnprocessedFile>) {
-    info!("branch {} does exist, updating..", env);
+    info!("branch {} exists, updating..", env);
     // // switch to "env" branch
     // switch_branches(&repo, env);
     //
@@ -64,6 +69,13 @@ fn get_fetch_options() -> FetchOptions<'static> {
     let mut fetch_options = FetchOptions::new();
     fetch_options.remote_callbacks(get_remote_callbacks(access_token));
     fetch_options
+}
+
+fn get_push_options() -> PushOptions<'static> {
+    let access_token = include_str!("../../../../../.secrets/github_token");
+    let mut push_options = PushOptions::new();
+    push_options.remote_callbacks(get_remote_callbacks(access_token));
+    push_options
 }
 
 fn repo_init(root_dir: &str) -> Repository {
@@ -109,7 +121,6 @@ struct UnprocessedFile {
 fn load_all_unprocessed_files(root: &str, repo: &Repository) -> Vec<UnprocessedFile> {
 
     let mut output = Vec::new();
-
     let head = repo.head().unwrap();
     let tree = head.peel_to_tree().unwrap();
 
@@ -201,51 +212,93 @@ fn branch_exists(repo: &Repository, branch_name: &str) -> bool {
 
 fn create_branch(repo: &Repository, branch_name: &str) {
 
+    // finding current commit, then creating a new local branch there
     let commit = repo.head().unwrap().peel_to_commit().unwrap();
-    repo.branch(branch_name, &commit, true).unwrap();
+    let _branch = repo.branch(branch_name, &commit, true).unwrap();
+    let branch_ref = format!("refs/heads/{}", branch_name);
 
-    // Push the new branch to the remote
+    // Push the new branch to the remote, (linking it to the remote branch)
     let mut remote = repo.find_remote("origin").unwrap();
-
-    let access_token = include_str!("../../../../../.secrets/github_token");
-    let mut push_options = PushOptions::new();
-    push_options.remote_callbacks(get_remote_callbacks(access_token));
-
-    remote.push(&[&format!("refs/heads/{}:refs/heads/{}", branch_name, branch_name)], Some(&mut push_options)).unwrap();
+    let mut push_options = get_push_options();
+    remote.push(&[&format!("{}:{}", &branch_ref, &branch_ref)], Some(&mut push_options)).unwrap();
 
     info!("Created remote branch: {:?}", branch_name);
 
+    // switch to branch
+    repo.set_head(&branch_ref).unwrap();
+    repo.checkout_head(None).unwrap();
+    info!("switched to {:?} branch!", branch_name);
+}
 
-    // let remote_branch = format!("refs/remotes/origin/{}", branch_name);
-    // let local_branch_name = format!("refs/heads/{}", branch_name);
-    //
-    // // fetch
-    // let mut fetch_options = get_fetch_options();
-    //
-    // let mut remote = repo.find_remote("origin").unwrap();
-    // remote
-    //     .fetch(&[branch_name, "main"], Some(&mut fetch_options), None)
-    //     .unwrap();
+fn delete_all_files(repo: &Repository, file_entries: &Vec<UnprocessedFile>) {
 
-    // let branch_reference = repo.head().unwrap();
-    // let branch_commit = branch_reference.peel_to_commit().unwrap();
+    let mut index = repo.index().expect("Failed to open index");
 
-    // // Set up tracking to the remote branch
-    // repo.reference(
-    //     &remote_branch,
-    //     branch_commit.id(),
-    //     true,
-    //     format!("Setting up remote branch: {}", branch_name).as_str(),
-    // ).unwrap();
-    //
-    // // Push the new branch to the remote
-    // let access_token = include_str!("../../../../../.secrets/github_token");
-    // let mut push_options = PushOptions::new();
-    // push_options.remote_callbacks(get_remote_callbacks(access_token));
-    //
-    // remote.push(&[&format!("refs/heads/{}:refs/heads/{}", branch_name, branch_name)], Some(&mut push_options)).unwrap();
+    for file_entry in file_entries {
+        let file_path = format!("{}{}", file_entry.path, file_entry.name);
+        let full_path = format!("{}/{}", repo.workdir().unwrap().to_str().unwrap(), file_path);
 
-    // info!("Created remote branch: {:?}", branch_name);
+        let path = Path::new(full_path.as_str());
+        match fs::remove_file(path) {
+            Ok(_) => {
+                info!("deleted file: {}", full_path);
+            }
+            Err(err) => {
+                info!("failed to delete file: {}", err);
+            }
+        }
+
+        index
+            .remove_path(Path::new(&file_path))
+            .expect("Failed to remove file from index");
+        info!("removed file from index: {}", file_path);
+    }
+}
+
+fn git_commit(repo: &Repository, branch_name: &str, commit_message: &str) {
+
+    let tree_id = repo
+        .index()
+        .expect("Failed to open index")
+        .write_tree()
+        .expect("Failed to write tree");
+
+    let parent_commit = repo
+        .head()
+        .expect("Failed to get HEAD reference")
+        .peel_to_commit()
+        .expect("Failed to peel HEAD to commit");
+
+    // Prepare the commit details
+    let author = Signature::now("connorcarpenter", "connorcarpenter@gmail.com").expect("Failed to create author signature");
+    let committer =
+        Signature::now("connorcarpenter", "connorcarpenter@gmail.com").expect("Failed to create committer signature");
+
+    // Create the commit
+    repo.commit(
+        Some("HEAD"),
+        &author,
+        &committer,
+        commit_message,
+        &repo.find_tree(tree_id).expect("Failed to find tree"),
+        &[&parent_commit],
+    )
+        .expect("Failed to create commit");
+
+    info!("committed to local {:?} branch!", branch_name);
+}
+
+fn git_push(repo: &Repository, branch_name: &str) {
+
+    let mut remote = repo
+        .find_remote("origin")
+        .expect("Failed to find remote 'origin'");
+    let mut push_options = get_push_options();
+    remote
+        .push(&[format!("refs/heads/{}", branch_name)], Some(&mut push_options))
+        .expect("Failed to push commit");
+
+    info!("pushed to remote {:?} branch!", branch_name);
 }
 
 // use std::{fs, fs::File, io::{Read, Write}, path::Path, collections::{HashSet, HashMap}};
@@ -476,63 +529,6 @@ fn create_branch(repo: &Repository, branch_name: &str) {
 // }
 //
 // // commits
-// fn delete_all_files(repo: &Repository, branch_name: &str, file_entries: &Vec<FileEntry>) {
-//
-//     // Fetch the latest changes from the remote repository
-//     let access_token = include_str!("../../../../../.secrets/github_token");
-//
-//     let mut fetch_options = git2::FetchOptions::new();
-//     fetch_options.remote_callbacks(get_remote_callbacks(access_token));
-//
-//     let mut remote = repo.find_remote("origin").expect("Failed to find remote");
-//     remote.fetch(&["main", "json"], Some(&mut fetch_options), None)
-//         .expect("Failed to fetch changes from the remote");
-//
-//     // get ref
-//     let ref_name = format!("refs/heads/{}", branch_name);
-//     // repo.set_head(&ref_name).expect("Failed to set head to the new branch");
-//     repo.checkout_head(Some(git2::build::CheckoutBuilder::new().force()))
-//         .expect("Failed to checkout the new branch");
-//
-//     let mut index = repo.index().expect("Failed to open index");
-//
-//     for file_entry in file_entries {
-//         let file_path = format!("{}{}", file_entry.path, file_entry.name);
-//         let full_path = format!("{}/{}", repo.workdir().unwrap().to_str().unwrap(), file_path);
-//
-//         let path = Path::new(full_path.as_str());
-//         match fs::remove_file(path) {
-//             Ok(_) => {
-//                 info!("deleted file: {}", full_path);
-//             }
-//             Err(err) => {
-//                 info!("failed to delete file: {}", err);
-//             }
-//         }
-//
-//         index
-//             .remove_path(Path::new(&file_path))
-//             .expect("Failed to remove file from index");
-//     }
-//
-//     let tree_id = index.write_tree().expect("Failed to write index");
-//     let tree = repo.find_tree(tree_id).expect("Failed to find tree");
-//
-//     let signature = repo.signature().expect("Failed to get signature");
-//     let parent_commit = repo.head().expect("Failed to get head").peel_to_commit().expect("Failed to peel to commit");
-//
-//     let commit_id = repo.commit(
-//         Some("HEAD"),
-//         &signature,
-//         &signature,
-//         &format!("committing to {:?}", branch_name),
-//         &tree,
-//         &[&parent_commit],
-//     ).unwrap();
-//
-//     repo.reference(&ref_name, commit_id, true, "committing to branch").unwrap();
-//
-//     info!("committed to {:?} branch!", branch_name);
-// }
+
 //
 //
