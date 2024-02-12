@@ -1,6 +1,5 @@
-
+use crate::AssetId;
 use crate::json::{SkinFile, Asset, AssetData, AssetMeta};
-use crate::json::asset::AssetId;
 
 impl SkinFile {
     pub fn write(&self, asset_id: &AssetId) -> Box<[u8]> {

@@ -1,6 +1,5 @@
-
+use crate::AssetId;
 use crate::json::{SkelFile, Asset, AssetData, AssetMeta};
-use crate::json::asset::AssetId;
 
 impl SkelFile {
     pub fn write(&self, asset_id: &AssetId) -> Box<[u8]> {

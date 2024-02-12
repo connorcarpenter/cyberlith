@@ -9,7 +9,8 @@ use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 
-use asset_io::json::{AssetId, MeshFile};
+use asset_io::AssetId;
+use asset_io::json::{MeshFile};
 
 use editor_proto::components::{Edge3d, Face3d, FileExtension, FileType, Vertex3d};
 

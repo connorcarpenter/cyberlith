@@ -9,7 +9,8 @@ use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 
-use asset_io::json::{AssetId, SceneFile, FileComponentType};
+use asset_io::AssetId;
+use asset_io::json::{SceneFile, FileComponentType};
 
 use editor_proto::{
     components::{

@@ -9,7 +9,8 @@ use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 
-use asset_io::json::{AssetId, FileComponentType, ModelFile};
+use asset_io::AssetId;
+use asset_io::json::{FileComponentType, ModelFile};
 
 use editor_proto::{
     components::{
@@ -161,13 +162,13 @@ impl FileWriter for ModelWriter {
         world: &mut World,
         project: &Project,
         content_entities: &HashMap<Entity, ContentEntityData>,
-        asset_id: &AssetId,
+        asset_id: &AssetId
     ) -> Box<[u8]> {
         let data = self.world_to_data(world, project, content_entities);
         data.write(asset_id)
     }
 
-    fn write_new_default(&self, asset_id: &AssetId,) -> Box<[u8]> {
+    fn write_new_default(&self, asset_id: &AssetId) -> Box<[u8]> {
         let data = ModelFile::new();
         data.write(asset_id)
     }

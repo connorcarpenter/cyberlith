@@ -9,7 +9,8 @@ use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 
-use asset_io::json::{AnimFile, AnimFileFrame, AssetId};
+use asset_io::AssetId;
+use asset_io::json::{AnimFile, AnimFileFrame};
 
 use editor_proto::{
     components::{AnimFrame, AnimRotation, FileExtension, Transition},

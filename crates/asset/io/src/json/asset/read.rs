@@ -42,6 +42,14 @@ impl ProcessedAssetMeta {
         }
     }
 
+    pub fn asset_id(&self) -> AssetId {
+        AssetId::from_str(&self.asset_id).unwrap()
+    }
+
+    pub fn hash(&self) -> &[u8] {
+        &self.hash
+    }
+
     pub fn write(&self) -> Vec<u8> {
         serde_json::to_vec_pretty(self).unwrap()
     }

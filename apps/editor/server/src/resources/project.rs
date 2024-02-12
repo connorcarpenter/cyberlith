@@ -9,7 +9,8 @@ use bevy_log::{info, warn};
 use git2::{Repository, Signature};
 
 use naia_bevy_server::{BigMapKey, CommandsExt, RoomKey, Server, UserKey};
-use asset_io::json::AssetId;
+
+use asset_io::AssetId;
 
 use editor_proto::{
     components::{ChangelistEntry, ChangelistStatus, EntryKind, FileExtension, FileSystemEntry},

@@ -1,6 +1,5 @@
-
+use crate::AssetId;
 use crate::json::{PaletteFile, Asset, AssetData, AssetMeta};
-use crate::json::asset::AssetId;
 
 impl PaletteFile {
     pub fn write(&self, asset_id: &AssetId) -> Box<[u8]> {

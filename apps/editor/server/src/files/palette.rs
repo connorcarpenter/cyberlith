@@ -9,7 +9,8 @@ use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 
-use asset_io::json::{AssetId, PaletteFile};
+use asset_io::AssetId;
+use asset_io::json::{PaletteFile};
 
 use editor_proto::components::PaletteColor;
 
