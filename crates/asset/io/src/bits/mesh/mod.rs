@@ -21,16 +21,13 @@ use naia_serde::SerdeInternal as Serde;
 pub enum MeshAction {
     //////// x,   y,   z //
     Vertex(i16, i16, i16),
-    //// id1, id2 // (vertex ids)
-    Edge(u16, u16),
-    //// order_index, id1, id2, id3 // (vertex ids) // id4, id5, id6 (edge ids)
-    Face(u16, u16, u16, u16, u16, u16, u16),
+    //// order_index, id1, id2, id3 // (vertex ids)
+    Face(u16, u16, u16, u16),
 }
 
 #[derive(Serde, Clone, PartialEq)]
 pub enum MeshActionType {
     None,
     Vertex,
-    Edge,
     Face,
 }

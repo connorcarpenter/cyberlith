@@ -40,7 +40,7 @@ fn create_processed_assets(env: &str, root: &str, repo: Repository, all_new_unpr
     git_push(&repo, env);
 }
 
-fn update_processed_assets(env: &str, root: &str, repo: Repository, all_new_unprocessed_files: Vec<UnprocessedFile>) {
+fn update_processed_assets(env: &str, root: &str, repo: Repository, all_unprocessed_files: Vec<UnprocessedFile>) {
     todo!();
     info!("branch {} exists, updating..", env);
     // // switch to "env" branch

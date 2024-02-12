@@ -29,23 +29,13 @@ impl MeshAction {
 
                     output.push(Self::Vertex(x, y, z));
                 }
-                MeshActionType::Edge => {
-                    let vertex_a: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
-                    let vertex_b: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
-
-                    output.push(Self::Edge(vertex_a, vertex_b));
-                }
                 MeshActionType::Face => {
                     let vertex_a: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
                     let vertex_b: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
                     let vertex_c: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
 
-                    let edge_a: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
-                    let edge_b: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
-                    let edge_c: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
-
                     output.push(Self::Face(
-                        face_index, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c,
+                        face_index, vertex_a, vertex_b, vertex_c
                     ));
 
                     face_index += 1;

@@ -84,9 +84,6 @@ impl From<MeshFilePath> for CpuMesh {
                     vertex_a_id,
                     vertex_b_id,
                     vertex_c_id,
-                    _,
-                    _,
-                    _,
                 ) => {
                     // info!(
                     //     "Face: {}, {}, {}, {}",
@@ -105,9 +102,6 @@ impl From<MeshFilePath> for CpuMesh {
                     face_indices.push(face_id);
                     face_indices.push(face_id);
                     face_indices.push(face_id);
-                }
-                asset_io::bits::MeshAction::Edge(_, _) => {
-                    // do nothing
                 }
             }
         }

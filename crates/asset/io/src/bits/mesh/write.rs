@@ -18,14 +18,7 @@ impl MeshAction {
                     VertexSerdeInt::from(*y).ser(&mut bit_writer);
                     VertexSerdeInt::from(*z).ser(&mut bit_writer);
                 }
-                Self::Edge(vertex_a, vertex_b) => {
-                    // continue bit
-                    MeshActionType::Edge.ser(&mut bit_writer);
-
-                    UnsignedVariableInteger::<6>::from(*vertex_a).ser(&mut bit_writer);
-                    UnsignedVariableInteger::<6>::from(*vertex_b).ser(&mut bit_writer);
-                }
-                Self::Face(face_index, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c) => {
+                Self::Face(face_index, vertex_a, vertex_b, vertex_c) => {
                     if *face_index != test_face_index {
                         panic!(
                             "face_index {:?} does not match test_face_index {:?}",
@@ -39,10 +32,6 @@ impl MeshAction {
                     UnsignedVariableInteger::<6>::from(*vertex_a).ser(&mut bit_writer);
                     UnsignedVariableInteger::<6>::from(*vertex_b).ser(&mut bit_writer);
                     UnsignedVariableInteger::<6>::from(*vertex_c).ser(&mut bit_writer);
-
-                    UnsignedVariableInteger::<6>::from(*edge_a).ser(&mut bit_writer);
-                    UnsignedVariableInteger::<6>::from(*edge_b).ser(&mut bit_writer);
-                    UnsignedVariableInteger::<6>::from(*edge_c).ser(&mut bit_writer);
 
                     test_face_index += 1;
                 }
