@@ -183,7 +183,7 @@ fn create_fs_entry(
         .insert(FileSystemEntryLocal::new(new_file_name));
 
     // register with file manager
-    let file_ext = FileExtension::from(new_file_name);
+    let file_ext = FileExtension::from_file_name(new_file_name);
     file_manager.on_file_create(&entity_id, file_ext);
 
     (file_ext, entity_id)

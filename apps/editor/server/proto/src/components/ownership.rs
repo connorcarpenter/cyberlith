@@ -39,17 +39,7 @@ pub enum FileExtension {
 }
 
 impl From<&str> for FileExtension {
-    fn from(file_name: &str) -> Self {
-        // split file name by '.'
-        let split: Vec<_> = file_name.split('.').collect();
-        let mut ext: &str = split.last().unwrap();
-
-        if ext == "json" {
-            ext = split.get(split.len() - 2).unwrap();
-        }
-
-        //info!("file_name: {}, ext: {}", file_name, ext);
-
+    fn from(ext: &str) -> Self {
         // match file extension to enum
         match ext {
             "skeleton" => FileExtension::Skel,
@@ -66,6 +56,12 @@ impl From<&str> for FileExtension {
 }
 
 impl FileExtension {
+
+    pub fn from_file_name(file_name: &str) -> Self {
+        let ext = file_name.split('.').last().unwrap_or("");
+        FileExtension::from(ext)
+    }
+
     pub fn can_io(&self) -> bool {
         match self {
             FileExtension::Skel

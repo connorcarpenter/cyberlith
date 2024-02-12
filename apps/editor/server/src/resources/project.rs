@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fs, fs::File, io::Read, path::Path, sync::Mutex};
+use std::{collections::HashMap, fs, io::Read, path::Path, sync::Mutex};
 
 use bevy_ecs::{
     entity::Entity,
@@ -70,12 +70,13 @@ impl Project {
         internal_path: &str,
     ) -> Self {
         let working_file_tree = file_entries.clone();
+        let asset_id_map = asset_id_map_from_file_entries(&file_entries);
         Self {
             room_key,
             filespaces: HashMap::new(),
             master_file_entries: file_entries,
             working_file_entries: working_file_tree,
-            asset_id_map: HashMap::new(),
+            asset_id_map,
             changelist_entries: HashMap::new(),
             repo: Mutex::new(repo),
             access_token: access_token.to_string(),
@@ -233,15 +234,21 @@ impl Project {
         parent: Option<FileKey>,
         file_key: &FileKey,
     ) {
-        if file_key.kind() == EntryKind::Directory {
+        let file_entry_val = if file_key.kind() == EntryKind::Directory {
             info!("creating directory: {}", name);
+            FileEntryValue::new(entity, None, None, parent, None)
         } else {
             info!("creating file: {}", name);
-        }
+            let file_extension = FileExtension::from_file_name(name);
+            if file_extension == FileExtension::Unknown {
+                panic!("unknown file extension: {}", name);
+            }
+            let asset_id = self.get_new_unique_asset_id(file_key);
+            FileEntryValue::new(entity, Some(asset_id), Some(file_extension), parent, None)
+        };
 
-        let file_extension = FileExtension::from(name);
-        let asset_id = self.get_new_unique_asset_id(file_key);
-        let file_entry_val = FileEntryValue::new(entity, Some(asset_id), Some(file_extension), parent, None);
+        let file_extension = file_entry_val.extension().unwrap();
+        let asset_id = file_entry_val.asset_id().unwrap();
 
         // Add new Entity into Working Tree
         Self::add_to_file_tree(
@@ -513,7 +520,7 @@ impl Project {
                 let path = self.get_full_file_path_master(&file_key);
 
                 // Remove Entity from Master Tree, returning a list of child entities that should be despawned
-                let (_entry_value, entities_to_delete) =
+                let (entry_value, entities_to_delete) =
                     Self::remove_file_entry(&mut self.master_file_entries, &file_key);
                 self.cleanup_changelist_entry(&mut commands, &file_key);
 
@@ -522,6 +529,9 @@ impl Project {
                 }
 
                 // delete file
+                if entry_value.children().is_some() {
+                    todo!("cannot delete directories right now, please implement!");
+                }
                 info!("git delete file");
                 self.fs_delete_file(&path);
 
@@ -682,12 +692,13 @@ impl Project {
     }
 
     fn fs_update_index(&mut self, path: &str) {
+        let path = format!("{}.json", path);
         let repo = self.repo.lock().unwrap();
 
         // Add the file to the repository
         let mut index = repo.index().expect("Failed to open index");
         index
-            .add_path(Path::new(path))
+            .add_path(Path::new(&path))
             .expect("Failed to add file to index");
         index.write().expect("Failed to write index");
     }
@@ -700,7 +711,7 @@ impl Project {
     fn fs_delete_file(&mut self, file_path: &str) {
         let repo = self.repo.lock().unwrap();
 
-        let full_path = format!("{}/{}", self.internal_path, file_path);
+        let full_path = format!("{}/{}.json", self.internal_path, file_path);
         info!("git deleting file at: `{}`", full_path);
 
         // Remove the file from the working directory
@@ -722,7 +733,7 @@ impl Project {
             .get_content()
             .unwrap();
 
-        let full_file_path = format!("{}/{}", self.internal_path, path);
+        let full_file_path = format!("{}/{}.json", self.internal_path, path);
 
         // Create the directory if it doesn't exist
         if let Some(parent) = Path::new(&full_file_path).parent() {
@@ -938,11 +949,11 @@ impl Project {
     }
 
     pub(crate) fn read_from_file(full_path_str: &str, key: &FileKey) -> Box<[u8]> {
-        let file_path = format!("{}{}", key.path(), key.name());
+        let file_path = format!("{}{}.json", key.path(), key.name());
         let full_path = format!("{}/{}", full_path_str, file_path);
         info!("Getting blob for file: {}", full_path);
         let path = Path::new(full_path.as_str());
-        let mut file = match File::open(path) {
+        let mut file = match fs::File::open(path) {
             Ok(file) => file,
             Err(err) => panic!("Failed to open file: {}", err),
         };
@@ -1155,4 +1166,14 @@ impl Project {
     pub(crate) fn file_key_from_asset_id(&self, asset_id: &AssetId) -> Option<FileKey> {
         self.asset_id_map.get(asset_id).cloned()
     }
+}
+
+fn asset_id_map_from_file_entries(file_entries: &HashMap<FileKey, FileEntryValue>) -> HashMap<AssetId, FileKey> {
+    let mut asset_id_map = HashMap::new();
+    for (file_key, file_value) in file_entries {
+        if let Some(asset_id) = file_value.asset_id() {
+            asset_id_map.insert(asset_id, file_key.clone());
+        }
+    }
+    asset_id_map
 }

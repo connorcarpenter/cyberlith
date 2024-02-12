@@ -745,8 +745,10 @@ fn fill_file_entries_from_git(
     let mut output = HashSet::new();
 
     for git_entry in git_tree.iter() {
-        let name = git_entry.name().unwrap().to_string();
-
+        let mut name = git_entry.name().unwrap().to_string();
+        if name.ends_with(".json") {
+            name = name.trim_end_matches(".json").to_string();
+        }
         info!("Git -> Tree: processing Entry `{:?}`", name);
 
         match git_entry.kind() {
@@ -780,14 +782,14 @@ fn fill_file_entries_from_git(
                 let id = GitManager::spawn_file_tree_entity(commands, server);
 
                 let file_key = FileKey::new(path, &name, entry_kind);
-                let file_extension = FileExtension::from(name.as_str());
 
-                let asset_id = {
+                let (asset_id, file_extension) = {
                     let bytes = Project::read_from_file(full_path_str, &file_key);
-                    let Ok(asset_meta) = AssetMeta::read_from_file(&bytes) else {
+                    let Ok((asset_meta, file_extension)) = AssetMeta::read_from_file(&bytes) else {
                         panic!("Could not read AssetMeta from file: {:?}", &file_key);
                     };
-                    asset_meta.asset_id()
+                    let file_extension = FileExtension::from(file_extension.as_str());
+                    (asset_meta.asset_id(), file_extension)
                 };
 
                 let file_entry_value =

@@ -51,9 +51,9 @@ impl AssetMeta {
         self.schema_version
     }
 
-    pub fn read_from_file(bytes: &[u8]) -> Result<Self, AssetIoError> {
-        let (meta, _) = Asset::read(bytes)?.deconstruct();
-        return Ok(meta);
+    pub fn read_from_file(bytes: &[u8]) -> Result<(Self, String), AssetIoError> {
+        let (meta, data) = Asset::read(bytes)?.deconstruct();
+        return Ok((meta, data.type_name()));
     }
 }
 
@@ -69,4 +69,20 @@ pub enum AssetData {
     Skin(SkinFile),
     Scene(SceneFile),
     Model(ModelFile),
+}
+
+impl AssetData {
+    pub fn type_name(&self) -> String {
+        match self {
+            AssetData::Palette(_) => "palette",
+            AssetData::Skeleton(_) => "skeleton",
+            AssetData::Mesh(_) => "mesh",
+            AssetData::Animation(_) => "animation",
+            AssetData::Icon(_) => "icon",
+            AssetData::Skin(_) => "skin",
+            AssetData::Scene(_) => "scene",
+            AssetData::Model(_) => "model",
+        }
+        .to_string()
+    }
 }

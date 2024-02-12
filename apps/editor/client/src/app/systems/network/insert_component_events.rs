@@ -147,7 +147,7 @@ pub fn insert_file_component_events(
                 .unwrap()
                 .insert(entity, FileSystemParent::new());
         }
-        file_manager.on_file_create(&entity, FileExtension::from(entry.name.as_str()));
+        file_manager.on_file_create(&entity, FileExtension::from_file_name(entry.name.as_str()));
         commands
             .entity(entity)
             .insert(FileSystemEntryLocal::new(entry.name.as_str()));

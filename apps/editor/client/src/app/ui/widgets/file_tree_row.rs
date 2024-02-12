@@ -57,7 +57,7 @@ impl FileTreeRowUiWidget {
         } else {
             Self::paint_no_icon
         };
-        let file_extension = FileExtension::from(name);
+        let file_extension = FileExtension::from_file_name(name);
         let separator = if path.len() > 0 { ":" } else { "" };
         let full_path = format!("{}{}{}", path, separator, name);
         let unicode_icon = if is_dir { "📁" } else { "📃" };

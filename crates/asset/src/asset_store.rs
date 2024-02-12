@@ -57,6 +57,7 @@ impl Default for AssetStore {
 
 impl AssetStore {
     pub(crate) fn load<T: From<AssetHandle>>(&mut self, path: &str) -> T {
+        todo!(); // this needs to be migrated to asset ids
         let split: Vec<_> = path.split('.').collect();
         let mut file_ext: &str = split.last().unwrap();
 
