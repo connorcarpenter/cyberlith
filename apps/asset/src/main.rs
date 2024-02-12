@@ -1,60 +1,57 @@
 mod heartbeat;
 mod state;
 mod asset;
+mod registration;
+mod disconnection;
 
 use std::{net::SocketAddr, time::Duration};
 
-use log::{info, LevelFilter, warn};
+use log::{info, LevelFilter};
 use simple_logger::SimpleLogger;
 
 use http_server::{Server, async_dup::Arc, smol::lock::RwLock};
-use http_client::HttpClient;
 
-use region_server_http_proto::AssetRegisterInstanceRequest;
-
-use config::{ASSET_SERVER_PORT, SELF_BINDING_ADDR, ASSET_SERVER_RECV_ADDR, ASSET_SERVER_SECRET, REGION_SERVER_RECV_ADDR, REGION_SERVER_PORT};
+use config::{ASSET_SERVER_PORT, SELF_BINDING_ADDR};
 
 use crate::state::State;
 
 pub fn main() {
+    // setup logging
     SimpleLogger::new()
         .with_level(LevelFilter::Info)
         .init()
         .expect("A logger was already initialized");
+
+    // setup state
+    let registration_resend_rate = Duration::from_secs(5);
+    let region_server_disconnect_timeout = Duration::from_secs(16);
+    let state = Arc::new(RwLock::new(State::new(registration_resend_rate, region_server_disconnect_timeout)));
 
     // setup listening http server
     info!("Asset Server starting up...");
     let socket_addr: SocketAddr = SocketAddr::new(SELF_BINDING_ADDR.parse().unwrap(), ASSET_SERVER_PORT);
 
     let mut server = Server::new(socket_addr);
-    let _state = Arc::new(RwLock::new(State::new()));
 
     heartbeat::endpoint(&mut server);
     asset::endpoint(&mut server);
 
     server.start();
 
-    // send registration request to region server
-    Server::spawn(async move {
-        let request = AssetRegisterInstanceRequest::new(
-            ASSET_SERVER_SECRET,
-            ASSET_SERVER_RECV_ADDR,
-            ASSET_SERVER_PORT,
-        );
-        let response = HttpClient::send(REGION_SERVER_RECV_ADDR, REGION_SERVER_PORT, request).await;
-        match response {
-            Ok(_) => {
-                info!("from {:?}:{} - asset server registration success", REGION_SERVER_RECV_ADDR, REGION_SERVER_PORT);
-            },
-            Err(err) => {
-                warn!("from {:?}:{} - asset server registration failure: {}", REGION_SERVER_RECV_ADDR, REGION_SERVER_PORT, err.to_string());
-            }
-        }
-    });
-
-    // loop
     loop {
-        std::thread::sleep(Duration::from_secs(1));
+        std::thread::sleep(Duration::from_secs(5));
         info!(".");
+
+        // send registration
+        let state_clone = state.clone();
+        Server::spawn(async move {
+            registration::handle(state_clone).await;
+        });
+
+        // handle disconnection
+        let state_clone = state.clone();
+        Server::spawn(async move {
+            disconnection::handle(state_clone).await;
+        });
     }
 }
