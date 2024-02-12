@@ -15,7 +15,7 @@ impl AssetMeta {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ProcessedAssetMeta {
     asset_id: String,
     etag: String,
@@ -44,5 +44,9 @@ impl ProcessedAssetMeta {
 
     pub fn write(&self) -> Vec<u8> {
         serde_json::to_vec_pretty(self).unwrap()
+    }
+
+    pub fn read(bytes: &[u8]) -> Result<Self, AssetIoError> {
+        serde_json::from_slice(bytes).map_err(|e| AssetIoError::Message(e.to_string()))
     }
 }

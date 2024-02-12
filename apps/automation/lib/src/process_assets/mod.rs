@@ -42,14 +42,15 @@ fn create_processed_assets(env: &str, root: &str, repo: Repository, all_new_unpr
 }
 
 fn update_processed_assets(env: &str, root: &str, repo: Repository, all_unprocessed_files: Vec<UnprocessedFile>) {
-    todo!();
     info!("branch {} exists, updating..", env);
-    // // switch to "env" branch
-    // switch_branches(&repo, env);
-    //
-    // // get files from previously processed environment
-    // let old_meta_files = load_all_meta_files(root, &repo);
-    //
+    // switch to "env" branch
+    git_pull(&repo, env);
+    switch_to_branch(&repo, env);
+
+    // get files from previously processed environment
+    let old_meta_files = load_all_processed_meta_files(root, &repo);
+    todo!();
+
     // // prune out unprocessed files that have not changed since last being processed
     // let new_modified_unprocessed_files = prune_unchanged_files(&old_meta_files, &all_new_unprocessed_files);
     //
@@ -138,6 +139,17 @@ fn load_all_unprocessed_files(root: &str, repo: &Repository) -> Vec<UnprocessedF
     output
 }
 
+fn load_all_processed_meta_files(root: &str, repo: &Repository) -> Vec<ProcessedAssetMeta> {
+
+    let mut output = Vec::new();
+    let head = repo.head().unwrap();
+    let tree = head.peel_to_tree().unwrap();
+
+    collect_processed_meta_files(&mut output, root, &repo, &tree, "");
+
+    output
+}
+
 fn collect_unprocessed_files(
     output: &mut Vec<UnprocessedFile>,
     root: &str,
@@ -185,6 +197,56 @@ fn collect_unprocessed_files(
     }
 }
 
+fn collect_processed_meta_files(
+    output: &mut Vec<ProcessedAssetMeta>,
+    root: &str,
+    repo: &Repository,
+    git_tree: &Tree,
+    path: &str,
+) {
+    for git_entry in git_tree.iter() {
+        let name = git_entry.name().unwrap().to_string();
+
+        match git_entry.kind() {
+            Some(git2::ObjectType::Tree) => {
+
+                let new_path = format!("{}{}", path, name);
+
+                let git_children = git_entry.to_object(repo).unwrap().peel_to_tree().unwrap();
+
+                collect_processed_meta_files(
+                    output,
+                    root,
+                    repo,
+                    &git_children,
+                    &new_path,
+                );
+            }
+            Some(git2::ObjectType::Blob) => {
+
+                let name_split = name.split(".");
+                let extension = name_split.last().unwrap();
+                if extension != "meta" {
+                    continue;
+                }
+
+                let bytes = get_file_contents(root, path, &name);
+
+                let processed_meta = ProcessedAssetMeta::read(
+                    &bytes,
+                ).unwrap();
+
+                info!("read meta file: {}", name);
+
+                output.push(processed_meta);
+            }
+            _ => {
+                info!("Unknown file type: {:?}", git_entry.kind());
+            }
+        }
+    }
+}
+
 fn get_file_contents(root: &str, path: &str, file: &str) -> Vec<u8> {
     let file_path = format!("{}{}", path, file);
     let full_path = format!("{}/{}", root, file_path);
@@ -224,8 +286,14 @@ fn create_branch(repo: &Repository, branch_name: &str) {
     info!("Created remote branch: {:?}", branch_name);
 
     // switch to branch
-    repo.set_head(&branch_ref).unwrap();
-    repo.checkout_head(None).unwrap();
+    switch_to_branch(repo, branch_name);
+}
+
+fn switch_to_branch(repo: &Repository, branch_name: &str) {
+    let branch_refname = format!("refs/heads/{}", branch_name);
+    let mut checkout_builder = git2::build::CheckoutBuilder::new();
+    checkout_builder.force();
+    repo.checkout_head(Some(&mut checkout_builder)).unwrap();
     info!("switched to {:?} branch!", branch_name);
 }
 
@@ -298,6 +366,36 @@ fn git_push(repo: &Repository, branch_name: &str) {
         .expect("Failed to push commit");
 
     info!("pushed to remote {:?} branch!", branch_name);
+}
+
+fn git_pull(repo: &Repository, branch_name: &str) {
+
+    // Fetch changes from the remote
+    let mut remote = repo.find_remote("origin").unwrap();
+    let mut fetch_options = get_fetch_options();
+    remote
+        .fetch(&[branch_name], Some(&mut fetch_options), None)
+        .unwrap();
+
+    // Get the updated reference after fetch
+    let fetch_head = repo.find_reference("FETCH_HEAD").unwrap();
+    let fetch_commit = repo.reference_to_annotated_commit(&fetch_head).unwrap();
+    let fetch_commit_oid = fetch_commit.id();
+    let fetch_commit_object = repo.find_object(fetch_commit_oid, None).unwrap();
+
+    // Reset the local branch to the head of the remote branch
+    let mut checkout_builder = git2::build::CheckoutBuilder::new();
+    checkout_builder.force();
+
+    // Reset local changes
+    repo.reset(
+        &fetch_commit_object,
+        git2::ResetType::Hard,
+        Some(&mut checkout_builder),
+    )
+        .unwrap();
+
+    info!("pulled from {:?} branch!", branch_name);
 }
 
 fn write_all_new_files(repo: &Repository, branch_name: &str, unprocessed_files: &Vec<UnprocessedFile>) {
