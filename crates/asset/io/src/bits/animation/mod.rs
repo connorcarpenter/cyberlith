@@ -19,6 +19,7 @@ use std::collections::HashMap;
 use naia_serde::{SerdeInternal as Serde, UnsignedVariableInteger};
 
 use crate::bits::common::SerdeQuat;
+use crate::json::AssetId;
 
 // Transition
 #[derive(Clone, PartialEq, Serde)]
@@ -44,7 +45,7 @@ impl Transition {
 // Actions
 pub enum AnimAction {
     // path, file_name
-    SkelFile(String, String),
+    SkelFile(AssetId),
     // shape name -> shape_index
     ShapeIndex(String),
     // shape_index -> rotation

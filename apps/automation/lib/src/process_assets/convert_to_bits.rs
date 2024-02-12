@@ -1,5 +1,6 @@
+use std::collections::HashMap;
 use asset_io::{json::{AnimFile, IconFile, MeshFile, ModelFile, PaletteFile, SceneFile, SkelFile, SkinFile}, bits::{AnimAction, IconAction, MeshAction, ModelAction, PaletteAction, SceneAction, SkelAction, SkinAction}};
-use asset_io::bits::SerdeRotation;
+use asset_io::bits::{SerdeQuat, SerdeRotation, Transition};
 
 pub(crate) fn palette(data: &PaletteFile) -> Vec<u8> {
     let mut actions = Vec::new();
@@ -61,6 +62,38 @@ pub(crate) fn skin(data: &SkinFile) -> Vec<u8> {
     SkinAction::write(actions).to_vec()
 }
 
+pub(crate) fn animation(data: &AnimFile) -> Vec<u8> {
+    let mut actions = Vec::new();
+
+    let skeleton_asset_id = data.get_skeleton_asset_id();
+    actions.push(AnimAction::SkelFile(skeleton_asset_id));
+
+    for name in data.get_edge_names() {
+        actions.push(AnimAction::ShapeIndex(name.clone()));
+    }
+
+    for frame in data.get_frames() {
+        let mut rotations = HashMap::new();
+        for pose in frame.get_poses() {
+            let id = pose.get_edge_id();
+            let rotation = pose.get_rotation();
+            rotations.insert(id, SerdeQuat::from_xyzw(rotation.get_x(), rotation.get_y(), rotation.get_z(), rotation.get_w()));
+        }
+        let transition_ms = frame.get_transition_ms();
+        actions.push(AnimAction::Frame(rotations, Transition::new(transition_ms)));
+    }
+
+    AnimAction::write(actions).to_vec()
+}
+
+pub(crate) fn icon(data: &IconFile) -> Vec<u8> {
+    let mut actions = Vec::new();
+
+    todo!();
+
+    IconAction::write(actions).to_vec()
+}
+
 pub(crate) fn scene(data: &SceneFile) -> Vec<u8> {
     let mut actions = Vec::new();
 
@@ -75,22 +108,4 @@ pub(crate) fn model(data: &ModelFile) -> Vec<u8> {
     todo!();
 
     ModelAction::write(actions).to_vec()
-}
-
-pub(crate) fn icon(data: &IconFile) -> Vec<u8> {
-    let mut actions = Vec::new();
-
-    todo!();
-
-    IconAction::write(actions).to_vec()
-}
-
-
-
-pub(crate) fn animation(data: &AnimFile) -> Vec<u8> {
-    let mut actions = Vec::new();
-
-    todo!();
-
-    AnimAction::write(actions).to_vec()
 }

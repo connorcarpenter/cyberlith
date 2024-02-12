@@ -8,10 +8,9 @@ impl AnimAction {
 
         for action in actions {
             match action {
-                AnimAction::SkelFile(path, file_name) => {
+                AnimAction::SkelFile(asset_id) => {
                     AnimActionType::SkelFile.ser(&mut bit_writer);
-                    path.ser(&mut bit_writer);
-                    file_name.ser(&mut bit_writer);
+                    asset_id.as_u32().ser(&mut bit_writer);
                 }
                 AnimAction::ShapeIndex(name) => {
                     AnimActionType::ShapeIndex.ser(&mut bit_writer);
