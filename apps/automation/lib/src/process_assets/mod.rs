@@ -5,7 +5,7 @@ use std::io::Write;
 
 use git2::{Cred, FetchOptions, Index, PushOptions, Repository, Signature, Tree};
 use log::info;
-use asset_io::AssetId;
+use asset_io::{AssetId, ETag};
 use asset_io::json::{Asset, AssetData, AssetMeta, ProcessedAssetMeta};
 
 use crate::CliError;
@@ -396,7 +396,7 @@ fn get_dependencies(data: &AssetData) -> Vec<AssetId> {
 fn process_new_meta_file(unprocessed_meta: &AssetMeta, dependencies: Vec<AssetId>, hash: AssetHash) -> ProcessedAssetMeta {
     ProcessedAssetMeta::new(
         unprocessed_meta.asset_id(),
-        1,
+        ETag::get_random(),
         unprocessed_meta.schema_version(),
         dependencies,
         hash.to_vec(),

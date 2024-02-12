@@ -17,3 +17,4 @@ cfg_if! {
 }
 
 pub type AssetId = U32Token;
+pub type ETag = U32Token;

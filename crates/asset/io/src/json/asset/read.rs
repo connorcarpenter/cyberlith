@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{json::{Asset, AssetMeta}, AssetIoError, AssetId};
+use crate::{json::{Asset, AssetMeta}, AssetIoError, AssetId, ETag};
 
 impl Asset {
     pub fn read(bytes: &[u8]) -> Result<Self, AssetIoError> {
@@ -18,7 +18,7 @@ impl AssetMeta {
 #[derive(Serialize, Deserialize, Clone)]
 pub struct ProcessedAssetMeta {
     asset_id: String,
-    asset_version: u32,
+    etag: String,
     schema_version: u32,
     dependencies: Vec<String>,
     hash: Vec<u8>,
@@ -27,7 +27,7 @@ pub struct ProcessedAssetMeta {
 impl ProcessedAssetMeta {
     pub fn new(
         asset_id: AssetId,
-        asset_version: u32,
+        etag: ETag,
         schema_version: u32,
         dependencies: Vec<AssetId>,
         hash: Vec<u8>
@@ -35,7 +35,7 @@ impl ProcessedAssetMeta {
         let dependencies = dependencies.into_iter().map(|id| id.as_string()).collect();
         Self {
             asset_id: asset_id.as_string(),
-            asset_version,
+            etag: etag.as_string(),
             schema_version,
             dependencies,
             hash,
