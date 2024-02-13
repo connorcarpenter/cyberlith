@@ -46,10 +46,10 @@ async fn async_impl(
         incoming_addr, http_addr
     );
 
-    let server_instance = AssetInstance::new(http_addr, http_port);
+    let asset_instance = AssetInstance::new(http_addr, http_port);
 
     let mut state = state.write().await;
-    state.register_asset_instance(server_instance);
+    state.register_asset_instance(asset_instance);
 
     info!("Sending register instance response to asset server");
 
