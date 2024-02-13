@@ -55,7 +55,7 @@ async fn async_impl(
 
     let request = IncomingUserRequest::new(REGION_SERVER_SECRET, &temp_token);
 
-    let Ok(outgoing_response) = HttpClient::send(&world_server_http_addr, world_server_http_port, request).await else {
+    let Ok(_outgoing_response) = HttpClient::send(&world_server_http_addr, world_server_http_port, request).await else {
         warn!("failed incoming user request to world server");
         return Err(ResponseError::InternalServerError("failed incoming user request to world server".to_string()));
     };
@@ -63,8 +63,6 @@ async fn async_impl(
     info!("Received incoming user response from world server");
 
     info!("Sending user login response to session server");
-
-    // TODO: end of part we need to get rid of
 
     Ok(WorldUserLoginResponse::new(&world_server_public_url, &temp_token))
 }

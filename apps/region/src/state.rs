@@ -5,7 +5,7 @@ use log::{info, warn};
 use http_client::{HttpClient, RequestOptions};
 use http_server::Server;
 
-use session_server_http_proto::HeartbeatRequest as SessionHeartbeatRequest;
+use session_server_http_proto::{ConnectAssetServerRequest, DisconnectAssetServerRequest, HeartbeatRequest as SessionHeartbeatRequest};
 use world_server_http_proto::HeartbeatRequest as WorldHeartbeatRequest;
 use asset_server_http_proto::HeartbeatRequest as AssetHeartbeatRequest;
 use config::REGION_SERVER_SECRET;
@@ -43,15 +43,33 @@ impl State {
         self.assetless_session_instances.remove(&key);
     }
 
-    pub fn deregister_asset_instance(&mut self) {
+    pub async fn deregister_asset_instance(&mut self) {
         self.asset_instance = None;
 
-        for (key, port) in self.session_instances.iter() {
+        for (key, instance) in self.session_instances.iter() {
             if !self.assetless_session_instances.contains(key) {
                 self.assetless_session_instances.insert(key.clone());
 
                 // send disconnect asset server message to session instance
-                todo!();
+
+                let instance_addr = instance.http_addr();
+                let instance_port = instance.http_port();
+                let last_heard = instance.last_heard();
+
+                Server::spawn(async move {
+                    let request =  DisconnectAssetServerRequest::new(REGION_SERVER_SECRET);
+                    let response = HttpClient::send(&instance_addr, instance_port, request).await;
+                    match response {
+                        Ok(_) => {
+                            info!("from {:?}:{} - session disconnect asset server success", instance_addr, instance_port);
+                            let mut last_heard = last_heard.write().await;
+                            *last_heard = Instant::now();
+                        },
+                        Err(err) => {
+                            warn!("from {:?}:{} - session disconnect asset server failure: {}", instance_addr, instance_port, err.to_string());
+                        }
+                    }
+                });
             }
         }
     }
@@ -165,8 +183,28 @@ impl State {
             return;
         }
 
-        for (session_ip, session_port) in self.assetless_session_instances.iter() {
-            todo!();
+        for key in self.assetless_session_instances.iter() {
+            let instance = self.session_instances.get(key).unwrap();
+            let instance_addr = instance.http_addr();
+            let instance_port = instance.http_port();
+            let last_heard = instance.last_heard();
+            let asset_server_addr = self.asset_instance.as_ref().unwrap().http_addr();
+            let asset_server_port = self.asset_instance.as_ref().unwrap().http_port();
+
+            Server::spawn(async move {
+                let request =  ConnectAssetServerRequest::new(REGION_SERVER_SECRET, &asset_server_addr, asset_server_port);
+                let response = HttpClient::send(&instance_addr, instance_port, request).await;
+                match response {
+                    Ok(_) => {
+                        info!("from {:?}:{} - session connect asset server success", instance_addr, instance_port);
+                        let mut last_heard = last_heard.write().await;
+                        *last_heard = Instant::now();
+                    },
+                    Err(err) => {
+                        warn!("from {:?}:{} - session connect asset server failure: {}", instance_addr, instance_port, err.to_string());
+                    }
+                }
+            });
         }
 
         self.assetless_session_instances.clear();
@@ -213,7 +251,7 @@ impl State {
                 let elapsed = now.duration_since(last_heard);
                 if elapsed.as_secs() > timeout.as_secs() {
                     info!("asset instance disconnected");
-                    self.deregister_asset_instance();
+                    self.deregister_asset_instance().await;
                 }
             }
         }

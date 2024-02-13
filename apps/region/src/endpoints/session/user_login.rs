@@ -54,7 +54,7 @@ async fn async_impl(
 
     let request = IncomingUserRequest::new(REGION_SERVER_SECRET, &temp_token);
 
-    let Ok(outgoing_response) = HttpClient::send(&session_server_http_addr, session_server_http_port, request).await else {
+    let Ok(_outgoing_response) = HttpClient::send(&session_server_http_addr, session_server_http_port, request).await else {
         warn!("Failed incoming user request to session server");
         return Err(ResponseError::InternalServerError("failed incoming user request to session server".to_string()));
     };
