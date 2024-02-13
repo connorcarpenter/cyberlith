@@ -33,7 +33,7 @@ pub fn main() {
 
     let mut server = Server::new(socket_addr);
 
-    heartbeat::endpoint(&mut server);
+    heartbeat::endpoint(&mut server, state.clone());
     asset::endpoint(&mut server);
 
     server.start();

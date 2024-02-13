@@ -26,6 +26,7 @@ pub struct Global {
     world_connect_resend_rate: Duration,
     login_tokens: HashSet<String>,
     worldless_users: HashMap<UserKey, Option<Instant>>,
+    asset_server_opt: Option<(String, u16)>,
 }
 
 impl Global {
@@ -46,6 +47,7 @@ impl Global {
             world_connect_resend_rate,
             login_tokens: HashSet::new(),
             worldless_users: HashMap::new(),
+            asset_server_opt: None,
         }
     }
 
@@ -98,6 +100,7 @@ impl Global {
 
     pub fn set_disconnected(&mut self) {
         self.region_server_connection_state = ConnectionState::Disconnected;
+        self.clear_asset_server();
     }
 
     // World Keys
@@ -150,5 +153,15 @@ impl Global {
 
     pub fn take_login_token(&mut self, token: &str) -> bool {
         self.login_tokens.remove(token)
+    }
+
+    // Asset Server
+
+    pub fn set_asset_server(&mut self, addr: &str, port: u16) {
+        self.asset_server_opt = Some((addr.to_string(), port));
+    }
+
+    pub fn clear_asset_server(&mut self) {
+        self.asset_server_opt = None;
     }
 }

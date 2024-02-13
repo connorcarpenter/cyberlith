@@ -33,8 +33,16 @@ impl State {
 
     pub fn register_session_instance(&mut self, instance: SessionInstance) {
         let key = (instance.http_addr(), instance.http_port());
+
+        self.assetless_session_instances.insert(key.clone());
+
+        if self.session_instances.contains_key(&key) {
+            info!("session instance restart detected. received re-registration request. details: {:?}", key);
+            return;
+        }
+
         self.session_instances.insert(key.clone(), instance);
-        self.assetless_session_instances.insert(key);
+
     }
 
     pub fn deregister_session_instance(&mut self, http_addr: &str, http_port: u16) {
@@ -80,6 +88,12 @@ impl State {
 
     pub fn register_world_instance(&mut self, instance: WorldInstance) {
         let key = (instance.http_addr(), instance.http_port());
+
+        if self.world_instances.contains_key(&key) {
+            info!("world instance restart detected. received re-registration request. details: {:?}", key);
+            return;
+        }
+
         self.world_instances.insert(key, instance);
     }
 
@@ -88,7 +102,14 @@ impl State {
     }
 
     pub fn register_asset_instance(&mut self, instance: AssetInstance) {
-        self.asset_instance = Some(instance);
+        if let Some(old_asset_instance) = self.asset_instance.as_ref() {
+            if old_asset_instance.http_addr() == instance.http_addr() && old_asset_instance.http_port() == instance.http_port() {
+                info!("asset instance restart detected. received re-registration request. details: {:?}{:?}", old_asset_instance.http_addr(), old_asset_instance.http_port());
+            }
+            panic!("shouldn't have more than one asset instance");
+        } else {
+            self.asset_instance = Some(instance);
+        }
     }
 
     pub async fn send_heartbeats(&mut self) {

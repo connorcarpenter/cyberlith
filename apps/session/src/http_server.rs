@@ -81,7 +81,7 @@ pub fn recv_connect_asset_server_request(
         global.heard_from_region_server();
 
         // store asset server details
-        todo!("store asset server details");
+        global.set_asset_server(request.http_addr(), request.http_port());
 
         // responding
         // info!("Sending connect asset server response to region server ..");
@@ -107,7 +107,7 @@ pub fn recv_disconnect_asset_server_request(
         global.heard_from_region_server();
 
         // erase asset server details
-        todo!("erase asset server details");
+        global.clear_asset_server();
 
         // responding
         // info!("Sending connect asset server response to region server ..");

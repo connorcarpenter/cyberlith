@@ -83,7 +83,7 @@ pub async fn serve_impl<
                     let key = format!("{} {}", parts[0], parts[1]);
 
                     if match_func(key.clone()).await {
-                        info!("incoming request matched url: {}", key);
+                        // info!("incoming request matched url: {}", key);
                         read_state = ReadState::ReadingHeaders;
                         method = Some(Method::from_str(parts[0]).unwrap());
                         uri = Some(parts[1].to_string());
