@@ -37,10 +37,16 @@ pub fn main() {
         std::thread::sleep(Duration::from_secs(5));
         info!(".");
 
-        let state = state.clone();
+        let state_clone = state.clone();
         Server::spawn(async move {
-            let mut state = state.write().await;
+            let mut state = state_clone.write().await;
             state.send_heartbeats().await;
+        });
+
+        let state_clone = state.clone();
+        Server::spawn(async move {
+            let mut state = state_clone.write().await;
+            state.sync_asset_session_instances().await;
         });
     }
 }

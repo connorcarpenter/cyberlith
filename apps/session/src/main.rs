@@ -48,6 +48,8 @@ fn main() {
                 naia::error_events,
                 http_server::recv_login_request,
                 http_server::recv_heartbeat_request,
+                http_server::recv_connect_asset_server_request,
+                http_server::recv_disconnect_asset_server_request,
                 http_client::recv_world_connect_response,
                 http_client::recv_register_instance_response,
                 http_client::send_connect_region,

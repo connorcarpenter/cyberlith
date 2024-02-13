@@ -1,4 +1,4 @@
-use std::{collections::HashMap, time::{Duration, Instant}};
+use std::{collections::{HashMap, HashSet}, time::{Duration, Instant}};
 
 use log::{info, warn};
 
@@ -17,6 +17,7 @@ pub struct State {
     session_instances: HashMap<(String, u16), SessionInstance>,
     world_instances: HashMap<(String, u16), WorldInstance>,
     asset_instance: Option<AssetInstance>,
+    assetless_session_instances: HashSet<(String, u16)>,
 }
 
 impl State {
@@ -26,12 +27,33 @@ impl State {
             session_instances: HashMap::new(),
             world_instances: HashMap::new(),
             asset_instance: None,
+            assetless_session_instances: HashSet::new(),
         }
     }
 
     pub fn register_session_instance(&mut self, instance: SessionInstance) {
         let key = (instance.http_addr(), instance.http_port());
-        self.session_instances.insert(key, instance);
+        self.session_instances.insert(key.clone(), instance);
+        self.assetless_session_instances.insert(key);
+    }
+
+    pub fn deregister_session_instance(&mut self, http_addr: &str, http_port: u16) {
+        let key = (http_addr.to_string(), http_port);
+        self.session_instances.remove(&key);
+        self.assetless_session_instances.remove(&key);
+    }
+
+    pub fn deregister_asset_instance(&mut self) {
+        self.asset_instance = None;
+
+        for (key, port) in self.session_instances.iter() {
+            if !self.assetless_session_instances.contains(key) {
+                self.assetless_session_instances.insert(key.clone());
+
+                // send disconnect asset server message to session instance
+                todo!();
+            }
+        }
     }
 
     pub fn get_available_session_server(&self) -> Option<&SessionInstance> {
@@ -55,52 +77,7 @@ impl State {
 
         let now = Instant::now();
 
-        // clean up instances that have disconnected
-        {
-
-            let timeout = self.timeout;
-
-            {
-                let mut disconnected_instances = Vec::new();
-                for (addr, instance) in self.session_instances.iter() {
-                    let last_heard = *instance.last_heard().read().await;
-                    let elapsed = now.duration_since(last_heard);
-                    if elapsed.as_secs() > timeout.as_secs() {
-                        disconnected_instances.push(addr.clone());
-                    }
-                }
-                for addr in disconnected_instances {
-                    info!("session instance {:?} disconnected", addr);
-                    self.session_instances.remove(&addr);
-                }
-            }
-
-            {
-                let mut disconnected_instances = Vec::new();
-                for (addr, instance) in self.world_instances.iter() {
-                    let last_heard = *instance.last_heard().read().await;
-                    let elapsed = now.duration_since(last_heard);
-                    if elapsed.as_secs() > timeout.as_secs() {
-                        disconnected_instances.push(addr.clone());
-                    }
-                }
-                for addr in disconnected_instances {
-                    info!("world instance {:?} disconnected", addr);
-                    self.world_instances.remove(&addr);
-                }
-            }
-
-            {
-                if let Some(instance) = &self.asset_instance {
-                    let last_heard = *instance.last_heard().read().await;
-                    let elapsed = now.duration_since(last_heard);
-                    if elapsed.as_secs() > timeout.as_secs() {
-                        info!("asset instance disconnected");
-                        self.asset_instance = None;
-                    }
-                }
-            }
-        }
+        self.disconnect_unheard_instances(now).await;
 
         // send out heartbeats
         for instance in self.session_instances.values() {
@@ -177,6 +154,68 @@ impl State {
                     }
                 }
             });
+        }
+    }
+
+    pub async fn sync_asset_session_instances(&mut self) {
+        if self.asset_instance.is_none() {
+            return;
+        }
+        if self.assetless_session_instances.is_empty() {
+            return;
+        }
+
+        for (session_ip, session_port) in self.assetless_session_instances.iter() {
+            todo!();
+        }
+
+        self.assetless_session_instances.clear();
+    }
+
+    async fn disconnect_unheard_instances(&mut self, now: Instant) {
+        // clean up instances that have disconnected
+
+        let timeout = self.timeout;
+
+        {
+            let mut disconnected_instances = Vec::new();
+            for (addr, instance) in self.session_instances.iter() {
+                let last_heard = *instance.last_heard().read().await;
+                let elapsed = now.duration_since(last_heard);
+                if elapsed.as_secs() > timeout.as_secs() {
+                    disconnected_instances.push(addr.clone());
+                }
+            }
+            for (addr_ip, addr_port) in disconnected_instances {
+                info!("session instance {:?}:{:?} disconnected", addr_ip, addr_port);
+                self.deregister_session_instance(&addr_ip, addr_port);
+            }
+        }
+
+        {
+            let mut disconnected_instances = Vec::new();
+            for (addr, instance) in self.world_instances.iter() {
+                let last_heard = *instance.last_heard().read().await;
+                let elapsed = now.duration_since(last_heard);
+                if elapsed.as_secs() > timeout.as_secs() {
+                    disconnected_instances.push(addr.clone());
+                }
+            }
+            for addr in disconnected_instances {
+                info!("world instance {:?} disconnected", addr);
+                self.world_instances.remove(&addr);
+            }
+        }
+
+        {
+            if let Some(instance) = &self.asset_instance {
+                let last_heard = *instance.last_heard().read().await;
+                let elapsed = now.duration_since(last_heard);
+                if elapsed.as_secs() > timeout.as_secs() {
+                    info!("asset instance disconnected");
+                    self.deregister_asset_instance();
+                }
+            }
         }
     }
 }

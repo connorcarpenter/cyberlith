@@ -6,7 +6,7 @@ use bevy_log::{info, warn};
 use bevy_http_client::ResponseError;
 use bevy_http_server::HttpServer;
 
-use session_server_http_proto::{HeartbeatRequest, HeartbeatResponse, IncomingUserRequest, IncomingUserResponse};
+use session_server_http_proto::{ConnectAssetServerRequest, ConnectAssetServerResponse, DisconnectAssetServerRequest, DisconnectAssetServerResponse, HeartbeatRequest, HeartbeatResponse, IncomingUserRequest, IncomingUserResponse};
 use config::{SELF_BINDING_ADDR, SESSION_SERVER_HTTP_PORT, REGION_SERVER_SECRET};
 
 use crate::global::Global;
@@ -60,5 +60,57 @@ pub fn recv_heartbeat_request(
         // responding
         // info!("Sending heartbeat response to region server ..");
         server.respond(response_key, Ok(HeartbeatResponse));
+    }
+}
+
+pub fn recv_connect_asset_server_request(
+    mut global: ResMut<Global>,
+    mut server: ResMut<HttpServer>,
+) {
+    while let Some((_addr, request, response_key)) = server.receive::<ConnectAssetServerRequest>() {
+
+        if request.region_secret() != REGION_SERVER_SECRET {
+            warn!("invalid request secret");
+            server.respond(response_key, Err(ResponseError::Unauthenticated));
+            continue;
+        }
+
+        info!("Connect Asset Server request received from region server");
+
+        // setting last heard
+        global.heard_from_region_server();
+
+        // store asset server details
+        todo!("store asset server details");
+
+        // responding
+        // info!("Sending connect asset server response to region server ..");
+        server.respond(response_key, Ok(ConnectAssetServerResponse));
+    }
+}
+
+pub fn recv_disconnect_asset_server_request(
+    mut global: ResMut<Global>,
+    mut server: ResMut<HttpServer>,
+) {
+    while let Some((_addr, request, response_key)) = server.receive::<DisconnectAssetServerRequest>() {
+
+        if request.region_secret() != REGION_SERVER_SECRET {
+            warn!("invalid request secret");
+            server.respond(response_key, Err(ResponseError::Unauthenticated));
+            continue;
+        }
+
+        info!("Disconnect Asset Server request received from region server");
+
+        // setting last heard
+        global.heard_from_region_server();
+
+        // erase asset server details
+        todo!("erase asset server details");
+
+        // responding
+        // info!("Sending connect asset server response to region server ..");
+        server.respond(response_key, Ok(DisconnectAssetServerResponse));
     }
 }
