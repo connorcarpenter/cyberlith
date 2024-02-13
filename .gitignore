@@ -15,9 +15,6 @@ node_modules
 /apps/automation/cli/target/repo
 /apps/automation/cli/target/repo/
 /apps/automation/cli/target/repo/*
-/apps/asset/target
-/apps/asset/target/
-/apps/asset/target/*
-/apps/asset/target/repo
-/apps/asset/target/repo/
-/apps/asset/target/repo/*
+/apps/asset/assets
+/apps/asset/assets/
+/apps/asset/assets/*
