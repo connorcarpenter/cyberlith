@@ -7,7 +7,7 @@ edition = "2021"
 publish = false
 
 [features]
-local = [ "config/local" ]
+local = [ "config/local", "automation_lib" ]
 prod = [ "config/prod" ]
 
 [dependencies]
@@ -20,3 +20,6 @@ region_server_http_proto = { path = "../region/http_proto" }
 
 log = { version = "0.4", features = [] }
 simple_logger = { version = "4.0", default-features = false, features = ["timestamps"] }
+cfg-if = { version = "1.0" }
+
+automation_lib = { path = "../automation/lib", optional = true }

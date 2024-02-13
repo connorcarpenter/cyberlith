@@ -1,8 +1,18 @@
+#[macro_use]
+extern crate cfg_if;
+
+
 mod heartbeat;
 mod state;
 mod asset;
 mod registration;
 mod disconnection;
+
+cfg_if! {
+    if #[cfg(feature = "local")] {
+        mod local;
+    } else {}
+}
 
 use std::{net::SocketAddr, time::Duration};
 
@@ -21,6 +31,9 @@ pub fn main() {
         .with_level(LevelFilter::Info)
         .init()
         .expect("A logger was already initialized");
+
+    #[cfg(feature = "local")]
+    local::setup();
 
     // setup state
     let registration_resend_rate = Duration::from_secs(5);
