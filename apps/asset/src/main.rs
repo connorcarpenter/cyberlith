@@ -8,6 +8,7 @@ mod asset;
 mod registration;
 mod disconnection;
 mod asset_map;
+mod asset_cache;
 
 cfg_if! {
     if #[cfg(feature = "local")] {
@@ -41,7 +42,8 @@ pub fn main() {
     let registration_resend_rate = Duration::from_secs(5);
     let region_server_disconnect_timeout = Duration::from_secs(16);
     let asset_map = init_asset_map("assets");
-    let state = Arc::new(RwLock::new(State::new(registration_resend_rate, region_server_disconnect_timeout, asset_map)));
+    let cache_size_kb = 5000; // 5 MB
+    let state = Arc::new(RwLock::new(State::new(registration_resend_rate, region_server_disconnect_timeout, cache_size_kb, asset_map)));
 
     // setup listening http server
     info!("Asset Server starting up...");
@@ -50,7 +52,7 @@ pub fn main() {
     let mut server = Server::new(socket_addr);
 
     heartbeat::endpoint(&mut server, state.clone());
-    asset::endpoint(&mut server);
+    asset::endpoint(&mut server, state.clone());
 
     server.start();
 

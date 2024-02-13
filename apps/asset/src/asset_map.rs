@@ -16,6 +16,14 @@ impl AssetMetadata {
             etag,
         }
     }
+
+    pub fn path(&self) -> &str {
+        &self.path
+    }
+
+    pub fn etag(&self) -> ETag {
+        self.etag
+    }
 }
 
 pub struct AssetMap {
@@ -31,12 +39,12 @@ impl AssetMap {
     }
 
     pub fn insert(&mut self, asset_id: AssetId, etag: ETag, path: String) {
-        info!("Inserting asset into map: asset_id: {:?}, etag: {:?}, path: {:?}", asset_id, etag, path);
+        // info!("Inserting asset into map: asset_id: {:?}, etag: {:?}, path: {:?}", asset_id, etag, path);
         self.map.insert(asset_id, AssetMetadata::new(path, etag));
     }
 
-    pub fn get(&self, asset_id: AssetId) -> Option<&AssetMetadata> {
-        self.map.get(&asset_id)
+    pub fn get(&self, asset_id: &AssetId) -> Option<&AssetMetadata> {
+        self.map.get(asset_id)
     }
 }
 
