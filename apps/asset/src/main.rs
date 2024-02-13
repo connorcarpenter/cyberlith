@@ -7,6 +7,7 @@ mod state;
 mod asset;
 mod registration;
 mod disconnection;
+mod asset_map;
 
 cfg_if! {
     if #[cfg(feature = "local")] {
@@ -23,6 +24,7 @@ use http_server::{Server, async_dup::Arc, smol::lock::RwLock};
 
 use config::{ASSET_SERVER_PORT, SELF_BINDING_ADDR};
 
+use crate::asset_map::init_asset_map;
 use crate::state::State;
 
 pub fn main() {
@@ -38,7 +40,8 @@ pub fn main() {
     // setup state
     let registration_resend_rate = Duration::from_secs(5);
     let region_server_disconnect_timeout = Duration::from_secs(16);
-    let state = Arc::new(RwLock::new(State::new(registration_resend_rate, region_server_disconnect_timeout)));
+    let asset_map = init_asset_map("assets");
+    let state = Arc::new(RwLock::new(State::new(registration_resend_rate, region_server_disconnect_timeout, asset_map)));
 
     // setup listening http server
     info!("Asset Server starting up...");

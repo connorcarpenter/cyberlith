@@ -50,6 +50,14 @@ impl ProcessedAssetMeta {
         &self.hash
     }
 
+    pub fn etag(&self) -> ETag {
+        ETag::from_str(&self.etag).unwrap()
+    }
+
+    pub fn dependencies(&self) -> Vec<AssetId> {
+        self.dependencies.iter().map(|s| AssetId::from_str(s).unwrap()).collect()
+    }
+
     pub fn write(&self) -> Vec<u8> {
         serde_json::to_vec_pretty(self).unwrap()
     }

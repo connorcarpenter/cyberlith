@@ -1,4 +1,5 @@
-use std::process::Command;
+use std::{io, io::Write, process::Command};
+
 use log::info;
 
 pub(crate) fn setup() {
@@ -12,7 +13,18 @@ pub(crate) fn setup() {
     let destination_dir = "./assets";
 
     // Create and replace the destination directory
-    Command::new("rm").arg("-r").arg(destination_dir).status().expect("Failed to delete destination directory");
+    info!("Deleting destination directory: {}", destination_dir);
+    let mut delete_command = Command::new("sudo").arg("-S").arg("rm").arg("-rf").arg(destination_dir).spawn().unwrap();
+
+    // Wait for the process to finish and capture the exit status
+    let status = delete_command.wait().unwrap();
+    if status.success() {
+        info!("Destination directory deleted successfully.");
+    } else {
+        panic!("Error: Delete command failed with status: {:?}", status);
+    }
+
+    // Create new destination directory
     Command::new("mkdir").arg("-p").arg(destination_dir).status().expect("Failed to create destination directory");
 
     // Execute shell command to copy files from source to destination
@@ -25,7 +37,7 @@ pub(crate) fn setup() {
 
     // Execute shell command to delete files from source
     Command::new("rm")
-        .arg("-r")
+        .arg("-rf")
         .arg("./target")
         .status()
         .expect("Failed to execute delete command");

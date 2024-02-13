@@ -1,6 +1,8 @@
 
 use std::time::{Duration, Instant};
 
+use crate::asset_map::AssetMap;
+
 pub enum ConnectionState {
     Disconnected,
     Connected,
@@ -12,12 +14,14 @@ pub struct State {
     region_server_last_heard: Instant,
     registration_resend_rate: Duration,
     region_server_disconnect_timeout: Duration,
+    asset_map: AssetMap,
 }
 
 impl State {
     pub fn new(
         registration_resend_rate: Duration,
         region_server_disconnect_timeout: Duration,
+        asset_map: AssetMap,
     ) -> Self {
         Self {
             region_server_connection_state: ConnectionState::Disconnected,
@@ -25,6 +29,7 @@ impl State {
             region_server_last_heard: Instant::now(),
             registration_resend_rate,
             region_server_disconnect_timeout,
+            asset_map,
         }
     }
 
