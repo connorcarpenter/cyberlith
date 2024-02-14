@@ -4,7 +4,7 @@ mod auth;
 pub use auth::Auth;
 
 // Plugin
-pub struct MessagesPlugin;
+pub(crate) struct MessagesPlugin;
 
 impl ProtocolPlugin for MessagesPlugin {
     fn build(&self, protocol: &mut Protocol) {

@@ -1,7 +1,8 @@
-use std::collections::HashSet;
-use std::time::{Instant, Duration};
+use std::{time::{Instant, Duration}, collections::HashSet};
 
 use bevy_ecs::system::Resource;
+
+use naia_bevy_server::RoomKey;
 
 use bevy_http_client::{ResponseKey as ClientResponseKey};
 
@@ -21,13 +22,15 @@ pub struct Global {
     registration_resend_rate: Duration,
     region_server_disconnect_timeout: Duration,
     login_tokens: HashSet<String>,
+    main_room_key: RoomKey,
 }
 
 impl Global {
 
     pub fn new(
+        main_room_key: RoomKey,
         registration_resend_rate: Duration,
-        region_server_disconnect_timeout: Duration
+        region_server_disconnect_timeout: Duration,
     ) -> Self {
         Self {
             region_server_connection_state: ConnectionState::Disconnected,
@@ -37,6 +40,7 @@ impl Global {
             registration_resend_rate,
             region_server_disconnect_timeout,
             login_tokens: HashSet::new(),
+            main_room_key
         }
     }
 
@@ -98,5 +102,11 @@ impl Global {
 
     pub fn take_login_token(&mut self, token: &str) -> bool {
         self.login_tokens.remove(token)
+    }
+
+    //
+
+    pub fn main_room_key(&self) -> RoomKey {
+        self.main_room_key
     }
 }

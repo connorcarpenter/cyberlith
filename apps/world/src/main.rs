@@ -2,6 +2,7 @@ mod naia;
 mod http_server;
 mod http_client;
 mod global;
+mod asset_manager;
 
 use std::time::Duration;
 
@@ -10,19 +11,16 @@ use bevy_ecs::schedule::IntoSystemConfigs;
 use bevy_log::LogPlugin;
 
 use naia_bevy_server::{Plugin as NaiaServerPlugin, ReceiveEvents, ServerConfig as NaiaServerConfig};
-use bevy_http_client::HttpClientPlugin;
 
+use bevy_http_client::HttpClientPlugin;
 use bevy_http_server::HttpServerPlugin;
 
 use world_server_naia_proto::{protocol as naia_protocol};
 use world_server_http_proto::{protocol as http_protocol};
 
-use global::Global;
+use crate::asset_manager::AssetManager;
 
 fn main() {
-
-    let registration_resend_rate = Duration::from_secs(5);
-    let region_server_disconnect_timeout = Duration::from_secs(16);
 
     // Build App
     App::default()
@@ -33,7 +31,7 @@ fn main() {
         .add_plugins(HttpServerPlugin::new(http_protocol()))
         .add_plugins(HttpClientPlugin)
         // Resource
-        .insert_resource(Global::new(registration_resend_rate, region_server_disconnect_timeout))
+        .insert_resource(AssetManager::new())
         // Startup System
         .add_systems(Startup, naia::init)
         .add_systems(Startup, http_server::init)

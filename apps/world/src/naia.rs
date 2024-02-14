@@ -1,22 +1,20 @@
-use std::net::SocketAddr;
-use bevy_ecs::change_detection::ResMut;
-use bevy_ecs::event::EventReader;
+use std::{time::Duration, net::SocketAddr};
+
+use bevy_ecs::{system::{Commands, Res}, event::EventReader, change_detection::ResMut};
 use bevy_log::{info, warn};
 
-use naia_bevy_server::{
-    events::{AuthEvents, ConnectEvent, DisconnectEvent, ErrorEvent},
-    transport::webrtc,
-    Server,
-};
+use naia_bevy_server::{events::{AuthEvents, ConnectEvent, DisconnectEvent, ErrorEvent}, transport::webrtc, Server, CommandsExt};
 
-use world_server_naia_proto::messages::Auth;
 use config::{WORLD_SERVER_SIGNAL_PORT, WORLD_SERVER_WEBRTC_PORT, PUBLIC_IP_ADDR, SELF_BINDING_ADDR};
 
-use crate::global::Global;
+use world_server_naia_proto::{messages::Auth, components::Body};
 
-pub fn init(mut server: Server) {
+use crate::{global::Global, asset_manager::{AssetCatalog, AssetCommandsExt, AssetManager}};
+
+pub fn init(mut commands: Commands, mut server: Server) {
     info!("World Naia Server starting up");
 
+    // set up server
     let server_addresses = webrtc::ServerAddrs::new(
         // IP Address to listen on for WebRTC signaling
         SocketAddr::new(SELF_BINDING_ADDR.parse().unwrap(), WORLD_SERVER_SIGNAL_PORT),
@@ -27,6 +25,12 @@ pub fn init(mut server: Server) {
     );
     let socket = webrtc::Socket::new(&server_addresses, server.socket_config());
     server.listen(socket);
+
+    // set up global
+    let main_room_key = server.make_room().key();
+    let registration_resend_rate = Duration::from_secs(5);
+    let region_server_disconnect_timeout = Duration::from_secs(16);
+    commands.insert_resource(Global::new(main_room_key, registration_resend_rate, region_server_disconnect_timeout));
 }
 
 pub fn auth_events(
@@ -52,11 +56,29 @@ pub fn auth_events(
     }
 }
 
-pub fn connect_events(server: Server, mut event_reader: EventReader<ConnectEvent>) {
+pub fn connect_events(
+    mut commands: Commands,
+    mut server: Server,
+    global: Res<Global>,
+    mut asset_manager: ResMut<AssetManager>,
+    mut event_reader: EventReader<ConnectEvent>
+) {
     for ConnectEvent(user_key) in event_reader.read() {
         let address = server.user(user_key).address();
 
         info!("Server connected to: {}", address);
+
+        let entity = commands
+            // Spawn new Entity
+            .spawn_empty()
+            // MUST call this to begin replication
+            .enable_replication(&mut server)
+            // insert asset ref
+            .insert_asset::<Body>(&mut asset_manager, &mut server, AssetCatalog::Cube.into())
+            // return Entity id
+            .id();
+
+        server.room_mut(&global.main_room_key()).add_entity(&entity);
     }
 }
 
