@@ -1,13 +1,14 @@
 use std::collections::HashMap;
 
 use bevy_log::info;
+use asset_io::AssetId;
 
 use math::Quat;
 use render_api::components::Transform;
 use storage::{AssetHash, Handle};
 
 use crate::{
-    asset_dependency::{AssetDependency, SkinOrSceneHandle},
+    asset_dependency::{AssetDependency, AssetComponentHandle},
     asset_handle::AssetHandleImpl,
     AssetHandle, ModelData, SkeletonData,
 };
@@ -49,17 +50,17 @@ impl AnimationData {
     pub(crate) fn load_dependencies(
         &self,
         handle: Handle<Self>,
-        dependencies: &mut Vec<(AssetHandle, String)>,
+        dependencies: &mut Vec<(AssetHandle, AssetId)>,
     ) {
-        let AssetDependency::<SkeletonData>::Path(path) = &self.skeleton_file else {
+        let AssetDependency::<SkeletonData>::AssetId(asset_id) = &self.skeleton_file else {
             panic!("expected path right after load");
         };
-        dependencies.push((handle.into(), path.clone()));
+        dependencies.push((handle.into(), asset_id.clone()));
     }
 
     pub(crate) fn finish_dependency(
         &mut self,
-        _dependency_path: String,
+        _dependency_id: AssetId,
         dependency_handle: AssetHandle,
     ) {
         match dependency_handle.to_impl() {
@@ -89,7 +90,7 @@ impl AnimationData {
         skeleton_data: &SkeletonData,
         model_data: &ModelData,
         frame_elapsed_ms: f32,
-    ) -> Option<Vec<(SkinOrSceneHandle, Transform)>> {
+    ) -> Option<Vec<(AssetComponentHandle, Transform)>> {
         let model_components = model_data.get_components_copied();
 
         let (frame_index, next_frame_index, interpolation) = self.get_frame_stats(frame_elapsed_ms);
@@ -235,7 +236,7 @@ impl From<String> for AnimationData {
         }
 
         Self {
-            skeleton_file: AssetDependency::Path(skel_file_opt.unwrap()),
+            skeleton_file: AssetDependency::AssetId(skel_file_opt.unwrap()),
             frames,
             total_duration: total_animation_time_ms,
         }

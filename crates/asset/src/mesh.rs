@@ -1,13 +1,15 @@
 use bevy_log::info;
+use asset_io::AssetId;
 
 use math::Vec3;
 use render_api::base::CpuMesh;
 use storage::{AssetHash, Storage, Handle};
 
 use crate::asset_dependency::AssetDependency;
+use crate::data_from_asset_id;
 
 #[derive(Hash)]
-struct MeshFilePath(String);
+struct MeshAssetId(AssetId);
 
 pub struct MeshFile {
     path: AssetDependency<CpuMesh>,
@@ -36,38 +38,37 @@ impl MeshFile {
     }
 
     pub(crate) fn load_cpu_mesh(&mut self, meshes: &mut Storage<CpuMesh>) {
-        let AssetDependency::<CpuMesh>::Path(path) = &self.path else {
+        let AssetDependency::<CpuMesh>::AssetId(asset_id) = &self.path else {
             panic!("expected handle right after load");
         };
-        let cpu_mesh_handle = meshes.add(MeshFilePath(path.clone()));
+        let cpu_mesh_handle = meshes.add(MeshAssetId(asset_id.clone()));
         self.path.load_handle(cpu_mesh_handle);
     }
 }
 
-impl AssetHash<CpuMesh> for MeshFilePath {}
-impl AssetHash<MeshFile> for String {}
+impl AssetHash<CpuMesh> for MeshAssetId {}
+impl AssetHash<MeshFile> for AssetId {}
 
-impl From<String> for MeshFile {
-    fn from(path: String) -> Self {
+impl From<AssetId> for MeshFile {
+    fn from(asset_id: AssetId) -> Self {
         Self {
-            path: AssetDependency::Path(path),
+            path: AssetDependency::AssetId(asset_id),
         }
     }
 }
 
-impl From<MeshFilePath> for CpuMesh {
-    fn from(file_path: MeshFilePath) -> Self {
-        let path = file_path.0;
-        let file_path = format!("assets/{}", path);
+impl From<MeshAssetId> for CpuMesh {
+    fn from(asset_id: MeshAssetId) -> Self {
+        let asset_id = asset_id.0;
 
-        let Ok(data) = web_fs::read(&file_path) else {
-            panic!("unable to read file: {:?}", &file_path);
+        let Ok(data) = data_from_asset_id(&asset_id) else {
+            panic!("unable to read asset_id: {:?}", asset_id);
         };
         //let data = include_bytes!("cube.mesh");
 
         let actions = asset_io::bits::MeshAction::read(&data).expect("unable to parse file");
 
-        info!("--- reading mesh file: {} ---", &path);
+        info!("--- reading mesh file: {:?} ---", asset_id);
 
         let mut vertices = Vec::new();
         let mut positions = Vec::new();

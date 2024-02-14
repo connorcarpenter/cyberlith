@@ -35,6 +35,7 @@ fn main() {
         // Startup System
         .add_systems(Startup, naia::init)
         .add_systems(Startup, http_server::init)
+        .add_systems(Startup, naia::tick_events_startup)
         // Receive Server Events
         .add_systems(
             Update,
@@ -43,6 +44,7 @@ fn main() {
                 naia::connect_events,
                 naia::disconnect_events,
                 naia::error_events,
+                naia::tick_events,
                 http_server::recv_login_request,
                 http_server::recv_heartbeat_request,
                 http_client::recv_register_instance_response,

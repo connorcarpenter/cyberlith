@@ -8,7 +8,7 @@ use render_api::{
 };
 use storage::Handle;
 
-use crate::{asset_store::AssetStore, asset_dependency::SkinOrSceneHandle, AnimationData, IconData, MeshFile, ModelData, SceneData, SkinData};
+use crate::{asset_store::AssetStore, asset_dependency::AssetComponentHandle, AnimationData, IconData, MeshFile, ModelData, SceneData, SkinData};
 
 pub(crate) struct AssetRenderer;
 
@@ -110,7 +110,7 @@ impl AssetRenderer {
             component_transform = component_transform.multiply(parent_transform);
 
             match skin_or_scene_handle {
-                SkinOrSceneHandle::Skin(skin_handle) => {
+                AssetComponentHandle::Skin(skin_handle) => {
                     Self::draw_skin(
                         asset_store,
                         render_frame,
@@ -119,7 +119,7 @@ impl AssetRenderer {
                         render_layer_opt,
                     );
                 }
-                SkinOrSceneHandle::Scene(scene_handle) => {
+                AssetComponentHandle::Scene(scene_handle) => {
                     Self::draw_scene(
                         asset_store,
                         render_frame,
@@ -151,7 +151,7 @@ impl AssetRenderer {
             component_transform = component_transform.multiply(parent_transform);
 
             match skin_or_scene_handle {
-                SkinOrSceneHandle::Skin(skin_handle) => {
+                AssetComponentHandle::Skin(skin_handle) => {
                     Self::draw_skin(
                         asset_store,
                         render_frame,
@@ -160,7 +160,7 @@ impl AssetRenderer {
                         render_layer_opt,
                     );
                 }
-                SkinOrSceneHandle::Scene(scene_handle) => {
+                AssetComponentHandle::Scene(scene_handle) => {
                     Self::draw_scene(
                         asset_store,
                         render_frame,
@@ -213,7 +213,7 @@ impl AssetRenderer {
             component_transform = component_transform.multiply(parent_transform);
 
             match skin_or_scene_handle {
-                SkinOrSceneHandle::Skin(skin_handle) => {
+                AssetComponentHandle::Skin(skin_handle) => {
                     Self::draw_skin(
                         asset_store,
                         render_frame,
@@ -222,7 +222,7 @@ impl AssetRenderer {
                         render_layer_opt,
                     );
                 }
-                SkinOrSceneHandle::Scene(scene_handle) => {
+                AssetComponentHandle::Scene(scene_handle) => {
                     Self::draw_scene(
                         asset_store,
                         render_frame,

@@ -1,6 +1,7 @@
 use std::{collections::HashMap, fs};
 
 use bevy_log::info;
+use asset_io::AssetId;
 
 use math::Vec3;
 use render_api::{
@@ -70,17 +71,17 @@ impl IconData {
     pub(crate) fn load_dependencies(
         &self,
         handle: Handle<Self>,
-        dependencies: &mut Vec<(AssetHandle, String)>,
+        dependencies: &mut Vec<(AssetHandle, AssetId)>,
     ) {
-        let AssetDependency::<PaletteData>::Path(path) = &self.palette_file else {
+        let AssetDependency::<PaletteData>::AssetId(asset_id) = &self.palette_file else {
             panic!("expected path right after load");
         };
-        dependencies.push((handle.into(), path.clone()));
+        dependencies.push((handle.into(), asset_id.clone()));
     }
 
     pub(crate) fn finish_dependency(
         &mut self,
-        _dependency_path: String,
+        _dependency_id: AssetId,
         dependency_handle: AssetHandle,
     ) {
         match dependency_handle.to_impl() {
@@ -230,8 +231,8 @@ impl From<String> for IconData {
         let mut frames = Vec::new();
         for action in actions {
             match action {
-                asset_io::bits::IconAction::PaletteFile(path, file_name) => {
-                    palette_file_opt = Some(format!("{}/{}", path, file_name));
+                asset_io::bits::IconAction::PaletteFile(asset_id) => {
+                    palette_file_opt = Some(asset_id);
                 }
                 asset_io::bits::IconAction::Frame(frame_actions) => {
                     info!("- Frame Start: {} -", frames.len());
@@ -254,9 +255,6 @@ impl From<String> for IconData {
                                 vertex_a_id,
                                 vertex_b_id,
                                 vertex_c_id,
-                                _,
-                                _,
-                                _,
                             ) => {
                                 let vertex_a = vertices[vertex_a_id as usize];
                                 let vertex_b = vertices[vertex_b_id as usize];
@@ -273,9 +271,6 @@ impl From<String> for IconData {
                                 face_indices.push(face_id);
 
                                 face_color_ids.push((face_id, color_index));
-                            }
-                            asset_io::bits::IconFrameAction::Edge(_, _) => {
-                                // do nothing
                             }
                         }
                     }
@@ -294,7 +289,7 @@ impl From<String> for IconData {
         // todo: lots here
 
         Self {
-            palette_file: AssetDependency::Path(palette_file_opt.unwrap()),
+            palette_file: AssetDependency::AssetId(palette_file_opt.unwrap()),
             frames,
         }
     }

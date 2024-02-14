@@ -15,6 +15,7 @@ mod asset_store;
 
 pub use animation::*;
 pub use asset_handle::*;
+
 pub use asset_manager::*;
 pub use icon::*;
 pub use mesh::*;
@@ -24,3 +25,8 @@ pub use plugin::*;
 pub use scene::*;
 pub use skeleton::*;
 pub use skin::*;
+
+use asset_io::AssetId;
+pub(crate) fn data_from_asset_id(asset_id: &AssetId) -> Result<Vec<u8>, std::io::Error> {
+    todo!()
+}

@@ -1,6 +1,6 @@
 
 mod common;
-pub use common::{FileTransformEntityType, SerdeQuat, SerdeRotation};
+pub use common::{ComponentFileType, SerdeQuat, SerdeRotation};
 
 mod animation;
 pub use animation::{AnimAction, Transition};

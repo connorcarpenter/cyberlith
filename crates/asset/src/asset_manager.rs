@@ -1,5 +1,6 @@
 
 use bevy_ecs::system::{ResMut, Resource};
+use asset_io::AssetId;
 
 use render_api::{
     base::CpuSkin,
@@ -28,8 +29,8 @@ impl Default for AssetManager {
 }
 
 impl AssetManager {
-    pub fn load<T: From<AssetHandle>>(&mut self, path: &str) -> T {
-        self.store.load::<T>(path)
+    pub fn load<T: From<AssetHandle>>(&mut self, asset_id: &AssetId) -> T {
+        self.store.load::<T>(asset_id)
     }
 
     pub fn sync(

@@ -17,15 +17,15 @@ cfg_if! {
 use naia_serde::SerdeInternal as Serde;
 use crate::AssetId;
 
-use crate::bits::common::{FileTransformEntityType, SerdeQuat};
+use crate::bits::common::{ComponentFileType, SerdeQuat};
 
 // Actions
 #[derive(Clone)]
 pub enum ModelAction {
-    // path, file_name
+    // asset id
     SkelFile(AssetId),
-    // path, file_name, file_type
-    Component(AssetId, FileTransformEntityType),
+    // asset id, file_type
+    Component(AssetId, ComponentFileType),
     // file index, name, x, y, z, scale_x, scale_y, scale_z, rotation
     NetTransform(u16, String, i16, i16, i16, f32, f32, f32, SerdeQuat),
 }
@@ -33,7 +33,7 @@ pub enum ModelAction {
 #[derive(Serde, Clone, PartialEq)]
 pub enum ModelActionType {
     SkelFile,
-    SkinFile,
+    ComponentFile,
     NetTransform,
     None,
 }

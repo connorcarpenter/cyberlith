@@ -17,19 +17,19 @@ cfg_if! {
 use naia_serde::SerdeInternal as Serde;
 
 use crate::AssetId;
-use crate::bits::common::{FileTransformEntityType, SerdeQuat};
+use crate::bits::common::{ComponentFileType, SerdeQuat};
 
 #[derive(Clone)]
 pub enum SceneAction {
     // path, file_name, file_type
-    Component(AssetId, FileTransformEntityType),
+    Component(AssetId, ComponentFileType),
     // file index, x, y, z, scale_x, scale_y, scale_z, rotation
     NetTransform(u16, i16, i16, i16, f32, f32, f32, SerdeQuat),
 }
 
 #[derive(Serde, Clone, PartialEq)]
 pub enum SceneActionType {
-    SkinOrSceneFile,
+    ComponentFile,
     NetTransform,
     None,
 }

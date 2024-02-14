@@ -1,6 +1,7 @@
 use std::{collections::HashMap, fs};
 
 use bevy_log::info;
+use asset_io::AssetId;
 
 use render_api::base::{CpuMaterial, CpuMesh, CpuSkin};
 use storage::{AssetHash, Storage, Handle};
@@ -51,22 +52,22 @@ impl SkinData {
     pub(crate) fn load_dependencies(
         &self,
         handle: Handle<Self>,
-        dependencies: &mut Vec<(AssetHandle, String)>,
+        dependencies: &mut Vec<(AssetHandle, AssetId)>,
     ) {
-        let AssetDependency::<MeshFile>::Path(path) = &self.mesh_file else {
+        let AssetDependency::<MeshFile>::AssetId(asset_id) = &self.mesh_file else {
             panic!("expected path right after load");
         };
-        dependencies.push((handle.into(), path.clone()));
+        dependencies.push((handle.into(), asset_id.clone()));
 
-        let AssetDependency::<PaletteData>::Path(path) = &self.palette_file else {
+        let AssetDependency::<PaletteData>::AssetId(asset_id) = &self.palette_file else {
             panic!("expected path right after load");
         };
-        dependencies.push((handle.into(), path.clone()));
+        dependencies.push((handle.into(), asset_id.clone()));
     }
 
     pub(crate) fn finish_dependency(
         &mut self,
-        _dependency_path: String,
+        _dependency_id: AssetId,
         dependency_handle: AssetHandle,
     ) {
         match dependency_handle.to_impl() {
@@ -162,11 +163,11 @@ impl From<String> for SkinData {
         let mut mesh_file_opt = None;
         for action in actions {
             match action {
-                asset_io::bits::SkinAction::PaletteFile(path, file_name) => {
-                    palette_file_opt = Some(format!("{}/{}", path, file_name));
+                asset_io::bits::SkinAction::PaletteFile(asset_id) => {
+                    palette_file_opt = Some(asset_id);
                 }
-                asset_io::bits::SkinAction::MeshFile(path, file_name) => {
-                    mesh_file_opt = Some(format!("{}/{}", path, file_name));
+                asset_io::bits::SkinAction::MeshFile(asset_id) => {
+                    mesh_file_opt = Some(asset_id);
                 }
                 asset_io::bits::SkinAction::BackgroundColor(color_index) => {
                     bck_color_index = Some(color_index);
@@ -186,8 +187,8 @@ impl From<String> for SkinData {
         info!("--- done reading skin ---");
 
         Self {
-            mesh_file: AssetDependency::Path(mesh_file_opt.unwrap()),
-            palette_file: AssetDependency::Path(palette_file_opt.unwrap()),
+            mesh_file: AssetDependency::AssetId(mesh_file_opt.unwrap()),
+            palette_file: AssetDependency::AssetId(palette_file_opt.unwrap()),
             cpu_skin_handle: None,
             bckg_color_id: bck_color_index.unwrap(),
             face_color_ids,

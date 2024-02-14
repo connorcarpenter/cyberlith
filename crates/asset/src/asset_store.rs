@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use bevy_log::warn;
+use asset_io::AssetId;
 
 use render_api::base::{CpuMaterial, CpuSkin, CpuMesh};
 use storage::{Storage, Handle};
@@ -56,110 +57,104 @@ impl Default for AssetStore {
 }
 
 impl AssetStore {
-    pub(crate) fn load<T: From<AssetHandle>>(&mut self, path: &str) -> T {
-        todo!(); // this needs to be migrated to asset ids
-        let split: Vec<_> = path.split('.').collect();
-        let mut file_ext: &str = split.last().unwrap();
-
-        if file_ext == "json" {
-            file_ext = split.get(split.len() - 2).unwrap();
-        }
-
-        let path_string = path.to_string();
-
-        let mut dependencies = Vec::new();
-
-        let asset_handle = match file_ext {
-            "mesh" => {
-                let existed = self.meshes.has(path_string.clone());
-                let handle = self.meshes.add(path_string);
-                if !existed {
-                    self.queued_meshes.push(handle.clone());
-                }
-                let asset_handle: AssetHandle = handle.into();
-                asset_handle.into()
-            }
-            "skeleton" => {
-                let asset_handle: AssetHandle = self.skeletons.add(path_string).into();
-                asset_handle.into()
-            }
-            "palette" => {
-                let existed = self.palettes.has(path_string.clone());
-                let handle = self.palettes.add(path_string);
-                if !existed {
-                    self.queued_palettes.push(handle.clone());
-                }
-                let asset_handle: AssetHandle = handle.into();
-                asset_handle.into()
-            }
-            "animation" => {
-                let existed = self.animations.has(path_string.clone());
-                let handle = self.animations.add(path_string);
-                if !existed {
-                    let data = self.animations.get(&handle).unwrap();
-                    data.load_dependencies(handle, &mut dependencies);
-                }
-                let asset_handle: AssetHandle = handle.into();
-                asset_handle.into()
-            }
-            "icon" => {
-                let existed = self.icons.has(path_string.clone());
-                let handle = self.icons.add(path_string);
-                if !existed {
-                    self.queued_icons.push(handle.clone());
-                    let data = self.icons.get(&handle).unwrap();
-                    data.load_dependencies(handle, &mut dependencies);
-                }
-                let asset_handle: AssetHandle = handle.into();
-                asset_handle.into()
-            }
-            "skin" => {
-                let existed = self.skins.has(path_string.clone());
-                let handle = self.skins.add(path_string);
-                if !existed {
-                    let data = self.skins.get(&handle).unwrap();
-                    data.load_dependencies(handle, &mut dependencies);
-                }
-                let asset_handle: AssetHandle = handle.into();
-                asset_handle.into()
-            }
-            "model" => {
-                let existed = self.models.has(path_string.clone());
-                let handle = self.models.add(path_string);
-                if !existed {
-                    let data = self.models.get(&handle).unwrap();
-                    data.load_dependencies(handle, &mut dependencies);
-                }
-                let asset_handle: AssetHandle = handle.into();
-                asset_handle.into()
-            }
-            "scene" => {
-                let existed = self.scenes.has(path_string.clone());
-                let handle = self.scenes.add(path_string);
-                if !existed {
-                    let data = self.scenes.get(&handle).unwrap();
-                    data.load_dependencies(handle, &mut dependencies);
-                }
-                let asset_handle: AssetHandle = handle.into();
-                asset_handle.into()
-            }
-            _ => panic!("Unknown file extension: {}", file_ext),
-        };
-
-        if !dependencies.is_empty() {
-            for (principal_handle, dependency_string) in dependencies {
-                let dependency_handle = self.load(&dependency_string);
-                self.finish_dependency(principal_handle, dependency_string, dependency_handle);
-            }
-        }
-
-        asset_handle
+    pub(crate) fn load<T: From<AssetHandle>>(&mut self, asset_id: &AssetId) -> T {
+        todo!();
+        //
+        // let file_ext: String = todo!(); // need to get extension from asset id
+        //
+        // let mut dependencies = Vec::new();
+        //
+        // let asset_handle = match file_ext.as_str() {
+        //     "mesh" => {
+        //         let existed = self.meshes.has(*asset_id);
+        //         let handle = self.meshes.add(*asset_id);
+        //         if !existed {
+        //             self.queued_meshes.push(handle.clone());
+        //         }
+        //         let asset_handle: AssetHandle = handle.into();
+        //         asset_handle.into()
+        //     }
+        //     "skeleton" => {
+        //         let asset_handle: AssetHandle = self.skeletons.add(*asset_id).into();
+        //         asset_handle.into()
+        //     }
+        //     "palette" => {
+        //         let existed = self.palettes.has(*asset_id);
+        //         let handle = self.palettes.add(*asset_id);
+        //         if !existed {
+        //             self.queued_palettes.push(handle.clone());
+        //         }
+        //         let asset_handle: AssetHandle = handle.into();
+        //         asset_handle.into()
+        //     }
+        //     "animation" => {
+        //         let existed = self.animations.has(*asset_id);
+        //         let handle = self.animations.add(*asset_id);
+        //         if !existed {
+        //             let data = self.animations.get(&handle).unwrap();
+        //             data.load_dependencies(handle, &mut dependencies);
+        //         }
+        //         let asset_handle: AssetHandle = handle.into();
+        //         asset_handle.into()
+        //     }
+        //     "icon" => {
+        //         let existed = self.icons.has(*asset_id);
+        //         let handle = self.icons.add(*asset_id);
+        //         if !existed {
+        //             self.queued_icons.push(handle.clone());
+        //             let data = self.icons.get(&handle).unwrap();
+        //             data.load_dependencies(handle, &mut dependencies);
+        //         }
+        //         let asset_handle: AssetHandle = handle.into();
+        //         asset_handle.into()
+        //     }
+        //     "skin" => {
+        //         let existed = self.skins.has(*asset_id);
+        //         let handle = self.skins.add(*asset_id);
+        //         if !existed {
+        //             let data = self.skins.get(&handle).unwrap();
+        //             data.load_dependencies(handle, &mut dependencies);
+        //         }
+        //         let asset_handle: AssetHandle = handle.into();
+        //         asset_handle.into()
+        //     }
+        //     "model" => {
+        //         let existed = self.models.has(*asset_id);
+        //         let handle = self.models.add(*asset_id);
+        //         if !existed {
+        //             let data = self.models.get(&handle).unwrap();
+        //             data.load_dependencies(handle, &mut dependencies);
+        //         }
+        //         let asset_handle: AssetHandle = handle.into();
+        //         asset_handle.into()
+        //     }
+        //     "scene" => {
+        //         let existed = self.scenes.has(*asset_id);
+        //         let handle = self.scenes.add(*asset_id);
+        //         if !existed {
+        //             let data = self.scenes.get(&handle).unwrap();
+        //             data.load_dependencies(handle, &mut dependencies);
+        //         }
+        //         let asset_handle: AssetHandle = handle.into();
+        //         asset_handle.into()
+        //     }
+        //     _ => panic!("Unknown file extension: {}", file_ext),
+        // };
+        //
+        // if !dependencies.is_empty() {
+        //     for (principal_handle, dependency_id) in dependencies {
+        //         let dependency_handle = self.load(&dependency_id);
+        //         self.finish_dependency(principal_handle, dependency_id, dependency_handle);
+        //     }
+        // }
+        //
+        // asset_handle
     }
 
     fn finish_dependency(
         &mut self,
         principal_handle: AssetHandle,
-        dependency_string: String,
+        dependency_id: AssetId,
         dependency_handle: AssetHandle,
     ) {
         match principal_handle.to_impl() {
@@ -170,11 +165,11 @@ impl AssetStore {
             }
             AssetHandleImpl::Animation(principal_handle) => {
                 let data = self.animations.get_mut(&principal_handle).unwrap();
-                data.finish_dependency(dependency_string, dependency_handle);
+                data.finish_dependency(dependency_id, dependency_handle);
             }
             AssetHandleImpl::Icon(principal_handle) => {
                 let data = self.icons.get_mut(&principal_handle).unwrap();
-                data.finish_dependency(dependency_string, dependency_handle);
+                data.finish_dependency(dependency_id, dependency_handle);
                 if data.has_all_dependencies() {
                     let palette_handle = data.get_palette_file_handle().unwrap().clone();
 
@@ -197,7 +192,7 @@ impl AssetStore {
             }
             AssetHandleImpl::Skin(principal_handle) => {
                 let data = self.skins.get_mut(&principal_handle).unwrap();
-                data.finish_dependency(dependency_string, dependency_handle);
+                data.finish_dependency(dependency_id, dependency_handle);
                 if data.has_all_dependencies() {
                     let palette_handle = data.get_palette_file_handle().unwrap().clone();
                     let mesh_handle = data.get_mesh_file_handle().unwrap().clone();
@@ -229,7 +224,7 @@ impl AssetStore {
             }
             AssetHandleImpl::Model(principal_handle) => {
                 let data = self.models.get_mut(&principal_handle).unwrap();
-                data.finish_dependency(dependency_string, dependency_handle);
+                data.finish_dependency(dependency_id, dependency_handle);
 
                 if data.all_dependencies_loaded() {
                     let skeleton_handle = data.get_skeleton_handle();
@@ -239,7 +234,7 @@ impl AssetStore {
             }
             AssetHandleImpl::Scene(principal_handle) => {
                 let data = self.scenes.get_mut(&principal_handle).unwrap();
-                data.finish_dependency(dependency_string, dependency_handle);
+                data.finish_dependency(dependency_id, dependency_handle);
             }
         }
     }

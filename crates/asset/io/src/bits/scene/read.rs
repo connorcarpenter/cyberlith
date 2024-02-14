@@ -1,7 +1,8 @@
 use naia_serde::{BitReader, SerdeErr, SerdeInternal as Serde, UnsignedVariableInteger};
+use crate::AssetId;
 
 use crate::bits::{
-    common::{FileTransformEntityType, ScaleSerdeInt, SerdeQuat, TranslationSerdeInt},
+    common::{ComponentFileType, ScaleSerdeInt, SerdeQuat, TranslationSerdeInt},
     scene::SceneActionType,
     SceneAction,
 };
@@ -16,11 +17,11 @@ impl SceneAction {
             let action_type = SceneActionType::de(bit_reader)?;
 
             match action_type {
-                SceneActionType::SkinOrSceneFile => {
-                    let path = String::de(bit_reader)?;
-                    let file_name = String::de(bit_reader)?;
-                    let file_type = FileTransformEntityType::de(bit_reader)?;
-                    actions.push(Self::Component(path, file_name, file_type));
+                SceneActionType::ComponentFile => {
+                    let val = u32::de(bit_reader)?;
+                    let asset_id = AssetId::from_u32(val).unwrap();
+                    let file_type = ComponentFileType::de(bit_reader)?;
+                    actions.push(Self::Component(asset_id, file_type));
                 }
                 SceneActionType::NetTransform => {
                     let skin_index: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();

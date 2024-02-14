@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use asset_io::{json::{AnimFile, IconFile, MeshFile, ModelFile, PaletteFile, SceneFile, SkelFile, SkinFile}, bits::{AnimAction, IconAction, MeshAction, ModelAction, PaletteAction, SceneAction, SkelAction, SkinAction}};
-use asset_io::bits::{FileTransformEntityType, IconFrameAction, SerdeQuat, SerdeRotation, Transition};
+use asset_io::bits::{ComponentFileType, IconFrameAction, SerdeQuat, SerdeRotation, Transition};
 use asset_io::json::FileComponentType;
 
 pub(crate) fn palette(data: &PaletteFile) -> Vec<u8> {
@@ -119,8 +119,8 @@ pub(crate) fn scene(data: &SceneFile) -> Vec<u8> {
     for component in data.get_components() {
         let asset_id = component.asset_id();
         let kind = match component.kind() {
-            FileComponentType::Scene => FileTransformEntityType::Scene,
-            FileComponentType::Skin => FileTransformEntityType::Skin,
+            FileComponentType::Scene => ComponentFileType::Scene,
+            FileComponentType::Skin => ComponentFileType::Skin,
         };
         actions.push(SceneAction::Component(asset_id, kind));
     }
@@ -153,8 +153,8 @@ pub(crate) fn model(data: &ModelFile) -> Vec<u8> {
     for component in data.get_components() {
         let asset_id = component.asset_id();
         let kind = match component.kind() {
-            FileComponentType::Scene => FileTransformEntityType::Scene,
-            FileComponentType::Skin => FileTransformEntityType::Skin,
+            FileComponentType::Scene => ComponentFileType::Scene,
+            FileComponentType::Skin => ComponentFileType::Skin,
         };
         actions.push(ModelAction::Component(asset_id, kind));
     }

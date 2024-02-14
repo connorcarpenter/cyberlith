@@ -17,7 +17,7 @@ impl ModelAction {
                     asset_id.as_u32().ser(&mut bit_writer);
                 }
                 Self::Component(asset_id, file_type) => {
-                    ModelActionType::SkinFile.ser(&mut bit_writer);
+                    ModelActionType::ComponentFile.ser(&mut bit_writer);
                     asset_id.as_u32().ser(&mut bit_writer);
                     file_type.ser(&mut bit_writer);
                 }

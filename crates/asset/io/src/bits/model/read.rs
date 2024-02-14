@@ -1,7 +1,8 @@
 use naia_serde::{BitReader, SerdeErr, SerdeInternal as Serde, UnsignedVariableInteger};
+use crate::AssetId;
 
 use crate::bits::{
-    common::{FileTransformEntityType, ScaleSerdeInt, SerdeQuat, TranslationSerdeInt},
+    common::{ComponentFileType, ScaleSerdeInt, SerdeQuat, TranslationSerdeInt},
     model::ModelActionType,
     ModelAction,
 };
@@ -17,15 +18,14 @@ impl ModelAction {
 
             match action_type {
                 ModelActionType::SkelFile => {
-                    let path = String::de(bit_reader)?;
-                    let file_name = String::de(bit_reader)?;
-                    actions.push(ModelAction::SkelFile(path, file_name));
+                    let val = u32::de(bit_reader)?;
+                    actions.push(Self::SkelFile(AssetId::from_u32(val).unwrap()));
                 }
-                ModelActionType::SkinFile => {
-                    let path = String::de(bit_reader)?;
-                    let file_name = String::de(bit_reader)?;
-                    let file_type = FileTransformEntityType::de(bit_reader)?;
-                    actions.push(ModelAction::Component(path, file_name, file_type));
+                ModelActionType::ComponentFile => {
+                    let val = u32::de(bit_reader)?;
+                    let asset_id = AssetId::from_u32(val).unwrap();
+                    let file_type = ComponentFileType::de(bit_reader)?;
+                    actions.push(Self::Component(asset_id, file_type));
                 }
                 ModelActionType::NetTransform => {
                     let skin_index: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
@@ -45,7 +45,7 @@ impl ModelAction {
 
                     let rotation = SerdeQuat::de(bit_reader)?;
 
-                    actions.push(ModelAction::NetTransform(
+                    actions.push(Self::NetTransform(
                         skin_index,
                         vertex_name,
                         translation_x,

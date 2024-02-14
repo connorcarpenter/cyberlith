@@ -5,7 +5,7 @@ use naia_serde::{
 
 // FileTransformEntityType
 #[derive(Serde, Copy, Clone, PartialEq, Debug)]
-pub enum FileTransformEntityType {
+pub enum ComponentFileType {
     Skin,
     Scene,
 }
