@@ -12,7 +12,7 @@ pub fn tick_events(mut server: Server, mut tick_reader: EventReader<TickEvent>) 
         // Update scopes of entities
         for (_, user_key, entity) in server.scope_checks() {
             // This indicates the Entity should be in this scope.
-            server.user_scope(&user_key).include(&entity);
+            server.user_scope_mut(&user_key).include(&entity);
         }
     }
 }
