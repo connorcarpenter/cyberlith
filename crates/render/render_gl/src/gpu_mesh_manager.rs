@@ -92,7 +92,7 @@ impl GpuMeshManager {
         program.use_vertex_attribute("vertex_face_index", gpu_face_indices);
     }
 
-    pub fn draw(
+    pub fn render(
         &self,
         program: &Program,
         render_states: RenderStates,

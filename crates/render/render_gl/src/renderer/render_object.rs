@@ -77,7 +77,7 @@ impl RenderMeshes {
 
                 program.use_texture("instance_texture", &instance_texture);
 
-                gpu_mesh_manager.draw(program, render_states, render_camera.camera, commands);
+                gpu_mesh_manager.render(program, render_states, render_camera.camera, commands);
             })
             .expect("Failed compiling shader");
     }
