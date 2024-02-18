@@ -1,7 +1,7 @@
 
 use bevy_app::{App, Startup, Update};
 
-use game_engine::{render::resources::WindowSettings, EnginePlugin, wait_for_finish};
+use game_engine::{render::{resources::WindowSettings, Draw}, EnginePlugin, wait_for_finish};
 
 use super::{systems::{scene, network}, global::Global};
 
@@ -17,7 +17,7 @@ pub fn run() {
         // Scene Systems
         .add_systems(Startup, scene::scene_setup)
         .add_systems(Update, scene::scene_step)
-        .add_systems(Update, scene::scene_draw)
+        .add_systems(Draw, scene::scene_draw)
         // Network Systems
         .init_resource::<network::ApiTimer>()
         .add_systems(Update, network::handle_connection)
