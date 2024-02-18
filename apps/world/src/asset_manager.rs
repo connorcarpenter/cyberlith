@@ -184,9 +184,9 @@ pub trait AssetCommandsExt {
     fn insert_asset<M: Send + Sync + 'static>(&mut self, asset_manager: &mut AssetManager, server: &mut Server, asset_id: AssetId) -> &mut Self;
 }
 
-impl AssetCommandsExt for EntityCommands<'_, '_, '_> {
+impl AssetCommandsExt for EntityCommands<'_> {
     fn insert_asset<M: Send + Sync + 'static>(&mut self, asset_manager: &mut AssetManager, server: &mut Server, asset_id: AssetId) -> &mut Self {
-        let new_ref = asset_manager.create_asset_ref::<M>(self.commands(), server, asset_id);
+        let new_ref = asset_manager.create_asset_ref::<M>(&mut self.commands(), server, asset_id);
         self.insert(new_ref);
         self
     }

@@ -15,8 +15,8 @@ storage = { path = "../../storage" }
 
 # External Crates
 # should be very light on the number of dependencies
-bevy_app = { version = "0.12.1", default-features=false }
-bevy_ecs = { version = "0.12.1", default-features=false }
-bevy_log = { version = "0.12.1", default-features=false }
-bevy_utils = { version = "0.12.1" }
+bevy_app = { version = "0.13", default-features=false }
+bevy_ecs = { version = "0.13", default-features=false }
+bevy_log = { version = "0.13", default-features=false }
+bevy_utils = { version = "0.13" }
 thiserror = "1"

@@ -26,9 +26,9 @@ crate-type = ["cdylib", "rlib"]
 game_engine = { path = "../engine" }
 
 # External
-bevy_app = { version = "0.12.1", default-features=false }
-bevy_ecs = { version = "0.12.1", default-features=false }
-bevy_log = { version = "0.12.1", default-features=false }
+bevy_app = { version = "0.13", default-features=false }
+bevy_ecs = { version = "0.13", default-features=false }
+bevy_log = { version = "0.13", default-features=false }
 
 rand = { version = "0.8.5" }
 cfg-if = { version = "1.0" }

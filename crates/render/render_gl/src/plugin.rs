@@ -1,9 +1,6 @@
 use std::sync::{Arc, RwLock};
 
-use bevy_app::{
-    App, First, Last, Main, MainScheduleOrder, Plugin, PostUpdate, PreStartup, PreUpdate,
-    RunFixedUpdateLoop, StateTransition, Update,
-};
+use bevy_app::{App, First, Last, Main, MainScheduleOrder, Plugin, PostUpdate, PreStartup, PreUpdate, RunFixedMainLoop, StateTransition, Update};
 use bevy_ecs::schedule::{ExecutorKind, Schedule};
 
 use render_api::{Render, Window};
@@ -58,7 +55,7 @@ impl Plugin for SingleThreadedPlugin {
         app.edit_schedule(First, make_single_threaded_fn.clone());
         app.edit_schedule(PreUpdate, make_single_threaded_fn.clone());
         app.edit_schedule(StateTransition, make_single_threaded_fn.clone());
-        app.edit_schedule(RunFixedUpdateLoop, make_single_threaded_fn.clone());
+        app.edit_schedule(RunFixedMainLoop, make_single_threaded_fn.clone());
         app.edit_schedule(Update, make_single_threaded_fn.clone());
         app.edit_schedule(PostUpdate, make_single_threaded_fn.clone());
         app.edit_schedule(Last, make_single_threaded_fn);
