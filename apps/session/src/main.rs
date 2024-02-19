@@ -24,6 +24,7 @@ use global::Global;
 
 fn main() {
 
+    let instance_secret = crypto::generate_random_string(16);
     let registration_resend_rate = Duration::from_secs(5);
     let region_server_disconnect_timeout = Duration::from_secs(16);
     let world_connect_resend_rate = Duration::from_secs(5);
@@ -37,7 +38,7 @@ fn main() {
         .add_plugins(HttpServerPlugin::new(http_protocol()))
         .add_plugins(HttpClientPlugin)
         // Resource
-        .insert_resource(Global::new(registration_resend_rate, region_server_disconnect_timeout, world_connect_resend_rate))
+        .insert_resource(Global::new(&instance_secret, registration_resend_rate, region_server_disconnect_timeout, world_connect_resend_rate))
         // Startup System
         .add_systems(Startup, naia::init)
         .add_systems(Startup, http_server::init)

@@ -9,7 +9,7 @@ use region_server_http_proto::{
     WorldUserLoginResponse,
 };
 use world_server_http_proto::IncomingUserRequest;
-use config::{REGION_SERVER_SECRET, SESSION_SERVER_SECRET};
+use config::{REGION_SERVER_SECRET, SESSION_SERVER_GLOBAL_SECRET};
 
 use crate::state::State;
 
@@ -32,7 +32,7 @@ async fn async_impl(
     incoming_request: WorldUserLoginRequest
 ) -> Result<WorldUserLoginResponse, ResponseError> {
 
-    if incoming_request.session_secret() != SESSION_SERVER_SECRET {
+    if incoming_request.session_secret() != SESSION_SERVER_GLOBAL_SECRET {
         warn!("invalid request secret");
         return Err(ResponseError::Unauthenticated);
     }
@@ -45,6 +45,7 @@ async fn async_impl(
         return Err(ResponseError::InternalServerError("no available world server".to_string()));
     };
 
+    let world_server_instance_secret = world_server.instance_secret();
     let world_server_http_addr = world_server.http_addr();
     let world_server_http_port = world_server.http_port();
     let world_server_public_webrtc_url = world_server.public_webrtc_url();
@@ -55,7 +56,7 @@ async fn async_impl(
 
     let request = IncomingUserRequest::new(REGION_SERVER_SECRET, &temp_token);
 
-    let Ok(_outgoing_response) = HttpClient::send(&world_server_http_addr, world_server_http_port, request).await else {
+    let Ok(_outgoing_response) = HttpClient::send(world_server_http_addr, world_server_http_port, request).await else {
         warn!("failed incoming user request to world server");
         return Err(ResponseError::InternalServerError("failed incoming user request to world server".to_string()));
     };
@@ -64,5 +65,5 @@ async fn async_impl(
 
     info!("Sending user login response to session server");
 
-    Ok(WorldUserLoginResponse::new(&world_server_public_webrtc_url, &temp_token))
+    Ok(WorldUserLoginResponse::new(world_server_instance_secret, world_server_public_webrtc_url, &temp_token))
 }

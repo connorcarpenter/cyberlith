@@ -5,7 +5,7 @@ use http_server::{async_dup::Arc, smol::lock::RwLock};
 
 use region_server_http_proto::AssetRegisterInstanceRequest;
 
-use config::{ASSET_SERVER_PORT, ASSET_SERVER_RECV_ADDR, ASSET_SERVER_SECRET, REGION_SERVER_RECV_ADDR, REGION_SERVER_PORT};
+use config::{ASSET_SERVER_PORT, ASSET_SERVER_RECV_ADDR, ASSET_SERVER_GLOBAL_SECRET, REGION_SERVER_RECV_ADDR, REGION_SERVER_PORT};
 
 use crate::state::State;
 
@@ -20,7 +20,7 @@ pub async fn handle(state: Arc<RwLock<State>>) {
     }
 
     let request = AssetRegisterInstanceRequest::new(
-        ASSET_SERVER_SECRET,
+        ASSET_SERVER_GLOBAL_SECRET,
         ASSET_SERVER_RECV_ADDR,
         ASSET_SERVER_PORT,
     );

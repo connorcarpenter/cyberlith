@@ -6,7 +6,7 @@ use bevy_http_client::{HttpClient, ResponseError};
 use bevy_http_server::HttpServer;
 
 use region_server_http_proto::SessionRegisterInstanceRequest;
-use config::{REGION_SERVER_RECV_ADDR, REGION_SERVER_SECRET, REGION_SERVER_PORT, SESSION_SERVER_RECV_ADDR, SESSION_SERVER_HTTP_PORT, SESSION_SERVER_SIGNAL_PORT, SESSION_SERVER_SECRET, PUBLIC_IP_ADDR};
+use config::{REGION_SERVER_RECV_ADDR, REGION_SERVER_SECRET, REGION_SERVER_PORT, SESSION_SERVER_RECV_ADDR, SESSION_SERVER_HTTP_PORT, SESSION_SERVER_SIGNAL_PORT, SESSION_SERVER_GLOBAL_SECRET, PUBLIC_IP_ADDR};
 use session_server_http_proto::{HeartbeatRequest, HeartbeatResponse};
 
 use crate::global::Global;
@@ -27,7 +27,8 @@ pub fn send_connect_region(
 
     //info!("Sending request to register instance with region server ..");
     let request = SessionRegisterInstanceRequest::new(
-        SESSION_SERVER_SECRET,
+        SESSION_SERVER_GLOBAL_SECRET,
+        global.instance_secret(),
         SESSION_SERVER_RECV_ADDR,
         SESSION_SERVER_HTTP_PORT,
         format!("http://{}:{}", PUBLIC_IP_ADDR, SESSION_SERVER_SIGNAL_PORT).as_str(),

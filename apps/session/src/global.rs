@@ -16,6 +16,7 @@ pub enum ConnectionState {
 
 #[derive(Resource)]
 pub struct Global {
+    instance_secret: String,
     region_server_connection_state: ConnectionState,
     region_server_last_sent: Instant,
     region_server_last_heard: Instant,
@@ -32,11 +33,13 @@ pub struct Global {
 impl Global {
 
     pub fn new(
+        instance_secret: &str,
         registration_resend_rate: Duration,
         region_server_disconnect_timeout: Duration,
         world_connect_resend_rate: Duration,
     ) -> Self {
         Self {
+            instance_secret: instance_secret.to_string(),
             region_server_connection_state: ConnectionState::Disconnected,
             region_server_last_sent: Instant::now(),
             region_server_last_heard: Instant::now(),
@@ -49,6 +52,10 @@ impl Global {
             worldless_users: HashMap::new(),
             asset_server_opt: None,
         }
+    }
+
+    pub fn instance_secret(&self) -> &str {
+        &self.instance_secret
     }
 
     // Region Server stuff

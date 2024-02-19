@@ -8,7 +8,7 @@ use bevy_http_client::HttpClient;
 
 use region_server_http_proto::WorldUserLoginRequest;
 use session_server_naia_proto::{channels::PrimaryChannel, messages::WorldConnectToken};
-use config::{REGION_SERVER_RECV_ADDR, REGION_SERVER_PORT, SESSION_SERVER_SECRET};
+use config::{REGION_SERVER_RECV_ADDR, REGION_SERVER_PORT, SESSION_SERVER_GLOBAL_SECRET};
 
 use crate::global::Global;
 
@@ -18,7 +18,7 @@ pub fn send_world_connect_request(
 ) {
     let worldless_users = global.take_worldless_users();
     for user_key in worldless_users {
-        let request = WorldUserLoginRequest::new(SESSION_SERVER_SECRET);
+        let request = WorldUserLoginRequest::new(SESSION_SERVER_GLOBAL_SECRET);
         let key = http_client.send(REGION_SERVER_RECV_ADDR, REGION_SERVER_PORT, request);
         global.add_world_key(&user_key, key);
     }

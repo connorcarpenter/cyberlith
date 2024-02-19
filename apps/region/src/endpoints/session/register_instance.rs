@@ -9,7 +9,7 @@ use region_server_http_proto::{
     SessionRegisterInstanceRequest,
     SessionRegisterInstanceResponse,
 };
-use config::SESSION_SERVER_SECRET;
+use config::SESSION_SERVER_GLOBAL_SECRET;
 
 use crate::{instances::SessionInstance, state::State};
 
@@ -33,11 +33,12 @@ async fn async_impl(
     incoming_request: SessionRegisterInstanceRequest
 ) -> Result<SessionRegisterInstanceResponse, ResponseError> {
 
-    if incoming_request.session_secret() != SESSION_SERVER_SECRET {
+    if incoming_request.global_secret() != SESSION_SERVER_GLOBAL_SECRET {
         warn!("invalid request secret");
         return Err(ResponseError::Unauthenticated);
     }
 
+    let instance_secret = incoming_request.instance_secret();
     let http_addr = incoming_request.http_addr();
     let http_port = incoming_request.http_port();
     let public_webrtc_url = incoming_request.public_webrtc_url();
@@ -47,7 +48,7 @@ async fn async_impl(
         incoming_addr, http_addr, public_webrtc_url
     );
 
-    let server_instance = SessionInstance::new(http_addr, http_port, public_webrtc_url);
+    let server_instance = SessionInstance::new(instance_secret, http_addr, http_port, public_webrtc_url);
 
     let mut state = state.write().await;
     state.register_session_instance(server_instance);

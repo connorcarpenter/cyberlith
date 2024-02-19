@@ -9,7 +9,7 @@ use region_server_http_proto::{
     WorldRegisterInstanceRequest,
     WorldRegisterInstanceResponse,
 };
-use config::WORLD_SERVER_SECRET;
+use config::WORLD_SERVER_GLOBAL_SECRET;
 
 use crate::{instances::WorldInstance, state::State};
 
@@ -33,11 +33,12 @@ async fn async_impl(
     incoming_request: WorldRegisterInstanceRequest
 ) -> Result<WorldRegisterInstanceResponse, ResponseError> {
 
-    if incoming_request.world_secret() != WORLD_SERVER_SECRET {
+    if incoming_request.global_secret() != WORLD_SERVER_GLOBAL_SECRET {
         warn!("invalid request secret");
         return Err(ResponseError::Unauthenticated);
     }
 
+    let instance_secret = incoming_request.instance_secret();
     let http_addr = incoming_request.http_addr();
     let http_port = incoming_request.http_port();
     let public_webrtc_url = incoming_request.public_webrtc_url();
@@ -47,7 +48,7 @@ async fn async_impl(
         incoming_addr, http_addr, public_webrtc_url
     );
 
-    let server_instance = WorldInstance::new(http_addr, http_port, public_webrtc_url);
+    let server_instance = WorldInstance::new(instance_secret, http_addr, http_port, public_webrtc_url);
 
     let mut state = state.write().await;
     state.register_world_instance(server_instance);

@@ -6,30 +6,30 @@ use http_common::{ApiRequest, ApiResponse, Method};
 // Request
 #[derive(Serde, PartialEq, Clone)]
 pub struct AssetRegisterInstanceRequest {
-    asset_secret: String,
+    global_secret: String,
     http_addr: String,
     http_port: u16,
 }
 
 impl AssetRegisterInstanceRequest {
     pub fn new(
-        asset_secret: &str,
+        global_secret: &str,
         http_addr: &str,
         http_port: u16,
     ) -> Self {
         Self {
-            asset_secret: asset_secret.to_string(),
+            global_secret: global_secret.to_string(),
             http_addr: http_addr.to_string(),
             http_port,
         }
     }
 
-    pub fn asset_secret(&self) -> &str {
-        &self.asset_secret
+    pub fn global_secret(&self) -> &str {
+        &self.global_secret
     }
 
-    pub fn http_addr(&self) -> String {
-        self.http_addr.clone()
+    pub fn http_addr(&self) -> &str {
+        &self.http_addr
     }
 
     pub fn http_port(&self) -> u16 {

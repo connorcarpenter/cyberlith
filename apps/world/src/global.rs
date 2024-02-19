@@ -15,6 +15,7 @@ pub enum ConnectionState {
 
 #[derive(Resource)]
 pub struct Global {
+    instance_secret: String,
     region_server_connection_state: ConnectionState,
     region_server_last_sent: Instant,
     region_server_last_heard: Instant,
@@ -28,11 +29,13 @@ pub struct Global {
 impl Global {
 
     pub fn new(
+        instance_secret: &str,
         main_room_key: RoomKey,
         registration_resend_rate: Duration,
         region_server_disconnect_timeout: Duration,
     ) -> Self {
         Self {
+            instance_secret: instance_secret.to_string(),
             region_server_connection_state: ConnectionState::Disconnected,
             region_server_last_sent: Instant::now(),
             region_server_last_heard: Instant::now(),
@@ -42,6 +45,10 @@ impl Global {
             login_tokens: HashSet::new(),
             main_room_key
         }
+    }
+
+    pub fn instance_secret(&self) -> &str {
+        &self.instance_secret
     }
 
     pub fn register_instance_response_key(&self) -> Option<&ClientResponseKey<WorldRegisterInstanceResponse>> {

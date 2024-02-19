@@ -4,6 +4,7 @@ use std::time::Instant;
 use http_server::{async_dup::Arc, smol::lock::RwLock};
 
 pub struct SessionInstance {
+    instance_secret: String,
     http_addr: String,
     http_port: u16,
     public_webrtc_url: String,
@@ -11,25 +12,30 @@ pub struct SessionInstance {
 }
 
 impl SessionInstance {
-    pub fn new(http_addr: String, http_port: u16, public_webrtc_url: String) -> Self {
+    pub fn new(instance_secret: &str, http_addr: &str, http_port: u16, public_webrtc_url: &str) -> Self {
         Self {
-            http_addr,
+            instance_secret: instance_secret.to_string(),
+            http_addr: http_addr.to_string(),
             http_port,
-            public_webrtc_url,
+            public_webrtc_url: public_webrtc_url.to_string(),
             last_heard: Arc::new(RwLock::new(Instant::now())),
         }
     }
 
-    pub fn http_addr(&self) -> String {
-        self.http_addr.clone()
+    pub fn instance_secret(&self) -> &str {
+        &self.instance_secret
+    }
+
+    pub fn http_addr(&self) -> &str {
+        &self.http_addr
     }
 
     pub fn http_port(&self) -> u16 {
         self.http_port
     }
 
-    pub fn public_webrtc_url(&self) -> String {
-        self.public_webrtc_url.clone()
+    pub fn public_webrtc_url(&self) -> &str {
+        &self.public_webrtc_url
     }
 
     pub fn last_heard(&self) -> Arc<RwLock<Instant>> {
@@ -38,6 +44,7 @@ impl SessionInstance {
 }
 
 pub struct WorldInstance {
+    instance_secret: String,
     http_addr: String,
     http_port: u16,
     public_webrtc_url: String,
@@ -45,25 +52,30 @@ pub struct WorldInstance {
 }
 
 impl WorldInstance {
-    pub fn new(http_addr: String, http_port: u16, public_webrtc_url: String) -> Self {
+    pub fn new(instance_secret: &str, http_addr: &str, http_port: u16, public_webrtc_url: &str) -> Self {
         Self {
-            http_addr,
+            instance_secret: instance_secret.to_string(),
+            http_addr: http_addr.to_string(),
             http_port,
-            public_webrtc_url,
+            public_webrtc_url: public_webrtc_url.to_string(),
             last_heard: Arc::new(RwLock::new(Instant::now())),
         }
     }
 
-    pub fn http_addr(&self) -> String {
-        self.http_addr.clone()
+    pub fn instance_secret(&self) -> &str {
+        &self.instance_secret
+    }
+
+    pub fn http_addr(&self) -> &str {
+        &self.http_addr
     }
 
     pub fn http_port(&self) -> u16 {
         self.http_port
     }
 
-    pub fn public_webrtc_url(&self) -> String {
-        self.public_webrtc_url.clone()
+    pub fn public_webrtc_url(&self) -> &str {
+        &self.public_webrtc_url
     }
 
     pub fn last_heard(&self) -> Arc<RwLock<Instant>> {
@@ -78,16 +90,16 @@ pub struct AssetInstance {
 }
 
 impl AssetInstance {
-    pub fn new(http_addr: String, http_port: u16) -> Self {
+    pub fn new(http_addr: &str, http_port: u16) -> Self {
         Self {
-            http_addr,
+            http_addr: http_addr.to_string(),
             http_port,
             last_heard: Arc::new(RwLock::new(Instant::now())),
         }
     }
 
-    pub fn http_addr(&self) -> String {
-        self.http_addr.clone()
+    pub fn http_addr(&self) -> &str {
+        &self.http_addr
     }
 
     pub fn http_port(&self) -> u16 {

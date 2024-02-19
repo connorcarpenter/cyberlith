@@ -9,7 +9,7 @@ use region_server_http_proto::{
     AssetRegisterInstanceRequest,
     AssetRegisterInstanceResponse,
 };
-use config::ASSET_SERVER_SECRET;
+use config::ASSET_SERVER_GLOBAL_SECRET;
 
 use crate::{instances::AssetInstance, state::State};
 
@@ -33,7 +33,7 @@ async fn async_impl(
     incoming_request: AssetRegisterInstanceRequest
 ) -> Result<AssetRegisterInstanceResponse, ResponseError> {
 
-    if incoming_request.asset_secret() != ASSET_SERVER_SECRET {
+    if incoming_request.global_secret() != ASSET_SERVER_GLOBAL_SECRET {
         warn!("invalid request secret");
         return Err(ResponseError::Unauthenticated);
     }

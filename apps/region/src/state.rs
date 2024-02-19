@@ -32,7 +32,7 @@ impl State {
     }
 
     pub fn register_session_instance(&mut self, instance: SessionInstance) {
-        let key = (instance.http_addr(), instance.http_port());
+        let key = (instance.http_addr().to_string(), instance.http_port());
 
         self.assetless_session_instances.insert(key.clone());
 
@@ -60,7 +60,7 @@ impl State {
 
                 // send disconnect asset server message to session instance
 
-                let instance_addr = instance.http_addr();
+                let instance_addr = instance.http_addr().to_string();
                 let instance_port = instance.http_port();
                 let last_heard = instance.last_heard();
 
@@ -87,7 +87,7 @@ impl State {
     }
 
     pub fn register_world_instance(&mut self, instance: WorldInstance) {
-        let key = (instance.http_addr(), instance.http_port());
+        let key = (instance.http_addr().to_string(), instance.http_port());
 
         if self.world_instances.contains_key(&key) {
             info!("world instance restart detected. received re-registration request. details: {:?}", key);
@@ -121,7 +121,7 @@ impl State {
         // send out heartbeats
         for instance in self.session_instances.values() {
 
-            let instance_addr = instance.http_addr();
+            let instance_addr = instance.http_addr().to_string();
             let instance_port = instance.http_port();
             let last_heard = instance.last_heard();
 
@@ -146,7 +146,7 @@ impl State {
 
         for instance in self.world_instances.values() {
 
-            let instance_addr = instance.http_addr();
+            let instance_addr = instance.http_addr().to_string();
             let instance_port = instance.http_port();
             
             let last_heard = instance.last_heard();
@@ -172,7 +172,7 @@ impl State {
 
         if let Some(instance) = self.asset_instance.as_ref() {
 
-            let instance_addr = instance.http_addr();
+            let instance_addr = instance.http_addr().to_string();
             let instance_port = instance.http_port();
             let last_heard = instance.last_heard();
 
@@ -206,10 +206,10 @@ impl State {
 
         for key in self.assetless_session_instances.iter() {
             let instance = self.session_instances.get(key).unwrap();
-            let instance_addr = instance.http_addr();
+            let instance_addr = instance.http_addr().to_string();
             let instance_port = instance.http_port();
             let last_heard = instance.last_heard();
-            let asset_server_addr = self.asset_instance.as_ref().unwrap().http_addr();
+            let asset_server_addr = self.asset_instance.as_ref().unwrap().http_addr().to_string();
             let asset_server_port = self.asset_instance.as_ref().unwrap().http_port();
 
             Server::spawn(async move {

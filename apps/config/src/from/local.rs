@@ -59,10 +59,10 @@ pub const ORCHESTRATOR_SECRET: &str = "bvVKHPxlQ72VBQnSDAZqN0vxZS36Vq3c";
 pub const REGION_SERVER_SECRET: &str = "ArQZmRSf4xvbLVusVjrqGhIaZOExAeIq";
 
 #[allow(dead_code)]
-pub const SESSION_SERVER_SECRET: &str = "zUe6K0RKY03JJMPo3u5SaByfiut0alOW";
+pub const SESSION_SERVER_GLOBAL_SECRET: &str = "zUe6K0RKY03JJMPo3u5SaByfiut0alOW";
 
 #[allow(dead_code)]
-pub const WORLD_SERVER_SECRET: &str = "VKHusVjrGh035aSlQ7236bvVxlQ70alOW";
+pub const WORLD_SERVER_GLOBAL_SECRET: &str = "VKHusVjrGh035aSlQ7236bvVxlQ70alOW";
 
 #[allow(dead_code)]
-pub const ASSET_SERVER_SECRET: &str = "QvsVjrGh035V70aVKHuaSbxlllQ7236OW";
+pub const ASSET_SERVER_GLOBAL_SECRET: &str = "QvsVjrGh035V70aVKHuaSbxlllQ7236OW";

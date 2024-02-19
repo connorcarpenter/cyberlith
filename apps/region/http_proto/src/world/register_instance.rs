@@ -6,36 +6,42 @@ use http_common::{ApiRequest, ApiResponse, Method};
 // Request
 #[derive(Serde, PartialEq, Clone)]
 pub struct WorldRegisterInstanceRequest {
-    world_secret: String,
+    global_secret: String,
+    instance_secret: String,
     http_addr: String,
     http_port: u16,
     public_webrtc_url: String,
 }
 
 impl WorldRegisterInstanceRequest {
-    pub fn new(world_secret: &str, http_addr: &str, http_port: u16, public_webrtc_url: &str) -> Self {
+    pub fn new(global_secret: &str, instance_secret: &str, http_addr: &str, http_port: u16, public_webrtc_url: &str) -> Self {
         Self {
-            world_secret: world_secret.to_string(),
+            global_secret: global_secret.to_string(),
+            instance_secret: instance_secret.to_string(),
             http_addr: http_addr.to_string(),
             http_port,
             public_webrtc_url: public_webrtc_url.to_string(),
         }
     }
 
-    pub fn world_secret(&self) -> &str {
-        &self.world_secret
+    pub fn global_secret(&self) -> &str {
+        &self.global_secret
     }
 
-    pub fn http_addr(&self) -> String {
-        self.http_addr.clone()
+    pub fn instance_secret(&self) -> &str {
+        &self.instance_secret
+    }
+
+    pub fn http_addr(&self) -> &str {
+        &self.http_addr
     }
 
     pub fn http_port(&self) -> u16 {
         self.http_port
     }
 
-    pub fn public_webrtc_url(&self) -> String {
-        self.public_webrtc_url.clone()
+    pub fn public_webrtc_url(&self) -> &str {
+        &self.public_webrtc_url
     }
 }
 
