@@ -7,15 +7,14 @@ use winit::{
     window::WindowBuilder,
     *,
 };
+use winit::event_loop::EventLoopWindowTarget;
+use winit::keyboard::{KeyCode, PhysicalKey};
 
 use input::{IncomingEvent, Key, Modifiers, MouseButton};
 use render_api::{
     components::Viewport,
     resources::{SurfaceSettings, WindowSettings},
 };
-
-#[cfg(not(target_arch = "wasm32"))]
-use winit::platform::run_return::EventLoopExtRunReturn;
 
 #[cfg(target_arch = "wasm32")]
 use winit::platform::web::EventLoopExtWebSys;
@@ -43,7 +42,10 @@ impl Window<()> {
     ///
     /// [settings]: WindowSettings
     pub fn new(window_settings: WindowSettings) -> Result<Window<()>, WindowError> {
-        Self::from_event_loop(window_settings, EventLoop::new())
+        let event_loop = EventLoop::new().map_err(|event_loop_err| {
+            WindowError::WinitEventLoopError(event_loop_err)
+        })?;
+        Self::from_event_loop(window_settings, event_loop)
     }
 }
 
@@ -215,13 +217,13 @@ impl<T: 'static + Clone> Window<T> {
         let mut first_frame = true;
         let mut mouse_pressed = None;
         let stop_signal = stop_signal.clone();
-        let loop_func = move |event: WinitEvent::<'_, T>, _: &_, control_flow: &mut _| {
+        let loop_func = move |event: WinitEvent::<T>, elwt: &EventLoopWindowTarget<T>| {
             let stop_signal = stop_signal.clone();
             match event {
                 WinitEvent::UserEvent(t) => {
                     events.push(IncomingEvent::UserEvent(t));
                 }
-                WinitEvent::LoopDestroyed => {
+                WinitEvent::LoopExiting => {
                     #[cfg(target_arch = "wasm32")]
                     {
                         use wasm_bindgen::JsCast;
@@ -241,97 +243,94 @@ impl<T: 'static + Clone> Window<T> {
                         panic!("failed to write stop signal");
                     }
                 }
-                WinitEvent::MainEventsCleared => {
-                    self.window.request_redraw();
-                }
-                WinitEvent::RedrawRequested(_) => {
-                    #[cfg(not(target_arch = "wasm32"))]
-                        let now = std::time::Instant::now();
-                    #[cfg(target_arch = "wasm32")]
-                        let now = instant::Instant::now();
-
-                    let duration = now.duration_since(last_time);
-                    last_time = now;
-                    let elapsed_time =
-                        duration.as_secs() as f64 * 1000.0 + duration.subsec_nanos() as f64 * 1e-6;
-                    accumulated_time += elapsed_time;
-
-                    #[cfg(target_arch = "wasm32")]
-                    if self.maximized {
-                        use winit::platform::web::WindowExtWebSys;
-
-                        let html_canvas = self.window.canvas();
-                        let browser_window = html_canvas
-                            .owner_document()
-                            .and_then(|doc| doc.default_view())
-                            .or_else(web_sys::window)
-                            .unwrap();
-
-                        self.window.set_inner_size(dpi::LogicalSize {
-                            width: browser_window.inner_width().unwrap().as_f64().unwrap(),
-                            height: browser_window.inner_height().unwrap().as_f64().unwrap(),
-                        });
-                    }
-
-                    let (physical_width, physical_height): (u32, u32) =
-                        self.window.inner_size().into();
-                    let device_pixel_ratio = self.window.scale_factor();
-                    let (logical_width, logical_height): (u32, u32) = self
-                        .window
-                        .inner_size()
-                        .to_logical::<f64>(device_pixel_ratio)
-                        .into();
-                    let frame_input = FrameInput {
-                        incoming_events: events.drain(..).collect(),
-                        outgoing_events: Vec::new(),
-                        elapsed_time,
-                        accumulated_time,
-                        logical_size: Viewport::new_at_origin(logical_width, logical_height),
-                        physical_size: Viewport::new_at_origin(physical_width, physical_height),
-                        device_pixel_ratio,
-                        first_frame,
-                    };
-                    first_frame = false;
-                    let frame_output = callback(frame_input);
-
-                    for event in frame_output.events.unwrap() {
-                        match event {
-                            OutgoingEvent::CursorChanged(cursor_icon) => {
-                                self.window.set_cursor_icon(cursor_icon);
-                            }
-                            OutgoingEvent::Exit => {
-                                *control_flow = ControlFlow::Exit;
-                            }
-                        }
-                    }
-
-                    if frame_output.exit || *control_flow == ControlFlow::Exit {
-                        *control_flow = ControlFlow::Exit;
-                    } else {
-                        if frame_output.swap_buffers {
-                            #[cfg(not(target_arch = "wasm32"))]
-                            self.gl.swap_buffers().unwrap();
-                        }
-                        if frame_output.wait_next_event {
-                            *control_flow = ControlFlow::Wait;
-                        } else {
-                            *control_flow = ControlFlow::Poll;
-                            self.window.request_redraw();
-                        }
-                    }
-                }
                 WinitEvent::WindowEvent { ref event, .. } => match event {
+                    WindowEvent::RedrawRequested => {
+                        #[cfg(not(target_arch = "wasm32"))]
+                            let now = std::time::Instant::now();
+                        #[cfg(target_arch = "wasm32")]
+                            let now = instant::Instant::now();
+
+                        let duration = now.duration_since(last_time);
+                        last_time = now;
+                        let elapsed_time =
+                            duration.as_secs() as f64 * 1000.0 + duration.subsec_nanos() as f64 * 1e-6;
+                        accumulated_time += elapsed_time;
+
+                        #[cfg(target_arch = "wasm32")]
+                        if self.maximized {
+                            use winit::platform::web::WindowExtWebSys;
+
+                            let html_canvas = self.window.canvas();
+                            let browser_window = html_canvas
+                                .owner_document()
+                                .and_then(|doc| doc.default_view())
+                                .or_else(web_sys::window)
+                                .unwrap();
+
+                            self.window.set_inner_size(dpi::LogicalSize {
+                                width: browser_window.inner_width().unwrap().as_f64().unwrap(),
+                                height: browser_window.inner_height().unwrap().as_f64().unwrap(),
+                            });
+                        }
+
+                        let (physical_width, physical_height): (u32, u32) =
+                            self.window.inner_size().into();
+                        let device_pixel_ratio = self.window.scale_factor();
+                        let (logical_width, logical_height): (u32, u32) = self
+                            .window
+                            .inner_size()
+                            .to_logical::<f64>(device_pixel_ratio)
+                            .into();
+                        let frame_input = FrameInput {
+                            incoming_events: events.drain(..).collect(),
+                            outgoing_events: Vec::new(),
+                            elapsed_time,
+                            accumulated_time,
+                            logical_size: Viewport::new_at_origin(logical_width, logical_height),
+                            physical_size: Viewport::new_at_origin(physical_width, physical_height),
+                            device_pixel_ratio,
+                            first_frame,
+                        };
+                        first_frame = false;
+                        let frame_output = callback(frame_input);
+
+                        for event in frame_output.events.unwrap() {
+                            match event {
+                                OutgoingEvent::CursorChanged(cursor_icon) => {
+                                    self.window.set_cursor_icon(cursor_icon);
+                                }
+                                OutgoingEvent::Exit => {
+                                    elwt.exit();
+                                }
+                            }
+                        }
+
+                        if frame_output.exit {
+                            elwt.exit();
+                        } else {
+                            if frame_output.swap_buffers {
+                                #[cfg(not(target_arch = "wasm32"))]
+                                self.gl.swap_buffers().unwrap();
+                            }
+                            if frame_output.wait_next_event {
+                                elwt.set_control_flow(ControlFlow::Wait);
+                            } else {
+                                elwt.set_control_flow(ControlFlow::Poll);
+                                self.window.request_redraw();
+                            }
+                        }
+                    }
                     WindowEvent::Resized(physical_size) => {
                         self.gl.resize(*physical_size);
                     }
                     WindowEvent::CloseRequested => {
-                        *control_flow = ControlFlow::Exit;
+                        elwt.exit();
                         info!("close requested");
                     },
-                    WindowEvent::KeyboardInput { input, .. } => {
-                        if let Some(keycode) = input.virtual_keycode {
-                            use event::VirtualKeyCode;
-                            let state = input.state == event::ElementState::Pressed;
+                    WindowEvent::KeyboardInput { event, .. } => {
+                        if let PhysicalKey::Code(keycode) = event.physical_key {
+
+                            let state = event.state == event::ElementState::Pressed;
                             if let Some(kind) = translate_virtual_key_code(keycode) {
                                 events.push(if state {
                                     IncomingEvent::KeyPress {
@@ -346,29 +345,21 @@ impl<T: 'static + Clone> Window<T> {
                                         handled: false,
                                     }
                                 });
-                            } else if keycode == VirtualKeyCode::LControl
-                                || keycode == VirtualKeyCode::RControl
+                            } else if keycode == KeyCode::ControlLeft
+                                || keycode == KeyCode::ControlRight
                             {
                                 modifiers.ctrl = state;
-                                if !cfg!(target_os = "macos") {
-                                    modifiers.command = state;
-                                }
+                                modifiers.command = state;
                                 events.push(IncomingEvent::ModifiersChange { modifiers });
-                            } else if keycode == VirtualKeyCode::LAlt
-                                || keycode == VirtualKeyCode::RAlt
+                            } else if keycode == KeyCode::AltLeft
+                                || keycode == KeyCode::AltRight
                             {
                                 modifiers.alt = state;
                                 events.push(IncomingEvent::ModifiersChange { modifiers });
-                            } else if keycode == VirtualKeyCode::LShift
-                                || keycode == VirtualKeyCode::RShift
+                            } else if keycode == KeyCode::ShiftLeft
+                                || keycode == KeyCode::ShiftRight
                             {
                                 modifiers.shift = state;
-                                events.push(IncomingEvent::ModifiersChange { modifiers });
-                            } else if (keycode == VirtualKeyCode::LWin
-                                || keycode == VirtualKeyCode::RWin)
-                                && cfg!(target_os = "macos")
-                            {
-                                modifiers.command = state;
                                 events.push(IncomingEvent::ModifiersChange { modifiers });
                             }
                         }
@@ -445,11 +436,15 @@ impl<T: 'static + Clone> Window<T> {
                         });
                         cursor_pos = Some((p.x, p.y));
                     }
-                    WindowEvent::ReceivedCharacter(ch) => {
-                        if is_printable_char(*ch) && !modifiers.ctrl && !modifiers.command {
-                            events.push(IncomingEvent::Text(ch.to_string()));
-                        }
-                    }
+                    // WindowEvent::KeyboardInput { event, .. } => {
+                    //     if let keyboard::Key::Character(character) = event.logical_key.clone() {
+                    //         let ch = character.as_str();
+                    //         let ch = ch.chars().next().unwrap();
+                    //         if is_printable_char(ch) && !modifiers.ctrl && !modifiers.command {
+                    //             events.push(IncomingEvent::Text(ch.to_string()));
+                    //         }
+                    //     }
+                    // }
                     WindowEvent::CursorEntered { .. } => {
                         events.push(IncomingEvent::MouseEnter);
                     }
@@ -550,7 +545,9 @@ impl<T: 'static + Clone> Window<T> {
         };
 
         #[cfg(not(target_arch = "wasm32"))]
-        EventLoop::<T>::run_return(&mut self.event_loop, loop_func);
+        if let Err(e) = self.event_loop.run(loop_func) {
+            panic!("Error in event loop: {}", e);
+        }
 
         #[cfg(target_arch = "wasm32")]
         EventLoop::<T>::spawn(self.event_loop, loop_func);
@@ -594,65 +591,64 @@ fn is_printable_char(chr: char) -> bool {
     !is_in_private_use_area && !chr.is_ascii_control()
 }
 
-fn translate_virtual_key_code(key: event::VirtualKeyCode) -> Option<Key> {
-    use event::VirtualKeyCode::*;
+fn translate_virtual_key_code(key: KeyCode) -> Option<Key> {
 
     Some(match key {
-        Down => Key::ArrowDown,
-        Left => Key::ArrowLeft,
-        Right => Key::ArrowRight,
-        Up => Key::ArrowUp,
+        KeyCode::ArrowDown => Key::ArrowDown,
+        KeyCode::ArrowLeft => Key::ArrowLeft,
+        KeyCode::ArrowRight => Key::ArrowRight,
+        KeyCode::ArrowUp => Key::ArrowUp,
 
-        Escape => Key::Escape,
-        Tab => Key::Tab,
-        Back => Key::Backspace,
-        Return => Key::Enter,
-        Space => Key::Space,
+        KeyCode::Escape => Key::Escape,
+        KeyCode::Tab => Key::Tab,
+        KeyCode::Backspace => Key::Backspace,
+        KeyCode::Enter => Key::Enter,
+        KeyCode::Space => Key::Space,
 
-        Insert => Key::Insert,
-        Delete => Key::Delete,
-        Home => Key::Home,
-        End => Key::End,
-        PageUp => Key::PageUp,
-        PageDown => Key::PageDown,
+        KeyCode::Insert => Key::Insert,
+        KeyCode::Delete => Key::Delete,
+        KeyCode::Home => Key::Home,
+        KeyCode::End => Key::End,
+        KeyCode::PageUp => Key::PageUp,
+        KeyCode::PageDown => Key::PageDown,
 
-        Key0 | Numpad0 => Key::Num0,
-        Key1 | Numpad1 => Key::Num1,
-        Key2 | Numpad2 => Key::Num2,
-        Key3 | Numpad3 => Key::Num3,
-        Key4 | Numpad4 => Key::Num4,
-        Key5 | Numpad5 => Key::Num5,
-        Key6 | Numpad6 => Key::Num6,
-        Key7 | Numpad7 => Key::Num7,
-        Key8 | Numpad8 => Key::Num8,
-        Key9 | Numpad9 => Key::Num9,
+        KeyCode::Digit0 | KeyCode::Numpad0 => Key::Num0,
+        KeyCode::Digit1 | KeyCode::Numpad1 => Key::Num1,
+        KeyCode::Digit2 | KeyCode::Numpad2 => Key::Num2,
+        KeyCode::Digit3 | KeyCode::Numpad3 => Key::Num3,
+        KeyCode::Digit4 | KeyCode::Numpad4 => Key::Num4,
+        KeyCode::Digit5 | KeyCode::Numpad5 => Key::Num5,
+        KeyCode::Digit6 | KeyCode::Numpad6 => Key::Num6,
+        KeyCode::Digit7 | KeyCode::Numpad7 => Key::Num7,
+        KeyCode::Digit8 | KeyCode::Numpad8 => Key::Num8,
+        KeyCode::Digit9 | KeyCode::Numpad9 => Key::Num9,
 
-        A => Key::A,
-        B => Key::B,
-        C => Key::C,
-        D => Key::D,
-        E => Key::E,
-        F => Key::F,
-        G => Key::G,
-        H => Key::H,
-        I => Key::I,
-        J => Key::J,
-        K => Key::K,
-        L => Key::L,
-        M => Key::M,
-        N => Key::N,
-        O => Key::O,
-        P => Key::P,
-        Q => Key::Q,
-        R => Key::R,
-        S => Key::S,
-        T => Key::T,
-        U => Key::U,
-        V => Key::V,
-        W => Key::W,
-        X => Key::X,
-        Y => Key::Y,
-        Z => Key::Z,
+        KeyCode::KeyA => Key::A,
+        KeyCode::KeyB => Key::B,
+        KeyCode::KeyC => Key::C,
+        KeyCode::KeyD => Key::D,
+        KeyCode::KeyE => Key::E,
+        KeyCode::KeyF => Key::F,
+        KeyCode::KeyG => Key::G,
+        KeyCode::KeyH => Key::H,
+        KeyCode::KeyI => Key::I,
+        KeyCode::KeyJ => Key::J,
+        KeyCode::KeyK => Key::K,
+        KeyCode::KeyL => Key::L,
+        KeyCode::KeyM => Key::M,
+        KeyCode::KeyN => Key::N,
+        KeyCode::KeyO => Key::O,
+        KeyCode::KeyP => Key::P,
+        KeyCode::KeyQ => Key::Q,
+        KeyCode::KeyR => Key::R,
+        KeyCode::KeyS => Key::S,
+        KeyCode::KeyT => Key::T,
+        KeyCode::KeyU => Key::U,
+        KeyCode::KeyV => Key::V,
+        KeyCode::KeyW => Key::W,
+        KeyCode::KeyX => Key::X,
+        KeyCode::KeyY => Key::Y,
+        KeyCode::KeyZ => Key::Z,
 
         _ => {
             return None;

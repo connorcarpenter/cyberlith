@@ -13,6 +13,10 @@ pub enum WindowError {
     GlutinError(#[from] glutin::error::Error),
     #[error("winit error")]
     WinitError(#[from] winit::error::OsError),
+    #[error("winit event loop error")]
+    WinitEventLoopError(#[from] winit::error::EventLoopError),
+    #[error("winit handle error")]
+    WinitHandleError(#[from] raw_window_handle::HandleError),
     #[error("error in three-d")]
     ThreeDError(#[from] CoreError),
     #[error("the number of MSAA samples must be a power of two")]

@@ -23,11 +23,11 @@ bevy_log = { version = "0.13", default-features = false }
 bevy_utils = { version = "0.13", default-features = false }
 cfg-if = { version = "1.0" }
 thiserror = { version = "1" }
-winit = { version = "0.28" }
+winit = { version = "0.29.10", features = ["rwh_05"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-glutin = { version = "0.30" }
-raw-window-handle = { version = "0.5" }
+glutin = { version = "0.31.3" }
+raw-window-handle = { version = "0.5.2" }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen = { version = "0.2" }

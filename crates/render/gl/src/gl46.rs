@@ -169,9 +169,9 @@ pub mod types {
     pub type GLeglImageOES = *mut c_void;
     pub type GLchar = c_char;
     pub type GLcharARB = c_char;
-    #[cfg(any(target_os = "macos", target_os = "ios"))]
+    #[cfg(target_os = "ios")]
     pub type GLhandleARB = *mut c_void;
-    #[cfg(not(any(target_os = "macos", target_os = "ios")))]
+    #[cfg(not(target_os = "ios"))]
     pub type GLhandleARB = c_uint;
     pub type GLhalf = u16;
     pub type GLhalfARB = u16;

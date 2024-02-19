@@ -130,8 +130,6 @@ mod inner {
             let preference = glutin::display::DisplayApiPreference::EglThenGlx(Box::new(
                 winit::platform::x11::register_xlib_error_hook,
             ));
-            #[cfg(target_os = "macos")]
-            let preference = glutin::display::DisplayApiPreference::Cgl;
             #[cfg(target_os = "android")]
             let preference = glutin::display::DisplayApiPreference::Egl;
 
