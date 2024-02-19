@@ -44,8 +44,8 @@ async fn async_impl(
     let public_webrtc_url = incoming_request.public_webrtc_url();
 
     info!(
-        "register instance request received from session server: (incoming: {:?}, http: {:?}, public_webrtc_url: {:?})",
-        incoming_addr, http_addr, public_webrtc_url
+        "register instance request received from session server: (incoming: {:?}, instance secret: {:?}, http: {:?}, public_webrtc_url: {:?})",
+        incoming_addr, instance_secret, http_addr, public_webrtc_url
     );
 
     let server_instance = SessionInstance::new(instance_secret, http_addr, http_port, public_webrtc_url);

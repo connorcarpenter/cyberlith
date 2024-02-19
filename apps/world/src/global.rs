@@ -13,6 +13,22 @@ pub enum ConnectionState {
     Connected,
 }
 
+pub struct UserData {
+    pub user_id: u64,
+    pub session_server_addr: String,
+    pub session_server_port: u16,
+}
+
+impl UserData {
+    fn new(user_id: u64, session_server_addr: &str, session_server_port: u16) -> Self {
+        Self {
+            user_id,
+            session_server_addr: session_server_addr.to_string(),
+            session_server_port,
+        }
+    }
+}
+
 #[derive(Resource)]
 pub struct Global {
     instance_secret: String,
@@ -23,8 +39,8 @@ pub struct Global {
     registration_resend_rate: Duration,
     region_server_disconnect_timeout: Duration,
     next_user_id: u64,
-    login_tokens: HashMap<String, u64>,
-    users: HashMap<UserKey, u64>,
+    login_tokens: HashMap<String, UserData>,
+    users: HashMap<UserKey, UserData>,
     main_room_key: RoomKey,
 }
 
@@ -107,22 +123,32 @@ impl Global {
 
     // Client login
 
-    pub fn add_login_token(&mut self, token: &str) -> u64 {
+    pub fn add_login_token(&mut self, session_server_addr: &str, session_server_port: u16, token: &str) -> u64 {
         let user_id = self.next_user_id;
         self.next_user_id = self.next_user_id.wrapping_add(1);
         if self.next_user_id == 0 {
             panic!("user_id overflow");
         }
-        self.login_tokens.insert(token.to_string(), user_id);
+        self.login_tokens.insert(token.to_string(), UserData::new(user_id, session_server_addr, session_server_port));
         user_id
     }
 
-    pub fn take_login_token(&mut self, token: &str) -> Option<u64> {
+    pub fn take_login_token(&mut self, token: &str) -> Option<UserData> {
         self.login_tokens.remove(token)
     }
 
-    pub fn add_user(&mut self, user_key: &UserKey, user_id: u64) {
-        self.users.insert(user_key.clone(), user_id);
+    pub fn add_user(&mut self, user_key: &UserKey, user_data: UserData) {
+        self.users.insert(user_key.clone(), user_data);
+    }
+
+    pub fn get_user_id(&self, user_key: &UserKey) -> Option<u64> {
+        let user_data = self.users.get(user_key)?;
+        Some(user_data.user_id)
+    }
+
+    pub fn get_user_session_server(&self, user_key: &UserKey) -> Option<(String, u16)> {
+        let user_data = self.users.get(user_key)?;
+        Some((user_data.session_server_addr.clone(), user_data.session_server_port))
     }
     //
 

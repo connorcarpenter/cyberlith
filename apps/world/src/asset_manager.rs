@@ -1,12 +1,18 @@
 use std::collections::HashMap;
 
 use bevy_ecs::{entity::Entity, prelude::Resource, system::{Commands, EntityCommands}};
+use bevy_ecs::system::ResMut;
 use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, RoomKey, Server, UserKey};
 
 use asset_id::AssetId;
+use bevy_http_client::{HttpClient, ResponseKey};
+
+use session_server_http_proto::{UserAssetIdRequest, UserAssetIdResponse};
 use world_server_naia_proto::components::{AssetEntry, AssetRef};
+
+use crate::global::Global;
 
 // AssetCatalog
 #[derive(Clone, Copy, Eq, PartialEq)]
@@ -79,6 +85,7 @@ impl UserAssetData {
 pub struct AssetManager {
     user_key_to_data_map: HashMap<UserKey, UserAssetData>,
     asset_id_to_data_map: HashMap<AssetId, AssetData>,
+    asset_response_keys: Vec<ResponseKey<UserAssetIdResponse>>
 }
 
 impl AssetManager {
@@ -86,6 +93,7 @@ impl AssetManager {
         Self {
             user_key_to_data_map: HashMap::new(),
             asset_id_to_data_map: HashMap::new(),
+            asset_response_keys: Vec::new(),
         }
     }
 
@@ -133,7 +141,28 @@ impl AssetManager {
         self.asset_id_to_data_map.insert(asset_id, asset_data);
     }
 
-    pub fn handle_scope_actions(&mut self, server: &mut Server, ref_actions: Vec<(UserKey, AssetId, bool)>) {
+    pub fn update(&mut self, http_client: &mut HttpClient) {
+        // check response keys
+        let mut received_response_keys = Vec::new();
+        for response_key in self.asset_response_keys.iter() {
+            if let Some(response) = http_client.recv(response_key) {
+                received_response_keys.push(response_key.clone());
+                match response {
+                    Ok(_response) => {
+                        info!("received user asset response");
+                    }
+                    Err(error) => {
+                        info!("error: {}", error.to_string());
+                    }
+                }
+            }
+        }
+        for response_key in received_response_keys.iter() {
+            self.asset_response_keys.retain(|key| key != response_key);
+        }
+    }
+
+    pub fn handle_scope_actions(&mut self, server: &mut Server, global: &Global, http_client: &mut HttpClient, ref_actions: Vec<(UserKey, AssetId, bool)>) {
 
         info!("handle_scope_actions");
 
@@ -171,21 +200,42 @@ impl AssetManager {
             if added {
                 info!("adding asset entry for user: {:?}, asset: {:?}", user_key, asset_id);
                 room.add_entity(&asset_entry_entity);
-                self.notify_session_server_asset_is_in_scope(user_key, asset_id);
+                self.notify_session_server_asset(global, http_client, &user_key, asset_id, true);
             } else {
                 room.remove_entity(&asset_entry_entity);
-                self.notify_session_server_asset_is_out_of_scope(user_key, asset_id);
+                self.notify_session_server_asset(global, http_client, &user_key, asset_id, false);
             }
         }
     }
 
-    fn notify_session_server_asset_is_in_scope(&self, user_key: UserKey, asset_id: AssetId) {
-        todo!()
+    fn notify_session_server_asset(&mut self, global: &Global, http_client: &mut HttpClient, user_key: &UserKey, asset_id: AssetId, added: bool) {
+
+        let instance_secret = global.instance_secret();
+        let user_id = global.get_user_id(user_key).unwrap();
+
+        let request = UserAssetIdRequest::new(
+            instance_secret,
+            user_id,
+            asset_id,
+            added,
+        );
+
+        let (session_server_addr, session_server_port) = global.get_user_session_server(user_key).unwrap();
+        let key = http_client.send(&session_server_addr, session_server_port, request);
+
+        self.set_user_asset_response_key(key);
     }
 
-    fn notify_session_server_asset_is_out_of_scope(&self, user_key: UserKey, asset_id: AssetId) {
-        todo!()
+    fn set_user_asset_response_key(&mut self, response_key: ResponseKey<UserAssetIdResponse>) {
+        self.asset_response_keys.push(response_key);
     }
+}
+
+pub fn update(
+    mut asset_manager: ResMut<AssetManager>,
+    mut http_client: ResMut<HttpClient>,
+) {
+    asset_manager.update(&mut http_client);
 }
 
 // AssetCommandsExt

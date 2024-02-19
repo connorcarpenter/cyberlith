@@ -46,11 +46,15 @@ fn main() {
                 naia::disconnect_events,
                 naia::error_events,
                 naia::tick_events,
+
                 user_connection::recv_login_request,
+
                 region_connection::recv_heartbeat_request,
                 region_connection::recv_register_instance_response,
-                region_connection::send_connect_region,
+                region_connection::send_register_instance_request,
                 region_connection::process_region_server_disconnect,
+
+                asset_manager::update,
             )
                 .in_set(ReceiveEvents),
         )

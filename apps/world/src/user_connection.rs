@@ -24,7 +24,7 @@ pub fn recv_login_request(
 
         info!("Login request received from region server: Login(token: {})", request.login_token);
 
-        let new_user_id = global.add_login_token(&request.login_token);
+        let new_user_id = global.add_login_token(&request.session_server_addr, request.session_server_port, &request.login_token);
 
         info!("Sending login response to region server ..");
 

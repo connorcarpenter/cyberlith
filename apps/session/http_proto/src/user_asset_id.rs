@@ -6,18 +6,20 @@ use asset_id::AssetId;
 
 // Request
 #[derive(Serde, PartialEq, Clone)]
-pub struct AddedAssetIdRequest {
+pub struct UserAssetIdRequest {
     world_instance_secret: String,
     user_id: u64,
     asset_id: AssetId,
+    added: bool,
 }
 
-impl AddedAssetIdRequest {
-    pub fn new(world_instance_secret: &str, user_id: u64, asset_id: AssetId) -> Self {
+impl UserAssetIdRequest {
+    pub fn new(world_instance_secret: &str, user_id: u64, asset_id: AssetId, added: bool) -> Self {
         Self {
             world_instance_secret: world_instance_secret.to_string(),
             user_id,
             asset_id,
+            added,
         }
     }
 
@@ -32,23 +34,27 @@ impl AddedAssetIdRequest {
     pub fn asset_id(&self) -> &AssetId {
         &self.asset_id
     }
+
+    pub fn added(&self) -> bool {
+        self.added
+    }
 }
 
 // Response
 #[derive(Serde, PartialEq, Clone)]
-pub struct AddedAssetIdResponse;
+pub struct UserAssetIdResponse;
 
 // Traits
-impl ApiRequest for AddedAssetIdRequest {
-    type Response = AddedAssetIdResponse;
+impl ApiRequest for UserAssetIdRequest {
+    type Response = UserAssetIdResponse;
 
     fn method() -> Method {
         Method::Post
     }
 
     fn path() -> &'static str {
-        "added_asset_id"
+        "user_asset_id"
     }
 }
 
-impl ApiResponse for AddedAssetIdResponse {}
+impl ApiResponse for UserAssetIdResponse {}

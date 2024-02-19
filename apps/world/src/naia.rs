@@ -10,6 +10,7 @@ use bevy_log::{info, warn};
 
 use naia_bevy_server::{events::{AuthEvents, ConnectEvent, DisconnectEvent, ErrorEvent}, transport::webrtc, Server, CommandsExt, UserKey};
 use naia_bevy_server::events::TickEvent;
+use bevy_http_client::HttpClient;
 
 use config::{WORLD_SERVER_SIGNAL_PORT, WORLD_SERVER_WEBRTC_PORT, PUBLIC_IP_ADDR, SELF_BINDING_ADDR};
 
@@ -48,11 +49,11 @@ pub fn auth_events(
 ) {
     for events in event_reader.read() {
         for (user_key, auth) in events.read::<Auth>() {
-            if let Some(user_id) = global.take_login_token(&auth.token) {
+            if let Some(user_data) = global.take_login_token(&auth.token) {
 
-                info!("Accepted connection. User Id: {}, Token: {}", user_id, auth.token);
+                info!("Accepted connection. User Id: {}, Token: {}", user_data.user_id, auth.token);
 
-                global.add_user(&user_key, user_id);
+                global.add_user(&user_key, user_data);
 
                 // Accept incoming connection
                 server.accept_connection(&user_key);
@@ -237,13 +238,17 @@ pub fn tick_events(
     {
         let mut system_state: SystemState<(
             Server,
+            Res<Global>,
             ResMut<AssetManager>,
+            ResMut<HttpClient>,
         )> = SystemState::new(world);
         let (
             mut server,
+            global,
             mut asset_manager,
+            mut http_client,
         ) = system_state.get_mut(world);
 
-        asset_manager.handle_scope_actions(&mut server, asset_id_entity_actions);
+        asset_manager.handle_scope_actions(&mut server, &global, &mut http_client, asset_id_entity_actions);
     }
 }

@@ -21,6 +21,7 @@ asset_id = { path = "../../crates/asset/asset_id" }
 world_server_naia_proto = { path = "naia_proto" }
 world_server_http_proto = { path = "http_proto" }
 region_server_http_proto = { path = "../region/http_proto" }
+session_server_http_proto = { path = "../session/http_proto" }
 
 # These are the official Bevy crates, we can use them because the Server isn't built for Wasm
 bevy_app = { version = "0.13", default-features=false }

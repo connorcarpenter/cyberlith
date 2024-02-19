@@ -83,7 +83,12 @@ impl State {
     }
 
     pub fn get_available_session_server(&self) -> Option<&SessionInstance> {
+        // TODO: load balance
         self.session_instances.values().next()
+    }
+
+    pub fn get_session_server_from_instance_secret(&self, instance_secret: &str) -> Option<&SessionInstance> {
+        self.session_instances.values().find(|instance| instance.instance_secret() == instance_secret)
     }
 
     pub fn register_world_instance(&mut self, instance: WorldInstance) {
@@ -98,6 +103,7 @@ impl State {
     }
 
     pub fn get_available_world_server(&self) -> Option<&WorldInstance> {
+        // TODO: load balance
         self.world_instances.values().next()
     }
 

@@ -9,7 +9,7 @@ use region_server_http_proto::{
     WorldUserLoginResponse,
 };
 use world_server_http_proto::IncomingUserRequest;
-use config::{REGION_SERVER_SECRET, SESSION_SERVER_GLOBAL_SECRET};
+use config::REGION_SERVER_SECRET;
 
 use crate::state::State;
 
@@ -32,18 +32,24 @@ async fn async_impl(
     incoming_request: WorldUserLoginRequest
 ) -> Result<WorldUserLoginResponse, ResponseError> {
 
-    if incoming_request.session_secret() != SESSION_SERVER_GLOBAL_SECRET {
-        warn!("invalid request secret");
+    let state = state.read().await;
+
+    info!("incoming session server instance secret: {:?}", incoming_request.session_server_instance_secret);
+
+    let Some(session_server) = state.get_session_server_from_instance_secret(&incoming_request.session_server_instance_secret) else {
+        warn!("invalid session server instance secret");
         return Err(ResponseError::Unauthenticated);
-    }
+    };
 
     info!("world user login request received from session server");
 
-    let state = state.read().await;
     let Some(world_server) = state.get_available_world_server() else {
         warn!("no available world server");
         return Err(ResponseError::InternalServerError("no available world server".to_string()));
     };
+
+    let session_server_addr = session_server.http_addr();
+    let session_server_port = session_server.http_port();
 
     let world_server_instance_secret = world_server.instance_secret();
     let world_server_http_addr = world_server.http_addr();
@@ -54,7 +60,7 @@ async fn async_impl(
 
     let temp_token = crypto::generate_random_string(16);
 
-    let world_server_request = IncomingUserRequest::new(REGION_SERVER_SECRET, &temp_token);
+    let world_server_request = IncomingUserRequest::new(REGION_SERVER_SECRET, session_server_addr, session_server_port, &temp_token);
 
     let Ok(world_server_response) = HttpClient::send(world_server_http_addr, world_server_http_port, world_server_request).await else {
         warn!("failed incoming user request to world server");

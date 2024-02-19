@@ -6,18 +6,14 @@ use http_common::{ApiRequest, ApiResponse, Method};
 // Request
 #[derive(Serde, PartialEq, Clone)]
 pub struct WorldUserLoginRequest {
-    session_secret: String,
+    pub session_server_instance_secret: String,
 }
 
 impl WorldUserLoginRequest {
-    pub fn new(session_secret: &str) -> Self {
+    pub fn new(session_server_instance_secret: &str) -> Self {
         Self {
-            session_secret: session_secret.to_string(),
+            session_server_instance_secret: session_server_instance_secret.to_string(),
         }
-    }
-
-    pub fn session_secret(&self) -> &str {
-        &self.session_secret
     }
 }
 
