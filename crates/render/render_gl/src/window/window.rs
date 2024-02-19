@@ -203,7 +203,7 @@ impl<T: 'static + Clone> Window<T> {
         #[cfg(not(target_arch = "wasm32"))]
         let mut last_time = std::time::Instant::now();
         #[cfg(target_arch = "wasm32")]
-        let mut last_time = instant::Instant::now();
+        let mut last_time = web_time::Instant::now();
 
         let mut accumulated_time = 0.0;
         let mut events = Vec::new();
@@ -248,7 +248,7 @@ impl<T: 'static + Clone> Window<T> {
                     #[cfg(not(target_arch = "wasm32"))]
                         let now = std::time::Instant::now();
                     #[cfg(target_arch = "wasm32")]
-                        let now = instant::Instant::now();
+                        let now = web_time::Instant::now();
 
                     let duration = now.duration_since(last_time);
                     last_time = now;
