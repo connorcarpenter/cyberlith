@@ -19,5 +19,5 @@ memoffset = "0.9.0"
 
 # Web:
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-web-sys = { version = "0.3", features = ["console"] }
+web-sys = { version = "0.3.64", features = ["console"] }
 wasm-bindgen = { version = "0.2" }
