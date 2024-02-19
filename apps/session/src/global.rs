@@ -200,6 +200,10 @@ impl Global {
         world_instance.add_user(*user_key, user_id);
     }
 
+    pub fn world_instance_exists(&self, world_instance_secret: &str) -> bool {
+        self.world_instances.contains_key(world_instance_secret)
+    }
+
     // Client login
 
     pub fn add_login_token(&mut self, token: &str) {

@@ -4,11 +4,13 @@ use bevy_log::{info, warn};
 
 use naia_bevy_server::Server;
 
-use bevy_http_client::HttpClient;
+use bevy_http_client::{HttpClient, ResponseError};
+use bevy_http_server::HttpServer;
 
 use region_server_http_proto::WorldUserLoginRequest;
 use session_server_naia_proto::{channels::PrimaryChannel, messages::WorldConnectToken};
 use config::{REGION_SERVER_RECV_ADDR, REGION_SERVER_PORT, SESSION_SERVER_GLOBAL_SECRET};
+use session_server_http_proto::{AddedAssetIdRequest, AddedAssetIdResponse, RemovedAssetIdRequest, RemovedAssetIdResponse};
 
 use crate::global::Global;
 
@@ -52,5 +54,49 @@ pub fn recv_world_connect_response(
                 }
             }
         }
+    }
+}
+
+pub fn recv_added_asset_id_request(
+    global: ResMut<Global>,
+    mut server: ResMut<HttpServer>
+) {
+    while let Some((_addr, request, response_key)) = server.receive::<AddedAssetIdRequest>() {
+
+        if !global.world_instance_exists(request.world_instance_secret()) {
+            warn!("invalid request secret");
+            server.respond(response_key, Err(ResponseError::Unauthenticated));
+            continue;
+        }
+
+        info!("AddedAssetId request received from world server: (user_id: {:?}, asset_id: {:?})", request.user_id(), request.asset_id());
+
+        // todo !
+
+        info!("AddedAssetId response to world server ..");
+
+        server.respond(response_key, Ok(AddedAssetIdResponse));
+    }
+}
+
+pub fn recv_removed_asset_id_request(
+    global: ResMut<Global>,
+    mut server: ResMut<HttpServer>
+) {
+    while let Some((_addr, request, response_key)) = server.receive::<RemovedAssetIdRequest>() {
+
+        if !global.world_instance_exists(request.world_instance_secret()) {
+            warn!("invalid request secret");
+            server.respond(response_key, Err(ResponseError::Unauthenticated));
+            continue;
+        }
+
+        info!("RemovedAssetId request received from world server: (user_id: {:?}, asset_id: {:?})", request.user_id(), request.asset_id());
+
+        // todo !
+
+        info!("RemovedAssetId response to world server ..");
+
+        server.respond(response_key, Ok(RemovedAssetIdResponse));
     }
 }

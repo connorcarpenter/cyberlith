@@ -63,6 +63,8 @@ fn main() {
 
                 world_connection::send_world_connect_request,
                 world_connection::recv_world_connect_response,
+                world_connection::recv_added_asset_id_request,
+                world_connection::recv_removed_asset_id_request,
             )
                 .in_set(ReceiveEvents),
         )
