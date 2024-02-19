@@ -29,18 +29,18 @@ impl UserData {
 }
 
 struct WorldInstanceData {
-    users: HashSet<(UserKey, u64)>, // likely not the right data type ...
+    user_id_to_key_map: HashMap<u64, UserKey>,
 }
 
 impl WorldInstanceData {
     pub fn new() -> Self {
         Self {
-            users: HashSet::new(),
+            user_id_to_key_map: HashMap::new(),
         }
     }
 
     pub(crate) fn add_user(&mut self, user_key: UserKey, user_id: u64) {
-        self.users.insert((user_key, user_id));
+        self.user_id_to_key_map.insert(user_id, user_key);
     }
 }
 
@@ -202,6 +202,11 @@ impl Global {
 
     pub fn world_instance_exists(&self, world_instance_secret: &str) -> bool {
         self.world_instances.contains_key(world_instance_secret)
+    }
+
+    pub fn get_user_key_from_world_instance(&self, world_instance_secret: &str, user_id: u64) -> Option<UserKey> {
+        let world_instance = self.world_instances.get(world_instance_secret)?;
+        world_instance.user_id_to_key_map.get(&user_id).copied()
     }
 
     // Client login

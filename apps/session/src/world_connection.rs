@@ -12,6 +12,7 @@ use session_server_naia_proto::{channels::PrimaryChannel, messages::WorldConnect
 use config::{REGION_SERVER_RECV_ADDR, REGION_SERVER_PORT};
 use session_server_http_proto::{UserAssetIdRequest, UserAssetIdResponse};
 
+use crate::asset_manager::AssetManager;
 use crate::global::Global;
 
 pub fn send_world_connect_request(
@@ -59,19 +60,28 @@ pub fn recv_world_connect_response(
 
 pub fn recv_added_asset_id_request(
     global: ResMut<Global>,
-    mut server: ResMut<HttpServer>
+    mut server: ResMut<HttpServer>,
+    mut asset_manager: ResMut<AssetManager>,
 ) {
     while let Some((_addr, request, response_key)) = server.receive::<UserAssetIdRequest>() {
 
-        if !global.world_instance_exists(request.world_instance_secret()) {
+        let world_instance_secret = request.world_instance_secret();
+
+        if !global.world_instance_exists(world_instance_secret) {
             warn!("invalid request secret");
             server.respond(response_key, Err(ResponseError::Unauthenticated));
             continue;
         }
 
-        info!("UserAssetId request received from world server: (user_id: {:?}, asset_id: {:?})", request.user_id(), request.asset_id());
+        let user_id = request.user_id();
+        let asset_id = request.asset_id();
+        let added = request.added();
 
-        // todo !
+        info!("UserAssetId request received from world server: (user_id: {:?}, asset_id: {:?})", user_id, asset_id);
+
+        let user_key = global.get_user_key_from_world_instance(world_instance_secret, user_id).unwrap();
+
+        asset_manager.user_asset_request(user_key, asset_id, added);
 
         info!("UserAssetId response to world server ..");
 

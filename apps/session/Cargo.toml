@@ -16,6 +16,7 @@ bevy_http_server = { path = "../../crates/http/bevy_http_server" }
 bevy_http_client = { path = "../../crates/http/bevy_http_client" }
 config = { path = "../config", features = ["session"] }
 crypto = { path = "../../crates/crypto" }
+asset_id = { path = "../../crates/asset/asset_id" }
 
 session_server_naia_proto = { path = "naia_proto" }
 session_server_http_proto = { path = "http_proto" }

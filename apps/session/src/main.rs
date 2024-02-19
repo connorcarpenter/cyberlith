@@ -5,6 +5,7 @@ mod asset_connection;
 mod world_connection;
 mod user_connection;
 mod global;
+mod asset_manager;
 
 use std::time::Duration;
 
@@ -21,6 +22,7 @@ use session_server_naia_proto::{protocol as naia_protocol};
 use session_server_http_proto::{protocol as http_protocol};
 
 use global::Global;
+use crate::asset_manager::AssetManager;
 
 fn main() {
 
@@ -39,6 +41,7 @@ fn main() {
         .add_plugins(HttpClientPlugin)
         // Resource
         .insert_resource(Global::new(&instance_secret, registration_resend_rate, region_server_disconnect_timeout, world_connect_resend_rate))
+        .insert_resource(AssetManager::new())
         // Startup System
         .add_systems(Startup, naia::init)
         .add_systems(Startup, http_server::init)
