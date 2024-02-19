@@ -1,8 +1,9 @@
 mod naia;
 mod http_server;
-mod http_client;
+mod region_connection;
 mod global;
 mod asset_manager;
+mod user_connection;
 
 use std::time::Duration;
 
@@ -45,11 +46,11 @@ fn main() {
                 naia::disconnect_events,
                 naia::error_events,
                 naia::tick_events,
-                http_server::recv_login_request,
-                http_server::recv_heartbeat_request,
-                http_client::recv_register_instance_response,
-                http_client::send_connect_region,
-                http_client::process_region_server_disconnect,
+                user_connection::recv_login_request,
+                region_connection::recv_heartbeat_request,
+                region_connection::recv_register_instance_response,
+                region_connection::send_connect_region,
+                region_connection::process_region_server_disconnect,
             )
                 .in_set(ReceiveEvents),
         )

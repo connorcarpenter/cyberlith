@@ -2,10 +2,12 @@
 use bevy_ecs::change_detection::ResMut;
 use bevy_log::{info, warn};
 
-use bevy_http_client::HttpClient;
+use bevy_http_client::{HttpClient, ResponseError};
+use bevy_http_server::HttpServer;
 
 use region_server_http_proto::WorldRegisterInstanceRequest;
-use config::{REGION_SERVER_RECV_ADDR, REGION_SERVER_PORT, WORLD_SERVER_RECV_ADDR, WORLD_SERVER_HTTP_PORT, WORLD_SERVER_SIGNAL_PORT, WORLD_SERVER_SECRET, PUBLIC_IP_ADDR};
+use config::{REGION_SERVER_RECV_ADDR, REGION_SERVER_PORT, WORLD_SERVER_RECV_ADDR, WORLD_SERVER_HTTP_PORT, WORLD_SERVER_SIGNAL_PORT, WORLD_SERVER_SECRET, REGION_SERVER_SECRET, PUBLIC_IP_ADDR};
+use world_server_http_proto::{HeartbeatRequest, HeartbeatResponse};
 
 use crate::global::Global;
 
@@ -56,6 +58,29 @@ pub fn recv_register_instance_response(
     }
 }
 
+pub fn recv_heartbeat_request(
+    mut global: ResMut<Global>,
+    mut server: ResMut<HttpServer>,
+) {
+    while let Some((_addr, request, response_key)) = server.receive::<HeartbeatRequest>() {
+
+        if request.region_secret() != REGION_SERVER_SECRET {
+            warn!("invalid request secret");
+            server.respond(response_key, Err(ResponseError::Unauthenticated));
+            continue;
+        }
+
+        info!("Heartbeat request received from region server");
+
+        // setting last heard
+        global.heard_from_region_server();
+
+        // responding
+        // info!("Sending heartbeat response to region server ..");
+        server.respond(response_key, Ok(HeartbeatResponse));
+    }
+}
+
 pub fn process_region_server_disconnect(mut global: ResMut<Global>) {
     if global.connected() {
         if global.time_to_disconnect() {
@@ -64,3 +89,4 @@ pub fn process_region_server_disconnect(mut global: ResMut<Global>) {
         }
     }
 }
+
