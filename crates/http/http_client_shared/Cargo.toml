@@ -14,9 +14,9 @@ async-channel = { version = "1.8" }
 
 # For compiling to web:
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-js-sys = "0.3"
-wasm-bindgen = "0.2.87"
-wasm-bindgen-futures = "0.4"
+js-sys = { version = "0.3" }
+wasm-bindgen = { version = "0.2" }
+wasm-bindgen-futures = { version = "0.4" }
 
 [dependencies.web-sys]
 version = "0.3.52"

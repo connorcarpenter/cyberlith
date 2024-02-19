@@ -35,7 +35,7 @@ mod inner {
             window: &Window,
             settings: SurfaceSettings,
         ) -> Result<Self, WindowError> {
-            let canvas = window.canvas();
+            let canvas = window.canvas().unwrap();
 
             // get webgl context and verify extensions
             let webgl_context = canvas
@@ -87,6 +87,7 @@ mod inner {
 
 #[cfg(not(target_arch = "wasm32"))]
 mod inner {
+    use glutin::display::DisplayApiPreference;
     use glutin::surface::*;
     use render_api::resources::HardwareAcceleration;
 
@@ -119,19 +120,9 @@ mod inner {
             // but sometimes platforms/drivers may not have it, so we use back up options
             // where possible. TODO: check whether we can expose these options as
             // "features", so that users can select the relevant backend they want.
-
-            // try egl and fallback to windows wgl. Windows is the only platform that
-            // *requires* window handle to create display.
-            #[cfg(target_os = "windows")]
-            let preference =
-                glutin::display::DisplayApiPreference::WglThenEgl(Some(raw_window_handle));
-            // try egl and fallback to x11 glx
-            #[cfg(target_os = "linux")]
-            let preference = glutin::display::DisplayApiPreference::EglThenGlx(Box::new(
+            let preference = DisplayApiPreference::Glx(Box::new(
                 winit::platform::x11::register_xlib_error_hook,
             ));
-            #[cfg(target_os = "android")]
-            let preference = glutin::display::DisplayApiPreference::Egl;
 
             let gl_display =
                 unsafe { glutin::display::Display::new(raw_display_handle, preference)? };

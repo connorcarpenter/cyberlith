@@ -174,6 +174,7 @@ impl<T: 'static + Clone> Window<T> {
                 }) as Box<dyn FnMut(_)>);
             winit_window
                 .canvas()
+                .unwrap()
                 .add_event_listener_with_callback("contextmenu", closure.as_ref().unchecked_ref())
                 .expect("failed to listen to canvas context menu");
             closure
@@ -230,6 +231,7 @@ impl<T: 'static + Clone> Window<T> {
                         use winit::platform::web::WindowExtWebSys;
                         self.window
                             .canvas()
+                            .unwrap()
                             .remove_event_listener_with_callback(
                                 "contextmenu",
                                 self.closure.as_ref().unchecked_ref(),
@@ -246,9 +248,9 @@ impl<T: 'static + Clone> Window<T> {
                 WinitEvent::WindowEvent { ref event, .. } => match event {
                     WindowEvent::RedrawRequested => {
                         #[cfg(not(target_arch = "wasm32"))]
-                            let now = std::time::Instant::now();
+                        let now = std::time::Instant::now();
                         #[cfg(target_arch = "wasm32")]
-                            let now = instant::Instant::now();
+                        let now = instant::Instant::now();
 
                         let duration = now.duration_since(last_time);
                         last_time = now;
@@ -260,14 +262,14 @@ impl<T: 'static + Clone> Window<T> {
                         if self.maximized {
                             use winit::platform::web::WindowExtWebSys;
 
-                            let html_canvas = self.window.canvas();
+                            let html_canvas = self.window.canvas().unwrap();
                             let browser_window = html_canvas
                                 .owner_document()
                                 .and_then(|doc| doc.default_view())
                                 .or_else(web_sys::window)
                                 .unwrap();
 
-                            self.window.set_inner_size(dpi::LogicalSize {
+                            self.window.request_inner_size(dpi::LogicalSize {
                                 width: browser_window.inner_width().unwrap().as_f64().unwrap(),
                                 height: browser_window.inner_height().unwrap().as_f64().unwrap(),
                             });

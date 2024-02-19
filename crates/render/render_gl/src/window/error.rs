@@ -34,6 +34,8 @@ pub enum WindowError {
 pub enum WindowError {
     #[error("failed to create a new winit window")]
     WinitError(#[from] winit::error::OsError),
+    #[error("winit event loop error")]
+    WinitEventLoopError(#[from] winit::error::EventLoopError),
     #[error("failed creating a new window")]
     WindowCreation,
     #[error("unable to get document from canvas")]
