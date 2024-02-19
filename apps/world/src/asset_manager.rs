@@ -170,12 +170,20 @@ impl AssetManager {
             if added {
                 info!("adding asset entry for user: {:?}, asset: {:?}", user_key, asset_id);
                 room.add_entity(&asset_entry_entity);
-                // TODO: notify session server that asset is now in scope for user
+                self.notify_session_server_asset_is_in_scope(user_key, asset_id);
             } else {
                 room.remove_entity(&asset_entry_entity);
-                // TODO: notify session server that asset is now out of scope for user
+                self.notify_session_server_asset_is_out_of_scope(user_key, asset_id);
             }
         }
+    }
+
+    fn notify_session_server_asset_is_in_scope(&self, user_key: UserKey, asset_id: AssetId) {
+        todo!()
+    }
+
+    fn notify_session_server_asset_is_out_of_scope(&self, user_key: UserKey, asset_id: AssetId) {
+        todo!()
     }
 }
 

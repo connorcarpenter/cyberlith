@@ -222,7 +222,7 @@ pub fn tick_events(
                 asset_id_entity_actions.push((*user_key, asset_id, *include));
             }
 
-            // TODO: put other AssetRef<Marker> components here ..
+            // TODO: put other AssetRef<Marker> components here .. clean this up somehow??
         }
     }
 
