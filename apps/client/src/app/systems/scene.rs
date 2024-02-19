@@ -103,7 +103,7 @@ pub fn scene_setup(
             camera: Camera {
                 viewport: Some(Viewport::new_at_origin(1280, 720)),
                 order: 0,
-                clear_operation: ClearOperation::from_rgba(0.0, 0.0, 0.0, 1.0),
+                clear_operation: ClearOperation::from_rgba(0.0, 255.0, 0.0, 1.0),
                 target: RenderTarget::Screen,
                 ..Default::default()
             },
@@ -128,6 +128,7 @@ pub fn scene_step(
     mut object_q: Query<&mut Transform, With<ObjectMarker>>,
     mut rotation: Local<f32>,
     // mut icon_q: Query<&mut WalkAnimation>,
+    mut camera_q: Query<&mut Camera>,
 ) {
     let elapsed_time = time.get_elapsed();
 
@@ -159,6 +160,15 @@ pub fn scene_step(
     //         anim.image_index -= subimage_count;
     //     }
     // }
+
+    for mut camera in camera_q.iter_mut() {
+        camera.clear_operation = ClearOperation::from_rgba(
+            (f32::to_radians(*rotation).cos() + 1.0) / 2.0,
+            (f32::to_radians(*rotation).sin() + 1.0) / 2.0,
+            0.0,
+            1.0,
+        );
+    }
 }
 
 pub fn scene_draw(
