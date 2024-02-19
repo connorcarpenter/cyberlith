@@ -6,16 +6,16 @@ use http_server::{async_dup::Arc, smol::lock::RwLock};
 pub struct SessionInstance {
     http_addr: String,
     http_port: u16,
-    public_url: String,
+    public_webrtc_url: String,
     last_heard: Arc<RwLock<Instant>>,
 }
 
 impl SessionInstance {
-    pub fn new(http_addr: String, http_port: u16, public_url: String) -> Self {
+    pub fn new(http_addr: String, http_port: u16, public_webrtc_url: String) -> Self {
         Self {
             http_addr,
             http_port,
-            public_url,
+            public_webrtc_url,
             last_heard: Arc::new(RwLock::new(Instant::now())),
         }
     }
@@ -28,8 +28,8 @@ impl SessionInstance {
         self.http_port
     }
 
-    pub fn public_url(&self) -> String {
-        self.public_url.clone()
+    pub fn public_webrtc_url(&self) -> String {
+        self.public_webrtc_url.clone()
     }
 
     pub fn last_heard(&self) -> Arc<RwLock<Instant>> {
@@ -40,16 +40,16 @@ impl SessionInstance {
 pub struct WorldInstance {
     http_addr: String,
     http_port: u16,
-    public_url: String,
+    public_webrtc_url: String,
     last_heard: Arc<RwLock<Instant>>,
 }
 
 impl WorldInstance {
-    pub fn new(http_addr: String, http_port: u16, public_url: String) -> Self {
+    pub fn new(http_addr: String, http_port: u16, public_webrtc_url: String) -> Self {
         Self {
             http_addr,
             http_port,
-            public_url,
+            public_webrtc_url,
             last_heard: Arc::new(RwLock::new(Instant::now())),
         }
     }
@@ -62,8 +62,8 @@ impl WorldInstance {
         self.http_port
     }
 
-    pub fn public_url(&self) -> String {
-        self.public_url.clone()
+    pub fn public_webrtc_url(&self) -> String {
+        self.public_webrtc_url.clone()
     }
 
     pub fn last_heard(&self) -> Arc<RwLock<Instant>> {

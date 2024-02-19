@@ -46,7 +46,7 @@ async fn async_impl(
     };
     let session_server_http_addr = session_server.http_addr();
     let session_server_http_port = session_server.http_port();
-    let session_server_public_url = session_server.public_url();
+    let session_server_public_webrtc_url = session_server.public_webrtc_url();
 
     info!("Sending incoming user request to session server");
 
@@ -63,5 +63,5 @@ async fn async_impl(
 
     info!("Sending user login response to orchestrator");
 
-    Ok(SessionUserLoginResponse::new(&session_server_public_url, &temp_token))
+    Ok(SessionUserLoginResponse::new(&session_server_public_webrtc_url, &temp_token))
 }

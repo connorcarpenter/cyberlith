@@ -92,10 +92,10 @@ pub fn recv_world_connect_response(
             received_response_keys.push(response_key.clone());
             match result {
                 Ok(response) => {
-                    info!("received from regionserver: world_connect(public_url: {:?}, token: {:?})", response.world_server_public_url, response.token);
+                    info!("received from regionserver: world_connect(public_webrtc_url: {:?}, token: {:?})", response.world_server_public_webrtc_url, response.token);
 
                     let token = WorldConnectToken::new(
-                        &response.world_server_public_url,
+                        &response.world_server_public_webrtc_url,
                         &response.token,
                     );
                     server.send_message::<PrimaryChannel, WorldConnectToken>(user_key, &token);

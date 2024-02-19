@@ -29,14 +29,14 @@ impl SessionUserLoginRequest {
 // Response
 #[derive(Serde, PartialEq, Clone)]
 pub struct SessionUserLoginResponse {
-    pub session_server_public_url: String,
+    pub session_server_public_webrtc_url: String,
     pub token: String,
 }
 
 impl SessionUserLoginResponse {
-    pub fn new(session_server_public_url: &str, token: &str) -> Self {
+    pub fn new(session_server_public_webrtc_url: &str, token: &str) -> Self {
         Self {
-            session_server_public_url: session_server_public_url.to_string(),
+            session_server_public_webrtc_url: session_server_public_webrtc_url.to_string(),
             token: token.to_string(),
         }
     }

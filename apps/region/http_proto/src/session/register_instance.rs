@@ -9,7 +9,7 @@ pub struct SessionRegisterInstanceRequest {
     session_secret: String,
     http_addr: String,
     http_port: u16,
-    public_url: String,
+    public_webrtc_url: String,
 }
 
 impl SessionRegisterInstanceRequest {
@@ -17,13 +17,13 @@ impl SessionRegisterInstanceRequest {
         session_secret: &str,
         http_addr: &str,
         http_port: u16,
-        public_url: &str,
+        public_webrtc_url: &str,
     ) -> Self {
         Self {
             session_secret: session_secret.to_string(),
             http_addr: http_addr.to_string(),
             http_port,
-            public_url: public_url.to_string(),
+            public_webrtc_url: public_webrtc_url.to_string(),
         }
     }
 
@@ -39,8 +39,8 @@ impl SessionRegisterInstanceRequest {
         self.http_port
     }
 
-    pub fn public_url(&self) -> String {
-        self.public_url.clone()
+    pub fn public_webrtc_url(&self) -> String {
+        self.public_webrtc_url.clone()
     }
 }
 

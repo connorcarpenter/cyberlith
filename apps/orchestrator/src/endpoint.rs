@@ -32,15 +32,15 @@ async fn async_impl(incoming_request: LoginRequest) -> Result<LoginResponse, Res
     };
 
     info!(
-        "Received login response from region server: addr: {:?}, token: {}",
-        region_response.session_server_public_url,
+        "Received login response from region server: webrtc_url: {:?}, token: {}",
+        region_response.session_server_public_webrtc_url,
         region_response.token,
     );
 
     info!("Sending login response to client");
 
     Ok(LoginResponse::new(
-        &region_response.session_server_public_url,
+        &region_response.session_server_public_webrtc_url,
         &region_response.token,
     ))
 }

@@ -50,13 +50,13 @@ pub fn handle_connection(
             if let Some(result) = http_client.recv(key) {
                 match result {
                     Ok(response) => {
-                        info!("received from orchestrator: (url: {:?}, token: {:?})", response.session_server_public_url, response.token);
+                        info!("received from orchestrator: (webrtc url: {:?}, token: {:?})", response.session_server_public_webrtc_url, response.token);
                         global.connection_state = ConnectionState::ReceivedFromOrchestrator(response.clone());
 
                         session_client.auth(SessionAuth::new(&response.token));
-                        info!("connecting to session server: {}", response.session_server_public_url);
+                        info!("connecting to session server: {}", response.session_server_public_webrtc_url);
                         let socket = WebrtcSocket::new(
-                            &response.session_server_public_url,
+                            &response.session_server_public_webrtc_url,
                             session_client.socket_config()
                         );
                         session_client.connect(socket);
@@ -108,9 +108,9 @@ pub fn session_message_events(
             info!("received World Connect Token from Session Server!");
 
             world_client.auth(WorldAuth::new(&token.token));
-            info!("connecting to world server: {}", token.world_server_public_url);
+            info!("connecting to world server: {}", token.world_server_public_webrtc_url);
             let socket = WebrtcSocket::new(
-                &token.world_server_public_url,
+                &token.world_server_public_webrtc_url,
                 world_client.socket_config()
             );
             world_client.connect(socket);

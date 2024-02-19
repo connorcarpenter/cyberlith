@@ -24,14 +24,14 @@ impl WorldUserLoginRequest {
 // Response
 #[derive(Serde, PartialEq, Clone, Eq, Hash)]
 pub struct WorldUserLoginResponse {
-    pub world_server_public_url: String,
+    pub world_server_public_webrtc_url: String,
     pub token: String,
 }
 
 impl WorldUserLoginResponse {
-    pub fn new(world_server_public_url: &str, token: &str) -> Self {
+    pub fn new(world_server_public_webrtc_url: &str, token: &str) -> Self {
         Self {
-            world_server_public_url: world_server_public_url.to_string(),
+            world_server_public_webrtc_url: world_server_public_webrtc_url.to_string(),
             token: token.to_string(),
         }
     }
