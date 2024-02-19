@@ -26,7 +26,7 @@ impl WorldUserLoginRequest {
 pub struct WorldUserLoginResponse {
     pub world_server_instance_secret: String,
     pub world_server_public_webrtc_url: String,
-    pub token: String,
+    pub login_token: String,
 }
 
 impl WorldUserLoginResponse {
@@ -34,7 +34,7 @@ impl WorldUserLoginResponse {
         Self {
             world_server_instance_secret: world_server_instance_secret.to_string(),
             world_server_public_webrtc_url: world_server_public_webrtc_url.to_string(),
-            token: token.to_string(),
+            login_token: token.to_string(),
         }
     }
 }

@@ -107,7 +107,7 @@ pub fn session_message_events(
         for token in events.read::<SessionPrimaryChannel, WorldConnectToken>() {
             info!("received World Connect Token from Session Server!");
 
-            world_client.auth(WorldAuth::new(&token.token));
+            world_client.auth(WorldAuth::new(&token.login_token));
             info!("connecting to world server: {}", token.world_server_public_webrtc_url);
             let socket = WebrtcSocket::new(
                 &token.world_server_public_webrtc_url,

@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use http_common::ApiResponse;
 
 // ResponseKey
-#[derive(Clone, Eq, PartialEq, Hash)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash)]
 pub struct ResponseKey<S: ApiResponse> {
     pub(crate) id: u64,
     phantom_s: PhantomData<S>,

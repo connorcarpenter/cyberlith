@@ -14,6 +14,18 @@ pub enum ConnectionState {
     Connected,
 }
 
+struct UserData {
+    world_instance_secret: String,
+}
+
+impl UserData {
+    pub fn new(world_instance_secret: &str) -> Self {
+        Self {
+            world_instance_secret: world_instance_secret.to_string(),
+        }
+    }
+}
+
 #[derive(Resource)]
 pub struct Global {
     instance_secret: String,
@@ -27,6 +39,7 @@ pub struct Global {
     world_connect_resend_rate: Duration,
     login_tokens: HashSet<String>,
     worldless_users: HashMap<UserKey, Option<Instant>>,
+    worldfull_users: HashMap<UserKey, UserData>,
     asset_server_opt: Option<(String, u16)>,
 }
 
@@ -50,6 +63,7 @@ impl Global {
             world_connect_resend_rate,
             login_tokens: HashSet::new(),
             worldless_users: HashMap::new(),
+            worldfull_users: HashMap::new(),
             asset_server_opt: None,
         }
     }
@@ -140,16 +154,24 @@ impl Global {
         worldless_users
     }
 
-    pub fn add_world_key(&mut self, user_key: &UserKey, response_key: ClientResponseKey<WorldUserLoginResponse>) {
+    pub fn add_world_connect_response_key(&mut self, user_key: &UserKey, response_key: ClientResponseKey<WorldUserLoginResponse>) {
         self.world_connect_response_keys.insert(response_key, user_key.clone());
     }
 
-    pub fn remove_world_key(&mut self, response_key: &ClientResponseKey<WorldUserLoginResponse>) {
+    pub fn remove_world_connect_response_key(&mut self, response_key: &ClientResponseKey<WorldUserLoginResponse>) {
         self.world_connect_response_keys.remove(response_key);
     }
 
-    pub fn world_keys(&self) -> impl Iterator<Item = (&ClientResponseKey<WorldUserLoginResponse>, &UserKey)> {
-        self.world_connect_response_keys.iter()
+    pub fn world_connect_response_keys(&self) -> Vec<(ClientResponseKey<WorldUserLoginResponse>, UserKey)> {
+        let mut out = Vec::new();
+        for (res_key, usr_key) in self.world_connect_response_keys.iter() {
+            out.push((res_key.clone(), *usr_key));
+        }
+        out
+    }
+
+    pub fn add_worldfull_user(&mut self, user_key: &UserKey, world_instance_secret: &str) {
+        self.worldfull_users.insert(*user_key, UserData::new(world_instance_secret));
     }
 
     // Client login
