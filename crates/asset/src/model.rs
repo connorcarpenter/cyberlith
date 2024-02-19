@@ -1,6 +1,6 @@
 use bevy_log::info;
-use asset_io::AssetId;
 
+use asset_id::AssetId;
 use render_api::components::Transform;
 use storage::{AssetHash, Handle};
 use asset_io::bits::ComponentFileType;

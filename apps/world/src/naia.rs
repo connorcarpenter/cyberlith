@@ -48,9 +48,11 @@ pub fn auth_events(
 ) {
     for events in event_reader.read() {
         for (user_key, auth) in events.read::<Auth>() {
-            if global.take_login_token(&auth.token) {
+            if let Some(user_id) = global.take_login_token(&auth.token) {
 
-                info!("Accepted connection. Token: {}", auth.token);
+                info!("Accepted connection. User Id: {}, Token: {}", user_id, auth.token);
+
+                global.add_user(&user_key, user_id);
 
                 // Accept incoming connection
                 server.accept_connection(&user_key);

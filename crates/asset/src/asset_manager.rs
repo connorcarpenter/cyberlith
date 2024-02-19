@@ -1,6 +1,6 @@
 
 use bevy_ecs::system::{ResMut, Resource};
-use asset_io::AssetId;
+use asset_id::AssetId;
 
 use render_api::{
     base::CpuSkin,

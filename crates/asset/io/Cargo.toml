@@ -13,7 +13,7 @@ write_json = [ "serde", "serde_json" ]
 [dependencies]
 cfg-if = { version = "1.0" }
 log = { version = "0.4" }
-
+asset_id = { path = "../asset_id" }
 crypto = { path = "../../crypto" }
 
 # for BITS

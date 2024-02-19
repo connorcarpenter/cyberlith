@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
 use bevy_log::warn;
-use asset_io::AssetId;
 
+use asset_id::AssetId;
 use render_api::base::{CpuMaterial, CpuSkin, CpuMesh};
 use storage::{Storage, Handle};
 

@@ -25,7 +25,7 @@ impl AssetCache {
             info!("Cache hit: {:?}", path);
 
             // update lru order
-            self.access_deque.retain(|x| x != path);
+            self.access_deque.retain(|x| x != path); // costly, O(n)
             self.access_deque.push_back(path.to_string());
 
             return Some(data.clone());

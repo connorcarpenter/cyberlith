@@ -2,7 +2,8 @@ use std::{collections::HashMap, fs};
 
 use log::info;
 
-use asset_io::{AssetId, ETag, json::ProcessedAssetMeta};
+use asset_id::{AssetId, ETag};
+use asset_io::{json::ProcessedAssetMeta};
 
 pub struct AssetMetadata {
     path: String,

@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use crate::AssetId;
+use asset_id::AssetId;
 
 use crate::json::{MAX_QUAT_COMPONENT_SIZE, MAX_SCALE};
 

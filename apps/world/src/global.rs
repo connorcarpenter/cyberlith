@@ -1,8 +1,8 @@
-use std::{time::{Instant, Duration}, collections::HashSet};
+use std::{time::{Instant, Duration}, collections::HashMap};
 
 use bevy_ecs::system::Resource;
 
-use naia_bevy_server::RoomKey;
+use naia_bevy_server::{RoomKey, UserKey};
 
 use bevy_http_client::{ResponseKey as ClientResponseKey};
 
@@ -22,7 +22,9 @@ pub struct Global {
     register_instance_response_key: Option<ClientResponseKey<WorldRegisterInstanceResponse>>,
     registration_resend_rate: Duration,
     region_server_disconnect_timeout: Duration,
-    login_tokens: HashSet<String>,
+    next_user_id: u64,
+    login_tokens: HashMap<String, u64>,
+    users: HashMap<UserKey, u64>,
     main_room_key: RoomKey,
 }
 
@@ -42,7 +44,9 @@ impl Global {
             register_instance_response_key: None,
             registration_resend_rate,
             region_server_disconnect_timeout,
-            login_tokens: HashSet::new(),
+            next_user_id: 0,
+            login_tokens: HashMap::new(),
+            users: HashMap::new(),
             main_room_key
         }
     }
@@ -103,14 +107,23 @@ impl Global {
 
     // Client login
 
-    pub fn add_login_token(&mut self, token: &str) {
-        self.login_tokens.insert(token.to_string());
+    pub fn add_login_token(&mut self, token: &str) -> u64 {
+        let user_id = self.next_user_id;
+        self.next_user_id = self.next_user_id.wrapping_add(1);
+        if self.next_user_id == 0 {
+            panic!("user_id overflow");
+        }
+        self.login_tokens.insert(token.to_string(), user_id);
+        user_id
     }
 
-    pub fn take_login_token(&mut self, token: &str) -> bool {
+    pub fn take_login_token(&mut self, token: &str) -> Option<u64> {
         self.login_tokens.remove(token)
     }
 
+    pub fn add_user(&mut self, user_key: &UserKey, user_id: u64) {
+        self.users.insert(user_key.clone(), user_id);
+    }
     //
 
     pub fn main_room_key(&self) -> RoomKey {

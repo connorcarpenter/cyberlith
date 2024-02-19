@@ -1,5 +1,5 @@
 use naia_serde::{BitReader, SerdeErr, SerdeInternal as Serde};
-use crate::AssetId;
+use asset_id::AssetId;
 
 use crate::bits::{skin::SkinActionType, SkinAction};
 

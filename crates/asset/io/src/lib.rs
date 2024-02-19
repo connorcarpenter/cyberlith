@@ -2,7 +2,6 @@ mod error;
 pub use error::AssetIoError;
 
 use cfg_if::cfg_if;
-use crypto::U32Token;
 
 cfg_if! {
     if #[cfg(any(feature = "write_bits", feature = "read_bits"))] {
@@ -15,6 +14,3 @@ cfg_if! {
         pub mod json;
     } else {}
 }
-
-pub type AssetId = U32Token;
-pub type ETag = U32Token;

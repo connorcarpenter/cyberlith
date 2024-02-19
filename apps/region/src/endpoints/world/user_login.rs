@@ -54,16 +54,18 @@ async fn async_impl(
 
     let temp_token = crypto::generate_random_string(16);
 
-    let request = IncomingUserRequest::new(REGION_SERVER_SECRET, &temp_token);
+    let world_server_request = IncomingUserRequest::new(REGION_SERVER_SECRET, &temp_token);
 
-    let Ok(_outgoing_response) = HttpClient::send(world_server_http_addr, world_server_http_port, request).await else {
+    let Ok(world_server_response) = HttpClient::send(world_server_http_addr, world_server_http_port, world_server_request).await else {
         warn!("failed incoming user request to world server");
         return Err(ResponseError::InternalServerError("failed incoming user request to world server".to_string()));
     };
 
     info!("Received incoming user response from world server");
 
+    let user_id = world_server_response.user_id;
+
     info!("Sending user login response to session server");
 
-    Ok(WorldUserLoginResponse::new(world_server_instance_secret, world_server_public_webrtc_url, &temp_token))
+    Ok(WorldUserLoginResponse::new(world_server_instance_secret, user_id, world_server_public_webrtc_url, &temp_token))
 }

@@ -24,10 +24,10 @@ pub fn recv_login_request(
 
         info!("Login request received from region server: Login(token: {})", request.login_token);
 
-        global.add_login_token(&request.login_token);
+        let new_user_id = global.add_login_token(&request.login_token);
 
         info!("Sending login response to region server ..");
 
-        server.respond(response_key, Ok(IncomingUserResponse));
+        server.respond(response_key, Ok(IncomingUserResponse::new(new_user_id)));
     }
 }

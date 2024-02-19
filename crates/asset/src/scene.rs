@@ -1,6 +1,6 @@
 use bevy_log::info;
-use asset_io::AssetId;
 
+use asset_id::AssetId;
 use asset_io::bits::ComponentFileType;
 use math::{Quat, Vec3};
 use render_api::components::Transform;

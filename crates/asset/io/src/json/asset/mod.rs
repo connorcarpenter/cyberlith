@@ -15,8 +15,8 @@ cfg_if! {
 }
 
 use serde::{Deserialize, Serialize};
+use asset_id::AssetId;
 
-use crate::AssetId;
 use crate::json::{skin::SkinFile, scene::SceneFile, model::ModelFile, icon::IconFile, animation::AnimFile, mesh::MeshFile, palette::PaletteFile, skeleton::SkelFile};
 
 #[derive(Serialize, Deserialize, Clone)]

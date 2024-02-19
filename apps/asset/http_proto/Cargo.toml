@@ -11,4 +11,4 @@ publish = false
 [dependencies]
 naia-serde = { path = "../../../../naia/shared/serde" }
 http_common = { path = "../../../crates/http/http_common" }
-asset_io = { path = "../../../crates/asset/io", features = ["read_json"] }
+asset_id = { path = "../../../crates/asset/asset_id" }

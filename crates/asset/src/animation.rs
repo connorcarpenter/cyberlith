@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use bevy_log::info;
-use asset_io::AssetId;
+use asset_id::AssetId;
 
 use math::Quat;
 use render_api::components::Transform;

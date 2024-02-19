@@ -5,7 +5,8 @@ use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, RoomKey, Server, UserKey};
 
-use world_server_naia_proto::components::{AssetEntry, AssetId, AssetRef};
+use asset_id::AssetId;
+use world_server_naia_proto::components::{AssetEntry, AssetRef};
 
 // AssetCatalog
 #[derive(Clone, Copy, Eq, PartialEq)]

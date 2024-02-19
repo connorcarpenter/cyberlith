@@ -25,14 +25,16 @@ impl WorldUserLoginRequest {
 #[derive(Serde, PartialEq, Clone, Eq, Hash)]
 pub struct WorldUserLoginResponse {
     pub world_server_instance_secret: String,
+    pub world_server_user_id: u64,
     pub world_server_public_webrtc_url: String,
     pub login_token: String,
 }
 
 impl WorldUserLoginResponse {
-    pub fn new(world_server_instance_secret: &str, world_server_public_webrtc_url: &str, token: &str) -> Self {
+    pub fn new(world_server_instance_secret: &str, world_server_user_id: u64, world_server_public_webrtc_url: &str, token: &str) -> Self {
         Self {
             world_server_instance_secret: world_server_instance_secret.to_string(),
+            world_server_user_id,
             world_server_public_webrtc_url: world_server_public_webrtc_url.to_string(),
             login_token: token.to_string(),
         }

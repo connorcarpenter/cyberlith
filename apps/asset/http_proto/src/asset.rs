@@ -1,6 +1,5 @@
 use naia_serde::SerdeInternal as Serde;
-
-use asset_io::{AssetId, ETag};
+use asset_id::{AssetId, ETag};
 
 use http_common::{ApiRequest, ApiResponse, Method};
 
@@ -8,24 +7,24 @@ use http_common::{ApiRequest, ApiResponse, Method};
 #[derive(Serde, PartialEq, Clone, Debug)]
 pub struct AssetRequest {
     // TODO: secret?
-    asset_id: String,
-    etag: String,
+    asset_id: AssetId,
+    etag: ETag,
 }
 
 impl AssetRequest {
     pub fn new(asset_id: AssetId, etag: ETag) -> Self {
         Self {
-            asset_id: asset_id.as_string(),
-            etag: etag.as_string(),
+            asset_id,
+            etag,
         }
     }
 
     pub fn asset_id(&self) -> AssetId {
-        AssetId::from_str(&self.asset_id).unwrap()
+        self.asset_id
     }
 
     pub fn etag(&self) -> ETag {
-        ETag::from_str(&self.etag).unwrap()
+        self.etag
     }
 }
 

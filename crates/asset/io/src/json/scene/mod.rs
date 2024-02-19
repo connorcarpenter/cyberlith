@@ -1,7 +1,7 @@
 use cfg_if::cfg_if;
 
 use serde::{Deserialize, Serialize};
-use crate::AssetId;
+use asset_id::AssetId;
 
 use crate::json::{components::{FileComponentType, FileComponentEntry, FileTransformPosition, FileTransformRotation, FileTransformScale}};
 

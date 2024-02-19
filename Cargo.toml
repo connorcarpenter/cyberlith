@@ -31,6 +31,7 @@ members = [
     "crates/input",
     "crates/asset/io",
     "crates/asset",
+    "crates/asset/asset_id",
     "crates/render/gl",
     "crates/render/egui_gl",
     "crates/http/bevy_http_client",

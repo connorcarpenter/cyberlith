@@ -18,6 +18,7 @@ config = { path = "../config", features = ["asset"] }
 asset_server_http_proto = { path = "http_proto" }
 region_server_http_proto = { path = "../region/http_proto" }
 asset_io = { path = "../../crates/asset/io", features = ["read_json"] }
+asset_id = { path = "../../crates/asset/asset_id" }
 
 log = { version = "0.4", features = [] }
 simple_logger = { version = "4.0", default-features = false, features = ["timestamps"] }

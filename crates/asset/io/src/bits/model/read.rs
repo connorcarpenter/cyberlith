@@ -1,5 +1,5 @@
 use naia_serde::{BitReader, SerdeErr, SerdeInternal as Serde, UnsignedVariableInteger};
-use crate::AssetId;
+use asset_id::AssetId;
 
 use crate::bits::{
     common::{ComponentFileType, ScaleSerdeInt, SerdeQuat, TranslationSerdeInt},

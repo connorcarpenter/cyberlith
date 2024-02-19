@@ -16,13 +16,31 @@ pub enum ConnectionState {
 
 struct UserData {
     world_instance_secret: String,
+    user_id: u64,
 }
 
 impl UserData {
-    pub fn new(world_instance_secret: &str) -> Self {
+    pub fn new(world_instance_secret: &str, user_id: u64) -> Self {
         Self {
             world_instance_secret: world_instance_secret.to_string(),
+            user_id,
         }
+    }
+}
+
+struct WorldInstanceData {
+    users: HashSet<(UserKey, u64)>, // likely not the right data type ...
+}
+
+impl WorldInstanceData {
+    pub fn new() -> Self {
+        Self {
+            users: HashSet::new(),
+        }
+    }
+
+    pub(crate) fn add_user(&mut self, user_key: UserKey, user_id: u64) {
+        self.users.insert((user_key, user_id));
     }
 }
 
@@ -40,6 +58,7 @@ pub struct Global {
     login_tokens: HashSet<String>,
     worldless_users: HashMap<UserKey, Option<Instant>>,
     worldfull_users: HashMap<UserKey, UserData>,
+    world_instances: HashMap<String, WorldInstanceData>,
     asset_server_opt: Option<(String, u16)>,
 }
 
@@ -64,6 +83,7 @@ impl Global {
             login_tokens: HashSet::new(),
             worldless_users: HashMap::new(),
             worldfull_users: HashMap::new(),
+            world_instances: HashMap::new(),
             asset_server_opt: None,
         }
     }
@@ -170,8 +190,14 @@ impl Global {
         out
     }
 
-    pub fn add_worldfull_user(&mut self, user_key: &UserKey, world_instance_secret: &str) {
-        self.worldfull_users.insert(*user_key, UserData::new(world_instance_secret));
+    pub fn add_worldfull_user(&mut self, user_key: &UserKey, world_instance_secret: &str, user_id: u64) {
+        self.worldfull_users.insert(*user_key, UserData::new(world_instance_secret, user_id));
+
+        if !self.world_instances.contains_key(world_instance_secret) {
+            self.world_instances.insert(world_instance_secret.to_string(), WorldInstanceData::new());
+        }
+        let world_instance = self.world_instances.get_mut(world_instance_secret).unwrap();
+        world_instance.add_user(*user_key, user_id);
     }
 
     // Client login

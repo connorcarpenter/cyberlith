@@ -24,7 +24,15 @@ impl IncomingUserRequest {
 
 // Response
 #[derive(Serde, PartialEq, Clone)]
-pub struct IncomingUserResponse;
+pub struct IncomingUserResponse {
+    pub user_id: u64,
+}
+
+impl IncomingUserResponse {
+    pub fn new(user_id: u64) -> Self {
+        Self { user_id }
+    }
+}
 
 // Traits
 impl ApiRequest for IncomingUserRequest {

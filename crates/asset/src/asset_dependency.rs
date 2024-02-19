@@ -1,4 +1,4 @@
-use asset_io::AssetId;
+use asset_id::AssetId;
 use storage::Handle;
 
 use crate::{SceneData, SkinData};
