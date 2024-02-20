@@ -14,6 +14,7 @@ use crate::{asset_store::AssetStore, user_assets::UserAssets};
 pub struct AssetManager {
     users: HashMap<UserKey, UserAssets>,
     asset_store: AssetStore,
+    queued_user_asset_requests: Vec<(UserKey, AssetId, bool)>,
 }
 
 impl AssetManager {
@@ -21,6 +22,7 @@ impl AssetManager {
         Self {
             users: HashMap::new(),
             asset_store: AssetStore::new(),
+            queued_user_asset_requests: Vec::new(),
         }
     }
 
@@ -30,6 +32,26 @@ impl AssetManager {
 
     pub fn deregister_user(&mut self, user_key: &UserKey) {
         self.users.remove(user_key);
+    }
+
+    pub fn queue_user_asset_request(&mut self, user_key: UserKey, asset_id: &AssetId, added: bool) {
+        self.queued_user_asset_requests.push((user_key, asset_id.clone(), added));
+    }
+
+    pub fn has_queued_user_asset_requests(&self) -> bool {
+        self.queued_user_asset_requests.len() > 0
+    }
+
+    pub fn process_queued_user_asset_requests(
+        &mut self,
+        server: &mut Server,
+        http_client: &mut HttpClient,
+        asset_server_addr: &str,
+        asset_server_port: u16
+    ) {
+        for (user_key, asset_id, added) in std::mem::take(&mut self.queued_user_asset_requests) {
+            self.user_asset_request(server, http_client, asset_server_addr, asset_server_port, user_key, &asset_id, added);
+        }
     }
 
     pub fn user_asset_request(
