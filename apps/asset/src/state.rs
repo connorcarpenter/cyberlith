@@ -1,5 +1,7 @@
 use crate::asset_cache::AssetCache;
 use std::time::{Duration, Instant};
+use asset_server_http_proto::{AssetRequest, AssetResponse};
+use http_client::ResponseError;
 
 use crate::asset_metadata_store::AssetMetadataStore;
 
@@ -32,7 +34,7 @@ impl State {
             region_server_last_heard: Instant::now(),
             registration_resend_rate,
             region_server_disconnect_timeout,
-            asset_metadata_store: asset_metadata_store,
+            asset_metadata_store,
             asset_cache: AssetCache::new(asset_cache_size_kb, asset_path),
         }
     }
@@ -71,11 +73,29 @@ impl State {
         self.region_server_connection_state = ConnectionState::Disconnected;
     }
 
-    pub fn asset_metadata_store(&self) -> &AssetMetadataStore {
-        &self.asset_metadata_store
-    }
+    pub fn handle_asset_request(&mut self, request: AssetRequest,) -> Result<AssetResponse, ResponseError> {
 
-    pub fn asset_cache_mut(&mut self) -> &mut AssetCache {
-        &mut self.asset_cache
+        let req_asset_id = request.asset_id();
+        let req_etag_opt = request.etag_opt();
+
+        if let Some(metadata) = self.asset_metadata_store.get(&req_asset_id) {
+            let asset_etag = metadata.etag();
+            if let Some(req_etag) = req_etag_opt {
+                if asset_etag == req_etag {
+                    return Ok(AssetResponse::not_modified());
+                }
+            }
+
+            let path = metadata.path().to_string();
+            let Some(asset_data) = self.asset_cache.load(&path) else {
+                return Err(ResponseError::InternalServerError(format!(
+                    "Failed to load asset data for path: `{}`",
+                    path
+                )));
+            };
+            return Ok(AssetResponse::modified(asset_etag, asset_data));
+        } else {
+            return Err(ResponseError::NotFound);
+        }
     }
 }

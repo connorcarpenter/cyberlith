@@ -29,10 +29,44 @@ pub struct AssetMetadataStore {
 }
 
 impl AssetMetadataStore {
-    fn new() -> Self {
-        Self {
+    pub fn new(path: &str) -> Self {
+        let mut output = Self {
             map: HashMap::new(),
+        };
+
+        let entries = fs::read_dir(path).unwrap();
+
+        for entry in entries {
+            let Ok(entry) = entry else {
+                continue;
+            };
+            let file_path = entry.path();
+
+            // Check if the file has a .meta extension
+            let Some(extension) = file_path.extension() else {
+                continue;
+            };
+            if extension != "meta" {
+                continue;
+            }
+
+            info!("Reading asset meta file: {:?}", file_path);
+            let bytes = fs::read(&file_path).unwrap();
+
+            let processed_meta = ProcessedAssetMeta::read(&bytes).unwrap();
+
+            // strip ".meta" extension from file path
+            let file_path = file_path.file_stem().unwrap();
+            let new_file_path = file_path.to_string_lossy();
+
+            output.insert(
+                processed_meta.asset_id(),
+                processed_meta.etag(),
+                new_file_path.to_string(),
+            );
         }
+
+        output
     }
 
     pub fn insert(&mut self, asset_id: AssetId, etag: ETag, path: String) {
@@ -43,42 +77,4 @@ impl AssetMetadataStore {
     pub fn get(&self, asset_id: &AssetId) -> Option<&AssetMetadata> {
         self.map.get(asset_id)
     }
-}
-
-pub fn init_asset_map(path: &str) -> AssetMetadataStore {
-    let mut output = AssetMetadataStore::new();
-
-    let entries = fs::read_dir(path).unwrap();
-
-    for entry in entries {
-        let Ok(entry) = entry else {
-            continue;
-        };
-        let file_path = entry.path();
-
-        // Check if the file has a .meta extension
-        let Some(extension) = file_path.extension() else {
-            continue;
-        };
-        if extension != "meta" {
-            continue;
-        }
-
-        info!("Reading asset meta file: {:?}", file_path);
-        let bytes = fs::read(&file_path).unwrap();
-
-        let processed_meta = ProcessedAssetMeta::read(&bytes).unwrap();
-
-        // strip ".meta" extension from file path
-        let file_path = file_path.file_stem().unwrap();
-        let new_file_path = file_path.to_string_lossy();
-
-        output.insert(
-            processed_meta.asset_id(),
-            processed_meta.etag(),
-            new_file_path.to_string(),
-        );
-    }
-
-    output
 }

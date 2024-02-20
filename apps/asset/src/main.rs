@@ -21,8 +21,8 @@ use simple_logger::SimpleLogger;
 use http_server::{async_dup::Arc, smol::lock::RwLock, Server};
 
 use config::{ASSET_SERVER_PORT, SELF_BINDING_ADDR};
+use crate::asset_metadata_store::AssetMetadataStore;
 
-use crate::asset_metadata_store::init_asset_map;
 use crate::state::State;
 
 pub fn main() {
@@ -39,13 +39,13 @@ pub fn main() {
     let registration_resend_rate = Duration::from_secs(5);
     let region_server_disconnect_timeout = Duration::from_secs(16);
     let asset_path = "assets";
-    let asset_map = init_asset_map(asset_path);
+    let asset_metadata_store = AssetMetadataStore::new(asset_path);
     let cache_size_kb = 5000; // 5 MB
     let state = Arc::new(RwLock::new(State::new(
         registration_resend_rate,
         region_server_disconnect_timeout,
         cache_size_kb,
-        asset_map,
+        asset_metadata_store,
         asset_path,
     )));
 
