@@ -1,5 +1,8 @@
 use bevy_app::AppExit;
-use bevy_ecs::{event::EventReader, system::{NonSendMut, ResMut}};
+use bevy_ecs::{
+    event::EventReader,
+    system::{NonSendMut, ResMut},
+};
 
 use render_api::{resources::Time, Window};
 

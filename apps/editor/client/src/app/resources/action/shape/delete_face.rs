@@ -24,7 +24,10 @@ pub(crate) fn execute(world: &mut World, action: ShapeAction) -> Vec<ShapeAction
     let (mut commands, mut face_manager, mut meshes) = system_state.get_mut(world);
 
     let Some(face_3d_entity) = face_manager.face_entity_2d_to_3d(&face_2d_entity) else {
-        panic!("failed to get face 3d entity for face 2d entity `{:?}`!", face_2d_entity)
+        panic!(
+            "failed to get face 3d entity for face 2d entity `{:?}`!",
+            face_2d_entity
+        )
     };
 
     // delete 3d face

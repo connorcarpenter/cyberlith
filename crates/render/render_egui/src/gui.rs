@@ -216,10 +216,7 @@ impl GUI {
     }
 
     pub fn render(&self, egui_context: &egui::Context) {
-        let Some(output) = self
-            .output
-            .borrow_mut()
-            .take() else {
+        let Some(output) = self.output.borrow_mut().take() else {
             info!("No output to render");
             return;
         };

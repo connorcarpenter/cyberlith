@@ -1,15 +1,15 @@
 use std::{
     collections::BTreeMap,
-    net::{TcpStream, SocketAddr},
+    net::{SocketAddr, TcpStream},
 };
 
 use async_dup::Arc;
 use log::{info, warn};
 use smol::{
-    Async,
-    io::{AsyncReadExt, AsyncWriteExt, BufReader},
     future::Future,
+    io::{AsyncReadExt, AsyncWriteExt, BufReader},
     stream::StreamExt,
+    Async,
 };
 
 use http_common::{Method, Request, Response, ResponseError};
@@ -25,7 +25,6 @@ pub async fn serve_impl<
     match_func: impl Fn(String) -> MatchOutput,
     respond_func: impl Fn((SocketAddr, Request)) -> RespondOutput,
 ) {
-
     let mut method: Option<Method> = None;
     let mut uri: Option<String> = None;
     let mut content_length: Option<usize> = None;

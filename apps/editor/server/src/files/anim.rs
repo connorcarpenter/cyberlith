@@ -9,8 +9,8 @@ use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 
-use asset_io::AssetId;
 use asset_io::json::{AnimFile, AnimFileFrame};
+use asset_io::AssetId;
 
 use editor_proto::{
     components::{AnimFrame, AnimRotation, FileExtension, Transition},
@@ -19,11 +19,7 @@ use editor_proto::{
 };
 
 use crate::{
-    files::{
-        add_file_dependency,
-        FileWriter,
-        convert_from_quat,
-    },
+    files::{add_file_dependency, convert_from_quat, FileWriter},
     resources::{AnimationManager, ContentEntityData, Project},
 };
 
@@ -172,10 +168,7 @@ impl FileWriter for AnimWriter {
         data.write(asset_id)
     }
 
-    fn write_new_default(
-        &self,
-        asset_id: &AssetId,
-    ) -> Box<[u8]> {
+    fn write_new_default(&self, asset_id: &AssetId) -> Box<[u8]> {
         info!("anim write new default");
 
         let mut data = AnimFile::new();
@@ -234,8 +227,7 @@ impl AnimReader {
 
                 let transition = frame.get_transition_ms();
 
-                let mut component =
-                    AnimFrame::new(frame_index, Transition::new(transition));
+                let mut component = AnimFrame::new(frame_index, Transition::new(transition));
                 component.file_entity.set(&server, file_entity);
                 let frame_entity = commands
                     .spawn_empty()
@@ -294,7 +286,6 @@ impl AnimReader {
         file_entity: &Entity,
         bytes: &Box<[u8]>,
     ) -> HashMap<Entity, ContentEntityData> {
-
         let Ok((meta, data)) = AnimFile::read(bytes) else {
             panic!("Error reading .anim file");
         };

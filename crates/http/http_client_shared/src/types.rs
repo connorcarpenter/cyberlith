@@ -5,7 +5,6 @@ use http_common::ResponseError;
 /// A type-alias for `Result<T, ehttp::Error>`.
 pub type Result<T> = std::result::Result<T, ResponseError>;
 
-
 /// An HTTP response status line and headers used for the [`streaming`](crate::streaming) API.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PartialResponse {

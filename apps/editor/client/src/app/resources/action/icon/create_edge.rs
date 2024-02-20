@@ -39,7 +39,8 @@ pub(crate) fn execute(
         shape_to_select,
         face_to_create_opt,
         old_edge_entities_opt,
-    ) = action else {
+    ) = action
+    else {
         panic!("Expected CreateEdge");
     };
 

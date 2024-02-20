@@ -1,8 +1,7 @@
-use serde::{Deserialize, Serialize};
 use asset_id::AssetId;
+use serde::{Deserialize, Serialize};
 
 use crate::json::{MAX_QUAT_COMPONENT_SIZE, MAX_SCALE};
-
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub enum FileComponentType {
@@ -34,7 +33,6 @@ pub struct FileComponentEntry {
 }
 
 impl FileComponentEntry {
-
     pub fn new(asset_id: AssetId, kind: FileComponentType) -> Self {
         Self {
             asset_id: asset_id.as_string(),
@@ -51,10 +49,11 @@ impl FileComponentEntry {
     }
 }
 
-
 #[derive(Serialize, Deserialize, Clone)]
 pub struct FileTransformPosition {
-    x: i16, y: i16, z: i16,
+    x: i16,
+    y: i16,
+    z: i16,
 }
 
 impl FileTransformPosition {
@@ -77,7 +76,10 @@ impl FileTransformPosition {
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct FileTransformRotation {
-    x: i8, y: i8, z: i8, w: i8,
+    x: i8,
+    y: i8,
+    z: i8,
+    w: i8,
 }
 
 impl FileTransformRotation {
@@ -109,16 +111,17 @@ impl FileTransformRotation {
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct FileTransformScale {
-    x: u32, y: u32, z: u32,
+    x: u32,
+    y: u32,
+    z: u32,
 }
 
 impl FileTransformScale {
-
     pub fn new(x: f32, y: f32, z: f32) -> Self {
         Self {
             x: (x * MAX_SCALE) as u32,
             y: (y * MAX_SCALE) as u32,
-            z: (z * MAX_SCALE) as u32
+            z: (z * MAX_SCALE) as u32,
         }
     }
 

@@ -29,7 +29,8 @@ pub fn execute(
     let (mut commands, mut client) = system_state.get_mut(world);
 
     // release the last color entity
-    let Some(last_color_entity) = palette_manager.get_color_entity(&file_entity, last_color_index) else {
+    let Some(last_color_entity) = palette_manager.get_color_entity(&file_entity, last_color_index)
+    else {
         return vec![];
     };
     commands
@@ -39,7 +40,8 @@ pub fn execute(
     palette_manager.select_color(next_color_index);
 
     // request auth over next color entity
-    let Some(next_color_entity) = palette_manager.get_color_entity(&file_entity, next_color_index) else {
+    let Some(next_color_entity) = palette_manager.get_color_entity(&file_entity, next_color_index)
+    else {
         return vec![];
     };
     commands

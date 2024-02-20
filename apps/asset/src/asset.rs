@@ -1,28 +1,23 @@
-
 use log::info;
 
 use http_client::ResponseError;
-use http_server::{Server, smol::lock::RwLock, async_dup::Arc};
+use http_server::{async_dup::Arc, smol::lock::RwLock, Server};
 
 use asset_server_http_proto::{AssetRequest, AssetResponse};
 
 use crate::state::State;
 
-pub fn endpoint(
-    server: &mut Server,
-    state: Arc<RwLock<State>>,
-) {
-    server.endpoint(
-        move |(_addr, req)| {
-            let state = state.clone();
-            async move {
-                async_impl(state, req).await
-            }
-        }
-    );
+pub fn endpoint(server: &mut Server, state: Arc<RwLock<State>>) {
+    server.endpoint(move |(_addr, req)| {
+        let state = state.clone();
+        async move { async_impl(state, req).await }
+    });
 }
 
-async fn async_impl(state: Arc<RwLock<State>>, request: AssetRequest) -> Result<AssetResponse, ResponseError> {
+async fn async_impl(
+    state: Arc<RwLock<State>>,
+    request: AssetRequest,
+) -> Result<AssetResponse, ResponseError> {
     info!("Asset request received: {:?}, sending response", request);
     let req_asset_id = request.asset_id();
     let req_etag_opt = request.etag_opt();
@@ -38,7 +33,10 @@ async fn async_impl(state: Arc<RwLock<State>>, request: AssetRequest) -> Result<
 
         let path = metadata.path().to_string();
         let Some(asset_data) = state.asset_cache_mut().load(&path) else {
-            return Err(ResponseError::InternalServerError(format!("Failed to load asset data for path: `{}`", path)));
+            return Err(ResponseError::InternalServerError(format!(
+                "Failed to load asset data for path: `{}`",
+                path
+            )));
         };
         return Ok(AssetResponse::modified(asset_etag, asset_data));
     } else {

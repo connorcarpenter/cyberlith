@@ -7,7 +7,7 @@ mod world_connect;
 pub use world_connect::WorldConnectToken;
 
 mod asset_etag;
-pub use asset_etag::{AssetEtagRequest, AssetEtagResponseValue, AssetEtagResponse};
+pub use asset_etag::{AssetEtagRequest, AssetEtagResponse, AssetEtagResponseValue};
 
 mod asset_data;
 pub use asset_data::AssetDataMessage;

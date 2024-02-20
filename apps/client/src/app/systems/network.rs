@@ -6,16 +6,20 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 
+use crate::app::resources::asset_cache::AssetCache;
+use game_engine::asset::AssetManager;
 use game_engine::{
     config::{ORCHESTRATOR_PORT, PUBLIC_IP_ADDR},
     http::HttpClient,
     naia::{Timer, WebrtcSocket},
     orchestrator::LoginRequest,
-    session::{AssetDataMessage, AssetEtagRequest, SessionAuth, SessionClient, SessionConnectEvent, SessionMessageEvents, SessionPrimaryChannel, SessionRequestChannel, SessionRequestEvents, WorldConnectToken},
+    session::{
+        AssetDataMessage, AssetEtagRequest, SessionAuth, SessionClient, SessionConnectEvent,
+        SessionMessageEvents, SessionPrimaryChannel, SessionRequestChannel, SessionRequestEvents,
+        WorldConnectToken,
+    },
     world::{WorldAuth, WorldClient, WorldConnectEvent},
 };
-use game_engine::asset::AssetManager;
-use crate::app::resources::asset_cache::AssetCache;
 
 use crate::app::resources::connection_state::ConnectionState;
 use crate::app::resources::global::Global;
@@ -53,14 +57,21 @@ pub fn handle_connection(
             if let Some(result) = http_client.recv(key) {
                 match result {
                     Ok(response) => {
-                        info!("received from orchestrator: (webrtc url: {:?}, token: {:?})", response.session_server_public_webrtc_url, response.token);
-                        global.connection_state = ConnectionState::ReceivedFromOrchestrator(response.clone());
+                        info!(
+                            "received from orchestrator: (webrtc url: {:?}, token: {:?})",
+                            response.session_server_public_webrtc_url, response.token
+                        );
+                        global.connection_state =
+                            ConnectionState::ReceivedFromOrchestrator(response.clone());
 
                         session_client.auth(SessionAuth::new(&response.token));
-                        info!("connecting to session server: {}", response.session_server_public_webrtc_url);
+                        info!(
+                            "connecting to session server: {}",
+                            response.session_server_public_webrtc_url
+                        );
                         let socket = WebrtcSocket::new(
                             &response.session_server_public_webrtc_url,
-                            session_client.socket_config()
+                            session_client.socket_config(),
                         );
                         session_client.connect(socket);
                     }
@@ -74,9 +85,7 @@ pub fn handle_connection(
         ConnectionState::ReceivedFromOrchestrator(_response) => {
             // waiting for connect event ..
         }
-        ConnectionState::ConnectedToSession => {
-
-        }
+        ConnectionState::ConnectedToSession => {}
         ConnectionState::ConnectedToWorld => {
             info!("world : connected!");
         }
@@ -92,7 +101,10 @@ pub fn session_connect_events(
         let Ok(server_address) = client.server_address() else {
             panic!("Shouldn't happen");
         };
-        info!("Client connected to session server at addr: {}", server_address);
+        info!(
+            "Client connected to session server at addr: {}",
+            server_address
+        );
 
         let ConnectionState::ReceivedFromOrchestrator(_) = &global.connection_state else {
             panic!("Shouldn't happen");
@@ -111,10 +123,13 @@ pub fn session_message_events(
             info!("received World Connect Token from Session Server!");
 
             world_client.auth(WorldAuth::new(&token.login_token));
-            info!("connecting to world server: {}", token.world_server_public_webrtc_url);
+            info!(
+                "connecting to world server: {}",
+                token.world_server_public_webrtc_url
+            );
             let socket = WebrtcSocket::new(
                 &token.world_server_public_webrtc_url,
-                world_client.socket_config()
+                world_client.socket_config(),
             );
             world_client.connect(socket);
         }
@@ -132,7 +147,8 @@ pub fn session_request_events(
     mut event_reader: EventReader<SessionRequestEvents>,
 ) {
     for events in event_reader.read() {
-        for (response_send_key, request) in events.read::<SessionRequestChannel, AssetEtagRequest>() {
+        for (response_send_key, request) in events.read::<SessionRequestChannel, AssetEtagRequest>()
+        {
             info!("received Asset Etag Request from Session Server!");
 
             let response = asset_cache.handle_etag_request(request);
@@ -153,7 +169,10 @@ pub fn world_connect_events(
         let Ok(server_address) = client.server_address() else {
             panic!("Shouldn't happen");
         };
-        info!("Client connected to world server at addr: {}", server_address);
+        info!(
+            "Client connected to world server at addr: {}",
+            server_address
+        );
 
         let ConnectionState::ConnectedToSession = &global.connection_state else {
             panic!("Shouldn't happen");

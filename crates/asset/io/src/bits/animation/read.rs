@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
-use naia_serde::{BitReader, Serde, SerdeErr, UnsignedVariableInteger};
 use asset_id::AssetId;
+use naia_serde::{BitReader, Serde, SerdeErr, UnsignedVariableInteger};
 
 use crate::bits::{
     animation::{AnimAction, AnimActionType, Transition},

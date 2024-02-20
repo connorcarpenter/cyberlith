@@ -2,6 +2,8 @@ mod animation;
 mod asset_dependency;
 mod asset_handle;
 mod asset_manager;
+mod asset_renderer;
+mod asset_store;
 mod icon;
 mod mesh;
 mod model;
@@ -10,8 +12,6 @@ mod plugin;
 mod scene;
 mod skeleton;
 mod skin;
-mod asset_renderer;
-mod asset_store;
 
 pub use animation::*;
 pub use asset_handle::*;

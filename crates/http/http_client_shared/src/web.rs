@@ -1,6 +1,6 @@
-use web_sys::AbortController;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::JsFuture;
+use web_sys::AbortController;
 
 use http_common::{Request, RequestOptions, Response, ResponseError};
 
@@ -10,15 +10,24 @@ use crate::types::PartialResponse;
 ///
 /// NOTE: `Ok(…)` is returned on network error.
 /// `Err` is only for failure to use the fetch API.
-pub async fn fetch_async(request: &Request, request_options_opt: Option<RequestOptions>) -> crate::Result<Response> {
-    fetch_jsvalue(request, request_options_opt).await.map_err(string_from_js_value).map_err(|estr| ResponseError::HttpError(estr))
+pub async fn fetch_async(
+    request: &Request,
+    request_options_opt: Option<RequestOptions>,
+) -> crate::Result<Response> {
+    fetch_jsvalue(request, request_options_opt)
+        .await
+        .map_err(string_from_js_value)
+        .map_err(|estr| ResponseError::HttpError(estr))
 }
 
 pub(crate) fn string_from_js_value(value: JsValue) -> String {
     value.as_string().unwrap_or_else(|| format!("{:#?}", value))
 }
 
-pub(crate) async fn fetch_base(request: &Request, request_options_opt: Option<RequestOptions>) -> Result<web_sys::Response, JsValue> {
+pub(crate) async fn fetch_base(
+    request: &Request,
+    request_options_opt: Option<RequestOptions>,
+) -> Result<web_sys::Response, JsValue> {
     let mut opts = web_sys::RequestInit::new();
     opts.method(request.method.as_str());
     opts.mode(web_sys::RequestMode::Cors);
@@ -28,12 +37,15 @@ pub(crate) async fn fetch_base(request: &Request, request_options_opt: Option<Re
             let abort_signal = abort_controller.signal();
 
             // abort the controller after a timeout
-            web_sys::window().unwrap()
+            web_sys::window()
+                .unwrap()
                 .set_timeout_with_callback_and_timeout_and_arguments_0(
                     Closure::wrap(Box::new(move || {
                         abort_controller.abort();
-                    }) as Box<dyn FnMut()>).as_ref().unchecked_ref(),
-                    timeout.as_millis() as i32
+                    }) as Box<dyn FnMut()>)
+                    .as_ref()
+                    .unchecked_ref(),
+                    timeout.as_millis() as i32,
                 )
                 .expect("cannot set timeout");
 
@@ -98,7 +110,10 @@ pub(crate) fn get_response_base(response: &web_sys::Response) -> Result<PartialR
 
 /// NOTE: `Ok(…)` is returned on network error.
 /// `Err` is only for failure to use the fetch API.
-async fn fetch_jsvalue(request: &Request, request_options_opt: Option<RequestOptions>) -> Result<Response, JsValue> {
+async fn fetch_jsvalue(
+    request: &Request,
+    request_options_opt: Option<RequestOptions>,
+) -> Result<Response, JsValue> {
     let response = fetch_base(request, request_options_opt).await?;
 
     let array_buffer = JsFuture::from(response.array_buffer()?).await?;

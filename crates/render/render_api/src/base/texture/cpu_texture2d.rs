@@ -1,7 +1,7 @@
 use storage::AssetHash;
 
-use crate::{base::CpuTextureDataType};
 use super::CpuTextureData;
+use crate::base::CpuTextureDataType;
 
 ///
 /// A CPU-side version of a 2D texture.

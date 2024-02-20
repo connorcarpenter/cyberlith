@@ -1,23 +1,36 @@
-use std::{time::Duration, net::SocketAddr};
 use std::collections::HashMap;
+use std::{net::SocketAddr, time::Duration};
 
-use bevy_ecs::{system::{Commands, Res}, event::EventReader, change_detection::ResMut};
 use bevy_ecs::change_detection::Mut;
 use bevy_ecs::entity::Entity;
 use bevy_ecs::prelude::{Query, Resource, World};
 use bevy_ecs::system::SystemState;
+use bevy_ecs::{
+    change_detection::ResMut,
+    event::EventReader,
+    system::{Commands, Res},
+};
 use bevy_log::{info, warn};
 
-use naia_bevy_server::{events::{AuthEvents, ConnectEvent, DisconnectEvent, ErrorEvent}, transport::webrtc, Server, CommandsExt, UserKey};
-use naia_bevy_server::events::TickEvent;
 use bevy_http_client::HttpClient;
+use naia_bevy_server::events::TickEvent;
+use naia_bevy_server::{
+    events::{AuthEvents, ConnectEvent, DisconnectEvent, ErrorEvent},
+    transport::webrtc,
+    CommandsExt, Server, UserKey,
+};
 
-use config::{WORLD_SERVER_SIGNAL_PORT, WORLD_SERVER_WEBRTC_PORT, PUBLIC_IP_ADDR, SELF_BINDING_ADDR};
+use config::{
+    PUBLIC_IP_ADDR, SELF_BINDING_ADDR, WORLD_SERVER_SIGNAL_PORT, WORLD_SERVER_WEBRTC_PORT,
+};
 
-use world_server_naia_proto::{messages::Auth, components::Body};
 use world_server_naia_proto::components::{AssetEntry, AssetRef};
+use world_server_naia_proto::{components::Body, messages::Auth};
 
-use crate::{global::Global, asset_manager::{AssetCatalog, AssetCommandsExt, AssetManager}};
+use crate::{
+    asset_manager::{AssetCatalog, AssetCommandsExt, AssetManager},
+    global::Global,
+};
 
 pub fn init(mut commands: Commands, mut server: Server) {
     info!("World Naia Server starting up");
@@ -39,19 +52,26 @@ pub fn init(mut commands: Commands, mut server: Server) {
     let main_room_key = server.make_room().key();
     let registration_resend_rate = Duration::from_secs(5);
     let region_server_disconnect_timeout = Duration::from_secs(16);
-    commands.insert_resource(Global::new(&instance_secret, main_room_key, registration_resend_rate, region_server_disconnect_timeout));
+    commands.insert_resource(Global::new(
+        &instance_secret,
+        main_room_key,
+        registration_resend_rate,
+        region_server_disconnect_timeout,
+    ));
 }
 
 pub fn auth_events(
     mut global: ResMut<Global>,
     mut server: Server,
-    mut event_reader: EventReader<AuthEvents>
+    mut event_reader: EventReader<AuthEvents>,
 ) {
     for events in event_reader.read() {
         for (user_key, auth) in events.read::<Auth>() {
             if let Some(user_data) = global.take_login_token(&auth.token) {
-
-                info!("Accepted connection. User Id: {}, Token: {}", user_data.user_id, auth.token);
+                info!(
+                    "Accepted connection. User Id: {}, Token: {}",
+                    user_data.user_id, auth.token
+                );
 
                 global.add_user(&user_key, user_data);
 
@@ -72,7 +92,7 @@ pub fn connect_events(
     mut server: Server,
     global: Res<Global>,
     mut asset_manager: ResMut<AssetManager>,
-    mut event_reader: EventReader<ConnectEvent>
+    mut event_reader: EventReader<ConnectEvent>,
 ) {
     for ConnectEvent(user_key) in event_reader.read() {
         let address = server.user(user_key).address();
@@ -99,7 +119,7 @@ pub fn connect_events(
 
 pub fn disconnect_events(
     mut asset_manager: ResMut<AssetManager>,
-    mut event_reader: EventReader<DisconnectEvent>
+    mut event_reader: EventReader<DisconnectEvent>,
 ) {
     for DisconnectEvent(user_key, user) in event_reader.read() {
         info!("Server disconnected from: {:?}", user.address);
@@ -121,14 +141,10 @@ struct CachedTickEventsState {
 
 pub fn tick_events_startup(world: &mut World) {
     let event_state: SystemState<EventReader<TickEvent>> = SystemState::new(world);
-    world.insert_resource(CachedTickEventsState {
-        event_state,
-    });
+    world.insert_resource(CachedTickEventsState { event_state });
 }
 
-pub fn tick_events(
-    world: &mut World,
-) {
+pub fn tick_events(world: &mut World) {
     let mut has_ticked = false;
 
     world.resource_scope(
@@ -167,7 +183,6 @@ pub fn tick_events(
     let mut scope_actions: HashMap<(UserKey, Entity), bool> = HashMap::new();
 
     for (_room_key, user_key, entity, in_scope) in scope_checks {
-
         // TODO: assess scope logic here
         if !in_scope {
             info!("Entity out of scope: {:?}, adding to user", entity);
@@ -203,19 +218,11 @@ pub fn tick_events(
     let mut asset_id_entity_actions = Vec::new();
 
     {
-        let mut system_state: SystemState<(
-            Server,
-            Query<&AssetEntry>,
-            Query<&AssetRef<Body>>,
-        )> = SystemState::new(world);
-        let (
-            server,
-            asset_entry_q,
-            asset_ref_body_q,
-        ) = system_state.get_mut(world);
+        let mut system_state: SystemState<(Server, Query<&AssetEntry>, Query<&AssetRef<Body>>)> =
+            SystemState::new(world);
+        let (server, asset_entry_q, asset_ref_body_q) = system_state.get_mut(world);
 
         for ((user_key, entity), include) in scope_actions.iter() {
-
             // determine if entity has any AssetRef components
 
             // AssetRef<Body>
@@ -242,13 +249,13 @@ pub fn tick_events(
             ResMut<AssetManager>,
             ResMut<HttpClient>,
         )> = SystemState::new(world);
-        let (
-            mut server,
-            global,
-            mut asset_manager,
-            mut http_client,
-        ) = system_state.get_mut(world);
+        let (mut server, global, mut asset_manager, mut http_client) = system_state.get_mut(world);
 
-        asset_manager.handle_scope_actions(&mut server, &global, &mut http_client, asset_id_entity_actions);
+        asset_manager.handle_scope_actions(
+            &mut server,
+            &global,
+            &mut http_client,
+            asset_id_entity_actions,
+        );
     }
 }

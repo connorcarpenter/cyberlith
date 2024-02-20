@@ -3,15 +3,15 @@ use std::default::Default;
 use bevy_ecs::bundle::Bundle;
 
 use math::{Vec2, Vec3};
-use storage::{Storage, Handle};
+use storage::{Handle, Storage};
 
+use super::transform::Transform;
 use crate::{
     base::{CpuMaterial, CpuMesh},
     components::Visibility,
     shapes,
     shapes::set_2d_line_transform,
 };
-use super::transform::Transform;
 
 #[derive(Default, Bundle)]
 pub struct RenderObjectBundle {

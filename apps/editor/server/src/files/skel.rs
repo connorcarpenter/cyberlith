@@ -9,8 +9,8 @@ use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 
+use asset_io::json::SkelFile;
 use asset_io::AssetId;
-use asset_io::json::{SkelFile};
 
 use editor_proto::components::{
     Edge3d, EdgeAngle, FileExtension, FileType, SerdeRotation, ShapeName, Vertex3d, VertexRoot,
@@ -81,7 +81,7 @@ impl SkelWriter {
                 );
             }
             let Ok(vertex) = vertex_q.get(*entity) else {
-                    continue;
+                continue;
             };
 
             let parent_and_edge_entity_opt: Option<(Entity, Entity)> =
@@ -108,7 +108,10 @@ impl SkelWriter {
             let parent_entity_opt =
                 parent_and_edge_entity_opt.map(|(parent_entity, edge_entity)| {
                     let Ok(edge_angle) = edge_angle_q.get(edge_entity) else {
-                        panic!("edge_entity {:?} does not have an EdgeAngle component!", edge_entity);
+                        panic!(
+                            "edge_entity {:?} does not have an EdgeAngle component!",
+                            edge_entity
+                        );
                     };
                     (parent_entity, edge_angle.get_serde())
                 });
@@ -139,7 +142,7 @@ impl SkelWriter {
                 *y,
                 *z,
                 parent_id.map(|(id, rot)| (id, convert_into_rotation(rot))),
-                vertex_name_opt.clone()
+                vertex_name_opt.clone(),
             );
         }
 
@@ -169,10 +172,7 @@ impl FileWriter for SkelWriter {
 pub struct SkelReader;
 
 impl SkelReader {
-    fn data_to_world(
-        world: &mut World,
-        data: &SkelFile,
-    ) -> HashMap<Entity, ContentEntityData> {
+    fn data_to_world(world: &mut World, data: &SkelFile) -> HashMap<Entity, ContentEntityData> {
         let mut system_state: SystemState<(Commands, Server, ResMut<ShapeManager>)> =
             SystemState::new(world);
         let (mut commands, mut server, mut shape_manager) = system_state.get_mut(world);
@@ -296,7 +296,6 @@ impl SkelReader {
     }
 
     pub fn read(&self, world: &mut World, bytes: &Box<[u8]>) -> HashMap<Entity, ContentEntityData> {
-
         let Ok((meta, data)) = SkelFile::read(bytes) else {
             panic!("Error reading .skel file");
         };

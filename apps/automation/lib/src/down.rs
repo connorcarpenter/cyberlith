@@ -3,7 +3,11 @@ use std::time::Duration;
 use log::info;
 use vultr::VultrApi;
 
-use crate::{utils::{thread_init_compat, check_channel}, get_api_key, CliError};
+use crate::{
+    get_api_key,
+    utils::{check_channel, thread_init_compat},
+    CliError,
+};
 
 pub fn down() -> Result<(), CliError> {
     info!("Stopping instance");
@@ -35,7 +39,9 @@ async fn stop_instance() -> Result<(), CliError> {
         return Err(CliError::Message("No instances running".to_string()));
     }
     if instances.len() > 1 {
-        return Err(CliError::Message("More than one instance running!".to_string()));
+        return Err(CliError::Message(
+            "More than one instance running!".to_string(),
+        ));
     }
     let instance = instances.first().unwrap();
 

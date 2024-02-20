@@ -534,7 +534,8 @@ impl IconInputManager {
             let Ok(vertex_transform) = transform_q.get(vertex_entity) else {
                 continue;
             };
-            let Some(vertex_frame_entity) = icon_manager.vertex_get_frame_entity(&vertex_entity) else {
+            let Some(vertex_frame_entity) = icon_manager.vertex_get_frame_entity(&vertex_entity)
+            else {
                 continue;
             };
             if vertex_frame_entity != *frame_entity {
@@ -568,7 +569,8 @@ impl IconInputManager {
                 if owned_by_file.file_entity != *current_file_entity {
                     continue;
                 }
-                let Some(edge_frame_entity) = icon_manager.edge_get_frame_entity(&edge_entity) else {
+                let Some(edge_frame_entity) = icon_manager.edge_get_frame_entity(&edge_entity)
+                else {
                     continue;
                 };
                 if edge_frame_entity != *frame_entity {
@@ -607,7 +609,8 @@ impl IconInputManager {
                 if owned_by_file.file_entity != *current_file_entity {
                     continue;
                 }
-                let Some(face_frame_entity) = icon_manager.face_get_frame_entity(&face_entity) else {
+                let Some(face_frame_entity) = icon_manager.face_get_frame_entity(&face_entity)
+                else {
                     continue;
                 };
                 if face_frame_entity != *frame_entity {
@@ -882,7 +885,11 @@ impl IconInputManager {
     }
 
     pub(crate) fn handle_delete_frame(world: &mut World, icon_manager: &mut IconManager) {
-        let Some(current_file_entity) = world.get_resource::<TabManager>().unwrap().current_tab_entity() else {
+        let Some(current_file_entity) = world
+            .get_resource::<TabManager>()
+            .unwrap()
+            .current_tab_entity()
+        else {
             return;
         };
         let current_file_entity = *current_file_entity;
@@ -891,7 +898,8 @@ impl IconInputManager {
         let (mut commands, client) = system_state.get_mut(world);
 
         // delete vertex
-        let Some(current_frame_entity) = icon_manager.current_frame_entity(&current_file_entity) else {
+        let Some(current_frame_entity) = icon_manager.current_frame_entity(&current_file_entity)
+        else {
             return;
         };
 

@@ -1,7 +1,7 @@
 use cfg_if::cfg_if;
 
-use serde::{Deserialize, Serialize};
 use asset_id::AssetId;
+use serde::{Deserialize, Serialize};
 
 use crate::json::MAX_QUAT_COMPONENT_SIZE;
 
@@ -28,7 +28,6 @@ pub struct AnimFileQuat {
 }
 
 impl AnimFileQuat {
-
     pub fn from_xyzw(rotation_x: f32, rotation_y: f32, rotation_z: f32, rotation_w: f32) -> Self {
         Self {
             x: (rotation_x * MAX_QUAT_COMPONENT_SIZE).round() as i8,
@@ -85,7 +84,14 @@ impl AnimFileFrame {
         }
     }
 
-    pub fn add_pose(&mut self, edge_id: u16, rotation_x: f32, rotation_y: f32, rotation_z: f32, rotation_w: f32) {
+    pub fn add_pose(
+        &mut self,
+        edge_id: u16,
+        rotation_x: f32,
+        rotation_y: f32,
+        rotation_z: f32,
+        rotation_w: f32,
+    ) {
         self.poses.push(AnimFilePose {
             edge_id,
             rotation: AnimFileQuat::from_xyzw(rotation_x, rotation_y, rotation_z, rotation_w),
@@ -109,7 +115,6 @@ pub struct AnimFile {
 }
 
 impl AnimFile {
-
     pub const CURRENT_SCHEMA_VERSION: u32 = 0;
 
     pub fn new() -> Self {

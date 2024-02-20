@@ -3,7 +3,7 @@ use std::time::Duration;
 use log::{info, warn};
 use vultr::VultrApi;
 
-use crate::{CliError, get_api_key};
+use crate::{get_api_key, CliError};
 
 pub async fn instance_wait(instance_id: &str) -> Result<(), CliError> {
     let api_key = get_api_key();
@@ -11,7 +11,6 @@ pub async fn instance_wait(instance_id: &str) -> Result<(), CliError> {
     let api = VultrApi::new(api_key);
 
     loop {
-
         match api.get_instance_async(instance_id).await {
             Ok(instance) => {
                 info!("instance status: {:?}", instance.status);

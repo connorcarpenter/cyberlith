@@ -56,7 +56,6 @@ impl From<&str> for FileExtension {
 }
 
 impl FileExtension {
-
     pub fn from_file_name(file_name: &str) -> Self {
         let ext = file_name.split('.').last().unwrap_or("");
         FileExtension::from(ext)

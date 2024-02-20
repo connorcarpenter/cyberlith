@@ -61,8 +61,8 @@ pub(crate) fn action_stack_undo(world: &mut World) {
 
         if tab_content_has_focus {
             let Some(tab_file_entity) = tab_manager.current_tab_entity() else {
-                    return;
-                };
+                return;
+            };
             let tab_file_entity = *tab_file_entity;
             if let Some(tab_state) = tab_manager.current_tab_state_mut() {
                 if tab_state.action_stack.has_undo() {

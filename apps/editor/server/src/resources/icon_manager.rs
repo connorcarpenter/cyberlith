@@ -251,7 +251,10 @@ impl IconManager {
 
         for vertex_entity in [start_vertex_entity, end_vertex_entity] {
             let Some(vertex_data) = self.vertices.get_mut(&vertex_entity) else {
-                panic!("on_create_icon_edge: vertex entity `{:?}` not found!", vertex_entity);
+                panic!(
+                    "on_create_icon_edge: vertex entity `{:?}` not found!",
+                    vertex_entity
+                );
             };
             vertex_data.add_edge(edge_entity);
         }
@@ -277,7 +280,10 @@ impl IconManager {
         // add faces to vertices
         for vertex_entity in [vertex_a, vertex_b, vertex_c] {
             let Some(data) = self.vertices.get_mut(&vertex_entity) else {
-                panic!("on_create_face: vertex entity `{:?}` not found!", vertex_entity);
+                panic!(
+                    "on_create_face: vertex entity `{:?}` not found!",
+                    vertex_entity
+                );
             };
             data.add_face(face_entity);
         }
@@ -427,7 +433,10 @@ impl IconManager {
 
     pub fn on_client_despawn_edge(&mut self, edge_entity: &Entity) {
         let Some(edge_data) = self.deregister_edge(edge_entity) else {
-            warn!("edge entity `{:?}` not found, perhaps was already despawned?", edge_entity);
+            warn!(
+                "edge entity `{:?}` not found, perhaps was already despawned?",
+                edge_entity
+            );
             return;
         };
 
@@ -444,7 +453,10 @@ impl IconManager {
 
     pub(crate) fn on_client_despawn_face(&mut self, face_entity: &Entity) {
         let Some(face_data) = self.deregister_face(face_entity) else {
-            warn!("face entity `{:?}` not found, perhaps was already despawned?", face_entity);
+            warn!(
+                "face entity `{:?}` not found, perhaps was already despawned?",
+                face_entity
+            );
             return;
         };
 

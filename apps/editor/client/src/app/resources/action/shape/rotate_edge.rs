@@ -26,7 +26,10 @@ pub(crate) fn execute(world: &mut World, action: ShapeAction) -> Vec<ShapeAction
     let edge_3d_entity = edge_manager.edge_entity_2d_to_3d(&edge_2d_entity).unwrap();
 
     let Ok(mut edge_angle) = edge_angle_q.get_mut(edge_3d_entity) else {
-        panic!("Failed to get EdgeAngle for edge entity {:?}!", edge_3d_entity);
+        panic!(
+            "Failed to get EdgeAngle for edge entity {:?}!",
+            edge_3d_entity
+        );
     };
     edge_angle.set_radians(new_angle);
 

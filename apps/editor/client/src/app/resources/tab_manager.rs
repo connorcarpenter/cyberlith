@@ -17,7 +17,7 @@ use render_egui::{
     egui,
     egui::{vec2, Id, NumExt, Rect, Response, Rounding, Sense, Stroke, TextStyle, Ui, WidgetText},
 };
-use storage::{Storage, Handle};
+use storage::{Handle, Storage};
 
 use editor_proto::{
     channels::TabActionChannel,
@@ -946,7 +946,8 @@ fn set_face_3d_colors_recursive(
     face_color_q: &Query<&FaceColor>,
     skin_or_scene_q: &Query<&SkinOrSceneEntity>,
 ) {
-    let Some(net_transform_entities) = model_manager.file_transform_entities(current_file_entity) else {
+    let Some(net_transform_entities) = model_manager.file_transform_entities(current_file_entity)
+    else {
         return;
     };
     for net_transform_entity in net_transform_entities {
@@ -1023,10 +1024,14 @@ fn set_face_3d_colors(
         bckg_color_q,
         palette_color_q,
     );
-    let Some(palette_file_entity) = file_manager.file_get_dependency(skin_file_entity, FileExtension::Palette) else {
+    let Some(palette_file_entity) =
+        file_manager.file_get_dependency(skin_file_entity, FileExtension::Palette)
+    else {
         return;
     };
-    let Some(mesh_file_entity) = file_manager.file_get_dependency(skin_file_entity, FileExtension::Mesh) else {
+    let Some(mesh_file_entity) =
+        file_manager.file_get_dependency(skin_file_entity, FileExtension::Mesh)
+    else {
         return;
     };
     let Some(colors) = palette_manager.get_file_colors(&palette_file_entity) else {
@@ -1100,7 +1105,9 @@ fn set_icon_face_colors(
         &mut Query<&mut Handle<CpuMaterial>, (With<IconLocalFace>, Without<IconFace>)>,
     )>,
 ) {
-    let Some(palette_file_entity) = file_manager.file_get_dependency(icon_file_entity, FileExtension::Palette) else {
+    let Some(palette_file_entity) =
+        file_manager.file_get_dependency(icon_file_entity, FileExtension::Palette)
+    else {
         return;
     };
     if !palette_manager.has_file_colors(&palette_file_entity) {

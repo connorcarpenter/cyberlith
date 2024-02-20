@@ -7,7 +7,7 @@ use bevy_http_shared::Protocol;
 use crate::server::HttpServer;
 
 pub struct HttpServerPlugin {
-    protocol: Mutex<Option<Protocol>>
+    protocol: Mutex<Option<Protocol>>,
 }
 
 impl HttpServerPlugin {

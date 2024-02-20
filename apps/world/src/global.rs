@@ -1,10 +1,13 @@
-use std::{time::{Instant, Duration}, collections::HashMap};
+use std::{
+    collections::HashMap,
+    time::{Duration, Instant},
+};
 
 use bevy_ecs::system::Resource;
 
 use naia_bevy_server::{RoomKey, UserKey};
 
-use bevy_http_client::{ResponseKey as ClientResponseKey};
+use bevy_http_client::ResponseKey as ClientResponseKey;
 
 use region_server_http_proto::WorldRegisterInstanceResponse;
 
@@ -45,7 +48,6 @@ pub struct Global {
 }
 
 impl Global {
-
     pub fn new(
         instance_secret: &str,
         main_room_key: RoomKey,
@@ -63,7 +65,7 @@ impl Global {
             next_user_id: 0,
             login_tokens: HashMap::new(),
             users: HashMap::new(),
-            main_room_key
+            main_room_key,
         }
     }
 
@@ -71,11 +73,16 @@ impl Global {
         &self.instance_secret
     }
 
-    pub fn register_instance_response_key(&self) -> Option<&ClientResponseKey<WorldRegisterInstanceResponse>> {
+    pub fn register_instance_response_key(
+        &self,
+    ) -> Option<&ClientResponseKey<WorldRegisterInstanceResponse>> {
         self.register_instance_response_key.as_ref()
     }
 
-    pub fn set_register_instance_response_key(&mut self, response_key: ClientResponseKey<WorldRegisterInstanceResponse>) {
+    pub fn set_register_instance_response_key(
+        &mut self,
+        response_key: ClientResponseKey<WorldRegisterInstanceResponse>,
+    ) {
         self.register_instance_response_key = Some(response_key);
     }
 
@@ -123,13 +130,21 @@ impl Global {
 
     // Client login
 
-    pub fn add_login_token(&mut self, session_server_addr: &str, session_server_port: u16, token: &str) -> u64 {
+    pub fn add_login_token(
+        &mut self,
+        session_server_addr: &str,
+        session_server_port: u16,
+        token: &str,
+    ) -> u64 {
         let user_id = self.next_user_id;
         self.next_user_id = self.next_user_id.wrapping_add(1);
         if self.next_user_id == 0 {
             panic!("user_id overflow");
         }
-        self.login_tokens.insert(token.to_string(), UserData::new(user_id, session_server_addr, session_server_port));
+        self.login_tokens.insert(
+            token.to_string(),
+            UserData::new(user_id, session_server_addr, session_server_port),
+        );
         user_id
     }
 
@@ -148,7 +163,10 @@ impl Global {
 
     pub fn get_user_session_server(&self, user_key: &UserKey) -> Option<(String, u16)> {
         let user_data = self.users.get(user_key)?;
-        Some((user_data.session_server_addr.clone(), user_data.session_server_port))
+        Some((
+            user_data.session_server_addr.clone(),
+            user_data.session_server_port,
+        ))
     }
     //
 

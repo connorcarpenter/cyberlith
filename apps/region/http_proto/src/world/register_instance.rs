@@ -1,5 +1,4 @@
-
-use naia_serde::{SerdeInternal as Serde};
+use naia_serde::SerdeInternal as Serde;
 
 use http_common::{ApiRequest, ApiResponse, Method};
 
@@ -14,7 +13,13 @@ pub struct WorldRegisterInstanceRequest {
 }
 
 impl WorldRegisterInstanceRequest {
-    pub fn new(global_secret: &str, instance_secret: &str, http_addr: &str, http_port: u16, public_webrtc_url: &str) -> Self {
+    pub fn new(
+        global_secret: &str,
+        instance_secret: &str,
+        http_addr: &str,
+        http_port: u16,
+        public_webrtc_url: &str,
+    ) -> Self {
         Self {
             global_secret: global_secret.to_string(),
             instance_secret: instance_secret.to_string(),
@@ -51,9 +56,7 @@ pub struct WorldRegisterInstanceResponse;
 
 impl WorldRegisterInstanceResponse {
     pub fn new() -> Self {
-        Self {
-
-        }
+        Self {}
     }
 }
 

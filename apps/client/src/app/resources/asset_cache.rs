@@ -1,7 +1,10 @@
-use std::collections::HashMap;
 use bevy_ecs::prelude::Resource;
+use std::collections::HashMap;
 
-use game_engine::{AssetId, ETag, session::{AssetEtagRequest, AssetEtagResponse}};
+use game_engine::{
+    session::{AssetEtagRequest, AssetEtagResponse},
+    AssetId, ETag,
+};
 
 #[derive(Resource)]
 pub struct AssetCache {
@@ -23,4 +26,3 @@ impl AssetCache {
         }
     }
 }
-

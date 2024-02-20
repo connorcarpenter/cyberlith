@@ -8,7 +8,7 @@ use bevy_ecs::component::Component;
 use math::Vec3;
 use storage::AssetHash;
 
-use crate::{base::Color};
+use crate::base::Color;
 
 ///
 /// A light which shines in the given direction.

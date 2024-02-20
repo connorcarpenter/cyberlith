@@ -1,5 +1,5 @@
-use std::collections::{HashMap, VecDeque};
 use log::{info, warn};
+use std::collections::{HashMap, VecDeque};
 
 pub struct AssetCache {
     capacity_kb: u32,
@@ -75,7 +75,10 @@ impl AssetCache {
 
         self.current_size_kb -= kb_count;
 
-        info!("Unloaded LRU file: {:?} (size: {:?})... current: {:?} kb, max: {:?} kb", oldest_path, kb_count, self.current_size_kb, self.capacity_kb);
+        info!(
+            "Unloaded LRU file: {:?} (size: {:?})... current: {:?} kb, max: {:?} kb",
+            oldest_path, kb_count, self.current_size_kb, self.capacity_kb
+        );
     }
 }
 

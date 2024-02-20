@@ -65,15 +65,22 @@ use api_error::VultrApiError;
 use serde::Serialize;
 use serde_json::json;
 
-pub use builder::{create_instance_builder::CreateInstanceBuilder, create_instance_builder::LinuxUserScheme, update_dns_record::VultrUpdateDnsRecordBuilder};
-pub use data::{dns::{
-    VultrDomain, VultrDomainRecord, VultrDomainRecordRoot, VultrDomainRecordsRoot, VultrDomainRoot,
-    VultrDomainsRoot,
-}, instance::{
-    VultrAccount, VultrAccountRoot, VultrInstance, VultrInstanceRoot, VultrInstancesRoot, VultrOS,
-    VultrOSRoot, VultrPlan, VultrPlansRoot, VultrRegion, VultrRegionsRoot, VultrSSHKey, VultrReservedIp, VultrReservedIpsRoot,
-    VultrSSHKeyRoot, VultrSSHKeysRoot, VultrIso, VultrIsosRoot, VultrFirewallGroup, VultrFirewallGroupsRoot,
-}};
+pub use builder::{
+    create_instance_builder::CreateInstanceBuilder, create_instance_builder::LinuxUserScheme,
+    update_dns_record::VultrUpdateDnsRecordBuilder,
+};
+pub use data::{
+    dns::{
+        VultrDomain, VultrDomainRecord, VultrDomainRecordRoot, VultrDomainRecordsRoot,
+        VultrDomainRoot, VultrDomainsRoot,
+    },
+    instance::{
+        VultrAccount, VultrAccountRoot, VultrFirewallGroup, VultrFirewallGroupsRoot, VultrInstance,
+        VultrInstanceRoot, VultrInstancesRoot, VultrIso, VultrIsosRoot, VultrOS, VultrOSRoot,
+        VultrPlan, VultrPlansRoot, VultrRegion, VultrRegionsRoot, VultrReservedIp,
+        VultrReservedIpsRoot, VultrSSHKey, VultrSSHKeyRoot, VultrSSHKeysRoot,
+    },
+};
 pub use instance_type::VultrInstanceType;
 pub use vultr_error::VultrError;
 
@@ -541,18 +548,33 @@ impl<'a> VultrApi {
 
     pub async fn get_reserved_ip_list_async(&self) -> Result<Vec<VultrReservedIp>, VultrError> {
         let url = format!("https://api.vultr.com/v2/reserved-ips");
-        Ok(self.get_async(&url).await?.json::<VultrReservedIpsRoot>().await?.reserved_ips)
+        Ok(self
+            .get_async(&url)
+            .await?
+            .json::<VultrReservedIpsRoot>()
+            .await?
+            .reserved_ips)
     }
 
     #[cfg(feature = "blocking")]
     pub fn get_firewall_group_list(&self) -> Result<Vec<VultrFirewallGroup>, VultrError> {
         let url = format!("https://api.vultr.com/v2/firewalls");
-        Ok(self.get(&url)?.json::<VultrFirewallGroupsRoot>()?.firewall_groups)
+        Ok(self
+            .get(&url)?
+            .json::<VultrFirewallGroupsRoot>()?
+            .firewall_groups)
     }
 
-    pub async fn get_firewall_group_list_async(&self) -> Result<Vec<VultrFirewallGroup>, VultrError> {
+    pub async fn get_firewall_group_list_async(
+        &self,
+    ) -> Result<Vec<VultrFirewallGroup>, VultrError> {
         let url = format!("https://api.vultr.com/v2/firewalls");
-        Ok(self.get_async(&url).await?.json::<VultrFirewallGroupsRoot>().await?.firewall_groups)
+        Ok(self
+            .get_async(&url)
+            .await?
+            .json::<VultrFirewallGroupsRoot>()
+            .await?
+            .firewall_groups)
     }
 
     #[cfg(feature = "blocking")]
@@ -563,7 +585,12 @@ impl<'a> VultrApi {
 
     pub async fn get_iso_list_async(&self) -> Result<Vec<VultrIso>, VultrError> {
         let url = format!("https://api.vultr.com/v2/iso");
-        Ok(self.get_async(&url).await?.json::<VultrIsosRoot>().await?.isos)
+        Ok(self
+            .get_async(&url)
+            .await?
+            .json::<VultrIsosRoot>()
+            .await?
+            .isos)
     }
 
     #[cfg(feature = "blocking")]

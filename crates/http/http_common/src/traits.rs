@@ -1,4 +1,3 @@
-
 use naia_serde::{BitReader, FileBitWriter, Serde};
 
 use crate::{Method, Request, Response, ResponseError};

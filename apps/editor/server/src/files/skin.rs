@@ -9,8 +9,8 @@ use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 
+use asset_io::json::SkinFile;
 use asset_io::AssetId;
-use asset_io::json::{SkinFile};
 
 use editor_proto::{
     components::{BackgroundSkinColor, FaceColor, FileExtension, PaletteColor},
@@ -175,7 +175,10 @@ impl SkinReader {
             FileExtension::Palette,
             &dependency_file_key,
         );
-        output.insert(new_entity, ContentEntityData::new_dependency(dependency_file_key));
+        output.insert(
+            new_entity,
+            ContentEntityData::new_dependency(dependency_file_key),
+        );
 
         // Mesh Dependency
         let mesh_asset_id = data.get_mesh_asset_id();
@@ -187,9 +190,12 @@ impl SkinReader {
             &mut commands,
             &mut server,
             FileExtension::Mesh,
-            &dependency_file_key
+            &dependency_file_key,
         );
-        output.insert(new_entity, ContentEntityData::new_dependency(dependency_file_key));
+        output.insert(
+            new_entity,
+            ContentEntityData::new_dependency(dependency_file_key),
+        );
 
         // Background Color
         let bckg_color = data.get_background_color_id();
@@ -246,7 +252,6 @@ impl SkinReader {
         file_entity: &Entity,
         bytes: &Box<[u8]>,
     ) -> HashMap<Entity, ContentEntityData> {
-
         let Ok((meta, data)) = SkinFile::read(bytes) else {
             panic!("Error reading .skin file");
         };

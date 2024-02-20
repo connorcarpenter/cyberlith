@@ -1,5 +1,4 @@
-
-use naia_serde::{SerdeInternal as Serde};
+use naia_serde::SerdeInternal as Serde;
 
 use http_common::{ApiRequest, ApiResponse, Method};
 
@@ -27,7 +26,12 @@ pub struct WorldUserLoginResponse {
 }
 
 impl WorldUserLoginResponse {
-    pub fn new(world_server_instance_secret: &str, world_server_user_id: u64, world_server_public_webrtc_url: &str, token: &str) -> Self {
+    pub fn new(
+        world_server_instance_secret: &str,
+        world_server_user_id: u64,
+        world_server_public_webrtc_url: &str,
+        token: &str,
+    ) -> Self {
         Self {
             world_server_instance_secret: world_server_instance_secret.to_string(),
             world_server_user_id,

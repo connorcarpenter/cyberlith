@@ -1,13 +1,21 @@
-
 use std::time::Duration;
 
 use crossbeam_channel::TryRecvError;
 use log::{info, warn};
 
-use crate::{utils::{check_channel, run_command, run_ssh_command, ssh_session_close, ssh_session_create, thread_init, thread_init_compat}, server_build, containers_up::{container_create_and_start, container_stop_and_remove, image_pull, image_push}, get_container_registry_creds, get_container_registry_url, CliError};
+use crate::{
+    containers_up::{
+        container_create_and_start, container_stop_and_remove, image_pull, image_push,
+    },
+    get_container_registry_creds, get_container_registry_url, server_build,
+    utils::{
+        check_channel, run_command, run_ssh_command, ssh_session_close, ssh_session_create,
+        thread_init, thread_init_compat,
+    },
+    CliError,
+};
 
 pub fn up_content() -> Result<(), CliError> {
-
     let content_rcvr = thread_init(server_build::server_build_content);
     let mut content_rdy = false;
 
@@ -36,15 +44,23 @@ fn containers_up() -> Result<(), CliError> {
         match rcvr.try_recv() {
             Ok(result) => return result,
             Err(TryRecvError::Disconnected) => warn!("containers receiver disconnected!"),
-            _ => {},
+            _ => {}
         }
     }
 }
 
 async fn containers_up_impl() -> Result<(), CliError> {
-
     // login on client
-    run_command("containers", format!("docker login https://{} {}", get_container_registry_url(), get_container_registry_creds()).as_str()).await?;
+    run_command(
+        "containers",
+        format!(
+            "docker login https://{} {}",
+            get_container_registry_url(),
+            get_container_registry_creds()
+        )
+        .as_str(),
+    )
+    .await?;
 
     // push image
     image_push("content").await?;
@@ -56,7 +72,16 @@ async fn containers_up_impl() -> Result<(), CliError> {
     container_stop_and_remove(&session, "content").await?;
 
     // login on server
-    run_ssh_command(&session, format!("docker login https://{} {}", get_container_registry_url(), get_container_registry_creds()).as_str()).await?;
+    run_ssh_command(
+        &session,
+        format!(
+            "docker login https://{} {}",
+            get_container_registry_url(),
+            get_container_registry_creds()
+        )
+        .as_str(),
+    )
+    .await?;
 
     // pull new image
     image_pull(&session, "content").await?;

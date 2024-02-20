@@ -11,7 +11,7 @@ use render_api::{
     },
 };
 use render_egui::EguiUserTextures;
-use storage::{Storage, Handle};
+use storage::{Handle, Storage};
 
 use crate::app::{
     components::{DefaultDraw, SelectCircle, SelectLine, SelectTriangle, Vertex2d},

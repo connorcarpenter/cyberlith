@@ -1,5 +1,7 @@
-
-use std::{collections::{HashMap, HashSet}, fs};
+use std::{
+    collections::{HashMap, HashSet},
+    fs,
+};
 
 use bevy_log::info;
 

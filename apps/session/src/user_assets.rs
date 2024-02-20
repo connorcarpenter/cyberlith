@@ -1,5 +1,5 @@
-use std::collections::HashSet;
 use bevy_log::info;
+use std::collections::HashSet;
 
 use naia_bevy_server::{ResponseReceiveKey, Server, UserKey};
 
@@ -7,9 +7,12 @@ use asset_id::{AssetId, ETag};
 use bevy_http_client::{HttpClient, ResponseKey};
 
 use asset_server_http_proto::{AssetRequest, AssetResponse, AssetResponseValue};
-use session_server_naia_proto::{messages::{AssetEtagRequest, AssetEtagResponse}, channels::RequestChannel};
 use session_server_naia_proto::channels::PrimaryChannel;
 use session_server_naia_proto::messages::{AssetDataMessage, AssetEtagResponseValue};
+use session_server_naia_proto::{
+    channels::RequestChannel,
+    messages::{AssetEtagRequest, AssetEtagResponse},
+};
 
 use crate::asset_store::AssetStore;
 
@@ -25,7 +28,7 @@ impl FirstFlightRequest {
     pub fn new(
         client_etag_response_key: ResponseReceiveKey<AssetEtagResponse>,
         asset_server_request: AssetRequest,
-        asset_server_response_key: ResponseKey<AssetResponse>
+        asset_server_response_key: ResponseKey<AssetResponse>,
     ) -> Self {
         Self {
             client_etag_response_key: Some(client_etag_response_key),
@@ -65,14 +68,18 @@ impl FirstFlightRequest {
     }
 
     pub fn unwrap_responses(self) -> (AssetEtagResponse, AssetRequest, AssetResponse) {
-        (self.client_etag_response.unwrap(), self.asset_server_request, self.asset_server_response.unwrap())
+        (
+            self.client_etag_response.unwrap(),
+            self.asset_server_request,
+            self.asset_server_response.unwrap(),
+        )
     }
 }
 
 pub struct UserAssets {
     user_key: UserKey,
     assets_in_memory: HashSet<AssetId>,
-    first_flight_requests: Vec<FirstFlightRequest>
+    first_flight_requests: Vec<FirstFlightRequest>,
 }
 
 impl UserAssets {
@@ -80,7 +87,7 @@ impl UserAssets {
         Self {
             user_key: *user_key,
             assets_in_memory: HashSet::new(),
-            first_flight_requests: Vec::new()
+            first_flight_requests: Vec::new(),
         }
     }
 
@@ -92,17 +99,30 @@ impl UserAssets {
         asset_server_port: u16,
         asset_store: &AssetStore,
         asset_id: &AssetId,
-        added: bool
+        added: bool,
     ) {
         if added {
-            self.user_asset_added(server, http_client, asset_server_addr, asset_server_port, asset_store, asset_id);
+            self.user_asset_added(
+                server,
+                http_client,
+                asset_server_addr,
+                asset_server_port,
+                asset_store,
+                asset_id,
+            );
         } else {
             self.user_asset_removed(asset_id);
         }
     }
 
-    pub fn process_in_flight_requests(&mut self, server: &mut Server, http_client: &mut HttpClient) -> (Option<Vec<(AssetId, ETag, Vec<u8>)>>, Option<Vec<(UserKey, AssetId)>>) {
-
+    pub fn process_in_flight_requests(
+        &mut self,
+        server: &mut Server,
+        http_client: &mut HttpClient,
+    ) -> (
+        Option<Vec<(AssetId, ETag, Vec<u8>)>>,
+        Option<Vec<(UserKey, AssetId)>>,
+    ) {
         let first_flight_requests = std::mem::take(&mut self.first_flight_requests);
 
         if first_flight_requests.is_empty() {
@@ -127,18 +147,25 @@ impl UserAssets {
         let mut asset_server_responses = Vec::new();
         let mut pending_client_requests = Vec::new();
         for (client_etag_res, asset_server_req, asset_res) in first_flight_responses {
-
             let asset_id = asset_server_req.asset_id();
             let old_etag_opt = asset_server_req.etag_opt();
 
             match (client_etag_res.value, asset_res.value) {
-                (AssetEtagResponseValue::Found(client_etag), AssetResponseValue::Modified(new_etag, data)) => {
+                (
+                    AssetEtagResponseValue::Found(client_etag),
+                    AssetResponseValue::Modified(new_etag, data),
+                ) => {
                     if client_etag == new_etag {
-                        panic!("client somehow has newer etag than server, this should never happen")
+                        panic!(
+                            "client somehow has newer etag than server, this should never happen"
+                        )
                     }
 
                     info!("client responded with old etag: {:?}, asset server responded with newer etag: {:?}", client_etag, new_etag);
-                    info!("storing asset data for: {:?}, and sending new data to client", asset_id);
+                    info!(
+                        "storing asset data for: {:?}, and sending new data to client",
+                        asset_id
+                    );
 
                     // store new asset etag & data
                     asset_server_responses.push((asset_id, new_etag, data));
@@ -165,10 +192,18 @@ impl UserAssets {
                         panic!("asset server responded with NotModified but no etag was provided in request... this should never happen");
                     }
                 }
-                (AssetEtagResponseValue::NotFound, AssetResponseValue::Modified(new_etag, data)) => {
-
-                    info!("client responded with no etag, asset server responded with new etag: {:?}", new_etag);
-                    info!("storing asset data for: {:?}, and sending new data to client", asset_id);
+                (
+                    AssetEtagResponseValue::NotFound,
+                    AssetResponseValue::Modified(new_etag, data),
+                ) => {
+                    info!(
+                        "client responded with no etag, asset server responded with new etag: {:?}",
+                        new_etag
+                    );
+                    info!(
+                        "storing asset data for: {:?}, and sending new data to client",
+                        asset_id
+                    );
 
                     // store new asset etag & data
                     asset_server_responses.push((asset_id, new_etag, data));
@@ -202,8 +237,12 @@ impl UserAssets {
         (asset_server_responses, pending_client_requests)
     }
 
-    pub(crate) fn send_client_asset_data(&mut self, server: &mut Server, asset_store: &AssetStore, asset_id: &AssetId) {
-
+    pub(crate) fn send_client_asset_data(
+        &mut self,
+        server: &mut Server,
+        asset_store: &AssetStore,
+        asset_id: &AssetId,
+    ) {
         info!("sending asset data to client: {:?}", asset_id);
 
         // get asset etag & data from store
@@ -222,9 +261,8 @@ impl UserAssets {
         asset_server_addr: &str,
         asset_server_port: u16,
         asset_store: &AssetStore,
-        asset_id: &AssetId
+        asset_id: &AssetId,
     ) {
-
         // does user already have the asset in memory? if so, return
         if self.assets_in_memory.contains(asset_id) {
             return;
@@ -233,16 +271,26 @@ impl UserAssets {
         // send 'asset_etag' request to client
         info!("sending asset etag request to client: {:?}", asset_id);
         let asset_etag_request = AssetEtagRequest::new(asset_id);
-        let asset_etag_response_key = server.send_request::<RequestChannel, _>(&self.user_key, &asset_etag_request).unwrap();
+        let asset_etag_response_key = server
+            .send_request::<RequestChannel, _>(&self.user_key, &asset_etag_request)
+            .unwrap();
 
         // send 'asset' request to asset server
         info!("sending asset request to asset server: {:?}", asset_id);
         let etag_opt = asset_store.get_etag(asset_id);
         let asset_server_request = AssetRequest::new(*asset_id, etag_opt);
-        let asset_server_response_key = http_client.send(asset_server_addr, asset_server_port, asset_server_request.clone());
+        let asset_server_response_key = http_client.send(
+            asset_server_addr,
+            asset_server_port,
+            asset_server_request.clone(),
+        );
 
         // save responsekeys for 'load_asset' and 'load_asset_with_data' requests
-        self.first_flight_requests.push(FirstFlightRequest::new(asset_etag_response_key, asset_server_request, asset_server_response_key));
+        self.first_flight_requests.push(FirstFlightRequest::new(
+            asset_etag_response_key,
+            asset_server_request,
+            asset_server_response_key,
+        ));
     }
 
     fn user_asset_removed(&mut self, _asset_id: &AssetId) {

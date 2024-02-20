@@ -14,7 +14,12 @@ pub fn execute(
     current_file_entity: &Entity,
     action: ModelAction,
 ) -> Vec<ModelAction> {
-    let ModelAction::CreateTransform(edge_2d_entity_opt, dependency_file_ext, dependency_file_entity) = action else {
+    let ModelAction::CreateTransform(
+        edge_2d_entity_opt,
+        dependency_file_ext,
+        dependency_file_entity,
+    ) = action
+    else {
         panic!("Expected CreateTransform");
     };
 

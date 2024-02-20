@@ -46,7 +46,10 @@ pub(crate) fn execute(
     let mut connected_face_vertex_entities = Vec::new();
 
     let Some(connected_edges) = icon_manager.vertex_get_edges(&vertex_entity) else {
-        panic!("Failed to get connected edges for vertex entity {:?}!", vertex_entity);
+        panic!(
+            "Failed to get connected edges for vertex entity {:?}!",
+            vertex_entity
+        );
     };
     let connected_edges = connected_edges.iter().map(|edge| *edge).collect::<Vec<_>>();
     for edge_entity in connected_edges {
@@ -65,7 +68,10 @@ pub(crate) fn execute(
         connected_vertices_entities.push((connected_vertex_entity, Some(edge_entity)));
     }
     let Some(connected_faces) = icon_manager.vertex_get_faces(&vertex_entity) else {
-        panic!("Failed to get connected faces for vertex entity {:?}!", vertex_entity);
+        panic!(
+            "Failed to get connected faces for vertex entity {:?}!",
+            vertex_entity
+        );
     };
     let connected_faces: Vec<IconFaceKey> = connected_faces.iter().map(|face| *face).collect();
     for face_key in connected_faces {
@@ -97,7 +103,10 @@ pub(crate) fn execute(
     }
 
     let Ok((_, vertex)) = vertex_q.get(vertex_entity) else {
-        panic!("Failed to get IconVertex for vertex entity {:?}!", vertex_entity);
+        panic!(
+            "Failed to get IconVertex for vertex entity {:?}!",
+            vertex_entity
+        );
     };
     let frame_entity = vertex.frame_entity.get(&client).unwrap();
     let vertex_position = vertex.as_vec2();

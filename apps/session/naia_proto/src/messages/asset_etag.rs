@@ -13,7 +13,9 @@ impl Request for AssetEtagRequest {
 
 impl AssetEtagRequest {
     pub fn new(asset_id: &AssetId) -> Self {
-        Self { asset_id: *asset_id }
+        Self {
+            asset_id: *asset_id,
+        }
     }
 }
 
@@ -25,19 +27,21 @@ pub enum AssetEtagResponseValue {
 
 #[derive(Message, Eq, PartialEq, Hash, Debug)]
 pub struct AssetEtagResponse {
-    pub value: AssetEtagResponseValue
+    pub value: AssetEtagResponseValue,
 }
 
-impl Response for AssetEtagResponse {
-
-}
+impl Response for AssetEtagResponse {}
 
 impl AssetEtagResponse {
     pub fn not_found() -> Self {
-        Self { value: AssetEtagResponseValue::NotFound }
+        Self {
+            value: AssetEtagResponseValue::NotFound,
+        }
     }
 
     pub fn found(etag: ETag) -> Self {
-        Self { value: AssetEtagResponseValue::Found(etag) }
+        Self {
+            value: AssetEtagResponseValue::Found(etag),
+        }
     }
 }

@@ -239,7 +239,8 @@ impl ComponentWaitlistEntry {
                 return ComponentData::MeshEdge(project_key, file_key, start, end);
             }
             (Some(FileExtension::Mesh), Some(ComponentType::Face)) => {
-                let (None, vertex_a, vertex_b, vertex_c, _, _, _) = self.face_entities.unwrap() else {
+                let (None, vertex_a, vertex_b, vertex_c, _, _, _) = self.face_entities.unwrap()
+                else {
                     panic!("invalid");
                 };
                 return ComponentData::MeshFace(
@@ -264,7 +265,9 @@ impl ComponentWaitlistEntry {
                 return ComponentData::IconEdge(project_key, file_key, start, end);
             }
             (Some(FileExtension::Icon), Some(ComponentType::Face)) => {
-                let (Some(frame_entity), vertex_a, vertex_b, vertex_c, _, _, _) = self.face_entities.unwrap() else {
+                let (Some(frame_entity), vertex_a, vertex_b, vertex_c, _, _, _) =
+                    self.face_entities.unwrap()
+                else {
                     panic!("invalid");
                 };
                 return ComponentData::IconFace(

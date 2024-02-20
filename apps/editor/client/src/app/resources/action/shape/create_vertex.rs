@@ -39,7 +39,8 @@ pub(crate) fn execute(
     tab_file_entity: Entity,
     action: ShapeAction,
 ) -> Vec<ShapeAction> {
-    let ShapeAction::CreateVertex(vertex_type_data, position, old_vertex_entities_opt) = action else {
+    let ShapeAction::CreateVertex(vertex_type_data, position, old_vertex_entities_opt) = action
+    else {
         panic!("Expected CreateVertex");
     };
 

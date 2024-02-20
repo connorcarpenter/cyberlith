@@ -1,6 +1,5 @@
-
-use std::time::{Duration, Instant};
 use crate::asset_cache::AssetCache;
+use std::time::{Duration, Instant};
 
 use crate::asset_map::AssetMap;
 

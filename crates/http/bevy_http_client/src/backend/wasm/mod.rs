@@ -1,11 +1,14 @@
 use bevy_tasks::AsyncComputeTaskPool;
 use crossbeam_channel::{bounded, Receiver};
 
-use http_common::{Request, Response, ResponseError, RequestOptions};
+use http_common::{Request, RequestOptions, Response, ResponseError};
 
 pub(crate) struct RequestTask(pub Receiver<Result<Response, ResponseError>>);
 
-pub(crate) fn send_request(request: Request, request_options_opt: Option<RequestOptions>) -> RequestTask {
+pub(crate) fn send_request(
+    request: Request,
+    request_options_opt: Option<RequestOptions>,
+) -> RequestTask {
     let thread_pool = AsyncComputeTaskPool::get();
 
     let (tx, task) = bounded(1);
@@ -25,9 +28,7 @@ pub(crate) fn send_request(request: Request, request_options_opt: Option<Request
 
 pub(crate) fn poll_task(task: &mut RequestTask) -> Option<Result<Response, ResponseError>> {
     match task.0.try_recv() {
-        Ok(Ok(response)) => {
-            Some(Ok(response))
-        }
+        Ok(Ok(response)) => Some(Ok(response)),
         Ok(Err(error)) => Some(Err(error)),
         Err(_) => None,
     }

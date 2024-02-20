@@ -1,11 +1,14 @@
 use bevy_app::{App, Plugin};
-use bevy_ecs::{change_detection::DetectChanges, system::{Res, ResMut}};
+use bevy_ecs::{
+    change_detection::DetectChanges,
+    system::{Res, ResMut},
+};
 
 use render_api::{
     base::{CpuMaterial, CpuMesh, CpuSkin, CpuTexture2D},
     RenderSync,
 };
-use storage::{Storage, SideStorage};
+use storage::{SideStorage, Storage};
 
 use crate::{
     core::{GpuDepthTexture2D, GpuTexture2D},

@@ -1,7 +1,6 @@
-
 mod server;
 
-use std::{net::SocketAddr};
+use std::net::SocketAddr;
 
 use log::{info, LevelFilter};
 use simple_logger::SimpleLogger;
@@ -17,7 +16,8 @@ pub fn main() {
         .expect("A logger was already initialized");
 
     info!("Content Server starting up...");
-    let socket_addr: SocketAddr = SocketAddr::new(SELF_BINDING_ADDR.parse().unwrap(), CONTENT_SERVER_PORT);
+    let socket_addr: SocketAddr =
+        SocketAddr::new(SELF_BINDING_ADDR.parse().unwrap(), CONTENT_SERVER_PORT);
 
     let mut server = Server::new(socket_addr);
 

@@ -8,8 +8,10 @@ use async_channel::{Receiver, Sender};
 ///
 /// NOTE: `Ok(…)` is returned on network error.
 /// `Err` is only for failure to use the fetch API.
-pub fn fetch_blocking(request: &Request, request_options_opt: Option<RequestOptions>) -> crate::Result<Response> {
-
+pub fn fetch_blocking(
+    request: &Request,
+    request_options_opt: Option<RequestOptions>,
+) -> crate::Result<Response> {
     let mut req = ureq::request(request.method.as_str(), &request.url);
 
     if let Some(request_options) = request_options_opt {
@@ -27,7 +29,9 @@ pub fn fetch_blocking(request: &Request, request_options_opt: Option<RequestOpti
     let (ok, resp) = match resp {
         Ok(resp) => (true, resp),
         Err(ureq::Error::Status(_, resp)) => (false, resp), // Still read the body on e.g. 404
-        Err(ureq::Error::Transport(error)) => return Err(ResponseError::HttpError(error.to_string())),
+        Err(ureq::Error::Transport(error)) => {
+            return Err(ResponseError::HttpError(error.to_string()))
+        }
     };
 
     let url = resp.get_url().to_owned();
@@ -61,14 +65,21 @@ pub fn fetch_blocking(request: &Request, request_options_opt: Option<RequestOpti
 
 // ----------------------------------------------------------------------------
 
-pub(crate) fn fetch(request: Request, request_options_opt: Option<RequestOptions>, on_done: Box<dyn FnOnce(crate::Result<Response>) + Send>) {
+pub(crate) fn fetch(
+    request: Request,
+    request_options_opt: Option<RequestOptions>,
+    on_done: Box<dyn FnOnce(crate::Result<Response>) + Send>,
+) {
     std::thread::Builder::new()
         .name("ehttp".to_owned())
         .spawn(move || on_done(fetch_blocking(&request, request_options_opt)))
         .expect("Failed to spawn ehttp thread");
 }
 
-pub(crate) async fn fetch_async(request: Request, request_options_opt: Option<RequestOptions>) -> crate::Result<Response> {
+pub(crate) async fn fetch_async(
+    request: Request,
+    request_options_opt: Option<RequestOptions>,
+) -> crate::Result<Response> {
     let (tx, rx): (
         Sender<crate::Result<Response>>,
         Receiver<crate::Result<Response>>,
@@ -79,5 +90,8 @@ pub(crate) async fn fetch_async(request: Request, request_options_opt: Option<Re
         request_options_opt,
         Box::new(move |received| tx.send_blocking(received).unwrap()),
     );
-    rx.recv().await.map_err(|err| err.to_string()).map_err(|estr| ResponseError::HttpError(estr))?
+    rx.recv()
+        .await
+        .map_err(|err| err.to_string())
+        .map_err(|estr| ResponseError::HttpError(estr))?
 }

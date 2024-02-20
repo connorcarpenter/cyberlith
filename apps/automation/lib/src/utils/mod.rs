@@ -4,13 +4,13 @@ use async_compat::Compat;
 use crossbeam_channel::{bounded, Receiver, TryRecvError};
 use log::{info, warn};
 use openssh::{KnownHosts, Session, SessionBuilder};
-use subprocess::{Exec,  Redirection};
 use smol::channel::bounded as smol_bounded;
+use subprocess::{Exec, Redirection};
 
 use crate::CliError;
 
-pub fn thread_init<F: Future<Output=Result<(), CliError>> + Sized + Send + 'static>(
-    x: fn() -> F
+pub fn thread_init<F: Future<Output = Result<(), CliError>> + Sized + Send + 'static>(
+    x: fn() -> F,
 ) -> Receiver<Result<(), CliError>> {
     let (sender, receiver) = bounded(1);
 
@@ -18,13 +18,13 @@ pub fn thread_init<F: Future<Output=Result<(), CliError>> + Sized + Send + 'stat
         let result = x().await;
         sender.send(result).expect("failed to send result");
     })
-        .detach();
+    .detach();
 
     receiver
 }
 
-pub fn thread_init_compat<F: Future<Output=Result<(), CliError>> + Sized + Send + 'static>(
-    x: fn() -> F
+pub fn thread_init_compat<F: Future<Output = Result<(), CliError>> + Sized + Send + 'static>(
+    x: fn() -> F,
 ) -> Receiver<Result<(), CliError>> {
     let (sender, receiver) = bounded(1);
 
@@ -32,13 +32,12 @@ pub fn thread_init_compat<F: Future<Output=Result<(), CliError>> + Sized + Send 
         let result = x().await;
         sender.send(result).expect("failed to send result");
     }))
-        .detach();
+    .detach();
 
     receiver
 }
 
 pub async fn run_command(command_name: &str, command_str: &str) -> Result<(), CliError> {
-
     info!("({}) -> {}", command_name, command_str);
 
     let command_name = command_name.to_string();
@@ -48,10 +47,12 @@ pub async fn run_command(command_name: &str, command_str: &str) -> Result<(), Cl
     let (sender, receiver) = smol_bounded(1);
 
     executor::spawn(async move {
-
         let command_name = command_name_clone;
 
-        let args = command_str.split(" ").map(|thestr| thestr.to_string()).collect::<Vec<String>>();
+        let args = command_str
+            .split(" ")
+            .map(|thestr| thestr.to_string())
+            .collect::<Vec<String>>();
 
         let result_to_send = {
             let command = Exec::cmd(&args[0])
@@ -69,18 +70,18 @@ pub async fn run_command(command_name: &str, command_str: &str) -> Result<(), Cl
                     }
                     Ok(())
                 }
-                Err(err) => {
-                    Err(CliError::Message(err.to_string()))
-                }
+                Err(err) => Err(CliError::Message(err.to_string())),
             }
         };
 
-        sender.send(result_to_send).await.expect("failed to send result");
-    }).detach();
+        sender
+            .send(result_to_send)
+            .await
+            .expect("failed to send result");
+    })
+    .detach();
 
-    match receiver
-        .recv()
-        .await {
+    match receiver.recv().await {
         Ok(Ok(())) => {
             // info!("({}) received successful(?) status from command", command_name);
             Ok(())
@@ -139,21 +140,30 @@ pub async fn ssh_session_close(session: Session) -> Result<(), CliError> {
 pub async fn run_ssh_command(session: &Session, command_str: &str) -> Result<(), CliError> {
     info!("-> {}", command_str);
 
-    let commands: Vec<String> = command_str.split(" ").map(|thestr| thestr.to_string()).collect();
+    let commands: Vec<String> = command_str
+        .split(" ")
+        .map(|thestr| thestr.to_string())
+        .collect();
 
     let mut command = session.command(&commands[0]);
     for i in 1..commands.len() {
         command.arg(&commands[i]);
     }
 
-    let output = command.output().await.map_err(|err| CliError::Message(err.to_string()))?;
+    let output = command
+        .output()
+        .await
+        .map_err(|err| CliError::Message(err.to_string()))?;
     if output.status.success() {
         let result = String::from_utf8_lossy(&output.stdout);
         info!("<- {}", result);
         return Ok(());
     } else {
         let error_message = String::from_utf8_lossy(&output.stderr);
-        return Err(CliError::Message(format!("Command Error: {}", error_message)));
+        return Err(CliError::Message(format!(
+            "Command Error: {}",
+            error_message
+        )));
     }
 }
 
@@ -161,27 +171,35 @@ pub async fn run_ssh_raw_command(session: &Session, command_str: &str) -> Result
     info!("-> {}", command_str);
 
     let mut raw_command = session.raw_command(command_str);
-    let output = raw_command.output().await.map_err(|err| CliError::Message(err.to_string()))?;
+    let output = raw_command
+        .output()
+        .await
+        .map_err(|err| CliError::Message(err.to_string()))?;
     if output.status.success() {
         let result = String::from_utf8_lossy(&output.stdout);
         info!("<- {}", result);
         return Ok(());
     } else {
         let error_message = String::from_utf8_lossy(&output.stderr);
-        return Err(CliError::Message(format!("Command Error: {}", error_message)));
+        return Err(CliError::Message(format!(
+            "Command Error: {}",
+            error_message
+        )));
     }
 }
 
 pub fn check_channel(
     rcvr: &Receiver<Result<(), CliError>>,
-    rdy: &mut bool
+    rdy: &mut bool,
 ) -> Result<(), CliError> {
     if !*rdy {
         match rcvr.try_recv() {
             Ok(Ok(())) => *rdy = true,
             Ok(Err(err)) => return Err(err),
-            Err(TryRecvError::Disconnected) => return Err(CliError::Message("channel disconnected".to_string())),
-            _ => {},
+            Err(TryRecvError::Disconnected) => {
+                return Err(CliError::Message("channel disconnected".to_string()))
+            }
+            _ => {}
         }
     }
 

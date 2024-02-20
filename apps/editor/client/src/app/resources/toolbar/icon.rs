@@ -148,10 +148,9 @@ impl IconToolbar {
         )> = SystemState::new(world);
         let (file_manager, palette_manager, palette_color_q) = system_state.get_mut(world);
 
-        let Some(palette_file_entity) = file_manager.file_get_dependency(
-            current_file_entity,
-            FileExtension::Palette,
-        ) else {
+        let Some(palette_file_entity) =
+            file_manager.file_get_dependency(current_file_entity, FileExtension::Palette)
+        else {
             panic!("Expected palette file dependency");
         };
         let Some(colors) = palette_manager.get_file_colors(&palette_file_entity) else {
@@ -159,10 +158,9 @@ impl IconToolbar {
         };
 
         egui::SidePanel::right("icon_right_panel")
-            .exact_width(8.0*2.0 + 48.0*2.0 + 2.0 + 10.0*2.0)
+            .exact_width(8.0 * 2.0 + 48.0 * 2.0 + 2.0 + 10.0 * 2.0)
             .resizable(false)
             .show_inside(ui, |ui| {
-
                 ui.horizontal_top(|ui| {
                     Frame::none().inner_margin(8.0).show(ui, |ui| {
                         ui.style_mut().override_text_style = Some(egui::TextStyle::Heading);
@@ -184,7 +182,6 @@ impl IconToolbar {
 
                 ui.vertical_centered(|ui| {
                     Frame::none().inner_margin(8.0).show(ui, |ui| {
-
                         let size = Vec2::new(48.0, 48.0);
 
                         let color_index = icon_manager.selected_color_index();
@@ -200,8 +197,7 @@ impl IconToolbar {
                         let b = *color_component.b;
                         let color = Color32::from_rgb(r, g, b);
 
-                        let (mut rect, _response) =
-                            ui.allocate_exact_size(size, Sense::click());
+                        let (mut rect, _response) = ui.allocate_exact_size(size, Sense::click());
 
                         if ui.is_rect_visible(rect) {
                             ui.painter().rect_filled(rect, 0.0, color);
@@ -224,7 +220,9 @@ impl IconToolbar {
                                 let Some(palette_color_entity) = color_entity_opt else {
                                     continue;
                                 };
-                                let Ok(color_component) = palette_color_q.get(*palette_color_entity) else {
+                                let Ok(color_component) =
+                                    palette_color_q.get(*palette_color_entity)
+                                else {
                                     continue;
                                 };
                                 let r = *color_component.r;
@@ -244,16 +242,22 @@ impl IconToolbar {
                                         rect = rect.expand(2.0);
                                         ui.painter().rect_stroke(rect, 0.0, (2.0, Color32::WHITE));
                                     } else if response.clicked_by(PointerButton::Primary) {
-                                        color_index_picked = Some((color_index, *palette_color_entity, PointerButton::Primary));
+                                        color_index_picked = Some((
+                                            color_index,
+                                            *palette_color_entity,
+                                            PointerButton::Primary,
+                                        ));
                                     }
                                 }
                             }
                         });
-                    });
+                    },
+                );
                 return;
             });
 
-        let Some((color_index_picked, palette_color_entity, click_type)) = color_index_picked else {
+        let Some((color_index_picked, palette_color_entity, click_type)) = color_index_picked
+        else {
             return None;
         };
         match click_type {

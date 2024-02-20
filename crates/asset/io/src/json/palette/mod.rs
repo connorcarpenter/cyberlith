@@ -1,7 +1,7 @@
 use cfg_if::cfg_if;
 
-use serde::{Deserialize, Serialize};
 use asset_id::AssetId;
+use serde::{Deserialize, Serialize};
 
 cfg_if! {
     if #[cfg(feature = "read_json")] {
@@ -36,13 +36,10 @@ pub struct PaletteFile {
 }
 
 impl PaletteFile {
-
     pub const CURRENT_SCHEMA_VERSION: u32 = 0;
 
     pub fn new() -> Self {
-        Self {
-            colors: Vec::new(),
-        }
+        Self { colors: Vec::new() }
     }
 
     pub fn dependencies(&self) -> Vec<AssetId> {
@@ -54,16 +51,13 @@ impl PaletteFile {
     }
 
     pub fn add_color(&mut self, r: u8, g: u8, b: u8) {
-        self.colors.push(PaletteFileColor {
-            r,
-            g,
-            b,
-        });
+        self.colors.push(PaletteFileColor { r, g, b });
     }
 
     pub fn insert_color(&mut self, index: usize, r: u8, g: u8, b: u8) {
         if index >= self.colors.len() {
-            self.colors.resize(index + 1, PaletteFileColor { r: 0, g: 0, b: 0 });
+            self.colors
+                .resize(index + 1, PaletteFileColor { r: 0, g: 0, b: 0 });
         }
         self.colors[index] = PaletteFileColor { r, g, b };
     }

@@ -1,7 +1,10 @@
-use serde::{Deserialize, Serialize};
 use asset_id::{AssetId, ETag};
+use serde::{Deserialize, Serialize};
 
-use crate::{json::{Asset, AssetMeta}, AssetIoError};
+use crate::{
+    json::{Asset, AssetMeta},
+    AssetIoError,
+};
 
 impl Asset {
     pub fn read(bytes: &[u8]) -> Result<Self, AssetIoError> {
@@ -31,7 +34,7 @@ impl ProcessedAssetMeta {
         etag: ETag,
         schema_version: u32,
         dependencies: Vec<AssetId>,
-        hash: Vec<u8>
+        hash: Vec<u8>,
     ) -> Self {
         let dependencies = dependencies.into_iter().map(|id| id.as_string()).collect();
         Self {
@@ -56,7 +59,10 @@ impl ProcessedAssetMeta {
     }
 
     pub fn dependencies(&self) -> Vec<AssetId> {
-        self.dependencies.iter().map(|s| AssetId::from_str(s).unwrap()).collect()
+        self.dependencies
+            .iter()
+            .map(|s| AssetId::from_str(s).unwrap())
+            .collect()
     }
 
     pub fn write(&self) -> Vec<u8> {

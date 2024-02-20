@@ -1,9 +1,12 @@
 use cfg_if::cfg_if;
 
-use serde::{Deserialize, Serialize};
 use asset_id::AssetId;
+use serde::{Deserialize, Serialize};
 
-use crate::json::{components::{FileComponentType, FileComponentEntry, FileTransformPosition, FileTransformRotation, FileTransformScale}};
+use crate::json::components::{
+    FileComponentEntry, FileComponentType, FileTransformPosition, FileTransformRotation,
+    FileTransformScale,
+};
 
 cfg_if! {
     if #[cfg(feature = "read_json")] {
@@ -28,8 +31,12 @@ pub struct SceneFileTransform {
 }
 
 impl SceneFileTransform {
-
-    pub fn new(component_id: u16, position: FileTransformPosition, rotation: FileTransformRotation, scale: FileTransformScale) -> Self {
+    pub fn new(
+        component_id: u16,
+        position: FileTransformPosition,
+        rotation: FileTransformRotation,
+        scale: FileTransformScale,
+    ) -> Self {
         Self {
             component_id,
             position,
@@ -62,7 +69,6 @@ pub struct SceneFile {
 }
 
 impl SceneFile {
-
     pub const CURRENT_SCHEMA_VERSION: u32 = 0;
 
     pub fn new() -> Self {
@@ -87,7 +93,8 @@ impl SceneFile {
     }
 
     pub fn add_component(&mut self, asset_id: AssetId, kind: FileComponentType) {
-        self.components.push(FileComponentEntry::new(asset_id, kind));
+        self.components
+            .push(FileComponentEntry::new(asset_id, kind));
     }
 
     pub fn get_transforms(&self) -> &Vec<SceneFileTransform> {
@@ -106,13 +113,13 @@ impl SceneFile {
         rotation_x: f32,
         rotation_y: f32,
         rotation_z: f32,
-        rotation_w: f32
+        rotation_w: f32,
     ) {
         self.transforms.push(SceneFileTransform::new(
             component_id,
             FileTransformPosition::new(x, y, z),
             FileTransformRotation::new(rotation_x, rotation_y, rotation_z, rotation_w),
-            FileTransformScale::new(scale_x, scale_y, scale_z)
+            FileTransformScale::new(scale_x, scale_y, scale_z),
         ));
     }
 }

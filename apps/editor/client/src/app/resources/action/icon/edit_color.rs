@@ -39,7 +39,10 @@ pub(crate) fn execute(
         .face_entity_local_to_net(&local_face_entity)
         .unwrap();
     let Ok(mut face) = face_q.get_mut(net_face_entity) else {
-        panic!("Failed to get IconFace for face entity {:?}!", net_face_entity);
+        panic!(
+            "Failed to get IconFace for face entity {:?}!",
+            net_face_entity
+        );
     };
     let old_palette_color_entity_opt = face.palette_color_entity.get(&client);
 

@@ -7,7 +7,7 @@ use bevy_log::info;
 use naia_bevy_client::Client;
 
 use render_api::{base::CpuMesh, components::Transform};
-use storage::{Storage, Handle};
+use storage::{Handle, Storage};
 
 use editor_proto::components::{Face3d, Vertex3d};
 
@@ -20,7 +20,9 @@ use crate::app::{
 };
 
 pub(crate) fn execute(world: &mut World, action: ShapeAction) -> Vec<ShapeAction> {
-    let ShapeAction::MoveVertex(vertex_2d_entity, old_position, new_position, already_moved) = action else {
+    let ShapeAction::MoveVertex(vertex_2d_entity, old_position, new_position, already_moved) =
+        action
+    else {
         panic!("Expected MoveVertex");
     };
 
@@ -59,7 +61,10 @@ pub(crate) fn execute(world: &mut World, action: ShapeAction) -> Vec<ShapeAction
         // MoveVertex action happens after the vertex has already been moved, so we wouldn't need to do anything here ..
         // BUT we do need to update the vertex_3d's position here in order to apply when undo/redo is executed
         let Ok(mut vertex_3d) = vertex_3d_q.get_mut(vertex_3d_entity) else {
-            panic!("Failed to get Vertex3d for vertex entity {:?}!", vertex_3d_entity);
+            panic!(
+                "Failed to get Vertex3d for vertex entity {:?}!",
+                vertex_3d_entity
+            );
         };
         vertex_3d.set_vec3(&new_position);
     }

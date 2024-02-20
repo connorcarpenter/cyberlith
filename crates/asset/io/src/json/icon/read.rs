@@ -1,5 +1,7 @@
-
-use crate::{error::AssetIoError, json::{IconFile, Asset, AssetData, AssetMeta}};
+use crate::{
+    error::AssetIoError,
+    json::{Asset, AssetData, AssetMeta, IconFile},
+};
 
 impl IconFile {
     pub fn read(bytes: &[u8]) -> Result<(AssetMeta, Self), AssetIoError> {

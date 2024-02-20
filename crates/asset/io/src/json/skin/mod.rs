@@ -1,7 +1,7 @@
 use cfg_if::cfg_if;
 
-use serde::{Deserialize, Serialize};
 use asset_id::AssetId;
+use serde::{Deserialize, Serialize};
 
 cfg_if! {
     if #[cfg(feature = "read_json")] {
@@ -25,10 +25,7 @@ pub struct SkinFileFace {
 
 impl SkinFileFace {
     pub fn new(face_id: u16, color_id: u8) -> Self {
-        Self {
-            face_id,
-            color_id,
-        }
+        Self { face_id, color_id }
     }
 
     pub fn face_id(&self) -> u16 {
@@ -49,7 +46,6 @@ pub struct SkinFile {
 }
 
 impl SkinFile {
-
     pub const CURRENT_SCHEMA_VERSION: u32 = 0;
 
     pub fn new() -> Self {
@@ -99,9 +95,6 @@ impl SkinFile {
     }
 
     pub fn add_face_color(&mut self, face_id: u16, color_id: u8) {
-        self.face_colors.push(SkinFileFace {
-            face_id,
-            color_id,
-        });
+        self.face_colors.push(SkinFileFace { face_id, color_id });
     }
 }

@@ -1,7 +1,7 @@
 use math::{triangle_is_ccw_toward_point, Vec3};
 use storage::AssetHash;
 
-use crate::{base::CpuMesh};
+use crate::base::CpuMesh;
 
 #[derive(Hash)]
 pub struct Cube;

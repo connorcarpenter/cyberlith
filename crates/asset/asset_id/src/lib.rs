@@ -17,7 +17,7 @@ impl Serde for AssetId {
         let val = u32::de(reader)?;
         let Some(val) = U32Token::from_u32(val) else {
             return Err(SerdeErr);
-        } ;
+        };
         Ok(Self(val))
     }
 
@@ -77,7 +77,7 @@ impl Serde for ETag {
         let val = u32::de(reader)?;
         let Some(val) = U32Token::from_u32(val) else {
             return Err(SerdeErr);
-        } ;
+        };
         Ok(Self(val))
     }
 
@@ -87,7 +87,6 @@ impl Serde for ETag {
 }
 
 impl ETag {
-
     pub fn new_random() -> Self {
         Self(U32Token::get_random())
     }

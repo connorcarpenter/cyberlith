@@ -1,5 +1,4 @@
-
-use naia_serde::{SerdeInternal as Serde};
+use naia_serde::SerdeInternal as Serde;
 
 use http_common::{ApiRequest, ApiResponse, Method};
 
@@ -12,11 +11,7 @@ pub struct AssetRegisterInstanceRequest {
 }
 
 impl AssetRegisterInstanceRequest {
-    pub fn new(
-        global_secret: &str,
-        http_addr: &str,
-        http_port: u16,
-    ) -> Self {
+    pub fn new(global_secret: &str, http_addr: &str, http_port: u16) -> Self {
         Self {
             global_secret: global_secret.to_string(),
             http_addr: http_addr.to_string(),
@@ -43,9 +38,7 @@ pub struct AssetRegisterInstanceResponse;
 
 impl AssetRegisterInstanceResponse {
     pub fn new() -> Self {
-        Self {
-
-        }
+        Self {}
     }
 }
 

@@ -1,7 +1,7 @@
 use bevy_log::info;
 
 use render_api::base::{Color, CpuMaterial};
-use storage::{AssetHash, Storage, Handle};
+use storage::{AssetHash, Handle, Storage};
 
 impl AssetHash<PaletteData> for String {}
 
@@ -59,8 +59,7 @@ impl From<String> for PaletteData {
             panic!("unable to read file: {:?}", &file_path);
         };
 
-        let actions =
-            asset_io::bits::PaletteAction::read(&data).expect("unable to parse file");
+        let actions = asset_io::bits::PaletteAction::read(&data).expect("unable to parse file");
 
         info!("--- reading palette: {} ---", path);
 

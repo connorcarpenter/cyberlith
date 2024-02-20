@@ -99,7 +99,11 @@ pub fn draw(
 }
 
 pub fn draw_vertices_and_edges(world: &mut World) {
-    let Some(current_tab) = world.get_resource::<TabManager>().unwrap().current_tab_entity() else {
+    let Some(current_tab) = world
+        .get_resource::<TabManager>()
+        .unwrap()
+        .current_tab_entity()
+    else {
         return;
     };
     let file_ext = world
@@ -204,7 +208,8 @@ fn draw_vertices_and_edges_inner(world: &mut World, current_file: FileExtension)
         render_frame.draw_mesh(render_layer_opt, mesh_handle, &mat_handle, transform);
 
         // draw vertex 2d
-        let Some(vertex_2d_entity) = vertex_manager.vertex_entity_3d_to_2d(&vertex_3d_entity) else {
+        let Some(vertex_2d_entity) = vertex_manager.vertex_entity_3d_to_2d(&vertex_3d_entity)
+        else {
             continue;
         };
 
@@ -239,7 +244,9 @@ fn draw_vertices_and_edges_inner(world: &mut World, current_file: FileExtension)
         render_frame.draw_mesh(render_layer_opt, mesh_handle, &mat_handle, transform);
 
         // draw edge 2d
-        let Some(edge_2d_entity) = edge_manager.edge_entity_3d_to_2d(&edge_3d_entity) else {continue};
+        let Some(edge_2d_entity) = edge_manager.edge_entity_3d_to_2d(&edge_3d_entity) else {
+            continue;
+        };
 
         let (mesh_handle, transform, render_layer_opt) = objects_q.get(edge_2d_entity).unwrap();
         render_frame.draw_mesh(render_layer_opt, mesh_handle, &mat_handle, transform);

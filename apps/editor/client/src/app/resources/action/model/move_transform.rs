@@ -12,7 +12,9 @@ use crate::app::{
 };
 
 pub(crate) fn execute(world: &mut World, action: ModelAction) -> Vec<ModelAction> {
-    let ModelAction::MoveTransform(transform_entity, old_transform, new_transform, already_moved) = action else {
+    let ModelAction::MoveTransform(transform_entity, old_transform, new_transform, already_moved) =
+        action
+    else {
         panic!("Expected MoveTransform");
     };
 

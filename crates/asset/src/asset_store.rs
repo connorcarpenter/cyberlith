@@ -3,12 +3,12 @@ use std::collections::HashMap;
 use bevy_log::warn;
 
 use asset_id::AssetId;
-use render_api::base::{CpuMaterial, CpuSkin, CpuMesh};
-use storage::{Storage, Handle};
+use render_api::base::{CpuMaterial, CpuMesh, CpuSkin};
+use storage::{Handle, Storage};
 
 use crate::{
-    asset_handle::AssetHandleImpl, AnimationData, AssetHandle,
-    IconData, MeshFile, ModelData, PaletteData, SceneData, SkeletonData, SkinData,
+    asset_handle::AssetHandleImpl, AnimationData, AssetHandle, IconData, MeshFile, ModelData,
+    PaletteData, SceneData, SkeletonData, SkinData,
 };
 
 pub(crate) struct AssetStore {

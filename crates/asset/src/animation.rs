@@ -1,14 +1,14 @@
 use std::collections::HashMap;
 
-use bevy_log::info;
 use asset_id::AssetId;
+use bevy_log::info;
 
 use math::Quat;
 use render_api::components::Transform;
 use storage::{AssetHash, Handle};
 
 use crate::{
-    asset_dependency::{AssetDependency, AssetComponentHandle},
+    asset_dependency::{AssetComponentHandle, AssetDependency},
     asset_handle::AssetHandleImpl,
     AssetHandle, ModelData, SkeletonData,
 };

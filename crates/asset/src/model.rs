@@ -1,13 +1,13 @@
 use bevy_log::info;
 
 use asset_id::AssetId;
-use render_api::components::Transform;
-use storage::{AssetHash, Handle};
 use asset_io::bits::ComponentFileType;
 use math::{Quat, Vec3};
+use render_api::components::Transform;
+use storage::{AssetHash, Handle};
 
 use crate::{
-    asset_dependency::{AssetDependency, AssetComponent, AssetComponentHandle},
+    asset_dependency::{AssetComponent, AssetComponentHandle, AssetDependency},
     asset_handle::AssetHandleImpl,
     scene::finish_component_dependency,
     AssetHandle, SceneData, SkeletonData, SkinData,
@@ -67,19 +67,11 @@ impl ModelData {
             }
             AssetHandleImpl::Skin(handle) => {
                 let handle = AssetComponentHandle::Skin(handle);
-                finish_component_dependency(
-                    &mut self.component_files,
-                    dependency_id,
-                    handle,
-                );
+                finish_component_dependency(&mut self.component_files, dependency_id, handle);
             }
             AssetHandleImpl::Scene(handle) => {
                 let handle = AssetComponentHandle::Scene(handle);
-                finish_component_dependency(
-                    &mut self.component_files,
-                    dependency_id,
-                    handle,
-                );
+                finish_component_dependency(&mut self.component_files, dependency_id, handle);
             }
             _ => {
                 panic!("unexpected type of handle");
@@ -191,15 +183,14 @@ impl From<String> for ModelData {
                         file_index, asset_id, file_type
                     );
 
-                    let asset_dependency =
-                        match file_type {
-                            ComponentFileType::Skin => {
-                                AssetComponent::Skin(AssetDependency::<SkinData>::AssetId(asset_id))
-                            }
-                            ComponentFileType::Scene => AssetComponent::Scene(
-                                AssetDependency::<SceneData>::AssetId(asset_id),
-                            ),
-                        };
+                    let asset_dependency = match file_type {
+                        ComponentFileType::Skin => {
+                            AssetComponent::Skin(AssetDependency::<SkinData>::AssetId(asset_id))
+                        }
+                        ComponentFileType::Scene => {
+                            AssetComponent::Scene(AssetDependency::<SceneData>::AssetId(asset_id))
+                        }
+                    };
 
                     component_files.push(asset_dependency);
 

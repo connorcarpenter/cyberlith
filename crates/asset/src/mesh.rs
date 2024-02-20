@@ -3,7 +3,7 @@ use bevy_log::info;
 use asset_id::AssetId;
 use math::Vec3;
 use render_api::base::CpuMesh;
-use storage::{AssetHash, Storage, Handle};
+use storage::{AssetHash, Handle, Storage};
 
 use crate::asset_dependency::AssetDependency;
 use crate::data_from_asset_id;

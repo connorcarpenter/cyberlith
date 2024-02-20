@@ -54,7 +54,10 @@ pub(crate) fn execute(
     ) = system_state.get_mut(world);
 
     let Some(edge_3d_entity_ref) = edge_manager.edge_entity_2d_to_3d(&edge_2d_entity) else {
-        panic!("failed to get edge 3d entity for edge 2d entity `{:?}`!", edge_2d_entity)
+        panic!(
+            "failed to get edge 3d entity for edge 2d entity `{:?}`!",
+            edge_2d_entity
+        )
     };
     let edge_3d_entity = edge_3d_entity_ref;
 

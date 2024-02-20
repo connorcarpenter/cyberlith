@@ -54,7 +54,10 @@ pub fn execute(world: &mut World, tab_file_entity: Entity, action: AnimAction) -
         .unwrap();
 
     let Ok(name) = name_q.get(vertex_3d_entity) else {
-        panic!("Failed to get ShapeName for vertex entity {:?}!", vertex_3d_entity);
+        panic!(
+            "Failed to get ShapeName for vertex entity {:?}!",
+            vertex_3d_entity
+        );
     };
     let name = name.value.as_str();
 

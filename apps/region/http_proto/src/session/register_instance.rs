@@ -1,5 +1,4 @@
-
-use naia_serde::{SerdeInternal as Serde};
+use naia_serde::SerdeInternal as Serde;
 
 use http_common::{ApiRequest, ApiResponse, Method};
 
@@ -57,9 +56,7 @@ pub struct SessionRegisterInstanceResponse;
 
 impl SessionRegisterInstanceResponse {
     pub fn new() -> Self {
-        Self {
-
-        }
+        Self {}
     }
 }
 

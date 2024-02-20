@@ -4,7 +4,7 @@ use bevy_log::info;
 
 use asset_id::AssetId;
 use render_api::base::{CpuMaterial, CpuMesh, CpuSkin};
-use storage::{AssetHash, Storage, Handle};
+use storage::{AssetHash, Handle, Storage};
 
 use crate::{
     asset_dependency::AssetDependency, asset_handle::AssetHandleImpl, AssetHandle, MeshFile,

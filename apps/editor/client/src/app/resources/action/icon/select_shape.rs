@@ -53,10 +53,9 @@ pub(crate) fn execute(
 
         // create new face, assign color
         let palette_color_index = icon_manager.selected_color_index();
-        let Some(palette_file_entity) = file_manager.file_get_dependency(
-            &current_file_entity,
-            FileExtension::Palette,
-        ) else {
+        let Some(palette_file_entity) =
+            file_manager.file_get_dependency(&current_file_entity, FileExtension::Palette)
+        else {
             panic!("Expected palette file dependency");
         };
         let next_palette_color_entity = palette_manager
@@ -75,7 +74,10 @@ pub(crate) fn execute(
             // edit face color
 
             let Ok(mut face_component) = face_q.get_mut(net_face_entity) else {
-                panic!("Failed to get FaceColor for face entity {:?}!", net_face_entity);
+                panic!(
+                    "Failed to get FaceColor for face entity {:?}!",
+                    net_face_entity
+                );
             };
 
             let prev_palette_entity = face_component.palette_color_entity.get(&client).unwrap();

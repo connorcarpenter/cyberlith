@@ -1,7 +1,13 @@
-use std::collections::HashMap;
-use asset_io::{json::{AnimFile, IconFile, MeshFile, ModelFile, PaletteFile, SceneFile, SkelFile, SkinFile}, bits::{AnimAction, IconAction, MeshAction, ModelAction, PaletteAction, SceneAction, SkelAction, SkinAction}};
 use asset_io::bits::{ComponentFileType, IconFrameAction, SerdeQuat, SerdeRotation, Transition};
 use asset_io::json::FileComponentType;
+use asset_io::{
+    bits::{
+        AnimAction, IconAction, MeshAction, ModelAction, PaletteAction, SceneAction, SkelAction,
+        SkinAction,
+    },
+    json::{AnimFile, IconFile, MeshFile, ModelFile, PaletteFile, SceneFile, SkelFile, SkinFile},
+};
+use std::collections::HashMap;
 
 pub(crate) fn palette(data: &PaletteFile) -> Vec<u8> {
     let mut actions = Vec::new();
@@ -15,12 +21,12 @@ pub(crate) fn palette(data: &PaletteFile) -> Vec<u8> {
 }
 
 pub(crate) fn skeleton(data: &SkelFile) -> Vec<u8> {
-
     let mut actions = Vec::new();
 
     for vertex in data.get_vertices() {
         let (x, y, z, parent_opt, name_opt) = vertex.deconstruct();
-        let parent_opt = parent_opt.map(|(id, rotation)| (id, SerdeRotation::from_inner_value(rotation)));
+        let parent_opt =
+            parent_opt.map(|(id, rotation)| (id, SerdeRotation::from_inner_value(rotation)));
         actions.push(SkelAction::Vertex(x, y, z, parent_opt, name_opt));
     }
 
@@ -78,7 +84,15 @@ pub(crate) fn animation(data: &AnimFile) -> Vec<u8> {
         for pose in frame.get_poses() {
             let id = pose.get_edge_id();
             let rotation = pose.get_rotation();
-            rotations.insert(id, SerdeQuat::from_xyzw(rotation.get_x(), rotation.get_y(), rotation.get_z(), rotation.get_w()));
+            rotations.insert(
+                id,
+                SerdeQuat::from_xyzw(
+                    rotation.get_x(),
+                    rotation.get_y(),
+                    rotation.get_z(),
+                    rotation.get_w(),
+                ),
+            );
         }
         let transition_ms = frame.get_transition_ms();
         actions.push(AnimAction::Frame(rotations, Transition::new(transition_ms)));
@@ -105,7 +119,9 @@ pub(crate) fn icon(data: &IconFile) -> Vec<u8> {
             let vertex_b = face.vertex_b();
             let vertex_c = face.vertex_c();
 
-            frame_actions.push(IconFrameAction::Face(face_id, color_id, vertex_a, vertex_b, vertex_c));
+            frame_actions.push(IconFrameAction::Face(
+                face_id, color_id, vertex_a, vertex_b, vertex_c,
+            ));
         }
         actions.push(IconAction::Frame(frame_actions));
     }
@@ -138,7 +154,8 @@ pub(crate) fn scene(data: &SceneFile) -> Vec<u8> {
             scale.x(),
             scale.y(),
             scale.z(),
-            SerdeQuat::from_xyzw(rotation.x(), rotation.y(), rotation.z(), rotation.w())));
+            SerdeQuat::from_xyzw(rotation.x(), rotation.y(), rotation.z(), rotation.w()),
+        ));
     }
 
     SceneAction::write(actions).to_vec()
@@ -174,7 +191,8 @@ pub(crate) fn model(data: &ModelFile) -> Vec<u8> {
             scale.x(),
             scale.y(),
             scale.z(),
-            SerdeQuat::from_xyzw(rotation.x(), rotation.y(), rotation.z(), rotation.w())));
+            SerdeQuat::from_xyzw(rotation.x(), rotation.y(), rotation.z(), rotation.w()),
+        ));
     }
 
     ModelAction::write(actions).to_vec()

@@ -29,7 +29,8 @@ pub fn execute(
     let (mut commands, mut client) = system_state.get_mut(world);
 
     // release the last frame entity
-    let Some(last_frame_entity) = icon_manager.get_frame_entity(&file_entity, last_frame_index) else {
+    let Some(last_frame_entity) = icon_manager.get_frame_entity(&file_entity, last_frame_index)
+    else {
         return vec![];
     };
     commands
@@ -39,7 +40,8 @@ pub fn execute(
     icon_manager.set_current_frame_index(next_frame_index);
 
     // request auth over next frame entity
-    let Some(next_frame_entity) = icon_manager.get_frame_entity(&file_entity, next_frame_index) else {
+    let Some(next_frame_entity) = icon_manager.get_frame_entity(&file_entity, next_frame_index)
+    else {
         return vec![];
     };
     commands

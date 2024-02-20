@@ -1,4 +1,6 @@
-use naia_bevy_shared::{Channel, ChannelDirection, ChannelMode, Protocol, ProtocolPlugin, ReliableSettings};
+use naia_bevy_shared::{
+    Channel, ChannelDirection, ChannelMode, Protocol, ProtocolPlugin, ReliableSettings,
+};
 
 #[derive(Channel)]
 pub struct PrimaryChannel;

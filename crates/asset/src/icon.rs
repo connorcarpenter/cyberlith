@@ -1,13 +1,11 @@
 use std::{collections::HashMap, fs};
 
-use bevy_log::info;
 use asset_id::AssetId;
+use bevy_log::info;
 
 use math::Vec3;
-use render_api::{
-    base::{CpuMaterial, CpuMesh, CpuSkin},
-};
-use storage::{AssetHash, Storage, Handle};
+use render_api::base::{CpuMaterial, CpuMesh, CpuSkin};
+use storage::{AssetHash, Handle, Storage};
 
 use crate::{
     asset_dependency::AssetDependency, asset_handle::AssetHandleImpl, AssetHandle, PaletteData,

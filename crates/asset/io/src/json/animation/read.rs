@@ -1,5 +1,7 @@
-
-use crate::{error::AssetIoError, json::{AnimFile, Asset, AssetData, AssetMeta}};
+use crate::{
+    error::AssetIoError,
+    json::{AnimFile, Asset, AssetData, AssetMeta},
+};
 
 impl AnimFile {
     pub fn read(bytes: &[u8]) -> Result<(AssetMeta, Self), AssetIoError> {

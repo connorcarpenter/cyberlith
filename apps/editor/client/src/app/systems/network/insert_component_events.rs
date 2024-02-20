@@ -10,9 +10,7 @@ use bevy_log::{info, warn};
 
 use naia_bevy_client::{events::InsertComponentEvents, Client, Replicate};
 
-use render_api::{
-    base::{CpuMaterial, CpuMesh},
-};
+use render_api::base::{CpuMaterial, CpuMesh};
 use storage::Storage;
 
 use editor_proto::components::{
@@ -165,23 +163,28 @@ pub fn insert_file_component_events(
         let entity = event.entity;
         let entry = entry_q.get(entity).unwrap();
         // Get parent
-        let Some(parent_entity) = child_q
-                .get(entity)
-                .unwrap()
-                .parent_id
-                .get(&client) else {
-                panic!("FileSystemChild component of entry: `{}` has no parent component", *entry.name);
-            };
+        let Some(parent_entity) = child_q.get(entity).unwrap().parent_id.get(&client) else {
+            panic!(
+                "FileSystemChild component of entry: `{}` has no parent component",
+                *entry.name
+            );
+        };
 
         if let Ok(mut parent) = parent_q.get_mut(parent_entity) {
             file_post_process::parent_add_child_entry(&mut parent, entry, entity);
         } else {
             let Some(parent_map) = recent_parents.as_mut() else {
-                    panic!("FileSystemChild component on entity: `{:?}` has invalid parent_id: `{:?}`", entity, parent_entity);
-                };
+                panic!(
+                    "FileSystemChild component on entity: `{:?}` has invalid parent_id: `{:?}`",
+                    entity, parent_entity
+                );
+            };
             let Some(parent) = parent_map.get_mut(&parent_entity) else {
-                    panic!("FileSystemChild component on entity: `{:?}` has invalid parent_id: `{:?}`", entity, parent_entity);
-                };
+                panic!(
+                    "FileSystemChild component on entity: `{:?}` has invalid parent_id: `{:?}`",
+                    entity, parent_entity
+                );
+            };
             file_post_process::parent_add_child_entry(parent, entry, entity);
         }
     }
@@ -366,11 +369,17 @@ pub fn insert_edge_events(
 
         let edge_3d = edge_3d_q.get(edge_entity).unwrap();
         let Some(start_entity) = edge_3d.start.get(&client) else {
-            warn!("Edge3d component of entity: `{:?}` has no start entity", edge_entity);
+            warn!(
+                "Edge3d component of entity: `{:?}` has no start entity",
+                edge_entity
+            );
             continue;
         };
         let Some(end_entity) = edge_3d.end.get(&client) else {
-            warn!("Edge3d component of entity: `{:?}` has no start entity", edge_entity);
+            warn!(
+                "Edge3d component of entity: `{:?}` has no start entity",
+                edge_entity
+            );
             continue;
         };
 
@@ -445,27 +454,45 @@ pub fn insert_face_events(
 
         let face_3d = face_3d_q.get(face_entity).unwrap();
         let Some(vertex_a_entity) = face_3d.vertex_a.get(&client) else {
-            warn!("Face3d component of entity: `{:?}` has no vertex a entity", face_entity);
+            warn!(
+                "Face3d component of entity: `{:?}` has no vertex a entity",
+                face_entity
+            );
             continue;
         };
         let Some(vertex_b_entity) = face_3d.vertex_b.get(&client) else {
-            warn!("Face3d component of entity: `{:?}` has no vertex b entity", face_entity);
+            warn!(
+                "Face3d component of entity: `{:?}` has no vertex b entity",
+                face_entity
+            );
             continue;
         };
         let Some(vertex_c_entity) = face_3d.vertex_c.get(&client) else {
-            warn!("Face3d component of entity: `{:?}` has no vertex c entity", face_entity);
+            warn!(
+                "Face3d component of entity: `{:?}` has no vertex c entity",
+                face_entity
+            );
             continue;
         };
         let Some(edge_a_entity) = face_3d.edge_a.get(&client) else {
-            warn!("Face3d component of entity: `{:?}` has no edge a entity", face_entity);
+            warn!(
+                "Face3d component of entity: `{:?}` has no edge a entity",
+                face_entity
+            );
             continue;
         };
         let Some(edge_b_entity) = face_3d.edge_b.get(&client) else {
-            warn!("Face3d component of entity: `{:?}` has no edge b entity", face_entity);
+            warn!(
+                "Face3d component of entity: `{:?}` has no edge b entity",
+                face_entity
+            );
             continue;
         };
         let Some(edge_c_entity) = face_3d.edge_c.get(&client) else {
-            warn!("Face3d component of entity: `{:?}` has no edge c entity", face_entity);
+            warn!(
+                "Face3d component of entity: `{:?}` has no edge c entity",
+                face_entity
+            );
             continue;
         };
 
@@ -572,11 +599,17 @@ pub fn insert_icon_edge_events(
         let edge = edge_q.get(edge_entity).unwrap();
         let frame_entity = edge.frame_entity.get(&client).unwrap();
         let Some(start_entity) = edge.start.get(&client) else {
-            warn!("IconEdge component of entity: `{:?}` has no start entity", edge_entity);
+            warn!(
+                "IconEdge component of entity: `{:?}` has no start entity",
+                edge_entity
+            );
             continue;
         };
         let Some(end_entity) = edge.end.get(&client) else {
-            warn!("IconEdge component of entity: `{:?}` has no start entity", edge_entity);
+            warn!(
+                "IconEdge component of entity: `{:?}` has no start entity",
+                edge_entity
+            );
             continue;
         };
 
@@ -630,27 +663,45 @@ pub fn insert_icon_face_events(
         let frame_entity = face.frame_entity.get(&client).unwrap();
         let palette_color_entity = face.palette_color_entity.get(&client).unwrap();
         let Some(vertex_a_entity) = face.vertex_a.get(&client) else {
-            warn!("IconFace component of entity: `{:?}` has no vertex a entity", face_entity);
+            warn!(
+                "IconFace component of entity: `{:?}` has no vertex a entity",
+                face_entity
+            );
             continue;
         };
         let Some(vertex_b_entity) = face.vertex_b.get(&client) else {
-            warn!("IconFace component of entity: `{:?}` has no vertex b entity", face_entity);
+            warn!(
+                "IconFace component of entity: `{:?}` has no vertex b entity",
+                face_entity
+            );
             continue;
         };
         let Some(vertex_c_entity) = face.vertex_c.get(&client) else {
-            warn!("IconFace component of entity: `{:?}` has no vertex c entity", face_entity);
+            warn!(
+                "IconFace component of entity: `{:?}` has no vertex c entity",
+                face_entity
+            );
             continue;
         };
         let Some(edge_a_entity) = face.edge_a.get(&client) else {
-            warn!("IconFace component of entity: `{:?}` has no edge a entity", face_entity);
+            warn!(
+                "IconFace component of entity: `{:?}` has no edge a entity",
+                face_entity
+            );
             continue;
         };
         let Some(edge_b_entity) = face.edge_b.get(&client) else {
-            warn!("IconFace component of entity: `{:?}` has no edge b entity", face_entity);
+            warn!(
+                "IconFace component of entity: `{:?}` has no edge b entity",
+                face_entity
+            );
             continue;
         };
         let Some(edge_c_entity) = face.edge_c.get(&client) else {
-            warn!("IconFace component of entity: `{:?}` has no edge c entity", face_entity);
+            warn!(
+                "IconFace component of entity: `{:?}` has no edge c entity",
+                face_entity
+            );
             continue;
         };
 

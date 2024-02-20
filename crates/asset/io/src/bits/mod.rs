@@ -1,4 +1,3 @@
-
 mod common;
 pub use common::{ComponentFileType, SerdeQuat, SerdeRotation};
 

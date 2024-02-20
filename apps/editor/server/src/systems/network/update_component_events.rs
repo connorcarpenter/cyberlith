@@ -102,7 +102,9 @@ pub fn update_component_events(
     }
 
     for modified_content_entity in modified_content_entities {
-        let Some((project_key, file_key)) = git_manager.content_entity_keys(&modified_content_entity) else {
+        let Some((project_key, file_key)) =
+            git_manager.content_entity_keys(&modified_content_entity)
+        else {
             panic!("no content entity keys!");
         };
         git_manager.on_client_modify_file(&mut commands, &mut server, &project_key, &file_key);

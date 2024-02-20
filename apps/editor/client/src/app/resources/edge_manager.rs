@@ -18,7 +18,7 @@ use render_api::{
         set_2d_line_transform_from_angle,
     },
 };
-use storage::{Storage, Handle};
+use storage::{Handle, Storage};
 
 use editor_proto::components::{
     Edge3d, EdgeAngle, FileExtension, FileType, OwnedByFile, ShapeName,
@@ -122,9 +122,9 @@ impl EdgeManager {
     ) {
         let Ok(start_transform) = transform_q.get(edge_endpoints.start) else {
             warn!(
-                    "2d Edge start entity {:?} has no transform",
-                    edge_endpoints.start,
-                );
+                "2d Edge start entity {:?} has no transform",
+                edge_endpoints.start,
+            );
             return;
         };
 
@@ -132,9 +132,9 @@ impl EdgeManager {
 
         let Ok(end_transform) = transform_q.get(edge_endpoints.end) else {
             warn!(
-                    "2d Edge end entity {:?} has no transform",
-                    edge_endpoints.end,
-                );
+                "2d Edge end entity {:?} has no transform",
+                edge_endpoints.end,
+            );
             return;
         };
 
@@ -244,7 +244,10 @@ impl EdgeManager {
         let edge_angle_endpoint = get_2d_line_transform_endpoint(&angle_transform);
 
         let Ok(mut base_circle_transform) = transform_q.get_mut(base_circle_entity) else {
-            warn!("Edge angle base circle entity {:?} has no transform", base_circle_entity);
+            warn!(
+                "Edge angle base circle entity {:?} has no transform",
+                base_circle_entity
+            );
             return;
         };
         base_circle_transform.translation.x = middle_pos.x;
@@ -253,7 +256,10 @@ impl EdgeManager {
         base_circle_transform.scale = Vec3::splat(edge_angle_base_circle_scale);
 
         let Ok(mut end_circle_transform) = transform_q.get_mut(end_circle_entity) else {
-            warn!("Edge angle end circle entity {:?} has no transform", end_circle_entity);
+            warn!(
+                "Edge angle end circle entity {:?} has no transform",
+                end_circle_entity
+            );
             return;
         };
         end_circle_transform.translation.x = edge_angle_endpoint.x;
@@ -689,7 +695,7 @@ impl EdgeManager {
         }
 
         // unregister edge
-        let Some(edge_2d_entity) = self.unregister_3d_edge(vertex_manager,entity_3d) else {
+        let Some(edge_2d_entity) = self.unregister_3d_edge(vertex_manager, entity_3d) else {
             panic!(
                 "Edge3d entity: `{:?}` has no corresponding Edge2d entity",
                 entity_3d

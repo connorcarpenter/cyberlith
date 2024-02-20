@@ -1,12 +1,17 @@
 mod convert_to_bits;
 
-use std::{fs, fs::File, io::{Read, Write}, path::Path};
+use std::{
+    fs,
+    fs::File,
+    io::{Read, Write},
+    path::Path,
+};
 
+use asset_id::{AssetId, ETag};
 use git2::{Cred, FetchOptions, Index, Oid, PushOptions, Repository, Signature, Tree};
 use log::info;
-use asset_id::{AssetId, ETag};
 
-use asset_io::{json::{Asset, AssetData, AssetMeta, ProcessedAssetMeta}};
+use asset_io::json::{Asset, AssetData, AssetMeta, ProcessedAssetMeta};
 
 use crate::CliError;
 
@@ -25,8 +30,15 @@ pub fn process_assets(env: &str) -> Result<(), CliError> {
     Ok(())
 }
 
-fn create_processed_assets(env: &str, repo: Repository, all_new_unprocessed_files: Vec<UnprocessedFile>) {
-    info!("branch {:?} doesn't exist, processing all files for the first time", env);
+fn create_processed_assets(
+    env: &str,
+    repo: Repository,
+    all_new_unprocessed_files: Vec<UnprocessedFile>,
+) {
+    info!(
+        "branch {:?} doesn't exist, processing all files for the first time",
+        env
+    );
     // create new branch
     create_branch(&repo, env);
 
@@ -41,7 +53,12 @@ fn create_processed_assets(env: &str, repo: Repository, all_new_unprocessed_file
     git_push(&repo, env);
 }
 
-fn update_processed_assets(env: &str, root: &str, repo: Repository, all_unprocessed_files: Vec<UnprocessedFile>) {
+fn update_processed_assets(
+    env: &str,
+    root: &str,
+    repo: Repository,
+    all_unprocessed_files: Vec<UnprocessedFile>,
+) {
     info!("branch {:?} exists, processing only modified files..", env);
     // switch to "env" branch
     git_pull(&repo, env);
@@ -51,7 +68,8 @@ fn update_processed_assets(env: &str, root: &str, repo: Repository, all_unproces
     let old_meta_files = load_all_processed_meta_files(root, &repo);
 
     // prune out unprocessed files that have not changed since last being processed
-    let new_modified_unprocessed_files = prune_unchanged_files(&old_meta_files, all_unprocessed_files);
+    let new_modified_unprocessed_files =
+        prune_unchanged_files(&old_meta_files, all_unprocessed_files);
     if new_modified_unprocessed_files.is_empty() {
         info!("no files to process, exiting..");
         return;
@@ -124,12 +142,15 @@ struct UnprocessedFile {
 
 impl UnprocessedFile {
     pub fn new(path: &str, name: &str, bytes: Vec<u8>) -> Self {
-        Self { path: path.to_string(), name: name.to_string(), bytes }
+        Self {
+            path: path.to_string(),
+            name: name.to_string(),
+            bytes,
+        }
     }
 }
 
 fn load_all_unprocessed_files(root: &str, repo: &Repository) -> Vec<UnprocessedFile> {
-
     let mut output = Vec::new();
     let head = repo.head().unwrap();
     let tree = head.peel_to_tree().unwrap();
@@ -140,7 +161,6 @@ fn load_all_unprocessed_files(root: &str, repo: &Repository) -> Vec<UnprocessedF
 }
 
 fn load_all_processed_meta_files(root: &str, repo: &Repository) -> Vec<ProcessedAssetMeta> {
-
     let mut output = Vec::new();
     let head = repo.head().unwrap();
     let tree = head.peel_to_tree().unwrap();
@@ -162,29 +182,17 @@ fn collect_unprocessed_files(
 
         match git_entry.kind() {
             Some(git2::ObjectType::Tree) => {
-
                 let new_path = format!("{}{}", path, name);
 
                 let git_children = git_entry.to_object(repo).unwrap().peel_to_tree().unwrap();
 
-                collect_unprocessed_files(
-                    output,
-                    root,
-                    repo,
-                    &git_children,
-                    &new_path,
-                );
+                collect_unprocessed_files(output, root, repo, &git_children, &new_path);
             }
             Some(git2::ObjectType::Blob) => {
-
                 let bytes = get_file_contents(root, path, &name);
                 // let bytes_len = bytes.len();
 
-                let file_entry = UnprocessedFile::new(
-                    path,
-                    &name,
-                    bytes,
-                );
+                let file_entry = UnprocessedFile::new(path, &name, bytes);
 
                 info!("read file: {}", file_entry.name);
 
@@ -209,21 +217,13 @@ fn collect_processed_meta_files(
 
         match git_entry.kind() {
             Some(git2::ObjectType::Tree) => {
-
                 let new_path = format!("{}{}", path, name);
 
                 let git_children = git_entry.to_object(repo).unwrap().peel_to_tree().unwrap();
 
-                collect_processed_meta_files(
-                    output,
-                    root,
-                    repo,
-                    &git_children,
-                    &new_path,
-                );
+                collect_processed_meta_files(output, root, repo, &git_children, &new_path);
             }
             Some(git2::ObjectType::Blob) => {
-
                 let name_split = name.split(".");
                 let extension = name_split.last().unwrap();
                 if extension != "meta" {
@@ -232,9 +232,7 @@ fn collect_processed_meta_files(
 
                 let bytes = get_file_contents(root, path, &name);
 
-                let processed_meta = ProcessedAssetMeta::read(
-                    &bytes,
-                ).unwrap();
+                let processed_meta = ProcessedAssetMeta::read(&bytes).unwrap();
 
                 info!("read meta file: {}", name);
 
@@ -272,7 +270,6 @@ fn branch_exists(repo: &Repository, branch_name: &str) -> bool {
 }
 
 fn create_branch(repo: &Repository, branch_name: &str) {
-
     // finding current commit, then creating a new local branch there
     let commit = repo.head().unwrap().peel_to_commit().unwrap();
     let _branch = repo.branch(branch_name, &commit, true).unwrap();
@@ -281,7 +278,12 @@ fn create_branch(repo: &Repository, branch_name: &str) {
     // Push the new branch to the remote, (linking it to the remote branch)
     let mut remote = repo.find_remote("origin").unwrap();
     let mut push_options = get_push_options();
-    remote.push(&[&format!("{}:{}", &branch_ref, &branch_ref)], Some(&mut push_options)).unwrap();
+    remote
+        .push(
+            &[&format!("{}:{}", &branch_ref, &branch_ref)],
+            Some(&mut push_options),
+        )
+        .unwrap();
 
     info!("Created remote branch: {:?}", branch_name);
 
@@ -300,12 +302,15 @@ fn switch_to_branch(repo: &Repository, branch_name: &str) {
 }
 
 fn delete_all_files(repo: &Repository, file_entries: &Vec<UnprocessedFile>) {
-
     let mut index = repo.index().expect("Failed to open index");
 
     for file_entry in file_entries {
         let file_path = format!("{}{}", file_entry.path, file_entry.name);
-        let full_path = format!("{}/{}", repo.workdir().unwrap().to_str().unwrap(), file_path);
+        let full_path = format!(
+            "{}/{}",
+            repo.workdir().unwrap().to_str().unwrap(),
+            file_path
+        );
 
         let path = Path::new(full_path.as_str());
         match fs::remove_file(path) {
@@ -325,7 +330,6 @@ fn delete_all_files(repo: &Repository, file_entries: &Vec<UnprocessedFile>) {
 }
 
 fn git_commit(repo: &Repository, branch_name: &str, commit_message: &str) -> Oid {
-
     let tree_id = repo
         .index()
         .expect("Failed to open index")
@@ -339,19 +343,21 @@ fn git_commit(repo: &Repository, branch_name: &str, commit_message: &str) -> Oid
         .expect("Failed to peel HEAD to commit");
 
     // Prepare the commit details
-    let author = Signature::now("connorcarpenter", "connorcarpenter@gmail.com").expect("Failed to create author signature");
-    let committer =
-        Signature::now("connorcarpenter", "connorcarpenter@gmail.com").expect("Failed to create committer signature");
+    let author = Signature::now("connorcarpenter", "connorcarpenter@gmail.com")
+        .expect("Failed to create author signature");
+    let committer = Signature::now("connorcarpenter", "connorcarpenter@gmail.com")
+        .expect("Failed to create committer signature");
 
     // Create the commit
-    let commit_id = repo.commit(
-        Some("HEAD"),
-        &author,
-        &committer,
-        commit_message,
-        &repo.find_tree(tree_id).expect("Failed to find tree"),
-        &[&parent_commit],
-    )
+    let commit_id = repo
+        .commit(
+            Some("HEAD"),
+            &author,
+            &committer,
+            commit_message,
+            &repo.find_tree(tree_id).expect("Failed to find tree"),
+            &[&parent_commit],
+        )
         .expect("Failed to create commit");
 
     info!("committed to local {:?} branch!", branch_name);
@@ -360,7 +366,6 @@ fn git_commit(repo: &Repository, branch_name: &str, commit_message: &str) -> Oid
 }
 
 fn git_push(repo: &Repository, branch_name: &str) {
-
     let mut remote = repo
         .find_remote("origin")
         .expect("Failed to find remote 'origin'");
@@ -374,7 +379,6 @@ fn git_push(repo: &Repository, branch_name: &str) {
 }
 
 fn git_pull(repo: &Repository, branch_name: &str) {
-
     // Fetch changes from the remote
     let mut remote = repo.find_remote("origin").unwrap();
     let mut fetch_options = get_fetch_options();
@@ -398,17 +402,30 @@ fn git_pull(repo: &Repository, branch_name: &str) {
         git2::ResetType::Hard,
         Some(&mut checkout_builder),
     )
-        .unwrap();
+    .unwrap();
 
     // Create a local reference pointing to the head of the local branch
     let branch_ref = format!("refs/heads/{}", branch_name);
     let branch_ref_target = fetch_commit_oid;
-    let branch_ref_target_id = repo.refname_to_id(&branch_ref).unwrap_or_else(|_| branch_ref_target);
-    repo.reference(&branch_ref, branch_ref_target_id, true, "Updating local reference").unwrap();
+    let branch_ref_target_id = repo
+        .refname_to_id(&branch_ref)
+        .unwrap_or_else(|_| branch_ref_target);
+    repo.reference(
+        &branch_ref,
+        branch_ref_target_id,
+        true,
+        "Updating local reference",
+    )
+    .unwrap();
 
     // Push the new branch to the remote, (linking it to the remote branch)
     let mut push_options = get_push_options();
-    remote.push(&[&format!("{}:{}", &branch_ref, &branch_ref)], Some(&mut push_options)).unwrap();
+    remote
+        .push(
+            &[&format!("{}:{}", &branch_ref, &branch_ref)],
+            Some(&mut push_options),
+        )
+        .unwrap();
 
     info!("pulled from {:?} branch!", branch_name);
 }
@@ -418,7 +435,6 @@ fn write_all_new_files(repo: &Repository, unprocessed_files: &Vec<UnprocessedFil
     let mut index = repo.index().expect("Failed to open index");
 
     for unprocessed_file in unprocessed_files {
-
         // let prev_path = format!("{}/{}", unprocessed_file.path, unprocessed_file.name);
         // info!("processing file at path: {}", prev_path);
 
@@ -439,36 +455,23 @@ fn write_all_new_files(repo: &Repository, unprocessed_files: &Vec<UnprocessedFil
 
         let asset_data_type_name = unprocessed_asset.data().type_name();
         if asset_data_type_name.as_str() != true_file_ext {
-            panic!("Expected file type to be: {}, got: {}", true_file_ext, asset_data_type_name);
+            panic!(
+                "Expected file type to be: {}, got: {}",
+                true_file_ext, asset_data_type_name
+            );
         }
         let dependencies = get_dependencies(&unprocessed_asset.data());
 
         // convert asset data to bits
         let processed_asset_bytes = match unprocessed_asset.data() {
-            AssetData::Palette(data) => {
-                convert_to_bits::palette(data)
-            }
-            AssetData::Scene(data) => {
-                convert_to_bits::scene(data)
-            }
-            AssetData::Mesh(data) => {
-                convert_to_bits::mesh(data)
-            }
-            AssetData::Skin(data) => {
-                convert_to_bits::skin(data)
-            }
-            AssetData::Model(data) => {
-                convert_to_bits::model(data)
-            }
-            AssetData::Skeleton(data) => {
-                convert_to_bits::skeleton(data)
-            }
-            AssetData::Animation(data) => {
-                convert_to_bits::animation(data)
-            }
-            AssetData::Icon(data) => {
-                convert_to_bits::icon(data)
-            }
+            AssetData::Palette(data) => convert_to_bits::palette(data),
+            AssetData::Scene(data) => convert_to_bits::scene(data),
+            AssetData::Mesh(data) => convert_to_bits::mesh(data),
+            AssetData::Skin(data) => convert_to_bits::skin(data),
+            AssetData::Model(data) => convert_to_bits::model(data),
+            AssetData::Skeleton(data) => convert_to_bits::skeleton(data),
+            AssetData::Animation(data) => convert_to_bits::animation(data),
+            AssetData::Icon(data) => convert_to_bits::icon(data),
         };
 
         // write new data file
@@ -506,7 +509,11 @@ fn get_dependencies(data: &AssetData) -> Vec<AssetId> {
     }
 }
 
-fn process_new_meta_file(unprocessed_meta: &AssetMeta, dependencies: Vec<AssetId>, hash: AssetHash) -> ProcessedAssetMeta {
+fn process_new_meta_file(
+    unprocessed_meta: &AssetMeta,
+    dependencies: Vec<AssetId>,
+    hash: AssetHash,
+) -> ProcessedAssetMeta {
     ProcessedAssetMeta::new(
         unprocessed_meta.asset_id(),
         ETag::new_random(),
@@ -517,7 +524,6 @@ fn process_new_meta_file(unprocessed_meta: &AssetMeta, dependencies: Vec<AssetId
 }
 
 fn write_new_file(index: &mut Index, file_path: &str, full_path: &str, bytes: Vec<u8>) {
-
     // if file exists, delete it
     let path = Path::new(full_path);
     let file_exists = path.exists();
@@ -560,7 +566,7 @@ fn write_new_file(index: &mut Index, file_path: &str, full_path: &str, bytes: Ve
 
 fn prune_unchanged_files(
     old_meta_files: &Vec<ProcessedAssetMeta>,
-    all_unprocessed_files: Vec<UnprocessedFile>
+    all_unprocessed_files: Vec<UnprocessedFile>,
 ) -> Vec<UnprocessedFile> {
     let mut output = Vec::new();
 
@@ -580,17 +586,21 @@ fn prune_unchanged_files(
 
         let asset_data_type_name = unprocessed_asset.data().type_name();
         if asset_data_type_name.as_str() != true_file_ext {
-            panic!("Expected file type to be: {}, got: {}", true_file_ext, asset_data_type_name);
+            panic!(
+                "Expected file type to be: {}, got: {}",
+                true_file_ext, asset_data_type_name
+            );
         }
 
-        let prev_meta = old_meta_files.iter().find(|meta| meta.asset_id() == unprocessed_asset.meta().asset_id());
+        let prev_meta = old_meta_files
+            .iter()
+            .find(|meta| meta.asset_id() == unprocessed_asset.meta().asset_id());
 
         if let Some(meta) = prev_meta {
             if unprocessed_hash == meta.hash() {
                 info!("file unchanged: {}", prev_path);
                 continue;
-            }
-            else {
+            } else {
                 info!("file changed: {}", prev_path);
             }
         } else {

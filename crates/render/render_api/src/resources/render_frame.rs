@@ -5,7 +5,7 @@ use bevy_ecs::system::Resource;
 use storage::Handle;
 
 use crate::{
-    base::{CpuMaterial, CpuSkin, CpuMesh},
+    base::{CpuMaterial, CpuMesh, CpuSkin},
     components::{
         AmbientLight, Camera, DirectionalLight, PointLight, Projection, RenderLayer, RenderLayers,
         Transform,

@@ -14,8 +14,8 @@ cfg_if! {
 
 use std::collections::HashMap;
 
-use naia_serde::{SerdeInternal as Serde, UnsignedVariableInteger};
 use asset_id::AssetId;
+use naia_serde::{SerdeInternal as Serde, UnsignedVariableInteger};
 
 use crate::bits::common::SerdeQuat;
 

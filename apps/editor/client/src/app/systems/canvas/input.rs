@@ -31,7 +31,11 @@ pub fn update_mouse_hover(world: &mut World) {
         return;
     }
 
-    let Some(current_tab_entity) = world.get_resource::<TabManager>().unwrap().current_tab_entity() else {
+    let Some(current_tab_entity) = world
+        .get_resource::<TabManager>()
+        .unwrap()
+        .current_tab_entity()
+    else {
         return;
     };
     let current_tab_entity = *current_tab_entity;

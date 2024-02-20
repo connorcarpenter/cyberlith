@@ -32,7 +32,8 @@ pub(crate) fn execute(
     current_file_entity: Entity,
     action: IconAction,
 ) -> Vec<IconAction> {
-    let IconAction::CreateVertex(icon_vertex_data, position, old_vertex_entities_opt) = action else {
+    let IconAction::CreateVertex(icon_vertex_data, position, old_vertex_entities_opt) = action
+    else {
         panic!("Expected CreateVertex");
     };
     let frame_entity = icon_vertex_data.frame_entity;

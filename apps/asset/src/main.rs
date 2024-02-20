@@ -1,14 +1,13 @@
 #[macro_use]
 extern crate cfg_if;
 
-
-mod heartbeat;
-mod state;
 mod asset;
-mod registration;
-mod disconnection;
-mod asset_map;
 mod asset_cache;
+mod asset_map;
+mod disconnection;
+mod heartbeat;
+mod registration;
+mod state;
 
 cfg_if! {
     if #[cfg(feature = "local")] {
@@ -21,7 +20,7 @@ use std::{net::SocketAddr, time::Duration};
 use log::{info, LevelFilter};
 use simple_logger::SimpleLogger;
 
-use http_server::{Server, async_dup::Arc, smol::lock::RwLock};
+use http_server::{async_dup::Arc, smol::lock::RwLock, Server};
 
 use config::{ASSET_SERVER_PORT, SELF_BINDING_ADDR};
 
@@ -44,11 +43,18 @@ pub fn main() {
     let asset_path = "assets";
     let asset_map = init_asset_map(asset_path);
     let cache_size_kb = 5000; // 5 MB
-    let state = Arc::new(RwLock::new(State::new(registration_resend_rate, region_server_disconnect_timeout, cache_size_kb, asset_map, asset_path)));
+    let state = Arc::new(RwLock::new(State::new(
+        registration_resend_rate,
+        region_server_disconnect_timeout,
+        cache_size_kb,
+        asset_map,
+        asset_path,
+    )));
 
     // setup listening http server
     info!("Asset Server starting up...");
-    let socket_addr: SocketAddr = SocketAddr::new(SELF_BINDING_ADDR.parse().unwrap(), ASSET_SERVER_PORT);
+    let socket_addr: SocketAddr =
+        SocketAddr::new(SELF_BINDING_ADDR.parse().unwrap(), ASSET_SERVER_PORT);
 
     let mut server = Server::new(socket_addr);
 

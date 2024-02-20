@@ -1,7 +1,7 @@
+mod asset;
 mod session;
 mod world;
-mod asset;
 
+pub use asset::*;
 pub use session::*;
 pub use world::*;
-pub use asset::*;

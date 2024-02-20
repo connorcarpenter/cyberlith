@@ -115,15 +115,24 @@ impl FaceManager {
 
             // find center of all of face_icon's vertices
             let Ok(vertex_a_transform) = transform_q.get(face_icon.vertex_2d_a()) else {
-                warn!("Face entity {:?}'s vertex_a has no transform", face_2d_entity);
+                warn!(
+                    "Face entity {:?}'s vertex_a has no transform",
+                    face_2d_entity
+                );
                 continue;
             };
             let Ok(vertex_b_transform) = transform_q.get(face_icon.vertex_2d_b()) else {
-                warn!("Face entity {:?}'s vertex_b has no transform", face_2d_entity);
+                warn!(
+                    "Face entity {:?}'s vertex_b has no transform",
+                    face_2d_entity
+                );
                 continue;
             };
             let Ok(vertex_c_transform) = transform_q.get(face_icon.vertex_2d_c()) else {
-                warn!("Face entity {:?}'s vertex_c has no transform", face_2d_entity);
+                warn!(
+                    "Face entity {:?}'s vertex_c has no transform",
+                    face_2d_entity
+                );
                 continue;
             };
 
@@ -286,10 +295,7 @@ impl FaceManager {
             );
         };
         let Some(Some(face_3d_data)) = self.face_keys.get(&face_3d_key) else {
-            panic!(
-                "Face3d entity: `{:?}` has not been registered",
-                face_3d_key
-            );
+            panic!("Face3d entity: `{:?}` has not been registered", face_3d_key);
         };
         if face_3d_data.entity_3d.is_some() {
             panic!("already create face 3d entity! cannot do this twice!");
@@ -478,7 +484,8 @@ impl FaceManager {
         face_key: &FaceKey,
     ) -> Entity {
         // unregister face
-        let Some(face_2d_entity) = self.unregister_face_key(vertex_manager, edge_manager, face_key) else {
+        let Some(face_2d_entity) = self.unregister_face_key(vertex_manager, edge_manager, face_key)
+        else {
             panic!(
                 "FaceKey: `{:?}` has no corresponding Face2d entity",
                 face_key

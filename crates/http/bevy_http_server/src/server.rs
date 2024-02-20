@@ -1,4 +1,4 @@
-use std::{net::SocketAddr, any::TypeId, collections::HashMap};
+use std::{any::TypeId, collections::HashMap, net::SocketAddr};
 
 use bevy_ecs::system::Resource;
 
@@ -8,7 +8,7 @@ use smol::channel::{Receiver, Sender};
 use bevy_http_shared::Protocol;
 use http_common::{ApiRequest, ApiResponse, Request, Response, ResponseError};
 
-use crate::{ResponseKey, server_state::ServerState};
+use crate::{server_state::ServerState, ResponseKey};
 
 #[derive(Resource)]
 pub struct HttpServer {
@@ -19,7 +19,6 @@ pub struct HttpServer {
 }
 
 impl HttpServer {
-
     pub fn new(protocol: Protocol) -> Self {
         let (state, request_receivers, response_sender) = ServerState::new(protocol);
 
@@ -45,7 +44,6 @@ impl HttpServer {
             panic!("did not register type!");
         };
         if let Ok((response_id, request_addr, request)) = request_receiver.try_recv() {
-
             let Ok(request) = Q::from_request(request) else {
                 warn!("could not deserialize request");
                 return None;
@@ -57,16 +55,18 @@ impl HttpServer {
         }
     }
 
-    pub fn respond<S: ApiResponse>(&mut self, key: ResponseKey<S>, response_result: Result<S, ResponseError>) {
+    pub fn respond<S: ApiResponse>(
+        &mut self,
+        key: ResponseKey<S>,
+        response_result: Result<S, ResponseError>,
+    ) {
         let id = key.id;
         let response_result = match response_result {
-            Ok(response) => {
-                Ok(response.to_response())
-            }
-            Err(error) => {
-                Err(error)
-            }
+            Ok(response) => Ok(response.to_response()),
+            Err(error) => Err(error),
         };
-        self.response_sender.try_send((id, response_result)).unwrap();
+        self.response_sender
+            .try_send((id, response_result))
+            .unwrap();
     }
 }

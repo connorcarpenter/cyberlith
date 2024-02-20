@@ -7,7 +7,7 @@ use bevy_log::info;
 
 use naia_bevy_client::{events::RemoveComponentEvents, Client, Replicate};
 
-use render_api::{base::CpuMesh};
+use render_api::base::CpuMesh;
 use storage::Storage;
 
 use editor_proto::components::{

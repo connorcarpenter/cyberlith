@@ -6,11 +6,7 @@ use std::{
 
 use async_dup::Arc;
 use log::info;
-use smol::{
-    Async,
-    future::Future,
-    lock::RwLock,
-};
+use smol::{future::Future, lock::RwLock, Async};
 
 use http_common::{ApiRequest, ApiResponse, Request, Response, ResponseError};
 
@@ -25,9 +21,15 @@ pub struct Server {
                 + Send
                 + Sync
                 + FnMut(
-                (SocketAddr, Request)
-                )
-                    -> Pin<Box<dyn 'static + Send + Sync + Future<Output = Result<Response, ResponseError>>>>,
+                    (SocketAddr, Request),
+                ) -> Pin<
+                    Box<
+                        dyn 'static
+                            + Send
+                            + Sync
+                            + Future<Output = Result<Response, ResponseError>>,
+                    >,
+                >,
         >,
     >,
 }
@@ -48,9 +50,7 @@ impl Server {
         .detach();
     }
 
-    pub fn spawn<T: Send + 'static>(
-        future: impl Future<Output = T> + Send + 'static,
-    ) {
+    pub fn spawn<T: Send + 'static>(future: impl Future<Output = T> + Send + 'static) {
         executor::spawn(future).detach();
     }
 
@@ -83,16 +83,19 @@ fn endpoint_2<
     dyn 'static
         + Send
         + Sync
-        + FnMut((SocketAddr, Request)) -> Pin<Box<dyn 'static + Send + Sync + Future<Output = Result<Response, ResponseError>>>>,
+        + FnMut(
+            (SocketAddr, Request),
+        ) -> Pin<
+            Box<dyn 'static + Send + Sync + Future<Output = Result<Response, ResponseError>>>,
+        >,
 > {
     Box::new(move |args: (SocketAddr, Request)| {
-
         let addr = args.0;
         let pure_request = args.1;
 
         let Ok(typed_request) = TypeRequest::from_request(pure_request) else {
-                panic!("unable to convert request to typed request, handle this better in future!");
-            };
+            panic!("unable to convert request to typed request, handle this better in future!");
+        };
 
         let typed_future = handler((addr, typed_request));
 
@@ -148,7 +151,7 @@ async fn listen(server: Arc<RwLock<Server>>) {
 async fn serve(
     server: Arc<RwLock<Server>>,
     incoming_address: SocketAddr,
-    response_stream: Arc<Async<TcpStream>>
+    response_stream: Arc<Async<TcpStream>>,
 ) {
     let endpoint_key_ref: Arc<RwLock<Option<String>>> = Arc::new(RwLock::new(None));
 
@@ -185,6 +188,7 @@ async fn serve(
 
                 endpoint((addr, request)).await
             }
-        }
-    ).await;
+        },
+    )
+    .await;
 }

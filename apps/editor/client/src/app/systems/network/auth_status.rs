@@ -183,28 +183,34 @@ fn process_entity_auth_status(
     entity: &Entity,
     status: &str,
 ) {
-    let Ok(
-        (
-            fs_entry_opt,
-            dep_opt,
-            vertex_opt,
-            edge_opt,
-            face_opt,
-            frame_opt,
-            rot_opt,
-            palette_opt,
-            face_color_opt,
-            bckg_color_opt,
-            net_transform_opt,
-            owned_by_file_opt,
-        )
-    ) = big_q.get(*entity) else {
-        warn!("process_entity_auth_status() for non-existent entity!: {:?}", entity);
+    let Ok((
+        fs_entry_opt,
+        dep_opt,
+        vertex_opt,
+        edge_opt,
+        face_opt,
+        frame_opt,
+        rot_opt,
+        palette_opt,
+        face_color_opt,
+        bckg_color_opt,
+        net_transform_opt,
+        owned_by_file_opt,
+    )) = big_q.get(*entity)
+    else {
+        warn!(
+            "process_entity_auth_status() for non-existent entity!: {:?}",
+            entity
+        );
         return;
     };
 
-    let Ok((icon_vertex_opt, icon_edge_opt, icon_face_opt, icon_frame_opt)) = big_q2.get(*entity) else {
-        warn!("process_entity_auth_status() for non-existent entity!: {:?}", entity);
+    let Ok((icon_vertex_opt, icon_edge_opt, icon_face_opt, icon_frame_opt)) = big_q2.get(*entity)
+    else {
+        warn!(
+            "process_entity_auth_status() for non-existent entity!: {:?}",
+            entity
+        );
         return;
     };
 
@@ -271,7 +277,10 @@ fn process_entity_auth_status(
             .get_rotations_frame_entity(entity)
             .unwrap();
         let Ok(frame_component) = anim_frame_q.get(frame_entity) else {
-            panic!("component for rotation entity `{:?}` not found", frame_entity);
+            panic!(
+                "component for rotation entity `{:?}` not found",
+                frame_entity
+            );
         };
         let owning_file_entity = frame_component.file_entity.get(client).unwrap();
         if let Some(tab_state) = tab_manager.tab_state_mut(&owning_file_entity) {

@@ -22,7 +22,7 @@ use render_api::{
     resources::RenderFrame,
     shapes::{set_2d_line_transform, Circle, HollowTriangle, Line, Triangle},
 };
-use storage::{Storage, Handle};
+use storage::{Handle, Storage};
 
 use editor_proto::components::{IconEdge, IconFace, IconFrame, IconVertex, OwnedByFile};
 
@@ -247,20 +247,14 @@ impl IconManager {
 
             // sync
             let Ok(start_transform) = transform_q.get(start) else {
-                warn!(
-                    "Edge start entity {:?} has no transform",
-                    start,
-                );
+                warn!("Edge start entity {:?} has no transform", start,);
                 continue;
             };
 
             let start_pos = start_transform.translation.truncate();
 
             let Ok(end_transform) = transform_q.get(end) else {
-                warn!(
-                    "2d Edge end entity {:?} has no transform",
-                    end,
-                );
+                warn!("2d Edge end entity {:?} has no transform", end,);
                 continue;
             };
 
@@ -422,20 +416,14 @@ impl IconManager {
 
             // sync
             let Ok(start_transform) = transform_q.get(start) else {
-                warn!(
-                    "Edge start entity {:?} has no transform",
-                    start,
-                );
+                warn!("Edge start entity {:?} has no transform", start,);
                 continue;
             };
 
             let start_pos = start_transform.translation.truncate();
 
             let Ok(end_transform) = transform_q.get(end) else {
-                warn!(
-                    "2d Edge end entity {:?} has no transform",
-                    end,
-                );
+                warn!("2d Edge end entity {:?} has no transform", end,);
                 continue;
             };
 
@@ -1229,7 +1217,10 @@ impl IconManager {
         vertex_entity: &Entity,
     ) {
         let Some(vertex_data) = self.vertices.get(vertex_entity) else {
-            panic!("IconVertex entity: `{:?}` has not been registered", vertex_entity);
+            panic!(
+                "IconVertex entity: `{:?}` has not been registered",
+                vertex_entity
+            );
         };
 
         for face_key in &vertex_data.faces {
@@ -1243,7 +1234,10 @@ impl IconManager {
 
             // need to get vertices from IconFace component because they are in the correct order
             let Ok(face) = face_q.get(net_face_entity) else {
-                panic!("IconFace entity: `{:?}` has not been registered", net_face_entity);
+                panic!(
+                    "IconFace entity: `{:?}` has not been registered",
+                    net_face_entity
+                );
             };
             let vertex_a = face.vertex_a.get(client).unwrap();
             let vertex_b = face.vertex_b.get(client).unwrap();
@@ -1281,7 +1275,10 @@ impl IconManager {
 
     fn vertex_add_edge(&mut self, vertex_entity: &Entity, edge_entity: Entity) {
         let Some(vertex_data) = self.vertices.get_mut(&vertex_entity) else {
-            panic!("Vertex entity: `{:?}` has not been registered", vertex_entity);
+            panic!(
+                "Vertex entity: `{:?}` has not been registered",
+                vertex_entity
+            );
         };
         vertex_data.add_edge(edge_entity);
     }
@@ -1328,7 +1325,10 @@ impl IconManager {
         let mut set = HashSet::new();
 
         let Some(vertex_data) = self.vertices.get(&vertex_entity) else {
-            panic!("Vertex entity: `{:?}` has not been registered", vertex_entity);
+            panic!(
+                "Vertex entity: `{:?}` has not been registered",
+                vertex_entity
+            );
         };
         let edges = &vertex_data.edges;
         for edge_entity in edges {
@@ -1673,10 +1673,7 @@ impl IconManager {
             );
         };
         let Some(Some(face_data)) = self.face_keys.get(&face_key) else {
-            panic!(
-                "NetFace entity: `{:?}` has not been registered",
-                face_key
-            );
+            panic!("NetFace entity: `{:?}` has not been registered", face_key);
         };
         if face_data.net_entity.is_some() {
             panic!("already created net face entity! cannot do this twice!");
@@ -2647,7 +2644,9 @@ impl IconManager {
         mat_handle_white: &Handle<CpuMaterial>,
         frame_positions: &Vec<Vec2>,
     ) {
-        let Some(_frame_entity) = self.get_frame_entity(current_file_entity, self.preview_frame_index) else {
+        let Some(_frame_entity) =
+            self.get_frame_entity(current_file_entity, self.preview_frame_index)
+        else {
             return;
         };
         let complete = self.preview_elapsed_ms / self.frame_duration_ms;

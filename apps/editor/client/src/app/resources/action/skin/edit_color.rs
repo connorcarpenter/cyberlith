@@ -49,7 +49,10 @@ pub(crate) fn execute(world: &mut World, action: SkinAction) -> Vec<SkinAction> 
     let face_3d_entity = face_manager.face_entity_2d_to_3d(&face_2d_entity).unwrap();
     let face_color_entity = *skin_manager.face_to_color_entity(&face_3d_entity).unwrap();
     let Ok(mut face_color) = face_color_q.get_mut(face_color_entity) else {
-        panic!("Failed to get FaceColor for face color entity {:?}!", face_color_entity);
+        panic!(
+            "Failed to get FaceColor for face color entity {:?}!",
+            face_color_entity
+        );
     };
     let old_palette_color_entity_opt = face_color.palette_color_entity.get(&client);
 

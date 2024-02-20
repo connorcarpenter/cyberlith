@@ -1,7 +1,7 @@
 use math::{Vec2, Vec3};
 use storage::AssetHash;
 
-use crate::{base::CpuMesh};
+use crate::base::CpuMesh;
 
 // Triangle
 #[derive(Hash)]

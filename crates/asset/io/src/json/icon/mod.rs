@@ -1,7 +1,7 @@
 use cfg_if::cfg_if;
 
-use serde::{Deserialize, Serialize};
 use asset_id::AssetId;
+use serde::{Deserialize, Serialize};
 
 cfg_if! {
     if #[cfg(feature = "read_json")] {
@@ -25,10 +25,7 @@ pub struct IconFileFrameVertex {
 
 impl IconFileFrameVertex {
     pub fn new(x: i16, y: i16) -> Self {
-        Self {
-            x,
-            y,
-        }
+        Self { x, y }
     }
 
     pub fn x(&self) -> i16 {
@@ -48,10 +45,7 @@ pub struct IconFileFrameEdge {
 
 impl IconFileFrameEdge {
     pub fn new(vertex_a: u16, vertex_b: u16) -> Self {
-        Self {
-            vertex_a,
-            vertex_b,
-        }
+        Self { vertex_a, vertex_b }
     }
 
     pub fn vertex_a(&self) -> u16 {
@@ -76,7 +70,16 @@ pub struct IconFileFrameFace {
 }
 
 impl IconFileFrameFace {
-    pub fn new(face_id: u16, color_id: u8, vertex_a: u16, vertex_b: u16, vertex_c: u16, edge_a: u16, edge_b: u16, edge_c: u16) -> Self {
+    pub fn new(
+        face_id: u16,
+        color_id: u8,
+        vertex_a: u16,
+        vertex_b: u16,
+        vertex_c: u16,
+        edge_a: u16,
+        edge_b: u16,
+        edge_c: u16,
+    ) -> Self {
         Self {
             face_id,
             color_id,
@@ -151,26 +154,26 @@ impl IconFileFrame {
     }
 
     pub fn add_edge(&mut self, start: u16, end: u16) {
-        self.edges.push(IconFileFrameEdge::new(
-            start,
-            end,
-        ));
+        self.edges.push(IconFileFrameEdge::new(start, end));
     }
 
     pub fn get_faces(&self) -> &Vec<IconFileFrameFace> {
         &self.faces
     }
 
-    pub fn add_face(&mut self, face_id: u16, color_id: u8, vertex_a: u16, vertex_b: u16, vertex_c: u16, edge_a: u16, edge_b: u16, edge_c: u16) {
+    pub fn add_face(
+        &mut self,
+        face_id: u16,
+        color_id: u8,
+        vertex_a: u16,
+        vertex_b: u16,
+        vertex_c: u16,
+        edge_a: u16,
+        edge_b: u16,
+        edge_c: u16,
+    ) {
         self.faces.push(IconFileFrameFace::new(
-            face_id,
-            color_id,
-            vertex_a,
-            vertex_b,
-            vertex_c,
-            edge_a,
-            edge_b,
-            edge_c,
+            face_id, color_id, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c,
         ));
     }
 }
@@ -182,7 +185,6 @@ pub struct IconFile {
 }
 
 impl IconFile {
-
     pub const CURRENT_SCHEMA_VERSION: u32 = 0;
 
     pub fn new() -> Self {

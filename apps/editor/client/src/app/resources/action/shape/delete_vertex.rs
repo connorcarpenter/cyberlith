@@ -44,7 +44,10 @@ pub(crate) fn execute(
         .unwrap();
 
     let Ok(file_type) = world.query::<&FileType>().get(world, vertex_3d_entity) else {
-        panic!("Failed to get FileType for vertex entity {:?}!", vertex_3d_entity);
+        panic!(
+            "Failed to get FileType for vertex entity {:?}!",
+            vertex_3d_entity
+        );
     };
     let file_type_value = *file_type.value;
 
@@ -123,7 +126,10 @@ pub(crate) fn execute(
             );
 
             let Ok((_, vertex_3d)) = vertex_q.get(vertex_3d_entity) else {
-                panic!("Failed to get VertexChild for vertex entity {:?}!", vertex_3d_entity);
+                panic!(
+                    "Failed to get VertexChild for vertex entity {:?}!",
+                    vertex_3d_entity
+                );
             };
             let vertex_3d_position = vertex_3d.as_vec3();
 
@@ -173,7 +179,10 @@ pub(crate) fn execute(
             let mut connected_face_vertex_2d_entities = Vec::new();
 
             let Some(connected_edges) = vertex_manager.vertex_get_edges(&vertex_3d_entity) else {
-                panic!("Failed to get connected edges for vertex entity {:?}!", vertex_3d_entity);
+                panic!(
+                    "Failed to get connected edges for vertex entity {:?}!",
+                    vertex_3d_entity
+                );
             };
             let connected_edges = connected_edges.iter().map(|edge| *edge).collect::<Vec<_>>();
             for edge_3d_entity in connected_edges {
@@ -189,8 +198,13 @@ pub(crate) fn execute(
                     start_vertex_3d_entity
                 };
 
-                let Some(connected_vertex_2d_entity) = vertex_manager.vertex_entity_3d_to_2d(&connected_vertex_3d_entity) else {
-                    panic!("Failed to get connected vertex 2d entity for vertex entity {:?}!", connected_vertex_3d_entity);
+                let Some(connected_vertex_2d_entity) =
+                    vertex_manager.vertex_entity_3d_to_2d(&connected_vertex_3d_entity)
+                else {
+                    panic!(
+                        "Failed to get connected vertex 2d entity for vertex entity {:?}!",
+                        connected_vertex_3d_entity
+                    );
                 };
 
                 let edge_2d_entity = edge_manager.edge_entity_3d_to_2d(&edge_3d_entity).unwrap();
@@ -199,7 +213,10 @@ pub(crate) fn execute(
                     .push((connected_vertex_2d_entity, Some(edge_2d_entity)));
             }
             let Some(connected_faces) = vertex_manager.vertex_get_faces(&vertex_3d_entity) else {
-                panic!("Failed to get connected faces for vertex entity {:?}!", vertex_3d_entity);
+                panic!(
+                    "Failed to get connected faces for vertex entity {:?}!",
+                    vertex_3d_entity
+                );
             };
             let connected_faces: Vec<FaceKey> = connected_faces.iter().map(|face| *face).collect();
             for face_key in connected_faces {
@@ -236,7 +253,10 @@ pub(crate) fn execute(
             );
 
             let Ok((_, vertex_3d)) = vertex_q.get(vertex_3d_entity) else {
-                panic!("Failed to get Vertex3d for vertex entity {:?}!", vertex_3d_entity);
+                panic!(
+                    "Failed to get Vertex3d for vertex entity {:?}!",
+                    vertex_3d_entity
+                );
             };
             let vertex_3d_position = vertex_3d.as_vec3();
 

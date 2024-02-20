@@ -77,10 +77,9 @@ pub fn execute(
         let face_3d_entity = face_manager.face_entity_2d_to_3d(&face_2d_entity).unwrap();
 
         let palette_color_index = skin_manager.selected_color_index();
-        let Some(palette_file_entity) = file_manager.file_get_dependency(
-            &current_file_entity,
-            FileExtension::Palette,
-        ) else {
+        let Some(palette_file_entity) =
+            file_manager.file_get_dependency(&current_file_entity, FileExtension::Palette)
+        else {
             panic!("Expected palette file dependency");
         };
         let next_palette_color_entity = palette_manager
@@ -90,7 +89,10 @@ pub fn execute(
         if let Some(face_color_entity) = entity_to_request {
             // edit face color
             let Ok(mut face_color) = face_color_q.get_mut(face_color_entity) else {
-                panic!("Failed to get FaceColor for face color entity {:?}!", face_color_entity);
+                panic!(
+                    "Failed to get FaceColor for face color entity {:?}!",
+                    face_color_entity
+                );
             };
 
             let prev_palette_entity = face_color.palette_color_entity.get(&client).unwrap();

@@ -6,15 +6,11 @@ use std::{
 
 use async_dup::Arc;
 use log::info;
-use smol::{
-    Async,
-    future::Future,
-    lock::RwLock,
-};
+use smol::{future::Future, lock::RwLock, Async};
 
+use config::CONTENT_SERVER_ASSET_FILE_PATH;
 use http_common::{Request, Response, ResponseError};
 use http_server_shared::{executor, serve_impl};
-use config::CONTENT_SERVER_ASSET_FILE_PATH;
 
 pub struct Server {
     socket_addr: SocketAddr,
@@ -25,9 +21,15 @@ pub struct Server {
                 + Send
                 + Sync
                 + FnMut(
-                (SocketAddr, Request)
-                )
-                    -> Pin<Box<dyn 'static + Send + Sync + Future<Output = Result<Response, ResponseError>>>>,
+                    (SocketAddr, Request),
+                ) -> Pin<
+                    Box<
+                        dyn 'static
+                            + Send
+                            + Sync
+                            + Future<Output = Result<Response, ResponseError>>,
+                    >,
+                >,
         >,
     >,
 }
@@ -48,18 +50,11 @@ impl Server {
         .detach();
     }
 
-    pub fn serve_file(
-        &mut self,
-        file_name: &str,
-    ) {
+    pub fn serve_file(&mut self, file_name: &str) {
         self.serve_file_masked(file_name, file_name);
     }
 
-    pub fn serve_file_masked(
-        &mut self,
-        path: &str,
-        file_name: &str,
-    ) {
+    pub fn serve_file_masked(&mut self, path: &str, file_name: &str) {
         let endpoint_path = format!("GET /{}", path);
 
         info!("will serve file at: {}", endpoint_path);
@@ -74,11 +69,14 @@ fn endpoint_2(
     dyn 'static
         + Send
         + Sync
-        + FnMut((SocketAddr, Request)) -> Pin<Box<dyn 'static + Send + Sync + Future<Output = Result<Response, ResponseError>>>>,
+        + FnMut(
+            (SocketAddr, Request),
+        ) -> Pin<
+            Box<dyn 'static + Send + Sync + Future<Output = Result<Response, ResponseError>>>,
+        >,
 > {
     let file_name = file_name.to_string();
     Box::new(move |args: (SocketAddr, Request)| {
-
         let _addr = args.0;
         let _pure_request = args.1;
         let file_name = file_name.clone();
@@ -89,7 +87,9 @@ fn endpoint_2(
 
             // info!("reading file: {}", file_name);
 
-            let Ok(bytes) = std::fs::read(format!("{}{}", CONTENT_SERVER_ASSET_FILE_PATH, file_name)) else {
+            let Ok(bytes) =
+                std::fs::read(format!("{}{}", CONTENT_SERVER_ASSET_FILE_PATH, file_name))
+            else {
                 return Err(ResponseError::NotFound);
             };
 
@@ -104,10 +104,15 @@ fn endpoint_2(
                 "wasm" => "application/wasm",
                 _ => "text/plain",
             };
-            response.headers.insert("Content-Type".to_string(), content_type.to_string());
+            response
+                .headers
+                .insert("Content-Type".to_string(), content_type.to_string());
 
             // add Content-Length header
-            response.headers.insert("Content-Length".to_string(), response.body.len().to_string());
+            response.headers.insert(
+                "Content-Length".to_string(),
+                response.body.len().to_string(),
+            );
 
             // info!("sending response 1");
 
@@ -154,7 +159,7 @@ async fn listen(server: Arc<RwLock<Server>>) {
 async fn serve(
     server: Arc<RwLock<Server>>,
     incoming_address: SocketAddr,
-    response_stream: Arc<Async<TcpStream>>
+    response_stream: Arc<Async<TcpStream>>,
 ) {
     let endpoint_key_ref: Arc<RwLock<Option<String>>> = Arc::new(RwLock::new(None));
 
@@ -191,6 +196,7 @@ async fn serve(
 
                 endpoint((addr, request)).await
             }
-        }
-    ).await;
+        },
+    )
+    .await;
 }

@@ -1,4 +1,3 @@
-
 use bevy_ecs::{
     component::Component,
     query::With,
@@ -16,8 +15,10 @@ use game_engine::{
             RenderObjectBundle, RenderTarget, Transform, Viewport, Visibility,
         },
         resources::{RenderFrame, Time},
-        shapes
-    }, storage::{Storage, Handle},};
+        shapes,
+    },
+    storage::{Handle, Storage},
+};
 
 #[derive(Component)]
 pub struct ObjectMarker;

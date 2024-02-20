@@ -7,7 +7,7 @@ use bevy_log::info;
 use naia_bevy_client::Client;
 
 use render_api::{base::CpuMesh, components::Transform};
-use storage::{Storage, Handle};
+use storage::{Handle, Storage};
 
 use editor_proto::components::{IconFace, IconVertex};
 
@@ -21,7 +21,8 @@ pub(crate) fn execute(
     icon_manager: &mut IconManager,
     action: IconAction,
 ) -> Vec<IconAction> {
-    let IconAction::MoveVertex(vertex_entity, old_position, new_position, already_moved) = action else {
+    let IconAction::MoveVertex(vertex_entity, old_position, new_position, already_moved) = action
+    else {
         panic!("Expected MoveVertex");
     };
 
@@ -42,7 +43,10 @@ pub(crate) fn execute(
         // MoveVertex action happens after the vertex has already been moved, so we wouldn't need to do anything here ..
         // BUT we do need to update the vertex's position here in order to apply when undo/redo is executed
         let Ok(mut vertex) = vertex_q.get_mut(vertex_entity) else {
-            panic!("Failed to get IconVertex for vertex entity {:?}!", vertex_entity);
+            panic!(
+                "Failed to get IconVertex for vertex entity {:?}!",
+                vertex_entity
+            );
         };
         vertex.set_vec2(&new_position);
     }

@@ -11,8 +11,7 @@ pub(crate) struct AssetRefsPlugin;
 
 impl ProtocolPlugin for AssetRefsPlugin {
     fn build(&self, protocol: &mut Protocol) {
-        protocol
-            .add_component::<AssetRef<Body>>();
+        protocol.add_component::<AssetRef<Body>>();
     }
 }
 

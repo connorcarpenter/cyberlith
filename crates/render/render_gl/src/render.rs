@@ -9,9 +9,9 @@ use storage::SideStorage;
 
 use crate::{
     core::{GpuDepthTexture2D, GpuTexture2D, RenderTarget},
-    GpuMaterialManager,
-    GpuMeshManager,
-    GpuSkinManager, renderer::{RenderPass, RenderTargetExt}, window::FrameInput,
+    renderer::{RenderPass, RenderTargetExt},
+    window::FrameInput,
+    GpuMaterialManager, GpuMeshManager, GpuSkinManager,
 };
 
 pub fn render(

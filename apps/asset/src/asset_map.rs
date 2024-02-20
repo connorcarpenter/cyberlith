@@ -3,7 +3,7 @@ use std::{collections::HashMap, fs};
 use log::info;
 
 use asset_id::{AssetId, ETag};
-use asset_io::{json::ProcessedAssetMeta};
+use asset_io::json::ProcessedAssetMeta;
 
 pub struct AssetMetadata {
     path: String,
@@ -12,10 +12,7 @@ pub struct AssetMetadata {
 
 impl AssetMetadata {
     fn new(path: String, etag: ETag) -> Self {
-        Self {
-            path,
-            etag,
-        }
+        Self { path, etag }
     }
 
     pub fn path(&self) -> &str {
@@ -32,7 +29,6 @@ pub struct AssetMap {
 }
 
 impl AssetMap {
-
     fn new() -> Self {
         Self {
             map: HashMap::new(),
@@ -50,7 +46,6 @@ impl AssetMap {
 }
 
 pub fn init_asset_map(path: &str) -> AssetMap {
-
     let mut output = AssetMap::new();
 
     let entries = fs::read_dir(path).unwrap();
@@ -78,7 +73,11 @@ pub fn init_asset_map(path: &str) -> AssetMap {
         let file_path = file_path.file_stem().unwrap();
         let new_file_path = file_path.to_string_lossy();
 
-        output.insert(processed_meta.asset_id(), processed_meta.etag(), new_file_path.to_string());
+        output.insert(
+            processed_meta.asset_id(),
+            processed_meta.etag(),
+            new_file_path.to_string(),
+        );
     }
 
     output

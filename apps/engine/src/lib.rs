@@ -4,8 +4,8 @@ extern crate cfg_if;
 mod plugin;
 pub use plugin::EnginePlugin;
 
-mod renderer;
 mod client_markers;
+mod renderer;
 
 pub mod asset {
     pub use asset::*;
@@ -23,13 +23,16 @@ pub mod http {
     pub use bevy_http_client::*;
 }
 pub mod naia {
-    pub use naia_bevy_client::{Timer, transport::webrtc::Socket as WebrtcSocket};
+    pub use naia_bevy_client::{transport::webrtc::Socket as WebrtcSocket, Timer};
 }
 pub mod orchestrator {
     pub use orchestrator_http_proto::*;
 }
 pub mod session {
-    use naia_bevy_client::{Client, events::{ConnectEvent, RequestEvents, MessageEvents}};
+    use naia_bevy_client::{
+        events::{ConnectEvent, MessageEvents, RequestEvents},
+        Client,
+    };
 
     use super::client_markers::Session;
 
@@ -39,19 +42,24 @@ pub mod session {
     pub type SessionRequestEvents = RequestEvents<Session>;
 
     pub use session_server_naia_proto::{
-        messages::{Auth as SessionAuth, WorldConnectToken, AssetEtagRequest, AssetEtagResponse, AssetDataMessage},
-        channels::{PrimaryChannel as SessionPrimaryChannel, RequestChannel as SessionRequestChannel}
+        channels::{
+            PrimaryChannel as SessionPrimaryChannel, RequestChannel as SessionRequestChannel,
+        },
+        messages::{
+            AssetDataMessage, AssetEtagRequest, AssetEtagResponse, Auth as SessionAuth,
+            WorldConnectToken,
+        },
     };
 }
 pub mod world {
-    use naia_bevy_client::{Client, events::{ConnectEvent}};
+    use naia_bevy_client::{events::ConnectEvent, Client};
 
     use super::client_markers::World;
 
     pub type WorldClient<'w> = Client<'w, World>;
     pub type WorldConnectEvent = ConnectEvent<World>;
 
-    pub use world_server_naia_proto::messages::{Auth as WorldAuth};
+    pub use world_server_naia_proto::messages::Auth as WorldAuth;
 }
 pub mod config {
     pub use config::*;
@@ -59,5 +67,5 @@ pub mod config {
 pub mod storage {
     pub use storage::*;
 }
-pub use renderer::wait_for_finish;
 pub use asset_id::{AssetId, ETag};
+pub use renderer::wait_for_finish;

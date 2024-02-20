@@ -12,8 +12,8 @@ cfg_if! {
     } else {}
 }
 
-use naia_serde::SerdeInternal as Serde;
 use asset_id::AssetId;
+use naia_serde::SerdeInternal as Serde;
 
 use crate::bits::common::{ComponentFileType, SerdeQuat};
 

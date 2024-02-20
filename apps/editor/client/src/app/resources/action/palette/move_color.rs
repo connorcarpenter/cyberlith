@@ -18,7 +18,8 @@ pub fn execute(
     palette_manager: &mut PaletteManager,
     action: PaletteAction,
 ) -> Vec<PaletteAction> {
-    let PaletteAction::MoveColor(file_entity, current_color_index, next_color_index) = action else {
+    let PaletteAction::MoveColor(file_entity, current_color_index, next_color_index) = action
+    else {
         panic!("Expected MoveColor");
     };
 
@@ -31,12 +32,21 @@ pub fn execute(
         SystemState::new(world);
     let (mut commands, mut client, mut color_q) = system_state.get_mut(world);
 
-    let Some(current_color_entity) = palette_manager.get_color_entity(&file_entity, current_color_index) else {
-        warn!("Failed to get color entity for file `{:?}` and color index `{:?}`!", file_entity, current_color_index);
+    let Some(current_color_entity) =
+        palette_manager.get_color_entity(&file_entity, current_color_index)
+    else {
+        warn!(
+            "Failed to get color entity for file `{:?}` and color index `{:?}`!",
+            file_entity, current_color_index
+        );
         return vec![];
     };
-    let Some(next_color_entity) = palette_manager.get_color_entity(&file_entity, next_color_index) else {
-        warn!("Failed to get color entity for file `{:?}` and color index `{:?}`!", file_entity, current_color_index);
+    let Some(next_color_entity) = palette_manager.get_color_entity(&file_entity, next_color_index)
+    else {
+        warn!(
+            "Failed to get color entity for file `{:?}` and color index `{:?}`!",
+            file_entity, current_color_index
+        );
         return vec![];
     };
 
@@ -65,18 +75,27 @@ pub fn execute(
     }
 
     let Ok(next_color) = color_q.get(next_color_entity) else {
-        panic!("Failed to get PaletteColor for color entity {:?}!", next_color_entity);
+        panic!(
+            "Failed to get PaletteColor for color entity {:?}!",
+            next_color_entity
+        );
     };
     let next_color_order = *next_color.index;
 
     let Ok(mut current_color) = color_q.get_mut(current_color_entity) else {
-        panic!("Failed to get PaletteColor for color entity {:?}!", current_color_entity);
+        panic!(
+            "Failed to get PaletteColor for color entity {:?}!",
+            current_color_entity
+        );
     };
     let current_color_order = *current_color.index;
     *current_color.index = next_color_order;
 
     let Ok(mut next_color) = color_q.get_mut(next_color_entity) else {
-        panic!("Failed to get PaletteColor for color entity {:?}!", next_color_entity);
+        panic!(
+            "Failed to get PaletteColor for color entity {:?}!",
+            next_color_entity
+        );
     };
     *next_color.index = current_color_order;
 

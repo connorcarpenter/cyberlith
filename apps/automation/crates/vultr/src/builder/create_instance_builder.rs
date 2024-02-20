@@ -62,7 +62,7 @@ struct CreateInstanceConfig {
 }
 
 /// Builder struct for creating instances.
-/// 
+///
 /// A detailed documentation can be found at <https://www.vultr.com/api/#tag/instances/operation/create-instance>
 pub struct CreateInstanceBuilder {
     api: VultrApi,
@@ -154,7 +154,8 @@ impl CreateInstanceBuilder {
         let backups = match backups {
             true => "enabled",
             false => "disabled",
-        }.to_string();
+        }
+        .to_string();
         self.config.backups = Some(backups);
         self
     }

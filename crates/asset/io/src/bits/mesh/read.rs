@@ -34,9 +34,7 @@ impl MeshAction {
                     let vertex_b: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
                     let vertex_c: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
 
-                    output.push(Self::Face(
-                        face_index, vertex_a, vertex_b, vertex_c
-                    ));
+                    output.push(Self::Face(face_index, vertex_a, vertex_b, vertex_c));
 
                     face_index += 1;
                 }

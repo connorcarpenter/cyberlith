@@ -1,19 +1,22 @@
-mod instance_start;
-mod instance_wait;
-mod instance_init;
-mod ssh_init;
-mod instance_up;
-pub mod server_build;
 pub mod containers_up;
+mod instance_init;
+mod instance_start;
+mod instance_up;
+mod instance_wait;
+pub mod server_build;
+mod ssh_init;
 
 use std::time::Duration;
 
 use log::info;
 
-use crate::{utils::{check_channel, thread_init, thread_init_compat}, up::containers_up::containers_up, CliError};
+use crate::{
+    up::containers_up::containers_up,
+    utils::{check_channel, thread_init, thread_init_compat},
+    CliError,
+};
 
 pub fn up() -> Result<(), CliError> {
-
     let instance_rcvr = thread_init_compat(instance_up::instance_up);
     let mut instance_rdy = false;
 
@@ -52,7 +55,3 @@ pub fn up() -> Result<(), CliError> {
     info!("Done!");
     Ok(())
 }
-
-
-
-

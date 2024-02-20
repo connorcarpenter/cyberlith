@@ -159,7 +159,11 @@ pub fn naming_bar_visibility_toggle(world: &mut World, input_manager: &mut Input
     // is skeleton toolbar open?
 
     // get current file extension
-    let Some(current_file_entity) = world.get_resource::<TabManager>().unwrap().current_tab_entity() else {
+    let Some(current_file_entity) = world
+        .get_resource::<TabManager>()
+        .unwrap()
+        .current_tab_entity()
+    else {
         return;
     };
     let current_file_type = world

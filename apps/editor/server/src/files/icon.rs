@@ -9,8 +9,8 @@ use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 
-use asset_io::AssetId;
 use asset_io::json::{IconFile, IconFileFrame};
+use asset_io::AssetId;
 
 use editor_proto::{
     components::{FileExtension, IconEdge, IconFace, IconFrame, IconVertex, PaletteColor},
@@ -112,29 +112,13 @@ impl IconFrameActionData {
         info!("writing face list: {:?}", face_list);
 
         for face_info_opt in face_list {
-            let Some(
-                (
-                    face_id,
-                    color_id,
-                    vertex_a,
-                    vertex_b,
-                    vertex_c,
-                    edge_a,
-                    edge_b,
-                    edge_c
-                )
-            ) = face_info_opt else {
+            let Some((face_id, color_id, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c)) =
+                face_info_opt
+            else {
                 panic!("face_list contains None");
             };
             self.frame.add_face(
-                face_id,
-                color_id,
-                vertex_a,
-                vertex_b,
-                vertex_c,
-                edge_a,
-                edge_b,
-                edge_c,
+                face_id, color_id, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c,
             );
         }
     }
@@ -338,7 +322,7 @@ impl FileWriter for IconWriter {
     fn write_new_default(&self, asset_id: &AssetId) -> Box<[u8]> {
         let mut data = IconFile::new();
         let mut frame = IconFileFrame::new();
-        frame.add_vertex(0,0);
+        frame.add_vertex(0, 0);
         data.add_frame(frame);
 
         data.write(asset_id)
@@ -375,11 +359,13 @@ impl IconReader {
             FileExtension::Palette,
             &dependency_key,
         );
-        output.push((new_entity, ContentEntityTypeData::Dependency(dependency_key)));
+        output.push((
+            new_entity,
+            ContentEntityTypeData::Dependency(dependency_key),
+        ));
 
         // Frames
         for frame in data.get_frames() {
-
             // make frame entity
             let mut component = IconFrame::new(frame_index);
             component.file_entity.set(&server, file_entity);
@@ -396,12 +382,7 @@ impl IconReader {
 
             output.push((frame_entity, ContentEntityTypeData::Frame));
 
-            icon_manager.on_create_frame(
-                &file_entity,
-                &frame_entity,
-                frame_index as usize,
-                None,
-            );
+            icon_manager.on_create_frame(&file_entity, &frame_entity, frame_index as usize, None);
 
             frame_index += 1;
 
@@ -424,10 +405,18 @@ impl IconReader {
             }
             for edge in frame.get_edges() {
                 let Some(vertex_a_entity) = vertices.get(edge.vertex_a() as usize) else {
-                    panic!("edge's vertex_a_index is `{:?}` and list of vertices is `{:?}`", edge.vertex_a(), vertices);
+                    panic!(
+                        "edge's vertex_a_index is `{:?}` and list of vertices is `{:?}`",
+                        edge.vertex_a(),
+                        vertices
+                    );
                 };
                 let Some(vertex_b_entity) = vertices.get(edge.vertex_b() as usize) else {
-                    panic!("edge's vertex_b_index is `{:?}` and list of vertices is `{:?}`", edge.vertex_b(), vertices);
+                    panic!(
+                        "edge's vertex_b_index is `{:?}` and list of vertices is `{:?}`",
+                        edge.vertex_b(),
+                        vertices
+                    );
                 };
 
                 let mut edge_component = IconEdge::new();
@@ -450,12 +439,9 @@ impl IconReader {
                 ));
             }
             for face in frame.get_faces() {
-                let vertex_a_entity =
-                    *vertices.get(face.vertex_a() as usize).unwrap();
-                let vertex_b_entity =
-                    *vertices.get(face.vertex_b() as usize).unwrap();
-                let vertex_c_entity =
-                    *vertices.get(face.vertex_c() as usize).unwrap();
+                let vertex_a_entity = *vertices.get(face.vertex_a() as usize).unwrap();
+                let vertex_b_entity = *vertices.get(face.vertex_b() as usize).unwrap();
+                let vertex_c_entity = *vertices.get(face.vertex_c() as usize).unwrap();
 
                 let edge_a_entity = *edges.get(face.edge_a() as usize).unwrap();
                 let edge_b_entity = *edges.get(face.edge_b() as usize).unwrap();
@@ -479,7 +465,8 @@ impl IconReader {
                     .id();
                 info!(
                     "spawning icon face entity `{:?}`, index is {:?}",
-                    entity_id, face.face_id(),
+                    entity_id,
+                    face.face_id(),
                 );
                 output.push((
                     entity_id,
@@ -510,7 +497,6 @@ impl IconReader {
         file_entity: &Entity,
         bytes: &Box<[u8]>,
     ) -> HashMap<Entity, ContentEntityData> {
-
         let Ok((meta, data)) = IconFile::read(bytes) else {
             panic!("Error reading .icon file");
         };

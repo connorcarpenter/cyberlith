@@ -14,10 +14,13 @@ cfg_if! {
     } else {}
 }
 
-use serde::{Deserialize, Serialize};
 use asset_id::AssetId;
+use serde::{Deserialize, Serialize};
 
-use crate::json::{skin::SkinFile, scene::SceneFile, model::ModelFile, icon::IconFile, animation::AnimFile, mesh::MeshFile, palette::PaletteFile, skeleton::SkelFile};
+use crate::json::{
+    animation::AnimFile, icon::IconFile, mesh::MeshFile, model::ModelFile, palette::PaletteFile,
+    scene::SceneFile, skeleton::SkelFile, skin::SkinFile,
+};
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Asset {
@@ -26,7 +29,6 @@ pub struct Asset {
 }
 
 impl Asset {
-
     pub(crate) fn deconstruct(self) -> (AssetMeta, AssetData) {
         (self.meta, self.data)
     }
@@ -89,6 +91,6 @@ impl AssetData {
             AssetData::Scene(_) => "scene",
             AssetData::Model(_) => "model",
         }
-            .to_string()
+        .to_string()
     }
 }

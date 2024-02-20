@@ -12,8 +12,8 @@ use bevy_ecs::{
 use bevy_log::info;
 use git2::{Cred, Repository, Tree};
 
-use naia_bevy_server::{BigMap, CommandsExt, ReplicationConfig, RoomKey, Server, UserKey};
 use asset_io::json::AssetMeta;
+use naia_bevy_server::{BigMap, CommandsExt, ReplicationConfig, RoomKey, Server, UserKey};
 
 use editor_proto::{
     components::{
@@ -180,7 +180,10 @@ impl GitManager {
 
                     // set face_3d_entity and palette_color_entity into FaceColor component
                     let Ok(mut bckg_color) = bckg_color_q.get_mut(entity) else {
-                        panic!("Could not find background skin color for entity: {:?}", entity);
+                        panic!(
+                            "Could not find background skin color for entity: {:?}",
+                            entity
+                        );
                     };
                     bckg_color
                         .palette_color_entity
@@ -421,7 +424,10 @@ impl GitManager {
 
     pub(crate) fn queue_client_modify_file(&mut self, content_entity: &Entity) {
         let Some((project_key, file_key)) = self.content_entity_keys(content_entity) else {
-            panic!("Could not find content entity key for entity: {:?}", content_entity);
+            panic!(
+                "Could not find content entity key for entity: {:?}",
+                content_entity
+            );
         };
         self.queued_client_modify_files
             .push((project_key, file_key));
@@ -550,7 +556,16 @@ impl GitManager {
             let head = repo.head().unwrap();
             let tree = head.peel_to_tree().unwrap();
 
-            fill_file_entries_from_git(&mut file_entries, commands, server, &repo, &tree, "", None, &full_path_str);
+            fill_file_entries_from_git(
+                &mut file_entries,
+                commands,
+                server,
+                &repo,
+                &tree,
+                "",
+                None,
+                &full_path_str,
+            );
         }
 
         // Create new room for user and all their owned entities
@@ -792,8 +807,13 @@ fn fill_file_entries_from_git(
                     (asset_meta.asset_id(), file_extension)
                 };
 
-                let file_entry_value =
-                    FileEntryValue::new(id, Some(asset_id), Some(file_extension), parent.clone(), None);
+                let file_entry_value = FileEntryValue::new(
+                    id,
+                    Some(asset_id),
+                    Some(file_extension),
+                    parent.clone(),
+                    None,
+                );
                 file_entries.insert(file_key.clone(), file_entry_value);
 
                 output.insert(file_key.clone());

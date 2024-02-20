@@ -9,8 +9,8 @@ use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 
-use asset_io::AssetId;
 use asset_io::json::{FileComponentType, ModelFile};
+use asset_io::AssetId;
 
 use editor_proto::{
     components::{
@@ -23,8 +23,7 @@ use math::Quat;
 
 use crate::{
     files::{
-        add_file_dependency, convert_from_component_type,
-        convert_into_component_type, FileWriter,
+        add_file_dependency, convert_from_component_type, convert_into_component_type, FileWriter,
     },
     resources::{ContentEntityData, Project},
 };
@@ -100,7 +99,10 @@ impl ModelWriter {
                 dependency_key.full_path()
             );
             let dependency_asset_id = project.asset_id(dependency_key).unwrap();
-            data.add_component(dependency_asset_id, convert_into_component_type(dependency_type));
+            data.add_component(
+                dependency_asset_id,
+                convert_into_component_type(dependency_type),
+            );
         }
 
         // Write NetTransforms
@@ -110,7 +112,9 @@ impl ModelWriter {
                 Query<(&NetTransform, &SkinOrSceneEntity, &ShapeName)>,
             )> = SystemState::new(world);
             let (server, transform_q) = system_state.get_mut(world);
-            let Ok((transform, skin_or_scene_entity, shape_name)) = transform_q.get(net_transform_entity) else {
+            let Ok((transform, skin_or_scene_entity, shape_name)) =
+                transform_q.get(net_transform_entity)
+            else {
                 panic!("Error getting net transform");
             };
             let skin_entity: Entity = skin_or_scene_entity.value.get(&server).unwrap();
@@ -119,7 +123,10 @@ impl ModelWriter {
                 skin_entity
             );
             let Some(skin_index) = skin_dependency_to_index.get(&skin_entity) else {
-                panic!("skin entity not found in skin_dependency_to_index: `{:?}`", skin_entity);
+                panic!(
+                    "skin entity not found in skin_dependency_to_index: `{:?}`",
+                    skin_entity
+                );
             };
 
             let bone_name = (*shape_name.value).clone();
@@ -162,7 +169,7 @@ impl FileWriter for ModelWriter {
         world: &mut World,
         project: &Project,
         content_entities: &HashMap<Entity, ContentEntityData>,
-        asset_id: &AssetId
+        asset_id: &AssetId,
     ) -> Box<[u8]> {
         let data = self.world_to_data(world, project, content_entities);
         data.write(asset_id)
@@ -195,16 +202,15 @@ impl ModelReader {
         // Get Skeleton Dependency
         let skel_asset_id = data.get_skeleton_id();
         let dependency_file_key = project.file_key_from_asset_id(&skel_asset_id).unwrap();
-        let (new_dependency_entity, _dependency_file_entity) =
-            add_file_dependency(
-                project,
-                file_key,
-                file_entity,
-                &mut commands,
-                &mut server,
-                FileExtension::Skel,
-                &dependency_file_key,
-            );
+        let (new_dependency_entity, _dependency_file_entity) = add_file_dependency(
+            project,
+            file_key,
+            file_entity,
+            &mut commands,
+            &mut server,
+            FileExtension::Skel,
+            &dependency_file_key,
+        );
         output.insert(
             new_dependency_entity,
             ContentEntityData::new_dependency(dependency_file_key),
@@ -215,17 +221,18 @@ impl ModelReader {
                 FileComponentType::Skin => FileExtension::Skin,
                 FileComponentType::Scene => FileExtension::Scene,
             };
-            let dependency_file_key = project.file_key_from_asset_id(&component.asset_id()).unwrap();
-            let (new_dependency_entity, dependency_file_entity) =
-                add_file_dependency(
-                    project,
-                    file_key,
-                    file_entity,
-                    &mut commands,
-                    &mut server,
-                    dependency_file_ext,
-                    &dependency_file_key,
-                );
+            let dependency_file_key = project
+                .file_key_from_asset_id(&component.asset_id())
+                .unwrap();
+            let (new_dependency_entity, dependency_file_entity) = add_file_dependency(
+                project,
+                file_key,
+                file_entity,
+                &mut commands,
+                &mut server,
+                dependency_file_ext,
+                &dependency_file_key,
+            );
             output.insert(
                 new_dependency_entity,
                 ContentEntityData::new_dependency(dependency_file_key),
@@ -246,7 +253,9 @@ impl ModelReader {
             let scale = transform.scale();
             let vertex_name = transform.name();
 
-            let Some((skin_or_scene_type, skin_or_scene_entity)) = skin_files.get(skin_index as usize) else {
+            let Some((skin_or_scene_type, skin_or_scene_entity)) =
+                skin_files.get(skin_index as usize)
+            else {
                 panic!("skin index out of bounds");
             };
             let mut skin_or_scene_component =
@@ -269,7 +278,12 @@ impl ModelReader {
                 .enable_replication(&mut server)
                 .configure_replication(ReplicationConfig::Delegated)
                 .insert(NetTransform::new(
-                    math::SerdeQuat::from(Quat::from_xyzw(rotation.x(), rotation.y(), rotation.z(), rotation.w())),
+                    math::SerdeQuat::from(Quat::from_xyzw(
+                        rotation.x(),
+                        rotation.y(),
+                        rotation.z(),
+                        rotation.w(),
+                    )),
                     translation.x() as f32,
                     translation.y() as f32,
                     translation.z() as f32,
@@ -299,7 +313,6 @@ impl ModelReader {
         file_entity: &Entity,
         bytes: &Box<[u8]>,
     ) -> HashMap<Entity, ContentEntityData> {
-
         let Ok((meta, data)) = ModelFile::read(bytes) else {
             panic!("Error reading .model file");
         };

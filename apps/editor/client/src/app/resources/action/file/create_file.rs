@@ -37,7 +37,14 @@ pub(crate) fn execute(
     project_root_entity: Entity,
     action: FileAction,
 ) -> Vec<FileAction> {
-    let FileAction::CreateFile(parent_entity_opt, new_file_name, entry_kind, old_entity_opt, entry_contents_opt) = action else {
+    let FileAction::CreateFile(
+        parent_entity_opt,
+        new_file_name,
+        entry_kind,
+        old_entity_opt,
+        entry_contents_opt,
+    ) = action
+    else {
         panic!("Expected CreateFile");
     };
 

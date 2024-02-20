@@ -9,8 +9,8 @@ use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 
+use asset_io::json::MeshFile;
 use asset_io::AssetId;
-use asset_io::json::{MeshFile};
 
 use editor_proto::components::{Edge3d, Face3d, FileExtension, FileType, Vertex3d};
 
@@ -133,10 +133,14 @@ impl MeshWriter {
         }
 
         for face_info_opt in face_list {
-            let Some((face_id, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c)) = face_info_opt else {
+            let Some((face_id, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c)) =
+                face_info_opt
+            else {
                 panic!("face_list contains None");
             };
-            output.add_face(face_id, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c);
+            output.add_face(
+                face_id, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c,
+            );
         }
 
         output
@@ -209,10 +213,16 @@ impl MeshReader {
             let (vertex_a_index, vertex_b_index) = edge.deconstruct();
 
             let Some(vertex_a_entity) = vertices.get(vertex_a_index as usize) else {
-                panic!("edge's vertex_a_index is `{:?}` and list of vertices is `{:?}`", vertex_a_index, vertices);
+                panic!(
+                    "edge's vertex_a_index is `{:?}` and list of vertices is `{:?}`",
+                    vertex_a_index, vertices
+                );
             };
             let Some(vertex_b_entity) = vertices.get(vertex_b_index as usize) else {
-                panic!("edge's vertex_b_index is `{:?}` and list of vertices is `{:?}`", vertex_b_index, vertices);
+                panic!(
+                    "edge's vertex_b_index is `{:?}` and list of vertices is `{:?}`",
+                    vertex_b_index, vertices
+                );
             };
 
             let mut edge_component = Edge3d::new();
@@ -241,7 +251,7 @@ impl MeshReader {
                 vertex_c_index,
                 edge_a_index,
                 edge_b_index,
-                edge_c_index
+                edge_c_index,
             ) = face.deconstruct();
 
             let vertex_a_entity = *vertices.get(vertex_a_index as usize).unwrap();
@@ -295,7 +305,6 @@ impl MeshReader {
         file_entity: &Entity,
         bytes: &Box<[u8]>,
     ) -> HashMap<Entity, ContentEntityData> {
-
         let Ok((meta, data)) = MeshFile::read(bytes) else {
             panic!("Error reading .mesh file");
         };

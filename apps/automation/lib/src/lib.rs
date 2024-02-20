@@ -1,16 +1,15 @@
-
-mod up;
 mod down;
-mod utils;
-mod up_content;
 mod error;
 mod process_assets;
+mod up;
+mod up_content;
+mod utils;
 
-pub use up::*;
 pub use down::*;
-pub use up_content::*;
 pub use error::*;
 pub use process_assets::*;
+pub use up::*;
+pub use up_content::*;
 
 pub(crate) fn get_api_key() -> String {
     let api_key = include_str!("../../../../.vultr/api_key");

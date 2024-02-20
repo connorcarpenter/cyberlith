@@ -1,11 +1,14 @@
-use std::{collections::HashMap, time::{Instant, Duration}};
 use std::collections::HashSet;
+use std::{
+    collections::HashMap,
+    time::{Duration, Instant},
+};
 
 use bevy_ecs::system::Resource;
 
 use naia_bevy_server::UserKey;
 
-use bevy_http_client::{ResponseKey as ClientResponseKey};
+use bevy_http_client::ResponseKey as ClientResponseKey;
 
 use region_server_http_proto::{SessionRegisterInstanceResponse, WorldUserLoginResponse};
 
@@ -64,7 +67,6 @@ pub struct Global {
 }
 
 impl Global {
-
     pub fn new(
         instance_secret: &str,
         registration_resend_rate: Duration,
@@ -94,11 +96,16 @@ impl Global {
     }
 
     // Region Server stuff
-    pub fn register_instance_response_key(&self) -> Option<&ClientResponseKey<SessionRegisterInstanceResponse>> {
+    pub fn register_instance_response_key(
+        &self,
+    ) -> Option<&ClientResponseKey<SessionRegisterInstanceResponse>> {
         self.register_instance_response_key.as_ref()
     }
 
-    pub fn set_register_instance_response_key(&mut self, response_key: ClientResponseKey<SessionRegisterInstanceResponse>) {
+    pub fn set_register_instance_response_key(
+        &mut self,
+        response_key: ClientResponseKey<SessionRegisterInstanceResponse>,
+    ) {
         self.register_instance_response_key = Some(response_key);
     }
 
@@ -175,15 +182,25 @@ impl Global {
         worldless_users
     }
 
-    pub fn add_world_connect_response_key(&mut self, user_key: &UserKey, response_key: ClientResponseKey<WorldUserLoginResponse>) {
-        self.world_connect_response_keys.insert(response_key, user_key.clone());
+    pub fn add_world_connect_response_key(
+        &mut self,
+        user_key: &UserKey,
+        response_key: ClientResponseKey<WorldUserLoginResponse>,
+    ) {
+        self.world_connect_response_keys
+            .insert(response_key, user_key.clone());
     }
 
-    pub fn remove_world_connect_response_key(&mut self, response_key: &ClientResponseKey<WorldUserLoginResponse>) {
+    pub fn remove_world_connect_response_key(
+        &mut self,
+        response_key: &ClientResponseKey<WorldUserLoginResponse>,
+    ) {
         self.world_connect_response_keys.remove(response_key);
     }
 
-    pub fn world_connect_response_keys(&self) -> Vec<(ClientResponseKey<WorldUserLoginResponse>, UserKey)> {
+    pub fn world_connect_response_keys(
+        &self,
+    ) -> Vec<(ClientResponseKey<WorldUserLoginResponse>, UserKey)> {
         let mut out = Vec::new();
         for (res_key, usr_key) in self.world_connect_response_keys.iter() {
             out.push((res_key.clone(), *usr_key));
@@ -191,11 +208,18 @@ impl Global {
         out
     }
 
-    pub fn add_worldfull_user(&mut self, user_key: &UserKey, world_instance_secret: &str, user_id: u64) {
-        self.worldfull_users.insert(*user_key, UserData::new(world_instance_secret, user_id));
+    pub fn add_worldfull_user(
+        &mut self,
+        user_key: &UserKey,
+        world_instance_secret: &str,
+        user_id: u64,
+    ) {
+        self.worldfull_users
+            .insert(*user_key, UserData::new(world_instance_secret, user_id));
 
         if !self.world_instances.contains_key(world_instance_secret) {
-            self.world_instances.insert(world_instance_secret.to_string(), WorldInstanceData::new());
+            self.world_instances
+                .insert(world_instance_secret.to_string(), WorldInstanceData::new());
         }
         let world_instance = self.world_instances.get_mut(world_instance_secret).unwrap();
         world_instance.add_user(*user_key, user_id);
@@ -205,7 +229,11 @@ impl Global {
         self.world_instances.contains_key(world_instance_secret)
     }
 
-    pub fn get_user_key_from_world_instance(&self, world_instance_secret: &str, user_id: u64) -> Option<UserKey> {
+    pub fn get_user_key_from_world_instance(
+        &self,
+        world_instance_secret: &str,
+        user_id: u64,
+    ) -> Option<UserKey> {
         let world_instance = self.world_instances.get(world_instance_secret)?;
         world_instance.user_id_to_key_map.get(&user_id).copied()
     }
@@ -231,6 +259,8 @@ impl Global {
     }
 
     pub fn get_asset_server_url(&self) -> Option<(String, u16)> {
-        self.asset_server_opt.as_ref().map(|(addr, port)| (addr.clone(), *port))
+        self.asset_server_opt
+            .as_ref()
+            .map(|(addr, port)| (addr.clone(), *port))
     }
 }

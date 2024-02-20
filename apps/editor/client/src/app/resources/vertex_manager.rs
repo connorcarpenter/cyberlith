@@ -14,7 +14,7 @@ use render_api::{
     base::{CpuMaterial, CpuMesh},
     components::{Camera, CameraProjection, Projection, RenderObjectBundle, Transform, Visibility},
 };
-use storage::{Storage, Handle};
+use storage::{Handle, Storage};
 
 use editor_proto::components::{
     Face3d, FileExtension, FileType, OwnedByFile, Vertex3d, VertexRoot,
@@ -174,7 +174,10 @@ impl VertexManager {
                 continue;
             };
             let Some(vertex_2d_entity) = self.vertex_entity_3d_to_2d(&vertex_3d_entity) else {
-                warn!("Vertex3d entity {:?} has no corresponding Vertex2d entity", vertex_3d_entity);
+                warn!(
+                    "Vertex3d entity {:?} has no corresponding Vertex2d entity",
+                    vertex_3d_entity
+                );
                 continue;
             };
             if local_shape_q.get(vertex_3d_entity).is_ok() {
@@ -496,8 +499,12 @@ impl VertexManager {
         self.vertices_2d.insert(entity_2d, entity_3d);
 
         if let Some(parent_vertex_3d_entity) = parent_vertex_3d_entity_opt {
-            let Some(parent_vertex_3d_data) = self.vertices_3d.get_mut(&parent_vertex_3d_entity) else {
-                panic!("Vertex3d entity: `{:?}` has not been registered", parent_vertex_3d_entity);
+            let Some(parent_vertex_3d_data) = self.vertices_3d.get_mut(&parent_vertex_3d_entity)
+            else {
+                panic!(
+                    "Vertex3d entity: `{:?}` has not been registered",
+                    parent_vertex_3d_entity
+                );
             };
             parent_vertex_3d_data.add_child(entity_3d);
         }
@@ -624,7 +631,10 @@ impl VertexManager {
         vertex_3d_entity: &Entity,
     ) {
         let Some(vertex_3d_data) = self.vertices_3d.get(vertex_3d_entity) else {
-            panic!("Vertex3d entity: `{:?}` has not been registered", vertex_3d_entity);
+            panic!(
+                "Vertex3d entity: `{:?}` has not been registered",
+                vertex_3d_entity
+            );
         };
 
         for face_3d_key in &vertex_3d_data.faces_3d {
@@ -638,7 +648,10 @@ impl VertexManager {
 
             // need to get vertices from Face3d component because they are in the correct order
             let Ok(face_3d) = face_3d_q.get(face_3d_entity) else {
-                panic!("Face3d entity: `{:?}` has not been registered", face_3d_entity);
+                panic!(
+                    "Face3d entity: `{:?}` has not been registered",
+                    face_3d_entity
+                );
             };
             let vertex_3d_a = face_3d.vertex_a.get(client).unwrap();
             let vertex_3d_b = face_3d.vertex_b.get(client).unwrap();
@@ -710,7 +723,10 @@ impl VertexManager {
 
     pub(crate) fn vertex_add_edge(&mut self, vertex_3d_entity: &Entity, edge_3d_entity: Entity) {
         let Some(vertex_3d_data) = self.vertices_3d.get_mut(&vertex_3d_entity) else {
-            panic!("Vertex3d entity: `{:?}` has not been registered", vertex_3d_entity);
+            panic!(
+                "Vertex3d entity: `{:?}` has not been registered",
+                vertex_3d_entity
+            );
         };
         vertex_3d_data.add_edge(edge_3d_entity);
     }
@@ -776,7 +792,10 @@ impl VertexManager {
         let mut set = HashSet::new();
 
         let Some(vertex_data) = self.vertices_3d.get(&vertex_3d_entity) else {
-            panic!("Vertex3d entity: `{:?}` has not been registered", vertex_3d_entity);
+            panic!(
+                "Vertex3d entity: `{:?}` has not been registered",
+                vertex_3d_entity
+            );
         };
         let edges = &vertex_data.edges_3d;
         for edge_entity in edges {

@@ -1,5 +1,5 @@
-use naia_serde::SerdeInternal as Serde;
 use asset_id::{AssetId, ETag};
+use naia_serde::SerdeInternal as Serde;
 
 use http_common::{ApiRequest, ApiResponse, Method};
 
@@ -13,10 +13,7 @@ pub struct AssetRequest {
 
 impl AssetRequest {
     pub fn new(asset_id: AssetId, etag_opt: Option<ETag>) -> Self {
-        Self {
-            asset_id,
-            etag_opt,
-        }
+        Self { asset_id, etag_opt }
     }
 
     pub fn asset_id(&self) -> AssetId {

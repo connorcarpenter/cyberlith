@@ -1,4 +1,3 @@
-
 use std::time::Instant;
 
 use http_server::{async_dup::Arc, smol::lock::RwLock};
@@ -12,7 +11,12 @@ pub struct SessionInstance {
 }
 
 impl SessionInstance {
-    pub fn new(instance_secret: &str, http_addr: &str, http_port: u16, public_webrtc_url: &str) -> Self {
+    pub fn new(
+        instance_secret: &str,
+        http_addr: &str,
+        http_port: u16,
+        public_webrtc_url: &str,
+    ) -> Self {
         Self {
             instance_secret: instance_secret.to_string(),
             http_addr: http_addr.to_string(),
@@ -52,7 +56,12 @@ pub struct WorldInstance {
 }
 
 impl WorldInstance {
-    pub fn new(instance_secret: &str, http_addr: &str, http_port: u16, public_webrtc_url: &str) -> Self {
+    pub fn new(
+        instance_secret: &str,
+        http_addr: &str,
+        http_port: u16,
+        public_webrtc_url: &str,
+    ) -> Self {
         Self {
             instance_secret: instance_secret.to_string(),
             http_addr: http_addr.to_string(),

@@ -9,7 +9,7 @@ use bevy_log::info;
 use naia_bevy_client::{events::UpdateComponentEvents, Client};
 
 use render_api::{base::CpuMesh, components::Transform};
-use storage::{Storage, Handle};
+use storage::{Handle, Storage};
 
 use editor_proto::components::{
     AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, EdgeAngle, Face3d, FaceColor,
@@ -184,7 +184,10 @@ pub fn update_component_events(world: &mut World) {
         }
         for (_tick, frame_entity) in events.read::<AnimFrame>() {
             let Ok(frame) = anim_frame_q.get(frame_entity) else {
-                panic!("AnimFrame component not found for entity `{:?}`", frame_entity);
+                panic!(
+                    "AnimFrame component not found for entity `{:?}`",
+                    frame_entity
+                );
             };
             let file_entity = frame.file_entity.get(&client).unwrap();
             // check that index has changed
@@ -197,7 +200,10 @@ pub fn update_component_events(world: &mut World) {
         }
         for (_tick, frame_entity) in events.read::<IconFrame>() {
             let Ok(frame) = icon_frame_q.get(frame_entity) else {
-                panic!("IconFrame component not found for entity `{:?}`", frame_entity);
+                panic!(
+                    "IconFrame component not found for entity `{:?}`",
+                    frame_entity
+                );
             };
             let file_entity = frame.file_entity.get(&client).unwrap();
             // check that index has changed

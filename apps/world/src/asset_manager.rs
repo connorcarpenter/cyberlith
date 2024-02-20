@@ -1,7 +1,11 @@
 use std::collections::HashMap;
 
-use bevy_ecs::{entity::Entity, prelude::Resource, system::{Commands, EntityCommands}};
 use bevy_ecs::system::ResMut;
+use bevy_ecs::{
+    entity::Entity,
+    prelude::Resource,
+    system::{Commands, EntityCommands},
+};
 use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, RoomKey, Server, UserKey};
@@ -35,9 +39,7 @@ struct AssetData {
 
 impl AssetData {
     fn new(entry_entity: Entity) -> Self {
-        Self {
-            entry_entity,
-        }
+        Self { entry_entity }
     }
 }
 
@@ -57,7 +59,6 @@ impl UserAssetData {
 
     // returns true if asset ref was added for the first time
     pub(crate) fn add_asset_ref(&mut self, asset_id: AssetId) -> bool {
-
         let count = self.asset_ref_counts.entry(asset_id).or_insert(0);
         *count += 1;
 
@@ -85,7 +86,7 @@ impl UserAssetData {
 pub struct AssetManager {
     user_key_to_data_map: HashMap<UserKey, UserAssetData>,
     asset_id_to_data_map: HashMap<AssetId, AssetData>,
-    asset_response_keys: Vec<ResponseKey<UserAssetIdResponse>>
+    asset_response_keys: Vec<ResponseKey<UserAssetIdResponse>>,
 }
 
 impl AssetManager {
@@ -107,22 +108,21 @@ impl AssetManager {
         self.user_key_to_data_map.remove(user_key);
     }
 
-    fn create_asset_ref<
-        M: Send + Sync + 'static,
-    > (
+    fn create_asset_ref<M: Send + Sync + 'static>(
         &mut self,
         commands: &mut Commands,
         server: &mut Server,
         asset_id: AssetId,
     ) -> AssetRef<M> {
-
         let mut new_ref = AssetRef::new();
         if !self.asset_id_to_data_map.contains_key(&asset_id) {
             self.init_asset_id_entity(commands, server, asset_id);
         }
 
         let asset_data = self.asset_id_to_data_map.get(&asset_id).unwrap();
-        new_ref.asset_id_entity.set(server, &asset_data.entry_entity);
+        new_ref
+            .asset_id_entity
+            .set(server, &asset_data.entry_entity);
         new_ref
     }
 
@@ -162,8 +162,13 @@ impl AssetManager {
         }
     }
 
-    pub fn handle_scope_actions(&mut self, server: &mut Server, global: &Global, http_client: &mut HttpClient, ref_actions: Vec<(UserKey, AssetId, bool)>) {
-
+    pub fn handle_scope_actions(
+        &mut self,
+        server: &mut Server,
+        global: &Global,
+        http_client: &mut HttpClient,
+        ref_actions: Vec<(UserKey, AssetId, bool)>,
+    ) {
         info!("handle_scope_actions");
 
         let mut asset_actions = Vec::new();
@@ -175,7 +180,10 @@ impl AssetManager {
             };
 
             if added {
-                info!("adding asset ref for user: {:?}, asset: {:?}", user_key, asset_id);
+                info!(
+                    "adding asset ref for user: {:?}, asset: {:?}",
+                    user_key, asset_id
+                );
                 if user_data.add_asset_ref(asset_id) {
                     // user added asset ref for asset for the first time
                     asset_actions.push((user_key, asset_id, true));
@@ -198,7 +206,10 @@ impl AssetManager {
 
             let mut room = server.room_mut(&user_room_key);
             if added {
-                info!("adding asset entry for user: {:?}, asset: {:?}", user_key, asset_id);
+                info!(
+                    "adding asset entry for user: {:?}, asset: {:?}",
+                    user_key, asset_id
+                );
                 room.add_entity(&asset_entry_entity);
                 self.notify_session_server_asset(global, http_client, &user_key, asset_id, true);
             } else {
@@ -208,19 +219,21 @@ impl AssetManager {
         }
     }
 
-    fn notify_session_server_asset(&mut self, global: &Global, http_client: &mut HttpClient, user_key: &UserKey, asset_id: AssetId, added: bool) {
-
+    fn notify_session_server_asset(
+        &mut self,
+        global: &Global,
+        http_client: &mut HttpClient,
+        user_key: &UserKey,
+        asset_id: AssetId,
+        added: bool,
+    ) {
         let instance_secret = global.instance_secret();
         let user_id = global.get_user_id(user_key).unwrap();
 
-        let request = UserAssetIdRequest::new(
-            instance_secret,
-            user_id,
-            asset_id,
-            added,
-        );
+        let request = UserAssetIdRequest::new(instance_secret, user_id, asset_id, added);
 
-        let (session_server_addr, session_server_port) = global.get_user_session_server(user_key).unwrap();
+        let (session_server_addr, session_server_port) =
+            global.get_user_session_server(user_key).unwrap();
         let key = http_client.send(&session_server_addr, session_server_port, request);
 
         self.set_user_asset_response_key(key);
@@ -231,20 +244,27 @@ impl AssetManager {
     }
 }
 
-pub fn update(
-    mut asset_manager: ResMut<AssetManager>,
-    mut http_client: ResMut<HttpClient>,
-) {
+pub fn update(mut asset_manager: ResMut<AssetManager>, mut http_client: ResMut<HttpClient>) {
     asset_manager.update(&mut http_client);
 }
 
 // AssetCommandsExt
 pub trait AssetCommandsExt {
-    fn insert_asset<M: Send + Sync + 'static>(&mut self, asset_manager: &mut AssetManager, server: &mut Server, asset_id: AssetId) -> &mut Self;
+    fn insert_asset<M: Send + Sync + 'static>(
+        &mut self,
+        asset_manager: &mut AssetManager,
+        server: &mut Server,
+        asset_id: AssetId,
+    ) -> &mut Self;
 }
 
 impl AssetCommandsExt for EntityCommands<'_> {
-    fn insert_asset<M: Send + Sync + 'static>(&mut self, asset_manager: &mut AssetManager, server: &mut Server, asset_id: AssetId) -> &mut Self {
+    fn insert_asset<M: Send + Sync + 'static>(
+        &mut self,
+        asset_manager: &mut AssetManager,
+        server: &mut Server,
+        asset_id: AssetId,
+    ) -> &mut Self {
         let new_ref = asset_manager.create_asset_ref::<M>(&mut self.commands(), server, asset_id);
         self.insert(new_ref);
         self

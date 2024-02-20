@@ -1,15 +1,17 @@
 use log::info;
 use vultr::{VultrApi, VultrInstanceType};
 
-use crate::{CliError, get_api_key};
+use crate::{get_api_key, CliError};
 
 pub async fn instance_start() -> Result<String, CliError> {
-
     let api_key = get_api_key();
 
     let api = VultrApi::new(api_key);
 
-    let instances = api.get_instance_list_async().await.map_err(|e| CliError::from(e))?;
+    let instances = api
+        .get_instance_list_async()
+        .await
+        .map_err(|e| CliError::from(e))?;
     if instances.len() == 1 {
         let instance = instances.get(0).unwrap();
         return Ok(instance.id.clone());
@@ -31,7 +33,14 @@ pub async fn instance_start() -> Result<String, CliError> {
     let plans = api.get_plans_async().await?;
     let plan = plans
         .iter()
-        .find(|p| p.monthly_cost == 5.0 && p.vcpu_count == 1 && p.plan_type == "vc2" && p.ram ==1024 && p.disk == 25.0 && p.bandwidth == 1024.0)
+        .find(|p| {
+            p.monthly_cost == 5.0
+                && p.vcpu_count == 1
+                && p.plan_type == "vc2"
+                && p.ram == 1024
+                && p.disk == 25.0
+                && p.bandwidth == 1024.0
+        })
         .ok_or(CliError::Message("No plan found".to_string()))?;
     let plan_id = plan.id.clone();
     info!("found plan id: {:?}", plan_id);
@@ -40,7 +49,9 @@ pub async fn instance_start() -> Result<String, CliError> {
     let oses = api.get_os_list_async().await?;
     let os = oses
         .iter()
-        .find(|o| o.family.contains("ubuntu") && o.arch == "x64" && o.name == "Ubuntu 22.04 LTS x64")
+        .find(|o| {
+            o.family.contains("ubuntu") && o.arch == "x64" && o.name == "Ubuntu 22.04 LTS x64"
+        })
         .ok_or(CliError::Message("No OS found".to_string()))?;
     let os_id = os.id;
     info!("found OS id: {:?}", os_id);
@@ -85,11 +96,7 @@ pub async fn instance_start() -> Result<String, CliError> {
     let instance_opt;
     loop {
         let instance_result = api
-            .create_instance(
-                &region_id,
-                &plan_id,
-                VultrInstanceType::OS(os_id),
-            )
+            .create_instance(&region_id, &plan_id, VultrInstanceType::OS(os_id))
             .hostname("primaryserver")
             .label("Primary Server")
             .reserved_ipv4(&reserved_ip_id)
@@ -99,7 +106,8 @@ pub async fn instance_start() -> Result<String, CliError> {
             .backups(false)
             .ddos_protection(false)
             .activation_email(false)
-            .run_async().await;
+            .run_async()
+            .await;
         match instance_result {
             Ok(instance) => {
                 instance_opt = Some(instance);

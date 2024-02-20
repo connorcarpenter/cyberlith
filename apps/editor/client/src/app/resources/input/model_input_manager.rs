@@ -197,7 +197,9 @@ impl ModelInputManager {
 
         let skel_file_entity_opt = match file_ext {
             FileExtension::Model => {
-                let Some(skel_file_entity) = file_manager.file_get_dependency(current_file_entity, FileExtension::Skel) else {
+                let Some(skel_file_entity) =
+                    file_manager.file_get_dependency(current_file_entity, FileExtension::Skel)
+                else {
                     return None;
                 };
                 Some(skel_file_entity)
@@ -360,11 +362,9 @@ impl ModelInputManager {
         // get bone transform
         let bone_transform_opt = match file_ext {
             FileExtension::Model => {
-                let Some(bone_transform) = model_manager.get_bone_transform(
-                    &vertex_3d_q,
-                    &edge_angle_q,
-                    &ntc_entity
-                ) else {
+                let Some(bone_transform) =
+                    model_manager.get_bone_transform(&vertex_3d_q, &edge_angle_q, &ntc_entity)
+                else {
                     return;
                 };
                 Some(bone_transform)

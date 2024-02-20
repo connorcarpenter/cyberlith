@@ -25,7 +25,7 @@ use render_api::{
         set_2d_line_transform_from_angle, Circle, Line,
     },
 };
-use storage::{Storage, Handle};
+use storage::{Handle, Storage};
 
 use editor_proto::components::{
     AnimFrame, AnimRotation, EdgeAngle, FileExtension, ShapeName, Transition, Vertex3d, VertexRoot,
@@ -703,7 +703,8 @@ impl AnimationManager {
         parent_rotation: Quat,
     ) {
         // sync children vertices
-        let Some(children) = vertex_manager.vertex_children_3d_entities(&parent_vertex_3d_entity) else {
+        let Some(children) = vertex_manager.vertex_children_3d_entities(&parent_vertex_3d_entity)
+        else {
             return;
         };
 
@@ -748,7 +749,10 @@ impl AnimationManager {
 
             // update vertex transform
             let Ok(mut vertex_3d_transform) = transform_q.get_mut(*child_vertex_3d_entity) else {
-                warn!("Vertex3d entity {:?} has no Transform", child_vertex_3d_entity);
+                warn!(
+                    "Vertex3d entity {:?} has no Transform",
+                    child_vertex_3d_entity
+                );
                 continue;
             };
             vertex_3d_transform.translation = rotated_child_pos;
@@ -969,7 +973,11 @@ impl AnimationManager {
 
     pub fn draw_framing(&mut self, world: &mut World) {
         // get current file
-        let Some(current_file_entity) = world.get_resource::<TabManager>().unwrap().current_tab_entity() else {
+        let Some(current_file_entity) = world
+            .get_resource::<TabManager>()
+            .unwrap()
+            .current_tab_entity()
+        else {
             return;
         };
         let current_file_entity = *current_file_entity;
@@ -1181,7 +1189,9 @@ impl AnimationManager {
         mat_handle_white: &Handle<CpuMaterial>,
         frame_positions: &Vec<Vec2>,
     ) {
-        let Some(frame_entity) = self.get_frame_entity(current_file_entity, self.preview_frame_index) else {
+        let Some(frame_entity) =
+            self.get_frame_entity(current_file_entity, self.preview_frame_index)
+        else {
             return;
         };
         let Ok(frame_component) = world.query::<&AnimFrame>().get(world, frame_entity) else {
@@ -1325,7 +1335,8 @@ impl AnimationManager {
         frame_pos: &Vec2,
     ) {
         // sync children vertices
-        let Some(children) = vertex_manager.vertex_children_3d_entities(&parent_vertex_3d_entity) else {
+        let Some(children) = vertex_manager.vertex_children_3d_entities(&parent_vertex_3d_entity)
+        else {
             return;
         };
 
@@ -1334,7 +1345,10 @@ impl AnimationManager {
 
             // get 3d transform
             let Ok(vertex_3d_transform) = transform_q.get(*child_vertex_3d_entity) else {
-                warn!("Vertex3d entity {:?} has no Transform", child_vertex_3d_entity);
+                warn!(
+                    "Vertex3d entity {:?} has no Transform",
+                    child_vertex_3d_entity
+                );
                 continue;
             };
 
@@ -1521,7 +1535,9 @@ impl AnimationManager {
             return;
         };
 
-        let Some(frame_entity) = self.get_frame_entity(current_file_entity, self.preview_frame_index) else {
+        let Some(frame_entity) =
+            self.get_frame_entity(current_file_entity, self.preview_frame_index)
+        else {
             return;
         };
         let Ok((_, frame_component)) = frame_q.get(frame_entity) else {
@@ -1701,7 +1717,10 @@ fn sync_edge_angle(
         let edge_angle_endpoint = get_2d_line_transform_endpoint(&angle_transform);
 
         let Ok(mut base_circle_transform) = transform_q.get_mut(base_circle_entity) else {
-            warn!("Edge angle base circle entity {:?} has no transform", base_circle_entity);
+            warn!(
+                "Edge angle base circle entity {:?} has no transform",
+                base_circle_entity
+            );
             return;
         };
         base_circle_transform.translation.x = middle_pos.x;
@@ -1710,7 +1729,10 @@ fn sync_edge_angle(
         base_circle_transform.scale = Vec3::splat(edge_angle_base_circle_scale);
 
         let Ok(mut end_circle_transform) = transform_q.get_mut(end_circle_entity) else {
-            warn!("Edge angle end circle entity {:?} has no transform", end_circle_entity);
+            warn!(
+                "Edge angle end circle entity {:?} has no transform",
+                end_circle_entity
+            );
             return;
         };
         end_circle_transform.translation.x = edge_angle_endpoint.x;

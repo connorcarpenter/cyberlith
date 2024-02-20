@@ -111,7 +111,11 @@ pub fn sync_vertices(world: &mut World) {
     if !world.get_resource::<Canvas>().unwrap().is_visible() {
         return;
     }
-    let Some(current_tab_state) = world.get_resource::<TabManager>().unwrap().current_tab_state() else {
+    let Some(current_tab_state) = world
+        .get_resource::<TabManager>()
+        .unwrap()
+        .current_tab_state()
+    else {
         return;
     };
     let should_sync = world.get_resource::<VertexManager>().unwrap().should_sync();
@@ -266,7 +270,11 @@ pub fn sync_edges(world: &mut World) {
     if !world.get_resource::<Canvas>().unwrap().is_visible() {
         return;
     }
-    let Some(current_tab_entity) = world.get_resource::<TabManager>().unwrap().current_tab_entity() else {
+    let Some(current_tab_entity) = world
+        .get_resource::<TabManager>()
+        .unwrap()
+        .current_tab_entity()
+    else {
         return;
     };
     let current_tab_entity = *current_tab_entity;

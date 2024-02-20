@@ -21,7 +21,10 @@ pub async fn fetch_async(request: Request) -> Result<Response> {
 }
 
 /// Performs an `async` HTTP request.
-pub async fn fetch_async_with_options(request: Request, request_options: RequestOptions) -> Result<Response> {
+pub async fn fetch_async_with_options(
+    request: Request,
+    request_options: RequestOptions,
+) -> Result<Response> {
     #[cfg(not(target_arch = "wasm32"))]
     return native::fetch_async(request, Some(request_options)).await;
 

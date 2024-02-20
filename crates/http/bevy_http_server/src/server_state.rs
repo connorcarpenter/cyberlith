@@ -1,12 +1,17 @@
 use std::{
+    any::TypeId,
     collections::HashMap,
     net::{SocketAddr, TcpListener, TcpStream},
-    any::TypeId
 };
 
 use async_dup::Arc;
 use log::info;
-use smol::{channel::{Receiver, Sender}, lock::RwLock, Async, channel};
+use smol::{
+    channel,
+    channel::{Receiver, Sender},
+    lock::RwLock,
+    Async,
+};
 
 use bevy_http_shared::Protocol;
 use http_common::{Request, Response, ResponseError};
@@ -18,9 +23,7 @@ struct KeyMaker {
 
 impl KeyMaker {
     pub fn new() -> Self {
-        Self {
-            current_index: 0,
-        }
+        Self { current_index: 0 }
     }
 
     pub fn next_key_id(&mut self) -> u64 {
@@ -39,14 +42,18 @@ pub struct ServerState {
 }
 
 impl ServerState {
-    pub fn new(protocol: Protocol) -> (Self, HashMap<TypeId, Receiver<(u64, SocketAddr, Request)>>, Sender<(u64, Result<Response, ResponseError>)>) {
-
+    pub fn new(
+        protocol: Protocol,
+    ) -> (
+        Self,
+        HashMap<TypeId, Receiver<(u64, SocketAddr, Request)>>,
+        Sender<(u64, Result<Response, ResponseError>)>,
+    ) {
         // Requests
         let mut request_senders = HashMap::new();
         let mut request_receivers = HashMap::new();
         let types = protocol.get_all_types();
         for type_id in types {
-
             let (request_sender, request_receiver) = channel::unbounded();
 
             request_senders.insert(type_id, request_sender);
@@ -83,14 +90,21 @@ impl ServerState {
 
         // needs protocol, request senders, and response senders
         executor::spawn(async move {
-            listen(addr, protocol, request_senders, response_senders_clone, key_maker).await;
+            listen(
+                addr,
+                protocol,
+                request_senders,
+                response_senders_clone,
+                key_maker,
+            )
+            .await;
         })
-            .detach();
+        .detach();
 
         executor::spawn(async move {
             process_responses(main_response_receiver, response_senders).await;
         })
-            .detach();
+        .detach();
     }
 }
 
@@ -139,26 +153,31 @@ async fn listen(
                 request_senders_clone,
                 response_senders_map_clone,
                 key_maker_clone,
-            ).await;
+            )
+            .await;
         })
-            .detach();
+        .detach();
     }
 }
 
 // needs response_senders
 async fn process_responses(
     response_receiver: Receiver<(u64, Result<Response, ResponseError>)>,
-    response_senders_map: Arc<RwLock<HashMap<u64, Sender<Result<Response, ResponseError>>>>>
+    response_senders_map: Arc<RwLock<HashMap<u64, Sender<Result<Response, ResponseError>>>>>,
 ) {
-
     loop {
-        let (response_id, response) = response_receiver.recv().await.expect("unable to receive response");
+        let (response_id, response) = response_receiver
+            .recv()
+            .await
+            .expect("unable to receive response");
         let mut response_senders = response_senders_map.write().await;
 
         let Some(response_sender) = response_senders.remove(&response_id) else {
             panic!("received response for unknown response id: {}", response_id);
         };
-        response_sender.try_send(response).expect("unable to send response");
+        response_sender
+            .try_send(response)
+            .expect("unable to send response");
     }
 }
 
@@ -202,7 +221,6 @@ async fn serve(
             }
         },
         |(req_addr, request)| {
-
             let endpoint_key_ref_4 = endpoint_key_ref_2.clone();
             let keymaker_2 = keymaker_1.clone();
             let request_senders_2 = request_senders_1.clone();
@@ -217,7 +235,9 @@ async fn serve(
                     let Some(request_sender) = request_senders_2.get(&endpoint_key) else {
                         panic!("did not register type!");
                     };
-                    request_sender.try_send((response_key_id, req_addr, request)).expect("unable to send request");
+                    request_sender
+                        .try_send((response_key_id, req_addr, request))
+                        .expect("unable to send request");
 
                     let (response_sender, response_receiver) = channel::bounded(1);
                     let mut response_senders = response_senders_2.write().await;
@@ -227,16 +247,13 @@ async fn serve(
                 };
 
                 let response_result = match response_receiver.recv().await {
-                    Ok(response_result) => {
-                        response_result
-                    }
-                    Err(_err) => {
-                        Err(ResponseError::ChannelRecvError)
-                    }
+                    Ok(response_result) => response_result,
+                    Err(_err) => Err(ResponseError::ChannelRecvError),
                 };
 
                 response_result
             }
-        }
-    ).await;
+        },
+    )
+    .await;
 }

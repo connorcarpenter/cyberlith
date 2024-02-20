@@ -415,14 +415,33 @@ impl FileTreeRowUiWidget {
 
     pub fn on_click_new_file(world: &mut World, row_entity: &Entity, is_root_dir: bool) {
         world.resource_scope(|world, mut ui_state: Mut<UiState>| {
-            let mut system_state: SystemState<(Client<Main>, Query<(&FileSystemEntry, Option<&FileSystemChild>, Option<&FileSystemRootChild>, &mut FileSystemUiState)>)> =
-                SystemState::new(world);
+            let mut system_state: SystemState<(
+                Client<Main>,
+                Query<(
+                    &FileSystemEntry,
+                    Option<&FileSystemChild>,
+                    Option<&FileSystemRootChild>,
+                    &mut FileSystemUiState,
+                )>,
+            )> = SystemState::new(world);
             let (client, mut fs_query) = system_state.get_mut(world);
-            let Ok((entry, dir_child_opt, root_child_opt, mut entry_ui_state)) = fs_query.get_mut(*row_entity) else {
+            let Ok((entry, dir_child_opt, root_child_opt, mut entry_ui_state)) =
+                fs_query.get_mut(*row_entity)
+            else {
                 return;
             };
 
-            let directory_entity_opt = if is_root_dir { None } else { Self::get_directory_entity_opt(&client, entry, row_entity, dir_child_opt, root_child_opt) };
+            let directory_entity_opt = if is_root_dir {
+                None
+            } else {
+                Self::get_directory_entity_opt(
+                    &client,
+                    entry,
+                    row_entity,
+                    dir_child_opt,
+                    root_child_opt,
+                )
+            };
 
             let Some(request_handle) = ui_state.text_input_modal.open(
                 "New File",
@@ -434,20 +453,42 @@ impl FileTreeRowUiWidget {
                 return;
             };
 
-            entry_ui_state.modal_request = Some((ModalRequestType::NewFile(directory_entity_opt), request_handle));
+            entry_ui_state.modal_request = Some((
+                ModalRequestType::NewFile(directory_entity_opt),
+                request_handle,
+            ));
         });
     }
 
     pub fn on_click_new_directory(world: &mut World, row_entity: &Entity, is_root_dir: bool) {
         world.resource_scope(|world, mut ui_state: Mut<UiState>| {
-            let mut system_state: SystemState<(Client<Main>, Query<(&FileSystemEntry, Option<&FileSystemChild>, Option<&FileSystemRootChild>, &mut FileSystemUiState)>)> =
-                SystemState::new(world);
+            let mut system_state: SystemState<(
+                Client<Main>,
+                Query<(
+                    &FileSystemEntry,
+                    Option<&FileSystemChild>,
+                    Option<&FileSystemRootChild>,
+                    &mut FileSystemUiState,
+                )>,
+            )> = SystemState::new(world);
             let (client, mut fs_query) = system_state.get_mut(world);
-            let Ok((entry, dir_child_opt, root_child_opt, mut entry_ui_state)) = fs_query.get_mut(*row_entity) else {
+            let Ok((entry, dir_child_opt, root_child_opt, mut entry_ui_state)) =
+                fs_query.get_mut(*row_entity)
+            else {
                 return;
             };
 
-            let directory_entity_opt = if is_root_dir { None } else { Self::get_directory_entity_opt(&client, entry, row_entity, dir_child_opt, root_child_opt) };
+            let directory_entity_opt = if is_root_dir {
+                None
+            } else {
+                Self::get_directory_entity_opt(
+                    &client,
+                    entry,
+                    row_entity,
+                    dir_child_opt,
+                    root_child_opt,
+                )
+            };
 
             let Some(request_handle) = ui_state.text_input_modal.open(
                 "New Directory",
@@ -459,7 +500,10 @@ impl FileTreeRowUiWidget {
                 return;
             };
 
-            entry_ui_state.modal_request = Some((ModalRequestType::NewDirectory(directory_entity_opt), request_handle));
+            entry_ui_state.modal_request = Some((
+                ModalRequestType::NewDirectory(directory_entity_opt),
+                request_handle,
+            ));
         });
     }
 

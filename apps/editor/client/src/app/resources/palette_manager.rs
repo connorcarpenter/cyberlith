@@ -495,7 +495,8 @@ impl PaletteManager {
     ) {
         ui.spacing_mut().item_spacing = Vec2::new(10.0, 10.0);
 
-        let Some(color_entity) = self.get_color_entity(file_entity, self.selected_color_index) else {
+        let Some(color_entity) = self.get_color_entity(file_entity, self.selected_color_index)
+        else {
             return;
         };
         let mut color_q = world.query::<&mut PaletteColor>();
@@ -560,7 +561,8 @@ impl PaletteManager {
         world: &mut World,
         file_entity: &Entity,
     ) {
-        let Some(color_entity) = self.get_color_entity(file_entity, self.selected_color_index) else {
+        let Some(color_entity) = self.get_color_entity(file_entity, self.selected_color_index)
+        else {
             return;
         };
         let mut color_q = world.query::<&mut PaletteColor>();
@@ -934,7 +936,11 @@ pub(crate) fn palette_file_insert_color(palette_manager: &mut PaletteManager, wo
 }
 
 pub(crate) fn palette_file_delete_color(palette_manager: &mut PaletteManager, world: &mut World) {
-    let Some(current_file_entity) = world.get_resource::<TabManager>().unwrap().current_tab_entity() else {
+    let Some(current_file_entity) = world
+        .get_resource::<TabManager>()
+        .unwrap()
+        .current_tab_entity()
+    else {
         return;
     };
     let current_file_entity = *current_file_entity;
@@ -944,7 +950,9 @@ pub(crate) fn palette_file_delete_color(palette_manager: &mut PaletteManager, wo
 
     // delete color
     let current_color_index = palette_manager.current_color_index();
-    let Some(current_frame_entity) = palette_manager.get_color_entity(&current_file_entity, current_color_index) else {
+    let Some(current_frame_entity) =
+        palette_manager.get_color_entity(&current_file_entity, current_color_index)
+    else {
         return;
     };
 

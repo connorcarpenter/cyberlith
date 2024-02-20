@@ -253,7 +253,8 @@ impl CameraManager {
         let Some(camera_entity) = self.camera_2d else {
             return;
         };
-        let Ok((mut camera, mut transform, mut projection)) = camera_query.get_mut(camera_entity) else {
+        let Ok((mut camera, mut transform, mut projection)) = camera_query.get_mut(camera_entity)
+        else {
             return;
         };
         camera.viewport = Some(Viewport::new_at_origin(

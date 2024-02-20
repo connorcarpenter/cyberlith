@@ -38,9 +38,7 @@ impl FileTreeUiWidget {
 
         if is_directory {
             FileTreeRowUiWidget::render_row(ui, world, entity, path, name, depth, true);
-            let Some(ui_state) = world
-                .entity(*entity)
-                .get::<FileSystemUiState>() else {
+            let Some(ui_state) = world.entity(*entity).get::<FileSystemUiState>() else {
                 return;
             };
             if ui_state.opened {

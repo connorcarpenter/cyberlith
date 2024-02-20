@@ -2,7 +2,7 @@ use bevy_ecs::system::Resource;
 
 use math::Vec2;
 
-use render_api::{base::CpuTexture2D};
+use render_api::base::CpuTexture2D;
 use storage::Handle;
 
 use crate::app::resources::{

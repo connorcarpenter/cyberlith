@@ -1,6 +1,5 @@
-
-use bevy_ecs::system::{ResMut, Resource};
 use asset_id::AssetId;
+use bevy_ecs::system::{ResMut, Resource};
 
 use render_api::{
     base::CpuSkin,
@@ -8,11 +7,11 @@ use render_api::{
     components::{RenderLayer, Transform},
     resources::RenderFrame,
 };
-use storage::{Storage, Handle};
+use storage::{Handle, Storage};
 
 use crate::{
-    AnimationData, AssetHandle,
-    IconData, MeshFile, ModelData, SceneData, SkinData, asset_renderer::AssetRenderer, asset_store::AssetStore
+    asset_renderer::AssetRenderer, asset_store::AssetStore, AnimationData, AssetHandle, IconData,
+    MeshFile, ModelData, SceneData, SkinData,
 };
 
 #[derive(Resource)]
@@ -42,8 +41,12 @@ impl AssetManager {
         asset_manager.store.sync_meshes(&mut meshes);
         asset_manager.store.sync_icons(&mut meshes);
         asset_manager.store.sync_palettes(&mut materials);
-        asset_manager.store.sync_skins(&meshes, &materials, &mut skins);
-        asset_manager.store.sync_icon_skins(&meshes, &materials, &mut skins);
+        asset_manager
+            .store
+            .sync_skins(&meshes, &materials, &mut skins);
+        asset_manager
+            .store
+            .sync_icon_skins(&meshes, &materials, &mut skins);
     }
 
     pub fn get_icon_subimage_count(&self, handle: &Handle<IconData>) -> usize {
@@ -64,7 +67,14 @@ impl AssetManager {
         transform: &Transform,
         render_layer_opt: Option<&RenderLayer>,
     ) {
-        AssetRenderer::draw_mesh(&self.store, render_frame, mesh_handle, mat_handle, transform, render_layer_opt);
+        AssetRenderer::draw_mesh(
+            &self.store,
+            render_frame,
+            mesh_handle,
+            mat_handle,
+            transform,
+            render_layer_opt,
+        );
     }
 
     pub fn draw_icon(
@@ -75,7 +85,14 @@ impl AssetManager {
         transform: &Transform,
         render_layer_opt: Option<&RenderLayer>,
     ) {
-        AssetRenderer::draw_icon(&self.store, render_frame, icon_handle, subimage_index, transform, render_layer_opt);
+        AssetRenderer::draw_icon(
+            &self.store,
+            render_frame,
+            icon_handle,
+            subimage_index,
+            transform,
+            render_layer_opt,
+        );
     }
 
     pub fn draw_skin(
@@ -85,7 +102,13 @@ impl AssetManager {
         transform: &Transform,
         render_layer_opt: Option<&RenderLayer>,
     ) {
-        AssetRenderer::draw_skin(&self.store, render_frame, skin_handle, transform, render_layer_opt);
+        AssetRenderer::draw_skin(
+            &self.store,
+            render_frame,
+            skin_handle,
+            transform,
+            render_layer_opt,
+        );
     }
 
     pub fn draw_scene(
@@ -95,7 +118,13 @@ impl AssetManager {
         parent_transform: &Transform,
         render_layer_opt: Option<&RenderLayer>,
     ) {
-        AssetRenderer::draw_scene(&self.store, render_frame, scene_handle, parent_transform, render_layer_opt);
+        AssetRenderer::draw_scene(
+            &self.store,
+            render_frame,
+            scene_handle,
+            parent_transform,
+            render_layer_opt,
+        );
     }
 
     pub fn draw_model(
@@ -105,7 +134,13 @@ impl AssetManager {
         parent_transform: &Transform,
         render_layer_opt: Option<&RenderLayer>,
     ) {
-        AssetRenderer::draw_model(&self.store, render_frame, model_handle, parent_transform, render_layer_opt);
+        AssetRenderer::draw_model(
+            &self.store,
+            render_frame,
+            model_handle,
+            parent_transform,
+            render_layer_opt,
+        );
     }
 
     pub fn draw_animated_model(

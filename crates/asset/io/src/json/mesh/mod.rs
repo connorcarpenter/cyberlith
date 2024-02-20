@@ -1,7 +1,7 @@
 use cfg_if::cfg_if;
 
-use serde::{Deserialize, Serialize};
 use asset_id::AssetId;
+use serde::{Deserialize, Serialize};
 
 cfg_if! {
     if #[cfg(feature = "read_json")] {
@@ -55,7 +55,15 @@ pub struct MeshFileFace {
 
 impl MeshFileFace {
     pub fn deconstruct(&self) -> (u16, u16, u16, u16, u16, u16, u16) {
-        (self.face_id, self.vertex_a, self.vertex_b, self.vertex_c, self.edge_a, self.edge_b, self.edge_c)
+        (
+            self.face_id,
+            self.vertex_a,
+            self.vertex_b,
+            self.vertex_c,
+            self.edge_a,
+            self.edge_b,
+            self.edge_c,
+        )
     }
 }
 
@@ -67,7 +75,6 @@ pub struct MeshFile {
 }
 
 impl MeshFile {
-
     pub const CURRENT_SCHEMA_VERSION: u32 = 0;
 
     pub fn new() -> Self {
@@ -87,11 +94,7 @@ impl MeshFile {
     }
 
     pub fn add_vertex(&mut self, x: i16, y: i16, z: i16) {
-        self.vertices.push(MeshFileVertex {
-            x,
-            y,
-            z,
-        });
+        self.vertices.push(MeshFileVertex { x, y, z });
     }
 
     pub fn get_edges(&self) -> &Vec<MeshFileEdge> {
@@ -99,17 +102,23 @@ impl MeshFile {
     }
 
     pub fn add_edge(&mut self, vertex_a: u16, vertex_b: u16) {
-        self.edges.push(MeshFileEdge {
-            vertex_a,
-            vertex_b,
-        });
+        self.edges.push(MeshFileEdge { vertex_a, vertex_b });
     }
 
     pub fn get_faces(&self) -> &Vec<MeshFileFace> {
         &self.faces
     }
 
-    pub fn add_face(&mut self, face_id: u16, vertex_a: u16, vertex_b: u16, vertex_c: u16, edge_a: u16, edge_b: u16, edge_c: u16) {
+    pub fn add_face(
+        &mut self,
+        face_id: u16,
+        vertex_a: u16,
+        vertex_b: u16,
+        vertex_c: u16,
+        edge_a: u16,
+        edge_b: u16,
+        edge_c: u16,
+    ) {
         self.faces.push(MeshFileFace {
             face_id,
             vertex_a,

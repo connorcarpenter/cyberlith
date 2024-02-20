@@ -1169,7 +1169,9 @@ impl Project {
     }
 }
 
-fn asset_id_map_from_file_entries(file_entries: &HashMap<FileKey, FileEntryValue>) -> HashMap<AssetId, FileKey> {
+fn asset_id_map_from_file_entries(
+    file_entries: &HashMap<FileKey, FileEntryValue>,
+) -> HashMap<AssetId, FileKey> {
     let mut asset_id_map = HashMap::new();
     for (file_key, file_value) in file_entries {
         if let Some(asset_id) = file_value.asset_id() {

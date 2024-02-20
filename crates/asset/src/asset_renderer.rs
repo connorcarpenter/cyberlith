@@ -1,4 +1,3 @@
-
 use bevy_log::warn;
 
 use render_api::{
@@ -8,7 +7,10 @@ use render_api::{
 };
 use storage::Handle;
 
-use crate::{asset_store::AssetStore, asset_dependency::AssetComponentHandle, AnimationData, IconData, MeshFile, ModelData, SceneData, SkinData};
+use crate::{
+    asset_dependency::AssetComponentHandle, asset_store::AssetStore, AnimationData, IconData,
+    MeshFile, ModelData, SceneData, SkinData,
+};
 
 pub(crate) struct AssetRenderer;
 
@@ -44,7 +46,9 @@ impl AssetRenderer {
             warn!("icon data not loaded 1: {:?}", icon_handle.id);
             return;
         };
-        let Some((cpu_mesh_handle, cpu_skin_handle)) = icon_data.get_cpu_mesh_and_skin_handles(subimage_index) else {
+        let Some((cpu_mesh_handle, cpu_skin_handle)) =
+            icon_data.get_cpu_mesh_and_skin_handles(subimage_index)
+        else {
             warn!("icon data not loaded 2: {:?}", icon_handle.id);
             return;
         };
@@ -205,7 +209,9 @@ impl AssetRenderer {
             warn!("skeleton data not loaded 1: {:?}", skeleton_handle.id);
             return;
         };
-        let Some(model_components) = animation_data.get_animated_components(skeleton_data, model_data, frame_time_ms) else {
+        let Some(model_components) =
+            animation_data.get_animated_components(skeleton_data, model_data, frame_time_ms)
+        else {
             // not yet loaded all
             return;
         };

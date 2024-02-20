@@ -4,8 +4,11 @@ use bevy_log::{info, warn};
 use bevy_http_client::ResponseError;
 use bevy_http_server::HttpServer;
 
-use session_server_http_proto::{ConnectAssetServerRequest, ConnectAssetServerResponse, DisconnectAssetServerRequest, DisconnectAssetServerResponse};
 use config::REGION_SERVER_SECRET;
+use session_server_http_proto::{
+    ConnectAssetServerRequest, ConnectAssetServerResponse, DisconnectAssetServerRequest,
+    DisconnectAssetServerResponse,
+};
 
 use crate::global::Global;
 
@@ -14,7 +17,6 @@ pub fn recv_connect_asset_server_request(
     mut server: ResMut<HttpServer>,
 ) {
     while let Some((_addr, request, response_key)) = server.receive::<ConnectAssetServerRequest>() {
-
         if request.region_secret() != REGION_SERVER_SECRET {
             warn!("invalid request secret");
             server.respond(response_key, Err(ResponseError::Unauthenticated));
@@ -39,8 +41,9 @@ pub fn recv_disconnect_asset_server_request(
     mut global: ResMut<Global>,
     mut server: ResMut<HttpServer>,
 ) {
-    while let Some((_addr, request, response_key)) = server.receive::<DisconnectAssetServerRequest>() {
-
+    while let Some((_addr, request, response_key)) =
+        server.receive::<DisconnectAssetServerRequest>()
+    {
         if request.region_secret() != REGION_SERVER_SECRET {
             warn!("invalid request secret");
             server.respond(response_key, Err(ResponseError::Unauthenticated));

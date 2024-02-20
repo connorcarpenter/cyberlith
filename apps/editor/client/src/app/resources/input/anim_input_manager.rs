@@ -356,7 +356,11 @@ impl AnimInputManager {
         ) {
             (false, MouseButton::Left, Some((vertex_2d_entity, CanvasShape::Vertex))) => {
                 // move vertex
-                let Some(vertex_3d_entity) = world.get_resource::<VertexManager>().unwrap().vertex_entity_2d_to_3d(&vertex_2d_entity) else {
+                let Some(vertex_3d_entity) = world
+                    .get_resource::<VertexManager>()
+                    .unwrap()
+                    .vertex_entity_2d_to_3d(&vertex_2d_entity)
+                else {
                     warn!(
                         "Selected vertex entity: {:?} has no 3d counterpart",
                         vertex_2d_entity
@@ -546,7 +550,11 @@ impl AnimInputManager {
     }
 
     pub(crate) fn handle_delete_frame(world: &mut World, input_manager: &mut InputManager) {
-        let Some(current_file_entity) = world.get_resource::<TabManager>().unwrap().current_tab_entity() else {
+        let Some(current_file_entity) = world
+            .get_resource::<TabManager>()
+            .unwrap()
+            .current_tab_entity()
+        else {
             return;
         };
         let current_file_entity = *current_file_entity;
@@ -556,7 +564,9 @@ impl AnimInputManager {
         let (mut commands, client, animation_manager) = system_state.get_mut(world);
 
         // delete vertex
-        let Some(current_frame_entity) = animation_manager.current_frame_entity(&current_file_entity) else {
+        let Some(current_frame_entity) =
+            animation_manager.current_frame_entity(&current_file_entity)
+        else {
             return;
         };
 

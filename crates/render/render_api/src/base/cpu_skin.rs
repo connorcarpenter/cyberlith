@@ -2,7 +2,7 @@ use bevy_log::info;
 
 use storage::Handle;
 
-use crate::{base::CpuMaterial};
+use crate::base::CpuMaterial;
 
 #[derive(Clone)]
 pub struct CpuSkin {

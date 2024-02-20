@@ -106,7 +106,8 @@ impl InputManager {
         let Some(current_file_entity) = world
             .get_resource::<TabManager>()
             .unwrap()
-            .current_tab_entity() else {
+            .current_tab_entity()
+        else {
             return;
         };
         let current_file_entity = *current_file_entity;
@@ -148,7 +149,11 @@ impl InputManager {
         }
         self.resync_hover = false;
 
-        let Some(current_tab_state) = world.get_resource::<TabManager>().unwrap().current_tab_state() else {
+        let Some(current_tab_state) = world
+            .get_resource::<TabManager>()
+            .unwrap()
+            .current_tab_state()
+        else {
             return;
         };
         let camera_state = &current_tab_state.camera_state;
@@ -249,7 +254,9 @@ impl InputManager {
             let vertex_3d_entity = vertex_manager
                 .vertex_entity_2d_to_3d(&vertex_2d_entity)
                 .unwrap();
-            let Ok(shape_name) = shape_name_q.get(vertex_3d_entity) else { return; };
+            let Ok(shape_name) = shape_name_q.get(vertex_3d_entity) else {
+                return;
+            };
             let shape_name = shape_name.value.as_str();
             if shape_name.len() == 0 {
                 return;
@@ -320,7 +327,9 @@ impl InputManager {
         if let Some((edge_manager, shape_name_q)) = anim_opt {
             let edge_3d_entity = edge_manager.edge_entity_2d_to_3d(&edge_2d_entity).unwrap();
             let (_, end_vertex_3d_entity) = edge_manager.edge_get_endpoints(&edge_3d_entity);
-            let Ok(shape_name) = shape_name_q.get(end_vertex_3d_entity) else { return; };
+            let Ok(shape_name) = shape_name_q.get(end_vertex_3d_entity) else {
+                return;
+            };
             let shape_name = shape_name.value.as_str();
             if shape_name.len() == 0 {
                 return;
@@ -590,7 +599,11 @@ impl InputManager {
         //
 
         // update selected vertex circle & line
-        let Ok(mut select_shape_visibilities) = visibility_q.get_many_mut([select_circle_entity, select_triangle_entity, select_line_entity]) else {
+        let Ok(mut select_shape_visibilities) = visibility_q.get_many_mut([
+            select_circle_entity,
+            select_triangle_entity,
+            select_line_entity,
+        ]) else {
             panic!("Select shape entities has no Visibility");
         };
 
@@ -605,7 +618,8 @@ impl InputManager {
 
                 // sync select line transform
                 {
-                    let Ok(mut select_line_transform) = transform_q.get_mut(select_line_entity) else {
+                    let Ok(mut select_line_transform) = transform_q.get_mut(select_line_entity)
+                    else {
                         panic!("Select line entity has no Transform");
                     };
 
@@ -620,7 +634,8 @@ impl InputManager {
 
                 // sync select circle transform
                 {
-                    let Ok(mut select_circle_transform) = transform_q.get_mut(select_circle_entity) else {
+                    let Ok(mut select_circle_transform) = transform_q.get_mut(select_circle_entity)
+                    else {
                         panic!("Select shape entities has no Transform");
                     };
 
@@ -651,7 +666,8 @@ impl InputManager {
 
                 // sync select line transform
                 {
-                    let Ok(mut select_line_transform) = transform_q.get_mut(select_line_entity) else {
+                    let Ok(mut select_line_transform) = transform_q.get_mut(select_line_entity)
+                    else {
                         panic!("Select line entity has no Transform");
                     };
 
@@ -675,7 +691,9 @@ impl InputManager {
 
                 // sync select triangle transform
                 {
-                    let Ok(mut select_triangle_transform) = transform_q.get_mut(select_triangle_entity) else {
+                    let Ok(mut select_triangle_transform) =
+                        transform_q.get_mut(select_triangle_entity)
+                    else {
                         panic!("Select shape entities has no Transform");
                     };
 
@@ -753,7 +771,11 @@ impl InputManager {
         mouse_position: &Vec2,
     ) {
         // move vertex
-        let Some(vertex_3d_entity) = world.get_resource::<VertexManager>().unwrap().vertex_entity_2d_to_3d(&vertex_2d_entity) else {
+        let Some(vertex_3d_entity) = world
+            .get_resource::<VertexManager>()
+            .unwrap()
+            .vertex_entity_2d_to_3d(&vertex_2d_entity)
+        else {
             warn!(
                 "Selected vertex entity: {:?} has no 3d counterpart",
                 vertex_2d_entity

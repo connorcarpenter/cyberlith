@@ -3,10 +3,12 @@ use std::time::Duration;
 use log::{info, warn};
 use openssh::Session;
 
-use crate::{utils::{run_command, ssh_session_create}, CliError};
+use crate::{
+    utils::{run_command, ssh_session_create},
+    CliError,
+};
 
 pub async fn ssh_init() -> Result<Session, CliError> {
-
     remove_existing_known_host().await?;
 
     loop {

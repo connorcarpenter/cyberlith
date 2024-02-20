@@ -7,7 +7,7 @@ use render_api::components::Transform;
 use storage::{AssetHash, Handle};
 
 use crate::{
-    asset_dependency::{AssetDependency, AssetComponent, AssetComponentHandle},
+    asset_dependency::{AssetComponent, AssetComponentHandle, AssetDependency},
     asset_handle::AssetHandleImpl,
     AssetHandle, SkinData,
 };
@@ -59,19 +59,11 @@ impl SceneData {
                     &handle.id, dependency_id
                 );
                 let handle = AssetComponentHandle::Skin(handle);
-                finish_component_dependency(
-                    &mut self.component_files,
-                    dependency_id,
-                    handle,
-                );
+                finish_component_dependency(&mut self.component_files, dependency_id, handle);
             }
             AssetHandleImpl::Scene(handle) => {
                 let handle = AssetComponentHandle::Scene(handle);
-                finish_component_dependency(
-                    &mut self.component_files,
-                    dependency_id,
-                    handle,
-                );
+                finish_component_dependency(&mut self.component_files, dependency_id, handle);
             }
             _ => {
                 panic!("unexpected type of handle");
@@ -174,15 +166,14 @@ impl From<String> for SceneData {
                         file_index, file_type, asset_id
                     );
 
-                    let asset_dependency =
-                        match file_type {
-                            ComponentFileType::Skin => {
-                                AssetComponent::Skin(AssetDependency::<SkinData>::AssetId(asset_id))
-                            }
-                            ComponentFileType::Scene => AssetComponent::Scene(
-                                AssetDependency::<SceneData>::AssetId(asset_id),
-                            ),
-                        };
+                    let asset_dependency = match file_type {
+                        ComponentFileType::Skin => {
+                            AssetComponent::Skin(AssetDependency::<SkinData>::AssetId(asset_id))
+                        }
+                        ComponentFileType::Scene => {
+                            AssetComponent::Scene(AssetDependency::<SceneData>::AssetId(asset_id))
+                        }
+                    };
 
                     component_files.push(asset_dependency);
 

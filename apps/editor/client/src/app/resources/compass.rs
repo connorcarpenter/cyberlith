@@ -9,7 +9,7 @@ use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
     components::Transform,
 };
-use storage::{Storage, Handle};
+use storage::{Handle, Storage};
 
 use editor_proto::components::Vertex3d;
 

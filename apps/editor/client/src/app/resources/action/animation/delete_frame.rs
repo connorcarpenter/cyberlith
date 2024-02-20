@@ -43,7 +43,9 @@ pub fn execute(world: &mut World, action: AnimAction) -> Vec<AnimAction> {
     }
 
     // copy rotations to store in undo/redo
-    let Some(rotation_entities) = animation_manager.get_frame_rotations(&file_entity, &frame_entity) else {
+    let Some(rotation_entities) =
+        animation_manager.get_frame_rotations(&file_entity, &frame_entity)
+    else {
         panic!("Expected frame rotations");
     };
 

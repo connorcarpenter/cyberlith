@@ -12,7 +12,12 @@ pub struct IncomingUserRequest {
 }
 
 impl IncomingUserRequest {
-    pub fn new(region_secret: &str, session_server_addr: &str, session_server_port: u16, login_token: &str) -> Self {
+    pub fn new(
+        region_secret: &str,
+        session_server_addr: &str,
+        session_server_port: u16,
+        login_token: &str,
+    ) -> Self {
         Self {
             region_secret: region_secret.to_string(),
             session_server_addr: session_server_addr.to_string(),

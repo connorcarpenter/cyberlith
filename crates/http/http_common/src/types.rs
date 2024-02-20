@@ -58,7 +58,6 @@ pub struct Request {
 
 impl Request {
     pub fn new(method: Method, url: &str, body: Vec<u8>) -> Self {
-
         let mut headers = BTreeMap::new();
 
         if method == Method::Get && !body.is_empty() {

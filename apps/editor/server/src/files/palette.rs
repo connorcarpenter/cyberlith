@@ -9,8 +9,8 @@ use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 
+use asset_io::json::PaletteFile;
 use asset_io::AssetId;
-use asset_io::json::{PaletteFile};
 
 use editor_proto::components::PaletteColor;
 
@@ -55,7 +55,6 @@ impl FileWriter for PaletteWriter {
     }
 
     fn write_new_default(&self, asset_id: &AssetId) -> Box<[u8]> {
-
         let mut data = PaletteFile::new();
         data.add_color(255, 255, 255); // white
         data.add_color(0, 0, 0); // black
@@ -119,7 +118,6 @@ impl PaletteReader {
         file_entity: &Entity,
         bytes: &Box<[u8]>,
     ) -> HashMap<Entity, ContentEntityData> {
-
         let Ok((meta, data)) = PaletteFile::read(bytes) else {
             panic!("Error reading .palette file");
         };

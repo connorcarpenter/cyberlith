@@ -21,7 +21,7 @@ use render_api::{
     shapes,
     shapes::set_2d_line_transform,
 };
-use storage::{Storage, Handle};
+use storage::{Handle, Storage};
 
 use editor_proto::components::{
     Edge3d, EdgeAngle, Face3d, FileExtension, FileType, NetTransform, NetTransformEntityType,
@@ -487,7 +487,11 @@ impl ModelManager {
 
         // rotation control
         let mat_handle = materials.add(CpuMaterial::new(Color::RED, 0.0, 0.0, 0.0));
-        let (rotation_entity_vert_2d, rotation_entity_vert_3d, Some((rotation_entity_edge_3d, rotation_entity_edge_2d))) = Self::new_net_transform_control(
+        let (
+            rotation_entity_vert_2d,
+            rotation_entity_vert_3d,
+            Some((rotation_entity_edge_3d, rotation_entity_edge_2d)),
+        ) = Self::new_net_transform_control(
             commands,
             camera_manager,
             vertex_manager,
@@ -498,56 +502,63 @@ impl ModelManager {
             net_transform_entity,
             Some(translation_entity_2d),
             NetTransformControlType::RotationVertex,
-        ) else {
+        )
+        else {
             panic!("should def have an edge here");
         };
 
         // scale x control
         let mat_handle = materials.add(CpuMaterial::new(Color::WHITE, 0.0, 0.0, 0.0));
-        let (scale_x_entity_2d, scale_x_entity_3d, Some((scale_x_entity_edge_3d, _))) = Self::new_net_transform_control(
-            commands,
-            camera_manager,
-            vertex_manager,
-            edge_manager,
-            meshes,
-            materials,
-            &mat_handle,
-            net_transform_entity,
-            Some(translation_entity_2d),
-            NetTransformControlType::Scale(ScaleAxis::X),
-        ) else {
+        let (scale_x_entity_2d, scale_x_entity_3d, Some((scale_x_entity_edge_3d, _))) =
+            Self::new_net_transform_control(
+                commands,
+                camera_manager,
+                vertex_manager,
+                edge_manager,
+                meshes,
+                materials,
+                &mat_handle,
+                net_transform_entity,
+                Some(translation_entity_2d),
+                NetTransformControlType::Scale(ScaleAxis::X),
+            )
+        else {
             panic!("should def have an edge here");
         };
 
         // scale y control
-        let (scale_y_entity_2d, scale_y_entity_3d, Some((scale_y_entity_edge_3d, _))) = Self::new_net_transform_control(
-            commands,
-            camera_manager,
-            vertex_manager,
-            edge_manager,
-            meshes,
-            materials,
-            &mat_handle,
-            net_transform_entity,
-            Some(translation_entity_2d),
-            NetTransformControlType::Scale(ScaleAxis::Y),
-        ) else {
+        let (scale_y_entity_2d, scale_y_entity_3d, Some((scale_y_entity_edge_3d, _))) =
+            Self::new_net_transform_control(
+                commands,
+                camera_manager,
+                vertex_manager,
+                edge_manager,
+                meshes,
+                materials,
+                &mat_handle,
+                net_transform_entity,
+                Some(translation_entity_2d),
+                NetTransformControlType::Scale(ScaleAxis::Y),
+            )
+        else {
             panic!("should def have an edge here");
         };
 
         // scale z control
-        let (scale_z_entity_2d, scale_z_entity_3d, Some((scale_z_entity_edge_3d, _))) = Self::new_net_transform_control(
-            commands,
-            camera_manager,
-            vertex_manager,
-            edge_manager,
-            meshes,
-            materials,
-            &mat_handle,
-            net_transform_entity,
-            Some(translation_entity_2d),
-            NetTransformControlType::Scale(ScaleAxis::Z),
-        ) else {
+        let (scale_z_entity_2d, scale_z_entity_3d, Some((scale_z_entity_edge_3d, _))) =
+            Self::new_net_transform_control(
+                commands,
+                camera_manager,
+                vertex_manager,
+                edge_manager,
+                meshes,
+                materials,
+                &mat_handle,
+                net_transform_entity,
+                Some(translation_entity_2d),
+                NetTransformControlType::Scale(ScaleAxis::Z),
+            )
+        else {
             panic!("should def have an edge here");
         };
 
@@ -1176,8 +1187,13 @@ impl ModelManager {
 
             // sync edge angle if it exists (only for ModelControlTransform "rotation" edges)
             if let Ok(edge_angle) = edge_angle_q.get(*edge_3d_entity) {
-                let Some((base_circle_entity, angle_edge_entity, end_circle_entity)) = edge_manager.edge_angle_entities(edge_3d_entity) else {
-                    panic!("edge_3d_entity {:?} has no edge_angle_entities", edge_3d_entity);
+                let Some((base_circle_entity, angle_edge_entity, end_circle_entity)) =
+                    edge_manager.edge_angle_entities(edge_3d_entity)
+                else {
+                    panic!(
+                        "edge_3d_entity {:?} has no edge_angle_entities",
+                        edge_3d_entity
+                    );
                 };
                 EdgeManager::sync_edge_angle(
                     edge_angle_base_circle_scale,
@@ -1196,7 +1212,11 @@ impl ModelManager {
     }
 
     pub fn draw(&self, world: &mut World, file_ext: &FileExtension, current_file_entity: &Entity) {
-        let Some(current_tab_state) = world.get_resource::<TabManager>().unwrap().current_tab_state() else {
+        let Some(current_tab_state) = world
+            .get_resource::<TabManager>()
+            .unwrap()
+            .current_tab_state()
+        else {
             return;
         };
         let camera_state = &current_tab_state.camera_state;
@@ -1296,7 +1316,8 @@ impl ModelManager {
                     if owned_by_file.file_entity != skel_file_entity {
                         continue;
                     }
-                    let Some(edge_2d_entity) = edge_manager.edge_entity_3d_to_2d(&edge_3d_entity) else {
+                    let Some(edge_2d_entity) = edge_manager.edge_entity_3d_to_2d(&edge_3d_entity)
+                    else {
                         continue;
                     };
 
@@ -1384,7 +1405,8 @@ impl ModelManager {
             ) = system_state.get_mut(world);
 
             let camera_3d_entity = camera_manager.camera_3d_entity().unwrap();
-            let Ok((camera, camera_projection, camera_transform)) = camera_q.get(camera_3d_entity) else {
+            let Ok((camera, camera_projection, camera_transform)) = camera_q.get(camera_3d_entity)
+            else {
                 return;
             };
             let camera_viewport = camera.viewport.unwrap();
@@ -1505,8 +1527,12 @@ impl ModelManager {
         parent_affine_opt: Option<&Affine3A>,
         net_transform_entity: &Entity,
     ) {
-        let Ok((net_transform, skin_or_scene_entity)) = net_transform_q.get(*net_transform_entity) else {
-            warn!("net_transform_entity {:?} has no NetTransform", net_transform_entity);
+        let Ok((net_transform, skin_or_scene_entity)) = net_transform_q.get(*net_transform_entity)
+        else {
+            warn!(
+                "net_transform_entity {:?} has no NetTransform",
+                net_transform_entity
+            );
             return;
         };
 
@@ -1521,8 +1547,13 @@ impl ModelManager {
         match *skin_or_scene_entity.value_type {
             NetTransformEntityType::Skin => {
                 let skin_file_entity = skin_or_scene_entity.value.get(client).unwrap();
-                let Some(mesh_file_entity) = file_manager.file_get_dependency(&skin_file_entity, FileExtension::Mesh) else {
-                    warn!("skin_file_entity {:?} has no mesh_file_entity", skin_file_entity);
+                let Some(mesh_file_entity) =
+                    file_manager.file_get_dependency(&skin_file_entity, FileExtension::Mesh)
+                else {
+                    warn!(
+                        "skin_file_entity {:?} has no mesh_file_entity",
+                        skin_file_entity
+                    );
                     return;
                 };
 
@@ -1647,7 +1678,9 @@ impl ModelManager {
             // draw vertices (compass, grid)
             for vertex_3d_entity in vertex_3d_entities.iter() {
                 // draw vertex 2d
-                let Some(data) = vertex_manager.get_vertex_3d_data(&vertex_3d_entity) else { continue };
+                let Some(data) = vertex_manager.get_vertex_3d_data(&vertex_3d_entity) else {
+                    continue;
+                };
 
                 let (mesh_handle, mat_handle, transform, render_layer_opt) =
                     objects_q.get(*vertex_3d_entity).unwrap();
@@ -1761,7 +1794,9 @@ impl ModelManager {
         };
 
         for net_transform_entity in net_transform_entities {
-            let Ok((net_transform, skin_or_scene_entity)) = net_transform_q.get(*net_transform_entity) else {
+            let Ok((net_transform, skin_or_scene_entity)) =
+                net_transform_q.get(*net_transform_entity)
+            else {
                 continue;
             };
 
@@ -1799,8 +1834,9 @@ impl ModelManager {
             match *skin_or_scene_entity.value_type {
                 NetTransformEntityType::Skin => {
                     let skin_file_entity = skin_or_scene_entity.value.get(client).unwrap();
-                    let Some(mesh_file_entity) = file_manager
-                        .file_get_dependency(&skin_file_entity, FileExtension::Mesh) else {
+                    let Some(mesh_file_entity) =
+                        file_manager.file_get_dependency(&skin_file_entity, FileExtension::Mesh)
+                    else {
                         continue;
                     };
 

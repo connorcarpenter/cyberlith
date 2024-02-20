@@ -68,7 +68,10 @@ pub(crate) fn execute(
 
     // get palette color entity
     let Ok(mut bckg_color) = bckg_color_q.get_mut(bckg_color_entity) else {
-        panic!("Failed to get BackgroundSkinColor for face color entity {:?}!", bckg_color_entity);
+        panic!(
+            "Failed to get BackgroundSkinColor for face color entity {:?}!",
+            bckg_color_entity
+        );
     };
     let old_palette_color_entity = bckg_color.palette_color_entity.get(&client).unwrap();
 

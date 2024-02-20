@@ -1,5 +1,7 @@
-
-use crate::{error::AssetIoError, json::{SkinFile, Asset, AssetData, AssetMeta}};
+use crate::{
+    error::AssetIoError,
+    json::{Asset, AssetData, AssetMeta, SkinFile},
+};
 
 impl SkinFile {
     pub fn read(bytes: &[u8]) -> Result<(AssetMeta, Self), AssetIoError> {

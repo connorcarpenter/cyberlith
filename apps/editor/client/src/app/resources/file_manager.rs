@@ -114,7 +114,10 @@ impl FileManager {
 
         if let Some(parent_entity) = parent_entity_opt {
             let Some(parent_data) = self.file_entities.get_mut(&parent_entity) else {
-                panic!("parent_entity {:?} not found in file_entities", parent_entity);
+                panic!(
+                    "parent_entity {:?} not found in file_entities",
+                    parent_entity
+                );
             };
             parent_data.changelist_children.insert(cl_entity);
         }

@@ -1,6 +1,6 @@
-use std::net::SocketAddr;
-use bevy_ecs::{event::EventReader, change_detection::ResMut};
+use bevy_ecs::{change_detection::ResMut, event::EventReader};
 use bevy_log::{info, warn};
+use std::net::SocketAddr;
 
 use naia_bevy_server::{
     events::{AuthEvents, ConnectEvent, DisconnectEvent, ErrorEvent},
@@ -8,9 +8,11 @@ use naia_bevy_server::{
     Server,
 };
 
-use session_server_naia_proto::messages::Auth;
-use config::{PUBLIC_IP_ADDR, SELF_BINDING_ADDR, SESSION_SERVER_SIGNAL_PORT, SESSION_SERVER_WEBRTC_PORT};
 use crate::asset_manager::AssetManager;
+use config::{
+    PUBLIC_IP_ADDR, SELF_BINDING_ADDR, SESSION_SERVER_SIGNAL_PORT, SESSION_SERVER_WEBRTC_PORT,
+};
+use session_server_naia_proto::messages::Auth;
 
 use crate::global::Global;
 
@@ -19,9 +21,15 @@ pub fn init(mut server: Server) {
 
     let server_addresses = webrtc::ServerAddrs::new(
         // IP Address to listen on for WebRTC signaling
-        SocketAddr::new(SELF_BINDING_ADDR.parse().unwrap(), SESSION_SERVER_SIGNAL_PORT),
+        SocketAddr::new(
+            SELF_BINDING_ADDR.parse().unwrap(),
+            SESSION_SERVER_SIGNAL_PORT,
+        ),
         // IP Address to listen on for UDP WebRTC data channels
-        SocketAddr::new(SELF_BINDING_ADDR.parse().unwrap(), SESSION_SERVER_WEBRTC_PORT),
+        SocketAddr::new(
+            SELF_BINDING_ADDR.parse().unwrap(),
+            SESSION_SERVER_WEBRTC_PORT,
+        ),
         // The public WebRTC IP address to advertise
         format!("http://{}:{}", PUBLIC_IP_ADDR, SESSION_SERVER_WEBRTC_PORT).as_str(),
     );
@@ -32,12 +40,11 @@ pub fn init(mut server: Server) {
 pub fn auth_events(
     mut global: ResMut<Global>,
     mut server: Server,
-    mut event_reader: EventReader<AuthEvents>
+    mut event_reader: EventReader<AuthEvents>,
 ) {
     for events in event_reader.read() {
         for (user_key, auth) in events.read::<Auth>() {
             if global.take_login_token(&auth.token) {
-
                 info!("Accepted connection. Token: {}", auth.token);
 
                 // Accept incoming connection

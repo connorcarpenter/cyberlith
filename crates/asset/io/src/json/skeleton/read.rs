@@ -1,5 +1,7 @@
-
-use crate::{error::AssetIoError, json::{SkelFile, Asset, AssetData, AssetMeta}};
+use crate::{
+    error::AssetIoError,
+    json::{Asset, AssetData, AssetMeta, SkelFile},
+};
 
 impl SkelFile {
     pub fn read(bytes: &[u8]) -> Result<(AssetMeta, Self), AssetIoError> {

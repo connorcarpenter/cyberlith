@@ -9,8 +9,8 @@ use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 
+use asset_io::json::{FileComponentType, SceneFile};
 use asset_io::AssetId;
-use asset_io::json::{SceneFile, FileComponentType};
 
 use editor_proto::{
     components::{
@@ -23,8 +23,7 @@ use math::Quat;
 
 use crate::{
     files::{
-        add_file_dependency, convert_from_component_type,
-        convert_into_component_type, FileWriter,
+        add_file_dependency, convert_from_component_type, convert_into_component_type, FileWriter,
     },
     resources::{ContentEntityData, Project},
 };
@@ -100,7 +99,8 @@ impl SceneWriter {
                 Query<(&NetTransform, &SkinOrSceneEntity)>,
             )> = SystemState::new(world);
             let (server, transform_q) = system_state.get_mut(world);
-            let Ok((transform, component_entity_prop)) = transform_q.get(net_transform_entity) else {
+            let Ok((transform, component_entity_prop)) = transform_q.get(net_transform_entity)
+            else {
                 panic!("Error getting net transform");
             };
             let component_entity: Entity = component_entity_prop.value.get(&server).unwrap();
@@ -109,7 +109,10 @@ impl SceneWriter {
                 component_entity
             );
             let Some(component_id) = component_dependency_to_index.get(&component_entity) else {
-                panic!("skin entity not found in component_dependency_to_index: `{:?}`", component_entity);
+                panic!(
+                    "skin entity not found in component_dependency_to_index: `{:?}`",
+                    component_entity
+                );
             };
 
             let translation_x = transform.translation_x();
@@ -189,16 +192,15 @@ impl SceneReader {
                 FileComponentType::Scene => FileExtension::Scene,
             };
             let dependency_file_key = project.file_key_from_asset_id(&asset_id).unwrap();
-            let (new_dependency_entity, dependency_file_entity) =
-                add_file_dependency(
-                    project,
-                    file_key,
-                    file_entity,
-                    &mut commands,
-                    &mut server,
-                    dependency_file_ext,
-                    &dependency_file_key,
-                );
+            let (new_dependency_entity, dependency_file_entity) = add_file_dependency(
+                project,
+                file_key,
+                file_entity,
+                &mut commands,
+                &mut server,
+                dependency_file_ext,
+                &dependency_file_key,
+            );
             output.insert(
                 new_dependency_entity,
                 ContentEntityData::new_dependency(dependency_file_key),
@@ -217,14 +219,13 @@ impl SceneReader {
             let position = transform.position();
             let scale = transform.scale();
             let rotation = transform.rotation();
-            let Some((component_type, component_entity)) = components.get(component_index as usize) else {
+            let Some((component_type, component_entity)) = components.get(component_index as usize)
+            else {
                 panic!("skin index out of bounds");
             };
             let mut skin_or_scene_component =
                 SkinOrSceneEntity::new(convert_from_component_type(*component_type));
-            skin_or_scene_component
-                .value
-                .set(&server, component_entity);
+            skin_or_scene_component.value.set(&server, component_entity);
             info!(
                 "reading net transform into world. skin index: {} -> entity: `{:?}`",
                 component_index, component_entity
@@ -240,7 +241,12 @@ impl SceneReader {
                 .enable_replication(&mut server)
                 .configure_replication(ReplicationConfig::Delegated)
                 .insert(NetTransform::new(
-                    math::SerdeQuat::from(Quat::from_xyzw(rotation.x(), rotation.y(), rotation.z(), rotation.w())),
+                    math::SerdeQuat::from(Quat::from_xyzw(
+                        rotation.x(),
+                        rotation.y(),
+                        rotation.z(),
+                        rotation.w(),
+                    )),
                     position.x() as f32,
                     position.y() as f32,
                     position.z() as f32,
@@ -269,7 +275,6 @@ impl SceneReader {
         file_entity: &Entity,
         bytes: &Box<[u8]>,
     ) -> HashMap<Entity, ContentEntityData> {
-
         let Ok((meta, data)) = SceneFile::read(bytes) else {
             panic!("Error reading .scene file");
         };

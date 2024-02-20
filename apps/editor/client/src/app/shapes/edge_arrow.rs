@@ -4,7 +4,7 @@ use render_api::{
     components::{RenderObjectBundle, Transform},
     shapes::set_2d_line_transform,
 };
-use storage::{AssetHash, Storage, Handle};
+use storage::{AssetHash, Handle, Storage};
 
 pub fn create_2d_edge_arrow(
     meshes: &mut Storage<CpuMesh>,

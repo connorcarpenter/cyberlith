@@ -4,7 +4,7 @@ use render_api::{
     components::{RenderObjectBundle, Transform},
     shapes::{set_2d_line_transform, Line},
 };
-use storage::{Storage, Handle};
+use storage::{Handle, Storage};
 
 pub fn create_2d_edge_line(
     meshes: &mut Storage<CpuMesh>,

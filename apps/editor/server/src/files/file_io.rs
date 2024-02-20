@@ -9,8 +9,8 @@ use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 
-use asset_io::AssetId;
 use asset_io::json::{AnimFileQuat, FileComponentType};
+use asset_io::AssetId;
 use math::Quat;
 
 use editor_proto::{
@@ -38,10 +38,7 @@ pub trait FileWriter: Send + Sync {
         content_entities_opt: &HashMap<Entity, ContentEntityData>,
         asset_id: &AssetId,
     ) -> Box<[u8]>;
-    fn write_new_default(
-        &self,
-        asset_id: &AssetId,
-    ) -> Box<[u8]>;
+    fn write_new_default(&self, asset_id: &AssetId) -> Box<[u8]>;
 }
 
 pub trait FileReader: Send + Sync {
@@ -90,7 +87,9 @@ impl FileWriter for FileExtension {
             FileExtension::Skel => SkelWriter.write(world, project, content_entities, asset_id),
             FileExtension::Mesh => MeshWriter.write(world, project, content_entities, asset_id),
             FileExtension::Anim => AnimWriter.write(world, project, content_entities, asset_id),
-            FileExtension::Palette => PaletteWriter.write(world, project, content_entities, asset_id),
+            FileExtension::Palette => {
+                PaletteWriter.write(world, project, content_entities, asset_id)
+            }
             FileExtension::Skin => SkinWriter.write(world, project, content_entities, asset_id),
             FileExtension::Model => ModelWriter.write(world, project, content_entities, asset_id),
             FileExtension::Scene => SceneWriter.write(world, project, content_entities, asset_id),
@@ -343,10 +342,7 @@ pub fn add_file_dependency(
         .insert(component)
         .id();
 
-    return (
-        dependency_entity,
-        dependency_file_entity,
-    );
+    return (dependency_entity, dependency_file_entity);
 }
 
 // conversion
@@ -372,15 +368,11 @@ pub fn convert_from_quat(input: &AnimFileQuat) -> editor_proto::SerdeQuat {
 // }
 
 // rotation
-pub fn convert_into_rotation(
-    input: editor_proto::components::SerdeRotation,
-) -> u8 {
+pub fn convert_into_rotation(input: editor_proto::components::SerdeRotation) -> u8 {
     input.to_inner()
 }
 
-pub fn convert_from_rotation(
-    input: u8,
-) -> editor_proto::components::SerdeRotation {
+pub fn convert_from_rotation(input: u8) -> editor_proto::components::SerdeRotation {
     editor_proto::components::SerdeRotation::from_inner(input)
 }
 
@@ -389,12 +381,8 @@ pub fn convert_into_component_type(
     input: editor_proto::components::NetTransformEntityType,
 ) -> FileComponentType {
     match input {
-        editor_proto::components::NetTransformEntityType::Skin => {
-            FileComponentType::Skin
-        }
-        editor_proto::components::NetTransformEntityType::Scene => {
-            FileComponentType::Scene
-        }
+        editor_proto::components::NetTransformEntityType::Skin => FileComponentType::Skin,
+        editor_proto::components::NetTransformEntityType::Scene => FileComponentType::Scene,
         _ => {
             panic!("unsupported");
         }
@@ -405,11 +393,7 @@ pub fn convert_from_component_type(
     input: FileComponentType,
 ) -> editor_proto::components::NetTransformEntityType {
     match input {
-        FileComponentType::Skin => {
-            editor_proto::components::NetTransformEntityType::Skin
-        }
-        FileComponentType::Scene => {
-            editor_proto::components::NetTransformEntityType::Scene
-        }
+        FileComponentType::Skin => editor_proto::components::NetTransformEntityType::Skin,
+        FileComponentType::Scene => editor_proto::components::NetTransformEntityType::Scene,
     }
 }

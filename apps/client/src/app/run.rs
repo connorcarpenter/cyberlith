@@ -1,9 +1,11 @@
-
 use bevy_app::{App, Startup, Update};
 
-use game_engine::{EnginePlugin, render::{Draw, resources::WindowSettings}, wait_for_finish};
 use crate::app::resources::asset_cache::AssetCache;
 use crate::app::resources::global::Global;
+use game_engine::{
+    render::{resources::WindowSettings, Draw},
+    wait_for_finish, EnginePlugin,
+};
 
 use super::systems::{network, scene};
 

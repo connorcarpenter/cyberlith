@@ -394,7 +394,10 @@ impl ComponentWaitlist {
             }
             ComponentWaitlistInsert::Edge(start_entity, end_entity) => {
                 let Some(edge_entry) = self.get_mut(&entity) else {
-                    panic!("edge entity {:?} should have been inserted already!", entity);
+                    panic!(
+                        "edge entity {:?} should have been inserted already!",
+                        entity
+                    );
                 };
                 edge_entry.set_edge(start_entity, end_entity);
 
@@ -461,10 +464,11 @@ impl ComponentWaitlist {
         }
 
         for possibly_ready_entity in possibly_ready_entities {
-            let Some(incomplete_entry) = self
-                .incomplete_entries
-                .get(&possibly_ready_entity) else {
-                panic!("entity {:?} should have been inserted already!", possibly_ready_entity);
+            let Some(incomplete_entry) = self.incomplete_entries.get(&possibly_ready_entity) else {
+                panic!(
+                    "entity {:?} should have been inserted already!",
+                    possibly_ready_entity
+                );
             };
             if !incomplete_entry.is_ready() {
                 info!("entity `{:?}` is not ready yet...", possibly_ready_entity);

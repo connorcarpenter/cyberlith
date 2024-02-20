@@ -26,7 +26,10 @@ pub(crate) fn execute(
     let (mut commands, mut meshes) = system_state.get_mut(world);
 
     let Some(net_face_entity) = icon_manager.face_entity_local_to_net(&local_face_entity) else {
-        panic!("failed to get net face entity for local face entity `{:?}`!", local_face_entity)
+        panic!(
+            "failed to get net face entity for local face entity `{:?}`!",
+            local_face_entity
+        )
     };
 
     // delete net face

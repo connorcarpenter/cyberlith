@@ -1,5 +1,7 @@
-
-use crate::{error::AssetIoError, json::{PaletteFile, Asset, AssetData, AssetMeta}};
+use crate::{
+    error::AssetIoError,
+    json::{Asset, AssetData, AssetMeta, PaletteFile},
+};
 
 impl PaletteFile {
     pub fn read(bytes: &[u8]) -> Result<(AssetMeta, Self), AssetIoError> {

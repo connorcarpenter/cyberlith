@@ -1,20 +1,26 @@
 use log::{info, warn};
 
-use crate::{CliError, utils::ssh_session_close, up::{instance_init::instance_init, instance_start::instance_start, instance_wait::instance_wait, ssh_init::ssh_init}};
+use crate::{
+    up::{
+        instance_init::instance_init, instance_start::instance_start, instance_wait::instance_wait,
+        ssh_init::ssh_init,
+    },
+    utils::ssh_session_close,
+    CliError,
+};
 
 pub async fn instance_up() -> Result<(), CliError> {
-
     // start instance
     info!("Starting instance");
     let instance_id = match instance_start().await {
         Ok(instance_id) => {
             info!("Instance started! id is {:?}", instance_id);
             instance_id
-        },
+        }
         Err(e) => {
             warn!("Error starting instance: {:?}", e);
             return Err(e);
-        },
+        }
     };
 
     // wait for instance to be ready
@@ -23,7 +29,7 @@ pub async fn instance_up() -> Result<(), CliError> {
         Err(e) => {
             warn!("Error waiting for instance: {:?}", e);
             return Err(e);
-        },
+        }
     }
 
     // start ssh session
@@ -31,11 +37,11 @@ pub async fn instance_up() -> Result<(), CliError> {
         Ok(session) => {
             info!("SSH initiated");
             session
-        },
+        }
         Err(e) => {
             warn!("SSH not initiated.. error: {:?}", e);
             return Err(e);
-        },
+        }
     };
 
     // set up docker
@@ -44,7 +50,7 @@ pub async fn instance_up() -> Result<(), CliError> {
         Err(e) => {
             warn!("SSH and initial commands failed: {:?}", e);
             return Err(e);
-        },
+        }
     }
 
     // close ssh session

@@ -1,5 +1,4 @@
-
-use std::{collections::HashMap, any::TypeId};
+use std::{any::TypeId, collections::HashMap};
 
 use http_common::ApiRequest;
 
