@@ -62,7 +62,6 @@ pub fn recv_added_asset_id_request(
     global: ResMut<Global>,
     mut http_server: ResMut<HttpServer>,
     mut http_client: ResMut<HttpClient>,
-    mut naia_server: Server,
     mut asset_manager: ResMut<AssetManager>,
 ) {
     while let Some((_addr, request, response_key)) = http_server.receive::<UserAssetIdRequest>() {
@@ -89,7 +88,6 @@ pub fn recv_added_asset_id_request(
 
         if let Some((asset_server_addr, asset_server_port)) = global.get_asset_server_url() {
             asset_manager.user_asset_request(
-                &mut naia_server,
                 &mut http_client,
                 &asset_server_addr,
                 asset_server_port,
@@ -111,7 +109,6 @@ pub fn recv_added_asset_id_request(
     if asset_manager.has_queued_user_asset_requests() {
         if let Some((asset_server_addr, asset_server_port)) = global.get_asset_server_url() {
             asset_manager.process_queued_user_asset_requests(
-                &mut naia_server,
                 &mut http_client,
                 &asset_server_addr,
                 asset_server_port,

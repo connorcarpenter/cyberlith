@@ -5,6 +5,7 @@ use asset_id::{AssetId, ETag};
 #[derive(Message, Debug)]
 pub struct AssetEtagRequest {
     pub asset_id: AssetId,
+    pub etag: ETag,
 }
 
 impl Request for AssetEtagRequest {
@@ -12,17 +13,18 @@ impl Request for AssetEtagRequest {
 }
 
 impl AssetEtagRequest {
-    pub fn new(asset_id: &AssetId) -> Self {
+    pub fn new(asset_id: &AssetId, etag: &ETag) -> Self {
         Self {
             asset_id: *asset_id,
+            etag: *etag,
         }
     }
 }
 
 #[derive(Serde, Clone, Eq, PartialEq, Hash, Debug)]
 pub enum AssetEtagResponseValue {
-    Found(ETag),
-    NotFound,
+    ClientHasOldOrNoAsset,
+    ClientLoadedNonModifiedAsset,
 }
 
 #[derive(Message, Eq, PartialEq, Hash, Debug)]
@@ -33,15 +35,15 @@ pub struct AssetEtagResponse {
 impl Response for AssetEtagResponse {}
 
 impl AssetEtagResponse {
-    pub fn not_found() -> Self {
+    pub fn has_old_or_no_asset() -> Self {
         Self {
-            value: AssetEtagResponseValue::NotFound,
+            value: AssetEtagResponseValue::ClientHasOldOrNoAsset,
         }
     }
 
-    pub fn found(etag: ETag) -> Self {
+    pub fn loaded_non_modified_asset() -> Self {
         Self {
-            value: AssetEtagResponseValue::Found(etag),
+            value: AssetEtagResponseValue::ClientLoadedNonModifiedAsset,
         }
     }
 }

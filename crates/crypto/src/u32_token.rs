@@ -9,7 +9,7 @@ pub struct U32Token {
 
 impl Debug for U32Token {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "U32Token(`{}` or `{}`)", self.as_string(), self.as_u32())
+        write!(f, "`{}`", self.as_string())
     }
 }
 

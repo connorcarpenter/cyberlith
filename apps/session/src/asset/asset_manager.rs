@@ -45,7 +45,6 @@ impl AssetManager {
 
     pub fn process_queued_user_asset_requests(
         &mut self,
-        server: &mut Server,
         http_client: &mut HttpClient,
         asset_server_addr: &str,
         asset_server_port: u16,
@@ -53,7 +52,6 @@ impl AssetManager {
         for (user_key, asset_id, added) in std::mem::take(&mut self.queued_user_asset_requests) {
             info!("processing queued user asset request..");
             self.user_asset_request(
-                server,
                 http_client,
                 asset_server_addr,
                 asset_server_port,
@@ -66,7 +64,6 @@ impl AssetManager {
 
     pub fn user_asset_request(
         &mut self,
-        server: &mut Server,
         http_client: &mut HttpClient,
         asset_server_addr: &str,
         asset_server_port: u16,
@@ -76,7 +73,6 @@ impl AssetManager {
     ) {
         let user_assets = self.users.get_mut(&user_key).unwrap();
         user_assets.user_asset_request(
-            server,
             http_client,
             asset_server_addr,
             asset_server_port,
@@ -93,13 +89,19 @@ impl AssetManager {
     ) -> Option<Vec<(UserKey, AssetId)>> {
         let mut pending_requests = Vec::new();
         for user_assets in self.users.values_mut() {
-            let (asset_server_responses, pending_client_requests) =
-                user_assets.process_in_flight_requests(server, http_client);
+            // process first flight (to asset server)
+            let asset_server_responses = user_assets.process_first_flight_requests(http_client);
             if let Some(asset_server_responses) = asset_server_responses {
-                for (asset_id, etag, data) in asset_server_responses {
-                    self.asset_cache.insert_data(asset_id, etag, data);
+                for (asset_id, etag, data_opt) in asset_server_responses {
+                    if let Some(new_data) = data_opt {
+                        self.asset_cache.insert_data(asset_id, etag, new_data);
+                    }
+
+                    user_assets.send_second_flight(server, &asset_id, &etag);
                 }
             }
+            // process second flight (to client)
+            let pending_client_requests = user_assets.process_second_flight_requests(server);
             if let Some(mut pending_client_requests) = pending_client_requests {
                 pending_requests.append(&mut pending_client_requests);
             }

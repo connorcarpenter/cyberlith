@@ -19,14 +19,37 @@ impl AssetCache {
     }
 
     pub fn handle_etag_request(&self, request: AssetEtagRequest) -> AssetEtagResponse {
+
         // TODO: currently this will ALWAYS return 'not found' because we don't add any assets to the cache
-        match self.map.get(&request.asset_id) {
-            Some(etag) => AssetEtagResponse::found(*etag),
-            None => AssetEtagResponse::not_found(),
+
+        let asset_id = request.asset_id;
+        let asset_etag = request.etag;
+
+        let Some(old_etag) = self.map.get(&asset_id) else {
+            // client has no asset
+            return AssetEtagResponse::has_old_or_no_asset();
+        };
+        if old_etag != &asset_etag {
+            // client has old asset
+            return AssetEtagResponse::has_old_or_no_asset();
         }
+        // client has current asset
+
+        // TODO: load asset into memory!
+        todo!();
+
+        return AssetEtagResponse::loaded_non_modified_asset();
     }
 
-    pub fn handle_asset_data_message(&mut self, asset_data_message: AssetDataMessage) {
+    pub fn handle_asset_data_message(&mut self, message: AssetDataMessage) {
+
+        let asset_id = message.asset_id;
+        let asset_etag = message.asset_etag;
+        let asset_data = message.asset_data;
+
+        self.map.insert(asset_id, asset_etag);
+
+        // TODO: load asset into memory!
         todo!();
     }
 }
