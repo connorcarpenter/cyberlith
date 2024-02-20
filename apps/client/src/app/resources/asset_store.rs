@@ -9,13 +9,15 @@ use game_engine::{
 
 #[derive(Resource)]
 pub struct AssetStore {
-    map: HashMap<AssetId, ETag>,
+    metadata_store: HashMap<AssetId, ETag>,
+    data_store: HashMap<AssetId, Vec<u8>>,
 }
 
 impl AssetStore {
     pub fn new() -> Self {
         Self {
-            map: HashMap::new(),
+            metadata_store: HashMap::new(),
+            data_store: HashMap::new(),
         }
     }
 
@@ -26,7 +28,7 @@ impl AssetStore {
         let asset_id = request.asset_id;
         let asset_etag = request.etag;
 
-        let Some(old_etag) = self.map.get(&asset_id) else {
+        let Some(old_etag) = self.metadata_store.get(&asset_id) else {
             // client has no asset
             return LoadAssetResponse::has_old_or_no_asset();
         };
@@ -48,7 +50,7 @@ impl AssetStore {
         let asset_etag = message.asset_etag;
         let asset_data = message.asset_data;
 
-        self.map.insert(asset_id, asset_etag);
+        self.metadata_store.insert(asset_id, asset_etag);
 
         // TODO: load asset into memory!
         todo!();
