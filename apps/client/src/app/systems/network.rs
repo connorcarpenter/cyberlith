@@ -6,7 +6,7 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 
-use crate::app::resources::asset_cache::AssetCache;
+use crate::app::resources::asset_store::AssetStore;
 use game_engine::asset::AssetManager;
 use game_engine::{
     config::{ORCHESTRATOR_PORT, PUBLIC_IP_ADDR},
@@ -116,7 +116,7 @@ pub fn session_connect_events(
 
 pub fn session_message_events(
     mut world_client: WorldClient,
-    mut asset_cache: ResMut<AssetCache>,
+    mut asset_cache: ResMut<AssetStore>,
     mut event_reader: EventReader<SessionMessageEvents>,
 ) {
     for events in event_reader.read() {
@@ -144,7 +144,7 @@ pub fn session_message_events(
 
 pub fn session_request_events(
     mut session_client: SessionClient,
-    mut asset_cache: ResMut<AssetCache>,
+    mut asset_cache: ResMut<AssetStore>,
     mut event_reader: EventReader<SessionRequestEvents>,
 ) {
     for events in event_reader.read() {

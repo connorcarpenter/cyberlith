@@ -1,5 +1,6 @@
-use bevy_ecs::prelude::Resource;
 use std::collections::HashMap;
+
+use bevy_ecs::prelude::Resource;
 
 use game_engine::{
     session::{AssetEtagRequest, AssetDataMessage, AssetEtagResponse},
@@ -7,11 +8,11 @@ use game_engine::{
 };
 
 #[derive(Resource)]
-pub struct AssetCache {
+pub struct AssetStore {
     map: HashMap<AssetId, ETag>,
 }
 
-impl AssetCache {
+impl AssetStore {
     pub fn new() -> Self {
         Self {
             map: HashMap::new(),

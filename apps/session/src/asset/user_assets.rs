@@ -11,7 +11,7 @@ use session_server_naia_proto::{channels::{PrimaryChannel, RequestChannel}, mess
 use asset_id::{AssetId, ETag};
 use bevy_http_client::{HttpClient, ResponseKey};
 
-use crate::asset::asset_cache::AssetCache;
+use crate::asset::asset_store::AssetStore;
 
 struct FirstFlightRequest {
     asset_server_request: AssetRequest,
@@ -119,7 +119,7 @@ impl UserAssets {
         http_client: &mut HttpClient,
         asset_server_addr: &str,
         asset_server_port: u16,
-        asset_store: &AssetCache,
+        asset_store: &AssetStore,
         asset_id: &AssetId,
         added: bool,
     ) {
@@ -249,7 +249,7 @@ impl UserAssets {
     pub(crate) fn send_client_asset_data(
         &mut self,
         server: &mut Server,
-        asset_store: &AssetCache,
+        asset_store: &AssetStore,
         asset_id: &AssetId,
     ) {
         info!("sending asset data to client: {:?}", asset_id);
@@ -268,7 +268,7 @@ impl UserAssets {
         http_client: &mut HttpClient,
         asset_server_addr: &str,
         asset_server_port: u16,
-        asset_store: &AssetCache,
+        asset_store: &AssetStore,
         asset_id: &AssetId,
     ) {
         // does user already have the asset in memory? if so, return
