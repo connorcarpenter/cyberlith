@@ -1,7 +1,7 @@
 use std::f32::consts::PI;
 
 use math::{Quat, Vec2, Vec3};
-use storage::AssetHash;
+use storage::StorageHash;
 
 use crate::{base::CpuMesh, components::Transform};
 
@@ -82,7 +82,7 @@ pub fn normalize_angle(angle: f32) -> f32 {
 #[derive(Hash)]
 pub struct Line;
 
-impl AssetHash<CpuMesh> for Line {}
+impl StorageHash<CpuMesh> for Line {}
 
 impl From<Line> for CpuMesh {
     fn from(_line: Line) -> Self {

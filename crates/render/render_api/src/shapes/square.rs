@@ -1,5 +1,5 @@
 use math::Vec3;
-use storage::AssetHash;
+use storage::StorageHash;
 
 use crate::base::CpuMesh;
 
@@ -12,7 +12,7 @@ impl Square {
     }
 }
 
-impl AssetHash<CpuMesh> for Square {}
+impl StorageHash<CpuMesh> for Square {}
 
 impl From<Square> for CpuMesh {
     fn from(_square: Square) -> Self {
@@ -48,7 +48,7 @@ impl HollowRectangle {
     }
 }
 
-impl AssetHash<CpuMesh> for HollowRectangle {}
+impl StorageHash<CpuMesh> for HollowRectangle {}
 
 impl From<HollowRectangle> for CpuMesh {
     fn from(square: HollowRectangle) -> Self {

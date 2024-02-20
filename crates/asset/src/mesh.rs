@@ -3,7 +3,7 @@ use bevy_log::info;
 use asset_id::AssetId;
 use math::Vec3;
 use render_api::base::CpuMesh;
-use storage::{AssetHash, Handle, Storage};
+use storage::{StorageHash, Handle, Storage};
 
 use crate::asset_dependency::AssetDependency;
 use crate::data_from_asset_id;
@@ -46,8 +46,8 @@ impl MeshFile {
     }
 }
 
-impl AssetHash<CpuMesh> for MeshAssetId {}
-impl AssetHash<MeshFile> for AssetId {}
+impl StorageHash<CpuMesh> for MeshAssetId {}
+impl StorageHash<MeshFile> for AssetId {}
 
 impl From<AssetId> for MeshFile {
     fn from(asset_id: AssetId) -> Self {

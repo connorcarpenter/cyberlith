@@ -1,4 +1,4 @@
-use storage::AssetHash;
+use storage::StorageHash;
 
 use super::CpuTextureData;
 use crate::base::CpuTextureDataType;
@@ -20,7 +20,7 @@ pub struct CpuTexture2D {
     height: u32,
 }
 
-impl AssetHash<CpuTexture2D> for CpuTexture2D {}
+impl StorageHash<CpuTexture2D> for CpuTexture2D {}
 
 impl CpuTexture2D {
     pub fn from_size(width: u32, height: u32) -> Self {

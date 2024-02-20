@@ -5,13 +5,13 @@ use bevy_log::info;
 
 use math::Vec3;
 use render_api::base::{CpuMaterial, CpuMesh, CpuSkin};
-use storage::{AssetHash, Handle, Storage};
+use storage::{StorageHash, Handle, Storage};
 
 use crate::{
     asset_dependency::AssetDependency, asset_handle::AssetHandleImpl, AssetHandle, PaletteData,
 };
 
-impl AssetHash<IconData> for String {}
+impl StorageHash<IconData> for String {}
 
 pub struct IconData {
     palette_file: AssetDependency<PaletteData>,

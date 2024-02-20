@@ -4,7 +4,7 @@ use render_api::{
     components::{RenderObjectBundle, Transform},
     shapes::set_2d_line_transform,
 };
-use storage::{AssetHash, Handle, Storage};
+use storage::{StorageHash, Handle, Storage};
 
 pub fn create_2d_edge_arrow(
     meshes: &mut Storage<CpuMesh>,
@@ -48,7 +48,7 @@ impl Arrow2d {
     }
 }
 
-impl AssetHash<CpuMesh> for Arrow2d {}
+impl StorageHash<CpuMesh> for Arrow2d {}
 
 impl From<Arrow2d> for CpuMesh {
     fn from(arrow_2d: Arrow2d) -> Self {

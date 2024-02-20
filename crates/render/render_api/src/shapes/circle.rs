@@ -1,5 +1,5 @@
 use math::Vec3;
-use storage::AssetHash;
+use storage::StorageHash;
 
 use crate::base::CpuMesh;
 
@@ -9,7 +9,7 @@ pub struct Circle {
     pub angle_subdivisions: u16,
 }
 
-impl AssetHash<CpuMesh> for Circle {}
+impl StorageHash<CpuMesh> for Circle {}
 
 impl Circle {
     pub fn new(angle_subdivisions: u16) -> Self {
@@ -46,7 +46,7 @@ pub struct HollowCircle {
     pub angle_subdivisions: u16,
 }
 
-impl AssetHash<CpuMesh> for HollowCircle {}
+impl StorageHash<CpuMesh> for HollowCircle {}
 
 impl HollowCircle {
     pub fn new(angle_subdivisions: u16) -> Self {

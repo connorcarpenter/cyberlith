@@ -3,7 +3,7 @@ use render_api::{
     base::{CpuMaterial, CpuMesh},
     components::{RenderObjectBundle, Transform},
 };
-use storage::{AssetHash, Handle, Storage};
+use storage::{StorageHash, Handle, Storage};
 
 pub fn create_3d_edge_line(
     meshes: &mut Storage<CpuMesh>,
@@ -28,7 +28,7 @@ pub fn create_3d_edge_line(
 #[derive(Hash)]
 struct Line3d;
 
-impl AssetHash<CpuMesh> for Line3d {}
+impl StorageHash<CpuMesh> for Line3d {}
 
 impl From<Line3d> for CpuMesh {
     fn from(_: Line3d) -> Self {

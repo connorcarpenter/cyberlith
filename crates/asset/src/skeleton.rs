@@ -7,9 +7,9 @@ use bevy_log::info;
 
 use math::{quat_from_spin_direction, Quat, Vec3};
 use render_api::components::Transform;
-use storage::AssetHash;
+use storage::StorageHash;
 
-impl AssetHash<SkeletonData> for String {}
+impl StorageHash<SkeletonData> for String {}
 
 pub struct SkeletonData {
     // x, y, z, Option<parent_id, angle>, Option<vertex_name>

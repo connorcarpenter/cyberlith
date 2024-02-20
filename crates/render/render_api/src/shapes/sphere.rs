@@ -1,5 +1,5 @@
 use math::Vec3;
-use storage::AssetHash;
+use storage::StorageHash;
 
 use crate::base::CpuMesh;
 
@@ -14,7 +14,7 @@ impl Sphere {
     }
 }
 
-impl AssetHash<CpuMesh> for Sphere {}
+impl StorageHash<CpuMesh> for Sphere {}
 
 impl From<Sphere> for CpuMesh {
     fn from(sphere: Sphere) -> Self {

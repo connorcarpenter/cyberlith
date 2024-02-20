@@ -4,7 +4,7 @@ use bevy_log::info;
 
 use asset_id::AssetId;
 use render_api::base::{CpuMaterial, CpuMesh, CpuSkin};
-use storage::{AssetHash, Handle, Storage};
+use storage::{StorageHash, Handle, Storage};
 
 use crate::{
     asset_dependency::AssetDependency, asset_handle::AssetHandleImpl, AssetHandle, MeshFile,
@@ -20,7 +20,7 @@ pub struct SkinData {
     face_color_ids: Vec<(u16, u8)>,
 }
 
-impl AssetHash<SkinData> for String {}
+impl StorageHash<SkinData> for String {}
 
 impl Default for SkinData {
     fn default() -> Self {

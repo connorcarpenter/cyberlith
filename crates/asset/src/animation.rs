@@ -5,7 +5,7 @@ use bevy_log::info;
 
 use math::Quat;
 use render_api::components::Transform;
-use storage::{AssetHash, Handle};
+use storage::{StorageHash, Handle};
 
 use crate::{
     asset_dependency::{AssetComponentHandle, AssetDependency},
@@ -13,7 +13,7 @@ use crate::{
     AssetHandle, ModelData, SkeletonData,
 };
 
-impl AssetHash<AnimationData> for String {}
+impl StorageHash<AnimationData> for String {}
 
 pub struct AnimationData {
     skeleton_file: AssetDependency<SkeletonData>,

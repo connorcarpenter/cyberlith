@@ -1,12 +1,12 @@
 use math::{triangle_is_ccw_toward_point, Vec3};
-use storage::AssetHash;
+use storage::StorageHash;
 
 use crate::base::CpuMesh;
 
 #[derive(Hash)]
 pub struct Cube;
 
-impl AssetHash<CpuMesh> for Cube {}
+impl StorageHash<CpuMesh> for Cube {}
 
 impl From<Cube> for CpuMesh {
     fn from(_cube: Cube) -> Self {

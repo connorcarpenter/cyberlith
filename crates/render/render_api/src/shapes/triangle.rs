@@ -1,5 +1,5 @@
 use math::{Vec2, Vec3};
-use storage::AssetHash;
+use storage::StorageHash;
 
 use crate::base::CpuMesh;
 
@@ -11,7 +11,7 @@ pub struct Triangle {
     pub c: (i16, i16, i16),
 }
 
-impl AssetHash<CpuMesh> for Triangle {}
+impl StorageHash<CpuMesh> for Triangle {}
 
 impl Triangle {
     pub fn new_3d(a: Vec3, b: Vec3, c: Vec3) -> Self {
@@ -67,7 +67,7 @@ pub struct HollowTriangle {
     pub c: (i16, i16, i16),
 }
 
-impl AssetHash<CpuMesh> for HollowTriangle {}
+impl StorageHash<CpuMesh> for HollowTriangle {}
 
 impl HollowTriangle {
     pub fn new_2d(a: Vec2, b: Vec2, c: Vec2) -> Self {

@@ -1,9 +1,9 @@
 use bevy_log::info;
 
 use render_api::base::{Color, CpuMaterial};
-use storage::{AssetHash, Handle, Storage};
+use storage::{StorageHash, Handle, Storage};
 
-impl AssetHash<PaletteData> for String {}
+impl StorageHash<PaletteData> for String {}
 
 pub(crate) enum PaletteColor {
     Raw(u8, u8, u8),

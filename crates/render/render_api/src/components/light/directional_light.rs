@@ -6,7 +6,7 @@ use std::{
 use bevy_ecs::component::Component;
 
 use math::Vec3;
-use storage::AssetHash;
+use storage::StorageHash;
 
 use crate::base::Color;
 
@@ -34,7 +34,7 @@ impl Hash for DirectionalLight {
     }
 }
 
-impl AssetHash<DirectionalLight> for DirectionalLight {}
+impl StorageHash<DirectionalLight> for DirectionalLight {}
 
 impl DirectionalLight {
     /// Creates a new directional light.

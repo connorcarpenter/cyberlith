@@ -3,7 +3,7 @@ use render_api::{
     base::{CpuMaterial, CpuMesh},
     components::{RenderObjectBundle, Transform},
 };
-use storage::{AssetHash, Handle, Storage};
+use storage::{StorageHash, Handle, Storage};
 
 pub fn create_3d_edge_diamond(
     meshes: &mut Storage<CpuMesh>,
@@ -28,7 +28,7 @@ pub fn create_3d_edge_diamond(
 #[derive(Hash)]
 struct Diamond3d;
 
-impl AssetHash<CpuMesh> for Diamond3d {}
+impl StorageHash<CpuMesh> for Diamond3d {}
 
 impl From<Diamond3d> for CpuMesh {
     fn from(_: Diamond3d) -> Self {

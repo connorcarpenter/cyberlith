@@ -1,6 +1,6 @@
 use std::hash::{Hash, Hasher};
 
-use storage::AssetHash;
+use storage::StorageHash;
 
 use crate::base::Color;
 
@@ -13,7 +13,7 @@ pub struct CpuMaterial {
     pub shine_amount: f32,
 }
 
-impl AssetHash<CpuMaterial> for CpuMaterial {}
+impl StorageHash<CpuMaterial> for CpuMaterial {}
 
 impl Hash for CpuMaterial {
     fn hash<H: Hasher>(&self, state: &mut H) {
