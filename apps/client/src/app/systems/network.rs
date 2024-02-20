@@ -116,6 +116,7 @@ pub fn session_connect_events(
 
 pub fn session_message_events(
     mut world_client: WorldClient,
+    mut asset_cache: ResMut<AssetCache>,
     mut event_reader: EventReader<SessionMessageEvents>,
 ) {
     for events in event_reader.read() {
@@ -134,9 +135,9 @@ pub fn session_message_events(
             world_client.connect(socket);
         }
         for asset_message in events.read::<SessionPrimaryChannel, AssetDataMessage>() {
-            info!("received Asset Data Message from Session Server!");
+            info!("received Asset Data Message from Session Server! (id: {:?}, etag: {:?})", asset_message.asset_id, asset_message.asset_etag);
 
-            // TODO!
+            asset_cache.handle_asset_data_message(asset_message);
         }
     }
 }

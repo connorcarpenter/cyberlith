@@ -12,11 +12,11 @@ impl AssetData {
     }
 }
 
-pub struct AssetStore {
+pub struct AssetCache {
     map: HashMap<AssetId, AssetData>,
 }
 
-impl AssetStore {
+impl AssetCache {
     pub fn new() -> Self {
         Self {
             map: HashMap::new(),

@@ -1,6 +1,6 @@
 mod asset_connection;
 mod asset_manager;
-mod asset_store;
+mod asset_cache;
 mod global;
 mod http_server;
 mod naia;

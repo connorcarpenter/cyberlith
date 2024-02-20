@@ -9,12 +9,12 @@ use naia_bevy_server::{Server, UserKey};
 use asset_id::AssetId;
 use bevy_http_client::HttpClient;
 
-use crate::{asset_store::AssetStore, user_assets::UserAssets};
+use crate::{asset_cache::AssetCache, user_assets::UserAssets};
 
 #[derive(Resource)]
 pub struct AssetManager {
     users: HashMap<UserKey, UserAssets>,
-    asset_store: AssetStore,
+    asset_store: AssetCache,
     queued_user_asset_requests: Vec<(UserKey, AssetId, bool)>,
 }
 
@@ -22,7 +22,7 @@ impl AssetManager {
     pub fn new() -> Self {
         Self {
             users: HashMap::new(),
-            asset_store: AssetStore::new(),
+            asset_store: AssetCache::new(),
             queued_user_asset_requests: Vec::new(),
         }
     }

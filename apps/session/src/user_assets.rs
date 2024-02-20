@@ -14,7 +14,7 @@ use session_server_naia_proto::{
     messages::{AssetEtagRequest, AssetEtagResponse},
 };
 
-use crate::asset_store::AssetStore;
+use crate::asset_cache::AssetCache;
 
 struct FirstFlightRequest {
     client_etag_response_key: Option<ResponseReceiveKey<AssetEtagResponse>>,
@@ -97,7 +97,7 @@ impl UserAssets {
         http_client: &mut HttpClient,
         asset_server_addr: &str,
         asset_server_port: u16,
-        asset_store: &AssetStore,
+        asset_store: &AssetCache,
         asset_id: &AssetId,
         added: bool,
     ) {
@@ -240,7 +240,7 @@ impl UserAssets {
     pub(crate) fn send_client_asset_data(
         &mut self,
         server: &mut Server,
-        asset_store: &AssetStore,
+        asset_store: &AssetCache,
         asset_id: &AssetId,
     ) {
         info!("sending asset data to client: {:?}", asset_id);
@@ -260,7 +260,7 @@ impl UserAssets {
         http_client: &mut HttpClient,
         asset_server_addr: &str,
         asset_server_port: u16,
-        asset_store: &AssetStore,
+        asset_store: &AssetCache,
         asset_id: &AssetId,
     ) {
         // does user already have the asset in memory? if so, return

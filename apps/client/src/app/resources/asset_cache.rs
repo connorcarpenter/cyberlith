@@ -2,7 +2,7 @@ use bevy_ecs::prelude::Resource;
 use std::collections::HashMap;
 
 use game_engine::{
-    session::{AssetEtagRequest, AssetEtagResponse},
+    session::{AssetEtagRequest, AssetDataMessage, AssetEtagResponse},
     AssetId, ETag,
 };
 
@@ -24,5 +24,9 @@ impl AssetCache {
             Some(etag) => AssetEtagResponse::found(*etag),
             None => AssetEtagResponse::not_found(),
         }
+    }
+
+    pub fn handle_asset_data_message(&mut self, asset_data_message: AssetDataMessage) {
+        todo!();
     }
 }
