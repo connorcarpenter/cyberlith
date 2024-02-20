@@ -10,5 +10,7 @@ publish = false
 
 [dependencies]
 naia-bevy-shared = { path = "../../../../naia/adapters/bevy/shared" }
+asset_id = { path = "../../../crates/asset/asset_id" }
+
 cfg-if = { version = "1.0" }
 log = { version = "0.4" }

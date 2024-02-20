@@ -60,16 +60,18 @@ pub fn recv_world_connect_response(
 
 pub fn recv_added_asset_id_request(
     global: ResMut<Global>,
-    mut server: ResMut<HttpServer>,
+    mut http_server: ResMut<HttpServer>,
+    mut http_client: ResMut<HttpClient>,
+    mut naia_server: Server,
     mut asset_manager: ResMut<AssetManager>,
 ) {
-    while let Some((_addr, request, response_key)) = server.receive::<UserAssetIdRequest>() {
+    while let Some((_addr, request, response_key)) = http_server.receive::<UserAssetIdRequest>() {
 
         let world_instance_secret = request.world_instance_secret();
 
         if !global.world_instance_exists(world_instance_secret) {
             warn!("invalid request secret");
-            server.respond(response_key, Err(ResponseError::Unauthenticated));
+            http_server.respond(response_key, Err(ResponseError::Unauthenticated));
             continue;
         }
 
@@ -81,10 +83,11 @@ pub fn recv_added_asset_id_request(
 
         let user_key = global.get_user_key_from_world_instance(world_instance_secret, user_id).unwrap();
 
-        asset_manager.user_asset_request(user_key, asset_id, added);
+        let (asset_server_addr, asset_server_port) = global.get_asset_server_url().unwrap();
+        asset_manager.user_asset_request(&mut naia_server, &mut http_client, &asset_server_addr, asset_server_port, user_key, asset_id, added);
 
         info!("UserAssetId response to world server ..");
 
-        server.respond(response_key, Ok(UserAssetIdResponse));
+        http_server.respond(response_key, Ok(UserAssetIdResponse));
     }
 }

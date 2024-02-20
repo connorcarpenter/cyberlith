@@ -6,6 +6,8 @@ mod world_connection;
 mod user_connection;
 mod global;
 mod asset_manager;
+mod asset_store;
+mod user_assets;
 
 use std::time::Duration;
 
@@ -22,6 +24,7 @@ use session_server_naia_proto::{protocol as naia_protocol};
 use session_server_http_proto::{protocol as http_protocol};
 
 use global::Global;
+
 use crate::asset_manager::AssetManager;
 
 fn main() {
@@ -67,6 +70,8 @@ fn main() {
                 world_connection::send_world_connect_request,
                 world_connection::recv_world_connect_response,
                 world_connection::recv_added_asset_id_request,
+
+                asset_manager::update,
             )
                 .in_set(ReceiveEvents),
         )

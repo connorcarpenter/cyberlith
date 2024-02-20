@@ -15,6 +15,7 @@ pub enum ConnectionState {
 }
 
 struct UserData {
+    // LATER this may be used to send meaningful data about a user back to the given world server instance..
     world_instance_secret: String,
     user_id: u64,
 }
@@ -227,5 +228,9 @@ impl Global {
 
     pub fn clear_asset_server(&mut self) {
         self.asset_server_opt = None;
+    }
+
+    pub fn get_asset_server_url(&self) -> Option<(String, u16)> {
+        self.asset_server_opt.as_ref().map(|(addr, port)| (addr.clone(), *port))
     }
 }

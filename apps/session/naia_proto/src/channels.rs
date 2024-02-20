@@ -3,6 +3,9 @@ use naia_bevy_shared::{Channel, ChannelDirection, ChannelMode, Protocol, Protoco
 #[derive(Channel)]
 pub struct PrimaryChannel;
 
+#[derive(Channel)]
+pub struct RequestChannel;
+
 // Plugin
 pub struct ChannelsPlugin;
 
@@ -11,6 +14,10 @@ impl ProtocolPlugin for ChannelsPlugin {
         protocol
             .add_channel::<PrimaryChannel>(
                 ChannelDirection::ServerToClient,
+                ChannelMode::UnorderedReliable(ReliableSettings::default()),
+            )
+            .add_channel::<RequestChannel>(
+                ChannelDirection::Bidirectional,
                 ChannelMode::UnorderedReliable(ReliableSettings::default()),
             );
     }

@@ -8,14 +8,14 @@ use http_common::{ApiRequest, ApiResponse, Method};
 pub struct AssetRequest {
     // TODO: secret?
     asset_id: AssetId,
-    etag: ETag,
+    etag_opt: Option<ETag>,
 }
 
 impl AssetRequest {
-    pub fn new(asset_id: AssetId, etag: ETag) -> Self {
+    pub fn new(asset_id: AssetId, etag_opt: Option<ETag>) -> Self {
         Self {
             asset_id,
-            etag,
+            etag_opt,
         }
     }
 
@@ -23,21 +23,21 @@ impl AssetRequest {
         self.asset_id
     }
 
-    pub fn etag(&self) -> ETag {
-        self.etag
+    pub fn etag_opt(&self) -> Option<ETag> {
+        self.etag_opt
     }
 }
 
 // Response
 #[derive(Serde, PartialEq, Clone)]
 pub enum AssetResponseValue {
-    AssetData(Vec<u8>),
+    Modified(ETag, Vec<u8>),
     NotModified,
 }
 
 #[derive(Serde, PartialEq, Clone)]
 pub struct AssetResponse {
-    value: AssetResponseValue,
+    pub value: AssetResponseValue,
 }
 
 impl AssetResponse {
@@ -47,9 +47,9 @@ impl AssetResponse {
         }
     }
 
-    pub fn asset_data(data: Vec<u8>) -> Self {
+    pub fn modified(etag: ETag, data: Vec<u8>) -> Self {
         Self {
-            value: AssetResponseValue::AssetData(data),
+            value: AssetResponseValue::Modified(etag, data),
         }
     }
 }

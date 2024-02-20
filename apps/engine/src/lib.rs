@@ -29,15 +29,19 @@ pub mod orchestrator {
     pub use orchestrator_http_proto::*;
 }
 pub mod session {
-    use naia_bevy_client::{Client, events::{ConnectEvent, MessageEvents}};
+    use naia_bevy_client::{Client, events::{ConnectEvent, RequestEvents, MessageEvents}};
 
     use super::client_markers::Session;
 
     pub type SessionClient<'w> = Client<'w, Session>;
     pub type SessionConnectEvent = ConnectEvent<Session>;
     pub type SessionMessageEvents = MessageEvents<Session>;
+    pub type SessionRequestEvents = RequestEvents<Session>;
 
-    pub use session_server_naia_proto::{messages::{Auth as SessionAuth, WorldConnectToken}, channels::PrimaryChannel as SessionPrimaryChannel};
+    pub use session_server_naia_proto::{
+        messages::{Auth as SessionAuth, WorldConnectToken, AssetEtagRequest, AssetEtagResponse, AssetDataMessage},
+        channels::{PrimaryChannel as SessionPrimaryChannel, RequestChannel as SessionRequestChannel}
+    };
 }
 pub mod world {
     use naia_bevy_client::{Client, events::{ConnectEvent}};

@@ -9,7 +9,7 @@ use bevy_log::info;
 use game_engine::{
     http::HttpClient,
     naia::{Timer, WebrtcSocket},
-    session::{WorldConnectToken, SessionAuth, SessionClient, SessionConnectEvent, SessionMessageEvents, SessionPrimaryChannel},
+    session::{AssetDataMessage, AssetEtagRequest, WorldConnectToken, SessionAuth, SessionClient, SessionConnectEvent, SessionRequestEvents, SessionMessageEvents, SessionRequestChannel, SessionPrimaryChannel},
     orchestrator::LoginRequest,
     world::{WorldClient, WorldAuth, WorldConnectEvent},
     config::{PUBLIC_IP_ADDR, ORCHESTRATOR_PORT},
@@ -114,6 +114,23 @@ pub fn session_message_events(
                 world_client.socket_config()
             );
             world_client.connect(socket);
+        }
+        for asset_message in events.read::<SessionPrimaryChannel, AssetDataMessage>() {
+            info!("received Asset Data Message from Session Server!");
+
+            todo!();
+        }
+    }
+}
+
+pub fn session_request_events(
+    mut event_reader: EventReader<SessionRequestEvents>,
+) {
+    for events in event_reader.read() {
+        for (response_send_key, request) in events.read::<SessionRequestChannel, AssetEtagRequest>() {
+            info!("received Asset Etag Request from Session Server!");
+
+            todo!();
         }
     }
 }

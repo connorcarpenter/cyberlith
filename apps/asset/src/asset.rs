@@ -25,19 +25,22 @@ pub fn endpoint(
 async fn async_impl(state: Arc<RwLock<State>>, request: AssetRequest) -> Result<AssetResponse, ResponseError> {
     info!("Asset request received: {:?}, sending response", request);
     let req_asset_id = request.asset_id();
-    let req_etag = request.etag();
+    let req_etag_opt = request.etag_opt();
     let mut state = state.write().await;
     let asset_map = state.asset_map();
     if let Some(metadata) = asset_map.get(&req_asset_id) {
-        if metadata.etag() == req_etag {
-            Ok(AssetResponse::not_modified())
-        } else {
-            let path = metadata.path().to_string();
-            let Some(asset_data) = state.asset_cache_mut().load(&path) else {
-                return Err(ResponseError::InternalServerError(format!("Failed to load asset data for path: {:?}", path)));
-            };
-            Ok(AssetResponse::asset_data(asset_data))
+        let asset_etag = metadata.etag();
+        if let Some(req_etag) = req_etag_opt {
+            if asset_etag == req_etag {
+                return Ok(AssetResponse::not_modified());
+            }
         }
+
+        let path = metadata.path().to_string();
+        let Some(asset_data) = state.asset_cache_mut().load(&path) else {
+            return Err(ResponseError::InternalServerError(format!("Failed to load asset data for path: {:?}", path)));
+        };
+        return Ok(AssetResponse::modified(asset_etag, asset_data));
     } else {
         return Err(ResponseError::NotFound);
     }

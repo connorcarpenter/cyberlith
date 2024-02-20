@@ -10,6 +10,7 @@ use naia_bevy_server::{
 
 use session_server_naia_proto::messages::Auth;
 use config::{PUBLIC_IP_ADDR, SELF_BINDING_ADDR, SESSION_SERVER_SIGNAL_PORT, SESSION_SERVER_WEBRTC_PORT};
+use crate::asset_manager::AssetManager;
 
 use crate::global::Global;
 
@@ -55,6 +56,7 @@ pub fn connect_events(
     server: Server,
     mut event_reader: EventReader<ConnectEvent>,
     mut global: ResMut<Global>,
+    mut asset_manager: ResMut<AssetManager>,
 ) {
     for ConnectEvent(user_key) in event_reader.read() {
         let address = server.user(user_key).address();
@@ -62,12 +64,20 @@ pub fn connect_events(
         info!("Server connected to: {}", address);
 
         global.init_worldless_user(user_key);
+        asset_manager.register_user(user_key);
     }
 }
 
-pub fn disconnect_events(mut event_reader: EventReader<DisconnectEvent>) {
-    for DisconnectEvent(_user_key, user) in event_reader.read() {
+pub fn disconnect_events(
+    mut event_reader: EventReader<DisconnectEvent>,
+    mut asset_manager: ResMut<AssetManager>,
+) {
+    for DisconnectEvent(user_key, user) in event_reader.read() {
         info!("Server disconnected from: {:?}", user.address);
+
+        // TODO: probably need to deregister user from global?
+
+        asset_manager.deregister_user(user_key);
     }
 }
 
