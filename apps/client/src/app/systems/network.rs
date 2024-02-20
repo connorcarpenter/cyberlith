@@ -14,7 +14,7 @@ use game_engine::{
     naia::{Timer, WebrtcSocket},
     orchestrator::LoginRequest,
     session::{
-        AssetDataMessage, AssetEtagRequest, SessionAuth, SessionClient, SessionConnectEvent,
+        LoadAssetWithData, LoadAssetRequest, SessionAuth, SessionClient, SessionConnectEvent,
         SessionMessageEvents, SessionPrimaryChannel, SessionRequestChannel, SessionRequestEvents,
         WorldConnectToken,
     },
@@ -134,7 +134,7 @@ pub fn session_message_events(
             );
             world_client.connect(socket);
         }
-        for asset_message in events.read::<SessionPrimaryChannel, AssetDataMessage>() {
+        for asset_message in events.read::<SessionPrimaryChannel, LoadAssetWithData>() {
             info!("received Asset Data Message from Session Server! (id: {:?}, etag: {:?})", asset_message.asset_id, asset_message.asset_etag);
 
             asset_cache.handle_asset_data_message(asset_message);
@@ -148,7 +148,7 @@ pub fn session_request_events(
     mut event_reader: EventReader<SessionRequestEvents>,
 ) {
     for events in event_reader.read() {
-        for (response_send_key, request) in events.read::<SessionRequestChannel, AssetEtagRequest>()
+        for (response_send_key, request) in events.read::<SessionRequestChannel, LoadAssetRequest>()
         {
             info!("received Asset Etag Request from Session Server!");
 

@@ -6,20 +6,20 @@ use bevy_log::info;
 use naia_bevy_server::{ResponseReceiveKey, Server, UserKey};
 
 use asset_server_http_proto::{AssetRequest, AssetResponse, AssetResponseValue};
-use session_server_naia_proto::{channels::{PrimaryChannel, RequestChannel}, messages::{AssetEtagRequest, AssetEtagResponse, AssetDataMessage, AssetEtagResponseValue}};
+use session_server_naia_proto::{channels::{PrimaryChannel, RequestChannel}, messages::{LoadAssetRequest, LoadAssetResponse, LoadAssetWithData, LoadAssetResponseValue}};
 
 use asset_id::{AssetId, ETag};
 use bevy_http_client::{HttpClient, ResponseKey};
 
 use crate::asset::asset_store::AssetStore;
 
-struct FirstFlightRequest {
+struct AssetServerRequestState {
     asset_server_request: AssetRequest,
     asset_server_response_key: Option<ResponseKey<AssetResponse>>,
     asset_server_response: Option<AssetResponse>,
 }
 
-impl FirstFlightRequest {
+impl AssetServerRequestState {
     pub fn new(
         asset_server_request: AssetRequest,
         asset_server_response_key: ResponseKey<AssetResponse>,
@@ -60,48 +60,48 @@ impl FirstFlightRequest {
     }
 }
 
-struct SecondFlightRequest {
-    client_etag_request: AssetEtagRequest,
-    client_etag_response_key: Option<ResponseReceiveKey<AssetEtagResponse>>,
-    client_etag_response: Option<AssetEtagResponse>,
+struct ClientLoadAssetRequestState {
+    load_asset_request: LoadAssetRequest,
+    load_asset_response_key: Option<ResponseReceiveKey<LoadAssetResponse>>,
+    load_asset_response: Option<LoadAssetResponse>,
 }
 
-impl SecondFlightRequest {
+impl ClientLoadAssetRequestState {
     pub fn new(
-        client_etag_request: AssetEtagRequest,
-        client_etag_response_key: ResponseReceiveKey<AssetEtagResponse>,
+        load_asset_request: LoadAssetRequest,
+        load_asset_response_key: ResponseReceiveKey<LoadAssetResponse>,
     ) -> Self {
         Self {
-            client_etag_request,
-            client_etag_response_key: Some(client_etag_response_key),
-            client_etag_response: None,
+            load_asset_request,
+            load_asset_response_key: Some(load_asset_response_key),
+            load_asset_response: None,
         }
     }
 
     pub fn process(&mut self, server: &mut Server) {
-        if let Some(key) = self.client_etag_response_key.as_ref() {
+        if let Some(key) = self.load_asset_response_key.as_ref() {
             if let Some((_user_key, response)) = server.receive_response(key) {
                 info!("received asset etag response from client");
-                self.client_etag_response_key = None;
-                self.client_etag_response = Some(response);
+                self.load_asset_response_key = None;
+                self.load_asset_response = Some(response);
             }
         }
     }
 
     pub fn completed(&self) -> bool {
-        self.client_etag_response.is_some()
+        self.load_asset_response.is_some()
     }
 
-    pub fn unwrap_response(self) -> (AssetEtagRequest, AssetEtagResponse) {
-        (self.client_etag_request, self.client_etag_response.unwrap())
+    pub fn unwrap_response(self) -> (LoadAssetRequest, LoadAssetResponse) {
+        (self.load_asset_request, self.load_asset_response.unwrap())
     }
 }
 
 pub struct UserAssets {
     user_key: UserKey,
     assets_in_memory: HashSet<AssetId>,
-    first_flight_requests: Vec<FirstFlightRequest>,
-    second_flight_requests: Vec<SecondFlightRequest>,
+    asset_server_requests: Vec<AssetServerRequestState>,
+    client_load_asset_requests: Vec<ClientLoadAssetRequestState>,
 }
 
 impl UserAssets {
@@ -109,8 +109,8 @@ impl UserAssets {
         Self {
             user_key: *user_key,
             assets_in_memory: HashSet::new(),
-            first_flight_requests: Vec::new(),
-            second_flight_requests: Vec::new(),
+            asset_server_requests: Vec::new(),
+            client_load_asset_requests: Vec::new(),
         }
     }
 
@@ -140,7 +140,7 @@ impl UserAssets {
         &mut self,
         http_client: &mut HttpClient,
     ) -> Option<Vec<(AssetId, ETag, Option<Vec<u8>>)>> {
-        let first_flight_requests = std::mem::take(&mut self.first_flight_requests);
+        let first_flight_requests = std::mem::take(&mut self.asset_server_requests);
 
         if first_flight_requests.is_empty() {
             return None;
@@ -153,7 +153,7 @@ impl UserAssets {
             if request.completed() {
                 first_flight_responses.push(request.unwrap_response());
             } else {
-                self.first_flight_requests.push(request);
+                self.asset_server_requests.push(request);
             }
         }
 
@@ -195,7 +195,7 @@ impl UserAssets {
         &mut self,
         server: &mut Server,
     ) -> Option<Vec<(UserKey, AssetId)>> {
-        let second_flight_requests = std::mem::take(&mut self.second_flight_requests);
+        let second_flight_requests = std::mem::take(&mut self.client_load_asset_requests);
 
         if second_flight_requests.is_empty() {
             return None;
@@ -208,7 +208,7 @@ impl UserAssets {
             if request.completed() {
                 second_flight_responses.push(request.unwrap_response());
             } else {
-                self.second_flight_requests.push(request);
+                self.client_load_asset_requests.push(request);
             }
         }
 
@@ -222,7 +222,7 @@ impl UserAssets {
             let asset_id = client_etag_req.asset_id;
 
             match client_etag_res.value {
-                AssetEtagResponseValue::ClientHasOldOrNoAsset => {
+                LoadAssetResponseValue::ClientHasOldOrNoAsset => {
                     info!(
                         "client responded with old data for asset {:?}, sending new asset data to client.",
                         asset_id
@@ -230,7 +230,7 @@ impl UserAssets {
 
                     pending_client_requests.push((self.user_key, asset_id));
                 }
-                AssetEtagResponseValue::ClientLoadedNonModifiedAsset => {
+                LoadAssetResponseValue::ClientLoadedNonModifiedAsset => {
                     info!("client already has latest data for asset: {:?}", asset_id);
 
                     self.assets_in_memory.insert(asset_id);
@@ -256,7 +256,7 @@ impl UserAssets {
 
         // get asset etag & data from store
         let (etag, data) = asset_store.get_etag_and_data(asset_id).unwrap();
-        let message = AssetDataMessage::new(*asset_id, etag, data);
+        let message = LoadAssetWithData::new(*asset_id, etag, data);
         server.send_message::<PrimaryChannel, _>(&self.user_key, &message);
 
         // mark asset as in memory
@@ -287,7 +287,7 @@ impl UserAssets {
         );
 
         // save responsekeys for 'load_asset' and 'load_asset_with_data' requests
-        self.first_flight_requests.push(FirstFlightRequest::new(
+        self.asset_server_requests.push(AssetServerRequestState::new(
             asset_server_request,
             asset_server_response_key,
         ));
@@ -296,13 +296,13 @@ impl UserAssets {
     pub fn send_second_flight(&mut self, server: &mut Server, asset_id: &AssetId, etag: &ETag) {
         // send 'load_asset' request to client
         info!("sending load_asset request to client: (asset: {:?}, etag: {:?})", asset_id, etag);
-        let asset_etag_request = AssetEtagRequest::new(asset_id, etag);
+        let asset_etag_request = LoadAssetRequest::new(asset_id, etag);
         let asset_etag_response_key = server
             .send_request::<RequestChannel, _>(&self.user_key, &asset_etag_request)
             .unwrap();
 
         // save responsekeys for 'load_asset' requests
-        self.second_flight_requests.push(SecondFlightRequest::new(
+        self.client_load_asset_requests.push(ClientLoadAssetRequestState::new(
             asset_etag_request,
             asset_etag_response_key,
         ));

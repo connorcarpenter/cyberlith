@@ -3,16 +3,16 @@ use naia_bevy_shared::{Message, Request, Response, Serde};
 use asset_id::{AssetId, ETag};
 
 #[derive(Message, Debug)]
-pub struct AssetEtagRequest {
+pub struct LoadAssetRequest {
     pub asset_id: AssetId,
     pub etag: ETag,
 }
 
-impl Request for AssetEtagRequest {
-    type Response = AssetEtagResponse;
+impl Request for LoadAssetRequest {
+    type Response = LoadAssetResponse;
 }
 
-impl AssetEtagRequest {
+impl LoadAssetRequest {
     pub fn new(asset_id: &AssetId, etag: &ETag) -> Self {
         Self {
             asset_id: *asset_id,
@@ -22,28 +22,28 @@ impl AssetEtagRequest {
 }
 
 #[derive(Serde, Clone, Eq, PartialEq, Hash, Debug)]
-pub enum AssetEtagResponseValue {
+pub enum LoadAssetResponseValue {
     ClientHasOldOrNoAsset,
     ClientLoadedNonModifiedAsset,
 }
 
 #[derive(Message, Eq, PartialEq, Hash, Debug)]
-pub struct AssetEtagResponse {
-    pub value: AssetEtagResponseValue,
+pub struct LoadAssetResponse {
+    pub value: LoadAssetResponseValue,
 }
 
-impl Response for AssetEtagResponse {}
+impl Response for LoadAssetResponse {}
 
-impl AssetEtagResponse {
+impl LoadAssetResponse {
     pub fn has_old_or_no_asset() -> Self {
         Self {
-            value: AssetEtagResponseValue::ClientHasOldOrNoAsset,
+            value: LoadAssetResponseValue::ClientHasOldOrNoAsset,
         }
     }
 
     pub fn loaded_non_modified_asset() -> Self {
         Self {
-            value: AssetEtagResponseValue::ClientLoadedNonModifiedAsset,
+            value: LoadAssetResponseValue::ClientLoadedNonModifiedAsset,
         }
     }
 }

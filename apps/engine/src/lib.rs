@@ -46,7 +46,7 @@ pub mod session {
             PrimaryChannel as SessionPrimaryChannel, RequestChannel as SessionRequestChannel,
         },
         messages::{
-            AssetDataMessage, AssetEtagRequest, AssetEtagResponse, Auth as SessionAuth,
+            LoadAssetWithData, LoadAssetRequest, LoadAssetResponse, Auth as SessionAuth,
             WorldConnectToken,
         },
     };

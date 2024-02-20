@@ -6,11 +6,11 @@ pub use auth::Auth;
 mod world_connect;
 pub use world_connect::WorldConnectToken;
 
-mod asset_etag;
-pub use asset_etag::{AssetEtagRequest, AssetEtagResponse, AssetEtagResponseValue};
+mod load_asset_request;
+pub use load_asset_request::{LoadAssetRequest, LoadAssetResponse, LoadAssetResponseValue};
 
-mod asset_data;
-pub use asset_data::AssetDataMessage;
+mod load_asset_with_data;
+pub use load_asset_with_data::LoadAssetWithData;
 
 // Plugin
 pub struct MessagesPlugin;
@@ -20,7 +20,7 @@ impl ProtocolPlugin for MessagesPlugin {
         protocol
             .add_message::<Auth>()
             .add_message::<WorldConnectToken>()
-            .add_message::<AssetDataMessage>()
-            .add_request::<AssetEtagRequest>();
+            .add_message::<LoadAssetWithData>()
+            .add_request::<LoadAssetRequest>();
     }
 }
