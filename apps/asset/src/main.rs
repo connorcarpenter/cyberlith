@@ -1,13 +1,11 @@
 #[macro_use]
 extern crate cfg_if;
 
-mod asset;
 mod asset_cache;
-mod asset_map;
-mod disconnection;
-mod heartbeat;
-mod registration;
+mod asset_metadata_store;
+mod region_connection;
 mod state;
+mod asset_endpoint;
 
 cfg_if! {
     if #[cfg(feature = "local")] {
@@ -24,7 +22,7 @@ use http_server::{async_dup::Arc, smol::lock::RwLock, Server};
 
 use config::{ASSET_SERVER_PORT, SELF_BINDING_ADDR};
 
-use crate::asset_map::init_asset_map;
+use crate::asset_metadata_store::init_asset_map;
 use crate::state::State;
 
 pub fn main() {
@@ -58,8 +56,8 @@ pub fn main() {
 
     let mut server = Server::new(socket_addr);
 
-    heartbeat::endpoint(&mut server, state.clone());
-    asset::endpoint(&mut server, state.clone());
+    region_connection::recv_heartbeat_request(&mut server, state.clone());
+    asset_endpoint::handle_asset_request(&mut server, state.clone());
 
     server.start();
 
@@ -70,13 +68,13 @@ pub fn main() {
         // send registration
         let state_clone = state.clone();
         Server::spawn(async move {
-            registration::handle(state_clone).await;
+            region_connection::send_register_instance_request(state_clone).await;
         });
 
         // handle disconnection
         let state_clone = state.clone();
         Server::spawn(async move {
-            disconnection::handle(state_clone).await;
+            region_connection::process_region_server_disconnect(state_clone).await;
         });
     }
 }

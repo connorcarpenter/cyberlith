@@ -24,11 +24,11 @@ impl AssetMetadata {
     }
 }
 
-pub struct AssetMap {
+pub struct AssetMetadataStore {
     map: HashMap<AssetId, AssetMetadata>,
 }
 
-impl AssetMap {
+impl AssetMetadataStore {
     fn new() -> Self {
         Self {
             map: HashMap::new(),
@@ -45,8 +45,8 @@ impl AssetMap {
     }
 }
 
-pub fn init_asset_map(path: &str) -> AssetMap {
-    let mut output = AssetMap::new();
+pub fn init_asset_map(path: &str) -> AssetMetadataStore {
+    let mut output = AssetMetadataStore::new();
 
     let entries = fs::read_dir(path).unwrap();
 

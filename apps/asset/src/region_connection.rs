@@ -1,7 +1,8 @@
 use log::{info, warn};
+use asset_server_http_proto::{HeartbeatRequest, HeartbeatResponse};
 
-use http_client::HttpClient;
-use http_server::{async_dup::Arc, smol::lock::RwLock};
+use http_client::{HttpClient, ResponseError};
+use http_server::{async_dup::Arc, Server, smol::lock::RwLock};
 
 use region_server_http_proto::AssetRegisterInstanceRequest;
 
@@ -12,7 +13,7 @@ use config::{
 
 use crate::state::State;
 
-pub async fn handle(state: Arc<RwLock<State>>) {
+pub async fn send_register_instance_request(state: Arc<RwLock<State>>) {
     let mut state = state.write().await;
 
     if state.connected() {
@@ -47,4 +48,32 @@ pub async fn handle(state: Arc<RwLock<State>>) {
     }
 
     state.sent_to_region_server();
+}
+
+pub async fn process_region_server_disconnect(state: Arc<RwLock<State>>) {
+    let mut state = state.write().await;
+
+    if state.connected() {
+        if state.time_to_disconnect() {
+            info!("disconnecting from region server");
+            state.set_disconnected();
+        }
+    }
+}
+
+pub fn recv_heartbeat_request(server: &mut Server, state: Arc<RwLock<State>>) {
+    server.endpoint(move |(_addr, req)| {
+        let state = state.clone();
+        async move { async_recv_heartbeat_request_impl(state, req).await }
+    });
+}
+
+async fn async_recv_heartbeat_request_impl(
+    state: Arc<RwLock<State>>,
+    _: HeartbeatRequest,
+) -> Result<HeartbeatResponse, ResponseError> {
+    info!("Heartbeat request received from region server, sending response");
+    let mut state = state.write().await;
+    state.heard_from_region_server();
+    Ok(HeartbeatResponse)
 }

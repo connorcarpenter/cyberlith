@@ -1,7 +1,7 @@
 use crate::asset_cache::AssetCache;
 use std::time::{Duration, Instant};
 
-use crate::asset_map::AssetMap;
+use crate::asset_metadata_store::AssetMetadataStore;
 
 pub enum ConnectionState {
     Disconnected,
@@ -14,7 +14,7 @@ pub struct State {
     region_server_last_heard: Instant,
     registration_resend_rate: Duration,
     region_server_disconnect_timeout: Duration,
-    asset_map: AssetMap,
+    asset_metadata_store: AssetMetadataStore,
     asset_cache: AssetCache,
 }
 
@@ -23,7 +23,7 @@ impl State {
         registration_resend_rate: Duration,
         region_server_disconnect_timeout: Duration,
         asset_cache_size_kb: u32,
-        asset_map: AssetMap,
+        asset_metadata_store: AssetMetadataStore,
         asset_path: &str,
     ) -> Self {
         Self {
@@ -32,7 +32,7 @@ impl State {
             region_server_last_heard: Instant::now(),
             registration_resend_rate,
             region_server_disconnect_timeout,
-            asset_map,
+            asset_metadata_store: asset_metadata_store,
             asset_cache: AssetCache::new(asset_cache_size_kb, asset_path),
         }
     }
@@ -71,8 +71,8 @@ impl State {
         self.region_server_connection_state = ConnectionState::Disconnected;
     }
 
-    pub fn asset_map(&self) -> &AssetMap {
-        &self.asset_map
+    pub fn asset_metadata_store(&self) -> &AssetMetadataStore {
+        &self.asset_metadata_store
     }
 
     pub fn asset_cache_mut(&mut self) -> &mut AssetCache {

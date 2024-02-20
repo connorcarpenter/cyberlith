@@ -7,14 +7,14 @@ use asset_server_http_proto::{AssetRequest, AssetResponse};
 
 use crate::state::State;
 
-pub fn endpoint(server: &mut Server, state: Arc<RwLock<State>>) {
+pub fn handle_asset_request(server: &mut Server, state: Arc<RwLock<State>>) {
     server.endpoint(move |(_addr, req)| {
         let state = state.clone();
-        async move { async_impl(state, req).await }
+        async move { async_handle_asset_request_impl(state, req).await }
     });
 }
 
-async fn async_impl(
+async fn async_handle_asset_request_impl(
     state: Arc<RwLock<State>>,
     request: AssetRequest,
 ) -> Result<AssetResponse, ResponseError> {
@@ -22,8 +22,8 @@ async fn async_impl(
     let req_asset_id = request.asset_id();
     let req_etag_opt = request.etag_opt();
     let mut state = state.write().await;
-    let asset_map = state.asset_map();
-    if let Some(metadata) = asset_map.get(&req_asset_id) {
+    let asset_metadata_store = state.asset_metadata_store();
+    if let Some(metadata) = asset_metadata_store.get(&req_asset_id) {
         let asset_etag = metadata.etag();
         if let Some(req_etag) = req_etag_opt {
             if asset_etag == req_etag {

@@ -12,6 +12,7 @@ impl AssetData {
     }
 }
 
+/// Stores asset data and etags in RAM
 pub struct AssetStore {
     map: HashMap<AssetId, AssetData>,
 }

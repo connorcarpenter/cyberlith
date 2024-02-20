@@ -1,6 +1,7 @@
 use log::{info, warn};
 use std::collections::{HashMap, VecDeque};
 
+/// Stores asset data in RAM, but falls back to disk if over capacity
 pub struct AssetCache {
     capacity_kb: u32,
     current_size_kb: u32,
