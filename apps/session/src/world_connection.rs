@@ -6,13 +6,13 @@ use naia_bevy_server::Server;
 use bevy_http_client::{HttpClient, ResponseError};
 use bevy_http_server::HttpServer;
 
-use config::{REGION_SERVER_PORT, REGION_SERVER_RECV_ADDR};
 use region_server_http_proto::WorldUserLoginRequest;
 use session_server_http_proto::{UserAssetIdRequest, UserAssetIdResponse};
 use session_server_naia_proto::{channels::PrimaryChannel, messages::WorldConnectToken};
 
-use crate::asset_manager::AssetManager;
-use crate::global::Global;
+use config::{REGION_SERVER_PORT, REGION_SERVER_RECV_ADDR};
+
+use crate::{global::Global, asset::asset_manager::AssetManager};
 
 pub fn send_world_connect_request(mut http_client: ResMut<HttpClient>, mut global: ResMut<Global>) {
     let worldless_users = global.take_worldless_users();

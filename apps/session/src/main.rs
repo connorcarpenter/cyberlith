@@ -1,13 +1,5 @@
-mod asset_connection;
-mod asset_manager;
-mod asset_cache;
-mod global;
-mod http_server;
-mod naia;
-mod region_connection;
-mod user_assets;
-mod user_connection;
-mod world_connection;
+
+//
 
 use std::time::Duration;
 
@@ -25,9 +17,17 @@ use bevy_http_server::HttpServerPlugin;
 use session_server_http_proto::protocol as http_protocol;
 use session_server_naia_proto::protocol as naia_protocol;
 
-use global::Global;
+//
 
-use crate::asset_manager::AssetManager;
+mod global;
+mod http_server;
+mod naia;
+mod region_connection;
+mod user_connection;
+mod world_connection;
+mod asset;
+
+use crate::{global::Global, asset::{asset_connection, asset_manager, asset_manager::AssetManager}};
 
 fn main() {
     let instance_secret = crypto::generate_random_string(16);

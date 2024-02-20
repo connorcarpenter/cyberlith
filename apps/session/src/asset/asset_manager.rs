@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
-use bevy_ecs::prelude::Resource;
-use bevy_ecs::system::ResMut;
+use bevy_ecs::{system::ResMut, prelude::Resource};
 use bevy_log::info;
 
 use naia_bevy_server::{Server, UserKey};
@@ -9,12 +8,12 @@ use naia_bevy_server::{Server, UserKey};
 use asset_id::AssetId;
 use bevy_http_client::HttpClient;
 
-use crate::{asset_cache::AssetCache, user_assets::UserAssets};
+use crate::asset::{user_assets::UserAssets, asset_cache::AssetCache};
 
 #[derive(Resource)]
 pub struct AssetManager {
     users: HashMap<UserKey, UserAssets>,
-    asset_store: AssetCache,
+    asset_cache: AssetCache,
     queued_user_asset_requests: Vec<(UserKey, AssetId, bool)>,
 }
 
@@ -22,7 +21,7 @@ impl AssetManager {
     pub fn new() -> Self {
         Self {
             users: HashMap::new(),
-            asset_store: AssetCache::new(),
+            asset_cache: AssetCache::new(),
             queued_user_asset_requests: Vec::new(),
         }
     }
@@ -81,7 +80,7 @@ impl AssetManager {
             http_client,
             asset_server_addr,
             asset_server_port,
-            &self.asset_store,
+            &self.asset_cache,
             asset_id,
             added,
         );
@@ -98,7 +97,7 @@ impl AssetManager {
                 user_assets.process_in_flight_requests(server, http_client);
             if let Some(asset_server_responses) = asset_server_responses {
                 for (asset_id, etag, data) in asset_server_responses {
-                    self.asset_store.insert_data(asset_id, etag, data);
+                    self.asset_cache.insert_data(asset_id, etag, data);
                 }
             }
             if let Some(mut pending_client_requests) = pending_client_requests {
@@ -119,7 +118,7 @@ impl AssetManager {
         asset_id: &AssetId,
     ) {
         let user_assets = self.users.get_mut(user_key).unwrap();
-        user_assets.send_client_asset_data(server, &self.asset_store, asset_id);
+        user_assets.send_client_asset_data(server, &self.asset_cache, asset_id);
     }
 }
 

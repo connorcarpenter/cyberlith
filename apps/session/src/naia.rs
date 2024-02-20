@@ -1,6 +1,7 @@
+use std::net::SocketAddr;
+
 use bevy_ecs::{change_detection::ResMut, event::EventReader};
 use bevy_log::{info, warn};
-use std::net::SocketAddr;
 
 use naia_bevy_server::{
     events::{AuthEvents, ConnectEvent, DisconnectEvent, ErrorEvent},
@@ -8,13 +9,13 @@ use naia_bevy_server::{
     Server,
 };
 
-use crate::asset_manager::AssetManager;
+use session_server_naia_proto::messages::Auth;
+
 use config::{
     PUBLIC_IP_ADDR, SELF_BINDING_ADDR, SESSION_SERVER_SIGNAL_PORT, SESSION_SERVER_WEBRTC_PORT,
 };
-use session_server_naia_proto::messages::Auth;
 
-use crate::global::Global;
+use crate::{global::Global, asset::asset_manager::AssetManager};
 
 pub fn init(mut server: Server) {
     info!("Session Naia Server starting up");

@@ -1,20 +1,17 @@
-use bevy_log::info;
+
 use std::collections::HashSet;
 
+use bevy_log::info;
+
 use naia_bevy_server::{ResponseReceiveKey, Server, UserKey};
+
+use asset_server_http_proto::{AssetRequest, AssetResponse, AssetResponseValue};
+use session_server_naia_proto::{channels::{PrimaryChannel, RequestChannel}, messages::{AssetEtagRequest, AssetEtagResponse, AssetDataMessage, AssetEtagResponseValue}};
 
 use asset_id::{AssetId, ETag};
 use bevy_http_client::{HttpClient, ResponseKey};
 
-use asset_server_http_proto::{AssetRequest, AssetResponse, AssetResponseValue};
-use session_server_naia_proto::channels::PrimaryChannel;
-use session_server_naia_proto::messages::{AssetDataMessage, AssetEtagResponseValue};
-use session_server_naia_proto::{
-    channels::RequestChannel,
-    messages::{AssetEtagRequest, AssetEtagResponse},
-};
-
-use crate::asset_cache::AssetCache;
+use crate::asset::asset_cache::AssetCache;
 
 struct FirstFlightRequest {
     client_etag_response_key: Option<ResponseReceiveKey<AssetEtagResponse>>,
