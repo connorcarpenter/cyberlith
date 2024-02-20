@@ -60,3 +60,4 @@ pub mod storage {
     pub use storage::*;
 }
 pub use renderer::wait_for_finish;
+pub use asset_id::{AssetId, ETag};

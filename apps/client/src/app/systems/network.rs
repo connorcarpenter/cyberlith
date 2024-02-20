@@ -1,21 +1,24 @@
 use std::time::Duration;
 
 use bevy_ecs::{
-    system::{ResMut, Resource},
     event::EventReader,
+    system::{ResMut, Resource},
 };
 use bevy_log::info;
 
 use game_engine::{
+    config::{ORCHESTRATOR_PORT, PUBLIC_IP_ADDR},
     http::HttpClient,
     naia::{Timer, WebrtcSocket},
-    session::{AssetDataMessage, AssetEtagRequest, WorldConnectToken, SessionAuth, SessionClient, SessionConnectEvent, SessionRequestEvents, SessionMessageEvents, SessionRequestChannel, SessionPrimaryChannel},
     orchestrator::LoginRequest,
-    world::{WorldClient, WorldAuth, WorldConnectEvent},
-    config::{PUBLIC_IP_ADDR, ORCHESTRATOR_PORT},
+    session::{AssetDataMessage, AssetEtagRequest, SessionAuth, SessionClient, SessionConnectEvent, SessionMessageEvents, SessionPrimaryChannel, SessionRequestChannel, SessionRequestEvents, WorldConnectToken},
+    world::{WorldAuth, WorldClient, WorldConnectEvent},
 };
+use game_engine::asset::AssetManager;
+use crate::app::resources::asset_cache::AssetCache;
 
-use crate::app::{connection_state::ConnectionState, global::Global};
+use crate::app::resources::connection_state::ConnectionState;
+use crate::app::resources::global::Global;
 
 // ApiTimer
 #[derive(Resource)]
@@ -118,19 +121,25 @@ pub fn session_message_events(
         for asset_message in events.read::<SessionPrimaryChannel, AssetDataMessage>() {
             info!("received Asset Data Message from Session Server!");
 
-            todo!();
+            // TODO!
         }
     }
 }
 
 pub fn session_request_events(
+    mut session_client: SessionClient,
+    mut asset_cache: ResMut<AssetCache>,
     mut event_reader: EventReader<SessionRequestEvents>,
 ) {
     for events in event_reader.read() {
         for (response_send_key, request) in events.read::<SessionRequestChannel, AssetEtagRequest>() {
             info!("received Asset Etag Request from Session Server!");
 
-            todo!();
+            let response = asset_cache.handle_etag_request(request);
+            let response_result = session_client.send_response(&response_send_key, &response);
+            if !response_result {
+                panic!("Failed to send response to session server");
+            }
         }
     }
 }

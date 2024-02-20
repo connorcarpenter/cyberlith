@@ -41,9 +41,10 @@ pub fn main() {
     // setup state
     let registration_resend_rate = Duration::from_secs(5);
     let region_server_disconnect_timeout = Duration::from_secs(16);
-    let asset_map = init_asset_map("assets");
+    let asset_path = "assets";
+    let asset_map = init_asset_map(asset_path);
     let cache_size_kb = 5000; // 5 MB
-    let state = Arc::new(RwLock::new(State::new(registration_resend_rate, region_server_disconnect_timeout, cache_size_kb, asset_map)));
+    let state = Arc::new(RwLock::new(State::new(registration_resend_rate, region_server_disconnect_timeout, cache_size_kb, asset_map, asset_path)));
 
     // setup listening http server
     info!("Asset Server starting up...");

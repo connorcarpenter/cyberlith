@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use bevy_ecs::prelude::Resource;
 use bevy_ecs::system::ResMut;
+use bevy_log::info;
 
 use naia_bevy_server::{Server, UserKey};
 
@@ -50,6 +51,7 @@ impl AssetManager {
         asset_server_port: u16
     ) {
         for (user_key, asset_id, added) in std::mem::take(&mut self.queued_user_asset_requests) {
+            info!("processing queued user asset request..");
             self.user_asset_request(server, http_client, asset_server_addr, asset_server_port, user_key, &asset_id, added);
         }
     }

@@ -79,7 +79,7 @@ pub fn recv_added_asset_id_request(
         let asset_id = request.asset_id();
         let added = request.added();
 
-        info!("UserAssetId request received from world server: (user_id: {:?}, asset_id: {:?})", user_id, asset_id);
+        info!("UserAsset Request received from world server: (user_id: {:?}, asset_id: {:?})", user_id, asset_id);
 
         let user_key = global.get_user_key_from_world_instance(world_instance_secret, user_id).unwrap();
 
@@ -87,10 +87,11 @@ pub fn recv_added_asset_id_request(
             asset_manager.user_asset_request(&mut naia_server, &mut http_client, &asset_server_addr, asset_server_port, user_key, asset_id, added);
         } else {
             // queue for later
+            info!("Asset Server not available, queuing request ..");
             asset_manager.queue_user_asset_request(user_key, asset_id, added);
         }
 
-        info!("UserAssetId response to world server ..");
+        info!("UserAsset Response sent to world server ..");
 
         http_server.respond(response_key, Ok(UserAssetIdResponse));
     }

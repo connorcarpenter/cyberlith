@@ -1,9 +1,11 @@
 
 use bevy_app::{App, Startup, Update};
 
-use game_engine::{render::{resources::WindowSettings, Draw}, EnginePlugin, wait_for_finish};
+use game_engine::{EnginePlugin, render::{Draw, resources::WindowSettings}, wait_for_finish};
+use crate::app::resources::asset_cache::AssetCache;
+use crate::app::resources::global::Global;
 
-use super::{systems::{scene, network}, global::Global};
+use super::systems::{network, scene};
 
 pub fn run() {
     let mut app = App::default();
@@ -20,12 +22,13 @@ pub fn run() {
         .add_systems(Draw, scene::scene_draw)
         // Network Systems
         .init_resource::<network::ApiTimer>()
+        .insert_resource(AssetCache::new())
+        .init_resource::<Global>()
         .add_systems(Update, network::handle_connection)
         .add_systems(Update, network::session_connect_events)
         .add_systems(Update, network::session_message_events)
         .add_systems(Update, network::session_request_events)
-        .add_systems(Update, network::world_connect_events)
-        .init_resource::<Global>();
+        .add_systems(Update, network::world_connect_events);
     app.run();
 }
 

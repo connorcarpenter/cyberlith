@@ -1,6 +1,5 @@
-mod connection_state;
-mod global;
 mod run;
 mod systems;
+mod resources;
 
 pub use run::*;

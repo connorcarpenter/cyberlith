@@ -22,11 +22,7 @@ pub fn fetch_blocking(request: &Request, request_options_opt: Option<RequestOpti
         req = req.set(header.0, header.1);
     }
 
-    let resp = if request.body.is_empty() {
-        req.call()
-    } else {
-        req.send_bytes(&request.body)
-    };
+    let resp = req.send_bytes(&request.body);
 
     let (ok, resp) = match resp {
         Ok(resp) => (true, resp),

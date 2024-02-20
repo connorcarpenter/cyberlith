@@ -38,7 +38,7 @@ async fn async_impl(state: Arc<RwLock<State>>, request: AssetRequest) -> Result<
 
         let path = metadata.path().to_string();
         let Some(asset_data) = state.asset_cache_mut().load(&path) else {
-            return Err(ResponseError::InternalServerError(format!("Failed to load asset data for path: {:?}", path)));
+            return Err(ResponseError::InternalServerError(format!("Failed to load asset data for path: `{}`", path)));
         };
         return Ok(AssetResponse::modified(asset_etag, asset_data));
     } else {

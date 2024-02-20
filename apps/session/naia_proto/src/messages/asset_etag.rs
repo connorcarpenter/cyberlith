@@ -33,7 +33,11 @@ impl Response for AssetEtagResponse {
 }
 
 impl AssetEtagResponse {
-    pub fn new(value: AssetEtagResponseValue) -> Self {
-        Self { value }
+    pub fn not_found() -> Self {
+        Self { value: AssetEtagResponseValue::NotFound }
+    }
+
+    pub fn found(etag: ETag) -> Self {
+        Self { value: AssetEtagResponseValue::Found(etag) }
     }
 }

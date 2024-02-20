@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use bevy_log::info;
 
 use naia_bevy_server::{ResponseReceiveKey, Server, UserKey};
 
@@ -38,6 +39,7 @@ impl FirstFlightRequest {
     pub fn process(&mut self, server: &mut Server, http_client: &mut HttpClient) {
         if let Some(key) = self.client_etag_response_key.as_ref() {
             if let Some((_user_key, response)) = server.receive_response(key) {
+                info!("received asset etag response from client");
                 self.client_etag_response_key = None;
                 self.client_etag_response = Some(response);
             }
@@ -46,6 +48,7 @@ impl FirstFlightRequest {
             if let Some(response_result) = http_client.recv(key) {
                 match response_result {
                     Ok(response) => {
+                        info!("received asset response from asset server");
                         self.asset_server_response_key = None;
                         self.asset_server_response = Some(response);
                     }
@@ -133,6 +136,10 @@ impl UserAssets {
                     if client_etag == new_etag {
                         panic!("client somehow has newer etag than server, this should never happen")
                     }
+
+                    info!("client responded with old etag: {:?}, asset server responded with newer etag: {:?}", client_etag, new_etag);
+                    info!("storing asset data for: {:?}, and sending new data to client", asset_id);
+
                     // store new asset etag & data
                     asset_server_responses.push((asset_id, new_etag, data));
                     // send asset etag & data to client
@@ -142,10 +149,16 @@ impl UserAssets {
                     if let Some(old_etag) = old_etag_opt {
                         if old_etag == client_etag {
                             // client already has latest asset, done!
+
+                            info!("client already has latest asset: {:?}", asset_id);
+
                             self.assets_in_memory.insert(asset_id);
                             continue;
                         } else {
                             // send asset etag & data to client
+
+                            info!("client has old asset, sending new data: {:?}", asset_id);
+
                             pending_client_requests.push((self.user_key, asset_id));
                         }
                     } else {
@@ -153,6 +166,10 @@ impl UserAssets {
                     }
                 }
                 (AssetEtagResponseValue::NotFound, AssetResponseValue::Modified(new_etag, data)) => {
+
+                    info!("client responded with no etag, asset server responded with new etag: {:?}", new_etag);
+                    info!("storing asset data for: {:?}, and sending new data to client", asset_id);
+
                     // store new asset etag & data
                     asset_server_responses.push((asset_id, new_etag, data));
                     // send asset etag & data to client
@@ -162,6 +179,10 @@ impl UserAssets {
                     if old_etag_opt.is_none() {
                         panic!("asset server responded with NotModified but no etag was provided in request... this should never happen");
                     }
+
+                    info!("client responded with no etag, asset server responded with NotModified");
+                    info!("sending asset data for: {:?} to client", asset_id);
+
                     // send asset etag & data to client
                     pending_client_requests.push((self.user_key, asset_id));
                 }
@@ -182,6 +203,8 @@ impl UserAssets {
     }
 
     pub(crate) fn send_client_asset_data(&mut self, server: &mut Server, asset_store: &AssetStore, asset_id: &AssetId) {
+
+        info!("sending asset data to client: {:?}", asset_id);
 
         // get asset etag & data from store
         let (etag, data) = asset_store.get_etag_and_data(asset_id).unwrap();
@@ -208,10 +231,12 @@ impl UserAssets {
         }
 
         // send 'asset_etag' request to client
+        info!("sending asset etag request to client: {:?}", asset_id);
         let asset_etag_request = AssetEtagRequest::new(asset_id);
         let asset_etag_response_key = server.send_request::<RequestChannel, _>(&self.user_key, &asset_etag_request).unwrap();
 
         // send 'asset' request to asset server
+        info!("sending asset request to asset server: {:?}", asset_id);
         let etag_opt = asset_store.get_etag(asset_id);
         let asset_server_request = AssetRequest::new(*asset_id, etag_opt);
         let asset_server_response_key = http_client.send(asset_server_addr, asset_server_port, asset_server_request.clone());

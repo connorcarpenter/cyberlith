@@ -1,18 +1,20 @@
 use std::collections::{HashMap, VecDeque};
-use log::info;
+use log::{info, warn};
 
 pub struct AssetCache {
     capacity_kb: u32,
     current_size_kb: u32,
+    asset_path: String,
     data_map: HashMap<String, Vec<u8>>,
     access_deque: VecDeque<String>,
 }
 
 impl AssetCache {
-    pub fn new(capacity_kb: u32) -> Self {
+    pub fn new(capacity_kb: u32, asset_path: &str) -> Self {
         Self {
             capacity_kb,
             current_size_kb: 0,
+            asset_path: asset_path.to_string(),
             data_map: HashMap::new(),
             access_deque: VecDeque::new(),
         }
@@ -22,7 +24,7 @@ impl AssetCache {
         if let Some(data) = self.data_map.get(path) {
             // data is already in the cache, return it!
 
-            info!("Cache hit: {:?}", path);
+            info!("Cache hit: `{}`", path);
 
             // update lru order
             self.access_deque.retain(|x| x != path); // costly, O(n)
@@ -31,7 +33,11 @@ impl AssetCache {
             return Some(data.clone());
         }
 
-        let bytes = std::fs::read(path).ok()?;
+        let full_path = format!("{}/{}", self.asset_path, path);
+        let Ok(bytes) = std::fs::read(&full_path) else {
+            warn!("Failed to load file: `{}`", &full_path);
+            return None;
+        };
         let byte_count = bytes.len();
         let kb_count = bytes_to_kb(byte_count);
 
@@ -39,7 +45,7 @@ impl AssetCache {
         self.current_size_kb += kb_count;
         self.access_deque.push_back(path.to_string());
 
-        info!("Cache miss. Loading {:?} (size: {:?} kb) ... Current cache size: {:?} kb, max: {:?} kb", path, kb_count, self.current_size_kb, self.capacity_kb);
+        info!("Cache miss. Loading `{}` (size: {:?} kb) ... Current cache size: {:?} kb, max: {:?} kb", path, kb_count, self.current_size_kb, self.capacity_kb);
 
         if self.current_size_kb > self.capacity_kb {
             info!("Cache over capacity, unloading until under capacity... current: {:?} kb, max: {:?} kb", self.current_size_kb, self.capacity_kb);
