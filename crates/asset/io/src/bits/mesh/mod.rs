@@ -3,14 +3,12 @@ use cfg_if::cfg_if;
 cfg_if! {
     if #[cfg(feature = "read_bits")] {
         mod read;
-        pub use read::*;
     } else {}
 }
 
 cfg_if! {
     if #[cfg(feature = "write_bits")] {
         mod write;
-        pub use write::*;
     } else {}
 }
 

@@ -6,14 +6,12 @@ use asset_id::AssetId;
 cfg_if! {
     if #[cfg(feature = "read_json")] {
         mod read;
-        pub use read::*;
     } else {}
 }
 
 cfg_if! {
     if #[cfg(feature = "write_json")] {
         mod write;
-        pub use write::*;
     } else {}
 }
 

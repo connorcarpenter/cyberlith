@@ -36,7 +36,7 @@ pub fn scene_setup(
     mut commands: Commands,
     mut meshes: ResMut<Storage<CpuMesh>>,
     mut materials: ResMut<Storage<CpuMaterial>>,
-    mut asset_manager: ResMut<AssetManager>,
+    _asset_manager: ResMut<AssetManager>,
 ) {
     let layer = RenderLayers::layer(0);
 
@@ -162,7 +162,7 @@ pub fn scene_step(
 }
 
 pub fn scene_draw(
-    asset_manager: Res<AssetManager>,
+    _asset_manager: Res<AssetManager>,
     mut render_frame: ResMut<RenderFrame>,
     // Cameras
     cameras_q: Query<(&Camera, &Transform, &Projection, Option<&RenderLayer>)>,

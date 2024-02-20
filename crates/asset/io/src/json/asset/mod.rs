@@ -26,12 +26,6 @@ pub struct Asset {
 }
 
 impl Asset {
-    pub(crate) fn new(meta: AssetMeta, data: AssetData) -> Self {
-        Self {
-            meta,
-            data,
-        }
-    }
 
     pub(crate) fn deconstruct(self) -> (AssetMeta, AssetData) {
         (self.meta, self.data)
