@@ -142,15 +142,52 @@ impl UserAssets {
                             server.send_message::<PrimaryChannel, _>(&self.user_key, &message);
 
                             // remove from processing, add to memory
-                            self.assets_processing.remove(&asset_id);
-                            self.assets_in_memory.insert(asset_id);
+                            self.finish_asset_processing(server, asset_store, &asset_id);
                         }
                         LoadAssetResponseValue::ClientLoadedNonModifiedAsset => {
                             // remove from processing, add to memory
-                            self.assets_processing.remove(&asset_id);
-                            self.assets_in_memory.insert(asset_id);
+                            self.finish_asset_processing(server, asset_store, &asset_id);
                         }
                     }
+                }
+            }
+        }
+    }
+
+    fn finish_asset_processing(
+        &mut self,
+        server: &mut Server,
+        asset_store: &AssetStore,
+        asset_id: &AssetId
+    ) {
+        info!("finished processing asset: {:?}", asset_id);
+
+        self.assets_processing.remove(&asset_id);
+        self.assets_in_memory.insert(*asset_id);
+
+        // handle dependency waitlist
+        if let Some(waiting_asset_ids) = self.dependency_waitlist.remove(asset_id) {
+            for waiting_asset_id in waiting_asset_ids {
+
+                info!("asset: {:?} has finished loading, notifying waiting asset: {:?}", asset_id, waiting_asset_id);
+
+                let waiting_asset_state = self.assets_processing.get_mut(&waiting_asset_id).unwrap();
+                let waiting_asset_finished = waiting_asset_state.handle_dependency_loaded(asset_id);
+
+                // if waiting asset has no more dependencies, move it to next state
+                if waiting_asset_finished {
+
+                    info!("all dependencies for asset: {:?} have been loaded, sending to client", waiting_asset_id);
+
+                    // move to next state
+                    let waiting_asset_etag = asset_store.get_etag(&waiting_asset_id).unwrap();
+                    // all of asset's dependencies are already loaded (or asset has no dependencies), send asset over to client
+                    self.assets_processing.insert(waiting_asset_id, UserAssetProcessingState::send_client_load_asset_request(
+                        server,
+                        &self.user_key,
+                        &waiting_asset_id,
+                        &waiting_asset_etag,
+                    ));
                 }
             }
         }

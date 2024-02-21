@@ -59,6 +59,18 @@ impl UserAssetProcessingState {
         Self::WaitingForDependencies(dependencies)
     }
 
+    // returns whether all dependencies have loaded
+    pub(crate) fn handle_dependency_loaded(&mut self, dependency: &AssetId) -> bool {
+        let UserAssetProcessingState::WaitingForDependencies(dependencies) = self else {
+            panic!("handle_dependency_loaded called on non-WaitingForDependencies state");
+        };
+        let removal_result = dependencies.remove(dependency);
+        if !removal_result {
+            panic!("dependency not found in waiting list");
+        }
+        return dependencies.is_empty();
+    }
+
     pub(crate) fn process(
         &mut self,
         server: &mut Server,
