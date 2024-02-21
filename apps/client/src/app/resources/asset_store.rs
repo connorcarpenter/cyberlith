@@ -83,11 +83,6 @@ impl AssetStore {
         // load asset metadata into memory
         self.metadata_store.insert(asset_id, asset_etag, asset_file_path);
     }
-
-    pub fn handle_entity_added_asset_ref<T: AssetProcessor>(&mut self, entity: &Entity, asset_id: &AssetId) {
-        info!("entity ({:?}) received AssetRef from World Server! (asset_id: {:?})", entity, asset_id);
-        T::process(self, entity, asset_id);
-    }
 }
 
 pub trait AssetProcessor: Send + Sync + 'static {
@@ -96,6 +91,7 @@ pub trait AssetProcessor: Send + Sync + 'static {
 
 impl AssetProcessor for Main {
     fn process(asset_store: &mut AssetStore, entity: &Entity, asset_id: &AssetId) {
-        info!("processing Main asset ref");
+        info!("entity ({:?}) received AssetRef<Main> from World Server! (asset_id: {:?})", entity, asset_id);
+
     }
 }
