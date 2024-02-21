@@ -21,7 +21,7 @@ impl LoadAssetRequest {
     }
 }
 
-#[derive(Serde, Clone, Eq, PartialEq, Hash, Debug)]
+#[derive(Serde, Clone, Copy, Eq, PartialEq, Hash, Debug)]
 pub enum LoadAssetResponseValue {
     ClientHasOldOrNoAsset,
     ClientLoadedNonModifiedAsset,

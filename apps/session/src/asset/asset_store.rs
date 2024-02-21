@@ -36,6 +36,13 @@ impl AssetStore {
         }
     }
 
+    pub fn get_dependencies(&self, asset_id: &AssetId) -> Option<&HashSet<AssetId>> {
+        match self.map.get(asset_id) {
+            Some(asset_data) => Some(&asset_data.dependencies),
+            None => None,
+        }
+    }
+
     pub fn get_etag_and_data(&self, asset_id: &AssetId) -> Option<(ETag, Vec<u8>)> {
         match self.map.get(asset_id) {
             Some(asset_data) => Some((asset_data.etag, asset_data.data.clone())),
