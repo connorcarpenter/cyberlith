@@ -89,19 +89,19 @@ impl AssetManager {
     ) -> Option<Vec<(UserKey, AssetId)>> {
         let mut pending_requests = Vec::new();
         for user_assets in self.users.values_mut() {
-            // process first flight (to asset server)
-            let asset_server_responses = user_assets.process_first_flight_requests(http_client);
+            // process asset server requests
+            let asset_server_responses = user_assets.process_asset_server_requests(http_client);
             if let Some(asset_server_responses) = asset_server_responses {
                 for (asset_id, etag, data_opt) in asset_server_responses {
                     if let Some((dependencies, new_data)) = data_opt {
                         self.asset_cache.insert_data(asset_id, etag, dependencies, new_data);
                     }
 
-                    user_assets.send_second_flight(server, &asset_id, &etag);
+                    user_assets.send_client_load_asset_request(server, &asset_id, &etag);
                 }
             }
-            // process second flight (to client)
-            let pending_client_requests = user_assets.process_second_flight_requests(server);
+            // process client load asset requests
+            let pending_client_requests = user_assets.process_client_load_asset_requests(server);
             if let Some(mut pending_client_requests) = pending_client_requests {
                 pending_requests.append(&mut pending_client_requests);
             }

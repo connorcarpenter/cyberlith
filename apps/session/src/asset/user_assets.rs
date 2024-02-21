@@ -136,33 +136,33 @@ impl UserAssets {
         }
     }
 
-    pub fn process_first_flight_requests(
+    pub fn process_asset_server_requests(
         &mut self,
         http_client: &mut HttpClient,
     ) -> Option<Vec<(AssetId, ETag, Option<(HashSet<AssetId>, Vec<u8>)>)>> {
-        let first_flight_requests = std::mem::take(&mut self.asset_server_requests);
+        let asset_server_requests = std::mem::take(&mut self.asset_server_requests);
 
-        if first_flight_requests.is_empty() {
+        if asset_server_requests.is_empty() {
             return None;
         }
 
-        let mut first_flight_responses = Vec::new();
+        let mut asset_server_responses = Vec::new();
 
-        for mut request in first_flight_requests {
+        for mut request in asset_server_requests {
             request.process(http_client);
             if request.completed() {
-                first_flight_responses.push(request.unwrap_response());
+                asset_server_responses.push(request.unwrap_response());
             } else {
                 self.asset_server_requests.push(request);
             }
         }
 
-        if first_flight_responses.is_empty() {
+        if asset_server_responses.is_empty() {
             return None;
         }
 
         let mut asset_server_responses = Vec::new();
-        for (asset_server_req, asset_res) in first_flight_responses {
+        for (asset_server_req, asset_res) in asset_server_responses {
 
             let asset_id = asset_server_req.asset_id();
             let old_etag_opt = asset_server_req.etag_opt();
@@ -197,33 +197,33 @@ impl UserAssets {
         asset_server_responses
     }
 
-    pub fn process_second_flight_requests(
+    pub fn process_client_load_asset_requests(
         &mut self,
         server: &mut Server,
     ) -> Option<Vec<(UserKey, AssetId)>> {
-        let second_flight_requests = std::mem::take(&mut self.client_load_asset_requests);
+        let client_load_asset_requests = std::mem::take(&mut self.client_load_asset_requests);
 
-        if second_flight_requests.is_empty() {
+        if client_load_asset_requests.is_empty() {
             return None;
         }
 
-        let mut second_flight_responses = Vec::new();
+        let mut client_load_asset_responses = Vec::new();
 
-        for mut request in second_flight_requests {
+        for mut request in client_load_asset_requests {
             request.process(server);
             if request.completed() {
-                second_flight_responses.push(request.unwrap_response());
+                client_load_asset_responses.push(request.unwrap_response());
             } else {
                 self.client_load_asset_requests.push(request);
             }
         }
 
-        if second_flight_responses.is_empty() {
+        if client_load_asset_responses.is_empty() {
             return None;
         }
 
         let mut pending_client_requests = Vec::new();
-        for (client_etag_req, client_etag_res) in second_flight_responses {
+        for (client_etag_req, client_etag_res) in client_load_asset_responses {
 
             let asset_id = client_etag_req.asset_id;
 
@@ -299,7 +299,7 @@ impl UserAssets {
         ));
     }
 
-    pub fn send_second_flight(&mut self, server: &mut Server, asset_id: &AssetId, etag: &ETag) {
+    pub fn send_client_load_asset_request(&mut self, server: &mut Server, asset_id: &AssetId, etag: &ETag) {
         // send 'load_asset' request to client
         info!("sending load_asset request to client: (asset: {:?}, etag: {:?})", asset_id, etag);
         let asset_etag_request = LoadAssetRequest::new(asset_id, etag);
