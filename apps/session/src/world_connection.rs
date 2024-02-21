@@ -79,7 +79,7 @@ pub fn recv_added_asset_id_request(
         let added = request.added();
 
         info!(
-            "UserAsset Request received from world server: (user_id: {:?}, asset_id: {:?})",
+            "received from worldserver: user_asset_request(user_id: {:?}, asset_id: {:?})",
             user_id, asset_id
         );
 
@@ -103,7 +103,7 @@ pub fn recv_added_asset_id_request(
             asset_manager.queue_user_asset_request(user_key, asset_id, added);
         }
 
-        info!("UserAsset Response sent to world server ..");
+        //info!("UserAsset Response sent to world server ..");
 
         http_server.respond(response_key, Ok(UserAssetIdResponse));
     }

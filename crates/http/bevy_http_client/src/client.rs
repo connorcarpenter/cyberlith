@@ -37,7 +37,7 @@ impl HttpClient {
     ) -> ResponseKey<Q::Response> {
         let url = format!("http://{}:{}/{}", addr, port, Q::path());
         let http_request = Request::new(Q::method(), &url, req.to_bytes().to_vec());
-        info!("Sending request to: {:?}", url);
+        //info!("Sending request to: {:?}", url);
 
         let task = send_request(http_request, None);
 
@@ -57,7 +57,7 @@ impl HttpClient {
     ) -> ResponseKey<Q::Response> {
         let url = format!("http://{}:{}/{}", addr, port, Q::path());
         let http_request = Request::new(Q::method(), &url, req.to_bytes().to_vec());
-        info!("Sending request to: {:?}", url);
+        //info!("Sending request to: {:?}", url);
 
         let task = send_request(http_request, Some(req_options));
 

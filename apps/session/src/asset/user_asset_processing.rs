@@ -117,7 +117,6 @@ impl AssetServerRequestState {
             if let Some(response_result) = http_client.recv(key) {
                 match response_result {
                     Ok(response) => {
-                        info!("received asset response from asset server");
                         self.response_key = None;
                         self.response = Some(response);
                     }
@@ -144,7 +143,7 @@ impl AssetServerRequestState {
         match &asset_server_res.value {
             AssetResponseValue::Modified(new_etag, dependencies, data) => {
 
-                info!("asset server responded with new etag: {:?}. storing asset data for: {:?}", new_etag, asset_id);
+                info!("received from assetserver: asset_response(asset: {:?}, new etag: {:?}), storing data.", asset_id, new_etag);
 
                 // process dependencies
                 let mut dependency_set = HashSet::new();
@@ -156,7 +155,7 @@ impl AssetServerRequestState {
                 return Some(UserAssetProcessingStateTransition::asset_server_response(*new_etag, Some((dependency_set, data.clone()))));
             }
             AssetResponseValue::NotModified => {
-                info!("asset server responded with data not modified, storing asset data for: {:?}", asset_id);
+                info!("received from assetserver: asset_response(asset: {:?}, with data not modified).", asset_id);
 
                 return Some(UserAssetProcessingStateTransition::asset_server_response(old_etag_opt.unwrap(), None));
             }
@@ -184,7 +183,7 @@ impl ClientLoadAssetRequestState {
 
         if let Some(key) = self.response_key.as_ref() {
             if let Some((_user_key, response)) = server.receive_response(key) {
-                info!("received asset etag response from client");
+                info!("received 'load_asset' response from client");
                 self.response_key = None;
                 self.response = Some(response);
             } else {

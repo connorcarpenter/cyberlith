@@ -107,7 +107,7 @@ pub fn connect_events(
             // MUST call this to begin replication
             .enable_replication(&mut server)
             // insert asset ref
-            .insert_asset::<Main>(&mut asset_manager, &mut server, AssetCatalog::Cube.into())
+            .insert_asset::<Main>(&mut asset_manager, &mut server, AssetCatalog::HumanModel.into())
             // return Entity id
             .id();
 
