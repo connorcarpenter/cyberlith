@@ -1,7 +1,7 @@
 use bevy_app::{App, Plugin};
 use bevy_log::LogPlugin;
 
-use asset::AssetPlugin;
+use asset_render::AssetPlugin;
 use bevy_http_client::HttpClientPlugin;
 use input::InputPlugin;
 use naia_bevy_client::{ClientConfig as NaiaClientConfig, Plugin as NaiaClientPlugin};

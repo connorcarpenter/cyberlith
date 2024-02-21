@@ -1,16 +1,16 @@
 [package]
-name = "asset"
+name = "asset_render"
 version = "0.1.0"
 edition = "2021"
-workspace = "../.."
+workspace = "../../.."
 
 [dependencies]
 # should never include "render_gl" or "render_wgpu" here!
-asset_io = { path = "io", features = ["read_bits"] }
-asset_id = { path = "asset_id" }
-render_api = { path = "../render/render_api" }
-math = { path = "../math" }
-storage = { path = "../storage" }
+asset_io = { path = "../io", features = ["read_bits"] }
+asset_id = { path = "../asset_id" }
+render_api = { path = "../../render/render_api" }
+math = { path = "../../math" }
+storage = { path = "../../storage" }
 
 bevy_app = { version = "0.13", default-features = false }
 bevy_ecs = { version = "0.13", default-features = false }

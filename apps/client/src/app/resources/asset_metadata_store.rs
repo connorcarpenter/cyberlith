@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use bevy_log::{info, warn};
 
-use game_engine::{AssetId, ETag};
+use game_engine::asset::{AssetId, ETag};
 
 pub struct AssetMetadata {
     path: String,

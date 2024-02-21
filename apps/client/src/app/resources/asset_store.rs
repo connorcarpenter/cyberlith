@@ -5,7 +5,7 @@ use bevy_log::info;
 
 use game_engine::{
     session::{LoadAssetRequest, LoadAssetWithData, LoadAssetResponse},
-    AssetId,
+    asset::AssetId,
 };
 
 use crate::app::resources::asset_metadata_store::AssetMetadataStore;

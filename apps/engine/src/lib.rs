@@ -8,7 +8,8 @@ mod client_markers;
 mod renderer;
 
 pub mod asset {
-    pub use asset::*;
+    pub use asset_render::*;
+    pub use asset_id::{AssetId, ETag};
 }
 pub mod input {
     pub use input::*;
@@ -67,5 +68,4 @@ pub mod config {
 pub mod storage {
     pub use storage::*;
 }
-pub use asset_id::{AssetId, ETag};
 pub use renderer::wait_for_finish;

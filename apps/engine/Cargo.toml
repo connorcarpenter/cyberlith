@@ -17,7 +17,7 @@ wgpu_renderer = [ ]
 math = { path = "../../crates/math" }
 render_api = { path = "../../crates/render/render_api" }
 input = { path = "../../crates/input" }
-asset = { path = "../../crates/asset" }
+asset_render = { path = "../../crates/asset/render" }
 bevy_http_client = { path = "../../crates/http/bevy_http_client" }
 config = { path = "../config", features = ["client"]}
 storage = { path = "../../crates/storage" }
