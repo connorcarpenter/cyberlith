@@ -29,51 +29,53 @@ impl UserAssets {
 
     pub fn process_in_flight_requests(&mut self, server: &mut Server, http_client: &mut HttpClient, asset_store: &mut AssetStore) {
 
-        let mut assets_finished = Vec::new();
+        let mut state_transitions = Vec::new();
         for (asset_id, user_asset_state) in self.assets_processing.iter_mut() {
             if let Some(transition) = user_asset_state.process(server, http_client) {
-                match transition {
-                    UserAssetProcessingStateTransition::AssetServerResponse(asset_etag, data_opt) => {
-                        // received response from asset server
-                        if let Some((dependencies, new_data)) = data_opt {
-                            asset_store.insert_data(*asset_id, asset_etag, dependencies, new_data);
-                        }
+                state_transitions.push((*asset_id, transition));
+            }
+        }
 
-                        // move to next state
-                        *user_asset_state = UserAssetProcessingState::send_client_load_asset_request(
-                            server,
-                            &self.user_key,
-                            asset_id,
-                            &asset_etag,
-                        );
+        for (asset_id, transition) in state_transitions {
+            match transition {
+                UserAssetProcessingStateTransition::AssetServerResponse(asset_etag, data_opt) => {
+                    // received response from asset server
+                    if let Some((dependencies, new_data)) = data_opt {
+                        asset_store.insert_data(asset_id, asset_etag, dependencies, new_data);
                     }
-                    UserAssetProcessingStateTransition::ClientLoadAssetResponse(response_value) => {
-                        match response_value {
-                            LoadAssetResponseValue::ClientHasOldOrNoAsset => {
-                                info!("sending asset data to client: {:?}", asset_id);
 
-                                // get asset etag & data from store
-                                let (etag, data) = asset_store.get_etag_and_data(asset_id).unwrap();
+                    // move to next state
+                    self.assets_processing.insert(asset_id, UserAssetProcessingState::send_client_load_asset_request(
+                        server,
+                        &self.user_key,
+                        &asset_id,
+                        &asset_etag,
+                    ));
+                }
+                UserAssetProcessingStateTransition::ClientLoadAssetResponse(response_value) => {
+                    match response_value {
+                        LoadAssetResponseValue::ClientHasOldOrNoAsset => {
+                            info!("sending asset data to client: {:?}", asset_id);
 
-                                // send asset data to client
-                                let message = LoadAssetWithData::new(*asset_id, etag, data);
-                                server.send_message::<PrimaryChannel, _>(&self.user_key, &message);
+                            // get asset etag & data from store
+                            let (asset_etag, asset_data) = asset_store.get_etag_and_data(&asset_id).unwrap();
 
-                                // remove from processing, add to memory
-                                assets_finished.push(*asset_id);
-                            }
-                            LoadAssetResponseValue::ClientLoadedNonModifiedAsset => {
-                                // remove from processing, add to memory
-                                assets_finished.push(*asset_id);
-                            }
+                            // send asset data to client
+                            let message = LoadAssetWithData::new(asset_id, asset_etag, asset_data);
+                            server.send_message::<PrimaryChannel, _>(&self.user_key, &message);
+
+                            // remove from processing, add to memory
+                            self.assets_processing.remove(&asset_id);
+                            self.assets_in_memory.insert(asset_id);
+                        }
+                        LoadAssetResponseValue::ClientLoadedNonModifiedAsset => {
+                            // remove from processing, add to memory
+                            self.assets_processing.remove(&asset_id);
+                            self.assets_in_memory.insert(asset_id);
                         }
                     }
                 }
             }
-        }
-        for asset_finished in assets_finished {
-            self.assets_processing.remove(&asset_finished);
-            self.assets_in_memory.insert(asset_finished);
         }
     }
 
@@ -123,7 +125,7 @@ impl UserAssets {
             //return;
         }
 
-        // // check whether asset has any dependencies
+        // check whether asset has any dependencies
         // let mut pending_dependencies = HashSet::new();
         // if let Some(dependencies) = asset_store.get_dependencies(asset_id) {
         //     for dependency in dependencies {
