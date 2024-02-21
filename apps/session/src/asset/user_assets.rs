@@ -5,8 +5,7 @@ use bevy_log::info;
 
 use naia_bevy_server::{Server, UserKey};
 
-use asset_server_http_proto::AssetRequest;
-use session_server_naia_proto::{channels::{PrimaryChannel, RequestChannel}, messages::{LoadAssetRequest, LoadAssetWithData, LoadAssetResponseValue}};
+use session_server_naia_proto::{channels::PrimaryChannel, messages::{LoadAssetWithData, LoadAssetResponseValue}};
 
 use asset_id::AssetId;
 use bevy_http_client::HttpClient;
@@ -40,16 +39,12 @@ impl UserAssets {
                             asset_store.insert_data(*asset_id, asset_etag, dependencies, new_data);
                         }
 
-                        // send client "load asset" request
-                        info!("sending load_asset request to client: (asset: {:?}, etag: {:?})", asset_id, asset_etag);
-                        let client_load_asset_request = LoadAssetRequest::new(asset_id, &asset_etag);
-                        let client_load_asset_response_key = server
-                            .send_request::<RequestChannel, _>(&self.user_key, &client_load_asset_request)
-                            .unwrap();
-
                         // move to next state
-                        *user_asset_state = UserAssetProcessingState::client_load_asset_request_in_flight(
-                            client_load_asset_response_key,
+                        *user_asset_state = UserAssetProcessingState::send_client_load_asset_request(
+                            server,
+                            &self.user_key,
+                            asset_id,
+                            &asset_etag,
                         );
                     }
                     UserAssetProcessingStateTransition::ClientLoadAssetResponse(response_value) => {
@@ -84,6 +79,7 @@ impl UserAssets {
 
     pub fn handle_user_asset_request(
         &mut self,
+        server: &mut Server,
         http_client: &mut HttpClient,
         asset_server_addr: &str,
         asset_server_port: u16,
@@ -93,6 +89,7 @@ impl UserAssets {
     ) {
         if added {
             self.handle_user_asset_added(
+                server,
                 http_client,
                 asset_server_addr,
                 asset_server_port,
@@ -106,6 +103,7 @@ impl UserAssets {
 
     fn handle_user_asset_added(
         &mut self,
+        server: &mut Server,
         http_client: &mut HttpClient,
         asset_server_addr: &str,
         asset_server_port: u16,
@@ -122,7 +120,7 @@ impl UserAssets {
             // this isn't necessarily an error, I just want to know if it's possible
             // world server shouldn't be sending the same request twice?
             panic!("user already has asset in processing: {:?}", asset_id);
-            return;
+            //return;
         }
 
         // // check whether asset has any dependencies
@@ -137,24 +135,34 @@ impl UserAssets {
         //     }
         // }
 
-        // send 'asset' request to asset server
-        info!("sending asset request to asset server: {:?}", asset_id);
-        let etag_opt = asset_store.get_etag(asset_id);
-        let asset_server_request = AssetRequest::new(*asset_id, etag_opt);
-        let asset_server_response_key = http_client.send(
-            asset_server_addr,
-            asset_server_port,
-            asset_server_request.clone(),
-        );
+        if asset_store.has_asset(asset_id) {
+            // asset is in session_server's store, but not in client's memory
+            let asset_etag = asset_store.get_etag(asset_id).unwrap();
 
-        // save responsekeys for 'asset' request
-        self.assets_processing.insert(
-            *asset_id,
-            UserAssetProcessingState::asset_server_request_in_flight(
-                asset_server_request,
-                asset_server_response_key,
-            )
-        );
+            // move to next state
+            self.assets_processing.insert(
+                *asset_id,
+                UserAssetProcessingState::send_client_load_asset_request(
+                    server,
+                    &self.user_key,
+                    asset_id,
+                    &asset_etag,
+                )
+            );
+        } else {
+            // asset is not in store
+            // send 'asset' request to asset server
+            self.assets_processing.insert(
+                *asset_id,
+                UserAssetProcessingState::send_asset_server_request(
+                    http_client,
+                    asset_server_addr,
+                    asset_server_port,
+                    asset_id,
+                    None,
+                )
+            );
+        }
     }
 
     fn handle_user_asset_removed(&mut self, _asset_id: &AssetId) {

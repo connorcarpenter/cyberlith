@@ -3,10 +3,10 @@ use std::collections::HashSet;
 
 use bevy_log::info;
 
-use naia_bevy_server::{ResponseReceiveKey, Server};
+use naia_bevy_server::{ResponseReceiveKey, Server, UserKey};
 
 use asset_server_http_proto::{AssetRequest, AssetResponse, AssetResponseValue};
-use session_server_naia_proto::{messages::{LoadAssetResponse, LoadAssetResponseValue}};
+use session_server_naia_proto::{channels::RequestChannel, messages::{LoadAssetResponse, LoadAssetRequest, LoadAssetResponseValue}};
 
 use asset_id::{AssetId, ETag};
 use bevy_http_client::{HttpClient, ResponseKey};
@@ -19,16 +19,38 @@ pub enum UserAssetProcessingState {
 
 impl UserAssetProcessingState {
 
-    pub fn asset_server_request_in_flight(
-        request: AssetRequest,
-        response_key: ResponseKey<AssetResponse>
+    pub fn send_asset_server_request(
+        http_client: &mut HttpClient,
+        asset_server_addr: &str,
+        asset_server_port: u16,
+        asset_id: &AssetId,
+        asset_etag_opt: Option<ETag>,
     ) -> Self {
+        info!("sending asset request to asset server: {:?}", asset_id);
+        let request = AssetRequest::new(*asset_id, asset_etag_opt);
+        let response_key = http_client.send(
+            asset_server_addr,
+            asset_server_port,
+            request.clone(),
+        );
+
         Self::AssetServerRequestInFlight(AssetServerRequestState::new(request, response_key))
     }
 
-    pub fn client_load_asset_request_in_flight(
-        response_key: ResponseReceiveKey<LoadAssetResponse>
+    pub fn send_client_load_asset_request(
+        server: &mut Server,
+        user_key: &UserKey,
+        asset_id: &AssetId,
+        asset_etag: &ETag,
     ) -> Self {
+
+        // send client "load asset" request
+        info!("sending load_asset request to client: (asset: {:?}, etag: {:?})", asset_id, asset_etag);
+        let request = LoadAssetRequest::new(asset_id, asset_etag);
+        let response_key = server
+            .send_request::<RequestChannel, _>(user_key, &request)
+            .unwrap();
+
         Self::ClientLoadAssetRequestInFlight(ClientLoadAssetRequestState::new(response_key))
     }
 

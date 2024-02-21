@@ -29,6 +29,10 @@ impl AssetStore {
         self.map.insert(asset_id, AssetData::new(etag, dependencies, data));
     }
 
+    pub fn has_asset(&self, asset_id: &AssetId) -> bool {
+        self.map.contains_key(asset_id)
+    }
+
     pub fn get_etag(&self, asset_id: &AssetId) -> Option<ETag> {
         match self.map.get(asset_id) {
             Some(asset_data) => Some(asset_data.etag),

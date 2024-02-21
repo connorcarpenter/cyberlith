@@ -45,6 +45,7 @@ impl AssetManager {
 
     pub fn process_queued_user_asset_requests(
         &mut self,
+        naia_server: &mut Server,
         http_client: &mut HttpClient,
         asset_server_addr: &str,
         asset_server_port: u16,
@@ -52,6 +53,7 @@ impl AssetManager {
         for (user_key, asset_id, added) in std::mem::take(&mut self.queued_user_asset_requests) {
             info!("processing queued user asset request..");
             self.handle_user_asset_request(
+                naia_server,
                 http_client,
                 asset_server_addr,
                 asset_server_port,
@@ -64,6 +66,7 @@ impl AssetManager {
 
     pub fn handle_user_asset_request(
         &mut self,
+        server: &mut Server,
         http_client: &mut HttpClient,
         asset_server_addr: &str,
         asset_server_port: u16,
@@ -73,6 +76,7 @@ impl AssetManager {
     ) {
         let user_assets = self.users.get_mut(&user_key).unwrap();
         user_assets.handle_user_asset_request(
+            server,
             http_client,
             asset_server_addr,
             asset_server_port,

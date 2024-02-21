@@ -61,6 +61,7 @@ pub fn recv_world_connect_response(
 pub fn recv_added_asset_id_request(
     global: ResMut<Global>,
     mut http_server: ResMut<HttpServer>,
+    mut naia_server: Server,
     mut http_client: ResMut<HttpClient>,
     mut asset_manager: ResMut<AssetManager>,
 ) {
@@ -88,6 +89,7 @@ pub fn recv_added_asset_id_request(
 
         if let Some((asset_server_addr, asset_server_port)) = global.get_asset_server_url() {
             asset_manager.handle_user_asset_request(
+                &mut naia_server,
                 &mut http_client,
                 &asset_server_addr,
                 asset_server_port,
@@ -109,6 +111,7 @@ pub fn recv_added_asset_id_request(
     if asset_manager.has_queued_user_asset_requests() {
         if let Some((asset_server_addr, asset_server_port)) = global.get_asset_server_url() {
             asset_manager.process_queued_user_asset_requests(
+                &mut naia_server,
                 &mut http_client,
                 &asset_server_addr,
                 asset_server_port,
