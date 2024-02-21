@@ -12,8 +12,6 @@ use crate::{
     AssetHandle, SkinData,
 };
 
-impl StorageHash<SceneData> for String {}
-
 pub struct SceneData {
     component_files: Vec<AssetComponent>,
     net_transforms: Vec<(usize, Transform)>,
@@ -105,55 +103,12 @@ impl SceneData {
     pub(crate) fn get_components(&self) -> Option<&Vec<(AssetComponentHandle, Transform)>> {
         self.computed_components.as_ref()
     }
-}
 
-pub(crate) fn finish_component_dependency(
-    component_files: &mut Vec<AssetComponent>,
-    dependency_id: AssetId,
-    handle: AssetComponentHandle,
-) {
-    let mut found = false;
-    for file in component_files.iter_mut() {
-        match file {
-            AssetComponent::Skin(AssetDependency::<SkinData>::AssetId(asset_id)) => {
-                if asset_id == &dependency_id {
-                    let AssetComponentHandle::Skin(handle) = handle else {
-                        panic!("expected skin handle");
-                    };
-                    *file = AssetComponent::Skin(AssetDependency::<SkinData>::Handle(handle));
-                    found = true;
-                    break;
-                }
-            }
-            AssetComponent::Scene(AssetDependency::<SceneData>::AssetId(asset_id)) => {
-                if asset_id == &dependency_id {
-                    let AssetComponentHandle::Scene(handle) = handle else {
-                        panic!("expected scene handle");
-                    };
-                    *file = AssetComponent::Scene(AssetDependency::<SceneData>::Handle(handle));
-                    found = true;
-                    break;
-                }
-            }
-            _ => {}
-        }
-    }
-    if !found {
-        panic!("unable to find dependency path for: {:?}", &dependency_id);
-    }
-}
+    pub fn from_bytes(bytes: &[u8]) -> Self {
 
-impl From<String> for SceneData {
-    fn from(path: String) -> Self {
-        let file_path = format!("assets/{}", path);
+        let actions = asset_io::bits::SceneAction::read(bytes).expect("unable to parse file");
 
-        let Ok(data) = web_fs::read(&file_path) else {
-            panic!("unable to read file: {:?}", &file_path);
-        };
-
-        let actions = asset_io::bits::SceneAction::read(&data).expect("unable to parse file");
-
-        info!("--- reading scene: {} ---", path);
+        info!("--- reading scene ---");
 
         let mut component_files = Vec::new();
         let mut net_transforms = Vec::new();
@@ -213,5 +168,41 @@ impl From<String> for SceneData {
             net_transforms,
             computed_components: None,
         }
+    }
+}
+
+pub(crate) fn finish_component_dependency(
+    component_files: &mut Vec<AssetComponent>,
+    dependency_id: AssetId,
+    handle: AssetComponentHandle,
+) {
+    let mut found = false;
+    for file in component_files.iter_mut() {
+        match file {
+            AssetComponent::Skin(AssetDependency::<SkinData>::AssetId(asset_id)) => {
+                if asset_id == &dependency_id {
+                    let AssetComponentHandle::Skin(handle) = handle else {
+                        panic!("expected skin handle");
+                    };
+                    *file = AssetComponent::Skin(AssetDependency::<SkinData>::Handle(handle));
+                    found = true;
+                    break;
+                }
+            }
+            AssetComponent::Scene(AssetDependency::<SceneData>::AssetId(asset_id)) => {
+                if asset_id == &dependency_id {
+                    let AssetComponentHandle::Scene(handle) = handle else {
+                        panic!("expected scene handle");
+                    };
+                    *file = AssetComponent::Scene(AssetDependency::<SceneData>::Handle(handle));
+                    found = true;
+                    break;
+                }
+            }
+            _ => {}
+        }
+    }
+    if !found {
+        panic!("unable to find dependency path for: {:?}", &dependency_id);
     }
 }

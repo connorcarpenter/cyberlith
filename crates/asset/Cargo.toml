@@ -10,7 +10,6 @@ asset_io = { path = "io", features = ["read_bits"] }
 asset_id = { path = "asset_id" }
 render_api = { path = "../render/render_api" }
 math = { path = "../math" }
-web_fs = { path = "../../../web_fs" }
 storage = { path = "../storage" }
 
 bevy_app = { version = "0.13", default-features = false }

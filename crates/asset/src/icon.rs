@@ -11,8 +11,6 @@ use crate::{
     asset_dependency::AssetDependency, asset_handle::AssetHandleImpl, AssetHandle, PaletteData,
 };
 
-impl StorageHash<IconData> for String {}
-
 pub struct IconData {
     palette_file: AssetDependency<PaletteData>,
     frames: Vec<Frame>,
@@ -117,6 +115,77 @@ impl IconData {
     pub(crate) fn get_subimage_count(&self) -> usize {
         self.frames.len()
     }
+
+    pub fn from_bytes(bytes: &[u8]) -> Self {
+
+        let actions = asset_io::bits::IconAction::read(bytes).expect("unable to parse file");
+
+        let mut palette_file_opt = None;
+        let mut frames = Vec::new();
+        for action in actions {
+            match action {
+                asset_io::bits::IconAction::PaletteFile(asset_id) => {
+                    palette_file_opt = Some(asset_id);
+                }
+                asset_io::bits::IconAction::Frame(frame_actions) => {
+                    info!("- Frame Start: {} -", frames.len());
+
+                    let mut vertices = Vec::new();
+                    let mut positions = Vec::new();
+                    let mut face_indices = Vec::new();
+                    let mut face_color_ids = Vec::new();
+
+                    for frame_action in frame_actions {
+                        match frame_action {
+                            asset_io::bits::IconFrameAction::Vertex(x, y) => {
+                                info!("Vertex: ({}, {})", x, y);
+                                let vertex = Vec3::new(x as f32, y as f32, 0.0);
+                                vertices.push(vertex);
+                            }
+                            asset_io::bits::IconFrameAction::Face(
+                                face_id,
+                                color_index,
+                                vertex_a_id,
+                                vertex_b_id,
+                                vertex_c_id,
+                            ) => {
+                                let vertex_a = vertices[vertex_a_id as usize];
+                                let vertex_b = vertices[vertex_b_id as usize];
+                                let vertex_c = vertices[vertex_c_id as usize];
+
+                                positions.push(vertex_a);
+                                positions.push(vertex_b);
+                                positions.push(vertex_c);
+
+                                info!("face_id: {}", face_id);
+
+                                face_indices.push(face_id);
+                                face_indices.push(face_id);
+                                face_indices.push(face_id);
+
+                                face_color_ids.push((face_id, color_index));
+                            }
+                        }
+                    }
+
+                    let mut mesh = CpuMesh::from_vertices(positions);
+                    mesh.add_face_indices(face_indices);
+
+                    let frame = Frame::new(mesh, face_color_ids);
+                    frames.push(frame);
+
+                    info!("- Frame End -");
+                }
+            }
+        }
+
+        // todo: lots here
+
+        Self {
+            palette_file: AssetDependency::AssetId(palette_file_opt.unwrap()),
+            frames,
+        }
+    }
 }
 
 struct Frame {
@@ -212,83 +281,5 @@ impl Frame {
 
         // success!
         return true;
-    }
-}
-
-impl From<String> for IconData {
-    fn from(path: String) -> Self {
-        let file_path = format!("assets/{}", path);
-
-        let Ok(data) = fs::read(&file_path) else {
-            panic!("unable to read file: {:?}", &file_path);
-        };
-
-        let actions = asset_io::bits::IconAction::read(&data).expect("unable to parse file");
-
-        let mut palette_file_opt = None;
-        let mut frames = Vec::new();
-        for action in actions {
-            match action {
-                asset_io::bits::IconAction::PaletteFile(asset_id) => {
-                    palette_file_opt = Some(asset_id);
-                }
-                asset_io::bits::IconAction::Frame(frame_actions) => {
-                    info!("- Frame Start: {} -", frames.len());
-
-                    let mut vertices = Vec::new();
-                    let mut positions = Vec::new();
-                    let mut face_indices = Vec::new();
-                    let mut face_color_ids = Vec::new();
-
-                    for frame_action in frame_actions {
-                        match frame_action {
-                            asset_io::bits::IconFrameAction::Vertex(x, y) => {
-                                info!("Vertex: ({}, {})", x, y);
-                                let vertex = Vec3::new(x as f32, y as f32, 0.0);
-                                vertices.push(vertex);
-                            }
-                            asset_io::bits::IconFrameAction::Face(
-                                face_id,
-                                color_index,
-                                vertex_a_id,
-                                vertex_b_id,
-                                vertex_c_id,
-                            ) => {
-                                let vertex_a = vertices[vertex_a_id as usize];
-                                let vertex_b = vertices[vertex_b_id as usize];
-                                let vertex_c = vertices[vertex_c_id as usize];
-
-                                positions.push(vertex_a);
-                                positions.push(vertex_b);
-                                positions.push(vertex_c);
-
-                                info!("face_id: {}", face_id);
-
-                                face_indices.push(face_id);
-                                face_indices.push(face_id);
-                                face_indices.push(face_id);
-
-                                face_color_ids.push((face_id, color_index));
-                            }
-                        }
-                    }
-
-                    let mut mesh = CpuMesh::from_vertices(positions);
-                    mesh.add_face_indices(face_indices);
-
-                    let frame = Frame::new(mesh, face_color_ids);
-                    frames.push(frame);
-
-                    info!("- Frame End -");
-                }
-            }
-        }
-
-        // todo: lots here
-
-        Self {
-            palette_file: AssetDependency::AssetId(palette_file_opt.unwrap()),
-            frames,
-        }
     }
 }

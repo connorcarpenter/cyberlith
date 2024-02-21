@@ -25,7 +25,7 @@ use config::{
 };
 
 use world_server_naia_proto::components::{AssetEntry, AssetRef};
-use world_server_naia_proto::{components::Body, messages::Auth};
+use world_server_naia_proto::{components::Main, messages::Auth};
 
 use crate::{
     asset_manager::{AssetCatalog, AssetCommandsExt, AssetManager},
@@ -107,7 +107,7 @@ pub fn connect_events(
             // MUST call this to begin replication
             .enable_replication(&mut server)
             // insert asset ref
-            .insert_asset::<Body>(&mut asset_manager, &mut server, AssetCatalog::Cube.into())
+            .insert_asset::<Main>(&mut asset_manager, &mut server, AssetCatalog::HumanModel.into())
             // return Entity id
             .id();
 
@@ -218,7 +218,7 @@ pub fn tick_events(world: &mut World) {
     let mut asset_id_entity_actions = Vec::new();
 
     {
-        let mut system_state: SystemState<(Server, Query<&AssetEntry>, Query<&AssetRef<Body>>)> =
+        let mut system_state: SystemState<(Server, Query<&AssetEntry>, Query<&AssetRef<Main>>)> =
             SystemState::new(world);
         let (server, asset_entry_q, asset_ref_body_q) = system_state.get_mut(world);
 

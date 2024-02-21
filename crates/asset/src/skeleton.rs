@@ -9,8 +9,6 @@ use math::{quat_from_spin_direction, Quat, Vec3};
 use render_api::components::Transform;
 use storage::StorageHash;
 
-impl StorageHash<SkeletonData> for String {}
-
 pub struct SkeletonData {
     // x, y, z, Option<parent_id, angle>, Option<vertex_name>
     vertices: Vec<(Vec3, Option<(usize, f32)>, Option<String>)>,
@@ -100,17 +98,10 @@ impl SkeletonData {
             }
         }
     }
-}
 
-impl From<String> for SkeletonData {
-    fn from(path: String) -> Self {
-        let file_path = format!("assets/{}", path);
+    pub fn from_bytes(bytes: &[u8]) -> Self {
 
-        let Ok(data) = fs::read(&file_path) else {
-            panic!("unable to read file: {:?}", &file_path);
-        };
-
-        let actions = asset_io::bits::SkelAction::read(&data).expect("unable to parse file");
+        let actions = asset_io::bits::SkelAction::read(bytes).expect("unable to parse file");
 
         let mut vertices = Vec::new();
         for action in actions {

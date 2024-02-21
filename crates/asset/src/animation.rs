@@ -13,8 +13,6 @@ use crate::{
     AssetHandle, ModelData, SkeletonData,
 };
 
-impl StorageHash<AnimationData> for String {}
-
 pub struct AnimationData {
     skeleton_file: AssetDependency<SkeletonData>,
     frames: Vec<Frame>,
@@ -184,17 +182,10 @@ impl AnimationData {
 
         skeleton_data.get_interpolated_skeleton(interpolated_rotations)
     }
-}
 
-impl From<String> for AnimationData {
-    fn from(path: String) -> Self {
-        let file_path = format!("assets/{}", path);
+    pub fn load_from_bytes(bytes: &[u8]) -> Self {
 
-        let Ok(data) = web_fs::read(&file_path) else {
-            panic!("unable to read file: {:?}", &file_path);
-        };
-
-        let actions = asset_io::bits::AnimAction::read(&data).expect("unable to parse file");
+        let actions = asset_io::bits::AnimAction::read(bytes).expect("unable to parse file");
 
         let mut skel_file_opt = None;
         let mut name_map = HashMap::new();

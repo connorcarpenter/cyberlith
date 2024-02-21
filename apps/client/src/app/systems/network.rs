@@ -6,8 +6,6 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 
-use crate::app::resources::asset_store::AssetStore;
-use game_engine::asset::AssetManager;
 use game_engine::{
     config::{ORCHESTRATOR_PORT, PUBLIC_IP_ADDR},
     http::HttpClient,
@@ -21,8 +19,7 @@ use game_engine::{
     world::{WorldAuth, WorldClient, WorldConnectEvent},
 };
 
-use crate::app::resources::connection_state::ConnectionState;
-use crate::app::resources::global::Global;
+use crate::app::resources::{global::Global, asset_store::AssetStore, connection_state::ConnectionState};
 
 // ApiTimer
 #[derive(Resource)]

@@ -13,8 +13,6 @@ use crate::{
     AssetHandle, SceneData, SkeletonData, SkinData,
 };
 
-impl StorageHash<ModelData> for String {}
-
 pub struct ModelData {
     skeleton_file: AssetDependency<SkeletonData>,
     component_files: Vec<AssetComponent>,
@@ -155,17 +153,10 @@ impl ModelData {
 
         output
     }
-}
 
-impl From<String> for ModelData {
-    fn from(path: String) -> Self {
-        let file_path = format!("assets/{}", path);
+    pub fn from_bytes(bytes: &[u8]) -> Self {
 
-        let Ok(data) = web_fs::read(&file_path) else {
-            panic!("unable to read file: {:?}", &file_path);
-        };
-
-        let actions = asset_io::bits::ModelAction::read(&data).expect("unable to parse file");
+        let actions = asset_io::bits::ModelAction::read(bytes).expect("unable to parse file");
 
         let mut skel_file_opt = None;
         let mut component_files = Vec::new();

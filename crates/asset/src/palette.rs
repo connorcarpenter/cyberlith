@@ -3,8 +3,6 @@ use bevy_log::info;
 use render_api::base::{Color, CpuMaterial};
 use storage::{StorageHash, Handle, Storage};
 
-impl StorageHash<PaletteData> for String {}
-
 pub(crate) enum PaletteColor {
     Raw(u8, u8, u8),
     Material(Handle<CpuMaterial>),
@@ -43,25 +41,12 @@ impl PaletteData {
             *color = PaletteColor::Material(cpu_material_handle);
         }
     }
-}
 
-impl Default for PaletteData {
-    fn default() -> Self {
-        panic!("");
-    }
-}
+    pub fn from_bytes(bytes: &[u8]) -> Self {
 
-impl From<String> for PaletteData {
-    fn from(path: String) -> Self {
-        let file_path = format!("assets/{}", path);
+        let actions = asset_io::bits::PaletteAction::read(bytes).expect("unable to parse file");
 
-        let Ok(data) = web_fs::read(&file_path) else {
-            panic!("unable to read file: {:?}", &file_path);
-        };
-
-        let actions = asset_io::bits::PaletteAction::read(&data).expect("unable to parse file");
-
-        info!("--- reading palette: {} ---", path);
+        info!("--- reading palette ---");
 
         let mut colors = Vec::new();
         for action in actions {
@@ -76,5 +61,11 @@ impl From<String> for PaletteData {
         info!("--- done reading palette ---");
 
         Self { colors }
+    }
+}
+
+impl Default for PaletteData {
+    fn default() -> Self {
+        panic!("");
     }
 }

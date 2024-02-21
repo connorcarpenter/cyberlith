@@ -22,12 +22,14 @@ use crate::global::Global;
 #[derive(Clone, Copy, Eq, PartialEq)]
 pub enum AssetCatalog {
     Cube,
+    HumanModel,
 }
 
 impl Into<AssetId> for AssetCatalog {
     fn into(self) -> AssetId {
         match self {
             AssetCatalog::Cube => AssetId::from_str("d51ndn").unwrap(),
+            AssetCatalog::HumanModel => AssetId::from_str("dx8pye").unwrap()
         }
     }
 }

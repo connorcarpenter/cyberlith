@@ -20,8 +20,6 @@ pub struct SkinData {
     face_color_ids: Vec<(u16, u8)>,
 }
 
-impl StorageHash<SkinData> for String {}
-
 impl Default for SkinData {
     fn default() -> Self {
         panic!("");
@@ -145,17 +143,12 @@ impl SkinData {
         // success!
         return true;
     }
-}
 
-impl From<String> for SkinData {
-    fn from(path: String) -> Self {
-        let file_path = format!("assets/{}", path);
+    pub fn from_bytes(bytes: &[u8]) -> Self {
 
-        let Ok(data) = fs::read(&file_path) else {
-            panic!("unable to read file: {:?}", &file_path);
-        };
+        info!("--- reading skin ---");
 
-        let actions = asset_io::bits::SkinAction::read(&data).expect("unable to parse file");
+        let actions = asset_io::bits::SkinAction::read(bytes).expect("unable to parse file");
 
         let mut face_color_ids = Vec::new();
         let mut bck_color_index = None;
@@ -177,8 +170,6 @@ impl From<String> for SkinData {
                 }
             }
         }
-
-        info!("--- reading skin: {} ---", path);
 
         // for (face_id, color_id) in color_ids.iter().enumerate() {
         //     info!("face {} -> color {}", face_id, color_id);
