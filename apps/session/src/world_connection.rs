@@ -87,7 +87,7 @@ pub fn recv_added_asset_id_request(
             .unwrap();
 
         if let Some((asset_server_addr, asset_server_port)) = global.get_asset_server_url() {
-            asset_manager.user_asset_request(
+            asset_manager.handle_user_asset_request(
                 &mut http_client,
                 &asset_server_addr,
                 asset_server_port,

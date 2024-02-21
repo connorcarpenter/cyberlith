@@ -51,7 +51,7 @@ impl AssetManager {
     ) {
         for (user_key, asset_id, added) in std::mem::take(&mut self.queued_user_asset_requests) {
             info!("processing queued user asset request..");
-            self.user_asset_request(
+            self.handle_user_asset_request(
                 http_client,
                 asset_server_addr,
                 asset_server_port,
@@ -62,7 +62,7 @@ impl AssetManager {
         }
     }
 
-    pub fn user_asset_request(
+    pub fn handle_user_asset_request(
         &mut self,
         http_client: &mut HttpClient,
         asset_server_addr: &str,
@@ -72,7 +72,7 @@ impl AssetManager {
         added: bool,
     ) {
         let user_assets = self.users.get_mut(&user_key).unwrap();
-        user_assets.user_asset_request(
+        user_assets.handle_user_asset_request(
             http_client,
             asset_server_addr,
             asset_server_port,

@@ -114,7 +114,7 @@ impl UserAssets {
         }
     }
 
-    pub fn user_asset_request(
+    pub fn handle_user_asset_request(
         &mut self,
         http_client: &mut HttpClient,
         asset_server_addr: &str,
@@ -124,7 +124,7 @@ impl UserAssets {
         added: bool,
     ) {
         if added {
-            self.user_asset_added(
+            self.handle_user_asset_added(
                 http_client,
                 asset_server_addr,
                 asset_server_port,
@@ -132,7 +132,7 @@ impl UserAssets {
                 asset_id,
             );
         } else {
-            self.user_asset_removed(asset_id);
+            self.handle_user_asset_removed(asset_id);
         }
     }
 
@@ -269,7 +269,7 @@ impl UserAssets {
         self.assets_in_memory.insert(*asset_id);
     }
 
-    fn user_asset_added(
+    fn handle_user_asset_added(
         &mut self,
         http_client: &mut HttpClient,
         asset_server_addr: &str,
@@ -278,6 +278,7 @@ impl UserAssets {
         asset_id: &AssetId,
     ) {
         // does user already have the asset in memory? if so, return
+        // TODO: is there any reason we should check if the user has the right version in memory?
         if self.assets_in_memory.contains(asset_id) {
             return;
         }
@@ -292,7 +293,7 @@ impl UserAssets {
             asset_server_request.clone(),
         );
 
-        // save responsekeys for 'load_asset' and 'load_asset_with_data' requests
+        // save responsekeys for 'asset' request
         self.asset_server_requests.push(AssetServerRequestState::new(
             asset_server_request,
             asset_server_response_key,
@@ -314,7 +315,7 @@ impl UserAssets {
         ));
     }
 
-    fn user_asset_removed(&mut self, _asset_id: &AssetId) {
+    fn handle_user_asset_removed(&mut self, _asset_id: &AssetId) {
         todo!()
     }
 }
