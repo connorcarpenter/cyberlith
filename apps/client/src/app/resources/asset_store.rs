@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, any::TypeId};
 
 use bevy_ecs::{prelude::Resource, entity::Entity};
 use bevy_log::info;
@@ -11,12 +11,16 @@ use game_engine::{
 
 use crate::app::resources::asset_metadata_store::AssetMetadataStore;
 
+type AssetProcessorId = TypeId;
+
 /// Stores asset data in RAM
 #[derive(Resource)]
 pub struct AssetStore {
     path: String,
     metadata_store: AssetMetadataStore,
     data_store: HashMap<AssetId, Vec<u8>>,
+    asset_processor_map: HashMap<AssetProcessorId, Box<dyn AssetDeferredProcessor>>,
+    ref_waitlist: HashMap<AssetId, HashMap<Entity, AssetProcessorId>>,
 }
 
 impl AssetStore {
@@ -25,6 +29,8 @@ impl AssetStore {
             path: path.to_string(),
             metadata_store: AssetMetadataStore::new(path),
             data_store: HashMap::new(),
+            asset_processor_map: HashMap::new(),
+            ref_waitlist: HashMap::new(),
         }
     }
 
@@ -54,7 +60,7 @@ impl AssetStore {
         // load asset into memory
         info!("loading asset into memory: {:?}", metadata.path());
         let asset_bytes = filesystem::read(metadata.path()).unwrap();
-        self.data_store.insert(asset_id, asset_bytes);
+        self.handle_data_store_load_asset(&asset_id, asset_bytes);
 
         return LoadAssetResponse::loaded_non_modified_asset();
     }
@@ -78,20 +84,74 @@ impl AssetStore {
 
         // load asset data into memory
         info!("loading asset into memory: {:?}", asset_file_path);
-        self.data_store.insert(asset_id, asset_data);
+        self.handle_data_store_load_asset(&asset_id, asset_data);
 
         // load asset metadata into memory
         self.metadata_store.insert(asset_id, asset_etag, asset_file_path);
     }
+
+    pub fn handle_data_store_load_asset(&mut self, asset_id: &AssetId, asset_data: Vec<u8>) {
+        self.data_store.insert(*asset_id, asset_data);
+
+        // process any refs waiting for this asset
+        if let Some(ref_waitlist_entry) = self.ref_waitlist.remove(asset_id) {
+            for (entity, asset_processor_id) in ref_waitlist_entry {
+                let asset_processor = self.asset_processor_map.remove(&asset_processor_id).unwrap();
+
+                asset_processor.deferred_process(self, &entity, asset_id);
+
+                self.asset_processor_map.insert(asset_processor_id, asset_processor);
+            }
+        }
+    }
+
+    pub fn handle_entity_added_asset_ref<T: AssetProcessor>(&mut self, entity: &Entity, asset_id: &AssetId) {
+        info!("entity ({:?}) received AssetRef from World Server! (asset_id: {:?})", entity, asset_id);
+        if self.data_store.contains_key(asset_id) {
+            // process asset ref
+            T::process(self, entity, asset_id);
+        } else {
+            // initialize asset processor if needed
+            let asset_processor_id = T::id();
+            if !self.asset_processor_map.contains_key(&asset_processor_id) {
+                self.asset_processor_map.insert(asset_processor_id, T::make_deferred_box());
+            }
+
+            // put ref into waitlist
+            info!("asset {:?} not yet loaded. adding to waitlist", asset_id);
+            if !self.ref_waitlist.contains_key(asset_id) {
+                self.ref_waitlist.insert(*asset_id, HashMap::new());
+            }
+            let mut ref_waitlist_entry = self.ref_waitlist.get_mut(asset_id).unwrap();
+            ref_waitlist_entry.insert(*entity, asset_processor_id);
+        }
+    }
 }
 
 pub trait AssetProcessor: Send + Sync + 'static {
+    fn id() -> AssetProcessorId;
+    fn make_deferred_box() -> Box<dyn AssetDeferredProcessor>;
     fn process(asset_store: &mut AssetStore, entity: &Entity, asset_id: &AssetId);
 }
 
 impl AssetProcessor for Main {
+    fn id() -> AssetProcessorId {
+        TypeId::of::<Main>()
+    }
+    fn make_deferred_box() -> Box<dyn AssetDeferredProcessor> {
+        Box::new(Main)
+    }
     fn process(asset_store: &mut AssetStore, entity: &Entity, asset_id: &AssetId) {
-        info!("entity ({:?}) received AssetRef<Main> from World Server! (asset_id: {:?})", entity, asset_id);
+        info!("processing AssetRef<Main>");
+    }
+}
 
+pub trait AssetDeferredProcessor: Send + Sync + 'static {
+    fn deferred_process(&self, asset_store: &mut AssetStore, entity: &Entity, asset_id: &AssetId);
+}
+
+impl AssetDeferredProcessor for Main {
+    fn deferred_process(&self, asset_store: &mut AssetStore, entity: &Entity, asset_id: &AssetId) {
+        Main::process(asset_store, entity, asset_id);
     }
 }

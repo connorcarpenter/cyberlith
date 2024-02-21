@@ -21,7 +21,7 @@ use game_engine::{
     world::{WorldAuth, WorldClient, WorldConnectEvent, AssetEntry, AssetRef, Main, WorldInsertComponentEvents},
 };
 
-use crate::app::resources::{global::Global, asset_store::{AssetStore, AssetProcessor}, connection_state::ConnectionState};
+use crate::app::resources::{asset_store::AssetProcessor, global::Global, asset_store::AssetStore, connection_state::ConnectionState};
 
 // ApiTimer
 #[derive(Resource)]
@@ -216,5 +216,5 @@ fn insert_asset_ref_main_events<T: AssetProcessor>(
     };
     let asset_id = *asset_entry.asset_id;
 
-    T::process(asset_store, &entity, &asset_id);
+    asset_store.handle_entity_added_asset_ref::<T>(&entity, &asset_id);
 }
