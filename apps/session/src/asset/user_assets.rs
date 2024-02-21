@@ -14,32 +14,32 @@ use bevy_http_client::{HttpClient, ResponseKey};
 use crate::asset::asset_store::AssetStore;
 
 struct AssetServerRequestState {
-    asset_server_request: AssetRequest,
-    asset_server_response_key: Option<ResponseKey<AssetResponse>>,
-    asset_server_response: Option<AssetResponse>,
+    request: AssetRequest,
+    response_key: Option<ResponseKey<AssetResponse>>,
+    response: Option<AssetResponse>,
 }
 
 impl AssetServerRequestState {
     pub fn new(
-        asset_server_request: AssetRequest,
-        asset_server_response_key: ResponseKey<AssetResponse>,
+        request: AssetRequest,
+        response_key: ResponseKey<AssetResponse>,
     ) -> Self {
         Self {
-            asset_server_request,
-            asset_server_response_key: Some(asset_server_response_key),
-            asset_server_response: None,
+            request,
+            response_key: Some(response_key),
+            response: None,
         }
     }
 
-    pub(crate) fn process(&mut self, http_client: &mut HttpClient) -> Option<UserAssetStateTransition> {
+    pub(crate) fn process(&mut self, http_client: &mut HttpClient) -> Option<UserAssetProcessingStateTransition> {
 
-        if let Some(key) = self.asset_server_response_key.as_ref() {
+        if let Some(key) = self.response_key.as_ref() {
             if let Some(response_result) = http_client.recv(key) {
                 match response_result {
                     Ok(response) => {
                         info!("received asset response from asset server");
-                        self.asset_server_response_key = None;
-                        self.asset_server_response = Some(response);
+                        self.response_key = None;
+                        self.response = Some(response);
                     }
                     Err(e) => {
                         panic!("error receiving asset response: {:?}", e.to_string());
@@ -55,8 +55,8 @@ impl AssetServerRequestState {
 
         // response received!
 
-        let asset_server_req = &self.asset_server_request;
-        let asset_server_res = self.asset_server_response.as_ref().unwrap();
+        let asset_server_req = &self.request;
+        let asset_server_res = self.response.as_ref().unwrap();
 
         let asset_id = asset_server_req.asset_id();
         let old_etag_opt = asset_server_req.etag_opt();
@@ -73,39 +73,39 @@ impl AssetServerRequestState {
                 }
 
                 // store new asset etag & data
-                return Some(UserAssetStateTransition::AssetServerResponse(*new_etag, Some((dependency_set, data.clone()))));
+                return Some(UserAssetProcessingStateTransition::asset_server_response(*new_etag, Some((dependency_set, data.clone()))));
             }
             AssetResponseValue::NotModified => {
                 info!("asset server responded with data not modified, storing asset data for: {:?}", asset_id);
 
-                return Some(UserAssetStateTransition::AssetServerResponse(old_etag_opt.unwrap(), None));
+                return Some(UserAssetProcessingStateTransition::asset_server_response(old_etag_opt.unwrap(), None));
             }
         }
     }
 }
 
 struct ClientLoadAssetRequestState {
-    load_asset_response_key: Option<ResponseReceiveKey<LoadAssetResponse>>,
-    load_asset_response: Option<LoadAssetResponse>,
+    response_key: Option<ResponseReceiveKey<LoadAssetResponse>>,
+    response: Option<LoadAssetResponse>,
 }
 
 impl ClientLoadAssetRequestState {
     pub fn new(
-        load_asset_response_key: ResponseReceiveKey<LoadAssetResponse>,
+        response_key: ResponseReceiveKey<LoadAssetResponse>,
     ) -> Self {
         Self {
-            load_asset_response_key: Some(load_asset_response_key),
-            load_asset_response: None,
+            response_key: Some(response_key),
+            response: None,
         }
     }
 
-    pub fn process(&mut self, server: &mut Server) -> Option<UserAssetStateTransition> {
+    pub fn process(&mut self, server: &mut Server) -> Option<UserAssetProcessingStateTransition> {
 
-        if let Some(key) = self.load_asset_response_key.as_ref() {
+        if let Some(key) = self.response_key.as_ref() {
             if let Some((_user_key, response)) = server.receive_response(key) {
                 info!("received asset etag response from client");
-                self.load_asset_response_key = None;
-                self.load_asset_response = Some(response);
+                self.response_key = None;
+                self.response = Some(response);
             } else {
                 // still waiting for response
                 return None;
@@ -115,57 +115,59 @@ impl ClientLoadAssetRequestState {
         }
 
         // response received
-        let response = self.load_asset_response.as_ref().unwrap();
+        let response = self.response.as_ref().unwrap();
 
-        return Some(UserAssetStateTransition::ClientLoadAssetResponse(response.value));
-
-        // {
-        //     LoadAssetResponseValue::ClientHasOldOrNoAsset => {
-        //         info!(
-        //             "client responded with old data for asset {:?}, sending new asset data to client.",
-        //             asset_id
-        //         );
-        //
-        //         return Some(asset_id);
-        //         pending_client_requests.push((self.user_key, asset_id));
-        //     }
-        //     LoadAssetResponseValue::ClientLoadedNonModifiedAsset => {
-        //         info!("client already has latest data for asset: {:?}", asset_id);
-        //
-        //         self.assets_in_memory.insert(asset_id);
-        //     }
-        // }
-        //
-        //
-        // // send pending client "load_asset_with_data" requests
-        // for (user_key, asset_id) in pending_client_requests {
-        //     self.send_client_asset_data(server, &user_key, &asset_id);
-        // }
+        return Some(UserAssetProcessingStateTransition::client_load_asset_response(response.value));
     }
 }
 
-enum UserAssetState {
+enum UserAssetProcessingState {
     AssetServerRequestInFlight(AssetServerRequestState),
     ClientLoadAssetRequestInFlight(ClientLoadAssetRequestState),
 }
 
-enum UserAssetStateTransition {
+impl UserAssetProcessingState {
+    pub fn asset_server_request_in_flight(
+        request: AssetRequest,
+        response_key: ResponseKey<AssetResponse>
+    ) -> Self {
+        Self::AssetServerRequestInFlight(AssetServerRequestState::new(request, response_key))
+    }
+
+    pub fn client_load_asset_request_in_flight(
+        response_key: ResponseReceiveKey<LoadAssetResponse>
+    ) -> Self {
+        Self::ClientLoadAssetRequestInFlight(ClientLoadAssetRequestState::new(response_key))
+    }
+}
+
+enum UserAssetProcessingStateTransition {
     AssetServerResponse(ETag, Option<(HashSet<AssetId>, Vec<u8>)>),
     ClientLoadAssetResponse(LoadAssetResponseValue),
 }
 
-impl UserAssetState {
-    pub(crate) fn process_in_flight_requests(
+impl UserAssetProcessingStateTransition {
+    pub fn asset_server_response(etag: ETag, data_opt: Option<(HashSet<AssetId>, Vec<u8>)>) -> Self {
+        Self::AssetServerResponse(etag, data_opt)
+    }
+
+    pub fn client_load_asset_response(response_value: LoadAssetResponseValue) -> Self {
+        Self::ClientLoadAssetResponse(response_value)
+    }
+}
+
+impl UserAssetProcessingState {
+    pub(crate) fn process(
         &mut self,
         server: &mut Server,
         http_client: &mut HttpClient,
-    ) -> Option<UserAssetStateTransition> {
+    ) -> Option<UserAssetProcessingStateTransition> {
 
         match self {
-            UserAssetState::AssetServerRequestInFlight(state) => {
+            UserAssetProcessingState::AssetServerRequestInFlight(state) => {
                 return state.process(http_client);
             }
-            UserAssetState::ClientLoadAssetRequestInFlight(state) => {
+            UserAssetProcessingState::ClientLoadAssetRequestInFlight(state) => {
                 return state.process(server);
             }
         }
@@ -174,7 +176,7 @@ impl UserAssetState {
 
 pub struct UserAssets {
     user_key: UserKey,
-    assets_processing: HashMap<AssetId, UserAssetState>,
+    assets_processing: HashMap<AssetId, UserAssetProcessingState>,
     assets_in_memory: HashSet<AssetId>,
 }
 
@@ -191,9 +193,9 @@ impl UserAssets {
 
         let mut assets_finished = Vec::new();
         for (asset_id, user_asset_state) in self.assets_processing.iter_mut() {
-            if let Some(transition) = user_asset_state.process_in_flight_requests(server, http_client) {
+            if let Some(transition) = user_asset_state.process(server, http_client) {
                 match transition {
-                    UserAssetStateTransition::AssetServerResponse(asset_etag, data_opt) => {
+                    UserAssetProcessingStateTransition::AssetServerResponse(asset_etag, data_opt) => {
                         // received response from asset server
                         if let Some((dependencies, new_data)) = data_opt {
                             asset_store.insert_data(*asset_id, asset_etag, dependencies, new_data);
@@ -207,11 +209,11 @@ impl UserAssets {
                             .unwrap();
 
                         // move to next state
-                        *user_asset_state = UserAssetState::ClientLoadAssetRequestInFlight(ClientLoadAssetRequestState::new(
+                        *user_asset_state = UserAssetProcessingState::client_load_asset_request_in_flight(
                             client_load_asset_response_key,
-                        ));
+                        );
                     }
-                    UserAssetStateTransition::ClientLoadAssetResponse(response_value) => {
+                    UserAssetProcessingStateTransition::ClientLoadAssetResponse(response_value) => {
                         match response_value {
                             LoadAssetResponseValue::ClientHasOldOrNoAsset => {
                                 info!("sending asset data to client: {:?}", asset_id);
@@ -305,10 +307,13 @@ impl UserAssets {
         );
 
         // save responsekeys for 'asset' request
-        self.assets_processing.insert(*asset_id, UserAssetState::AssetServerRequestInFlight(AssetServerRequestState::new(
-            asset_server_request,
-            asset_server_response_key,
-        )));
+        self.assets_processing.insert(
+            *asset_id,
+            UserAssetProcessingState::asset_server_request_in_flight(
+                asset_server_request,
+                asset_server_response_key,
+            )
+        );
     }
 
     fn handle_user_asset_removed(&mut self, _asset_id: &AssetId) {
