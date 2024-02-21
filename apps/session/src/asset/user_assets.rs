@@ -139,7 +139,7 @@ impl UserAssets {
     pub fn process_first_flight_requests(
         &mut self,
         http_client: &mut HttpClient,
-    ) -> Option<Vec<(AssetId, ETag, Option<Vec<u8>>)>> {
+    ) -> Option<Vec<(AssetId, ETag, Option<(HashSet<AssetId>, Vec<u8>)>)>> {
         let first_flight_requests = std::mem::take(&mut self.asset_server_requests);
 
         if first_flight_requests.is_empty() {
@@ -168,12 +168,18 @@ impl UserAssets {
             let old_etag_opt = asset_server_req.etag_opt();
 
             match asset_res.value {
-                AssetResponseValue::Modified(new_etag, data) => {
+                AssetResponseValue::Modified(new_etag, dependencies, data) => {
 
                     info!("asset server responded with new etag: {:?}. storing asset data for: {:?}", new_etag, asset_id);
 
+                    // process dependencies
+                    let mut dependency_set = HashSet::new();
+                    for dependency in dependencies {
+                        dependency_set.insert(dependency);
+                    }
+
                     // store new asset etag & data
-                    asset_server_responses.push((asset_id, new_etag, Some(data)));
+                    asset_server_responses.push((asset_id, new_etag, Some((dependency_set, data))));
                 }
                 AssetResponseValue::NotModified => {
                     info!("asset server responded with data not modified, storing asset data for: {:?}", asset_id);

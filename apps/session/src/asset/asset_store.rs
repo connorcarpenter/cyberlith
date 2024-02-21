@@ -1,14 +1,15 @@
 use asset_id::{AssetId, ETag};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 struct AssetData {
     etag: ETag,
+    dependencies: HashSet<AssetId>,
     data: Vec<u8>,
 }
 
 impl AssetData {
-    pub fn new(etag: ETag, data: Vec<u8>) -> Self {
-        Self { etag, data }
+    pub fn new(etag: ETag, dependencies: HashSet<AssetId>, data: Vec<u8>) -> Self {
+        Self { etag, dependencies, data }
     }
 }
 
@@ -24,8 +25,8 @@ impl AssetStore {
         }
     }
 
-    pub fn insert_data(&mut self, asset_id: AssetId, etag: ETag, data: Vec<u8>) {
-        self.map.insert(asset_id, AssetData::new(etag, data));
+    pub fn insert_data(&mut self, asset_id: AssetId, etag: ETag, dependencies: HashSet<AssetId>, data: Vec<u8>) {
+        self.map.insert(asset_id, AssetData::new(etag, dependencies, data));
     }
 
     pub fn get_etag(&self, asset_id: &AssetId) -> Option<ETag> {

@@ -8,11 +8,12 @@ use asset_io::json::ProcessedAssetMeta;
 pub struct AssetMetadata {
     path: String,
     etag: ETag,
+    dependencies: Vec<AssetId>,
 }
 
 impl AssetMetadata {
-    fn new(path: String, etag: ETag) -> Self {
-        Self { path, etag }
+    fn new(path: String, etag: ETag, dependencies: Vec<AssetId>) -> Self {
+        Self { path, etag, dependencies }
     }
 
     pub fn path(&self) -> &str {
@@ -21,6 +22,10 @@ impl AssetMetadata {
 
     pub fn etag(&self) -> ETag {
         self.etag
+    }
+
+    pub fn dependencies(&self) -> &Vec<AssetId> {
+        &self.dependencies
     }
 }
 
@@ -63,6 +68,7 @@ impl AssetMetadataStore {
             output.insert(
                 processed_meta.asset_id(),
                 processed_meta.etag(),
+                processed_meta.dependencies(),
                 asset_file_path,
             );
         }
@@ -70,9 +76,9 @@ impl AssetMetadataStore {
         output
     }
 
-    pub fn insert(&mut self, asset_id: AssetId, etag: ETag, path: String) {
+    pub fn insert(&mut self, asset_id: AssetId, etag: ETag, dependencies: Vec<AssetId>, path: String) {
         // info!("Inserting asset into map: asset_id: {:?}, etag: {:?}, path: {:?}", asset_id, etag, path);
-        self.map.insert(asset_id, AssetMetadata::new(path, etag));
+        self.map.insert(asset_id, AssetMetadata::new(path, etag, dependencies));
     }
 
     pub fn get(&self, asset_id: &AssetId) -> Option<&AssetMetadata> {

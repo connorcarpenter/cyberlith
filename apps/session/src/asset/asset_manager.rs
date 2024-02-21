@@ -93,8 +93,8 @@ impl AssetManager {
             let asset_server_responses = user_assets.process_first_flight_requests(http_client);
             if let Some(asset_server_responses) = asset_server_responses {
                 for (asset_id, etag, data_opt) in asset_server_responses {
-                    if let Some(new_data) = data_opt {
-                        self.asset_cache.insert_data(asset_id, etag, new_data);
+                    if let Some((dependencies, new_data)) = data_opt {
+                        self.asset_cache.insert_data(asset_id, etag, dependencies, new_data);
                     }
 
                     user_assets.send_second_flight(server, &asset_id, &etag);
