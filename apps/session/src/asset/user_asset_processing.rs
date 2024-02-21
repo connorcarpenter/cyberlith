@@ -14,6 +14,7 @@ use bevy_http_client::{HttpClient, ResponseKey};
 // UserAssetProcessingState
 pub enum UserAssetProcessingState {
     AssetServerRequestInFlight(AssetServerRequestState),
+    WaitingForDependencies(HashSet<AssetId>),
     ClientLoadAssetRequestInFlight(ClientLoadAssetRequestState),
 }
 
@@ -54,6 +55,10 @@ impl UserAssetProcessingState {
         Self::ClientLoadAssetRequestInFlight(ClientLoadAssetRequestState::new(response_key))
     }
 
+    pub fn waiting_for_dependencies(dependencies: HashSet<AssetId>) -> Self {
+        Self::WaitingForDependencies(dependencies)
+    }
+
     pub(crate) fn process(
         &mut self,
         server: &mut Server,
@@ -66,6 +71,10 @@ impl UserAssetProcessingState {
             }
             UserAssetProcessingState::ClientLoadAssetRequestInFlight(state) => {
                 return state.process(server);
+            }
+            UserAssetProcessingState::WaitingForDependencies(_) => {
+                // do nothing
+                return None;
             }
         }
     }

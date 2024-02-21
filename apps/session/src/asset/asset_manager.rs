@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use bevy_ecs::{system::ResMut, prelude::Resource};
+use bevy_ecs::{system::{ResMut, Res}, prelude::Resource};
 use bevy_log::info;
 
 use naia_bevy_server::{Server, UserKey};
@@ -8,7 +8,7 @@ use naia_bevy_server::{Server, UserKey};
 use asset_id::AssetId;
 use bevy_http_client::HttpClient;
 
-use crate::asset::{user_assets::UserAssets, asset_store::AssetStore};
+use crate::{asset::{user_assets::UserAssets, asset_store::AssetStore}, global::Global};
 
 #[derive(Resource)]
 pub struct AssetManager {
@@ -90,9 +90,17 @@ impl AssetManager {
         &mut self,
         server: &mut Server,
         http_client: &mut HttpClient,
+        asset_server_addr: &str,
+        asset_server_port: u16,
     ) {
         for user_assets in self.users.values_mut() {
-            user_assets.process_in_flight_requests(server, http_client, &mut self.asset_store);
+            user_assets.process_in_flight_requests(
+                server,
+                http_client,
+                asset_server_addr,
+                asset_server_port,
+                &mut self.asset_store
+            );
         }
     }
 }
@@ -101,6 +109,11 @@ pub fn update(
     mut asset_manager: ResMut<AssetManager>,
     mut server: Server,
     mut http_client: ResMut<HttpClient>,
+    global: Res<Global>,
 ) {
-    asset_manager.process_in_flight_requests(&mut server, &mut http_client);
+    if let Some((asset_server_addr, asset_server_port)) = global.get_asset_server_url() {
+        asset_manager.process_in_flight_requests(&mut server, &mut http_client, &asset_server_addr, asset_server_port);
+    } else {
+        // it's okay to wait until the asset server is available
+    }
 }
