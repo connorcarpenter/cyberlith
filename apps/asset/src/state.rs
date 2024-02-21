@@ -26,7 +26,6 @@ impl State {
         region_server_disconnect_timeout: Duration,
         asset_cache_size_kb: u32,
         asset_metadata_store: AssetMetadataStore,
-        asset_path: &str,
     ) -> Self {
         Self {
             region_server_connection_state: ConnectionState::Disconnected,
@@ -35,7 +34,7 @@ impl State {
             registration_resend_rate,
             region_server_disconnect_timeout,
             asset_metadata_store,
-            asset_cache: AssetCache::new(asset_cache_size_kb, asset_path),
+            asset_cache: AssetCache::new(asset_cache_size_kb),
         }
     }
 

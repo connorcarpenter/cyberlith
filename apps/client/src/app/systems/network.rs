@@ -137,7 +137,7 @@ pub fn session_message_events(
         for asset_message in events.read::<SessionPrimaryChannel, LoadAssetWithData>() {
             info!("received Asset Data Message from Session Server! (id: {:?}, etag: {:?})", asset_message.asset_id, asset_message.asset_etag);
 
-            asset_cache.handle_asset_data_message(asset_message);
+            asset_cache.handle_load_asset_with_data_message(asset_message);
         }
     }
 }
@@ -152,7 +152,7 @@ pub fn session_request_events(
         {
             info!("received Asset Etag Request from Session Server!");
 
-            let response = asset_cache.handle_etag_request(request);
+            let response = asset_cache.handle_load_asset_request(request);
             let response_result = session_client.send_response(&response_send_key, &response);
             if !response_result {
                 panic!("Failed to send response to session server");

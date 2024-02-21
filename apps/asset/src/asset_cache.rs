@@ -1,21 +1,20 @@
-use log::{info, warn};
 use std::collections::{HashMap, VecDeque};
+
+use log::{info, warn};
 
 /// Stores asset data in RAM, but falls back to disk if over capacity
 pub struct AssetCache {
     capacity_kb: u32,
     current_size_kb: u32,
-    asset_path: String,
     data_map: HashMap<String, Vec<u8>>,
     access_deque: VecDeque<String>,
 }
 
 impl AssetCache {
-    pub fn new(capacity_kb: u32, asset_path: &str) -> Self {
+    pub fn new(capacity_kb: u32) -> Self {
         Self {
             capacity_kb,
             current_size_kb: 0,
-            asset_path: asset_path.to_string(),
             data_map: HashMap::new(),
             access_deque: VecDeque::new(),
         }
@@ -34,9 +33,8 @@ impl AssetCache {
             return Some(data.clone());
         }
 
-        let full_path = format!("{}/{}", self.asset_path, path);
-        let Ok(bytes) = std::fs::read(&full_path) else {
-            warn!("Failed to load file: `{}`", &full_path);
+        let Ok(bytes) = std::fs::read(&path) else {
+            warn!("Failed to load file: `{}`", &path);
             return None;
         };
         let byte_count = bytes.len();

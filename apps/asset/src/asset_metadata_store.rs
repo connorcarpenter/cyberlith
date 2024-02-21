@@ -56,13 +56,14 @@ impl AssetMetadataStore {
             let processed_meta = ProcessedAssetMeta::read(&bytes).unwrap();
 
             // strip ".meta" extension from file path
-            let file_path = file_path.file_stem().unwrap();
-            let new_file_path = file_path.to_string_lossy();
+            let file_path_parent = file_path.parent().unwrap().to_str().unwrap();
+            let file_name = file_path.file_stem().unwrap().to_str().unwrap();
+            let asset_file_path = format!("{}/{}", file_path_parent, file_name);
 
             output.insert(
                 processed_meta.asset_id(),
                 processed_meta.etag(),
-                new_file_path.to_string(),
+                asset_file_path,
             );
         }
 

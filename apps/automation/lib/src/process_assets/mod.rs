@@ -3,7 +3,7 @@ mod convert_to_bits;
 use std::{
     fs,
     fs::File,
-    io::{Read, Write},
+    io::Read,
     path::Path,
 };
 
@@ -539,18 +539,10 @@ fn write_new_file(index: &mut Index, file_path: &str, full_path: &str, bytes: Ve
     }
 
     // write data file
-    let mut file = match File::create(full_path) {
-        Ok(file) => file,
-        Err(err) => panic!("Failed to create file: {}", err),
+    match fs::write(full_path, &bytes) {
+        Ok(()) => {},
+        Err(err) => panic!("failed to write file: {}", err),
     };
-    match file.write_all(&bytes) {
-        Ok(_) => {
-            info!("wrote file: {}", file_path);
-        }
-        Err(err) => {
-            info!("failed to write file: {}", err);
-        }
-    }
 
     // add_path will also update the index
     index

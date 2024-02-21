@@ -36,17 +36,16 @@ pub fn main() {
     local::setup();
 
     // setup state
+    let asset_metadata_store = AssetMetadataStore::new("assets");
+
     let registration_resend_rate = Duration::from_secs(5);
     let region_server_disconnect_timeout = Duration::from_secs(16);
-    let asset_path = "assets";
-    let asset_metadata_store = AssetMetadataStore::new(asset_path);
     let cache_size_kb = 5000; // 5 MB
     let state = Arc::new(RwLock::new(State::new(
         registration_resend_rate,
         region_server_disconnect_timeout,
         cache_size_kb,
         asset_metadata_store,
-        asset_path,
     )));
 
     // setup listening http server

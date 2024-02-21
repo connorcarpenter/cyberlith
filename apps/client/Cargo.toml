@@ -24,6 +24,7 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 # Internal
 game_engine = { path = "../engine" }
+filesystem = { path = "../../crates/filesystem" }
 
 # External
 bevy_app = { version = "0.13", default-features=false }
