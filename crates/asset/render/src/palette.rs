@@ -1,7 +1,7 @@
 use bevy_log::info;
 
 use render_api::base::{Color, CpuMaterial};
-use storage::{StorageHash, Handle, Storage};
+use storage::{Handle, Storage};
 
 pub(crate) enum PaletteColor {
     Raw(u8, u8, u8),

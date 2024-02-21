@@ -4,7 +4,7 @@ use asset_id::AssetId;
 use asset_io::bits::ComponentFileType;
 use math::{Quat, Vec3};
 use render_api::components::Transform;
-use storage::{StorageHash, Handle};
+use storage::Handle;
 
 use crate::{
     asset_dependency::{AssetComponent, AssetComponentHandle, AssetDependency},

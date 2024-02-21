@@ -1,13 +1,9 @@
-use std::{
-    collections::{HashMap, HashSet},
-    fs,
-};
+use std::collections::{HashMap, HashSet};
 
 use bevy_log::info;
 
 use math::{quat_from_spin_direction, Quat, Vec3};
 use render_api::components::Transform;
-use storage::StorageHash;
 
 pub struct SkeletonData {
     // x, y, z, Option<parent_id, angle>, Option<vertex_name>

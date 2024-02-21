@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 
-use asset_id::AssetId;
 use bevy_log::info;
 
+use asset_id::AssetId;
 use math::Quat;
 use render_api::components::Transform;
-use storage::{StorageHash, Handle};
+use storage::Handle;
 
 use crate::{
     asset_dependency::{AssetComponentHandle, AssetDependency},
@@ -195,7 +195,7 @@ impl AnimationData {
             match action {
                 asset_io::bits::AnimAction::SkelFile(asset_id) => {
                     info!("SkelFile: {}", asset_id.as_string());
-                    skel_file_opt = Some(todo!());
+                    skel_file_opt = Some(asset_id);
                 }
                 asset_io::bits::AnimAction::ShapeIndex(name) => {
                     //info!("ShapeIndex {}: {}", names.len(), name);
