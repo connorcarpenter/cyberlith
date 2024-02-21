@@ -6,6 +6,7 @@ use bevy_log::info;
 use game_engine::{
     session::{LoadAssetRequest, LoadAssetWithData, LoadAssetResponse},
     asset::AssetId,
+    world::Main,
 };
 
 use crate::app::resources::asset_metadata_store::AssetMetadataStore;
@@ -83,7 +84,18 @@ impl AssetStore {
         self.metadata_store.insert(asset_id, asset_etag, asset_file_path);
     }
 
-    pub fn handle_entity_added_asset_ref<T: Send + Sync + 'static>(&mut self, entity: &Entity, asset_id: &AssetId) {
+    pub fn handle_entity_added_asset_ref<T: AssetProcessor>(&mut self, entity: &Entity, asset_id: &AssetId) {
         info!("entity ({:?}) received AssetRef from World Server! (asset_id: {:?})", entity, asset_id);
+        T::process(self, entity, asset_id);
+    }
+}
+
+pub trait AssetProcessor: Send + Sync + 'static {
+    fn process(asset_store: &mut AssetStore, entity: &Entity, asset_id: &AssetId);
+}
+
+impl AssetProcessor for Main {
+    fn process(asset_store: &mut AssetStore, entity: &Entity, asset_id: &AssetId) {
+        info!("processing Main asset ref");
     }
 }

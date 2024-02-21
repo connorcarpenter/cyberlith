@@ -21,7 +21,7 @@ use game_engine::{
     world::{WorldAuth, WorldClient, WorldConnectEvent, AssetEntry, AssetRef, Main, WorldInsertComponentEvents},
 };
 
-use crate::app::resources::{global::Global, asset_store::AssetStore, connection_state::ConnectionState};
+use crate::app::resources::{global::Global, asset_store::{AssetStore, AssetProcessor}, connection_state::ConnectionState};
 
 // ApiTimer
 #[derive(Resource)]
@@ -182,6 +182,7 @@ pub fn world_connect_events(
     }
 }
 
+// most likely will need to just split this up into individual insert component systems like in editor
 pub fn insert_component_events(
     client: WorldClient,
     mut event_reader: EventReader<WorldInsertComponentEvents>,
@@ -197,7 +198,7 @@ pub fn insert_component_events(
     }
 }
 
-fn insert_asset_ref_main_events<T: Send + Sync + 'static>(
+fn insert_asset_ref_main_events<T: AssetProcessor>(
     client: &WorldClient,
     asset_store: &mut AssetStore,
     asset_entry_q: &Query<&AssetEntry>,
@@ -215,5 +216,5 @@ fn insert_asset_ref_main_events<T: Send + Sync + 'static>(
     };
     let asset_id = *asset_entry.asset_id;
 
-    asset_store.handle_entity_added_asset_ref::<T>(&entity, &asset_id);
+    T::process(asset_store, &entity, &asset_id);
 }
