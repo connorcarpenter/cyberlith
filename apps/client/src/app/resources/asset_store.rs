@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use bevy_ecs::prelude::Resource;
+use bevy_ecs::{prelude::Resource, entity::Entity};
 use bevy_log::info;
 
 use game_engine::{
@@ -81,5 +81,9 @@ impl AssetStore {
 
         // load asset metadata into memory
         self.metadata_store.insert(asset_id, asset_etag, asset_file_path);
+    }
+
+    pub fn handle_entity_added_asset_ref<T: Send + Sync + 'static>(&mut self, entity: &Entity, asset_id: &AssetId) {
+        info!("entity ({:?}) received AssetRef from World Server! (asset_id: {:?})", entity, asset_id);
     }
 }

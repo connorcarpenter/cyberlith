@@ -1,7 +1,9 @@
 use std::time::Duration;
 
 use bevy_ecs::{
+    prelude::Query,
     event::EventReader,
+    entity::Entity,
     system::{ResMut, Resource},
 };
 use bevy_log::info;
@@ -16,7 +18,7 @@ use game_engine::{
         SessionMessageEvents, SessionPrimaryChannel, SessionRequestChannel, SessionRequestEvents,
         WorldConnectToken,
     },
-    world::{WorldAuth, WorldClient, WorldConnectEvent},
+    world::{WorldAuth, WorldClient, WorldConnectEvent, AssetEntry, AssetRef, Main, WorldInsertComponentEvents},
 };
 
 use crate::app::resources::{global::Global, asset_store::AssetStore, connection_state::ConnectionState};
@@ -113,7 +115,7 @@ pub fn session_connect_events(
 
 pub fn session_message_events(
     mut world_client: WorldClient,
-    mut asset_cache: ResMut<AssetStore>,
+    mut asset_store: ResMut<AssetStore>,
     mut event_reader: EventReader<SessionMessageEvents>,
 ) {
     for events in event_reader.read() {
@@ -134,14 +136,14 @@ pub fn session_message_events(
         for asset_message in events.read::<SessionPrimaryChannel, LoadAssetWithData>() {
             info!("received Asset Data Message from Session Server! (id: {:?}, etag: {:?})", asset_message.asset_id, asset_message.asset_etag);
 
-            asset_cache.handle_load_asset_with_data_message(asset_message);
+            asset_store.handle_load_asset_with_data_message(asset_message);
         }
     }
 }
 
 pub fn session_request_events(
     mut session_client: SessionClient,
-    mut asset_cache: ResMut<AssetStore>,
+    mut asset_store: ResMut<AssetStore>,
     mut event_reader: EventReader<SessionRequestEvents>,
 ) {
     for events in event_reader.read() {
@@ -149,7 +151,7 @@ pub fn session_request_events(
         {
             info!("received Asset Etag Request from Session Server!");
 
-            let response = asset_cache.handle_load_asset_request(request);
+            let response = asset_store.handle_load_asset_request(request);
             let response_result = session_client.send_response(&response_send_key, &response);
             if !response_result {
                 panic!("Failed to send response to session server");
@@ -178,4 +180,40 @@ pub fn world_connect_events(
 
         global.connection_state = ConnectionState::ConnectedToWorld;
     }
+}
+
+pub fn insert_component_events(
+    client: WorldClient,
+    mut event_reader: EventReader<WorldInsertComponentEvents>,
+    mut asset_store: ResMut<AssetStore>,
+    asset_entry_q: Query<&AssetEntry>,
+    asset_ref_q: Query<&AssetRef<Main>>,
+) {
+    for events in event_reader.read() {
+        for entity in events.read::<AssetRef<Main>>() {
+            insert_asset_ref_main_events::<Main>(&client, &mut asset_store, &asset_entry_q, &asset_ref_q, &entity);
+        }
+        // .. other components here later
+    }
+}
+
+fn insert_asset_ref_main_events<T: Send + Sync + 'static>(
+    client: &WorldClient,
+    asset_store: &mut AssetStore,
+    asset_entry_q: &Query<&AssetEntry>,
+    asset_ref_q: &Query<&AssetRef<T>>,
+    entity: &Entity
+) {
+    let Ok(asset_ref) = asset_ref_q.get(*entity) else {
+        panic!("Shouldn't happen");
+    };
+    let Some(asset_entry_entity) = asset_ref.asset_id_entity.get(client) else {
+        panic!("Shouldn't happen");
+    };
+    let Ok(asset_entry) = asset_entry_q.get(asset_entry_entity) else {
+        panic!("Shouldn't happen");
+    };
+    let asset_id = *asset_entry.asset_id;
+
+    asset_store.handle_entity_added_asset_ref::<T>(&entity, &asset_id);
 }
