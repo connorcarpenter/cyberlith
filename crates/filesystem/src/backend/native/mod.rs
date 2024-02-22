@@ -1,7 +1,8 @@
 use bevy_tasks::{AsyncComputeTaskPool, Task};
+
 use futures_lite::future;
 
-use crate::common::{FsTaskEnum, FsTaskResultEnum, FsTaskError};
+use crate::{types::{FsTaskEnum, FsTaskResultEnum}, error::FsTaskError};
 
 pub(crate) struct FsTaskJob(pub(crate) Task<Result<FsTaskResultEnum, FsTaskError>>);
 

@@ -2,12 +2,15 @@ use std::collections::HashMap;
 
 use bevy_ecs::{change_detection::ResMut, system::Resource};
 
-use crate::common::{FsTask, FsTaskResult, ReadTask, ReadResult, FsTaskResultEnum, FsTaskError, WriteTask, WriteResult};
-
 use crate::{
-    backend::FsTaskJob,
-    backend::{poll_task, start_task},
+    backend::{poll_task, FsTaskJob, start_task},
     TaskKey,
+    error::FsTaskError,
+    types::FsTaskResultEnum,
+    traits::FsTask,
+    task_read::{ReadResult, ReadTask},
+    task_write::{WriteResult, WriteTask},
+    traits::FsTaskResult,
 };
 
 #[derive(Resource)]

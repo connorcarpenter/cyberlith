@@ -1,5 +1,4 @@
-
-use crate::common::{ReadTask, ReadResult, WriteTask, WriteResult};
+use crate::{task_read::{ReadTask, ReadResult}, task_write::{WriteResult, WriteTask}};
 
 pub enum FsTaskEnum {
     Read(ReadTask),

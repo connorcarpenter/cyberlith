@@ -1,7 +1,7 @@
 
-use crate::common::{ReadResult, FsTaskEnum, FsTaskResultEnum, FsTaskError, WriteResult};
-
 use async_channel::{Receiver, Sender};
+
+use crate::{task_write::WriteResult, task_read::ReadResult, error::FsTaskError, types::{FsTaskEnum, FsTaskResultEnum}};
 
 pub(crate) async fn fetch_async(
     task_enum: FsTaskEnum,

@@ -1,6 +1,5 @@
-//! Minimal HTTP client for both native and WASM.
 
-use crate::{common::{FsTaskEnum, FsTaskResultEnum}, FsTaskError};
+use crate::{error::FsTaskError, types::{FsTaskEnum, FsTaskResultEnum}};
 
 pub(crate) async fn fetch_async(task_enum: FsTaskEnum) -> Result<FsTaskResultEnum, FsTaskError> {
     #[cfg(not(target_arch = "wasm32"))]
