@@ -14,7 +14,7 @@ pub(crate) fn start_task(
     let (tx, task) = bounded(1);
     thread_pool
         .spawn(async move {
-            let result = crate::backend::fetch_async(task_enum).await;
+            let result = crate::backend::task_process_async(task_enum).await;
             tx.send(result).ok();
         })
         .detach();
@@ -30,7 +30,7 @@ pub(crate) fn poll_task(task: &mut FsTaskJob) -> Option<Result<FsTaskResultEnum,
     }
 }
 
-pub async fn fetch_async(
+pub async fn task_process_async(
     _task_enum: &FsTaskEnum,
 ) -> Result<FsTaskResultEnum, TaskError> {
     todo!()

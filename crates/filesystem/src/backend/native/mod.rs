@@ -13,7 +13,7 @@ pub(crate) fn start_task(
 ) -> FsTaskJob {
     let thread_pool = AsyncComputeTaskPool::get();
 
-    let task = thread_pool.spawn(async { crate::backend::fetch_async(task_enum).await });
+    let task = thread_pool.spawn(async { crate::backend::task_process_async(task_enum).await });
 
     FsTaskJob(task)
 }
@@ -28,7 +28,7 @@ pub(crate) fn poll_task(task: &mut FsTaskJob) -> Option<Result<FsTaskResultEnum,
 
 ////
 
-pub(crate) async fn fetch_async(
+pub(crate) async fn task_process_async(
     task_enum: FsTaskEnum,
 ) -> Result<FsTaskResultEnum, TaskError> {
     let (tx, rx): (
@@ -36,7 +36,7 @@ pub(crate) async fn fetch_async(
         Receiver<Result<FsTaskResultEnum, TaskError>>,
     ) = async_channel::bounded(1);
 
-    fetch(
+    task_process(
         task_enum,
         Box::new(move |received| tx.send_blocking(received).unwrap()),
     );
@@ -45,17 +45,17 @@ pub(crate) async fn fetch_async(
         .map_err(|err| TaskError::IoError(err.to_string()))?
 }
 
-fn fetch(
+fn task_process(
     task_enum: FsTaskEnum,
     on_done: Box<dyn FnOnce(Result<FsTaskResultEnum, TaskError>) + Send>,
 ) {
     std::thread::Builder::new()
         .name("filesystem_client".to_owned())
-        .spawn(move || on_done(fetch_blocking(&task_enum)))
+        .spawn(move || on_done(task_process_blocking(&task_enum)))
         .expect("Failed to spawn ehttp thread");
 }
 
-fn fetch_blocking(
+fn task_process_blocking(
     task_enum: &FsTaskEnum,
 ) -> Result<FsTaskResultEnum, TaskError> {
     match task_enum {
