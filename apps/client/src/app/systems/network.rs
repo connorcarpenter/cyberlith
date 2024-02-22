@@ -4,7 +4,7 @@ use bevy_ecs::{
     prelude::Query,
     event::EventReader,
     entity::Entity,
-    system::{ResMut, Resource},
+    system::{Commands, ResMut, Resource},
 };
 use bevy_log::info;
 
@@ -18,10 +18,9 @@ use game_engine::{
         SessionMessageEvents, SessionPrimaryChannel, SessionRequestChannel, SessionRequestEvents,
         WorldConnectToken,
     },
-    world::{WorldAuth, WorldClient, WorldConnectEvent, AssetEntry, AssetRef, Main, WorldInsertComponentEvents},
+    world::{WorldSpawnEntityEvent, WorldAuth, WorldClient, WorldConnectEvent, AssetEntry, AssetRef, Main, WorldInsertComponentEvents},
+    asset::AssetManager,
 };
-use game_engine::asset::AssetManager;
-use game_engine::world::WorldSpawnEntityEvent;
 
 use crate::app::resources::{asset_store::AssetProcessor, global::Global, asset_store::AssetStore, connection_state::ConnectionState};
 
@@ -116,6 +115,7 @@ pub fn session_connect_events(
 }
 
 pub fn session_message_events(
+    mut commands: Commands,
     mut world_client: WorldClient,
     mut asset_store: ResMut<AssetStore>,
     mut asset_manager: ResMut<AssetManager>,
@@ -139,12 +139,13 @@ pub fn session_message_events(
         for asset_message in events.read::<SessionPrimaryChannel, LoadAssetWithData>() {
             info!("received Asset Data Message from Session Server! (id: {:?}, etag: {:?})", asset_message.asset_id, asset_message.asset_etag);
 
-            asset_store.handle_load_asset_with_data_message(&mut asset_manager, asset_message);
+            asset_store.handle_load_asset_with_data_message(&mut commands, &mut asset_manager, asset_message);
         }
     }
 }
 
 pub fn session_request_events(
+    mut commands: Commands,
     mut session_client: SessionClient,
     mut asset_store: ResMut<AssetStore>,
     mut asset_manager: ResMut<AssetManager>,
@@ -153,7 +154,7 @@ pub fn session_request_events(
     for events in event_reader.read() {
         for (response_send_key, request) in events.read::<SessionRequestChannel, LoadAssetRequest>()
         {
-            let response = asset_store.handle_load_asset_request(&mut asset_manager, request);
+            let response = asset_store.handle_load_asset_request(&mut commands, &mut asset_manager, request);
             let response_result = session_client.send_response(&response_send_key, &response);
             if !response_result {
                 panic!("Failed to send response to session server");
@@ -194,6 +195,7 @@ pub fn world_spawn_entity_events(
 
 // most likely will need to just split this up into individual insert component systems like in editor
 pub fn world_insert_component_events(
+    mut commands: Commands,
     client: WorldClient,
     mut event_reader: EventReader<WorldInsertComponentEvents>,
     mut asset_store: ResMut<AssetStore>,
@@ -207,16 +209,17 @@ pub fn world_insert_component_events(
             };
             let asset_id = *asset_entry.asset_id;
             info!("received Asset Entry from World Server! (entity: {:?}, asset_id: {:?})", entity, asset_id);
-            asset_store.handle_add_asset_entry(&entity, &asset_id);
+            asset_store.handle_add_asset_entry(&mut commands, &entity, &asset_id);
         }
         for entity in events.read::<AssetRef<Main>>() {
-            insert_asset_ref_main_events::<Main>(&client, &mut asset_store, &asset_entry_q, &asset_ref_q, &entity);
+            insert_asset_ref_main_events::<Main>(&mut commands, &client, &mut asset_store, &asset_entry_q, &asset_ref_q, &entity);
         }
         // .. other components here later
     }
 }
 
 fn insert_asset_ref_main_events<T: AssetProcessor>(
+    commands: &mut Commands,
     client: &WorldClient,
     asset_store: &mut AssetStore,
     asset_entry_q: &Query<&AssetEntry>,
@@ -231,7 +234,7 @@ fn insert_asset_ref_main_events<T: AssetProcessor>(
     };
     if let Ok(asset_entry) = asset_entry_q.get(asset_entry_entity) {
         let asset_id = *asset_entry.asset_id;
-        asset_store.handle_entity_added_asset_ref::<T>(entity, &asset_id);
+        asset_store.handle_entity_added_asset_ref::<T>(commands, entity, &asset_id);
     } else {
         // asset entry entity has been replicated, but not the component just yet ...
         asset_store.handle_add_asset_entry_waitlist::<T>(entity, &asset_entry_entity);

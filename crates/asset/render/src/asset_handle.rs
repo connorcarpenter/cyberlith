@@ -1,5 +1,9 @@
 use std::hash::{Hash, Hasher};
+
+use bevy_ecs::component::Component;
+
 use asset_id::{AssetId, AssetType};
+
 use crate::{AnimationData, IconData, MeshFile, ModelData, PaletteData, SceneData, SkeletonData, SkinData};
 
 #[derive(Clone, Copy, Eq, PartialEq, Hash)]
@@ -55,7 +59,7 @@ impl TypedAssetId {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Component)]
 pub struct AssetHandle<T> {
     asset_id: AssetId,
     phantom_t: std::marker::PhantomData<T>,
@@ -100,7 +104,81 @@ impl<T> Clone for AssetHandle<T> {
 
 impl<T> Copy for AssetHandle<T> {}
 
+// TypedAssetId -> AssetHandle
+impl From<TypedAssetId> for AssetHandle<SkeletonData> {
+    fn from(typed_asset_id: TypedAssetId) -> Self {
+        let TypedAssetId::Skeleton(asset_id) = typed_asset_id else {
+            panic!("expected skeleton id");
+        };
+        Self::new(asset_id)
+    }
+}
+
+impl From<TypedAssetId> for AssetHandle<MeshFile> {
+    fn from(typed_asset_id: TypedAssetId) -> Self {
+        let TypedAssetId::Mesh(asset_id) = typed_asset_id else {
+            panic!("expected mesh id");
+        };
+        Self::new(asset_id)
+    }
+}
+
+impl From<TypedAssetId> for AssetHandle<AnimationData> {
+    fn from(typed_asset_id: TypedAssetId) -> Self {
+        let TypedAssetId::Animation(asset_id) = typed_asset_id else {
+            panic!("expected animation id");
+        };
+        Self::new(asset_id)
+    }
+}
+
+impl From<TypedAssetId> for AssetHandle<SkinData> {
+    fn from(typed_asset_id: TypedAssetId) -> Self {
+        let TypedAssetId::Skin(asset_id) = typed_asset_id else {
+            panic!("expected skin id");
+        };
+        Self::new(asset_id)
+    }
+}
+
+impl From<TypedAssetId> for AssetHandle<PaletteData> {
+    fn from(typed_asset_id: TypedAssetId) -> Self {
+        let TypedAssetId::Palette(asset_id) = typed_asset_id else {
+            panic!("expected palette id");
+        };
+        Self::new(asset_id)
+    }
+}
+
+impl From<TypedAssetId> for AssetHandle<SceneData> {
+    fn from(typed_asset_id: TypedAssetId) -> Self {
+        let TypedAssetId::Scene(asset_id) = typed_asset_id else {
+            panic!("expected scene id");
+        };
+        Self::new(asset_id)
+    }
+}
+
+impl From<TypedAssetId> for AssetHandle<ModelData> {
+    fn from(typed_asset_id: TypedAssetId) -> Self {
+        let TypedAssetId::Model(asset_id) = typed_asset_id else {
+            panic!("expected model id");
+        };
+        Self::new(asset_id)
+    }
+}
+
+impl From<TypedAssetId> for AssetHandle<IconData> {
+    fn from(typed_asset_id: TypedAssetId) -> Self {
+        let TypedAssetId::Icon(asset_id) = typed_asset_id else {
+            panic!("expected icon id");
+        };
+        Self::new(asset_id)
+    }
+}
+
 // AssetHandle -> TypedAssetId
+
 impl From<AssetHandle<SkeletonData>> for TypedAssetId {
     fn from(handle: AssetHandle<SkeletonData>) -> Self {
         Self::new(handle.asset_id, AssetType::Skeleton)

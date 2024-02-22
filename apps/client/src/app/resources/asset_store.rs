@@ -1,15 +1,15 @@
 use std::{collections::HashMap, any::TypeId};
 
-use bevy_ecs::{prelude::Resource, entity::Entity};
+use bevy_ecs::{prelude::Resource, entity::Entity, system::Commands};
 use bevy_log::info;
+
 use naia_serde::{BitWriter, Serde};
 
 use game_engine::{
     session::{LoadAssetRequest, LoadAssetWithData, LoadAssetResponse},
-    asset::AssetId,
+    asset::{AssetId, AnimationData, AssetHandle, AssetManager, AssetType, IconData, MeshFile, ModelData, PaletteData, SceneData, SkeletonData, SkinData, TypedAssetId},
     world::Main,
 };
-use game_engine::asset::{AssetHandle, AssetManager, AssetType};
 
 use crate::app::resources::asset_metadata_store::{AssetMetadataSerde, AssetMetadataStore};
 
@@ -40,7 +40,7 @@ impl AssetStore {
         }
     }
 
-    pub fn handle_load_asset_request(&mut self, asset_manager: &mut AssetManager, request: LoadAssetRequest) -> LoadAssetResponse {
+    pub fn handle_load_asset_request(&mut self, commands: &mut Commands, asset_manager: &mut AssetManager, request: LoadAssetRequest) -> LoadAssetResponse {
 
         // TODO: currently this will ALWAYS return 'not found' because we don't add any assets to the cache
 
@@ -67,12 +67,12 @@ impl AssetStore {
         info!("loading asset into memory: {:?}", metadata.path());
         let asset_type = metadata.asset_type();
         let asset_bytes = filesystem::read(metadata.path()).unwrap();
-        self.handle_data_store_load_asset(asset_manager, &asset_id, &asset_type, asset_bytes);
+        self.handle_data_store_load_asset(commands, asset_manager, &asset_id, &asset_type, asset_bytes);
 
         return LoadAssetResponse::loaded_non_modified_asset();
     }
 
-    pub fn handle_load_asset_with_data_message(&mut self, asset_manager: &mut AssetManager, message: LoadAssetWithData) {
+    pub fn handle_load_asset_with_data_message(&mut self, commands: &mut Commands, asset_manager: &mut AssetManager, message: LoadAssetWithData) {
 
         let asset_id = message.asset_id;
         let asset_etag = message.asset_etag;
@@ -96,7 +96,7 @@ impl AssetStore {
 
         // load asset data into memory
         info!("loading asset into memory: {:?}", asset_file_path);
-        self.handle_data_store_load_asset(asset_manager, &asset_id, &asset_type, asset_data);
+        self.handle_data_store_load_asset(commands, asset_manager, &asset_id, &asset_type, asset_data);
 
         // load asset metadata into memory
         self.metadata_store.insert(asset_id, asset_etag, asset_file_path, asset_type);
@@ -104,6 +104,7 @@ impl AssetStore {
 
     pub fn handle_data_store_load_asset(
         &mut self,
+        commands: &mut Commands,
         asset_manager: &mut AssetManager,
         asset_id: &AssetId,
         asset_type: &AssetType,
@@ -115,10 +116,13 @@ impl AssetStore {
 
         // process any refs waiting for this asset
         if let Some(ref_waitlist_entry) = self.ref_waitlist.remove(asset_id) {
+
+            let typed_asset_id = TypedAssetId::new(*asset_id, *asset_type);
+
             for (entity, asset_processor_id) in ref_waitlist_entry {
                 let asset_processor = self.asset_processor_map.remove(&asset_processor_id).unwrap();
 
-                asset_processor.deferred_process(self, &entity, asset_id);
+                asset_processor.deferred_process(commands, &entity, &typed_asset_id);
 
                 self.asset_processor_map.insert(asset_processor_id, asset_processor);
             }
@@ -141,7 +145,7 @@ impl AssetStore {
         entry_waitlist_entry.insert(*ref_entity, asset_processor_id);
     }
 
-    pub fn handle_add_asset_entry(&mut self, entry_entity: &Entity, asset_id: &AssetId) {
+    pub fn handle_add_asset_entry(&mut self, commands: &mut Commands, entry_entity: &Entity, asset_id: &AssetId) {
         info!("entity ({:?}) received AssetEntry from World Server! (asset_id: {:?})", entry_entity, asset_id);
         // initialize asset processor if needed
         if let Some(waitlist_entry) = self.entry_waitlist.remove(entry_entity) {
@@ -153,7 +157,9 @@ impl AssetStore {
                     // process asset ref
                     let asset_processor = self.asset_processor_map.remove(&asset_processor_id).unwrap();
 
-                    asset_processor.deferred_process(self, &ref_entity, asset_id);
+                    let asset_type = self.metadata_store.get(asset_id).unwrap().asset_type();
+                    let typed_asset_id = TypedAssetId::new(*asset_id, asset_type);
+                    asset_processor.deferred_process(commands, &ref_entity, &typed_asset_id);
 
                     self.asset_processor_map.insert(asset_processor_id, asset_processor);
                 } else {
@@ -169,11 +175,13 @@ impl AssetStore {
         }
     }
 
-    pub fn handle_entity_added_asset_ref<T: AssetProcessor>(&mut self, ref_entity: &Entity, asset_id: &AssetId) {
+    pub fn handle_entity_added_asset_ref<T: AssetProcessor>(&mut self, commands: &mut Commands, ref_entity: &Entity, asset_id: &AssetId) {
         info!("entity ({:?}) received AssetRef from World Server! (asset_id: {:?})", ref_entity, asset_id);
         if self.data_store.contains_key(asset_id) {
             // process asset ref
-            T::process(self, ref_entity, asset_id);
+            let asset_type = self.metadata_store.get(asset_id).unwrap().asset_type();
+            let typed_asset_id = TypedAssetId::new(*asset_id, asset_type);
+            T::process(commands, ref_entity, &typed_asset_id);
         } else {
             // initialize asset processor if needed
             let asset_processor_id = T::id();
@@ -195,7 +203,7 @@ impl AssetStore {
 pub trait AssetProcessor: Send + Sync + 'static {
     fn id() -> AssetProcessorId;
     fn make_deferred_box() -> Box<dyn AssetDeferredProcessor>;
-    fn process(asset_store: &mut AssetStore, entity: &Entity, asset_id: &AssetId);
+    fn process(commands: &mut Commands, entity: &Entity, typed_asset_id: &TypedAssetId);
 }
 
 impl AssetProcessor for Main {
@@ -205,17 +213,34 @@ impl AssetProcessor for Main {
     fn make_deferred_box() -> Box<dyn AssetDeferredProcessor> {
         Box::new(Main)
     }
-    fn process(asset_store: &mut AssetStore, entity: &Entity, asset_id: &AssetId) {
-        info!("processing AssetRef<Main>");
+    fn process(commands: &mut Commands, entity: &Entity, typed_asset_id: &TypedAssetId) {
+        info!("processing for entity: {:?} = inserting AssetRef<Main>(asset_id: {:?}) ", entity, typed_asset_id.get_id());
+
+        let asset_type = typed_asset_id.get_type();
+        let asset_id = typed_asset_id.get_id();
+        match asset_type {
+            AssetType::Skeleton => process_type::<SkeletonData>(commands, entity, &asset_id),
+            AssetType::Mesh => process_type::<MeshFile>(commands, entity, &asset_id),
+            AssetType::Palette => process_type::<PaletteData>(commands, entity, &asset_id),
+            AssetType::Animation => process_type::<AnimationData>(commands, entity, &asset_id),
+            AssetType::Icon => process_type::<IconData>(commands, entity, &asset_id),
+            AssetType::Skin => process_type::<SkinData>(commands, entity, &asset_id),
+            AssetType::Model => process_type::<ModelData>(commands, entity, &asset_id),
+            AssetType::Scene => process_type::<SceneData>(commands, entity, &asset_id),
+        }
     }
 }
 
+fn process_type<T: Send + Sync + 'static>(commands: &mut Commands, entity: &Entity, asset_id: &AssetId) {
+    commands.entity(*entity).insert(AssetHandle::<T>::new(*asset_id));
+}
+
 pub trait AssetDeferredProcessor: Send + Sync + 'static {
-    fn deferred_process(&self, asset_store: &mut AssetStore, entity: &Entity, asset_id: &AssetId);
+    fn deferred_process(&self, commands: &mut Commands, entity: &Entity, typed_asset_id: &TypedAssetId);
 }
 
 impl AssetDeferredProcessor for Main {
-    fn deferred_process(&self, asset_store: &mut AssetStore, entity: &Entity, asset_id: &AssetId) {
-        Main::process(asset_store, entity, asset_id);
+    fn deferred_process(&self, commands: &mut Commands, entity: &Entity, typed_asset_id: &TypedAssetId) {
+        Main::process(commands, entity, typed_asset_id);
     }
 }
