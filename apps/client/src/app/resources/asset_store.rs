@@ -6,7 +6,7 @@ use bevy_log::info;
 use naia_serde::{BitWriter, Serde};
 
 use game_engine::{
-    filesystem::{ReadResult,WriteResult, FileSystemManager, TaskKey},
+    filesystem::FileSystemManager,
     session::{SessionClient, LoadAssetRequest, LoadAssetWithData, LoadAssetResponse},
     asset::{AssetId, AnimationData, AssetHandle, AssetManager, AssetType, IconData, MeshFile, ModelData, PaletteData, SceneData, SkeletonData, SkinData, TypedAssetId},
     world::{Main, Alt1},
@@ -45,6 +45,22 @@ impl AssetStore {
             load_asset_tasks: Vec::new(),
             save_asset_tasks: Vec::new(),
         }
+    }
+
+    // added as a system to App
+    pub fn startup(
+        mut asset_store: ResMut<AssetStore>,
+        mut fs_manager: ResMut<FileSystemManager>,
+    ) {
+        asset_store.metadata_store.load(&mut fs_manager);
+    }
+
+    // added as a system to App
+    pub fn handle_metadata_tasks(
+        mut asset_store: ResMut<AssetStore>,
+        mut fs_manager: ResMut<FileSystemManager>,
+    ) {
+        asset_store.metadata_store.process_tasks(&mut fs_manager);
     }
 
     // added as a system to App
@@ -95,7 +111,7 @@ impl AssetStore {
         mut fs_manager: ResMut<FileSystemManager>,
     ) {
         let save_asset_tasks = std::mem::take(&mut asset_store.save_asset_tasks);
-        for task in save_asset_tasks {
+        for mut task in save_asset_tasks {
             task.process(&mut fs_manager);
             if !task.is_completed() {
                 asset_store.save_asset_tasks.push(task);
