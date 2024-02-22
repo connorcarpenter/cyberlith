@@ -26,6 +26,7 @@ pub fn run() {
         .init_resource::<network::ApiTimer>()
         .insert_resource(AssetStore::new("assets"))
         .add_systems(Update, AssetStore::handle_load_asset_tasks)
+        .add_systems(Update, AssetStore::handle_save_asset_tasks)
         .init_resource::<Global>()
         .add_systems(Update, network::handle_connection)
         .add_systems(Update, network::session_connect_events)

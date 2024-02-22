@@ -6,7 +6,7 @@ use bevy_log::info;
 use naia_serde::{BitWriter, Serde};
 
 use game_engine::{
-    filesystem::{ReadResult, FileSystemManager, TaskKey},
+    filesystem::{ReadResult,WriteResult, FileSystemManager, TaskKey},
     session::{SessionClient, LoadAssetRequest, LoadAssetWithData, LoadAssetResponse},
     asset::{AssetId, AnimationData, AssetHandle, AssetManager, AssetType, IconData, MeshFile, ModelData, PaletteData, SceneData, SkeletonData, SkinData, TypedAssetId},
     world::{Main, Alt1},
@@ -22,6 +22,55 @@ pub enum LoadAssetTask {
     HasFsTask(AssetId, AssetType, ResponseSendKey<LoadAssetResponse>, TaskKey<ReadResult>),
 }
 
+pub struct SaveAssetTask {
+    asset_write_key_opt: Option<TaskKey<WriteResult>>,
+    metadata_write_key_opt: Option<TaskKey<WriteResult>>,
+}
+
+impl SaveAssetTask {
+    pub fn new(asset_write_key: TaskKey<WriteResult>, metadata_write_key: TaskKey<WriteResult>) -> Self {
+        Self {
+            asset_write_key_opt: Some(asset_write_key),
+            metadata_write_key_opt: Some(metadata_write_key),
+        }
+    }
+
+    pub fn process(&mut self, fs_manager: &mut FileSystemManager) {
+        if let Some(asset_write_key) = self.asset_write_key_opt {
+            if let Some(result) = fs_manager.get_result(&asset_write_key) {
+                match result {
+                    Ok(_) => {
+                        info!("asset write completed");
+                    }
+                    Err(e) => {
+                        panic!("error writing asset to disk: {:?}", e.to_string());
+                    }
+                }
+
+                self.asset_write_key_opt = None;
+            }
+        }
+        if let Some(metadata_write_key) = self.metadata_write_key_opt {
+            if let Some(result) = fs_manager.get_result(&metadata_write_key) {
+                match result {
+                    Ok(_) => {
+                        info!("metadata write completed");
+                    }
+                    Err(e) => {
+                        panic!("error writing metadata to disk: {:?}", e.to_string());
+                    }
+                }
+
+                self.metadata_write_key_opt = None;
+            }
+        }
+    }
+
+    pub fn is_completed(&self) -> bool {
+        self.asset_write_key_opt.is_none() && self.metadata_write_key_opt.is_none()
+    }
+}
+
 /// Stores asset data in RAM
 #[derive(Resource)]
 pub struct AssetStore {
@@ -34,7 +83,8 @@ pub struct AssetStore {
     // asset id -> (ref entity -> asset processor id)
     ref_waitlist: HashMap<AssetId, HashMap<Entity, AssetProcessorId>>,
     //
-    load_asset_tasks: Vec<LoadAssetTask>
+    load_asset_tasks: Vec<LoadAssetTask>,
+    save_asset_tasks: Vec<SaveAssetTask>,
 }
 
 impl AssetStore {
@@ -47,6 +97,7 @@ impl AssetStore {
             entry_waitlist: HashMap::new(),
             ref_waitlist: HashMap::new(),
             load_asset_tasks: Vec::new(),
+            save_asset_tasks: Vec::new(),
         }
     }
 
@@ -92,6 +143,20 @@ impl AssetStore {
         }
     }
 
+    // added as a system to App
+    pub fn handle_save_asset_tasks(
+        mut asset_store: ResMut<AssetStore>,
+        mut fs_manager: ResMut<FileSystemManager>,
+    ) {
+        let save_asset_tasks = std::mem::take(&mut asset_store.save_asset_tasks);
+        for task in save_asset_tasks {
+            task.process(&mut fs_manager);
+            if !task.is_completed() {
+                asset_store.save_asset_tasks.push(task);
+            }
+        }
+    }
+
     pub fn handle_load_asset_request(
         &mut self,
         file_system_manager: &mut FileSystemManager,
@@ -126,7 +191,13 @@ impl AssetStore {
         return;
     }
 
-    pub fn handle_load_asset_with_data_message(&mut self, commands: &mut Commands, asset_manager: &mut AssetManager, message: LoadAssetWithData) {
+    pub fn handle_load_asset_with_data_message(
+        &mut self,
+        commands: &mut Commands,
+        asset_manager: &mut AssetManager,
+        file_system_manager: &mut FileSystemManager,
+        message: LoadAssetWithData
+    ) {
 
         let asset_id = message.asset_id;
         let asset_etag = message.asset_etag;
@@ -138,7 +209,7 @@ impl AssetStore {
 
         // load asset data into disk
         info!("attempting to write asset data to disk: {:?}", asset_file_path);
-        filesystem::write(&asset_file_path, &asset_data).unwrap();
+        let asset_write_key = file_system_manager.write(&asset_file_path, &asset_data);
 
         // load asset metadata into disk
         info!("attempting to write asset metadata to disk: {:?}", asset_metadata_file_path);
@@ -146,7 +217,10 @@ impl AssetStore {
         let mut metadata_writer = BitWriter::new();
         metadata_payload.ser(&mut metadata_writer);
         let metadata_bytes = metadata_writer.to_bytes();
-        filesystem::write(asset_metadata_file_path, metadata_bytes).unwrap();
+        let metadata_write_key = file_system_manager.write(&asset_metadata_file_path, &metadata_bytes);
+
+        // save write keys into task
+        self.save_asset_tasks.push(SaveAssetTask::new(asset_write_key, metadata_write_key));
 
         // load asset data into memory
         info!("loading asset into memory: {:?}", asset_file_path);

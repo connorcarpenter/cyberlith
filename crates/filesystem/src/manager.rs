@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{path::PathBuf, collections::HashMap};
 
 use bevy_ecs::{change_detection::ResMut, system::Resource};
 
@@ -6,11 +6,8 @@ use crate::{
     backend::{FsTaskJob, poll_task, start_task},
     error::TaskError,
     TaskKey,
+    tasks::{write::{WriteResult, WriteTask}, traits::{FsTask, FsTaskResult}, task_enum::FsTaskResultEnum, read::{ReadResult, ReadTask}},
 };
-use crate::tasks::read::{ReadResult, ReadTask};
-use crate::tasks::task_enum::FsTaskResultEnum;
-use crate::tasks::traits::{FsTask, FsTaskResult};
-use crate::tasks::write::{WriteResult, WriteTask};
 
 #[derive(Resource)]
 pub struct FileSystemManager {
@@ -36,27 +33,20 @@ impl FileSystemManager {
     ) -> TaskKey<Q::Result> {
         let task_enum = task.to_enum();
 
-        let rtask = start_task(task_enum);
+        let job = start_task(task_enum);
 
         let key = self.next_key();
 
-        self.tasks.insert(key.id, rtask);
+        self.tasks.insert(key.id, job);
 
         key
     }
 
-    pub fn read(
-        &mut self,
-        path: &str,
-    ) -> TaskKey<ReadResult> {
+    pub fn read<T: Into<PathBuf>>(&mut self, path: T) -> TaskKey<ReadResult> {
         self.start_task(ReadTask::new(path))
     }
 
-    pub fn write(
-        &mut self,
-        path: &str,
-        bytes: Vec<u8>,
-    ) -> TaskKey<WriteResult> {
+    pub fn write<T: Into<PathBuf>, C: AsRef<[u8]>>(&mut self, path: T, bytes: C) -> TaskKey<WriteResult> {
         self.start_task(WriteTask::new(path, bytes))
     }
 

@@ -122,6 +122,7 @@ pub fn session_message_events(
     mut world_client: WorldClient,
     mut asset_store: ResMut<AssetStore>,
     mut asset_manager: ResMut<AssetManager>,
+    mut file_system_manager: ResMut<FileSystemManager>,
     mut event_reader: EventReader<SessionMessageEvents>,
 ) {
     for events in event_reader.read() {
@@ -142,7 +143,7 @@ pub fn session_message_events(
         for asset_message in events.read::<SessionPrimaryChannel, LoadAssetWithData>() {
             info!("received Asset Data Message from Session Server! (id: {:?}, etag: {:?})", asset_message.asset_id, asset_message.asset_etag);
 
-            asset_store.handle_load_asset_with_data_message(&mut commands, &mut asset_manager, asset_message);
+            asset_store.handle_load_asset_with_data_message(&mut commands, &mut asset_manager, &mut file_system_manager, asset_message);
         }
     }
 }

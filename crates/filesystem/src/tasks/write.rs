@@ -11,10 +11,11 @@ pub struct WriteTask {
 }
 
 impl WriteTask {
-    pub fn new<T: Into<PathBuf>>(path: T, bytes: Vec<u8>) -> Self {
+    pub fn new<T: Into<PathBuf>, C: AsRef<[u8]>>(path: T, bytes: C) -> Self {
+        let my_bytes = bytes.as_ref().to_vec();
         Self {
             path: path.into(),
-            bytes,
+            bytes: my_bytes,
         }
     }
 }
