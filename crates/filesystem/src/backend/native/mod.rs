@@ -50,9 +50,9 @@ fn task_process(
     on_done: Box<dyn FnOnce(Result<FsTaskResultEnum, TaskError>) + Send>,
 ) {
     std::thread::Builder::new()
-        .name("filesystem_client".to_owned())
+        .name("filesystem".to_owned())
         .spawn(move || on_done(task_process_blocking(&task_enum)))
-        .expect("Failed to spawn ehttp thread");
+        .expect("Failed to spawn filesystem thread");
 }
 
 fn task_process_blocking(
