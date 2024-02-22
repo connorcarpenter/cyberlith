@@ -2,18 +2,18 @@ use std::collections::HashMap;
 
 use bevy_ecs::{change_detection::ResMut, system::Resource};
 
-use crate::common::{ApiRequest, ApiResponse, Response, ResponseError};
+use crate::common::{FsTask, FsTaskResult, ReadTask, ReadResult, FsTaskResultEnum, FsTaskError, WriteTask, WriteResult};
 
 use crate::{
-    backend::RequestTask,
-    backend::{poll_task, send_request},
-    ResponseKey,
+    backend::FsTaskJob,
+    backend::{poll_task, start_task},
+    TaskKey,
 };
 
 #[derive(Resource)]
 pub struct FileSystemClient {
-    tasks: HashMap<u64, RequestTask>,
-    results: HashMap<u64, Result<Response, ResponseError>>,
+    tasks: HashMap<u64, FsTaskJob>,
+    results: HashMap<u64, Result<FsTaskResultEnum, FsTaskError>>,
     current_index: u64,
 }
 
@@ -28,29 +28,44 @@ impl Default for FileSystemClient {
 }
 
 impl FileSystemClient {
-    pub fn send<Q: ApiRequest>(
+    fn start_task<Q: FsTask>(
         &mut self,
-        req: Q,
-    ) -> ResponseKey<Q::Response> {
-        let http_request = req.to_request();
+        task: Q,
+    ) -> TaskKey<Q::Result> {
+        let task_enum = task.to_enum();
 
-        let task = send_request(http_request);
+        let rtask = start_task(task_enum);
 
         let key = self.next_key();
 
-        self.tasks.insert(key.id, task);
+        self.tasks.insert(key.id, rtask);
 
         key
     }
 
-    pub fn recv<S: ApiResponse>(
+    pub fn read(
         &mut self,
-        key: &ResponseKey<S>,
-    ) -> Option<Result<S, ResponseError>> {
+        path: &str,
+    ) -> TaskKey<ReadResult> {
+        self.start_task(ReadTask::new(path))
+    }
+
+    pub fn write(
+        &mut self,
+        path: &str,
+        bytes: Vec<u8>,
+    ) -> TaskKey<WriteResult> {
+        self.start_task(WriteTask::new(path, bytes))
+    }
+
+    pub fn get_result<S: FsTaskResult>(
+        &mut self,
+        key: &TaskKey<S>,
+    ) -> Option<Result<S, FsTaskError>> {
         if let Some(result) = self.results.remove(&key.id) {
             match result {
-                Ok(response) => {
-                    return Some(S::from_response(response));
+                Ok(result_enum) => {
+                    return Some(S::from_enum(result_enum));
                 }
                 Err(err) => Some(Err(err)),
             }
@@ -59,17 +74,17 @@ impl FileSystemClient {
         }
     }
 
-    fn next_key<S: ApiResponse>(&mut self) -> ResponseKey<S> {
+    fn next_key<S: FsTaskResult>(&mut self) -> TaskKey<S> {
         let next_index = self.current_index;
         self.current_index = self.current_index.wrapping_add(1);
-        ResponseKey::new(next_index)
+        TaskKey::new(next_index)
     }
 
-    pub(crate) fn tasks_iter_mut(&mut self) -> impl Iterator<Item = (&u64, &mut RequestTask)> {
+    pub(crate) fn tasks_iter_mut(&mut self) -> impl Iterator<Item = (&u64, &mut FsTaskJob)> {
         self.tasks.iter_mut()
     }
 
-    pub(crate) fn accept_result(&mut self, key: u64, result: Result<Response, ResponseError>) {
+    pub(crate) fn accept_result(&mut self, key: u64, result: Result<FsTaskResultEnum, FsTaskError>) {
         self.tasks.remove(&key);
         self.results.insert(key, result);
     }

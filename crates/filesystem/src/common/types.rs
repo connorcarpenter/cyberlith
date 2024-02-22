@@ -1,12 +1,12 @@
 
-use crate::common::{ReadRequest, ReadResponse, WriteRequest, WriteResponse};
+use crate::common::{ReadTask, ReadResult, WriteTask, WriteResult};
 
-pub enum Request {
-    Read(ReadRequest),
-    Write(WriteRequest),
+pub enum FsTaskEnum {
+    Read(ReadTask),
+    Write(WriteTask),
 }
 
-pub enum Response {
-    Read(ReadResponse),
-    Write(WriteResponse),
+pub enum FsTaskResultEnum {
+    Read(ReadResult),
+    Write(WriteResult),
 }

@@ -1,9 +1,9 @@
 
 
-use crate::{common::{Request, Response}, ResponseError};
+use crate::{common::{FsTaskEnum, FsTaskResultEnum}, FsTaskError};
 
 pub async fn fetch_async(
-    _request: &Request,
-) -> Result<Response, ResponseError> {
+    _task_enum: &FsTaskEnum,
+) -> Result<FsTaskResultEnum, FsTaskError> {
     todo!()
 }

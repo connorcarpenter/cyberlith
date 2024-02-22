@@ -1,14 +1,14 @@
 
-pub enum ResponseError {
-    InvalidResponse,
+pub enum FsTaskError {
+    InvalidResult,
     IoError(String),
 }
 
-impl ResponseError {
+impl FsTaskError {
     pub fn to_string(&self) -> String {
         match self {
-            ResponseError::InvalidResponse => "InvalidResponse".to_string(),
-            ResponseError::IoError(e) => format!("IoError: {}", e),
+            FsTaskError::InvalidResult => "InvalidResult".to_string(),
+            FsTaskError::IoError(e) => format!("IoError: {}", e),
         }
     }
 }

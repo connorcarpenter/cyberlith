@@ -9,7 +9,6 @@ mod common;
 mod shared;
 
 pub use client::FileSystemClient;
-pub use key::ResponseKey;
 pub use plugin::FileSystemPlugin;
-
-pub use common::ResponseError;
+pub use key::TaskKey;
+pub use common::FsTaskError;

@@ -1,15 +1,13 @@
 //! Minimal HTTP client for both native and WASM.
 
-use crate::common::{Request, Response};
-use crate::ResponseError;
+use crate::{common::{FsTaskEnum, FsTaskResultEnum}, FsTaskError};
 
-/// Performs an `async` HTTP request.
-pub async fn fetch_async(request: Request) -> Result<Response, ResponseError> {
+pub(crate) async fn fetch_async(task_enum: FsTaskEnum) -> Result<FsTaskResultEnum, FsTaskError> {
     #[cfg(not(target_arch = "wasm32"))]
-    return native::fetch_async(request).await;
+    return native::fetch_async(task_enum).await;
 
     #[cfg(target_arch = "wasm32")]
-    return web::fetch_async(&request).await;
+    return web::fetch_async(&task_enum).await;
 }
 
 #[cfg(not(target_arch = "wasm32"))]

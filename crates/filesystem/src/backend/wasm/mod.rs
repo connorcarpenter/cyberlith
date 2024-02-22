@@ -1,29 +1,29 @@
 use bevy_tasks::AsyncComputeTaskPool;
 use crossbeam_channel::{bounded, Receiver};
 
-use crate::common::{Request, Response, ResponseError};
+use crate::common::{FsTaskEnum, FsTaskResultEnum, FsTaskError};
 
-pub(crate) struct RequestTask(pub Receiver<Result<Response, ResponseError>>);
+pub(crate) struct FsTaskJob(pub Receiver<Result<FsTaskResultEnum, FsTaskError>>);
 
-pub(crate) fn send_request(
-    request: Request,
-) -> RequestTask {
+pub(crate) fn start_task(
+    task_enum: FsTaskEnum,
+) -> FsTaskJob {
     let thread_pool = AsyncComputeTaskPool::get();
 
     let (tx, task) = bounded(1);
     thread_pool
         .spawn(async move {
-            let response = crate::shared::fetch_async(request).await;
-            tx.send(response).ok();
+            let result = crate::shared::fetch_async(task_enum).await;
+            tx.send(result).ok();
         })
         .detach();
 
-    RequestTask(task)
+    FsTaskJob(task)
 }
 
-pub(crate) fn poll_task(task: &mut RequestTask) -> Option<Result<Response, ResponseError>> {
+pub(crate) fn poll_task(task: &mut FsTaskJob) -> Option<Result<FsTaskResultEnum, FsTaskError>> {
     match task.0.try_recv() {
-        Ok(Ok(response)) => Some(Ok(response)),
+        Ok(Ok(result_enum)) => Some(Ok(result_enum)),
         Ok(Err(error)) => Some(Err(error)),
         Err(_) => None,
     }

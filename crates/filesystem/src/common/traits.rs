@@ -1,14 +1,14 @@
 
-use crate::common::{Request, Response, ResponseError};
+use crate::common::{FsTaskEnum, FsTaskResultEnum, FsTaskError};
 
-pub trait ApiRequest {
-    type Response: ApiResponse;
+pub trait FsTask {
+    type Result: FsTaskResult;
 
-    fn to_request(self) -> Request;
-    fn from_request(request: Request) -> Result<Self, ()> where Self: Sized;
+    fn to_enum(self) -> FsTaskEnum;
+    fn from_enum(task_enum: FsTaskEnum) -> Result<Self, ()> where Self: Sized;
 }
 
-pub trait ApiResponse {
-    fn to_response(self) -> Response;
-    fn from_response(response: Response) -> Result<Self, ResponseError> where Self: Sized;
+pub trait FsTaskResult {
+    fn to_enum(self) -> FsTaskResultEnum;
+    fn from_enum(result_enum: FsTaskResultEnum) -> Result<Self, FsTaskError> where Self: Sized;
 }
