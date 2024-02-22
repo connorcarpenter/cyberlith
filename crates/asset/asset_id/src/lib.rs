@@ -17,6 +17,22 @@ pub enum AssetType {
     Scene,
 }
 
+impl AssetType {
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s {
+            "mesh" => Some(Self::Mesh),
+            "skeleton" => Some(Self::Skeleton),
+            "palette" => Some(Self::Palette),
+            "animation" => Some(Self::Animation),
+            "icon" => Some(Self::Icon),
+            "skin" => Some(Self::Skin),
+            "model" => Some(Self::Model),
+            "scene" => Some(Self::Scene),
+            _ => None,
+        }
+    }
+}
+
 // AssetId
 #[derive(Clone, Copy, PartialEq, Hash, Eq, Debug)]
 pub struct AssetId(U32Token);

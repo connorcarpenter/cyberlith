@@ -10,8 +10,5 @@ mod light;
 mod point_light;
 mod utils;
 
-pub use ambient_light::*;
-pub use directional_light::*;
 pub use light::*;
-pub use point_light::*;
 pub use utils::*;

@@ -62,7 +62,7 @@ pub mod world {
     pub type WorldInsertComponentEvents = InsertComponentEvents<World>;
     pub type WorldSpawnEntityEvent = SpawnEntityEvent<World>;
 
-    pub use world_server_naia_proto::{messages::Auth as WorldAuth, components::{AssetEntry, AssetRef, Main}};
+    pub use world_server_naia_proto::{messages::Auth as WorldAuth, components::{AssetEntry, AssetRef, Main, Alt1}};
 }
 pub mod config {
     pub use config::*;

@@ -93,8 +93,10 @@ impl State {
                 )));
             };
 
+            let asset_type = metadata.asset_type();
+
             let dependencies = metadata.dependencies().clone();
-            return Ok(AssetResponse::modified(asset_etag, dependencies, asset_data));
+            return Ok(AssetResponse::modified(asset_etag, asset_type, dependencies, asset_data));
         } else {
             return Err(ResponseError::NotFound);
         }

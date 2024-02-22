@@ -122,8 +122,8 @@ impl UserAssets {
             match transition {
                 UserAssetProcessingStateTransition::AssetServerResponse(asset_etag, data_opt) => {
                     // received response from asset server
-                    if let Some((dependencies, new_data)) = data_opt {
-                        asset_store.insert_data(asset_id, asset_etag, dependencies, new_data);
+                    if let Some((asset_type, dependencies, new_data)) = data_opt {
+                        asset_store.insert_data(asset_id, asset_type, asset_etag, dependencies, new_data);
                     }
 
                     // move to next state
@@ -135,10 +135,10 @@ impl UserAssets {
                             info!("sending asset data to client: {:?}", asset_id);
 
                             // get asset etag & data from store
-                            let (asset_etag, asset_data) = asset_store.get_etag_and_data(&asset_id).unwrap();
+                            let (asset_type, asset_etag, asset_data) = asset_store.get_type_and_etag_and_data(&asset_id).unwrap();
 
                             // send asset data to client
-                            let message = LoadAssetWithData::new(asset_id, asset_etag, asset_data);
+                            let message = LoadAssetWithData::new(asset_id, asset_type, asset_etag, asset_data);
                             server.send_message::<PrimaryChannel, _>(&self.user_key, &message);
 
                             // remove from processing, add to memory

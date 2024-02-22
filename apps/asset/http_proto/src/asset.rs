@@ -1,7 +1,7 @@
 
 use naia_serde::SerdeInternal as Serde;
 
-use asset_id::{AssetId, ETag};
+use asset_id::{AssetId, AssetType, ETag};
 use http_common::{ApiRequest, ApiResponse, Method};
 
 // Request
@@ -29,7 +29,7 @@ impl AssetRequest {
 // Response
 #[derive(Serde, PartialEq, Clone)]
 pub enum AssetResponseValue {
-    Modified(ETag, Vec<AssetId>, Vec<u8>),
+    Modified(ETag, AssetType, Vec<AssetId>, Vec<u8>),
     NotModified,
 }
 
@@ -45,9 +45,9 @@ impl AssetResponse {
         }
     }
 
-    pub fn modified(etag: ETag, dependencies: Vec<AssetId>, data: Vec<u8>) -> Self {
+    pub fn modified(etag: ETag, asset_type: AssetType, dependencies: Vec<AssetId>, data: Vec<u8>) -> Self {
         Self {
-            value: AssetResponseValue::Modified(etag, dependencies, data),
+            value: AssetResponseValue::Modified(etag, asset_type, dependencies, data),
         }
     }
 }

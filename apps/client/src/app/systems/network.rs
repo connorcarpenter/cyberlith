@@ -21,8 +21,12 @@ use game_engine::{
     world::{WorldSpawnEntityEvent, WorldAuth, WorldClient, WorldConnectEvent, AssetEntry, AssetRef, Main, WorldInsertComponentEvents},
     asset::AssetManager,
 };
+use game_engine::math::{Quat, Vec3};
+use game_engine::render::components::{RenderLayers, Transform, Visibility};
+use game_engine::world::Alt1;
 
 use crate::app::resources::{asset_store::AssetProcessor, global::Global, asset_store::AssetStore, connection_state::ConnectionState};
+use crate::app::systems::scene::ObjectMarker;
 
 // ApiTimer
 #[derive(Resource)]
@@ -200,7 +204,8 @@ pub fn world_insert_component_events(
     mut event_reader: EventReader<WorldInsertComponentEvents>,
     mut asset_store: ResMut<AssetStore>,
     asset_entry_q: Query<&AssetEntry>,
-    asset_ref_q: Query<&AssetRef<Main>>,
+    asset_ref_main_q: Query<&AssetRef<Main>>,
+    asset_ref_alt1_q: Query<&AssetRef<Alt1>>,
 ) {
     for events in event_reader.read() {
         for entity in events.read::<AssetEntry>() {
@@ -212,13 +217,34 @@ pub fn world_insert_component_events(
             asset_store.handle_add_asset_entry(&mut commands, &entity, &asset_id);
         }
         for entity in events.read::<AssetRef<Main>>() {
-            insert_asset_ref_main_events::<Main>(&mut commands, &client, &mut asset_store, &asset_entry_q, &asset_ref_q, &entity);
+            insert_asset_ref_events::<Main>(&mut commands, &client, &mut asset_store, &asset_entry_q, &asset_ref_main_q, &entity);
+
+            // add clientside things
+            let layer = RenderLayers::layer(0);
+
+            // model
+            commands
+                .entity(entity)
+                // .insert(WalkAnimation {
+                //     anim_handle: human_walk_anim_handle,
+                //     image_index: 0.0,
+                // })
+                .insert(
+                    Transform::from_translation(Vec3::splat(0.0))
+                        .with_rotation(Quat::from_rotation_z(f32::to_radians(0.0))),
+                )
+                .insert(Visibility::default())
+                .insert(ObjectMarker)
+                .insert(layer);
+        }
+        for entity in events.read::<AssetRef<Alt1>>() {
+            insert_asset_ref_events::<Alt1>(&mut commands, &client, &mut asset_store, &asset_entry_q, &asset_ref_alt1_q, &entity);
         }
         // .. other components here later
     }
 }
 
-fn insert_asset_ref_main_events<T: AssetProcessor>(
+fn insert_asset_ref_events<T: AssetProcessor>(
     commands: &mut Commands,
     client: &WorldClient,
     asset_store: &mut AssetStore,
@@ -239,5 +265,4 @@ fn insert_asset_ref_main_events<T: AssetProcessor>(
         // asset entry entity has been replicated, but not the component just yet ...
         asset_store.handle_add_asset_entry_waitlist::<T>(entity, &asset_entry_entity);
     };
-
 }

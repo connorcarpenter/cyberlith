@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use bevy_log::warn;
+use bevy_log::{info, warn};
 
 use asset_id::{AssetId, AssetType};
 use render_api::base::{CpuMaterial, CpuMesh, CpuSkin};
@@ -114,6 +114,7 @@ impl AssetStore {
             AssetType::Skin => {
                 let handle = AssetHandle::<SkinData>::new(*asset_id);
                 if !self.skins.has(&handle) {
+                    info!("loading skin {:?}", handle.asset_id());
                     let bytes = asset_data_store.get(asset_id).unwrap();
                     let skin_data = SkinData::from_bytes(bytes);
                     self.skins.insert(handle, skin_data);

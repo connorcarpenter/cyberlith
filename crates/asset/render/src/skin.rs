@@ -154,15 +154,19 @@ impl SkinData {
         for action in actions {
             match action {
                 asset_io::bits::SkinAction::PaletteFile(asset_id) => {
+                    info!("palette file: {:?}", asset_id);
                     palette_file_opt = Some(asset_id);
                 }
                 asset_io::bits::SkinAction::MeshFile(asset_id) => {
+                    info!("mesh file: {:?}", asset_id);
                     mesh_file_opt = Some(asset_id);
                 }
                 asset_io::bits::SkinAction::BackgroundColor(color_index) => {
+                    info!("background color: {}", color_index);
                     bck_color_index = Some(color_index);
                 }
                 asset_io::bits::SkinAction::SkinColor(face_index, color_index) => {
+                    info!("face color: {} -> {}", face_index, color_index);
                     face_color_ids.push((face_index, color_index));
                 }
             }

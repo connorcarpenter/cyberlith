@@ -38,7 +38,7 @@ impl ModelData {
                     dependencies.push((handle.into(), TypedAssetId::Skin(asset_id.clone())));
                 }
                 AssetComponent::Scene(AssetDependency::<SceneData>::AssetId(asset_id)) => {
-                    dependencies.push((handle.into(), TypedAssetId::Skin(asset_id.clone())));
+                    dependencies.push((handle.into(), TypedAssetId::Scene(asset_id.clone())));
                 }
                 _ => {
                     panic!("expected unloaded (no handles!) skin or scene file");

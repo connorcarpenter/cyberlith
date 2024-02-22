@@ -194,7 +194,7 @@ impl AssetRenderer {
         let skeleton_handle = {
             let skeleton_handle_1 = model_data.get_skeleton_handle();
             let skeleton_handle_2 = animation_data.get_skeleton_handle();
-            if skeleton_handle_1 == skeleton_handle_2 {
+            if skeleton_handle_1 != skeleton_handle_2 {
                 panic!(
                     "skeleton mismatch: {:?} != {:?}",
                     skeleton_handle_1.asset_id(), skeleton_handle_2.asset_id()

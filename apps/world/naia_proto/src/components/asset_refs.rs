@@ -11,12 +11,16 @@ pub(crate) struct AssetRefsPlugin;
 
 impl ProtocolPlugin for AssetRefsPlugin {
     fn build(&self, protocol: &mut Protocol) {
-        protocol.add_component::<AssetRef<Main>>().add_component::<AssetEntry>();
+        protocol
+            .add_component::<AssetEntry>()
+            .add_component::<AssetRef<Main>>()
+            .add_component::<AssetRef<Alt1>>();
     }
 }
 
 // Asset Markers
 pub struct Main;
+pub struct Alt1;
 
 // AssetRef
 #[derive(Component, Replicate)]

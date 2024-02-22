@@ -24,7 +24,7 @@ use config::{
     PUBLIC_IP_ADDR, SELF_BINDING_ADDR, WORLD_SERVER_SIGNAL_PORT, WORLD_SERVER_WEBRTC_PORT,
 };
 
-use world_server_naia_proto::components::{AssetEntry, AssetRef};
+use world_server_naia_proto::components::{Alt1, AssetEntry, AssetRef};
 use world_server_naia_proto::{components::Main, messages::Auth};
 
 use crate::{
@@ -111,6 +111,7 @@ pub fn connect_events(
             .enable_replication(&mut server)
             // insert asset ref
             .insert_asset::<Main>(&mut asset_manager, &mut server, AssetCatalog::HumanModel.into())
+            .insert_asset::<Alt1>(&mut asset_manager, &mut server, AssetCatalog::HumanWalk.into())
             // return Entity id
             .id();
 
@@ -227,9 +228,9 @@ pub fn tick_events(world: &mut World) {
     let mut asset_id_entity_actions = Vec::new();
 
     {
-        let mut system_state: SystemState<(Server, Query<&AssetEntry>, Query<&AssetRef<Main>>)> =
+        let mut system_state: SystemState<(Server, Query<&AssetEntry>, Query<&AssetRef<Main>>, Query<&AssetRef<Alt1>>)> =
             SystemState::new(world);
-        let (server, asset_entry_q, asset_ref_main_q) = system_state.get_mut(world);
+        let (server, asset_entry_q, asset_ref_main_q, asset_ref_alt1_q) = system_state.get_mut(world);
 
         for ((user_key, entity), include) in scope_actions.iter() {
             // determine if entity has any AssetRef components
@@ -243,8 +244,17 @@ pub fn tick_events(world: &mut World) {
 
                 asset_id_entity_actions.push((*user_key, asset_id, *include));
             }
-                // this is unecessary, just for logging
-            else if let Ok(asset_entry) = asset_entry_q.get(*entity) {
+            // AssetRef<Alt1>
+            if let Ok(asset_ref) = asset_ref_alt1_q.get(*entity) {
+                let asset_id_entity = asset_ref.asset_id_entity.get(&server).unwrap();
+                let asset_id = *asset_entry_q.get(asset_id_entity).unwrap().asset_id;
+
+                info!("entity {:?} has AssetRef<Alt1>(asset_id: {:?})", entity, asset_id);
+
+                asset_id_entity_actions.push((*user_key, asset_id, *include));
+            }
+            // this is unecessary, just for logging
+            if let Ok(asset_entry) = asset_entry_q.get(*entity) {
                 let asset_id = *asset_entry.asset_id;
 
                 info!("entity {:?} has AssetEntry(asset_id: {:?})", entity, asset_id);

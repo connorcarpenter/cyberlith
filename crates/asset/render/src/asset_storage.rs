@@ -1,5 +1,5 @@
 use std::{
-    collections::{HashMap, HashSet},
+    collections::HashMap,
     default::Default,
 };
 
@@ -8,9 +8,6 @@ use crate::AssetHandle;
 #[derive(Default)]
 pub struct AssetStorage<T> {
     data_map: HashMap<AssetHandle<T>, T>,
-    added_ids: HashSet<AssetHandle<T>>,
-    changed_ids: HashSet<AssetHandle<T>>,
-    removed_ids: HashSet<AssetHandle<T>>,
 }
 
 impl<T> AssetStorage<T> {
@@ -20,7 +17,6 @@ impl<T> AssetStorage<T> {
             panic!("Asset with id {:?} already exists", asset_handle.asset_id());
         }
         self.data_map.insert(asset_handle, data);
-        self.added_ids.insert(asset_handle);
     }
 
     pub fn has(&self, asset_handle: &AssetHandle<T>) -> bool {
@@ -32,7 +28,6 @@ impl<T> AssetStorage<T> {
     }
 
     pub fn get_mut(&mut self, asset_handle: &AssetHandle<T>) -> Option<&mut T> {
-        self.changed_ids.insert(*asset_handle);
         self.data_map.get_mut(asset_handle)
     }
 }

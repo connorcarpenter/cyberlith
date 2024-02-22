@@ -8,7 +8,7 @@ use naia_bevy_server::{ResponseReceiveKey, Server, UserKey};
 use asset_server_http_proto::{AssetRequest, AssetResponse, AssetResponseValue};
 use session_server_naia_proto::{channels::RequestChannel, messages::{LoadAssetResponse, LoadAssetRequest, LoadAssetResponseValue}};
 
-use asset_id::{AssetId, ETag};
+use asset_id::{AssetId, AssetType, ETag};
 use bevy_http_client::{HttpClient, ResponseKey};
 
 // UserAssetProcessingState
@@ -141,7 +141,7 @@ impl AssetServerRequestState {
         let old_etag_opt = asset_server_req.etag_opt();
 
         match &asset_server_res.value {
-            AssetResponseValue::Modified(new_etag, dependencies, data) => {
+            AssetResponseValue::Modified(new_etag, asset_type, dependencies, data) => {
 
                 info!("received from assetserver: asset_response(asset: {:?}, new etag: {:?}), storing data.", asset_id, new_etag);
 
@@ -152,7 +152,7 @@ impl AssetServerRequestState {
                 }
 
                 // store new asset etag & data
-                return Some(UserAssetProcessingStateTransition::asset_server_response(*new_etag, Some((dependency_set, data.clone()))));
+                return Some(UserAssetProcessingStateTransition::asset_server_response(*new_etag, Some((*asset_type, dependency_set, data.clone()))));
             }
             AssetResponseValue::NotModified => {
                 info!("received from assetserver: asset_response(asset: {:?}, with data not modified).", asset_id);
@@ -203,12 +203,12 @@ impl ClientLoadAssetRequestState {
 
 // UserAssetProcessingStateTransition
 pub enum UserAssetProcessingStateTransition {
-    AssetServerResponse(ETag, Option<(HashSet<AssetId>, Vec<u8>)>),
+    AssetServerResponse(ETag, Option<(AssetType, HashSet<AssetId>, Vec<u8>)>),
     ClientLoadAssetResponse(LoadAssetResponseValue),
 }
 
 impl UserAssetProcessingStateTransition {
-    pub fn asset_server_response(etag: ETag, data_opt: Option<(HashSet<AssetId>, Vec<u8>)>) -> Self {
+    pub fn asset_server_response(etag: ETag, data_opt: Option<(AssetType, HashSet<AssetId>, Vec<u8>)>) -> Self {
         Self::AssetServerResponse(etag, data_opt)
     }
 

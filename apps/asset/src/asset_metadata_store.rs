@@ -2,22 +2,27 @@ use std::{collections::HashMap, fs};
 
 use log::info;
 
-use asset_id::{AssetId, ETag};
+use asset_id::{AssetId, AssetType, ETag};
 use asset_io::json::ProcessedAssetMeta;
 
 pub struct AssetMetadata {
     path: String,
+    asset_type: AssetType,
     etag: ETag,
     dependencies: Vec<AssetId>,
 }
 
 impl AssetMetadata {
-    fn new(path: String, etag: ETag, dependencies: Vec<AssetId>) -> Self {
-        Self { path, etag, dependencies }
+    fn new(path: String, asset_type: AssetType, etag: ETag, dependencies: Vec<AssetId>) -> Self {
+        Self { path, asset_type, etag, dependencies }
     }
 
     pub fn path(&self) -> &str {
         &self.path
+    }
+
+    pub fn asset_type(&self) -> AssetType {
+        self.asset_type
     }
 
     pub fn etag(&self) -> ETag {
@@ -65,8 +70,14 @@ impl AssetMetadataStore {
             let file_name = file_path.file_stem().unwrap().to_str().unwrap();
             let asset_file_path = format!("{}/{}", file_path_parent, file_name);
 
+            let new_file_extension = file_name.split('.').last().unwrap();
+            let Some(asset_type) = AssetType::from_str(new_file_extension) else {
+                panic!("Failed to find asset type for extension: {:?}", new_file_extension)
+            };
+
             output.insert(
                 processed_meta.asset_id(),
+                asset_type,
                 processed_meta.etag(),
                 processed_meta.dependencies(),
                 asset_file_path,
@@ -76,9 +87,9 @@ impl AssetMetadataStore {
         output
     }
 
-    pub fn insert(&mut self, asset_id: AssetId, etag: ETag, dependencies: Vec<AssetId>, path: String) {
+    pub fn insert(&mut self, asset_id: AssetId, asset_type: AssetType, etag: ETag, dependencies: Vec<AssetId>, path: String) {
         // info!("Inserting asset into map: asset_id: {:?}, etag: {:?}, path: {:?}", asset_id, etag, path);
-        self.map.insert(asset_id, AssetMetadata::new(path, etag, dependencies));
+        self.map.insert(asset_id, AssetMetadata::new(path, asset_type, etag, dependencies));
     }
 
     pub fn get(&self, asset_id: &AssetId) -> Option<&AssetMetadata> {

@@ -10,8 +10,10 @@ use game_engine::{
     asset::{AssetId, AnimationData, AssetHandle, AssetManager, AssetType, IconData, MeshFile, ModelData, PaletteData, SceneData, SkeletonData, SkinData, TypedAssetId},
     world::Main,
 };
+use game_engine::world::Alt1;
 
 use crate::app::resources::asset_metadata_store::{AssetMetadataSerde, AssetMetadataStore};
+use crate::app::systems::scene::WalkAnimation;
 
 type AssetProcessorId = TypeId;
 
@@ -206,12 +208,18 @@ pub trait AssetProcessor: Send + Sync + 'static {
     fn process(commands: &mut Commands, entity: &Entity, typed_asset_id: &TypedAssetId);
 }
 
+impl AssetDeferredProcessor for Main {
+    fn deferred_process(&self, commands: &mut Commands, entity: &Entity, typed_asset_id: &TypedAssetId) {
+        Self::process(commands, entity, typed_asset_id);
+    }
+}
+
 impl AssetProcessor for Main {
     fn id() -> AssetProcessorId {
-        TypeId::of::<Main>()
+        TypeId::of::<Self>()
     }
     fn make_deferred_box() -> Box<dyn AssetDeferredProcessor> {
-        Box::new(Main)
+        Box::new(Self)
     }
     fn process(commands: &mut Commands, entity: &Entity, typed_asset_id: &TypedAssetId) {
         info!("processing for entity: {:?} = inserting AssetRef<Main>(asset_id: {:?}) ", entity, typed_asset_id.get_id());
@@ -231,16 +239,38 @@ impl AssetProcessor for Main {
     }
 }
 
+impl AssetDeferredProcessor for Alt1 {
+    fn deferred_process(&self, commands: &mut Commands, entity: &Entity, typed_asset_id: &TypedAssetId) {
+        Self::process(commands, entity, typed_asset_id);
+    }
+}
+
+impl AssetProcessor for Alt1 {
+    fn id() -> AssetProcessorId {
+        TypeId::of::<Self>()
+    }
+    fn make_deferred_box() -> Box<dyn AssetDeferredProcessor> {
+        Box::new(Self)
+    }
+    fn process(commands: &mut Commands, entity: &Entity, typed_asset_id: &TypedAssetId) {
+        info!("processing for entity: {:?} = inserting AssetRef<Alt1>(asset_id: {:?}) ", entity, typed_asset_id.get_id());
+
+        let asset_type = typed_asset_id.get_type();
+        let asset_id = typed_asset_id.get_id();
+        match asset_type {
+            AssetType::Animation => {
+                let walk_anim = WalkAnimation::new(AssetHandle::<AnimationData>::new(asset_id));
+                commands.entity(*entity).insert(walk_anim);
+            }
+            _ => { panic!("unsupported asset type: {:?}", asset_type); }
+        }
+    }
+}
+
 fn process_type<T: Send + Sync + 'static>(commands: &mut Commands, entity: &Entity, asset_id: &AssetId) {
     commands.entity(*entity).insert(AssetHandle::<T>::new(*asset_id));
 }
 
 pub trait AssetDeferredProcessor: Send + Sync + 'static {
     fn deferred_process(&self, commands: &mut Commands, entity: &Entity, typed_asset_id: &TypedAssetId);
-}
-
-impl AssetDeferredProcessor for Main {
-    fn deferred_process(&self, commands: &mut Commands, entity: &Entity, typed_asset_id: &TypedAssetId) {
-        Main::process(commands, entity, typed_asset_id);
-    }
 }

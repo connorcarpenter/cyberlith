@@ -1,15 +1,16 @@
-use asset_id::{AssetId, ETag};
+use asset_id::{AssetId, AssetType, ETag};
 use std::collections::{HashMap, HashSet};
 
 struct AssetData {
+    asset_type: AssetType,
     etag: ETag,
     dependencies: HashSet<AssetId>,
     data: Vec<u8>,
 }
 
 impl AssetData {
-    pub fn new(etag: ETag, dependencies: HashSet<AssetId>, data: Vec<u8>) -> Self {
-        Self { etag, dependencies, data }
+    pub fn new(asset_type: AssetType, etag: ETag, dependencies: HashSet<AssetId>, data: Vec<u8>) -> Self {
+        Self { asset_type, etag, dependencies, data }
     }
 }
 
@@ -25,8 +26,8 @@ impl AssetStore {
         }
     }
 
-    pub fn insert_data(&mut self, asset_id: AssetId, etag: ETag, dependencies: HashSet<AssetId>, data: Vec<u8>) {
-        self.map.insert(asset_id, AssetData::new(etag, dependencies, data));
+    pub fn insert_data(&mut self, asset_id: AssetId, asset_type: AssetType, etag: ETag, dependencies: HashSet<AssetId>, data: Vec<u8>) {
+        self.map.insert(asset_id, AssetData::new(asset_type, etag, dependencies, data));
     }
 
     pub fn has_asset(&self, asset_id: &AssetId) -> bool {
@@ -47,9 +48,9 @@ impl AssetStore {
         }
     }
 
-    pub fn get_etag_and_data(&self, asset_id: &AssetId) -> Option<(ETag, Vec<u8>)> {
+    pub fn get_type_and_etag_and_data(&self, asset_id: &AssetId) -> Option<(AssetType, ETag, Vec<u8>)> {
         match self.map.get(asset_id) {
-            Some(asset_data) => Some((asset_data.etag, asset_data.data.clone())),
+            Some(asset_data) => Some((asset_data.asset_type, asset_data.etag, asset_data.data.clone())),
             None => None,
         }
     }
