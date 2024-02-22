@@ -5,7 +5,6 @@ mod backend;
 mod client;
 mod key;
 mod plugin;
-mod shared;
 mod types;
 mod traits;
 mod error;
