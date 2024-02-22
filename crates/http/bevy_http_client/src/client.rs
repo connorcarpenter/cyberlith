@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use bevy_ecs::{change_detection::ResMut, system::Resource};
-use log::info;
 
 use http_common::{ApiRequest, ApiResponse, Request, RequestOptions, Response, ResponseError};
 

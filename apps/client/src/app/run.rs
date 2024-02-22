@@ -30,7 +30,9 @@ pub fn run() {
         .add_systems(Update, network::session_connect_events)
         .add_systems(Update, network::session_message_events)
         .add_systems(Update, network::session_request_events)
-        .add_systems(Update, network::world_connect_events);
+        .add_systems(Update, network::world_connect_events)
+        .add_systems(Update, network::world_spawn_entity_events)
+        .add_systems(Update, network::world_insert_component_events);
     app.run();
 }
 

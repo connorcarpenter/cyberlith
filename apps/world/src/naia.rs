@@ -99,8 +99,11 @@ pub fn connect_events(
 
         info!("Server connected to: {}", address);
 
-        server.room_mut(&global.main_room_key()).add_user(&user_key);
+        // add user to main room
+        let main_room_key = global.main_room_key();
+        server.room_mut(&main_room_key).add_user(&user_key);
 
+        // give user an entity
         let entity = commands
             // Spawn new Entity
             .spawn_empty()
@@ -111,8 +114,12 @@ pub fn connect_events(
             // return Entity id
             .id();
 
-        server.room_mut(&global.main_room_key()).add_entity(&entity);
+        // add entity to main room
+        server.room_mut(&main_room_key).add_entity(&entity);
 
+        // TODO: need to clean up this entity on disconnect
+
+        // register user
         asset_manager.register_user(&mut server, user_key);
     }
 }
@@ -185,7 +192,7 @@ pub fn tick_events(world: &mut World) {
     for (_room_key, user_key, entity, in_scope) in scope_checks {
         // TODO: assess scope logic here
         if !in_scope {
-            info!("Entity out of scope: {:?}, adding to user", entity);
+            info!("Entity out of scope: {:?}, should be added to user.", entity);
             scope_actions.insert((user_key, entity), true);
         }
     }
@@ -204,11 +211,13 @@ pub fn tick_events(world: &mut World) {
                 if server.user_scope(&user_key).has(&entity) {
                     panic!("Entity already in scope, shouldn't happen");
                 }
+                info!("Adding entity to user scope: {:?}", entity);
                 server.user_scope_mut(&user_key).include(&entity);
             } else {
                 if !server.user_scope(&user_key).has(&entity) {
                     panic!("Entity already out of scope, shouldn't happen");
                 }
+                info!("Removing entity from user scope: {:?}", entity);
                 server.user_scope_mut(&user_key).exclude(&entity);
             }
         }
@@ -220,20 +229,28 @@ pub fn tick_events(world: &mut World) {
     {
         let mut system_state: SystemState<(Server, Query<&AssetEntry>, Query<&AssetRef<Main>>)> =
             SystemState::new(world);
-        let (server, asset_entry_q, asset_ref_body_q) = system_state.get_mut(world);
+        let (server, asset_entry_q, asset_ref_main_q) = system_state.get_mut(world);
 
         for ((user_key, entity), include) in scope_actions.iter() {
             // determine if entity has any AssetRef components
 
-            // AssetRef<Body>
-            if let Ok(asset_ref) = asset_ref_body_q.get(*entity) {
-                info!("Entity has AssetRef<Body>");
+            // AssetRef<Main>
+            if let Ok(asset_ref) = asset_ref_main_q.get(*entity) {
                 let asset_id_entity = asset_ref.asset_id_entity.get(&server).unwrap();
                 let asset_id = *asset_entry_q.get(asset_id_entity).unwrap().asset_id;
+
+                info!("entity {:?} has AssetRef<Main>(asset_id: {:?})", entity, asset_id);
+
                 asset_id_entity_actions.push((*user_key, asset_id, *include));
             }
+                // this is unecessary, just for logging
+            else if let Ok(asset_entry) = asset_entry_q.get(*entity) {
+                let asset_id = *asset_entry.asset_id;
 
-            // TODO: put other AssetRef<Marker> components here .. clean this up somehow??
+                info!("entity {:?} has AssetEntry(asset_id: {:?})", entity, asset_id);
+            }
+
+            // TODO: put other AssetRef<Marker> components here .. also could clean this up somehow??
         }
     }
 

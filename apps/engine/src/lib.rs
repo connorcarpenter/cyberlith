@@ -53,13 +53,14 @@ pub mod session {
     };
 }
 pub mod world {
-    use naia_bevy_client::{events::{ConnectEvent, InsertComponentEvents}, Client};
+    use naia_bevy_client::{events::{SpawnEntityEvent, ConnectEvent, InsertComponentEvents}, Client};
 
     use super::client_markers::World;
 
     pub type WorldClient<'w> = Client<'w, World>;
     pub type WorldConnectEvent = ConnectEvent<World>;
     pub type WorldInsertComponentEvents = InsertComponentEvents<World>;
+    pub type WorldSpawnEntityEvent = SpawnEntityEvent<World>;
 
     pub use world_server_naia_proto::{messages::Auth as WorldAuth, components::{AssetEntry, AssetRef, Main}};
 }

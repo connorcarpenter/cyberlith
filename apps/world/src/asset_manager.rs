@@ -102,12 +102,15 @@ impl AssetManager {
 
     pub fn register_user(&mut self, server: &mut Server, user_key: &UserKey) {
         let room_key = server.make_room().key();
+        server.room_mut(&room_key).add_user(user_key);
         let user_data = UserAssetData::new(room_key);
         self.user_key_to_data_map.insert(*user_key, user_data);
     }
 
     pub fn deregister_user(&mut self, user_key: &UserKey) {
-        self.user_key_to_data_map.remove(user_key);
+        let data = self.user_key_to_data_map.remove(user_key).unwrap();
+        let room_key = data.room_key;
+        // TODO: do we need to remove user from room?
     }
 
     fn create_asset_ref<M: Send + Sync + 'static>(
@@ -122,9 +125,10 @@ impl AssetManager {
         }
 
         let asset_data = self.asset_id_to_data_map.get(&asset_id).unwrap();
+        let entry_entity = asset_data.entry_entity;
         new_ref
             .asset_id_entity
-            .set(server, &asset_data.entry_entity);
+            .set(server, &entry_entity);
         new_ref
     }
 
@@ -171,8 +175,6 @@ impl AssetManager {
         http_client: &mut HttpClient,
         ref_actions: Vec<(UserKey, AssetId, bool)>,
     ) {
-        info!("handle_scope_actions");
-
         let mut asset_actions = Vec::new();
 
         // update ref count for each user for each added/removed asset ref

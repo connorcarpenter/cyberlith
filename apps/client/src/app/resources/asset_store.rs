@@ -20,6 +20,9 @@ pub struct AssetStore {
     metadata_store: AssetMetadataStore,
     data_store: HashMap<AssetId, Vec<u8>>,
     asset_processor_map: HashMap<AssetProcessorId, Box<dyn AssetDeferredProcessor>>,
+    // entry entity -> (ref entity -> asset processor id)
+    entry_waitlist: HashMap<Entity, HashMap<Entity, AssetProcessorId>>,
+    // asset id -> (ref entity -> asset processor id)
     ref_waitlist: HashMap<AssetId, HashMap<Entity, AssetProcessorId>>,
 }
 
@@ -30,6 +33,7 @@ impl AssetStore {
             metadata_store: AssetMetadataStore::new(path),
             data_store: HashMap::new(),
             asset_processor_map: HashMap::new(),
+            entry_waitlist: HashMap::new(),
             ref_waitlist: HashMap::new(),
         }
     }
@@ -105,11 +109,55 @@ impl AssetStore {
         }
     }
 
-    pub fn handle_entity_added_asset_ref<T: AssetProcessor>(&mut self, entity: &Entity, asset_id: &AssetId) {
-        info!("entity ({:?}) received AssetRef from World Server! (asset_id: {:?})", entity, asset_id);
+    // entry entity is here, just not the component just yet ...
+    pub fn handle_add_asset_entry_waitlist<T: AssetProcessor>(&mut self, ref_entity: &Entity, entry_entity: &Entity) {
+        info!("entity ({:?}) received AssetRef from World Server! waiting on asset entry..", ref_entity);
+        // initialize asset processor if needed
+        let asset_processor_id = T::id();
+        if !self.asset_processor_map.contains_key(&asset_processor_id) {
+            self.asset_processor_map.insert(asset_processor_id, T::make_deferred_box());
+        }
+
+        if !self.entry_waitlist.contains_key(entry_entity) {
+            self.entry_waitlist.insert(*entry_entity, HashMap::new());
+        }
+        let mut entry_waitlist_entry = self.entry_waitlist.get_mut(entry_entity).unwrap();
+        entry_waitlist_entry.insert(*ref_entity, asset_processor_id);
+    }
+
+    pub fn handle_add_asset_entry(&mut self, entry_entity: &Entity, asset_id: &AssetId) {
+        info!("entity ({:?}) received AssetEntry from World Server! (asset_id: {:?})", entry_entity, asset_id);
+        // initialize asset processor if needed
+        if let Some(waitlist_entry) = self.entry_waitlist.remove(entry_entity) {
+            for (ref_entity, asset_processor_id) in waitlist_entry {
+                info!("Processing waiting AssetRef: {:?}", ref_entity);
+
+                // mirror logic in handle_entity_added_asset_ref
+                if self.data_store.contains_key(asset_id) {
+                    // process asset ref
+                    let asset_processor = self.asset_processor_map.remove(&asset_processor_id).unwrap();
+
+                    asset_processor.deferred_process(self, &ref_entity, asset_id);
+
+                    self.asset_processor_map.insert(asset_processor_id, asset_processor);
+                } else {
+                    // put ref into waitlist
+                    info!("asset {:?} not yet loaded. adding to waitlist", asset_id);
+                    if !self.ref_waitlist.contains_key(asset_id) {
+                        self.ref_waitlist.insert(*asset_id, HashMap::new());
+                    }
+                    let mut ref_waitlist_entry = self.ref_waitlist.get_mut(asset_id).unwrap();
+                    ref_waitlist_entry.insert(ref_entity, asset_processor_id);
+                }
+            }
+        }
+    }
+
+    pub fn handle_entity_added_asset_ref<T: AssetProcessor>(&mut self, ref_entity: &Entity, asset_id: &AssetId) {
+        info!("entity ({:?}) received AssetRef from World Server! (asset_id: {:?})", ref_entity, asset_id);
         if self.data_store.contains_key(asset_id) {
             // process asset ref
-            T::process(self, entity, asset_id);
+            T::process(self, ref_entity, asset_id);
         } else {
             // initialize asset processor if needed
             let asset_processor_id = T::id();
@@ -123,7 +171,7 @@ impl AssetStore {
                 self.ref_waitlist.insert(*asset_id, HashMap::new());
             }
             let mut ref_waitlist_entry = self.ref_waitlist.get_mut(asset_id).unwrap();
-            ref_waitlist_entry.insert(*entity, asset_processor_id);
+            ref_waitlist_entry.insert(*ref_entity, asset_processor_id);
         }
     }
 }
