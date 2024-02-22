@@ -1,166 +1,150 @@
-use storage::Handle;
+use std::hash::{Hash, Hasher};
+use asset_id::{AssetId, AssetType};
+use crate::{AnimationData, IconData, MeshFile, ModelData, PaletteData, SceneData, SkeletonData, SkinData};
 
-use crate::{
-    AnimationData, IconData, MeshFile, ModelData, PaletteData, SceneData, SkeletonData, SkinData,
-};
-
-pub struct AssetHandle {
-    inner: AssetHandleImpl,
+#[derive(Clone, Copy, Eq, PartialEq, Hash)]
+pub enum TypedAssetId {
+    Mesh(AssetId),
+    Skeleton(AssetId),
+    Palette(AssetId),
+    Animation(AssetId),
+    Icon(AssetId),
+    Skin(AssetId),
+    Model(AssetId),
+    Scene(AssetId),
 }
 
-impl AssetHandle {
-    pub(crate) fn to_impl(self) -> AssetHandleImpl {
-        self.inner
+impl TypedAssetId {
+    pub fn new(asset_id: AssetId, asset_type: AssetType) -> Self {
+        match asset_type {
+            AssetType::Mesh => Self::Mesh(asset_id),
+            AssetType::Skeleton => Self::Skeleton(asset_id),
+            AssetType::Palette => Self::Palette(asset_id),
+            AssetType::Animation => Self::Animation(asset_id),
+            AssetType::Icon => Self::Icon(asset_id),
+            AssetType::Skin => Self::Skin(asset_id),
+            AssetType::Model => Self::Model(asset_id),
+            AssetType::Scene => Self::Scene(asset_id),
+        }
+    }
+
+    pub fn get_id(&self) -> AssetId {
+        match self {
+            Self::Mesh(id) => *id,
+            Self::Skeleton(id) => *id,
+            Self::Palette(id) => *id,
+            Self::Animation(id) => *id,
+            Self::Icon(id) => *id,
+            Self::Skin(id) => *id,
+            Self::Model(id) => *id,
+            Self::Scene(id) => *id,
+        }
+    }
+
+    pub fn get_type(&self) -> AssetType {
+        match self {
+            Self::Mesh(_) => AssetType::Mesh,
+            Self::Skeleton(_) => AssetType::Skeleton,
+            Self::Palette(_) => AssetType::Palette,
+            Self::Animation(_) => AssetType::Animation,
+            Self::Icon(_) => AssetType::Icon,
+            Self::Skin(_) => AssetType::Skin,
+            Self::Model(_) => AssetType::Model,
+            Self::Scene(_) => AssetType::Scene,
+        }
     }
 }
 
-pub(crate) enum AssetHandleImpl {
-    Mesh(Handle<MeshFile>),
-    Skeleton(Handle<SkeletonData>),
-    Palette(Handle<PaletteData>),
-    Animation(Handle<AnimationData>),
-    Icon(Handle<IconData>),
-    Skin(Handle<SkinData>),
-    Model(Handle<ModelData>),
-    Scene(Handle<SceneData>),
+#[derive(Debug)]
+pub struct AssetHandle<T> {
+    asset_id: AssetId,
+    phantom_t: std::marker::PhantomData<T>,
+
 }
 
-// Handle<T> -> AssetHandle
-
-impl From<Handle<MeshFile>> for AssetHandle {
-    fn from(handle: Handle<MeshFile>) -> Self {
+impl<T> AssetHandle<T> {
+    pub fn new(asset_id: AssetId) -> Self {
         Self {
-            inner: AssetHandleImpl::Mesh(handle),
+            asset_id,
+            phantom_t: std::marker::PhantomData,
         }
+    }
+
+    pub fn asset_id(&self) -> AssetId {
+        self.asset_id
     }
 }
 
-impl From<Handle<SkeletonData>> for AssetHandle {
-    fn from(handle: Handle<SkeletonData>) -> Self {
+impl<T> Hash for AssetHandle<T> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.asset_id.hash(state);
+    }
+}
+
+impl<T> PartialEq<Self> for AssetHandle<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.asset_id == other.asset_id
+    }
+}
+
+impl<T> Eq for AssetHandle<T> {}
+
+impl<T> Clone for AssetHandle<T> {
+    fn clone(&self) -> Self {
         Self {
-            inner: AssetHandleImpl::Skeleton(handle),
+            asset_id: self.asset_id,
+            phantom_t: std::marker::PhantomData,
         }
     }
 }
 
-impl From<Handle<PaletteData>> for AssetHandle {
-    fn from(handle: Handle<PaletteData>) -> Self {
-        Self {
-            inner: AssetHandleImpl::Palette(handle),
-        }
+impl<T> Copy for AssetHandle<T> {}
+
+// AssetHandle -> TypedAssetId
+impl From<AssetHandle<SkeletonData>> for TypedAssetId {
+    fn from(handle: AssetHandle<SkeletonData>) -> Self {
+        Self::new(handle.asset_id, AssetType::Skeleton)
     }
 }
 
-impl From<Handle<AnimationData>> for AssetHandle {
-    fn from(handle: Handle<AnimationData>) -> Self {
-        Self {
-            inner: AssetHandleImpl::Animation(handle),
-        }
+impl From<AssetHandle<MeshFile>> for TypedAssetId {
+    fn from(handle: AssetHandle<MeshFile>) -> Self {
+        Self::new(handle.asset_id, AssetType::Mesh)
     }
 }
 
-impl From<Handle<IconData>> for AssetHandle {
-    fn from(handle: Handle<IconData>) -> Self {
-        Self {
-            inner: AssetHandleImpl::Icon(handle),
-        }
+impl From<AssetHandle<AnimationData>> for TypedAssetId {
+    fn from(handle: AssetHandle<AnimationData>) -> Self {
+        Self::new(handle.asset_id, AssetType::Animation)
     }
 }
 
-impl From<Handle<SkinData>> for AssetHandle {
-    fn from(handle: Handle<SkinData>) -> Self {
-        Self {
-            inner: AssetHandleImpl::Skin(handle),
-        }
+impl From<AssetHandle<SkinData>> for TypedAssetId {
+    fn from(handle: AssetHandle<SkinData>) -> Self {
+        Self::new(handle.asset_id, AssetType::Skin)
     }
 }
 
-impl From<Handle<ModelData>> for AssetHandle {
-    fn from(handle: Handle<ModelData>) -> Self {
-        Self {
-            inner: AssetHandleImpl::Model(handle),
-        }
+impl From<AssetHandle<PaletteData>> for TypedAssetId {
+    fn from(handle: AssetHandle<PaletteData>) -> Self {
+        Self::new(handle.asset_id, AssetType::Palette)
     }
 }
 
-impl From<Handle<SceneData>> for AssetHandle {
-    fn from(handle: Handle<SceneData>) -> Self {
-        Self {
-            inner: AssetHandleImpl::Scene(handle),
-        }
+impl From<AssetHandle<SceneData>> for TypedAssetId {
+    fn from(handle: AssetHandle<SceneData>) -> Self {
+        Self::new(handle.asset_id, AssetType::Scene)
     }
 }
 
-// AssetHandle -> Handle<T>
-
-impl From<AssetHandle> for Handle<MeshFile> {
-    fn from(value: AssetHandle) -> Self {
-        match value.inner {
-            AssetHandleImpl::Mesh(handle) => handle,
-            _ => panic!("unexpected handle"),
-        }
+impl From<AssetHandle<ModelData>> for TypedAssetId {
+    fn from(handle: AssetHandle<ModelData>) -> Self {
+        Self::new(handle.asset_id, AssetType::Model)
     }
 }
 
-impl From<AssetHandle> for Handle<PaletteData> {
-    fn from(value: AssetHandle) -> Self {
-        match value.inner {
-            AssetHandleImpl::Palette(handle) => handle,
-            _ => panic!("unexpected handle"),
-        }
-    }
-}
-
-impl From<AssetHandle> for Handle<SkeletonData> {
-    fn from(value: AssetHandle) -> Self {
-        match value.inner {
-            AssetHandleImpl::Skeleton(handle) => handle,
-            _ => panic!("unexpected handle"),
-        }
-    }
-}
-
-impl From<AssetHandle> for Handle<AnimationData> {
-    fn from(value: AssetHandle) -> Self {
-        match value.inner {
-            AssetHandleImpl::Animation(handle) => handle,
-            _ => panic!("unexpected handle"),
-        }
-    }
-}
-
-impl From<AssetHandle> for Handle<IconData> {
-    fn from(value: AssetHandle) -> Self {
-        match value.inner {
-            AssetHandleImpl::Icon(handle) => handle,
-            _ => panic!("unexpected handle"),
-        }
-    }
-}
-
-impl From<AssetHandle> for Handle<SkinData> {
-    fn from(value: AssetHandle) -> Self {
-        match value.inner {
-            AssetHandleImpl::Skin(handle) => handle,
-            _ => panic!("unexpected handle"),
-        }
-    }
-}
-
-impl From<AssetHandle> for Handle<ModelData> {
-    fn from(value: AssetHandle) -> Self {
-        match value.inner {
-            AssetHandleImpl::Model(handle) => handle,
-            _ => panic!("unexpected handle"),
-        }
-    }
-}
-
-impl From<AssetHandle> for Handle<SceneData> {
-    fn from(value: AssetHandle) -> Self {
-        match value.inner {
-            AssetHandleImpl::Scene(handle) => handle,
-            _ => panic!("unexpected handle"),
-        }
+impl From<AssetHandle<IconData>> for TypedAssetId {
+    fn from(handle: AssetHandle<IconData>) -> Self {
+        Self::new(handle.asset_id, AssetType::Icon)
     }
 }

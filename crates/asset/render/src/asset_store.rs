@@ -2,47 +2,44 @@ use std::collections::HashMap;
 
 use bevy_log::warn;
 
-use asset_id::AssetId;
+use asset_id::{AssetId, AssetType};
 use render_api::base::{CpuMaterial, CpuMesh, CpuSkin};
-use storage::{Handle, Storage};
+use storage::Storage;
 
-use crate::{
-    asset_handle::AssetHandleImpl, AnimationData, AssetHandle, IconData, MeshFile, ModelData,
-    PaletteData, SceneData, SkeletonData, SkinData,
-};
+use crate::{AnimationData, AssetHandle, IconData, MeshFile, ModelData, PaletteData, SceneData, SkeletonData, SkinData, asset_storage::AssetStorage, TypedAssetId};
 
 pub(crate) struct AssetStore {
-    pub(crate) meshes: Storage<MeshFile>,
-    pub(crate) skeletons: Storage<SkeletonData>,
-    pub(crate) palettes: Storage<PaletteData>,
-    pub(crate) animations: Storage<AnimationData>,
-    pub(crate) icons: Storage<IconData>,
-    pub(crate) skins: Storage<SkinData>,
-    pub(crate) models: Storage<ModelData>,
-    pub(crate) scenes: Storage<SceneData>,
+    pub(crate) meshes: AssetStorage<MeshFile>,
+    pub(crate) skeletons: AssetStorage<SkeletonData>,
+    pub(crate) palettes: AssetStorage<PaletteData>,
+    pub(crate) animations: AssetStorage<AnimationData>,
+    pub(crate) icons: AssetStorage<IconData>,
+    pub(crate) skins: AssetStorage<SkinData>,
+    pub(crate) models: AssetStorage<ModelData>,
+    pub(crate) scenes: AssetStorage<SceneData>,
 
     // mesh file name, skin handle
-    queued_meshes: Vec<Handle<MeshFile>>,
-    queued_palettes: Vec<Handle<PaletteData>>,
-    queued_icons: Vec<Handle<IconData>>,
-    icons_waiting_on_palettes: HashMap<Handle<PaletteData>, Vec<Handle<IconData>>>,
-    skins_waiting_on_palettes: HashMap<Handle<PaletteData>, Vec<Handle<SkinData>>>,
-    skins_waiting_on_meshes: HashMap<Handle<MeshFile>, Vec<Handle<SkinData>>>,
-    ready_icons: Vec<Handle<IconData>>,
-    ready_skins: Vec<Handle<SkinData>>,
+    queued_meshes: Vec<AssetHandle<MeshFile>>,
+    queued_palettes: Vec<AssetHandle<PaletteData>>,
+    queued_icons: Vec<AssetHandle<IconData>>,
+    icons_waiting_on_palettes: HashMap<AssetHandle<PaletteData>, Vec<AssetHandle<IconData>>>,
+    skins_waiting_on_palettes: HashMap<AssetHandle<PaletteData>, Vec<AssetHandle<SkinData>>>,
+    skins_waiting_on_meshes: HashMap<AssetHandle<MeshFile>, Vec<AssetHandle<SkinData>>>,
+    ready_icons: Vec<AssetHandle<IconData>>,
+    ready_skins: Vec<AssetHandle<SkinData>>,
 }
 
 impl Default for AssetStore {
     fn default() -> Self {
         Self {
-            meshes: Storage::default(),
-            skeletons: Storage::default(),
-            palettes: Storage::default(),
-            animations: Storage::default(),
-            icons: Storage::default(),
-            skins: Storage::default(),
-            models: Storage::default(),
-            scenes: Storage::default(),
+            meshes: AssetStorage::default(),
+            skeletons: AssetStorage::default(),
+            palettes: AssetStorage::default(),
+            animations: AssetStorage::default(),
+            icons: AssetStorage::default(),
+            skins: AssetStorage::default(),
+            models: AssetStorage::default(),
+            scenes: AssetStorage::default(),
 
             queued_meshes: Vec::new(),
             queued_palettes: Vec::new(),
@@ -57,126 +54,131 @@ impl Default for AssetStore {
 }
 
 impl AssetStore {
-    pub(crate) fn load<T: From<AssetHandle>>(&mut self, asset_id: &AssetId) -> T {
-        todo!();
-        //
-        // let file_ext: String = todo!(); // need to get extension from asset id
-        //
-        // let mut dependencies = Vec::new();
-        //
-        // let asset_handle = match file_ext.as_str() {
-        //     "mesh" => {
-        //         let existed = self.meshes.has(*asset_id);
-        //         let handle = self.meshes.add(*asset_id);
-        //         if !existed {
-        //             self.queued_meshes.push(handle.clone());
-        //         }
-        //         let asset_handle: AssetHandle = handle.into();
-        //         asset_handle.into()
-        //     }
-        //     "skeleton" => {
-        //         let asset_handle: AssetHandle = self.skeletons.add(*asset_id).into();
-        //         asset_handle.into()
-        //     }
-        //     "palette" => {
-        //         let existed = self.palettes.has(*asset_id);
-        //         let handle = self.palettes.add(*asset_id);
-        //         if !existed {
-        //             self.queued_palettes.push(handle.clone());
-        //         }
-        //         let asset_handle: AssetHandle = handle.into();
-        //         asset_handle.into()
-        //     }
-        //     "animation" => {
-        //         let existed = self.animations.has(*asset_id);
-        //         let handle = self.animations.add(*asset_id);
-        //         if !existed {
-        //             let data = self.animations.get(&handle).unwrap();
-        //             data.load_dependencies(handle, &mut dependencies);
-        //         }
-        //         let asset_handle: AssetHandle = handle.into();
-        //         asset_handle.into()
-        //     }
-        //     "icon" => {
-        //         let existed = self.icons.has(*asset_id);
-        //         let handle = self.icons.add(*asset_id);
-        //         if !existed {
-        //             self.queued_icons.push(handle.clone());
-        //             let data = self.icons.get(&handle).unwrap();
-        //             data.load_dependencies(handle, &mut dependencies);
-        //         }
-        //         let asset_handle: AssetHandle = handle.into();
-        //         asset_handle.into()
-        //     }
-        //     "skin" => {
-        //         let existed = self.skins.has(*asset_id);
-        //         let handle = self.skins.add(*asset_id);
-        //         if !existed {
-        //             let data = self.skins.get(&handle).unwrap();
-        //             data.load_dependencies(handle, &mut dependencies);
-        //         }
-        //         let asset_handle: AssetHandle = handle.into();
-        //         asset_handle.into()
-        //     }
-        //     "model" => {
-        //         let existed = self.models.has(*asset_id);
-        //         let handle = self.models.add(*asset_id);
-        //         if !existed {
-        //             let data = self.models.get(&handle).unwrap();
-        //             data.load_dependencies(handle, &mut dependencies);
-        //         }
-        //         let asset_handle: AssetHandle = handle.into();
-        //         asset_handle.into()
-        //     }
-        //     "scene" => {
-        //         let existed = self.scenes.has(*asset_id);
-        //         let handle = self.scenes.add(*asset_id);
-        //         if !existed {
-        //             let data = self.scenes.get(&handle).unwrap();
-        //             data.load_dependencies(handle, &mut dependencies);
-        //         }
-        //         let asset_handle: AssetHandle = handle.into();
-        //         asset_handle.into()
-        //     }
-        //     _ => panic!("Unknown file extension: {}", file_ext),
-        // };
-        //
-        // if !dependencies.is_empty() {
-        //     for (principal_handle, dependency_id) in dependencies {
-        //         let dependency_handle = self.load(&dependency_id);
-        //         self.finish_dependency(principal_handle, dependency_id, dependency_handle);
-        //     }
-        // }
-        //
-        // asset_handle
+    pub(crate) fn load(
+        &mut self,
+        asset_data_store: &HashMap<AssetId, Vec<u8>>,
+        asset_id: &AssetId,
+        asset_type: &AssetType,
+    ) {
+
+        let mut dependencies: Vec<(TypedAssetId, TypedAssetId)> = Vec::new();
+
+        match asset_type {
+            AssetType::Mesh => {
+                let handle = AssetHandle::<MeshFile>::new(*asset_id);
+                if !self.meshes.has(&handle) {
+                    let bytes = asset_data_store.get(asset_id).unwrap();
+                    let mesh_data = MeshFile::from_bytes(bytes);
+                    self.meshes.insert(handle, mesh_data);
+                    self.queued_meshes.push(handle);
+                }
+            }
+            AssetType::Skeleton => {
+                let handle = AssetHandle::<SkeletonData>::new(*asset_id);
+                if !self.skeletons.has(&handle) {
+                    let bytes = asset_data_store.get(asset_id).unwrap();
+                    let skeleton_data = SkeletonData::from_bytes(bytes);
+                    self.skeletons.insert(handle, skeleton_data);
+                }
+            }
+            AssetType::Palette => {
+                let handle = AssetHandle::<PaletteData>::new(*asset_id);
+                if !self.palettes.has(&handle) {
+                    let bytes = asset_data_store.get(asset_id).unwrap();
+                    let palette_data = PaletteData::from_bytes(bytes);
+                    self.palettes.insert(handle, palette_data);
+                    self.queued_palettes.push(handle);
+                }
+            }
+            AssetType::Animation => {
+                let handle = AssetHandle::<AnimationData>::new(*asset_id);
+                if !self.animations.has(&handle) {
+                    let bytes = asset_data_store.get(asset_id).unwrap();
+                    let animation_data = AnimationData::from_bytes(bytes);
+                    self.animations.insert(handle, animation_data);
+                    let animation_data = self.animations.get(&handle).unwrap();
+                    animation_data.load_dependencies(handle, &mut dependencies);
+                }
+            }
+            AssetType::Icon => {
+                let handle = AssetHandle::<IconData>::new(*asset_id);
+                if !self.icons.has(&handle) {
+                    let bytes = asset_data_store.get(asset_id).unwrap();
+                    let icon_data = IconData::from_bytes(bytes);
+                    self.icons.insert(handle, icon_data);
+                    self.queued_icons.push(handle);
+                    let icon_data = self.icons.get(&handle).unwrap();
+                    icon_data.load_dependencies(handle, &mut dependencies);
+                }
+            }
+            AssetType::Skin => {
+                let handle = AssetHandle::<SkinData>::new(*asset_id);
+                if !self.skins.has(&handle) {
+                    let bytes = asset_data_store.get(asset_id).unwrap();
+                    let skin_data = SkinData::from_bytes(bytes);
+                    self.skins.insert(handle, skin_data);
+                    let skin_data = self.skins.get(&handle).unwrap();
+                    skin_data.load_dependencies(handle, &mut dependencies);
+                }
+            }
+            AssetType::Model => {
+                let handle = AssetHandle::<ModelData>::new(*asset_id);
+                if !self.models.has(&handle) {
+                    let bytes = asset_data_store.get(asset_id).unwrap();
+                    let model_data = ModelData::from_bytes(bytes);
+                    self.models.insert(handle, model_data);
+                    let model_data = self.models.get(&handle).unwrap();
+                    model_data.load_dependencies(handle, &mut dependencies);
+                }
+            }
+            AssetType::Scene => {
+                let handle = AssetHandle::<SceneData>::new(*asset_id);
+                if !self.scenes.has(&handle) {
+                    let bytes = asset_data_store.get(asset_id).unwrap();
+                    let scene_data = SceneData::from_bytes(bytes);
+                    self.scenes.insert(handle, scene_data);
+                    let scene_data = self.scenes.get(&handle).unwrap();
+                    scene_data.load_dependencies(handle, &mut dependencies);
+                }
+            }
+        };
+
+        if !dependencies.is_empty() {
+            for (principal_handle, dependency_handle) in dependencies {
+                let dependency_id = dependency_handle.get_id();
+                let dependency_type = dependency_handle.get_type();
+                self.load(asset_data_store, &dependency_id, &dependency_type);
+                self.finish_dependency(principal_handle, dependency_handle);
+            }
+        }
     }
 
     fn finish_dependency(
         &mut self,
-        principal_handle: AssetHandle,
-        dependency_id: AssetId,
-        dependency_handle: AssetHandle,
+        principal_typed_id: TypedAssetId,
+        dependency_typed_id: TypedAssetId,
     ) {
-        match principal_handle.to_impl() {
-            AssetHandleImpl::Mesh(_)
-            | AssetHandleImpl::Skeleton(_)
-            | AssetHandleImpl::Palette(_) => {
+        match principal_typed_id {
+            TypedAssetId::Mesh(_)
+            | TypedAssetId::Skeleton(_)
+            | TypedAssetId::Palette(_) => {
                 panic!("unexpected dependency for this type of asset")
             }
-            AssetHandleImpl::Animation(principal_handle) => {
-                let data = self.animations.get_mut(&principal_handle).unwrap();
-                data.finish_dependency(dependency_id, dependency_handle);
+            TypedAssetId::Animation(principal_id) => {
+                let principal_handle = AssetHandle::<AnimationData>::new(principal_id);
+                let principal_data = self.animations.get_mut(&principal_handle).unwrap();
+                principal_data.finish_dependency(dependency_typed_id);
             }
-            AssetHandleImpl::Icon(principal_handle) => {
-                let data = self.icons.get_mut(&principal_handle).unwrap();
-                data.finish_dependency(dependency_id, dependency_handle);
-                if data.has_all_dependencies() {
-                    let palette_handle = data.get_palette_file_handle().unwrap().clone();
+            TypedAssetId::Icon(principal_id) => {
+                let principal_handle = AssetHandle::<IconData>::new(principal_id);
+                let principal_data = self.icons.get_mut(&principal_handle).unwrap();
+                principal_data.finish_dependency(dependency_typed_id);
+                if principal_data.has_all_dependencies() {
+                    let palette_handle = *principal_data.get_palette_file_handle().unwrap();
 
                     if !self.palette_has_cpu_materials(&palette_handle) {
                         if !self.icons_waiting_on_palettes.contains_key(&palette_handle) {
-                            self.icons_waiting_on_palettes
-                                .insert(palette_handle.clone(), Vec::new());
+                            self.icons_waiting_on_palettes.insert(palette_handle, Vec::new());
                         }
                         let icon_list = self
                             .icons_waiting_on_palettes
@@ -190,12 +192,13 @@ impl AssetStore {
                     }
                 }
             }
-            AssetHandleImpl::Skin(principal_handle) => {
-                let data = self.skins.get_mut(&principal_handle).unwrap();
-                data.finish_dependency(dependency_id, dependency_handle);
-                if data.has_all_dependencies() {
-                    let palette_handle = data.get_palette_file_handle().unwrap().clone();
-                    let mesh_handle = data.get_mesh_file_handle().unwrap().clone();
+            TypedAssetId::Skin(principal_id) => {
+                let principal_handle = AssetHandle::<SkinData>::new(principal_id);
+                let principal_data = self.skins.get_mut(&principal_handle).unwrap();
+                principal_data.finish_dependency(dependency_typed_id);
+                if principal_data.has_all_dependencies() {
+                    let palette_handle = *principal_data.get_palette_file_handle().unwrap();
+                    let mesh_handle = *principal_data.get_mesh_file_handle().unwrap();
 
                     if !self.palette_has_cpu_materials(&palette_handle) {
                         if !self.skins_waiting_on_palettes.contains_key(&palette_handle) {
@@ -222,19 +225,21 @@ impl AssetStore {
                     }
                 }
             }
-            AssetHandleImpl::Model(principal_handle) => {
-                let data = self.models.get_mut(&principal_handle).unwrap();
-                data.finish_dependency(dependency_id, dependency_handle);
+            TypedAssetId::Model(principal_id) => {
+                let principal_handle = AssetHandle::<ModelData>::new(principal_id);
+                let principal_data = self.models.get_mut(&principal_handle).unwrap();
+                principal_data.finish_dependency(dependency_typed_id);
 
-                if data.all_dependencies_loaded() {
-                    let skeleton_handle = data.get_skeleton_handle();
+                if principal_data.all_dependencies_loaded() {
+                    let skeleton_handle = principal_data.get_skeleton_handle();
                     let skeleton_data = self.skeletons.get(&skeleton_handle).unwrap();
-                    data.compute_components(skeleton_data);
+                    principal_data.compute_components(skeleton_data);
                 }
             }
-            AssetHandleImpl::Scene(principal_handle) => {
-                let data = self.scenes.get_mut(&principal_handle).unwrap();
-                data.finish_dependency(dependency_id, dependency_handle);
+            TypedAssetId::Scene(principal_id) => {
+                let prinicipal_handle = AssetHandle::<SceneData>::new(principal_id);
+                let principal_data = self.scenes.get_mut(&prinicipal_handle).unwrap();
+                principal_data.finish_dependency(dependency_typed_id);
             }
         }
     }
@@ -317,7 +322,7 @@ impl AssetStore {
             if skin_data.load_cpu_skin(materials, skins, mesh_data, palette_data) {
                 // success!
             } else {
-                warn!("skin data {} not loaded, re-queuing", skin_handle.id);
+                warn!("skin data {:?} not loaded, re-queuing", skin_handle.asset_id());
                 self.ready_skins.push(skin_handle);
             }
         }
@@ -361,23 +366,23 @@ impl AssetStore {
             if icon_data.load_cpu_skins(meshes, materials, skins, palette_data) {
                 // success!
             } else {
-                warn!("icon data {} not loaded, re-queuing", icon_handle.id);
+                warn!("icon data {:?} not loaded, re-queuing", icon_handle.asset_id());
                 self.ready_icons.push(icon_handle);
             }
         }
     }
 
-    fn palette_has_cpu_materials(&self, palette_handle: &Handle<PaletteData>) -> bool {
+    fn palette_has_cpu_materials(&self, palette_handle: &AssetHandle<PaletteData>) -> bool {
         let data = self.palettes.get(palette_handle).unwrap();
         data.has_cpu_materials()
     }
 
-    fn mesh_file_has_cpu_mesh(&self, mesh_handle: &Handle<MeshFile>) -> bool {
+    fn mesh_file_has_cpu_mesh(&self, mesh_handle: &AssetHandle<MeshFile>) -> bool {
         let data = self.meshes.get(mesh_handle).unwrap();
         data.has_cpu_mesh()
     }
 
-    fn icon_is_ready(&self, icon_handle: &Handle<IconData>) -> bool {
+    fn icon_is_ready(&self, icon_handle: &AssetHandle<IconData>) -> bool {
         let data = self.icons.get(icon_handle).unwrap();
 
         let palette_handle = data.get_palette_file_handle().unwrap();
@@ -388,7 +393,7 @@ impl AssetStore {
         return false;
     }
 
-    fn skin_is_ready(&self, skin_handle: &Handle<SkinData>) -> bool {
+    fn skin_is_ready(&self, skin_handle: &AssetHandle<SkinData>) -> bool {
         let data = self.skins.get(skin_handle).unwrap();
 
         let mesh_handle = data.get_mesh_file_handle().unwrap();

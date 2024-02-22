@@ -20,6 +20,7 @@ use game_engine::{
     },
     world::{WorldAuth, WorldClient, WorldConnectEvent, AssetEntry, AssetRef, Main, WorldInsertComponentEvents},
 };
+use game_engine::asset::AssetManager;
 use game_engine::world::WorldSpawnEntityEvent;
 
 use crate::app::resources::{asset_store::AssetProcessor, global::Global, asset_store::AssetStore, connection_state::ConnectionState};
@@ -117,6 +118,7 @@ pub fn session_connect_events(
 pub fn session_message_events(
     mut world_client: WorldClient,
     mut asset_store: ResMut<AssetStore>,
+    mut asset_manager: ResMut<AssetManager>,
     mut event_reader: EventReader<SessionMessageEvents>,
 ) {
     for events in event_reader.read() {
@@ -137,7 +139,7 @@ pub fn session_message_events(
         for asset_message in events.read::<SessionPrimaryChannel, LoadAssetWithData>() {
             info!("received Asset Data Message from Session Server! (id: {:?}, etag: {:?})", asset_message.asset_id, asset_message.asset_etag);
 
-            asset_store.handle_load_asset_with_data_message(asset_message);
+            asset_store.handle_load_asset_with_data_message(&mut asset_manager, asset_message);
         }
     }
 }
@@ -145,12 +147,13 @@ pub fn session_message_events(
 pub fn session_request_events(
     mut session_client: SessionClient,
     mut asset_store: ResMut<AssetStore>,
+    mut asset_manager: ResMut<AssetManager>,
     mut event_reader: EventReader<SessionRequestEvents>,
 ) {
     for events in event_reader.read() {
         for (response_send_key, request) in events.read::<SessionRequestChannel, LoadAssetRequest>()
         {
-            let response = asset_store.handle_load_asset_request(request);
+            let response = asset_store.handle_load_asset_request(&mut asset_manager, request);
             let response_result = session_client.send_response(&response_send_key, &response);
             if !response_result {
                 panic!("Failed to send response to session server");

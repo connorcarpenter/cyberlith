@@ -9,6 +9,7 @@ use game_engine::{
     asset::AssetId,
     world::Main,
 };
+use game_engine::asset::{AssetHandle, AssetManager, AssetType};
 
 use crate::app::resources::asset_metadata_store::{AssetMetadataSerde, AssetMetadataStore};
 
@@ -39,7 +40,7 @@ impl AssetStore {
         }
     }
 
-    pub fn handle_load_asset_request(&mut self, request: LoadAssetRequest) -> LoadAssetResponse {
+    pub fn handle_load_asset_request(&mut self, asset_manager: &mut AssetManager, request: LoadAssetRequest) -> LoadAssetResponse {
 
         // TODO: currently this will ALWAYS return 'not found' because we don't add any assets to the cache
 
@@ -64,13 +65,14 @@ impl AssetStore {
 
         // load asset into memory
         info!("loading asset into memory: {:?}", metadata.path());
+        let asset_type = metadata.asset_type();
         let asset_bytes = filesystem::read(metadata.path()).unwrap();
-        self.handle_data_store_load_asset(&asset_id, asset_bytes);
+        self.handle_data_store_load_asset(asset_manager, &asset_id, &asset_type, asset_bytes);
 
         return LoadAssetResponse::loaded_non_modified_asset();
     }
 
-    pub fn handle_load_asset_with_data_message(&mut self, message: LoadAssetWithData) {
+    pub fn handle_load_asset_with_data_message(&mut self, asset_manager: &mut AssetManager, message: LoadAssetWithData) {
 
         let asset_id = message.asset_id;
         let asset_etag = message.asset_etag;
@@ -94,14 +96,22 @@ impl AssetStore {
 
         // load asset data into memory
         info!("loading asset into memory: {:?}", asset_file_path);
-        self.handle_data_store_load_asset(&asset_id, asset_data);
+        self.handle_data_store_load_asset(asset_manager, &asset_id, &asset_type, asset_data);
 
         // load asset metadata into memory
         self.metadata_store.insert(asset_id, asset_etag, asset_file_path, asset_type);
     }
 
-    pub fn handle_data_store_load_asset(&mut self, asset_id: &AssetId, asset_data: Vec<u8>) {
+    pub fn handle_data_store_load_asset(
+        &mut self,
+        asset_manager: &mut AssetManager,
+        asset_id: &AssetId,
+        asset_type: &AssetType,
+        asset_data: Vec<u8>
+    ) {
         self.data_store.insert(*asset_id, asset_data);
+
+        asset_manager.load(&self.data_store, asset_id, asset_type);
 
         // process any refs waiting for this asset
         if let Some(ref_waitlist_entry) = self.ref_waitlist.remove(asset_id) {

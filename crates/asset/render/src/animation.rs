@@ -2,16 +2,10 @@ use std::collections::HashMap;
 
 use bevy_log::info;
 
-use asset_id::AssetId;
 use math::Quat;
 use render_api::components::Transform;
-use storage::Handle;
 
-use crate::{
-    asset_dependency::{AssetComponentHandle, AssetDependency},
-    asset_handle::AssetHandleImpl,
-    AssetHandle, ModelData, SkeletonData,
-};
+use crate::{asset_dependency::{AssetComponentHandle, AssetDependency}, AssetHandle, ModelData, SkeletonData, TypedAssetId};
 
 pub struct AnimationData {
     skeleton_file: AssetDependency<SkeletonData>,
@@ -47,23 +41,23 @@ impl Frame {
 impl AnimationData {
     pub(crate) fn load_dependencies(
         &self,
-        handle: Handle<Self>,
-        dependencies: &mut Vec<(AssetHandle, AssetId)>,
+        asset_handle: AssetHandle<Self>,
+        dependencies: &mut Vec<(TypedAssetId, TypedAssetId)>,
     ) {
         let AssetDependency::<SkeletonData>::AssetId(asset_id) = &self.skeleton_file else {
             panic!("expected path right after load");
         };
-        dependencies.push((handle.into(), asset_id.clone()));
+        dependencies.push((asset_handle.into(), TypedAssetId::Skeleton(*asset_id)));
     }
 
     pub(crate) fn finish_dependency(
         &mut self,
-        _dependency_id: AssetId,
-        dependency_handle: AssetHandle,
+        dependency_typed_id: TypedAssetId
     ) {
-        match dependency_handle.to_impl() {
-            AssetHandleImpl::Skeleton(handle) => {
-                self.skeleton_file.load_handle(handle);
+        match dependency_typed_id {
+            TypedAssetId::Skeleton(id) => {
+                let handle = AssetHandle::<SkeletonData>::new(id);
+                self.skeleton_file.load_asset_handle(handle);
             }
             _ => {
                 panic!("unexpected type of handle");
@@ -71,8 +65,8 @@ impl AnimationData {
         }
     }
 
-    pub(crate) fn get_skeleton_handle(&self) -> Handle<SkeletonData> {
-        if let AssetDependency::<SkeletonData>::Handle(handle) = &self.skeleton_file {
+    pub(crate) fn get_skeleton_handle(&self) -> AssetHandle<SkeletonData> {
+        if let AssetDependency::<SkeletonData>::AssetHandle(handle) = &self.skeleton_file {
             *handle
         } else {
             panic!("expected skeleton handle");
@@ -183,11 +177,11 @@ impl AnimationData {
         skeleton_data.get_interpolated_skeleton(interpolated_rotations)
     }
 
-    pub fn load_from_bytes(bytes: &[u8]) -> Self {
+    pub fn from_bytes(bytes: &[u8]) -> Self {
 
         let actions = asset_io::bits::AnimAction::read(bytes).expect("unable to parse file");
 
-        let mut skel_file_opt = None;
+        let mut skeleton_asset_id = None;
         let mut name_map = HashMap::new();
         let mut frames = Vec::new();
         let mut total_animation_time_ms = 0.0;
@@ -195,7 +189,7 @@ impl AnimationData {
             match action {
                 asset_io::bits::AnimAction::SkelFile(asset_id) => {
                     info!("SkelFile: {}", asset_id.as_string());
-                    skel_file_opt = Some(asset_id);
+                    skeleton_asset_id = Some(asset_id);
                 }
                 asset_io::bits::AnimAction::ShapeIndex(name) => {
                     //info!("ShapeIndex {}: {}", names.len(), name);
@@ -227,7 +221,7 @@ impl AnimationData {
         }
 
         Self {
-            skeleton_file: AssetDependency::AssetId(skel_file_opt.unwrap()),
+            skeleton_file: AssetDependency::AssetId(skeleton_asset_id.unwrap()),
             frames,
             total_duration: total_animation_time_ms,
         }

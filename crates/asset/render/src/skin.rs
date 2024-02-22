@@ -2,14 +2,10 @@ use std::collections::HashMap;
 
 use bevy_log::info;
 
-use asset_id::AssetId;
 use render_api::base::{CpuMaterial, CpuMesh, CpuSkin};
 use storage::{Handle, Storage};
 
-use crate::{
-    asset_dependency::AssetDependency, asset_handle::AssetHandleImpl, AssetHandle, MeshFile,
-    PaletteData,
-};
+use crate::{asset_dependency::AssetDependency, AssetHandle, MeshFile, PaletteData, TypedAssetId};
 
 pub struct SkinData {
     mesh_file: AssetDependency<MeshFile>,
@@ -27,16 +23,16 @@ impl Default for SkinData {
 }
 
 impl SkinData {
-    pub(crate) fn get_mesh_file_handle(&self) -> Option<&Handle<MeshFile>> {
-        if let AssetDependency::<MeshFile>::Handle(handle) = &self.mesh_file {
+    pub(crate) fn get_mesh_file_handle(&self) -> Option<&AssetHandle<MeshFile>> {
+        if let AssetDependency::<MeshFile>::AssetHandle(handle) = &self.mesh_file {
             Some(handle)
         } else {
             None
         }
     }
 
-    pub(crate) fn get_palette_file_handle(&self) -> Option<&Handle<PaletteData>> {
-        if let AssetDependency::<PaletteData>::Handle(handle) = &self.palette_file {
+    pub(crate) fn get_palette_file_handle(&self) -> Option<&AssetHandle<PaletteData>> {
+        if let AssetDependency::<PaletteData>::AssetHandle(handle) = &self.palette_file {
             Some(handle)
         } else {
             None
@@ -49,31 +45,32 @@ impl SkinData {
 
     pub(crate) fn load_dependencies(
         &self,
-        handle: Handle<Self>,
-        dependencies: &mut Vec<(AssetHandle, AssetId)>,
+        handle: AssetHandle<Self>,
+        dependencies: &mut Vec<(TypedAssetId, TypedAssetId)>,
     ) {
         let AssetDependency::<MeshFile>::AssetId(asset_id) = &self.mesh_file else {
             panic!("expected path right after load");
         };
-        dependencies.push((handle.into(), asset_id.clone()));
+        dependencies.push((handle.into(), TypedAssetId::Mesh(asset_id.clone())));
 
         let AssetDependency::<PaletteData>::AssetId(asset_id) = &self.palette_file else {
             panic!("expected path right after load");
         };
-        dependencies.push((handle.into(), asset_id.clone()));
+        dependencies.push((handle.into(), TypedAssetId::Palette(asset_id.clone())));
     }
 
     pub(crate) fn finish_dependency(
         &mut self,
-        _dependency_id: AssetId,
-        dependency_handle: AssetHandle,
+        dependency_typed_id: TypedAssetId
     ) {
-        match dependency_handle.to_impl() {
-            AssetHandleImpl::Mesh(handle) => {
-                self.mesh_file.load_handle(handle);
+        match dependency_typed_id {
+            TypedAssetId::Mesh(asset_id) => {
+                let handle = AssetHandle::<MeshFile>::new(asset_id);
+                self.mesh_file.load_asset_handle(handle);
             }
-            AssetHandleImpl::Palette(handle) => {
-                self.palette_file.load_handle(handle);
+            TypedAssetId::Palette(asset_id) => {
+                let handle = AssetHandle::<PaletteData>::new(asset_id);
+                self.palette_file.load_asset_handle(handle);
             }
             _ => {
                 panic!("unexpected type of handle");
@@ -82,8 +79,8 @@ impl SkinData {
     }
 
     pub(crate) fn has_all_dependencies(&self) -> bool {
-        if let AssetDependency::<MeshFile>::Handle(_) = &self.mesh_file {
-            if let AssetDependency::<PaletteData>::Handle(_) = &self.palette_file {
+        if let AssetDependency::<MeshFile>::AssetHandle(_) = &self.mesh_file {
+            if let AssetDependency::<PaletteData>::AssetHandle(_) = &self.palette_file {
                 return true;
             }
         }

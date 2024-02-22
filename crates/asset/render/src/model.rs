@@ -1,17 +1,10 @@
 use bevy_log::info;
 
-use asset_id::AssetId;
 use asset_io::bits::ComponentFileType;
 use math::{Quat, Vec3};
 use render_api::components::Transform;
-use storage::Handle;
 
-use crate::{
-    asset_dependency::{AssetComponent, AssetComponentHandle, AssetDependency},
-    asset_handle::AssetHandleImpl,
-    scene::finish_component_dependency,
-    AssetHandle, SceneData, SkeletonData, SkinData,
-};
+use crate::{asset_dependency::{AssetComponent, AssetComponentHandle, AssetDependency}, scene::finish_component_dependency, AssetHandle, SceneData, SkeletonData, SkinData, TypedAssetId};
 
 pub struct ModelData {
     skeleton_file: AssetDependency<SkeletonData>,
@@ -29,23 +22,23 @@ impl Default for ModelData {
 impl ModelData {
     pub(crate) fn load_dependencies(
         &self,
-        handle: Handle<Self>,
-        dependencies: &mut Vec<(AssetHandle, AssetId)>,
+        handle: AssetHandle<Self>,
+        dependencies: &mut Vec<(TypedAssetId, TypedAssetId)>,
     ) {
         {
             let AssetDependency::<SkeletonData>::AssetId(asset_id) = &self.skeleton_file else {
                 panic!("expected path right after load");
             };
-            dependencies.push((handle.into(), asset_id.clone()));
+            dependencies.push((handle.into(), TypedAssetId::Skeleton(asset_id.clone())));
         }
 
         for file in self.component_files.iter() {
             match file {
-                AssetComponent::Skin(AssetDependency::<SkinData>::AssetId(path)) => {
-                    dependencies.push((handle.into(), path.clone()));
+                AssetComponent::Skin(AssetDependency::<SkinData>::AssetId(asset_id)) => {
+                    dependencies.push((handle.into(), TypedAssetId::Skin(asset_id.clone())));
                 }
-                AssetComponent::Scene(AssetDependency::<SceneData>::AssetId(path)) => {
-                    dependencies.push((handle.into(), path.clone()));
+                AssetComponent::Scene(AssetDependency::<SceneData>::AssetId(asset_id)) => {
+                    dependencies.push((handle.into(), TypedAssetId::Skin(asset_id.clone())));
                 }
                 _ => {
                     panic!("expected unloaded (no handles!) skin or scene file");
@@ -56,20 +49,22 @@ impl ModelData {
 
     pub(crate) fn finish_dependency(
         &mut self,
-        dependency_id: AssetId,
-        dependency_handle: AssetHandle,
+        dependency_typed_id: TypedAssetId
     ) {
-        match dependency_handle.to_impl() {
-            AssetHandleImpl::Skeleton(handle) => {
-                self.skeleton_file.load_handle(handle);
+        match dependency_typed_id {
+            TypedAssetId::Skeleton(asset_id) => {
+                let asset_handle = AssetHandle::<SkeletonData>::new(asset_id);
+                self.skeleton_file.load_asset_handle(asset_handle);
             }
-            AssetHandleImpl::Skin(handle) => {
-                let handle = AssetComponentHandle::Skin(handle);
-                finish_component_dependency(&mut self.component_files, dependency_id, handle);
+            TypedAssetId::Skin(asset_id) => {
+                let asset_handle = AssetHandle::<SkinData>::new(asset_id);
+                let component_handle = AssetComponentHandle::Skin(asset_handle);
+                finish_component_dependency(&mut self.component_files, component_handle);
             }
-            AssetHandleImpl::Scene(handle) => {
-                let handle = AssetComponentHandle::Scene(handle);
-                finish_component_dependency(&mut self.component_files, dependency_id, handle);
+            TypedAssetId::Scene(asset_id) => {
+                let asset_handle = AssetHandle::<SceneData>::new(asset_id);
+                let component_handle = AssetComponentHandle::Scene(asset_handle);
+                finish_component_dependency(&mut self.component_files, component_handle);
             }
             _ => {
                 panic!("unexpected type of handle");
@@ -79,15 +74,15 @@ impl ModelData {
 
     pub(crate) fn all_dependencies_loaded(&self) -> bool {
         // check skeleton
-        let AssetDependency::<SkeletonData>::Handle(_) = &self.skeleton_file else {
+        let AssetDependency::<SkeletonData>::AssetHandle(_) = &self.skeleton_file else {
             return false;
         };
 
         // check components
         for file in self.component_files.iter() {
             match file {
-                AssetComponent::Skin(AssetDependency::<SkinData>::Handle(_)) => {}
-                AssetComponent::Scene(AssetDependency::<SceneData>::Handle(_)) => {}
+                AssetComponent::Skin(AssetDependency::<SkinData>::AssetHandle(_)) => {}
+                AssetComponent::Scene(AssetDependency::<SceneData>::AssetHandle(_)) => {}
                 _ => {
                     return false;
                 }
@@ -96,8 +91,8 @@ impl ModelData {
         true
     }
 
-    pub(crate) fn get_skeleton_handle(&self) -> Handle<SkeletonData> {
-        if let AssetDependency::<SkeletonData>::Handle(handle) = &self.skeleton_file {
+    pub(crate) fn get_skeleton_handle(&self) -> AssetHandle<SkeletonData> {
+        if let AssetDependency::<SkeletonData>::AssetHandle(handle) = &self.skeleton_file {
             *handle
         } else {
             panic!("expected skeleton handle");
@@ -116,10 +111,10 @@ impl ModelData {
 
             let file = &self.component_files[*file_index];
             match file {
-                AssetComponent::Skin(AssetDependency::<SkinData>::Handle(handle)) => {
+                AssetComponent::Skin(AssetDependency::<SkinData>::AssetHandle(handle)) => {
                     components.push((AssetComponentHandle::Skin(*handle), final_transform));
                 }
-                AssetComponent::Scene(AssetDependency::<SceneData>::Handle(handle)) => {
+                AssetComponent::Scene(AssetDependency::<SceneData>::AssetHandle(handle)) => {
                     components.push((AssetComponentHandle::Scene(*handle), final_transform));
                 }
                 _ => panic!("checking for all dependencies loaded should have caught this!"),
@@ -138,10 +133,10 @@ impl ModelData {
         for (file_index, bone_name, transform) in self.net_transforms.iter() {
             let file = &self.component_files[*file_index];
             let skin_or_scene_handle = match file {
-                AssetComponent::Skin(AssetDependency::<SkinData>::Handle(handle)) => {
+                AssetComponent::Skin(AssetDependency::<SkinData>::AssetHandle(handle)) => {
                     AssetComponentHandle::Skin(*handle)
                 }
-                AssetComponent::Scene(AssetDependency::<SceneData>::Handle(handle)) => {
+                AssetComponent::Scene(AssetDependency::<SceneData>::AssetHandle(handle)) => {
                     AssetComponentHandle::Scene(*handle)
                 }
                 _ => {
@@ -217,7 +212,7 @@ impl ModelData {
 
         Self {
             skeleton_file: AssetDependency::AssetId(skel_file_opt.unwrap()),
-            component_files: component_files,
+            component_files,
             net_transforms,
             computed_components: None,
         }

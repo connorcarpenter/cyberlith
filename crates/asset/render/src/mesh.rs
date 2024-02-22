@@ -1,15 +1,10 @@
 use bevy_log::info;
 
-use asset_id::AssetId;
 use math::Vec3;
 use render_api::base::CpuMesh;
-use storage::{StorageHash, Handle, Storage};
+use storage::{Handle, Storage};
 
 use crate::asset_dependency::AssetDependency;
-use crate::data_from_asset_id;
-
-#[derive(Hash)]
-struct MeshAssetId(AssetId);
 
 pub struct MeshFile {
     path: AssetDependency<CpuMesh>,
@@ -38,37 +33,13 @@ impl MeshFile {
     }
 
     pub(crate) fn load_cpu_mesh(&mut self, meshes: &mut Storage<CpuMesh>) {
-        let AssetDependency::<CpuMesh>::AssetId(asset_id) = &self.path else {
+        let AssetDependency::<CpuMesh>::Bytes(bytes) = &self.path else {
             panic!("expected handle right after load");
         };
-        let cpu_mesh_handle = meshes.add(MeshAssetId(asset_id.clone()));
-        self.path.load_handle(cpu_mesh_handle);
-    }
-}
 
-impl StorageHash<CpuMesh> for MeshAssetId {}
-impl StorageHash<MeshFile> for AssetId {}
+        let actions = asset_io::bits::MeshAction::read(bytes).expect("unable to parse file");
 
-impl From<AssetId> for MeshFile {
-    fn from(asset_id: AssetId) -> Self {
-        Self {
-            path: AssetDependency::AssetId(asset_id),
-        }
-    }
-}
-
-impl From<MeshAssetId> for CpuMesh {
-    fn from(asset_id: MeshAssetId) -> Self {
-        let asset_id = asset_id.0;
-
-        let Ok(data) = data_from_asset_id(&asset_id) else {
-            panic!("unable to read asset_id: {:?}", asset_id);
-        };
-        //let data = include_bytes!("cube.mesh");
-
-        let actions = asset_io::bits::MeshAction::read(&data).expect("unable to parse file");
-
-        info!("--- reading mesh file: {:?} ---", asset_id);
+        info!("--- reading mesh file ---",);
 
         let mut vertices = Vec::new();
         let mut positions = Vec::new();
@@ -109,8 +80,20 @@ impl From<MeshAssetId> for CpuMesh {
 
         info!("--- done reading mesh file ---");
 
-        let mut mesh = CpuMesh::from_vertices(positions);
-        mesh.add_face_indices(face_indices);
-        mesh
+        let mut cpu_mesh = CpuMesh::from_vertices(positions);
+        cpu_mesh.add_face_indices(face_indices);
+
+        let cpu_mesh_handle = meshes.add_unique(cpu_mesh);
+
+        self.path.load_handle(cpu_mesh_handle);
+    }
+
+    pub fn from_bytes(bytes: &[u8]) -> Self {
+
+        let boxed_bytes = bytes.to_vec().into_boxed_slice();
+
+        Self {
+            path: AssetDependency::Bytes(boxed_bytes),
+        }
     }
 }

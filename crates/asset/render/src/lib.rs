@@ -12,6 +12,7 @@ mod plugin;
 mod scene;
 mod skeleton;
 mod skin;
+mod asset_storage;
 
 pub use animation::*;
 pub use asset_handle::*;
@@ -24,8 +25,3 @@ pub use plugin::*;
 pub use scene::*;
 pub use skeleton::*;
 pub use skin::*;
-
-use asset_id::AssetId;
-pub(crate) fn data_from_asset_id(asset_id: &AssetId) -> Result<Vec<u8>, std::io::Error> {
-    todo!()
-}

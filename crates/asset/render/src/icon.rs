@@ -1,15 +1,12 @@
 use std::collections::HashMap;
 
-use asset_id::AssetId;
 use bevy_log::info;
 
 use math::Vec3;
 use render_api::base::{CpuMaterial, CpuMesh, CpuSkin};
 use storage::{Handle, Storage};
 
-use crate::{
-    asset_dependency::AssetDependency, asset_handle::AssetHandleImpl, AssetHandle, PaletteData,
-};
+use crate::{asset_dependency::AssetDependency, AssetHandle, PaletteData, TypedAssetId};
 
 pub struct IconData {
     palette_file: AssetDependency<PaletteData>,
@@ -23,8 +20,8 @@ impl Default for IconData {
 }
 
 impl IconData {
-    pub(crate) fn get_palette_file_handle(&self) -> Option<&Handle<PaletteData>> {
-        if let AssetDependency::<PaletteData>::Handle(handle) = &self.palette_file {
+    pub(crate) fn get_palette_file_handle(&self) -> Option<&AssetHandle<PaletteData>> {
+        if let AssetDependency::<PaletteData>::AssetHandle(handle) = &self.palette_file {
             Some(handle)
         } else {
             None
@@ -66,23 +63,23 @@ impl IconData {
 
     pub(crate) fn load_dependencies(
         &self,
-        handle: Handle<Self>,
-        dependencies: &mut Vec<(AssetHandle, AssetId)>,
+        asset_handle: AssetHandle<Self>,
+        dependencies: &mut Vec<(TypedAssetId, TypedAssetId)>,
     ) {
         let AssetDependency::<PaletteData>::AssetId(asset_id) = &self.palette_file else {
-            panic!("expected path right after load");
+            panic!("expected asset_id right after load");
         };
-        dependencies.push((handle.into(), asset_id.clone()));
+        dependencies.push((asset_handle.into(), TypedAssetId::Palette(asset_id.clone())));
     }
 
     pub(crate) fn finish_dependency(
         &mut self,
-        _dependency_id: AssetId,
-        dependency_handle: AssetHandle,
+        dependency_typed_id: TypedAssetId,
     ) {
-        match dependency_handle.to_impl() {
-            AssetHandleImpl::Palette(handle) => {
-                self.palette_file.load_handle(handle);
+        match dependency_typed_id {
+            TypedAssetId::Palette(asset_id) => {
+                let asset_handle = AssetHandle::<PaletteData>::new(asset_id);
+                self.palette_file.load_asset_handle(asset_handle);
                 info!("icon: load_palette");
             }
             _ => {
@@ -92,7 +89,7 @@ impl IconData {
     }
 
     pub(crate) fn has_all_dependencies(&self) -> bool {
-        if let AssetDependency::<PaletteData>::Handle(_) = &self.palette_file {
+        if let AssetDependency::<PaletteData>::AssetHandle(_) = &self.palette_file {
             return true;
         }
         return false;

@@ -1,4 +1,5 @@
-use asset_id::AssetId;
+use std::collections::HashMap;
+use asset_id::{AssetId, AssetType};
 use bevy_ecs::system::{ResMut, Resource};
 
 use render_api::{
@@ -28,8 +29,13 @@ impl Default for AssetManager {
 }
 
 impl AssetManager {
-    pub fn load<T: From<AssetHandle>>(&mut self, asset_id: &AssetId) -> T {
-        self.store.load::<T>(asset_id)
+    pub fn load(
+        &mut self,
+        asset_data_store: &HashMap<AssetId, Vec<u8>>,
+        asset_id: &AssetId,
+        asset_type: &AssetType,
+    ) {
+        self.store.load(asset_data_store, asset_id, asset_type);
     }
 
     pub fn sync(
@@ -49,12 +55,12 @@ impl AssetManager {
             .sync_icon_skins(&meshes, &materials, &mut skins);
     }
 
-    pub fn get_icon_subimage_count(&self, handle: &Handle<IconData>) -> usize {
+    pub fn get_icon_subimage_count(&self, handle: &AssetHandle<IconData>) -> usize {
         let data = self.store.icons.get(handle).unwrap();
         data.get_subimage_count()
     }
 
-    pub fn get_animation_duration(&self, handle: &Handle<AnimationData>) -> f32 {
+    pub fn get_animation_duration(&self, handle: &AssetHandle<AnimationData>) -> f32 {
         let data = self.store.animations.get(handle).unwrap();
         data.get_duration()
     }
@@ -62,7 +68,7 @@ impl AssetManager {
     pub fn draw_mesh(
         &self,
         render_frame: &mut RenderFrame,
-        mesh_handle: &Handle<MeshFile>,
+        mesh_handle: &AssetHandle<MeshFile>,
         mat_handle: &Handle<CpuMaterial>,
         transform: &Transform,
         render_layer_opt: Option<&RenderLayer>,
@@ -80,7 +86,7 @@ impl AssetManager {
     pub fn draw_icon(
         &self,
         render_frame: &mut RenderFrame,
-        icon_handle: &Handle<IconData>,
+        icon_handle: &AssetHandle<IconData>,
         subimage_index: usize,
         transform: &Transform,
         render_layer_opt: Option<&RenderLayer>,
@@ -98,7 +104,7 @@ impl AssetManager {
     pub fn draw_skin(
         &self,
         render_frame: &mut RenderFrame,
-        skin_handle: &Handle<SkinData>,
+        skin_handle: &AssetHandle<SkinData>,
         transform: &Transform,
         render_layer_opt: Option<&RenderLayer>,
     ) {
@@ -114,7 +120,7 @@ impl AssetManager {
     pub fn draw_scene(
         &self,
         render_frame: &mut RenderFrame,
-        scene_handle: &Handle<SceneData>,
+        scene_handle: &AssetHandle<SceneData>,
         parent_transform: &Transform,
         render_layer_opt: Option<&RenderLayer>,
     ) {
@@ -130,7 +136,7 @@ impl AssetManager {
     pub fn draw_model(
         &self,
         render_frame: &mut RenderFrame,
-        model_handle: &Handle<ModelData>,
+        model_handle: &AssetHandle<ModelData>,
         parent_transform: &Transform,
         render_layer_opt: Option<&RenderLayer>,
     ) {
@@ -146,8 +152,8 @@ impl AssetManager {
     pub fn draw_animated_model(
         &self,
         render_frame: &mut RenderFrame,
-        model_handle: &Handle<ModelData>,
-        animation_handle: &Handle<AnimationData>,
+        model_handle: &AssetHandle<ModelData>,
+        animation_handle: &AssetHandle<AnimationData>,
         parent_transform: &Transform,
         frame_time_ms: f32,
         render_layer_opt: Option<&RenderLayer>,
