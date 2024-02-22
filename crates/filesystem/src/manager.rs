@@ -6,11 +6,10 @@ use crate::{
     backend::{FsTaskJob, poll_task, start_task},
     error::TaskError,
     TaskKey,
-    traits::FsTask,
-    traits::FsTaskResult,
 };
 use crate::tasks::read::{ReadResult, ReadTask};
 use crate::tasks::task_enum::FsTaskResultEnum;
+use crate::tasks::traits::{FsTask, FsTaskResult};
 use crate::tasks::write::{WriteResult, WriteTask};
 
 #[derive(Resource)]

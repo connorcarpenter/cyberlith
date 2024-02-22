@@ -1,7 +1,8 @@
 use std::path::PathBuf;
 
-use crate::{error::TaskError, traits::{FsTask, FsTaskResult}};
+use crate::error::TaskError;
 use crate::tasks::task_enum::{FsTaskEnum, FsTaskResultEnum};
+use crate::tasks::traits::{FsTask, FsTaskResult};
 
 // Task
 pub struct ReadTask {

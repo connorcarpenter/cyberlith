@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use crate::traits::FsTaskResult;
+use crate::tasks::traits::FsTaskResult;
 
 // TaskKey
 #[derive(Clone, Copy, Eq, PartialEq, Hash)]

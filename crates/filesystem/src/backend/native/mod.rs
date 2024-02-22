@@ -28,9 +28,6 @@ pub(crate) fn poll_task(task: &mut FsTaskJob) -> Option<Result<FsTaskResultEnum,
 
 ////
 
-
-
-
 pub(crate) async fn fetch_async(
     task_enum: FsTaskEnum,
 ) -> Result<FsTaskResultEnum, TaskError> {

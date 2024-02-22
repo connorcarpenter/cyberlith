@@ -5,7 +5,6 @@ mod backend;
 mod manager;
 mod task_key;
 mod plugin;
-mod traits;
 mod error;
 mod tasks;
 
