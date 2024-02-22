@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crate::{error::FsTaskError, traits::{FsTask, FsTaskResult}, types::{FsTaskEnum, FsTaskResultEnum}};
+use crate::{error::TaskError, traits::{FsTask, FsTaskResult}, types::{FsTaskEnum, FsTaskResultEnum}};
 
 // Task
 pub struct WriteTask {
@@ -47,9 +47,9 @@ impl FsTaskResult for WriteResult {
         FsTaskResultEnum::Write(self)
     }
 
-    fn from_enum(result_enum: FsTaskResultEnum) -> Result<Self, FsTaskError> {
+    fn from_enum(result_enum: FsTaskResultEnum) -> Result<Self, TaskError> {
         let FsTaskResultEnum::Write(result) = result_enum else {
-            return Err(FsTaskError::InvalidResult);
+            return Err(TaskError::InvalidResult);
         };
         Ok(result)
     }

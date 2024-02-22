@@ -1,4 +1,4 @@
-use crate::error::FsTaskError;
+use crate::error::TaskError;
 use crate::types::{FsTaskEnum, FsTaskResultEnum};
 cfg_if! {
     if #[cfg(target_arch = "wasm32")] {
@@ -11,7 +11,7 @@ cfg_if! {
     }
 }
 
-pub(crate) async fn fetch_async(task_enum: FsTaskEnum) -> Result<FsTaskResultEnum, FsTaskError> {
+pub(crate) async fn fetch_async(task_enum: FsTaskEnum) -> Result<FsTaskResultEnum, TaskError> {
     #[cfg(not(target_arch = "wasm32"))]
     return native::fetch_async(task_enum).await;
 

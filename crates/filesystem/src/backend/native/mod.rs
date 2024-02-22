@@ -4,9 +4,11 @@ use futures_lite::future;
 
 use async_channel::{Receiver, Sender};
 
-use crate::{task_write::WriteResult, task_read::ReadResult, error::FsTaskError, types::{FsTaskEnum, FsTaskResultEnum}};
+use crate::{error::TaskError, types::{FsTaskEnum, FsTaskResultEnum}};
+use crate::tasks::read::ReadResult;
+use crate::tasks::write::WriteResult;
 
-pub(crate) struct FsTaskJob(pub(crate) Task<Result<FsTaskResultEnum, FsTaskError>>);
+pub(crate) struct FsTaskJob(pub(crate) Task<Result<FsTaskResultEnum, TaskError>>);
 
 pub(crate) fn start_task(
     task_enum: FsTaskEnum,
@@ -18,7 +20,7 @@ pub(crate) fn start_task(
     FsTaskJob(task)
 }
 
-pub(crate) fn poll_task(task: &mut FsTaskJob) -> Option<Result<FsTaskResultEnum, FsTaskError>> {
+pub(crate) fn poll_task(task: &mut FsTaskJob) -> Option<Result<FsTaskResultEnum, TaskError>> {
     match future::block_on(future::poll_once(&mut task.0)) {
         Some(Ok(result_enum)) => Some(Ok(result_enum)),
         Some(Err(error)) => Some(Err(error)),
@@ -33,10 +35,10 @@ pub(crate) fn poll_task(task: &mut FsTaskJob) -> Option<Result<FsTaskResultEnum,
 
 pub(crate) async fn fetch_async(
     task_enum: FsTaskEnum,
-) -> Result<FsTaskResultEnum, FsTaskError> {
+) -> Result<FsTaskResultEnum, TaskError> {
     let (tx, rx): (
-        Sender<Result<FsTaskResultEnum, FsTaskError>>,
-        Receiver<Result<FsTaskResultEnum, FsTaskError>>,
+        Sender<Result<FsTaskResultEnum, TaskError>>,
+        Receiver<Result<FsTaskResultEnum, TaskError>>,
     ) = async_channel::bounded(1);
 
     fetch(
@@ -45,12 +47,12 @@ pub(crate) async fn fetch_async(
     );
     rx.recv()
         .await
-        .map_err(|err| FsTaskError::IoError(err.to_string()))?
+        .map_err(|err| TaskError::IoError(err.to_string()))?
 }
 
 fn fetch(
     task_enum: FsTaskEnum,
-    on_done: Box<dyn FnOnce(Result<FsTaskResultEnum, FsTaskError>) + Send>,
+    on_done: Box<dyn FnOnce(Result<FsTaskResultEnum, TaskError>) + Send>,
 ) {
     std::thread::Builder::new()
         .name("filesystem_client".to_owned())
@@ -60,7 +62,7 @@ fn fetch(
 
 fn fetch_blocking(
     task_enum: &FsTaskEnum,
-) -> Result<FsTaskResultEnum, FsTaskError> {
+) -> Result<FsTaskResultEnum, TaskError> {
     match task_enum {
         FsTaskEnum::Read(task) => {
             match std::fs::read(&task.path) {
@@ -68,7 +70,7 @@ fn fetch_blocking(
                     Ok(FsTaskResultEnum::Read(ReadResult::new(bytes)))
                 }
                 Err(e) => {
-                    Err(FsTaskError::IoError(e.to_string()))
+                    Err(TaskError::IoError(e.to_string()))
                 }
             }
         }
@@ -78,7 +80,7 @@ fn fetch_blocking(
                     Ok(FsTaskResultEnum::Write(WriteResult::new()))
                 }
                 Err(e) => {
-                    Err(FsTaskError::IoError(e.to_string()))
+                    Err(TaskError::IoError(e.to_string()))
                 }
             }
         }

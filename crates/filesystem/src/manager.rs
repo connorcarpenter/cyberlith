@@ -3,20 +3,20 @@ use std::collections::HashMap;
 use bevy_ecs::{change_detection::ResMut, system::Resource};
 
 use crate::{
-    backend::{poll_task, FsTaskJob, start_task},
+    backend::{FsTaskJob, poll_task, start_task},
+    error::TaskError,
     TaskKey,
-    error::FsTaskError,
-    types::FsTaskResultEnum,
     traits::FsTask,
-    task_read::{ReadResult, ReadTask},
-    task_write::{WriteResult, WriteTask},
     traits::FsTaskResult,
+    types::FsTaskResultEnum,
 };
+use crate::tasks::read::{ReadResult, ReadTask};
+use crate::tasks::write::{WriteResult, WriteTask};
 
 #[derive(Resource)]
 pub struct FileSystemManager {
     tasks: HashMap<u64, FsTaskJob>,
-    results: HashMap<u64, Result<FsTaskResultEnum, FsTaskError>>,
+    results: HashMap<u64, Result<FsTaskResultEnum, TaskError>>,
     current_index: u64,
 }
 
@@ -64,7 +64,7 @@ impl FileSystemManager {
     pub fn get_result<S: FsTaskResult>(
         &mut self,
         key: &TaskKey<S>,
-    ) -> Option<Result<S, FsTaskError>> {
+    ) -> Option<Result<S, TaskError>> {
         if let Some(result) = self.results.remove(&key.id) {
             match result {
                 Ok(result_enum) => {
@@ -87,7 +87,7 @@ impl FileSystemManager {
         self.tasks.iter_mut()
     }
 
-    pub(crate) fn accept_result(&mut self, key: u64, result: Result<FsTaskResultEnum, FsTaskError>) {
+    pub(crate) fn accept_result(&mut self, key: u64, result: Result<FsTaskResultEnum, TaskError>) {
         self.tasks.remove(&key);
         self.results.insert(key, result);
     }

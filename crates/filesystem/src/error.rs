@@ -1,14 +1,14 @@
 
-pub enum FsTaskError {
+pub enum TaskError {
     InvalidResult,
     IoError(String),
 }
 
-impl FsTaskError {
+impl TaskError {
     pub fn to_string(&self) -> String {
         match self {
-            FsTaskError::InvalidResult => "InvalidResult".to_string(),
-            FsTaskError::IoError(e) => format!("IoError: {}", e),
+            TaskError::InvalidResult => "InvalidResult".to_string(),
+            TaskError::IoError(e) => format!("IoError: {}", e),
         }
     }
 }

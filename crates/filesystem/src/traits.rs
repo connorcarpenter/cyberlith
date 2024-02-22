@@ -1,5 +1,5 @@
 
-use crate::{types::{FsTaskEnum, FsTaskResultEnum}, error::FsTaskError};
+use crate::{types::{FsTaskEnum, FsTaskResultEnum}, error::TaskError};
 
 pub trait FsTask {
     type Result: FsTaskResult;
@@ -10,5 +10,5 @@ pub trait FsTask {
 
 pub trait FsTaskResult {
     fn to_enum(self) -> FsTaskResultEnum;
-    fn from_enum(result_enum: FsTaskResultEnum) -> Result<Self, FsTaskError> where Self: Sized;
+    fn from_enum(result_enum: FsTaskResultEnum) -> Result<Self, TaskError> where Self: Sized;
 }

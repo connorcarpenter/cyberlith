@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crate::{types::{FsTaskEnum, FsTaskResultEnum}, traits::{FsTask, FsTaskResult}, error::FsTaskError};
+use crate::{types::{FsTaskEnum, FsTaskResultEnum}, traits::{FsTask, FsTaskResult}, error::TaskError};
 
 // Task
 pub struct ReadTask {
@@ -49,9 +49,9 @@ impl FsTaskResult for ReadResult {
         FsTaskResultEnum::Read(self)
     }
 
-    fn from_enum(result_enum: FsTaskResultEnum) -> Result<Self, FsTaskError> {
+    fn from_enum(result_enum: FsTaskResultEnum) -> Result<Self, TaskError> {
         let FsTaskResultEnum::Read(result) = result_enum else {
-            return Err(FsTaskError::InvalidResult);
+            return Err(TaskError::InvalidResult);
         };
         Ok(result)
     }
