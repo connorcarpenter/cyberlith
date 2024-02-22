@@ -18,15 +18,14 @@ use game_engine::{
         SessionMessageEvents, SessionPrimaryChannel, SessionRequestChannel, SessionRequestEvents,
         WorldConnectToken,
     },
-    world::{WorldSpawnEntityEvent, WorldAuth, WorldClient, WorldConnectEvent, AssetEntry, AssetRef, Main, WorldInsertComponentEvents},
+    world::{Alt1, WorldSpawnEntityEvent, WorldAuth, WorldClient, WorldConnectEvent, AssetEntry, AssetRef, Main, WorldInsertComponentEvents},
     asset::AssetManager,
+    filesystem::FileSystemManager,
+    math::{Quat, Vec3},
+    render::components::{RenderLayers, Transform, Visibility}
 };
-use game_engine::math::{Quat, Vec3};
-use game_engine::render::components::{RenderLayers, Transform, Visibility};
-use game_engine::world::Alt1;
 
-use crate::app::resources::{asset_store::AssetProcessor, global::Global, asset_store::AssetStore, connection_state::ConnectionState};
-use crate::app::systems::scene::ObjectMarker;
+use crate::app::{systems::scene::ObjectMarker, resources::{asset_store::AssetProcessor, global::Global, asset_store::AssetStore, connection_state::ConnectionState}};
 
 // ApiTimer
 #[derive(Resource)]
@@ -149,20 +148,13 @@ pub fn session_message_events(
 }
 
 pub fn session_request_events(
-    mut commands: Commands,
-    mut session_client: SessionClient,
     mut asset_store: ResMut<AssetStore>,
-    mut asset_manager: ResMut<AssetManager>,
+    mut file_system_manager: ResMut<FileSystemManager>,
     mut event_reader: EventReader<SessionRequestEvents>,
 ) {
     for events in event_reader.read() {
-        for (response_send_key, request) in events.read::<SessionRequestChannel, LoadAssetRequest>()
-        {
-            let response = asset_store.handle_load_asset_request(&mut commands, &mut asset_manager, request);
-            let response_result = session_client.send_response(&response_send_key, &response);
-            if !response_result {
-                panic!("Failed to send response to session server");
-            }
+        for (response_send_key, request) in events.read::<SessionRequestChannel, LoadAssetRequest>() {
+            asset_store.handle_load_asset_request(&mut file_system_manager, request, response_send_key);
         }
     }
 }

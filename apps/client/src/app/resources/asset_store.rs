@@ -1,21 +1,26 @@
 use std::{collections::HashMap, any::TypeId};
 
-use bevy_ecs::{prelude::Resource, entity::Entity, system::Commands};
+use bevy_ecs::{prelude::Resource, entity::Entity, system::{Commands, ResMut}};
 use bevy_log::info;
 
 use naia_serde::{BitWriter, Serde};
 
 use game_engine::{
-    session::{LoadAssetRequest, LoadAssetWithData, LoadAssetResponse},
+    filesystem::{ReadResult, FileSystemManager, TaskKey},
+    session::{SessionClient, LoadAssetRequest, LoadAssetWithData, LoadAssetResponse},
     asset::{AssetId, AnimationData, AssetHandle, AssetManager, AssetType, IconData, MeshFile, ModelData, PaletteData, SceneData, SkeletonData, SkinData, TypedAssetId},
-    world::Main,
+    world::{Main, Alt1},
+    naia::ResponseSendKey,
 };
-use game_engine::world::Alt1;
 
-use crate::app::resources::asset_metadata_store::{AssetMetadataSerde, AssetMetadataStore};
-use crate::app::systems::scene::WalkAnimation;
+use crate::app::{systems::scene::WalkAnimation, resources::asset_metadata_store::{AssetMetadataSerde, AssetMetadataStore}};
 
 type AssetProcessorId = TypeId;
+
+pub enum LoadAssetTask {
+    HasResponse(ResponseSendKey<LoadAssetResponse>, LoadAssetResponse),
+    HasFsTask(AssetId, AssetType, ResponseSendKey<LoadAssetResponse>, TaskKey<ReadResult>),
+}
 
 /// Stores asset data in RAM
 #[derive(Resource)]
@@ -28,6 +33,8 @@ pub struct AssetStore {
     entry_waitlist: HashMap<Entity, HashMap<Entity, AssetProcessorId>>,
     // asset id -> (ref entity -> asset processor id)
     ref_waitlist: HashMap<AssetId, HashMap<Entity, AssetProcessorId>>,
+    //
+    load_asset_tasks: Vec<LoadAssetTask>
 }
 
 impl AssetStore {
@@ -39,23 +46,70 @@ impl AssetStore {
             asset_processor_map: HashMap::new(),
             entry_waitlist: HashMap::new(),
             ref_waitlist: HashMap::new(),
+            load_asset_tasks: Vec::new(),
         }
     }
 
-    pub fn handle_load_asset_request(&mut self, commands: &mut Commands, asset_manager: &mut AssetManager, request: LoadAssetRequest) -> LoadAssetResponse {
+    // added as a system to App
+    pub fn handle_load_asset_tasks(
+        mut asset_store: ResMut<AssetStore>,
+        mut commands: Commands,
+        mut session_client: SessionClient,
+        mut fs_manager: ResMut<FileSystemManager>,
+        mut asset_manager: ResMut<AssetManager>,
+    ) {
+        let load_asset_tasks = std::mem::take(&mut asset_store.load_asset_tasks);
+        // process load asset tasks
+        for task in load_asset_tasks {
+            let response_opt = match task {
+                LoadAssetTask::HasResponse(response_send_key, response) => {
+                    // already have response
+                    Some((response_send_key, response))
+                }
+                LoadAssetTask::HasFsTask(asset_id, asset_type, response_send_key, fs_task_key) => {
+                    match fs_manager.get_result(&fs_task_key) {
+                        Some(Ok(result)) => {
 
-        // TODO: currently this will ALWAYS return 'not found' because we don't add any assets to the cache
+                            let asset_bytes = result.bytes;
+                            asset_store.handle_data_store_load_asset(&mut commands, &mut asset_manager, &asset_id, &asset_type, asset_bytes);
 
+                            Some((response_send_key, LoadAssetResponse::loaded_non_modified_asset()))
+                        }
+                        Some(Err(e)) => {
+                            panic!("error reading asset from disk: {:?}", e.to_string());
+                        }
+                        None => {
+                            // still pending
+                            asset_store.load_asset_tasks.push(LoadAssetTask::HasFsTask(asset_id, asset_type, response_send_key, fs_task_key));
+                            None
+                        }
+                    }
+                }
+            };
+            if let Some((response_send_key, response)) = response_opt {
+                session_client.send_response(&response_send_key, &response);
+            }
+        }
+    }
+
+    pub fn handle_load_asset_request(
+        &mut self,
+        file_system_manager: &mut FileSystemManager,
+        request: LoadAssetRequest,
+        response_send_key: ResponseSendKey<LoadAssetResponse>
+    ) {
         let asset_id = request.asset_id;
         let asset_etag = request.etag;
 
         let Some(metadata) = self.metadata_store.get(&asset_id) else {
             // client has no asset
-            return LoadAssetResponse::has_old_or_no_asset();
+            self.load_asset_tasks.push(LoadAssetTask::HasResponse(response_send_key, LoadAssetResponse::has_old_or_no_asset()));
+            return;
         };
         if metadata.etag() != asset_etag {
             // client has old asset
-            return LoadAssetResponse::has_old_or_no_asset();
+            self.load_asset_tasks.push(LoadAssetTask::HasResponse(response_send_key, LoadAssetResponse::has_old_or_no_asset()));
+            return;
         }
 
         // client has current asset in disk
@@ -67,11 +121,9 @@ impl AssetStore {
 
         // load asset into memory
         info!("loading asset into memory: {:?}", metadata.path());
-        let asset_type = metadata.asset_type();
-        let asset_bytes = filesystem::read(metadata.path()).unwrap();
-        self.handle_data_store_load_asset(commands, asset_manager, &asset_id, &asset_type, asset_bytes);
-
-        return LoadAssetResponse::loaded_non_modified_asset();
+        let fs_task_key = file_system_manager.read(metadata.path());
+        self.load_asset_tasks.push(LoadAssetTask::HasFsTask(asset_id, metadata.asset_type(), response_send_key, fs_task_key));
+        return;
     }
 
     pub fn handle_load_asset_with_data_message(&mut self, commands: &mut Commands, asset_manager: &mut AssetManager, message: LoadAssetWithData) {

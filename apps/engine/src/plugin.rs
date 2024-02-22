@@ -5,6 +5,7 @@ use asset_render::AssetPlugin;
 use bevy_http_client::HttpClientPlugin;
 use input::InputPlugin;
 use naia_bevy_client::{ClientConfig as NaiaClientConfig, Plugin as NaiaClientPlugin};
+use filesystem::FileSystemPlugin;
 use render_api::RenderApiPlugin;
 
 use session_server_naia_proto::protocol as session_server_naia_protocol;
@@ -29,6 +30,7 @@ impl Plugin for EnginePlugin {
             .add_plugins(InputPlugin)
             .add_plugins(AssetPlugin)
             .add_plugins(HttpClientPlugin)
+            .add_plugins(FileSystemPlugin)
             .add_plugins(NaiaClientPlugin::<Session>::new(
                 NaiaClientConfig::default(),
                 session_server_naia_protocol(),

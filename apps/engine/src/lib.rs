@@ -24,7 +24,7 @@ pub mod http {
     pub use bevy_http_client::*;
 }
 pub mod naia {
-    pub use naia_bevy_client::{transport::webrtc::Socket as WebrtcSocket, Timer};
+    pub use naia_bevy_client::{transport::webrtc::Socket as WebrtcSocket, Timer, ResponseSendKey};
 }
 pub mod orchestrator {
     pub use orchestrator_http_proto::*;
@@ -71,3 +71,6 @@ pub mod storage {
     pub use storage::*;
 }
 pub use renderer::wait_for_finish;
+pub mod filesystem {
+    pub use filesystem::*;
+}
