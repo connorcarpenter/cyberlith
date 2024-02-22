@@ -1,8 +1,7 @@
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::JsFuture;
-use web_sys::AbortController;
 
-use crate::common::{Request, RequestOptions, Response, ResponseError};
+use crate::common::{Request, Response, ResponseError};
 
 use crate::shared::types::PartialResponse;
 
@@ -12,9 +11,8 @@ use crate::shared::types::PartialResponse;
 /// `Err` is only for failure to use the fetch API.
 pub async fn fetch_async(
     request: &Request,
-    request_options_opt: Option<RequestOptions>,
 ) -> crate::shared::Result<Response> {
-    fetch_jsvalue(request, request_options_opt)
+    fetch_jsvalue(request)
         .await
         .map_err(string_from_js_value)
         .map_err(|estr| ResponseError::HttpError(estr))
@@ -26,32 +24,10 @@ pub(crate) fn string_from_js_value(value: JsValue) -> String {
 
 pub(crate) async fn fetch_base(
     request: &Request,
-    request_options_opt: Option<RequestOptions>,
 ) -> Result<web_sys::Response, JsValue> {
     let mut opts = web_sys::RequestInit::new();
     opts.method(request.method.as_str());
     opts.mode(web_sys::RequestMode::Cors);
-    if let Some(request_options) = request_options_opt {
-        if let Some(timeout) = request_options.timeout_opt {
-            let abort_controller = AbortController::new()?;
-            let abort_signal = abort_controller.signal();
-
-            // abort the controller after a timeout
-            web_sys::window()
-                .unwrap()
-                .set_timeout_with_callback_and_timeout_and_arguments_0(
-                    Closure::wrap(Box::new(move || {
-                        abort_controller.abort();
-                    }) as Box<dyn FnMut()>)
-                    .as_ref()
-                    .unchecked_ref(),
-                    timeout.as_millis() as i32,
-                )
-                .expect("cannot set timeout");
-
-            opts.signal(Some(&abort_signal));
-        }
-    }
 
     if !request.body.is_empty() {
         let body_bytes: &[u8] = &request.body;
@@ -112,9 +88,8 @@ pub(crate) fn get_response_base(response: &web_sys::Response) -> Result<PartialR
 /// `Err` is only for failure to use the fetch API.
 async fn fetch_jsvalue(
     request: &Request,
-    request_options_opt: Option<RequestOptions>,
 ) -> Result<Response, JsValue> {
-    let response = fetch_base(request, request_options_opt).await?;
+    let response = fetch_base(request).await?;
 
     let array_buffer = JsFuture::from(response.array_buffer()?).await?;
     let uint8_array = js_sys::Uint8Array::new(&array_buffer);

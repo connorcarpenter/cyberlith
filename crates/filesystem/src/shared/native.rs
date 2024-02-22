@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use crate::common::{Request, RequestOptions, Response, ResponseError};
+use crate::common::{Request, Response, ResponseError};
 
 use async_channel::{Receiver, Sender};
 
@@ -10,15 +10,8 @@ use async_channel::{Receiver, Sender};
 /// `Err` is only for failure to use the fetch API.
 pub fn fetch_blocking(
     request: &Request,
-    request_options_opt: Option<RequestOptions>,
 ) -> crate::shared::Result<Response> {
     let mut req = ureq::request(request.method.as_str(), &request.url);
-
-    if let Some(request_options) = request_options_opt {
-        if let Some(timeout_duration) = request_options.timeout_opt {
-            req = req.timeout(timeout_duration);
-        }
-    }
 
     for header in &request.headers {
         req = req.set(header.0, header.1);
@@ -67,18 +60,16 @@ pub fn fetch_blocking(
 
 pub(crate) fn fetch(
     request: Request,
-    request_options_opt: Option<RequestOptions>,
     on_done: Box<dyn FnOnce(crate::shared::Result<Response>) + Send>,
 ) {
     std::thread::Builder::new()
-        .name("ehttp".to_owned())
-        .spawn(move || on_done(fetch_blocking(&request, request_options_opt)))
+        .name("filesystem_client".to_owned())
+        .spawn(move || on_done(fetch_blocking(&request)))
         .expect("Failed to spawn ehttp thread");
 }
 
 pub(crate) async fn fetch_async(
     request: Request,
-    request_options_opt: Option<RequestOptions>,
 ) -> crate::shared::Result<Response> {
     let (tx, rx): (
         Sender<crate::shared::Result<Response>>,
@@ -87,7 +78,6 @@ pub(crate) async fn fetch_async(
 
     fetch(
         request,
-        request_options_opt,
         Box::new(move |received| tx.send_blocking(received).unwrap()),
     );
     rx.recv()

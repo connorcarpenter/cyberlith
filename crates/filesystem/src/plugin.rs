@@ -1,14 +1,14 @@
 use bevy_app::{App, Plugin, Update};
 
-use crate::client::{client_update, HttpClient};
+use crate::client::{client_update, FileSystemClient};
 
 #[derive(Default)]
-pub struct HttpClientPlugin;
+pub struct FileSystemPlugin;
 
-impl Plugin for HttpClientPlugin {
+impl Plugin for FileSystemPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(bevy_core::TaskPoolPlugin::default())
-            .init_resource::<HttpClient>()
+            .init_resource::<FileSystemClient>()
             .add_systems(Update, client_update);
     }
 }

@@ -1,5 +1,4 @@
 use std::collections::BTreeMap;
-use std::time::Duration;
 
 /// HTTP Method
 #[derive(Clone, Eq, PartialEq)]
@@ -73,11 +72,6 @@ impl Request {
             headers,
         }
     }
-}
-
-/// Request options
-pub struct RequestOptions {
-    pub timeout_opt: Option<Duration>,
 }
 
 /// Response from a completed HTTP request.

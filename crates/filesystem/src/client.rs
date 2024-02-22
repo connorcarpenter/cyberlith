@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use bevy_ecs::{change_detection::ResMut, system::Resource};
 
-use crate::common::{ApiRequest, ApiResponse, Request, RequestOptions, Response, ResponseError};
+use crate::common::{ApiRequest, ApiResponse, Request, Response, ResponseError};
 
 use crate::{
     backend::RequestTask,
@@ -11,13 +11,13 @@ use crate::{
 };
 
 #[derive(Resource)]
-pub struct HttpClient {
+pub struct FileSystemClient {
     tasks: HashMap<u64, RequestTask>,
     results: HashMap<u64, Result<Response, ResponseError>>,
     current_index: u64,
 }
 
-impl Default for HttpClient {
+impl Default for FileSystemClient {
     fn default() -> Self {
         Self {
             tasks: HashMap::new(),
@@ -27,7 +27,7 @@ impl Default for HttpClient {
     }
 }
 
-impl HttpClient {
+impl FileSystemClient {
     pub fn send<Q: ApiRequest>(
         &mut self,
         addr: &str,
@@ -38,27 +38,7 @@ impl HttpClient {
         let http_request = Request::new(Q::method(), &url, req.to_bytes().to_vec());
         //info!("Sending request to: {:?}", url);
 
-        let task = send_request(http_request, None);
-
-        let key = self.next_key();
-
-        self.tasks.insert(key.id, task);
-
-        key
-    }
-
-    pub fn send_with_options<Q: ApiRequest>(
-        &mut self,
-        addr: &str,
-        port: u16,
-        req: Q,
-        req_options: RequestOptions,
-    ) -> ResponseKey<Q::Response> {
-        let url = format!("http://{}:{}/{}", addr, port, Q::path());
-        let http_request = Request::new(Q::method(), &url, req.to_bytes().to_vec());
-        //info!("Sending request to: {:?}", url);
-
-        let task = send_request(http_request, Some(req_options));
+        let task = send_request(http_request);
 
         let key = self.next_key();
 
@@ -102,7 +82,7 @@ impl HttpClient {
     }
 }
 
-pub(crate) fn client_update(mut client: ResMut<HttpClient>) {
+pub(crate) fn client_update(mut client: ResMut<FileSystemClient>) {
     let mut finished_tasks = Vec::new();
     for (key, task) in client.tasks_iter_mut() {
         if let Some(result) = poll_task(task) {
