@@ -1,5 +1,6 @@
 
-use crate::{types::{FsTaskEnum, FsTaskResultEnum}, error::TaskError};
+use crate::error::TaskError;
+use crate::tasks::task_enum::{FsTaskEnum, FsTaskResultEnum};
 
 pub trait FsTask {
     type Result: FsTaskResult;

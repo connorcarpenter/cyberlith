@@ -3,14 +3,13 @@ extern crate cfg_if;
 
 mod backend;
 mod manager;
-mod key;
+mod task_key;
 mod plugin;
-mod types;
 mod traits;
 mod error;
 mod tasks;
 
 pub use manager::FileSystemManager;
 pub use plugin::FileSystemPlugin;
-pub use key::TaskKey;
+pub use task_key::TaskKey;
 pub use error::TaskError;

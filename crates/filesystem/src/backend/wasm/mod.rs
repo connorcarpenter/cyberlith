@@ -2,9 +2,9 @@ use bevy_tasks::AsyncComputeTaskPool;
 
 use crossbeam_channel::{bounded, Receiver};
 
-use crate::{error::FsTaskError, types::{FsTaskEnum, FsTaskResultEnum}};
+use crate::{tasks::task_enum::{FsTaskEnum, FsTaskResultEnum}, error::TaskError};
 
-pub(crate) struct FsTaskJob(pub Receiver<Result<FsTaskResultEnum, FsTaskError>>);
+pub(crate) struct FsTaskJob(pub Receiver<Result<FsTaskResultEnum, TaskError>>);
 
 pub(crate) fn start_task(
     task_enum: FsTaskEnum,
@@ -22,7 +22,7 @@ pub(crate) fn start_task(
     FsTaskJob(task)
 }
 
-pub(crate) fn poll_task(task: &mut FsTaskJob) -> Option<Result<FsTaskResultEnum, FsTaskError>> {
+pub(crate) fn poll_task(task: &mut FsTaskJob) -> Option<Result<FsTaskResultEnum, TaskError>> {
     match task.0.try_recv() {
         Ok(Ok(result_enum)) => Some(Ok(result_enum)),
         Ok(Err(error)) => Some(Err(error)),
@@ -32,6 +32,6 @@ pub(crate) fn poll_task(task: &mut FsTaskJob) -> Option<Result<FsTaskResultEnum,
 
 pub async fn fetch_async(
     _task_enum: &FsTaskEnum,
-) -> Result<FsTaskResultEnum, FsTaskError> {
+) -> Result<FsTaskResultEnum, TaskError> {
     todo!()
 }

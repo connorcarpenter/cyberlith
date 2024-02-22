@@ -4,9 +4,7 @@ use futures_lite::future;
 
 use async_channel::{Receiver, Sender};
 
-use crate::{error::TaskError, types::{FsTaskEnum, FsTaskResultEnum}};
-use crate::tasks::read::ReadResult;
-use crate::tasks::write::WriteResult;
+use crate::{tasks::{read::ReadResult, task_enum::{FsTaskEnum, FsTaskResultEnum}, write::WriteResult}, error::TaskError};
 
 pub(crate) struct FsTaskJob(pub(crate) Task<Result<FsTaskResultEnum, TaskError>>);
 

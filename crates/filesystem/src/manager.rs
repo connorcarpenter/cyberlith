@@ -8,9 +8,9 @@ use crate::{
     TaskKey,
     traits::FsTask,
     traits::FsTaskResult,
-    types::FsTaskResultEnum,
 };
 use crate::tasks::read::{ReadResult, ReadTask};
+use crate::tasks::task_enum::FsTaskResultEnum;
 use crate::tasks::write::{WriteResult, WriteTask};
 
 #[derive(Resource)]

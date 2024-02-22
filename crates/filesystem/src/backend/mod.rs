@@ -1,5 +1,5 @@
 use crate::error::TaskError;
-use crate::types::{FsTaskEnum, FsTaskResultEnum};
+use crate::tasks::task_enum::{FsTaskEnum, FsTaskResultEnum};
 cfg_if! {
     if #[cfg(target_arch = "wasm32")] {
         mod wasm;
