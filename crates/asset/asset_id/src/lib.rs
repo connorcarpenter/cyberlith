@@ -1,8 +1,21 @@
 use std::ops::{Deref, DerefMut};
 
-use naia_serde::{BitReader, BitWrite, Serde, SerdeErr};
+use naia_serde::{BitReader, BitWrite, SerdeInternal as Serde, SerdeErr};
 
 use crypto::U32Token;
+
+// AssetType
+#[derive(Serde, Eq, PartialEq, Clone, Copy, Hash, Debug)]
+pub enum AssetType {
+    Mesh,
+    Skeleton,
+    Palette,
+    Animation,
+    Icon,
+    Skin,
+    Model,
+    Scene,
+}
 
 // AssetId
 #[derive(Clone, Copy, PartialEq, Hash, Eq, Debug)]

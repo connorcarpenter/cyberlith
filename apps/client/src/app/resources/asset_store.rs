@@ -2,6 +2,7 @@ use std::{collections::HashMap, any::TypeId};
 
 use bevy_ecs::{prelude::Resource, entity::Entity};
 use bevy_log::info;
+use naia_serde::{BitWriter, Serde};
 
 use game_engine::{
     session::{LoadAssetRequest, LoadAssetWithData, LoadAssetResponse},
@@ -9,7 +10,7 @@ use game_engine::{
     world::Main,
 };
 
-use crate::app::resources::asset_metadata_store::AssetMetadataStore;
+use crate::app::resources::asset_metadata_store::{AssetMetadataSerde, AssetMetadataStore};
 
 type AssetProcessorId = TypeId;
 
@@ -73,6 +74,7 @@ impl AssetStore {
 
         let asset_id = message.asset_id;
         let asset_etag = message.asset_etag;
+        let asset_type = message.asset_type;
         let asset_data = message.asset_data;
 
         let asset_file_path = format!("{}/{}", self.path, asset_id.to_string());
@@ -84,14 +86,18 @@ impl AssetStore {
 
         // load asset metadata into disk
         info!("attempting to write asset metadata to disk: {:?}", asset_metadata_file_path);
-        filesystem::write(asset_metadata_file_path, asset_etag.to_string().as_bytes()).unwrap();
+        let metadata_payload = AssetMetadataSerde::new(asset_etag, asset_type);
+        let mut metadata_writer = BitWriter::new();
+        metadata_payload.ser(&mut metadata_writer);
+        let metadata_bytes = metadata_writer.to_bytes();
+        filesystem::write(asset_metadata_file_path, metadata_bytes).unwrap();
 
         // load asset data into memory
         info!("loading asset into memory: {:?}", asset_file_path);
         self.handle_data_store_load_asset(&asset_id, asset_data);
 
         // load asset metadata into memory
-        self.metadata_store.insert(asset_id, asset_etag, asset_file_path);
+        self.metadata_store.insert(asset_id, asset_etag, asset_file_path, asset_type);
     }
 
     pub fn handle_data_store_load_asset(&mut self, asset_id: &AssetId, asset_data: Vec<u8>) {
@@ -121,7 +127,7 @@ impl AssetStore {
         if !self.entry_waitlist.contains_key(entry_entity) {
             self.entry_waitlist.insert(*entry_entity, HashMap::new());
         }
-        let mut entry_waitlist_entry = self.entry_waitlist.get_mut(entry_entity).unwrap();
+        let entry_waitlist_entry = self.entry_waitlist.get_mut(entry_entity).unwrap();
         entry_waitlist_entry.insert(*ref_entity, asset_processor_id);
     }
 
@@ -146,7 +152,7 @@ impl AssetStore {
                     if !self.ref_waitlist.contains_key(asset_id) {
                         self.ref_waitlist.insert(*asset_id, HashMap::new());
                     }
-                    let mut ref_waitlist_entry = self.ref_waitlist.get_mut(asset_id).unwrap();
+                    let ref_waitlist_entry = self.ref_waitlist.get_mut(asset_id).unwrap();
                     ref_waitlist_entry.insert(ref_entity, asset_processor_id);
                 }
             }
@@ -170,7 +176,7 @@ impl AssetStore {
             if !self.ref_waitlist.contains_key(asset_id) {
                 self.ref_waitlist.insert(*asset_id, HashMap::new());
             }
-            let mut ref_waitlist_entry = self.ref_waitlist.get_mut(asset_id).unwrap();
+            let ref_waitlist_entry = self.ref_waitlist.get_mut(asset_id).unwrap();
             ref_waitlist_entry.insert(*ref_entity, asset_processor_id);
         }
     }

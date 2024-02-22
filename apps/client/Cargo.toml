@@ -23,8 +23,10 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 # Internal
+# goal is to have ONLY game_engine here!!!
 game_engine = { path = "../engine" }
 filesystem = { path = "../../crates/filesystem" }
+naia-serde = { path = "../../../naia/shared/serde" }
 
 # External
 bevy_app = { version = "0.13", default-features=false }

@@ -9,7 +9,7 @@ mod renderer;
 
 pub mod asset {
     pub use asset_render::*;
-    pub use asset_id::{AssetId, ETag};
+    pub use asset_id::{AssetId, ETag, AssetType};
 }
 pub mod input {
     pub use input::*;
