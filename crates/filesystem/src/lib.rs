@@ -1,11 +1,15 @@
-use cfg_if::cfg_if;
+#[macro_use]
+extern crate cfg_if;
 
-cfg_if! {
-    if #[cfg(not(target_arch = "wasm32"))] {
-        mod native;
-        pub use native::*;
-    } else {
-        mod wasm;
-        pub use wasm::*;
-    }
-}
+mod backend;
+mod client;
+mod key;
+mod plugin;
+mod common;
+mod shared;
+
+pub use client::HttpClient;
+pub use key::ResponseKey;
+pub use plugin::HttpClientPlugin;
+
+pub use common::ResponseError;

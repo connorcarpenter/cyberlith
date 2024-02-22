@@ -2,13 +2,27 @@
 name = "filesystem"
 version = "0.1.0"
 edition = "2021"
-
-[features]
+workspace = "../.."
 
 [dependencies]
+naia-serde = { path = "../../../naia/shared/serde" }
+
+bevy_tasks = { version = "0.13", default-features = false, features = ["multi-threaded"] }
+bevy_ecs = { version = "0.13", default-features = false }
+bevy_app = { version = "0.13", default-features = false }
+bevy_core = { version = "0.13", default-features = false }
+
 cfg-if = { version = "1.0" }
+log = "0.4.17"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-wasm-bindgen = { version = "0.2" }
-web-sys = { version = "0.3", features = ['Window', 'Navigator', 'StorageManager'] }
-js-sys = { version = "0.3" }
+crossbeam-channel = "0.5.7"
+js-sys = "0.3"
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+web-sys = { version = "0.3.52", features = [ "AbortController", "AbortSignal", "Headers", "ReadableStream", "Request", "RequestInit", "RequestMode", "Response", "Window" ] }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+futures-lite = { version = "1.11.3" }
+ureq = "2.0"
+async-channel = { version = "1.8" }
