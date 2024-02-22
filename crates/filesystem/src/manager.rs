@@ -14,13 +14,13 @@ use crate::{
 };
 
 #[derive(Resource)]
-pub struct FileSystemClient {
+pub struct FileSystemManager {
     tasks: HashMap<u64, FsTaskJob>,
     results: HashMap<u64, Result<FsTaskResultEnum, FsTaskError>>,
     current_index: u64,
 }
 
-impl Default for FileSystemClient {
+impl Default for FileSystemManager {
     fn default() -> Self {
         Self {
             tasks: HashMap::new(),
@@ -30,7 +30,7 @@ impl Default for FileSystemClient {
     }
 }
 
-impl FileSystemClient {
+impl FileSystemManager {
     fn start_task<Q: FsTask>(
         &mut self,
         task: Q,
@@ -93,7 +93,7 @@ impl FileSystemClient {
     }
 }
 
-pub(crate) fn client_update(mut client: ResMut<FileSystemClient>) {
+pub(crate) fn update(mut client: ResMut<FileSystemManager>) {
     let mut finished_tasks = Vec::new();
     for (key, task) in client.tasks_iter_mut() {
         if let Some(result) = poll_task(task) {
