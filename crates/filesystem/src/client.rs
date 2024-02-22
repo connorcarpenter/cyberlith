@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use bevy_ecs::{change_detection::ResMut, system::Resource};
 
-use crate::common::{ApiRequest, ApiResponse, Request, Response, ResponseError};
+use crate::common::{ApiRequest, ApiResponse, Response, ResponseError};
 
 use crate::{
     backend::RequestTask,
@@ -30,13 +30,9 @@ impl Default for FileSystemClient {
 impl FileSystemClient {
     pub fn send<Q: ApiRequest>(
         &mut self,
-        addr: &str,
-        port: u16,
         req: Q,
     ) -> ResponseKey<Q::Response> {
-        let url = format!("http://{}:{}/{}", addr, port, Q::path());
-        let http_request = Request::new(Q::method(), &url, req.to_bytes().to_vec());
-        //info!("Sending request to: {:?}", url);
+        let http_request = req.to_request();
 
         let task = send_request(http_request);
 
@@ -54,10 +50,7 @@ impl FileSystemClient {
         if let Some(result) = self.results.remove(&key.id) {
             match result {
                 Ok(response) => {
-                    let Ok(api_response) = S::from_response(response) else {
-                        return Some(Err(ResponseError::SerdeError));
-                    };
-                    Some(Ok(api_response))
+                    return Some(S::from_response(response));
                 }
                 Err(err) => Some(Err(err)),
             }
