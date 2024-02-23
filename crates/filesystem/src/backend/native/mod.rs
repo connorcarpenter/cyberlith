@@ -3,8 +3,9 @@ use bevy_tasks::{AsyncComputeTaskPool, Task};
 use futures_lite::future;
 
 use async_channel::{Receiver, Sender};
+use log::info;
 
-use crate::{tasks::{read::ReadResult, task_enum::{FsTaskEnum, FsTaskResultEnum}, write::WriteResult}, error::TaskError};
+use crate::{tasks::{read_dir::ReadDirEntry, read::ReadResult, task_enum::{FsTaskEnum, FsTaskResultEnum}, write::WriteResult}, error::TaskError, ReadDirResult, CreateDirResult};
 
 pub(crate) struct FsTaskJob(pub(crate) Task<Result<FsTaskResultEnum, TaskError>>);
 
@@ -79,5 +80,51 @@ fn task_process_blocking(
                 }
             }
         }
+        FsTaskEnum::ReadDir(task) => {
+            match std::fs::read_dir(&task.path) {
+                Ok(entries) => {
+                    Ok(FsTaskResultEnum::ReadDir(convert_read_dir(entries)))
+                }
+                Err(e) => {
+                    Err(TaskError::IoError(e.to_string()))
+                }
+            }
+        }
+        FsTaskEnum::CreateDir(task) => {
+            match std::fs::create_dir(&task.path) {
+                Ok(()) => {
+                    Ok(FsTaskResultEnum::CreateDir(CreateDirResult::new()))
+                }
+                Err(e) => {
+                    Err(TaskError::IoError(e.to_string()))
+                }
+            }
+        }
     }
+}
+
+fn convert_read_dir(read_dir: std::fs::ReadDir) -> ReadDirResult {
+    let mut result = ReadDirResult::new();
+
+    for entry in read_dir {
+        match entry {
+            Ok(entry) => {
+                let result_entry = convert_dir_entry(entry);
+                result.add_entry(result_entry);
+            }
+            Err(e) => {
+                // skip for now
+                info!("Error reading directory entry: {:?}", e.to_string());
+            }
+        }
+    }
+
+    result
+}
+
+fn convert_dir_entry(entry: std::fs::DirEntry) -> ReadDirEntry {
+    let path = entry.path();
+    let file_name = entry.file_name().into_string().unwrap();
+
+    ReadDirEntry::new(path, file_name)
 }

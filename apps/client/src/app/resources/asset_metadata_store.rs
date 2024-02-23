@@ -1,9 +1,10 @@
 use std::{path::PathBuf, collections::HashMap};
 
+use bevy_log::{info, warn};
+
 use naia_serde::{SerdeInternal as Serde, BitReader};
 
-use game_engine::{filesystem::{FileSystemManager, ReadResult, TaskKey}, asset::{AssetId, AssetType, ETag}};
-
+use game_engine::{filesystem::{CreateDirResult, ReadDirResult, FileSystemManager, ReadResult, TaskKey}, asset::{AssetId, AssetType, ETag}};
 
 #[derive(Serde, Eq, PartialEq, Clone)]
 pub struct AssetMetadataSerde {
@@ -61,35 +62,62 @@ impl AssetMetadataStore {
     }
 
     pub fn load(&mut self, fs_manager: &mut FileSystemManager) {
-        // me.tasks.push(AssetMetadataTask::load_dir(fs_manager, path));
+        self.tasks.push(AssetMetadataTask::load_dir(fs_manager, &self.path));
     }
 
     pub fn process_tasks(&mut self, fs_manager: &mut FileSystemManager) {
+
+        if self.finished_loading {
+            return;
+        }
+
         let tasks = std::mem::take(&mut self.tasks);
 
         for task in tasks {
             match task {
-                // AssetMetadataTask::LoadDir(task_key) => {
-                //     match fs_manager.poll_read_dir(task_key) {
-                //         Some(ReadDirResult::Ok(entries)) => {
-                //             for entry in entries {
-                //                 if let Ok(entry) = entry {
-                //                     if entry.file_type().is_dir() {
-                //                         new_tasks.push(AssetMetadataTask::load_dir(fs_manager, entry.path().to_str().unwrap()));
-                //                     } else {
-                //                         new_tasks.push(AssetMetadataTask::load_file(fs_manager, entry.path().to_str().unwrap()));
-                //                     }
-                //                 }
-                //             }
-                //         }
-                //         Some(ReadDirResult::Err(err)) => {
-                //             warn!("Error reading directory: {:?}", err);
-                //         }
-                //         None => {
-                //             self.tasks.push(AssetMetadataTask::LoadDir(task_key));
-                //         }
-                //     }
-                // }
+                AssetMetadataTask::LoadDir(path, task_key) => {
+                    match fs_manager.get_result(&task_key) {
+                        Some(Ok(result)) => {
+                            let entries = result.entries();
+                            for entry in entries {
+                                let file_path = entry.path();
+
+                                // Check if the file has a .meta extension
+                                let Some(extension) = file_path.extension() else {
+                                    continue;
+                                };
+                                if extension != "meta" {
+                                    continue;
+                                }
+
+                                info!("Reading asset metadata file: {:?}", file_path);
+                                self.tasks.push(AssetMetadataTask::load_file(fs_manager, file_path.to_str().unwrap()));
+                            }
+                        }
+                        Some(Err(err)) => {
+                            warn!("Failed to read directory ({:?}): {:?}", path, err.to_string());
+
+                            info!("Creating directory: {:?}", path);
+                            self.tasks.push(AssetMetadataTask::create_dir(fs_manager, path));
+                        }
+                        None => {
+                            self.tasks.push(AssetMetadataTask::LoadDir(path, task_key));
+                        }
+                    }
+                }
+                AssetMetadataTask::CreateDir(path, task_key) => {
+                    match fs_manager.get_result(&task_key) {
+                        Some(Ok(result)) => {
+                            info!("Created directory: {:?}", path);
+                        }
+                        Some(Err(err)) => {
+                            panic!("Error creating directory ({:?}): {:?}", path, err.to_string());
+                        }
+                        None => {
+                            self.tasks.push(AssetMetadataTask::CreateDir(path, task_key));
+                        }
+                    }
+                }
                 AssetMetadataTask::LoadFile(file_path, task_key) => {
                     match fs_manager.get_result(&task_key) {
                         Some(Ok(result)) => {
@@ -111,7 +139,7 @@ impl AssetMetadataStore {
                             self.map.insert(asset_id, metadata);
                         }
                         Some(Err(err)) => {
-                            panic!("Error reading file: {:?}", err.to_string());
+                            panic!("Error reading file ({:?}): {:?}", file_path, err.to_string());
                         }
                         None => {
                             self.tasks.push(AssetMetadataTask::LoadFile(file_path, task_key));
@@ -123,6 +151,7 @@ impl AssetMetadataStore {
 
         if self.tasks.is_empty() {
             self.finished_loading = true;
+            info!("Finished loading AssetMetadataStore");
         }
     }
 
@@ -147,18 +176,24 @@ impl AssetMetadataStore {
 }
 
 enum AssetMetadataTask {
-    // LoadDir(TaskKey<ReadDirResult>),
+    LoadDir(PathBuf, TaskKey<ReadDirResult>),
     LoadFile(PathBuf, TaskKey<ReadResult>),
+    CreateDir(PathBuf, TaskKey<CreateDirResult>),
 }
 
 impl AssetMetadataTask {
-    // fn load_dir(fs_manager: &mut FileSystemManager, path: &str) -> Self {
-    //     let task_key = fs_manager.read_dir(path);
-    //     Self::LoadDir(task_key)
-    // }
+    fn load_dir(fs_manager: &mut FileSystemManager, path: &str) -> Self {
+        let task_key = fs_manager.read_dir(path);
+        Self::LoadDir(PathBuf::from(path), task_key)
+    }
 
     fn load_file(fs_manager: &mut FileSystemManager, path: &str) -> Self {
         let task_key = fs_manager.read(path);
         Self::LoadFile(PathBuf::from(path), task_key)
+    }
+
+    fn create_dir(fs_manager: &mut FileSystemManager, path: PathBuf) -> Self {
+        let task_key = fs_manager.create_dir(path.clone());
+        Self::CreateDir(path, task_key)
     }
 }
