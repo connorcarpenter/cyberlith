@@ -5,7 +5,7 @@ use js_sys::{Array, AsyncIterator, Function, Promise};
 use log::info;
 use wasm_bindgen::JsValue;
 use wasm_bindgen_futures::JsFuture;
-use web_sys::{FileSystemDirectoryHandle, FileSystemGetDirectoryOptions, FileSystemGetFileOptions, FileSystemFileHandle, FileSystemWritableFileStream};
+use web_sys::{FileSystemDirectoryHandle, FileSystemGetDirectoryOptions, FileSystemGetFileOptions, FileSystemFileHandle, FileSystemWritableFileStream, WritableStream};
 
 use crate::{tasks::{write::WriteTask, read_dir::{ReadDirTask, ReadDirEntry}, read::ReadTask, create_dir::CreateDirTask, task_enum::{FsTaskEnum, FsTaskResultEnum}}, error::TaskError, ReadDirResult, CreateDirResult, WriteResult};
 
@@ -55,15 +55,39 @@ async fn handle_write(task: &WriteTask) -> Result<FsTaskResultEnum, TaskError> {
 
     let root = get_root().await;
 
-    let file_name = task.path.clone().into_os_string().into_string().unwrap();
+    let folder_name = task.path.parent().unwrap().to_str().unwrap();
+
+    let dir_handle_promise = root.get_directory_handle(&folder_name);
+    let dir_handle_js = JsFuture::from(dir_handle_promise).await.expect("Error getting directory handle");
+    let dir_handle: FileSystemDirectoryHandle = dir_handle_js.try_into().expect("Failed to cast JsValue to FileSystemDirectoryHandle");
+
+    let file_name = task.path.file_name().unwrap().to_str().unwrap();
+
+    // create file
     let mut options = FileSystemGetFileOptions::new();
     options.create(true);
-    let file_handle_promise = root.get_file_handle_with_options(&file_name, &options);
+    let file_handle_promise = dir_handle.get_file_handle_with_options(file_name, &options);
+
+    info!("attempting to create file handle with name: {:?}", file_name);
     let file_handle_js = JsFuture::from(file_handle_promise).await.expect("Error creating file handle");
+    info!("file handle created");
+
     let file_handle: FileSystemFileHandle = file_handle_js.try_into().expect("Failed to cast JsValue to FileSystemFileHandle");
+
+    // create file write stream
     let file_stream_promise = file_handle.create_writable();
     let file_stream_js = JsFuture::from(file_stream_promise).await.expect("Error creating file stream");
-    let file_stream: FileSystemWritableFileStream = file_stream_js.try_into().expect("Failed to cast JsValue to FileSystemWritableFileStream");
+    let file_stream: FileSystemWritableFileStream = file_stream_js.clone().try_into().expect("Failed to cast JsValue to FileSystemWritableFileStream");
+
+    // write to file
+    let write_promise = file_stream.write_with_u8_array(task.bytes.as_ref()).expect("Error writing to file");
+    // from documentation, this promise should return 'undefined'
+    let _ = JsFuture::from(write_promise).await.expect("Error resolving file writing promise");
+
+    // close file write stream
+    let writeable_stream: WritableStream = file_stream_js.try_into().expect("Failed to cast JsValue to WritableStream");
+    let close_promise = writeable_stream.close();
+    let _ = JsFuture::from(close_promise).await.expect("Error closing file stream");
 
     Ok(FsTaskResultEnum::Write(output))
 }
