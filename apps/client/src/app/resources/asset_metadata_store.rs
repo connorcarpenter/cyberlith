@@ -81,8 +81,6 @@ impl AssetMetadataStore {
                             let entries = result.entries();
                             for entry in entries {
 
-                                info!("Reading entry: {:?}", entry.path());
-
                                 let file_path = entry.path();
 
                                 // Check if the file has a .meta extension

@@ -1,13 +1,13 @@
 use bevy_tasks::AsyncComputeTaskPool;
 
 use crossbeam_channel::{bounded, Receiver};
-use js_sys::{Array, AsyncIterator, Function, Promise};
+use js_sys::{Array, ArrayBuffer, AsyncIterator, Function, Promise, Uint8Array};
 use log::info;
 use wasm_bindgen::JsValue;
 use wasm_bindgen_futures::JsFuture;
-use web_sys::{FileSystemDirectoryHandle, FileSystemGetDirectoryOptions, FileSystemGetFileOptions, FileSystemFileHandle, FileSystemWritableFileStream, WritableStream};
+use web_sys::{Blob, FileSystemDirectoryHandle, FileSystemGetDirectoryOptions, FileSystemGetFileOptions, FileSystemFileHandle, FileSystemWritableFileStream, WritableStream};
 
-use crate::{tasks::{write::WriteTask, read_dir::{ReadDirTask, ReadDirEntry}, read::ReadTask, create_dir::CreateDirTask, task_enum::{FsTaskEnum, FsTaskResultEnum}}, error::TaskError, ReadDirResult, CreateDirResult, WriteResult};
+use crate::{tasks::{write::WriteTask, read_dir::{ReadDirTask, ReadDirEntry}, read::ReadTask, create_dir::CreateDirTask, task_enum::{FsTaskEnum, FsTaskResultEnum}}, error::TaskError, ReadDirResult, CreateDirResult, WriteResult, ReadResult};
 
 pub(crate) struct FsTaskJob(pub Receiver<Result<FsTaskResultEnum, TaskError>>);
 
@@ -47,7 +47,32 @@ pub async fn task_process_async(
 }
 
 async fn handle_read(task: &ReadTask) -> Result<FsTaskResultEnum, TaskError> {
-    todo!()
+
+    let root = get_root().await;
+
+    let folder_name = task.path.parent().unwrap().to_str().unwrap();
+
+    let dir_handle_promise = root.get_directory_handle(&folder_name);
+    let dir_handle_js = JsFuture::from(dir_handle_promise).await.expect("Error getting directory handle");
+    let dir_handle: FileSystemDirectoryHandle = dir_handle_js.try_into().expect("Failed to cast JsValue to FileSystemDirectoryHandle");
+
+    let file_name = task.path.file_name().unwrap().to_str().unwrap();
+    let file_handle_promise = dir_handle.get_file_handle(file_name);
+    let file_handle_js = JsFuture::from(file_handle_promise).await.expect("Error getting file handle");
+    let file_handle: FileSystemFileHandle = file_handle_js.try_into().expect("Failed to cast JsValue to FileSystemFileHandle");
+
+    let file_promise = file_handle.get_file();
+    let file_js = JsFuture::from(file_promise).await.expect("Error creating file");
+    let blob: Blob = file_js.try_into().expect("Failed to cast JsValue to File");
+
+    let array_buffer_promise = blob.array_buffer();
+    let array_buffer_js = JsFuture::from(array_buffer_promise).await.expect("Error getting array buffer");
+    let array = Uint8Array::new(&array_buffer_js);
+    let bytes = array.to_vec();
+
+    info!("Read file: {:?}, got {} bytes!", task.path.to_str().unwrap(), bytes.len());
+
+    Ok(FsTaskResultEnum::Read(ReadResult::new(bytes)))
 }
 
 async fn handle_write(task: &WriteTask) -> Result<FsTaskResultEnum, TaskError> {
