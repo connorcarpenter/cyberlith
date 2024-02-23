@@ -107,7 +107,7 @@ impl AssetMetadataStore {
                 }
                 AssetMetadataTask::CreateDir(path, task_key) => {
                     match fs_manager.get_result(&task_key) {
-                        Some(Ok(result)) => {
+                        Some(Ok(_result)) => {
                             info!("Created directory: {:?}", path);
                         }
                         Some(Err(err)) => {

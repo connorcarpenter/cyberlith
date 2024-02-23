@@ -2,7 +2,7 @@ use bevy_tasks::AsyncComputeTaskPool;
 
 use crossbeam_channel::{bounded, Receiver};
 
-use crate::{tasks::task_enum::{FsTaskEnum, FsTaskResultEnum}, error::TaskError};
+use crate::{tasks::{write::WriteTask, read_dir::ReadDirTask, read::ReadTask, create_dir::CreateDirTask, task_enum::{FsTaskEnum, FsTaskResultEnum}}, error::TaskError};
 
 pub(crate) struct FsTaskJob(pub Receiver<Result<FsTaskResultEnum, TaskError>>);
 
@@ -31,7 +31,28 @@ pub(crate) fn poll_task(task: &mut FsTaskJob) -> Option<Result<FsTaskResultEnum,
 }
 
 pub async fn task_process_async(
-    _task_enum: &FsTaskEnum,
+    task_enum: &FsTaskEnum,
 ) -> Result<FsTaskResultEnum, TaskError> {
+    match task_enum {
+        FsTaskEnum::Read(task) => handle_read(task).await,
+        FsTaskEnum::Write(task) => handle_write(task).await,
+        FsTaskEnum::ReadDir(task) => handle_read_dir(task).await,
+        FsTaskEnum::CreateDir(task) => handle_create_dir(task).await,
+    }
+}
+
+async fn handle_read(task: &ReadTask) -> Result<FsTaskResultEnum, TaskError> {
+    todo!()
+}
+
+async fn handle_write(task: &WriteTask) -> Result<FsTaskResultEnum, TaskError> {
+    todo!()
+}
+
+async fn handle_read_dir(task: &ReadDirTask) -> Result<FsTaskResultEnum, TaskError> {
+    todo!()
+}
+
+async fn handle_create_dir(task: &CreateDirTask) -> Result<FsTaskResultEnum, TaskError> {
     todo!()
 }
