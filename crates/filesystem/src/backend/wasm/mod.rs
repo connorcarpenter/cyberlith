@@ -5,9 +5,9 @@ use js_sys::{Array, AsyncIterator, Function, Promise};
 use log::info;
 use wasm_bindgen::JsValue;
 use wasm_bindgen_futures::JsFuture;
-use web_sys::FileSystemDirectoryHandle;
+use web_sys::{FileSystemDirectoryHandle, FileSystemGetDirectoryOptions};
 
-use crate::{tasks::{write::WriteTask, read_dir::{ReadDirTask, ReadDirEntry}, read::ReadTask, create_dir::CreateDirTask, task_enum::{FsTaskEnum, FsTaskResultEnum}}, error::TaskError, ReadDirResult};
+use crate::{tasks::{write::WriteTask, read_dir::{ReadDirTask, ReadDirEntry}, read::ReadTask, create_dir::CreateDirTask, task_enum::{FsTaskEnum, FsTaskResultEnum}}, error::TaskError, ReadDirResult, CreateDirResult};
 
 pub(crate) struct FsTaskJob(pub Receiver<Result<FsTaskResultEnum, TaskError>>);
 
@@ -76,7 +76,7 @@ async fn handle_read_dir(task: &ReadDirTask) -> Result<FsTaskResultEnum, TaskErr
         }
     };
 
-    let dir_handle_js = JsValue::from(root);
+    let dir_handle_js = JsValue::from(dir_handle);
 
     // Get the JavaScript function for the 'entries' method
     let entries_function_js = js_sys::Reflect::get(
@@ -143,7 +143,7 @@ async fn handle_read_dir(task: &ReadDirTask) -> Result<FsTaskResultEnum, TaskErr
             }
         };
 
-        info!("Found entry: {}", name);
+        info!("Found entry: {:?}", name);
         output.add_entry(ReadDirEntry::new("".into(), name));
 
         // TODO: get path, add to entry
@@ -154,7 +154,29 @@ async fn handle_read_dir(task: &ReadDirTask) -> Result<FsTaskResultEnum, TaskErr
 }
 
 async fn handle_create_dir(task: &CreateDirTask) -> Result<FsTaskResultEnum, TaskError> {
-    todo!()
+    let output = CreateDirResult::new();
+
+    let root = get_root().await;
+
+    let folder_name = task.path.clone().into_os_string().into_string().unwrap();
+    let mut options = FileSystemGetDirectoryOptions::new();
+    options.create(true);
+    let dir_handle_promise = root.get_directory_handle_with_options(&folder_name, &options);
+    let dir_handle_js = match JsFuture::from(dir_handle_promise).await {
+        Ok(dir_handle_js) => dir_handle_js,
+        Err(e) => {
+            let error_string = format!("Error creating directory handle: {:?}", e);
+            return Err(TaskError::IoError(error_string));
+        }
+    };
+    let _dir_handle: FileSystemDirectoryHandle = match dir_handle_js.try_into() {
+        Ok(handle) => handle,
+        Err(_) => {
+            panic!("Failed to cast JsValue to FileSystemDirectoryHandle");
+        }
+    };
+
+    Ok(FsTaskResultEnum::CreateDir(output))
 }
 
 // utils for tasks
