@@ -145,13 +145,13 @@ async fn handle_read_dir(task: &ReadDirTask) -> Result<FsTaskResultEnum, TaskErr
         let name_js = next_entry.get(0);
         let handle_js = next_entry.get(1);
 
-        let name = name_js.as_string().expect("Failed to cast JsValue to String");
+        let file_name = name_js.as_string().expect("Failed to cast JsValue to String");
 
-        info!("Found entry: {:?}", name);
-        output.add_entry(ReadDirEntry::new("".into(), name));
+        let full_path = format!("{}/{}", folder_name, file_name);
+        info!("Found entry: (fullpath: {:?}, filename: {:?})", full_path.as_str(), file_name);
+        output.add_entry(ReadDirEntry::new(full_path.into(), file_name));
 
-        // TODO: get path, add to entry
-        // TODO: handle subdirectories
+        // TODO: handle subdirectories?
     }
 
     Ok(FsTaskResultEnum::ReadDir(output))
