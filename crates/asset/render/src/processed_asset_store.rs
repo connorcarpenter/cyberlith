@@ -8,7 +8,7 @@ use storage::Storage;
 
 use crate::{AnimationData, AssetHandle, IconData, MeshFile, ModelData, PaletteData, SceneData, SkeletonData, SkinData, asset_storage::AssetStorage, TypedAssetId};
 
-pub(crate) struct AssetStore {
+pub(crate) struct ProcessedAssetStore {
     pub(crate) meshes: AssetStorage<MeshFile>,
     pub(crate) skeletons: AssetStorage<SkeletonData>,
     pub(crate) palettes: AssetStorage<PaletteData>,
@@ -29,7 +29,7 @@ pub(crate) struct AssetStore {
     ready_skins: Vec<AssetHandle<SkinData>>,
 }
 
-impl Default for AssetStore {
+impl Default for ProcessedAssetStore {
     fn default() -> Self {
         Self {
             meshes: AssetStorage::default(),
@@ -53,7 +53,7 @@ impl Default for AssetStore {
     }
 }
 
-impl AssetStore {
+impl ProcessedAssetStore {
     pub(crate) fn load(
         &mut self,
         asset_data_store: &HashMap<AssetId, Vec<u8>>,

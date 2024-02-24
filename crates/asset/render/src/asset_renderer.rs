@@ -7,13 +7,13 @@ use render_api::{
 };
 use storage::Handle;
 
-use crate::{asset_dependency::AssetComponentHandle, asset_store::AssetStore, AnimationData, IconData, MeshFile, ModelData, SceneData, SkinData, AssetHandle};
+use crate::{asset_dependency::AssetComponentHandle, processed_asset_store::ProcessedAssetStore, AnimationData, IconData, MeshFile, ModelData, SceneData, SkinData, AssetHandle};
 
 pub(crate) struct AssetRenderer;
 
 impl AssetRenderer {
     pub(crate) fn draw_mesh(
-        asset_store: &AssetStore,
+        asset_store: &ProcessedAssetStore,
         render_frame: &mut RenderFrame,
         mesh_handle: &AssetHandle<MeshFile>,
         mat_handle: &Handle<CpuMaterial>,
@@ -32,7 +32,7 @@ impl AssetRenderer {
     }
 
     pub(crate) fn draw_icon(
-        asset_store: &AssetStore,
+        asset_store: &ProcessedAssetStore,
         render_frame: &mut RenderFrame,
         icon_handle: &AssetHandle<IconData>,
         subimage_index: usize,
@@ -58,7 +58,7 @@ impl AssetRenderer {
     }
 
     pub(crate) fn draw_skin(
-        asset_store: &AssetStore,
+        asset_store: &ProcessedAssetStore,
         render_frame: &mut RenderFrame,
         skin_handle: &AssetHandle<SkinData>,
         transform: &Transform,
@@ -93,7 +93,7 @@ impl AssetRenderer {
     }
 
     pub(crate) fn draw_scene(
-        asset_store: &AssetStore,
+        asset_store: &ProcessedAssetStore,
         render_frame: &mut RenderFrame,
         scene_handle: &AssetHandle<SceneData>,
         parent_transform: &Transform,
@@ -134,7 +134,7 @@ impl AssetRenderer {
     }
 
     pub(crate) fn draw_model(
-        asset_store: &AssetStore,
+        asset_store: &ProcessedAssetStore,
         render_frame: &mut RenderFrame,
         model_handle: &AssetHandle<ModelData>,
         parent_transform: &Transform,
@@ -175,7 +175,7 @@ impl AssetRenderer {
     }
 
     pub(crate) fn draw_animated_model(
-        asset_store: &AssetStore,
+        asset_store: &ProcessedAssetStore,
         render_frame: &mut RenderFrame,
         model_handle: &AssetHandle<ModelData>,
         animation_handle: &AssetHandle<AnimationData>,

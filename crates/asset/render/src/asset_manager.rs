@@ -11,19 +11,19 @@ use render_api::{
 use storage::{Handle, Storage};
 
 use crate::{
-    asset_renderer::AssetRenderer, asset_store::AssetStore, AnimationData, AssetHandle, IconData,
+    asset_renderer::AssetRenderer, processed_asset_store::ProcessedAssetStore, AnimationData, AssetHandle, IconData,
     MeshFile, ModelData, SceneData, SkinData,
 };
 
 #[derive(Resource)]
 pub struct AssetManager {
-    store: AssetStore,
+    store: ProcessedAssetStore,
 }
 
 impl Default for AssetManager {
     fn default() -> Self {
         Self {
-            store: AssetStore::default(),
+            store: ProcessedAssetStore::default(),
         }
     }
 }

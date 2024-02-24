@@ -4,7 +4,7 @@ use asset_io::bits::ComponentFileType;
 use math::{Quat, Vec3};
 use render_api::components::Transform;
 
-use crate::{asset_dependency::{AssetComponent, AssetComponentHandle, AssetDependency}, scene::finish_component_dependency, AssetHandle, SceneData, SkeletonData, SkinData, TypedAssetId};
+use crate::{asset_dependency::{AssetComponent, AssetComponentHandle, AssetDependency}, finish_component_dependency, AssetHandle, SceneData, SkeletonData, SkinData, TypedAssetId};
 
 pub struct ModelData {
     skeleton_file: AssetDependency<SkeletonData>,
