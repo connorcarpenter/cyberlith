@@ -25,7 +25,7 @@ use game_engine::{
     render::components::{RenderLayers, Transform, Visibility}
 };
 
-use crate::app::{systems::scene::ObjectMarker, resources::{asset_cache::AssetProcessor, global::Global, asset_cache::AssetCache, connection_state::ConnectionState}};
+use crate::app::{systems::scene::ObjectMarker, resources::{asset_metadata_store::AssetMetadataStore, asset_cache::{AssetProcessor, AssetCache}, global::Global, connection_state::ConnectionState}};
 
 // ApiTimer
 #[derive(Resource)]
@@ -123,6 +123,7 @@ pub fn session_message_events(
     mut asset_cache: ResMut<AssetCache>,
     mut asset_manager: ResMut<AssetManager>,
     mut file_system_manager: ResMut<FileSystemManager>,
+    mut metadata_store: ResMut<AssetMetadataStore>,
     mut event_reader: EventReader<SessionMessageEvents>,
 ) {
     for events in event_reader.read() {
@@ -143,7 +144,7 @@ pub fn session_message_events(
         for asset_message in events.read::<SessionPrimaryChannel, LoadAssetWithData>() {
             info!("received Asset Data Message from Session Server! (id: {:?}, etag: {:?})", asset_message.asset_id, asset_message.asset_etag);
 
-            asset_cache.handle_load_asset_with_data_message(&mut commands, &mut asset_manager, &mut file_system_manager, asset_message);
+            asset_cache.handle_load_asset_with_data_message(&mut commands, &mut asset_manager, &mut file_system_manager, &mut metadata_store, asset_message);
         }
     }
 }
@@ -151,11 +152,12 @@ pub fn session_message_events(
 pub fn session_request_events(
     mut asset_cache: ResMut<AssetCache>,
     mut file_system_manager: ResMut<FileSystemManager>,
+    mut metadata_store: ResMut<AssetMetadataStore>,
     mut event_reader: EventReader<SessionRequestEvents>,
 ) {
     for events in event_reader.read() {
         for (response_send_key, request) in events.read::<SessionRequestChannel, LoadAssetRequest>() {
-            asset_cache.handle_load_asset_request(&mut file_system_manager, request, response_send_key);
+            asset_cache.handle_load_asset_request(&mut file_system_manager, &mut metadata_store, request, response_send_key);
         }
     }
 }
@@ -195,6 +197,7 @@ pub fn world_insert_component_events(
     mut commands: Commands,
     client: WorldClient,
     mut event_reader: EventReader<WorldInsertComponentEvents>,
+    mut metadata_store: ResMut<AssetMetadataStore>,
     mut asset_cache: ResMut<AssetCache>,
     asset_entry_q: Query<&AssetEntry>,
     asset_ref_main_q: Query<&AssetRef<Main>>,
@@ -207,10 +210,10 @@ pub fn world_insert_component_events(
             };
             let asset_id = *asset_entry.asset_id;
             info!("received Asset Entry from World Server! (entity: {:?}, asset_id: {:?})", entity, asset_id);
-            asset_cache.handle_add_asset_entry(&mut commands, &entity, &asset_id);
+            asset_cache.handle_add_asset_entry(&mut commands, &mut metadata_store, &entity, &asset_id);
         }
         for entity in events.read::<AssetRef<Main>>() {
-            insert_asset_ref_events::<Main>(&mut commands, &client, &mut asset_cache, &asset_entry_q, &asset_ref_main_q, &entity);
+            insert_asset_ref_events::<Main>(&mut commands, &client, &mut asset_cache, &mut metadata_store, &asset_entry_q, &asset_ref_main_q, &entity);
 
             // add clientside things
             let layer = RenderLayers::layer(0);
@@ -231,7 +234,7 @@ pub fn world_insert_component_events(
                 .insert(layer);
         }
         for entity in events.read::<AssetRef<Alt1>>() {
-            insert_asset_ref_events::<Alt1>(&mut commands, &client, &mut asset_cache, &asset_entry_q, &asset_ref_alt1_q, &entity);
+            insert_asset_ref_events::<Alt1>(&mut commands, &client, &mut asset_cache, &mut metadata_store, &asset_entry_q, &asset_ref_alt1_q, &entity);
         }
         // .. other components here later
     }
@@ -241,6 +244,7 @@ fn insert_asset_ref_events<T: AssetProcessor>(
     commands: &mut Commands,
     client: &WorldClient,
     asset_cache: &mut AssetCache,
+    metadata_store: &mut AssetMetadataStore,
     asset_entry_q: &Query<&AssetEntry>,
     asset_ref_q: &Query<&AssetRef<T>>,
     entity: &Entity
@@ -253,7 +257,7 @@ fn insert_asset_ref_events<T: AssetProcessor>(
     };
     if let Ok(asset_entry) = asset_entry_q.get(asset_entry_entity) {
         let asset_id = *asset_entry.asset_id;
-        asset_cache.handle_entity_added_asset_ref::<T>(commands, entity, &asset_id);
+        asset_cache.handle_entity_added_asset_ref::<T>(commands, metadata_store, entity, &asset_id);
     } else {
         // asset entry entity has been replicated, but not the component just yet ...
         asset_cache.handle_add_asset_entry_waitlist::<T>(entity, &asset_entry_entity);

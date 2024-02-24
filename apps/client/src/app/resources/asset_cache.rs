@@ -21,7 +21,6 @@ type AssetProcessorId = TypeId;
 #[derive(Resource)]
 pub struct AssetCache {
     path: String,
-    metadata_store: AssetMetadataStore,
     data_store: HashMap<AssetId, Vec<u8>>,
     asset_processor_map: HashMap<AssetProcessorId, Box<dyn AssetDeferredProcessor>>,
     // entry entity -> (ref entity -> asset processor id)
@@ -37,7 +36,6 @@ impl AssetCache {
     pub fn new(path: &str) -> Self {
         Self {
             path: path.to_string(),
-            metadata_store: AssetMetadataStore::new(path),
             data_store: HashMap::new(),
             asset_processor_map: HashMap::new(),
             entry_waitlist: HashMap::new(),
@@ -45,22 +43,6 @@ impl AssetCache {
             load_asset_tasks: Vec::new(),
             save_asset_tasks: Vec::new(),
         }
-    }
-
-    // added as a system to App
-    pub fn startup(
-        mut asset_cache: ResMut<AssetCache>,
-        mut fs_manager: ResMut<FileSystemManager>,
-    ) {
-        asset_cache.metadata_store.load(&mut fs_manager);
-    }
-
-    // added as a system to App
-    pub fn handle_metadata_tasks(
-        mut asset_cache: ResMut<AssetCache>,
-        mut fs_manager: ResMut<FileSystemManager>,
-    ) {
-        asset_cache.metadata_store.process_tasks(&mut fs_manager);
     }
 
     // added as a system to App
@@ -122,13 +104,14 @@ impl AssetCache {
     pub fn handle_load_asset_request(
         &mut self,
         file_system_manager: &mut FileSystemManager,
+        metadata_store: &mut AssetMetadataStore,
         request: LoadAssetRequest,
         response_send_key: ResponseSendKey<LoadAssetResponse>
     ) {
         let asset_id = request.asset_id;
         let asset_etag = request.etag;
 
-        let Some(metadata) = self.metadata_store.get(&asset_id) else {
+        let Some(metadata) = metadata_store.get(&asset_id) else {
             // client has no asset
             self.load_asset_tasks.push(LoadAssetTask::HasResponse(response_send_key, LoadAssetResponse::has_old_or_no_asset()));
             return;
@@ -158,6 +141,7 @@ impl AssetCache {
         commands: &mut Commands,
         asset_manager: &mut AssetManager,
         file_system_manager: &mut FileSystemManager,
+        metadata_store: &mut AssetMetadataStore,
         message: LoadAssetWithData
     ) {
 
@@ -189,7 +173,7 @@ impl AssetCache {
         self.handle_data_store_load_asset(commands, asset_manager, &asset_id, &asset_type, asset_data);
 
         // load asset metadata into memory
-        self.metadata_store.insert(asset_id, asset_etag, asset_file_path, asset_type);
+        metadata_store.insert(asset_id, asset_etag, asset_file_path, asset_type);
     }
 
     pub fn handle_data_store_load_asset(
@@ -235,7 +219,13 @@ impl AssetCache {
         entry_waitlist_entry.insert(*ref_entity, asset_processor_id);
     }
 
-    pub fn handle_add_asset_entry(&mut self, commands: &mut Commands, entry_entity: &Entity, asset_id: &AssetId) {
+    pub fn handle_add_asset_entry(
+        &mut self,
+        commands: &mut Commands,
+        metadata_store: &mut AssetMetadataStore,
+        entry_entity: &Entity,
+        asset_id: &AssetId
+    ) {
         info!("entity ({:?}) received AssetEntry from World Server! (asset_id: {:?})", entry_entity, asset_id);
         // initialize asset processor if needed
         if let Some(waitlist_entry) = self.entry_waitlist.remove(entry_entity) {
@@ -247,7 +237,7 @@ impl AssetCache {
                     // process asset ref
                     let asset_processor = self.asset_processor_map.remove(&asset_processor_id).unwrap();
 
-                    let asset_type = self.metadata_store.get(asset_id).unwrap().asset_type();
+                    let asset_type = metadata_store.get(asset_id).unwrap().asset_type();
                     let typed_asset_id = TypedAssetId::new(*asset_id, asset_type);
                     asset_processor.deferred_process(commands, &ref_entity, &typed_asset_id);
 
@@ -265,11 +255,17 @@ impl AssetCache {
         }
     }
 
-    pub fn handle_entity_added_asset_ref<T: AssetProcessor>(&mut self, commands: &mut Commands, ref_entity: &Entity, asset_id: &AssetId) {
+    pub fn handle_entity_added_asset_ref<T: AssetProcessor>(
+        &mut self,
+        commands: &mut Commands,
+        metadata_store: &mut AssetMetadataStore,
+        ref_entity: &Entity,
+        asset_id: &AssetId
+    ) {
         info!("entity ({:?}) received AssetRef from World Server! (asset_id: {:?})", ref_entity, asset_id);
         if self.data_store.contains_key(asset_id) {
             // process asset ref
-            let asset_type = self.metadata_store.get(asset_id).unwrap().asset_type();
+            let asset_type = metadata_store.get(asset_id).unwrap().asset_type();
             let typed_asset_id = TypedAssetId::new(*asset_id, asset_type);
             T::process(commands, ref_entity, &typed_asset_id);
         } else {

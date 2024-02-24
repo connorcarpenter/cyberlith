@@ -1,11 +1,11 @@
 use bevy_app::{App, Startup, Update};
 
-use crate::app::resources::asset_cache::AssetCache;
-use crate::app::resources::global::Global;
 use game_engine::{
     render::{resources::WindowSettings, Draw},
     wait_for_finish, EnginePlugin,
 };
+
+use crate::app::resources::{global::Global, asset_cache::AssetCache, asset_metadata_store::AssetMetadataStore};
 
 use super::systems::{network, scene};
 
@@ -25,8 +25,9 @@ pub fn run() {
         // Network Systems
         .init_resource::<network::ApiTimer>()
         .insert_resource(AssetCache::new("assets"))
-        .add_systems(Startup, AssetCache::startup)
-        .add_systems(Update, AssetCache::handle_metadata_tasks)
+        .insert_resource(AssetMetadataStore::new("assets"))
+        .add_systems(Startup, AssetMetadataStore::startup)
+        .add_systems(Update, AssetMetadataStore::handle_metadata_tasks)
         .add_systems(Update, AssetCache::handle_load_asset_tasks)
         .add_systems(Update, AssetCache::handle_save_asset_tasks)
         .init_resource::<Global>()

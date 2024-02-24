@@ -1,5 +1,6 @@
 use std::{path::PathBuf, collections::HashMap};
 
+use bevy_ecs::{change_detection::ResMut, system::Resource};
 use bevy_log::{info, warn};
 
 use naia_serde::{SerdeInternal as Serde, BitReader};
@@ -42,6 +43,7 @@ impl AssetMetadata {
     }
 }
 
+#[derive(Resource)]
 pub struct AssetMetadataStore {
     path: String,
     finished_loading: bool,
@@ -58,7 +60,22 @@ impl AssetMetadataStore {
             finished_loading: false,
             tasks: Vec::new(),
         }
+    }
 
+    // added as a system to App
+    pub fn startup(
+        mut asset_metadata_store: ResMut<AssetMetadataStore>,
+        mut fs_manager: ResMut<FileSystemManager>,
+    ) {
+        asset_metadata_store.load(&mut fs_manager);
+    }
+
+    // added as a system to App
+    pub fn handle_metadata_tasks(
+        mut asset_metadata_store: ResMut<AssetMetadataStore>,
+        mut fs_manager: ResMut<FileSystemManager>,
+    ) {
+        asset_metadata_store.process_tasks(&mut fs_manager);
     }
 
     pub fn load(&mut self, fs_manager: &mut FileSystemManager) {
