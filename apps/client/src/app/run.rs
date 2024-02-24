@@ -5,7 +5,7 @@ use game_engine::{
     wait_for_finish, EnginePlugin,
 };
 
-use crate::app::resources::{global::Global, asset_cache::AssetCache};
+use crate::app::resources::{global::Global, asset_ref_processor::AssetRefProcessor};
 
 use super::systems::{network, scene};
 
@@ -24,9 +24,6 @@ pub fn run() {
         .add_systems(Draw, scene::scene_draw)
         // Network Systems
         .init_resource::<network::ApiTimer>()
-        .insert_resource(AssetCache::new("assets"))
-        .add_systems(Update, AssetCache::handle_load_asset_tasks)
-        .add_systems(Update, AssetCache::handle_save_asset_tasks)
         .init_resource::<Global>()
         .add_systems(Update, network::handle_connection)
         .add_systems(Update, network::session_connect_events)
@@ -34,7 +31,10 @@ pub fn run() {
         .add_systems(Update, network::session_request_events)
         .add_systems(Update, network::world_connect_events)
         .add_systems(Update, network::world_spawn_entity_events)
-        .add_systems(Update, network::world_insert_component_events);
+        .add_systems(Update, network::world_insert_component_events)
+        // todo: remove this
+        .insert_resource(AssetRefProcessor::new())
+        .add_systems(Update, network::handle_asset_loaded_events);
     app.run();
 }
 

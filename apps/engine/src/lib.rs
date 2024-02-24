@@ -6,9 +6,13 @@ pub use plugin::EnginePlugin;
 
 mod client_markers;
 mod renderer;
+mod asset_cache;
 
 pub mod asset {
+    use crate::asset_cache;
+    
     pub use asset_render::*;
+    pub use asset_cache::*;
     pub use asset_id::{AssetId, ETag, AssetType};
 }
 pub mod input {

@@ -31,6 +31,8 @@ world_server_naia_proto = { path = "../world/naia_proto" }
 # `render_gl` and `render_wgpu` SHOULD *ALWAYS* be optional
 render_gl = { path = "../../crates/render/render_gl", optional = true }
 
+naia-serde = { path = "../../../naia/shared/serde" }
+
 # External Crates
 naia-bevy-client = { path = "../../../naia/adapters/bevy/client", features = ["transport_webrtc"] }
 
