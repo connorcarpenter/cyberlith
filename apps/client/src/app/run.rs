@@ -5,7 +5,7 @@ use game_engine::{
     wait_for_finish, EnginePlugin,
 };
 
-use crate::app::resources::{global::Global, asset_cache::AssetCache, asset_metadata_store::AssetMetadataStore};
+use crate::app::resources::{global::Global, asset_cache::AssetCache};
 
 use super::systems::{network, scene};
 
@@ -25,9 +25,6 @@ pub fn run() {
         // Network Systems
         .init_resource::<network::ApiTimer>()
         .insert_resource(AssetCache::new("assets"))
-        .insert_resource(AssetMetadataStore::new("assets"))
-        .add_systems(Startup, AssetMetadataStore::startup)
-        .add_systems(Update, AssetMetadataStore::handle_metadata_tasks)
         .add_systems(Update, AssetCache::handle_load_asset_tasks)
         .add_systems(Update, AssetCache::handle_save_asset_tasks)
         .init_resource::<Global>()

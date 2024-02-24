@@ -8,12 +8,12 @@ use naia_serde::{BitWriter, Serde};
 use game_engine::{
     filesystem::FileSystemManager,
     session::{SessionClient, LoadAssetRequest, LoadAssetWithData, LoadAssetResponse},
-    asset::{AssetId, AnimationData, AssetHandle, AssetManager, AssetType, IconData, MeshFile, ModelData, PaletteData, SceneData, SkeletonData, SkinData, TypedAssetId},
+    asset::{AssetMetadataSerde, AssetMetadataStore, AssetId, AnimationData, AssetHandle, AssetManager, AssetType, IconData, MeshFile, ModelData, PaletteData, SceneData, SkeletonData, SkinData, TypedAssetId},
     world::{Main, Alt1},
     naia::ResponseSendKey,
 };
 
-use crate::app::{systems::scene::WalkAnimation, resources::{asset_metadata_store::{AssetMetadataSerde, AssetMetadataStore}, asset_tasks::{LoadAssetTask, SaveAssetTask}}};
+use crate::app::{systems::scene::WalkAnimation, resources::{asset_tasks::{LoadAssetTask, SaveAssetTask}}};
 
 type AssetProcessorId = TypeId;
 

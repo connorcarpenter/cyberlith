@@ -19,13 +19,13 @@ use game_engine::{
         WorldConnectToken,
     },
     world::{Alt1, WorldSpawnEntityEvent, WorldAuth, WorldClient, WorldConnectEvent, AssetEntry, AssetRef, Main, WorldInsertComponentEvents},
-    asset::AssetManager,
+    asset::{AssetManager, AssetMetadataStore},
     filesystem::FileSystemManager,
     math::{Quat, Vec3},
     render::components::{RenderLayers, Transform, Visibility}
 };
 
-use crate::app::{systems::scene::ObjectMarker, resources::{asset_metadata_store::AssetMetadataStore, asset_cache::{AssetProcessor, AssetCache}, global::Global, connection_state::ConnectionState}};
+use crate::app::{systems::scene::ObjectMarker, resources::{asset_cache::{AssetProcessor, AssetCache}, global::Global, connection_state::ConnectionState}};
 
 // ApiTimer
 #[derive(Resource)]

@@ -5,7 +5,8 @@ use bevy_log::{info, warn};
 
 use naia_serde::{SerdeInternal as Serde, BitReader};
 
-use game_engine::{filesystem::{CreateDirResult, ReadDirResult, FileSystemManager, ReadResult, TaskKey}, asset::{AssetId, AssetType, ETag}};
+use asset_id::{AssetId, AssetType, ETag};
+use filesystem::{CreateDirResult, ReadDirResult, FileSystemManager, ReadResult, TaskKey};
 
 #[derive(Serde, Eq, PartialEq, Clone)]
 pub struct AssetMetadataSerde {
