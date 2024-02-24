@@ -19,7 +19,7 @@ type AssetProcessorId = TypeId;
 
 /// Stores asset data in RAM
 #[derive(Resource)]
-pub struct AssetStore {
+pub struct AssetCache {
     path: String,
     metadata_store: AssetMetadataStore,
     data_store: HashMap<AssetId, Vec<u8>>,
@@ -33,7 +33,7 @@ pub struct AssetStore {
     save_asset_tasks: Vec<SaveAssetTask>,
 }
 
-impl AssetStore {
+impl AssetCache {
     pub fn new(path: &str) -> Self {
         Self {
             path: path.to_string(),
@@ -49,29 +49,29 @@ impl AssetStore {
 
     // added as a system to App
     pub fn startup(
-        mut asset_store: ResMut<AssetStore>,
+        mut asset_cache: ResMut<AssetCache>,
         mut fs_manager: ResMut<FileSystemManager>,
     ) {
-        asset_store.metadata_store.load(&mut fs_manager);
+        asset_cache.metadata_store.load(&mut fs_manager);
     }
 
     // added as a system to App
     pub fn handle_metadata_tasks(
-        mut asset_store: ResMut<AssetStore>,
+        mut asset_cache: ResMut<AssetCache>,
         mut fs_manager: ResMut<FileSystemManager>,
     ) {
-        asset_store.metadata_store.process_tasks(&mut fs_manager);
+        asset_cache.metadata_store.process_tasks(&mut fs_manager);
     }
 
     // added as a system to App
     pub fn handle_load_asset_tasks(
-        mut asset_store: ResMut<AssetStore>,
+        mut asset_cache: ResMut<AssetCache>,
         mut commands: Commands,
         mut session_client: SessionClient,
         mut fs_manager: ResMut<FileSystemManager>,
         mut asset_manager: ResMut<AssetManager>,
     ) {
-        let load_asset_tasks = std::mem::take(&mut asset_store.load_asset_tasks);
+        let load_asset_tasks = std::mem::take(&mut asset_cache.load_asset_tasks);
         // process load asset tasks
         for task in load_asset_tasks {
             let response_opt = match task {
@@ -84,7 +84,7 @@ impl AssetStore {
                         Some(Ok(result)) => {
 
                             let asset_bytes = result.bytes;
-                            asset_store.handle_data_store_load_asset(&mut commands, &mut asset_manager, &asset_id, &asset_type, asset_bytes);
+                            asset_cache.handle_data_store_load_asset(&mut commands, &mut asset_manager, &asset_id, &asset_type, asset_bytes);
 
                             Some((response_send_key, LoadAssetResponse::loaded_non_modified_asset()))
                         }
@@ -93,7 +93,7 @@ impl AssetStore {
                         }
                         None => {
                             // still pending
-                            asset_store.load_asset_tasks.push(LoadAssetTask::HasFsTask(asset_id, asset_type, response_send_key, fs_task_key));
+                            asset_cache.load_asset_tasks.push(LoadAssetTask::HasFsTask(asset_id, asset_type, response_send_key, fs_task_key));
                             None
                         }
                     }
@@ -107,14 +107,14 @@ impl AssetStore {
 
     // added as a system to App
     pub fn handle_save_asset_tasks(
-        mut asset_store: ResMut<AssetStore>,
+        mut asset_cache: ResMut<AssetCache>,
         mut fs_manager: ResMut<FileSystemManager>,
     ) {
-        let save_asset_tasks = std::mem::take(&mut asset_store.save_asset_tasks);
+        let save_asset_tasks = std::mem::take(&mut asset_cache.save_asset_tasks);
         for mut task in save_asset_tasks {
             task.process(&mut fs_manager);
             if !task.is_completed() {
-                asset_store.save_asset_tasks.push(task);
+                asset_cache.save_asset_tasks.push(task);
             }
         }
     }

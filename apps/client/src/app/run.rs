@@ -1,6 +1,6 @@
 use bevy_app::{App, Startup, Update};
 
-use crate::app::resources::asset_store::AssetStore;
+use crate::app::resources::asset_cache::AssetCache;
 use crate::app::resources::global::Global;
 use game_engine::{
     render::{resources::WindowSettings, Draw},
@@ -24,11 +24,11 @@ pub fn run() {
         .add_systems(Draw, scene::scene_draw)
         // Network Systems
         .init_resource::<network::ApiTimer>()
-        .insert_resource(AssetStore::new("assets"))
-        .add_systems(Startup, AssetStore::startup)
-        .add_systems(Update, AssetStore::handle_metadata_tasks)
-        .add_systems(Update, AssetStore::handle_load_asset_tasks)
-        .add_systems(Update, AssetStore::handle_save_asset_tasks)
+        .insert_resource(AssetCache::new("assets"))
+        .add_systems(Startup, AssetCache::startup)
+        .add_systems(Update, AssetCache::handle_metadata_tasks)
+        .add_systems(Update, AssetCache::handle_load_asset_tasks)
+        .add_systems(Update, AssetCache::handle_save_asset_tasks)
         .init_resource::<Global>()
         .add_systems(Update, network::handle_connection)
         .add_systems(Update, network::session_connect_events)
