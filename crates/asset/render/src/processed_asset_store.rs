@@ -6,10 +6,10 @@ use asset_id::{AssetId, AssetType};
 use render_api::base::{CpuMaterial, CpuMesh, CpuSkin};
 use storage::Storage;
 
-use crate::{AnimationData, AssetHandle, IconData, MeshFile, ModelData, PaletteData, SceneData, SkeletonData, SkinData, asset_storage::AssetStorage, TypedAssetId};
+use crate::{AnimationData, AssetHandle, IconData, MeshData, ModelData, PaletteData, SceneData, SkeletonData, SkinData, asset_storage::AssetStorage, TypedAssetId};
 
 pub(crate) struct ProcessedAssetStore {
-    pub(crate) meshes: AssetStorage<MeshFile>,
+    pub(crate) meshes: AssetStorage<MeshData>,
     pub(crate) skeletons: AssetStorage<SkeletonData>,
     pub(crate) palettes: AssetStorage<PaletteData>,
     pub(crate) animations: AssetStorage<AnimationData>,
@@ -19,12 +19,12 @@ pub(crate) struct ProcessedAssetStore {
     pub(crate) scenes: AssetStorage<SceneData>,
 
     // mesh file name, skin handle
-    queued_meshes: Vec<AssetHandle<MeshFile>>,
+    queued_meshes: Vec<AssetHandle<MeshData>>,
     queued_palettes: Vec<AssetHandle<PaletteData>>,
     queued_icons: Vec<AssetHandle<IconData>>,
     icons_waiting_on_palettes: HashMap<AssetHandle<PaletteData>, Vec<AssetHandle<IconData>>>,
     skins_waiting_on_palettes: HashMap<AssetHandle<PaletteData>, Vec<AssetHandle<SkinData>>>,
-    skins_waiting_on_meshes: HashMap<AssetHandle<MeshFile>, Vec<AssetHandle<SkinData>>>,
+    skins_waiting_on_meshes: HashMap<AssetHandle<MeshData>, Vec<AssetHandle<SkinData>>>,
     ready_icons: Vec<AssetHandle<IconData>>,
     ready_skins: Vec<AssetHandle<SkinData>>,
 }
@@ -65,10 +65,10 @@ impl ProcessedAssetStore {
 
         match asset_type {
             AssetType::Mesh => {
-                let handle = AssetHandle::<MeshFile>::new(*asset_id);
+                let handle = AssetHandle::<MeshData>::new(*asset_id);
                 if !self.meshes.has(&handle) {
                     let bytes = asset_data_store.get(asset_id).unwrap();
-                    let mesh_data = MeshFile::from_bytes(bytes);
+                    let mesh_data = MeshData::from_bytes(bytes);
                     self.meshes.insert(handle, mesh_data);
                     self.queued_meshes.push(handle);
                 }
@@ -378,7 +378,7 @@ impl ProcessedAssetStore {
         data.has_cpu_materials()
     }
 
-    fn mesh_file_has_cpu_mesh(&self, mesh_handle: &AssetHandle<MeshFile>) -> bool {
+    fn mesh_file_has_cpu_mesh(&self, mesh_handle: &AssetHandle<MeshData>) -> bool {
         let data = self.meshes.get(mesh_handle).unwrap();
         data.has_cpu_mesh()
     }

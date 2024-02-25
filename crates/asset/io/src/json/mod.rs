@@ -7,7 +7,7 @@ mod icon;
 pub use icon::{IconFile, IconFileFrame};
 
 mod mesh;
-pub use mesh::MeshFile;
+pub use mesh::MeshData;
 
 mod model;
 pub use model::ModelFile;

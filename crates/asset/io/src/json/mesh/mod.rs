@@ -18,32 +18,32 @@ cfg_if! {
 // Mesh
 
 #[derive(Serialize, Deserialize, Clone)]
-pub struct MeshFileVertex {
+pub struct MeshDataVertex {
     x: i16,
     y: i16,
     z: i16,
 }
 
-impl MeshFileVertex {
+impl MeshDataVertex {
     pub fn deconstruct(&self) -> (i16, i16, i16) {
         (self.x, self.y, self.z)
     }
 }
 
 #[derive(Serialize, Deserialize, Clone)]
-pub struct MeshFileEdge {
+pub struct MeshDataEdge {
     vertex_a: u16,
     vertex_b: u16,
 }
 
-impl MeshFileEdge {
+impl MeshDataEdge {
     pub fn deconstruct(&self) -> (u16, u16) {
         (self.vertex_a, self.vertex_b)
     }
 }
 
 #[derive(Serialize, Deserialize, Clone)]
-pub struct MeshFileFace {
+pub struct MeshDataFace {
     face_id: u16,
     vertex_a: u16,
     vertex_b: u16,
@@ -53,7 +53,7 @@ pub struct MeshFileFace {
     edge_c: u16,
 }
 
-impl MeshFileFace {
+impl MeshDataFace {
     pub fn deconstruct(&self) -> (u16, u16, u16, u16, u16, u16, u16) {
         (
             self.face_id,
@@ -68,13 +68,13 @@ impl MeshFileFace {
 }
 
 #[derive(Serialize, Deserialize, Clone)]
-pub struct MeshFile {
-    vertices: Vec<MeshFileVertex>,
-    edges: Vec<MeshFileEdge>,
-    faces: Vec<MeshFileFace>,
+pub struct MeshData {
+    vertices: Vec<MeshDataVertex>,
+    edges: Vec<MeshDataEdge>,
+    faces: Vec<MeshDataFace>,
 }
 
-impl MeshFile {
+impl MeshData {
     pub const CURRENT_SCHEMA_VERSION: u32 = 0;
 
     pub fn new() -> Self {
@@ -89,23 +89,23 @@ impl MeshFile {
         Vec::new()
     }
 
-    pub fn get_vertices(&self) -> &Vec<MeshFileVertex> {
+    pub fn get_vertices(&self) -> &Vec<MeshDataVertex> {
         &self.vertices
     }
 
     pub fn add_vertex(&mut self, x: i16, y: i16, z: i16) {
-        self.vertices.push(MeshFileVertex { x, y, z });
+        self.vertices.push(MeshDataVertex { x, y, z });
     }
 
-    pub fn get_edges(&self) -> &Vec<MeshFileEdge> {
+    pub fn get_edges(&self) -> &Vec<MeshDataEdge> {
         &self.edges
     }
 
     pub fn add_edge(&mut self, vertex_a: u16, vertex_b: u16) {
-        self.edges.push(MeshFileEdge { vertex_a, vertex_b });
+        self.edges.push(MeshDataEdge { vertex_a, vertex_b });
     }
 
-    pub fn get_faces(&self) -> &Vec<MeshFileFace> {
+    pub fn get_faces(&self) -> &Vec<MeshDataFace> {
         &self.faces
     }
 
@@ -119,7 +119,7 @@ impl MeshFile {
         edge_b: u16,
         edge_c: u16,
     ) {
-        self.faces.push(MeshFileFace {
+        self.faces.push(MeshDataFace {
             face_id,
             vertex_a,
             vertex_b,

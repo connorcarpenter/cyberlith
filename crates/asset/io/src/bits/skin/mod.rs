@@ -20,7 +20,7 @@ pub enum SkinAction {
     // path, file_name
     PaletteFile(AssetId),
     // path, file_name
-    MeshFile(AssetId),
+    MeshData(AssetId),
     // palette color index
     BackgroundColor(u8),
     // mesh face index, palette color index
@@ -30,7 +30,7 @@ pub enum SkinAction {
 #[derive(Serde, Clone, PartialEq)]
 pub enum SkinActionType {
     PaletteFile,
-    MeshFile,
+    MeshData,
     BackgroundColor,
     SkinColor,
     None,

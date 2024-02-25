@@ -5,10 +5,10 @@ use bevy_log::info;
 use render_api::base::{CpuMaterial, CpuMesh, CpuSkin};
 use storage::{Handle, Storage};
 
-use crate::{asset_dependency::AssetDependency, AssetHandle, MeshFile, PaletteData, TypedAssetId};
+use crate::{asset_dependency::AssetDependency, AssetHandle, MeshData, PaletteData, TypedAssetId};
 
 pub struct SkinData {
-    mesh_file: AssetDependency<MeshFile>,
+    mesh_file: AssetDependency<MeshData>,
     palette_file: AssetDependency<PaletteData>,
     cpu_skin_handle: Option<Handle<CpuSkin>>,
     bckg_color_id: u8,
@@ -23,8 +23,8 @@ impl Default for SkinData {
 }
 
 impl SkinData {
-    pub(crate) fn get_mesh_file_handle(&self) -> Option<&AssetHandle<MeshFile>> {
-        if let AssetDependency::<MeshFile>::AssetHandle(handle) = &self.mesh_file {
+    pub(crate) fn get_mesh_file_handle(&self) -> Option<&AssetHandle<MeshData>> {
+        if let AssetDependency::<MeshData>::AssetHandle(handle) = &self.mesh_file {
             Some(handle)
         } else {
             None
@@ -48,7 +48,7 @@ impl SkinData {
         handle: AssetHandle<Self>,
         dependencies: &mut Vec<(TypedAssetId, TypedAssetId)>,
     ) {
-        let AssetDependency::<MeshFile>::AssetId(asset_id) = &self.mesh_file else {
+        let AssetDependency::<MeshData>::AssetId(asset_id) = &self.mesh_file else {
             panic!("expected path right after load");
         };
         dependencies.push((handle.into(), TypedAssetId::Mesh(asset_id.clone())));
@@ -65,7 +65,7 @@ impl SkinData {
     ) {
         match dependency_typed_id {
             TypedAssetId::Mesh(asset_id) => {
-                let handle = AssetHandle::<MeshFile>::new(asset_id);
+                let handle = AssetHandle::<MeshData>::new(asset_id);
                 self.mesh_file.load_asset_handle(handle);
             }
             TypedAssetId::Palette(asset_id) => {
@@ -79,7 +79,7 @@ impl SkinData {
     }
 
     pub(crate) fn has_all_dependencies(&self) -> bool {
-        if let AssetDependency::<MeshFile>::AssetHandle(_) = &self.mesh_file {
+        if let AssetDependency::<MeshData>::AssetHandle(_) = &self.mesh_file {
             if let AssetDependency::<PaletteData>::AssetHandle(_) = &self.palette_file {
                 return true;
             }
@@ -157,7 +157,7 @@ impl SkinData {
                     info!("palette file: {:?}", asset_id);
                     palette_file_opt = Some(asset_id);
                 }
-                asset_io::bits::SkinAction::MeshFile(asset_id) => {
+                asset_io::bits::SkinAction::MeshData(asset_id) => {
                     info!("mesh file: {:?}", asset_id);
                     mesh_file_opt = Some(asset_id);
                 }

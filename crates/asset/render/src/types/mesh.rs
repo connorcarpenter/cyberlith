@@ -6,17 +6,17 @@ use storage::{Handle, Storage};
 
 use crate::asset_dependency::AssetDependency;
 
-pub struct MeshFile {
+pub struct MeshData {
     path: AssetDependency<CpuMesh>,
 }
 
-impl Default for MeshFile {
+impl Default for MeshData {
     fn default() -> Self {
         panic!("");
     }
 }
 
-impl MeshFile {
+impl MeshData {
     pub(crate) fn get_cpu_mesh_handle(&self) -> Option<&Handle<CpuMesh>> {
         if let AssetDependency::<CpuMesh>::Handle(handle) = &self.path {
             Some(handle)

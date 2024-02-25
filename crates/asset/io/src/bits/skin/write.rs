@@ -12,8 +12,8 @@ impl SkinAction {
                     SkinActionType::PaletteFile.ser(&mut bit_writer);
                     asset_id.as_u32().ser(&mut bit_writer);
                 }
-                Self::MeshFile(asset_id) => {
-                    SkinActionType::MeshFile.ser(&mut bit_writer);
+                Self::MeshData(asset_id) => {
+                    SkinActionType::MeshData.ser(&mut bit_writer);
                     asset_id.as_u32().ser(&mut bit_writer);
                 }
                 Self::BackgroundColor(palette_color_index) => {

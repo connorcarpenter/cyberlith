@@ -4,7 +4,7 @@ use bevy_ecs::component::Component;
 
 use asset_id::{AssetId, AssetType};
 
-use crate::{AnimationData, IconData, MeshFile, ModelData, PaletteData, SceneData, SkeletonData, SkinData};
+use crate::{AnimationData, IconData, MeshData, ModelData, PaletteData, SceneData, SkeletonData, SkinData};
 
 #[derive(Clone, Copy, Eq, PartialEq, Hash)]
 pub enum TypedAssetId {
@@ -114,7 +114,7 @@ impl From<TypedAssetId> for AssetHandle<SkeletonData> {
     }
 }
 
-impl From<TypedAssetId> for AssetHandle<MeshFile> {
+impl From<TypedAssetId> for AssetHandle<MeshData> {
     fn from(typed_asset_id: TypedAssetId) -> Self {
         let TypedAssetId::Mesh(asset_id) = typed_asset_id else {
             panic!("expected mesh id");
@@ -185,8 +185,8 @@ impl From<AssetHandle<SkeletonData>> for TypedAssetId {
     }
 }
 
-impl From<AssetHandle<MeshFile>> for TypedAssetId {
-    fn from(handle: AssetHandle<MeshFile>) -> Self {
+impl From<AssetHandle<MeshData>> for TypedAssetId {
+    fn from(handle: AssetHandle<MeshData>) -> Self {
         Self::new(handle.asset_id, AssetType::Mesh)
     }
 }

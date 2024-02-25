@@ -7,7 +7,7 @@ use render_api::{
 };
 use storage::Handle;
 
-use crate::{asset_dependency::AssetComponentHandle, processed_asset_store::ProcessedAssetStore, AnimationData, IconData, MeshFile, ModelData, SceneData, SkinData, AssetHandle};
+use crate::{asset_dependency::AssetComponentHandle, processed_asset_store::ProcessedAssetStore, AnimationData, IconData, MeshData, ModelData, SceneData, SkinData, AssetHandle};
 
 pub(crate) struct AssetRenderer;
 
@@ -15,7 +15,7 @@ impl AssetRenderer {
     pub(crate) fn draw_mesh(
         asset_store: &ProcessedAssetStore,
         render_frame: &mut RenderFrame,
-        mesh_handle: &AssetHandle<MeshFile>,
+        mesh_handle: &AssetHandle<MeshData>,
         mat_handle: &Handle<CpuMaterial>,
         transform: &Transform,
         render_layer_opt: Option<&RenderLayer>,

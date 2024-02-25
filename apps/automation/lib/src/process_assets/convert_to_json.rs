@@ -4,7 +4,7 @@
 //     json::{AssetData, PaletteFile},
 //     bits::{AnimAction, FileTransformEntityType, IconAction, IconFrameAction, MeshAction, ModelAction, PaletteAction, SceneAction, SkelAction, SkinAction}
 // };
-// use asset_io::json::{AnimFile, AnimFileFrame, IconFile, IconFileFrame, MeshFile, ModelFile, SceneFile, SkelFile, SkinFile};
+// use asset_io::json::{AnimFile, AnimFileFrame, IconFile, IconFileFrame, MeshData, ModelFile, SceneFile, SkelFile, SkinFile};
 //
 // // use crate::process_assets::json::ProcessData;
 //
@@ -78,7 +78,7 @@
 // pub fn mesh(in_bytes: &Vec<u8>) -> AssetData {
 //     let actions = MeshAction::read(in_bytes).unwrap();
 //
-//     let mut file = MeshFile::new();
+//     let mut file = MeshData::new();
 //
 //     for action in actions {
 //         match action {
@@ -196,7 +196,7 @@
 //             SkinAction::PaletteFile(path, file_name) => {
 //                 file.set_palette_asset_id(format!("{}/{}", path, file_name).as_str());
 //             }
-//             SkinAction::MeshFile(path, file_name) => {
+//             SkinAction::MeshData(path, file_name) => {
 //                 file.set_mesh_asset_id(format!("{}/{}", path, file_name).as_str());
 //             }
 //             SkinAction::BackgroundColor(palette_color_id) => {

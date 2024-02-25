@@ -12,7 +12,7 @@ use storage::{Handle, Storage};
 
 use crate::{
     asset_renderer::AssetRenderer, processed_asset_store::ProcessedAssetStore, AnimationData, AssetHandle, IconData,
-    MeshFile, ModelData, SceneData, SkinData,
+    MeshData, ModelData, SceneData, SkinData,
 };
 
 #[derive(Resource)]
@@ -68,7 +68,7 @@ impl AssetManager {
     pub fn draw_mesh(
         &self,
         render_frame: &mut RenderFrame,
-        mesh_handle: &AssetHandle<MeshFile>,
+        mesh_handle: &AssetHandle<MeshData>,
         mat_handle: &Handle<CpuMaterial>,
         transform: &Transform,
         render_layer_opt: Option<&RenderLayer>,

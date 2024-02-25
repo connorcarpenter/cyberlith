@@ -7,7 +7,7 @@ use bevy_log::info;
 
 use game_engine::{
     world::{Alt1, Position, WorldSpawnEntityEvent, Main, WorldInsertComponentEvent, WorldInsertAssetRefEvent},
-    asset::{AnimationData, AssetHandle, AssetType, IconData, MeshFile, ModelData, PaletteData, SceneData, SkeletonData, SkinData},
+    asset::{AnimationData, AssetHandle, AssetType, IconData, MeshData, ModelData, PaletteData, SceneData, SkeletonData, SkinData},
     math::{Quat, Vec3},
     render::components::{RenderLayers, Transform, Visibility}
 };
@@ -44,7 +44,7 @@ pub fn world_main_insert_asset_ref_events(
 
         match asset_type {
             AssetType::Skeleton => {commands.entity(entity).insert(AssetHandle::<SkeletonData>::new(asset_id));},
-            AssetType::Mesh => {commands.entity(entity).insert(AssetHandle::<MeshFile>::new(asset_id));},
+            AssetType::Mesh => {commands.entity(entity).insert(AssetHandle::<MeshData>::new(asset_id));},
             AssetType::Palette => {commands.entity(entity).insert(AssetHandle::<PaletteData>::new(asset_id));},
             AssetType::Animation => {commands.entity(entity).insert(AssetHandle::<AnimationData>::new(asset_id));},
             AssetType::Icon => {commands.entity(entity).insert(AssetHandle::<IconData>::new(asset_id));},

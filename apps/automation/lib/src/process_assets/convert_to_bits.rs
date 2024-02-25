@@ -5,7 +5,7 @@ use asset_io::{
         AnimAction, IconAction, MeshAction, ModelAction, PaletteAction, SceneAction, SkelAction,
         SkinAction,
     },
-    json::{AnimFile, IconFile, MeshFile, ModelFile, PaletteFile, SceneFile, SkelFile, SkinFile},
+    json::{AnimFile, IconFile, MeshData, ModelFile, PaletteFile, SceneFile, SkelFile, SkinFile},
 };
 use std::collections::HashMap;
 
@@ -33,7 +33,7 @@ pub(crate) fn skeleton(data: &SkelFile) -> Vec<u8> {
     SkelAction::write(actions).to_vec()
 }
 
-pub(crate) fn mesh(data: &MeshFile) -> Vec<u8> {
+pub(crate) fn mesh(data: &MeshData) -> Vec<u8> {
     let mut actions = Vec::new();
 
     for vertex in data.get_vertices() {
@@ -55,7 +55,7 @@ pub(crate) fn skin(data: &SkinFile) -> Vec<u8> {
     actions.push(SkinAction::PaletteFile(palette_asset_id));
 
     let mesh_asset_id = data.get_mesh_asset_id();
-    actions.push(SkinAction::MeshFile(mesh_asset_id));
+    actions.push(SkinAction::MeshData(mesh_asset_id));
 
     let background_color = data.get_background_color_id();
     actions.push(SkinAction::BackgroundColor(background_color));

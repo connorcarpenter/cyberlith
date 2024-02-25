@@ -18,7 +18,7 @@ use asset_id::AssetId;
 use serde::{Deserialize, Serialize};
 
 use crate::json::{
-    animation::AnimFile, icon::IconFile, mesh::MeshFile, model::ModelFile, palette::PaletteFile,
+    animation::AnimFile, icon::IconFile, mesh::MeshData, model::ModelFile, palette::PaletteFile,
     scene::SceneFile, skeleton::SkelFile, skin::SkinFile,
 };
 
@@ -71,7 +71,7 @@ impl AssetMeta {
 pub enum AssetData {
     Palette(PaletteFile),
     Skeleton(SkelFile),
-    Mesh(MeshFile),
+    Mesh(MeshData),
     Animation(AnimFile),
     Icon(IconFile),
     Skin(SkinFile),

@@ -17,9 +17,9 @@ impl SkinAction {
                     let asset_id_val = u32::de(bit_reader)?;
                     actions.push(Self::PaletteFile(AssetId::from_u32(asset_id_val).unwrap()));
                 }
-                SkinActionType::MeshFile => {
+                SkinActionType::MeshData => {
                     let asset_id_val = u32::de(bit_reader)?;
-                    actions.push(Self::MeshFile(AssetId::from_u32(asset_id_val).unwrap()));
+                    actions.push(Self::MeshData(AssetId::from_u32(asset_id_val).unwrap()));
                 }
                 SkinActionType::BackgroundColor => {
                     let palette_color_index = u8::de(bit_reader)?;
