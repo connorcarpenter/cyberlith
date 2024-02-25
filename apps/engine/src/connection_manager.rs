@@ -3,7 +3,8 @@ use std::time::Duration;
 use bevy_ecs::{event::{EventReader, EventWriter, Event}, system::Resource, change_detection::ResMut};
 use bevy_log::info;
 
-use naia_bevy_client::{Timer, events::ConnectEvent};
+use naia_bevy_client::{Timer, events::ConnectEvent, Client};
+use naia_bevy_client::events::{MessageEvents, RequestEvents};
 
 use asset_render::{AssetManager, AssetMetadataStore};
 use bevy_http_client::{HttpClient, ResponseKey};
@@ -11,10 +12,16 @@ use config::{ORCHESTRATOR_PORT, PUBLIC_IP_ADDR};
 use filesystem::FileSystemManager;
 
 use orchestrator_http_proto::{LoginRequest, LoginResponse};
-use session_server_naia_proto::messages::{LoadAssetRequest, LoadAssetWithData, WorldConnectToken, Auth as SessionAuth};
+use session_server_naia_proto::{channels::PrimaryChannel, messages::{LoadAssetRequest, LoadAssetWithData, WorldConnectToken, Auth as SessionAuth}};
 use world_server_naia_proto::messages::Auth as WorldAuth;
 
-use crate::{world::WorldClient, session::{SessionMessageEvents, SessionPrimaryChannel, SessionRequestChannel, SessionRequestEvents}, asset::{AssetCache, AssetLoadedEvent}, client_markers::{Session, World}, naia::WebrtcSocket, session::SessionClient};
+use naia_bevy_client::transport::webrtc::Socket as WebrtcSocket;
+use session_server_naia_proto::channels::RequestChannel;
+
+use crate::{client_markers::{Session, World}, asset_cache::{AssetCache, AssetLoadedEvent}};
+
+type SessionClient<'a> = Client<'a, Session>;
+type WorldClient<'a> = Client<'a, World>;
 
 #[derive(Clone, PartialEq)]
 pub enum ConnectionState {
@@ -102,11 +109,11 @@ impl ConnectionManager {
         mut asset_manager: ResMut<AssetManager>,
         mut file_system_manager: ResMut<FileSystemManager>,
         mut metadata_store: ResMut<AssetMetadataStore>,
-        mut event_reader: EventReader<SessionMessageEvents>,
+        mut event_reader: EventReader<MessageEvents<Session>>,
         mut asset_loaded_event_writer: EventWriter<AssetLoadedEvent>,
     ) {
         for events in event_reader.read() {
-            for token in events.read::<SessionPrimaryChannel, WorldConnectToken>() {
+            for token in events.read::<PrimaryChannel, WorldConnectToken>() {
                 info!("received World Connect Token from Session Server!");
 
                 world_client.auth(WorldAuth::new(&token.login_token));
@@ -120,7 +127,7 @@ impl ConnectionManager {
                 );
                 world_client.connect(socket);
             }
-            for asset_message in events.read::<SessionPrimaryChannel, LoadAssetWithData>() {
+            for asset_message in events.read::<PrimaryChannel, LoadAssetWithData>() {
                 info!("received Asset Data Message from Session Server! (id: {:?}, etag: {:?})", asset_message.asset_id, asset_message.asset_etag);
 
                 asset_cache.handle_load_asset_with_data_message(&mut asset_manager, &mut asset_loaded_event_writer, &mut file_system_manager, &mut metadata_store, asset_message);
@@ -132,10 +139,10 @@ impl ConnectionManager {
         mut asset_cache: ResMut<AssetCache>,
         mut file_system_manager: ResMut<FileSystemManager>,
         mut metadata_store: ResMut<AssetMetadataStore>,
-        mut event_reader: EventReader<SessionRequestEvents>,
+        mut event_reader: EventReader<RequestEvents<Session>>,
     ) {
         for events in event_reader.read() {
-            for (response_send_key, request) in events.read::<SessionRequestChannel, LoadAssetRequest>() {
+            for (response_send_key, request) in events.read::<RequestChannel, LoadAssetRequest>() {
                 asset_cache.handle_load_asset_request(&mut file_system_manager, &mut metadata_store, request, response_send_key);
             }
         }

@@ -12,11 +12,8 @@ mod world_events;
 mod asset_ref_processor;
 
 pub mod asset {
-    use crate::asset_cache;
-
-    pub use asset_render::*;
-    pub use asset_cache::*;
-    pub use asset_id::{AssetId, ETag, AssetType};
+    pub use asset_render::{AssetManager, AnimationData, AssetHandle, IconData, MeshFile, ModelData, PaletteData,SceneData,SkeletonData,SkinData};
+    pub use asset_id::{AssetId, AssetType};
 }
 pub mod input {
     pub use input::*;
@@ -26,33 +23,6 @@ pub mod math {
 }
 pub mod render {
     pub use render_api::*;
-}
-pub mod http {
-    pub use bevy_http_client::*;
-}
-pub mod naia {
-    pub use naia_bevy_client::{transport::webrtc::Socket as WebrtcSocket, Timer, ResponseSendKey};
-}
-pub mod orchestrator {
-    pub use orchestrator_http_proto::*;
-}
-pub mod session {
-    use naia_bevy_client::{
-        events::{MessageEvents, RequestEvents},
-        Client,
-    };
-
-    use super::client_markers::Session;
-
-    pub type SessionClient<'w> = Client<'w, Session>;
-    pub type SessionMessageEvents = MessageEvents<Session>;
-    pub type SessionRequestEvents = RequestEvents<Session>;
-
-    pub use session_server_naia_proto::{
-        channels::{
-            PrimaryChannel as SessionPrimaryChannel, RequestChannel as SessionRequestChannel,
-        },
-    };
 }
 pub mod world {
     use naia_bevy_client::{events::SpawnEntityEvent, Client};
@@ -72,13 +42,7 @@ pub mod storage {
     pub use storage::*;
 }
 
-pub mod filesystem {
-    pub use filesystem::*;
-}
-
 // TODO: should these find a home?
 pub use renderer::wait_for_finish;
-
-pub use connection_manager::{ConnectionManager, SessionConnectEvent};
 
 pub use world_events::InsertComponentEvent;

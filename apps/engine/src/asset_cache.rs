@@ -7,12 +7,14 @@ use naia_serde::{BitWriter, Serde};
 
 use session_server_naia_proto::messages::{LoadAssetRequest, LoadAssetResponse, LoadAssetWithData};
 
-use crate::{
-    filesystem::{FileSystemManager, ReadResult, TaskKey, WriteResult},
-    session::SessionClient,
-    asset::{AssetMetadataSerde, AssetMetadataStore, AssetId, AssetManager, AssetType},
-    naia::ResponseSendKey,
-};
+use filesystem::{FileSystemManager, ReadResult, TaskKey, WriteResult};
+use naia_bevy_client::{Client, ResponseSendKey};
+use asset_id::{AssetId, AssetType};
+use asset_render::{AssetManager, AssetMetadataSerde, AssetMetadataStore};
+
+type SessionClient<'a> = Client<'a, Session>;
+
+use crate::client_markers::Session;
 
 /// Stores asset data in RAM
 #[derive(Resource)]
