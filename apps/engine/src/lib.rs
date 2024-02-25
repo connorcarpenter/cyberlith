@@ -36,14 +36,13 @@ pub mod orchestrator {
 }
 pub mod session {
     use naia_bevy_client::{
-        events::{ConnectEvent, MessageEvents, RequestEvents},
+        events::{MessageEvents, RequestEvents},
         Client,
     };
 
     use super::client_markers::Session;
 
     pub type SessionClient<'w> = Client<'w, Session>;
-    pub type SessionConnectEvent = ConnectEvent<Session>;
     pub type SessionMessageEvents = MessageEvents<Session>;
     pub type SessionRequestEvents = RequestEvents<Session>;
 
@@ -82,4 +81,6 @@ pub mod filesystem {
 
 // TODO: should these find a home?
 pub use renderer::wait_for_finish;
+
 pub use connection_manager::ConnectionManager;
+pub use connection_manager::SessionConnectEvent;

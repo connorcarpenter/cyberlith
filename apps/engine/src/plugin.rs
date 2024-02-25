@@ -17,7 +17,7 @@ use crate::{
     client_markers::{Session, World},
     renderer::RendererPlugin,
 };
-use crate::connection_manager::ConnectionManager;
+use crate::connection_manager::{ConnectionManager, SessionConnectEvent};
 
 pub struct EnginePlugin;
 
@@ -49,7 +49,11 @@ impl Plugin for EnginePlugin {
             .add_event::<AssetLoadedEvent>()
             // connection manager stuff, maybe refactor out?
             .init_resource::<ConnectionManager>()
+            .add_event::<SessionConnectEvent>()
             .add_systems(Update, ConnectionManager::handle_connection)
+            .add_systems(Update, ConnectionManager::handle_session_connect_events)
+            .add_systems(Update, ConnectionManager::handle_session_message_events)
+            .add_systems(Update, ConnectionManager::handle_session_request_events)
         ;
     }
 }

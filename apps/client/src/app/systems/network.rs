@@ -1,81 +1,14 @@
 
 use bevy_ecs::{
     prelude::Query,
-    event::{EventReader, EventWriter},
+    event::EventReader,
     system::{Commands, ResMut},
 };
 use bevy_log::info;
 
-use game_engine::{naia::WebrtcSocket, session::{
-    LoadAssetWithData, LoadAssetRequest, SessionClient, SessionConnectEvent,
-    SessionMessageEvents, SessionPrimaryChannel, SessionRequestChannel, SessionRequestEvents,
-    WorldConnectToken,
-}, world::{Alt1, WorldSpawnEntityEvent, WorldAuth, WorldClient, WorldConnectEvent, AssetEntry, AssetRef, Main, WorldInsertComponentEvents}, asset::{AssetLoadedEvent, AssetCache, AssetManager, AssetMetadataStore}, filesystem::FileSystemManager, math::{Quat, Vec3}, render::components::{RenderLayers, Transform, Visibility}, ConnectionManager};
+use game_engine::{world::{Alt1, WorldSpawnEntityEvent, WorldClient, WorldConnectEvent, AssetEntry, AssetRef, Main, WorldInsertComponentEvents}, asset::{AssetCache, AssetMetadataStore}, math::{Quat, Vec3}, render::components::{RenderLayers, Transform, Visibility}, ConnectionManager};
 
 use crate::app::{systems::scene::ObjectMarker, resources::{asset_ref_processor::AssetRefProcessor}};
-
-pub fn session_connect_events(
-    client: SessionClient,
-    mut event_reader: EventReader<SessionConnectEvent>,
-    mut connection_manager: ResMut<ConnectionManager>,
-) {
-    for _ in event_reader.read() {
-        let Ok(server_address) = client.server_address() else {
-            panic!("Shouldn't happen");
-        };
-        info!(
-            "Client connected to session server at addr: {}",
-            server_address
-        );
-
-        connection_manager.handle_session_connection_event();
-    }
-}
-
-pub fn session_message_events(
-    mut world_client: WorldClient,
-    mut asset_cache: ResMut<AssetCache>,
-    mut asset_manager: ResMut<AssetManager>,
-    mut file_system_manager: ResMut<FileSystemManager>,
-    mut metadata_store: ResMut<AssetMetadataStore>,
-    mut event_reader: EventReader<SessionMessageEvents>,
-    mut asset_loaded_event_writer: EventWriter<AssetLoadedEvent>,
-) {
-    for events in event_reader.read() {
-        for token in events.read::<SessionPrimaryChannel, WorldConnectToken>() {
-            info!("received World Connect Token from Session Server!");
-
-            world_client.auth(WorldAuth::new(&token.login_token));
-            info!(
-                "connecting to world server: {}",
-                token.world_server_public_webrtc_url
-            );
-            let socket = WebrtcSocket::new(
-                &token.world_server_public_webrtc_url,
-                world_client.socket_config(),
-            );
-            world_client.connect(socket);
-        }
-        for asset_message in events.read::<SessionPrimaryChannel, LoadAssetWithData>() {
-            info!("received Asset Data Message from Session Server! (id: {:?}, etag: {:?})", asset_message.asset_id, asset_message.asset_etag);
-
-            asset_cache.handle_load_asset_with_data_message(&mut asset_manager, &mut asset_loaded_event_writer, &mut file_system_manager, &mut metadata_store, asset_message);
-        }
-    }
-}
-
-pub fn session_request_events(
-    mut asset_cache: ResMut<AssetCache>,
-    mut file_system_manager: ResMut<FileSystemManager>,
-    mut metadata_store: ResMut<AssetMetadataStore>,
-    mut event_reader: EventReader<SessionRequestEvents>,
-) {
-    for events in event_reader.read() {
-        for (response_send_key, request) in events.read::<SessionRequestChannel, LoadAssetRequest>() {
-            asset_cache.handle_load_asset_request(&mut file_system_manager, &mut metadata_store, request, response_send_key);
-        }
-    }
-}
 
 pub fn world_connect_events(
     client: WorldClient,
