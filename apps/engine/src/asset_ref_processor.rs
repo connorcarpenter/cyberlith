@@ -1,12 +1,14 @@
 use std::{collections::HashMap, any::TypeId};
 
-use bevy_ecs::{event::EventReader, change_detection::ResMut, prelude::{Resource, Query}, entity::Entity, system::Commands};
+use bevy_ecs::{world::World, system::SystemState, event::{Events, EventReader}, change_detection::{Mut, ResMut}, prelude::{Resource, Query}, entity::Entity};
 use bevy_log::info;
 
-use game_engine::{asset::{AssetCache, AssetId, AssetLoadedEvent, AssetMetadataStore, AnimationData, AssetHandle, AssetType, IconData, MeshFile, ModelData, PaletteData, SceneData, SkeletonData, SkinData, TypedAssetId},
-                  world::{AssetEntry, AssetRef, WorldClient, Main, Alt1}};
+use world_server_naia_proto::components::{Alt1, AssetEntry, AssetRef, Main};
 
-use crate::app::systems::scene::WalkAnimation;
+use asset_id::AssetId;
+use asset_render::{AssetMetadataStore, TypedAssetId};
+
+use crate::{asset_cache::{AssetCache, AssetLoadedEvent}, world::WorldClient, world_events::InsertAssetRefEvent};
 
 type AssetProcessorId = TypeId;
 
@@ -29,9 +31,12 @@ impl AssetRefProcessor {
         }
     }
 
+    pub fn get_asset_processor_ref(&self, asset_processor_id: &AssetProcessorId) -> Option<&Box<dyn AssetDeferredProcessor>> {
+        self.asset_processor_map.get(asset_processor_id)
+    }
+
     // used by systems
     pub fn insert_asset_ref_events<T: AssetProcessor>(
-        commands: &mut Commands,
         client: &WorldClient,
         asset_cache: &AssetCache,
         metadata_store: &mut AssetMetadataStore,
@@ -39,7 +44,7 @@ impl AssetRefProcessor {
         asset_entry_q: &Query<&AssetEntry>,
         asset_ref_q: &Query<&AssetRef<T>>,
         entity: &Entity
-    ) {
+    ) -> Vec<(Entity, TypedAssetId)> {
         let Ok(asset_ref) = asset_ref_q.get(*entity) else {
             panic!("Shouldn't happen");
         };
@@ -48,44 +53,55 @@ impl AssetRefProcessor {
         };
         if let Ok(asset_entry) = asset_entry_q.get(asset_entry_entity) {
             let asset_id = *asset_entry.asset_id;
-            asset_ref_processor.handle_entity_added_asset_ref::<T>(commands, asset_cache, metadata_store, entity, &asset_id);
+            let output = asset_ref_processor.handle_entity_added_asset_ref::<T>(asset_cache, metadata_store, entity, &asset_id);
+            return output;
         } else {
             // asset entry entity has been replicated, but not the component just yet ...
             asset_ref_processor.handle_add_asset_entry_waitlist::<T>(entity, &asset_entry_entity);
+            return Vec::new();
         };
     }
 
     // used as a system
     pub fn handle_asset_loaded_events(
-        mut commands: Commands,
-        mut reader: EventReader<AssetLoadedEvent>,
-        mut asset_ref_processer: ResMut<AssetRefProcessor>,
+        world: &mut World,
     ) {
+
+        let mut system_state: SystemState<(
+            EventReader<AssetLoadedEvent>,
+            ResMut<AssetRefProcessor>,
+        )> = SystemState::new(world);
+        let (
+            mut reader,
+            mut asset_ref_processer,
+        ) = system_state.get_mut(world);
+
+        let mut list_of_events = Vec::new();
         for event in reader.read() {
             info!("received Asset Loaded Event! (asset_id: {:?}, asset_type: {:?})", event.asset_id, event.asset_type);
 
-            asset_ref_processer.process(&mut commands, event);
-        }
-    }
+            let asset_id = event.asset_id;
+            let asset_type = event.asset_type;
 
-    fn process(&mut self, commands: &mut Commands, event: &AssetLoadedEvent) {
+            // process any refs waiting for this asset
+            if let Some(ref_waitlist_entry) = asset_ref_processer.ref_waitlist.remove(&asset_id) {
 
-        let asset_id = event.asset_id;
-        let asset_type = event.asset_type;
+                let typed_asset_id = TypedAssetId::new(asset_id, asset_type);
 
-        // process any refs waiting for this asset
-        if let Some(ref_waitlist_entry) = self.ref_waitlist.remove(&asset_id) {
-
-            let typed_asset_id = TypedAssetId::new(asset_id, asset_type);
-
-            for (entity, asset_processor_id) in ref_waitlist_entry {
-                let asset_processor = self.asset_processor_map.remove(&asset_processor_id).unwrap();
-
-                asset_processor.deferred_process(commands, &entity, &typed_asset_id);
-
-                self.asset_processor_map.insert(asset_processor_id, asset_processor);
+                for (entity, asset_processor_id) in ref_waitlist_entry {
+                    list_of_events.push((asset_processor_id, entity, typed_asset_id));
+                }
             }
         }
+
+        world.resource_scope(
+            |world, asset_ref_processor: Mut<AssetRefProcessor>| {
+                for (asset_processor_id, entity, typed_asset_id) in list_of_events {
+                    let asset_processor = asset_ref_processor.get_asset_processor_ref(&asset_processor_id).unwrap();
+                    asset_processor.deferred_process(world, &entity, &typed_asset_id);
+                }
+            },
+        );
     }
 
     // entry entity is here, just not the component just yet ...
@@ -106,12 +122,12 @@ impl AssetRefProcessor {
 
     pub fn handle_add_asset_entry(
         &mut self,
-        commands: &mut Commands,
         metadata_store: &mut AssetMetadataStore,
         asset_cache: &AssetCache,
         entry_entity: &Entity,
         asset_id: &AssetId
-    ) {
+    ) -> Vec<(AssetProcessorId, Entity, TypedAssetId)> {
+        let mut output = Vec::new();
         info!("entity ({:?}) received AssetEntry from World Server! (asset_id: {:?})", entry_entity, asset_id);
         // initialize asset processor if needed
         if let Some(waitlist_entry) = self.entry_waitlist.remove(entry_entity) {
@@ -121,13 +137,9 @@ impl AssetRefProcessor {
                 // mirror logic in handle_entity_added_asset_ref
                 if asset_cache.has_asset(asset_id) {
                     // process asset ref
-                    let asset_processor = self.asset_processor_map.remove(&asset_processor_id).unwrap();
-
                     let asset_type = metadata_store.get(asset_id).unwrap().asset_type();
                     let typed_asset_id = TypedAssetId::new(*asset_id, asset_type);
-                    asset_processor.deferred_process(commands, &ref_entity, &typed_asset_id);
-
-                    self.asset_processor_map.insert(asset_processor_id, asset_processor);
+                    output.push((asset_processor_id, ref_entity, typed_asset_id));
                 } else {
                     // put ref into waitlist
                     info!("asset {:?} not yet loaded. adding to waitlist", asset_id);
@@ -139,22 +151,24 @@ impl AssetRefProcessor {
                 }
             }
         }
+
+        output
     }
 
     pub fn handle_entity_added_asset_ref<T: AssetProcessor>(
         &mut self,
-        commands: &mut Commands,
         asset_cache: &AssetCache,
         metadata_store: &mut AssetMetadataStore,
         ref_entity: &Entity,
         asset_id: &AssetId
-    ) {
+    ) -> Vec<(Entity, TypedAssetId)> {
         info!("entity ({:?}) received AssetRef from World Server! (asset_id: {:?})", ref_entity, asset_id);
+        let mut output = Vec::new();
         if asset_cache.has_asset(asset_id) {
             // process asset ref
             let asset_type = metadata_store.get(asset_id).unwrap().asset_type();
             let typed_asset_id = TypedAssetId::new(*asset_id, asset_type);
-            T::process(commands, ref_entity, &typed_asset_id);
+            output.push((*ref_entity, typed_asset_id));
         } else {
             // initialize asset processor if needed
             let asset_processor_id = T::id();
@@ -170,19 +184,18 @@ impl AssetRefProcessor {
             let ref_waitlist_entry = self.ref_waitlist.get_mut(asset_id).unwrap();
             ref_waitlist_entry.insert(*ref_entity, asset_processor_id);
         }
+        output
     }
 }
 
 pub trait AssetProcessor: Send + Sync + 'static {
     fn id() -> AssetProcessorId;
     fn make_deferred_box() -> Box<dyn AssetDeferredProcessor>;
-    fn process(commands: &mut Commands, entity: &Entity, typed_asset_id: &TypedAssetId);
+    fn process(world: &mut World, entity: &Entity, typed_asset_id: &TypedAssetId);
 }
 
-impl AssetDeferredProcessor for Main {
-    fn deferred_process(&self, commands: &mut Commands, entity: &Entity, typed_asset_id: &TypedAssetId) {
-        Self::process(commands, entity, typed_asset_id);
-    }
+pub trait AssetDeferredProcessor: Send + Sync + 'static {
+    fn deferred_process(&self, world: &mut World, entity: &Entity, typed_asset_id: &TypedAssetId);
 }
 
 impl AssetProcessor for Main {
@@ -192,27 +205,15 @@ impl AssetProcessor for Main {
     fn make_deferred_box() -> Box<dyn AssetDeferredProcessor> {
         Box::new(Self)
     }
-    fn process(commands: &mut Commands, entity: &Entity, typed_asset_id: &TypedAssetId) {
-        info!("processing for entity: {:?} = inserting AssetRef<Main>(asset_id: {:?}) ", entity, typed_asset_id.get_id());
-
-        let asset_type = typed_asset_id.get_type();
-        let asset_id = typed_asset_id.get_id();
-        match asset_type {
-            AssetType::Skeleton => process_type::<SkeletonData>(commands, entity, &asset_id),
-            AssetType::Mesh => process_type::<MeshFile>(commands, entity, &asset_id),
-            AssetType::Palette => process_type::<PaletteData>(commands, entity, &asset_id),
-            AssetType::Animation => process_type::<AnimationData>(commands, entity, &asset_id),
-            AssetType::Icon => process_type::<IconData>(commands, entity, &asset_id),
-            AssetType::Skin => process_type::<SkinData>(commands, entity, &asset_id),
-            AssetType::Model => process_type::<ModelData>(commands, entity, &asset_id),
-            AssetType::Scene => process_type::<SceneData>(commands, entity, &asset_id),
-        }
+    fn process(world: &mut World, entity: &Entity, typed_asset_id: &TypedAssetId) {
+        let mut event_writer = world.get_resource_mut::<Events<InsertAssetRefEvent<Main>>>().unwrap();
+        event_writer.send(InsertAssetRefEvent::<Self>::new(*entity, typed_asset_id.get_id(), typed_asset_id.get_type()));
     }
 }
 
-impl AssetDeferredProcessor for Alt1 {
-    fn deferred_process(&self, commands: &mut Commands, entity: &Entity, typed_asset_id: &TypedAssetId) {
-        Self::process(commands, entity, typed_asset_id);
+impl AssetDeferredProcessor for Main {
+    fn deferred_process(&self, world: &mut World, entity: &Entity, typed_asset_id: &TypedAssetId) {
+        Self::process(world, entity, typed_asset_id);
     }
 }
 
@@ -223,25 +224,14 @@ impl AssetProcessor for Alt1 {
     fn make_deferred_box() -> Box<dyn AssetDeferredProcessor> {
         Box::new(Self)
     }
-    fn process(commands: &mut Commands, entity: &Entity, typed_asset_id: &TypedAssetId) {
-        info!("processing for entity: {:?} = inserting AssetRef<Alt1>(asset_id: {:?}) ", entity, typed_asset_id.get_id());
-
-        let asset_type = typed_asset_id.get_type();
-        let asset_id = typed_asset_id.get_id();
-        match asset_type {
-            AssetType::Animation => {
-                let walk_anim = WalkAnimation::new(AssetHandle::<AnimationData>::new(asset_id));
-                commands.entity(*entity).insert(walk_anim);
-            }
-            _ => { panic!("unsupported asset type: {:?}", asset_type); }
-        }
+    fn process(world: &mut World, entity: &Entity, typed_asset_id: &TypedAssetId) {
+        let mut event_writer = world.get_resource_mut::<Events<InsertAssetRefEvent<Alt1>>>().unwrap();
+        event_writer.send(InsertAssetRefEvent::<Self>::new(*entity, typed_asset_id.get_id(), typed_asset_id.get_type()));
     }
 }
 
-fn process_type<T: Send + Sync + 'static>(commands: &mut Commands, entity: &Entity, asset_id: &AssetId) {
-    commands.entity(*entity).insert(AssetHandle::<T>::new(*asset_id));
-}
-
-pub trait AssetDeferredProcessor: Send + Sync + 'static {
-    fn deferred_process(&self, commands: &mut Commands, entity: &Entity, typed_asset_id: &TypedAssetId);
+impl AssetDeferredProcessor for Alt1 {
+    fn deferred_process(&self, world: &mut World, entity: &Entity, typed_asset_id: &TypedAssetId) {
+        Self::process(world, entity, typed_asset_id);
+    }
 }

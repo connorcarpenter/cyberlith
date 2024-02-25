@@ -8,6 +8,8 @@ mod client_markers;
 mod renderer;
 mod asset_cache;
 mod connection_manager;
+mod world_events;
+mod asset_ref_processor;
 
 pub mod asset {
     use crate::asset_cache;
@@ -50,23 +52,18 @@ pub mod session {
         channels::{
             PrimaryChannel as SessionPrimaryChannel, RequestChannel as SessionRequestChannel,
         },
-        messages::{
-            LoadAssetWithData, LoadAssetRequest, LoadAssetResponse, Auth as SessionAuth,
-            WorldConnectToken,
-        },
     };
 }
 pub mod world {
-    use naia_bevy_client::{events::{SpawnEntityEvent, ConnectEvent, InsertComponentEvents}, Client};
+    use naia_bevy_client::{events::SpawnEntityEvent, Client};
 
     use super::client_markers::World;
 
     pub type WorldClient<'w> = Client<'w, World>;
-    pub type WorldConnectEvent = ConnectEvent<World>;
-    pub type WorldInsertComponentEvents = InsertComponentEvents<World>;
     pub type WorldSpawnEntityEvent = SpawnEntityEvent<World>;
-
-    pub use world_server_naia_proto::{messages::Auth as WorldAuth, components::{AssetEntry, AssetRef, Main, Alt1}};
+    pub use super::world_events::InsertComponentEvent as WorldInsertComponentEvent;
+    pub use super::world_events::InsertAssetRefEvent as WorldInsertAssetRefEvent;
+    pub use world_server_naia_proto::components::{Position, Main, Alt1};
 }
 pub mod config {
     pub use config::*;
@@ -82,5 +79,6 @@ pub mod filesystem {
 // TODO: should these find a home?
 pub use renderer::wait_for_finish;
 
-pub use connection_manager::ConnectionManager;
-pub use connection_manager::SessionConnectEvent;
+pub use connection_manager::{ConnectionManager, SessionConnectEvent};
+
+pub use world_events::InsertComponentEvent;

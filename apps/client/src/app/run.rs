@@ -5,8 +5,6 @@ use game_engine::{
     wait_for_finish, EnginePlugin,
 };
 
-use crate::app::resources::asset_ref_processor::AssetRefProcessor;
-
 use super::systems::{network, scene};
 
 pub fn run() {
@@ -23,12 +21,10 @@ pub fn run() {
         .add_systems(Update, scene::scene_step)
         .add_systems(Draw, scene::scene_draw)
         // Network Systems
-        .add_systems(Update, network::world_connect_events)
         .add_systems(Update, network::world_spawn_entity_events)
-        .add_systems(Update, network::world_insert_component_events)
-        // todo: remove this?
-        .insert_resource(AssetRefProcessor::new())
-        .add_systems(Update, AssetRefProcessor::handle_asset_loaded_events);
+        .add_systems(Update, network::world_main_insert_position_events)
+        .add_systems(Update, network::world_main_insert_asset_ref_events)
+        .add_systems(Update, network::world_alt1_insert_asset_ref_events);
     app.run();
 }
 

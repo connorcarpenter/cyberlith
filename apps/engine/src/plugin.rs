@@ -1,4 +1,4 @@
-use bevy_app::{App, Plugin, Update};
+use bevy_app::{App, Plugin, Startup, Update};
 use bevy_log::LogPlugin;
 
 use naia_bevy_client::{ClientConfig as NaiaClientConfig, Plugin as NaiaClientPlugin};
@@ -10,14 +10,10 @@ use filesystem::FileSystemPlugin;
 use render_api::RenderApiPlugin;
 
 use session_server_naia_proto::protocol as session_server_naia_protocol;
+use world_server_naia_proto::components::{Alt1, Main, Position};
 use world_server_naia_proto::protocol as world_server_naia_protocol;
 
-use crate::{
-    asset_cache::{AssetCache, AssetLoadedEvent},
-    client_markers::{Session, World},
-    renderer::RendererPlugin,
-};
-use crate::connection_manager::{ConnectionManager, SessionConnectEvent};
+use crate::{world_events::InsertAssetRefEvent, connection_manager::{ConnectionManager, SessionConnectEvent}, asset_ref_processor::AssetRefProcessor, asset_cache::{AssetCache, AssetLoadedEvent}, client_markers::{Session, World}, InsertComponentEvent, renderer::RendererPlugin, world_events};
 
 pub struct EnginePlugin;
 
@@ -54,6 +50,18 @@ impl Plugin for EnginePlugin {
             .add_systems(Update, ConnectionManager::handle_session_connect_events)
             .add_systems(Update, ConnectionManager::handle_session_message_events)
             .add_systems(Update, ConnectionManager::handle_session_request_events)
+            .add_systems(Update, ConnectionManager::handle_world_connect_events)
+            // asset ref processing stuff
+            .insert_resource(AssetRefProcessor::new())
+            .add_systems(Update, AssetRefProcessor::handle_asset_loaded_events)
+
+            // world component insert stuff
+
+            .add_systems(Startup, world_events::insert_component_event_startup)
+            .add_systems(Update, world_events::insert_component_events)
+            .add_event::<InsertComponentEvent<Position>>()
+            .add_event::<InsertAssetRefEvent<Main>>()
+            .add_event::<InsertAssetRefEvent<Alt1>>()
         ;
     }
 }

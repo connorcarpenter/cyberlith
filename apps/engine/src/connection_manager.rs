@@ -4,15 +4,17 @@ use bevy_ecs::{event::{EventReader, EventWriter, Event}, system::Resource, chang
 use bevy_log::info;
 
 use naia_bevy_client::{Timer, events::ConnectEvent};
-use asset_render::{AssetManager, AssetMetadataStore};
 
+use asset_render::{AssetManager, AssetMetadataStore};
 use bevy_http_client::{HttpClient, ResponseKey};
 use config::{ORCHESTRATOR_PORT, PUBLIC_IP_ADDR};
 use filesystem::FileSystemManager;
-use orchestrator_http_proto::{LoginRequest, LoginResponse};
-use session_server_naia_proto::messages::{LoadAssetRequest, LoadAssetWithData, WorldConnectToken};
 
-use crate::{world::{WorldAuth, WorldClient}, session::{SessionMessageEvents, SessionPrimaryChannel, SessionRequestChannel, SessionRequestEvents}, asset::{AssetCache, AssetLoadedEvent}, client_markers::Session, naia::WebrtcSocket, session::{SessionAuth, SessionClient}};
+use orchestrator_http_proto::{LoginRequest, LoginResponse};
+use session_server_naia_proto::messages::{LoadAssetRequest, LoadAssetWithData, WorldConnectToken, Auth as SessionAuth};
+use world_server_naia_proto::messages::Auth as WorldAuth;
+
+use crate::{world::WorldClient, session::{SessionMessageEvents, SessionPrimaryChannel, SessionRequestChannel, SessionRequestEvents}, asset::{AssetCache, AssetLoadedEvent}, client_markers::{Session, World}, naia::WebrtcSocket, session::SessionClient};
 
 #[derive(Clone, PartialEq)]
 pub enum ConnectionState {
@@ -71,12 +73,26 @@ impl ConnectionManager {
     }
 
     // used as a system
-    pub fn handle_world_connection_event(&mut self) {
-        let ConnectionState::ConnectedToSession = &self.connection_state else {
-            panic!("Shouldn't happen");
-        };
+    pub fn handle_world_connect_events(
+        client: WorldClient,
+        mut event_reader: EventReader<ConnectEvent<World>>,
+        mut connection_manager: ResMut<ConnectionManager>,
+    ) {
+        for _ in event_reader.read() {
+            let Ok(server_address) = client.server_address() else {
+                panic!("Shouldn't happen");
+            };
+            info!(
+                "Client connected to world server at addr: {}",
+                server_address
+            );
 
-        self.connection_state = ConnectionState::ConnectedToWorld;
+            let ConnectionState::ConnectedToSession = &connection_manager.connection_state else {
+                panic!("Shouldn't happen");
+            };
+
+            connection_manager.connection_state = ConnectionState::ConnectedToWorld;
+        }
     }
 
     // used as a system

@@ -5,9 +5,11 @@ use bevy_log::info;
 
 use naia_serde::{BitWriter, Serde};
 
+use session_server_naia_proto::messages::{LoadAssetRequest, LoadAssetResponse, LoadAssetWithData};
+
 use crate::{
     filesystem::{FileSystemManager, ReadResult, TaskKey, WriteResult},
-    session::{SessionClient, LoadAssetRequest, LoadAssetWithData, LoadAssetResponse},
+    session::SessionClient,
     asset::{AssetMetadataSerde, AssetMetadataStore, AssetId, AssetManager, AssetType},
     naia::ResponseSendKey,
 };
