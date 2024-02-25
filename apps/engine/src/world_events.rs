@@ -81,8 +81,8 @@ pub fn insert_component_events(world: &mut BevyWorld) {
 
         // asset events
         insert_asset_entry_event(world, &events);
-        insert_asset_ref_main_event(world, &events);
-        insert_asset_ref_alt1_event(world, &events);
+        insert_asset_ref_event::<Main>(world, &events);
+        insert_asset_ref_event::<Alt1>(world, &events);
 
         // other events
         insert_component_event::<Position>(world, &events);
@@ -114,23 +114,23 @@ fn insert_asset_entry_event(world: &mut BevyWorld, events: &InsertComponentEvent
         asset_entry_q,
     ) = system_state.get_mut(world);
 
-    let mut list_of_events = Vec::new();
+    let mut aggregated_pending_asset_ref_insert_events = Vec::new();
     for entity in events.read::<AssetEntry>() {
         let Ok(asset_entry) = asset_entry_q.get(entity) else {
             panic!("Shouldn't happen");
         };
         let asset_id = *asset_entry.asset_id;
         info!("received Asset Entry from World Server! (entity: {:?}, asset_id: {:?})", entity, asset_id);
-        let mut output = asset_ref_processor.handle_add_asset_entry(&mut metadata_store, &asset_cache, &entity, &asset_id);
-        list_of_events.append(&mut output);
+        let mut pending_asset_ref_insert_events = asset_ref_processor.handle_add_asset_entry(&mut metadata_store, &asset_cache, &entity, &asset_id);
+        aggregated_pending_asset_ref_insert_events.append(&mut pending_asset_ref_insert_events);
     }
 
-    if list_of_events.is_empty() {
+    if aggregated_pending_asset_ref_insert_events.is_empty() {
         return;
     }
     world.resource_scope(
         |world, asset_ref_processor: Mut<AssetRefProcessor>| {
-            for (asset_processor_id, entity, typed_asset_id) in list_of_events {
+            for (asset_processor_id, entity, typed_asset_id) in aggregated_pending_asset_ref_insert_events {
                 let asset_processor = asset_ref_processor.get_asset_processor_ref(&asset_processor_id).unwrap();
                 asset_processor.deferred_process(world, &entity, &typed_asset_id);
             }
@@ -138,7 +138,7 @@ fn insert_asset_entry_event(world: &mut BevyWorld, events: &InsertComponentEvent
     );
 }
 
-fn insert_asset_ref_main_event(world: &mut BevyWorld, events: &InsertComponentEvents<World>) {
+fn insert_asset_ref_event<T: AssetProcessor>(world: &mut BevyWorld, events: &InsertComponentEvents<World>) {
 
     let mut list_of_events = Vec::new();
 
@@ -148,7 +148,7 @@ fn insert_asset_ref_main_event(world: &mut BevyWorld, events: &InsertComponentEv
         ResMut<AssetRefProcessor>,
         Res<AssetCache>,
         Query<&AssetEntry>,
-        Query<&AssetRef<Main>>,
+        Query<&AssetRef<T>>,
     )> = SystemState::new(world);
     let (
         client,
@@ -156,17 +156,17 @@ fn insert_asset_ref_main_event(world: &mut BevyWorld, events: &InsertComponentEv
         mut asset_ref_processor,
         asset_cache,
         asset_entry_q,
-        asset_ref_main_q,
+        asset_ref_q,
     ) = system_state.get_mut(world);
 
-    for entity in events.read::<AssetRef<Main>>() {
-        let mut output = AssetRefProcessor::insert_asset_ref_events::<Main>(
+    for entity in events.read::<AssetRef<T>>() {
+        let mut output = AssetRefProcessor::insert_asset_ref_events::<T>(
             &client,
             &asset_cache,
             &mut metadata_store,
             &mut asset_ref_processor,
             &asset_entry_q,
-            &asset_ref_main_q,
+            &asset_ref_q,
             &entity
         );
         list_of_events.append(&mut output);
@@ -175,48 +175,6 @@ fn insert_asset_ref_main_event(world: &mut BevyWorld, events: &InsertComponentEv
     //
 
     for (entity, typed_asset_id) in list_of_events {
-        Main::process(world, &entity, &typed_asset_id);
-    }
-}
-
-
-fn insert_asset_ref_alt1_event(world: &mut BevyWorld, events: &InsertComponentEvents<World>) {
-
-    let mut list_of_events = Vec::new();
-
-    let mut system_state: SystemState<(
-        WorldClient,
-        ResMut<AssetMetadataStore>,
-        ResMut<AssetRefProcessor>,
-        Res<AssetCache>,
-        Query<&AssetEntry>,
-        Query<&AssetRef<Alt1>>,
-    )> = SystemState::new(world);
-    let (
-        client,
-        mut metadata_store,
-        mut asset_ref_processor,
-        asset_cache,
-        asset_entry_q,
-        asset_ref_alt1_q,
-    ) = system_state.get_mut(world);
-
-    for entity in events.read::<AssetRef<Alt1>>() {
-        let mut output = AssetRefProcessor::insert_asset_ref_events::<Alt1>(
-            &client,
-            &asset_cache,
-            &mut metadata_store,
-            &mut asset_ref_processor,
-            &asset_entry_q,
-            &asset_ref_alt1_q,
-            &entity
-        );
-        list_of_events.append(&mut output);
-    }
-
-    //
-
-    for (entity, typed_asset_id) in list_of_events {
-        Alt1::process(world, &entity, &typed_asset_id);
+        T::process(world, &entity, &typed_asset_id);
     }
 }

@@ -22,14 +22,17 @@ pub struct AssetRefProcessor {
     ref_waitlist: HashMap<AssetId, HashMap<Entity, AssetProcessorId>>,
 }
 
-impl AssetRefProcessor {
-    pub fn new() -> Self {
+impl Default for AssetRefProcessor {
+    fn default() -> Self {
         Self {
             asset_processor_map: HashMap::new(),
             entry_waitlist: HashMap::new(),
             ref_waitlist: HashMap::new(),
         }
     }
+}
+
+impl AssetRefProcessor {
 
     pub fn get_asset_processor_ref(&self, asset_processor_id: &AssetProcessorId) -> Option<&Box<dyn AssetDeferredProcessor>> {
         self.asset_processor_map.get(asset_processor_id)

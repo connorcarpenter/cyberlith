@@ -40,10 +40,11 @@ impl Plugin for EnginePlugin {
             ))
             // asset cache stuff, todo: maybe refactor out?
             .insert_resource(AssetCache::new("assets"))
+            .add_event::<AssetLoadedEvent>()
             .add_systems(Update, AssetCache::handle_load_asset_tasks)
             .add_systems(Update, AssetCache::handle_save_asset_tasks)
-            .add_event::<AssetLoadedEvent>()
-            // connection manager stuff, maybe refactor out?
+
+            // connection manager stuff, maybe refactor out into a plugin?
             .init_resource::<ConnectionManager>()
             .add_event::<SessionConnectEvent>()
             .add_systems(Update, ConnectionManager::handle_connection)
@@ -51,17 +52,17 @@ impl Plugin for EnginePlugin {
             .add_systems(Update, ConnectionManager::handle_session_message_events)
             .add_systems(Update, ConnectionManager::handle_session_request_events)
             .add_systems(Update, ConnectionManager::handle_world_connect_events)
+
             // asset ref processing stuff
-            .insert_resource(AssetRefProcessor::new())
+            .init_resource::<AssetRefProcessor>()
             .add_systems(Update, AssetRefProcessor::handle_asset_loaded_events)
 
             // world component insert stuff
-
-            .add_systems(Startup, world_events::insert_component_event_startup)
-            .add_systems(Update, world_events::insert_component_events)
             .add_event::<InsertComponentEvent<Position>>()
             .add_event::<InsertAssetRefEvent<Main>>()
             .add_event::<InsertAssetRefEvent<Alt1>>()
+            .add_systems(Startup, world_events::insert_component_event_startup)
+            .add_systems(Update, world_events::insert_component_events)
         ;
     }
 }
