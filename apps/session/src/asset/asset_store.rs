@@ -27,6 +27,9 @@ impl AssetStore {
     }
 
     pub fn insert_data(&mut self, asset_id: AssetId, asset_type: AssetType, etag: ETag, dependencies: HashSet<AssetId>, data: Vec<u8>) {
+        if self.map.contains_key(&asset_id) {
+            panic!("asset is already in memory");
+        }
         self.map.insert(asset_id, AssetData::new(asset_type, etag, dependencies, data));
     }
 

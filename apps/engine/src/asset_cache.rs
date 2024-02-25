@@ -173,6 +173,9 @@ impl AssetCache {
         asset_type: &AssetType,
         asset_data: Vec<u8>
     ) {
+        if self.data_store.contains_key(asset_id) {
+            panic!("asset is already in memory");
+        }
         self.data_store.insert(*asset_id, asset_data);
 
         asset_manager.load(&self.data_store, asset_id, asset_type);
