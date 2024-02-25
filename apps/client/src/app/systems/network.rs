@@ -2,7 +2,6 @@
 use bevy_ecs::{
     prelude::Query,
     event::{EventReader, EventWriter},
-    entity::Entity,
     system::{Commands, ResMut},
 };
 use bevy_log::info;
@@ -13,7 +12,7 @@ use game_engine::{naia::WebrtcSocket, session::{
     WorldConnectToken,
 }, world::{Alt1, WorldSpawnEntityEvent, WorldAuth, WorldClient, WorldConnectEvent, AssetEntry, AssetRef, Main, WorldInsertComponentEvents}, asset::{AssetLoadedEvent, AssetCache, AssetManager, AssetMetadataStore}, filesystem::FileSystemManager, math::{Quat, Vec3}, render::components::{RenderLayers, Transform, Visibility}, ConnectionManager};
 
-use crate::app::{systems::scene::ObjectMarker, resources::{asset_ref_processor::{AssetProcessor, AssetRefProcessor}}};
+use crate::app::{systems::scene::ObjectMarker, resources::{asset_ref_processor::AssetRefProcessor}};
 
 pub fn session_connect_events(
     client: SessionClient,
@@ -126,7 +125,7 @@ pub fn world_insert_component_events(
             asset_ref_processor.handle_add_asset_entry(&mut commands, &mut metadata_store, &asset_cache, &entity, &asset_id);
         }
         for entity in events.read::<AssetRef<Main>>() {
-            insert_asset_ref_events::<Main>(&mut commands, &client, &asset_cache, &mut metadata_store, &mut asset_ref_processor, &asset_entry_q, &asset_ref_main_q, &entity);
+            AssetRefProcessor::insert_asset_ref_events::<Main>(&mut commands, &client, &asset_cache, &mut metadata_store, &mut asset_ref_processor, &asset_entry_q, &asset_ref_main_q, &entity);
 
             // add clientside things
             let layer = RenderLayers::layer(0);
@@ -147,45 +146,8 @@ pub fn world_insert_component_events(
                 .insert(layer);
         }
         for entity in events.read::<AssetRef<Alt1>>() {
-            insert_asset_ref_events::<Alt1>(&mut commands, &client, &asset_cache, &mut metadata_store, &mut asset_ref_processor, &asset_entry_q, &asset_ref_alt1_q, &entity);
+            AssetRefProcessor::insert_asset_ref_events::<Alt1>(&mut commands, &client, &asset_cache, &mut metadata_store, &mut asset_ref_processor, &asset_entry_q, &asset_ref_alt1_q, &entity);
         }
         // .. other components here later
-    }
-}
-
-fn insert_asset_ref_events<T: AssetProcessor>(
-    commands: &mut Commands,
-    client: &WorldClient,
-    asset_cache: &AssetCache,
-    metadata_store: &mut AssetMetadataStore,
-    asset_ref_processor: &mut AssetRefProcessor,
-    asset_entry_q: &Query<&AssetEntry>,
-    asset_ref_q: &Query<&AssetRef<T>>,
-    entity: &Entity
-) {
-    let Ok(asset_ref) = asset_ref_q.get(*entity) else {
-        panic!("Shouldn't happen");
-    };
-    let Some(asset_entry_entity) = asset_ref.asset_id_entity.get(client) else {
-        panic!("Shouldn't happen");
-    };
-    if let Ok(asset_entry) = asset_entry_q.get(asset_entry_entity) {
-        let asset_id = *asset_entry.asset_id;
-        asset_ref_processor.handle_entity_added_asset_ref::<T>(commands, asset_cache, metadata_store, entity, &asset_id);
-    } else {
-        // asset entry entity has been replicated, but not the component just yet ...
-        asset_ref_processor.handle_add_asset_entry_waitlist::<T>(entity, &asset_entry_entity);
-    };
-}
-
-pub fn handle_asset_loaded_events(
-    mut commands: Commands,
-    mut reader: EventReader<AssetLoadedEvent>,
-    mut asset_ref_processer: ResMut<AssetRefProcessor>,
-) {
-    for event in reader.read() {
-        info!("received Asset Loaded Event! (asset_id: {:?}, asset_type: {:?})", event.asset_id, event.asset_type);
-
-        asset_ref_processer.process(&mut commands, event);
     }
 }

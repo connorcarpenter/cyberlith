@@ -1,10 +1,10 @@
 use std::{collections::HashMap, any::TypeId};
 
-use bevy_ecs::{prelude::Resource, entity::Entity, system::Commands};
+use bevy_ecs::{event::EventReader, change_detection::ResMut, prelude::{Resource, Query}, entity::Entity, system::Commands};
 use bevy_log::info;
 
 use game_engine::{asset::{AssetCache, AssetId, AssetLoadedEvent, AssetMetadataStore, AnimationData, AssetHandle, AssetType, IconData, MeshFile, ModelData, PaletteData, SceneData, SkeletonData, SkinData, TypedAssetId},
-                  world::{Main, Alt1}};
+                  world::{AssetEntry, AssetRef, WorldClient, Main, Alt1}};
 
 use crate::app::systems::scene::WalkAnimation;
 
@@ -29,7 +29,46 @@ impl AssetRefProcessor {
         }
     }
 
-    pub fn process(&mut self, commands: &mut Commands, event: &AssetLoadedEvent) {
+    // used by systems
+    pub fn insert_asset_ref_events<T: AssetProcessor>(
+        commands: &mut Commands,
+        client: &WorldClient,
+        asset_cache: &AssetCache,
+        metadata_store: &mut AssetMetadataStore,
+        asset_ref_processor: &mut AssetRefProcessor,
+        asset_entry_q: &Query<&AssetEntry>,
+        asset_ref_q: &Query<&AssetRef<T>>,
+        entity: &Entity
+    ) {
+        let Ok(asset_ref) = asset_ref_q.get(*entity) else {
+            panic!("Shouldn't happen");
+        };
+        let Some(asset_entry_entity) = asset_ref.asset_id_entity.get(client) else {
+            panic!("Shouldn't happen");
+        };
+        if let Ok(asset_entry) = asset_entry_q.get(asset_entry_entity) {
+            let asset_id = *asset_entry.asset_id;
+            asset_ref_processor.handle_entity_added_asset_ref::<T>(commands, asset_cache, metadata_store, entity, &asset_id);
+        } else {
+            // asset entry entity has been replicated, but not the component just yet ...
+            asset_ref_processor.handle_add_asset_entry_waitlist::<T>(entity, &asset_entry_entity);
+        };
+    }
+
+    // used as a system
+    pub fn handle_asset_loaded_events(
+        mut commands: Commands,
+        mut reader: EventReader<AssetLoadedEvent>,
+        mut asset_ref_processer: ResMut<AssetRefProcessor>,
+    ) {
+        for event in reader.read() {
+            info!("received Asset Loaded Event! (asset_id: {:?}, asset_type: {:?})", event.asset_id, event.asset_type);
+
+            asset_ref_processer.process(&mut commands, event);
+        }
+    }
+
+    fn process(&mut self, commands: &mut Commands, event: &AssetLoadedEvent) {
 
         let asset_id = event.asset_id;
         let asset_type = event.asset_type;

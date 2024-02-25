@@ -29,9 +29,9 @@ pub fn run() {
         .add_systems(Update, network::world_connect_events)
         .add_systems(Update, network::world_spawn_entity_events)
         .add_systems(Update, network::world_insert_component_events)
-        // todo: remove this
+        // todo: remove this?
         .insert_resource(AssetRefProcessor::new())
-        .add_systems(Update, network::handle_asset_loaded_events);
+        .add_systems(Update, AssetRefProcessor::handle_asset_loaded_events);
     app.run();
 }
 
