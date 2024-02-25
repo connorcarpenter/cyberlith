@@ -17,6 +17,7 @@ use crate::{
     client_markers::{Session, World},
     renderer::RendererPlugin,
 };
+use crate::connection_manager::ConnectionManager;
 
 pub struct EnginePlugin;
 
@@ -46,6 +47,9 @@ impl Plugin for EnginePlugin {
             .add_systems(Update, AssetCache::handle_load_asset_tasks)
             .add_systems(Update, AssetCache::handle_save_asset_tasks)
             .add_event::<AssetLoadedEvent>()
+            // connection manager stuff, maybe refactor out?
+            .init_resource::<ConnectionManager>()
+            .add_systems(Update, ConnectionManager::handle_connection)
         ;
     }
 }

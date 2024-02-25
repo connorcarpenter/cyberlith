@@ -1,104 +1,24 @@
-use std::time::Duration;
 
 use bevy_ecs::{
     prelude::Query,
     event::{EventReader, EventWriter},
     entity::Entity,
-    system::{Commands, ResMut, Resource},
+    system::{Commands, ResMut},
 };
 use bevy_log::info;
 
-use game_engine::{
-    config::{ORCHESTRATOR_PORT, PUBLIC_IP_ADDR},
-    http::HttpClient,
-    naia::{Timer, WebrtcSocket},
-    orchestrator::LoginRequest,
-    session::{
-        LoadAssetWithData, LoadAssetRequest, SessionAuth, SessionClient, SessionConnectEvent,
-        SessionMessageEvents, SessionPrimaryChannel, SessionRequestChannel, SessionRequestEvents,
-        WorldConnectToken,
-    },
-    world::{Alt1, WorldSpawnEntityEvent, WorldAuth, WorldClient, WorldConnectEvent, AssetEntry, AssetRef, Main, WorldInsertComponentEvents},
-    asset::{AssetLoadedEvent, AssetCache, AssetManager, AssetMetadataStore},
-    filesystem::FileSystemManager,
-    math::{Quat, Vec3},
-    render::components::{RenderLayers, Transform, Visibility}
-};
+use game_engine::{naia::WebrtcSocket, session::{
+    LoadAssetWithData, LoadAssetRequest, SessionClient, SessionConnectEvent,
+    SessionMessageEvents, SessionPrimaryChannel, SessionRequestChannel, SessionRequestEvents,
+    WorldConnectToken,
+}, world::{Alt1, WorldSpawnEntityEvent, WorldAuth, WorldClient, WorldConnectEvent, AssetEntry, AssetRef, Main, WorldInsertComponentEvents}, asset::{AssetLoadedEvent, AssetCache, AssetManager, AssetMetadataStore}, filesystem::FileSystemManager, math::{Quat, Vec3}, render::components::{RenderLayers, Transform, Visibility}, ConnectionManager};
 
-use crate::app::{systems::scene::ObjectMarker, resources::{asset_ref_processor::{AssetProcessor, AssetRefProcessor}, global::Global, connection_state::ConnectionState}};
-
-// ApiTimer
-#[derive(Resource)]
-pub struct ApiTimer(pub Timer);
-
-impl Default for ApiTimer {
-    fn default() -> Self {
-        Self(Timer::new(Duration::from_millis(5000)))
-    }
-}
-
-pub fn handle_connection(
-    mut global: ResMut<Global>,
-    mut timer: ResMut<ApiTimer>,
-    mut http_client: ResMut<HttpClient>,
-    mut session_client: SessionClient,
-) {
-    if timer.0.ringing() {
-        timer.0.reset();
-    } else {
-        return;
-    }
-
-    match &global.connection_state {
-        ConnectionState::Disconnected => {
-            info!("sending to orchestrator..");
-            let request = LoginRequest::new("charlie", "12345");
-            let key = http_client.send(PUBLIC_IP_ADDR, ORCHESTRATOR_PORT, request);
-            global.connection_state = ConnectionState::SentToOrchestrator(key);
-        }
-        ConnectionState::SentToOrchestrator(key) => {
-            if let Some(result) = http_client.recv(key) {
-                match result {
-                    Ok(response) => {
-                        info!(
-                            "received from orchestrator: (webrtc url: {:?}, token: {:?})",
-                            response.session_server_public_webrtc_url, response.token
-                        );
-                        global.connection_state =
-                            ConnectionState::ReceivedFromOrchestrator(response.clone());
-
-                        session_client.auth(SessionAuth::new(&response.token));
-                        info!(
-                            "connecting to session server: {}",
-                            response.session_server_public_webrtc_url
-                        );
-                        let socket = WebrtcSocket::new(
-                            &response.session_server_public_webrtc_url,
-                            session_client.socket_config(),
-                        );
-                        session_client.connect(socket);
-                    }
-                    Err(_) => {
-                        info!("resending to orchestrator..");
-                        global.connection_state = ConnectionState::Disconnected;
-                    }
-                }
-            }
-        }
-        ConnectionState::ReceivedFromOrchestrator(_response) => {
-            // waiting for connect event ..
-        }
-        ConnectionState::ConnectedToSession => {}
-        ConnectionState::ConnectedToWorld => {
-            info!("world : connected!");
-        }
-    }
-}
+use crate::app::{systems::scene::ObjectMarker, resources::{asset_ref_processor::{AssetProcessor, AssetRefProcessor}}};
 
 pub fn session_connect_events(
     client: SessionClient,
     mut event_reader: EventReader<SessionConnectEvent>,
-    mut global: ResMut<Global>,
+    mut connection_manager: ResMut<ConnectionManager>,
 ) {
     for _ in event_reader.read() {
         let Ok(server_address) = client.server_address() else {
@@ -109,11 +29,7 @@ pub fn session_connect_events(
             server_address
         );
 
-        let ConnectionState::ReceivedFromOrchestrator(_) = &global.connection_state else {
-            panic!("Shouldn't happen");
-        };
-
-        global.connection_state = ConnectionState::ConnectedToSession;
+        connection_manager.handle_session_connection_event();
     }
 }
 
@@ -165,7 +81,7 @@ pub fn session_request_events(
 pub fn world_connect_events(
     client: WorldClient,
     mut event_reader: EventReader<WorldConnectEvent>,
-    mut global: ResMut<Global>,
+    mut connection_manager: ResMut<ConnectionManager>,
 ) {
     for _ in event_reader.read() {
         let Ok(server_address) = client.server_address() else {
@@ -176,11 +92,7 @@ pub fn world_connect_events(
             server_address
         );
 
-        let ConnectionState::ConnectedToSession = &global.connection_state else {
-            panic!("Shouldn't happen");
-        };
-
-        global.connection_state = ConnectionState::ConnectedToWorld;
+        connection_manager.handle_world_connection_event();
     }
 }
 

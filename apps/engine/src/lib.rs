@@ -7,10 +7,11 @@ pub use plugin::EnginePlugin;
 mod client_markers;
 mod renderer;
 mod asset_cache;
+mod connection_manager;
 
 pub mod asset {
     use crate::asset_cache;
-    
+
     pub use asset_render::*;
     pub use asset_cache::*;
     pub use asset_id::{AssetId, ETag, AssetType};
@@ -74,7 +75,11 @@ pub mod config {
 pub mod storage {
     pub use storage::*;
 }
-pub use renderer::wait_for_finish;
+
 pub mod filesystem {
     pub use filesystem::*;
 }
+
+// TODO: should these find a home?
+pub use renderer::wait_for_finish;
+pub use connection_manager::ConnectionManager;
