@@ -56,6 +56,10 @@ impl Serde for AssetId {
 }
 
 impl AssetId {
+    pub fn get_random() -> Self {
+        Self(U32Token::get_random())
+    }
+
     pub fn from_str(s: &str) -> Result<Self, SerdeErr> {
         let Some(val) = U32Token::from_str(s) else {
             return Err(SerdeErr);

@@ -7,10 +7,11 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 
+use asset_id::AssetId;
+
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 
 use asset_io::json::{AnimFile, AnimFileFrame};
-use asset_io::AssetId;
 
 use editor_proto::{
     components::{AnimFrame, AnimRotation, FileExtension, Transition},

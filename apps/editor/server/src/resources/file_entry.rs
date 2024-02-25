@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use bevy_ecs::entity::Entity;
 
-use asset_io::AssetId;
+use asset_id::AssetId;
 
 use editor_proto::{components::FileExtension, resources::FileKey};
 

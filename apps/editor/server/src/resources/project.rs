@@ -10,7 +10,7 @@ use git2::{Repository, Signature};
 
 use naia_bevy_server::{BigMapKey, CommandsExt, RoomKey, Server, UserKey};
 
-use asset_io::AssetId;
+use asset_id::AssetId;
 
 use editor_proto::{
     components::{ChangelistEntry, ChangelistStatus, EntryKind, FileExtension, FileSystemEntry},

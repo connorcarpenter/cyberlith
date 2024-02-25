@@ -9,8 +9,9 @@ use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 
+use asset_id::AssetId;
 use asset_io::json::{FileComponentType, SceneFile};
-use asset_io::AssetId;
+use math::Quat;
 
 use editor_proto::{
     components::{
@@ -19,7 +20,6 @@ use editor_proto::{
     },
     resources::FileKey,
 };
-use math::Quat;
 
 use crate::{
     files::{

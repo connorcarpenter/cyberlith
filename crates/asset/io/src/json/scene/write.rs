@@ -1,5 +1,6 @@
+use asset_id::AssetId;
+
 use crate::json::{Asset, AssetData, AssetMeta, SceneFile};
-use crate::AssetId;
 
 impl SceneFile {
     pub fn write(&self, asset_id: &AssetId) -> Box<[u8]> {
