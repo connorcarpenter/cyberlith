@@ -12,6 +12,10 @@ impl AssetData {
     pub fn new(asset_type: AssetType, etag: ETag, dependencies: HashSet<AssetId>, data: Vec<u8>) -> Self {
         Self { asset_type, etag, dependencies, data }
     }
+
+    pub fn byte_count(&self) -> usize {
+        self.data.len()
+    }
 }
 
 /// Stores asset data and etags in RAM
@@ -54,6 +58,13 @@ impl AssetStore {
     pub fn get_type_and_etag_and_data(&self, asset_id: &AssetId) -> Option<(AssetType, ETag, Vec<u8>)> {
         match self.map.get(asset_id) {
             Some(asset_data) => Some((asset_data.asset_type, asset_data.etag, asset_data.data.clone())),
+            None => None,
+        }
+    }
+
+    pub fn get_size_bytes(&self, asset_id: &AssetId) -> Option<usize> {
+        match self.map.get(asset_id) {
+            Some(asset_data) => Some(asset_data.byte_count()),
             None => None,
         }
     }

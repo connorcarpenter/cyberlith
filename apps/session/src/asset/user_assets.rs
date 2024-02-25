@@ -18,15 +18,20 @@ pub struct UserAssets {
     assets_in_memory: HashSet<AssetId>,
     // when KEY is loaded in client, notify all VALUES that they can now load
     dependency_waitlist: HashMap<AssetId, HashSet<AssetId>>,
+    bytes_in_memory: usize,
 }
 
 impl UserAssets {
+
+    pub const MAX_BYTES_IN_MEMORY: usize = 1024 * 1024 * 25; // 25 MB
+
     pub fn new(user_key: &UserKey) -> Self {
         Self {
             user_key: *user_key,
             assets_processing: HashMap::new(),
             assets_in_memory: HashSet::new(),
             dependency_waitlist: HashMap::new(),
+            bytes_in_memory: 0,
         }
     }
 
@@ -162,8 +167,14 @@ impl UserAssets {
     ) {
         info!("finished processing asset: {:?}", asset_id);
 
-        self.assets_processing.remove(&asset_id);
+        self.assets_processing.remove(asset_id);
         self.assets_in_memory.insert(*asset_id);
+        let asset_size_bytes = asset_store.get_size_bytes(asset_id).unwrap();
+        self.bytes_in_memory += asset_size_bytes;
+        if self.bytes_in_memory > Self::MAX_BYTES_IN_MEMORY {
+            // implement unloading of user assets in order to preserve user experience & RAM. Use LRU cache.
+            todo!();
+        }
 
         // handle dependency waitlist
         if let Some(waiting_asset_ids) = self.dependency_waitlist.remove(asset_id) {
