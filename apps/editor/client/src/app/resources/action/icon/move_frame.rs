@@ -31,6 +31,7 @@ pub fn execute(
         SystemState::new(world);
     let (mut commands, mut client, mut frame_q) = system_state.get_mut(world);
 
+    // get current frame entity
     let Some(current_frame_entity) =
         icon_manager.get_frame_entity(&file_entity, current_frame_index)
     else {
@@ -40,6 +41,8 @@ pub fn execute(
         );
         return vec![];
     };
+
+    // get next frame entity
     let Some(next_frame_entity) = icon_manager.get_frame_entity(&file_entity, next_frame_index)
     else {
         warn!(
@@ -49,15 +52,19 @@ pub fn execute(
         return vec![];
     };
 
+    // request authority for current frame entity
     if let Some(auth) = commands.entity(current_frame_entity).authority(&client) {
         if !auth.is_requested() && !auth.is_granted() {
             warn!(
-                "current frame entity `{:?}` does not have auth!",
+                "Auth for current frame entity `{:?}` is denied!",
                 current_frame_entity
             );
             return vec![];
         }
+        // should already have authority
     }
+
+    // request authority for next frame entity
     if let Some(auth) = commands.entity(next_frame_entity).authority(&client) {
         if auth.is_denied() {
             warn!(
@@ -73,6 +80,7 @@ pub fn execute(
         }
     }
 
+    // get next frame order index
     let Ok(next_frame) = frame_q.get(next_frame_entity) else {
         panic!(
             "Failed to get AnimFrame for frame entity {:?}!",
@@ -81,21 +89,44 @@ pub fn execute(
     };
     let next_frame_order = next_frame.get_order();
 
+    // check that 'next_frame_order' is equal to 'next_frame_index'
+    if (next_frame_order as usize) != next_frame_index {
+        panic!(
+            "Expected next_frame_order to be equal to next_frame_index, but got {:?} != {:?}",
+            next_frame_order, next_frame_index
+        );
+    }
+
+    // change current frame to next frame order index
     let Ok(mut current_frame) = frame_q.get_mut(current_frame_entity) else {
         panic!(
             "Failed to get AnimFrame for frame entity {:?}!",
             current_frame_entity
         );
     };
+    // get previous order index
     let current_frame_order = current_frame.get_order();
+
+    // check that 'current_frame_order' is equal to 'current_frame_index'
+    if (current_frame_order as usize) != current_frame_index {
+        panic!(
+            "Expected current_frame_order to be equal to current_frame_index, but got {:?} != {:?}",
+            current_frame_order, current_frame_index
+        );
+    }
+
+    // set current frame order to next frame order
     current_frame.set_order(next_frame_order);
 
+    // get next frame
     let Ok(mut next_frame) = frame_q.get_mut(next_frame_entity) else {
         panic!(
             "Failed to get AnimFrame for frame entity {:?}!",
             next_frame_entity
         );
     };
+
+    // set next frame order to previous order
     next_frame.set_order(current_frame_order);
 
     icon_manager.set_current_frame_index(next_frame_index);

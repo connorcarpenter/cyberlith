@@ -2162,6 +2162,7 @@ impl IconManager {
             }
             if new_frame_list[frame_index].is_some() {
                 warn!("Duplicate frame order! {:?}", frame_index);
+                // this may temporarily break the frame order, but it will be fixed in the next loop
             }
             new_frame_list[frame_index] = Some(frame_entity);
         }

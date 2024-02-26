@@ -33,6 +33,7 @@ enum ContentEntityTypeData {
 }
 
 struct IconFrameActionData {
+    frame_entity: Entity,
     vertex_count: usize,
     edge_count: usize,
     vertex_map: HashMap<Entity, usize>,
@@ -42,8 +43,9 @@ struct IconFrameActionData {
 }
 
 impl IconFrameActionData {
-    fn new() -> Self {
+    fn new(frame_entity: Entity) -> Self {
         Self {
+            frame_entity,
             vertex_count: 0,
             edge_count: 0,
             vertex_map: HashMap::new(),
@@ -113,6 +115,16 @@ impl IconFrameActionData {
             );
         }
     }
+
+    pub(crate) fn validate_frame_entity(&self, frame_entity: &Entity) {
+        if *frame_entity != self.frame_entity {
+            panic!(
+                "frame_entity does not match. expected: `{:?}`, got: `{:?}`",
+                self.frame_entity, frame_entity
+            );
+        }
+
+    }
 }
 
 // Writer
@@ -163,7 +175,8 @@ impl IconWriter {
                     face_entities.push(*content_entity);
                 }
                 ContentEntityData::Frame => {
-                    frame_map.insert(frame_index, IconFrameActionData::new());
+                    // here we're just filling up frame_map, to be written later
+                    frame_map.insert(frame_index, IconFrameActionData::new(*content_entity));
                     frame_index += 1;
                 }
                 _ => {
@@ -209,6 +222,7 @@ impl IconWriter {
             let frame_action_data = frame_map
                 .get_mut(&frame_index)
                 .expect("should have initialized this already");
+            frame_action_data.validate_frame_entity(&frame_entity);
             frame_action_data.add_vertex(vertex_entity, vertex.x(), vertex.y());
         }
 
@@ -227,6 +241,7 @@ impl IconWriter {
             let frame_action_data = frame_map
                 .get_mut(&frame_index)
                 .expect("should have initialized this already");
+            frame_action_data.validate_frame_entity(&frame_entity);
 
             let vertex_a_entity = edge.start.get(&server).unwrap();
             let vertex_b_entity = edge.end.get(&server).unwrap();
@@ -250,6 +265,7 @@ impl IconWriter {
             let frame_action_data = frame_map
                 .get_mut(&frame_index)
                 .expect("should have initialized this already");
+            frame_action_data.validate_frame_entity(&frame_entity);
 
             let Some(face_index) = icon_manager.get_face_index(&face_entity) else {
                 panic!("face entity {:?} does not have an index!", face_entity);
@@ -279,7 +295,23 @@ impl IconWriter {
 
         while frame_map.contains_key(&frame_index) {
             info!("adding IconAction::Frame({})", frame_index);
+
             let frame_action_data = frame_map.remove(&frame_index).unwrap();
+
+            {
+                // check that frame index is correct
+                let Ok(frame) = frame_q.get(frame_action_data.frame_entity) else {
+                    panic!("");
+                };
+                let data_frame_index = frame.get_order() as u16;
+                if data_frame_index != frame_index {
+                    panic!(
+                        "frame index does not match. expected: `{:?}`, got: `{:?}`",
+                        frame_index, data_frame_index
+                    );
+                }
+            }
+
             output.add_frame(frame_action_data.frame);
             frame_index += 1;
         }
