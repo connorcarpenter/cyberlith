@@ -864,21 +864,11 @@ impl IconInputManager {
             let vertex_b_index = *vertex_map.get(&vertex_b_entity).unwrap();
             let vertex_c_index = *vertex_map.get(&vertex_c_entity).unwrap();
 
-            let edge_a_entity = face.edge_a.get(&client).unwrap();
-            let edge_b_entity = face.edge_b.get(&client).unwrap();
-            let edge_c_entity = face.edge_c.get(&client).unwrap();
-            let edge_a_index = *edge_map.get(&edge_a_entity).unwrap();
-            let edge_b_index = *edge_map.get(&edge_b_entity).unwrap();
-            let edge_c_index = *edge_map.get(&edge_c_entity).unwrap();
-
             copied_shapes.push(IconShapeData::Face(
                 palette_color_entity,
                 vertex_a_index,
                 vertex_b_index,
                 vertex_c_index,
-                edge_a_index,
-                edge_b_index,
-                edge_c_index,
             ));
         }
         copied_shapes

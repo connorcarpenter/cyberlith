@@ -89,18 +89,12 @@ pub fn execute(
                         vertex_a_index,
                         vertex_b_index,
                         vertex_c_index,
-                        edge_a_index,
-                        edge_b_index,
-                        edge_c_index,
                     ) => {
                         faces.push((
                             palette_color_entity,
                             vertex_a_index,
                             vertex_b_index,
                             vertex_c_index,
-                            edge_a_index,
-                            edge_b_index,
-                            edge_c_index,
                         ));
                     }
                 }
@@ -175,17 +169,11 @@ pub fn execute(
                 vertex_a_index,
                 vertex_b_index,
                 vertex_c_index,
-                edge_a_index,
-                edge_b_index,
-                edge_c_index,
             ) in faces
             {
                 let vertex_a_entity = *vertex_map.get(&vertex_a_index).unwrap();
                 let vertex_b_entity = *vertex_map.get(&vertex_b_index).unwrap();
                 let vertex_c_entity = *vertex_map.get(&vertex_c_index).unwrap();
-                let edge_a_entity = *edge_map.get(&edge_a_index).unwrap();
-                let edge_b_entity = *edge_map.get(&edge_b_index).unwrap();
-                let edge_c_entity = *edge_map.get(&edge_c_index).unwrap();
 
                 let face_key = IconFaceKey::new(vertex_a_entity, vertex_b_entity, vertex_c_entity);
 
@@ -208,7 +196,6 @@ pub fn execute(
                     &mut materials,
                     &transform_q,
                     &face_key,
-                    [edge_a_entity, edge_b_entity, edge_c_entity],
                     &file_entity,
                     &new_frame_entity,
                     &palette_color_entity,

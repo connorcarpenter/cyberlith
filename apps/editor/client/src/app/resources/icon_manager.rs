@@ -170,8 +170,8 @@ pub enum IconShapeData {
     Vertex(i16, i16),
     // vertex a index, vertex b index
     Edge(usize, usize),
-    // palette_color_entity, vertex a index, vertex b index, vertex c index, edge a index, edge b index, edge c index
-    Face(Entity, usize, usize, usize, usize, usize, usize),
+    // palette_color_entity, vertex a index, vertex b index, vertex c index
+    Face(Entity, usize, usize, usize),
 }
 
 impl IconManager {
@@ -1491,10 +1491,6 @@ impl IconManager {
         (*edge_entity, deleted_local_face_entities)
     }
 
-    pub(crate) fn has_edge_entity(&self, edge_entity: &Entity) -> bool {
-        self.edges.contains_key(edge_entity)
-    }
-
     pub(crate) fn edge_connected_faces(&self, edge_entity: &Entity) -> Option<Vec<IconFaceKey>> {
         self.edges
             .get(edge_entity)
@@ -1507,14 +1503,6 @@ impl IconManager {
             .unwrap()
             .faces
             .insert(face_key);
-    }
-
-    fn edge_remove_face(&mut self, edge_entity: &Entity, face_key: &IconFaceKey) {
-        self.edges
-            .get_mut(edge_entity)
-            .unwrap()
-            .faces
-            .remove(face_key);
     }
 
     fn edge_get_endpoints(&self, edge_entity: &Entity) -> (Entity, Entity) {
@@ -1650,9 +1638,6 @@ impl IconManager {
                 *file_entity,
                 *frame_entity,
                 new_entity,
-                edge_entities[0],
-                edge_entities[1],
-                edge_entities[2],
             )),
         );
         self.local_faces.insert(new_entity, *face_key);
@@ -1680,9 +1665,6 @@ impl IconManager {
         }
         let file_entity = face_data.file_entity;
         let frame_entity = face_data.frame_entity;
-        let edge_entity_a = face_data.edge_a;
-        let edge_entity_b = face_data.edge_b;
-        let edge_entity_c = face_data.edge_c;
 
         let mut system_state: SystemState<(
             Commands,
@@ -1708,7 +1690,6 @@ impl IconManager {
             &mut materials,
             &transform_q,
             &face_key,
-            [edge_entity_a, edge_entity_b, edge_entity_c],
             &file_entity,
             &frame_entity,
             &palette_color_entity,
@@ -1727,7 +1708,6 @@ impl IconManager {
         materials: &mut Storage<CpuMaterial>,
         transform_q: &Query<&Transform>,
         face_key: &IconFaceKey,
-        edge_entities: [Entity; 3],
         file_entity: &Entity,
         frame_entity: &Entity,
         palette_color_entity: &Entity,
@@ -1766,9 +1746,6 @@ impl IconManager {
         face_component.vertex_a.set(client, &vertex_entities[0]);
         face_component.vertex_b.set(client, &vertex_entities[1]);
         face_component.vertex_c.set(client, &vertex_entities[2]);
-        face_component.edge_a.set(client, &edge_entities[0]);
-        face_component.edge_b.set(client, &edge_entities[1]);
-        face_component.edge_c.set(client, &edge_entities[2]);
 
         // get owned_by_file component
         let mut owned_by_file_component = OwnedByFile::new();
@@ -1930,11 +1907,6 @@ impl IconManager {
             // remove face from vertices
             for vertex_entity in [face_key.vertex_a, face_key.vertex_b, face_key.vertex_c] {
                 self.vertex_remove_face(&vertex_entity, face_key);
-            }
-
-            // remove face from edges
-            for edge_entity in [face_data.edge_a, face_data.edge_b, face_data.edge_c] {
-                self.edge_remove_face(&edge_entity, face_key);
             }
 
             return Some(local_entity);

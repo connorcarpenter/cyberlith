@@ -46,7 +46,7 @@ impl MeshWriter {
         /////////////////////////////////////  id /////////////////
         let mut vertex_map: HashMap<Entity, usize> = HashMap::new();
         let mut edge_map: HashMap<Entity, usize> = HashMap::new();
-        let mut face_list: Vec<Option<(u16, u16, u16, u16, u16, u16, u16)>> = Vec::new();
+        let mut face_list: Vec<Option<(u16, u16, u16, u16)>> = Vec::new();
 
         info!(
             "writing in world_to_actions(), content_entities: `{:?}`",
@@ -107,21 +107,11 @@ impl MeshWriter {
                 let vertex_b_id = *vertex_map.get(&vertex_b_entity).unwrap();
                 let vertex_c_id = *vertex_map.get(&vertex_c_entity).unwrap();
 
-                let edge_a_entity = face.edge_a.get(&server).unwrap();
-                let edge_b_entity = face.edge_b.get(&server).unwrap();
-                let edge_c_entity = face.edge_c.get(&server).unwrap();
-                let edge_a_id = *edge_map.get(&edge_a_entity).unwrap();
-                let edge_b_id = *edge_map.get(&edge_b_entity).unwrap();
-                let edge_c_id = *edge_map.get(&edge_c_entity).unwrap();
-
                 let face_info = (
                     face_index as u16,
                     vertex_a_id as u16,
                     vertex_b_id as u16,
                     vertex_c_id as u16,
-                    edge_a_id as u16,
-                    edge_b_id as u16,
-                    edge_c_id as u16,
                 );
                 if face_index >= face_list.len() {
                     face_list.resize(face_index + 1, None);
@@ -133,13 +123,13 @@ impl MeshWriter {
         }
 
         for face_info_opt in face_list {
-            let Some((face_id, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c)) =
+            let Some((face_id, vertex_a, vertex_b, vertex_c)) =
                 face_info_opt
             else {
                 panic!("face_list contains None");
             };
             output.add_face(
-                face_id, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c,
+                face_id, vertex_a, vertex_b, vertex_c
             );
         }
 
@@ -249,26 +239,16 @@ impl MeshReader {
                 vertex_a_index,
                 vertex_b_index,
                 vertex_c_index,
-                edge_a_index,
-                edge_b_index,
-                edge_c_index,
             ) = face.deconstruct();
 
             let vertex_a_entity = *vertices.get(vertex_a_index as usize).unwrap();
             let vertex_b_entity = *vertices.get(vertex_b_index as usize).unwrap();
             let vertex_c_entity = *vertices.get(vertex_c_index as usize).unwrap();
 
-            let edge_a_entity = *edges.get(edge_a_index as usize).unwrap();
-            let edge_b_entity = *edges.get(edge_b_index as usize).unwrap();
-            let edge_c_entity = *edges.get(edge_c_index as usize).unwrap();
-
             let mut face_component = Face3d::new();
             face_component.vertex_a.set(&server, &vertex_a_entity);
             face_component.vertex_b.set(&server, &vertex_b_entity);
             face_component.vertex_c.set(&server, &vertex_c_entity);
-            face_component.edge_a.set(&server, &edge_a_entity);
-            face_component.edge_b.set(&server, &edge_b_entity);
-            face_component.edge_c.set(&server, &edge_c_entity);
 
             let entity_id = commands
                 .spawn_empty()

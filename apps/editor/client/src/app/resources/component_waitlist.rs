@@ -31,10 +31,10 @@ pub enum ComponentWaitlistInsert {
     Vertex,
     VertexRoot,
     Edge(Entity, Entity),
-    // vertex_entity_a, vertex_entity_b, vertex_entity_c, edge_entity_a, edge_entity_b, edge_entity_c
-    Face(Entity, Entity, Entity, Entity, Entity, Entity),
-    // color_entity, vertex_entity_a, vertex_entity_b, vertex_entity_c, edge_entity_a, edge_entity_b, edge_entity_c
-    IconFace(Entity, Entity, Entity, Entity, Entity, Entity, Entity),
+    // vertex_entity_a, vertex_entity_b, vertex_entity_c
+    Face(Entity, Entity, Entity),
+    // color_entity, vertex_entity_a, vertex_entity_b, vertex_entity_c
+    IconFace(Entity, Entity, Entity, Entity),
     EdgeAngle(f32),
     NetTransform,
     SkinOrSceneEntity(Entity, NetTransformEntityType),
@@ -87,8 +87,8 @@ pub struct ComponentWaitlistEntry {
     vertex_parent: Option<Option<Entity>>,
     edge_entities: Option<(Entity, Entity)>,
     edge_angle: Option<f32>,
-    // Option<vertex a, vertex b, vertex c, edge a, edge b, edge c>
-    face_entities: Option<(Entity, Entity, Entity, Entity, Entity, Entity)>,
+    // Option<vertex a, vertex b, vertex c>
+    face_entities: Option<(Entity, Entity, Entity)>,
 
     skin_or_scene_entity: Option<(Entity, NetTransformEntityType)>,
     shape_name: Option<String>,
@@ -206,12 +206,9 @@ impl ComponentWaitlistEntry {
         vertex_a: Entity,
         vertex_b: Entity,
         vertex_c: Entity,
-        edge_a: Entity,
-        edge_b: Entity,
-        edge_c: Entity,
     ) {
         self.component_type = Some(ComponentType::Face);
-        self.face_entities = Some((vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c));
+        self.face_entities = Some((vertex_a, vertex_b, vertex_c));
     }
 
     fn set_icon_face(
@@ -220,12 +217,9 @@ impl ComponentWaitlistEntry {
         vertex_a: Entity,
         vertex_b: Entity,
         vertex_c: Entity,
-        edge_a: Entity,
-        edge_b: Entity,
-        edge_c: Entity,
     ) {
         self.component_type = Some(ComponentType::Face);
-        self.face_entities = Some((vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c));
+        self.face_entities = Some((vertex_a, vertex_b, vertex_c));
         self.icon_color_entity = Some(color_entity);
     }
 
@@ -264,7 +258,7 @@ impl ComponentWaitlistEntry {
                 ComponentData::Edge(entities.0, entities.1, None)
             }
             (FileExtension::Mesh, ComponentType::Face) => {
-                let (vertex_a, vertex_b, vertex_c, _, _, _) = self.face_entities.unwrap();
+                let (vertex_a, vertex_b, vertex_c) = self.face_entities.unwrap();
                 ComponentData::Face(vertex_a, vertex_b, vertex_c)
             }
             (FileExtension::Model, ComponentType::NetTransform) => {
@@ -281,7 +275,7 @@ impl ComponentWaitlistEntry {
                 ComponentData::IconEdge(self.icon_frame_entity.unwrap(), entities.0, entities.1)
             }
             (FileExtension::Icon, ComponentType::Face) => {
-                let (vertex_a, vertex_b, vertex_c, _, _, _) = self.face_entities.unwrap();
+                let (vertex_a, vertex_b, vertex_c) = self.face_entities.unwrap();
                 ComponentData::IconFace(
                     self.icon_frame_entity.unwrap(),
                     vertex_a,
@@ -418,28 +412,22 @@ impl ComponentWaitlist {
             ComponentWaitlistInsert::EdgeAngle(angle) => {
                 self.get_mut(&entity).unwrap().set_edge_angle(angle);
             }
-            ComponentWaitlistInsert::Face(vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c) => {
+            ComponentWaitlistInsert::Face(vertex_a, vertex_b, vertex_c) => {
                 self.get_mut(&entity)
                     .unwrap()
-                    .set_face(vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c);
+                    .set_face(vertex_a, vertex_b, vertex_c);
             }
             ComponentWaitlistInsert::IconFace(
                 color_entity,
                 vertex_a,
                 vertex_b,
                 vertex_c,
-                edge_a,
-                edge_b,
-                edge_c,
             ) => {
                 self.get_mut(&entity).unwrap().set_icon_face(
                     color_entity,
                     vertex_a,
                     vertex_b,
                     vertex_c,
-                    edge_a,
-                    edge_b,
-                    edge_c,
                 );
             }
             ComponentWaitlistInsert::SkinOrSceneEntity(
@@ -537,9 +525,6 @@ impl ComponentWaitlist {
                     let Some(vertex_manager) = vertex_manager_opt else {
                         panic!("vertex manager not available");
                     };
-                    let Some(edge_manager) = edge_manager_opt else {
-                        panic!("edge manager not available");
-                    };
                     let entities = entry.face_entities.unwrap();
 
                     let mut dependencies = Vec::new();
@@ -552,17 +537,6 @@ impl ComponentWaitlist {
                                 entity, vertex_3d_entity
                             );
                             dependencies.push(*vertex_3d_entity);
-                        }
-                    }
-
-                    for edge_3d_entity in [&entities.3, &entities.4, &entities.5] {
-                        if !edge_manager.has_edge_entity_3d(edge_3d_entity) {
-                            // need to put in parent waitlist
-                            info!(
-                                "face entity {:?} requires parent edge {:?}. putting in parent waitlist",
-                                entity, edge_3d_entity
-                            );
-                            dependencies.push(*edge_3d_entity);
                         }
                     }
 
@@ -619,17 +593,6 @@ impl ComponentWaitlist {
                                 entity, vertex_entity
                             );
                             dependencies.push(*vertex_entity);
-                        }
-                    }
-
-                    for edge_entity in [&entities.3, &entities.4, &entities.5] {
-                        if !icon_manager.has_edge_entity(edge_entity) {
-                            // need to put in parent waitlist
-                            info!(
-                                "face entity {:?} requires parent edge {:?}. putting in parent waitlist",
-                                entity, edge_entity
-                            );
-                            dependencies.push(*edge_entity);
                         }
                     }
 

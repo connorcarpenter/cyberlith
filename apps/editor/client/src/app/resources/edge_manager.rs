@@ -686,7 +686,6 @@ impl EdgeManager {
                         canvas,
                         input_manager,
                         vertex_manager,
-                        self,
                         &face_3d_key,
                     );
                     deleted_face_2d_entities.push(face_2d_entity);
@@ -739,14 +738,6 @@ impl EdgeManager {
             .unwrap()
             .faces_3d
             .insert(face_key);
-    }
-
-    pub(crate) fn edge_remove_face(&mut self, edge_3d_entity: &Entity, face_key: &FaceKey) {
-        self.edges_3d
-            .get_mut(edge_3d_entity)
-            .unwrap()
-            .faces_3d
-            .remove(face_key);
     }
 
     pub(crate) fn edge_get_endpoints(&self, edge_3d_entity: &Entity) -> (Entity, Entity) {

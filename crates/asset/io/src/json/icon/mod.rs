@@ -57,17 +57,27 @@ impl IconFileFrameEdge {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Deserialize, Serialize, Clone)]
 pub struct IconFileFrameFace {
     face_id: u16,
     color_id: u8,
     vertex_a: u16,
     vertex_b: u16,
     vertex_c: u16,
-    edge_a: u16,
-    edge_b: u16,
-    edge_c: u16,
 }
+
+// impl Serialize for IconFileFrameFace {
+//     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
+//         // 3 is the number of fields in the struct.
+//         let mut state = serializer.serialize_struct("IconFileFrameFace", 5)?;
+//         state.serialize_field("face_id", &self.face_id)?;
+//         state.serialize_field("color_id", &self.color_id)?;
+//         state.serialize_field("vertex_a", &self.vertex_a)?;
+//         state.serialize_field("vertex_b", &self.vertex_b)?;
+//         state.serialize_field("vertex_c", &self.vertex_c)?;
+//         state.end()
+//     }
+// }
 
 impl IconFileFrameFace {
     pub fn new(
@@ -76,9 +86,6 @@ impl IconFileFrameFace {
         vertex_a: u16,
         vertex_b: u16,
         vertex_c: u16,
-        edge_a: u16,
-        edge_b: u16,
-        edge_c: u16,
     ) -> Self {
         Self {
             face_id,
@@ -86,9 +93,6 @@ impl IconFileFrameFace {
             vertex_a,
             vertex_b,
             vertex_c,
-            edge_a,
-            edge_b,
-            edge_c,
         }
     }
 
@@ -110,18 +114,6 @@ impl IconFileFrameFace {
 
     pub fn vertex_c(&self) -> u16 {
         self.vertex_c
-    }
-
-    pub fn edge_a(&self) -> u16 {
-        self.edge_a
-    }
-
-    pub fn edge_b(&self) -> u16 {
-        self.edge_b
-    }
-
-    pub fn edge_c(&self) -> u16 {
-        self.edge_c
     }
 }
 
@@ -168,12 +160,9 @@ impl IconFileFrame {
         vertex_a: u16,
         vertex_b: u16,
         vertex_c: u16,
-        edge_a: u16,
-        edge_b: u16,
-        edge_c: u16,
     ) {
         self.faces.push(IconFileFrameFace::new(
-            face_id, color_id, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c,
+            face_id, color_id, vertex_a, vertex_b, vertex_c,
         ));
     }
 }

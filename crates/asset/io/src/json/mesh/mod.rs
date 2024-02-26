@@ -42,27 +42,33 @@ impl MeshDataEdge {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Deserialize, Serialize, Clone)]
 pub struct MeshDataFace {
     face_id: u16,
     vertex_a: u16,
     vertex_b: u16,
     vertex_c: u16,
-    edge_a: u16,
-    edge_b: u16,
-    edge_c: u16,
 }
 
+// impl Serialize for MeshDataFace {
+//     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
+//         // 3 is the number of fields in the struct.
+//         let mut state = serializer.serialize_struct("MeshDataFace", 4)?;
+//         state.serialize_field("face_id", &self.face_id)?;
+//         state.serialize_field("vertex_a", &self.vertex_a)?;
+//         state.serialize_field("vertex_b", &self.vertex_b)?;
+//         state.serialize_field("vertex_c", &self.vertex_c)?;
+//         state.end()
+//     }
+// }
+
 impl MeshDataFace {
-    pub fn deconstruct(&self) -> (u16, u16, u16, u16, u16, u16, u16) {
+    pub fn deconstruct(&self) -> (u16, u16, u16, u16) {
         (
             self.face_id,
             self.vertex_a,
             self.vertex_b,
             self.vertex_c,
-            self.edge_a,
-            self.edge_b,
-            self.edge_c,
         )
     }
 }
@@ -115,18 +121,12 @@ impl MeshData {
         vertex_a: u16,
         vertex_b: u16,
         vertex_c: u16,
-        edge_a: u16,
-        edge_b: u16,
-        edge_c: u16,
     ) {
         self.faces.push(MeshDataFace {
             face_id,
             vertex_a,
             vertex_b,
             vertex_c,
-            edge_a,
-            edge_b,
-            edge_c,
         });
     }
 }

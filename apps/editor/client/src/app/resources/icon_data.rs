@@ -83,10 +83,6 @@ pub struct IconFaceData {
 
     pub(crate) local_entity: Entity,
     pub(crate) net_entity: Option<Entity>,
-
-    pub(crate) edge_a: Entity,
-    pub(crate) edge_b: Entity,
-    pub(crate) edge_c: Entity,
 }
 
 impl IconFaceData {
@@ -94,19 +90,12 @@ impl IconFaceData {
         file_entity: Entity,
         frame_entity: Entity,
         local_entity: Entity,
-        edge_a: Entity,
-        edge_b: Entity,
-        edge_c: Entity,
     ) -> Self {
         Self {
             file_entity,
             frame_entity,
             local_entity,
             net_entity: None,
-
-            edge_a,
-            edge_b,
-            edge_c,
         }
     }
 }

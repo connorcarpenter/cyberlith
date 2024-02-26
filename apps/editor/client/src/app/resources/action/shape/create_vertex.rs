@@ -265,11 +265,6 @@ pub(crate) fn execute(
                         &mut camera_manager,
                         &transform_q,
                         &face_key,
-                        [
-                            edge_3d_entities[0],
-                            edge_3d_entities[1],
-                            edge_3d_entities[2],
-                        ],
                         tab_file_entity,
                     );
                 }

@@ -120,27 +120,17 @@ pub struct FaceData {
     pub(crate) entity_3d: Option<Entity>,
     pub(crate) entity_2d: Entity,
     pub(crate) file_entity: Entity,
-
-    pub(crate) edge_3d_a: Entity,
-    pub(crate) edge_3d_b: Entity,
-    pub(crate) edge_3d_c: Entity,
 }
 
 impl FaceData {
     pub fn new(
         entity_2d: Entity,
         file_entity: Entity,
-        edge_3d_a: Entity,
-        edge_3d_b: Entity,
-        edge_3d_c: Entity,
     ) -> Self {
         Self {
             entity_2d,
             entity_3d: None,
             file_entity,
-            edge_3d_a,
-            edge_3d_b,
-            edge_3d_c,
         }
     }
 }

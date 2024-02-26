@@ -277,9 +277,6 @@ impl FaceManager {
             Some(FaceData::new(
                 entity_2d,
                 file_entity,
-                edge_entities[0],
-                edge_entities[1],
-                edge_entities[2],
             )),
         );
         self.faces_2d.insert(entity_2d, *face_key);
@@ -320,11 +317,6 @@ impl FaceManager {
             &camera_manager,
             &transform_q,
             &face_3d_key,
-            [
-                face_3d_data.edge_3d_a,
-                face_3d_data.edge_3d_b,
-                face_3d_data.edge_3d_c,
-            ],
             face_3d_data.file_entity,
         );
 
@@ -340,7 +332,6 @@ impl FaceManager {
         camera_manager: &CameraManager,
         transform_q: &Query<&Transform>,
         face_key: &FaceKey,
-        edge_3d_entities: [Entity; 3],
         file_entity: Entity,
     ) {
         // get 3d vertex entities & positions
@@ -382,9 +373,6 @@ impl FaceManager {
         face_3d_component
             .vertex_c
             .set(client, &vertex_3d_entities[2]);
-        face_3d_component.edge_a.set(client, &edge_3d_entities[0]);
-        face_3d_component.edge_b.set(client, &edge_3d_entities[1]);
-        face_3d_component.edge_c.set(client, &edge_3d_entities[2]);
 
         // get owned_by_file component
         let mut owned_by_file_component = OwnedByFile::new();
@@ -480,11 +468,10 @@ impl FaceManager {
         canvas: &mut Canvas,
         input_manager: &mut InputManager,
         vertex_manager: &mut VertexManager,
-        edge_manager: &mut EdgeManager,
         face_key: &FaceKey,
     ) -> Entity {
         // unregister face
-        let Some(face_2d_entity) = self.unregister_face_key(vertex_manager, edge_manager, face_key)
+        let Some(face_2d_entity) = self.unregister_face_key(vertex_manager, face_key)
         else {
             panic!(
                 "FaceKey: `{:?}` has no corresponding Face2d entity",
@@ -555,7 +542,6 @@ impl FaceManager {
     fn unregister_face_key(
         &mut self,
         vertex_manager: &mut VertexManager,
-        edge_manager: &mut EdgeManager,
         face_key: &FaceKey,
     ) -> Option<Entity> {
         info!("unregistering face key: `{:?}`", face_key);
@@ -570,15 +556,6 @@ impl FaceManager {
                 face_key.vertex_3d_c,
             ] {
                 vertex_manager.vertex_remove_face(&vertex_3d_entity, face_key);
-            }
-
-            // remove face from edges
-            for edge_3d_entity in [
-                face_3d_data.edge_3d_a,
-                face_3d_data.edge_3d_b,
-                face_3d_data.edge_3d_c,
-            ] {
-                edge_manager.edge_remove_face(&edge_3d_entity, face_key);
             }
 
             return Some(entity_2d);

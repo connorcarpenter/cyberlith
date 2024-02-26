@@ -37,7 +37,7 @@ struct IconFrameActionData {
     edge_count: usize,
     vertex_map: HashMap<Entity, usize>,
     edge_map: HashMap<Entity, usize>,
-    face_list: Vec<Option<(u16, u8, u16, u16, u16, u16, u16, u16)>>,
+    face_list: Vec<Option<(u16, u8, u16, u16, u16)>>,
     frame: IconFileFrame,
 }
 
@@ -79,16 +79,10 @@ impl IconFrameActionData {
         vertex_a_entity: Entity,
         vertex_b_entity: Entity,
         vertex_c_entity: Entity,
-        edge_a_entity: Entity,
-        edge_b_entity: Entity,
-        edge_c_entity: Entity,
     ) {
         let vertex_a_id = *self.vertex_map.get(&vertex_a_entity).unwrap();
         let vertex_b_id = *self.vertex_map.get(&vertex_b_entity).unwrap();
         let vertex_c_id = *self.vertex_map.get(&vertex_c_entity).unwrap();
-        let edge_a_id = *self.edge_map.get(&edge_a_entity).unwrap();
-        let edge_b_id = *self.edge_map.get(&edge_b_entity).unwrap();
-        let edge_c_id = *self.edge_map.get(&edge_c_entity).unwrap();
 
         let face_info = (
             face_index,
@@ -96,9 +90,6 @@ impl IconFrameActionData {
             vertex_a_id as u16,
             vertex_b_id as u16,
             vertex_c_id as u16,
-            edge_a_id as u16,
-            edge_b_id as u16,
-            edge_c_id as u16,
         );
         if face_index as usize >= self.face_list.len() {
             self.face_list.resize((face_index + 1) as usize, None);
@@ -112,13 +103,13 @@ impl IconFrameActionData {
         info!("writing face list: {:?}", face_list);
 
         for face_info_opt in face_list {
-            let Some((face_id, color_id, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c)) =
+            let Some((face_id, color_id, vertex_a, vertex_b, vertex_c)) =
                 face_info_opt
             else {
                 panic!("face_list contains None");
             };
             self.frame.add_face(
-                face_id, color_id, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c,
+                face_id, color_id, vertex_a, vertex_b, vertex_c,
             );
         }
     }
@@ -269,9 +260,6 @@ impl IconWriter {
             let vertex_a_entity = face.vertex_a.get(&server).unwrap();
             let vertex_b_entity = face.vertex_b.get(&server).unwrap();
             let vertex_c_entity = face.vertex_c.get(&server).unwrap();
-            let edge_a_entity = face.edge_a.get(&server).unwrap();
-            let edge_b_entity = face.edge_b.get(&server).unwrap();
-            let edge_c_entity = face.edge_c.get(&server).unwrap();
 
             frame_action_data.add_face(
                 face_index as u16,
@@ -279,9 +267,6 @@ impl IconWriter {
                 vertex_a_entity,
                 vertex_b_entity,
                 vertex_c_entity,
-                edge_a_entity,
-                edge_b_entity,
-                edge_c_entity,
             );
         }
 
@@ -443,18 +428,11 @@ impl IconReader {
                 let vertex_b_entity = *vertices.get(face.vertex_b() as usize).unwrap();
                 let vertex_c_entity = *vertices.get(face.vertex_c() as usize).unwrap();
 
-                let edge_a_entity = *edges.get(face.edge_a() as usize).unwrap();
-                let edge_b_entity = *edges.get(face.edge_b() as usize).unwrap();
-                let edge_c_entity = *edges.get(face.edge_c() as usize).unwrap();
-
                 let mut face_component = IconFace::new();
                 face_component.frame_entity.set(&server, &frame_entity);
                 face_component.vertex_a.set(&server, &vertex_a_entity);
                 face_component.vertex_b.set(&server, &vertex_b_entity);
                 face_component.vertex_c.set(&server, &vertex_c_entity);
-                face_component.edge_a.set(&server, &edge_a_entity);
-                face_component.edge_b.set(&server, &edge_b_entity);
-                face_component.edge_c.set(&server, &edge_c_entity);
 
                 let entity_id = commands
                     .spawn_empty()

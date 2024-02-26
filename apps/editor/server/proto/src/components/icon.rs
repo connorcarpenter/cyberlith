@@ -85,9 +85,6 @@ pub struct IconFace {
     pub vertex_a: EntityProperty,
     pub vertex_b: EntityProperty,
     pub vertex_c: EntityProperty,
-    pub edge_a: EntityProperty,
-    pub edge_b: EntityProperty,
-    pub edge_c: EntityProperty,
 }
 
 impl IconFace {

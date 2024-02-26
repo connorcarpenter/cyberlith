@@ -474,27 +474,6 @@ pub fn insert_face_events(
             );
             continue;
         };
-        let Some(edge_a_entity) = face_3d.edge_a.get(&client) else {
-            warn!(
-                "Face3d component of entity: `{:?}` has no edge a entity",
-                face_entity
-            );
-            continue;
-        };
-        let Some(edge_b_entity) = face_3d.edge_b.get(&client) else {
-            warn!(
-                "Face3d component of entity: `{:?}` has no edge b entity",
-                face_entity
-            );
-            continue;
-        };
-        let Some(edge_c_entity) = face_3d.edge_c.get(&client) else {
-            warn!(
-                "Face3d component of entity: `{:?}` has no edge c entity",
-                face_entity
-            );
-            continue;
-        };
 
         component_waitlist.process_inserts(
             &mut commands,
@@ -515,9 +494,6 @@ pub fn insert_face_events(
                     vertex_a_entity,
                     vertex_b_entity,
                     vertex_c_entity,
-                    edge_a_entity,
-                    edge_b_entity,
-                    edge_c_entity,
                 ),
                 ComponentWaitlistInsert::FileType(FileExtension::Mesh),
             ],
@@ -683,27 +659,6 @@ pub fn insert_icon_face_events(
             );
             continue;
         };
-        let Some(edge_a_entity) = face.edge_a.get(&client) else {
-            warn!(
-                "IconFace component of entity: `{:?}` has no edge a entity",
-                face_entity
-            );
-            continue;
-        };
-        let Some(edge_b_entity) = face.edge_b.get(&client) else {
-            warn!(
-                "IconFace component of entity: `{:?}` has no edge b entity",
-                face_entity
-            );
-            continue;
-        };
-        let Some(edge_c_entity) = face.edge_c.get(&client) else {
-            warn!(
-                "IconFace component of entity: `{:?}` has no edge c entity",
-                face_entity
-            );
-            continue;
-        };
 
         component_waitlist.process_inserts(
             &mut commands,
@@ -725,9 +680,6 @@ pub fn insert_icon_face_events(
                     vertex_a_entity,
                     vertex_b_entity,
                     vertex_c_entity,
-                    edge_a_entity,
-                    edge_b_entity,
-                    edge_c_entity,
                 ),
                 ComponentWaitlistInsert::FileType(FileExtension::Icon),
                 ComponentWaitlistInsert::FrameEntity(frame_entity),

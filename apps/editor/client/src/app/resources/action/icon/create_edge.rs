@@ -161,7 +161,6 @@ pub(crate) fn execute(
                         &mut materials,
                         &transform_q,
                         &face_key,
-                        [edge_entities[0], edge_entities[1], edge_entities[2]],
                         &current_file_entity,
                         &frame_entity,
                         &palette_color_entity,
