@@ -1505,6 +1505,14 @@ impl IconManager {
             .insert(face_key);
     }
 
+    fn edge_remove_face(&mut self, edge_entity: &Entity, face_key: &IconFaceKey) {
+        self.edges
+            .get_mut(edge_entity)
+            .unwrap()
+            .faces
+            .remove(face_key);
+    }
+
     fn edge_get_endpoints(&self, edge_entity: &Entity) -> (Entity, Entity) {
         let edge_data = self.edges.get(edge_entity).unwrap();
         (edge_data.vertex_entity_a, edge_data.vertex_entity_b)
@@ -1515,6 +1523,12 @@ impl IconManager {
             // remove edge from vertices
             for vertex_entity in [edge_data.vertex_entity_a, edge_data.vertex_entity_b] {
                 self.vertex_remove_edge(&vertex_entity, edge_entity);
+            }
+
+            // remove edge from faces
+            for face_key in edge_data.faces {
+                let face_data = self.face_keys.get_mut(&face_key).unwrap().as_mut().unwrap();
+                face_data.remove_edge(edge_entity);
             }
         }
     }
@@ -1605,6 +1619,12 @@ impl IconManager {
             self.vertex_add_face(vertex_entity, *face_key)
         }
 
+        let mut face_data = IconFaceData::new(
+            *file_entity,
+            *frame_entity,
+            new_entity,
+        );
+
         // add face to edge data
         let mut edge_entities = Vec::new();
         for (vert_a, vert_b) in [
@@ -1626,6 +1646,7 @@ impl IconManager {
 
             if let Some(edge_entity) = found_edge {
                 self.edge_add_face(&edge_entity, *face_key);
+                face_data.add_edge(edge_entity);
 
                 edge_entities.push(edge_entity);
             }
@@ -1634,11 +1655,7 @@ impl IconManager {
         // register face data
         self.face_keys.insert(
             *face_key,
-            Some(IconFaceData::new(
-                *file_entity,
-                *frame_entity,
-                new_entity,
-            )),
+            Some(face_data),
         );
         self.local_faces.insert(new_entity, *face_key);
 
@@ -1907,6 +1924,11 @@ impl IconManager {
             // remove face from vertices
             for vertex_entity in [face_key.vertex_a, face_key.vertex_b, face_key.vertex_c] {
                 self.vertex_remove_face(&vertex_entity, face_key);
+            }
+
+            // remove face from edges
+            for edge_entity in face_data.get_edges() {
+                self.edge_remove_face(&edge_entity, face_key);
             }
 
             return Some(local_entity);

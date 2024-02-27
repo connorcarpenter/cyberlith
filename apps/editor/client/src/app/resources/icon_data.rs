@@ -83,6 +83,8 @@ pub struct IconFaceData {
 
     pub(crate) local_entity: Entity,
     pub(crate) net_entity: Option<Entity>,
+
+    edges: HashSet<Entity>,
 }
 
 impl IconFaceData {
@@ -96,6 +98,19 @@ impl IconFaceData {
             frame_entity,
             local_entity,
             net_entity: None,
+            edges: HashSet::new(),
         }
+    }
+
+    pub fn add_edge(&mut self, edge_entity: Entity) {
+        self.edges.insert(edge_entity);
+    }
+
+    pub fn remove_edge(&mut self, edge_entity: &Entity) {
+        self.edges.remove(edge_entity);
+    }
+
+    pub fn get_edges(&self) -> &HashSet<Entity> {
+        &self.edges
     }
 }

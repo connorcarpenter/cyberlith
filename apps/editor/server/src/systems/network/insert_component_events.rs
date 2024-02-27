@@ -231,7 +231,7 @@ pub fn insert_vertex_component_events(
             &mut Some(&mut shape_manager),
             &mut None,
             &entity,
-            ComponentWaitlistInsert::Vertex,
+            ComponentWaitlistInsert::Vertex(None),
         );
     }
 
@@ -277,7 +277,7 @@ pub fn insert_edge_component_events(
             &mut Some(&mut shape_manager),
             &mut None,
             &edge_entity,
-            ComponentWaitlistInsert::Edge(start_entity, end_entity),
+            ComponentWaitlistInsert::Edge(None, start_entity, end_entity),
         );
     }
 }
@@ -443,6 +443,7 @@ pub fn insert_icon_component_events(
     mut icon_manager: ResMut<IconManager>,
 
     key_q: Query<&FileKey>,
+    vertex_q: Query<&IconVertex>,
     edge_q: Query<&IconEdge>,
     face_q: Query<&IconFace>,
     mut frame_q: Query<&mut IconFrame>,
@@ -452,6 +453,9 @@ pub fn insert_icon_component_events(
         let entity = event.entity;
         info!("entity: `{:?}`, inserted IconVertex", entity);
 
+        let vertex = vertex_q.get(entity).unwrap();
+        let frame_entity = vertex.frame_entity.get(&server).unwrap();
+
         component_waitlist.process_inserts(
             &mut server,
             &mut git_manager,
@@ -459,7 +463,7 @@ pub fn insert_icon_component_events(
             &mut Some(&mut icon_manager),
             &entity,
             &[
-                ComponentWaitlistInsert::Vertex,
+                ComponentWaitlistInsert::Vertex(Some(frame_entity)),
                 ComponentWaitlistInsert::FileType(FileExtension::Icon),
             ],
         );
@@ -471,6 +475,7 @@ pub fn insert_icon_component_events(
         info!("entity: `{:?}`, inserted IconEdge", entity);
 
         let edge = edge_q.get(entity).unwrap();
+        let frame_entity = edge.frame_entity.get(&server).unwrap();
         let Some(start_entity) = edge.start.get(&server) else {
             panic!("no parent entity!")
         };
@@ -484,7 +489,7 @@ pub fn insert_icon_component_events(
             &mut Some(&mut icon_manager),
             &entity,
             &[
-                ComponentWaitlistInsert::Edge(start_entity, end_entity),
+                ComponentWaitlistInsert::Edge(Some(frame_entity), start_entity, end_entity),
                 ComponentWaitlistInsert::FileType(FileExtension::Icon),
             ],
         );

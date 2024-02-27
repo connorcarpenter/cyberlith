@@ -11,14 +11,16 @@ use naia_bevy_server::{CommandsExt, Server};
 use editor_proto::components::IconFrame;
 
 pub struct IconVertexData {
+    frame_entity: Entity,
     edges: HashSet<Entity>,
     // faces
     faces: HashSet<Entity>,
 }
 
 impl IconVertexData {
-    fn new() -> Self {
+    fn new(frame_entity: Entity) -> Self {
         Self {
+            frame_entity,
             edges: HashSet::new(),
             faces: HashSet::new(),
         }
@@ -43,13 +45,15 @@ impl IconVertexData {
 }
 
 pub struct IconEdgeData {
+    frame_entity: Entity,
     vertex_a: Entity,
     vertex_b: Entity,
 }
 
 impl IconEdgeData {
-    pub fn new(start: Entity, end: Entity) -> Self {
+    pub fn new(frame_entity: Entity, start: Entity, end: Entity) -> Self {
         Self {
+            frame_entity,
             vertex_a: start,
             vertex_b: end,
         }
@@ -83,14 +87,14 @@ impl IconFaceData {
 }
 
 pub struct FileFrameData {
-    frames: HashSet<Entity>,
+    frames: HashMap<Entity, FrameData>,
     frame_list: Vec<Option<Entity>>,
 }
 
 impl FileFrameData {
     fn new() -> Self {
         Self {
-            frames: HashSet::new(),
+            frames: HashMap::new(),
             frame_list: Vec::new(),
         }
     }
@@ -107,7 +111,7 @@ impl FileFrameData {
         }
         info!("- op -");
 
-        self.frames.insert(frame_entity);
+        self.frames.insert(frame_entity, FrameData::new());
 
         // add to frame_list
         if frame_order >= self.frame_list.len() {
@@ -143,8 +147,10 @@ impl FileFrameData {
         &mut self,
         frame_entity: &Entity,
         frame_q_opt: Option<&mut Query<&mut IconFrame>>,
-    ) {
-        self.frames.remove(frame_entity);
+    ) -> Option<FrameData> {
+        let Some(frame_data) = self.frames.remove(frame_entity) else {
+            panic!("frame data not found");
+        };
 
         let frame_order = {
             let mut frame_order_opt = None;
@@ -173,6 +179,90 @@ impl FileFrameData {
 
             self.frame_list.truncate(self.frame_list.len() - 1);
         }
+
+        Some(frame_data)
+    }
+
+    fn add_vertex(&mut self, frame_entity: Entity, shape_entity: Entity) {
+        let Some(frame_data) = self.frames.get_mut(&frame_entity) else {
+            panic!("frame entity not found");
+        };
+        frame_data.add_vertex(shape_entity);
+    }
+
+    fn remove_vertex(&mut self, frame_entity: &Entity, shape_entity: &Entity) {
+        let Some(frame_data) = self.frames.get_mut(&frame_entity) else {
+            panic!("frame entity not found");
+        };
+        frame_data.remove_vertex(shape_entity);
+    }
+
+    fn add_edge(&mut self, frame_entity: Entity, shape_entity: Entity) {
+        let Some(frame_data) = self.frames.get_mut(&frame_entity) else {
+            panic!("frame entity not found");
+        };
+        frame_data.add_edge(shape_entity);
+    }
+
+    fn remove_edge(&mut self, frame_entity: &Entity, edge_entity: &Entity) {
+        let Some(frame_data) = self.frames.get_mut(&frame_entity) else {
+            panic!("frame entity not found");
+        };
+        frame_data.remove_edge(edge_entity);
+    }
+
+    fn add_face(&mut self, frame_entity: Entity, face_entity: Entity) {
+        let Some(frame_data) = self.frames.get_mut(&frame_entity) else {
+            panic!("frame entity not found");
+        };
+        frame_data.add_face(face_entity);
+    }
+
+    fn remove_face(&mut self, frame_entity: &Entity, shape_entity: &Entity) {
+        let Some(frame_data) = self.frames.get_mut(&frame_entity) else {
+            panic!("frame entity not found");
+        };
+        frame_data.remove_face(shape_entity);
+    }
+}
+
+pub struct FrameData {
+    vertices: HashSet<Entity>,
+    edges: HashSet<Entity>,
+    faces: HashSet<Entity>,
+}
+
+impl FrameData {
+    fn new() -> Self {
+        Self {
+            vertices: HashSet::new(),
+            edges: HashSet::new(),
+            faces: HashSet::new(),
+        }
+    }
+
+    fn add_vertex(&mut self, entity: Entity) {
+        self.vertices.insert(entity);
+    }
+
+    fn remove_vertex(&mut self, entity: &Entity) {
+        self.vertices.remove(entity);
+    }
+
+    fn add_edge(&mut self, entity: Entity) {
+        self.edges.insert(entity);
+    }
+
+    fn remove_edge(&mut self, entity: &Entity) {
+        self.edges.remove(entity);
+    }
+
+    fn add_face(&mut self, entity: Entity) {
+        self.faces.insert(entity);
+    }
+
+    fn remove_face(&mut self, entity: &Entity) {
+        self.faces.remove(entity);
     }
 }
 
@@ -230,23 +320,42 @@ impl IconManager {
         }
     }
 
-    pub fn on_create_vertex(&mut self, vertex_entity: Entity) {
+    pub fn on_create_vertex(&mut self, frame_entity: Entity, vertex_entity: Entity) {
         // info!("on_create_vertex: {:?} {:?}", entity, parent_opt);
 
-        info!("inserting icon vert entity: `{:?}`", vertex_entity,);
+        info!("inserting icon vert entity: `{:?}`", vertex_entity);
 
-        self.vertices.insert(vertex_entity, IconVertexData::new());
+        let Some(file_entity) = self.frames.get(&frame_entity) else {
+            panic!("frame entity not found");
+        };
+
+        let Some(file_frame_data) = self.file_frame_data.get_mut(&file_entity) else {
+            panic!("frame entity not found for file");
+        };
+        file_frame_data.add_vertex(frame_entity, vertex_entity);
+
+        self.vertices.insert(vertex_entity, IconVertexData::new(frame_entity));
     }
 
     pub fn on_create_edge(
         &mut self,
+        frame_entity: Entity,
         start_vertex_entity: Entity,
         edge_entity: Entity,
         end_vertex_entity: Entity,
     ) {
+        let Some(file_entity) = self.frames.get(&frame_entity) else {
+            panic!("frame entity not found");
+        };
+
+        let Some(file_frame_data) = self.file_frame_data.get_mut(&file_entity) else {
+            panic!("frame entity not found for file");
+        };
+        file_frame_data.add_edge(frame_entity, edge_entity);
+
         self.edges.insert(
             edge_entity,
-            IconEdgeData::new(start_vertex_entity, end_vertex_entity),
+            IconEdgeData::new(frame_entity, start_vertex_entity, end_vertex_entity),
         );
 
         for vertex_entity in [start_vertex_entity, end_vertex_entity] {
@@ -269,6 +378,15 @@ impl IconManager {
         vertex_b: Entity,
         vertex_c: Entity,
     ) {
+        let Some(file_entity) = self.frames.get(frame_entity) else {
+            panic!("frame entity not found");
+        };
+
+        let Some(file_frame_data) = self.file_frame_data.get_mut(&file_entity) else {
+            panic!("frame entity not found for file");
+        };
+        file_frame_data.add_face(*frame_entity, face_entity);
+
         // assign index
         let face_index = self.assign_index_to_new_face(frame_entity, old_index_opt, &face_entity);
 
@@ -310,17 +428,40 @@ impl IconManager {
 
     pub fn on_despawn_frame(
         &mut self,
+        commands: &mut Commands,
+        server: &mut Server,
         frame_entity: &Entity,
         frame_q_opt: Option<&mut Query<&mut IconFrame>>,
     ) {
-        self.deregister_frame(frame_entity, frame_q_opt);
+        let frame_data = self.deregister_frame(frame_entity, frame_q_opt).unwrap();
+        for vertex_entity in frame_data.vertices {
+            commands
+                .entity(vertex_entity)
+                .take_authority(server)
+                .despawn();
+            self.deregister_vertex(&vertex_entity);
+        }
+        for edge_entity in frame_data.edges {
+            commands
+                .entity(edge_entity)
+                .take_authority(server)
+                .despawn();
+            self.deregister_edge(&edge_entity);
+        }
+        for face_entity in frame_data.faces {
+            commands
+                .entity(face_entity)
+                .take_authority(server)
+                .despawn();
+            self.deregister_face(&face_entity);
+        }
     }
 
     pub fn deregister_frame(
         &mut self,
         frame_entity: &Entity,
         frame_q_opt: Option<&mut Query<&mut IconFrame>>,
-    ) {
+    ) -> Option<FrameData> {
         let Some(file_entity) = self.frames.remove(frame_entity) else {
             panic!("frame entity not found");
         };
@@ -367,18 +508,53 @@ impl IconManager {
         new_index
     }
 
-    pub fn deregister_vertex(&mut self, vertex_entity: &Entity) -> Option<IconVertexData> {
-        self.vertices.remove(vertex_entity)
+    pub fn deregister_vertex(&mut self, vertex_entity: &Entity) -> IconVertexData {
+        let Some(vert_data) = self.vertices.remove(vertex_entity) else {
+            panic!("vertex entity not found");
+        };
+
+        let frame_entity = vert_data.frame_entity;
+        if let Some(file_entity) = self.frames.get(&frame_entity) {
+            if let Some(frame_data) = self.file_frame_data.get_mut(&file_entity) {
+                frame_data.remove_vertex(&frame_entity, vertex_entity);
+            }
+        }
+
+        vert_data
     }
 
-    pub fn deregister_edge(&mut self, edge_entity: &Entity) -> Option<IconEdgeData> {
-        self.edges.remove(edge_entity)
+    pub fn deregister_edge(&mut self, edge_entity: &Entity) -> IconEdgeData {
+        let Some(edge_data) = self.edges.remove(edge_entity) else {
+            panic!("edge entity not found");
+        };
+
+        let frame_entity = edge_data.frame_entity;
+        if let Some(file_entity) = self.frames.get(&frame_entity) {
+            if let Some(frame_data) = self.file_frame_data.get_mut(&file_entity) {
+                frame_data.remove_edge(&frame_entity, edge_entity);
+            }
+        }
+
+        for vertex_entity in [edge_data.vertex_a, edge_data.vertex_b] {
+            if let Some(data) = self.vertices.get_mut(&vertex_entity) {
+                data.remove_edge(edge_entity);
+            }
+        }
+
+        edge_data
     }
 
     pub fn deregister_face(&mut self, face_entity: &Entity) -> Option<IconFaceData> {
         let Some(face_data) = self.faces.remove(face_entity) else {
             return None;
         };
+
+        let frame_entity = face_data.frame_entity;
+        if let Some(file_entity) = self.frames.get(&frame_entity) {
+            if let Some(frame_data) = self.file_frame_data.get_mut(&file_entity) {
+                frame_data.remove_face(&frame_entity, face_entity);
+            }
+        }
 
         // remove face from file face list
         let frame_entity = face_data.frame_entity;
@@ -432,13 +608,7 @@ impl IconManager {
     }
 
     pub fn on_client_despawn_edge(&mut self, edge_entity: &Entity) {
-        let Some(edge_data) = self.deregister_edge(edge_entity) else {
-            warn!(
-                "edge entity `{:?}` not found, perhaps was already despawned?",
-                edge_entity
-            );
-            return;
-        };
+        let edge_data = self.deregister_edge(edge_entity);
 
         for vertex_entity in [edge_data.vertex_a, edge_data.vertex_b] {
             if let Some(data) = self.vertices.get_mut(&vertex_entity) {
