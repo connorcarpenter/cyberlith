@@ -27,9 +27,12 @@ pub fn execute(
         file_entity, current_frame_index, next_frame_index
     );
 
-    let mut system_state: SystemState<(Commands, Client<Main>, Query<&mut IconFrame>)> =
-        SystemState::new(world);
-    let (mut commands, mut client, mut frame_q) = system_state.get_mut(world);
+    let mut system_state: SystemState<(
+        Commands,
+        Client<Main>,
+        Query<&mut IconFrame>
+    )> = SystemState::new(world);
+    let (mut commands, client, mut frame_q) = system_state.get_mut(world);
 
     // get current frame entity
     let Some(current_frame_entity) =
@@ -42,17 +45,7 @@ pub fn execute(
         return vec![];
     };
 
-    // get next frame entity
-    let Some(next_frame_entity) = icon_manager.get_frame_entity(&file_entity, next_frame_index)
-    else {
-        warn!(
-            "Failed to get frame entity for file `{:?}` and frame index `{:?}`!",
-            file_entity, next_frame_index
-        );
-        return vec![];
-    };
-
-    // request authority for current frame entity
+    // check authority for current frame entity, should already have it
     if let Some(auth) = commands.entity(current_frame_entity).authority(&client) {
         if !auth.is_requested() && !auth.is_granted() {
             warn!(
@@ -64,43 +57,10 @@ pub fn execute(
         // should already have authority
     }
 
-    // request authority for next frame entity
-    if let Some(auth) = commands.entity(next_frame_entity).authority(&client) {
-        if auth.is_denied() {
-            warn!(
-                "Auth for next frame entity `{:?}` is denied!",
-                next_frame_entity
-            );
-            return vec![];
-        }
-        if auth.is_available() || auth.is_releasing() {
-            commands
-                .entity(next_frame_entity)
-                .request_authority(&mut client);
-        }
-    }
-
-    // get next frame order index
-    let Ok(next_frame) = frame_q.get(next_frame_entity) else {
-        panic!(
-            "Failed to get AnimFrame for frame entity {:?}!",
-            next_frame_entity
-        );
-    };
-    let next_frame_order = next_frame.get_order();
-
-    // check that 'next_frame_order' is equal to 'next_frame_index'
-    if (next_frame_order as usize) != next_frame_index {
-        panic!(
-            "Expected next_frame_order to be equal to next_frame_index, but got {:?} != {:?}",
-            next_frame_order, next_frame_index
-        );
-    }
-
     // change current frame to next frame order index
     let Ok(mut current_frame) = frame_q.get_mut(current_frame_entity) else {
         panic!(
-            "Failed to get AnimFrame for frame entity {:?}!",
+            "Failed to get IconFrame for frame entity {:?}!",
             current_frame_entity
         );
     };
@@ -116,25 +76,11 @@ pub fn execute(
     }
 
     // set current frame order to next frame order
-    current_frame.set_order(next_frame_order);
-
-    // get next frame
-    let Ok(mut next_frame) = frame_q.get_mut(next_frame_entity) else {
-        panic!(
-            "Failed to get AnimFrame for frame entity {:?}!",
-            next_frame_entity
-        );
-    };
-
-    // set next frame order to previous order
-    next_frame.set_order(current_frame_order);
+    info!("setting IconFrame(entity: {:?}).order to {:?} ... (previously was {:?})", current_frame_entity, next_frame_index, current_frame_order);
+    current_frame.set_order(next_frame_index as u8);
 
     icon_manager.set_current_frame_index(next_frame_index);
     icon_manager.framing_queue_resync_frame_order(&file_entity);
-
-    commands
-        .entity(next_frame_entity)
-        .release_authority(&mut client);
 
     system_state.apply(world);
 

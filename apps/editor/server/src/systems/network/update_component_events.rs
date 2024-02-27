@@ -2,7 +2,7 @@ use bevy_ecs::{
     event::EventReader,
     system::{Commands, Query, Res, ResMut},
 };
-use bevy_log::info;
+use bevy_log::{info, warn};
 
 use naia_bevy_server::{events::UpdateComponentEvents, CommandsExt, EntityAuthStatus, Server};
 
@@ -12,15 +12,17 @@ use editor_proto::components::{
     Vertex3d,
 };
 
-use crate::resources::{GitManager, UserManager};
+use crate::resources::{GitManager, IconManager, UserManager};
 
 pub fn update_component_events(
     mut commands: Commands,
     mut server: Server,
     mut git_manager: ResMut<GitManager>,
     user_manager: Res<UserManager>,
+    mut icon_manager: ResMut<IconManager>,
     mut event_reader: EventReader<UpdateComponentEvents>,
     shape_name_q: Query<&ShapeName>,
+    mut icon_frame_q: Query<&mut IconFrame>,
 ) {
     let mut modified_content_entities = Vec::new();
     for events in event_reader.read() {
@@ -53,6 +55,41 @@ pub fn update_component_events(
         }
         // on IconFrame Update Event
         for (_, entity) in events.read::<IconFrame>() {
+
+            let Ok(frame) = icon_frame_q.get(entity) else {
+                panic!("icon frame not found");
+            };
+            let updated_file_entity = frame.file_entity.get(&server).unwrap();
+            let updated_frame_order = frame.get_order();
+            icon_manager.update_frame_order(&updated_file_entity, &entity, updated_frame_order, &mut icon_frame_q);
+
+            info!("---");
+
+            let mut frame_list = Vec::new();
+
+            for frame in icon_frame_q.iter() {
+                let frames_file_entity = frame.file_entity.get(&server).unwrap();
+                if frames_file_entity != updated_file_entity {
+                    continue;
+                }
+                let frame_index = frame.get_order() as usize;
+                let frame_entity = icon_manager.get_frame_at_index(&frames_file_entity, frame_index).unwrap();
+                // resize if necessary
+                if frame_index >= frame_list.len() {
+                    frame_list.resize(frame_index + 1, None);
+                }
+                if frame_list[frame_index].is_some() {
+                    warn!("Duplicate frame order! {:?}", frame_index);
+                }
+                frame_list[frame_index] = Some(frame_entity);
+            }
+
+            for (index, frame_entity_opt) in frame_list.iter().enumerate() {
+                info!("frame order: {:?} -> {:?}", index, frame_entity_opt);
+            }
+
+            info!("---");
+
             modified_content_entities.push(entity);
         }
         // on EdgeAngle Update Event

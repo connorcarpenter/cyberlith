@@ -111,7 +111,7 @@ impl FileFrameData {
         }
         info!("- op -");
 
-        self.frames.insert(frame_entity, FrameData::new());
+        self.frames.insert(frame_entity, FrameData::new(frame_order as u8));
 
         // add to frame_list
         if frame_order >= self.frame_list.len() {
@@ -129,10 +129,15 @@ impl FileFrameData {
             for i in frame_order + 1..self.frame_list.len() {
                 // update frame_order in AnimFrame using frame_q_opt
                 if let Some(frame_q) = frame_q_opt.as_mut() {
-                    let Ok(mut frame) = frame_q.get_mut(self.frame_list[i].unwrap()) else {
+                    let entity = self.frame_list[i].unwrap();
+                    let Ok(mut frame) = frame_q.get_mut(entity) else {
                         panic!("frame not found");
                     };
                     frame.set_order(i as u8);
+                    let Some(frame_data) = self.frames.get_mut(&entity) else {
+                        panic!("frame data not found");
+                    };
+                    frame_data.order = i as u8;
                 }
             }
         }
@@ -172,15 +177,45 @@ impl FileFrameData {
                 self.frame_list[i] = self.frame_list[i + 1];
 
                 // update frame_order in IconFrame using frame_q_opt
-                if let Ok(mut frame) = frame_q.get_mut(self.frame_list[i].unwrap()) {
+                let entity = self.frame_list[i].unwrap();
+                if let Ok(mut frame) = frame_q.get_mut(entity) {
                     frame.set_order(i as u8);
                 }
+                let Some(frame_data) = self.frames.get_mut(&entity) else {
+                    panic!("frame data not found");
+                };
+                frame_data.order = i as u8;
             }
 
             self.frame_list.truncate(self.frame_list.len() - 1);
         }
 
         Some(frame_data)
+    }
+
+    pub(crate) fn update_frame_order(&mut self, new_frame_entity: &Entity, new_order: u8, frame_q: &mut Query<&mut IconFrame>) {
+        let Some(new_frame_data) = self.frames.get_mut(new_frame_entity) else {
+            panic!("frame entity not found");
+        };
+        let old_order = new_frame_data.order;
+        new_frame_data.order = new_order;
+
+        // get entity at new order index
+        let old_frame_entity = self.frame_list[new_order as usize].unwrap();
+        let Some(old_frame_data) = self.frames.get_mut(&old_frame_entity) else {
+            panic!("frame entity not found");
+        };
+        old_frame_data.order = old_order;
+
+        // now swap the entities in the frame list, new_order and old_order
+        self.frame_list[new_order as usize] = Some(*new_frame_entity);
+        self.frame_list[old_order as usize] = Some(old_frame_entity);
+
+        // new frame entity is already updated, but need to update old frame entity
+        let Ok(mut old_frame) = frame_q.get_mut(old_frame_entity) else {
+            panic!("frame not found");
+        };
+        old_frame.set_order(old_order);
     }
 
     fn add_vertex(&mut self, frame_entity: Entity, shape_entity: Entity) {
@@ -227,14 +262,16 @@ impl FileFrameData {
 }
 
 pub struct FrameData {
+    order: u8,
     vertices: HashSet<Entity>,
     edges: HashSet<Entity>,
     faces: HashSet<Entity>,
 }
 
 impl FrameData {
-    fn new() -> Self {
+    fn new(order: u8) -> Self {
         Self {
+            order,
             vertices: HashSet::new(),
             edges: HashSet::new(),
             faces: HashSet::new(),
@@ -310,6 +347,34 @@ impl IconManager {
 
     pub fn has_frame(&self, frame_entity: &Entity) -> bool {
         self.frames.contains_key(frame_entity)
+    }
+
+    pub fn get_frame_at_index(&self, file_entity: &Entity, frame_index: usize) -> Option<Entity> {
+        if let Some(file_frame_data) = self.file_frame_data.get(file_entity) {
+            file_frame_data.frame_list.get(frame_index).cloned().flatten()
+        } else {
+            None
+        }
+    }
+
+    pub fn update_frame_order(
+        &mut self,
+        file_entity: &Entity,
+        frame_entity: &Entity,
+        frame_order: u8,
+        frame_q: &mut Query<&mut IconFrame>,
+    ) {
+        info!(
+            "icon frame update event (File Entity: {:?}, Frame Entity: {:?}, Order: {:?})",
+            file_entity,
+            frame_entity,
+            frame_order
+        );
+
+        let Some(file_frame_data) = self.file_frame_data.get_mut(file_entity) else {
+            panic!("file entity not found");
+        };
+        file_frame_data.update_frame_order(frame_entity, frame_order, frame_q);
     }
 
     pub fn get_face_index(&self, entity: &Entity) -> Option<usize> {

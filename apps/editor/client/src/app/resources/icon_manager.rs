@@ -2116,10 +2116,10 @@ impl IconManager {
     }
 
     pub fn framing_queue_resync_frame_order(&mut self, file_entity: &Entity) {
-        info!(
-            "framing_queue_resync_frame_order for entity: `{:?}`",
-            file_entity
-        );
+        // info!(
+        //     "framing_queue_resync_frame_order for entity: `{:?}`",
+        //     file_entity
+        // );
         self.resync_frame_order.insert(*file_entity);
     }
 

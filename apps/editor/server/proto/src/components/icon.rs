@@ -110,6 +110,6 @@ impl IconFrame {
     }
 
     pub fn set_order(&mut self, order: u8) {
-        *self.order = order.into();
+        self.order.set(order);
     }
 }
