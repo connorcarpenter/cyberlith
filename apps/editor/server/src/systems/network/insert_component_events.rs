@@ -448,6 +448,37 @@ pub fn insert_icon_component_events(
     face_q: Query<&IconFace>,
     mut frame_q: Query<&mut IconFrame>,
 ) {
+    // on IconFrame Insert Event
+    for event in frame_events.read() {
+        let user_key = event.user_key;
+        let frame_entity = event.entity;
+        info!("entity: `{:?}`, inserted IconFrame", frame_entity);
+
+        let frame = frame_q.get(frame_entity).unwrap();
+        let frame_index = frame.get_order() as usize;
+        let file_entity: Entity = frame.file_entity.get(&server).unwrap();
+
+        let project_key = user_manager
+            .user_session_data(&user_key)
+            .unwrap()
+            .project_key()
+            .unwrap();
+        let file_key = key_q.get(file_entity).unwrap().clone();
+
+        icon_manager.on_create_frame(&file_entity, &frame_entity, frame_index, Some(&mut frame_q));
+
+        let content_entity_data = ContentEntityData::new_frame();
+        git_manager.on_insert_content_entity(
+            &mut server,
+            &project_key,
+            &file_key,
+            &frame_entity,
+            &content_entity_data,
+        );
+
+        git_manager.on_client_modify_file(&mut commands, &mut server, &project_key, &file_key);
+    }
+
     // on IconVertex Insert Event
     for event in vertex_events.read() {
         let entity = event.entity;
@@ -526,37 +557,6 @@ pub fn insert_icon_component_events(
                 ComponentWaitlistInsert::FileType(FileExtension::Icon),
             ],
         );
-    }
-
-    // on IconFrame Insert Event
-    for event in frame_events.read() {
-        let user_key = event.user_key;
-        let frame_entity = event.entity;
-        info!("entity: `{:?}`, inserted IconFrame", frame_entity);
-
-        let frame = frame_q.get(frame_entity).unwrap();
-        let frame_index = frame.get_order() as usize;
-        let file_entity: Entity = frame.file_entity.get(&server).unwrap();
-
-        let project_key = user_manager
-            .user_session_data(&user_key)
-            .unwrap()
-            .project_key()
-            .unwrap();
-        let file_key = key_q.get(file_entity).unwrap().clone();
-
-        icon_manager.on_create_frame(&file_entity, &frame_entity, frame_index, Some(&mut frame_q));
-
-        let content_entity_data = ContentEntityData::new_frame();
-        git_manager.on_insert_content_entity(
-            &mut server,
-            &project_key,
-            &file_key,
-            &frame_entity,
-            &content_entity_data,
-        );
-
-        git_manager.on_client_modify_file(&mut commands, &mut server, &project_key, &file_key);
     }
 }
 

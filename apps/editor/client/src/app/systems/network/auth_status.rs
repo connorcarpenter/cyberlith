@@ -343,7 +343,6 @@ fn process_entity_auth_status(
     } else if icon_vertex_opt.is_some()
         || icon_edge_opt.is_some()
         || icon_face_opt.is_some()
-        || icon_frame_opt.is_some()
     {
         info!(
             "auth processing for shape entity `{:?}`: `{:?}`",
@@ -359,7 +358,21 @@ fn process_entity_auth_status(
                 );
             }
         } else {
-            warn!("no owning file entity found for shape entity: {:?}", entity);
+            warn!("no owning file entity found for icon shape entity: {:?}", entity);
+        }
+    } else if let Some(frame_component) = icon_frame_opt {
+        info!(
+            "auth processing for icon frame entity `{:?}`: `{:?}`",
+            entity, status
+        );
+        let owning_file_entity = frame_component.file_entity.get(client).unwrap();
+        if let Some(tab_state) = tab_manager.tab_state_mut(&owning_file_entity) {
+            tab_state.action_stack.entity_update_auth_status(&entity);
+        } else {
+            warn!(
+                "no tab state found for file entity: {:?}",
+                owning_file_entity
+            );
         }
     } else {
         warn!("unhandled auth status: entity `{:?}`: {:?}", entity, status);

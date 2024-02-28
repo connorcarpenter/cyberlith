@@ -497,7 +497,8 @@ impl IconManager {
         server: &mut Server,
         frame_entity: &Entity,
         frame_q_opt: Option<&mut Query<&mut IconFrame>>,
-    ) {
+    ) -> Vec<Entity> {
+        let mut despawn_entities = Vec::new();
         let frame_data = self.deregister_frame(frame_entity, frame_q_opt).unwrap();
         for vertex_entity in frame_data.vertices {
             commands
@@ -505,6 +506,7 @@ impl IconManager {
                 .take_authority(server)
                 .despawn();
             self.deregister_vertex(&vertex_entity);
+            despawn_entities.push(vertex_entity);
         }
         for edge_entity in frame_data.edges {
             commands
@@ -512,6 +514,7 @@ impl IconManager {
                 .take_authority(server)
                 .despawn();
             self.deregister_edge(&edge_entity);
+            despawn_entities.push(edge_entity);
         }
         for face_entity in frame_data.faces {
             commands
@@ -519,7 +522,10 @@ impl IconManager {
                 .take_authority(server)
                 .despawn();
             self.deregister_face(&face_entity);
+            despawn_entities.push(face_entity);
         }
+
+        despawn_entities
     }
 
     pub fn deregister_frame(
@@ -684,6 +690,8 @@ impl IconManager {
                 data.remove_edge(edge_entity);
             }
         }
+
+        // TODO: handle any faces that were dependent on this edge?
     }
 
     pub(crate) fn on_client_despawn_face(&mut self, face_entity: &Entity) {
@@ -705,5 +713,7 @@ impl IconManager {
                 data.remove_face(face_entity);
             }
         }
+
+        // TODO: remove face from edge data
     }
 }

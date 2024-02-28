@@ -427,6 +427,8 @@ impl ShapeManager {
                 data.remove_edge(edge_entity);
             }
         }
+
+        // TODO: remove face
     }
 
     pub(crate) fn on_client_despawn_face(&mut self, face_entity: &Entity) {

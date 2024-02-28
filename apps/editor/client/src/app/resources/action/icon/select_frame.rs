@@ -2,7 +2,7 @@ use bevy_ecs::{
     prelude::World,
     system::{Commands, SystemState},
 };
-use bevy_log::info;
+use bevy_log::{info, warn};
 
 use naia_bevy_client::{Client, CommandsExt};
 
@@ -31,6 +31,7 @@ pub fn execute(
     // release the last frame entity
     let Some(last_frame_entity) = icon_manager.get_frame_entity(&file_entity, last_frame_index)
     else {
+        warn!("Last frame entity not found");
         return vec![];
     };
     commands
@@ -42,8 +43,10 @@ pub fn execute(
     // request auth over next frame entity
     let Some(next_frame_entity) = icon_manager.get_frame_entity(&file_entity, next_frame_index)
     else {
+        warn!("Next frame entity not found");
         return vec![];
     };
+    info!("Requesting authority over next frame entity: {:?}", next_frame_entity);
     commands
         .entity(next_frame_entity)
         .request_authority(&mut client);

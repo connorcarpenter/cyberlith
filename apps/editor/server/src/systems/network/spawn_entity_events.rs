@@ -107,10 +107,10 @@ pub fn despawn_entity_events(
                 // vertex
                 info!("entity: `{:?}` (which is a Vertex), despawned", entity);
 
-                let other_entities_to_despawn =
+                let other_despawned_entities =
                     shape_manager.on_client_despawn_vertex(&mut commands, &mut server, entity);
 
-                for other_entity in other_entities_to_despawn {
+                for other_entity in other_despawned_entities {
                     git_manager.on_remove_content_entity(&mut server, &other_entity);
                 }
 
@@ -136,10 +136,10 @@ pub fn despawn_entity_events(
                 // vertex
                 info!("entity: `{:?}` (which is a IconVertex), despawned", entity);
 
-                let other_entities_to_despawn =
+                let other_despawned_entities =
                     icon_manager.on_client_despawn_vertex(&mut commands, &mut server, entity);
 
-                for other_entity in other_entities_to_despawn {
+                for other_entity in other_despawned_entities {
                     git_manager.on_remove_content_entity(&mut server, &other_entity);
                 }
 
@@ -163,7 +163,17 @@ pub fn despawn_entity_events(
                 // frame
                 info!("entity: `{:?}` (which is an IconFrame), despawned", entity);
 
-                icon_manager.on_despawn_frame(&mut commands, &mut server, entity, Some(&mut icon_frame_q));
+                let other_despawned_entities = icon_manager.on_despawn_frame(
+                    &mut commands,
+                    &mut server,
+                    entity,
+                    Some(&mut icon_frame_q)
+                );
+
+                for other_entity in other_despawned_entities {
+                    git_manager.on_remove_content_entity(&mut server, &other_entity);
+                }
+
                 despawned_entities.push(entity);
             }
             Some(DespawnType::AnimFrame) => {
