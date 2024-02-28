@@ -15,7 +15,7 @@ pub fn convert_ttf_to_icon(ttf_file_name: &str) -> Result<(), CliError> {
     let palette_asset_id = AssetId::from_str("8273wa").unwrap();
     output_file.set_palette_asset_id(&palette_asset_id);
 
-    for ascii_code in 32..=112 { // should be 32..=126
+    for ascii_code in 32..=126 { // should be 32..=126
         let character = ascii_code as u8 as char;
         info!("ASCII Code: {}  Character: {}", ascii_code, character);
 

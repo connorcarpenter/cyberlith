@@ -958,7 +958,9 @@ impl IconManager {
                 } else {
                     Edge2dLocal::NORMAL_THICKNESS
                 };
-                let mut hover_edge_transform = transform_q.get_mut(hover_entity).unwrap();
+                let Ok(mut hover_edge_transform) = transform_q.get_mut(hover_entity) else {
+                    return;
+                };
                 hover_edge_transform.scale.y = scale;
             }
             CanvasShape::Face => {
