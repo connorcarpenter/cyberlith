@@ -1,4 +1,5 @@
 use glam::Vec3;
+use log::warn;
 
 // returns whether last two vertices were swapped
 pub fn reorder_triangle_winding(
@@ -6,7 +7,10 @@ pub fn reorder_triangle_winding(
     external_point: Vec3,
     set_to_clockwise: bool,
 ) -> bool {
-    let currently_clockwise = !triangle_is_ccw_toward_point(*vertices, external_point);
+    let Some(currently_ccw) = triangle_is_ccw_toward_point(*vertices, external_point) else {
+        return false;
+    };
+    let currently_clockwise = !currently_ccw;
 
     if currently_clockwise == set_to_clockwise {
         return false;
@@ -18,7 +22,7 @@ pub fn reorder_triangle_winding(
 }
 
 // returns whether last two vertices were swapped
-pub fn triangle_is_ccw_toward_point(vertices: [Vec3; 3], external_point: Vec3) -> bool {
+pub fn triangle_is_ccw_toward_point(vertices: [Vec3; 3], external_point: Vec3) -> Option<bool> {
     let a = vertices[0];
     let b = vertices[1];
     let c = vertices[2];
@@ -33,11 +37,12 @@ pub fn triangle_is_ccw_toward_point(vertices: [Vec3; 3], external_point: Vec3) -
 
     return if dot_product > 0.0 {
         // is counter-clockwise order
-        false
+        Some(false)
     } else if dot_product < 0.0 {
         // is clockwise order
-        true
+        Some(true)
     } else {
-        panic!("coplanar!");
+        warn!("coplanar!");
+        None
     };
 }

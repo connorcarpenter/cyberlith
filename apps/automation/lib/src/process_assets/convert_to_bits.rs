@@ -41,7 +41,7 @@ pub(crate) fn mesh(data: &MeshData) -> Vec<u8> {
         actions.push(MeshAction::Vertex(x, y, z));
     }
     for face in data.get_faces() {
-        let (face_id, vertex_a, vertex_b, vertex_c, _, _, _) = face.deconstruct();
+        let (face_id, vertex_a, vertex_b, vertex_c) = face.deconstruct();
         actions.push(MeshAction::Face(face_id, vertex_a, vertex_b, vertex_c));
     }
 

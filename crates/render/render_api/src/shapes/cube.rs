@@ -133,12 +133,13 @@ fn push_triangle(
     vertex_b: Vec3,
     vertex_c: Vec3,
 ) {
-    let ccw = triangle_is_ccw_toward_point([vertex_a, vertex_b, vertex_c], Vec3::splat(100.0));
-    if should_be_ccw != ccw {
-        panic!(
-            "Triangle is not clockwise toward camera: {} {}",
-            face_name, tri_name
-        );
+    if let Some(ccw) = triangle_is_ccw_toward_point([vertex_a, vertex_b, vertex_c], Vec3::splat(100.0)) {
+        if should_be_ccw != ccw {
+            panic!(
+                "Triangle is not clockwise toward camera: {} {}",
+                face_name, tri_name
+            );
+        }
     }
     positions.push(vertex_a);
     positions.push(vertex_b);

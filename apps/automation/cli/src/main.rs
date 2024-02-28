@@ -23,6 +23,17 @@ fn cli() -> Command {
                         .value_parser(["dev", "stage", "prod", "qwon"]),
                 ),
         )
+        .subcommand(
+            Command::new("convert_ttf_to_icon")
+                .about("converts ttf to icon")
+                .arg_required_else_help(true)
+                .arg(
+                    Arg::new("ttf")
+                        .short('t')
+                        .long("ttf")
+                        .required(true),
+                ),
+        )
 }
 
 fn main() {
@@ -40,6 +51,10 @@ fn main() {
         Some(("process_assets", sub_matches)) => {
             let env_val = sub_matches.get_one::<String>("env").unwrap();
             automation_lib::process_assets(env_val)
+        }
+        Some(("convert_ttf_to_icon", sub_matches)) => {
+            let ttf_file_name_val = sub_matches.get_one::<String>("ttf").unwrap();
+            automation_lib::convert_ttf_to_icon(ttf_file_name_val)
         }
         _ => Err(CliError::Message("Invalid subcommand".to_string())),
     };
