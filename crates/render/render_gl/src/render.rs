@@ -1,5 +1,7 @@
 use bevy_ecs::system::{NonSendMut, Res, ResMut};
 
+use rand::seq::SliceRandom;
+
 use render_api::{
     base::CpuTexture2D,
     components::{Camera, RenderLayers, RenderTarget as CameraRenderTarget},
@@ -31,7 +33,7 @@ pub fn render(
         camera_work.push(None);
     }
 
-    let frame_contents = render_frame.take_contents();
+    let mut frame_contents = render_frame.take_contents();
 
     // Aggregate Cameras
     for (render_layer, camera, transform, projection) in frame_contents.cameras.iter() {
@@ -90,7 +92,19 @@ pub fn render(
     }
 
     // Aggregate Meshes
+    if frame_contents.meshes.len() > 4096 {
+        // TODO: get rid of this max!
+        // shuffle meshes
+        let mut rng = rand::thread_rng();
+        frame_contents.meshes.shuffle(&mut rng);
+    }
+    let mut mesh_count = 0;
     for (render_layer, mesh_handle, mat_handle, transform) in frame_contents.meshes.iter() {
+        mesh_count += 1;
+        if mesh_count > 4096 {
+            // info!("Too many meshes in a single frame! Limit is 4096.");
+            break;
+        }
         for camera_index in layer_to_order[*render_layer].iter().map(|x| *x) {
             if camera_work[camera_index].is_none() {
                 panic!("Found render object with RenderLayer not associated with any Camera!");

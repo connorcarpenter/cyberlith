@@ -83,7 +83,7 @@ pub fn draw(
                 return;
             }
         }
-        FileExtension::Model | FileExtension::Scene => {
+        FileExtension::Model | FileExtension::Scene | FileExtension::Icon => {
             return;
         }
         _ => {}

@@ -2530,17 +2530,19 @@ impl IconManager {
                 continue;
             };
 
-            let mut vertex_pos = vertex.as_vec2();
-            vertex_pos.x *= size_ratio.x;
-            vertex_pos.y *= size_ratio.y;
-            let vertex_pos = *frame_pos + vertex_pos;
-            let transform = Transform::from_translation_2d(vertex_pos);
-            render_frame.draw_mesh(
-                Some(&self.render_layer),
-                point_mesh_handle,
-                mat_handle_gray,
-                &transform,
-            );
+            if data.edges.is_empty() {
+                let mut vertex_pos = vertex.as_vec2();
+                vertex_pos.x *= size_ratio.x;
+                vertex_pos.y *= size_ratio.y;
+                let vertex_pos = *frame_pos + vertex_pos;
+                let transform = Transform::from_translation_2d(vertex_pos);
+                render_frame.draw_mesh(
+                    Some(&self.render_layer),
+                    point_mesh_handle,
+                    mat_handle_gray,
+                    &transform,
+                );
+            }
 
             for edge_entity in data.edges.iter() {
                 edge_entities.insert(*edge_entity);
