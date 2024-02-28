@@ -175,6 +175,9 @@ pub enum IconShapeData {
 }
 
 impl IconManager {
+
+    const SHAPE_SCALE_FACTOR: f32 = 2.5;
+
     pub fn draw(&mut self, world: &mut World, current_file_entity: &Entity) {
         if self.meshing {
             if self.wireframe {
@@ -347,6 +350,7 @@ impl IconManager {
         let camera_scale = 1.0 / camera_state.camera_3d_scale();
         camera_transform.scale = Vec3::new(camera_scale, camera_scale, 1.0);
         let camera_transform = *camera_transform;
+        let camera_scale_adjusted = camera_transform.scale.x * Self::SHAPE_SCALE_FACTOR;
 
         let mut vertex_entities = Vec::new();
         let mut edge_entities = HashSet::new();
@@ -515,6 +519,8 @@ impl IconManager {
                 let mut transform = transform_q.get_mut(self.select_circle_entity).unwrap();
                 transform.translation = vertex_translation;
                 transform.translation.z += 1.0;
+                transform.scale.x = SelectCircle::RADIUS * camera_scale_adjusted;
+                transform.scale.y = SelectCircle::RADIUS * camera_scale_adjusted;
 
                 render_frame.draw_mesh(
                     Some(&self.render_layer),
@@ -536,6 +542,7 @@ impl IconManager {
                     view_mouse_position,
                     vertex_translation.z + 1.0,
                 );
+                transform.scale.y = SelectLine::THICKNESS * camera_scale_adjusted;
 
                 render_frame.draw_mesh(
                     Some(&self.render_layer),
@@ -574,6 +581,8 @@ impl IconManager {
                 let mut transform = transform_q.get_mut(self.select_triangle_entity).unwrap();
                 transform.translation = face_translation;
                 transform.translation.z += 1.0;
+                transform.scale.x = SelectTriangle::SIZE * camera_scale_adjusted;
+                transform.scale.y = SelectTriangle::SIZE * camera_scale_adjusted;
 
                 render_frame.draw_mesh(
                     Some(&self.render_layer),
@@ -873,9 +882,15 @@ impl IconManager {
         };
         let view_mouse_position =
             Self::screen_to_view(&canvas, camera_transform, screen_mouse_position);
+        let camera_scale = camera_transform.scale.x * Self::SHAPE_SCALE_FACTOR;
 
         if self.meshing {
-            self.sync_mouse_hover_ui_meshing(world, current_file_entity, &view_mouse_position);
+            self.sync_mouse_hover_ui_meshing(
+                world,
+                current_file_entity,
+                &view_mouse_position,
+                camera_scale
+            );
         } else {
             self.sync_mouse_hover_ui_framing(
                 current_file_entity,
@@ -890,6 +905,7 @@ impl IconManager {
         world: &mut World,
         current_file_entity: &Entity,
         view_mouse_position: &Vec2,
+        camera_scale: f32,
     ) {
         let frame_entity = self.current_frame_entity(current_file_entity).unwrap();
 
@@ -900,23 +916,129 @@ impl IconManager {
             current_file_entity,
             &frame_entity,
             view_mouse_position,
+            camera_scale,
         );
         if new_hover_entity == self.hovered_entity {
             return;
         }
 
-        // reset scale of old hovered entity
-        if let Some((hover_entity, hover_shape)) = self.hovered_entity {
-            self.sync_hover_shape_scale(world, hover_entity, hover_shape, false);
-        }
-
         // set hovered entity to new entity
         self.hovered_entity = new_hover_entity;
+    }
 
-        // set scale of new hovered entity
-        if let Some((hover_entity, hover_shape)) = self.hovered_entity {
-            let visually_hovering = self.hovered_entity != self.selected_shape;
-            self.sync_hover_shape_scale(world, hover_entity, hover_shape, visually_hovering);
+    pub fn update_shape_scale(&self, world: &mut World, current_file_entity: Entity) {
+
+        let hovered_entity_opt = self.hovered_entity.map(|(entity, _)| entity);
+        let current_frame_entity = self.current_frame_entity(&current_file_entity).unwrap();
+
+        let mut system_state: SystemState<(
+            Query<&mut Transform>,
+            Query<(Entity, &OwnedByFileLocal), With<IconVertex>>,
+            Query<(Entity, &OwnedByFileLocal), With<IconEdgeLocal>>,
+            Query<(Entity, &OwnedByFileLocal), With<IconLocalFace>>,
+        )> = SystemState::new(world);
+        let (
+            mut transform_q,
+            vertex_q,
+            edge_q,
+            face_q,
+        ) = system_state.get_mut(world);
+
+        let Ok(camera_transform) = transform_q.get(self.camera_entity) else {
+            return;
+        };
+        let camera_scale = camera_transform.scale.x * Self::SHAPE_SCALE_FACTOR;
+
+        // update vertices
+        for (entity, owned_by_file) in vertex_q.iter() {
+            if owned_by_file.file_entity != current_file_entity {
+                continue;
+            }
+            let Ok(mut transform) = transform_q.get_mut(entity) else {
+                continue;
+            };
+            let Some(vertex_frame_entity) = self.vertex_get_frame_entity(&entity)
+                else {
+                    continue;
+                };
+            if vertex_frame_entity != current_frame_entity {
+                continue;
+            }
+
+            let hovering = if let Some(hover_entity) = hovered_entity_opt {
+                entity == hover_entity
+            } else {
+                false
+            };
+            let scale = if hovering {
+                Vertex2d::HOVER_RADIUS
+            } else {
+                Vertex2d::RADIUS
+            } * camera_scale;
+
+            transform.scale.x = scale;
+            transform.scale.y = scale;
+        }
+
+        // update edges
+        for (entity, owned_by_file) in edge_q.iter() {
+            if owned_by_file.file_entity != current_file_entity {
+                continue;
+            }
+            let Ok(mut transform) = transform_q.get_mut(entity) else {
+                continue;
+            };
+            let Some(edge_frame_entity) = self.edge_get_frame_entity(&entity)
+                else {
+                    continue;
+                };
+            if edge_frame_entity != current_frame_entity {
+                continue;
+            }
+
+            let hovering = if let Some(hover_entity) = hovered_entity_opt {
+                entity == hover_entity
+            } else {
+                false
+            };
+            let scale = if hovering {
+                Edge2dLocal::HOVER_THICKNESS
+            } else {
+                Edge2dLocal::NORMAL_THICKNESS
+            } * camera_scale;
+
+            transform.scale.y = scale;
+        }
+
+        // update faces
+        for (entity, owned_by_file) in face_q.iter() {
+            if owned_by_file.file_entity != current_file_entity {
+                continue;
+            }
+            let Ok(mut transform) = transform_q.get_mut(entity) else {
+                continue;
+            };
+            let Some(face_frame_entity) = self.face_get_frame_entity(&entity)
+                else {
+                    continue;
+                };
+            if face_frame_entity != current_frame_entity {
+                continue;
+            }
+
+            let hovering = if let Some(hover_entity) = hovered_entity_opt {
+                entity == hover_entity
+            } else {
+                false
+            };
+            let scale = if hovering {
+                FaceIcon2d::HOVER_SIZE
+            } else {
+                FaceIcon2d::SIZE
+            } * camera_scale;
+
+            transform.scale.x = scale;
+            transform.scale.y = scale;
         }
     }
 
@@ -929,52 +1051,6 @@ impl IconManager {
         let vy = (((pos.y / canvas_size.y) - 0.5) * camera_transform.scale.y * canvas_size.y)
             + camera_transform.translation.y;
         Vec2::new(vx, vy)
-    }
-
-    fn sync_hover_shape_scale(
-        &mut self,
-        world: &mut World,
-        hover_entity: Entity,
-        hover_shape: CanvasShape,
-        hovering: bool,
-    ) {
-        let mut system_state: SystemState<Query<&mut Transform>> = SystemState::new(world);
-        let mut transform_q = system_state.get_mut(world);
-
-        match hover_shape {
-            CanvasShape::Vertex => {
-                let scale = if hovering {
-                    Vertex2d::HOVER_RADIUS
-                } else {
-                    Vertex2d::RADIUS
-                };
-                let mut hover_vert_transform = transform_q.get_mut(hover_entity).unwrap();
-                hover_vert_transform.scale.x = scale;
-                hover_vert_transform.scale.y = scale;
-            }
-            CanvasShape::Edge => {
-                let scale = if hovering {
-                    Edge2dLocal::HOVER_THICKNESS
-                } else {
-                    Edge2dLocal::NORMAL_THICKNESS
-                };
-                let Ok(mut hover_edge_transform) = transform_q.get_mut(hover_entity) else {
-                    return;
-                };
-                hover_edge_transform.scale.y = scale;
-            }
-            CanvasShape::Face => {
-                let scale = if hovering {
-                    FaceIcon2d::HOVER_SIZE
-                } else {
-                    FaceIcon2d::SIZE
-                };
-                let mut hover_face_transform = transform_q.get_mut(hover_entity).unwrap();
-                hover_face_transform.scale.x = scale;
-                hover_face_transform.scale.y = scale;
-            }
-            _ => panic!(""),
-        }
     }
 
     pub fn select_shape(&mut self, entity: &Entity, shape: CanvasShape) {
@@ -1745,7 +1821,7 @@ impl IconManager {
             .iter()
             .enumerate()
         {
-            let vertex_transform = transform_q.get(*vertex_entity).unwrap();
+            let vertex_transform = transform_q.get(*vertex_entity).unwrap(); // TODO: I keep running into this one - 2
             positions[index] = vertex_transform.translation;
             vertex_entities[index] = *vertex_entity;
         }

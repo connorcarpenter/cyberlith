@@ -498,22 +498,40 @@ pub fn update_animation(
 }
 
 pub fn update_icon(
-    client: Client<Main>,
-    file_manager: Res<FileManager>,
-    tab_manager: Res<TabManager>,
-    mut icon_manager: ResMut<IconManager>,
-    frame_q: Query<(Entity, &IconFrame)>,
+    world: &mut World,
 ) {
+    let mut system_state: SystemState<(
+        Client<Main>,
+        Res<FileManager>,
+        Res<TabManager>,
+        ResMut<IconManager>,
+        Query<(Entity, &IconFrame)>
+    )> = SystemState::new(world);
+    let (
+        client,
+        file_manager,
+        tab_manager,
+        mut icon_manager,
+        frame_q
+    ) = system_state.get_mut(world);
+
     // get file type
     let Some(current_file_entity) = tab_manager.current_tab_entity() else {
         return;
     };
-    let file_ext = file_manager.get_file_type(current_file_entity);
+    let current_file_entity = *current_file_entity;
+    let file_ext = file_manager.get_file_type(&current_file_entity);
     if file_ext != FileExtension::Icon {
         return;
     }
     icon_manager.framing_resync_frame_order(&client, &frame_q);
-    icon_manager.preview_update(current_file_entity);
+    icon_manager.preview_update(&current_file_entity);
+
+    if icon_manager.is_meshing() && icon_manager.is_wired() {
+        world.resource_scope(|world, icon_manager: Mut<IconManager>| {
+            icon_manager.update_shape_scale(world, current_file_entity);
+        });
+    }
 }
 
 pub fn update_palette(

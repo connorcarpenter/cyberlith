@@ -459,6 +459,7 @@ impl IconInputManager {
         current_file_entity: &Entity,
         frame_entity: &Entity,
         mouse_position: &Vec2,
+        camera_scale: f32,
     ) -> Option<(Entity, CanvasShape)> {
         let mut system_state: SystemState<(
             Query<&Transform>,
@@ -466,7 +467,12 @@ impl IconInputManager {
             Query<(Entity, &OwnedByFileLocal), With<IconEdgeLocal>>,
             Query<(Entity, &OwnedByFileLocal), With<IconLocalFace>>,
         )> = SystemState::new(world);
-        let (transform_q, vertex_q, edge_q, face_q) = system_state.get_mut(world);
+        let (
+            transform_q,
+            vertex_q,
+            edge_q,
+            face_q
+        ) = system_state.get_mut(world);
 
         let mut least_distance = f32::MAX;
         let mut least_entity = None;
@@ -479,6 +485,7 @@ impl IconInputManager {
             current_file_entity,
             frame_entity,
             mouse_position,
+            camera_scale,
             &mut least_distance,
             &mut least_entity,
             &mut is_hovering,
@@ -491,6 +498,7 @@ impl IconInputManager {
             current_file_entity,
             frame_entity,
             mouse_position,
+            camera_scale,
             &mut least_distance,
             &mut least_entity,
             &mut is_hovering,
@@ -503,6 +511,7 @@ impl IconInputManager {
             current_file_entity,
             frame_entity,
             mouse_position,
+            camera_scale,
             &mut least_distance,
             &mut least_entity,
             &mut is_hovering,
@@ -522,6 +531,7 @@ impl IconInputManager {
         current_file_entity: &Entity,
         frame_entity: &Entity,
         mouse_position: &Vec2,
+        camera_scale: f32,
         least_distance: &mut f32,
         least_entity: &mut Option<(Entity, CanvasShape)>,
         is_hovering: &mut bool,
@@ -549,7 +559,7 @@ impl IconInputManager {
             }
         }
 
-        *is_hovering = *least_distance <= Vertex2d::DETECT_RADIUS;
+        *is_hovering = *least_distance <= Vertex2d::DETECT_RADIUS * camera_scale;
     }
 
     fn handle_edge_hover(
@@ -559,6 +569,7 @@ impl IconInputManager {
         current_file_entity: &Entity,
         frame_entity: &Entity,
         mouse_position: &Vec2,
+        camera_scale: f32,
         least_distance: &mut f32,
         least_entity: &mut Option<(Entity, CanvasShape)>,
         is_hovering: &mut bool,
@@ -588,7 +599,7 @@ impl IconInputManager {
                 }
             }
 
-            *is_hovering = *least_distance <= Edge2dLocal::DETECT_THICKNESS;
+            *is_hovering = *least_distance <= Edge2dLocal::DETECT_THICKNESS * camera_scale;
         }
     }
 
@@ -599,6 +610,7 @@ impl IconInputManager {
         current_file_entity: &Entity,
         frame_entity: &Entity,
         mouse_position: &Vec2,
+        camera_scale: f32,
         least_distance: &mut f32,
         least_entity: &mut Option<(Entity, CanvasShape)>,
         is_hovering: &mut bool,
@@ -627,7 +639,7 @@ impl IconInputManager {
                 }
             }
 
-            *is_hovering = *least_distance <= FaceIcon2d::DETECT_RADIUS;
+            *is_hovering = *least_distance <= FaceIcon2d::DETECT_RADIUS * camera_scale;
         }
     }
 
