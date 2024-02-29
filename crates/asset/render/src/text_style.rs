@@ -4,12 +4,15 @@ use bevy_ecs::component::Component;
 pub struct TextStyle {
     // height of characters in pixels
     pub size: f32,
+    // spacing between characters, in pixels
+    pub character_buffer: f32,
 }
 
 impl TextStyle {
-    pub fn new(size: f32) -> Self {
+    pub fn new(size: f32, character_buffer: f32) -> Self {
         Self {
-            size
+            size,
+            character_buffer,
         }
     }
 }

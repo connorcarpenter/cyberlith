@@ -20,6 +20,17 @@ impl Default for IconData {
 }
 
 impl IconData {
+
+    pub(crate) fn get_frame_width(&self, index: usize) -> Option<f32> {
+        let frame = self.frames.get(index)?;
+        Some(frame.get_width())
+    }
+
+    pub(crate) fn get_frame_height(&self, index: usize) -> Option<f32> {
+        let frame = self.frames.get(index)?;
+        Some(frame.get_height())
+    }
+
     pub(crate) fn get_palette_file_handle(&self) -> Option<&AssetHandle<PaletteData>> {
         if let AssetDependency::<PaletteData>::AssetHandle(handle) = &self.palette_file {
             Some(handle)
@@ -187,21 +198,79 @@ impl IconData {
     }
 }
 
+struct FrameMetadata {
+    min_x: f32,
+    min_y: f32,
+    max_x: f32,
+    max_y: f32,
+    width: f32,
+    height: f32,
+}
+
+impl FrameMetadata {
+    pub fn from_mesh(mesh: &CpuMesh) -> Self {
+        let mut min_x = f32::MAX;
+        let mut min_y = f32::MAX;
+        let mut max_x = f32::MIN;
+        let mut max_y = f32::MIN;
+
+        for vertex in mesh.vertices() {
+            if vertex.x < min_x {
+                min_x = vertex.x;
+            }
+            if vertex.y < min_y {
+                min_y = vertex.y;
+            }
+            if vertex.x > max_x {
+                max_x = vertex.x;
+            }
+            if vertex.y > max_y {
+                max_y = vertex.y;
+            }
+        }
+
+        let width = max_x - min_x;
+        let height = max_y - min_y;
+
+        info!("FrameMetadata: min_x: {}, min_y: {}, max_x: {}, max_y: {}, width: {}, height: {}", min_x, min_y, max_x, max_y, width, height);
+
+        Self {
+            min_x,
+            min_y,
+            max_x,
+            max_y,
+            width,
+            height,
+        }
+    }
+}
+
 struct Frame {
     cpu_mesh: Option<CpuMesh>,
     cpu_mesh_handle: Option<Handle<CpuMesh>>,
     cpu_skin_handle: Option<Handle<CpuSkin>>,
     face_color_ids: Vec<(u16, u8)>,
+    metadata: FrameMetadata,
 }
 
 impl Frame {
     fn new(cpu_mesh: CpuMesh, face_color_ids: Vec<(u16, u8)>) -> Self {
+        let metadata = FrameMetadata::from_mesh(&cpu_mesh);
         Self {
             cpu_mesh: Some(cpu_mesh),
             cpu_mesh_handle: None,
             cpu_skin_handle: None,
             face_color_ids,
+            metadata,
         }
+    }
+
+    pub fn get_width(&self) -> f32 {
+        self.metadata.width
+    }
+
+    pub fn get_height(&self) -> f32 {
+        self.metadata.height
     }
 
     fn get_cpu_mesh_handle(&self) -> Option<&Handle<CpuMesh>> {

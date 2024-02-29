@@ -54,6 +54,17 @@ impl Default for ProcessedAssetStore {
 }
 
 impl ProcessedAssetStore {
+
+    pub(crate) fn get_icon_frame_width(&self, handle: &AssetHandle<IconData>, frame_index: usize) -> Option<f32> {
+        let data = self.icons.get(handle)?;
+        data.get_frame_width(frame_index)
+    }
+
+    pub(crate) fn get_icon_frame_height(&self, handle: &AssetHandle<IconData>, frame_index: usize) -> Option<f32> {
+        let data = self.icons.get(handle)?;
+        data.get_frame_height(frame_index)
+    }
+
     pub(crate) fn load(
         &mut self,
         asset_data_store: &HashMap<AssetId, Vec<u8>>,

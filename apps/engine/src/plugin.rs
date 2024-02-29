@@ -1,11 +1,12 @@
 use bevy_app::{App, Plugin, Startup, Update};
+use bevy_ecs::system::ResMut;
 use bevy_log::LogPlugin;
 
 use naia_bevy_client::{ClientConfig as NaiaClientConfig, Plugin as NaiaClientPlugin};
 
 use asset_render::AssetPlugin;
 use bevy_http_client::HttpClientPlugin;
-use input::InputPlugin;
+use input::{Input, InputPlugin};
 use filesystem::FileSystemPlugin;
 use render_api::RenderApiPlugin;
 
@@ -38,6 +39,7 @@ impl Plugin for EnginePlugin {
                 NaiaClientConfig::default(),
                 world_server_naia_protocol(),
             ))
+            .add_systems(Startup, engine_startup)
             // asset cache stuff, todo: maybe refactor out?
             .insert_resource(AssetCache::new("assets"))
             .add_event::<AssetLoadedEvent>()
@@ -65,4 +67,8 @@ impl Plugin for EnginePlugin {
             .add_systems(Update, world_events::insert_component_events)
         ;
     }
+}
+
+fn engine_startup(mut input: ResMut<Input>) {
+    input.set_enabled(true);
 }

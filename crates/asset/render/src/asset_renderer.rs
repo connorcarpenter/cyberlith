@@ -68,9 +68,8 @@ impl AssetRenderer {
         render_layer_opt: Option<&RenderLayer>,
         text: &str,
     ) {
-        let size = style.size / 100.0;
         let mut cursor = Transform::from_xyz(position.x, position.y, position.z);
-        cursor.scale = Vec3::splat(size);
+        cursor.scale = Vec3::splat(style.size / 200.0);
 
         for c in text.chars() {
             let c: u8 = if c.is_ascii() {
@@ -80,15 +79,29 @@ impl AssetRenderer {
                 value
             };
             let subimage_index = (c - 32) as usize;
+
+            // get character width in order to move cursor appropriately
+            let icon_width = if subimage_index == 0 {
+                100.0
+            } else {
+                asset_store.get_icon_frame_width(icon_handle, subimage_index).unwrap_or(0.0)
+            };
+            let icon_width = (icon_width/200.0) * style.size;
+            let icon_width = icon_width + style.character_buffer;
+            let half_icon_width = icon_width / 2.0;
+
+            let mut final_position = cursor.clone();
+            final_position.translation.x += half_icon_width;
             Self::draw_icon(
                 asset_store,
                 render_frame,
                 icon_handle,
                 subimage_index,
-                &cursor,
+                &final_position,
                 render_layer_opt,
             );
-            cursor.translation.x += style.size;
+
+            cursor.translation.x += icon_width;
         }
     }
 
