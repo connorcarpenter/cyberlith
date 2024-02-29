@@ -82,6 +82,10 @@ impl GpuMeshManager {
         self.assets.remove(_handle)
     }
 
+    pub fn is_ready(&self) -> bool {
+        self.gpu_positions.is_some()
+    }
+
     pub fn use_attributes(&self, program: &Program) {
         let gpu_positions = self.gpu_positions.as_ref().unwrap();
         let gpu_normals = self.gpu_normals.as_ref().unwrap();

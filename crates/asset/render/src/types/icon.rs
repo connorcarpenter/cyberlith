@@ -51,8 +51,10 @@ impl IconData {
         skins: &mut Storage<CpuSkin>,
         palette_data: &PaletteData,
     ) -> bool {
+        let mut frame_index = 0;
         for frame in &mut self.frames {
             if !frame.has_cpu_skin_handle() {
+                frame_index += 1;
                 if !frame.load_cpu_skin(meshes, materials, skins, palette_data) {
                     return false;
                 }
@@ -247,8 +249,8 @@ impl Frame {
         for index in 0..mesh_face_ids.len() / 3 {
             let face_id = mesh_face_ids[index * 3];
 
-            if face_id > biggest_face_id {
-                biggest_face_id = face_id;
+            if face_id >= biggest_face_id {
+                biggest_face_id = face_id + 1;
             }
         }
 
@@ -256,7 +258,7 @@ impl Frame {
         for (face_id, color_id) in &self.face_color_ids {
             map.insert(*face_id, *color_id);
         }
-        for index in 0..=biggest_face_id {
+        for index in 0..biggest_face_id {
             let Some(color_id) = map.get(&index) else {
                 panic!("invalid face id, {}", index);
             };

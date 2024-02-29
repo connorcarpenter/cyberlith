@@ -101,6 +101,24 @@ impl AssetManager {
         );
     }
 
+    pub fn draw_text(
+        &self,
+        render_frame: &mut RenderFrame,
+        icon_handle: &AssetHandle<IconData>,
+        transform: &Transform,
+        render_layer_opt: Option<&RenderLayer>,
+        text: &str,
+    ) {
+        AssetRenderer::draw_text(
+            &self.store,
+            render_frame,
+            icon_handle,
+            transform,
+            render_layer_opt,
+            text,
+        );
+    }
+
     pub fn draw_skin(
         &self,
         render_frame: &mut RenderFrame,

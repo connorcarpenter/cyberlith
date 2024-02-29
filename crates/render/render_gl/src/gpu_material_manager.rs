@@ -69,6 +69,10 @@ impl GpuMaterialManager {
         FragmentShader { source: output }
     }
 
+    pub fn is_ready(&self) -> bool {
+        self.gpu_materials.is_some()
+    }
+
     pub fn use_uniforms(&self, program: &Program, camera: &RenderCamera, lights: &[&dyn Light]) {
         if !lights.is_empty() {
             for (i, light) in lights.iter().enumerate() {
