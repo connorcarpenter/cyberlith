@@ -1,5 +1,7 @@
 use bevy_log::warn;
+use rand::Rng;
 
+use math::Vec3;
 use render_api::{
     base::CpuMaterial,
     components::{RenderLayer, Transform},
@@ -7,7 +9,7 @@ use render_api::{
 };
 use storage::Handle;
 
-use crate::{asset_dependency::AssetComponentHandle, processed_asset_store::ProcessedAssetStore, AnimationData, IconData, MeshData, ModelData, SceneData, SkinData, AssetHandle};
+use crate::{asset_dependency::AssetComponentHandle, processed_asset_store::ProcessedAssetStore, AnimationData, IconData, MeshData, ModelData, SceneData, SkinData, AssetHandle, TextStyle};
 
 pub(crate) struct AssetRenderer;
 
@@ -55,6 +57,39 @@ impl AssetRenderer {
             &cpu_skin_handle,
             transform,
         );
+    }
+
+    pub(crate) fn draw_text(
+        asset_store: &ProcessedAssetStore,
+        render_frame: &mut RenderFrame,
+        icon_handle: &AssetHandle<IconData>,
+        style: &TextStyle,
+        position: &Vec3,
+        render_layer_opt: Option<&RenderLayer>,
+        text: &str,
+    ) {
+        let size = style.size / 100.0;
+        let mut cursor = Transform::from_xyz(position.x, position.y, position.z);
+        cursor.scale = Vec3::splat(size);
+
+        for c in text.chars() {
+            let c: u8 = if c.is_ascii() {
+                c as u8
+            } else {
+                let value = rand::thread_rng().gen_range(32..=126) as u8;
+                value
+            };
+            let subimage_index = (c - 32) as usize;
+            Self::draw_icon(
+                asset_store,
+                render_frame,
+                icon_handle,
+                subimage_index,
+                &cursor,
+                render_layer_opt,
+            );
+            cursor.translation.x += style.size;
+        }
     }
 
     pub(crate) fn draw_skin(

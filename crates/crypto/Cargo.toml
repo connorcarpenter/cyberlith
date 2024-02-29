@@ -6,4 +6,4 @@ workspace = "../.."
 
 [dependencies]
 ring = { version = "0.17" }
-rand = { version = "0.8" }
+rand = { version = "0.8.5" }

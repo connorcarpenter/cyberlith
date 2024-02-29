@@ -1,7 +1,9 @@
 use std::collections::HashMap;
-use asset_id::{AssetId, AssetType};
+
 use bevy_ecs::system::{ResMut, Resource};
 
+use asset_id::{AssetId, AssetType};
+use math::Vec3;
 use render_api::{
     base::CpuSkin,
     base::{CpuMaterial, CpuMesh},
@@ -10,10 +12,7 @@ use render_api::{
 };
 use storage::{Handle, Storage};
 
-use crate::{
-    asset_renderer::AssetRenderer, processed_asset_store::ProcessedAssetStore, AnimationData, AssetHandle, IconData,
-    MeshData, ModelData, SceneData, SkinData,
-};
+use crate::{asset_renderer::AssetRenderer, processed_asset_store::ProcessedAssetStore, AnimationData, AssetHandle, IconData, MeshData, ModelData, SceneData, SkinData, TextStyle};
 
 #[derive(Resource)]
 pub struct AssetManager {
@@ -105,7 +104,8 @@ impl AssetManager {
         &self,
         render_frame: &mut RenderFrame,
         icon_handle: &AssetHandle<IconData>,
-        transform: &Transform,
+        style: &TextStyle,
+        position: &Vec3,
         render_layer_opt: Option<&RenderLayer>,
         text: &str,
     ) {
@@ -113,7 +113,8 @@ impl AssetManager {
             &self.store,
             render_frame,
             icon_handle,
-            transform,
+            style,
+            position,
             render_layer_opt,
             text,
         );
