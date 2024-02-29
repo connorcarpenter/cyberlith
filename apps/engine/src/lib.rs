@@ -12,7 +12,7 @@ mod world_events;
 mod asset_ref_processor;
 
 pub mod asset {
-    pub use asset_render::{AssetManager, AnimationData, AssetHandle, IconData, MeshData, ModelData, PaletteData,SceneData,SkeletonData,SkinData};
+    pub use asset_render::{AssetManager, AnimationData, AssetHandle, IconData, MeshData, ModelData, PaletteData,SceneData,SkeletonData,SkinData, TextStyle};
     pub use asset_id::{AssetId, AssetType};
 }
 pub mod input {

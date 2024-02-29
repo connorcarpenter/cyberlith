@@ -21,9 +21,8 @@ use simple_logger::SimpleLogger;
 use http_server::{async_dup::Arc, smol::lock::RwLock, Server};
 
 use config::{ASSET_SERVER_PORT, SELF_BINDING_ADDR};
-use crate::asset_metadata_store::AssetMetadataStore;
 
-use crate::state::State;
+use crate::{state::State, asset_metadata_store::AssetMetadataStore};
 
 pub fn main() {
     // setup logging
