@@ -54,9 +54,17 @@ impl AssetManager {
             .sync_icon_skins(&meshes, &materials, &mut skins);
     }
 
-    pub fn get_icon_subimage_count(&self, handle: &AssetHandle<IconData>) -> usize {
+    pub fn get_icon_frame_count(&self, handle: &AssetHandle<IconData>) -> usize {
         let data = self.store.icons.get(handle).unwrap();
         data.get_subimage_count()
+    }
+
+    pub fn get_icon_frame_width(&self, handle: &AssetHandle<IconData>, index: usize) -> Option<f32> {
+        self.store.get_icon_frame_width(handle, index)
+    }
+
+    pub fn get_icon_frame_height(&self, handle: &AssetHandle<IconData>, index: usize) -> Option<f32> {
+        self.store.get_icon_frame_height(handle, index)
     }
 
     pub fn get_animation_duration(&self, handle: &AssetHandle<AnimationData>) -> f32 {

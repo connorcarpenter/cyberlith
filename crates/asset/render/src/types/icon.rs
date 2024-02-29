@@ -62,10 +62,8 @@ impl IconData {
         skins: &mut Storage<CpuSkin>,
         palette_data: &PaletteData,
     ) -> bool {
-        let mut frame_index = 0;
         for frame in &mut self.frames {
             if !frame.has_cpu_skin_handle() {
-                frame_index += 1;
                 if !frame.load_cpu_skin(meshes, materials, skins, palette_data) {
                     return false;
                 }
@@ -199,10 +197,10 @@ impl IconData {
 }
 
 struct FrameMetadata {
-    min_x: f32,
-    min_y: f32,
-    max_x: f32,
-    max_y: f32,
+    // min_x: f32,
+    // min_y: f32,
+    // max_x: f32,
+    // max_y: f32,
     width: f32,
     height: f32,
 }
@@ -232,13 +230,13 @@ impl FrameMetadata {
         let width = max_x - min_x;
         let height = max_y - min_y;
 
-        info!("FrameMetadata: min_x: {}, min_y: {}, max_x: {}, max_y: {}, width: {}, height: {}", min_x, min_y, max_x, max_y, width, height);
+        // info!("FrameMetadata: min_x: {}, min_y: {}, max_x: {}, max_y: {}, width: {}, height: {}", min_x, min_y, max_x, max_y, width, height);
 
         Self {
-            min_x,
-            min_y,
-            max_x,
-            max_y,
+            // min_x,
+            // min_y,
+            // max_x,
+            // max_y,
             width,
             height,
         }

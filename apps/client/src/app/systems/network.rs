@@ -11,8 +11,11 @@ use game_engine::{
     math::{Quat, Vec3},
     render::components::{RenderLayers, Transform, Visibility}
 };
+use game_engine::asset::TextStyle;
+use game_engine::math::Vec2;
 
-use crate::app::{systems::scene::{ObjectMarker, WalkAnimation}};
+// use crate::app::{systems::scene::{WalkerMarker, WalkAnimation}};
+use crate::app::systems::scene::TextMarker;
 
 pub fn world_spawn_entity_events(
     mut event_reader: EventReader<WorldSpawnEntityEvent>,
@@ -53,18 +56,33 @@ pub fn world_main_insert_asset_ref_events(
             AssetType::Scene => {commands.entity(entity).insert(AssetHandle::<SceneData>::new(asset_id));},
         }
 
-        if AssetType::Model == asset_type {
+        // if AssetType::Model == asset_type {
+        //     // add clientside things
+        //     let layer = RenderLayers::layer(0);
+        //
+        //     commands
+        //         .entity(entity)
+        //         .insert(
+        //             Transform::from_translation(Vec3::splat(0.0))
+        //                 .with_rotation(Quat::from_rotation_z(f32::to_radians(0.0))),
+        //         )
+        //         .insert(Visibility::default())
+        //         // .insert(WalkerMarker)
+        //         .insert(layer);
+        // }
+        // else
+        if AssetType::Icon == asset_type {
             // add clientside things
             let layer = RenderLayers::layer(0);
 
             commands
                 .entity(entity)
                 .insert(
-                    Transform::from_translation(Vec3::splat(0.0))
-                        .with_rotation(Quat::from_rotation_z(f32::to_radians(0.0))),
+                    Transform::from_translation_2d(Vec2::splat(64.0)),
                 )
                 .insert(Visibility::default())
-                .insert(ObjectMarker)
+                .insert(TextMarker)
+                .insert(TextStyle::new(32.0, 4.0))
                 .insert(layer);
         } else {
             panic!("unexpected asset type");
@@ -85,8 +103,8 @@ pub fn world_alt1_insert_asset_ref_events(
         info!("processing for entity: {:?} = inserting AssetRef<Alt1>(asset_id: {:?}) ", entity, asset_id);
 
         if AssetType::Animation == asset_type {
-            let walk_anim = WalkAnimation::new(AssetHandle::<AnimationData>::new(asset_id));
-            commands.entity(entity).insert(walk_anim);
+            // let walk_anim = WalkAnimation::new(AssetHandle::<AnimationData>::new(asset_id));
+            // commands.entity(entity).insert(walk_anim);
         } else {
             panic!("unexpected asset type");
         }

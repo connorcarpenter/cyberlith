@@ -18,7 +18,7 @@ pub fn run() {
         })
         // Scene Systems
         .add_systems(Startup, scene::scene_setup)
-        .add_systems(Update, scene::scene_step)
+        // .add_systems(Update, scene::scene_step)
         .add_systems(Draw, scene::scene_draw)
         // Network Systems
         .add_systems(Update, network::world_spawn_entity_events)
