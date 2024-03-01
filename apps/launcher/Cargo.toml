@@ -13,11 +13,11 @@ gl_renderer = [ "game_engine/gl_renderer" ]
 wgpu_renderer = [ "game_engine/wgpu_renderer" ]
 
 [[bin]]
-name = "game_client"
+name = "launcher"
 path = "src/main.rs"
 
 [lib]
-name = "game_client"
+name = "launcher"
 path = "src/lib.rs"
 crate-type = ["cdylib", "rlib"]
 

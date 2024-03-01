@@ -45,6 +45,8 @@ pub fn scene_setup(
         viewport_height as u32,
     ));
     camera_bundle.camera.target = RenderTarget::Screen;
+    commands
+        .spawn(camera_bundle).insert(layer);
 
     commands
         .spawn_empty()

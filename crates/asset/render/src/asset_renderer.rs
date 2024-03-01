@@ -82,7 +82,7 @@ impl AssetRenderer {
 
             // get character width in order to move cursor appropriately
             let icon_width = if subimage_index == 0 {
-                100.0
+                40.0
             } else {
                 asset_store.get_icon_frame_width(icon_handle, subimage_index).unwrap_or(0.0)
             };
