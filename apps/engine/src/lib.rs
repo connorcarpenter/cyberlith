@@ -2,7 +2,7 @@
 extern crate cfg_if;
 
 mod plugin;
-pub use plugin::EnginePlugin;
+pub use plugin::{NetworkedEnginePlugin, EnginePlugin};
 
 mod client_markers;
 mod renderer;

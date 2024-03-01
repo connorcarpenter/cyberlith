@@ -1,0 +1,40 @@
+[package]
+name = "launcher"
+version = "0.1.0"
+authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
+workspace = "../.."
+edition = "2021"
+publish = false
+
+[features]
+local = [ "game_engine/local" ]
+prod = [ "game_engine/prod" ]
+gl_renderer = [ "game_engine/gl_renderer" ]
+wgpu_renderer = [ "game_engine/wgpu_renderer" ]
+
+[[bin]]
+name = "game_client"
+path = "src/main.rs"
+
+[lib]
+name = "game_client"
+path = "src/lib.rs"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+# Internal
+# goal is to have ONLY game_engine here!!!
+game_engine = { path = "../engine" }
+naia-serde = { path = "../../../naia/shared/serde" }
+
+# External
+bevy_app = { version = "0.13", default-features=false }
+bevy_ecs = { version = "0.13", default-features=false }
+bevy_log = { version = "0.13", default-features=false }
+
+rand = { version = "0.8.5" }
+cfg-if = { version = "1.0" }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = { version = "0.2", features = [ "serde-serialize" ] }
+wasm-bindgen-futures = { version = "0.4.40" }

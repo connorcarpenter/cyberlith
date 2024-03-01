@@ -7,6 +7,9 @@
 node_modules
 /target
 /apps/client/target
+/apps/client/assets
+/apps/launcher/target
+/apps/launcher/assets
 /apps/editor/client/target
 /apps/editor/server/target
 /apps/automation/cli/target

@@ -3,6 +3,7 @@ resolver = "2"
 # all crates should be listed here
 members = [
     "apps/client",
+    "apps/launcher",
     "apps/config",
     "apps/content",
     "apps/automation/cli",

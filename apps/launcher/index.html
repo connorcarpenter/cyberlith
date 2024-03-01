@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8"/>
+        <title>Cyberlith Launcher</title>
+    </head>
+    <body>
+    <canvas id="canvas"></canvas>
+        <script type="module">
+            import app, { finished } from "./target/game_client.js";
+            async function start() {
+                await app();
+                console.log("app is running");
+                await finished();
+                console.log("app is finished");
+            }
+            start();
+        </script>
+    </body>
+</html>

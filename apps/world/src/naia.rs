@@ -110,9 +110,8 @@ pub fn connect_events(
             // MUST call this to begin replication
             .enable_replication(&mut server)
             // insert asset ref
-            // .insert_asset::<Main>(&mut asset_manager, &mut server, AssetCatalog::HumanModel.into())
-            // .insert_asset::<Alt1>(&mut asset_manager, &mut server, AssetCatalog::HumanWalk.into())
-            .insert_asset::<Main>(&mut asset_manager, &mut server, AssetCatalog::FontVerdana.into())
+            .insert_asset::<Main>(&mut asset_manager, &mut server, AssetCatalog::HumanModel.into())
+            .insert_asset::<Alt1>(&mut asset_manager, &mut server, AssetCatalog::HumanWalk.into())
             // return Entity id
             .id();
 

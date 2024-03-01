@@ -30,6 +30,25 @@ impl Plugin for EnginePlugin {
             .add_plugins(AssetPlugin)
             .add_plugins(HttpClientPlugin)
             .add_plugins(FileSystemPlugin)
+            .add_systems(Startup, engine_startup)
+            // asset cache stuff, todo: maybe refactor out?
+            .insert_resource(AssetCache::new("assets"))
+            .add_event::<AssetLoadedEvent>()
+            .add_systems(Update, AssetCache::handle_save_asset_tasks)
+
+            // embedded asset
+            .add_systems(Update, handle_embedded_asset_event)
+        ;
+    }
+}
+
+pub struct NetworkedEnginePlugin;
+
+impl Plugin for NetworkedEnginePlugin {
+    fn build(&self, app: &mut App) {
+        app
+            .add_plugins(EnginePlugin)
+
             .add_plugins(NaiaClientPlugin::<Session>::new(
                 NaiaClientConfig::default(),
                 session_server_naia_protocol(),
@@ -38,12 +57,6 @@ impl Plugin for EnginePlugin {
                 NaiaClientConfig::default(),
                 world_server_naia_protocol(),
             ))
-            .add_systems(Startup, engine_startup)
-            // asset cache stuff, todo: maybe refactor out?
-            .insert_resource(AssetCache::new("assets"))
-            .add_event::<AssetLoadedEvent>()
-            .add_systems(Update, AssetCache::handle_load_asset_tasks)
-            .add_systems(Update, AssetCache::handle_save_asset_tasks)
 
             // connection manager stuff, maybe refactor out into a plugin?
             .init_resource::<ConnectionManager>()
@@ -57,6 +70,7 @@ impl Plugin for EnginePlugin {
             // asset ref processing stuff
             .init_resource::<AssetRefProcessor>()
             .add_systems(Update, AssetRefProcessor::handle_asset_loaded_events)
+            .add_systems(Update, AssetCache::handle_load_asset_tasks)
 
             // world component insert stuff
             .add_event::<InsertComponentEvent<Position>>()
@@ -64,9 +78,6 @@ impl Plugin for EnginePlugin {
             .add_event::<InsertAssetRefEvent<Alt1>>()
             .add_systems(Startup, world_events::insert_component_event_startup)
             .add_systems(Update, world_events::insert_component_events)
-
-            // embedded asset
-            .add_systems(Update, handle_embedded_asset_event)
         ;
     }
 }
