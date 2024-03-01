@@ -10,6 +10,7 @@ mod asset_cache;
 mod connection_manager;
 mod world_events;
 mod asset_ref_processor;
+mod embedded_asset;
 
 pub mod asset {
     pub use asset_render::{AssetManager, AnimationData, AssetHandle, IconData, MeshData, ModelData, PaletteData,SceneData,SkeletonData,SkinData, TextStyle, EmbeddedAssetEvent, embedded_asset_event};

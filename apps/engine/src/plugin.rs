@@ -11,10 +11,9 @@ use filesystem::FileSystemPlugin;
 use render_api::RenderApiPlugin;
 
 use session_server_naia_proto::protocol as session_server_naia_protocol;
-use world_server_naia_proto::components::{Alt1, Main, Position};
-use world_server_naia_proto::protocol as world_server_naia_protocol;
+use world_server_naia_proto::{protocol as world_server_naia_protocol, components::{Alt1, Main, Position}};
 
-use crate::{world_events::InsertAssetRefEvent, connection_manager::{ConnectionManager, SessionConnectEvent}, asset_ref_processor::AssetRefProcessor, asset_cache::{AssetCache, AssetLoadedEvent}, client_markers::{Session, World}, InsertComponentEvent, renderer::RendererPlugin, world_events};
+use crate::{embedded_asset::handle_embedded_asset_event, world_events::InsertAssetRefEvent, connection_manager::{ConnectionManager, SessionConnectEvent}, asset_ref_processor::AssetRefProcessor, asset_cache::{AssetCache, AssetLoadedEvent}, client_markers::{Session, World}, InsertComponentEvent, renderer::RendererPlugin, world_events};
 
 pub struct EnginePlugin;
 
@@ -65,6 +64,9 @@ impl Plugin for EnginePlugin {
             .add_event::<InsertAssetRefEvent<Alt1>>()
             .add_systems(Startup, world_events::insert_component_event_startup)
             .add_systems(Update, world_events::insert_component_events)
+
+            // embedded asset
+            .add_systems(Update, handle_embedded_asset_event)
         ;
     }
 }

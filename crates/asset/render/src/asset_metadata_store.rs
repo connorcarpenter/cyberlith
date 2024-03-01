@@ -186,9 +186,9 @@ impl AssetMetadataStore {
     }
 
     pub fn insert(&mut self, asset_id: AssetId, etag: ETag, path: String, asset_type: AssetType) {
-        if !self.finished_loading {
-            panic!("AssetMetadataStore is not finished loading");
-        }
+        // if !self.finished_loading {
+        //     panic!("AssetMetadataStore is not finished loading");
+        // }
         // info!("Inserting asset into map: asset_id: {:?}, etag: {:?}, path: {:?}", asset_id, etag, path);
         self.map.insert(asset_id, AssetMetadata::new(path, etag, asset_type));
     }
