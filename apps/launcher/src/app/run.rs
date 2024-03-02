@@ -5,7 +5,7 @@ use game_engine::{
     wait_for_finish, EnginePlugin,
 };
 
-use super::systems::scene;
+use super::{systems::scene, resources};
 
 pub fn run() {
     let mut app = App::default();

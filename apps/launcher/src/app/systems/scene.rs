@@ -18,17 +18,22 @@ use game_engine::{
     },
     storage::Handle,
 };
+use game_engine::ui::UiManager;
+use crate::app::resources::Global;
 
 #[derive(Component)]
 pub struct TextMarker;
 
 pub fn scene_setup(
     mut commands: Commands,
+    mut ui_manager: ResMut<UiManager>,
     mut embedded_asset_events: EventWriter<EmbeddedAssetEvent>
 ) {
     // TODO: use some kind of catalog here
     embedded_asset_events.send(embedded_asset_event!("../embedded/8273wa")); // palette
     embedded_asset_events.send(embedded_asset_event!("../embedded/34mvvk")); // verdana icon
+
+    ui_manager.set_font(&AssetId::from_str("34mvvk").unwrap());
 
     let layer = RenderLayers::layer(0);
 
@@ -45,24 +50,28 @@ pub fn scene_setup(
         viewport_height as u32,
     ));
     camera_bundle.camera.target = RenderTarget::Screen;
-    commands
-        .spawn(camera_bundle).insert(layer);
+    let camera_entity = commands
+        .spawn(camera_bundle).insert(layer).id();
 
-    commands
-        .spawn_empty()
-        .insert(
-            Transform::from_translation_2d(Vec2::splat(64.0)),
-        )
-        .insert(Visibility::default())
-        .insert(TextMarker)
-        .insert(TextStyle::new(32.0, 4.0))
-        .insert(layer)
-        .insert(AssetHandle::<IconData>::new(AssetId::from_str("34mvvk").unwrap())); // TODO: use some kind of catalog
+    commands.insert_resource(Global::new(camera_entity));
+
+    // commands
+    //     .spawn_empty()
+    //     .insert(
+    //         Transform::from_translation_2d(Vec2::splat(64.0)),
+    //     )
+    //     .insert(Visibility::default())
+    //     .insert(TextMarker)
+    //     .insert(TextStyle::new(32.0, 4.0))
+    //     .insert(layer)
+    //     .insert(); // TODO: use some kind of catalog
 }
 
 pub fn scene_draw(
-    asset_manager: Res<AssetManager>,
     mut render_frame: ResMut<RenderFrame>,
+    global: Res<Global>,
+    asset_manager: Res<AssetManager>,
+    mut ui_manager: ResMut<UiManager>,
     // Cameras
     cameras_q: Query<(&Camera, &Transform, &Projection, Option<&RenderLayer>)>,
     // Meshes
@@ -115,6 +124,35 @@ pub fn scene_draw(
         }
         render_frame.draw_mesh(render_layer_opt, mesh_handle, mat_handle, transform);
     }
+
+    ui_manager
+        // draw should return the root/screen panel
+        .draw(&mut render_frame, global.camera_entity, |ui| {
+            // ui places widgets as children, that's it
+            ui.draw(Label::new("Hello, my Nina! <3"));
+            ui.draw(Panel::new().width(100.0).height(100.0).show_inside(|ui| {
+
+            }));
+            ui.draw(Panel::new().width(100.0).height(100.0).show_inside(|ui| {
+
+            }));
+            if ui.draw(Button::new("click me")).clicked() {
+                // do something
+            }
+
+            // alternatively, additional shortcuts (but make sure the above works for a good foundation:
+            ui.label("Hello, my Nina! <3");
+            ui.panel().width(100.0).height(100.0).show_inside(|ui| {
+
+            });
+            ui.panel().width(100.0).height(100.0).show_inside(|ui| {
+
+            });
+            if ui.button("click me").clicked() {
+                // do something
+            }
+        });
+
 
     //let mut mouse_pos = input.mouse_position();
 

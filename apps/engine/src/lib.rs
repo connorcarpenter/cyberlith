@@ -42,6 +42,9 @@ pub mod config {
 pub mod storage {
     pub use storage::*;
 }
+pub mod ui {
+    pub use ui::*;
+}
 
 // TODO: should these find a home?
 pub use renderer::wait_for_finish;

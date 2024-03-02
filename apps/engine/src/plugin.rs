@@ -11,6 +11,7 @@ use filesystem::FileSystemPlugin;
 use render_api::RenderApiPlugin;
 
 use session_server_naia_proto::protocol as session_server_naia_protocol;
+use ui::UiPlugin;
 use world_server_naia_proto::{protocol as world_server_naia_protocol, components::{Alt1, Main, Position}};
 
 use crate::{embedded_asset::handle_embedded_asset_event, world_events::InsertAssetRefEvent, connection_manager::{ConnectionManager, SessionConnectEvent}, asset_ref_processor::AssetRefProcessor, asset_cache::{AssetCache, AssetLoadedEvent}, client_markers::{Session, World}, InsertComponentEvent, renderer::RendererPlugin, world_events};
@@ -30,6 +31,7 @@ impl Plugin for EnginePlugin {
             .add_plugins(AssetPlugin)
             .add_plugins(HttpClientPlugin)
             .add_plugins(FileSystemPlugin)
+            .add_plugins(UiPlugin)
             .add_systems(Startup, engine_startup)
             // asset cache stuff, todo: maybe refactor out?
             .insert_resource(AssetCache::new("assets"))
