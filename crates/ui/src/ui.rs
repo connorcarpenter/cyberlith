@@ -1,7 +1,8 @@
 use bevy_ecs::{change_detection::ResMut, component::Component, system::Query};
-use bevy_log::warn;
+use bevy_log::{info, warn};
 
 use morphorm::Node;
+use asset_render::{AssetHandle, AssetManager, IconData};
 
 use render_api::{
     base::{CpuMaterial, CpuMesh},
@@ -16,11 +17,12 @@ use crate::{
     panel::{Panel, PanelStore},
     style::Style,
     uiid::UiId,
+    label::Label,
 };
 
 #[derive(Component)]
 pub struct Ui {
-    box_mesh_handle_opt: Option<Handle<CpuMesh>>,
+    globals: Globals,
     pending_mat_handles: Vec<UiId>,
     next_uiid: UiId,
     cache: LayoutCache,
@@ -34,7 +36,7 @@ impl Ui {
 
     pub fn new() -> Self {
         let mut me = Self {
-            box_mesh_handle_opt: None,
+            globals: Globals::new(),
             pending_mat_handles: Vec::new(),
             next_uiid: Self::ROOT_PANEL_ID,
             cache: LayoutCache::new(),
@@ -52,6 +54,7 @@ impl Ui {
     }
 
     // called as as system
+
     pub fn update(
         mut meshes: ResMut<Storage<CpuMesh>>,
         mut materials: ResMut<Storage<CpuMaterial>>,
@@ -67,13 +70,15 @@ impl Ui {
         }
     }
 
+    // system methods
+
     fn needs_box_handle(&self) -> bool {
-        self.box_mesh_handle_opt.is_none()
+        self.globals.box_mesh_handle_opt.is_none()
     }
 
     fn set_box_handle(&mut self, meshes: &mut Storage<CpuMesh>) {
         let mesh_handle = meshes.add(UnitSquare);
-        self.box_mesh_handle_opt = Some(mesh_handle);
+        self.globals.box_mesh_handle_opt = Some(mesh_handle);
     }
 
     fn needs_color_handles(&self) -> bool {
@@ -92,6 +97,13 @@ impl Ui {
         }
     }
 
+    // interface
+
+    pub fn set_text_handle(&mut self, text_handle: &AssetHandle<IconData>) -> &mut Self {
+        self.globals.text_handle_opt = Some(text_handle.clone());
+        self
+    }
+
     pub fn root_ref(&self) -> PanelRef {
         PanelRef::new(self, Self::ROOT_PANEL_ID)
     }
@@ -101,7 +113,7 @@ impl Ui {
         PanelMut::new(self, Self::ROOT_PANEL_ID)
     }
 
-    pub fn draw(&mut self, render_frame: &mut RenderFrame, render_layer_opt: Option<&RenderLayer>) {
+    pub fn draw(&mut self, render_frame: &mut RenderFrame, render_layer_opt: Option<&RenderLayer>, asset_manager: &AssetManager) {
         let Some(viewport) = render_frame.get_camera_viewport(render_layer_opt) else {
             return;
         };
@@ -109,13 +121,14 @@ impl Ui {
         self.recalculate_layout_if_needed();
 
         draw_node(
-            0.0,
             render_frame,
             render_layer_opt,
-            self.box_mesh_handle_opt.as_ref().unwrap(),
+            asset_manager,
+            &self.globals,
             &self.cache,
             &self.panels,
             &Self::ROOT_PANEL_ID,
+            0.0,
         );
     }
 
@@ -132,7 +145,7 @@ impl Ui {
         self.recalc_layout = true;
     }
 
-    pub fn recalculate_layout_if_needed(&mut self) {
+    fn recalculate_layout_if_needed(&mut self) {
         if self.recalc_layout {
             self.recalc_layout = false;
             self.recalculate_layout();
@@ -140,7 +153,7 @@ impl Ui {
     }
 
     fn recalculate_layout(&mut self) {
-        //info!("recalculating layout. viewport_width: {:?}, viewport_height: {:?}", self.viewport.width, self.viewport.height);
+        info!("recalculating layout. viewport_width: {:?}, viewport_height: {:?}", self.viewport.width, self.viewport.height);
         let root_panel = self.panels.get_mut(&Self::ROOT_PANEL_ID).unwrap();
         root_panel.style.set_width_px(self.viewport.width as f32);
         root_panel.style.set_height_px(self.viewport.height as f32);
@@ -152,6 +165,7 @@ impl Ui {
         Self::ROOT_PANEL_ID.layout(cache_mut, panels_ref, panels_ref, &mut ());
 
         // now go get all the queued color handles
+        // happens each time there's a recalculation of layout ... should actually just happen whenever new elements are added
         self.collect_color_handles();
     }
 
@@ -165,26 +179,44 @@ impl Ui {
         self.pending_mat_handles = pending_mat_handles;
     }
 
-    pub(crate) fn next_id(&mut self) -> UiId {
+    fn next_id(&mut self) -> UiId {
         let output = self.next_uiid;
         self.next_uiid.increment();
         output
     }
 
-    pub(crate) fn create_panel(&mut self) -> UiId {
+    fn create_panel(&mut self) -> UiId {
         let panel = Panel::new();
         let panel_id = self.next_id();
         self.panels.insert(panel_id, panel);
         panel_id
     }
 
-    pub(crate) fn panel_ref(&self, uiid: &UiId) -> Option<&Panel> {
+    fn panel_ref(&self, uiid: &UiId) -> Option<&Panel> {
         self.panels.get(&uiid)
     }
 
-    pub(crate) fn panel_mut(&mut self, uiid: &UiId) -> Option<&mut Panel> {
+    fn panel_mut(&mut self, uiid: &UiId) -> Option<&mut Panel> {
         self.queue_recalculate_layout();
         self.panels.get_mut(&uiid)
+    }
+}
+
+pub struct Globals {
+    box_mesh_handle_opt: Option<Handle<CpuMesh>>,
+    text_handle_opt: Option<AssetHandle<IconData>>,
+}
+
+impl Globals {
+    pub fn new() -> Self {
+        Self {
+            box_mesh_handle_opt: None,
+            text_handle_opt: None,
+        }
+    }
+
+    pub fn get_text_handle(&self) -> Option<&AssetHandle<IconData>> {
+        self.text_handle_opt.as_ref()
     }
 }
 
@@ -220,6 +252,21 @@ impl<'a> PanelContentsMut<'a> {
             .children
             .push(new_panel_id);
         PanelMut::<'b>::new(self.ui, new_panel_id)
+    }
+
+    pub fn add_label(&mut self, text: &str) {
+
+        // creates a new panel, returning a context for it
+        let new_panel_id = self.ui.create_panel();
+
+        // add panel to children
+        let panel_mut = self.ui.panel_mut(&self.panel_id).unwrap();
+        panel_mut.children.push(new_panel_id);
+
+        // add label widget to new panel
+        let panel_mut = self.ui.panel_mut(&new_panel_id).unwrap();
+        panel_mut.style.set_size_st(1.0, 1.0);
+        panel_mut.widget_opt = Some(Box::new(Label::new(text)));
     }
 }
 
@@ -294,13 +341,14 @@ impl<'a> PanelMut<'a> {
 }
 
 fn draw_node(
-    depth: f32,
     render_frame: &mut RenderFrame,
     render_layer_opt: Option<&RenderLayer>,
-    mesh_handle: &Handle<CpuMesh>,
+    asset_manager: &AssetManager,
+    globals: &Globals,
     cache: &LayoutCache,
     store: &PanelStore,
     id: &UiId,
+    depth: f32,
 ) {
     let Some((width, height, posx, posy)) = cache.bounds(id) else {
         warn!("no bounds for id: {:?}", id);
@@ -311,26 +359,35 @@ fn draw_node(
         warn!("no panel for id: {:?}", id);
         return;
     };
-    let Some(mat_handle) = panel_ref.style.background_color_handle() else {
-        warn!("no color handle for id: {:?}", id);
-        return;
-    };
 
     let mut transform = Transform::from_xyz(posx, posy, depth);
     transform.scale.x = width;
     transform.scale.y = height;
-    render_frame.draw_mesh(render_layer_opt, mesh_handle, &mat_handle, &transform);
 
-    for child in panel_ref.children.iter() {
-        //info!("drawing child: {:?}", child);
-        draw_node(
-            depth + 0.1, // TODO: make this configurable
-            render_frame,
-            render_layer_opt,
-            mesh_handle,
-            cache,
-            store,
-            child,
-        );
+    // draw widget
+    if let Some(widget) = &panel_ref.widget_opt {
+        widget.draw(render_frame, render_layer_opt, asset_manager, globals, &transform);
+    } else {
+        // draw panel
+        let Some(mat_handle) = panel_ref.style.background_color_handle() else {
+            warn!("no color handle for id: {:?}", id);
+            return;
+        };
+
+        render_frame.draw_mesh(render_layer_opt, globals.box_mesh_handle_opt.as_ref().unwrap(), &mat_handle, &transform);
+
+        for child in panel_ref.children.iter() {
+            //info!("drawing child: {:?}", child);
+            draw_node( // TODO: make this configurable
+                       render_frame,
+                       render_layer_opt,
+                       asset_manager,
+                       globals,
+                       cache,
+                       store,
+                       child,
+                       depth + 0.1,
+            );
+        }
     }
 }

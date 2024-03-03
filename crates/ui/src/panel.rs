@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{style::Style, UiId};
+use crate::{style::Style, UiId, widget::Widget};
 
 pub struct PanelStore {
     map: HashMap<UiId, Panel>,
@@ -35,6 +35,7 @@ pub struct Panel {
     pub(crate) children: Vec<UiId>,
     pub(crate) visible: bool,
     pub(crate) style: Style,
+    pub(crate) widget_opt: Option<Box<dyn Widget>>,
 }
 
 impl Panel {

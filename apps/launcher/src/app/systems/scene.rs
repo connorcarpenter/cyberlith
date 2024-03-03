@@ -3,6 +3,7 @@ use bevy_ecs::{
     event::EventWriter,
     system::{Commands, Query, ResMut},
 };
+use bevy_ecs::system::Res;
 
 use game_engine::{
     asset::{
@@ -20,6 +21,7 @@ use game_engine::{
     },
     ui::Ui,
 };
+use game_engine::asset::{AssetHandle, AssetId, AssetManager, IconData};
 
 #[derive(Component)]
 pub struct TextMarker;
@@ -36,8 +38,11 @@ pub fn scene_setup(
 
     // ui
 
+    let text_handle = AssetHandle::<IconData>::new(AssetId::from_str("34mvvk").unwrap()); // TODO: use some kind of catalog
     let mut ui = Ui::new();
-    ui.root_mut()
+    ui
+        .set_text_handle(& text_handle)
+        .root_mut()
         .style(|s| {
             s.set_background_color(Color::YELLOW)
                 .set_vertical()
@@ -48,9 +53,14 @@ pub fn scene_setup(
             //ui.label("Hello, my Nina! <3");
             c.add_panel()
                 .style(|s| {
-                    s.set_background_color(Color::RED).set_size_st(1.0, 1.0);
+                    s
+                        .set_background_color(Color::RED)
+                        .set_size_st(1.0, 1.0)
+                        .set_padding_px(0.0, 0.0, 0.0, 0.0);
                 })
-                .contents(|mut _c| {});
+                .contents(|mut c| {
+                    c.add_label("Hello, my Nina");
+                });
             c.add_panel()
                 .style(|s| {
                     s.set_background_color(Color::BLUE).set_size_st(1.0, 1.0);
@@ -100,6 +110,7 @@ pub fn scene_setup(
 
 pub fn scene_draw(
     mut render_frame: ResMut<RenderFrame>,
+    asset_manager: Res<AssetManager>,
     // Cameras
     cameras_q: Query<(&Camera, &Transform, &Projection, Option<&RenderLayer>)>,
     mut uis_q: Query<(&mut Ui, Option<&RenderLayer>)>,
@@ -133,7 +144,7 @@ pub fn scene_draw(
 
     // Aggregate UIs
     for (mut ui, render_layer_opt) in uis_q.iter_mut() {
-        ui.draw(&mut render_frame, render_layer_opt);
+        ui.draw(&mut render_frame, render_layer_opt, &asset_manager);
     }
 }
 

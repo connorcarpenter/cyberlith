@@ -122,10 +122,10 @@ impl AssetManager {
     pub fn draw_text(
         &self,
         render_frame: &mut RenderFrame,
+        render_layer_opt: Option<&RenderLayer>,
         icon_handle: &AssetHandle<IconData>,
         style: &TextStyle,
         position: &Vec3,
-        render_layer_opt: Option<&RenderLayer>,
         text: &str,
     ) {
         AssetRenderer::draw_text(

@@ -1,16 +1,12 @@
 mod plugin;
-pub use plugin::UiPlugin;
-
 mod ui;
-pub use ui::Ui;
-
 mod uiid;
-pub use uiid::UiId;
-
 mod panel;
-// pub use panel::*;
-
 mod style;
-// pub use style::*;
-
 mod cache;
+mod widget;
+mod label;
+
+pub use plugin::UiPlugin;
+pub use ui::Ui;
+pub use uiid::UiId;

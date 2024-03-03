@@ -1,3 +1,4 @@
+use bevy_log::info;
 use morphorm::{LayoutType, Node, PositionType, Units};
 
 use crate::panel::PanelStore;
@@ -28,6 +29,7 @@ impl Node for UiId {
 
     fn children<'t>(&'t self, ui: &'t PanelStore) -> Self::ChildIter<'t> {
         if let Some(panel) = ui.get(self) {
+            info!("children: {:?}", panel.children);
             panel.children.iter()
         } else {
             [].iter()
