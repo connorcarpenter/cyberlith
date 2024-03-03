@@ -1,5 +1,5 @@
 use bevy_ecs::{change_detection::ResMut, component::Component, system::Query};
-use bevy_log::{info, warn};
+use bevy_log::warn;
 
 use morphorm::Node;
 

@@ -10,10 +10,6 @@ impl UiId {
         UiId(id)
     }
 
-    pub(crate) fn get(&self) -> u32 {
-        self.0
-    }
-
     pub(crate) fn increment(&mut self) {
         self.0 += 1;
     }

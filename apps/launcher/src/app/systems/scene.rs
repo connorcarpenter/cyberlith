@@ -1,25 +1,23 @@
 use bevy_ecs::{
     component::Component,
     event::EventWriter,
-    system::{Commands, Query, Res, ResMut},
+    system::{Commands, Query, ResMut},
 };
-use bevy_log::info;
 
 use game_engine::{
     asset::{
-        embedded_asset_event, AssetHandle, AssetManager, EmbeddedAssetEvent, IconData, TextStyle,
+        embedded_asset_event, EmbeddedAssetEvent,
     },
     math::Vec3,
     render::{
-        base::{Color, CpuMaterial, CpuMesh},
+        base::Color,
         components::{
             AmbientLight, Camera, CameraBundle, DirectionalLight, PointLight, Projection,
-            RenderLayer, RenderLayers, RenderTarget, Transform, Viewport, Visibility, OrthographicProjection,
+            RenderLayer, RenderLayers, RenderTarget, Transform, Viewport, OrthographicProjection,
         },
         resources::RenderFrame,
         Window,
     },
-    storage::Handle,
     ui::Ui,
 };
 
@@ -94,45 +92,6 @@ pub fn scene_setup(
     //     .insert(); // TODO: use some kind of catalog
 }
 
-pub fn handle_viewport_resize(mut window: ResMut<Window>, mut cameras_q: Query<(&mut Camera, &mut Transform)>) {
-    // sync camera viewport to window
-    if !window.did_change() {
-        return;
-    }
-    window.clear_change();
-    let Some(window_res) = window.get() else {
-        return;
-    };
-    for (mut camera, mut transform) in cameras_q.iter_mut() {
-        let should_change = if let Some(viewport) = camera.viewport.as_mut() {
-            *viewport != window_res.logical_size } else { true };
-        if should_change {
-            let new_viewport = Viewport::new_at_origin(
-                window_res.logical_size.width,
-                window_res.logical_size.height,
-            );
-            camera.viewport = Some(new_viewport);
-
-            //info!("resize window detected. new viewport: (x: {:?}, y: {:?}, width: {:?}, height: {:?})", new_viewport.x, new_viewport.y, new_viewport.width, new_viewport.height);
-
-            *transform = Transform::from_xyz(
-                new_viewport.width as f32 * 0.5,
-                new_viewport.height as f32 * 0.5,
-                1000.0,
-            )
-            .looking_at(
-                Vec3::new(
-                    new_viewport.width as f32 * 0.5,
-                    new_viewport.height as f32 * 0.5,
-                    0.0,
-                ),
-                Vec3::NEG_Y,
-            );
-        }
-    }
-}
-
-// TODO: handle resize events by updating ui size (ui.update_size())
 // TODO: handle mouse move events to update cursor (ui.update_cursor())
 // TODO: handle keypress events to update focus (ui.navigate(up/down/left/right))
 // TODO: ui.receive_click() -> Option<UiId>(); // ui determined by cursor
@@ -141,24 +100,8 @@ pub fn handle_viewport_resize(mut window: ResMut<Window>, mut cameras_q: Query<(
 
 pub fn scene_draw(
     mut render_frame: ResMut<RenderFrame>,
-    asset_manager: Res<AssetManager>,
     // Cameras
     cameras_q: Query<(&Camera, &Transform, &Projection, Option<&RenderLayer>)>,
-    // Meshes
-    cpu_meshes_q: Query<(
-        &Handle<CpuMesh>,
-        &Handle<CpuMaterial>,
-        &Transform,
-        &Visibility,
-        Option<&RenderLayer>,
-    )>,
-    icons_q: Query<(
-        &AssetHandle<IconData>,
-        &TextStyle,
-        &Transform,
-        &Visibility,
-        Option<&RenderLayer>,
-    )>,
     mut uis_q: Query<(&mut Ui, Option<&RenderLayer>)>,
     // Lights
     ambient_lights_q: Query<(&AmbientLight, Option<&RenderLayer>)>,
@@ -188,24 +131,46 @@ pub fn scene_draw(
         render_frame.draw_ambient_light(render_layer_opt, ambient_light);
     }
 
-    // Aggregate Cpu Meshes
-    for (mesh_handle, mat_handle, transform, visibility, render_layer_opt) in cpu_meshes_q.iter() {
-        if !visibility.visible {
-            continue;
-        }
-        render_frame.draw_mesh(render_layer_opt, mesh_handle, mat_handle, transform);
-    }
-
     // Aggregate UIs
     for (mut ui, render_layer_opt) in uis_q.iter_mut() {
         ui.draw(&mut render_frame, render_layer_opt);
     }
+}
 
-    //  // Aggregate Icons
-    // for (icon_handle, style, transform, visibility, render_layer_opt) in icons_q.iter() {
-    //     if !visibility.visible {
-    //         continue;
-    //     }
-    //     asset_manager.draw_text(&mut render_frame, icon_handle, &style, &transform.translation, render_layer_opt, "Hello, my Nina! <3");
-    // }
+pub fn handle_viewport_resize(mut window: ResMut<Window>, mut cameras_q: Query<(&mut Camera, &mut Transform)>) {
+    // sync camera viewport to window
+    if !window.did_change() {
+        return;
+    }
+    window.clear_change();
+    let Some(window_res) = window.get() else {
+        return;
+    };
+    for (mut camera, mut transform) in cameras_q.iter_mut() {
+        let should_change = if let Some(viewport) = camera.viewport.as_mut() {
+            *viewport != window_res.logical_size } else { true };
+        if should_change {
+            let new_viewport = Viewport::new_at_origin(
+                window_res.logical_size.width,
+                window_res.logical_size.height,
+            );
+            camera.viewport = Some(new_viewport);
+
+            //info!("resize window detected. new viewport: (x: {:?}, y: {:?}, width: {:?}, height: {:?})", new_viewport.x, new_viewport.y, new_viewport.width, new_viewport.height);
+
+            *transform = Transform::from_xyz(
+                new_viewport.width as f32 * 0.5,
+                new_viewport.height as f32 * 0.5,
+                1000.0,
+            )
+                .looking_at(
+                    Vec3::new(
+                        new_viewport.width as f32 * 0.5,
+                        new_viewport.height as f32 * 0.5,
+                        0.0,
+                    ),
+                    Vec3::NEG_Y,
+                );
+        }
+    }
 }
