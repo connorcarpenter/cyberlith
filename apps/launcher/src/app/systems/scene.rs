@@ -43,30 +43,30 @@ pub fn scene_setup(
         .style(|s| {
             s
                 .set_background_color(Color::YELLOW)
-                .set_horizontal()
+                .set_vertical()
                 .set_padding_px(10.0, 10.0, 10.0, 10.0)
-                .set_col_between_px(10.0);
+                .set_row_between_px(10.0);
         })
-        .inside(|mut ui| {
+        .contents(|mut c| {
             //ui.label("Hello, my Nina! <3");
-            ui
-                .panel()
+            c
+                .add_panel()
                 .style(|s| {
                     s
                         .set_background_color(Color::RED)
                         .set_size_st(1.0, 1.0);
                 })
-                .inside(|_ui| {
+                .contents(|mut _c| {
 
                 });
-            ui
-                .panel()
+            c
+                .add_panel()
                 .style(|s| {
                     s
                         .set_background_color(Color::BLUE)
                         .set_size_st(1.0, 1.0);
                 })
-                .inside(|_ui| {
+                .contents(|mut _c| {
 
                 });
             //ui.button("click me");

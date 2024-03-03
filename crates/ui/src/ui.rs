@@ -1,15 +1,13 @@
 
 use bevy_ecs::{system::Query, component::Component, change_detection::ResMut};
-use bevy_log::{info, warn};
+use bevy_log::warn;
 
-use morphorm::{Cache, Node};
+use morphorm::Node;
 
 use render_api::{shapes::{UnitSquare}, resources::RenderFrame, components::{RenderLayer, Transform, Viewport}, base::{CpuMaterial, CpuMesh}};
 use storage::{Handle, Storage};
 
-use crate::{uiid::UiId, panel::PanelStore, cache::LayoutCache};
-use crate::panel::Panel;
-use crate::style::Style;
+use crate::{style::Style, uiid::UiId, panel::{PanelStore, Panel}, cache::LayoutCache};
 
 #[derive(Component)]
 pub struct Ui {
@@ -38,10 +36,10 @@ impl Ui {
             viewport: Viewport::new_at_origin(0, 0),
         };
 
-        let panel = Panel::new();
-        let panel_id = Self::ROOT_PANEL_ID;
-        me.panels.insert(panel_id, panel);
-        me.next_uiid.increment();
+        let panel_id = me.create_panel();
+        if panel_id != Self::ROOT_PANEL_ID {
+            panic!("root panel id is not 0");
+        }
 
         me
     }
@@ -87,13 +85,13 @@ impl Ui {
         }
     }
 
-    pub fn root_ref(&self) -> PanelContextRef {
-        PanelContextRef::new(self, Self::ROOT_PANEL_ID)
+    pub fn root_ref(&self) -> PanelRef {
+        PanelRef::new(self, Self::ROOT_PANEL_ID)
     }
 
-    pub fn root_mut(&mut self) -> PanelContextMut {
+    pub fn root_mut(&mut self) -> PanelMut {
         self.queue_recalculate_layout();
-        PanelContextMut::new(self, Self::ROOT_PANEL_ID)
+        PanelMut::new(self, Self::ROOT_PANEL_ID)
     }
 
     pub fn draw(&mut self, render_frame: &mut RenderFrame, render_layer_opt: Option<&RenderLayer>) {
@@ -184,12 +182,12 @@ impl Ui {
 }
 
 // use for inspecting children?
-pub struct InsidePanelContextRef<'a> {
+pub struct PanelContentsRef<'a> {
     ui: &'a Ui,
     panel_id: UiId,
 }
 
-impl<'a> InsidePanelContextRef<'a> {
+impl<'a> PanelContentsRef<'a> {
     pub(crate) fn new(ui: &'a Ui, panel_id: UiId) -> Self {
         Self {
             ui,
@@ -198,13 +196,13 @@ impl<'a> InsidePanelContextRef<'a> {
     }
 }
 
-// used just for adding children
-pub struct InsidePanelContextMut<'a> {
+// only used for adding children
+pub struct PanelContentsMut<'a> {
     ui: &'a mut Ui,
     panel_id: UiId,
 }
 
-impl<'a> InsidePanelContextMut<'a> {
+impl<'a> PanelContentsMut<'a> {
     pub(crate) fn new(ui: &'a mut Ui, panel_id: UiId) -> Self {
         Self {
             ui,
@@ -212,20 +210,20 @@ impl<'a> InsidePanelContextMut<'a> {
         }
     }
 
-    pub fn panel<'b>(self: &'b mut InsidePanelContextMut<'a>) -> PanelContextMut<'b> {
+    pub fn add_panel<'b>(self: &'b mut PanelContentsMut<'a>) -> PanelMut<'b> {
         // creates a new panel, returning a context for it
         let new_panel_id = self.ui.create_panel();
         self.ui.panel_mut(&self.panel_id).unwrap().children.push(new_panel_id);
-        PanelContextMut::<'b>::new(self.ui, new_panel_id)
+        PanelMut::<'b>::new(self.ui, new_panel_id)
     }
 }
 
-pub struct PanelContextRef<'a> {
+pub struct PanelRef<'a> {
     ui: &'a Ui,
     panel_id: UiId,
 }
 
-impl<'a> PanelContextRef<'a> {
+impl<'a> PanelRef<'a> {
     pub(crate) fn new(ui: &'a Ui, panel_id: UiId) -> Self {
         Self {
             ui,
@@ -233,8 +231,8 @@ impl<'a> PanelContextRef<'a> {
         }
     }
 
-    pub fn inside(&'a self, inner_fn: impl FnOnce(InsidePanelContextRef)) -> &Self {
-        let context = InsidePanelContextRef::new(self.ui, self.panel_id);
+    pub fn inside(&'a self, inner_fn: impl FnOnce(PanelContentsRef)) -> &Self {
+        let context = PanelContentsRef::new(self.ui, self.panel_id);
         inner_fn(context);
         self
     }
@@ -251,12 +249,12 @@ impl<'a> PanelContextRef<'a> {
     }
 }
 
-pub struct PanelContextMut<'a> {
+pub struct PanelMut<'a> {
     ui: &'a mut Ui,
     panel_id: UiId,
 }
 
-impl<'a> PanelContextMut<'a> {
+impl<'a> PanelMut<'a> {
     pub(crate) fn new(ui: &'a mut Ui, panel_id: UiId) -> Self {
         Self {
             ui,
@@ -264,8 +262,8 @@ impl<'a> PanelContextMut<'a> {
         }
     }
 
-    pub fn inside(&'a mut self, inner_fn: impl FnOnce(InsidePanelContextMut)) -> &mut Self {
-        let context = InsidePanelContextMut::new(self.ui, self.panel_id);
+    pub fn contents(&'a mut self, inner_fn: impl FnOnce(PanelContentsMut)) -> &mut Self {
+        let context = PanelContentsMut::new(self.ui, self.panel_id);
         inner_fn(context);
         self
     }
@@ -318,11 +316,6 @@ fn draw_node(
         warn!("no color handle for id: {:?}", id);
         return;
     };
-
-    //
-    let color = panel_ref.style.background_color();
-    //info!("id: {:?}, color: {:?}, x: {}, y: {}, width: {}, height: {}, depth: {}", id, color, posx, posy, width, height, depth);
-    //
 
     let mut transform = Transform::from_xyz(posx, posy, depth);
     transform.scale.x = width;
