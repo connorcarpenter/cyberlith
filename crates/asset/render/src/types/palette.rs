@@ -43,7 +43,6 @@ impl PaletteData {
     }
 
     pub fn from_bytes(bytes: &[u8]) -> Self {
-
         let actions = asset_io::bits::PaletteAction::read(bytes).expect("unable to parse file");
 
         info!("--- reading palette ---");

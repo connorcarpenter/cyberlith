@@ -1,14 +1,10 @@
 use bevy_ecs::system::Resource;
 
 #[derive(Resource)]
-pub struct Global {
-
-}
+pub struct Global {}
 
 impl Default for Global {
     fn default() -> Self {
-        Self {
-
-        }
+        Self {}
     }
 }

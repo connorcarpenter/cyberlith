@@ -1,10 +1,17 @@
 use std::time::Duration;
 
-use bevy_ecs::{event::{EventReader, EventWriter, Event}, system::Resource, change_detection::ResMut};
+use bevy_ecs::{
+    change_detection::ResMut,
+    event::{Event, EventReader, EventWriter},
+    system::Resource,
+};
 use bevy_log::info;
 
-use naia_bevy_client::{Timer, events::ConnectEvent, Client};
-use naia_bevy_client::events::{MessageEvents, RequestEvents};
+use naia_bevy_client::{
+    events::{ConnectEvent, MessageEvents, RequestEvents},
+    transport::webrtc::Socket as WebrtcSocket,
+    Client, Timer,
+};
 
 use asset_render::{AssetManager, AssetMetadataStore};
 use bevy_http_client::{HttpClient, ResponseKey};
@@ -12,13 +19,16 @@ use config::{ORCHESTRATOR_PORT, PUBLIC_IP_ADDR};
 use filesystem::FileSystemManager;
 
 use orchestrator_http_proto::{LoginRequest, LoginResponse};
-use session_server_naia_proto::{channels::PrimaryChannel, messages::{LoadAssetRequest, LoadAssetWithData, WorldConnectToken, Auth as SessionAuth}};
+use session_server_naia_proto::{
+    channels::{PrimaryChannel, RequestChannel},
+    messages::{Auth as SessionAuth, LoadAssetRequest, LoadAssetWithData, WorldConnectToken},
+};
 use world_server_naia_proto::messages::Auth as WorldAuth;
 
-use naia_bevy_client::transport::webrtc::Socket as WebrtcSocket;
-use session_server_naia_proto::channels::RequestChannel;
-
-use crate::{client_markers::{Session, World}, asset_cache::{AssetCache, AssetLoadedEvent}};
+use crate::{
+    asset_cache::{AssetCache, AssetLoadedEvent},
+    client_markers::{Session, World},
+};
 
 type SessionClient<'a> = Client<'a, Session>;
 type WorldClient<'a> = Client<'a, World>;
@@ -52,13 +62,12 @@ impl Default for ConnectionManager {
 }
 
 impl ConnectionManager {
-
     // used as a system
     pub fn handle_session_connect_events(
         client: SessionClient,
         mut event_reader: EventReader<ConnectEvent<Session>>,
         mut connection_manager: ResMut<ConnectionManager>,
-        mut event_writer: EventWriter<SessionConnectEvent>
+        mut event_writer: EventWriter<SessionConnectEvent>,
     ) {
         for _ in event_reader.read() {
             let Ok(server_address) = client.server_address() else {
@@ -69,7 +78,8 @@ impl ConnectionManager {
                 server_address
             );
 
-            let ConnectionState::ReceivedFromOrchestrator(_) = &connection_manager.connection_state else {
+            let ConnectionState::ReceivedFromOrchestrator(_) = &connection_manager.connection_state
+            else {
                 panic!("Shouldn't happen");
             };
 
@@ -118,9 +128,9 @@ impl ConnectionManager {
 
                 world_client.auth(WorldAuth::new(&token.login_token));
                 info!(
-                "connecting to world server: {}",
-                token.world_server_public_webrtc_url
-            );
+                    "connecting to world server: {}",
+                    token.world_server_public_webrtc_url
+                );
                 let socket = WebrtcSocket::new(
                     &token.world_server_public_webrtc_url,
                     world_client.socket_config(),
@@ -128,9 +138,18 @@ impl ConnectionManager {
                 world_client.connect(socket);
             }
             for asset_message in events.read::<PrimaryChannel, LoadAssetWithData>() {
-                info!("received Asset Data Message from Session Server! (id: {:?}, etag: {:?})", asset_message.asset_id, asset_message.asset_etag);
+                info!(
+                    "received Asset Data Message from Session Server! (id: {:?}, etag: {:?})",
+                    asset_message.asset_id, asset_message.asset_etag
+                );
 
-                asset_cache.handle_load_asset_with_data_message(&mut asset_manager, &mut asset_loaded_event_writer, &mut file_system_manager, &mut metadata_store, asset_message);
+                asset_cache.handle_load_asset_with_data_message(
+                    &mut asset_manager,
+                    &mut asset_loaded_event_writer,
+                    &mut file_system_manager,
+                    &mut metadata_store,
+                    asset_message,
+                );
             }
         }
     }
@@ -143,7 +162,12 @@ impl ConnectionManager {
     ) {
         for events in event_reader.read() {
             for (response_send_key, request) in events.read::<RequestChannel, LoadAssetRequest>() {
-                asset_cache.handle_load_asset_request(&mut file_system_manager, &mut metadata_store, request, response_send_key);
+                asset_cache.handle_load_asset_request(
+                    &mut file_system_manager,
+                    &mut metadata_store,
+                    request,
+                    response_send_key,
+                );
             }
         }
     }
@@ -157,8 +181,11 @@ impl ConnectionManager {
         connection_manager.handle_connection_impl(&mut http_client, &mut session_client);
     }
 
-
-    fn handle_connection_impl(&mut self, http_client: &mut HttpClient, session_client: &mut SessionClient) {
+    fn handle_connection_impl(
+        &mut self,
+        http_client: &mut HttpClient,
+        session_client: &mut SessionClient,
+    ) {
         if self.send_timer.ringing() {
             self.send_timer.reset();
         } else {
@@ -177,17 +204,17 @@ impl ConnectionManager {
                     match result {
                         Ok(response) => {
                             info!(
-                            "received from orchestrator: (webrtc url: {:?}, token: {:?})",
-                            response.session_server_public_webrtc_url, response.token
-                        );
+                                "received from orchestrator: (webrtc url: {:?}, token: {:?})",
+                                response.session_server_public_webrtc_url, response.token
+                            );
                             self.connection_state =
                                 ConnectionState::ReceivedFromOrchestrator(response.clone());
 
                             session_client.auth(SessionAuth::new(&response.token));
                             info!(
-                            "connecting to session server: {}",
-                            response.session_server_public_webrtc_url
-                        );
+                                "connecting to session server: {}",
+                                response.session_server_public_webrtc_url
+                            );
                             let socket = WebrtcSocket::new(
                                 &response.session_server_public_webrtc_url,
                                 session_client.socket_config(),

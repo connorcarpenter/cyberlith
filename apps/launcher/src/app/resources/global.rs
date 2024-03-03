@@ -1,5 +1,4 @@
-use bevy_ecs::{system::Resource};
+use bevy_ecs::system::Resource;
 
 #[derive(Resource)]
-pub struct Global {
-}
+pub struct Global {}

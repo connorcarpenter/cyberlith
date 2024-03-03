@@ -20,7 +20,6 @@ impl Default for IconData {
 }
 
 impl IconData {
-
     pub(crate) fn get_frame_width(&self, index: usize) -> Option<f32> {
         let frame = self.frames.get(index)?;
         Some(frame.get_width())
@@ -83,10 +82,7 @@ impl IconData {
         dependencies.push((asset_handle.into(), TypedAssetId::Palette(asset_id.clone())));
     }
 
-    pub(crate) fn finish_dependency(
-        &mut self,
-        dependency_typed_id: TypedAssetId,
-    ) {
+    pub(crate) fn finish_dependency(&mut self, dependency_typed_id: TypedAssetId) {
         match dependency_typed_id {
             TypedAssetId::Palette(asset_id) => {
                 let asset_handle = AssetHandle::<PaletteData>::new(asset_id);
@@ -125,7 +121,6 @@ impl IconData {
     }
 
     pub fn from_bytes(bytes: &[u8]) -> Self {
-
         let actions = asset_io::bits::IconAction::read(bytes).expect("unable to parse file");
 
         let mut palette_file_opt = None;

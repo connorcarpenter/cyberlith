@@ -2,19 +2,22 @@
 extern crate cfg_if;
 
 mod plugin;
-pub use plugin::{NetworkedEnginePlugin, EnginePlugin};
+pub use plugin::{EnginePlugin, NetworkedEnginePlugin};
 
-mod client_markers;
-mod renderer;
 mod asset_cache;
-mod connection_manager;
-mod world_events;
 mod asset_ref_processor;
+mod client_markers;
+mod connection_manager;
 mod embedded_asset;
+mod renderer;
+mod world_events;
 
 pub mod asset {
-    pub use asset_render::{AssetManager, AnimationData, AssetHandle, IconData, MeshData, ModelData, PaletteData,SceneData,SkeletonData,SkinData, TextStyle, EmbeddedAssetEvent, embedded_asset_event};
     pub use asset_id::{AssetId, AssetType};
+    pub use asset_render::{
+        embedded_asset_event, AnimationData, AssetHandle, AssetManager, EmbeddedAssetEvent,
+        IconData, MeshData, ModelData, PaletteData, SceneData, SkeletonData, SkinData, TextStyle,
+    };
 }
 pub mod input {
     pub use input::*;
@@ -32,9 +35,9 @@ pub mod world {
 
     pub type WorldClient<'w> = Client<'w, World>;
     pub type WorldSpawnEntityEvent = SpawnEntityEvent<World>;
-    pub use super::world_events::InsertComponentEvent as WorldInsertComponentEvent;
     pub use super::world_events::InsertAssetRefEvent as WorldInsertAssetRefEvent;
-    pub use world_server_naia_proto::components::{Position, Main, Alt1};
+    pub use super::world_events::InsertComponentEvent as WorldInsertComponentEvent;
+    pub use world_server_naia_proto::components::{Alt1, Main, Position};
 }
 pub mod config {
     pub use config::*;

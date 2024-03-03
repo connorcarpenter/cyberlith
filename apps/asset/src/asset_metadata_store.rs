@@ -14,7 +14,12 @@ pub struct AssetMetadata {
 
 impl AssetMetadata {
     fn new(path: String, asset_type: AssetType, etag: ETag, dependencies: Vec<AssetId>) -> Self {
-        Self { path, asset_type, etag, dependencies }
+        Self {
+            path,
+            asset_type,
+            etag,
+            dependencies,
+        }
     }
 
     pub fn path(&self) -> &str {
@@ -72,7 +77,10 @@ impl AssetMetadataStore {
 
             let new_file_extension = file_name.split('.').last().unwrap();
             let Some(asset_type) = AssetType::from_str(new_file_extension) else {
-                panic!("Failed to find asset type for extension: {:?}", new_file_extension)
+                panic!(
+                    "Failed to find asset type for extension: {:?}",
+                    new_file_extension
+                )
             };
 
             output.insert(
@@ -87,12 +95,22 @@ impl AssetMetadataStore {
         output
     }
 
-    pub fn insert(&mut self, asset_id: AssetId, asset_type: AssetType, etag: ETag, dependencies: Vec<AssetId>, path: String) {
+    pub fn insert(
+        &mut self,
+        asset_id: AssetId,
+        asset_type: AssetType,
+        etag: ETag,
+        dependencies: Vec<AssetId>,
+        path: String,
+    ) {
         // info!("Inserting asset into map: asset_id: {:?}, etag: {:?}, path: {:?}", asset_id, etag, path);
         if self.map.contains_key(&asset_id) {
             panic!("asset already exists in map: {:?}", asset_id);
         }
-        self.map.insert(asset_id, AssetMetadata::new(path, asset_type, etag, dependencies));
+        self.map.insert(
+            asset_id,
+            AssetMetadata::new(path, asset_type, etag, dependencies),
+        );
     }
 
     pub fn get(&self, asset_id: &AssetId) -> Option<&AssetMetadata> {

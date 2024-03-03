@@ -11,9 +11,7 @@ pub struct ReadTask {
 
 impl ReadTask {
     pub fn new<T: Into<PathBuf>>(path: T) -> Self {
-        Self {
-            path: path.into(),
-        }
+        Self { path: path.into() }
     }
 }
 
@@ -24,9 +22,7 @@ pub struct ReadResult {
 
 impl ReadResult {
     pub fn new(bytes: Vec<u8>) -> Self {
-        Self {
-            bytes
-        }
+        Self { bytes }
     }
 }
 

@@ -12,7 +12,7 @@ use session_server_naia_proto::{channels::PrimaryChannel, messages::WorldConnect
 
 use config::{REGION_SERVER_PORT, REGION_SERVER_RECV_ADDR};
 
-use crate::{global::Global, asset::asset_manager::AssetManager};
+use crate::{asset::asset_manager::AssetManager, global::Global};
 
 pub fn send_world_connect_request(mut http_client: ResMut<HttpClient>, mut global: ResMut<Global>) {
     let worldless_users = global.take_worldless_users();

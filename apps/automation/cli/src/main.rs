@@ -27,12 +27,7 @@ fn cli() -> Command {
             Command::new("convert_ttf_to_icon")
                 .about("converts ttf to icon")
                 .arg_required_else_help(true)
-                .arg(
-                    Arg::new("ttf")
-                        .short('t')
-                        .long("ttf")
-                        .required(true),
-                ),
+                .arg(Arg::new("ttf").short('t').long("ttf").required(true)),
         )
 }
 

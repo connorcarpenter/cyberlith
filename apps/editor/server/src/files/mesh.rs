@@ -123,14 +123,10 @@ impl MeshWriter {
         }
 
         for face_info_opt in face_list {
-            let Some((face_id, vertex_a, vertex_b, vertex_c)) =
-                face_info_opt
-            else {
+            let Some((face_id, vertex_a, vertex_b, vertex_c)) = face_info_opt else {
                 panic!("face_list contains None");
             };
-            output.add_face(
-                face_id, vertex_a, vertex_b, vertex_c
-            );
+            output.add_face(face_id, vertex_a, vertex_b, vertex_c);
         }
 
         output
@@ -234,12 +230,7 @@ impl MeshReader {
             ));
         }
         for face in data.get_faces() {
-            let (
-                face_index,
-                vertex_a_index,
-                vertex_b_index,
-                vertex_c_index,
-            ) = face.deconstruct();
+            let (face_index, vertex_a_index, vertex_b_index, vertex_c_index) = face.deconstruct();
 
             let vertex_a_entity = *vertices.get(vertex_a_index as usize).unwrap();
             let vertex_b_entity = *vertices.get(vertex_b_index as usize).unwrap();

@@ -17,7 +17,6 @@ impl Plugin for AssetPlugin {
             .add_systems(Startup, AssetMetadataStore::startup)
             .add_systems(Update, AssetMetadataStore::handle_metadata_tasks)
             // Embedded stuff
-            .add_event::<EmbeddedAssetEvent>()
-        ;
+            .add_event::<EmbeddedAssetEvent>();
     }
 }

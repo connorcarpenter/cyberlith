@@ -28,7 +28,6 @@ pub trait StorageHash<T>: Any + Hash + Into<T> {
 }
 
 impl<T> Storage<T> {
-
     pub fn has<L: StorageHash<T>>(&mut self, data: L) -> bool {
         let key = data.get_key();
         self.keys.contains_key(&key)

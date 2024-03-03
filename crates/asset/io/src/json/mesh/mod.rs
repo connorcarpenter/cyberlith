@@ -64,12 +64,7 @@ pub struct MeshDataFace {
 
 impl MeshDataFace {
     pub fn deconstruct(&self) -> (u16, u16, u16, u16) {
-        (
-            self.face_id,
-            self.vertex_a,
-            self.vertex_b,
-            self.vertex_c,
-        )
+        (self.face_id, self.vertex_a, self.vertex_b, self.vertex_c)
     }
 }
 
@@ -115,13 +110,7 @@ impl MeshData {
         &self.faces
     }
 
-    pub fn add_face(
-        &mut self,
-        face_id: u16,
-        vertex_a: u16,
-        vertex_b: u16,
-        vertex_c: u16,
-    ) {
+    pub fn add_face(&mut self, face_id: u16, vertex_a: u16, vertex_b: u16, vertex_c: u16) {
         self.faces.push(MeshDataFace {
             face_id,
             vertex_a,

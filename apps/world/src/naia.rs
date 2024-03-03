@@ -110,8 +110,16 @@ pub fn connect_events(
             // MUST call this to begin replication
             .enable_replication(&mut server)
             // insert asset ref
-            .insert_asset::<Main>(&mut asset_manager, &mut server, AssetCatalog::HumanModel.into())
-            .insert_asset::<Alt1>(&mut asset_manager, &mut server, AssetCatalog::HumanWalk.into())
+            .insert_asset::<Main>(
+                &mut asset_manager,
+                &mut server,
+                AssetCatalog::HumanModel.into(),
+            )
+            .insert_asset::<Alt1>(
+                &mut asset_manager,
+                &mut server,
+                AssetCatalog::HumanWalk.into(),
+            )
             // return Entity id
             .id();
 
@@ -193,7 +201,10 @@ pub fn tick_events(world: &mut World) {
     for (_room_key, user_key, entity, in_scope) in scope_checks {
         // TODO: assess scope logic here
         if !in_scope {
-            info!("Entity out of scope: {:?}, should be added to user.", entity);
+            info!(
+                "Entity out of scope: {:?}, should be added to user.",
+                entity
+            );
             scope_actions.insert((user_key, entity), true);
         }
     }
@@ -228,9 +239,14 @@ pub fn tick_events(world: &mut World) {
     let mut asset_id_entity_actions = Vec::new();
 
     {
-        let mut system_state: SystemState<(Server, Query<&AssetEntry>, Query<&AssetRef<Main>>, Query<&AssetRef<Alt1>>)> =
-            SystemState::new(world);
-        let (server, asset_entry_q, asset_ref_main_q, asset_ref_alt1_q) = system_state.get_mut(world);
+        let mut system_state: SystemState<(
+            Server,
+            Query<&AssetEntry>,
+            Query<&AssetRef<Main>>,
+            Query<&AssetRef<Alt1>>,
+        )> = SystemState::new(world);
+        let (server, asset_entry_q, asset_ref_main_q, asset_ref_alt1_q) =
+            system_state.get_mut(world);
 
         for ((user_key, entity), include) in scope_actions.iter() {
             // determine if entity has any AssetRef components
@@ -240,7 +256,10 @@ pub fn tick_events(world: &mut World) {
                 let asset_id_entity = asset_ref.asset_id_entity.get(&server).unwrap();
                 let asset_id = *asset_entry_q.get(asset_id_entity).unwrap().asset_id;
 
-                info!("entity {:?} has AssetRef<Main>(asset_id: {:?})", entity, asset_id);
+                info!(
+                    "entity {:?} has AssetRef<Main>(asset_id: {:?})",
+                    entity, asset_id
+                );
 
                 asset_id_entity_actions.push((*user_key, asset_id, *include));
             }
@@ -249,7 +268,10 @@ pub fn tick_events(world: &mut World) {
                 let asset_id_entity = asset_ref.asset_id_entity.get(&server).unwrap();
                 let asset_id = *asset_entry_q.get(asset_id_entity).unwrap().asset_id;
 
-                info!("entity {:?} has AssetRef<Alt1>(asset_id: {:?})", entity, asset_id);
+                info!(
+                    "entity {:?} has AssetRef<Alt1>(asset_id: {:?})",
+                    entity, asset_id
+                );
 
                 asset_id_entity_actions.push((*user_key, asset_id, *include));
             }
@@ -257,7 +279,10 @@ pub fn tick_events(world: &mut World) {
             if let Ok(asset_entry) = asset_entry_q.get(*entity) {
                 let asset_id = *asset_entry.asset_id;
 
-                info!("entity {:?} has AssetEntry(asset_id: {:?})", entity, asset_id);
+                info!(
+                    "entity {:?} has AssetEntry(asset_id: {:?})",
+                    entity, asset_id
+                );
             }
 
             // TODO: put other AssetRef<Marker> components here .. also could clean this up somehow??

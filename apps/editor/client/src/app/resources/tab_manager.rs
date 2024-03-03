@@ -1135,8 +1135,8 @@ fn set_icon_face_colors(
         *net_face_material = new_mat_handle;
 
         if let Some((icon_manager, local_face_q)) = local_face_opt {
-            let Some(local_face_entity) = icon_manager
-                .face_entity_net_to_local(&net_face_entity) else {
+            let Some(local_face_entity) = icon_manager.face_entity_net_to_local(&net_face_entity)
+            else {
                 warn!("no local face entity for net face entity, need to fix this!");
                 continue;
             };

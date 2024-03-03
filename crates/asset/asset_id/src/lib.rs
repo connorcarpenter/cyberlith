@@ -1,6 +1,6 @@
 use std::ops::{Deref, DerefMut};
 
-use naia_serde::{BitReader, BitWrite, SerdeInternal as Serde, SerdeErr};
+use naia_serde::{BitReader, BitWrite, SerdeErr, SerdeInternal as Serde};
 
 use crypto::U32Token;
 

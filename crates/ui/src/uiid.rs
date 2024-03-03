@@ -1,4 +1,3 @@
-
 use morphorm::{LayoutType, Node, PositionType, Units};
 
 use crate::panel::PanelStore;
@@ -87,7 +86,13 @@ impl Node for UiId {
         Some(panel.style.margin_bottom())
     }
 
-    fn content_size(&self, ui: &PanelStore, sublayout: &mut Self::SubLayout<'_>, parent_width: Option<f32>, parent_height: Option<f32>) -> Option<(f32, f32)> {
+    fn content_size(
+        &self,
+        ui: &PanelStore,
+        sublayout: &mut Self::SubLayout<'_>,
+        parent_width: Option<f32>,
+        parent_height: Option<f32>,
+    ) -> Option<(f32, f32)> {
         // TODO!
         None
     }

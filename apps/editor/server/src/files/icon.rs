@@ -105,14 +105,11 @@ impl IconFrameActionData {
         info!("writing face list: {:?}", face_list);
 
         for face_info_opt in face_list {
-            let Some((face_id, color_id, vertex_a, vertex_b, vertex_c)) =
-                face_info_opt
-            else {
+            let Some((face_id, color_id, vertex_a, vertex_b, vertex_c)) = face_info_opt else {
                 panic!("face_list contains None");
             };
-            self.frame.add_face(
-                face_id, color_id, vertex_a, vertex_b, vertex_c,
-            );
+            self.frame
+                .add_face(face_id, color_id, vertex_a, vertex_b, vertex_c);
         }
     }
 }
@@ -277,7 +274,6 @@ impl IconWriter {
 
         // Write Frames
 
-
         //
 
         let mut new_frame_list = Vec::new();
@@ -293,16 +289,21 @@ impl IconWriter {
             }
 
             if new_frame_list[frame_index].is_some() {
-                panic!("Duplicate frame order! (entity: {:?}, order index: {:?})", frame_entity, frame_index);
+                panic!(
+                    "Duplicate frame order! (entity: {:?}, order index: {:?})",
+                    frame_entity, frame_index
+                );
             } else {
-                info!("writing frame (entity: {:?}, order index {:?})", frame_entity, frame_index);
+                info!(
+                    "writing frame (entity: {:?}, order index {:?})",
+                    frame_entity, frame_index
+                );
             }
             new_frame_list[frame_index] = Some(frame_data.frame);
         }
 
         let mut frame_index = 0;
         for frame_opt in new_frame_list {
-
             let frame_data = frame_opt.expect("frame_opt should not be None");
 
             info!("adding IconAction::Frame({})", frame_index);

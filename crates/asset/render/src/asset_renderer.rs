@@ -9,7 +9,10 @@ use render_api::{
 };
 use storage::Handle;
 
-use crate::{asset_dependency::AssetComponentHandle, processed_asset_store::ProcessedAssetStore, AnimationData, IconData, MeshData, ModelData, SceneData, SkinData, AssetHandle, TextStyle};
+use crate::{
+    asset_dependency::AssetComponentHandle, processed_asset_store::ProcessedAssetStore,
+    AnimationData, AssetHandle, IconData, MeshData, ModelData, SceneData, SkinData, TextStyle,
+};
 
 pub(crate) struct AssetRenderer;
 
@@ -84,9 +87,11 @@ impl AssetRenderer {
             let icon_width = if subimage_index == 0 {
                 40.0
             } else {
-                asset_store.get_icon_frame_width(icon_handle, subimage_index).unwrap_or(0.0)
+                asset_store
+                    .get_icon_frame_width(icon_handle, subimage_index)
+                    .unwrap_or(0.0)
             };
-            let icon_width = (icon_width/200.0) * style.size;
+            let icon_width = (icon_width / 200.0) * style.size;
             let icon_width = icon_width + style.character_buffer;
             let half_icon_width = icon_width / 2.0;
 
@@ -236,7 +241,10 @@ impl AssetRenderer {
             return;
         };
         let Some(animation_data) = asset_store.animations.get(animation_handle) else {
-            warn!("animation data not loaded 1: {:?}", animation_handle.asset_id());
+            warn!(
+                "animation data not loaded 1: {:?}",
+                animation_handle.asset_id()
+            );
             return;
         };
         let skeleton_handle = {
@@ -245,13 +253,17 @@ impl AssetRenderer {
             if skeleton_handle_1 != skeleton_handle_2 {
                 panic!(
                     "skeleton mismatch: {:?} != {:?}",
-                    skeleton_handle_1.asset_id(), skeleton_handle_2.asset_id()
+                    skeleton_handle_1.asset_id(),
+                    skeleton_handle_2.asset_id()
                 );
             }
             skeleton_handle_1
         };
         let Some(skeleton_data) = asset_store.skeletons.get(&skeleton_handle) else {
-            warn!("skeleton data not loaded 1: {:?}", skeleton_handle.asset_id());
+            warn!(
+                "skeleton data not loaded 1: {:?}",
+                skeleton_handle.asset_id()
+            );
             return;
         };
         let Some(model_components) =

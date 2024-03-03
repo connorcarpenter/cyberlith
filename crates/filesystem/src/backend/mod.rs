@@ -11,7 +11,9 @@ cfg_if! {
     }
 }
 
-pub(crate) async fn task_process_async(task_enum: FsTaskEnum) -> Result<FsTaskResultEnum, TaskError> {
+pub(crate) async fn task_process_async(
+    task_enum: FsTaskEnum,
+) -> Result<FsTaskResultEnum, TaskError> {
     #[cfg(not(target_arch = "wasm32"))]
     return native::task_process_async(task_enum).await;
 

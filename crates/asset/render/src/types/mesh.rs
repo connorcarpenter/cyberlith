@@ -89,7 +89,6 @@ impl MeshData {
     }
 
     pub fn from_bytes(bytes: &[u8]) -> Self {
-
         let boxed_bytes = bytes.to_vec().into_boxed_slice();
 
         Self {

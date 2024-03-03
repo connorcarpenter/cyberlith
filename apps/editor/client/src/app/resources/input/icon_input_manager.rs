@@ -467,12 +467,7 @@ impl IconInputManager {
             Query<(Entity, &OwnedByFileLocal), With<IconEdgeLocal>>,
             Query<(Entity, &OwnedByFileLocal), With<IconLocalFace>>,
         )> = SystemState::new(world);
-        let (
-            transform_q,
-            vertex_q,
-            edge_q,
-            face_q
-        ) = system_state.get_mut(world);
+        let (transform_q, vertex_q, edge_q, face_q) = system_state.get_mut(world);
 
         let mut least_distance = f32::MAX;
         let mut least_entity = None;

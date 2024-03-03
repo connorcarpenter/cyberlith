@@ -4,7 +4,10 @@ use asset_io::bits::ComponentFileType;
 use math::{Quat, Vec3};
 use render_api::components::Transform;
 
-use crate::{asset_dependency::{AssetComponent, AssetComponentHandle, AssetDependency}, finish_component_dependency, AssetHandle, SceneData, SkeletonData, SkinData, TypedAssetId};
+use crate::{
+    asset_dependency::{AssetComponent, AssetComponentHandle, AssetDependency},
+    finish_component_dependency, AssetHandle, SceneData, SkeletonData, SkinData, TypedAssetId,
+};
 
 pub struct ModelData {
     skeleton_file: AssetDependency<SkeletonData>,
@@ -47,10 +50,7 @@ impl ModelData {
         }
     }
 
-    pub(crate) fn finish_dependency(
-        &mut self,
-        dependency_typed_id: TypedAssetId
-    ) {
+    pub(crate) fn finish_dependency(&mut self, dependency_typed_id: TypedAssetId) {
         match dependency_typed_id {
             TypedAssetId::Skeleton(asset_id) => {
                 let asset_handle = AssetHandle::<SkeletonData>::new(asset_id);
@@ -150,7 +150,6 @@ impl ModelData {
     }
 
     pub fn from_bytes(bytes: &[u8]) -> Self {
-
         let actions = asset_io::bits::ModelAction::read(bytes).expect("unable to parse file");
 
         let mut skel_file_opt = None;

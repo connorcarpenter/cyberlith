@@ -55,13 +55,17 @@ pub fn update_component_events(
         }
         // on IconFrame Update Event
         for (_, entity) in events.read::<IconFrame>() {
-
             let Ok(frame) = icon_frame_q.get(entity) else {
                 panic!("icon frame not found");
             };
             let updated_file_entity = frame.file_entity.get(&server).unwrap();
             let updated_frame_order = frame.get_order();
-            icon_manager.update_frame_order(&updated_file_entity, &entity, updated_frame_order, &mut icon_frame_q);
+            icon_manager.update_frame_order(
+                &updated_file_entity,
+                &entity,
+                updated_frame_order,
+                &mut icon_frame_q,
+            );
 
             info!("---");
 
@@ -73,7 +77,9 @@ pub fn update_component_events(
                     continue;
                 }
                 let frame_index = frame.get_order() as usize;
-                let frame_entity = icon_manager.get_frame_at_index(&frames_file_entity, frame_index).unwrap();
+                let frame_entity = icon_manager
+                    .get_frame_at_index(&frames_file_entity, frame_index)
+                    .unwrap();
                 // resize if necessary
                 if frame_index >= frame_list.len() {
                     frame_list.resize(frame_index + 1, None);

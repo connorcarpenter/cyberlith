@@ -1,6 +1,10 @@
 use std::path::PathBuf;
 
-use crate::{error::TaskError, tasks::task_enum::{FsTaskEnum, FsTaskResultEnum}, tasks::traits::{FsTask, FsTaskResult}};
+use crate::{
+    error::TaskError,
+    tasks::task_enum::{FsTaskEnum, FsTaskResultEnum},
+    tasks::traits::{FsTask, FsTaskResult},
+};
 
 // Task
 pub struct ReadDirTask {
@@ -9,9 +13,7 @@ pub struct ReadDirTask {
 
 impl ReadDirTask {
     pub fn new<T: Into<PathBuf>>(path: T) -> Self {
-        Self {
-            path: path.into(),
-        }
+        Self { path: path.into() }
     }
 }
 
@@ -23,10 +25,7 @@ pub struct ReadDirEntry {
 
 impl ReadDirEntry {
     pub fn new(path: PathBuf, file_name: String) -> Self {
-        Self {
-            path,
-            file_name,
-        }
+        Self { path, file_name }
     }
 
     pub fn path(&self) -> &PathBuf {
@@ -39,7 +38,7 @@ impl ReadDirEntry {
 }
 
 pub struct ReadDirResult {
-    entries: Vec<ReadDirEntry>
+    entries: Vec<ReadDirEntry>,
 }
 
 impl ReadDirResult {

@@ -1,4 +1,3 @@
-
 use naia_serde::SerdeInternal as Serde;
 
 use asset_id::{AssetId, AssetType, ETag};
@@ -45,7 +44,12 @@ impl AssetResponse {
         }
     }
 
-    pub fn modified(etag: ETag, asset_type: AssetType, dependencies: Vec<AssetId>, data: Vec<u8>) -> Self {
+    pub fn modified(
+        etag: ETag,
+        asset_type: AssetType,
+        dependencies: Vec<AssetId>,
+        data: Vec<u8>,
+    ) -> Self {
         Self {
             value: AssetResponseValue::Modified(etag, asset_type, dependencies, data),
         }

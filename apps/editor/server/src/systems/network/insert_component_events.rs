@@ -311,9 +311,7 @@ pub fn insert_face_component_events(
             &mut None,
             &entity,
             &[
-                ComponentWaitlistInsert::Face(
-                    None, vertex_a, vertex_b, vertex_c
-                ),
+                ComponentWaitlistInsert::Face(None, vertex_a, vertex_b, vertex_c),
                 ComponentWaitlistInsert::FileType(FileExtension::Mesh),
             ],
         );
@@ -548,12 +546,7 @@ pub fn insert_icon_component_events(
             &mut Some(&mut icon_manager),
             &entity,
             &[
-                ComponentWaitlistInsert::Face(
-                    Some(frame_entity),
-                    vertex_a,
-                    vertex_b,
-                    vertex_c,
-                ),
+                ComponentWaitlistInsert::Face(Some(frame_entity), vertex_a, vertex_b, vertex_c),
                 ComponentWaitlistInsert::FileType(FileExtension::Icon),
             ],
         );

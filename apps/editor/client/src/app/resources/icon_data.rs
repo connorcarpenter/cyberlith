@@ -88,11 +88,7 @@ pub struct IconFaceData {
 }
 
 impl IconFaceData {
-    pub fn new(
-        file_entity: Entity,
-        frame_entity: Entity,
-        local_entity: Entity,
-    ) -> Self {
+    pub fn new(file_entity: Entity, frame_entity: Entity, local_entity: Entity) -> Self {
         Self {
             file_entity,
             frame_entity,

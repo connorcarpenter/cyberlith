@@ -80,13 +80,7 @@ pub struct IconFileFrameFace {
 // }
 
 impl IconFileFrameFace {
-    pub fn new(
-        face_id: u16,
-        color_id: u8,
-        vertex_a: u16,
-        vertex_b: u16,
-        vertex_c: u16,
-    ) -> Self {
+    pub fn new(face_id: u16, color_id: u8, vertex_a: u16, vertex_b: u16, vertex_c: u16) -> Self {
         Self {
             face_id,
             color_id,

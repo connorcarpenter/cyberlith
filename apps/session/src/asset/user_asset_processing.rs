@@ -1,4 +1,3 @@
-
 use std::collections::HashSet;
 
 use bevy_log::info;
@@ -6,7 +5,10 @@ use bevy_log::info;
 use naia_bevy_server::{ResponseReceiveKey, Server, UserKey};
 
 use asset_server_http_proto::{AssetRequest, AssetResponse, AssetResponseValue};
-use session_server_naia_proto::{channels::RequestChannel, messages::{LoadAssetResponse, LoadAssetRequest, LoadAssetResponseValue}};
+use session_server_naia_proto::{
+    channels::RequestChannel,
+    messages::{LoadAssetRequest, LoadAssetResponse, LoadAssetResponseValue},
+};
 
 use asset_id::{AssetId, AssetType, ETag};
 use bevy_http_client::{HttpClient, ResponseKey};
@@ -19,7 +21,6 @@ pub enum UserAssetProcessingState {
 }
 
 impl UserAssetProcessingState {
-
     pub fn send_asset_server_request(
         http_client: &mut HttpClient,
         asset_server_addr: &str,
@@ -29,11 +30,7 @@ impl UserAssetProcessingState {
     ) -> Self {
         info!("sending asset request to asset server: {:?}", asset_id);
         let request = AssetRequest::new(*asset_id, asset_etag_opt);
-        let response_key = http_client.send(
-            asset_server_addr,
-            asset_server_port,
-            request.clone(),
-        );
+        let response_key = http_client.send(asset_server_addr, asset_server_port, request.clone());
 
         Self::AssetServerRequestInFlight(AssetServerRequestState::new(request, response_key))
     }
@@ -44,9 +41,11 @@ impl UserAssetProcessingState {
         asset_id: &AssetId,
         asset_etag: &ETag,
     ) -> Self {
-
         // send client "load asset" request
-        info!("sending load_asset request to client: (asset: {:?}, etag: {:?})", asset_id, asset_etag);
+        info!(
+            "sending load_asset request to client: (asset: {:?}, etag: {:?})",
+            asset_id, asset_etag
+        );
         let request = LoadAssetRequest::new(asset_id, asset_etag);
         let response_key = server
             .send_request::<RequestChannel, _>(user_key, &request)
@@ -76,7 +75,6 @@ impl UserAssetProcessingState {
         server: &mut Server,
         http_client: &mut HttpClient,
     ) -> Option<UserAssetProcessingStateTransition> {
-
         match self {
             UserAssetProcessingState::AssetServerRequestInFlight(state) => {
                 return state.process(http_client);
@@ -100,10 +98,7 @@ pub struct AssetServerRequestState {
 }
 
 impl AssetServerRequestState {
-    pub fn new(
-        request: AssetRequest,
-        response_key: ResponseKey<AssetResponse>,
-    ) -> Self {
+    pub fn new(request: AssetRequest, response_key: ResponseKey<AssetResponse>) -> Self {
         Self {
             request,
             response_key: Some(response_key),
@@ -111,8 +106,10 @@ impl AssetServerRequestState {
         }
     }
 
-    pub(crate) fn process(&mut self, http_client: &mut HttpClient) -> Option<UserAssetProcessingStateTransition> {
-
+    pub(crate) fn process(
+        &mut self,
+        http_client: &mut HttpClient,
+    ) -> Option<UserAssetProcessingStateTransition> {
         if let Some(key) = self.response_key.as_ref() {
             if let Some(response_result) = http_client.recv(key) {
                 match response_result {
@@ -142,7 +139,6 @@ impl AssetServerRequestState {
 
         match &asset_server_res.value {
             AssetResponseValue::Modified(new_etag, asset_type, dependencies, data) => {
-
                 info!("received from assetserver: asset_response(asset: {:?}, new etag: {:?}), storing data.", asset_id, new_etag);
 
                 // process dependencies
@@ -152,12 +148,18 @@ impl AssetServerRequestState {
                 }
 
                 // store new asset etag & data
-                return Some(UserAssetProcessingStateTransition::asset_server_response(*new_etag, Some((*asset_type, dependency_set, data.clone()))));
+                return Some(UserAssetProcessingStateTransition::asset_server_response(
+                    *new_etag,
+                    Some((*asset_type, dependency_set, data.clone())),
+                ));
             }
             AssetResponseValue::NotModified => {
                 info!("received from assetserver: asset_response(asset: {:?}, with data not modified).", asset_id);
 
-                return Some(UserAssetProcessingStateTransition::asset_server_response(old_etag_opt.unwrap(), None));
+                return Some(UserAssetProcessingStateTransition::asset_server_response(
+                    old_etag_opt.unwrap(),
+                    None,
+                ));
             }
         }
     }
@@ -170,9 +172,7 @@ pub struct ClientLoadAssetRequestState {
 }
 
 impl ClientLoadAssetRequestState {
-    pub fn new(
-        response_key: ResponseReceiveKey<LoadAssetResponse>,
-    ) -> Self {
+    pub fn new(response_key: ResponseReceiveKey<LoadAssetResponse>) -> Self {
         Self {
             response_key: Some(response_key),
             response: None,
@@ -180,7 +180,6 @@ impl ClientLoadAssetRequestState {
     }
 
     pub fn process(&mut self, server: &mut Server) -> Option<UserAssetProcessingStateTransition> {
-
         if let Some(key) = self.response_key.as_ref() {
             if let Some((_user_key, response)) = server.receive_response(key) {
                 info!("received 'load_asset' response from client");
@@ -197,7 +196,9 @@ impl ClientLoadAssetRequestState {
         // response received
         let response = self.response.as_ref().unwrap();
 
-        return Some(UserAssetProcessingStateTransition::client_load_asset_response(response.value));
+        return Some(
+            UserAssetProcessingStateTransition::client_load_asset_response(response.value),
+        );
     }
 }
 
@@ -208,7 +209,10 @@ pub enum UserAssetProcessingStateTransition {
 }
 
 impl UserAssetProcessingStateTransition {
-    pub fn asset_server_response(etag: ETag, data_opt: Option<(AssetType, HashSet<AssetId>, Vec<u8>)>) -> Self {
+    pub fn asset_server_response(
+        etag: ETag,
+        data_opt: Option<(AssetType, HashSet<AssetId>, Vec<u8>)>,
+    ) -> Self {
         Self::AssetServerResponse(etag, data_opt)
     }
 

@@ -490,11 +490,7 @@ pub fn insert_face_events(
             None,
             &face_entity,
             &[
-                ComponentWaitlistInsert::Face(
-                    vertex_a_entity,
-                    vertex_b_entity,
-                    vertex_c_entity,
-                ),
+                ComponentWaitlistInsert::Face(vertex_a_entity, vertex_b_entity, vertex_c_entity),
                 ComponentWaitlistInsert::FileType(FileExtension::Mesh),
             ],
         );

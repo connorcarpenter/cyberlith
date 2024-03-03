@@ -201,12 +201,7 @@ impl ComponentWaitlistEntry {
         self.edge_angle = Some(angle);
     }
 
-    fn set_face(
-        &mut self,
-        vertex_a: Entity,
-        vertex_b: Entity,
-        vertex_c: Entity,
-    ) {
+    fn set_face(&mut self, vertex_a: Entity, vertex_b: Entity, vertex_c: Entity) {
         self.component_type = Some(ComponentType::Face);
         self.face_entities = Some((vertex_a, vertex_b, vertex_c));
     }
@@ -417,12 +412,7 @@ impl ComponentWaitlist {
                     .unwrap()
                     .set_face(vertex_a, vertex_b, vertex_c);
             }
-            ComponentWaitlistInsert::IconFace(
-                color_entity,
-                vertex_a,
-                vertex_b,
-                vertex_c,
-            ) => {
+            ComponentWaitlistInsert::IconFace(color_entity, vertex_a, vertex_b, vertex_c) => {
                 self.get_mut(&entity).unwrap().set_icon_face(
                     color_entity,
                     vertex_a,

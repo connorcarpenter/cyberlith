@@ -1,8 +1,6 @@
-
 #[macro_export]
 macro_rules! embedded_asset_event {
     ($path: expr) => {{
-
         let path = std::path::Path::new($path);
         let asset_id_str = path.file_stem().unwrap().to_str().unwrap();
 

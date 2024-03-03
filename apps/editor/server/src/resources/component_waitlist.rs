@@ -28,12 +28,7 @@ pub enum ComponentWaitlistInsert {
     //// option<FrameEntity>, parent, child
     Edge(Option<Entity>, Entity, Entity),
     //// (option<FrameEntity>, vertex_a, vertex_b, vertex_c)
-    Face(
-        Option<Entity>,
-        Entity,
-        Entity,
-        Entity,
-    ),
+    Face(Option<Entity>, Entity, Entity, Entity),
     ////
     NetTransform,
     ////
@@ -85,12 +80,7 @@ pub struct ComponentWaitlistEntry {
     // frame entity, vertex a entity, vertex b entity
     edge_entities: Option<(Option<Entity>, Entity, Entity)>,
     // Option<(Option<frame entity>, vertex a entity, vertex b entity, vertex c entity, edge a entity, edge b entity, edge c entity)
-    face_entities: Option<(
-        Option<Entity>,
-        Entity,
-        Entity,
-        Entity,
-    )>,
+    face_entities: Option<(Option<Entity>, Entity, Entity, Entity)>,
 
     skin_or_scene_entity: bool,
     shape_name: bool,
@@ -181,12 +171,7 @@ impl ComponentWaitlistEntry {
         vertex_b: Entity,
         vertex_c: Entity,
     ) {
-        self.face_entities = Some((
-            frame_entity,
-            vertex_a,
-            vertex_b,
-            vertex_c,
-        ));
+        self.face_entities = Some((frame_entity, vertex_a, vertex_b, vertex_c));
     }
 
     fn set_component_type(&mut self, component_type: ComponentType) {
@@ -240,8 +225,7 @@ impl ComponentWaitlistEntry {
                 return ComponentData::MeshEdge(project_key, file_key, start, end);
             }
             (Some(FileExtension::Mesh), Some(ComponentType::Face)) => {
-                let (None, vertex_a, vertex_b, vertex_c) = self.face_entities.unwrap()
-                else {
+                let (None, vertex_a, vertex_b, vertex_c) = self.face_entities.unwrap() else {
                     panic!("invalid");
                 };
                 return ComponentData::MeshFace(
@@ -384,20 +368,10 @@ impl ComponentWaitlist {
                 //     possibly_ready_entities
                 // );
             }
-            ComponentWaitlistInsert::Face(
-                frame_entity_opt,
-                vertex_a,
-                vertex_b,
-                vertex_c,
-            ) => {
+            ComponentWaitlistInsert::Face(frame_entity_opt, vertex_a, vertex_b, vertex_c) => {
                 let entry = self.get_mut(entity).unwrap();
                 entry.set_component_type(ComponentType::Face);
-                entry.set_face_entities(
-                    frame_entity_opt,
-                    vertex_a,
-                    vertex_b,
-                    vertex_c,
-                );
+                entry.set_face_entities(frame_entity_opt, vertex_a, vertex_b, vertex_c);
             }
             ComponentWaitlistInsert::FileType(file_type) => {
                 self.get_mut(entity).unwrap().set_file_type(file_type);

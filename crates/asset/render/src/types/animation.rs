@@ -5,7 +5,10 @@ use bevy_log::info;
 use math::Quat;
 use render_api::components::Transform;
 
-use crate::{asset_dependency::{AssetComponentHandle, AssetDependency}, AssetHandle, ModelData, SkeletonData, TypedAssetId};
+use crate::{
+    asset_dependency::{AssetComponentHandle, AssetDependency},
+    AssetHandle, ModelData, SkeletonData, TypedAssetId,
+};
 
 pub struct AnimationData {
     skeleton_file: AssetDependency<SkeletonData>,
@@ -50,10 +53,7 @@ impl AnimationData {
         dependencies.push((asset_handle.into(), TypedAssetId::Skeleton(*asset_id)));
     }
 
-    pub(crate) fn finish_dependency(
-        &mut self,
-        dependency_typed_id: TypedAssetId
-    ) {
+    pub(crate) fn finish_dependency(&mut self, dependency_typed_id: TypedAssetId) {
         match dependency_typed_id {
             TypedAssetId::Skeleton(id) => {
                 let handle = AssetHandle::<SkeletonData>::new(id);
@@ -178,7 +178,6 @@ impl AnimationData {
     }
 
     pub fn from_bytes(bytes: &[u8]) -> Self {
-
         let actions = asset_io::bits::AnimAction::read(bytes).expect("unable to parse file");
 
         let mut skeleton_asset_id = None;

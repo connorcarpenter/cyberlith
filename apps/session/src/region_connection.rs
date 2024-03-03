@@ -14,7 +14,10 @@ use session_server_http_proto::{HeartbeatRequest, HeartbeatResponse};
 
 use crate::global::Global;
 
-pub fn send_register_instance_request(mut http_client: ResMut<HttpClient>, mut global: ResMut<Global>) {
+pub fn send_register_instance_request(
+    mut http_client: ResMut<HttpClient>,
+    mut global: ResMut<Global>,
+) {
     if global.connected() {
         return;
     }

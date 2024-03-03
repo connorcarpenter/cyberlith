@@ -497,23 +497,16 @@ pub fn update_animation(
     animation_manager.preview_update(&mut canvas, current_file_entity, &frame_q);
 }
 
-pub fn update_icon(
-    world: &mut World,
-) {
+pub fn update_icon(world: &mut World) {
     let mut system_state: SystemState<(
         Client<Main>,
         Res<FileManager>,
         Res<TabManager>,
         ResMut<IconManager>,
-        Query<(Entity, &IconFrame)>
+        Query<(Entity, &IconFrame)>,
     )> = SystemState::new(world);
-    let (
-        client,
-        file_manager,
-        tab_manager,
-        mut icon_manager,
-        frame_q
-    ) = system_state.get_mut(world);
+    let (client, file_manager, tab_manager, mut icon_manager, frame_q) =
+        system_state.get_mut(world);
 
     // get file type
     let Some(current_file_entity) = tab_manager.current_tab_entity() else {

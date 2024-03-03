@@ -5,13 +5,20 @@ use futures_lite::future;
 use async_channel::{Receiver, Sender};
 use log::info;
 
-use crate::{tasks::{read_dir::ReadDirEntry, read::ReadResult, task_enum::{FsTaskEnum, FsTaskResultEnum}, write::WriteResult}, error::TaskError, ReadDirResult, CreateDirResult};
+use crate::{
+    error::TaskError,
+    tasks::{
+        read::ReadResult,
+        read_dir::ReadDirEntry,
+        task_enum::{FsTaskEnum, FsTaskResultEnum},
+        write::WriteResult,
+    },
+    CreateDirResult, ReadDirResult,
+};
 
 pub(crate) struct FsTaskJob(pub(crate) Task<Result<FsTaskResultEnum, TaskError>>);
 
-pub(crate) fn start_task(
-    task_enum: FsTaskEnum,
-) -> FsTaskJob {
+pub(crate) fn start_task(task_enum: FsTaskEnum) -> FsTaskJob {
     let thread_pool = AsyncComputeTaskPool::get();
 
     let task = thread_pool.spawn(async { crate::backend::task_process_async(task_enum).await });
@@ -56,50 +63,24 @@ fn task_process(
         .expect("Failed to spawn filesystem thread");
 }
 
-fn task_process_blocking(
-    task_enum: &FsTaskEnum,
-) -> Result<FsTaskResultEnum, TaskError> {
+fn task_process_blocking(task_enum: &FsTaskEnum) -> Result<FsTaskResultEnum, TaskError> {
     match task_enum {
-        FsTaskEnum::Read(task) => {
-            match std::fs::read(&task.path) {
-                Ok(bytes) => {
-                    Ok(FsTaskResultEnum::Read(ReadResult::new(bytes)))
-                }
-                Err(e) => {
-                    Err(TaskError::IoError(e.to_string()))
-                }
-            }
-        }
-        FsTaskEnum::Write(task) => {
-            match std::fs::write(&task.path, &task.bytes) {
-                Ok(()) => {
-                    Ok(FsTaskResultEnum::Write(WriteResult::new()))
-                }
-                Err(e) => {
-                    Err(TaskError::IoError(e.to_string()))
-                }
-            }
-        }
-        FsTaskEnum::ReadDir(task) => {
-            match std::fs::read_dir(&task.path) {
-                Ok(entries) => {
-                    Ok(FsTaskResultEnum::ReadDir(convert_read_dir(entries)))
-                }
-                Err(e) => {
-                    Err(TaskError::IoError(e.to_string()))
-                }
-            }
-        }
-        FsTaskEnum::CreateDir(task) => {
-            match std::fs::create_dir(&task.path) {
-                Ok(()) => {
-                    Ok(FsTaskResultEnum::CreateDir(CreateDirResult::new()))
-                }
-                Err(e) => {
-                    Err(TaskError::IoError(e.to_string()))
-                }
-            }
-        }
+        FsTaskEnum::Read(task) => match std::fs::read(&task.path) {
+            Ok(bytes) => Ok(FsTaskResultEnum::Read(ReadResult::new(bytes))),
+            Err(e) => Err(TaskError::IoError(e.to_string())),
+        },
+        FsTaskEnum::Write(task) => match std::fs::write(&task.path, &task.bytes) {
+            Ok(()) => Ok(FsTaskResultEnum::Write(WriteResult::new())),
+            Err(e) => Err(TaskError::IoError(e.to_string())),
+        },
+        FsTaskEnum::ReadDir(task) => match std::fs::read_dir(&task.path) {
+            Ok(entries) => Ok(FsTaskResultEnum::ReadDir(convert_read_dir(entries))),
+            Err(e) => Err(TaskError::IoError(e.to_string())),
+        },
+        FsTaskEnum::CreateDir(task) => match std::fs::create_dir(&task.path) {
+            Ok(()) => Ok(FsTaskResultEnum::CreateDir(CreateDirResult::new())),
+            Err(e) => Err(TaskError::IoError(e.to_string())),
+        },
     }
 }
 

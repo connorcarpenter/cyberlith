@@ -167,7 +167,7 @@ pub fn despawn_entity_events(
                     &mut commands,
                     &mut server,
                     entity,
-                    Some(&mut icon_frame_q)
+                    Some(&mut icon_frame_q),
                 );
 
                 for other_entity in other_despawned_entities {

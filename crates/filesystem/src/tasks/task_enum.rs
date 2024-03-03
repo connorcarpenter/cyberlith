@@ -1,4 +1,9 @@
-use crate::tasks::{write::{WriteResult, WriteTask}, read_dir::{ReadDirResult, ReadDirTask}, read::{ReadResult, ReadTask}, create_dir::{CreateDirTask, CreateDirResult}};
+use crate::tasks::{
+    create_dir::{CreateDirResult, CreateDirTask},
+    read::{ReadResult, ReadTask},
+    read_dir::{ReadDirResult, ReadDirTask},
+    write::{WriteResult, WriteTask},
+};
 
 pub enum FsTaskEnum {
     Read(ReadTask),

@@ -1,13 +1,22 @@
-
-use bevy_ecs::{system::Query, component::Component, change_detection::ResMut};
+use bevy_ecs::{change_detection::ResMut, component::Component, system::Query};
 use bevy_log::warn;
 
 use morphorm::Node;
 
-use render_api::{shapes::{UnitSquare}, resources::RenderFrame, components::{RenderLayer, Transform, Viewport}, base::{CpuMaterial, CpuMesh}};
+use render_api::{
+    base::{CpuMaterial, CpuMesh},
+    components::{RenderLayer, Transform, Viewport},
+    resources::RenderFrame,
+    shapes::UnitSquare,
+};
 use storage::{Handle, Storage};
 
-use crate::{style::Style, uiid::UiId, panel::{PanelStore, Panel}, cache::LayoutCache};
+use crate::{
+    cache::LayoutCache,
+    panel::{Panel, PanelStore},
+    style::Style,
+    uiid::UiId,
+};
 
 #[derive(Component)]
 pub struct Ui {
@@ -21,11 +30,9 @@ pub struct Ui {
 }
 
 impl Ui {
-
     const ROOT_PANEL_ID: UiId = UiId::new(0);
 
     pub fn new() -> Self {
-
         let mut me = Self {
             box_mesh_handle_opt: None,
             pending_mat_handles: Vec::new(),
@@ -108,7 +115,7 @@ impl Ui {
             self.box_mesh_handle_opt.as_ref().unwrap(),
             &self.cache,
             &self.panels,
-            &Self::ROOT_PANEL_ID
+            &Self::ROOT_PANEL_ID,
         );
     }
 
@@ -133,7 +140,6 @@ impl Ui {
     }
 
     fn recalculate_layout(&mut self) {
-
         let root_panel = self.panels.get_mut(&Self::ROOT_PANEL_ID).unwrap();
         root_panel.style.set_width_px(self.viewport.width as f32);
         root_panel.style.set_height_px(self.viewport.height as f32);
@@ -189,10 +195,7 @@ pub struct PanelContentsRef<'a> {
 
 impl<'a> PanelContentsRef<'a> {
     pub(crate) fn new(ui: &'a Ui, panel_id: UiId) -> Self {
-        Self {
-            ui,
-            panel_id,
-        }
+        Self { ui, panel_id }
     }
 }
 
@@ -204,16 +207,17 @@ pub struct PanelContentsMut<'a> {
 
 impl<'a> PanelContentsMut<'a> {
     pub(crate) fn new(ui: &'a mut Ui, panel_id: UiId) -> Self {
-        Self {
-            ui,
-            panel_id,
-        }
+        Self { ui, panel_id }
     }
 
     pub fn add_panel<'b>(self: &'b mut PanelContentsMut<'a>) -> PanelMut<'b> {
         // creates a new panel, returning a context for it
         let new_panel_id = self.ui.create_panel();
-        self.ui.panel_mut(&self.panel_id).unwrap().children.push(new_panel_id);
+        self.ui
+            .panel_mut(&self.panel_id)
+            .unwrap()
+            .children
+            .push(new_panel_id);
         PanelMut::<'b>::new(self.ui, new_panel_id)
     }
 }
@@ -225,10 +229,7 @@ pub struct PanelRef<'a> {
 
 impl<'a> PanelRef<'a> {
     pub(crate) fn new(ui: &'a Ui, panel_id: UiId) -> Self {
-        Self {
-            ui,
-            panel_id,
-        }
+        Self { ui, panel_id }
     }
 
     pub fn inside(&'a self, inner_fn: impl FnOnce(PanelContentsRef)) -> &Self {
@@ -256,10 +257,7 @@ pub struct PanelMut<'a> {
 
 impl<'a> PanelMut<'a> {
     pub(crate) fn new(ui: &'a mut Ui, panel_id: UiId) -> Self {
-        Self {
-            ui,
-            panel_id,
-        }
+        Self { ui, panel_id }
     }
 
     pub fn contents(&'a mut self, inner_fn: impl FnOnce(PanelContentsMut)) -> &mut Self {

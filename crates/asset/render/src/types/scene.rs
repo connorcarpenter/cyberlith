@@ -4,7 +4,10 @@ use asset_io::bits::ComponentFileType;
 use math::{Quat, Vec3};
 use render_api::components::Transform;
 
-use crate::{asset_dependency::{AssetComponent, AssetComponentHandle, AssetDependency}, AssetHandle, SkinData, TypedAssetId};
+use crate::{
+    asset_dependency::{AssetComponent, AssetComponentHandle, AssetDependency},
+    AssetHandle, SkinData, TypedAssetId,
+};
 
 pub struct SceneData {
     component_files: Vec<AssetComponent>,
@@ -39,16 +42,10 @@ impl SceneData {
         }
     }
 
-    pub(crate) fn finish_dependency(
-        &mut self,
-        dependency_typed_id: TypedAssetId
-    ) {
+    pub(crate) fn finish_dependency(&mut self, dependency_typed_id: TypedAssetId) {
         match dependency_typed_id {
             TypedAssetId::Skin(asset_id) => {
-                info!(
-                    "finished scene dependency for skin: {:?}",
-                    asset_id,
-                );
+                info!("finished scene dependency for skin: {:?}", asset_id,);
                 let asset_handle = AssetHandle::<SkinData>::new(asset_id);
                 let component_handle = AssetComponentHandle::Skin(asset_handle);
                 finish_component_dependency(&mut self.component_files, component_handle);
@@ -100,7 +97,6 @@ impl SceneData {
     }
 
     pub fn from_bytes(bytes: &[u8]) -> Self {
-
         let actions = asset_io::bits::SceneAction::read(bytes).expect("unable to parse file");
 
         info!("--- reading scene ---");
@@ -179,7 +175,9 @@ pub(crate) fn finish_component_dependency(
                     let AssetComponentHandle::Skin(asset_handle) = component_handle else {
                         panic!("expected skin handle");
                     };
-                    *file = AssetComponent::Skin(AssetDependency::<SkinData>::AssetHandle(asset_handle));
+                    *file = AssetComponent::Skin(AssetDependency::<SkinData>::AssetHandle(
+                        asset_handle,
+                    ));
                     found = true;
                     break;
                 }
@@ -189,7 +187,8 @@ pub(crate) fn finish_component_dependency(
                     let AssetComponentHandle::Scene(handle) = component_handle else {
                         panic!("expected scene handle");
                     };
-                    *file = AssetComponent::Scene(AssetDependency::<SceneData>::AssetHandle(handle));
+                    *file =
+                        AssetComponent::Scene(AssetDependency::<SceneData>::AssetHandle(handle));
                     found = true;
                     break;
                 }
@@ -198,6 +197,9 @@ pub(crate) fn finish_component_dependency(
         }
     }
     if !found {
-        panic!("unable to find dependency path for: {:?}", component_handle.asset_id());
+        panic!(
+            "unable to find dependency path for: {:?}",
+            component_handle.asset_id()
+        );
     }
 }

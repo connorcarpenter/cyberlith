@@ -96,7 +96,6 @@ impl SkeletonData {
     }
 
     pub fn from_bytes(bytes: &[u8]) -> Self {
-
         let actions = asset_io::bits::SkelAction::read(bytes).expect("unable to parse file");
 
         let mut vertices = Vec::new();

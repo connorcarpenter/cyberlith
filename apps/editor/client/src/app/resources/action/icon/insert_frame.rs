@@ -164,13 +164,7 @@ pub fn execute(
                 edge_count += 1;
             }
 
-            for (
-                palette_color_entity,
-                vertex_a_index,
-                vertex_b_index,
-                vertex_c_index,
-            ) in faces
-            {
+            for (palette_color_entity, vertex_a_index, vertex_b_index, vertex_c_index) in faces {
                 let vertex_a_entity = *vertex_map.get(&vertex_a_index).unwrap();
                 let vertex_b_entity = *vertex_map.get(&vertex_b_index).unwrap();
                 let vertex_c_entity = *vertex_map.get(&vertex_c_index).unwrap();

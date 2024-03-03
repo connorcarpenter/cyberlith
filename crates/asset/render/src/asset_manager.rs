@@ -12,7 +12,10 @@ use render_api::{
 };
 use storage::{Handle, Storage};
 
-use crate::{asset_renderer::AssetRenderer, processed_asset_store::ProcessedAssetStore, AnimationData, AssetHandle, IconData, MeshData, ModelData, SceneData, SkinData, TextStyle};
+use crate::{
+    asset_renderer::AssetRenderer, processed_asset_store::ProcessedAssetStore, AnimationData,
+    AssetHandle, IconData, MeshData, ModelData, SceneData, SkinData, TextStyle,
+};
 
 #[derive(Resource)]
 pub struct AssetManager {
@@ -59,11 +62,19 @@ impl AssetManager {
         data.get_subimage_count()
     }
 
-    pub fn get_icon_frame_width(&self, handle: &AssetHandle<IconData>, index: usize) -> Option<f32> {
+    pub fn get_icon_frame_width(
+        &self,
+        handle: &AssetHandle<IconData>,
+        index: usize,
+    ) -> Option<f32> {
         self.store.get_icon_frame_width(handle, index)
     }
 
-    pub fn get_icon_frame_height(&self, handle: &AssetHandle<IconData>, index: usize) -> Option<f32> {
+    pub fn get_icon_frame_height(
+        &self,
+        handle: &AssetHandle<IconData>,
+        index: usize,
+    ) -> Option<f32> {
         self.store.get_icon_frame_height(handle, index)
     }
 

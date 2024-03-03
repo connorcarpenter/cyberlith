@@ -15,7 +15,7 @@ use config::{
     PUBLIC_IP_ADDR, SELF_BINDING_ADDR, SESSION_SERVER_SIGNAL_PORT, SESSION_SERVER_WEBRTC_PORT,
 };
 
-use crate::{global::Global, asset::asset_manager::AssetManager};
+use crate::{asset::asset_manager::AssetManager, global::Global};
 
 pub fn init(mut server: Server) {
     info!("Session Naia Server starting up");

@@ -9,7 +9,6 @@ impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {
         app
             // AssetManager
-            .add_systems(Update, Ui::update)
-        ;
+            .add_systems(Update, Ui::update);
     }
 }

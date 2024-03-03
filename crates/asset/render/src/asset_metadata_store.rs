@@ -1,12 +1,12 @@
-use std::{path::PathBuf, collections::HashMap};
+use std::{collections::HashMap, path::PathBuf};
 
 use bevy_ecs::{change_detection::ResMut, system::Resource};
 use bevy_log::{info, warn};
 
-use naia_serde::{SerdeInternal as Serde, BitReader};
+use naia_serde::{BitReader, SerdeInternal as Serde};
 
 use asset_id::{AssetId, AssetType, ETag};
-use filesystem::{CreateDirResult, ReadDirResult, FileSystemManager, ReadResult, TaskKey};
+use filesystem::{CreateDirResult, FileSystemManager, ReadDirResult, ReadResult, TaskKey};
 
 #[derive(Serde, Eq, PartialEq, Clone)]
 pub struct AssetMetadataSerde {
@@ -28,7 +28,11 @@ pub struct AssetMetadata {
 
 impl AssetMetadata {
     fn new(path: String, etag: ETag, asset_type: AssetType) -> Self {
-        Self { path, etag, asset_type }
+        Self {
+            path,
+            etag,
+            asset_type,
+        }
     }
 
     pub fn path(&self) -> &str {
@@ -54,7 +58,6 @@ pub struct AssetMetadataStore {
 
 impl AssetMetadataStore {
     pub fn new(path: &str) -> Self {
-
         Self {
             path: path.to_string(),
             map: HashMap::new(),
@@ -80,11 +83,11 @@ impl AssetMetadataStore {
     }
 
     pub fn load(&mut self, fs_manager: &mut FileSystemManager) {
-        self.tasks.push(AssetMetadataTask::load_dir(fs_manager, &self.path));
+        self.tasks
+            .push(AssetMetadataTask::load_dir(fs_manager, &self.path));
     }
 
     pub fn process_tasks(&mut self, fs_manager: &mut FileSystemManager) {
-
         if self.finished_loading {
             return;
         }
@@ -98,7 +101,6 @@ impl AssetMetadataStore {
                         Some(Ok(result)) => {
                             let entries = result.entries();
                             for entry in entries {
-
                                 let file_path = entry.path();
 
                                 // Check if the file has a .meta extension
@@ -110,14 +112,22 @@ impl AssetMetadataStore {
                                 }
 
                                 info!("Reading asset metadata file: {:?}", file_path);
-                                self.tasks.push(AssetMetadataTask::load_file(fs_manager, file_path.to_str().unwrap()));
+                                self.tasks.push(AssetMetadataTask::load_file(
+                                    fs_manager,
+                                    file_path.to_str().unwrap(),
+                                ));
                             }
                         }
                         Some(Err(err)) => {
-                            warn!("Failed to read directory ({:?}): {:?}", path, err.to_string());
+                            warn!(
+                                "Failed to read directory ({:?}): {:?}",
+                                path,
+                                err.to_string()
+                            );
 
                             info!("Creating directory: {:?}", path);
-                            self.tasks.push(AssetMetadataTask::create_dir(fs_manager, path));
+                            self.tasks
+                                .push(AssetMetadataTask::create_dir(fs_manager, path));
                         }
                         None => {
                             self.tasks.push(AssetMetadataTask::LoadDir(path, task_key));
@@ -130,10 +140,15 @@ impl AssetMetadataStore {
                             info!("Created directory: {:?}", path);
                         }
                         Some(Err(err)) => {
-                            panic!("Error creating directory ({:?}): {:?}", path, err.to_string());
+                            panic!(
+                                "Error creating directory ({:?}): {:?}",
+                                path,
+                                err.to_string()
+                            );
                         }
                         None => {
-                            self.tasks.push(AssetMetadataTask::CreateDir(path, task_key));
+                            self.tasks
+                                .push(AssetMetadataTask::CreateDir(path, task_key));
                         }
                     }
                 }
@@ -142,7 +157,8 @@ impl AssetMetadataStore {
                         Some(Ok(result)) => {
                             let metadata_bytes = result.bytes;
                             let mut metadata_reader = BitReader::new(&metadata_bytes);
-                            let metadata_payload = AssetMetadataSerde::de(&mut metadata_reader).unwrap();
+                            let metadata_payload =
+                                AssetMetadataSerde::de(&mut metadata_reader).unwrap();
 
                             let asset_etag = metadata_payload.etag;
                             let asset_type = metadata_payload.asset_type;
@@ -152,16 +168,22 @@ impl AssetMetadataStore {
                             let file_name = file_path.file_stem().unwrap().to_str().unwrap();
                             let asset_file_path = format!("{}/{}", file_path_parent, file_name);
 
-                            let metadata = AssetMetadata::new(asset_file_path, asset_etag, asset_type);
+                            let metadata =
+                                AssetMetadata::new(asset_file_path, asset_etag, asset_type);
                             let asset_id = AssetId::from_str(file_name).unwrap();
 
                             self.map.insert(asset_id, metadata);
                         }
                         Some(Err(err)) => {
-                            panic!("Error reading file ({:?}): {:?}", file_path, err.to_string());
+                            panic!(
+                                "Error reading file ({:?}): {:?}",
+                                file_path,
+                                err.to_string()
+                            );
                         }
                         None => {
-                            self.tasks.push(AssetMetadataTask::LoadFile(file_path, task_key));
+                            self.tasks
+                                .push(AssetMetadataTask::LoadFile(file_path, task_key));
                         }
                     }
                 }
@@ -190,7 +212,8 @@ impl AssetMetadataStore {
         //     panic!("AssetMetadataStore is not finished loading");
         // }
         // info!("Inserting asset into map: asset_id: {:?}, etag: {:?}, path: {:?}", asset_id, etag, path);
-        self.map.insert(asset_id, AssetMetadata::new(path, etag, asset_type));
+        self.map
+            .insert(asset_id, AssetMetadata::new(path, etag, asset_type));
     }
 }
 

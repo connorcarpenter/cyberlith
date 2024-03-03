@@ -46,7 +46,6 @@ pub struct Style {
 }
 
 impl Style {
-
     // getters
 
     pub fn background_color(&self) -> Color {
@@ -177,8 +176,6 @@ impl Style {
         self.col_between
     }
 
-
-
     // setters
 
     pub fn set_background_color(&mut self, color: Color) -> &mut Self {
@@ -212,14 +209,12 @@ impl Style {
     pub fn set_relative(&mut self) -> &mut Self {
         self.position_type = PositionType::ParentDirected;
         self
-
     }
 
     // set_width
     fn set_width_units(&mut self, width: Units) -> &mut Self {
         self.width = width;
         self
-
     }
 
     pub fn set_width_auto(&mut self) -> &mut Self {
@@ -343,7 +338,10 @@ impl Style {
     }
 
     pub fn set_size_min_pc(&mut self, min_width_pc: f32, min_height_pc: f32) -> &mut Self {
-        self.set_size_min_units(Units::Percentage(min_width_pc), Units::Percentage(min_height_pc))
+        self.set_size_min_units(
+            Units::Percentage(min_width_pc),
+            Units::Percentage(min_height_pc),
+        )
     }
 
     pub fn set_size_min_st(&mut self, min_width_st: f32, min_height_st: f32) -> &mut Self {
@@ -410,7 +408,10 @@ impl Style {
     }
 
     pub fn set_size_max_pc(&mut self, max_width_pc: f32, max_height_pc: f32) -> &mut Self {
-        self.set_size_max_units(Units::Percentage(max_width_pc), Units::Percentage(max_height_pc))
+        self.set_size_max_units(
+            Units::Percentage(max_width_pc),
+            Units::Percentage(max_height_pc),
+        )
     }
 
     pub fn set_size_max_st(&mut self, max_width_st: f32, max_height_st: f32) -> &mut Self {
@@ -683,19 +684,31 @@ impl Style {
 
     // set_margin
     pub fn set_margin_auto(&mut self) -> &mut Self {
-        self.set_margin_left_auto().set_margin_right_auto().set_margin_top_auto().set_margin_bottom_auto()
+        self.set_margin_left_auto()
+            .set_margin_right_auto()
+            .set_margin_top_auto()
+            .set_margin_bottom_auto()
     }
 
     pub fn set_margin_px(&mut self, left: f32, right: f32, top: f32, bottom: f32) -> &mut Self {
-        self.set_margin_left_px(left).set_margin_right_px(right).set_margin_top_px(top).set_margin_bottom_px(bottom)
+        self.set_margin_left_px(left)
+            .set_margin_right_px(right)
+            .set_margin_top_px(top)
+            .set_margin_bottom_px(bottom)
     }
 
     pub fn set_margin_pc(&mut self, left: f32, right: f32, top: f32, bottom: f32) -> &mut Self {
-        self.set_margin_left_pc(left).set_margin_right_pc(right).set_margin_top_pc(top).set_margin_bottom_pc(bottom)
+        self.set_margin_left_pc(left)
+            .set_margin_right_pc(right)
+            .set_margin_top_pc(top)
+            .set_margin_bottom_pc(bottom)
     }
 
     pub fn set_margin_st(&mut self, left: f32, right: f32, top: f32, bottom: f32) -> &mut Self {
-        self.set_margin_left_st(left).set_margin_right_st(right).set_margin_top_st(top).set_margin_bottom_st(bottom)
+        self.set_margin_left_st(left)
+            .set_margin_right_st(right)
+            .set_margin_top_st(top)
+            .set_margin_bottom_st(bottom)
     }
 
     // set_border_left
@@ -788,19 +801,31 @@ impl Style {
 
     // set_border
     pub fn set_border_auto(&mut self) -> &mut Self {
-        self.set_border_left_auto().set_border_right_auto().set_border_top_auto().set_border_bottom_auto()
+        self.set_border_left_auto()
+            .set_border_right_auto()
+            .set_border_top_auto()
+            .set_border_bottom_auto()
     }
 
     pub fn set_border_px(&mut self, left: f32, right: f32, top: f32, bottom: f32) -> &mut Self {
-        self.set_border_left_px(left).set_border_right_px(right).set_border_top_px(top).set_border_bottom_px(bottom)
+        self.set_border_left_px(left)
+            .set_border_right_px(right)
+            .set_border_top_px(top)
+            .set_border_bottom_px(bottom)
     }
 
     pub fn set_border_pc(&mut self, left: f32, right: f32, top: f32, bottom: f32) -> &mut Self {
-        self.set_border_left_pc(left).set_border_right_pc(right).set_border_top_pc(top).set_border_bottom_pc(bottom)
+        self.set_border_left_pc(left)
+            .set_border_right_pc(right)
+            .set_border_top_pc(top)
+            .set_border_bottom_pc(bottom)
     }
 
     pub fn set_border_st(&mut self, left: f32, right: f32, top: f32, bottom: f32) -> &mut Self {
-        self.set_border_left_st(left).set_border_right_st(right).set_border_top_st(top).set_border_bottom_st(bottom)
+        self.set_border_left_st(left)
+            .set_border_right_st(right)
+            .set_border_top_st(top)
+            .set_border_bottom_st(bottom)
     }
 
     // set_padding_left
@@ -893,19 +918,31 @@ impl Style {
 
     // set_padding
     pub fn set_padding_auto(&mut self) -> &mut Self {
-        self.set_padding_left_auto().set_padding_right_auto().set_padding_top_auto().set_padding_bottom_auto()
+        self.set_padding_left_auto()
+            .set_padding_right_auto()
+            .set_padding_top_auto()
+            .set_padding_bottom_auto()
     }
 
     pub fn set_padding_px(&mut self, left: f32, right: f32, top: f32, bottom: f32) -> &mut Self {
-        self.set_padding_left_px(left).set_padding_right_px(right).set_padding_top_px(top).set_padding_bottom_px(bottom)
+        self.set_padding_left_px(left)
+            .set_padding_right_px(right)
+            .set_padding_top_px(top)
+            .set_padding_bottom_px(bottom)
     }
 
     pub fn set_padding_pc(&mut self, left: f32, right: f32, top: f32, bottom: f32) -> &mut Self {
-        self.set_padding_left_pc(left).set_padding_right_pc(right).set_padding_top_pc(top).set_padding_bottom_pc(bottom)
+        self.set_padding_left_pc(left)
+            .set_padding_right_pc(right)
+            .set_padding_top_pc(top)
+            .set_padding_bottom_pc(bottom)
     }
 
     pub fn set_padding_st(&mut self, left: f32, right: f32, top: f32, bottom: f32) -> &mut Self {
-        self.set_padding_left_st(left).set_padding_right_st(right).set_padding_top_st(top).set_padding_bottom_st(bottom)
+        self.set_padding_left_st(left)
+            .set_padding_right_st(right)
+            .set_padding_top_st(top)
+            .set_padding_bottom_st(bottom)
     }
 
     // set_row_between

@@ -1,4 +1,3 @@
-
 //
 
 use std::time::Duration;
@@ -19,15 +18,18 @@ use session_server_naia_proto::protocol as naia_protocol;
 
 //
 
+mod asset;
 mod global;
 mod http_server;
 mod naia;
 mod region_connection;
 mod user_connection;
 mod world_connection;
-mod asset;
 
-use crate::{global::Global, asset::{asset_connection, asset_manager, asset_manager::AssetManager}};
+use crate::{
+    asset::{asset_connection, asset_manager, asset_manager::AssetManager},
+    global::Global,
+};
 
 fn main() {
     let instance_secret = crypto::generate_random_string(16);

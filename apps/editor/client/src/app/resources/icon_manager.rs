@@ -175,7 +175,6 @@ pub enum IconShapeData {
 }
 
 impl IconManager {
-
     const SHAPE_SCALE_FACTOR: f32 = 2.5;
 
     pub fn draw(&mut self, world: &mut World, current_file_entity: &Entity) {
@@ -358,8 +357,7 @@ impl IconManager {
 
         // material
         let mat_handle_white = materials.add(Color::WHITE);
-        let mat_handle_light_gray =
-            materials.add(Color::LIGHT_GRAY);
+        let mat_handle_light_gray = materials.add(Color::LIGHT_GRAY);
         let mat_handle_gray = materials.add(Color::GRAY);
 
         // collect grid vertices
@@ -889,7 +887,7 @@ impl IconManager {
                 world,
                 current_file_entity,
                 &view_mouse_position,
-                camera_scale
+                camera_scale,
             );
         } else {
             self.sync_mouse_hover_ui_framing(
@@ -927,7 +925,6 @@ impl IconManager {
     }
 
     pub fn update_shape_scale(&self, world: &mut World, current_file_entity: Entity) {
-
         let hovered_entity_opt = self.hovered_entity.map(|(entity, _)| entity);
         let current_frame_entity = self.current_frame_entity(&current_file_entity).unwrap();
 
@@ -937,12 +934,7 @@ impl IconManager {
             Query<(Entity, &OwnedByFileLocal), With<IconEdgeLocal>>,
             Query<(Entity, &OwnedByFileLocal), With<IconLocalFace>>,
         )> = SystemState::new(world);
-        let (
-            mut transform_q,
-            vertex_q,
-            edge_q,
-            face_q,
-        ) = system_state.get_mut(world);
+        let (mut transform_q, vertex_q, edge_q, face_q) = system_state.get_mut(world);
 
         let Ok(camera_transform) = transform_q.get(self.camera_entity) else {
             return;
@@ -957,10 +949,9 @@ impl IconManager {
             let Ok(mut transform) = transform_q.get_mut(entity) else {
                 continue;
             };
-            let Some(vertex_frame_entity) = self.vertex_get_frame_entity(&entity)
-                else {
-                    continue;
-                };
+            let Some(vertex_frame_entity) = self.vertex_get_frame_entity(&entity) else {
+                continue;
+            };
             if vertex_frame_entity != current_frame_entity {
                 continue;
             }
@@ -988,10 +979,9 @@ impl IconManager {
             let Ok(mut transform) = transform_q.get_mut(entity) else {
                 continue;
             };
-            let Some(edge_frame_entity) = self.edge_get_frame_entity(&entity)
-                else {
-                    continue;
-                };
+            let Some(edge_frame_entity) = self.edge_get_frame_entity(&entity) else {
+                continue;
+            };
             if edge_frame_entity != current_frame_entity {
                 continue;
             }
@@ -1018,10 +1008,9 @@ impl IconManager {
             let Ok(mut transform) = transform_q.get_mut(entity) else {
                 continue;
             };
-            let Some(face_frame_entity) = self.face_get_frame_entity(&entity)
-                else {
-                    continue;
-                };
+            let Some(face_frame_entity) = self.face_get_frame_entity(&entity) else {
+                continue;
+            };
             if face_frame_entity != current_frame_entity {
                 continue;
             }
@@ -1697,11 +1686,7 @@ impl IconManager {
             self.vertex_add_face(vertex_entity, *face_key)
         }
 
-        let mut face_data = IconFaceData::new(
-            *file_entity,
-            *frame_entity,
-            new_entity,
-        );
+        let mut face_data = IconFaceData::new(*file_entity, *frame_entity, new_entity);
 
         // add face to edge data
         let mut edge_entities = Vec::new();
@@ -1731,10 +1716,7 @@ impl IconManager {
         }
 
         // register face data
-        self.face_keys.insert(
-            *face_key,
-            Some(face_data),
-        );
+        self.face_keys.insert(*face_key, Some(face_data));
         self.local_faces.insert(new_entity, *face_key);
 
         new_entity
@@ -2435,10 +2417,8 @@ impl IconManager {
             let line_mesh_handle = meshes.add(Line);
             let mat_handle_white = materials.add(Color::WHITE);
             let mat_handle_gray = materials.add(Color::GRAY);
-            let mat_handle_dark_gray =
-                materials.add(Color::DARK_GRAY);
-            let mat_handle_light_gray =
-                materials.add(Color::LIGHT_GRAY);
+            let mat_handle_dark_gray = materials.add(Color::DARK_GRAY);
+            let mat_handle_light_gray = materials.add(Color::LIGHT_GRAY);
 
             for (frame_index, frame_pos) in frame_rects.iter().enumerate() {
                 // frame_index 0 is preview frame

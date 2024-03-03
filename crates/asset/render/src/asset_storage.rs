@@ -1,7 +1,4 @@
-use std::{
-    collections::HashMap,
-    default::Default,
-};
+use std::{collections::HashMap, default::Default};
 
 use crate::AssetHandle;
 
@@ -11,7 +8,6 @@ pub struct AssetStorage<T> {
 }
 
 impl<T> AssetStorage<T> {
-
     pub fn insert(&mut self, asset_handle: AssetHandle<T>, data: T) {
         if self.data_map.contains_key(&asset_handle) {
             panic!("Asset with id {:?} already exists", asset_handle.asset_id());

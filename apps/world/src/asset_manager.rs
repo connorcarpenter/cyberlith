@@ -126,9 +126,7 @@ impl AssetManager {
 
         let asset_data = self.asset_id_to_data_map.get(&asset_id).unwrap();
         let entry_entity = asset_data.entry_entity;
-        new_ref
-            .asset_id_entity
-            .set(server, &entry_entity);
+        new_ref.asset_id_entity.set(server, &entry_entity);
         new_ref
     }
 

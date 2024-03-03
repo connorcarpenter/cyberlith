@@ -1,11 +1,6 @@
 mod convert_to_bits;
 
-use std::{
-    fs,
-    fs::File,
-    io::Read,
-    path::Path,
-};
+use std::{fs, fs::File, io::Read, path::Path};
 
 use asset_id::{AssetId, ETag};
 use git2::{Cred, FetchOptions, Index, Oid, PushOptions, Repository, Signature, Tree};
@@ -540,7 +535,7 @@ fn write_new_file(index: &mut Index, file_path: &str, full_path: &str, bytes: Ve
 
     // write data file
     match fs::write(full_path, &bytes) {
-        Ok(()) => {},
+        Ok(()) => {}
         Err(err) => panic!("failed to write file: {}", err),
     };
 

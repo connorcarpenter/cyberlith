@@ -1,8 +1,20 @@
-use std::{path::PathBuf, collections::HashMap};
+use std::{collections::HashMap, path::PathBuf};
 
 use bevy_ecs::{change_detection::ResMut, system::Resource};
 
-use crate::{backend::{FsTaskJob, poll_task, start_task}, CreateDirResult, error::TaskError, ReadDirResult, TaskKey, tasks::{read_dir::ReadDirTask, create_dir::CreateDirTask, write::{WriteResult, WriteTask}, traits::{FsTask, FsTaskResult}, task_enum::FsTaskResultEnum, read::{ReadResult, ReadTask}}};
+use crate::{
+    backend::{poll_task, start_task, FsTaskJob},
+    error::TaskError,
+    tasks::{
+        create_dir::CreateDirTask,
+        read::{ReadResult, ReadTask},
+        read_dir::ReadDirTask,
+        task_enum::FsTaskResultEnum,
+        traits::{FsTask, FsTaskResult},
+        write::{WriteResult, WriteTask},
+    },
+    CreateDirResult, ReadDirResult, TaskKey,
+};
 
 #[derive(Resource)]
 pub struct FileSystemManager {
@@ -22,10 +34,7 @@ impl Default for FileSystemManager {
 }
 
 impl FileSystemManager {
-    fn start_task<Q: FsTask>(
-        &mut self,
-        task: Q,
-    ) -> TaskKey<Q::Result> {
+    fn start_task<Q: FsTask>(&mut self, task: Q) -> TaskKey<Q::Result> {
         let task_enum = task.to_enum();
 
         let job = start_task(task_enum);
@@ -41,7 +50,11 @@ impl FileSystemManager {
         self.start_task(ReadTask::new(path))
     }
 
-    pub fn write<T: Into<PathBuf>, C: AsRef<[u8]>>(&mut self, path: T, bytes: C) -> TaskKey<WriteResult> {
+    pub fn write<T: Into<PathBuf>, C: AsRef<[u8]>>(
+        &mut self,
+        path: T,
+        bytes: C,
+    ) -> TaskKey<WriteResult> {
         self.start_task(WriteTask::new(path, bytes))
     }
 

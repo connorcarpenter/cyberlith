@@ -1,16 +1,21 @@
-
 use std::collections::{HashMap, HashSet};
 
 use bevy_log::info;
 
 use naia_bevy_server::{Server, UserKey};
 
-use session_server_naia_proto::{channels::PrimaryChannel, messages::{LoadAssetWithData, LoadAssetResponseValue}};
+use session_server_naia_proto::{
+    channels::PrimaryChannel,
+    messages::{LoadAssetResponseValue, LoadAssetWithData},
+};
 
 use asset_id::{AssetId, ETag};
 use bevy_http_client::HttpClient;
 
-use crate::asset::{asset_store::AssetStore, user_asset_processing::{UserAssetProcessingState, UserAssetProcessingStateTransition}};
+use crate::asset::{
+    asset_store::AssetStore,
+    user_asset_processing::{UserAssetProcessingState, UserAssetProcessingStateTransition},
+};
 
 pub struct UserAssets {
     user_key: UserKey,
@@ -22,7 +27,6 @@ pub struct UserAssets {
 }
 
 impl UserAssets {
-
     pub const MAX_BYTES_IN_MEMORY: usize = 1024 * 1024 * 25; // 25 MB
 
     pub fn new(user_key: &UserKey) -> Self {
@@ -86,7 +90,15 @@ impl UserAssets {
             let asset_etag = asset_store.get_etag(asset_id).unwrap();
 
             // move to next state
-            self.handle_asset_dependencies(server, http_client, asset_server_addr, asset_server_port, asset_store, asset_id, &asset_etag);
+            self.handle_asset_dependencies(
+                server,
+                http_client,
+                asset_server_addr,
+                asset_server_port,
+                asset_store,
+                asset_id,
+                &asset_etag,
+            );
         } else {
             // asset is not in store
             // send 'asset' request to asset server
@@ -98,7 +110,7 @@ impl UserAssets {
                     asset_server_port,
                     asset_id,
                     None,
-                )
+                ),
             );
         }
     }
@@ -113,9 +125,8 @@ impl UserAssets {
         http_client: &mut HttpClient,
         asset_server_addr: &str,
         asset_server_port: u16,
-        asset_store: &mut AssetStore
+        asset_store: &mut AssetStore,
     ) {
-
         let mut state_transitions = Vec::new();
         for (asset_id, user_asset_state) in self.assets_processing.iter_mut() {
             if let Some(transition) = user_asset_state.process(server, http_client) {
@@ -128,11 +139,25 @@ impl UserAssets {
                 UserAssetProcessingStateTransition::AssetServerResponse(asset_etag, data_opt) => {
                     // received response from asset server
                     if let Some((asset_type, dependencies, new_data)) = data_opt {
-                        asset_store.insert_data(asset_id, asset_type, asset_etag, dependencies, new_data);
+                        asset_store.insert_data(
+                            asset_id,
+                            asset_type,
+                            asset_etag,
+                            dependencies,
+                            new_data,
+                        );
                     }
 
                     // move to next state
-                    self.handle_asset_dependencies(server, http_client, asset_server_addr, asset_server_port, asset_store, &asset_id, &asset_etag);
+                    self.handle_asset_dependencies(
+                        server,
+                        http_client,
+                        asset_server_addr,
+                        asset_server_port,
+                        asset_store,
+                        &asset_id,
+                        &asset_etag,
+                    );
                 }
                 UserAssetProcessingStateTransition::ClientLoadAssetResponse(response_value) => {
                     match response_value {
@@ -140,10 +165,13 @@ impl UserAssets {
                             info!("sending asset data to client: {:?}", asset_id);
 
                             // get asset etag & data from store
-                            let (asset_type, asset_etag, asset_data) = asset_store.get_type_and_etag_and_data(&asset_id).unwrap();
+                            let (asset_type, asset_etag, asset_data) =
+                                asset_store.get_type_and_etag_and_data(&asset_id).unwrap();
 
                             // send asset data to client
-                            let message = LoadAssetWithData::new(asset_id, asset_type, asset_etag, asset_data);
+                            let message = LoadAssetWithData::new(
+                                asset_id, asset_type, asset_etag, asset_data,
+                            );
                             server.send_message::<PrimaryChannel, _>(&self.user_key, &message);
 
                             // remove from processing, add to memory
@@ -163,7 +191,7 @@ impl UserAssets {
         &mut self,
         server: &mut Server,
         asset_store: &AssetStore,
-        asset_id: &AssetId
+        asset_id: &AssetId,
     ) {
         info!("finished processing asset: {:?}", asset_id);
 
@@ -179,26 +207,34 @@ impl UserAssets {
         // handle dependency waitlist
         if let Some(waiting_asset_ids) = self.dependency_waitlist.remove(asset_id) {
             for waiting_asset_id in waiting_asset_ids {
+                info!(
+                    "asset: {:?} has finished loading, notifying waiting asset: {:?}",
+                    asset_id, waiting_asset_id
+                );
 
-                info!("asset: {:?} has finished loading, notifying waiting asset: {:?}", asset_id, waiting_asset_id);
-
-                let waiting_asset_state = self.assets_processing.get_mut(&waiting_asset_id).unwrap();
+                let waiting_asset_state =
+                    self.assets_processing.get_mut(&waiting_asset_id).unwrap();
                 let waiting_asset_finished = waiting_asset_state.handle_dependency_loaded(asset_id);
 
                 // if waiting asset has no more dependencies, move it to next state
                 if waiting_asset_finished {
-
-                    info!("all dependencies for asset: {:?} have been loaded, sending to client", waiting_asset_id);
+                    info!(
+                        "all dependencies for asset: {:?} have been loaded, sending to client",
+                        waiting_asset_id
+                    );
 
                     // move to next state
                     let waiting_asset_etag = asset_store.get_etag(&waiting_asset_id).unwrap();
                     // all of asset's dependencies are already loaded (or asset has no dependencies), send asset over to client
-                    self.assets_processing.insert(waiting_asset_id, UserAssetProcessingState::send_client_load_asset_request(
-                        server,
-                        &self.user_key,
-                        &waiting_asset_id,
-                        &waiting_asset_etag,
-                    ));
+                    self.assets_processing.insert(
+                        waiting_asset_id,
+                        UserAssetProcessingState::send_client_load_asset_request(
+                            server,
+                            &self.user_key,
+                            &waiting_asset_id,
+                            &waiting_asset_etag,
+                        ),
+                    );
                 }
             }
         }
@@ -212,7 +248,7 @@ impl UserAssets {
         asset_server_port: u16,
         asset_store: &AssetStore,
         asset_id: &AssetId,
-        asset_etag: &ETag
+        asset_etag: &ETag,
     ) {
         // check whether asset has any dependencies
         let mut pending_dependencies = HashSet::new();
@@ -225,7 +261,14 @@ impl UserAssets {
 
                 if !self.assets_processing.contains_key(dependency) {
                     // add task to process dependency if it doesn't exist
-                    self.handle_user_asset_added(server, http_client, asset_server_addr, asset_server_port, asset_store, dependency);
+                    self.handle_user_asset_added(
+                        server,
+                        http_client,
+                        asset_server_addr,
+                        asset_server_port,
+                        asset_store,
+                        dependency,
+                    );
                 }
 
                 // add dependency to pending list
@@ -242,17 +285,21 @@ impl UserAssets {
 
         if pending_dependencies.is_empty() {
             // all of asset's dependencies are already loaded (or asset has no dependencies), send asset over to client
-            self.assets_processing.insert(*asset_id, UserAssetProcessingState::send_client_load_asset_request(
-                server,
-                &self.user_key,
-                asset_id,
-                asset_etag,
-            ));
+            self.assets_processing.insert(
+                *asset_id,
+                UserAssetProcessingState::send_client_load_asset_request(
+                    server,
+                    &self.user_key,
+                    asset_id,
+                    asset_etag,
+                ),
+            );
         } else {
             // asset must wait on dependencies to load first
-            self.assets_processing.insert(*asset_id, UserAssetProcessingState::waiting_for_dependencies(
-                pending_dependencies,
-            ));
+            self.assets_processing.insert(
+                *asset_id,
+                UserAssetProcessingState::waiting_for_dependencies(pending_dependencies),
+            );
         }
     }
 }

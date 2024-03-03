@@ -1,9 +1,10 @@
-use crate::asset_cache::AssetCache;
 use std::time::{Duration, Instant};
-use asset_server_http_proto::{AssetRequest, AssetResponse};
+
 use http_client::ResponseError;
 
-use crate::asset_metadata_store::AssetMetadataStore;
+use asset_server_http_proto::{AssetRequest, AssetResponse};
+
+use crate::{asset_cache::AssetCache, asset_metadata_store::AssetMetadataStore};
 
 pub enum ConnectionState {
     Disconnected,
@@ -72,8 +73,10 @@ impl State {
         self.region_server_connection_state = ConnectionState::Disconnected;
     }
 
-    pub fn handle_asset_request(&mut self, request: AssetRequest,) -> Result<AssetResponse, ResponseError> {
-
+    pub fn handle_asset_request(
+        &mut self,
+        request: AssetRequest,
+    ) -> Result<AssetResponse, ResponseError> {
         let req_asset_id = request.asset_id();
         let req_etag_opt = request.etag_opt();
 
@@ -96,7 +99,12 @@ impl State {
             let asset_type = metadata.asset_type();
 
             let dependencies = metadata.dependencies().clone();
-            return Ok(AssetResponse::modified(asset_etag, asset_type, dependencies, asset_data));
+            return Ok(AssetResponse::modified(
+                asset_etag,
+                asset_type,
+                dependencies,
+                asset_data,
+            ));
         } else {
             return Err(ResponseError::NotFound);
         }

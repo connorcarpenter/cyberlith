@@ -8,10 +8,9 @@ use crate::{
     base::{CpuMaterial, CpuMesh, CpuSkin},
     components::{
         AmbientLight, Camera, DirectionalLight, PointLight, Projection, RenderLayer, RenderLayers,
-        Transform,
+        Transform, Viewport,
     },
 };
-use crate::components::Viewport;
 
 #[derive(Resource)]
 pub struct RenderFrame {
@@ -37,9 +36,7 @@ impl RenderFrame {
             .cameras
             .iter()
             .find(|(layer_id, _, _, _)| *layer_id == id)
-            .map(|(_, camera, _, _)| {
-                camera.viewport
-            })
+            .map(|(_, camera, _, _)| camera.viewport)
             .flatten()
     }
 

@@ -111,7 +111,8 @@ impl FileFrameData {
         }
         info!("- op -");
 
-        self.frames.insert(frame_entity, FrameData::new(frame_order as u8));
+        self.frames
+            .insert(frame_entity, FrameData::new(frame_order as u8));
 
         // add to frame_list
         if frame_order >= self.frame_list.len() {
@@ -193,7 +194,12 @@ impl FileFrameData {
         Some(frame_data)
     }
 
-    pub(crate) fn update_frame_order(&mut self, new_frame_entity: &Entity, new_order: u8, frame_q: &mut Query<&mut IconFrame>) {
+    pub(crate) fn update_frame_order(
+        &mut self,
+        new_frame_entity: &Entity,
+        new_order: u8,
+        frame_q: &mut Query<&mut IconFrame>,
+    ) {
         let Some(new_frame_data) = self.frames.get_mut(new_frame_entity) else {
             panic!("frame entity not found");
         };
@@ -351,7 +357,11 @@ impl IconManager {
 
     pub fn get_frame_at_index(&self, file_entity: &Entity, frame_index: usize) -> Option<Entity> {
         if let Some(file_frame_data) = self.file_frame_data.get(file_entity) {
-            file_frame_data.frame_list.get(frame_index).cloned().flatten()
+            file_frame_data
+                .frame_list
+                .get(frame_index)
+                .cloned()
+                .flatten()
         } else {
             None
         }
@@ -366,9 +376,7 @@ impl IconManager {
     ) {
         info!(
             "icon frame update event (File Entity: {:?}, Frame Entity: {:?}, Order: {:?})",
-            file_entity,
-            frame_entity,
-            frame_order
+            file_entity, frame_entity, frame_order
         );
 
         let Some(file_frame_data) = self.file_frame_data.get_mut(file_entity) else {
@@ -399,7 +407,8 @@ impl IconManager {
         };
         file_frame_data.add_vertex(frame_entity, vertex_entity);
 
-        self.vertices.insert(vertex_entity, IconVertexData::new(frame_entity));
+        self.vertices
+            .insert(vertex_entity, IconVertexData::new(frame_entity));
     }
 
     pub fn on_create_edge(

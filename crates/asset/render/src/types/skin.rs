@@ -59,10 +59,7 @@ impl SkinData {
         dependencies.push((handle.into(), TypedAssetId::Palette(asset_id.clone())));
     }
 
-    pub(crate) fn finish_dependency(
-        &mut self,
-        dependency_typed_id: TypedAssetId
-    ) {
+    pub(crate) fn finish_dependency(&mut self, dependency_typed_id: TypedAssetId) {
         match dependency_typed_id {
             TypedAssetId::Mesh(asset_id) => {
                 let handle = AssetHandle::<MeshData>::new(asset_id);
@@ -142,7 +139,6 @@ impl SkinData {
     }
 
     pub fn from_bytes(bytes: &[u8]) -> Self {
-
         info!("--- reading skin ---");
 
         let actions = asset_io::bits::SkinAction::read(bytes).expect("unable to parse file");

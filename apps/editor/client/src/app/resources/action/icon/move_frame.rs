@@ -27,11 +27,8 @@ pub fn execute(
         file_entity, current_frame_index, next_frame_index
     );
 
-    let mut system_state: SystemState<(
-        Commands,
-        Client<Main>,
-        Query<&mut IconFrame>
-    )> = SystemState::new(world);
+    let mut system_state: SystemState<(Commands, Client<Main>, Query<&mut IconFrame>)> =
+        SystemState::new(world);
     let (mut commands, client, mut frame_q) = system_state.get_mut(world);
 
     // get current frame entity
@@ -76,7 +73,10 @@ pub fn execute(
     }
 
     // set current frame order to next frame order
-    info!("setting IconFrame(entity: {:?}).order to {:?} ... (previously was {:?})", current_frame_entity, next_frame_index, current_frame_order);
+    info!(
+        "setting IconFrame(entity: {:?}).order to {:?} ... (previously was {:?})",
+        current_frame_entity, next_frame_index, current_frame_order
+    );
     current_frame.set_order(next_frame_index as u8);
 
     icon_manager.set_current_frame_index(next_frame_index);

@@ -4,7 +4,9 @@ use bevy_ecs::component::Component;
 
 use asset_id::{AssetId, AssetType};
 
-use crate::{AnimationData, IconData, MeshData, ModelData, PaletteData, SceneData, SkeletonData, SkinData};
+use crate::{
+    AnimationData, IconData, MeshData, ModelData, PaletteData, SceneData, SkeletonData, SkinData,
+};
 
 #[derive(Clone, Copy, Eq, PartialEq, Hash)]
 pub enum TypedAssetId {
@@ -63,7 +65,6 @@ impl TypedAssetId {
 pub struct AssetHandle<T> {
     asset_id: AssetId,
     phantom_t: std::marker::PhantomData<T>,
-
 }
 
 impl<T> AssetHandle<T> {

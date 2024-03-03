@@ -17,7 +17,9 @@ impl LayoutCache {
     }
 
     pub fn bounds(&self, node: &UiId) -> Option<(f32, f32, f32, f32)> {
-        self.rect.get(node).map(|(width, height, posx, posy)| (*width, *height, *posx, *posy))
+        self.rect
+            .get(node)
+            .map(|(width, height, posx, posy)| (*width, *height, *posx, *posy))
     }
 }
 

@@ -2,10 +2,10 @@
 extern crate cfg_if;
 
 mod asset_cache;
+mod asset_endpoint;
 mod asset_metadata_store;
 mod region_connection;
 mod state;
-mod asset_endpoint;
 
 cfg_if! {
     if #[cfg(feature = "local")] {
@@ -22,7 +22,7 @@ use http_server::{async_dup::Arc, smol::lock::RwLock, Server};
 
 use config::{ASSET_SERVER_PORT, SELF_BINDING_ADDR};
 
-use crate::{state::State, asset_metadata_store::AssetMetadataStore};
+use crate::{asset_metadata_store::AssetMetadataStore, state::State};
 
 pub fn main() {
     // setup logging

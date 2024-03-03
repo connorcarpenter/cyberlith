@@ -1,16 +1,20 @@
 use std::collections::HashMap;
 
-use bevy_ecs::{event::{Event, EventWriter}, prelude::Resource, system::ResMut};
+use bevy_ecs::{
+    event::{Event, EventWriter},
+    prelude::Resource,
+    system::ResMut,
+};
 use bevy_log::info;
 
 use naia_serde::{BitWriter, Serde};
 
 use session_server_naia_proto::messages::{LoadAssetRequest, LoadAssetResponse, LoadAssetWithData};
 
-use filesystem::{FileSystemManager, ReadResult, TaskKey, WriteResult};
-use naia_bevy_client::{Client, ResponseSendKey};
 use asset_id::{AssetId, AssetType};
 use asset_render::{AssetManager, AssetMetadataSerde, AssetMetadataStore};
+use filesystem::{FileSystemManager, ReadResult, TaskKey, WriteResult};
+use naia_bevy_client::{Client, ResponseSendKey};
 
 type SessionClient<'a> = Client<'a, Session>;
 
@@ -55,18 +59,31 @@ impl AssetCache {
                 LoadAssetTask::HasFsTask(asset_id, asset_type, response_send_key, fs_task_key) => {
                     match fs_manager.get_result(&fs_task_key) {
                         Some(Ok(result)) => {
-
                             let asset_bytes = result.bytes;
-                            asset_cache.handle_data_store_load_asset(&mut asset_manager, &mut asset_loaded_event_writer, &asset_id, &asset_type, asset_bytes);
+                            asset_cache.handle_data_store_load_asset(
+                                &mut asset_manager,
+                                &mut asset_loaded_event_writer,
+                                &asset_id,
+                                &asset_type,
+                                asset_bytes,
+                            );
 
-                            Some((response_send_key, LoadAssetResponse::loaded_non_modified_asset()))
+                            Some((
+                                response_send_key,
+                                LoadAssetResponse::loaded_non_modified_asset(),
+                            ))
                         }
                         Some(Err(e)) => {
                             panic!("error reading asset from disk: {:?}", e.to_string());
                         }
                         None => {
                             // still pending
-                            asset_cache.load_asset_tasks.push(LoadAssetTask::HasFsTask(asset_id, asset_type, response_send_key, fs_task_key));
+                            asset_cache.load_asset_tasks.push(LoadAssetTask::HasFsTask(
+                                asset_id,
+                                asset_type,
+                                response_send_key,
+                                fs_task_key,
+                            ));
                             None
                         }
                     }
@@ -97,19 +114,25 @@ impl AssetCache {
         file_system_manager: &mut FileSystemManager,
         metadata_store: &mut AssetMetadataStore,
         request: LoadAssetRequest,
-        response_send_key: ResponseSendKey<LoadAssetResponse>
+        response_send_key: ResponseSendKey<LoadAssetResponse>,
     ) {
         let asset_id = request.asset_id;
         let asset_etag = request.etag;
 
         let Some(metadata) = metadata_store.get(&asset_id) else {
             // client has no asset
-            self.load_asset_tasks.push(LoadAssetTask::HasResponse(response_send_key, LoadAssetResponse::has_old_or_no_asset()));
+            self.load_asset_tasks.push(LoadAssetTask::HasResponse(
+                response_send_key,
+                LoadAssetResponse::has_old_or_no_asset(),
+            ));
             return;
         };
         if metadata.etag() != asset_etag {
             // client has old asset
-            self.load_asset_tasks.push(LoadAssetTask::HasResponse(response_send_key, LoadAssetResponse::has_old_or_no_asset()));
+            self.load_asset_tasks.push(LoadAssetTask::HasResponse(
+                response_send_key,
+                LoadAssetResponse::has_old_or_no_asset(),
+            ));
             return;
         }
 
@@ -123,7 +146,12 @@ impl AssetCache {
         // load asset into memory
         info!("loading asset into memory: {:?}", metadata.path());
         let fs_task_key = file_system_manager.read(metadata.path());
-        self.load_asset_tasks.push(LoadAssetTask::HasFsTask(asset_id, metadata.asset_type(), response_send_key, fs_task_key));
+        self.load_asset_tasks.push(LoadAssetTask::HasFsTask(
+            asset_id,
+            metadata.asset_type(),
+            response_send_key,
+            fs_task_key,
+        ));
         return;
     }
 
@@ -133,9 +161,8 @@ impl AssetCache {
         asset_loaded_event_writer: &mut EventWriter<AssetLoadedEvent>,
         file_system_manager: &mut FileSystemManager,
         metadata_store: &mut AssetMetadataStore,
-        message: LoadAssetWithData
+        message: LoadAssetWithData,
     ) {
-
         let asset_id = message.asset_id;
         let asset_etag = message.asset_etag;
         let asset_type = message.asset_type;
@@ -145,23 +172,37 @@ impl AssetCache {
         let asset_metadata_file_path = format!("{}.meta", &asset_file_path);
 
         // load asset data into disk
-        info!("attempting to write asset data to disk: {:?}", asset_file_path);
+        info!(
+            "attempting to write asset data to disk: {:?}",
+            asset_file_path
+        );
         let asset_write_key = file_system_manager.write(&asset_file_path, &asset_data);
 
         // load asset metadata into disk
-        info!("attempting to write asset metadata to disk: {:?}", asset_metadata_file_path);
+        info!(
+            "attempting to write asset metadata to disk: {:?}",
+            asset_metadata_file_path
+        );
         let metadata_payload = AssetMetadataSerde::new(asset_etag, asset_type);
         let mut metadata_writer = BitWriter::new();
         metadata_payload.ser(&mut metadata_writer);
         let metadata_bytes = metadata_writer.to_bytes();
-        let metadata_write_key = file_system_manager.write(&asset_metadata_file_path, &metadata_bytes);
+        let metadata_write_key =
+            file_system_manager.write(&asset_metadata_file_path, &metadata_bytes);
 
         // save write keys into task
-        self.save_asset_tasks.push(SaveAssetTask::new(asset_write_key, metadata_write_key));
+        self.save_asset_tasks
+            .push(SaveAssetTask::new(asset_write_key, metadata_write_key));
 
         // load asset data into memory
         info!("loading asset into memory: {:?}", asset_file_path);
-        self.handle_data_store_load_asset(asset_manager, asset_loaded_event_writer, &asset_id, &asset_type, asset_data);
+        self.handle_data_store_load_asset(
+            asset_manager,
+            asset_loaded_event_writer,
+            &asset_id,
+            &asset_type,
+            asset_data,
+        );
 
         // load asset metadata into memory
         metadata_store.insert(asset_id, asset_etag, asset_file_path, asset_type);
@@ -173,7 +214,7 @@ impl AssetCache {
         asset_loaded_event_writer: &mut EventWriter<AssetLoadedEvent>,
         asset_id: &AssetId,
         asset_type: &AssetType,
-        asset_data: Vec<u8>
+        asset_data: Vec<u8>,
     ) {
         if self.data_store.contains_key(asset_id) {
             panic!("asset is already in memory");
@@ -201,7 +242,12 @@ pub struct AssetLoadedEvent {
 
 pub enum LoadAssetTask {
     HasResponse(ResponseSendKey<LoadAssetResponse>, LoadAssetResponse),
-    HasFsTask(AssetId, AssetType, ResponseSendKey<LoadAssetResponse>, TaskKey<ReadResult>),
+    HasFsTask(
+        AssetId,
+        AssetType,
+        ResponseSendKey<LoadAssetResponse>,
+        TaskKey<ReadResult>,
+    ),
 }
 
 pub struct SaveAssetTask {
@@ -210,7 +256,10 @@ pub struct SaveAssetTask {
 }
 
 impl SaveAssetTask {
-    pub fn new(asset_write_key: TaskKey<WriteResult>, metadata_write_key: TaskKey<WriteResult>) -> Self {
+    pub fn new(
+        asset_write_key: TaskKey<WriteResult>,
+        metadata_write_key: TaskKey<WriteResult>,
+    ) -> Self {
         Self {
             asset_write_key_opt: Some(asset_write_key),
             metadata_write_key_opt: Some(metadata_write_key),

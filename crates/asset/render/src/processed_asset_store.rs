@@ -6,7 +6,10 @@ use asset_id::{AssetId, AssetType};
 use render_api::base::{CpuMaterial, CpuMesh, CpuSkin};
 use storage::Storage;
 
-use crate::{AnimationData, AssetHandle, IconData, MeshData, ModelData, PaletteData, SceneData, SkeletonData, SkinData, asset_storage::AssetStorage, TypedAssetId};
+use crate::{
+    asset_storage::AssetStorage, AnimationData, AssetHandle, IconData, MeshData, ModelData,
+    PaletteData, SceneData, SkeletonData, SkinData, TypedAssetId,
+};
 
 pub(crate) struct ProcessedAssetStore {
     pub(crate) meshes: AssetStorage<MeshData>,
@@ -54,13 +57,20 @@ impl Default for ProcessedAssetStore {
 }
 
 impl ProcessedAssetStore {
-
-    pub(crate) fn get_icon_frame_width(&self, handle: &AssetHandle<IconData>, frame_index: usize) -> Option<f32> {
+    pub(crate) fn get_icon_frame_width(
+        &self,
+        handle: &AssetHandle<IconData>,
+        frame_index: usize,
+    ) -> Option<f32> {
         let data = self.icons.get(handle)?;
         data.get_frame_width(frame_index)
     }
 
-    pub(crate) fn get_icon_frame_height(&self, handle: &AssetHandle<IconData>, frame_index: usize) -> Option<f32> {
+    pub(crate) fn get_icon_frame_height(
+        &self,
+        handle: &AssetHandle<IconData>,
+        frame_index: usize,
+    ) -> Option<f32> {
         let data = self.icons.get(handle)?;
         data.get_frame_height(frame_index)
     }
@@ -71,7 +81,6 @@ impl ProcessedAssetStore {
         asset_id: &AssetId,
         asset_type: &AssetType,
     ) {
-
         let mut dependencies: Vec<(TypedAssetId, TypedAssetId)> = Vec::new();
 
         match asset_type {
@@ -171,9 +180,7 @@ impl ProcessedAssetStore {
         dependency_typed_id: TypedAssetId,
     ) {
         match principal_typed_id {
-            TypedAssetId::Mesh(_)
-            | TypedAssetId::Skeleton(_)
-            | TypedAssetId::Palette(_) => {
+            TypedAssetId::Mesh(_) | TypedAssetId::Skeleton(_) | TypedAssetId::Palette(_) => {
                 panic!("unexpected dependency for this type of asset")
             }
             TypedAssetId::Animation(principal_id) => {
@@ -190,7 +197,8 @@ impl ProcessedAssetStore {
 
                     if !self.palette_has_cpu_materials(&palette_handle) {
                         if !self.icons_waiting_on_palettes.contains_key(&palette_handle) {
-                            self.icons_waiting_on_palettes.insert(palette_handle, Vec::new());
+                            self.icons_waiting_on_palettes
+                                .insert(palette_handle, Vec::new());
                         }
                         let icon_list = self
                             .icons_waiting_on_palettes
@@ -334,7 +342,10 @@ impl ProcessedAssetStore {
             if skin_data.load_cpu_skin(materials, skins, mesh_data, palette_data) {
                 // success!
             } else {
-                warn!("skin data {:?} not loaded, re-queuing", skin_handle.asset_id());
+                warn!(
+                    "skin data {:?} not loaded, re-queuing",
+                    skin_handle.asset_id()
+                );
                 self.ready_skins.push(skin_handle);
             }
         }
@@ -378,7 +389,10 @@ impl ProcessedAssetStore {
             if icon_data.load_cpu_skins(meshes, materials, skins, palette_data) {
                 // success!
             } else {
-                warn!("icon data {:?} not loaded, re-queuing", icon_handle.asset_id());
+                warn!(
+                    "icon data {:?} not loaded, re-queuing",
+                    icon_handle.asset_id()
+                );
                 self.ready_icons.push(icon_handle);
             }
         }

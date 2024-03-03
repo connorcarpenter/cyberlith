@@ -272,13 +272,8 @@ impl FaceManager {
         }
 
         // register face data
-        self.face_keys.insert(
-            *face_key,
-            Some(FaceData::new(
-                entity_2d,
-                file_entity,
-            )),
-        );
+        self.face_keys
+            .insert(*face_key, Some(FaceData::new(entity_2d, file_entity)));
         self.faces_2d.insert(entity_2d, *face_key);
 
         entity_2d
@@ -471,8 +466,7 @@ impl FaceManager {
         face_key: &FaceKey,
     ) -> Entity {
         // unregister face
-        let Some(face_2d_entity) = self.unregister_face_key(vertex_manager, face_key)
-        else {
+        let Some(face_2d_entity) = self.unregister_face_key(vertex_manager, face_key) else {
             panic!(
                 "FaceKey: `{:?}` has no corresponding Face2d entity",
                 face_key

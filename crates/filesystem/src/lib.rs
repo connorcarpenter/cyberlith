@@ -2,14 +2,16 @@
 extern crate cfg_if;
 
 mod backend;
-mod manager;
-mod task_key;
-mod plugin;
 mod error;
+mod manager;
+mod plugin;
+mod task_key;
 mod tasks;
 
+pub use error::TaskError;
 pub use manager::FileSystemManager;
 pub use plugin::FileSystemPlugin;
 pub use task_key::TaskKey;
-pub use error::TaskError;
-pub use tasks::{read::ReadResult, write::WriteResult, read_dir::ReadDirResult, create_dir::CreateDirResult};
+pub use tasks::{
+    create_dir::CreateDirResult, read::ReadResult, read_dir::ReadDirResult, write::WriteResult,
+};

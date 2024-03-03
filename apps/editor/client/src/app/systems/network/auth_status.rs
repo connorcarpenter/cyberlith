@@ -340,10 +340,7 @@ fn process_entity_auth_status(
                 owning_file_entity
             );
         }
-    } else if icon_vertex_opt.is_some()
-        || icon_edge_opt.is_some()
-        || icon_face_opt.is_some()
-    {
+    } else if icon_vertex_opt.is_some() || icon_edge_opt.is_some() || icon_face_opt.is_some() {
         info!(
             "auth processing for shape entity `{:?}`: `{:?}`",
             entity, status
@@ -358,7 +355,10 @@ fn process_entity_auth_status(
                 );
             }
         } else {
-            warn!("no owning file entity found for icon shape entity: {:?}", entity);
+            warn!(
+                "no owning file entity found for icon shape entity: {:?}",
+                entity
+            );
         }
     } else if let Some(frame_component) = icon_frame_opt {
         info!(

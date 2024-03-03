@@ -1,8 +1,8 @@
-use log::{info, warn};
 use asset_server_http_proto::{HeartbeatRequest, HeartbeatResponse};
+use log::{info, warn};
 
 use http_client::{HttpClient, ResponseError};
-use http_server::{async_dup::Arc, Server, smol::lock::RwLock};
+use http_server::{async_dup::Arc, smol::lock::RwLock, Server};
 
 use region_server_http_proto::AssetRegisterInstanceRequest;
 

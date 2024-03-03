@@ -1,16 +1,15 @@
 use std::collections::HashMap;
 
-use crate::{UiId};
-use crate::style::Style;
+use crate::{style::Style, UiId};
 
 pub struct PanelStore {
-    map: HashMap<UiId, Panel>
+    map: HashMap<UiId, Panel>,
 }
 
 impl PanelStore {
     pub fn new() -> Self {
         Self {
-            map: HashMap::new()
+            map: HashMap::new(),
         }
     }
 

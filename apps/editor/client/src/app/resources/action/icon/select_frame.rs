@@ -46,7 +46,10 @@ pub fn execute(
         warn!("Next frame entity not found");
         return vec![];
     };
-    info!("Requesting authority over next frame entity: {:?}", next_frame_entity);
+    info!(
+        "Requesting authority over next frame entity: {:?}",
+        next_frame_entity
+    );
     commands
         .entity(next_frame_entity)
         .request_authority(&mut client);

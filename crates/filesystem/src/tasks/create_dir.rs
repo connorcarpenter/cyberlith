@@ -1,6 +1,12 @@
 use std::path::PathBuf;
 
-use crate::{error::TaskError, tasks::{traits::{FsTask, FsTaskResult}, task_enum::{FsTaskEnum, FsTaskResultEnum}}};
+use crate::{
+    error::TaskError,
+    tasks::{
+        task_enum::{FsTaskEnum, FsTaskResultEnum},
+        traits::{FsTask, FsTaskResult},
+    },
+};
 
 // Task
 pub struct CreateDirTask {
@@ -9,9 +15,7 @@ pub struct CreateDirTask {
 
 impl CreateDirTask {
     pub fn new<T: Into<PathBuf>>(path: T) -> Self {
-        Self {
-            path: path.into(),
-        }
+        Self { path: path.into() }
     }
 }
 

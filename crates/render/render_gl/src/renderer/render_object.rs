@@ -50,7 +50,10 @@ impl RenderMeshes {
         lights: &[&dyn Light],
         meshes: RenderMeshes,
     ) {
-        if !gpu_skin_manager.is_ready() || !gpu_material_manager.is_ready() || !gpu_mesh_manager.is_ready() {
+        if !gpu_skin_manager.is_ready()
+            || !gpu_material_manager.is_ready()
+            || !gpu_mesh_manager.is_ready()
+        {
             return;
         }
         let (commands, instance_texture) =

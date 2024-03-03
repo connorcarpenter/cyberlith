@@ -3,7 +3,7 @@ use render_api::{
     base::{CpuMaterial, CpuMesh},
     components::{RenderObjectBundle, Transform},
 };
-use storage::{StorageHash, Handle, Storage};
+use storage::{Handle, Storage, StorageHash};
 
 pub fn create_3d_edge_diamond(
     meshes: &mut Storage<CpuMesh>,

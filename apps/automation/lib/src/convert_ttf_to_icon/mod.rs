@@ -1,8 +1,9 @@
 use std::collections::HashSet;
-use log::{info, warn};
-use ttf2mesh::{Quality, TTFFile, Value};
+
 use asset_id::AssetId;
 use asset_io::json::{IconFile, IconFileFrame};
+use log::{info, warn};
+use ttf2mesh::{Quality, TTFFile, Value};
 
 use crate::CliError;
 
@@ -15,7 +16,8 @@ pub fn convert_ttf_to_icon(ttf_file_name: &str) -> Result<(), CliError> {
     let palette_asset_id = AssetId::from_str("8273wa").unwrap();
     output_file.set_palette_asset_id(&palette_asset_id);
 
-    for ascii_code in 32..=126 { // should be 32..=126
+    for ascii_code in 32..=126 {
+        // should be 32..=126
         let character = ascii_code as u8 as char;
         info!("ASCII Code: {}  Character: {}", ascii_code, character);
 
@@ -50,7 +52,8 @@ pub fn convert_ttf_to_icon(ttf_file_name: &str) -> Result<(), CliError> {
             let (mut x, mut y) = vertex.val();
 
             x -= mid_x;
-            x *= 150.0; y *= 150.0;
+            x *= 150.0;
+            y *= 150.0;
             y *= -1.0;
             y += 55.0;
 
@@ -99,7 +102,11 @@ pub fn convert_ttf_to_icon(ttf_file_name: &str) -> Result<(), CliError> {
     let file_name = file_name_path.file_stem().unwrap().to_str().unwrap();
     let output_file_name = format!("{}.icon.json", file_name);
 
-    info!("Writing icon file: {:?}. (bytes: {:?})", output_file_name, output_bytes.len());
+    info!(
+        "Writing icon file: {:?}. (bytes: {:?})",
+        output_file_name,
+        output_bytes.len()
+    );
     std::fs::write(output_file_name, output_bytes).unwrap();
 
     Ok(())

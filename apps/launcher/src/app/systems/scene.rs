@@ -1,33 +1,34 @@
 use bevy_ecs::{
     component::Component,
+    event::EventWriter,
     system::{Commands, Query, Res, ResMut},
-    event::EventWriter
 };
 use bevy_log::info;
 
 use game_engine::{
-    asset::{embedded_asset_event, EmbeddedAssetEvent, IconData, TextStyle, AssetManager, AssetHandle},
+    asset::{
+        embedded_asset_event, AssetHandle, AssetManager, EmbeddedAssetEvent, IconData, TextStyle,
+    },
+    math::Vec3,
     render::{
         base::{Color, CpuMaterial, CpuMesh},
         components::{
-            AmbientLight, Camera, CameraBundle, DirectionalLight,
-            PointLight, Projection, RenderLayer, RenderLayers,
-            RenderTarget, Transform, Viewport, Visibility,
+            AmbientLight, Camera, CameraBundle, DirectionalLight, PointLight, Projection,
+            RenderLayer, RenderLayers, RenderTarget, Transform, Viewport, Visibility,
         },
         resources::RenderFrame,
+        Window,
     },
     storage::Handle,
+    ui::Ui,
 };
-use game_engine::math::Vec3;
-use game_engine::render::Window;
-use game_engine::ui::{Ui};
 
 #[derive(Component)]
 pub struct TextMarker;
 
 pub fn scene_setup(
     mut commands: Commands,
-    mut embedded_asset_events: EventWriter<EmbeddedAssetEvent>
+    mut embedded_asset_events: EventWriter<EmbeddedAssetEvent>,
 ) {
     // TODO: use some kind of catalog here
     embedded_asset_events.send(embedded_asset_event!("../embedded/8273wa")); // palette
@@ -38,44 +39,29 @@ pub fn scene_setup(
     // ui
 
     let mut ui = Ui::new();
-    ui
-        .root_mut()
+    ui.root_mut()
         .style(|s| {
-            s
-                .set_background_color(Color::YELLOW)
+            s.set_background_color(Color::YELLOW)
                 .set_vertical()
                 .set_padding_px(10.0, 10.0, 10.0, 10.0)
                 .set_row_between_px(10.0);
         })
         .contents(|mut c| {
             //ui.label("Hello, my Nina! <3");
-            c
-                .add_panel()
+            c.add_panel()
                 .style(|s| {
-                    s
-                        .set_background_color(Color::RED)
-                        .set_size_st(1.0, 1.0);
+                    s.set_background_color(Color::RED).set_size_st(1.0, 1.0);
                 })
-                .contents(|mut _c| {
-
-                });
-            c
-                .add_panel()
+                .contents(|mut _c| {});
+            c.add_panel()
                 .style(|s| {
-                    s
-                        .set_background_color(Color::BLUE)
-                        .set_size_st(1.0, 1.0);
+                    s.set_background_color(Color::BLUE).set_size_st(1.0, 1.0);
                 })
-                .contents(|mut _c| {
-
-                });
+                .contents(|mut _c| {});
             //ui.button("click me");
         });
 
-    let _ui_entity = commands
-        .spawn(ui)
-        .insert(layer)
-        .id();
+    let _ui_entity = commands.spawn(ui).insert(layer).id();
 
     // ambient light
     commands
@@ -90,10 +76,7 @@ pub fn scene_setup(
         viewport_height as u32,
     ));
     camera_bundle.camera.target = RenderTarget::Screen;
-    let _camera_id = commands
-        .spawn(camera_bundle)
-        .insert(layer)
-        .id();
+    let _camera_id = commands.spawn(camera_bundle).insert(layer).id();
 
     // commands
     //     .spawn_empty()
@@ -107,10 +90,7 @@ pub fn scene_setup(
     //     .insert(); // TODO: use some kind of catalog
 }
 
-pub fn scene_update(
-    window: Res<Window>,
-    mut cameras_q: Query<(&mut Camera, &mut Transform)>,
-) {
+pub fn scene_update(window: Res<Window>, mut cameras_q: Query<(&mut Camera, &mut Transform)>) {
     // sync camera viewport to window
     let Some(window_res) = window.get() else {
         return;
@@ -124,7 +104,7 @@ pub fn scene_update(
                 viewport.width = window_res.logical_size.width;
                 viewport.height = window_res.logical_size.height;
 
-                *transform =  Transform::from_xyz(
+                *transform = Transform::from_xyz(
                     viewport.width as f32 * 0.5,
                     viewport.height as f32 * 0.5,
                     1000.0,
@@ -169,10 +149,7 @@ pub fn scene_draw(
         &Visibility,
         Option<&RenderLayer>,
     )>,
-    mut uis_q: Query<(
-        &mut Ui,
-        Option<&RenderLayer>,
-    )>,
+    mut uis_q: Query<(&mut Ui, Option<&RenderLayer>)>,
     // Lights
     ambient_lights_q: Query<(&AmbientLight, Option<&RenderLayer>)>,
     point_lights_q: Query<(&PointLight, Option<&RenderLayer>)>,

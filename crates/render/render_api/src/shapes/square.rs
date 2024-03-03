@@ -47,7 +47,6 @@ impl StorageHash<CpuMesh> for UnitSquare {}
 
 impl From<UnitSquare> for CpuMesh {
     fn from(_square: UnitSquare) -> Self {
-
         let positions = vec![
             Vec3::new(0.0, 0.0, 0.0),
             Vec3::new(1.0, 0.0, 0.0),

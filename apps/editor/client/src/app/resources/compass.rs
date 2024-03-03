@@ -158,7 +158,7 @@ impl Compass {
         );
         self.compass_vertices_3d.push(vertex_3d_entity);
 
-        let mat_handle = materials.add(Color::RED, 0.0, 0.0, 0.0);
+        let mat_handle = materials.add(Color::RED);
         self.new_compass_arm(
             commands,
             camera_manager,

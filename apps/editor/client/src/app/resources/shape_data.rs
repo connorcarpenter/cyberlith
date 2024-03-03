@@ -123,10 +123,7 @@ pub struct FaceData {
 }
 
 impl FaceData {
-    pub fn new(
-        entity_2d: Entity,
-        file_entity: Entity,
-    ) -> Self {
+    pub fn new(entity_2d: Entity, file_entity: Entity) -> Self {
         Self {
             entity_2d,
             entity_3d: None,
