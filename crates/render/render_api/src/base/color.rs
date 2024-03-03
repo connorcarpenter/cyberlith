@@ -1,4 +1,7 @@
 use math::*;
+use storage::StorageHash;
+
+use crate::base::CpuMaterial;
 
 /// Represents a color composed of a red, green and blue component.
 /// In addition, the alpha value determines the how transparent the color is (0 is fully transparent and 255 is fully opaque).
@@ -10,6 +13,14 @@ pub struct Color {
     pub g: u8,
     /// Blue component
     pub b: u8,
+}
+
+impl StorageHash<CpuMaterial> for Color {}
+
+impl From<Color> for CpuMaterial {
+    fn from(color: Color) -> Self {
+        CpuMaterial::new(color, 0.0, 0.0, 0.0)
+    }
 }
 
 impl Color {

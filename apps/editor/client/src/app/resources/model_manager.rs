@@ -471,7 +471,7 @@ impl ModelManager {
         net_transform_entity: Entity,
     ) {
         // translation control
-        let mat_handle = materials.add(CpuMaterial::new(Color::LIGHT_BLUE, 0.0, 0.0, 0.0));
+        let mat_handle = materials.add(Color::LIGHT_BLUE);
         let (translation_entity_2d, translation_entity_3d, _) = Self::new_net_transform_control(
             commands,
             camera_manager,
@@ -486,7 +486,7 @@ impl ModelManager {
         );
 
         // rotation control
-        let mat_handle = materials.add(CpuMaterial::new(Color::RED, 0.0, 0.0, 0.0));
+        let mat_handle = materials.add(Color::RED);
         let (
             rotation_entity_vert_2d,
             rotation_entity_vert_3d,
@@ -508,7 +508,7 @@ impl ModelManager {
         };
 
         // scale x control
-        let mat_handle = materials.add(CpuMaterial::new(Color::WHITE, 0.0, 0.0, 0.0));
+        let mat_handle = materials.add(Color::WHITE);
         let (scale_x_entity_2d, scale_x_entity_3d, Some((scale_x_entity_edge_3d, _))) =
             Self::new_net_transform_control(
                 commands,

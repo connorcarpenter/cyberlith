@@ -1,14 +1,15 @@
-use bevy_app::{App, Plugin};
+use bevy_app::{App, Plugin, Update};
+
+use crate::Ui;
 
 // Plugin
 pub struct UiPlugin;
 
 impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {
-        // app
-        //     // AssetManager
-        //     .init_resource::<UiManager>()
-        //     .add_systems(Update, UiManager::update)
-        // ;
+        app
+            // AssetManager
+            .add_systems(Update, Ui::update)
+        ;
     }
 }

@@ -100,7 +100,7 @@ fn setup_2d_scene(
 ) {
     camera_manager.layer_2d = RenderLayers::layer(2);
 
-    let mat_handle_white = materials.add(CpuMaterial::new(Color::WHITE, 0.0, 0.0, 0.0));
+    let mat_handle_white = materials.add(Color::WHITE);
 
     // light
     {

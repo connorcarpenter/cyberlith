@@ -75,7 +75,7 @@ impl RenderObjectBundle {
                 ..Default::default()
             }
         } else {
-            let mesh = meshes.add(shapes::Square::new());
+            let mesh = meshes.add(shapes::CenteredSquare::new());
             Self {
                 mesh,
                 material: *material,

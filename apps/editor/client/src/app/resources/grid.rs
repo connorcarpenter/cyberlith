@@ -68,7 +68,7 @@ impl Grid {
         materials: &mut Storage<CpuMaterial>,
     ) {
         // forward point
-        let mat_handle = materials.add(CpuMaterial::new(Color::RED, 0.0, 0.0, 0.0));
+        let mat_handle = materials.add(Color::RED);
         let (_, fwd_vertex_3d_entity, _, _) = vertex_manager.new_local_vertex(
             commands,
             camera_manager,
@@ -148,7 +148,7 @@ impl Grid {
         let grid_size: f32 = 100.0;
         let neg_grid_size: f32 = -grid_size;
 
-        let mat_handle = materials.add(CpuMaterial::new(Color::GRAY, 0.0, 0.0, 0.0));
+        let mat_handle = materials.add(Color::GRAY);
         let (root_vertex_2d_entity, root_vertex_3d_entity, _, _) = vertex_manager.new_local_vertex(
             commands,
             camera_manager,
@@ -217,7 +217,7 @@ impl Grid {
         parent_vertex_2d_entity: Entity,
         position: Vec3,
     ) {
-        let mat_handle = materials.add(CpuMaterial::new(Color::GRAY, 0.0, 0.0, 0.0));
+        let mat_handle = materials.add(Color::GRAY);
         let (_, vertex_3d_entity, _, _) = vertex_manager.new_local_vertex(
             commands,
             camera_manager,

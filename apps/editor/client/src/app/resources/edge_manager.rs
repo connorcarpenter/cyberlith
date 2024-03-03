@@ -472,7 +472,7 @@ impl EdgeManager {
         edge_angle_opt: Option<f32>,
         default_draw: bool,
     ) -> Entity {
-        let mat_handle_dark_blue = materials.add(CpuMaterial::new(Color::DARK_BLUE, 0.0, 0.0, 0.0));
+        let mat_handle_dark_blue = materials.add(Color::DARK_BLUE);
 
         // edge 3d
         let shape_components = if arrows_not_lines {

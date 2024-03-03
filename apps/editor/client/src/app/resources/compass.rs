@@ -144,7 +144,7 @@ impl Compass {
         meshes: &mut Storage<CpuMesh>,
         materials: &mut Storage<CpuMaterial>,
     ) {
-        let mat_handle = materials.add(CpuMaterial::new(Color::WHITE, 0.0, 0.0, 0.0));
+        let mat_handle = materials.add(Color::WHITE);
         let (root_vertex_2d_entity, vertex_3d_entity, _, _) = vertex_manager.new_local_vertex(
             commands,
             camera_manager,
@@ -158,7 +158,7 @@ impl Compass {
         );
         self.compass_vertices_3d.push(vertex_3d_entity);
 
-        let mat_handle = materials.add(CpuMaterial::new(Color::RED, 0.0, 0.0, 0.0));
+        let mat_handle = materials.add(Color::RED, 0.0, 0.0, 0.0);
         self.new_compass_arm(
             commands,
             camera_manager,
@@ -171,7 +171,7 @@ impl Compass {
             Vec3::new(100.0, 0.0, 0.0),
         );
 
-        let mat_handle = materials.add(CpuMaterial::new(Color::GREEN, 0.0, 0.0, 0.0));
+        let mat_handle = materials.add(Color::GREEN);
         self.new_compass_arm(
             commands,
             camera_manager,
@@ -184,7 +184,7 @@ impl Compass {
             Vec3::new(0.0, 100.0, 0.0),
         );
 
-        let mat_handle = materials.add(CpuMaterial::new(Color::LIGHT_BLUE, 0.0, 0.0, 0.0));
+        let mat_handle = materials.add(Color::LIGHT_BLUE);
         self.new_compass_arm(
             commands,
             camera_manager,

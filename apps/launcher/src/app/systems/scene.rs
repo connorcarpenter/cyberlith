@@ -36,7 +36,7 @@ pub fn scene_setup(
 
     let mut ui = Ui::new();
     ui
-        .root()
+        .root_mut()
         .style(|s| {
             s
                 .set_background_color(Color::YELLOW)
@@ -131,8 +131,8 @@ pub fn scene_draw(
         &Visibility,
         Option<&RenderLayer>,
     )>,
-    uis_q: Query<(
-        &Ui,
+    mut uis_q: Query<(
+        &mut Ui,
         Option<&RenderLayer>,
     )>,
     // Lights
@@ -172,7 +172,7 @@ pub fn scene_draw(
     }
 
     // Aggregate UIs
-    for (ui, render_layer_opt) in uis_q.iter() {
+    for (mut ui, render_layer_opt) in uis_q.iter_mut() {
         ui.draw(&mut render_frame, render_layer_opt);
     }
 

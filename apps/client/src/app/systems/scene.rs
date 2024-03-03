@@ -52,8 +52,8 @@ pub fn scene_setup(
     // plane
     commands
         .spawn(RenderObjectBundle {
-            mesh: meshes.add(shapes::Square),
-            material: materials.add(CpuMaterial::new(Color::DARK_GRAY, 0.0, 0.0, 0.0)),
+            mesh: meshes.add(shapes::CenteredSquare),
+            material: materials.add(Color::DARK_GRAY),
             transform: Transform::from_scale(Vec3::new(ROOM_WIDTH, ROOM_DEPTH, 1.0))
                 .with_translation(Vec3::new(0.0, 0.0, 0.0)),
             ..Default::default()

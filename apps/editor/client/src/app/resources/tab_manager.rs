@@ -792,7 +792,7 @@ fn file_ext_specific_sync_tabs_shape_colors(
                 face_color_q,
             ) = system_state.get_mut(world);
 
-            let gray_mat_handle = materials.add(CpuMaterial::new(Color::LIGHT_GRAY, 0.0, 0.0, 0.0));
+            let gray_mat_handle = materials.add(Color::LIGHT_GRAY);
             for mut mat_handle in edge_2d_q.iter_mut() {
                 *mat_handle = gray_mat_handle;
             }

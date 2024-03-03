@@ -3,19 +3,20 @@ use storage::StorageHash;
 
 use crate::base::CpuMesh;
 
+// CenteredSquare
 #[derive(Hash)]
-pub struct Square;
+pub struct CenteredSquare;
 
-impl Square {
+impl CenteredSquare {
     pub fn new() -> Self {
         Self
     }
 }
 
-impl StorageHash<CpuMesh> for Square {}
+impl StorageHash<CpuMesh> for CenteredSquare {}
 
-impl From<Square> for CpuMesh {
-    fn from(_square: Square) -> Self {
+impl From<CenteredSquare> for CpuMesh {
+    fn from(_square: CenteredSquare) -> Self {
         let half_size = 1.0;
         let neg_half_size = -1.0;
 
@@ -24,6 +25,34 @@ impl From<Square> for CpuMesh {
             Vec3::new(half_size, neg_half_size, 0.0),
             Vec3::new(half_size, half_size, 0.0),
             Vec3::new(neg_half_size, half_size, 0.0),
+        ];
+
+        let indices = vec![0, 2, 1, 2, 0, 3];
+
+        CpuMesh::from_indices(&positions, &indices)
+    }
+}
+
+// UnitSquare
+#[derive(Hash)]
+pub struct UnitSquare;
+
+impl UnitSquare {
+    pub fn new() -> Self {
+        Self
+    }
+}
+
+impl StorageHash<CpuMesh> for UnitSquare {}
+
+impl From<UnitSquare> for CpuMesh {
+    fn from(_square: UnitSquare) -> Self {
+
+        let positions = vec![
+            Vec3::new(0.0, 0.0, 0.0),
+            Vec3::new(1.0, 0.0, 0.0),
+            Vec3::new(1.0, 1.0, 0.0),
+            Vec3::new(0.0, 1.0, 0.0),
         ];
 
         let indices = vec![0, 2, 1, 2, 0, 3];

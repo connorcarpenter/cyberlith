@@ -11,6 +11,7 @@ use crate::{
         Transform,
     },
 };
+use crate::components::Viewport;
 
 #[derive(Resource)]
 pub struct RenderFrame {
@@ -28,6 +29,18 @@ impl Default for RenderFrame {
 impl RenderFrame {
     pub fn take_contents(&mut self) -> RenderFrameContents {
         std::mem::take(&mut self.contents)
+    }
+
+    pub fn get_camera_viewport(&self, render_layer_opt: Option<&RenderLayer>) -> Option<Viewport> {
+        let id = convert_wrapper(render_layer_opt.copied());
+        self.contents
+            .cameras
+            .iter()
+            .find(|(layer_id, _, _, _)| *layer_id == id)
+            .map(|(_, camera, _, _)| {
+                camera.viewport
+            })
+            .flatten()
     }
 
     pub fn draw_camera(

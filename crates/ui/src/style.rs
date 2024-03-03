@@ -1,51 +1,196 @@
 use morphorm::{LayoutType, PositionType, Units};
 
-use render_api::base::Color;
+use render_api::base::{Color, CpuMaterial};
+use storage::Handle;
 
 #[derive(Clone, Default, Copy)]
 pub struct Style {
-    pub(crate) background_color: Color,
-    pub(crate) layout_type: LayoutType,
-    pub(crate) position_type: PositionType,
+    background_color: Color,
+    background_color_handle: Option<Handle<CpuMaterial>>,
 
-    pub(crate) width: Units,
-    pub(crate) height: Units,
-    pub(crate) width_min: Units,
-    pub(crate) width_max: Units,
-    pub(crate) height_min: Units,
-    pub(crate) height_max: Units,
+    layout_type: LayoutType,
+    position_type: PositionType,
 
-    pub(crate) margin_left: Units,
-    pub(crate) margin_right: Units,
-    pub(crate) margin_top: Units,
-    pub(crate) margin_bottom: Units,
-    pub(crate) margin_left_min: Units,
-    pub(crate) margin_left_max: Units,
-    pub(crate) margin_right_min: Units,
-    pub(crate) margin_right_max: Units,
-    pub(crate) margin_top_min: Units,
-    pub(crate) margin_top_max: Units,
-    pub(crate) margin_bottom_min: Units,
-    pub(crate) margin_bottom_max: Units,
+    width: Units,
+    height: Units,
+    width_min: Units,
+    width_max: Units,
+    height_min: Units,
+    height_max: Units,
 
-    pub(crate) border_left: Units,
-    pub(crate) border_right: Units,
-    pub(crate) border_top: Units,
-    pub(crate) border_bottom: Units,
+    margin_left: Units,
+    margin_right: Units,
+    margin_top: Units,
+    margin_bottom: Units,
+    margin_left_min: Units,
+    margin_left_max: Units,
+    margin_right_min: Units,
+    margin_right_max: Units,
+    margin_top_min: Units,
+    margin_top_max: Units,
+    margin_bottom_min: Units,
+    margin_bottom_max: Units,
 
-    pub(crate) padding_left: Units,
-    pub(crate) padding_right: Units,
-    pub(crate) padding_top: Units,
-    pub(crate) padding_bottom: Units,
+    border_left: Units,
+    border_right: Units,
+    border_top: Units,
+    border_bottom: Units,
 
-    pub(crate) row_between: Units,
-    pub(crate) col_between: Units,
+    padding_left: Units,
+    padding_right: Units,
+    padding_top: Units,
+    padding_bottom: Units,
+
+    row_between: Units,
+    col_between: Units,
 }
 
 impl Style {
 
+    // getters
+
+    pub fn background_color(&self) -> Color {
+        self.background_color
+    }
+
+    pub fn background_color_handle(&self) -> Option<Handle<CpuMaterial>> {
+        self.background_color_handle
+    }
+
+    pub fn layout_type(&self) -> LayoutType {
+        self.layout_type
+    }
+
+    pub fn position_type(&self) -> PositionType {
+        self.position_type
+    }
+
+    pub fn width(&self) -> Units {
+        self.width
+    }
+
+    pub fn height(&self) -> Units {
+        self.height
+    }
+
+    pub fn width_min(&self) -> Units {
+        self.width_min
+    }
+
+    pub fn width_max(&self) -> Units {
+        self.width_max
+    }
+
+    pub fn height_min(&self) -> Units {
+        self.height_min
+    }
+
+    pub fn height_max(&self) -> Units {
+        self.height_max
+    }
+
+    pub fn margin_left(&self) -> Units {
+        self.margin_left
+    }
+
+    pub fn margin_right(&self) -> Units {
+        self.margin_right
+    }
+
+    pub fn margin_top(&self) -> Units {
+        self.margin_top
+    }
+
+    pub fn margin_bottom(&self) -> Units {
+        self.margin_bottom
+    }
+
+    pub fn margin_left_min(&self) -> Units {
+        self.margin_left_min
+    }
+
+    pub fn margin_left_max(&self) -> Units {
+        self.margin_left_max
+    }
+
+    pub fn margin_right_min(&self) -> Units {
+        self.margin_right_min
+    }
+
+    pub fn margin_right_max(&self) -> Units {
+        self.margin_right_max
+    }
+
+    pub fn margin_top_min(&self) -> Units {
+        self.margin_top_min
+    }
+
+    pub fn margin_top_max(&self) -> Units {
+        self.margin_top_max
+    }
+
+    pub fn margin_bottom_min(&self) -> Units {
+        self.margin_bottom_min
+    }
+
+    pub fn margin_bottom_max(&self) -> Units {
+        self.margin_bottom_max
+    }
+
+    pub fn border_left(&self) -> Units {
+        self.border_left
+    }
+
+    pub fn border_right(&self) -> Units {
+        self.border_right
+    }
+
+    pub fn border_top(&self) -> Units {
+        self.border_top
+    }
+
+    pub fn border_bottom(&self) -> Units {
+        self.border_bottom
+    }
+
+    pub fn padding_left(&self) -> Units {
+        self.padding_left
+    }
+
+    pub fn padding_right(&self) -> Units {
+        self.padding_right
+    }
+
+    pub fn padding_top(&self) -> Units {
+        self.padding_top
+    }
+
+    pub fn padding_bottom(&self) -> Units {
+        self.padding_bottom
+    }
+
+    pub fn row_between(&self) -> Units {
+        self.row_between
+    }
+
+    pub fn col_between(&self) -> Units {
+        self.col_between
+    }
+
+
+
+    // setters
+
     pub fn set_background_color(&mut self, color: Color) -> &mut Self {
-        self.background_color = color;
+        if color != self.background_color {
+            self.background_color = color;
+            self.background_color_handle = None;
+        }
+        self
+    }
+
+    pub fn set_background_color_handle(&mut self, handle: Handle<CpuMaterial>) -> &mut Self {
+        self.background_color_handle = Some(handle);
         self
     }
 

@@ -227,7 +227,7 @@ impl IconManager {
         let mut edge_entities = HashSet::new();
 
         // material
-        let mat_handle_gray = materials.add(CpuMaterial::new(Color::GRAY, 0.0, 0.0, 0.0));
+        let mat_handle_gray = materials.add(Color::GRAY);
 
         // collect grid vertices
         for vertex_entity in self.grid_vertices.iter() {
@@ -357,10 +357,10 @@ impl IconManager {
         let mut face_keys = HashSet::new();
 
         // material
-        let mat_handle_white = materials.add(CpuMaterial::new(Color::WHITE, 0.0, 0.0, 0.0));
+        let mat_handle_white = materials.add(Color::WHITE);
         let mat_handle_light_gray =
-            materials.add(CpuMaterial::new(Color::LIGHT_GRAY, 0.0, 0.0, 0.0));
-        let mat_handle_gray = materials.add(CpuMaterial::new(Color::GRAY, 0.0, 0.0, 0.0));
+            materials.add(Color::LIGHT_GRAY);
+        let mat_handle_gray = materials.add(Color::GRAY);
 
         // collect grid vertices
         for vertex_entity in self.grid_vertices.iter() {
@@ -605,7 +605,7 @@ impl IconManager {
     ) {
         self.render_layer = RenderLayers::layer(4);
 
-        let mat_handle_white = materials.add(CpuMaterial::new(Color::WHITE, 0.0, 0.0, 0.0));
+        let mat_handle_white = materials.add(Color::WHITE);
 
         // light
         {
@@ -702,7 +702,7 @@ impl IconManager {
         let grid_size: f32 = 100.0;
         let neg_grid_size: f32 = -grid_size;
 
-        let mat_handle = materials.add(CpuMaterial::new(Color::LIGHT_GRAY, 0.0, 0.0, 0.0));
+        let mat_handle = materials.add(Color::LIGHT_GRAY);
 
         let vertex_entity_a = self.new_local_vertex(
             commands,
@@ -1667,7 +1667,7 @@ impl IconManager {
 
         // local face needs to have it's own button mesh, matching the vertices
 
-        let mat_handle = materials.add(CpuMaterial::new(Color::GRAY, 0.0, 0.0, 0.0));
+        let mat_handle = materials.add(Color::GRAY);
 
         let new_entity = commands
             .spawn_empty()
@@ -2433,12 +2433,12 @@ impl IconManager {
             let render_layer = self.render_layer;
             let point_mesh_handle = meshes.add(Circle::new(Vertex2d::SUBDIVISIONS));
             let line_mesh_handle = meshes.add(Line);
-            let mat_handle_white = materials.add(CpuMaterial::new(Color::WHITE, 0.0, 0.0, 0.0));
-            let mat_handle_gray = materials.add(CpuMaterial::new(Color::GRAY, 0.0, 0.0, 0.0));
+            let mat_handle_white = materials.add(Color::WHITE);
+            let mat_handle_gray = materials.add(Color::GRAY);
             let mat_handle_dark_gray =
-                materials.add(CpuMaterial::new(Color::DARK_GRAY, 0.0, 0.0, 0.0));
+                materials.add(Color::DARK_GRAY);
             let mat_handle_light_gray =
-                materials.add(CpuMaterial::new(Color::LIGHT_GRAY, 0.0, 0.0, 0.0));
+                materials.add(Color::LIGHT_GRAY);
 
             for (frame_index, frame_pos) in frame_rects.iter().enumerate() {
                 // frame_index 0 is preview frame
