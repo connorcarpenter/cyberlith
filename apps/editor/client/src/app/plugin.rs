@@ -58,7 +58,8 @@ impl Plugin for VortexPlugin {
             // Add Window Settings Plugin
             .insert_resource(WindowSettings {
                 title: "Vortex".to_string(),
-                max_size: Some((1280, 720)),
+                min_size: (320, 180),
+                max_size: None,
                 ..Default::default()
             })
             // Networking Plugin
