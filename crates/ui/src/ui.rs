@@ -1,5 +1,5 @@
 use bevy_ecs::{change_detection::ResMut, component::Component, system::Query};
-use bevy_log::warn;
+use bevy_log::{info, warn};
 
 use morphorm::Node;
 
@@ -140,6 +140,7 @@ impl Ui {
     }
 
     fn recalculate_layout(&mut self) {
+        //info!("recalculating layout. viewport_width: {:?}, viewport_height: {:?}", self.viewport.width, self.viewport.height);
         let root_panel = self.panels.get_mut(&Self::ROOT_PANEL_ID).unwrap();
         root_panel.style.set_width_px(self.viewport.width as f32);
         root_panel.style.set_height_px(self.viewport.height as f32);

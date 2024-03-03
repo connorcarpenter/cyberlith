@@ -156,12 +156,11 @@ impl<T: 'static + Clone> Window<T> {
     pub fn from_winit_window(
         winit_window: window::Window,
         event_loop: EventLoop<T>,
-        mut surface_settings: SurfaceSettings,
+        surface_settings: SurfaceSettings,
         maximized: bool,
     ) -> Result<Self, WindowError> {
         let mut gl = WindowedContext::from_winit_window(&winit_window, surface_settings);
         if gl.is_err() {
-            surface_settings.multisamples = 0;
             gl = WindowedContext::from_winit_window(&winit_window, surface_settings);
         }
 

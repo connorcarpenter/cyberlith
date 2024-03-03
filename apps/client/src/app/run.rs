@@ -14,12 +14,14 @@ pub fn run() {
         // Add Window Settings Plugin
         .insert_resource(WindowSettings {
             title: "Cyberlith".to_string(),
-            max_size: Some((1280, 720)),
+            min_size: (320, 180),
+            max_size: None,
             ..Default::default()
         })
         // Scene Systems
         .add_systems(Startup, scene::scene_setup)
         .add_systems(Update, scene::scene_step)
+        .add_systems(Update, scene::handle_viewport_resize)
         .add_systems(Draw, scene::scene_draw)
         // Network Systems
         .add_systems(Update, network::world_spawn_entity_events)

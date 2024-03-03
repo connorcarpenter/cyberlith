@@ -27,3 +27,6 @@ session_server_http_proto = { path = "../session/http_proto" }
 bevy_app = { version = "0.13", default-features=false }
 bevy_ecs = { version = "0.13", default-features=false }
 bevy_log = { version = "0.13", default-features=false }
+
+# TODO: remove this once bevy_log is updates the underlying tracing-log requirement from 0.1.2 to 0.2.0
+regex = { version = "1.10.3", features = ["unicode-case"] }

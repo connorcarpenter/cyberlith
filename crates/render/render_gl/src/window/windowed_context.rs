@@ -42,7 +42,7 @@ mod inner {
                 .get_context_with_context_options(
                     "webgl2",
                     &serde_wasm_bindgen::to_value(&ContextOpt {
-                        antialias: settings.multisamples > 0,
+                        antialias: false,
                         depth: settings.depth_buffer > 0,
                         stencil: settings.stencil_buffer > 0,
                         willReadFrequently: match settings.hardware_acceleration {
@@ -107,11 +107,10 @@ mod inner {
             window: &Window,
             settings: SurfaceSettings,
         ) -> Result<Self, WindowError> {
-            if settings.multisamples > 0 && !settings.multisamples.is_power_of_two() {
-                Err(WindowError::InvalidNumberOfMSAASamples)?;
-            }
+
             use glutin::prelude::*;
             use raw_window_handle::*;
+
             let raw_display_handle = window.raw_display_handle();
             let raw_window_handle = window.raw_window_handle();
 
@@ -135,13 +134,8 @@ mod inner {
             #[cfg(target_os = "android")]
             let preference = glutin::display::DisplayApiPreference::Egl;
 
-            let gl_display =
-                unsafe { glutin::display::Display::new(raw_display_handle, preference)? };
-            let swap_interval = if settings.vsync {
-                glutin::surface::SwapInterval::Wait(std::num::NonZeroU32::new(1).unwrap())
-            } else {
-                glutin::surface::SwapInterval::DontWait
-            };
+            let gl_display = unsafe { glutin::display::Display::new(raw_display_handle, preference)? };
+            let swap_interval = SwapInterval::Wait(std::num::NonZeroU32::new(1).unwrap());
 
             let hardware_acceleration = match settings.hardware_acceleration {
                 HardwareAcceleration::Required => Some(true),
@@ -151,12 +145,6 @@ mod inner {
             let config_template = glutin::config::ConfigTemplateBuilder::new()
                 .prefer_hardware_accelerated(hardware_acceleration)
                 .with_depth_size(settings.depth_buffer);
-            // we don't know if multi sampling option is set. so, check if its more than 0.
-            let config_template = if settings.multisamples > 0 {
-                config_template.with_multisampling(settings.multisamples)
-            } else {
-                config_template
-            };
             let config_template = config_template
                 .with_stencil_size(settings.stencil_buffer)
                 .compatible_with_native_window(raw_window_handle)

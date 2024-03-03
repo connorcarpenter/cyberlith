@@ -18,10 +18,6 @@ pub enum HardwareAcceleration {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[allow(dead_code)]
 pub struct SurfaceSettings {
-    /// Turn on vertical syncing, limiting the FPS to the display refresh rate.
-    /// The default is true.
-    /// On web this has no effect since vsync is always on.
-    pub vsync: bool,
     /// Sets the number of bits in the depth buffer.
     /// A value of 0 means no depth buffer.
     /// The default value is 24.
@@ -32,13 +28,6 @@ pub struct SurfaceSettings {
     /// The default value is 0.
     /// On web, this can only be off (0) or on (>0).
     pub stencil_buffer: u8,
-    /// Set the level of the multisampling anti-aliasing (MSAA).
-    /// Must be a power-of-two. Higher = more smooth edges.
-    /// A value of 0 turns it off.
-    /// The default value is 4.
-    /// On web, this can only be off (0) or on (>0).
-    /// The actual number of samples depends on browser settings.
-    pub multisamples: u8,
     /// Specify whether or not hardware acceleration is preferred, required, or
     /// off. The default is [HardwareAcceleration::Preferred].
     pub hardware_acceleration: HardwareAcceleration,
@@ -47,10 +36,8 @@ pub struct SurfaceSettings {
 impl Default for SurfaceSettings {
     fn default() -> Self {
         Self {
-            vsync: true,
             depth_buffer: 24,
             stencil_buffer: 0,
-            multisamples: 0,
             hardware_acceleration: HardwareAcceleration::Required,
         }
     }

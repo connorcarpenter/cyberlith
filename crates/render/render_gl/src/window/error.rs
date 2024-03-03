@@ -13,10 +13,8 @@ pub enum WindowError {
     GlutinError(#[from] glutin::error::Error),
     #[error("winit error")]
     WinitError(#[from] winit::error::OsError),
-    #[error("error in three-d")]
-    ThreeDError(#[from] CoreError),
-    #[error("the number of MSAA samples must be a power of two")]
-    InvalidNumberOfMSAASamples,
+    #[error("error in render_gl")]
+    RenderGlError(#[from] CoreError),
     #[error("it's not possible to create a graphics context/surface with the given settings")]
     SurfaceCreationError,
 }

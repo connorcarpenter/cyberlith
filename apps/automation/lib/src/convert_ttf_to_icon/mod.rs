@@ -1,9 +1,10 @@
 use std::collections::HashSet;
 
-use asset_id::AssetId;
-use asset_io::json::{IconFile, IconFileFrame};
 use log::{info, warn};
 use ttf2mesh::{Quality, TTFFile, Value};
+
+use asset_id::AssetId;
+use asset_io::json::{IconFile, IconFileFrame};
 
 use crate::CliError;
 

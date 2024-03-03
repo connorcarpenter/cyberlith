@@ -14,7 +14,7 @@ use game_engine::{
         base::{Color, CpuMaterial, CpuMesh},
         components::{
             AmbientLight, Camera, CameraBundle, DirectionalLight, PointLight, Projection,
-            RenderLayer, RenderLayers, RenderTarget, Transform, Viewport, Visibility,
+            RenderLayer, RenderLayers, RenderTarget, Transform, Viewport, Visibility, OrthographicProjection,
         },
         resources::RenderFrame,
         Window,
@@ -69,14 +69,18 @@ pub fn scene_setup(
         .insert(layer);
 
     // camera
-    let viewport_width = 1280.0;
-    let viewport_height = 720.0;
-    let mut camera_bundle = CameraBundle::new_2d(&Viewport::new_at_origin(
-        viewport_width as u32,
-        viewport_height as u32,
-    ));
-    camera_bundle.camera.target = RenderTarget::Screen;
-    let _camera_id = commands.spawn(camera_bundle).insert(layer).id();
+    let _camera_id = commands.spawn(CameraBundle {
+        camera: Camera {
+            viewport: None, // this will set later
+            target: RenderTarget::Screen,
+            ..Default::default()
+        },
+        projection: Projection::Orthographic(OrthographicProjection {
+            near: 0.0,
+            far: 2000.0,
+        }),
+        ..Default::default()
+    }).insert(layer).id();
 
     // commands
     //     .spawn_empty()
@@ -90,34 +94,40 @@ pub fn scene_setup(
     //     .insert(); // TODO: use some kind of catalog
 }
 
-pub fn scene_update(window: Res<Window>, mut cameras_q: Query<(&mut Camera, &mut Transform)>) {
+pub fn handle_viewport_resize(mut window: ResMut<Window>, mut cameras_q: Query<(&mut Camera, &mut Transform)>) {
     // sync camera viewport to window
+    if !window.did_change() {
+        return;
+    }
+    window.clear_change();
     let Some(window_res) = window.get() else {
         return;
     };
     for (mut camera, mut transform) in cameras_q.iter_mut() {
-        if let Some(viewport) = camera.viewport.as_mut() {
-            if *viewport != window_res.logical_size {
-                info!("resize window detected. new viewport: (x: {:?}, y: {:?}, width: {:?}, height: {:?})", viewport.x, viewport.y, viewport.width, viewport.height);
-                viewport.x = 0;
-                viewport.y = 0;
-                viewport.width = window_res.logical_size.width;
-                viewport.height = window_res.logical_size.height;
+        let should_change = if let Some(viewport) = camera.viewport.as_mut() {
+            *viewport != window_res.logical_size } else { true };
+        if should_change {
+            let new_viewport = Viewport::new_at_origin(
+                window_res.logical_size.width,
+                window_res.logical_size.height,
+            );
+            camera.viewport = Some(new_viewport);
 
-                *transform = Transform::from_xyz(
-                    viewport.width as f32 * 0.5,
-                    viewport.height as f32 * 0.5,
-                    1000.0,
-                )
-                .looking_at(
-                    Vec3::new(
-                        viewport.width as f32 * 0.5,
-                        viewport.height as f32 * 0.5,
-                        0.0,
-                    ),
-                    Vec3::NEG_Y,
-                );
-            }
+            //info!("resize window detected. new viewport: (x: {:?}, y: {:?}, width: {:?}, height: {:?})", new_viewport.x, new_viewport.y, new_viewport.width, new_viewport.height);
+
+            *transform = Transform::from_xyz(
+                new_viewport.width as f32 * 0.5,
+                new_viewport.height as f32 * 0.5,
+                1000.0,
+            )
+            .looking_at(
+                Vec3::new(
+                    new_viewport.width as f32 * 0.5,
+                    new_viewport.height as f32 * 0.5,
+                    0.0,
+                ),
+                Vec3::NEG_Y,
+            );
         }
     }
 }

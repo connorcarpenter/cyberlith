@@ -3,11 +3,12 @@ use bevy_ecs::{
     query::With,
     system::{Commands, Local, Query, Res, ResMut},
 };
+use bevy_log::info;
 
 use game_engine::{
     asset::{AnimationData, AssetHandle, AssetManager, ModelData},
     math::{Quat, Vec3},
-    render::{
+    render::{Window,
         base::{Color, CpuMaterial, CpuMesh},
         components::{
             AmbientLight, Camera, CameraBundle, ClearOperation, DirectionalLight,
@@ -80,7 +81,7 @@ pub fn scene_setup(
     commands
         .spawn(CameraBundle {
             camera: Camera {
-                viewport: Some(Viewport::new_at_origin(1280, 720)),
+                viewport: None,
                 order: 0,
                 clear_operation: ClearOperation::from_rgba(0.0, 0.0, 0.0, 1.0),
                 target: RenderTarget::Screen,
@@ -135,6 +136,30 @@ pub fn scene_step(
 
         while anim.image_index >= subimage_count {
             anim.image_index -= subimage_count;
+        }
+    }
+}
+
+pub fn handle_viewport_resize(mut window: ResMut<Window>, mut cameras_q: Query<&mut Camera>) {
+    // sync camera viewport to window
+    if !window.did_change() {
+        return;
+    }
+    window.clear_change();
+    let Some(window_res) = window.get() else {
+        return;
+    };
+    for mut camera in cameras_q.iter_mut() {
+        let should_change = if let Some(viewport) = camera.viewport.as_mut() {
+            *viewport != window_res.logical_size } else { true };
+        if should_change {
+            let new_viewport = Viewport::new_at_origin(
+                window_res.logical_size.width,
+                window_res.logical_size.height,
+            );
+            camera.viewport = Some(new_viewport);
+
+            //info!("resize window detected. new viewport: (x: {:?}, y: {:?}, width: {:?}, height: {:?})", new_viewport.x, new_viewport.y, new_viewport.width, new_viewport.height);
         }
     }
 }
