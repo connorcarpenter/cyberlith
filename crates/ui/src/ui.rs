@@ -102,7 +102,7 @@ impl Ui {
         };
         self.update_viewport(&viewport);
         self.recalculate_layout_if_needed();
-        info!("drawing ...");
+
         draw_node(
             0.0,
             render_frame,
@@ -112,7 +112,6 @@ impl Ui {
             &self.panels,
             &Self::ROOT_PANEL_ID
         );
-        info!("... done drawing");
     }
 
     fn update_viewport(&mut self, viewport: &Viewport) {
@@ -136,7 +135,7 @@ impl Ui {
     }
 
     fn recalculate_layout(&mut self) {
-        info!("recalculating layout ...");
+
         let root_panel = self.panels.get_mut(&Self::ROOT_PANEL_ID).unwrap();
         root_panel.style.set_width_px(self.viewport.width as f32);
         root_panel.style.set_height_px(self.viewport.height as f32);
@@ -149,7 +148,6 @@ impl Ui {
 
         // now go get all the queued color handles
         self.collect_color_handles();
-        info!("... done recalculating layout");
     }
 
     fn collect_color_handles(&mut self) {
@@ -323,7 +321,7 @@ fn draw_node(
 
     //
     let color = panel_ref.style.background_color();
-    info!("id: {:?}, color: {:?}, x: {}, y: {}, width: {}, height: {}, depth: {}", id, color, posx, posy, width, height, depth);
+    //info!("id: {:?}, color: {:?}, x: {}, y: {}, width: {}, height: {}, depth: {}", id, color, posx, posy, width, height, depth);
     //
 
     let mut transform = Transform::from_xyz(posx, posy, depth);
@@ -332,7 +330,7 @@ fn draw_node(
     render_frame.draw_mesh(render_layer_opt, mesh_handle, &mat_handle, &transform);
 
     for child in panel_ref.children.iter() {
-        info!("drawing child: {:?}", child);
+        //info!("drawing child: {:?}", child);
         draw_node(
             depth + 0.1, // TODO: make this configurable
             render_frame,

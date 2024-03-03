@@ -3,6 +3,7 @@ use bevy_ecs::{
     system::{Commands, Query, Res, ResMut},
     event::EventWriter
 };
+use bevy_log::info;
 
 use game_engine::{
     asset::{embedded_asset_event, EmbeddedAssetEvent, IconData, TextStyle, AssetManager, AssetHandle},
@@ -17,6 +18,8 @@ use game_engine::{
     },
     storage::Handle,
 };
+use game_engine::math::Vec3;
+use game_engine::render::Window;
 use game_engine::ui::{Ui};
 
 #[derive(Component)]
@@ -104,6 +107,41 @@ pub fn scene_setup(
     //     .insert(); // TODO: use some kind of catalog
 }
 
+pub fn scene_update(
+    window: Res<Window>,
+    mut cameras_q: Query<(&mut Camera, &mut Transform)>,
+) {
+    // sync camera viewport to window
+    let Some(window_res) = window.get() else {
+        return;
+    };
+    for (mut camera, mut transform) in cameras_q.iter_mut() {
+        if let Some(viewport) = camera.viewport.as_mut() {
+            if *viewport != window_res.logical_size {
+                info!("resize window detected. new viewport: (x: {:?}, y: {:?}, width: {:?}, height: {:?})", viewport.x, viewport.y, viewport.width, viewport.height);
+                viewport.x = 0;
+                viewport.y = 0;
+                viewport.width = window_res.logical_size.width;
+                viewport.height = window_res.logical_size.height;
+
+                *transform =  Transform::from_xyz(
+                    viewport.width as f32 * 0.5,
+                    viewport.height as f32 * 0.5,
+                    1000.0,
+                )
+                .looking_at(
+                    Vec3::new(
+                        viewport.width as f32 * 0.5,
+                        viewport.height as f32 * 0.5,
+                        0.0,
+                    ),
+                    Vec3::NEG_Y,
+                );
+            }
+        }
+    }
+}
+
 // TODO: handle resize events by updating ui size (ui.update_size())
 // TODO: handle mouse move events to update cursor (ui.update_cursor())
 // TODO: handle keypress events to update focus (ui.navigate(up/down/left/right))
@@ -176,11 +214,11 @@ pub fn scene_draw(
         ui.draw(&mut render_frame, render_layer_opt);
     }
 
-    // Aggregate Icons
-    for (icon_handle, style, transform, visibility, render_layer_opt) in icons_q.iter() {
-        if !visibility.visible {
-            continue;
-        }
-        asset_manager.draw_text(&mut render_frame, icon_handle, &style, &transform.translation, render_layer_opt, "Hello, my Nina! <3");
-    }
+    //  // Aggregate Icons
+    // for (icon_handle, style, transform, visibility, render_layer_opt) in icons_q.iter() {
+    //     if !visibility.visible {
+    //         continue;
+    //     }
+    //     asset_manager.draw_text(&mut render_frame, icon_handle, &style, &transform.translation, render_layer_opt, "Hello, my Nina! <3");
+    // }
 }

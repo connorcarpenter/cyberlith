@@ -59,13 +59,13 @@ impl Cache for LayoutCache {
 
     fn set_bounds(&mut self, node: &Self::Node, posx: f32, posy: f32, width: f32, height: f32) {
         if let Some(rect) = self.rect.get_mut(&node.key()) {
-            info!("setting bounds for node: {:?}", node.key());
+            //info!("setting bounds for node: {:?}", node.key());
             rect.0 = width;
             rect.1 = height;
             rect.2 = posx;
             rect.3 = posy;
         } else {
-            info!("inserting bounds for node: {:?}", node.key());
+            //info!("inserting bounds for node: {:?}", node.key());
             self.rect.insert(node.key(), (width, height, posx, posy));
         }
     }

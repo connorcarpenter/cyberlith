@@ -32,12 +32,9 @@ impl Node for UiId {
     }
 
     fn children<'t>(&'t self, ui: &'t PanelStore) -> Self::ChildIter<'t> {
-        info!("getting children for {:?}", self);
         if let Some(panel) = ui.get(self) {
-            info!("children: {:?}", panel.children);
             panel.children.iter()
         } else {
-            info!("no children");
             [].iter()
         }
     }

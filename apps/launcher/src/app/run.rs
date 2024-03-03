@@ -1,4 +1,4 @@
-use bevy_app::{App, Startup};
+use bevy_app::{App, Startup, Update};
 
 use game_engine::{
     render::{resources::WindowSettings, Draw},
@@ -19,7 +19,7 @@ pub fn run() {
         })
         // Scene Systems
         .add_systems(Startup, scene::scene_setup)
-        // .add_systems(Update, scene::scene_step)
+        .add_systems(Update, scene::scene_update)
         .add_systems(Draw, scene::scene_draw);
     app.run();
 }
