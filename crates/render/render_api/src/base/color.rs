@@ -39,6 +39,8 @@ impl Color {
     pub const GRAY: Color = Color::new(40, 40, 40);
     /// Opaque light gray
     pub const DARK_GRAY: Color = Color::new(16, 16, 16);
+    /// Opqaue yellow
+    pub const YELLOW: Color = Color::new(255, 255, 0);
 
     ///
     /// Creates a new color with the given red, green and blue values

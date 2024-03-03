@@ -5,8 +5,7 @@ use bevy_ecs::{
 };
 
 use game_engine::{
-    asset::{AssetId, embedded_asset_event, EmbeddedAssetEvent, IconData, TextStyle, AssetManager, AssetHandle},
-    math::Vec2,
+    asset::{embedded_asset_event, EmbeddedAssetEvent, IconData, TextStyle, AssetManager, AssetHandle},
     render::{
         base::{Color, CpuMaterial, CpuMesh},
         components::{
@@ -18,24 +17,62 @@ use game_engine::{
     },
     storage::Handle,
 };
-use game_engine::ui::UiManager;
-use crate::app::resources::Global;
+use game_engine::ui::{Ui};
 
 #[derive(Component)]
 pub struct TextMarker;
 
 pub fn scene_setup(
     mut commands: Commands,
-    mut ui_manager: ResMut<UiManager>,
     mut embedded_asset_events: EventWriter<EmbeddedAssetEvent>
 ) {
     // TODO: use some kind of catalog here
     embedded_asset_events.send(embedded_asset_event!("../embedded/8273wa")); // palette
     embedded_asset_events.send(embedded_asset_event!("../embedded/34mvvk")); // verdana icon
 
-    ui_manager.set_font(&AssetId::from_str("34mvvk").unwrap());
-
     let layer = RenderLayers::layer(0);
+
+    // ui
+
+    let mut ui = Ui::new();
+    ui
+        .root()
+        .style(|s| {
+            s
+                .set_background_color(Color::YELLOW)
+                .set_horizontal()
+                .set_padding_px(10.0, 10.0, 10.0, 10.0)
+                .set_col_between_px(10.0);
+        })
+        .inside(|mut ui| {
+            //ui.label("Hello, my Nina! <3");
+            ui
+                .panel()
+                .style(|s| {
+                    s
+                        .set_background_color(Color::RED)
+                        .set_size_st(1.0, 1.0);
+                })
+                .inside(|_ui| {
+
+                });
+            ui
+                .panel()
+                .style(|s| {
+                    s
+                        .set_background_color(Color::BLUE)
+                        .set_size_st(1.0, 1.0);
+                })
+                .inside(|_ui| {
+
+                });
+            //ui.button("click me");
+        });
+
+    let _ui_entity = commands
+        .spawn(ui)
+        .insert(layer)
+        .id();
 
     // ambient light
     commands
@@ -50,10 +87,10 @@ pub fn scene_setup(
         viewport_height as u32,
     ));
     camera_bundle.camera.target = RenderTarget::Screen;
-    let camera_entity = commands
-        .spawn(camera_bundle).insert(layer).id();
-
-    commands.insert_resource(Global::new(camera_entity));
+    let _camera_id = commands
+        .spawn(camera_bundle)
+        .insert(layer)
+        .id();
 
     // commands
     //     .spawn_empty()
@@ -67,11 +104,16 @@ pub fn scene_setup(
     //     .insert(); // TODO: use some kind of catalog
 }
 
+// TODO: handle resize events by updating ui size (ui.update_size())
+// TODO: handle mouse move events to update cursor (ui.update_cursor())
+// TODO: handle keypress events to update focus (ui.navigate(up/down/left/right))
+// TODO: ui.receive_click() -> Option<UiId>(); // ui determined by cursor
+// TODO: ui.receive_select() -> UiId; // ui determined by focus
+// TODO: ui.receive_char() // if textline widget is in focus
+
 pub fn scene_draw(
     mut render_frame: ResMut<RenderFrame>,
-    global: Res<Global>,
     asset_manager: Res<AssetManager>,
-    mut ui_manager: ResMut<UiManager>,
     // Cameras
     cameras_q: Query<(&Camera, &Transform, &Projection, Option<&RenderLayer>)>,
     // Meshes
@@ -87,6 +129,10 @@ pub fn scene_draw(
         &TextStyle,
         &Transform,
         &Visibility,
+        Option<&RenderLayer>,
+    )>,
+    uis_q: Query<(
+        &Ui,
         Option<&RenderLayer>,
     )>,
     // Lights
@@ -125,36 +171,10 @@ pub fn scene_draw(
         render_frame.draw_mesh(render_layer_opt, mesh_handle, mat_handle, transform);
     }
 
-    ui_manager
-        // draw should return the root/screen panel
-        .draw(&mut render_frame, global.camera_entity, |ui| {
-            // ui places widgets as children, that's it
-            ui.draw(Label::new("Hello, my Nina! <3"));
-            ui.draw(Panel::new().width(100.0).height(100.0).show_inside(|ui| {
-
-            }));
-            ui.draw(Panel::new().width(100.0).height(100.0).show_inside(|ui| {
-
-            }));
-            if ui.draw(Button::new("click me")).clicked() {
-                // do something
-            }
-
-            // alternatively, additional shortcuts (but make sure the above works for a good foundation:
-            ui.label("Hello, my Nina! <3");
-            ui.panel().width(100.0).height(100.0).show_inside(|ui| {
-
-            });
-            ui.panel().width(100.0).height(100.0).show_inside(|ui| {
-
-            });
-            if ui.button("click me").clicked() {
-                // do something
-            }
-        });
-
-
-    //let mut mouse_pos = input.mouse_position();
+    // Aggregate UIs
+    for (ui, render_layer_opt) in uis_q.iter() {
+        ui.draw(&mut render_frame, render_layer_opt);
+    }
 
     // Aggregate Icons
     for (icon_handle, style, transform, visibility, render_layer_opt) in icons_q.iter() {

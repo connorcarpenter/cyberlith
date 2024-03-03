@@ -1,14 +1,12 @@
-use bevy_ecs::{system::Resource, entity::Entity};
+use bevy_ecs::{system::Resource};
 
 #[derive(Resource)]
 pub struct Global {
-    pub camera_entity: Entity,
 }
 
 impl Global {
-    pub fn new(camera_entity: Entity) -> Self {
+    pub fn new() -> Self {
         Self {
-            camera_entity,
         }
     }
 }
