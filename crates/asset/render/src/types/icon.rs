@@ -113,6 +113,11 @@ impl IconData {
         return false;
     }
 
+    pub(crate) fn get_cpu_mesh_handle(&self, subimage_index: usize) -> Option<&Handle<CpuMesh>> {
+        let frame = &self.frames[subimage_index];
+        frame.get_cpu_mesh_handle()
+    }
+
     pub(crate) fn get_cpu_mesh_and_skin_handles(
         &self,
         subimage_index: usize,

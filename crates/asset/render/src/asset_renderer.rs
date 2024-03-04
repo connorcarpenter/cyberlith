@@ -18,12 +18,12 @@ pub(crate) struct AssetRenderer;
 
 impl AssetRenderer {
     pub(crate) fn draw_mesh(
-        asset_store: &ProcessedAssetStore,
         render_frame: &mut RenderFrame,
+        render_layer_opt: Option<&RenderLayer>,
+        asset_store: &ProcessedAssetStore,
         mesh_handle: &AssetHandle<MeshData>,
         mat_handle: &Handle<CpuMaterial>,
         transform: &Transform,
-        render_layer_opt: Option<&RenderLayer>,
     ) {
         let Some(mesh_file) = asset_store.meshes.get(mesh_handle) else {
             warn!("mesh file not loaded 1: {:?}", mesh_handle.asset_id());
@@ -37,12 +37,12 @@ impl AssetRenderer {
     }
 
     pub(crate) fn draw_icon(
-        asset_store: &ProcessedAssetStore,
         render_frame: &mut RenderFrame,
+        render_layer_opt: Option<&RenderLayer>,
+        asset_store: &ProcessedAssetStore,
         icon_handle: &AssetHandle<IconData>,
         subimage_index: usize,
         transform: &Transform,
-        render_layer_opt: Option<&RenderLayer>,
     ) {
         let Some(icon_data) = asset_store.icons.get(icon_handle) else {
             warn!("icon data not loaded 1: {:?}", icon_handle.asset_id());
@@ -62,11 +62,37 @@ impl AssetRenderer {
         );
     }
 
+    pub(crate) fn draw_icon_with_material(
+        render_frame: &mut RenderFrame,
+        render_layer_opt: Option<&RenderLayer>,
+        asset_store: &ProcessedAssetStore,
+        icon_handle: &AssetHandle<IconData>,
+        mat_handle: &Handle<CpuMaterial>,
+        subimage_index: usize,
+        transform: &Transform,
+    ) {
+        let Some(icon_data) = asset_store.icons.get(icon_handle) else {
+            warn!("icon data not loaded 1: {:?}", icon_handle.asset_id());
+            return;
+        };
+        let Some(cpu_mesh_handle) = icon_data.get_cpu_mesh_handle(subimage_index) else {
+            warn!("icon data not loaded 2: {:?}", icon_handle.asset_id());
+            return;
+        };
+        render_frame.draw_mesh(
+            render_layer_opt,
+            &cpu_mesh_handle,
+            mat_handle,
+            transform,
+        );
+    }
+
     pub(crate) fn draw_text(
         render_frame: &mut RenderFrame,
         render_layer_opt: Option<&RenderLayer>,
         asset_store: &ProcessedAssetStore,
         icon_handle: &AssetHandle<IconData>,
+        mat_handle: &Handle<CpuMaterial>,
         transform: &Transform,
         text: &str,
     ) {
@@ -110,13 +136,14 @@ impl AssetRenderer {
             let mut final_position = cursor.clone();
             final_position.translation.x += half_frame_actual_width;
 
-            Self::draw_icon(
-                asset_store,
+            Self::draw_icon_with_material(
                 render_frame,
+                render_layer_opt,
+                asset_store,
                 icon_handle,
+                mat_handle,
                 frame_index,
                 &final_position,
-                render_layer_opt,
             );
 
             cursor.translation.x += frame_actual_width;
@@ -159,11 +186,11 @@ impl AssetRenderer {
     }
 
     pub(crate) fn draw_skin(
-        asset_store: &ProcessedAssetStore,
         render_frame: &mut RenderFrame,
+        render_layer_opt: Option<&RenderLayer>,
+        asset_store: &ProcessedAssetStore,
         skin_handle: &AssetHandle<SkinData>,
         transform: &Transform,
-        render_layer_opt: Option<&RenderLayer>,
     ) {
         let Some(skin_data) = asset_store.skins.get(skin_handle) else {
             warn!("skin data {:?} not loaded 1", skin_handle.asset_id());
@@ -194,11 +221,11 @@ impl AssetRenderer {
     }
 
     pub(crate) fn draw_scene(
-        asset_store: &ProcessedAssetStore,
         render_frame: &mut RenderFrame,
+        render_layer_opt: Option<&RenderLayer>,
+        asset_store: &ProcessedAssetStore,
         scene_handle: &AssetHandle<SceneData>,
         parent_transform: &Transform,
-        render_layer_opt: Option<&RenderLayer>,
     ) {
         let Some(scene_data) = asset_store.scenes.get(scene_handle) else {
             warn!("scene data not loaded 1: {:?}", scene_handle.asset_id());
@@ -214,20 +241,20 @@ impl AssetRenderer {
             match skin_or_scene_handle {
                 AssetComponentHandle::Skin(skin_handle) => {
                     Self::draw_skin(
-                        asset_store,
                         render_frame,
+                        render_layer_opt,
+                        asset_store,
                         &skin_handle,
                         &component_transform,
-                        render_layer_opt,
                     );
                 }
                 AssetComponentHandle::Scene(scene_handle) => {
                     Self::draw_scene(
-                        asset_store,
                         render_frame,
+                        render_layer_opt,
+                        asset_store,
                         &scene_handle,
                         &component_transform,
-                        render_layer_opt,
                     );
                 }
             }
@@ -235,11 +262,11 @@ impl AssetRenderer {
     }
 
     pub(crate) fn draw_model(
-        asset_store: &ProcessedAssetStore,
         render_frame: &mut RenderFrame,
+        render_layer_opt: Option<&RenderLayer>,
+        asset_store: &ProcessedAssetStore,
         model_handle: &AssetHandle<ModelData>,
         parent_transform: &Transform,
-        render_layer_opt: Option<&RenderLayer>,
     ) {
         let Some(model_data) = asset_store.models.get(model_handle) else {
             warn!("model data not loaded 1: {:?}", model_handle.asset_id());
@@ -255,20 +282,20 @@ impl AssetRenderer {
             match skin_or_scene_handle {
                 AssetComponentHandle::Skin(skin_handle) => {
                     Self::draw_skin(
-                        asset_store,
                         render_frame,
+                        render_layer_opt,
+                        asset_store,
                         &skin_handle,
                         &component_transform,
-                        render_layer_opt,
                     );
                 }
                 AssetComponentHandle::Scene(scene_handle) => {
                     Self::draw_scene(
-                        asset_store,
                         render_frame,
+                        render_layer_opt,
+                        asset_store,
                         &scene_handle,
                         &component_transform,
-                        render_layer_opt,
                     );
                 }
             }
@@ -276,13 +303,13 @@ impl AssetRenderer {
     }
 
     pub(crate) fn draw_animated_model(
-        asset_store: &ProcessedAssetStore,
         render_frame: &mut RenderFrame,
+        render_layer_opt: Option<&RenderLayer>,
+        asset_store: &ProcessedAssetStore,
         model_handle: &AssetHandle<ModelData>,
         animation_handle: &AssetHandle<AnimationData>,
         parent_transform: &Transform,
         frame_time_ms: f32,
-        render_layer_opt: Option<&RenderLayer>,
     ) {
         let Some(model_data) = asset_store.models.get(model_handle) else {
             warn!("model data not loaded 1: {:?}", model_handle.asset_id());
@@ -326,20 +353,20 @@ impl AssetRenderer {
             match skin_or_scene_handle {
                 AssetComponentHandle::Skin(skin_handle) => {
                     Self::draw_skin(
-                        asset_store,
                         render_frame,
+                        render_layer_opt,
+                        asset_store,
                         &skin_handle,
                         &component_transform,
-                        render_layer_opt,
                     );
                 }
                 AssetComponentHandle::Scene(scene_handle) => {
                     Self::draw_scene(
-                        asset_store,
                         render_frame,
+                        render_layer_opt,
+                        asset_store,
                         &scene_handle,
                         &component_transform,
-                        render_layer_opt,
                     );
                 }
             }

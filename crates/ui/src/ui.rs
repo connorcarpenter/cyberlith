@@ -68,6 +68,9 @@ impl Ui {
             if ui.needs_color_handles() {
                 ui.set_color_handles(&mut materials);
             }
+            if ui.needs_text_color_handle() {
+                ui.set_text_color_handle(&mut materials);
+            }
         }
     }
 
@@ -80,6 +83,15 @@ impl Ui {
     fn set_box_handle(&mut self, meshes: &mut Storage<CpuMesh>) {
         let mesh_handle = meshes.add(UnitSquare);
         self.globals.box_mesh_handle_opt = Some(mesh_handle);
+    }
+
+    fn needs_text_color_handle(&self) -> bool {
+        self.globals.text_color_handle_opt.is_none()
+    }
+
+    fn set_text_color_handle(&mut self, materials: &mut Storage<CpuMaterial>) {
+        let mat_handle = materials.add(self.globals.text_color);
+        self.globals.text_color_handle_opt = Some(mat_handle);
     }
 
     fn needs_color_handles(&self) -> bool {
@@ -100,8 +112,13 @@ impl Ui {
 
     // interface
 
-    pub fn set_text_handle(&mut self, text_handle: &AssetHandle<IconData>) -> &mut Self {
-        self.globals.text_handle_opt = Some(text_handle.clone());
+    pub fn set_text_icon_handle(&mut self, text_handle: &AssetHandle<IconData>) -> &mut Self {
+        self.globals.text_icon_handle_opt = Some(text_handle.clone());
+        self
+    }
+
+    pub fn set_text_color(&mut self, text_color: Color) -> &mut Self {
+        self.globals.set_text_color(text_color);
         self
     }
 
@@ -208,19 +225,35 @@ impl Ui {
 
 pub struct Globals {
     box_mesh_handle_opt: Option<Handle<CpuMesh>>,
-    text_handle_opt: Option<AssetHandle<IconData>>,
+    text_icon_handle_opt: Option<AssetHandle<IconData>>,
+    text_color: Color,
+    text_color_handle_opt: Option<Handle<CpuMaterial>>,
 }
 
 impl Globals {
     pub fn new() -> Self {
         Self {
             box_mesh_handle_opt: None,
-            text_handle_opt: None,
+            text_icon_handle_opt: None,
+            text_color: Color::BLACK,
+            text_color_handle_opt: None,
         }
     }
 
-    pub fn get_text_handle(&self) -> Option<&AssetHandle<IconData>> {
-        self.text_handle_opt.as_ref()
+    pub fn get_text_icon_handle(&self) -> Option<&AssetHandle<IconData>> {
+        self.text_icon_handle_opt.as_ref()
+    }
+
+    pub fn set_text_color(&mut self, color: Color) {
+        if color == self.text_color {
+            return;
+        }
+        self.text_color = color;
+        self.text_color_handle_opt = None;
+    }
+
+    pub fn get_text_color_handle(&self) -> Option<&Handle<CpuMaterial>> {
+        self.text_color_handle_opt.as_ref()
     }
 }
 

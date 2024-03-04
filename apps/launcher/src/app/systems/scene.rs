@@ -41,7 +41,8 @@ pub fn scene_setup(
     let text_handle = AssetHandle::<IconData>::new(AssetId::from_str("34mvvk").unwrap()); // TODO: use some kind of catalog
     let mut ui = Ui::new();
     ui
-        .set_text_handle(& text_handle)
+        .set_text_icon_handle(& text_handle)
+        .set_text_color(Color::AQUA)
         .root_mut()
         .style(|s| {
             s

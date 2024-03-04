@@ -92,12 +92,12 @@ impl AssetManager {
         render_layer_opt: Option<&RenderLayer>,
     ) {
         AssetRenderer::draw_mesh(
-            &self.store,
             render_frame,
+            render_layer_opt,
+            &self.store,
             mesh_handle,
             mat_handle,
             transform,
-            render_layer_opt,
         );
     }
 
@@ -110,12 +110,12 @@ impl AssetManager {
         render_layer_opt: Option<&RenderLayer>,
     ) {
         AssetRenderer::draw_icon(
-            &self.store,
             render_frame,
+            render_layer_opt,
+            &self.store,
             icon_handle,
             subimage_index,
             transform,
-            render_layer_opt,
         );
     }
 
@@ -124,6 +124,7 @@ impl AssetManager {
         render_frame: &mut RenderFrame,
         render_layer_opt: Option<&RenderLayer>,
         icon_handle: &AssetHandle<IconData>,
+        material_handle: &Handle<CpuMaterial>,
         transform: &Transform,
         text: &str,
     ) {
@@ -132,6 +133,7 @@ impl AssetManager {
             render_layer_opt,
             &self.store,
             icon_handle,
+            material_handle,
             transform,
             text,
         );
@@ -145,11 +147,11 @@ impl AssetManager {
         render_layer_opt: Option<&RenderLayer>,
     ) {
         AssetRenderer::draw_skin(
-            &self.store,
             render_frame,
+            render_layer_opt,
+            &self.store,
             skin_handle,
             transform,
-            render_layer_opt,
         );
     }
 
@@ -161,11 +163,11 @@ impl AssetManager {
         render_layer_opt: Option<&RenderLayer>,
     ) {
         AssetRenderer::draw_scene(
-            &self.store,
             render_frame,
+            render_layer_opt,
+            &self.store,
             scene_handle,
             parent_transform,
-            render_layer_opt,
         );
     }
 
@@ -177,11 +179,11 @@ impl AssetManager {
         render_layer_opt: Option<&RenderLayer>,
     ) {
         AssetRenderer::draw_model(
-            &self.store,
             render_frame,
+            render_layer_opt,
+            &self.store,
             model_handle,
             parent_transform,
-            render_layer_opt,
         );
     }
 
@@ -195,13 +197,13 @@ impl AssetManager {
         render_layer_opt: Option<&RenderLayer>,
     ) {
         AssetRenderer::draw_animated_model(
-            &self.store,
             render_frame,
+            render_layer_opt,
+            &self.store,
             model_handle,
             animation_handle,
             parent_transform,
             frame_time_ms,
-            render_layer_opt,
         );
     }
 }

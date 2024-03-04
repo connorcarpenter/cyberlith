@@ -1,5 +1,5 @@
 
-use asset_render::{AssetManager, TextStyle};
+use asset_render::AssetManager;
 use render_api::{resources::RenderFrame, components::{RenderLayer, Transform}};
 
 use crate::{widget::Widget, ui::Globals};
@@ -26,8 +26,11 @@ impl Widget for Label {
         globals: &Globals,
         transform: &Transform
     ) {
-        let Some(text_handle) = globals.get_text_handle() else {
+        let Some(text_icon_handle) = globals.get_text_icon_handle() else {
             panic!("No text handle found in globals");
+        };
+        let Some(text_color_handle) = globals.get_text_color_handle() else {
+            panic!("No text color handle found in globals");
         };
 
         // TODO: use some kind of text style from parent panel
@@ -39,7 +42,8 @@ impl Widget for Label {
         asset_manager.draw_text(
             render_frame,
             render_layer_opt,
-            text_handle,
+            text_icon_handle,
+            text_color_handle,
             &transform,
             &self.text,
         );
