@@ -1,4 +1,5 @@
-use bevy_log::info;
+use std::fmt::{Display, Formatter};
+
 use morphorm::{LayoutType, Node, PositionType, Units};
 
 use crate::panel::PanelStore;
@@ -16,6 +17,12 @@ impl UiId {
     }
 }
 
+impl Display for UiId {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 impl Node for UiId {
     type Store = PanelStore;
     type Tree = PanelStore;
@@ -29,7 +36,6 @@ impl Node for UiId {
 
     fn children<'t>(&'t self, ui: &'t PanelStore) -> Self::ChildIter<'t> {
         if let Some(panel) = ui.get(self) {
-            info!("children: {:?}", panel.children);
             panel.children.iter()
         } else {
             [].iter()

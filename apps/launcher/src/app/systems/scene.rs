@@ -44,7 +44,8 @@ pub fn scene_setup(
         .set_text_handle(& text_handle)
         .root_mut()
         .style(|s| {
-            s.set_background_color(Color::YELLOW)
+            s
+                .set_background_color(Color::YELLOW)
                 .set_vertical()
                 .set_padding_px(10.0, 10.0, 10.0, 10.0)
                 .set_row_between_px(10.0);
@@ -56,14 +57,16 @@ pub fn scene_setup(
                     s
                         .set_background_color(Color::RED)
                         .set_size_st(1.0, 1.0)
-                        .set_padding_px(0.0, 0.0, 0.0, 0.0);
+                        .set_padding_px(10.0, 10.0, 10.0, 10.0);
                 })
                 .contents(|mut c| {
                     c.add_label("Hello, my Nina");
                 });
             c.add_panel()
                 .style(|s| {
-                    s.set_background_color(Color::BLUE).set_size_st(1.0, 1.0);
+                    s
+                        .set_background_color(Color::BLUE)
+                        .set_size_st(1.0, 1.0);
                 })
                 .contents(|mut _c| {});
             //ui.button("click me");

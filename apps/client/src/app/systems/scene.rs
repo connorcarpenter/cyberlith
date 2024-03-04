@@ -3,7 +3,6 @@ use bevy_ecs::{
     query::With,
     system::{Commands, Local, Query, Res, ResMut},
 };
-use bevy_log::info;
 
 use game_engine::{
     asset::{AnimationData, AssetHandle, AssetManager, ModelData},

@@ -11,6 +11,8 @@ use crate::{asset_dependency::AssetDependency, AssetHandle, PaletteData, TypedAs
 pub struct IconData {
     palette_file: AssetDependency<PaletteData>,
     frames: Vec<Frame>,
+    max_width: f32,
+    max_height: f32,
 }
 
 impl Default for IconData {
@@ -20,6 +22,15 @@ impl Default for IconData {
 }
 
 impl IconData {
+
+    pub(crate) fn get_max_width(&self) -> f32 {
+        self.max_width
+    }
+
+    pub(crate) fn get_max_height(&self) -> f32 {
+        self.max_height
+    }
+
     pub(crate) fn get_frame_width(&self, index: usize) -> Option<f32> {
         let frame = self.frames.get(index)?;
         Some(frame.get_width())
@@ -124,6 +135,8 @@ impl IconData {
         let actions = asset_io::bits::IconAction::read(bytes).expect("unable to parse file");
 
         let mut palette_file_opt = None;
+        let mut max_width = 0.0;
+        let mut max_height = 0.0;
         let mut frames = Vec::new();
         for action in actions {
             match action {
@@ -175,6 +188,16 @@ impl IconData {
                     mesh.add_face_indices(face_indices);
 
                     let frame = Frame::new(mesh, face_color_ids);
+
+                    let frame_width = frame.get_width();
+                    let frame_height = frame.get_height();
+                    if frame_width > max_width {
+                        max_width = frame_width;
+                    }
+                    if frame_height > max_height {
+                        max_height = frame_height;
+                    }
+
                     frames.push(frame);
 
                     info!("- Frame End -");
@@ -187,6 +210,8 @@ impl IconData {
         Self {
             palette_file: AssetDependency::AssetId(palette_file_opt.unwrap()),
             frames,
+            max_width,
+            max_height,
         }
     }
 }

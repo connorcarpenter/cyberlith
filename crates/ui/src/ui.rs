@@ -1,7 +1,7 @@
 use bevy_ecs::{change_detection::ResMut, component::Component, system::Query};
 use bevy_log::{info, warn};
 
-use morphorm::Node;
+use morphorm::{Node, print_node};
 use asset_render::{AssetHandle, AssetManager, IconData};
 
 use render_api::{
@@ -10,6 +10,7 @@ use render_api::{
     resources::RenderFrame,
     shapes::UnitSquare,
 };
+use render_api::base::Color;
 use storage::{Handle, Storage};
 
 use crate::{
@@ -128,7 +129,7 @@ impl Ui {
             &self.cache,
             &self.panels,
             &Self::ROOT_PANEL_ID,
-            0.0,
+            (0.0, 0.0, 0.0),
         );
     }
 
@@ -153,7 +154,8 @@ impl Ui {
     }
 
     fn recalculate_layout(&mut self) {
-        info!("recalculating layout. viewport_width: {:?}, viewport_height: {:?}", self.viewport.width, self.viewport.height);
+        //info!("recalculating layout. viewport_width: {:?}, viewport_height: {:?}", self.viewport.width, self.viewport.height);
+
         let root_panel = self.panels.get_mut(&Self::ROOT_PANEL_ID).unwrap();
         root_panel.style.set_width_px(self.viewport.width as f32);
         root_panel.style.set_height_px(self.viewport.height as f32);
@@ -163,6 +165,8 @@ impl Ui {
 
         // this calculates all the rects in cache_mut
         Self::ROOT_PANEL_ID.layout(cache_mut, panels_ref, panels_ref, &mut ());
+
+        // print_node(&Self::ROOT_PANEL_ID, &self.cache, &self.panels, true, false, "".to_string());
 
         // now go get all the queued color handles
         // happens each time there's a recalculation of layout ... should actually just happen whenever new elements are added
@@ -348,9 +352,9 @@ fn draw_node(
     cache: &LayoutCache,
     store: &PanelStore,
     id: &UiId,
-    depth: f32,
+    parent_position: (f32, f32, f32),
 ) {
-    let Some((width, height, posx, posy)) = cache.bounds(id) else {
+    let Some((width, height, child_offset_x, child_offset_y)) = cache.bounds(id) else {
         warn!("no bounds for id: {:?}", id);
         return;
     };
@@ -360,7 +364,11 @@ fn draw_node(
         return;
     };
 
-    let mut transform = Transform::from_xyz(posx, posy, depth);
+    let mut transform = Transform::from_xyz(
+        parent_position.0 + child_offset_x,
+        parent_position.1 + child_offset_y,
+        parent_position.2,
+    );
     transform.scale.x = width;
     transform.scale.y = height;
 
@@ -386,7 +394,11 @@ fn draw_node(
                        cache,
                        store,
                        child,
-                       depth + 0.1,
+                       (
+                           transform.translation.x,
+                           transform.translation.y,
+                           transform.translation.z + 0.1
+                       ),
             );
         }
     }

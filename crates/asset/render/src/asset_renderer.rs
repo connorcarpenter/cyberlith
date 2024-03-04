@@ -1,4 +1,4 @@
-use bevy_log::warn;
+use bevy_log::{info, warn};
 use rand::Rng;
 
 use math::Vec3;
@@ -63,51 +63,99 @@ impl AssetRenderer {
     }
 
     pub(crate) fn draw_text(
-        asset_store: &ProcessedAssetStore,
         render_frame: &mut RenderFrame,
-        icon_handle: &AssetHandle<IconData>,
-        style: &TextStyle,
-        position: &Vec3,
         render_layer_opt: Option<&RenderLayer>,
+        asset_store: &ProcessedAssetStore,
+        icon_handle: &AssetHandle<IconData>,
+        transform: &Transform,
         text: &str,
     ) {
-        let mut cursor = Transform::from_xyz(position.x, position.y, position.z);
-        cursor.scale = Vec3::splat(style.size / 200.0);
+        // will draw text string, stretched to fit the transform:
+        // (transform.translation.x, transform.translation.y, transform.translation.z),
+        // with width: (transform.scale.x, transform.scale.y)
+
+        // first, measure the string
+        let (raw_width, raw_height) = Self::measure_raw_text(asset_store, icon_handle, text);
+
+        let mut cursor = Transform::from_xyz(
+            transform.translation.x,
+            transform.translation.y + (transform.scale.y * 0.5),
+            transform.translation.z
+        );
+
+        // if we want to fill 200px, but raw_width is 100px, then scale_x would be 2.0
+        cursor.scale.x = transform.scale.x / raw_width;
+        cursor.scale.y = transform.scale.y / raw_height;
 
         for c in text.chars() {
             let c: u8 = if c.is_ascii() {
                 c as u8
             } else {
-                let value = rand::thread_rng().gen_range(32..=126) as u8;
-                value
+                42 // asterisk
+            };
+            let frame_index = (c - 32) as usize;
+
+            // get character width in order to move cursor appropriately
+            let frame_raw_width = if frame_index == 0 {
+                40.0 // TODO: replace with config
+            } else {
+                asset_store
+                    .get_icon_frame_width(icon_handle, frame_index)
+                    .unwrap_or(0.0)
+            };
+
+            let frame_actual_width = frame_raw_width * cursor.scale.x;
+            let half_frame_actual_width = frame_actual_width * 0.5;
+
+            let mut final_position = cursor.clone();
+            final_position.translation.x += half_frame_actual_width;
+
+            Self::draw_icon(
+                asset_store,
+                render_frame,
+                icon_handle,
+                frame_index,
+                &final_position,
+                render_layer_opt,
+            );
+
+            cursor.translation.x += frame_actual_width;
+            cursor.translation.x += 6.0 * cursor.scale.x; // between character spacing - TODO: replace with config
+        }
+    }
+
+    fn measure_raw_text(
+        asset_store: &ProcessedAssetStore,
+        icon_handle: &AssetHandle<IconData>,
+        text: &str,
+    ) -> (f32, f32) {
+
+        let mut width = 0.0;
+        let mut height = 200.0;
+
+        for c in text.chars() {
+            let c: u8 = if c.is_ascii() {
+                c as u8
+            } else {
+                42 // asterisk
             };
             let subimage_index = (c - 32) as usize;
 
             // get character width in order to move cursor appropriately
             let icon_width = if subimage_index == 0 {
-                40.0
+                40.0 // space width - TODO: replace with config
             } else {
                 asset_store
                     .get_icon_frame_width(icon_handle, subimage_index)
                     .unwrap_or(0.0)
             };
-            let icon_width = (icon_width / 200.0) * style.size;
-            let icon_width = icon_width + style.character_buffer;
-            let half_icon_width = icon_width / 2.0;
 
-            let mut final_position = cursor.clone();
-            final_position.translation.x += half_icon_width;
-            Self::draw_icon(
-                asset_store,
-                render_frame,
-                icon_handle,
-                subimage_index,
-                &final_position,
-                render_layer_opt,
-            );
+            width += icon_width;
 
-            cursor.translation.x += icon_width;
+            width += 6.0; // between character spacing - TODO: replace with config
         }
+
+        (width, height)
     }
 
     pub(crate) fn draw_skin(

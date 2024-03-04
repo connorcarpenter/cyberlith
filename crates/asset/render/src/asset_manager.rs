@@ -124,17 +124,15 @@ impl AssetManager {
         render_frame: &mut RenderFrame,
         render_layer_opt: Option<&RenderLayer>,
         icon_handle: &AssetHandle<IconData>,
-        style: &TextStyle,
-        position: &Vec3,
+        transform: &Transform,
         text: &str,
     ) {
         AssetRenderer::draw_text(
-            &self.store,
             render_frame,
-            icon_handle,
-            style,
-            position,
             render_layer_opt,
+            &self.store,
+            icon_handle,
+            transform,
             text,
         );
     }

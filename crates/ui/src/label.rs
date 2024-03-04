@@ -1,4 +1,4 @@
-use bevy_log::info;
+
 use asset_render::{AssetManager, TextStyle};
 use render_api::{resources::RenderFrame, components::{RenderLayer, Transform}};
 
@@ -32,18 +32,15 @@ impl Widget for Label {
 
         // TODO: use some kind of text style from parent panel
         // TODO: text should fill the entire panel
-        let style = TextStyle::new(transform.scale.y, 6.0);
+        //let style = TextStyle::new(transform.scale.y, 6.0);
 
         // info!("Drawing label: {}", self.text);
-        let mut position = transform.translation;
-        position.y += transform.scale.y / 2.0;
 
         asset_manager.draw_text(
             render_frame,
             render_layer_opt,
             text_handle,
-            &style,
-            &position,
+            &transform,
             &self.text,
         );
     }
