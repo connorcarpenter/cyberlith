@@ -42,35 +42,104 @@ pub fn scene_setup(
     let mut ui = Ui::new();
     ui
         .set_text_icon_handle(& text_handle)
-        .set_text_color(Color::AQUA)
+        .set_text_color(Color::WHITE)
         .root_mut()
         .style(|s| {
             s
-                .set_background_color(Color::YELLOW)
+                .set_background_color(Color::BLACK)
                 .set_vertical()
                 .set_padding_px(10.0, 10.0, 10.0, 10.0)
                 .set_row_between_px(10.0);
         })
         .contents(|mut c| {
-            //ui.label("Hello, my Nina! <3");
             c.add_panel()
                 .style(|s| {
                     s
-                        .set_background_color(Color::RED)
-                        .set_size_st(1.0, 1.0)
+                        .set_background_color(Color::BLACK)
+                        .set_size_st(1.0, 3.0)
                         .set_padding_px(10.0, 10.0, 10.0, 10.0);
                 })
                 .contents(|mut c| {
-                    c.add_label("Hello, my Nina");
+                    c.add_label("cyberlith");
                 });
+
+            // start button container
             c.add_panel()
                 .style(|s| {
                     s
-                        .set_background_color(Color::BLUE)
-                        .set_size_st(1.0, 1.0);
+                        .set_background_color(Color::BLACK)
+                        .set_size_st(1.0, 1.0)
+                        .set_horizontal();
                 })
-                .contents(|mut _c| {});
-            //ui.button("click me");
+                .contents(|mut c| {
+
+                    // spacing
+                    c.add_panel()
+                        .style(|s| {
+                            s
+                                .set_background_color(Color::BLACK)
+                                .set_size_st(1.0, 1.0);
+                        });
+
+                    // button
+                    c.add_panel()
+                        .style(|s| {
+                            s
+                                .set_background_color(Color::DARK_GRAY)
+                                .set_size_st(3.0, 1.0)
+                                .set_padding_px(10.0, 10.0, 10.0, 10.0);
+                        })
+                        .contents(|mut c| {
+                            c.add_label("start");
+                        });
+
+                    // spacing
+                    c.add_panel()
+                        .style(|s| {
+                            s
+                                .set_background_color(Color::BLACK)
+                                .set_size_st(1.0, 1.0);
+                        });
+                });
+
+            // continue button container
+            c.add_panel()
+                .style(|s| {
+                    s
+                        .set_background_color(Color::BLACK)
+                        .set_size_st(1.0, 1.0)
+                        .set_horizontal();
+                })
+                .contents(|mut c| {
+
+                    // spacing
+                    c.add_panel()
+                        .style(|s| {
+                            s
+                                .set_background_color(Color::BLACK)
+                                .set_size_st(1.0, 1.0);
+                        });
+
+                    // button
+                    c.add_panel()
+                        .style(|s| {
+                            s
+                                .set_background_color(Color::DARK_GRAY)
+                                .set_size_st(3.0, 1.0)
+                                .set_padding_px(10.0, 10.0, 10.0, 10.0);
+                        })
+                        .contents(|mut c| {
+                            c.add_label("continue");
+                        });
+
+                    // spacing
+                    c.add_panel()
+                        .style(|s| {
+                            s
+                                .set_background_color(Color::BLACK)
+                                .set_size_st(1.0, 1.0);
+                        });
+                });
         });
 
     let _ui_entity = commands.spawn(ui).insert(layer).id();

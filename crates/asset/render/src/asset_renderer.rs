@@ -161,6 +161,11 @@ impl AssetRenderer {
         let mut height = 200.0;
 
         for c in text.chars() {
+
+            if width > 0.0 {
+                width += 6.0; // between character spacing - TODO: replace with config
+            }
+
             let c: u8 = if c.is_ascii() {
                 c as u8
             } else {
@@ -178,8 +183,6 @@ impl AssetRenderer {
             };
 
             width += icon_width;
-
-            width += 6.0; // between character spacing - TODO: replace with config
         }
 
         (width, height)
