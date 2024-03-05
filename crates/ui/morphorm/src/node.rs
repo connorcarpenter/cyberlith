@@ -175,6 +175,12 @@ pub trait Node: Sized {
 
     /// Returns the bottom-side border width of the node.
     fn border_bottom(&self, store: &Self::Store) -> Option<Units>;
+
+    /// Returns the solid override of the node.
+    fn solid(&self, store: &Self::Store) -> Option<Solid>;
+
+    /// Returns the aspect ratio of the node. (width / height)
+    fn aspect_ratio(&self, store: &Self::Store) -> Option<f32>;
 }
 
 /// Helper trait used internally for converting layout properties into a direction-agnostic value.
@@ -338,3 +344,9 @@ pub(crate) trait NodeExt: Node {
 
 // Implement `NodeExt` for all types which implement `Node`.
 impl<N: Node> NodeExt for N {}
+
+#[derive(Clone, Copy, Eq, PartialEq)]
+pub enum Solid {
+    Fit, // maximum axis uses aspect ratio
+    Fill, // minimum axis uses aspect ratio
+}

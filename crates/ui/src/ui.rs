@@ -16,7 +16,7 @@ use crate::{
     cache::LayoutCache,
     node::{NodeKind, UiNode, NodeStore},
     node_id::NodeId,
-    panel::{Panel, PanelMut, PanelRef},
+    panel::{Panel, PanelMut},
     widget::Widget,
 };
 
@@ -119,10 +119,6 @@ impl Ui {
     pub fn set_text_color(&mut self, text_color: Color) -> &mut Self {
         self.globals.set_text_color(text_color);
         self
-    }
-
-    pub fn root_ref(&self) -> PanelRef {
-        PanelRef::new(self, Self::ROOT_NODE_ID)
     }
 
     pub fn root_mut(&mut self) -> PanelMut {

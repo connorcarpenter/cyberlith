@@ -1,11 +1,8 @@
 use std::fmt::{Display, Formatter};
-use bevy_log::info;
 
-use morphorm::{LayoutType, Node, PositionType, Units};
-use crate::label::Label;
+use morphorm::{LayoutType, Node, PositionType, Solid, Units};
 
-use crate::node::{NodeKind, NodeStore, UiNode};
-use crate::panel::Panel;
+use crate::{panel::Panel, label::Label, node::{NodeKind, NodeStore, UiNode}};
 
 #[derive(Clone, Copy, PartialEq, PartialOrd, Ord, Eq, Hash, Debug, Default)]
 pub struct NodeId(u32);
@@ -248,5 +245,16 @@ impl Node for NodeId {
     fn border_bottom(&self, store: &NodeStore) -> Option<Units> {
         let node = store.get(self)?;
         Some(node.style.border_bottom)
+    }
+
+    fn solid(&self, store: &NodeStore) -> Option<Solid> {
+        let node = store.get(self)?;
+        let val = node.style.solid_override?;
+        Some(val)
+    }
+
+    fn aspect_ratio(&self, store: &Self::Store) -> Option<f32> {
+        let node = store.get(self)?;
+        Some(node.style.aspect_ratio_w_over_h)
     }
 }

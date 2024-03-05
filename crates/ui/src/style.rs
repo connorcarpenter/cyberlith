@@ -1,7 +1,4 @@
-use morphorm::{PositionType, Units};
-
-use render_api::base::{Color, CpuMaterial};
-use storage::Handle;
+use morphorm::{PositionType, Solid, Units};
 
 #[derive(Clone, Default, Copy)]
 pub(crate) struct NodeStyle {
@@ -33,5 +30,6 @@ pub(crate) struct NodeStyle {
     pub(crate) border_top: Units,
     pub(crate) border_bottom: Units,
 
+    pub(crate) solid_override: Option<Solid>,
     pub(crate) aspect_ratio_w_over_h: f32,
 }

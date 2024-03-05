@@ -95,29 +95,6 @@ pub(crate) struct PanelStyle {
     pub(crate) col_between: Units,
 }
 
-pub struct PanelRef<'a> {
-    ui: &'a Ui,
-    panel_id: NodeId,
-}
-
-impl<'a> PanelRef<'a> {
-    pub(crate) fn new(ui: &'a Ui, panel_id: NodeId) -> Self {
-        Self { ui, panel_id }
-    }
-
-    pub fn style(&self, inner_fn: impl FnOnce(PanelStyleRef)) -> &Self {
-        let style_ref = PanelStyleRef::new(self.ui, self.panel_id);
-        inner_fn(style_ref);
-        self
-    }
-
-    pub fn contents(&'a self, inner_fn: impl FnOnce(PanelContentsRef)) -> &Self {
-        let context = PanelContentsRef::new(self.ui, self.panel_id);
-        inner_fn(context);
-        self
-    }
-}
-
 pub struct PanelMut<'a> {
     ui: &'a mut Ui,
     node_id: NodeId,
@@ -145,18 +122,6 @@ impl<'a> PanelMut<'a> {
         let mut context = PanelContentsMut::new(self.ui, self.node_id);
         inner_fn(&mut context);
         self
-    }
-}
-
-// use for inspecting children?
-pub struct PanelContentsRef<'a> {
-    ui: &'a Ui,
-    panel_id: NodeId,
-}
-
-impl<'a> PanelContentsRef<'a> {
-    pub(crate) fn new(ui: &'a Ui, panel_id: NodeId) -> Self {
-        Self { ui, panel_id }
     }
 }
 
@@ -198,155 +163,6 @@ impl<'a> PanelContentsMut<'a> {
         self.get_panel_mut().add_child(new_id);
 
         LabelMut::<'b>::new(self.ui, new_id)
-    }
-}
-
-pub struct PanelStyleRef<'a> {
-    ui: &'a Ui,
-    node_id: NodeId,
-}
-
-impl<'a> PanelStyleRef<'a> {
-    pub(crate) fn new(ui: &'a Ui, panel_id: NodeId) -> Self {
-        Self { ui, node_id: panel_id }
-    }
-
-    fn get_ref(&self) -> &UiNode {
-        self.ui.node_ref(&self.node_id).unwrap()
-    }
-
-    fn get_panel_ref(&self) -> &Panel {
-        self.get_ref().widget.as_ref().as_any().downcast_ref::<Panel>().unwrap()
-    }
-
-    // getters
-
-    pub fn background_color(&self) -> Color {
-        self.get_panel_ref().style.background_color
-    }
-
-    pub fn background_color_handle(&self) -> Option<Handle<CpuMaterial>> {
-        self.get_panel_ref().style.background_color_handle
-    }
-
-    pub fn layout_type(&self) -> LayoutType {
-        self.get_panel_ref().style.layout_type
-    }
-
-    pub fn position_type(&self) -> PositionType {
-        self.get_ref().style.position_type
-    }
-
-    pub fn width(&self) -> Units {
-        self.get_ref().style.width
-    }
-
-    pub fn height(&self) -> Units {
-        self.get_ref().style.height
-    }
-
-    pub fn width_min(&self) -> Units {
-        self.get_ref().style.width_min
-    }
-
-    pub fn width_max(&self) -> Units {
-        self.get_ref().style.width_max
-    }
-
-    pub fn height_min(&self) -> Units {
-        self.get_ref().style.height_min
-    }
-
-    pub fn height_max(&self) -> Units {
-        self.get_ref().style.height_max
-    }
-
-    pub fn margin_left(&self) -> Units {
-        self.get_ref().style.margin_left
-    }
-
-    pub fn margin_right(&self) -> Units {
-        self.get_ref().style.margin_right
-    }
-
-    pub fn margin_top(&self) -> Units {
-        self.get_ref().style.margin_top
-    }
-
-    pub fn margin_bottom(&self) -> Units {
-        self.get_ref().style.margin_bottom
-    }
-
-    pub fn margin_left_min(&self) -> Units {
-        self.get_ref().style.margin_left_min
-    }
-
-    pub fn margin_left_max(&self) -> Units {
-        self.get_ref().style.margin_left_max
-    }
-
-    pub fn margin_right_min(&self) -> Units {
-        self.get_ref().style.margin_right_min
-    }
-
-    pub fn margin_right_max(&self) -> Units {
-        self.get_ref().style.margin_right_max
-    }
-
-    pub fn margin_top_min(&self) -> Units {
-        self.get_ref().style.margin_top_min
-    }
-
-    pub fn margin_top_max(&self) -> Units {
-        self.get_ref().style.margin_top_max
-    }
-
-    pub fn margin_bottom_min(&self) -> Units {
-        self.get_ref().style.margin_bottom_min
-    }
-
-    pub fn margin_bottom_max(&self) -> Units {
-        self.get_ref().style.margin_bottom_max
-    }
-
-    pub fn border_left(&self) -> Units {
-        self.get_ref().style.border_left
-    }
-
-    pub fn border_right(&self) -> Units {
-        self.get_ref().style.border_right
-    }
-
-    pub fn border_top(&self) -> Units {
-        self.get_ref().style.border_top
-    }
-
-    pub fn border_bottom(&self) -> Units {
-        self.get_ref().style.border_bottom
-    }
-
-    pub fn padding_left(&self) -> Units {
-        self.get_panel_ref().style.padding_left
-    }
-
-    pub fn padding_right(&self) -> Units {
-        self.get_panel_ref().style.padding_right
-    }
-
-    pub fn padding_top(&self) -> Units {
-        self.get_panel_ref().style.padding_top
-    }
-
-    pub fn padding_bottom(&self) -> Units {
-        self.get_panel_ref().style.padding_bottom
-    }
-
-    pub fn row_between(&self) -> Units {
-        self.get_panel_ref().style.row_between
-    }
-
-    pub fn col_between(&self) -> Units {
-        self.get_panel_ref().style.col_between
     }
 }
 

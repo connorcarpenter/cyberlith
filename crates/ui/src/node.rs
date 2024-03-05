@@ -1,4 +1,4 @@
-use std::{collections::HashMap, any::Any};
+use std::collections::HashMap;
 
 use crate::{style::NodeStyle, NodeId, widget::Widget};
 
@@ -7,31 +7,31 @@ pub struct NodeStore {
 }
 
 impl NodeStore {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self {
             map: HashMap::new(),
         }
     }
 
-    pub fn insert(&mut self, uiid: NodeId, panel: UiNode) {
+    pub(crate) fn insert(&mut self, uiid: NodeId, panel: UiNode) {
         self.map.insert(uiid, panel);
     }
 
-    pub fn get(&self, uiid: &NodeId) -> Option<&UiNode> {
+    pub(crate) fn get(&self, uiid: &NodeId) -> Option<&UiNode> {
         self.map.get(uiid)
     }
 
-    pub fn get_mut(&mut self, uiid: &NodeId) -> Option<&mut UiNode> {
+    pub(crate) fn get_mut(&mut self, uiid: &NodeId) -> Option<&mut UiNode> {
         self.map.get_mut(uiid)
     }
 
-    pub fn keys(&self) -> impl Iterator<Item = &NodeId> {
+    pub(crate) fn keys(&self) -> impl Iterator<Item = &NodeId> {
         self.map.keys()
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = (&NodeId, &UiNode)> {
-        self.map.iter()
-    }
+    // pub(crate) fn iter(&self) -> impl Iterator<Item = (&NodeId, &UiNode)> {
+    //     self.map.iter()
+    // }
 }
 
 #[derive(PartialEq, Eq, Clone, Copy)]
@@ -62,8 +62,8 @@ impl UiNode {
         widget.as_any().downcast_ref()
     }
 
-    pub(crate) fn downcast_mut<T: Widget>(widget: &mut dyn Widget) -> Option<&mut T> {
-        let widget_any: &mut dyn Any = widget.as_any_mut();
-        widget_any.downcast_mut()
-    }
+    // pub(crate) fn downcast_mut<T: Widget>(widget: &mut dyn Widget) -> Option<&mut T> {
+    //     let widget_any: &mut dyn Any = widget.as_any_mut();
+    //     widget_any.downcast_mut()
+    // }
 }

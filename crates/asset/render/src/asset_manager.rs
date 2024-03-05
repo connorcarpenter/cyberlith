@@ -61,6 +61,14 @@ impl AssetManager {
         data.get_subimage_count()
     }
 
+    pub fn get_icon_max_width(&self, handle: &AssetHandle<IconData>) -> Option<f32> {
+        self.store.get_icon_max_width(handle)
+    }
+
+    pub fn get_icon_max_height(&self, handle: &AssetHandle<IconData>) -> Option<f32> {
+        self.store.get_icon_max_height(handle)
+    }
+
     pub fn get_icon_frame_width(
         &self,
         handle: &AssetHandle<IconData>,

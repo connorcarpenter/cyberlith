@@ -3,22 +3,21 @@ use std::any::Any;
 use morphorm::{PositionType, Units};
 
 use asset_render::AssetManager;
-use render_api::{base::{Color, CpuMaterial}, resources::RenderFrame, components::{RenderLayer, Transform}};
-use storage::Handle;
+use render_api::{resources::RenderFrame, components::{RenderLayer, Transform}};
 
 use crate::{cache::LayoutCache, node::{UiNode, NodeStore}, style::NodeStyle, widget::Widget, ui::Globals, Ui, NodeId};
 
 #[derive(Clone)]
 pub struct Label {
     text: String,
-    style: LabelStyle,
+    _style: LabelStyle,
 }
 
 impl Label {
     pub fn new(text: &str) -> Self {
         Self {
             text: text.to_string(),
-            style: LabelStyle::default(),
+            _style: LabelStyle::default(),
         }
     }
 }
@@ -72,23 +71,6 @@ pub struct LabelStyle {
 
 }
 
-pub struct LabelRef<'a> {
-    ui: &'a Ui,
-    node_id: NodeId,
-}
-
-impl<'a> LabelRef<'a> {
-    pub(crate) fn new(ui: &'a Ui, node_id: NodeId) -> Self {
-        Self { ui, node_id }
-    }
-
-    pub fn style(&self, inner_fn: impl FnOnce(LabelStyleRef)) -> &Self {
-        let style_ref = LabelStyleRef::new(self.ui, self.node_id);
-        inner_fn(style_ref);
-        self
-    }
-}
-
 pub struct LabelMut<'a> {
     ui: &'a mut Ui,
     node_id: NodeId,
@@ -113,119 +95,6 @@ impl<'a> LabelMut<'a> {
     }
 }
 
-pub struct LabelStyleRef<'a> {
-    ui: &'a Ui,
-    node_id: NodeId,
-}
-
-impl<'a> LabelStyleRef<'a> {
-    pub(crate) fn new(ui: &'a Ui, node_id: NodeId) -> Self {
-        Self { ui, node_id }
-    }
-
-    fn get_ref(&self) -> &UiNode {
-        self.ui.node_ref(&self.node_id).unwrap()
-    }
-
-    fn get_label_ref(&self) -> &Label {
-        self.get_ref().widget.as_ref().as_any().downcast_ref::<Label>().unwrap()
-    }
-
-    // getters
-
-    pub fn position_type(&self) -> PositionType {
-        self.get_ref().style.position_type
-    }
-
-    pub fn width(&self) -> Units {
-        self.get_ref().style.width
-    }
-
-    pub fn height(&self) -> Units {
-        self.get_ref().style.height
-    }
-
-    pub fn width_min(&self) -> Units {
-        self.get_ref().style.width_min
-    }
-
-    pub fn width_max(&self) -> Units {
-        self.get_ref().style.width_max
-    }
-
-    pub fn height_min(&self) -> Units {
-        self.get_ref().style.height_min
-    }
-
-    pub fn height_max(&self) -> Units {
-        self.get_ref().style.height_max
-    }
-
-    pub fn margin_left(&self) -> Units {
-        self.get_ref().style.margin_left
-    }
-
-    pub fn margin_right(&self) -> Units {
-        self.get_ref().style.margin_right
-    }
-
-    pub fn margin_top(&self) -> Units {
-        self.get_ref().style.margin_top
-    }
-
-    pub fn margin_bottom(&self) -> Units {
-        self.get_ref().style.margin_bottom
-    }
-
-    pub fn margin_left_min(&self) -> Units {
-        self.get_ref().style.margin_left_min
-    }
-
-    pub fn margin_left_max(&self) -> Units {
-        self.get_ref().style.margin_left_max
-    }
-
-    pub fn margin_right_min(&self) -> Units {
-        self.get_ref().style.margin_right_min
-    }
-
-    pub fn margin_right_max(&self) -> Units {
-        self.get_ref().style.margin_right_max
-    }
-
-    pub fn margin_top_min(&self) -> Units {
-        self.get_ref().style.margin_top_min
-    }
-
-    pub fn margin_top_max(&self) -> Units {
-        self.get_ref().style.margin_top_max
-    }
-
-    pub fn margin_bottom_min(&self) -> Units {
-        self.get_ref().style.margin_bottom_min
-    }
-
-    pub fn margin_bottom_max(&self) -> Units {
-        self.get_ref().style.margin_bottom_max
-    }
-
-    pub fn border_left(&self) -> Units {
-        self.get_ref().style.border_left
-    }
-
-    pub fn border_right(&self) -> Units {
-        self.get_ref().style.border_right
-    }
-
-    pub fn border_top(&self) -> Units {
-        self.get_ref().style.border_top
-    }
-
-    pub fn border_bottom(&self) -> Units {
-        self.get_ref().style.border_bottom
-    }
-}
-
 pub struct LabelStyleMut<'a> {
     ui: &'a mut Ui,
     node_id: NodeId,
@@ -244,13 +113,13 @@ impl<'a> LabelStyleMut<'a> {
         self.ui.node_mut(&self.node_id).unwrap()
     }
 
-    fn get_label_ref(&self) -> &Label {
-        self.get_ref().widget.as_ref().as_any().downcast_ref::<Label>().unwrap()
-    }
-
-    fn get_label_mut(&mut self) -> &mut Label {
-        self.get_mut().widget.as_mut().as_any_mut().downcast_mut::<Label>().unwrap()
-    }
+    // fn get_label_ref(&self) -> &Label {
+    //     self.get_ref().widget.as_ref().as_any().downcast_ref::<Label>().unwrap()
+    // }
+    //
+    // fn get_label_mut(&mut self) -> &mut Label {
+    //     self.get_mut().widget.as_mut().as_any_mut().downcast_mut::<Label>().unwrap()
+    // }
 
     // getters
 
