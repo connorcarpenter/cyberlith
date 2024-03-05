@@ -128,10 +128,8 @@ impl Node for NodeId {
         let node = store.get(self)?;
         let aspect_ratio = node.style.aspect_ratio_w_to_h;
 
-        info!("content_size");
-
+        // make sure it's a label ... ?
         let _label_ref = self.label_ref(store)?;
-        info!("is label");
 
         if let Some(computed_width) = computed_width {
             return Some((computed_width, computed_width * aspect_ratio));

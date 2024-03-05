@@ -68,7 +68,6 @@ pub fn scene_setup(
                         .add_label("c y b e r l i t h")
                         .style(|s| {
                             s
-                                .set_background_color(Color::BLACK)
                                 .set_size_st(1.0, 2.0);
                                 //.set_margin_px(10.0, 10.0, 10.0, 10.0);
                         });

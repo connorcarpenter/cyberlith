@@ -5,9 +5,7 @@ use storage::Handle;
 
 #[derive(Clone, Default, Copy)]
 pub(crate) struct NodeStyle {
-    pub(crate) background_color: Color,
-    pub(crate) background_color_handle: Option<Handle<CpuMaterial>>,
-
+    
     pub(crate) position_type: PositionType,
 
     pub(crate) width: Units,

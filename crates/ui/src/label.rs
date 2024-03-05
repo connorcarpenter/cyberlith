@@ -133,14 +133,6 @@ impl<'a> LabelStyleRef<'a> {
 
     // getters
 
-    pub fn background_color(&self) -> Color {
-        self.get_ref().style.background_color
-    }
-
-    pub fn background_color_handle(&self) -> Option<Handle<CpuMaterial>> {
-        self.get_ref().style.background_color_handle
-    }
-
     pub fn position_type(&self) -> PositionType {
         self.get_ref().style.position_type
     }
@@ -262,14 +254,6 @@ impl<'a> LabelStyleMut<'a> {
 
     // getters
 
-    pub fn background_color(&self) -> Color {
-        self.get_ref().style.background_color
-    }
-
-    pub fn background_color_handle(&self) -> Option<Handle<CpuMaterial>> {
-        self.get_ref().style.background_color_handle
-    }
-
     pub fn position_type(&self) -> PositionType {
         self.get_ref().style.position_type
     }
@@ -363,20 +347,6 @@ impl<'a> LabelStyleMut<'a> {
     }
 
     // setters
-
-    pub fn set_background_color(&mut self, color: Color) -> &mut Self {
-        let current_color = self.background_color();
-        if color != current_color {
-            self.get_mut().style.background_color = color;
-            self.get_mut().style.background_color_handle = None;
-        }
-        self
-    }
-
-    pub fn set_background_color_handle(&mut self, handle: Handle<CpuMaterial>) -> &mut Self {
-        self.get_mut().style.background_color_handle = Some(handle);
-        self
-    }
 
     pub fn set_absolute(&mut self) -> &mut Self {
         self.get_mut().style.position_type = PositionType::SelfDirected;

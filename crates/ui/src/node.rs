@@ -25,6 +25,10 @@ impl NodeStore {
         self.map.get_mut(uiid)
     }
 
+    pub fn keys(&self) -> impl Iterator<Item = &NodeId> {
+        self.map.keys()
+    }
+
     pub fn iter(&self) -> impl Iterator<Item = (&NodeId, &UiNode)> {
         self.map.iter()
     }

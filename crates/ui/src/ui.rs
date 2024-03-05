@@ -98,14 +98,14 @@ impl Ui {
     }
 
     fn set_color_handles(&mut self, materials: &mut Storage<CpuMaterial>) {
-        for uiid in self.pending_mat_handles.drain(..) {
-            let Some(node_ref) = self.nodes.get(&uiid) else {
+        let ids = std::mem::take(&mut self.pending_mat_handles);
+        for id in ids {
+            let Some(panel_mut) = self.panel_mut(&id) else {
                 continue;
             };
-            let color = node_ref.style.background_color;
+            let color = panel_mut.style.background_color;
             let mat_handle = materials.add(color);
-            let node = self.nodes.get_mut(&uiid).unwrap();
-            node.style.background_color_handle = Some(mat_handle);
+            panel_mut.style.background_color_handle = Some(mat_handle);
         }
     }
 
@@ -191,9 +191,12 @@ impl Ui {
 
     fn collect_color_handles(&mut self) {
         let mut pending_mat_handles = Vec::new();
-        for (uiid, panel) in self.nodes.iter() {
-            if panel.style.background_color_handle.is_none() {
-                pending_mat_handles.push(*uiid);
+        for id in self.nodes.keys() {
+            let Some(panel_ref) = self.panel_ref(&id) else {
+                continue;
+            };
+            if panel_ref.style.background_color_handle.is_none() {
+                pending_mat_handles.push(*id);
             }
         }
         self.pending_mat_handles = pending_mat_handles;
@@ -212,13 +215,25 @@ impl Ui {
         node_id
     }
 
-    pub(crate) fn node_ref(&self, uiid: &NodeId) -> Option<&UiNode> {
-        self.nodes.get(&uiid)
+    pub(crate) fn node_ref(&self, id: &NodeId) -> Option<&UiNode> {
+        self.nodes.get(&id)
     }
 
-    pub(crate) fn node_mut(&mut self, uiid: &NodeId) -> Option<&mut UiNode> {
+    pub(crate) fn node_mut(&mut self, id: &NodeId) -> Option<&mut UiNode> {
         self.queue_recalculate_layout();
-        self.nodes.get_mut(&uiid)
+        self.nodes.get_mut(&id)
+    }
+
+    pub(crate) fn panel_ref(&self, id: &NodeId) -> Option<&Panel> {
+        let node_ref = self.node_ref(id)?;
+        let panel_ref = node_ref.widget.as_ref().as_any().downcast_ref::<Panel>()?;
+        Some(panel_ref)
+    }
+
+    pub(crate) fn panel_mut(&mut self, id: &NodeId) -> Option<&mut Panel> {
+        let node_mut = self.node_mut(id)?;
+        let panel_mut = node_mut.widget.as_mut().as_any_mut().downcast_mut::<Panel>()?;
+        Some(panel_mut)
     }
 }
 

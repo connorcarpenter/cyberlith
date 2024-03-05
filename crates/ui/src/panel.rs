@@ -46,11 +46,11 @@ impl Widget for Panel {
         globals: &Globals,
         cache: &LayoutCache,
         store: &NodeStore,
-        node_style: &NodeStyle,
+        _node_style: &NodeStyle,
         transform: &Transform
     ) {
         // draw panel
-        let Some(mat_handle) = node_style.background_color_handle else {
+        let Some(mat_handle) = self.style.background_color_handle else {
             warn!("no color handle for panel"); // probably will need to do better debugging later
             return;
         };
@@ -80,6 +80,10 @@ impl Widget for Panel {
 
 #[derive(Clone, Default, Copy)]
 pub(crate) struct PanelStyle {
+
+    pub(crate) background_color: Color,
+    pub(crate) background_color_handle: Option<Handle<CpuMaterial>>,
+
     pub(crate) layout_type: LayoutType,
 
     pub(crate) padding_left: Units,
@@ -218,11 +222,11 @@ impl<'a> PanelStyleRef<'a> {
     // getters
 
     pub fn background_color(&self) -> Color {
-        self.get_ref().style.background_color
+        self.get_panel_ref().style.background_color
     }
 
     pub fn background_color_handle(&self) -> Option<Handle<CpuMaterial>> {
-        self.get_ref().style.background_color_handle
+        self.get_panel_ref().style.background_color_handle
     }
 
     pub fn layout_type(&self) -> LayoutType {
@@ -375,11 +379,11 @@ impl<'a> PanelStyleMut<'a> {
     // getters
 
     pub fn background_color(&self) -> Color {
-        self.get_ref().style.background_color
+        self.get_panel_ref().style.background_color
     }
 
     pub fn background_color_handle(&self) -> Option<Handle<CpuMaterial>> {
-        self.get_ref().style.background_color_handle
+        self.get_panel_ref().style.background_color_handle
     }
 
     pub fn layout_type(&self) -> LayoutType {
@@ -507,14 +511,14 @@ impl<'a> PanelStyleMut<'a> {
     pub fn set_background_color(&mut self, color: Color) -> &mut Self {
         let current_color = self.background_color();
         if color != current_color {
-            self.get_mut().style.background_color = color;
-            self.get_mut().style.background_color_handle = None;
+            self.get_panel_mut().style.background_color = color;
+            self.get_panel_mut().style.background_color_handle = None;
         }
         self
     }
 
     pub fn set_background_color_handle(&mut self, handle: Handle<CpuMaterial>) -> &mut Self {
-        self.get_mut().style.background_color_handle = Some(handle);
+        self.get_panel_mut().style.background_color_handle = Some(handle);
         self
     }
 
