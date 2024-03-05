@@ -1,7 +1,6 @@
 use smallvec::SmallVec;
 
-use crate::{Cache, LayoutType, Node, NodeExt, PositionType, Size, Solid, Units};
-use crate::{CacheExt, Units::*};
+use crate::{CacheExt, Units::*, Cache, LayoutType, Node, NodeExt, percentage_calc, PositionType, Size, Solid, Units};
 
 const DEFAULT_MIN: f32 = -f32::MAX;
 const DEFAULT_MAX: f32 = f32::MAX;
@@ -96,6 +95,26 @@ where
     N: Node,
     C: Cache<Node = N>,
 {
+    let parent_padding_main: f32 = match node.child_main_before(store, parent_layout_type) {
+        Pixels(val) => val,
+        Percentage(val) => percentage_calc(val, parent_main, 0.0),
+        _ => 0.0,
+    } + match node.child_main_after(store, parent_layout_type) {
+        Pixels(val) => val,
+        Percentage(val) => percentage_calc(val, parent_main, 0.0),
+        _ => 0.0,
+    };
+    let parent_padding_cross: f32 = match node.child_cross_before(store, parent_layout_type) {
+        Pixels(val) => val,
+        Percentage(val) => percentage_calc(val, cross_size, 0.0),
+        _ => 0.0,
+    } + match node.child_cross_after(store, parent_layout_type) {
+        Pixels(val) => val,
+        Percentage(val) => percentage_calc(val, cross_size, 0.0),
+        _ => 0.0,
+    };
+
+
     // The layout type of the node. Determines the main and cross axes of the children.
     let layout_type = node.layout_type(store).unwrap_or_default();
 
@@ -103,17 +122,17 @@ where
     let main = node.main(store, parent_layout_type);
     let cross = node.cross(store, parent_layout_type);
 
-    let min_main = node.min_main(store, parent_layout_type).to_px(parent_main, DEFAULT_MIN);
-    let max_main = node.max_main(store, parent_layout_type).to_px(parent_main, DEFAULT_MAX);
+    let min_main = node.min_main(store, parent_layout_type).to_px(parent_main, parent_padding_main, DEFAULT_MIN);
+    let max_main = node.max_main(store, parent_layout_type).to_px(parent_main, parent_padding_main, DEFAULT_MAX);
 
     // TODO: Need parent_cross to compute this correctly
-    let min_cross = node.min_cross(store, parent_layout_type).to_px(cross_size, DEFAULT_MIN);
-    let max_cross = node.max_cross(store, parent_layout_type).to_px(cross_size, DEFAULT_MAX);
+    let min_cross = node.min_cross(store, parent_layout_type).to_px(cross_size, parent_padding_cross, DEFAULT_MIN);
+    let max_cross = node.max_cross(store, parent_layout_type).to_px(cross_size, parent_padding_cross, DEFAULT_MAX);
 
     // Compute main-axis size.
     let mut computed_main = match main {
         Pixels(val) => val,
-        Percentage(val) => (parent_main * (val / 100.0)).round(),
+        Percentage(val) => percentage_calc(val, parent_main, parent_padding_main).round(),
         Stretch(_) => parent_main,
         Auto => 0.0,
     };
@@ -122,13 +141,13 @@ where
     let mut computed_cross = cross_size;
 
     let border_main_before =
-        node.border_main_before(store, parent_layout_type).to_px(computed_main, DEFAULT_BORDER_WIDTH);
+        node.border_main_before(store, parent_layout_type).to_px(computed_main, parent_padding_main, DEFAULT_BORDER_WIDTH);
     let border_main_after =
-        node.border_main_after(store, parent_layout_type).to_px(computed_main, DEFAULT_BORDER_WIDTH);
+        node.border_main_after(store, parent_layout_type).to_px(computed_main, parent_padding_main, DEFAULT_BORDER_WIDTH);
     let border_cross_before =
-        node.border_cross_before(store, parent_layout_type).to_px(computed_cross, DEFAULT_BORDER_WIDTH);
+        node.border_cross_before(store, parent_layout_type).to_px(computed_cross, parent_padding_cross, DEFAULT_BORDER_WIDTH);
     let border_cross_after =
-        node.border_cross_after(store, parent_layout_type).to_px(computed_cross, DEFAULT_BORDER_WIDTH);
+        node.border_cross_after(store, parent_layout_type).to_px(computed_cross, parent_padding_cross, DEFAULT_BORDER_WIDTH);
 
     let node_children = node.children(tree).filter(|child| child.visible(store));
 
@@ -191,10 +210,10 @@ where
     let mut main_axis = SmallVec::<[StretchItem; 32]>::new();
 
     // Parent overrides for child auto space.
-    let node_child_main_before = node.child_main_before(store, layout_type);
-    let node_child_main_after = node.child_main_after(store, layout_type);
-    let node_child_cross_before = node.child_cross_before(store, layout_type);
-    let node_child_cross_after = node.child_cross_after(store, layout_type);
+    let node_child_main_before = Pixels(0.0);
+    let node_child_main_after = Pixels(0.0);
+    let node_child_cross_before = Pixels(0.0);
+    let node_child_cross_after = Pixels(0.0);
     let node_child_main_between = node.main_between(store, layout_type);
 
     // Determine index of first and last parent-directed child nodes.
@@ -276,8 +295,8 @@ where
                 index,
                 factor,
                 ItemType::Before,
-                child_min_main_before.to_px(parent_main, DEFAULT_MIN),
-                child_max_main_before.to_px(parent_main, DEFAULT_MAX),
+                child_min_main_before.to_px(parent_main, parent_padding_main, DEFAULT_MIN),
+                child_max_main_before.to_px(parent_main, parent_padding_main, DEFAULT_MAX),
             ));
         }
 
@@ -287,8 +306,8 @@ where
                 index,
                 factor,
                 ItemType::Size,
-                child_min_main.to_px(parent_main, DEFAULT_MIN),
-                child_max_main.to_px(parent_main, DEFAULT_MAX),
+                child_min_main.to_px(parent_main, parent_padding_main, DEFAULT_MIN),
+                child_max_main.to_px(parent_main, parent_padding_main, DEFAULT_MAX),
             ));
         }
 
@@ -298,29 +317,29 @@ where
                 index,
                 factor,
                 ItemType::After,
-                child_min_main_after.to_px(parent_main, DEFAULT_MIN),
-                child_max_main_after.to_px(parent_main, DEFAULT_MAX),
+                child_min_main_after.to_px(parent_main, parent_padding_main, DEFAULT_MIN),
+                child_max_main_after.to_px(parent_main, parent_padding_main, DEFAULT_MAX),
             ));
         }
 
         // Compute fixed-size child cross_before.
         let computed_child_cross_before =
-            child_cross_before.to_px_clamped(parent_cross, 0.0, child_min_cross_before, child_max_cross_before);
+            child_cross_before.to_px_clamped(parent_cross, parent_padding_cross, 0.0, child_min_cross_before, child_max_cross_before);
 
         // Compute fixed-size child_cross.
-        let mut computed_child_cross = child_cross.to_px_clamped(parent_cross, 0.0, child_min_cross, child_max_cross);
+        let mut computed_child_cross = child_cross.to_px_clamped(parent_cross, parent_padding_cross, 0.0, child_min_cross, child_max_cross);
 
         // Compute fixed-size child cross_after.
         let computed_child_cross_after =
-            child_cross_after.to_px_clamped(parent_cross, 0.0, child_min_cross_after, child_max_cross_after);
+            child_cross_after.to_px_clamped(parent_cross, parent_padding_cross, 0.0, child_min_cross_after, child_max_cross_after);
 
         // Compute fixed-size child main_before.
         let computed_child_main_before =
-            child_main_before.to_px_clamped(parent_main, 0.0, child_min_main_before, child_max_main_before);
+            child_main_before.to_px_clamped(parent_main, parent_padding_main, 0.0, child_min_main_before, child_max_main_before);
 
         // Compute fixed-size child main_after.
         let computed_child_main_after =
-            child_main_after.to_px_clamped(parent_main, 0.0, child_min_main_after, child_max_main_after);
+            child_main_after.to_px_clamped(parent_main, parent_padding_main, 0.0, child_min_main_after, child_max_main_after);
 
         let mut computed_child_main = 0.0;
         // Compute fixed-size child main.
@@ -377,9 +396,9 @@ where
         let mut cross_axis = SmallVec::<[StretchItem; 3]>::new();
         if let Stretch(factor) = child_cross_before {
             let child_min_cross_before =
-                child.node.min_cross_before(store, layout_type).to_px(parent_cross, DEFAULT_MIN);
+                child.node.min_cross_before(store, layout_type).to_px(parent_cross, parent_padding_cross, DEFAULT_MIN);
             let child_max_cross_before =
-                child.node.max_cross_before(store, layout_type).to_px(parent_cross, DEFAULT_MAX);
+                child.node.max_cross_before(store, layout_type).to_px(parent_cross, parent_padding_cross, DEFAULT_MAX);
 
             cross_flex_sum += factor;
 
@@ -395,8 +414,8 @@ where
         }
 
         if let Stretch(factor) = child_cross {
-            let child_min_cross = child.node.min_cross(store, layout_type).to_px(parent_cross, DEFAULT_MIN);
-            let child_max_cross = child.node.max_cross(store, layout_type).to_px(parent_cross, DEFAULT_MAX);
+            let child_min_cross = child.node.min_cross(store, layout_type).to_px(parent_cross, parent_padding_cross, DEFAULT_MIN);
+            let child_max_cross = child.node.max_cross(store, layout_type).to_px(parent_cross, parent_padding_cross, DEFAULT_MAX);
 
             cross_flex_sum += factor;
 
@@ -406,8 +425,8 @@ where
         }
 
         if let Stretch(factor) = child_cross_after {
-            let child_min_cross_after = child.node.min_cross_after(store, layout_type).to_px(parent_cross, DEFAULT_MIN);
-            let child_max_cross_after = child.node.max_cross_after(store, layout_type).to_px(parent_cross, DEFAULT_MAX);
+            let child_min_cross_after = child.node.min_cross_after(store, layout_type).to_px(parent_cross, parent_padding_cross, DEFAULT_MIN);
+            let child_max_cross_after = child.node.max_cross_after(store, layout_type).to_px(parent_cross, parent_padding_cross, DEFAULT_MAX);
 
             cross_flex_sum += factor;
 
@@ -591,9 +610,9 @@ where
         let mut cross_axis = SmallVec::<[StretchItem; 3]>::new();
         if let Stretch(factor) = child_cross_before {
             let child_min_cross_before =
-                child.node.min_cross_before(store, layout_type).to_px(parent_cross, DEFAULT_MIN);
+                child.node.min_cross_before(store, layout_type).to_px(parent_cross, parent_padding_cross, DEFAULT_MIN);
             let child_max_cross_before =
-                child.node.max_cross_before(store, layout_type).to_px(parent_cross, DEFAULT_MAX);
+                child.node.max_cross_before(store, layout_type).to_px(parent_cross, parent_padding_cross, DEFAULT_MAX);
 
             cross_flex_sum += factor;
 
@@ -609,8 +628,8 @@ where
         }
 
         if let Stretch(factor) = child_cross_after {
-            let child_min_cross_after = child.node.min_cross_after(store, layout_type).to_px(parent_cross, DEFAULT_MIN);
-            let child_max_cross_after = child.node.max_cross_after(store, layout_type).to_px(parent_cross, DEFAULT_MAX);
+            let child_min_cross_after = child.node.min_cross_after(store, layout_type).to_px(parent_cross, parent_padding_cross, DEFAULT_MIN);
+            let child_max_cross_after = child.node.max_cross_after(store, layout_type).to_px(parent_cross, parent_padding_cross, DEFAULT_MAX);
 
             cross_flex_sum += factor;
 
@@ -740,22 +759,22 @@ where
 
         // Compute fixed-size child cross_before.
         let computed_child_cross_before =
-            child_cross_before.to_px_clamped(parent_cross, 0.0, child_min_cross_before, child_max_cross_before);
+            child_cross_before.to_px_clamped(parent_cross, parent_padding_cross, 0.0, child_min_cross_before, child_max_cross_before);
 
         // Compute fixed-size child_cross.
-        let mut computed_child_cross = child_cross.to_px_clamped(parent_cross, 0.0, child_min_cross, child_max_cross);
+        let mut computed_child_cross = child_cross.to_px_clamped(parent_cross, parent_padding_cross, 0.0, child_min_cross, child_max_cross);
 
         // Compute fixed-size child cross_after.
         let computed_child_cross_after =
-            child_cross_after.to_px_clamped(parent_cross, 0.0, child_min_cross_after, child_max_cross_after);
+            child_cross_after.to_px_clamped(parent_cross, parent_padding_cross, 0.0, child_min_cross_after, child_max_cross_after);
 
         // Compute fixed-size child main_before.
         let computed_child_main_before =
-            child_main_before.to_px_clamped(parent_main, 0.0, child_min_main_before, child_max_main_before);
+            child_main_before.to_px_clamped(parent_main, parent_padding_main, 0.0, child_min_main_before, child_max_main_before);
 
         // Compute fixed-size child main_after.
         let computed_child_main_after =
-            child_main_after.to_px_clamped(parent_main, 0.0, child_min_main_after, child_max_main_after);
+            child_main_after.to_px_clamped(parent_main, parent_padding_main, 0.0, child_min_main_after, child_max_main_after);
 
         let mut computed_child_main = 0.0;
 
@@ -804,9 +823,9 @@ where
         let mut cross_axis = SmallVec::<[StretchItem; 3]>::new();
         if let Stretch(factor) = child_cross_before {
             let child_min_cross_before =
-                child.node.min_cross_before(store, layout_type).to_px(parent_cross, DEFAULT_MIN);
+                child.node.min_cross_before(store, layout_type).to_px(parent_cross, parent_padding_cross, DEFAULT_MIN);
             let child_max_cross_before =
-                child.node.max_cross_before(store, layout_type).to_px(parent_cross, DEFAULT_MAX);
+                child.node.max_cross_before(store, layout_type).to_px(parent_cross, parent_padding_cross, DEFAULT_MAX);
 
             cross_flex_sum += factor;
 
@@ -822,8 +841,8 @@ where
         }
 
         if let Stretch(factor) = child_cross {
-            let child_min_cross = child.node.min_cross(store, layout_type).to_px(parent_cross, DEFAULT_MIN);
-            let child_max_cross = child.node.max_cross(store, layout_type).to_px(parent_cross, DEFAULT_MAX);
+            let child_min_cross = child.node.min_cross(store, layout_type).to_px(parent_cross, parent_padding_cross, DEFAULT_MIN);
+            let child_max_cross = child.node.max_cross(store, layout_type).to_px(parent_cross, parent_padding_cross, DEFAULT_MAX);
 
             cross_flex_sum += factor;
 
@@ -833,8 +852,8 @@ where
         }
 
         if let Stretch(factor) = child_cross_after {
-            let child_min_cross_after = child.node.min_cross_after(store, layout_type).to_px(parent_cross, DEFAULT_MIN);
-            let child_max_cross_after = child.node.max_cross_after(store, layout_type).to_px(parent_cross, DEFAULT_MAX);
+            let child_min_cross_after = child.node.min_cross_after(store, layout_type).to_px(parent_cross, parent_padding_cross, DEFAULT_MIN);
+            let child_max_cross_after = child.node.max_cross_after(store, layout_type).to_px(parent_cross, parent_padding_cross, DEFAULT_MAX);
 
             cross_flex_sum += factor;
 
@@ -954,8 +973,8 @@ where
         // Collect stretch main items.
         let mut main_axis = SmallVec::<[StretchItem; 3]>::new();
         if let Stretch(factor) = child_main_before {
-            let child_min_main_before = child.node.min_main_before(store, layout_type).to_px(parent_main, DEFAULT_MIN);
-            let child_max_main_before = child.node.max_main_before(store, layout_type).to_px(parent_main, DEFAULT_MAX);
+            let child_min_main_before = child.node.min_main_before(store, layout_type).to_px(parent_main, parent_padding_main, DEFAULT_MIN);
+            let child_max_main_before = child.node.max_main_before(store, layout_type).to_px(parent_main, parent_padding_main, DEFAULT_MAX);
 
             child_main_flex_sum += factor;
 
@@ -968,16 +987,16 @@ where
             ));
         }
         if let Stretch(factor) = child_main {
-            let child_min_main = child.node.min_main(store, layout_type).to_px(parent_main, DEFAULT_MIN);
-            let child_max_main = child.node.max_main(store, layout_type).to_px(parent_main, DEFAULT_MAX);
+            let child_min_main = child.node.min_main(store, layout_type).to_px(parent_main, parent_padding_main, DEFAULT_MIN);
+            let child_max_main = child.node.max_main(store, layout_type).to_px(parent_main, parent_padding_main, DEFAULT_MAX);
 
             child_main_flex_sum += factor;
 
             main_axis.push(StretchItem::new(index, factor, ItemType::Size, child_min_main, child_max_main));
         }
         if let Stretch(factor) = child_main_after {
-            let child_min_main_after = child.node.min_main_after(store, layout_type).to_px(parent_main, DEFAULT_MIN);
-            let child_max_main_after = child.node.max_main_after(store, layout_type).to_px(parent_main, DEFAULT_MAX);
+            let child_min_main_after = child.node.min_main_after(store, layout_type).to_px(parent_main, parent_padding_main, DEFAULT_MIN);
+            let child_max_main_after = child.node.max_main_after(store, layout_type).to_px(parent_main, parent_padding_main, DEFAULT_MAX);
 
             child_main_flex_sum += factor;
 

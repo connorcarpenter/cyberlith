@@ -78,22 +78,22 @@ pub enum Units {
 
 impl Units {
     /// Returns the units converted to pixels or a provided default.
-    pub fn to_px(&self, parent_value: f32, default: f32) -> f32 {
+    pub fn to_px(&self, parent_value: f32, parent_padding: f32, default: f32) -> f32 {
         match self {
             Units::Pixels(pixels) => *pixels,
-            Units::Percentage(percentage) => (percentage / 100.0) * parent_value,
+            Units::Percentage(percentage) => percentage_calc(*percentage, parent_value, parent_padding),
             Units::Stretch(_) => default,
             Units::Auto => default,
         }
     }
 
-    pub fn to_px_clamped(&self, parent_value: f32, default: f32, min: Units, max: Units) -> f32 {
-        let min = min.to_px(parent_value, f32::MIN);
-        let max = max.to_px(parent_value, f32::MAX);
+    pub fn to_px_clamped(&self, parent_value: f32, parent_padding: f32, default: f32, min: Units, max: Units) -> f32 {
+        let min = min.to_px(parent_value, parent_padding, f32::MIN);
+        let max = max.to_px(parent_value, parent_padding, f32::MAX);
 
         match self {
             Units::Pixels(pixels) => pixels.min(max).max(min),
-            Units::Percentage(percentage) => ((percentage / 100.0) * parent_value).min(max).max(min),
+            Units::Percentage(percentage) => percentage_calc(*percentage, parent_value, parent_padding).min(max).max(min),
             Units::Stretch(_) => default.min(max).max(min),
             Units::Auto => default.min(max).max(min),
         }
@@ -138,4 +138,8 @@ pub struct Size {
     pub main: f32,
     /// The computed size on the cross axis.
     pub cross: f32,
+}
+
+pub fn percentage_calc(percentage: f32, parent_value: f32, parent_padding: f32) -> f32 {
+    (percentage / 100.0) * (parent_value - parent_padding)
 }
