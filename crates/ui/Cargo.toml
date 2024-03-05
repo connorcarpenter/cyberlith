@@ -9,9 +9,9 @@ asset_id = { path = "../asset/asset_id" }
 asset_render = { path = "../asset/render" }
 render_api = { path = "../render/render_api" }
 storage = { path = "../storage" }
+morphorm = { path = "morphorm" }
 
 bevy_app = { version = "0.13", default-features = false }
 bevy_ecs = { version = "0.13", default-features = false }
 bevy_log = { version = "0.13", default-features=false }
 
-morphorm = { version = "0.6.4" }
