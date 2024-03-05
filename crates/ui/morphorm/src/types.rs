@@ -54,8 +54,8 @@ pub enum Units {
     Pixels(f32),
     /// A percentage of the parent dimension.
     ///
-    /// A percentage of the parent's width when applied to left, width, right properties.
-    /// A percentage of the parent's height when applied to top, height, bottom properties.
+    /// A percentage of the (parent's width - parent's padding - margin - border) when applied to left, width, right properties.
+    /// A percentage of the (parent's height - parent's padding - margin - border) when applied to top, height, bottom properties.
     Percentage(f32),
     /// A factor of the remaining free space.
     ///

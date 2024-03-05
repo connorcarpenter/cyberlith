@@ -1,6 +1,6 @@
 use smallvec::SmallVec;
 
-use crate::{Cache, LayoutType, Node, NodeExt, PositionType, Size, Units};
+use crate::{Cache, LayoutType, Node, NodeExt, PositionType, Size, Solid, Units};
 use crate::{CacheExt, Units::*};
 
 const DEFAULT_MIN: f32 = -f32::MAX;
@@ -159,6 +159,7 @@ where
     }
 
     // TODO: Figure out how to constrain content size on cross axis.
+    apply_solid_layout(node, store, &mut computed_main, &mut computed_cross);
 
     // Return early if there's no children to layout.
     if num_children == 0 {
@@ -1096,6 +1097,31 @@ where
         }
     }
 
+    //apply_solid_layout(node, store, &mut computed_main, &mut computed_cross);
+
     // Return the computed size, propagating it back up the tree.
     Size { main: computed_main, cross: computed_cross }
+}
+
+fn apply_solid_layout<N: Node>(node: &N, store: &N::Store, main: &mut f32, cross: &mut f32) {
+    // Apply solid layout stuff
+    let node_solid = node.solid(store);
+    if node_solid.is_some() {
+        let aspect_ratio = node.aspect_ratio(store).expect("Solid nodes must have an aspect ratio");
+        let node_solid = node_solid.unwrap();
+        let computed_main = *cross / aspect_ratio;
+        let computed_cross = *main * aspect_ratio;
+        match node_solid {
+            Solid::Fit => {
+                // max axis uses (aspect ratio * min axis)
+                *main = computed_main.min(*main);
+                *cross = computed_cross.min(*cross);
+            }
+            Solid::Fill => {
+                // min axis uses (aspect ratio * max axis)
+                *main = computed_main.max(*main);
+                *cross = computed_cross.max(*cross);
+            }
+        }
+    }
 }

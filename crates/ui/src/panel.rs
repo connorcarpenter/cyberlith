@@ -2,7 +2,7 @@ use std::any::Any;
 
 use bevy_log::warn;
 
-use morphorm::{LayoutType, PositionType, Units};
+use morphorm::{LayoutType, PositionType, Solid, Units};
 
 use asset_render::AssetManager;
 use render_api::{base::{Color, CpuMaterial}, resources::RenderFrame, components::{RenderLayer, Transform}};
@@ -858,6 +858,64 @@ impl<'a> PanelStyleMut<'a> {
             .set_margin_bottom_st(bottom)
     }
 
+    // set_margin_min
+    pub fn set_margin_min_auto(&mut self) -> &mut Self {
+        self.set_margin_left_min_auto()
+            .set_margin_right_min_auto()
+            .set_margin_top_min_auto()
+            .set_margin_bottom_min_auto()
+    }
+
+    pub fn set_margin_min_px(&mut self, left: f32, right: f32, top: f32, bottom: f32) -> &mut Self {
+        self.set_margin_left_min_px(left)
+            .set_margin_right_min_px(right)
+            .set_margin_top_min_px(top)
+            .set_margin_bottom_min_px(bottom)
+    }
+
+    pub fn set_margin_min_pc(&mut self, left: f32, right: f32, top: f32, bottom: f32) -> &mut Self {
+        self.set_margin_left_min_pc(left)
+            .set_margin_right_min_pc(right)
+            .set_margin_top_min_pc(top)
+            .set_margin_bottom_min_pc(bottom)
+    }
+
+    pub fn set_margin_min_st(&mut self, left: f32, right: f32, top: f32, bottom: f32) -> &mut Self {
+        self.set_margin_left_min_st(left)
+            .set_margin_right_min_st(right)
+            .set_margin_top_min_st(top)
+            .set_margin_bottom_min_st(bottom)
+    }
+
+    // set margin max
+    pub fn set_margin_max_auto(&mut self) -> &mut Self {
+        self.set_margin_left_max_auto()
+            .set_margin_right_max_auto()
+            .set_margin_top_max_auto()
+            .set_margin_bottom_max_auto()
+    }
+
+    pub fn set_margin_max_px(&mut self, left: f32, right: f32, top: f32, bottom: f32) -> &mut Self {
+        self.set_margin_left_max_px(left)
+            .set_margin_right_max_px(right)
+            .set_margin_top_max_px(top)
+            .set_margin_bottom_max_px(bottom)
+    }
+
+    pub fn set_margin_max_pc(&mut self, left: f32, right: f32, top: f32, bottom: f32) -> &mut Self {
+        self.set_margin_left_max_pc(left)
+            .set_margin_right_max_pc(right)
+            .set_margin_top_max_pc(top)
+            .set_margin_bottom_max_pc(bottom)
+    }
+
+    pub fn set_margin_max_st(&mut self, left: f32, right: f32, top: f32, bottom: f32) -> &mut Self {
+        self.set_margin_left_max_st(left)
+            .set_margin_right_max_st(right)
+            .set_margin_top_max_st(top)
+            .set_margin_bottom_max_st(bottom)
+    }
+
     // set_border_left
     fn set_border_left_units(&mut self, border_left: Units) -> &mut Self {
         self.get_mut().style.border_left = border_left;
@@ -1134,6 +1192,18 @@ impl<'a> PanelStyleMut<'a> {
 
     pub fn set_col_between_st(&mut self, column_between_st: f32) -> &mut Self {
         self.set_col_between_units(Units::Stretch(column_between_st))
+    }
+
+    // solid stuff
+
+    pub fn set_solid_fit(&mut self) -> &mut Self {
+        self.get_mut().style.solid_override = Some(Solid::Fit);
+        self
+    }
+
+    pub fn set_solid_fill(&mut self) -> &mut Self {
+        self.get_mut().style.solid_override = Some(Solid::Fill);
+        self
     }
 
     pub fn set_aspect_ratio(&mut self, width: f32, height: f32) -> &mut Self {
