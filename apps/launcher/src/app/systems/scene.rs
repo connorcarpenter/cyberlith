@@ -47,97 +47,110 @@ pub fn scene_setup(
         .style(|s| {
             s
                 .set_background_color(Color::BLACK)
-                .set_vertical()
-                .set_padding_px(10.0, 10.0, 10.0, 10.0)
-                .set_row_between_px(10.0);
+                .set_padding_st(1.0, 1.0, 1.0, 1.0);
         })
         .contents(|mut c| {
+
+            // menu container
             c.add_panel()
                 .style(|s| {
                     s
                         .set_background_color(Color::BLACK)
-                        .set_size_st(1.0, 3.0)
-                        .set_padding_px(10.0, 10.0, 10.0, 10.0);
-                })
-                .contents(|mut c| {
-                    c.add_label("cyberlith");
-                });
-
-            // start button container
-            c.add_panel()
-                .style(|s| {
-                    s
-                        .set_background_color(Color::BLACK)
-                        .set_size_st(1.0, 1.0)
-                        .set_horizontal();
+                        .set_size_px(640.0, 360.0)
+                        .set_padding_px(10.0, 10.0, 10.0, 10.0)
+                        .set_vertical()
+                        .set_row_between_px(10.0);
                 })
                 .contents(|mut c| {
 
-                    // spacing
+                    // title container
                     c.add_panel()
                         .style(|s| {
                             s
                                 .set_background_color(Color::BLACK)
-                                .set_size_st(1.0, 1.0);
-                        });
-
-                    // button
-                    c.add_panel()
-                        .style(|s| {
-                            s
-                                .set_background_color(Color::DARK_GRAY)
-                                .set_size_st(3.0, 1.0)
+                                .set_size_st(1.0, 3.0)
                                 .set_padding_px(10.0, 10.0, 10.0, 10.0);
                         })
                         .contents(|mut c| {
-                            c.add_label("start");
+                            c.add_label("cyberlith");
                         });
 
-                    // spacing
+                    // start button container
                     c.add_panel()
                         .style(|s| {
                             s
                                 .set_background_color(Color::BLACK)
-                                .set_size_st(1.0, 1.0);
-                        });
-                });
-
-            // continue button container
-            c.add_panel()
-                .style(|s| {
-                    s
-                        .set_background_color(Color::BLACK)
-                        .set_size_st(1.0, 1.0)
-                        .set_horizontal();
-                })
-                .contents(|mut c| {
-
-                    // spacing
-                    c.add_panel()
-                        .style(|s| {
-                            s
-                                .set_background_color(Color::BLACK)
-                                .set_size_st(1.0, 1.0);
-                        });
-
-                    // button
-                    c.add_panel()
-                        .style(|s| {
-                            s
-                                .set_background_color(Color::DARK_GRAY)
-                                .set_size_st(3.0, 1.0)
-                                .set_padding_px(10.0, 10.0, 10.0, 10.0);
+                                .set_size_st(1.0, 1.0)
+                                .set_horizontal();
                         })
                         .contents(|mut c| {
-                            c.add_label("continue");
+
+                            // spacing
+                            c.add_panel()
+                                .style(|s| {
+                                    s
+                                        .set_background_color(Color::BLACK)
+                                        .set_size_st(1.0, 1.0);
+                                });
+
+                            // button
+                            c.add_panel()
+                                .style(|s| {
+                                    s
+                                        .set_background_color(Color::DARK_GRAY)
+                                        .set_size_st(3.0, 1.0)
+                                        .set_padding_px(10.0, 10.0, 10.0, 10.0);
+                                })
+                                .contents(|mut c| {
+                                    c.add_label("start");
+                                });
+
+                            // spacing
+                            c.add_panel()
+                                .style(|s| {
+                                    s
+                                        .set_background_color(Color::BLACK)
+                                        .set_size_st(1.0, 1.0);
+                                });
                         });
 
-                    // spacing
+                    // continue button container
                     c.add_panel()
                         .style(|s| {
                             s
                                 .set_background_color(Color::BLACK)
-                                .set_size_st(1.0, 1.0);
+                                .set_size_st(1.0, 1.0)
+                                .set_horizontal();
+                        })
+                        .contents(|mut c| {
+
+                            // spacing
+                            c.add_panel()
+                                .style(|s| {
+                                    s
+                                        .set_background_color(Color::BLACK)
+                                        .set_size_st(1.0, 1.0);
+                                });
+
+                            // button
+                            c.add_panel()
+                                .style(|s| {
+                                    s
+                                        .set_background_color(Color::DARK_GRAY)
+                                        .set_size_st(3.0, 1.0)
+                                        .set_padding_px(10.0, 10.0, 10.0, 10.0);
+                                })
+                                .contents(|mut c| {
+                                    c.add_label("continue");
+                                });
+
+                            // spacing
+                            c.add_panel()
+                                .style(|s| {
+                                    s
+                                        .set_background_color(Color::BLACK)
+                                        .set_size_st(1.0, 1.0);
+                                });
                         });
                 });
         });
