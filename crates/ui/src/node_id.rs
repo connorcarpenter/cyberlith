@@ -1,4 +1,5 @@
 use std::fmt::{Display, Formatter};
+use bevy_log::info;
 
 use morphorm::{LayoutType, Node, PositionType, Units};
 use crate::label::Label;
@@ -116,13 +117,29 @@ impl Node for NodeId {
     fn content_size(
         &self,
         store: &NodeStore,
-        sublayout: &mut Self::SubLayout<'_>,
-        parent_width: Option<f32>,
-        parent_height: Option<f32>,
+        _sublayout: &mut Self::SubLayout<'_>,
+
+        // only 1 of these will be Some
+        computed_width: Option<f32>,
+        computed_height: Option<f32>,
+
     ) -> Option<(f32, f32)> {
-        // let label_ref = self.label_ref(store)?;
-        // Some((label_ref.style.width, label_ref.height))
-        None
+
+        let node = store.get(self)?;
+        let aspect_ratio = node.style.aspect_ratio_w_to_h;
+
+        info!("content_size");
+
+        let _label_ref = self.label_ref(store)?;
+        info!("is label");
+
+        if let Some(computed_width) = computed_width {
+            return Some((computed_width, computed_width * aspect_ratio));
+        } else if let Some(computed_height) = computed_height {
+            return Some((computed_height / aspect_ratio, computed_height));
+        } else {
+            return None;
+        }
     }
 
     fn child_left(&self, store: &NodeStore) -> Option<Units> {

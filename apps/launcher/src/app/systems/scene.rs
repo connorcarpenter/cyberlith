@@ -69,8 +69,8 @@ pub fn scene_setup(
                         .style(|s| {
                             s
                                 .set_background_color(Color::BLACK)
-                                .set_size_st(1.0, 2.0)
-                                .set_margin_px(10.0, 10.0, 10.0, 10.0);
+                                .set_size_st(1.0, 2.0);
+                                //.set_margin_px(10.0, 10.0, 10.0, 10.0);
                         });
 
 
@@ -98,13 +98,21 @@ pub fn scene_setup(
                                 .style(|s| {
                                     s
                                         .set_background_color(Color::DARK_GRAY)
-                                        .set_size_st(3.0, 1.0)
-                                        .set_padding_px(10.0, 10.0, 10.0, 10.0);
+                                        .set_size_st(3.0, 1.0);
                                 })
                                 .contents(|c| {
-                                    c.add_label("start").style(|s| {
-                                        s.set_size_st(1.0, 1.0);
-                                    });
+                                    c
+                                        .add_label("start")
+                                        .style(|s| {
+                                            s
+                                                .set_margin_left_st(1.0)
+                                                .set_margin_right_st(1.0)
+                                                .set_margin_top_px(10.0)
+                                                .set_margin_bottom_px(10.0)
+                                                .set_height_st(1.0) // shouldn't need this? (maybe should always be stretch?)
+                                                .set_width_auto() // shouldn't need this? (maybe should be default?)
+                                                .set_aspect_ratio_w_to_h(0.18); // shouldn't need this? (maybe should be based off of some text_size style property?)
+                                        });
                                 });
 
                             // spacing
@@ -143,9 +151,17 @@ pub fn scene_setup(
                                         .set_padding_px(10.0, 10.0, 10.0, 10.0);
                                 })
                                 .contents(|c| {
-                                    c.add_label("continue").style(|s| {
-                                        s.set_size_st(1.0, 1.0);
-                                    });
+                                    c.add_label("continue")
+                                        .style(|s| {
+                                            s
+                                                .set_margin_left_st(1.0)
+                                                .set_margin_right_st(1.0)
+                                                .set_margin_top_px(10.0)
+                                                .set_margin_bottom_px(10.0)
+                                                .set_height_st(1.0) // shouldn't need this? (maybe should always be stretch?)
+                                                .set_width_auto() // shouldn't need this? (maybe should be default?)
+                                                .set_aspect_ratio_w_to_h(0.18); // shouldn't need this? (maybe should be based off of some text_size style property?)
+                                        });
                                 });
 
                             // spacing

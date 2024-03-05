@@ -34,4 +34,6 @@ pub(crate) struct NodeStyle {
     pub(crate) border_right: Units,
     pub(crate) border_top: Units,
     pub(crate) border_bottom: Units,
+
+    pub(crate) aspect_ratio_w_to_h: f32,
 }

@@ -1004,4 +1004,9 @@ impl<'a> LabelStyleMut<'a> {
             .set_border_top_st(top)
             .set_border_bottom_st(bottom)
     }
+
+    pub fn set_aspect_ratio_w_to_h(&mut self, val: f32) -> &mut Self {
+        self.get_mut().style.aspect_ratio_w_to_h = val;
+        self
+    }
 }
