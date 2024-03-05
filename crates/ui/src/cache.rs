@@ -2,11 +2,11 @@ use std::collections::HashMap;
 
 use morphorm::{Cache, Node};
 
-use crate::UiId;
+use crate::NodeId;
 
 #[derive(Default)]
 pub struct LayoutCache {
-    rect: HashMap<UiId, (f32, f32, f32, f32)>,
+    rect: HashMap<NodeId, (f32, f32, f32, f32)>,
 }
 
 impl LayoutCache {
@@ -16,7 +16,7 @@ impl LayoutCache {
         }
     }
 
-    pub fn bounds(&self, node: &UiId) -> Option<(f32, f32, f32, f32)> {
+    pub fn bounds(&self, node: &NodeId) -> Option<(f32, f32, f32, f32)> {
         self.rect
             .get(node)
             .map(|(width, height, posx, posy)| (*width, *height, *posx, *posy))
@@ -24,7 +24,7 @@ impl LayoutCache {
 }
 
 impl Cache for LayoutCache {
-    type Node = UiId;
+    type Node = NodeId;
 
     fn width(&self, node: &Self::Node) -> f32 {
         if let Some(rect) = self.rect.get(&node.key()) {

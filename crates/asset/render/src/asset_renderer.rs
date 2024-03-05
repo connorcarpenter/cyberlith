@@ -1,7 +1,5 @@
-use bevy_log::{info, warn};
-use rand::Rng;
+use bevy_log::warn;
 
-use math::Vec3;
 use render_api::{
     base::CpuMaterial,
     components::{RenderLayer, Transform},
@@ -11,7 +9,7 @@ use storage::Handle;
 
 use crate::{
     asset_dependency::AssetComponentHandle, processed_asset_store::ProcessedAssetStore,
-    AnimationData, AssetHandle, IconData, MeshData, ModelData, SceneData, SkinData, TextStyle,
+    AnimationData, AssetHandle, IconData, MeshData, ModelData, SceneData, SkinData,
 };
 
 pub(crate) struct AssetRenderer;
@@ -158,7 +156,7 @@ impl AssetRenderer {
     ) -> (f32, f32) {
 
         let mut width = 0.0;
-        let mut height = 200.0;
+        let height = 200.0;
 
         for c in text.chars() {
 

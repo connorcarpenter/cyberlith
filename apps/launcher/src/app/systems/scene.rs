@@ -49,7 +49,7 @@ pub fn scene_setup(
                 .set_background_color(Color::BLACK)
                 .set_padding_st(1.0, 1.0, 1.0, 1.0);
         })
-        .contents(|mut c| {
+        .contents(|c| {
 
             // menu container
             c.add_panel()
@@ -61,19 +61,18 @@ pub fn scene_setup(
                         .set_vertical()
                         .set_row_between_px(10.0);
                 })
-                .contents(|mut c| {
+                .contents(|c| {
 
                     // title container
-                    c.add_panel()
+                    c
+                        .add_label("c y b e r l i t h")
                         .style(|s| {
                             s
                                 .set_background_color(Color::BLACK)
-                                .set_size_st(1.0, 3.0)
-                                .set_padding_px(10.0, 10.0, 10.0, 10.0);
-                        })
-                        .contents(|mut c| {
-                            c.add_label("cyberlith");
+                                .set_size_st(1.0, 2.0)
+                                .set_margin_px(10.0, 10.0, 10.0, 10.0);
                         });
+
 
                     // start button container
                     c.add_panel()
@@ -83,7 +82,7 @@ pub fn scene_setup(
                                 .set_size_st(1.0, 1.0)
                                 .set_horizontal();
                         })
-                        .contents(|mut c| {
+                        .contents(|c| {
 
                             // spacing
                             c.add_panel()
@@ -94,15 +93,18 @@ pub fn scene_setup(
                                 });
 
                             // button
-                            c.add_panel()
+                            let mut pm = c.add_panel();
+                            pm
                                 .style(|s| {
                                     s
                                         .set_background_color(Color::DARK_GRAY)
                                         .set_size_st(3.0, 1.0)
                                         .set_padding_px(10.0, 10.0, 10.0, 10.0);
                                 })
-                                .contents(|mut c| {
-                                    c.add_label("start");
+                                .contents(|c| {
+                                    c.add_label("start").style(|s| {
+                                        s.set_size_st(1.0, 1.0);
+                                    });
                                 });
 
                             // spacing
@@ -122,7 +124,7 @@ pub fn scene_setup(
                                 .set_size_st(1.0, 1.0)
                                 .set_horizontal();
                         })
-                        .contents(|mut c| {
+                        .contents(|c| {
 
                             // spacing
                             c.add_panel()
@@ -140,8 +142,10 @@ pub fn scene_setup(
                                         .set_size_st(3.0, 1.0)
                                         .set_padding_px(10.0, 10.0, 10.0, 10.0);
                                 })
-                                .contents(|mut c| {
-                                    c.add_label("continue");
+                                .contents(|c| {
+                                    c.add_label("continue").style(|s| {
+                                        s.set_size_st(1.0, 1.0);
+                                    });
                                 });
 
                             // spacing

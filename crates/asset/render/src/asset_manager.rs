@@ -3,7 +3,6 @@ use std::collections::HashMap;
 use bevy_ecs::system::{ResMut, Resource};
 
 use asset_id::{AssetId, AssetType};
-use math::Vec3;
 use render_api::{
     base::CpuSkin,
     base::{CpuMaterial, CpuMesh},
@@ -14,7 +13,7 @@ use storage::{Handle, Storage};
 
 use crate::{
     asset_renderer::AssetRenderer, processed_asset_store::ProcessedAssetStore, AnimationData,
-    AssetHandle, IconData, MeshData, ModelData, SceneData, SkinData, TextStyle,
+    AssetHandle, IconData, MeshData, ModelData, SceneData, SkinData,
 };
 
 #[derive(Resource)]
