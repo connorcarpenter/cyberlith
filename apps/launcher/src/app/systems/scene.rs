@@ -110,7 +110,7 @@ pub fn scene_setup(
                                                 .set_margin_bottom_px(10.0)
                                                 .set_height_st(1.0) // shouldn't need this? (maybe should always be stretch?)
                                                 .set_width_auto() // shouldn't need this? (maybe should be default?)
-                                                .set_aspect_ratio_w_to_h(0.18); // shouldn't need this? (maybe should be based off of some text_size style property?)
+                                                .set_aspect_ratio(11.0, 2.0); // shouldn't need this? (maybe should be based off of some text_size style property?)
                                         });
                                 });
 
@@ -159,7 +159,7 @@ pub fn scene_setup(
                                                 .set_margin_bottom_px(10.0)
                                                 .set_height_st(1.0) // shouldn't need this? (maybe should always be stretch?)
                                                 .set_width_auto() // shouldn't need this? (maybe should be default?)
-                                                .set_aspect_ratio_w_to_h(0.18); // shouldn't need this? (maybe should be based off of some text_size style property?)
+                                                .set_aspect_ratio(11.0, 2.0); // shouldn't need this? (maybe should be based off of some text_size style property?)
                                         });
                                 });
 

@@ -126,15 +126,15 @@ impl Node for NodeId {
     ) -> Option<(f32, f32)> {
 
         let node = store.get(self)?;
-        let aspect_ratio = node.style.aspect_ratio_w_to_h;
+        let aspect_ratio = node.style.aspect_ratio_w_over_h;
 
         // make sure it's a label ... ?
         let _label_ref = self.label_ref(store)?;
 
         if let Some(computed_width) = computed_width {
-            return Some((computed_width, computed_width * aspect_ratio));
+            return Some((computed_width, computed_width / aspect_ratio));
         } else if let Some(computed_height) = computed_height {
-            return Some((computed_height / aspect_ratio, computed_height));
+            return Some((computed_height * aspect_ratio, computed_height));
         } else {
             return None;
         }

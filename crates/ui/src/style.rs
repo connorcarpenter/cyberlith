@@ -5,7 +5,7 @@ use storage::Handle;
 
 #[derive(Clone, Default, Copy)]
 pub(crate) struct NodeStyle {
-    
+
     pub(crate) position_type: PositionType,
 
     pub(crate) width: Units,
@@ -33,5 +33,5 @@ pub(crate) struct NodeStyle {
     pub(crate) border_top: Units,
     pub(crate) border_bottom: Units,
 
-    pub(crate) aspect_ratio_w_to_h: f32,
+    pub(crate) aspect_ratio_w_over_h: f32,
 }

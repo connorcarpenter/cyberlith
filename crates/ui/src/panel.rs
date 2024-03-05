@@ -1320,8 +1320,8 @@ impl<'a> PanelStyleMut<'a> {
         self.set_col_between_units(Units::Stretch(column_between_st))
     }
 
-    pub fn set_aspect_ratio_w_to_h(&mut self, val: f32) -> &mut Self {
-        self.get_mut().style.aspect_ratio_w_to_h = val;
+    pub fn set_aspect_ratio(&mut self, width: f32, height: f32) -> &mut Self {
+        self.get_mut().style.aspect_ratio_w_over_h = width / height;
         self
     }
 }
