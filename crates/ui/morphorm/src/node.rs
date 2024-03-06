@@ -99,34 +99,34 @@ pub trait Node: Sized {
     fn height_max(&self, store: &Self::Store) -> Option<SizeUnits>;
 
     /// Returns the desired left-side space of the node.
-    fn margin_left(&self, store: &Self::Store) -> Option<SpaceUnits>;
+    fn margin_left(&self, store: &Self::Store) -> Option<MarginUnits>;
 
     /// Returns the desired right-side space of the node.
-    fn margin_right(&self, store: &Self::Store) -> Option<SpaceUnits>;
+    fn margin_right(&self, store: &Self::Store) -> Option<MarginUnits>;
 
     /// Returns the desired top-side space of the node.
-    fn margin_top(&self, store: &Self::Store) -> Option<SpaceUnits>;
+    fn margin_top(&self, store: &Self::Store) -> Option<MarginUnits>;
 
     /// Returns the desired bottom-side space of the node.
-    fn margin_bottom(&self, store: &Self::Store) -> Option<SpaceUnits>;
+    fn margin_bottom(&self, store: &Self::Store) -> Option<MarginUnits>;
 
     /// Returns the desired left-side child-space of the node.
-    fn padding_left(&self, store: &Self::Store) -> Option<SpaceUnits>;
+    fn padding_left(&self, store: &Self::Store) -> Option<SizeUnits>;
 
     /// Returns the desired left-side child-space of the node.
-    fn padding_right(&self, store: &Self::Store) -> Option<SpaceUnits>;
+    fn padding_right(&self, store: &Self::Store) -> Option<SizeUnits>;
 
     /// Returns the desired left-side child-space of the node.
-    fn padding_top(&self, store: &Self::Store) -> Option<SpaceUnits>;
+    fn padding_top(&self, store: &Self::Store) -> Option<SizeUnits>;
 
     /// Returns the desired left-side child-space of the node.
-    fn padding_bottom(&self, store: &Self::Store) -> Option<SpaceUnits>;
+    fn padding_bottom(&self, store: &Self::Store) -> Option<SizeUnits>;
 
     /// Returns the desired space to applied between the children of the node on the vertical axis.
-    fn row_between(&self, store: &Self::Store) -> Option<SpaceUnits>;
+    fn row_between(&self, store: &Self::Store) -> Option<SizeUnits>;
 
     /// Returns the desired space to be applied between the children of the node on the horizontal axis.
-    fn col_between(&self, store: &Self::Store) -> Option<SpaceUnits>;
+    fn col_between(&self, store: &Self::Store) -> Option<SizeUnits>;
 
     /// Returns the solid override of the node.
     fn solid(&self, store: &Self::Store) -> Option<Solid>;
@@ -200,44 +200,44 @@ pub(crate) trait NodeExt: Node {
         )
     }
 
-    fn margin_main_before(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SpaceUnits {
+    fn margin_main_before(&self, store: &Self::Store, parent_layout_type: LayoutType) -> MarginUnits {
         parent_layout_type.select_unwrap(store, |store| self.margin_left(store), |store| self.margin_top(store))
     }
 
-    fn margin_main_after(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SpaceUnits {
+    fn margin_main_after(&self, store: &Self::Store, parent_layout_type: LayoutType) -> MarginUnits {
         parent_layout_type.select_unwrap(store, |store| self.margin_right(store), |store| self.margin_bottom(store))
     }
 
-    fn margin_cross_before(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SpaceUnits {
+    fn margin_cross_before(&self, store: &Self::Store, parent_layout_type: LayoutType) -> MarginUnits {
         parent_layout_type.select_unwrap(store, |store| self.margin_top(store), |store| self.margin_left(store))
     }
 
-    fn margin_cross_after(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SpaceUnits {
+    fn margin_cross_after(&self, store: &Self::Store, parent_layout_type: LayoutType) -> MarginUnits {
         parent_layout_type.select_unwrap(store, |store| self.margin_bottom(store), |store| self.margin_right(store))
     }
 
-    fn padding_main_before(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SpaceUnits {
+    fn padding_main_before(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SizeUnits {
         parent_layout_type.select_unwrap(store, |store| self.padding_left(store), |store| self.padding_top(store))
     }
 
-    fn padding_main_after(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SpaceUnits {
+    fn padding_main_after(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SizeUnits {
         parent_layout_type.select_unwrap(store, |store| self.padding_right(store), |store| self.padding_bottom(store))
     }
 
-    fn padding_cross_before(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SpaceUnits {
+    fn padding_cross_before(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SizeUnits {
         parent_layout_type.select_unwrap(store, |store| self.padding_top(store), |store| self.padding_left(store))
     }
 
-    fn padding_cross_after(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SpaceUnits {
+    fn padding_cross_after(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SizeUnits {
         parent_layout_type.select_unwrap(store, |store| self.padding_bottom(store), |store| self.padding_right(store))
     }
 
-    fn main_between(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SpaceUnits {
+    fn main_between(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SizeUnits {
         parent_layout_type.select_unwrap(store, |store| self.col_between(store), |store| self.row_between(store))
     }
 
     // Currently unused until wrapping is implemented
-    fn cross_between(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SpaceUnits {
+    fn cross_between(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SizeUnits {
         parent_layout_type.select_unwrap(store, |store| self.row_between(store), |store| self.col_between(store))
     }
 }

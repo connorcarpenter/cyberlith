@@ -1,6 +1,6 @@
 use std::any::Any;
 
-use morphorm::{PositionType, SizeUnits, SpaceUnits};
+use morphorm::{PositionType, SizeUnits, MarginUnits};
 
 use asset_render::AssetManager;
 use render_api::{resources::RenderFrame, components::{RenderLayer, Transform}};
@@ -145,19 +145,19 @@ impl<'a> LabelStyleMut<'a> {
         self.get_ref().style.height_max
     }
 
-    pub fn margin_left(&self) -> SpaceUnits {
+    pub fn margin_left(&self) -> MarginUnits {
         self.get_ref().style.margin_left
     }
 
-    pub fn margin_right(&self) -> SpaceUnits {
+    pub fn margin_right(&self) -> MarginUnits {
         self.get_ref().style.margin_right
     }
 
-    pub fn margin_top(&self) -> SpaceUnits {
+    pub fn margin_top(&self) -> MarginUnits {
         self.get_ref().style.margin_top
     }
 
-    pub fn margin_bottom(&self) -> SpaceUnits {
+    pub fn margin_bottom(&self) -> MarginUnits {
         self.get_ref().style.margin_bottom
     }
 
@@ -345,85 +345,62 @@ impl<'a> LabelStyleMut<'a> {
     }
 
     // set_left
-    fn set_margin_left_units(&mut self, left: SpaceUnits) -> &mut Self {
+    fn set_margin_left_units(&mut self, left: MarginUnits) -> &mut Self {
         self.get_mut().style.margin_left = left;
         self
     }
 
-    pub fn set_margin_left_auto(&mut self) -> &mut Self {
-        self.set_margin_left_units(SpaceUnits::Auto)
-    }
-
     pub fn set_margin_left_px(&mut self, left_px: f32) -> &mut Self {
-        self.set_margin_left_units(SpaceUnits::Pixels(left_px))
+        self.set_margin_left_units(MarginUnits::Pixels(left_px))
     }
 
     pub fn set_margin_left_pc(&mut self, left_pc: f32) -> &mut Self {
-        self.set_margin_left_units(SpaceUnits::Percentage(left_pc))
+        self.set_margin_left_units(MarginUnits::Percentage(left_pc))
     }
 
     // set_right
-    fn set_margin_right_units(&mut self, right: SpaceUnits) -> &mut Self {
+    fn set_margin_right_units(&mut self, right: MarginUnits) -> &mut Self {
         self.get_mut().style.margin_right = right;
         self
     }
 
-    pub fn set_margin_right_auto(&mut self) -> &mut Self {
-        self.set_margin_right_units(SpaceUnits::Auto)
-    }
-
     pub fn set_margin_right_px(&mut self, right_px: f32) -> &mut Self {
-        self.set_margin_right_units(SpaceUnits::Pixels(right_px))
+        self.set_margin_right_units(MarginUnits::Pixels(right_px))
     }
 
     pub fn set_margin_right_pc(&mut self, right_pc: f32) -> &mut Self {
-        self.set_margin_right_units(SpaceUnits::Percentage(right_pc))
+        self.set_margin_right_units(MarginUnits::Percentage(right_pc))
     }
 
     // set_top
-    fn set_margin_top_units(&mut self, top: SpaceUnits) -> &mut Self {
+    fn set_margin_top_units(&mut self, top: MarginUnits) -> &mut Self {
         self.get_mut().style.margin_top = top;
         self
     }
 
-    pub fn set_margin_top_auto(&mut self) -> &mut Self {
-        self.set_margin_top_units(SpaceUnits::Auto)
-    }
-
     pub fn set_margin_top_px(&mut self, top_px: f32) -> &mut Self {
-        self.set_margin_top_units(SpaceUnits::Pixels(top_px))
+        self.set_margin_top_units(MarginUnits::Pixels(top_px))
     }
 
     pub fn set_margin_top_pc(&mut self, top_pc: f32) -> &mut Self {
-        self.set_margin_top_units(SpaceUnits::Percentage(top_pc))
+        self.set_margin_top_units(MarginUnits::Percentage(top_pc))
     }
 
     // set_bottom
-    fn set_margin_bottom_units(&mut self, bottom: SpaceUnits) -> &mut Self {
+    fn set_margin_bottom_units(&mut self, bottom: MarginUnits) -> &mut Self {
         self.get_mut().style.margin_bottom = bottom;
         self
     }
 
-    pub fn set_margin_bottom_auto(&mut self) -> &mut Self {
-        self.set_margin_bottom_units(SpaceUnits::Auto)
-    }
-
     pub fn set_margin_bottom_px(&mut self, bottom_px: f32) -> &mut Self {
-        self.set_margin_bottom_units(SpaceUnits::Pixels(bottom_px))
+        self.set_margin_bottom_units(MarginUnits::Pixels(bottom_px))
     }
 
     pub fn set_margin_bottom_pc(&mut self, bottom_pc: f32) -> &mut Self {
-        self.set_margin_bottom_units(SpaceUnits::Percentage(bottom_pc))
+        self.set_margin_bottom_units(MarginUnits::Percentage(bottom_pc))
     }
 
     // set_margin
-    pub fn set_margin_auto(&mut self) -> &mut Self {
-        self.set_margin_left_auto()
-            .set_margin_right_auto()
-            .set_margin_top_auto()
-            .set_margin_bottom_auto()
-    }
-
     pub fn set_margin_px(&mut self, left: f32, right: f32, top: f32, bottom: f32) -> &mut Self {
         self.set_margin_left_px(left)
             .set_margin_right_px(right)

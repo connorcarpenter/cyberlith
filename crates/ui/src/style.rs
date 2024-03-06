@@ -1,4 +1,4 @@
-use morphorm::{PositionType, SizeUnits, Solid, SpaceUnits};
+use morphorm::{PositionType, SizeUnits, Solid, MarginUnits};
 
 #[derive(Clone, Default, Copy)]
 pub(crate) struct NodeStyle {
@@ -12,10 +12,10 @@ pub(crate) struct NodeStyle {
     pub(crate) height_min: SizeUnits,
     pub(crate) height_max: SizeUnits,
 
-    pub(crate) margin_left: SpaceUnits,
-    pub(crate) margin_right: SpaceUnits,
-    pub(crate) margin_top: SpaceUnits,
-    pub(crate) margin_bottom: SpaceUnits,
+    pub(crate) margin_left: MarginUnits,
+    pub(crate) margin_right: MarginUnits,
+    pub(crate) margin_top: MarginUnits,
+    pub(crate) margin_bottom: MarginUnits,
 
     pub(crate) solid_override: Option<Solid>,
     pub(crate) aspect_ratio_w_over_h: f32,

@@ -1,6 +1,6 @@
 use std::fmt::{Display, Formatter};
 
-use morphorm::{Alignment, LayoutType, Node, PositionType, SizeUnits, Solid, SpaceUnits};
+use morphorm::{Alignment, LayoutType, Node, PositionType, SizeUnits, Solid, MarginUnits};
 
 use crate::{panel::Panel, node::{NodeKind, NodeStore, UiNode}};
 
@@ -111,52 +111,52 @@ impl Node for NodeId {
         Some(node.style.height_max)
     }
 
-    fn margin_left(&self, store: &NodeStore) -> Option<SpaceUnits> {
+    fn margin_left(&self, store: &NodeStore) -> Option<MarginUnits> {
         let node = store.get(self)?;
         Some(node.style.margin_left)
     }
 
-    fn margin_right(&self, store: &NodeStore) -> Option<SpaceUnits> {
+    fn margin_right(&self, store: &NodeStore) -> Option<MarginUnits> {
         let node = store.get(self)?;
         Some(node.style.margin_right)
     }
 
-    fn margin_top(&self, store: &NodeStore) -> Option<SpaceUnits> {
+    fn margin_top(&self, store: &NodeStore) -> Option<MarginUnits> {
         let node = store.get(self)?;
         Some(node.style.margin_top)
     }
 
-    fn margin_bottom(&self, store: &NodeStore) -> Option<SpaceUnits> {
+    fn margin_bottom(&self, store: &NodeStore) -> Option<MarginUnits> {
         let node = store.get(self)?;
         Some(node.style.margin_bottom)
     }
 
-    fn padding_left(&self, store: &NodeStore) -> Option<SpaceUnits> {
+    fn padding_left(&self, store: &NodeStore) -> Option<SizeUnits> {
         let panel_ref = self.panel_ref(store)?;
         Some(panel_ref.style.padding_left)
     }
 
-    fn padding_right(&self, store: &NodeStore) -> Option<SpaceUnits> {
+    fn padding_right(&self, store: &NodeStore) -> Option<SizeUnits> {
         let panel_ref = self.panel_ref(store)?;
         Some(panel_ref.style.padding_right)
     }
 
-    fn padding_top(&self, store: &NodeStore) -> Option<SpaceUnits> {
+    fn padding_top(&self, store: &NodeStore) -> Option<SizeUnits> {
         let panel_ref = self.panel_ref(store)?;
         Some(panel_ref.style.padding_top)
     }
 
-    fn padding_bottom(&self, store: &NodeStore) -> Option<SpaceUnits> {
+    fn padding_bottom(&self, store: &NodeStore) -> Option<SizeUnits> {
         let panel_ref = self.panel_ref(store)?;
         Some(panel_ref.style.padding_bottom)
     }
 
-    fn row_between(&self, store: &NodeStore) -> Option<SpaceUnits> {
+    fn row_between(&self, store: &NodeStore) -> Option<SizeUnits> {
         let panel_ref = self.panel_ref(store)?;
         Some(panel_ref.style.row_between)
     }
 
-    fn col_between(&self, store: &NodeStore) -> Option<SpaceUnits> {
+    fn col_between(&self, store: &NodeStore) -> Option<SizeUnits> {
         let panel_ref = self.panel_ref(store)?;
         Some(panel_ref.style.col_between)
     }

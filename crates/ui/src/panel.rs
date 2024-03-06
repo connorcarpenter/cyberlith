@@ -2,7 +2,7 @@ use std::any::Any;
 
 use bevy_log::warn;
 
-use morphorm::{Alignment, LayoutType, PositionType, SizeUnits, Solid, SpaceUnits};
+use morphorm::{Alignment, LayoutType, PositionType, SizeUnits, Solid, MarginUnits};
 
 use asset_render::AssetManager;
 use render_api::{base::{Color, CpuMaterial}, resources::RenderFrame, components::{RenderLayer, Transform}};
@@ -86,13 +86,13 @@ pub(crate) struct PanelStyle {
 
     pub(crate) layout_type: LayoutType,
 
-    pub(crate) padding_left: SpaceUnits,
-    pub(crate) padding_right: SpaceUnits,
-    pub(crate) padding_top: SpaceUnits,
-    pub(crate) padding_bottom: SpaceUnits,
+    pub(crate) padding_left: SizeUnits,
+    pub(crate) padding_right: SizeUnits,
+    pub(crate) padding_top: SizeUnits,
+    pub(crate) padding_bottom: SizeUnits,
 
-    pub(crate) row_between: SpaceUnits,
-    pub(crate) col_between: SpaceUnits,
+    pub(crate) row_between: SizeUnits,
+    pub(crate) col_between: SizeUnits,
     pub(crate) halign: Alignment,
     pub(crate) valign: Alignment,
 }
@@ -236,43 +236,43 @@ impl<'a> PanelStyleMut<'a> {
         self.get_ref().style.height_max
     }
 
-    pub fn margin_left(&self) -> SpaceUnits {
+    pub fn margin_left(&self) -> MarginUnits {
         self.get_ref().style.margin_left
     }
 
-    pub fn margin_right(&self) -> SpaceUnits {
+    pub fn margin_right(&self) -> MarginUnits {
         self.get_ref().style.margin_right
     }
 
-    pub fn margin_top(&self) -> SpaceUnits {
+    pub fn margin_top(&self) -> MarginUnits {
         self.get_ref().style.margin_top
     }
 
-    pub fn margin_bottom(&self) -> SpaceUnits {
+    pub fn margin_bottom(&self) -> MarginUnits {
         self.get_ref().style.margin_bottom
     }
 
-    pub fn padding_left(&self) -> SpaceUnits {
+    pub fn padding_left(&self) -> SizeUnits {
         self.get_panel_ref().style.padding_left
     }
 
-    pub fn padding_right(&self) -> SpaceUnits {
+    pub fn padding_right(&self) -> SizeUnits {
         self.get_panel_ref().style.padding_right
     }
 
-    pub fn padding_top(&self) -> SpaceUnits {
+    pub fn padding_top(&self) -> SizeUnits {
         self.get_panel_ref().style.padding_top
     }
 
-    pub fn padding_bottom(&self) -> SpaceUnits {
+    pub fn padding_bottom(&self) -> SizeUnits {
         self.get_panel_ref().style.padding_bottom
     }
 
-    pub fn row_between(&self) -> SpaceUnits {
+    pub fn row_between(&self) -> SizeUnits {
         self.get_panel_ref().style.row_between
     }
 
-    pub fn col_between(&self) -> SpaceUnits {
+    pub fn col_between(&self) -> SizeUnits {
         self.get_panel_ref().style.col_between
     }
 
@@ -502,100 +502,78 @@ impl<'a> PanelStyleMut<'a> {
     }
 
     // set_left
-    fn set_margin_left_units(&mut self, left: SpaceUnits) -> &mut Self {
+    fn set_margin_left_units(&mut self, left: MarginUnits) -> &mut Self {
         self.get_mut().style.margin_left = left;
         self
     }
 
-    pub fn set_margin_left_auto(&mut self) -> &mut Self {
-        self.set_margin_left_units(SpaceUnits::Auto)
-    }
-
     pub fn set_margin_left_px(&mut self, left_px: f32) -> &mut Self {
-        self.set_margin_left_units(SpaceUnits::Pixels(left_px))
+        self.set_margin_left_units(MarginUnits::Pixels(left_px))
     }
 
     pub fn set_margin_left_pc(&mut self, left_pc: f32) -> &mut Self {
-        self.set_margin_left_units(SpaceUnits::Percentage(left_pc))
+        self.set_margin_left_units(MarginUnits::Percentage(left_pc))
     }
 
     pub fn set_margin_left_st(&mut self, left_st: f32) -> &mut Self {
-        self.set_margin_left_units(SpaceUnits::Stretch(left_st))
+        self.set_margin_left_units(MarginUnits::Stretch(left_st))
     }
 
     // set_right
-    fn set_margin_right_units(&mut self, right: SpaceUnits) -> &mut Self {
+    fn set_margin_right_units(&mut self, right: MarginUnits) -> &mut Self {
         self.get_mut().style.margin_right = right;
         self
     }
 
-    pub fn set_margin_right_auto(&mut self) -> &mut Self {
-        self.set_margin_right_units(SpaceUnits::Auto)
-    }
-
     pub fn set_margin_right_px(&mut self, right_px: f32) -> &mut Self {
-        self.set_margin_right_units(SpaceUnits::Pixels(right_px))
+        self.set_margin_right_units(MarginUnits::Pixels(right_px))
     }
 
     pub fn set_margin_right_pc(&mut self, right_pc: f32) -> &mut Self {
-        self.set_margin_right_units(SpaceUnits::Percentage(right_pc))
+        self.set_margin_right_units(MarginUnits::Percentage(right_pc))
     }
 
     pub fn set_margin_right_st(&mut self, right_st: f32) -> &mut Self {
-        self.set_margin_right_units(SpaceUnits::Stretch(right_st))
+        self.set_margin_right_units(MarginUnits::Stretch(right_st))
     }
 
     // set_top
-    fn set_margin_top_units(&mut self, top: SpaceUnits) -> &mut Self {
+    fn set_margin_top_units(&mut self, top: MarginUnits) -> &mut Self {
         self.get_mut().style.margin_top = top;
         self
     }
 
-    pub fn set_margin_top_auto(&mut self) -> &mut Self {
-        self.set_margin_top_units(SpaceUnits::Auto)
-    }
-
     pub fn set_margin_top_px(&mut self, top_px: f32) -> &mut Self {
-        self.set_margin_top_units(SpaceUnits::Pixels(top_px))
+        self.set_margin_top_units(MarginUnits::Pixels(top_px))
     }
 
     pub fn set_margin_top_pc(&mut self, top_pc: f32) -> &mut Self {
-        self.set_margin_top_units(SpaceUnits::Percentage(top_pc))
+        self.set_margin_top_units(MarginUnits::Percentage(top_pc))
     }
 
     pub fn set_margin_top_st(&mut self, top_st: f32) -> &mut Self {
-        self.set_margin_top_units(SpaceUnits::Stretch(top_st))
+        self.set_margin_top_units(MarginUnits::Stretch(top_st))
     }
 
     // set_bottom
-    fn set_margin_bottom_units(&mut self, bottom: SpaceUnits) -> &mut Self {
+    fn set_margin_bottom_units(&mut self, bottom: MarginUnits) -> &mut Self {
         self.get_mut().style.margin_bottom = bottom;
         self
     }
 
-    pub fn set_margin_bottom_auto(&mut self) -> &mut Self {
-        self.set_margin_bottom_units(SpaceUnits::Auto)
-    }
-
     pub fn set_margin_bottom_px(&mut self, bottom_px: f32) -> &mut Self {
-        self.set_margin_bottom_units(SpaceUnits::Pixels(bottom_px))
+        self.set_margin_bottom_units(MarginUnits::Pixels(bottom_px))
     }
 
     pub fn set_margin_bottom_pc(&mut self, bottom_pc: f32) -> &mut Self {
-        self.set_margin_bottom_units(SpaceUnits::Percentage(bottom_pc))
+        self.set_margin_bottom_units(MarginUnits::Percentage(bottom_pc))
     }
 
     pub fn set_margin_bottom_st(&mut self, bottom_st: f32) -> &mut Self {
-        self.set_margin_bottom_units(SpaceUnits::Stretch(bottom_st))
+        self.set_margin_bottom_units(MarginUnits::Stretch(bottom_st))
     }
 
     // set_margin
-    pub fn set_margin_auto(&mut self) -> &mut Self {
-        self.set_margin_left_auto()
-            .set_margin_right_auto()
-            .set_margin_top_auto()
-            .set_margin_bottom_auto()
-    }
 
     pub fn set_margin_px(&mut self, left: f32, right: f32, top: f32, bottom: f32) -> &mut Self {
         self.set_margin_left_px(left)
@@ -611,99 +589,76 @@ impl<'a> PanelStyleMut<'a> {
             .set_margin_bottom_pc(bottom)
     }
 
-    pub fn set_margin_st(&mut self, left: f32, right: f32, top: f32, bottom: f32) -> &mut Self {
-        self.set_margin_left_st(left)
-            .set_margin_right_st(right)
-            .set_margin_top_st(top)
-            .set_margin_bottom_st(bottom)
-    }
-
     // set_padding_left
-    fn set_padding_left_units(&mut self, child_left: SpaceUnits) -> &mut Self {
+    fn set_padding_left_units(&mut self, child_left: SizeUnits) -> &mut Self {
         self.get_panel_mut().style.padding_left = child_left;
         self
     }
 
     pub fn set_padding_left_auto(&mut self) -> &mut Self {
-        self.set_padding_left_units(SpaceUnits::Auto)
+        self.set_padding_left_units(SizeUnits::Auto)
     }
 
     pub fn set_padding_left_px(&mut self, child_left_px: f32) -> &mut Self {
-        self.set_padding_left_units(SpaceUnits::Pixels(child_left_px))
+        self.set_padding_left_units(SizeUnits::Pixels(child_left_px))
     }
 
     pub fn set_padding_left_pc(&mut self, child_left_pc: f32) -> &mut Self {
-        self.set_padding_left_units(SpaceUnits::Percentage(child_left_pc))
-    }
-
-    pub fn set_padding_left_st(&mut self, child_left_st: f32) -> &mut Self {
-        self.set_padding_left_units(SpaceUnits::Stretch(child_left_st))
+        self.set_padding_left_units(SizeUnits::Percentage(child_left_pc))
     }
 
     // set_padding_right
-    fn set_padding_right_units(&mut self, child_right: SpaceUnits) -> &mut Self {
+    fn set_padding_right_units(&mut self, child_right: SizeUnits) -> &mut Self {
         self.get_panel_mut().style.padding_right = child_right;
         self
     }
 
     pub fn set_padding_right_auto(&mut self) -> &mut Self {
-        self.set_padding_right_units(SpaceUnits::Auto)
+        self.set_padding_right_units(SizeUnits::Auto)
     }
 
     pub fn set_padding_right_px(&mut self, child_right_px: f32) -> &mut Self {
-        self.set_padding_right_units(SpaceUnits::Pixels(child_right_px))
+        self.set_padding_right_units(SizeUnits::Pixels(child_right_px))
     }
 
     pub fn set_padding_right_pc(&mut self, child_right_pc: f32) -> &mut Self {
-        self.set_padding_right_units(SpaceUnits::Percentage(child_right_pc))
-    }
-
-    pub fn set_padding_right_st(&mut self, child_right_st: f32) -> &mut Self {
-        self.set_padding_right_units(SpaceUnits::Stretch(child_right_st))
+        self.set_padding_right_units(SizeUnits::Percentage(child_right_pc))
     }
 
     // set_padding_top
-    fn set_padding_top_units(&mut self, child_top: SpaceUnits) -> &mut Self {
+    fn set_padding_top_units(&mut self, child_top: SizeUnits) -> &mut Self {
         self.get_panel_mut().style.padding_top = child_top;
         self
     }
 
     pub fn set_padding_top_auto(&mut self) -> &mut Self {
-        self.set_padding_top_units(SpaceUnits::Auto)
+        self.set_padding_top_units(SizeUnits::Auto)
     }
 
     pub fn set_padding_top_px(&mut self, child_top_px: f32) -> &mut Self {
-        self.set_padding_top_units(SpaceUnits::Pixels(child_top_px))
+        self.set_padding_top_units(SizeUnits::Pixels(child_top_px))
     }
 
     pub fn set_padding_top_pc(&mut self, child_top_pc: f32) -> &mut Self {
-        self.set_padding_top_units(SpaceUnits::Percentage(child_top_pc))
-    }
-
-    pub fn set_padding_top_st(&mut self, child_top_st: f32) -> &mut Self {
-        self.set_padding_top_units(SpaceUnits::Stretch(child_top_st))
+        self.set_padding_top_units(SizeUnits::Percentage(child_top_pc))
     }
 
     // set_padding_bottom
-    fn set_padding_bottom_units(&mut self, child_bottom: SpaceUnits) -> &mut Self {
+    fn set_padding_bottom_units(&mut self, child_bottom: SizeUnits) -> &mut Self {
         self.get_panel_mut().style.padding_bottom = child_bottom;
         self
     }
 
     pub fn set_padding_bottom_auto(&mut self) -> &mut Self {
-        self.set_padding_bottom_units(SpaceUnits::Auto)
+        self.set_padding_bottom_units(SizeUnits::Auto)
     }
 
     pub fn set_padding_bottom_px(&mut self, child_bottom_px: f32) -> &mut Self {
-        self.set_padding_bottom_units(SpaceUnits::Pixels(child_bottom_px))
+        self.set_padding_bottom_units(SizeUnits::Pixels(child_bottom_px))
     }
 
     pub fn set_padding_bottom_pc(&mut self, child_bottom_pc: f32) -> &mut Self {
-        self.set_padding_bottom_units(SpaceUnits::Percentage(child_bottom_pc))
-    }
-
-    pub fn set_padding_bottom_st(&mut self, child_bottom_st: f32) -> &mut Self {
-        self.set_padding_bottom_units(SpaceUnits::Stretch(child_bottom_st))
+        self.set_padding_bottom_units(SizeUnits::Percentage(child_bottom_pc))
     }
 
     // set_padding
@@ -728,55 +683,40 @@ impl<'a> PanelStyleMut<'a> {
             .set_padding_bottom_pc(bottom)
     }
 
-    pub fn set_padding_st(&mut self, left: f32, right: f32, top: f32, bottom: f32) -> &mut Self {
-        self.set_padding_left_st(left)
-            .set_padding_right_st(right)
-            .set_padding_top_st(top)
-            .set_padding_bottom_st(bottom)
-    }
-
     // set_row_between
-    fn set_row_between_units(&mut self, row_between: SpaceUnits) -> &mut Self {
+    fn set_row_between_units(&mut self, row_between: SizeUnits) -> &mut Self {
         self.get_panel_mut().style.row_between = row_between;
         self
     }
 
     pub fn set_row_between_auto(&mut self) -> &mut Self {
-        self.set_row_between_units(SpaceUnits::Auto)
+        self.set_row_between_units(SizeUnits::Auto)
     }
 
     pub fn set_row_between_px(&mut self, row_between_px: f32) -> &mut Self {
-        self.set_row_between_units(SpaceUnits::Pixels(row_between_px))
+        self.set_row_between_units(SizeUnits::Pixels(row_between_px))
     }
 
     pub fn set_row_between_pc(&mut self, row_between_pc: f32) -> &mut Self {
-        self.set_row_between_units(SpaceUnits::Percentage(row_between_pc))
-    }
-
-    pub fn set_row_between_st(&mut self, row_between_st: f32) -> &mut Self {
-        self.set_row_between_units(SpaceUnits::Stretch(row_between_st))
+        self.set_row_between_units(SizeUnits::Percentage(row_between_pc))
     }
 
     // set_col_between
-    fn set_col_between_units(&mut self, column_between: SpaceUnits) -> &mut Self {
+    fn set_col_between_units(&mut self, column_between: SizeUnits) -> &mut Self {
         self.get_panel_mut().style.col_between = column_between;
         self
     }
 
     pub fn set_col_between_auto(&mut self) -> &mut Self {
-        self.set_col_between_units(SpaceUnits::Auto)
+        self.set_col_between_units(SizeUnits::Auto)
     }
 
     pub fn set_col_between_px(&mut self, column_between_px: f32) -> &mut Self {
-        self.set_col_between_units(SpaceUnits::Pixels(column_between_px))
+        self.set_col_between_units(SizeUnits::Pixels(column_between_px))
     }
 
     pub fn set_col_between_pc(&mut self, column_between_pc: f32) -> &mut Self {
-        self.set_col_between_units(SpaceUnits::Percentage(column_between_pc))
-    }
-
-    pub fn set_col_between_st(&mut self, column_between_st: f32) -> &mut Self {
-        self.set_col_between_units(SpaceUnits::Stretch(column_between_st))
+        self.set_col_between_units(SizeUnits::Percentage(column_between_pc))
     }
 
     // solid stuff
