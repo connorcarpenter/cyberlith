@@ -57,14 +57,6 @@ pub enum MarginUnits {
     /// A percentage of the (parent's width - parent's padding - margin) when applied to left, right properties.
     /// A percentage of the (parent's height - parent's padding - margin) when applied to top, bottom properties.
     Percentage(f32),
-    /// A factor of the remaining free space.
-    ///
-    /// The remaining free space is the parent space minus the space and size of any fixed-size nodes in that axis.
-    /// The remaining free space is then shared between any stretch nodes based on the ratio of their stretch factors.
-    ///
-    /// For example, given two stretch nodes with factors of 1.0 and 2.0 respectively. The first will occupy 1/3 of the
-    /// remaining free space while the second will occupy 2/3 of the remaining free space.
-    Stretch(f32),
 }
 
 impl Default for MarginUnits {
@@ -78,7 +70,6 @@ impl MarginUnits {
     pub fn add_size_units(&mut self, size_units: SizeUnits) {
         match (self, size_units) {
             (_, SizeUnits::Auto) => {}
-            (MarginUnits::Stretch(_), _) => {}
             (MarginUnits::Pixels(val), SizeUnits::Pixels(size)) => *val += size,
             (MarginUnits::Percentage(val), SizeUnits::Percentage(size)) => *val += size,
             (_, _) => {}
@@ -86,22 +77,20 @@ impl MarginUnits {
     }
 
     /// Returns the units converted to pixels or a provided default.
-    pub fn to_px(&self, parent_value: f32, parent_padding: f32, default: f32) -> f32 {
+    pub fn to_px(&self, parent_value: f32, parent_padding: f32) -> f32 {
         match self {
             MarginUnits::Pixels(pixels) => *pixels,
             MarginUnits::Percentage(percentage) => percentage_calc(*percentage, parent_value, parent_padding),
-            MarginUnits::Stretch(_) => default,
         }
     }
 
-    pub fn to_px_clamped(&self, parent_value: f32, parent_padding: f32, default: f32, min: MarginUnits, max: MarginUnits) -> f32 {
-        let min = min.to_px(parent_value, parent_padding, f32::MIN);
-        let max = max.to_px(parent_value, parent_padding, f32::MAX);
+    pub fn to_px_clamped(&self, parent_value: f32, parent_padding: f32, min: MarginUnits, max: MarginUnits) -> f32 {
+        let min = min.to_px(parent_value, parent_padding);
+        let max = max.to_px(parent_value, parent_padding);
 
         match self {
             MarginUnits::Pixels(pixels) => pixels.min(max).max(min),
             MarginUnits::Percentage(percentage) => percentage_calc(*percentage, parent_value, parent_padding).min(max).max(min),
-            MarginUnits::Stretch(_) => default.min(max).max(min),
         }
     }
 
@@ -111,7 +100,6 @@ impl MarginUnits {
             (MarginUnits::Percentage(val), MarginUnits::Percentage(min), MarginUnits::Percentage(max)) => {
                 MarginUnits::Percentage(val.min(max).max(min))
             }
-            (MarginUnits::Stretch(val), MarginUnits::Stretch(min), MarginUnits::Stretch(max)) => MarginUnits::Stretch(val.min(max).max(min)),
             _ => *self,
         }
     }
@@ -124,11 +112,6 @@ impl MarginUnits {
     /// Returns true if the value is a percentage.
     pub fn is_percentage(&self) -> bool {
         matches!(self, MarginUnits::Percentage(_))
-    }
-
-    /// Returns true if the value is a stretch factor.
-    pub fn is_stretch(&self) -> bool {
-        matches!(self, MarginUnits::Stretch(_))
     }
 }
 

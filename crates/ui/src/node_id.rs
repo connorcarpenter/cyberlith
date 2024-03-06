@@ -172,13 +172,23 @@ impl Node for NodeId {
         Some(node.style.aspect_ratio_w_over_h)
     }
 
-    fn halign(&self, store: &Self::Store) -> Option<Alignment> {
-        let panel_ref = self.panel_ref(store)?;
-        Some(panel_ref.style.halign)
+    fn self_halign(&self, store: &Self::Store) -> Option<Alignment> {
+        let node = store.get(self)?;
+        Some(node.style.self_halign)
     }
 
-    fn valign(&self, store: &Self::Store) -> Option<Alignment> {
+    fn self_valign(&self, store: &Self::Store) -> Option<Alignment> {
+        let node = store.get(self)?;
+        Some(node.style.self_valign)
+    }
+
+    fn children_halign(&self, store: &Self::Store) -> Option<Alignment> {
         let panel_ref = self.panel_ref(store)?;
-        Some(panel_ref.style.valign)
+        Some(panel_ref.style.children_halign)
+    }
+
+    fn children_valign(&self, store: &Self::Store) -> Option<Alignment> {
+        let panel_ref = self.panel_ref(store)?;
+        Some(panel_ref.style.children_valign)
     }
 }

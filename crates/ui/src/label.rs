@@ -1,6 +1,6 @@
 use std::any::Any;
 
-use morphorm::{PositionType, SizeUnits, MarginUnits};
+use morphorm::{PositionType, SizeUnits, MarginUnits, Alignment};
 
 use asset_render::AssetManager;
 use render_api::{resources::RenderFrame, components::{RenderLayer, Transform}};
@@ -159,6 +159,14 @@ impl<'a> LabelStyleMut<'a> {
 
     pub fn margin_bottom(&self) -> MarginUnits {
         self.get_ref().style.margin_bottom
+    }
+
+    pub fn halign(&self) -> Alignment {
+        self.get_ref().style.self_halign
+    }
+
+    pub fn valign(&self) -> Alignment {
+        self.get_ref().style.self_valign
     }
 
     // setters
@@ -413,5 +421,16 @@ impl<'a> LabelStyleMut<'a> {
             .set_margin_right_pc(right)
             .set_margin_top_pc(top)
             .set_margin_bottom_pc(bottom)
+    }
+
+    // alignment
+    pub fn set_halign(&mut self, halign: Alignment) -> &mut Self {
+        self.get_mut().style.self_halign = halign;
+        self
+    }
+
+    pub fn set_valign(&mut self, valign: Alignment) -> &mut Self {
+        self.get_mut().style.self_valign = valign;
+        self
     }
 }

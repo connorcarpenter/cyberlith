@@ -93,8 +93,8 @@ pub(crate) struct PanelStyle {
 
     pub(crate) row_between: SizeUnits,
     pub(crate) col_between: SizeUnits,
-    pub(crate) halign: Alignment,
-    pub(crate) valign: Alignment,
+    pub(crate) children_halign: Alignment,
+    pub(crate) children_valign: Alignment,
 }
 
 pub struct PanelMut<'a> {
@@ -276,12 +276,20 @@ impl<'a> PanelStyleMut<'a> {
         self.get_panel_ref().style.col_between
     }
 
-    pub fn halign(&self) -> Alignment {
-        self.get_panel_ref().style.halign
+    pub fn self_halign(&self) -> Alignment {
+        self.get_ref().style.self_halign
     }
 
-    pub fn valign(&self) -> Alignment {
-        self.get_panel_ref().style.valign
+    pub fn self_valign(&self) -> Alignment {
+        self.get_ref().style.self_valign
+    }
+
+    pub fn children_halign(&self) -> Alignment {
+        self.get_panel_ref().style.children_halign
+    }
+
+    pub fn children_valign(&self) -> Alignment {
+        self.get_panel_ref().style.children_valign
     }
 
     // setters
@@ -320,13 +328,23 @@ impl<'a> PanelStyleMut<'a> {
         self
     }
 
-    pub fn set_halign(&mut self, align: Alignment) -> &mut Self {
-        self.get_panel_mut().style.halign = align;
+    pub fn set_self_halign(&mut self, align: Alignment) -> &mut Self {
+        self.get_mut().style.self_halign = align;
         self
     }
 
-    pub fn set_valign(&mut self, align: Alignment) -> &mut Self {
-        self.get_panel_mut().style.valign = align;
+    pub fn set_self_valign(&mut self, align: Alignment) -> &mut Self {
+        self.get_mut().style.self_valign = align;
+        self
+    }
+
+    pub fn set_children_halign(&mut self, align: Alignment) -> &mut Self {
+        self.get_panel_mut().style.children_halign = align;
+        self
+    }
+
+    pub fn set_children_valign(&mut self, align: Alignment) -> &mut Self {
+        self.get_panel_mut().style.children_valign = align;
         self
     }
 
@@ -515,10 +533,6 @@ impl<'a> PanelStyleMut<'a> {
         self.set_margin_left_units(MarginUnits::Percentage(left_pc))
     }
 
-    pub fn set_margin_left_st(&mut self, left_st: f32) -> &mut Self {
-        self.set_margin_left_units(MarginUnits::Stretch(left_st))
-    }
-
     // set_right
     fn set_margin_right_units(&mut self, right: MarginUnits) -> &mut Self {
         self.get_mut().style.margin_right = right;
@@ -531,10 +545,6 @@ impl<'a> PanelStyleMut<'a> {
 
     pub fn set_margin_right_pc(&mut self, right_pc: f32) -> &mut Self {
         self.set_margin_right_units(MarginUnits::Percentage(right_pc))
-    }
-
-    pub fn set_margin_right_st(&mut self, right_st: f32) -> &mut Self {
-        self.set_margin_right_units(MarginUnits::Stretch(right_st))
     }
 
     // set_top
@@ -551,10 +561,6 @@ impl<'a> PanelStyleMut<'a> {
         self.set_margin_top_units(MarginUnits::Percentage(top_pc))
     }
 
-    pub fn set_margin_top_st(&mut self, top_st: f32) -> &mut Self {
-        self.set_margin_top_units(MarginUnits::Stretch(top_st))
-    }
-
     // set_bottom
     fn set_margin_bottom_units(&mut self, bottom: MarginUnits) -> &mut Self {
         self.get_mut().style.margin_bottom = bottom;
@@ -567,10 +573,6 @@ impl<'a> PanelStyleMut<'a> {
 
     pub fn set_margin_bottom_pc(&mut self, bottom_pc: f32) -> &mut Self {
         self.set_margin_bottom_units(MarginUnits::Percentage(bottom_pc))
-    }
-
-    pub fn set_margin_bottom_st(&mut self, bottom_st: f32) -> &mut Self {
-        self.set_margin_bottom_units(MarginUnits::Stretch(bottom_st))
     }
 
     // set_margin

@@ -134,10 +134,17 @@ pub trait Node: Sized {
     /// Returns the aspect ratio of the node. (width / height)
     fn aspect_ratio(&self, store: &Self::Store) -> Option<f32>;
 
-    /// Returns the horizontal alignment of the node
-    fn halign(&self, store: &Self::Store) -> Option<Alignment>;
+    /// Returns the horizontal alignment of the node.
+    fn self_halign(&self, store: &Self::Store) -> Option<Alignment>;
 
-    fn valign(&self, store: &Self::Store) -> Option<Alignment>;
+    /// Returns the vertical alignment of the node.
+    fn self_valign(&self, store: &Self::Store) -> Option<Alignment>;
+
+    /// Returns the horizontal alignment of the node's children
+    fn children_halign(&self, store: &Self::Store) -> Option<Alignment>;
+
+    /// Returns the vertical alignment of the node's children
+    fn children_valign(&self, store: &Self::Store) -> Option<Alignment>;
 }
 
 #[derive(Eq, PartialEq, Clone, Copy, Default)]
@@ -146,6 +153,22 @@ pub enum Alignment {
     #[default]
     Center,
     End,
+}
+
+impl Alignment {
+    pub(crate) fn has_start(&self) -> bool {
+        match self {
+            Alignment::Start | Alignment::Center => true,
+            _ => false,
+        }
+    }
+
+    pub(crate) fn has_end(&self) -> bool {
+        match self {
+            Alignment::End | Alignment::Center => true,
+            _ => false,
+        }
+    }
 }
 
 /// Helper trait used internally for converting layout properties into a direction-agnostic value.
@@ -239,6 +262,14 @@ pub(crate) trait NodeExt: Node {
     // Currently unused until wrapping is implemented
     fn cross_between(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SizeUnits {
         parent_layout_type.select_unwrap(store, |store| self.row_between(store), |store| self.col_between(store))
+    }
+
+    fn self_align(&self, store: &Self::Store, parent_layout_type: LayoutType) -> Alignment {
+        parent_layout_type.select_unwrap(store, |store| self.self_valign(store), |store| self.self_halign(store))
+    }
+
+    fn children_align(&self, store: &Self::Store, layout_type: LayoutType) -> Alignment {
+        layout_type.select_unwrap(store, |store| self.children_halign(store), |store| self.children_valign(store))
     }
 }
 
