@@ -164,18 +164,6 @@ pub trait Node: Sized {
     /// Returns the maximum bottom-side space of the node.
     fn max_bottom(&self, store: &Self::Store) -> Option<SpaceUnits>;
 
-    /// Returns the left-side border width of the node.
-    fn border_left(&self, store: &Self::Store) -> Option<SpaceUnits>;
-
-    /// Returns the right-side border width of the node.
-    fn border_right(&self, store: &Self::Store) -> Option<SpaceUnits>;
-
-    /// Returns the top-side border width of the node.
-    fn border_top(&self, store: &Self::Store) -> Option<SpaceUnits>;
-
-    /// Returns the bottom-side border width of the node.
-    fn border_bottom(&self, store: &Self::Store) -> Option<SpaceUnits>;
-
     /// Returns the solid override of the node.
     fn solid(&self, store: &Self::Store) -> Option<Solid>;
 
@@ -306,22 +294,6 @@ pub(crate) trait NodeExt: Node {
 
     fn max_cross_after(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SpaceUnits {
         parent_layout_type.select_unwrap(store, |store| self.max_bottom(store), |store| self.max_right(store))
-    }
-
-    fn border_main_before(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SpaceUnits {
-        parent_layout_type.select_unwrap(store, |store| self.border_left(store), |store| self.border_top(store))
-    }
-
-    fn border_main_after(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SpaceUnits {
-        parent_layout_type.select_unwrap(store, |store| self.border_right(store), |store| self.border_bottom(store))
-    }
-
-    fn border_cross_before(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SpaceUnits {
-        parent_layout_type.select_unwrap(store, |store| self.border_top(store), |store| self.border_left(store))
-    }
-
-    fn border_cross_after(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SpaceUnits {
-        parent_layout_type.select_unwrap(store, |store| self.border_bottom(store), |store| self.border_right(store))
     }
 
     fn content_sizing(

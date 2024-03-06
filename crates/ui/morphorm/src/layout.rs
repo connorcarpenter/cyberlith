@@ -4,7 +4,6 @@ use crate::{CacheExt, Cache, LayoutType, Node, NodeExt, percentage_calc, Positio
 
 const DEFAULT_MIN: f32 = -f32::MAX;
 const DEFAULT_MAX: f32 = f32::MAX;
-const DEFAULT_BORDER_WIDTH: f32 = 0.0;
 
 /// Represents the type of a stretch item. Either space-before, size (main/cross), or space-after.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -137,15 +136,6 @@ where
 
     // Cross size is determined by the parent.
     let mut computed_cross = cross_size;
-
-    let border_main_before =
-        node.border_main_before(store, parent_layout_type).to_px(computed_main, parent_padding_main, DEFAULT_BORDER_WIDTH);
-    let border_main_after =
-        node.border_main_after(store, parent_layout_type).to_px(computed_main, parent_padding_main, DEFAULT_BORDER_WIDTH);
-    let border_cross_before =
-        node.border_cross_before(store, parent_layout_type).to_px(computed_cross, parent_padding_cross, DEFAULT_BORDER_WIDTH);
-    let border_cross_after =
-        node.border_cross_after(store, parent_layout_type).to_px(computed_cross, parent_padding_cross, DEFAULT_BORDER_WIDTH);
 
     let node_children = node.children(tree).filter(|child| child.visible(store));
 
@@ -348,7 +338,7 @@ where
 
     // Determine cross-size of auto node from children.
     if num_parent_directed_children != 0 && node.cross(store, layout_type) == SizeUnits::Auto {
-        parent_cross = (cross_max + border_cross_before + border_cross_after).min(max_cross).max(min_cross);
+        parent_cross = cross_max.min(max_cross).max(min_cross);
     }
 
     // Compute flexible space and size on the cross-axis for parent-directed children.
@@ -418,8 +408,6 @@ where
 
             // Compute free space in the cross axis.
             let child_cross_free_space = parent_cross
-                - border_cross_before
-                - border_cross_after
                 - child.cross_before
                 - child.cross
                 - child.cross_after;
@@ -467,7 +455,7 @@ where
 
     // Determine main-size of auto node from children.
     if num_parent_directed_children != 0 && node.main(store, layout_type) == SizeUnits::Auto {
-        parent_main = (parent_main.max(main_sum) + border_main_before + border_main_after).min(max_main).max(min_main);
+        parent_main = parent_main.max(main_sum).min(max_main).max(min_main);
     }
 
     // Compute flexible space and size on the main axis for parent-directed children.
@@ -479,7 +467,7 @@ where
             }
 
             // Calculate free space on the main-axis.
-            let free_main_space = parent_main - main_sum - border_main_before - border_main_after;
+            let free_main_space = parent_main - main_sum;
 
             let mut total_violation = 0.0;
 
@@ -587,8 +575,6 @@ where
 
             // Compute free space in the cross axis.
             let child_cross_free_space = parent_cross
-                - border_cross_before
-                - border_cross_after
                 - child.cross_before
                 - child.cross
                 - child.cross_after;
@@ -796,8 +782,6 @@ where
 
             // Compute free space in the cross axis.
             let child_cross_free_space = parent_cross
-                - border_cross_before
-                - border_cross_after
                 - child.cross_before
                 - child.cross
                 - child.cross_after;
@@ -904,8 +888,6 @@ where
 
             // Compute free space in the main axis.
             let child_main_free_space = parent_main
-                - border_main_before
-                - border_main_after
                 - child.main_before
                 - child.main
                 - child.main_after;
@@ -956,8 +938,8 @@ where
                 cache.set_rect(
                     child.node,
                     layout_type,
-                    child.main_before + border_main_before,
-                    child.cross_before + border_cross_before,
+                    child.main_before,
+                    child.cross_before,
                     child.main,
                     child.cross,
                 );
@@ -968,8 +950,8 @@ where
                 cache.set_rect(
                     child.node,
                     layout_type,
-                    main_pos + border_main_before,
-                    child.cross_before + border_cross_before,
+                    main_pos,
+                    child.cross_before,
                     child.main,
                     child.cross,
                 );
@@ -980,8 +962,6 @@ where
 
     // Determine auto main and cross size from space and size of children.
     if num_parent_directed_children != 0 {
-        main_sum += border_main_before + border_main_after;
-        cross_max += border_cross_before + border_cross_after;
 
         if parent_layout_type != layout_type {
             std::mem::swap(&mut main_sum, &mut cross_max)

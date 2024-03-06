@@ -216,26 +216,6 @@ impl Node for NodeId {
         Some(node.style.margin_bottom_max)
     }
 
-    fn border_left(&self, store: &NodeStore) -> Option<SpaceUnits> {
-        let node = store.get(self)?;
-        Some(node.style.border_left)
-    }
-
-    fn border_right(&self, store: &NodeStore) -> Option<SpaceUnits> {
-        let node = store.get(self)?;
-        Some(node.style.border_right)
-    }
-
-    fn border_top(&self, store: &NodeStore) -> Option<SpaceUnits> {
-        let node = store.get(self)?;
-        Some(node.style.border_top)
-    }
-
-    fn border_bottom(&self, store: &NodeStore) -> Option<SpaceUnits> {
-        let node = store.get(self)?;
-        Some(node.style.border_bottom)
-    }
-
     fn solid(&self, store: &NodeStore) -> Option<Solid> {
         let node = store.get(self)?;
         let val = node.style.solid_override?;
