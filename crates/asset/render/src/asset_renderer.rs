@@ -1,4 +1,4 @@
-use bevy_log::warn;
+use bevy_log::{info, warn};
 
 use render_api::{
     base::CpuMaterial,
@@ -94,6 +94,8 @@ impl AssetRenderer {
         transform: &Transform,
         text: &str,
     ) {
+        // info!("drawing text: {}, transform: {:?}, text_height: {:?}", text, transform);
+
         // will draw text string, stretched to fit the transform:
         // (transform.translation.x, transform.translation.y, transform.translation.z),
         // with width: (transform.scale.x, transform.scale.y)
@@ -102,14 +104,21 @@ impl AssetRenderer {
         let (raw_width, raw_height) = Self::measure_raw_text(asset_store, icon_handle, text);
 
         let mut cursor = Transform::from_xyz(
-            transform.translation.x,
+            transform.translation.x + (transform.scale.x * 0.5),
             transform.translation.y + (transform.scale.y * 0.5),
             transform.translation.z
         );
 
         // if we want to fill 200px, but raw_width is 100px, then scale_x would be 2.0
-        cursor.scale.x = transform.scale.x / raw_width;
         cursor.scale.y = transform.scale.y / raw_height;
+        cursor.scale.x = cursor.scale.y;
+
+        if raw_width * cursor.scale.x > transform.scale.x {
+            cursor.scale.x = transform.scale.x / raw_width;
+            cursor.scale.y = cursor.scale.x;
+        }
+
+        cursor.translation.x -= (raw_width * cursor.scale.x) * 0.5;
 
         for c in text.chars() {
             let c: u8 = if c.is_ascii() {

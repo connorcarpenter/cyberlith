@@ -1,4 +1,5 @@
 use std::fmt::{Display, Formatter};
+use bevy_log::info;
 
 use morphorm::{LayoutType, Node, PositionType, Solid, Units};
 
@@ -121,20 +122,8 @@ impl Node for NodeId {
         computed_height: Option<f32>,
 
     ) -> Option<(f32, f32)> {
-
-        let node = store.get(self)?;
-        let aspect_ratio = node.style.aspect_ratio_w_over_h;
-
-        // make sure it's a label ... ?
-        let _label_ref = self.label_ref(store)?;
-
-        if let Some(computed_width) = computed_width {
-            return Some((computed_width, computed_width / aspect_ratio));
-        } else if let Some(computed_height) = computed_height {
-            return Some((computed_height * aspect_ratio, computed_height));
-        } else {
-            return None;
-        }
+        info!("content size");
+        None
     }
 
     fn child_left(&self, store: &NodeStore) -> Option<Units> {

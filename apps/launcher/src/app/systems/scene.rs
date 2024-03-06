@@ -47,129 +47,83 @@ pub fn scene_setup(
         .style(|s| {
             s
                 .set_background_color(Color::BLACK)
-                .set_padding_st(1.0, 1.0, 1.0, 1.0);
+                .set_padding_px(10.0, 10.0, 10.0, 10.0)
+                .set_vertical()
+                .set_row_between_px(10.0);
         })
         .contents(|c| {
 
-            // menu container
-            c.add_panel()
+            // title container
+            c
+                .add_panel()
                 .style(|s| {
                     s
                         .set_background_color(Color::BLACK)
-                        .set_size_px(640.0, 360.0)
-                        .set_padding_px(10.0, 10.0, 10.0, 10.0)
-                        .set_vertical()
-                        .set_row_between_px(10.0);
+                        .set_margin_top_st(1.0)
+                        .set_margin_left_st(1.0)
+                        .set_margin_right_st(1.0)
+                        .set_size_pc(100.0, 38.2)
+                        .set_solid_fit()
+                        .set_aspect_ratio(16.0, 4.5);
                 })
                 .contents(|c| {
-
-                    // title container
                     c
                         .add_label("c y b e r l i t h")
                         .style(|s| {
                             s
-                                .set_size_st(1.0, 2.0);
-                                //.set_margin_px(10.0, 10.0, 10.0, 10.0);
+                                .set_size_pc(100.0, 100.0);
                         });
+                });
 
-
-                    // start button container
-                    c.add_panel()
+            // start button
+            c
+                .add_panel()
+                .style(|s| {
+                    s
+                        .set_background_color(Color::DARK_GRAY)
+                        .set_size_pc(50.0, 20.0)
+                        .set_size_max_px(240.0, 90.0)
+                        .set_margin_left_st(1.0)
+                        .set_margin_right_st(1.0)
+                        .set_solid_fit()
+                        .set_aspect_ratio(16.0, 4.5)
+                        .set_padding_px(10.0, 10.0, 10.0, 10.0);
+                })
+                .contents(|c| {
+                    c
+                        .add_label("start")
                         .style(|s| {
                             s
-                                .set_background_color(Color::BLACK)
-                                .set_size_st(1.0, 1.0)
-                                .set_horizontal();
-                        })
-                        .contents(|c| {
-
-                            // spacing
-                            c.add_panel()
-                                .style(|s| {
-                                    s
-                                        .set_background_color(Color::BLACK)
-                                        .set_size_st(1.0, 1.0);
-                                });
-
-                            // button
-                            let mut pm = c.add_panel();
-                            pm
-                                .style(|s| {
-                                    s
-                                        .set_background_color(Color::DARK_GRAY)
-                                        .set_size_st(3.0, 1.0);
-                                })
-                                .contents(|c| {
-                                    c
-                                        .add_label("start")
-                                        .style(|s| {
-                                            s
-                                                .set_margin_left_st(1.0)
-                                                .set_margin_right_st(1.0)
-                                                .set_margin_top_px(10.0)
-                                                .set_margin_bottom_px(10.0)
-                                                .set_height_st(1.0) // shouldn't need this? (maybe should always be stretch?)
-                                                .set_width_auto() // shouldn't need this? (maybe should be default?)
-                                                .set_aspect_ratio(11.0, 2.0); // shouldn't need this? (maybe should be based off of some text_size style property?)
-                                        });
-                                });
-
-                            // spacing
-                            c.add_panel()
-                                .style(|s| {
-                                    s
-                                        .set_background_color(Color::BLACK)
-                                        .set_size_st(1.0, 1.0);
-                                });
+                                .set_size_pc(100.0, 100.0)
+                                .set_margin_left_st(1.0)
+                                .set_margin_right_st(1.0)
+                            ;
                         });
+                });
 
-                    // continue button container
-                    c.add_panel()
+            // continue button
+            c
+                .add_panel()
+                .style(|s| {
+                    s
+                        .set_background_color(Color::DARK_GRAY)
+                        .set_size_pc(50.0, 20.0)
+                        .set_size_max_px(240.0, 90.0)
+                        .set_margin_left_st(1.0)
+                        .set_margin_right_st(1.0)
+                        .set_solid_fit()
+                        .set_aspect_ratio(16.0, 4.5)
+                        .set_padding_px(10.0, 10.0, 10.0, 10.0)
+                        .set_margin_bottom_st(1.0);
+                })
+                .contents(|c| {
+                    c.add_label("continue")
                         .style(|s| {
                             s
-                                .set_background_color(Color::BLACK)
-                                .set_size_st(1.0, 1.0)
-                                .set_horizontal();
-                        })
-                        .contents(|c| {
-
-                            // spacing
-                            c.add_panel()
-                                .style(|s| {
-                                    s
-                                        .set_background_color(Color::BLACK)
-                                        .set_size_st(1.0, 1.0);
-                                });
-
-                            // button
-                            c.add_panel()
-                                .style(|s| {
-                                    s
-                                        .set_background_color(Color::DARK_GRAY)
-                                        .set_size_st(3.0, 1.0)
-                                        .set_padding_px(10.0, 10.0, 10.0, 10.0);
-                                })
-                                .contents(|c| {
-                                    c.add_label("continue")
-                                        .style(|s| {
-                                            s
-                                                .set_margin_left_st(1.0)
-                                                .set_margin_right_st(1.0)
-                                                .set_margin_top_px(10.0)
-                                                .set_margin_bottom_px(10.0)
-                                                .set_height_st(1.0) // shouldn't need this? (maybe should always be stretch?)
-                                                .set_width_auto() // shouldn't need this? (maybe should be default?)
-                                                .set_aspect_ratio(11.0, 2.0); // shouldn't need this? (maybe should be based off of some text_size style property?)
-                                        });
-                                });
-
-                            // spacing
-                            c.add_panel()
-                                .style(|s| {
-                                    s
-                                        .set_background_color(Color::BLACK)
-                                        .set_size_st(1.0, 1.0);
-                                });
+                                .set_size_pc(100.0, 100.0)
+                                .set_margin_left_st(1.0)
+                                .set_margin_right_st(1.0)
+                            ;
                         });
                 });
         });

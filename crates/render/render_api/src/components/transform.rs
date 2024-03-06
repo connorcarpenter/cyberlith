@@ -4,7 +4,7 @@ use bevy_ecs::component::Component;
 
 use math::{matrix_transform_point, Affine3A, Mat3, Mat4, Quat, Vec2, Vec3};
 
-#[derive(Clone, Component, Copy)]
+#[derive(Clone, Component, Copy, Debug)]
 pub struct Transform {
     pub translation: Vec3,
     pub rotation: Quat,

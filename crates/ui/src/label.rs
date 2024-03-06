@@ -49,18 +49,12 @@ impl Widget for Label {
             panic!("No text color handle found in globals");
         };
 
-        // TODO: use some kind of text style from parent panel
-        // TODO: text should fill the entire panel
-        //let style = TextStyle::new(transform.scale.y, 6.0);
-
-        // info!("Drawing label: {}", self.text);
-
         asset_manager.draw_text(
             render_frame,
             render_layer_opt,
             text_icon_handle,
             text_color_handle,
-            &transform,
+            transform,
             &self.text,
         );
     }
@@ -117,9 +111,9 @@ impl<'a> LabelStyleMut<'a> {
     //     self.get_ref().widget.as_ref().as_any().downcast_ref::<Label>().unwrap()
     // }
     //
-    // fn get_label_mut(&mut self) -> &mut Label {
-    //     self.get_mut().widget.as_mut().as_any_mut().downcast_mut::<Label>().unwrap()
-    // }
+    fn get_label_mut(&mut self) -> &mut Label {
+        self.get_mut().widget.as_mut().as_any_mut().downcast_mut::<Label>().unwrap()
+    }
 
     // getters
 
@@ -842,10 +836,5 @@ impl<'a> LabelStyleMut<'a> {
             .set_border_right_st(right)
             .set_border_top_st(top)
             .set_border_bottom_st(bottom)
-    }
-
-    pub fn set_aspect_ratio(&mut self, width: f32, height: f32) -> &mut Self {
-        self.get_mut().style.aspect_ratio_w_over_h = width / height;
-        self
     }
 }
