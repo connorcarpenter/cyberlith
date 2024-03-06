@@ -239,10 +239,6 @@ impl<'a> LabelStyleMut<'a> {
         self.set_width_units(SizeUnits::Percentage(width_pc))
     }
 
-    // pub fn set_width_st(&mut self, stretch: f32) -> &mut Self {
-    //     self.set_width_units(Units::Stretch(stretch))
-    // }
-
     // set height
     fn set_height_units(&mut self, height: SizeUnits) -> &mut Self {
         self.get_mut().style.height = height;
@@ -260,10 +256,6 @@ impl<'a> LabelStyleMut<'a> {
     pub fn set_height_pc(&mut self, width_pc: f32) -> &mut Self {
         self.set_height_units(SizeUnits::Percentage(width_pc))
     }
-
-    // pub fn set_height_st(&mut self, stretch: f32) -> &mut Self {
-    //     self.set_height_units(Units::Stretch(stretch))
-    // }
 
     // set size
     fn set_size_units(&mut self, width: SizeUnits, height: SizeUnits) -> &mut Self {
@@ -284,10 +276,6 @@ impl<'a> LabelStyleMut<'a> {
         self.set_size_units(SizeUnits::Percentage(width_pc), SizeUnits::Percentage(height_pc))
     }
 
-    // pub fn set_size_st(&mut self, width_st: f32, height_st: f32) -> &mut Self {
-    //     self.set_size_units(Units::Stretch(width_st), Units::Stretch(height_st))
-    // }
-
     // set_width_min
     fn set_width_min_units(&mut self, min_width: SizeUnits) -> &mut Self {
         self.get_mut().style.width_min = min_width;
@@ -306,10 +294,6 @@ impl<'a> LabelStyleMut<'a> {
         self.set_width_min_units(SizeUnits::Percentage(min_width_pc))
     }
 
-    // pub fn set_width_min_st(&mut self, min_width_st: f32) -> &mut Self {
-    //     self.set_width_min_units(Units::Stretch(min_width_st))
-    // }
-
     // set_height_min
     fn set_height_min_units(&mut self, min_height: SizeUnits) -> &mut Self {
         self.get_mut().style.height_min = min_height;
@@ -327,10 +311,6 @@ impl<'a> LabelStyleMut<'a> {
     pub fn set_height_min_pc(&mut self, min_height_pc: f32) -> &mut Self {
         self.set_height_min_units(SizeUnits::Percentage(min_height_pc))
     }
-
-    // pub fn set_height_min_st(&mut self, min_height_st: f32) -> &mut Self {
-    //     self.set_height_min_units(Units::Stretch(min_height_st))
-    // }
 
     // set_size_min
     fn set_size_min_units(&mut self, min_width: SizeUnits, min_height: SizeUnits) -> &mut Self {
@@ -354,10 +334,6 @@ impl<'a> LabelStyleMut<'a> {
         )
     }
 
-    // pub fn set_size_min_st(&mut self, min_width_st: f32, min_height_st: f32) -> &mut Self {
-    //     self.set_size_min_units(Units::Stretch(min_width_st), Units::Stretch(min_height_st))
-    // }
-
     // set_width_max
     fn set_width_max_units(&mut self, max_width: SizeUnits) -> &mut Self {
         self.get_mut().style.width_max = max_width;
@@ -376,10 +352,6 @@ impl<'a> LabelStyleMut<'a> {
         self.set_width_max_units(SizeUnits::Percentage(max_width_pc))
     }
 
-    // pub fn set_width_max_st(&mut self, max_width_st: f32) -> &mut Self {
-    //     self.set_width_max_units(Units::Stretch(max_width_st))
-    // }
-
     // set_height_max
     fn set_height_max_units(&mut self, max_height: SizeUnits) -> &mut Self {
         self.get_mut().style.height_max = max_height;
@@ -397,10 +369,6 @@ impl<'a> LabelStyleMut<'a> {
     pub fn set_height_max_pc(&mut self, max_height_pc: f32) -> &mut Self {
         self.set_height_max_units(SizeUnits::Percentage(max_height_pc))
     }
-
-    // pub fn set_height_max_st(&mut self, max_height_st: f32) -> &mut Self {
-    //     self.set_height_max_units(Units::Stretch(max_height_st))
-    // }
 
     // set_size_max
     fn set_size_max_units(&mut self, max_width: SizeUnits, max_height: SizeUnits) -> &mut Self {
@@ -423,10 +391,6 @@ impl<'a> LabelStyleMut<'a> {
             SizeUnits::Percentage(max_height_pc),
         )
     }
-
-    // pub fn set_size_max_st(&mut self, max_width_st: f32, max_height_st: f32) -> &mut Self {
-    //     self.set_size_max_units(Units::Stretch(max_width_st), Units::Stretch(max_height_st))
-    // }
 
     // set_left
     fn set_margin_left_units(&mut self, left: SpaceUnits) -> &mut Self {

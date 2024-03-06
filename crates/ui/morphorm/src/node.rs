@@ -187,8 +187,8 @@ pub trait Node: Sized {
 pub(crate) trait NodeExt: Node {
     fn main(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SizeUnits {
         match parent_layout_type {
-            LayoutType::Row => self.width(store).unwrap_or(SizeUnits::Stretch(1.0)),
-            LayoutType::Column => self.height(store).unwrap_or(SizeUnits::Stretch(1.0)),
+            LayoutType::Row => self.width(store).unwrap_or(SizeUnits::Percentage(100.0)),
+            LayoutType::Column => self.height(store).unwrap_or(SizeUnits::Percentage(100.0)),
         }
     }
 
@@ -212,8 +212,8 @@ pub(crate) trait NodeExt: Node {
 
     fn cross(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SizeUnits {
         match parent_layout_type {
-            LayoutType::Row => self.height(store).unwrap_or(SizeUnits::Stretch(1.0)),
-            LayoutType::Column => self.width(store).unwrap_or(SizeUnits::Stretch(1.0)),
+            LayoutType::Row => self.height(store).unwrap_or(SizeUnits::Percentage(100.0)),
+            LayoutType::Column => self.width(store).unwrap_or(SizeUnits::Percentage(100.0)),
         }
     }
 
