@@ -49,7 +49,6 @@ pub fn scene_setup(
                 .set_background_color(Color::BLACK)
                 .set_padding_px(10.0, 10.0, 10.0, 10.0)
                 .set_vertical()
-                .set_children_valign(Alignment::End)
                 .set_row_between_px(10.0);
         })
         .contents(|c| {
@@ -80,6 +79,7 @@ pub fn scene_setup(
                     s
                         .set_background_color(Color::DARK_GRAY)
                         .set_self_halign(Alignment::Start)
+                        .set_margin_left_px(20.0)
                         .set_size_pc(50.0, 20.0)
                         .set_size_max_px(240.0, 90.0)
                         .set_solid_fit()
@@ -103,6 +103,7 @@ pub fn scene_setup(
                     s
                         .set_background_color(Color::DARK_GRAY)
                         .set_self_halign(Alignment::End)
+                        .set_margin_right_px(20.0)
                         .set_size_pc(50.0, 20.0)
                         .set_size_max_px(240.0, 90.0)
                         .set_solid_fit()
