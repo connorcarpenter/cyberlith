@@ -169,6 +169,19 @@ pub trait Node: Sized {
 
     /// Returns the aspect ratio of the node. (width / height)
     fn aspect_ratio(&self, store: &Self::Store) -> Option<f32>;
+
+    /// Returns the horizontal alignment of the node
+    fn halign(&self, store: &Self::Store) -> Option<Alignment>;
+
+    fn valign(&self, store: &Self::Store) -> Option<Alignment>;
+}
+
+#[derive(Eq, PartialEq, Clone, Copy, Default)]
+pub enum Alignment {
+    Start,
+    #[default]
+    Center,
+    End,
 }
 
 /// Helper trait used internally for converting layout properties into a direction-agnostic value.

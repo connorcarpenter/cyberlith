@@ -1,7 +1,7 @@
 use std::fmt::{Display, Formatter};
 use bevy_log::info;
 
-use morphorm::{LayoutType, Node, PositionType, SizeUnits, Solid, SpaceUnits};
+use morphorm::{Alignment, LayoutType, Node, PositionType, SizeUnits, Solid, SpaceUnits};
 
 use crate::{panel::Panel, node::{NodeKind, NodeStore, UiNode}};
 
@@ -225,5 +225,15 @@ impl Node for NodeId {
     fn aspect_ratio(&self, store: &Self::Store) -> Option<f32> {
         let node = store.get(self)?;
         Some(node.style.aspect_ratio_w_over_h)
+    }
+
+    fn halign(&self, store: &Self::Store) -> Option<Alignment> {
+        let node = store.get(self)?;
+        Some(node.style.halign)
+    }
+
+    fn valign(&self, store: &Self::Store) -> Option<Alignment> {
+        let node = store.get(self)?;
+        Some(node.style.valign)
     }
 }
