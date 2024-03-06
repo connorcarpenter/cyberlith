@@ -131,46 +131,6 @@ impl Node for NodeId {
         Some(node.style.margin_bottom)
     }
 
-    fn margin_left_min(&self, store: &NodeStore) -> Option<SpaceUnits> {
-        let node = store.get(self)?;
-        Some(node.style.margin_left_min)
-    }
-
-    fn margin_right_min(&self, store: &NodeStore) -> Option<SpaceUnits> {
-        let node = store.get(self)?;
-        Some(node.style.margin_right_min)
-    }
-
-    fn margin_top_min(&self, store: &NodeStore) -> Option<SpaceUnits> {
-        let node = store.get(self)?;
-        Some(node.style.margin_top_min)
-    }
-
-    fn margin_bottom_min(&self, store: &NodeStore) -> Option<SpaceUnits> {
-        let node = store.get(self)?;
-        Some(node.style.margin_bottom_min)
-    }
-
-    fn margin_left_max(&self, store: &NodeStore) -> Option<SpaceUnits> {
-        let node = store.get(self)?;
-        Some(node.style.margin_left_max)
-    }
-
-    fn margin_right_max(&self, store: &NodeStore) -> Option<SpaceUnits> {
-        let node = store.get(self)?;
-        Some(node.style.margin_right_max)
-    }
-
-    fn margin_top_max(&self, store: &NodeStore) -> Option<SpaceUnits> {
-        let node = store.get(self)?;
-        Some(node.style.margin_top_max)
-    }
-
-    fn margin_bottom_max(&self, store: &NodeStore) -> Option<SpaceUnits> {
-        let node = store.get(self)?;
-        Some(node.style.margin_bottom_max)
-    }
-
     fn padding_left(&self, store: &NodeStore) -> Option<SpaceUnits> {
         let panel_ref = self.panel_ref(store)?;
         Some(panel_ref.style.padding_left)

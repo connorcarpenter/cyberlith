@@ -21,21 +21,15 @@ struct StretchItem {
     factor: f32,
     // The type of stretch item, either space-before, size, or space-after.
     item_type: ItemType,
-    // The violation of the stretch item after clamping.
-    violation: f32,
     // The computed size of the stretch item.
     computed: f32,
     // Whether or not the stretch item is frozen.
     frozen: bool,
-    // The minimum size of the stretch item.
-    min: f32,
-    // The maximum size of the stretch item.
-    max: f32,
 }
 
 impl StretchItem {
-    pub fn new(index: usize, factor: f32, item_type: ItemType, min: f32, max: f32) -> Self {
-        Self { index, factor, item_type, violation: 0.0, computed: 0.0, frozen: false, min, max }
+    pub fn new(index: usize, factor: f32, item_type: ItemType) -> Self {
+        Self { index, factor, item_type, computed: 0.0, frozen: false }
     }
 }
 
@@ -217,20 +211,8 @@ where
         let mut child_margin_cross_after = child.margin_cross_after(store, layout_type);
 
         // Get fixed-size space and size constraints.
-        let child_margin_cross_min_before = child.margin_cross_min_before(store, layout_type);
-        let child_margin_cross_max_before = child.margin_cross_max_before(store, layout_type);
-
         let child_cross_min = child.cross_min(store, layout_type);
         let child_cross_max = child.cross_max(store, layout_type);
-
-        let child_margin_cross_min_after = child.margin_cross_min_after(store, layout_type);
-        let child_margin_cross_max_after = child.margin_cross_max_after(store, layout_type);
-
-        let child_margin_main_min_before = child.margin_main_min_before(store, layout_type);
-        let child_margin_main_max_before = child.margin_main_max_before(store, layout_type);
-
-        let child_margin_main_min_after = child.margin_main_min_after(store, layout_type);
-        let child_margin_main_max_after = child.margin_main_max_after(store, layout_type);
 
         // Apply parent child_space overrides to auto child space.
         if child_margin_main_before == SpaceUnits::Auto && first == Some(index) {
@@ -264,8 +246,6 @@ where
                 index,
                 factor,
                 ItemType::Before,
-                child_margin_main_min_before.to_px(parent_main, parent_padding_main, DEFAULT_MIN),
-                child_margin_main_max_before.to_px(parent_main, parent_padding_main, DEFAULT_MAX),
             ));
         }
 
@@ -275,29 +255,27 @@ where
                 index,
                 factor,
                 ItemType::After,
-                child_margin_main_min_after.to_px(parent_main, parent_padding_main, DEFAULT_MIN),
-                child_margin_main_max_after.to_px(parent_main, parent_padding_main, DEFAULT_MAX),
             ));
         }
 
         // Compute fixed-size child cross_before.
         let computed_child_cross_before =
-            child_margin_cross_before.to_px_clamped(parent_cross, parent_padding_cross, 0.0, child_margin_cross_min_before, child_margin_cross_max_before);
+            child_margin_cross_before.to_px(parent_cross, parent_padding_cross, 0.0);
 
         // Compute fixed-size child_cross.
         let mut computed_child_cross = child_cross.to_px_clamped(parent_cross, parent_padding_cross, 0.0, child_cross_min, child_cross_max);
 
         // Compute fixed-size child cross_after.
         let computed_child_cross_after =
-            child_margin_cross_after.to_px_clamped(parent_cross, parent_padding_cross, 0.0, child_margin_cross_min_after, child_margin_cross_max_after);
+            child_margin_cross_after.to_px(parent_cross, parent_padding_cross, 0.0);
 
         // Compute fixed-size child main_before.
         let computed_child_main_before =
-            child_margin_main_before.to_px_clamped(parent_main, parent_padding_main, 0.0, child_margin_main_min_before, child_margin_main_max_before);
+            child_margin_main_before.to_px(parent_main, parent_padding_main, 0.0);
 
         // Compute fixed-size child main_after.
         let computed_child_main_after =
-            child_margin_main_after.to_px_clamped(parent_main, parent_padding_main, 0.0, child_margin_main_min_after, child_margin_main_max_after);
+            child_margin_main_after.to_px(parent_main, parent_padding_main, 0.0);
 
         let computed_child_main;
         // Compute fixed-size child main.
@@ -352,10 +330,6 @@ where
         // Collect stretch cross items.
         let mut cross_axis_stretch_nodes = SmallVec::<[StretchItem; 3]>::new();
         if let SpaceUnits::Stretch(factor) = child_margin_cross_before {
-            let child_margin_cross_min_before =
-                child.node.margin_cross_min_before(store, layout_type).to_px(parent_cross, parent_padding_cross, DEFAULT_MIN);
-            let child_margin_cross_max_before =
-                child.node.margin_cross_max_before(store, layout_type).to_px(parent_cross, parent_padding_cross, DEFAULT_MAX);
 
             cross_flex_sum += factor;
 
@@ -365,14 +339,10 @@ where
                 index,
                 factor,
                 ItemType::Before,
-                child_margin_cross_min_before,
-                child_margin_cross_max_before,
             ));
         }
 
         if let SpaceUnits::Stretch(factor) = child_margin_cross_after {
-            let child_margin_cross_min_after = child.node.margin_cross_min_after(store, layout_type).to_px(parent_cross, parent_padding_cross, DEFAULT_MIN);
-            let child_margin_cross_max_after = child.node.margin_cross_max_after(store, layout_type).to_px(parent_cross, parent_padding_cross, DEFAULT_MAX);
 
             cross_flex_sum += factor;
 
@@ -382,8 +352,6 @@ where
                 index,
                 factor,
                 ItemType::After,
-                child_margin_cross_min_after,
-                child_margin_cross_max_after,
             ));
         }
 
@@ -399,26 +367,14 @@ where
                 - child.cross
                 - child.cross_after;
 
-            // Total size violation in the cross axis.
-            let mut total_violation = 0.0;
-
             for item in cross_axis_stretch_nodes.iter_mut().filter(|item| !item.frozen) {
                 let actual_cross = (item.factor * child_cross_free_space / cross_flex_sum).round();
-
-                let clamped = actual_cross.min(item.max).max(item.min);
-                item.violation = clamped - actual_cross;
-                total_violation += item.violation;
-
-                item.computed = clamped;
+                item.computed = actual_cross;
             }
 
             for item in cross_axis_stretch_nodes.iter_mut().filter(|item| !item.frozen) {
                 // Freeze over-stretched items.
-                item.frozen = match total_violation {
-                    v if v > 0.0 => item.violation > 0.0,
-                    v if v < 0.0 => item.violation < 0.0,
-                    _ => true,
-                };
+                item.frozen = true; // TODO: maybe this should be false
 
                 // If the item is frozen, adjust the used_space and sum of cross stretch factors.
                 if item.frozen {
@@ -456,26 +412,17 @@ where
             // Calculate free space on the main-axis.
             let free_main_space = parent_main - children_main_sum;
 
-            let mut total_violation = 0.0;
-
             for item in main_axis_stretch_nodes.iter_mut().filter(|item| !item.frozen) {
                 let actual_main = (item.factor * free_main_space / main_flex_sum).round();
 
-                let clamped = actual_main.min(item.max).max(item.min);
-                item.violation = clamped - actual_main;
-                total_violation += item.violation;
-                item.computed = clamped;
+                item.computed = actual_main;
             }
 
             for item in main_axis_stretch_nodes.iter_mut().filter(|item| !item.frozen) {
                 let child = &mut children[item.index];
 
                 // Freeze over-stretched items.
-                item.frozen = match total_violation {
-                    total if total > 0.0 => item.violation > 0.0,
-                    total if total < 0.0 => item.violation < 0.0,
-                    _ => true,
-                };
+                item.frozen = true; // TODO: maybe this should be false?
 
                 // If the item is frozen, adjust the used_space and sum of cross stretch factors.
                 if item.frozen {
@@ -517,10 +464,6 @@ where
         // Collect stretch cross items.
         let mut cross_axis_stretch_nodes = SmallVec::<[StretchItem; 3]>::new();
         if let SpaceUnits::Stretch(factor) = child_margin_cross_before {
-            let child_margin_cross_min_before =
-                child.node.margin_cross_min_before(store, layout_type).to_px(parent_cross, parent_padding_cross, DEFAULT_MIN);
-            let child_margin_cross_max_before =
-                child.node.margin_cross_max_before(store, layout_type).to_px(parent_cross, parent_padding_cross, DEFAULT_MAX);
 
             cross_flex_sum += factor;
 
@@ -530,14 +473,10 @@ where
                 index,
                 factor,
                 ItemType::Before,
-                child_margin_cross_min_before,
-                child_margin_cross_max_before,
             ));
         }
 
         if let SpaceUnits::Stretch(factor) = child_margin_cross_after {
-            let child_margin_cross_min_after = child.node.margin_cross_min_after(store, layout_type).to_px(parent_cross, parent_padding_cross, DEFAULT_MIN);
-            let child_margin_cross_max_after = child.node.margin_cross_max_after(store, layout_type).to_px(parent_cross, parent_padding_cross, DEFAULT_MAX);
 
             cross_flex_sum += factor;
 
@@ -547,8 +486,6 @@ where
                 index,
                 factor,
                 ItemType::After,
-                child_margin_cross_min_after,
-                child_margin_cross_max_after,
             ));
         }
 
@@ -566,26 +503,15 @@ where
                 - child.cross
                 - child.cross_after;
 
-            // Total size violation in the cross axis.
-            let mut total_violation = 0.0;
-
             for item in cross_axis_stretch_nodes.iter_mut().filter(|item| !item.frozen) {
                 let actual_cross = (item.factor * child_cross_free_space / cross_flex_sum).round();
 
-                let clamped = actual_cross.min(item.max).max(item.min);
-                item.violation = clamped - actual_cross;
-                total_violation += item.violation;
-
-                item.computed = clamped;
+                item.computed = actual_cross;
             }
 
             for item in cross_axis_stretch_nodes.iter_mut().filter(|item| !item.frozen) {
                 // Freeze over-stretched items.
-                item.frozen = match total_violation {
-                    v if v > 0.0 => item.violation > 0.0,
-                    v if v < 0.0 => item.violation < 0.0,
-                    _ => true,
-                };
+                item.frozen = true; // TODO: maybe this should be false
 
                 // If the item is frozen, adjust the used_space and sum of cross stretch factors.
                 if item.frozen {
@@ -625,20 +551,8 @@ where
         let mut child_margin_cross_after = child.margin_cross_after(store, layout_type);
 
         // Get fixed-size space and size constraints.
-        let child_margin_cross_min_before = child.margin_cross_min_before(store, layout_type);
-        let child_margin_cross_max_before = child.margin_cross_max_before(store, layout_type);
-
         let child_cross_min = child.cross_min(store, layout_type);
         let child_cross_max = child.cross_max(store, layout_type);
-
-        let child_margin_cross_min_after = child.margin_cross_min_after(store, layout_type);
-        let child_margin_cross_max_after = child.margin_cross_max_after(store, layout_type);
-
-        let child_margin_main_min_before = child.margin_main_min_before(store, layout_type);
-        let child_margin_main_max_before = child.margin_main_max_before(store, layout_type);
-
-        let child_margin_main_min_after = child.margin_main_min_after(store, layout_type);
-        let child_margin_main_max_after = child.margin_main_max_after(store, layout_type);
 
         // Apply parent child_space overrides to auto child space.
         if child_margin_main_before == SpaceUnits::Auto {
@@ -659,22 +573,22 @@ where
 
         // Compute fixed-size child cross_before.
         let computed_child_cross_before =
-            child_margin_cross_before.to_px_clamped(parent_cross, parent_padding_cross, 0.0, child_margin_cross_min_before, child_margin_cross_max_before);
+            child_margin_cross_before.to_px(parent_cross, parent_padding_cross, 0.0);
 
         // Compute fixed-size child_cross.
         let mut computed_child_cross = child_cross.to_px_clamped(parent_cross, parent_padding_cross, 0.0, child_cross_min, child_cross_max);
 
         // Compute fixed-size child cross_after.
         let computed_child_cross_after =
-            child_margin_cross_after.to_px_clamped(parent_cross, parent_padding_cross, 0.0, child_margin_cross_min_after, child_margin_cross_max_after);
+            child_margin_cross_after.to_px(parent_cross, parent_padding_cross, 0.0);
 
         // Compute fixed-size child main_before.
         let computed_child_main_before =
-            child_margin_main_before.to_px_clamped(parent_main, parent_padding_main, 0.0, child_margin_main_min_before, child_margin_main_max_before);
+            child_margin_main_before.to_px(parent_main, parent_padding_main, 0.0);
 
         // Compute fixed-size child main_after.
         let computed_child_main_after =
-            child_margin_main_after.to_px_clamped(parent_main, parent_padding_main, 0.0, child_margin_main_min_after, child_margin_main_max_after);
+            child_margin_main_after.to_px(parent_main, parent_padding_main, 0.0);
 
         let computed_child_main;
 
@@ -721,10 +635,6 @@ where
         // Collect stretch cross items.
         let mut cross_axis_stretch_nodes = SmallVec::<[StretchItem; 3]>::new();
         if let SpaceUnits::Stretch(factor) = child_margin_cross_before {
-            let child_margin_cross_min_before =
-                child.node.margin_cross_min_before(store, layout_type).to_px(parent_cross, parent_padding_cross, DEFAULT_MIN);
-            let child_margin_cross_max_before =
-                child.node.margin_cross_max_before(store, layout_type).to_px(parent_cross, parent_padding_cross, DEFAULT_MAX);
 
             cross_flex_sum += factor;
 
@@ -734,14 +644,10 @@ where
                 index,
                 factor,
                 ItemType::Before,
-                child_margin_cross_min_before,
-                child_margin_cross_max_before,
             ));
         }
 
         if let SpaceUnits::Stretch(factor) = child_margin_cross_after {
-            let child_margin_cross_min_after = child.node.margin_cross_min_after(store, layout_type).to_px(parent_cross, parent_padding_cross, DEFAULT_MIN);
-            let child_margin_cross_max_after = child.node.margin_cross_max_after(store, layout_type).to_px(parent_cross, parent_padding_cross, DEFAULT_MAX);
 
             cross_flex_sum += factor;
 
@@ -751,8 +657,6 @@ where
                 index,
                 factor,
                 ItemType::After,
-                child_margin_cross_min_after,
-                child_margin_cross_max_after,
             ));
         }
 
@@ -770,26 +674,15 @@ where
                 - child.cross
                 - child.cross_after;
 
-            // Total size violation in the cross axis.
-            let mut total_violation = 0.0;
-
             for item in cross_axis_stretch_nodes.iter_mut().filter(|item| !item.frozen) {
                 let actual_cross = (item.factor * child_cross_free_space / cross_flex_sum).round();
 
-                let clamped = actual_cross.min(item.max).max(item.min);
-                item.violation = clamped - actual_cross;
-                total_violation += item.violation;
-
-                item.computed = clamped;
+                item.computed = actual_cross;
             }
 
             for item in cross_axis_stretch_nodes.iter_mut().filter(|item| !item.frozen) {
                 // Freeze over-stretched items.
-                item.frozen = match total_violation {
-                    v if v > 0.0 => item.violation > 0.0,
-                    v if v < 0.0 => item.violation < 0.0,
-                    _ => true,
-                };
+                item.frozen = true; // TODO: maybe this should be false
 
                 // If the item is frozen, adjust the used_space and sum of cross stretch factors.
                 if item.frozen {
@@ -836,8 +729,6 @@ where
         // Collect stretch main items.
         let mut main_axis_stretch_nodes_2 = SmallVec::<[StretchItem; 3]>::new();
         if let SpaceUnits::Stretch(factor) = child_main_before {
-            let child_margin_main_min_before = child.node.margin_main_min_before(store, layout_type).to_px(parent_main, parent_padding_main, DEFAULT_MIN);
-            let child_margin_main_max_before = child.node.margin_main_max_before(store, layout_type).to_px(parent_main, parent_padding_main, DEFAULT_MAX);
 
             child_main_flex_sum += factor;
 
@@ -845,13 +736,9 @@ where
                 index,
                 factor,
                 ItemType::Before,
-                child_margin_main_min_before,
-                child_margin_main_max_before,
             ));
         }
         if let SpaceUnits::Stretch(factor) = child_main_after {
-            let child_margin_main_min_after = child.node.margin_main_min_after(store, layout_type).to_px(parent_main, parent_padding_main, DEFAULT_MIN);
-            let child_margin_main_max_after = child.node.margin_main_max_after(store, layout_type).to_px(parent_main, parent_padding_main, DEFAULT_MAX);
 
             child_main_flex_sum += factor;
 
@@ -859,8 +746,6 @@ where
                 index,
                 factor,
                 ItemType::After,
-                child_margin_main_min_after,
-                child_margin_main_max_after,
             ));
         }
 
@@ -877,24 +762,16 @@ where
                 - child.main_after;
 
             // Total size violation in the main axis.
-            let mut total_violation = 0.0;
 
             for item in main_axis_stretch_nodes_2.iter_mut().filter(|item| !item.frozen) {
                 let actual_main = (item.factor * child_main_free_space / child_main_flex_sum).round();
 
-                let clamped = actual_main.min(item.max).max(item.min);
-                item.violation = clamped - actual_main;
-                total_violation += item.violation;
-                item.computed = clamped;
+                item.computed = actual_main;
             }
 
             for item in main_axis_stretch_nodes_2.iter_mut().filter(|item| !item.frozen) {
                 // Freeze over-stretched items.
-                item.frozen = match total_violation {
-                    total if total > 0.0 => item.violation > 0.0,
-                    total if total < 0.0 => item.violation < 0.0,
-                    _ => true,
-                };
+                item.frozen = true; // TODO: maybe this should be false
 
                 // If the item is frozen, adjust the used_space and sum of main stretch factors.
                 if item.frozen {

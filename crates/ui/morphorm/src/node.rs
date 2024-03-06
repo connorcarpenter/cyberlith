@@ -110,30 +110,6 @@ pub trait Node: Sized {
     /// Returns the desired bottom-side space of the node.
     fn margin_bottom(&self, store: &Self::Store) -> Option<SpaceUnits>;
 
-    /// Returns the minimum left-side space of the node.
-    fn margin_left_min(&self, store: &Self::Store) -> Option<SpaceUnits>;
-
-    /// Returns the minimum right-side space of the node.
-    fn margin_right_min(&self, store: &Self::Store) -> Option<SpaceUnits>;
-
-    /// Returns the minimum top-side space of the node.
-    fn margin_top_min(&self, store: &Self::Store) -> Option<SpaceUnits>;
-
-    /// Returns the minimum bottom-side space of the node.
-    fn margin_bottom_min(&self, store: &Self::Store) -> Option<SpaceUnits>;
-
-    /// Returns the maximum left-side space of the node.
-    fn margin_left_max(&self, store: &Self::Store) -> Option<SpaceUnits>;
-
-    /// Returns the maximum right-side space of the node.
-    fn margin_right_max(&self, store: &Self::Store) -> Option<SpaceUnits>;
-
-    /// Returns the maximum top-side space of the node.
-    fn margin_top_max(&self, store: &Self::Store) -> Option<SpaceUnits>;
-
-    /// Returns the maximum bottom-side space of the node.
-    fn margin_bottom_max(&self, store: &Self::Store) -> Option<SpaceUnits>;
-
     /// Returns the desired left-side child-space of the node.
     fn padding_left(&self, store: &Self::Store) -> Option<SpaceUnits>;
 
@@ -263,38 +239,6 @@ pub(crate) trait NodeExt: Node {
     // Currently unused until wrapping is implemented
     fn cross_between(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SpaceUnits {
         parent_layout_type.select_unwrap(store, |store| self.row_between(store), |store| self.col_between(store))
-    }
-
-    fn margin_main_min_before(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SpaceUnits {
-        parent_layout_type.select_unwrap(store, |store| self.margin_left_min(store), |store| self.margin_top_min(store))
-    }
-
-    fn margin_main_max_before(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SpaceUnits {
-        parent_layout_type.select_unwrap(store, |store| self.margin_left_max(store), |store| self.margin_top_max(store))
-    }
-
-    fn margin_main_min_after(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SpaceUnits {
-        parent_layout_type.select_unwrap(store, |store| self.margin_right_min(store), |store| self.margin_bottom_min(store))
-    }
-
-    fn margin_main_max_after(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SpaceUnits {
-        parent_layout_type.select_unwrap(store, |store| self.margin_right_max(store), |store| self.margin_bottom_max(store))
-    }
-
-    fn margin_cross_min_before(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SpaceUnits {
-        parent_layout_type.select_unwrap(store, |store| self.margin_top_min(store), |store| self.margin_left_min(store))
-    }
-
-    fn margin_cross_max_before(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SpaceUnits {
-        parent_layout_type.select_unwrap(store, |store| self.margin_top_max(store), |store| self.margin_left_max(store))
-    }
-
-    fn margin_cross_min_after(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SpaceUnits {
-        parent_layout_type.select_unwrap(store, |store| self.margin_bottom_min(store), |store| self.margin_right_min(store))
-    }
-
-    fn margin_cross_max_after(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SpaceUnits {
-        parent_layout_type.select_unwrap(store, |store| self.margin_bottom_max(store), |store| self.margin_right_max(store))
     }
 }
 
