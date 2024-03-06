@@ -26,11 +26,6 @@ pub(crate) struct NodeStyle {
     pub(crate) margin_bottom_min: SpaceUnits,
     pub(crate) margin_bottom_max: SpaceUnits,
 
-    pub(crate) border_left: SpaceUnits,
-    pub(crate) border_right: SpaceUnits,
-    pub(crate) border_top: SpaceUnits,
-    pub(crate) border_bottom: SpaceUnits,
-
     pub(crate) solid_override: Option<Solid>,
     pub(crate) aspect_ratio_w_over_h: f32,
     pub(crate) halign: Alignment,
