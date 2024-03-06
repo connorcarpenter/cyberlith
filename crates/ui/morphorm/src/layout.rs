@@ -349,11 +349,11 @@ where
 
                     match item.item_type {
                         ItemType::Before => {
-                            child.cross_before = item.computed;
+                            child.cross_before += item.computed;
                         }
 
                         ItemType::After => {
-                            child.cross_after = item.computed;
+                            child.cross_after += item.computed;
                         }
                     }
                 }
@@ -474,11 +474,11 @@ where
 
                     match item.item_type {
                         ItemType::Before => {
-                            child.cross_before = item.computed;
+                            child.cross_before += item.computed;
                         }
 
                         ItemType::After => {
-                            child.cross_after = item.computed;
+                            child.cross_after += item.computed;
                         }
                     }
                 }
@@ -614,11 +614,11 @@ where
 
                     match item.item_type {
                         ItemType::Before => {
-                            child.cross_before = item.computed;
+                            child.cross_before += item.computed;
                         }
 
                         ItemType::After => {
-                            child.cross_after = item.computed;
+                            child.cross_after += item.computed;
                         }
                     }
                 }
@@ -693,10 +693,10 @@ where
 
                     match item.item_type {
                         ItemType::Before => {
-                            child.main_before = item.computed;
+                            child.main_before += item.computed;
                         }
                         ItemType::After => {
-                            child.main_after = item.computed;
+                            child.main_after += item.computed;
                         }
                     }
                 }
