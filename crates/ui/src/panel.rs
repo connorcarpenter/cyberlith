@@ -2,7 +2,7 @@ use std::any::Any;
 
 use bevy_log::warn;
 
-use morphorm::{LayoutType, PositionType, SizeUnits, Solid, SpaceUnits};
+use morphorm::{Alignment, LayoutType, PositionType, SizeUnits, Solid, SpaceUnits};
 
 use asset_render::AssetManager;
 use render_api::{base::{Color, CpuMaterial}, resources::RenderFrame, components::{RenderLayer, Transform}};
@@ -93,6 +93,8 @@ pub(crate) struct PanelStyle {
 
     pub(crate) row_between: SpaceUnits,
     pub(crate) col_between: SpaceUnits,
+    pub(crate) halign: Alignment,
+    pub(crate) valign: Alignment,
 }
 
 pub struct PanelMut<'a> {
@@ -306,6 +308,14 @@ impl<'a> PanelStyleMut<'a> {
         self.get_panel_ref().style.col_between
     }
 
+    pub fn halign(&self) -> Alignment {
+        self.get_panel_ref().style.halign
+    }
+
+    pub fn valign(&self) -> Alignment {
+        self.get_panel_ref().style.valign
+    }
+
     // setters
 
     pub fn set_background_color(&mut self, color: Color) -> &mut Self {
@@ -339,6 +349,16 @@ impl<'a> PanelStyleMut<'a> {
 
     pub fn set_relative(&mut self) -> &mut Self {
         self.get_mut().style.position_type = PositionType::Relative;
+        self
+    }
+
+    pub fn set_halign(&mut self, align: Alignment) -> &mut Self {
+        self.get_panel_mut().style.halign = align;
+        self
+    }
+
+    pub fn set_valign(&mut self, align: Alignment) -> &mut Self {
+        self.get_panel_mut().style.valign = align;
         self
     }
 

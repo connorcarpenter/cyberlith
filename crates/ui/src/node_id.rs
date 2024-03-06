@@ -213,12 +213,12 @@ impl Node for NodeId {
     }
 
     fn halign(&self, store: &Self::Store) -> Option<Alignment> {
-        let node = store.get(self)?;
-        Some(node.style.halign)
+        let panel_ref = self.panel_ref(store)?;
+        Some(panel_ref.style.halign)
     }
 
     fn valign(&self, store: &Self::Store) -> Option<Alignment> {
-        let node = store.get(self)?;
-        Some(node.style.valign)
+        let panel_ref = self.panel_ref(store)?;
+        Some(panel_ref.style.valign)
     }
 }

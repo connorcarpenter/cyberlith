@@ -394,10 +394,6 @@ impl<'a> LabelStyleMut<'a> {
         self.set_margin_left_units(SpaceUnits::Percentage(left_pc))
     }
 
-    pub fn set_margin_left_st(&mut self, left_st: f32) -> &mut Self {
-        self.set_margin_left_units(SpaceUnits::Stretch(left_st))
-    }
-
     // set_right
     fn set_margin_right_units(&mut self, right: SpaceUnits) -> &mut Self {
         self.get_mut().style.margin_right = right;
@@ -414,10 +410,6 @@ impl<'a> LabelStyleMut<'a> {
 
     pub fn set_margin_right_pc(&mut self, right_pc: f32) -> &mut Self {
         self.set_margin_right_units(SpaceUnits::Percentage(right_pc))
-    }
-
-    pub fn set_margin_right_st(&mut self, right_st: f32) -> &mut Self {
-        self.set_margin_right_units(SpaceUnits::Stretch(right_st))
     }
 
     // set_top
@@ -438,10 +430,6 @@ impl<'a> LabelStyleMut<'a> {
         self.set_margin_top_units(SpaceUnits::Percentage(top_pc))
     }
 
-    pub fn set_margin_top_st(&mut self, top_st: f32) -> &mut Self {
-        self.set_margin_top_units(SpaceUnits::Stretch(top_st))
-    }
-
     // set_bottom
     fn set_margin_bottom_units(&mut self, bottom: SpaceUnits) -> &mut Self {
         self.get_mut().style.margin_bottom = bottom;
@@ -458,10 +446,6 @@ impl<'a> LabelStyleMut<'a> {
 
     pub fn set_margin_bottom_pc(&mut self, bottom_pc: f32) -> &mut Self {
         self.set_margin_bottom_units(SpaceUnits::Percentage(bottom_pc))
-    }
-
-    pub fn set_margin_bottom_st(&mut self, bottom_st: f32) -> &mut Self {
-        self.set_margin_bottom_units(SpaceUnits::Stretch(bottom_st))
     }
 
     // set_margin_left_min
@@ -482,10 +466,6 @@ impl<'a> LabelStyleMut<'a> {
         self.set_margin_left_min_units(SpaceUnits::Percentage(min_left_pc))
     }
 
-    pub fn set_margin_left_min_st(&mut self, min_left_st: f32) -> &mut Self {
-        self.set_margin_left_min_units(SpaceUnits::Stretch(min_left_st))
-    }
-
     // set_margin_right_min
     fn set_margin_right_min_units(&mut self, min_right: SpaceUnits) -> &mut Self {
         self.get_mut().style.margin_right_min = min_right;
@@ -502,10 +482,6 @@ impl<'a> LabelStyleMut<'a> {
 
     pub fn set_margin_right_min_pc(&mut self, min_right_pc: f32) -> &mut Self {
         self.set_margin_right_min_units(SpaceUnits::Percentage(min_right_pc))
-    }
-
-    pub fn set_margin_right_min_st(&mut self, min_right_st: f32) -> &mut Self {
-        self.set_margin_right_min_units(SpaceUnits::Stretch(min_right_st))
     }
 
     // set_margin_top_min
@@ -526,10 +502,6 @@ impl<'a> LabelStyleMut<'a> {
         self.set_margin_top_min_units(SpaceUnits::Percentage(min_top_pc))
     }
 
-    pub fn set_margin_top_min_st(&mut self, min_top_st: f32) -> &mut Self {
-        self.set_margin_top_min_units(SpaceUnits::Stretch(min_top_st))
-    }
-
     // set_margin_bottom_min
     fn set_margin_bottom_min_units(&mut self, min_bottom: SpaceUnits) -> &mut Self {
         self.get_mut().style.margin_bottom_min = min_bottom;
@@ -546,10 +518,6 @@ impl<'a> LabelStyleMut<'a> {
 
     pub fn set_margin_bottom_min_pc(&mut self, min_bottom_pc: f32) -> &mut Self {
         self.set_margin_bottom_min_units(SpaceUnits::Percentage(min_bottom_pc))
-    }
-
-    pub fn set_margin_bottom_min_st(&mut self, min_bottom_st: f32) -> &mut Self {
-        self.set_margin_bottom_min_units(SpaceUnits::Stretch(min_bottom_st))
     }
 
     // set_margin_left_max
@@ -570,10 +538,6 @@ impl<'a> LabelStyleMut<'a> {
         self.set_margin_left_max_units(SpaceUnits::Percentage(max_left_pc))
     }
 
-    pub fn set_margin_left_max_st(&mut self, max_left_st: f32) -> &mut Self {
-        self.set_margin_left_max_units(SpaceUnits::Stretch(max_left_st))
-    }
-
     // set_margin_right_max
     fn set_margin_right_max_units(&mut self, max_right: SpaceUnits) -> &mut Self {
         self.get_mut().style.margin_right_max = max_right;
@@ -590,10 +554,6 @@ impl<'a> LabelStyleMut<'a> {
 
     pub fn set_margin_right_max_pc(&mut self, max_right_pc: f32) -> &mut Self {
         self.set_margin_right_max_units(SpaceUnits::Percentage(max_right_pc))
-    }
-
-    pub fn set_margin_right_max_st(&mut self, max_right_st: f32) -> &mut Self {
-        self.set_margin_right_max_units(SpaceUnits::Stretch(max_right_st))
     }
 
     // set_margin_top_max
@@ -614,10 +574,6 @@ impl<'a> LabelStyleMut<'a> {
         self.set_margin_top_max_units(SpaceUnits::Percentage(max_top_pc))
     }
 
-    pub fn set_margin_top_max_st(&mut self, max_top_st: f32) -> &mut Self {
-        self.set_margin_top_max_units(SpaceUnits::Stretch(max_top_st))
-    }
-
     // set_margin_bottom_max
     fn set_margin_bottom_max_units(&mut self, max_bottom: SpaceUnits) -> &mut Self {
         self.get_mut().style.margin_bottom_max = max_bottom;
@@ -634,10 +590,6 @@ impl<'a> LabelStyleMut<'a> {
 
     pub fn set_margin_bottom_max_pc(&mut self, max_bottom_pc: f32) -> &mut Self {
         self.set_margin_bottom_max_units(SpaceUnits::Percentage(max_bottom_pc))
-    }
-
-    pub fn set_margin_bottom_max_st(&mut self, max_bottom_st: f32) -> &mut Self {
-        self.set_margin_bottom_max_units(SpaceUnits::Stretch(max_bottom_st))
     }
 
     // set_margin
@@ -660,12 +612,5 @@ impl<'a> LabelStyleMut<'a> {
             .set_margin_right_pc(right)
             .set_margin_top_pc(top)
             .set_margin_bottom_pc(bottom)
-    }
-
-    pub fn set_margin_st(&mut self, left: f32, right: f32, top: f32, bottom: f32) -> &mut Self {
-        self.set_margin_left_st(left)
-            .set_margin_right_st(right)
-            .set_margin_top_st(top)
-            .set_margin_bottom_st(bottom)
     }
 }

@@ -59,9 +59,6 @@ pub fn scene_setup(
                 .style(|s| {
                     s
                         .set_background_color(Color::BLACK)
-                        .set_margin_top_st(1.0)
-                        .set_margin_left_st(1.0)
-                        .set_margin_right_st(1.0)
                         .set_size_pc(100.0, 38.2)
                         .set_solid_fit()
                         .set_aspect_ratio(16.0, 4.5);
@@ -83,8 +80,6 @@ pub fn scene_setup(
                         .set_background_color(Color::DARK_GRAY)
                         .set_size_pc(50.0, 20.0)
                         .set_size_max_px(240.0, 90.0)
-                        .set_margin_left_st(1.0)
-                        .set_margin_right_st(1.0)
                         .set_solid_fit()
                         .set_aspect_ratio(16.0, 4.5)
                         .set_padding_px(10.0, 10.0, 10.0, 10.0);
@@ -95,8 +90,6 @@ pub fn scene_setup(
                         .style(|s| {
                             s
                                 .set_size_pc(100.0, 100.0)
-                                .set_margin_left_st(1.0)
-                                .set_margin_right_st(1.0)
                             ;
                         });
                 });
@@ -109,8 +102,6 @@ pub fn scene_setup(
                         .set_background_color(Color::DARK_GRAY)
                         .set_size_pc(50.0, 20.0)
                         .set_size_max_px(240.0, 90.0)
-                        .set_margin_left_st(1.0)
-                        .set_margin_right_st(1.0)
                         .set_solid_fit()
                         .set_aspect_ratio(16.0, 4.5)
                         .set_padding_px(10.0, 10.0, 10.0, 10.0)
@@ -121,8 +112,6 @@ pub fn scene_setup(
                         .style(|s| {
                             s
                                 .set_size_pc(100.0, 100.0)
-                                .set_margin_left_st(1.0)
-                                .set_margin_right_st(1.0)
                             ;
                         });
                 });
