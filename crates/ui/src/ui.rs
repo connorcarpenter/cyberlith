@@ -1,7 +1,7 @@
 use bevy_ecs::{change_detection::ResMut, component::Component, system::Query};
 use bevy_log::warn;
 
-use morphorm::{Node, Units};
+use morphorm::{Node, SizeUnits};
 
 use asset_render::{AssetHandle, AssetManager, IconData};
 use render_api::{
@@ -169,8 +169,8 @@ impl Ui {
         //info!("recalculating layout. viewport_width: {:?}, viewport_height: {:?}", self.viewport.width, self.viewport.height);
 
         let root_panel = self.nodes.get_mut(&Self::ROOT_NODE_ID).unwrap();
-        root_panel.style.width = Units::Pixels(self.viewport.width as f32);
-        root_panel.style.height = Units::Pixels(self.viewport.height as f32);
+        root_panel.style.width = SizeUnits::Pixels(self.viewport.width as f32);
+        root_panel.style.height = SizeUnits::Pixels(self.viewport.height as f32);
 
         let panels_ref = &self.nodes;
         let cache_mut = &mut self.cache;

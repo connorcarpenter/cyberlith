@@ -1,6 +1,6 @@
 use std::any::Any;
 
-use morphorm::{PositionType, Units};
+use morphorm::{PositionType, SizeUnits, SpaceUnits};
 
 use asset_render::AssetManager;
 use render_api::{resources::RenderFrame, components::{RenderLayer, Transform}};
@@ -111,9 +111,9 @@ impl<'a> LabelStyleMut<'a> {
     //     self.get_ref().widget.as_ref().as_any().downcast_ref::<Label>().unwrap()
     // }
     //
-    fn get_label_mut(&mut self) -> &mut Label {
-        self.get_mut().widget.as_mut().as_any_mut().downcast_mut::<Label>().unwrap()
-    }
+    // fn get_label_mut(&mut self) -> &mut Label {
+    //     self.get_mut().widget.as_mut().as_any_mut().downcast_mut::<Label>().unwrap()
+    // }
 
     // getters
 
@@ -121,91 +121,91 @@ impl<'a> LabelStyleMut<'a> {
         self.get_ref().style.position_type
     }
 
-    pub fn width(&self) -> Units {
+    pub fn width(&self) -> SizeUnits {
         self.get_ref().style.width
     }
 
-    pub fn height(&self) -> Units {
+    pub fn height(&self) -> SizeUnits {
         self.get_ref().style.height
     }
 
-    pub fn width_min(&self) -> Units {
+    pub fn width_min(&self) -> SizeUnits {
         self.get_ref().style.width_min
     }
 
-    pub fn width_max(&self) -> Units {
+    pub fn width_max(&self) -> SizeUnits {
         self.get_ref().style.width_max
     }
 
-    pub fn height_min(&self) -> Units {
+    pub fn height_min(&self) -> SizeUnits {
         self.get_ref().style.height_min
     }
 
-    pub fn height_max(&self) -> Units {
+    pub fn height_max(&self) -> SizeUnits {
         self.get_ref().style.height_max
     }
 
-    pub fn margin_left(&self) -> Units {
+    pub fn margin_left(&self) -> SpaceUnits {
         self.get_ref().style.margin_left
     }
 
-    pub fn margin_right(&self) -> Units {
+    pub fn margin_right(&self) -> SpaceUnits {
         self.get_ref().style.margin_right
     }
 
-    pub fn margin_top(&self) -> Units {
+    pub fn margin_top(&self) -> SpaceUnits {
         self.get_ref().style.margin_top
     }
 
-    pub fn margin_bottom(&self) -> Units {
+    pub fn margin_bottom(&self) -> SpaceUnits {
         self.get_ref().style.margin_bottom
     }
 
-    pub fn margin_left_min(&self) -> Units {
+    pub fn margin_left_min(&self) -> SpaceUnits {
         self.get_ref().style.margin_left_min
     }
 
-    pub fn margin_left_max(&self) -> Units {
+    pub fn margin_left_max(&self) -> SpaceUnits {
         self.get_ref().style.margin_left_max
     }
 
-    pub fn margin_right_min(&self) -> Units {
+    pub fn margin_right_min(&self) -> SpaceUnits {
         self.get_ref().style.margin_right_min
     }
 
-    pub fn margin_right_max(&self) -> Units {
+    pub fn margin_right_max(&self) -> SpaceUnits {
         self.get_ref().style.margin_right_max
     }
 
-    pub fn margin_top_min(&self) -> Units {
+    pub fn margin_top_min(&self) -> SpaceUnits {
         self.get_ref().style.margin_top_min
     }
 
-    pub fn margin_top_max(&self) -> Units {
+    pub fn margin_top_max(&self) -> SpaceUnits {
         self.get_ref().style.margin_top_max
     }
 
-    pub fn margin_bottom_min(&self) -> Units {
+    pub fn margin_bottom_min(&self) -> SpaceUnits {
         self.get_ref().style.margin_bottom_min
     }
 
-    pub fn margin_bottom_max(&self) -> Units {
+    pub fn margin_bottom_max(&self) -> SpaceUnits {
         self.get_ref().style.margin_bottom_max
     }
 
-    pub fn border_left(&self) -> Units {
+    pub fn border_left(&self) -> SpaceUnits {
         self.get_ref().style.border_left
     }
 
-    pub fn border_right(&self) -> Units {
+    pub fn border_right(&self) -> SpaceUnits {
         self.get_ref().style.border_right
     }
 
-    pub fn border_top(&self) -> Units {
+    pub fn border_top(&self) -> SpaceUnits {
         self.get_ref().style.border_top
     }
 
-    pub fn border_bottom(&self) -> Units {
+    pub fn border_bottom(&self) -> SpaceUnits {
         self.get_ref().style.border_bottom
     }
 
@@ -222,474 +222,474 @@ impl<'a> LabelStyleMut<'a> {
     }
 
     // set_width
-    fn set_width_units(&mut self, width: Units) -> &mut Self {
+    fn set_width_units(&mut self, width: SizeUnits) -> &mut Self {
         self.get_mut().style.width = width;
         self
     }
 
     pub fn set_width_auto(&mut self) -> &mut Self {
-        self.set_width_units(Units::Auto)
+        self.set_width_units(SizeUnits::Auto)
     }
 
     pub fn set_width_px(&mut self, width_px: f32) -> &mut Self {
-        self.set_width_units(Units::Pixels(width_px))
+        self.set_width_units(SizeUnits::Pixels(width_px))
     }
 
     pub fn set_width_pc(&mut self, width_pc: f32) -> &mut Self {
-        self.set_width_units(Units::Percentage(width_pc))
+        self.set_width_units(SizeUnits::Percentage(width_pc))
     }
 
-    pub fn set_width_st(&mut self, stretch: f32) -> &mut Self {
-        self.set_width_units(Units::Stretch(stretch))
-    }
+    // pub fn set_width_st(&mut self, stretch: f32) -> &mut Self {
+    //     self.set_width_units(Units::Stretch(stretch))
+    // }
 
     // set height
-    fn set_height_units(&mut self, height: Units) -> &mut Self {
+    fn set_height_units(&mut self, height: SizeUnits) -> &mut Self {
         self.get_mut().style.height = height;
         self
     }
 
     pub fn set_height_auto(&mut self) -> &mut Self {
-        self.set_height_units(Units::Auto)
+        self.set_height_units(SizeUnits::Auto)
     }
 
     pub fn set_height_px(&mut self, width_px: f32) -> &mut Self {
-        self.set_height_units(Units::Pixels(width_px))
+        self.set_height_units(SizeUnits::Pixels(width_px))
     }
 
     pub fn set_height_pc(&mut self, width_pc: f32) -> &mut Self {
-        self.set_height_units(Units::Percentage(width_pc))
+        self.set_height_units(SizeUnits::Percentage(width_pc))
     }
 
-    pub fn set_height_st(&mut self, stretch: f32) -> &mut Self {
-        self.set_height_units(Units::Stretch(stretch))
-    }
+    // pub fn set_height_st(&mut self, stretch: f32) -> &mut Self {
+    //     self.set_height_units(Units::Stretch(stretch))
+    // }
 
     // set size
-    fn set_size_units(&mut self, width: Units, height: Units) -> &mut Self {
+    fn set_size_units(&mut self, width: SizeUnits, height: SizeUnits) -> &mut Self {
         self.set_width_units(width);
         self.set_height_units(height);
         self
     }
 
     pub fn set_size_auto(&mut self) -> &mut Self {
-        self.set_size_units(Units::Auto, Units::Auto)
+        self.set_size_units(SizeUnits::Auto, SizeUnits::Auto)
     }
 
     pub fn set_size_px(&mut self, width_px: f32, height_px: f32) -> &mut Self {
-        self.set_size_units(Units::Pixels(width_px), Units::Pixels(height_px))
+        self.set_size_units(SizeUnits::Pixels(width_px), SizeUnits::Pixels(height_px))
     }
 
     pub fn set_size_pc(&mut self, width_pc: f32, height_pc: f32) -> &mut Self {
-        self.set_size_units(Units::Percentage(width_pc), Units::Percentage(height_pc))
+        self.set_size_units(SizeUnits::Percentage(width_pc), SizeUnits::Percentage(height_pc))
     }
 
-    pub fn set_size_st(&mut self, width_st: f32, height_st: f32) -> &mut Self {
-        self.set_size_units(Units::Stretch(width_st), Units::Stretch(height_st))
-    }
+    // pub fn set_size_st(&mut self, width_st: f32, height_st: f32) -> &mut Self {
+    //     self.set_size_units(Units::Stretch(width_st), Units::Stretch(height_st))
+    // }
 
     // set_width_min
-    fn set_width_min_units(&mut self, min_width: Units) -> &mut Self {
+    fn set_width_min_units(&mut self, min_width: SizeUnits) -> &mut Self {
         self.get_mut().style.width_min = min_width;
         self
     }
 
     pub fn set_width_min_auto(&mut self) -> &mut Self {
-        self.set_width_min_units(Units::Auto)
+        self.set_width_min_units(SizeUnits::Auto)
     }
 
     pub fn set_width_min_px(&mut self, min_width_px: f32) -> &mut Self {
-        self.set_width_min_units(Units::Pixels(min_width_px))
+        self.set_width_min_units(SizeUnits::Pixels(min_width_px))
     }
 
     pub fn set_width_min_pc(&mut self, min_width_pc: f32) -> &mut Self {
-        self.set_width_min_units(Units::Percentage(min_width_pc))
+        self.set_width_min_units(SizeUnits::Percentage(min_width_pc))
     }
 
-    pub fn set_width_min_st(&mut self, min_width_st: f32) -> &mut Self {
-        self.set_width_min_units(Units::Stretch(min_width_st))
-    }
+    // pub fn set_width_min_st(&mut self, min_width_st: f32) -> &mut Self {
+    //     self.set_width_min_units(Units::Stretch(min_width_st))
+    // }
 
     // set_height_min
-    fn set_height_min_units(&mut self, min_height: Units) -> &mut Self {
+    fn set_height_min_units(&mut self, min_height: SizeUnits) -> &mut Self {
         self.get_mut().style.height_min = min_height;
         self
     }
 
     pub fn set_height_min_auto(&mut self) -> &mut Self {
-        self.set_height_min_units(Units::Auto)
+        self.set_height_min_units(SizeUnits::Auto)
     }
 
     pub fn set_height_min_px(&mut self, min_height_px: f32) -> &mut Self {
-        self.set_height_min_units(Units::Pixels(min_height_px))
+        self.set_height_min_units(SizeUnits::Pixels(min_height_px))
     }
 
     pub fn set_height_min_pc(&mut self, min_height_pc: f32) -> &mut Self {
-        self.set_height_min_units(Units::Percentage(min_height_pc))
+        self.set_height_min_units(SizeUnits::Percentage(min_height_pc))
     }
 
-    pub fn set_height_min_st(&mut self, min_height_st: f32) -> &mut Self {
-        self.set_height_min_units(Units::Stretch(min_height_st))
-    }
+    // pub fn set_height_min_st(&mut self, min_height_st: f32) -> &mut Self {
+    //     self.set_height_min_units(Units::Stretch(min_height_st))
+    // }
 
     // set_size_min
-    fn set_size_min_units(&mut self, min_width: Units, min_height: Units) -> &mut Self {
+    fn set_size_min_units(&mut self, min_width: SizeUnits, min_height: SizeUnits) -> &mut Self {
         self.set_width_min_units(min_width);
         self.set_height_min_units(min_height);
         self
     }
 
     pub fn set_size_min_auto(&mut self) -> &mut Self {
-        self.set_size_min_units(Units::Auto, Units::Auto)
+        self.set_size_min_units(SizeUnits::Auto, SizeUnits::Auto)
     }
 
     pub fn set_size_min_px(&mut self, min_width_px: f32, min_height_px: f32) -> &mut Self {
-        self.set_size_min_units(Units::Pixels(min_width_px), Units::Pixels(min_height_px))
+        self.set_size_min_units(SizeUnits::Pixels(min_width_px), SizeUnits::Pixels(min_height_px))
     }
 
     pub fn set_size_min_pc(&mut self, min_width_pc: f32, min_height_pc: f32) -> &mut Self {
         self.set_size_min_units(
-            Units::Percentage(min_width_pc),
-            Units::Percentage(min_height_pc),
+            SizeUnits::Percentage(min_width_pc),
+            SizeUnits::Percentage(min_height_pc),
         )
     }
 
-    pub fn set_size_min_st(&mut self, min_width_st: f32, min_height_st: f32) -> &mut Self {
-        self.set_size_min_units(Units::Stretch(min_width_st), Units::Stretch(min_height_st))
-    }
+    // pub fn set_size_min_st(&mut self, min_width_st: f32, min_height_st: f32) -> &mut Self {
+    //     self.set_size_min_units(Units::Stretch(min_width_st), Units::Stretch(min_height_st))
+    // }
 
     // set_width_max
-    fn set_width_max_units(&mut self, max_width: Units) -> &mut Self {
+    fn set_width_max_units(&mut self, max_width: SizeUnits) -> &mut Self {
         self.get_mut().style.width_max = max_width;
         self
     }
 
     pub fn set_width_max_auto(&mut self) -> &mut Self {
-        self.set_width_max_units(Units::Auto)
+        self.set_width_max_units(SizeUnits::Auto)
     }
 
     pub fn set_width_max_px(&mut self, max_width_px: f32) -> &mut Self {
-        self.set_width_max_units(Units::Pixels(max_width_px))
+        self.set_width_max_units(SizeUnits::Pixels(max_width_px))
     }
 
     pub fn set_width_max_pc(&mut self, max_width_pc: f32) -> &mut Self {
-        self.set_width_max_units(Units::Percentage(max_width_pc))
+        self.set_width_max_units(SizeUnits::Percentage(max_width_pc))
     }
 
-    pub fn set_width_max_st(&mut self, max_width_st: f32) -> &mut Self {
-        self.set_width_max_units(Units::Stretch(max_width_st))
-    }
+    // pub fn set_width_max_st(&mut self, max_width_st: f32) -> &mut Self {
+    //     self.set_width_max_units(Units::Stretch(max_width_st))
+    // }
 
     // set_height_max
-    fn set_height_max_units(&mut self, max_height: Units) -> &mut Self {
+    fn set_height_max_units(&mut self, max_height: SizeUnits) -> &mut Self {
         self.get_mut().style.height_max = max_height;
         self
     }
 
     pub fn set_height_max_auto(&mut self) -> &mut Self {
-        self.set_height_max_units(Units::Auto)
+        self.set_height_max_units(SizeUnits::Auto)
     }
 
     pub fn set_height_max_px(&mut self, max_height_px: f32) -> &mut Self {
-        self.set_height_max_units(Units::Pixels(max_height_px))
+        self.set_height_max_units(SizeUnits::Pixels(max_height_px))
     }
 
     pub fn set_height_max_pc(&mut self, max_height_pc: f32) -> &mut Self {
-        self.set_height_max_units(Units::Percentage(max_height_pc))
+        self.set_height_max_units(SizeUnits::Percentage(max_height_pc))
     }
 
-    pub fn set_height_max_st(&mut self, max_height_st: f32) -> &mut Self {
-        self.set_height_max_units(Units::Stretch(max_height_st))
-    }
+    // pub fn set_height_max_st(&mut self, max_height_st: f32) -> &mut Self {
+    //     self.set_height_max_units(Units::Stretch(max_height_st))
+    // }
 
     // set_size_max
-    fn set_size_max_units(&mut self, max_width: Units, max_height: Units) -> &mut Self {
+    fn set_size_max_units(&mut self, max_width: SizeUnits, max_height: SizeUnits) -> &mut Self {
         self.set_width_max_units(max_width);
         self.set_height_max_units(max_height);
         self
     }
 
     pub fn set_size_max_auto(&mut self) -> &mut Self {
-        self.set_size_max_units(Units::Auto, Units::Auto)
+        self.set_size_max_units(SizeUnits::Auto, SizeUnits::Auto)
     }
 
     pub fn set_size_max_px(&mut self, max_width_px: f32, max_height_px: f32) -> &mut Self {
-        self.set_size_max_units(Units::Pixels(max_width_px), Units::Pixels(max_height_px))
+        self.set_size_max_units(SizeUnits::Pixels(max_width_px), SizeUnits::Pixels(max_height_px))
     }
 
     pub fn set_size_max_pc(&mut self, max_width_pc: f32, max_height_pc: f32) -> &mut Self {
         self.set_size_max_units(
-            Units::Percentage(max_width_pc),
-            Units::Percentage(max_height_pc),
+            SizeUnits::Percentage(max_width_pc),
+            SizeUnits::Percentage(max_height_pc),
         )
     }
 
-    pub fn set_size_max_st(&mut self, max_width_st: f32, max_height_st: f32) -> &mut Self {
-        self.set_size_max_units(Units::Stretch(max_width_st), Units::Stretch(max_height_st))
-    }
+    // pub fn set_size_max_st(&mut self, max_width_st: f32, max_height_st: f32) -> &mut Self {
+    //     self.set_size_max_units(Units::Stretch(max_width_st), Units::Stretch(max_height_st))
+    // }
 
     // set_left
-    fn set_margin_left_units(&mut self, left: Units) -> &mut Self {
+    fn set_margin_left_units(&mut self, left: SpaceUnits) -> &mut Self {
         self.get_mut().style.margin_left = left;
         self
     }
 
     pub fn set_margin_left_auto(&mut self) -> &mut Self {
-        self.set_margin_left_units(Units::Auto)
+        self.set_margin_left_units(SpaceUnits::Auto)
     }
 
     pub fn set_margin_left_px(&mut self, left_px: f32) -> &mut Self {
-        self.set_margin_left_units(Units::Pixels(left_px))
+        self.set_margin_left_units(SpaceUnits::Pixels(left_px))
     }
 
     pub fn set_margin_left_pc(&mut self, left_pc: f32) -> &mut Self {
-        self.set_margin_left_units(Units::Percentage(left_pc))
+        self.set_margin_left_units(SpaceUnits::Percentage(left_pc))
     }
 
     pub fn set_margin_left_st(&mut self, left_st: f32) -> &mut Self {
-        self.set_margin_left_units(Units::Stretch(left_st))
+        self.set_margin_left_units(SpaceUnits::Stretch(left_st))
     }
 
     // set_right
-    fn set_margin_right_units(&mut self, right: Units) -> &mut Self {
+    fn set_margin_right_units(&mut self, right: SpaceUnits) -> &mut Self {
         self.get_mut().style.margin_right = right;
         self
     }
 
     pub fn set_margin_right_auto(&mut self) -> &mut Self {
-        self.set_margin_right_units(Units::Auto)
+        self.set_margin_right_units(SpaceUnits::Auto)
     }
 
     pub fn set_margin_right_px(&mut self, right_px: f32) -> &mut Self {
-        self.set_margin_right_units(Units::Pixels(right_px))
+        self.set_margin_right_units(SpaceUnits::Pixels(right_px))
     }
 
     pub fn set_margin_right_pc(&mut self, right_pc: f32) -> &mut Self {
-        self.set_margin_right_units(Units::Percentage(right_pc))
+        self.set_margin_right_units(SpaceUnits::Percentage(right_pc))
     }
 
     pub fn set_margin_right_st(&mut self, right_st: f32) -> &mut Self {
-        self.set_margin_right_units(Units::Stretch(right_st))
+        self.set_margin_right_units(SpaceUnits::Stretch(right_st))
     }
 
     // set_top
-    fn set_margin_top_units(&mut self, top: Units) -> &mut Self {
+    fn set_margin_top_units(&mut self, top: SpaceUnits) -> &mut Self {
         self.get_mut().style.margin_top = top;
         self
     }
 
     pub fn set_margin_top_auto(&mut self) -> &mut Self {
-        self.set_margin_top_units(Units::Auto)
+        self.set_margin_top_units(SpaceUnits::Auto)
     }
 
     pub fn set_margin_top_px(&mut self, top_px: f32) -> &mut Self {
-        self.set_margin_top_units(Units::Pixels(top_px))
+        self.set_margin_top_units(SpaceUnits::Pixels(top_px))
     }
 
     pub fn set_margin_top_pc(&mut self, top_pc: f32) -> &mut Self {
-        self.set_margin_top_units(Units::Percentage(top_pc))
+        self.set_margin_top_units(SpaceUnits::Percentage(top_pc))
     }
 
     pub fn set_margin_top_st(&mut self, top_st: f32) -> &mut Self {
-        self.set_margin_top_units(Units::Stretch(top_st))
+        self.set_margin_top_units(SpaceUnits::Stretch(top_st))
     }
 
     // set_bottom
-    fn set_margin_bottom_units(&mut self, bottom: Units) -> &mut Self {
+    fn set_margin_bottom_units(&mut self, bottom: SpaceUnits) -> &mut Self {
         self.get_mut().style.margin_bottom = bottom;
         self
     }
 
     pub fn set_margin_bottom_auto(&mut self) -> &mut Self {
-        self.set_margin_bottom_units(Units::Auto)
+        self.set_margin_bottom_units(SpaceUnits::Auto)
     }
 
     pub fn set_margin_bottom_px(&mut self, bottom_px: f32) -> &mut Self {
-        self.set_margin_bottom_units(Units::Pixels(bottom_px))
+        self.set_margin_bottom_units(SpaceUnits::Pixels(bottom_px))
     }
 
     pub fn set_margin_bottom_pc(&mut self, bottom_pc: f32) -> &mut Self {
-        self.set_margin_bottom_units(Units::Percentage(bottom_pc))
+        self.set_margin_bottom_units(SpaceUnits::Percentage(bottom_pc))
     }
 
     pub fn set_margin_bottom_st(&mut self, bottom_st: f32) -> &mut Self {
-        self.set_margin_bottom_units(Units::Stretch(bottom_st))
+        self.set_margin_bottom_units(SpaceUnits::Stretch(bottom_st))
     }
 
     // set_margin_left_min
-    fn set_margin_left_min_units(&mut self, min_left: Units) -> &mut Self {
+    fn set_margin_left_min_units(&mut self, min_left: SpaceUnits) -> &mut Self {
         self.get_mut().style.margin_left_min = min_left;
         self
     }
 
     pub fn set_margin_left_min_auto(&mut self) -> &mut Self {
-        self.set_margin_left_min_units(Units::Auto)
+        self.set_margin_left_min_units(SpaceUnits::Auto)
     }
 
     pub fn set_margin_left_min_px(&mut self, min_left_px: f32) -> &mut Self {
-        self.set_margin_left_min_units(Units::Pixels(min_left_px))
+        self.set_margin_left_min_units(SpaceUnits::Pixels(min_left_px))
     }
 
     pub fn set_margin_left_min_pc(&mut self, min_left_pc: f32) -> &mut Self {
-        self.set_margin_left_min_units(Units::Percentage(min_left_pc))
+        self.set_margin_left_min_units(SpaceUnits::Percentage(min_left_pc))
     }
 
     pub fn set_margin_left_min_st(&mut self, min_left_st: f32) -> &mut Self {
-        self.set_margin_left_min_units(Units::Stretch(min_left_st))
+        self.set_margin_left_min_units(SpaceUnits::Stretch(min_left_st))
     }
 
     // set_margin_right_min
-    fn set_margin_right_min_units(&mut self, min_right: Units) -> &mut Self {
+    fn set_margin_right_min_units(&mut self, min_right: SpaceUnits) -> &mut Self {
         self.get_mut().style.margin_right_min = min_right;
         self
     }
 
     pub fn set_margin_right_min_auto(&mut self) -> &mut Self {
-        self.set_margin_right_min_units(Units::Auto)
+        self.set_margin_right_min_units(SpaceUnits::Auto)
     }
 
     pub fn set_margin_right_min_px(&mut self, min_right_px: f32) -> &mut Self {
-        self.set_margin_right_min_units(Units::Pixels(min_right_px))
+        self.set_margin_right_min_units(SpaceUnits::Pixels(min_right_px))
     }
 
     pub fn set_margin_right_min_pc(&mut self, min_right_pc: f32) -> &mut Self {
-        self.set_margin_right_min_units(Units::Percentage(min_right_pc))
+        self.set_margin_right_min_units(SpaceUnits::Percentage(min_right_pc))
     }
 
     pub fn set_margin_right_min_st(&mut self, min_right_st: f32) -> &mut Self {
-        self.set_margin_right_min_units(Units::Stretch(min_right_st))
+        self.set_margin_right_min_units(SpaceUnits::Stretch(min_right_st))
     }
 
     // set_margin_top_min
-    fn set_margin_top_min_units(&mut self, min_top: Units) -> &mut Self {
+    fn set_margin_top_min_units(&mut self, min_top: SpaceUnits) -> &mut Self {
         self.get_mut().style.margin_top_min = min_top;
         self
     }
 
     pub fn set_margin_top_min_auto(&mut self) -> &mut Self {
-        self.set_margin_top_min_units(Units::Auto)
+        self.set_margin_top_min_units(SpaceUnits::Auto)
     }
 
     pub fn set_margin_top_min_px(&mut self, min_top_px: f32) -> &mut Self {
-        self.set_margin_top_min_units(Units::Pixels(min_top_px))
+        self.set_margin_top_min_units(SpaceUnits::Pixels(min_top_px))
     }
 
     pub fn set_margin_top_min_pc(&mut self, min_top_pc: f32) -> &mut Self {
-        self.set_margin_top_min_units(Units::Percentage(min_top_pc))
+        self.set_margin_top_min_units(SpaceUnits::Percentage(min_top_pc))
     }
 
     pub fn set_margin_top_min_st(&mut self, min_top_st: f32) -> &mut Self {
-        self.set_margin_top_min_units(Units::Stretch(min_top_st))
+        self.set_margin_top_min_units(SpaceUnits::Stretch(min_top_st))
     }
 
     // set_margin_bottom_min
-    fn set_margin_bottom_min_units(&mut self, min_bottom: Units) -> &mut Self {
+    fn set_margin_bottom_min_units(&mut self, min_bottom: SpaceUnits) -> &mut Self {
         self.get_mut().style.margin_bottom_min = min_bottom;
         self
     }
 
     pub fn set_margin_bottom_min_auto(&mut self) -> &mut Self {
-        self.set_margin_bottom_min_units(Units::Auto)
+        self.set_margin_bottom_min_units(SpaceUnits::Auto)
     }
 
     pub fn set_margin_bottom_min_px(&mut self, min_bottom_px: f32) -> &mut Self {
-        self.set_margin_bottom_min_units(Units::Pixels(min_bottom_px))
+        self.set_margin_bottom_min_units(SpaceUnits::Pixels(min_bottom_px))
     }
 
     pub fn set_margin_bottom_min_pc(&mut self, min_bottom_pc: f32) -> &mut Self {
-        self.set_margin_bottom_min_units(Units::Percentage(min_bottom_pc))
+        self.set_margin_bottom_min_units(SpaceUnits::Percentage(min_bottom_pc))
     }
 
     pub fn set_margin_bottom_min_st(&mut self, min_bottom_st: f32) -> &mut Self {
-        self.set_margin_bottom_min_units(Units::Stretch(min_bottom_st))
+        self.set_margin_bottom_min_units(SpaceUnits::Stretch(min_bottom_st))
     }
 
     // set_margin_left_max
-    fn set_margin_left_max_units(&mut self, max_left: Units) -> &mut Self {
+    fn set_margin_left_max_units(&mut self, max_left: SpaceUnits) -> &mut Self {
         self.get_mut().style.margin_left_max = max_left;
         self
     }
 
     pub fn set_margin_left_max_auto(&mut self) -> &mut Self {
-        self.set_margin_left_max_units(Units::Auto)
+        self.set_margin_left_max_units(SpaceUnits::Auto)
     }
 
     pub fn set_margin_left_max_px(&mut self, max_left_px: f32) -> &mut Self {
-        self.set_margin_left_max_units(Units::Pixels(max_left_px))
+        self.set_margin_left_max_units(SpaceUnits::Pixels(max_left_px))
     }
 
     pub fn set_margin_left_max_pc(&mut self, max_left_pc: f32) -> &mut Self {
-        self.set_margin_left_max_units(Units::Percentage(max_left_pc))
+        self.set_margin_left_max_units(SpaceUnits::Percentage(max_left_pc))
     }
 
     pub fn set_margin_left_max_st(&mut self, max_left_st: f32) -> &mut Self {
-        self.set_margin_left_max_units(Units::Stretch(max_left_st))
+        self.set_margin_left_max_units(SpaceUnits::Stretch(max_left_st))
     }
 
     // set_margin_right_max
-    fn set_margin_right_max_units(&mut self, max_right: Units) -> &mut Self {
+    fn set_margin_right_max_units(&mut self, max_right: SpaceUnits) -> &mut Self {
         self.get_mut().style.margin_right_max = max_right;
         self
     }
 
     pub fn set_margin_right_max_auto(&mut self) -> &mut Self {
-        self.set_margin_right_max_units(Units::Auto)
+        self.set_margin_right_max_units(SpaceUnits::Auto)
     }
 
     pub fn set_margin_right_max_px(&mut self, max_right_px: f32) -> &mut Self {
-        self.set_margin_right_max_units(Units::Pixels(max_right_px))
+        self.set_margin_right_max_units(SpaceUnits::Pixels(max_right_px))
     }
 
     pub fn set_margin_right_max_pc(&mut self, max_right_pc: f32) -> &mut Self {
-        self.set_margin_right_max_units(Units::Percentage(max_right_pc))
+        self.set_margin_right_max_units(SpaceUnits::Percentage(max_right_pc))
     }
 
     pub fn set_margin_right_max_st(&mut self, max_right_st: f32) -> &mut Self {
-        self.set_margin_right_max_units(Units::Stretch(max_right_st))
+        self.set_margin_right_max_units(SpaceUnits::Stretch(max_right_st))
     }
 
     // set_margin_top_max
-    fn set_margin_top_max_units(&mut self, max_top: Units) -> &mut Self {
+    fn set_margin_top_max_units(&mut self, max_top: SpaceUnits) -> &mut Self {
         self.get_mut().style.margin_top_max = max_top;
         self
     }
 
     pub fn set_margin_top_max_auto(&mut self) -> &mut Self {
-        self.set_margin_top_max_units(Units::Auto)
+        self.set_margin_top_max_units(SpaceUnits::Auto)
     }
 
     pub fn set_margin_top_max_px(&mut self, max_top_px: f32) -> &mut Self {
-        self.set_margin_top_max_units(Units::Pixels(max_top_px))
+        self.set_margin_top_max_units(SpaceUnits::Pixels(max_top_px))
     }
 
     pub fn set_margin_top_max_pc(&mut self, max_top_pc: f32) -> &mut Self {
-        self.set_margin_top_max_units(Units::Percentage(max_top_pc))
+        self.set_margin_top_max_units(SpaceUnits::Percentage(max_top_pc))
     }
 
     pub fn set_margin_top_max_st(&mut self, max_top_st: f32) -> &mut Self {
-        self.set_margin_top_max_units(Units::Stretch(max_top_st))
+        self.set_margin_top_max_units(SpaceUnits::Stretch(max_top_st))
     }
 
     // set_margin_bottom_max
-    fn set_margin_bottom_max_units(&mut self, max_bottom: Units) -> &mut Self {
+    fn set_margin_bottom_max_units(&mut self, max_bottom: SpaceUnits) -> &mut Self {
         self.get_mut().style.margin_bottom_max = max_bottom;
         self
     }
 
     pub fn set_margin_bottom_max_auto(&mut self) -> &mut Self {
-        self.set_margin_bottom_max_units(Units::Auto)
+        self.set_margin_bottom_max_units(SpaceUnits::Auto)
     }
 
     pub fn set_margin_bottom_max_px(&mut self, max_bottom_px: f32) -> &mut Self {
-        self.set_margin_bottom_max_units(Units::Pixels(max_bottom_px))
+        self.set_margin_bottom_max_units(SpaceUnits::Pixels(max_bottom_px))
     }
 
     pub fn set_margin_bottom_max_pc(&mut self, max_bottom_pc: f32) -> &mut Self {
-        self.set_margin_bottom_max_units(Units::Percentage(max_bottom_pc))
+        self.set_margin_bottom_max_units(SpaceUnits::Percentage(max_bottom_pc))
     }
 
     pub fn set_margin_bottom_max_st(&mut self, max_bottom_st: f32) -> &mut Self {
-        self.set_margin_bottom_max_units(Units::Stretch(max_bottom_st))
+        self.set_margin_bottom_max_units(SpaceUnits::Stretch(max_bottom_st))
     }
 
     // set_margin
@@ -722,91 +722,91 @@ impl<'a> LabelStyleMut<'a> {
     }
 
     // set_border_left
-    fn set_border_left_units(&mut self, border_left: Units) -> &mut Self {
+    fn set_border_left_units(&mut self, border_left: SpaceUnits) -> &mut Self {
         self.get_mut().style.border_left = border_left;
         self
     }
 
     pub fn set_border_left_auto(&mut self) -> &mut Self {
-        self.set_border_left_units(Units::Auto)
+        self.set_border_left_units(SpaceUnits::Auto)
     }
 
     pub fn set_border_left_px(&mut self, border_left_px: f32) -> &mut Self {
-        self.set_border_left_units(Units::Pixels(border_left_px))
+        self.set_border_left_units(SpaceUnits::Pixels(border_left_px))
     }
 
     pub fn set_border_left_pc(&mut self, border_left_pc: f32) -> &mut Self {
-        self.set_border_left_units(Units::Percentage(border_left_pc))
+        self.set_border_left_units(SpaceUnits::Percentage(border_left_pc))
     }
 
     pub fn set_border_left_st(&mut self, border_left_st: f32) -> &mut Self {
-        self.set_border_left_units(Units::Stretch(border_left_st))
+        self.set_border_left_units(SpaceUnits::Stretch(border_left_st))
     }
 
     // set_border_right
-    fn set_border_right_units(&mut self, border_right: Units) -> &mut Self {
+    fn set_border_right_units(&mut self, border_right: SpaceUnits) -> &mut Self {
         self.get_mut().style.border_right = border_right;
         self
     }
 
     pub fn set_border_right_auto(&mut self) -> &mut Self {
-        self.set_border_right_units(Units::Auto)
+        self.set_border_right_units(SpaceUnits::Auto)
     }
 
     pub fn set_border_right_px(&mut self, border_right_px: f32) -> &mut Self {
-        self.set_border_right_units(Units::Pixels(border_right_px))
+        self.set_border_right_units(SpaceUnits::Pixels(border_right_px))
     }
 
     pub fn set_border_right_pc(&mut self, border_right_pc: f32) -> &mut Self {
-        self.set_border_right_units(Units::Percentage(border_right_pc))
+        self.set_border_right_units(SpaceUnits::Percentage(border_right_pc))
     }
 
     pub fn set_border_right_st(&mut self, border_right_st: f32) -> &mut Self {
-        self.set_border_right_units(Units::Stretch(border_right_st))
+        self.set_border_right_units(SpaceUnits::Stretch(border_right_st))
     }
 
     // set_border_top
-    fn set_border_top_units(&mut self, border_top: Units) -> &mut Self {
+    fn set_border_top_units(&mut self, border_top: SpaceUnits) -> &mut Self {
         self.get_mut().style.border_top = border_top;
         self
     }
 
     pub fn set_border_top_auto(&mut self) -> &mut Self {
-        self.set_border_top_units(Units::Auto)
+        self.set_border_top_units(SpaceUnits::Auto)
     }
 
     pub fn set_border_top_px(&mut self, border_top_px: f32) -> &mut Self {
-        self.set_border_top_units(Units::Pixels(border_top_px))
+        self.set_border_top_units(SpaceUnits::Pixels(border_top_px))
     }
 
     pub fn set_border_top_pc(&mut self, border_top_pc: f32) -> &mut Self {
-        self.set_border_top_units(Units::Percentage(border_top_pc))
+        self.set_border_top_units(SpaceUnits::Percentage(border_top_pc))
     }
 
     pub fn set_border_top_st(&mut self, border_top_st: f32) -> &mut Self {
-        self.set_border_top_units(Units::Stretch(border_top_st))
+        self.set_border_top_units(SpaceUnits::Stretch(border_top_st))
     }
 
     // set_border_bottom
-    fn set_border_bottom_units(&mut self, border_bottom: Units) -> &mut Self {
+    fn set_border_bottom_units(&mut self, border_bottom: SpaceUnits) -> &mut Self {
         self.get_mut().style.border_bottom = border_bottom;
         self
     }
 
     pub fn set_border_bottom_auto(&mut self) -> &mut Self {
-        self.set_border_bottom_units(Units::Auto)
+        self.set_border_bottom_units(SpaceUnits::Auto)
     }
 
     pub fn set_border_bottom_px(&mut self, border_bottom_px: f32) -> &mut Self {
-        self.set_border_bottom_units(Units::Pixels(border_bottom_px))
+        self.set_border_bottom_units(SpaceUnits::Pixels(border_bottom_px))
     }
 
     pub fn set_border_bottom_pc(&mut self, border_bottom_pc: f32) -> &mut Self {
-        self.set_border_bottom_units(Units::Percentage(border_bottom_pc))
+        self.set_border_bottom_units(SpaceUnits::Percentage(border_bottom_pc))
     }
 
     pub fn set_border_bottom_st(&mut self, border_bottom_st: f32) -> &mut Self {
-        self.set_border_bottom_units(Units::Stretch(border_bottom_st))
+        self.set_border_bottom_units(SpaceUnits::Stretch(border_bottom_st))
     }
 
     // set_border

@@ -1,4 +1,4 @@
-use bevy_log::{info, warn};
+use bevy_log::warn;
 
 use render_api::{
     base::CpuMaterial,

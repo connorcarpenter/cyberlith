@@ -1,6 +1,6 @@
 use smallvec::SmallVec;
 
-use crate::{CacheExt, Units::*, Cache, LayoutType, Node, NodeExt, percentage_calc, PositionType, Size, Solid, Units};
+use crate::{CacheExt, Cache, LayoutType, Node, NodeExt, percentage_calc, PositionType, Size, Solid, SpaceUnits, SizeUnits};
 
 const DEFAULT_MIN: f32 = -f32::MAX;
 const DEFAULT_MAX: f32 = f32::MAX;
@@ -96,21 +96,21 @@ where
     C: Cache<Node = N>,
 {
     let parent_padding_main: f32 = match node.child_main_before(store, parent_layout_type) {
-        Pixels(val) => val,
-        Percentage(val) => percentage_calc(val, parent_main, 0.0),
+        SpaceUnits::Pixels(val) => val,
+        SpaceUnits::Percentage(val) => percentage_calc(val, parent_main, 0.0),
         _ => 0.0,
     } + match node.child_main_after(store, parent_layout_type) {
-        Pixels(val) => val,
-        Percentage(val) => percentage_calc(val, parent_main, 0.0),
+        SpaceUnits::Pixels(val) => val,
+        SpaceUnits::Percentage(val) => percentage_calc(val, parent_main, 0.0),
         _ => 0.0,
     };
     let parent_padding_cross: f32 = match node.child_cross_before(store, parent_layout_type) {
-        Pixels(val) => val,
-        Percentage(val) => percentage_calc(val, cross_size, 0.0),
+        SpaceUnits::Pixels(val) => val,
+        SpaceUnits::Percentage(val) => percentage_calc(val, cross_size, 0.0),
         _ => 0.0,
     } + match node.child_cross_after(store, parent_layout_type) {
-        Pixels(val) => val,
-        Percentage(val) => percentage_calc(val, cross_size, 0.0),
+        SpaceUnits::Pixels(val) => val,
+        SpaceUnits::Percentage(val) => percentage_calc(val, cross_size, 0.0),
         _ => 0.0,
     };
 
@@ -131,10 +131,10 @@ where
 
     // Compute main-axis size.
     let mut computed_main = match main {
-        Pixels(val) => val,
-        Percentage(val) => percentage_calc(val, parent_main, parent_padding_main).round(),
-        Stretch(_) => parent_main,
-        Auto => 0.0,
+        SizeUnits::Pixels(val) => val,
+        SizeUnits::Percentage(val) => percentage_calc(val, parent_main, parent_padding_main).round(),
+        SizeUnits::Stretch(_) => parent_main,
+        SizeUnits::Auto => 0.0,
     };
 
     // Cross size is determined by the parent.
@@ -210,10 +210,10 @@ where
     let mut main_axis = SmallVec::<[StretchItem; 32]>::new();
 
     // Parent overrides for child auto space.
-    let node_child_main_before = Pixels(0.0);
-    let node_child_main_after = Pixels(0.0);
-    let node_child_cross_before = Pixels(0.0);
-    let node_child_cross_after = Pixels(0.0);
+    let node_child_main_before = SpaceUnits::Pixels(0.0);
+    let node_child_main_after = SpaceUnits::Pixels(0.0);
+    let node_child_cross_before = SpaceUnits::Pixels(0.0);
+    let node_child_cross_after = SpaceUnits::Pixels(0.0);
     let node_child_main_between = node.main_between(store, layout_type);
 
     // Determine index of first and last parent-directed child nodes.
@@ -264,32 +264,32 @@ where
         let child_max_main = child.max_main(store, layout_type);
 
         // Apply parent child_space overrides to auto child space.
-        if child_main_before == Units::Auto && first == Some(index) {
+        if child_main_before == SpaceUnits::Auto && first == Some(index) {
             child_main_before = node_child_main_before;
         }
 
-        if child_main_after == Units::Auto {
+        if child_main_after == SpaceUnits::Auto {
             if last == Some(index) {
                 child_main_after = node_child_main_after;
             } else if let Some((_, next_node)) = node_children.peek() {
                 // Only apply main between if both adjacent children have auto space between
                 let next_main_before = next_node.main_before(store, layout_type);
-                if next_main_before == Units::Auto {
+                if next_main_before == SpaceUnits::Auto {
                     child_main_after = node_child_main_between;
                 }
             }
         }
 
-        if child_cross_before == Units::Auto {
+        if child_cross_before == SpaceUnits::Auto {
             child_cross_before = node_child_cross_before;
         }
 
-        if child_cross_after == Units::Auto {
+        if child_cross_after == SpaceUnits::Auto {
             child_cross_after = node_child_cross_after;
         }
 
         // Collect stretch main items.
-        if let Stretch(factor) = child_main_before {
+        if let SpaceUnits::Stretch(factor) = child_main_before {
             main_flex_sum += factor;
             main_axis.push(StretchItem::new(
                 index,
@@ -300,7 +300,7 @@ where
             ));
         }
 
-        if let Stretch(factor) = child_main {
+        if let SizeUnits::Stretch(factor) = child_main {
             main_flex_sum += factor;
             main_axis.push(StretchItem::new(
                 index,
@@ -311,7 +311,7 @@ where
             ));
         }
 
-        if let Stretch(factor) = child_main_after {
+        if let SpaceUnits::Stretch(factor) = child_main_after {
             main_flex_sum += factor;
             main_axis.push(StretchItem::new(
                 index,
@@ -366,7 +366,7 @@ where
     }
 
     // Determine cross-size of auto node from children.
-    if num_parent_directed_children != 0 && node.cross(store, layout_type) == Auto {
+    if num_parent_directed_children != 0 && node.cross(store, layout_type) == SizeUnits::Auto {
         parent_cross = (cross_max + border_cross_before + border_cross_after).min(max_cross).max(min_cross);
     }
 
@@ -382,11 +382,11 @@ where
         let mut child_cross_after = child.node.cross_after(store, layout_type);
 
         // Apply child_space overrides.
-        if child_cross_before == Units::Auto {
+        if child_cross_before == SpaceUnits::Auto {
             child_cross_before = node_child_cross_before;
         }
 
-        if child_cross_after == Units::Auto {
+        if child_cross_after == SpaceUnits::Auto {
             child_cross_after = node_child_cross_after;
         }
 
@@ -394,7 +394,7 @@ where
 
         // Collect stretch cross items.
         let mut cross_axis = SmallVec::<[StretchItem; 3]>::new();
-        if let Stretch(factor) = child_cross_before {
+        if let SpaceUnits::Stretch(factor) = child_cross_before {
             let child_min_cross_before =
                 child.node.min_cross_before(store, layout_type).to_px(parent_cross, parent_padding_cross, DEFAULT_MIN);
             let child_max_cross_before =
@@ -413,7 +413,7 @@ where
             ));
         }
 
-        if let Stretch(factor) = child_cross {
+        if let SizeUnits::Stretch(factor) = child_cross {
             let child_min_cross = child.node.min_cross(store, layout_type).to_px(parent_cross, parent_padding_cross, DEFAULT_MIN);
             let child_max_cross = child.node.max_cross(store, layout_type).to_px(parent_cross, parent_padding_cross, DEFAULT_MAX);
 
@@ -424,7 +424,7 @@ where
             cross_axis.push(StretchItem::new(index, factor, ItemType::Size, child_min_cross, child_max_cross));
         }
 
-        if let Stretch(factor) = child_cross_after {
+        if let SpaceUnits::Stretch(factor) = child_cross_after {
             let child_min_cross_after = child.node.min_cross_after(store, layout_type).to_px(parent_cross, parent_padding_cross, DEFAULT_MIN);
             let child_max_cross_after = child.node.max_cross_after(store, layout_type).to_px(parent_cross, parent_padding_cross, DEFAULT_MAX);
 
@@ -517,7 +517,7 @@ where
     }
 
     // Determine main-size of auto node from children.
-    if num_parent_directed_children != 0 && node.main(store, layout_type) == Auto {
+    if num_parent_directed_children != 0 && node.main(store, layout_type) == SizeUnits::Auto {
         parent_main = (parent_main.max(main_sum) + border_main_before + border_main_after).min(max_main).max(min_main);
     }
 
@@ -596,11 +596,11 @@ where
         let mut child_cross_after = child.node.cross_after(store, layout_type);
 
         // Apply child_space overrides.
-        if child_cross_before == Units::Auto {
+        if child_cross_before == SpaceUnits::Auto {
             child_cross_before = node_child_cross_before;
         }
 
-        if child_cross_after == Units::Auto {
+        if child_cross_after == SpaceUnits::Auto {
             child_cross_after = node_child_cross_after;
         }
 
@@ -608,7 +608,7 @@ where
 
         // Collect stretch cross items.
         let mut cross_axis = SmallVec::<[StretchItem; 3]>::new();
-        if let Stretch(factor) = child_cross_before {
+        if let SpaceUnits::Stretch(factor) = child_cross_before {
             let child_min_cross_before =
                 child.node.min_cross_before(store, layout_type).to_px(parent_cross, parent_padding_cross, DEFAULT_MIN);
             let child_max_cross_before =
@@ -627,7 +627,7 @@ where
             ));
         }
 
-        if let Stretch(factor) = child_cross_after {
+        if let SpaceUnits::Stretch(factor) = child_cross_after {
             let child_min_cross_after = child.node.min_cross_after(store, layout_type).to_px(parent_cross, parent_padding_cross, DEFAULT_MIN);
             let child_max_cross_after = child.node.max_cross_after(store, layout_type).to_px(parent_cross, parent_padding_cross, DEFAULT_MAX);
 
@@ -741,19 +741,19 @@ where
         // let child_max_main = child.max_main(store, layout_type);
 
         // Apply parent child_space overrides to auto child space.
-        if child_main_before == Units::Auto {
+        if child_main_before == SpaceUnits::Auto {
             child_main_before = node_child_main_before;
         }
 
-        if child_main_after == Units::Auto {
+        if child_main_after == SpaceUnits::Auto {
             child_main_after = node_child_main_after;
         }
 
-        if child_cross_before == Units::Auto {
+        if child_cross_before == SpaceUnits::Auto {
             child_cross_before = node_child_cross_before;
         }
 
-        if child_cross_after == Units::Auto {
+        if child_cross_after == SpaceUnits::Auto {
             child_cross_after = node_child_cross_after;
         }
 
@@ -809,11 +809,11 @@ where
         let mut child_cross_after = child.node.cross_after(store, layout_type);
 
         // Apply child_space overrides.
-        if child_cross_before == Units::Auto {
+        if child_cross_before == SpaceUnits::Auto {
             child_cross_before = node_child_cross_before;
         }
 
-        if child_cross_after == Units::Auto {
+        if child_cross_after == SpaceUnits::Auto {
             child_cross_after = node_child_cross_after;
         }
 
@@ -821,7 +821,7 @@ where
 
         // Collect stretch cross items.
         let mut cross_axis = SmallVec::<[StretchItem; 3]>::new();
-        if let Stretch(factor) = child_cross_before {
+        if let SpaceUnits::Stretch(factor) = child_cross_before {
             let child_min_cross_before =
                 child.node.min_cross_before(store, layout_type).to_px(parent_cross, parent_padding_cross, DEFAULT_MIN);
             let child_max_cross_before =
@@ -840,7 +840,7 @@ where
             ));
         }
 
-        if let Stretch(factor) = child_cross {
+        if let SizeUnits::Stretch(factor) = child_cross {
             let child_min_cross = child.node.min_cross(store, layout_type).to_px(parent_cross, parent_padding_cross, DEFAULT_MIN);
             let child_max_cross = child.node.max_cross(store, layout_type).to_px(parent_cross, parent_padding_cross, DEFAULT_MAX);
 
@@ -851,7 +851,7 @@ where
             cross_axis.push(StretchItem::new(index, factor, ItemType::Size, child_min_cross, child_max_cross));
         }
 
-        if let Stretch(factor) = child_cross_after {
+        if let SpaceUnits::Stretch(factor) = child_cross_after {
             let child_min_cross_after = child.node.min_cross_after(store, layout_type).to_px(parent_cross, parent_padding_cross, DEFAULT_MIN);
             let child_max_cross_after = child.node.max_cross_after(store, layout_type).to_px(parent_cross, parent_padding_cross, DEFAULT_MAX);
 
@@ -960,11 +960,11 @@ where
         let mut child_main_after = child.node.main_after(store, layout_type);
 
         // Apply child_space overrides.
-        if child_main_before == Units::Auto {
+        if child_main_before == SpaceUnits::Auto {
             child_main_before = node_child_main_before;
         }
 
-        if child_main_after == Units::Auto {
+        if child_main_after == SpaceUnits::Auto {
             child_main_after = node_child_main_after;
         }
 
@@ -972,7 +972,7 @@ where
 
         // Collect stretch main items.
         let mut main_axis = SmallVec::<[StretchItem; 3]>::new();
-        if let Stretch(factor) = child_main_before {
+        if let SpaceUnits::Stretch(factor) = child_main_before {
             let child_min_main_before = child.node.min_main_before(store, layout_type).to_px(parent_main, parent_padding_main, DEFAULT_MIN);
             let child_max_main_before = child.node.max_main_before(store, layout_type).to_px(parent_main, parent_padding_main, DEFAULT_MAX);
 
@@ -986,7 +986,7 @@ where
                 child_max_main_before,
             ));
         }
-        if let Stretch(factor) = child_main {
+        if let SizeUnits::Stretch(factor) = child_main {
             let child_min_main = child.node.min_main(store, layout_type).to_px(parent_main, parent_padding_main, DEFAULT_MIN);
             let child_max_main = child.node.max_main(store, layout_type).to_px(parent_main, parent_padding_main, DEFAULT_MAX);
 
@@ -994,7 +994,7 @@ where
 
             main_axis.push(StretchItem::new(index, factor, ItemType::Size, child_min_main, child_max_main));
         }
-        if let Stretch(factor) = child_main_after {
+        if let SpaceUnits::Stretch(factor) = child_main_after {
             let child_min_main_after = child.node.min_main_after(store, layout_type).to_px(parent_main, parent_padding_main, DEFAULT_MIN);
             let child_max_main_after = child.node.max_main_after(store, layout_type).to_px(parent_main, parent_padding_main, DEFAULT_MAX);
 
@@ -1062,7 +1062,7 @@ where
             }
         }
 
-        if let Stretch(_) = child_main {
+        if let SizeUnits::Stretch(_) = child_main {
             layout(child.node, layout_type, child.main, child.cross, cache, tree, store, sublayout);
         }
     }
@@ -1107,11 +1107,11 @@ where
             std::mem::swap(&mut main_sum, &mut cross_max)
         };
 
-        if main == Auto {
+        if main == SizeUnits::Auto {
             computed_main = main_sum.min(max_main).max(min_main);
         }
 
-        if cross == Auto {
+        if cross == SizeUnits::Auto {
             computed_cross = cross_max.min(max_cross).max(min_cross);
         }
     }

@@ -49,7 +49,7 @@ pub trait Node: Sized {
         let width = self
             .width(store)
             .map(|w| match w {
-                Units::Pixels(px) => px,
+                SizeUnits::Pixels(px) => px,
                 _ => panic!("Root node must have fixed size."),
             })
             .expect("Failed to get width for node");
@@ -57,7 +57,7 @@ pub trait Node: Sized {
         let height = self
             .height(store)
             .map(|w| match w {
-                Units::Pixels(px) => px,
+                SizeUnits::Pixels(px) => px,
                 _ => panic!("Root node must have fixed size."),
             })
             .expect("Failed to get height for node");
@@ -83,22 +83,22 @@ pub trait Node: Sized {
     fn position_type(&self, store: &Self::Store) -> Option<PositionType>;
 
     /// Returns the desired width of the node.
-    fn width(&self, store: &Self::Store) -> Option<Units>;
+    fn width(&self, store: &Self::Store) -> Option<SizeUnits>;
 
     /// Returns the desired height of the node.
-    fn height(&self, store: &Self::Store) -> Option<Units>;
+    fn height(&self, store: &Self::Store) -> Option<SizeUnits>;
 
     /// Returns the desired left-side space of the node.
-    fn left(&self, store: &Self::Store) -> Option<Units>;
+    fn left(&self, store: &Self::Store) -> Option<SpaceUnits>;
 
     /// Returns the desired right-side space of the node.
-    fn right(&self, store: &Self::Store) -> Option<Units>;
+    fn right(&self, store: &Self::Store) -> Option<SpaceUnits>;
 
     /// Returns the desired top-side space of the node.
-    fn top(&self, store: &Self::Store) -> Option<Units>;
+    fn top(&self, store: &Self::Store) -> Option<SpaceUnits>;
 
     /// Returns the desired bottom-side space of the node.
-    fn bottom(&self, store: &Self::Store) -> Option<Units>;
+    fn bottom(&self, store: &Self::Store) -> Option<SpaceUnits>;
 
     /// Returns the width and height of the node if its desired width and/or desired height are auto and the node has no children.
     /// This can be used to size the node based on visual content (such as text), or to apply an aspect ratio size constraint.
@@ -111,70 +111,70 @@ pub trait Node: Sized {
     ) -> Option<(f32, f32)>;
 
     /// Returns the desired left-side child-space of the node.
-    fn child_left(&self, store: &Self::Store) -> Option<Units>;
+    fn child_left(&self, store: &Self::Store) -> Option<SpaceUnits>;
 
     /// Returns the desired left-side child-space of the node.
-    fn child_right(&self, store: &Self::Store) -> Option<Units>;
+    fn child_right(&self, store: &Self::Store) -> Option<SpaceUnits>;
 
     /// Returns the desired left-side child-space of the node.
-    fn child_top(&self, store: &Self::Store) -> Option<Units>;
+    fn child_top(&self, store: &Self::Store) -> Option<SpaceUnits>;
 
     /// Returns the desired left-side child-space of the node.
-    fn child_bottom(&self, store: &Self::Store) -> Option<Units>;
+    fn child_bottom(&self, store: &Self::Store) -> Option<SpaceUnits>;
 
     /// Returns the desired space to applied between the children of the node on the vertical axis.
-    fn row_between(&self, store: &Self::Store) -> Option<Units>;
+    fn row_between(&self, store: &Self::Store) -> Option<SpaceUnits>;
 
     /// Returns the desired space to be applied between the children of the node on the horizontal axis.
-    fn col_between(&self, store: &Self::Store) -> Option<Units>;
+    fn col_between(&self, store: &Self::Store) -> Option<SpaceUnits>;
 
     /// Returns the minimum width of the node.
-    fn min_width(&self, store: &Self::Store) -> Option<Units>;
+    fn min_width(&self, store: &Self::Store) -> Option<SizeUnits>;
 
     /// Returns the minimum height of the node.
-    fn min_height(&self, store: &Self::Store) -> Option<Units>;
+    fn min_height(&self, store: &Self::Store) -> Option<SizeUnits>;
 
     /// Returns the maximum width of the node.
-    fn max_width(&self, store: &Self::Store) -> Option<Units>;
+    fn max_width(&self, store: &Self::Store) -> Option<SizeUnits>;
 
     /// Returns the maximum height of the node.
-    fn max_height(&self, store: &Self::Store) -> Option<Units>;
+    fn max_height(&self, store: &Self::Store) -> Option<SizeUnits>;
 
     /// Returns the minimum left-side space of the node.
-    fn min_left(&self, store: &Self::Store) -> Option<Units>;
+    fn min_left(&self, store: &Self::Store) -> Option<SpaceUnits>;
 
     /// Returns the minimum right-side space of the node.
-    fn min_right(&self, store: &Self::Store) -> Option<Units>;
+    fn min_right(&self, store: &Self::Store) -> Option<SpaceUnits>;
 
     /// Returns the minimum top-side space of the node.
-    fn min_top(&self, store: &Self::Store) -> Option<Units>;
+    fn min_top(&self, store: &Self::Store) -> Option<SpaceUnits>;
 
     /// Returns the minimum bottom-side space of the node.
-    fn min_bottom(&self, store: &Self::Store) -> Option<Units>;
+    fn min_bottom(&self, store: &Self::Store) -> Option<SpaceUnits>;
 
     /// Returns the maximum left-side space of the node.
-    fn max_left(&self, store: &Self::Store) -> Option<Units>;
+    fn max_left(&self, store: &Self::Store) -> Option<SpaceUnits>;
 
     /// Returns the maximum right-side space of the node.
-    fn max_right(&self, store: &Self::Store) -> Option<Units>;
+    fn max_right(&self, store: &Self::Store) -> Option<SpaceUnits>;
 
     /// Returns the maximum top-side space of the node.
-    fn max_top(&self, store: &Self::Store) -> Option<Units>;
+    fn max_top(&self, store: &Self::Store) -> Option<SpaceUnits>;
 
     /// Returns the maximum bottom-side space of the node.
-    fn max_bottom(&self, store: &Self::Store) -> Option<Units>;
+    fn max_bottom(&self, store: &Self::Store) -> Option<SpaceUnits>;
 
     /// Returns the left-side border width of the node.
-    fn border_left(&self, store: &Self::Store) -> Option<Units>;
+    fn border_left(&self, store: &Self::Store) -> Option<SpaceUnits>;
 
     /// Returns the right-side border width of the node.
-    fn border_right(&self, store: &Self::Store) -> Option<Units>;
+    fn border_right(&self, store: &Self::Store) -> Option<SpaceUnits>;
 
     /// Returns the top-side border width of the node.
-    fn border_top(&self, store: &Self::Store) -> Option<Units>;
+    fn border_top(&self, store: &Self::Store) -> Option<SpaceUnits>;
 
     /// Returns the bottom-side border width of the node.
-    fn border_bottom(&self, store: &Self::Store) -> Option<Units>;
+    fn border_bottom(&self, store: &Self::Store) -> Option<SpaceUnits>;
 
     /// Returns the solid override of the node.
     fn solid(&self, store: &Self::Store) -> Option<Solid>;
@@ -185,142 +185,142 @@ pub trait Node: Sized {
 
 /// Helper trait used internally for converting layout properties into a direction-agnostic value.
 pub(crate) trait NodeExt: Node {
-    fn main(&self, store: &Self::Store, parent_layout_type: LayoutType) -> Units {
+    fn main(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SizeUnits {
         match parent_layout_type {
-            LayoutType::Row => self.width(store).unwrap_or(Units::Stretch(1.0)),
-            LayoutType::Column => self.height(store).unwrap_or(Units::Stretch(1.0)),
+            LayoutType::Row => self.width(store).unwrap_or(SizeUnits::Stretch(1.0)),
+            LayoutType::Column => self.height(store).unwrap_or(SizeUnits::Stretch(1.0)),
         }
     }
 
-    fn min_main(&self, store: &Self::Store, parent_layout_type: LayoutType) -> Units {
+    fn min_main(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SizeUnits {
         parent_layout_type.select_unwrap_default(
             store,
             |store| self.min_width(store),
             |store| self.min_height(store),
-            Units::Pixels(0.0),
+            SizeUnits::Pixels(0.0),
         )
     }
 
-    fn max_main(&self, store: &Self::Store, parent_layout_type: LayoutType) -> Units {
+    fn max_main(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SizeUnits {
         parent_layout_type.select_unwrap_default(
             store,
             |store| self.max_width(store),
             |store| self.max_height(store),
-            Units::Pixels(f32::MAX),
+            SizeUnits::Pixels(f32::MAX),
         )
     }
 
-    fn cross(&self, store: &Self::Store, parent_layout_type: LayoutType) -> Units {
+    fn cross(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SizeUnits {
         match parent_layout_type {
-            LayoutType::Row => self.height(store).unwrap_or(Units::Stretch(1.0)),
-            LayoutType::Column => self.width(store).unwrap_or(Units::Stretch(1.0)),
+            LayoutType::Row => self.height(store).unwrap_or(SizeUnits::Stretch(1.0)),
+            LayoutType::Column => self.width(store).unwrap_or(SizeUnits::Stretch(1.0)),
         }
     }
 
-    fn min_cross(&self, store: &Self::Store, parent_layout_type: LayoutType) -> Units {
+    fn min_cross(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SizeUnits {
         parent_layout_type.select_unwrap_default(
             store,
             |store| self.min_height(store),
             |store| self.min_width(store),
-            Units::Pixels(0.0),
+            SizeUnits::Pixels(0.0),
         )
     }
 
-    fn max_cross(&self, store: &Self::Store, parent_layout_type: LayoutType) -> Units {
+    fn max_cross(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SizeUnits {
         parent_layout_type.select_unwrap_default(
             store,
             |store| self.max_height(store),
             |store| self.max_width(store),
-            Units::Pixels(f32::MAX),
+            SizeUnits::Pixels(f32::MAX),
         )
     }
 
-    fn main_before(&self, store: &Self::Store, parent_layout_type: LayoutType) -> Units {
+    fn main_before(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SpaceUnits {
         parent_layout_type.select_unwrap(store, |store| self.left(store), |store| self.top(store))
     }
 
-    fn main_after(&self, store: &Self::Store, parent_layout_type: LayoutType) -> Units {
+    fn main_after(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SpaceUnits {
         parent_layout_type.select_unwrap(store, |store| self.right(store), |store| self.bottom(store))
     }
 
-    fn cross_before(&self, store: &Self::Store, parent_layout_type: LayoutType) -> Units {
+    fn cross_before(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SpaceUnits {
         parent_layout_type.select_unwrap(store, |store| self.top(store), |store| self.left(store))
     }
 
-    fn cross_after(&self, store: &Self::Store, parent_layout_type: LayoutType) -> Units {
+    fn cross_after(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SpaceUnits {
         parent_layout_type.select_unwrap(store, |store| self.bottom(store), |store| self.right(store))
     }
 
-    fn child_main_before(&self, store: &Self::Store, parent_layout_type: LayoutType) -> Units {
+    fn child_main_before(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SpaceUnits {
         parent_layout_type.select_unwrap(store, |store| self.child_left(store), |store| self.child_top(store))
     }
 
-    fn child_main_after(&self, store: &Self::Store, parent_layout_type: LayoutType) -> Units {
+    fn child_main_after(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SpaceUnits {
         parent_layout_type.select_unwrap(store, |store| self.child_right(store), |store| self.child_bottom(store))
     }
 
-    fn child_cross_before(&self, store: &Self::Store, parent_layout_type: LayoutType) -> Units {
+    fn child_cross_before(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SpaceUnits {
         parent_layout_type.select_unwrap(store, |store| self.child_top(store), |store| self.child_left(store))
     }
 
-    fn child_cross_after(&self, store: &Self::Store, parent_layout_type: LayoutType) -> Units {
+    fn child_cross_after(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SpaceUnits {
         parent_layout_type.select_unwrap(store, |store| self.child_bottom(store), |store| self.child_right(store))
     }
 
-    fn main_between(&self, store: &Self::Store, parent_layout_type: LayoutType) -> Units {
+    fn main_between(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SpaceUnits {
         parent_layout_type.select_unwrap(store, |store| self.col_between(store), |store| self.row_between(store))
     }
 
     // Currently unused until wrapping is implemented
-    fn cross_between(&self, store: &Self::Store, parent_layout_type: LayoutType) -> Units {
+    fn cross_between(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SpaceUnits {
         parent_layout_type.select_unwrap(store, |store| self.row_between(store), |store| self.col_between(store))
     }
 
-    fn min_main_before(&self, store: &Self::Store, parent_layout_type: LayoutType) -> Units {
+    fn min_main_before(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SpaceUnits {
         parent_layout_type.select_unwrap(store, |store| self.min_left(store), |store| self.min_top(store))
     }
 
-    fn max_main_before(&self, store: &Self::Store, parent_layout_type: LayoutType) -> Units {
+    fn max_main_before(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SpaceUnits {
         parent_layout_type.select_unwrap(store, |store| self.max_left(store), |store| self.max_top(store))
     }
 
-    fn min_main_after(&self, store: &Self::Store, parent_layout_type: LayoutType) -> Units {
+    fn min_main_after(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SpaceUnits {
         parent_layout_type.select_unwrap(store, |store| self.min_right(store), |store| self.min_bottom(store))
     }
 
-    fn max_main_after(&self, store: &Self::Store, parent_layout_type: LayoutType) -> Units {
+    fn max_main_after(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SpaceUnits {
         parent_layout_type.select_unwrap(store, |store| self.max_right(store), |store| self.max_bottom(store))
     }
 
-    fn min_cross_before(&self, store: &Self::Store, parent_layout_type: LayoutType) -> Units {
+    fn min_cross_before(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SpaceUnits {
         parent_layout_type.select_unwrap(store, |store| self.min_top(store), |store| self.min_left(store))
     }
 
-    fn max_cross_before(&self, store: &Self::Store, parent_layout_type: LayoutType) -> Units {
+    fn max_cross_before(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SpaceUnits {
         parent_layout_type.select_unwrap(store, |store| self.max_top(store), |store| self.max_left(store))
     }
 
-    fn min_cross_after(&self, store: &Self::Store, parent_layout_type: LayoutType) -> Units {
+    fn min_cross_after(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SpaceUnits {
         parent_layout_type.select_unwrap(store, |store| self.min_bottom(store), |store| self.min_right(store))
     }
 
-    fn max_cross_after(&self, store: &Self::Store, parent_layout_type: LayoutType) -> Units {
+    fn max_cross_after(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SpaceUnits {
         parent_layout_type.select_unwrap(store, |store| self.max_bottom(store), |store| self.max_right(store))
     }
 
-    fn border_main_before(&self, store: &Self::Store, parent_layout_type: LayoutType) -> Units {
+    fn border_main_before(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SpaceUnits {
         parent_layout_type.select_unwrap(store, |store| self.border_left(store), |store| self.border_top(store))
     }
 
-    fn border_main_after(&self, store: &Self::Store, parent_layout_type: LayoutType) -> Units {
+    fn border_main_after(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SpaceUnits {
         parent_layout_type.select_unwrap(store, |store| self.border_right(store), |store| self.border_bottom(store))
     }
 
-    fn border_cross_before(&self, store: &Self::Store, parent_layout_type: LayoutType) -> Units {
+    fn border_cross_before(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SpaceUnits {
         parent_layout_type.select_unwrap(store, |store| self.border_top(store), |store| self.border_left(store))
     }
 
-    fn border_cross_after(&self, store: &Self::Store, parent_layout_type: LayoutType) -> Units {
+    fn border_cross_after(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SpaceUnits {
         parent_layout_type.select_unwrap(store, |store| self.border_bottom(store), |store| self.border_right(store))
     }
 
