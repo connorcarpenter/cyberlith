@@ -1,5 +1,4 @@
 use std::fmt::{Display, Formatter};
-use bevy_log::info;
 
 use morphorm::{Alignment, LayoutType, Node, PositionType, SizeUnits, Solid, SpaceUnits};
 
@@ -92,56 +91,102 @@ impl Node for NodeId {
         Some(node.style.height)
     }
 
-    fn left(&self, store: &NodeStore) -> Option<SpaceUnits> {
+    fn width_min(&self, store: &NodeStore) -> Option<SizeUnits> {
+        let node = store.get(self)?;
+        Some(node.style.width_min)
+    }
+
+    fn height_min(&self, store: &NodeStore) -> Option<SizeUnits> {
+        let node = store.get(self)?;
+        Some(node.style.height_min)
+    }
+
+    fn width_max(&self, store: &NodeStore) -> Option<SizeUnits> {
+        let node = store.get(self)?;
+        Some(node.style.width_max)
+    }
+
+    fn height_max(&self, store: &NodeStore) -> Option<SizeUnits> {
+        let node = store.get(self)?;
+        Some(node.style.height_max)
+    }
+
+    fn margin_left(&self, store: &NodeStore) -> Option<SpaceUnits> {
         let node = store.get(self)?;
         Some(node.style.margin_left)
     }
 
-    fn right(&self, store: &NodeStore) -> Option<SpaceUnits> {
+    fn margin_right(&self, store: &NodeStore) -> Option<SpaceUnits> {
         let node = store.get(self)?;
         Some(node.style.margin_right)
     }
 
-    fn top(&self, store: &NodeStore) -> Option<SpaceUnits> {
+    fn margin_top(&self, store: &NodeStore) -> Option<SpaceUnits> {
         let node = store.get(self)?;
         Some(node.style.margin_top)
     }
 
-    fn bottom(&self, store: &NodeStore) -> Option<SpaceUnits> {
+    fn margin_bottom(&self, store: &NodeStore) -> Option<SpaceUnits> {
         let node = store.get(self)?;
         Some(node.style.margin_bottom)
     }
 
-    fn content_size(
-        &self,
-        _store: &NodeStore,
-        _sublayout: &mut Self::SubLayout<'_>,
-
-        // only 1 of these will be Some
-        _computed_width: Option<f32>,
-        _computed_height: Option<f32>,
-
-    ) -> Option<(f32, f32)> {
-        info!("content size");
-        None
+    fn margin_left_min(&self, store: &NodeStore) -> Option<SpaceUnits> {
+        let node = store.get(self)?;
+        Some(node.style.margin_left_min)
     }
 
-    fn child_left(&self, store: &NodeStore) -> Option<SpaceUnits> {
+    fn margin_right_min(&self, store: &NodeStore) -> Option<SpaceUnits> {
+        let node = store.get(self)?;
+        Some(node.style.margin_right_min)
+    }
+
+    fn margin_top_min(&self, store: &NodeStore) -> Option<SpaceUnits> {
+        let node = store.get(self)?;
+        Some(node.style.margin_top_min)
+    }
+
+    fn margin_bottom_min(&self, store: &NodeStore) -> Option<SpaceUnits> {
+        let node = store.get(self)?;
+        Some(node.style.margin_bottom_min)
+    }
+
+    fn margin_left_max(&self, store: &NodeStore) -> Option<SpaceUnits> {
+        let node = store.get(self)?;
+        Some(node.style.margin_left_max)
+    }
+
+    fn margin_right_max(&self, store: &NodeStore) -> Option<SpaceUnits> {
+        let node = store.get(self)?;
+        Some(node.style.margin_right_max)
+    }
+
+    fn margin_top_max(&self, store: &NodeStore) -> Option<SpaceUnits> {
+        let node = store.get(self)?;
+        Some(node.style.margin_top_max)
+    }
+
+    fn margin_bottom_max(&self, store: &NodeStore) -> Option<SpaceUnits> {
+        let node = store.get(self)?;
+        Some(node.style.margin_bottom_max)
+    }
+
+    fn padding_left(&self, store: &NodeStore) -> Option<SpaceUnits> {
         let panel_ref = self.panel_ref(store)?;
         Some(panel_ref.style.padding_left)
     }
 
-    fn child_right(&self, store: &NodeStore) -> Option<SpaceUnits> {
+    fn padding_right(&self, store: &NodeStore) -> Option<SpaceUnits> {
         let panel_ref = self.panel_ref(store)?;
         Some(panel_ref.style.padding_right)
     }
 
-    fn child_top(&self, store: &NodeStore) -> Option<SpaceUnits> {
+    fn padding_top(&self, store: &NodeStore) -> Option<SpaceUnits> {
         let panel_ref = self.panel_ref(store)?;
         Some(panel_ref.style.padding_top)
     }
 
-    fn child_bottom(&self, store: &NodeStore) -> Option<SpaceUnits> {
+    fn padding_bottom(&self, store: &NodeStore) -> Option<SpaceUnits> {
         let panel_ref = self.panel_ref(store)?;
         Some(panel_ref.style.padding_bottom)
     }
@@ -154,66 +199,6 @@ impl Node for NodeId {
     fn col_between(&self, store: &NodeStore) -> Option<SpaceUnits> {
         let panel_ref = self.panel_ref(store)?;
         Some(panel_ref.style.col_between)
-    }
-
-    fn min_width(&self, store: &NodeStore) -> Option<SizeUnits> {
-        let node = store.get(self)?;
-        Some(node.style.width_min)
-    }
-
-    fn min_height(&self, store: &NodeStore) -> Option<SizeUnits> {
-        let node = store.get(self)?;
-        Some(node.style.height_min)
-    }
-
-    fn max_width(&self, store: &NodeStore) -> Option<SizeUnits> {
-        let node = store.get(self)?;
-        Some(node.style.width_max)
-    }
-
-    fn max_height(&self, store: &NodeStore) -> Option<SizeUnits> {
-        let node = store.get(self)?;
-        Some(node.style.height_max)
-    }
-
-    fn min_left(&self, store: &NodeStore) -> Option<SpaceUnits> {
-        let node = store.get(self)?;
-        Some(node.style.margin_left_min)
-    }
-
-    fn min_right(&self, store: &NodeStore) -> Option<SpaceUnits> {
-        let node = store.get(self)?;
-        Some(node.style.margin_right_min)
-    }
-
-    fn min_top(&self, store: &NodeStore) -> Option<SpaceUnits> {
-        let node = store.get(self)?;
-        Some(node.style.margin_top_min)
-    }
-
-    fn min_bottom(&self, store: &NodeStore) -> Option<SpaceUnits> {
-        let node = store.get(self)?;
-        Some(node.style.margin_bottom_min)
-    }
-
-    fn max_left(&self, store: &NodeStore) -> Option<SpaceUnits> {
-        let node = store.get(self)?;
-        Some(node.style.margin_left_max)
-    }
-
-    fn max_right(&self, store: &NodeStore) -> Option<SpaceUnits> {
-        let node = store.get(self)?;
-        Some(node.style.margin_right_max)
-    }
-
-    fn max_top(&self, store: &NodeStore) -> Option<SpaceUnits> {
-        let node = store.get(self)?;
-        Some(node.style.margin_top_max)
-    }
-
-    fn max_bottom(&self, store: &NodeStore) -> Option<SpaceUnits> {
-        let node = store.get(self)?;
-        Some(node.style.margin_bottom_max)
     }
 
     fn solid(&self, store: &NodeStore) -> Option<Solid> {

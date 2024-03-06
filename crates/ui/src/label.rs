@@ -212,12 +212,12 @@ impl<'a> LabelStyleMut<'a> {
     // setters
 
     pub fn set_absolute(&mut self) -> &mut Self {
-        self.get_mut().style.position_type = PositionType::SelfDirected;
+        self.get_mut().style.position_type = PositionType::Absolute;
         self
     }
 
     pub fn set_relative(&mut self) -> &mut Self {
-        self.get_mut().style.position_type = PositionType::ParentDirected;
+        self.get_mut().style.position_type = PositionType::Relative;
         self
     }
 

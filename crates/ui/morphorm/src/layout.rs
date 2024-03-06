@@ -87,7 +87,6 @@ pub(crate) fn layout<N, C>(
     cache: &mut C,
     tree: &<N as Node>::Tree,
     store: &<N as Node>::Store,
-    sublayout: &mut <N as Node>::SubLayout<'_>,
 ) -> Size
 where
     N: Node,
@@ -145,20 +144,9 @@ where
     // Get the total number of parent-directed children of the node.
     let num_parent_directed_children = node
         .children(tree)
-        .filter(|child| child.position_type(store).unwrap_or_default() == PositionType::ParentDirected)
+        .filter(|child| child.position_type(store).unwrap_or_default() == PositionType::Relative)
         .filter(|child| child.visible(store))
         .count();
-
-    // Apply content sizing.
-    if (main.is_auto() || cross.is_auto()) && num_parent_directed_children == 0 {
-        let parent_main = if main.is_auto() { None } else { Some(computed_main) };
-        let parent_cross = if cross.is_auto() { None } else { Some(computed_cross) };
-        if let Some(content_size) = node.content_sizing(store, sublayout, parent_layout_type, parent_main, parent_cross)
-        {
-            computed_main = content_size.0;
-            computed_cross = content_size.1;
-        }
-    }
 
     // Apply main-axis size constraints for pixels and percentage.
     computed_main = computed_main.min(max_main).max(min_main);
@@ -206,7 +194,7 @@ where
     let mut iter = node
         .children(tree)
         .filter(|child| child.visible(store))
-        .filter(|child| child.position_type(store).unwrap_or_default() == PositionType::ParentDirected)
+        .filter(|child| child.position_type(store).unwrap_or_default() == PositionType::Relative)
         .enumerate();
 
     let first = iter.next().map(|(index, _)| index);
@@ -215,7 +203,7 @@ where
     let mut node_children = node
         .children(tree)
         .filter(|child| child.visible(store))
-        .filter(|child| child.position_type(store).unwrap_or_default() == PositionType::ParentDirected)
+        .filter(|child| child.position_type(store).unwrap_or_default() == PositionType::Relative)
         .enumerate()
         .peekable();
 
@@ -316,7 +304,7 @@ where
         // Compute fixed-size child main.
         {
             let child_size =
-                layout(child, layout_type, parent_main, computed_child_cross, cache, tree, store, sublayout);
+                layout(child, layout_type, parent_main, computed_child_cross, cache, tree, store);
 
             computed_child_main = child_size.main;
             computed_child_cross = child_size.cross;
@@ -344,7 +332,7 @@ where
     // Compute flexible space and size on the cross-axis for parent-directed children.
     for (index, child) in children
         .iter_mut()
-        .filter(|child| child.node.position_type(store).unwrap_or_default() == PositionType::ParentDirected)
+        .filter(|child| child.node.position_type(store).unwrap_or_default() == PositionType::Relative)
         .filter(|child| !child.node.cross(store, layout_type).is_auto())
         .enumerate()
     {
@@ -617,14 +605,14 @@ where
             }
         }
 
-        if child_position_type == PositionType::ParentDirected {
+        if child_position_type == PositionType::Relative {
             cross_max = cross_max.max(child.cross_before + child.cross + child.cross_after);
         }
     }
 
     let node_children = node
         .children(tree)
-        .filter(|child| child.position_type(store).unwrap_or_default() == PositionType::SelfDirected)
+        .filter(|child| child.position_type(store).unwrap_or_default() == PositionType::Absolute)
         .filter(|child| child.visible(store));
 
     // Compute space and size of non-flexible self-directed children.
@@ -697,7 +685,7 @@ where
         // Compute fixed-size child main.
         {
             let child_size =
-                layout(child, layout_type, parent_main, computed_child_cross, cache, tree, store, sublayout);
+                layout(child, layout_type, parent_main, computed_child_cross, cache, tree, store);
 
             computed_child_main = child_size.main;
             computed_child_cross = child_size.cross;
@@ -717,7 +705,7 @@ where
     // Compute flexible space and size on the cross-axis for self-directed nodes.
     for (index, child) in children
         .iter_mut()
-        .filter(|child| child.node.position_type(store).unwrap_or_default() == PositionType::SelfDirected)
+        .filter(|child| child.node.position_type(store).unwrap_or_default() == PositionType::Absolute)
         .enumerate()
     {
         let mut child_cross_before = child.node.cross_before(store, layout_type);
@@ -824,7 +812,7 @@ where
             }
         }
 
-        if child_position_type == PositionType::ParentDirected {
+        if child_position_type == PositionType::Relative {
             cross_max = cross_max.max(child.cross_before + child.cross + child.cross_after);
         }
     }
@@ -832,7 +820,7 @@ where
     // Compute flexible space and size on the main-axis for self-directed nodes.
     for (index, child) in children
         .iter_mut()
-        .filter(|child| child.node.position_type(store).unwrap_or_default() == PositionType::SelfDirected)
+        .filter(|child| child.node.position_type(store).unwrap_or_default() == PositionType::Absolute)
         .enumerate()
     {
         let mut child_main_before = child.node.main_before(store, layout_type);
@@ -934,7 +922,7 @@ where
     for child in children.iter() {
         let child_position_type = child.node.position_type(store).unwrap_or_default();
         match child_position_type {
-            PositionType::SelfDirected => {
+            PositionType::Absolute => {
                 cache.set_rect(
                     child.node,
                     layout_type,
@@ -945,7 +933,7 @@ where
                 );
             }
 
-            PositionType::ParentDirected => {
+            PositionType::Relative => {
                 main_pos += child.main_before;
                 cache.set_rect(
                     child.node,

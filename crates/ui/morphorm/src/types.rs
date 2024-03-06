@@ -41,10 +41,10 @@ impl LayoutType {
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PositionType {
     /// Node is positioned relative to parent but ignores its siblings.
-    SelfDirected,
+    Absolute,
     /// Node is positioned relative to parent and in-line with siblings.
     #[default]
-    ParentDirected,
+    Relative,
 }
 
 /// Units which describe spacing and size.

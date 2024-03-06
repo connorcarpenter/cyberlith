@@ -176,7 +176,7 @@ impl Ui {
         let cache_mut = &mut self.cache;
 
         // this calculates all the rects in cache_mut
-        Self::ROOT_NODE_ID.layout(cache_mut, panels_ref, panels_ref, &mut ());
+        Self::ROOT_NODE_ID.layout(cache_mut, panels_ref, panels_ref);
 
         // print_node(&Self::ROOT_PANEL_ID, &self.cache, &self.panels, true, false, "".to_string());
 
