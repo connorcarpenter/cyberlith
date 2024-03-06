@@ -11,4 +11,4 @@ mod panel;
 pub use plugin::UiPlugin;
 pub use ui::Ui;
 pub use node_id::NodeId;
-pub use morphorm::Alignment;
+pub use layout::Alignment;

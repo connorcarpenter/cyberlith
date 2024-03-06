@@ -1,6 +1,6 @@
 use std::fmt::{Display, Formatter};
 
-use morphorm::{Alignment, LayoutType, Node, PositionType, SizeUnits, Solid, MarginUnits};
+use layout::{Alignment, LayoutType, Node, PositionType, SizeUnits, Solid, MarginUnits};
 
 use crate::{panel::Panel, node::{NodeKind, NodeStore, UiNode}};
 
