@@ -113,6 +113,15 @@ impl Ui {
 
     // interface
 
+    pub fn target_camera(&self) -> Entity {
+        self.target_camera
+    }
+
+    pub fn set_target_camera(&mut self, camera_entity: Entity) -> &mut Self {
+        self.target_camera = camera_entity;
+        self
+    }
+
     pub fn set_text_icon_handle(&mut self, text_handle: &AssetHandle<IconData>) -> &mut Self {
         self.globals.text_icon_handle_opt = Some(text_handle.clone());
         self

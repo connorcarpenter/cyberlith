@@ -33,7 +33,7 @@ pub fn scene_setup(
     embedded_asset_events.send(embedded_asset_event!("../embedded/34mvvk")); // verdana icon
 
     // render layer
-    let layer = RenderLayers::layer(0);
+    let layer = RenderLayers::layer(1);
 
     // ambient light
     commands
@@ -141,7 +141,7 @@ pub fn scene_setup(
                 });
         });
 
-    let _ui_entity = commands.spawn(ui).insert(layer).id();
+    let _ui_entity = commands.spawn(ui).id();
 
     // commands
     //     .spawn_empty()
@@ -166,7 +166,7 @@ pub fn scene_draw(
     asset_manager: Res<AssetManager>,
     // Cameras
     cameras_q: Query<(&Camera, &Transform, &Projection, Option<&RenderLayer>)>,
-    mut uis_q: Query<(&mut Ui, Option<&RenderLayer>)>,
+    mut uis_q: Query<&mut Ui>,
     // Lights
     ambient_lights_q: Query<(&AmbientLight, Option<&RenderLayer>)>,
     point_lights_q: Query<(&PointLight, Option<&RenderLayer>)>,
@@ -196,7 +196,9 @@ pub fn scene_draw(
     }
 
     // Aggregate UIs
-    for (mut ui, render_layer_opt) in uis_q.iter_mut() {
+    for mut ui in uis_q.iter_mut() {
+        let camera_entity = ui.target_camera();
+        let render_layer_opt = cameras_q.get(camera_entity).ok().and_then(|(_, _, _, render_layer_opt)| render_layer_opt);
         ui.draw(&mut render_frame, render_layer_opt, &asset_manager);
     }
 }
