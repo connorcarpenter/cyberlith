@@ -1,27 +1,25 @@
 use bevy_ecs::{
     component::Component,
     event::EventWriter,
-    system::{Commands, Query, ResMut},
+    system::{Res, Commands, Query, ResMut},
 };
-use bevy_ecs::system::Res;
 
 use game_engine::{
     asset::{
-        embedded_asset_event, EmbeddedAssetEvent,
+        embedded_asset_event, EmbeddedAssetEvent, AssetHandle, AssetId, AssetManager, IconData,
     },
     math::Vec3,
     render::{
         base::Color,
         components::{
             AmbientLight, Camera, CameraBundle, DirectionalLight, PointLight, Projection,
-            RenderLayer, RenderLayers, RenderTarget, Transform, Viewport, OrthographicProjection,
+            RenderLayer, RenderLayers, RenderTarget, Transform, Viewport, OrthographicProjection, ClearOperation
         },
         resources::RenderFrame,
         Window,
     },
     ui::{Ui, Alignment},
 };
-use game_engine::asset::{AssetHandle, AssetId, AssetManager, IconData};
 
 #[derive(Component)]
 pub struct TextMarker;
@@ -46,7 +44,8 @@ pub fn scene_setup(
         .root_mut()
         .style(|s| {
             s
-                .set_background_color(Color::BLACK)
+                //.set_background_color(Color::BLACK)
+                .set_background_alpha(0.0)
                 .set_padding_px(10.0, 10.0, 10.0, 10.0)
                 .set_vertical()
                 .set_row_between_px(10.0);
@@ -58,8 +57,7 @@ pub fn scene_setup(
                 .add_panel()
                 .style(|s| {
                     s
-                        .set_background_color(Color::RED)
-                        .set_background_alpha(0.5)
+                        .set_background_alpha(0.0)
                         .set_size_pc(100.0, 38.2)
                         .set_solid_fit()
                         .set_aspect_ratio(16.0, 4.5);
@@ -134,6 +132,7 @@ pub fn scene_setup(
         camera: Camera {
             viewport: None, // this will set later
             target: RenderTarget::Screen,
+            clear_operation: ClearOperation::from_rgba(0.0, 0.25, 0.5, 1.0),
             ..Default::default()
         },
         projection: Projection::Orthographic(OrthographicProjection {

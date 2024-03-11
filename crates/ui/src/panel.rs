@@ -49,14 +49,20 @@ impl Widget for Panel {
         transform: &Transform
     ) {
         // draw panel
-        let Some(mat_handle) = self.style.background_color_handle else {
+        if let Some(mat_handle) = self.style.background_color_handle {
+            if self.style.background_alpha > 0.0 {
+                if self.style.background_alpha != 1.0 {
+                    panic!("partial background_alpha not implemented yet!");
+                }
+                let box_handle = globals.get_box_mesh_handle().unwrap();
+                render_frame.draw_mesh(render_layer_opt, box_handle, &mat_handle, &transform);
+            }
+        } else {
             warn!("no color handle for panel"); // probably will need to do better debugging later
             return;
         };
 
-        let box_handle = globals.get_box_mesh_handle().unwrap();
-        render_frame.draw_mesh(render_layer_opt, box_handle, &mat_handle, &transform);
-
+        // draw children
         for child_id in self.children.iter() {
             //info!("drawing child: {:?}", child);
             draw_node( // TODO: make this configurable?
@@ -77,7 +83,7 @@ impl Widget for Panel {
     }
 }
 
-#[derive(Clone, Default, Copy)]
+#[derive(Clone, Copy)]
 pub(crate) struct PanelStyle {
 
     pub(crate) background_color: Color,
@@ -95,6 +101,28 @@ pub(crate) struct PanelStyle {
     pub(crate) col_between: SizeUnits,
     pub(crate) children_halign: Alignment,
     pub(crate) children_valign: Alignment,
+}
+
+impl Default for PanelStyle {
+    fn default() -> Self {
+        Self {
+            background_color: Color::BLACK,
+            background_alpha: 1.0,
+            background_color_handle: None,
+
+            layout_type: LayoutType::Column,
+
+            padding_left: SizeUnits::Auto,
+            padding_right: SizeUnits::Auto,
+            padding_top: SizeUnits::Auto,
+            padding_bottom: SizeUnits::Auto,
+
+            row_between: SizeUnits::Auto,
+            col_between: SizeUnits::Auto,
+            children_halign: Alignment::Center,
+            children_valign: Alignment::Center,
+        }
+    }
 }
 
 pub struct PanelMut<'a> {
