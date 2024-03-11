@@ -81,6 +81,7 @@ impl Widget for Panel {
 pub(crate) struct PanelStyle {
 
     pub(crate) background_color: Color,
+    pub(crate) background_alpha: f32,
     pub(crate) background_color_handle: Option<Handle<CpuMaterial>>,
 
     pub(crate) layout_type: LayoutType,
@@ -199,6 +200,8 @@ impl<'a> PanelStyleMut<'a> {
         self.get_panel_ref().style.background_color
     }
 
+    pub fn background_alpha(&self) -> f32 { self.get_panel_ref().style.background_alpha }
+
     pub fn background_color_handle(&self) -> Option<Handle<CpuMaterial>> {
         self.get_panel_ref().style.background_color_handle
     }
@@ -299,6 +302,11 @@ impl<'a> PanelStyleMut<'a> {
             self.get_panel_mut().style.background_color = color;
             self.get_panel_mut().style.background_color_handle = None;
         }
+        self
+    }
+
+    pub fn set_background_alpha(&mut self, alpha: f32) -> &mut Self {
+        self.get_panel_mut().style.background_alpha = alpha;
         self
     }
 

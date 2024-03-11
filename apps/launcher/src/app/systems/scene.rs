@@ -58,7 +58,8 @@ pub fn scene_setup(
                 .add_panel()
                 .style(|s| {
                     s
-                        .set_background_color(Color::BLACK)
+                        .set_background_color(Color::RED)
+                        .set_background_alpha(0.5)
                         .set_size_pc(100.0, 38.2)
                         .set_solid_fit()
                         .set_aspect_ratio(16.0, 4.5);
