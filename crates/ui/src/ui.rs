@@ -1,4 +1,4 @@
-use bevy_ecs::{change_detection::ResMut, component::Component, system::Query};
+use bevy_ecs::{entity::Entity, change_detection::ResMut, component::Component, system::Query};
 use bevy_log::warn;
 
 use layout::{Node, SizeUnits};
@@ -28,13 +28,14 @@ pub struct Ui {
     cache: LayoutCache,
     nodes: NodeStore,
     recalc_layout: bool,
-    viewport: Viewport,
+    last_viewport: Viewport,
+    target_camera: Entity,
 }
 
 impl Ui {
     const ROOT_NODE_ID: NodeId = NodeId::new(0);
 
-    pub fn new() -> Self {
+    pub fn new(camera_id: Entity) -> Self {
         let mut me = Self {
             globals: Globals::new(),
             pending_mat_handles: Vec::new(),
@@ -42,7 +43,8 @@ impl Ui {
             cache: LayoutCache::new(),
             nodes: NodeStore::new(),
             recalc_layout: false,
-            viewport: Viewport::new_at_origin(0, 0),
+            last_viewport: Viewport::new_at_origin(0, 0),
+            target_camera: camera_id,
         };
 
         let panel_id = me.create_node(&NodeKind::Panel, Panel::new());
@@ -147,10 +149,10 @@ impl Ui {
 
     fn update_viewport(&mut self, viewport: &Viewport) {
         let viewport = *viewport;
-        if self.viewport == viewport {
+        if self.last_viewport == viewport {
             return;
         }
-        self.viewport = viewport;
+        self.last_viewport = viewport;
         self.queue_recalculate_layout();
     }
 
@@ -169,8 +171,8 @@ impl Ui {
         //info!("recalculating layout. viewport_width: {:?}, viewport_height: {:?}", self.viewport.width, self.viewport.height);
 
         let root_panel = self.nodes.get_mut(&Self::ROOT_NODE_ID).unwrap();
-        root_panel.style.width = SizeUnits::Pixels(self.viewport.width as f32);
-        root_panel.style.height = SizeUnits::Pixels(self.viewport.height as f32);
+        root_panel.style.width = SizeUnits::Pixels(self.last_viewport.width as f32);
+        root_panel.style.height = SizeUnits::Pixels(self.last_viewport.height as f32);
 
         let panels_ref = &self.nodes;
         let cache_mut = &mut self.cache;

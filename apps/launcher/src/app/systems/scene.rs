@@ -32,12 +32,33 @@ pub fn scene_setup(
     embedded_asset_events.send(embedded_asset_event!("../embedded/8273wa")); // palette
     embedded_asset_events.send(embedded_asset_event!("../embedded/34mvvk")); // verdana icon
 
+    // render layer
     let layer = RenderLayers::layer(0);
+
+    // ambient light
+    commands
+        .spawn(AmbientLight::new(1.0, Color::WHITE))
+        .insert(layer);
+
+    // camera
+    let camera_id = commands.spawn(CameraBundle {
+        camera: Camera {
+            viewport: None, // this will set later
+            target: RenderTarget::Screen,
+            clear_operation: ClearOperation::from_rgba(0.0, 0.25, 0.5, 1.0),
+            ..Default::default()
+        },
+        projection: Projection::Orthographic(OrthographicProjection {
+            near: 0.0,
+            far: 2000.0,
+        }),
+        ..Default::default()
+    }).insert(layer).id();
 
     // ui
 
     let text_handle = AssetHandle::<IconData>::new(AssetId::from_str("34mvvk").unwrap()); // TODO: use some kind of catalog
-    let mut ui = Ui::new();
+    let mut ui = Ui::new(camera_id);
     ui
         .set_text_icon_handle(& text_handle)
         .set_text_color(Color::WHITE)
@@ -121,26 +142,6 @@ pub fn scene_setup(
         });
 
     let _ui_entity = commands.spawn(ui).insert(layer).id();
-
-    // ambient light
-    commands
-        .spawn(AmbientLight::new(1.0, Color::WHITE))
-        .insert(layer);
-
-    // camera
-    let _camera_id = commands.spawn(CameraBundle {
-        camera: Camera {
-            viewport: None, // this will set later
-            target: RenderTarget::Screen,
-            clear_operation: ClearOperation::from_rgba(0.0, 0.25, 0.5, 1.0),
-            ..Default::default()
-        },
-        projection: Projection::Orthographic(OrthographicProjection {
-            near: 0.0,
-            far: 2000.0,
-        }),
-        ..Default::default()
-    }).insert(layer).id();
 
     // commands
     //     .spawn_empty()
