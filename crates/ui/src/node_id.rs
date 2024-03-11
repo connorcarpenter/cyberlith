@@ -26,10 +26,10 @@ impl NodeId {
         None
     }
 
-    // pub(crate) fn label_ref<'a>(&'a self, store: &'a NodeStore) -> Option<&Label> {
+    // pub(crate) fn text_ref<'a>(&'a self, store: &'a NodeStore) -> Option<&Text> {
     //     let node = store.get(self)?;
-    //     if node.kind == NodeKind::Label {
-    //         return UiNode::downcast_ref::<Label>(
+    //     if node.kind == NodeKind::Text {
+    //         return UiNode::downcast_ref::<Text>(
     //             node.widget.as_ref()
     //         );
     //     }

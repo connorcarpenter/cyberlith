@@ -65,7 +65,7 @@ pub fn scene_setup(
                 })
                 .contents(|c| {
                     c
-                        .add_label("c y b e r l i t h")
+                        .add_text("c y b e r l i t h")
                         .style(|s| {
                             s
                                 .set_size_pc(100.0, 100.0);
@@ -88,7 +88,7 @@ pub fn scene_setup(
                 })
                 .contents(|c| {
                     c
-                        .add_label("start")
+                        .add_text("start")
                         .style(|s| {
                             s
                                 .set_size_pc(100.0, 100.0)
@@ -112,7 +112,7 @@ pub fn scene_setup(
                     ;
                 })
                 .contents(|c| {
-                    c.add_label("continue")
+                    c.add_text("continue")
                         .style(|s| {
                             s
                                 .set_size_pc(100.0, 100.0)

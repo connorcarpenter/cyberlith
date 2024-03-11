@@ -5,7 +5,7 @@ mod node;
 mod style;
 mod cache;
 mod widget;
-mod label;
+mod text;
 mod panel;
 
 pub use plugin::UiPlugin;

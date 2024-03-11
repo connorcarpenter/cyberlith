@@ -8,21 +8,21 @@ use render_api::{resources::RenderFrame, components::{RenderLayer, Transform}};
 use crate::{cache::LayoutCache, node::{UiNode, NodeStore}, style::NodeStyle, widget::Widget, ui::Globals, Ui, NodeId};
 
 #[derive(Clone)]
-pub struct Label {
+pub struct Text {
     text: String,
-    _style: LabelStyle,
+    _style: TextStyle,
 }
 
-impl Label {
+impl Text {
     pub fn new(text: &str) -> Self {
         Self {
             text: text.to_string(),
-            _style: LabelStyle::default(),
+            _style: TextStyle::default(),
         }
     }
 }
 
-impl Widget for Label {
+impl Widget for Text {
     fn as_any(&self) -> &dyn Any {
         self
     }
@@ -61,16 +61,16 @@ impl Widget for Label {
 }
 
 #[derive(Clone, Default, Copy)]
-pub struct LabelStyle {
+pub struct TextStyle {
 
 }
 
-pub struct LabelMut<'a> {
+pub struct TextMut<'a> {
     ui: &'a mut Ui,
     node_id: NodeId,
 }
 
-impl<'a> LabelMut<'a> {
+impl<'a> TextMut<'a> {
     pub(crate) fn new(ui: &'a mut Ui, panel_id: NodeId) -> Self {
         Self { ui, node_id: panel_id }
     }
@@ -82,19 +82,19 @@ impl<'a> LabelMut<'a> {
         self
     }
 
-    pub fn style(&mut self, inner_fn: impl FnOnce(&mut LabelStyleMut)) -> &mut Self {
-        let mut style_mut = LabelStyleMut::new(self.ui, self.node_id);
+    pub fn style(&mut self, inner_fn: impl FnOnce(&mut TextStyleMut)) -> &mut Self {
+        let mut style_mut = TextStyleMut::new(self.ui, self.node_id);
         inner_fn(&mut style_mut);
         self
     }
 }
 
-pub struct LabelStyleMut<'a> {
+pub struct TextStyleMut<'a> {
     ui: &'a mut Ui,
     node_id: NodeId,
 }
 
-impl<'a> LabelStyleMut<'a> {
+impl<'a> TextStyleMut<'a> {
     pub(crate) fn new(ui: &'a mut Ui, node_id: NodeId) -> Self {
         Self { ui, node_id }
     }
@@ -107,12 +107,12 @@ impl<'a> LabelStyleMut<'a> {
         self.ui.node_mut(&self.node_id).unwrap()
     }
 
-    // fn get_label_ref(&self) -> &Label {
-    //     self.get_ref().widget.as_ref().as_any().downcast_ref::<Label>().unwrap()
+    // fn get_text_ref(&self) -> &Text {
+    //     self.get_ref().widget.as_ref().as_any().downcast_ref::<Text>().unwrap()
     // }
     //
-    // fn get_label_mut(&mut self) -> &mut Label {
-    //     self.get_mut().widget.as_mut().as_any_mut().downcast_mut::<Label>().unwrap()
+    // fn get_text_mut(&mut self) -> &mut Text {
+    //     self.get_mut().widget.as_mut().as_any_mut().downcast_mut::<Text>().unwrap()
     // }
 
     // getters

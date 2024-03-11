@@ -37,7 +37,7 @@ impl NodeStore {
 #[derive(PartialEq, Eq, Clone, Copy)]
 pub(crate) enum NodeKind {
     Panel,
-    Label,
+    Text,
 }
 
 #[derive(Clone)]

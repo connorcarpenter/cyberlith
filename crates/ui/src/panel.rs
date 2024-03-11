@@ -7,7 +7,7 @@ use asset_render::AssetManager;
 use render_api::{base::{Color, CpuMaterial}, resources::RenderFrame, components::{RenderLayer, Transform}};
 use storage::Handle;
 
-use crate::{ui::draw_node, style::NodeStyle, node::{NodeKind, NodeStore, UiNode}, label::{Label, LabelMut}, cache::LayoutCache, widget::Widget, ui::Globals, NodeId, Ui};
+use crate::{ui::draw_node, style::NodeStyle, node::{NodeKind, NodeStore, UiNode}, text::{Text, TextMut}, cache::LayoutCache, widget::Widget, ui::Globals, NodeId, Ui};
 
 #[derive(Clone)]
 pub struct Panel {
@@ -155,15 +155,15 @@ impl<'a> PanelContentsMut<'a> {
         PanelMut::<'b>::new(self.ui, new_id)
     }
 
-    pub fn add_label<'b>(self: &'b mut PanelContentsMut<'a>, text: &str) -> LabelMut<'b> {
+    pub fn add_text<'b>(self: &'b mut PanelContentsMut<'a>, text: &str) -> TextMut<'b> {
 
         // creates a new panel, returning a context for it
-        let new_id = self.ui.create_node(&NodeKind::Label, Label::new(text));
+        let new_id = self.ui.create_node(&NodeKind::Text, Text::new(text));
 
         // add new panel to children
         self.get_panel_mut().add_child(new_id);
 
-        LabelMut::<'b>::new(self.ui, new_id)
+        TextMut::<'b>::new(self.ui, new_id)
     }
 }
 
