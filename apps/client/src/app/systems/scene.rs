@@ -81,7 +81,6 @@ pub fn scene_setup(
         .spawn(CameraBundle {
             camera: Camera {
                 viewport: None,
-                order: 0,
                 clear_operation: ClearOperation::from_rgba(0.0, 0.0, 0.0, 1.0),
                 target: RenderTarget::Screen,
                 ..Default::default()

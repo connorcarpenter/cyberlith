@@ -26,8 +26,6 @@ pub fn render(
     textures: ResMut<SideStorage<CpuTexture2D, GpuTexture2D>>,
     depth_textures: ResMut<SideStorage<CpuTexture2D, GpuDepthTexture2D>>,
 ) {
-    let mut layer_to_order: Vec<Vec<usize>> = Vec::with_capacity(RenderLayers::TOTAL_LAYERS);
-    layer_to_order.resize(RenderLayers::TOTAL_LAYERS, Vec::new());
     let mut camera_work: Vec<Option<RenderPass>> = Vec::with_capacity(Camera::MAX_CAMERAS);
     for _ in 0..Camera::MAX_CAMERAS {
         camera_work.push(None);
@@ -37,58 +35,51 @@ pub fn render(
 
     // Aggregate Cameras
     for (render_layer, camera, transform, projection) in frame_contents.cameras.iter() {
-        let camera_order = camera.order();
-        if camera_work[camera_order].is_some() {
+
+        if camera_work[*render_layer].is_some() {
             panic!("Each Camera must have a unique `order` value!");
         }
 
-        camera_work[camera_order] = Some(RenderPass::from_camera(camera, transform, projection));
-        layer_to_order[*render_layer].push(camera_order);
+        camera_work[*render_layer] = Some(RenderPass::from_camera(camera, transform, projection));
     }
 
     // Aggregate Point Lights
     for (render_layer, point_light) in frame_contents.point_lights.iter() {
-        for camera_index in layer_to_order[*render_layer].iter().map(|x| *x) {
-            if camera_work[camera_index].is_none() {
-                panic!("Found PointLight with RenderLayer not associated with any Camera!");
-            }
-
-            camera_work[camera_index]
-                .as_mut()
-                .unwrap()
-                .lights
-                .push(point_light);
+        if camera_work[*render_layer].is_none() {
+            panic!("Found PointLight with RenderLayer not associated with any Camera!");
         }
+
+        camera_work[*render_layer]
+            .as_mut()
+            .unwrap()
+            .lights
+            .push(point_light);
     }
 
     // Aggregate Directional Lights
     for (render_layer, dir_light) in frame_contents.directional_lights.iter() {
-        for camera_index in layer_to_order[*render_layer].iter().map(|x| *x) {
-            if camera_work[camera_index].is_none() {
-                panic!("Found DirectionalLight with RenderLayer not associated with any Camera!");
-            }
-
-            camera_work[camera_index]
-                .as_mut()
-                .unwrap()
-                .lights
-                .push(dir_light);
+        if camera_work[*render_layer].is_none() {
+            panic!("Found DirectionalLight with RenderLayer not associated with any Camera!");
         }
+
+        camera_work[*render_layer]
+            .as_mut()
+            .unwrap()
+            .lights
+            .push(dir_light);
     }
 
     // Aggregate Ambient Lights
     for (render_layer, ambient_light) in frame_contents.ambient_lights.iter() {
-        for camera_index in layer_to_order[*render_layer].iter().map(|x| *x) {
-            if camera_work[camera_index].is_none() {
-                panic!("Found AmbientLight with RenderLayer not associated with any Camera!");
-            }
-
-            camera_work[camera_index]
-                .as_mut()
-                .unwrap()
-                .lights
-                .push(ambient_light);
+        if camera_work[*render_layer].is_none() {
+            panic!("Found AmbientLight with RenderLayer not associated with any Camera!");
         }
+
+        camera_work[*render_layer]
+            .as_mut()
+            .unwrap()
+            .lights
+            .push(ambient_light);
     }
 
     // Aggregate Meshes
@@ -105,17 +96,16 @@ pub fn render(
             // info!("Too many meshes in a single frame! Limit is 4096.");
             break;
         }
-        for camera_index in layer_to_order[*render_layer].iter().map(|x| *x) {
-            if camera_work[camera_index].is_none() {
-                panic!("Found render object with RenderLayer not associated with any Camera!");
-            }
 
-            camera_work[camera_index].as_mut().unwrap().add_mesh(
-                mesh_handle,
-                mat_handle,
-                transform,
-            );
+        if camera_work[*render_layer].is_none() {
+            panic!("Found render object with RenderLayer not associated with any Camera!");
         }
+
+        camera_work[*render_layer].as_mut().unwrap().add_mesh(
+            mesh_handle,
+            mat_handle,
+            transform,
+        );
     }
 
     // Draw

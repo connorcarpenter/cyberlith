@@ -50,7 +50,6 @@ impl CameraBundle {
 #[derive(Component, Clone, Copy)]
 pub struct Camera {
     pub viewport: Option<Viewport>,
-    pub order: usize,
     pub clear_operation: ClearOperation,
     pub target: RenderTarget,
     pub is_active: bool,
@@ -58,17 +57,6 @@ pub struct Camera {
 
 impl Camera {
     pub const MAX_CAMERAS: usize = 32;
-
-    pub fn order(&self) -> usize {
-        self.order
-    }
-
-    pub fn set_order(&mut self, order: usize) {
-        if order > Self::MAX_CAMERAS {
-            panic!("Camera order must be less than {}", Self::MAX_CAMERAS);
-        }
-        self.order = order;
-    }
 
     pub fn viewport_or_default(&self) -> Viewport {
         self.viewport.unwrap_or_default()
@@ -80,7 +68,6 @@ impl Default for Camera {
         Self {
             is_active: true,
             viewport: None,
-            order: 0,
             clear_operation: ClearOperation::default(),
             target: RenderTarget::Screen,
         }
