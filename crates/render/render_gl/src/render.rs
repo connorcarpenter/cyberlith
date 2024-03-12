@@ -27,12 +27,17 @@ pub fn render(
     let render_passes = render_frame.take_render_passes();
 
     // Draw
+    let mut index = 0;
     for render_pass_opt in render_passes {
         if render_pass_opt.is_none() {
             continue;
         }
         let render_pass = render_pass_opt.unwrap();
-        let camera = render_pass.camera_opt.as_ref().unwrap();
+        let Some(camera) = render_pass.camera_opt.as_ref() else {
+            //warn!("RenderLayer: {} has no camera!", index);
+            continue;
+        };
+        index += 1;
 
         let render_target = {
             match &camera.target {

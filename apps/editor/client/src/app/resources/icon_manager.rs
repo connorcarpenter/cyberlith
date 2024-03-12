@@ -620,7 +620,6 @@ impl IconManager {
             ));
             camera_bundle.camera.target = RenderTarget::Image(canvas_texture_handle);
             camera_bundle.camera.is_active = false;
-            camera_bundle.camera.order = 2;
             camera_bundle.transform.translation.x = 0.0;
             camera_bundle.transform.translation.y = 0.0;
             self.camera_entity = commands.spawn(camera_bundle).insert(self.render_layer).id();

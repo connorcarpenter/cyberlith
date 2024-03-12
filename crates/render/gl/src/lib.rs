@@ -85,9 +85,13 @@ pub enum CompressedPixelUnpackData<'a> {
 
 // these fields are ordered according to spec: https://docs.gl/gl4/glMultiDrawArraysIndirect
 pub struct DrawArraysIndirectCommand {
+    // vertex count
     count: u32,
+    // number of instances
     instance_count: u32,
+    // first vertex index
     first: u32,
+    // ?
     base_instance: u32,
 }
 

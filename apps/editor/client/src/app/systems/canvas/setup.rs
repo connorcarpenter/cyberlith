@@ -117,7 +117,6 @@ fn setup_2d_scene(
         ));
         camera_bundle.camera.target = RenderTarget::Image(canvas_texture_handle);
         camera_bundle.camera.is_active = false;
-        camera_bundle.camera.order = 1;
         let camera_entity = commands
             .spawn(camera_bundle)
             .insert(camera_manager.layer_2d)
@@ -216,7 +215,6 @@ fn setup_3d_scene(
                     texture_size.x as u32,
                     texture_size.y as u32,
                 )),
-                order: 0,
                 clear_operation: ClearOperation::from_rgba(0.0, 0.0, 0.0, 1.0),
                 target: RenderTarget::Image(canvas_texture_handle),
                 ..Default::default()

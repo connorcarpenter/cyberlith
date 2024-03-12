@@ -169,17 +169,6 @@ fn setup_3d_scene(
     // render_layer
     let layer = RenderLayers::layer(0);
 
-    // plane
-    commands
-        .spawn(RenderObjectBundle {
-            mesh: meshes.add(shapes::CenteredSquare),
-            material: materials.add(Color::DARK_GRAY),
-            transform: Transform::from_scale(Vec3::new(300., 300., 1.0))
-                .with_translation(Vec3::new(0.0, 0.0, 0.0)),
-            ..Default::default()
-        })
-        .insert(layer);
-
     // cube
     commands
         .spawn(RenderObjectBundle {

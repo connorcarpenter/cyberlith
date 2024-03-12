@@ -1,5 +1,8 @@
 use std::collections::HashMap;
 
+use rand;
+use rand::seq::SliceRandom;
+
 use gl::DrawArraysIndirectCommand;
 use math::Mat4;
 use render_api::{components::{Camera, Projection, Transform, CameraProjection, Viewport}, resources::{MaterialOrSkinHandle, RenderPass}, base::CpuMesh};
@@ -121,7 +124,16 @@ fn meshes_to_commands(
     mesh_handles.sort(); // TODO: is this still necessary??
 
     for mesh_handle in mesh_handles {
-        let instances = mesh_handle_transform_map.remove(&mesh_handle).unwrap();
+        let mut instances = mesh_handle_transform_map.remove(&mesh_handle).unwrap();
+
+        if instances.len() > 4096 {
+            let mut rng = rand::thread_rng();
+            instances.shuffle(&mut rng);
+            instances.truncate(4096);
+        }
+
+        //info!("Mesh has {} instances", instances.len());
+
         let gpu_mesh = gpu_mesh_manager.get(&mesh_handle).unwrap();
 
         let count = gpu_mesh.count();

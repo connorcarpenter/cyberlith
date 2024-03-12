@@ -24,3 +24,18 @@ impl Default for RenderPass {
         }
     }
 }
+
+impl RenderPass {
+    pub fn add_mesh(
+        &mut self,
+        mesh_handle: &Handle<CpuMesh>,
+        mat_handle: MaterialOrSkinHandle,
+        transform_matrix: Mat4,
+    ) {
+        if !self.meshes.contains_key(mesh_handle) {
+            self.meshes.insert(*mesh_handle, Vec::new());
+        }
+        let map = self.meshes.get_mut(mesh_handle).unwrap();
+        map.push((mat_handle, transform_matrix));
+    }
+}

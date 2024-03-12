@@ -110,12 +110,7 @@ impl RenderFrame {
         transform: &Transform,
     ) {
         let contents = self.get_render_pass_mut(render_layer_opt);
-
-        if !contents.meshes.contains_key(mesh_handle) {
-            contents.meshes.insert(*mesh_handle, Vec::new());
-        }
-        let map = contents.meshes.get_mut(mesh_handle).unwrap();
-        map.push((MaterialOrSkinHandle::Material(mat_handle.clone()), transform.compute_matrix()));
+        contents.add_mesh(mesh_handle, MaterialOrSkinHandle::Material(mat_handle.clone()), transform.compute_matrix());
     }
 
     pub fn draw_skinned_mesh(
@@ -126,12 +121,7 @@ impl RenderFrame {
         transform: &Transform,
     ) {
         let contents = self.get_render_pass_mut(render_layer_opt);
-
-        if !contents.meshes.contains_key(mesh_handle) {
-            contents.meshes.insert(*mesh_handle, Vec::new());
-        }
-        let map = contents.meshes.get_mut(mesh_handle).unwrap();
-        map.push((MaterialOrSkinHandle::Skin(skin_handle.clone()), transform.compute_matrix()));
+        contents.add_mesh(mesh_handle, MaterialOrSkinHandle::Skin(skin_handle.clone()), transform.compute_matrix());
     }
 }
 
