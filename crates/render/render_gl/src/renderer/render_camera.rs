@@ -2,14 +2,14 @@ use render_api::components::{Camera, Projection, Transform};
 
 // Render Camera
 #[derive(Clone, Copy)]
-pub struct RenderCamera<'a> {
-    pub camera: &'a Camera,
-    pub transform: &'a Transform,
-    pub projection: &'a Projection,
+pub struct RenderCamera {
+    pub camera: Camera,
+    pub transform: Transform,
+    pub projection: Projection,
 }
 
-impl<'a> RenderCamera<'a> {
-    pub fn new(camera: &'a Camera, transform: &'a Transform, projection: &'a Projection) -> Self {
+impl RenderCamera {
+    pub fn new(camera: Camera, transform: Transform, projection: Projection) -> Self {
         Self {
             camera,
             transform,

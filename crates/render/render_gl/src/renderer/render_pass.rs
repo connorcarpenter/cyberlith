@@ -1,46 +1,45 @@
+use std::collections::HashMap;
+
+use math::Mat4;
 use render_api::{
+    components::TypedLight,
+    resources::{RenderFrameContents, MaterialOrSkinHandle},
     base::CpuMesh,
-    components::{Camera, Projection, Transform},
-    resources::MaterialOrSkinHandle,
 };
 use storage::Handle;
 
-use crate::renderer::{Light, RenderCamera, RenderMeshes};
+use crate::renderer::RenderCamera;
 
 // Render Pass
-pub struct RenderPass<'a> {
-    pub camera: RenderCamera<'a>,
-    pub lights: Vec<&'a dyn Light>,
-    meshes: RenderMeshes,
+pub struct RenderPass {
+    pub camera: RenderCamera,
+    pub lights: Vec<TypedLight>,
+    meshes: HashMap<Handle<CpuMesh>, Vec<(MaterialOrSkinHandle, Mat4)>>,
 }
 
-impl<'a> RenderPass<'a> {
-    pub fn from_camera(
-        camera: &'a Camera,
-        transform: &'a Transform,
-        projection: &'a Projection,
+impl RenderPass {
+    pub fn from_contents(
+        contents: RenderFrameContents,
     ) -> Self {
+
+        let RenderFrameContents {
+            camera_opt,
+            lights,
+            meshes,
+        } = contents;
+
+        let Some((camera, transform, projection)) = camera_opt else {
+            panic!("RenderFrameContents missing camera");
+        };
+
         Self {
             camera: RenderCamera::new(camera, transform, projection),
-            lights: Vec::new(),
-            meshes: RenderMeshes::new(),
+            lights,
+            meshes,
         }
     }
 
-    pub fn add_mesh(
-        &mut self,
-        mesh_handle: &Handle<CpuMesh>,
-        mat_handle: &MaterialOrSkinHandle,
-        transform: &'a Transform,
-    ) {
-        self.meshes.add_instance(mesh_handle, mat_handle, transform);
-    }
-
-    pub fn take(self) -> (RenderCamera<'a>, Vec<&'a dyn Light>, RenderMeshes) {
+    pub fn take(self) -> (RenderCamera, Vec<TypedLight>, HashMap<Handle<CpuMesh>, Vec<(MaterialOrSkinHandle, Mat4)>>) {
         (self.camera, self.lights, self.meshes)
-    }
-
-    pub fn process_camera(render: &RenderCamera<'a>) -> &'a Camera {
-        &render.camera
     }
 }

@@ -1,4 +1,10 @@
-use crate::renderer::{RenderCamera, RenderMeshes};
+use std::collections::HashMap;
+
+use math::Mat4;
+use render_api::{resources::MaterialOrSkinHandle, base::CpuMesh};
+use storage::Handle;
+
+use crate::renderer::RenderCamera;
 
 ///
 /// Compare function for sorting objects based on distance from the camera.
@@ -7,8 +13,8 @@ use crate::renderer::{RenderCamera, RenderMeshes};
 ///
 pub fn cmp_render_order(
     _camera: &RenderCamera,
-    _obj0: &RenderMeshes,
-    _obj1: &RenderMeshes,
+    _obj0: &HashMap<Handle<CpuMesh>, Vec<(MaterialOrSkinHandle, Mat4)>>,
+    _obj1: &HashMap<Handle<CpuMesh>, Vec<(MaterialOrSkinHandle, Mat4)>>,
 ) -> std::cmp::Ordering {
     todo!()
     // let distance_a = camera
