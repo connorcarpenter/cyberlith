@@ -1,6 +1,12 @@
-use render_api::{base::CpuMaterial, components::{Camera, Projection, Transform, CameraProjection}};
+use render_api::{
+    base::CpuMaterial,
+    components::{Camera, CameraProjection, Projection, Transform},
+};
 
-use crate::{core::{Program, RenderStates}, renderer::{FragmentShader, FromPbrMaterial, Light, Material}};
+use crate::{
+    core::{Program, RenderStates},
+    renderer::{FragmentShader, FromPbrMaterial, Light, Material},
+};
 
 ///
 /// Used for rendering the distance from the camera to the object with this material in each pixel.
@@ -29,7 +35,14 @@ impl Material for DepthMaterial {
         }
     }
 
-    fn use_uniforms(&self, program: &Program, _camera: &Camera, camera_transform: &Transform, camera_projection: &Projection, _lights: &[&dyn Light]) {
+    fn use_uniforms(
+        &self,
+        program: &Program,
+        _camera: &Camera,
+        camera_transform: &Transform,
+        camera_projection: &Projection,
+        _lights: &[&dyn Light],
+    ) {
         program.use_uniform(
             "minDistance",
             self.min_distance

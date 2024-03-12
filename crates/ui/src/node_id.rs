@@ -1,8 +1,11 @@
 use std::fmt::{Display, Formatter};
 
-use layout::{Alignment, LayoutType, Node, PositionType, SizeUnits, Solid, MarginUnits};
+use layout::{Alignment, LayoutType, MarginUnits, Node, PositionType, SizeUnits, Solid};
 
-use crate::{panel::Panel, node::{NodeKind, NodeStore, UiNode}};
+use crate::{
+    node::{NodeKind, NodeStore, UiNode},
+    panel::Panel,
+};
 
 #[derive(Clone, Copy, PartialEq, PartialOrd, Ord, Eq, Hash, Debug, Default)]
 pub struct NodeId(u32);
@@ -19,9 +22,7 @@ impl NodeId {
     pub(crate) fn panel_ref<'a>(&'a self, store: &'a NodeStore) -> Option<&Panel> {
         let node = store.get(self)?;
         if node.kind == NodeKind::Panel {
-            return UiNode::downcast_ref::<Panel>(
-                node.widget.as_ref()
-            );
+            return UiNode::downcast_ref::<Panel>(node.widget.as_ref());
         }
         None
     }
@@ -55,7 +56,6 @@ impl Node for NodeId {
     }
 
     fn children<'t>(&'t self, store: &'t NodeStore) -> Self::ChildIter<'t> {
-
         if let Some(panel_ref) = self.panel_ref(store) {
             return panel_ref.children.iter();
         }

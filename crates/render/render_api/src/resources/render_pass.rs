@@ -3,7 +3,11 @@ use std::collections::HashMap;
 use math::Mat4;
 use storage::Handle;
 
-use crate::{resources::MaterialOrSkinHandle, base::CpuMesh, components::{Camera, Projection, Transform, TypedLight}};
+use crate::{
+    base::CpuMesh,
+    components::{Camera, Projection, Transform, TypedLight},
+    resources::MaterialOrSkinHandle,
+};
 
 pub struct RenderPass {
     pub camera_opt: Option<Camera>,

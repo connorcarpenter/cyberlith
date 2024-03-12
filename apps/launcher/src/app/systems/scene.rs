@@ -1,28 +1,28 @@
 use bevy_ecs::{
     component::Component,
-    event::EventWriter,
-    system::{Res, Commands, Query, ResMut},
     entity::Entity,
-    prelude::{Local, With}
+    event::EventWriter,
+    prelude::{Local, With},
+    system::{Commands, Query, Res, ResMut},
 };
 
 use game_engine::{
     asset::{
-        embedded_asset_event, EmbeddedAssetEvent, AssetManager, AssetHandle, AssetId, IconData,
+        embedded_asset_event, AssetHandle, AssetId, AssetManager, EmbeddedAssetEvent, IconData,
     },
     math::Vec3,
     render::{
-        base::{CpuMaterial, Color, CpuMesh},
+        base::{Color, CpuMaterial, CpuMesh},
         components::{
-            Visibility, AmbientLight, Camera, CameraBundle, DirectionalLight, PointLight, Projection, RenderObjectBundle,
-            RenderLayer, RenderLayers, RenderTarget, Transform, Viewport, OrthographicProjection, ClearOperation, PerspectiveProjection
+            AmbientLight, Camera, CameraBundle, ClearOperation, DirectionalLight,
+            OrthographicProjection, PerspectiveProjection, PointLight, Projection, RenderLayer,
+            RenderLayers, RenderObjectBundle, RenderTarget, Transform, Viewport, Visibility,
         },
         resources::{RenderFrame, Time},
-        Window,
-        shapes,
+        shapes, Window,
     },
-    storage::{Storage, Handle},
-    ui::{Ui, Alignment},
+    storage::{Handle, Storage},
+    ui::{Alignment, Ui},
 };
 
 use crate::app::resources::Global;
@@ -56,26 +56,28 @@ fn setup_ui(commands: &mut Commands) -> Entity {
         .insert(layer);
 
     // camera
-    let camera_id = commands.spawn(CameraBundle {
-        camera: Camera {
-            viewport: None, // this will set later
-            target: RenderTarget::Screen,
-            clear_operation: ClearOperation::none(),
+    let camera_id = commands
+        .spawn(CameraBundle {
+            camera: Camera {
+                viewport: None, // this will set later
+                target: RenderTarget::Screen,
+                clear_operation: ClearOperation::none(),
+                ..Default::default()
+            },
+            projection: Projection::Orthographic(OrthographicProjection {
+                near: 0.0,
+                far: 2000.0,
+            }),
             ..Default::default()
-        },
-        projection: Projection::Orthographic(OrthographicProjection {
-            near: 0.0,
-            far: 2000.0,
-        }),
-        ..Default::default()
-    }).insert(layer).id();
+        })
+        .insert(layer)
+        .id();
 
     // ui
 
     let text_handle = AssetHandle::<IconData>::new(AssetId::from_str("34mvvk").unwrap()); // TODO: use some kind of catalog
     let mut ui = Ui::new();
-    ui
-        .set_text_icon_handle(& text_handle)
+    ui.set_text_icon_handle(&text_handle)
         .set_text_color(Color::WHITE)
         .root_mut()
         .style(|s| {
@@ -87,32 +89,24 @@ fn setup_ui(commands: &mut Commands) -> Entity {
                 .set_row_between_px(10.0);
         })
         .contents(|c| {
-
             // title container
-            c
-                .add_panel()
+            c.add_panel()
                 .style(|s| {
-                    s
-                        .set_background_alpha(0.0)
+                    s.set_background_alpha(0.0)
                         .set_size_pc(100.0, 38.2)
                         .set_solid_fit()
                         .set_aspect_ratio(16.0, 4.5);
                 })
                 .contents(|c| {
-                    c
-                        .add_text("c y b e r l i t h")
-                        .style(|s| {
-                            s
-                                .set_size_pc(100.0, 100.0);
-                        });
+                    c.add_text("c y b e r l i t h").style(|s| {
+                        s.set_size_pc(100.0, 100.0);
+                    });
                 });
 
             // start button
-            c
-                .add_panel()
+            c.add_panel()
                 .style(|s| {
-                    s
-                        .set_background_color(Color::DARK_GRAY)
+                    s.set_background_color(Color::DARK_GRAY)
                         .set_self_halign(Alignment::Center)
                         .set_margin_right_px(40.0)
                         .set_size_pc(50.0, 20.0)
@@ -122,37 +116,27 @@ fn setup_ui(commands: &mut Commands) -> Entity {
                         .set_padding_px(10.0, 10.0, 10.0, 10.0);
                 })
                 .contents(|c| {
-                    c
-                        .add_text("start")
-                        .style(|s| {
-                            s
-                                .set_size_pc(100.0, 100.0)
-                            ;
-                        });
+                    c.add_text("start").style(|s| {
+                        s.set_size_pc(100.0, 100.0);
+                    });
                 });
 
             // continue button
-            c
-                .add_panel()
+            c.add_panel()
                 .style(|s| {
-                    s
-                        .set_background_color(Color::DARK_GRAY)
+                    s.set_background_color(Color::DARK_GRAY)
                         .set_self_halign(Alignment::Center)
                         .set_margin_left_px(40.0)
                         .set_size_pc(50.0, 20.0)
                         .set_size_max_px(240.0, 90.0)
                         .set_solid_fit()
                         .set_aspect_ratio(16.0, 4.5)
-                        .set_padding_px(10.0, 10.0, 10.0, 10.0)
-                    ;
+                        .set_padding_px(10.0, 10.0, 10.0, 10.0);
                 })
                 .contents(|c| {
-                    c.add_text("continue")
-                        .style(|s| {
-                            s
-                                .set_size_pc(100.0, 100.0)
-                            ;
-                        });
+                    c.add_text("continue").style(|s| {
+                        s.set_size_pc(100.0, 100.0);
+                    });
                 });
         });
 
@@ -164,7 +148,7 @@ fn setup_ui(commands: &mut Commands) -> Entity {
 fn setup_3d_scene(
     commands: &mut Commands,
     meshes: &mut Storage<CpuMesh>,
-    materials: &mut Storage<CpuMaterial>
+    materials: &mut Storage<CpuMaterial>,
 ) -> Entity {
     // render_layer
     let layer = RenderLayers::layer(0);
@@ -174,7 +158,8 @@ fn setup_3d_scene(
         .spawn(RenderObjectBundle {
             mesh: meshes.add(shapes::Cube),
             material: materials.add(Color::RED),
-            transform: Transform::from_translation(Vec3::new(0.0, 0.0, 120.0)).with_scale(Vec3::splat(30.0)),
+            transform: Transform::from_translation(Vec3::new(0.0, 0.0, 120.0))
+                .with_scale(Vec3::splat(30.0)),
             ..Default::default()
         })
         .insert(CubeMarker)
@@ -317,7 +302,7 @@ pub fn scene_draw(
 pub fn handle_viewport_resize(
     global: Res<Global>,
     mut window: ResMut<Window>,
-    mut cameras_q: Query<(&mut Camera, &mut Transform)>
+    mut cameras_q: Query<(&mut Camera, &mut Transform)>,
 ) {
     // sync camera viewport to window
     if !window.did_change() {
@@ -331,7 +316,10 @@ pub fn handle_viewport_resize(
     // resize ui camera
     if let Ok((mut camera, mut transform)) = cameras_q.get_mut(global.camera_ui) {
         let should_change = if let Some(viewport) = camera.viewport.as_mut() {
-            *viewport != window_res.logical_size } else { true };
+            *viewport != window_res.logical_size
+        } else {
+            true
+        };
         if should_change {
             let new_viewport = Viewport::new_at_origin(
                 window_res.logical_size.width,
@@ -346,20 +334,23 @@ pub fn handle_viewport_resize(
                 new_viewport.height as f32 * 0.5,
                 1000.0,
             )
-                .looking_at(
-                    Vec3::new(
-                        new_viewport.width as f32 * 0.5,
-                        new_viewport.height as f32 * 0.5,
-                        0.0,
-                    ),
-                    Vec3::NEG_Y,
-                );
+            .looking_at(
+                Vec3::new(
+                    new_viewport.width as f32 * 0.5,
+                    new_viewport.height as f32 * 0.5,
+                    0.0,
+                ),
+                Vec3::NEG_Y,
+            );
         }
     }
 
     if let Ok((mut camera, _transform)) = cameras_q.get_mut(global.camera_3d) {
         let should_change = if let Some(viewport) = camera.viewport.as_mut() {
-            *viewport != window_res.logical_size } else { true };
+            *viewport != window_res.logical_size
+        } else {
+            true
+        };
         if should_change {
             let new_viewport = Viewport::new_at_origin(
                 window_res.logical_size.width,

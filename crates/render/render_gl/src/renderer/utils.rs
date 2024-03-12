@@ -1,7 +1,11 @@
 use std::collections::HashMap;
 
 use math::Mat4;
-use render_api::{components::{Projection, Transform, Camera}, resources::MaterialOrSkinHandle, base::CpuMesh};
+use render_api::{
+    base::CpuMesh,
+    components::{Camera, Projection, Transform},
+    resources::MaterialOrSkinHandle,
+};
 use storage::Handle;
 
 ///

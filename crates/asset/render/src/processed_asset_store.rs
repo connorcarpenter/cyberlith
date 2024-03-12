@@ -57,7 +57,6 @@ impl Default for ProcessedAssetStore {
 }
 
 impl ProcessedAssetStore {
-
     pub(crate) fn get_icon_max_width(&self, handle: &AssetHandle<IconData>) -> Option<f32> {
         let data = self.icons.get(handle)?;
         Some(data.get_max_width())

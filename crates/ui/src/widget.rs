@@ -1,9 +1,12 @@
 use std::any::Any;
 
 use asset_render::AssetManager;
-use render_api::{resources::RenderFrame, components::{RenderLayer, Transform}};
+use render_api::{
+    components::{RenderLayer, Transform},
+    resources::RenderFrame,
+};
 
-use crate::{ui::Globals, style::NodeStyle, node::NodeStore, cache::LayoutCache};
+use crate::{cache::LayoutCache, node::NodeStore, style::NodeStyle, ui::Globals};
 
 pub(crate) trait Widget: Any + Send + Sync + WidgetBoxClone {
     fn as_any(&self) -> &dyn Any;
@@ -19,7 +22,7 @@ pub(crate) trait Widget: Any + Send + Sync + WidgetBoxClone {
         cache: &LayoutCache,
         store: &NodeStore,
         node_style: &NodeStyle,
-        transform: &Transform
+        transform: &Transform,
     );
 }
 

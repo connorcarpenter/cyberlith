@@ -1,8 +1,7 @@
-use layout::{PositionType, SizeUnits, Solid, MarginUnits, Alignment};
+use layout::{Alignment, MarginUnits, PositionType, SizeUnits, Solid};
 
 #[derive(Clone, Default, Copy)]
 pub(crate) struct NodeStyle {
-
     pub(crate) position_type: PositionType,
 
     pub(crate) width: SizeUnits,

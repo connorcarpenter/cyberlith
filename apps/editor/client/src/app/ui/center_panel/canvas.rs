@@ -106,7 +106,8 @@ pub fn render_canvas(ui: &mut Ui, world: &mut World) {
                             // This is the texture that will be rendered to.
                             let texture_width = texture_size.x as u32;
                             let texture_height = texture_size.y as u32;
-                            let new_texture = CpuTexture2D::from_size(texture_width, texture_height);
+                            let new_texture =
+                                CpuTexture2D::from_size(texture_width, texture_height);
 
                             textures.set(&texture_handle, new_texture);
                             user_textures.mark_texture_changed(&texture_handle);
@@ -115,13 +116,17 @@ pub fn render_canvas(ui: &mut Ui, world: &mut World) {
                             canvas.update_texture_size(current_texture_size);
                             camera_manager
                                 .update_camera_viewports(current_texture_size, &mut camera_query);
-                            icon_manager.update_camera_viewport(current_texture_size, &mut camera_query);
+                            icon_manager
+                                .update_camera_viewport(current_texture_size, &mut camera_query);
 
                             // queue recalc of shapes
                             camera_manager.recalculate_3d_view();
                             canvas.queue_resync_shapes_light();
 
-                            info!("resized window to: (width: {:?}, height: {:?})", texture_width, texture_height);
+                            info!(
+                                "resized window to: (width: {:?}, height: {:?})",
+                                texture_width, texture_height
+                            );
                         }
 
                         ui_state.resized_window = false;

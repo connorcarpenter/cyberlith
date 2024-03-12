@@ -1,9 +1,7 @@
 use bevy_ecs::system::{NonSendMut, Res, ResMut};
 
 use render_api::{
-    base::CpuTexture2D,
-    components::{RenderTarget as CameraRenderTarget},
-    resources::RenderFrame,
+    base::CpuTexture2D, components::RenderTarget as CameraRenderTarget, resources::RenderFrame,
 };
 use storage::SideStorage;
 

@@ -1,8 +1,8 @@
 mod render_frame;
+mod render_pass;
 mod time;
 mod window;
 mod window_settings;
-mod render_pass;
 
 pub use render_frame::*;
 pub use render_pass::*;

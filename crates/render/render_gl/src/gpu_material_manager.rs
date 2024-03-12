@@ -2,7 +2,10 @@ use std::{collections::HashMap, default::Default};
 
 use bevy_ecs::system::Resource;
 
-use render_api::{components::{Camera, Projection, Transform}, base::CpuMaterial};
+use render_api::{
+    base::CpuMaterial,
+    components::{Camera, Projection, Transform},
+};
 use storage::Handle;
 
 use crate::{
@@ -73,7 +76,14 @@ impl GpuMaterialManager {
         self.gpu_materials.is_some()
     }
 
-    pub fn use_uniforms(&self, program: &Program, camera: &Camera, camera_transform: &Transform, camera_projection: &Projection, lights: &[&dyn Light]) {
+    pub fn use_uniforms(
+        &self,
+        program: &Program,
+        camera: &Camera,
+        camera_transform: &Transform,
+        camera_projection: &Projection,
+        lights: &[&dyn Light],
+    ) {
         if !lights.is_empty() {
             for (i, light) in lights.iter().enumerate() {
                 light.use_uniforms(program, i as u32);

@@ -1,6 +1,12 @@
-use render_api::{components::{Camera, Projection, Transform}, base::{Color, CpuMaterial}};
+use render_api::{
+    base::{Color, CpuMaterial},
+    components::{Camera, Projection, Transform},
+};
 
-use crate::{core::{Cull, Program, RenderStates}, renderer::{FragmentShader, FromPbrMaterial, Light, Material}};
+use crate::{
+    core::{Cull, Program, RenderStates},
+    renderer::{FragmentShader, FromPbrMaterial, Light, Material},
+};
 
 ///
 /// A physically-based material that renders a [Geometry] in an approximate correct physical manner based on Physically Based Rendering (PBR).
@@ -51,7 +57,14 @@ impl Material for PbrMaterial {
         FragmentShader { source: output }
     }
 
-    fn use_uniforms(&self, program: &Program, _camera: &Camera, camera_transform: &Transform, _camera_projection: &Projection, lights: &[&dyn Light]) {
+    fn use_uniforms(
+        &self,
+        program: &Program,
+        _camera: &Camera,
+        camera_transform: &Transform,
+        _camera_projection: &Projection,
+        lights: &[&dyn Light],
+    ) {
         if !lights.is_empty() {
             for (i, light) in lights.iter().enumerate() {
                 light.use_uniforms(program, i as u32);

@@ -66,7 +66,6 @@ impl Default for MarginUnits {
 }
 
 impl MarginUnits {
-
     pub fn add_size_units(&mut self, size_units: SizeUnits) {
         match (self, size_units) {
             (_, SizeUnits::Auto) => {}
@@ -80,26 +79,42 @@ impl MarginUnits {
     pub fn to_px(&self, parent_value: f32, parent_padding: f32) -> f32 {
         match self {
             MarginUnits::Pixels(pixels) => *pixels,
-            MarginUnits::Percentage(percentage) => percentage_calc(*percentage, parent_value, parent_padding),
+            MarginUnits::Percentage(percentage) => {
+                percentage_calc(*percentage, parent_value, parent_padding)
+            }
         }
     }
 
-    pub fn to_px_clamped(&self, parent_value: f32, parent_padding: f32, min: MarginUnits, max: MarginUnits) -> f32 {
+    pub fn to_px_clamped(
+        &self,
+        parent_value: f32,
+        parent_padding: f32,
+        min: MarginUnits,
+        max: MarginUnits,
+    ) -> f32 {
         let min = min.to_px(parent_value, parent_padding);
         let max = max.to_px(parent_value, parent_padding);
 
         match self {
             MarginUnits::Pixels(pixels) => pixels.min(max).max(min),
-            MarginUnits::Percentage(percentage) => percentage_calc(*percentage, parent_value, parent_padding).min(max).max(min),
+            MarginUnits::Percentage(percentage) => {
+                percentage_calc(*percentage, parent_value, parent_padding)
+                    .min(max)
+                    .max(min)
+            }
         }
     }
 
     pub fn clamp(&self, min: MarginUnits, max: MarginUnits) -> Self {
         match (self, min, max) {
-            (MarginUnits::Pixels(val), MarginUnits::Pixels(min), MarginUnits::Pixels(max)) => MarginUnits::Pixels(val.min(max).max(min)),
-            (MarginUnits::Percentage(val), MarginUnits::Percentage(min), MarginUnits::Percentage(max)) => {
-                MarginUnits::Percentage(val.min(max).max(min))
+            (MarginUnits::Pixels(val), MarginUnits::Pixels(min), MarginUnits::Pixels(max)) => {
+                MarginUnits::Pixels(val.min(max).max(min))
             }
+            (
+                MarginUnits::Percentage(val),
+                MarginUnits::Percentage(min),
+                MarginUnits::Percentage(max),
+            ) => MarginUnits::Percentage(val.min(max).max(min)),
             _ => *self,
         }
     }
@@ -138,28 +153,45 @@ impl SizeUnits {
     pub fn to_px(&self, parent_value: f32, parent_padding: f32, default: f32) -> f32 {
         match self {
             SizeUnits::Pixels(pixels) => *pixels,
-            SizeUnits::Percentage(percentage) => percentage_calc(*percentage, parent_value, parent_padding),
+            SizeUnits::Percentage(percentage) => {
+                percentage_calc(*percentage, parent_value, parent_padding)
+            }
             SizeUnits::Auto => default,
         }
     }
 
-    pub fn to_px_clamped(&self, parent_value: f32, parent_padding: f32, default: f32, min: SizeUnits, max: SizeUnits) -> f32 {
+    pub fn to_px_clamped(
+        &self,
+        parent_value: f32,
+        parent_padding: f32,
+        default: f32,
+        min: SizeUnits,
+        max: SizeUnits,
+    ) -> f32 {
         let min = min.to_px(parent_value, parent_padding, f32::MIN);
         let max = max.to_px(parent_value, parent_padding, f32::MAX);
 
         match self {
             SizeUnits::Pixels(pixels) => pixels.min(max).max(min),
-            SizeUnits::Percentage(percentage) => percentage_calc(*percentage, parent_value, parent_padding).min(max).max(min),
+            SizeUnits::Percentage(percentage) => {
+                percentage_calc(*percentage, parent_value, parent_padding)
+                    .min(max)
+                    .max(min)
+            }
             SizeUnits::Auto => default.min(max).max(min),
         }
     }
 
     pub fn clamp(&self, min: SizeUnits, max: SizeUnits) -> Self {
         match (self, min, max) {
-            (SizeUnits::Pixels(val), SizeUnits::Pixels(min), SizeUnits::Pixels(max)) => SizeUnits::Pixels(val.min(max).max(min)),
-            (SizeUnits::Percentage(val), SizeUnits::Percentage(min), SizeUnits::Percentage(max)) => {
-                SizeUnits::Percentage(val.min(max).max(min))
+            (SizeUnits::Pixels(val), SizeUnits::Pixels(min), SizeUnits::Pixels(max)) => {
+                SizeUnits::Pixels(val.min(max).max(min))
             }
+            (
+                SizeUnits::Percentage(val),
+                SizeUnits::Percentage(min),
+                SizeUnits::Percentage(max),
+            ) => SizeUnits::Percentage(val.min(max).max(min)),
             _ => *self,
         }
     }

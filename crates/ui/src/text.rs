@@ -1,11 +1,21 @@
 use std::any::Any;
 
-use layout::{PositionType, SizeUnits, MarginUnits, Alignment};
+use layout::{Alignment, MarginUnits, PositionType, SizeUnits};
 
 use asset_render::AssetManager;
-use render_api::{resources::RenderFrame, components::{RenderLayer, Transform}};
+use render_api::{
+    components::{RenderLayer, Transform},
+    resources::RenderFrame,
+};
 
-use crate::{cache::LayoutCache, node::{UiNode, NodeStore}, style::NodeStyle, widget::Widget, ui::Globals, Ui, NodeId};
+use crate::{
+    cache::LayoutCache,
+    node::{NodeStore, UiNode},
+    style::NodeStyle,
+    ui::Globals,
+    widget::Widget,
+    NodeId, Ui,
+};
 
 #[derive(Clone)]
 pub struct Text {
@@ -40,7 +50,7 @@ impl Widget for Text {
         _cache: &LayoutCache,
         _store: &NodeStore,
         _node_style: &NodeStyle,
-        transform: &Transform
+        transform: &Transform,
     ) {
         let Some(text_icon_handle) = globals.get_text_icon_handle() else {
             panic!("No text handle found in globals");
@@ -61,9 +71,7 @@ impl Widget for Text {
 }
 
 #[derive(Clone, Default, Copy)]
-pub struct TextStyle {
-
-}
+pub struct TextStyle {}
 
 pub struct TextMut<'a> {
     ui: &'a mut Ui,
@@ -72,7 +80,10 @@ pub struct TextMut<'a> {
 
 impl<'a> TextMut<'a> {
     pub(crate) fn new(ui: &'a mut Ui, panel_id: NodeId) -> Self {
-        Self { ui, node_id: panel_id }
+        Self {
+            ui,
+            node_id: panel_id,
+        }
     }
 
     pub fn set_visible(&mut self, visible: bool) -> &mut Self {
@@ -233,7 +244,10 @@ impl<'a> TextStyleMut<'a> {
     }
 
     pub fn set_size_pc(&mut self, width_pc: f32, height_pc: f32) -> &mut Self {
-        self.set_size_units(SizeUnits::Percentage(width_pc), SizeUnits::Percentage(height_pc))
+        self.set_size_units(
+            SizeUnits::Percentage(width_pc),
+            SizeUnits::Percentage(height_pc),
+        )
     }
 
     // set_width_min
@@ -284,7 +298,10 @@ impl<'a> TextStyleMut<'a> {
     }
 
     pub fn set_size_min_px(&mut self, min_width_px: f32, min_height_px: f32) -> &mut Self {
-        self.set_size_min_units(SizeUnits::Pixels(min_width_px), SizeUnits::Pixels(min_height_px))
+        self.set_size_min_units(
+            SizeUnits::Pixels(min_width_px),
+            SizeUnits::Pixels(min_height_px),
+        )
     }
 
     pub fn set_size_min_pc(&mut self, min_width_pc: f32, min_height_pc: f32) -> &mut Self {
@@ -342,7 +359,10 @@ impl<'a> TextStyleMut<'a> {
     }
 
     pub fn set_size_max_px(&mut self, max_width_px: f32, max_height_px: f32) -> &mut Self {
-        self.set_size_max_units(SizeUnits::Pixels(max_width_px), SizeUnits::Pixels(max_height_px))
+        self.set_size_max_units(
+            SizeUnits::Pixels(max_width_px),
+            SizeUnits::Pixels(max_height_px),
+        )
     }
 
     pub fn set_size_max_pc(&mut self, max_width_pc: f32, max_height_pc: f32) -> &mut Self {

@@ -14,7 +14,7 @@ use storage::{Handle, Storage};
 
 use crate::{
     cache::LayoutCache,
-    node::{NodeKind, UiNode, NodeStore},
+    node::{NodeKind, NodeStore, UiNode},
     node_id::NodeId,
     panel::{Panel, PanelMut},
     widget::Widget,
@@ -126,7 +126,12 @@ impl Ui {
         PanelMut::new(self, Self::ROOT_NODE_ID)
     }
 
-    pub fn draw(&mut self, render_frame: &mut RenderFrame, render_layer_opt: Option<&RenderLayer>, asset_manager: &AssetManager) {
+    pub fn draw(
+        &mut self,
+        render_frame: &mut RenderFrame,
+        render_layer_opt: Option<&RenderLayer>,
+        asset_manager: &AssetManager,
+    ) {
         let Some(viewport) = render_frame.get_camera_viewport(render_layer_opt) else {
             return;
         };
@@ -228,7 +233,11 @@ impl Ui {
 
     pub(crate) fn panel_mut(&mut self, id: &NodeId) -> Option<&mut Panel> {
         let node_mut = self.node_mut(id)?;
-        let panel_mut = node_mut.widget.as_mut().as_any_mut().downcast_mut::<Panel>()?;
+        let panel_mut = node_mut
+            .widget
+            .as_mut()
+            .as_any_mut()
+            .downcast_mut::<Panel>()?;
         Some(panel_mut)
     }
 }

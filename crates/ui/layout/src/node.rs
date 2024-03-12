@@ -223,53 +223,129 @@ pub(crate) trait NodeExt: Node {
         )
     }
 
-    fn margin_main_before(&self, store: &Self::Store, parent_layout_type: LayoutType) -> MarginUnits {
-        parent_layout_type.select_unwrap(store, |store| self.margin_left(store), |store| self.margin_top(store))
+    fn margin_main_before(
+        &self,
+        store: &Self::Store,
+        parent_layout_type: LayoutType,
+    ) -> MarginUnits {
+        parent_layout_type.select_unwrap(
+            store,
+            |store| self.margin_left(store),
+            |store| self.margin_top(store),
+        )
     }
 
-    fn margin_main_after(&self, store: &Self::Store, parent_layout_type: LayoutType) -> MarginUnits {
-        parent_layout_type.select_unwrap(store, |store| self.margin_right(store), |store| self.margin_bottom(store))
+    fn margin_main_after(
+        &self,
+        store: &Self::Store,
+        parent_layout_type: LayoutType,
+    ) -> MarginUnits {
+        parent_layout_type.select_unwrap(
+            store,
+            |store| self.margin_right(store),
+            |store| self.margin_bottom(store),
+        )
     }
 
-    fn margin_cross_before(&self, store: &Self::Store, parent_layout_type: LayoutType) -> MarginUnits {
-        parent_layout_type.select_unwrap(store, |store| self.margin_top(store), |store| self.margin_left(store))
+    fn margin_cross_before(
+        &self,
+        store: &Self::Store,
+        parent_layout_type: LayoutType,
+    ) -> MarginUnits {
+        parent_layout_type.select_unwrap(
+            store,
+            |store| self.margin_top(store),
+            |store| self.margin_left(store),
+        )
     }
 
-    fn margin_cross_after(&self, store: &Self::Store, parent_layout_type: LayoutType) -> MarginUnits {
-        parent_layout_type.select_unwrap(store, |store| self.margin_bottom(store), |store| self.margin_right(store))
+    fn margin_cross_after(
+        &self,
+        store: &Self::Store,
+        parent_layout_type: LayoutType,
+    ) -> MarginUnits {
+        parent_layout_type.select_unwrap(
+            store,
+            |store| self.margin_bottom(store),
+            |store| self.margin_right(store),
+        )
     }
 
-    fn padding_main_before(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SizeUnits {
-        parent_layout_type.select_unwrap(store, |store| self.padding_left(store), |store| self.padding_top(store))
+    fn padding_main_before(
+        &self,
+        store: &Self::Store,
+        parent_layout_type: LayoutType,
+    ) -> SizeUnits {
+        parent_layout_type.select_unwrap(
+            store,
+            |store| self.padding_left(store),
+            |store| self.padding_top(store),
+        )
     }
 
     fn padding_main_after(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SizeUnits {
-        parent_layout_type.select_unwrap(store, |store| self.padding_right(store), |store| self.padding_bottom(store))
+        parent_layout_type.select_unwrap(
+            store,
+            |store| self.padding_right(store),
+            |store| self.padding_bottom(store),
+        )
     }
 
-    fn padding_cross_before(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SizeUnits {
-        parent_layout_type.select_unwrap(store, |store| self.padding_top(store), |store| self.padding_left(store))
+    fn padding_cross_before(
+        &self,
+        store: &Self::Store,
+        parent_layout_type: LayoutType,
+    ) -> SizeUnits {
+        parent_layout_type.select_unwrap(
+            store,
+            |store| self.padding_top(store),
+            |store| self.padding_left(store),
+        )
     }
 
-    fn padding_cross_after(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SizeUnits {
-        parent_layout_type.select_unwrap(store, |store| self.padding_bottom(store), |store| self.padding_right(store))
+    fn padding_cross_after(
+        &self,
+        store: &Self::Store,
+        parent_layout_type: LayoutType,
+    ) -> SizeUnits {
+        parent_layout_type.select_unwrap(
+            store,
+            |store| self.padding_bottom(store),
+            |store| self.padding_right(store),
+        )
     }
 
     fn main_between(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SizeUnits {
-        parent_layout_type.select_unwrap(store, |store| self.col_between(store), |store| self.row_between(store))
+        parent_layout_type.select_unwrap(
+            store,
+            |store| self.col_between(store),
+            |store| self.row_between(store),
+        )
     }
 
     // Currently unused until wrapping is implemented
     fn cross_between(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SizeUnits {
-        parent_layout_type.select_unwrap(store, |store| self.row_between(store), |store| self.col_between(store))
+        parent_layout_type.select_unwrap(
+            store,
+            |store| self.row_between(store),
+            |store| self.col_between(store),
+        )
     }
 
     fn self_align(&self, store: &Self::Store, parent_layout_type: LayoutType) -> Alignment {
-        parent_layout_type.select_unwrap(store, |store| self.self_valign(store), |store| self.self_halign(store))
+        parent_layout_type.select_unwrap(
+            store,
+            |store| self.self_valign(store),
+            |store| self.self_halign(store),
+        )
     }
 
     fn children_align(&self, store: &Self::Store, layout_type: LayoutType) -> Alignment {
-        layout_type.select_unwrap(store, |store| self.children_halign(store), |store| self.children_valign(store))
+        layout_type.select_unwrap(
+            store,
+            |store| self.children_halign(store),
+            |store| self.children_valign(store),
+        )
     }
 }
 
@@ -278,6 +354,6 @@ impl<N: Node> NodeExt for N {}
 
 #[derive(Clone, Copy, Eq, PartialEq)]
 pub enum Solid {
-    Fit, // maximum axis uses aspect ratio
+    Fit,  // maximum axis uses aspect ratio
     Fill, // minimum axis uses aspect ratio
 }

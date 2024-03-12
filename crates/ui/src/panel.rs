@@ -2,12 +2,25 @@ use std::any::Any;
 
 use bevy_log::warn;
 
-use layout::{Alignment, LayoutType, PositionType, SizeUnits, Solid, MarginUnits};
 use asset_render::AssetManager;
-use render_api::{base::{Color, CpuMaterial}, resources::RenderFrame, components::{RenderLayer, Transform}};
+use layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
+use render_api::{
+    base::{Color, CpuMaterial},
+    components::{RenderLayer, Transform},
+    resources::RenderFrame,
+};
 use storage::Handle;
 
-use crate::{ui::draw_node, style::NodeStyle, node::{NodeKind, NodeStore, UiNode}, text::{Text, TextMut}, cache::LayoutCache, widget::Widget, ui::Globals, NodeId, Ui};
+use crate::{
+    cache::LayoutCache,
+    node::{NodeKind, NodeStore, UiNode},
+    style::NodeStyle,
+    text::{Text, TextMut},
+    ui::draw_node,
+    ui::Globals,
+    widget::Widget,
+    NodeId, Ui,
+};
 
 #[derive(Clone)]
 pub struct Panel {
@@ -46,7 +59,7 @@ impl Widget for Panel {
         cache: &LayoutCache,
         store: &NodeStore,
         _node_style: &NodeStyle,
-        transform: &Transform
+        transform: &Transform,
     ) {
         // draw panel
         if let Some(mat_handle) = self.style.background_color_handle {
@@ -65,19 +78,20 @@ impl Widget for Panel {
         // draw children
         for child_id in self.children.iter() {
             //info!("drawing child: {:?}", child);
-            draw_node( // TODO: make this configurable?
-                       render_frame,
-                       render_layer_opt,
-                       asset_manager,
-                       globals,
-                       cache,
-                       store,
-                       child_id,
-                       (
-                           transform.translation.x,
-                           transform.translation.y,
-                           transform.translation.z + 0.1
-                       ),
+            draw_node(
+                // TODO: make this configurable?
+                render_frame,
+                render_layer_opt,
+                asset_manager,
+                globals,
+                cache,
+                store,
+                child_id,
+                (
+                    transform.translation.x,
+                    transform.translation.y,
+                    transform.translation.z + 0.1,
+                ),
             );
         }
     }
@@ -85,7 +99,6 @@ impl Widget for Panel {
 
 #[derive(Clone, Copy)]
 pub(crate) struct PanelStyle {
-
     pub(crate) background_color: Color,
     pub(crate) background_alpha: f32,
     pub(crate) background_color_handle: Option<Handle<CpuMaterial>>,
@@ -171,7 +184,12 @@ impl<'a> PanelContentsMut<'a> {
     }
 
     fn get_panel_mut(&mut self) -> &mut Panel {
-        self.get_mut().widget.as_mut().as_any_mut().downcast_mut::<Panel>().unwrap()
+        self.get_mut()
+            .widget
+            .as_mut()
+            .as_any_mut()
+            .downcast_mut::<Panel>()
+            .unwrap()
     }
 
     pub fn add_panel<'b>(self: &'b mut PanelContentsMut<'a>) -> PanelMut<'b> {
@@ -185,7 +203,6 @@ impl<'a> PanelContentsMut<'a> {
     }
 
     pub fn add_text<'b>(self: &'b mut PanelContentsMut<'a>, text: &str) -> TextMut<'b> {
-
         // creates a new panel, returning a context for it
         let new_id = self.ui.create_node(&NodeKind::Text, Text::new(text));
 
@@ -203,7 +220,10 @@ pub struct PanelStyleMut<'a> {
 
 impl<'a> PanelStyleMut<'a> {
     pub(crate) fn new(ui: &'a mut Ui, panel_id: NodeId) -> Self {
-        Self { ui, node_id: panel_id }
+        Self {
+            ui,
+            node_id: panel_id,
+        }
     }
 
     fn get_ref(&self) -> &UiNode {
@@ -215,11 +235,21 @@ impl<'a> PanelStyleMut<'a> {
     }
 
     fn get_panel_ref(&self) -> &Panel {
-        self.get_ref().widget.as_ref().as_any().downcast_ref::<Panel>().unwrap()
+        self.get_ref()
+            .widget
+            .as_ref()
+            .as_any()
+            .downcast_ref::<Panel>()
+            .unwrap()
     }
 
     fn get_panel_mut(&mut self) -> &mut Panel {
-        self.get_mut().widget.as_mut().as_any_mut().downcast_mut::<Panel>().unwrap()
+        self.get_mut()
+            .widget
+            .as_mut()
+            .as_any_mut()
+            .downcast_mut::<Panel>()
+            .unwrap()
     }
 
     // getters
@@ -228,7 +258,9 @@ impl<'a> PanelStyleMut<'a> {
         self.get_panel_ref().style.background_color
     }
 
-    pub fn background_alpha(&self) -> f32 { self.get_panel_ref().style.background_alpha }
+    pub fn background_alpha(&self) -> f32 {
+        self.get_panel_ref().style.background_alpha
+    }
 
     pub fn background_color_handle(&self) -> Option<Handle<CpuMaterial>> {
         self.get_panel_ref().style.background_color_handle
@@ -435,7 +467,10 @@ impl<'a> PanelStyleMut<'a> {
     }
 
     pub fn set_size_pc(&mut self, width_pc: f32, height_pc: f32) -> &mut Self {
-        self.set_size_units(SizeUnits::Percentage(width_pc), SizeUnits::Percentage(height_pc))
+        self.set_size_units(
+            SizeUnits::Percentage(width_pc),
+            SizeUnits::Percentage(height_pc),
+        )
     }
 
     // set_width_min
@@ -486,7 +521,10 @@ impl<'a> PanelStyleMut<'a> {
     }
 
     pub fn set_size_min_px(&mut self, min_width_px: f32, min_height_px: f32) -> &mut Self {
-        self.set_size_min_units(SizeUnits::Pixels(min_width_px), SizeUnits::Pixels(min_height_px))
+        self.set_size_min_units(
+            SizeUnits::Pixels(min_width_px),
+            SizeUnits::Pixels(min_height_px),
+        )
     }
 
     pub fn set_size_min_pc(&mut self, min_width_pc: f32, min_height_pc: f32) -> &mut Self {
@@ -544,7 +582,10 @@ impl<'a> PanelStyleMut<'a> {
     }
 
     pub fn set_size_max_px(&mut self, max_width_px: f32, max_height_px: f32) -> &mut Self {
-        self.set_size_max_units(SizeUnits::Pixels(max_width_px), SizeUnits::Pixels(max_height_px))
+        self.set_size_max_units(
+            SizeUnits::Pixels(max_width_px),
+            SizeUnits::Pixels(max_height_px),
+        )
     }
 
     pub fn set_size_max_pc(&mut self, max_width_pc: f32, max_height_pc: f32) -> &mut Self {

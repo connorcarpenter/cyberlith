@@ -22,7 +22,6 @@ impl Default for IconData {
 }
 
 impl IconData {
-
     pub(crate) fn get_max_width(&self) -> f32 {
         self.max_width
     }

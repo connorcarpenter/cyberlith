@@ -77,12 +77,7 @@ impl AssetRenderer {
             warn!("icon data not loaded 2: {:?}", icon_handle.asset_id());
             return;
         };
-        render_frame.draw_mesh(
-            render_layer_opt,
-            &cpu_mesh_handle,
-            mat_handle,
-            transform,
-        );
+        render_frame.draw_mesh(render_layer_opt, &cpu_mesh_handle, mat_handle, transform);
     }
 
     pub(crate) fn draw_text(
@@ -106,7 +101,7 @@ impl AssetRenderer {
         let mut cursor = Transform::from_xyz(
             transform.translation.x + (transform.scale.x * 0.5),
             transform.translation.y + (transform.scale.y * 0.5),
-            transform.translation.z
+            transform.translation.z,
         );
 
         // if we want to fill 200px, but raw_width is 100px, then scale_x would be 2.0
@@ -163,12 +158,10 @@ impl AssetRenderer {
         icon_handle: &AssetHandle<IconData>,
         text: &str,
     ) -> (f32, f32) {
-
         let mut width = 0.0;
         let height = 200.0;
 
         for c in text.chars() {
-
             if width > 0.0 {
                 width += 6.0; // between character spacing - TODO: replace with config
             }

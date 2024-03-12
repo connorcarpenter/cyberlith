@@ -7,7 +7,7 @@ use bevy_ecs::{
 use game_engine::{
     asset::{AnimationData, AssetHandle, AssetManager, ModelData},
     math::{Quat, Vec3},
-    render::{Window,
+    render::{
         base::{Color, CpuMaterial, CpuMesh},
         components::{
             AmbientLight, Camera, CameraBundle, ClearOperation, DirectionalLight,
@@ -15,7 +15,7 @@ use game_engine::{
             RenderObjectBundle, RenderTarget, Transform, Viewport, Visibility,
         },
         resources::{RenderFrame, Time},
-        shapes,
+        shapes, Window,
     },
     storage::{Handle, Storage},
 };
@@ -149,7 +149,10 @@ pub fn handle_viewport_resize(mut window: ResMut<Window>, mut cameras_q: Query<&
     };
     for mut camera in cameras_q.iter_mut() {
         let should_change = if let Some(viewport) = camera.viewport.as_mut() {
-            *viewport != window_res.logical_size } else { true };
+            *viewport != window_res.logical_size
+        } else {
+            true
+        };
         if should_change {
             let new_viewport = Viewport::new_at_origin(
                 window_res.logical_size.width,

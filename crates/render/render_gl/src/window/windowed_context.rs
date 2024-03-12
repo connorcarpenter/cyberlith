@@ -107,7 +107,6 @@ mod inner {
             window: &Window,
             settings: SurfaceSettings,
         ) -> Result<Self, WindowError> {
-
             use glutin::prelude::*;
             use raw_window_handle::*;
 
@@ -134,7 +133,8 @@ mod inner {
             #[cfg(target_os = "android")]
             let preference = glutin::display::DisplayApiPreference::Egl;
 
-            let gl_display = unsafe { glutin::display::Display::new(raw_display_handle, preference)? };
+            let gl_display =
+                unsafe { glutin::display::Display::new(raw_display_handle, preference)? };
             let swap_interval = SwapInterval::Wait(std::num::NonZeroU32::new(1).unwrap());
 
             let hardware_acceleration = match settings.hardware_acceleration {

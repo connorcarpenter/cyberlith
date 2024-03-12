@@ -5,13 +5,17 @@ use rand::seq::SliceRandom;
 
 use gl::DrawArraysIndirectCommand;
 use math::Mat4;
-use render_api::{components::{Camera, Projection, Transform, CameraProjection, Viewport}, resources::{MaterialOrSkinHandle, RenderPass}, base::CpuMesh};
+use render_api::{
+    base::CpuMesh,
+    components::{Camera, CameraProjection, Projection, Transform, Viewport},
+    resources::{MaterialOrSkinHandle, RenderPass},
+};
 use storage::Handle;
 
 use crate::{
+    core::{Context, Cull, GpuTexture2D, RenderStates},
     renderer::{lights_shader_source, Light},
     GpuMaterialManager, GpuMeshManager, GpuSkinManager,
-    core::{GpuTexture2D, Context, Cull, RenderStates},
 };
 
 pub trait RenderTargetExt {
@@ -31,7 +35,7 @@ pub trait RenderTargetExt {
             camera_transform_opt,
             camera_projection_opt,
             lights,
-            meshes
+            meshes,
         } = render_pass;
         let camera = camera_opt.unwrap();
         let camera_transform = camera_transform_opt.unwrap();
@@ -78,8 +82,12 @@ fn render<'a>(
     {
         return;
     }
-    let (commands, instance_texture) =
-        meshes_to_commands(meshes, gpu_mesh_manager, gpu_material_manager, gpu_skin_manager);
+    let (commands, instance_texture) = meshes_to_commands(
+        meshes,
+        gpu_mesh_manager,
+        gpu_material_manager,
+        gpu_skin_manager,
+    );
 
     let render_states = RenderStates {
         cull: Cull::Back,
@@ -89,13 +97,18 @@ fn render<'a>(
     let vertex_shader_source = vertex_shader_source(lights);
     Context::get()
         .program(vertex_shader_source, fragment_shader.source, |program| {
-            gpu_material_manager.use_uniforms(program, camera, camera_transform, camera_projection, lights);
+            gpu_material_manager.use_uniforms(
+                program,
+                camera,
+                camera_transform,
+                camera_projection,
+                lights,
+            );
             gpu_skin_manager.use_uniforms(program);
 
             program.use_uniform(
                 "view_projection",
-                camera_projection
-                    .projection_matrix(&camera.viewport_or_default())
+                camera_projection.projection_matrix(&camera.viewport_or_default())
                     * camera_transform.view_matrix(),
             );
 
@@ -112,7 +125,6 @@ fn meshes_to_commands(
     gpu_mat_manager: &GpuMaterialManager,
     gpu_skin_manager: &GpuSkinManager,
 ) -> (Vec<DrawArraysIndirectCommand>, GpuTexture2D) {
-
     let mut commands = Vec::new();
     let mut instances_rows = Vec::new();
     let mut max_instance_count = 0;
@@ -168,8 +180,7 @@ fn meshes_to_commands(
 
     let texture_width = instance_grid_width as u32;
     let texture_height = commands.len() as u32;
-    let mut instances_texture =
-        GpuTexture2D::new_empty::<[f32; 4]>(texture_width, texture_height);
+    let mut instances_texture = GpuTexture2D::new_empty::<[f32; 4]>(texture_width, texture_height);
     instances_texture.fill_pure(&instances_grid);
 
     (commands, instances_texture)

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{style::NodeStyle, NodeId, widget::Widget};
+use crate::{style::NodeStyle, widget::Widget, NodeId};
 
 pub struct NodeStore {
     map: HashMap<NodeId, UiNode>,

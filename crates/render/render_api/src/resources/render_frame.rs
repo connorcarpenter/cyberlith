@@ -8,7 +8,7 @@ use crate::{
     base::{CpuMaterial, CpuMesh, CpuSkin},
     components::{
         AmbientLight, Camera, DirectionalLight, PointLight, Projection, RenderLayer, RenderLayers,
-        Transform, Viewport, TypedLight
+        Transform, TypedLight, Viewport,
     },
     resources::render_pass::RenderPass,
 };
@@ -27,7 +27,6 @@ impl Default for RenderFrame {
 }
 
 impl RenderFrame {
-
     fn new_render_passes() -> Vec<Option<RenderPass>> {
         let mut contents = Vec::with_capacity(Camera::MAX_CAMERAS);
         for _ in 0..Camera::MAX_CAMERAS {
@@ -110,7 +109,11 @@ impl RenderFrame {
         transform: &Transform,
     ) {
         let contents = self.get_render_pass_mut(render_layer_opt);
-        contents.add_mesh(mesh_handle, MaterialOrSkinHandle::Material(mat_handle.clone()), transform.compute_matrix());
+        contents.add_mesh(
+            mesh_handle,
+            MaterialOrSkinHandle::Material(mat_handle.clone()),
+            transform.compute_matrix(),
+        );
     }
 
     pub fn draw_skinned_mesh(
@@ -121,7 +124,11 @@ impl RenderFrame {
         transform: &Transform,
     ) {
         let contents = self.get_render_pass_mut(render_layer_opt);
-        contents.add_mesh(mesh_handle, MaterialOrSkinHandle::Skin(skin_handle.clone()), transform.compute_matrix());
+        contents.add_mesh(
+            mesh_handle,
+            MaterialOrSkinHandle::Skin(skin_handle.clone()),
+            transform.compute_matrix(),
+        );
     }
 }
 
