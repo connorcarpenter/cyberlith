@@ -35,7 +35,7 @@ pub fn render(
         let render_pass = work.unwrap();
 
         let render_target = {
-            match &render_pass.camera.camera.target {
+            match &render_pass.camera.target {
                 CameraRenderTarget::Screen => frame_input.screen(),
                 CameraRenderTarget::Image(texture_handle) => {
                     // Render to Image
@@ -47,7 +47,7 @@ pub fn render(
         };
 
         // Clear the color and depth of the screen render target using the camera's clear color
-        render_target.clear((&render_pass.camera.camera.clear_operation).into());
+        render_target.clear((&render_pass.camera.clear_operation).into());
 
         render_target.render(
             &gpu_mesh_manager,

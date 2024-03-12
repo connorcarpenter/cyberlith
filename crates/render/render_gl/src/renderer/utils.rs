@@ -1,10 +1,8 @@
 use std::collections::HashMap;
 
 use math::Mat4;
-use render_api::{resources::MaterialOrSkinHandle, base::CpuMesh};
+use render_api::{components::{Projection, Transform, Camera}, resources::MaterialOrSkinHandle, base::CpuMesh};
 use storage::Handle;
-
-use crate::renderer::RenderCamera;
 
 ///
 /// Compare function for sorting objects based on distance from the camera.
@@ -12,7 +10,9 @@ use crate::renderer::RenderCamera;
 /// then transparent objects from farthest away to closest to the camera.
 ///
 pub fn cmp_render_order(
-    _camera: &RenderCamera,
+    _camera: &Camera,
+    _camera_transform: &Transform,
+    _camera_projection: &Projection,
     _obj0: &HashMap<Handle<CpuMesh>, Vec<(MaterialOrSkinHandle, Mat4)>>,
     _obj1: &HashMap<Handle<CpuMesh>, Vec<(MaterialOrSkinHandle, Mat4)>>,
 ) -> std::cmp::Ordering {

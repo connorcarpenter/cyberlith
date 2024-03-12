@@ -2,11 +2,11 @@ use std::collections::HashMap;
 
 use gl::DrawArraysIndirectCommand;
 use math::Mat4;
-use render_api::{components::{CameraProjection, Viewport}, resources::MaterialOrSkinHandle, base::CpuMesh};
+use render_api::{components::{Camera, Projection, Transform, CameraProjection, Viewport}, resources::MaterialOrSkinHandle, base::CpuMesh};
 use storage::Handle;
 
 use crate::{
-    renderer::{lights_shader_source, RenderCamera, Light, RenderPass},
+    renderer::{lights_shader_source, Light, RenderPass},
     GpuMaterialManager, GpuMeshManager, GpuSkinManager,
     core::{GpuTexture2D, Context, Cull, RenderStates},
 };
@@ -23,7 +23,7 @@ pub trait RenderTargetExt {
         gpu_skin_manager: &GpuSkinManager,
         render_pass: RenderPass,
     ) -> &Self {
-        let (camera, lights, object) = render_pass.take();
+        let (camera, camera_transform, camera_projection, lights, object) = render_pass.take();
 
         let light_refs: Vec<&dyn Light> = lights.iter().map(|item| item as &dyn Light).collect();
 
@@ -33,6 +33,8 @@ pub trait RenderTargetExt {
                 gpu_material_manager,
                 gpu_skin_manager,
                 &camera,
+                &camera_transform,
+                &camera_projection,
                 &light_refs,
                 object,
             );
@@ -52,7 +54,9 @@ fn render<'a>(
     gpu_mesh_manager: &'a GpuMeshManager,
     gpu_material_manager: &'a GpuMaterialManager,
     gpu_skin_manager: &'a GpuSkinManager,
-    render_camera: &'a RenderCamera,
+    camera: &Camera,
+    camera_transform: &Transform,
+    camera_projection: &Projection,
     lights: &[&dyn Light],
     meshes: HashMap<Handle<CpuMesh>, Vec<(MaterialOrSkinHandle, Mat4)>>,
 ) {
@@ -73,20 +77,19 @@ fn render<'a>(
     let vertex_shader_source = vertex_shader_source(lights);
     Context::get()
         .program(vertex_shader_source, fragment_shader.source, |program| {
-            gpu_material_manager.use_uniforms(program, render_camera, lights);
+            gpu_material_manager.use_uniforms(program, camera, camera_transform, camera_projection, lights);
             gpu_skin_manager.use_uniforms(program);
 
             program.use_uniform(
                 "view_projection",
-                render_camera
-                    .projection
-                    .projection_matrix(&render_camera.camera.viewport_or_default())
-                    * render_camera.transform.view_matrix(),
+                camera_projection
+                    .projection_matrix(&camera.viewport_or_default())
+                    * camera_transform.view_matrix(),
             );
 
             program.use_texture("instance_texture", &instance_texture);
 
-            gpu_mesh_manager.render(program, render_states, &render_camera.camera, commands);
+            gpu_mesh_manager.render(program, render_states, camera, commands);
         })
         .expect("Failed compiling shader");
 }

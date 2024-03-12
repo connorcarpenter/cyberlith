@@ -48,7 +48,7 @@ impl RenderFrame {
         let id = convert_wrapper(render_layer_opt.copied());
         let frame_opt = self.contents.get(id)?;
         let frame = frame_opt.as_ref()?;
-        let (camera, _transform, _projection) = frame.camera_opt?;
+        let camera = frame.camera_opt?;
         let viewport = camera.viewport?;
         Some(viewport)
     }
@@ -74,7 +74,9 @@ impl RenderFrame {
         projection: &Projection,
     ) {
         let contents = self.init_layer(render_layer_opt);
-        contents.camera_opt = Some((camera.clone(), *transform, *projection));
+        contents.camera_opt = Some(camera.clone());
+        contents.camera_transform_opt = Some(*transform);
+        contents.camera_projection_opt = Some(*projection);
     }
 
     pub fn draw_point_light(&mut self, render_layer_opt: Option<&RenderLayer>, light: &PointLight) {
@@ -140,7 +142,9 @@ pub enum MaterialOrSkinHandle {
 }
 
 pub struct RenderFrameContents {
-    pub camera_opt: Option<(Camera, Transform, Projection)>,
+    pub camera_opt: Option<Camera>,
+    pub camera_transform_opt: Option<Transform>,
+    pub camera_projection_opt: Option<Projection>,
     pub lights: Vec<TypedLight>,
     pub meshes: HashMap<Handle<CpuMesh>, Vec<(MaterialOrSkinHandle, Mat4)>>,
 }
@@ -149,6 +153,8 @@ impl Default for RenderFrameContents {
     fn default() -> Self {
         Self {
             camera_opt: None,
+            camera_transform_opt: None,
+            camera_projection_opt: None,
             lights: Vec::new(),
             meshes: HashMap::new(),
         }

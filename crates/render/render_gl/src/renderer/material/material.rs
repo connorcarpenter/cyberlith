@@ -1,6 +1,8 @@
+use render_api::components::{Camera, Projection, Transform};
+
 use crate::{
     core::{Program, RenderStates},
-    renderer::{FragmentShader, Light, RenderCamera},
+    renderer::{FragmentShader, Light},
 };
 
 ///
@@ -18,7 +20,7 @@ pub trait Material: Send + Sync {
     ///
     /// Sends the uniform data needed for this material to the fragment shader.
     ///
-    fn use_uniforms(&self, program: &Program, camera: &RenderCamera, lights: &[&dyn Light]);
+    fn use_uniforms(&self, program: &Program, camera: &Camera, camera_transform: &Transform, camera_projection: &Projection, lights: &[&dyn Light]);
 
     ///
     /// Returns the render states needed to render with this material.

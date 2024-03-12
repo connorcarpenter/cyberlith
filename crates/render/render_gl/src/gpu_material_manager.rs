@@ -2,12 +2,12 @@ use std::{collections::HashMap, default::Default};
 
 use bevy_ecs::system::Resource;
 
-use render_api::base::CpuMaterial;
+use render_api::{components::{Camera, Projection, Transform}, base::CpuMaterial};
 use storage::Handle;
 
 use crate::{
     core::{GpuTexture2D, Program},
-    renderer::{FragmentShader, Light, RenderCamera},
+    renderer::{FragmentShader, Light},
 };
 
 #[derive(Resource)]
@@ -73,13 +73,13 @@ impl GpuMaterialManager {
         self.gpu_materials.is_some()
     }
 
-    pub fn use_uniforms(&self, program: &Program, camera: &RenderCamera, lights: &[&dyn Light]) {
+    pub fn use_uniforms(&self, program: &Program, camera: &Camera, camera_transform: &Transform, camera_projection: &Projection, lights: &[&dyn Light]) {
         if !lights.is_empty() {
             for (i, light) in lights.iter().enumerate() {
                 light.use_uniforms(program, i as u32);
             }
         }
-        program.use_uniform_if_required("camera_position", camera.transform.translation);
+        program.use_uniform_if_required("camera_position", camera_transform.translation);
 
         //program.use_uniform("material_texture_width", self.cpu_materials.len() as f32);
 
