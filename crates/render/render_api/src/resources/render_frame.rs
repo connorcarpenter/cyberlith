@@ -1,8 +1,7 @@
-use std::{default::Default, collections::HashMap};
+use std::default::Default;
 
 use bevy_ecs::system::Resource;
 
-use math::Mat4;
 use storage::Handle;
 
 use crate::{
@@ -11,24 +10,25 @@ use crate::{
         AmbientLight, Camera, DirectionalLight, PointLight, Projection, RenderLayer, RenderLayers,
         Transform, Viewport, TypedLight
     },
+    resources::render_pass::RenderPass,
 };
 
 #[derive(Resource)]
 pub struct RenderFrame {
-    contents: Vec<Option<RenderFrameContents>>,
+    render_passes: Vec<Option<RenderPass>>,
 }
 
 impl Default for RenderFrame {
     fn default() -> Self {
         Self {
-            contents: Self::new_contents(),
+            render_passes: Self::new_render_passes(),
         }
     }
 }
 
 impl RenderFrame {
 
-    fn new_contents() -> Vec<Option<RenderFrameContents>> {
+    fn new_render_passes() -> Vec<Option<RenderPass>> {
         let mut contents = Vec::with_capacity(Camera::MAX_CAMERAS);
         for _ in 0..Camera::MAX_CAMERAS {
             contents.push(None);
@@ -36,34 +36,34 @@ impl RenderFrame {
         contents
     }
 
-    pub fn take_contents(&mut self) -> Vec<Option<RenderFrameContents>> {
-        let mut output_frame = Self::new_contents();
+    pub fn take_render_passes(&mut self) -> Vec<Option<RenderPass>> {
+        let mut output_frame = Self::new_render_passes();
 
-        std::mem::swap(&mut self.contents, &mut output_frame);
+        std::mem::swap(&mut self.render_passes, &mut output_frame);
 
         output_frame
     }
 
     pub fn get_camera_viewport(&self, render_layer_opt: Option<&RenderLayer>) -> Option<Viewport> {
         let id = convert_wrapper(render_layer_opt.copied());
-        let frame_opt = self.contents.get(id)?;
+        let frame_opt = self.render_passes.get(id)?;
         let frame = frame_opt.as_ref()?;
         let camera = frame.camera_opt?;
         let viewport = camera.viewport?;
         Some(viewport)
     }
 
-    fn init_layer(&mut self, render_layer_opt: Option<&RenderLayer>) -> &mut RenderFrameContents {
+    fn get_render_pass_mut(&mut self, render_layer_opt: Option<&RenderLayer>) -> &mut RenderPass {
         let id = convert_wrapper(render_layer_opt.copied());
 
-        if self.contents[id].is_none() {
+        if self.render_passes[id].is_none() {
             if id >= Camera::MAX_CAMERAS {
                 panic!("RenderLayer index out of bounds!");
             }
-            self.contents[id] = Some(RenderFrameContents::default());
+            self.render_passes[id] = Some(RenderPass::default());
         }
 
-        self.contents.get_mut(id).unwrap().as_mut().unwrap()
+        self.render_passes.get_mut(id).unwrap().as_mut().unwrap()
     }
 
     pub fn draw_camera(
@@ -73,14 +73,14 @@ impl RenderFrame {
         transform: &Transform,
         projection: &Projection,
     ) {
-        let contents = self.init_layer(render_layer_opt);
+        let contents = self.get_render_pass_mut(render_layer_opt);
         contents.camera_opt = Some(camera.clone());
         contents.camera_transform_opt = Some(*transform);
         contents.camera_projection_opt = Some(*projection);
     }
 
     pub fn draw_point_light(&mut self, render_layer_opt: Option<&RenderLayer>, light: &PointLight) {
-        let contents = self.init_layer(render_layer_opt);
+        let contents = self.get_render_pass_mut(render_layer_opt);
         contents.lights.push(TypedLight::Point(*light));
     }
 
@@ -89,7 +89,7 @@ impl RenderFrame {
         render_layer_opt: Option<&RenderLayer>,
         light: &DirectionalLight,
     ) {
-        let contents = self.init_layer(render_layer_opt);
+        let contents = self.get_render_pass_mut(render_layer_opt);
         contents.lights.push(TypedLight::Directional(*light));
     }
 
@@ -98,7 +98,7 @@ impl RenderFrame {
         render_layer_opt: Option<&RenderLayer>,
         light: &AmbientLight,
     ) {
-        let contents = self.init_layer(render_layer_opt);
+        let contents = self.get_render_pass_mut(render_layer_opt);
         contents.lights.push(TypedLight::Ambient(*light));
     }
 
@@ -109,7 +109,7 @@ impl RenderFrame {
         mat_handle: &Handle<CpuMaterial>,
         transform: &Transform,
     ) {
-        let contents = self.init_layer(render_layer_opt);
+        let contents = self.get_render_pass_mut(render_layer_opt);
 
         if !contents.meshes.contains_key(mesh_handle) {
             contents.meshes.insert(*mesh_handle, Vec::new());
@@ -125,7 +125,7 @@ impl RenderFrame {
         skin_handle: &Handle<CpuSkin>,
         transform: &Transform,
     ) {
-        let contents = self.init_layer(render_layer_opt);
+        let contents = self.get_render_pass_mut(render_layer_opt);
 
         if !contents.meshes.contains_key(mesh_handle) {
             contents.meshes.insert(*mesh_handle, Vec::new());
@@ -139,26 +139,6 @@ impl RenderFrame {
 pub enum MaterialOrSkinHandle {
     Material(Handle<CpuMaterial>),
     Skin(Handle<CpuSkin>),
-}
-
-pub struct RenderFrameContents {
-    pub camera_opt: Option<Camera>,
-    pub camera_transform_opt: Option<Transform>,
-    pub camera_projection_opt: Option<Projection>,
-    pub lights: Vec<TypedLight>,
-    pub meshes: HashMap<Handle<CpuMesh>, Vec<(MaterialOrSkinHandle, Mat4)>>,
-}
-
-impl Default for RenderFrameContents {
-    fn default() -> Self {
-        Self {
-            camera_opt: None,
-            camera_transform_opt: None,
-            camera_projection_opt: None,
-            lights: Vec::new(),
-            meshes: HashMap::new(),
-        }
-    }
 }
 
 fn convert_wrapper(w: Option<RenderLayer>) -> usize {

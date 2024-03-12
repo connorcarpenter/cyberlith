@@ -2,11 +2,11 @@ use std::collections::HashMap;
 
 use gl::DrawArraysIndirectCommand;
 use math::Mat4;
-use render_api::{components::{Camera, Projection, Transform, CameraProjection, Viewport}, resources::MaterialOrSkinHandle, base::CpuMesh};
+use render_api::{components::{Camera, Projection, Transform, CameraProjection, Viewport}, resources::{MaterialOrSkinHandle, RenderPass}, base::CpuMesh};
 use storage::Handle;
 
 use crate::{
-    renderer::{lights_shader_source, Light, RenderPass},
+    renderer::{lights_shader_source, Light},
     GpuMaterialManager, GpuMeshManager, GpuSkinManager,
     core::{GpuTexture2D, Context, Cull, RenderStates},
 };
@@ -23,7 +23,16 @@ pub trait RenderTargetExt {
         gpu_skin_manager: &GpuSkinManager,
         render_pass: RenderPass,
     ) -> &Self {
-        let (camera, camera_transform, camera_projection, lights, object) = render_pass.take();
+        let RenderPass {
+            camera_opt,
+            camera_transform_opt,
+            camera_projection_opt,
+            lights,
+            meshes
+        } = render_pass;
+        let camera = camera_opt.unwrap();
+        let camera_transform = camera_transform_opt.unwrap();
+        let camera_projection = camera_projection_opt.unwrap();
 
         let light_refs: Vec<&dyn Light> = lights.iter().map(|item| item as &dyn Light).collect();
 
@@ -36,7 +45,7 @@ pub trait RenderTargetExt {
                 &camera_transform,
                 &camera_projection,
                 &light_refs,
-                object,
+                meshes,
             );
         });
         self
