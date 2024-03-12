@@ -1,7 +1,6 @@
 use std::any::Any;
 
-use layout::{Alignment, MarginUnits, PositionType, SizeUnits};
-
+use layout::{Alignment, MarginUnits, PositionType, SizeUnits, Solid};
 use asset_render::AssetManager;
 use render_api::{
     components::{RenderLayer, Transform},
@@ -10,8 +9,8 @@ use render_api::{
 
 use crate::{
     cache::LayoutCache,
-    node::{NodeStore, UiNode},
-    style::NodeStyle,
+    node::UiStore,
+    style::{NodeStyle, StyleId},
     ui::Globals,
     widget::Widget,
     NodeId, Ui,
@@ -20,14 +19,12 @@ use crate::{
 #[derive(Clone)]
 pub struct Text {
     text: String,
-    _style: TextStyle,
 }
 
 impl Text {
     pub fn new(text: &str) -> Self {
         Self {
             text: text.to_string(),
-            _style: TextStyle::default(),
         }
     }
 }
@@ -48,8 +45,8 @@ impl Widget for Text {
         asset_manager: &AssetManager,
         globals: &Globals,
         _cache: &LayoutCache,
-        _store: &NodeStore,
-        _node_style: &NodeStyle,
+        _store: &UiStore,
+        _node_id: &NodeId,
         transform: &Transform,
     ) {
         let Some(text_icon_handle) = globals.get_text_icon_handle() else {
@@ -70,8 +67,14 @@ impl Widget for Text {
     }
 }
 
-#[derive(Clone, Default, Copy)]
+#[derive(Clone, Copy)]
 pub struct TextStyle {}
+
+impl TextStyle {
+    pub fn empty() -> Self {
+        Self {}
+    }
+}
 
 pub struct TextMut<'a> {
     ui: &'a mut Ui,
@@ -93,108 +96,243 @@ impl<'a> TextMut<'a> {
         self
     }
 
-    pub fn style(&mut self, inner_fn: impl FnOnce(&mut TextStyleMut)) -> &mut Self {
-        let mut style_mut = TextStyleMut::new(self.ui, self.node_id);
-        inner_fn(&mut style_mut);
-        self
+    pub fn add_style(&mut self, _style_id: StyleId) -> &mut Self {
+        todo!()
+    }
+}
+
+pub struct TextStyleRef<'a> {
+    store: &'a UiStore,
+    node_id: NodeId,
+}
+
+impl<'a> TextStyleRef<'a> {
+
+    pub(crate) fn new(store: &'a UiStore, node_id: NodeId) -> Self {
+        Self { store, node_id }
+    }
+
+    pub fn position_type(&self) -> PositionType {
+        let mut output = PositionType::default();
+
+        self.store.for_each_node_style(&self.node_id, |style| {
+            if let Some(position_type) = style.position_type {
+                output = position_type;
+            }
+        });
+
+        output
+    }
+
+    pub fn self_halign(&self) -> Alignment {
+        let mut output = Alignment::default();
+
+        self.store.for_each_node_style(&self.node_id, |style| {
+            if let Some(halign) = style.self_halign {
+                output = halign;
+            }
+        });
+
+        output
+    }
+
+    pub fn self_valign(&self) -> Alignment {
+        let mut output = Alignment::default();
+
+        self.store.for_each_node_style(&self.node_id, |style| {
+            if let Some(valign) = style.self_valign {
+                output = valign;
+            }
+        });
+
+        output
+    }
+
+    pub fn width(&self) -> SizeUnits {
+        let mut output = SizeUnits::default();
+
+        self.store.for_each_node_style(&self.node_id, |style| {
+            if let Some(width) = style.width {
+                output = width;
+            }
+        });
+
+        output
+    }
+
+    pub fn height(&self) -> SizeUnits {
+        let mut output = SizeUnits::default();
+
+        self.store.for_each_node_style(&self.node_id, |style| {
+            if let Some(height) = style.height {
+                output = height;
+            }
+        });
+
+        output
+    }
+
+    pub fn width_min(&self) -> SizeUnits {
+        let mut output = SizeUnits::default();
+
+        self.store.for_each_node_style(&self.node_id, |style| {
+            if let Some(width_min) = style.width_min {
+                output = width_min;
+            }
+        });
+
+        output
+    }
+
+    pub fn width_max(&self) -> SizeUnits {
+        let mut output = SizeUnits::default();
+
+        self.store.for_each_node_style(&self.node_id, |style| {
+            if let Some(width_max) = style.width_max {
+                output = width_max;
+            }
+        });
+
+        output
+    }
+
+    pub fn height_min(&self) -> SizeUnits {
+        let mut output = SizeUnits::default();
+
+        self.store.for_each_node_style(&self.node_id, |style| {
+            if let Some(height_min) = style.height_min {
+                output = height_min;
+            }
+        });
+
+        output
+    }
+
+    pub fn height_max(&self) -> SizeUnits {
+        let mut output = SizeUnits::default();
+
+        self.store.for_each_node_style(&self.node_id, |style| {
+            if let Some(height_max) = style.height_max {
+                output = height_max;
+            }
+        });
+
+        output
+    }
+
+    pub fn margin_left(&self) -> MarginUnits {
+        let mut output = MarginUnits::default();
+
+        self.store.for_each_node_style(&self.node_id, |style| {
+            if let Some(margin_left) = style.margin_left {
+                output = margin_left;
+            }
+        });
+
+        output
+    }
+
+    pub fn margin_right(&self) -> MarginUnits {
+        let mut output = MarginUnits::default();
+
+        self.store.for_each_node_style(&self.node_id, |style| {
+            if let Some(margin_right) = style.margin_right {
+                output = margin_right;
+            }
+        });
+
+        output
+    }
+
+    pub fn margin_top(&self) -> MarginUnits {
+        let mut output = MarginUnits::default();
+
+        self.store.for_each_node_style(&self.node_id, |style| {
+            if let Some(margin_top) = style.margin_top {
+                output = margin_top;
+            }
+        });
+
+        output
+    }
+
+    pub fn margin_bottom(&self) -> MarginUnits {
+        let mut output = MarginUnits::default();
+
+        self.store.for_each_node_style(&self.node_id, |style| {
+            if let Some(margin_bottom) = style.margin_bottom {
+                output = margin_bottom;
+            }
+        });
+
+        output
+    }
+
+    pub fn solid(&self) -> Option<Solid> {
+        let mut output = None;
+
+        self.store.for_each_node_style(&self.node_id, |style| {
+            if let Some(solid_override) = style.solid_override {
+                output = Some(solid_override);
+            }
+        });
+
+        output
+    }
+
+    pub fn aspect_ratio_w_over_h(&self) -> f32 {
+        let mut output = 1.0; // TODO: put into const var!
+
+        self.store.for_each_node_style(&self.node_id, |style| {
+            if let Some(aspect_ratio_w_over_h) = style.aspect_ratio_w_over_h {
+                output = aspect_ratio_w_over_h;
+            }
+        });
+
+        output
     }
 }
 
 pub struct TextStyleMut<'a> {
     ui: &'a mut Ui,
-    node_id: NodeId,
+    style_id: StyleId,
 }
 
 impl<'a> TextStyleMut<'a> {
-    pub(crate) fn new(ui: &'a mut Ui, node_id: NodeId) -> Self {
-        Self { ui, node_id }
+    pub(crate) fn new(ui: &'a mut Ui, style_id: StyleId) -> Self {
+        Self {
+            ui,
+            style_id,
+        }
     }
 
-    fn get_ref(&self) -> &UiNode {
-        self.ui.node_ref(&self.node_id).unwrap()
+    fn get_style_mut(&mut self) -> &mut NodeStyle {
+        self.ui.style_mut(&self.style_id).unwrap()
     }
-
-    fn get_mut(&mut self) -> &mut UiNode {
-        self.ui.node_mut(&self.node_id).unwrap()
-    }
-
-    // fn get_text_ref(&self) -> &Text {
-    //     self.get_ref().widget.as_ref().as_any().downcast_ref::<Text>().unwrap()
-    // }
-    //
-    // fn get_text_mut(&mut self) -> &mut Text {
-    //     self.get_mut().widget.as_mut().as_any_mut().downcast_mut::<Text>().unwrap()
-    // }
-
-    // getters
-
-    pub fn position_type(&self) -> PositionType {
-        self.get_ref().style.position_type
-    }
-
-    pub fn width(&self) -> SizeUnits {
-        self.get_ref().style.width
-    }
-
-    pub fn height(&self) -> SizeUnits {
-        self.get_ref().style.height
-    }
-
-    pub fn width_min(&self) -> SizeUnits {
-        self.get_ref().style.width_min
-    }
-
-    pub fn width_max(&self) -> SizeUnits {
-        self.get_ref().style.width_max
-    }
-
-    pub fn height_min(&self) -> SizeUnits {
-        self.get_ref().style.height_min
-    }
-
-    pub fn height_max(&self) -> SizeUnits {
-        self.get_ref().style.height_max
-    }
-
-    pub fn margin_left(&self) -> MarginUnits {
-        self.get_ref().style.margin_left
-    }
-
-    pub fn margin_right(&self) -> MarginUnits {
-        self.get_ref().style.margin_right
-    }
-
-    pub fn margin_top(&self) -> MarginUnits {
-        self.get_ref().style.margin_top
-    }
-
-    pub fn margin_bottom(&self) -> MarginUnits {
-        self.get_ref().style.margin_bottom
-    }
-
-    pub fn halign(&self) -> Alignment {
-        self.get_ref().style.self_halign
-    }
-
-    pub fn valign(&self) -> Alignment {
-        self.get_ref().style.self_valign
-    }
-
-    // setters
 
     pub fn set_absolute(&mut self) -> &mut Self {
-        self.get_mut().style.position_type = PositionType::Absolute;
+        self.get_style_mut().position_type = Some(PositionType::Absolute);
         self
     }
 
     pub fn set_relative(&mut self) -> &mut Self {
-        self.get_mut().style.position_type = PositionType::Relative;
+        self.get_style_mut().position_type = Some(PositionType::Relative);
+        self
+    }
+
+    pub fn set_self_halign(&mut self, align: Alignment) -> &mut Self {
+        self.get_style_mut().self_halign = Some(align);
+        self
+    }
+
+    pub fn set_self_valign(&mut self, align: Alignment) -> &mut Self {
+        self.get_style_mut().self_valign = Some(align);
         self
     }
 
     // set_width
     fn set_width_units(&mut self, width: SizeUnits) -> &mut Self {
-        self.get_mut().style.width = width;
+        self.get_style_mut().width = Some(width);
         self
     }
 
@@ -212,7 +350,7 @@ impl<'a> TextStyleMut<'a> {
 
     // set height
     fn set_height_units(&mut self, height: SizeUnits) -> &mut Self {
-        self.get_mut().style.height = height;
+        self.get_style_mut().height = Some(height);
         self
     }
 
@@ -252,7 +390,7 @@ impl<'a> TextStyleMut<'a> {
 
     // set_width_min
     fn set_width_min_units(&mut self, min_width: SizeUnits) -> &mut Self {
-        self.get_mut().style.width_min = min_width;
+        self.get_style_mut().width_min = Some(min_width);
         self
     }
 
@@ -270,7 +408,7 @@ impl<'a> TextStyleMut<'a> {
 
     // set_height_min
     fn set_height_min_units(&mut self, min_height: SizeUnits) -> &mut Self {
-        self.get_mut().style.height_min = min_height;
+        self.get_style_mut().height_min = Some(min_height);
         self
     }
 
@@ -313,7 +451,7 @@ impl<'a> TextStyleMut<'a> {
 
     // set_width_max
     fn set_width_max_units(&mut self, max_width: SizeUnits) -> &mut Self {
-        self.get_mut().style.width_max = max_width;
+        self.get_style_mut().width_max = Some(max_width);
         self
     }
 
@@ -331,7 +469,7 @@ impl<'a> TextStyleMut<'a> {
 
     // set_height_max
     fn set_height_max_units(&mut self, max_height: SizeUnits) -> &mut Self {
-        self.get_mut().style.height_max = max_height;
+        self.get_style_mut().height_max = Some(max_height);
         self
     }
 
@@ -374,7 +512,7 @@ impl<'a> TextStyleMut<'a> {
 
     // set_left
     fn set_margin_left_units(&mut self, left: MarginUnits) -> &mut Self {
-        self.get_mut().style.margin_left = left;
+        self.get_style_mut().margin_left = Some(left);
         self
     }
 
@@ -388,7 +526,7 @@ impl<'a> TextStyleMut<'a> {
 
     // set_right
     fn set_margin_right_units(&mut self, right: MarginUnits) -> &mut Self {
-        self.get_mut().style.margin_right = right;
+        self.get_style_mut().margin_right = Some(right);
         self
     }
 
@@ -402,7 +540,7 @@ impl<'a> TextStyleMut<'a> {
 
     // set_top
     fn set_margin_top_units(&mut self, top: MarginUnits) -> &mut Self {
-        self.get_mut().style.margin_top = top;
+        self.get_style_mut().margin_top = Some(top);
         self
     }
 
@@ -416,7 +554,7 @@ impl<'a> TextStyleMut<'a> {
 
     // set_bottom
     fn set_margin_bottom_units(&mut self, bottom: MarginUnits) -> &mut Self {
-        self.get_mut().style.margin_bottom = bottom;
+        self.get_style_mut().margin_bottom = Some(bottom);
         self
     }
 
@@ -429,6 +567,7 @@ impl<'a> TextStyleMut<'a> {
     }
 
     // set_margin
+
     pub fn set_margin_px(&mut self, left: f32, right: f32, top: f32, bottom: f32) -> &mut Self {
         self.set_margin_left_px(left)
             .set_margin_right_px(right)
@@ -443,14 +582,20 @@ impl<'a> TextStyleMut<'a> {
             .set_margin_bottom_pc(bottom)
     }
 
-    // alignment
-    pub fn set_halign(&mut self, halign: Alignment) -> &mut Self {
-        self.get_mut().style.self_halign = halign;
+    // solid stuff
+
+    pub fn set_solid_fit(&mut self) -> &mut Self {
+        self.get_style_mut().solid_override = Some(Solid::Fit);
         self
     }
 
-    pub fn set_valign(&mut self, valign: Alignment) -> &mut Self {
-        self.get_mut().style.self_valign = valign;
+    pub fn set_solid_fill(&mut self) -> &mut Self {
+        self.get_style_mut().solid_override = Some(Solid::Fill);
+        self
+    }
+
+    pub fn set_aspect_ratio(&mut self, width: f32, height: f32) -> &mut Self {
+        self.get_style_mut().aspect_ratio_w_over_h = Some(width / height);
         self
     }
 }

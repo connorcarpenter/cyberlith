@@ -14,10 +14,12 @@ use storage::{Handle, Storage};
 
 use crate::{
     cache::LayoutCache,
-    node::{NodeKind, NodeStore, UiNode},
+    node::{WidgetKind, UiStore, UiNode},
     node_id::NodeId,
-    panel::{PanelStyleMut, Panel, PanelMut},
-    widget::Widget, style::StyleId, text::TextStyleMut
+    panel::{PanelStyle, PanelStyleMut, Panel, PanelMut},
+    widget::Widget,
+    style::{NodeStyle, StyleId, WidgetStyle},
+    text::{TextStyle, TextStyleMut}
 };
 
 #[derive(Component)]
@@ -25,30 +27,50 @@ pub struct Ui {
     globals: Globals,
     pending_mat_handles: Vec<NodeId>,
     next_node_id: NodeId,
+    next_style_id: StyleId,
     cache: LayoutCache,
-    nodes: NodeStore,
+    store: UiStore,
     recalc_layout: bool,
     last_viewport: Viewport,
 }
 
 impl Ui {
     const ROOT_NODE_ID: NodeId = NodeId::new(0);
+    const ROOT_STYLE_ID: StyleId = StyleId::new(0);
+    pub const BASE_TEXT_STYLE_ID: StyleId = StyleId::new(1);
 
     pub fn new() -> Self {
         let mut me = Self {
             globals: Globals::new(),
             pending_mat_handles: Vec::new(),
             next_node_id: Self::ROOT_NODE_ID,
+            next_style_id: Self::ROOT_STYLE_ID,
             cache: LayoutCache::new(),
-            nodes: NodeStore::new(),
+            store: UiStore::new(),
             recalc_layout: false,
             last_viewport: Viewport::new_at_origin(0, 0),
         };
 
-        let panel_id = me.create_node(&NodeKind::Panel, Panel::new());
-        if panel_id != Self::ROOT_NODE_ID {
+        // Root Node
+        let root_panel_id = me.create_node(&WidgetKind::Panel, Panel::new());
+        if root_panel_id != Self::ROOT_NODE_ID {
             panic!("root panel id is not 0");
         }
+
+        // Root Style
+        let root_panel_style_id = me.create_style(NodeStyle::empty(WidgetStyle::Panel(PanelStyle::empty())));
+        if root_panel_style_id != Self::ROOT_STYLE_ID {
+            panic!("root panel style id is {:?}, not 0!", root_panel_style_id);
+        }
+        me.node_mut(&root_panel_id).unwrap().style_ids.push(root_panel_style_id);
+
+        // Base Text Style
+        let base_text_style_id = me.create_style(NodeStyle::empty(WidgetStyle::Text(TextStyle::empty())));
+        if base_text_style_id != Self::BASE_TEXT_STYLE_ID {
+            panic!("base text style id is {:?}, not 1!", base_text_style_id);
+        }
+        me.style_mut(&base_text_style_id).unwrap().width = Some(SizeUnits::Percentage(100.0));
+        me.style_mut(&base_text_style_id).unwrap().height = Some(SizeUnits::Percentage(100.0));
 
         me
     }
@@ -100,12 +122,19 @@ impl Ui {
     fn set_color_handles(&mut self, materials: &mut Storage<CpuMaterial>) {
         let ids = std::mem::take(&mut self.pending_mat_handles);
         for id in ids {
-            let Some(panel_mut) = self.panel_mut(&id) else {
+
+            let node_ref = self.node_ref(&id).unwrap();
+            if node_ref.kind != WidgetKind::Panel {
                 continue;
-            };
-            let color = panel_mut.style.background_color;
+            }
+
+            let panel_style_ref = self.store.panel_style_ref(&id);
+            let color = panel_style_ref.background_color();
+
+            let panel_mut = self.panel_mut(&id).unwrap();
+
             let mat_handle = materials.add(color);
-            panel_mut.style.background_color_handle = Some(mat_handle);
+            panel_mut.background_color_handle = Some(mat_handle);
         }
     }
 
@@ -127,11 +156,17 @@ impl Ui {
     }
 
     pub fn create_panel_style(&mut self, inner_fn: impl FnOnce(&mut PanelStyleMut)) -> StyleId {
-        todo!();
+        let new_style_id = self.create_style(NodeStyle::empty(WidgetStyle::Panel(PanelStyle::empty())));
+        let mut panel_style_mut = PanelStyleMut::new(self, new_style_id);
+        inner_fn(&mut panel_style_mut);
+        new_style_id
     }
 
     pub fn create_text_style(&mut self, inner_fn: impl FnOnce(&mut TextStyleMut)) -> StyleId {
-        todo!();
+        let new_style_id = self.create_style(NodeStyle::empty(WidgetStyle::Text(TextStyle::empty())));
+        let mut text_style_mut = TextStyleMut::new(self, new_style_id);
+        inner_fn(&mut text_style_mut);
+        new_style_id
     }
 
     pub fn draw(
@@ -152,7 +187,7 @@ impl Ui {
             asset_manager,
             &self.globals,
             &self.cache,
-            &self.nodes,
+            &self.store,
             &Self::ROOT_NODE_ID,
             (0.0, 0.0, 0.0),
         );
@@ -181,11 +216,15 @@ impl Ui {
     fn recalculate_layout(&mut self) {
         //info!("recalculating layout. viewport_width: {:?}, viewport_height: {:?}", self.viewport.width, self.viewport.height);
 
-        let root_panel = self.nodes.get_mut(&Self::ROOT_NODE_ID).unwrap();
-        root_panel.style.width = SizeUnits::Pixels(self.last_viewport.width as f32);
-        root_panel.style.height = SizeUnits::Pixels(self.last_viewport.height as f32);
+        let last_viewport_width: f32 = self.last_viewport.width as f32;
+        let last_viewport_height: f32 = self.last_viewport.height as f32;
 
-        let panels_ref = &self.nodes;
+        let root_panel_style_id = *self.node_ref(&Self::ROOT_NODE_ID).unwrap().style_ids.last().unwrap();
+        let root_panel_style = self.style_mut(&root_panel_style_id).unwrap();
+        root_panel_style.width = Some(SizeUnits::Pixels(last_viewport_width));
+        root_panel_style.height = Some(SizeUnits::Pixels(last_viewport_height));
+
+        let panels_ref = &self.store;
         let cache_mut = &mut self.cache;
 
         // this calculates all the rects in cache_mut
@@ -200,37 +239,37 @@ impl Ui {
 
     fn collect_color_handles(&mut self) {
         let mut pending_mat_handles = Vec::new();
-        for id in self.nodes.keys() {
+        for id in self.store.node_ids() {
             let Some(panel_ref) = self.panel_ref(&id) else {
                 continue;
             };
-            if panel_ref.style.background_color_handle.is_none() {
+            if panel_ref.background_color_handle.is_none() {
                 pending_mat_handles.push(*id);
             }
         }
         self.pending_mat_handles = pending_mat_handles;
     }
 
-    fn next_id(&mut self) -> NodeId {
+    fn next_node_id(&mut self) -> NodeId {
         let output = self.next_node_id;
         self.next_node_id.increment();
         output
     }
 
-    pub(crate) fn create_node<W: Widget>(&mut self, node_kind: &NodeKind, widget: W) -> NodeId {
+    pub(crate) fn create_node<W: Widget>(&mut self, node_kind: &WidgetKind, widget: W) -> NodeId {
         let panel = UiNode::new(node_kind, widget);
-        let node_id = self.next_id();
-        self.nodes.insert(node_id, panel);
+        let node_id = self.next_node_id();
+        self.store.insert_node(node_id, panel);
         node_id
     }
 
     pub(crate) fn node_ref(&self, id: &NodeId) -> Option<&UiNode> {
-        self.nodes.get(&id)
+        self.store.get_node(&id)
     }
 
     pub(crate) fn node_mut(&mut self, id: &NodeId) -> Option<&mut UiNode> {
         self.queue_recalculate_layout();
-        self.nodes.get_mut(&id)
+        self.store.get_node_mut(&id)
     }
 
     pub(crate) fn panel_ref(&self, id: &NodeId) -> Option<&Panel> {
@@ -247,6 +286,25 @@ impl Ui {
             .as_any_mut()
             .downcast_mut::<Panel>()?;
         Some(panel_mut)
+    }
+
+    pub(crate) fn style_ref(&self, id: &StyleId) -> Option<&NodeStyle> {
+        self.store.get_style(&id)
+    }
+
+    pub(crate) fn style_mut(&mut self, id: &StyleId) -> Option<&mut NodeStyle> {
+        self.store.get_style_mut(&id)
+    }
+
+    fn next_style_id(&mut self) -> StyleId {
+        let output = self.next_style_id;
+        self.next_style_id.increment();
+        output
+    }
+    pub(crate) fn create_style(&mut self, style: NodeStyle) -> StyleId {
+        let style_id = self.next_style_id();
+        self.store.insert_style(style_id, style);
+        style_id
     }
 }
 
@@ -294,7 +352,7 @@ pub(crate) fn draw_node(
     asset_manager: &AssetManager,
     globals: &Globals,
     cache: &LayoutCache,
-    store: &NodeStore,
+    store: &UiStore,
     id: &NodeId,
     parent_position: (f32, f32, f32),
 ) {
@@ -303,7 +361,7 @@ pub(crate) fn draw_node(
         return;
     };
 
-    let Some(node) = store.get(&id) else {
+    let Some(node) = store.get_node(&id) else {
         warn!("no panel for id: {:?}", id);
         return;
     };
@@ -324,7 +382,7 @@ pub(crate) fn draw_node(
             globals,
             cache,
             store,
-            &node.style,
+            id,
             &transform,
         );
     }

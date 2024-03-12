@@ -2,40 +2,19 @@ use std::fmt::{Display, Formatter};
 
 use layout::{Alignment, LayoutType, MarginUnits, Node, PositionType, SizeUnits, Solid};
 
-use crate::{
-    node::{NodeKind, NodeStore, UiNode},
-    panel::Panel,
-};
+use crate::node::{UiStore, WidgetKind};
 
 #[derive(Clone, Copy, PartialEq, PartialOrd, Ord, Eq, Hash, Debug, Default)]
 pub struct NodeId(u32);
 
 impl NodeId {
     pub(crate) const fn new(id: u32) -> Self {
-        NodeId(id)
+        Self(id)
     }
 
     pub(crate) fn increment(&mut self) {
         self.0 += 1;
     }
-
-    pub(crate) fn panel_ref<'a>(&'a self, store: &'a NodeStore) -> Option<&Panel> {
-        let node = store.get(self)?;
-        if node.kind == NodeKind::Panel {
-            return UiNode::downcast_ref::<Panel>(node.widget.as_ref());
-        }
-        None
-    }
-
-    // pub(crate) fn text_ref<'a>(&'a self, store: &'a NodeStore) -> Option<&Text> {
-    //     let node = store.get(self)?;
-    //     if node.kind == NodeKind::Text {
-    //         return UiNode::downcast_ref::<Text>(
-    //             node.widget.as_ref()
-    //         );
-    //     }
-    //     None
-    // }
 }
 
 impl Display for NodeId {
@@ -45,9 +24,9 @@ impl Display for NodeId {
 }
 
 impl Node for NodeId {
-    type Store = NodeStore;
-    type Tree = NodeStore;
-    type ChildIter<'t> = std::slice::Iter<'t, NodeId>;
+    type Store = UiStore;
+    type Tree = UiStore;
+    type ChildIter<'t> = std::slice::Iter<'t, Self>;
     type CacheKey = Self;
     type SubLayout<'a> = ();
 
@@ -55,140 +34,352 @@ impl Node for NodeId {
         *self
     }
 
-    fn children<'t>(&'t self, store: &'t NodeStore) -> Self::ChildIter<'t> {
-        if let Some(panel_ref) = self.panel_ref(store) {
+    fn children<'t>(&'t self, store: &'t UiStore) -> Self::ChildIter<'t> {
+        if let Some(panel_ref) = store.panel_ref(self) {
             return panel_ref.children.iter();
         }
 
         return [].iter();
     }
 
-    fn visible(&self, store: &NodeStore) -> bool {
-        if let Some(node) = store.get(self) {
+    fn visible(&self, store: &UiStore) -> bool {
+        if let Some(node) = store.get_node(self) {
             node.visible
         } else {
             false
         }
     }
 
-    fn layout_type(&self, store: &NodeStore) -> Option<LayoutType> {
-        let panel_ref = self.panel_ref(store)?;
-        Some(panel_ref.style.layout_type)
+    fn layout_type(&self, store: &UiStore) -> Option<LayoutType> {
+
+        if store.node_kind(self) != WidgetKind::Panel {
+            return None;
+        }
+
+        let mut output = LayoutType::default();
+
+        store.for_each_panel_style(self, |panel_style| {
+            if let Some(layout_type) = panel_style.layout_type {
+                output = layout_type;
+            }
+        });
+
+        Some(output)
     }
 
-    fn position_type(&self, store: &NodeStore) -> Option<PositionType> {
-        let node = store.get(self)?;
-        Some(node.style.position_type)
+    fn position_type(&self, store: &UiStore) -> Option<PositionType> {
+        let mut output = PositionType::default();
+
+        store.for_each_node_style(self, |node_style| {
+            if let Some(position_type) = node_style.position_type {
+                output = position_type;
+            }
+        });
+
+        Some(output)
     }
 
-    fn width(&self, store: &NodeStore) -> Option<SizeUnits> {
-        let node = store.get(self)?;
-        Some(node.style.width)
+    fn width(&self, store: &UiStore) -> Option<SizeUnits> {
+        let mut output = SizeUnits::default();
+
+        store.for_each_node_style(self, |node_style| {
+            if let Some(width) = node_style.width {
+                output = width;
+            }
+        });
+
+        Some(output)
     }
 
-    fn height(&self, store: &NodeStore) -> Option<SizeUnits> {
-        let node = store.get(self)?;
-        Some(node.style.height)
+    fn height(&self, store: &UiStore) -> Option<SizeUnits> {
+        let mut output = SizeUnits::default();
+
+        store.for_each_node_style(self, |node_style| {
+            if let Some(height) = node_style.height {
+                output = height;
+            }
+        });
+
+        Some(output)
     }
 
-    fn width_min(&self, store: &NodeStore) -> Option<SizeUnits> {
-        let node = store.get(self)?;
-        Some(node.style.width_min)
+    fn width_min(&self, store: &UiStore) -> Option<SizeUnits> {
+        let mut output = SizeUnits::default();
+
+        store.for_each_node_style(self, |node_style| {
+            if let Some(width_min) = node_style.width_min {
+                output = width_min;
+            }
+        });
+
+        Some(output)
     }
 
-    fn height_min(&self, store: &NodeStore) -> Option<SizeUnits> {
-        let node = store.get(self)?;
-        Some(node.style.height_min)
+    fn height_min(&self, store: &UiStore) -> Option<SizeUnits> {
+        let mut output = SizeUnits::default();
+
+        store.for_each_node_style(self, |node_style| {
+            if let Some(height_min) = node_style.height_min {
+                output = height_min;
+            }
+        });
+
+        Some(output)
     }
 
-    fn width_max(&self, store: &NodeStore) -> Option<SizeUnits> {
-        let node = store.get(self)?;
-        Some(node.style.width_max)
+    fn width_max(&self, store: &UiStore) -> Option<SizeUnits> {
+        let mut output = SizeUnits::default();
+
+        store.for_each_node_style(self, |node_style| {
+            if let Some(width_max) = node_style.width_max {
+                output = width_max;
+            }
+        });
+
+        Some(output)
     }
 
-    fn height_max(&self, store: &NodeStore) -> Option<SizeUnits> {
-        let node = store.get(self)?;
-        Some(node.style.height_max)
+    fn height_max(&self, store: &UiStore) -> Option<SizeUnits> {
+        let mut output = SizeUnits::default();
+
+        store.for_each_node_style(self, |node_style| {
+            if let Some(height_max) = node_style.height_max {
+                output = height_max;
+            }
+        });
+
+        Some(output)
     }
 
-    fn margin_left(&self, store: &NodeStore) -> Option<MarginUnits> {
-        let node = store.get(self)?;
-        Some(node.style.margin_left)
+    fn margin_left(&self, store: &UiStore) -> Option<MarginUnits> {
+        let mut output = MarginUnits::default();
+
+        store.for_each_node_style(self, |node_style| {
+            if let Some(margin_left) = node_style.margin_left {
+                output = margin_left;
+            }
+        });
+
+        Some(output)
     }
 
-    fn margin_right(&self, store: &NodeStore) -> Option<MarginUnits> {
-        let node = store.get(self)?;
-        Some(node.style.margin_right)
+    fn margin_right(&self, store: &UiStore) -> Option<MarginUnits> {
+        let mut output = MarginUnits::default();
+
+        store.for_each_node_style(self, |node_style| {
+            if let Some(margin_right) = node_style.margin_right {
+                output = margin_right;
+            }
+        });
+
+        Some(output)
     }
 
-    fn margin_top(&self, store: &NodeStore) -> Option<MarginUnits> {
-        let node = store.get(self)?;
-        Some(node.style.margin_top)
+    fn margin_top(&self, store: &UiStore) -> Option<MarginUnits> {
+        let mut output = MarginUnits::default();
+
+        store.for_each_node_style(self, |node_style| {
+            if let Some(margin_top) = node_style.margin_top {
+                output = margin_top;
+            }
+        });
+
+        Some(output)
     }
 
-    fn margin_bottom(&self, store: &NodeStore) -> Option<MarginUnits> {
-        let node = store.get(self)?;
-        Some(node.style.margin_bottom)
+    fn margin_bottom(&self, store: &UiStore) -> Option<MarginUnits> {
+        let mut output = MarginUnits::default();
+
+        store.for_each_node_style(self, |node_style| {
+            if let Some(margin_bottom) = node_style.margin_bottom {
+                output = margin_bottom;
+            }
+        });
+
+        Some(output)
     }
 
-    fn padding_left(&self, store: &NodeStore) -> Option<SizeUnits> {
-        let panel_ref = self.panel_ref(store)?;
-        Some(panel_ref.style.padding_left)
+    fn padding_left(&self, store: &UiStore) -> Option<SizeUnits> {
+
+        if store.node_kind(self) != WidgetKind::Panel {
+            return None;
+        }
+
+        let mut output = SizeUnits::default();
+
+        store.for_each_panel_style(self, |panel_style| {
+            if let Some(padding_left) = panel_style.padding_left {
+                output = padding_left;
+            }
+        });
+
+        Some(output)
     }
 
-    fn padding_right(&self, store: &NodeStore) -> Option<SizeUnits> {
-        let panel_ref = self.panel_ref(store)?;
-        Some(panel_ref.style.padding_right)
+    fn padding_right(&self, store: &UiStore) -> Option<SizeUnits> {
+
+        if store.node_kind(self) != WidgetKind::Panel {
+            return None;
+        }
+
+        let mut output = SizeUnits::default();
+
+        store.for_each_panel_style(self, |panel_style| {
+            if let Some(padding_right) = panel_style.padding_right {
+                output = padding_right;
+            }
+        });
+
+        Some(output)
     }
 
-    fn padding_top(&self, store: &NodeStore) -> Option<SizeUnits> {
-        let panel_ref = self.panel_ref(store)?;
-        Some(panel_ref.style.padding_top)
+    fn padding_top(&self, store: &UiStore) -> Option<SizeUnits> {
+
+        if store.node_kind(self) != WidgetKind::Panel {
+            return None;
+        }
+
+        let mut output = SizeUnits::default();
+
+        store.for_each_panel_style(self, |panel_style| {
+            if let Some(padding_top) = panel_style.padding_top {
+                output = padding_top;
+            }
+        });
+
+        Some(output)
     }
 
-    fn padding_bottom(&self, store: &NodeStore) -> Option<SizeUnits> {
-        let panel_ref = self.panel_ref(store)?;
-        Some(panel_ref.style.padding_bottom)
+    fn padding_bottom(&self, store: &UiStore) -> Option<SizeUnits> {
+
+        if store.node_kind(self) != WidgetKind::Panel {
+            return None;
+        }
+
+        let mut output = SizeUnits::default();
+
+        store.for_each_panel_style(self, |panel_style| {
+            if let Some(padding_bottom) = panel_style.padding_bottom {
+                output = padding_bottom;
+            }
+        });
+
+        Some(output)
     }
 
-    fn row_between(&self, store: &NodeStore) -> Option<SizeUnits> {
-        let panel_ref = self.panel_ref(store)?;
-        Some(panel_ref.style.row_between)
+    fn row_between(&self, store: &UiStore) -> Option<SizeUnits> {
+
+        if store.node_kind(self) != WidgetKind::Panel {
+            return None;
+        }
+
+        let mut output = SizeUnits::default();
+
+        store.for_each_panel_style(self, |panel_style| {
+            if let Some(row_between) = panel_style.row_between {
+                output = row_between;
+            }
+        });
+
+        Some(output)
     }
 
-    fn col_between(&self, store: &NodeStore) -> Option<SizeUnits> {
-        let panel_ref = self.panel_ref(store)?;
-        Some(panel_ref.style.col_between)
+    fn col_between(&self, store: &UiStore) -> Option<SizeUnits> {
+
+        if store.node_kind(self) != WidgetKind::Panel {
+            return None;
+        }
+
+        let mut output = SizeUnits::default();
+
+        store.for_each_panel_style(self, |panel_style| {
+            if let Some(col_between) = panel_style.col_between {
+                output = col_between;
+            }
+        });
+
+        Some(output)
     }
 
-    fn solid(&self, store: &NodeStore) -> Option<Solid> {
-        let node = store.get(self)?;
-        let val = node.style.solid_override?;
-        Some(val)
+    fn solid(&self, store: &UiStore) -> Option<Solid> {
+        let mut output = None;
+
+        store.for_each_node_style(self, |node_style| {
+            if let Some(solid) = node_style.solid_override {
+                output = Some(solid);
+            }
+        });
+
+        output
     }
 
     fn aspect_ratio(&self, store: &Self::Store) -> Option<f32> {
-        let node = store.get(self)?;
-        Some(node.style.aspect_ratio_w_over_h)
+        let mut output = 1.0; // TODO: put this into a constant
+
+        store.for_each_node_style(self, |node_style| {
+            if let Some(aspect_ratio) = node_style.aspect_ratio_w_over_h {
+                output = aspect_ratio;
+            }
+        });
+
+        Some(output)
     }
 
     fn self_halign(&self, store: &Self::Store) -> Option<Alignment> {
-        let node = store.get(self)?;
-        Some(node.style.self_halign)
+        let mut output = Alignment::default();
+
+        store.for_each_node_style(self, |node_style| {
+            if let Some(self_halign) = node_style.self_halign {
+                output = self_halign;
+            }
+        });
+
+        Some(output)
     }
 
     fn self_valign(&self, store: &Self::Store) -> Option<Alignment> {
-        let node = store.get(self)?;
-        Some(node.style.self_valign)
+        let mut output = Alignment::default();
+
+        store.for_each_node_style(self, |node_style| {
+            if let Some(self_valign) = node_style.self_valign {
+                output = self_valign;
+            }
+        });
+
+        Some(output)
     }
 
     fn children_halign(&self, store: &Self::Store) -> Option<Alignment> {
-        let panel_ref = self.panel_ref(store)?;
-        Some(panel_ref.style.children_halign)
+
+        if store.node_kind(self) != WidgetKind::Panel {
+            return None;
+        }
+
+        let mut output = Alignment::default();
+
+        store.for_each_panel_style(self, |panel_style| {
+            if let Some(children_halign) = panel_style.children_halign {
+                output = children_halign;
+            }
+        });
+
+        Some(output)
     }
 
     fn children_valign(&self, store: &Self::Store) -> Option<Alignment> {
-        let panel_ref = self.panel_ref(store)?;
-        Some(panel_ref.style.children_valign)
+
+        if store.node_kind(self) != WidgetKind::Panel {
+            return None;
+        }
+
+        let mut output = Alignment::default();
+
+        store.for_each_panel_style(self, |panel_style| {
+            if let Some(children_valign) = panel_style.children_valign {
+                output = children_valign;
+            }
+        });
+
+        Some(output)
     }
 }

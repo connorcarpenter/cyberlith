@@ -6,7 +6,7 @@ use render_api::{
     resources::RenderFrame,
 };
 
-use crate::{cache::LayoutCache, node::NodeStore, style::NodeStyle, ui::Globals};
+use crate::{cache::LayoutCache, node::UiStore, NodeId, ui::Globals};
 
 pub(crate) trait Widget: Any + Send + Sync + WidgetBoxClone {
     fn as_any(&self) -> &dyn Any;
@@ -20,8 +20,8 @@ pub(crate) trait Widget: Any + Send + Sync + WidgetBoxClone {
         asset_manager: &AssetManager,
         globals: &Globals,
         cache: &LayoutCache,
-        store: &NodeStore,
-        node_style: &NodeStyle,
+        store: &UiStore,
+        node_id: &NodeId,
         transform: &Transform,
     );
 }

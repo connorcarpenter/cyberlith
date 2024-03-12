@@ -122,11 +122,7 @@ fn setup_ui(commands: &mut Commands) -> Entity {
                 .add_panel()
                 .add_style(container_style)
                 .contents(|c| {
-                    c
-                        .add_text("c y b e r l i t h")
-                        .style(|s| {
-                            s.set_size_pc(100.0, 100.0);
-                        });
+                    c.add_text("c y b e r l i t h");
                 });
 
             // start button
@@ -135,11 +131,7 @@ fn setup_ui(commands: &mut Commands) -> Entity {
                 .add_style(base_button_style)
                 .add_style(start_button_style)
                 .contents(|c| {
-                    c
-                        .add_text("start")
-                        .style(|s| {
-                            s.set_size_pc(100.0, 100.0);
-                        });
+                    c.add_text("start");
                 });
 
             // continue button
@@ -148,9 +140,7 @@ fn setup_ui(commands: &mut Commands) -> Entity {
                 .add_style(base_button_style)
                 .add_style(continue_button_style)
                 .contents(|c| {
-                    c.add_text("continue").style(|s| {
-                        s.set_size_pc(100.0, 100.0);
-                    });
+                    c.add_text("continue");
                 });
         });
 

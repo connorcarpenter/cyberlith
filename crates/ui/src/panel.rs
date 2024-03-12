@@ -13,27 +13,26 @@ use storage::Handle;
 
 use crate::{
     cache::LayoutCache,
-    node::{NodeKind, NodeStore, UiNode},
-    style::NodeStyle,
+    node::{WidgetKind, UiStore, UiNode},
+    style::{WidgetStyle, NodeStyle, StyleId},
     text::{Text, TextMut},
     ui::draw_node,
     ui::Globals,
     widget::Widget,
     NodeId, Ui,
 };
-use crate::style::StyleId;
 
 #[derive(Clone)]
 pub struct Panel {
     pub(crate) children: Vec<NodeId>,
-    pub(crate) style: PanelStyle,
+    pub(crate) background_color_handle: Option<Handle<CpuMaterial>>,
 }
 
 impl Panel {
     pub fn new() -> Self {
         Self {
             children: Vec::new(),
-            style: PanelStyle::default(),
+            background_color_handle: None,
         }
     }
 
@@ -58,14 +57,16 @@ impl Widget for Panel {
         asset_manager: &AssetManager,
         globals: &Globals,
         cache: &LayoutCache,
-        store: &NodeStore,
-        _node_style: &NodeStyle,
+        store: &UiStore,
+        node_id: &NodeId,
         transform: &Transform,
     ) {
         // draw panel
-        if let Some(mat_handle) = self.style.background_color_handle {
-            if self.style.background_alpha > 0.0 {
-                if self.style.background_alpha != 1.0 {
+        if let Some(mat_handle) = self.background_color_handle {
+            let panel_style_ref = store.panel_style_ref(node_id);
+            let background_alpha = panel_style_ref.background_alpha();
+            if background_alpha > 0.0 {
+                if background_alpha != 1.0 {
                     panic!("partial background_alpha not implemented yet!");
                 }
                 let box_handle = globals.get_box_mesh_handle().unwrap();
@@ -100,41 +101,39 @@ impl Widget for Panel {
 
 #[derive(Clone, Copy)]
 pub(crate) struct PanelStyle {
-    pub(crate) background_color: Color,
-    pub(crate) background_alpha: f32,
-    pub(crate) background_color_handle: Option<Handle<CpuMaterial>>,
+    pub(crate) background_color: Option<Color>,
+    pub(crate) background_alpha: Option<f32>,
 
-    pub(crate) layout_type: LayoutType,
+    pub(crate) layout_type: Option<LayoutType>,
 
-    pub(crate) padding_left: SizeUnits,
-    pub(crate) padding_right: SizeUnits,
-    pub(crate) padding_top: SizeUnits,
-    pub(crate) padding_bottom: SizeUnits,
+    pub(crate) padding_left: Option<SizeUnits>,
+    pub(crate) padding_right: Option<SizeUnits>,
+    pub(crate) padding_top: Option<SizeUnits>,
+    pub(crate) padding_bottom: Option<SizeUnits>,
 
-    pub(crate) row_between: SizeUnits,
-    pub(crate) col_between: SizeUnits,
-    pub(crate) children_halign: Alignment,
-    pub(crate) children_valign: Alignment,
+    pub(crate) row_between: Option<SizeUnits>,
+    pub(crate) col_between: Option<SizeUnits>,
+    pub(crate) children_halign: Option<Alignment>,
+    pub(crate) children_valign: Option<Alignment>,
 }
 
-impl Default for PanelStyle {
-    fn default() -> Self {
+impl PanelStyle {
+    pub fn empty() -> Self {
         Self {
-            background_color: Color::BLACK,
-            background_alpha: 1.0,
-            background_color_handle: None,
+            background_color: None,
+            background_alpha: None,
 
-            layout_type: LayoutType::Column,
+            layout_type: None,
 
-            padding_left: SizeUnits::Auto,
-            padding_right: SizeUnits::Auto,
-            padding_top: SizeUnits::Auto,
-            padding_bottom: SizeUnits::Auto,
+            padding_left: None,
+            padding_right: None,
+            padding_top: None,
+            padding_bottom: None,
 
-            row_between: SizeUnits::Auto,
-            col_between: SizeUnits::Auto,
-            children_halign: Alignment::Center,
-            children_valign: Alignment::Center,
+            row_between: None,
+            col_between: None,
+            children_halign: None,
+            children_valign: None,
         }
     }
 }
@@ -163,7 +162,8 @@ impl<'a> PanelMut<'a> {
     // }
 
     pub fn add_style(&mut self, style_id: StyleId) -> &mut Self {
-        todo!();
+        let node = self.ui.node_mut(&self.node_id).unwrap();
+        node.style_ids.push(style_id);
         self
     }
 
@@ -200,7 +200,7 @@ impl<'a> PanelContentsMut<'a> {
 
     pub fn add_panel<'b>(self: &'b mut PanelContentsMut<'a>) -> PanelMut<'b> {
         // creates a new panel, returning a context for it
-        let new_id = self.ui.create_node(&NodeKind::Panel, Panel::new());
+        let new_id = self.ui.create_node(&WidgetKind::Panel, Panel::new());
 
         // add new panel to children
         self.get_panel_mut().add_child(new_id);
@@ -210,7 +210,11 @@ impl<'a> PanelContentsMut<'a> {
 
     pub fn add_text<'b>(self: &'b mut PanelContentsMut<'a>, text: &str) -> TextMut<'b> {
         // creates a new panel, returning a context for it
-        let new_id = self.ui.create_node(&NodeKind::Text, Text::new(text));
+        let new_id = self.ui.create_node(&WidgetKind::Text, Text::new(text));
+
+        // add base text style
+        let node_mut = self.ui.node_mut(&new_id).unwrap();
+        node_mut.style_ids.push(Ui::BASE_TEXT_STYLE_ID);
 
         // add new panel to children
         self.get_panel_mut().add_child(new_id);
@@ -219,211 +223,428 @@ impl<'a> PanelContentsMut<'a> {
     }
 }
 
-pub struct PanelStyleMut<'a> {
-    ui: &'a mut Ui,
+pub struct PanelStyleRef<'a> {
+    store: &'a UiStore,
     node_id: NodeId,
 }
 
+impl<'a> PanelStyleRef<'a> {
+
+    pub(crate) fn new(store: &'a UiStore, node_id: NodeId) -> Self {
+        Self { store, node_id }
+    }
+
+    pub fn background_color(&self) -> Color {
+        let mut output = Color::BLACK; // TODO: put into const var!
+
+        self.store.for_each_panel_style(&self.node_id, |style| {
+            if let Some(color) = style.background_color {
+                output = color;
+            }
+        });
+
+        output
+    }
+
+    pub fn background_alpha(&self) -> f32 {
+        let mut output = 1.0; // TODO: put into const var!
+
+        self.store.for_each_panel_style(&self.node_id, |style| {
+            if let Some(alpha) = style.background_alpha {
+                output = alpha;
+            }
+        });
+
+        output
+    }
+
+    pub fn layout_type(&self) -> LayoutType {
+        let mut output = LayoutType::default();
+
+        self.store.for_each_panel_style(&self.node_id, |style| {
+            if let Some(layout_type) = style.layout_type {
+                output = layout_type;
+            }
+        });
+
+        output
+    }
+
+    pub fn position_type(&self) -> PositionType {
+        let mut output = PositionType::default();
+
+        self.store.for_each_node_style(&self.node_id, |style| {
+            if let Some(position_type) = style.position_type {
+                output = position_type;
+            }
+        });
+
+        output
+    }
+
+    pub fn self_halign(&self) -> Alignment {
+        let mut output = Alignment::default();
+
+        self.store.for_each_node_style(&self.node_id, |style| {
+            if let Some(halign) = style.self_halign {
+                output = halign;
+            }
+        });
+
+        output
+    }
+
+    pub fn self_valign(&self) -> Alignment {
+        let mut output = Alignment::default();
+
+        self.store.for_each_node_style(&self.node_id, |style| {
+            if let Some(valign) = style.self_valign {
+                output = valign;
+            }
+        });
+
+        output
+    }
+
+    pub fn children_halign(&self) -> Alignment {
+        let mut output = Alignment::default();
+
+        self.store.for_each_panel_style(&self.node_id, |style| {
+            if let Some(halign) = style.children_halign {
+                output = halign;
+            }
+        });
+
+        output
+    }
+
+    pub fn children_valign(&self) -> Alignment {
+        let mut output = Alignment::default();
+
+        self.store.for_each_panel_style(&self.node_id, |style| {
+            if let Some(valign) = style.children_valign {
+                output = valign;
+            }
+        });
+
+        output
+    }
+
+    pub fn width(&self) -> SizeUnits {
+        let mut output = SizeUnits::default();
+
+        self.store.for_each_node_style(&self.node_id, |style| {
+            if let Some(width) = style.width {
+                output = width;
+            }
+        });
+
+        output
+    }
+
+    pub fn height(&self) -> SizeUnits {
+        let mut output = SizeUnits::default();
+
+        self.store.for_each_node_style(&self.node_id, |style| {
+            if let Some(height) = style.height {
+                output = height;
+            }
+        });
+
+        output
+    }
+
+    pub fn width_min(&self) -> SizeUnits {
+        let mut output = SizeUnits::default();
+
+        self.store.for_each_node_style(&self.node_id, |style| {
+            if let Some(width_min) = style.width_min {
+                output = width_min;
+            }
+        });
+
+        output
+    }
+
+    pub fn width_max(&self) -> SizeUnits {
+        let mut output = SizeUnits::default();
+
+        self.store.for_each_node_style(&self.node_id, |style| {
+            if let Some(width_max) = style.width_max {
+                output = width_max;
+            }
+        });
+
+        output
+    }
+
+    pub fn height_min(&self) -> SizeUnits {
+        let mut output = SizeUnits::default();
+
+        self.store.for_each_node_style(&self.node_id, |style| {
+            if let Some(height_min) = style.height_min {
+                output = height_min;
+            }
+        });
+
+        output
+    }
+
+    pub fn height_max(&self) -> SizeUnits {
+        let mut output = SizeUnits::default();
+
+        self.store.for_each_node_style(&self.node_id, |style| {
+            if let Some(height_max) = style.height_max {
+                output = height_max;
+            }
+        });
+
+        output
+    }
+
+    pub fn margin_left(&self) -> MarginUnits {
+        let mut output = MarginUnits::default();
+
+        self.store.for_each_node_style(&self.node_id, |style| {
+            if let Some(margin_left) = style.margin_left {
+                output = margin_left;
+            }
+        });
+
+        output
+    }
+
+    pub fn margin_right(&self) -> MarginUnits {
+        let mut output = MarginUnits::default();
+
+        self.store.for_each_node_style(&self.node_id, |style| {
+            if let Some(margin_right) = style.margin_right {
+                output = margin_right;
+            }
+        });
+
+        output
+    }
+
+    pub fn margin_top(&self) -> MarginUnits {
+        let mut output = MarginUnits::default();
+
+        self.store.for_each_node_style(&self.node_id, |style| {
+            if let Some(margin_top) = style.margin_top {
+                output = margin_top;
+            }
+        });
+
+        output
+    }
+
+    pub fn margin_bottom(&self) -> MarginUnits {
+        let mut output = MarginUnits::default();
+
+        self.store.for_each_node_style(&self.node_id, |style| {
+            if let Some(margin_bottom) = style.margin_bottom {
+                output = margin_bottom;
+            }
+        });
+
+        output
+    }
+
+    pub fn padding_left(&self) -> SizeUnits {
+        let mut output = SizeUnits::default();
+
+        self.store.for_each_panel_style(&self.node_id, |style| {
+            if let Some(padding_left) = style.padding_left {
+                output = padding_left;
+            }
+        });
+
+        output
+    }
+
+    pub fn padding_right(&self) -> SizeUnits {
+        let mut output = SizeUnits::default();
+
+        self.store.for_each_panel_style(&self.node_id, |style| {
+            if let Some(padding_right) = style.padding_right {
+                output = padding_right;
+            }
+        });
+
+        output
+    }
+
+    pub fn padding_top(&self) -> SizeUnits {
+        let mut output = SizeUnits::default();
+
+        self.store.for_each_panel_style(&self.node_id, |style| {
+            if let Some(padding_top) = style.padding_top {
+                output = padding_top;
+            }
+        });
+
+        output
+    }
+
+    pub fn padding_bottom(&self) -> SizeUnits {
+        let mut output = SizeUnits::default();
+
+        self.store.for_each_panel_style(&self.node_id, |style| {
+            if let Some(padding_bottom) = style.padding_bottom {
+                output = padding_bottom;
+            }
+        });
+
+        output
+    }
+
+    pub fn row_between(&self) -> SizeUnits {
+        let mut output = SizeUnits::default();
+
+        self.store.for_each_panel_style(&self.node_id, |style| {
+            if let Some(row_between) = style.row_between {
+                output = row_between;
+            }
+        });
+
+        output
+    }
+
+    pub fn col_between(&self) -> SizeUnits {
+        let mut output = SizeUnits::default();
+
+        self.store.for_each_panel_style(&self.node_id, |style| {
+            if let Some(col_between) = style.col_between {
+                output = col_between;
+            }
+        });
+
+        output
+    }
+
+    pub fn solid(&self) -> Option<Solid> {
+        let mut output = None;
+
+        self.store.for_each_node_style(&self.node_id, |style| {
+            if let Some(solid_override) = style.solid_override {
+                output = Some(solid_override);
+            }
+        });
+
+        output
+    }
+
+    pub fn aspect_ratio_w_over_h(&self) -> f32 {
+        let mut output = 1.0; // TODO: put into const var!
+
+        self.store.for_each_node_style(&self.node_id, |style| {
+            if let Some(aspect_ratio_w_over_h) = style.aspect_ratio_w_over_h {
+                output = aspect_ratio_w_over_h;
+            }
+        });
+
+        output
+    }
+}
+
+pub struct PanelStyleMut<'a> {
+    ui: &'a mut Ui,
+    style_id: StyleId,
+}
+
 impl<'a> PanelStyleMut<'a> {
-    pub(crate) fn new(ui: &'a mut Ui, panel_id: NodeId) -> Self {
+    pub(crate) fn new(ui: &'a mut Ui, style_id: StyleId) -> Self {
         Self {
             ui,
-            node_id: panel_id,
+            style_id,
         }
     }
 
-    fn get_ref(&self) -> &UiNode {
-        self.ui.node_ref(&self.node_id).unwrap()
+    fn get_style(&self) -> &NodeStyle {
+        self.ui.style_ref(&self.style_id).unwrap()
     }
 
-    fn get_mut(&mut self) -> &mut UiNode {
-        self.ui.node_mut(&self.node_id).unwrap()
+    fn get_style_mut(&mut self) -> &mut NodeStyle {
+        self.ui.style_mut(&self.style_id).unwrap()
     }
 
-    fn get_panel_ref(&self) -> &Panel {
-        self.get_ref()
-            .widget
-            .as_ref()
-            .as_any()
-            .downcast_ref::<Panel>()
-            .unwrap()
+    fn get_panel_style(&self) -> &PanelStyle {
+        if let WidgetStyle::Panel(panel_style) = &self.get_style().widget_style {
+            panel_style
+        } else {
+            panic!("StyleId does not reference a PanelStyle");
+        }
     }
 
-    fn get_panel_mut(&mut self) -> &mut Panel {
-        self.get_mut()
-            .widget
-            .as_mut()
-            .as_any_mut()
-            .downcast_mut::<Panel>()
-            .unwrap()
+    fn get_panel_style_mut(&mut self) -> &mut PanelStyle {
+        if let WidgetStyle::Panel(panel_style) = &mut self.get_style_mut().widget_style {
+            panel_style
+        } else {
+            panic!("StyleId does not reference a PanelStyle");
+        }
     }
 
     // getters
 
-    pub fn background_color(&self) -> Color {
-        self.get_panel_ref().style.background_color
-    }
-
-    pub fn background_alpha(&self) -> f32 {
-        self.get_panel_ref().style.background_alpha
-    }
-
-    pub fn background_color_handle(&self) -> Option<Handle<CpuMaterial>> {
-        self.get_panel_ref().style.background_color_handle
-    }
-
-    pub fn layout_type(&self) -> LayoutType {
-        self.get_panel_ref().style.layout_type
-    }
-
-    pub fn position_type(&self) -> PositionType {
-        self.get_ref().style.position_type
-    }
-
-    pub fn width(&self) -> SizeUnits {
-        self.get_ref().style.width
-    }
-
-    pub fn height(&self) -> SizeUnits {
-        self.get_ref().style.height
-    }
-
-    pub fn width_min(&self) -> SizeUnits {
-        self.get_ref().style.width_min
-    }
-
-    pub fn width_max(&self) -> SizeUnits {
-        self.get_ref().style.width_max
-    }
-
-    pub fn height_min(&self) -> SizeUnits {
-        self.get_ref().style.height_min
-    }
-
-    pub fn height_max(&self) -> SizeUnits {
-        self.get_ref().style.height_max
-    }
-
-    pub fn margin_left(&self) -> MarginUnits {
-        self.get_ref().style.margin_left
-    }
-
-    pub fn margin_right(&self) -> MarginUnits {
-        self.get_ref().style.margin_right
-    }
-
-    pub fn margin_top(&self) -> MarginUnits {
-        self.get_ref().style.margin_top
-    }
-
-    pub fn margin_bottom(&self) -> MarginUnits {
-        self.get_ref().style.margin_bottom
-    }
-
-    pub fn padding_left(&self) -> SizeUnits {
-        self.get_panel_ref().style.padding_left
-    }
-
-    pub fn padding_right(&self) -> SizeUnits {
-        self.get_panel_ref().style.padding_right
-    }
-
-    pub fn padding_top(&self) -> SizeUnits {
-        self.get_panel_ref().style.padding_top
-    }
-
-    pub fn padding_bottom(&self) -> SizeUnits {
-        self.get_panel_ref().style.padding_bottom
-    }
-
-    pub fn row_between(&self) -> SizeUnits {
-        self.get_panel_ref().style.row_between
-    }
-
-    pub fn col_between(&self) -> SizeUnits {
-        self.get_panel_ref().style.col_between
-    }
-
-    pub fn self_halign(&self) -> Alignment {
-        self.get_ref().style.self_halign
-    }
-
-    pub fn self_valign(&self) -> Alignment {
-        self.get_ref().style.self_valign
-    }
-
-    pub fn children_halign(&self) -> Alignment {
-        self.get_panel_ref().style.children_halign
-    }
-
-    pub fn children_valign(&self) -> Alignment {
-        self.get_panel_ref().style.children_valign
+    fn background_color(&self) -> Option<Color> {
+        self.get_panel_style().background_color
     }
 
     // setters
 
     pub fn set_background_color(&mut self, color: Color) -> &mut Self {
-        let current_color = self.background_color();
-        if color != current_color {
-            self.get_panel_mut().style.background_color = color;
-            self.get_panel_mut().style.background_color_handle = None;
-        }
+        self.get_panel_style_mut().background_color = Some(color);
         self
     }
 
     pub fn set_background_alpha(&mut self, alpha: f32) -> &mut Self {
-        self.get_panel_mut().style.background_alpha = alpha;
-        self
-    }
-
-    pub fn set_background_color_handle(&mut self, handle: Handle<CpuMaterial>) -> &mut Self {
-        self.get_panel_mut().style.background_color_handle = Some(handle);
+        self.get_panel_style_mut().background_alpha = Some(alpha);
         self
     }
 
     pub fn set_horizontal(&mut self) -> &mut Self {
-        self.get_panel_mut().style.layout_type = LayoutType::Row;
+        self.get_panel_style_mut().layout_type = Some(LayoutType::Row);
         self
     }
 
     pub fn set_vertical(&mut self) -> &mut Self {
-        self.get_panel_mut().style.layout_type = LayoutType::Column;
+        self.get_panel_style_mut().layout_type = Some(LayoutType::Column);
         self
     }
 
     pub fn set_absolute(&mut self) -> &mut Self {
-        self.get_mut().style.position_type = PositionType::Absolute;
+        self.get_style_mut().position_type = Some(PositionType::Absolute);
         self
     }
 
     pub fn set_relative(&mut self) -> &mut Self {
-        self.get_mut().style.position_type = PositionType::Relative;
+        self.get_style_mut().position_type = Some(PositionType::Relative);
         self
     }
 
     pub fn set_self_halign(&mut self, align: Alignment) -> &mut Self {
-        self.get_mut().style.self_halign = align;
+        self.get_style_mut().self_halign = Some(align);
         self
     }
 
     pub fn set_self_valign(&mut self, align: Alignment) -> &mut Self {
-        self.get_mut().style.self_valign = align;
+        self.get_style_mut().self_valign = Some(align);
         self
     }
 
     pub fn set_children_halign(&mut self, align: Alignment) -> &mut Self {
-        self.get_panel_mut().style.children_halign = align;
+        self.get_panel_style_mut().children_halign = Some(align);
         self
     }
 
     pub fn set_children_valign(&mut self, align: Alignment) -> &mut Self {
-        self.get_panel_mut().style.children_valign = align;
+        self.get_panel_style_mut().children_valign = Some(align);
         self
     }
 
     // set_width
     fn set_width_units(&mut self, width: SizeUnits) -> &mut Self {
-        self.get_mut().style.width = width;
+        self.get_style_mut().width = Some(width);
         self
     }
 
@@ -441,7 +662,7 @@ impl<'a> PanelStyleMut<'a> {
 
     // set height
     fn set_height_units(&mut self, height: SizeUnits) -> &mut Self {
-        self.get_mut().style.height = height;
+        self.get_style_mut().height = Some(height);
         self
     }
 
@@ -481,7 +702,7 @@ impl<'a> PanelStyleMut<'a> {
 
     // set_width_min
     fn set_width_min_units(&mut self, min_width: SizeUnits) -> &mut Self {
-        self.get_mut().style.width_min = min_width;
+        self.get_style_mut().width_min = Some(min_width);
         self
     }
 
@@ -499,7 +720,7 @@ impl<'a> PanelStyleMut<'a> {
 
     // set_height_min
     fn set_height_min_units(&mut self, min_height: SizeUnits) -> &mut Self {
-        self.get_mut().style.height_min = min_height;
+        self.get_style_mut().height_min = Some(min_height);
         self
     }
 
@@ -542,7 +763,7 @@ impl<'a> PanelStyleMut<'a> {
 
     // set_width_max
     fn set_width_max_units(&mut self, max_width: SizeUnits) -> &mut Self {
-        self.get_mut().style.width_max = max_width;
+        self.get_style_mut().width_max = Some(max_width);
         self
     }
 
@@ -560,7 +781,7 @@ impl<'a> PanelStyleMut<'a> {
 
     // set_height_max
     fn set_height_max_units(&mut self, max_height: SizeUnits) -> &mut Self {
-        self.get_mut().style.height_max = max_height;
+        self.get_style_mut().height_max = Some(max_height);
         self
     }
 
@@ -603,7 +824,7 @@ impl<'a> PanelStyleMut<'a> {
 
     // set_left
     fn set_margin_left_units(&mut self, left: MarginUnits) -> &mut Self {
-        self.get_mut().style.margin_left = left;
+        self.get_style_mut().margin_left = Some(left);
         self
     }
 
@@ -617,7 +838,7 @@ impl<'a> PanelStyleMut<'a> {
 
     // set_right
     fn set_margin_right_units(&mut self, right: MarginUnits) -> &mut Self {
-        self.get_mut().style.margin_right = right;
+        self.get_style_mut().margin_right = Some(right);
         self
     }
 
@@ -631,7 +852,7 @@ impl<'a> PanelStyleMut<'a> {
 
     // set_top
     fn set_margin_top_units(&mut self, top: MarginUnits) -> &mut Self {
-        self.get_mut().style.margin_top = top;
+        self.get_style_mut().margin_top = Some(top);
         self
     }
 
@@ -645,7 +866,7 @@ impl<'a> PanelStyleMut<'a> {
 
     // set_bottom
     fn set_margin_bottom_units(&mut self, bottom: MarginUnits) -> &mut Self {
-        self.get_mut().style.margin_bottom = bottom;
+        self.get_style_mut().margin_bottom = Some(bottom);
         self
     }
 
@@ -675,7 +896,7 @@ impl<'a> PanelStyleMut<'a> {
 
     // set_padding_left
     fn set_padding_left_units(&mut self, child_left: SizeUnits) -> &mut Self {
-        self.get_panel_mut().style.padding_left = child_left;
+        self.get_panel_style_mut().padding_left = Some(child_left);
         self
     }
 
@@ -693,7 +914,7 @@ impl<'a> PanelStyleMut<'a> {
 
     // set_padding_right
     fn set_padding_right_units(&mut self, child_right: SizeUnits) -> &mut Self {
-        self.get_panel_mut().style.padding_right = child_right;
+        self.get_panel_style_mut().padding_right = Some(child_right);
         self
     }
 
@@ -711,7 +932,7 @@ impl<'a> PanelStyleMut<'a> {
 
     // set_padding_top
     fn set_padding_top_units(&mut self, child_top: SizeUnits) -> &mut Self {
-        self.get_panel_mut().style.padding_top = child_top;
+        self.get_panel_style_mut().padding_top = Some(child_top);
         self
     }
 
@@ -729,7 +950,7 @@ impl<'a> PanelStyleMut<'a> {
 
     // set_padding_bottom
     fn set_padding_bottom_units(&mut self, child_bottom: SizeUnits) -> &mut Self {
-        self.get_panel_mut().style.padding_bottom = child_bottom;
+        self.get_panel_style_mut().padding_bottom = Some(child_bottom);
         self
     }
 
@@ -769,7 +990,7 @@ impl<'a> PanelStyleMut<'a> {
 
     // set_row_between
     fn set_row_between_units(&mut self, row_between: SizeUnits) -> &mut Self {
-        self.get_panel_mut().style.row_between = row_between;
+        self.get_panel_style_mut().row_between = Some(row_between);
         self
     }
 
@@ -787,7 +1008,7 @@ impl<'a> PanelStyleMut<'a> {
 
     // set_col_between
     fn set_col_between_units(&mut self, column_between: SizeUnits) -> &mut Self {
-        self.get_panel_mut().style.col_between = column_between;
+        self.get_panel_style_mut().col_between = Some(column_between);
         self
     }
 
@@ -806,17 +1027,17 @@ impl<'a> PanelStyleMut<'a> {
     // solid stuff
 
     pub fn set_solid_fit(&mut self) -> &mut Self {
-        self.get_mut().style.solid_override = Some(Solid::Fit);
+        self.get_style_mut().solid_override = Some(Solid::Fit);
         self
     }
 
     pub fn set_solid_fill(&mut self) -> &mut Self {
-        self.get_mut().style.solid_override = Some(Solid::Fill);
+        self.get_style_mut().solid_override = Some(Solid::Fill);
         self
     }
 
     pub fn set_aspect_ratio(&mut self, width: f32, height: f32) -> &mut Self {
-        self.get_mut().style.aspect_ratio_w_over_h = width / height;
+        self.get_style_mut().aspect_ratio_w_over_h = Some(width / height);
         self
     }
 }
