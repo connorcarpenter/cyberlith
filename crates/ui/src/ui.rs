@@ -16,8 +16,8 @@ use crate::{
     cache::LayoutCache,
     node::{NodeKind, NodeStore, UiNode},
     node_id::NodeId,
-    panel::{Panel, PanelMut},
-    widget::Widget,
+    panel::{PanelStyleMut, Panel, PanelMut},
+    widget::Widget, style::StyleId, text::TextStyleMut
 };
 
 #[derive(Component)]
@@ -124,6 +124,14 @@ impl Ui {
     pub fn root_mut(&mut self) -> PanelMut {
         self.queue_recalculate_layout();
         PanelMut::new(self, Self::ROOT_NODE_ID)
+    }
+
+    pub fn create_panel_style(&mut self, inner_fn: impl FnOnce(&mut PanelStyleMut)) -> StyleId {
+        todo!();
+    }
+
+    pub fn create_text_style(&mut self, inner_fn: impl FnOnce(&mut TextStyleMut)) -> StyleId {
+        todo!();
     }
 
     pub fn draw(

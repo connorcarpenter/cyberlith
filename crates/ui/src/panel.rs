@@ -21,6 +21,7 @@ use crate::{
     widget::Widget,
     NodeId, Ui,
 };
+use crate::style::StyleId;
 
 #[derive(Clone)]
 pub struct Panel {
@@ -155,9 +156,14 @@ impl<'a> PanelMut<'a> {
         self
     }
 
-    pub fn style(&mut self, inner_fn: impl FnOnce(&mut PanelStyleMut)) -> &mut Self {
-        let mut style_mut = PanelStyleMut::new(self.ui, self.node_id);
-        inner_fn(&mut style_mut);
+    // pub fn style(&mut self, inner_fn: impl FnOnce(&mut PanelStyleMut)) -> &mut Self {
+    //     let mut style_mut = PanelStyleMut::new(self.ui, self.node_id);
+    //     inner_fn(&mut style_mut);
+    //     self
+    // }
+
+    pub fn add_style(&mut self, style_id: StyleId) -> &mut Self {
+        todo!();
         self
     }
 

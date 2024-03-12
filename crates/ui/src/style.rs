@@ -1,5 +1,16 @@
 use layout::{Alignment, MarginUnits, PositionType, SizeUnits, Solid};
 
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Default, PartialOrd, Ord)]
+pub struct StyleId {
+    id: u32,
+}
+
+impl StyleId {
+    pub fn new(id: u32) -> Self {
+        Self { id }
+    }
+}
+
 #[derive(Clone, Default, Copy)]
 pub(crate) struct NodeStyle {
     pub(crate) position_type: PositionType,
