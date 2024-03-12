@@ -20,8 +20,10 @@ pub fn run() {
         })
         // Scene Systems
         .add_systems(Startup, scene::scene_setup)
+        .add_systems(Update, scene::scene_step)
+        .add_systems(Draw, scene::scene_draw)
         .add_systems(Update, scene::handle_viewport_resize)
-        .add_systems(Draw, scene::scene_draw);
+        ;
     app.run();
 }
 

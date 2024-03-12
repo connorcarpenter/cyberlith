@@ -1,4 +1,4 @@
-use bevy_ecs::{entity::Entity, change_detection::ResMut, component::Component, system::Query};
+use bevy_ecs::{change_detection::ResMut, component::Component, system::Query};
 use bevy_log::warn;
 
 use layout::{Node, SizeUnits};
@@ -29,13 +29,12 @@ pub struct Ui {
     nodes: NodeStore,
     recalc_layout: bool,
     last_viewport: Viewport,
-    target_camera: Entity,
 }
 
 impl Ui {
     const ROOT_NODE_ID: NodeId = NodeId::new(0);
 
-    pub fn new(camera_id: Entity) -> Self {
+    pub fn new() -> Self {
         let mut me = Self {
             globals: Globals::new(),
             pending_mat_handles: Vec::new(),
@@ -44,7 +43,6 @@ impl Ui {
             nodes: NodeStore::new(),
             recalc_layout: false,
             last_viewport: Viewport::new_at_origin(0, 0),
-            target_camera: camera_id,
         };
 
         let panel_id = me.create_node(&NodeKind::Panel, Panel::new());
@@ -112,15 +110,6 @@ impl Ui {
     }
 
     // interface
-
-    pub fn target_camera(&self) -> Entity {
-        self.target_camera
-    }
-
-    pub fn set_target_camera(&mut self, camera_entity: Entity) -> &mut Self {
-        self.target_camera = camera_entity;
-        self
-    }
 
     pub fn set_text_icon_handle(&mut self, text_handle: &AssetHandle<IconData>) -> &mut Self {
         self.globals.text_icon_handle_opt = Some(text_handle.clone());

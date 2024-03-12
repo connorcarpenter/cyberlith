@@ -1,4 +1,4 @@
-mod resources;
+pub mod resources;
 mod run;
 mod systems;
 

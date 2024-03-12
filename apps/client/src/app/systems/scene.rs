@@ -123,8 +123,8 @@ pub fn scene_step(
         transform.translation.y = f32::to_radians(*rotation).sin() * 250.0;
         transform.translation.z = 0.0;
 
-        transform.rotate_x(0.001 * elapsed_time);
-        transform.rotate_y(0.002 * elapsed_time);
+        // transform.rotate_x(0.001 * elapsed_time);
+        // transform.rotate_y(0.002 * elapsed_time);
         transform.rotation = Quat::from_rotation_z(f32::to_radians(*rotation + 90.0));
 
         // animate
