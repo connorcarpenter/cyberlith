@@ -24,7 +24,7 @@ use crate::{
 
 #[derive(Clone)]
 pub struct Panel {
-    pub(crate) children: Vec<NodeId>,
+    pub children: Vec<NodeId>,
     pub(crate) background_color_handle: Option<Handle<CpuMaterial>>,
 }
 
@@ -100,25 +100,25 @@ impl Widget for Panel {
 }
 
 #[derive(Clone, Copy)]
-pub(crate) struct PanelStyle {
-    pub(crate) background_color: Option<Color>,
-    pub(crate) background_alpha: Option<f32>,
+pub struct PanelStyle {
+    pub background_color: Option<Color>,
+    pub background_alpha: Option<f32>,
 
-    pub(crate) layout_type: Option<LayoutType>,
+    pub layout_type: Option<LayoutType>,
 
-    pub(crate) padding_left: Option<SizeUnits>,
-    pub(crate) padding_right: Option<SizeUnits>,
-    pub(crate) padding_top: Option<SizeUnits>,
-    pub(crate) padding_bottom: Option<SizeUnits>,
+    pub padding_left: Option<SizeUnits>,
+    pub padding_right: Option<SizeUnits>,
+    pub padding_top: Option<SizeUnits>,
+    pub padding_bottom: Option<SizeUnits>,
 
-    pub(crate) row_between: Option<SizeUnits>,
-    pub(crate) col_between: Option<SizeUnits>,
-    pub(crate) children_halign: Option<Alignment>,
-    pub(crate) children_valign: Option<Alignment>,
+    pub row_between: Option<SizeUnits>,
+    pub col_between: Option<SizeUnits>,
+    pub children_halign: Option<Alignment>,
+    pub children_valign: Option<Alignment>,
 }
 
 impl PanelStyle {
-    pub fn empty() -> Self {
+    pub(crate) fn empty() -> Self {
         Self {
             background_color: None,
             background_alpha: None,

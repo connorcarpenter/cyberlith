@@ -2,8 +2,8 @@
 use crate::{text::TextStyleRef, style::{WidgetStyle, NodeStyle, StyleId}, widget::Widget, NodeId, panel::{Panel, PanelStyle, PanelStyleRef}};
 
 pub struct UiStore {
-    pub(crate) styles: Vec<NodeStyle>,
-    pub(crate) nodes: Vec<UiNode>,
+    pub styles: Vec<NodeStyle>,
+    pub nodes: Vec<UiNode>,
 }
 
 impl UiStore {
@@ -109,17 +109,17 @@ impl UiStore {
 }
 
 #[derive(PartialEq, Eq, Clone, Copy)]
-pub(crate) enum WidgetKind {
+pub enum WidgetKind {
     Panel,
     Text,
 }
 
 #[derive(Clone)]
-pub(crate) struct UiNode {
-    pub(crate) visible: bool,
-    pub(crate) style_ids: Vec<StyleId>,
-    pub(crate) kind: WidgetKind,
-    pub(crate) widget: Box<dyn Widget>,
+pub struct UiNode {
+    pub visible: bool,
+    pub style_ids: Vec<StyleId>,
+    pub kind: WidgetKind,
+    pub widget: Box<dyn Widget>,
 }
 
 impl UiNode {
@@ -132,7 +132,7 @@ impl UiNode {
         }
     }
 
-    pub(crate) fn downcast_ref<T: Widget>(widget: &dyn Widget) -> Option<&T> {
+    pub fn downcast_ref<T: Widget>(widget: &dyn Widget) -> Option<&T> {
         widget.as_any().downcast_ref()
     }
 

@@ -6,7 +6,7 @@ use crate::{text::TextStyle, panel::PanelStyle};
 pub struct StyleId(u32);
 
 impl StyleId {
-    pub(crate) const fn new(id: u32) -> Self {
+    pub const fn new(id: u32) -> Self {
         Self(id)
     }
 
@@ -22,33 +22,33 @@ pub enum WidgetStyle {
 }
 
 #[derive(Clone, Copy)]
-pub(crate) struct NodeStyle {
+pub struct NodeStyle {
 
-    pub(crate) widget_style: WidgetStyle,
+    pub widget_style: WidgetStyle,
 
-    pub(crate) position_type: Option<PositionType>,
+    pub position_type: Option<PositionType>,
 
-    pub(crate) width: Option<SizeUnits>,
-    pub(crate) height: Option<SizeUnits>,
-    pub(crate) width_min: Option<SizeUnits>,
-    pub(crate) width_max: Option<SizeUnits>,
-    pub(crate) height_min: Option<SizeUnits>,
-    pub(crate) height_max: Option<SizeUnits>,
+    pub width: Option<SizeUnits>,
+    pub height: Option<SizeUnits>,
+    pub width_min: Option<SizeUnits>,
+    pub width_max: Option<SizeUnits>,
+    pub height_min: Option<SizeUnits>,
+    pub height_max: Option<SizeUnits>,
 
-    pub(crate) margin_left: Option<MarginUnits>,
-    pub(crate) margin_right: Option<MarginUnits>,
-    pub(crate) margin_top: Option<MarginUnits>,
-    pub(crate) margin_bottom: Option<MarginUnits>,
+    pub margin_left: Option<MarginUnits>,
+    pub margin_right: Option<MarginUnits>,
+    pub margin_top: Option<MarginUnits>,
+    pub margin_bottom: Option<MarginUnits>,
 
-    pub(crate) solid_override: Option<Solid>,
-    pub(crate) aspect_ratio_w_over_h: Option<f32>,
+    pub solid_override: Option<Solid>,
+    pub aspect_ratio_w_over_h: Option<f32>,
 
-    pub(crate) self_halign: Option<Alignment>,
-    pub(crate) self_valign: Option<Alignment>,
+    pub self_halign: Option<Alignment>,
+    pub self_valign: Option<Alignment>,
 }
 
 impl NodeStyle {
-    pub fn empty(widget_style: WidgetStyle) -> Self {
+    pub(crate) fn empty(widget_style: WidgetStyle) -> Self {
         Self {
             widget_style,
             position_type: None,

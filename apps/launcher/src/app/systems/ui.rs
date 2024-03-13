@@ -73,7 +73,7 @@ pub fn init_ui(text_handle: &AssetHandle<IconData>) -> Ui {
 }
 
 pub fn write_ui(ui: Ui) -> Vec<u8> {
-    let bytes = ui.write_json();
+    let bytes = ui_io::json::write_json(&ui);
 
     // let byte_str = std::str::from_utf8(&bytes).unwrap();
     // info!("ui: {:?}", byte_str);
@@ -82,5 +82,5 @@ pub fn write_ui(ui: Ui) -> Vec<u8> {
 }
 
 pub fn read_ui(bytes: Vec<u8>) -> Ui {
-    Ui::read_json(bytes)
+    ui_io::json::read_json(bytes)
 }

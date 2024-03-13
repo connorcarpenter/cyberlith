@@ -26,7 +26,7 @@ pub struct Ui {
     globals: Globals,
     pending_mat_handles: Vec<NodeId>,
     cache: LayoutCache,
-    pub(crate) store: UiStore,
+    pub store: UiStore,
     recalc_layout: bool,
     last_viewport: Viewport,
 }
@@ -34,7 +34,7 @@ pub struct Ui {
 impl Ui {
     pub(crate) const ROOT_NODE_ID: NodeId = NodeId::new(0);
     // pub(crate) const ROOT_STYLE_ID: StyleId = StyleId::new(0);
-    pub(crate) const BASE_TEXT_STYLE_ID: StyleId = StyleId::new(0);
+    pub const BASE_TEXT_STYLE_ID: StyleId = StyleId::new(0);
 
     pub fn new() -> Self {
         let mut me = Self {
@@ -135,7 +135,7 @@ impl Ui {
 
     // interface
 
-    pub(crate) fn get_text_icon_handle(&self) -> &AssetHandle<IconData> {
+    pub fn get_text_icon_handle(&self) -> &AssetHandle<IconData> {
         self.globals.text_icon_handle_opt.as_ref().unwrap()
     }
 
@@ -144,7 +144,7 @@ impl Ui {
         self
     }
 
-    pub(crate) fn get_text_color(&self) -> Color {
+    pub fn get_text_color(&self) -> Color {
         self.globals.text_color
     }
 

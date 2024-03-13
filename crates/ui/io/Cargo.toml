@@ -11,6 +11,12 @@ read_json = [ "serde", "serde_json" ]
 write_json = [ "serde", "serde_json" ]
 
 [dependencies]
+asset_id = { path = "../../asset/id" }
+asset_render = { path = "../../asset/render" }
+render_api = { path = "../../render/render_api" }
+ui_layout = { path = "../layout" }
+ui = { path = "../../ui" }
+
 cfg-if = { version = "1.0" }
 log = { version = "0.4" }
 

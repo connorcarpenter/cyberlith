@@ -28,7 +28,7 @@ impl Text {
         }
     }
 
-    pub(crate) fn inner_text(&self) -> &str {
+    pub fn inner_text(&self) -> &str {
         &self.text
     }
 }

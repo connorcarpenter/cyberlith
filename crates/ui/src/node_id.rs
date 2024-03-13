@@ -12,7 +12,7 @@ impl NodeId {
         Self(id)
     }
 
-    pub(crate) fn as_usize(&self) -> usize {
+    pub fn as_usize(&self) -> usize {
         self.0 as usize
     }
 }

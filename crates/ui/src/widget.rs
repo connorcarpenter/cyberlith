@@ -8,7 +8,7 @@ use render_api::{
 
 use crate::{cache::LayoutCache, node::UiStore, NodeId, ui::Globals};
 
-pub(crate) trait Widget: Any + Send + Sync + WidgetBoxClone {
+pub trait Widget: Any + Send + Sync + WidgetBoxClone {
     fn as_any(&self) -> &dyn Any;
 
     fn as_any_mut(&mut self) -> &mut dyn Any;
