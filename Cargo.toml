@@ -32,7 +32,7 @@ members = [
     "crates/input",
     "crates/asset/io",
     "crates/asset/render",
-    "crates/asset/asset_id",
+    "crates/asset/id",
     "crates/filesystem",
     "crates/render/gl",
     "crates/render/egui_gl",

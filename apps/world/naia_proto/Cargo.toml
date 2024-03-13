@@ -11,7 +11,7 @@ publish = false
 [dependencies]
 naia-bevy-shared = { path = "../../../../naia/adapters/bevy/shared" }
 crypto = { path = "../../../crates/crypto" }
-asset_id = { path = "../../../crates/asset/asset_id" }
+asset_id = { path = "../../../crates/asset/id" }
 
 bevy_ecs = { version = "0.13", default-features=false }
 

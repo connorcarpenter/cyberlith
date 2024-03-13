@@ -21,7 +21,7 @@ asset_render = { path = "../../crates/asset/render" }
 bevy_http_client = { path = "../../crates/http/bevy_http_client" }
 config = { path = "../config", features = ["client"]}
 storage = { path = "../../crates/storage" }
-asset_id = { path = "../../crates/asset/asset_id" }
+asset_id = { path = "../../crates/asset/id" }
 filesystem = { path = "../../crates/filesystem" }
 ui = { path = "../../crates/ui" }
 
