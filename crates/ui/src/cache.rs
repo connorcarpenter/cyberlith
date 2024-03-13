@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use layout::{Cache, Node};
+use ui_layout::{Cache, Node};
 
 use crate::NodeId;
 

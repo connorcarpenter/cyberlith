@@ -3,7 +3,7 @@ use std::any::Any;
 use bevy_log::warn;
 
 use asset_render::AssetManager;
-use layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
+use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 use render_api::{
     base::{Color, CpuMaterial},
     components::{RenderLayer, Transform},

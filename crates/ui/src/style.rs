@@ -1,4 +1,4 @@
-use layout::{Alignment, MarginUnits, PositionType, SizeUnits, Solid};
+use ui_layout::{Alignment, MarginUnits, PositionType, SizeUnits, Solid};
 
 use crate::{text::TextStyle, panel::PanelStyle};
 

@@ -9,7 +9,7 @@ mod ui;
 mod widget;
 mod serde;
 
-pub use layout::Alignment;
+pub use ui_layout::Alignment;
 pub use node_id::NodeId;
 pub use plugin::UiPlugin;
 pub use ui::Ui;

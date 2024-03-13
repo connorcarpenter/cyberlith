@@ -1,7 +1,7 @@
 use bevy_ecs::{change_detection::ResMut, component::Component, system::Query};
 use bevy_log::warn;
 
-use layout::{Node, SizeUnits};
+use ui_layout::{Node, SizeUnits};
 use asset_render::{AssetHandle, AssetManager, IconData};
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},

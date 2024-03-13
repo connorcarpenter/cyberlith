@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use asset_id::AssetId;
 use asset_render::{AssetHandle, IconData};
-use layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
+use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 use render_api::base::Color;
 
 use crate::{node::{UiNode, WidgetKind}, panel::{PanelStyle, PanelMut, PanelStyleMut, Panel}, style::{NodeStyle,StyleId, WidgetStyle}, text::{TextStyle, TextStyleMut, Text}, Ui, widget::Widget};

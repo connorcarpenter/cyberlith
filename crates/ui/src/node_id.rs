@@ -1,6 +1,6 @@
 use std::fmt::{Display, Formatter};
 
-use layout::{Alignment, LayoutType, MarginUnits, Node, PositionType, SizeUnits, Solid};
+use ui_layout::{Alignment, LayoutType, MarginUnits, Node, PositionType, SizeUnits, Solid};
 
 use crate::node::{UiStore, WidgetKind};
 
