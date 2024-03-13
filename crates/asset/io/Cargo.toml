@@ -21,4 +21,4 @@ naia-serde = { path = "../../../../naia/shared/serde", optional = true }
 
 # for JSON
 serde = { version = "1.0.189", features = ["derive"], optional = true }
-serde_json = { version = "1.0.107", optional = true}
+serde_json = { version = "1.0.107", optional = true }

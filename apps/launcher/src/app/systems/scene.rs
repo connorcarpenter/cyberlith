@@ -26,6 +26,7 @@ use game_engine::{
 };
 
 use crate::app::resources::Global;
+use crate::app::systems::ui::{init_ui, read_ui, write_ui};
 
 #[derive(Component)]
 pub struct CubeMarker;
@@ -77,72 +78,9 @@ fn setup_ui(commands: &mut Commands) -> Entity {
 
     let text_handle = AssetHandle::<IconData>::new(AssetId::from_str("34mvvk").unwrap()); // TODO: use some kind of catalog
 
-    let mut ui = Ui::new();
-
-    let window_style = ui.create_panel_style(|s| {
-        s
-            //.set_background_color(Color::BLACK)
-            .set_background_alpha(0.0)
-            .set_padding_px(10.0, 10.0, 10.0, 10.0)
-            .set_vertical()
-            .set_row_between_px(10.0);
-    });
-    let container_style = ui.create_panel_style(|s| {
-        s
-            .set_background_alpha(0.0)
-            .set_size_pc(100.0, 38.2)
-            .set_solid_fit()
-            .set_aspect_ratio(16.0, 4.5);
-    });
-    let base_button_style = ui.create_panel_style(|s| {
-        s
-            .set_background_color(Color::DARK_GRAY)
-            .set_self_halign(Alignment::Center)
-            .set_size_pc(50.0, 20.0)
-            .set_size_max_px(240.0, 90.0)
-            .set_solid_fit()
-            .set_aspect_ratio(16.0, 4.5)
-            .set_padding_px(10.0, 10.0, 10.0, 10.0);
-    });
-    let start_button_style = ui.create_panel_style(|s| {
-       s.set_margin_right_px(40.0);
-    });
-    let continue_button_style = ui.create_panel_style(|s| {
-       s.set_margin_left_px(40.0);
-    });
-
-    ui
-        .set_text_icon_handle(&text_handle)
-        .set_text_color(Color::WHITE)
-        .root_mut()
-        .add_style(window_style)
-        .contents(|c| {
-            // title container
-            c
-                .add_panel()
-                .add_style(container_style)
-                .contents(|c| {
-                    c.add_text("c y b e r l i t h");
-                });
-
-            // start button
-            c
-                .add_panel()
-                .add_style(base_button_style)
-                .add_style(start_button_style)
-                .contents(|c| {
-                    c.add_text("start");
-                });
-
-            // continue button
-            c
-                .add_panel()
-                .add_style(base_button_style)
-                .add_style(continue_button_style)
-                .contents(|c| {
-                    c.add_text("continue");
-                });
-        });
+    let ui = init_ui(&text_handle);
+    let ui_bytes = write_ui(ui);
+    let ui = read_ui(ui_bytes);
 
     let _ui_entity = commands.spawn(ui).insert(layer).id();
 

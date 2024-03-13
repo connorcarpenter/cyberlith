@@ -27,6 +27,10 @@ impl Text {
             text: text.to_string(),
         }
     }
+
+    pub(crate) fn inner_text(&self) -> &str {
+        &self.text
+    }
 }
 
 impl Widget for Text {
@@ -96,8 +100,10 @@ impl<'a> TextMut<'a> {
         self
     }
 
-    pub fn add_style(&mut self, _style_id: StyleId) -> &mut Self {
-        todo!()
+    pub fn add_style(&mut self, style_id: StyleId) -> &mut Self {
+        let node = self.ui.node_mut(&self.node_id).unwrap();
+        node.style_ids.push(style_id);
+        self
     }
 }
 

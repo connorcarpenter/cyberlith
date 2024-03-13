@@ -2,7 +2,6 @@ use bevy_ecs::{change_detection::ResMut, component::Component, system::Query};
 use bevy_log::warn;
 
 use layout::{Node, SizeUnits};
-
 use asset_render::{AssetHandle, AssetManager, IconData};
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
@@ -35,9 +34,9 @@ pub struct Ui {
 }
 
 impl Ui {
-    const ROOT_NODE_ID: NodeId = NodeId::new(0);
-    const ROOT_STYLE_ID: StyleId = StyleId::new(0);
-    pub const BASE_TEXT_STYLE_ID: StyleId = StyleId::new(1);
+    pub(crate) const ROOT_NODE_ID: NodeId = NodeId::new(0);
+    pub(crate) const ROOT_STYLE_ID: StyleId = StyleId::new(0);
+    pub(crate) const BASE_TEXT_STYLE_ID: StyleId = StyleId::new(1);
 
     pub fn new() -> Self {
         let mut me = Self {
@@ -248,6 +247,14 @@ impl Ui {
             }
         }
         self.pending_mat_handles = pending_mat_handles;
+    }
+
+    pub(crate) fn nodes_iter(&self) -> impl Iterator<Item = (&NodeId, &UiNode)> {
+        self.store.nodes_iter()
+    }
+
+    pub(crate) fn styles_iter(&self) -> impl Iterator<Item = (&StyleId, &NodeStyle)> {
+        self.store.styles_iter()
     }
 
     fn next_node_id(&mut self) -> NodeId {

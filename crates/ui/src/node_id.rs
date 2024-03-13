@@ -15,6 +15,10 @@ impl NodeId {
     pub(crate) fn increment(&mut self) {
         self.0 += 1;
     }
+
+    pub(crate) fn as_usize(&self) -> usize {
+        self.0 as usize
+    }
 }
 
 impl Display for NodeId {

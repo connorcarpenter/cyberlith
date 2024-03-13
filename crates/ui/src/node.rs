@@ -43,6 +43,14 @@ impl UiStore {
         self.styles.get_mut(style_id)
     }
 
+    pub(crate) fn nodes_iter(&self) -> impl Iterator<Item = (&NodeId, &UiNode)> {
+        self.nodes.iter()
+    }
+
+    pub(crate) fn styles_iter(&self) -> impl Iterator<Item = (&StyleId, &NodeStyle)> {
+        self.styles.iter()
+    }
+
     // pub(crate) fn iter(&self) -> impl Iterator<Item = (&NodeId, &UiNode)> {
     //     self.map.iter()
     // }

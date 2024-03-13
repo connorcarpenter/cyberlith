@@ -7,6 +7,7 @@ mod style;
 mod text;
 mod ui;
 mod widget;
+mod serde;
 
 pub use layout::Alignment;
 pub use node_id::NodeId;
