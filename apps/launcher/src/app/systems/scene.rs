@@ -22,11 +22,10 @@ use game_engine::{
         shapes, Window,
     },
     storage::{Handle, Storage},
-    ui::{Alignment, Ui},
+    ui::Ui,
 };
 
-use crate::app::resources::Global;
-use crate::app::systems::ui::{init_ui, read_ui, write_ui};
+use crate::app::{resources::Global, systems::ui::{init_ui, read_ui, write_ui}};
 
 #[derive(Component)]
 pub struct CubeMarker;

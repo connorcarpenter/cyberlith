@@ -1,54 +1,58 @@
-use std::collections::HashMap;
 
 use crate::{text::TextStyleRef, style::{WidgetStyle, NodeStyle, StyleId}, widget::Widget, NodeId, panel::{Panel, PanelStyle, PanelStyleRef}};
 
 pub struct UiStore {
-    styles: HashMap<StyleId, NodeStyle>,
-    nodes: HashMap<NodeId, UiNode>,
+    pub(crate) styles: Vec<NodeStyle>,
+    pub(crate) nodes: Vec<UiNode>,
 }
 
 impl UiStore {
     pub(crate) fn new() -> Self {
         Self {
-            styles: HashMap::new(),
-            nodes: HashMap::new(),
+            styles: Vec::new(),
+            nodes: Vec::new(),
         }
     }
 
-    pub(crate) fn insert_node(&mut self, node_id: NodeId, node: UiNode) {
-        self.nodes.insert(node_id, node);
+    // nodes
+    pub(crate) fn insert_node(&mut self, node: UiNode) -> NodeId {
+        let index = self.nodes.len();
+        self.nodes.push(node);
+        NodeId::new(index as u32)
     }
 
     pub(crate) fn get_node(&self, node_id: &NodeId) -> Option<&UiNode> {
-        self.nodes.get(node_id)
+        self.nodes.get(node_id.as_usize())
     }
 
-    pub(crate) fn get_node_mut(&mut self, uiid: &NodeId) -> Option<&mut UiNode> {
-        self.nodes.get_mut(uiid)
+    pub(crate) fn get_node_mut(&mut self, node_id: &NodeId) -> Option<&mut UiNode> {
+        self.nodes.get_mut(node_id.as_usize())
     }
 
-    pub(crate) fn node_ids(&self) -> impl Iterator<Item = &NodeId> {
-        self.nodes.keys()
+    pub(crate) fn node_ids(&self) -> Vec<NodeId> {
+        let mut output = Vec::new();
+
+        for i in 0..self.nodes.len() {
+            output.push(NodeId::new(i as u32));
+        }
+
+        output
     }
 
-    pub(crate) fn insert_style(&mut self, style_id: StyleId, style: NodeStyle) {
-        self.styles.insert(style_id, style);
+    // styles
+
+    pub(crate) fn insert_style(&mut self, style: NodeStyle) -> StyleId {
+        let index = self.styles.len();
+        self.styles.push(style);
+        StyleId::new(index as u32)
     }
 
     pub(crate) fn get_style(&self, style_id: &StyleId) -> Option<&NodeStyle> {
-        self.styles.get(style_id)
+        self.styles.get(style_id.as_usize())
     }
 
     pub(crate) fn get_style_mut(&mut self, style_id: &StyleId) -> Option<&mut NodeStyle> {
-        self.styles.get_mut(style_id)
-    }
-
-    pub(crate) fn nodes_iter(&self) -> impl Iterator<Item = (&NodeId, &UiNode)> {
-        self.nodes.iter()
-    }
-
-    pub(crate) fn styles_iter(&self) -> impl Iterator<Item = (&StyleId, &NodeStyle)> {
-        self.styles.iter()
+        self.styles.get_mut(style_id.as_usize())
     }
 
     // pub(crate) fn iter(&self) -> impl Iterator<Item = (&NodeId, &UiNode)> {

@@ -25,25 +25,21 @@ use crate::{
 pub struct Ui {
     globals: Globals,
     pending_mat_handles: Vec<NodeId>,
-    next_node_id: NodeId,
-    next_style_id: StyleId,
     cache: LayoutCache,
-    store: UiStore,
+    pub(crate) store: UiStore,
     recalc_layout: bool,
     last_viewport: Viewport,
 }
 
 impl Ui {
     pub(crate) const ROOT_NODE_ID: NodeId = NodeId::new(0);
-    pub(crate) const ROOT_STYLE_ID: StyleId = StyleId::new(0);
-    pub(crate) const BASE_TEXT_STYLE_ID: StyleId = StyleId::new(1);
+    // pub(crate) const ROOT_STYLE_ID: StyleId = StyleId::new(0);
+    pub(crate) const BASE_TEXT_STYLE_ID: StyleId = StyleId::new(0);
 
     pub fn new() -> Self {
         let mut me = Self {
             globals: Globals::new(),
             pending_mat_handles: Vec::new(),
-            next_node_id: Self::ROOT_NODE_ID,
-            next_style_id: Self::ROOT_STYLE_ID,
             cache: LayoutCache::new(),
             store: UiStore::new(),
             recalc_layout: false,
@@ -57,11 +53,11 @@ impl Ui {
         }
 
         // Root Style
-        let root_panel_style_id = me.create_style(NodeStyle::empty(WidgetStyle::Panel(PanelStyle::empty())));
-        if root_panel_style_id != Self::ROOT_STYLE_ID {
-            panic!("root panel style id is {:?}, not 0!", root_panel_style_id);
-        }
-        me.node_mut(&root_panel_id).unwrap().style_ids.push(root_panel_style_id);
+        // let root_panel_style_id = me.create_style(NodeStyle::empty(WidgetStyle::Panel(PanelStyle::empty())));
+        // if root_panel_style_id != Self::ROOT_STYLE_ID {
+        //     panic!("root panel style id is {:?}, not 0!", root_panel_style_id);
+        // }
+        // me.node_mut(&root_panel_id).unwrap().style_ids.push(root_panel_style_id);
 
         // Base Text Style
         let base_text_style_id = me.create_style(NodeStyle::empty(WidgetStyle::Text(TextStyle::empty())));
@@ -139,9 +135,17 @@ impl Ui {
 
     // interface
 
+    pub(crate) fn get_text_icon_handle(&self) -> &AssetHandle<IconData> {
+        self.globals.text_icon_handle_opt.as_ref().unwrap()
+    }
+
     pub fn set_text_icon_handle(&mut self, text_handle: &AssetHandle<IconData>) -> &mut Self {
         self.globals.text_icon_handle_opt = Some(text_handle.clone());
         self
+    }
+
+    pub(crate) fn get_text_color(&self) -> Color {
+        self.globals.text_color
     }
 
     pub fn set_text_color(&mut self, text_color: Color) -> &mut Self {
@@ -243,31 +247,14 @@ impl Ui {
                 continue;
             };
             if panel_ref.background_color_handle.is_none() {
-                pending_mat_handles.push(*id);
+                pending_mat_handles.push(id);
             }
         }
         self.pending_mat_handles = pending_mat_handles;
     }
 
-    pub(crate) fn nodes_iter(&self) -> impl Iterator<Item = (&NodeId, &UiNode)> {
-        self.store.nodes_iter()
-    }
-
-    pub(crate) fn styles_iter(&self) -> impl Iterator<Item = (&StyleId, &NodeStyle)> {
-        self.store.styles_iter()
-    }
-
-    fn next_node_id(&mut self) -> NodeId {
-        let output = self.next_node_id;
-        self.next_node_id.increment();
-        output
-    }
-
     pub(crate) fn create_node<W: Widget>(&mut self, node_kind: &WidgetKind, widget: W) -> NodeId {
-        let panel = UiNode::new(node_kind, widget);
-        let node_id = self.next_node_id();
-        self.store.insert_node(node_id, panel);
-        node_id
+        self.store.insert_node(UiNode::new(node_kind, widget))
     }
 
     pub(crate) fn node_ref(&self, id: &NodeId) -> Option<&UiNode> {
@@ -303,15 +290,8 @@ impl Ui {
         self.store.get_style_mut(&id)
     }
 
-    fn next_style_id(&mut self) -> StyleId {
-        let output = self.next_style_id;
-        self.next_style_id.increment();
-        output
-    }
     pub(crate) fn create_style(&mut self, style: NodeStyle) -> StyleId {
-        let style_id = self.next_style_id();
-        self.store.insert_style(style_id, style);
-        style_id
+        self.store.insert_style(style)
     }
 }
 

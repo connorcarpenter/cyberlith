@@ -1,12 +1,14 @@
 use std::collections::HashMap;
 
+use bevy_log::info;
 use serde::{Deserialize, Serialize};
+
 use asset_id::AssetId;
+use asset_render::{AssetHandle, IconData};
 use layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 use render_api::base::Color;
 
-use crate::{node::{UiNode, WidgetKind}, panel::{PanelStyle, PanelStyleMut, Panel}, style::{NodeStyle,StyleId, WidgetStyle}, text::{TextStyle, TextStyleMut, Text}, Ui, widget::Widget};
-use crate::panel::{PanelContentsMut, PanelMut};
+use crate::{node::{UiNode, WidgetKind}, panel::{PanelStyle, PanelMut, PanelStyleMut, Panel}, style::{NodeStyle,StyleId, WidgetStyle}, text::{TextStyle, TextStyleMut, Text}, Ui, widget::Widget};
 
 impl Ui {
     pub fn write_json(&self) -> Vec<u8> {
@@ -16,49 +18,7 @@ impl Ui {
 
     pub fn read_json(data: Vec<u8>) -> Self {
         let ui_serde: UiSerde = serde_json::from_slice(data.as_slice()).unwrap();
-
-        let mut ui = Ui::new();
-
-        // ui_serde -> ui
-        let UiSerde {
-            styles,
-            nodes,
-        } = ui_serde;
-
-        let mut style_index_to_id = HashMap::new();
-
-        // styles
-        for (style_index, style_serde) in styles.iter().enumerate() {
-            if style_index == 0 {
-                // style 0 is for root, which already exists
-                style_index_to_id.insert(style_index, Ui::ROOT_STYLE_ID);
-            } else {
-                let style_id = match style_serde.widget_kind() {
-                    WidgetKind::Panel => ui.create_panel_style(|style| {
-                        style_serde_to_panel_style(style_serde, style);
-                    }),
-                    WidgetKind::Text => ui.create_text_style(|style| {
-                        style_serde_to_text_style(style_serde, style);
-                    }),
-                };
-                style_index_to_id.insert(style_index, style_id);
-            }
-        }
-
-        // nodes
-        let root_node_serde = nodes.first().unwrap();
-        let mut root_mut = ui.root_mut();
-        root_mut.set_visible(root_node_serde.visible);
-        for style_index in &root_node_serde.style_ids {
-            let style_id = *style_index_to_id.get(style_index).unwrap();
-            root_mut.add_style(style_id);
-        }
-        let WidgetSerde::Panel(panel_serde) = &root_node_serde.widget else {
-            panic!("Expected panel widget");
-        };
-        convert_nodes_recurse(&style_index_to_id, &nodes, panel_serde, &mut root_mut);
-
-        ui
+        ui_serde.to_ui()
     }
 }
 
@@ -72,6 +32,9 @@ fn convert_nodes_recurse<'a>(
         for child_index in &panel_serde.children {
             let child_index = *child_index;
             let child_node_serde = &nodes[child_index];
+
+            info!("{} - child_node_serde: {:?}", child_index, child_node_serde);
+
             match child_node_serde.widget_kind() {
                 WidgetKind::Panel => {
                     let mut child_panel_mut = c.add_panel();
@@ -101,8 +64,10 @@ fn convert_nodes_recurse<'a>(
     });
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 struct UiSerde {
+    text_color: ColorSerde,
+    text_icon_asset_id: String,
     styles: Vec<UiStyleSerde>,
     nodes: Vec<UiNodeSerde>,
 }
@@ -114,27 +79,88 @@ impl UiSerde {
 
         let mut style_id_to_index = HashMap::new();
 
+        let text_color = ColorSerde::from_color(ui.get_text_color());
+        let text_icon_asset_id = ui.get_text_icon_handle().asset_id().to_string();
+
         let mut me = Self {
+            text_color,
+            text_icon_asset_id,
             styles: Vec::new(),
             nodes: Vec::new(),
         };
 
         // styles
-        for (style_id, style) in ui.styles_iter() {
-            if *style_id == Ui::BASE_TEXT_STYLE_ID {
+        for (style_id, style) in ui.store.styles.iter().enumerate() {
+            let style_id = StyleId::new(style_id as u32);
+            if style_id == Ui::BASE_TEXT_STYLE_ID {
                 continue;
             }
             let next_index = me.styles.len();
-            style_id_to_index.insert(*style_id, next_index);
+            style_id_to_index.insert(style_id, next_index);
             me.styles.push(UiStyleSerde::from_style(style));
         }
 
         // nodes
-        for (_, node) in ui.nodes_iter() {
+        for node in ui.store.nodes.iter() {
             me.nodes.push(UiNodeSerde::from_node(&style_id_to_index, node));
         }
 
         me
+    }
+
+    fn to_ui(self) -> Ui {
+        let mut ui = Ui::new();
+
+        // ui_serde -> ui
+        let UiSerde {
+            text_color,
+            text_icon_asset_id,
+            styles,
+            nodes,
+        } = self;
+
+        // text color
+        ui.set_text_color(text_color.to_color());
+
+        // text icon
+        let text_icon_asset_id = AssetId::from_str(&text_icon_asset_id).unwrap();
+        let text_icon_asset_handle = AssetHandle::<IconData>::new(text_icon_asset_id);
+        ui.set_text_icon_handle(&text_icon_asset_handle);
+
+        let mut style_index_to_id = HashMap::new();
+
+        // styles
+        for (style_index, style_serde) in styles.iter().enumerate() {
+
+            info!("style_serde: {}, {:?}", style_index, style_serde);
+
+            let style_id = match style_serde.widget_kind() {
+                WidgetKind::Panel => ui.create_panel_style(|style| {
+                    style_serde_to_panel_style(style_serde, style);
+                }),
+                WidgetKind::Text => ui.create_text_style(|style| {
+                    style_serde_to_text_style(style_serde, style);
+                }),
+            };
+            style_index_to_id.insert(style_index, style_id);
+        }
+
+        // nodes
+        let root_node_serde = nodes.first().unwrap();
+        info!("0 - root_node_serde: {:?}", root_node_serde);
+
+        let mut root_mut = ui.root_mut();
+        root_mut.set_visible(root_node_serde.visible);
+        for style_index in &root_node_serde.style_ids {
+            let style_id = *style_index_to_id.get(style_index).unwrap();
+            root_mut.add_style(style_id);
+        }
+        let WidgetSerde::Panel(panel_serde) = &root_node_serde.widget else {
+            panic!("Expected panel widget");
+        };
+        convert_nodes_recurse(&style_index_to_id, &nodes, panel_serde, &mut root_mut);
+
+        ui
     }
 
     fn dependencies(&self) -> Vec<AssetId> {
@@ -142,7 +168,7 @@ impl UiSerde {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 struct UiStyleSerde {
 
     widget_style: WidgetStyleSerde,
@@ -195,32 +221,6 @@ impl UiStyleSerde {
         }
     }
 
-    fn to_style(&self) -> NodeStyle {
-        NodeStyle {
-            widget_style: self.widget_style.to_style(),
-
-            position_type: self.position_type.as_ref().map(PositionTypeSerde::to_position_type),
-
-            width: self.width.as_ref().map(SizeUnitsSerde::to_size_units),
-            height: self.height.as_ref().map(SizeUnitsSerde::to_size_units),
-            width_min: self.width_min.as_ref().map(SizeUnitsSerde::to_size_units),
-            width_max: self.width_max.as_ref().map(SizeUnitsSerde::to_size_units),
-            height_min: self.height_min.as_ref().map(SizeUnitsSerde::to_size_units),
-            height_max: self.height_max.as_ref().map(SizeUnitsSerde::to_size_units),
-
-            margin_left: self.margin_left.as_ref().map(MarginUnitsSerde::to_margin_units),
-            margin_right: self.margin_right.as_ref().map(MarginUnitsSerde::to_margin_units),
-            margin_top: self.margin_top.as_ref().map(MarginUnitsSerde::to_margin_units),
-            margin_bottom: self.margin_bottom.as_ref().map(MarginUnitsSerde::to_margin_units),
-
-            solid_override: self.solid_override.as_ref().map(SolidSerde::to_solid),
-            aspect_ratio_w_over_h: self.aspect_ratio_w_over_h,
-
-            self_halign: self.self_halign.as_ref().map(AlignmentSerde::to_alignment),
-            self_valign: self.self_valign.as_ref().map(AlignmentSerde::to_alignment),
-        }
-    }
-
     fn widget_kind(&self) -> WidgetKind {
         match &self.widget_style {
             WidgetStyleSerde::Panel(_) => WidgetKind::Panel,
@@ -229,7 +229,7 @@ impl UiStyleSerde {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 enum WidgetStyleSerde {
     Panel(PanelStyleSerde),
     Text(TextStyleSerde),
@@ -243,15 +243,15 @@ impl WidgetStyleSerde {
         }
     }
 
-    fn to_style(&self) -> WidgetStyle {
-        match self {
-            Self::Panel(panel) => WidgetStyle::Panel(panel.to_panel_style()),
-            Self::Text(text) => WidgetStyle::Text(text.to_text_style()),
-        }
-    }
+    // fn to_style(&self) -> WidgetStyle {
+    //     match self {
+    //         Self::Panel(panel) => WidgetStyle::Panel(panel.to_panel_style()),
+    //         Self::Text(text) => WidgetStyle::Text(text.to_text_style()),
+    //     }
+    // }
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 struct PanelStyleSerde {
     background_color: Option<ColorSerde>,
     background_alpha: Option<f32>,
@@ -289,46 +289,46 @@ impl PanelStyleSerde {
         }
     }
 
-    fn to_panel_style(&self) -> PanelStyle {
-        PanelStyle {
-            background_color: self.background_color.as_ref().map(ColorSerde::to_color),
-            background_alpha: self.background_alpha,
-
-            layout_type: self.layout_type.as_ref().map(LayoutTypeSerde::to_layout_type),
-
-            padding_left: self.padding_left.as_ref().map(SizeUnitsSerde::to_size_units),
-            padding_right: self.padding_right.as_ref().map(SizeUnitsSerde::to_size_units),
-            padding_top: self.padding_top.as_ref().map(SizeUnitsSerde::to_size_units),
-            padding_bottom: self.padding_bottom.as_ref().map(SizeUnitsSerde::to_size_units),
-
-            row_between: self.row_between.as_ref().map(SizeUnitsSerde::to_size_units),
-            col_between: self.col_between.as_ref().map(SizeUnitsSerde::to_size_units),
-            children_halign: self.children_halign.as_ref().map(AlignmentSerde::to_alignment),
-            children_valign: self.children_valign.as_ref().map(AlignmentSerde::to_alignment),
-        }
-    }
+    // fn to_panel_style(&self) -> PanelStyle {
+    //     PanelStyle {
+    //         background_color: self.background_color.as_ref().map(ColorSerde::to_color),
+    //         background_alpha: self.background_alpha,
+    //
+    //         layout_type: self.layout_type.as_ref().map(LayoutTypeSerde::to_layout_type),
+    //
+    //         padding_left: self.padding_left.as_ref().map(SizeUnitsSerde::to_size_units),
+    //         padding_right: self.padding_right.as_ref().map(SizeUnitsSerde::to_size_units),
+    //         padding_top: self.padding_top.as_ref().map(SizeUnitsSerde::to_size_units),
+    //         padding_bottom: self.padding_bottom.as_ref().map(SizeUnitsSerde::to_size_units),
+    //
+    //         row_between: self.row_between.as_ref().map(SizeUnitsSerde::to_size_units),
+    //         col_between: self.col_between.as_ref().map(SizeUnitsSerde::to_size_units),
+    //         children_halign: self.children_halign.as_ref().map(AlignmentSerde::to_alignment),
+    //         children_valign: self.children_valign.as_ref().map(AlignmentSerde::to_alignment),
+    //     }
+    // }
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 struct TextStyleSerde {
 
 }
 
 impl TextStyleSerde {
-    fn from_text_style(style: &TextStyle) -> Self {
+    fn from_text_style(_style: &TextStyle) -> Self {
         Self {
 
         }
     }
 
-    fn to_text_style(&self) -> TextStyle {
-        TextStyle {
-
-        }
-    }
+    // fn to_text_style(&self) -> TextStyle {
+    //     TextStyle {
+    //
+    //     }
+    // }
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 enum PositionTypeSerde {
     Absolute,
     Relative,
@@ -350,7 +350,7 @@ impl PositionTypeSerde {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 enum SizeUnitsSerde {
     Pixels(f32),
     Percentage(f32),
@@ -375,7 +375,7 @@ impl SizeUnitsSerde {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 enum MarginUnitsSerde {
     Pixels(f32),
     Percentage(f32),
@@ -397,7 +397,7 @@ impl MarginUnitsSerde {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 enum SolidSerde {
     Fit,
     Fill,
@@ -419,7 +419,7 @@ impl SolidSerde {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 enum AlignmentSerde {
     Start,
     Center,
@@ -444,7 +444,7 @@ impl AlignmentSerde {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 enum LayoutTypeSerde {
     Row,
     Column,
@@ -466,7 +466,7 @@ impl LayoutTypeSerde {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 struct ColorSerde {
     r: u8,
     g: u8,
@@ -487,7 +487,7 @@ impl ColorSerde {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 struct UiNodeSerde {
     visible: bool,
     style_ids: Vec<usize>,
@@ -521,25 +521,25 @@ impl UiNodeSerde {
         me
     }
 
-    fn to_node(&self, index_to_style_id: &Vec<StyleId>, widget: Box<dyn Widget>) -> UiNode {
-        let mut style_ids = Vec::new();
-        for style_index in &self.style_ids {
-            let style_id = index_to_style_id[*style_index];
-            style_ids.push(style_id);
-        }
-
-        let kind = self.widget_kind();
-
-        UiNode {
-            visible: self.visible,
-            style_ids,
-            kind,
-            widget,
-        }
-    }
+    // fn to_node(&self, index_to_style_id: &Vec<StyleId>, widget: Box<dyn Widget>) -> UiNode {
+    //     let mut style_ids = Vec::new();
+    //     for style_index in &self.style_ids {
+    //         let style_id = index_to_style_id[*style_index];
+    //         style_ids.push(style_id);
+    //     }
+    //
+    //     let kind = self.widget_kind();
+    //
+    //     UiNode {
+    //         visible: self.visible,
+    //         style_ids,
+    //         kind,
+    //         widget,
+    //     }
+    // }
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 enum WidgetSerde {
     Panel(PanelSerde),
     Text(TextSerde),
@@ -560,7 +560,7 @@ impl WidgetSerde {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 struct PanelSerde {
     children: Vec<usize>,
 }
@@ -577,7 +577,7 @@ impl PanelSerde {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 struct TextSerde {
     text: String,
 }
