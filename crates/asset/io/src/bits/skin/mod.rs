@@ -12,14 +12,15 @@ cfg_if! {
     } else {}
 }
 
-use asset_id::AssetId;
 use naia_serde::SerdeInternal as Serde;
+
+use asset_id::AssetId;
 
 #[derive(Clone)]
 pub enum SkinAction {
-    // path, file_name
+    // assetid
     PaletteFile(AssetId),
-    // path, file_name
+    // assetid
     MeshData(AssetId),
     // palette color index
     BackgroundColor(u8),

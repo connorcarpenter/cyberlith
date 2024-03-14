@@ -3,23 +3,23 @@ use cfg_if::cfg_if;
 cfg_if! {
     if #[cfg(feature = "read_json")] {
         mod read;
+
+        pub fn read_json(data: Vec<u8>) -> Ui {
+            let ui_serde: UiSerde = serde_json::from_slice(data.as_slice()).unwrap();
+            ui_serde.to_ui()
+        }
     } else {}
 }
 
 cfg_if! {
     if #[cfg(feature = "write_json")] {
         mod write;
+
+        pub fn write_json(ui: &Ui) -> Vec<u8> {
+            let ui_serde = UiSerde::from_ui(ui);
+            serde_json::to_vec_pretty(&ui_serde).unwrap()
+        }
     } else {}
-}
-
-pub fn write_json(ui: &Ui) -> Vec<u8> {
-    let ui_serde = UiSerde::from_ui(ui);
-    serde_json::to_vec_pretty(&ui_serde).unwrap()
-}
-
-pub fn read_json(data: Vec<u8>) -> Ui {
-    let ui_serde: UiSerde = serde_json::from_slice(data.as_slice()).unwrap();
-    ui_serde.to_ui()
 }
 
 ///
