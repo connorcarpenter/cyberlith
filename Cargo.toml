@@ -4,6 +4,7 @@ resolver = "2"
 members = [
     "apps/client",
     "apps/launcher",
+    "apps/ui_editor",
     "apps/config",
     "apps/content",
     "apps/automation/cli",
