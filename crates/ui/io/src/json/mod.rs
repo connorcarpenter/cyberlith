@@ -67,7 +67,7 @@ pub(crate) struct UiStyleJson {
     margin_bottom: Option<MarginUnitsJson>,
 
     solid_override: Option<SolidJson>,
-    aspect_ratio_w_over_h: Option<f32>,
+    aspect_ratio: Option<(f32, f32)>,
 
     self_halign: Option<AlignmentJson>,
     self_valign: Option<AlignmentJson>,

@@ -15,9 +15,9 @@ pub fn init_ui(text_handle: &AssetHandle<IconData>) -> Ui {
     let container_style = ui.create_panel_style(|s| {
         s
             .set_background_alpha(0.0)
-            .set_size_pc(100.0, 38.2)
+            .set_size_pc(100., 38.)
             .set_solid_fit()
-            .set_aspect_ratio(16.0, 4.5);
+            .set_aspect_ratio(16., 4.);
     });
     let base_button_style = ui.create_panel_style(|s| {
         s
@@ -26,7 +26,7 @@ pub fn init_ui(text_handle: &AssetHandle<IconData>) -> Ui {
             .set_size_pc(50.0, 20.0)
             .set_size_max_px(240.0, 90.0)
             .set_solid_fit()
-            .set_aspect_ratio(16.0, 4.5)
+            .set_aspect_ratio(16.0, 4.)
             .set_padding_px(10.0, 10.0, 10.0, 10.0);
     });
     let start_button_style = ui.create_panel_style(|s| {

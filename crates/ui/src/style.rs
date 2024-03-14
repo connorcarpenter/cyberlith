@@ -41,7 +41,7 @@ pub struct NodeStyle {
     pub margin_bottom: Option<MarginUnits>,
 
     pub solid_override: Option<Solid>,
-    pub aspect_ratio_w_over_h: Option<f32>,
+    aspect_ratio: Option<(f32, f32)>,
 
     pub self_halign: Option<Alignment>,
     pub self_valign: Option<Alignment>,
@@ -66,10 +66,30 @@ impl NodeStyle {
             margin_bottom: None,
 
             solid_override: None,
-            aspect_ratio_w_over_h: None,
+            aspect_ratio: None,
 
             self_halign: None,
             self_valign: None,
         }
+    }
+
+    pub fn aspect_ratio(&self) -> Option<(f32, f32)> {
+        self.aspect_ratio
+    }
+
+    pub(crate) fn set_aspect_ratio(&mut self, width: f32, height: f32) {
+
+        // validate
+        if width.fract() != 0.0 || height.fract() != 0.0 {
+            panic!("Aspect ratio must be a whole number, got: {} / {}", width, height);
+        }
+        if width < 0.0 || height < 0.0 {
+            panic!("Aspect ratio must be a positive number, got: {} / {}", width, height);
+        }
+        if width >= 256.0 || height >= 256.0 {
+            panic!("Aspect ratio must be <= 256, got: {} / {}", width, height);
+        }
+
+        self.aspect_ratio = Some((width, height));
     }
 }

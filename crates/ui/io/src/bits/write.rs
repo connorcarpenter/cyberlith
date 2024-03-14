@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use naia_serde::{FileBitWriter, SerdeInternal as Serde};
+use naia_serde::{FileBitWriter, SerdeInternal as Serde, UnsignedInteger, UnsignedVariableInteger};
 
 use ui::{NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Ui, UiNode, Widget, WidgetKind, WidgetStyle};
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
@@ -84,6 +84,26 @@ fn actions_to_bytes(actions: Vec<UiAction>) -> Vec<u8> {
 // conversion
 impl UiStyleBits {
     pub(crate) fn from_style(style: &NodeStyle) -> Self {
+
+        let aspect_ratio = style.aspect_ratio().map(|(width, height)| {
+
+            // validate
+            if width.fract() != 0.0 || height.fract() != 0.0 {
+                panic!("Aspect ratio must be a whole number, got: {} / {}", width, height);
+            }
+            if width < 0.0 || height < 0.0 {
+                panic!("Aspect ratio must be a positive number, got: {} / {}", width, height);
+            }
+            if width >= 256.0 || height >= 256.0 {
+                panic!("Aspect ratio must be <= 256, got: {} / {}", width, height);
+            }
+
+            let width = width as u8;
+            let height = height as u8;
+
+            (width, height)
+        });
+
         Self {
             widget_style: WidgetStyleBits::from_style(&style.widget_style),
 
@@ -102,7 +122,7 @@ impl UiStyleBits {
             margin_bottom: style.margin_bottom.map(MarginUnitsBits::from_margin_units),
 
             solid_override: style.solid_override.map(SolidBits::from_solid),
-            aspect_ratio_w_over_h: todo!(),
+            aspect_ratio,
 
             self_halign: style.self_halign.map(AlignmentBits::from_alignment),
             self_valign: style.self_valign.map(AlignmentBits::from_alignment),
@@ -123,10 +143,11 @@ impl PanelStyleBits {
     fn from_panel_style(style: &PanelStyle) -> Self {
         Self {
             background_color: style.background_color.map(|val| {
-                todo!()
+                (val.r, val.g, val.b)
             }),
-            background_alpha: style.background_alpha.map(|val| {
-                todo!()
+            background_alpha: style.background_alpha().map(|val| {
+                let val = (val * 10.0) as u8;
+                UnsignedInteger::<4>::new(val)
             }),
 
             layout_type: style.layout_type.map(LayoutTypeBits::from_layout_type),
@@ -164,8 +185,34 @@ impl PositionTypeBits {
 impl SizeUnitsBits {
     fn from_size_units(size_units: SizeUnits) -> Self {
         match size_units {
-            SizeUnits::Pixels(val) => Self::Pixels(todo!()),
-            SizeUnits::Percentage(val) => Self::Percent(todo!()),
+            SizeUnits::Pixels(val) => {
+                // validate
+                if val.fract() != 0.0 {
+                    panic!("SizeUnits::Pixels value must be a whole number, got: {}", val);
+                }
+                if val < 0.0 {
+                    panic!("SizeUnits::Pixels value must be positive, got: {}", val);
+                }
+
+                let val = val as u64;
+                let val = UnsignedVariableInteger::<7>::new(val);
+
+                Self::Pixels(val)
+            },
+            SizeUnits::Percentage(val) => {
+                // validate
+                if val < 0.0 || val > 100.0 {
+                    panic!("SizeUnits::Percentage value must be between 0 and 100, got: {}", val);
+                }
+                if val.fract() != 0.0 {
+                    panic!("SizeUnits::Percentage value must be a whole number, got: {}", val);
+                }
+
+                let val = val as u64;
+                let val = UnsignedInteger::<7>::new(val);
+
+                Self::Percent(val)
+            },
             SizeUnits::Auto => Self::Auto,
         }
     }
@@ -174,8 +221,34 @@ impl SizeUnitsBits {
 impl MarginUnitsBits {
     fn from_margin_units(margin_units: MarginUnits) -> Self {
         match margin_units {
-            MarginUnits::Pixels(val) => Self::Pixels(todo!()),
-            MarginUnits::Percentage(val) => Self::Percent(todo!()),
+            MarginUnits::Pixels(val) => {
+                // validate
+                if val.fract() != 0.0 {
+                    panic!("SizeUnits::Pixels value must be a whole number, got: {}", val);
+                }
+                if val < 0.0 {
+                    panic!("SizeUnits::Pixels value must be positive, got: {}", val);
+                }
+
+                let val = val as u64;
+                let val = UnsignedVariableInteger::<7>::new(val);
+
+                Self::Pixels(val)
+            },
+            MarginUnits::Percentage(val) => {
+                // validate
+                if val < 0.0 || val > 100.0 {
+                    panic!("SizeUnits::Percentage value must be between 0 and 100, got: {}", val);
+                }
+                if val.fract() != 0.0 {
+                    panic!("SizeUnits::Percentage value must be a whole number, got: {}", val);
+                }
+
+                let val = val as u64;
+                let val = UnsignedInteger::<7>::new(val);
+
+                Self::Percent(val)
+            },
         }
     }
 }

@@ -163,8 +163,16 @@ impl PositionTypeBits {
 impl SizeUnitsBits {
     fn to_size_units(&self) -> SizeUnits {
         match self {
-            Self::Pixels(val) => SizeUnits::Pixels(todo!()),
-            Self::Percent(val) => SizeUnits::Percentage(todo!()),
+            Self::Pixels(val) => {
+                let val: u64 = val.to();
+                let val: f32 = val as f32;
+                SizeUnits::Pixels(val)
+            },
+            Self::Percent(val) => {
+                let val: u64 = val.to();
+                let val: f32 = val as f32;
+                SizeUnits::Percentage(val)
+            },
             Self::Auto => SizeUnits::Auto,
         }
     }
@@ -173,8 +181,16 @@ impl SizeUnitsBits {
 impl MarginUnitsBits {
     fn to_margin_units(&self) -> MarginUnits {
         match self {
-            Self::Pixels(val) => MarginUnits::Pixels(todo!()),
-            Self::Percent(val) => MarginUnits::Percentage(todo!()),
+            Self::Pixels(val) => {
+                let val: u64 = val.to();
+                let val: f32 = val as f32;
+                MarginUnits::Pixels(val)
+            },
+            Self::Percent(val) => {
+                let val: u64 = val.to();
+                let val: f32 = val as f32;
+                MarginUnits::Percentage(val)
+            },
         }
     }
 }
@@ -300,9 +316,8 @@ impl UiStyleBits {
                 Solid::Fill => style.set_solid_fill(),
             };
         }
-        if let Some(aspect_ratio_w_over_h) = self.aspect_ratio_w_over_h {
-            todo!();
-            //style.set_aspect_ratio(aspect_ratio_w_over_h, 1.0);
+        if let Some((w, h)) = self.aspect_ratio {
+            style.set_aspect_ratio(w as f32, h as f32);
         }
         if let Some(val_serde) = &self.self_halign {
             let val = val_serde.to_alignment();
@@ -322,7 +337,10 @@ impl UiStyleBits {
             style.set_background_color(Color::new(*r, *g, *b));
         }
         if let Some(background_alpha) = panel_style_serde.background_alpha {
-            style.set_background_alpha(todo!());
+            let val: u8 = background_alpha.to();
+            let val: f32 = val as f32;
+            let val = val / 10.0;
+            style.set_background_alpha(val);
         }
         if let Some(layout_type_serde) = &panel_style_serde.layout_type {
             let layout_type = layout_type_serde.to_layout_type();
@@ -481,7 +499,7 @@ impl UiStyleBits {
                 Solid::Fill => style.set_solid_fill(),
             };
         }
-        if let Some(aspect_ratio_w_over_h) = self.aspect_ratio_w_over_h {
+        if let Some(aspect_ratio_w_over_h) = self.aspect_ratio {
             todo!();
             // style.set_aspect_ratio(aspect_ratio_w_over_h, 1.0);
         }

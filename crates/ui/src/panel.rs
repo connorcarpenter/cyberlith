@@ -102,7 +102,7 @@ impl Widget for Panel {
 #[derive(Clone, Copy)]
 pub struct PanelStyle {
     pub background_color: Option<Color>,
-    pub background_alpha: Option<f32>,
+    background_alpha: Option<f32>,
 
     pub layout_type: Option<LayoutType>,
 
@@ -135,6 +135,23 @@ impl PanelStyle {
             children_halign: None,
             children_valign: None,
         }
+    }
+
+    pub fn background_alpha(&self) -> Option<f32> {
+        self.background_alpha
+    }
+
+    pub(crate) fn set_background_alpha(&mut self, val: f32) {
+
+        // validate
+        if val < 0.0 || val > 1.0 {
+            panic!("background_alpha must be between 0.0 and 1.0");
+        }
+        if (val * 10.0).fract() != 0.0 {
+            panic!("background_alpha must be a multiple of 0.1");
+        }
+
+        self.background_alpha = Some(val);
     }
 }
 
@@ -292,7 +309,7 @@ impl<'a> PanelStyleMut<'a> {
     }
 
     pub fn set_background_alpha(&mut self, alpha: f32) -> &mut Self {
-        self.get_panel_style_mut().background_alpha = Some(alpha);
+        self.get_panel_style_mut().set_background_alpha(alpha);
         self
     }
 
@@ -731,7 +748,7 @@ impl<'a> PanelStyleMut<'a> {
     }
 
     pub fn set_aspect_ratio(&mut self, width: f32, height: f32) -> &mut Self {
-        self.get_style_mut().aspect_ratio_w_over_h = Some(width / height);
+        self.get_style_mut().set_aspect_ratio(width, height);
         self
     }
 }

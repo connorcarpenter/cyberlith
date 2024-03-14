@@ -317,8 +317,8 @@ impl Node for NodeId {
         let mut output = 1.0; // TODO: put this into a constant
 
         store.for_each_node_style(self, |node_style| {
-            if let Some(aspect_ratio) = node_style.aspect_ratio_w_over_h {
-                output = aspect_ratio;
+            if let Some((w, h)) = node_style.aspect_ratio() {
+                output = w / h;
             }
         });
 

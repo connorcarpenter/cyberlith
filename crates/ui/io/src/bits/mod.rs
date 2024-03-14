@@ -20,7 +20,7 @@ cfg_if! {
     } else {}
 }
 
-use naia_serde::SerdeInternal as Serde;
+use naia_serde::{SerdeInternal as Serde, UnsignedInteger, UnsignedVariableInteger};
 
 use ui::{Ui, WidgetKind};
 use asset_id::AssetId;
@@ -69,7 +69,7 @@ pub(crate) struct UiStyleBits {
     margin_bottom: Option<MarginUnitsBits>,
 
     solid_override: Option<SolidBits>,
-    aspect_ratio_w_over_h: Option<(u8, u8)>,
+    aspect_ratio: Option<(u8, u8)>,
 
     self_halign: Option<AlignmentBits>,
     self_valign: Option<AlignmentBits>,
@@ -87,7 +87,7 @@ impl UiStyleBits {
 #[derive(Serde, Clone, PartialEq)]
 pub(crate) struct PanelStyleBits {
     background_color: Option<(u8, u8, u8)>,
-    background_alpha: Option<u8>, // TODO: is this a good value type for this?
+    background_alpha: Option<UnsignedInteger<4>>,
 
     layout_type: Option<LayoutTypeBits>,
 
@@ -121,15 +121,15 @@ pub(crate) enum PositionTypeBits {
 
 #[derive(Serde, Clone, PartialEq)]
 pub(crate) enum SizeUnitsBits {
-    Pixels(u16), // TODO: is this a good value type for this?
-    Percent(u8), // TODO: is this a good value type for this?
+    Pixels(UnsignedVariableInteger<7>),
+    Percent(UnsignedInteger<7>),
     Auto,
 }
 
 #[derive(Serde, Clone, PartialEq)]
 pub(crate) enum MarginUnitsBits {
-    Pixels(u16), // TODO: is this a good value type for this?
-    Percent(u8), // TODO: is this a good value type for this?
+    Pixels(UnsignedVariableInteger<7>), // TODO: is this a good value type for this?
+    Percent(UnsignedInteger<7>), // TODO: is this a good value type for this?
 }
 
 #[derive(Serde, Clone, PartialEq)]

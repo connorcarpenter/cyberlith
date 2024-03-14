@@ -5,6 +5,7 @@ use bevy_ecs::{
     prelude::{Local, With},
     system::{Commands, Query, Res, ResMut},
 };
+use bevy_log::info;
 
 use game_engine::{
     asset::{
@@ -79,9 +80,13 @@ fn setup_ui(commands: &mut Commands) -> Entity {
     let text_handle = AssetHandle::<IconData>::new(AssetId::from_str("34mvvk").unwrap()); // TODO: use some kind of catalog
 
     let ui = init_ui(&text_handle);
+
     let ui_bytes = json_write_ui(ui);
+    info!("json byte count: {:?}", ui_bytes.len());
     let ui = json_read_ui(ui_bytes);
+
     let ui_bytes = bits_write_ui(ui);
+    info!("bits byte count: {:?}", ui_bytes.len());
     let ui = bits_read_ui(ui_bytes);
 
     let _ui_entity = commands.spawn(ui).insert(layer).id();

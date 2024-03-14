@@ -409,7 +409,7 @@ impl<'a> TextStyleMut<'a> {
     }
 
     pub fn set_aspect_ratio(&mut self, width: f32, height: f32) -> &mut Self {
-        self.get_style_mut().aspect_ratio_w_over_h = Some(width / height);
+        self.get_style_mut().set_aspect_ratio(width, height);
         self
     }
 }

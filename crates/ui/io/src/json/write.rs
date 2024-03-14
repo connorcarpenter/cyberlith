@@ -71,7 +71,7 @@ impl UiStyleJson {
             margin_bottom: style.margin_bottom.map(MarginUnitsJson::from_margin_units),
 
             solid_override: style.solid_override.map(SolidJson::from_solid),
-            aspect_ratio_w_over_h: style.aspect_ratio_w_over_h,
+            aspect_ratio: style.aspect_ratio(),
 
             self_halign: style.self_halign.map(AlignmentJson::from_alignment),
             self_valign: style.self_valign.map(AlignmentJson::from_alignment),
@@ -92,7 +92,7 @@ impl PanelStyleJson {
     fn from_panel_style(style: &PanelStyle) -> Self {
         Self {
             background_color: style.background_color.map(ColorJson::from_color),
-            background_alpha: style.background_alpha,
+            background_alpha: style.background_alpha(),
 
             layout_type: style.layout_type.map(LayoutTypeJson::from_layout_type),
 
