@@ -27,7 +27,7 @@ pub fn read_json(data: Vec<u8>) -> Ui {
 use serde::{Deserialize, Serialize};
 use asset_id::AssetId;
 
-use ui::{Ui, Widget, WidgetKind};
+use ui::{Ui, WidgetKind};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub(crate) struct UiSerde {

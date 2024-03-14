@@ -1,21 +1,20 @@
 use std::collections::HashMap;
 
 use log::info;
-use serde::{Deserialize, Serialize};
 
 use asset_id::AssetId;
 use asset_render::{AssetHandle, IconData};
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 use render_api::base::Color;
 use ui::{
-    UiNode, WidgetKind, PanelStyle, PanelMut, PanelStyleMut, Panel, NodeStyle,StyleId,
-    WidgetStyle, TextStyle, TextStyleMut, Text, Ui, Widget
+    WidgetKind, PanelMut, PanelStyleMut, StyleId,
+    TextStyleMut, Ui,
 };
 
 use super::{
     UiNodeSerde, PanelSerde, WidgetSerde, UiSerde, ColorSerde, UiStyleSerde, SizeUnitsSerde,
-    PositionTypeSerde, WidgetStyleSerde, MarginUnitsSerde, SolidSerde, AlignmentSerde, PanelStyleSerde,
-    TextStyleSerde, LayoutTypeSerde, TextSerde
+    PositionTypeSerde, WidgetStyleSerde, MarginUnitsSerde, SolidSerde, AlignmentSerde,
+    LayoutTypeSerde,
 };
 
 fn convert_nodes_recurse<'a>(

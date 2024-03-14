@@ -26,7 +26,7 @@ pub trait Widget: Any + Send + Sync + WidgetBoxClone {
     );
 }
 
-pub(crate) trait WidgetBoxClone {
+pub trait WidgetBoxClone {
     fn clone_box(&self) -> Box<dyn Widget>;
 }
 

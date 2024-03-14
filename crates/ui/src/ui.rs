@@ -282,10 +282,6 @@ impl Ui {
         Some(panel_mut)
     }
 
-    pub(crate) fn style_ref(&self, id: &StyleId) -> Option<&NodeStyle> {
-        self.store.get_style(&id)
-    }
-
     pub(crate) fn style_mut(&mut self, id: &StyleId) -> Option<&mut NodeStyle> {
         self.store.get_style_mut(&id)
     }
@@ -295,7 +291,7 @@ impl Ui {
     }
 }
 
-pub(crate) struct Globals {
+pub struct Globals {
     box_mesh_handle_opt: Option<Handle<CpuMesh>>,
     text_icon_handle_opt: Option<AssetHandle<IconData>>,
     text_color: Color,
