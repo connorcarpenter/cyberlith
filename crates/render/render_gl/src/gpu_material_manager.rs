@@ -4,7 +4,7 @@ use bevy_ecs::system::Resource;
 
 use render_api::{
     base::CpuMaterial,
-    components::{Camera, Projection, Transform},
+    components::Transform,
 };
 use storage::Handle;
 
@@ -79,9 +79,7 @@ impl GpuMaterialManager {
     pub fn use_uniforms(
         &self,
         program: &Program,
-        camera: &Camera,
         camera_transform: &Transform,
-        camera_projection: &Projection,
         lights: &[&dyn Light],
     ) {
         if !lights.is_empty() {

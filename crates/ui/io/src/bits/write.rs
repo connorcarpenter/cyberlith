@@ -34,6 +34,9 @@ fn convert_ui_to_actions(ui: &Ui) -> Vec<UiAction> {
             continue;
         }
         let next_index = style_count;
+        if style_count == u8::MAX {
+            panic!("Too many styles, max is {}", u8::MAX);
+        }
         style_count += 1;
         style_id_to_index.insert(style_id, next_index);
 
@@ -293,7 +296,7 @@ impl UiNodeBits {
             if style_id == &Ui::BASE_TEXT_STYLE_ID {
                 continue;
             }
-            let style_index: u8 = *style_id_to_index.get(style_id).unwrap();
+            let style_index = *style_id_to_index.get(style_id).unwrap();
             me.style_ids.push(style_index);
         }
 
@@ -322,7 +325,12 @@ impl PanelBits {
             children: Vec::new(),
         };
         for child_id in panel.children.iter() {
-            me.children.push(child_id.as_usize() as u8); // TODO: cleanup conversion
+            let child_id = child_id.as_usize();
+            if child_id >= u8::MAX as usize {
+                panic!("Too many children nodes, max is {}", u8::MAX);
+            }
+            let child_id = child_id as u8;
+            me.children.push(child_id);
         }
         me
     }

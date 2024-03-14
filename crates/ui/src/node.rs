@@ -16,6 +16,9 @@ impl UiStore {
 
     // nodes
     pub(crate) fn insert_node(&mut self, node: UiNode) -> NodeId {
+        if self.nodes.len() >= 255 {
+            panic!("1 UI can only hold up to 255 nodes, too many nodes!");
+        }
         let index = self.nodes.len();
         self.nodes.push(node);
         NodeId::new(index as u32)
@@ -42,6 +45,9 @@ impl UiStore {
     // styles
 
     pub(crate) fn insert_style(&mut self, style: NodeStyle) -> StyleId {
+        if self.styles.len() >= 255 {
+            panic!("1 UI can only hold up to 255 styles, too many styles!");
+        }
         let index = self.styles.len();
         self.styles.push(style);
         StyleId::new(index as u32)

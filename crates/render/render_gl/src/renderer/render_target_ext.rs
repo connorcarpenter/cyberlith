@@ -99,9 +99,7 @@ fn render<'a>(
         .program(vertex_shader_source, fragment_shader.source, |program| {
             gpu_material_manager.use_uniforms(
                 program,
-                camera,
                 camera_transform,
-                camera_projection,
                 lights,
             );
             gpu_skin_manager.use_uniforms(program);

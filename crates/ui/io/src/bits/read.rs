@@ -499,9 +499,8 @@ impl UiStyleBits {
                 Solid::Fill => style.set_solid_fill(),
             };
         }
-        if let Some(aspect_ratio_w_over_h) = self.aspect_ratio {
-            todo!();
-            // style.set_aspect_ratio(aspect_ratio_w_over_h, 1.0);
+        if let Some((w, h)) = self.aspect_ratio {
+            style.set_aspect_ratio(w as f32, h as f32);
         }
         if let Some(val_serde) = &self.self_halign {
             let val = val_serde.to_alignment();
