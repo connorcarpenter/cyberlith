@@ -89,10 +89,10 @@ impl UiJson {
 
             let style_id = match style_serde.widget_kind() {
                 WidgetKind::Panel => ui.create_panel_style(|style| {
-                    style_serde_to_panel_style(style_serde, style);
+                    style_serde.to_panel_style(style);
                 }),
                 WidgetKind::Text => ui.create_text_style(|style| {
-                    style_serde_to_text_style(style_serde, style);
+                    style_serde.to_text_style(style);
                 }),
             };
             style_index_to_id.insert(style_index, style_id);
@@ -179,288 +179,289 @@ impl ColorJson {
     }
 }
 
-// conversion
-fn style_serde_to_panel_style(style_serde: &UiStyleJson, style: &mut PanelStyleMut) {
-    // node-specific
-    if let Some(position_type_serde) = &style_serde.position_type {
-        let position_type = position_type_serde.to_position_type();
-        match position_type {
-            PositionType::Absolute => style.set_absolute(),
-            PositionType::Relative => style.set_relative(),
+impl UiStyleJson {
+    fn to_panel_style(&self, style: &mut PanelStyleMut) {
+        // node-specific
+        if let Some(position_type_serde) = &self.position_type {
+            let position_type = position_type_serde.to_position_type();
+            match position_type {
+                PositionType::Absolute => style.set_absolute(),
+                PositionType::Relative => style.set_relative(),
+            };
+        }
+        if let Some(val_serde) = &self.width {
+            let val = val_serde.to_size_units();
+            match val {
+                SizeUnits::Pixels(pixels) => style.set_width_px(pixels),
+                SizeUnits::Percentage(percentage) => style.set_width_pc(percentage),
+                SizeUnits::Auto => style.set_width_auto(),
+            };
+        }
+        if let Some(val_serde) = &self.height {
+            let val = val_serde.to_size_units();
+            match val {
+                SizeUnits::Pixels(pixels) => style.set_height_px(pixels),
+                SizeUnits::Percentage(percentage) => style.set_height_pc(percentage),
+                SizeUnits::Auto => style.set_height_auto(),
+            };
+        }
+        if let Some(val_serde) = &self.width_min {
+            let val = val_serde.to_size_units();
+            match val {
+                SizeUnits::Pixels(pixels) => style.set_width_min_px(pixels),
+                SizeUnits::Percentage(percentage) => style.set_width_min_pc(percentage),
+                SizeUnits::Auto => style.set_width_min_auto(),
+            };
+        }
+        if let Some(val_serde) = &self.width_max {
+            let val = val_serde.to_size_units();
+            match val {
+                SizeUnits::Pixels(pixels) => style.set_width_max_px(pixels),
+                SizeUnits::Percentage(percentage) => style.set_width_max_pc(percentage),
+                SizeUnits::Auto => style.set_width_max_auto(),
+            };
+        }
+        if let Some(val_serde) = &self.height_min {
+            let val = val_serde.to_size_units();
+            match val {
+                SizeUnits::Pixels(pixels) => style.set_height_min_px(pixels),
+                SizeUnits::Percentage(percentage) => style.set_height_min_pc(percentage),
+                SizeUnits::Auto => style.set_height_min_auto(),
+            };
+        }
+        if let Some(val_serde) = &self.height_max {
+            let val = val_serde.to_size_units();
+            match val {
+                SizeUnits::Pixels(pixels) => style.set_height_max_px(pixels),
+                SizeUnits::Percentage(percentage) => style.set_height_max_pc(percentage),
+                SizeUnits::Auto => style.set_height_max_auto(),
+            };
+        }
+        if let Some(val_serde) = &self.margin_left {
+            let val = val_serde.to_margin_units();
+            match val {
+                MarginUnits::Pixels(pixels) => style.set_margin_left_px(pixels),
+                MarginUnits::Percentage(percentage) => style.set_margin_left_pc(percentage),
+            };
+        }
+        if let Some(val_serde) = &self.margin_right {
+            let val = val_serde.to_margin_units();
+            match val {
+                MarginUnits::Pixels(pixels) => style.set_margin_right_px(pixels),
+                MarginUnits::Percentage(percentage) => style.set_margin_right_pc(percentage),
+            };
+        }
+        if let Some(val_serde) = &self.margin_top {
+            let val = val_serde.to_margin_units();
+            match val {
+                MarginUnits::Pixels(pixels) => style.set_margin_top_px(pixels),
+                MarginUnits::Percentage(percentage) => style.set_margin_top_pc(percentage),
+            };
+        }
+        if let Some(val_serde) = &self.margin_bottom {
+            let val = val_serde.to_margin_units();
+            match val {
+                MarginUnits::Pixels(pixels) => style.set_margin_bottom_px(pixels),
+                MarginUnits::Percentage(percentage) => style.set_margin_bottom_pc(percentage),
+            };
+        }
+        if let Some(solid_override_serde) = &self.solid_override {
+            let solid_override = solid_override_serde.to_solid();
+            match solid_override {
+                Solid::Fit => style.set_solid_fit(),
+                Solid::Fill => style.set_solid_fill(),
+            };
+        }
+        if let Some(aspect_ratio_w_over_h) = self.aspect_ratio_w_over_h {
+            style.set_aspect_ratio(aspect_ratio_w_over_h, 1.0);
+        }
+        if let Some(val_serde) = &self.self_halign {
+            let val = val_serde.to_alignment();
+            style.set_self_halign(val);
+        }
+        if let Some(val_serde) = &self.self_valign {
+            let val = val_serde.to_alignment();
+            style.set_self_valign(val);
+        }
+
+        // panel-specific
+        let WidgetStyleJson::Panel(panel_style_serde) = &self.widget_style else {
+            panic!("Expected panel style");
         };
-    }
-    if let Some(val_serde) = &style_serde.width {
-        let val = val_serde.to_size_units();
-        match val {
-            SizeUnits::Pixels(pixels) => style.set_width_px(pixels),
-            SizeUnits::Percentage(percentage) => style.set_width_pc(percentage),
-            SizeUnits::Auto => style.set_width_auto(),
-        };
-    }
-    if let Some(val_serde) = &style_serde.height {
-        let val = val_serde.to_size_units();
-        match val {
-            SizeUnits::Pixels(pixels) => style.set_height_px(pixels),
-            SizeUnits::Percentage(percentage) => style.set_height_pc(percentage),
-            SizeUnits::Auto => style.set_height_auto(),
-        };
-    }
-    if let Some(val_serde) = &style_serde.width_min {
-        let val = val_serde.to_size_units();
-        match val {
-            SizeUnits::Pixels(pixels) => style.set_width_min_px(pixels),
-            SizeUnits::Percentage(percentage) => style.set_width_min_pc(percentage),
-            SizeUnits::Auto => style.set_width_min_auto(),
-        };
-    }
-    if let Some(val_serde) = &style_serde.width_max {
-        let val = val_serde.to_size_units();
-        match val {
-            SizeUnits::Pixels(pixels) => style.set_width_max_px(pixels),
-            SizeUnits::Percentage(percentage) => style.set_width_max_pc(percentage),
-            SizeUnits::Auto => style.set_width_max_auto(),
-        };
-    }
-    if let Some(val_serde) = &style_serde.height_min {
-        let val = val_serde.to_size_units();
-        match val {
-            SizeUnits::Pixels(pixels) => style.set_height_min_px(pixels),
-            SizeUnits::Percentage(percentage) => style.set_height_min_pc(percentage),
-            SizeUnits::Auto => style.set_height_min_auto(),
-        };
-    }
-    if let Some(val_serde) = &style_serde.height_max {
-        let val = val_serde.to_size_units();
-        match val {
-            SizeUnits::Pixels(pixels) => style.set_height_max_px(pixels),
-            SizeUnits::Percentage(percentage) => style.set_height_max_pc(percentage),
-            SizeUnits::Auto => style.set_height_max_auto(),
-        };
-    }
-    if let Some(val_serde) = &style_serde.margin_left {
-        let val = val_serde.to_margin_units();
-        match val {
-            MarginUnits::Pixels(pixels) => style.set_margin_left_px(pixels),
-            MarginUnits::Percentage(percentage) => style.set_margin_left_pc(percentage),
-        };
-    }
-    if let Some(val_serde) = &style_serde.margin_right {
-        let val = val_serde.to_margin_units();
-        match val {
-            MarginUnits::Pixels(pixels) => style.set_margin_right_px(pixels),
-            MarginUnits::Percentage(percentage) => style.set_margin_right_pc(percentage),
-        };
-    }
-    if let Some(val_serde) = &style_serde.margin_top {
-        let val = val_serde.to_margin_units();
-        match val {
-            MarginUnits::Pixels(pixels) => style.set_margin_top_px(pixels),
-            MarginUnits::Percentage(percentage) => style.set_margin_top_pc(percentage),
-        };
-    }
-    if let Some(val_serde) = &style_serde.margin_bottom {
-        let val = val_serde.to_margin_units();
-        match val {
-            MarginUnits::Pixels(pixels) => style.set_margin_bottom_px(pixels),
-            MarginUnits::Percentage(percentage) => style.set_margin_bottom_pc(percentage),
-        };
-    }
-    if let Some(solid_override_serde) = &style_serde.solid_override {
-        let solid_override = solid_override_serde.to_solid();
-        match solid_override {
-            Solid::Fit => style.set_solid_fit(),
-            Solid::Fill => style.set_solid_fill(),
-        };
-    }
-    if let Some(aspect_ratio_w_over_h) = style_serde.aspect_ratio_w_over_h {
-        style.set_aspect_ratio(aspect_ratio_w_over_h, 1.0);
-    }
-    if let Some(val_serde) = &style_serde.self_halign {
-        let val = val_serde.to_alignment();
-        style.set_self_halign(val);
-    }
-    if let Some(val_serde) = &style_serde.self_valign {
-        let val = val_serde.to_alignment();
-        style.set_self_valign(val);
+
+        if let Some(background_color_serde) = &panel_style_serde.background_color {
+            style.set_background_color(background_color_serde.to_color());
+        }
+        if let Some(background_alpha) = panel_style_serde.background_alpha {
+            style.set_background_alpha(background_alpha);
+        }
+        if let Some(layout_type_serde) = &panel_style_serde.layout_type {
+            let layout_type = layout_type_serde.to_layout_type();
+            match layout_type {
+                LayoutType::Row => style.set_horizontal(),
+                LayoutType::Column => style.set_vertical(),
+            };
+        }
+        if let Some(val_serde) = &panel_style_serde.padding_left {
+            let val = val_serde.to_size_units();
+            match val {
+                SizeUnits::Pixels(pixels) => style.set_padding_left_px(pixels),
+                SizeUnits::Percentage(percentage) => style.set_padding_left_pc(percentage),
+                SizeUnits::Auto => style.set_padding_left_auto(),
+            };
+        }
+        if let Some(val_serde) = &panel_style_serde.padding_right {
+            let val = val_serde.to_size_units();
+            match val {
+                SizeUnits::Pixels(pixels) => style.set_padding_right_px(pixels),
+                SizeUnits::Percentage(percentage) => style.set_padding_right_pc(percentage),
+                SizeUnits::Auto => style.set_padding_right_auto(),
+            };
+        }
+        if let Some(val_serde) = &panel_style_serde.padding_top {
+            let val = val_serde.to_size_units();
+            match val {
+                SizeUnits::Pixels(pixels) => style.set_padding_top_px(pixels),
+                SizeUnits::Percentage(percentage) => style.set_padding_top_pc(percentage),
+                SizeUnits::Auto => style.set_padding_top_auto(),
+            };
+        }
+        if let Some(val_serde) = &panel_style_serde.padding_bottom {
+            let val = val_serde.to_size_units();
+            match val {
+                SizeUnits::Pixels(pixels) => style.set_padding_bottom_px(pixels),
+                SizeUnits::Percentage(percentage) => style.set_padding_bottom_pc(percentage),
+                SizeUnits::Auto => style.set_padding_bottom_auto(),
+            };
+        }
+        if let Some(val_serde) = &panel_style_serde.row_between {
+            let val = val_serde.to_size_units();
+            match val {
+                SizeUnits::Pixels(pixels) => style.set_row_between_px(pixels),
+                SizeUnits::Percentage(percentage) => style.set_row_between_pc(percentage),
+                SizeUnits::Auto => style.set_row_between_auto(),
+            };
+        }
+        if let Some(val_serde) = &panel_style_serde.col_between {
+            let val = val_serde.to_size_units();
+            match val {
+                SizeUnits::Pixels(pixels) => style.set_col_between_px(pixels),
+                SizeUnits::Percentage(percentage) => style.set_col_between_pc(percentage),
+                SizeUnits::Auto => style.set_col_between_auto(),
+            };
+        }
+        if let Some(val_serde) = &panel_style_serde.children_halign {
+            let val = val_serde.to_alignment();
+            style.set_children_halign(val);
+        }
+        if let Some(val_serde) = &panel_style_serde.children_valign {
+            let val = val_serde.to_alignment();
+            style.set_children_valign(val);
+        }
     }
 
-    // panel-specific
-    let WidgetStyleJson::Panel(panel_style_serde) = &style_serde.widget_style else {
-        panic!("Expected panel style");
-    };
-
-    if let Some(background_color_serde) = &panel_style_serde.background_color {
-        style.set_background_color(background_color_serde.to_color());
-    }
-    if let Some(background_alpha) = panel_style_serde.background_alpha {
-        style.set_background_alpha(background_alpha);
-    }
-    if let Some(layout_type_serde) = &panel_style_serde.layout_type {
-        let layout_type = layout_type_serde.to_layout_type();
-        match layout_type {
-            LayoutType::Row => style.set_horizontal(),
-            LayoutType::Column => style.set_vertical(),
-        };
-    }
-    if let Some(val_serde) = &panel_style_serde.padding_left {
-        let val = val_serde.to_size_units();
-        match val {
-            SizeUnits::Pixels(pixels) => style.set_padding_left_px(pixels),
-            SizeUnits::Percentage(percentage) => style.set_padding_left_pc(percentage),
-            SizeUnits::Auto => style.set_padding_left_auto(),
-        };
-    }
-    if let Some(val_serde) = &panel_style_serde.padding_right {
-        let val = val_serde.to_size_units();
-        match val {
-            SizeUnits::Pixels(pixels) => style.set_padding_right_px(pixels),
-            SizeUnits::Percentage(percentage) => style.set_padding_right_pc(percentage),
-            SizeUnits::Auto => style.set_padding_right_auto(),
-        };
-    }
-    if let Some(val_serde) = &panel_style_serde.padding_top {
-        let val = val_serde.to_size_units();
-        match val {
-            SizeUnits::Pixels(pixels) => style.set_padding_top_px(pixels),
-            SizeUnits::Percentage(percentage) => style.set_padding_top_pc(percentage),
-            SizeUnits::Auto => style.set_padding_top_auto(),
-        };
-    }
-    if let Some(val_serde) = &panel_style_serde.padding_bottom {
-        let val = val_serde.to_size_units();
-        match val {
-            SizeUnits::Pixels(pixels) => style.set_padding_bottom_px(pixels),
-            SizeUnits::Percentage(percentage) => style.set_padding_bottom_pc(percentage),
-            SizeUnits::Auto => style.set_padding_bottom_auto(),
-        };
-    }
-    if let Some(val_serde) = &panel_style_serde.row_between {
-        let val = val_serde.to_size_units();
-        match val {
-            SizeUnits::Pixels(pixels) => style.set_row_between_px(pixels),
-            SizeUnits::Percentage(percentage) => style.set_row_between_pc(percentage),
-            SizeUnits::Auto => style.set_row_between_auto(),
-        };
-    }
-    if let Some(val_serde) = &panel_style_serde.col_between {
-        let val = val_serde.to_size_units();
-        match val {
-            SizeUnits::Pixels(pixels) => style.set_col_between_px(pixels),
-            SizeUnits::Percentage(percentage) => style.set_col_between_pc(percentage),
-            SizeUnits::Auto => style.set_col_between_auto(),
-        };
-    }
-    if let Some(val_serde) = &panel_style_serde.children_halign {
-        let val = val_serde.to_alignment();
-        style.set_children_halign(val);
-    }
-    if let Some(val_serde) = &panel_style_serde.children_valign {
-        let val = val_serde.to_alignment();
-        style.set_children_valign(val);
-    }
-}
-
-fn style_serde_to_text_style(style_serde: &UiStyleJson, style: &mut TextStyleMut) {
-    // node-specific
-    if let Some(position_type_serde) = &style_serde.position_type {
-        let position_type = position_type_serde.to_position_type();
-        match position_type {
-            PositionType::Absolute => style.set_absolute(),
-            PositionType::Relative => style.set_relative(),
-        };
-    }
-    if let Some(val_serde) = &style_serde.width {
-        let val = val_serde.to_size_units();
-        match val {
-            SizeUnits::Pixels(pixels) => style.set_width_px(pixels),
-            SizeUnits::Percentage(percentage) => style.set_width_pc(percentage),
-            SizeUnits::Auto => style.set_width_auto(),
-        };
-    }
-    if let Some(val_serde) = &style_serde.height {
-        let val = val_serde.to_size_units();
-        match val {
-            SizeUnits::Pixels(pixels) => style.set_height_px(pixels),
-            SizeUnits::Percentage(percentage) => style.set_height_pc(percentage),
-            SizeUnits::Auto => style.set_height_auto(),
-        };
-    }
-    if let Some(val_serde) = &style_serde.width_min {
-        let val = val_serde.to_size_units();
-        match val {
-            SizeUnits::Pixels(pixels) => style.set_width_min_px(pixels),
-            SizeUnits::Percentage(percentage) => style.set_width_min_pc(percentage),
-            SizeUnits::Auto => style.set_width_min_auto(),
-        };
-    }
-    if let Some(val_serde) = &style_serde.width_max {
-        let val = val_serde.to_size_units();
-        match val {
-            SizeUnits::Pixels(pixels) => style.set_width_max_px(pixels),
-            SizeUnits::Percentage(percentage) => style.set_width_max_pc(percentage),
-            SizeUnits::Auto => style.set_width_max_auto(),
-        };
-    }
-    if let Some(val_serde) = &style_serde.height_min {
-        let val = val_serde.to_size_units();
-        match val {
-            SizeUnits::Pixels(pixels) => style.set_height_min_px(pixels),
-            SizeUnits::Percentage(percentage) => style.set_height_min_pc(percentage),
-            SizeUnits::Auto => style.set_height_min_auto(),
-        };
-    }
-    if let Some(val_serde) = &style_serde.height_max {
-        let val = val_serde.to_size_units();
-        match val {
-            SizeUnits::Pixels(pixels) => style.set_height_max_px(pixels),
-            SizeUnits::Percentage(percentage) => style.set_height_max_pc(percentage),
-            SizeUnits::Auto => style.set_height_max_auto(),
-        };
-    }
-    if let Some(val_serde) = &style_serde.margin_left {
-        let val = val_serde.to_margin_units();
-        match val {
-            MarginUnits::Pixels(pixels) => style.set_margin_left_px(pixels),
-            MarginUnits::Percentage(percentage) => style.set_margin_left_pc(percentage),
-        };
-    }
-    if let Some(val_serde) = &style_serde.margin_right {
-        let val = val_serde.to_margin_units();
-        match val {
-            MarginUnits::Pixels(pixels) => style.set_margin_right_px(pixels),
-            MarginUnits::Percentage(percentage) => style.set_margin_right_pc(percentage),
-        };
-    }
-    if let Some(val_serde) = &style_serde.margin_top {
-        let val = val_serde.to_margin_units();
-        match val {
-            MarginUnits::Pixels(pixels) => style.set_margin_top_px(pixels),
-            MarginUnits::Percentage(percentage) => style.set_margin_top_pc(percentage),
-        };
-    }
-    if let Some(val_serde) = &style_serde.margin_bottom {
-        let val = val_serde.to_margin_units();
-        match val {
-            MarginUnits::Pixels(pixels) => style.set_margin_bottom_px(pixels),
-            MarginUnits::Percentage(percentage) => style.set_margin_bottom_pc(percentage),
-        };
-    }
-    if let Some(solid_override_serde) = &style_serde.solid_override {
-        let solid_override = solid_override_serde.to_solid();
-        match solid_override {
-            Solid::Fit => style.set_solid_fit(),
-            Solid::Fill => style.set_solid_fill(),
-        };
-    }
-    if let Some(aspect_ratio_w_over_h) = style_serde.aspect_ratio_w_over_h {
-        style.set_aspect_ratio(aspect_ratio_w_over_h, 1.0);
-    }
-    if let Some(val_serde) = &style_serde.self_halign {
-        let val = val_serde.to_alignment();
-        style.set_self_halign(val);
-    }
-    if let Some(val_serde) = &style_serde.self_valign {
-        let val = val_serde.to_alignment();
-        style.set_self_valign(val);
+    fn to_text_style(&self, style: &mut TextStyleMut) {
+        // node-specific
+        if let Some(position_type_serde) = &self.position_type {
+            let position_type = position_type_serde.to_position_type();
+            match position_type {
+                PositionType::Absolute => style.set_absolute(),
+                PositionType::Relative => style.set_relative(),
+            };
+        }
+        if let Some(val_serde) = &self.width {
+            let val = val_serde.to_size_units();
+            match val {
+                SizeUnits::Pixels(pixels) => style.set_width_px(pixels),
+                SizeUnits::Percentage(percentage) => style.set_width_pc(percentage),
+                SizeUnits::Auto => style.set_width_auto(),
+            };
+        }
+        if let Some(val_serde) = &self.height {
+            let val = val_serde.to_size_units();
+            match val {
+                SizeUnits::Pixels(pixels) => style.set_height_px(pixels),
+                SizeUnits::Percentage(percentage) => style.set_height_pc(percentage),
+                SizeUnits::Auto => style.set_height_auto(),
+            };
+        }
+        if let Some(val_serde) = &self.width_min {
+            let val = val_serde.to_size_units();
+            match val {
+                SizeUnits::Pixels(pixels) => style.set_width_min_px(pixels),
+                SizeUnits::Percentage(percentage) => style.set_width_min_pc(percentage),
+                SizeUnits::Auto => style.set_width_min_auto(),
+            };
+        }
+        if let Some(val_serde) = &self.width_max {
+            let val = val_serde.to_size_units();
+            match val {
+                SizeUnits::Pixels(pixels) => style.set_width_max_px(pixels),
+                SizeUnits::Percentage(percentage) => style.set_width_max_pc(percentage),
+                SizeUnits::Auto => style.set_width_max_auto(),
+            };
+        }
+        if let Some(val_serde) = &self.height_min {
+            let val = val_serde.to_size_units();
+            match val {
+                SizeUnits::Pixels(pixels) => style.set_height_min_px(pixels),
+                SizeUnits::Percentage(percentage) => style.set_height_min_pc(percentage),
+                SizeUnits::Auto => style.set_height_min_auto(),
+            };
+        }
+        if let Some(val_serde) = &self.height_max {
+            let val = val_serde.to_size_units();
+            match val {
+                SizeUnits::Pixels(pixels) => style.set_height_max_px(pixels),
+                SizeUnits::Percentage(percentage) => style.set_height_max_pc(percentage),
+                SizeUnits::Auto => style.set_height_max_auto(),
+            };
+        }
+        if let Some(val_serde) = &self.margin_left {
+            let val = val_serde.to_margin_units();
+            match val {
+                MarginUnits::Pixels(pixels) => style.set_margin_left_px(pixels),
+                MarginUnits::Percentage(percentage) => style.set_margin_left_pc(percentage),
+            };
+        }
+        if let Some(val_serde) = &self.margin_right {
+            let val = val_serde.to_margin_units();
+            match val {
+                MarginUnits::Pixels(pixels) => style.set_margin_right_px(pixels),
+                MarginUnits::Percentage(percentage) => style.set_margin_right_pc(percentage),
+            };
+        }
+        if let Some(val_serde) = &self.margin_top {
+            let val = val_serde.to_margin_units();
+            match val {
+                MarginUnits::Pixels(pixels) => style.set_margin_top_px(pixels),
+                MarginUnits::Percentage(percentage) => style.set_margin_top_pc(percentage),
+            };
+        }
+        if let Some(val_serde) = &self.margin_bottom {
+            let val = val_serde.to_margin_units();
+            match val {
+                MarginUnits::Pixels(pixels) => style.set_margin_bottom_px(pixels),
+                MarginUnits::Percentage(percentage) => style.set_margin_bottom_pc(percentage),
+            };
+        }
+        if let Some(solid_override_serde) = &self.solid_override {
+            let solid_override = solid_override_serde.to_solid();
+            match solid_override {
+                Solid::Fit => style.set_solid_fit(),
+                Solid::Fill => style.set_solid_fill(),
+            };
+        }
+        if let Some(aspect_ratio_w_over_h) = self.aspect_ratio_w_over_h {
+            style.set_aspect_ratio(aspect_ratio_w_over_h, 1.0);
+        }
+        if let Some(val_serde) = &self.self_halign {
+            let val = val_serde.to_alignment();
+            style.set_self_halign(val);
+        }
+        if let Some(val_serde) = &self.self_valign {
+            let val = val_serde.to_alignment();
+            style.set_self_valign(val);
+        }
     }
 }
