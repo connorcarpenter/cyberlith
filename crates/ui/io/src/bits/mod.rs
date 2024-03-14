@@ -1,7 +1,5 @@
 use cfg_if::cfg_if;
 
-use ui::Ui;
-
 cfg_if! {
     if #[cfg(feature = "read_bits")] {
         mod read;
@@ -24,6 +22,7 @@ cfg_if! {
 
 use naia_serde::SerdeInternal as Serde;
 
+use ui::{Ui, WidgetKind};
 use asset_id::AssetId;
 
 // Actions
@@ -34,17 +33,154 @@ pub(crate) enum UiAction {
     // assetid
     TextIconAssetId(AssetId),
     // style
-    Style(),
+    Style(UiStyleBits),
     // node
-    Node(),
+    Node(UiNodeBits),
 }
 
 #[derive(Serde, Clone, PartialEq)]
-pub enum UiActionType {
+pub(crate) enum UiActionType {
     TextColor,
     TextIconAssetId,
     Style,
     Node,
 
     None,
+}
+
+// Style
+#[derive(Serde, Clone, PartialEq)]
+pub(crate) struct UiStyleBits {
+
+    widget_style: WidgetStyleBits,
+
+    position_type: Option<PositionTypeBits>,
+
+    width: Option<SizeUnitsBits>,
+    height: Option<SizeUnitsBits>,
+    width_min: Option<SizeUnitsBits>,
+    width_max: Option<SizeUnitsBits>,
+    height_min: Option<SizeUnitsBits>,
+    height_max: Option<SizeUnitsBits>,
+
+    margin_left: Option<MarginUnitsBits>,
+    margin_right: Option<MarginUnitsBits>,
+    margin_top: Option<MarginUnitsBits>,
+    margin_bottom: Option<MarginUnitsBits>,
+
+    solid_override: Option<SolidBits>,
+    aspect_ratio_w_over_h: Option<(u8, u8)>,
+
+    self_halign: Option<AlignmentBits>,
+    self_valign: Option<AlignmentBits>,
+}
+
+impl UiStyleBits {
+    pub(crate) fn widget_kind(&self) -> WidgetKind {
+        match &self.widget_style {
+            WidgetStyleBits::Panel(_) => WidgetKind::Panel,
+            WidgetStyleBits::Text(_) => WidgetKind::Text,
+        }
+    }
+}
+
+#[derive(Serde, Clone, PartialEq)]
+pub(crate) struct PanelStyleBits {
+    background_color: Option<(u8, u8, u8)>,
+    background_alpha: Option<u8>, // TODO: is this a good value type for this?
+
+    layout_type: Option<LayoutTypeBits>,
+
+    padding_left: Option<SizeUnitsBits>,
+    padding_right: Option<SizeUnitsBits>,
+    padding_top: Option<SizeUnitsBits>,
+    padding_bottom: Option<SizeUnitsBits>,
+
+    row_between: Option<SizeUnitsBits>,
+    col_between: Option<SizeUnitsBits>,
+    children_halign: Option<AlignmentBits>,
+    children_valign: Option<AlignmentBits>,
+}
+
+#[derive(Serde, Clone, PartialEq)]
+pub(crate) struct TextStyleBits {
+
+}
+
+#[derive(Serde, Clone, PartialEq)]
+pub(crate) enum WidgetStyleBits {
+    Panel(PanelStyleBits),
+    Text(TextStyleBits),
+}
+
+#[derive(Serde, Clone, PartialEq)]
+pub(crate) enum PositionTypeBits {
+    Absolute,
+    Relative,
+}
+
+#[derive(Serde, Clone, PartialEq)]
+pub(crate) enum SizeUnitsBits {
+    Pixels(u16), // TODO: is this a good value type for this?
+    Percent(u8), // TODO: is this a good value type for this?
+    Auto,
+}
+
+#[derive(Serde, Clone, PartialEq)]
+pub(crate) enum MarginUnitsBits {
+    Pixels(u16), // TODO: is this a good value type for this?
+    Percent(u8), // TODO: is this a good value type for this?
+}
+
+#[derive(Serde, Clone, PartialEq)]
+pub(crate) enum SolidBits {
+    Fit,
+    Fill,
+}
+
+#[derive(Serde, Clone, PartialEq)]
+pub(crate) enum AlignmentBits {
+    Start,
+    Center,
+    End,
+}
+
+#[derive(Serde, Clone, PartialEq)]
+pub(crate) enum LayoutTypeBits {
+    Row,
+    Column,
+}
+
+// Node
+
+#[derive(Serde, Clone, PartialEq)]
+pub(crate) struct UiNodeBits {
+    visible: bool,
+    style_ids: Vec<u8>, // TODO: is this a good value type for this? how many styles are we likely to have?
+    widget: WidgetBits,
+}
+
+impl UiNodeBits {
+    pub(crate) fn widget_kind(&self) -> WidgetKind {
+        match &self.widget {
+            WidgetBits::Panel(_) => WidgetKind::Panel,
+            WidgetBits::Text(_) => WidgetKind::Text,
+        }
+    }
+}
+
+#[derive(Serde, Clone, PartialEq)]
+pub(crate) enum WidgetBits {
+    Panel(PanelBits),
+    Text(TextBits),
+}
+
+#[derive(Serde, Clone, PartialEq)]
+pub(crate) struct PanelBits {
+    children: Vec<u8>, // TODO: is this a good value type for this? how many nodes are each likely to have?
+}
+
+#[derive(Serde, Clone, PartialEq)]
+pub(crate) struct TextBits {
+    text: String,
 }

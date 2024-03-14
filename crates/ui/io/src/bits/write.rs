@@ -43,13 +43,13 @@ fn actions_to_bytes(actions: Vec<UiAction>) -> Vec<u8> {
                 UiActionType::TextIconAssetId.ser(&mut bit_writer);
                 asset_id.as_u32().ser(&mut bit_writer);
             }
-            UiAction::Style() => {
+            UiAction::Style(style) => {
                 UiActionType::Style.ser(&mut bit_writer);
-                todo!()
+                style.ser(&mut bit_writer);
             }
-            UiAction::Node() => {
+            UiAction::Node(node) => {
                 UiActionType::Node.ser(&mut bit_writer);
-                todo!()
+                node.ser(&mut bit_writer);
             }
         }
     }

@@ -5,7 +5,7 @@ use asset_render::{AssetHandle, IconData};
 use render_api::base::Color;
 use ui::Ui;
 
-use crate::bits::{UiAction, UiActionType};
+use crate::bits::{UiAction, UiActionType, UiNodeBits, UiStyleBits};
 
 pub fn read_bits(data: Vec<u8>) -> Ui {
     let actions = bytes_to_actions(data).unwrap();
@@ -25,10 +25,10 @@ fn convert_actions_to_ui(actions: Vec<UiAction>) -> Ui {
                 let asset_handle = AssetHandle::<IconData>::new(asset_id);
                 ui.set_text_icon_handle(&asset_handle);
             }
-            UiAction::Style() => {
+            UiAction::Style(style) => {
                 todo!()
             }
-            UiAction::Node() => {
+            UiAction::Node(node) => {
                 todo!()
             }
         }
@@ -58,10 +58,12 @@ fn bytes_to_actions(bytes: Vec<u8>) -> Result<Vec<UiAction>, SerdeErr> {
                 actions.push(UiAction::TextIconAssetId(asset_id));
             }
             UiActionType::Style => {
-                actions.push(UiAction::Style());
+                let style = UiStyleBits::de(bit_reader)?;
+                actions.push(UiAction::Style(style));
             }
             UiActionType::Node => {
-                actions.push(UiAction::Node());
+                let node = UiNodeBits::de(bit_reader)?;
+                actions.push(UiAction::Node(node));
             }
             UiActionType::None => {
                 break;

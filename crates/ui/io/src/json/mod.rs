@@ -45,6 +45,8 @@ impl UiJson {
     }
 }
 
+// Style
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub(crate) struct UiStyleJson {
 
@@ -153,6 +155,8 @@ pub(crate) struct ColorJson {
     g: u8,
     b: u8,
 }
+
+// Node
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub(crate) struct UiNodeJson {
