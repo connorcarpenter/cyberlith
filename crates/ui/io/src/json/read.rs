@@ -1,7 +1,5 @@
 use std::collections::HashMap;
 
-use log::info;
-
 use asset_id::AssetId;
 use asset_render::{AssetHandle, IconData};
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
@@ -28,7 +26,7 @@ fn convert_nodes_recurse<'a>(
             let child_index = *child_index;
             let child_node_serde = &nodes[child_index];
 
-            info!("{} - child_node_serde: {:?}", child_index, child_node_serde);
+            //info!("{} - child_node_serde: {:?}", child_index, child_node_serde);
 
             match child_node_serde.widget_kind() {
                 WidgetKind::Panel => {
@@ -80,12 +78,12 @@ impl UiJson {
         let text_icon_asset_handle = AssetHandle::<IconData>::new(text_icon_asset_id);
         ui.set_text_icon_handle(&text_icon_asset_handle);
 
+        // styles
         let mut style_index_to_id = HashMap::new();
 
-        // styles
         for (style_index, style_serde) in styles.iter().enumerate() {
 
-            info!("style_serde: {}, {:?}", style_index, style_serde);
+            //info!("style_serde: {}, {:?}", style_index, style_serde);
 
             let style_id = match style_serde.widget_kind() {
                 WidgetKind::Panel => ui.create_panel_style(|style| {
@@ -100,7 +98,7 @@ impl UiJson {
 
         // nodes
         let root_node_serde = nodes.first().unwrap();
-        info!("0 - root_node_serde: {:?}", root_node_serde);
+        //info!("0 - root_node_serde: {:?}", root_node_serde);
 
         let mut root_mut = ui.root_mut();
         root_mut.set_visible(root_node_serde.visible);
