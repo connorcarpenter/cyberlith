@@ -13,6 +13,8 @@ use super::{
     TextStyleJson, LayoutTypeJson, TextJson
 };
 
+// conversion
+
 impl UiJson {
 
     pub(crate) fn from_ui(ui: &Ui) -> Self {
@@ -48,8 +50,6 @@ impl UiJson {
         me
     }
 }
-
-
 
 impl UiStyleJson {
     fn from_style(style: &NodeStyle) -> Self {
