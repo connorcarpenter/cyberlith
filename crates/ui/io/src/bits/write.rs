@@ -10,14 +10,20 @@ pub fn write_bits(ui: &Ui) -> Vec<u8> {
 }
 
 fn convert_ui_to_actions(ui: &Ui) -> Vec<UiAction> {
+    let mut output = Vec::new();
+
     // write text color
+    let text_color = ui.get_text_color();
+    output.push(UiAction::TextColor(text_color.r, text_color.g, text_color.b));
 
     // write text icon AssetId
+    let text_icon_asset_id = ui.get_text_icon_handle().asset_id();
+    output.push(UiAction::TextIconAssetId(text_icon_asset_id));
 
     // write styles
+    todo!()
 
     // write nodes
-
     todo!()
 }
 

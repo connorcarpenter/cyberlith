@@ -1,6 +1,8 @@
 use naia_serde::{BitReader, SerdeInternal as Serde, SerdeErr};
 
 use asset_id::AssetId;
+use asset_render::{AssetHandle, IconData};
+use render_api::base::Color;
 use ui::Ui;
 
 use crate::bits::{UiAction, UiActionType};
@@ -11,15 +13,28 @@ pub fn read_bits(data: Vec<u8>) -> Ui {
 }
 
 fn convert_actions_to_ui(actions: Vec<UiAction>) -> Ui {
-    // read text color
+    let mut ui = Ui::new();
 
-    // read text icon AssetId
+    for action in actions {
+        match action {
+            UiAction::TextColor(r, g, b) => {
+                let color = Color::new(r, g, b);
+                ui.set_text_color(color);
+            }
+            UiAction::TextIconAssetId(asset_id) => {
+                let asset_handle = AssetHandle::<IconData>::new(asset_id);
+                ui.set_text_icon_handle(&asset_handle);
+            }
+            UiAction::Style() => {
+                todo!()
+            }
+            UiAction::Node() => {
+                todo!()
+            }
+        }
+    }
 
-    // read styles
-
-    // read nodes
-
-    todo!()
+    ui
 }
 
 fn bytes_to_actions(bytes: Vec<u8>) -> Result<Vec<UiAction>, SerdeErr> {
