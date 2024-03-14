@@ -6,10 +6,7 @@ use asset_id::{AssetId, AssetType};
 use render_api::base::{CpuMaterial, CpuMesh, CpuSkin};
 use storage::Storage;
 
-use crate::{
-    asset_storage::AssetStorage, AnimationData, AssetHandle, IconData, MeshData, ModelData,
-    PaletteData, SceneData, SkeletonData, SkinData, TypedAssetId,
-};
+use crate::{asset_storage::AssetStorage, AnimationData, AssetHandle, IconData, MeshData, ModelData, PaletteData, SceneData, SkeletonData, SkinData, TypedAssetId, UiData};
 
 pub(crate) struct ProcessedAssetStore {
     pub(crate) meshes: AssetStorage<MeshData>,
@@ -20,6 +17,7 @@ pub(crate) struct ProcessedAssetStore {
     pub(crate) skins: AssetStorage<SkinData>,
     pub(crate) models: AssetStorage<ModelData>,
     pub(crate) scenes: AssetStorage<SceneData>,
+    pub(crate) uis: AssetStorage<UiData>,
 
     // mesh file name, skin handle
     queued_meshes: Vec<AssetHandle<MeshData>>,
@@ -43,6 +41,7 @@ impl Default for ProcessedAssetStore {
             skins: AssetStorage::default(),
             models: AssetStorage::default(),
             scenes: AssetStorage::default(),
+            uis: AssetStorage::default(),
 
             queued_meshes: Vec::new(),
             queued_palettes: Vec::new(),
@@ -172,6 +171,16 @@ impl ProcessedAssetStore {
                     scene_data.load_dependencies(handle, &mut dependencies);
                 }
             }
+            AssetType::Ui => {
+                let handle = AssetHandle::<UiData>::new(*asset_id);
+                if !self.uis.has(&handle) {
+                    let bytes = asset_data_store.get(asset_id).unwrap();
+                    let ui_data = UiData::from_bytes(bytes);
+                    self.uis.insert(handle, ui_data);
+                    let ui_data = self.uis.get(&handle).unwrap();
+                    ui_data.load_dependencies(handle, &mut dependencies);
+                }
+            }
         };
 
         if !dependencies.is_empty() {
@@ -269,6 +278,11 @@ impl ProcessedAssetStore {
             TypedAssetId::Scene(principal_id) => {
                 let prinicipal_handle = AssetHandle::<SceneData>::new(principal_id);
                 let principal_data = self.scenes.get_mut(&prinicipal_handle).unwrap();
+                principal_data.finish_dependency(dependency_typed_id);
+            }
+            TypedAssetId::Ui(principal_id) => {
+                let principal_handle = AssetHandle::<UiData>::new(principal_id);
+                let principal_data = self.uis.get_mut(&principal_handle).unwrap();
                 principal_data.finish_dependency(dependency_typed_id);
             }
         }

@@ -5,6 +5,11 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 
+use naia_serde::{BitWriter, Serde};
+
+use asset_render::AssetMetadataSerde;
+use asset_id::ETag;
+
 use game_engine::{
     asset::{
         embedded_asset_event, AssetHandle, AssetId, AssetManager, EmbeddedAssetEvent, IconData,
@@ -22,6 +27,7 @@ use game_engine::{
     },
     ui::Ui,
 };
+use game_engine::asset::AssetType;
 
 use crate::app::{
     resources::Global,
@@ -80,21 +86,23 @@ fn setup_ui(commands: &mut Commands) -> Entity {
     let ui_bytes = json_write_ui(ui);
     info!("json byte count: {:?}", ui_bytes.len());
 
-    // write to file
-    std::fs::write(format!("{}.json", name), &ui_bytes).unwrap();
+    // write JSON to file
+    std::fs::write(format!("output/{}.json", name), &ui_bytes).unwrap();
 
     let ui = json_read_ui(ui_bytes);
 
     let ui_bytes = bits_write_ui(ui);
     info!("bits byte count: {:?}", ui_bytes.len());
 
-    // write to file
-    std::fs::write(name, &ui_bytes).unwrap();
+    // write bit-packed data to file
+    std::fs::write(format!("output/{}", name), &ui_bytes).unwrap();
 
-    // write meta to file
-    let asset_meta = asset_render::AssetMetadataSerde::new(ETag::new_random(), AssetType::Ui);
-    let meta_bytes: Vec<u8> = todo!("write meta to file");
-    std::fs::write(format!("{}.meta", name), &meta_bytes).unwrap();
+    // write metadata to file
+    let ui_metadata = AssetMetadataSerde::new(ETag::new_random(), AssetType::Ui);
+    let mut bit_writer = BitWriter::new();
+    ui_metadata.ser(&mut bit_writer);
+    let metadata_bytes = bit_writer.to_bytes();
+    std::fs::write(format!("output/{}.meta", name), &metadata_bytes).unwrap();
 
     let ui = bits_read_ui(ui_bytes);
 

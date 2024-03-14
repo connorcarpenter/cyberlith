@@ -15,6 +15,7 @@ pub enum AssetType {
     Skin,
     Model,
     Scene,
+    Ui,
 }
 
 impl AssetType {
@@ -28,6 +29,7 @@ impl AssetType {
             "skin" => Some(Self::Skin),
             "model" => Some(Self::Model),
             "scene" => Some(Self::Scene),
+            "ui" => Some(Self::Ui),
             _ => None,
         }
     }

@@ -7,10 +7,7 @@ use render_api::{
 };
 use storage::Handle;
 
-use crate::{
-    asset_dependency::AssetComponentHandle, processed_asset_store::ProcessedAssetStore,
-    AnimationData, AssetHandle, IconData, MeshData, ModelData, SceneData, SkinData,
-};
+use crate::{asset_dependency::AssetComponentHandle, processed_asset_store::ProcessedAssetStore, AnimationData, AssetHandle, IconData, MeshData, ModelData, SceneData, SkinData, UiData};
 
 pub(crate) struct AssetRenderer;
 
@@ -374,5 +371,45 @@ impl AssetRenderer {
                 }
             }
         }
+    }
+
+    pub(crate) fn draw_ui(
+        render_frame: &mut RenderFrame,
+        render_layer_opt: Option<&RenderLayer>,
+        asset_store: &ProcessedAssetStore,
+        ui_handle: &AssetHandle<UiData>,
+    ) {
+        let Some(ui_data) = asset_store.uis.get(ui_handle) else {
+            warn!("ui data not loaded 1: {:?}", ui_handle.asset_id());
+            return;
+        };
+        // let Some(model_components) = ui_data.get_components_ref() else {
+        //     // not yet loaded all
+        //     return;
+        // };
+        // for (skin_or_scene_handle, mut component_transform) in model_components {
+        //     component_transform = component_transform.multiply(parent_transform);
+        //
+        //     match skin_or_scene_handle {
+        //         AssetComponentHandle::Skin(skin_handle) => {
+        //             Self::draw_skin(
+        //                 render_frame,
+        //                 render_layer_opt,
+        //                 asset_store,
+        //                 &skin_handle,
+        //                 &component_transform,
+        //             );
+        //         }
+        //         AssetComponentHandle::Scene(scene_handle) => {
+        //             Self::draw_scene(
+        //                 render_frame,
+        //                 render_layer_opt,
+        //                 asset_store,
+        //                 &scene_handle,
+        //                 &component_transform,
+        //             );
+        //         }
+        //     }
+        // }
     }
 }

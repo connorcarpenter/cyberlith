@@ -4,9 +4,7 @@ use bevy_ecs::component::Component;
 
 use asset_id::{AssetId, AssetType};
 
-use crate::{
-    AnimationData, IconData, MeshData, ModelData, PaletteData, SceneData, SkeletonData, SkinData,
-};
+use crate::{AnimationData, IconData, MeshData, ModelData, PaletteData, SceneData, SkeletonData, SkinData, UiData};
 
 #[derive(Clone, Copy, Eq, PartialEq, Hash)]
 pub enum TypedAssetId {
@@ -18,6 +16,7 @@ pub enum TypedAssetId {
     Skin(AssetId),
     Model(AssetId),
     Scene(AssetId),
+    Ui(AssetId),
 }
 
 impl TypedAssetId {
@@ -31,6 +30,7 @@ impl TypedAssetId {
             AssetType::Skin => Self::Skin(asset_id),
             AssetType::Model => Self::Model(asset_id),
             AssetType::Scene => Self::Scene(asset_id),
+            AssetType::Ui => Self::Ui(asset_id),
         }
     }
 
@@ -44,6 +44,7 @@ impl TypedAssetId {
             Self::Skin(id) => *id,
             Self::Model(id) => *id,
             Self::Scene(id) => *id,
+            Self::Ui(id) => *id,
         }
     }
 
@@ -57,6 +58,7 @@ impl TypedAssetId {
             Self::Skin(_) => AssetType::Skin,
             Self::Model(_) => AssetType::Model,
             Self::Scene(_) => AssetType::Scene,
+            Self::Ui(_) => AssetType::Ui,
         }
     }
 }
@@ -178,6 +180,15 @@ impl From<TypedAssetId> for AssetHandle<IconData> {
     }
 }
 
+impl From<TypedAssetId> for AssetHandle<UiData> {
+    fn from(typed_asset_id: TypedAssetId) -> Self {
+        let TypedAssetId::Ui(asset_id) = typed_asset_id else {
+            panic!("expected ui id");
+        };
+        Self::new(asset_id)
+    }
+}
+
 // AssetHandle -> TypedAssetId
 
 impl From<AssetHandle<SkeletonData>> for TypedAssetId {
@@ -225,5 +236,11 @@ impl From<AssetHandle<ModelData>> for TypedAssetId {
 impl From<AssetHandle<IconData>> for TypedAssetId {
     fn from(handle: AssetHandle<IconData>) -> Self {
         Self::new(handle.asset_id, AssetType::Icon)
+    }
+}
+
+impl From<AssetHandle<UiData>> for TypedAssetId {
+    fn from(handle: AssetHandle<UiData>) -> Self {
+        Self::new(handle.asset_id, AssetType::Ui)
     }
 }
