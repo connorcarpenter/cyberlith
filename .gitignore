@@ -10,6 +10,8 @@ node_modules
 /apps/client/assets
 /apps/launcher/target
 /apps/launcher/assets
+/apps/ui_editor/target
+/apps/ui_editor/assets
 /apps/editor/client/target
 /apps/editor/server/target
 /apps/automation/cli/target

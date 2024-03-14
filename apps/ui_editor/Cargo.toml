@@ -1,0 +1,32 @@
+[package]
+name = "ui_editor"
+version = "0.1.0"
+authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
+workspace = "../.."
+edition = "2021"
+publish = false
+
+[features]
+local = [ "game_engine/local" ]
+prod = [ "game_engine/prod" ]
+gl_renderer = [ "game_engine/gl_renderer" ]
+wgpu_renderer = [ "game_engine/wgpu_renderer" ]
+
+[[bin]]
+name = "ui_editor"
+path = "src/main.rs"
+
+[dependencies]
+# Internal
+# goal is to have ONLY game_engine here!!!
+game_engine = { path = "../../crates/engine" }
+naia-serde = { path = "../../../naia/shared/serde" }
+ui_io = { path = "../../crates/ui/io", features = [ "read_json", "write_json", "read_bits", "write_bits" ] }
+
+# External
+bevy_app = { version = "0.13", default-features=false }
+bevy_ecs = { version = "0.13", default-features=false }
+bevy_log = { version = "0.13", default-features=false }
+
+rand = { version = "0.8.5" }
+cfg-if = { version = "1.0" }
