@@ -9,7 +9,7 @@ members = [
     "apps/automation/cli",
     "apps/automation/lib",
     "apps/automation/crates/vultr",
-    "apps/engine",
+    "crates/engine",
     "apps/orchestrator",
     "apps/orchestrator/http_proto",
     "apps/region",

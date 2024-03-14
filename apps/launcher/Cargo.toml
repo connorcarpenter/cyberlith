@@ -24,7 +24,7 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 # Internal
 # goal is to have ONLY game_engine here!!!
-game_engine = { path = "../engine" }
+game_engine = { path = "../../crates/engine" }
 naia-serde = { path = "../../../naia/shared/serde" }
 ui_io = { path = "../../crates/ui/io", features = [ "read_json", "write_json", "read_bits", "write_bits" ] }
 
