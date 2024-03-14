@@ -1,5 +1,5 @@
 
-use crate::{text::TextStyleRef, style::{WidgetStyle, NodeStyle, StyleId}, widget::Widget, NodeId, panel::{Panel, PanelStyle, PanelStyleRef}};
+use crate::{style::{WidgetStyle, NodeStyle, StyleId}, widget::Widget, NodeId, panel::{Panel, PanelStyle, PanelStyleRef}};
 
 pub struct UiStore {
     pub styles: Vec<NodeStyle>,
@@ -101,10 +101,6 @@ impl UiStore {
 
     pub(crate) fn panel_style_ref(&self, node_id: &NodeId) -> PanelStyleRef {
         PanelStyleRef::new(self, *node_id)
-    }
-
-    pub fn text_style_ref(&self, node_id: &NodeId) -> TextStyleRef {
-        TextStyleRef::new(self, *node_id)
     }
 }
 
