@@ -1,8 +1,6 @@
 use bevy_ecs::{
-    component::Component,
     entity::Entity,
     event::EventWriter,
-    prelude::{Local, With},
     system::{Commands, Query, Res, ResMut},
 };
 use bevy_log::info;
@@ -13,16 +11,15 @@ use game_engine::{
     },
     math::Vec3,
     render::{
-        base::{Color, CpuMaterial, CpuMesh},
+        base::Color,
         components::{
-            AmbientLight, Camera, CameraBundle, ClearOperation, DirectionalLight,
-            OrthographicProjection, PerspectiveProjection, PointLight, Projection, RenderLayer,
-            RenderLayers, RenderObjectBundle, RenderTarget, Transform, Viewport, Visibility,
+            AmbientLight, Camera, CameraBundle, ClearOperation,
+            OrthographicProjection, Projection, RenderLayer,
+            RenderLayers, RenderTarget, Transform, Viewport,
         },
-        resources::{RenderFrame, Time},
-        shapes, Window,
+        resources::RenderFrame,
+        Window,
     },
-    storage::{Handle, Storage},
     ui::Ui,
 };
 
@@ -46,7 +43,7 @@ pub fn scene_setup(
 
 fn setup_ui(commands: &mut Commands) -> Entity {
     // render_layer
-    let layer = RenderLayers::layer(1);
+    let layer = RenderLayers::layer(0);
 
     // ambient light
     commands
