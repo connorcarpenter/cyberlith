@@ -42,6 +42,9 @@ pub fn scene_setup(
 }
 
 fn setup_ui(commands: &mut Commands) -> Entity {
+
+    let name = "main"; // TODO: clean this up
+
     // render_layer
     let layer = RenderLayers::layer(0);
 
@@ -68,7 +71,7 @@ fn setup_ui(commands: &mut Commands) -> Entity {
         .insert(layer)
         .id();
 
-    // ui
+    // ui serde
 
     let text_handle = AssetHandle::<IconData>::new(AssetId::from_str("34mvvk").unwrap()); // TODO: use some kind of catalog
 
@@ -76,10 +79,23 @@ fn setup_ui(commands: &mut Commands) -> Entity {
 
     let ui_bytes = json_write_ui(ui);
     info!("json byte count: {:?}", ui_bytes.len());
+
+    // write to file
+    std::fs::write(format!("{}.json", name), &ui_bytes).unwrap();
+
     let ui = json_read_ui(ui_bytes);
 
     let ui_bytes = bits_write_ui(ui);
     info!("bits byte count: {:?}", ui_bytes.len());
+
+    // write to file
+    std::fs::write(name, &ui_bytes).unwrap();
+
+    // write meta to file
+    let asset_meta = asset_render::AssetMetadataSerde::new(ETag::new_random(), AssetType::Ui);
+    let meta_bytes: Vec<u8> = todo!("write meta to file");
+    std::fs::write(format!("{}.meta", name), &meta_bytes).unwrap();
+
     let ui = bits_read_ui(ui_bytes);
 
     let _ui_entity = commands.spawn(ui).insert(layer).id();

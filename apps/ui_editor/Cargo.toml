@@ -22,6 +22,7 @@ path = "src/main.rs"
 game_engine = { path = "../../crates/engine" }
 naia-serde = { path = "../../../naia/shared/serde" }
 ui_io = { path = "../../crates/ui/io", features = [ "read_json", "write_json", "read_bits", "write_bits" ] }
+asset_render = { path = "../../crates/asset/render" }
 
 # External
 bevy_app = { version = "0.13", default-features=false }
