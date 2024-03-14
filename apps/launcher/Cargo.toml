@@ -26,7 +26,7 @@ crate-type = ["cdylib", "rlib"]
 # goal is to have ONLY game_engine here!!!
 game_engine = { path = "../engine" }
 naia-serde = { path = "../../../naia/shared/serde" }
-ui_io = { path = "../../crates/ui/io", features = [ "read_json", "write_json" ] }
+ui_io = { path = "../../crates/ui/io", features = [ "read_json", "write_json", "read_bits", "write_bits" ] }
 
 # External
 bevy_app = { version = "0.13", default-features=false }

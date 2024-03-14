@@ -25,7 +25,8 @@ use game_engine::{
     ui::Ui,
 };
 
-use crate::app::{resources::Global, systems::ui::{init_ui, read_ui, write_ui}};
+use crate::app::{resources::Global, systems::ui::{init_ui, json_read_ui, json_write_ui}};
+use crate::app::systems::ui::{bits_read_ui, bits_write_ui};
 
 #[derive(Component)]
 pub struct CubeMarker;
@@ -78,8 +79,10 @@ fn setup_ui(commands: &mut Commands) -> Entity {
     let text_handle = AssetHandle::<IconData>::new(AssetId::from_str("34mvvk").unwrap()); // TODO: use some kind of catalog
 
     let ui = init_ui(&text_handle);
-    let ui_bytes = write_ui(ui);
-    let ui = read_ui(ui_bytes);
+    let ui_bytes = json_write_ui(ui);
+    let ui = json_read_ui(ui_bytes);
+    let ui_bytes = bits_write_ui(ui);
+    let ui = bits_read_ui(ui_bytes);
 
     let _ui_entity = commands.spawn(ui).insert(layer).id();
 
