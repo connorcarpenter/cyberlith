@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use naia_serde::{BitReader, SerdeInternal as Serde, SerdeErr};
+use naia_serde::{BitReader, SerdeErr, SerdeInternal as Serde};
 
 use asset_id::AssetId;
 use asset_render::{AssetHandle, IconData};
@@ -8,7 +8,10 @@ use render_api::base::Color;
 use ui::{PanelMut, PanelStyleMut, StyleId, TextStyleMut, Ui, WidgetKind};
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 
-use crate::bits::{AlignmentBits, LayoutTypeBits, MarginUnitsBits, PanelBits, PositionTypeBits, SizeUnitsBits, SolidBits, UiAction, UiActionType, UiNodeBits, UiStyleBits, WidgetBits, WidgetStyleBits};
+use crate::bits::{
+    AlignmentBits, LayoutTypeBits, MarginUnitsBits, PanelBits, PositionTypeBits, SizeUnitsBits,
+    SolidBits, UiAction, UiActionType, UiNodeBits, UiStyleBits, WidgetBits, WidgetStyleBits,
+};
 
 pub fn read_bits(data: Vec<u8>) -> Ui {
     let actions = bytes_to_actions(data).unwrap();
@@ -111,7 +114,7 @@ fn convert_nodes_recurse<'a>(
     style_index_to_id: &HashMap<usize, StyleId>,
     nodes: &Vec<UiNodeBits>,
     panel_serde: &PanelBits,
-    panel_mut: &'a mut PanelMut<'a>
+    panel_mut: &'a mut PanelMut<'a>,
 ) {
     panel_mut.contents(|c| {
         for child_index in &panel_serde.children {
@@ -132,7 +135,12 @@ fn convert_nodes_recurse<'a>(
                     let WidgetBits::Panel(child_panel_serde) = &child_node_serde.widget else {
                         panic!("Expected panel widget");
                     };
-                    convert_nodes_recurse(style_index_to_id, nodes, child_panel_serde, &mut child_panel_mut);
+                    convert_nodes_recurse(
+                        style_index_to_id,
+                        nodes,
+                        child_panel_serde,
+                        &mut child_panel_mut,
+                    );
                 }
                 WidgetKind::Text => {
                     let WidgetBits::Text(child_text_serde) = &child_node_serde.widget else {
@@ -167,12 +175,12 @@ impl SizeUnitsBits {
                 let val: u64 = val.to();
                 let val: f32 = val as f32;
                 SizeUnits::Pixels(val)
-            },
+            }
             Self::Percent(val) => {
                 let val: u64 = val.to();
                 let val: f32 = val as f32;
                 SizeUnits::Percentage(val)
-            },
+            }
             Self::Auto => SizeUnits::Auto,
         }
     }
@@ -185,12 +193,12 @@ impl MarginUnitsBits {
                 let val: u64 = val.to();
                 let val: f32 = val as f32;
                 MarginUnits::Pixels(val)
-            },
+            }
             Self::Percent(val) => {
                 let val: u64 = val.to();
                 let val: f32 = val as f32;
                 MarginUnits::Percentage(val)
-            },
+            }
         }
     }
 }

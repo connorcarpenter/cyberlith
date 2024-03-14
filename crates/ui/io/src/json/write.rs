@@ -1,24 +1,22 @@
 use std::collections::HashMap;
 
-use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 use render_api::base::Color;
 use ui::{
-    UiNode, WidgetKind, PanelStyle, Panel, NodeStyle,StyleId,
-    WidgetStyle, TextStyle, Text, Ui, Widget
+    NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Ui, UiNode, Widget, WidgetKind,
+    WidgetStyle,
 };
+use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 
 use super::{
-    UiNodeJson, PanelJson, WidgetJson, UiJson, ColorJson, UiStyleJson, SizeUnitsJson,
-    PositionTypeJson, WidgetStyleJson, MarginUnitsJson, SolidJson, AlignmentJson, PanelStyleJson,
-    TextStyleJson, LayoutTypeJson, TextJson
+    AlignmentJson, ColorJson, LayoutTypeJson, MarginUnitsJson, PanelJson, PanelStyleJson,
+    PositionTypeJson, SizeUnitsJson, SolidJson, TextJson, TextStyleJson, UiJson, UiNodeJson,
+    UiStyleJson, WidgetJson, WidgetStyleJson,
 };
 
 // conversion
 
 impl UiJson {
-
     pub(crate) fn from_ui(ui: &Ui) -> Self {
-
         let mut style_id_to_index = HashMap::new();
 
         let text_color = ColorJson::from_color(ui.get_text_color());
@@ -44,7 +42,8 @@ impl UiJson {
 
         // nodes
         for node in ui.store.nodes.iter() {
-            me.nodes.push(UiNodeJson::from_node(&style_id_to_index, node));
+            me.nodes
+                .push(UiNodeJson::from_node(&style_id_to_index, node));
         }
 
         me
@@ -56,7 +55,9 @@ impl UiStyleJson {
         Self {
             widget_style: WidgetStyleJson::from_style(&style.widget_style),
 
-            position_type: style.position_type.map(PositionTypeJson::from_position_type),
+            position_type: style
+                .position_type
+                .map(PositionTypeJson::from_position_type),
 
             width: style.width.map(SizeUnitsJson::from_size_units),
             height: style.height.map(SizeUnitsJson::from_size_units),
@@ -111,9 +112,7 @@ impl PanelStyleJson {
 
 impl TextStyleJson {
     fn from_text_style(_style: &TextStyle) -> Self {
-        Self {
-
-        }
+        Self {}
     }
 }
 
@@ -209,11 +208,11 @@ impl WidgetJson {
             WidgetKind::Panel => {
                 let panel = UiNode::downcast_ref::<Panel>(widget).unwrap();
                 Self::Panel(PanelJson::from_panel(panel))
-            },
+            }
             WidgetKind::Text => {
                 let text = UiNode::downcast_ref::<Text>(widget).unwrap();
                 Self::Text(TextJson::from_text(text))
-            },
+            }
         }
     }
 }

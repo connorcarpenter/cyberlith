@@ -1,5 +1,9 @@
-
-use crate::{style::{WidgetStyle, NodeStyle, StyleId}, widget::Widget, NodeId, panel::{Panel, PanelStyle, PanelStyleRef}};
+use crate::{
+    panel::{Panel, PanelStyle, PanelStyleRef},
+    style::{NodeStyle, StyleId, WidgetStyle},
+    widget::Widget,
+    NodeId,
+};
 
 pub struct UiStore {
     pub styles: Vec<NodeStyle>,

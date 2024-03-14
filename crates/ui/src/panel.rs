@@ -3,18 +3,18 @@ use std::any::Any;
 use bevy_log::warn;
 
 use asset_render::AssetManager;
-use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 use render_api::{
     base::{Color, CpuMaterial},
     components::{RenderLayer, Transform},
     resources::RenderFrame,
 };
 use storage::Handle;
+use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 
 use crate::{
     cache::LayoutCache,
-    node::{WidgetKind, UiStore, UiNode},
-    style::{WidgetStyle, NodeStyle, StyleId},
+    node::{UiNode, UiStore, WidgetKind},
+    style::{NodeStyle, StyleId, WidgetStyle},
     text::{Text, TextMut},
     ui::draw_node,
     ui::Globals,
@@ -142,7 +142,6 @@ impl PanelStyle {
     }
 
     pub(crate) fn set_background_alpha(&mut self, val: f32) {
-
         // validate
         if val < 0.0 || val > 1.0 {
             panic!("background_alpha must be between 0.0 and 1.0");
@@ -246,7 +245,6 @@ pub struct PanelStyleRef<'a> {
 }
 
 impl<'a> PanelStyleRef<'a> {
-
     pub(crate) fn new(store: &'a UiStore, node_id: NodeId) -> Self {
         Self { store, node_id }
     }
@@ -283,10 +281,7 @@ pub struct PanelStyleMut<'a> {
 
 impl<'a> PanelStyleMut<'a> {
     pub(crate) fn new(ui: &'a mut Ui, style_id: StyleId) -> Self {
-        Self {
-            ui,
-            style_id,
-        }
+        Self { ui, style_id }
     }
 
     fn get_style_mut(&mut self) -> &mut NodeStyle {

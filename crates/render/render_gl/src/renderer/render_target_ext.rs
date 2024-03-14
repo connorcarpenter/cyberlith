@@ -97,11 +97,7 @@ fn render<'a>(
     let vertex_shader_source = vertex_shader_source(lights);
     Context::get()
         .program(vertex_shader_source, fragment_shader.source, |program| {
-            gpu_material_manager.use_uniforms(
-                program,
-                camera_transform,
-                lights,
-            );
+            gpu_material_manager.use_uniforms(program, camera_transform, lights);
             gpu_skin_manager.use_uniforms(program);
 
             program.use_uniform(

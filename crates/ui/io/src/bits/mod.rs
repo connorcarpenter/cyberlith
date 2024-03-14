@@ -22,8 +22,8 @@ cfg_if! {
 
 use naia_serde::{SerdeInternal as Serde, UnsignedInteger, UnsignedVariableInteger};
 
-use ui::{Ui, WidgetKind};
 use asset_id::AssetId;
+use ui::{Ui, WidgetKind};
 
 // Actions
 #[derive(Clone)]
@@ -51,7 +51,6 @@ pub(crate) enum UiActionType {
 // Style
 #[derive(Serde, Clone, PartialEq)]
 pub(crate) struct UiStyleBits {
-
     widget_style: WidgetStyleBits,
 
     position_type: Option<PositionTypeBits>,
@@ -103,9 +102,7 @@ pub(crate) struct PanelStyleBits {
 }
 
 #[derive(Serde, Clone, PartialEq)]
-pub(crate) struct TextStyleBits {
-
-}
+pub(crate) struct TextStyleBits {}
 
 #[derive(Serde, Clone, PartialEq)]
 pub(crate) enum WidgetStyleBits {
@@ -129,7 +126,7 @@ pub(crate) enum SizeUnitsBits {
 #[derive(Serde, Clone, PartialEq)]
 pub(crate) enum MarginUnitsBits {
     Pixels(UnsignedVariableInteger<7>), // TODO: is this a good value type for this?
-    Percent(UnsignedInteger<7>), // TODO: is this a good value type for this?
+    Percent(UnsignedInteger<7>),        // TODO: is this a good value type for this?
 }
 
 #[derive(Serde, Clone, PartialEq)]

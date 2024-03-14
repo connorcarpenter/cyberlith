@@ -51,7 +51,6 @@ impl Node for NodeId {
     }
 
     fn layout_type(&self, store: &UiStore) -> Option<LayoutType> {
-
         if store.node_kind(self) != WidgetKind::Panel {
             return None;
         }
@@ -200,7 +199,6 @@ impl Node for NodeId {
     }
 
     fn padding_left(&self, store: &UiStore) -> Option<SizeUnits> {
-
         if store.node_kind(self) != WidgetKind::Panel {
             return None;
         }
@@ -217,7 +215,6 @@ impl Node for NodeId {
     }
 
     fn padding_right(&self, store: &UiStore) -> Option<SizeUnits> {
-
         if store.node_kind(self) != WidgetKind::Panel {
             return None;
         }
@@ -234,7 +231,6 @@ impl Node for NodeId {
     }
 
     fn padding_top(&self, store: &UiStore) -> Option<SizeUnits> {
-
         if store.node_kind(self) != WidgetKind::Panel {
             return None;
         }
@@ -251,7 +247,6 @@ impl Node for NodeId {
     }
 
     fn padding_bottom(&self, store: &UiStore) -> Option<SizeUnits> {
-
         if store.node_kind(self) != WidgetKind::Panel {
             return None;
         }
@@ -268,7 +263,6 @@ impl Node for NodeId {
     }
 
     fn row_between(&self, store: &UiStore) -> Option<SizeUnits> {
-
         if store.node_kind(self) != WidgetKind::Panel {
             return None;
         }
@@ -285,7 +279,6 @@ impl Node for NodeId {
     }
 
     fn col_between(&self, store: &UiStore) -> Option<SizeUnits> {
-
         if store.node_kind(self) != WidgetKind::Panel {
             return None;
         }
@@ -350,7 +343,6 @@ impl Node for NodeId {
     }
 
     fn children_halign(&self, store: &Self::Store) -> Option<Alignment> {
-
         if store.node_kind(self) != WidgetKind::Panel {
             return None;
         }
@@ -367,7 +359,6 @@ impl Node for NodeId {
     }
 
     fn children_valign(&self, store: &Self::Store) -> Option<Alignment> {
-
         if store.node_kind(self) != WidgetKind::Panel {
             return None;
         }

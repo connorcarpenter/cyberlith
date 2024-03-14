@@ -9,14 +9,14 @@ mod ui;
 mod widget;
 
 // just for engine
-pub use ui_layout::Alignment;
 pub use node_id::NodeId;
 pub use plugin::UiPlugin;
 pub use ui::Ui;
+pub use ui_layout::Alignment;
 
 // just for ui_io
 pub use node::{UiNode, WidgetKind};
-pub use panel::{PanelStyle, PanelMut, PanelStyleMut, Panel};
+pub use panel::{Panel, PanelMut, PanelStyle, PanelStyleMut};
 pub use style::{NodeStyle, StyleId, WidgetStyle};
-pub use text::{TextStyle, TextStyleMut, Text};
+pub use text::{Text, TextStyle, TextStyleMut};
 pub use widget::Widget;

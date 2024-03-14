@@ -2,10 +2,17 @@ use std::collections::HashMap;
 
 use naia_serde::{FileBitWriter, SerdeInternal as Serde, UnsignedInteger, UnsignedVariableInteger};
 
-use ui::{NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Ui, UiNode, Widget, WidgetKind, WidgetStyle};
+use ui::{
+    NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Ui, UiNode, Widget, WidgetKind,
+    WidgetStyle,
+};
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 
-use crate::bits::{AlignmentBits, LayoutTypeBits, MarginUnitsBits, PanelBits, PanelStyleBits, PositionTypeBits, SizeUnitsBits, SolidBits, TextBits, TextStyleBits, UiAction, UiActionType, UiNodeBits, UiStyleBits, WidgetBits, WidgetStyleBits};
+use crate::bits::{
+    AlignmentBits, LayoutTypeBits, MarginUnitsBits, PanelBits, PanelStyleBits, PositionTypeBits,
+    SizeUnitsBits, SolidBits, TextBits, TextStyleBits, UiAction, UiActionType, UiNodeBits,
+    UiStyleBits, WidgetBits, WidgetStyleBits,
+};
 
 pub fn write_bits(ui: &Ui) -> Vec<u8> {
     let actions = convert_ui_to_actions(ui);
@@ -17,7 +24,11 @@ fn convert_ui_to_actions(ui: &Ui) -> Vec<UiAction> {
 
     // write text color
     let text_color = ui.get_text_color();
-    output.push(UiAction::TextColor(text_color.r, text_color.g, text_color.b));
+    output.push(UiAction::TextColor(
+        text_color.r,
+        text_color.g,
+        text_color.b,
+    ));
 
     // write text icon AssetId
     let text_icon_asset_id = ui.get_text_icon_handle().asset_id();
@@ -45,7 +56,10 @@ fn convert_ui_to_actions(ui: &Ui) -> Vec<UiAction> {
 
     // write nodes
     for node in ui.store.nodes.iter() {
-        output.push(UiAction::Node(UiNodeBits::from_node(&style_id_to_index, node)));
+        output.push(UiAction::Node(UiNodeBits::from_node(
+            &style_id_to_index,
+            node,
+        )));
     }
 
     output
@@ -61,7 +75,6 @@ fn actions_to_bytes(actions: Vec<UiAction>) -> Vec<u8> {
                 r.ser(&mut bit_writer);
                 g.ser(&mut bit_writer);
                 b.ser(&mut bit_writer);
-
             }
             UiAction::TextIconAssetId(asset_id) => {
                 UiActionType::TextIconAssetId.ser(&mut bit_writer);
@@ -87,15 +100,19 @@ fn actions_to_bytes(actions: Vec<UiAction>) -> Vec<u8> {
 // conversion
 impl UiStyleBits {
     pub(crate) fn from_style(style: &NodeStyle) -> Self {
-
         let aspect_ratio = style.aspect_ratio().map(|(width, height)| {
-
             // validate
             if width.fract() != 0.0 || height.fract() != 0.0 {
-                panic!("Aspect ratio must be a whole number, got: {} / {}", width, height);
+                panic!(
+                    "Aspect ratio must be a whole number, got: {} / {}",
+                    width, height
+                );
             }
             if width < 0.0 || height < 0.0 {
-                panic!("Aspect ratio must be a positive number, got: {} / {}", width, height);
+                panic!(
+                    "Aspect ratio must be a positive number, got: {} / {}",
+                    width, height
+                );
             }
             if width >= 256.0 || height >= 256.0 {
                 panic!("Aspect ratio must be <= 256, got: {} / {}", width, height);
@@ -110,7 +127,9 @@ impl UiStyleBits {
         Self {
             widget_style: WidgetStyleBits::from_style(&style.widget_style),
 
-            position_type: style.position_type.map(PositionTypeBits::from_position_type),
+            position_type: style
+                .position_type
+                .map(PositionTypeBits::from_position_type),
 
             width: style.width.map(SizeUnitsBits::from_size_units),
             height: style.height.map(SizeUnitsBits::from_size_units),
@@ -145,9 +164,7 @@ impl WidgetStyleBits {
 impl PanelStyleBits {
     fn from_panel_style(style: &PanelStyle) -> Self {
         Self {
-            background_color: style.background_color.map(|val| {
-                (val.r, val.g, val.b)
-            }),
+            background_color: style.background_color.map(|val| (val.r, val.g, val.b)),
             background_alpha: style.background_alpha().map(|val| {
                 let val = (val * 10.0) as u8;
                 UnsignedInteger::<4>::new(val)
@@ -170,9 +187,7 @@ impl PanelStyleBits {
 
 impl TextStyleBits {
     fn from_text_style(_style: &TextStyle) -> Self {
-        Self {
-
-        }
+        Self {}
     }
 }
 
@@ -191,7 +206,10 @@ impl SizeUnitsBits {
             SizeUnits::Pixels(val) => {
                 // validate
                 if val.fract() != 0.0 {
-                    panic!("SizeUnits::Pixels value must be a whole number, got: {}", val);
+                    panic!(
+                        "SizeUnits::Pixels value must be a whole number, got: {}",
+                        val
+                    );
                 }
                 if val < 0.0 {
                     panic!("SizeUnits::Pixels value must be positive, got: {}", val);
@@ -201,21 +219,27 @@ impl SizeUnitsBits {
                 let val = UnsignedVariableInteger::<7>::new(val);
 
                 Self::Pixels(val)
-            },
+            }
             SizeUnits::Percentage(val) => {
                 // validate
                 if val < 0.0 || val > 100.0 {
-                    panic!("SizeUnits::Percentage value must be between 0 and 100, got: {}", val);
+                    panic!(
+                        "SizeUnits::Percentage value must be between 0 and 100, got: {}",
+                        val
+                    );
                 }
                 if val.fract() != 0.0 {
-                    panic!("SizeUnits::Percentage value must be a whole number, got: {}", val);
+                    panic!(
+                        "SizeUnits::Percentage value must be a whole number, got: {}",
+                        val
+                    );
                 }
 
                 let val = val as u64;
                 let val = UnsignedInteger::<7>::new(val);
 
                 Self::Percent(val)
-            },
+            }
             SizeUnits::Auto => Self::Auto,
         }
     }
@@ -227,7 +251,10 @@ impl MarginUnitsBits {
             MarginUnits::Pixels(val) => {
                 // validate
                 if val.fract() != 0.0 {
-                    panic!("SizeUnits::Pixels value must be a whole number, got: {}", val);
+                    panic!(
+                        "SizeUnits::Pixels value must be a whole number, got: {}",
+                        val
+                    );
                 }
                 if val < 0.0 {
                     panic!("SizeUnits::Pixels value must be positive, got: {}", val);
@@ -237,21 +264,27 @@ impl MarginUnitsBits {
                 let val = UnsignedVariableInteger::<7>::new(val);
 
                 Self::Pixels(val)
-            },
+            }
             MarginUnits::Percentage(val) => {
                 // validate
                 if val < 0.0 || val > 100.0 {
-                    panic!("SizeUnits::Percentage value must be between 0 and 100, got: {}", val);
+                    panic!(
+                        "SizeUnits::Percentage value must be between 0 and 100, got: {}",
+                        val
+                    );
                 }
                 if val.fract() != 0.0 {
-                    panic!("SizeUnits::Percentage value must be a whole number, got: {}", val);
+                    panic!(
+                        "SizeUnits::Percentage value must be a whole number, got: {}",
+                        val
+                    );
                 }
 
                 let val = val as u64;
                 let val = UnsignedInteger::<7>::new(val);
 
                 Self::Percent(val)
-            },
+            }
         }
     }
 }
@@ -310,11 +343,11 @@ impl WidgetBits {
             WidgetKind::Panel => {
                 let panel = UiNode::downcast_ref::<Panel>(widget).unwrap();
                 Self::Panel(PanelBits::from_panel(panel))
-            },
+            }
             WidgetKind::Text => {
                 let text = UiNode::downcast_ref::<Text>(widget).unwrap();
                 Self::Text(TextBits::from_text(text))
-            },
+            }
         }
     }
 }

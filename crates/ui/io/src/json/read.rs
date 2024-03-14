@@ -2,24 +2,20 @@ use std::collections::HashMap;
 
 use asset_id::AssetId;
 use asset_render::{AssetHandle, IconData};
-use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 use render_api::base::Color;
-use ui::{
-    WidgetKind, PanelMut, PanelStyleMut, StyleId,
-    TextStyleMut, Ui,
-};
+use ui::{PanelMut, PanelStyleMut, StyleId, TextStyleMut, Ui, WidgetKind};
+use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 
 use super::{
-    UiNodeJson, PanelJson, WidgetJson, UiJson, ColorJson, UiStyleJson, SizeUnitsJson,
-    PositionTypeJson, WidgetStyleJson, MarginUnitsJson, SolidJson, AlignmentJson,
-    LayoutTypeJson,
+    AlignmentJson, ColorJson, LayoutTypeJson, MarginUnitsJson, PanelJson, PositionTypeJson,
+    SizeUnitsJson, SolidJson, UiJson, UiNodeJson, UiStyleJson, WidgetJson, WidgetStyleJson,
 };
 
 fn convert_nodes_recurse<'a>(
     style_index_to_id: &HashMap<usize, StyleId>,
     nodes: &Vec<UiNodeJson>,
     panel_serde: &PanelJson,
-    panel_mut: &'a mut PanelMut<'a>
+    panel_mut: &'a mut PanelMut<'a>,
 ) {
     panel_mut.contents(|c| {
         for child_index in &panel_serde.children {
@@ -39,7 +35,12 @@ fn convert_nodes_recurse<'a>(
                     let WidgetJson::Panel(child_panel_serde) = &child_node_serde.widget else {
                         panic!("Expected panel widget");
                     };
-                    convert_nodes_recurse(style_index_to_id, nodes, child_panel_serde, &mut child_panel_mut);
+                    convert_nodes_recurse(
+                        style_index_to_id,
+                        nodes,
+                        child_panel_serde,
+                        &mut child_panel_mut,
+                    );
                 }
                 WidgetKind::Text => {
                     let WidgetJson::Text(child_text_serde) = &child_node_serde.widget else {
@@ -58,7 +59,6 @@ fn convert_nodes_recurse<'a>(
 }
 
 impl UiJson {
-
     pub(crate) fn to_ui(self) -> Ui {
         let mut ui = Ui::new();
 
@@ -82,7 +82,6 @@ impl UiJson {
         let mut style_index_to_id = HashMap::new();
 
         for (style_index, style_serde) in styles.iter().enumerate() {
-
             //info!("style_serde: {}, {:?}", style_index, style_serde);
 
             let style_id = match style_serde.widget_kind() {

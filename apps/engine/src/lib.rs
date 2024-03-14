@@ -46,7 +46,7 @@ pub mod storage {
     pub use storage::*;
 }
 pub mod ui {
-    pub use ui::{Alignment, NodeId, UiPlugin, Ui};
+    pub use ui::{Alignment, NodeId, Ui, UiPlugin};
 }
 
 // TODO: should these find a home?

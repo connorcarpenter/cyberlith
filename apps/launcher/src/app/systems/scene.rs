@@ -26,8 +26,11 @@ use game_engine::{
     ui::Ui,
 };
 
-use crate::app::{resources::Global, systems::ui::{init_ui, json_read_ui, json_write_ui}};
 use crate::app::systems::ui::{bits_read_ui, bits_write_ui};
+use crate::app::{
+    resources::Global,
+    systems::ui::{init_ui, json_read_ui, json_write_ui},
+};
 
 #[derive(Component)]
 pub struct CubeMarker;

@@ -2,10 +2,7 @@ use std::{collections::HashMap, default::Default};
 
 use bevy_ecs::system::Resource;
 
-use render_api::{
-    base::CpuMaterial,
-    components::Transform,
-};
+use render_api::{base::CpuMaterial, components::Transform};
 use storage::Handle;
 
 use crate::{

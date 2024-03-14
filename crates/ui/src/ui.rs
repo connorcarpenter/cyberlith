@@ -1,7 +1,6 @@
 use bevy_ecs::{change_detection::ResMut, component::Component, system::Query};
 use bevy_log::warn;
 
-use ui_layout::{Node, SizeUnits};
 use asset_render::{AssetHandle, AssetManager, IconData};
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
@@ -10,15 +9,16 @@ use render_api::{
     shapes::UnitSquare,
 };
 use storage::{Handle, Storage};
+use ui_layout::{Node, SizeUnits};
 
 use crate::{
     cache::LayoutCache,
-    node::{WidgetKind, UiStore, UiNode},
+    node::{UiNode, UiStore, WidgetKind},
     node_id::NodeId,
-    panel::{PanelStyle, PanelStyleMut, Panel, PanelMut},
-    widget::Widget,
+    panel::{Panel, PanelMut, PanelStyle, PanelStyleMut},
     style::{NodeStyle, StyleId, WidgetStyle},
-    text::{TextStyle, TextStyleMut}
+    text::{TextStyle, TextStyleMut},
+    widget::Widget,
 };
 
 #[derive(Component)]
@@ -60,7 +60,8 @@ impl Ui {
         // me.node_mut(&root_panel_id).unwrap().style_ids.push(root_panel_style_id);
 
         // Base Text Style
-        let base_text_style_id = me.create_style(NodeStyle::empty(WidgetStyle::Text(TextStyle::empty())));
+        let base_text_style_id =
+            me.create_style(NodeStyle::empty(WidgetStyle::Text(TextStyle::empty())));
         if base_text_style_id != Self::BASE_TEXT_STYLE_ID {
             panic!("base text style id is {:?}, not 1!", base_text_style_id);
         }
@@ -117,7 +118,6 @@ impl Ui {
     fn set_color_handles(&mut self, materials: &mut Storage<CpuMaterial>) {
         let ids = std::mem::take(&mut self.pending_mat_handles);
         for id in ids {
-
             let node_ref = self.node_ref(&id).unwrap();
             if node_ref.kind != WidgetKind::Panel {
                 continue;
@@ -159,14 +159,16 @@ impl Ui {
     }
 
     pub fn create_panel_style(&mut self, inner_fn: impl FnOnce(&mut PanelStyleMut)) -> StyleId {
-        let new_style_id = self.create_style(NodeStyle::empty(WidgetStyle::Panel(PanelStyle::empty())));
+        let new_style_id =
+            self.create_style(NodeStyle::empty(WidgetStyle::Panel(PanelStyle::empty())));
         let mut panel_style_mut = PanelStyleMut::new(self, new_style_id);
         inner_fn(&mut panel_style_mut);
         new_style_id
     }
 
     pub fn create_text_style(&mut self, inner_fn: impl FnOnce(&mut TextStyleMut)) -> StyleId {
-        let new_style_id = self.create_style(NodeStyle::empty(WidgetStyle::Text(TextStyle::empty())));
+        let new_style_id =
+            self.create_style(NodeStyle::empty(WidgetStyle::Text(TextStyle::empty())));
         let mut text_style_mut = TextStyleMut::new(self, new_style_id);
         inner_fn(&mut text_style_mut);
         new_style_id
@@ -222,7 +224,12 @@ impl Ui {
         let last_viewport_width: f32 = self.last_viewport.width as f32;
         let last_viewport_height: f32 = self.last_viewport.height as f32;
 
-        let root_panel_style_id = *self.node_ref(&Self::ROOT_NODE_ID).unwrap().style_ids.last().unwrap();
+        let root_panel_style_id = *self
+            .node_ref(&Self::ROOT_NODE_ID)
+            .unwrap()
+            .style_ids
+            .last()
+            .unwrap();
         let root_panel_style = self.style_mut(&root_panel_style_id).unwrap();
         root_panel_style.width = Some(SizeUnits::Pixels(last_viewport_width));
         root_panel_style.height = Some(SizeUnits::Pixels(last_viewport_height));

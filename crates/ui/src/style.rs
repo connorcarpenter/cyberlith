@@ -1,6 +1,6 @@
 use ui_layout::{Alignment, MarginUnits, PositionType, SizeUnits, Solid};
 
-use crate::{text::TextStyle, panel::PanelStyle};
+use crate::{panel::PanelStyle, text::TextStyle};
 
 #[derive(Clone, Copy, PartialEq, PartialOrd, Ord, Eq, Hash, Debug, Default)]
 pub struct StyleId(u32);
@@ -23,7 +23,6 @@ pub enum WidgetStyle {
 
 #[derive(Clone, Copy)]
 pub struct NodeStyle {
-
     pub widget_style: WidgetStyle,
 
     pub position_type: Option<PositionType>,
@@ -78,13 +77,18 @@ impl NodeStyle {
     }
 
     pub(crate) fn set_aspect_ratio(&mut self, width: f32, height: f32) {
-
         // validate
         if width.fract() != 0.0 || height.fract() != 0.0 {
-            panic!("Aspect ratio must be a whole number, got: {} / {}", width, height);
+            panic!(
+                "Aspect ratio must be a whole number, got: {} / {}",
+                width, height
+            );
         }
         if width < 0.0 || height < 0.0 {
-            panic!("Aspect ratio must be a positive number, got: {} / {}", width, height);
+            panic!(
+                "Aspect ratio must be a positive number, got: {} / {}",
+                width, height
+            );
         }
         if width >= 256.0 || height >= 256.0 {
             panic!("Aspect ratio must be <= 256, got: {} / {}", width, height);

@@ -22,10 +22,9 @@ cfg_if! {
     } else {}
 }
 
-///
-
-use serde::{Deserialize, Serialize};
 use asset_id::AssetId;
+///
+use serde::{Deserialize, Serialize};
 
 use ui::{Ui, WidgetKind};
 
@@ -49,7 +48,6 @@ impl UiJson {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub(crate) struct UiStyleJson {
-
     widget_style: WidgetStyleJson,
 
     position_type: Option<PositionTypeJson>,
@@ -101,9 +99,7 @@ pub(crate) struct PanelStyleJson {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub(crate) struct TextStyleJson {
-
-}
+pub(crate) struct TextStyleJson {}
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub(crate) enum WidgetStyleJson {

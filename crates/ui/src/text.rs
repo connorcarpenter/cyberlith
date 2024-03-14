@@ -1,11 +1,11 @@
 use std::any::Any;
 
-use ui_layout::{Alignment, MarginUnits, PositionType, SizeUnits, Solid};
 use asset_render::AssetManager;
 use render_api::{
     components::{RenderLayer, Transform},
     resources::RenderFrame,
 };
+use ui_layout::{Alignment, MarginUnits, PositionType, SizeUnits, Solid};
 
 use crate::{
     cache::LayoutCache,
@@ -114,10 +114,7 @@ pub struct TextStyleMut<'a> {
 
 impl<'a> TextStyleMut<'a> {
     pub(crate) fn new(ui: &'a mut Ui, style_id: StyleId) -> Self {
-        Self {
-            ui,
-            style_id,
-        }
+        Self { ui, style_id }
     }
 
     fn get_style_mut(&mut self) -> &mut NodeStyle {
