@@ -5,8 +5,8 @@ cfg_if! {
         mod read;
 
         pub fn read_json(data: Vec<u8>) -> Ui {
-            let ui_serde: UiSerde = serde_json::from_slice(data.as_slice()).unwrap();
-            ui_serde.to_ui()
+            let ui_json: UiJson = serde_json::from_slice(data.as_slice()).unwrap();
+            ui_json.to_ui()
         }
     } else {}
 }
@@ -16,8 +16,8 @@ cfg_if! {
         mod write;
 
         pub fn write_json(ui: &Ui) -> Vec<u8> {
-            let ui_serde = UiSerde::from_ui(ui);
-            serde_json::to_vec_pretty(&ui_serde).unwrap()
+            let ui_json = UiJson::from_ui(ui);
+            serde_json::to_vec_pretty(&ui_json).unwrap()
         }
     } else {}
 }
@@ -30,14 +30,14 @@ use asset_id::AssetId;
 use ui::{Ui, WidgetKind};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub(crate) struct UiSerde {
-    text_color: ColorSerde,
+pub(crate) struct UiJson {
+    text_color: ColorJson,
     text_icon_asset_id: String,
-    styles: Vec<UiStyleSerde>,
-    nodes: Vec<UiNodeSerde>,
+    styles: Vec<UiStyleJson>,
+    nodes: Vec<UiNodeJson>,
 }
 
-impl UiSerde {
+impl UiJson {
     const CURRENT_SCHEMA_VERSION: u32 = 0;
 
     fn dependencies(&self) -> Vec<AssetId> {
@@ -46,142 +46,142 @@ impl UiSerde {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub(crate) struct UiStyleSerde {
+pub(crate) struct UiStyleJson {
 
-    widget_style: WidgetStyleSerde,
+    widget_style: WidgetStyleJson,
 
-    position_type: Option<PositionTypeSerde>,
+    position_type: Option<PositionTypeJson>,
 
-    width: Option<SizeUnitsSerde>,
-    height: Option<SizeUnitsSerde>,
-    width_min: Option<SizeUnitsSerde>,
-    width_max: Option<SizeUnitsSerde>,
-    height_min: Option<SizeUnitsSerde>,
-    height_max: Option<SizeUnitsSerde>,
+    width: Option<SizeUnitsJson>,
+    height: Option<SizeUnitsJson>,
+    width_min: Option<SizeUnitsJson>,
+    width_max: Option<SizeUnitsJson>,
+    height_min: Option<SizeUnitsJson>,
+    height_max: Option<SizeUnitsJson>,
 
-    margin_left: Option<MarginUnitsSerde>,
-    margin_right: Option<MarginUnitsSerde>,
-    margin_top: Option<MarginUnitsSerde>,
-    margin_bottom: Option<MarginUnitsSerde>,
+    margin_left: Option<MarginUnitsJson>,
+    margin_right: Option<MarginUnitsJson>,
+    margin_top: Option<MarginUnitsJson>,
+    margin_bottom: Option<MarginUnitsJson>,
 
-    solid_override: Option<SolidSerde>,
+    solid_override: Option<SolidJson>,
     aspect_ratio_w_over_h: Option<f32>,
 
-    self_halign: Option<AlignmentSerde>,
-    self_valign: Option<AlignmentSerde>,
+    self_halign: Option<AlignmentJson>,
+    self_valign: Option<AlignmentJson>,
 }
 
-impl UiStyleSerde {
+impl UiStyleJson {
     pub(crate) fn widget_kind(&self) -> WidgetKind {
         match &self.widget_style {
-            WidgetStyleSerde::Panel(_) => WidgetKind::Panel,
-            WidgetStyleSerde::Text(_) => WidgetKind::Text,
+            WidgetStyleJson::Panel(_) => WidgetKind::Panel,
+            WidgetStyleJson::Text(_) => WidgetKind::Text,
         }
     }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub(crate) struct PanelStyleSerde {
-    background_color: Option<ColorSerde>,
+pub(crate) struct PanelStyleJson {
+    background_color: Option<ColorJson>,
     background_alpha: Option<f32>,
 
-    layout_type: Option<LayoutTypeSerde>,
+    layout_type: Option<LayoutTypeJson>,
 
-    padding_left: Option<SizeUnitsSerde>,
-    padding_right: Option<SizeUnitsSerde>,
-    padding_top: Option<SizeUnitsSerde>,
-    padding_bottom: Option<SizeUnitsSerde>,
+    padding_left: Option<SizeUnitsJson>,
+    padding_right: Option<SizeUnitsJson>,
+    padding_top: Option<SizeUnitsJson>,
+    padding_bottom: Option<SizeUnitsJson>,
 
-    row_between: Option<SizeUnitsSerde>,
-    col_between: Option<SizeUnitsSerde>,
-    children_halign: Option<AlignmentSerde>,
-    children_valign: Option<AlignmentSerde>,
+    row_between: Option<SizeUnitsJson>,
+    col_between: Option<SizeUnitsJson>,
+    children_halign: Option<AlignmentJson>,
+    children_valign: Option<AlignmentJson>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub(crate) struct TextStyleSerde {
+pub(crate) struct TextStyleJson {
 
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub(crate) enum WidgetStyleSerde {
-    Panel(PanelStyleSerde),
-    Text(TextStyleSerde),
+pub(crate) enum WidgetStyleJson {
+    Panel(PanelStyleJson),
+    Text(TextStyleJson),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub(crate) enum PositionTypeSerde {
+pub(crate) enum PositionTypeJson {
     Absolute,
     Relative,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub(crate) enum SizeUnitsSerde {
+pub(crate) enum SizeUnitsJson {
     Pixels(f32),
     Percentage(f32),
     Auto,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub(crate) enum MarginUnitsSerde {
+pub(crate) enum MarginUnitsJson {
     Pixels(f32),
     Percentage(f32),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub(crate) enum SolidSerde {
+pub(crate) enum SolidJson {
     Fit,
     Fill,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub(crate) enum AlignmentSerde {
+pub(crate) enum AlignmentJson {
     Start,
     Center,
     End,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub(crate) enum LayoutTypeSerde {
+pub(crate) enum LayoutTypeJson {
     Row,
     Column,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub(crate) struct ColorSerde {
+pub(crate) struct ColorJson {
     r: u8,
     g: u8,
     b: u8,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub(crate) struct UiNodeSerde {
+pub(crate) struct UiNodeJson {
     visible: bool,
     style_ids: Vec<usize>,
-    widget: WidgetSerde,
+    widget: WidgetJson,
 }
 
-impl UiNodeSerde {
+impl UiNodeJson {
     fn widget_kind(&self) -> WidgetKind {
         match &self.widget {
-            WidgetSerde::Panel(_) => WidgetKind::Panel,
-            WidgetSerde::Text(_) => WidgetKind::Text,
+            WidgetJson::Panel(_) => WidgetKind::Panel,
+            WidgetJson::Text(_) => WidgetKind::Text,
         }
     }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub(crate) enum WidgetSerde {
-    Panel(PanelSerde),
-    Text(TextSerde),
+pub(crate) enum WidgetJson {
+    Panel(PanelJson),
+    Text(TextJson),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub(crate) struct PanelSerde {
+pub(crate) struct PanelJson {
     children: Vec<usize>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub(crate) struct TextSerde {
+pub(crate) struct TextJson {
     text: String,
 }

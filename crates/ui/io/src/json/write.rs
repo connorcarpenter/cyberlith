@@ -8,18 +8,18 @@ use ui::{
 };
 
 use super::{
-    UiNodeSerde, PanelSerde, WidgetSerde, UiSerde, ColorSerde, UiStyleSerde, SizeUnitsSerde,
-    PositionTypeSerde, WidgetStyleSerde, MarginUnitsSerde, SolidSerde, AlignmentSerde, PanelStyleSerde,
-    TextStyleSerde, LayoutTypeSerde, TextSerde
+    UiNodeJson, PanelJson, WidgetJson, UiJson, ColorJson, UiStyleJson, SizeUnitsJson,
+    PositionTypeJson, WidgetStyleJson, MarginUnitsJson, SolidJson, AlignmentJson, PanelStyleJson,
+    TextStyleJson, LayoutTypeJson, TextJson
 };
 
-impl UiSerde {
+impl UiJson {
 
     pub(crate) fn from_ui(ui: &Ui) -> Self {
 
         let mut style_id_to_index = HashMap::new();
 
-        let text_color = ColorSerde::from_color(ui.get_text_color());
+        let text_color = ColorJson::from_color(ui.get_text_color());
         let text_icon_asset_id = ui.get_text_icon_handle().asset_id().to_string();
 
         let mut me = Self {
@@ -37,12 +37,12 @@ impl UiSerde {
             }
             let next_index = me.styles.len();
             style_id_to_index.insert(style_id, next_index);
-            me.styles.push(UiStyleSerde::from_style(style));
+            me.styles.push(UiStyleJson::from_style(style));
         }
 
         // nodes
         for node in ui.store.nodes.iter() {
-            me.nodes.push(UiNodeSerde::from_node(&style_id_to_index, node));
+            me.nodes.push(UiNodeJson::from_node(&style_id_to_index, node));
         }
 
         me
@@ -51,65 +51,65 @@ impl UiSerde {
 
 
 
-impl UiStyleSerde {
+impl UiStyleJson {
     fn from_style(style: &NodeStyle) -> Self {
         Self {
-            widget_style: WidgetStyleSerde::from_style(&style.widget_style),
+            widget_style: WidgetStyleJson::from_style(&style.widget_style),
 
-            position_type: style.position_type.map(PositionTypeSerde::from_position_type),
+            position_type: style.position_type.map(PositionTypeJson::from_position_type),
 
-            width: style.width.map(SizeUnitsSerde::from_size_units),
-            height: style.height.map(SizeUnitsSerde::from_size_units),
-            width_min: style.width_min.map(SizeUnitsSerde::from_size_units),
-            width_max: style.width_max.map(SizeUnitsSerde::from_size_units),
-            height_min: style.height_min.map(SizeUnitsSerde::from_size_units),
-            height_max: style.height_max.map(SizeUnitsSerde::from_size_units),
+            width: style.width.map(SizeUnitsJson::from_size_units),
+            height: style.height.map(SizeUnitsJson::from_size_units),
+            width_min: style.width_min.map(SizeUnitsJson::from_size_units),
+            width_max: style.width_max.map(SizeUnitsJson::from_size_units),
+            height_min: style.height_min.map(SizeUnitsJson::from_size_units),
+            height_max: style.height_max.map(SizeUnitsJson::from_size_units),
 
-            margin_left: style.margin_left.map(MarginUnitsSerde::from_margin_units),
-            margin_right: style.margin_right.map(MarginUnitsSerde::from_margin_units),
-            margin_top: style.margin_top.map(MarginUnitsSerde::from_margin_units),
-            margin_bottom: style.margin_bottom.map(MarginUnitsSerde::from_margin_units),
+            margin_left: style.margin_left.map(MarginUnitsJson::from_margin_units),
+            margin_right: style.margin_right.map(MarginUnitsJson::from_margin_units),
+            margin_top: style.margin_top.map(MarginUnitsJson::from_margin_units),
+            margin_bottom: style.margin_bottom.map(MarginUnitsJson::from_margin_units),
 
-            solid_override: style.solid_override.map(SolidSerde::from_solid),
+            solid_override: style.solid_override.map(SolidJson::from_solid),
             aspect_ratio_w_over_h: style.aspect_ratio_w_over_h,
 
-            self_halign: style.self_halign.map(AlignmentSerde::from_alignment),
-            self_valign: style.self_valign.map(AlignmentSerde::from_alignment),
+            self_halign: style.self_halign.map(AlignmentJson::from_alignment),
+            self_valign: style.self_valign.map(AlignmentJson::from_alignment),
         }
     }
 }
 
-impl WidgetStyleSerde {
+impl WidgetStyleJson {
     fn from_style(style: &WidgetStyle) -> Self {
         match style {
-            WidgetStyle::Panel(panel) => Self::Panel(PanelStyleSerde::from_panel_style(panel)),
-            WidgetStyle::Text(text) => Self::Text(TextStyleSerde::from_text_style(text)),
+            WidgetStyle::Panel(panel) => Self::Panel(PanelStyleJson::from_panel_style(panel)),
+            WidgetStyle::Text(text) => Self::Text(TextStyleJson::from_text_style(text)),
         }
     }
 }
 
-impl PanelStyleSerde {
+impl PanelStyleJson {
     fn from_panel_style(style: &PanelStyle) -> Self {
         Self {
-            background_color: style.background_color.map(ColorSerde::from_color),
+            background_color: style.background_color.map(ColorJson::from_color),
             background_alpha: style.background_alpha,
 
-            layout_type: style.layout_type.map(LayoutTypeSerde::from_layout_type),
+            layout_type: style.layout_type.map(LayoutTypeJson::from_layout_type),
 
-            padding_left: style.padding_left.map(SizeUnitsSerde::from_size_units),
-            padding_right: style.padding_right.map(SizeUnitsSerde::from_size_units),
-            padding_top: style.padding_top.map(SizeUnitsSerde::from_size_units),
-            padding_bottom: style.padding_bottom.map(SizeUnitsSerde::from_size_units),
+            padding_left: style.padding_left.map(SizeUnitsJson::from_size_units),
+            padding_right: style.padding_right.map(SizeUnitsJson::from_size_units),
+            padding_top: style.padding_top.map(SizeUnitsJson::from_size_units),
+            padding_bottom: style.padding_bottom.map(SizeUnitsJson::from_size_units),
 
-            row_between: style.row_between.map(SizeUnitsSerde::from_size_units),
-            col_between: style.col_between.map(SizeUnitsSerde::from_size_units),
-            children_halign: style.children_halign.map(AlignmentSerde::from_alignment),
-            children_valign: style.children_valign.map(AlignmentSerde::from_alignment),
+            row_between: style.row_between.map(SizeUnitsJson::from_size_units),
+            col_between: style.col_between.map(SizeUnitsJson::from_size_units),
+            children_halign: style.children_halign.map(AlignmentJson::from_alignment),
+            children_valign: style.children_valign.map(AlignmentJson::from_alignment),
         }
     }
 }
 
-impl TextStyleSerde {
+impl TextStyleJson {
     fn from_text_style(_style: &TextStyle) -> Self {
         Self {
 
@@ -117,7 +117,7 @@ impl TextStyleSerde {
     }
 }
 
-impl PositionTypeSerde {
+impl PositionTypeJson {
     fn from_position_type(position_type: PositionType) -> Self {
         match position_type {
             PositionType::Absolute => Self::Absolute,
@@ -126,7 +126,7 @@ impl PositionTypeSerde {
     }
 }
 
-impl SizeUnitsSerde {
+impl SizeUnitsJson {
     fn from_size_units(size_units: SizeUnits) -> Self {
         match size_units {
             SizeUnits::Pixels(pixels) => Self::Pixels(pixels),
@@ -136,7 +136,7 @@ impl SizeUnitsSerde {
     }
 }
 
-impl MarginUnitsSerde {
+impl MarginUnitsJson {
     fn from_margin_units(margin_units: MarginUnits) -> Self {
         match margin_units {
             MarginUnits::Pixels(pixels) => Self::Pixels(pixels),
@@ -145,7 +145,7 @@ impl MarginUnitsSerde {
     }
 }
 
-impl SolidSerde {
+impl SolidJson {
     fn from_solid(solid: Solid) -> Self {
         match solid {
             Solid::Fit => Self::Fit,
@@ -154,7 +154,7 @@ impl SolidSerde {
     }
 }
 
-impl AlignmentSerde {
+impl AlignmentJson {
     fn from_alignment(alignment: Alignment) -> Self {
         match alignment {
             Alignment::Start => Self::Start,
@@ -164,7 +164,7 @@ impl AlignmentSerde {
     }
 }
 
-impl LayoutTypeSerde {
+impl LayoutTypeJson {
     fn from_layout_type(layout_type: LayoutType) -> Self {
         match layout_type {
             LayoutType::Row => Self::Row,
@@ -173,7 +173,7 @@ impl LayoutTypeSerde {
     }
 }
 
-impl ColorSerde {
+impl ColorJson {
     fn from_color(color: Color) -> Self {
         Self {
             r: color.r,
@@ -183,12 +183,12 @@ impl ColorSerde {
     }
 }
 
-impl UiNodeSerde {
+impl UiNodeJson {
     fn from_node(style_id_to_index: &HashMap<StyleId, usize>, node: &UiNode) -> Self {
         let mut me = Self {
             visible: node.visible,
             style_ids: Vec::new(),
-            widget: WidgetSerde::from_widget(node.kind, node.widget.as_ref()),
+            widget: WidgetJson::from_widget(node.kind, node.widget.as_ref()),
         };
 
         for style_id in &node.style_ids {
@@ -203,22 +203,22 @@ impl UiNodeSerde {
     }
 }
 
-impl WidgetSerde {
+impl WidgetJson {
     fn from_widget(kind: WidgetKind, widget: &dyn Widget) -> Self {
         match kind {
             WidgetKind::Panel => {
                 let panel = UiNode::downcast_ref::<Panel>(widget).unwrap();
-                Self::Panel(PanelSerde::from_panel(panel))
+                Self::Panel(PanelJson::from_panel(panel))
             },
             WidgetKind::Text => {
                 let text = UiNode::downcast_ref::<Text>(widget).unwrap();
-                Self::Text(TextSerde::from_text(text))
+                Self::Text(TextJson::from_text(text))
             },
         }
     }
 }
 
-impl PanelSerde {
+impl PanelJson {
     fn from_panel(panel: &Panel) -> Self {
         let mut me = Self {
             children: Vec::new(),
@@ -230,7 +230,7 @@ impl PanelSerde {
     }
 }
 
-impl TextSerde {
+impl TextJson {
     fn from_text(text: &Text) -> Self {
         Self {
             text: text.inner_text().to_string(),

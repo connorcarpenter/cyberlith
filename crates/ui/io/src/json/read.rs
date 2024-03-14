@@ -12,15 +12,15 @@ use ui::{
 };
 
 use super::{
-    UiNodeSerde, PanelSerde, WidgetSerde, UiSerde, ColorSerde, UiStyleSerde, SizeUnitsSerde,
-    PositionTypeSerde, WidgetStyleSerde, MarginUnitsSerde, SolidSerde, AlignmentSerde,
-    LayoutTypeSerde,
+    UiNodeJson, PanelJson, WidgetJson, UiJson, ColorJson, UiStyleJson, SizeUnitsJson,
+    PositionTypeJson, WidgetStyleJson, MarginUnitsJson, SolidJson, AlignmentJson,
+    LayoutTypeJson,
 };
 
 fn convert_nodes_recurse<'a>(
     style_index_to_id: &HashMap<usize, StyleId>,
-    nodes: &Vec<UiNodeSerde>,
-    panel_serde: &PanelSerde,
+    nodes: &Vec<UiNodeJson>,
+    panel_serde: &PanelJson,
     panel_mut: &'a mut PanelMut<'a>
 ) {
     panel_mut.contents(|c| {
@@ -38,13 +38,13 @@ fn convert_nodes_recurse<'a>(
                         let style_id = *style_index_to_id.get(style_index).unwrap();
                         child_panel_mut.add_style(style_id);
                     }
-                    let WidgetSerde::Panel(child_panel_serde) = &child_node_serde.widget else {
+                    let WidgetJson::Panel(child_panel_serde) = &child_node_serde.widget else {
                         panic!("Expected panel widget");
                     };
                     convert_nodes_recurse(style_index_to_id, nodes, child_panel_serde, &mut child_panel_mut);
                 }
                 WidgetKind::Text => {
-                    let WidgetSerde::Text(child_text_serde) = &child_node_serde.widget else {
+                    let WidgetJson::Text(child_text_serde) = &child_node_serde.widget else {
                         panic!("Expected text widget");
                     };
                     let mut child_text_mut = c.add_text(child_text_serde.text.as_str());
@@ -59,13 +59,13 @@ fn convert_nodes_recurse<'a>(
     });
 }
 
-impl UiSerde {
+impl UiJson {
 
     pub(crate) fn to_ui(self) -> Ui {
         let mut ui = Ui::new();
 
         // ui_serde -> ui
-        let UiSerde {
+        let UiJson {
             text_color,
             text_icon_asset_id,
             styles,
@@ -108,7 +108,7 @@ impl UiSerde {
             let style_id = *style_index_to_id.get(style_index).unwrap();
             root_mut.add_style(style_id);
         }
-        let WidgetSerde::Panel(panel_serde) = &root_node_serde.widget else {
+        let WidgetJson::Panel(panel_serde) = &root_node_serde.widget else {
             panic!("Expected panel widget");
         };
         convert_nodes_recurse(&style_index_to_id, &nodes, panel_serde, &mut root_mut);
@@ -117,7 +117,7 @@ impl UiSerde {
     }
 }
 
-impl PositionTypeSerde {
+impl PositionTypeJson {
     fn to_position_type(&self) -> PositionType {
         match self {
             Self::Absolute => PositionType::Absolute,
@@ -126,7 +126,7 @@ impl PositionTypeSerde {
     }
 }
 
-impl SizeUnitsSerde {
+impl SizeUnitsJson {
     fn to_size_units(&self) -> SizeUnits {
         match self {
             Self::Pixels(pixels) => SizeUnits::Pixels(*pixels),
@@ -136,7 +136,7 @@ impl SizeUnitsSerde {
     }
 }
 
-impl MarginUnitsSerde {
+impl MarginUnitsJson {
     fn to_margin_units(&self) -> MarginUnits {
         match self {
             Self::Pixels(pixels) => MarginUnits::Pixels(*pixels),
@@ -145,7 +145,7 @@ impl MarginUnitsSerde {
     }
 }
 
-impl SolidSerde {
+impl SolidJson {
     fn to_solid(&self) -> Solid {
         match self {
             Self::Fit => Solid::Fit,
@@ -154,7 +154,7 @@ impl SolidSerde {
     }
 }
 
-impl AlignmentSerde {
+impl AlignmentJson {
     fn to_alignment(&self) -> Alignment {
         match self {
             Self::Start => Alignment::Start,
@@ -164,7 +164,7 @@ impl AlignmentSerde {
     }
 }
 
-impl LayoutTypeSerde {
+impl LayoutTypeJson {
     fn to_layout_type(&self) -> LayoutType {
         match self {
             Self::Row => LayoutType::Row,
@@ -173,14 +173,14 @@ impl LayoutTypeSerde {
     }
 }
 
-impl ColorSerde {
+impl ColorJson {
     fn to_color(&self) -> Color {
         Color::new(self.r, self.g, self.b)
     }
 }
 
 // conversion
-fn style_serde_to_panel_style(style_serde: &UiStyleSerde, style: &mut PanelStyleMut) {
+fn style_serde_to_panel_style(style_serde: &UiStyleJson, style: &mut PanelStyleMut) {
     // node-specific
     if let Some(position_type_serde) = &style_serde.position_type {
         let position_type = position_type_serde.to_position_type();
@@ -285,7 +285,7 @@ fn style_serde_to_panel_style(style_serde: &UiStyleSerde, style: &mut PanelStyle
     }
 
     // panel-specific
-    let WidgetStyleSerde::Panel(panel_style_serde) = &style_serde.widget_style else {
+    let WidgetStyleJson::Panel(panel_style_serde) = &style_serde.widget_style else {
         panic!("Expected panel style");
     };
 
@@ -360,7 +360,7 @@ fn style_serde_to_panel_style(style_serde: &UiStyleSerde, style: &mut PanelStyle
     }
 }
 
-fn style_serde_to_text_style(style_serde: &UiStyleSerde, style: &mut TextStyleMut) {
+fn style_serde_to_text_style(style_serde: &UiStyleJson, style: &mut TextStyleMut) {
     // node-specific
     if let Some(position_type_serde) = &style_serde.position_type {
         let position_type = position_type_serde.to_position_type();
