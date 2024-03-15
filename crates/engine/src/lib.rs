@@ -16,7 +16,7 @@ pub mod asset {
     pub use asset_id::{AssetId, AssetType};
     pub use asset_render::{
         embedded_asset_event, AnimationData, AssetHandle, AssetManager, EmbeddedAssetEvent,
-        IconData, MeshData, ModelData, PaletteData, SceneData, SkeletonData, SkinData, TextStyle,
+        IconData, MeshData, ModelData, PaletteData, SceneData, SkeletonData, SkinData, UiData,
     };
 }
 pub mod input {

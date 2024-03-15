@@ -5,11 +5,10 @@ use bevy_ecs::{
     prelude::{Local, With},
     system::{Commands, Query, Res, ResMut},
 };
-use bevy_log::info;
 
 use game_engine::{
     asset::{
-        embedded_asset_event, AssetHandle, AssetId, AssetManager, EmbeddedAssetEvent, IconData,
+        embedded_asset_event, AssetHandle, AssetId, AssetManager, EmbeddedAssetEvent, UiData,
     },
     math::Vec3,
     render::{
@@ -26,10 +25,8 @@ use game_engine::{
     ui::Ui,
 };
 
-use crate::app::systems::ui::{bits_read_ui, bits_write_ui};
 use crate::app::{
     resources::Global,
-    systems::ui::{init_ui, json_read_ui, json_write_ui},
 };
 
 #[derive(Component)]
@@ -41,9 +38,10 @@ pub fn scene_setup(
     mut materials: ResMut<Storage<CpuMaterial>>,
     mut embedded_asset_events: EventWriter<EmbeddedAssetEvent>,
 ) {
-    // TODO: use some kind of catalog here
+    // TODO: use some kind of catalog here?
     embedded_asset_events.send(embedded_asset_event!("../embedded/8273wa")); // palette
     embedded_asset_events.send(embedded_asset_event!("../embedded/34mvvk")); // verdana icon
+    embedded_asset_events.send(embedded_asset_event!("../embedded/tpp7za")); // main ui
 
     let scene_camera = setup_3d_scene(&mut commands, &mut meshes, &mut materials);
     let ui_camera = setup_ui(&mut commands);
@@ -80,19 +78,9 @@ fn setup_ui(commands: &mut Commands) -> Entity {
 
     // ui
 
-    let text_handle = AssetHandle::<IconData>::new(AssetId::from_str("34mvvk").unwrap()); // TODO: use some kind of catalog
+    let ui_handle = AssetHandle::<UiData>::new(AssetId::from_str("tpp7za").unwrap()); // TODO: use some kind of catalog?
 
-    let ui = init_ui(&text_handle);
-
-    let ui_bytes = json_write_ui(ui);
-    info!("json byte count: {:?}", ui_bytes.len());
-    let ui = json_read_ui(ui_bytes);
-
-    let ui_bytes = bits_write_ui(ui);
-    info!("bits byte count: {:?}", ui_bytes.len());
-    let ui = bits_read_ui(ui_bytes);
-
-    let _ui_entity = commands.spawn(ui).insert(layer).id();
+    let _ui_entity = commands.spawn(ui_handle).insert(layer).id();
 
     camera_id
 }
@@ -196,11 +184,11 @@ pub fn scene_step(
 
 pub fn scene_draw(
     mut render_frame: ResMut<RenderFrame>,
-    asset_manager: Res<AssetManager>,
+    mut asset_manager: ResMut<AssetManager>,
     // Cameras
     cameras_q: Query<(&Camera, &Transform, &Projection, Option<&RenderLayer>)>,
     // UIs
-    mut uis_q: Query<(&mut Ui, Option<&RenderLayer>)>,
+    uis_q: Query<(&AssetHandle<UiData>, Option<&RenderLayer>)>,
     // Meshes
     cpu_meshes_q: Query<(
         &Handle<CpuMesh>,
@@ -246,8 +234,8 @@ pub fn scene_draw(
     }
 
     // Aggregate UIs
-    for (mut ui, render_layer_opt) in uis_q.iter_mut() {
-        ui.draw(&mut render_frame, render_layer_opt, &asset_manager);
+    for (ui_handle, render_layer_opt) in uis_q.iter() {
+        asset_manager.draw_ui(&mut render_frame, render_layer_opt, ui_handle);
     }
 }
 

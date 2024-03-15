@@ -53,16 +53,21 @@ pub fn scene_setup(
 fn setup_ui(commands: &mut Commands, asset_manager: &mut AssetManager) {
 
     let name = "main"; // TODO: clean this up?
-    let asset_id = AssetId::get_random();
+    let ui_asset_id_str = "tpp7za"; // AssetId::get_random(); // keep this around to generate new AssetIds if needed!
+    let icon_asset_id = "34mvvk";
+    let ui_etag = ETag::new_random(); // TODO: should we be able to re-use ETag so it doesn't auto update?
 
-    let text_handle = AssetHandle::<IconData>::new(AssetId::from_str("34mvvk").unwrap()); // TODO: use some kind of catalog
+    let ui_asset_id = AssetId::from_str(ui_asset_id_str).unwrap();
+    let icon_asset_id = AssetId::from_str(icon_asset_id).unwrap();
 
-    let ui = init_ui(&text_handle);
+    let icon_asset_handle = AssetHandle::<IconData>::new(icon_asset_id); // TODO: use some kind of catalog?
+
+    let ui = init_ui(&icon_asset_handle);
 
     // ui -> JSON bytes
     let ui_bytes = {
         let ui_json = json_write_ui(ui);
-        let new_meta = AssetMeta::new(&asset_id, UiJson::CURRENT_SCHEMA_VERSION);
+        let new_meta = AssetMeta::new(&ui_asset_id, UiJson::CURRENT_SCHEMA_VERSION);
         let asset = Asset::new(new_meta, AssetData::Ui(ui_json));
         let ui_bytes = serde_json::to_vec_pretty(&asset)
             .unwrap();
@@ -88,26 +93,25 @@ fn setup_ui(commands: &mut Commands, asset_manager: &mut AssetManager) {
     info!("bits byte count: {:?}", ui_bytes.len());
 
     // write bit-packed data to file
-    std::fs::write(format!("output/{}", name), &ui_bytes).unwrap();
+    std::fs::write(format!("output/{}", ui_asset_id_str), &ui_bytes).unwrap();
 
     // write metadata to file
     {
-        let ui_metadata = AssetMetadataSerde::new(ETag::new_random(), AssetType::Ui);
+        let ui_metadata = AssetMetadataSerde::new(ui_etag, AssetType::Ui);
         let mut bit_writer = BitWriter::new();
         ui_metadata.ser(&mut bit_writer);
         let metadata_bytes = bit_writer.to_bytes();
-        std::fs::write(format!("output/{}.meta", name), &metadata_bytes).unwrap();
+        std::fs::write(format!("output/{}.meta", ui_asset_id_str), &metadata_bytes).unwrap();
     }
 
     // bit-packed bytes -> ui
     let ui = bits_read_ui(ui_bytes);
 
     // load ui into asset manager
-    let asset_id = AssetId::get_random();
-    asset_manager.manual_load_ui(&asset_id, ui);
+    asset_manager.manual_load_ui(&ui_asset_id, ui);
 
     // make handle
-    let asset_handle = AssetHandle::<UiData>::new(asset_id);
+    let asset_handle = AssetHandle::<UiData>::new(ui_asset_id);
 
     // add handle to entity
     let _ui_entity = commands.spawn(asset_handle).id();
@@ -144,7 +148,7 @@ pub fn scene_draw(
     // Cameras
     cameras_q: Query<(&Camera, &Transform, &Projection, Option<&RenderLayer>)>,
     // UIs
-    mut uis_q: Query<(&AssetHandle<UiData>, Option<&RenderLayer>)>,
+    uis_q: Query<(&AssetHandle<UiData>, Option<&RenderLayer>)>,
     // Lights
     ambient_lights_q: Query<(&AmbientLight, Option<&RenderLayer>)>,
 ) {
@@ -162,7 +166,7 @@ pub fn scene_draw(
     }
 
     // Aggregate UIs
-    for (ui_handle, render_layer_opt) in uis_q.iter_mut() {
+    for (ui_handle, render_layer_opt) in uis_q.iter() {
         asset_manager.draw_ui(&mut render_frame, render_layer_opt, ui_handle);
     }
 }
