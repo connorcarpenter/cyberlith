@@ -79,6 +79,7 @@ impl UiStyleBits {
         match &self.widget_style {
             WidgetStyleBits::Panel(_) => WidgetKind::Panel,
             WidgetStyleBits::Text(_) => WidgetKind::Text,
+            WidgetStyleBits::Button(_) => WidgetKind::Button,
         }
     }
 }
@@ -105,9 +106,15 @@ pub(crate) struct PanelStyleBits {
 pub(crate) struct TextStyleBits {}
 
 #[derive(Serde, Clone, PartialEq)]
+pub(crate) struct ButtonStyleBits {
+    panel: PanelStyleBits,
+}
+
+#[derive(Serde, Clone, PartialEq)]
 pub(crate) enum WidgetStyleBits {
     Panel(PanelStyleBits),
     Text(TextStyleBits),
+    Button(ButtonStyleBits)
 }
 
 #[derive(Serde, Clone, PartialEq)]
@@ -162,6 +169,7 @@ impl UiNodeBits {
         match &self.widget {
             WidgetBits::Panel(_) => WidgetKind::Panel,
             WidgetBits::Text(_) => WidgetKind::Text,
+            WidgetBits::Button(_) => WidgetKind::Button,
         }
     }
 }
@@ -170,6 +178,7 @@ impl UiNodeBits {
 pub(crate) enum WidgetBits {
     Panel(PanelBits),
     Text(TextBits),
+    Button(ButtonBits),
 }
 
 #[derive(Serde, Clone, PartialEq)]
@@ -180,4 +189,9 @@ pub(crate) struct PanelBits {
 #[derive(Serde, Clone, PartialEq)]
 pub(crate) struct TextBits {
     text: String,
+}
+
+#[derive(Serde, Clone, PartialEq)]
+pub(crate) struct ButtonBits {
+    panel: PanelBits,
 }

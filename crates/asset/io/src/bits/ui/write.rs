@@ -2,16 +2,9 @@ use std::collections::HashMap;
 
 use naia_serde::{FileBitWriter, SerdeInternal as Serde, UnsignedInteger, UnsignedVariableInteger};
 
-use ui::{
-    NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Ui, UiNode, Widget,
-    WidgetStyle, Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid,
-};
+use ui::{NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Ui, UiNode, Widget, WidgetStyle, Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid, ButtonStyle, Button};
 
-use crate::bits::{
-    AlignmentBits, LayoutTypeBits, MarginUnitsBits, PanelBits, PanelStyleBits, PositionTypeBits,
-    SizeUnitsBits, SolidBits, TextBits, TextStyleBits, UiAction, UiActionType, UiNodeBits,
-    UiStyleBits, WidgetBits, WidgetStyleBits,
-};
+use crate::bits::{AlignmentBits, ButtonBits, ButtonStyleBits, LayoutTypeBits, MarginUnitsBits, PanelBits, PanelStyleBits, PositionTypeBits, SizeUnitsBits, SolidBits, TextBits, TextStyleBits, UiAction, UiActionType, UiNodeBits, UiStyleBits, WidgetBits, WidgetStyleBits};
 
 pub fn write_bits(ui: &Ui) -> Vec<u8> {
     let actions = convert_ui_to_actions(ui);
@@ -156,6 +149,7 @@ impl WidgetStyleBits {
         match style {
             WidgetStyle::Panel(panel) => Self::Panel(PanelStyleBits::from_panel_style(panel)),
             WidgetStyle::Text(text) => Self::Text(TextStyleBits::from_text_style(text)),
+            WidgetStyle::Button(button) => Self::Button(ButtonStyleBits::from_button_style(button)),
         }
     }
 }
@@ -187,6 +181,14 @@ impl PanelStyleBits {
 impl TextStyleBits {
     fn from_text_style(_style: &TextStyle) -> Self {
         Self {}
+    }
+}
+
+impl ButtonStyleBits {
+    fn from_button_style(style: &ButtonStyle) -> Self {
+        Self {
+            panel: PanelStyleBits::from_panel_style(&style.panel),
+        }
     }
 }
 
@@ -345,6 +347,9 @@ impl WidgetBits {
             Widget::Text(text) => {
                 Self::Text(TextBits::from_text(text))
             }
+            Widget::Button(button) => {
+                Self::Button(ButtonBits::from_button(button))
+            }
         }
     }
 }
@@ -370,6 +375,16 @@ impl TextBits {
     fn from_text(text: &Text) -> Self {
         Self {
             text: text.inner_text().to_string(),
+        }
+    }
+}
+
+impl ButtonBits {
+    fn from_button(button: &Button) -> Self {
+        let panel = &button.panel;
+        let panel_bits = PanelBits::from_panel(panel);
+        Self {
+            panel: panel_bits,
         }
     }
 }

@@ -8,15 +8,7 @@ use render_api::{
 use storage::{Handle, Storage};
 use ui_layout::{Node, SizeUnits};
 
-use crate::{
-    cache::LayoutCache,
-    node::{UiNode, UiStore},
-    node_id::NodeId,
-    panel::{Panel, PanelMut, PanelStyle, PanelStyleMut},
-    style::{NodeStyle, StyleId, WidgetStyle},
-    text::{TextStyle, TextStyleMut},
-    widget::{Widget, WidgetKind},
-};
+use crate::{Button, ButtonStyle, ButtonStyleMut, cache::LayoutCache, node::{UiNode, UiStore}, node_id::NodeId, panel::{Panel, PanelMut, PanelStyle, PanelStyleMut}, style::{NodeStyle, StyleId, WidgetStyle}, text::{TextStyle, TextStyleMut}, widget::{Widget, WidgetKind}};
 
 pub struct Ui {
     pub globals: Globals,
@@ -81,17 +73,26 @@ impl Ui {
         let ids = self.collect_color_handles();
         for id in ids {
             let node_ref = self.node_ref(&id).unwrap();
-            if node_ref.widget_kind() != WidgetKind::Panel {
-                continue;
+
+            match node_ref.widget_kind() {
+                WidgetKind::Panel => {
+                    let panel_style_ref = self.store.panel_style_ref(&id);
+                    let color = panel_style_ref.background_color();
+                    let panel_mut = self.panel_mut(&id).unwrap();
+                    let mat_handle = materials.add(color);
+                    panel_mut.background_color_handle = Some(mat_handle);
+                },
+                WidgetKind::Button => {
+                    let button_style_ref = self.store.button_style_ref(&id);
+                    let color = button_style_ref.background_color();
+                    let button_mut = self.button_mut(&id).unwrap();
+                    let mat_handle = materials.add(color);
+                    button_mut.panel.background_color_handle = Some(mat_handle);
+                },
+                _ => {
+                    continue;
+                },
             }
-
-            let panel_style_ref = self.store.panel_style_ref(&id);
-            let color = panel_style_ref.background_color();
-
-            let panel_mut = self.panel_mut(&id).unwrap();
-
-            let mat_handle = materials.add(color);
-            panel_mut.background_color_handle = Some(mat_handle);
         }
     }
 
@@ -133,6 +134,14 @@ impl Ui {
             self.create_style(NodeStyle::empty(WidgetStyle::Text(TextStyle::empty())));
         let mut text_style_mut = TextStyleMut::new(self, new_style_id);
         inner_fn(&mut text_style_mut);
+        new_style_id
+    }
+
+    pub fn create_button_style(&mut self, inner_fn: impl FnOnce(&mut ButtonStyleMut)) -> StyleId {
+        let new_style_id =
+            self.create_style(NodeStyle::empty(WidgetStyle::Button(ButtonStyle::empty())));
+        let mut button_style_mut = ButtonStyleMut::new(self, new_style_id);
+        inner_fn(&mut button_style_mut);
         new_style_id
     }
 
@@ -184,11 +193,25 @@ impl Ui {
     pub fn collect_color_handles(&mut self) -> Vec<NodeId> {
         let mut pending_mat_handles = Vec::new();
         for id in self.store.node_ids() {
-            let Some(panel_ref) = self.panel_ref(&id) else {
+            let Some(node_ref) = self.node_ref(&id) else {
                 continue;
             };
-            if panel_ref.background_color_handle.is_none() {
-                pending_mat_handles.push(id);
+            match node_ref.widget_kind() {
+                WidgetKind::Panel => {
+                    let panel_ref = node_ref.widget_panel_ref().unwrap();
+                    if panel_ref.background_color_handle.is_none() {
+                        pending_mat_handles.push(id);
+                    }
+                },
+                WidgetKind::Button => {
+                    let button_ref = node_ref.widget_button_ref().unwrap();
+                    if button_ref.panel.background_color_handle.is_none() {
+                        pending_mat_handles.push(id);
+                    }
+                },
+                _ => {
+                    continue;
+                },
             }
         }
         pending_mat_handles
@@ -217,6 +240,18 @@ impl Ui {
         let node_mut = self.node_mut(id)?;
         let panel_mut = node_mut.widget_panel_mut()?;
         Some(panel_mut)
+    }
+
+    pub(crate) fn button_ref(&self, id: &NodeId) -> Option<&Button> {
+        let node_ref = self.node_ref(id)?;
+        let button_ref = node_ref.widget_button_ref()?;
+        Some(button_ref)
+    }
+
+    pub(crate) fn button_mut(&mut self, id: &NodeId) -> Option<&mut Button> {
+        let node_mut = self.node_mut(id)?;
+        let button_mut = node_mut.widget_button_mut()?;
+        Some(button_mut)
     }
 
     pub(crate) fn style_mut(&mut self, id: &StyleId) -> Option<&mut NodeStyle> {

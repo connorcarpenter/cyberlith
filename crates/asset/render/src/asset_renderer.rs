@@ -452,6 +452,9 @@ fn draw_ui_node(
             WidgetKind::Text => {
                 draw_ui_text(render_frame, render_layer_opt, asset_store, ui, text_icon_handle, id, &transform);
             }
+            WidgetKind::Button => {
+                draw_ui_button(render_frame, render_layer_opt, asset_store, ui, text_icon_handle, id, &transform);
+            }
         }
     }
 }
@@ -531,4 +534,54 @@ fn draw_ui_text(
         transform,
         &text_ref.text,
     );
+}
+
+fn draw_ui_button(
+    //self was Button
+    render_frame: &mut RenderFrame,
+    render_layer_opt: Option<&RenderLayer>,
+    asset_store: &ProcessedAssetStore,
+    ui: &Ui,
+    text_icon_handle: &AssetHandle<IconData>,
+    node_id: &NodeId,
+    transform: &Transform,
+) {
+    let Some(button_ref) = ui.store.button_ref(node_id) else {
+        panic!("no button ref for node_id: {:?}", node_id);
+    };
+
+    // draw button
+    if let Some(mat_handle) = button_ref.panel.background_color_handle {
+        let button_style_ref = ui.store.button_style_ref(node_id);
+        let background_alpha = button_style_ref.background_alpha();
+        if background_alpha > 0.0 {
+            if background_alpha != 1.0 {
+                panic!("partial background_alpha not implemented yet!");
+            }
+            let box_handle = ui.globals.get_box_mesh_handle().unwrap();
+            render_frame.draw_mesh(render_layer_opt, box_handle, &mat_handle, &transform);
+        }
+    } else {
+        warn!("no color handle for button"); // probably will need to do better debugging later
+        return;
+    };
+
+    // draw children
+    for child_id in button_ref.panel.children.iter() {
+        //info!("drawing child: {:?}", child);
+        draw_ui_node(
+            // TODO: make this configurable?
+            render_frame,
+            render_layer_opt,
+            asset_store,
+            ui,
+            text_icon_handle,
+            child_id,
+            (
+                transform.translation.x,
+                transform.translation.y,
+                transform.translation.z + 0.1,
+            ),
+        );
+    }
 }

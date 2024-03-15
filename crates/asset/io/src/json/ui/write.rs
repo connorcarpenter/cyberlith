@@ -1,10 +1,8 @@
 use std::collections::HashMap;
 
 use render_api::base::Color;
-use ui::{
-    NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Ui, UiNode, Widget,
-    WidgetStyle, Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid
-};
+use ui::{NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Ui, UiNode, Widget, WidgetStyle, Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid, ButtonStyle, Button};
+use crate::json::{ButtonJson, ButtonStyleJson};
 
 use super::{
     AlignmentJson, ColorJson, LayoutTypeJson, MarginUnitsJson, PanelJson, PanelStyleJson,
@@ -84,6 +82,7 @@ impl WidgetStyleJson {
         match style {
             WidgetStyle::Panel(panel) => Self::Panel(PanelStyleJson::from_panel_style(panel)),
             WidgetStyle::Text(text) => Self::Text(TextStyleJson::from_text_style(text)),
+            WidgetStyle::Button(button) => Self::Button(ButtonStyleJson::from_button_style(button)),
         }
     }
 }
@@ -112,6 +111,18 @@ impl PanelStyleJson {
 impl TextStyleJson {
     fn from_text_style(_style: &TextStyle) -> Self {
         Self {}
+    }
+}
+
+impl ButtonStyleJson {
+    fn from_button_style(style: &ButtonStyle) -> Self {
+
+        let panel_style = &style.panel;
+        let panel_json = PanelStyleJson::from_panel_style(panel_style);
+
+        Self {
+            panel: panel_json,
+        }
     }
 }
 
@@ -210,6 +221,9 @@ impl WidgetJson {
             Widget::Text(text) => {
                 Self::Text(TextJson::from_text(text))
             }
+            Widget::Button(button) => {
+                Self::Button(ButtonJson::from_button(button))
+            }
         }
     }
 }
@@ -230,6 +244,16 @@ impl TextJson {
     fn from_text(text: &Text) -> Self {
         Self {
             text: text.inner_text().to_string(),
+        }
+    }
+}
+
+impl ButtonJson {
+    fn from_button(button: &Button) -> Self {
+        let panel = &button.panel;
+        let panel_json = PanelJson::from_panel(panel);
+        Self {
+            panel: panel_json,
         }
     }
 }

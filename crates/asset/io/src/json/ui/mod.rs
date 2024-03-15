@@ -75,6 +75,7 @@ impl UiStyleJson {
         match &self.widget_style {
             WidgetStyleJson::Panel(_) => WidgetKind::Panel,
             WidgetStyleJson::Text(_) => WidgetKind::Text,
+            WidgetStyleJson::Button(_) => WidgetKind::Button,
         }
     }
 }
@@ -101,10 +102,16 @@ pub(crate) struct PanelStyleJson {
 pub(crate) struct TextStyleJson {}
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+pub(crate) struct ButtonStyleJson {
+    panel: PanelStyleJson,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "lowercase")]
 pub(crate) enum WidgetStyleJson {
     Panel(PanelStyleJson),
     Text(TextStyleJson),
+    Button(ButtonStyleJson),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -172,6 +179,7 @@ impl UiNodeJson {
         match &self.widget {
             WidgetJson::Panel(_) => WidgetKind::Panel,
             WidgetJson::Text(_) => WidgetKind::Text,
+            WidgetJson::Button(_) => WidgetKind::Button,
         }
     }
 }
@@ -181,6 +189,7 @@ impl UiNodeJson {
 pub(crate) enum WidgetJson {
     Panel(PanelJson),
     Text(TextJson),
+    Button(ButtonJson),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -191,4 +200,9 @@ pub(crate) struct PanelJson {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub(crate) struct TextJson {
     text: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub(crate) struct ButtonJson {
+    panel: PanelJson,
 }

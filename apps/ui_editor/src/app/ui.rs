@@ -36,7 +36,7 @@ pub fn init_ui() -> (String, AssetId, ETag, Ui) {
             .set_solid_fit()
             .set_aspect_ratio(16., 4.);
     });
-    let base_button_style = ui.create_panel_style(|s| {
+    let base_button_style = ui.create_button_style(|s| {
         s.set_background_color(Color::DARK_GRAY)
             .set_self_halign(Alignment::Center)
             .set_size_pc(50.0, 20.0)
@@ -45,10 +45,10 @@ pub fn init_ui() -> (String, AssetId, ETag, Ui) {
             .set_aspect_ratio(16.0, 4.)
             .set_padding_px(10.0, 10.0, 10.0, 10.0);
     });
-    let start_button_style = ui.create_panel_style(|s| {
+    let start_button_style = ui.create_button_style(|s| {
         s.set_margin_right_px(40.0);
     });
-    let continue_button_style = ui.create_panel_style(|s| {
+    let continue_button_style = ui.create_button_style(|s| {
         s.set_margin_left_px(40.0);
     });
 
@@ -65,7 +65,7 @@ pub fn init_ui() -> (String, AssetId, ETag, Ui) {
             });
 
             // start button
-            c.add_panel()
+            c.add_button()
                 .add_style(base_button_style)
                 .add_style(start_button_style)
                 .contents(|c| {
@@ -73,7 +73,7 @@ pub fn init_ui() -> (String, AssetId, ETag, Ui) {
                 });
 
             // continue button
-            c.add_panel()
+            c.add_button()
                 .add_style(base_button_style)
                 .add_style(continue_button_style)
                 .contents(|c| {

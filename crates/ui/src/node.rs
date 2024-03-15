@@ -1,4 +1,5 @@
-use crate::{panel::{Panel, PanelStyle, PanelStyleRef}, style::{NodeStyle, StyleId, WidgetStyle}, widget::Widget, NodeId, Text};
+use crate::{panel::{Panel, PanelStyle, PanelStyleRef}, style::{NodeStyle, StyleId, WidgetStyle}, widget::Widget, NodeId, Text, ButtonStyle, Button};
+use crate::button::ButtonStyleRef;
 use crate::widget::WidgetKind;
 
 pub struct UiStore {
@@ -75,6 +76,14 @@ impl UiStore {
         None
     }
 
+    pub fn button_ref(&self, node_id: &NodeId) -> Option<&Button> {
+        let node = self.get_node(node_id)?;
+        if node.widget_kind() == WidgetKind::Button {
+            return node.widget_button_ref();
+        }
+        None
+    }
+
     fn node_style_ids(&self, node_id: &NodeId) -> &Vec<StyleId> {
         let node = self.get_node(node_id).unwrap();
         &node.style_ids
@@ -105,8 +114,24 @@ impl UiStore {
         }
     }
 
+    pub(crate) fn for_each_button_style(&self, node_id: &NodeId, mut func: impl FnMut(&ButtonStyle)) {
+        for style_id in self.node_style_ids(node_id) {
+            let Some(style) = self.get_style(style_id) else {
+                panic!("StyleId does not reference a Style");
+            };
+            let WidgetStyle::Button(button_style) = style.widget_style else {
+                panic!("StyleId does not reference a ButtonStyle");
+            };
+            func(&button_style);
+        }
+    }
+
     pub fn panel_style_ref(&self, node_id: &NodeId) -> PanelStyleRef {
         PanelStyleRef::new(self, *node_id)
+    }
+
+    pub fn button_style_ref(&self, node_id: &NodeId) -> ButtonStyleRef {
+        ButtonStyleRef::new(self, *node_id)
     }
 }
 
@@ -154,6 +179,20 @@ impl UiNode {
     pub fn widget_text_mut(&mut self) -> Option<&mut Text> {
         match &mut self.widget {
             Widget::Text(text) => Some(text),
+            _ => None,
+        }
+    }
+
+    pub fn widget_button_ref(&self) -> Option<&Button> {
+        match &self.widget {
+            Widget::Button(button) => Some(button),
+            _ => None,
+        }
+    }
+
+    pub fn widget_button_mut(&mut self) -> Option<&mut Button> {
+        match &mut self.widget {
+            Widget::Button(button) => Some(button),
             _ => None,
         }
     }

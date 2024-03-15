@@ -5,104 +5,63 @@ use render_api::{
 use storage::Handle;
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 
-use crate::{node::{UiNode, UiStore}, style::{NodeStyle, StyleId, WidgetStyle}, text::{Text, TextMut}, NodeId, Ui, Widget, Button, ButtonMut};
+use crate::{node::{UiNode, UiStore}, style::{NodeStyle, StyleId, WidgetStyle}, text::{Text, TextMut}, NodeId, Ui, Widget, PanelStyle, Panel, PanelMut};
+use crate::panel::PanelContentsMut;
 
 #[derive(Clone)]
-pub struct Panel {
-    pub children: Vec<NodeId>,
-    pub background_color_handle: Option<Handle<CpuMaterial>>,
+pub struct Button {
+    pub panel: Panel,
 }
 
-impl Panel {
+impl Button {
     pub fn new() -> Self {
         Self {
-            children: Vec::new(),
-            background_color_handle: None,
+            panel: Panel::new(),
         }
     }
 
     pub fn add_child(&mut self, child_id: NodeId) {
-        self.children.push(child_id);
+        self.panel.add_child(child_id);
     }
 }
 
 #[derive(Clone, Copy)]
-pub struct PanelStyle {
-    pub background_color: Option<Color>,
-    pub(crate) background_alpha: Option<f32>,
-
-    pub layout_type: Option<LayoutType>,
-
-    pub padding_left: Option<SizeUnits>,
-    pub padding_right: Option<SizeUnits>,
-    pub padding_top: Option<SizeUnits>,
-    pub padding_bottom: Option<SizeUnits>,
-
-    pub row_between: Option<SizeUnits>,
-    pub col_between: Option<SizeUnits>,
-    pub children_halign: Option<Alignment>,
-    pub children_valign: Option<Alignment>,
+pub struct ButtonStyle {
+    pub panel: PanelStyle,
 }
 
-impl PanelStyle {
+impl ButtonStyle {
     pub(crate) fn empty() -> Self {
         Self {
-            background_color: None,
-            background_alpha: None,
-
-            layout_type: None,
-
-            padding_left: None,
-            padding_right: None,
-            padding_top: None,
-            padding_bottom: None,
-
-            row_between: None,
-            col_between: None,
-            children_halign: None,
-            children_valign: None,
+            panel: PanelStyle::empty(),
         }
     }
 
     pub fn background_alpha(&self) -> Option<f32> {
-        self.background_alpha
+        self.panel.background_alpha()
     }
 
     pub(crate) fn set_background_alpha(&mut self, val: f32) {
-        // validate
-        if val < 0.0 || val > 1.0 {
-            panic!("background_alpha must be between 0.0 and 1.0");
-        }
-        if (val * 10.0).fract() != 0.0 {
-            panic!("background_alpha must be a multiple of 0.1");
-        }
-
-        self.background_alpha = Some(val);
+        self.panel.set_background_alpha(val);
     }
 }
 
-pub struct PanelMut<'a> {
+pub struct ButtonMut<'a> {
     ui: &'a mut Ui,
     node_id: NodeId,
 }
 
-impl<'a> PanelMut<'a> {
+impl<'a> ButtonMut<'a> {
     pub(crate) fn new(ui: &'a mut Ui, node_id: NodeId) -> Self {
         Self { ui, node_id }
     }
 
     pub fn set_visible(&mut self, visible: bool) -> &mut Self {
-        if let Some(panel) = self.ui.node_mut(&self.node_id) {
-            panel.visible = visible;
+        if let Some(node) = self.ui.node_mut(&self.node_id) {
+            node.visible = visible;
         }
         self
     }
-
-    // pub fn style(&mut self, inner_fn: impl FnOnce(&mut PanelStyleMut)) -> &mut Self {
-    //     let mut style_mut = PanelStyleMut::new(self.ui, self.node_id);
-    //     inner_fn(&mut style_mut);
-    //     self
-    // }
 
     pub fn add_style(&mut self, style_id: StyleId) -> &mut Self {
         let node = self.ui.node_mut(&self.node_id).unwrap();
@@ -110,20 +69,24 @@ impl<'a> PanelMut<'a> {
         self
     }
 
-    pub fn contents(&'a mut self, inner_fn: impl FnOnce(&mut PanelContentsMut)) -> &mut Self {
-        let mut context = PanelContentsMut::new(self.ui, self.node_id);
+    pub fn contents(&'a mut self, inner_fn: impl FnOnce(&mut ButtonContentsMut)) -> &mut Self {
+        let mut context = ButtonContentsMut::new(self.ui, self.node_id);
         inner_fn(&mut context);
         self
+    }
+
+    pub fn to_panel_mut(&mut self) -> PanelMut {
+        PanelMut::new(self.ui, self.node_id)
     }
 }
 
 // only used for adding children
-pub struct PanelContentsMut<'a> {
+pub struct ButtonContentsMut<'a> {
     ui: &'a mut Ui,
     node_id: NodeId,
 }
 
-impl<'a> PanelContentsMut<'a> {
+impl<'a> ButtonContentsMut<'a> {
     pub(crate) fn new(ui: &'a mut Ui, node_id: NodeId) -> Self {
         Self { ui, node_id }
     }
@@ -132,21 +95,21 @@ impl<'a> PanelContentsMut<'a> {
         self.ui.node_mut(&self.node_id).unwrap()
     }
 
-    fn get_panel_mut(&mut self) -> &mut Panel {
-        self.get_mut().widget_panel_mut().unwrap()
+    fn get_button_mut(&mut self) -> &mut Button {
+        self.get_mut().widget_button_mut().unwrap()
     }
 
-    pub fn add_panel<'b>(self: &'b mut PanelContentsMut<'a>) -> PanelMut<'b> {
+    pub fn add_panel<'b>(self: &'b mut ButtonContentsMut<'a>) -> PanelMut<'b> {
         // creates a new panel, returning a context for it
         let new_id = self.ui.create_node(Widget::Panel(Panel::new()));
 
         // add new panel to children
-        self.get_panel_mut().add_child(new_id);
+        self.get_button_mut().add_child(new_id);
 
         PanelMut::<'b>::new(self.ui, new_id)
     }
 
-    pub fn add_text<'b>(self: &'b mut PanelContentsMut<'a>, text: &str) -> TextMut<'b> {
+    pub fn add_text<'b>(self: &'b mut ButtonContentsMut<'a>, text: &str) -> TextMut<'b> {
         // creates a new panel, returning a context for it
         let new_id = self.ui.create_node(Widget::Text(Text::new(text)));
 
@@ -154,29 +117,21 @@ impl<'a> PanelContentsMut<'a> {
         let node_mut = self.ui.node_mut(&new_id).unwrap();
         node_mut.style_ids.push(Ui::BASE_TEXT_STYLE_ID);
 
-        // add new panel to children
-        self.get_panel_mut().add_child(new_id);
+        // add new text widget to children
+        self.get_button_mut().add_child(new_id);
 
         TextMut::<'b>::new(self.ui, new_id)
     }
 
-    pub fn add_button<'b>(self: &'b mut PanelContentsMut<'a>) -> ButtonMut<'b> {
-        // creates a new button, returning a context for it
-        let new_id = self.ui.create_node(Widget::Button(Button::new()));
-
-        // add new panel to children
-        self.get_panel_mut().add_child(new_id);
-
-        ButtonMut::<'b>::new(self.ui, new_id)
-    }
+    // no `add_button` for buttons-in-buttons ...
 }
 
-pub struct PanelStyleRef<'a> {
+pub struct ButtonStyleRef<'a> {
     store: &'a UiStore,
     node_id: NodeId,
 }
 
-impl<'a> PanelStyleRef<'a> {
+impl<'a> ButtonStyleRef<'a> {
     pub(crate) fn new(store: &'a UiStore, node_id: NodeId) -> Self {
         Self { store, node_id }
     }
@@ -184,8 +139,8 @@ impl<'a> PanelStyleRef<'a> {
     pub fn background_color(&self) -> Color {
         let mut output = Color::BLACK; // TODO: put into const var!
 
-        self.store.for_each_panel_style(&self.node_id, |style| {
-            if let Some(color) = style.background_color {
+        self.store.for_each_button_style(&self.node_id, |style| {
+            if let Some(color) = style.panel.background_color {
                 output = color;
             }
         });
@@ -196,8 +151,8 @@ impl<'a> PanelStyleRef<'a> {
     pub fn background_alpha(&self) -> f32 {
         let mut output = 1.0; // TODO: put into const var!
 
-        self.store.for_each_panel_style(&self.node_id, |style| {
-            if let Some(alpha) = style.background_alpha {
+        self.store.for_each_button_style(&self.node_id, |style| {
+            if let Some(alpha) = style.panel.background_alpha {
                 output = alpha;
             }
         });
@@ -206,12 +161,12 @@ impl<'a> PanelStyleRef<'a> {
     }
 }
 
-pub struct PanelStyleMut<'a> {
+pub struct ButtonStyleMut<'a> {
     ui: &'a mut Ui,
     style_id: StyleId,
 }
 
-impl<'a> PanelStyleMut<'a> {
+impl<'a> ButtonStyleMut<'a> {
     pub(crate) fn new(ui: &'a mut Ui, style_id: StyleId) -> Self {
         Self { ui, style_id }
     }
@@ -220,33 +175,33 @@ impl<'a> PanelStyleMut<'a> {
         self.ui.style_mut(&self.style_id).unwrap()
     }
 
-    fn get_panel_style_mut(&mut self) -> &mut PanelStyle {
-        if let WidgetStyle::Panel(panel_style) = &mut self.get_style_mut().widget_style {
-            panel_style
+    fn get_button_style_mut(&mut self) -> &mut ButtonStyle {
+        if let WidgetStyle::Button(button_style) = &mut self.get_style_mut().widget_style {
+            button_style
         } else {
-            panic!("StyleId does not reference a PanelStyle");
+            panic!("StyleId does not reference a ButtonStyle");
         }
     }
 
     // setters
 
     pub fn set_background_color(&mut self, color: Color) -> &mut Self {
-        self.get_panel_style_mut().background_color = Some(color);
+        self.get_button_style_mut().panel.background_color = Some(color);
         self
     }
 
     pub fn set_background_alpha(&mut self, alpha: f32) -> &mut Self {
-        self.get_panel_style_mut().set_background_alpha(alpha);
+        self.get_button_style_mut().set_background_alpha(alpha);
         self
     }
 
     pub fn set_horizontal(&mut self) -> &mut Self {
-        self.get_panel_style_mut().layout_type = Some(LayoutType::Row);
+        self.get_button_style_mut().panel.layout_type = Some(LayoutType::Row);
         self
     }
 
     pub fn set_vertical(&mut self) -> &mut Self {
-        self.get_panel_style_mut().layout_type = Some(LayoutType::Column);
+        self.get_button_style_mut().panel.layout_type = Some(LayoutType::Column);
         self
     }
 
@@ -271,12 +226,12 @@ impl<'a> PanelStyleMut<'a> {
     }
 
     pub fn set_children_halign(&mut self, align: Alignment) -> &mut Self {
-        self.get_panel_style_mut().children_halign = Some(align);
+        self.get_button_style_mut().panel.children_halign = Some(align);
         self
     }
 
     pub fn set_children_valign(&mut self, align: Alignment) -> &mut Self {
-        self.get_panel_style_mut().children_valign = Some(align);
+        self.get_button_style_mut().panel.children_valign = Some(align);
         self
     }
 
@@ -534,7 +489,7 @@ impl<'a> PanelStyleMut<'a> {
 
     // set_padding_left
     fn set_padding_left_units(&mut self, child_left: SizeUnits) -> &mut Self {
-        self.get_panel_style_mut().padding_left = Some(child_left);
+        self.get_button_style_mut().panel.padding_left = Some(child_left);
         self
     }
 
@@ -552,7 +507,7 @@ impl<'a> PanelStyleMut<'a> {
 
     // set_padding_right
     fn set_padding_right_units(&mut self, child_right: SizeUnits) -> &mut Self {
-        self.get_panel_style_mut().padding_right = Some(child_right);
+        self.get_button_style_mut().panel.padding_right = Some(child_right);
         self
     }
 
@@ -570,7 +525,7 @@ impl<'a> PanelStyleMut<'a> {
 
     // set_padding_top
     fn set_padding_top_units(&mut self, child_top: SizeUnits) -> &mut Self {
-        self.get_panel_style_mut().padding_top = Some(child_top);
+        self.get_button_style_mut().panel.padding_top = Some(child_top);
         self
     }
 
@@ -588,7 +543,7 @@ impl<'a> PanelStyleMut<'a> {
 
     // set_padding_bottom
     fn set_padding_bottom_units(&mut self, child_bottom: SizeUnits) -> &mut Self {
-        self.get_panel_style_mut().padding_bottom = Some(child_bottom);
+        self.get_button_style_mut().panel.padding_bottom = Some(child_bottom);
         self
     }
 
@@ -628,7 +583,7 @@ impl<'a> PanelStyleMut<'a> {
 
     // set_row_between
     fn set_row_between_units(&mut self, row_between: SizeUnits) -> &mut Self {
-        self.get_panel_style_mut().row_between = Some(row_between);
+        self.get_button_style_mut().panel.row_between = Some(row_between);
         self
     }
 
@@ -646,7 +601,7 @@ impl<'a> PanelStyleMut<'a> {
 
     // set_col_between
     fn set_col_between_units(&mut self, column_between: SizeUnits) -> &mut Self {
-        self.get_panel_style_mut().col_between = Some(column_between);
+        self.get_button_style_mut().panel.col_between = Some(column_between);
         self
     }
 

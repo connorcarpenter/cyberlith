@@ -35,8 +35,21 @@ impl Node for NodeId {
     }
 
     fn children<'t>(&'t self, store: &'t UiStore) -> Self::ChildIter<'t> {
-        if let Some(panel_ref) = store.panel_ref(self) {
-            return panel_ref.children.iter();
+        if let Some(node_ref) = store.get_node(self) {
+            let widget_kind = node_ref.widget_kind();
+            match widget_kind {
+                WidgetKind::Panel => {
+                    if let Some(panel_ref) = store.panel_ref(self) {
+                        return panel_ref.children.iter();
+                    }
+                }
+                WidgetKind::Button => {
+                    if let Some(button_ref) = store.button_ref(self) {
+                        return button_ref.panel.children.iter();
+                    }
+                }
+                _ => {}
+            }
         }
 
         return [].iter();
