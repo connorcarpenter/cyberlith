@@ -1,3 +1,4 @@
+use asset_io::json::UiJson;
 use game_engine::{
     asset::{AssetHandle, IconData},
     render::base::Color,
@@ -37,7 +38,7 @@ pub fn init_ui(text_handle: &AssetHandle<IconData>) -> Ui {
         s.set_margin_left_px(40.0);
     });
 
-    ui.set_text_icon_handle(&text_handle)
+    ui.set_text_icon_asset_id(&text_handle.asset_id())
         .set_text_color(Color::WHITE)
         .root_mut()
         .add_style(window_style)
@@ -67,25 +68,20 @@ pub fn init_ui(text_handle: &AssetHandle<IconData>) -> Ui {
     ui
 }
 
-pub fn json_write_ui(ui: Ui) -> Vec<u8> {
-    let bytes = ui_io::json::write_json(&ui);
-
-    // let byte_str = std::str::from_utf8(&bytes).unwrap();
-    // info!("ui: {:?}", byte_str);
-
-    bytes
+pub fn json_write_ui(ui: Ui) -> UiJson {
+    UiJson::from_ui(&ui)
 }
 
 pub fn json_read_ui(bytes: Vec<u8>) -> Ui {
-    ui_io::json::read_json(bytes)
+    asset_io::json::read_ui_json(bytes)
 }
 
 pub fn bits_write_ui(ui: Ui) -> Vec<u8> {
-    let bytes = ui_io::bits::write_bits(&ui);
+    let bytes = asset_io::bits::write_ui_bits(&ui);
 
     bytes
 }
 
 pub fn bits_read_ui(bytes: Vec<u8>) -> Ui {
-    ui_io::bits::read_bits(bytes)
+    asset_io::bits::read_ui_bits(bytes)
 }

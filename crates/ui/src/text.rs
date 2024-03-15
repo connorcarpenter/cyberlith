@@ -1,6 +1,5 @@
 use std::any::Any;
 
-use asset_render::AssetManager;
 use render_api::{
     components::{RenderLayer, Transform},
     resources::RenderFrame,
@@ -18,7 +17,7 @@ use crate::{
 
 #[derive(Clone)]
 pub struct Text {
-    text: String,
+    pub text: String,
 }
 
 impl Text {
@@ -30,44 +29,6 @@ impl Text {
 
     pub fn inner_text(&self) -> &str {
         &self.text
-    }
-}
-
-impl Widget for Text {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn as_any_mut(&mut self) -> &mut dyn Any {
-        self
-    }
-
-    fn draw(
-        &self,
-        render_frame: &mut RenderFrame,
-        render_layer_opt: Option<&RenderLayer>,
-        asset_manager: &AssetManager,
-        globals: &Globals,
-        _cache: &LayoutCache,
-        _store: &UiStore,
-        _node_id: &NodeId,
-        transform: &Transform,
-    ) {
-        let Some(text_icon_handle) = globals.get_text_icon_handle() else {
-            panic!("No text handle found in globals");
-        };
-        let Some(text_color_handle) = globals.get_text_color_handle() else {
-            panic!("No text color handle found in globals");
-        };
-
-        asset_manager.draw_text(
-            render_frame,
-            render_layer_opt,
-            text_icon_handle,
-            text_color_handle,
-            transform,
-            &self.text,
-        );
     }
 }
 

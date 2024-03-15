@@ -11,10 +11,7 @@ use render_api::{
 };
 use storage::{Handle, Storage};
 
-use crate::{
-    asset_renderer::AssetRenderer, processed_asset_store::ProcessedAssetStore, AnimationData,
-    AssetHandle, IconData, MeshData, ModelData, SceneData, SkinData,
-};
+use crate::{asset_renderer::AssetRenderer, processed_asset_store::ProcessedAssetStore, AnimationData, AssetHandle, IconData, MeshData, ModelData, SceneData, SkinData, UiData};
 
 #[derive(Resource)]
 pub struct AssetManager {
@@ -211,6 +208,20 @@ impl AssetManager {
             animation_handle,
             parent_transform,
             frame_time_ms,
+        );
+    }
+
+    pub fn draw_ui(
+        &mut self,
+        render_frame: &mut RenderFrame,
+        render_layer_opt: Option<&RenderLayer>,
+        ui_handle: &AssetHandle<UiData>,
+    ) {
+        AssetRenderer::draw_ui(
+            render_frame,
+            render_layer_opt,
+            &mut self.store,
+            ui_handle,
         );
     }
 }

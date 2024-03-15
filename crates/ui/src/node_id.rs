@@ -2,7 +2,7 @@ use std::fmt::{Display, Formatter};
 
 use ui_layout::{Alignment, LayoutType, MarginUnits, Node, PositionType, SizeUnits, Solid};
 
-use crate::node::{UiStore, WidgetKind};
+use crate::{node::UiStore, widget::WidgetKind};
 
 #[derive(Clone, Copy, PartialEq, PartialOrd, Ord, Eq, Hash, Debug, Default)]
 pub struct NodeId(u32);

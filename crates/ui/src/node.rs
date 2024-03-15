@@ -1,9 +1,5 @@
-use crate::{
-    panel::{Panel, PanelStyle, PanelStyleRef},
-    style::{NodeStyle, StyleId, WidgetStyle},
-    widget::Widget,
-    NodeId,
-};
+use crate::{panel::{Panel, PanelStyle, PanelStyleRef}, style::{NodeStyle, StyleId, WidgetStyle}, widget::Widget, NodeId, Text};
+use crate::widget::WidgetKind;
 
 pub struct UiStore {
     pub styles: Vec<NodeStyle>,
@@ -28,7 +24,7 @@ impl UiStore {
         NodeId::new(index as u32)
     }
 
-    pub(crate) fn get_node(&self, node_id: &NodeId) -> Option<&UiNode> {
+    pub fn get_node(&self, node_id: &NodeId) -> Option<&UiNode> {
         self.nodes.get(node_id.as_usize())
     }
 
@@ -71,10 +67,10 @@ impl UiStore {
 
     // refs stuff
 
-    pub(crate) fn panel_ref(&self, node_id: &NodeId) -> Option<&Panel> {
+    pub fn panel_ref(&self, node_id: &NodeId) -> Option<&Panel> {
         let node = self.get_node(node_id)?;
-        if node.kind == WidgetKind::Panel {
-            return UiNode::downcast_ref::<Panel>(node.widget.as_ref());
+        if node.widget_kind() == WidgetKind::Panel {
+            return node.widget_panel_ref();
         }
         None
     }
@@ -85,7 +81,7 @@ impl UiStore {
     }
 
     pub(crate) fn node_kind(&self, node_id: &NodeId) -> WidgetKind {
-        self.get_node(node_id).unwrap().kind
+        self.get_node(node_id).unwrap().widget_kind()
     }
 
     pub(crate) fn for_each_node_style(&self, node_id: &NodeId, mut func: impl FnMut(&NodeStyle)) {
@@ -109,41 +105,56 @@ impl UiStore {
         }
     }
 
-    pub(crate) fn panel_style_ref(&self, node_id: &NodeId) -> PanelStyleRef {
+    pub fn panel_style_ref(&self, node_id: &NodeId) -> PanelStyleRef {
         PanelStyleRef::new(self, *node_id)
     }
-}
-
-#[derive(PartialEq, Eq, Clone, Copy)]
-pub enum WidgetKind {
-    Panel,
-    Text,
 }
 
 #[derive(Clone)]
 pub struct UiNode {
     pub visible: bool,
     pub style_ids: Vec<StyleId>,
-    pub kind: WidgetKind,
-    pub widget: Box<dyn Widget>,
+    pub widget: Widget,
 }
 
 impl UiNode {
-    pub(crate) fn new<W: Widget>(kind: &WidgetKind, widget: W) -> Self {
+    pub(crate) fn new(widget: Widget) -> Self {
         Self {
             visible: true,
             style_ids: Vec::new(),
-            widget: Box::new(widget),
-            kind: *kind,
+            widget,
         }
     }
 
-    pub fn downcast_ref<T: Widget>(widget: &dyn Widget) -> Option<&T> {
-        widget.as_any().downcast_ref()
+    pub fn widget_kind(&self) -> WidgetKind {
+        self.widget.kind()
     }
 
-    // pub(crate) fn downcast_mut<T: Widget>(widget: &mut dyn Widget) -> Option<&mut T> {
-    //     let widget_any: &mut dyn Any = widget.as_any_mut();
-    //     widget_any.downcast_mut()
-    // }
+    pub fn widget_panel_ref(&self) -> Option<&Panel> {
+        match &self.widget {
+            Widget::Panel(panel) => Some(panel),
+            _ => None,
+        }
+    }
+
+    pub fn widget_panel_mut(&mut self) -> Option<&mut Panel> {
+        match &mut self.widget {
+            Widget::Panel(panel) => Some(panel),
+            _ => None,
+        }
+    }
+
+    pub fn widget_text_ref(&self) -> Option<&Text> {
+        match &self.widget {
+            Widget::Text(text) => Some(text),
+            _ => None,
+        }
+    }
+
+    pub fn widget_text_mut(&mut self) -> Option<&mut Text> {
+        match &mut self.widget {
+            Widget::Text(text) => Some(text),
+            _ => None,
+        }
+    }
 }

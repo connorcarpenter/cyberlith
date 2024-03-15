@@ -1,10 +1,8 @@
 use std::collections::HashMap;
 
 use asset_id::AssetId;
-use asset_render::{AssetHandle, IconData};
 use render_api::base::Color;
-use ui::{PanelMut, PanelStyleMut, StyleId, TextStyleMut, Ui, WidgetKind};
-use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
+use ui::{PanelMut, PanelStyleMut, StyleId, TextStyleMut, Ui, WidgetKind, Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 
 use super::{
     AlignmentJson, ColorJson, LayoutTypeJson, MarginUnitsJson, PanelJson, PositionTypeJson,
@@ -59,7 +57,7 @@ fn convert_nodes_recurse<'a>(
 }
 
 impl UiJson {
-    pub(crate) fn to_ui(self) -> Ui {
+    pub fn to_ui(self) -> Ui {
         let mut ui = Ui::new();
 
         // ui_serde -> ui
@@ -75,8 +73,7 @@ impl UiJson {
 
         // text icon
         let text_icon_asset_id = AssetId::from_str(&text_icon_asset_id).unwrap();
-        let text_icon_asset_handle = AssetHandle::<IconData>::new(text_icon_asset_id);
-        ui.set_text_icon_handle(&text_icon_asset_handle);
+        ui.set_text_icon_asset_id(&text_icon_asset_id);
 
         // styles
         let mut style_index_to_id = HashMap::new();

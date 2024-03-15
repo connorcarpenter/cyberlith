@@ -21,9 +21,9 @@ path = "src/main.rs"
 # goal is to have ONLY game_engine here!!!
 game_engine = { path = "../../crates/engine" }
 naia-serde = { path = "../../../naia/shared/serde" }
-ui_io = { path = "../../crates/ui/io", features = [ "read_json", "write_json", "read_bits", "write_bits" ] }
 asset_render = { path = "../../crates/asset/render" }
 asset_id = { path = "../../crates/asset/id" }
+asset_io = { path = "../../crates/asset/io", features = ["write_bits", "read_bits", "write_json", "read_json"] }
 
 # External
 bevy_app = { version = "0.13", default-features=false }
@@ -32,3 +32,5 @@ bevy_log = { version = "0.13", default-features=false }
 
 rand = { version = "0.8.5" }
 cfg-if = { version = "1.0" }
+
+serde_json = { version = "1.0.107" }

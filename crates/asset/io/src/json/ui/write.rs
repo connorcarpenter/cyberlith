@@ -3,9 +3,8 @@ use std::collections::HashMap;
 use render_api::base::Color;
 use ui::{
     NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Ui, UiNode, Widget, WidgetKind,
-    WidgetStyle,
+    WidgetStyle, Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid
 };
-use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 
 use super::{
     AlignmentJson, ColorJson, LayoutTypeJson, MarginUnitsJson, PanelJson, PanelStyleJson,
@@ -16,11 +15,11 @@ use super::{
 // conversion
 
 impl UiJson {
-    pub(crate) fn from_ui(ui: &Ui) -> Self {
+    pub fn from_ui(ui: &Ui) -> Self {
         let mut style_id_to_index = HashMap::new();
 
         let text_color = ColorJson::from_color(ui.get_text_color());
-        let text_icon_asset_id = ui.get_text_icon_handle().asset_id().to_string();
+        let text_icon_asset_id = ui.get_text_icon_asset_id().to_string();
 
         let mut me = Self {
             text_color,
@@ -187,7 +186,7 @@ impl UiNodeJson {
         let mut me = Self {
             visible: node.visible,
             style_ids: Vec::new(),
-            widget: WidgetJson::from_widget(node.kind, node.widget.as_ref()),
+            widget: WidgetJson::from_widget(&node.widget),
         };
 
         for style_id in &node.style_ids {
@@ -203,14 +202,12 @@ impl UiNodeJson {
 }
 
 impl WidgetJson {
-    fn from_widget(kind: WidgetKind, widget: &dyn Widget) -> Self {
-        match kind {
-            WidgetKind::Panel => {
-                let panel = UiNode::downcast_ref::<Panel>(widget).unwrap();
+    fn from_widget(widget: &Widget) -> Self {
+        match widget {
+            Widget::Panel(panel) => {
                 Self::Panel(PanelJson::from_panel(panel))
             }
-            WidgetKind::Text => {
-                let text = UiNode::downcast_ref::<Text>(widget).unwrap();
+            Widget::Text(text) => {
                 Self::Text(TextJson::from_text(text))
             }
         }

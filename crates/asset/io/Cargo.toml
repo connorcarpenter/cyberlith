@@ -13,8 +13,11 @@ write_json = [ "serde", "serde_json" ]
 [dependencies]
 cfg-if = { version = "1.0" }
 log = { version = "0.4" }
+
+render_api = { path = "../../render/render_api" }
 asset_id = { path = "../id" }
 crypto = { path = "../../crypto" }
+ui = { path = "../../ui" }
 
 # for BITS
 naia-serde = { path = "../../../../naia/shared/serde", optional = true }

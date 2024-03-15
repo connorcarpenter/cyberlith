@@ -4,7 +4,7 @@ cfg_if! {
     if #[cfg(feature = "read_json")] {
         mod read;
 
-        pub fn read_json(data: Vec<u8>) -> Ui {
+        pub fn read_ui_json(data: Vec<u8>) -> Ui {
             let ui_json: UiJson = serde_json::from_slice(data.as_slice()).unwrap();
             ui_json.to_ui()
         }
@@ -15,9 +15,8 @@ cfg_if! {
     if #[cfg(feature = "write_json")] {
         mod write;
 
-        pub fn write_json(ui: &Ui) -> Vec<u8> {
-            let ui_json = UiJson::from_ui(ui);
-            serde_json::to_vec_pretty(&ui_json).unwrap()
+        pub fn write_ui_json(ui: Ui) -> UiJson {
+            UiJson::from_ui(&ui)
         }
     } else {}
 }
@@ -29,7 +28,7 @@ use serde::{Deserialize, Serialize};
 use ui::{Ui, WidgetKind};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub(crate) struct UiJson {
+pub struct UiJson {
     text_color: ColorJson,
     text_icon_asset_id: String,
     styles: Vec<UiStyleJson>,
@@ -37,7 +36,7 @@ pub(crate) struct UiJson {
 }
 
 impl UiJson {
-    const CURRENT_SCHEMA_VERSION: u32 = 0;
+    pub const CURRENT_SCHEMA_VERSION: u32 = 0;
 
     fn dependencies(&self) -> Vec<AssetId> {
         todo!()
@@ -102,18 +101,21 @@ pub(crate) struct PanelStyleJson {
 pub(crate) struct TextStyleJson {}
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "lowercase")]
 pub(crate) enum WidgetStyleJson {
     Panel(PanelStyleJson),
     Text(TextStyleJson),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "lowercase")]
 pub(crate) enum PositionTypeJson {
     Absolute,
     Relative,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "lowercase")]
 pub(crate) enum SizeUnitsJson {
     Pixels(f32),
     Percentage(f32),
@@ -121,18 +123,21 @@ pub(crate) enum SizeUnitsJson {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "lowercase")]
 pub(crate) enum MarginUnitsJson {
     Pixels(f32),
     Percentage(f32),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "lowercase")]
 pub(crate) enum SolidJson {
     Fit,
     Fill,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "lowercase")]
 pub(crate) enum AlignmentJson {
     Start,
     Center,
@@ -140,6 +145,7 @@ pub(crate) enum AlignmentJson {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "lowercase")]
 pub(crate) enum LayoutTypeJson {
     Row,
     Column,
@@ -171,6 +177,7 @@ impl UiNodeJson {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "lowercase")]
 pub(crate) enum WidgetJson {
     Panel(PanelJson),
     Text(TextJson),

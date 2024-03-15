@@ -2,7 +2,6 @@ use std::any::Any;
 
 use bevy_log::warn;
 
-use asset_render::AssetManager;
 use render_api::{
     base::{Color, CpuMaterial},
     components::{RenderLayer, Transform},
@@ -11,21 +10,12 @@ use render_api::{
 use storage::Handle;
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 
-use crate::{
-    cache::LayoutCache,
-    node::{UiNode, UiStore, WidgetKind},
-    style::{NodeStyle, StyleId, WidgetStyle},
-    text::{Text, TextMut},
-    ui::draw_node,
-    ui::Globals,
-    widget::Widget,
-    NodeId, Ui,
-};
+use crate::{cache::LayoutCache, node::{UiNode, UiStore}, style::{NodeStyle, StyleId, WidgetStyle}, text::{Text, TextMut}, ui::Globals, widget::WidgetKind, NodeId, Ui, Widget};
 
 #[derive(Clone)]
 pub struct Panel {
     pub children: Vec<NodeId>,
-    pub(crate) background_color_handle: Option<Handle<CpuMaterial>>,
+    pub background_color_handle: Option<Handle<CpuMaterial>>,
 }
 
 impl Panel {
@@ -38,64 +28,6 @@ impl Panel {
 
     pub fn add_child(&mut self, child_id: NodeId) {
         self.children.push(child_id);
-    }
-}
-
-impl Widget for Panel {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn as_any_mut(&mut self) -> &mut dyn Any {
-        self
-    }
-
-    fn draw(
-        &self,
-        render_frame: &mut RenderFrame,
-        render_layer_opt: Option<&RenderLayer>,
-        asset_manager: &AssetManager,
-        globals: &Globals,
-        cache: &LayoutCache,
-        store: &UiStore,
-        node_id: &NodeId,
-        transform: &Transform,
-    ) {
-        // draw panel
-        if let Some(mat_handle) = self.background_color_handle {
-            let panel_style_ref = store.panel_style_ref(node_id);
-            let background_alpha = panel_style_ref.background_alpha();
-            if background_alpha > 0.0 {
-                if background_alpha != 1.0 {
-                    panic!("partial background_alpha not implemented yet!");
-                }
-                let box_handle = globals.get_box_mesh_handle().unwrap();
-                render_frame.draw_mesh(render_layer_opt, box_handle, &mat_handle, &transform);
-            }
-        } else {
-            warn!("no color handle for panel"); // probably will need to do better debugging later
-            return;
-        };
-
-        // draw children
-        for child_id in self.children.iter() {
-            //info!("drawing child: {:?}", child);
-            draw_node(
-                // TODO: make this configurable?
-                render_frame,
-                render_layer_opt,
-                asset_manager,
-                globals,
-                cache,
-                store,
-                child_id,
-                (
-                    transform.translation.x,
-                    transform.translation.y,
-                    transform.translation.z + 0.1,
-                ),
-            );
-        }
     }
 }
 
@@ -206,17 +138,12 @@ impl<'a> PanelContentsMut<'a> {
     }
 
     fn get_panel_mut(&mut self) -> &mut Panel {
-        self.get_mut()
-            .widget
-            .as_mut()
-            .as_any_mut()
-            .downcast_mut::<Panel>()
-            .unwrap()
+        self.get_mut().widget_panel_mut().unwrap()
     }
 
     pub fn add_panel<'b>(self: &'b mut PanelContentsMut<'a>) -> PanelMut<'b> {
         // creates a new panel, returning a context for it
-        let new_id = self.ui.create_node(&WidgetKind::Panel, Panel::new());
+        let new_id = self.ui.create_node(Widget::Panel(Panel::new()));
 
         // add new panel to children
         self.get_panel_mut().add_child(new_id);
@@ -226,7 +153,7 @@ impl<'a> PanelContentsMut<'a> {
 
     pub fn add_text<'b>(self: &'b mut PanelContentsMut<'a>, text: &str) -> TextMut<'b> {
         // creates a new panel, returning a context for it
-        let new_id = self.ui.create_node(&WidgetKind::Text, Text::new(text));
+        let new_id = self.ui.create_node(Widget::Text(Text::new(text)));
 
         // add base text style
         let node_mut = self.ui.node_mut(&new_id).unwrap();

@@ -4,9 +4,8 @@ use naia_serde::{FileBitWriter, SerdeInternal as Serde, UnsignedInteger, Unsigne
 
 use ui::{
     NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Ui, UiNode, Widget, WidgetKind,
-    WidgetStyle,
+    WidgetStyle, Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid,
 };
-use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 
 use crate::bits::{
     AlignmentBits, LayoutTypeBits, MarginUnitsBits, PanelBits, PanelStyleBits, PositionTypeBits,
@@ -31,8 +30,8 @@ fn convert_ui_to_actions(ui: &Ui) -> Vec<UiAction> {
     ));
 
     // write text icon AssetId
-    let text_icon_asset_id = ui.get_text_icon_handle().asset_id();
-    output.push(UiAction::TextIconAssetId(text_icon_asset_id));
+    let text_icon_asset_id = ui.get_text_icon_asset_id();
+    output.push(UiAction::TextIconAssetId(*text_icon_asset_id));
 
     // write styles
 
@@ -322,7 +321,7 @@ impl UiNodeBits {
         let mut me = Self {
             visible: node.visible,
             style_ids: Vec::new(),
-            widget: WidgetBits::from_widget(node.kind, node.widget.as_ref()),
+            widget: WidgetBits::from_widget(&node.widget),
         };
 
         for style_id in &node.style_ids {
@@ -338,14 +337,12 @@ impl UiNodeBits {
 }
 
 impl WidgetBits {
-    fn from_widget(kind: WidgetKind, widget: &dyn Widget) -> Self {
-        match kind {
-            WidgetKind::Panel => {
-                let panel = UiNode::downcast_ref::<Panel>(widget).unwrap();
+    fn from_widget(widget: &Widget) -> Self {
+        match widget {
+            Widget::Panel(panel) => {
                 Self::Panel(PanelBits::from_panel(panel))
             }
-            WidgetKind::Text => {
-                let text = UiNode::downcast_ref::<Text>(widget).unwrap();
+            Widget::Text(text) => {
                 Self::Text(TextBits::from_text(text))
             }
         }

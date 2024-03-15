@@ -4,7 +4,7 @@ cfg_if! {
     if #[cfg(feature = "read_bits")] {
         mod read;
 
-        pub fn read_bits(data: Vec<u8>) -> Ui {
+        pub fn read_ui_bits(data: Vec<u8>) -> Ui {
             read::read_bits(data)
         }
     } else {}
@@ -14,7 +14,7 @@ cfg_if! {
     if #[cfg(feature = "write_bits")] {
         mod write;
 
-        pub fn write_bits(ui: &Ui) -> Vec<u8> {
+        pub fn write_ui_bits(ui: &Ui) -> Vec<u8> {
             write::write_bits(ui)
         }
     } else {}

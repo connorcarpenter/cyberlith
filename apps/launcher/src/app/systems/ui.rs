@@ -37,7 +37,7 @@ pub fn init_ui(text_handle: &AssetHandle<IconData>) -> Ui {
         s.set_margin_left_px(40.0);
     });
 
-    ui.set_text_icon_handle(&text_handle)
+    ui.set_text_icon_asset_id(&text_handle)
         .set_text_color(Color::WHITE)
         .root_mut()
         .add_style(window_style)

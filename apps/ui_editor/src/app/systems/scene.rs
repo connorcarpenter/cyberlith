@@ -7,12 +7,14 @@ use bevy_log::info;
 
 use naia_serde::{BitWriter, Serde};
 
-use asset_render::AssetMetadataSerde;
+use asset_io::json::{Asset, AssetData, AssetMeta, UiJson};
+use asset_render::{AssetMetadataSerde, UiData};
 use asset_id::ETag;
 
+// TODO: don't depend on game engine?
 use game_engine::{
     asset::{
-        embedded_asset_event, AssetHandle, AssetId, AssetManager, EmbeddedAssetEvent, IconData,
+        embedded_asset_event, AssetHandle, AssetId, AssetManager, EmbeddedAssetEvent, IconData, AssetType,
     },
     math::Vec3,
     render::{
@@ -27,7 +29,6 @@ use game_engine::{
     },
     ui::Ui,
 };
-use game_engine::asset::AssetType;
 
 use crate::app::{
     resources::Global,
@@ -42,22 +43,71 @@ pub fn scene_setup(
     embedded_asset_events.send(embedded_asset_event!("../embedded/8273wa")); // palette
     embedded_asset_events.send(embedded_asset_event!("../embedded/34mvvk")); // verdana icon
 
-    let ui_camera = setup_ui(&mut commands);
+    let camera = setup_scene(&mut commands);
+    setup_ui(&mut commands);
 
-    commands.insert_resource(Global::new(ui_camera));
+    commands.insert_resource(Global::new(camera));
 }
 
-fn setup_ui(commands: &mut Commands) -> Entity {
+fn setup_ui(commands: &mut Commands) {
 
-    let name = "main"; // TODO: clean this up
+    let name = "main"; // TODO: clean this up?
+    let asset_id = AssetId::get_random();
 
-    // render_layer
-    let layer = RenderLayers::layer(0);
+    let text_handle = AssetHandle::<IconData>::new(AssetId::from_str("34mvvk").unwrap()); // TODO: use some kind of catalog
 
+    let ui = init_ui(&text_handle);
+
+    // ui -> JSON bytes
+    let ui_bytes = {
+        let ui_json = json_write_ui(ui);
+        let new_meta = AssetMeta::new(&asset_id, UiJson::CURRENT_SCHEMA_VERSION);
+        let asset = Asset::new(new_meta, AssetData::Ui(ui_json));
+        let ui_bytes = serde_json::to_vec_pretty(&asset)
+            .unwrap();
+        info!("json byte count: {:?}", ui_bytes.len());
+        ui_bytes
+    };
+
+    // write JSON bytes to file
+    std::fs::write(format!("output/{}.ui.json", name), &ui_bytes).unwrap();
+
+    // JSON bytes -> ui
+    let ui = {
+        let asset: Asset = serde_json::from_slice(&ui_bytes).unwrap();
+        let (_, data) = asset.deconstruct();
+        let AssetData::Ui(ui_json) = data else {
+            panic!("expected UiData");
+        };
+        ui_json.to_ui()
+    };
+
+    // ui -> bit-packed bytes
+    let ui_bytes = bits_write_ui(ui);
+    info!("bits byte count: {:?}", ui_bytes.len());
+
+    // write bit-packed data to file
+    std::fs::write(format!("output/{}", name), &ui_bytes).unwrap();
+
+    // write metadata to file
+    {
+        let ui_metadata = AssetMetadataSerde::new(ETag::new_random(), AssetType::Ui);
+        let mut bit_writer = BitWriter::new();
+        ui_metadata.ser(&mut bit_writer);
+        let metadata_bytes = bit_writer.to_bytes();
+        std::fs::write(format!("output/{}.meta", name), &metadata_bytes).unwrap();
+    }
+
+    // bit-packed bytes -> ui
+    let ui = bits_read_ui(ui_bytes);
+
+    let _ui_entity = commands.spawn(ui).id();
+}
+
+fn setup_scene(commands: &mut Commands) -> Entity {
     // ambient light
     commands
-        .spawn(AmbientLight::new(1.0, Color::WHITE))
-        .insert(layer);
+        .spawn(AmbientLight::new(1.0, Color::WHITE));
 
     // camera
     let camera_id = commands
@@ -74,50 +124,18 @@ fn setup_ui(commands: &mut Commands) -> Entity {
             }),
             ..Default::default()
         })
-        .insert(layer)
         .id();
-
-    // ui serde
-
-    let text_handle = AssetHandle::<IconData>::new(AssetId::from_str("34mvvk").unwrap()); // TODO: use some kind of catalog
-
-    let ui = init_ui(&text_handle);
-
-    let ui_bytes = json_write_ui(ui);
-    info!("json byte count: {:?}", ui_bytes.len());
-
-    // write JSON to file
-    std::fs::write(format!("output/{}.json", name), &ui_bytes).unwrap();
-
-    let ui = json_read_ui(ui_bytes);
-
-    let ui_bytes = bits_write_ui(ui);
-    info!("bits byte count: {:?}", ui_bytes.len());
-
-    // write bit-packed data to file
-    std::fs::write(format!("output/{}", name), &ui_bytes).unwrap();
-
-    // write metadata to file
-    let ui_metadata = AssetMetadataSerde::new(ETag::new_random(), AssetType::Ui);
-    let mut bit_writer = BitWriter::new();
-    ui_metadata.ser(&mut bit_writer);
-    let metadata_bytes = bit_writer.to_bytes();
-    std::fs::write(format!("output/{}.meta", name), &metadata_bytes).unwrap();
-
-    let ui = bits_read_ui(ui_bytes);
-
-    let _ui_entity = commands.spawn(ui).insert(layer).id();
 
     camera_id
 }
 
 pub fn scene_draw(
     mut render_frame: ResMut<RenderFrame>,
-    asset_manager: Res<AssetManager>,
+    mut asset_manager: ResMut<AssetManager>,
     // Cameras
     cameras_q: Query<(&Camera, &Transform, &Projection, Option<&RenderLayer>)>,
     // UIs
-    mut uis_q: Query<(&mut Ui, Option<&RenderLayer>)>,
+    mut uis_q: Query<(&AssetHandle<UiData>, Option<&RenderLayer>)>,
     // Lights
     ambient_lights_q: Query<(&AmbientLight, Option<&RenderLayer>)>,
 ) {
@@ -135,8 +153,8 @@ pub fn scene_draw(
     }
 
     // Aggregate UIs
-    for (mut ui, render_layer_opt) in uis_q.iter_mut() {
-        ui.draw(&mut render_frame, render_layer_opt, &asset_manager);
+    for (ui_handle, render_layer_opt) in uis_q.iter_mut() {
+        asset_manager.draw_ui(&mut render_frame, render_layer_opt, ui_handle);
     }
 }
 

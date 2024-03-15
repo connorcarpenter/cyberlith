@@ -12,7 +12,7 @@ render_api = { path = "../../render/render_api" }
 math = { path = "../../math" }
 storage = { path = "../../storage" }
 filesystem = { path = "../../filesystem" }
-#ui = { path = "../../ui" }
+ui = { path = "../../ui" }
 
 naia-serde = { path = "../../../../naia/shared/serde" }
 

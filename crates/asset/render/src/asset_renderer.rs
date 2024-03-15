@@ -6,6 +6,7 @@ use render_api::{
     resources::RenderFrame,
 };
 use storage::Handle;
+use ui::{NodeId, Ui, WidgetKind};
 
 use crate::{asset_dependency::AssetComponentHandle, processed_asset_store::ProcessedAssetStore, AnimationData, AssetHandle, IconData, MeshData, ModelData, SceneData, SkinData, UiData};
 
@@ -376,40 +377,156 @@ impl AssetRenderer {
     pub(crate) fn draw_ui(
         render_frame: &mut RenderFrame,
         render_layer_opt: Option<&RenderLayer>,
-        asset_store: &ProcessedAssetStore,
+        asset_store: &mut ProcessedAssetStore, // TODO: should be immutable, need to split Ui up with layout_cache/viewport separate
         ui_handle: &AssetHandle<UiData>,
     ) {
+        {
+            let Some(ui_data) = asset_store.uis.get_mut(ui_handle) else {
+                warn!("ui data not loaded 1: {:?}", ui_handle.asset_id());
+                return;
+            };
+
+            //
+            let ui = ui_data.get_ui_mut();
+
+            let Some(viewport) = render_frame.get_camera_viewport(render_layer_opt) else {
+                return;
+            };
+            ui.update_viewport(&viewport);
+            ui.recalculate_layout_if_needed();
+        }
+
         let Some(ui_data) = asset_store.uis.get(ui_handle) else {
-            warn!("ui data not loaded 1: {:?}", ui_handle.asset_id());
+            warn!("ui data not loaded 2: {:?}", ui_handle.asset_id());
             return;
         };
-        // let Some(model_components) = ui_data.get_components_ref() else {
-        //     // not yet loaded all
-        //     return;
-        // };
-        // for (skin_or_scene_handle, mut component_transform) in model_components {
-        //     component_transform = component_transform.multiply(parent_transform);
-        //
-        //     match skin_or_scene_handle {
-        //         AssetComponentHandle::Skin(skin_handle) => {
-        //             Self::draw_skin(
-        //                 render_frame,
-        //                 render_layer_opt,
-        //                 asset_store,
-        //                 &skin_handle,
-        //                 &component_transform,
-        //             );
-        //         }
-        //         AssetComponentHandle::Scene(scene_handle) => {
-        //             Self::draw_scene(
-        //                 render_frame,
-        //                 render_layer_opt,
-        //                 asset_store,
-        //                 &scene_handle,
-        //                 &component_transform,
-        //             );
-        //         }
-        //     }
-        // }
+
+        let ui = ui_data.get_ui_ref();
+
+        draw_ui_node(
+            render_frame,
+            render_layer_opt,
+            asset_store,
+            &ui,
+            &Ui::ROOT_NODE_ID,
+            (0.0, 0.0, 0.0),
+        );
+
     }
+}
+
+fn draw_ui_node(
+    render_frame: &mut RenderFrame,
+    render_layer_opt: Option<&RenderLayer>,
+    asset_store: &ProcessedAssetStore,
+    ui: &Ui,
+    id: &NodeId,
+    parent_position: (f32, f32, f32),
+) {
+    let Some((width, height, child_offset_x, child_offset_y)) = ui.cache.bounds(id) else {
+        warn!("no bounds for id: {:?}", id);
+        return;
+    };
+
+    let Some(node) = ui.store.get_node(&id) else {
+        warn!("no panel for id: {:?}", id);
+        return;
+    };
+
+    let mut transform = Transform::from_xyz(
+        parent_position.0 + child_offset_x,
+        parent_position.1 + child_offset_y,
+        parent_position.2,
+    );
+    transform.scale.x = width;
+    transform.scale.y = height;
+
+    if node.visible {
+        match node.widget_kind() {
+            WidgetKind::Panel => {
+                draw_ui_panel(render_frame, render_layer_opt, asset_store, ui, id, &transform);
+            }
+            WidgetKind::Text => {
+                draw_ui_text(render_frame, render_layer_opt, asset_store, ui, id, &transform);
+            }
+        }
+    }
+}
+
+fn draw_ui_panel(
+    //self was Panel
+    render_frame: &mut RenderFrame,
+    render_layer_opt: Option<&RenderLayer>,
+    asset_store: &ProcessedAssetStore,
+    ui: &Ui,
+    node_id: &NodeId,
+    transform: &Transform,
+) {
+    let Some(panel_ref) = ui.store.panel_ref(node_id) else {
+        panic!("no panel ref for node_id: {:?}", node_id);
+    };
+
+    // draw panel
+    if let Some(mat_handle) = panel_ref.background_color_handle {
+        let panel_style_ref = ui.store.panel_style_ref(node_id);
+        let background_alpha = panel_style_ref.background_alpha();
+        if background_alpha > 0.0 {
+            if background_alpha != 1.0 {
+                panic!("partial background_alpha not implemented yet!");
+            }
+            let box_handle = ui.globals.get_box_mesh_handle().unwrap();
+            render_frame.draw_mesh(render_layer_opt, box_handle, &mat_handle, &transform);
+        }
+    } else {
+        warn!("no color handle for panel"); // probably will need to do better debugging later
+        return;
+    };
+
+    // draw children
+    for child_id in panel_ref.children.iter() {
+        //info!("drawing child: {:?}", child);
+        draw_ui_node(
+            // TODO: make this configurable?
+            render_frame,
+            render_layer_opt,
+            asset_store,
+            ui,
+            child_id,
+            (
+                transform.translation.x,
+                transform.translation.y,
+                transform.translation.z + 0.1,
+            ),
+        );
+    }
+}
+
+fn draw_ui_text(
+    //&self, // self was text widget
+    render_frame: &mut RenderFrame,
+    render_layer_opt: Option<&RenderLayer>,
+    asset_store: &ProcessedAssetStore,
+    ui: &Ui,
+    node_id: &NodeId,
+    transform: &Transform,
+) {
+    let text_ref = ui.store.get_node(node_id).unwrap().widget_text_ref().unwrap();
+
+    let Some(text_icon_handle) = ui.globals.get_text_icon_handle() else {
+        panic!("No text handle found in globals");
+    };
+    let Some(text_color_handle) = ui.globals.get_text_color_handle() else {
+        panic!("No text color handle found in globals");
+    };
+    let text_icon_handle = AssetHandle::<IconData>::new(*text_icon_handle);
+
+    AssetRenderer::draw_text(
+        render_frame,
+        render_layer_opt,
+        asset_store,
+        &text_icon_handle,
+        text_color_handle,
+        transform,
+        &text_ref.text,
+    );
 }

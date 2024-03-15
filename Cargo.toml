@@ -50,7 +50,6 @@ members = [
     "crates/storage",
     "crates/ui",
     "crates/ui/layout",
-    "crates/ui/io",
 ]
 # any crates with conflicting dependencies / feature flags cannot be put here
 default-members = [

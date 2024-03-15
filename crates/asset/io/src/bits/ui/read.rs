@@ -3,10 +3,8 @@ use std::collections::HashMap;
 use naia_serde::{BitReader, SerdeErr, SerdeInternal as Serde};
 
 use asset_id::AssetId;
-use asset_render::{AssetHandle, IconData};
 use render_api::base::Color;
-use ui::{PanelMut, PanelStyleMut, StyleId, TextStyleMut, Ui, WidgetKind};
-use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
+use ui::{PanelMut, PanelStyleMut, StyleId, TextStyleMut, Ui, WidgetKind, Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 
 use crate::bits::{
     AlignmentBits, LayoutTypeBits, MarginUnitsBits, PanelBits, PositionTypeBits, SizeUnitsBits,
@@ -33,8 +31,7 @@ fn convert_actions_to_ui(actions: Vec<UiAction>) -> Ui {
                 ui.set_text_color(color);
             }
             UiAction::TextIconAssetId(asset_id) => {
-                let asset_handle = AssetHandle::<IconData>::new(asset_id);
-                ui.set_text_icon_handle(&asset_handle);
+                ui.set_text_icon_asset_id(&asset_id);
             }
             UiAction::Style(style_bits) => {
                 let style_id = match style_bits.widget_kind() {

@@ -12,11 +12,11 @@ mod widget;
 pub use node_id::NodeId;
 pub use plugin::UiPlugin;
 pub use ui::Ui;
-pub use ui_layout::Alignment;
+pub use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 
 // just for ui_io
-pub use node::{UiNode, WidgetKind};
+pub use node::UiNode;
 pub use panel::{Panel, PanelMut, PanelStyle, PanelStyleMut};
 pub use style::{NodeStyle, StyleId, WidgetStyle};
 pub use text::{Text, TextStyle, TextStyleMut};
-pub use widget::Widget;
+pub use widget::{Widget, WidgetKind};

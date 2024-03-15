@@ -24,6 +24,9 @@ pub use skeleton::SkelFile;
 mod skin;
 pub use skin::SkinFile;
 
+mod ui;
+pub use ui::*;
+
 mod asset;
 pub use asset::{Asset, AssetData, AssetMeta};
 

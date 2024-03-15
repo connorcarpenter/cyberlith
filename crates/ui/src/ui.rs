@@ -1,11 +1,9 @@
 use bevy_ecs::{change_detection::ResMut, component::Component, system::Query};
-use bevy_log::warn;
 
-use asset_render::{AssetHandle, AssetManager, IconData};
+use asset_id::AssetId;
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
-    components::{RenderLayer, Transform, Viewport},
-    resources::RenderFrame,
+    components::{Viewport},
     shapes::UnitSquare,
 };
 use storage::{Handle, Storage};
@@ -13,26 +11,26 @@ use ui_layout::{Node, SizeUnits};
 
 use crate::{
     cache::LayoutCache,
-    node::{UiNode, UiStore, WidgetKind},
+    node::{UiNode, UiStore},
     node_id::NodeId,
     panel::{Panel, PanelMut, PanelStyle, PanelStyleMut},
     style::{NodeStyle, StyleId, WidgetStyle},
     text::{TextStyle, TextStyleMut},
-    widget::Widget,
+    widget::{Widget, WidgetKind},
 };
 
 #[derive(Component)]
 pub struct Ui {
-    globals: Globals,
+    pub globals: Globals,
     pending_mat_handles: Vec<NodeId>,
-    cache: LayoutCache,
+    pub cache: LayoutCache,
     pub store: UiStore,
     recalc_layout: bool,
     last_viewport: Viewport,
 }
 
 impl Ui {
-    pub(crate) const ROOT_NODE_ID: NodeId = NodeId::new(0);
+    pub const ROOT_NODE_ID: NodeId = NodeId::new(0);
     // pub(crate) const ROOT_STYLE_ID: StyleId = StyleId::new(0);
     pub const BASE_TEXT_STYLE_ID: StyleId = StyleId::new(0);
 
@@ -47,7 +45,7 @@ impl Ui {
         };
 
         // Root Node
-        let root_panel_id = me.create_node(&WidgetKind::Panel, Panel::new());
+        let root_panel_id = me.create_node(Widget::Panel(Panel::new()));
         if root_panel_id != Self::ROOT_NODE_ID {
             panic!("root panel id is not 0");
         }
@@ -119,7 +117,7 @@ impl Ui {
         let ids = std::mem::take(&mut self.pending_mat_handles);
         for id in ids {
             let node_ref = self.node_ref(&id).unwrap();
-            if node_ref.kind != WidgetKind::Panel {
+            if node_ref.widget_kind() != WidgetKind::Panel {
                 continue;
             }
 
@@ -135,12 +133,12 @@ impl Ui {
 
     // interface
 
-    pub fn get_text_icon_handle(&self) -> &AssetHandle<IconData> {
-        self.globals.text_icon_handle_opt.as_ref().unwrap()
+    pub fn get_text_icon_asset_id(&self) -> &AssetId {
+        self.globals.text_icon_asset_id_opt.as_ref().unwrap()
     }
 
-    pub fn set_text_icon_handle(&mut self, text_handle: &AssetHandle<IconData>) -> &mut Self {
-        self.globals.text_icon_handle_opt = Some(text_handle.clone());
+    pub fn set_text_icon_asset_id(&mut self, text_icon_asset_id: &AssetId) -> &mut Self {
+        self.globals.text_icon_asset_id_opt = Some(text_icon_asset_id.clone());
         self
     }
 
@@ -174,31 +172,7 @@ impl Ui {
         new_style_id
     }
 
-    pub fn draw(
-        &mut self,
-        render_frame: &mut RenderFrame,
-        render_layer_opt: Option<&RenderLayer>,
-        asset_manager: &AssetManager,
-    ) {
-        let Some(viewport) = render_frame.get_camera_viewport(render_layer_opt) else {
-            return;
-        };
-        self.update_viewport(&viewport);
-        self.recalculate_layout_if_needed();
-
-        draw_node(
-            render_frame,
-            render_layer_opt,
-            asset_manager,
-            &self.globals,
-            &self.cache,
-            &self.store,
-            &Self::ROOT_NODE_ID,
-            (0.0, 0.0, 0.0),
-        );
-    }
-
-    fn update_viewport(&mut self, viewport: &Viewport) {
+    pub fn update_viewport(&mut self, viewport: &Viewport) {
         let viewport = *viewport;
         if self.last_viewport == viewport {
             return;
@@ -211,7 +185,7 @@ impl Ui {
         self.recalc_layout = true;
     }
 
-    fn recalculate_layout_if_needed(&mut self) {
+    pub fn recalculate_layout_if_needed(&mut self) {
         if self.recalc_layout {
             self.recalc_layout = false;
             self.recalculate_layout();
@@ -260,8 +234,8 @@ impl Ui {
         self.pending_mat_handles = pending_mat_handles;
     }
 
-    pub(crate) fn create_node<W: Widget>(&mut self, node_kind: &WidgetKind, widget: W) -> NodeId {
-        self.store.insert_node(UiNode::new(node_kind, widget))
+    pub(crate) fn create_node(&mut self, widget: Widget) -> NodeId {
+        self.store.insert_node(UiNode::new(widget))
     }
 
     pub(crate) fn node_ref(&self, id: &NodeId) -> Option<&UiNode> {
@@ -275,17 +249,13 @@ impl Ui {
 
     pub(crate) fn panel_ref(&self, id: &NodeId) -> Option<&Panel> {
         let node_ref = self.node_ref(id)?;
-        let panel_ref = node_ref.widget.as_ref().as_any().downcast_ref::<Panel>()?;
+        let panel_ref = node_ref.widget_panel_ref()?;
         Some(panel_ref)
     }
 
     pub(crate) fn panel_mut(&mut self, id: &NodeId) -> Option<&mut Panel> {
         let node_mut = self.node_mut(id)?;
-        let panel_mut = node_mut
-            .widget
-            .as_mut()
-            .as_any_mut()
-            .downcast_mut::<Panel>()?;
+        let panel_mut = node_mut.widget_panel_mut()?;
         Some(panel_mut)
     }
 
@@ -300,7 +270,7 @@ impl Ui {
 
 pub struct Globals {
     box_mesh_handle_opt: Option<Handle<CpuMesh>>,
-    text_icon_handle_opt: Option<AssetHandle<IconData>>,
+    text_icon_asset_id_opt: Option<AssetId>,
     text_color: Color,
     text_color_handle_opt: Option<Handle<CpuMaterial>>,
 }
@@ -309,14 +279,14 @@ impl Globals {
     pub(crate) fn new() -> Self {
         Self {
             box_mesh_handle_opt: None,
-            text_icon_handle_opt: None,
+            text_icon_asset_id_opt: None,
             text_color: Color::BLACK,
             text_color_handle_opt: None,
         }
     }
 
-    pub fn get_text_icon_handle(&self) -> Option<&AssetHandle<IconData>> {
-        self.text_icon_handle_opt.as_ref()
+    pub fn get_text_icon_handle(&self) -> Option<&AssetId> {
+        self.text_icon_asset_id_opt.as_ref()
     }
 
     pub fn get_text_color_handle(&self) -> Option<&Handle<CpuMaterial>> {
@@ -333,47 +303,5 @@ impl Globals {
         }
         self.text_color = color;
         self.text_color_handle_opt = None;
-    }
-}
-
-pub(crate) fn draw_node(
-    render_frame: &mut RenderFrame,
-    render_layer_opt: Option<&RenderLayer>,
-    asset_manager: &AssetManager,
-    globals: &Globals,
-    cache: &LayoutCache,
-    store: &UiStore,
-    id: &NodeId,
-    parent_position: (f32, f32, f32),
-) {
-    let Some((width, height, child_offset_x, child_offset_y)) = cache.bounds(id) else {
-        warn!("no bounds for id: {:?}", id);
-        return;
-    };
-
-    let Some(node) = store.get_node(&id) else {
-        warn!("no panel for id: {:?}", id);
-        return;
-    };
-
-    let mut transform = Transform::from_xyz(
-        parent_position.0 + child_offset_x,
-        parent_position.1 + child_offset_y,
-        parent_position.2,
-    );
-    transform.scale.x = width;
-    transform.scale.y = height;
-
-    if node.visible {
-        node.widget.draw(
-            render_frame,
-            render_layer_opt,
-            asset_manager,
-            globals,
-            cache,
-            store,
-            id,
-            &transform,
-        );
     }
 }

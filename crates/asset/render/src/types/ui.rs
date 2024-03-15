@@ -1,8 +1,10 @@
+use ui::Ui;
 
 use crate::{asset_dependency::AssetDependency, AssetHandle, IconData, TypedAssetId};
 
 pub struct UiData {
     icon_file: AssetDependency<IconData>,
+    ui: Ui,
 }
 
 impl Default for UiData {
@@ -12,6 +14,15 @@ impl Default for UiData {
 }
 
 impl UiData {
+
+    pub(crate) fn get_ui_ref(&self) -> &Ui {
+        &self.ui
+    }
+
+    pub(crate) fn get_ui_mut(&mut self) -> &mut Ui {
+        &mut self.ui
+    }
+
     pub(crate) fn load_dependencies(
         &self,
         asset_handle: AssetHandle<Self>,

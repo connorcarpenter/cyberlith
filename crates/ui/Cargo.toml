@@ -6,7 +6,6 @@ workspace = "../.."
 
 [dependencies]
 asset_id = { path = "../asset/id" }
-asset_render = { path = "../asset/render" }
 render_api = { path = "../render/render_api" }
 storage = { path = "../storage" }
 ui_layout = { path = "layout" }
