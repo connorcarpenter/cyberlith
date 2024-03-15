@@ -83,5 +83,5 @@ pub fn bits_write_ui(ui: Ui) -> Vec<u8> {
 }
 
 pub fn bits_read_ui(bytes: Vec<u8>) -> Ui {
-    asset_io::bits::read_ui_bits(bytes)
+    asset_io::bits::read_ui_bits(&bytes)
 }

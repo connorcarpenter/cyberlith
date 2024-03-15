@@ -11,7 +11,6 @@ use input::{Input, InputPlugin};
 use render_api::RenderApiPlugin;
 
 use session_server_naia_proto::protocol as session_server_naia_protocol;
-use ui::UiPlugin;
 use world_server_naia_proto::{
     components::{Alt1, Main, Position},
     protocol as world_server_naia_protocol,
@@ -44,7 +43,6 @@ impl Plugin for EnginePlugin {
             .add_plugins(AssetPlugin)
             .add_plugins(HttpClientPlugin)
             .add_plugins(FileSystemPlugin)
-            .add_plugins(UiPlugin)
             .add_systems(Startup, engine_startup)
             // asset cache stuff, todo: maybe refactor out?
             .insert_resource(AssetCache::new("assets"))

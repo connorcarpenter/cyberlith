@@ -1,4 +1,5 @@
 use bevy_ecs::{change_detection::ResMut, component::Component, system::Query};
+use bevy_log::info;
 
 use asset_id::AssetId;
 use render_api::{
@@ -19,10 +20,8 @@ use crate::{
     widget::{Widget, WidgetKind},
 };
 
-#[derive(Component)]
 pub struct Ui {
     pub globals: Globals,
-    pending_mat_handles: Vec<NodeId>,
     pub cache: LayoutCache,
     pub store: UiStore,
     recalc_layout: bool,
@@ -37,7 +36,6 @@ impl Ui {
     pub fn new() -> Self {
         let mut me = Self {
             globals: Globals::new(),
-            pending_mat_handles: Vec::new(),
             cache: LayoutCache::new(),
             store: UiStore::new(),
             recalc_layout: false,
@@ -69,52 +67,20 @@ impl Ui {
         me
     }
 
-    // called as as system
-
-    pub fn update(
-        mut meshes: ResMut<Storage<CpuMesh>>,
-        mut materials: ResMut<Storage<CpuMaterial>>,
-        mut ui_q: Query<&mut Ui>,
-    ) {
-        for mut ui in ui_q.iter_mut() {
-            if ui.needs_box_handle() {
-                ui.set_box_handle(&mut meshes);
-            }
-            if ui.needs_color_handles() {
-                ui.set_color_handles(&mut materials);
-            }
-            if ui.needs_text_color_handle() {
-                ui.set_text_color_handle(&mut materials);
-            }
-        }
-    }
-
     // system methods
 
-    fn needs_box_handle(&self) -> bool {
-        self.globals.box_mesh_handle_opt.is_none()
-    }
+    pub fn set_handles(&mut self, meshes: &mut Storage<CpuMesh>, materials: &mut Storage<CpuMaterial>) {
 
-    fn set_box_handle(&mut self, meshes: &mut Storage<CpuMesh>) {
+        // set box mesh handle
         let mesh_handle = meshes.add(UnitSquare);
         self.globals.box_mesh_handle_opt = Some(mesh_handle);
-    }
 
-    fn needs_text_color_handle(&self) -> bool {
-        self.globals.text_color_handle_opt.is_none()
-    }
-
-    fn set_text_color_handle(&mut self, materials: &mut Storage<CpuMaterial>) {
+        // set text color handle
         let mat_handle = materials.add(self.globals.text_color);
         self.globals.text_color_handle_opt = Some(mat_handle);
-    }
 
-    fn needs_color_handles(&self) -> bool {
-        !self.pending_mat_handles.is_empty()
-    }
-
-    fn set_color_handles(&mut self, materials: &mut Storage<CpuMaterial>) {
-        let ids = std::mem::take(&mut self.pending_mat_handles);
+        // set color handles
+        let ids = self.collect_color_handles();
         for id in ids {
             let node_ref = self.node_ref(&id).unwrap();
             if node_ref.widget_kind() != WidgetKind::Panel {
@@ -215,13 +181,9 @@ impl Ui {
         Self::ROOT_NODE_ID.layout(cache_mut, panels_ref, panels_ref);
 
         // print_node(&Self::ROOT_PANEL_ID, &self.cache, &self.panels, true, false, "".to_string());
-
-        // now go get all the queued color handles
-        // happens each time there's a recalculation of layout ... should actually just happen whenever new elements are added
-        self.collect_color_handles();
     }
 
-    fn collect_color_handles(&mut self) {
+    pub fn collect_color_handles(&mut self) -> Vec<NodeId> {
         let mut pending_mat_handles = Vec::new();
         for id in self.store.node_ids() {
             let Some(panel_ref) = self.panel_ref(&id) else {
@@ -231,7 +193,7 @@ impl Ui {
                 pending_mat_handles.push(id);
             }
         }
-        self.pending_mat_handles = pending_mat_handles;
+        pending_mat_handles
     }
 
     pub(crate) fn create_node(&mut self, widget: Widget) -> NodeId {

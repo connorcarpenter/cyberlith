@@ -11,7 +11,7 @@ use crate::bits::{
     SolidBits, UiAction, UiActionType, UiNodeBits, UiStyleBits, WidgetBits, WidgetStyleBits,
 };
 
-pub fn read_bits(data: Vec<u8>) -> Ui {
+pub fn read_bits(data: &[u8]) -> Ui {
     let actions = bytes_to_actions(data).unwrap();
     convert_actions_to_ui(actions)
 }
@@ -70,8 +70,8 @@ fn convert_actions_to_ui(actions: Vec<UiAction>) -> Ui {
     ui
 }
 
-fn bytes_to_actions(bytes: Vec<u8>) -> Result<Vec<UiAction>, SerdeErr> {
-    let mut bit_reader = BitReader::new(&bytes);
+fn bytes_to_actions(data: &[u8]) -> Result<Vec<UiAction>, SerdeErr> {
+    let mut bit_reader = BitReader::new(data);
     let bit_reader = &mut bit_reader;
     let mut actions = Vec::new();
 

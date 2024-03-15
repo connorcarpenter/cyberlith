@@ -38,18 +38,19 @@ use crate::app::{
 pub fn scene_setup(
     mut commands: Commands,
     mut embedded_asset_events: EventWriter<EmbeddedAssetEvent>,
+    mut asset_manager: ResMut<AssetManager>,
 ) {
     // TODO: use some kind of catalog here
     embedded_asset_events.send(embedded_asset_event!("../embedded/8273wa")); // palette
     embedded_asset_events.send(embedded_asset_event!("../embedded/34mvvk")); // verdana icon
 
     let camera = setup_scene(&mut commands);
-    setup_ui(&mut commands);
+    setup_ui(&mut commands, &mut asset_manager);
 
     commands.insert_resource(Global::new(camera));
 }
 
-fn setup_ui(commands: &mut Commands) {
+fn setup_ui(commands: &mut Commands, asset_manager: &mut AssetManager) {
 
     let name = "main"; // TODO: clean this up?
     let asset_id = AssetId::get_random();
@@ -101,7 +102,15 @@ fn setup_ui(commands: &mut Commands) {
     // bit-packed bytes -> ui
     let ui = bits_read_ui(ui_bytes);
 
-    let _ui_entity = commands.spawn(ui).id();
+    // load ui into asset manager
+    let asset_id = AssetId::get_random();
+    asset_manager.manual_load_ui(&asset_id, ui);
+
+    // make handle
+    let asset_handle = AssetHandle::<UiData>::new(asset_id);
+
+    // add handle to entity
+    let _ui_entity = commands.spawn(asset_handle).id();
 }
 
 fn setup_scene(commands: &mut Commands) -> Entity {

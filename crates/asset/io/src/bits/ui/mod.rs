@@ -4,7 +4,7 @@ cfg_if! {
     if #[cfg(feature = "read_bits")] {
         mod read;
 
-        pub fn read_ui_bits(data: Vec<u8>) -> Ui {
+        pub fn read_ui_bits(data: &[u8]) -> Ui {
             read::read_bits(data)
         }
     } else {}

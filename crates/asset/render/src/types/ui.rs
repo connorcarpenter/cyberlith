@@ -1,3 +1,5 @@
+use render_api::base::{CpuMaterial, CpuMesh};
+use storage::Storage;
 use ui::Ui;
 
 use crate::{asset_dependency::AssetDependency, AssetHandle, IconData, TypedAssetId};
@@ -14,6 +16,22 @@ impl Default for UiData {
 }
 
 impl UiData {
+
+    pub fn from_ui(ui: Ui) -> Self {
+
+        let icon_asset_id = ui.get_text_icon_asset_id();
+        let icon_file = AssetDependency::AssetId(*icon_asset_id);
+
+        Self {
+            icon_file,
+            ui,
+        }
+    }
+
+    pub fn from_bytes(bytes: &[u8]) -> Self {
+        let ui = asset_io::bits::read_ui_bits(bytes);
+        Self::from_ui(ui)
+    }
 
     pub(crate) fn get_ui_ref(&self) -> &Ui {
         &self.ui
@@ -54,7 +72,7 @@ impl UiData {
         }
     }
 
-    pub fn from_bytes(bytes: &[u8]) -> Self {
-        todo!()
+    pub(crate) fn load_cpu_data(&mut self, meshes: &mut Storage<CpuMesh>, materials: &mut Storage<CpuMaterial>) {
+        self.ui.set_handles(meshes, materials);
     }
 }

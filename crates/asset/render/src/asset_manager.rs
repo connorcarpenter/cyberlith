@@ -10,6 +10,7 @@ use render_api::{
     resources::RenderFrame,
 };
 use storage::{Handle, Storage};
+use ui::Ui;
 
 use crate::{asset_renderer::AssetRenderer, processed_asset_store::ProcessedAssetStore, AnimationData, AssetHandle, IconData, MeshData, ModelData, SceneData, SkinData, UiData};
 
@@ -36,15 +37,33 @@ impl AssetManager {
         self.store.load(asset_data_store, asset_id, asset_type);
     }
 
+    pub fn manual_load_ui(
+        &mut self,
+        asset_id: &AssetId,
+        ui: Ui,
+    ) {
+        self.store.manual_load_ui(asset_id, ui);
+    }
+
     pub fn sync(
         mut asset_manager: ResMut<Self>,
         mut meshes: ResMut<Storage<CpuMesh>>,
         mut materials: ResMut<Storage<CpuMaterial>>,
         mut skins: ResMut<Storage<CpuSkin>>,
     ) {
-        asset_manager.store.sync_meshes(&mut meshes);
-        asset_manager.store.sync_icons(&mut meshes);
-        asset_manager.store.sync_palettes(&mut materials);
+        asset_manager
+            .store
+            .sync_meshes(&mut meshes);
+        asset_manager
+            .store
+            .sync_icons(&mut meshes);
+        asset_manager
+            .store
+            .sync_palettes(&mut materials);
+        asset_manager
+            .store
+            .sync_uis(&mut meshes, &mut materials);
+
         asset_manager
             .store
             .sync_skins(&meshes, &materials, &mut skins);
