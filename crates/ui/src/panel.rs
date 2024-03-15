@@ -1,16 +1,11 @@
-use std::any::Any;
-
-use bevy_log::warn;
 
 use render_api::{
     base::{Color, CpuMaterial},
-    components::{RenderLayer, Transform},
-    resources::RenderFrame,
 };
 use storage::Handle;
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 
-use crate::{cache::LayoutCache, node::{UiNode, UiStore}, style::{NodeStyle, StyleId, WidgetStyle}, text::{Text, TextMut}, ui::Globals, widget::WidgetKind, NodeId, Ui, Widget};
+use crate::{node::{UiNode, UiStore}, style::{NodeStyle, StyleId, WidgetStyle}, text::{Text, TextMut}, NodeId, Ui, Widget};
 
 #[derive(Clone)]
 pub struct Panel {

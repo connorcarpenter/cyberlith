@@ -1,5 +1,3 @@
-use bevy_ecs::{change_detection::ResMut, component::Component, system::Query};
-use bevy_log::info;
 
 use asset_id::AssetId;
 use render_api::{

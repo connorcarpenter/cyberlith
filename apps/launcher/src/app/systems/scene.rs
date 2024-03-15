@@ -22,7 +22,6 @@ use game_engine::{
         shapes, Window,
     },
     storage::{Handle, Storage},
-    ui::Ui,
 };
 
 use crate::app::{

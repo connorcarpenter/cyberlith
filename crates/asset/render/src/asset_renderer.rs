@@ -402,12 +402,14 @@ impl AssetRenderer {
         };
 
         let ui = ui_data.get_ui_ref();
+        let text_icon_handle = ui_data.get_icon_handle();
 
         draw_ui_node(
             render_frame,
             render_layer_opt,
             asset_store,
             &ui,
+            &text_icon_handle,
             &Ui::ROOT_NODE_ID,
             (0.0, 0.0, 0.0),
         );
@@ -420,6 +422,7 @@ fn draw_ui_node(
     render_layer_opt: Option<&RenderLayer>,
     asset_store: &ProcessedAssetStore,
     ui: &Ui,
+    text_icon_handle: &AssetHandle<IconData>,
     id: &NodeId,
     parent_position: (f32, f32, f32),
 ) {
@@ -444,10 +447,10 @@ fn draw_ui_node(
     if node.visible {
         match node.widget_kind() {
             WidgetKind::Panel => {
-                draw_ui_panel(render_frame, render_layer_opt, asset_store, ui, id, &transform);
+                draw_ui_panel(render_frame, render_layer_opt, asset_store, ui, text_icon_handle, id, &transform);
             }
             WidgetKind::Text => {
-                draw_ui_text(render_frame, render_layer_opt, asset_store, ui, id, &transform);
+                draw_ui_text(render_frame, render_layer_opt, asset_store, ui, text_icon_handle, id, &transform);
             }
         }
     }
@@ -459,6 +462,7 @@ fn draw_ui_panel(
     render_layer_opt: Option<&RenderLayer>,
     asset_store: &ProcessedAssetStore,
     ui: &Ui,
+    text_icon_handle: &AssetHandle<IconData>,
     node_id: &NodeId,
     transform: &Transform,
 ) {
@@ -491,6 +495,7 @@ fn draw_ui_panel(
             render_layer_opt,
             asset_store,
             ui,
+            text_icon_handle,
             child_id,
             (
                 transform.translation.x,
@@ -507,24 +512,21 @@ fn draw_ui_text(
     render_layer_opt: Option<&RenderLayer>,
     asset_store: &ProcessedAssetStore,
     ui: &Ui,
+    text_icon_handle: &AssetHandle<IconData>,
     node_id: &NodeId,
     transform: &Transform,
 ) {
     let text_ref = ui.store.get_node(node_id).unwrap().widget_text_ref().unwrap();
 
-    let Some(text_icon_handle) = ui.globals.get_text_icon_handle() else {
-        panic!("No text handle found in globals");
-    };
     let Some(text_color_handle) = ui.globals.get_text_color_handle() else {
         panic!("No text color handle found in globals");
     };
-    let text_icon_handle = AssetHandle::<IconData>::new(*text_icon_handle);
 
     AssetRenderer::draw_text(
         render_frame,
         render_layer_opt,
         asset_store,
-        &text_icon_handle,
+        text_icon_handle,
         text_color_handle,
         transform,
         &text_ref.text,
