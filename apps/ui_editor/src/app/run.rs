@@ -5,7 +5,7 @@ use game_engine::{
     EnginePlugin,
 };
 
-use super::systems::scene;
+use super::setup;
 
 pub fn run() {
     let mut app = App::default();
@@ -19,8 +19,9 @@ pub fn run() {
             ..Default::default()
         })
         // Scene Systems
-        .add_systems(Startup, scene::scene_setup)
-        .add_systems(Draw, scene::scene_draw)
-        .add_systems(Update, scene::handle_viewport_resize);
+        .add_systems(Startup, setup::setup_scene)
+        .add_systems(Startup, setup::setup_ui)
+        .add_systems(Draw, setup::scene_draw)
+        .add_systems(Update, setup::handle_viewport_resize);
     app.run();
 }

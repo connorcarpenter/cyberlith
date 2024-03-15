@@ -1,5 +1,4 @@
 use bevy_ecs::{
-    entity::Entity,
     event::EventWriter,
     system::{Commands, Query, Res, ResMut},
 };
@@ -14,7 +13,7 @@ use asset_id::ETag;
 // TODO: don't depend on game engine?
 use game_engine::{
     asset::{
-        embedded_asset_event, AssetHandle, AssetId, AssetManager, EmbeddedAssetEvent, IconData, AssetType,
+        embedded_asset_event, AssetHandle, AssetId, AssetManager, EmbeddedAssetEvent, AssetType,
     },
     math::Vec3,
     render::{
@@ -22,7 +21,7 @@ use game_engine::{
         components::{
             AmbientLight, Camera, CameraBundle, ClearOperation,
             OrthographicProjection, Projection, RenderLayer,
-            RenderLayers, RenderTarget, Transform, Viewport,
+            RenderTarget, Transform, Viewport,
         },
         resources::RenderFrame,
         Window,
@@ -30,43 +29,48 @@ use game_engine::{
     ui::Ui,
 };
 
-use crate::app::{
-    resources::Global,
-    systems::ui::{init_ui, json_read_ui, json_write_ui, bits_read_ui, bits_write_ui},
-};
+use crate::app::{ui::init_ui, global::Global};
 
-pub fn scene_setup(
+pub fn setup_ui(
     mut commands: Commands,
     mut embedded_asset_events: EventWriter<EmbeddedAssetEvent>,
     mut asset_manager: ResMut<AssetManager>,
 ) {
-    // TODO: use some kind of catalog here
-    embedded_asset_events.send(embedded_asset_event!("../embedded/8273wa")); // palette
-    embedded_asset_events.send(embedded_asset_event!("../embedded/34mvvk")); // verdana icon
+    embedded_asset_events.send(embedded_asset_event!("embedded/8273wa")); // palette
+    embedded_asset_events.send(embedded_asset_event!("embedded/34mvvk")); // verdana icon
 
-    let camera = setup_scene(&mut commands);
-    setup_ui(&mut commands, &mut asset_manager);
+    // create ui
+    let (ui_name, ui_asset_id, ui_etag, ui) = init_ui();
 
-    commands.insert_resource(Global::new(camera));
+    // finish
+    finish_ui_setup(&mut commands, &mut asset_manager, &ui_name, &ui_asset_id, &ui_etag, ui);
 }
 
-fn setup_ui(commands: &mut Commands, asset_manager: &mut AssetManager) {
+fn finish_ui_setup(
+    commands: &mut Commands,
+    asset_manager: &mut AssetManager,
+    name: &str,
+    ui_asset_id: &AssetId,
+    ui_etag: &ETag,
+    ui: Ui
+) {
+    // write JSON and bits files, metadata too
+    let ui = write_to_file(name, &ui_asset_id, ui_etag, ui);
 
-    let name = "main"; // TODO: clean this up?
-    let ui_asset_id_str = "tpp7za"; // AssetId::get_random(); // keep this around to generate new AssetIds if needed!
-    let icon_asset_id = "34mvvk";
-    let ui_etag = ETag::new_random(); // TODO: should we be able to re-use ETag so it doesn't auto update?
+    // load ui into asset manager
+    asset_manager.manual_load_ui(&ui_asset_id, ui);
 
-    let ui_asset_id = AssetId::from_str(ui_asset_id_str).unwrap();
-    let icon_asset_id = AssetId::from_str(icon_asset_id).unwrap();
+    // make handle, add handle to entity
+    let asset_handle = AssetHandle::<UiData>::new(*ui_asset_id);
+    let _ui_entity = commands.spawn(asset_handle).id();
+}
 
-    let icon_asset_handle = AssetHandle::<IconData>::new(icon_asset_id); // TODO: use some kind of catalog?
-
-    let ui = init_ui(&icon_asset_handle);
+fn write_to_file(name: &str, ui_asset_id: &AssetId, ui_etag: &ETag, ui: Ui) -> Ui {
+    let ui_asset_id_str = ui_asset_id.to_string();
 
     // ui -> JSON bytes
     let ui_bytes = {
-        let ui_json = json_write_ui(ui);
+        let ui_json = UiJson::from_ui(&ui);
         let new_meta = AssetMeta::new(&ui_asset_id, UiJson::CURRENT_SCHEMA_VERSION);
         let asset = Asset::new(new_meta, AssetData::Ui(ui_json));
         let ui_bytes = serde_json::to_vec_pretty(&asset)
@@ -89,7 +93,7 @@ fn setup_ui(commands: &mut Commands, asset_manager: &mut AssetManager) {
     };
 
     // ui -> bit-packed bytes
-    let ui_bytes = bits_write_ui(ui);
+    let ui_bytes = asset_io::bits::write_ui_bits(&ui);
     info!("bits byte count: {:?}", ui_bytes.len());
 
     // write bit-packed data to file
@@ -97,7 +101,7 @@ fn setup_ui(commands: &mut Commands, asset_manager: &mut AssetManager) {
 
     // write metadata to file
     {
-        let ui_metadata = AssetMetadataSerde::new(ui_etag, AssetType::Ui);
+        let ui_metadata = AssetMetadataSerde::new(*ui_etag, AssetType::Ui);
         let mut bit_writer = BitWriter::new();
         ui_metadata.ser(&mut bit_writer);
         let metadata_bytes = bit_writer.to_bytes();
@@ -105,19 +109,13 @@ fn setup_ui(commands: &mut Commands, asset_manager: &mut AssetManager) {
     }
 
     // bit-packed bytes -> ui
-    let ui = bits_read_ui(ui_bytes);
-
-    // load ui into asset manager
-    asset_manager.manual_load_ui(&ui_asset_id, ui);
-
-    // make handle
-    let asset_handle = AssetHandle::<UiData>::new(ui_asset_id);
-
-    // add handle to entity
-    let _ui_entity = commands.spawn(asset_handle).id();
+    let ui = asset_io::bits::read_ui_bits(&ui_bytes);
+    ui
 }
 
-fn setup_scene(commands: &mut Commands) -> Entity {
+pub fn setup_scene(
+    mut commands: Commands
+) {
     // ambient light
     commands
         .spawn(AmbientLight::new(1.0, Color::WHITE));
@@ -139,7 +137,7 @@ fn setup_scene(commands: &mut Commands) -> Entity {
         })
         .id();
 
-    camera_id
+    commands.insert_resource(Global::new(camera_id));
 }
 
 pub fn scene_draw(

@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use naia_serde::{FileBitWriter, SerdeInternal as Serde, UnsignedInteger, UnsignedVariableInteger};
 
 use ui::{
-    NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Ui, UiNode, Widget, WidgetKind,
+    NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Ui, UiNode, Widget,
     WidgetStyle, Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid,
 };
 

@@ -1,13 +1,27 @@
-use asset_io::json::UiJson;
+use asset_id::{AssetId, ETag};
 use game_engine::{
-    asset::{AssetHandle, IconData},
     render::base::Color,
     ui::{Alignment, Ui},
 };
 
-pub fn init_ui(text_handle: &AssetHandle<IconData>) -> Ui {
+// this is where new UIs should be created
+
+pub fn init_ui() -> (String, AssetId, ETag, Ui) {
+
+    // config
+    let ui_name = "main";
+    let ui_asset_id_str = "tpp7za"; // AssetId::get_random(); // keep this around to generate new AssetIds if needed!
+    let icon_asset_id_str = "34mvvk";
+    let ui_etag = ETag::new_random();
+
+    // asset ids ..
+    let ui_asset_id = AssetId::from_str(ui_asset_id_str).unwrap();
+    let icon_asset_id = AssetId::from_str(icon_asset_id_str).unwrap();
+
+    // Create UI !
     let mut ui = Ui::new();
 
+    // styles
     let window_style = ui.create_panel_style(|s| {
         s
             //.set_background_color(Color::BLACK)
@@ -38,7 +52,9 @@ pub fn init_ui(text_handle: &AssetHandle<IconData>) -> Ui {
         s.set_margin_left_px(40.0);
     });
 
-    ui.set_text_icon_asset_id(&text_handle.asset_id())
+    // nodes
+    ui
+        .set_text_icon_asset_id(&icon_asset_id)
         .set_text_color(Color::WHITE)
         .root_mut()
         .add_style(window_style)
@@ -65,23 +81,5 @@ pub fn init_ui(text_handle: &AssetHandle<IconData>) -> Ui {
                 });
         });
 
-    ui
-}
-
-pub fn json_write_ui(ui: Ui) -> UiJson {
-    UiJson::from_ui(&ui)
-}
-
-pub fn json_read_ui(bytes: Vec<u8>) -> Ui {
-    asset_io::json::read_ui_json(bytes)
-}
-
-pub fn bits_write_ui(ui: Ui) -> Vec<u8> {
-    let bytes = asset_io::bits::write_ui_bits(&ui);
-
-    bytes
-}
-
-pub fn bits_read_ui(bytes: Vec<u8>) -> Ui {
-    asset_io::bits::read_ui_bits(&bytes)
+    (ui_name.to_string(), ui_asset_id, ui_etag, ui)
 }

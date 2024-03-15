@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use render_api::base::Color;
 use ui::{
-    NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Ui, UiNode, Widget, WidgetKind,
+    NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Ui, UiNode, Widget,
     WidgetStyle, Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid
 };
 
