@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use bevy_ecs::system::{ResMut, Resource};
-use bevy_log::warn;
+use bevy_log::{warn};
 
 use asset_id::{AssetId, AssetType};
 use render_api::{
