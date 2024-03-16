@@ -234,6 +234,7 @@ pub fn scene_draw(
 
     // Aggregate UIs
     for (ui_handle, render_layer_opt) in uis_q.iter() {
+        asset_manager.update_ui(&render_frame, render_layer_opt, ui_handle);
         asset_manager.draw_ui(&mut render_frame, render_layer_opt, ui_handle);
     }
 }

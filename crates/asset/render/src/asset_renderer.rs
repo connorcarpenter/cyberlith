@@ -377,25 +377,9 @@ impl AssetRenderer {
     pub(crate) fn draw_ui(
         render_frame: &mut RenderFrame,
         render_layer_opt: Option<&RenderLayer>,
-        asset_store: &mut ProcessedAssetStore, // TODO: should be immutable, need to split Ui up with layout_cache/viewport separate
+        asset_store: &ProcessedAssetStore,
         ui_handle: &AssetHandle<UiData>,
     ) {
-        {
-            let Some(ui_data) = asset_store.uis.get_mut(ui_handle) else {
-                warn!("ui data not loaded 1: {:?}", ui_handle.asset_id());
-                return;
-            };
-
-            //
-            let ui = ui_data.get_ui_mut();
-
-            let Some(viewport) = render_frame.get_camera_viewport(render_layer_opt) else {
-                return;
-            };
-            ui.update_viewport(&viewport);
-            ui.recalculate_layout_if_needed();
-        }
-
         let Some(ui_data) = asset_store.uis.get(ui_handle) else {
             warn!("ui data not loaded 2: {:?}", ui_handle.asset_id());
             return;
@@ -551,7 +535,7 @@ fn draw_ui_button(
     };
 
     // draw button
-    if let Some(mat_handle) = button_ref.panel.background_color_handle {
+    if let Some(mat_handle) = button_ref.background_color_handle() { // TODO: revert back to `background_color_handle`
         let button_style_ref = ui.store.button_style_ref(node_id);
         let background_alpha = button_style_ref.background_alpha();
         if background_alpha > 0.0 {

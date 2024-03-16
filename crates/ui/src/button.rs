@@ -26,6 +26,10 @@ impl Button {
         self.panel.add_child(child_id);
     }
 
+    pub fn background_color_handle(&self) -> Option<Handle<CpuMaterial>> {
+        self.panel.background_color_handle
+    }
+
     pub fn hover_color_handle(&self) -> Option<Handle<CpuMaterial>> {
         self.hover_color_handle
     }

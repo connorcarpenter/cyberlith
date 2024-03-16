@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use bevy_ecs::system::{ResMut, Resource};
+use bevy_log::warn;
 
 use asset_id::{AssetId, AssetType};
 use render_api::{
@@ -230,8 +231,28 @@ impl AssetManager {
         );
     }
 
-    pub fn draw_ui(
+    pub fn update_ui(
         &mut self,
+        render_frame: &RenderFrame,
+        render_layer_opt: Option<&RenderLayer>,
+        ui_handle: &AssetHandle<UiData>,
+    ) {
+        let Some(viewport) = render_frame.get_camera_viewport(render_layer_opt) else {
+            return;
+        };
+
+        let Some(ui_data) = self.store.uis.get_mut(ui_handle) else {
+            warn!("ui data not loaded 1: {:?}", ui_handle.asset_id());
+            return;
+        };
+        
+        let ui = ui_data.get_ui_mut();
+        ui.update_viewport(&viewport);
+        ui.recalculate_layout_if_needed();
+    }
+
+    pub fn draw_ui(
+        &self,
         render_frame: &mut RenderFrame,
         render_layer_opt: Option<&RenderLayer>,
         ui_handle: &AssetHandle<UiData>,
@@ -239,7 +260,7 @@ impl AssetManager {
         AssetRenderer::draw_ui(
             render_frame,
             render_layer_opt,
-            &mut self.store,
+            &self.store,
             ui_handle,
         );
     }
