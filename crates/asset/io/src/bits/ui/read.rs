@@ -770,5 +770,14 @@ impl UiStyleBits {
             let val = val_serde.to_alignment();
             style.set_children_valign(val);
         }
+
+        // button-specific
+        if let Some((r, g, b)) = &button_style_serde.hover_color {
+            style.set_hover_color(Color::new(*r, *g, *b));
+        }
+
+        if let Some((r, g, b)) = &button_style_serde.down_color {
+            style.set_down_color(Color::new(*r, *g, *b));
+        }
     }
 }

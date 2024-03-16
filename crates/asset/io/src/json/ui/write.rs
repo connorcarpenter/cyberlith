@@ -122,6 +122,8 @@ impl ButtonStyleJson {
 
         Self {
             panel: panel_json,
+            hover_color: style.hover_color.map(ColorJson::from_color),
+            down_color: style.down_color.map(ColorJson::from_color),
         }
     }
 }

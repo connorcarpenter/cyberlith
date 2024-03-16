@@ -709,5 +709,16 @@ impl UiStyleJson {
             let val = val_serde.to_alignment();
             style.set_children_valign(val);
         }
+
+        // button-specific
+        if let Some(val_serde) = &button_style_serde.hover_color {
+            let val = val_serde.to_color();
+            style.set_hover_color(val);
+        }
+
+        if let Some(val_serde) = &button_style_serde.down_color {
+            let val = val_serde.to_color();
+            style.set_down_color(val);
+        }
     }
 }

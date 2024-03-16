@@ -1,39 +1,62 @@
 
-use render_api::{
-    base::{Color, CpuMaterial},
-};
+use render_api::base::{Color, CpuMaterial};
 use storage::Handle;
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 
 use crate::{node::{UiNode, UiStore}, style::{NodeStyle, StyleId, WidgetStyle}, text::{Text, TextMut}, NodeId, Ui, Widget, PanelStyle, Panel, PanelMut};
-use crate::panel::PanelContentsMut;
 
 #[derive(Clone)]
 pub struct Button {
     pub panel: Panel,
+
+    hover_color_handle: Option<Handle<CpuMaterial>>,
+    down_color_handle: Option<Handle<CpuMaterial>>,
 }
 
 impl Button {
     pub fn new() -> Self {
         Self {
             panel: Panel::new(),
+            hover_color_handle: None,
+            down_color_handle: None,
         }
     }
 
     pub fn add_child(&mut self, child_id: NodeId) {
         self.panel.add_child(child_id);
     }
+
+    pub fn hover_color_handle(&self) -> Option<Handle<CpuMaterial>> {
+        self.hover_color_handle
+    }
+
+    pub fn set_hover_color_handle(&mut self, val: Handle<CpuMaterial>) {
+        self.hover_color_handle = Some(val);
+    }
+
+    pub fn down_color_handle(&self) -> Option<Handle<CpuMaterial>> {
+        self.down_color_handle
+    }
+
+    pub fn set_down_color_handle(&mut self, val: Handle<CpuMaterial>) {
+        self.down_color_handle = Some(val);
+    }
 }
 
 #[derive(Clone, Copy)]
 pub struct ButtonStyle {
     pub panel: PanelStyle,
+
+    pub hover_color: Option<Color>,
+    pub down_color: Option<Color>,
 }
 
 impl ButtonStyle {
     pub(crate) fn empty() -> Self {
         Self {
             panel: PanelStyle::empty(),
+            hover_color: None,
+            down_color: None,
         }
     }
 
@@ -43,6 +66,22 @@ impl ButtonStyle {
 
     pub(crate) fn set_background_alpha(&mut self, val: f32) {
         self.panel.set_background_alpha(val);
+    }
+
+    pub fn hover_color(&self) -> Option<Color> {
+        self.hover_color
+    }
+
+    pub(crate) fn set_hover_color(&mut self, val: Color) {
+        self.hover_color = Some(val);
+    }
+
+    pub fn down_color(&self) -> Option<Color> {
+        self.down_color
+    }
+
+    pub(crate) fn set_down_color(&mut self, val: Color) {
+        self.down_color = Some(val);
     }
 }
 
@@ -159,6 +198,30 @@ impl<'a> ButtonStyleRef<'a> {
 
         output
     }
+
+    pub fn hover_color(&self) -> Color {
+        let mut output = Color::BLACK; // TODO: put into const var!
+
+        self.store.for_each_button_style(&self.node_id, |style| {
+            if let Some(color) = style.hover_color {
+                output = color;
+            }
+        });
+
+        output
+    }
+
+    pub fn down_color(&self) -> Color {
+        let mut output = Color::BLACK; // TODO: put into const var!
+
+        self.store.for_each_button_style(&self.node_id, |style| {
+            if let Some(color) = style.down_color {
+                output = color;
+            }
+        });
+
+        output
+    }
 }
 
 pub struct ButtonStyleMut<'a> {
@@ -184,6 +247,16 @@ impl<'a> ButtonStyleMut<'a> {
     }
 
     // setters
+
+    pub fn set_hover_color(&mut self, color: Color) -> &mut Self {
+        self.get_button_style_mut().set_hover_color(color);
+        self
+    }
+
+    pub fn set_down_color(&mut self, color: Color) -> &mut Self {
+        self.get_button_style_mut().set_down_color(color);
+        self
+    }
 
     pub fn set_background_color(&mut self, color: Color) -> &mut Self {
         self.get_button_style_mut().panel.background_color = Some(color);

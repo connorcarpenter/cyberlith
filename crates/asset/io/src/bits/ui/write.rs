@@ -188,6 +188,8 @@ impl ButtonStyleBits {
     fn from_button_style(style: &ButtonStyle) -> Self {
         Self {
             panel: PanelStyleBits::from_panel_style(&style.panel),
+            hover_color: style.hover_color.map(|val| (val.r, val.g, val.b)),
+            down_color: style.down_color.map(|val| (val.r, val.g, val.b)),
         }
     }
 }

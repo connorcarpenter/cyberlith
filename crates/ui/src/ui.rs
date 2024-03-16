@@ -38,13 +38,6 @@ impl Ui {
             panic!("root panel id is not 0");
         }
 
-        // Root Style
-        // let root_panel_style_id = me.create_style(NodeStyle::empty(WidgetStyle::Panel(PanelStyle::empty())));
-        // if root_panel_style_id != Self::ROOT_STYLE_ID {
-        //     panic!("root panel style id is {:?}, not 0!", root_panel_style_id);
-        // }
-        // me.node_mut(&root_panel_id).unwrap().style_ids.push(root_panel_style_id);
-
         // Base Text Style
         let base_text_style_id =
             me.create_style(NodeStyle::empty(WidgetStyle::Text(TextStyle::empty())));
@@ -62,12 +55,16 @@ impl Ui {
     pub fn set_handles(&mut self, meshes: &mut Storage<CpuMesh>, materials: &mut Storage<CpuMaterial>) {
 
         // set box mesh handle
-        let mesh_handle = meshes.add(UnitSquare);
-        self.globals.box_mesh_handle_opt = Some(mesh_handle);
+        {
+            let mesh_handle = meshes.add(UnitSquare);
+            self.globals.box_mesh_handle_opt = Some(mesh_handle);
+        }
 
         // set text color handle
-        let mat_handle = materials.add(self.globals.text_color);
-        self.globals.text_color_handle_opt = Some(mat_handle);
+        {
+            let mat_handle = materials.add(self.globals.text_color);
+            self.globals.text_color_handle_opt = Some(mat_handle);
+        }
 
         // set color handles
         let ids = self.collect_color_handles();
@@ -84,10 +81,21 @@ impl Ui {
                 },
                 WidgetKind::Button => {
                     let button_style_ref = self.store.button_style_ref(&id);
-                    let color = button_style_ref.background_color();
+
+                    let background_color = button_style_ref.background_color();
+                    let hover_color = button_style_ref.hover_color();
+                    let down_color = button_style_ref.down_color();
+
                     let button_mut = self.button_mut(&id).unwrap();
-                    let mat_handle = materials.add(color);
-                    button_mut.panel.background_color_handle = Some(mat_handle);
+
+                    let background_color_handle = materials.add(background_color);
+                    button_mut.panel.background_color_handle = Some(background_color_handle);
+
+                    let hover_color_handle = materials.add(hover_color);
+                    button_mut.set_hover_color_handle(hover_color_handle);
+
+                    let down_color_handle = materials.add(down_color);
+                    button_mut.set_down_color_handle(down_color_handle);
                 },
                 _ => {
                     continue;
@@ -205,7 +213,7 @@ impl Ui {
                 },
                 WidgetKind::Button => {
                     let button_ref = node_ref.widget_button_ref().unwrap();
-                    if button_ref.panel.background_color_handle.is_none() {
+                    if button_ref.panel.background_color_handle.is_none() || button_ref.hover_color_handle().is_none() || button_ref.down_color_handle().is_none() {
                         pending_mat_handles.push(id);
                     }
                 },
@@ -230,22 +238,10 @@ impl Ui {
         self.store.get_node_mut(&id)
     }
 
-    pub(crate) fn panel_ref(&self, id: &NodeId) -> Option<&Panel> {
-        let node_ref = self.node_ref(id)?;
-        let panel_ref = node_ref.widget_panel_ref()?;
-        Some(panel_ref)
-    }
-
     pub(crate) fn panel_mut(&mut self, id: &NodeId) -> Option<&mut Panel> {
         let node_mut = self.node_mut(id)?;
         let panel_mut = node_mut.widget_panel_mut()?;
         Some(panel_mut)
-    }
-
-    pub(crate) fn button_ref(&self, id: &NodeId) -> Option<&Button> {
-        let node_ref = self.node_ref(id)?;
-        let button_ref = node_ref.widget_button_ref()?;
-        Some(button_ref)
     }
 
     pub(crate) fn button_mut(&mut self, id: &NodeId) -> Option<&mut Button> {

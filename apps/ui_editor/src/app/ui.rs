@@ -38,6 +38,8 @@ pub fn init_ui() -> (String, AssetId, ETag, Ui) {
     });
     let base_button_style = ui.create_button_style(|s| {
         s.set_background_color(Color::DARK_GRAY)
+            .set_hover_color(Color::RED)
+            .set_down_color(Color::BLUE)
             .set_self_halign(Alignment::Center)
             .set_size_pc(50.0, 20.0)
             .set_size_max_px(240.0, 90.0)
