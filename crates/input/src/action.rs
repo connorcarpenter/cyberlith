@@ -1,9 +1,11 @@
+use bevy_ecs::event::Event;
+
 use math::Vec2;
 
 use crate::{Key, MouseButton};
 
-#[derive(Clone, Copy)]
-pub enum InputAction {
+#[derive(Clone, Copy, Event)]
+pub enum InputEvent {
     MouseClick(MouseButton, Vec2),
     MouseRelease(MouseButton),
     MouseMoved,

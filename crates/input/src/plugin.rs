@@ -1,6 +1,6 @@
-use bevy_app::{App, Plugin};
+use bevy_app::{App, Plugin, Update};
 
-use crate::Input;
+use crate::{Input, InputEvent};
 
 // Plugin
 pub struct InputPlugin;
@@ -9,6 +9,11 @@ impl Plugin for InputPlugin {
     fn build(&self, app: &mut App) {
         app
             // Resources
-            .insert_resource(Input::new());
+            .insert_resource(Input::new())
+            // Events
+            .add_event::<InputEvent>()
+            // Systems
+            .add_systems(Update, Input::update)
+        ;
     }
 }

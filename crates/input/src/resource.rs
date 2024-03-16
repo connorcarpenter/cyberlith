@@ -1,10 +1,10 @@
 use std::collections::HashSet;
 
-use bevy_ecs::system::Resource;
+use bevy_ecs::{system::{ResMut, Resource}, event::EventWriter};
 
 use math::Vec2;
 
-use crate::{is_button::IsButton, IncomingEvent, InputAction, Key, MouseButton};
+use crate::{is_button::IsButton, IncomingEvent, InputEvent, Key, MouseButton};
 
 #[derive(Resource)]
 pub struct Input {
@@ -14,9 +14,8 @@ pub struct Input {
     mouse_scroll_y: f32,
     last_mouse_position: Vec2,
     keys: HashSet<Key>,
-    outgoing_actions: Vec<InputAction>,
+    outgoing_actions: Vec<InputEvent>,
     enabled: bool,
-    canvas_size: Vec2,
     has_canvas_props: bool,
     mouse_delta: Vec2,
 }
@@ -33,8 +32,15 @@ impl Input {
             outgoing_actions: Vec::new(),
             enabled: false,
             has_canvas_props: false,
-            canvas_size: Vec2::ZERO,
             mouse_delta: Vec2::ZERO,
+        }
+    }
+
+    // will be used as system
+    pub fn update(mut input: ResMut<Input>, mut event_writer: EventWriter<InputEvent>) {
+        let events = std::mem::take(&mut input.outgoing_actions);
+        for event in events {
+            event_writer.send(event);
         }
     }
 
@@ -42,8 +48,7 @@ impl Input {
         self.has_canvas_props
     }
 
-    pub fn update_canvas_properties(&mut self, canvas_size: Vec2, offset_x: f32, offset_y: f32) {
-        self.canvas_size = canvas_size;
+    pub fn update_canvas_properties(&mut self, offset_x: f32, offset_y: f32) {
         self.mouse_offset.x = offset_x;
         self.mouse_offset.y = offset_y;
         self.has_canvas_props = true;
@@ -51,12 +56,6 @@ impl Input {
 
     pub fn mouse_position(&self) -> &Vec2 {
         &self.mouse_coords
-    }
-
-    pub fn consume_mouse_scroll(&mut self) -> f32 {
-        let scroll = self.mouse_scroll_y;
-        self.mouse_scroll_y = 0.0;
-        scroll
     }
 
     pub fn is_pressed<T: IsButton>(&self, button: T) -> bool {
@@ -67,6 +66,16 @@ impl Input {
         self.enabled = enabled;
     }
 
+    fn set_mouse_coords(&mut self, position: &(f64, f64)) {
+        self.mouse_coords.x = (position.0 as f32) - self.mouse_offset.x;
+        self.mouse_coords.y = (position.1 as f32) - self.mouse_offset.y;
+    }
+
+    fn set_mouse_delta(&mut self, last_mouse_position: Vec2, mouse_position: Vec2) {
+        self.mouse_delta = mouse_position - last_mouse_position;
+    }
+
+    // should only be used in `render_gl` crate
     pub fn recv_events(&mut self, events: &Vec<IncomingEvent<()>>) {
         if !self.enabled {
             return;
@@ -85,7 +94,7 @@ impl Input {
                     if !self.mouse_buttons.contains(button) {
                         self.set_mouse_coords(position);
                         self.outgoing_actions
-                            .push(InputAction::MouseClick(*button, self.mouse_coords));
+                            .push(InputEvent::MouseClick(*button, self.mouse_coords));
                         self.mouse_buttons.insert(*button);
                     }
                 }
@@ -97,7 +106,7 @@ impl Input {
                     }
                     if self.mouse_buttons.contains(button) {
                         self.outgoing_actions
-                            .push(InputAction::MouseRelease(*button));
+                            .push(InputEvent::MouseRelease(*button));
                         self.mouse_buttons.remove(button);
                     }
                 }
@@ -117,14 +126,14 @@ impl Input {
                         self.last_mouse_position = self.mouse_coords;
 
                         for mouse_button in self.mouse_buttons.iter() {
-                            self.outgoing_actions.push(InputAction::MouseDragged(
+                            self.outgoing_actions.push(InputEvent::MouseDragged(
                                 *mouse_button,
                                 self.mouse_coords,
                                 self.mouse_delta,
                             ));
                         }
 
-                        self.outgoing_actions.push(InputAction::MouseMoved);
+                        self.outgoing_actions.push(InputEvent::MouseMoved);
                     }
                 }
                 IncomingEvent::MouseWheel { delta, .. } => {
@@ -134,7 +143,7 @@ impl Input {
                     // mouse wheel zoom..
                     if self.mouse_scroll_y > 0.1 || self.mouse_scroll_y < -0.1 {
                         self.outgoing_actions
-                            .push(InputAction::MiddleMouseScroll(self.mouse_scroll_y));
+                            .push(InputEvent::MiddleMouseScroll(self.mouse_scroll_y));
                         self.mouse_scroll_y = 0.0;
                     }
                 }
@@ -143,7 +152,7 @@ impl Input {
                         continue;
                     }
                     if !self.keys.contains(kind) {
-                        self.outgoing_actions.push(InputAction::KeyPress(*kind));
+                        self.outgoing_actions.push(InputEvent::KeyPress(*kind));
                         self.keys.insert(*kind);
                     }
                 }
@@ -152,7 +161,7 @@ impl Input {
                         continue;
                     }
                     if self.keys.contains(kind) {
-                        self.outgoing_actions.push(InputAction::KeyRelease(*kind));
+                        self.outgoing_actions.push(InputEvent::KeyRelease(*kind));
                         self.keys.remove(kind);
                     }
                 }
@@ -163,18 +172,5 @@ impl Input {
                 IncomingEvent::UserEvent(_) => {}
             }
         }
-    }
-
-    fn set_mouse_coords(&mut self, position: &(f64, f64)) {
-        self.mouse_coords.x = (position.0 as f32) - self.mouse_offset.x;
-        self.mouse_coords.y = (position.1 as f32) - self.mouse_offset.y;
-    }
-
-    fn set_mouse_delta(&mut self, last_mouse_position: Vec2, mouse_position: Vec2) {
-        self.mouse_delta = mouse_position - last_mouse_position;
-    }
-
-    pub fn take_actions(&mut self) -> Vec<InputAction> {
-        std::mem::take(&mut self.outgoing_actions)
     }
 }

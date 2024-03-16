@@ -1,10 +1,12 @@
 use bevy_ecs::{
-    system::{Res, ResMut, SystemState},
+    system::{Res, SystemState},
     world::{Mut, World},
+    event::EventReader,
 };
 
 use editor_proto::components::FileExtension;
-use input::Input;
+
+use input::{Input, InputEvent};
 
 use crate::app::resources::{
     canvas::Canvas, file_manager::FileManager, icon_manager::IconManager, input::InputManager,
@@ -12,17 +14,20 @@ use crate::app::resources::{
 };
 
 pub fn input(world: &mut World) {
-    let mut system_state: SystemState<(Res<Canvas>, ResMut<Input>)> = SystemState::new(world);
-    let (canvas, mut input) = system_state.get_mut(world);
+    let mut system_state: SystemState<(Res<Canvas>, EventReader<InputEvent>)> = SystemState::new(world);
+    let (canvas, mut input_reader) = system_state.get_mut(world);
 
     if !canvas.is_visible() {
         return;
     }
 
-    let input_actions = input.take_actions();
+    let mut input_events = Vec::new();
+    for event in input_reader.read() {
+        input_events.push(*event);
+    }
 
     world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
-        input_manager.update_input(input_actions, world);
+        input_manager.update_input(input_events, world);
     });
 }
 

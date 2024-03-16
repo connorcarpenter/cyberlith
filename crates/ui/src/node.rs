@@ -84,6 +84,14 @@ impl UiStore {
         None
     }
 
+    pub fn button_mut(&mut self, node_id: &NodeId) -> Option<&mut Button> {
+        let node = self.get_node_mut(node_id)?;
+        if node.widget_kind() == WidgetKind::Button {
+            return node.widget_button_mut();
+        }
+        None
+    }
+
     fn node_style_ids(&self, node_id: &NodeId) -> &Vec<StyleId> {
         let node = self.get_node(node_id).unwrap();
         &node.style_ids

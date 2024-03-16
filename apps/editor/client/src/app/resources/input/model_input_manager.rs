@@ -10,7 +10,7 @@ use bevy_log::{info, warn};
 
 use naia_bevy_client::{Client, CommandsExt};
 
-use input::{InputAction, Key, MouseButton};
+use input::{InputEvent, Key, MouseButton};
 use math::{quat_from_spin_direction, spin_direction_from_quat, Vec2, Vec3};
 use render_api::{
     components::{Camera, Projection, Transform},
@@ -42,14 +42,14 @@ impl ModelInputManager {
         world: &mut World,
         input_manager: &mut InputManager,
         file_ext: &FileExtension,
-        input_actions: Vec<InputAction>,
+        input_actions: Vec<InputEvent>,
     ) {
         for action in input_actions {
             match action {
-                InputAction::MouseClick(click_type, mouse_position) => {
+                InputEvent::MouseClick(click_type, mouse_position) => {
                     Self::handle_mouse_click(world, input_manager, &mouse_position, click_type)
                 }
-                InputAction::MouseDragged(click_type, mouse_position, delta) => {
+                InputEvent::MouseDragged(click_type, mouse_position, delta) => {
                     Self::handle_mouse_drag(
                         world,
                         input_manager,
@@ -59,19 +59,19 @@ impl ModelInputManager {
                         click_type,
                     )
                 }
-                InputAction::MiddleMouseScroll(scroll_y) => {
+                InputEvent::MiddleMouseScroll(scroll_y) => {
                     InputManager::handle_mouse_scroll_wheel(world, scroll_y)
                 }
-                InputAction::MouseMoved => {
+                InputEvent::MouseMoved => {
                     input_manager.queue_resync_hover_ui();
                     input_manager.queue_resync_selection_ui();
                 }
-                InputAction::MouseRelease(MouseButton::Left) => {
+                InputEvent::MouseRelease(MouseButton::Left) => {
                     world.resource_scope(|world, mut model_manager: Mut<ModelManager>| {
                         model_manager.on_drag_transform_end(world, input_manager);
                     });
                 }
-                InputAction::KeyPress(key) => match key {
+                InputEvent::KeyPress(key) => match key {
                     Key::S
                     | Key::W
                     | Key::D

@@ -11,7 +11,7 @@ use render_api::{
     resources::RenderFrame,
 };
 use storage::{Handle, Storage};
-use ui::Ui;
+use ui::{NodeId, Ui, WidgetKind};
 
 use crate::{asset_renderer::AssetRenderer, processed_asset_store::ProcessedAssetStore, AnimationData, AssetHandle, IconData, MeshData, ModelData, SceneData, SkinData, UiData};
 
@@ -235,20 +235,28 @@ impl AssetManager {
         &mut self,
         render_frame: &RenderFrame,
         render_layer_opt: Option<&RenderLayer>,
+        mouse_state: (f32, f32, bool),
         ui_handle: &AssetHandle<UiData>,
     ) {
-        let Some(viewport) = render_frame.get_camera_viewport(render_layer_opt) else {
-            return;
-        };
-
         let Some(ui_data) = self.store.uis.get_mut(ui_handle) else {
             warn!("ui data not loaded 1: {:?}", ui_handle.asset_id());
             return;
         };
-        
         let ui = ui_data.get_ui_mut();
-        ui.update_viewport(&viewport);
-        ui.recalculate_layout_if_needed();
+
+        // update viewport / recalculate layout for ui
+        if let Some(viewport) = render_frame.get_camera_viewport(render_layer_opt) {
+            ui.update_viewport(&viewport);
+            ui.recalculate_layout_if_needed();
+        }
+
+        // update button states
+        update_button_states(
+            ui,
+            &Ui::ROOT_NODE_ID,
+            mouse_state,
+            (0.0, 0.0)
+        )
     }
 
     pub fn draw_ui(
@@ -263,5 +271,57 @@ impl AssetManager {
             &self.store,
             ui_handle,
         );
+    }
+}
+
+fn update_button_states(
+    ui: &mut Ui,
+    id: &NodeId,
+    mouse_state: (f32, f32, bool),
+    parent_position: (f32, f32),
+) {
+    let Some(node) = ui.store.get_node(&id) else {
+        warn!("no panel for id: {:?}", id);
+        return;
+    };
+
+    if !node.visible {
+        return;
+    }
+
+    let Some((width, height, child_offset_x, child_offset_y)) = ui.cache.bounds(id) else {
+        warn!("no bounds for id: {:?}", id);
+        return;
+    };
+
+    let child_position = (
+        parent_position.0 + child_offset_x,
+        parent_position.1 + child_offset_y,
+    );
+
+    match node.widget_kind() {
+        WidgetKind::Panel => {
+            let Some(panel_ref) = ui.store.panel_ref(id) else {
+                panic!("no panel ref for node_id: {:?}", id);
+            };
+
+            // update children
+            let child_ids = panel_ref.children.clone();
+            for child_id in child_ids {
+                update_button_states(
+                    ui,
+                    &child_id,
+                    mouse_state,
+                    child_position,
+                );
+            }
+        }
+        WidgetKind::Button => {
+            let Some(button_mut) = ui.store.button_mut(id) else {
+                panic!("no button mut for node_id: {:?}", id);
+            };
+            button_mut.update_state((width, height, child_position.0, child_position.1), mouse_state);
+        }
+        _ => {}
     }
 }

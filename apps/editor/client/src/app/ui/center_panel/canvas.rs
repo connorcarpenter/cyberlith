@@ -84,9 +84,7 @@ pub fn render_canvas(ui: &mut Ui, world: &mut World) {
                     texture_size.y -= 3.0;
 
                     if !input.has_canvas_properties() {
-                        let native_texture_size = Vec2::new(texture_size.x, texture_size.y);
                         input.update_canvas_properties(
-                            native_texture_size,
                             top_left.x + 1.0,
                             top_left.y + 1.0,
                         );
@@ -98,7 +96,6 @@ pub fn render_canvas(ui: &mut Ui, world: &mut World) {
                         if last_texture_size != current_texture_size {
                             ui_state.canvas_coords = Some(top_left);
                             input.update_canvas_properties(
-                                current_texture_size,
                                 top_left.x + 1.0,
                                 top_left.y + 1.0,
                             );

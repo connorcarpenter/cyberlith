@@ -213,7 +213,7 @@ impl Ui {
                 },
                 WidgetKind::Button => {
                     let button_ref = node_ref.widget_button_ref().unwrap();
-                    if button_ref.panel.background_color_handle.is_none() || button_ref.hover_color_handle().is_none() || button_ref.down_color_handle().is_none() {
+                    if button_ref.needs_color_handle() {
                         pending_mat_handles.push(id);
                     }
                 },

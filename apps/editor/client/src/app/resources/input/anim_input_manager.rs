@@ -8,7 +8,7 @@ use bevy_log::warn;
 
 use naia_bevy_client::{Client, CommandsExt, Instant};
 
-use input::{InputAction, Key, MouseButton};
+use input::{InputEvent, Key, MouseButton};
 use math::Vec2;
 use render_api::components::{Transform, Visibility};
 
@@ -35,7 +35,7 @@ impl AnimInputManager {
     pub fn update_input(
         world: &mut World,
         input_manager: &mut InputManager,
-        input_actions: Vec<InputAction>,
+        input_actions: Vec<InputEvent>,
     ) {
         let animation_manager = world.get_resource_mut::<AnimationManager>().unwrap();
         if animation_manager.is_posing() {
@@ -48,11 +48,11 @@ impl AnimInputManager {
     fn update_input_framing(
         world: &mut World,
         input_manager: &mut InputManager,
-        input_actions: Vec<InputAction>,
+        input_actions: Vec<InputEvent>,
     ) {
         for action in input_actions {
             match action {
-                InputAction::MouseClick(click_type, mouse_position) => {
+                InputEvent::MouseClick(click_type, mouse_position) => {
                     Self::handle_mouse_click_framing(
                         world,
                         input_manager,
@@ -60,16 +60,16 @@ impl AnimInputManager {
                         &mouse_position,
                     )
                 }
-                InputAction::MouseDragged(click_type, _mouse_position, delta) => {
+                InputEvent::MouseDragged(click_type, _mouse_position, delta) => {
                     Self::handle_mouse_drag_framing(world, click_type, delta)
                 }
-                InputAction::MiddleMouseScroll(scroll_y) => {
+                InputEvent::MiddleMouseScroll(scroll_y) => {
                     Self::handle_mouse_scroll_framing(world, scroll_y)
                 }
-                InputAction::MouseMoved => {
+                InputEvent::MouseMoved => {
                     input_manager.queue_resync_hover_ui();
                 }
-                InputAction::KeyPress(key) => match key {
+                InputEvent::KeyPress(key) => match key {
                     Key::Delete => Self::handle_delete_frame(world, input_manager),
                     Key::Insert => Self::handle_insert_frame(world, input_manager),
                     Key::Space => Self::handle_play_pause(world),
@@ -125,11 +125,11 @@ impl AnimInputManager {
     fn update_input_posing(
         world: &mut World,
         input_manager: &mut InputManager,
-        input_actions: Vec<InputAction>,
+        input_actions: Vec<InputEvent>,
     ) {
         for action in input_actions {
             match action {
-                InputAction::MouseClick(click_type, mouse_position) => {
+                InputEvent::MouseClick(click_type, mouse_position) => {
                     Self::handle_mouse_click_posing(
                         world,
                         input_manager,
@@ -137,7 +137,7 @@ impl AnimInputManager {
                         &mouse_position,
                     )
                 }
-                InputAction::MouseDragged(click_type, mouse_position, delta) => {
+                InputEvent::MouseDragged(click_type, mouse_position, delta) => {
                     Self::handle_mouse_drag_posing(
                         world,
                         input_manager,
@@ -146,17 +146,17 @@ impl AnimInputManager {
                         delta,
                     )
                 }
-                InputAction::MiddleMouseScroll(scroll_y) => {
+                InputEvent::MiddleMouseScroll(scroll_y) => {
                     InputManager::handle_mouse_scroll_wheel(world, scroll_y)
                 }
-                InputAction::MouseMoved => {
+                InputEvent::MouseMoved => {
                     input_manager.queue_resync_hover_ui();
                     input_manager.queue_resync_selection_ui();
                 }
-                InputAction::MouseRelease(MouseButton::Left) => {
+                InputEvent::MouseRelease(MouseButton::Left) => {
                     Self::reset_last_dragged_rotation(input_manager, world)
                 }
-                InputAction::KeyPress(key) => match key {
+                InputEvent::KeyPress(key) => match key {
                     Key::S
                     | Key::W
                     | Key::D

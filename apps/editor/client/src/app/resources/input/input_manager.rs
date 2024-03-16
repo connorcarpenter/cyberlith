@@ -8,7 +8,7 @@ use bevy_log::{info, warn};
 
 use naia_bevy_client::{Client, CommandsExt, Instant};
 
-use input::{InputAction, Key, MouseButton};
+use input::{InputEvent, Key, MouseButton};
 use math::{Vec2, Vec3};
 use render_api::{
     components::{Camera, Projection, Transform, Visibility},
@@ -102,7 +102,7 @@ impl InputManager {
         self.vertex_dragging_enabled = !self.vertex_dragging_enabled;
     }
 
-    pub fn update_input(&mut self, input_actions: Vec<InputAction>, world: &mut World) {
+    pub fn update_input(&mut self, input_actions: Vec<InputEvent>, world: &mut World) {
         let Some(current_file_entity) = world
             .get_resource::<TabManager>()
             .unwrap()

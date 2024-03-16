@@ -5,12 +5,21 @@ use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Sol
 
 use crate::{node::{UiNode, UiStore}, style::{NodeStyle, StyleId, WidgetStyle}, text::{Text, TextMut}, NodeId, Ui, Widget, PanelStyle, Panel, PanelMut};
 
+#[derive(Clone, Copy)]
+enum ButtonState {
+    Normal,
+    Hover,
+    Down,
+}
+
 #[derive(Clone)]
 pub struct Button {
     pub panel: Panel,
 
     hover_color_handle: Option<Handle<CpuMaterial>>,
     down_color_handle: Option<Handle<CpuMaterial>>,
+
+    state: ButtonState,
 }
 
 impl Button {
@@ -19,6 +28,40 @@ impl Button {
             panel: Panel::new(),
             hover_color_handle: None,
             down_color_handle: None,
+            state: ButtonState::Normal,
+        }
+    }
+
+    pub fn update_state(
+        &mut self,
+        layout: (f32, f32, f32, f32),
+        mouse_state: (f32, f32, bool)
+    ) {
+        let (width, height, posx, posy) = layout;
+        let (mouse_x, mouse_y, mouse_down) = mouse_state;
+
+        let inside = mouse_x >= posx && mouse_x <= posx + width + 1.0 && mouse_y >= posy && mouse_y <= posy + height + 1.0;
+        let new_state = if inside {
+            if mouse_down {
+                ButtonState::Down
+            } else {
+                ButtonState::Hover
+            }
+        } else {
+            ButtonState::Normal
+        };
+        self.state = new_state;
+    }
+
+    pub fn needs_color_handle(&self) -> bool {
+        self.panel.background_color_handle.is_none() || self.hover_color_handle.is_none() || self.down_color_handle.is_none()
+    }
+
+    pub fn current_color_handle(&self) -> Option<Handle<CpuMaterial>> {
+        match self.state {
+            ButtonState::Normal => self.panel.background_color_handle,
+            ButtonState::Hover => self.hover_color_handle,
+            ButtonState::Down => self.down_color_handle,
         }
     }
 
@@ -26,20 +69,8 @@ impl Button {
         self.panel.add_child(child_id);
     }
 
-    pub fn background_color_handle(&self) -> Option<Handle<CpuMaterial>> {
-        self.panel.background_color_handle
-    }
-
-    pub fn hover_color_handle(&self) -> Option<Handle<CpuMaterial>> {
-        self.hover_color_handle
-    }
-
     pub fn set_hover_color_handle(&mut self, val: Handle<CpuMaterial>) {
         self.hover_color_handle = Some(val);
-    }
-
-    pub fn down_color_handle(&self) -> Option<Handle<CpuMaterial>> {
-        self.down_color_handle
     }
 
     pub fn set_down_color_handle(&mut self, val: Handle<CpuMaterial>) {
