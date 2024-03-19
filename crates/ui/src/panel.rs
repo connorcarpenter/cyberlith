@@ -5,7 +5,7 @@ use render_api::{
 use storage::Handle;
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 
-use crate::{node::{UiNode, UiStore}, style::{NodeStyle, StyleId, WidgetStyle}, text::{Text, TextMut}, NodeId, Ui, Widget, Button, ButtonMut};
+use crate::{store::UiStore, node::{UiNode}, style::{NodeStyle, StyleId, WidgetStyle}, text::{Text, TextMut}, NodeId, Ui, Widget, Button, ButtonMut};
 
 #[derive(Clone)]
 pub struct Panel {

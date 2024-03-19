@@ -7,6 +7,7 @@ mod text;
 mod ui;
 mod widget;
 mod button;
+mod store;
 
 // just for engine
 pub use node_id::NodeId;

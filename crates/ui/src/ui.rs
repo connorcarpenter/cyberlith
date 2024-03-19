@@ -8,7 +8,7 @@ use render_api::{
 use storage::{Handle, Storage};
 use ui_layout::{Node, SizeUnits};
 
-use crate::{Button, ButtonStyle, ButtonStyleMut, cache::LayoutCache, node::{UiNode, UiStore}, node_id::NodeId, panel::{Panel, PanelMut, PanelStyle, PanelStyleMut}, style::{NodeStyle, StyleId, WidgetStyle}, text::{TextStyle, TextStyleMut}, widget::{Widget, WidgetKind}};
+use crate::{store::UiStore, Button, ButtonStyle, ButtonStyleMut, cache::LayoutCache, node::{UiNode}, node_id::NodeId, panel::{Panel, PanelMut, PanelStyle, PanelStyleMut}, style::{NodeStyle, StyleId, WidgetStyle}, text::{TextStyle, TextStyleMut}, widget::{Widget, WidgetKind}};
 
 pub struct Ui {
     pub globals: Globals,
