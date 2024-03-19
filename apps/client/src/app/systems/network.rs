@@ -13,6 +13,7 @@ use game_engine::{
         WorldSpawnEntityEvent,
     },
 };
+use game_engine::asset::UiData;
 
 use crate::app::systems::scene::{WalkAnimation, WalkerMarker};
 
@@ -90,6 +91,11 @@ pub fn world_main_insert_asset_ref_events(
                 commands
                     .entity(entity)
                     .insert(AssetHandle::<SceneData>::new(asset_id));
+            }
+            AssetType::Ui => {
+                commands
+                    .entity(entity)
+                    .insert(AssetHandle::<UiData>::new(asset_id));
             }
         }
 

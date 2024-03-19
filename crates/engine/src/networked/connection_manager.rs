@@ -5,6 +5,7 @@ use bevy_ecs::{
     event::{Event, EventReader, EventWriter},
     system::Resource,
 };
+use bevy_ecs::system::Res;
 use bevy_log::info;
 
 use naia_bevy_client::{
@@ -18,17 +19,28 @@ use bevy_http_client::{HttpClient, ResponseKey};
 use config::{ORCHESTRATOR_PORT, PUBLIC_IP_ADDR};
 use filesystem::FileSystemManager;
 
-use orchestrator_http_proto::{LoginRequest, LoginResponse};
-use session_server_naia_proto::{
-    channels::{PrimaryChannel, RequestChannel},
-    messages::{Auth as SessionAuth, LoadAssetRequest, LoadAssetWithData, WorldConnectToken},
-};
-use world_server_naia_proto::messages::Auth as WorldAuth;
+cfg_if! {
+if #[cfg(feature = "networked")]
+    {
+        use orchestrator_http_proto::{LoginRequest, LoginResponse};
+        use session_server_naia_proto::{
+            channels::{PrimaryChannel, RequestChannel},
+            messages::{Auth as SessionAuth, LoadAssetRequest, LoadAssetWithData, WorldConnectToken},
+        };
+        use world_server_naia_proto::messages::Auth as WorldAuth;
+    }
+    else
+    {
+
+    }
+}
 
 use crate::{
     asset_cache::{AssetCache, AssetLoadedEvent},
-    client_markers::{Session, World},
 };
+use crate::networked::asset_cache_checker::AssetCacheChecker;
+
+use super::client_markers::{Session, World};
 
 type SessionClient<'a> = Client<'a, Session>;
 type WorldClient<'a> = Client<'a, World>;
@@ -143,26 +155,32 @@ impl ConnectionManager {
                     asset_message.asset_id, asset_message.asset_etag
                 );
 
+                let LoadAssetWithData {
+                    asset_id, asset_etag, asset_type, asset_data
+                } = asset_message;
+
                 asset_cache.handle_load_asset_with_data_message(
                     &mut asset_manager,
                     &mut asset_loaded_event_writer,
                     &mut file_system_manager,
                     &mut metadata_store,
-                    asset_message,
+                    asset_id, asset_etag, asset_type, asset_data
                 );
             }
         }
     }
 
     pub fn handle_session_request_events(
-        mut asset_cache: ResMut<AssetCache>,
+        asset_cache: Res<AssetCache>,
+        mut asset_cache_checker: ResMut<AssetCacheChecker>,
         mut file_system_manager: ResMut<FileSystemManager>,
         mut metadata_store: ResMut<AssetMetadataStore>,
         mut event_reader: EventReader<RequestEvents<Session>>,
     ) {
         for events in event_reader.read() {
             for (response_send_key, request) in events.read::<RequestChannel, LoadAssetRequest>() {
-                asset_cache.handle_load_asset_request(
+                asset_cache_checker.handle_load_asset_request(
+                    &asset_cache,
                     &mut file_system_manager,
                     &mut metadata_store,
                     request,

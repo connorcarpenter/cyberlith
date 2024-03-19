@@ -7,7 +7,6 @@ use naia_serde::{BitReader, Serde};
 
 use asset_render::{AssetManager, AssetMetadataSerde, AssetMetadataStore, EmbeddedAssetEvent};
 use filesystem::FileSystemManager;
-use session_server_naia_proto::messages::LoadAssetWithData;
 
 use crate::asset_cache::{AssetCache, AssetLoadedEvent};
 
@@ -27,19 +26,15 @@ pub fn handle_embedded_asset_event(
         let mut bit_reader = BitReader::new(metadata_bytes);
         let metadata = AssetMetadataSerde::de(&mut bit_reader).unwrap();
 
-        let message = LoadAssetWithData::new(
-            asset_id,
-            metadata.asset_type,
-            metadata.etag,
-            data_bytes.to_vec(),
-        );
-
         asset_cache.handle_load_asset_with_data_message(
             &mut asset_manager,
             &mut asset_loaded_event_writer,
             &mut file_system_manager,
             &mut metadata_store,
-            message,
+            asset_id,
+            metadata.etag,
+            metadata.asset_type,
+            data_bytes.to_vec(),
         );
     }
 }

@@ -2,20 +2,23 @@
 extern crate cfg_if;
 
 mod plugin;
-pub use plugin::{EnginePlugin, NetworkedEnginePlugin};
+pub use plugin::EnginePlugin;
+
+cfg_if! {
+    if #[cfg(feature = "networked")] {
+        mod networked;
+        pub use networked::*;
+    } else {}
+}
 
 mod asset_cache;
-mod asset_ref_processor;
-mod client_markers;
-mod connection_manager;
 mod embedded_asset;
 mod renderer;
-mod world_events;
 
 pub mod asset {
     pub use asset_id::{AssetId, AssetType};
     pub use asset_render::{
-        embedded_asset_event, AnimationData, AssetHandle, AssetManager, EmbeddedAssetEvent,
+        AnimationData, AssetHandle, AssetManager, embedded_asset_event, EmbeddedAssetEvent,
         IconData, MeshData, ModelData, PaletteData, SceneData, SkeletonData, SkinData, UiData,
     };
 }
@@ -27,17 +30,6 @@ pub mod math {
 }
 pub mod render {
     pub use render_api::*;
-}
-pub mod world {
-    use naia_bevy_client::{events::SpawnEntityEvent, Client};
-
-    use super::client_markers::World;
-
-    pub type WorldClient<'w> = Client<'w, World>;
-    pub type WorldSpawnEntityEvent = SpawnEntityEvent<World>;
-    pub use super::world_events::InsertAssetRefEvent as WorldInsertAssetRefEvent;
-    pub use super::world_events::InsertComponentEvent as WorldInsertComponentEvent;
-    pub use world_server_naia_proto::components::{Alt1, Main, Position};
 }
 pub mod config {
     pub use config::*;
@@ -51,5 +43,3 @@ pub mod ui {
 
 // TODO: should these find a home?
 pub use renderer::wait_for_finish;
-
-pub use world_events::InsertComponentEvent;

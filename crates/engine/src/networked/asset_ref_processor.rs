@@ -18,8 +18,9 @@ use asset_render::{AssetMetadataStore, TypedAssetId};
 use crate::{
     asset_cache::{AssetCache, AssetLoadedEvent},
     world::WorldClient,
-    world_events::InsertAssetRefEvent,
 };
+
+use super::world_events::InsertAssetRefEvent;
 
 type AssetProcessorId = TypeId;
 

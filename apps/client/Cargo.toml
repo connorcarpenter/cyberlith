@@ -24,7 +24,7 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 # Internal
 # goal is to have ONLY game_engine here!!!
-game_engine = { path = "../../crates/engine" }
+game_engine = { path = "../../crates/engine", features = ["networked"] }
 naia-serde = { path = "../../../naia/shared/serde" }
 
 # External

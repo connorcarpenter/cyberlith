@@ -16,10 +16,10 @@ use asset_render::AssetMetadataStore;
 
 use crate::{
     asset_cache::AssetCache,
-    asset_ref_processor::{AssetProcessor, AssetRefProcessor},
-    client_markers::World,
     world::WorldClient,
 };
+
+use super::{asset_ref_processor::{AssetProcessor, AssetRefProcessor}, client_markers::World};
 
 #[derive(Event)]
 pub struct InsertComponentEvent<T: Replicate> {
