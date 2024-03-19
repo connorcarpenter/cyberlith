@@ -38,8 +38,12 @@ pub struct UiJson {
 impl UiJson {
     pub const CURRENT_SCHEMA_VERSION: u32 = 0;
 
-    fn dependencies(&self) -> Vec<AssetId> {
-        todo!()
+    pub fn dependencies(&self) -> Vec<AssetId> {
+        let mut output = Vec::new();
+
+        output.push(AssetId::from_str(&self.text_icon_asset_id).unwrap());
+
+        output
     }
 }
 

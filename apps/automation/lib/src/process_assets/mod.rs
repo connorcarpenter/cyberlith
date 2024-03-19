@@ -447,18 +447,19 @@ fn write_all_new_files(repo: &Repository, unprocessed_files: &Vec<UnprocessedFil
         let hash = get_asset_hash(&unprocessed_file.bytes);
 
         let unprocessed_asset = Asset::read(&unprocessed_file.bytes).expect("Failed to read asset");
+        let (unprocessed_asset_meta, unprocessed_asset_data) = unprocessed_asset.deconstruct();
 
-        let asset_data_type_name = unprocessed_asset.data().type_name();
+        let asset_data_type_name = unprocessed_asset_data.type_name();
         if asset_data_type_name.as_str() != true_file_ext {
             panic!(
                 "Expected file type to be: {}, got: {}",
                 true_file_ext, asset_data_type_name
             );
         }
-        let dependencies = get_dependencies(&unprocessed_asset.data());
+        let dependencies = get_dependencies(&unprocessed_asset_data);
 
         // convert asset data to bits
-        let processed_asset_bytes = match unprocessed_asset.data() {
+        let processed_asset_bytes = match unprocessed_asset_data {
             AssetData::Palette(data) => convert_to_bits::palette(data),
             AssetData::Scene(data) => convert_to_bits::scene(data),
             AssetData::Mesh(data) => convert_to_bits::mesh(data),
@@ -467,6 +468,7 @@ fn write_all_new_files(repo: &Repository, unprocessed_files: &Vec<UnprocessedFil
             AssetData::Skeleton(data) => convert_to_bits::skeleton(data),
             AssetData::Animation(data) => convert_to_bits::animation(data),
             AssetData::Icon(data) => convert_to_bits::icon(data),
+            AssetData::Ui(data) => convert_to_bits::ui(data),
         };
 
         // write new data file
@@ -475,7 +477,7 @@ fn write_all_new_files(repo: &Repository, unprocessed_files: &Vec<UnprocessedFil
         // process Asset Meta
         let meta_file_path = format!("{}.meta", file_path);
         let meta_full_path = format!("{}.meta", full_path);
-        let processed_meta = process_new_meta_file(&unprocessed_asset.meta(), dependencies, hash);
+        let processed_meta = process_new_meta_file(&unprocessed_asset_meta, dependencies, hash);
         let meta_bytes = processed_meta.write();
 
         // write new meta file
@@ -501,6 +503,7 @@ fn get_dependencies(data: &AssetData) -> Vec<AssetId> {
         AssetData::Skeleton(data) => data.dependencies(),
         AssetData::Animation(data) => data.dependencies(),
         AssetData::Icon(data) => data.dependencies(),
+        AssetData::Ui(data) => data.dependencies(),
     }
 }
 
