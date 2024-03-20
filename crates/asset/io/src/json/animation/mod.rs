@@ -108,13 +108,13 @@ impl AnimFileFrame {
 }
 
 #[derive(Serialize, Deserialize, Clone)]
-pub struct AnimFile {
+pub struct AnimationJson {
     skeleton_asset_id: String,
     edge_names: Vec<String>,
     frames: Vec<AnimFileFrame>,
 }
 
-impl AnimFile {
+impl AnimationJson {
     pub const CURRENT_SCHEMA_VERSION: u32 = 0;
 
     pub fn new() -> Self {

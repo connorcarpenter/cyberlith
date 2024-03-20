@@ -1,28 +1,28 @@
 use cfg_if::cfg_if;
 
 mod animation;
-pub use animation::{AnimFile, AnimFileFrame, AnimFileQuat};
+pub use animation::{AnimationJson, AnimFileFrame, AnimFileQuat};
 
 mod icon;
-pub use icon::{IconFile, IconFileFrame};
+pub use icon::{IconJson, IconFileFrame};
 
 mod mesh;
-pub use mesh::MeshData;
+pub use mesh::MeshJson;
 
 mod model;
-pub use model::ModelFile;
+pub use model::ModelJson;
 
 mod palette;
-pub use palette::PaletteFile;
+pub use palette::PaletteJson;
 
 mod scene;
-pub use scene::SceneFile;
+pub use scene::SceneJson;
 
 mod skeleton;
-pub use skeleton::SkelFile;
+pub use skeleton::SkeletonJson;
 
 mod skin;
-pub use skin::SkinFile;
+pub use skin::SkinJson;
 
 mod ui;
 pub use ui::*;

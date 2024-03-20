@@ -4,7 +4,7 @@ use log::{info, warn};
 use ttf2mesh::{Quality, TTFFile, Value};
 
 use asset_id::AssetId;
-use asset_io::json::{IconFile, IconFileFrame};
+use asset_io::json::{IconJson, IconFileFrame};
 
 use crate::CliError;
 
@@ -13,7 +13,7 @@ pub fn convert_ttf_to_icon(ttf_file_name: &str) -> Result<(), CliError> {
     let mut ttf = TTFFile::from_file(ttf_file_name).unwrap();
     info!("ttf glyph count: {}", ttf.glyph_count());
 
-    let mut output_file = IconFile::new();
+    let mut output_file = IconJson::new();
     let palette_asset_id = AssetId::from_str("8273wa").unwrap();
     output_file.set_palette_asset_id(&palette_asset_id);
 

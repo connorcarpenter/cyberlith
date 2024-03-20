@@ -63,12 +63,12 @@ impl SceneFileTransform {
 }
 
 #[derive(Serialize, Deserialize, Clone)]
-pub struct SceneFile {
+pub struct SceneJson {
     components: Vec<FileComponentEntry>,
     transforms: Vec<SceneFileTransform>,
 }
 
-impl SceneFile {
+impl SceneJson {
     pub const CURRENT_SCHEMA_VERSION: u32 = 0;
 
     pub fn new() -> Self {

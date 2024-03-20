@@ -16,7 +16,7 @@ cfg_if! {
 use asset_id::AssetId;
 use serde::{Deserialize, Serialize};
 
-use crate::json::{animation::AnimFile, icon::IconFile, mesh::MeshData, model::ModelFile, palette::PaletteFile, scene::SceneFile, skeleton::SkelFile, skin::SkinFile, UiJson};
+use crate::json::{animation::AnimationJson, icon::IconJson, mesh::MeshJson, model::ModelJson, palette::PaletteJson, scene::SceneJson, skeleton::SkeletonJson, skin::SkinJson, UiJson};
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Asset {
@@ -65,14 +65,14 @@ impl AssetMeta {
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(rename_all = "lowercase")]
 pub enum AssetData {
-    Palette(PaletteFile),
-    Skeleton(SkelFile),
-    Mesh(MeshData),
-    Animation(AnimFile),
-    Icon(IconFile),
-    Skin(SkinFile),
-    Scene(SceneFile),
-    Model(ModelFile),
+    Palette(PaletteJson),
+    Skeleton(SkeletonJson),
+    Mesh(MeshJson),
+    Animation(AnimationJson),
+    Icon(IconJson),
+    Skin(SkinJson),
+    Scene(SceneJson),
+    Model(ModelJson),
     Ui(UiJson),
 }
 

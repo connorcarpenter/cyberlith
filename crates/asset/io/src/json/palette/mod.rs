@@ -31,11 +31,11 @@ impl PaletteFileColor {
 }
 
 #[derive(Serialize, Deserialize, Clone)]
-pub struct PaletteFile {
+pub struct PaletteJson {
     colors: Vec<PaletteFileColor>,
 }
 
-impl PaletteFile {
+impl PaletteJson {
     pub const CURRENT_SCHEMA_VERSION: u32 = 0;
 
     pub fn new() -> Self {

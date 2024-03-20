@@ -70,13 +70,13 @@ impl ModelFileTransform {
 }
 
 #[derive(Serialize, Deserialize, Clone)]
-pub struct ModelFile {
+pub struct ModelJson {
     skeleton_id: String,
     components: Vec<FileComponentEntry>,
     transforms: Vec<ModelFileTransform>,
 }
 
-impl ModelFile {
+impl ModelJson {
     pub const CURRENT_SCHEMA_VERSION: u32 = 0;
 
     pub fn new() -> Self {

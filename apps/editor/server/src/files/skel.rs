@@ -10,7 +10,7 @@ use bevy_log::info;
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 
 use asset_id::AssetId;
-use asset_io::json::SkelFile;
+use asset_io::json::SkeletonJson;
 
 use editor_proto::components::{
     Edge3d, EdgeAngle, FileExtension, FileType, SerdeRotation, ShapeName, Vertex3d, VertexRoot,
@@ -28,8 +28,8 @@ use crate::{
 pub struct SkelWriter;
 
 impl SkelWriter {
-    fn new_default_data(&self) -> SkelFile {
-        let mut output = SkelFile::new();
+    fn new_default_data(&self) -> SkeletonJson {
+        let mut output = SkeletonJson::new();
 
         output.add_vertex(0, 0, 0, None, None);
 
@@ -40,7 +40,7 @@ impl SkelWriter {
         &self,
         world: &mut World,
         content_entities: &HashMap<Entity, ContentEntityData>,
-    ) -> SkelFile {
+    ) -> SkeletonJson {
         let content_entities = content_entities.keys().cloned().collect::<Vec<Entity>>();
 
         let mut system_state: SystemState<(
@@ -53,7 +53,7 @@ impl SkelWriter {
         let (shape_manager, vertex_q, file_type_q, shape_name_q, edge_angle_q) =
             system_state.get_mut(world);
 
-        let mut output = SkelFile::new();
+        let mut output = SkeletonJson::new();
 
         ///////////////////////////////  id,   x,   y,   z, Option<parent_entity, angle>, vertex_name ///////////////////
         let mut map: HashMap<
@@ -172,7 +172,7 @@ impl FileWriter for SkelWriter {
 pub struct SkelReader;
 
 impl SkelReader {
-    fn data_to_world(world: &mut World, data: &SkelFile) -> HashMap<Entity, ContentEntityData> {
+    fn data_to_world(world: &mut World, data: &SkeletonJson) -> HashMap<Entity, ContentEntityData> {
         let mut system_state: SystemState<(Commands, Server, ResMut<ShapeManager>)> =
             SystemState::new(world);
         let (mut commands, mut server, mut shape_manager) = system_state.get_mut(world);
@@ -296,11 +296,11 @@ impl SkelReader {
     }
 
     pub fn read(&self, world: &mut World, bytes: &Box<[u8]>) -> HashMap<Entity, ContentEntityData> {
-        let Ok((meta, data)) = SkelFile::read(bytes) else {
+        let Ok((meta, data)) = SkeletonJson::read(bytes) else {
             panic!("Error reading .skel file");
         };
 
-        if meta.schema_version() != SkelFile::CURRENT_SCHEMA_VERSION {
+        if meta.schema_version() != SkeletonJson::CURRENT_SCHEMA_VERSION {
             panic!("Invalid schema version");
         }
 

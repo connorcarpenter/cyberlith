@@ -1,9 +1,9 @@
 use crate::{
     error::AssetIoError,
-    json::{AnimFile, Asset, AssetData, AssetMeta},
+    json::{AnimationJson, Asset, AssetData, AssetMeta},
 };
 
-impl AnimFile {
+impl AnimationJson {
     pub fn read(bytes: &[u8]) -> Result<(AssetMeta, Self), AssetIoError> {
         let (meta, data) = Asset::read(bytes)?.deconstruct();
         let AssetData::Animation(data) = data else {

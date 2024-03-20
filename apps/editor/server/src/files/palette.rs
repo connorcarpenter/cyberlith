@@ -10,7 +10,7 @@ use bevy_log::info;
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 
 use asset_id::AssetId;
-use asset_io::json::PaletteFile;
+use asset_io::json::PaletteJson;
 
 use editor_proto::components::PaletteColor;
 
@@ -23,11 +23,11 @@ use crate::{
 pub struct PaletteWriter;
 
 impl PaletteWriter {
-    fn world_to_data(&self, world: &mut World) -> PaletteFile {
+    fn world_to_data(&self, world: &mut World) -> PaletteJson {
         let mut system_state: SystemState<Query<&PaletteColor>> = SystemState::new(world);
         let color_q = system_state.get_mut(world);
 
-        let mut output = PaletteFile::new();
+        let mut output = PaletteJson::new();
 
         for color in color_q.iter() {
             let index = *color.index as usize;
@@ -55,7 +55,7 @@ impl FileWriter for PaletteWriter {
     }
 
     fn write_new_default(&self, asset_id: &AssetId) -> Box<[u8]> {
-        let mut data = PaletteFile::new();
+        let mut data = PaletteJson::new();
         data.add_color(255, 255, 255); // white
         data.add_color(0, 0, 0); // black
         data.add_color(255, 0, 0); // red
@@ -75,7 +75,7 @@ impl PaletteReader {
     fn data_to_world(
         world: &mut World,
         file_entity: &Entity,
-        data: &PaletteFile,
+        data: &PaletteJson,
     ) -> HashMap<Entity, ContentEntityData> {
         let mut output = HashMap::new();
         let mut index = 0;
@@ -118,11 +118,11 @@ impl PaletteReader {
         file_entity: &Entity,
         bytes: &Box<[u8]>,
     ) -> HashMap<Entity, ContentEntityData> {
-        let Ok((meta, data)) = PaletteFile::read(bytes) else {
+        let Ok((meta, data)) = PaletteJson::read(bytes) else {
             panic!("Error reading .palette file");
         };
 
-        if meta.schema_version() != PaletteFile::CURRENT_SCHEMA_VERSION {
+        if meta.schema_version() != PaletteJson::CURRENT_SCHEMA_VERSION {
             panic!("Invalid schema version");
         }
 

@@ -69,13 +69,13 @@ impl MeshDataFace {
 }
 
 #[derive(Serialize, Deserialize, Clone)]
-pub struct MeshData {
+pub struct MeshJson {
     vertices: Vec<MeshDataVertex>,
     edges: Vec<MeshDataEdge>,
     faces: Vec<MeshDataFace>,
 }
 
-impl MeshData {
+impl MeshJson {
     pub const CURRENT_SCHEMA_VERSION: u32 = 0;
 
     pub fn new() -> Self {

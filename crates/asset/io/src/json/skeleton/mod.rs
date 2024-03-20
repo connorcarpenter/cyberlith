@@ -63,11 +63,11 @@ impl SkelFileVertex {
 }
 
 #[derive(Serialize, Deserialize, Clone)]
-pub struct SkelFile {
+pub struct SkeletonJson {
     vertices: Vec<SkelFileVertex>,
 }
 
-impl SkelFile {
+impl SkeletonJson {
     pub const CURRENT_SCHEMA_VERSION: u32 = 0;
 
     pub fn new() -> Self {

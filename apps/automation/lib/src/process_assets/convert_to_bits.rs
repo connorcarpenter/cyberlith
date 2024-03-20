@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
-use asset_io::{json::{FileComponentType, UiJson, AnimFile, IconFile, MeshData, ModelFile, PaletteFile, SceneFile, SkelFile, SkinFile}, bits::{AnimAction, IconAction, MeshAction, ModelAction, PaletteAction, SceneAction, SkelAction,
-                                                         SkinAction, ComponentFileType, IconFrameAction, SerdeQuat, SerdeRotation, Transition}};
+use asset_io::{json::{FileComponentType, UiJson, AnimationJson, IconJson, MeshJson, ModelJson, PaletteJson, SceneJson, SkeletonJson, SkinJson}, bits::{AnimAction, IconAction, MeshAction, ModelAction, PaletteAction, SceneAction, SkelAction,
+                                                                                                                                                       SkinAction, ComponentFileType, IconFrameAction, SerdeQuat, SerdeRotation, Transition}};
 
-pub(crate) fn palette(data: PaletteFile) -> Vec<u8> {
+pub(crate) fn palette(data: PaletteJson) -> Vec<u8> {
     let mut actions = Vec::new();
 
     for color in data.get_colors() {
@@ -14,7 +14,7 @@ pub(crate) fn palette(data: PaletteFile) -> Vec<u8> {
     PaletteAction::write(actions).to_vec()
 }
 
-pub(crate) fn skeleton(data: SkelFile) -> Vec<u8> {
+pub(crate) fn skeleton(data: SkeletonJson) -> Vec<u8> {
     let mut actions = Vec::new();
 
     for vertex in data.get_vertices() {
@@ -27,7 +27,7 @@ pub(crate) fn skeleton(data: SkelFile) -> Vec<u8> {
     SkelAction::write(actions).to_vec()
 }
 
-pub(crate) fn mesh(data: MeshData) -> Vec<u8> {
+pub(crate) fn mesh(data: MeshJson) -> Vec<u8> {
     let mut actions = Vec::new();
 
     for vertex in data.get_vertices() {
@@ -42,7 +42,7 @@ pub(crate) fn mesh(data: MeshData) -> Vec<u8> {
     MeshAction::write(actions).to_vec()
 }
 
-pub(crate) fn skin(data: SkinFile) -> Vec<u8> {
+pub(crate) fn skin(data: SkinJson) -> Vec<u8> {
     let mut actions = Vec::new();
 
     let palette_asset_id = data.get_palette_asset_id();
@@ -63,7 +63,7 @@ pub(crate) fn skin(data: SkinFile) -> Vec<u8> {
     SkinAction::write(actions).to_vec()
 }
 
-pub(crate) fn animation(data: AnimFile) -> Vec<u8> {
+pub(crate) fn animation(data: AnimationJson) -> Vec<u8> {
     let mut actions = Vec::new();
 
     let skeleton_asset_id = data.get_skeleton_asset_id();
@@ -95,7 +95,7 @@ pub(crate) fn animation(data: AnimFile) -> Vec<u8> {
     AnimAction::write(actions).to_vec()
 }
 
-pub(crate) fn icon(data: IconFile) -> Vec<u8> {
+pub(crate) fn icon(data: IconJson) -> Vec<u8> {
     let mut actions = Vec::new();
 
     let palette_id = data.get_palette_asset_id();
@@ -123,7 +123,7 @@ pub(crate) fn icon(data: IconFile) -> Vec<u8> {
     IconAction::write(actions).to_vec()
 }
 
-pub(crate) fn scene(data: SceneFile) -> Vec<u8> {
+pub(crate) fn scene(data: SceneJson) -> Vec<u8> {
     let mut actions = Vec::new();
 
     for component in data.get_components() {
@@ -155,7 +155,7 @@ pub(crate) fn scene(data: SceneFile) -> Vec<u8> {
     SceneAction::write(actions).to_vec()
 }
 
-pub(crate) fn model(data: ModelFile) -> Vec<u8> {
+pub(crate) fn model(data: ModelJson) -> Vec<u8> {
     let mut actions = Vec::new();
 
     let skel_id = data.get_skeleton_id();

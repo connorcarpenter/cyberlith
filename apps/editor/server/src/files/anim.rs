@@ -11,7 +11,7 @@ use asset_id::AssetId;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 
-use asset_io::json::{AnimFile, AnimFileFrame};
+use asset_io::json::{AnimationJson, AnimFileFrame};
 
 use editor_proto::{
     components::{AnimFrame, AnimRotation, FileExtension, Transition},
@@ -33,7 +33,7 @@ impl AnimWriter {
         world: &mut World,
         project: &Project,
         content_entities: &HashMap<Entity, ContentEntityData>,
-    ) -> AnimFile {
+    ) -> AnimationJson {
         let working_file_entries = project.working_file_entries();
 
         let mut skel_dependency_key_opt = None;
@@ -114,7 +114,7 @@ impl AnimWriter {
             }
         }
 
-        let mut file = AnimFile::new();
+        let mut file = AnimationJson::new();
 
         // Write Skel Dependency
         if let Some(dependency_key) = skel_dependency_key_opt {
@@ -172,7 +172,7 @@ impl FileWriter for AnimWriter {
     fn write_new_default(&self, asset_id: &AssetId) -> Box<[u8]> {
         info!("anim write new default");
 
-        let mut data = AnimFile::new();
+        let mut data = AnimationJson::new();
         data.add_frame(AnimFileFrame::new(100));
 
         data.write(asset_id)
@@ -188,7 +188,7 @@ impl AnimReader {
         project: &mut Project,
         file_key: &FileKey,
         file_entity: &Entity,
-        data: &AnimFile,
+        data: &AnimationJson,
     ) -> HashMap<Entity, ContentEntityData> {
         let mut output = HashMap::new();
         let mut shape_name_index = 0;
@@ -287,11 +287,11 @@ impl AnimReader {
         file_entity: &Entity,
         bytes: &Box<[u8]>,
     ) -> HashMap<Entity, ContentEntityData> {
-        let Ok((meta, data)) = AnimFile::read(bytes) else {
+        let Ok((meta, data)) = AnimationJson::read(bytes) else {
             panic!("Error reading .anim file");
         };
 
-        if meta.schema_version() != AnimFile::CURRENT_SCHEMA_VERSION {
+        if meta.schema_version() != AnimationJson::CURRENT_SCHEMA_VERSION {
             panic!("Invalid schema version");
         }
 

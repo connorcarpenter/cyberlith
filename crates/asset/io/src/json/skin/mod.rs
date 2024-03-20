@@ -38,14 +38,14 @@ impl SkinFileFace {
 }
 
 #[derive(Serialize, Deserialize, Clone)]
-pub struct SkinFile {
+pub struct SkinJson {
     palette_asset_id: String,
     mesh_asset_id: String,
     background_color_id: u8,
     face_colors: Vec<SkinFileFace>,
 }
 
-impl SkinFile {
+impl SkinJson {
     pub const CURRENT_SCHEMA_VERSION: u32 = 0;
 
     pub fn new() -> Self {

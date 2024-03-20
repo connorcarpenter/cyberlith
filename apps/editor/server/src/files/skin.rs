@@ -10,7 +10,7 @@ use bevy_log::info;
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 
 use asset_id::AssetId;
-use asset_io::json::SkinFile;
+use asset_io::json::SkinJson;
 
 use editor_proto::{
     components::{BackgroundSkinColor, FaceColor, FileExtension, PaletteColor},
@@ -31,7 +31,7 @@ impl SkinWriter {
         world: &mut World,
         project: &Project,
         content_entities: &HashMap<Entity, ContentEntityData>,
-    ) -> SkinFile {
+    ) -> SkinJson {
         let working_file_entries = project.working_file_entries();
 
         let mut palette_dependency_key_opt = None;
@@ -68,7 +68,7 @@ impl SkinWriter {
             }
         }
 
-        let mut output = SkinFile::new();
+        let mut output = SkinJson::new();
 
         // Write Palette Dependency
         if let Some(dependency_key) = palette_dependency_key_opt {
@@ -142,7 +142,7 @@ impl FileWriter for SkinWriter {
     }
 
     fn write_new_default(&self, asset_id: &AssetId) -> Box<[u8]> {
-        let data = SkinFile::new();
+        let data = SkinJson::new();
         data.write(asset_id)
     }
 }
@@ -156,7 +156,7 @@ impl SkinReader {
         project: &mut Project,
         file_key: &FileKey,
         file_entity: &Entity,
-        data: &SkinFile,
+        data: &SkinJson,
     ) -> HashMap<Entity, ContentEntityData> {
         let mut output = HashMap::new();
 
@@ -252,11 +252,11 @@ impl SkinReader {
         file_entity: &Entity,
         bytes: &Box<[u8]>,
     ) -> HashMap<Entity, ContentEntityData> {
-        let Ok((meta, data)) = SkinFile::read(bytes) else {
+        let Ok((meta, data)) = SkinJson::read(bytes) else {
             panic!("Error reading .skin file");
         };
 
-        if meta.schema_version() != SkinFile::CURRENT_SCHEMA_VERSION {
+        if meta.schema_version() != SkinJson::CURRENT_SCHEMA_VERSION {
             panic!("Invalid schema version");
         }
 

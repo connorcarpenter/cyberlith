@@ -10,7 +10,7 @@ use bevy_log::info;
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 
 use asset_id::AssetId;
-use asset_io::json::MeshData;
+use asset_io::json::MeshJson;
 
 use editor_proto::components::{Edge3d, Face3d, FileExtension, FileType, Vertex3d};
 
@@ -27,7 +27,7 @@ impl MeshWriter {
         &self,
         world: &mut World,
         content_entities: &HashMap<Entity, ContentEntityData>,
-    ) -> MeshData {
+    ) -> MeshJson {
         let content_entities = content_entities.keys().cloned().collect::<Vec<Entity>>();
 
         let mut system_state: SystemState<(
@@ -41,7 +41,7 @@ impl MeshWriter {
         let (server, shape_manager, vertex_q, edge_q, face_q, file_type_q) =
             system_state.get_mut(world);
 
-        let mut output = MeshData::new();
+        let mut output = MeshJson::new();
 
         /////////////////////////////////////  id /////////////////
         let mut vertex_map: HashMap<Entity, usize> = HashMap::new();
@@ -158,7 +158,7 @@ impl FileWriter for MeshWriter {
     }
 
     fn write_new_default(&self, asset_id: &AssetId) -> Box<[u8]> {
-        let mut data = MeshData::new();
+        let mut data = MeshJson::new();
 
         data.add_vertex(0, 0, 0);
 
@@ -173,7 +173,7 @@ impl MeshReader {
     fn data_to_world(
         world: &mut World,
         file_entity: &Entity,
-        data: &MeshData,
+        data: &MeshJson,
     ) -> HashMap<Entity, ContentEntityData> {
         let mut system_state: SystemState<(Commands, Server, ResMut<ShapeManager>)> =
             SystemState::new(world);
@@ -276,11 +276,11 @@ impl MeshReader {
         file_entity: &Entity,
         bytes: &Box<[u8]>,
     ) -> HashMap<Entity, ContentEntityData> {
-        let Ok((meta, data)) = MeshData::read(bytes) else {
+        let Ok((meta, data)) = MeshJson::read(bytes) else {
             panic!("Error reading .mesh file");
         };
 
-        if meta.schema_version() != MeshData::CURRENT_SCHEMA_VERSION {
+        if meta.schema_version() != MeshJson::CURRENT_SCHEMA_VERSION {
             panic!("Invalid schema version");
         }
 

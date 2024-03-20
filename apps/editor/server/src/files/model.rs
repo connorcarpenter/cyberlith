@@ -10,7 +10,7 @@ use bevy_log::info;
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 
 use asset_id::AssetId;
-use asset_io::json::{FileComponentType, ModelFile};
+use asset_io::json::{FileComponentType, ModelJson};
 
 use editor_proto::{
     components::{
@@ -37,7 +37,7 @@ impl ModelWriter {
         world: &mut World,
         project: &Project,
         content_entities: &HashMap<Entity, ContentEntityData>,
-    ) -> ModelFile {
+    ) -> ModelJson {
         let working_file_entries = project.working_file_entries();
 
         let mut skel_dependency_key_opt = None;
@@ -83,7 +83,7 @@ impl ModelWriter {
             }
         }
 
-        let mut data = ModelFile::new();
+        let mut data = ModelJson::new();
 
         // Write Skel Dependency
         if let Some(dependency_key) = skel_dependency_key_opt {
@@ -176,7 +176,7 @@ impl FileWriter for ModelWriter {
     }
 
     fn write_new_default(&self, asset_id: &AssetId) -> Box<[u8]> {
-        let data = ModelFile::new();
+        let data = ModelJson::new();
         data.write(asset_id)
     }
 }
@@ -190,7 +190,7 @@ impl ModelReader {
         project: &mut Project,
         file_key: &FileKey,
         file_entity: &Entity,
-        data: &ModelFile,
+        data: &ModelJson,
     ) -> HashMap<Entity, ContentEntityData> {
         let mut output = HashMap::new();
 
@@ -313,11 +313,11 @@ impl ModelReader {
         file_entity: &Entity,
         bytes: &Box<[u8]>,
     ) -> HashMap<Entity, ContentEntityData> {
-        let Ok((meta, data)) = ModelFile::read(bytes) else {
+        let Ok((meta, data)) = ModelJson::read(bytes) else {
             panic!("Error reading .model file");
         };
 
-        if meta.schema_version() != ModelFile::CURRENT_SCHEMA_VERSION {
+        if meta.schema_version() != ModelJson::CURRENT_SCHEMA_VERSION {
             panic!("Invalid schema version");
         }
 

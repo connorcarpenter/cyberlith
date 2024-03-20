@@ -162,12 +162,12 @@ impl IconFileFrame {
 }
 
 #[derive(Serialize, Deserialize, Clone)]
-pub struct IconFile {
+pub struct IconJson {
     palette_asset_id: String,
     frames: Vec<IconFileFrame>,
 }
 
-impl IconFile {
+impl IconJson {
     pub const CURRENT_SCHEMA_VERSION: u32 = 0;
 
     pub fn new() -> Self {

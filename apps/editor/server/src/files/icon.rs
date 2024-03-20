@@ -10,7 +10,7 @@ use bevy_log::info;
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 
 use asset_id::AssetId;
-use asset_io::json::{IconFile, IconFileFrame};
+use asset_io::json::{IconJson, IconFileFrame};
 
 use editor_proto::{
     components::{FileExtension, IconEdge, IconFace, IconFrame, IconVertex, PaletteColor},
@@ -123,10 +123,10 @@ impl IconWriter {
         world: &mut World,
         project: &Project,
         content_entities: &HashMap<Entity, ContentEntityData>,
-    ) -> IconFile {
+    ) -> IconJson {
         let working_file_entries = project.working_file_entries();
 
-        let mut output = IconFile::new();
+        let mut output = IconJson::new();
 
         let mut palette_dependency_key_opt = None;
         let mut vertex_entities = Vec::new();
@@ -330,7 +330,7 @@ impl FileWriter for IconWriter {
     }
 
     fn write_new_default(&self, asset_id: &AssetId) -> Box<[u8]> {
-        let mut data = IconFile::new();
+        let mut data = IconJson::new();
         let mut frame = IconFileFrame::new();
         frame.add_vertex(0, 0);
         data.add_frame(frame);
@@ -348,7 +348,7 @@ impl IconReader {
         project: &mut Project,
         file_key: &FileKey,
         file_entity: &Entity,
-        data: &IconFile,
+        data: &IconJson,
     ) -> HashMap<Entity, ContentEntityData> {
         let mut system_state: SystemState<(Commands, Server, ResMut<IconManager>)> =
             SystemState::new(world);
@@ -500,11 +500,11 @@ impl IconReader {
         file_entity: &Entity,
         bytes: &Box<[u8]>,
     ) -> HashMap<Entity, ContentEntityData> {
-        let Ok((meta, data)) = IconFile::read(bytes) else {
+        let Ok((meta, data)) = IconJson::read(bytes) else {
             panic!("Error reading .icon file");
         };
 
-        if meta.schema_version() != IconFile::CURRENT_SCHEMA_VERSION {
+        if meta.schema_version() != IconJson::CURRENT_SCHEMA_VERSION {
             panic!("Invalid schema version");
         }
 

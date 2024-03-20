@@ -1,9 +1,9 @@
 use crate::{
     error::AssetIoError,
-    json::{Asset, AssetData, AssetMeta, SkelFile},
+    json::{Asset, AssetData, AssetMeta, SkeletonJson},
 };
 
-impl SkelFile {
+impl SkeletonJson {
     pub fn read(bytes: &[u8]) -> Result<(AssetMeta, Self), AssetIoError> {
         let (meta, data) = Asset::read(bytes)?.deconstruct();
         let AssetData::Skeleton(data) = data else {

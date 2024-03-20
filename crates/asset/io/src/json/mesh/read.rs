@@ -1,9 +1,9 @@
 use crate::{
     error::AssetIoError,
-    json::{Asset, AssetData, AssetMeta, MeshData},
+    json::{Asset, AssetData, AssetMeta, MeshJson},
 };
 
-impl MeshData {
+impl MeshJson {
     pub fn read(bytes: &[u8]) -> Result<(AssetMeta, Self), AssetIoError> {
         let (meta, data) = Asset::read(bytes)?.deconstruct();
         let AssetData::Mesh(data) = data else {

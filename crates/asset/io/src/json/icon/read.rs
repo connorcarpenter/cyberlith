@@ -1,9 +1,9 @@
 use crate::{
     error::AssetIoError,
-    json::{Asset, AssetData, AssetMeta, IconFile},
+    json::{Asset, AssetData, AssetMeta, IconJson},
 };
 
-impl IconFile {
+impl IconJson {
     pub fn read(bytes: &[u8]) -> Result<(AssetMeta, Self), AssetIoError> {
         let (meta, data) = Asset::read(bytes)?.deconstruct();
         let AssetData::Icon(data) = data else {

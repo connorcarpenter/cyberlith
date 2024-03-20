@@ -10,7 +10,7 @@ use bevy_log::info;
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 
 use asset_id::AssetId;
-use asset_io::json::{FileComponentType, SceneFile};
+use asset_io::json::{FileComponentType, SceneJson};
 use math::Quat;
 
 use editor_proto::{
@@ -37,7 +37,7 @@ impl SceneWriter {
         world: &mut World,
         project: &Project,
         content_entities: &HashMap<Entity, ContentEntityData>,
-    ) -> SceneFile {
+    ) -> SceneJson {
         let working_file_entries = project.working_file_entries();
 
         let mut skin_dependencies = Vec::new();
@@ -79,7 +79,7 @@ impl SceneWriter {
             }
         }
 
-        let mut output = SceneFile::new();
+        let mut output = SceneJson::new();
 
         // Write Component Dependencies
         for (dependency_key, dependency_type) in skin_dependencies {
@@ -159,7 +159,7 @@ impl FileWriter for SceneWriter {
     }
 
     fn write_new_default(&self, asset_id: &AssetId) -> Box<[u8]> {
-        let data = SceneFile::new();
+        let data = SceneJson::new();
         data.write(asset_id)
     }
 }
@@ -173,7 +173,7 @@ impl SceneReader {
         project: &mut Project,
         file_key: &FileKey,
         file_entity: &Entity,
-        data: &SceneFile,
+        data: &SceneJson,
     ) -> HashMap<Entity, ContentEntityData> {
         let mut output = HashMap::new();
 
@@ -275,11 +275,11 @@ impl SceneReader {
         file_entity: &Entity,
         bytes: &Box<[u8]>,
     ) -> HashMap<Entity, ContentEntityData> {
-        let Ok((meta, data)) = SceneFile::read(bytes) else {
+        let Ok((meta, data)) = SceneJson::read(bytes) else {
             panic!("Error reading .scene file");
         };
 
-        if meta.schema_version() != SceneFile::CURRENT_SCHEMA_VERSION {
+        if meta.schema_version() != SceneJson::CURRENT_SCHEMA_VERSION {
             panic!("Invalid schema version");
         }
 
