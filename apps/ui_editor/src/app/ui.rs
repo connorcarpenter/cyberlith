@@ -1,12 +1,9 @@
 use bevy_ecs::{prelude::Commands, event::{Event, EventReader, EventWriter}, change_detection::ResMut};
 use bevy_log::info;
 
-use naia_serde::{BitWriter, SerdeInternal};
-
-use asset_id::{AssetId, AssetType, ETag};
 use asset_io::json::{Asset, AssetData, AssetMeta, UiJson};
-use asset_render::{AssetHandle, AssetManager, AssetMetadataSerde, embedded_asset_event, EmbeddedAssetEvent, UiData};
 use game_engine::{
+    asset::{AssetMetadataSerde, AssetHandle, AssetManager, AssetType, embedded_asset_event, EmbeddedAssetEvent, UiData, AssetId, ETag},
     render::base::Color,
     ui::{Alignment, Ui},
 };
@@ -175,9 +172,7 @@ fn write_to_file(name: &str, ui_asset_id: &AssetId, ui_etag: &ETag, ui: Ui) -> U
     // write metadata to file
     {
         let ui_metadata = AssetMetadataSerde::new(*ui_etag, AssetType::Ui);
-        let mut bit_writer = BitWriter::new();
-        ui_metadata.ser(&mut bit_writer);
-        let metadata_bytes = bit_writer.to_bytes();
+        let metadata_bytes = ui_metadata.to_bytes();
         std::fs::write(format!("output/{}.meta", ui_asset_id_str), &metadata_bytes).unwrap();
     }
 

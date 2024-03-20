@@ -16,10 +16,10 @@ mod embedded_asset;
 mod renderer;
 
 pub mod asset {
-    pub use asset_id::{AssetId, AssetType};
+    pub use asset_id::{AssetId, AssetType, ETag};
     pub use asset_render::{
         AnimationData, AssetHandle, AssetManager, embedded_asset_event, EmbeddedAssetEvent,
-        IconData, MeshData, ModelData, PaletteData, SceneData, SkeletonData, SkinData, UiData,
+        IconData, MeshData, ModelData, PaletteData, SceneData, SkeletonData, SkinData, UiData, AssetMetadataSerde,
     };
 }
 pub mod input {

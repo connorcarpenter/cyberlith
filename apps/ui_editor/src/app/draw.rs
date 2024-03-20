@@ -1,8 +1,6 @@
 use bevy_ecs::{prelude::Query, change_detection::{Res, ResMut}};
 
-use asset_render::{AssetHandle, AssetManager, UiData};
-
-use game_engine::{render::{resources::RenderFrame, components::{AmbientLight, Camera, Projection, RenderLayer, Transform}}, input::{Input, MouseButton}};
+use game_engine::{asset::{AssetManager, AssetHandle, UiData}, render::{resources::RenderFrame, components::{AmbientLight, Camera, Projection, RenderLayer, Transform}}, input::{Input, MouseButton}};
 
 pub fn scene_draw(
     mut render_frame: ResMut<RenderFrame>,

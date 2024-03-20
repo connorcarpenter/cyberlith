@@ -6,12 +6,6 @@ workspace = "../.."
 edition = "2021"
 publish = false
 
-[features]
-local = [ "game_engine/local" ]
-prod = [ "game_engine/prod" ]
-gl_renderer = [ "game_engine/gl_renderer" ]
-wgpu_renderer = [ "game_engine/wgpu_renderer" ]
-
 [[bin]]
 name = "ui_editor"
 path = "src/main.rs"
@@ -19,11 +13,8 @@ path = "src/main.rs"
 [dependencies]
 # Internal
 # goal is to have ONLY game_engine here!!!
-game_engine = { path = "../../crates/engine" }
-naia-serde = { path = "../../../naia/shared/serde" }
-asset_render = { path = "../../crates/asset/render" }
-asset_id = { path = "../../crates/asset/id" }
-asset_io = { path = "../../crates/asset/io", features = ["write_bits", "read_bits", "write_json", "read_json"] }
+game_engine = { path = "../../crates/engine", features = [ "gl_renderer", "local" ] }
+asset_io = { path = "../../crates/asset/io", features = [ "write_bits", "read_bits", "write_json", "read_json" ] }
 
 # External
 bevy_app = { version = "0.13", default-features=false }

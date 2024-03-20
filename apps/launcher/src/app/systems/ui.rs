@@ -1,9 +1,6 @@
 use bevy_ecs::{
-    component::Component,
-    entity::Entity,
     event::{Event,EventWriter, EventReader},
-    prelude::{Local, With},
-    system::{Commands, Query, Res, ResMut},
+    system::{Commands, ResMut},
 };
 use bevy_log::info;
 
@@ -11,19 +8,14 @@ use game_engine::{
     asset::{
         embedded_asset_event, AssetHandle, AssetId, AssetManager, EmbeddedAssetEvent, UiData,
     },
-    math::Vec3,
     render::{
-        base::{Color, CpuMaterial, CpuMesh},
+        base::Color,
         components::{
-            AmbientLight, Camera, CameraBundle, ClearOperation, DirectionalLight,
-            OrthographicProjection, PerspectiveProjection, PointLight, Projection, RenderLayer,
-            RenderLayers, RenderObjectBundle, RenderTarget, Transform, Viewport, Visibility,
+            AmbientLight, Camera, CameraBundle, ClearOperation,
+            OrthographicProjection, Projection,
+            RenderLayers, RenderTarget,
         },
-        resources::{RenderFrame, Time},
-        shapes, Window,
     },
-    storage::{Handle, Storage},
-    input::{Input, MouseButton},
 };
 
 use crate::app::{
