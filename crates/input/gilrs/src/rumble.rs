@@ -1,6 +1,6 @@
 //! Handle user specified rumble request events.
-use std::collections::HashMap;
-use std::time::Duration;
+use std::{time::Duration, collections::HashMap};
+
 use bevy_ecs::{
     prelude::{EventReader, Res},
     system::NonSendMut,
@@ -11,10 +11,10 @@ use gilrs::{
     GamepadId, Gilrs,
 };
 use log::{debug, warn};
+
 use render_api::resources::Time;
 
-use crate::gamepad::{GamepadRumbleIntensity, GamepadRumbleRequest};
-use crate::converter::convert_gamepad_id;
+use crate::{InputGilrs, converter::convert_gamepad_id, gamepad::{GamepadRumbleIntensity, GamepadRumbleRequest}};
 
 /// A rumble effect that is currently in effect.
 struct RunningRumble {
@@ -124,10 +124,11 @@ fn handle_rumble_request(
 }
 pub(crate) fn play_gilrs_rumble(
     time: Res<Time>,
-    mut gilrs: NonSendMut<Gilrs>,
+    mut input_gilrs: NonSendMut<InputGilrs>,
     mut requests: EventReader<GamepadRumbleRequest>,
     mut running_rumbles: NonSendMut<RunningRumbleEffects>,
 ) {
+    let gilrs = &mut input_gilrs.gilrs;
     let current_time = time.get_elapsed_ms();
     // Remove outdated rumble effects.
     for rumbles in running_rumbles.rumbles.values_mut() {
@@ -141,7 +142,7 @@ pub(crate) fn play_gilrs_rumble(
     // Add new effects.
     for rumble in requests.read().cloned() {
         let gamepad = rumble.gamepad();
-        match handle_rumble_request(&mut running_rumbles, &mut gilrs, rumble, Duration::from_millis(20)) {
+        match handle_rumble_request(&mut running_rumbles, gilrs, rumble, Duration::from_millis(20)) {
             Ok(()) => {}
             Err(RumbleError::GilrsError(err)) => {
                 if let ff::Error::FfNotSupported(_) = err {

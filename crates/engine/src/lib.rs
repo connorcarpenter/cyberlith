@@ -1,15 +1,15 @@
 #[macro_use]
 extern crate cfg_if;
 
-mod plugin;
-pub use plugin::EnginePlugin;
-
 cfg_if! {
     if #[cfg(feature = "networked")] {
         mod networked;
         pub use networked::*;
     } else {}
 }
+
+mod plugin;
+pub use plugin::EnginePlugin;
 
 mod asset_cache;
 mod embedded_asset;

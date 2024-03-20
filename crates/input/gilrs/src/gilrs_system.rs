@@ -5,13 +5,13 @@ use gilrs::{ev::filter::axis_dpad_to_button, EventType, Filter, Gilrs};
 use crate::{axis::Axis, converter::{convert_axis, convert_button, convert_gamepad_id}, gamepad::{
     GamepadAxisChangedEvent, GamepadButtonChangedEvent, GamepadConnection, GamepadConnectionEvent,
     GamepadSettings, GamepadEvent, GamepadInfo, GamepadAxis, GamepadButton
-}};
+}, InputGilrs};
 
 pub fn gilrs_event_startup_system(
-    gilrs: NonSend<Gilrs>,
+    input_gilrs: NonSend<InputGilrs>,
     mut connection_events: EventWriter<GamepadConnectionEvent>,
 ) {
-    for (id, gamepad) in gilrs.gamepads() {
+    for (id, gamepad) in input_gilrs.gilrs.gamepads() {
         let info = GamepadInfo {
             name: gamepad.name().into(),
         };
@@ -24,12 +24,13 @@ pub fn gilrs_event_startup_system(
 }
 
 pub fn gilrs_event_system(
-    mut gilrs: NonSendMut<Gilrs>,
+    mut input_gilrs: NonSendMut<InputGilrs>,
     mut events: EventWriter<GamepadEvent>,
     mut gamepad_buttons: ResMut<Axis<GamepadButton>>,
     gamepad_axis: Res<Axis<GamepadAxis>>,
     gamepad_settings: Res<GamepadSettings>,
 ) {
+    let mut gilrs = &mut input_gilrs.gilrs;
     while let Some(gilrs_event) = gilrs
         .next_event()
         .filter_ev(&axis_dpad_to_button, &mut gilrs)
