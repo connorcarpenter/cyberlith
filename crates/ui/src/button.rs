@@ -1,9 +1,14 @@
-
 use render_api::base::{Color, CpuMaterial};
 use storage::Handle;
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 
-use crate::{store::UiStore, node::{UiNode}, style::{NodeStyle, StyleId, WidgetStyle}, text::{Text, TextMut}, NodeId, Ui, Widget, PanelStyle, Panel, PanelMut};
+use crate::{
+    node::UiNode,
+    store::UiStore,
+    style::{NodeStyle, StyleId, WidgetStyle},
+    text::{Text, TextMut},
+    NodeId, Panel, PanelMut, PanelStyle, Ui, Widget,
+};
 
 #[derive(Clone, Copy)]
 enum ButtonState {
@@ -34,15 +39,14 @@ impl Button {
         }
     }
 
-    pub fn update_state(
-        &mut self,
-        layout: (f32, f32, f32, f32),
-        mouse_state: (f32, f32, bool)
-    ) {
+    pub fn update_state(&mut self, layout: (f32, f32, f32, f32), mouse_state: (f32, f32, bool)) {
         let (width, height, posx, posy) = layout;
         let (mouse_x, mouse_y, mouse_down) = mouse_state;
 
-        let inside = mouse_x >= posx && mouse_x <= posx + width + 1.0 && mouse_y >= posy && mouse_y <= posy + height + 1.0;
+        let inside = mouse_x >= posx
+            && mouse_x <= posx + width + 1.0
+            && mouse_y >= posy
+            && mouse_y <= posy + height + 1.0;
         let new_state = if inside {
             if mouse_down {
                 ButtonState::Down
@@ -56,7 +60,9 @@ impl Button {
     }
 
     pub fn needs_color_handle(&self) -> bool {
-        self.panel.background_color_handle.is_none() || self.hover_color_handle.is_none() || self.down_color_handle.is_none()
+        self.panel.background_color_handle.is_none()
+            || self.hover_color_handle.is_none()
+            || self.down_color_handle.is_none()
     }
 
     pub fn current_color_handle(&self) -> Option<Handle<CpuMaterial>> {

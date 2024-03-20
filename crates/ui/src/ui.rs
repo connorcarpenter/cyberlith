@@ -1,14 +1,23 @@
-
 use asset_id::AssetId;
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
-    components::{Viewport},
+    components::Viewport,
     shapes::UnitSquare,
 };
 use storage::{Handle, Storage};
 use ui_layout::{Node, SizeUnits};
 
-use crate::{store::UiStore, Button, ButtonStyle, ButtonStyleMut, cache::LayoutCache, node::{UiNode}, node_id::NodeId, panel::{Panel, PanelMut, PanelStyle, PanelStyleMut}, style::{NodeStyle, StyleId, WidgetStyle}, text::{TextStyle, TextStyleMut}, widget::{Widget, WidgetKind}};
+use crate::{
+    cache::LayoutCache,
+    node::UiNode,
+    node_id::NodeId,
+    panel::{Panel, PanelMut, PanelStyle, PanelStyleMut},
+    store::UiStore,
+    style::{NodeStyle, StyleId, WidgetStyle},
+    text::{TextStyle, TextStyleMut},
+    widget::{Widget, WidgetKind},
+    Button, ButtonStyle, ButtonStyleMut,
+};
 
 pub struct Ui {
     pub globals: Globals,
@@ -52,8 +61,11 @@ impl Ui {
 
     // system methods
 
-    pub fn set_handles(&mut self, meshes: &mut Storage<CpuMesh>, materials: &mut Storage<CpuMaterial>) {
-
+    pub fn set_handles(
+        &mut self,
+        meshes: &mut Storage<CpuMesh>,
+        materials: &mut Storage<CpuMaterial>,
+    ) {
         // set box mesh handle
         {
             let mesh_handle = meshes.add(UnitSquare);
@@ -78,7 +90,7 @@ impl Ui {
                     let panel_mut = self.panel_mut(&id).unwrap();
                     let mat_handle = materials.add(color);
                     panel_mut.background_color_handle = Some(mat_handle);
-                },
+                }
                 WidgetKind::Button => {
                     let button_style_ref = self.store.button_style_ref(&id);
 
@@ -96,10 +108,10 @@ impl Ui {
 
                     let down_color_handle = materials.add(down_color);
                     button_mut.set_down_color_handle(down_color_handle);
-                },
+                }
                 _ => {
                     continue;
-                },
+                }
             }
         }
     }
@@ -210,16 +222,16 @@ impl Ui {
                     if panel_ref.background_color_handle.is_none() {
                         pending_mat_handles.push(id);
                     }
-                },
+                }
                 WidgetKind::Button => {
                     let button_ref = node_ref.widget_button_ref().unwrap();
                     if button_ref.needs_color_handle() {
                         pending_mat_handles.push(id);
                     }
-                },
+                }
                 _ => {
                     continue;
-                },
+                }
             }
         }
         pending_mat_handles

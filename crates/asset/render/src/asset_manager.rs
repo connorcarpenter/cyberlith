@@ -1,6 +1,10 @@
 use std::collections::HashMap;
 
-use bevy_ecs::{system::{ResMut, Resource}, event::Event, entity::Entity};
+use bevy_ecs::{
+    entity::Entity,
+    event::Event,
+    system::{ResMut, Resource},
+};
 use bevy_log::{info, warn};
 
 use asset_id::{AssetId, AssetType};
@@ -13,7 +17,10 @@ use render_api::{
 use storage::{Handle, Storage};
 use ui::{NodeId, Ui, WidgetKind};
 
-use crate::{asset_renderer::AssetRenderer, processed_asset_store::ProcessedAssetStore, AnimationData, AssetHandle, IconData, MeshData, ModelData, SceneData, SkinData, UiData};
+use crate::{
+    asset_renderer::AssetRenderer, processed_asset_store::ProcessedAssetStore, AnimationData,
+    AssetHandle, IconData, MeshData, ModelData, SceneData, SkinData, UiData,
+};
 
 #[derive(Resource)]
 pub struct AssetManager {
@@ -38,11 +45,7 @@ impl AssetManager {
         self.store.load(asset_data_store, asset_id, asset_type);
     }
 
-    pub fn manual_load_ui(
-        &mut self,
-        asset_id: &AssetId,
-        ui: Ui,
-    ) {
+    pub fn manual_load_ui(&mut self, asset_id: &AssetId, ui: Ui) {
         self.store.manual_load_ui(asset_id, ui);
     }
 
@@ -52,18 +55,10 @@ impl AssetManager {
         mut materials: ResMut<Storage<CpuMaterial>>,
         mut skins: ResMut<Storage<CpuSkin>>,
     ) {
-        asset_manager
-            .store
-            .sync_meshes(&mut meshes);
-        asset_manager
-            .store
-            .sync_icons(&mut meshes);
-        asset_manager
-            .store
-            .sync_palettes(&mut materials);
-        asset_manager
-            .store
-            .sync_uis(&mut meshes, &mut materials);
+        asset_manager.store.sync_meshes(&mut meshes);
+        asset_manager.store.sync_icons(&mut meshes);
+        asset_manager.store.sync_palettes(&mut materials);
+        asset_manager.store.sync_uis(&mut meshes, &mut materials);
 
         asset_manager
             .store
@@ -260,12 +255,7 @@ impl AssetManager {
         }
 
         // update button states
-        update_button_states(
-            ui,
-            &Ui::ROOT_NODE_ID,
-            mouse_state,
-            (0.0, 0.0)
-        )
+        update_button_states(ui, &Ui::ROOT_NODE_ID, mouse_state, (0.0, 0.0))
     }
 
     pub fn draw_ui(
@@ -274,12 +264,7 @@ impl AssetManager {
         render_layer_opt: Option<&RenderLayer>,
         ui_handle: &AssetHandle<UiData>,
     ) {
-        AssetRenderer::draw_ui(
-            render_frame,
-            render_layer_opt,
-            &self.store,
-            ui_handle,
-        );
+        AssetRenderer::draw_ui(render_frame, render_layer_opt, &self.store, ui_handle);
     }
 }
 
@@ -317,19 +302,17 @@ fn update_button_states(
             // update children
             let child_ids = panel_ref.children.clone();
             for child_id in child_ids {
-                update_button_states(
-                    ui,
-                    &child_id,
-                    mouse_state,
-                    child_position,
-                );
+                update_button_states(ui, &child_id, mouse_state, child_position);
             }
         }
         WidgetKind::Button => {
             let Some(button_mut) = ui.store.button_mut(id) else {
                 panic!("no button mut for node_id: {:?}", id);
             };
-            button_mut.update_state((width, height, child_position.0, child_position.1), mouse_state);
+            button_mut.update_state(
+                (width, height, child_position.0, child_position.1),
+                mouse_state,
+            );
         }
         _ => {}
     }

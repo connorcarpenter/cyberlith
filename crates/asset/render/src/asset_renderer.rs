@@ -8,7 +8,10 @@ use render_api::{
 use storage::Handle;
 use ui::{NodeId, Ui, WidgetKind};
 
-use crate::{asset_dependency::AssetComponentHandle, processed_asset_store::ProcessedAssetStore, AnimationData, AssetHandle, IconData, MeshData, ModelData, SceneData, SkinData, UiData};
+use crate::{
+    asset_dependency::AssetComponentHandle, processed_asset_store::ProcessedAssetStore,
+    AnimationData, AssetHandle, IconData, MeshData, ModelData, SceneData, SkinData, UiData,
+};
 
 pub(crate) struct AssetRenderer;
 
@@ -397,7 +400,6 @@ impl AssetRenderer {
             &Ui::ROOT_NODE_ID,
             (0.0, 0.0, 0.0),
         );
-
     }
 }
 
@@ -431,13 +433,37 @@ fn draw_ui_node(
     if node.visible {
         match node.widget_kind() {
             WidgetKind::Panel => {
-                draw_ui_panel(render_frame, render_layer_opt, asset_store, ui, text_icon_handle, id, &transform);
+                draw_ui_panel(
+                    render_frame,
+                    render_layer_opt,
+                    asset_store,
+                    ui,
+                    text_icon_handle,
+                    id,
+                    &transform,
+                );
             }
             WidgetKind::Text => {
-                draw_ui_text(render_frame, render_layer_opt, asset_store, ui, text_icon_handle, id, &transform);
+                draw_ui_text(
+                    render_frame,
+                    render_layer_opt,
+                    asset_store,
+                    ui,
+                    text_icon_handle,
+                    id,
+                    &transform,
+                );
             }
             WidgetKind::Button => {
-                draw_ui_button(render_frame, render_layer_opt, asset_store, ui, text_icon_handle, id, &transform);
+                draw_ui_button(
+                    render_frame,
+                    render_layer_opt,
+                    asset_store,
+                    ui,
+                    text_icon_handle,
+                    id,
+                    &transform,
+                );
             }
         }
     }
@@ -503,7 +529,12 @@ fn draw_ui_text(
     node_id: &NodeId,
     transform: &Transform,
 ) {
-    let text_ref = ui.store.get_node(node_id).unwrap().widget_text_ref().unwrap();
+    let text_ref = ui
+        .store
+        .get_node(node_id)
+        .unwrap()
+        .widget_text_ref()
+        .unwrap();
 
     let Some(text_color_handle) = ui.globals.get_text_color_handle() else {
         panic!("No text color handle found in globals");

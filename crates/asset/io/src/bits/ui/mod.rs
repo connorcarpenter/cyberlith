@@ -116,7 +116,7 @@ pub(crate) struct ButtonStyleBits {
 pub(crate) enum WidgetStyleBits {
     Panel(PanelStyleBits),
     Text(TextStyleBits),
-    Button(ButtonStyleBits)
+    Button(ButtonStyleBits),
 }
 
 #[derive(Serde, Clone, PartialEq)]

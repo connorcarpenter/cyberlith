@@ -1,6 +1,9 @@
 use std::collections::HashSet;
 
-use bevy_ecs::{system::{ResMut, Resource}, event::EventWriter};
+use bevy_ecs::{
+    event::EventWriter,
+    system::{ResMut, Resource},
+};
 
 use math::Vec2;
 

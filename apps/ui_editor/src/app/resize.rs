@@ -3,9 +3,7 @@ use bevy_ecs::system::{Query, Res, ResMut};
 use game_engine::{
     math::Vec3,
     render::{
-        components::{
-            Camera, Transform, Viewport,
-        },
+        components::{Camera, Transform, Viewport},
         Window,
     },
 };

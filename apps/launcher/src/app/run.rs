@@ -5,7 +5,13 @@ use game_engine::{
     wait_for_finish, EnginePlugin,
 };
 
-use crate::app::{systems::{scene, resize, ui, draw, ui::{ContinueButtonEvent, StartButtonEvent}}, resources::Global};
+use crate::app::{
+    resources::Global,
+    systems::{
+        draw, resize, scene, ui,
+        ui::{ContinueButtonEvent, StartButtonEvent},
+    },
+};
 
 pub fn run() {
     let mut app = App::default();

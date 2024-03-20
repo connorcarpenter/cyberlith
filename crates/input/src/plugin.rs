@@ -13,7 +13,6 @@ impl Plugin for InputPlugin {
             // Events
             .add_event::<InputEvent>()
             // Systems
-            .add_systems(Update, Input::update)
-        ;
+            .add_systems(Update, Input::update);
     }
 }

@@ -1,9 +1,16 @@
-use bevy_ecs::{prelude::Commands, event::{Event, EventReader, EventWriter}, change_detection::ResMut};
+use bevy_ecs::{
+    change_detection::ResMut,
+    event::{Event, EventReader, EventWriter},
+    prelude::Commands,
+};
 use bevy_log::info;
 
 use asset_io::json::{Asset, AssetData, AssetMeta, UiJson};
 use game_engine::{
-    asset::{AssetMetadataSerde, AssetHandle, AssetManager, AssetType, embedded_asset_event, EmbeddedAssetEvent, UiData, AssetId, ETag},
+    asset::{
+        embedded_asset_event, AssetHandle, AssetId, AssetManager, AssetMetadataSerde, AssetType,
+        ETag, EmbeddedAssetEvent, UiData,
+    },
     render::base::Color,
     ui::{Alignment, Ui},
 };
@@ -11,7 +18,6 @@ use game_engine::{
 // this is where new UIs should be created
 
 pub fn init_ui() -> (String, AssetId, ETag, Ui) {
-
     // config
     let ui_name = "main";
     let ui_asset_id_str = "tpp7za"; // AssetId::get_random(); // keep this around to generate new AssetIds if needed!
@@ -59,8 +65,7 @@ pub fn init_ui() -> (String, AssetId, ETag, Ui) {
     });
 
     // nodes
-    ui
-        .set_text_icon_asset_id(&icon_asset_id)
+    ui.set_text_icon_asset_id(&icon_asset_id)
         .set_text_color(Color::WHITE)
         .root_mut()
         .add_style(window_style)
@@ -125,7 +130,7 @@ pub fn setup_ui(
 
 pub fn handle_events(
     mut start_btn_rdr: EventReader<StartButtonEvent>,
-    mut continue_btn_rdr: EventReader<ContinueButtonEvent>
+    mut continue_btn_rdr: EventReader<ContinueButtonEvent>,
 ) {
     for _ in start_btn_rdr.read() {
         info!("start button clicked!");
@@ -143,8 +148,7 @@ fn write_to_file(name: &str, ui_asset_id: &AssetId, ui_etag: &ETag, ui: Ui) -> U
         let ui_json = UiJson::from_ui(&ui);
         let new_meta = AssetMeta::new(&ui_asset_id, UiJson::CURRENT_SCHEMA_VERSION);
         let asset = Asset::new(new_meta, AssetData::Ui(ui_json));
-        let ui_bytes = serde_json::to_vec_pretty(&asset)
-            .unwrap();
+        let ui_bytes = serde_json::to_vec_pretty(&asset).unwrap();
         info!("json byte count: {:?}", ui_bytes.len());
         ui_bytes
     };

@@ -5,8 +5,8 @@ use game_engine::{
     EnginePlugin,
 };
 
+use super::{draw, resize, scene, ui};
 use crate::app::ui::{ContinueButtonEvent, StartButtonEvent};
-use super::{scene, ui, draw, resize};
 
 pub fn run() {
     let mut app = App::default();

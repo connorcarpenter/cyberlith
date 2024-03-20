@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Ui Editor [RUN]" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
-    <option name="command" value="run --features &quot;gl_renderer, local&quot;" />
+    <option name="command" value="run" />
     <option name="workingDirectory" value="file://$PROJECT_DIR$/apps/ui_editor" />
     <envs />
     <option name="emulateTerminal" value="false" />

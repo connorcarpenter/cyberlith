@@ -4,7 +4,7 @@ use log::{info, warn};
 use ttf2mesh::{Quality, TTFFile, Value};
 
 use asset_id::AssetId;
-use asset_io::json::{IconJson, IconFileFrame};
+use asset_io::json::{IconFileFrame, IconJson};
 
 use crate::CliError;
 

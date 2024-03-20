@@ -16,16 +16,11 @@ impl Default for UiData {
 }
 
 impl UiData {
-
     pub fn from_ui(ui: Ui) -> Self {
-
         let icon_asset_id = ui.get_text_icon_asset_id();
         let icon_file = AssetDependency::AssetId(*icon_asset_id);
 
-        Self {
-            icon_file,
-            ui,
-        }
+        Self { icon_file, ui }
     }
 
     pub fn from_bytes(bytes: &[u8]) -> Self {
@@ -72,7 +67,11 @@ impl UiData {
         }
     }
 
-    pub(crate) fn load_cpu_data(&mut self, meshes: &mut Storage<CpuMesh>, materials: &mut Storage<CpuMaterial>) {
+    pub(crate) fn load_cpu_data(
+        &mut self,
+        meshes: &mut Storage<CpuMesh>,
+        materials: &mut Storage<CpuMaterial>,
+    ) {
         self.ui.set_handles(meshes, materials);
     }
 }

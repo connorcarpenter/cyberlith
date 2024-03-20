@@ -84,10 +84,7 @@ pub fn render_canvas(ui: &mut Ui, world: &mut World) {
                     texture_size.y -= 3.0;
 
                     if !input.has_canvas_properties() {
-                        input.update_canvas_properties(
-                            top_left.x + 1.0,
-                            top_left.y + 1.0,
-                        );
+                        input.update_canvas_properties(top_left.x + 1.0, top_left.y + 1.0);
                     }
                     if ui_state.resized_window {
                         let last_texture_size = canvas.texture_size();
@@ -95,10 +92,7 @@ pub fn render_canvas(ui: &mut Ui, world: &mut World) {
 
                         if last_texture_size != current_texture_size {
                             ui_state.canvas_coords = Some(top_left);
-                            input.update_canvas_properties(
-                                top_left.x + 1.0,
-                                top_left.y + 1.0,
-                            );
+                            input.update_canvas_properties(top_left.x + 1.0, top_left.y + 1.0);
 
                             // This is the texture that will be rendered to.
                             let texture_width = texture_size.x as u32;

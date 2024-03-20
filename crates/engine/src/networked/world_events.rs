@@ -14,12 +14,12 @@ use world_server_naia_proto::components::{Alt1, AssetEntry, AssetRef, Main, Posi
 use asset_id::{AssetId, AssetType};
 use asset_render::AssetMetadataStore;
 
-use crate::{
-    asset_cache::AssetCache,
-    world::WorldClient,
-};
+use crate::{asset_cache::AssetCache, world::WorldClient};
 
-use super::{asset_ref_processor::{AssetProcessor, AssetRefProcessor}, client_markers::World};
+use super::{
+    asset_ref_processor::{AssetProcessor, AssetRefProcessor},
+    client_markers::World,
+};
 
 #[derive(Event)]
 pub struct InsertComponentEvent<T: Replicate> {

@@ -1,24 +1,18 @@
 use bevy_ecs::system::Commands;
 
-use game_engine::{
-    render::{
-        base::Color,
-        components::{
-            AmbientLight, Camera, CameraBundle, ClearOperation,
-            OrthographicProjection, Projection,
-            RenderTarget,
-        },
+use game_engine::render::{
+    base::Color,
+    components::{
+        AmbientLight, Camera, CameraBundle, ClearOperation, OrthographicProjection, Projection,
+        RenderTarget,
     },
 };
 
 use crate::app::global::Global;
 
-pub fn setup_scene(
-    mut commands: Commands
-) {
+pub fn setup_scene(mut commands: Commands) {
     // ambient light
-    commands
-        .spawn(AmbientLight::new(1.0, Color::WHITE));
+    commands.spawn(AmbientLight::new(1.0, Color::WHITE));
 
     // camera
     let camera_id = commands

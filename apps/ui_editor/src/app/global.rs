@@ -7,8 +7,6 @@ pub struct Global {
 
 impl Global {
     pub fn new(camera_ui: Entity) -> Self {
-        Self {
-            camera_ui,
-        }
+        Self { camera_ui }
     }
 }

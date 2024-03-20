@@ -1,8 +1,11 @@
 use std::collections::HashMap;
 
-use render_api::base::Color;
-use ui::{NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Ui, UiNode, Widget, WidgetStyle, Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid, ButtonStyle, Button};
 use crate::json::{ButtonJson, ButtonStyleJson};
+use render_api::base::Color;
+use ui::{
+    Alignment, Button, ButtonStyle, LayoutType, MarginUnits, NodeStyle, Panel, PanelStyle,
+    PositionType, SizeUnits, Solid, StyleId, Text, TextStyle, Ui, UiNode, Widget, WidgetStyle,
+};
 
 use super::{
     AlignmentJson, ColorJson, LayoutTypeJson, MarginUnitsJson, PanelJson, PanelStyleJson,
@@ -116,7 +119,6 @@ impl TextStyleJson {
 
 impl ButtonStyleJson {
     fn from_button_style(style: &ButtonStyle) -> Self {
-
         let panel_style = &style.panel;
         let panel_json = PanelStyleJson::from_panel_style(panel_style);
 
@@ -217,15 +219,9 @@ impl UiNodeJson {
 impl WidgetJson {
     fn from_widget(widget: &Widget) -> Self {
         match widget {
-            Widget::Panel(panel) => {
-                Self::Panel(PanelJson::from_panel(panel))
-            }
-            Widget::Text(text) => {
-                Self::Text(TextJson::from_text(text))
-            }
-            Widget::Button(button) => {
-                Self::Button(ButtonJson::from_button(button))
-            }
+            Widget::Panel(panel) => Self::Panel(PanelJson::from_panel(panel)),
+            Widget::Text(text) => Self::Text(TextJson::from_text(text)),
+            Widget::Button(button) => Self::Button(ButtonJson::from_button(button)),
         }
     }
 }

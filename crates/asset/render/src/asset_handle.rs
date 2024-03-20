@@ -4,7 +4,10 @@ use bevy_ecs::component::Component;
 
 use asset_id::{AssetId, AssetType};
 
-use crate::{AnimationData, IconData, MeshData, ModelData, PaletteData, SceneData, SkeletonData, SkinData, UiData};
+use crate::{
+    AnimationData, IconData, MeshData, ModelData, PaletteData, SceneData, SkeletonData, SkinData,
+    UiData,
+};
 
 #[derive(Clone, Copy, Eq, PartialEq, Hash)]
 pub enum TypedAssetId {

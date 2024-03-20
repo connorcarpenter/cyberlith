@@ -1,11 +1,14 @@
-
-use render_api::{
-    base::{Color, CpuMaterial},
-};
+use render_api::base::{Color, CpuMaterial};
 use storage::Handle;
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 
-use crate::{store::UiStore, node::{UiNode}, style::{NodeStyle, StyleId, WidgetStyle}, text::{Text, TextMut}, NodeId, Ui, Widget, Button, ButtonMut};
+use crate::{
+    node::UiNode,
+    store::UiStore,
+    style::{NodeStyle, StyleId, WidgetStyle},
+    text::{Text, TextMut},
+    Button, ButtonMut, NodeId, Ui, Widget,
+};
 
 #[derive(Clone)]
 pub struct Panel {
@@ -160,9 +163,14 @@ impl<'a> PanelContentsMut<'a> {
         TextMut::<'b>::new(self.ui, new_id)
     }
 
-    pub fn add_button<'b>(self: &'b mut PanelContentsMut<'a>, button_id_str: &str) -> ButtonMut<'b> {
+    pub fn add_button<'b>(
+        self: &'b mut PanelContentsMut<'a>,
+        button_id_str: &str,
+    ) -> ButtonMut<'b> {
         // creates a new button, returning a context for it
-        let new_id = self.ui.create_node(Widget::Button(Button::new(button_id_str)));
+        let new_id = self
+            .ui
+            .create_node(Widget::Button(Button::new(button_id_str)));
 
         // add new panel to children
         self.get_panel_mut().add_child(new_id);

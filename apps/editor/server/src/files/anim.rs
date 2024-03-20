@@ -11,7 +11,7 @@ use asset_id::AssetId;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 
-use asset_io::json::{AnimationJson, AnimFileFrame};
+use asset_io::json::{AnimFileFrame, AnimationJson};
 
 use editor_proto::{
     components::{AnimFrame, AnimRotation, FileExtension, Transition},

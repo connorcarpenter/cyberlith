@@ -1,26 +1,21 @@
 use bevy_ecs::{
-    event::{Event,EventWriter, EventReader},
+    event::{Event, EventReader, EventWriter},
     system::{Commands, ResMut},
 };
 use bevy_log::info;
 
 use game_engine::{
-    asset::{
-        embedded_asset_event, AssetHandle, AssetId, AssetManager, EmbeddedAssetEvent, UiData,
-    },
+    asset::{embedded_asset_event, AssetHandle, AssetId, AssetManager, EmbeddedAssetEvent, UiData},
     render::{
         base::Color,
         components::{
-            AmbientLight, Camera, CameraBundle, ClearOperation,
-            OrthographicProjection, Projection,
+            AmbientLight, Camera, CameraBundle, ClearOperation, OrthographicProjection, Projection,
             RenderLayers, RenderTarget,
         },
     },
 };
 
-use crate::app::{
-    resources::Global,
-};
+use crate::app::resources::Global;
 
 #[derive(Event)]
 pub struct StartButtonEvent;
@@ -77,7 +72,7 @@ pub fn ui_setup(
 
 pub fn handle_events(
     mut start_btn_rdr: EventReader<StartButtonEvent>,
-    mut continue_btn_rdr: EventReader<ContinueButtonEvent>
+    mut continue_btn_rdr: EventReader<ContinueButtonEvent>,
 ) {
     for _ in start_btn_rdr.read() {
         info!("start button clicked!");

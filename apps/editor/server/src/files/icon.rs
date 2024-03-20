@@ -10,7 +10,7 @@ use bevy_log::info;
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 
 use asset_id::AssetId;
-use asset_io::json::{IconJson, IconFileFrame};
+use asset_io::json::{IconFileFrame, IconJson};
 
 use editor_proto::{
     components::{FileExtension, IconEdge, IconFace, IconFrame, IconVertex, PaletteColor},

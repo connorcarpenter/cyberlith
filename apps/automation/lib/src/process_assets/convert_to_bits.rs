@@ -1,7 +1,15 @@
 use std::collections::HashMap;
 
-use asset_io::{json::{FileComponentType, UiJson, AnimationJson, IconJson, MeshJson, ModelJson, PaletteJson, SceneJson, SkeletonJson, SkinJson}, bits::{AnimAction, IconAction, MeshAction, ModelAction, PaletteAction, SceneAction, SkelAction,
-                                                                                                                                                       SkinAction, ComponentFileType, IconFrameAction, SerdeQuat, SerdeRotation, Transition}};
+use asset_io::{
+    bits::{
+        AnimAction, ComponentFileType, IconAction, IconFrameAction, MeshAction, ModelAction,
+        PaletteAction, SceneAction, SerdeQuat, SerdeRotation, SkelAction, SkinAction, Transition,
+    },
+    json::{
+        AnimationJson, FileComponentType, IconJson, MeshJson, ModelJson, PaletteJson, SceneJson,
+        SkeletonJson, SkinJson, UiJson,
+    },
+};
 
 pub(crate) fn palette(data: PaletteJson) -> Vec<u8> {
     let mut actions = Vec::new();
@@ -193,7 +201,6 @@ pub(crate) fn model(data: ModelJson) -> Vec<u8> {
 }
 
 pub(crate) fn ui(data: UiJson) -> Vec<u8> {
-
     let ui = data.to_ui();
     let ui_bytes = asset_io::bits::write_ui_bits(&ui);
 

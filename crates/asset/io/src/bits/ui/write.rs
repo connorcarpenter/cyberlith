@@ -2,9 +2,16 @@ use std::collections::HashMap;
 
 use naia_serde::{FileBitWriter, SerdeInternal as Serde, UnsignedInteger, UnsignedVariableInteger};
 
-use ui::{NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Ui, UiNode, Widget, WidgetStyle, Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid, ButtonStyle, Button};
+use ui::{
+    Alignment, Button, ButtonStyle, LayoutType, MarginUnits, NodeStyle, Panel, PanelStyle,
+    PositionType, SizeUnits, Solid, StyleId, Text, TextStyle, Ui, UiNode, Widget, WidgetStyle,
+};
 
-use crate::bits::{AlignmentBits, ButtonBits, ButtonStyleBits, LayoutTypeBits, MarginUnitsBits, PanelBits, PanelStyleBits, PositionTypeBits, SizeUnitsBits, SolidBits, TextBits, TextStyleBits, UiAction, UiActionType, UiNodeBits, UiStyleBits, WidgetBits, WidgetStyleBits};
+use crate::bits::{
+    AlignmentBits, ButtonBits, ButtonStyleBits, LayoutTypeBits, MarginUnitsBits, PanelBits,
+    PanelStyleBits, PositionTypeBits, SizeUnitsBits, SolidBits, TextBits, TextStyleBits, UiAction,
+    UiActionType, UiNodeBits, UiStyleBits, WidgetBits, WidgetStyleBits,
+};
 
 pub fn write_bits(ui: &Ui) -> Vec<u8> {
     let actions = convert_ui_to_actions(ui);
@@ -343,15 +350,9 @@ impl UiNodeBits {
 impl WidgetBits {
     fn from_widget(widget: &Widget) -> Self {
         match widget {
-            Widget::Panel(panel) => {
-                Self::Panel(PanelBits::from_panel(panel))
-            }
-            Widget::Text(text) => {
-                Self::Text(TextBits::from_text(text))
-            }
-            Widget::Button(button) => {
-                Self::Button(ButtonBits::from_button(button))
-            }
+            Widget::Panel(panel) => Self::Panel(PanelBits::from_panel(panel)),
+            Widget::Text(text) => Self::Text(TextBits::from_text(text)),
+            Widget::Button(button) => Self::Button(ButtonBits::from_button(button)),
         }
     }
 }

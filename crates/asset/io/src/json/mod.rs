@@ -1,10 +1,10 @@
 use cfg_if::cfg_if;
 
 mod animation;
-pub use animation::{AnimationJson, AnimFileFrame, AnimFileQuat};
+pub use animation::{AnimFileFrame, AnimFileQuat, AnimationJson};
 
 mod icon;
-pub use icon::{IconJson, IconFileFrame};
+pub use icon::{IconFileFrame, IconJson};
 
 mod mesh;
 pub use mesh::MeshJson;

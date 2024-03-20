@@ -18,8 +18,9 @@ mod renderer;
 pub mod asset {
     pub use asset_id::{AssetId, AssetType, ETag};
     pub use asset_render::{
-        AnimationData, AssetHandle, AssetManager, embedded_asset_event, EmbeddedAssetEvent,
-        IconData, MeshData, ModelData, PaletteData, SceneData, SkeletonData, SkinData, UiData, AssetMetadataSerde,
+        embedded_asset_event, AnimationData, AssetHandle, AssetManager, AssetMetadataSerde,
+        EmbeddedAssetEvent, IconData, MeshData, ModelData, PaletteData, SceneData, SkeletonData,
+        SkinData, UiData,
     };
 }
 pub mod input {

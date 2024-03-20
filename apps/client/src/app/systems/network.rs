@@ -1,6 +1,7 @@
 use bevy_ecs::{event::EventReader, system::Commands};
 use bevy_log::info;
 
+use game_engine::asset::UiData;
 use game_engine::{
     asset::{
         AnimationData, AssetHandle, AssetType, IconData, MeshData, ModelData, PaletteData,
@@ -13,7 +14,6 @@ use game_engine::{
         WorldSpawnEntityEvent,
     },
 };
-use game_engine::asset::UiData;
 
 use crate::app::systems::scene::{WalkAnimation, WalkerMarker};
 

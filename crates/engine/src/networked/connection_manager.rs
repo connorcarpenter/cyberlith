@@ -1,11 +1,11 @@
 use std::time::Duration;
 
+use bevy_ecs::system::Res;
 use bevy_ecs::{
     change_detection::ResMut,
     event::{Event, EventReader, EventWriter},
     system::Resource,
 };
-use bevy_ecs::system::Res;
 use bevy_log::info;
 
 use naia_bevy_client::{
@@ -35,9 +35,7 @@ if #[cfg(feature = "networked")]
     }
 }
 
-use crate::{
-    asset_cache::{AssetCache, AssetLoadedEvent},
-};
+use crate::asset_cache::{AssetCache, AssetLoadedEvent};
 use crate::networked::asset_cache_checker::AssetCacheChecker;
 
 use super::client_markers::{Session, World};
@@ -156,7 +154,10 @@ impl ConnectionManager {
                 );
 
                 let LoadAssetWithData {
-                    asset_id, asset_etag, asset_type, asset_data
+                    asset_id,
+                    asset_etag,
+                    asset_type,
+                    asset_data,
                 } = asset_message;
 
                 asset_cache.handle_load_asset_with_data_message(
@@ -164,7 +165,10 @@ impl ConnectionManager {
                     &mut asset_loaded_event_writer,
                     &mut file_system_manager,
                     &mut metadata_store,
-                    asset_id, asset_etag, asset_type, asset_data
+                    asset_id,
+                    asset_etag,
+                    asset_type,
+                    asset_data,
                 );
             }
         }

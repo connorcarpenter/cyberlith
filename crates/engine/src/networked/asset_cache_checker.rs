@@ -1,9 +1,4 @@
-
-use bevy_ecs::{
-    event::EventWriter,
-    prelude::Resource,
-    system::ResMut,
-};
+use bevy_ecs::{event::EventWriter, prelude::Resource, system::ResMut};
 use bevy_log::info;
 
 use naia_bevy_client::{Client, ResponseSendKey};
@@ -22,10 +17,7 @@ use crate::networked::client_markers::Session;
 
 #[cfg(feature = "networked")]
 pub enum LoadAssetTask {
-    HasResponse(
-        ResponseSendKey<LoadAssetResponse>,
-        LoadAssetResponse
-    ),
+    HasResponse(ResponseSendKey<LoadAssetResponse>, LoadAssetResponse),
     HasFsTask(
         AssetId,
         AssetType,
@@ -79,12 +71,14 @@ impl AssetCacheChecker {
                         }
                         None => {
                             // still pending
-                            asset_cache_checker.load_asset_tasks.push(LoadAssetTask::HasFsTask(
-                                asset_id,
-                                asset_type,
-                                response_send_key,
-                                fs_task_key,
-                            ));
+                            asset_cache_checker
+                                .load_asset_tasks
+                                .push(LoadAssetTask::HasFsTask(
+                                    asset_id,
+                                    asset_type,
+                                    response_send_key,
+                                    fs_task_key,
+                                ));
                             None
                         }
                     }

@@ -1,7 +1,7 @@
 use bevy_ecs::{
+    event::EventReader,
     system::{Res, SystemState},
     world::{Mut, World},
-    event::EventReader,
 };
 
 use editor_proto::components::FileExtension;
@@ -14,7 +14,8 @@ use crate::app::resources::{
 };
 
 pub fn input(world: &mut World) {
-    let mut system_state: SystemState<(Res<Canvas>, EventReader<InputEvent>)> = SystemState::new(world);
+    let mut system_state: SystemState<(Res<Canvas>, EventReader<InputEvent>)> =
+        SystemState::new(world);
     let (canvas, mut input_reader) = system_state.get_mut(world);
 
     if !canvas.is_visible() {

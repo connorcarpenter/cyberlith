@@ -4,9 +4,16 @@ use naia_serde::{BitReader, SerdeErr, SerdeInternal as Serde};
 
 use asset_id::AssetId;
 use render_api::base::Color;
-use ui::{PanelMut, PanelStyleMut, StyleId, TextStyleMut, Ui, WidgetKind, Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid, ButtonStyleMut, ButtonMut};
+use ui::{
+    Alignment, ButtonMut, ButtonStyleMut, LayoutType, MarginUnits, PanelMut, PanelStyleMut,
+    PositionType, SizeUnits, Solid, StyleId, TextStyleMut, Ui, WidgetKind,
+};
 
-use crate::bits::{AlignmentBits, ButtonBits, LayoutTypeBits, MarginUnitsBits, PanelBits, PositionTypeBits, SizeUnitsBits, SolidBits, UiAction, UiActionType, UiNodeBits, UiStyleBits, WidgetBits, WidgetStyleBits};
+use crate::bits::{
+    AlignmentBits, ButtonBits, LayoutTypeBits, MarginUnitsBits, PanelBits, PositionTypeBits,
+    SizeUnitsBits, SolidBits, UiAction, UiActionType, UiNodeBits, UiStyleBits, WidgetBits,
+    WidgetStyleBits,
+};
 
 pub fn read_bits(data: &[u8]) -> Ui {
     let actions = bytes_to_actions(data).unwrap();
@@ -591,7 +598,6 @@ impl UiStyleBits {
     }
 
     fn to_button_style(&self, style: &mut ButtonStyleMut) {
-
         // node-specific
         if let Some(position_type_serde) = &self.position_type {
             let position_type = position_type_serde.to_position_type();

@@ -1,4 +1,10 @@
-use crate::{widget::WidgetKind, button::ButtonStyleRef, panel::{Panel, PanelStyle, PanelStyleRef}, style::{NodeStyle, StyleId, WidgetStyle}, NodeId, ButtonStyle, Button, UiNode};
+use crate::{
+    button::ButtonStyleRef,
+    panel::{Panel, PanelStyle, PanelStyleRef},
+    style::{NodeStyle, StyleId, WidgetStyle},
+    widget::WidgetKind,
+    Button, ButtonStyle, NodeId, UiNode,
+};
 
 pub struct UiStore {
     pub styles: Vec<NodeStyle>,
@@ -120,7 +126,11 @@ impl UiStore {
         }
     }
 
-    pub(crate) fn for_each_button_style(&self, node_id: &NodeId, mut func: impl FnMut(&ButtonStyle)) {
+    pub(crate) fn for_each_button_style(
+        &self,
+        node_id: &NodeId,
+        mut func: impl FnMut(&ButtonStyle),
+    ) {
         for style_id in self.node_style_ids(node_id) {
             let Some(style) = self.get_style(style_id) else {
                 panic!("StyleId does not reference a Style");

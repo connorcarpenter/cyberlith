@@ -1,11 +1,8 @@
-
 mod run;
 pub use run::*;
 
-mod global;
-mod ui;
-mod scene;
-mod resize;
 mod draw;
-
-
+mod global;
+mod resize;
+mod scene;
+mod ui;

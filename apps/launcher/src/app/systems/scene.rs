@@ -10,8 +10,8 @@ use game_engine::{
         base::{Color, CpuMaterial, CpuMesh},
         components::{
             AmbientLight, Camera, CameraBundle, ClearOperation, DirectionalLight,
-            PerspectiveProjection, Projection,
-            RenderLayers, RenderObjectBundle, RenderTarget, Transform,
+            PerspectiveProjection, Projection, RenderLayers, RenderObjectBundle, RenderTarget,
+            Transform,
         },
         resources::Time,
         shapes,
@@ -19,9 +19,7 @@ use game_engine::{
     storage::Storage,
 };
 
-use crate::app::{
-    resources::Global,
-};
+use crate::app::resources::Global;
 
 #[derive(Component)]
 pub struct CubeMarker;

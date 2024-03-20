@@ -7,7 +7,10 @@ use render_api::base::{CpuMaterial, CpuMesh, CpuSkin};
 use storage::Storage;
 use ui::Ui;
 
-use crate::{asset_storage::AssetStorage, AnimationData, AssetHandle, IconData, MeshData, ModelData, PaletteData, SceneData, SkeletonData, SkinData, TypedAssetId, UiData};
+use crate::{
+    asset_storage::AssetStorage, AnimationData, AssetHandle, IconData, MeshData, ModelData,
+    PaletteData, SceneData, SkeletonData, SkinData, TypedAssetId, UiData,
+};
 
 pub(crate) struct ProcessedAssetStore {
     pub(crate) meshes: AssetStorage<MeshData>,
@@ -197,11 +200,7 @@ impl ProcessedAssetStore {
         }
     }
 
-    pub(crate) fn manual_load_ui(
-        &mut self,
-        asset_id: &AssetId,
-        ui: Ui,
-    ) {
+    pub(crate) fn manual_load_ui(&mut self, asset_id: &AssetId, ui: Ui) {
         let mut dependencies: Vec<(TypedAssetId, TypedAssetId)> = Vec::new();
 
         let handle = AssetHandle::<UiData>::new(*asset_id);
@@ -449,7 +448,11 @@ impl ProcessedAssetStore {
         }
     }
 
-    pub(crate) fn sync_uis(&mut self, meshes: &mut Storage<CpuMesh>, materials: &mut Storage<CpuMaterial>) {
+    pub(crate) fn sync_uis(
+        &mut self,
+        meshes: &mut Storage<CpuMesh>,
+        materials: &mut Storage<CpuMaterial>,
+    ) {
         if self.queued_uis.is_empty() {
             return;
         }

@@ -10,7 +10,14 @@ use world_server_naia_proto::{
 
 use crate::EnginePlugin;
 
-use super::{world_events::{InsertAssetRefEvent, InsertComponentEvent}, asset_ref_processor::AssetRefProcessor, asset_cache_checker::AssetCacheChecker, connection_manager::{ConnectionManager, SessionConnectEvent}, client_markers::{Session, World}, world_events};
+use super::{
+    asset_cache_checker::AssetCacheChecker,
+    asset_ref_processor::AssetRefProcessor,
+    client_markers::{Session, World},
+    connection_manager::{ConnectionManager, SessionConnectEvent},
+    world_events,
+    world_events::{InsertAssetRefEvent, InsertComponentEvent},
+};
 
 pub struct NetworkedEnginePlugin;
 

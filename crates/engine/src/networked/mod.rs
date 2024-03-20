@@ -1,12 +1,12 @@
-mod asset_ref_processor;
 mod asset_cache_checker;
-mod networked_plugin;
-mod connection_manager;
+mod asset_ref_processor;
 mod client_markers;
+mod connection_manager;
+mod networked_plugin;
 mod world_events;
 
 pub mod world {
-    use naia_bevy_client::{Client, events::SpawnEntityEvent};
+    use naia_bevy_client::{events::SpawnEntityEvent, Client};
 
     use super::client_markers::World;
 
