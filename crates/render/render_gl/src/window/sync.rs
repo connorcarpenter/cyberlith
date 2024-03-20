@@ -30,7 +30,7 @@ pub fn sync(
     }
 
     // update elapsed time
-    time.set_elapsed(frame_input.elapsed_time as f32);
+    time.set_elapsed_ms(frame_input.elapsed_time_ms as f32);
 
     // read exit events
     for _ in exit_event_reader.read() {

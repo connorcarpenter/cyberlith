@@ -14,11 +14,11 @@ impl Default for Time {
 }
 
 impl Time {
-    pub fn set_elapsed(&mut self, elapsed: f32) {
+    pub fn set_elapsed_ms(&mut self, elapsed: f32) {
         self.elapsed = elapsed;
     }
 
-    pub fn get_elapsed(&self) -> f32 {
+    pub fn get_elapsed_ms(&self) -> f32 {
         self.elapsed
     }
 }

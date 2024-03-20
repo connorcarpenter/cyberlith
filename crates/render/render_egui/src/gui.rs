@@ -65,7 +65,7 @@ impl GUI {
         frame_input: &mut FrameInput<T>,
     ) {
         let events: &mut [IncomingEvent<T>] = frame_input.incoming_events.as_mut_slice();
-        let accumulated_time_in_ms: f64 = frame_input.accumulated_time;
+        let accumulated_time_in_ms: f64 = frame_input.accumulated_time_ms;
         let viewport: Viewport = frame_input.physical_size;
         let device_pixel_ratio: f64 = frame_input.device_pixel_ratio;
 

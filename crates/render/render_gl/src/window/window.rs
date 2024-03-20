@@ -283,8 +283,8 @@ impl<T: 'static + Clone> Window<T> {
                     let frame_input = FrameInput {
                         incoming_events: events.drain(..).collect(),
                         outgoing_events: Vec::new(),
-                        elapsed_time,
-                        accumulated_time,
+                        elapsed_time_ms: elapsed_time,
+                        accumulated_time_ms: accumulated_time,
                         logical_size: Viewport::new_at_origin(logical_width, logical_height),
                         physical_size: Viewport::new_at_origin(physical_width, physical_height),
                         device_pixel_ratio,

@@ -13,7 +13,7 @@ use crate::{is_button::IsButton, IncomingEvent, InputEvent, Key, MouseButton};
 pub struct WinitInput {
     mouse_offset: Vec2,
     mouse_coords: Vec2,
-    mouse_buttons: HashSet<MouseButton>,
+    pressed_mouse_buttons: HashSet<MouseButton>,
     mouse_scroll_y: f32,
     last_mouse_position: Vec2,
     keys: HashSet<Key>,
@@ -27,7 +27,7 @@ impl WinitInput {
     pub fn new() -> Self {
         Self {
             mouse_coords: Vec2::ZERO,
-            mouse_buttons: HashSet::new(),
+            pressed_mouse_buttons: HashSet::new(),
             mouse_offset: Vec2::ZERO,
             mouse_scroll_y: 0.0,
             last_mouse_position: Vec2::ZERO,
@@ -62,7 +62,7 @@ impl WinitInput {
     }
 
     pub fn is_pressed<T: IsButton>(&self, button: T) -> bool {
-        button.is_pressed(&self.mouse_buttons, &self.keys)
+        button.is_pressed(&self.pressed_mouse_buttons, &self.keys)
     }
 
     pub fn set_enabled(&mut self, enabled: bool) {
@@ -94,11 +94,11 @@ impl WinitInput {
                     if *handled {
                         continue;
                     }
-                    if !self.mouse_buttons.contains(button) {
+                    if !self.pressed_mouse_buttons.contains(button) {
                         self.set_mouse_coords(position);
                         self.outgoing_actions
                             .push(InputEvent::MouseClick(*button, self.mouse_coords));
-                        self.mouse_buttons.insert(*button);
+                        self.pressed_mouse_buttons.insert(*button);
                     }
                 }
                 IncomingEvent::MouseRelease {
@@ -107,10 +107,10 @@ impl WinitInput {
                     if *handled {
                         continue;
                     }
-                    if self.mouse_buttons.contains(button) {
+                    if self.pressed_mouse_buttons.contains(button) {
                         self.outgoing_actions
                             .push(InputEvent::MouseRelease(*button));
-                        self.mouse_buttons.remove(button);
+                        self.pressed_mouse_buttons.remove(button);
                     }
                 }
                 IncomingEvent::MouseMotion {
@@ -128,7 +128,7 @@ impl WinitInput {
                         self.set_mouse_delta(self.last_mouse_position, self.mouse_coords);
                         self.last_mouse_position = self.mouse_coords;
 
-                        for mouse_button in self.mouse_buttons.iter() {
+                        for mouse_button in self.pressed_mouse_buttons.iter() {
                             self.outgoing_actions.push(InputEvent::MouseDragged(
                                 *mouse_button,
                                 self.mouse_coords,

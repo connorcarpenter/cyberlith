@@ -106,7 +106,7 @@ pub fn scene_step(
     mut object_q: Query<(&mut Transform, &mut WalkAnimation), With<WalkerMarker>>,
     mut rotation: Local<f32>,
 ) {
-    let elapsed_time = time.get_elapsed();
+    let elapsed_time = time.get_elapsed_ms();
 
     if *rotation == 0.0 {
         *rotation = 0.01;

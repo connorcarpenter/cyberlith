@@ -23,10 +23,10 @@ pub struct FrameInput<T: 'static + Clone> {
     pub outgoing_events: Vec<OutgoingEvent>,
 
     /// Milliseconds since last frame.
-    pub elapsed_time: f64,
+    pub elapsed_time_ms: f64,
 
     /// Milliseconds accumulated time since start.
-    pub accumulated_time: f64,
+    pub accumulated_time_ms: f64,
 
     /// Viewport of the window in physical pixels (not counting pixel ratio)
     pub physical_size: Viewport,
