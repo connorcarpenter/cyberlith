@@ -8,6 +8,7 @@ mod ui;
 mod widget;
 mod button;
 mod store;
+mod event;
 
 // just for engine
 pub use node_id::NodeId;

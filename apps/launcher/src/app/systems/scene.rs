@@ -1,28 +1,22 @@
 use bevy_ecs::{
     component::Component,
-    entity::Entity,
-    event::EventWriter,
     prelude::{Local, With},
     system::{Commands, Query, Res, ResMut},
 };
 
 use game_engine::{
-    asset::{
-        embedded_asset_event, AssetHandle, AssetId, AssetManager, EmbeddedAssetEvent, UiData,
-    },
     math::Vec3,
     render::{
         base::{Color, CpuMaterial, CpuMesh},
         components::{
             AmbientLight, Camera, CameraBundle, ClearOperation, DirectionalLight,
-            OrthographicProjection, PerspectiveProjection, PointLight, Projection, RenderLayer,
-            RenderLayers, RenderObjectBundle, RenderTarget, Transform, Viewport, Visibility,
+            PerspectiveProjection, Projection,
+            RenderLayers, RenderObjectBundle, RenderTarget, Transform,
         },
-        resources::{RenderFrame, Time},
-        shapes, Window,
+        resources::Time,
+        shapes,
     },
-    storage::{Handle, Storage},
-    input::{Input, MouseButton},
+    storage::Storage,
 };
 
 use crate::app::{
@@ -34,62 +28,10 @@ pub struct CubeMarker;
 
 pub fn scene_setup(
     mut commands: Commands,
+    mut global: ResMut<Global>,
     mut meshes: ResMut<Storage<CpuMesh>>,
     mut materials: ResMut<Storage<CpuMaterial>>,
-    mut embedded_asset_events: EventWriter<EmbeddedAssetEvent>,
 ) {
-    // TODO: use some kind of catalog here?
-    embedded_asset_events.send(embedded_asset_event!("../embedded/8273wa")); // palette
-    embedded_asset_events.send(embedded_asset_event!("../embedded/34mvvk")); // verdana icon
-    embedded_asset_events.send(embedded_asset_event!("../embedded/tpp7za")); // main ui
-
-    let scene_camera = setup_3d_scene(&mut commands, &mut meshes, &mut materials);
-    let ui_camera = setup_ui(&mut commands);
-
-    commands.insert_resource(Global::new(scene_camera, ui_camera));
-}
-
-fn setup_ui(commands: &mut Commands) -> Entity {
-    // render_layer
-    let layer = RenderLayers::layer(1);
-
-    // ambient light
-    commands
-        .spawn(AmbientLight::new(1.0, Color::WHITE))
-        .insert(layer);
-
-    // camera
-    let camera_id = commands
-        .spawn(CameraBundle {
-            camera: Camera {
-                viewport: None, // this will set later
-                target: RenderTarget::Screen,
-                clear_operation: ClearOperation::none(),
-                ..Default::default()
-            },
-            projection: Projection::Orthographic(OrthographicProjection {
-                near: 0.0,
-                far: 2000.0,
-            }),
-            ..Default::default()
-        })
-        .insert(layer)
-        .id();
-
-    // ui
-
-    let ui_handle = AssetHandle::<UiData>::new(AssetId::from_str("tpp7za").unwrap()); // TODO: use some kind of catalog?
-
-    let _ui_entity = commands.spawn(ui_handle).insert(layer).id();
-
-    camera_id
-}
-
-fn setup_3d_scene(
-    commands: &mut Commands,
-    meshes: &mut Storage<CpuMesh>,
-    materials: &mut Storage<CpuMaterial>,
-) -> Entity {
     // render_layer
     let layer = RenderLayers::layer(0);
 
@@ -137,16 +79,16 @@ fn setup_3d_scene(
             //     far: 10000.0,
             //     ..Default::default()
             // }),
-                Projection::Perspective(PerspectiveProjection {
-                            fov: std::f32::consts::PI / 4.0,
-                            near: 0.1,
-                            far: 10000.0,
-                           }),
+            Projection::Perspective(PerspectiveProjection {
+                fov: std::f32::consts::PI / 4.0,
+                near: 0.1,
+                far: 10000.0,
+            }),
         })
         .insert(layer)
         .id();
 
-    camera_id
+    global.camera_3d = camera_id;
 }
 
 pub fn scene_step(
@@ -174,137 +116,4 @@ pub fn scene_step(
         transform.rotate_x(0.001 * elapsed_time);
         transform.rotate_y(0.002 * elapsed_time);
     }
-}
-
-// TODO: handle mouse move events to update cursor (ui.update_cursor())
-// TODO: handle keypress events to update focus (ui.navigate(up/down/left/right))
-// TODO: ui.receive_click() -> Option<UiId>(); // ui determined by cursor
-// TODO: ui.receive_select() -> UiId; // ui determined by focus
-// TODO: ui.receive_char() // if textline widget is in focus
-
-pub fn scene_draw(
-    mut render_frame: ResMut<RenderFrame>,
-    mut asset_manager: ResMut<AssetManager>,
-    input: Res<Input>,
-    // Cameras
-    cameras_q: Query<(&Camera, &Transform, &Projection, Option<&RenderLayer>)>,
-    // UIs
-    uis_q: Query<(&AssetHandle<UiData>, Option<&RenderLayer>)>,
-    // Meshes
-    cpu_meshes_q: Query<(
-        &Handle<CpuMesh>,
-        &Handle<CpuMaterial>,
-        &Transform,
-        &Visibility,
-        Option<&RenderLayer>,
-    )>,
-    // Lights
-    ambient_lights_q: Query<(&AmbientLight, Option<&RenderLayer>)>,
-    point_lights_q: Query<(&PointLight, Option<&RenderLayer>)>,
-    directional_lights_q: Query<(&DirectionalLight, Option<&RenderLayer>)>,
-) {
-    // Aggregate Cameras
-    for (camera, transform, projection, render_layer_opt) in cameras_q.iter() {
-        if !camera.is_active {
-            continue;
-        }
-        render_frame.draw_camera(render_layer_opt, camera, transform, projection);
-    }
-
-    // Aggregate Point Lights
-    for (point_light, render_layer_opt) in point_lights_q.iter() {
-        render_frame.draw_point_light(render_layer_opt, point_light);
-    }
-
-    // Aggregate Directional Lights
-    for (dir_light, render_layer_opt) in directional_lights_q.iter() {
-        render_frame.draw_directional_light(render_layer_opt, dir_light);
-    }
-
-    // Aggregate Ambient Lights
-    for (ambient_light, render_layer_opt) in ambient_lights_q.iter() {
-        render_frame.draw_ambient_light(render_layer_opt, ambient_light);
-    }
-
-    // Aggregate Cpu Meshes
-    for (mesh_handle, mat_handle, transform, visibility, render_layer_opt) in cpu_meshes_q.iter() {
-        if !visibility.visible {
-            continue;
-        }
-        render_frame.draw_mesh(render_layer_opt, mesh_handle, mat_handle, transform);
-    }
-
-    // Aggregate UIs
-    let mouse_pos = input.mouse_position();
-    let mouse_state = (mouse_pos.x, mouse_pos.y, input.is_pressed(MouseButton::Left));
-    for (ui_handle, render_layer_opt) in uis_q.iter() {
-        asset_manager.update_ui(&render_frame, render_layer_opt, mouse_state, ui_handle);
-        asset_manager.draw_ui(&mut render_frame, render_layer_opt, ui_handle);
-    }
-}
-
-pub fn handle_viewport_resize(
-    global: Res<Global>,
-    mut window: ResMut<Window>,
-    mut cameras_q: Query<(&mut Camera, &mut Transform)>,
-) {
-    // sync camera viewport to window
-    if !window.did_change() {
-        return;
-    }
-    window.clear_change();
-    let Some(window_res) = window.get() else {
-        return;
-    };
-
-    // resize ui camera
-    if let Ok((mut camera, mut transform)) = cameras_q.get_mut(global.camera_ui) {
-        let should_change = if let Some(viewport) = camera.viewport.as_mut() {
-            *viewport != window_res.logical_size
-        } else {
-            true
-        };
-        if should_change {
-            let new_viewport = Viewport::new_at_origin(
-                window_res.logical_size.width,
-                window_res.logical_size.height,
-            );
-            camera.viewport = Some(new_viewport);
-
-            //info!("resize window detected. new viewport: (x: {:?}, y: {:?}, width: {:?}, height: {:?})", new_viewport.x, new_viewport.y, new_viewport.width, new_viewport.height);
-
-            *transform = Transform::from_xyz(
-                new_viewport.width as f32 * 0.5,
-                new_viewport.height as f32 * 0.5,
-                1000.0,
-            )
-            .looking_at(
-                Vec3::new(
-                    new_viewport.width as f32 * 0.5,
-                    new_viewport.height as f32 * 0.5,
-                    0.0,
-                ),
-                Vec3::NEG_Y,
-            );
-        }
-    }
-
-    if let Ok((mut camera, _transform)) = cameras_q.get_mut(global.camera_3d) {
-        let should_change = if let Some(viewport) = camera.viewport.as_mut() {
-            *viewport != window_res.logical_size
-        } else {
-            true
-        };
-        if should_change {
-            let new_viewport = Viewport::new_at_origin(
-                window_res.logical_size.width,
-                window_res.logical_size.height,
-            );
-            camera.viewport = Some(new_viewport);
-
-            //info!("resize window detected. new viewport: (x: {:?}, y: {:?}, width: {:?}, height: {:?})", new_viewport.x, new_viewport.y, new_viewport.width, new_viewport.height);
-        }
-    }
-
-    // resize scene camera
 }

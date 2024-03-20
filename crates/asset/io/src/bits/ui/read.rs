@@ -152,7 +152,10 @@ fn convert_nodes_recurse_panel<'a>(
                     }
                 }
                 WidgetKind::Button => {
-                    let mut child_button_mut = c.add_button();
+                    let WidgetBits::Button(child_button_serde) = &child_node_serde.widget else {
+                        panic!("Expected button widget");
+                    };
+                    let mut child_button_mut = c.add_button(child_button_serde.id_str.as_str());
                     child_button_mut.set_visible(child_node_serde.visible);
                     for style_index in &child_node_serde.style_ids {
                         let style_index = *style_index as usize;

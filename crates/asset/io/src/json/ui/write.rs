@@ -256,6 +256,7 @@ impl ButtonJson {
         let panel_json = PanelJson::from_panel(panel);
         Self {
             panel: panel_json,
+            id_str: button.id_str.to_string(),
         }
     }
 }

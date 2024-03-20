@@ -6,11 +6,11 @@ pub struct Global {
     pub camera_ui: Entity,
 }
 
-impl Global {
-    pub fn new(camera_3d: Entity, camera_ui: Entity) -> Self {
+impl Default for Global {
+    fn default() -> Self {
         Self {
-            camera_3d,
-            camera_ui,
+            camera_3d: Entity::PLACEHOLDER,
+            camera_ui: Entity::PLACEHOLDER,
         }
     }
 }

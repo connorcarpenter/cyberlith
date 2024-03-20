@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
-use bevy_ecs::system::{ResMut, Resource};
-use bevy_log::{warn};
+use bevy_ecs::{system::{ResMut, Resource}, event::Event, entity::Entity};
+use bevy_log::{info, warn};
 
 use asset_id::{AssetId, AssetType};
 use render_api::{
@@ -71,6 +71,15 @@ impl AssetManager {
         asset_manager
             .store
             .sync_icon_skins(&meshes, &materials, &mut skins);
+    }
+
+    pub fn register_event<T: Event>(
+        &mut self,
+        ui_entity: Entity,
+        ui_handle: AssetHandle<UiData>,
+        id_str: &str,
+    ) {
+        info!("registering event: {:?}", id_str);
     }
 
     pub fn get_icon_frame_count(&self, handle: &AssetHandle<IconData>) -> usize {

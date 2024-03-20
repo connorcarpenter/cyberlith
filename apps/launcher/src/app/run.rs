@@ -5,7 +5,7 @@ use game_engine::{
     wait_for_finish, EnginePlugin,
 };
 
-use super::systems::scene;
+use crate::app::{systems::{scene, resize, ui, draw, ui::{ContinueButtonEvent, StartButtonEvent}}, resources::Global};
 
 pub fn run() {
     let mut app = App::default();
@@ -18,11 +18,20 @@ pub fn run() {
             max_size: None,
             ..Default::default()
         })
-        // Scene Systems
+        // global resource
+        .init_resource::<Global>()
+        // events
+        .add_event::<StartButtonEvent>()
+        .add_event::<ContinueButtonEvent>()
+        // ui systems
+        .add_systems(Startup, ui::ui_setup)
+        .add_systems(Update, ui::handle_events)
+        // scene systems
         .add_systems(Startup, scene::scene_setup)
         .add_systems(Update, scene::scene_step)
-        .add_systems(Draw, scene::scene_draw)
-        .add_systems(Update, scene::handle_viewport_resize);
+        // viewport resize
+        .add_systems(Update, resize::handle_viewport_resize)
+        .add_systems(Draw, draw::draw);
     app.run();
 }
 

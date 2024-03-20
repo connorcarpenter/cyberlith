@@ -15,6 +15,7 @@ enum ButtonState {
 #[derive(Clone)]
 pub struct Button {
     pub panel: Panel,
+    pub id_str: String,
 
     hover_color_handle: Option<Handle<CpuMaterial>>,
     down_color_handle: Option<Handle<CpuMaterial>>,
@@ -23,9 +24,10 @@ pub struct Button {
 }
 
 impl Button {
-    pub fn new() -> Self {
+    pub fn new(id_str: &str) -> Self {
         Self {
             panel: Panel::new(),
+            id_str: id_str.to_string(),
             hover_color_handle: None,
             down_color_handle: None,
             state: ButtonState::Normal,

@@ -387,6 +387,7 @@ impl ButtonBits {
         let panel_bits = PanelBits::from_panel(panel);
         Self {
             panel: panel_bits,
+            id_str: button.id_str.clone(),
         }
     }
 }

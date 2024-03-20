@@ -196,4 +196,5 @@ pub(crate) struct TextBits {
 #[derive(Serde, Clone, PartialEq)]
 pub(crate) struct ButtonBits {
     panel: PanelBits,
+    id_str: String,
 }

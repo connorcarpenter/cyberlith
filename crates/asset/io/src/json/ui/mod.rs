@@ -211,4 +211,5 @@ pub(crate) struct TextJson {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub(crate) struct ButtonJson {
     panel: PanelJson,
+    id_str: String,
 }
