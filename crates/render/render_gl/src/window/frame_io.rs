@@ -1,6 +1,6 @@
 use winit::window::CursorIcon;
 
-use input::IncomingEvent;
+use input::winit::IncomingEvent;
 use render_api::{components::Viewport, WindowResolution};
 
 use crate::core::*;

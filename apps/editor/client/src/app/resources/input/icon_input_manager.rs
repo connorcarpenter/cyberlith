@@ -10,7 +10,7 @@ use bevy_log::{info, warn};
 
 use naia_bevy_client::{Client, CommandsExt, Instant};
 
-use input::{InputEvent, Key, MouseButton};
+use input::winit::{InputEvent, Key, MouseButton};
 use math::Vec2;
 use render_api::{
     components::Transform,

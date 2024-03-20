@@ -1,13 +1,11 @@
 [package]
-name = "input"
+name = "input_gilrs"
 version = "0.1.0"
 edition = "2021"
-workspace = "../.."
+workspace = "../../.."
 
 [dependencies]
 # should never include "render_gl" or "render_wgpu" here!
-input_winit = { path = "winit" }
-input_gilrs = { path = "gilrs" }
 
 bevy_app = { version = "0.13", default-features = false }
 

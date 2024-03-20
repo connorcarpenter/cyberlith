@@ -10,7 +10,7 @@ use math::Vec2;
 use crate::{is_button::IsButton, IncomingEvent, InputEvent, Key, MouseButton};
 
 #[derive(Resource)]
-pub struct Input {
+pub struct WinitInput {
     mouse_offset: Vec2,
     mouse_coords: Vec2,
     mouse_buttons: HashSet<MouseButton>,
@@ -23,7 +23,7 @@ pub struct Input {
     mouse_delta: Vec2,
 }
 
-impl Input {
+impl WinitInput {
     pub fn new() -> Self {
         Self {
             mouse_coords: Vec2::ZERO,
@@ -40,7 +40,7 @@ impl Input {
     }
 
     // will be used as system
-    pub fn update(mut input: ResMut<Input>, mut event_writer: EventWriter<InputEvent>) {
+    pub fn update(mut input: ResMut<WinitInput>, mut event_writer: EventWriter<InputEvent>) {
         let events = std::mem::take(&mut input.outgoing_actions);
         for event in events {
             event_writer.send(event);

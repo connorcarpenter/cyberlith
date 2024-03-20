@@ -1,13 +1,12 @@
 use std::collections::HashMap;
 
 use bevy_ecs::{
-    entity::Entity,
     event::Event,
     system::{ResMut, Resource},
     change_detection::Mut,
     world::World
 };
-use bevy_log::{info, warn};
+use bevy_log::warn;
 
 use asset_id::{AssetId, AssetType};
 use render_api::{

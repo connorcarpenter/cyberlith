@@ -5,7 +5,7 @@ use bevy_log::LogPlugin;
 use asset_render::AssetPlugin;
 use bevy_http_client::HttpClientPlugin;
 use filesystem::FileSystemPlugin;
-use input::{Input, InputPlugin};
+use input::{InputPlugin, winit::WinitInput};
 use render_api::RenderApiPlugin;
 
 use crate::{
@@ -39,6 +39,6 @@ impl Plugin for EnginePlugin {
     }
 }
 
-fn engine_startup(mut input: ResMut<Input>) {
-    input.set_enabled(true);
+fn engine_startup(mut winit_input: ResMut<WinitInput>) {
+    winit_input.set_enabled(true);
 }

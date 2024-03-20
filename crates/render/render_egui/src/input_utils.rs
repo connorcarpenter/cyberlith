@@ -1,10 +1,10 @@
-use input::{
+use input::winit::{
     Key as RenderglKey, Modifiers as RenderglModifiers, MouseButton as RenderglMouseButton,
 };
 
 pub fn gl_to_egui_key(key: &RenderglKey) -> egui::Key {
     use egui::Key;
-    use input::Key::*;
+    use input::winit::Key::*;
     match key {
         ArrowDown => Key::ArrowDown,
         ArrowLeft => Key::ArrowLeft,

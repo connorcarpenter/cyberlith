@@ -4,7 +4,7 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 
-use input::Input;
+use input::winit::WinitInput;
 use math::Vec2;
 use render_api::{
     base::CpuTexture2D,
@@ -42,7 +42,7 @@ pub fn render_canvas(ui: &mut Ui, world: &mut World) {
                 ResMut<Storage<CpuTexture2D>>,
                 ResMut<EguiUserTextures>,
                 ResMut<UiState>,
-                ResMut<Input>,
+                ResMut<WinitInput>,
                 Query<(&mut Camera, &mut Transform, &mut Projection)>,
             )> = SystemState::new(world);
             let (

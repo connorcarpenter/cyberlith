@@ -1,18 +1,12 @@
-use bevy_app::{App, Plugin, Update};
+use bevy_app::{App, Plugin};
 
-use crate::{Input, InputEvent};
+use input_winit::InputWinitPlugin;
 
 // Plugin
 pub struct InputPlugin;
 
 impl Plugin for InputPlugin {
     fn build(&self, app: &mut App) {
-        app
-            // Resources
-            .insert_resource(Input::new())
-            // Events
-            .add_event::<InputEvent>()
-            // Systems
-            .add_systems(Update, Input::update);
+        app.add_plugins(InputWinitPlugin);
     }
 }

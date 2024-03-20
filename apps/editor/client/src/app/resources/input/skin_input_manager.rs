@@ -5,7 +5,7 @@ use bevy_ecs::{
     world::{Mut, World},
 };
 
-use input::{InputEvent, Key, MouseButton};
+use input::winit::{InputEvent, Key, MouseButton};
 use math::Vec2;
 use render_api::components::{Transform, Visibility};
 

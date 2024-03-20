@@ -11,7 +11,7 @@ use bevy_log::{info, warn};
 
 use naia_bevy_client::{Client, CommandsExt, Instant, Replicate, ReplicationConfig};
 
-use input::{Input, Key};
+use input::winit::{WinitInput, Key};
 use math::{Vec2, Vec3};
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh, CpuTexture2D},
@@ -314,7 +314,7 @@ impl IconManager {
             ResMut<RenderFrame>,
             Res<Canvas>,
             Res<TabManager>,
-            Res<Input>,
+            Res<WinitInput>,
             ResMut<Storage<CpuMaterial>>,
             Query<(Entity, &OwnedByFileLocal), With<IconVertex>>,
             Query<&IconVertex>,

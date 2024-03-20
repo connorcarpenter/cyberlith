@@ -8,7 +8,7 @@ use winit::{
     *,
 };
 
-use input::{IncomingEvent, Key, Modifiers, MouseButton};
+use input::winit::{IncomingEvent, Key, Modifiers, MouseButton};
 use render_api::{
     components::Viewport,
     resources::{SurfaceSettings, WindowSettings},

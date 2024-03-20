@@ -8,7 +8,7 @@ use bevy_log::warn;
 
 use naia_bevy_client::{Client, CommandsExt};
 
-use input::{InputEvent, Key, MouseButton};
+use input::winit::{InputEvent, Key, MouseButton};
 use math::{Vec2, Vec3};
 use render_api::components::{Transform, Visibility};
 
