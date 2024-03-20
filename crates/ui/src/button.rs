@@ -10,7 +10,7 @@ use crate::{
     NodeId, Panel, PanelMut, PanelStyle, Ui, Widget,
 };
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 enum ButtonState {
     Normal,
     Hover,
@@ -39,7 +39,14 @@ impl Button {
         }
     }
 
-    pub fn update_state(&mut self, layout: (f32, f32, f32, f32), mouse_state: (f32, f32, bool)) {
+    // returns whether or not to emit a ClickEvent
+    pub fn update_state(
+        &mut self,
+        layout: (f32, f32, f32, f32),
+        mouse_state: (f32, f32, bool)
+    ) -> bool {
+        let mut was_clicked = false;
+
         let (width, height, posx, posy) = layout;
         let (mouse_x, mouse_y, mouse_down) = mouse_state;
 
@@ -49,6 +56,10 @@ impl Button {
             && mouse_y <= posy + height + 1.0;
         let new_state = if inside {
             if mouse_down {
+                if self.state != ButtonState::Down {
+                    was_clicked = true;
+                }
+
                 ButtonState::Down
             } else {
                 ButtonState::Hover
@@ -57,6 +68,8 @@ impl Button {
             ButtonState::Normal
         };
         self.state = new_state;
+
+        was_clicked
     }
 
     pub fn needs_color_handle(&self) -> bool {

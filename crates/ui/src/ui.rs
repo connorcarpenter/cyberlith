@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use asset_id::AssetId;
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
@@ -7,17 +9,7 @@ use render_api::{
 use storage::{Handle, Storage};
 use ui_layout::{Node, SizeUnits};
 
-use crate::{
-    cache::LayoutCache,
-    node::UiNode,
-    node_id::NodeId,
-    panel::{Panel, PanelMut, PanelStyle, PanelStyleMut},
-    store::UiStore,
-    style::{NodeStyle, StyleId, WidgetStyle},
-    text::{TextStyle, TextStyleMut},
-    widget::{Widget, WidgetKind},
-    Button, ButtonStyle, ButtonStyleMut,
-};
+use crate::{cache::LayoutCache, node::UiNode, node_id::NodeId, panel::{Panel, PanelMut, PanelStyle, PanelStyleMut}, store::UiStore, style::{NodeStyle, StyleId, WidgetStyle}, text::{TextStyle, TextStyleMut}, widget::{Widget, WidgetKind}, Button, ButtonStyle, ButtonStyleMut, UiEvent};
 
 pub struct Ui {
     pub globals: Globals,
@@ -25,6 +17,8 @@ pub struct Ui {
     pub store: UiStore,
     recalc_layout: bool,
     last_viewport: Viewport,
+    id_str_to_node_id_map: HashMap<String, NodeId>,
+    events: Vec<(NodeId, UiEvent)>,
 }
 
 impl Ui {
@@ -39,6 +33,8 @@ impl Ui {
             store: UiStore::new(),
             recalc_layout: false,
             last_viewport: Viewport::new_at_origin(0, 0),
+            id_str_to_node_id_map: HashMap::new(),
+            events: Vec::new(),
         };
 
         // Root Node
@@ -57,6 +53,16 @@ impl Ui {
         me.style_mut(&base_text_style_id).unwrap().height = Some(SizeUnits::Percentage(100.0));
 
         me
+    }
+
+
+    // events
+    pub fn emit_event(&mut self, node_id: &NodeId, event: UiEvent) {
+        self.events.push((*node_id, event));
+    }
+
+    pub fn take_events(&mut self) -> Vec<(NodeId, UiEvent)> {
+        std::mem::take(&mut self.events)
     }
 
     // system methods
@@ -237,8 +243,25 @@ impl Ui {
         pending_mat_handles
     }
 
+    pub fn get_node_id_by_id_str(&self, id_str: &str) -> Option<NodeId> {
+        self.id_str_to_node_id_map.get(id_str).cloned()
+    }
+
     pub(crate) fn create_node(&mut self, widget: Widget) -> NodeId {
-        self.store.insert_node(UiNode::new(widget))
+
+        let mut id_str_opt = None;
+        if let Widget::Button(button) = &widget {
+            id_str_opt = Some(button.id_str.clone());
+        }
+
+        let ui_node = UiNode::new(widget);
+        let node_id = self.store.insert_node(ui_node);
+
+        if let Some(id_str) = id_str_opt {
+            self.id_str_to_node_id_map.insert(id_str, node_id);
+        }
+
+        node_id
     }
 
     pub(crate) fn node_ref(&self, id: &NodeId) -> Option<&UiNode> {

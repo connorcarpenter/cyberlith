@@ -95,10 +95,10 @@ pub fn init_ui() -> (String, AssetId, ETag, Ui) {
     (ui_name.to_string(), ui_asset_id, ui_etag, ui)
 }
 
-#[derive(Event)]
+#[derive(Event, Default)]
 pub struct StartButtonEvent;
 
-#[derive(Event)]
+#[derive(Event, Default)]
 pub struct ContinueButtonEvent;
 
 pub fn setup_ui(
@@ -122,10 +122,10 @@ pub fn setup_ui(
 
     // make handle, add handle to entity
     let ui_handle = AssetHandle::<UiData>::new(ui_asset_id);
-    let ui_entity = commands.spawn(ui_handle).id();
+    let _ui_entity = commands.spawn(ui_handle).id();
 
-    asset_manager.register_event::<StartButtonEvent>(ui_entity, ui_handle, "start_button");
-    asset_manager.register_event::<ContinueButtonEvent>(ui_entity, ui_handle, "continue_button");
+    asset_manager.register_ui_event::<StartButtonEvent>(&ui_handle, "start_button");
+    asset_manager.register_ui_event::<ContinueButtonEvent>(&ui_handle, "continue_button");
 }
 
 pub fn handle_events(

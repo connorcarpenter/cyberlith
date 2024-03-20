@@ -17,10 +17,10 @@ use game_engine::{
 
 use crate::app::resources::Global;
 
-#[derive(Event)]
+#[derive(Event, Default)]
 pub struct StartButtonEvent;
 
-#[derive(Event)]
+#[derive(Event, Default)]
 pub struct ContinueButtonEvent;
 
 pub fn ui_setup(
@@ -39,10 +39,10 @@ pub fn ui_setup(
 
     // ui
     let ui_handle = AssetHandle::<UiData>::new(AssetId::from_str("tpp7za").unwrap()); // TODO: use some kind of catalog?
-    let ui_entity = commands.spawn(ui_handle).insert(layer).id();
+    let _ui_entity = commands.spawn(ui_handle).insert(layer).id();
 
-    asset_manager.register_event::<StartButtonEvent>(ui_entity, ui_handle, "start_button");
-    asset_manager.register_event::<ContinueButtonEvent>(ui_entity, ui_handle, "continue_button");
+    asset_manager.register_ui_event::<StartButtonEvent>(&ui_handle, "start_button");
+    asset_manager.register_ui_event::<ContinueButtonEvent>(&ui_handle, "continue_button");
 
     // light
     commands

@@ -452,9 +452,9 @@ impl ProcessedAssetStore {
         &mut self,
         meshes: &mut Storage<CpuMesh>,
         materials: &mut Storage<CpuMaterial>,
-    ) {
+    ) -> Option<Vec<AssetHandle<UiData>>> {
         if self.queued_uis.is_empty() {
-            return;
+            return None;
         }
 
         let ui_handles = std::mem::take(&mut self.queued_uis);
@@ -463,6 +463,8 @@ impl ProcessedAssetStore {
             let ui_data = self.uis.get_mut(ui_handle).unwrap();
             ui_data.load_cpu_data(meshes, materials);
         }
+
+        Some(ui_handles)
     }
 
     fn palette_has_cpu_materials(&self, palette_handle: &AssetHandle<PaletteData>) -> bool {

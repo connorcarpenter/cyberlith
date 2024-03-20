@@ -4,6 +4,8 @@ use bevy_ecs::{
     entity::Entity,
     event::Event,
     system::{ResMut, Resource},
+    change_detection::Mut,
+    world::World
 };
 use bevy_log::{info, warn};
 
@@ -15,7 +17,7 @@ use render_api::{
     resources::RenderFrame,
 };
 use storage::{Handle, Storage};
-use ui::{NodeId, Ui, WidgetKind};
+use ui::{NodeId, Ui, UiEvent, UiEventHandler, WidgetKind};
 
 use crate::{
     asset_renderer::AssetRenderer, processed_asset_store::ProcessedAssetStore, AnimationData,
@@ -25,12 +27,18 @@ use crate::{
 #[derive(Resource)]
 pub struct AssetManager {
     store: ProcessedAssetStore,
+    queued_ui_event_handlers: HashMap<AssetHandle<UiData>, Vec<(String, UiEventHandler)>>,
+    ui_event_handlers: HashMap<(AssetId, NodeId), UiEventHandler>,
+    ui_events: Vec<(AssetId, NodeId, UiEvent)>,
 }
 
 impl Default for AssetManager {
     fn default() -> Self {
         Self {
             store: ProcessedAssetStore::default(),
+            ui_events: Vec::new(),
+            ui_event_handlers: HashMap::new(),
+            queued_ui_event_handlers: HashMap::new(),
         }
     }
 }
@@ -49,6 +57,7 @@ impl AssetManager {
         self.store.manual_load_ui(asset_id, ui);
     }
 
+    // used as a system
     pub fn sync(
         mut asset_manager: ResMut<Self>,
         mut meshes: ResMut<Storage<CpuMesh>>,
@@ -58,7 +67,18 @@ impl AssetManager {
         asset_manager.store.sync_meshes(&mut meshes);
         asset_manager.store.sync_icons(&mut meshes);
         asset_manager.store.sync_palettes(&mut materials);
-        asset_manager.store.sync_uis(&mut meshes, &mut materials);
+        if let Some(new_uis) = asset_manager.store.sync_uis(&mut meshes, &mut materials) {
+            for handle in new_uis {
+                if let Some(queued_handlers) = asset_manager.queued_ui_event_handlers.remove(&handle) {
+                    for (id_str, handler) in queued_handlers {
+                        let asset_id = handle.asset_id();
+                        let ui_store = asset_manager.store.uis.get(&handle).unwrap();
+                        let node_id = ui_store.get_ui_ref().get_node_id_by_id_str(&id_str).unwrap();
+                        asset_manager.ui_event_handlers.insert((asset_id, node_id), handler);
+                    }
+                }
+            }
+        }
 
         asset_manager
             .store
@@ -68,13 +88,57 @@ impl AssetManager {
             .sync_icon_skins(&meshes, &materials, &mut skins);
     }
 
-    pub fn register_event<T: Event>(
+    // used as a system
+    pub fn process_ui_events(
+        world: &mut World,
+    ) {
+        world.resource_scope(|world, mut asset_manager: Mut<AssetManager>| {
+            asset_manager.process_ui_events_impl(world);
+        });
+    }
+
+    fn process_ui_events_impl(
         &mut self,
-        ui_entity: Entity,
-        ui_handle: AssetHandle<UiData>,
+        world: &mut World,
+    ) {
+        if self.ui_events.is_empty() {
+            return;
+        }
+
+        let events = std::mem::take(&mut self.ui_events);
+        for (asset_id, node_id, event) in events {
+            let Some(handler) = self.ui_event_handlers.get(&(asset_id, node_id)) else {
+                warn!("no handler for asset_id: {:?}, node_id: {:?}", asset_id, node_id);
+                continue;
+            };
+
+            handler.handle(world, event);
+        }
+    }
+
+    pub fn register_ui_event<T: Event + Default>(
+        &mut self,
+        ui_handle: &AssetHandle<UiData>,
         id_str: &str,
     ) {
-        info!("registering event: {:?}", id_str);
+        let asset_id = ui_handle.asset_id();
+        let event_handler = UiEventHandler::new::<T>();
+
+        if let Some(ui_store) = self.store.uis.get(&ui_handle) {
+            let Some(node_id) = ui_store.get_ui_ref().get_node_id_by_id_str(id_str) else {
+                panic!("no node_id for id_str: {:?}", id_str);
+            };
+
+            self.ui_event_handlers.insert((asset_id, node_id), event_handler);
+        } else {
+            if !self.queued_ui_event_handlers.contains_key(&ui_handle) {
+                self.queued_ui_event_handlers.insert(ui_handle.clone(), Vec::new());
+            }
+            self.queued_ui_event_handlers
+                .get_mut(&ui_handle)
+                .unwrap()
+                .push((id_str.to_string(), event_handler));
+        }
     }
 
     pub fn get_icon_frame_count(&self, handle: &AssetHandle<IconData>) -> usize {
@@ -255,7 +319,14 @@ impl AssetManager {
         }
 
         // update button states
-        update_button_states(ui, &Ui::ROOT_NODE_ID, mouse_state, (0.0, 0.0))
+        update_button_states(ui, &Ui::ROOT_NODE_ID, mouse_state, (0.0, 0.0));
+
+        // get any events
+        let mut events: Vec<(AssetId, NodeId, UiEvent)> = ui.take_events().iter().map(|(node_id, event)| {
+            (ui_handle.asset_id(), *node_id, event.clone())
+        }).collect();
+
+        self.ui_events.append(&mut events);
     }
 
     pub fn draw_ui(
@@ -309,10 +380,13 @@ fn update_button_states(
             let Some(button_mut) = ui.store.button_mut(id) else {
                 panic!("no button mut for node_id: {:?}", id);
             };
-            button_mut.update_state(
+            let did_click = button_mut.update_state(
                 (width, height, child_position.0, child_position.1),
                 mouse_state,
             );
+            if did_click {
+                ui.emit_event(id, UiEvent::Clicked);
+            }
         }
         _ => {}
     }
