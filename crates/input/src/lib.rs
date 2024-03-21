@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate cfg_if;
+
 mod input_event;
 mod cursor_icon;
 mod incoming_event;

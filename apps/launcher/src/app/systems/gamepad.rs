@@ -21,19 +21,24 @@ pub(crate) fn gamepad_system(
             InputEvent::KeyPressed(_) => {}
             InputEvent::KeyReleased(_) => {}
             InputEvent::GamepadConnected(id) => {
-                info!("{:?} connected", id);
+                info!("INPUT: {:?} connected", id);
+                info!("---");
             }
             InputEvent::GamepadDisconnected(id) => {
-                info!("{:?} disconnected", id);
+                info!("INPUT: {:?} disconnected", id);
+                info!("---");
             }
-            InputEvent::GamepadButtonPressed(id, btn) => {
-                info!("{:?} {:?} pressed", id, btn);
+            InputEvent::GamepadButtonPressed(_id, btn) => {
+                info!("INPUT: {:?} pressed", btn);
+                info!("---");
             }
-            InputEvent::GamepadButtonReleased(id, btn) => {
-                info!("{:?} {:?} released", id, btn);
+            InputEvent::GamepadButtonReleased(_id, btn) => {
+                info!("INPUT: {:?} released", btn);
+                info!("---");
             }
-            InputEvent::GamepadAxisChanged(id, axis, value) => {
-                info!("{:?} {:?} changed to {}", id, axis, value);
+            InputEvent::GamepadAxisChanged(_id, axis, value) => {
+                info!("INPUT: {:?} changed to {}", axis, value);
+                info!("---");
             }
         }
     }

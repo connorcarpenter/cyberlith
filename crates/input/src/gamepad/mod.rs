@@ -4,8 +4,6 @@ use bevy_ecs::schedule::{IntoSystemConfigs, SystemSet};
 
 use gilrs::{Gilrs, GilrsBuilder};
 
-mod converter;
-
 mod gamepad;
 pub(crate) use gamepad::{ALL_BUTTON_TYPES, ALL_AXIS_TYPES};
 pub use gamepad::{GamepadInfo, Gamepads, GamepadButton, GamepadSettings, GamepadAxis, GamepadId, GamepadButtonType, GamepadAxisType, GamepadRumbleRequest, GamepadRumbleIntensity};
@@ -17,6 +15,7 @@ mod gilrs_system;
 use gilrs_system::{gilrs_event_startup_system, gilrs_event_system};
 
 mod rumble;
+mod converter;
 
 use rumble::{play_gilrs_rumble, RunningRumbleEffects};
 

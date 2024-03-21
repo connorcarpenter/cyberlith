@@ -1,8 +1,9 @@
 use bevy_ecs::system::{NonSend, NonSendMut, Res, ResMut};
+use bevy_log::info;
 
-use gilrs::{ev::filter::axis_dpad_to_button, EventType, Filter};
+use gilrs::{EventType, Filter};
 
-use crate::{gamepad::{converter::{convert_axis, convert_button, convert_gamepad_id}, gamepad::{
+use crate::{gamepad::{converter::{axis_dpad_to_button_filter, convert_axis, convert_button, convert_gamepad_id}, gamepad::{
     GamepadSettings, GamepadInfo, GamepadAxis, GamepadButton
 }, InputGilrs}, Input};
 
@@ -27,11 +28,13 @@ pub fn gilrs_event_system(
     let mut gilrs = &mut input_gilrs.gilrs;
     while let Some(gilrs_event) = gilrs
         .next_event()
-        .filter_ev(&axis_dpad_to_button, &mut gilrs)
+        .filter_ev(&axis_dpad_to_button_filter, &mut gilrs)
     {
         gilrs.update(&gilrs_event);
 
         let gamepad = convert_gamepad_id(gilrs_event.id);
+        //info!("---");
+        //info!("GILRS event: {:?}", gilrs_event.event);
         match gilrs_event.event {
             EventType::Connected => {
                 let pad = gilrs.gamepad(gilrs_event.id);
@@ -81,8 +84,8 @@ pub fn gilrs_event_system(
                     }
                 }
             }
-            EventType::AxisChanged(gilrs_axis, raw_value, _) => {
-                if let Some(axis_type) = convert_axis(gilrs_axis) {
+            EventType::AxisChanged(gilrs_axis, raw_value, code) => {
+                if let Some(axis_type) = convert_axis(gilrs_axis, code.into_u32()) {
                     let axis = GamepadAxis::new(gamepad, axis_type);
                     let old_value = input_winit.gamepad_axis_get(axis);
                     let axis_settings = gamepad_settings.get_axis_settings(axis);

@@ -1,15 +1,13 @@
-use crate::gamepad::gamepad::{GamepadId, GamepadAxisType, GamepadButtonType};
+use crate::gamepad::gamepad::{GamepadAxisType, GamepadButtonType};
 
-pub fn convert_gamepad_id(gamepad_id: gilrs::GamepadId) -> GamepadId {
-    GamepadId::new(gamepad_id.into())
-}
+pub use gilrs::ev::filter::axis_dpad_to_button as axis_dpad_to_button_filter;
 
 pub fn convert_button(button: gilrs::Button) -> Option<GamepadButtonType> {
     match button {
         gilrs::Button::South => Some(GamepadButtonType::South),
         gilrs::Button::East => Some(GamepadButtonType::East),
-        gilrs::Button::North => Some(GamepadButtonType::West), // these are swapped???
-        gilrs::Button::West => Some(GamepadButtonType::North), // these are swapped???
+        gilrs::Button::North => Some(GamepadButtonType::West),
+        gilrs::Button::West => Some(GamepadButtonType::North),
         gilrs::Button::C => Some(GamepadButtonType::C),
         gilrs::Button::Z => Some(GamepadButtonType::Z),
         gilrs::Button::LeftTrigger => Some(GamepadButtonType::LeftBumper),
@@ -23,11 +21,13 @@ pub fn convert_button(button: gilrs::Button) -> Option<GamepadButtonType> {
         gilrs::Button::DPadDown => Some(GamepadButtonType::DPadDown),
         gilrs::Button::DPadLeft => Some(GamepadButtonType::DPadLeft),
         gilrs::Button::DPadRight => Some(GamepadButtonType::DPadRight),
-        _ => None,
+        gilrs::Button::LeftTrigger2 => None,
+        gilrs::Button::RightTrigger2 => None,
+        gilrs::Button::Unknown => None,
     }
 }
 
-pub fn convert_axis(axis: gilrs::Axis) -> Option<GamepadAxisType> {
+pub fn convert_axis(axis: gilrs::Axis, _raw_code: u32) -> Option<GamepadAxisType> {
     match axis {
         gilrs::Axis::LeftStickX => Some(GamepadAxisType::LeftStickX),
         gilrs::Axis::LeftStickY => Some(GamepadAxisType::LeftStickY),
