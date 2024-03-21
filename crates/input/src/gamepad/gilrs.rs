@@ -1,5 +1,4 @@
 use bevy_ecs::system::{NonSend, NonSendMut, ResMut};
-use bevy_log::info;
 
 use gilrs::{EventType, Filter, Gilrs};
 

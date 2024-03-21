@@ -59,7 +59,7 @@ pub(crate) const ALL_AXIS_TYPES: [GamepadAxisType; 4] = [
 /// [`GamepadAxisChangedEvent`]. It is also used in the [`GamepadAxis`]
 /// which in turn is used to create the [`Axis<GamepadAxis>`] `bevy` resource.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub(crate) enum GamepadAxisType {
+pub enum GamepadAxisType {
     /// The horizontal value of the left stick.
     LeftStickX,
     /// The vertical value of the left stick.
@@ -69,9 +69,6 @@ pub(crate) enum GamepadAxisType {
     RightStickX,
     /// The vertical value of the right stick.
     RightStickY,
-
-    /// Non-standard support for other axis types (i.e. HOTAS sliders, potentiometers, etc).
-    Other(u8),
 }
 
 impl GamepadAxisType {
@@ -79,9 +76,6 @@ impl GamepadAxisType {
         match self {
             GamepadAxisType::LeftStickX | GamepadAxisType::LeftStickY => JoystickType::Left,
             GamepadAxisType::RightStickX | GamepadAxisType::RightStickY => JoystickType::Right,
-            GamepadAxisType::Other(_) => {
-                panic!("Cannot convert `GamepadAxisType::Other` to `JoystickType`")
-            }
         }
     }
 }
@@ -97,7 +91,7 @@ impl GamepadAxisType {
 ///
 /// The gamepad axes resources are updated inside of the [`gamepad_axis_event_system`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub(crate) struct GamepadAxis {
+pub struct GamepadAxis {
     /// The gamepad on which the axis is located on.
     pub gamepad: GamepadId,
     /// The type of the axis.

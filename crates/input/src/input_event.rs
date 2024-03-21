@@ -3,7 +3,7 @@ use bevy_ecs::event::Event;
 use math::Vec2;
 
 use crate::{
-    gamepad::{GamepadAxisType, GamepadButtonType, GamepadId},
+    gamepad::{GamepadButtonType, GamepadId},
     JoystickType, Key, MouseButton,
 };
 
