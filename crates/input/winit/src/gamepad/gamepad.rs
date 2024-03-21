@@ -9,10 +9,9 @@ use bevy_ecs::{
     event::{Event, EventReader, EventWriter},
 };
 use bevy_ecs::system::NonSendMut;
-use log::info;
+use bevy_log::info;
 
-use crate::axis::Axis;
-use crate::InputGilrs;
+use crate::gamepad::{axis::Axis, InputGilrs};
 
 /// The current "press" state of an element
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]

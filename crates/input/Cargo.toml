@@ -7,7 +7,6 @@ workspace = "../.."
 [dependencies]
 # should never include "render_gl" or "render_wgpu" here!
 input_winit = { path = "winit" }
-input_gilrs = { path = "gilrs" }
 
 bevy_app = { version = "0.13", default-features = false }
 

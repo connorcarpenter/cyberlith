@@ -5,16 +5,16 @@ use bevy_ecs::{
     prelude::{EventReader, Res},
     system::NonSendMut,
 };
+use bevy_log::{debug, warn};
 
 use gilrs::{
     ff::{self, BaseEffect, BaseEffectType, Repeat, Replay},
     GamepadId, Gilrs,
 };
-use log::{debug, warn};
 
 use render_api::resources::Time;
 
-use crate::{InputGilrs, converter::convert_gamepad_id, gamepad::{GamepadRumbleIntensity, GamepadRumbleRequest}};
+use crate::gamepad::{InputGilrs, converter::convert_gamepad_id, gamepad::{GamepadRumbleIntensity, GamepadRumbleRequest}};
 
 /// A rumble effect that is currently in effect.
 struct RunningRumble {
@@ -35,7 +35,7 @@ enum RumbleError {
 
 /// Contains the gilrs rumble effects that are currently running for each gamepad
 #[derive(Default)]
-pub(crate) struct RunningRumbleEffects {
+pub struct RunningRumbleEffects {
     /// If multiple rumbles are running at the same time, their resulting rumble
     /// will be the saturated sum of their strengths up until [`u16::MAX`]
     rumbles: HashMap<GamepadId, Vec<RunningRumble>>,
@@ -122,7 +122,7 @@ fn handle_rumble_request(
 
     Ok(())
 }
-pub(crate) fn play_gilrs_rumble(
+pub fn play_gilrs_rumble(
     time: Res<Time>,
     mut input_gilrs: NonSendMut<InputGilrs>,
     mut requests: EventReader<GamepadRumbleRequest>,

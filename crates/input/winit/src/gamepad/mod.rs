@@ -17,9 +17,10 @@ mod gilrs_system;
 use gilrs_system::{gilrs_event_startup_system, gilrs_event_system};
 
 mod rumble;
+
 use rumble::{play_gilrs_rumble, RunningRumbleEffects};
 
-use crate::{gamepad::{gamepad_axis_event_system, gamepad_button_event_system, gamepad_connection_system, gamepad_event_system, GamepadAxisChangedEvent, GamepadButtonChangedEvent, GamepadButtonInput, GamepadConnectionEvent, GamepadEvent, GamepadRumbleRequest, GamepadSettings}};
+use crate::gamepad::{gamepad::{gamepad_axis_event_system, gamepad_button_event_system, gamepad_connection_system, gamepad_event_system, GamepadAxisChangedEvent, GamepadButtonChangedEvent, GamepadButtonInput, GamepadConnectionEvent, GamepadEvent, GamepadRumbleRequest, GamepadSettings}};
 
 /// Plugin that provides gamepad handling to an [`App`].
 #[derive(Default)]

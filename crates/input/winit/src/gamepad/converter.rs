@@ -1,4 +1,4 @@
-use crate::gamepad::{GamepadId, GamepadAxisType, GamepadButtonType};
+use crate::gamepad::gamepad::{GamepadId, GamepadAxisType, GamepadButtonType};
 
 pub fn convert_gamepad_id(gamepad_id: gilrs::GamepadId) -> GamepadId {
     GamepadId::new(gamepad_id.into())

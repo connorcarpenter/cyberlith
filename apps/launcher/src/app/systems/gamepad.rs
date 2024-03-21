@@ -2,7 +2,7 @@ use bevy_ecs::event::EventReader;
 use bevy_ecs::system::{NonSend, Res};
 use bevy_log::info;
 
-use game_engine::input::{gilrs::{GamepadButtonType, GamepadAxisType, GamepadAxis, Axis, GamepadButton, Gamepads, InputGilrs}, winit::WinitInput};
+use game_engine::input::{winit::gamepad::{GamepadButtonType, GamepadAxisType, GamepadAxis, Axis, GamepadButton, Gamepads, InputGilrs}, winit::WinitInput};
 use game_engine::input::winit::{InputEvent, Key, MouseButton};
 
 pub(crate) fn gamepad_system(
