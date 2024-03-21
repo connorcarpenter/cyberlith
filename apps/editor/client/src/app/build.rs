@@ -1,7 +1,7 @@
 use bevy_app::App;
 use bevy_log::LogPlugin;
 
-use input::InputPlugin;
+use input::InputWinitPlugin;
 use render_api::RenderApiPlugin;
 use render_egui::EguiPlugin;
 use render_gl::RenderGlPlugin;
@@ -19,7 +19,7 @@ pub fn build() -> App {
         // Add Egui Plugin
         .add_plugins(EguiPlugin)
         // Add Input Plugin
-        .add_plugins(InputPlugin)
+        .add_plugins(InputWinitPlugin)
         // Add Vortex Plugin
         .add_plugins(VortexPlugin);
     app

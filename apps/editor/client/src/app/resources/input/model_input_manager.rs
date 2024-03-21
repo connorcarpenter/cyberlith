@@ -10,7 +10,7 @@ use bevy_log::{info, warn};
 
 use naia_bevy_client::{Client, CommandsExt};
 
-use input::winit::{InputEvent, Key, MouseButton};
+use input::{InputEvent, Key, MouseButton};
 use math::{quat_from_spin_direction, spin_direction_from_quat, Vec2, Vec3};
 use render_api::{
     components::{Camera, Projection, Transform},

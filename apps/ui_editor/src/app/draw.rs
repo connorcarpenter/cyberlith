@@ -5,7 +5,7 @@ use bevy_ecs::{
 
 use game_engine::{
     asset::{AssetHandle, AssetManager, UiData},
-    input::winit::{WinitInput, MouseButton},
+    input::{WinitInput, MouseButton},
     render::{
         components::{AmbientLight, Camera, Projection, RenderLayer, Transform},
         resources::RenderFrame,

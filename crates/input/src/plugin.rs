@@ -1,13 +1,20 @@
-use bevy_app::{App, Plugin};
+use bevy_app::{App, Plugin, Update};
 
-use input_winit::{InputWinitPlugin};
+use crate::{WinitInput, InputEvent};
+use crate::gamepad::GilrsPlugin;
 
 // Plugin
-pub struct InputPlugin;
+pub struct InputWinitPlugin;
 
-impl Plugin for InputPlugin {
+impl Plugin for InputWinitPlugin {
     fn build(&self, app: &mut App) {
         app
-            .add_plugins(InputWinitPlugin);
+            .add_plugins(GilrsPlugin)
+            // Resources
+            .insert_resource(WinitInput::new())
+            // Events
+            .add_event::<InputEvent>()
+            // Systems
+            .add_systems(Update, WinitInput::update);
     }
 }

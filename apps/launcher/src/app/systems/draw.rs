@@ -2,7 +2,7 @@ use bevy_ecs::system::{Query, Res, ResMut};
 
 use game_engine::{
     asset::{AssetHandle, AssetManager, UiData},
-    input::winit::{WinitInput, MouseButton},
+    input::{WinitInput, MouseButton},
     render::{
         base::{CpuMaterial, CpuMesh},
         components::{

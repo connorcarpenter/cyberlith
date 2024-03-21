@@ -11,7 +11,7 @@ use bevy_log::{info, warn};
 
 use naia_bevy_client::{Client, CommandsExt, Instant, Replicate, ReplicationConfig};
 
-use input::winit::{WinitInput, Key};
+use input::{WinitInput, Key};
 use math::{Vec2, Vec3};
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh, CpuTexture2D},

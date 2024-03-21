@@ -7,7 +7,7 @@ use bevy_ecs::{
 
 use naia_bevy_client::Client;
 
-use input::winit::WinitInput;
+use input::WinitInput;
 
 use render_api::{
     base::{CpuMaterial, CpuMesh},

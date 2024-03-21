@@ -4,7 +4,7 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 
-use input::winit::WinitInput;
+use input::WinitInput;
 use math::Vec2;
 use render_api::{
     base::CpuTexture2D,

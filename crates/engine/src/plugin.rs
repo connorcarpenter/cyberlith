@@ -5,7 +5,7 @@ use bevy_log::LogPlugin;
 use asset_render::AssetPlugin;
 use bevy_http_client::HttpClientPlugin;
 use filesystem::FileSystemPlugin;
-use input::{InputPlugin, winit::WinitInput};
+use input::{InputWinitPlugin, WinitInput};
 use render_api::RenderApiPlugin;
 
 use crate::{
@@ -25,7 +25,7 @@ impl Plugin for EnginePlugin {
             .add_plugins(RenderApiPlugin)
             .add_plugins(RendererPlugin)
             // Add misc crates Plugins
-            .add_plugins(InputPlugin)
+            .add_plugins(InputWinitPlugin)
             .add_plugins(AssetPlugin)
             .add_plugins(HttpClientPlugin)
             .add_plugins(FileSystemPlugin)

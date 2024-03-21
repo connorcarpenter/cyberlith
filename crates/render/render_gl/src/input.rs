@@ -1,6 +1,6 @@
 use bevy_ecs::system::{NonSendMut, ResMut};
 
-use input::winit::WinitInput;
+use input::WinitInput;
 
 use crate::window::FrameInput;
 

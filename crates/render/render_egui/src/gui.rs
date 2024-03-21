@@ -5,7 +5,7 @@ use bevy_log::info;
 use egui::PlatformOutput;
 use egui_gl::{gl, Painter};
 
-use input::winit::{IncomingEvent, Modifiers};
+use input::{IncomingEvent, Modifiers};
 use render_api::components::Viewport;
 use render_gl::{
     core::Context,

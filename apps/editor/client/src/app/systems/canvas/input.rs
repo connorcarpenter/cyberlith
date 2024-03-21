@@ -6,7 +6,7 @@ use bevy_ecs::{
 
 use editor_proto::components::FileExtension;
 
-use input::winit::{WinitInput, InputEvent};
+use input::{WinitInput, InputEvent};
 
 use crate::app::resources::{
     canvas::Canvas, file_manager::FileManager, icon_manager::IconManager, input::InputManager,

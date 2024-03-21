@@ -2,8 +2,8 @@ use bevy_ecs::event::EventReader;
 use bevy_ecs::system::{NonSend, Res};
 use bevy_log::info;
 
-use game_engine::input::{winit::gamepad::{GamepadButtonType, GamepadAxisType, GamepadAxis, Axis, GamepadButton, Gamepads, InputGilrs}, winit::WinitInput};
-use game_engine::input::winit::{InputEvent, Key, MouseButton};
+use game_engine::input::{gamepad::{GamepadButtonType, GamepadAxisType, GamepadAxis, Axis, GamepadButton, Gamepads, InputGilrs}, WinitInput};
+use game_engine::input::{InputEvent, Key, MouseButton};
 
 pub(crate) fn gamepad_system(
     winit_input: Res<WinitInput>,
@@ -35,7 +35,7 @@ pub(crate) fn gamepad_system(
 
     for gamepad in gamepads.iter() {
         if button_inputs.is_pressed(GamepadButton::new(gamepad, GamepadButtonType::South)) {
-            info!("{:?} South not pressed", gamepad);
+            info!("{:?} South pressed", gamepad);
         } else if !button_inputs.is_pressed(GamepadButton::new(gamepad, GamepadButtonType::South))
         {
             info!("{:?} South not pressed", gamepad);
