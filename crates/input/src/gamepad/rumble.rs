@@ -37,15 +37,11 @@ impl RumbleManager {
         duration: Duration,
         intensity: GamepadRumbleIntensity,
     ) {
-        self.requests.push(GamepadRumbleRequest::Add {
+        self.requests.push(GamepadRumbleRequest::new(
             duration,
             intensity,
             gamepad,
-        });
-    }
-
-    pub fn stop_rumble(&mut self, gamepad: GamepadId) {
-        self.requests.push(GamepadRumbleRequest::Stop { gamepad });
+        ));
     }
 
     // will be used as a system
@@ -103,59 +99,43 @@ impl RumbleManager {
         input_gilrs: &mut GilrsWrapper,
     ) -> Result<(), RumbleError> {
         let gilrs = input_gilrs.gilrs_mut();
-        match rumble_request {
-            GamepadRumbleRequest::Add {
-                duration,
-                intensity,
-                gamepad,
-            } => {
-                let (gamepad_id, _) = gilrs
-                    .gamepads()
-                    .find(|(pad_id, _)| convert_gamepad_id(*pad_id) == gamepad)
-                    .ok_or(RumbleError::GamepadNotFound)?;
+        let GamepadRumbleRequest {
+            duration,
+            intensity,
+            gamepad,
+        } = rumble_request;
 
-                let mut effect_builder = ff::EffectBuilder::new();
+        let (gamepad_id, _) = gilrs
+            .gamepads()
+            .find(|(pad_id, _)| convert_gamepad_id(*pad_id) == gamepad)
+            .ok_or(RumbleError::GamepadNotFound)?;
 
-                for effect in get_base_effects(intensity, duration) {
-                    effect_builder.add_effect(effect);
-                    effect_builder.repeat(Repeat::For(duration.into()));
-                }
+        let mut effect_builder = ff::EffectBuilder::new();
 
-                let effect = effect_builder
-                    .gamepads(&[gamepad_id])
-                    .finish(gilrs)
-                    .map_err(|e| RumbleError::GilrsError(e))?;
-                effect.play().map_err(|e| RumbleError::GilrsError(e))?;
-
-                let gamepad_rumbles = input_gilrs
-                    .rumbles_mut()
-                    .rumbles
-                    .entry(convert_gamepad_id(gamepad_id))
-                    .or_default();
-                let deadline = Duration::from_millis(20) + duration;
-                gamepad_rumbles.push(RunningRumble { deadline, effect });
-
-                Ok(())
-            }
-            GamepadRumbleRequest::Stop { gamepad } => {
-                let (gamepad_id, _) = gilrs
-                    .gamepads()
-                    .find(|(pad_id, _)| convert_gamepad_id(*pad_id) == gamepad)
-                    .ok_or(RumbleError::GamepadNotFound)?;
-
-                // `ff::Effect` uses RAII, dropping = deactivating
-                input_gilrs
-                    .rumbles_mut()
-                    .rumbles
-                    .remove(&convert_gamepad_id(gamepad_id));
-
-                Ok(())
-            }
+        for effect in get_base_effects(intensity, duration) {
+            effect_builder.add_effect(effect);
+            effect_builder.repeat(Repeat::For(duration.into()));
         }
+
+        let effect = effect_builder
+            .gamepads(&[gamepad_id])
+            .finish(gilrs)
+            .map_err(|e| RumbleError::GilrsError(e))?;
+        effect.play().map_err(|e| RumbleError::GilrsError(e))?;
+
+        let gamepad_rumbles = input_gilrs
+            .rumbles_mut()
+            .rumbles
+            .entry(convert_gamepad_id(gamepad_id))
+            .or_default();
+        let deadline = Duration::from_millis(20) + duration;
+        gamepad_rumbles.push(RunningRumble { deadline, effect });
+
+        Ok(())
     }
 }
 
-enum GamepadRumbleRequest {
+struct GamepadRumbleRequest {
     /// Add a rumble to the given gamepad.
     ///
     /// Simultaneous rumble effects add up to the sum of their strengths.
@@ -164,29 +144,26 @@ enum GamepadRumbleRequest {
     /// time, their intensities will be added up, and the controller will rumble
     /// at full intensity until one of the rumbles finishes, then the rumble
     /// will continue at the intensity of the remaining event.
-    ///
-    /// To replace an existing rumble, send a [`GamepadRumbleRequest::Stop`] event first.
-    Add {
-        /// How long the gamepad should rumble.
-        duration: Duration,
-        /// How intense the rumble should be.
-        intensity: GamepadRumbleIntensity,
-        /// The gamepad to rumble.
-        gamepad: GamepadId,
-    },
-    /// Stop all running rumbles on the given [`GamepadId`].
-    Stop {
-        /// The gamepad to stop rumble.
-        gamepad: GamepadId,
-    },
+
+    /// How long the gamepad should rumble.
+    duration: Duration,
+    /// How intense the rumble should be.
+    intensity: GamepadRumbleIntensity,
+    /// The gamepad to rumble.
+    gamepad: GamepadId,
 }
 
 impl GamepadRumbleRequest {
-    fn gamepad(&self) -> GamepadId {
-        match self {
-            GamepadRumbleRequest::Add { gamepad, .. } => *gamepad,
-            GamepadRumbleRequest::Stop { gamepad } => *gamepad,
+    fn new(duration: Duration, intensity: GamepadRumbleIntensity, gamepad: GamepadId) -> Self {
+        Self {
+            duration,
+            intensity,
+            gamepad,
         }
+    }
+
+    fn gamepad(&self) -> GamepadId {
+        self.gamepad
     }
 }
 
