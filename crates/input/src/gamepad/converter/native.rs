@@ -54,3 +54,99 @@ pub fn convert_axis(axis: gilrs::Axis, _raw_code: u32) -> Option<GamepadAxisType
         gilrs::Axis::Unknown | gilrs::Axis::DPadX | gilrs::Axis::DPadY | gilrs::Axis::LeftZ | gilrs::Axis::RightZ => None,
     }
 }
+
+// Triggers to Button
+const PRESS_THRESHOLD: f32 = -0.6;
+const RELEASE_THRESHOLD: f32 = -0.9;
+
+pub fn axis_triggers_to_button_filter(ev: Option<gilrs::Event>, gilrs: &mut gilrs::Gilrs) -> Option<gilrs::Event> {
+
+    let ev = ev?;
+    let gamepad = gilrs.gamepad(ev.id);
+
+    match ev.event {
+        gilrs::EventType::AxisChanged(gilrs::Axis::LeftZ, val, code) => {
+
+            let left_trigger_button = gilrs::Button::LeftTrigger2;
+
+            let is_pressed = gamepad.state().is_pressed(code);
+            if is_pressed {
+                if val < RELEASE_THRESHOLD {
+                    gilrs.insert_event(gilrs::Event {
+                        event: gilrs::EventType::ButtonChanged(
+                            left_trigger_button,
+                            0.0,
+                            code,
+                        ),
+                        ..ev
+                    });
+                    return Some(gilrs::Event {
+                        event: gilrs::EventType::ButtonReleased(left_trigger_button, code),
+                        ..ev
+                    });
+                } else {
+                    return None;
+                }
+            } else {
+                if val > PRESS_THRESHOLD {
+                    gilrs.insert_event(gilrs::Event {
+                        event: gilrs::EventType::ButtonChanged(
+                            left_trigger_button,
+                            1.0,
+                            code,
+                        ),
+                        ..ev
+                    });
+                    return Some(gilrs::Event {
+                        event: gilrs::EventType::ButtonPressed(left_trigger_button, code),
+                        ..ev
+                    });
+                } else {
+                    return None;
+                }
+            }
+        }
+        gilrs::EventType::AxisChanged(gilrs::Axis::RightZ, val, code) => {
+
+            let right_trigger_button = gilrs::Button::RightTrigger2;
+
+            let is_pressed = gamepad.state().is_pressed(code);
+            if is_pressed {
+                if val < RELEASE_THRESHOLD {
+                    gilrs.insert_event(gilrs::Event {
+                        event: gilrs::EventType::ButtonChanged(
+                            right_trigger_button,
+                            0.0,
+                            code,
+                        ),
+                        ..ev
+                    });
+                    return Some(gilrs::Event {
+                        event: gilrs::EventType::ButtonReleased(right_trigger_button, code),
+                        ..ev
+                    });
+                } else {
+                    return None;
+                }
+            } else {
+                if val > PRESS_THRESHOLD {
+                    gilrs.insert_event(gilrs::Event {
+                        event: gilrs::EventType::ButtonChanged(
+                            right_trigger_button,
+                            1.0,
+                            code,
+                        ),
+                        ..ev
+                    });
+                    return Some(gilrs::Event {
+                        event: gilrs::EventType::ButtonPressed(right_trigger_button, code),
+                        ..ev
+                    });
+                } else {
+                    return None;
+                }
+            }
+        }
+        _ => Some(ev),
+    }
+}
