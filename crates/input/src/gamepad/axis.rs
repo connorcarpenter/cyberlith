@@ -1,6 +1,6 @@
 //! The generic axis type.
 
-use std::{hash::Hash, collections::HashMap};
+use std::{collections::HashMap, hash::Hash};
 
 use crate::GamepadId;
 
@@ -14,7 +14,10 @@ pub struct Joystick {
 
 impl Joystick {
     pub fn new(gamepad: GamepadId, joystick_type: JoystickType) -> Self {
-        Self { gamepad, joystick_type }
+        Self {
+            gamepad,
+            joystick_type,
+        }
     }
 }
 
@@ -76,7 +79,9 @@ impl GamepadAxisType {
         match self {
             GamepadAxisType::LeftStickX | GamepadAxisType::LeftStickY => JoystickType::Left,
             GamepadAxisType::RightStickX | GamepadAxisType::RightStickY => JoystickType::Right,
-            GamepadAxisType::Other(_) => panic!("Cannot convert `GamepadAxisType::Other` to `JoystickType`"),
+            GamepadAxisType::Other(_) => {
+                panic!("Cannot convert `GamepadAxisType::Other` to `JoystickType`")
+            }
         }
     }
 }

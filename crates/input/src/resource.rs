@@ -8,8 +8,14 @@ use bevy_log::info;
 
 use math::Vec2;
 
-use crate::{is_button::IsButton, IncomingEvent, InputEvent, Key, MouseButton, gamepad::{GamepadId, GamepadButtonType}, GamepadSettings, Joystick};
-use crate::gamepad::{ALL_AXIS_TYPES, ALL_BUTTON_TYPES, Axis, GamepadAxis, GamepadButton, GamepadInfo, Gamepads};
+use crate::gamepad::{
+    Axis, GamepadAxis, GamepadButton, GamepadInfo, Gamepads, ALL_AXIS_TYPES, ALL_BUTTON_TYPES,
+};
+use crate::{
+    gamepad::{GamepadButtonType, GamepadId},
+    is_button::IsButton,
+    GamepadSettings, IncomingEvent, InputEvent, Joystick, Key, MouseButton,
+};
 
 #[derive(Resource)]
 pub struct Input {
@@ -67,7 +73,11 @@ impl Input {
     }
 
     pub fn is_pressed<T: IsButton>(&self, button: T) -> bool {
-        button.is_pressed(&self.pressed_mouse_buttons, &self.pressed_keys, &self.pressed_gamepad_buttons)
+        button.is_pressed(
+            &self.pressed_mouse_buttons,
+            &self.pressed_keys,
+            &self.pressed_gamepad_buttons,
+        )
     }
 
     pub fn has_canvas_properties(&self) -> bool {
@@ -101,9 +111,7 @@ impl Input {
         for event in events {
             match event {
                 IncomingEvent::MousePress {
-                    button,
-                    position,
-                    ..
+                    button, position, ..
                 } => {
                     if !self.pressed_mouse_buttons.contains(button) {
                         self.set_mouse_coords(position);
@@ -112,18 +120,14 @@ impl Input {
                         self.pressed_mouse_buttons.insert(*button);
                     }
                 }
-                IncomingEvent::MouseRelease {
-                    button, ..
-                } => {
+                IncomingEvent::MouseRelease { button, .. } => {
                     if self.pressed_mouse_buttons.contains(button) {
                         self.outgoing_actions
                             .push(InputEvent::MouseReleased(*button));
                         self.pressed_mouse_buttons.remove(button);
                     }
                 }
-                IncomingEvent::MouseMotion {
-                    position, ..
-                } => {
+                IncomingEvent::MouseMotion { position, .. } => {
                     self.set_mouse_coords(position);
 
                     if self.mouse_coords.x as i16 != self.last_mouse_position.x as i16
@@ -141,7 +145,8 @@ impl Input {
                             ));
                         }
 
-                        self.outgoing_actions.push(InputEvent::MouseMoved(self.mouse_coords));
+                        self.outgoing_actions
+                            .push(InputEvent::MouseMoved(self.mouse_coords));
                     }
                 }
                 IncomingEvent::MouseWheel { delta, .. } => {
@@ -183,8 +188,14 @@ impl Input {
         let x_axis = joystick_type.x_axis();
         let y_axis = joystick_type.y_axis();
 
-        let x = self.gamepad_axis.get(GamepadAxis::new(gamepad, x_axis)).unwrap_or(0.0);
-        let y = self.gamepad_axis.get(GamepadAxis::new(gamepad, y_axis)).unwrap_or(0.0);
+        let x = self
+            .gamepad_axis
+            .get(GamepadAxis::new(gamepad, x_axis))
+            .unwrap_or(0.0);
+        let y = self
+            .gamepad_axis
+            .get(GamepadAxis::new(gamepad, y_axis))
+            .unwrap_or(0.0);
 
         // INVERT Y
         cfg_if! {
@@ -245,7 +256,8 @@ impl Input {
     }
 
     pub(crate) fn recv_gilrs_gamepad_disconnect(&mut self, id: GamepadId) {
-        self.outgoing_actions.push(InputEvent::GamepadDisconnected(id));
+        self.outgoing_actions
+            .push(InputEvent::GamepadDisconnected(id));
 
         self.gamepads.deregister(id);
         info!("{:?} Disconnected", id);
@@ -261,18 +273,24 @@ impl Input {
     }
 
     pub(crate) fn recv_gilrs_button_press(&mut self, id: GamepadId, button: GamepadButtonType) {
-        self.outgoing_actions.push(InputEvent::GamepadButtonPressed(id, button));
+        self.outgoing_actions
+            .push(InputEvent::GamepadButtonPressed(id, button));
     }
 
     pub(crate) fn recv_gilrs_button_release(&mut self, id: GamepadId, button: GamepadButtonType) {
-        self.outgoing_actions.push(InputEvent::GamepadButtonReleased(id, button));
+        self.outgoing_actions
+            .push(InputEvent::GamepadButtonReleased(id, button));
     }
 
     pub(crate) fn gamepad_axis_set(&mut self, axis: GamepadAxis, val: f32) {
         self.gamepad_axis.set(axis, val);
         let joystick_type = axis.axis_type.to_joystick();
         let joystick_position = self.joystick_position(Joystick::new(axis.gamepad, joystick_type));
-        self.outgoing_actions.push(InputEvent::GamepadJoystickMoved(axis.gamepad, joystick_type, joystick_position));
+        self.outgoing_actions.push(InputEvent::GamepadJoystickMoved(
+            axis.gamepad,
+            joystick_type,
+            joystick_position,
+        ));
     }
 
     pub(crate) fn gamepad_button_axis_get(&self, button: GamepadButton) -> Option<f32> {

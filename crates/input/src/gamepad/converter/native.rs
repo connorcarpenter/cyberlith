@@ -1,5 +1,3 @@
-
-
 pub use gilrs::ev::filter::axis_dpad_to_button as axis_dpad_to_button_filter;
 
 use crate::gamepad::{GamepadAxisType, GamepadButtonType};
@@ -36,7 +34,7 @@ pub fn convert_button(button: gilrs::Button) -> Option<GamepadButtonType> {
         gilrs::Button::DPadRight => Some(GamepadButtonType::DPadRight),
 
         // ignore
-        gilrs::Button::Unknown | gilrs::Button::C | gilrs::Button::Z  => None,
+        gilrs::Button::Unknown | gilrs::Button::C | gilrs::Button::Z => None,
     }
 }
 
@@ -51,7 +49,11 @@ pub fn convert_axis(axis: gilrs::Axis, _raw_code: u32) -> Option<GamepadAxisType
         gilrs::Axis::RightStickY => Some(GamepadAxisType::RightStickY),
 
         // ignore
-        gilrs::Axis::Unknown | gilrs::Axis::DPadX | gilrs::Axis::DPadY | gilrs::Axis::LeftZ | gilrs::Axis::RightZ => None,
+        gilrs::Axis::Unknown
+        | gilrs::Axis::DPadX
+        | gilrs::Axis::DPadY
+        | gilrs::Axis::LeftZ
+        | gilrs::Axis::RightZ => None,
     }
 }
 
@@ -59,25 +61,22 @@ pub fn convert_axis(axis: gilrs::Axis, _raw_code: u32) -> Option<GamepadAxisType
 const PRESS_THRESHOLD: f32 = -0.6;
 const RELEASE_THRESHOLD: f32 = -0.9;
 
-pub fn axis_triggers_to_button_filter(ev: Option<gilrs::Event>, gilrs: &mut gilrs::Gilrs) -> Option<gilrs::Event> {
-
+pub fn axis_triggers_to_button_filter(
+    ev: Option<gilrs::Event>,
+    gilrs: &mut gilrs::Gilrs,
+) -> Option<gilrs::Event> {
     let ev = ev?;
     let gamepad = gilrs.gamepad(ev.id);
 
     match ev.event {
         gilrs::EventType::AxisChanged(gilrs::Axis::LeftZ, val, code) => {
-
             let left_trigger_button = gilrs::Button::LeftTrigger2;
 
             let is_pressed = gamepad.state().is_pressed(code);
             if is_pressed {
                 if val < RELEASE_THRESHOLD {
                     gilrs.insert_event(gilrs::Event {
-                        event: gilrs::EventType::ButtonChanged(
-                            left_trigger_button,
-                            0.0,
-                            code,
-                        ),
+                        event: gilrs::EventType::ButtonChanged(left_trigger_button, 0.0, code),
                         ..ev
                     });
                     return Some(gilrs::Event {
@@ -90,11 +89,7 @@ pub fn axis_triggers_to_button_filter(ev: Option<gilrs::Event>, gilrs: &mut gilr
             } else {
                 if val > PRESS_THRESHOLD {
                     gilrs.insert_event(gilrs::Event {
-                        event: gilrs::EventType::ButtonChanged(
-                            left_trigger_button,
-                            1.0,
-                            code,
-                        ),
+                        event: gilrs::EventType::ButtonChanged(left_trigger_button, 1.0, code),
                         ..ev
                     });
                     return Some(gilrs::Event {
@@ -107,18 +102,13 @@ pub fn axis_triggers_to_button_filter(ev: Option<gilrs::Event>, gilrs: &mut gilr
             }
         }
         gilrs::EventType::AxisChanged(gilrs::Axis::RightZ, val, code) => {
-
             let right_trigger_button = gilrs::Button::RightTrigger2;
 
             let is_pressed = gamepad.state().is_pressed(code);
             if is_pressed {
                 if val < RELEASE_THRESHOLD {
                     gilrs.insert_event(gilrs::Event {
-                        event: gilrs::EventType::ButtonChanged(
-                            right_trigger_button,
-                            0.0,
-                            code,
-                        ),
+                        event: gilrs::EventType::ButtonChanged(right_trigger_button, 0.0, code),
                         ..ev
                     });
                     return Some(gilrs::Event {
@@ -131,11 +121,7 @@ pub fn axis_triggers_to_button_filter(ev: Option<gilrs::Event>, gilrs: &mut gilr
             } else {
                 if val > PRESS_THRESHOLD {
                     gilrs.insert_event(gilrs::Event {
-                        event: gilrs::EventType::ButtonChanged(
-                            right_trigger_button,
-                            1.0,
-                            code,
-                        ),
+                        event: gilrs::EventType::ButtonChanged(right_trigger_button, 1.0, code),
                         ..ev
                     });
                     return Some(gilrs::Event {

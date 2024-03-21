@@ -5,20 +5,21 @@ use gilrs::{EventType, Filter, Gilrs};
 
 use crate::{
     gamepad::{
-        GamepadAxis, GamepadButton, GamepadInfo,
         converter::{
-            axis_dpad_to_button_filter, convert_axis, convert_button, convert_gamepad_id, axis_triggers_to_button_filter
+            axis_dpad_to_button_filter, axis_triggers_to_button_filter, convert_axis,
+            convert_button, convert_gamepad_id,
         },
         rumble::RunningRumbleEffects,
+        GamepadAxis, GamepadButton, GamepadInfo,
     },
-    Input
+    Input,
 };
 
 pub struct GilrsWrapper {
     gilrs: Gilrs,
 
     // this is in here and not the RumbleManager because it is non-Send
-    running_rumbles: RunningRumbleEffects
+    running_rumbles: RunningRumbleEffects,
 }
 
 impl GilrsWrapper {
@@ -38,10 +39,7 @@ impl GilrsWrapper {
     }
 
     // used as a system
-    pub fn startup(
-        input_gilrs: NonSend<GilrsWrapper>,
-        mut input: ResMut<Input>,
-    ) {
+    pub fn startup(input_gilrs: NonSend<GilrsWrapper>, mut input: ResMut<Input>) {
         for (id, gamepad) in input_gilrs.gilrs.gamepads() {
             let info = GamepadInfo {
                 name: gamepad.name().into(),
@@ -52,15 +50,10 @@ impl GilrsWrapper {
     }
 
     // used as a system
-    pub fn update(
-        mut gilrs_wrapper: NonSendMut<GilrsWrapper>,
-        mut input: ResMut<Input>,
-    ) {
+    pub fn update(mut gilrs_wrapper: NonSendMut<GilrsWrapper>, mut input: ResMut<Input>) {
         let mut gilrs = &mut gilrs_wrapper.gilrs;
 
-        while let Some(gilrs_event) = gilrs
-            .next_event()
-        {
+        while let Some(gilrs_event) = gilrs.next_event() {
             // info!("---");
             // info!("GILRS raw event: {:?}", gilrs_event);
 
@@ -94,15 +87,16 @@ impl GilrsWrapper {
                     if let Some(button_type) = convert_button(gilrs_button) {
                         let button = GamepadButton::new(gamepad, button_type);
                         let old_value = input.gamepad_button_axis_get(button);
-                        let button_settings = input.gamepad_settings().get_button_axis_settings(button);
+                        let button_settings =
+                            input.gamepad_settings().get_button_axis_settings(button);
 
                         // Only send events that pass the user-defined change threshold
                         if let Some(filtered_value) = button_settings.filter(raw_value, old_value) {
-
                             {
                                 let button = GamepadButton::new(gamepad, button_type);
                                 let value = filtered_value;
-                                let button_property = input.gamepad_settings().get_button_settings(button);
+                                let button_property =
+                                    input.gamepad_settings().get_button_settings(button);
 
                                 if button_property.is_released(value) {
                                     // Check if button was previously pressed
@@ -145,5 +139,4 @@ impl GilrsWrapper {
         }
         gilrs.inc();
     }
-
 }

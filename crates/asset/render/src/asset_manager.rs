@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 
 use bevy_ecs::{
+    change_detection::Mut,
     event::Event,
     system::{ResMut, Resource},
-    change_detection::Mut,
-    world::World
+    world::World,
 };
 use bevy_log::warn;
 
@@ -68,12 +68,19 @@ impl AssetManager {
         asset_manager.store.sync_palettes(&mut materials);
         if let Some(new_uis) = asset_manager.store.sync_uis(&mut meshes, &mut materials) {
             for handle in new_uis {
-                if let Some(queued_handlers) = asset_manager.queued_ui_event_handlers.remove(&handle) {
+                if let Some(queued_handlers) =
+                    asset_manager.queued_ui_event_handlers.remove(&handle)
+                {
                     for (id_str, handler) in queued_handlers {
                         let asset_id = handle.asset_id();
                         let ui_store = asset_manager.store.uis.get(&handle).unwrap();
-                        let node_id = ui_store.get_ui_ref().get_node_id_by_id_str(&id_str).unwrap();
-                        asset_manager.ui_event_handlers.insert((asset_id, node_id), handler);
+                        let node_id = ui_store
+                            .get_ui_ref()
+                            .get_node_id_by_id_str(&id_str)
+                            .unwrap();
+                        asset_manager
+                            .ui_event_handlers
+                            .insert((asset_id, node_id), handler);
                     }
                 }
             }
@@ -88,18 +95,13 @@ impl AssetManager {
     }
 
     // used as a system
-    pub fn process_ui_events(
-        world: &mut World,
-    ) {
+    pub fn process_ui_events(world: &mut World) {
         world.resource_scope(|world, mut asset_manager: Mut<AssetManager>| {
             asset_manager.process_ui_events_impl(world);
         });
     }
 
-    fn process_ui_events_impl(
-        &mut self,
-        world: &mut World,
-    ) {
+    fn process_ui_events_impl(&mut self, world: &mut World) {
         if self.ui_events.is_empty() {
             return;
         }
@@ -107,7 +109,10 @@ impl AssetManager {
         let events = std::mem::take(&mut self.ui_events);
         for (asset_id, node_id, event) in events {
             let Some(handler) = self.ui_event_handlers.get(&(asset_id, node_id)) else {
-                warn!("no handler for asset_id: {:?}, node_id: {:?}", asset_id, node_id);
+                warn!(
+                    "no handler for asset_id: {:?}, node_id: {:?}",
+                    asset_id, node_id
+                );
                 continue;
             };
 
@@ -128,10 +133,12 @@ impl AssetManager {
                 panic!("no node_id for id_str: {:?}", id_str);
             };
 
-            self.ui_event_handlers.insert((asset_id, node_id), event_handler);
+            self.ui_event_handlers
+                .insert((asset_id, node_id), event_handler);
         } else {
             if !self.queued_ui_event_handlers.contains_key(&ui_handle) {
-                self.queued_ui_event_handlers.insert(ui_handle.clone(), Vec::new());
+                self.queued_ui_event_handlers
+                    .insert(ui_handle.clone(), Vec::new());
             }
             self.queued_ui_event_handlers
                 .get_mut(&ui_handle)
@@ -321,9 +328,11 @@ impl AssetManager {
         update_button_states(ui, &Ui::ROOT_NODE_ID, mouse_state, (0.0, 0.0));
 
         // get any events
-        let mut events: Vec<(AssetId, NodeId, UiEvent)> = ui.take_events().iter().map(|(node_id, event)| {
-            (ui_handle.asset_id(), *node_id, event.clone())
-        }).collect();
+        let mut events: Vec<(AssetId, NodeId, UiEvent)> = ui
+            .take_events()
+            .iter()
+            .map(|(node_id, event)| (ui_handle.asset_id(), *node_id, event.clone()))
+            .collect();
 
         self.ui_events.append(&mut events);
     }

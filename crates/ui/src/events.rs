@@ -1,4 +1,7 @@
-use bevy_ecs::{world::World, event::{Event, Events}};
+use bevy_ecs::{
+    event::{Event, Events},
+    world::World,
+};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum UiEvent {
@@ -6,13 +9,13 @@ pub enum UiEvent {
 }
 
 pub struct UiEventHandler {
-    inner: Box<dyn UiEventHandlerTrait>
+    inner: Box<dyn UiEventHandlerTrait>,
 }
 
 impl UiEventHandler {
     pub fn new<T: Event + Default>() -> Self {
         Self {
-            inner: Box::new(UiEventHandlerImpl::<T>::new())
+            inner: Box::new(UiEventHandlerImpl::<T>::new()),
         }
     }
 
@@ -26,13 +29,13 @@ trait UiEventHandlerTrait: Send + Sync + 'static {
 }
 
 struct UiEventHandlerImpl<T: Event + Default> {
-    _phantom: std::marker::PhantomData<T>
+    _phantom: std::marker::PhantomData<T>,
 }
 
 impl<T: Event + Default> UiEventHandlerImpl<T> {
     fn new() -> Self {
         Self {
-            _phantom: std::marker::PhantomData
+            _phantom: std::marker::PhantomData,
         }
     }
 }

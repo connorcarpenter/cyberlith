@@ -9,7 +9,17 @@ use render_api::{
 use storage::{Handle, Storage};
 use ui_layout::{Node, SizeUnits};
 
-use crate::{cache::LayoutCache, node::UiNode, node_id::NodeId, panel::{Panel, PanelMut, PanelStyle, PanelStyleMut}, store::UiStore, style::{NodeStyle, StyleId, WidgetStyle}, text::{TextStyle, TextStyleMut}, widget::{Widget, WidgetKind}, Button, ButtonStyle, ButtonStyleMut, UiEvent};
+use crate::{
+    cache::LayoutCache,
+    node::UiNode,
+    node_id::NodeId,
+    panel::{Panel, PanelMut, PanelStyle, PanelStyleMut},
+    store::UiStore,
+    style::{NodeStyle, StyleId, WidgetStyle},
+    text::{TextStyle, TextStyleMut},
+    widget::{Widget, WidgetKind},
+    Button, ButtonStyle, ButtonStyleMut, UiEvent,
+};
 
 pub struct Ui {
     pub globals: Globals,
@@ -54,7 +64,6 @@ impl Ui {
 
         me
     }
-
 
     // events
     pub fn emit_event(&mut self, node_id: &NodeId, event: UiEvent) {
@@ -248,7 +257,6 @@ impl Ui {
     }
 
     pub(crate) fn create_node(&mut self, widget: Widget) -> NodeId {
-
         let mut id_str_opt = None;
         if let Widget::Button(button) = &widget {
             id_str_opt = Some(button.id_str.clone());

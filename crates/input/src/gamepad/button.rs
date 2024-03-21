@@ -2,25 +2,19 @@ use crate::GamepadId;
 
 /// An array of every [`GamepadButtonType`] variant.
 pub(crate) const ALL_BUTTON_TYPES: [GamepadButtonType; 17] = [
-
     GamepadButtonType::South,
     GamepadButtonType::East,
     GamepadButtonType::North,
     GamepadButtonType::West,
-
     GamepadButtonType::LeftTrigger,
     GamepadButtonType::RightTrigger,
-
     GamepadButtonType::LeftBumper,
     GamepadButtonType::RightBumper,
-
     GamepadButtonType::Select,
     GamepadButtonType::Start,
     GamepadButtonType::Mode,
-
     GamepadButtonType::LeftThumb,
     GamepadButtonType::RightThumb,
-
     GamepadButtonType::DPadUp,
     GamepadButtonType::DPadDown,
     GamepadButtonType::DPadLeft,
@@ -100,7 +94,6 @@ pub struct GamepadButton {
 }
 
 impl GamepadButton {
-
     pub fn new(gamepad: GamepadId, button_type: GamepadButtonType) -> Self {
         Self {
             gamepad,

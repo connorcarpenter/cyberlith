@@ -1,56 +1,51 @@
 //! Handle user specified rumble request events.
-use std::{time::Duration, collections::HashMap};
+use std::{collections::HashMap, time::Duration};
 
 use bevy_ecs::{
     prelude::Res,
-    system::{ResMut, NonSendMut, Resource},
+    system::{NonSendMut, ResMut, Resource},
 };
 use bevy_log::{debug, warn};
 
-use gilrs::{
-    ff::{self, BaseEffect, BaseEffectType, Repeat, Replay},
-};
+use gilrs::ff::{self, BaseEffect, BaseEffectType, Repeat, Replay};
 
 use render_api::resources::Time;
 
-use crate::{GamepadId, gamepad::{converter::convert_gamepad_id, gilrs::GilrsWrapper}};
+use crate::{
+    gamepad::{converter::convert_gamepad_id, gilrs::GilrsWrapper},
+    GamepadId,
+};
 
 #[derive(Resource)]
 pub struct RumbleManager {
-    requests: Vec<GamepadRumbleRequest>
+    requests: Vec<GamepadRumbleRequest>,
 }
 
 impl Default for RumbleManager {
     fn default() -> Self {
         Self {
-            requests: Vec::new()
+            requests: Vec::new(),
         }
     }
 }
 
 impl RumbleManager {
-
     // User API
     pub fn add_rumble(
         &mut self,
         gamepad: GamepadId,
         duration: Duration,
-        intensity: GamepadRumbleIntensity
+        intensity: GamepadRumbleIntensity,
     ) {
         self.requests.push(GamepadRumbleRequest::Add {
             duration,
             intensity,
-            gamepad
+            gamepad,
         });
     }
 
-    pub fn stop_rumble(
-        &mut self,
-        gamepad: GamepadId
-    ) {
-        self.requests.push(GamepadRumbleRequest::Stop {
-            gamepad
-        });
+    pub fn stop_rumble(&mut self, gamepad: GamepadId) {
+        self.requests.push(GamepadRumbleRequest::Stop { gamepad });
     }
 
     // will be used as a system
@@ -63,9 +58,13 @@ impl RumbleManager {
         // Remove outdated rumble effects.
         for rumbles in input_gilrs.rumbles_mut().rumbles.values_mut() {
             // `ff::Effect` uses RAII, dropping = deactivating
-            rumbles.retain(|RunningRumble { deadline, .. }| (deadline.as_millis() as f32) >= current_time);
+            rumbles.retain(|RunningRumble { deadline, .. }| {
+                (deadline.as_millis() as f32) >= current_time
+            });
         }
-        input_gilrs.rumbles_mut().rumbles
+        input_gilrs
+            .rumbles_mut()
+            .rumbles
             .retain(|_gamepad, rumbles| !rumbles.is_empty());
 
         // handle all new rumble requests
@@ -79,7 +78,9 @@ impl RumbleManager {
                 Ok(()) => {}
                 Err(RumbleError::GilrsError(err)) => {
                     if let ff::Error::FfNotSupported(_) = err {
-                        debug!("Tried to rumble {gamepad:?}, but it doesn't support force feedback");
+                        debug!(
+                            "Tried to rumble {gamepad:?}, but it doesn't support force feedback"
+                        );
                     } else {
                         warn!(
                         "Tried to handle rumble request for {gamepad:?} but an error occurred: {err}"
@@ -103,7 +104,11 @@ impl RumbleManager {
     ) -> Result<(), RumbleError> {
         let gilrs = input_gilrs.gilrs_mut();
         match rumble_request {
-            GamepadRumbleRequest::Add { duration, intensity, gamepad } => {
+            GamepadRumbleRequest::Add {
+                duration,
+                intensity,
+                gamepad,
+            } => {
                 let (gamepad_id, _) = gilrs
                     .gamepads()
                     .find(|(pad_id, _)| convert_gamepad_id(*pad_id) == gamepad)
@@ -116,14 +121,17 @@ impl RumbleManager {
                     effect_builder.repeat(Repeat::For(duration.into()));
                 }
 
-                let effect = effect_builder.gamepads(&[gamepad_id]).finish(gilrs).map_err(|e| {
-                    RumbleError::GilrsError(e)
-                })?;
-                effect.play().map_err(|e| {
-                    RumbleError::GilrsError(e)
-                })?;
+                let effect = effect_builder
+                    .gamepads(&[gamepad_id])
+                    .finish(gilrs)
+                    .map_err(|e| RumbleError::GilrsError(e))?;
+                effect.play().map_err(|e| RumbleError::GilrsError(e))?;
 
-                let gamepad_rumbles = input_gilrs.rumbles_mut().rumbles.entry(convert_gamepad_id(gamepad_id)).or_default();
+                let gamepad_rumbles = input_gilrs
+                    .rumbles_mut()
+                    .rumbles
+                    .entry(convert_gamepad_id(gamepad_id))
+                    .or_default();
                 let deadline = Duration::from_millis(20) + duration;
                 gamepad_rumbles.push(RunningRumble { deadline, effect });
 
@@ -136,7 +144,10 @@ impl RumbleManager {
                     .ok_or(RumbleError::GamepadNotFound)?;
 
                 // `ff::Effect` uses RAII, dropping = deactivating
-                input_gilrs.rumbles_mut().rumbles.remove(&convert_gamepad_id(gamepad_id));
+                input_gilrs
+                    .rumbles_mut()
+                    .rumbles
+                    .remove(&convert_gamepad_id(gamepad_id));
 
                 Ok(())
             }

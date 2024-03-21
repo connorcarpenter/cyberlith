@@ -1,9 +1,7 @@
-
 use crate::gamepad::{GamepadAxisType, GamepadButtonType};
 
 pub fn convert_button(button: gilrs::Button) -> Option<GamepadButtonType> {
     match button {
-
         // face buttons
         gilrs::Button::South => Some(GamepadButtonType::South),
         gilrs::Button::East => Some(GamepadButtonType::East),
@@ -42,19 +40,23 @@ pub fn convert_axis(axis: gilrs::Axis, raw_code: u32) -> Option<GamepadAxisType>
         gilrs::Axis::LeftStickX => Some(GamepadAxisType::LeftStickX),
         gilrs::Axis::LeftStickY => Some(GamepadAxisType::LeftStickY),
         gilrs::Axis::RightStickY => Some(GamepadAxisType::RightStickX),
-        gilrs::Axis::Unknown => {
-            match raw_code {
-                46 => Some(GamepadAxisType::RightStickY),
-                _ => None,
-            }
+        gilrs::Axis::Unknown => match raw_code {
+            46 => Some(GamepadAxisType::RightStickY),
+            _ => None,
         },
         // ignore
-        gilrs::Axis::DPadX | gilrs::Axis::DPadY | gilrs::Axis::LeftZ | gilrs::Axis::RightZ | gilrs::Axis::RightStickX => None,
+        gilrs::Axis::DPadX
+        | gilrs::Axis::DPadY
+        | gilrs::Axis::LeftZ
+        | gilrs::Axis::RightZ
+        | gilrs::Axis::RightStickX => None,
     }
 }
 
-pub fn axis_dpad_to_button_filter(ev: Option<gilrs::Event>, gilrs: &mut gilrs::Gilrs) -> Option<gilrs::Event> {
-
+pub fn axis_dpad_to_button_filter(
+    ev: Option<gilrs::Event>,
+    gilrs: &mut gilrs::Gilrs,
+) -> Option<gilrs::Event> {
     let ev = ev?;
     let gamepad = gilrs.gamepad(ev.id);
 
@@ -66,7 +68,8 @@ pub fn axis_dpad_to_button_filter(ev: Option<gilrs::Event>, gilrs: &mut gilrs::G
     match ev.event {
         gilrs::EventType::AxisChanged(gilrs::Axis::Unknown, val, code) => {
             match code.into_u32() {
-                48 => { // DPadXAxis
+                48 => {
+                    // DPadXAxis
                     let mut release_left = false;
                     let mut release_right = false;
                     let mut event = None;
@@ -85,7 +88,10 @@ pub fn axis_dpad_to_button_filter(ev: Option<gilrs::Event>, gilrs: &mut gilrs::G
                             ..ev
                         });
                         event = Some(gilrs::Event {
-                            event: gilrs::EventType::ButtonPressed(gilrs::Button::DPadRight, btn_dpad_right_code),
+                            event: gilrs::EventType::ButtonPressed(
+                                gilrs::Button::DPadRight,
+                                btn_dpad_right_code,
+                            ),
                             ..ev
                         });
                     } else if val == -1.0 {
@@ -102,7 +108,10 @@ pub fn axis_dpad_to_button_filter(ev: Option<gilrs::Event>, gilrs: &mut gilrs::G
                             ..ev
                         });
                         event = Some(gilrs::Event {
-                            event: gilrs::EventType::ButtonPressed(gilrs::Button::DPadLeft, btn_dpad_left_code),
+                            event: gilrs::EventType::ButtonPressed(
+                                gilrs::Button::DPadLeft,
+                                btn_dpad_left_code,
+                            ),
                             ..ev
                         });
                     } else {
@@ -124,7 +133,10 @@ pub fn axis_dpad_to_button_filter(ev: Option<gilrs::Event>, gilrs: &mut gilrs::G
                             ..ev
                         });
                         event = Some(gilrs::Event {
-                            event: gilrs::EventType::ButtonReleased(gilrs::Button::DPadRight, btn_dpad_right_code),
+                            event: gilrs::EventType::ButtonReleased(
+                                gilrs::Button::DPadRight,
+                                btn_dpad_right_code,
+                            ),
                             ..ev
                         });
                     }
@@ -143,14 +155,18 @@ pub fn axis_dpad_to_button_filter(ev: Option<gilrs::Event>, gilrs: &mut gilrs::G
                             ..ev
                         });
                         event = Some(gilrs::Event {
-                            event: gilrs::EventType::ButtonReleased(gilrs::Button::DPadLeft, btn_dpad_left_code),
+                            event: gilrs::EventType::ButtonReleased(
+                                gilrs::Button::DPadLeft,
+                                btn_dpad_left_code,
+                            ),
                             ..ev
                         });
                     }
 
                     event
                 }
-                49 => { // DPadYAxis
+                49 => {
+                    // DPadYAxis
                     let mut release_up = false;
                     let mut release_down = false;
                     let mut event = None;
@@ -161,11 +177,18 @@ pub fn axis_dpad_to_button_filter(ev: Option<gilrs::Event>, gilrs: &mut gilrs::G
                         release_down = gamepad.state().is_pressed(btn_dpad_down_code);
 
                         gilrs.insert_event(gilrs::Event {
-                            event: gilrs::EventType::ButtonChanged(gilrs::Button::DPadUp, 1.0, btn_dpad_up_code),
+                            event: gilrs::EventType::ButtonChanged(
+                                gilrs::Button::DPadUp,
+                                1.0,
+                                btn_dpad_up_code,
+                            ),
                             ..ev
                         });
                         event = Some(gilrs::Event {
-                            event: gilrs::EventType::ButtonPressed(gilrs::Button::DPadUp, btn_dpad_up_code),
+                            event: gilrs::EventType::ButtonPressed(
+                                gilrs::Button::DPadUp,
+                                btn_dpad_up_code,
+                            ),
                             ..ev
                         });
                     } else if val == 1.0 {
@@ -182,7 +205,10 @@ pub fn axis_dpad_to_button_filter(ev: Option<gilrs::Event>, gilrs: &mut gilrs::G
                             ..ev
                         });
                         event = Some(gilrs::Event {
-                            event: gilrs::EventType::ButtonPressed(gilrs::Button::DPadDown, btn_dpad_down_code),
+                            event: gilrs::EventType::ButtonPressed(
+                                gilrs::Button::DPadDown,
+                                btn_dpad_down_code,
+                            ),
                             ..ev
                         });
                     } else {
@@ -196,11 +222,18 @@ pub fn axis_dpad_to_button_filter(ev: Option<gilrs::Event>, gilrs: &mut gilrs::G
                         }
 
                         gilrs.insert_event(gilrs::Event {
-                            event: gilrs::EventType::ButtonChanged(gilrs::Button::DPadUp, 0.0, btn_dpad_up_code),
+                            event: gilrs::EventType::ButtonChanged(
+                                gilrs::Button::DPadUp,
+                                0.0,
+                                btn_dpad_up_code,
+                            ),
                             ..ev
                         });
                         event = Some(gilrs::Event {
-                            event: gilrs::EventType::ButtonReleased(gilrs::Button::DPadUp, btn_dpad_up_code),
+                            event: gilrs::EventType::ButtonReleased(
+                                gilrs::Button::DPadUp,
+                                btn_dpad_up_code,
+                            ),
                             ..ev
                         });
                     }
@@ -219,7 +252,10 @@ pub fn axis_dpad_to_button_filter(ev: Option<gilrs::Event>, gilrs: &mut gilrs::G
                             ..ev
                         });
                         event = Some(gilrs::Event {
-                            event: gilrs::EventType::ButtonReleased(gilrs::Button::DPadDown, btn_dpad_down_code),
+                            event: gilrs::EventType::ButtonReleased(
+                                gilrs::Button::DPadDown,
+                                btn_dpad_down_code,
+                            ),
                             ..ev
                         });
                     }
@@ -228,7 +264,6 @@ pub fn axis_dpad_to_button_filter(ev: Option<gilrs::Event>, gilrs: &mut gilrs::G
                 }
                 _ => Some(ev),
             }
-
         }
         _ => Some(ev),
     }
@@ -238,25 +273,22 @@ pub fn axis_dpad_to_button_filter(ev: Option<gilrs::Event>, gilrs: &mut gilrs::G
 const PRESS_THRESHOLD: f32 = -0.6;
 const RELEASE_THRESHOLD: f32 = -0.9;
 
-pub fn axis_triggers_to_button_filter(ev: Option<gilrs::Event>, gilrs: &mut gilrs::Gilrs) -> Option<gilrs::Event> {
-
+pub fn axis_triggers_to_button_filter(
+    ev: Option<gilrs::Event>,
+    gilrs: &mut gilrs::Gilrs,
+) -> Option<gilrs::Event> {
     let ev = ev?;
     let gamepad = gilrs.gamepad(ev.id);
 
     match ev.event {
         gilrs::EventType::AxisChanged(gilrs::Axis::RightStickX, val, code) => {
-
             let left_trigger_button = gilrs::Button::C;
 
             let is_pressed = gamepad.state().is_pressed(code);
             if is_pressed {
                 if val < RELEASE_THRESHOLD {
                     gilrs.insert_event(gilrs::Event {
-                        event: gilrs::EventType::ButtonChanged(
-                            left_trigger_button,
-                            0.0,
-                            code,
-                        ),
+                        event: gilrs::EventType::ButtonChanged(left_trigger_button, 0.0, code),
                         ..ev
                     });
                     return Some(gilrs::Event {
@@ -269,11 +301,7 @@ pub fn axis_triggers_to_button_filter(ev: Option<gilrs::Event>, gilrs: &mut gilr
             } else {
                 if val > PRESS_THRESHOLD {
                     gilrs.insert_event(gilrs::Event {
-                        event: gilrs::EventType::ButtonChanged(
-                            left_trigger_button,
-                            1.0,
-                            code,
-                        ),
+                        event: gilrs::EventType::ButtonChanged(left_trigger_button, 1.0, code),
                         ..ev
                     });
                     return Some(gilrs::Event {
@@ -285,52 +313,43 @@ pub fn axis_triggers_to_button_filter(ev: Option<gilrs::Event>, gilrs: &mut gilr
                 }
             }
         }
-        gilrs::EventType::AxisChanged(gilrs::Axis::Unknown, val, code) => {
-            match code.into_u32() {
-                47 => {
+        gilrs::EventType::AxisChanged(gilrs::Axis::Unknown, val, code) => match code.into_u32() {
+            47 => {
+                let right_trigger_button = gilrs::Button::Z;
 
-                    let right_trigger_button = gilrs::Button::Z;
-
-                    let is_pressed = gamepad.state().is_pressed(code);
-                    if is_pressed {
-                        if val < RELEASE_THRESHOLD {
-                            gilrs.insert_event(gilrs::Event {
-                                event: gilrs::EventType::ButtonChanged(
-                                    right_trigger_button,
-                                    0.0,
-                                    code,
-                                ),
-                                ..ev
-                            });
-                            return Some(gilrs::Event {
-                                event: gilrs::EventType::ButtonReleased(right_trigger_button, code),
-                                ..ev
-                            });
-                        } else {
-                            return None;
-                        }
+                let is_pressed = gamepad.state().is_pressed(code);
+                if is_pressed {
+                    if val < RELEASE_THRESHOLD {
+                        gilrs.insert_event(gilrs::Event {
+                            event: gilrs::EventType::ButtonChanged(right_trigger_button, 0.0, code),
+                            ..ev
+                        });
+                        return Some(gilrs::Event {
+                            event: gilrs::EventType::ButtonReleased(right_trigger_button, code),
+                            ..ev
+                        });
                     } else {
-                        if val > PRESS_THRESHOLD {
-                            gilrs.insert_event(gilrs::Event {
-                                event: gilrs::EventType::ButtonChanged(
-                                    right_trigger_button,
-                                    1.0,
-                                    code,
-                                ),
-                                ..ev
-                            });
-                            return Some(gilrs::Event {
-                                event: gilrs::EventType::ButtonPressed(right_trigger_button, code),
-                                ..ev
-                            });
-                        } else {
-                            return None;
-                        }
+                        return None;
+                    }
+                } else {
+                    if val > PRESS_THRESHOLD {
+                        gilrs.insert_event(gilrs::Event {
+                            event: gilrs::EventType::ButtonChanged(right_trigger_button, 1.0, code),
+                            ..ev
+                        });
+                        return Some(gilrs::Event {
+                            event: gilrs::EventType::ButtonPressed(right_trigger_button, code),
+                            ..ev
+                        });
+                    } else {
+                        return None;
                     }
                 }
-                _ => { return Some(ev); },
             }
-        }
+            _ => {
+                return Some(ev);
+            }
+        },
         _ => Some(ev),
     }
 }

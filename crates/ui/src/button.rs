@@ -43,7 +43,7 @@ impl Button {
     pub fn update_state(
         &mut self,
         layout: (f32, f32, f32, f32),
-        mouse_state: (f32, f32, bool)
+        mouse_state: (f32, f32, bool),
     ) -> bool {
         let mut was_clicked = false;
 

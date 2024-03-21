@@ -1,6 +1,9 @@
 use std::collections::HashMap;
 
-use crate::{gamepad::error::{AxisSettingsError, ButtonSettingsError}, GamepadAxis, GamepadButton};
+use crate::{
+    gamepad::error::{AxisSettingsError, ButtonSettingsError},
+    GamepadAxis, GamepadButton,
+};
 
 #[derive(Default, Debug)]
 pub struct GamepadSettings {
@@ -19,7 +22,6 @@ pub struct GamepadSettings {
 }
 
 impl GamepadSettings {
-
     pub fn get_button_settings(&self, button: GamepadButton) -> &ButtonSettings {
         self.button_settings
             .get(&button)

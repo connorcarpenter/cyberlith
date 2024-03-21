@@ -8,7 +8,7 @@ use game_engine::{
 use crate::app::{
     resources::Global,
     systems::{
-        draw, resize, scene, ui, gamepad,
+        draw, gamepad, resize, scene, ui,
         ui::{ContinueButtonEvent, StartButtonEvent},
     },
 };

@@ -1,9 +1,15 @@
 use std::time::Duration;
 
-use bevy_ecs::{system::{Res, ResMut}, event::EventReader};
+use bevy_ecs::{
+    event::EventReader,
+    system::{Res, ResMut},
+};
 use bevy_log::info;
 
-use game_engine::input::{InputEvent, Key, MouseButton, GamepadButtonType, GamepadRumbleIntensity, GamepadButton, Input, RumbleManager, Joystick, JoystickType};
+use game_engine::input::{
+    GamepadButton, GamepadButtonType, GamepadRumbleIntensity, Input, InputEvent, Joystick,
+    JoystickType, Key, MouseButton, RumbleManager,
+};
 
 pub(crate) fn gamepad_system(
     input: Res<Input>,
@@ -50,20 +56,27 @@ pub(crate) fn gamepad_system(
 
     // gamepad state
     for gamepad_id in input.gamepads_iter() {
-        if input.is_pressed(GamepadButton::new(gamepad_id, GamepadButtonType::RightBumper)) {
+        if input.is_pressed(GamepadButton::new(
+            gamepad_id,
+            GamepadButtonType::RightBumper,
+        )) {
             //info!("{:?} RightBumper pressed", gamepad);
             rumble_manager.add_rumble(
                 gamepad_id,
                 Duration::from_secs(1),
                 GamepadRumbleIntensity::strong_motor(0.1),
             );
-        } else if !input.is_pressed(GamepadButton::new(gamepad_id, GamepadButtonType::RightBumper))
-        {
+        } else if !input.is_pressed(GamepadButton::new(
+            gamepad_id,
+            GamepadButtonType::RightBumper,
+        )) {
             //info!("{:?} RightBumper not pressed", gamepad);
         }
 
-        let left_joystick_pos = input.joystick_position(Joystick::new(gamepad_id, JoystickType::Left));
-        let right_joystick_pos = input.joystick_position(Joystick::new(gamepad_id, JoystickType::Right));
+        let left_joystick_pos =
+            input.joystick_position(Joystick::new(gamepad_id, JoystickType::Left));
+        let right_joystick_pos =
+            input.joystick_position(Joystick::new(gamepad_id, JoystickType::Right));
 
         // if left_joystick_pos.abs() > 0.1 {
         //     info!("INPUT: {:?} left joystick position: {:?}", gamepad_id, left_joystick_pos);

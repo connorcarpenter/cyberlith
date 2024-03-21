@@ -217,7 +217,6 @@ impl<T: 'static + Clone> Window<T> {
         let loop_func = move |event: WinitEvent<'_, T>, _: &_, control_flow: &mut _| {
             let stop_signal = stop_signal.clone();
             match event {
-
                 WinitEvent::LoopDestroyed => {
                     #[cfg(target_arch = "wasm32")]
                     {
@@ -331,15 +330,9 @@ impl<T: 'static + Clone> Window<T> {
                             let state = input.state == event::ElementState::Pressed;
                             if let Some(kind) = translate_virtual_key_code(keycode) {
                                 events.push(if state {
-                                    IncomingEvent::KeyPress {
-                                        kind,
-                                        modifiers,
-                                    }
+                                    IncomingEvent::KeyPress { kind, modifiers }
                                 } else {
-                                    IncomingEvent::KeyRelease {
-                                        kind,
-                                        modifiers,
-                                    }
+                                    IncomingEvent::KeyRelease { kind, modifiers }
                                 });
                             } else if keycode == VirtualKeyCode::LControl
                                 || keycode == VirtualKeyCode::RControl

@@ -1,4 +1,3 @@
-
 use bevy_app::{App, Plugin, PostUpdate, PreStartup, PreUpdate};
 
 use gilrs::GilrsBuilder;
@@ -10,7 +9,6 @@ pub struct GamepadPlugin;
 
 impl Plugin for GamepadPlugin {
     fn build(&self, app: &mut App) {
-
         // gilrs
         match GilrsBuilder::new()
             .with_default_filters(false)
@@ -29,7 +27,7 @@ impl Plugin for GamepadPlugin {
             }
             Err(err) => {
                 panic!("Failed to start Gilrs. {}", err);
-            },
+            }
         }
     }
 }

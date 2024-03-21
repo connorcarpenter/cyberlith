@@ -1,6 +1,6 @@
 use bevy_app::{App, Plugin, Update};
 
-use crate::{Input, InputEvent, gamepad::GamepadPlugin};
+use crate::{gamepad::GamepadPlugin, Input, InputEvent};
 
 // Plugin
 pub struct InputPlugin;

@@ -5,7 +5,7 @@ use bevy_log::LogPlugin;
 use asset_render::AssetPlugin;
 use bevy_http_client::HttpClientPlugin;
 use filesystem::FileSystemPlugin;
-use input::{InputPlugin, Input};
+use input::{Input, InputPlugin};
 use render_api::RenderApiPlugin;
 
 use crate::{
