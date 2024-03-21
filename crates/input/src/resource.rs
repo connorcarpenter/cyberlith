@@ -171,7 +171,6 @@ impl Input {
     }
 
     pub fn gamepad_button_press(&mut self, input: GamepadButton) {
-        // Returns `true` if the `input` wasn't pressed.
         self.pressed_gamepad_buttons.insert(input);
     }
 
@@ -233,6 +232,7 @@ impl Input {
 
     pub(crate) fn gamepad_axis_set(&mut self, axis: GamepadAxis, val: f32) {
         self.gamepad_axis.set(axis, val);
+        self.outgoing_actions.push(InputEvent::GamepadAxisChanged(axis.gamepad, axis.axis_type, val));
     }
 
     pub(crate) fn gamepad_button_axis_get(&self, button: GamepadButton) -> Option<f32> {

@@ -8,8 +8,8 @@ pub fn convert_button(button: gilrs::Button) -> Option<GamepadButtonType> {
     match button {
         gilrs::Button::South => Some(GamepadButtonType::South),
         gilrs::Button::East => Some(GamepadButtonType::East),
-        gilrs::Button::North => Some(GamepadButtonType::North),
-        gilrs::Button::West => Some(GamepadButtonType::West),
+        gilrs::Button::North => Some(GamepadButtonType::West), // these are swapped???
+        gilrs::Button::West => Some(GamepadButtonType::North), // these are swapped???
         gilrs::Button::C => Some(GamepadButtonType::C),
         gilrs::Button::Z => Some(GamepadButtonType::Z),
         gilrs::Button::LeftTrigger => Some(GamepadButtonType::LeftBumper),

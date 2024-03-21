@@ -46,7 +46,7 @@ pub(crate) fn gamepad_system(
     // gamepad state
     for gamepad in winit_input.gamepads_iter() {
         if winit_input.gamepad_button_is_pressed(GamepadButton::new(gamepad, GamepadButtonType::RightBumper)) {
-            info!("{:?} RightBumper pressed", gamepad);
+            //info!("{:?} RightBumper pressed", gamepad);
             rumble_requests.send(GamepadRumbleRequest::Add {
                 gamepad,
                 intensity: GamepadRumbleIntensity::strong_motor(0.1),
@@ -63,13 +63,13 @@ pub(crate) fn gamepad_system(
             ))
             .unwrap();
         if right_trigger > 0.01 {
-            info!("{:?} RightTrigger value is {}", gamepad, right_trigger);
+            //info!("{:?} RightTrigger value is {}", gamepad, right_trigger);
         }
 
         let left_stick_x = winit_input.gamepad_axis_get(GamepadAxis::new(gamepad, GamepadAxisType::LeftStickX))
             .unwrap();
         if left_stick_x.abs() > 0.01 {
-            info!("{:?} LeftStickX value is {}", gamepad, left_stick_x);
+            //info!("{:?} LeftStickX value is {}", gamepad, left_stick_x);
         }
     }
 }
