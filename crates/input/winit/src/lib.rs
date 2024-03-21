@@ -1,4 +1,4 @@
-mod action;
+mod input_event;
 mod cursor_icon;
 mod incoming_event;
 mod is_button;
@@ -8,7 +8,7 @@ mod mouse_button;
 mod plugin;
 mod resource;
 
-pub use action::*;
+pub use input_event::*;
 pub use cursor_icon::*;
 pub use incoming_event::*;
 pub use key::*;

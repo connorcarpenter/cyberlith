@@ -13,14 +13,16 @@ use crate::{is_button::IsButton, IncomingEvent, InputEvent, Key, MouseButton};
 pub struct WinitInput {
     mouse_offset: Vec2,
     mouse_coords: Vec2,
-    pressed_mouse_buttons: HashSet<MouseButton>,
+    mouse_delta: Vec2,
     mouse_scroll_y: f32,
-    last_mouse_position: Vec2,
-    keys: HashSet<Key>,
+    pressed_mouse_buttons: HashSet<MouseButton>,
+    pressed_keys: HashSet<Key>,
     outgoing_actions: Vec<InputEvent>,
     enabled: bool,
+
+    last_mouse_position: Vec2,
     has_canvas_props: bool,
-    mouse_delta: Vec2,
+
 }
 
 impl WinitInput {
@@ -31,7 +33,7 @@ impl WinitInput {
             mouse_offset: Vec2::ZERO,
             mouse_scroll_y: 0.0,
             last_mouse_position: Vec2::ZERO,
-            keys: HashSet::new(),
+            pressed_keys: HashSet::new(),
             outgoing_actions: Vec::new(),
             enabled: false,
             has_canvas_props: false,
@@ -47,6 +49,14 @@ impl WinitInput {
         }
     }
 
+    pub fn mouse_position(&self) -> &Vec2 {
+        &self.mouse_coords
+    }
+
+    pub fn is_pressed<T: IsButton>(&self, button: T) -> bool {
+        button.is_pressed(&self.pressed_mouse_buttons, &self.pressed_keys)
+    }
+
     pub fn has_canvas_properties(&self) -> bool {
         self.has_canvas_props
     }
@@ -55,14 +65,6 @@ impl WinitInput {
         self.mouse_offset.x = offset_x;
         self.mouse_offset.y = offset_y;
         self.has_canvas_props = true;
-    }
-
-    pub fn mouse_position(&self) -> &Vec2 {
-        &self.mouse_coords
-    }
-
-    pub fn is_pressed<T: IsButton>(&self, button: T) -> bool {
-        button.is_pressed(&self.pressed_mouse_buttons, &self.keys)
     }
 
     pub fn set_enabled(&mut self, enabled: bool) {
@@ -154,18 +156,18 @@ impl WinitInput {
                     if *handled {
                         continue;
                     }
-                    if !self.keys.contains(kind) {
+                    if !self.pressed_keys.contains(kind) {
                         self.outgoing_actions.push(InputEvent::KeyPress(*kind));
-                        self.keys.insert(*kind);
+                        self.pressed_keys.insert(*kind);
                     }
                 }
                 IncomingEvent::KeyRelease { kind, handled, .. } => {
                     if *handled {
                         continue;
                     }
-                    if self.keys.contains(kind) {
+                    if self.pressed_keys.contains(kind) {
                         self.outgoing_actions.push(InputEvent::KeyRelease(*kind));
-                        self.keys.remove(kind);
+                        self.pressed_keys.remove(kind);
                     }
                 }
                 IncomingEvent::MouseEnter => {}

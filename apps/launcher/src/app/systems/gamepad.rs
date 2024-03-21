@@ -1,20 +1,44 @@
+use bevy_ecs::event::EventReader;
 use bevy_ecs::system::{NonSend, Res};
 use bevy_log::info;
 
-use game_engine::input::gilrs::{GamepadButtonType, GamepadAxisType, GamepadAxis, Axis, GamepadButton, Gamepads, InputGilrs};
+use game_engine::input::{gilrs::{GamepadButtonType, GamepadAxisType, GamepadAxis, Axis, GamepadButton, Gamepads, InputGilrs}, winit::WinitInput};
+use game_engine::input::winit::{InputEvent, Key, MouseButton};
 
 pub(crate) fn gamepad_system(
+    winit_input: Res<WinitInput>,
+    mut winit_input_events: EventReader<InputEvent>,
+
     gamepads: Res<Gamepads>,
     button_inputs: NonSend<InputGilrs>,
     button_axes: Res<Axis<GamepadButton>>,
     axes: Res<Axis<GamepadAxis>>,
 ) {
+    // winit events
+    for event in winit_input_events.read() {
+        match event {
+            InputEvent::MouseClick(_, _) => {}
+            InputEvent::MouseRelease(_) => {}
+            InputEvent::MouseMoved => {}
+            InputEvent::MouseDragged(_, _, _) => {}
+            InputEvent::MiddleMouseScroll(_) => {}
+            InputEvent::KeyPress(_) => {}
+            InputEvent::KeyRelease(_) => {}
+        }
+    }
+
+    // winit state
+    let space_pressed = winit_input.is_pressed(Key::Space);
+    let mouse_pos = winit_input.mouse_position();
+    let left_btn_pressed = winit_input.is_pressed(MouseButton::Left);
+
+
     for gamepad in gamepads.iter() {
-        if button_inputs.just_pressed(GamepadButton::new(gamepad, GamepadButtonType::South)) {
-            info!("{:?} just pressed South", gamepad);
-        } else if button_inputs.just_released(GamepadButton::new(gamepad, GamepadButtonType::South))
+        if button_inputs.is_pressed(GamepadButton::new(gamepad, GamepadButtonType::South)) {
+            info!("{:?} South not pressed", gamepad);
+        } else if !button_inputs.is_pressed(GamepadButton::new(gamepad, GamepadButtonType::South))
         {
-            info!("{:?} just released South", gamepad);
+            info!("{:?} South not pressed", gamepad);
         }
 
         let right_trigger = button_axes

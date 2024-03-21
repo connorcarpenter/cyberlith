@@ -80,64 +80,31 @@ impl Plugin for GilrsPlugin {
 pub struct InputGilrs {
     gilrs: Gilrs,
 
-    pressed: HashSet<GamepadButton>,
-    just_pressed: HashSet<GamepadButton>,
-    just_released: HashSet<GamepadButton>,
+    pressed_gamepad_buttons: HashSet<GamepadButton>,
 }
 
 impl InputGilrs {
     pub fn new(gilrs: Gilrs) -> Self {
         Self {
             gilrs,
-            pressed: HashSet::new(),
-            just_pressed: HashSet::new(),
-            just_released: HashSet::new(),
+            pressed_gamepad_buttons: HashSet::new(),
         }
     }
 
-    /// Registers a press for the given `input`.
     pub fn press(&mut self, input: GamepadButton) {
         // Returns `true` if the `input` wasn't pressed.
-        if self.pressed.insert(input) {
-            self.just_pressed.insert(input);
-        }
+        self.pressed_gamepad_buttons.insert(input);
     }
 
-    /// Returns `true` if the `input` has been pressed.
-    pub fn pressed(&self, input: GamepadButton) -> bool {
-        self.pressed.contains(&input)
-    }
-
-    /// Registers a release for the given `input`.
     pub fn release(&mut self, input: GamepadButton) {
-        // Returns `true` if the `input` was pressed.
-        if self.pressed.remove(&input) {
-            self.just_released.insert(input);
-        }
+        self.pressed_gamepad_buttons.remove(&input);
     }
 
-    /// Returns `true` if the `input` has just been pressed.
-    pub fn just_pressed(&self, input: GamepadButton) -> bool {
-        self.just_pressed.contains(&input)
+    pub fn is_pressed(&self, input: GamepadButton) -> bool {
+        self.pressed_gamepad_buttons.contains(&input)
     }
 
-    /// Returns `true` if the `input` has just been released.
-    pub fn just_released(&self, input: GamepadButton) -> bool {
-        self.just_released.contains(&input)
-    }
-
-    /// Clears the `pressed`, `just_pressed` and `just_released` data of the `input`.
     pub fn reset(&mut self, input: GamepadButton) {
-        self.pressed.remove(&input);
-        self.just_pressed.remove(&input);
-        self.just_released.remove(&input);
-    }
-
-    /// Clears the `just pressed` and `just released` data for every input.
-    ///
-    /// See also [`ButtonInput::reset_all`] for a full reset.
-    pub fn clear(&mut self) {
-        self.just_pressed.clear();
-        self.just_released.clear();
+        self.pressed_gamepad_buttons.remove(&input);
     }
 }
