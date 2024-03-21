@@ -3,25 +3,34 @@ use crate::gamepad::{GamepadAxisType, GamepadButtonType};
 
 pub fn convert_button(button: gilrs::Button) -> Option<GamepadButtonType> {
     match button {
+
+        // face buttons
         gilrs::Button::South => Some(GamepadButtonType::South),
         gilrs::Button::East => Some(GamepadButtonType::East),
         gilrs::Button::North => Some(GamepadButtonType::North),
         gilrs::Button::West => Some(GamepadButtonType::West),
-        gilrs::Button::C => Some(GamepadButtonType::C),
-        gilrs::Button::Z => Some(GamepadButtonType::Z),
+
+        // triggers
+
+        // bumpers
         gilrs::Button::LeftTrigger => Some(GamepadButtonType::LeftBumper),
         gilrs::Button::RightTrigger => Some(GamepadButtonType::RightBumper),
+
+        // center buttons
+        gilrs::Button::LeftTrigger2 => Some(GamepadButtonType::Select),
+        gilrs::Button::RightTrigger2 => Some(GamepadButtonType::Start),
         gilrs::Button::Select => Some(GamepadButtonType::Mode),
+
+        // thumbsticks
         gilrs::Button::Start => Some(GamepadButtonType::LeftThumb),
-        gilrs::Button::Mode => Some(GamepadButtonType::Mode),
         gilrs::Button::LeftThumb => Some(GamepadButtonType::RightThumb),
-        gilrs::Button::RightThumb => Some(GamepadButtonType::RightThumb),
+
+        // dpad
         gilrs::Button::DPadUp => Some(GamepadButtonType::DPadUp),
         gilrs::Button::DPadDown => Some(GamepadButtonType::DPadDown),
         gilrs::Button::DPadLeft => Some(GamepadButtonType::DPadLeft),
         gilrs::Button::DPadRight => Some(GamepadButtonType::DPadRight),
-        gilrs::Button::LeftTrigger2 => Some(GamepadButtonType::Select),
-        gilrs::Button::RightTrigger2 => Some(GamepadButtonType::Start),
+
         gilrs::Button::Unknown => None,
     }
 }
@@ -39,11 +48,8 @@ pub fn convert_axis(axis: gilrs::Axis, raw_code: u32) -> Option<GamepadAxisType>
                 _ => None,
             }
         },
-        gilrs::Axis::LeftZ | gilrs::Axis::RightZ => None,
-        // The `axis_dpad_to_button` gilrs filter should filter out all DPadX and DPadY events. If
-        // it doesn't then we probably need an entry added to the following repo and an update to
-        // GilRs to use the updated database: https://github.com/gabomdq/SDL_GameControllerDB
-        gilrs::Axis::DPadX | gilrs::Axis::DPadY => None,
+        // ignore
+        gilrs::Axis::DPadX | gilrs::Axis::DPadY | gilrs::Axis::LeftZ | gilrs::Axis::RightZ => None,
     }
 }
 

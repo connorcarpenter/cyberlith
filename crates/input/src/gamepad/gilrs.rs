@@ -1,4 +1,5 @@
 use bevy_ecs::system::{NonSend, NonSendMut, ResMut};
+use bevy_log::info;
 
 use gilrs::{EventType, Filter, Gilrs};
 
@@ -6,7 +7,7 @@ use crate::{
     gamepad::{
         GamepadAxis, GamepadButton, GamepadInfo,
         converter::{
-            axis_dpad_to_button_filter, convert_axis, convert_button, convert_gamepad_id
+            axis_dpad_to_button_filter, convert_axis, convert_button, convert_gamepad_id, axis_triggers_to_button_filter
         },
         rumble::RunningRumbleEffects,
     },
@@ -56,15 +57,27 @@ impl GilrsWrapper {
         mut input_winit: ResMut<Input>,
     ) {
         let mut gilrs = &mut input_gilrs.gilrs;
+
         while let Some(gilrs_event) = gilrs
             .next_event()
-            .filter_ev(&axis_dpad_to_button_filter, &mut gilrs)
         {
+            // info!("---");
+            // info!("GILRS raw event: {:?}", gilrs_event);
+
+            let Some(gilrs_event) = gilrs_event
+                .filter_ev(&axis_dpad_to_button_filter, &mut gilrs)
+                .filter_ev(&axis_triggers_to_button_filter, &mut gilrs)
+            else {
+                // info!("GILRS fil event: NONE");
+                continue;
+            };
+
+            // info!("GILRS fil event: {:?}", gilrs_event);
+
             gilrs.update(&gilrs_event);
 
             let gamepad = convert_gamepad_id(gilrs_event.id);
-            //info!("---");
-            //info!("GILRS event: {:?}", gilrs_event.event);
+
             match gilrs_event.event {
                 EventType::Connected => {
                     let pad = gilrs.gamepad(gilrs_event.id);

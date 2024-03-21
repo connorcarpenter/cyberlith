@@ -2,19 +2,25 @@ use crate::GamepadId;
 
 /// An array of every [`GamepadButtonType`] variant.
 pub(crate) const ALL_BUTTON_TYPES: [GamepadButtonType; 17] = [
+
     GamepadButtonType::South,
     GamepadButtonType::East,
     GamepadButtonType::North,
     GamepadButtonType::West,
-    GamepadButtonType::C,
-    GamepadButtonType::Z,
+
+    GamepadButtonType::LeftTrigger,
+    GamepadButtonType::RightTrigger,
+
     GamepadButtonType::LeftBumper,
     GamepadButtonType::RightBumper,
+
     GamepadButtonType::Select,
     GamepadButtonType::Start,
     GamepadButtonType::Mode,
+
     GamepadButtonType::LeftThumb,
     GamepadButtonType::RightThumb,
+
     GamepadButtonType::DPadUp,
     GamepadButtonType::DPadDown,
     GamepadButtonType::DPadLeft,
@@ -40,15 +46,16 @@ pub enum GamepadButtonType {
     /// The left action button of the action pad (i.e. PS: Square, Xbox: X).
     West,
 
-    /// The C button.
-    C,
-    /// The Z button.
-    Z,
+    /// The left trigger.
+    LeftTrigger,
+    /// The right trigger.
+    RightTrigger,
 
     /// The left bumper.
     LeftBumper,
     /// The right bumper.
     RightBumper,
+
     /// The select button.
     Select,
     /// The start button.
