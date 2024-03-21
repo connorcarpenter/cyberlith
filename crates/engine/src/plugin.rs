@@ -39,6 +39,6 @@ impl Plugin for EnginePlugin {
     }
 }
 
-fn engine_startup(mut winit_input: ResMut<Input>) {
-    winit_input.set_enabled(true);
+fn engine_startup(mut input: ResMut<Input>) {
+    input.set_enabled(true);
 }
