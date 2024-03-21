@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use bevy_ecs::{system::{Res, ResMut}, event::{EventReader, EventWriter}};
+use bevy_ecs::{system::{Res, ResMut}, event::EventReader};
 use bevy_log::info;
 
 use game_engine::input::{InputEvent, Key, MouseButton, GamepadButtonType, GamepadRumbleIntensity, GamepadAxisType, GamepadAxis, GamepadButton, Input, RumbleManager};
