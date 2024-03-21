@@ -47,8 +47,8 @@ impl Plugin for GilrsPlugin {
             .add_systems(
                 PreUpdate,
                 (
-                    gamepad_event_system,
                     gamepad_connection_system.after(gamepad_event_system),
+                    gamepad_event_system,
                     gamepad_button_event_system
                         .after(gamepad_event_system)
                         .after(gamepad_connection_system),

@@ -176,14 +176,10 @@ pub enum GamepadButtonType {
     /// The Z button.
     Z,
 
-    /// The first left trigger.
-    LeftTrigger,
-    /// The second left trigger.
-    LeftTrigger2,
-    /// The first right trigger.
-    RightTrigger,
-    /// The second right trigger.
-    RightTrigger2,
+    /// The left bumper.
+    LeftBumper,
+    /// The right bumper.
+    RightBumper,
     /// The select button.
     Select,
     /// The start button.
@@ -259,15 +255,15 @@ pub enum GamepadAxisType {
     LeftStickX,
     /// The vertical value of the left stick.
     LeftStickY,
-    /// The value of the left `Z` button.
-    LeftZ,
+    /// The value of the left trigger button.
+    LeftTrigger,
 
     /// The horizontal value of the right stick.
     RightStickX,
     /// The vertical value of the right stick.
     RightStickY,
-    /// The value of the right `Z` button.
-    RightZ,
+    /// The value of the right trigger button.
+    RightTrigger,
 
     /// Non-standard support for other axis types (i.e. HOTAS sliders, potentiometers, etc).
     Other(u8),
@@ -1147,17 +1143,15 @@ pub fn gamepad_event_system(
 }
 
 /// An array of every [`GamepadButtonType`] variant.
-const ALL_BUTTON_TYPES: [GamepadButtonType; 19] = [
+const ALL_BUTTON_TYPES: [GamepadButtonType; 17] = [
     GamepadButtonType::South,
     GamepadButtonType::East,
     GamepadButtonType::North,
     GamepadButtonType::West,
     GamepadButtonType::C,
     GamepadButtonType::Z,
-    GamepadButtonType::LeftTrigger,
-    GamepadButtonType::LeftTrigger2,
-    GamepadButtonType::RightTrigger,
-    GamepadButtonType::RightTrigger2,
+    GamepadButtonType::LeftBumper,
+    GamepadButtonType::RightBumper,
     GamepadButtonType::Select,
     GamepadButtonType::Start,
     GamepadButtonType::Mode,
@@ -1173,10 +1167,10 @@ const ALL_BUTTON_TYPES: [GamepadButtonType; 19] = [
 const ALL_AXIS_TYPES: [GamepadAxisType; 6] = [
     GamepadAxisType::LeftStickX,
     GamepadAxisType::LeftStickY,
-    GamepadAxisType::LeftZ,
+    GamepadAxisType::LeftTrigger,
     GamepadAxisType::RightStickX,
     GamepadAxisType::RightStickY,
-    GamepadAxisType::RightZ,
+    GamepadAxisType::RightTrigger,
 ];
 
 /// The intensity at which a gamepad's force-feedback motors may rumble.

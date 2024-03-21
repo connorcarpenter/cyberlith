@@ -12,10 +12,8 @@ pub fn convert_button(button: gilrs::Button) -> Option<GamepadButtonType> {
         gilrs::Button::West => Some(GamepadButtonType::West),
         gilrs::Button::C => Some(GamepadButtonType::C),
         gilrs::Button::Z => Some(GamepadButtonType::Z),
-        gilrs::Button::LeftTrigger => Some(GamepadButtonType::LeftTrigger),
-        gilrs::Button::LeftTrigger2 => Some(GamepadButtonType::LeftTrigger2),
-        gilrs::Button::RightTrigger => Some(GamepadButtonType::RightTrigger),
-        gilrs::Button::RightTrigger2 => Some(GamepadButtonType::RightTrigger2),
+        gilrs::Button::LeftTrigger => Some(GamepadButtonType::LeftBumper),
+        gilrs::Button::RightTrigger => Some(GamepadButtonType::RightBumper),
         gilrs::Button::Select => Some(GamepadButtonType::Select),
         gilrs::Button::Start => Some(GamepadButtonType::Start),
         gilrs::Button::Mode => Some(GamepadButtonType::Mode),
@@ -25,7 +23,7 @@ pub fn convert_button(button: gilrs::Button) -> Option<GamepadButtonType> {
         gilrs::Button::DPadDown => Some(GamepadButtonType::DPadDown),
         gilrs::Button::DPadLeft => Some(GamepadButtonType::DPadLeft),
         gilrs::Button::DPadRight => Some(GamepadButtonType::DPadRight),
-        gilrs::Button::Unknown => None,
+        _ => None,
     }
 }
 
@@ -33,10 +31,10 @@ pub fn convert_axis(axis: gilrs::Axis) -> Option<GamepadAxisType> {
     match axis {
         gilrs::Axis::LeftStickX => Some(GamepadAxisType::LeftStickX),
         gilrs::Axis::LeftStickY => Some(GamepadAxisType::LeftStickY),
-        gilrs::Axis::LeftZ => Some(GamepadAxisType::LeftZ),
+        gilrs::Axis::LeftZ => Some(GamepadAxisType::LeftTrigger),
         gilrs::Axis::RightStickX => Some(GamepadAxisType::RightStickX),
         gilrs::Axis::RightStickY => Some(GamepadAxisType::RightStickY),
-        gilrs::Axis::RightZ => Some(GamepadAxisType::RightZ),
+        gilrs::Axis::RightZ => Some(GamepadAxisType::RightTrigger),
         // The `axis_dpad_to_button` gilrs filter should filter out all DPadX and DPadY events. If
         // it doesn't then we probably need an entry added to the following repo and an update to
         // GilRs to use the updated database: https://github.com/gabomdq/SDL_GameControllerDB

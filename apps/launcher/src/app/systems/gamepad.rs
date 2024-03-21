@@ -11,7 +11,6 @@ pub(crate) fn gamepad_system(
 
     gamepads: Res<Gamepads>,
     button_inputs: NonSend<InputGilrs>,
-    button_axes: Res<Axis<GamepadButton>>,
     axes: Res<Axis<GamepadAxis>>,
 ) {
     // winit events
@@ -34,21 +33,21 @@ pub(crate) fn gamepad_system(
 
 
     for gamepad in gamepads.iter() {
-        if button_inputs.is_pressed(GamepadButton::new(gamepad, GamepadButtonType::South)) {
-            info!("{:?} South pressed", gamepad);
-        } else if !button_inputs.is_pressed(GamepadButton::new(gamepad, GamepadButtonType::South))
+        if button_inputs.is_pressed(GamepadButton::new(gamepad, GamepadButtonType::RightBumper)) {
+            info!("{:?} RightBumper pressed", gamepad);
+        } else if !button_inputs.is_pressed(GamepadButton::new(gamepad, GamepadButtonType::RightBumper))
         {
-            info!("{:?} South not pressed", gamepad);
+            info!("{:?} RightBumper not pressed", gamepad);
         }
 
-        let right_trigger = button_axes
-            .get(GamepadButton::new(
+        let right_trigger = axes
+            .get(GamepadAxis::new(
                 gamepad,
-                GamepadButtonType::RightTrigger2,
+                GamepadAxisType::RightTrigger,
             ))
             .unwrap();
-        if right_trigger.abs() > 0.01 {
-            info!("{:?} RightTrigger2 value is {}", gamepad, right_trigger);
+        if right_trigger > 0.01 {
+            info!("{:?} RightTrigger value is {}", gamepad, right_trigger);
         }
 
         let left_stick_x = axes
