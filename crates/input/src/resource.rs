@@ -8,7 +8,7 @@ use bevy_log::info;
 
 use math::Vec2;
 
-use crate::{is_button::IsButton, IncomingEvent, InputEvent, Key, MouseButton, gamepad::{GamepadId, GamepadButtonType}, GamepadSettings};
+use crate::{is_button::IsButton, IncomingEvent, InputEvent, Key, MouseButton, gamepad::{GamepadId, GamepadButtonType}, GamepadSettings, Joystick};
 use crate::gamepad::{ALL_AXIS_TYPES, ALL_BUTTON_TYPES, Axis, GamepadAxis, GamepadButton, GamepadInfo, Gamepads};
 
 #[derive(Resource)]
@@ -174,6 +174,32 @@ impl Input {
 
     // gamepad stuff
 
+    pub fn joystick_position(&self, joystick: Joystick) -> Vec2 {
+        let Joystick {
+            gamepad,
+            joystick_type,
+        } = joystick;
+
+        let x_axis = joystick_type.x_axis();
+        let y_axis = joystick_type.y_axis();
+
+        let x = self.gamepad_axis.get(GamepadAxis::new(gamepad, x_axis)).unwrap_or(0.0);
+        let y = self.gamepad_axis.get(GamepadAxis::new(gamepad, y_axis)).unwrap_or(0.0);
+
+        // INVERT Y
+        cfg_if! {
+            if #[cfg(target_arch = "wasm32")] {
+                use crate::JoystickType;
+                let y = if JoystickType::Left == joystick_type { -y } else { y };
+            }
+            else {
+                let y = -y;
+            }
+        }
+
+        Vec2::new(x, y)
+    }
+
     pub fn gamepad_settings(&self) -> &GamepadSettings {
         &self.gamepad_settings
     }
@@ -182,12 +208,12 @@ impl Input {
         &mut self.gamepad_settings
     }
 
-    pub fn gamepad_axis_get(&self, axis: GamepadAxis) -> Option<f32> {
-        self.gamepad_axis.get(axis)
-    }
-
     pub fn gamepads_iter(&self) -> impl Iterator<Item = GamepadId> + '_ {
         self.gamepads.iter()
+    }
+
+    pub(crate) fn gamepad_axis_get(&self, axis: GamepadAxis) -> Option<f32> {
+        self.gamepad_axis.get(axis)
     }
 
     pub(crate) fn gamepad_button_press(&mut self, input: GamepadButton) {
@@ -244,7 +270,9 @@ impl Input {
 
     pub(crate) fn gamepad_axis_set(&mut self, axis: GamepadAxis, val: f32) {
         self.gamepad_axis.set(axis, val);
-        self.outgoing_actions.push(InputEvent::GamepadAxisChanged(axis.gamepad, axis.axis_type, val));
+        let joystick_type = axis.axis_type.to_joystick();
+        let joystick_position = self.joystick_position(Joystick::new(axis.gamepad, joystick_type));
+        self.outgoing_actions.push(InputEvent::GamepadJoystickMoved(axis.gamepad, joystick_type, joystick_position));
     }
 
     pub(crate) fn gamepad_button_axis_get(&self, button: GamepadButton) -> Option<f32> {

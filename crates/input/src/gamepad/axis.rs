@@ -1,16 +1,51 @@
 //! The generic axis type.
 
 use std::{hash::Hash, collections::HashMap};
+
 use crate::GamepadId;
 
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub struct Joystick {
+    /// The gamepad on which the joystick is located on.
+    pub gamepad: GamepadId,
+    /// The type of the axis.
+    pub joystick_type: JoystickType,
+}
+
+impl Joystick {
+    pub fn new(gamepad: GamepadId, joystick_type: JoystickType) -> Self {
+        Self { gamepad, joystick_type }
+    }
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub enum JoystickType {
+    Left,
+    Right,
+}
+
+impl JoystickType {
+    pub(crate) fn x_axis(&self) -> GamepadAxisType {
+        match self {
+            JoystickType::Left => GamepadAxisType::LeftStickX,
+            JoystickType::Right => GamepadAxisType::RightStickX,
+        }
+    }
+
+    pub(crate) fn y_axis(&self) -> GamepadAxisType {
+        match self {
+            JoystickType::Left => GamepadAxisType::LeftStickY,
+            JoystickType::Right => GamepadAxisType::RightStickY,
+        }
+    }
+}
+
 /// An array of every [`GamepadAxisType`] variant.
-pub(crate) const ALL_AXIS_TYPES: [GamepadAxisType; 6] = [
+pub(crate) const ALL_AXIS_TYPES: [GamepadAxisType; 4] = [
     GamepadAxisType::LeftStickX,
     GamepadAxisType::LeftStickY,
-    GamepadAxisType::LeftTrigger,
     GamepadAxisType::RightStickX,
     GamepadAxisType::RightStickY,
-    GamepadAxisType::RightTrigger,
 ];
 
 /// A type of a [`GamepadAxis`].
@@ -21,23 +56,29 @@ pub(crate) const ALL_AXIS_TYPES: [GamepadAxisType; 6] = [
 /// [`GamepadAxisChangedEvent`]. It is also used in the [`GamepadAxis`]
 /// which in turn is used to create the [`Axis<GamepadAxis>`] `bevy` resource.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub enum GamepadAxisType {
+pub(crate) enum GamepadAxisType {
     /// The horizontal value of the left stick.
     LeftStickX,
     /// The vertical value of the left stick.
     LeftStickY,
-    /// The value of the left trigger button.
-    LeftTrigger,
 
     /// The horizontal value of the right stick.
     RightStickX,
     /// The vertical value of the right stick.
     RightStickY,
-    /// The value of the right trigger button.
-    RightTrigger,
 
     /// Non-standard support for other axis types (i.e. HOTAS sliders, potentiometers, etc).
     Other(u8),
+}
+
+impl GamepadAxisType {
+    pub fn to_joystick(&self) -> JoystickType {
+        match self {
+            GamepadAxisType::LeftStickX | GamepadAxisType::LeftStickY => JoystickType::Left,
+            GamepadAxisType::RightStickX | GamepadAxisType::RightStickY => JoystickType::Right,
+            GamepadAxisType::Other(_) => panic!("Cannot convert `GamepadAxisType::Other` to `JoystickType`"),
+        }
+    }
 }
 
 /// An axis of a [`GamepadId`].
@@ -51,7 +92,7 @@ pub enum GamepadAxisType {
 ///
 /// The gamepad axes resources are updated inside of the [`gamepad_axis_event_system`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub struct GamepadAxis {
+pub(crate) struct GamepadAxis {
     /// The gamepad on which the axis is located on.
     pub gamepad: GamepadId,
     /// The type of the axis.

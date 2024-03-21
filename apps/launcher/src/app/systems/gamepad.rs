@@ -3,7 +3,7 @@ use std::time::Duration;
 use bevy_ecs::{system::{Res, ResMut}, event::EventReader};
 use bevy_log::info;
 
-use game_engine::input::{InputEvent, Key, MouseButton, GamepadButtonType, GamepadRumbleIntensity, GamepadAxisType, GamepadAxis, GamepadButton, Input, RumbleManager};
+use game_engine::input::{InputEvent, Key, MouseButton, GamepadButtonType, GamepadRumbleIntensity, GamepadButton, Input, RumbleManager, Joystick, JoystickType};
 
 pub(crate) fn gamepad_system(
     winit_input: Res<Input>,
@@ -36,9 +36,9 @@ pub(crate) fn gamepad_system(
                 info!("INPUT: {:?} released", btn);
                 info!("---");
             }
-            InputEvent::GamepadAxisChanged(_id, axis, value) => {
-                info!("INPUT: {:?} changed to {}", axis, value);
-                info!("---");
+            InputEvent::GamepadJoystickMoved(_id, joystick, value) => {
+                info!("INPUT: {:?} move to {}", joystick, value);
+                // info!("---");
             }
         }
     }
@@ -62,19 +62,14 @@ pub(crate) fn gamepad_system(
             //info!("{:?} RightBumper not pressed", gamepad);
         }
 
-        let right_trigger = winit_input.gamepad_axis_get(GamepadAxis::new(
-            gamepad_id,
-            GamepadAxisType::RightTrigger,
-            ))
-            .unwrap();
-        if right_trigger > 0.01 {
-            //info!("{:?} RightTrigger value is {}", gamepad, right_trigger);
-        }
+        let left_joystick_pos = winit_input.joystick_position(Joystick::new(gamepad_id, JoystickType::Left));
+        let right_joystick_pos = winit_input.joystick_position(Joystick::new(gamepad_id, JoystickType::Right));
 
-        let left_stick_x = winit_input.gamepad_axis_get(GamepadAxis::new(gamepad_id, GamepadAxisType::LeftStickX))
-            .unwrap();
-        if left_stick_x.abs() > 0.01 {
-            //info!("{:?} LeftStickX value is {}", gamepad, left_stick_x);
-        }
+        // if left_joystick_pos.abs() > 0.1 {
+        //     info!("INPUT: {:?} left joystick position: {:?}", gamepad_id, left_joystick_pos);
+        // }
+        // if right_joystick_pos.abs() > 0.1 {
+        //     info!("INPUT: {:?} right joystick position: {:?}", gamepad_id, right_joystick_pos);
+        // }
     }
 }

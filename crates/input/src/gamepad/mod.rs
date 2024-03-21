@@ -13,8 +13,8 @@ mod settings;
 pub use settings::GamepadSettings;
 
 mod axis;
-pub(crate) use axis::{Axis, ALL_AXIS_TYPES};
-pub use axis::{GamepadAxisType, GamepadAxis};
+pub(crate) use axis::{Axis, ALL_AXIS_TYPES, GamepadAxisType, GamepadAxis, };
+pub use axis::{Joystick, JoystickType};
 
 mod button;
 pub(crate) use button::ALL_BUTTON_TYPES;
