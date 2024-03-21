@@ -1,10 +1,35 @@
 use bevy_ecs::system::{NonSend, NonSendMut, ResMut};
 
-use gilrs::{EventType, Filter};
+use gilrs::{EventType, Filter, Gilrs};
 
 use crate::{gamepad::{converter::{axis_dpad_to_button_filter, convert_axis, convert_button, convert_gamepad_id}, gamepad::{
     GamepadInfo, GamepadAxis, GamepadButton
-}, InputGilrs}, Input};
+}}, Input};
+use crate::gamepad::rumble::RunningRumbleEffects;
+
+pub struct InputGilrs {
+    gilrs: Gilrs,
+
+    // this is in here and not the RumbleManager because it is non-Send
+    running_rumbles: RunningRumbleEffects
+}
+
+impl InputGilrs {
+    pub fn new(gilrs: Gilrs) -> Self {
+        Self {
+            gilrs,
+            running_rumbles: RunningRumbleEffects::default(),
+        }
+    }
+
+    pub fn gilrs_mut(&mut self) -> &mut Gilrs {
+        &mut self.gilrs
+    }
+
+    pub fn rumbles_mut(&mut self) -> &mut RunningRumbleEffects {
+        &mut self.running_rumbles
+    }
+}
 
 pub fn gilrs_event_startup_system(
     input_gilrs: NonSend<InputGilrs>,
