@@ -1,6 +1,8 @@
-use crate::gamepad::gamepad::{GamepadAxisType, GamepadButtonType};
+
 
 pub use gilrs::ev::filter::axis_dpad_to_button as axis_dpad_to_button_filter;
+
+use crate::gamepad::{GamepadAxisType, GamepadButtonType};
 
 pub fn convert_button(button: gilrs::Button) -> Option<GamepadButtonType> {
     match button {

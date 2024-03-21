@@ -178,6 +178,10 @@ impl Input {
         &self.gamepad_settings
     }
 
+    pub fn gamepad_settings_mut(&mut self) -> &mut GamepadSettings {
+        &mut self.gamepad_settings
+    }
+
     pub fn gamepad_button_press(&mut self, input: GamepadButton) {
         self.pressed_gamepad_buttons.insert(input);
     }

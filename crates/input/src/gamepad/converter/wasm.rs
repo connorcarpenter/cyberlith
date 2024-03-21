@@ -1,5 +1,5 @@
 
-use crate::gamepad::gamepad::{GamepadAxisType, GamepadButtonType};
+use crate::gamepad::{GamepadAxisType, GamepadButtonType};
 
 pub fn convert_button(button: gilrs::Button) -> Option<GamepadButtonType> {
     match button {

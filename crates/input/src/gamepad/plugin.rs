@@ -3,13 +3,12 @@ use bevy_app::{App, Plugin, PostUpdate, PreStartup, PreUpdate};
 
 use gilrs::GilrsBuilder;
 
-use crate::{gamepad::gilrs_system::{gilrs_event_startup_system, gilrs_event_system, InputGilrs}, RumbleManager};
+use crate::{gamepad::gilrs::GilrsWrapper, RumbleManager};
 
-/// Plugin that provides gamepad handling to an [`App`].
 #[derive(Default)]
-pub struct GilrsPlugin;
+pub struct GamepadPlugin;
 
-impl Plugin for GilrsPlugin {
+impl Plugin for GamepadPlugin {
     fn build(&self, app: &mut App) {
 
         // gilrs
@@ -21,11 +20,11 @@ impl Plugin for GilrsPlugin {
             Ok(gilrs) => {
                 app
                     // Resources
-                    .insert_non_send_resource(InputGilrs::new(gilrs))
+                    .insert_non_send_resource(GilrsWrapper::new(gilrs))
                     .init_resource::<RumbleManager>()
                     // Systems
-                    .add_systems(PreStartup, gilrs_event_startup_system)
-                    .add_systems(PreUpdate, gilrs_event_system)
+                    .add_systems(PreStartup, GilrsWrapper::startup)
+                    .add_systems(PreUpdate, GilrsWrapper::update)
                     .add_systems(PostUpdate, RumbleManager::update);
             }
             Err(err) => {

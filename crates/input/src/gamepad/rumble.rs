@@ -13,7 +13,7 @@ use gilrs::{
 
 use render_api::resources::Time;
 
-use crate::{GamepadId, gamepad::{converter::convert_gamepad_id, gilrs_system::InputGilrs}};
+use crate::{GamepadId, gamepad::{converter::convert_gamepad_id, gilrs::GilrsWrapper}};
 
 #[derive(Resource)]
 pub struct RumbleManager {
@@ -56,7 +56,7 @@ impl RumbleManager {
     // will be used as a system
     pub(crate) fn update(
         time: Res<Time>,
-        mut input_gilrs: NonSendMut<InputGilrs>,
+        mut input_gilrs: NonSendMut<GilrsWrapper>,
         mut rumble_manager: ResMut<RumbleManager>,
     ) {
         let current_time = time.get_elapsed_ms();
@@ -99,7 +99,7 @@ impl RumbleManager {
 
     fn handle_rumble_request(
         rumble_request: GamepadRumbleRequest,
-        input_gilrs: &mut InputGilrs,
+        input_gilrs: &mut GilrsWrapper,
     ) -> Result<(), RumbleError> {
         let gilrs = input_gilrs.gilrs_mut();
         match rumble_request {
