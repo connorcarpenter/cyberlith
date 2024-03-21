@@ -13,8 +13,6 @@ pub enum IncomingEvent<T: 'static + Clone> {
         position: (f64, f64),
         /// The state of modifiers.
         modifiers: Modifiers,
-        /// Whether or not this event already have been handled.
-        handled: bool,
     },
     /// Fired when a button is released or the screen is stopped being touched.
     MouseRelease {
@@ -26,8 +24,6 @@ pub enum IncomingEvent<T: 'static + Clone> {
         position: (f64, f64),
         /// The state of modifiers.
         modifiers: Modifiers,
-        /// Whether or not this event already have been handled.
-        handled: bool,
     },
     /// Fired continuously when the mouse or a finger on the screen is moved.
     MouseMotion {
@@ -41,8 +37,6 @@ pub enum IncomingEvent<T: 'static + Clone> {
         position: (f64, f64),
         /// The state of modifiers.
         modifiers: Modifiers,
-        /// Whether or not this event already have been handled.
-        handled: bool,
     },
     /// Fired continuously when the mouse wheel or equivalent is applied.
     MouseWheel {
@@ -54,8 +48,6 @@ pub enum IncomingEvent<T: 'static + Clone> {
         position: (f64, f64),
         /// The state of modifiers.
         modifiers: Modifiers,
-        /// Whether or not this event already have been handled.
-        handled: bool,
     },
     /// Fired when the mouse enters the window.
     MouseEnter,
@@ -67,8 +59,6 @@ pub enum IncomingEvent<T: 'static + Clone> {
         kind: Key,
         /// The state of modifiers.
         modifiers: Modifiers,
-        /// Whether or not this event already have been handled.
-        handled: bool,
     },
     /// Fired when a key is released.
     KeyRelease {
@@ -76,8 +66,6 @@ pub enum IncomingEvent<T: 'static + Clone> {
         kind: Key,
         /// The state of modifiers.
         modifiers: Modifiers,
-        /// Whether or not this event already have been handled.
-        handled: bool,
     },
     /// Fired when the modifiers change.
     ModifiersChange {

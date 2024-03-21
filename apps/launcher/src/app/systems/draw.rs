@@ -2,7 +2,7 @@ use bevy_ecs::system::{Query, Res, ResMut};
 
 use game_engine::{
     asset::{AssetHandle, AssetManager, UiData},
-    input::{WinitInput, MouseButton},
+    input::{Input, MouseButton},
     render::{
         base::{CpuMaterial, CpuMesh},
         components::{
@@ -17,7 +17,7 @@ use game_engine::{
 pub fn draw(
     mut render_frame: ResMut<RenderFrame>,
     mut asset_manager: ResMut<AssetManager>,
-    input: Res<WinitInput>,
+    input: Res<Input>,
     // Cameras
     cameras_q: Query<(&Camera, &Transform, &Projection, Option<&RenderLayer>)>,
     // UIs

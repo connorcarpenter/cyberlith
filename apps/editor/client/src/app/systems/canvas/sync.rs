@@ -7,7 +7,7 @@ use bevy_ecs::{
 
 use naia_bevy_client::Client;
 
-use input::WinitInput;
+use input::Input;
 
 use render_api::{
     base::{CpuMaterial, CpuMesh},
@@ -572,7 +572,7 @@ pub fn update_selection_ui(
     canvas: Res<Canvas>,
     file_manager: Res<FileManager>,
     tab_manager: Res<TabManager>,
-    input: Res<WinitInput>,
+    input: Res<Input>,
     mut input_manager: ResMut<InputManager>,
     mut transform_q: Query<&mut Transform>,
     mut visibility_q: Query<&mut Visibility>,

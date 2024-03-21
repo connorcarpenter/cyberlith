@@ -1,20 +1,19 @@
 use bevy_app::{App, Plugin, Update};
 
-use crate::{WinitInput, InputEvent};
-use crate::gamepad::GilrsPlugin;
+use crate::{Input, InputEvent, gamepad::GilrsPlugin};
 
 // Plugin
-pub struct InputWinitPlugin;
+pub struct InputPlugin;
 
-impl Plugin for InputWinitPlugin {
+impl Plugin for InputPlugin {
     fn build(&self, app: &mut App) {
         app
             .add_plugins(GilrsPlugin)
             // Resources
-            .insert_resource(WinitInput::new())
+            .insert_resource(Input::new())
             // Events
             .add_event::<InputEvent>()
             // Systems
-            .add_systems(Update, WinitInput::update);
+            .add_systems(Update, Input::update);
     }
 }

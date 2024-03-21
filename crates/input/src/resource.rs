@@ -10,7 +10,7 @@ use math::Vec2;
 use crate::{is_button::IsButton, IncomingEvent, InputEvent, Key, MouseButton};
 
 #[derive(Resource)]
-pub struct WinitInput {
+pub struct Input {
     mouse_offset: Vec2,
     mouse_coords: Vec2,
     mouse_delta: Vec2,
@@ -25,7 +25,7 @@ pub struct WinitInput {
 
 }
 
-impl WinitInput {
+impl Input {
     pub fn new() -> Self {
         Self {
             mouse_coords: Vec2::ZERO,
@@ -42,7 +42,7 @@ impl WinitInput {
     }
 
     // will be used as system
-    pub fn update(mut input: ResMut<WinitInput>, mut event_writer: EventWriter<InputEvent>) {
+    pub fn update(mut input: ResMut<Input>, mut event_writer: EventWriter<InputEvent>) {
         let events = std::mem::take(&mut input.outgoing_actions);
         for event in events {
             event_writer.send(event);
@@ -89,13 +89,9 @@ impl WinitInput {
             match event {
                 IncomingEvent::MousePress {
                     button,
-                    handled,
                     position,
                     ..
                 } => {
-                    if *handled {
-                        continue;
-                    }
                     if !self.pressed_mouse_buttons.contains(button) {
                         self.set_mouse_coords(position);
                         self.outgoing_actions
@@ -104,11 +100,8 @@ impl WinitInput {
                     }
                 }
                 IncomingEvent::MouseRelease {
-                    button, handled, ..
+                    button, ..
                 } => {
-                    if *handled {
-                        continue;
-                    }
                     if self.pressed_mouse_buttons.contains(button) {
                         self.outgoing_actions
                             .push(InputEvent::MouseRelease(*button));
@@ -116,11 +109,8 @@ impl WinitInput {
                     }
                 }
                 IncomingEvent::MouseMotion {
-                    position, handled, ..
+                    position, ..
                 } => {
-                    if *handled {
-                        continue;
-                    }
                     self.set_mouse_coords(position);
 
                     if self.mouse_coords.x as i16 != self.last_mouse_position.x as i16
@@ -152,19 +142,13 @@ impl WinitInput {
                         self.mouse_scroll_y = 0.0;
                     }
                 }
-                IncomingEvent::KeyPress { kind, handled, .. } => {
-                    if *handled {
-                        continue;
-                    }
+                IncomingEvent::KeyPress { kind, .. } => {
                     if !self.pressed_keys.contains(kind) {
                         self.outgoing_actions.push(InputEvent::KeyPress(*kind));
                         self.pressed_keys.insert(*kind);
                     }
                 }
-                IncomingEvent::KeyRelease { kind, handled, .. } => {
-                    if *handled {
-                        continue;
-                    }
+                IncomingEvent::KeyRelease { kind, .. } => {
                     if self.pressed_keys.contains(kind) {
                         self.outgoing_actions.push(InputEvent::KeyRelease(*kind));
                         self.pressed_keys.remove(kind);

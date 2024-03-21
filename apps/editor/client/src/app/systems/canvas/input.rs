@@ -6,7 +6,7 @@ use bevy_ecs::{
 
 use editor_proto::components::FileExtension;
 
-use input::{WinitInput, InputEvent};
+use input::{Input, InputEvent};
 
 use crate::app::resources::{
     canvas::Canvas, file_manager::FileManager, icon_manager::IconManager, input::InputManager,
@@ -51,7 +51,7 @@ pub fn update_mouse_hover(world: &mut World) {
         .unwrap()
         .get_file_type(&current_tab_entity);
 
-    let mouse_pos = world.get_resource::<WinitInput>().unwrap().mouse_position();
+    let mouse_pos = world.get_resource::<Input>().unwrap().mouse_position();
     let mouse_pos = *mouse_pos;
 
     if file_type == FileExtension::Icon {

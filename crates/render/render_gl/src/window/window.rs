@@ -336,13 +336,11 @@ impl<T: 'static + Clone> Window<T> {
                                     IncomingEvent::KeyPress {
                                         kind,
                                         modifiers,
-                                        handled: false,
                                     }
                                 } else {
                                     IncomingEvent::KeyRelease {
                                         kind,
                                         modifiers,
-                                        handled: false,
                                     }
                                 });
                             } else if keycode == VirtualKeyCode::LControl
@@ -384,7 +382,6 @@ impl<T: 'static + Clone> Window<T> {
                                         ),
                                         position,
                                         modifiers,
-                                        handled: false,
                                     });
                                 }
                                 winit::event::MouseScrollDelta::PixelDelta(delta) => {
@@ -393,7 +390,6 @@ impl<T: 'static + Clone> Window<T> {
                                         delta: (d.x, d.y),
                                         position,
                                         modifiers,
-                                        handled: false,
                                     });
                                 }
                             }
@@ -414,7 +410,6 @@ impl<T: 'static + Clone> Window<T> {
                                         button: b,
                                         position,
                                         modifiers,
-                                        handled: false,
                                     }
                                 } else {
                                     mouse_pressed = None;
@@ -422,7 +417,6 @@ impl<T: 'static + Clone> Window<T> {
                                         button: b,
                                         position,
                                         modifiers,
-                                        handled: false,
                                     }
                                 });
                             }
@@ -440,7 +434,6 @@ impl<T: 'static + Clone> Window<T> {
                             delta,
                             position: (p.x, p.y),
                             modifiers,
-                            handled: false,
                         });
                         cursor_pos = Some((p.x, p.y));
                     }
@@ -468,7 +461,6 @@ impl<T: 'static + Clone> Window<T> {
                                         button: MouseButton::Left,
                                         position,
                                         modifiers,
-                                        handled: false,
                                     });
                                     cursor_pos = Some(position);
                                     finger_id = Some(touch.id);
@@ -483,7 +475,6 @@ impl<T: 'static + Clone> Window<T> {
                                         button: MouseButton::Left,
                                         position,
                                         modifiers,
-                                        handled: false,
                                     });
                                     cursor_pos = None;
                                     finger_id = None;
@@ -502,7 +493,6 @@ impl<T: 'static + Clone> Window<T> {
                                         events.push(IncomingEvent::MouseWheel {
                                             position,
                                             modifiers,
-                                            handled: false,
                                             delta: (
                                                 (position.0 - p.0).abs() - (last_pos.0 - p.0).abs(),
                                                 (position.1 - p.1).abs() - (last_pos.1 - p.1).abs(),
@@ -513,7 +503,6 @@ impl<T: 'static + Clone> Window<T> {
                                             button: Some(MouseButton::Left),
                                             position,
                                             modifiers,
-                                            handled: false,
                                             delta: (
                                                 position.0 - last_pos.0,
                                                 position.1 - last_pos.1,
@@ -530,7 +519,6 @@ impl<T: 'static + Clone> Window<T> {
                                         events.push(IncomingEvent::MouseWheel {
                                             position: p,
                                             modifiers,
-                                            handled: false,
                                             delta: (
                                                 (position.0 - p.0).abs() - (last_pos.0 - p.0).abs(),
                                                 (position.1 - p.1).abs() - (last_pos.1 - p.1).abs(),
