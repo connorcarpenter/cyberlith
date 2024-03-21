@@ -8,7 +8,7 @@ use bevy_log::info;
 
 use math::Vec2;
 
-use crate::{is_button::IsButton, IncomingEvent, InputEvent, Key, MouseButton, gamepad::{GamepadId, GamepadButtonType}};
+use crate::{is_button::IsButton, IncomingEvent, InputEvent, Key, MouseButton, gamepad::{GamepadId, GamepadButtonType}, GamepadSettings};
 use crate::gamepad::{ALL_AXIS_TYPES, ALL_BUTTON_TYPES, Axis, GamepadAxis, GamepadButton, GamepadInfo, Gamepads};
 
 #[derive(Resource)]
@@ -25,6 +25,7 @@ pub struct Input {
     last_mouse_position: Vec2,
     has_canvas_props: bool,
 
+    gamepad_settings: GamepadSettings,
     gamepads: Gamepads,
     gamepad_axis: Axis<GamepadAxis>,
     gamepad_button_axis: Axis<GamepadButton>,
@@ -45,6 +46,7 @@ impl Input {
             has_canvas_props: false,
             mouse_delta: Vec2::ZERO,
 
+            gamepad_settings: GamepadSettings::default(),
             gamepads: Gamepads::default(),
             gamepad_axis: Axis::default(),
             gamepad_button_axis: Axis::default(),
@@ -168,6 +170,12 @@ impl Input {
                 _ => {}
             }
         }
+    }
+
+    // gamepad stuff
+
+    pub fn gamepad_settings(&self) -> &GamepadSettings {
+        &self.gamepad_settings
     }
 
     pub fn gamepad_button_press(&mut self, input: GamepadButton) {

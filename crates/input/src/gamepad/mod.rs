@@ -32,8 +32,7 @@ impl Plugin for GilrsPlugin {
 
         //
         app
-            .add_event::<GamepadRumbleRequest>()
-            .init_resource::<GamepadSettings>();
+            .add_event::<GamepadRumbleRequest>();
 
         // gilrs
         match GilrsBuilder::new()

@@ -1,10 +1,9 @@
-use bevy_ecs::system::{NonSend, NonSendMut, Res, ResMut};
-use bevy_log::info;
+use bevy_ecs::system::{NonSend, NonSendMut, ResMut};
 
 use gilrs::{EventType, Filter};
 
 use crate::{gamepad::{converter::{axis_dpad_to_button_filter, convert_axis, convert_button, convert_gamepad_id}, gamepad::{
-    GamepadSettings, GamepadInfo, GamepadAxis, GamepadButton
+    GamepadInfo, GamepadAxis, GamepadButton
 }, InputGilrs}, Input};
 
 pub fn gilrs_event_startup_system(
@@ -23,7 +22,6 @@ pub fn gilrs_event_startup_system(
 pub fn gilrs_event_system(
     mut input_gilrs: NonSendMut<InputGilrs>,
     mut input_winit: ResMut<Input>,
-    gamepad_settings: Res<GamepadSettings>,
 ) {
     let mut gilrs = &mut input_gilrs.gilrs;
     while let Some(gilrs_event) = gilrs
@@ -51,7 +49,7 @@ pub fn gilrs_event_system(
                 if let Some(button_type) = convert_button(gilrs_button) {
                     let button = GamepadButton::new(gamepad, button_type);
                     let old_value = input_winit.gamepad_button_axis_get(button);
-                    let button_settings = gamepad_settings.get_button_axis_settings(button);
+                    let button_settings = input_winit.gamepad_settings().get_button_axis_settings(button);
 
                     // Only send events that pass the user-defined change threshold
                     if let Some(filtered_value) = button_settings.filter(raw_value, old_value) {
@@ -59,7 +57,7 @@ pub fn gilrs_event_system(
                         {
                             let button = GamepadButton::new(gamepad, button_type);
                             let value = filtered_value;
-                            let button_property = gamepad_settings.get_button_settings(button);
+                            let button_property = input_winit.gamepad_settings().get_button_settings(button);
 
                             if button_property.is_released(value) {
                                 // Check if button was previously pressed
@@ -88,7 +86,7 @@ pub fn gilrs_event_system(
                 if let Some(axis_type) = convert_axis(gilrs_axis, code.into_u32()) {
                     let axis = GamepadAxis::new(gamepad, axis_type);
                     let old_value = input_winit.gamepad_axis_get(axis);
-                    let axis_settings = gamepad_settings.get_axis_settings(axis);
+                    let axis_settings = input_winit.gamepad_settings().get_axis_settings(axis);
 
                     // Only send events that pass the user-defined change threshold
                     if let Some(filtered_value) = axis_settings.filter(raw_value, old_value) {

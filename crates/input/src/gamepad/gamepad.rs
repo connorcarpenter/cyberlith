@@ -2,10 +2,7 @@
 
 use std::{time::Duration, collections::HashMap};
 
-use bevy_ecs::{
-    system::Resource,
-    event::Event,
-};
+use bevy_ecs::event::Event;
 
 /// Errors that occur when setting axis settings for gamepad input.
 #[derive(Debug, PartialEq)]
@@ -276,7 +273,7 @@ impl GamepadAxis {
 /// The [`GamepadSettings`] are used inside of `bevy_gilrs` to determine when raw gamepad events from `gilrs`,
 /// should register as a [`GamepadEvent`]. Events that don't meet the change thresholds defined in [`GamepadSettings`]
 /// will not register. To modify these settings, mutate the corresponding resource.
-#[derive(Resource, Default, Debug)]
+#[derive(Default, Debug)]
 pub struct GamepadSettings {
     /// The default button settings.
     pub default_button_settings: ButtonSettings,
