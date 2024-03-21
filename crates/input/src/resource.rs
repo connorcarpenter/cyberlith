@@ -67,7 +67,7 @@ impl Input {
     }
 
     pub fn is_pressed<T: IsButton>(&self, button: T) -> bool {
-        button.is_pressed(&self.pressed_mouse_buttons, &self.pressed_keys)
+        button.is_pressed(&self.pressed_mouse_buttons, &self.pressed_keys, &self.pressed_gamepad_buttons)
     }
 
     pub fn has_canvas_properties(&self) -> bool {
@@ -182,19 +182,23 @@ impl Input {
         &mut self.gamepad_settings
     }
 
-    pub fn gamepad_button_press(&mut self, input: GamepadButton) {
+    pub fn gamepad_axis_get(&self, axis: GamepadAxis) -> Option<f32> {
+        self.gamepad_axis.get(axis)
+    }
+
+    pub fn gamepads_iter(&self) -> impl Iterator<Item = GamepadId> + '_ {
+        self.gamepads.iter()
+    }
+
+    pub(crate) fn gamepad_button_press(&mut self, input: GamepadButton) {
         self.pressed_gamepad_buttons.insert(input);
     }
 
-    pub fn gamepad_button_release(&mut self, input: GamepadButton) {
+    pub(crate) fn gamepad_button_release(&mut self, input: GamepadButton) {
         self.pressed_gamepad_buttons.remove(&input);
     }
 
-    pub fn gamepad_button_is_pressed(&self, input: GamepadButton) -> bool {
-        self.pressed_gamepad_buttons.contains(&input)
-    }
-
-    pub fn gamepad_button_reset(&mut self, input: GamepadButton) {
+    pub(crate) fn gamepad_button_reset(&mut self, input: GamepadButton) {
         self.pressed_gamepad_buttons.remove(&input);
     }
 
@@ -238,10 +242,6 @@ impl Input {
         self.outgoing_actions.push(InputEvent::GamepadButtonReleased(id, button));
     }
 
-    pub fn gamepad_axis_get(&self, axis: GamepadAxis) -> Option<f32> {
-        self.gamepad_axis.get(axis)
-    }
-
     pub(crate) fn gamepad_axis_set(&mut self, axis: GamepadAxis, val: f32) {
         self.gamepad_axis.set(axis, val);
         self.outgoing_actions.push(InputEvent::GamepadAxisChanged(axis.gamepad, axis.axis_type, val));
@@ -253,9 +253,5 @@ impl Input {
 
     pub(crate) fn gamepad_button_axis_set(&mut self, button: GamepadButton, val: f32) {
         self.gamepad_button_axis.set(button, val);
-    }
-
-    pub fn gamepads_iter(&self) -> impl Iterator<Item = GamepadId> + '_ {
-        self.gamepads.iter()
     }
 }

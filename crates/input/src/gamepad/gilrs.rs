@@ -93,7 +93,7 @@ impl GilrsWrapper {
 
                                 if button_property.is_released(value) {
                                     // Check if button was previously pressed
-                                    if input_winit.gamepad_button_is_pressed(button) {
+                                    if input_winit.is_pressed(button) {
                                         input_winit.recv_gilrs_button_release(gamepad, button_type);
                                     }
                                     // We don't have to check if the button was previously pressed here
@@ -101,7 +101,7 @@ impl GilrsWrapper {
                                     input_winit.gamepad_button_release(button);
                                 } else if button_property.is_pressed(value) {
                                     // Check if button was previously not pressed
-                                    if !input_winit.gamepad_button_is_pressed(button) {
+                                    if !input_winit.is_pressed(button) {
                                         input_winit.recv_gilrs_button_press(gamepad, button_type);
                                     }
                                     input_winit.gamepad_button_press(button);

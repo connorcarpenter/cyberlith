@@ -49,29 +49,29 @@ pub(crate) fn gamepad_system(
     let left_btn_pressed = winit_input.is_pressed(MouseButton::Left);
 
     // gamepad state
-    for gamepad in winit_input.gamepads_iter() {
-        if winit_input.gamepad_button_is_pressed(GamepadButton::new(gamepad, GamepadButtonType::RightBumper)) {
+    for gamepad_id in winit_input.gamepads_iter() {
+        if winit_input.is_pressed(GamepadButton::new(gamepad_id, GamepadButtonType::RightBumper)) {
             //info!("{:?} RightBumper pressed", gamepad);
             rumble_manager.add_rumble(
-                gamepad,
+                gamepad_id,
                 Duration::from_secs(1),
                 GamepadRumbleIntensity::strong_motor(0.1),
             );
-        } else if !winit_input.gamepad_button_is_pressed(GamepadButton::new(gamepad, GamepadButtonType::RightBumper))
+        } else if !winit_input.is_pressed(GamepadButton::new(gamepad_id, GamepadButtonType::RightBumper))
         {
             //info!("{:?} RightBumper not pressed", gamepad);
         }
 
         let right_trigger = winit_input.gamepad_axis_get(GamepadAxis::new(
-                gamepad,
-                GamepadAxisType::RightTrigger,
+            gamepad_id,
+            GamepadAxisType::RightTrigger,
             ))
             .unwrap();
         if right_trigger > 0.01 {
             //info!("{:?} RightTrigger value is {}", gamepad, right_trigger);
         }
 
-        let left_stick_x = winit_input.gamepad_axis_get(GamepadAxis::new(gamepad, GamepadAxisType::LeftStickX))
+        let left_stick_x = winit_input.gamepad_axis_get(GamepadAxis::new(gamepad_id, GamepadAxisType::LeftStickX))
             .unwrap();
         if left_stick_x.abs() > 0.01 {
             //info!("{:?} LeftStickX value is {}", gamepad, left_stick_x);
