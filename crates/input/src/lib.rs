@@ -7,7 +7,7 @@ mod modifiers;
 mod mouse_button;
 mod plugin;
 mod resource;
-pub mod gamepad;
+mod gamepad;
 
 pub use input_event::*;
 pub use cursor_icon::*;
@@ -17,3 +17,4 @@ pub use modifiers::*;
 pub use mouse_button::*;
 pub use plugin::*;
 pub use resource::*;
+pub use gamepad::*;

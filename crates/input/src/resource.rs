@@ -4,10 +4,12 @@ use bevy_ecs::{
     event::EventWriter,
     system::{ResMut, Resource},
 };
+use bevy_log::info;
 
 use math::Vec2;
 
-use crate::{is_button::IsButton, IncomingEvent, InputEvent, Key, MouseButton};
+use crate::{is_button::IsButton, IncomingEvent, InputEvent, Key, MouseButton, gamepad::{GamepadId, GamepadButtonType}};
+use crate::gamepad::{ALL_AXIS_TYPES, ALL_BUTTON_TYPES, Axis, GamepadAxis, GamepadButton, GamepadInfo, Gamepads};
 
 #[derive(Resource)]
 pub struct Input {
@@ -23,6 +25,10 @@ pub struct Input {
     last_mouse_position: Vec2,
     has_canvas_props: bool,
 
+    gamepads: Gamepads,
+    gamepad_axis: Axis<GamepadAxis>,
+    gamepad_button_axis: Axis<GamepadButton>,
+    pressed_gamepad_buttons: HashSet<GamepadButton>,
 }
 
 impl Input {
@@ -38,6 +44,11 @@ impl Input {
             enabled: false,
             has_canvas_props: false,
             mouse_delta: Vec2::ZERO,
+
+            gamepads: Gamepads::default(),
+            gamepad_axis: Axis::default(),
+            gamepad_button_axis: Axis::default(),
+            pressed_gamepad_buttons: HashSet::new(),
         }
     }
 
@@ -157,5 +168,82 @@ impl Input {
                 _ => {}
             }
         }
+    }
+
+    pub fn gamepad_button_press(&mut self, input: GamepadButton) {
+        // Returns `true` if the `input` wasn't pressed.
+        self.pressed_gamepad_buttons.insert(input);
+    }
+
+    pub fn gamepad_button_release(&mut self, input: GamepadButton) {
+        self.pressed_gamepad_buttons.remove(&input);
+    }
+
+    pub fn gamepad_button_is_pressed(&self, input: GamepadButton) -> bool {
+        self.pressed_gamepad_buttons.contains(&input)
+    }
+
+    pub fn gamepad_button_reset(&mut self, input: GamepadButton) {
+        self.pressed_gamepad_buttons.remove(&input);
+    }
+
+    pub(crate) fn recv_gilrs_gamepad_connect(&mut self, id: GamepadId, info: GamepadInfo) {
+        self.outgoing_actions.push(InputEvent::GamepadConnected(id));
+
+        self.gamepads.register(id, info.clone());
+        info!("{:?} Connected", id);
+
+        for button_type in &ALL_BUTTON_TYPES {
+            let gamepad_button = GamepadButton::new(id, *button_type);
+            self.gamepad_button_reset(gamepad_button);
+            self.gamepad_button_axis.set(gamepad_button, 0.0);
+        }
+        for axis_type in &ALL_AXIS_TYPES {
+            self.gamepad_axis.set(GamepadAxis::new(id, *axis_type), 0.0);
+        }
+    }
+
+    pub(crate) fn recv_gilrs_gamepad_disconnect(&mut self, id: GamepadId) {
+        self.outgoing_actions.push(InputEvent::GamepadDisconnected(id));
+
+        self.gamepads.deregister(id);
+        info!("{:?} Disconnected", id);
+
+        for button_type in &ALL_BUTTON_TYPES {
+            let gamepad_button = GamepadButton::new(id, *button_type);
+            self.gamepad_button_reset(gamepad_button);
+            self.gamepad_button_axis.remove(gamepad_button);
+        }
+        for axis_type in &ALL_AXIS_TYPES {
+            self.gamepad_axis.remove(GamepadAxis::new(id, *axis_type));
+        }
+    }
+
+    pub(crate) fn recv_gilrs_button_press(&mut self, id: GamepadId, button: GamepadButtonType) {
+        self.outgoing_actions.push(InputEvent::GamepadButtonPressed(id, button));
+    }
+
+    pub(crate) fn recv_gilrs_button_release(&mut self, id: GamepadId, button: GamepadButtonType) {
+        self.outgoing_actions.push(InputEvent::GamepadButtonReleased(id, button));
+    }
+
+    pub fn gamepad_axis_get(&self, axis: GamepadAxis) -> Option<f32> {
+        self.gamepad_axis.get(axis)
+    }
+
+    pub(crate) fn gamepad_axis_set(&mut self, axis: GamepadAxis, val: f32) {
+        self.gamepad_axis.set(axis, val);
+    }
+
+    pub(crate) fn gamepad_button_axis_get(&self, button: GamepadButton) -> Option<f32> {
+        self.gamepad_button_axis.get(button)
+    }
+
+    pub(crate) fn gamepad_button_axis_set(&mut self, button: GamepadButton, val: f32) {
+        self.gamepad_button_axis.set(button, val);
+    }
+
+    pub fn gamepads_iter(&self) -> impl Iterator<Item = GamepadId> + '_ {
+        self.gamepads.iter()
     }
 }

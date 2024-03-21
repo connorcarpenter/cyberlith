@@ -2,14 +2,12 @@
 
 use std::{hash::Hash, collections::HashMap};
 
-use bevy_ecs::system::Resource;
-
 /// Stores the position data of the input devices of type `T`.
 ///
 /// The values are stored as `f32`s, using [`Axis::set`].
 /// Use [`Axis::get`] to retrieve the value clamped between [`Axis::MIN`] and [`Axis::MAX`]
 /// inclusive, or unclamped using [`Axis::get_unclamped`].
-#[derive(Debug, Resource)]
+#[derive(Debug)]
 pub struct Axis<T> {
     /// The position data of the input devices.
     axis_data: HashMap<T, f32>,

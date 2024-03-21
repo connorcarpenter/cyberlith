@@ -3,28 +3,9 @@
 use std::{time::Duration, collections::HashMap};
 
 use bevy_ecs::{
-    system::{Res, NonSendMut, ResMut, Resource},
-    event::{Event, EventReader, EventWriter},
+    system::Resource,
+    event::Event,
 };
-use bevy_log::info;
-
-use crate::gamepad::{axis::Axis, InputGilrs};
-
-/// The current "press" state of an element
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
-pub enum ButtonState {
-    /// The button is pressed.
-    Pressed,
-    /// The button is not pressed.
-    Released,
-}
-
-impl ButtonState {
-    /// Is this button pressed?
-    pub fn is_pressed(&self) -> bool {
-        matches!(self, ButtonState::Pressed)
-    }
-}
 
 /// Errors that occur when setting axis settings for gamepad input.
 #[derive(Debug, PartialEq)]
@@ -116,7 +97,7 @@ pub struct GamepadInfo {
 ///
 /// The [`GamepadId`]s are registered and deregistered in the [`gamepad_connection_system`]
 /// whenever a [`GamepadConnectionEvent`] is received.
-#[derive(Resource, Default, Debug)]
+#[derive(Default, Debug)]
 pub struct Gamepads {
     /// The collection of the connected [`GamepadId`]s.
     gamepads: HashMap<GamepadId, GamepadInfo>,
@@ -129,7 +110,7 @@ impl Gamepads {
     }
 
     /// Returns an iterator over registered [`GamepadId`]s in an arbitrary order.
-    pub fn iter(&self) -> impl Iterator<Item =GamepadId> + '_ {
+    pub fn iter(&self) -> impl Iterator<Item = GamepadId> + '_ {
         self.gamepads.keys().copied()
     }
 
@@ -139,12 +120,12 @@ impl Gamepads {
     }
 
     /// Registers the `gamepad`, marking it as connected.
-    fn register(&mut self, gamepad: GamepadId, info: GamepadInfo) {
+    pub(crate) fn register(&mut self, gamepad: GamepadId, info: GamepadInfo) {
         self.gamepads.insert(gamepad, info);
     }
 
     /// Deregisters the `gamepad`, marking it as disconnected.
-    fn deregister(&mut self, gamepad: GamepadId) {
+    pub(crate) fn deregister(&mut self, gamepad: GamepadId) {
         self.gamepads.remove(&gamepad);
     }
 }
@@ -228,15 +209,6 @@ impl GamepadButton {
             button_type,
         }
     }
-}
-
-/// A gamepad button input event.
-#[derive(Event, Debug, Clone, Copy, PartialEq, Eq)]
-pub struct GamepadButtonInput {
-    /// The gamepad button assigned to the event.
-    pub button: GamepadButton,
-    /// The pressed state of the button.
-    pub state: ButtonState,
 }
 
 /// A type of a [`GamepadAxis`].
@@ -908,239 +880,8 @@ impl ButtonAxisSettings {
     }
 }
 
-/// Handles [`GamepadConnectionEvent`]s and updates gamepad resources.
-///
-/// Updates the [`Gamepads`] resource and resets and/or initializes
-/// the [`Axis<GamepadButton>`] and [`ButtonInput<GamepadButton>`] resources.
-///
-/// ## Note
-///
-/// Whenever a [`GamepadId`] connects or disconnects, an information gets printed to the console using the [`info!`] macro.
-pub fn gamepad_connection_system(
-    mut gamepads: ResMut<Gamepads>,
-    mut connection_events: EventReader<GamepadConnectionEvent>,
-    mut axis: ResMut<Axis<GamepadAxis>>,
-    mut button_axis: ResMut<Axis<GamepadButton>>,
-    mut button_input: NonSendMut<InputGilrs>,
-) {
-    for connection_event in connection_events.read() {
-        let gamepad = connection_event.gamepad;
-
-        if let GamepadConnection::Connected(info) = &connection_event.connection {
-            gamepads.register(gamepad, info.clone());
-            info!("{:?} Connected", gamepad);
-
-            for button_type in &ALL_BUTTON_TYPES {
-                let gamepad_button = GamepadButton::new(gamepad, *button_type);
-                button_input.reset(gamepad_button);
-                button_axis.set(gamepad_button, 0.0);
-            }
-            for axis_type in &ALL_AXIS_TYPES {
-                axis.set(GamepadAxis::new(gamepad, *axis_type), 0.0);
-            }
-        } else {
-            gamepads.deregister(gamepad);
-            info!("{:?} Disconnected", gamepad);
-
-            for button_type in &ALL_BUTTON_TYPES {
-                let gamepad_button = GamepadButton::new(gamepad, *button_type);
-                button_input.reset(gamepad_button);
-                button_axis.remove(gamepad_button);
-            }
-            for axis_type in &ALL_AXIS_TYPES {
-                axis.remove(GamepadAxis::new(gamepad, *axis_type));
-            }
-        }
-    }
-}
-
-/// The connection status of a gamepad.
-#[derive(Debug, Clone, PartialEq)]
-pub enum GamepadConnection {
-    /// The gamepad is connected.
-    Connected(GamepadInfo),
-    /// The gamepad is disconnected.
-    Disconnected,
-}
-
-/// A Gamepad connection event. Created when a connection to a gamepad
-/// is established and when a gamepad is disconnected.
-#[derive(Event, Debug, Clone, PartialEq)]
-pub struct GamepadConnectionEvent {
-    /// The gamepad whose connection status changed.
-    pub gamepad: GamepadId,
-    /// The change in the gamepads connection.
-    pub connection: GamepadConnection,
-}
-
-impl GamepadConnectionEvent {
-    /// Creates a [`GamepadConnectionEvent`].
-    pub fn new(gamepad: GamepadId, connection: GamepadConnection) -> Self {
-        Self {
-            gamepad,
-            connection,
-        }
-    }
-
-    /// Is the gamepad connected?
-    pub fn connected(&self) -> bool {
-        matches!(self.connection, GamepadConnection::Connected(_))
-    }
-
-    /// Is the gamepad disconnected?
-    pub fn disconnected(&self) -> bool {
-        !self.connected()
-    }
-}
-
-/// Gamepad event for when the "value" on the axis changes
-/// by an amount larger than the threshold defined in [`GamepadSettings`].
-#[derive(Event, Debug, Clone, PartialEq)]
-pub struct GamepadAxisChangedEvent {
-    /// The gamepad on which the axis is triggered.
-    pub gamepad: GamepadId,
-    /// The type of the triggered axis.
-    pub axis_type: GamepadAxisType,
-    /// The value of the axis.
-    pub value: f32,
-}
-
-impl GamepadAxisChangedEvent {
-    /// Creates a [`GamepadAxisChangedEvent`].
-    pub fn new(gamepad: GamepadId, axis_type: GamepadAxisType, value: f32) -> Self {
-        Self {
-            gamepad,
-            axis_type,
-            value,
-        }
-    }
-}
-
-/// Gamepad event for when the "value" (amount of pressure) on the button
-/// changes by an amount larger than the threshold defined in [`GamepadSettings`].
-#[derive(Event, Debug, Clone, PartialEq)]
-pub struct GamepadButtonChangedEvent {
-    /// The gamepad on which the button is triggered.
-    pub gamepad: GamepadId,
-    /// The type of the triggered button.
-    pub button_type: GamepadButtonType,
-    /// The value of the button.
-    pub value: f32,
-}
-
-impl GamepadButtonChangedEvent {
-    /// Creates a [`GamepadButtonChangedEvent`].
-    pub fn new(gamepad: GamepadId, button_type: GamepadButtonType, value: f32) -> Self {
-        Self {
-            gamepad,
-            button_type,
-            value,
-        }
-    }
-}
-
-pub fn gamepad_axis_event_system(
-    mut gamepad_axis: ResMut<Axis<GamepadAxis>>,
-    mut axis_events: EventReader<GamepadAxisChangedEvent>,
-) {
-    for axis_event in axis_events.read() {
-        let axis = GamepadAxis::new(axis_event.gamepad, axis_event.axis_type);
-        gamepad_axis.set(axis, axis_event.value);
-    }
-}
-
-pub fn gamepad_button_event_system(
-    mut button_changed_events: EventReader<GamepadButtonChangedEvent>,
-    mut input: NonSendMut<InputGilrs>,
-    mut button_input_events: EventWriter<GamepadButtonInput>,
-    settings: Res<GamepadSettings>,
-) {
-    for button_event in button_changed_events.read() {
-        let button = GamepadButton::new(button_event.gamepad, button_event.button_type);
-        let value = button_event.value;
-        let button_property = settings.get_button_settings(button);
-
-        if button_property.is_released(value) {
-            // Check if button was previously pressed
-            if input.is_pressed(button) {
-                button_input_events.send(GamepadButtonInput {
-                    button,
-                    state: ButtonState::Released,
-                });
-            }
-            // We don't have to check if the button was previously pressed here
-            // because that check is performed within Input<T>::release()
-            input.release(button);
-        } else if button_property.is_pressed(value) {
-            // Check if button was previously not pressed
-            if !input.is_pressed(button) {
-                button_input_events.send(GamepadButtonInput {
-                    button,
-                    state: ButtonState::Pressed,
-                });
-            }
-            input.press(button);
-        };
-    }
-}
-
-/// A gamepad event.
-///
-/// This event type is used over the [`GamepadConnectionEvent`],
-/// [`GamepadButtonChangedEvent`] and [`GamepadAxisChangedEvent`] when
-/// the in-frame relative ordering of events is important.
-#[derive(Event, Debug, Clone, PartialEq)]
-pub enum GamepadEvent {
-    /// A gamepad has been connected or disconnected.
-    Connection(GamepadConnectionEvent),
-    /// A button of the gamepad has been triggered.
-    Button(GamepadButtonChangedEvent),
-    /// An axis of the gamepad has been triggered.
-    Axis(GamepadAxisChangedEvent),
-}
-
-impl From<GamepadConnectionEvent> for GamepadEvent {
-    fn from(value: GamepadConnectionEvent) -> Self {
-        Self::Connection(value)
-    }
-}
-
-impl From<GamepadButtonChangedEvent> for GamepadEvent {
-    fn from(value: GamepadButtonChangedEvent) -> Self {
-        Self::Button(value)
-    }
-}
-
-impl From<GamepadAxisChangedEvent> for GamepadEvent {
-    fn from(value: GamepadAxisChangedEvent) -> Self {
-        Self::Axis(value)
-    }
-}
-
-/// Splits the [`GamepadEvent`] event stream into it's component events.
-pub fn gamepad_event_system(
-    mut gamepad_events: EventReader<GamepadEvent>,
-    mut connection_events: EventWriter<GamepadConnectionEvent>,
-    mut button_events: EventWriter<GamepadButtonChangedEvent>,
-    mut axis_events: EventWriter<GamepadAxisChangedEvent>,
-) {
-    for gamepad_event in gamepad_events.read() {
-        match gamepad_event {
-            GamepadEvent::Connection(connection_event) => {
-                connection_events.send(connection_event.clone());
-            }
-            GamepadEvent::Button(button_event) => {
-                button_events.send(button_event.clone());
-            }
-            GamepadEvent::Axis(axis_event) => {
-                axis_events.send(axis_event.clone());
-            }
-        }
-    }
-}
-
 /// An array of every [`GamepadButtonType`] variant.
-const ALL_BUTTON_TYPES: [GamepadButtonType; 17] = [
+pub(crate) const ALL_BUTTON_TYPES: [GamepadButtonType; 17] = [
     GamepadButtonType::South,
     GamepadButtonType::East,
     GamepadButtonType::North,
@@ -1161,7 +902,7 @@ const ALL_BUTTON_TYPES: [GamepadButtonType; 17] = [
 ];
 
 /// An array of every [`GamepadAxisType`] variant.
-const ALL_AXIS_TYPES: [GamepadAxisType; 6] = [
+pub(crate) const ALL_AXIS_TYPES: [GamepadAxisType; 6] = [
     GamepadAxisType::LeftStickX,
     GamepadAxisType::LeftStickY,
     GamepadAxisType::LeftTrigger,
