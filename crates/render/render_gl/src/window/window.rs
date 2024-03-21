@@ -194,7 +194,7 @@ impl<T: 'static + Clone> Window<T> {
     ///
     /// Start the main render loop which calls the `callback` closure each frame.
     ///
-    pub fn render_loop<F: 'static + FnMut(FrameInput<T>) -> FrameOutput>(
+    pub fn render_loop<F: 'static + FnMut(FrameInput) -> FrameOutput>(
         #[allow(unused_mut)] mut self,
         stop_signal: Arc<RwLock<StopSignal>>,
         mut callback: F,
@@ -217,9 +217,7 @@ impl<T: 'static + Clone> Window<T> {
         let loop_func = move |event: WinitEvent<'_, T>, _: &_, control_flow: &mut _| {
             let stop_signal = stop_signal.clone();
             match event {
-                WinitEvent::UserEvent(t) => {
-                    events.push(IncomingEvent::UserEvent(t));
-                }
+
                 WinitEvent::LoopDestroyed => {
                     #[cfg(target_arch = "wasm32")]
                     {
@@ -442,12 +440,8 @@ impl<T: 'static + Clone> Window<T> {
                             events.push(IncomingEvent::Text(ch.to_string()));
                         }
                     }
-                    WindowEvent::CursorEntered { .. } => {
-                        events.push(IncomingEvent::MouseEnter);
-                    }
                     WindowEvent::CursorLeft { .. } => {
                         mouse_pressed = None;
-                        events.push(IncomingEvent::MouseLeave);
                     }
                     WindowEvent::Touch(touch) => {
                         let position = touch

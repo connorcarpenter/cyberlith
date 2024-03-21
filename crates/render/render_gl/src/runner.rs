@@ -63,7 +63,7 @@ pub fn runner_func(mut app: App) {
                 // Remove FrameInput
                 let old_frame_input = app
                     .world
-                    .remove_non_send_resource::<FrameInput<()>>().unwrap();
+                    .remove_non_send_resource::<FrameInput>().unwrap();
 
                 // Returns default frame output to end the frame
                 FrameOutput::from(old_frame_input)

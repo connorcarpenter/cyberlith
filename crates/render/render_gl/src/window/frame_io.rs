@@ -15,9 +15,9 @@ pub enum OutgoingEvent {
 /// Input from the window to the rendering (and whatever else needs it) each frame.
 ///
 #[derive(Clone, Debug)]
-pub struct FrameInput<T: 'static + Clone> {
+pub struct FrameInput {
     /// A list of [events](crate::Event) which has occurred since last frame.
-    pub incoming_events: Vec<IncomingEvent<T>>,
+    pub incoming_events: Vec<IncomingEvent>,
 
     /// A list of Events which should be sent onwards
     pub outgoing_events: Vec<OutgoingEvent>,
@@ -41,7 +41,7 @@ pub struct FrameInput<T: 'static + Clone> {
     pub first_frame: bool,
 }
 
-impl<T: 'static + Clone> FrameInput<T> {
+impl FrameInput {
     pub fn screen(&self) -> RenderTarget {
         RenderTarget::screen(self.logical_size.width, self.logical_size.height)
     }
@@ -95,8 +95,8 @@ impl Default for FrameOutput {
     }
 }
 
-impl From<FrameInput<()>> for FrameOutput {
-    fn from(frame_input: FrameInput<()>) -> Self {
+impl From<FrameInput> for FrameOutput {
+    fn from(frame_input: FrameInput) -> Self {
         let mut output = Self::default();
         output.events = Some(frame_input.outgoing_events);
         output

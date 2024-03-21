@@ -14,7 +14,7 @@ pub fn startup(world: &mut World) {
 }
 
 pub fn pre_update(
-    mut frame_input: NonSendMut<FrameInput<()>>,
+    mut frame_input: NonSendMut<FrameInput>,
     mut gui: NonSendMut<GUI>,
     egui_context: Res<EguiContext>,
 ) {
@@ -22,7 +22,7 @@ pub fn pre_update(
 }
 
 pub fn post_update(
-    mut frame_input: NonSendMut<FrameInput<()>>,
+    mut frame_input: NonSendMut<FrameInput>,
     mut gui: NonSendMut<GUI>,
     egui_context: Res<EguiContext>,
 ) {
@@ -30,7 +30,7 @@ pub fn post_update(
 }
 
 pub fn draw(
-    //frame_input: NonSendMut<FrameInput<()>>,
+    //frame_input: NonSendMut<FrameInput>,
     gui: NonSendMut<GUI>,
     egui_context: Res<EguiContext>,
 ) {

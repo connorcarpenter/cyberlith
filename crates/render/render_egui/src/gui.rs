@@ -62,7 +62,7 @@ impl GUI {
     pub fn pre_update<T: 'static + Clone>(
         &mut self,
         egui_context: &egui::Context,
-        frame_input: &mut FrameInput<T>,
+        frame_input: &mut FrameInput,
     ) {
         let events: &mut [IncomingEvent<T>] = frame_input.incoming_events.as_mut_slice();
         let accumulated_time_in_ms: f64 = frame_input.accumulated_time_ms;
@@ -202,7 +202,7 @@ impl GUI {
     pub fn post_update<T: 'static + Clone>(
         &mut self,
         egui_context: &egui::Context,
-        frame_input: &mut FrameInput<T>,
+        frame_input: &mut FrameInput,
     ) {
         let mut end_frame = egui_context.end_frame();
 

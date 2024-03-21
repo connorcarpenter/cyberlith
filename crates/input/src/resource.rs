@@ -81,7 +81,7 @@ impl Input {
     }
 
     // should only be used in `render_gl` crate
-    pub fn recv_events(&mut self, events: &Vec<IncomingEvent<()>>) {
+    pub fn recv_events(&mut self, events: &Vec<IncomingEvent>) {
         if !self.enabled {
             return;
         }
@@ -154,11 +154,7 @@ impl Input {
                         self.pressed_keys.remove(kind);
                     }
                 }
-                IncomingEvent::MouseEnter => {}
-                IncomingEvent::MouseLeave => {}
-                IncomingEvent::ModifiersChange { .. } => {}
-                IncomingEvent::Text(_) => {}
-                IncomingEvent::UserEvent(_) => {}
+                _ => {}
             }
         }
     }

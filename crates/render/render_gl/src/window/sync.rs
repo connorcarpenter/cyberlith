@@ -9,7 +9,7 @@ use render_api::{resources::Time, Window};
 use crate::window::{FrameInput, OutgoingEvent};
 
 pub fn sync(
-    mut frame_input: NonSendMut<FrameInput<()>>,
+    mut frame_input: NonSendMut<FrameInput>,
     mut window: ResMut<Window>,
     mut time: ResMut<Time>,
     mut exit_event_reader: EventReader<AppExit>,

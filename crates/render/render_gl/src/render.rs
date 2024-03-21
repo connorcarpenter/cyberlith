@@ -14,7 +14,7 @@ use crate::{
 
 pub fn render(
     mut render_frame: ResMut<RenderFrame>,
-    frame_input: NonSendMut<FrameInput<()>>,
+    frame_input: NonSendMut<FrameInput>,
     // Resources
     gpu_mesh_manager: Res<GpuMeshManager>,
     gpu_material_manager: Res<GpuMaterialManager>,

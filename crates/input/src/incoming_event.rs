@@ -2,7 +2,7 @@ use crate::{Key, Modifiers, MouseButton};
 
 /// An input event (from mouse, keyboard or similar).
 #[derive(Clone, Debug)]
-pub enum IncomingEvent<T: 'static + Clone> {
+pub enum IncomingEvent {
     /// Fired when a button is pressed or the screen is touched.
     MousePress {
         /// Type of button
@@ -49,10 +49,6 @@ pub enum IncomingEvent<T: 'static + Clone> {
         /// The state of modifiers.
         modifiers: Modifiers,
     },
-    /// Fired when the mouse enters the window.
-    MouseEnter,
-    /// Fired when the mouse leaves the window.
-    MouseLeave,
     /// Fired when a key is pressed.
     KeyPress {
         /// The type of key.
@@ -74,6 +70,4 @@ pub enum IncomingEvent<T: 'static + Clone> {
     },
     /// Fires when some text has been written.
     Text(String),
-    /// User created custom event.
-    UserEvent(T),
 }
