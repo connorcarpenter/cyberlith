@@ -8,7 +8,7 @@ use gilrs::{Gilrs, GilrsBuilder};
 mod converter;
 
 mod gamepad;
-pub use gamepad::{Gamepads, GamepadButton, GamepadAxis, GamepadButtonType, GamepadAxisType, GamepadAxisChangedEvent, GamepadButtonChangedEvent, GamepadConnectionEvent, GamepadRumbleRequest, GamepadRumbleIntensity, GamepadButtonInput};
+pub use gamepad::{GamepadInfo, Gamepads, GamepadButton, GamepadAxis, GamepadId, GamepadButtonType, GamepadAxisType, GamepadAxisChangedEvent, GamepadButtonChangedEvent, GamepadConnectionEvent, GamepadRumbleRequest, GamepadRumbleIntensity, GamepadButtonInput};
 
 mod axis;
 pub use axis::{Axis};

@@ -1,6 +1,6 @@
 use bevy_ecs::{system::{NonSend, NonSendMut, Res, ResMut}, event::EventWriter};
 
-use gilrs::{ev::filter::axis_dpad_to_button, EventType, Filter, Gilrs};
+use gilrs::{ev::filter::axis_dpad_to_button, EventType, Filter};
 
 use crate::gamepad::{axis::Axis, converter::{convert_axis, convert_button, convert_gamepad_id}, gamepad::{
     GamepadAxisChangedEvent, GamepadButtonChangedEvent, GamepadConnection, GamepadConnectionEvent,

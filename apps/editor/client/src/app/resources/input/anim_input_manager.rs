@@ -52,7 +52,7 @@ impl AnimInputManager {
     ) {
         for action in input_actions {
             match action {
-                InputEvent::MouseClick(click_type, mouse_position) => {
+                InputEvent::MouseClicked(click_type, mouse_position) => {
                     Self::handle_mouse_click_framing(
                         world,
                         input_manager,
@@ -63,13 +63,13 @@ impl AnimInputManager {
                 InputEvent::MouseDragged(click_type, _mouse_position, delta) => {
                     Self::handle_mouse_drag_framing(world, click_type, delta)
                 }
-                InputEvent::MiddleMouseScroll(scroll_y) => {
+                InputEvent::MouseMiddleScrolled(scroll_y) => {
                     Self::handle_mouse_scroll_framing(world, scroll_y)
                 }
                 InputEvent::MouseMoved => {
                     input_manager.queue_resync_hover_ui();
                 }
-                InputEvent::KeyPress(key) => match key {
+                InputEvent::KeyPressed(key) => match key {
                     Key::Delete => Self::handle_delete_frame(world, input_manager),
                     Key::Insert => Self::handle_insert_frame(world, input_manager),
                     Key::Space => Self::handle_play_pause(world),
@@ -129,7 +129,7 @@ impl AnimInputManager {
     ) {
         for action in input_actions {
             match action {
-                InputEvent::MouseClick(click_type, mouse_position) => {
+                InputEvent::MouseClicked(click_type, mouse_position) => {
                     Self::handle_mouse_click_posing(
                         world,
                         input_manager,
@@ -146,17 +146,17 @@ impl AnimInputManager {
                         delta,
                     )
                 }
-                InputEvent::MiddleMouseScroll(scroll_y) => {
+                InputEvent::MouseMiddleScrolled(scroll_y) => {
                     InputManager::handle_mouse_scroll_wheel(world, scroll_y)
                 }
                 InputEvent::MouseMoved => {
                     input_manager.queue_resync_hover_ui();
                     input_manager.queue_resync_selection_ui();
                 }
-                InputEvent::MouseRelease(MouseButton::Left) => {
+                InputEvent::MouseReleased(MouseButton::Left) => {
                     Self::reset_last_dragged_rotation(input_manager, world)
                 }
-                InputEvent::KeyPress(key) => match key {
+                InputEvent::KeyPressed(key) => match key {
                     Key::S
                     | Key::W
                     | Key::D

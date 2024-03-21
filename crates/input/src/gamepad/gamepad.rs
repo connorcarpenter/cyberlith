@@ -1,14 +1,11 @@
 //! The gamepad input functionality.
 
-use std::collections::HashMap;
-use std::time::Duration;
+use std::{time::Duration, collections::HashMap};
 
 use bevy_ecs::{
-    change_detection::DetectChangesMut,
-    system::{Res, ResMut, Resource},
+    system::{Res, NonSendMut, ResMut, Resource},
     event::{Event, EventReader, EventWriter},
 };
-use bevy_ecs::system::NonSendMut;
 use bevy_log::info;
 
 use crate::gamepad::{axis::Axis, InputGilrs};

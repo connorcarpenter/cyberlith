@@ -63,7 +63,7 @@ impl IconInputManager {
         let wired = icon_manager.is_wired();
         for action in input_actions {
             match action {
-                InputEvent::MouseClick(click_type, mouse_position) => {
+                InputEvent::MouseClicked(click_type, mouse_position) => {
                     if wired {
                         Self::handle_mouse_click_meshing(
                             world,
@@ -83,7 +83,7 @@ impl IconInputManager {
                         click_type,
                     )
                 }
-                InputEvent::MiddleMouseScroll(scroll_y) => {
+                InputEvent::MouseMiddleScrolled(scroll_y) => {
                     InputManager::handle_mouse_scroll_wheel(world, scroll_y)
                 }
                 InputEvent::MouseMoved => {
@@ -91,12 +91,12 @@ impl IconInputManager {
                         icon_manager.queue_resync_hover_ui();
                     }
                 }
-                InputEvent::MouseRelease(MouseButton::Left) => {
+                InputEvent::MouseReleased(MouseButton::Left) => {
                     if wired {
                         icon_manager.reset_last_dragged_vertex(world)
                     }
                 }
-                InputEvent::KeyPress(key) => match key {
+                InputEvent::KeyPressed(key) => match key {
                     Key::S | Key::W => {
                         icon_manager.handle_keypress_camera_controls(key);
                     }
@@ -647,7 +647,7 @@ impl IconInputManager {
     ) {
         for action in input_actions {
             match action {
-                InputEvent::MouseClick(click_type, mouse_position) => {
+                InputEvent::MouseClicked(click_type, mouse_position) => {
                     Self::handle_mouse_click_framing(
                         world,
                         icon_manager,
@@ -658,13 +658,13 @@ impl IconInputManager {
                 InputEvent::MouseDragged(click_type, _mouse_position, delta) => {
                     Self::handle_mouse_drag_framing(world, icon_manager, click_type, delta)
                 }
-                InputEvent::MiddleMouseScroll(scroll_y) => {
+                InputEvent::MouseMiddleScrolled(scroll_y) => {
                     Self::handle_mouse_scroll_framing(icon_manager, scroll_y)
                 }
                 InputEvent::MouseMoved => {
                     icon_manager.queue_resync_hover_ui();
                 }
-                InputEvent::KeyPress(key) => match key {
+                InputEvent::KeyPressed(key) => match key {
                     Key::Delete => Self::handle_delete_frame(world, icon_manager),
                     Key::Insert => Self::handle_insert_frame(world, icon_manager),
                     Key::Space => Self::handle_play_pause(icon_manager),

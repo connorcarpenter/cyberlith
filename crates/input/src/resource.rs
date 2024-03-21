@@ -95,7 +95,7 @@ impl Input {
                     if !self.pressed_mouse_buttons.contains(button) {
                         self.set_mouse_coords(position);
                         self.outgoing_actions
-                            .push(InputEvent::MouseClick(*button, self.mouse_coords));
+                            .push(InputEvent::MouseClicked(*button, self.mouse_coords));
                         self.pressed_mouse_buttons.insert(*button);
                     }
                 }
@@ -104,7 +104,7 @@ impl Input {
                 } => {
                     if self.pressed_mouse_buttons.contains(button) {
                         self.outgoing_actions
-                            .push(InputEvent::MouseRelease(*button));
+                            .push(InputEvent::MouseReleased(*button));
                         self.pressed_mouse_buttons.remove(button);
                     }
                 }
@@ -128,7 +128,7 @@ impl Input {
                             ));
                         }
 
-                        self.outgoing_actions.push(InputEvent::MouseMoved);
+                        self.outgoing_actions.push(InputEvent::MouseMoved(self.mouse_coords));
                     }
                 }
                 IncomingEvent::MouseWheel { delta, .. } => {
@@ -138,19 +138,19 @@ impl Input {
                     // mouse wheel zoom..
                     if self.mouse_scroll_y > 0.1 || self.mouse_scroll_y < -0.1 {
                         self.outgoing_actions
-                            .push(InputEvent::MiddleMouseScroll(self.mouse_scroll_y));
+                            .push(InputEvent::MouseMiddleScrolled(self.mouse_scroll_y));
                         self.mouse_scroll_y = 0.0;
                     }
                 }
                 IncomingEvent::KeyPress { kind, .. } => {
                     if !self.pressed_keys.contains(kind) {
-                        self.outgoing_actions.push(InputEvent::KeyPress(*kind));
+                        self.outgoing_actions.push(InputEvent::KeyPressed(*kind));
                         self.pressed_keys.insert(*kind);
                     }
                 }
                 IncomingEvent::KeyRelease { kind, .. } => {
                     if self.pressed_keys.contains(kind) {
-                        self.outgoing_actions.push(InputEvent::KeyRelease(*kind));
+                        self.outgoing_actions.push(InputEvent::KeyReleased(*kind));
                         self.pressed_keys.remove(kind);
                     }
                 }

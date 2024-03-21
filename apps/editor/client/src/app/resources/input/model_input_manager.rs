@@ -46,7 +46,7 @@ impl ModelInputManager {
     ) {
         for action in input_actions {
             match action {
-                InputEvent::MouseClick(click_type, mouse_position) => {
+                InputEvent::MouseClicked(click_type, mouse_position) => {
                     Self::handle_mouse_click(world, input_manager, &mouse_position, click_type)
                 }
                 InputEvent::MouseDragged(click_type, mouse_position, delta) => {
@@ -59,19 +59,19 @@ impl ModelInputManager {
                         click_type,
                     )
                 }
-                InputEvent::MiddleMouseScroll(scroll_y) => {
+                InputEvent::MouseMiddleScrolled(scroll_y) => {
                     InputManager::handle_mouse_scroll_wheel(world, scroll_y)
                 }
                 InputEvent::MouseMoved => {
                     input_manager.queue_resync_hover_ui();
                     input_manager.queue_resync_selection_ui();
                 }
-                InputEvent::MouseRelease(MouseButton::Left) => {
+                InputEvent::MouseReleased(MouseButton::Left) => {
                     world.resource_scope(|world, mut model_manager: Mut<ModelManager>| {
                         model_manager.on_drag_transform_end(world, input_manager);
                     });
                 }
-                InputEvent::KeyPress(key) => match key {
+                InputEvent::KeyPressed(key) => match key {
                     Key::S
                     | Key::W
                     | Key::D

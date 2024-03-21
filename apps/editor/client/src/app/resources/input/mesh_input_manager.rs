@@ -34,23 +34,23 @@ impl MeshInputManager {
     ) {
         for action in input_actions {
             match action {
-                InputEvent::MouseClick(click_type, mouse_position) => {
+                InputEvent::MouseClicked(click_type, mouse_position) => {
                     Self::handle_mouse_click(world, input_manager, &mouse_position, click_type)
                 }
                 InputEvent::MouseDragged(click_type, mouse_position, delta) => {
                     Self::handle_mouse_drag(world, input_manager, mouse_position, delta, click_type)
                 }
-                InputEvent::MiddleMouseScroll(scroll_y) => {
+                InputEvent::MouseMiddleScrolled(scroll_y) => {
                     InputManager::handle_mouse_scroll_wheel(world, scroll_y)
                 }
                 InputEvent::MouseMoved => {
                     input_manager.queue_resync_hover_ui();
                     input_manager.queue_resync_selection_ui();
                 }
-                InputEvent::MouseRelease(MouseButton::Left) => {
+                InputEvent::MouseReleased(MouseButton::Left) => {
                     input_manager.reset_last_dragged_vertex(world)
                 }
-                InputEvent::KeyPress(key) => match key {
+                InputEvent::KeyPressed(key) => match key {
                     Key::S
                     | Key::W
                     | Key::D

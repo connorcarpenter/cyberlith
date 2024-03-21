@@ -23,13 +23,28 @@ pub(crate) fn gamepad_system(
     // winit events
     for event in winit_input_events.read() {
         match event {
-            InputEvent::MouseClick(_, _) => {}
-            InputEvent::MouseRelease(_) => {}
-            InputEvent::MouseMoved => {}
+            InputEvent::MouseClicked(_, _) => {}
+            InputEvent::MouseReleased(_) => {}
+            InputEvent::MouseMoved(_) => {}
             InputEvent::MouseDragged(_, _, _) => {}
-            InputEvent::MiddleMouseScroll(_) => {}
-            InputEvent::KeyPress(_) => {}
-            InputEvent::KeyRelease(_) => {}
+            InputEvent::MouseMiddleScrolled(_) => {}
+            InputEvent::KeyPressed(_) => {}
+            InputEvent::KeyReleased(_) => {}
+            InputEvent::GamepadConnected(id) => {
+                info!("{:?} connected", id);
+            }
+            InputEvent::GamepadDisconnected(id) => {
+                info!("{:?} disconnected", id);
+            }
+            InputEvent::GamepadButtonPressed(id, btn) => {
+                info!("{:?} {:?} pressed", id, btn);
+            }
+            InputEvent::GamepadButtonReleased(id, btn) => {
+                info!("{:?} {:?} released", id, btn);
+            }
+            InputEvent::GamepadAxisChanged(id, axis, value) => {
+                info!("{:?} {:?} changed to {}", id, axis, value);
+            }
         }
     }
 
@@ -37,28 +52,6 @@ pub(crate) fn gamepad_system(
     let space_pressed = winit_input.is_pressed(Key::Space);
     let mouse_pos = winit_input.mouse_position();
     let left_btn_pressed = winit_input.is_pressed(MouseButton::Left);
-
-    // gamepad events
-    for connection_event in gilrs_cnct_events.read() {
-        info!("{:?}", connection_event);
-    }
-    for axis_changed_event in gilrs_axis_events.read() {
-        info!(
-            "{:?} of {:?} is changed to {}",
-            axis_changed_event.axis_type, axis_changed_event.gamepad, axis_changed_event.value
-        );
-    }
-    for button_changed_event in gilrs_bttn_events.read() {
-        info!(
-            "{:?} of {:?} is changed to {}",
-            button_changed_event.button_type,
-            button_changed_event.gamepad,
-            button_changed_event.value
-        );
-    }
-    for button_input_event in gilrs_inpt_events.read() {
-        info!("{:?}", button_input_event);
-    }
 
     // gamepad state
     for gamepad in gamepads.iter() {
