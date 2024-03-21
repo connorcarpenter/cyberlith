@@ -8,7 +8,7 @@ use gilrs::{Gilrs, GilrsBuilder};
 mod converter;
 
 mod gamepad;
-pub use gamepad::{Gamepads, GamepadButton, GamepadAxis, GamepadButtonType, GamepadAxisType, GamepadAxisChangedEvent, GamepadButtonChangedEvent, GamepadConnectionEvent, GamepadButtonInput};
+pub use gamepad::{Gamepads, GamepadButton, GamepadAxis, GamepadButtonType, GamepadAxisType, GamepadAxisChangedEvent, GamepadButtonChangedEvent, GamepadConnectionEvent, GamepadRumbleRequest, GamepadRumbleIntensity, GamepadButtonInput};
 
 mod axis;
 pub use axis::{Axis};
@@ -20,7 +20,7 @@ mod rumble;
 
 use rumble::{play_gilrs_rumble, RunningRumbleEffects};
 
-use crate::gamepad::{gamepad::{gamepad_axis_event_system, gamepad_button_event_system, gamepad_connection_system, gamepad_event_system, GamepadEvent, GamepadRumbleRequest, GamepadSettings}};
+use crate::gamepad::{gamepad::{gamepad_axis_event_system, gamepad_button_event_system, gamepad_connection_system, gamepad_event_system, GamepadEvent, GamepadSettings}};
 
 /// Plugin that provides gamepad handling to an [`App`].
 #[derive(Default)]

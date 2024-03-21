@@ -1,9 +1,11 @@
-use bevy_ecs::event::EventReader;
+use std::time::Duration;
+use bevy_ecs::event::{EventReader, EventWriter};
 use bevy_ecs::system::{NonSend, Res};
 use bevy_log::info;
 
-use game_engine::input::{gamepad::{GamepadButtonType, GamepadConnectionEvent, GamepadButtonInput, GamepadButtonChangedEvent, GamepadAxisChangedEvent, GamepadAxisType, GamepadAxis, Axis, GamepadButton, Gamepads, InputGilrs}, Input};
+use game_engine::input::{gamepad::{GamepadButtonType, GamepadConnectionEvent, GamepadButtonInput, GamepadRumbleIntensity, GamepadButtonChangedEvent, GamepadAxisChangedEvent, GamepadAxisType, GamepadAxis, Axis, GamepadButton, Gamepads, InputGilrs}, Input};
 use game_engine::input::{InputEvent, Key, MouseButton};
+use game_engine::input::gamepad::GamepadRumbleRequest;
 
 pub(crate) fn gamepad_system(
     winit_input: Res<Input>,
@@ -16,6 +18,7 @@ pub(crate) fn gamepad_system(
     mut gilrs_axis_events: EventReader<GamepadAxisChangedEvent>,
     mut gilrs_bttn_events: EventReader<GamepadButtonChangedEvent>,
     mut gilrs_inpt_events: EventReader<GamepadButtonInput>,
+    mut rumble_requests: EventWriter<GamepadRumbleRequest>,
 ) {
     // winit events
     for event in winit_input_events.read() {
@@ -61,6 +64,11 @@ pub(crate) fn gamepad_system(
     for gamepad in gamepads.iter() {
         if button_inputs.is_pressed(GamepadButton::new(gamepad, GamepadButtonType::RightBumper)) {
             info!("{:?} RightBumper pressed", gamepad);
+            rumble_requests.send(GamepadRumbleRequest::Add {
+                gamepad,
+                intensity: GamepadRumbleIntensity::strong_motor(0.1),
+                duration: Duration::from_secs(5),
+            });
         } else if !button_inputs.is_pressed(GamepadButton::new(gamepad, GamepadButtonType::RightBumper))
         {
             //info!("{:?} RightBumper not pressed", gamepad);
