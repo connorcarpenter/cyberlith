@@ -305,10 +305,9 @@ impl AssetManager {
         );
     }
 
-    pub fn update_ui(
+    pub fn update_ui_viewport(
         &mut self,
         camera: &Camera,
-        ui_input: UiInput,
         ui_handle: &AssetHandle<UiData>,
     ) {
         let Some(ui_data) = self.store.uis.get_mut(ui_handle) else {
@@ -322,8 +321,19 @@ impl AssetManager {
             ui.update_viewport(&viewport);
             ui.recalculate_layout_if_needed();
         }
+    }
 
-        // update button states
+    pub fn update_ui_input(
+        &mut self,
+        ui_input: UiInput,
+        ui_handle: &AssetHandle<UiData>,
+    ) {
+        let Some(ui_data) = self.store.uis.get_mut(ui_handle) else {
+            warn!("ui data not loaded 1: {:?}", ui_handle.asset_id());
+            return;
+        };
+        let ui = ui_data.get_ui_mut();
+
         ui.receive_input(ui_input);
 
         // get any events

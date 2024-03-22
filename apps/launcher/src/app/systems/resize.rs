@@ -1,4 +1,5 @@
 use bevy_ecs::system::{Query, Res, ResMut};
+use bevy_log::info;
 
 use game_engine::{
     math::Vec3,
@@ -19,10 +20,12 @@ pub fn handle_viewport_resize(
     if !window.did_change() {
         return;
     }
+    //info!("window did change");
     window.clear_change();
     let Some(window_res) = window.get() else {
         return;
     };
+    //info!("window has res");
 
     // resize ui camera
     if let Ok((mut camera, mut transform)) = cameras_q.get_mut(global.camera_ui) {
@@ -32,6 +35,7 @@ pub fn handle_viewport_resize(
             true
         };
         if should_change {
+            //info!("cam should change");
             let new_viewport = Viewport::new_at_origin(
                 window_res.logical_size.width,
                 window_res.logical_size.height,
