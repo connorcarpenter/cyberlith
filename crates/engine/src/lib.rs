@@ -41,6 +41,9 @@ pub mod storage {
 pub mod ui {
     pub use ui::{Alignment, NodeId, Ui};
 }
+pub mod random {
+    pub use random::*;
+}
 
 // TODO: should these find a home?
 pub use renderer::wait_for_finish;

@@ -1,7 +1,5 @@
 use std::fmt::Debug;
 
-use rand::{thread_rng, Rng};
-
 #[derive(Eq, PartialEq, Hash, Clone, Copy, Ord, PartialOrd)]
 pub struct U32Token {
     value: u32,
@@ -23,7 +21,7 @@ impl U32Token {
     const MAX_VALUE: u32 = Self::MAX_CHARS.pow(Self::MAX_LENGTH);
 
     pub fn get_random() -> Self {
-        let value = thread_rng().gen_range(0..Self::MAX_VALUE);
+        let value = random::gen_range_u32(0, Self::MAX_VALUE);
         Self { value }
     }
 

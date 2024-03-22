@@ -15,6 +15,7 @@ http_server = { path = "../../crates/http/http_server" }
 http_client = { path = "../../crates/http/http_client" }
 crypto = { path = "../../crates/crypto" }
 config = { path = "../config", features = ["region"] }
+random = { path = "../../crates/random" }
 
 region_server_http_proto = { path = "http_proto" }
 session_server_http_proto = { path = "../session/http_proto" }

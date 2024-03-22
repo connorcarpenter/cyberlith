@@ -48,7 +48,7 @@ pub fn init(mut commands: Commands, mut server: Server) {
     server.listen(socket);
 
     // set up global
-    let instance_secret = crypto::generate_random_string(16);
+    let instance_secret = random::generate_random_string(16);
     let main_room_key = server.make_room().key();
     let registration_resend_rate = Duration::from_secs(5);
     let region_server_disconnect_timeout = Duration::from_secs(16);

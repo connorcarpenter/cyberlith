@@ -13,11 +13,10 @@ math = { path = "../../math" }
 storage = { path = "../../storage" }
 filesystem = { path = "../../filesystem" }
 ui = { path = "../../ui" }
+random = { path = "../../random" }
 
 naia-serde = { path = "../../../../naia/shared/serde" }
 
 bevy_app = { version = "0.13", default-features = false }
 bevy_ecs = { version = "0.13", default-features = false }
 bevy_log = { version = "0.13", default-features=false }
-
-rand = { version = "0.8.5" }

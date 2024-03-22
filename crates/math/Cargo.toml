@@ -7,5 +7,6 @@ workspace = "../.."
 [dependencies]
 glam = { version = "0.23" }
 naia-serde = { path = "../../../naia/shared/serde" }
+random = { path = "../random" }
 log = { version = "0.4" }
-rand = { version = "0.8.5" }
+

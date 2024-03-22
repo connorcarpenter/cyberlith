@@ -59,12 +59,12 @@ impl GUI {
     /// Construct the GUI (Add panels, widgets etc.) using the [egui::Context] in the callback function.
     /// This function returns whether or not the GUI has changed, ie. if it consumes any events, and therefore needs to be rendered again.
     ///
-    pub fn pre_update<T: 'static + Clone>(
+    pub fn pre_update(
         &mut self,
         egui_context: &egui::Context,
         frame_input: &mut FrameInput,
     ) {
-        let events: &mut [IncomingEvent<T>] = frame_input.incoming_events.as_mut_slice();
+        let events: &mut [IncomingEvent] = frame_input.incoming_events.as_mut_slice();
         let accumulated_time_in_ms: f64 = frame_input.accumulated_time_ms;
         let viewport: Viewport = frame_input.physical_size;
         let device_pixel_ratio: f64 = frame_input.device_pixel_ratio;
@@ -92,98 +92,71 @@ impl GUI {
                     IncomingEvent::KeyPress {
                         kind,
                         modifiers,
-                        handled,
+
                     } => {
-                        if !*handled {
-                            Some(egui::Event::Key {
-                                key: gl_to_egui_key(kind),
-                                pressed: true,
-                                modifiers: gl_to_egui_modifiers(modifiers),
-                                repeat: false,
-                            })
-                        } else {
-                            None
-                        }
+                        Some(egui::Event::Key {
+                            key: gl_to_egui_key(kind),
+                            pressed: true,
+                            modifiers: gl_to_egui_modifiers(modifiers),
+                            repeat: false,
+                        })
                     }
                     IncomingEvent::KeyRelease {
                         kind,
                         modifiers,
-                        handled,
                     } => {
-                        if !*handled {
-                            Some(egui::Event::Key {
-                                key: gl_to_egui_key(kind),
-                                pressed: false,
-                                modifiers: gl_to_egui_modifiers(modifiers),
-                                repeat: false,
-                            })
-                        } else {
-                            None
-                        }
+                        Some(egui::Event::Key {
+                            key: gl_to_egui_key(kind),
+                            pressed: false,
+                            modifiers: gl_to_egui_modifiers(modifiers),
+                            repeat: false,
+                        })
                     }
                     IncomingEvent::MousePress {
                         button,
                         position,
                         modifiers,
-                        handled,
                     } => {
-                        if !*handled {
-                            Some(egui::Event::PointerButton {
-                                pos: egui::Pos2 {
-                                    x: position.0 as f32,
-                                    y: position.1 as f32,
-                                },
-                                button: gl_to_egui_mouse_button(button),
-                                pressed: true,
-                                modifiers: gl_to_egui_modifiers(modifiers),
-                            })
-                        } else {
-                            None
-                        }
+                        Some(egui::Event::PointerButton {
+                            pos: egui::Pos2 {
+                                x: position.0 as f32,
+                                y: position.1 as f32,
+                            },
+                            button: gl_to_egui_mouse_button(button),
+                            pressed: true,
+                            modifiers: gl_to_egui_modifiers(modifiers),
+                        })
                     }
                     IncomingEvent::MouseRelease {
                         button,
                         position,
                         modifiers,
-                        handled,
                     } => {
-                        if !*handled {
-                            Some(egui::Event::PointerButton {
-                                pos: egui::Pos2 {
-                                    x: position.0 as f32,
-                                    y: position.1 as f32,
-                                },
-                                button: gl_to_egui_mouse_button(button),
-                                pressed: false,
-                                modifiers: gl_to_egui_modifiers(modifiers),
-                            })
-                        } else {
-                            None
-                        }
-                    }
-                    IncomingEvent::MouseMotion {
-                        position, handled, ..
-                    } => {
-                        if !*handled {
-                            Some(egui::Event::PointerMoved(egui::Pos2 {
+                        Some(egui::Event::PointerButton {
+                            pos: egui::Pos2 {
                                 x: position.0 as f32,
                                 y: position.1 as f32,
-                            }))
-                        } else {
-                            None
-                        }
+                            },
+                            button: gl_to_egui_mouse_button(button),
+                            pressed: false,
+                            modifiers: gl_to_egui_modifiers(modifiers),
+                        })
+                    }
+                    IncomingEvent::MouseMotion {
+                        position, ..
+                    } => {
+                        Some(egui::Event::PointerMoved(egui::Pos2 {
+                            x: position.0 as f32,
+                            y: position.1 as f32,
+                        }))
                     }
                     IncomingEvent::Text(text) => Some(egui::Event::Text(text.clone())),
-                    IncomingEvent::MouseLeave => Some(egui::Event::PointerGone),
-                    IncomingEvent::MouseWheel { delta, handled, .. } => {
-                        if !*handled {
-                            Some(egui::Event::Scroll(egui::Vec2::new(
-                                delta.0 as f32,
-                                delta.1 as f32,
-                            )))
-                        } else {
-                            None
-                        }
+                    // IncomingEvent::MouseLeave => Some(egui::Event::PointerGone),
+                    IncomingEvent::MouseWheel { delta, .. } => {
+                        Some(egui::Event::Scroll(egui::Vec2::new(
+                            delta.0 as f32,
+                            delta.1 as f32,
+                        )))
                     }
                     _ => None,
                 })
@@ -199,7 +172,7 @@ impl GUI {
     /// Construct the GUI (Add panels, widgets etc.) using the [egui::Context] in the callback function.
     /// This function returns whether or not the GUI has changed, ie. if it consumes any events, and therefore needs to be rendered again.
     ///
-    pub fn post_update<T: 'static + Clone>(
+    pub fn post_update(
         &mut self,
         egui_context: &egui::Context,
         frame_input: &mut FrameInput,

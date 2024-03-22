@@ -1,8 +1,5 @@
 use std::collections::HashMap;
 
-use rand;
-use rand::seq::SliceRandom;
-
 use gl::DrawArraysIndirectCommand;
 use math::Mat4;
 use render_api::{
@@ -133,8 +130,7 @@ fn meshes_to_commands(
         let mut instances = mesh_handle_transform_map.remove(&mesh_handle).unwrap();
 
         if instances.len() > 4096 {
-            let mut rng = rand::thread_rng();
-            instances.shuffle(&mut rng);
+            random::shuffle_vec(&mut instances);
             instances.truncate(4096);
         }
 

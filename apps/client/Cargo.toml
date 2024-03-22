@@ -26,13 +26,13 @@ crate-type = ["cdylib", "rlib"]
 # goal is to have ONLY game_engine here!!!
 game_engine = { path = "../../crates/engine", features = ["networked"] }
 naia-serde = { path = "../../../naia/shared/serde" }
+random = { path = "../../crates/random" }
 
 # External
 bevy_app = { version = "0.13", default-features=false }
 bevy_ecs = { version = "0.13", default-features=false }
 bevy_log = { version = "0.13", default-features=false }
 
-rand = { version = "0.8.5" }
 cfg-if = { version = "1.0" }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]

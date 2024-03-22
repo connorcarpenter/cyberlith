@@ -66,7 +66,7 @@ impl AnimInputManager {
                 InputEvent::MouseMiddleScrolled(scroll_y) => {
                     Self::handle_mouse_scroll_framing(world, scroll_y)
                 }
-                InputEvent::MouseMoved => {
+                InputEvent::MouseMoved(_mouse_position) => {
                     input_manager.queue_resync_hover_ui();
                 }
                 InputEvent::KeyPressed(key) => match key {
@@ -149,7 +149,7 @@ impl AnimInputManager {
                 InputEvent::MouseMiddleScrolled(scroll_y) => {
                     InputManager::handle_mouse_scroll_wheel(world, scroll_y)
                 }
-                InputEvent::MouseMoved => {
+                InputEvent::MouseMoved(_mouse_position) => {
                     input_manager.queue_resync_hover_ui();
                     input_manager.queue_resync_selection_ui();
                 }

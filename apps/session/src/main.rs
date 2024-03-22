@@ -32,7 +32,7 @@ use crate::{
 };
 
 fn main() {
-    let instance_secret = crypto::generate_random_string(16);
+    let instance_secret = random::generate_random_string(16);
     let registration_resend_rate = Duration::from_secs(5);
     let region_server_disconnect_timeout = Duration::from_secs(16);
     let world_connect_resend_rate = Duration::from_secs(5);

@@ -1,9 +1,9 @@
 use js_sys::{Array, Function, Object};
 use wasm_bindgen::JsValue;
-use crate::gamepad::{rumble::{GamepadRumbleRequest, RumbleError}, gilrs::GilrsWrapper, converter::convert_gamepad_id};
-
 use web_sys::Gamepad as WebGamepad;
+
 use crate::GamepadRumbleIntensity;
+use crate::gamepad::{rumble::{GamepadRumbleRequest, RumbleError}, gilrs::GilrsWrapper, converter::convert_gamepad_id};
 
 pub(crate) fn handle_rumble_request(
     rumble_request: GamepadRumbleRequest,
@@ -63,7 +63,7 @@ pub(crate) fn handle_rumble_request(
 
     let rumble_vars_js_obj = JsValue::from(Object::new());
     js_sys::Reflect::set(&rumble_vars_js_obj, &JsValue::from("startDelay"), &JsValue::from(0)).unwrap();
-    js_sys::Reflect::set(&rumble_vars_js_obj, &JsValue::from("duration"), &JsValue::from(duration)).unwrap();
+    js_sys::Reflect::set(&rumble_vars_js_obj, &JsValue::from("duration"), &JsValue::from(duration.as_millis())).unwrap();
     js_sys::Reflect::set(&rumble_vars_js_obj, &JsValue::from("weakMagnitude"), &JsValue::from(weak_motor)).unwrap();
     js_sys::Reflect::set(&rumble_vars_js_obj, &JsValue::from("strongMagnitude"), &JsValue::from(strong_motor)).unwrap();
     play_effect_args.push(&rumble_vars_js_obj);

@@ -15,6 +15,7 @@ math = { path = "../../math" }
 input = { path = "../../input" }
 gl = { path = "../gl" }
 storage = { path = "../../storage" }
+random = { path = "../../random" }
 
 # External Crates
 bevy_app = { version = "0.13", default-features = false }
@@ -24,7 +25,6 @@ bevy_log = { version = "0.13", default-features = false }
 cfg-if = { version = "1.0" }
 thiserror = { version = "1" }
 winit = { version = "0.28", default-features = false, features = ["x11"] }
-rand = { version = "0.8.5" }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 glutin = { version = "0.30", default-features = false, features = ["glx", "x11"] }

@@ -1,6 +1,5 @@
 //! Handle user specified rumble request events.
 use std::{collections::HashMap, time::Duration};
-use std::time::Instant;
 
 use bevy_ecs::{
     prelude::Res,
@@ -9,6 +8,7 @@ use bevy_ecs::{
 use bevy_log::{debug, info, warn};
 
 use gilrs::ff::{self, Effect};
+use instant::Instant;
 
 use render_api::resources::Time;
 
@@ -252,13 +252,16 @@ impl Default for GamepadRunningRumbleEffects {
 impl GamepadRunningRumbleEffects {
     pub(crate) fn add_rumble(&mut self, duration: Duration, intensity: GamepadRumbleIntensity, effect: Effect) {
 
-        let real_deadline = Instant::now() + duration;
+        let duration_millis = duration.as_millis();
+        let mut real_deadline = Instant::now();
+        real_deadline.add_millis(duration_millis as u32);
 
         if real_deadline > self.last_deadline {
-            self.last_deadline = real_deadline;
+            self.last_deadline = real_deadline.clone();
         }
 
-        let used_deadline = real_deadline + Duration::from_millis(20);
+        let mut used_deadline = real_deadline.clone();
+        used_deadline.add_millis(20);
 
         self.rumbles
             .push(RunningRumble {

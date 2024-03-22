@@ -43,7 +43,7 @@ impl MeshInputManager {
                 InputEvent::MouseMiddleScrolled(scroll_y) => {
                     InputManager::handle_mouse_scroll_wheel(world, scroll_y)
                 }
-                InputEvent::MouseMoved => {
+                InputEvent::MouseMoved(_mouse_position) => {
                     input_manager.queue_resync_hover_ui();
                     input_manager.queue_resync_selection_ui();
                 }

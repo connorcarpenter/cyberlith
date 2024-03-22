@@ -43,8 +43,8 @@ pub(crate) fn gamepad_system(
 
                     // TESTING
                     let duration = 1000; //duration.as_millis() as u32;
-                    let weak_motor = math::generate_random_range_f32(0.0, 1.0);
-                    let strong_motor = math::generate_random_range_f32(0.0, 1.0);
+                    let weak_motor = game_engine::random::gen_range_f32(0.0, 1.0);
+                    let strong_motor = game_engine::random::gen_range_f32(0.0, 1.0);
                     // TESTING
 
                     rumble_manager.add_rumble(

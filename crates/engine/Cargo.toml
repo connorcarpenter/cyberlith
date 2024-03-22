@@ -25,6 +25,7 @@ storage = { path = "../storage" }
 asset_id = { path = "../asset/id" }
 filesystem = { path = "../filesystem" }
 ui = { path = "../ui" }
+random = { path = "../random" }
 
 # Networked Dependencies
 orchestrator_http_proto = { path = "../../apps/orchestrator/http_proto", optional = true }
@@ -44,4 +45,3 @@ bevy_ecs = { version = "0.13", default-features=false }
 bevy_log = { version = "0.13", default-features=false }
 
 cfg-if = { version = "1.0" }
-rand = { version = "0.8.5" }

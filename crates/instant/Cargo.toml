@@ -1,0 +1,10 @@
+[package]
+name = "instant"
+version = "0.1.0"
+edition = "2021"
+workspace = "../.."
+
+[dependencies]
+naia-socket-shared = { path = "../../../naia/socket/shared" }
+
+log = { version = "0.4" }
