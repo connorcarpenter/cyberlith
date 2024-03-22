@@ -140,19 +140,23 @@ pub fn ui_update(
     // UIs
     uis_q: Query<(&AssetHandle<UiData>, Option<&RenderLayer>)>,
 ) {
-    let Some(ui_input) = UiInputConverter::convert(&input, &mut input_events) else {
-        return;
-    };
+    let ui_input = UiInputConverter::convert(&input, &mut input_events);
 
     for (ui_handle, ui_render_layer_opt) in uis_q.iter() {
 
-        // find camera
+        // find camera, update viewport
         for (camera, cam_render_layer_opt) in cameras_q.iter() {
             if cam_render_layer_opt == ui_render_layer_opt {
-                asset_manager.update_ui(camera, ui_input.clone(), ui_handle);
+                asset_manager.update_ui_viewport(camera, ui_handle);
                 break;
             }
         }
+
+        // update with inputs
+        let Some(ui_input) = ui_input.clone() else {
+            continue;
+        };
+        asset_manager.update_ui_input(ui_input, ui_handle);
     }
 }
 
