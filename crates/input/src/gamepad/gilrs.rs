@@ -1,4 +1,5 @@
 use std::time::Duration;
+
 use bevy_ecs::system::{NonSend, NonSendMut, ResMut};
 
 use gilrs::{EventType, ff, Filter, Gilrs};
@@ -7,11 +8,10 @@ use crate::{gamepad::{
     converter::{
         axis_dpad_to_button_filter, axis_triggers_to_button_filter, convert_axis,
         convert_button, convert_gamepad_id,
-    },
+    }, rumble,
     rumble::RunningRumbleEffects,
     GamepadAxis, GamepadButton, GamepadInfo,
 }, GamepadId, GamepadRumbleIntensity, Input};
-use crate::gamepad::rumble::RunningRumble;
 
 pub struct GilrsWrapper {
     gilrs: Gilrs,
@@ -33,10 +33,22 @@ impl GilrsWrapper {
     }
 
     pub fn update_rumbles(&mut self) {
-        self.running_rumbles.update();
+        if let Some(updated_gamepads) = self.running_rumbles.update() {
+            let _result = rumble::set_total_rumbles(self, updated_gamepads);
+            // TODO: handle result
+        }
+        self.running_rumbles.cleanup();
     }
 
-    pub fn add_rumble(&mut self, gamepad: &GamepadId, duration: Duration, intensity: GamepadRumbleIntensity, effect: ff::Effect) {
+    // unused on native, used on wasm
+    #[allow(unused)]
+    pub fn get_current_rumble(&self, gamepad_id: &GamepadId) -> Option<(Duration, GamepadRumbleIntensity)> {
+        let output = self.running_rumbles.get_current_rumble(gamepad_id);
+
+        output
+    }
+
+    pub fn add_rumble(&mut self, gamepad: &GamepadId, duration: Duration, intensity: GamepadRumbleIntensity, effect: Option<ff::Effect>) {
         self.running_rumbles.add_rumble(gamepad, duration, intensity, effect);
     }
 

@@ -36,8 +36,16 @@ pub(crate) fn handle_rumble_request(
         .map_err(|e| RumbleError::GilrsError(e))?;
     effect.play().map_err(|e| RumbleError::GilrsError(e))?;
 
-    input_gilrs.add_rumble(&convert_gamepad_id(gamepad_id), duration, intensity, effect);
+    input_gilrs.add_rumble(&convert_gamepad_id(gamepad_id), duration, intensity, Some(effect));
 
+    Ok(())
+}
+
+pub(crate) fn set_total_rumbles(
+    _input_gilrs: &mut GilrsWrapper,
+    _gamepad_ids: Vec<crate::GamepadId>,
+) -> Result<(), RumbleError> {
+    // do nothing, gilrs takes care of this on native for us!
     Ok(())
 }
 

@@ -1,22 +1,17 @@
 //! Handle user specified rumble request events.
 use std::{collections::HashMap, time::Duration};
 
-use bevy_ecs::{
-    prelude::Res,
-    system::{NonSendMut, ResMut, Resource},
-};
-use bevy_log::{debug, info, warn};
+use bevy_ecs::system::{NonSendMut, ResMut, Resource};
+use bevy_log::warn;
 
 use gilrs::ff::{self, Effect};
+
 use instant::Instant;
 
-use render_api::resources::Time;
-
 use crate::{
-    gamepad::gilrs::GilrsWrapper,
+    gamepad::{gilrs::GilrsWrapper, rumble::handle_rumble_request},
     GamepadId,
 };
-use crate::gamepad::rumble::handle_rumble_request;
 
 #[derive(Resource)]
 pub struct RumbleManager {
@@ -48,12 +43,9 @@ impl RumbleManager {
 
     // will be used as a system
     pub(crate) fn update(
-        time: Res<Time>,
         mut input_gilrs: NonSendMut<GilrsWrapper>,
         mut rumble_manager: ResMut<RumbleManager>,
     ) {
-        input_gilrs.update_rumbles();
-
         // handle all new rumble requests
         let new_rumble_events = rumble_manager.take_new_rumble_events();
         for rumble_request in new_rumble_events {
@@ -79,6 +71,9 @@ impl RumbleManager {
                 }
             };
         }
+
+        // update existing rumbles
+        input_gilrs.update_rumbles();
     }
 
     fn take_new_rumble_events(&mut self) -> Vec<GamepadRumbleRequest> {
@@ -175,6 +170,10 @@ impl GamepadRumbleIntensity {
             weak_motor: 0.0,
         }
     }
+
+    pub fn is_none(&self) -> bool {
+        self.strong_motor == 0.0 && self.weak_motor == 0.0
+    }
 }
 
 /// A rumble effect that is currently in effect.
@@ -186,12 +185,13 @@ pub(crate) struct RunningRumble {
     ///
     /// Dropping it will cause the effect to stop
     #[allow(dead_code)]
-    pub(crate) effect: ff::Effect,
+    pub(crate) effect: Option<Effect>,
 }
 
 #[derive(Debug)]
 pub(crate) enum RumbleError {
     GamepadNotFound,
+    #[allow(unused)]
     GilrsError(ff::Error),
 }
 
@@ -211,19 +211,49 @@ impl Default for RunningRumbleEffects {
 }
 
 impl RunningRumbleEffects {
-    pub(crate) fn add_rumble(&mut self, id: &GamepadId, duration: Duration, intensity: GamepadRumbleIntensity, effect: Effect) {
+
+    // unused in native, used in wasm
+    #[allow(unused)]
+    pub fn get_current_rumble(&self, gamepad_id: &GamepadId) -> Option<(Duration, GamepadRumbleIntensity)> {
+        if let Some(rumbles) = self.rumbles.get(gamepad_id) {
+            let duration = rumbles.last_deadline.until();
+            let current_rumble = rumbles.current_rumble;
+            if duration.as_millis() == 0 || current_rumble.is_none() {
+                return None;
+            }
+            return Some((duration, rumbles.current_rumble));
+        } else {
+            return None;
+        }
+    }
+
+    pub(crate) fn add_rumble(&mut self, id: &GamepadId, duration: Duration, intensity: GamepadRumbleIntensity, effect: Option<Effect>) {
         self.rumbles
             .entry(*id)
             .or_insert_with(GamepadRunningRumbleEffects::default)
             .add_rumble(duration, intensity, effect);
     }
 
-    pub(crate) fn update(&mut self) {
+    // returns list of gamepads that should be updated
+    pub(crate) fn update(&mut self) -> Option<Vec<GamepadId>> {
+
+        let mut output = None;
+
         let now = Instant::now();
         // Remove outdated rumble effects.
-        for gamepad_effects in self.rumbles.values_mut() {
-            gamepad_effects.update(&now);
+        for (id, gamepad_effects) in self.rumbles.iter_mut() {
+            if gamepad_effects.update(&now) {
+                if output.is_none() {
+                    output = Some(Vec::new());
+                }
+                output.as_mut().unwrap().push(*id);
+            }
         }
+
+        output
+    }
+
+    pub(crate) fn cleanup(&mut self) {
         self
             .rumbles
             .retain(|_gamepad, rumbles| !rumbles.is_empty());
@@ -234,6 +264,7 @@ pub(crate) struct GamepadRunningRumbleEffects {
     rumbles: Vec<RunningRumble>,
     current_rumble: GamepadRumbleIntensity,
     last_deadline: Instant,
+    rumble_is_dirty: bool,
 }
 
 impl Default for GamepadRunningRumbleEffects {
@@ -245,12 +276,13 @@ impl Default for GamepadRunningRumbleEffects {
                 weak_motor: 0.0,
             },
             last_deadline: Instant::now(),
+            rumble_is_dirty: false,
         }
     }
 }
 
 impl GamepadRunningRumbleEffects {
-    pub(crate) fn add_rumble(&mut self, duration: Duration, intensity: GamepadRumbleIntensity, effect: Effect) {
+    pub(crate) fn add_rumble(&mut self, duration: Duration, intensity: GamepadRumbleIntensity, effect: Option<Effect>) {
 
         let duration_millis = duration.as_millis();
         let mut real_deadline = Instant::now();
@@ -258,6 +290,7 @@ impl GamepadRunningRumbleEffects {
 
         if real_deadline > self.last_deadline {
             self.last_deadline = real_deadline.clone();
+            self.rumble_is_dirty = true;
         }
 
         let mut used_deadline = real_deadline.clone();
@@ -273,7 +306,8 @@ impl GamepadRunningRumbleEffects {
         self.add_rumble_intensity(intensity);
     }
 
-    pub(crate) fn update(&mut self, now: &Instant) {
+    // returns whether new rumble should be set
+    pub(crate) fn update(&mut self, now: &Instant) -> bool {
         let old_rumbles = std::mem::take(&mut self.rumbles);
 
         for rumble in old_rumbles {
@@ -283,9 +317,16 @@ impl GamepadRunningRumbleEffects {
 
                 let intensity = rumble.intensity;
                 self.remove_rumble_intensity(intensity);
-
-                info!("Rumble effect finished. Intensity is now: {:?}", self.current_rumble);
             }
+        }
+
+        // check if rumbling has changed
+        if self.rumble_is_dirty {
+            self.rumble_is_dirty = false;
+
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -296,10 +337,12 @@ impl GamepadRunningRumbleEffects {
     fn add_rumble_intensity(&mut self, intensity: GamepadRumbleIntensity) {
         self.current_rumble.strong_motor += intensity.strong_motor;
         self.current_rumble.weak_motor += intensity.weak_motor;
+        self.rumble_is_dirty = true;
     }
 
     fn remove_rumble_intensity(&mut self, intensity: GamepadRumbleIntensity) {
         self.current_rumble.strong_motor -= intensity.strong_motor;
         self.current_rumble.weak_motor -= intensity.weak_motor;
+        self.rumble_is_dirty = true;
     }
 }

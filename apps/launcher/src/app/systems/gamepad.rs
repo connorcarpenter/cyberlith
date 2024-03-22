@@ -10,7 +10,6 @@ use game_engine::input::{
     GamepadButton, GamepadButtonType, GamepadRumbleIntensity, Input, InputEvent, Joystick,
     JoystickType, Key, MouseButton, RumbleManager,
 };
-use game_engine::math;
 
 pub(crate) fn gamepad_system(
     input: Res<Input>,
@@ -43,16 +42,19 @@ pub(crate) fn gamepad_system(
 
                     // TESTING
                     let duration = 1000; //duration.as_millis() as u32;
-                    let weak_motor = game_engine::random::gen_range_f32(0.0, 1.0);
-                    let strong_motor = game_engine::random::gen_range_f32(0.0, 1.0);
+                    let (weak, strong) = if game_engine::random::gen_bool() {
+                        (0.0, 0.2)
+                    } else {
+                        (0.2, 0.0)
+                    };
                     // TESTING
 
                     rumble_manager.add_rumble(
                         *id,
                         Duration::from_millis(duration),
                         GamepadRumbleIntensity {
-                            strong_motor,
-                            weak_motor,
+                            strong_motor: strong,
+                            weak_motor: weak,
                         },
                     );
                 }

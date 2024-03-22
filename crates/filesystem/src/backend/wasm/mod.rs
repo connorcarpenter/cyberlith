@@ -1,7 +1,7 @@
 use bevy_tasks::AsyncComputeTaskPool;
 
 use crossbeam_channel::{bounded, Receiver};
-use js_sys::{Array, ArrayBuffer, AsyncIterator, Function, Promise, Uint8Array};
+use js_sys::{Array, AsyncIterator, Function, Promise, Uint8Array};
 use log::info;
 use wasm_bindgen::JsValue;
 use wasm_bindgen_futures::JsFuture;
@@ -224,7 +224,7 @@ async fn handle_read_dir(task: &ReadDirTask) -> Result<FsTaskResultEnum, TaskErr
             .try_into()
             .expect("Failed to cast iterator's value to Array");
         let name_js = next_entry.get(0);
-        let handle_js = next_entry.get(1);
+        let _handle_js = next_entry.get(1);
 
         let file_name = name_js
             .as_string()

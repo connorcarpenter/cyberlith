@@ -1,29 +1,55 @@
+use std::time::Duration;
+
 use js_sys::{Array, Function, Object};
 use wasm_bindgen::JsValue;
 use web_sys::Gamepad as WebGamepad;
 
-use crate::GamepadRumbleIntensity;
-use crate::gamepad::{rumble::{GamepadRumbleRequest, RumbleError}, gilrs::GilrsWrapper, converter::convert_gamepad_id};
+use crate::{GamepadRumbleIntensity, gamepad::{rumble::{GamepadRumbleRequest, RumbleError}, gilrs::GilrsWrapper, converter::convert_gamepad_id, GamepadId}};
 
 pub(crate) fn handle_rumble_request(
     rumble_request: GamepadRumbleRequest,
     input_gilrs: &mut GilrsWrapper,
 ) -> Result<(), RumbleError> {
-    let gilrs = input_gilrs.gilrs_mut();
     let GamepadRumbleRequest {
         duration,
         intensity,
         gamepad: gamepad_id,
     } = rumble_request;
+
+    input_gilrs.add_rumble(&gamepad_id, duration, intensity, None);
+
+    Ok(())
+}
+
+pub(crate) fn set_total_rumbles(
+    input_gilrs: &mut GilrsWrapper,
+    gamepad_ids: Vec<GamepadId>,
+) -> Result<(), RumbleError> {
+
+    for gamepad_id in gamepad_ids {
+        if let Some((current_rumble_duration, current_rumble_intensity)) = input_gilrs.get_current_rumble(&gamepad_id) {
+            set_total_rumble(input_gilrs, &gamepad_id, current_rumble_duration, current_rumble_intensity)?;
+        }
+    }
+
+    Ok(())
+}
+
+fn set_total_rumble(
+    input_gilrs: &mut GilrsWrapper,
+    gamepad_id: &GamepadId,
+    duration: Duration,
+    intensity: GamepadRumbleIntensity,
+) -> Result<(), RumbleError> {
+    let gilrs = input_gilrs.gilrs_mut();
     let GamepadRumbleIntensity {
         strong_motor,
         weak_motor,
     } = intensity;
-
     // get gamepad name
     let (_, gamepad) = gilrs
         .gamepads()
-        .find(|(pad_id, _)| convert_gamepad_id(*pad_id) == gamepad_id)
+        .find(|(pad_id, _)| convert_gamepad_id(*pad_id) == *gamepad_id)
         .ok_or(RumbleError::GamepadNotFound)?;
 
     let gamepad_name = gamepad.os_name();
@@ -63,7 +89,7 @@ pub(crate) fn handle_rumble_request(
 
     let rumble_vars_js_obj = JsValue::from(Object::new());
     js_sys::Reflect::set(&rumble_vars_js_obj, &JsValue::from("startDelay"), &JsValue::from(0)).unwrap();
-    js_sys::Reflect::set(&rumble_vars_js_obj, &JsValue::from("duration"), &JsValue::from(duration.as_millis())).unwrap();
+    js_sys::Reflect::set(&rumble_vars_js_obj, &JsValue::from("duration"), &JsValue::from(duration.as_millis() as u32)).unwrap();
     js_sys::Reflect::set(&rumble_vars_js_obj, &JsValue::from("weakMagnitude"), &JsValue::from(weak_motor)).unwrap();
     js_sys::Reflect::set(&rumble_vars_js_obj, &JsValue::from("strongMagnitude"), &JsValue::from(strong_motor)).unwrap();
     play_effect_args.push(&rumble_vars_js_obj);
