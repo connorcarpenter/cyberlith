@@ -8,7 +8,7 @@ use game_engine::{
 use crate::app::{
     resources::Global,
     systems::{
-        draw, gamepad, resize, scene, ui,
+        draw, resize, scene, ui,
         ui::{ContinueButtonEvent, StartButtonEvent},
     },
 };
@@ -36,7 +36,7 @@ pub fn run() {
         // scene systems
         .add_systems(Startup, scene::scene_setup)
         .add_systems(Update, scene::scene_step)
-        .add_systems(Update, gamepad::gamepad_system)
+        //.add_systems(Update, gamepad_testing::gamepad_testing_system)
         // viewport resize
         .add_systems(Update, resize::handle_viewport_resize)
         // draw
