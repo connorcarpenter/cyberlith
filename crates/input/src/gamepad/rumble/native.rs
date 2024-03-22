@@ -4,9 +4,7 @@ use gilrs::{ff, ff::Repeat};
 use gilrs::ff::{BaseEffect, BaseEffectType, Replay};
 
 use crate::gamepad::{rumble::RumbleError, converter::convert_gamepad_id, gilrs::GilrsWrapper};
-use crate::gamepad::rumble::RunningRumble;
 use crate::GamepadRumbleIntensity;
-
 use super::common::{GamepadRumbleRequest};
 
 pub(crate) fn handle_rumble_request(
@@ -38,8 +36,7 @@ pub(crate) fn handle_rumble_request(
         .map_err(|e| RumbleError::GilrsError(e))?;
     effect.play().map_err(|e| RumbleError::GilrsError(e))?;
 
-    let deadline = Duration::from_millis(20) + duration;
-    input_gilrs.add_rumble(&convert_gamepad_id(gamepad_id), deadline, effect);
+    input_gilrs.add_rumble(&convert_gamepad_id(gamepad_id), duration, intensity, effect);
 
     Ok(())
 }

@@ -10,7 +10,7 @@ use crate::{gamepad::{
     },
     rumble::RunningRumbleEffects,
     GamepadAxis, GamepadButton, GamepadInfo,
-}, GamepadId, Input};
+}, GamepadId, GamepadRumbleIntensity, Input};
 use crate::gamepad::rumble::RunningRumble;
 
 pub struct GilrsWrapper {
@@ -36,8 +36,8 @@ impl GilrsWrapper {
         self.running_rumbles.update();
     }
 
-    pub fn add_rumble(&mut self, gamepad: &GamepadId, duration: Duration, effect: ff::Effect) {
-        self.running_rumbles.add_rumble(gamepad, duration, effect);
+    pub fn add_rumble(&mut self, gamepad: &GamepadId, duration: Duration, intensity: GamepadRumbleIntensity, effect: ff::Effect) {
+        self.running_rumbles.add_rumble(gamepad, duration, intensity, effect);
     }
 
     // used as a system

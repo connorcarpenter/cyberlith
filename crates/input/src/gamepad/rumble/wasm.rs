@@ -61,12 +61,6 @@ pub(crate) fn handle_rumble_request(
 
     play_effect_args.push(&JsValue::from_str("dual-rumble"));
 
-    // TESTING
-    let duration = 1000; //duration.as_millis() as u32;
-    let weak_motor = math::generate_random_range_f32(0.0, 1.0);
-    let strong_motor = math::generate_random_range_f32(0.0, 1.0);
-    // TESTING
-
     let rumble_vars_js_obj = JsValue::from(Object::new());
     js_sys::Reflect::set(&rumble_vars_js_obj, &JsValue::from("startDelay"), &JsValue::from(0)).unwrap();
     js_sys::Reflect::set(&rumble_vars_js_obj, &JsValue::from("duration"), &JsValue::from(duration)).unwrap();

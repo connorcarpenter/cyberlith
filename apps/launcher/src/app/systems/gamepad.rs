@@ -10,6 +10,7 @@ use game_engine::input::{
     GamepadButton, GamepadButtonType, GamepadRumbleIntensity, Input, InputEvent, Joystick,
     JoystickType, Key, MouseButton, RumbleManager,
 };
+use game_engine::math;
 
 pub(crate) fn gamepad_system(
     input: Res<Input>,
@@ -39,10 +40,20 @@ pub(crate) fn gamepad_system(
                 info!("---");
 
                 if *btn == GamepadButtonType::RightBumper {
+
+                    // TESTING
+                    let duration = 1000; //duration.as_millis() as u32;
+                    let weak_motor = math::generate_random_range_f32(0.0, 1.0);
+                    let strong_motor = math::generate_random_range_f32(0.0, 1.0);
+                    // TESTING
+
                     rumble_manager.add_rumble(
                         *id,
-                        Duration::from_secs(1),
-                        GamepadRumbleIntensity::strong_motor(0.1),
+                        Duration::from_millis(duration),
+                        GamepadRumbleIntensity {
+                            strong_motor,
+                            weak_motor,
+                        },
                     );
                 }
             }
