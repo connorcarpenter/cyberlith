@@ -16,7 +16,7 @@ use render_api::{
     resources::RenderFrame,
 };
 use storage::{Handle, Storage};
-use ui::{NodeId, Ui, UiEvent, UiEventHandler, WidgetKind};
+use ui::{NodeId, Ui, UiEvent, UiEventHandler, UiInput};
 
 use crate::{
     asset_renderer::AssetRenderer, processed_asset_store::ProcessedAssetStore, AnimationData,
@@ -308,7 +308,7 @@ impl AssetManager {
     pub fn update_ui(
         &mut self,
         camera: &Camera,
-        mouse_state: (f32, f32, bool),
+        ui_input: UiInput,
         ui_handle: &AssetHandle<UiData>,
     ) {
         let Some(ui_data) = self.store.uis.get_mut(ui_handle) else {
@@ -324,7 +324,7 @@ impl AssetManager {
         }
 
         // update button states
-        update_button_states(ui, &Ui::ROOT_NODE_ID, mouse_state, (0.0, 0.0));
+        ui.receive_input(ui_input);
 
         // get any events
         let mut events: Vec<(AssetId, NodeId, UiEvent)> = ui
@@ -343,58 +343,5 @@ impl AssetManager {
         ui_handle: &AssetHandle<UiData>,
     ) {
         AssetRenderer::draw_ui(render_frame, render_layer_opt, &self.store, ui_handle);
-    }
-}
-
-fn update_button_states(
-    ui: &mut Ui,
-    id: &NodeId,
-    mouse_state: (f32, f32, bool),
-    parent_position: (f32, f32),
-) {
-    let Some(node) = ui.store.get_node(&id) else {
-        warn!("no panel for id: {:?}", id);
-        return;
-    };
-
-    if !node.visible {
-        return;
-    }
-
-    let Some((width, height, child_offset_x, child_offset_y)) = ui.cache.bounds(id) else {
-        warn!("no bounds for id: {:?}", id);
-        return;
-    };
-
-    let child_position = (
-        parent_position.0 + child_offset_x,
-        parent_position.1 + child_offset_y,
-    );
-
-    match node.widget_kind() {
-        WidgetKind::Panel => {
-            let Some(panel_ref) = ui.store.panel_ref(id) else {
-                panic!("no panel ref for node_id: {:?}", id);
-            };
-
-            // update children
-            let child_ids = panel_ref.children.clone();
-            for child_id in child_ids {
-                update_button_states(ui, &child_id, mouse_state, child_position);
-            }
-        }
-        WidgetKind::Button => {
-            let Some(button_mut) = ui.store.button_mut(id) else {
-                panic!("no button mut for node_id: {:?}", id);
-            };
-            let did_click = button_mut.update_state(
-                (width, height, child_position.0, child_position.1),
-                mouse_state,
-            );
-            if did_click {
-                ui.emit_event(id, UiEvent::Clicked);
-            }
-        }
-        _ => {}
     }
 }

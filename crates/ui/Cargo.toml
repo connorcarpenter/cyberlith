@@ -9,6 +9,7 @@ asset_id = { path = "../asset/id" }
 render_api = { path = "../render/render_api" }
 storage = { path = "../storage" }
 ui_layout = { path = "layout" }
+input = { path = "../input" }
 
 bevy_app = { version = "0.13", default-features = false }
 bevy_ecs = { version = "0.13", default-features = false }

@@ -9,6 +9,7 @@ mod style;
 mod text;
 mod ui;
 mod widget;
+mod input;
 
 // just for engine
 pub use node_id::NodeId;
@@ -23,3 +24,4 @@ pub use panel::{Panel, PanelMut, PanelStyle, PanelStyleMut};
 pub use style::{NodeStyle, StyleId, WidgetStyle};
 pub use text::{Text, TextStyle, TextStyleMut};
 pub use widget::{Widget, WidgetKind};
+pub use input::{UiInputConverter, UiInput};

@@ -17,9 +17,7 @@ use crate::{
     store::UiStore,
     style::{NodeStyle, StyleId, WidgetStyle},
     text::{TextStyle, TextStyleMut},
-    widget::{Widget, WidgetKind},
-    Button, ButtonStyle, ButtonStyleMut, UiEvent,
-};
+    widget::{Widget, WidgetKind}, input::ui_receive_input, Button, ButtonStyle, ButtonStyleMut, UiEvent, UiInput};
 
 pub struct Ui {
     pub globals: Globals,
@@ -66,6 +64,10 @@ impl Ui {
     }
 
     // events
+    pub fn receive_input(&mut self, input: UiInput) {
+        ui_receive_input(self, input);
+    }
+
     pub fn emit_event(&mut self, node_id: &NodeId, event: UiEvent) {
         self.events.push((*node_id, event));
     }

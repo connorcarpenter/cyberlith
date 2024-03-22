@@ -39,7 +39,7 @@ pub mod storage {
     pub use storage::*;
 }
 pub mod ui {
-    pub use ui::{Alignment, NodeId, Ui};
+    pub use ui::{Alignment, NodeId, Ui, UiInputConverter};
 }
 pub mod random {
     pub use random::*;

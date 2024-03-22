@@ -5,7 +5,7 @@ use bevy_ecs::{
 use bevy_log::info;
 
 use game_engine::{
-    input::{Input, MouseButton},
+    input::{InputEvent, Input},
     asset::{embedded_asset_event, AssetHandle, AssetId, AssetManager, EmbeddedAssetEvent, UiData},
     render::{
         base::Color,
@@ -14,6 +14,7 @@ use game_engine::{
             RenderLayers, RenderTarget,
         },
     },
+    ui::{UiInputConverter},
 };
 
 use crate::app::resources::Global;
@@ -74,24 +75,22 @@ pub fn ui_setup(
 pub fn ui_update(
     mut asset_manager: ResMut<AssetManager>,
     input: Res<Input>,
+    mut input_events: EventReader<InputEvent>,
     // Cameras
     cameras_q: Query<(&Camera, Option<&RenderLayer>)>,
     // UIs
     uis_q: Query<(&AssetHandle<UiData>, Option<&RenderLayer>)>,
 ) {
-    // Aggregate UIs
-    let mouse_pos = input.mouse_position();
-    let mouse_state = (
-        mouse_pos.x,
-        mouse_pos.y,
-        input.is_pressed(MouseButton::Left),
-    );
+    let Some(ui_input) = UiInputConverter::convert(&input, &mut input_events) else {
+        return;
+    };
+
     for (ui_handle, ui_render_layer_opt) in uis_q.iter() {
 
         // find camera
         for (camera, cam_render_layer_opt) in cameras_q.iter() {
             if cam_render_layer_opt == ui_render_layer_opt {
-                asset_manager.update_ui(camera, mouse_state, ui_handle);
+                asset_manager.update_ui(camera, ui_input.clone(), ui_handle);
                 break;
             }
         }
