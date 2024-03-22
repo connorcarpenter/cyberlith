@@ -17,16 +17,22 @@ use crate::{
     store::UiStore,
     style::{NodeStyle, StyleId, WidgetStyle},
     text::{TextStyle, TextStyleMut},
-    widget::{Widget, WidgetKind}, input::ui_receive_input, Button, ButtonStyle, ButtonStyleMut, UiEvent, UiInput};
+    widget::{Widget, WidgetKind},
+    input::ui_receive_input,
+    Button, ButtonStyle, ButtonStyleMut, UiEvent, UiInput, button::ButtonState
+};
 
 pub struct Ui {
     pub globals: Globals,
     pub cache: LayoutCache,
     pub store: UiStore,
+
     recalc_layout: bool,
     last_viewport: Viewport,
     id_str_to_node_id_map: HashMap<String, NodeId>,
     events: Vec<(NodeId, UiEvent)>,
+    hovering_node: Option<NodeId>,
+    select_is_pressed: bool,
 }
 
 impl Ui {
@@ -43,6 +49,8 @@ impl Ui {
             last_viewport: Viewport::new_at_origin(0, 0),
             id_str_to_node_id_map: HashMap::new(),
             events: Vec::new(),
+            hovering_node: None,
+            select_is_pressed: false,
         };
 
         // Root Node
@@ -66,6 +74,34 @@ impl Ui {
     // events
     pub fn receive_input(&mut self, input: UiInput) {
         ui_receive_input(self, input);
+    }
+
+    pub fn receive_hover(&mut self, id: &NodeId) {
+        self.hovering_node = Some(*id);
+    }
+
+    pub fn get_button_state(&self, id: &NodeId) -> ButtonState {
+        let Some(hover_id) = self.hovering_node else {
+            return ButtonState::Normal;
+        };
+
+        if hover_id == *id {
+            if self.select_is_pressed {
+                ButtonState::Down
+            } else {
+                ButtonState::Hover
+            }
+        } else {
+            ButtonState::Normal
+        }
+    }
+
+    pub fn clear_hover(&mut self) {
+        self.hovering_node = None;
+    }
+
+    pub fn set_select_pressed(&mut self, val: bool) {
+        self.select_is_pressed = val;
     }
 
     pub fn emit_event(&mut self, node_id: &NodeId, event: UiEvent) {

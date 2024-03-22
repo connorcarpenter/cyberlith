@@ -566,7 +566,8 @@ fn draw_ui_button(
     };
 
     // draw button
-    if let Some(mat_handle) = button_ref.current_color_handle() {
+    let button_state = ui.get_button_state(node_id);
+    if let Some(mat_handle) = button_ref.current_color_handle(button_state) {
         let button_style_ref = ui.store.button_style_ref(node_id);
         let background_alpha = button_style_ref.background_alpha();
         if background_alpha > 0.0 {

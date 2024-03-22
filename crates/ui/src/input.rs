@@ -119,8 +119,9 @@ pub enum UiInputEvent {
 pub fn ui_receive_input(ui: &mut Ui, input: UiInput) {
     match input {
         UiInput::Mouse(x, y, pressed) => {
-            let mouse_state = (x, y, pressed);
-            update_button_states(ui, &Ui::ROOT_NODE_ID, mouse_state, (0.0, 0.0));
+            ui.set_select_pressed(pressed);
+            ui.clear_hover();
+            ui_update_hover(ui, &Ui::ROOT_NODE_ID, x, y, (0.0, 0.0));
         }
         UiInput::Events(events) => {
             info!("processing ui input events...");
@@ -128,10 +129,12 @@ pub fn ui_receive_input(ui: &mut Ui, input: UiInput) {
     }
 }
 
-fn update_button_states(
+// this currently requires recursion because node layout is additive ... one day we should fix this
+fn ui_update_hover(
     ui: &mut Ui,
     id: &NodeId,
-    mouse_state: (f32, f32, bool),
+    mouse_x: f32,
+    mouse_y: f32,
     parent_position: (f32, f32),
 ) {
     let Some(node) = ui.store.get_node(&id) else {
@@ -162,19 +165,18 @@ fn update_button_states(
             // update children
             let child_ids = panel_ref.children.clone();
             for child_id in child_ids {
-                update_button_states(ui, &child_id, mouse_state, child_position);
+                ui_update_hover(ui, &child_id, mouse_x, mouse_y, child_position);
             }
         }
         WidgetKind::Button => {
             let Some(button_mut) = ui.store.button_mut(id) else {
                 panic!("no button mut for node_id: {:?}", id);
             };
-            let did_click = button_mut.update_state(
+            if button_mut.mouse_is_inside(
                 (width, height, child_position.0, child_position.1),
-                mouse_state,
-            );
-            if did_click {
-                ui.emit_event(id, UiEvent::Clicked);
+                mouse_x, mouse_y,
+            ) {
+                ui.receive_hover(id);
             }
         }
         _ => {}

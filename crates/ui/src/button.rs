@@ -11,7 +11,7 @@ use crate::{
 };
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-enum ButtonState {
+pub enum ButtonState {
     Normal,
     Hover,
     Down,
@@ -24,8 +24,6 @@ pub struct Button {
 
     hover_color_handle: Option<Handle<CpuMaterial>>,
     down_color_handle: Option<Handle<CpuMaterial>>,
-
-    state: ButtonState,
 }
 
 impl Button {
@@ -35,41 +33,19 @@ impl Button {
             id_str: id_str.to_string(),
             hover_color_handle: None,
             down_color_handle: None,
-            state: ButtonState::Normal,
         }
     }
 
-    // returns whether or not to emit a ClickEvent
-    pub fn update_state(
+    // returns whether or not mouse is inside the button
+    pub fn mouse_is_inside(
         &mut self,
         layout: (f32, f32, f32, f32),
-        mouse_state: (f32, f32, bool),
+        mouse_x: f32,
+        mouse_y: f32,
     ) -> bool {
-        let mut was_clicked = false;
-
         let (width, height, posx, posy) = layout;
-        let (mouse_x, mouse_y, mouse_down) = mouse_state;
 
-        let inside = mouse_x >= posx
-            && mouse_x <= posx + width + 1.0
-            && mouse_y >= posy
-            && mouse_y <= posy + height + 1.0;
-        let new_state = if inside {
-            if mouse_down {
-                if self.state != ButtonState::Down {
-                    was_clicked = true;
-                }
-
-                ButtonState::Down
-            } else {
-                ButtonState::Hover
-            }
-        } else {
-            ButtonState::Normal
-        };
-        self.state = new_state;
-
-        was_clicked
+        mouse_x >= posx && mouse_x <= posx + width + 1.0 && mouse_y >= posy && mouse_y <= posy + height + 1.0
     }
 
     pub fn needs_color_handle(&self) -> bool {
@@ -78,8 +54,8 @@ impl Button {
             || self.down_color_handle.is_none()
     }
 
-    pub fn current_color_handle(&self) -> Option<Handle<CpuMaterial>> {
-        match self.state {
+    pub fn current_color_handle(&self, state: ButtonState) -> Option<Handle<CpuMaterial>> {
+        match state {
             ButtonState::Normal => self.panel.background_color_handle,
             ButtonState::Hover => self.hover_color_handle,
             ButtonState::Down => self.down_color_handle,
