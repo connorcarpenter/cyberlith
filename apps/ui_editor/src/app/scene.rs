@@ -10,7 +10,7 @@ use game_engine::render::{
 
 use crate::app::global::Global;
 
-pub fn setup_scene(mut commands: Commands) {
+pub fn scene_setup(mut commands: Commands) {
     // ambient light
     commands.spawn(AmbientLight::new(1.0, Color::WHITE));
 

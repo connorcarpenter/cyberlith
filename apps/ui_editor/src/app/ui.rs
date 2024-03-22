@@ -17,8 +17,7 @@ use game_engine::{
 };
 
 // this is where new UIs should be created
-
-pub fn init_ui() -> (String, AssetId, ETag, Ui) {
+fn ui_define() -> (String, AssetId, ETag, Ui) {
     // config
     let ui_name = "main";
     let ui_asset_id_str = "tpp7za"; // AssetId::get_random(); // keep this around to generate new AssetIds if needed!
@@ -102,7 +101,8 @@ pub struct StartButtonEvent;
 #[derive(Event, Default)]
 pub struct ContinueButtonEvent;
 
-pub fn setup_ui(
+// this is run as a system at startup
+pub fn ui_setup(
     mut commands: Commands,
     mut embedded_asset_events: EventWriter<EmbeddedAssetEvent>,
     mut asset_manager: ResMut<AssetManager>,
@@ -111,7 +111,7 @@ pub fn setup_ui(
     embedded_asset_events.send(embedded_asset_event!("embedded/34mvvk")); // verdana icon
 
     // create ui
-    let (ui_name, ui_asset_id, ui_etag, ui) = init_ui();
+    let (ui_name, ui_asset_id, ui_etag, ui) = ui_define();
 
     // finish
 
@@ -129,7 +129,7 @@ pub fn setup_ui(
     asset_manager.register_ui_event::<ContinueButtonEvent>(&ui_handle, "continue_button");
 }
 
-pub fn update_ui(
+pub fn ui_update(
     mut asset_manager: ResMut<AssetManager>,
     input: Res<Input>,
     // Cameras
@@ -155,7 +155,7 @@ pub fn update_ui(
     }
 }
 
-pub fn handle_events(
+pub fn ui_handle_events(
     mut start_btn_rdr: EventReader<StartButtonEvent>,
     mut continue_btn_rdr: EventReader<ContinueButtonEvent>,
 ) {

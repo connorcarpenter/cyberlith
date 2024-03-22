@@ -32,13 +32,14 @@ pub fn run() {
         // ui systems
         .add_systems(Startup, ui::ui_setup)
         .add_systems(Update, ui::ui_update)
-        .add_systems(Update, ui::handle_events)
+        .add_systems(Update, ui::ui_handle_events)
         // scene systems
         .add_systems(Startup, scene::scene_setup)
         .add_systems(Update, scene::scene_step)
         .add_systems(Update, gamepad::gamepad_system)
         // viewport resize
         .add_systems(Update, resize::handle_viewport_resize)
+        // draw
         .add_systems(Draw, draw::draw);
     app.run();
 }

@@ -22,12 +22,15 @@ pub fn run() {
         // events
         .add_event::<StartButtonEvent>()
         .add_event::<ContinueButtonEvent>()
-        // systems
-        .add_systems(Startup, scene::setup_scene)
-        .add_systems(Startup, ui::setup_ui)
-        .add_systems(Update, ui::update_ui)
-        .add_systems(Update, ui::handle_events)
-        .add_systems(Draw, draw::scene_draw)
-        .add_systems(Update, resize::handle_viewport_resize);
+        // ui systems
+        .add_systems(Startup, ui::ui_setup)
+        .add_systems(Update, ui::ui_update)
+        .add_systems(Update, ui::ui_handle_events)
+        // scene systems
+        .add_systems(Startup, scene::scene_setup)
+        // viewport resize
+        .add_systems(Update, resize::handle_viewport_resize)
+        // draw
+        .add_systems(Draw, draw::draw);
     app.run();
 }

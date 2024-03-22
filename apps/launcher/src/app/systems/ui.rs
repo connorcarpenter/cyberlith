@@ -98,7 +98,7 @@ pub fn ui_update(
     }
 }
 
-pub fn handle_events(
+pub fn ui_handle_events(
     mut start_btn_rdr: EventReader<StartButtonEvent>,
     mut continue_btn_rdr: EventReader<ContinueButtonEvent>,
 ) {

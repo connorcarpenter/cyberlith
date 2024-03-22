@@ -11,7 +11,7 @@ use game_engine::{
     },
 };
 
-pub fn scene_draw(
+pub fn draw(
     mut render_frame: ResMut<RenderFrame>,
     asset_manager: Res<AssetManager>,
     // Cameras
