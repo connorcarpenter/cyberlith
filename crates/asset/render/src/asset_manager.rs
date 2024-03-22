@@ -12,7 +12,7 @@ use asset_id::{AssetId, AssetType};
 use render_api::{
     base::CpuSkin,
     base::{CpuMaterial, CpuMesh},
-    components::{RenderLayer, Transform},
+    components::{Camera, RenderLayer, Transform},
     resources::RenderFrame,
 };
 use storage::{Handle, Storage};
@@ -307,8 +307,7 @@ impl AssetManager {
 
     pub fn update_ui(
         &mut self,
-        render_frame: &RenderFrame,
-        render_layer_opt: Option<&RenderLayer>,
+        camera: &Camera,
         mouse_state: (f32, f32, bool),
         ui_handle: &AssetHandle<UiData>,
     ) {
@@ -319,7 +318,7 @@ impl AssetManager {
         let ui = ui_data.get_ui_mut();
 
         // update viewport / recalculate layout for ui
-        if let Some(viewport) = render_frame.get_camera_viewport(render_layer_opt) {
+        if let Some(viewport) = camera.viewport {
             ui.update_viewport(&viewport);
             ui.recalculate_layout_if_needed();
         }

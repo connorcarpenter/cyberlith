@@ -25,6 +25,7 @@ pub fn run() {
         // systems
         .add_systems(Startup, scene::setup_scene)
         .add_systems(Startup, ui::setup_ui)
+        .add_systems(Update, ui::update_ui)
         .add_systems(Update, ui::handle_events)
         .add_systems(Draw, draw::scene_draw)
         .add_systems(Update, resize::handle_viewport_resize);

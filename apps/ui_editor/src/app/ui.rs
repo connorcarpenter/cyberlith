@@ -1,7 +1,7 @@
 use bevy_ecs::{
-    change_detection::ResMut,
     event::{Event, EventReader, EventWriter},
     prelude::Commands,
+    system::{Res, Query, ResMut},
 };
 use bevy_log::info;
 
@@ -11,8 +11,9 @@ use game_engine::{
         embedded_asset_event, AssetHandle, AssetId, AssetManager, AssetMetadataSerde, AssetType,
         ETag, EmbeddedAssetEvent, UiData,
     },
-    render::base::Color,
+    render::{base::Color, components::{RenderLayer, Camera}},
     ui::{Alignment, Ui},
+    input::{Input, MouseButton},
 };
 
 // this is where new UIs should be created
@@ -126,6 +127,32 @@ pub fn setup_ui(
 
     asset_manager.register_ui_event::<StartButtonEvent>(&ui_handle, "start_button");
     asset_manager.register_ui_event::<ContinueButtonEvent>(&ui_handle, "continue_button");
+}
+
+pub fn update_ui(
+    mut asset_manager: ResMut<AssetManager>,
+    input: Res<Input>,
+    // Cameras
+    cameras_q: Query<(&Camera, Option<&RenderLayer>)>,
+    // UIs
+    uis_q: Query<(&AssetHandle<UiData>, Option<&RenderLayer>)>,
+) {
+    let mouse_pos = input.mouse_position();
+    let mouse_state = (
+        mouse_pos.x,
+        mouse_pos.y,
+        input.is_pressed(MouseButton::Left),
+    );
+    for (ui_handle, ui_render_layer_opt) in uis_q.iter() {
+
+        // find camera
+        for (camera, cam_render_layer_opt) in cameras_q.iter() {
+            if cam_render_layer_opt == ui_render_layer_opt {
+                asset_manager.update_ui(camera, mouse_state, ui_handle);
+                break;
+            }
+        }
+    }
 }
 
 pub fn handle_events(

@@ -2,7 +2,6 @@ use bevy_ecs::system::{Query, Res, ResMut};
 
 use game_engine::{
     asset::{AssetHandle, AssetManager, UiData},
-    input::{Input, MouseButton},
     render::{
         base::{CpuMaterial, CpuMesh},
         components::{
@@ -16,8 +15,7 @@ use game_engine::{
 
 pub fn draw(
     mut render_frame: ResMut<RenderFrame>,
-    mut asset_manager: ResMut<AssetManager>,
-    input: Res<Input>,
+    asset_manager: Res<AssetManager>,
     // Cameras
     cameras_q: Query<(&Camera, &Transform, &Projection, Option<&RenderLayer>)>,
     // UIs
@@ -67,14 +65,7 @@ pub fn draw(
     }
 
     // Aggregate UIs
-    let mouse_pos = input.mouse_position();
-    let mouse_state = (
-        mouse_pos.x,
-        mouse_pos.y,
-        input.is_pressed(MouseButton::Left),
-    );
     for (ui_handle, render_layer_opt) in uis_q.iter() {
-        asset_manager.update_ui(&render_frame, render_layer_opt, mouse_state, ui_handle);
         asset_manager.draw_ui(&mut render_frame, render_layer_opt, ui_handle);
     }
 }

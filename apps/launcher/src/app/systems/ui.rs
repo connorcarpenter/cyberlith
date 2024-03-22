@@ -1,15 +1,16 @@
 use bevy_ecs::{
     event::{Event, EventReader, EventWriter},
-    system::{Commands, ResMut},
+    system::{Commands, Res, ResMut, Query},
 };
 use bevy_log::info;
 
 use game_engine::{
+    input::{Input, MouseButton},
     asset::{embedded_asset_event, AssetHandle, AssetId, AssetManager, EmbeddedAssetEvent, UiData},
     render::{
         base::Color,
         components::{
-            AmbientLight, Camera, CameraBundle, ClearOperation, OrthographicProjection, Projection,
+            RenderLayer, AmbientLight, Camera, CameraBundle, ClearOperation, OrthographicProjection, Projection,
             RenderLayers, RenderTarget,
         },
     },
@@ -68,6 +69,33 @@ pub fn ui_setup(
         .id();
 
     global.camera_ui = camera_id;
+}
+
+pub fn ui_update(
+    mut asset_manager: ResMut<AssetManager>,
+    input: Res<Input>,
+    // Cameras
+    cameras_q: Query<(&Camera, Option<&RenderLayer>)>,
+    // UIs
+    uis_q: Query<(&AssetHandle<UiData>, Option<&RenderLayer>)>,
+) {
+    // Aggregate UIs
+    let mouse_pos = input.mouse_position();
+    let mouse_state = (
+        mouse_pos.x,
+        mouse_pos.y,
+        input.is_pressed(MouseButton::Left),
+    );
+    for (ui_handle, ui_render_layer_opt) in uis_q.iter() {
+
+        // find camera
+        for (camera, cam_render_layer_opt) in cameras_q.iter() {
+            if cam_render_layer_opt == ui_render_layer_opt {
+                asset_manager.update_ui(camera, mouse_state, ui_handle);
+                break;
+            }
+        }
+    }
 }
 
 pub fn handle_events(
