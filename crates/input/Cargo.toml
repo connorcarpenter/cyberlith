@@ -16,3 +16,12 @@ bevy_log = { version = "0.13", default-features = false }
 gilrs = { version = "0.10.1" }
 
 cfg-if = { version = "1.0" }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+js-sys = { version = "0.3"  }
+web-sys = { version = "0.3", features = [
+    "Gamepad",
+    "Window",
+    "Navigator",
+] }
+wasm-bindgen = "0.2"

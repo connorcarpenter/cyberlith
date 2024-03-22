@@ -1,18 +1,17 @@
+use std::time::Duration;
 use bevy_ecs::system::{NonSend, NonSendMut, ResMut};
 
-use gilrs::{EventType, Filter, Gilrs};
+use gilrs::{EventType, ff, Filter, Gilrs};
 
-use crate::{
-    gamepad::{
-        converter::{
-            axis_dpad_to_button_filter, axis_triggers_to_button_filter, convert_axis,
-            convert_button, convert_gamepad_id,
-        },
-        rumble::RunningRumbleEffects,
-        GamepadAxis, GamepadButton, GamepadInfo,
+use crate::{gamepad::{
+    converter::{
+        axis_dpad_to_button_filter, axis_triggers_to_button_filter, convert_axis,
+        convert_button, convert_gamepad_id,
     },
-    Input,
-};
+    rumble::RunningRumbleEffects,
+    GamepadAxis, GamepadButton, GamepadInfo,
+}, GamepadId, Input};
+use crate::gamepad::rumble::RunningRumble;
 
 pub struct GilrsWrapper {
     gilrs: Gilrs,
@@ -33,8 +32,12 @@ impl GilrsWrapper {
         &mut self.gilrs
     }
 
-    pub fn rumbles_mut(&mut self) -> &mut RunningRumbleEffects {
-        &mut self.running_rumbles
+    pub fn update_rumbles(&mut self) {
+        self.running_rumbles.update();
+    }
+
+    pub fn add_rumble(&mut self, gamepad: &GamepadId, duration: Duration, effect: ff::Effect) {
+        self.running_rumbles.add_rumble(gamepad, duration, effect);
     }
 
     // used as a system

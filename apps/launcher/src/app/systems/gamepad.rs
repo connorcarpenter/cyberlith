@@ -34,9 +34,17 @@ pub(crate) fn gamepad_system(
                 info!("INPUT: {:?} disconnected", id);
                 info!("---");
             }
-            InputEvent::GamepadButtonPressed(_id, btn) => {
+            InputEvent::GamepadButtonPressed(id, btn) => {
                 info!("INPUT: {:?} pressed", btn);
                 info!("---");
+
+                if *btn == GamepadButtonType::RightBumper {
+                    rumble_manager.add_rumble(
+                        *id,
+                        Duration::from_secs(1),
+                        GamepadRumbleIntensity::strong_motor(0.1),
+                    );
+                }
             }
             InputEvent::GamepadButtonReleased(_id, btn) => {
                 info!("INPUT: {:?} released", btn);
@@ -61,11 +69,11 @@ pub(crate) fn gamepad_system(
             GamepadButtonType::RightBumper,
         )) {
             //info!("{:?} RightBumper pressed", gamepad);
-            rumble_manager.add_rumble(
-                gamepad_id,
-                Duration::from_secs(1),
-                GamepadRumbleIntensity::strong_motor(0.1),
-            );
+            // rumble_manager.add_rumble(
+            //     gamepad_id,
+            //     Duration::from_secs(1),
+            //     GamepadRumbleIntensity::strong_motor(0.1),
+            // );
         } else if !input.is_pressed(GamepadButton::new(
             gamepad_id,
             GamepadButtonType::RightBumper,
