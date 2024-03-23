@@ -1,5 +1,4 @@
 use bevy_ecs::system::{Query, Res, ResMut};
-use bevy_log::info;
 
 use game_engine::{
     math::Vec3,

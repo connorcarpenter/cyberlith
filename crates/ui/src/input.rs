@@ -1,5 +1,5 @@
 use bevy_ecs::event::EventReader;
-use bevy_log::{info, warn};
+use bevy_log::warn;
 
 use input::{GamepadButtonType, Input, InputEvent, Key, MouseButton};
 
@@ -154,7 +154,7 @@ pub fn ui_receive_input(ui: &mut Ui, input: UiInput) {
                 ui.receive_hover(&default_button_id);
                 return;
             }
-            let mut hover_node = hover_node.unwrap();
+            let hover_node = hover_node.unwrap();
             for event in events {
                 match event {
                     UiInputEvent::Up => {
@@ -163,12 +163,8 @@ pub fn ui_receive_input(ui: &mut Ui, input: UiInput) {
                         }
                     }
                     UiInputEvent::Down => {
-                        info!("received Down event");
                         if let Some(next_id) = ui.button_get_down_id(&hover_node) {
-                            info!("found down id: {:?}", next_id);
                             ui.receive_hover(&next_id);
-                        } else {
-                            info!("no down id found");
                         }
                     }
                     UiInputEvent::Left => {
