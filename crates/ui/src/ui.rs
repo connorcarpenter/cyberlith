@@ -36,6 +36,28 @@ pub struct Ui {
 }
 
 impl Ui {
+    pub(crate) fn button_get_up_id(&self, id: &NodeId) -> Option<NodeId> {
+        let up_str: &str = self.node_ref(id)?.widget_button_ref()?.navigation.up_goes_to.as_ref()?;
+        self.get_node_id_by_id_str(up_str)
+    }
+
+    pub(crate) fn button_get_down_id(&self, id: &NodeId) -> Option<NodeId> {
+        let down_str: &str = self.node_ref(id)?.widget_button_ref()?.navigation.down_goes_to.as_ref()?;
+        self.get_node_id_by_id_str(down_str)
+    }
+
+    pub(crate) fn button_get_left_id(&self, id: &NodeId) -> Option<NodeId> {
+        let left_str: &str = self.node_ref(id)?.widget_button_ref()?.navigation.left_goes_to.as_ref()?;
+        self.get_node_id_by_id_str(left_str)
+    }
+
+    pub(crate) fn button_get_right_id(&self, id: &NodeId) -> Option<NodeId> {
+        let right_str: &str = self.node_ref(id)?.widget_button_ref()?.navigation.right_goes_to.as_ref()?;
+        self.get_node_id_by_id_str(right_str)
+    }
+}
+
+impl Ui {
     pub const ROOT_NODE_ID: NodeId = NodeId::new(0);
     // pub(crate) const ROOT_STYLE_ID: StyleId = StyleId::new(0);
     pub const BASE_TEXT_STYLE_ID: StyleId = StyleId::new(0);

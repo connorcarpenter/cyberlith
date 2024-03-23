@@ -21,6 +21,7 @@ pub enum ButtonState {
 pub struct Button {
     pub panel: Panel,
     pub id_str: String,
+    pub navigation: ButtonNavigation,
 
     hover_color_handle: Option<Handle<CpuMaterial>>,
     down_color_handle: Option<Handle<CpuMaterial>>,
@@ -31,6 +32,7 @@ impl Button {
         Self {
             panel: Panel::new(),
             id_str: id_str.to_string(),
+            navigation: ButtonNavigation::new(),
             hover_color_handle: None,
             down_color_handle: None,
         }
@@ -72,6 +74,25 @@ impl Button {
 
     pub fn set_down_color_handle(&mut self, val: Handle<CpuMaterial>) {
         self.down_color_handle = Some(val);
+    }
+}
+
+#[derive(Clone)]
+pub struct ButtonNavigation {
+    pub left_goes_to: Option<String>,
+    pub right_goes_to: Option<String>,
+    pub up_goes_to: Option<String>,
+    pub down_goes_to: Option<String>,
+}
+
+impl ButtonNavigation {
+    pub fn new() -> Self {
+        Self {
+            left_goes_to: None,
+            right_goes_to: None,
+            up_goes_to: None,
+            down_goes_to: None,
+        }
     }
 }
 
@@ -151,6 +172,12 @@ impl<'a> ButtonMut<'a> {
         self
     }
 
+    pub fn navigation(&'a mut self, inner_fn: impl FnOnce(&mut ButtonNavigationMut)) -> &mut Self {
+        let mut context = ButtonNavigationMut::new(self.ui, self.node_id);
+        inner_fn(&mut context);
+        self
+    }
+
     pub fn to_panel_mut(&mut self) -> PanelMut {
         PanelMut::new(self.ui, self.node_id)
     }
@@ -200,6 +227,45 @@ impl<'a> ButtonContentsMut<'a> {
     }
 
     // no `add_button` for buttons-in-buttons ...
+}
+
+pub struct ButtonNavigationMut<'a> {
+    ui: &'a mut Ui,
+    node_id: NodeId,
+}
+
+impl<'a> ButtonNavigationMut<'a> {
+    pub(crate) fn new(ui: &'a mut Ui, node_id: NodeId) -> Self {
+        Self { ui, node_id }
+    }
+
+    fn get_mut(&mut self) -> &mut UiNode {
+        self.ui.node_mut(&self.node_id).unwrap()
+    }
+
+    fn get_button_mut(&mut self) -> &mut Button {
+        self.get_mut().widget_button_mut().unwrap()
+    }
+
+    pub fn left_goes_to(&mut self, name: &str) -> &mut Self {
+        self.get_button_mut().navigation.left_goes_to = Some(name.to_string());
+        self
+    }
+
+    pub fn right_goes_to(&mut self, name: &str) -> &mut Self {
+        self.get_button_mut().navigation.right_goes_to = Some(name.to_string());
+        self
+    }
+
+    pub fn up_goes_to(&mut self, name: &str) -> &mut Self {
+        self.get_button_mut().navigation.up_goes_to = Some(name.to_string());
+        self
+    }
+
+    pub fn down_goes_to(&mut self, name: &str) -> &mut Self {
+        self.get_button_mut().navigation.down_goes_to = Some(name.to_string());
+        self
+    }
 }
 
 pub struct ButtonStyleRef<'a> {

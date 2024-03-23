@@ -83,7 +83,23 @@ fn convert_nodes_recurse_button<'a>(
     button_serde: &ButtonJson,
     button_mut: &'a mut ButtonMut<'a>,
 ) {
-    button_mut.contents(|c| {
+    let button_nav_serde = &button_serde.navigation;
+    button_mut
+        .navigation(|n| {
+            if let Some(nav_str) = button_nav_serde.up.as_ref() {
+                n.up_goes_to(&nav_str);
+            }
+            if let Some(nav_str) = button_nav_serde.down.as_ref() {
+                n.down_goes_to(&nav_str);
+            }
+            if let Some(nav_str) = button_nav_serde.left.as_ref() {
+                n.left_goes_to(&nav_str);
+            }
+            if let Some(nav_str) = button_nav_serde.right.as_ref() {
+                n.right_goes_to(&nav_str);
+            }
+        })
+        .contents(|c| {
         for child_index in &button_serde.panel.children {
             let child_index = *child_index;
             let child_node_serde = &nodes[child_index];

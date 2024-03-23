@@ -192,13 +192,43 @@ fn convert_nodes_recurse_panel<'a>(
     });
 }
 
+fn get_nav_thang<'a>(
+    nodes: &'a Vec<UiNodeBits>,
+    input_int: Option<&UnsignedVariableInteger<4>>
+) -> Option<&'a str> {
+    let input_int = input_int?;
+    let nav_index = input_int.to::<u32>() as usize;
+    let nav_node_serde = &nodes[nav_index];
+    let WidgetBits::Button(button_bits) = &nav_node_serde.widget else {
+        panic!("Expected button widget");
+    };
+    let nav_str = button_bits.id_str.as_str();
+    Some(nav_str)
+}
+
 fn convert_nodes_recurse_button<'a>(
     style_index_to_id: &HashMap<usize, StyleId>,
     nodes: &Vec<UiNodeBits>,
     button_serde: &ButtonBits,
     button_mut: &'a mut ButtonMut<'a>,
 ) {
-    button_mut.contents(|c| {
+    let button_nav_serde = &button_serde.navigation;
+    button_mut
+        .navigation(|n| {
+            if let Some(nav_str) = get_nav_thang(nodes, button_nav_serde.up.as_ref()) {
+                n.up_goes_to(nav_str);
+            }
+            if let Some(nav_str) = get_nav_thang(nodes, button_nav_serde.down.as_ref()) {
+                n.down_goes_to(nav_str);
+            }
+            if let Some(nav_str) = get_nav_thang(nodes, button_nav_serde.left.as_ref()) {
+                n.left_goes_to(nav_str);
+            }
+            if let Some(nav_str) = get_nav_thang(nodes, button_nav_serde.right.as_ref()) {
+                n.right_goes_to(nav_str);
+            }
+        })
+        .contents(|c| {
         for child_index in &button_serde.panel.children {
             let child_index = *child_index as usize;
             let child_node_serde = &nodes[child_index];

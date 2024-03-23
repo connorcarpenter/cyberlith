@@ -124,12 +124,48 @@ pub fn ui_receive_input(ui: &mut Ui, input: UiInput) {
             ui_update_hover(ui, &Ui::ROOT_NODE_ID, x, y, (0.0, 0.0));
         }
         UiInput::Events(events) => {
-            info!("processing ui input events...");
-            if ui.get_hover().is_none() {
+            let hover_node = ui.get_hover();
+            if hover_node.is_none() {
                 let Some(default_button_id) = ui.get_default_button() else {
                     panic!("no default button set, cannot process input events without somewhere to start");
                 };
                 ui.receive_hover(&default_button_id);
+                return;
+            }
+            let mut hover_node = hover_node.unwrap();
+            for event in events {
+                match event {
+                    UiInputEvent::Up => {
+                        if let Some(next_id) = ui.button_get_up_id(&hover_node) {
+                            ui.receive_hover(&next_id);
+                        }
+                    }
+                    UiInputEvent::Down => {
+                        info!("received Down event");
+                        if let Some(next_id) = ui.button_get_down_id(&hover_node) {
+                            info!("found down id: {:?}", next_id);
+                            ui.receive_hover(&next_id);
+                        } else {
+                            info!("no down id found");
+                        }
+                    }
+                    UiInputEvent::Left => {
+                        if let Some(next_id) = ui.button_get_left_id(&hover_node) {
+                            ui.receive_hover(&next_id);
+                        }
+                    }
+                    UiInputEvent::Right => {
+                        if let Some(next_id) = ui.button_get_right_id(&hover_node) {
+                            ui.receive_hover(&next_id);
+                        }
+                    }
+                    UiInputEvent::Select => {
+                        ui.emit_event(&hover_node, UiEvent::Clicked);
+                    }
+                    UiInputEvent::Back => {
+
+                    }
+                }
             }
         }
     }

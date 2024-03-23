@@ -1,11 +1,8 @@
 use std::collections::HashMap;
 
-use crate::json::{ButtonJson, ButtonStyleJson};
+use crate::json::{ButtonJson, ButtonNavigationJson, ButtonStyleJson};
 use render_api::base::Color;
-use ui::{
-    Alignment, Button, ButtonStyle, LayoutType, MarginUnits, NodeStyle, Panel, PanelStyle,
-    PositionType, SizeUnits, Solid, StyleId, Text, TextStyle, Ui, UiNode, Widget, WidgetStyle,
-};
+use ui::{Alignment, Button, ButtonNavigation, ButtonStyle, LayoutType, MarginUnits, NodeStyle, Panel, PanelStyle, PositionType, SizeUnits, Solid, StyleId, Text, TextStyle, Ui, UiNode, Widget, WidgetStyle};
 
 use super::{
     AlignmentJson, ColorJson, LayoutTypeJson, MarginUnitsJson, PanelJson, PanelStyleJson,
@@ -254,6 +251,18 @@ impl ButtonJson {
         Self {
             panel: panel_json,
             id_str: button.id_str.to_string(),
+            navigation: ButtonNavigationJson::from_button_navigation(&button.navigation),
+        }
+    }
+}
+
+impl ButtonNavigationJson {
+    fn from_button_navigation(navigation: &ButtonNavigation) -> Self {
+        Self {
+            up: navigation.up_goes_to.clone(),
+            down: navigation.down_goes_to.clone(),
+            left: navigation.left_goes_to.clone(),
+            right: navigation.right_goes_to.clone(),
         }
     }
 }

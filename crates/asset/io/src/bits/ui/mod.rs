@@ -200,4 +200,13 @@ pub(crate) struct TextBits {
 pub(crate) struct ButtonBits {
     panel: PanelBits,
     id_str: String,
+    navigation: ButtonNavigationBits,
+}
+
+#[derive(Serde, Clone, PartialEq)]
+pub(crate) struct ButtonNavigationBits {
+    up: Option<UnsignedVariableInteger<4>>,
+    down: Option<UnsignedVariableInteger<4>>,
+    left: Option<UnsignedVariableInteger<4>>,
+    right: Option<UnsignedVariableInteger<4>>,
 }

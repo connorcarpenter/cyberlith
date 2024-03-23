@@ -213,4 +213,13 @@ pub(crate) struct TextJson {
 pub(crate) struct ButtonJson {
     panel: PanelJson,
     id_str: String,
+    navigation: ButtonNavigationJson,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub(crate) struct ButtonNavigationJson {
+    up: Option<String>,
+    down: Option<String>,
+    left: Option<String>,
+    right: Option<String>,
 }

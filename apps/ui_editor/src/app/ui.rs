@@ -82,6 +82,11 @@ fn ui_define() -> (String, AssetId, ETag, Ui) {
                 .add_style(start_button_style)
                 .contents(|c| {
                     c.add_text("start");
+                })
+                .navigation(|n| {
+                    n
+                        .down_goes_to("continue_button")
+                        .right_goes_to("continue_button");
                 });
 
             // continue button
@@ -90,6 +95,11 @@ fn ui_define() -> (String, AssetId, ETag, Ui) {
                 .add_style(continue_button_style)
                 .contents(|c| {
                     c.add_text("continue");
+                })
+                .navigation(|n| {
+                    n
+                        .up_goes_to("start_button")
+                        .left_goes_to("start_button");
                 });
         });
 

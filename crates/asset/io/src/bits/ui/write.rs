@@ -4,14 +4,10 @@ use naia_serde::{FileBitWriter, SerdeInternal as Serde, UnsignedInteger, Unsigne
 
 use ui::{
     Alignment, Button, ButtonStyle, LayoutType, MarginUnits, NodeStyle, Panel, PanelStyle,
-    PositionType, SizeUnits, Solid, StyleId, Text, TextStyle, Ui, UiNode, Widget, WidgetStyle,
+    PositionType, SizeUnits, Solid, StyleId, Text, TextStyle, Ui, UiNode, Widget, WidgetStyle, ButtonNavigation,
 };
 
-use crate::bits::{
-    AlignmentBits, ButtonBits, ButtonStyleBits, LayoutTypeBits, MarginUnitsBits, PanelBits,
-    PanelStyleBits, PositionTypeBits, SizeUnitsBits, SolidBits, TextBits, TextStyleBits, UiAction,
-    UiActionType, UiNodeBits, UiStyleBits, WidgetBits, WidgetStyleBits,
-};
+use crate::bits::{AlignmentBits, ButtonBits, ButtonNavigationBits, ButtonStyleBits, LayoutTypeBits, MarginUnitsBits, PanelBits, PanelStyleBits, PositionTypeBits, SizeUnitsBits, SolidBits, TextBits, TextStyleBits, UiAction, UiActionType, UiNodeBits, UiStyleBits, WidgetBits, WidgetStyleBits};
 
 pub fn write_bits(ui: &Ui) -> Vec<u8> {
     let actions = convert_ui_to_actions(ui);
@@ -60,6 +56,7 @@ fn convert_ui_to_actions(ui: &Ui) -> Vec<UiAction> {
     // write nodes
     for node in ui.store.nodes.iter() {
         output.push(UiAction::Node(UiNodeBits::from_node(
+            ui,
             &style_id_to_index,
             node,
         )));
@@ -341,11 +338,11 @@ impl LayoutTypeBits {
 }
 
 impl UiNodeBits {
-    fn from_node(style_id_to_index: &HashMap<StyleId, u8>, node: &UiNode) -> Self {
+    fn from_node(ui: &Ui, style_id_to_index: &HashMap<StyleId, u8>, node: &UiNode) -> Self {
         let mut me = Self {
             visible: node.visible,
             style_ids: Vec::new(),
-            widget: WidgetBits::from_widget(&node.widget),
+            widget: WidgetBits::from_widget(ui, &node.widget),
         };
 
         for style_id in &node.style_ids {
@@ -361,11 +358,11 @@ impl UiNodeBits {
 }
 
 impl WidgetBits {
-    fn from_widget(widget: &Widget) -> Self {
+    fn from_widget(ui: &Ui, widget: &Widget) -> Self {
         match widget {
             Widget::Panel(panel) => Self::Panel(PanelBits::from_panel(panel)),
             Widget::Text(text) => Self::Text(TextBits::from_text(text)),
-            Widget::Button(button) => Self::Button(ButtonBits::from_button(button)),
+            Widget::Button(button) => Self::Button(ButtonBits::from_button(ui, button)),
         }
     }
 }
@@ -396,12 +393,43 @@ impl TextBits {
 }
 
 impl ButtonBits {
-    fn from_button(button: &Button) -> Self {
-        let panel = &button.panel;
-        let panel_bits = PanelBits::from_panel(panel);
+    fn from_button(ui: &Ui, button: &Button) -> Self {
+        let panel_bits = PanelBits::from_panel(&button.panel);
+        let nav_bits = ButtonNavigationBits::from_navigation(ui, &button.navigation);
         Self {
             panel: panel_bits,
             id_str: button.id_str.clone(),
+            navigation: nav_bits,
         }
     }
+}
+
+impl ButtonNavigationBits {
+    fn from_navigation(ui: &Ui, navigation: &ButtonNavigation) -> Self {
+        let ButtonNavigation {
+            up_goes_to,
+            down_goes_to,
+            left_goes_to,
+            right_goes_to,
+        } = navigation;
+
+        let up = get_nav_id(ui, up_goes_to.as_ref().map(|s| s.as_str()));
+        let down = get_nav_id(ui, down_goes_to.as_ref().map(|s| s.as_str()));
+        let left = get_nav_id(ui, left_goes_to.as_ref().map(|s| s.as_str()));
+        let right = get_nav_id(ui, right_goes_to.as_ref().map(|s| s.as_str()));
+
+        Self {
+            up,
+            down,
+            left,
+            right,
+        }
+    }
+}
+
+fn get_nav_id(ui: &Ui, id_str: Option<&str>) -> Option<UnsignedVariableInteger<4>> {
+    let id_str = id_str?;
+    let id = ui.get_node_id_by_id_str(id_str)?;
+    let id = id.as_usize();
+    Some(UnsignedVariableInteger::<4>::new(id as i128))
 }
