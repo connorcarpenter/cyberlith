@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use bevy_ecs::{
     event::{Event, EventReader, EventWriter},
     system::{Commands, Res, ResMut, Query},
@@ -5,7 +7,7 @@ use bevy_ecs::{
 use bevy_log::info;
 
 use game_engine::{
-    input::{InputEvent, Input},
+    input::{InputEvent, Input, GamepadRumbleIntensity, RumbleManager},
     asset::{embedded_asset_event, AssetHandle, AssetId, AssetManager, EmbeddedAssetEvent, UiData},
     render::{
         base::Color,
@@ -102,13 +104,21 @@ pub fn ui_update(
 }
 
 pub fn ui_handle_events(
+    input: Res<Input>,
+    mut rumble_manager: ResMut<RumbleManager>,
     mut start_btn_rdr: EventReader<StartButtonEvent>,
     mut continue_btn_rdr: EventReader<ContinueButtonEvent>,
 ) {
     for _ in start_btn_rdr.read() {
         info!("start button clicked!");
+        if let Some(id) = input.gamepad_first() {
+            rumble_manager.add_rumble(id, Duration::from_millis(200), GamepadRumbleIntensity::strong_motor(0.4));
+        }
     }
     for _ in continue_btn_rdr.read() {
         info!("continue button clicked!");
+        if let Some(id) = input.gamepad_first() {
+            rumble_manager.add_rumble(id, Duration::from_millis(200), GamepadRumbleIntensity::strong_motor(0.4));
+        }
     }
 }
