@@ -23,7 +23,7 @@ cfg_if! {
 use naia_serde::{SerdeInternal as Serde, UnsignedInteger, UnsignedVariableInteger};
 
 use asset_id::AssetId;
-use ui::{Ui, WidgetKind};
+use ui::{NodeId, Ui, WidgetKind};
 
 // Actions
 #[derive(Clone)]
@@ -32,6 +32,8 @@ pub(crate) enum UiAction {
     TextColor(u8, u8, u8),
     // assetid
     TextIconAssetId(AssetId),
+    // default button
+    DefaultButton(Option<NodeId>),
     // style
     Style(UiStyleBits),
     // node
@@ -42,6 +44,7 @@ pub(crate) enum UiAction {
 pub(crate) enum UiActionType {
     TextColor,
     TextIconAssetId,
+    DefaultButton,
     Style,
     Node,
 

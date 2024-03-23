@@ -1,13 +1,10 @@
 use std::collections::HashMap;
 
-use naia_serde::{BitReader, SerdeErr, SerdeInternal as Serde};
+use naia_serde::{BitReader, SerdeErr, SerdeInternal as Serde, UnsignedVariableInteger};
 
 use asset_id::AssetId;
 use render_api::base::Color;
-use ui::{
-    Alignment, ButtonMut, ButtonStyleMut, LayoutType, MarginUnits, PanelMut, PanelStyleMut,
-    PositionType, SizeUnits, Solid, StyleId, TextStyleMut, Ui, WidgetKind,
-};
+use ui::{Alignment, ButtonMut, ButtonStyleMut, LayoutType, MarginUnits, NodeId, PanelMut, PanelStyleMut, PositionType, SizeUnits, Solid, StyleId, TextStyleMut, Ui, WidgetKind};
 
 use crate::bits::{
     AlignmentBits, ButtonBits, LayoutTypeBits, MarginUnitsBits, PanelBits, PositionTypeBits,
@@ -36,6 +33,11 @@ fn convert_actions_to_ui(actions: Vec<UiAction>) -> Ui {
             }
             UiAction::TextIconAssetId(asset_id) => {
                 ui.set_text_icon_asset_id(&asset_id);
+            }
+            UiAction::DefaultButton(node_id_opt) => {
+                if let Some(node_id) = node_id_opt {
+                    ui.set_default_button(node_id)
+                }
             }
             UiAction::Style(style_bits) => {
                 let style_id = match style_bits.widget_kind() {
@@ -96,6 +98,12 @@ fn bytes_to_actions(data: &[u8]) -> Result<Vec<UiAction>, SerdeErr> {
                 let val = u32::de(bit_reader)?;
                 let asset_id = AssetId::from_u32(val).unwrap();
                 actions.push(UiAction::TextIconAssetId(asset_id));
+            }
+            UiActionType::DefaultButton => {
+                let val = Option::<UnsignedVariableInteger<7>>::de(bit_reader)?;
+                let val: Option<u64> = val.map(|v| v.to());
+                let node_id_opt = val.map(|v| NodeId::from_usize(v as usize));
+                actions.push(UiAction::DefaultButton(node_id_opt));
             }
             UiActionType::Style => {
                 let style = UiStyleBits::de(bit_reader)?;

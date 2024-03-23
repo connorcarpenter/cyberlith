@@ -45,6 +45,7 @@ impl Ui {
             globals: Globals::new(),
             cache: LayoutCache::new(),
             store: UiStore::new(),
+
             recalc_layout: false,
             last_viewport: Viewport::new_at_origin(0, 0),
             id_str_to_node_id_map: HashMap::new(),
@@ -76,6 +77,10 @@ impl Ui {
         ui_receive_input(self, input);
     }
 
+    pub fn get_hover(&self) -> Option<NodeId> {
+        self.hovering_node
+    }
+
     pub fn receive_hover(&mut self, id: &NodeId) {
         self.hovering_node = Some(*id);
     }
@@ -98,6 +103,14 @@ impl Ui {
 
     pub fn clear_hover(&mut self) {
         self.hovering_node = None;
+    }
+
+    pub fn get_default_button(&self) -> Option<NodeId> {
+        self.globals.default_button
+    }
+
+    pub fn set_default_button(&mut self, id: NodeId) {
+        self.globals.default_button = Some(id);
     }
 
     pub fn set_select_pressed(&mut self, val: bool) {
@@ -345,6 +358,7 @@ pub struct Globals {
     text_icon_asset_id_opt: Option<AssetId>,
     text_color: Color,
     text_color_handle_opt: Option<Handle<CpuMaterial>>,
+    default_button: Option<NodeId>,
 }
 
 impl Globals {
@@ -354,6 +368,7 @@ impl Globals {
             text_icon_asset_id_opt: None,
             text_color: Color::BLACK,
             text_color_handle_opt: None,
+            default_button: None,
         }
     }
 

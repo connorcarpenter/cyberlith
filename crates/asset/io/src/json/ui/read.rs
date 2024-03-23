@@ -3,10 +3,7 @@ use std::collections::HashMap;
 use crate::json::ButtonJson;
 use asset_id::AssetId;
 use render_api::base::Color;
-use ui::{
-    Alignment, ButtonMut, ButtonStyleMut, LayoutType, MarginUnits, PanelMut, PanelStyleMut,
-    PositionType, SizeUnits, Solid, StyleId, TextStyleMut, Ui, WidgetKind,
-};
+use ui::{Alignment, ButtonMut, ButtonStyleMut, LayoutType, MarginUnits, NodeId, PanelMut, PanelStyleMut, PositionType, SizeUnits, Solid, StyleId, TextStyleMut, Ui, WidgetKind};
 
 use super::{
     AlignmentJson, ColorJson, LayoutTypeJson, MarginUnitsJson, PanelJson, PositionTypeJson,
@@ -138,6 +135,7 @@ impl UiJson {
         let UiJson {
             text_color,
             text_icon_asset_id,
+            default_button,
             styles,
             nodes,
         } = self;
@@ -148,6 +146,11 @@ impl UiJson {
         // text icon
         let text_icon_asset_id = AssetId::from_str(&text_icon_asset_id).unwrap();
         ui.set_text_icon_asset_id(&text_icon_asset_id);
+
+        // default button
+        if let Some(default_button_id) = default_button {
+            ui.set_default_button(NodeId::from_usize(default_button_id));
+        }
 
         // styles
         let mut style_index_to_id = HashMap::new();

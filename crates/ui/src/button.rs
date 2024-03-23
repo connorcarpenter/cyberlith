@@ -134,6 +134,11 @@ impl<'a> ButtonMut<'a> {
         self
     }
 
+    pub fn set_as_default_button(&mut self) -> &mut Self {
+        self.ui.set_default_button(self.node_id);
+        self
+    }
+
     pub fn add_style(&mut self, style_id: StyleId) -> &mut Self {
         let node = self.ui.node_mut(&self.node_id).unwrap();
         node.style_ids.push(style_id);

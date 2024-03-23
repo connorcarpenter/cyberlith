@@ -33,6 +33,10 @@ fn convert_ui_to_actions(ui: &Ui) -> Vec<UiAction> {
     let text_icon_asset_id = ui.get_text_icon_asset_id();
     output.push(UiAction::TextIconAssetId(*text_icon_asset_id));
 
+    // write default button
+    let default_button_id = ui.get_default_button();
+    output.push(UiAction::DefaultButton(default_button_id));
+
     // write styles
 
     let mut style_id_to_index = HashMap::new();
@@ -78,6 +82,15 @@ fn actions_to_bytes(actions: Vec<UiAction>) -> Vec<u8> {
             UiAction::TextIconAssetId(asset_id) => {
                 UiActionType::TextIconAssetId.ser(&mut bit_writer);
                 asset_id.as_u32().ser(&mut bit_writer);
+            }
+            UiAction::DefaultButton(button_id_opt) => {
+                UiActionType::DefaultButton.ser(&mut bit_writer);
+                let val_opt = button_id_opt.map(|id| {
+                    let val = id.as_usize();
+                    let val = UnsignedVariableInteger::<7>::new(val as i128);
+                    val
+                });
+                val_opt.ser(&mut bit_writer);
             }
             UiAction::Style(style) => {
                 UiActionType::Style.ser(&mut bit_writer);

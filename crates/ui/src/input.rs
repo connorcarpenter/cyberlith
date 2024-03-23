@@ -125,6 +125,12 @@ pub fn ui_receive_input(ui: &mut Ui, input: UiInput) {
         }
         UiInput::Events(events) => {
             info!("processing ui input events...");
+            if ui.get_hover().is_none() {
+                let Some(default_button_id) = ui.get_default_button() else {
+                    panic!("no default button set, cannot process input events without somewhere to start");
+                };
+                ui.receive_hover(&default_button_id);
+            }
         }
     }
 }

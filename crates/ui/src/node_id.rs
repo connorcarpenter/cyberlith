@@ -15,6 +15,10 @@ impl NodeId {
     pub fn as_usize(&self) -> usize {
         self.0 as usize
     }
+
+    pub fn from_usize(id: usize) -> Self {
+        Self(id as u32)
+    }
 }
 
 impl Display for NodeId {

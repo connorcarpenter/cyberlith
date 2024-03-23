@@ -12,11 +12,9 @@ use game_engine::{
         ETag, EmbeddedAssetEvent, UiData,
     },
     render::{base::Color, components::{RenderLayer, Camera}},
-    ui::{Alignment, Ui},
-    input::{Input, MouseButton},
+    ui::{Alignment, Ui, UiInputConverter},
+    input::{Input, InputEvent},
 };
-use game_engine::input::InputEvent;
-use game_engine::ui::UiInputConverter;
 
 // this is where new UIs should be created
 fn ui_define() -> (String, AssetId, ETag, Ui) {
@@ -79,6 +77,7 @@ fn ui_define() -> (String, AssetId, ETag, Ui) {
 
             // start button
             c.add_button("start_button")
+                .set_as_default_button()
                 .add_style(base_button_style)
                 .add_style(start_button_style)
                 .contents(|c| {
