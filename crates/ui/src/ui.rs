@@ -135,6 +135,10 @@ impl Ui {
         self.globals.default_button = Some(id);
     }
 
+    pub fn get_select_pressed(&self) -> bool {
+        self.select_is_pressed
+    }
+
     pub fn set_select_pressed(&mut self, val: bool) {
         self.select_is_pressed = val;
     }

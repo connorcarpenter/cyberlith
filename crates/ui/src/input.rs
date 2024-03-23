@@ -81,7 +81,14 @@ impl UiInputConverter {
                 InputEvent::GamepadButtonPressed(_, GamepadButtonType::Start) |
                 InputEvent::GamepadButtonPressed(_, GamepadButtonType::South)
                 => {
-                    Some(UiInputEvent::Select)
+                    Some(UiInputEvent::SelectPressed)
+                }
+                InputEvent::KeyReleased(Key::Enter) |
+                InputEvent::KeyReleased(Key::Space) |
+                InputEvent::GamepadButtonReleased(_, GamepadButtonType::Start) |
+                InputEvent::GamepadButtonReleased(_, GamepadButtonType::South)
+                => {
+                    Some(UiInputEvent::SelectReleased)
                 }
                 InputEvent::KeyPressed(Key::Escape) |
                 InputEvent::KeyPressed(Key::Backspace) |
@@ -113,15 +120,30 @@ pub enum UiInput {
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
 pub enum UiInputEvent {
-    Up, Down, Left, Right, Select, Back
+    Up, Down, Left, Right,
+    SelectPressed, SelectReleased,
+    Back
 }
 
 pub fn ui_receive_input(ui: &mut Ui, input: UiInput) {
     match input {
         UiInput::Mouse(x, y, pressed) => {
-            ui.set_select_pressed(pressed);
             ui.clear_hover();
             ui_update_hover(ui, &Ui::ROOT_NODE_ID, x, y, (0.0, 0.0));
+
+            let current_pressed = ui.get_select_pressed();
+            if pressed {
+                if !current_pressed {
+                    ui.set_select_pressed(true);
+                    if let Some(hover_node) = ui.get_hover() {
+                        ui.emit_event(&hover_node, UiEvent::Clicked)
+                    }
+                }
+            } else {
+                if current_pressed {
+                    ui.set_select_pressed(false);
+                }
+            }
         }
         UiInput::Events(events) => {
             let hover_node = ui.get_hover();
@@ -159,8 +181,12 @@ pub fn ui_receive_input(ui: &mut Ui, input: UiInput) {
                             ui.receive_hover(&next_id);
                         }
                     }
-                    UiInputEvent::Select => {
+                    UiInputEvent::SelectPressed => {
                         ui.emit_event(&hover_node, UiEvent::Clicked);
+                        ui.set_select_pressed(true);
+                    }
+                    UiInputEvent::SelectReleased => {
+                        ui.set_select_pressed(false);
                     }
                     UiInputEvent::Back => {
 

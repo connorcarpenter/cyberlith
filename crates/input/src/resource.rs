@@ -223,6 +223,10 @@ impl Input {
         self.gamepads.iter()
     }
 
+    pub fn gamepad_first(&self) -> Option<GamepadId> {
+        self.gamepads_iter().next()
+    }
+
     pub(crate) fn gamepad_axis_get(&self, axis: GamepadAxis) -> Option<f32> {
         self.gamepad_axis.get(axis)
     }
