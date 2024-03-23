@@ -45,8 +45,8 @@ pub fn ui_setup(
     let ui_handle = AssetHandle::<UiData>::new(AssetId::from_str("tpp7za").unwrap()); // TODO: use some kind of catalog?
     let _ui_entity = commands.spawn(ui_handle).insert(layer).id();
 
-    asset_manager.register_ui_event::<StartButtonEvent>(&ui_handle, "start_button");
-    asset_manager.register_ui_event::<ContinueButtonEvent>(&ui_handle, "continue_button");
+    asset_manager.register_ui_event::<StartButtonEvent>(&ui_handle, "login_button");
+    asset_manager.register_ui_event::<ContinueButtonEvent>(&ui_handle, "register_button");
 
     // light
     commands
@@ -106,17 +106,17 @@ pub fn ui_update(
 pub fn ui_handle_events(
     input: Res<Input>,
     mut rumble_manager: ResMut<RumbleManager>,
-    mut start_btn_rdr: EventReader<StartButtonEvent>,
-    mut continue_btn_rdr: EventReader<ContinueButtonEvent>,
+    mut login_btn_rdr: EventReader<StartButtonEvent>,
+    mut register_btn_rdr: EventReader<ContinueButtonEvent>,
 ) {
-    for _ in start_btn_rdr.read() {
-        info!("start button clicked!");
+    for _ in login_btn_rdr.read() {
+        info!("login button clicked!");
         if let Some(id) = input.gamepad_first() {
             rumble_manager.add_rumble(id, Duration::from_millis(200), GamepadRumbleIntensity::strong_motor(0.4));
         }
     }
-    for _ in continue_btn_rdr.read() {
-        info!("continue button clicked!");
+    for _ in register_btn_rdr.read() {
+        info!("register button clicked!");
         if let Some(id) = input.gamepad_first() {
             rumble_manager.add_rumble(id, Duration::from_millis(200), GamepadRumbleIntensity::strong_motor(0.4));
         }

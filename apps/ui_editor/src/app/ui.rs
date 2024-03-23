@@ -59,10 +59,10 @@ fn ui_define() -> (String, AssetId, ETag, Ui) {
             .set_aspect_ratio(16.0, 4.)
             .set_padding_px(10.0, 10.0, 10.0, 10.0);
     });
-    let start_button_style = ui.create_button_style(|s| {
+    let login_button_style = ui.create_button_style(|s| {
         s.set_margin_right_px(40.0);
     });
-    let continue_button_style = ui.create_button_style(|s| {
+    let register_button_style = ui.create_button_style(|s| {
         s.set_margin_left_px(40.0);
     });
 
@@ -77,31 +77,31 @@ fn ui_define() -> (String, AssetId, ETag, Ui) {
                 c.add_text("c y b e r l i t h");
             });
 
-            // start button
-            c.add_button("start_button")
+            // login button
+            c.add_button("login_button")
                 .set_as_default_button()
                 .add_style(base_button_style)
-                .add_style(start_button_style)
+                .add_style(login_button_style)
                 .contents(|c| {
-                    c.add_text("start");
+                    c.add_text("login");
                 })
                 .navigation(|n| {
                     n
-                        .down_goes_to("continue_button")
-                        .right_goes_to("continue_button");
+                        .down_goes_to("register_button")
+                        .right_goes_to("register_button");
                 });
 
             // continue button
-            c.add_button("continue_button")
+            c.add_button("register_button")
                 .add_style(base_button_style)
-                .add_style(continue_button_style)
+                .add_style(register_button_style)
                 .contents(|c| {
-                    c.add_text("continue");
+                    c.add_text("register");
                 })
                 .navigation(|n| {
                     n
-                        .up_goes_to("start_button")
-                        .left_goes_to("start_button");
+                        .up_goes_to("login_button")
+                        .left_goes_to("login_button");
                 });
         });
 
@@ -109,10 +109,10 @@ fn ui_define() -> (String, AssetId, ETag, Ui) {
 }
 
 #[derive(Event, Default)]
-pub struct StartButtonEvent;
+pub struct LoginButtonEvent;
 
 #[derive(Event, Default)]
-pub struct ContinueButtonEvent;
+pub struct RegisterButtonEvent;
 
 // this is run as a system at startup
 pub fn ui_setup(
@@ -138,8 +138,8 @@ pub fn ui_setup(
     let ui_handle = AssetHandle::<UiData>::new(ui_asset_id);
     let _ui_entity = commands.spawn(ui_handle).id();
 
-    asset_manager.register_ui_event::<StartButtonEvent>(&ui_handle, "start_button");
-    asset_manager.register_ui_event::<ContinueButtonEvent>(&ui_handle, "continue_button");
+    asset_manager.register_ui_event::<LoginButtonEvent>(&ui_handle, "login_button");
+    asset_manager.register_ui_event::<RegisterButtonEvent>(&ui_handle, "register_button");
 }
 
 pub fn ui_update(
@@ -174,17 +174,17 @@ pub fn ui_update(
 pub fn ui_handle_events(
     input: Res<Input>,
     mut rumble_manager: ResMut<RumbleManager>,
-    mut start_btn_rdr: EventReader<StartButtonEvent>,
-    mut continue_btn_rdr: EventReader<ContinueButtonEvent>,
+    mut login_btn_rdr: EventReader<LoginButtonEvent>,
+    mut register_btn_rdr: EventReader<RegisterButtonEvent>,
 ) {
-    for _ in start_btn_rdr.read() {
-        info!("start button clicked!");
+    for _ in login_btn_rdr.read() {
+        info!("login button clicked!");
         if let Some(id) = input.gamepad_first() {
             rumble_manager.add_rumble(id, Duration::from_millis(200), GamepadRumbleIntensity::weak_motor(0.4));
         }
     }
-    for _ in continue_btn_rdr.read() {
-        info!("continue button clicked!");
+    for _ in register_btn_rdr.read() {
+        info!("register button clicked!");
         if let Some(id) = input.gamepad_first() {
             rumble_manager.add_rumble(id, Duration::from_millis(200), GamepadRumbleIntensity::weak_motor(0.4));
         }

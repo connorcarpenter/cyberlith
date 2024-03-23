@@ -6,7 +6,7 @@ use game_engine::{
 };
 
 use super::{draw, resize, scene, ui};
-use crate::app::ui::{ContinueButtonEvent, StartButtonEvent};
+use crate::app::ui::{RegisterButtonEvent, LoginButtonEvent};
 
 pub fn run() {
     let mut app = App::default();
@@ -20,8 +20,8 @@ pub fn run() {
             ..Default::default()
         })
         // events
-        .add_event::<StartButtonEvent>()
-        .add_event::<ContinueButtonEvent>()
+        .add_event::<LoginButtonEvent>()
+        .add_event::<RegisterButtonEvent>()
         // ui systems
         .add_systems(Startup, ui::ui_setup)
         .add_systems(Update, ui::ui_update)
