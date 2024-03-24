@@ -25,10 +25,10 @@ fn ui_define() -> (String, AssetId, ETag, Ui) {
     //return start::ui_define();
 
     // login
-    //return login::ui_define();
+    return login::ui_define();
 
     // register
-    return register::ui_define();
+    //return register::ui_define();
 }
 
 #[derive(Event, Default)]
@@ -58,7 +58,7 @@ pub fn ui_setup(
     let ui_handle = AssetHandle::<UiData>::new(ui_asset_id);
     let _ui_entity = commands.spawn(ui_handle).id();
 
-    asset_manager.register_ui_event::<SubmitButtonEvent>(&ui_handle, "submit_button");
+    //asset_manager.register_ui_event::<SubmitButtonEvent>(&ui_handle, "login_button");
 }
 
 pub fn ui_update(

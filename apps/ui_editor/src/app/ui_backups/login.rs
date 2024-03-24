@@ -18,14 +18,12 @@ pub fn ui_define() -> (String, AssetId, ETag, Ui) {
     let window_style = ui.create_panel_style(|s| {
         s
             .set_background_alpha(0.)
-            .set_background_alpha(1.0)
             .set_vertical()
             .set_children_valign(Alignment::Start);
     });
     let main_container_style = ui.create_panel_style(|s| {
         s
             .set_background_alpha(0.)
-            .set_background_alpha(1.0)
             .set_size_pc(100., 100.)
             .set_solid_fit()
             .set_aspect_ratio(16., 9.)
@@ -35,7 +33,6 @@ pub fn ui_define() -> (String, AssetId, ETag, Ui) {
     let title_container_style = ui.create_panel_style(|s| {
         s
             .set_background_alpha(0.)
-            .set_background_alpha(1.0)
             .set_size_pc(100., 33.)
             .set_vertical()
             .set_children_valign(Alignment::Start)
@@ -51,7 +48,6 @@ pub fn ui_define() -> (String, AssetId, ETag, Ui) {
     let body_container_style = ui.create_panel_style(|s| {
         s
             .set_background_alpha(0.)
-            .set_background_alpha(1.0)
             .set_size_pc(100., 67.)
             .set_vertical()
             .set_children_valign(Alignment::Start)

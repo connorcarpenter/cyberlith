@@ -36,17 +36,19 @@ pub fn ui_setup(
     // TODO: use some kind of catalog here?
     embedded_asset_events.send(embedded_asset_event!("../embedded/8273wa")); // palette
     embedded_asset_events.send(embedded_asset_event!("../embedded/34mvvk")); // verdana icon
-    embedded_asset_events.send(embedded_asset_event!("../embedded/tpp7za")); // main ui
+    embedded_asset_events.send(embedded_asset_event!("../embedded/tpp7za")); // start ui
+    embedded_asset_events.send(embedded_asset_event!("../embedded/rckneg")); // login ui
+    embedded_asset_events.send(embedded_asset_event!("../embedded/3f5gej")); // register ui
 
     // render_layer
     let layer = RenderLayers::layer(1);
 
     // ui
-    let ui_handle = AssetHandle::<UiData>::new(AssetId::from_str("tpp7za").unwrap()); // TODO: use some kind of catalog?
+    let ui_handle = AssetHandle::<UiData>::new(AssetId::from_str("rckneg").unwrap()); // TODO: use some kind of catalog?
     let _ui_entity = commands.spawn(ui_handle).insert(layer).id();
 
-    asset_manager.register_ui_event::<StartButtonEvent>(&ui_handle, "login_button");
-    asset_manager.register_ui_event::<ContinueButtonEvent>(&ui_handle, "register_button");
+    //asset_manager.register_ui_event::<StartButtonEvent>(&ui_handle, "login_button");
+    //asset_manager.register_ui_event::<ContinueButtonEvent>(&ui_handle, "register_button");
 
     // light
     commands
