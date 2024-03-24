@@ -2,7 +2,7 @@ use game_engine::{ui::{Alignment, Ui}, render::base::Color, asset::{AssetId, ETa
 
 pub fn ui_define() -> (String, AssetId, ETag, Ui) {
     // config
-    let ui_name = "main";
+    let ui_name = "start";
     let ui_asset_id_str = "tpp7za"; // AssetId::get_random(); // keep this around to generate new AssetIds if needed!
     let icon_asset_id_str = "34mvvk";
     let ui_etag = ETag::new_random();
