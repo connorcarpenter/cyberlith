@@ -104,7 +104,10 @@ pub(crate) struct PanelStyleJson {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub(crate) struct TextStyleJson {}
+pub(crate) struct TextStyleJson {
+    background_color: Option<ColorJson>,
+    background_alpha: Option<f32>,
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub(crate) struct ButtonStyleJson {

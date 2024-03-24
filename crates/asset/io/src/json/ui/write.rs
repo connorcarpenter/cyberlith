@@ -110,8 +110,11 @@ impl PanelStyleJson {
 }
 
 impl TextStyleJson {
-    fn from_text_style(_style: &TextStyle) -> Self {
-        Self {}
+    fn from_text_style(style: &TextStyle) -> Self {
+        Self {
+            background_color: style.background_color.map(ColorJson::from_color),
+            background_alpha: style.background_alpha(),
+        }
     }
 }
 

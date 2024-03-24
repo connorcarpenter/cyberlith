@@ -106,7 +106,10 @@ pub(crate) struct PanelStyleBits {
 }
 
 #[derive(Serde, Clone, PartialEq)]
-pub(crate) struct TextStyleBits {}
+pub(crate) struct TextStyleBits {
+    background_color: Option<(u8, u8, u8)>,
+    background_alpha: Option<UnsignedInteger<4>>,
+}
 
 #[derive(Serde, Clone, PartialEq)]
 pub(crate) struct ButtonStyleBits {

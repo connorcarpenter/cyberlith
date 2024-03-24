@@ -9,18 +9,7 @@ use render_api::{
 use storage::{Handle, Storage};
 use ui_layout::{Node, SizeUnits};
 
-use crate::{
-    cache::LayoutCache,
-    node::UiNode,
-    node_id::NodeId,
-    panel::{Panel, PanelMut, PanelStyle, PanelStyleMut},
-    store::UiStore,
-    style::{NodeStyle, StyleId, WidgetStyle},
-    text::{TextStyle, TextStyleMut},
-    widget::{Widget, WidgetKind},
-    input::ui_receive_input,
-    Button, ButtonStyle, ButtonStyleMut, UiEvent, UiInput, button::ButtonState
-};
+use crate::{cache::LayoutCache, node::UiNode, node_id::NodeId, panel::{Panel, PanelMut, PanelStyle, PanelStyleMut}, store::UiStore, style::{NodeStyle, StyleId, WidgetStyle}, text::{TextStyle, TextStyleMut}, widget::{Widget, WidgetKind}, input::ui_receive_input, Button, ButtonStyle, ButtonStyleMut, UiEvent, UiInput, button::ButtonState, Text};
 
 pub struct Ui {
     pub globals: Globals,
@@ -183,6 +172,13 @@ impl Ui {
                     let mat_handle = materials.add(color);
                     panel_mut.background_color_handle = Some(mat_handle);
                 }
+                WidgetKind::Text => {
+                    let text_style_ref = self.store.text_style_ref(&id);
+                    let color = text_style_ref.background_color();
+                    let text_mut = self.text_mut(&id).unwrap();
+                    let mat_handle = materials.add(color);
+                    text_mut.background_color_handle = Some(mat_handle);
+                }
                 WidgetKind::Button => {
                     let button_style_ref = self.store.button_style_ref(&id);
 
@@ -241,13 +237,13 @@ impl Ui {
         new_style_id
     }
 
-    // pub fn create_text_style(&mut self, inner_fn: impl FnOnce(&mut TextStyleMut)) -> StyleId {
-    //     let new_style_id =
-    //         self.create_style(NodeStyle::empty(WidgetStyle::Text(TextStyle::empty())));
-    //     let mut text_style_mut = TextStyleMut::new(self, new_style_id);
-    //     inner_fn(&mut text_style_mut);
-    //     new_style_id
-    // }
+    pub fn create_text_style(&mut self, inner_fn: impl FnOnce(&mut TextStyleMut)) -> StyleId {
+        let new_style_id =
+            self.create_style(NodeStyle::empty(WidgetStyle::Text(TextStyle::empty())));
+        let mut text_style_mut = TextStyleMut::new(self, new_style_id);
+        inner_fn(&mut text_style_mut);
+        new_style_id
+    }
 
     pub fn create_button_style(&mut self, inner_fn: impl FnOnce(&mut ButtonStyleMut)) -> StyleId {
         let new_style_id =
@@ -315,14 +311,17 @@ impl Ui {
                         pending_mat_handles.push(id);
                     }
                 }
+                WidgetKind::Text => {
+                    let text_ref = node_ref.widget_text_ref().unwrap();
+                    if text_ref.background_color_handle.is_none() {
+                        pending_mat_handles.push(id);
+                    }
+                }
                 WidgetKind::Button => {
                     let button_ref = node_ref.widget_button_ref().unwrap();
                     if button_ref.needs_color_handle() {
                         pending_mat_handles.push(id);
                     }
-                }
-                _ => {
-                    continue;
                 }
             }
         }
@@ -362,6 +361,12 @@ impl Ui {
         let node_mut = self.node_mut(id)?;
         let panel_mut = node_mut.widget_panel_mut()?;
         Some(panel_mut)
+    }
+
+    pub(crate) fn text_mut(&mut self, id: &NodeId) -> Option<&mut Text> {
+        let node_mut = self.node_mut(id)?;
+        let text_mut = node_mut.widget_text_mut()?;
+        Some(text_mut)
     }
 
     pub(crate) fn button_mut(&mut self, id: &NodeId) -> Option<&mut Button> {

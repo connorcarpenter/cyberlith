@@ -1,5 +1,6 @@
 use game_engine::{ui::{Alignment, Ui}, render::base::Color, asset::{AssetId, ETag}};
 
+#[allow(unused)]
 pub fn ui_define() -> (String, AssetId, ETag, Ui) {
     // config
     let ui_name = "register";

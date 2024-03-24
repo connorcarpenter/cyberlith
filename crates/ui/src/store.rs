@@ -1,10 +1,4 @@
-use crate::{
-    button::ButtonStyleRef,
-    panel::{Panel, PanelStyle, PanelStyleRef},
-    style::{NodeStyle, StyleId, WidgetStyle},
-    widget::WidgetKind,
-    Button, ButtonStyle, NodeId, UiNode,
-};
+use crate::{text::TextStyleRef, button::ButtonStyleRef, panel::{Panel, PanelStyle, PanelStyleRef}, style::{NodeStyle, StyleId, WidgetStyle}, widget::WidgetKind, Button, ButtonStyle, NodeId, UiNode, TextStyle};
 
 pub struct UiStore {
     pub styles: Vec<NodeStyle>,
@@ -126,6 +120,18 @@ impl UiStore {
         }
     }
 
+    pub(crate) fn for_each_text_style(&self, node_id: &NodeId, mut func: impl FnMut(&TextStyle)) {
+        for style_id in self.node_style_ids(node_id) {
+            let Some(style) = self.get_style(style_id) else {
+                panic!("StyleId does not reference a Style");
+            };
+            let WidgetStyle::Text(text_style) = style.widget_style else {
+                panic!("StyleId does not reference a TextStyle");
+            };
+            func(&text_style);
+        }
+    }
+
     pub(crate) fn for_each_button_style(
         &self,
         node_id: &NodeId,
@@ -144,6 +150,10 @@ impl UiStore {
 
     pub fn panel_style_ref(&self, node_id: &NodeId) -> PanelStyleRef {
         PanelStyleRef::new(self, *node_id)
+    }
+
+    pub fn text_style_ref(&self, node_id: &NodeId) -> TextStyleRef {
+        TextStyleRef::new(self, *node_id)
     }
 
     pub fn button_style_ref(&self, node_id: &NodeId) -> ButtonStyleRef {

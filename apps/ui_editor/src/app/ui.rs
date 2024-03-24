@@ -13,8 +13,8 @@ use game_engine::{
         embedded_asset_event, AssetHandle, AssetId, AssetManager, AssetMetadataSerde, AssetType,
         ETag, EmbeddedAssetEvent, UiData,
     },
-    render::{base::Color, components::{RenderLayer, Camera}},
-    ui::{Alignment, Ui, UiInputConverter},
+    render::{components::{RenderLayer, Camera}},
+    ui::{Ui, UiInputConverter},
     input::{Input, InputEvent, GamepadRumbleIntensity, RumbleManager},
 };
 
@@ -25,10 +25,13 @@ fn ui_define() -> (String, AssetId, ETag, Ui) {
     //return start::ui_define();
 
     // login
-    return login::ui_define();
+    //return login::ui_define();
 
     // register
     //return register::ui_define();
+
+    // temp
+    return temp::ui_define();
 }
 
 #[derive(Event, Default)]

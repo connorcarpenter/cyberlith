@@ -196,8 +196,14 @@ impl PanelStyleBits {
 }
 
 impl TextStyleBits {
-    fn from_text_style(_style: &TextStyle) -> Self {
-        Self {}
+    fn from_text_style(style: &TextStyle) -> Self {
+        Self {
+            background_color: style.background_color.map(|val| (val.r, val.g, val.b)),
+            background_alpha: style.background_alpha().map(|val| {
+                let val = (val * 10.0) as u8;
+                UnsignedInteger::<4>::new(val)
+            }),
+        }
     }
 }
 

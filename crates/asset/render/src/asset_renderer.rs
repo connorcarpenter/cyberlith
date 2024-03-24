@@ -529,12 +529,29 @@ fn draw_ui_text(
     node_id: &NodeId,
     transform: &Transform,
 ) {
-    let text_ref = ui
+    let Some(text_ref) = ui
         .store
         .get_node(node_id)
         .unwrap()
-        .widget_text_ref()
-        .unwrap();
+        .widget_text_ref() else {
+        panic!("no text ref for node_id: {:?}", node_id);
+    };
+
+    // draw background
+    if let Some(mat_handle) = text_ref.background_color_handle {
+        let text_style_ref = ui.store.text_style_ref(node_id);
+        let background_alpha = text_style_ref.background_alpha();
+        if background_alpha > 0.0 {
+            if background_alpha != 1.0 {
+                panic!("partial background_alpha not implemented yet!");
+            }
+            let box_handle = ui.globals.get_box_mesh_handle().unwrap();
+            render_frame.draw_mesh(render_layer_opt, box_handle, &mat_handle, &transform);
+        }
+    } else {
+        warn!("no background color handle for text"); // probably will need to do better debugging later
+        return;
+    };
 
     let Some(text_color_handle) = ui.globals.get_text_color_handle() else {
         panic!("No text color handle found in globals");

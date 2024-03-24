@@ -1,19 +1,20 @@
-use ui_layout::{Alignment, MarginUnits, PositionType, SizeUnits, Solid};
+use render_api::base::{Color, CpuMaterial};
+use storage::Handle;
+use ui_layout::{Alignment, MarginUnits, PositionType, SizeUnits};
 
-use crate::{
-    style::{NodeStyle, StyleId},
-    NodeId, Ui,
-};
+use crate::{store::UiStore, style::{NodeStyle, StyleId}, NodeId, Ui, WidgetStyle};
 
 #[derive(Clone)]
 pub struct Text {
     pub text: String,
+    pub background_color_handle: Option<Handle<CpuMaterial>>,
 }
 
 impl Text {
     pub fn new(text: &str) -> Self {
         Self {
             text: text.to_string(),
+            background_color_handle: None,
         }
     }
 
@@ -23,11 +24,33 @@ impl Text {
 }
 
 #[derive(Clone, Copy)]
-pub struct TextStyle {}
+pub struct TextStyle {
+    pub background_color: Option<Color>,
+    pub(crate) background_alpha: Option<f32>,
+}
 
 impl TextStyle {
     pub fn empty() -> Self {
-        Self {}
+        Self {
+            background_color: None,
+            background_alpha: None,
+        }
+    }
+
+    pub fn background_alpha(&self) -> Option<f32> {
+        self.background_alpha
+    }
+
+    pub(crate) fn set_background_alpha(&mut self, val: f32) {
+        // validate
+        if val < 0.0 || val > 1.0 {
+            panic!("background_alpha must be between 0.0 and 1.0");
+        }
+        if (val * 10.0).fract() != 0.0 {
+            panic!("background_alpha must be a multiple of 0.1");
+        }
+
+        self.background_alpha = Some(val);
     }
 }
 
@@ -58,6 +81,41 @@ impl<'a> TextMut<'a> {
     }
 }
 
+pub struct TextStyleRef<'a> {
+    store: &'a UiStore,
+    node_id: NodeId,
+}
+
+impl<'a> TextStyleRef<'a> {
+    pub(crate) fn new(store: &'a UiStore, node_id: NodeId) -> Self {
+        Self { store, node_id }
+    }
+
+    pub fn background_color(&self) -> Color {
+        let mut output = Color::BLACK; // TODO: put into const var!
+
+        self.store.for_each_text_style(&self.node_id, |style| {
+            if let Some(color) = style.background_color {
+                output = color;
+            }
+        });
+
+        output
+    }
+
+    pub fn background_alpha(&self) -> f32 {
+        let mut output = 1.0; // TODO: put into const var!
+
+        self.store.for_each_text_style(&self.node_id, |style| {
+            if let Some(alpha) = style.background_alpha {
+                output = alpha;
+            }
+        });
+
+        output
+    }
+}
+
 pub struct TextStyleMut<'a> {
     ui: &'a mut Ui,
     style_id: StyleId,
@@ -70,6 +128,24 @@ impl<'a> TextStyleMut<'a> {
 
     fn get_style_mut(&mut self) -> &mut NodeStyle {
         self.ui.style_mut(&self.style_id).unwrap()
+    }
+
+    fn get_text_style_mut(&mut self) -> &mut TextStyle {
+        if let WidgetStyle::Text(text_style) = &mut self.get_style_mut().widget_style {
+            text_style
+        } else {
+            panic!("StyleId does not reference a TextStyle");
+        }
+    }
+
+    pub fn set_background_color(&mut self, color: Color) -> &mut Self {
+        self.get_text_style_mut().background_color = Some(color);
+        self
+    }
+
+    pub fn set_background_alpha(&mut self, alpha: f32) -> &mut Self {
+        self.get_text_style_mut().set_background_alpha(alpha);
+        self
     }
 
     pub fn set_absolute(&mut self) -> &mut Self {
@@ -92,184 +168,25 @@ impl<'a> TextStyleMut<'a> {
         self
     }
 
-    // set_width
-    fn set_width_units(&mut self, width: SizeUnits) -> &mut Self {
-        self.get_style_mut().width = Some(width);
-        self
-    }
-
-    pub fn set_width_auto(&mut self) -> &mut Self {
-        self.set_width_units(SizeUnits::Auto)
-    }
-
-    pub fn set_width_px(&mut self, width_px: f32) -> &mut Self {
-        self.set_width_units(SizeUnits::Pixels(width_px))
-    }
-
-    pub fn set_width_pc(&mut self, width_pc: f32) -> &mut Self {
-        self.set_width_units(SizeUnits::Percentage(width_pc))
-    }
-
     // set height
     fn set_height_units(&mut self, height: SizeUnits) -> &mut Self {
         self.get_style_mut().height = Some(height);
         self
     }
 
-    pub fn set_height_auto(&mut self) -> &mut Self {
-        self.set_height_units(SizeUnits::Auto)
-    }
-
     pub fn set_height_px(&mut self, width_px: f32) -> &mut Self {
         self.set_height_units(SizeUnits::Pixels(width_px))
     }
 
-    pub fn set_height_pc(&mut self, width_pc: f32) -> &mut Self {
-        self.set_height_units(SizeUnits::Percentage(width_pc))
-    }
-
     // set size
-    fn set_size_units(&mut self, width: SizeUnits, height: SizeUnits) -> &mut Self {
-        self.set_width_units(width);
+    fn set_size_units(&mut self, height: SizeUnits) -> &mut Self {
         self.set_height_units(height);
         self
     }
 
-    pub fn set_size_auto(&mut self) -> &mut Self {
-        self.set_size_units(SizeUnits::Auto, SizeUnits::Auto)
-    }
-
-    pub fn set_size_px(&mut self, width_px: f32, height_px: f32) -> &mut Self {
-        self.set_size_units(SizeUnits::Pixels(width_px), SizeUnits::Pixels(height_px))
-    }
-
-    pub fn set_size_pc(&mut self, width_pc: f32, height_pc: f32) -> &mut Self {
-        self.set_size_units(
-            SizeUnits::Percentage(width_pc),
-            SizeUnits::Percentage(height_pc),
-        )
-    }
-
-    // set_width_min
-    fn set_width_min_units(&mut self, min_width: SizeUnits) -> &mut Self {
-        self.get_style_mut().width_min = Some(min_width);
+    pub fn set_size_px(&mut self, height_px: f32) -> &mut Self {
+        self.set_size_units(SizeUnits::Pixels(height_px));
         self
-    }
-
-    pub fn set_width_min_auto(&mut self) -> &mut Self {
-        self.set_width_min_units(SizeUnits::Auto)
-    }
-
-    pub fn set_width_min_px(&mut self, min_width_px: f32) -> &mut Self {
-        self.set_width_min_units(SizeUnits::Pixels(min_width_px))
-    }
-
-    pub fn set_width_min_pc(&mut self, min_width_pc: f32) -> &mut Self {
-        self.set_width_min_units(SizeUnits::Percentage(min_width_pc))
-    }
-
-    // set_height_min
-    fn set_height_min_units(&mut self, min_height: SizeUnits) -> &mut Self {
-        self.get_style_mut().height_min = Some(min_height);
-        self
-    }
-
-    pub fn set_height_min_auto(&mut self) -> &mut Self {
-        self.set_height_min_units(SizeUnits::Auto)
-    }
-
-    pub fn set_height_min_px(&mut self, min_height_px: f32) -> &mut Self {
-        self.set_height_min_units(SizeUnits::Pixels(min_height_px))
-    }
-
-    pub fn set_height_min_pc(&mut self, min_height_pc: f32) -> &mut Self {
-        self.set_height_min_units(SizeUnits::Percentage(min_height_pc))
-    }
-
-    // set_size_min
-    fn set_size_min_units(&mut self, min_width: SizeUnits, min_height: SizeUnits) -> &mut Self {
-        self.set_width_min_units(min_width);
-        self.set_height_min_units(min_height);
-        self
-    }
-
-    pub fn set_size_min_auto(&mut self) -> &mut Self {
-        self.set_size_min_units(SizeUnits::Auto, SizeUnits::Auto)
-    }
-
-    pub fn set_size_min_px(&mut self, min_width_px: f32, min_height_px: f32) -> &mut Self {
-        self.set_size_min_units(
-            SizeUnits::Pixels(min_width_px),
-            SizeUnits::Pixels(min_height_px),
-        )
-    }
-
-    pub fn set_size_min_pc(&mut self, min_width_pc: f32, min_height_pc: f32) -> &mut Self {
-        self.set_size_min_units(
-            SizeUnits::Percentage(min_width_pc),
-            SizeUnits::Percentage(min_height_pc),
-        )
-    }
-
-    // set_width_max
-    fn set_width_max_units(&mut self, max_width: SizeUnits) -> &mut Self {
-        self.get_style_mut().width_max = Some(max_width);
-        self
-    }
-
-    pub fn set_width_max_auto(&mut self) -> &mut Self {
-        self.set_width_max_units(SizeUnits::Auto)
-    }
-
-    pub fn set_width_max_px(&mut self, max_width_px: f32) -> &mut Self {
-        self.set_width_max_units(SizeUnits::Pixels(max_width_px))
-    }
-
-    pub fn set_width_max_pc(&mut self, max_width_pc: f32) -> &mut Self {
-        self.set_width_max_units(SizeUnits::Percentage(max_width_pc))
-    }
-
-    // set_height_max
-    fn set_height_max_units(&mut self, max_height: SizeUnits) -> &mut Self {
-        self.get_style_mut().height_max = Some(max_height);
-        self
-    }
-
-    pub fn set_height_max_auto(&mut self) -> &mut Self {
-        self.set_height_max_units(SizeUnits::Auto)
-    }
-
-    pub fn set_height_max_px(&mut self, max_height_px: f32) -> &mut Self {
-        self.set_height_max_units(SizeUnits::Pixels(max_height_px))
-    }
-
-    pub fn set_height_max_pc(&mut self, max_height_pc: f32) -> &mut Self {
-        self.set_height_max_units(SizeUnits::Percentage(max_height_pc))
-    }
-
-    // set_size_max
-    fn set_size_max_units(&mut self, max_width: SizeUnits, max_height: SizeUnits) -> &mut Self {
-        self.set_width_max_units(max_width);
-        self.set_height_max_units(max_height);
-        self
-    }
-
-    pub fn set_size_max_auto(&mut self) -> &mut Self {
-        self.set_size_max_units(SizeUnits::Auto, SizeUnits::Auto)
-    }
-
-    pub fn set_size_max_px(&mut self, max_width_px: f32, max_height_px: f32) -> &mut Self {
-        self.set_size_max_units(
-            SizeUnits::Pixels(max_width_px),
-            SizeUnits::Pixels(max_height_px),
-        )
-    }
-
-    pub fn set_size_max_pc(&mut self, max_width_pc: f32, max_height_pc: f32) -> &mut Self {
-        self.set_size_max_units(
-            SizeUnits::Percentage(max_width_pc),
-            SizeUnits::Percentage(max_height_pc),
-        )
     }
 
     // set_left
@@ -342,22 +259,5 @@ impl<'a> TextStyleMut<'a> {
             .set_margin_right_pc(right)
             .set_margin_top_pc(top)
             .set_margin_bottom_pc(bottom)
-    }
-
-    // solid stuff
-
-    pub fn set_solid_fit(&mut self) -> &mut Self {
-        self.get_style_mut().solid_override = Some(Solid::Fit);
-        self
-    }
-
-    pub fn set_solid_fill(&mut self) -> &mut Self {
-        self.get_style_mut().solid_override = Some(Solid::Fill);
-        self
-    }
-
-    pub fn set_aspect_ratio(&mut self, width: f32, height: f32) -> &mut Self {
-        self.get_style_mut().set_aspect_ratio(width, height);
-        self
     }
 }
