@@ -1,5 +1,6 @@
-// this is where new UIs should be created
-fn ui_define() -> (String, AssetId, ETag, Ui) {
+use game_engine::{ui::{Alignment, Ui}, render::base::Color, asset::{AssetId, ETag}};
+
+pub fn ui_define() -> (String, AssetId, ETag, Ui) {
     // config
     let ui_name = "main";
     let ui_asset_id_str = "tpp7za"; // AssetId::get_random(); // keep this around to generate new AssetIds if needed!
