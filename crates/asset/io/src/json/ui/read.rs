@@ -178,9 +178,11 @@ impl UiJson {
                 WidgetKind::Panel => ui.create_panel_style(|style| {
                     style_serde.to_panel_style(style);
                 }),
-                WidgetKind::Text => ui.create_text_style(|style| {
-                    style_serde.to_text_style(style);
-                }),
+                WidgetKind::Text => {
+                    panic!("not supported");
+                }//ui.create_text_style(|style| {
+                    // style_serde.to_text_style(style);
+                // }),
                 WidgetKind::Button => ui.create_button_style(|style| {
                     style_serde.to_button_style(style);
                 }),

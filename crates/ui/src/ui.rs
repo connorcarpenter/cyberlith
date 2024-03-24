@@ -241,13 +241,13 @@ impl Ui {
         new_style_id
     }
 
-    pub fn create_text_style(&mut self, inner_fn: impl FnOnce(&mut TextStyleMut)) -> StyleId {
-        let new_style_id =
-            self.create_style(NodeStyle::empty(WidgetStyle::Text(TextStyle::empty())));
-        let mut text_style_mut = TextStyleMut::new(self, new_style_id);
-        inner_fn(&mut text_style_mut);
-        new_style_id
-    }
+    // pub fn create_text_style(&mut self, inner_fn: impl FnOnce(&mut TextStyleMut)) -> StyleId {
+    //     let new_style_id =
+    //         self.create_style(NodeStyle::empty(WidgetStyle::Text(TextStyle::empty())));
+    //     let mut text_style_mut = TextStyleMut::new(self, new_style_id);
+    //     inner_fn(&mut text_style_mut);
+    //     new_style_id
+    // }
 
     pub fn create_button_style(&mut self, inner_fn: impl FnOnce(&mut ButtonStyleMut)) -> StyleId {
         let new_style_id =

@@ -44,9 +44,11 @@ fn convert_actions_to_ui(actions: Vec<UiAction>) -> Ui {
                     WidgetKind::Panel => ui.create_panel_style(|style| {
                         style_bits.to_panel_style(style);
                     }),
-                    WidgetKind::Text => ui.create_text_style(|style| {
-                        style_bits.to_text_style(style);
-                    }),
+                    WidgetKind::Text => {
+                        panic!("not supported");
+                    },//ui.create_text_style(|style| {
+                    //     style_bits.to_text_style(style);
+                    // }),
                     WidgetKind::Button => ui.create_button_style(|style| {
                         style_bits.to_button_style(style);
                     }),
