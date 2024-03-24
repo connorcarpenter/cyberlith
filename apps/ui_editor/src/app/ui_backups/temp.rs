@@ -48,7 +48,7 @@ pub fn ui_define() -> (String, AssetId, ETag, Ui) {
     });
 
     let title_text_style = ui.create_text_style(|s| {
-        s.set_size_px(28.).set_self_halign(Alignment::Start).set_background_color(Color::DARK_GRAY);
+        s.set_size_px(28.).set_self_halign(Alignment::Start);
     });
     let body_text_style = ui.create_text_style(|s| {
 

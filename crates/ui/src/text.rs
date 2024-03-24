@@ -104,7 +104,7 @@ impl<'a> TextStyleRef<'a> {
     }
 
     pub fn background_alpha(&self) -> f32 {
-        let mut output = 1.0; // TODO: put into const var!
+        let mut output = 0.0; // TODO: put into const var!
 
         self.store.for_each_text_style(&self.node_id, |style| {
             if let Some(alpha) = style.background_alpha {
