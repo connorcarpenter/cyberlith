@@ -136,7 +136,9 @@ pub fn ui_receive_input(ui: &mut Ui, input: UiInput) {
                 if !current_pressed {
                     ui.set_select_pressed(true);
                     if let Some(hover_node) = ui.get_hover() {
-                        ui.emit_event(&hover_node, UiEvent::Clicked)
+                        if ui.node_ref(&hover_node).unwrap().widget_kind() == WidgetKind::Button {
+                            ui.emit_event(&hover_node, UiEvent::Clicked);
+                        }
                     }
                 }
             } else {

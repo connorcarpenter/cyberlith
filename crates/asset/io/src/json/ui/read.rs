@@ -185,7 +185,7 @@ impl UiJson {
         let UiJson {
             text_color,
             text_icon_asset_id,
-            first_input: first_input,
+            first_input,
             styles,
             nodes,
         } = self;

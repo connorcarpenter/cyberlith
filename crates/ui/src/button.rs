@@ -2,13 +2,7 @@ use render_api::base::{Color, CpuMaterial};
 use storage::Handle;
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 
-use crate::{
-    node::UiNode,
-    store::UiStore,
-    style::{NodeStyle, StyleId, WidgetStyle},
-    text::{Text, TextMut},
-    NodeId, Panel, PanelMut, PanelStyle, Ui, Widget,
-};
+use crate::{node::UiNode, store::UiStore, style::{NodeStyle, StyleId, WidgetStyle}, text::{Text, TextMut}, NodeId, Panel, PanelMut, PanelStyle, Ui, Widget};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum NodeActiveState {
