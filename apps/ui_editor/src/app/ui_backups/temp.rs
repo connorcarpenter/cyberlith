@@ -19,13 +19,13 @@ pub fn ui_define() -> (String, AssetId, ETag, Ui) {
     let window_style = ui.create_panel_style(|s| {
         s
             .set_background_alpha(1.)
-            .set_background_color(Color::RED)
+            .set_background_color(Color::BLACK)
         ;
     });
     let main_container_style = ui.create_panel_style(|s| {
         s
             .set_background_alpha(1.)
-            .set_background_color(Color::BLUE)
+            .set_background_color(Color::BLACK)
             .set_size_pc(100., 100.)
             .set_solid_fit()
             .set_aspect_ratio(16., 9.);
@@ -33,7 +33,7 @@ pub fn ui_define() -> (String, AssetId, ETag, Ui) {
     let title_container_style = ui.create_panel_style(|s| {
         s
             .set_background_alpha(1.)
-            .set_background_color(Color::GREEN)
+            .set_background_color(Color::RED)
             .set_size_pc(100., 33.)
             .set_vertical()
             .set_children_valign(Alignment::Center)
@@ -42,21 +42,14 @@ pub fn ui_define() -> (String, AssetId, ETag, Ui) {
     let body_container_style = ui.create_panel_style(|s| {
         s
             .set_background_alpha(1.)
-            .set_background_color(Color::YELLOW)
+            .set_background_color(Color::BLUE)
             .set_size_pc(100., 67.)
         ;
     });
-
-    let title_text_style = ui.create_text_style(|s| {
+    let base_text_input_style = ui.create_panel_style(|s| {
         s
-            .set_size_px(25.)
-            .set_self_halign(Alignment::Start)
-            // .set_background_color(Color::AQUA)
-            // .set_background_alpha(1.)
-        ;
-    });
-    let body_text_style = ui.create_text_style(|s| {
-
+            .set_background_color(Color::GRAY)
+            .set_size_pc(45., 10.);
     });
 
     // nodes
@@ -70,12 +63,12 @@ pub fn ui_define() -> (String, AssetId, ETag, Ui) {
             c.add_panel().add_style(main_container_style).contents(|c| {
                 // title container
                 c.add_panel().add_style(title_container_style).contents(|c| {
-                    c.add_text("text1").add_style(title_text_style);
+
                 });
 
                 // body container
                 c.add_panel().add_style(body_container_style).contents(|c| {
-                    c.add_text("text2").add_style(body_text_style);
+                    c.add_panel().add_style(base_text_input_style);
                 });
             });
 

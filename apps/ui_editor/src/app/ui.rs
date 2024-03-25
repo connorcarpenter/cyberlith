@@ -28,10 +28,10 @@ fn ui_define() -> (String, AssetId, ETag, Ui) {
     // return login::ui_define();
 
     // register
-    return register::ui_define();
+    // return register::ui_define();
 
     // temp
-    // return temp::ui_define();
+    return temp::ui_define();
 }
 
 #[derive(Event, Default)]
