@@ -18,33 +18,27 @@ pub fn ui_define() -> (String, AssetId, ETag, Ui) {
     // styles
     let window_style = ui.create_panel_style(|s| {
         s
-            .set_background_alpha(0.)
-            .set_vertical()
-            .set_children_valign(Alignment::Start);
+            .set_background_alpha(0.);
     });
     let main_container_style = ui.create_panel_style(|s| {
         s
             .set_background_alpha(0.)
             .set_size_pc(100., 100.)
             .set_solid_fit()
-            .set_aspect_ratio(16., 9.)
-            .set_self_halign(Alignment::Start)
-            .set_vertical();
+            .set_aspect_ratio(16., 9.);
     });
     let title_container_style = ui.create_panel_style(|s| {
         s
             .set_background_alpha(0.)
-            .set_size_pc(100., 14.)
+            .set_size_pc(100., 16.)
             .set_vertical()
             .set_children_valign(Alignment::Start)
         ;
     });
-    let title_text_container_style = ui.create_panel_style(|s| {
+    let title_text_style = ui.create_text_style(|s| {
         s
             .set_background_alpha(0.)
-            .set_size_pc(30.0, 90.0)
-            .set_margin_left_px(20.0)
-            .set_self_halign(Alignment::Start);
+            .set_size_pc(90.0);
     });
     let body_container_style = ui.create_panel_style(|s| {
         s
@@ -58,7 +52,7 @@ pub fn ui_define() -> (String, AssetId, ETag, Ui) {
         s
             .set_background_alpha(0.)
             .set_width_pc(100.0)
-            .set_height_pc(12.0)
+            .set_height_pc(10.0)
             .set_horizontal();
     });
     let heading_container_left_style = ui.create_panel_style(|s| {
@@ -73,36 +67,39 @@ pub fn ui_define() -> (String, AssetId, ETag, Ui) {
             .set_width_pc(50.0)
             .set_height_pc(70.0);
     });
-    let heading_text_container_style = ui.create_panel_style(|s| {
+    let heading_text_style = ui.create_text_style(|s| {
         s
             .set_background_alpha(0.)
-            .set_width_pc(42.0)
-            .set_height_pc(100.0)
+            .set_size_pc(100.0)
             .set_margin_left_px(20.0)
             .set_self_halign(Alignment::Start);
+    });
+    let base_button_text_style = ui.create_text_style(|s| {
+        s
+            .set_size_px(50.0)
+            .set_self_halign(Alignment::Center)
+            .set_self_valign(Alignment::Center)
+            .set_margin_px(10.0, 10.0, 10.0, 10.0);
     });
     let base_button_style = ui.create_button_style(|s| {
         s.set_background_color(Color::DARK_GRAY)
             .set_hover_color(Color::RED)
-            .set_down_color(Color::BLUE)
-            .set_padding_px(10.0, 10.0, 10.0, 10.0);
+            .set_down_color(Color::BLUE);
     });
     let submit_button_style = ui.create_button_style(|s| {
         s
-            .set_size_pc(11.0, 10.0)
             .set_self_halign(Alignment::Start)
             .set_margin_left_px(40.);
     });
     let register_button_style = ui.create_button_style(|s| {
         s
-            .set_size_pc(25.0, 100.0)
             .set_self_halign(Alignment::End)
             .set_margin_right_px(10.0);
     });
-    let base_label_style = ui.create_panel_style(|s| {
+    let base_label_style = ui.create_text_style(|s| {
         s
             .set_background_alpha(0.)
-            .set_size_pc(7., 5.)
+            .set_size_pc(5.)
             .set_self_halign(Alignment::Start)
             .set_margin_left_px(40.0);
     });
@@ -125,10 +122,7 @@ pub fn ui_define() -> (String, AssetId, ETag, Ui) {
             c.add_panel().add_style(main_container_style).contents(|c| {
                 // title container
                 c.add_panel().add_style(title_container_style).contents(|c| {
-                    // title text
-                    c.add_panel().add_style(title_text_container_style).contents(|c| {
-                        c.add_text("c y b e r l i t h");
-                    });
+                    c.add_text("c y b e r l i t h").add_style(title_text_style);
                 });
 
                 // body container
@@ -137,20 +131,17 @@ pub fn ui_define() -> (String, AssetId, ETag, Ui) {
                     c.add_panel().add_style(heading_container_style).contents(|c| {
                         // heading container left
                         c.add_panel().add_style(heading_container_left_style).contents(|c| {
-                            // heading text container
-                            c.add_panel().add_style(heading_text_container_style).contents(|c| {
-                                c.add_text("register your account");
-                            });
+                            c.add_text("register your account").add_style(heading_text_style);
                         });
 
                         // heading container right
                         c.add_panel().add_style(heading_container_right_style).contents(|c| {
-                            // login button
+                            // register button
                             c.add_button("login_button")
                                 .add_style(base_button_style)
                                 .add_style(register_button_style)
                                 .contents(|c| {
-                                    c.add_text("login");
+                                    c.add_text("login").add_style(base_button_text_style);
                                 });
                         });
 
@@ -158,33 +149,25 @@ pub fn ui_define() -> (String, AssetId, ETag, Ui) {
 
                     // username input
                     // text
-                    c.add_panel().add_style(base_label_style).contents(|c| {
-                        c.add_text("username:");
-                    });
+                    c.add_text("username:").add_style(base_label_style);
                     // text-edit
                     c.add_panel().add_style(base_text_input_style);
 
                     // email input
                     // text
-                    c.add_panel().add_style(base_label_style).contents(|c| {
-                        c.add_text("email address:");
-                    });
+                    c.add_text("email address:").add_style(base_label_style);
                     // text-edit
                     c.add_panel().add_style(base_text_input_style);
 
                     // password input
                     // text
-                    c.add_panel().add_style(base_label_style).contents(|c| {
-                        c.add_text("password:");
-                    });
+                    c.add_text("password:").add_style(base_label_style);
                     // text-edit
                     c.add_panel().add_style(base_text_input_style);
 
-                    // password input
+                    // confirm password input
                     // text
-                    c.add_panel().add_style(base_label_style).contents(|c| {
-                        c.add_text("confirm password:");
-                    });
+                    c.add_text("confirm password:").add_style(base_label_style);
                     // text-edit
                     c.add_panel().add_style(base_text_input_style);
 
@@ -193,7 +176,7 @@ pub fn ui_define() -> (String, AssetId, ETag, Ui) {
                         .add_style(base_button_style)
                         .add_style(submit_button_style)
                         .contents(|c| {
-                            c.add_text("submit");
+                            c.add_text("submit").add_style(base_button_text_style);
                         });
 
                 });
