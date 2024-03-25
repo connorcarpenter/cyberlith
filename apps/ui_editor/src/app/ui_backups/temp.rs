@@ -46,10 +46,12 @@ pub fn ui_define() -> (String, AssetId, ETag, Ui) {
             .set_size_pc(100., 67.)
         ;
     });
-    let base_text_input_style = ui.create_panel_style(|s| {
+    let base_textbox_style = ui.create_textbox_style(|s| {
         s
             .set_background_color(Color::GRAY)
-            .set_size_pc(45., 10.);
+            .set_width_pc(45.)
+            .set_height_vp(7.0)
+        ;
     });
 
     // nodes
@@ -68,7 +70,7 @@ pub fn ui_define() -> (String, AssetId, ETag, Ui) {
 
                 // body container
                 c.add_panel().add_style(body_container_style).contents(|c| {
-                    c.add_panel().add_style(base_text_input_style);
+                    c.add_textbox("my_textbox").add_style(base_textbox_style);
                 });
             });
 

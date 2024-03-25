@@ -420,6 +420,17 @@ fn draw_ui_node(
                     &transform,
                 );
             }
+            WidgetKind::Textbox => {
+                draw_ui_textbox(
+                    render_frame,
+                    render_layer_opt,
+                    asset_store,
+                    ui,
+                    text_icon_handle,
+                    id,
+                    &transform,
+                );
+            }
         }
     }
 }
@@ -574,4 +585,35 @@ fn draw_ui_button(
             ),
         );
     }
+}
+
+fn draw_ui_textbox(
+    //self was Textbox
+    render_frame: &mut RenderFrame,
+    render_layer_opt: Option<&RenderLayer>,
+    _asset_store: &ProcessedAssetStore,
+    ui: &Ui,
+    _text_icon_handle: &AssetHandle<IconData>,
+    node_id: &NodeId,
+    transform: &Transform,
+) {
+    let Some(textbox_ref) = ui.store.textbox_ref(node_id) else {
+        panic!("no textbox ref for node_id: {:?}", node_id);
+    };
+
+    // draw textbox
+    if let Some(mat_handle) = textbox_ref.current_color_handle() {
+        let textbox_style_ref = ui.store.textbox_style_ref(node_id);
+        let background_alpha = textbox_style_ref.background_alpha();
+        if background_alpha > 0.0 {
+            if background_alpha != 1.0 {
+                panic!("partial background_alpha not implemented yet!");
+            }
+            let box_handle = ui.globals.get_box_mesh_handle().unwrap();
+            render_frame.draw_mesh(render_layer_opt, box_handle, &mat_handle, &transform);
+        }
+    } else {
+        warn!("no color handle for button"); // probably will need to do better debugging later
+        return;
+    };
 }

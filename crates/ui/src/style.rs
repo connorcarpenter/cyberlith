@@ -1,6 +1,6 @@
 use ui_layout::{Alignment, MarginUnits, PositionType, SizeUnits, Solid};
 
-use crate::{panel::PanelStyle, text::TextStyle, ButtonStyle};
+use crate::{panel::PanelStyle, text::TextStyle, ButtonStyle, TextboxStyle};
 
 #[derive(Clone, Copy, PartialEq, PartialOrd, Ord, Eq, Hash, Debug, Default)]
 pub struct StyleId(u32);
@@ -20,6 +20,7 @@ pub enum WidgetStyle {
     Panel(PanelStyle),
     Text(TextStyle),
     Button(ButtonStyle),
+    Textbox(TextboxStyle),
 }
 
 #[derive(Clone, Copy)]

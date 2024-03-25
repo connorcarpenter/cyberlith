@@ -81,6 +81,7 @@ impl UiStyleJson {
             WidgetStyleJson::Panel(_) => WidgetKind::Panel,
             WidgetStyleJson::Text(_) => WidgetKind::Text,
             WidgetStyleJson::Button(_) => WidgetKind::Button,
+            WidgetStyleJson::Textbox(_) => WidgetKind::Textbox,
         }
     }
 }
@@ -117,11 +118,17 @@ pub(crate) struct ButtonStyleJson {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+pub(crate) struct TextboxStyleJson {
+    panel: PanelStyleJson,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "lowercase")]
 pub(crate) enum WidgetStyleJson {
     Panel(PanelStyleJson),
     Text(TextStyleJson),
     Button(ButtonStyleJson),
+    Textbox(TextboxStyleJson),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -192,6 +199,7 @@ impl UiNodeJson {
             WidgetJson::Panel(_) => WidgetKind::Panel,
             WidgetJson::Text(_) => WidgetKind::Text,
             WidgetJson::Button(_) => WidgetKind::Button,
+            WidgetJson::Textbox(_) => WidgetKind::Textbox,
         }
     }
 }
@@ -202,6 +210,7 @@ pub(crate) enum WidgetJson {
     Panel(PanelJson),
     Text(TextJson),
     Button(ButtonJson),
+    Textbox(TextboxJson),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -218,11 +227,18 @@ pub(crate) struct TextJson {
 pub(crate) struct ButtonJson {
     panel: PanelJson,
     id_str: String,
-    navigation: ButtonNavigationJson,
+    navigation: NavigationJson,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub(crate) struct ButtonNavigationJson {
+pub(crate) struct TextboxJson {
+    panel: PanelJson,
+    id_str: String,
+    navigation: NavigationJson,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub(crate) struct NavigationJson {
     up: Option<String>,
     down: Option<String>,
     left: Option<String>,

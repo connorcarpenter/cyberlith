@@ -2,12 +2,9 @@ use std::collections::HashMap;
 
 use naia_serde::{FileBitWriter, SerdeInternal as Serde, UnsignedInteger, UnsignedVariableInteger};
 
-use ui::{
-    Alignment, Button, ButtonStyle, LayoutType, MarginUnits, NodeStyle, Panel, PanelStyle,
-    PositionType, SizeUnits, Solid, StyleId, Text, TextStyle, Ui, UiNode, Widget, WidgetStyle, ButtonNavigation,
-};
+use ui::{Alignment, Button, ButtonStyle, LayoutType, MarginUnits, NodeStyle, Panel, PanelStyle, PositionType, SizeUnits, Solid, StyleId, Text, TextStyle, Ui, UiNode, Widget, WidgetStyle, Navigation, TextboxStyle, Textbox};
 
-use crate::bits::{AlignmentBits, ButtonBits, ButtonNavigationBits, ButtonStyleBits, LayoutTypeBits, MarginUnitsBits, PanelBits, PanelStyleBits, PositionTypeBits, SizeUnitsBits, SolidBits, TextBits, TextStyleBits, UiAction, UiActionType, UiNodeBits, UiStyleBits, WidgetBits, WidgetStyleBits};
+use crate::bits::{AlignmentBits, ButtonBits, NavigationBits, ButtonStyleBits, LayoutTypeBits, MarginUnitsBits, PanelBits, PanelStyleBits, PositionTypeBits, SizeUnitsBits, SolidBits, TextBits, TextStyleBits, UiAction, UiActionType, UiNodeBits, UiStyleBits, WidgetBits, WidgetStyleBits, TextboxStyleBits, TextboxBits};
 
 pub fn write_bits(ui: &Ui) -> Vec<u8> {
     let actions = convert_ui_to_actions(ui);
@@ -167,6 +164,7 @@ impl WidgetStyleBits {
             WidgetStyle::Panel(panel) => Self::Panel(PanelStyleBits::from_panel_style(panel)),
             WidgetStyle::Text(text) => Self::Text(TextStyleBits::from_text_style(text)),
             WidgetStyle::Button(button) => Self::Button(ButtonStyleBits::from_button_style(button)),
+            WidgetStyle::Textbox(textbox) => Self::Textbox(TextboxStyleBits::from_textbox_style(textbox)),
         }
     }
 }
@@ -213,6 +211,14 @@ impl ButtonStyleBits {
             panel: PanelStyleBits::from_panel_style(&style.panel),
             hover_color: style.hover_color.map(|val| (val.r, val.g, val.b)),
             down_color: style.down_color.map(|val| (val.r, val.g, val.b)),
+        }
+    }
+}
+
+impl TextboxStyleBits {
+    fn from_textbox_style(style: &TextboxStyle) -> Self {
+        Self {
+            panel: PanelStyleBits::from_panel_style(&style.panel),
         }
     }
 }
@@ -409,6 +415,7 @@ impl WidgetBits {
             Widget::Panel(panel) => Self::Panel(PanelBits::from_panel(panel)),
             Widget::Text(text) => Self::Text(TextBits::from_text(text)),
             Widget::Button(button) => Self::Button(ButtonBits::from_button(ui, button)),
+            Widget::Textbox(textbox) => Self::Textbox(TextboxBits::from_textbox(ui, textbox)),
         }
     }
 }
@@ -441,7 +448,7 @@ impl TextBits {
 impl ButtonBits {
     fn from_button(ui: &Ui, button: &Button) -> Self {
         let panel_bits = PanelBits::from_panel(&button.panel);
-        let nav_bits = ButtonNavigationBits::from_navigation(ui, &button.navigation);
+        let nav_bits = NavigationBits::from_navigation(ui, &button.navigation);
         Self {
             panel: panel_bits,
             id_str: button.id_str.clone(),
@@ -450,9 +457,21 @@ impl ButtonBits {
     }
 }
 
-impl ButtonNavigationBits {
-    fn from_navigation(ui: &Ui, navigation: &ButtonNavigation) -> Self {
-        let ButtonNavigation {
+impl TextboxBits {
+    fn from_textbox(ui: &Ui, textbox: &Textbox) -> Self {
+        let panel_bits = PanelBits::from_panel(&textbox.panel);
+        let nav_bits = NavigationBits::from_navigation(ui, &textbox.navigation);
+        Self {
+            panel: panel_bits,
+            id_str: textbox.id_str.clone(),
+            navigation: nav_bits,
+        }
+    }
+}
+
+impl NavigationBits {
+    fn from_navigation(ui: &Ui, navigation: &Navigation) -> Self {
+        let Navigation {
             up_goes_to,
             down_goes_to,
             left_goes_to,

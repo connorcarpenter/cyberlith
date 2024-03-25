@@ -9,7 +9,7 @@ use render_api::{
 use storage::{Handle, Storage};
 use ui_layout::{Node, SizeUnits, TextMeasurer};
 
-use crate::{cache::LayoutCache, node::UiNode, node_id::NodeId, panel::{Panel, PanelMut, PanelStyle, PanelStyleMut}, store::UiStore, style::{NodeStyle, StyleId, WidgetStyle}, text::{TextStyle, TextStyleMut}, widget::{Widget, WidgetKind}, input::ui_receive_input, Button, ButtonStyle, ButtonStyleMut, UiEvent, UiInput, button::ButtonState, Text};
+use crate::{cache::LayoutCache, node::UiNode, node_id::NodeId, panel::{Panel, PanelMut, PanelStyle, PanelStyleMut}, store::UiStore, style::{NodeStyle, StyleId, WidgetStyle}, text::{TextStyle, TextStyleMut}, widget::{Widget, WidgetKind}, input::ui_receive_input, Button, ButtonStyle, ButtonStyleMut, UiEvent, UiInput, button::ButtonState, Text, Textbox, TextboxStyleMut, TextboxStyle};
 
 pub struct Ui {
     pub globals: Globals,
@@ -197,6 +197,16 @@ impl Ui {
                     let down_color_handle = materials.add(down_color);
                     button_mut.set_down_color_handle(down_color_handle);
                 }
+                WidgetKind::Textbox => {
+                    let textbox_style_ref = self.store.textbox_style_ref(&id);
+
+                    let background_color = textbox_style_ref.background_color();
+
+                    let textbox_mut = self.textbox_mut(&id).unwrap();
+
+                    let background_color_handle = materials.add(background_color);
+                    textbox_mut.panel.background_color_handle = Some(background_color_handle);
+                }
             }
         }
     }
@@ -247,6 +257,14 @@ impl Ui {
             self.create_style(NodeStyle::empty(WidgetStyle::Button(ButtonStyle::empty())));
         let mut button_style_mut = ButtonStyleMut::new(self, new_style_id);
         inner_fn(&mut button_style_mut);
+        new_style_id
+    }
+
+    pub fn create_textbox_style(&mut self, inner_fn: impl FnOnce(&mut TextboxStyleMut)) -> StyleId {
+        let new_style_id =
+            self.create_style(NodeStyle::empty(WidgetStyle::Textbox(TextboxStyle::empty())));
+        let mut textbox_style_mut = TextboxStyleMut::new(self, new_style_id);
+        inner_fn(&mut textbox_style_mut);
         new_style_id
     }
 
@@ -322,6 +340,12 @@ impl Ui {
                         pending_mat_handles.push(id);
                     }
                 }
+                WidgetKind::Textbox => {
+                    let textbox_ref = node_ref.widget_textbox_ref().unwrap();
+                    if textbox_ref.needs_color_handle() {
+                        pending_mat_handles.push(id);
+                    }
+                }
             }
         }
         pending_mat_handles
@@ -372,6 +396,12 @@ impl Ui {
         let node_mut = self.node_mut(id)?;
         let button_mut = node_mut.widget_button_mut()?;
         Some(button_mut)
+    }
+
+    pub(crate) fn textbox_mut(&mut self, id: &NodeId) -> Option<&mut Textbox> {
+        let node_mut = self.node_mut(id)?;
+        let textbox_mut = node_mut.widget_textbox_mut()?;
+        Some(textbox_mut)
     }
 
     pub(crate) fn style_mut(&mut self, id: &StyleId) -> Option<&mut NodeStyle> {

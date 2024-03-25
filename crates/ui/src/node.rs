@@ -1,4 +1,4 @@
-use crate::{panel::Panel, style::StyleId, widget::Widget, widget::WidgetKind, Button, Text};
+use crate::{panel::Panel, style::StyleId, widget::Widget, widget::WidgetKind, Button, Text, Textbox};
 
 #[derive(Clone)]
 pub struct UiNode {
@@ -58,6 +58,20 @@ impl UiNode {
     pub fn widget_button_mut(&mut self) -> Option<&mut Button> {
         match &mut self.widget {
             Widget::Button(button) => Some(button),
+            _ => None,
+        }
+    }
+
+    pub fn widget_textbox_ref(&self) -> Option<&Textbox> {
+        match &self.widget {
+            Widget::Textbox(textbox) => Some(textbox),
+            _ => None,
+        }
+    }
+
+    pub fn widget_textbox_mut(&mut self) -> Option<&mut Textbox> {
+        match &mut self.widget {
+            Widget::Textbox(textbox) => Some(textbox),
             _ => None,
         }
     }

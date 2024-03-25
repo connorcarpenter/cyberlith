@@ -1,4 +1,4 @@
-use crate::{text::TextStyleRef, button::ButtonStyleRef, panel::{Panel, PanelStyle, PanelStyleRef}, style::{NodeStyle, StyleId, WidgetStyle}, widget::WidgetKind, Button, ButtonStyle, NodeId, UiNode, TextStyle, Text};
+use crate::{textbox::TextboxStyleRef, text::TextStyleRef, button::ButtonStyleRef, panel::{Panel, PanelStyle, PanelStyleRef}, style::{NodeStyle, StyleId, WidgetStyle}, widget::WidgetKind, Button, ButtonStyle, NodeId, UiNode, TextStyle, Text, TextboxStyle, Textbox};
 
 pub struct UiStore {
     pub styles: Vec<NodeStyle>,
@@ -98,6 +98,14 @@ impl UiStore {
         None
     }
 
+    pub fn textbox_ref(&self, node_id: &NodeId) -> Option<&Textbox> {
+        let node = self.get_node(node_id)?;
+        if node.widget_kind() == WidgetKind::Textbox {
+            return node.widget_textbox_ref();
+        }
+        None
+    }
+
     fn node_style_ids(&self, node_id: &NodeId) -> &Vec<StyleId> {
         let node = self.get_node(node_id).unwrap();
         &node.style_ids
@@ -157,6 +165,18 @@ impl UiStore {
         }
     }
 
+    pub(crate) fn for_each_textbox_style(&self, node_id: &NodeId, mut func: impl FnMut(&TextboxStyle)) {
+        for style_id in self.node_style_ids(node_id) {
+            let Some(style) = self.get_style(style_id) else {
+                panic!("StyleId does not reference a Style");
+            };
+            let WidgetStyle::Textbox(textbox_style) = style.widget_style else {
+                panic!("StyleId does not reference a TextboxStyle");
+            };
+            func(&textbox_style);
+        }
+    }
+
     pub fn panel_style_ref(&self, node_id: &NodeId) -> PanelStyleRef {
         PanelStyleRef::new(self, *node_id)
     }
@@ -167,5 +187,9 @@ impl UiStore {
 
     pub fn button_style_ref(&self, node_id: &NodeId) -> ButtonStyleRef {
         ButtonStyleRef::new(self, *node_id)
+    }
+
+    pub fn textbox_style_ref(&self, node_id: &NodeId) -> TextboxStyleRef {
+        TextboxStyleRef::new(self, *node_id)
     }
 }

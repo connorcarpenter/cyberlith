@@ -21,7 +21,7 @@ pub enum ButtonState {
 pub struct Button {
     pub panel: Panel,
     pub id_str: String,
-    pub navigation: ButtonNavigation,
+    pub navigation: Navigation,
 
     hover_color_handle: Option<Handle<CpuMaterial>>,
     down_color_handle: Option<Handle<CpuMaterial>>,
@@ -32,7 +32,7 @@ impl Button {
         Self {
             panel: Panel::new(),
             id_str: id_str.to_string(),
-            navigation: ButtonNavigation::new(),
+            navigation: Navigation::new(),
             hover_color_handle: None,
             down_color_handle: None,
         }
@@ -78,14 +78,14 @@ impl Button {
 }
 
 #[derive(Clone)]
-pub struct ButtonNavigation {
+pub struct Navigation {
     pub left_goes_to: Option<String>,
     pub right_goes_to: Option<String>,
     pub up_goes_to: Option<String>,
     pub down_goes_to: Option<String>,
 }
 
-impl ButtonNavigation {
+impl Navigation {
     pub fn new() -> Self {
         Self {
             left_goes_to: None,

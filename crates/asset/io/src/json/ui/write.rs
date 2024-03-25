@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
-use crate::json::{ButtonJson, ButtonNavigationJson, ButtonStyleJson};
 use render_api::base::Color;
-use ui::{Alignment, Button, ButtonNavigation, ButtonStyle, LayoutType, MarginUnits, NodeStyle, Panel, PanelStyle, PositionType, SizeUnits, Solid, StyleId, Text, TextStyle, Ui, UiNode, Widget, WidgetStyle};
+use ui::{Alignment, Button, Navigation, ButtonStyle, LayoutType, MarginUnits, NodeStyle, Panel, PanelStyle, PositionType, SizeUnits, Solid, StyleId, Text, TextStyle, Ui, UiNode, Widget, WidgetStyle, TextboxStyle, Textbox};
 
+use crate::json::{ButtonJson, NavigationJson, ButtonStyleJson, TextboxStyleJson, TextboxJson};
 use super::{
     AlignmentJson, ColorJson, LayoutTypeJson, MarginUnitsJson, PanelJson, PanelStyleJson,
     PositionTypeJson, SizeUnitsJson, SolidJson, TextJson, TextStyleJson, UiJson, UiNodeJson,
@@ -84,6 +84,7 @@ impl WidgetStyleJson {
             WidgetStyle::Panel(panel) => Self::Panel(PanelStyleJson::from_panel_style(panel)),
             WidgetStyle::Text(text) => Self::Text(TextStyleJson::from_text_style(text)),
             WidgetStyle::Button(button) => Self::Button(ButtonStyleJson::from_button_style(button)),
+            WidgetStyle::Textbox(textbox) => Self::Textbox(TextboxStyleJson::from_textbox_style(textbox)),
         }
     }
 }
@@ -127,6 +128,17 @@ impl ButtonStyleJson {
             panel: panel_json,
             hover_color: style.hover_color.map(ColorJson::from_color),
             down_color: style.down_color.map(ColorJson::from_color),
+        }
+    }
+}
+
+impl TextboxStyleJson {
+    fn from_textbox_style(style: &TextboxStyle) -> Self {
+        let panel_style = &style.panel;
+        let panel_json = PanelStyleJson::from_panel_style(panel_style);
+
+        Self {
+            panel: panel_json,
         }
     }
 }
@@ -225,6 +237,7 @@ impl WidgetJson {
             Widget::Panel(panel) => Self::Panel(PanelJson::from_panel(panel)),
             Widget::Text(text) => Self::Text(TextJson::from_text(text)),
             Widget::Button(button) => Self::Button(ButtonJson::from_button(button)),
+            Widget::Textbox(textbox) => Self::Textbox(TextboxJson::from_textbox(textbox)),
         }
     }
 }
@@ -256,13 +269,25 @@ impl ButtonJson {
         Self {
             panel: panel_json,
             id_str: button.id_str.to_string(),
-            navigation: ButtonNavigationJson::from_button_navigation(&button.navigation),
+            navigation: NavigationJson::from_navigation(&button.navigation),
         }
     }
 }
 
-impl ButtonNavigationJson {
-    fn from_button_navigation(navigation: &ButtonNavigation) -> Self {
+impl TextboxJson {
+    fn from_textbox(textbox: &Textbox) -> Self {
+        let panel = &textbox.panel;
+        let panel_json = PanelJson::from_panel(panel);
+        Self {
+            panel: panel_json,
+            id_str: textbox.id_str.to_string(),
+            navigation: NavigationJson::from_navigation(&textbox.navigation),
+        }
+    }
+}
+
+impl NavigationJson {
+    fn from_navigation(navigation: &Navigation) -> Self {
         Self {
             up: navigation.up_goes_to.clone(),
             down: navigation.down_goes_to.clone(),

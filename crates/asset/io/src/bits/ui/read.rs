@@ -4,13 +4,9 @@ use naia_serde::{BitReader, SerdeErr, SerdeInternal as Serde, UnsignedVariableIn
 
 use asset_id::AssetId;
 use render_api::base::Color;
-use ui::{Alignment, ButtonMut, ButtonStyleMut, LayoutType, MarginUnits, NodeId, PanelMut, PanelStyleMut, PositionType, SizeUnits, Solid, StyleId, TextStyleMut, Ui, WidgetKind};
+use ui::{Alignment, ButtonMut, ButtonStyleMut, LayoutType, MarginUnits, NodeId, PanelMut, PanelStyleMut, PositionType, SizeUnits, Solid, StyleId, TextboxMut, TextboxStyleMut, TextStyleMut, Ui, WidgetKind};
 
-use crate::bits::{
-    AlignmentBits, ButtonBits, LayoutTypeBits, MarginUnitsBits, PanelBits, PositionTypeBits,
-    SizeUnitsBits, SolidBits, UiAction, UiActionType, UiNodeBits, UiStyleBits, WidgetBits,
-    WidgetStyleBits,
-};
+use crate::bits::{AlignmentBits, ButtonBits, LayoutTypeBits, MarginUnitsBits, PanelBits, PositionTypeBits, SizeUnitsBits, SolidBits, TextboxBits, UiAction, UiActionType, UiNodeBits, UiStyleBits, WidgetBits, WidgetStyleBits};
 
 pub fn read_bits(data: &[u8]) -> Ui {
     let actions = bytes_to_actions(data).unwrap();
@@ -49,6 +45,9 @@ fn convert_actions_to_ui(actions: Vec<UiAction>) -> Ui {
                     }),
                     WidgetKind::Button => ui.create_button_style(|style| {
                         style_bits.to_button_style(style);
+                    }),
+                    WidgetKind::Textbox => ui.create_textbox_style(|style| {
+                        style_bits.to_textbox_style(style);
                     }),
                 };
                 style_index_to_id.insert(style_count, style_id);
@@ -177,14 +176,28 @@ fn convert_nodes_recurse_panel<'a>(
                         let style_id = *style_index_to_id.get(&style_index).unwrap();
                         child_button_mut.add_style(style_id);
                     }
-                    let WidgetBits::Button(child_button_serde) = &child_node_serde.widget else {
-                        panic!("Expected panel widget");
-                    };
                     convert_nodes_recurse_button(
                         style_index_to_id,
                         nodes,
                         child_button_serde,
                         &mut child_button_mut,
+                    );
+                }
+                WidgetKind::Textbox => {
+                    let WidgetBits::Textbox(child_textbox_serde) = &child_node_serde.widget else {
+                        panic!("Expected textbox widget");
+                    };
+                    let mut child_textbox_mut = c.add_textbox(child_textbox_serde.id_str.as_str());
+                    child_textbox_mut.set_visible(child_node_serde.visible);
+                    for style_index in &child_node_serde.style_ids {
+                        let style_index = *style_index as usize;
+                        let style_id = *style_index_to_id.get(&style_index).unwrap();
+                        child_textbox_mut.add_style(style_id);
+                    }
+                    set_textbox_navigation(
+                        nodes,
+                        child_textbox_serde,
+                        &mut child_textbox_mut,
                     );
                 }
             }
@@ -272,6 +285,29 @@ fn convert_nodes_recurse_button<'a>(
             }
         }
     });
+}
+
+fn set_textbox_navigation<'a>(
+    nodes: &Vec<UiNodeBits>,
+    textbox_serde: &TextboxBits,
+    textbox_mut: &'a mut TextboxMut<'a>,
+) {
+    let textbox_nav_serde = &textbox_serde.navigation;
+    textbox_mut
+        .navigation(|n| {
+            if let Some(nav_str) = get_nav_thang(nodes, textbox_nav_serde.up.as_ref()) {
+                n.up_goes_to(nav_str);
+            }
+            if let Some(nav_str) = get_nav_thang(nodes, textbox_nav_serde.down.as_ref()) {
+                n.down_goes_to(nav_str);
+            }
+            if let Some(nav_str) = get_nav_thang(nodes, textbox_nav_serde.left.as_ref()) {
+                n.left_goes_to(nav_str);
+            }
+            if let Some(nav_str) = get_nav_thang(nodes, textbox_nav_serde.right.as_ref()) {
+                n.right_goes_to(nav_str);
+            }
+        });
 }
 
 impl PositionTypeBits {
@@ -854,6 +890,127 @@ impl UiStyleBits {
 
         if let Some((r, g, b)) = &button_style_serde.down_color {
             style.set_down_color(Color::new(*r, *g, *b));
+        }
+    }
+
+    fn to_textbox_style(&self, style: &mut TextboxStyleMut) {
+        // node-specific
+        if let Some(position_type_serde) = &self.position_type {
+            let position_type = position_type_serde.to_position_type();
+            match position_type {
+                PositionType::Absolute => style.set_absolute(),
+                PositionType::Relative => style.set_relative(),
+            };
+        }
+        if let Some(val_serde) = &self.width {
+            let val = val_serde.to_size_units();
+            match val {
+                SizeUnits::Pixels(pixels) => style.set_width_px(pixels),
+                SizeUnits::Percentage(percentage) => style.set_width_pc(percentage),
+                SizeUnits::Viewport(percentage) => style.set_width_vp(percentage),
+                SizeUnits::Auto => style.set_width_auto(),
+            };
+        }
+        if let Some(val_serde) = &self.height {
+            let val = val_serde.to_size_units();
+            match val {
+                SizeUnits::Pixels(pixels) => style.set_height_px(pixels),
+                SizeUnits::Percentage(percentage) => style.set_height_pc(percentage),
+                SizeUnits::Viewport(percentage) => style.set_height_vp(percentage),
+                SizeUnits::Auto => style.set_height_auto(),
+            };
+        }
+        if let Some(val_serde) = &self.width_min {
+            let val = val_serde.to_size_units();
+            match val {
+                SizeUnits::Pixels(pixels) => style.set_width_min_px(pixels),
+                SizeUnits::Percentage(percentage) => style.set_width_min_pc(percentage),
+                SizeUnits::Viewport(percentage) => style.set_width_min_vp(percentage),
+                SizeUnits::Auto => style.set_width_min_auto(),
+            };
+        }
+        if let Some(val_serde) = &self.width_max {
+            let val = val_serde.to_size_units();
+            match val {
+                SizeUnits::Pixels(pixels) => style.set_width_max_px(pixels),
+                SizeUnits::Percentage(percentage) => style.set_width_max_pc(percentage),
+                SizeUnits::Viewport(percentage) => style.set_width_max_vp(percentage),
+                SizeUnits::Auto => style.set_width_max_auto(),
+            };
+        }
+        if let Some(val_serde) = &self.height_min {
+            let val = val_serde.to_size_units();
+            match val {
+                SizeUnits::Pixels(pixels) => style.set_height_min_px(pixels),
+                SizeUnits::Percentage(percentage) => style.set_height_min_pc(percentage),
+                SizeUnits::Viewport(percentage) => style.set_height_min_vp(percentage),
+                SizeUnits::Auto => style.set_height_min_auto(),
+            };
+        }
+        if let Some(val_serde) = &self.height_max {
+            let val = val_serde.to_size_units();
+            match val {
+                SizeUnits::Pixels(pixels) => style.set_height_max_px(pixels),
+                SizeUnits::Percentage(percentage) => style.set_height_max_pc(percentage),
+                SizeUnits::Viewport(percentage) => style.set_height_max_vp(percentage),
+                SizeUnits::Auto => style.set_height_max_auto(),
+            };
+        }
+        if let Some(val_serde) = &self.margin_left {
+            let val = val_serde.to_margin_units();
+            match val {
+                MarginUnits::Pixels(pixels) => style.set_margin_left_px(pixels),
+                MarginUnits::Percentage(percentage) => style.set_margin_left_pc(percentage),
+                MarginUnits::Viewport(percentage) => style.set_margin_left_vp(percentage),
+            };
+        }
+        if let Some(val_serde) = &self.margin_right {
+            let val = val_serde.to_margin_units();
+            match val {
+                MarginUnits::Pixels(pixels) => style.set_margin_right_px(pixels),
+                MarginUnits::Percentage(percentage) => style.set_margin_right_pc(percentage),
+                MarginUnits::Viewport(percentage) => style.set_margin_right_vp(percentage),
+            };
+        }
+        if let Some(val_serde) = &self.margin_top {
+            let val = val_serde.to_margin_units();
+            match val {
+                MarginUnits::Pixels(pixels) => style.set_margin_top_px(pixels),
+                MarginUnits::Percentage(percentage) => style.set_margin_top_pc(percentage),
+                MarginUnits::Viewport(percentage) => style.set_margin_top_vp(percentage),
+            };
+        }
+        if let Some(val_serde) = &self.margin_bottom {
+            let val = val_serde.to_margin_units();
+            match val {
+                MarginUnits::Pixels(pixels) => style.set_margin_bottom_px(pixels),
+                MarginUnits::Percentage(percentage) => style.set_margin_bottom_pc(percentage),
+                MarginUnits::Viewport(percentage) => style.set_margin_bottom_vp(percentage),
+            };
+        }
+        if let Some(val_serde) = &self.self_halign {
+            let val = val_serde.to_alignment();
+            style.set_self_halign(val);
+        }
+        if let Some(val_serde) = &self.self_valign {
+            let val = val_serde.to_alignment();
+            style.set_self_valign(val);
+        }
+
+        // panel-specific
+        let WidgetStyleBits::Textbox(textbox_style_serde) = &self.widget_style else {
+            panic!("Expected textbox style");
+        };
+        let panel_style_serde = &textbox_style_serde.panel;
+
+        if let Some((r, g, b)) = &panel_style_serde.background_color {
+            style.set_background_color(Color::new(*r, *g, *b));
+        }
+        if let Some(background_alpha) = panel_style_serde.background_alpha {
+            let val: u8 = background_alpha.to();
+            let val: f32 = val as f32;
+            let val = val / 10.0;
+            style.set_background_alpha(val);
         }
     }
 }

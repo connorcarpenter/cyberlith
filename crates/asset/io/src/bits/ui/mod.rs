@@ -83,6 +83,7 @@ impl UiStyleBits {
             WidgetStyleBits::Panel(_) => WidgetKind::Panel,
             WidgetStyleBits::Text(_) => WidgetKind::Text,
             WidgetStyleBits::Button(_) => WidgetKind::Button,
+            WidgetStyleBits::Textbox(_) => WidgetKind::Textbox,
         }
     }
 }
@@ -119,10 +120,16 @@ pub(crate) struct ButtonStyleBits {
 }
 
 #[derive(Serde, Clone, PartialEq)]
+pub(crate) struct TextboxStyleBits {
+    panel: PanelStyleBits,
+}
+
+#[derive(Serde, Clone, PartialEq)]
 pub(crate) enum WidgetStyleBits {
     Panel(PanelStyleBits),
     Text(TextStyleBits),
     Button(ButtonStyleBits),
+    Textbox(TextboxStyleBits),
 }
 
 #[derive(Serde, Clone, PartialEq)]
@@ -180,6 +187,7 @@ impl UiNodeBits {
             WidgetBits::Panel(_) => WidgetKind::Panel,
             WidgetBits::Text(_) => WidgetKind::Text,
             WidgetBits::Button(_) => WidgetKind::Button,
+            WidgetBits::Textbox(_) => WidgetKind::Textbox,
         }
     }
 }
@@ -189,6 +197,7 @@ pub(crate) enum WidgetBits {
     Panel(PanelBits),
     Text(TextBits),
     Button(ButtonBits),
+    Textbox(TextboxBits),
 }
 
 #[derive(Serde, Clone, PartialEq)]
@@ -205,11 +214,18 @@ pub(crate) struct TextBits {
 pub(crate) struct ButtonBits {
     panel: PanelBits,
     id_str: String,
-    navigation: ButtonNavigationBits,
+    navigation: NavigationBits,
 }
 
 #[derive(Serde, Clone, PartialEq)]
-pub(crate) struct ButtonNavigationBits {
+pub(crate) struct TextboxBits {
+    panel: PanelBits,
+    id_str: String,
+    navigation: NavigationBits,
+}
+
+#[derive(Serde, Clone, PartialEq)]
+pub(crate) struct NavigationBits {
     up: Option<UnsignedVariableInteger<4>>,
     down: Option<UnsignedVariableInteger<4>>,
     left: Option<UnsignedVariableInteger<4>>,
