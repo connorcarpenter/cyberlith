@@ -155,8 +155,8 @@ impl<'a> ButtonMut<'a> {
         self
     }
 
-    pub fn set_as_default_button(&mut self) -> &mut Self {
-        self.ui.set_default_button(self.node_id);
+    pub fn set_as_first_input(&mut self) -> &mut Self {
+        self.ui.set_first_input(self.node_id);
         self
     }
 

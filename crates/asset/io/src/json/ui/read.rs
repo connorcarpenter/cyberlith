@@ -185,7 +185,7 @@ impl UiJson {
         let UiJson {
             text_color,
             text_icon_asset_id,
-            default_button,
+            first_input: first_input,
             styles,
             nodes,
         } = self;
@@ -197,9 +197,9 @@ impl UiJson {
         let text_icon_asset_id = AssetId::from_str(&text_icon_asset_id).unwrap();
         ui.set_text_icon_asset_id(&text_icon_asset_id);
 
-        // default button
-        if let Some(default_button_id) = default_button {
-            ui.set_default_button(NodeId::from_usize(default_button_id));
+        // first input
+        if let Some(first_input_id) = first_input {
+            ui.set_first_input(NodeId::from_usize(first_input_id));
         }
 
         // styles

@@ -148,32 +148,32 @@ pub fn ui_receive_input(ui: &mut Ui, input: UiInput) {
         UiInput::Events(events) => {
             let hover_node = ui.get_hover();
             if hover_node.is_none() {
-                let Some(default_button_id) = ui.get_default_button() else {
-                    panic!("no default button set, cannot process input events without somewhere to start");
+                let Some(first_input_id) = ui.get_first_input() else {
+                    panic!("no first input set, cannot process input events without somewhere to start");
                 };
-                ui.receive_hover(&default_button_id);
+                ui.receive_hover(&first_input_id);
                 return;
             }
             let hover_node = hover_node.unwrap();
             for event in events {
                 match event {
                     UiInputEvent::Up => {
-                        if let Some(next_id) = ui.button_get_up_id(&hover_node) {
+                        if let Some(next_id) = ui.nav_get_up_id(&hover_node) {
                             ui.receive_hover(&next_id);
                         }
                     }
                     UiInputEvent::Down => {
-                        if let Some(next_id) = ui.button_get_down_id(&hover_node) {
+                        if let Some(next_id) = ui.nav_get_down_id(&hover_node) {
                             ui.receive_hover(&next_id);
                         }
                     }
                     UiInputEvent::Left => {
-                        if let Some(next_id) = ui.button_get_left_id(&hover_node) {
+                        if let Some(next_id) = ui.nav_get_left_id(&hover_node) {
                             ui.receive_hover(&next_id);
                         }
                     }
                     UiInputEvent::Right => {
-                        if let Some(next_id) = ui.button_get_right_id(&hover_node) {
+                        if let Some(next_id) = ui.nav_get_right_id(&hover_node) {
                             ui.receive_hover(&next_id);
                         }
                     }

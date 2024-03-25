@@ -61,7 +61,7 @@ pub fn ui_define() -> (String, AssetId, ETag, Ui) {
 
             // login button
             c.add_button("login_button")
-                .set_as_default_button()
+                .set_as_first_input()
                 .add_style(base_button_style)
                 .add_style(login_button_style)
                 .contents(|c| {

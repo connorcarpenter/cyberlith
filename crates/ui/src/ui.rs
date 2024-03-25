@@ -10,7 +10,7 @@ use render_api::{
 use storage::{Handle, Storage};
 use ui_layout::{Node, SizeUnits, TextMeasurer};
 
-use crate::{cache::LayoutCache, node::UiNode, node_id::NodeId, panel::{Panel, PanelMut, PanelStyle, PanelStyleMut}, store::UiStore, style::{NodeStyle, StyleId, WidgetStyle}, text::{TextStyle, TextStyleMut}, widget::{Widget, WidgetKind}, input::ui_receive_input, Button, ButtonStyle, ButtonStyleMut, UiEvent, UiInput, button::NodeActiveState, Text, Textbox, TextboxStyleMut, TextboxStyle};
+use crate::{cache::LayoutCache, node::UiNode, node_id::NodeId, panel::{Panel, PanelMut, PanelStyle, PanelStyleMut}, store::UiStore, style::{NodeStyle, StyleId, WidgetStyle}, text::{TextStyle, TextStyleMut}, widget::{Widget, WidgetKind}, input::ui_receive_input, Button, ButtonStyle, ButtonStyleMut, UiEvent, UiInput, button::NodeActiveState, Text, Textbox, TextboxStyleMut, TextboxStyle, Navigation};
 
 pub struct Ui {
     pub globals: Globals,
@@ -27,24 +27,37 @@ pub struct Ui {
 }
 
 impl Ui {
-    pub(crate) fn button_get_up_id(&self, id: &NodeId) -> Option<NodeId> {
-        let up_str: &str = self.node_ref(id)?.widget_button_ref()?.navigation.up_goes_to.as_ref()?;
+    pub(crate) fn nav_get_up_id(&self, id: &NodeId) -> Option<NodeId> {
+        let nav = self.get_node_nav(id)?;
+        let up_str: &str = nav.up_goes_to.as_ref()?;
         self.get_node_id_by_id_str(up_str)
     }
 
-    pub(crate) fn button_get_down_id(&self, id: &NodeId) -> Option<NodeId> {
-        let down_str: &str = self.node_ref(id)?.widget_button_ref()?.navigation.down_goes_to.as_ref()?;
+    pub(crate) fn nav_get_down_id(&self, id: &NodeId) -> Option<NodeId> {
+        let nav = self.get_node_nav(id)?;
+        let down_str: &str = nav.down_goes_to.as_ref()?;
         self.get_node_id_by_id_str(down_str)
     }
 
-    pub(crate) fn button_get_left_id(&self, id: &NodeId) -> Option<NodeId> {
-        let left_str: &str = self.node_ref(id)?.widget_button_ref()?.navigation.left_goes_to.as_ref()?;
+    pub(crate) fn nav_get_left_id(&self, id: &NodeId) -> Option<NodeId> {
+        let nav = self.get_node_nav(id)?;
+        let left_str: &str = nav.left_goes_to.as_ref()?;
         self.get_node_id_by_id_str(left_str)
     }
 
-    pub(crate) fn button_get_right_id(&self, id: &NodeId) -> Option<NodeId> {
-        let right_str: &str = self.node_ref(id)?.widget_button_ref()?.navigation.right_goes_to.as_ref()?;
+    pub(crate) fn nav_get_right_id(&self, id: &NodeId) -> Option<NodeId> {
+        let nav = self.get_node_nav(id)?;
+        let right_str: &str = nav.right_goes_to.as_ref()?;
         self.get_node_id_by_id_str(right_str)
+    }
+
+    fn get_node_nav(&self, id: &NodeId) -> Option<&Navigation> {
+        let node = self.node_ref(id)?;
+        match node.widget_kind() {
+            WidgetKind::Button => Some(&node.widget_button_ref()?.navigation),
+            WidgetKind::Textbox => Some(&node.widget_textbox_ref()?.navigation),
+            _ => None,
+        }
     }
 }
 
@@ -129,12 +142,12 @@ impl Ui {
         self.hovering_node = None;
     }
 
-    pub fn get_default_button(&self) -> Option<NodeId> {
-        self.globals.default_button
+    pub fn get_first_input(&self) -> Option<NodeId> {
+        self.globals.first_input
     }
 
-    pub fn set_default_button(&mut self, id: NodeId) {
-        self.globals.default_button = Some(id);
+    pub fn set_first_input(&mut self, id: NodeId) {
+        self.globals.first_input = Some(id);
     }
 
     pub fn get_select_pressed(&self) -> bool {
@@ -378,8 +391,14 @@ impl Ui {
 
     pub(crate) fn create_node(&mut self, widget: Widget) -> NodeId {
         let mut id_str_opt = None;
-        if let Widget::Button(button) = &widget {
-            id_str_opt = Some(button.id_str.clone());
+        match &widget {
+            Widget::Button(button) => {
+                id_str_opt = Some(button.id_str.clone());
+            }
+            Widget::Textbox(textbox) => {
+                id_str_opt = Some(textbox.id_str.clone());
+            }
+            _ => {}
         }
 
         let ui_node = UiNode::new(widget);
@@ -439,7 +458,7 @@ pub struct Globals {
     text_icon_asset_id_opt: Option<AssetId>,
     text_color: Color,
     text_color_handle_opt: Option<Handle<CpuMaterial>>,
-    default_button: Option<NodeId>,
+    first_input: Option<NodeId>,
 }
 
 impl Globals {
@@ -449,7 +468,7 @@ impl Globals {
             text_icon_asset_id_opt: None,
             text_color: Color::BLACK,
             text_color_handle_opt: None,
-            default_button: None,
+            first_input: None,
         }
     }
 

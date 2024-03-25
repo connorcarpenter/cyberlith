@@ -31,7 +31,7 @@ use ui::{Ui, WidgetKind};
 pub struct UiJson {
     text_color: ColorJson,
     text_icon_asset_id: String,
-    default_button: Option<usize>,
+    first_input: Option<usize>,
     styles: Vec<UiStyleJson>,
     nodes: Vec<UiNodeJson>,
 }

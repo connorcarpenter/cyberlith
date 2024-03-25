@@ -22,7 +22,7 @@ impl UiJson {
         let mut me = Self {
             text_color,
             text_icon_asset_id,
-            default_button: ui.get_default_button().map(|id| id.as_usize()),
+            first_input: ui.get_first_input().map(|id| id.as_usize()),
             styles: Vec::new(),
             nodes: Vec::new(),
         };

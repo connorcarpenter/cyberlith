@@ -33,7 +33,7 @@ pub(crate) enum UiAction {
     // assetid
     TextIconAssetId(AssetId),
     // default button
-    DefaultButton(Option<NodeId>),
+    FirstInput(Option<NodeId>),
     // style
     Style(UiStyleBits),
     // node

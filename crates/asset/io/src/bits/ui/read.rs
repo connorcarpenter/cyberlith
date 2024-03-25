@@ -30,9 +30,9 @@ fn convert_actions_to_ui(actions: Vec<UiAction>) -> Ui {
             UiAction::TextIconAssetId(asset_id) => {
                 ui.set_text_icon_asset_id(&asset_id);
             }
-            UiAction::DefaultButton(node_id_opt) => {
+            UiAction::FirstInput(node_id_opt) => {
                 if let Some(node_id) = node_id_opt {
-                    ui.set_default_button(node_id)
+                    ui.set_first_input(node_id)
                 }
             }
             UiAction::Style(style_bits) => {
@@ -102,7 +102,7 @@ fn bytes_to_actions(data: &[u8]) -> Result<Vec<UiAction>, SerdeErr> {
                 let val = Option::<UnsignedVariableInteger<7>>::de(bit_reader)?;
                 let val: Option<u64> = val.map(|v| v.to());
                 let node_id_opt = val.map(|v| NodeId::from_usize(v as usize));
-                actions.push(UiAction::DefaultButton(node_id_opt));
+                actions.push(UiAction::FirstInput(node_id_opt));
             }
             UiActionType::Style => {
                 let style = UiStyleBits::de(bit_reader)?;
@@ -212,11 +212,17 @@ fn get_nav_thang<'a>(
     let input_int = input_int?;
     let nav_index = input_int.to::<u32>() as usize;
     let nav_node_serde = &nodes[nav_index];
-    let WidgetBits::Button(button_bits) = &nav_node_serde.widget else {
-        panic!("Expected button widget");
-    };
-    let nav_str = button_bits.id_str.as_str();
-    Some(nav_str)
+    match &nav_node_serde.widget {
+        WidgetBits::Button(button_serde) => {
+            let nav_str = button_serde.id_str.as_str();
+            Some(nav_str)
+        }
+        WidgetBits::Textbox(textbox_serde) => {
+            let nav_str = textbox_serde.id_str.as_str();
+            Some(nav_str)
+        }
+        _ => None,
+    }
 }
 
 fn convert_nodes_recurse_button<'a>(
