@@ -551,8 +551,8 @@ fn draw_ui_button(
     };
 
     // draw button
-    let button_state = ui.get_button_state(node_id);
-    if let Some(mat_handle) = button_ref.current_color_handle(button_state) {
+    let active_state = ui.get_active_state(node_id);
+    if let Some(mat_handle) = button_ref.current_color_handle(active_state) {
         let button_style_ref = ui.store.button_style_ref(node_id);
         let background_alpha = button_style_ref.background_alpha();
         if background_alpha > 0.0 {
@@ -602,7 +602,8 @@ fn draw_ui_textbox(
     };
 
     // draw textbox
-    if let Some(mat_handle) = textbox_ref.current_color_handle() {
+    let active_state = ui.get_active_state(node_id);
+    if let Some(mat_handle) = textbox_ref.current_color_handle(active_state) {
         let textbox_style_ref = ui.store.textbox_style_ref(node_id);
         let background_alpha = textbox_style_ref.background_alpha();
         if background_alpha > 0.0 {

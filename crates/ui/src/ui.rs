@@ -10,7 +10,7 @@ use render_api::{
 use storage::{Handle, Storage};
 use ui_layout::{Node, SizeUnits, TextMeasurer};
 
-use crate::{cache::LayoutCache, node::UiNode, node_id::NodeId, panel::{Panel, PanelMut, PanelStyle, PanelStyleMut}, store::UiStore, style::{NodeStyle, StyleId, WidgetStyle}, text::{TextStyle, TextStyleMut}, widget::{Widget, WidgetKind}, input::ui_receive_input, Button, ButtonStyle, ButtonStyleMut, UiEvent, UiInput, button::ButtonState, Text, Textbox, TextboxStyleMut, TextboxStyle};
+use crate::{cache::LayoutCache, node::UiNode, node_id::NodeId, panel::{Panel, PanelMut, PanelStyle, PanelStyleMut}, store::UiStore, style::{NodeStyle, StyleId, WidgetStyle}, text::{TextStyle, TextStyleMut}, widget::{Widget, WidgetKind}, input::ui_receive_input, Button, ButtonStyle, ButtonStyleMut, UiEvent, UiInput, button::NodeActiveState, Text, Textbox, TextboxStyleMut, TextboxStyle};
 
 pub struct Ui {
     pub globals: Globals,
@@ -109,19 +109,19 @@ impl Ui {
         self.hovering_node = Some(*id);
     }
 
-    pub fn get_button_state(&self, id: &NodeId) -> ButtonState {
+    pub fn get_active_state(&self, id: &NodeId) -> NodeActiveState {
         let Some(hover_id) = self.hovering_node else {
-            return ButtonState::Normal;
+            return NodeActiveState::Normal;
         };
 
         if hover_id == *id {
             if self.select_is_pressed {
-                ButtonState::Down
+                NodeActiveState::Active
             } else {
-                ButtonState::Hover
+                NodeActiveState::Hover
             }
         } else {
-            ButtonState::Normal
+            NodeActiveState::Normal
         }
     }
 
@@ -214,11 +214,19 @@ impl Ui {
                     let textbox_style_ref = self.store.textbox_style_ref(&id);
 
                     let background_color = textbox_style_ref.background_color();
+                    let hover_color = textbox_style_ref.hover_color();
+                    let active_color = textbox_style_ref.active_color();
 
                     let textbox_mut = self.textbox_mut(&id).unwrap();
 
                     let background_color_handle = materials.add(background_color);
                     textbox_mut.panel.background_color_handle = Some(background_color_handle);
+
+                    let hover_color_handle = materials.add(hover_color);
+                    textbox_mut.set_hover_color_handle(hover_color_handle);
+
+                    let active_color_handle = materials.add(active_color);
+                    textbox_mut.set_active_color_handle(active_color_handle);
                 }
             }
         }

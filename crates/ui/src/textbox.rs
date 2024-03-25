@@ -2,13 +2,16 @@ use render_api::base::{Color, CpuMaterial};
 use storage::Handle;
 use ui_layout::{Alignment, MarginUnits, PositionType, SizeUnits};
 
-use crate::{node::UiNode, store::UiStore, style::{NodeStyle, StyleId, WidgetStyle}, NodeId, Panel, PanelMut, PanelStyle, Ui, Navigation};
+use crate::{button::NodeActiveState, node::UiNode, store::UiStore, style::{NodeStyle, StyleId, WidgetStyle}, NodeId, Panel, PanelMut, PanelStyle, Ui, Navigation};
 
 #[derive(Clone)]
 pub struct Textbox {
     pub panel: Panel,
     pub id_str: String,
     pub navigation: Navigation,
+
+    hover_color_handle: Option<Handle<CpuMaterial>>,
+    active_color_handle: Option<Handle<CpuMaterial>>,
 }
 
 impl Textbox {
@@ -17,6 +20,8 @@ impl Textbox {
             panel: Panel::new(),
             id_str: id_str.to_string(),
             navigation: Navigation::new(),
+            hover_color_handle: None,
+            active_color_handle: None,
         }
     }
 
@@ -36,20 +41,38 @@ impl Textbox {
         self.panel.background_color_handle.is_none()
     }
 
-    pub fn current_color_handle(&self) -> Option<Handle<CpuMaterial>> {
-        self.panel.background_color_handle
+    pub fn current_color_handle(&self, state: NodeActiveState) -> Option<Handle<CpuMaterial>> {
+        match state {
+            NodeActiveState::Normal => self.panel.background_color_handle,
+            NodeActiveState::Hover => self.hover_color_handle,
+            NodeActiveState::Active => self.active_color_handle,
+        }
+    }
+
+    pub fn set_hover_color_handle(&mut self, val: Handle<CpuMaterial>) {
+        self.hover_color_handle = Some(val);
+    }
+
+    pub fn set_active_color_handle(&mut self, val: Handle<CpuMaterial>) {
+        self.active_color_handle = Some(val);
     }
 }
 
 #[derive(Clone, Copy)]
 pub struct TextboxStyle {
     pub panel: PanelStyle,
+
+    pub hover_color: Option<Color>,
+    pub active_color: Option<Color>,
 }
 
 impl TextboxStyle {
     pub(crate) fn empty() -> Self {
         Self {
             panel: PanelStyle::empty(),
+
+            hover_color: None,
+            active_color: None,
         }
     }
 
@@ -59,6 +82,22 @@ impl TextboxStyle {
 
     pub(crate) fn set_background_alpha(&mut self, val: f32) {
         self.panel.set_background_alpha(val);
+    }
+
+    pub fn hover_color(&self) -> Option<Color> {
+        self.hover_color
+    }
+
+    pub(crate) fn set_hover_color(&mut self, val: Color) {
+        self.hover_color = Some(val);
+    }
+
+    pub fn active_color(&self) -> Option<Color> {
+        self.active_color
+    }
+
+    pub(crate) fn set_active_color(&mut self, val: Color) {
+        self.active_color = Some(val);
     }
 }
 
@@ -168,6 +207,30 @@ impl<'a> TextboxStyleRef<'a> {
 
         output
     }
+
+    pub fn hover_color(&self) -> Color {
+        let mut output = Color::BLACK; // TODO: put into const var!
+
+        self.store.for_each_textbox_style(&self.node_id, |style| {
+            if let Some(color) = style.hover_color {
+                output = color;
+            }
+        });
+
+        output
+    }
+
+    pub fn active_color(&self) -> Color {
+        let mut output = Color::BLACK; // TODO: put into const var!
+
+        self.store.for_each_textbox_style(&self.node_id, |style| {
+            if let Some(color) = style.active_color {
+                output = color;
+            }
+        });
+
+        output
+    }
 }
 
 pub struct TextboxStyleMut<'a> {
@@ -201,6 +264,16 @@ impl<'a> TextboxStyleMut<'a> {
 
     pub fn set_background_alpha(&mut self, alpha: f32) -> &mut Self {
         self.get_textbox_style_mut().set_background_alpha(alpha);
+        self
+    }
+
+    pub fn set_hover_color(&mut self, color: Color) -> &mut Self {
+        self.get_textbox_style_mut().set_hover_color(color);
+        self
+    }
+
+    pub fn set_active_color(&mut self, color: Color) -> &mut Self {
+        self.get_textbox_style_mut().set_active_color(color);
         self
     }
 

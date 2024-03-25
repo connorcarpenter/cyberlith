@@ -219,6 +219,8 @@ impl TextboxStyleBits {
     fn from_textbox_style(style: &TextboxStyle) -> Self {
         Self {
             panel: PanelStyleBits::from_panel_style(&style.panel),
+            hover_color: style.hover_color.map(|val| (val.r, val.g, val.b)),
+            active_color: style.active_color.map(|val| (val.r, val.g, val.b)),
         }
     }
 }

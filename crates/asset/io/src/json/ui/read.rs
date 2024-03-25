@@ -595,6 +595,101 @@ impl UiStyleJson {
     }
 
     fn to_button_style(&self, style: &mut ButtonStyleMut) {
+
+        // button-specific
+        let WidgetStyleJson::Button(button_style_serde) = &self.widget_style else {
+            panic!("Expected button style");
+        };
+
+        if let Some(val_serde) = &button_style_serde.hover_color {
+            let val = val_serde.to_color();
+            style.set_hover_color(val);
+        }
+
+        if let Some(val_serde) = &button_style_serde.down_color {
+            let val = val_serde.to_color();
+            style.set_down_color(val);
+        }
+
+        // panel-specific
+        let panel_style_serde = &button_style_serde.panel;
+
+        if let Some(background_color_serde) = &panel_style_serde.background_color {
+            style.set_background_color(background_color_serde.to_color());
+        }
+        if let Some(background_alpha) = panel_style_serde.background_alpha {
+            style.set_background_alpha(background_alpha);
+        }
+        if let Some(layout_type_serde) = &panel_style_serde.layout_type {
+            let layout_type = layout_type_serde.to_layout_type();
+            match layout_type {
+                LayoutType::Row => style.set_horizontal(),
+                LayoutType::Column => style.set_vertical(),
+            };
+        }
+        if let Some(val_serde) = &panel_style_serde.padding_left {
+            let val = val_serde.to_size_units();
+            match val {
+                SizeUnits::Pixels(pixels) => style.set_padding_left_px(pixels),
+                SizeUnits::Percentage(percentage) => style.set_padding_left_pc(percentage),
+                SizeUnits::Viewport(percentage) => style.set_padding_left_vp(percentage),
+                SizeUnits::Auto => style.set_padding_left_auto(),
+            };
+        }
+        if let Some(val_serde) = &panel_style_serde.padding_right {
+            let val = val_serde.to_size_units();
+            match val {
+                SizeUnits::Pixels(pixels) => style.set_padding_right_px(pixels),
+                SizeUnits::Percentage(percentage) => style.set_padding_right_pc(percentage),
+                SizeUnits::Viewport(percentage) => style.set_padding_right_vp(percentage),
+                SizeUnits::Auto => style.set_padding_right_auto(),
+            };
+        }
+        if let Some(val_serde) = &panel_style_serde.padding_top {
+            let val = val_serde.to_size_units();
+            match val {
+                SizeUnits::Pixels(pixels) => style.set_padding_top_px(pixels),
+                SizeUnits::Percentage(percentage) => style.set_padding_top_pc(percentage),
+                SizeUnits::Viewport(percentage) => style.set_padding_top_vp(percentage),
+                SizeUnits::Auto => style.set_padding_top_auto(),
+            };
+        }
+        if let Some(val_serde) = &panel_style_serde.padding_bottom {
+            let val = val_serde.to_size_units();
+            match val {
+                SizeUnits::Pixels(pixels) => style.set_padding_bottom_px(pixels),
+                SizeUnits::Percentage(percentage) => style.set_padding_bottom_pc(percentage),
+                SizeUnits::Viewport(percentage) => style.set_padding_bottom_vp(percentage),
+                SizeUnits::Auto => style.set_padding_bottom_auto(),
+            };
+        }
+        if let Some(val_serde) = &panel_style_serde.row_between {
+            let val = val_serde.to_size_units();
+            match val {
+                SizeUnits::Pixels(pixels) => style.set_row_between_px(pixels),
+                SizeUnits::Percentage(percentage) => style.set_row_between_pc(percentage),
+                SizeUnits::Viewport(percentage) => style.set_row_between_vp(percentage),
+                SizeUnits::Auto => style.set_row_between_auto(),
+            };
+        }
+        if let Some(val_serde) = &panel_style_serde.col_between {
+            let val = val_serde.to_size_units();
+            match val {
+                SizeUnits::Pixels(pixels) => style.set_col_between_px(pixels),
+                SizeUnits::Percentage(percentage) => style.set_col_between_pc(percentage),
+                SizeUnits::Viewport(percentage) => style.set_col_between_vp(percentage),
+                SizeUnits::Auto => style.set_col_between_auto(),
+            };
+        }
+        if let Some(val_serde) = &panel_style_serde.children_halign {
+            let val = val_serde.to_alignment();
+            style.set_children_halign(val);
+        }
+        if let Some(val_serde) = &panel_style_serde.children_valign {
+            let val = val_serde.to_alignment();
+            style.set_children_valign(val);
+        }
+
         // node-specific
         if let Some(position_type_serde) = &self.position_type {
             let position_type = position_type_serde.to_position_type();
@@ -707,12 +802,25 @@ impl UiStyleJson {
             let val = val_serde.to_alignment();
             style.set_self_valign(val);
         }
+    }
+
+    fn to_textbox_style(&self, style: &mut TextboxStyleMut) {
+
+        // textbox-specific
+        let WidgetStyleJson::Textbox(textbox_style_serde) = &self.widget_style else {
+            panic!("Expected textbox style");
+        };
+        if let Some(val_serde) = &textbox_style_serde.hover_color {
+            let val = val_serde.to_color();
+            style.set_hover_color(val);
+        }
+        if let Some(val_serde) = &textbox_style_serde.active_color {
+            let val = val_serde.to_color();
+            style.set_active_color(val);
+        }
 
         // panel-specific
-        let WidgetStyleJson::Button(button_style_serde) = &self.widget_style else {
-            panic!("Expected button style");
-        };
-        let panel_style_serde = &button_style_serde.panel;
+        let panel_style_serde = &textbox_style_serde.panel;
 
         if let Some(background_color_serde) = &panel_style_serde.background_color {
             style.set_background_color(background_color_serde.to_color());
@@ -720,89 +828,7 @@ impl UiStyleJson {
         if let Some(background_alpha) = panel_style_serde.background_alpha {
             style.set_background_alpha(background_alpha);
         }
-        if let Some(layout_type_serde) = &panel_style_serde.layout_type {
-            let layout_type = layout_type_serde.to_layout_type();
-            match layout_type {
-                LayoutType::Row => style.set_horizontal(),
-                LayoutType::Column => style.set_vertical(),
-            };
-        }
-        if let Some(val_serde) = &panel_style_serde.padding_left {
-            let val = val_serde.to_size_units();
-            match val {
-                SizeUnits::Pixels(pixels) => style.set_padding_left_px(pixels),
-                SizeUnits::Percentage(percentage) => style.set_padding_left_pc(percentage),
-                SizeUnits::Viewport(percentage) => style.set_padding_left_vp(percentage),
-                SizeUnits::Auto => style.set_padding_left_auto(),
-            };
-        }
-        if let Some(val_serde) = &panel_style_serde.padding_right {
-            let val = val_serde.to_size_units();
-            match val {
-                SizeUnits::Pixels(pixels) => style.set_padding_right_px(pixels),
-                SizeUnits::Percentage(percentage) => style.set_padding_right_pc(percentage),
-                SizeUnits::Viewport(percentage) => style.set_padding_right_vp(percentage),
-                SizeUnits::Auto => style.set_padding_right_auto(),
-            };
-        }
-        if let Some(val_serde) = &panel_style_serde.padding_top {
-            let val = val_serde.to_size_units();
-            match val {
-                SizeUnits::Pixels(pixels) => style.set_padding_top_px(pixels),
-                SizeUnits::Percentage(percentage) => style.set_padding_top_pc(percentage),
-                SizeUnits::Viewport(percentage) => style.set_padding_top_vp(percentage),
-                SizeUnits::Auto => style.set_padding_top_auto(),
-            };
-        }
-        if let Some(val_serde) = &panel_style_serde.padding_bottom {
-            let val = val_serde.to_size_units();
-            match val {
-                SizeUnits::Pixels(pixels) => style.set_padding_bottom_px(pixels),
-                SizeUnits::Percentage(percentage) => style.set_padding_bottom_pc(percentage),
-                SizeUnits::Viewport(percentage) => style.set_padding_bottom_vp(percentage),
-                SizeUnits::Auto => style.set_padding_bottom_auto(),
-            };
-        }
-        if let Some(val_serde) = &panel_style_serde.row_between {
-            let val = val_serde.to_size_units();
-            match val {
-                SizeUnits::Pixels(pixels) => style.set_row_between_px(pixels),
-                SizeUnits::Percentage(percentage) => style.set_row_between_pc(percentage),
-                SizeUnits::Viewport(percentage) => style.set_row_between_vp(percentage),
-                SizeUnits::Auto => style.set_row_between_auto(),
-            };
-        }
-        if let Some(val_serde) = &panel_style_serde.col_between {
-            let val = val_serde.to_size_units();
-            match val {
-                SizeUnits::Pixels(pixels) => style.set_col_between_px(pixels),
-                SizeUnits::Percentage(percentage) => style.set_col_between_pc(percentage),
-                SizeUnits::Viewport(percentage) => style.set_col_between_vp(percentage),
-                SizeUnits::Auto => style.set_col_between_auto(),
-            };
-        }
-        if let Some(val_serde) = &panel_style_serde.children_halign {
-            let val = val_serde.to_alignment();
-            style.set_children_halign(val);
-        }
-        if let Some(val_serde) = &panel_style_serde.children_valign {
-            let val = val_serde.to_alignment();
-            style.set_children_valign(val);
-        }
 
-        // button-specific
-        if let Some(val_serde) = &button_style_serde.hover_color {
-            let val = val_serde.to_color();
-            style.set_hover_color(val);
-        }
-
-        if let Some(val_serde) = &button_style_serde.down_color {
-            let val = val_serde.to_color();
-            style.set_down_color(val);
-        }
-    }
-
-    fn to_textbox_style(&self, style: &mut TextboxStyleMut) {
         // node-specific
         if let Some(position_type_serde) = &self.position_type {
             let position_type = position_type_serde.to_position_type();
@@ -904,19 +930,6 @@ impl UiStyleJson {
         if let Some(val_serde) = &self.self_valign {
             let val = val_serde.to_alignment();
             style.set_self_valign(val);
-        }
-
-        // panel-specific
-        let WidgetStyleJson::Textbox(textbox_style_serde) = &self.widget_style else {
-            panic!("Expected textbox style");
-        };
-        let panel_style_serde = &textbox_style_serde.panel;
-
-        if let Some(background_color_serde) = &panel_style_serde.background_color {
-            style.set_background_color(background_color_serde.to_color());
-        }
-        if let Some(background_alpha) = panel_style_serde.background_alpha {
-            style.set_background_alpha(background_alpha);
         }
     }
 }

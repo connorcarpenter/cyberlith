@@ -139,6 +139,8 @@ impl TextboxStyleJson {
 
         Self {
             panel: panel_json,
+            hover_color: style.hover_color.map(ColorJson::from_color),
+            active_color: style.active_color.map(ColorJson::from_color),
         }
     }
 }

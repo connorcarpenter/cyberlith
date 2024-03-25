@@ -11,10 +11,10 @@ use crate::{
 };
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub enum ButtonState {
+pub enum NodeActiveState {
     Normal,
     Hover,
-    Down,
+    Active,
 }
 
 #[derive(Clone)]
@@ -56,11 +56,11 @@ impl Button {
             || self.down_color_handle.is_none()
     }
 
-    pub fn current_color_handle(&self, state: ButtonState) -> Option<Handle<CpuMaterial>> {
+    pub fn current_color_handle(&self, state: NodeActiveState) -> Option<Handle<CpuMaterial>> {
         match state {
-            ButtonState::Normal => self.panel.background_color_handle,
-            ButtonState::Hover => self.hover_color_handle,
-            ButtonState::Down => self.down_color_handle,
+            NodeActiveState::Normal => self.panel.background_color_handle,
+            NodeActiveState::Hover => self.hover_color_handle,
+            NodeActiveState::Active => self.down_color_handle,
         }
     }
 

@@ -122,6 +122,8 @@ pub(crate) struct ButtonStyleBits {
 #[derive(Serde, Clone, PartialEq)]
 pub(crate) struct TextboxStyleBits {
     panel: PanelStyleBits,
+    hover_color: Option<(u8, u8, u8)>,
+    active_color: Option<(u8, u8, u8)>,
 }
 
 #[derive(Serde, Clone, PartialEq)]

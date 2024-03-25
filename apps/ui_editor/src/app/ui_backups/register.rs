@@ -106,6 +106,8 @@ pub fn ui_define() -> (String, AssetId, ETag, Ui) {
     let base_textbox_style = ui.create_textbox_style(|s| {
         s
             .set_background_color(Color::GRAY)
+            .set_hover_color(Color::RED)
+            .set_active_color(Color::BLUE)
             .set_size_pc(45., 7.)
             .set_self_halign(Alignment::Start)
             .set_margin_left_px(40.0);

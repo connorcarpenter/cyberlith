@@ -6,7 +6,7 @@ use bevy_ecs::{
     system::{ResMut, Resource},
     world::World,
 };
-use bevy_log::{info, warn};
+use bevy_log::warn;
 
 use asset_id::{AssetId, AssetType};
 use input::{CursorIcon, Input};
