@@ -14,7 +14,7 @@ mod input;
 // just for engine
 pub use node_id::NodeId;
 pub use ui::Ui;
-pub use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
+pub use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid, TextMeasurer};
 
 // just for ui_io
 pub use button::{Button, ButtonMut, ButtonStyle, ButtonStyleMut, ButtonNavigation};

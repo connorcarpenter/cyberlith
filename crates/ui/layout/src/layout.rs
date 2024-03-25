@@ -1,9 +1,6 @@
 use smallvec::SmallVec;
 
-use crate::{
-    percentage_calc, Cache, CacheExt, LayoutType, Node, NodeExt, PositionType, Size, SizeUnits,
-    Solid,
-};
+use crate::{percentage_calc, Cache, CacheExt, LayoutType, Node, NodeExt, PositionType, Size, SizeUnits, Solid, TextMeasurer};
 
 const DEFAULT_MIN: f32 = -f32::MAX;
 const DEFAULT_MAX: f32 = f32::MAX;
@@ -90,6 +87,7 @@ pub(crate) fn layout<N, C>(
     cache: &mut C,
     tree: &<N as Node>::Tree,
     store: &<N as Node>::Store,
+    text_measurer: &dyn TextMeasurer,
 ) -> Size
 where
     N: Node,
@@ -176,6 +174,7 @@ where
     // TODO: Figure out how to constrain content size on cross axis.
 
     apply_solid_layout(node, store, &mut computed_main, &mut computed_cross);
+    apply_text_layout(node, store, text_measurer, parent_layout_type, &mut computed_main, &mut computed_cross);
 
     // Return early if there's no children to layout.
     if num_children == 0 {
@@ -290,6 +289,7 @@ where
                 cache,
                 tree,
                 store,
+                text_measurer,
             );
 
             computed_child_main = child_size.main;
@@ -585,6 +585,7 @@ where
                 cache,
                 tree,
                 store,
+                text_measurer,
             );
 
             computed_child_main = child_size.main;
@@ -807,7 +808,7 @@ where
 
 fn apply_solid_layout<N: Node>(node: &N, store: &N::Store, main: &mut f32, cross: &mut f32) {
     // Apply solid layout stuff
-    let node_solid = node.solid(store);
+    let node_solid = node.is_solid(store);
     if node_solid.is_some() {
         let aspect_ratio = node
             .aspect_ratio(store)
@@ -827,5 +828,35 @@ fn apply_solid_layout<N: Node>(node: &N, store: &N::Store, main: &mut f32, cross
                 *cross = computed_cross.max(*cross);
             }
         }
+    }
+}
+
+fn apply_text_layout<N: Node>(
+    node: &N,
+    store: &N::Store,
+    text_measurer: &dyn TextMeasurer,
+    parent_layout_type: LayoutType,
+    main: &mut f32,
+    cross: &mut f32
+) {
+
+    if node.is_text(store) {
+
+        let width: &mut f32;
+        let height: &mut f32;
+        match parent_layout_type {
+            LayoutType::Row => {
+                width = main;
+                height = cross;
+            }
+            LayoutType::Column => {
+                width = cross;
+                height = main;
+            }
+        }
+
+        let height: f32 = *height;
+        let computed_width = node.calculate_text_width(store, text_measurer, height);
+        *width = computed_width;
     }
 }

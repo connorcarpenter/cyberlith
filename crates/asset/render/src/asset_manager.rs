@@ -16,7 +16,7 @@ use render_api::{
     resources::RenderFrame,
 };
 use storage::{Handle, Storage};
-use ui::{NodeId, Ui, UiEvent, UiEventHandler, UiInput};
+use ui::{NodeId, TextMeasurer, Ui, UiEvent, UiEventHandler, UiInput};
 
 use crate::{
     asset_renderer::AssetRenderer, processed_asset_store::ProcessedAssetStore, AnimationData,
@@ -310,17 +310,37 @@ impl AssetManager {
         camera: &Camera,
         ui_handle: &AssetHandle<UiData>,
     ) {
+        let Some(viewport) = camera.viewport else {
+            return;
+        };
         let Some(ui_data) = self.store.uis.get_mut(ui_handle) else {
             warn!("ui data not loaded 1: {:?}", ui_handle.asset_id());
             return;
         };
+
         let ui = ui_data.get_ui_mut();
 
-        // update viewport / recalculate layout for ui
-        if let Some(viewport) = camera.viewport {
-            ui.update_viewport(&viewport);
-            ui.recalculate_layout_if_needed();
+        ui.update_viewport(&viewport);
+
+        let needs_to_recalc = ui.needs_to_recalculate_layout();
+
+        if needs_to_recalc {
+            let icon_handle = ui_data.get_icon_handle();
+            self.recalculate_ui_layout(ui_handle, &icon_handle);
         }
+    }
+
+    fn recalculate_ui_layout(&mut self, ui_handle: &AssetHandle<UiData>, icon_handle: &AssetHandle<IconData>) {
+        let Some(icon_data) = self.store.icons.get(&icon_handle) else {
+            return;
+        };
+        let text_measurer = UiTextMeasurer::new(icon_data);
+
+        let Some(ui_data) = self.store.uis.get_mut(ui_handle) else {
+            return;
+        };
+
+        ui_data.get_ui_mut().recalculate_layout(&text_measurer);
     }
 
     pub fn update_ui_input(
@@ -353,5 +373,29 @@ impl AssetManager {
         ui_handle: &AssetHandle<UiData>,
     ) {
         AssetRenderer::draw_ui(render_frame, render_layer_opt, &self.store, ui_handle);
+    }
+}
+
+struct UiTextMeasurer<'a> {
+    icon_data: &'a IconData,
+}
+
+impl<'a> UiTextMeasurer<'a> {
+    fn new(icon_data: &'a IconData) -> Self {
+        Self { icon_data }
+    }
+}
+
+impl<'a> TextMeasurer for UiTextMeasurer<'a> {
+
+    fn get_raw_char_width(&self, subimage: usize) -> f32 {
+        if subimage == 0 {
+            return 40.0;
+        }
+        self.icon_data.get_frame_width(subimage).unwrap_or(0.0)
+    }
+
+    fn get_raw_char_height(&self, _subimage: usize) -> f32 {
+        200.0
     }
 }

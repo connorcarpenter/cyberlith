@@ -1,4 +1,4 @@
-use crate::{text::TextStyleRef, button::ButtonStyleRef, panel::{Panel, PanelStyle, PanelStyleRef}, style::{NodeStyle, StyleId, WidgetStyle}, widget::WidgetKind, Button, ButtonStyle, NodeId, UiNode, TextStyle};
+use crate::{text::TextStyleRef, button::ButtonStyleRef, panel::{Panel, PanelStyle, PanelStyleRef}, style::{NodeStyle, StyleId, WidgetStyle}, widget::WidgetKind, Button, ButtonStyle, NodeId, UiNode, TextStyle, Text};
 
 pub struct UiStore {
     pub styles: Vec<NodeStyle>,
@@ -74,6 +74,14 @@ impl UiStore {
         None
     }
 
+    pub fn text_ref(&self, node_id: &NodeId) -> Option<&Text> {
+        let node = self.get_node(node_id)?;
+        if node.widget_kind() == WidgetKind::Text {
+            return node.widget_text_ref();
+        }
+        None
+    }
+
     pub fn button_ref(&self, node_id: &NodeId) -> Option<&Button> {
         let node = self.get_node(node_id)?;
         if node.widget_kind() == WidgetKind::Button {
@@ -113,10 +121,11 @@ impl UiStore {
             let Some(style) = self.get_style(style_id) else {
                 panic!("StyleId does not reference a Style");
             };
-            let WidgetStyle::Panel(panel_style) = style.widget_style else {
-                panic!("StyleId does not reference a PanelStyle");
-            };
-            func(&panel_style);
+            match style.widget_style {
+                WidgetStyle::Panel(panel_style) => func(&panel_style),
+                WidgetStyle::Button(button_style) => func(&button_style.panel),
+                _ => panic!("StyleId does not reference a PanelStyle"),
+            }
         }
     }
 

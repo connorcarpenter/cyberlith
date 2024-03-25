@@ -1,4 +1,4 @@
-use crate::{layout, types::*, Cache};
+use crate::{layout, types::*, Cache, TextMeasurer};
 
 /// A `Node` represents a layout element which can be sized and positioned based on
 /// a number of layout properties.
@@ -22,10 +22,6 @@ pub trait Node: Sized {
         Self: 't;
     /// A type representing a key to store and retrieve values from the [`Cache`].
     type CacheKey;
-    /// A type representing a context which can be used to save/load state when computing [content size](crate::Node::content_size).
-    /// For example, a `TextContext` which could be used to measure (and cache) the size of text, which could
-    /// then be used to size an `Auto` layout node using content size.
-    type SubLayout<'a>;
 
     /// Performs layout on the given node returning its computed size.
     ///
@@ -43,6 +39,7 @@ pub trait Node: Sized {
         cache: &mut C,
         tree: &Self::Tree,
         store: &Self::Store,
+        text_measurer: &dyn TextMeasurer,
     ) -> Size {
         let width = self
             .width(store)
@@ -62,7 +59,7 @@ pub trait Node: Sized {
 
         cache.set_bounds(self, cache.posx(self), cache.posy(self), width, height);
 
-        layout(self, LayoutType::Column, height, width, cache, tree, store)
+        layout(self, LayoutType::Column, height, width, cache, tree, store, text_measurer)
     }
 
     /// Returns a key which can be used to set/get computed layout data from the [`cache`](crate::Cache).
@@ -129,7 +126,13 @@ pub trait Node: Sized {
     fn col_between(&self, store: &Self::Store) -> Option<SizeUnits>;
 
     /// Returns the solid override of the node.
-    fn solid(&self, store: &Self::Store) -> Option<Solid>;
+    fn is_solid(&self, store: &Self::Store) -> Option<Solid>;
+
+    /// Returns whether node is text.
+    fn is_text(&self, store: &Self::Store) -> bool;
+
+    /// Returns whether node is text.
+    fn calculate_text_width(&self, store: &Self::Store, text_measurer: &dyn TextMeasurer, height: f32) -> f32;
 
     /// Returns the aspect ratio of the node. (width / height)
     fn aspect_ratio(&self, store: &Self::Store) -> Option<f32>;

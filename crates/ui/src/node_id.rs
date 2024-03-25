@@ -1,8 +1,8 @@
 use std::fmt::{Display, Formatter};
 
-use ui_layout::{Alignment, LayoutType, MarginUnits, Node, PositionType, SizeUnits, Solid};
+use ui_layout::{Alignment, LayoutType, MarginUnits, Node, PositionType, SizeUnits, Solid, TextMeasurer};
 
-use crate::{store::UiStore, widget::WidgetKind};
+use crate::{store::UiStore, Text, widget::WidgetKind};
 
 #[derive(Clone, Copy, PartialEq, PartialOrd, Ord, Eq, Hash, Debug, Default)]
 pub struct NodeId(u32);
@@ -32,31 +32,28 @@ impl Node for NodeId {
     type Tree = UiStore;
     type ChildIter<'t> = std::slice::Iter<'t, Self>;
     type CacheKey = Self;
-    type SubLayout<'a> = ();
 
     fn key(&self) -> Self::CacheKey {
         *self
     }
 
     fn children<'t>(&'t self, store: &'t UiStore) -> Self::ChildIter<'t> {
-        if let Some(node_ref) = store.get_node(self) {
-            let widget_kind = node_ref.widget_kind();
-            match widget_kind {
-                WidgetKind::Panel => {
-                    if let Some(panel_ref) = store.panel_ref(self) {
-                        return panel_ref.children.iter();
-                    }
-                }
-                WidgetKind::Button => {
-                    if let Some(button_ref) = store.button_ref(self) {
-                        return button_ref.panel.children.iter();
-                    }
-                }
-                _ => {}
-            }
+        if !store.node_kind(self).has_children() {
+            return [].iter();
         }
-
-        return [].iter();
+        let node_ref = store.get_node(self).unwrap();
+        let widget_kind = node_ref.widget_kind();
+        match widget_kind {
+            WidgetKind::Panel => {
+                let panel_ref = store.panel_ref(self).unwrap();
+                return panel_ref.children.iter();
+            }
+            WidgetKind::Button => {
+                let button_ref = store.button_ref(self).unwrap();
+                return button_ref.panel.children.iter();
+            }
+            _ => panic!("impossible"),
+        }
     }
 
     fn visible(&self, store: &UiStore) -> bool {
@@ -68,7 +65,7 @@ impl Node for NodeId {
     }
 
     fn layout_type(&self, store: &UiStore) -> Option<LayoutType> {
-        if store.node_kind(self) != WidgetKind::Panel {
+        if !store.node_kind(self).has_children() {
             return None;
         }
 
@@ -98,6 +95,10 @@ impl Node for NodeId {
     fn width(&self, store: &UiStore) -> Option<SizeUnits> {
         let mut output = SizeUnits::default();
 
+        if store.node_kind(self).is_text() {
+            return Some(output);
+        }
+
         store.for_each_node_style(self, |node_style| {
             if let Some(width) = node_style.width {
                 output = width;
@@ -122,6 +123,10 @@ impl Node for NodeId {
     fn width_min(&self, store: &UiStore) -> Option<SizeUnits> {
         let mut output = SizeUnits::default();
 
+        if store.node_kind(self).is_text() {
+            return Some(output);
+        }
+
         store.for_each_node_style(self, |node_style| {
             if let Some(width_min) = node_style.width_min {
                 output = width_min;
@@ -133,6 +138,10 @@ impl Node for NodeId {
 
     fn height_min(&self, store: &UiStore) -> Option<SizeUnits> {
         let mut output = SizeUnits::default();
+
+        if store.node_kind(self).is_text() {
+            return Some(output);
+        }
 
         store.for_each_node_style(self, |node_style| {
             if let Some(height_min) = node_style.height_min {
@@ -146,6 +155,10 @@ impl Node for NodeId {
     fn width_max(&self, store: &UiStore) -> Option<SizeUnits> {
         let mut output = SizeUnits::default();
 
+        if store.node_kind(self).is_text() {
+            return Some(output);
+        }
+
         store.for_each_node_style(self, |node_style| {
             if let Some(width_max) = node_style.width_max {
                 output = width_max;
@@ -157,6 +170,10 @@ impl Node for NodeId {
 
     fn height_max(&self, store: &UiStore) -> Option<SizeUnits> {
         let mut output = SizeUnits::default();
+
+        if store.node_kind(self).is_text() {
+            return Some(output);
+        }
 
         store.for_each_node_style(self, |node_style| {
             if let Some(height_max) = node_style.height_max {
@@ -216,7 +233,7 @@ impl Node for NodeId {
     }
 
     fn padding_left(&self, store: &UiStore) -> Option<SizeUnits> {
-        if store.node_kind(self) != WidgetKind::Panel {
+        if !store.node_kind(self).has_children() {
             return None;
         }
 
@@ -232,7 +249,7 @@ impl Node for NodeId {
     }
 
     fn padding_right(&self, store: &UiStore) -> Option<SizeUnits> {
-        if store.node_kind(self) != WidgetKind::Panel {
+        if !store.node_kind(self).has_children() {
             return None;
         }
 
@@ -248,7 +265,7 @@ impl Node for NodeId {
     }
 
     fn padding_top(&self, store: &UiStore) -> Option<SizeUnits> {
-        if store.node_kind(self) != WidgetKind::Panel {
+        if !store.node_kind(self).has_children() {
             return None;
         }
 
@@ -264,7 +281,7 @@ impl Node for NodeId {
     }
 
     fn padding_bottom(&self, store: &UiStore) -> Option<SizeUnits> {
-        if store.node_kind(self) != WidgetKind::Panel {
+        if !store.node_kind(self).has_children() {
             return None;
         }
 
@@ -280,7 +297,7 @@ impl Node for NodeId {
     }
 
     fn row_between(&self, store: &UiStore) -> Option<SizeUnits> {
-        if store.node_kind(self) != WidgetKind::Panel {
+        if !store.node_kind(self).has_children() {
             return None;
         }
 
@@ -296,7 +313,7 @@ impl Node for NodeId {
     }
 
     fn col_between(&self, store: &UiStore) -> Option<SizeUnits> {
-        if store.node_kind(self) != WidgetKind::Panel {
+        if !store.node_kind(self).has_children() {
             return None;
         }
 
@@ -311,7 +328,24 @@ impl Node for NodeId {
         Some(output)
     }
 
-    fn solid(&self, store: &UiStore) -> Option<Solid> {
+    fn is_text(&self, store: &UiStore) -> bool {
+        store.node_kind(self).is_text()
+    }
+
+    fn calculate_text_width(&self, store: &Self::Store, text_measurer: &dyn TextMeasurer, height: f32) -> f32 {
+        let text_ref = store.text_ref(self).unwrap();
+        let text = text_ref.text.as_str();
+        let raw_width = Text::measure_raw_text_width(text_measurer, text);
+        let raw_height = text_measurer.get_raw_char_height(0);
+        let scale = height / raw_height;
+        raw_width * scale
+    }
+
+    fn is_solid(&self, store: &UiStore) -> Option<Solid> {
+        if !store.node_kind(self).can_solid() {
+            return None;
+        }
+
         let mut output = None;
 
         store.for_each_node_style(self, |node_style| {
@@ -324,7 +358,12 @@ impl Node for NodeId {
     }
 
     fn aspect_ratio(&self, store: &Self::Store) -> Option<f32> {
+
         let mut output = 1.0; // TODO: put this into a constant
+
+        if !store.node_kind(self).can_solid() {
+            return Some(output);
+        }
 
         store.for_each_node_style(self, |node_style| {
             if let Some((w, h)) = node_style.aspect_ratio() {
@@ -360,7 +399,7 @@ impl Node for NodeId {
     }
 
     fn children_halign(&self, store: &Self::Store) -> Option<Alignment> {
-        if store.node_kind(self) != WidgetKind::Panel {
+        if !store.node_kind(self).has_children() {
             return None;
         }
 
@@ -376,7 +415,7 @@ impl Node for NodeId {
     }
 
     fn children_valign(&self, store: &Self::Store) -> Option<Alignment> {
-        if store.node_kind(self) != WidgetKind::Panel {
+        if !store.node_kind(self).has_children() {
             return None;
         }
 

@@ -1,6 +1,6 @@
 use render_api::base::{Color, CpuMaterial};
 use storage::Handle;
-use ui_layout::{Alignment, MarginUnits, PositionType, SizeUnits};
+use ui_layout::{Alignment, MarginUnits, PositionType, SizeUnits, TextMeasurer};
 
 use crate::{store::UiStore, style::{NodeStyle, StyleId}, NodeId, Ui, WidgetStyle};
 
@@ -20,6 +20,33 @@ impl Text {
 
     pub fn inner_text(&self) -> &str {
         &self.text
+    }
+
+    pub fn measure_raw_text_width(
+        text_measurer: &dyn TextMeasurer,
+        text: &str,
+    ) -> f32 {
+        let mut width = 0.0;
+
+        for c in text.chars() {
+            if width > 0.0 {
+                width += 6.0; // between character spacing - TODO: replace with config
+            }
+
+            let c: u8 = if c.is_ascii() {
+                c as u8
+            } else {
+                42 // asterisk
+            };
+            let subimage_index = (c - 32) as usize;
+
+            // get character width in order to move cursor appropriately
+            let icon_width = text_measurer.get_raw_char_width(subimage_index);
+
+            width += icon_width;
+        }
+
+        width
     }
 }
 
@@ -174,8 +201,16 @@ impl<'a> TextStyleMut<'a> {
         self
     }
 
-    pub fn set_height_px(&mut self, width_px: f32) -> &mut Self {
-        self.set_height_units(SizeUnits::Pixels(width_px))
+    // set_height_min
+    fn set_height_min_units(&mut self, min_height: SizeUnits) -> &mut Self {
+        self.get_style_mut().height_min = Some(min_height);
+        self
+    }
+
+    // set_height_max
+    fn set_height_max_units(&mut self, max_height: SizeUnits) -> &mut Self {
+        self.get_style_mut().height_max = Some(max_height);
+        self
     }
 
     // set size
@@ -186,6 +221,43 @@ impl<'a> TextStyleMut<'a> {
 
     pub fn set_size_px(&mut self, height_px: f32) -> &mut Self {
         self.set_size_units(SizeUnits::Pixels(height_px));
+        self
+    }
+
+    pub fn set_size_pc(&mut self, height_pc: f32) -> &mut Self {
+        self.set_size_units(SizeUnits::Percentage(height_pc));
+        self
+    }
+
+    // set size min
+    fn set_size_min_units(&mut self, height: SizeUnits) -> &mut Self {
+        self.set_height_min_units(height);
+        self
+    }
+
+    pub fn set_size_min_px(&mut self, height_px: f32) -> &mut Self {
+        self.set_size_min_units(SizeUnits::Pixels(height_px));
+        self
+    }
+
+    pub fn set_size_min_pc(&mut self, height_pc: f32) -> &mut Self {
+        self.set_size_min_units(SizeUnits::Percentage(height_pc));
+        self
+    }
+
+    // set size max
+    fn set_size_max_units(&mut self, height: SizeUnits) -> &mut Self {
+        self.set_height_max_units(height);
+        self
+    }
+
+    pub fn set_size_max_px(&mut self, height_px: f32) -> &mut Self {
+        self.set_size_max_units(SizeUnits::Pixels(height_px));
+        self
+    }
+
+    pub fn set_size_max_pc(&mut self, height_pc: f32) -> &mut Self {
+        self.set_size_max_units(SizeUnits::Percentage(height_pc));
         self
     }
 

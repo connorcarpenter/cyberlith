@@ -36,7 +36,7 @@ pub fn ui_define() -> (String, AssetId, ETag, Ui) {
             .set_background_color(Color::GREEN)
             .set_size_pc(100., 33.)
             .set_vertical()
-            .set_children_valign(Alignment::Start)
+            .set_children_valign(Alignment::Center)
         ;
     });
     let body_container_style = ui.create_panel_style(|s| {
@@ -48,7 +48,12 @@ pub fn ui_define() -> (String, AssetId, ETag, Ui) {
     });
 
     let title_text_style = ui.create_text_style(|s| {
-        s.set_size_px(28.).set_self_halign(Alignment::Start).set_background_color(Color::AQUA).set_background_alpha(1.);
+        s
+            .set_size_px(25.)
+            .set_self_halign(Alignment::Start)
+            // .set_background_color(Color::AQUA)
+            // .set_background_alpha(1.)
+        ;
     });
     let body_text_style = ui.create_text_style(|s| {
 

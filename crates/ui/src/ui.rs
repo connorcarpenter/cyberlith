@@ -7,7 +7,7 @@ use render_api::{
     shapes::UnitSquare,
 };
 use storage::{Handle, Storage};
-use ui_layout::{Node, SizeUnits};
+use ui_layout::{Node, SizeUnits, TextMeasurer};
 
 use crate::{cache::LayoutCache, node::UiNode, node_id::NodeId, panel::{Panel, PanelMut, PanelStyle, PanelStyleMut}, store::UiStore, style::{NodeStyle, StyleId, WidgetStyle}, text::{TextStyle, TextStyleMut}, widget::{Widget, WidgetKind}, input::ui_receive_input, Button, ButtonStyle, ButtonStyleMut, UiEvent, UiInput, button::ButtonState, Text};
 
@@ -197,9 +197,6 @@ impl Ui {
                     let down_color_handle = materials.add(down_color);
                     button_mut.set_down_color_handle(down_color_handle);
                 }
-                _ => {
-                    continue;
-                }
             }
         }
     }
@@ -266,14 +263,16 @@ impl Ui {
         self.recalc_layout = true;
     }
 
-    pub fn recalculate_layout_if_needed(&mut self) {
-        if self.recalc_layout {
-            self.recalc_layout = false;
-            self.recalculate_layout();
-        }
+    pub fn needs_to_recalculate_layout(&self) -> bool {
+        self.recalc_layout
     }
 
-    fn recalculate_layout(&mut self) {
+    pub fn recalculate_layout(&mut self, text_measurer: &dyn TextMeasurer) {
+        self.recalc_layout = false;
+        self.recalculate_layout_impl(text_measurer);
+    }
+
+    fn recalculate_layout_impl(&mut self, text_measurer: &dyn TextMeasurer) {
         //info!("recalculating layout. viewport_width: {:?}, viewport_height: {:?}", self.viewport.width, self.viewport.height);
 
         let last_viewport_width: f32 = self.last_viewport.width as f32;
@@ -293,7 +292,7 @@ impl Ui {
         let cache_mut = &mut self.cache;
 
         // this calculates all the rects in cache_mut
-        Self::ROOT_NODE_ID.layout(cache_mut, panels_ref, panels_ref);
+        Self::ROOT_NODE_ID.layout(cache_mut, panels_ref, panels_ref, text_measurer);
 
         // print_node(&Self::ROOT_PANEL_ID, &self.cache, &self.panels, true, false, "".to_string());
     }

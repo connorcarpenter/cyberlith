@@ -7,6 +7,32 @@ pub enum WidgetKind {
     Button,
 }
 
+impl WidgetKind {
+    pub fn has_children(&self) -> bool {
+        match self {
+            WidgetKind::Panel => true,
+            WidgetKind::Text => false,
+            WidgetKind::Button => true,
+        }
+    }
+
+    pub fn can_solid(&self) -> bool {
+        match self {
+            WidgetKind::Panel => true,
+            WidgetKind::Text => false,
+            WidgetKind::Button => false,
+        }
+    }
+
+    pub fn is_text(&self) -> bool {
+        match self {
+            WidgetKind::Panel => false,
+            WidgetKind::Text => true,
+            WidgetKind::Button => false,
+        }
+    }
+}
+
 #[derive(Clone)]
 pub enum Widget {
     Panel(Panel),

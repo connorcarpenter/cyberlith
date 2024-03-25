@@ -556,10 +556,25 @@ impl UiStyleBits {
         if let Some(val_serde) = &self.height {
             let val = val_serde.to_size_units();
             match val {
-                SizeUnits::Pixels(pixels) => style.set_height_px(pixels),
-                SizeUnits::Percentage(_) | SizeUnits::Auto => {
-                    panic!("unsupported");
-                }
+                SizeUnits::Pixels(pixels) => style.set_size_px(pixels),
+                SizeUnits::Percentage(percentage) => style.set_size_pc(percentage),
+                SizeUnits::Auto => panic!("unsupported"),
+            };
+        }
+        if let Some(val_serde) = &self.height_min {
+            let val = val_serde.to_size_units();
+            match val {
+                SizeUnits::Pixels(pixels) => style.set_size_min_px(pixels),
+                SizeUnits::Percentage(percentage) => style.set_size_min_pc(percentage),
+                SizeUnits::Auto => panic!("unsupported"),
+            };
+        }
+        if let Some(val_serde) = &self.height_max {
+            let val = val_serde.to_size_units();
+            match val {
+                SizeUnits::Pixels(pixels) => style.set_size_max_px(pixels),
+                SizeUnits::Percentage(percentage) => style.set_size_max_pc(percentage),
+                SizeUnits::Auto => panic!("unsupported"),
             };
         }
         if let Some(val_serde) = &self.margin_left {

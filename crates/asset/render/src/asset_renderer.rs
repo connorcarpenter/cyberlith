@@ -92,29 +92,19 @@ impl AssetRenderer {
     ) {
         // info!("drawing text: {}, transform: {:?}, text_height: {:?}", text, transform);
 
-        // will draw text string, stretched to fit the transform:
-        // (transform.translation.x, transform.translation.y, transform.translation.z),
-        // with width: (transform.scale.x, transform.scale.y)
-
-        // first, measure the string
-        let (raw_width, raw_height) = Self::measure_raw_text(asset_store, icon_handle, text);
+        // will draw text string:
+        // at position: (transform.translation.x, transform.translation.y, transform.translation.z),
+        // with size: (transform.scale.x, transform.scale.y)
 
         let mut cursor = Transform::from_xyz(
-            transform.translation.x + (transform.scale.x * 0.5),
+            transform.translation.x,
             transform.translation.y + (transform.scale.y * 0.5),
             transform.translation.z,
         );
 
         // if we want to fill 200px, but raw_width is 100px, then scale_x would be 2.0
-        cursor.scale.y = transform.scale.y / raw_height;
+        cursor.scale.y = transform.scale.y / 200.0;
         cursor.scale.x = cursor.scale.y;
-
-        if raw_width * cursor.scale.x > transform.scale.x {
-            cursor.scale.x = transform.scale.x / raw_width;
-            cursor.scale.y = cursor.scale.x;
-        }
-
-        cursor.translation.x -= (raw_width * cursor.scale.x) * 0.5;
 
         for c in text.chars() {
             let c: u8 = if c.is_ascii() {
@@ -152,41 +142,6 @@ impl AssetRenderer {
             cursor.translation.x += frame_actual_width;
             cursor.translation.x += 6.0 * cursor.scale.x; // between character spacing - TODO: replace with config
         }
-    }
-
-    fn measure_raw_text(
-        asset_store: &ProcessedAssetStore,
-        icon_handle: &AssetHandle<IconData>,
-        text: &str,
-    ) -> (f32, f32) {
-        let mut width = 0.0;
-        let height = 200.0;
-
-        for c in text.chars() {
-            if width > 0.0 {
-                width += 6.0; // between character spacing - TODO: replace with config
-            }
-
-            let c: u8 = if c.is_ascii() {
-                c as u8
-            } else {
-                42 // asterisk
-            };
-            let subimage_index = (c - 32) as usize;
-
-            // get character width in order to move cursor appropriately
-            let icon_width = if subimage_index == 0 {
-                40.0 // space width - TODO: replace with config
-            } else {
-                asset_store
-                    .get_icon_frame_width(icon_handle, subimage_index)
-                    .unwrap_or(0.0)
-            };
-
-            width += icon_width;
-        }
-
-        (width, height)
     }
 
     pub(crate) fn draw_skin(
@@ -546,7 +501,9 @@ fn draw_ui_text(
                 panic!("partial background_alpha not implemented yet!");
             }
             let box_handle = ui.globals.get_box_mesh_handle().unwrap();
-            render_frame.draw_mesh(render_layer_opt, box_handle, &mat_handle, &transform);
+            let mut new_transform = transform.clone();
+            new_transform.translation.z -= 0.025;
+            render_frame.draw_mesh(render_layer_opt, box_handle, &mat_handle, &new_transform);
         }
     } else {
         warn!("no background color handle for text"); // probably will need to do better debugging later
