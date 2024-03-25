@@ -127,23 +127,31 @@ pub enum UiInputEvent {
 
 pub fn ui_receive_input(ui: &mut Ui, input: UiInput) {
     match input {
-        UiInput::Mouse(x, y, pressed) => {
+        UiInput::Mouse(x, y, left_pressed) => {
             ui.clear_hover();
             ui_update_hover(ui, &Ui::ROOT_NODE_ID, x, y, (0.0, 0.0));
 
-            let current_pressed = ui.get_select_pressed();
-            if pressed {
-                if !current_pressed {
-                    ui.set_select_pressed(true);
+            if left_pressed {
                     if let Some(hover_node) = ui.get_hover() {
-                        if ui.node_ref(&hover_node).unwrap().widget_kind() == WidgetKind::Button {
-                            ui.emit_event(&hover_node, UiEvent::Clicked);
+                        match ui.node_ref(&hover_node).unwrap().widget_kind() {
+                            WidgetKind::Button => {
+                                ui.set_selected_node(Some(hover_node));
+                                ui.emit_event(&hover_node, UiEvent::Clicked);
+                            }
+                            WidgetKind::Textbox => {
+                                ui.set_selected_node(Some(hover_node));
+                            }
+                            _ => {}
                         }
                     }
-                }
             } else {
-                if current_pressed {
-                    ui.set_select_pressed(false);
+                if let Some(selected_node) = ui.get_selected_node() {
+                    match ui.node_ref(&selected_node).unwrap().widget_kind() {
+                        WidgetKind::Button => {
+                            ui.set_selected_node(None);
+                        }
+                        _ => {}
+                    }
                 }
             }
         }
@@ -180,11 +188,26 @@ pub fn ui_receive_input(ui: &mut Ui, input: UiInput) {
                         }
                     }
                     UiInputEvent::SelectPressed => {
-                        ui.emit_event(&hover_node, UiEvent::Clicked);
-                        ui.set_select_pressed(true);
+                        match ui.node_ref(&hover_node).unwrap().widget_kind() {
+                            WidgetKind::Button => {
+                                ui.set_selected_node(Some(hover_node));
+                                ui.emit_event(&hover_node, UiEvent::Clicked);
+                            }
+                            WidgetKind::Textbox => {
+                                ui.set_selected_node(Some(hover_node));
+                            }
+                            _ => {}
+                        }
                     }
                     UiInputEvent::SelectReleased => {
-                        ui.set_select_pressed(false);
+                        if let Some(selected_node) = ui.get_selected_node() {
+                            match ui.node_ref(&selected_node).unwrap().widget_kind() {
+                                WidgetKind::Button => {
+                                    ui.set_selected_node(None);
+                                }
+                                _ => {}
+                            }
+                        }
                     }
                     UiInputEvent::Back => {
 

@@ -22,7 +22,7 @@ pub struct Ui {
     id_str_to_node_id_map: HashMap<String, NodeId>,
     events: Vec<(NodeId, UiEvent)>,
     hovering_node: Option<NodeId>,
-    select_is_pressed: bool,
+    selected_node: Option<NodeId>,
     cursor_icon: Option<CursorIcon>,
 }
 
@@ -77,7 +77,7 @@ impl Ui {
             id_str_to_node_id_map: HashMap::new(),
             events: Vec::new(),
             hovering_node: None,
-            select_is_pressed: false,
+            selected_node: None,
             cursor_icon: None,
         };
 
@@ -123,19 +123,19 @@ impl Ui {
     }
 
     pub fn get_active_state(&self, id: &NodeId) -> NodeActiveState {
-        let Some(hover_id) = self.hovering_node else {
-            return NodeActiveState::Normal;
+        if let Some(select_id) = self.selected_node {
+            if select_id == *id {
+                return NodeActiveState::Active;
+            }
+        }
+
+        if let Some(hover_id) = self.hovering_node {
+            if hover_id == *id {
+                return NodeActiveState::Hover;
+            }
         };
 
-        if hover_id == *id {
-            if self.select_is_pressed {
-                NodeActiveState::Active
-            } else {
-                NodeActiveState::Hover
-            }
-        } else {
-            NodeActiveState::Normal
-        }
+        return NodeActiveState::Normal;
     }
 
     pub fn clear_hover(&mut self) {
@@ -150,12 +150,12 @@ impl Ui {
         self.globals.first_input = Some(id);
     }
 
-    pub fn get_select_pressed(&self) -> bool {
-        self.select_is_pressed
+    pub fn get_selected_node(&self) -> Option<NodeId> {
+        self.selected_node
     }
 
-    pub fn set_select_pressed(&mut self, val: bool) {
-        self.select_is_pressed = val;
+    pub fn set_selected_node(&mut self, id_opt: Option<NodeId>) {
+        self.selected_node = id_opt;
     }
 
     pub fn emit_event(&mut self, node_id: &NodeId, event: UiEvent) {
