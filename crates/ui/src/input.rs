@@ -1,7 +1,7 @@
 use bevy_ecs::event::EventReader;
 use bevy_log::warn;
 
-use input::{GamepadButtonType, Input, InputEvent, Key, MouseButton};
+use input::{CursorIcon, GamepadButtonType, Input, InputEvent, Key, MouseButton};
 
 use crate::{NodeId, Ui, UiEvent, WidgetKind};
 
@@ -241,6 +241,19 @@ fn ui_update_hover(
                 mouse_x, mouse_y,
             ) {
                 ui.receive_hover(id);
+                ui.set_cursor_icon(CursorIcon::Hand);
+            }
+        }
+        WidgetKind::Textbox => {
+            let Some(textbox_mut) = ui.store.textbox_mut(id) else {
+                panic!("no textbox mut for node_id: {:?}", id);
+            };
+            if textbox_mut.mouse_is_inside(
+                (width, height, child_position.0, child_position.1),
+                mouse_x, mouse_y,
+            ) {
+                ui.receive_hover(id);
+                ui.set_cursor_icon(CursorIcon::Text);
             }
         }
         _ => {}

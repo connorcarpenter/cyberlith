@@ -106,6 +106,14 @@ impl UiStore {
         None
     }
 
+    pub fn textbox_mut(&mut self, node_id: &NodeId) -> Option<&mut Textbox> {
+        let node = self.get_node_mut(node_id)?;
+        if node.widget_kind() == WidgetKind::Textbox {
+            return node.widget_textbox_mut();
+        }
+        None
+    }
+
     fn node_style_ids(&self, node_id: &NodeId) -> &Vec<StyleId> {
         let node = self.get_node(node_id).unwrap();
         &node.style_ids

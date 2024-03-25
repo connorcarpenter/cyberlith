@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use asset_id::AssetId;
+use input::CursorIcon;
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
     components::Viewport,
@@ -22,6 +23,7 @@ pub struct Ui {
     events: Vec<(NodeId, UiEvent)>,
     hovering_node: Option<NodeId>,
     select_is_pressed: bool,
+    cursor_icon: Option<CursorIcon>,
 }
 
 impl Ui {
@@ -63,6 +65,7 @@ impl Ui {
             events: Vec::new(),
             hovering_node: None,
             select_is_pressed: false,
+            cursor_icon: None,
         };
 
         // Root Node
@@ -86,6 +89,16 @@ impl Ui {
     // events
     pub fn receive_input(&mut self, input: UiInput) {
         ui_receive_input(self, input);
+    }
+
+    pub fn take_cursor_icon(&mut self) -> Option<CursorIcon> {
+        let output = self.cursor_icon;
+        self.cursor_icon = None;
+        output
+    }
+
+    pub fn set_cursor_icon(&mut self, cursor_icon: CursorIcon) {
+        self.cursor_icon = Some(cursor_icon);
     }
 
     pub fn get_hover(&self) -> Option<NodeId> {

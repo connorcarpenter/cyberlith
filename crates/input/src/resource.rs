@@ -11,11 +11,7 @@ use math::Vec2;
 use crate::gamepad::{
     Axis, GamepadAxis, GamepadButton, GamepadInfo, Gamepads, ALL_AXIS_TYPES, ALL_BUTTON_TYPES,
 };
-use crate::{
-    gamepad::{GamepadButtonType, GamepadId},
-    is_button::IsButton,
-    GamepadSettings, IncomingEvent, InputEvent, Joystick, Key, MouseButton,
-};
+use crate::{gamepad::{GamepadButtonType, GamepadId}, is_button::IsButton, GamepadSettings, IncomingEvent, InputEvent, Joystick, Key, MouseButton, CursorIcon};
 
 #[derive(Resource)]
 pub struct Input {
@@ -36,6 +32,8 @@ pub struct Input {
     gamepad_axis: Axis<GamepadAxis>,
     gamepad_button_axis: Axis<GamepadButton>,
     pressed_gamepad_buttons: HashSet<GamepadButton>,
+
+    cursor_change: Option<CursorIcon>,
 }
 
 impl Input {
@@ -57,6 +55,8 @@ impl Input {
             gamepad_axis: Axis::default(),
             gamepad_button_axis: Axis::default(),
             pressed_gamepad_buttons: HashSet::new(),
+
+            cursor_change: None,
         }
     }
 
@@ -66,6 +66,14 @@ impl Input {
         for event in events {
             event_writer.send(event);
         }
+    }
+
+    pub fn set_cursor_icon(&mut self, cursor_icon: CursorIcon) {
+        self.cursor_change = Some(cursor_icon);
+    }
+
+    pub fn take_cursor_icon(&mut self) -> Option<CursorIcon> {
+        self.cursor_change.take()
     }
 
     pub fn mouse_position(&self) -> &Vec2 {

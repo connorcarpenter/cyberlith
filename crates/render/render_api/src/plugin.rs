@@ -21,7 +21,8 @@ impl Plugin for RenderApiPlugin {
             .init_resource::<Storage<CpuTexture2D>>()
             .init_resource::<Storage<CpuSkin>>()
             .init_resource::<RenderFrame>()
-            .init_resource::<Time>();
+            .init_resource::<Time>()
+        ;
 
         // Schedules
         app.init_schedule(RenderSync);

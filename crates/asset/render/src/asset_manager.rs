@@ -6,9 +6,10 @@ use bevy_ecs::{
     system::{ResMut, Resource},
     world::World,
 };
-use bevy_log::warn;
+use bevy_log::{info, warn};
 
 use asset_id::{AssetId, AssetType};
+use input::{CursorIcon, Input};
 use render_api::{
     base::CpuSkin,
     base::{CpuMaterial, CpuMesh},
@@ -29,6 +30,8 @@ pub struct AssetManager {
     queued_ui_event_handlers: HashMap<AssetHandle<UiData>, Vec<(String, UiEventHandler)>>,
     ui_event_handlers: HashMap<(AssetId, NodeId), UiEventHandler>,
     ui_events: Vec<(AssetId, NodeId, UiEvent)>,
+    cursor_icon_change: Option<CursorIcon>,
+    last_cursor_icon: CursorIcon,
 }
 
 impl Default for AssetManager {
@@ -38,6 +41,8 @@ impl Default for AssetManager {
             ui_events: Vec::new(),
             ui_event_handlers: HashMap::new(),
             queued_ui_event_handlers: HashMap::new(),
+            cursor_icon_change: None,
+            last_cursor_icon: CursorIcon::Default,
         }
     }
 }
@@ -117,6 +122,22 @@ impl AssetManager {
             };
 
             handler.handle(world, event);
+        }
+    }
+
+    // used as a system
+    pub fn prepare_cursor_change(mut asset_manager: ResMut<AssetManager>) {
+        asset_manager.cursor_icon_change = None;
+    }
+
+    // used as a system
+    pub fn process_cursor_change(mut asset_manager: ResMut<AssetManager>, mut input: ResMut<Input>) {
+        let Some(cursor_change) = asset_manager.cursor_icon_change.take() else {
+            return;
+        };
+        if cursor_change != asset_manager.last_cursor_icon {
+            asset_manager.last_cursor_icon = cursor_change;
+            input.set_cursor_icon(cursor_change);
         }
     }
 
@@ -364,6 +385,13 @@ impl AssetManager {
             .collect();
 
         self.ui_events.append(&mut events);
+
+        // get cursor icon change
+        if let Some(cursor_icon) = ui.take_cursor_icon() {
+            self.cursor_icon_change = Some(cursor_icon);
+        } else {
+            self.cursor_icon_change = Some(CursorIcon::Default);
+        }
     }
 
     pub fn draw_ui(

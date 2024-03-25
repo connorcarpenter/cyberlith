@@ -37,6 +37,7 @@ impl Plugin for RenderGlPlugin {
             .add_systems(PreStartup, window::sync)
             .add_systems(First, window::sync)
             .add_systems(GlInput, input::run)
+            .add_systems(PostUpdate, input::update_cursor)
             .add_systems(Render, render);
 
         let mut order = app.world.resource_mut::<MainScheduleOrder>();
