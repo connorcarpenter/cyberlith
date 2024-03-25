@@ -103,7 +103,7 @@ pub fn ui_define() -> (String, AssetId, ETag, Ui) {
             .set_self_halign(Alignment::Start)
             .set_margin_left_px(40.0);
     });
-    let base_text_input_style = ui.create_panel_style(|s| {
+    let base_textbox_style = ui.create_textbox_style(|s| {
         s
             .set_background_color(Color::GRAY)
             .set_size_pc(45., 7.)
@@ -151,25 +151,25 @@ pub fn ui_define() -> (String, AssetId, ETag, Ui) {
                     // text
                     c.add_text("username:").add_style(base_label_style);
                     // text-edit
-                    c.add_panel().add_style(base_text_input_style);
+                    c.add_textbox("username_textbox").add_style(base_textbox_style);
 
                     // email input
                     // text
                     c.add_text("email address:").add_style(base_label_style);
                     // text-edit
-                    c.add_panel().add_style(base_text_input_style);
+                    c.add_textbox("email_textbox").add_style(base_textbox_style);
 
                     // password input
                     // text
                     c.add_text("password:").add_style(base_label_style);
                     // text-edit
-                    c.add_panel().add_style(base_text_input_style);
+                    c.add_textbox("password_textbox").add_style(base_textbox_style);
 
                     // confirm password input
                     // text
                     c.add_text("confirm password:").add_style(base_label_style);
                     // text-edit
-                    c.add_panel().add_style(base_text_input_style);
+                    c.add_textbox("confirm_password_textbox").add_style(base_textbox_style);
 
                     // submit button
                     c.add_button("submit_button")
