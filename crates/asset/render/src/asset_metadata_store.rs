@@ -119,7 +119,7 @@ impl AssetMetadataStore {
                                     continue;
                                 }
 
-                                info!("Reading asset metadata file: {:?}", file_path);
+                                // info!("Reading asset metadata file: {:?}", file_path);
                                 self.tasks.push(AssetMetadataTask::load_file(
                                     fs_manager,
                                     file_path.to_str().unwrap(),
@@ -200,7 +200,7 @@ impl AssetMetadataStore {
 
         if self.tasks.is_empty() {
             self.finished_loading = true;
-            info!("Finished loading AssetMetadataStore");
+            // info!("Finished loading AssetMetadataStore");
         }
     }
 

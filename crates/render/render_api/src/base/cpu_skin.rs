@@ -1,4 +1,3 @@
-use bevy_log::info;
 
 use storage::Handle;
 
@@ -12,11 +11,11 @@ pub struct CpuSkin {
 
 impl CpuSkin {
     pub fn log(&self) {
-        info!("--- loaded cpu skin ---");
-        for (index, handle) in self.face_to_material.iter().enumerate() {
-            info!("face: {}, material: {:?}", index, handle.id);
-        }
-        info!("--- end cpu skin ---");
+        // info!("--- loaded cpu skin ---");
+        // for (index, handle) in self.face_to_material.iter().enumerate() {
+            // info!("face: {}, material: {:?}", index, handle.id);
+        // }
+        // info!("--- end cpu skin ---");
     }
 }
 

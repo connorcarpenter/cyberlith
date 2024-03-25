@@ -126,7 +126,7 @@ impl AssetCacheChecker {
         }
 
         // load asset into memory
-        info!("loading asset into memory: {:?}", metadata.path());
+        // info!("loading asset into memory: {:?}", metadata.path());
         let fs_task_key = file_system_manager.read(metadata.path());
         self.load_asset_tasks.push(LoadAssetTask::HasFsTask(
             asset_id,

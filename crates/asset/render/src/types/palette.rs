@@ -1,4 +1,3 @@
-use bevy_log::info;
 
 use render_api::base::{Color, CpuMaterial};
 use storage::{Handle, Storage};
@@ -45,19 +44,19 @@ impl PaletteData {
     pub fn from_bytes(bytes: &[u8]) -> Self {
         let actions = asset_io::bits::PaletteAction::read(bytes).expect("unable to parse file");
 
-        info!("--- reading palette ---");
+        // info!("--- reading palette ---");
 
         let mut colors = Vec::new();
         for action in actions {
             match action {
                 asset_io::bits::PaletteAction::Color(r, g, b) => {
-                    info!("loaded color {} : ({}, {}, {})", colors.len(), r, g, b);
+                    // info!("loaded color {} : ({}, {}, {})", colors.len(), r, g, b);
                     colors.push(PaletteColor::Raw(r, g, b));
                 }
             }
         }
 
-        info!("--- done reading palette ---");
+        // info!("--- done reading palette ---");
 
         Self { colors }
     }

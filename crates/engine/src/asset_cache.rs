@@ -5,7 +5,6 @@ use bevy_ecs::{
     prelude::Resource,
     system::ResMut,
 };
-use bevy_log::info;
 
 use naia_serde::{BitWriter, Serde};
 
@@ -59,17 +58,17 @@ impl AssetCache {
         let asset_metadata_file_path = format!("{}.meta", &asset_file_path);
 
         // load asset data into disk
-        info!(
-            "attempting to write asset data to disk: {:?}",
-            asset_file_path
-        );
+        // info!(
+        //     "attempting to write asset data to disk: {:?}",
+        //     asset_file_path
+        // );
         let asset_write_key = file_system_manager.write(&asset_file_path, &asset_data);
 
         // load asset metadata into disk
-        info!(
-            "attempting to write asset metadata to disk: {:?}",
-            asset_metadata_file_path
-        );
+        // info!(
+        //     "attempting to write asset metadata to disk: {:?}",
+        //     asset_metadata_file_path
+        // );
         let metadata_payload = AssetMetadataSerde::new(asset_etag, asset_type);
         let mut metadata_writer = BitWriter::new();
         metadata_payload.ser(&mut metadata_writer);
@@ -82,7 +81,7 @@ impl AssetCache {
             .push(SaveAssetTask::new(asset_write_key, metadata_write_key));
 
         // load asset data into memory
-        info!("loading asset into memory: {:?}", asset_file_path);
+        // info!("loading asset into memory: {:?}", asset_file_path);
         self.handle_data_store_load_asset(
             asset_manager,
             asset_loaded_event_writer,
@@ -149,7 +148,7 @@ impl SaveAssetTask {
             if let Some(result) = fs_manager.get_result(&asset_write_key) {
                 match result {
                     Ok(_) => {
-                        info!("asset write completed");
+                        // info!("asset write completed");
                     }
                     Err(e) => {
                         panic!("error writing asset to disk: {:?}", e.to_string());
@@ -163,7 +162,7 @@ impl SaveAssetTask {
             if let Some(result) = fs_manager.get_result(&metadata_write_key) {
                 match result {
                     Ok(_) => {
-                        info!("metadata write completed");
+                        // info!("metadata write completed");
                     }
                     Err(e) => {
                         panic!("error writing metadata to disk: {:?}", e.to_string());

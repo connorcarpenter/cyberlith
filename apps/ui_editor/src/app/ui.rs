@@ -115,7 +115,7 @@ fn write_to_file(name: &str, ui_asset_id: &AssetId, ui_etag: &ETag, ui: Ui) -> U
         let new_meta = AssetMeta::new(&ui_asset_id, UiJson::CURRENT_SCHEMA_VERSION);
         let asset = Asset::new(new_meta, AssetData::Ui(ui_json));
         let ui_bytes = serde_json::to_vec_pretty(&asset).unwrap();
-        info!("json byte count: {:?}", ui_bytes.len());
+        // info!("json byte count: {:?}", ui_bytes.len());
         ui_bytes
     };
 
@@ -134,7 +134,7 @@ fn write_to_file(name: &str, ui_asset_id: &AssetId, ui_etag: &ETag, ui: Ui) -> U
 
     // ui -> bit-packed bytes
     let ui_bytes = asset_io::bits::write_ui_bits(&ui);
-    info!("bits byte count: {:?}", ui_bytes.len());
+    // info!("bits byte count: {:?}", ui_bytes.len());
 
     // write bit-packed data to file
     std::fs::write(format!("output/{}", ui_asset_id_str), &ui_bytes).unwrap();

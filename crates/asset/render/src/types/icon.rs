@@ -1,7 +1,5 @@
 use std::collections::HashMap;
 
-use bevy_log::info;
-
 use math::Vec3;
 use render_api::base::{CpuMaterial, CpuMesh, CpuSkin};
 use storage::{Handle, Storage};
@@ -58,7 +56,7 @@ impl IconData {
     }
 
     pub(crate) fn load_cpu_meshes(&mut self, meshes: &mut Storage<CpuMesh>) {
-        info!("icon: load_cpu_meshes");
+        // info!("icon: load_cpu_meshes");
         for frame in &mut self.frames {
             frame.load_cpu_mesh_handle(meshes);
         }
@@ -97,7 +95,7 @@ impl IconData {
             TypedAssetId::Palette(asset_id) => {
                 let asset_handle = AssetHandle::<PaletteData>::new(asset_id);
                 self.palette_file.load_asset_handle(asset_handle);
-                info!("icon: load_palette");
+                // info!("icon: load_palette");
             }
             _ => {
                 panic!("unexpected type of handle");
@@ -148,7 +146,7 @@ impl IconData {
                     palette_file_opt = Some(asset_id);
                 }
                 asset_io::bits::IconAction::Frame(frame_actions) => {
-                    info!("- Frame Start: {} -", frames.len());
+                    // info!("- Frame Start: {} -", frames.len());
 
                     let mut vertices = Vec::new();
                     let mut positions = Vec::new();
@@ -158,7 +156,7 @@ impl IconData {
                     for frame_action in frame_actions {
                         match frame_action {
                             asset_io::bits::IconFrameAction::Vertex(x, y) => {
-                                info!("Vertex: ({}, {})", x, y);
+                                // info!("Vertex: ({}, {})", x, y);
                                 let vertex = Vec3::new(x as f32, y as f32, 0.0);
                                 vertices.push(vertex);
                             }
@@ -177,7 +175,7 @@ impl IconData {
                                 positions.push(vertex_b);
                                 positions.push(vertex_c);
 
-                                info!("face_id: {}", face_id);
+                                // info!("face_id: {}", face_id);
 
                                 face_indices.push(face_id);
                                 face_indices.push(face_id);
@@ -204,7 +202,7 @@ impl IconData {
 
                     frames.push(frame);
 
-                    info!("- Frame End -");
+                    // info!("- Frame End -");
                 }
             }
         }
