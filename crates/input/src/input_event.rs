@@ -2,10 +2,7 @@ use bevy_ecs::event::Event;
 
 use math::Vec2;
 
-use crate::{
-    gamepad::{GamepadButtonType, GamepadId},
-    JoystickType, Key, MouseButton,
-};
+use crate::{gamepad::{GamepadButtonType, GamepadId}, JoystickType, Key, Modifiers, MouseButton};
 
 #[derive(Clone, Copy, Event)]
 pub enum InputEvent {
@@ -16,7 +13,7 @@ pub enum InputEvent {
     MouseDragged(MouseButton, Vec2, Vec2),
     MouseMiddleScrolled(f32),
     // keyboard
-    KeyPressed(Key),
+    KeyPressed(Key, Modifiers),
     KeyReleased(Key),
     // gamepad
     GamepadConnected(GamepadId),

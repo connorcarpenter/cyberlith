@@ -168,9 +168,9 @@ impl Input {
                         self.mouse_scroll_y = 0.0;
                     }
                 }
-                IncomingEvent::KeyPress { kind, .. } => {
+                IncomingEvent::KeyPress { kind, modifiers } => {
                     if !self.pressed_keys.contains(kind) {
-                        self.outgoing_actions.push(InputEvent::KeyPressed(*kind));
+                        self.outgoing_actions.push(InputEvent::KeyPressed(*kind, *modifiers));
                         self.pressed_keys.insert(*kind);
                     }
                 }

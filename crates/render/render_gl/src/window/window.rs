@@ -1,12 +1,7 @@
 use std::sync::{Arc, RwLock};
 
 use bevy_log::info;
-use winit::{
-    event::{Event as WinitEvent, TouchPhase, WindowEvent},
-    event_loop::{ControlFlow, EventLoop},
-    window::WindowBuilder,
-    *,
-};
+use winit::{dpi, event::{Event as WinitEvent, TouchPhase, WindowEvent, ElementState, VirtualKeyCode, MouseButton as WinitMouseButton}, event_loop::{ControlFlow, EventLoop}, window, window::WindowBuilder};
 
 use input::{IncomingEvent, Key, Modifiers, MouseButton};
 use render_api::{
@@ -326,8 +321,8 @@ impl<T: 'static + Clone> Window<T> {
                     }
                     WindowEvent::KeyboardInput { input, .. } => {
                         if let Some(keycode) = input.virtual_keycode {
-                            use event::VirtualKeyCode;
-                            let state = input.state == event::ElementState::Pressed;
+
+                            let state = input.state == ElementState::Pressed;
                             if let Some(kind) = translate_virtual_key_code(keycode) {
                                 events.push(if state {
                                     IncomingEvent::KeyPress { kind, modifiers }
@@ -389,13 +384,13 @@ impl<T: 'static + Clone> Window<T> {
                     WindowEvent::MouseInput { state, button, .. } => {
                         if let Some(position) = cursor_pos {
                             let button = match button {
-                                event::MouseButton::Left => Some(MouseButton::Left),
-                                event::MouseButton::Middle => Some(MouseButton::Middle),
-                                event::MouseButton::Right => Some(MouseButton::Right),
+                                WinitMouseButton::Left => Some(MouseButton::Left),
+                                WinitMouseButton::Middle => Some(MouseButton::Middle),
+                                WinitMouseButton::Right => Some(MouseButton::Right),
                                 _ => None,
                             };
                             if let Some(b) = button {
-                                events.push(if *state == event::ElementState::Pressed {
+                                events.push(if *state == ElementState::Pressed {
                                     mouse_pressed = Some(b);
                                     IncomingEvent::MousePress {
                                         button: b,
@@ -568,68 +563,89 @@ fn is_printable_char(chr: char) -> bool {
     !is_in_private_use_area && !chr.is_ascii_control()
 }
 
-fn translate_virtual_key_code(key: event::VirtualKeyCode) -> Option<Key> {
-    use event::VirtualKeyCode::*;
+fn translate_virtual_key_code(key: VirtualKeyCode) -> Option<Key> {
 
     Some(match key {
-        Down => Key::ArrowDown,
-        Left => Key::ArrowLeft,
-        Right => Key::ArrowRight,
-        Up => Key::ArrowUp,
+        VirtualKeyCode::Down => Key::ArrowDown,
+        VirtualKeyCode::Left => Key::ArrowLeft,
+        VirtualKeyCode::Right => Key::ArrowRight,
+        VirtualKeyCode::Up => Key::ArrowUp,
 
-        Escape => Key::Escape,
-        Tab => Key::Tab,
-        Back => Key::Backspace,
-        Return => Key::Enter,
-        Space => Key::Space,
+        VirtualKeyCode::Escape => Key::Escape,
+        VirtualKeyCode::Tab => Key::Tab,
+        VirtualKeyCode::Back => Key::Backspace,
+        VirtualKeyCode::Return | VirtualKeyCode::NumpadEnter => Key::Enter,
+        VirtualKeyCode::Space => Key::Space,
 
-        Insert => Key::Insert,
-        Delete => Key::Delete,
-        Home => Key::Home,
-        End => Key::End,
-        PageUp => Key::PageUp,
-        PageDown => Key::PageDown,
+        VirtualKeyCode::Insert => Key::Insert,
+        VirtualKeyCode::Delete => Key::Delete,
+        VirtualKeyCode::Home => Key::Home,
+        VirtualKeyCode::End => Key::End,
+        VirtualKeyCode::PageUp => Key::PageUp,
+        VirtualKeyCode::PageDown => Key::PageDown,
 
-        Key0 | Numpad0 => Key::Num0,
-        Key1 | Numpad1 => Key::Num1,
-        Key2 | Numpad2 => Key::Num2,
-        Key3 | Numpad3 => Key::Num3,
-        Key4 | Numpad4 => Key::Num4,
-        Key5 | Numpad5 => Key::Num5,
-        Key6 | Numpad6 => Key::Num6,
-        Key7 | Numpad7 => Key::Num7,
-        Key8 | Numpad8 => Key::Num8,
-        Key9 | Numpad9 => Key::Num9,
+        VirtualKeyCode::Key0 | VirtualKeyCode::Numpad0 => Key::Num0,
+        VirtualKeyCode::Key1 | VirtualKeyCode::Numpad1 => Key::Num1,
+        VirtualKeyCode::Key2 | VirtualKeyCode::Numpad2 => Key::Num2,
+        VirtualKeyCode::Key3 | VirtualKeyCode::Numpad3 => Key::Num3,
+        VirtualKeyCode::Key4 | VirtualKeyCode::Numpad4 => Key::Num4,
+        VirtualKeyCode::Key5 | VirtualKeyCode::Numpad5 => Key::Num5,
+        VirtualKeyCode::Key6 | VirtualKeyCode::Numpad6 => Key::Num6,
+        VirtualKeyCode::Key7 | VirtualKeyCode::Numpad7 => Key::Num7,
+        VirtualKeyCode::Key8 | VirtualKeyCode::Numpad8 => Key::Num8,
+        VirtualKeyCode::Key9 | VirtualKeyCode::Numpad9 => Key::Num9,
 
-        A => Key::A,
-        B => Key::B,
-        C => Key::C,
-        D => Key::D,
-        E => Key::E,
-        F => Key::F,
-        G => Key::G,
-        H => Key::H,
-        I => Key::I,
-        J => Key::J,
-        K => Key::K,
-        L => Key::L,
-        M => Key::M,
-        N => Key::N,
-        O => Key::O,
-        P => Key::P,
-        Q => Key::Q,
-        R => Key::R,
-        S => Key::S,
-        T => Key::T,
-        U => Key::U,
-        V => Key::V,
-        W => Key::W,
-        X => Key::X,
-        Y => Key::Y,
-        Z => Key::Z,
+        VirtualKeyCode::A => Key::A,
+        VirtualKeyCode::B => Key::B,
+        VirtualKeyCode::C => Key::C,
+        VirtualKeyCode::D => Key::D,
+        VirtualKeyCode::E => Key::E,
+        VirtualKeyCode::F => Key::F,
+        VirtualKeyCode::G => Key::G,
+        VirtualKeyCode::H => Key::H,
+        VirtualKeyCode::I => Key::I,
+        VirtualKeyCode::J => Key::J,
+        VirtualKeyCode::K => Key::K,
+        VirtualKeyCode::L => Key::L,
+        VirtualKeyCode::M => Key::M,
+        VirtualKeyCode::N => Key::N,
+        VirtualKeyCode::O => Key::O,
+        VirtualKeyCode::P => Key::P,
+        VirtualKeyCode::Q => Key::Q,
+        VirtualKeyCode::R => Key::R,
+        VirtualKeyCode::S => Key::S,
+        VirtualKeyCode::T => Key::T,
+        VirtualKeyCode::U => Key::U,
+        VirtualKeyCode::V => Key::V,
+        VirtualKeyCode::W => Key::W,
+        VirtualKeyCode::X => Key::X,
+        VirtualKeyCode::Y => Key::Y,
+        VirtualKeyCode::Z => Key::Z,
 
-        _ => {
-            return None;
-        }
+        VirtualKeyCode::Plus | VirtualKeyCode::NumpadAdd => Key::Plus,
+        VirtualKeyCode::Slash | VirtualKeyCode::NumpadDivide => Key::Slash,
+        VirtualKeyCode::Period | VirtualKeyCode::NumpadDecimal => Key::Period,
+        VirtualKeyCode::Equals | VirtualKeyCode::NumpadEquals => Key::Equals,
+        VirtualKeyCode::Asterisk | VirtualKeyCode::NumpadMultiply => Key::Asterisk,
+        VirtualKeyCode::Minus | VirtualKeyCode::NumpadSubtract => Key::Minus,
+        VirtualKeyCode::Grave => Key::Grave,
+        VirtualKeyCode::LBracket => Key::LBracket,
+        VirtualKeyCode::RBracket => Key::RBracket,
+        VirtualKeyCode::Backslash => Key::Backslash,
+        VirtualKeyCode::Semicolon => Key::Semicolon,
+        VirtualKeyCode::Apostrophe => Key::Apostrophe,
+        VirtualKeyCode::Comma => Key::Comma,
+
+        VirtualKeyCode::VolumeDown => Key::VolumeDown,
+        VirtualKeyCode::VolumeUp => Key::VolumeUp,
+
+        VirtualKeyCode::LShift => Key::LShift,
+        VirtualKeyCode::LControl => Key::LCtrl,
+        VirtualKeyCode::LAlt => Key::LAlt,
+        VirtualKeyCode::RShift => Key::RShift,
+        VirtualKeyCode::RControl => Key::RCtrl,
+        VirtualKeyCode::RAlt => Key::RAlt,
+
+        _ => return None,
     })
 }

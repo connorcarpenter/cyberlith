@@ -1,5 +1,5 @@
 use bevy_ecs::event::EventReader;
-use bevy_log::warn;
+use bevy_log::{info, warn};
 
 use input::{CursorIcon, GamepadButtonType, Input, InputEvent, Key, MouseButton};
 
@@ -39,7 +39,7 @@ impl UiInputConverter {
                 InputEvent::MouseClicked(_, _) | InputEvent::MouseReleased(_) | InputEvent::MouseMoved(_) | InputEvent::MouseDragged(_, _, _) | InputEvent::MouseMiddleScrolled(_) => {
                     Some(true)
                 }
-                InputEvent::KeyPressed(_) | InputEvent::KeyReleased(_) | InputEvent::GamepadButtonPressed(_, _) | InputEvent::GamepadButtonReleased(_, _) | InputEvent::GamepadJoystickMoved(_, _, _) => {
+                InputEvent::KeyPressed(_, _) | InputEvent::KeyReleased(_) | InputEvent::GamepadButtonPressed(_, _) | InputEvent::GamepadButtonReleased(_, _) | InputEvent::GamepadJoystickMoved(_, _, _) => {
                     Some(false)
                 }
                 _ => None,
@@ -52,49 +52,55 @@ impl UiInputConverter {
 
             // then, collect the actual events
             let output_event = match input_event {
-                InputEvent::KeyPressed(Key::ArrowUp) |
-                InputEvent::KeyPressed(Key::W) |
+                InputEvent::KeyPressed(Key::ArrowUp, _) |
                 InputEvent::GamepadButtonPressed(_, GamepadButtonType::DPadUp)
                 => {
                     Some(UiInputEvent::Up)
                 }
-                InputEvent::KeyPressed(Key::ArrowDown) |
-                InputEvent::KeyPressed(Key::S) |
+                InputEvent::KeyPressed(Key::ArrowDown, _) |
                 InputEvent::GamepadButtonPressed(_, GamepadButtonType::DPadDown)
                 => {
                     Some(UiInputEvent::Down)
                 }
-                InputEvent::KeyPressed(Key::ArrowLeft) |
-                InputEvent::KeyPressed(Key::A) |
+                InputEvent::KeyPressed(Key::ArrowLeft, _) |
                 InputEvent::GamepadButtonPressed(_, GamepadButtonType::DPadLeft)
                 => {
                     Some(UiInputEvent::Left)
                 }
-                InputEvent::KeyPressed(Key::ArrowRight) |
-                InputEvent::KeyPressed(Key::D) |
+                InputEvent::KeyPressed(Key::ArrowRight, _) |
                 InputEvent::GamepadButtonPressed(_, GamepadButtonType::DPadRight)
                 => {
                     Some(UiInputEvent::Right)
                 }
-                InputEvent::KeyPressed(Key::Enter) |
-                InputEvent::KeyPressed(Key::Space) |
+                InputEvent::KeyPressed(Key::Enter, _) |
                 InputEvent::GamepadButtonPressed(_, GamepadButtonType::Start) |
                 InputEvent::GamepadButtonPressed(_, GamepadButtonType::South)
                 => {
                     Some(UiInputEvent::SelectPressed)
                 }
                 InputEvent::KeyReleased(Key::Enter) |
-                InputEvent::KeyReleased(Key::Space) |
                 InputEvent::GamepadButtonReleased(_, GamepadButtonType::Start) |
                 InputEvent::GamepadButtonReleased(_, GamepadButtonType::South)
                 => {
                     Some(UiInputEvent::SelectReleased)
                 }
-                InputEvent::KeyPressed(Key::Escape) |
-                InputEvent::KeyPressed(Key::Backspace) |
+                InputEvent::KeyPressed(Key::Escape, _) |
                 InputEvent::GamepadButtonPressed(_, GamepadButtonType::East)
                 => {
                     Some(UiInputEvent::Back)
+                }
+                InputEvent::KeyPressed(Key::Backspace, _) => {
+                    Some(UiInputEvent::Backspace)
+                }
+                InputEvent::KeyPressed(Key::Delete, _) => {
+                    Some(UiInputEvent::Delete)
+                }
+                InputEvent::KeyPressed(key, modifiers) => {
+                    if key.is_char() {
+                        Some(UiInputEvent::Key(key.to_char(modifiers.shift).unwrap()))
+                    } else {
+                        None
+                    }
                 }
                 _ => None,
             };
@@ -122,7 +128,7 @@ pub enum UiInput {
 pub enum UiInputEvent {
     Up, Down, Left, Right,
     SelectPressed, SelectReleased,
-    Back
+    Back, Backspace, Delete, Key(char),
 }
 
 pub fn ui_receive_input(ui: &mut Ui, input: UiInput) {
@@ -211,6 +217,20 @@ pub fn ui_receive_input(ui: &mut Ui, input: UiInput) {
                     }
                     UiInputEvent::Back => {
 
+                    }
+                    UiInputEvent::Backspace => {
+
+                    }
+                    UiInputEvent::Delete => {
+
+                    }
+                    UiInputEvent::Key(key_char) => {
+                        match ui.node_ref(&hover_node).unwrap().widget_kind() {
+                            WidgetKind::Textbox => {
+                                info!("textbox key: {:?}", key_char);
+                            }
+                            _ => {}
+                        }
                     }
                 }
             }
