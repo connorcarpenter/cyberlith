@@ -145,6 +145,7 @@ impl SizeUnitsJson {
         match size_units {
             SizeUnits::Pixels(pixels) => Self::Pixels(pixels),
             SizeUnits::Percentage(percentage) => Self::Percentage(percentage),
+            SizeUnits::Viewport(percentage) => Self::Viewport(percentage),
             SizeUnits::Auto => Self::Auto,
         }
     }
@@ -155,6 +156,7 @@ impl MarginUnitsJson {
         match margin_units {
             MarginUnits::Pixels(pixels) => Self::Pixels(pixels),
             MarginUnits::Percentage(percentage) => Self::Percentage(percentage),
+            MarginUnits::Viewport(percentage) => Self::Viewport(percentage),
         }
     }
 }

@@ -135,6 +135,7 @@ pub(crate) enum PositionTypeBits {
 pub(crate) enum SizeUnitsBits {
     Pixels(UnsignedVariableInteger<7>),
     Percent(UnsignedInteger<7>),
+    Viewport(UnsignedInteger<7>),
     Auto,
 }
 
@@ -142,6 +143,7 @@ pub(crate) enum SizeUnitsBits {
 pub(crate) enum MarginUnitsBits {
     Pixels(UnsignedVariableInteger<7>), // TODO: is this a good value type for this?
     Percent(UnsignedInteger<7>),        // TODO: is this a good value type for this?
+    Viewport(UnsignedInteger<7>),       // TODO: is this a good value type for this?
 }
 
 #[derive(Serde, Clone, PartialEq)]

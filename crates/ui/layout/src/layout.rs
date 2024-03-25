@@ -62,28 +62,13 @@ struct ChildNode<'a, N: Node> {
 /// The algorithm recurses down the tree, in depth-first order, and performs
 /// layout on every node starting from the input `node`.
 ///
-/// # Arguments
-///
-/// * `node` - Root node to start layout from.
-/// * `parent_layout_type` - The [`LayoutType`] of the parent of the `node`.
-/// * `parent_main` - The size of the parent of the `node` on its main axis. If the `node` has no parent then pass the size of the node.
-/// * `cross_size` - The size of the `node` along its cross axis.
-/// * `cache` - A mutable reference to the [`Cache`].
-/// * `tree` - A mutable reference to the [`Tree`](crate::Node::Tree).
-/// * `store` - A mutable reference to the [`Store`](crate::Node::Store).
-/// * `sublayout` - A mutable reference to the [`SubLayout`](crate::Node::SubLayout) context.
-///
-/// # Example
-///
-/// ```
-/// layout(&root, LayoutType::Column, 600.0, 600.0, &mut cache, &tree, &store, &mut sublayout);
-/// ```
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn layout<N, C>(
     node: &N,
     parent_layout_type: LayoutType,
-    parent_main: f32,
-    cross_size: f32,
+    viewport_size: (f32, f32),
+    init_parent_main: f32,
+    init_parent_cross: f32,
     cache: &mut C,
     tree: &<N as Node>::Tree,
     store: &<N as Node>::Store,
@@ -95,20 +80,24 @@ where
 {
     let parent_padding_main: f32 = match node.padding_main_before(store, parent_layout_type) {
         SizeUnits::Pixels(val) => val,
-        SizeUnits::Percentage(val) => percentage_calc(val, parent_main, 0.0),
+        SizeUnits::Percentage(val) => percentage_calc(val, init_parent_main, 0.0),
+        SizeUnits::Viewport(val) => percentage_calc(val, viewport_size.0, 0.0),
         _ => 0.0,
     } + match node.padding_main_after(store, parent_layout_type) {
         SizeUnits::Pixels(val) => val,
-        SizeUnits::Percentage(val) => percentage_calc(val, parent_main, 0.0),
+        SizeUnits::Percentage(val) => percentage_calc(val, init_parent_main, 0.0),
+        SizeUnits::Viewport(val) => percentage_calc(val, viewport_size.0, 0.0),
         _ => 0.0,
     };
     let parent_padding_cross: f32 = match node.padding_cross_before(store, parent_layout_type) {
         SizeUnits::Pixels(val) => val,
-        SizeUnits::Percentage(val) => percentage_calc(val, cross_size, 0.0),
+        SizeUnits::Percentage(val) => percentage_calc(val, init_parent_cross, 0.0),
+        SizeUnits::Viewport(val) => percentage_calc(val, viewport_size.1, 0.0),
         _ => 0.0,
     } + match node.padding_cross_after(store, parent_layout_type) {
         SizeUnits::Pixels(val) => val,
-        SizeUnits::Percentage(val) => percentage_calc(val, cross_size, 0.0),
+        SizeUnits::Percentage(val) => percentage_calc(val, init_parent_cross, 0.0),
+        SizeUnits::Viewport(val) => percentage_calc(val, viewport_size.1, 0.0),
         _ => 0.0,
     };
 
@@ -119,25 +108,32 @@ where
     let main = node.main(store, parent_layout_type);
     let cross = node.cross(store, parent_layout_type);
 
+    let viewport_main = viewport_size.main(parent_layout_type);
+    let viewport_cross = viewport_size.cross(parent_layout_type);
+
     let main_min = node.main_min(store, parent_layout_type).to_px(
-        parent_main,
+        viewport_main,
+        init_parent_main,
         parent_padding_main,
         DEFAULT_MIN,
     );
     let main_max = node.main_max(store, parent_layout_type).to_px(
-        parent_main,
+        viewport_main,
+        init_parent_main,
         parent_padding_main,
         DEFAULT_MAX,
     );
 
     // TODO: Need parent_cross to compute this correctly
     let cross_min = node.cross_min(store, parent_layout_type).to_px(
-        cross_size,
+        viewport_cross,
+        init_parent_cross,
         parent_padding_cross,
         DEFAULT_MIN,
     );
     let cross_max = node.cross_max(store, parent_layout_type).to_px(
-        cross_size,
+        viewport_cross,
+        init_parent_cross,
         parent_padding_cross,
         DEFAULT_MAX,
     );
@@ -146,13 +142,16 @@ where
     let mut computed_main = match main {
         SizeUnits::Pixels(val) => val,
         SizeUnits::Percentage(val) => {
-            percentage_calc(val, parent_main, parent_padding_main).round()
+            percentage_calc(val, init_parent_main, parent_padding_main).round()
+        }
+        SizeUnits::Viewport(val) => {
+            percentage_calc(val, viewport_main, 0.0).round()
         }
         SizeUnits::Auto => 0.0,
     };
 
     // Cross size is determined by the parent.
-    let mut computed_cross = cross_size;
+    let mut computed_cross = init_parent_cross;
 
     let node_children = node.children(tree).filter(|child| child.visible(store));
 
@@ -255,10 +254,11 @@ where
 
         // Compute fixed-size child cross_before.
         let computed_child_cross_before =
-            child_margin_cross_before.to_px(parent_cross, parent_padding_cross);
+            child_margin_cross_before.to_px(viewport_cross, parent_cross, parent_padding_cross);
 
         // Compute fixed-size child_cross.
         let mut computed_child_cross = child_cross.to_px_clamped(
+            viewport_cross,
             parent_cross,
             parent_padding_cross,
             0.0,
@@ -268,15 +268,15 @@ where
 
         // Compute fixed-size child cross_after.
         let computed_child_cross_after =
-            child_margin_cross_after.to_px(parent_cross, parent_padding_cross);
+            child_margin_cross_after.to_px(viewport_cross, parent_cross, parent_padding_cross);
 
         // Compute fixed-size child main_before.
         let computed_child_main_before =
-            child_margin_main_before.to_px(parent_main, parent_padding_main);
+            child_margin_main_before.to_px(viewport_main, parent_main, parent_padding_main);
 
         // Compute fixed-size child main_after.
         let computed_child_main_after =
-            child_margin_main_after.to_px(parent_main, parent_padding_main);
+            child_margin_main_after.to_px(viewport_main, parent_main, parent_padding_main);
 
         let computed_child_main;
         // Compute fixed-size child main.
@@ -284,6 +284,7 @@ where
             let child_size = layout(
                 child,
                 layout_type,
+                viewport_size,
                 parent_main,
                 computed_child_cross,
                 cache,
@@ -550,10 +551,11 @@ where
 
         // Compute fixed-size child cross_before.
         let computed_child_cross_before =
-            child_margin_cross_before.to_px(parent_cross, parent_padding_cross);
+            child_margin_cross_before.to_px(viewport_cross, parent_cross, parent_padding_cross);
 
         // Compute fixed-size child_cross.
         let mut computed_child_cross = child_cross.to_px_clamped(
+            viewport_cross,
             parent_cross,
             parent_padding_cross,
             0.0,
@@ -563,15 +565,15 @@ where
 
         // Compute fixed-size child cross_after.
         let computed_child_cross_after =
-            child_margin_cross_after.to_px(parent_cross, parent_padding_cross);
+            child_margin_cross_after.to_px(viewport_cross, parent_cross, parent_padding_cross);
 
         // Compute fixed-size child main_before.
         let computed_child_main_before =
-            child_margin_main_before.to_px(parent_main, parent_padding_main);
+            child_margin_main_before.to_px(viewport_main, parent_main, parent_padding_main);
 
         // Compute fixed-size child main_after.
         let computed_child_main_after =
-            child_margin_main_after.to_px(parent_main, parent_padding_main);
+            child_margin_main_after.to_px(viewport_main, parent_main, parent_padding_main);
 
         let computed_child_main;
 
@@ -580,6 +582,7 @@ where
             let child_size = layout(
                 child,
                 layout_type,
+                viewport_size,
                 parent_main,
                 computed_child_cross,
                 cache,
@@ -858,5 +861,32 @@ fn apply_text_layout<N: Node>(
         let height: f32 = *height;
         let computed_width = node.calculate_text_width(store, text_measurer, height);
         *width = computed_width;
+    }
+}
+
+trait ViewportExt {
+    fn main(&self, layout_type: LayoutType) -> f32;
+    fn cross(&self, layout_type: LayoutType) -> f32;
+}
+
+impl ViewportExt for (f32, f32) {
+    fn main(&self, _layout_type: LayoutType) -> f32 {
+        // match layout_type {
+        //     LayoutType::Row => self.0,
+        //     LayoutType::Column => self.1,
+        // }
+
+        // viewport_min for both...
+        self.0.min(self.1)
+    }
+
+    fn cross(&self, _layout_type: LayoutType) -> f32 {
+        // match layout_type {
+        //     LayoutType::Row => self.1,
+        //     LayoutType::Column => self.0,
+        // }
+
+        // viewport_min for both...
+        self.0.min(self.1)
     }
 }

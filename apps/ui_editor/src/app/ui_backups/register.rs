@@ -70,13 +70,13 @@ pub fn ui_define() -> (String, AssetId, ETag, Ui) {
     let heading_text_style = ui.create_text_style(|s| {
         s
             .set_background_alpha(0.)
-            .set_size_pc(100.0)
+            .set_size_vp(7.0)
             .set_margin_left_px(20.0)
             .set_self_halign(Alignment::Start);
     });
     let base_button_text_style = ui.create_text_style(|s| {
         s
-            .set_size_px(50.0)
+            .set_size_vp(5.0)
             .set_self_halign(Alignment::Center)
             .set_self_valign(Alignment::Center)
             .set_margin_px(10.0, 10.0, 10.0, 10.0);
@@ -99,7 +99,7 @@ pub fn ui_define() -> (String, AssetId, ETag, Ui) {
     let base_label_style = ui.create_text_style(|s| {
         s
             .set_background_alpha(0.)
-            .set_size_pc(5.)
+            .set_size_vp(5.)
             .set_self_halign(Alignment::Start)
             .set_margin_left_px(40.0);
     });

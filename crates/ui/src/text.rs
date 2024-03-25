@@ -229,6 +229,11 @@ impl<'a> TextStyleMut<'a> {
         self
     }
 
+    pub fn set_size_vp(&mut self, height_vp: f32) -> &mut Self {
+        self.set_size_units(SizeUnits::Viewport(height_vp));
+        self
+    }
+
     // set size min
     fn set_size_min_units(&mut self, height: SizeUnits) -> &mut Self {
         self.set_height_min_units(height);
@@ -242,6 +247,11 @@ impl<'a> TextStyleMut<'a> {
 
     pub fn set_size_min_pc(&mut self, height_pc: f32) -> &mut Self {
         self.set_size_min_units(SizeUnits::Percentage(height_pc));
+        self
+    }
+
+    pub fn set_size_min_vp(&mut self, height_vp: f32) -> &mut Self {
+        self.set_size_min_units(SizeUnits::Viewport(height_vp));
         self
     }
 
@@ -261,6 +271,11 @@ impl<'a> TextStyleMut<'a> {
         self
     }
 
+    pub fn set_size_max_vp(&mut self, height_vp: f32) -> &mut Self {
+        self.set_size_max_units(SizeUnits::Viewport(height_vp));
+        self
+    }
+
     // set_left
     fn set_margin_left_units(&mut self, left: MarginUnits) -> &mut Self {
         self.get_style_mut().margin_left = Some(left);
@@ -273,6 +288,10 @@ impl<'a> TextStyleMut<'a> {
 
     pub fn set_margin_left_pc(&mut self, left_pc: f32) -> &mut Self {
         self.set_margin_left_units(MarginUnits::Percentage(left_pc))
+    }
+
+    pub fn set_margin_left_vp(&mut self, left_vp: f32) -> &mut Self {
+        self.set_margin_left_units(MarginUnits::Viewport(left_vp))
     }
 
     // set_right
@@ -289,6 +308,10 @@ impl<'a> TextStyleMut<'a> {
         self.set_margin_right_units(MarginUnits::Percentage(right_pc))
     }
 
+    pub fn set_margin_right_vp(&mut self, right_vp: f32) -> &mut Self {
+        self.set_margin_right_units(MarginUnits::Viewport(right_vp))
+    }
+
     // set_top
     fn set_margin_top_units(&mut self, top: MarginUnits) -> &mut Self {
         self.get_style_mut().margin_top = Some(top);
@@ -301,6 +324,10 @@ impl<'a> TextStyleMut<'a> {
 
     pub fn set_margin_top_pc(&mut self, top_pc: f32) -> &mut Self {
         self.set_margin_top_units(MarginUnits::Percentage(top_pc))
+    }
+
+    pub fn set_margin_top_vp(&mut self, top_vp: f32) -> &mut Self {
+        self.set_margin_top_units(MarginUnits::Viewport(top_vp))
     }
 
     // set_bottom
@@ -317,6 +344,10 @@ impl<'a> TextStyleMut<'a> {
         self.set_margin_bottom_units(MarginUnits::Percentage(bottom_pc))
     }
 
+    pub fn set_margin_bottom_vp(&mut self, bottom_vp: f32) -> &mut Self {
+        self.set_margin_bottom_units(MarginUnits::Viewport(bottom_vp))
+    }
+
     // set_margin
 
     pub fn set_margin_px(&mut self, left: f32, right: f32, top: f32, bottom: f32) -> &mut Self {
@@ -331,5 +362,12 @@ impl<'a> TextStyleMut<'a> {
             .set_margin_right_pc(right)
             .set_margin_top_pc(top)
             .set_margin_bottom_pc(bottom)
+    }
+
+    pub fn set_margin_vp(&mut self, left: f32, right: f32, top: f32, bottom: f32) -> &mut Self {
+        self.set_margin_left_vp(left)
+            .set_margin_right_vp(right)
+            .set_margin_top_vp(top)
+            .set_margin_bottom_vp(bottom)
     }
 }

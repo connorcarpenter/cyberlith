@@ -266,6 +266,26 @@ impl SizeUnitsBits {
 
                 Self::Percent(val)
             }
+            SizeUnits::Viewport(val) => {
+                // validate
+                if val < 0.0 || val > 100.0 {
+                    panic!(
+                        "SizeUnits::Viewport value must be between 0 and 100, got: {}",
+                        val
+                    );
+                }
+                if val.fract() != 0.0 {
+                    panic!(
+                        "SizeUnits::Viewport value must be a whole number, got: {}",
+                        val
+                    );
+                }
+
+                let val = val as u64;
+                let val = UnsignedInteger::<7>::new(val);
+
+                Self::Viewport(val)
+            }
             SizeUnits::Auto => Self::Auto,
         }
     }
@@ -310,6 +330,26 @@ impl MarginUnitsBits {
                 let val = UnsignedInteger::<7>::new(val);
 
                 Self::Percent(val)
+            }
+            MarginUnits::Viewport(val) => {
+                // validate
+                if val < 0.0 || val > 100.0 {
+                    panic!(
+                        "SizeUnits::Viewport value must be between 0 and 100, got: {}",
+                        val
+                    );
+                }
+                if val.fract() != 0.0 {
+                    panic!(
+                        "SizeUnits::Viewport value must be a whole number, got: {}",
+                        val
+                    );
+                }
+
+                let val = val as u64;
+                let val = UnsignedInteger::<7>::new(val);
+
+                Self::Viewport(val)
             }
         }
     }

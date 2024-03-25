@@ -296,6 +296,11 @@ impl SizeUnitsBits {
                 let val: f32 = val as f32;
                 SizeUnits::Percentage(val)
             }
+            Self::Viewport(val) => {
+                let val: u64 = val.to();
+                let val: f32 = val as f32;
+                SizeUnits::Viewport(val)
+            }
             Self::Auto => SizeUnits::Auto,
         }
     }
@@ -313,6 +318,11 @@ impl MarginUnitsBits {
                 let val: u64 = val.to();
                 let val: f32 = val as f32;
                 MarginUnits::Percentage(val)
+            }
+            Self::Viewport(val) => {
+                let val: u64 = val.to();
+                let val: f32 = val as f32;
+                MarginUnits::Viewport(val)
             }
         }
     }
@@ -374,6 +384,7 @@ impl UiStyleBits {
             match val {
                 SizeUnits::Pixels(pixels) => style.set_padding_left_px(pixels),
                 SizeUnits::Percentage(percentage) => style.set_padding_left_pc(percentage),
+                SizeUnits::Viewport(percentage) => style.set_padding_left_vp(percentage),
                 SizeUnits::Auto => style.set_padding_left_auto(),
             };
         }
@@ -382,6 +393,7 @@ impl UiStyleBits {
             match val {
                 SizeUnits::Pixels(pixels) => style.set_padding_right_px(pixels),
                 SizeUnits::Percentage(percentage) => style.set_padding_right_pc(percentage),
+                SizeUnits::Viewport(percentage) => style.set_padding_right_vp(percentage),
                 SizeUnits::Auto => style.set_padding_right_auto(),
             };
         }
@@ -390,6 +402,7 @@ impl UiStyleBits {
             match val {
                 SizeUnits::Pixels(pixels) => style.set_padding_top_px(pixels),
                 SizeUnits::Percentage(percentage) => style.set_padding_top_pc(percentage),
+                SizeUnits::Viewport(percentage) => style.set_padding_top_vp(percentage),
                 SizeUnits::Auto => style.set_padding_top_auto(),
             };
         }
@@ -398,6 +411,7 @@ impl UiStyleBits {
             match val {
                 SizeUnits::Pixels(pixels) => style.set_padding_bottom_px(pixels),
                 SizeUnits::Percentage(percentage) => style.set_padding_bottom_pc(percentage),
+                SizeUnits::Viewport(percentage) => style.set_padding_bottom_vp(percentage),
                 SizeUnits::Auto => style.set_padding_bottom_auto(),
             };
         }
@@ -406,6 +420,7 @@ impl UiStyleBits {
             match val {
                 SizeUnits::Pixels(pixels) => style.set_row_between_px(pixels),
                 SizeUnits::Percentage(percentage) => style.set_row_between_pc(percentage),
+                SizeUnits::Viewport(percentage) => style.set_row_between_vp(percentage),
                 SizeUnits::Auto => style.set_row_between_auto(),
             };
         }
@@ -414,6 +429,7 @@ impl UiStyleBits {
             match val {
                 SizeUnits::Pixels(pixels) => style.set_col_between_px(pixels),
                 SizeUnits::Percentage(percentage) => style.set_col_between_pc(percentage),
+                SizeUnits::Viewport(percentage) => style.set_col_between_vp(percentage),
                 SizeUnits::Auto => style.set_col_between_auto(),
             };
         }
@@ -439,6 +455,7 @@ impl UiStyleBits {
             match val {
                 SizeUnits::Pixels(pixels) => style.set_width_px(pixels),
                 SizeUnits::Percentage(percentage) => style.set_width_pc(percentage),
+                SizeUnits::Viewport(percentage) => style.set_width_vp(percentage),
                 SizeUnits::Auto => style.set_width_auto(),
             };
         }
@@ -447,6 +464,7 @@ impl UiStyleBits {
             match val {
                 SizeUnits::Pixels(pixels) => style.set_height_px(pixels),
                 SizeUnits::Percentage(percentage) => style.set_height_pc(percentage),
+                SizeUnits::Viewport(percentage) => style.set_height_vp(percentage),
                 SizeUnits::Auto => style.set_height_auto(),
             };
         }
@@ -455,6 +473,7 @@ impl UiStyleBits {
             match val {
                 SizeUnits::Pixels(pixels) => style.set_width_min_px(pixels),
                 SizeUnits::Percentage(percentage) => style.set_width_min_pc(percentage),
+                SizeUnits::Viewport(percentage) => style.set_width_min_vp(percentage),
                 SizeUnits::Auto => style.set_width_min_auto(),
             };
         }
@@ -463,6 +482,7 @@ impl UiStyleBits {
             match val {
                 SizeUnits::Pixels(pixels) => style.set_width_max_px(pixels),
                 SizeUnits::Percentage(percentage) => style.set_width_max_pc(percentage),
+                SizeUnits::Viewport(percentage) => style.set_width_max_vp(percentage),
                 SizeUnits::Auto => style.set_width_max_auto(),
             };
         }
@@ -471,6 +491,7 @@ impl UiStyleBits {
             match val {
                 SizeUnits::Pixels(pixels) => style.set_height_min_px(pixels),
                 SizeUnits::Percentage(percentage) => style.set_height_min_pc(percentage),
+                SizeUnits::Viewport(percentage) => style.set_height_min_vp(percentage),
                 SizeUnits::Auto => style.set_height_min_auto(),
             };
         }
@@ -479,6 +500,7 @@ impl UiStyleBits {
             match val {
                 SizeUnits::Pixels(pixels) => style.set_height_max_px(pixels),
                 SizeUnits::Percentage(percentage) => style.set_height_max_pc(percentage),
+                SizeUnits::Viewport(percentage) => style.set_height_max_vp(percentage),
                 SizeUnits::Auto => style.set_height_max_auto(),
             };
         }
@@ -487,6 +509,7 @@ impl UiStyleBits {
             match val {
                 MarginUnits::Pixels(pixels) => style.set_margin_left_px(pixels),
                 MarginUnits::Percentage(percentage) => style.set_margin_left_pc(percentage),
+                MarginUnits::Viewport(percentage) => style.set_margin_left_vp(percentage),
             };
         }
         if let Some(val_serde) = &self.margin_right {
@@ -494,6 +517,7 @@ impl UiStyleBits {
             match val {
                 MarginUnits::Pixels(pixels) => style.set_margin_right_px(pixels),
                 MarginUnits::Percentage(percentage) => style.set_margin_right_pc(percentage),
+                MarginUnits::Viewport(percentage) => style.set_margin_right_vp(percentage),
             };
         }
         if let Some(val_serde) = &self.margin_top {
@@ -501,6 +525,7 @@ impl UiStyleBits {
             match val {
                 MarginUnits::Pixels(pixels) => style.set_margin_top_px(pixels),
                 MarginUnits::Percentage(percentage) => style.set_margin_top_pc(percentage),
+                MarginUnits::Viewport(percentage) => style.set_margin_top_vp(percentage),
             };
         }
         if let Some(val_serde) = &self.margin_bottom {
@@ -508,6 +533,7 @@ impl UiStyleBits {
             match val {
                 MarginUnits::Pixels(pixels) => style.set_margin_bottom_px(pixels),
                 MarginUnits::Percentage(percentage) => style.set_margin_bottom_pc(percentage),
+                MarginUnits::Viewport(percentage) => style.set_margin_bottom_vp(percentage),
             };
         }
         if let Some(solid_override_serde) = &self.solid_override {
@@ -558,6 +584,7 @@ impl UiStyleBits {
             match val {
                 SizeUnits::Pixels(pixels) => style.set_size_px(pixels),
                 SizeUnits::Percentage(percentage) => style.set_size_pc(percentage),
+                SizeUnits::Viewport(percentage) => style.set_size_vp(percentage),
                 SizeUnits::Auto => panic!("unsupported"),
             };
         }
@@ -566,6 +593,7 @@ impl UiStyleBits {
             match val {
                 SizeUnits::Pixels(pixels) => style.set_size_min_px(pixels),
                 SizeUnits::Percentage(percentage) => style.set_size_min_pc(percentage),
+                SizeUnits::Viewport(percentage) => style.set_size_min_vp(percentage),
                 SizeUnits::Auto => panic!("unsupported"),
             };
         }
@@ -574,6 +602,7 @@ impl UiStyleBits {
             match val {
                 SizeUnits::Pixels(pixels) => style.set_size_max_px(pixels),
                 SizeUnits::Percentage(percentage) => style.set_size_max_pc(percentage),
+                SizeUnits::Viewport(percentage) => style.set_size_max_vp(percentage),
                 SizeUnits::Auto => panic!("unsupported"),
             };
         }
@@ -582,6 +611,7 @@ impl UiStyleBits {
             match val {
                 MarginUnits::Pixels(pixels) => style.set_margin_left_px(pixels),
                 MarginUnits::Percentage(percentage) => style.set_margin_left_pc(percentage),
+                MarginUnits::Viewport(percentage) => style.set_margin_left_vp(percentage),
             };
         }
         if let Some(val_serde) = &self.margin_right {
@@ -589,6 +619,7 @@ impl UiStyleBits {
             match val {
                 MarginUnits::Pixels(pixels) => style.set_margin_right_px(pixels),
                 MarginUnits::Percentage(percentage) => style.set_margin_right_pc(percentage),
+                MarginUnits::Viewport(percentage) => style.set_margin_right_vp(percentage),
             };
         }
         if let Some(val_serde) = &self.margin_top {
@@ -596,6 +627,7 @@ impl UiStyleBits {
             match val {
                 MarginUnits::Pixels(pixels) => style.set_margin_top_px(pixels),
                 MarginUnits::Percentage(percentage) => style.set_margin_top_pc(percentage),
+                MarginUnits::Viewport(percentage) => style.set_margin_top_vp(percentage),
             };
         }
         if let Some(val_serde) = &self.margin_bottom {
@@ -603,6 +635,7 @@ impl UiStyleBits {
             match val {
                 MarginUnits::Pixels(pixels) => style.set_margin_bottom_px(pixels),
                 MarginUnits::Percentage(percentage) => style.set_margin_bottom_pc(percentage),
+                MarginUnits::Viewport(percentage) => style.set_margin_bottom_vp(percentage),
             };
         }
         if let Some(val_serde) = &self.self_halign {
@@ -629,6 +662,7 @@ impl UiStyleBits {
             match val {
                 SizeUnits::Pixels(pixels) => style.set_width_px(pixels),
                 SizeUnits::Percentage(percentage) => style.set_width_pc(percentage),
+                SizeUnits::Viewport(percentage) => style.set_width_vp(percentage),
                 SizeUnits::Auto => style.set_width_auto(),
             };
         }
@@ -637,6 +671,7 @@ impl UiStyleBits {
             match val {
                 SizeUnits::Pixels(pixels) => style.set_height_px(pixels),
                 SizeUnits::Percentage(percentage) => style.set_height_pc(percentage),
+                SizeUnits::Viewport(percentage) => style.set_height_vp(percentage),
                 SizeUnits::Auto => style.set_height_auto(),
             };
         }
@@ -645,6 +680,7 @@ impl UiStyleBits {
             match val {
                 SizeUnits::Pixels(pixels) => style.set_width_min_px(pixels),
                 SizeUnits::Percentage(percentage) => style.set_width_min_pc(percentage),
+                SizeUnits::Viewport(percentage) => style.set_width_min_vp(percentage),
                 SizeUnits::Auto => style.set_width_min_auto(),
             };
         }
@@ -653,6 +689,7 @@ impl UiStyleBits {
             match val {
                 SizeUnits::Pixels(pixels) => style.set_width_max_px(pixels),
                 SizeUnits::Percentage(percentage) => style.set_width_max_pc(percentage),
+                SizeUnits::Viewport(percentage) => style.set_width_max_vp(percentage),
                 SizeUnits::Auto => style.set_width_max_auto(),
             };
         }
@@ -661,6 +698,7 @@ impl UiStyleBits {
             match val {
                 SizeUnits::Pixels(pixels) => style.set_height_min_px(pixels),
                 SizeUnits::Percentage(percentage) => style.set_height_min_pc(percentage),
+                SizeUnits::Viewport(percentage) => style.set_height_min_vp(percentage),
                 SizeUnits::Auto => style.set_height_min_auto(),
             };
         }
@@ -669,6 +707,7 @@ impl UiStyleBits {
             match val {
                 SizeUnits::Pixels(pixels) => style.set_height_max_px(pixels),
                 SizeUnits::Percentage(percentage) => style.set_height_max_pc(percentage),
+                SizeUnits::Viewport(percentage) => style.set_height_max_vp(percentage),
                 SizeUnits::Auto => style.set_height_max_auto(),
             };
         }
@@ -677,6 +716,7 @@ impl UiStyleBits {
             match val {
                 MarginUnits::Pixels(pixels) => style.set_margin_left_px(pixels),
                 MarginUnits::Percentage(percentage) => style.set_margin_left_pc(percentage),
+                MarginUnits::Viewport(percentage) => style.set_margin_left_vp(percentage),
             };
         }
         if let Some(val_serde) = &self.margin_right {
@@ -684,6 +724,7 @@ impl UiStyleBits {
             match val {
                 MarginUnits::Pixels(pixels) => style.set_margin_right_px(pixels),
                 MarginUnits::Percentage(percentage) => style.set_margin_right_pc(percentage),
+                MarginUnits::Viewport(percentage) => style.set_margin_right_vp(percentage),
             };
         }
         if let Some(val_serde) = &self.margin_top {
@@ -691,6 +732,7 @@ impl UiStyleBits {
             match val {
                 MarginUnits::Pixels(pixels) => style.set_margin_top_px(pixels),
                 MarginUnits::Percentage(percentage) => style.set_margin_top_pc(percentage),
+                MarginUnits::Viewport(percentage) => style.set_margin_top_vp(percentage),
             };
         }
         if let Some(val_serde) = &self.margin_bottom {
@@ -698,6 +740,7 @@ impl UiStyleBits {
             match val {
                 MarginUnits::Pixels(pixels) => style.set_margin_bottom_px(pixels),
                 MarginUnits::Percentage(percentage) => style.set_margin_bottom_pc(percentage),
+                MarginUnits::Viewport(percentage) => style.set_margin_bottom_vp(percentage),
             };
         }
         if let Some(solid_override_serde) = &self.solid_override {
@@ -746,6 +789,7 @@ impl UiStyleBits {
             match val {
                 SizeUnits::Pixels(pixels) => style.set_padding_left_px(pixels),
                 SizeUnits::Percentage(percentage) => style.set_padding_left_pc(percentage),
+                SizeUnits::Viewport(percentage) => style.set_padding_left_vp(percentage),
                 SizeUnits::Auto => style.set_padding_left_auto(),
             };
         }
@@ -754,6 +798,7 @@ impl UiStyleBits {
             match val {
                 SizeUnits::Pixels(pixels) => style.set_padding_right_px(pixels),
                 SizeUnits::Percentage(percentage) => style.set_padding_right_pc(percentage),
+                SizeUnits::Viewport(percentage) => style.set_padding_right_vp(percentage),
                 SizeUnits::Auto => style.set_padding_right_auto(),
             };
         }
@@ -762,6 +807,7 @@ impl UiStyleBits {
             match val {
                 SizeUnits::Pixels(pixels) => style.set_padding_top_px(pixels),
                 SizeUnits::Percentage(percentage) => style.set_padding_top_pc(percentage),
+                SizeUnits::Viewport(percentage) => style.set_padding_top_vp(percentage),
                 SizeUnits::Auto => style.set_padding_top_auto(),
             };
         }
@@ -770,6 +816,7 @@ impl UiStyleBits {
             match val {
                 SizeUnits::Pixels(pixels) => style.set_padding_bottom_px(pixels),
                 SizeUnits::Percentage(percentage) => style.set_padding_bottom_pc(percentage),
+                SizeUnits::Viewport(percentage) => style.set_padding_bottom_vp(percentage),
                 SizeUnits::Auto => style.set_padding_bottom_auto(),
             };
         }
@@ -778,6 +825,7 @@ impl UiStyleBits {
             match val {
                 SizeUnits::Pixels(pixels) => style.set_row_between_px(pixels),
                 SizeUnits::Percentage(percentage) => style.set_row_between_pc(percentage),
+                SizeUnits::Viewport(percentage) => style.set_row_between_vp(percentage),
                 SizeUnits::Auto => style.set_row_between_auto(),
             };
         }
@@ -786,6 +834,7 @@ impl UiStyleBits {
             match val {
                 SizeUnits::Pixels(pixels) => style.set_col_between_px(pixels),
                 SizeUnits::Percentage(percentage) => style.set_col_between_pc(percentage),
+                SizeUnits::Viewport(percentage) => style.set_col_between_vp(percentage),
                 SizeUnits::Auto => style.set_col_between_auto(),
             };
         }

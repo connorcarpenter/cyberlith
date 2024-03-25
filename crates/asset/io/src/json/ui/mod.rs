@@ -136,6 +136,7 @@ pub(crate) enum PositionTypeJson {
 pub(crate) enum SizeUnitsJson {
     Pixels(f32),
     Percentage(f32),
+    Viewport(f32),
     Auto,
 }
 
@@ -144,6 +145,7 @@ pub(crate) enum SizeUnitsJson {
 pub(crate) enum MarginUnitsJson {
     Pixels(f32),
     Percentage(f32),
+    Viewport(f32),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

@@ -57,6 +57,12 @@ pub enum MarginUnits {
     /// A percentage of the (parent's width - parent's padding - margin) when applied to left, right properties.
     /// A percentage of the (parent's height - parent's padding - margin) when applied to top, bottom properties.
     Percentage(f32),
+
+    /// A percentage of the viewport dimension.
+    ///
+    /// A percentage of the viewport's width when applied to width properties.
+    /// A percentage of the viewport's height when applied to height properties.
+    Viewport(f32),
 }
 
 impl Default for MarginUnits {
@@ -71,29 +77,32 @@ impl MarginUnits {
             (_, SizeUnits::Auto) => {}
             (MarginUnits::Pixels(val), SizeUnits::Pixels(size)) => *val += size,
             (MarginUnits::Percentage(val), SizeUnits::Percentage(size)) => *val += size,
+            (MarginUnits::Viewport(val), SizeUnits::Viewport(size)) => *val += size,
             (_, _) => {}
         }
     }
 
     /// Returns the units converted to pixels or a provided default.
-    pub fn to_px(&self, parent_value: f32, parent_padding: f32) -> f32 {
+    pub fn to_px(&self, viewport_value: f32, parent_value: f32, parent_padding: f32) -> f32 {
         match self {
             MarginUnits::Pixels(pixels) => *pixels,
             MarginUnits::Percentage(percentage) => {
                 percentage_calc(*percentage, parent_value, parent_padding)
             }
+            MarginUnits::Viewport(percentage) => percentage_calc(*percentage, viewport_value, 0.0),
         }
     }
 
     pub fn to_px_clamped(
         &self,
+        viewport_value: f32,
         parent_value: f32,
         parent_padding: f32,
         min: MarginUnits,
         max: MarginUnits,
     ) -> f32 {
-        let min = min.to_px(parent_value, parent_padding);
-        let max = max.to_px(parent_value, parent_padding);
+        let min = min.to_px(viewport_value, parent_value, parent_padding);
+        let max = max.to_px(viewport_value, parent_value, parent_padding);
 
         match self {
             MarginUnits::Pixels(pixels) => pixels.min(max).max(min),
@@ -102,6 +111,9 @@ impl MarginUnits {
                     .min(max)
                     .max(min)
             }
+            MarginUnits::Viewport(percentage) => percentage_calc(*percentage, viewport_value, 0.0)
+                .min(max)
+                .max(min),
         }
     }
 
@@ -115,6 +127,11 @@ impl MarginUnits {
                 MarginUnits::Percentage(min),
                 MarginUnits::Percentage(max),
             ) => MarginUnits::Percentage(val.min(max).max(min)),
+            (
+                MarginUnits::Viewport(val),
+                MarginUnits::Viewport(min),
+                MarginUnits::Viewport(max),
+            ) => MarginUnits::Viewport(val.min(max).max(min)),
             _ => *self,
         }
     }
@@ -128,6 +145,11 @@ impl MarginUnits {
     pub fn is_percentage(&self) -> bool {
         matches!(self, MarginUnits::Percentage(_))
     }
+
+    /// Returns true if the value is a viewport percentage.
+    pub fn is_viewport(&self) -> bool {
+        matches!(self, MarginUnits::Viewport(_))
+    }
 }
 
 /// Units which describe spacing and size.
@@ -140,6 +162,13 @@ pub enum SizeUnits {
     /// A percentage of the (parent's width - parent's padding - margin - border) when applied to width properties.
     /// A percentage of the (parent's height - parent's padding - margin - border) when applied to height properties.
     Percentage(f32),
+
+    /// A percentage of the viewport dimension.
+    ///
+    /// A percentage of the viewport's width when applied to width properties.
+    /// A percentage of the viewport's height when applied to height properties.
+    Viewport(f32),
+
     /// Automatically determine the value.
     ///
     /// When applied to size (width, height) Auto will either size to fit its children, or if there are no children
@@ -150,26 +179,28 @@ pub enum SizeUnits {
 
 impl SizeUnits {
     /// Returns the units converted to pixels or a provided default.
-    pub fn to_px(&self, parent_value: f32, parent_padding: f32, default: f32) -> f32 {
+    pub fn to_px(&self, viewport_value: f32, parent_value: f32, parent_padding: f32, default: f32) -> f32 {
         match self {
             SizeUnits::Pixels(pixels) => *pixels,
             SizeUnits::Percentage(percentage) => {
                 percentage_calc(*percentage, parent_value, parent_padding)
             }
+            SizeUnits::Viewport(percentage) => percentage_calc(*percentage, viewport_value, 0.0),
             SizeUnits::Auto => default,
         }
     }
 
     pub fn to_px_clamped(
         &self,
+        viewport_value: f32,
         parent_value: f32,
         parent_padding: f32,
         default: f32,
         min: SizeUnits,
         max: SizeUnits,
     ) -> f32 {
-        let min = min.to_px(parent_value, parent_padding, f32::MIN);
-        let max = max.to_px(parent_value, parent_padding, f32::MAX);
+        let min = min.to_px(viewport_value, parent_value, parent_padding, f32::MIN);
+        let max = max.to_px(viewport_value, parent_value, parent_padding, f32::MAX);
 
         match self {
             SizeUnits::Pixels(pixels) => pixels.min(max).max(min),
@@ -178,6 +209,9 @@ impl SizeUnits {
                     .min(max)
                     .max(min)
             }
+            SizeUnits::Viewport(percentage) => percentage_calc(*percentage, viewport_value, 0.0)
+                .min(max)
+                .max(min),
             SizeUnits::Auto => default.min(max).max(min),
         }
     }
@@ -192,6 +226,11 @@ impl SizeUnits {
                 SizeUnits::Percentage(min),
                 SizeUnits::Percentage(max),
             ) => SizeUnits::Percentage(val.min(max).max(min)),
+            (
+                SizeUnits::Viewport(val),
+                SizeUnits::Viewport(min),
+                SizeUnits::Viewport(max),
+            ) => SizeUnits::Viewport(val.min(max).max(min)),
             _ => *self,
         }
     }
@@ -204,6 +243,11 @@ impl SizeUnits {
     /// Returns true if the value is a percentage.
     pub fn is_percentage(&self) -> bool {
         matches!(self, SizeUnits::Percentage(_))
+    }
+
+    /// Returns true if the value is a viewport percentage.
+    pub fn is_viewport(&self) -> bool {
+        matches!(self, SizeUnits::Viewport(_))
     }
 
     /// Returns true if the value is auto.
