@@ -141,7 +141,11 @@ pub fn ui_receive_input(ui: &mut Ui, input: UiInput) {
     match input {
         UiInput::Mouse(x, y, left_pressed) => {
             ui.clear_hover();
-            ui_update_hover(ui, &Ui::ROOT_NODE_ID, x, y, (0.0, 0.0));
+
+            for node_id in 0..ui.store.nodes.len() {
+                let node_id = NodeId::from_usize(node_id);
+                ui_update_hover(ui, &node_id, x, y);
+            }
 
             if left_pressed {
                     if let Some(hover_node) = ui.get_hover() {
@@ -152,6 +156,9 @@ pub fn ui_receive_input(ui: &mut Ui, input: UiInput) {
                             }
                             WidgetKind::Textbox => {
                                 ui.set_selected_node(Some(hover_node));
+
+                                let (width, _, posx, _, _) = ui.cache.bounds(&hover_node).unwrap();
+                                ui.textbox_mut(&hover_node).unwrap().recv_click(x, posx, width);
                             }
                             _ => {}
                         }
@@ -254,13 +261,11 @@ pub fn ui_receive_input(ui: &mut Ui, input: UiInput) {
     }
 }
 
-// this currently requires recursion because node layout is additive ... one day we should fix this
 fn ui_update_hover(
     ui: &mut Ui,
     id: &NodeId,
     mouse_x: f32,
     mouse_y: f32,
-    parent_position: (f32, f32),
 ) {
     let Some(node) = ui.store.get_node(&id) else {
         warn!("no panel for id: {:?}", id);
@@ -271,34 +276,18 @@ fn ui_update_hover(
         return;
     }
 
-    let Some((width, height, child_offset_x, child_offset_y)) = ui.cache.bounds(id) else {
+    let Some((width, height, child_offset_x, child_offset_y, _)) = ui.cache.bounds(id) else {
         warn!("no bounds for id: {:?}", id);
         return;
     };
 
-    let child_position = (
-        parent_position.0 + child_offset_x,
-        parent_position.1 + child_offset_y,
-    );
-
     match node.widget_kind() {
-        WidgetKind::Panel => {
-            let Some(panel_ref) = ui.store.panel_ref(id) else {
-                panic!("no panel ref for node_id: {:?}", id);
-            };
-
-            // update children
-            let child_ids = panel_ref.children.clone();
-            for child_id in child_ids {
-                ui_update_hover(ui, &child_id, mouse_x, mouse_y, child_position);
-            }
-        }
         WidgetKind::Button => {
             let Some(button_mut) = ui.store.button_mut(id) else {
                 panic!("no button mut for node_id: {:?}", id);
             };
             if button_mut.mouse_is_inside(
-                (width, height, child_position.0, child_position.1),
+                (width, height, child_offset_x, child_offset_y),
                 mouse_x, mouse_y,
             ) {
                 ui.receive_hover(id);
@@ -310,7 +299,7 @@ fn ui_update_hover(
                 panic!("no textbox mut for node_id: {:?}", id);
             };
             if textbox_mut.mouse_is_inside(
-                (width, height, child_position.0, child_position.1),
+                (width, height, child_offset_x, child_offset_y),
                 mouse_x, mouse_y,
             ) {
                 ui.receive_hover(id);

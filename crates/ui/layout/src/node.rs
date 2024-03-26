@@ -57,7 +57,7 @@ pub trait Node: Sized {
             })
             .expect("Failed to get height for node");
 
-        cache.set_bounds(self, cache.posx(self), cache.posy(self), width, height);
+        cache.set_bounds(self, cache.posx(self), cache.posy(self), 0.0, width, height);
 
         layout(self, LayoutType::Column, (width, height), height, width, cache, tree, store, text_measurer)
     }

@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use bevy_log::warn;
 
 use asset_id::AssetId;
 use input::CursorIcon;
@@ -8,7 +9,7 @@ use render_api::{
     shapes::UnitSquare,
 };
 use storage::{Handle, Storage};
-use ui_layout::{Node, SizeUnits, TextMeasurer};
+use ui_layout::{Cache, Node, SizeUnits, TextMeasurer};
 
 use crate::{cache::LayoutCache, node::UiNode, node_id::NodeId, panel::{Panel, PanelMut, PanelStyle, PanelStyleMut}, store::UiStore, style::{NodeStyle, StyleId, WidgetStyle}, text::{TextStyle, TextStyleMut}, widget::{Widget, WidgetKind}, input::ui_receive_input, Button, ButtonStyle, ButtonStyleMut, UiEvent, UiInput, button::NodeActiveState, Text, Textbox, TextboxStyleMut, TextboxStyle, Navigation};
 
@@ -345,6 +346,7 @@ impl Ui {
 
         // this calculates all the rects in cache_mut
         Self::ROOT_NODE_ID.layout(cache_mut, panels_ref, panels_ref, text_measurer);
+        finalize_rects(self, &Self::ROOT_NODE_ID, (0.0, 0.0, 0.0))
 
         // print_node(&Self::ROOT_PANEL_ID, &self.cache, &self.panels, true, false, "".to_string());
     }
@@ -490,5 +492,57 @@ impl Globals {
         }
         self.text_color = color;
         self.text_color_handle_opt = None;
+    }
+}
+
+// recurses through tree and sets the bounds of each node to their absolute position
+fn finalize_rects(
+    ui: &mut Ui,
+    id: &NodeId,
+    parent_position: (f32, f32, f32),
+) {
+    let Some(node) = ui.store.get_node(&id) else {
+        warn!("no panel for id: {:?}", id);
+        return;
+    };
+
+    let Some((width, height, child_offset_x, child_offset_y, _)) = ui.cache.bounds(id) else {
+        warn!("no bounds for id: {:?}", id);
+        return;
+    };
+
+    let child_position = (
+        parent_position.0 + child_offset_x,
+        parent_position.1 + child_offset_y,
+        parent_position.2 + 0.1,
+    );
+
+    ui.cache.set_bounds(id, child_position.0, child_position.1, child_position.2, width, height);
+
+    match node.widget_kind() {
+        WidgetKind::Panel => {
+            let Some(panel_ref) = ui.store.panel_ref(id) else {
+                panic!("no panel ref for node_id: {:?}", id);
+            };
+
+            // update children
+            let child_ids = panel_ref.children.clone();
+            for child_id in child_ids {
+                finalize_rects(ui, &child_id, child_position);
+            }
+        }
+        WidgetKind::Button => {
+            let Some(button_ref) = ui.store.button_ref(id) else {
+                panic!("no button ref for node_id: {:?}", id);
+            };
+            let panel_ref = &button_ref.panel;
+
+            // update children
+            let child_ids = panel_ref.children.clone();
+            for child_id in child_ids {
+                finalize_rects(ui, &child_id, child_position);
+            }
+        }
+        _ => {}
     }
 }

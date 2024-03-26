@@ -19,7 +19,7 @@ pub trait Cache {
     fn posy(&self, node: &Self::Node) -> f32;
 
     /// Sets the cached position and size of the given node.
-    fn set_bounds(&mut self, node: &Self::Node, posx: f32, posy: f32, width: f32, height: f32);
+    fn set_bounds(&mut self, node: &Self::Node, posx: f32, posy: f32, posz: f32, width: f32, height: f32);
 }
 
 /// Helper trait for getting/setting node position/size in a direction agnostic way.
@@ -34,8 +34,8 @@ pub(crate) trait CacheExt: Cache {
         cross: f32,
     ) {
         match parent_layout_type {
-            LayoutType::Row => self.set_bounds(node, main_pos, cross_pos, main, cross),
-            LayoutType::Column => self.set_bounds(node, cross_pos, main_pos, cross, main),
+            LayoutType::Row => self.set_bounds(node, main_pos, cross_pos, 0.0, main, cross),
+            LayoutType::Column => self.set_bounds(node, cross_pos, main_pos, 0.0, cross, main),
         }
     }
 }

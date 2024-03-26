@@ -80,11 +80,15 @@ impl Textbox {
                 self.cursor += 1;
             },
             UiInputEvent::Backspace => {
-                self.text.remove(self.cursor - 1);
-                self.cursor -= 1;
+                if self.cursor > 0 {
+                    self.text.remove(self.cursor - 1);
+                    self.cursor -= 1;
+                }
             },
             UiInputEvent::Delete => {
-                self.text.remove(self.cursor);
+                if self.cursor < self.text.len() {
+                    self.text.remove(self.cursor);
+                }
             },
             UiInputEvent::Home => {
                 self.cursor = 0;
@@ -94,6 +98,10 @@ impl Textbox {
             },
             _ => panic!("Unhandled input event for textbox: {:?}", event),
         }
+    }
+
+    pub fn recv_click(&mut self, click_x: f32, position_x: f32, width: f32) {
+
     }
 }
 

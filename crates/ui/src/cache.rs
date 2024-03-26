@@ -6,7 +6,8 @@ use crate::NodeId;
 
 #[derive(Default)]
 pub struct LayoutCache {
-    rect: HashMap<NodeId, (f32, f32, f32, f32)>,
+    // width, height, x, y, z
+    rect: HashMap<NodeId, (f32, f32, f32, f32, f32)>,
 }
 
 impl LayoutCache {
@@ -16,10 +17,10 @@ impl LayoutCache {
         }
     }
 
-    pub fn bounds(&self, node: &NodeId) -> Option<(f32, f32, f32, f32)> {
+    pub fn bounds(&self, node: &NodeId) -> Option<(f32, f32, f32, f32, f32)> {
         self.rect
             .get(node)
-            .map(|(width, height, posx, posy)| (*width, *height, *posx, *posy))
+            .map(|(width, height, posx, posy, posz)| (*width, *height, *posx, *posy, *posz))
     }
 }
 
@@ -58,16 +59,17 @@ impl Cache for LayoutCache {
         0.0
     }
 
-    fn set_bounds(&mut self, node: &Self::Node, posx: f32, posy: f32, width: f32, height: f32) {
+    fn set_bounds(&mut self, node: &Self::Node, posx: f32, posy: f32, posz: f32, width: f32, height: f32) {
         if let Some(rect) = self.rect.get_mut(&node.key()) {
             //info!("setting bounds for node: {:?}", node.key());
             rect.0 = width;
             rect.1 = height;
             rect.2 = posx;
             rect.3 = posy;
+            rect.4 = posz;
         } else {
             //info!("inserting bounds for node: {:?}", node.key());
-            self.rect.insert(node.key(), (width, height, posx, posy));
+            self.rect.insert(node.key(), (width, height, posx, posy, posz));
         }
     }
 }

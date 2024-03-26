@@ -380,16 +380,18 @@ impl AssetRenderer {
         let ui = ui_data.get_ui_ref();
         let text_icon_handle = ui_data.get_icon_handle();
 
-        draw_ui_node(
-            render_frame,
-            render_layer_opt,
-            asset_store,
-            blinkiness,
-            &ui,
-            &text_icon_handle,
-            &Ui::ROOT_NODE_ID,
-            (0.0, 0.0, 0.0),
-        );
+        for node_id in 0..ui.store.nodes.len() {
+            let node_id = NodeId::from_usize(node_id);
+            draw_ui_node(
+                render_frame,
+                render_layer_opt,
+                asset_store,
+                blinkiness,
+                &ui,
+                &text_icon_handle,
+                &node_id,
+            );
+        }
     }
 }
 
@@ -401,9 +403,8 @@ fn draw_ui_node(
     ui: &Ui,
     text_icon_handle: &AssetHandle<IconData>,
     id: &NodeId,
-    parent_position: (f32, f32, f32),
 ) {
-    let Some((width, height, child_offset_x, child_offset_y)) = ui.cache.bounds(id) else {
+    let Some((width, height, child_offset_x, child_offset_y, child_offset_z)) = ui.cache.bounds(id) else {
         warn!("no bounds for id: {:?}", id);
         return;
     };
@@ -414,9 +415,9 @@ fn draw_ui_node(
     };
 
     let mut transform = Transform::from_xyz(
-        parent_position.0 + child_offset_x,
-        parent_position.1 + child_offset_y,
-        parent_position.2,
+        child_offset_x,
+        child_offset_y,
+        child_offset_z,
     );
     transform.scale.x = width;
     transform.scale.y = height;
@@ -427,10 +428,7 @@ fn draw_ui_node(
                 draw_ui_panel(
                     render_frame,
                     render_layer_opt,
-                    asset_store,
-                    blinkiness,
                     ui,
-                    text_icon_handle,
                     id,
                     &transform,
                 );
@@ -450,10 +448,7 @@ fn draw_ui_node(
                 draw_ui_button(
                     render_frame,
                     render_layer_opt,
-                    asset_store,
-                    blinkiness,
                     ui,
-                    text_icon_handle,
                     id,
                     &transform,
                 );
@@ -478,10 +473,7 @@ fn draw_ui_panel(
     //self was Panel
     render_frame: &mut RenderFrame,
     render_layer_opt: Option<&RenderLayer>,
-    asset_store: &ProcessedAssetStore,
-    blinkiness: &Blinkiness,
     ui: &Ui,
-    text_icon_handle: &AssetHandle<IconData>,
     node_id: &NodeId,
     transform: &Transform,
 ) {
@@ -504,26 +496,6 @@ fn draw_ui_panel(
         warn!("no color handle for panel"); // probably will need to do better debugging later
         return;
     };
-
-    // draw children
-    for child_id in panel_ref.children.iter() {
-        //info!("drawing child: {:?}", child);
-        draw_ui_node(
-            // TODO: make this configurable?
-            render_frame,
-            render_layer_opt,
-            asset_store,
-            blinkiness,
-            ui,
-            text_icon_handle,
-            child_id,
-            (
-                transform.translation.x,
-                transform.translation.y,
-                transform.translation.z + 0.1,
-            ),
-        );
-    }
 }
 
 fn draw_ui_text(
@@ -582,10 +554,7 @@ fn draw_ui_button(
     //self was Button
     render_frame: &mut RenderFrame,
     render_layer_opt: Option<&RenderLayer>,
-    asset_store: &ProcessedAssetStore,
-    blinkiness: &Blinkiness,
     ui: &Ui,
-    text_icon_handle: &AssetHandle<IconData>,
     node_id: &NodeId,
     transform: &Transform,
 ) {
@@ -609,26 +578,6 @@ fn draw_ui_button(
         warn!("no color handle for button"); // probably will need to do better debugging later
         return;
     };
-
-    // draw children
-    for child_id in button_ref.panel.children.iter() {
-        //info!("drawing child: {:?}", child);
-        draw_ui_node(
-            // TODO: make this configurable?
-            render_frame,
-            render_layer_opt,
-            asset_store,
-            blinkiness,
-            ui,
-            text_icon_handle,
-            child_id,
-            (
-                transform.translation.x,
-                transform.translation.y,
-                transform.translation.z + 0.1,
-            ),
-        );
-    }
 }
 
 fn draw_ui_textbox(
