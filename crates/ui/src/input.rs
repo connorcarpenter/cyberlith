@@ -95,6 +95,12 @@ impl UiInputConverter {
                 InputEvent::KeyPressed(Key::Delete, _) => {
                     Some(UiInputEvent::Delete)
                 }
+                InputEvent::KeyPressed(Key::Home, _) => {
+                    Some(UiInputEvent::Home)
+                }
+                InputEvent::KeyPressed(Key::End, _) => {
+                    Some(UiInputEvent::End)
+                }
                 InputEvent::KeyPressed(key, modifiers) => {
                     if key.is_char() {
                         Some(UiInputEvent::Key(key.to_char(modifiers.shift).unwrap()))
@@ -128,7 +134,7 @@ pub enum UiInput {
 pub enum UiInputEvent {
     Up, Down, Left, Right,
     SelectPressed, SelectReleased,
-    Back, Backspace, Delete, Key(char),
+    Back, Backspace, Delete, Key(char), Home, End,
 }
 
 pub fn ui_receive_input(ui: &mut Ui, input: UiInput) {
@@ -162,15 +168,26 @@ pub fn ui_receive_input(ui: &mut Ui, input: UiInput) {
             }
         }
         UiInput::Events(events) => {
-            let hover_node = ui.get_hover();
+            let mut hover_node = ui.get_hover();
             if hover_node.is_none() {
                 let Some(first_input_id) = ui.get_first_input() else {
                     panic!("no first input set, cannot process input events without somewhere to start");
                 };
                 ui.receive_hover(&first_input_id);
-                return;
+                hover_node = Some(first_input_id);
             }
             let hover_node = hover_node.unwrap();
+            let textbox_opt = {
+                if let Some(selected_id) = ui.get_selected_node() {
+                    if ui.node_ref(&selected_id).unwrap().widget_kind() == WidgetKind::Textbox {
+                        Some(selected_id)
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            };
             for event in events {
                 match event {
                     UiInputEvent::Up => {
@@ -184,13 +201,21 @@ pub fn ui_receive_input(ui: &mut Ui, input: UiInput) {
                         }
                     }
                     UiInputEvent::Left => {
-                        if let Some(next_id) = ui.nav_get_left_id(&hover_node) {
-                            ui.receive_hover(&next_id);
+                        if let Some(textbox_id) = textbox_opt {
+                            ui.textbox_mut(&textbox_id).unwrap().recv_input(event);
+                        } else {
+                            if let Some(next_id) = ui.nav_get_left_id(&hover_node) {
+                                ui.receive_hover(&next_id);
+                            }
                         }
                     }
                     UiInputEvent::Right => {
-                        if let Some(next_id) = ui.nav_get_right_id(&hover_node) {
-                            ui.receive_hover(&next_id);
+                        if let Some(textbox_id) = textbox_opt {
+                            ui.textbox_mut(&textbox_id).unwrap().recv_input(event);
+                        } else {
+                            if let Some(next_id) = ui.nav_get_right_id(&hover_node) {
+                                ui.receive_hover(&next_id);
+                            }
                         }
                     }
                     UiInputEvent::SelectPressed => {
@@ -218,18 +243,9 @@ pub fn ui_receive_input(ui: &mut Ui, input: UiInput) {
                     UiInputEvent::Back => {
 
                     }
-                    UiInputEvent::Backspace => {
-
-                    }
-                    UiInputEvent::Delete => {
-
-                    }
-                    UiInputEvent::Key(key_char) => {
-                        match ui.node_ref(&hover_node).unwrap().widget_kind() {
-                            WidgetKind::Textbox => {
-                                info!("textbox key: {:?}", key_char);
-                            }
-                            _ => {}
+                    UiInputEvent::Backspace | UiInputEvent::Delete | UiInputEvent::Key(_) | UiInputEvent::Home | UiInputEvent::End => {
+                        if let Some(textbox_id) = textbox_opt {
+                            ui.textbox_mut(&textbox_id).unwrap().recv_input(event);
                         }
                     }
                 }

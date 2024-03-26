@@ -255,6 +255,7 @@ impl AssetManager {
             material_handle,
             transform,
             text,
+            None,
         );
     }
 

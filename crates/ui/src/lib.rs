@@ -18,7 +18,7 @@ pub use ui::Ui;
 pub use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid, TextMeasurer};
 
 // just for ui_io
-pub use button::{Button, ButtonMut, ButtonStyle, ButtonStyleMut, Navigation};
+pub use button::{Button, ButtonMut, ButtonStyle, ButtonStyleMut, Navigation, NodeActiveState};
 pub use events::{UiEvent, UiEventHandler};
 pub use node::UiNode;
 pub use panel::{Panel, PanelMut, PanelStyle, PanelStyleMut};

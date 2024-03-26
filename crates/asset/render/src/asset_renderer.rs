@@ -6,7 +6,7 @@ use render_api::{
     resources::RenderFrame,
 };
 use storage::Handle;
-use ui::{NodeId, Ui, WidgetKind};
+use ui::{NodeActiveState, NodeId, Ui, WidgetKind};
 
 use crate::{
     asset_dependency::AssetComponentHandle, processed_asset_store::ProcessedAssetStore,
@@ -89,6 +89,7 @@ impl AssetRenderer {
         mat_handle: &Handle<CpuMaterial>,
         transform: &Transform,
         text: &str,
+        cursor_opt: Option<usize>,
     ) {
         // info!("drawing text: {}, transform: {:?}, text_height: {:?}", text, transform);
 
@@ -106,7 +107,9 @@ impl AssetRenderer {
         cursor.scale.y = transform.scale.y / 200.0;
         cursor.scale.x = cursor.scale.y;
 
-        for c in text.chars() {
+        let mut cursor_line_x = if cursor_opt.is_some() { cursor.translation.x - 4.0 } else { 0.0 };
+
+        for (char_index, c) in text.chars().enumerate() {
             let c: u8 = if c.is_ascii() {
                 c as u8
             } else {
@@ -140,7 +143,40 @@ impl AssetRenderer {
             );
 
             cursor.translation.x += frame_actual_width;
-            cursor.translation.x += 6.0 * cursor.scale.x; // between character spacing - TODO: replace with config
+            cursor.translation.x += 4.0 * cursor.scale.x; // between character spacing - TODO: replace with config
+            if let Some(cursor_line_id) = cursor_opt {
+                if char_index + 1 == cursor_line_id {
+                    cursor_line_x = cursor.translation.x;
+                }
+            }
+            cursor.translation.x += 4.0 * cursor.scale.x; // between character spacing - TODO: replace with config
+        }
+
+        if cursor_opt.is_some() {
+
+            let frame_index = (124 - 32) as usize;
+
+            // get character width in order to move cursor appropriately
+            let frame_raw_width = asset_store
+                .get_icon_frame_width(icon_handle, frame_index)
+                .unwrap_or(0.0);
+
+            let frame_actual_width = frame_raw_width * cursor.scale.x;
+            let half_frame_actual_width = frame_actual_width * 0.5;
+
+            let mut final_position = cursor.clone();
+            final_position.translation.x = cursor_line_x - 1.0;
+            final_position.translation.x += half_frame_actual_width;
+
+            Self::draw_icon_with_material(
+                render_frame,
+                render_layer_opt,
+                asset_store,
+                icon_handle,
+                mat_handle,
+                frame_index,
+                &final_position,
+            );
         }
     }
 
@@ -533,6 +569,7 @@ fn draw_ui_text(
         text_color_handle,
         transform,
         &text_ref.text,
+        None,
     );
 }
 
@@ -591,9 +628,9 @@ fn draw_ui_textbox(
     //self was Textbox
     render_frame: &mut RenderFrame,
     render_layer_opt: Option<&RenderLayer>,
-    _asset_store: &ProcessedAssetStore,
+    asset_store: &ProcessedAssetStore,
     ui: &Ui,
-    _text_icon_handle: &AssetHandle<IconData>,
+    text_icon_handle: &AssetHandle<IconData>,
     node_id: &NodeId,
     transform: &Transform,
 ) {
@@ -614,7 +651,33 @@ fn draw_ui_textbox(
             render_frame.draw_mesh(render_layer_opt, box_handle, &mat_handle, &transform);
         }
     } else {
-        warn!("no color handle for button"); // probably will need to do better debugging later
+        warn!("no color handle for textbox"); // probably will need to do better debugging later
         return;
     };
+
+    // draw text
+    let Some(text_color_handle) = ui.globals.get_text_color_handle() else {
+        panic!("No text color handle found in globals");
+    };
+
+    let mut new_transform = transform.clone();
+    new_transform.translation.x += 8.0;
+    new_transform.translation.z += 0.05;
+
+    let cursor_opt = if active_state == NodeActiveState::Active {
+        Some(textbox_ref.cursor)
+    } else {
+        None
+    };
+
+    AssetRenderer::draw_text(
+        render_frame,
+        render_layer_opt,
+        asset_store,
+        text_icon_handle,
+        text_color_handle,
+        &new_transform,
+        &textbox_ref.text,
+        cursor_opt
+    );
 }

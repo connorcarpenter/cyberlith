@@ -3,12 +3,16 @@ use storage::Handle;
 use ui_layout::{Alignment, MarginUnits, PositionType, SizeUnits};
 
 use crate::{button::NodeActiveState, node::UiNode, store::UiStore, style::{NodeStyle, StyleId, WidgetStyle}, NodeId, Panel, PanelMut, PanelStyle, Ui, Navigation};
+use crate::input::UiInputEvent;
 
 #[derive(Clone)]
 pub struct Textbox {
     pub panel: Panel,
     pub id_str: String,
     pub navigation: Navigation,
+
+    pub text: String,
+    pub cursor: usize,
 
     hover_color_handle: Option<Handle<CpuMaterial>>,
     active_color_handle: Option<Handle<CpuMaterial>>,
@@ -20,6 +24,8 @@ impl Textbox {
             panel: Panel::new(),
             id_str: id_str.to_string(),
             navigation: Navigation::new(),
+            text: String::new(),
+            cursor: 0,
             hover_color_handle: None,
             active_color_handle: None,
         }
@@ -55,6 +61,39 @@ impl Textbox {
 
     pub fn set_active_color_handle(&mut self, val: Handle<CpuMaterial>) {
         self.active_color_handle = Some(val);
+    }
+
+    pub fn recv_input(&mut self, event: UiInputEvent) {
+        match event {
+            UiInputEvent::Left => {
+                if self.cursor > 0 {
+                    self.cursor -= 1;
+                }
+            },
+            UiInputEvent::Right => {
+                if self.cursor < self.text.len() {
+                    self.cursor += 1;
+                }
+            },
+            UiInputEvent::Key(new_char) => {
+                self.text.insert(self.cursor, new_char);
+                self.cursor += 1;
+            },
+            UiInputEvent::Backspace => {
+                self.text.remove(self.cursor - 1);
+                self.cursor -= 1;
+            },
+            UiInputEvent::Delete => {
+                self.text.remove(self.cursor);
+            },
+            UiInputEvent::Home => {
+                self.cursor = 0;
+            },
+            UiInputEvent::End => {
+                self.cursor = self.text.len();
+            },
+            _ => panic!("Unhandled input event for textbox: {:?}", event),
+        }
     }
 }
 
