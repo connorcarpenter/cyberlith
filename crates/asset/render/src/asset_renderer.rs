@@ -8,10 +8,7 @@ use render_api::{
 use storage::Handle;
 use ui::{NodeActiveState, NodeId, Ui, WidgetKind};
 
-use crate::{
-    asset_dependency::AssetComponentHandle, processed_asset_store::ProcessedAssetStore,
-    AnimationData, AssetHandle, IconData, MeshData, ModelData, SceneData, SkinData, UiData,
-};
+use crate::{asset_dependency::AssetComponentHandle, processed_asset_store::ProcessedAssetStore, AnimationData, AssetHandle, IconData, MeshData, ModelData, SceneData, SkinData, UiData, Blinkiness};
 
 pub(crate) struct AssetRenderer;
 
@@ -372,6 +369,7 @@ impl AssetRenderer {
         render_frame: &mut RenderFrame,
         render_layer_opt: Option<&RenderLayer>,
         asset_store: &ProcessedAssetStore,
+        blinkiness: &Blinkiness,
         ui_handle: &AssetHandle<UiData>,
     ) {
         let Some(ui_data) = asset_store.uis.get(ui_handle) else {
@@ -386,6 +384,7 @@ impl AssetRenderer {
             render_frame,
             render_layer_opt,
             asset_store,
+            blinkiness,
             &ui,
             &text_icon_handle,
             &Ui::ROOT_NODE_ID,
@@ -398,6 +397,7 @@ fn draw_ui_node(
     render_frame: &mut RenderFrame,
     render_layer_opt: Option<&RenderLayer>,
     asset_store: &ProcessedAssetStore,
+    blinkiness: &Blinkiness,
     ui: &Ui,
     text_icon_handle: &AssetHandle<IconData>,
     id: &NodeId,
@@ -428,6 +428,7 @@ fn draw_ui_node(
                     render_frame,
                     render_layer_opt,
                     asset_store,
+                    blinkiness,
                     ui,
                     text_icon_handle,
                     id,
@@ -450,6 +451,7 @@ fn draw_ui_node(
                     render_frame,
                     render_layer_opt,
                     asset_store,
+                    blinkiness,
                     ui,
                     text_icon_handle,
                     id,
@@ -461,6 +463,7 @@ fn draw_ui_node(
                     render_frame,
                     render_layer_opt,
                     asset_store,
+                    blinkiness,
                     ui,
                     text_icon_handle,
                     id,
@@ -476,6 +479,7 @@ fn draw_ui_panel(
     render_frame: &mut RenderFrame,
     render_layer_opt: Option<&RenderLayer>,
     asset_store: &ProcessedAssetStore,
+    blinkiness: &Blinkiness,
     ui: &Ui,
     text_icon_handle: &AssetHandle<IconData>,
     node_id: &NodeId,
@@ -509,6 +513,7 @@ fn draw_ui_panel(
             render_frame,
             render_layer_opt,
             asset_store,
+            blinkiness,
             ui,
             text_icon_handle,
             child_id,
@@ -578,6 +583,7 @@ fn draw_ui_button(
     render_frame: &mut RenderFrame,
     render_layer_opt: Option<&RenderLayer>,
     asset_store: &ProcessedAssetStore,
+    blinkiness: &Blinkiness,
     ui: &Ui,
     text_icon_handle: &AssetHandle<IconData>,
     node_id: &NodeId,
@@ -612,6 +618,7 @@ fn draw_ui_button(
             render_frame,
             render_layer_opt,
             asset_store,
+            blinkiness,
             ui,
             text_icon_handle,
             child_id,
@@ -629,6 +636,7 @@ fn draw_ui_textbox(
     render_frame: &mut RenderFrame,
     render_layer_opt: Option<&RenderLayer>,
     asset_store: &ProcessedAssetStore,
+    blinkiness: &Blinkiness,
     ui: &Ui,
     text_icon_handle: &AssetHandle<IconData>,
     node_id: &NodeId,
@@ -665,7 +673,11 @@ fn draw_ui_textbox(
     new_transform.translation.z += 0.05;
 
     let cursor_opt = if active_state == NodeActiveState::Active {
-        Some(textbox_ref.cursor)
+        if blinkiness.enabled() {
+            Some(textbox_ref.cursor)
+        } else {
+            None
+        }
     } else {
         None
     };

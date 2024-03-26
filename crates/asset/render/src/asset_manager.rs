@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use bevy_ecs::{
     change_detection::Mut,
     event::Event,
-    system::{ResMut, Resource},
+    system::{ResMut, Res, Resource},
     world::World,
 };
 use bevy_log::warn;
@@ -14,7 +14,7 @@ use render_api::{
     base::CpuSkin,
     base::{CpuMaterial, CpuMesh},
     components::{Camera, RenderLayer, Transform},
-    resources::RenderFrame,
+    resources::{RenderFrame, Time},
 };
 use storage::{Handle, Storage};
 use ui::{NodeId, TextMeasurer, Ui, UiEvent, UiEventHandler, UiInput};
@@ -27,11 +27,13 @@ use crate::{
 #[derive(Resource)]
 pub struct AssetManager {
     store: ProcessedAssetStore,
+
     queued_ui_event_handlers: HashMap<AssetHandle<UiData>, Vec<(String, UiEventHandler)>>,
     ui_event_handlers: HashMap<(AssetId, NodeId), UiEventHandler>,
     ui_events: Vec<(AssetId, NodeId, UiEvent)>,
     cursor_icon_change: Option<CursorIcon>,
     last_cursor_icon: CursorIcon,
+    blinkiness: Blinkiness,
 }
 
 impl Default for AssetManager {
@@ -43,6 +45,7 @@ impl Default for AssetManager {
             queued_ui_event_handlers: HashMap::new(),
             cursor_icon_change: None,
             last_cursor_icon: CursorIcon::Default,
+            blinkiness: Blinkiness::new(),
         }
     }
 }
@@ -139,6 +142,12 @@ impl AssetManager {
             asset_manager.last_cursor_icon = cursor_change;
             input.set_cursor_icon(cursor_change);
         }
+    }
+
+    // used as a system
+    pub fn update_blinkiness(mut asset_manager: ResMut<AssetManager>, time: Res<Time>) {
+        let elapsed = time.get_elapsed_ms();
+        asset_manager.blinkiness.update(elapsed);
     }
 
     pub fn register_ui_event<T: Event + Default>(
@@ -401,7 +410,7 @@ impl AssetManager {
         render_layer_opt: Option<&RenderLayer>,
         ui_handle: &AssetHandle<UiData>,
     ) {
-        AssetRenderer::draw_ui(render_frame, render_layer_opt, &self.store, ui_handle);
+        AssetRenderer::draw_ui(render_frame, render_layer_opt, &self.store, &self.blinkiness, ui_handle);
     }
 }
 
@@ -426,5 +435,31 @@ impl<'a> TextMeasurer for UiTextMeasurer<'a> {
 
     fn get_raw_char_height(&self, _subimage: usize) -> f32 {
         200.0
+    }
+}
+
+pub struct Blinkiness {
+    value: bool,
+    accumulated_ms: f32,
+}
+
+impl Blinkiness {
+    pub fn new() -> Self {
+        Self {
+            value: true,
+            accumulated_ms: 0.0,
+        }
+    }
+
+    pub fn update(&mut self, delta_ms: f32) {
+        self.accumulated_ms += delta_ms;
+        if self.accumulated_ms >= 500.0 {
+            self.value = !self.value;
+            self.accumulated_ms = 0.0;
+        }
+    }
+
+    pub fn enabled(&self) -> bool {
+        self.value
     }
 }

@@ -15,6 +15,7 @@ filesystem = { path = "../../filesystem" }
 ui = { path = "../../ui" }
 random = { path = "../../random" }
 input = { path = "../../input" }
+instant = { path = "../../instant" }
 
 naia-serde = { path = "../../../../naia/shared/serde" }
 

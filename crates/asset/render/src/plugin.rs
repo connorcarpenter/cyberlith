@@ -14,6 +14,7 @@ impl Plugin for AssetPlugin {
             .add_systems(PreUpdate, AssetManager::prepare_cursor_change)
             .add_systems(Update, AssetManager::process_ui_events)
             .add_systems(PostUpdate, AssetManager::process_cursor_change)
+            .add_systems(Update, AssetManager::update_blinkiness)
             // AssetMetadataStore
             // TODO: AssetMetadataStore "assets" path here should be a config param somehow
             .insert_resource(AssetMetadataStore::new("assets"))
