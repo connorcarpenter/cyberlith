@@ -19,12 +19,12 @@ workspace = "../../.."
 log = { version = "0.4.16" }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-js-sys = "~0.3"
-wasm-bindgen = "0.2"
-slotmap = "1"
+js-sys = { version = "0.3" }
+wasm-bindgen = { version = "0.2" }
+slotmap = { version = "1" }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies.web_sys]
-version = "~0.3.60"
+version = "0.3"
 package = "web-sys"
 features = [
   "Document",
