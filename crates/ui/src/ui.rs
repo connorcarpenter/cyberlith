@@ -10,6 +10,7 @@ use render_api::{
 };
 use storage::{Handle, Storage};
 use ui_layout::{Cache, Node, SizeUnits, TextMeasurer};
+use instant::Instant;
 
 use crate::{cache::LayoutCache, node::UiNode, node_id::NodeId, panel::{Panel, PanelMut, PanelStyle, PanelStyleMut}, store::UiStore, style::{NodeStyle, StyleId, WidgetStyle}, text::{TextStyle, TextStyleMut}, widget::{Widget, WidgetKind}, input::ui_receive_input, Button, ButtonStyle, ButtonStyleMut, UiEvent, UiInput, button::NodeActiveState, Text, Textbox, TextboxStyleMut, TextboxStyle, Navigation};
 
@@ -25,41 +26,7 @@ pub struct Ui {
     hovering_node: Option<NodeId>,
     selected_node: Option<NodeId>,
     cursor_icon: Option<CursorIcon>,
-}
-
-impl Ui {
-    pub(crate) fn nav_get_up_id(&self, id: &NodeId) -> Option<NodeId> {
-        let nav = self.get_node_nav(id)?;
-        let up_str: &str = nav.up_goes_to.as_ref()?;
-        self.get_node_id_by_id_str(up_str)
-    }
-
-    pub(crate) fn nav_get_down_id(&self, id: &NodeId) -> Option<NodeId> {
-        let nav = self.get_node_nav(id)?;
-        let down_str: &str = nav.down_goes_to.as_ref()?;
-        self.get_node_id_by_id_str(down_str)
-    }
-
-    pub(crate) fn nav_get_left_id(&self, id: &NodeId) -> Option<NodeId> {
-        let nav = self.get_node_nav(id)?;
-        let left_str: &str = nav.left_goes_to.as_ref()?;
-        self.get_node_id_by_id_str(left_str)
-    }
-
-    pub(crate) fn nav_get_right_id(&self, id: &NodeId) -> Option<NodeId> {
-        let nav = self.get_node_nav(id)?;
-        let right_str: &str = nav.right_goes_to.as_ref()?;
-        self.get_node_id_by_id_str(right_str)
-    }
-
-    fn get_node_nav(&self, id: &NodeId) -> Option<&Navigation> {
-        let node = self.node_ref(id)?;
-        match node.widget_kind() {
-            WidgetKind::Button => Some(&node.widget_button_ref()?.navigation),
-            WidgetKind::Textbox => Some(&node.widget_textbox_ref()?.navigation),
-            _ => None,
-        }
-    }
+    interact_timer: Instant,
 }
 
 impl Ui {
@@ -80,6 +47,7 @@ impl Ui {
             hovering_node: None,
             selected_node: None,
             cursor_icon: None,
+            interact_timer: Instant::now(),
         };
 
         // Root Node
@@ -452,6 +420,48 @@ impl Ui {
 
     pub(crate) fn create_style(&mut self, style: NodeStyle) -> StyleId {
         self.store.insert_style(style)
+    }
+
+    pub(crate) fn reset_interact_timer(&mut self) {
+        self.interact_timer = Instant::now();
+    }
+
+    pub fn interact_timer_was_recent(&self) -> bool {
+        self.interact_timer.elapsed().as_secs_f32() < 1.0
+    }
+
+    // navigation
+    pub(crate) fn nav_get_up_id(&self, id: &NodeId) -> Option<NodeId> {
+        let nav = self.get_node_nav(id)?;
+        let up_str: &str = nav.up_goes_to.as_ref()?;
+        self.get_node_id_by_id_str(up_str)
+    }
+
+    pub(crate) fn nav_get_down_id(&self, id: &NodeId) -> Option<NodeId> {
+        let nav = self.get_node_nav(id)?;
+        let down_str: &str = nav.down_goes_to.as_ref()?;
+        self.get_node_id_by_id_str(down_str)
+    }
+
+    pub(crate) fn nav_get_left_id(&self, id: &NodeId) -> Option<NodeId> {
+        let nav = self.get_node_nav(id)?;
+        let left_str: &str = nav.left_goes_to.as_ref()?;
+        self.get_node_id_by_id_str(left_str)
+    }
+
+    pub(crate) fn nav_get_right_id(&self, id: &NodeId) -> Option<NodeId> {
+        let nav = self.get_node_nav(id)?;
+        let right_str: &str = nav.right_goes_to.as_ref()?;
+        self.get_node_id_by_id_str(right_str)
+    }
+
+    fn get_node_nav(&self, id: &NodeId) -> Option<&Navigation> {
+        let node = self.node_ref(id)?;
+        match node.widget_kind() {
+            WidgetKind::Button => Some(&node.widget_button_ref()?.navigation),
+            WidgetKind::Textbox => Some(&node.widget_textbox_ref()?.navigation),
+            _ => None,
+        }
     }
 }
 

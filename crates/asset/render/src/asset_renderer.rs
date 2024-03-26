@@ -380,13 +380,15 @@ impl AssetRenderer {
         let ui = ui_data.get_ui_ref();
         let text_icon_handle = ui_data.get_icon_handle();
 
+        let cursor_blink = blinkiness.enabled() || ui.interact_timer_was_recent();
+
         for node_id in 0..ui.store.nodes.len() {
             let node_id = NodeId::from_usize(node_id);
             draw_ui_node(
                 render_frame,
                 render_layer_opt,
                 asset_store,
-                blinkiness,
+                cursor_blink,
                 &ui,
                 &text_icon_handle,
                 &node_id,
@@ -399,7 +401,7 @@ fn draw_ui_node(
     render_frame: &mut RenderFrame,
     render_layer_opt: Option<&RenderLayer>,
     asset_store: &ProcessedAssetStore,
-    blinkiness: &Blinkiness,
+    cursor_blink: bool,
     ui: &Ui,
     text_icon_handle: &AssetHandle<IconData>,
     id: &NodeId,
@@ -458,7 +460,7 @@ fn draw_ui_node(
                     render_frame,
                     render_layer_opt,
                     asset_store,
-                    blinkiness,
+                    cursor_blink,
                     ui,
                     text_icon_handle,
                     id,
@@ -585,7 +587,7 @@ fn draw_ui_textbox(
     render_frame: &mut RenderFrame,
     render_layer_opt: Option<&RenderLayer>,
     asset_store: &ProcessedAssetStore,
-    blinkiness: &Blinkiness,
+    cursor_blink: bool,
     ui: &Ui,
     text_icon_handle: &AssetHandle<IconData>,
     node_id: &NodeId,
@@ -622,7 +624,7 @@ fn draw_ui_textbox(
     new_transform.translation.z += 0.05;
 
     let cursor_opt = if active_state == NodeActiveState::Active {
-        if blinkiness.enabled() {
+        if cursor_blink {
             Some(textbox_ref.cursor)
         } else {
             None

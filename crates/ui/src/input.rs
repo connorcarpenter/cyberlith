@@ -149,21 +149,21 @@ pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, input: Ui
             }
 
             if left_pressed {
-                    if let Some(hover_node) = ui.get_hover() {
-                        match ui.node_ref(&hover_node).unwrap().widget_kind() {
-                            WidgetKind::Button => {
-                                ui.set_selected_node(Some(hover_node));
-                                ui.emit_event(&hover_node, UiEvent::Clicked);
-                            }
-                            WidgetKind::Textbox => {
-                                ui.set_selected_node(Some(hover_node));
-
-                                let (_, height, posx, _, _) = ui.cache.bounds(&hover_node).unwrap();
-                                ui.textbox_mut(&hover_node).unwrap().recv_click(text_measurer, x, posx, height);
-                            }
-                            _ => {}
+                if let Some(hover_node) = ui.get_hover() {
+                    match ui.node_ref(&hover_node).unwrap().widget_kind() {
+                        WidgetKind::Button => {
+                            ui.set_selected_node(Some(hover_node));
+                            ui.emit_event(&hover_node, UiEvent::Clicked);
                         }
+                        WidgetKind::Textbox => {
+                            ui.set_selected_node(Some(hover_node));
+                            ui.reset_interact_timer();
+                            let (_, height, posx, _, _) = ui.cache.bounds(&hover_node).unwrap();
+                            ui.textbox_mut(&hover_node).unwrap().recv_click(text_measurer, x, posx, height);
+                        }
+                        _ => {}
                     }
+                }
             } else {
                 if let Some(selected_node) = ui.get_selected_node() {
                     match ui.node_ref(&selected_node).unwrap().widget_kind() {
@@ -210,6 +210,7 @@ pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, input: Ui
                     }
                     UiInputEvent::Left => {
                         if let Some(textbox_id) = textbox_opt {
+                            ui.reset_interact_timer();
                             ui.textbox_mut(&textbox_id).unwrap().recv_input(event);
                         } else {
                             if let Some(next_id) = ui.nav_get_left_id(&hover_node) {
@@ -219,6 +220,7 @@ pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, input: Ui
                     }
                     UiInputEvent::Right => {
                         if let Some(textbox_id) = textbox_opt {
+                            ui.reset_interact_timer();
                             ui.textbox_mut(&textbox_id).unwrap().recv_input(event);
                         } else {
                             if let Some(next_id) = ui.nav_get_right_id(&hover_node) {
@@ -233,6 +235,7 @@ pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, input: Ui
                                 ui.emit_event(&hover_node, UiEvent::Clicked);
                             }
                             WidgetKind::Textbox => {
+                                ui.reset_interact_timer();
                                 ui.set_selected_node(Some(hover_node));
                             }
                             _ => {}
@@ -253,6 +256,7 @@ pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, input: Ui
                     }
                     UiInputEvent::Backspace | UiInputEvent::Delete | UiInputEvent::Key(_) | UiInputEvent::Home | UiInputEvent::End => {
                         if let Some(textbox_id) = textbox_opt {
+                            ui.reset_interact_timer();
                             ui.textbox_mut(&textbox_id).unwrap().recv_input(event);
                         }
                     }
