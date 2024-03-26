@@ -101,8 +101,8 @@ impl Ui {
     }
 
     // events
-    pub fn receive_input(&mut self, input: UiInput) {
-        ui_receive_input(self, input);
+    pub fn receive_input(&mut self, text_measurer: &dyn TextMeasurer, input: UiInput) {
+        ui_receive_input(self, text_measurer, input);
     }
 
     pub fn take_cursor_icon(&mut self) -> Option<CursorIcon> {

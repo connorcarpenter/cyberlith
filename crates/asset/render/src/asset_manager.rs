@@ -383,9 +383,13 @@ impl AssetManager {
             warn!("ui data not loaded 1: {:?}", ui_handle.asset_id());
             return;
         };
+        let icon_handle = ui_data.get_icon_handle();
+        let Some(icon_data) = self.store.icons.get(&icon_handle) else {
+            return;
+        };
+        let text_measurer = UiTextMeasurer::new(icon_data);
         let ui = ui_data.get_ui_mut();
-
-        ui.receive_input(ui_input);
+        ui.receive_input(&text_measurer, ui_input);
 
         // get any events
         let mut events: Vec<(AssetId, NodeId, UiEvent)> = ui

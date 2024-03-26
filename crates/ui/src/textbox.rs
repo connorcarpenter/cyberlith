@@ -1,6 +1,6 @@
 use render_api::base::{Color, CpuMaterial};
 use storage::Handle;
-use ui_layout::{Alignment, MarginUnits, PositionType, SizeUnits};
+use ui_layout::{Alignment, MarginUnits, PositionType, SizeUnits, TextMeasurer};
 
 use crate::{button::NodeActiveState, node::UiNode, store::UiStore, style::{NodeStyle, StyleId, WidgetStyle}, NodeId, Panel, PanelMut, PanelStyle, Ui, Navigation};
 use crate::input::UiInputEvent;
@@ -100,8 +100,41 @@ impl Textbox {
         }
     }
 
-    pub fn recv_click(&mut self, click_x: f32, position_x: f32, width: f32) {
+    pub fn recv_click(&mut self, text_measurer: &dyn TextMeasurer, click_x: f32, position_x: f32, height: f32) {
+        let mut index_x = 8.0;
+        let click_x = click_x - position_x;
+        let raw_height = text_measurer.get_raw_char_height(0);
+        let scale = height / raw_height;
 
+        let mut closest_x: f32 = f32::MAX;
+        let mut closest_index: usize = usize::MAX;
+
+        for (char_index, c) in self.text.chars().enumerate() {
+
+            let dist = (click_x - index_x).abs();
+            if dist < closest_x {
+                closest_x = dist;
+                closest_index = char_index;
+            } else {
+                // dist is increasing ... we can break
+                self.cursor = closest_index;
+                return;
+            }
+
+            let c: u8 = if c.is_ascii() {
+                c as u8
+            } else {
+                42 // asterisk
+            };
+            let subimage_index = (c - 32) as usize;
+
+            // get character width in order to move cursor appropriately
+            let icon_width = text_measurer.get_raw_char_width(subimage_index) * scale;
+
+            index_x += icon_width;
+
+            index_x += 8.0 * scale; // between character spacing - TODO: replace with config
+        }
     }
 }
 

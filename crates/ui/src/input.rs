@@ -1,7 +1,8 @@
 use bevy_ecs::event::EventReader;
-use bevy_log::{info, warn};
+use bevy_log::warn;
 
 use input::{CursorIcon, GamepadButtonType, Input, InputEvent, Key, MouseButton};
+use ui_layout::TextMeasurer;
 
 use crate::{NodeId, Ui, UiEvent, WidgetKind};
 
@@ -137,7 +138,7 @@ pub enum UiInputEvent {
     Back, Backspace, Delete, Key(char), Home, End,
 }
 
-pub fn ui_receive_input(ui: &mut Ui, input: UiInput) {
+pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, input: UiInput) {
     match input {
         UiInput::Mouse(x, y, left_pressed) => {
             ui.clear_hover();
@@ -157,8 +158,8 @@ pub fn ui_receive_input(ui: &mut Ui, input: UiInput) {
                             WidgetKind::Textbox => {
                                 ui.set_selected_node(Some(hover_node));
 
-                                let (width, _, posx, _, _) = ui.cache.bounds(&hover_node).unwrap();
-                                ui.textbox_mut(&hover_node).unwrap().recv_click(x, posx, width);
+                                let (_, height, posx, _, _) = ui.cache.bounds(&hover_node).unwrap();
+                                ui.textbox_mut(&hover_node).unwrap().recv_click(text_measurer, x, posx, height);
                             }
                             _ => {}
                         }
