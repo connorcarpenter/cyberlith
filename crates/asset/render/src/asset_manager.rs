@@ -264,7 +264,6 @@ impl AssetManager {
             material_handle,
             transform,
             text,
-            None,
         );
     }
 
@@ -418,12 +417,12 @@ impl AssetManager {
     }
 }
 
-struct UiTextMeasurer<'a> {
+pub(crate)  struct UiTextMeasurer<'a> {
     icon_data: &'a IconData,
 }
 
 impl<'a> UiTextMeasurer<'a> {
-    fn new(icon_data: &'a IconData) -> Self {
+    pub(crate) fn new(icon_data: &'a IconData) -> Self {
         Self { icon_data }
     }
 }

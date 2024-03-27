@@ -335,8 +335,7 @@ impl Node for NodeId {
     fn calculate_text_width(&self, store: &Self::Store, text_measurer: &dyn TextMeasurer, height: f32) -> f32 {
         let text_ref = store.text_ref(self).unwrap();
         let text = text_ref.text.as_str();
-        let raw_width = Text::measure_raw_text_width(text_measurer, text);
-        let raw_height = text_measurer.get_raw_char_height(0);
+        let (raw_width, raw_height) = Text::measure_raw_text_size(text_measurer, text);
         let scale = height / raw_height;
         raw_width * scale
     }

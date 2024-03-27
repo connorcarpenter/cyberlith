@@ -9,6 +9,7 @@ use storage::Handle;
 use ui::{NodeActiveState, NodeId, Ui, WidgetKind};
 
 use crate::{asset_dependency::AssetComponentHandle, processed_asset_store::ProcessedAssetStore, AnimationData, AssetHandle, IconData, MeshData, ModelData, SceneData, SkinData, UiData, Blinkiness};
+use crate::asset_manager::UiTextMeasurer;
 
 pub(crate) struct AssetRenderer;
 
@@ -82,11 +83,10 @@ impl AssetRenderer {
         render_frame: &mut RenderFrame,
         render_layer_opt: Option<&RenderLayer>,
         asset_store: &ProcessedAssetStore,
-        icon_handle: &AssetHandle<IconData>,
-        mat_handle: &Handle<CpuMaterial>,
+        text_icon_handle: &AssetHandle<IconData>,
+        text_color_mat_handle: &Handle<CpuMaterial>,
         transform: &Transform,
         text: &str,
-        carat_index_opt: Option<usize>,
     ) {
         // info!("drawing text: {}, transform: {:?}, text_height: {:?}", text, transform);
 
@@ -94,87 +94,86 @@ impl AssetRenderer {
         // at position: (transform.translation.x, transform.translation.y, transform.translation.z),
         // with size: (transform.scale.x, transform.scale.y)
 
+        let Some(icon_data) = asset_store.icons.get(text_icon_handle) else {
+            return;
+        };
+        let text_measurer = UiTextMeasurer::new(icon_data);
+        let subimage_indices = ui::Text::get_subimage_indices(text);
+        let (x_positions, text_height) = ui::Text::get_raw_text_rects(&text_measurer, &subimage_indices);
+
         let mut cursor = Transform::from_xyz(
-            transform.translation.x,
+            0.0,
+            transform.translation.y + (transform.scale.y * 0.5),
+            transform.translation.z,
+        );
+        // if we want to fill 200px, but raw_width is 100px, then scale_x would be 2.0
+        cursor.scale.y = transform.scale.y / text_height;
+        cursor.scale.x = cursor.scale.y;
+
+        for char_index in 0..subimage_indices.len() {
+            let frame_x = x_positions[char_index]  * cursor.scale.x;
+            let next_frame_x = x_positions[char_index+1] * cursor.scale.x;
+            let frame_index = subimage_indices[char_index];
+
+            cursor.translation.x = transform.translation.x + (frame_x + next_frame_x) / 2.0;
+
+            Self::draw_icon_with_material(
+                render_frame,
+                render_layer_opt,
+                asset_store,
+                text_icon_handle,
+                text_color_mat_handle,
+                frame_index,
+                &cursor,
+            );
+        }
+    }
+
+    pub(crate) fn draw_text_carat(
+        render_frame: &mut RenderFrame,
+        render_layer_opt: Option<&RenderLayer>,
+        asset_store: &ProcessedAssetStore,
+        text_icon_handle: &AssetHandle<IconData>,
+        text_color_mat_handle: &Handle<CpuMaterial>,
+        transform: &Transform,
+        text: &str,
+        carat_index: usize,
+    ) {
+        let Some(icon_data) = asset_store.icons.get(text_icon_handle) else {
+            return;
+        };
+        let text_measurer = UiTextMeasurer::new(icon_data);
+        let subimage_indices = ui::Text::get_subimage_indices(text);
+        let (x_positions, text_height) = ui::Text::get_raw_text_rects(&text_measurer, &subimage_indices);
+
+        let mut cursor = Transform::from_xyz(
+            0.0,
             transform.translation.y + (transform.scale.y * 0.5),
             transform.translation.z,
         );
 
         // if we want to fill 200px, but raw_width is 100px, then scale_x would be 2.0
-        cursor.scale.y = transform.scale.y / 200.0;
+        cursor.scale.y = transform.scale.y / text_height;
         cursor.scale.x = cursor.scale.y;
 
-        let mut carat_x = if carat_index_opt.is_some() { cursor.translation.x - 4.0 } else { 0.0 };
+        for (char_index, x_position) in x_positions.iter().enumerate() {
+            let frame_x = x_position * cursor.scale.x;
 
-        for (char_index, c) in text.chars().enumerate() {
-            let c: u8 = if c.is_ascii() {
-                c as u8
-            } else {
-                42 // asterisk
-            };
-            let frame_index = (c - 32) as usize;
-
-            // get character width in order to move cursor appropriately
-            let frame_raw_width = if frame_index == 0 {
-                40.0 // TODO: replace with config
-            } else {
-                asset_store
-                    .get_icon_frame_width(icon_handle, frame_index)
-                    .unwrap_or(0.0)
-            };
-
-            let frame_actual_width = frame_raw_width * cursor.scale.x;
-            let half_frame_actual_width = frame_actual_width * 0.5;
-
-            let mut final_position = cursor.clone();
-            final_position.translation.x += half_frame_actual_width;
-
-            Self::draw_icon_with_material(
-                render_frame,
-                render_layer_opt,
-                asset_store,
-                icon_handle,
-                mat_handle,
-                frame_index,
-                &final_position,
-            );
-
-            cursor.translation.x += frame_actual_width;
-            cursor.translation.x += 4.0 * cursor.scale.x; // between character spacing - TODO: replace with config
-            if let Some(carat_index) = carat_index_opt {
-                if char_index + 1 == carat_index {
-                    carat_x = cursor.translation.x;
-                }
+            if char_index == carat_index {
+                cursor.translation.x = transform.translation.x + frame_x;
+                break;
             }
-            cursor.translation.x += 4.0 * cursor.scale.x; // between character spacing - TODO: replace with config
         }
 
-        if carat_index_opt.is_some() {
-
-            let frame_index = (124 - 32) as usize;
-
-            // get character width in order to move cursor appropriately
-            let frame_raw_width = asset_store
-                .get_icon_frame_width(icon_handle, frame_index)
-                .unwrap_or(0.0);
-
-            let frame_actual_width = frame_raw_width * cursor.scale.x;
-            let half_frame_actual_width = frame_actual_width * 0.5;
-
-            let mut final_position = cursor.clone();
-            final_position.translation.x = carat_x - 1.0;
-            final_position.translation.x += half_frame_actual_width;
-
-            Self::draw_icon_with_material(
-                render_frame,
-                render_layer_opt,
-                asset_store,
-                icon_handle,
-                mat_handle,
-                frame_index,
-                &final_position,
-            );
-        }
+        Self::draw_icon_with_material(
+            render_frame,
+            render_layer_opt,
+            asset_store,
+            text_icon_handle,
+            text_color_mat_handle,
+            (124 - 32) as usize, // pipe character '|'
+            &cursor,
+        );
     }
 
     pub(crate) fn draw_skin(
@@ -548,7 +547,6 @@ fn draw_ui_text(
         text_color_handle,
         transform,
         &text_ref.text,
-        None,
     );
 }
 
@@ -623,16 +621,6 @@ fn draw_ui_textbox(
     new_transform.translation.x += 8.0;
     new_transform.translation.z += 0.05;
 
-    let carat_opt = if active_state == NodeActiveState::Active {
-        if carat_blink {
-            Some(textbox_ref.carat_index)
-        } else {
-            None
-        }
-    } else {
-        None
-    };
-
     AssetRenderer::draw_text(
         render_frame,
         render_layer_opt,
@@ -641,6 +629,20 @@ fn draw_ui_textbox(
         text_color_handle,
         &new_transform,
         &textbox_ref.text,
-        carat_opt
     );
+
+    if active_state == NodeActiveState::Active {
+        if carat_blink {
+            AssetRenderer::draw_text_carat(
+                render_frame,
+                render_layer_opt,
+                asset_store,
+                text_icon_handle,
+                text_color_handle,
+                &new_transform,
+                &textbox_ref.text,
+                textbox_ref.carat_index,
+            );
+        }
+    }
 }
