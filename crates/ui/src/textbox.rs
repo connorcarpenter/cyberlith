@@ -14,6 +14,7 @@ pub struct Textbox {
 
     pub text: String,
     pub carat_index: usize,
+    pub select_index: usize,
 
     hover_color_handle: Option<Handle<CpuMaterial>>,
     active_color_handle: Option<Handle<CpuMaterial>>,
@@ -27,6 +28,7 @@ impl Textbox {
             navigation: Navigation::new(),
             text: String::new(),
             carat_index: 0,
+            select_index: 0,
             hover_color_handle: None,
             active_color_handle: None,
         }
@@ -66,36 +68,62 @@ impl Textbox {
 
     pub fn recv_input(&mut self, event: UiInputEvent) {
         match event {
-            UiInputEvent::Left => {
-                if self.carat_index > 0 {
-                    self.carat_index -= 1;
+            UiInputEvent::Left(modifiers) => {
+                match (modifiers.shift, modifiers.ctrl) {
+                    (false, false) => {
+                        if self.carat_index > 0 {
+                            self.carat_index -= 1;
+                        }
+                    }
+                    (_, _) => todo!(),
                 }
             },
-            UiInputEvent::Right => {
-                if self.carat_index < self.text.len() {
-                    self.carat_index += 1;
+            UiInputEvent::Right(modifiers) => {
+                match (modifiers.shift, modifiers.ctrl) {
+                    (false, false) => {
+                        if self.carat_index < self.text.len() {
+                            self.carat_index += 1;
+                        }
+                    }
+                    _ => {}
                 }
             },
             UiInputEvent::Text(new_char) => {
                 self.text.insert(self.carat_index, new_char);
                 self.carat_index += 1;
             },
-            UiInputEvent::Backspace => {
-                if self.carat_index > 0 {
-                    self.text.remove(self.carat_index - 1);
-                    self.carat_index -= 1;
+            UiInputEvent::Backspace(modifiers) => {
+                if modifiers.ctrl {
+                    todo!()
+                } else {
+                    if self.carat_index > 0 {
+                        self.text.remove(self.carat_index - 1);
+                        self.carat_index -= 1;
+                    }
                 }
             },
-            UiInputEvent::Delete => {
-                if self.carat_index < self.text.len() {
-                    self.text.remove(self.carat_index);
+            UiInputEvent::Delete(modifiers) => {
+                if modifiers.ctrl {
+                    todo!()
+                } else {
+                    if self.carat_index < self.text.len() {
+                        self.text.remove(self.carat_index);
+                    }
                 }
             },
-            UiInputEvent::Home => {
-                self.carat_index = 0;
+            UiInputEvent::Home(modifiers) => {
+                if modifiers.shift {
+                    todo!()
+                } else {
+                    self.carat_index = 0;
+                }
             },
-            UiInputEvent::End => {
-                self.carat_index = self.text.len();
+            UiInputEvent::End(modifiers) => {
+                if modifiers.shift {
+                    todo!()
+                } else {
+                    self.carat_index = self.text.len();
+                }
             },
             UiInputEvent::Paste(text) => {
                 // TODO: validate pasted text? I did panic at some point here.

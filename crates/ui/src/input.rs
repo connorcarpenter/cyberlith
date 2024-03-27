@@ -1,7 +1,7 @@
 use bevy_ecs::event::EventReader;
-use bevy_log::{info, warn};
+use bevy_log::warn;
 
-use input::{CursorIcon, GamepadButtonType, Input, InputEvent, Key, MouseButton};
+use input::{CursorIcon, GamepadButtonType, Input, InputEvent, Key, Modifiers, MouseButton};
 use ui_layout::TextMeasurer;
 
 use crate::{NodeId, Ui, UiEvent, WidgetKind};
@@ -60,8 +60,8 @@ impl UiInputConverter {
                     match button {
                         GamepadButtonType::DPadUp => Some(UiInputEvent::Up),
                         GamepadButtonType::DPadDown => Some(UiInputEvent::Down),
-                        GamepadButtonType::DPadLeft => Some(UiInputEvent::Left),
-                        GamepadButtonType::DPadRight => Some(UiInputEvent::Right),
+                        GamepadButtonType::DPadLeft => Some(UiInputEvent::Left(Modifiers::default())),
+                        GamepadButtonType::DPadRight => Some(UiInputEvent::Right(Modifiers::default())),
                         GamepadButtonType::Start | GamepadButtonType::South => Some(UiInputEvent::SelectPressed),
                         GamepadButtonType::East => Some(UiInputEvent::Back),
                         _ => None,
@@ -73,18 +73,18 @@ impl UiInputConverter {
                         _ => None,
                     }
                 }
-                InputEvent::KeyPressed(key, _modifiers) => {
+                InputEvent::KeyPressed(key, modifiers) => {
                     match key {
                         Key::ArrowUp => Some(UiInputEvent::Up),
                         Key::ArrowDown => Some(UiInputEvent::Down),
-                        Key::ArrowLeft => Some(UiInputEvent::Left),
-                        Key::ArrowRight => Some(UiInputEvent::Right),
+                        Key::ArrowLeft => Some(UiInputEvent::Left(*modifiers)),
+                        Key::ArrowRight => Some(UiInputEvent::Right(*modifiers)),
                         Key::Enter => Some(UiInputEvent::SelectPressed),
                         Key::Escape => Some(UiInputEvent::Back),
-                        Key::Backspace => Some(UiInputEvent::Backspace),
-                        Key::Delete => Some(UiInputEvent::Delete),
-                        Key::Home => Some(UiInputEvent::Home),
-                        Key::End => Some(UiInputEvent::End),
+                        Key::Backspace => Some(UiInputEvent::Backspace(*modifiers)),
+                        Key::Delete => Some(UiInputEvent::Delete(*modifiers)),
+                        Key::Home => Some(UiInputEvent::Home(*modifiers)),
+                        Key::End => Some(UiInputEvent::End(*modifiers)),
                         _ => None,
                     }
                 }
@@ -120,9 +120,9 @@ pub enum UiInput {
 
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub enum UiInputEvent {
-    Up, Down, Left, Right,
+    Up, Down, Left(Modifiers), Right(Modifiers),
     SelectPressed, SelectReleased,
-    Back, Backspace, Delete, Text(char), Home, End,
+    Back, Backspace(Modifiers), Delete(Modifiers), Text(char), Home(Modifiers), End(Modifiers),
     Copy, Cut, Paste(String),
 }
 
@@ -165,6 +165,8 @@ pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, input: Ui
         }
         UiInput::Events(events) => {
             let mut hover_node = ui.get_hover();
+
+            // hover default ui element if none is hovered (coming from mouse mode)
             if hover_node.is_none() {
                 let Some(first_input_id) = ui.get_first_input() else {
                     panic!("no first input set, cannot process input events without somewhere to start");
@@ -172,19 +174,29 @@ pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, input: Ui
                 ui.receive_hover(&first_input_id);
                 hover_node = Some(first_input_id);
             }
-            let hover_node = hover_node.unwrap();
-            let textbox_opt = {
-                if let Some(selected_id) = ui.get_selected_node() {
-                    if ui.node_ref(&selected_id).unwrap().widget_kind() == WidgetKind::Textbox {
-                        Some(selected_id)
-                    } else {
-                        None
+
+            // pipe event into textbox, if one is selected
+            if let Some(selected_id) = ui.get_selected_node() {
+                if ui.node_ref(&selected_id).unwrap().widget_kind() == WidgetKind::Textbox {
+                    let textbox_id = selected_id;
+                    for event in &events {
+                        match event {
+                            UiInputEvent::Right(_) | UiInputEvent::Left(_) | UiInputEvent::Backspace(_) | UiInputEvent::Delete(_) |
+                            UiInputEvent::Text(_) | UiInputEvent::Home(_) | UiInputEvent::End(_) | UiInputEvent::Paste(_)
+                            => {
+                                ui.reset_interact_timer();
+                                ui.textbox_mut(&textbox_id).unwrap().recv_input(event.clone());
+                                return;
+                            }
+                            _ => {}
+                        }
                     }
-                } else {
-                    None
                 }
-            };
-            for event in events {
+            }
+
+            // handle navigation of hover elements && buttons
+            let hover_node = hover_node.unwrap();
+            for event in &events {
                 match event {
                     UiInputEvent::Up => {
                         if let Some(next_id) = ui.nav_get_up_id(&hover_node) {
@@ -196,24 +208,14 @@ pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, input: Ui
                             ui.receive_hover(&next_id);
                         }
                     }
-                    UiInputEvent::Left => {
-                        if let Some(textbox_id) = textbox_opt {
-                            ui.reset_interact_timer();
-                            ui.textbox_mut(&textbox_id).unwrap().recv_input(event);
-                        } else {
-                            if let Some(next_id) = ui.nav_get_left_id(&hover_node) {
-                                ui.receive_hover(&next_id);
-                            }
+                    UiInputEvent::Left(_) => {
+                        if let Some(next_id) = ui.nav_get_left_id(&hover_node) {
+                            ui.receive_hover(&next_id);
                         }
                     }
-                    UiInputEvent::Right => {
-                        if let Some(textbox_id) = textbox_opt {
-                            ui.reset_interact_timer();
-                            ui.textbox_mut(&textbox_id).unwrap().recv_input(event);
-                        } else {
-                            if let Some(next_id) = ui.nav_get_right_id(&hover_node) {
-                                ui.receive_hover(&next_id);
-                            }
+                    UiInputEvent::Right(_) => {
+                        if let Some(next_id) = ui.nav_get_right_id(&hover_node) {
+                            ui.receive_hover(&next_id);
                         }
                     }
                     UiInputEvent::SelectPressed => {
@@ -221,10 +223,6 @@ pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, input: Ui
                             WidgetKind::Button => {
                                 ui.set_selected_node(Some(hover_node));
                                 ui.emit_event(&hover_node, UiEvent::Clicked);
-                            }
-                            WidgetKind::Textbox => {
-                                ui.reset_interact_timer();
-                                ui.set_selected_node(Some(hover_node));
                             }
                             _ => {}
                         }
@@ -237,15 +235,6 @@ pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, input: Ui
                                 }
                                 _ => {}
                             }
-                        }
-                    }
-                    UiInputEvent::Back => {
-
-                    }
-                    UiInputEvent::Backspace | UiInputEvent::Delete | UiInputEvent::Text(_) | UiInputEvent::Home | UiInputEvent::End | UiInputEvent::Paste(_) => {
-                        if let Some(textbox_id) = textbox_opt {
-                            ui.reset_interact_timer();
-                            ui.textbox_mut(&textbox_id).unwrap().recv_input(event);
                         }
                     }
                     _ => {}
