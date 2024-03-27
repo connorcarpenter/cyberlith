@@ -1,3 +1,4 @@
+
 use render_api::base::{Color, CpuMaterial};
 use storage::Handle;
 use ui_layout::{Alignment, MarginUnits, PositionType, SizeUnits, TextMeasurer};
@@ -75,7 +76,7 @@ impl Textbox {
                     self.cursor += 1;
                 }
             },
-            UiInputEvent::Key(new_char) => {
+            UiInputEvent::Text(new_char) => {
                 self.text.insert(self.cursor, new_char);
                 self.cursor += 1;
             },
@@ -96,6 +97,11 @@ impl Textbox {
             UiInputEvent::End => {
                 self.cursor = self.text.len();
             },
+            UiInputEvent::Paste(text) => {
+                // TODO: validate pasted text? I did panic at some point here.
+                self.text.insert_str(self.cursor, &text);
+                self.cursor += text.len();
+            }
             _ => panic!("Unhandled input event for textbox: {:?}", event),
         }
     }

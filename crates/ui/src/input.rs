@@ -37,10 +37,13 @@ impl UiInputConverter {
 
             // first, check the mode of the input event
             if let Some(was_mouse) = match input_event {
-                InputEvent::MouseClicked(_, _) | InputEvent::MouseReleased(_) | InputEvent::MouseMoved(_) | InputEvent::MouseDragged(_, _, _) | InputEvent::MouseMiddleScrolled(_) => {
+                InputEvent::MouseClicked(_, _) | InputEvent::MouseReleased(_) | InputEvent::MouseMoved(_) |
+                InputEvent::MouseDragged(_, _, _) | InputEvent::MouseMiddleScrolled(_) => {
                     Some(true)
                 }
-                InputEvent::Text(_) | InputEvent::KeyPressed(_, _) | InputEvent::KeyReleased(_) | InputEvent::GamepadButtonPressed(_, _) | InputEvent::GamepadButtonReleased(_, _) | InputEvent::GamepadJoystickMoved(_, _, _) => {
+                InputEvent::Text(_) | InputEvent::KeyPressed(_, _) | InputEvent::KeyReleased(_) |
+                InputEvent::GamepadButtonPressed(_, _) | InputEvent::GamepadButtonReleased(_, _) |
+                InputEvent::GamepadJoystickMoved(_, _, _) | InputEvent::Cut | InputEvent::Copy | InputEvent::Paste(_)  => {
                     Some(false)
                 }
                 _ => None,
@@ -91,7 +94,8 @@ impl UiInputConverter {
                         _ => None,
                     }
                 }
-                InputEvent::Text(c) => Some(UiInputEvent::Key(*c)),
+                InputEvent::Text(c) => Some(UiInputEvent::Text(*c)),
+                InputEvent::Paste(text) => Some(UiInputEvent::Paste(text.clone())),
                 _ => None,
             };
             let Some(output_event) = output_event else {
@@ -114,11 +118,12 @@ pub enum UiInput {
     Events(Vec<UiInputEvent>)
 }
 
-#[derive(Clone, Copy, Eq, PartialEq, Debug)]
+#[derive(Clone, Eq, PartialEq, Debug)]
 pub enum UiInputEvent {
     Up, Down, Left, Right,
     SelectPressed, SelectReleased,
-    Back, Backspace, Delete, Key(char), Home, End,
+    Back, Backspace, Delete, Text(char), Home, End,
+    Copy, Cut, Paste(String),
 }
 
 pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, input: UiInput) {
@@ -237,12 +242,13 @@ pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, input: Ui
                     UiInputEvent::Back => {
 
                     }
-                    UiInputEvent::Backspace | UiInputEvent::Delete | UiInputEvent::Key(_) | UiInputEvent::Home | UiInputEvent::End => {
+                    UiInputEvent::Backspace | UiInputEvent::Delete | UiInputEvent::Text(_) | UiInputEvent::Home | UiInputEvent::End | UiInputEvent::Paste(_) => {
                         if let Some(textbox_id) = textbox_opt {
                             ui.reset_interact_timer();
                             ui.textbox_mut(&textbox_id).unwrap().recv_input(event);
                         }
                     }
+                    _ => {}
                 }
             }
         }

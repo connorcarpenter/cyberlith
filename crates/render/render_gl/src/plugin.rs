@@ -6,6 +6,7 @@ use bevy_app::{
 };
 use bevy_ecs::schedule::{ExecutorKind, Schedule};
 
+use clipboard::ClipboardPlugin;
 use render_api::{Render, Window};
 
 use crate::{
@@ -23,6 +24,10 @@ impl Plugin for RenderGlPlugin {
     fn build(&self, app: &mut App) {
         unsafe {
             STOP_SIGNAL = Some(Arc::new(RwLock::new(StopSignal { stopped: false })));
+        }
+
+        if !app.is_plugin_added::<ClipboardPlugin>() {
+            app.add_plugins(ClipboardPlugin);
         }
 
         app

@@ -6,12 +6,10 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 
+use clipboard::ClipboardManager;
 use math::Vec2;
 
-use crate::gamepad::{
-    Axis, GamepadAxis, GamepadButton, GamepadInfo, Gamepads, ALL_AXIS_TYPES, ALL_BUTTON_TYPES,
-};
-use crate::{gamepad::{GamepadButtonType, GamepadId}, is_button::IsButton, GamepadSettings, IncomingEvent, InputEvent, Joystick, Key, MouseButton, CursorIcon};
+use crate::{gamepad::{Axis, GamepadAxis, GamepadButton, GamepadInfo, Gamepads, ALL_AXIS_TYPES, ALL_BUTTON_TYPES,, GamepadButtonType, GamepadId}, is_button::IsButton, GamepadSettings, IncomingEvent, InputEvent, Joystick, Key, MouseButton, CursorIcon};
 
 #[derive(Resource)]
 pub struct Input {
@@ -112,7 +110,7 @@ impl Input {
     }
 
     // should only be used in `render_gl` crate
-    pub fn recv_events(&mut self, events: &Vec<IncomingEvent>) {
+    pub fn recv_events(&mut self, clipboard: &mut ClipboardManager, events: &Vec<IncomingEvent>) {
         if !self.enabled {
             return;
         }
@@ -167,6 +165,26 @@ impl Input {
                     }
                 }
                 IncomingEvent::KeyPress(kind, modifiers) => {
+                    if modifiers.ctrl {
+                        match kind {
+                            Key::C => {
+                                self.outgoing_actions.push(InputEvent::Copy);
+                                continue;
+                            }
+                            Key::X => {
+                                self.outgoing_actions.push(InputEvent::Cut);
+                                continue;
+                            }
+                            Key::V => {
+                                if let Some(text) = clipboard.get_contents() {
+                                    self.outgoing_actions.push(InputEvent::Paste(text));
+                                }
+                                continue;
+                            }
+                            _ => {}
+                        }
+                    }
+
                     if !self.pressed_keys.contains(kind) {
                         self.outgoing_actions.push(InputEvent::KeyPressed(*kind, *modifiers));
                         self.pressed_keys.insert(*kind);

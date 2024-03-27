@@ -4,7 +4,7 @@ use math::Vec2;
 
 use crate::{gamepad::{GamepadButtonType, GamepadId}, JoystickType, Key, Modifiers, MouseButton};
 
-#[derive(Clone, Copy, Event)]
+#[derive(Clone, Event)]
 pub enum InputEvent {
     // mouse
     MouseClicked(MouseButton, Vec2),
@@ -22,4 +22,8 @@ pub enum InputEvent {
     GamepadButtonPressed(GamepadId, GamepadButtonType),
     GamepadButtonReleased(GamepadId, GamepadButtonType),
     GamepadJoystickMoved(GamepadId, JoystickType, Vec2),
+    // clipboard
+    Cut,
+    Copy,
+    Paste(String),
 }

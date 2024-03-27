@@ -16,6 +16,7 @@ input = { path = "../../input" }
 gl = { path = "../gl" }
 storage = { path = "../../storage" }
 random = { path = "../../random" }
+clipboard = { path = "../../clipboard" }
 
 # External Crates
 bevy_app = { version = "0.13", default-features = false }
