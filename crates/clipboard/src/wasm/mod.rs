@@ -15,6 +15,7 @@ impl Plugin for ClipboardPlugin {
             .init_resource::<ClipboardManager>()
             .init_non_send_resource::<web_clipboard::SubscribedEvents>()
             .add_systems(PreStartup, web_clipboard::startup_setup_web_events)
+            .add_systems(PreUpdate, handle_clipboard_events)
         ;
     }
 }
@@ -62,3 +63,24 @@ impl ClipboardManager {
         self.clipboard.get_contents()
     }
 }
+
+fn handle_clipboard_events(
+    mut clipboard_manager: ResMut<ClipboardManager>,
+) {
+    let event = clipboard_manager.try_receive_clipboard_event();
+    if let Some(event) = event {
+        match event {
+            web_clipboard::WebClipboardEvent::Cut => {
+                info!("received Cut");
+            }
+            web_clipboard::WebClipboardEvent::Copy => {
+                info!("received Copy");
+            }
+            web_clipboard::WebClipboardEvent::Paste(contents) => {
+                clipboard_manager.set_contents_internal(&contents);
+                info!("received Paste: {:?}", contents);
+            }
+        }
+    }
+}
+```
