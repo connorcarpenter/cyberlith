@@ -1,4 +1,4 @@
-
+use input::Modifiers;
 use render_api::base::{Color, CpuMaterial};
 use storage::Handle;
 use ui_layout::{Alignment, MarginUnits, PositionType, SizeUnits, TextMeasurer};
@@ -84,6 +84,7 @@ impl Textbox {
                         if self.carat_index > 0 {
                             self.carat_index -= 1;
                         }
+                        self.select_index = None;
                     }
                     (true, false) => {
                         if self.carat_index > 0 {
@@ -106,6 +107,7 @@ impl Textbox {
                         if self.carat_index < self.text.len() {
                             self.carat_index += 1;
                         }
+                        self.select_index = None;
                     }
                     (true, false) => {
                         if self.carat_index < self.text.len() {
@@ -168,7 +170,11 @@ impl Textbox {
         }
     }
 
-    pub fn recv_click(&mut self, text_measurer: &dyn TextMeasurer, click_x: f32, position_x: f32, height: f32) {
+    pub fn recv_click(&mut self, text_measurer: &dyn TextMeasurer, click_x: f32, position_x: f32, height: f32, modifiers: &Modifiers) {
+
+        if !modifiers.shift {
+            self.select_index = None;
+        }
 
         let click_x = click_x - position_x;
 

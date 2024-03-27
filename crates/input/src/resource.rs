@@ -116,11 +116,11 @@ impl Input {
         }
         for event in events {
             match event {
-                IncomingEvent::MousePress(button, position, _modifiers) => {
+                IncomingEvent::MousePress(button, position, modifiers) => {
                     if !self.pressed_mouse_buttons.contains(button) {
                         self.set_mouse_coords(position);
                         self.outgoing_actions
-                            .push(InputEvent::MouseClicked(*button, self.mouse_coords));
+                            .push(InputEvent::MouseClicked(*button, self.mouse_coords, modifiers.clone()));
                         self.pressed_mouse_buttons.insert(*button);
                     }
                 }

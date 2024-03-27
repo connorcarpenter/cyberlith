@@ -11,33 +11,25 @@ pub struct UiInputConverter;
 impl UiInputConverter {
 
     pub fn convert(input: &Input, input_events: &mut EventReader<InputEvent>) -> Option<UiInput> {
-        let (output_mode, output_events) = Self::read_all(input_events);
-        let Some(last_was_mouse) = output_mode else {
-            return None;
-        };
-        if last_was_mouse {
-            let mouse_pos = input.mouse_position();
-            return Some(UiInput::Mouse(mouse_pos.x,
-                                       mouse_pos.y,
-                                       input.is_pressed(MouseButton::Left)));
-        } else {
-            if let Some(output_events) = output_events {
-                return Some(UiInput::Events(output_events));
-            } else {
-                return None;
-            }
-        }
+        Self::read_all(input_events)
     }
 
-    fn read_all(input_events: &mut EventReader<InputEvent>) -> (Option<bool>, Option<Vec<UiInputEvent>>) {
+    fn read_all(input_events: &mut EventReader<InputEvent>) -> Option<UiInput> {
         let mut output_mode = None;
         let mut output_events = None;
+        let mut last_mouse_click = None;
 
         for input_event in input_events.read() {
 
             // first, check the mode of the input event
             if let Some(was_mouse) = match input_event {
-                InputEvent::MouseClicked(_, _) | InputEvent::MouseReleased(_) | InputEvent::MouseMoved(_) |
+                InputEvent::MouseClicked(button, pos, modifiers) => {
+                    if *button == MouseButton::Left {
+                        last_mouse_click = Some(UiInput::Mouse(pos.x, pos.y, true, modifiers.clone()));
+                    }
+                    Some(true)
+                }
+                InputEvent::MouseReleased(_) | InputEvent::MouseMoved(_) |
                 InputEvent::MouseDragged(_, _, _) | InputEvent::MouseMiddleScrolled(_) => {
                     Some(true)
                 }
@@ -108,13 +100,24 @@ impl UiInputConverter {
             output_events.as_mut().unwrap().push(output_event);
         };
 
-        (output_mode, output_events)
+        let Some(last_was_mouse) = output_mode else {
+            return None;
+        };
+        if last_was_mouse {
+            return last_mouse_click;
+        } else {
+            if let Some(output_events) = output_events {
+                return Some(UiInput::Events(output_events));
+            } else {
+                return None;
+            }
+        }
     }
 }
 
 #[derive(Clone)]
 pub enum UiInput {
-    Mouse(f32, f32, bool),
+    Mouse(f32, f32, bool, Modifiers),
     Events(Vec<UiInputEvent>)
 }
 
@@ -128,7 +131,7 @@ pub enum UiInputEvent {
 
 pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, input: UiInput) {
     match input {
-        UiInput::Mouse(x, y, left_pressed) => {
+        UiInput::Mouse(x, y, left_pressed, modifiers) => {
             ui.clear_hover();
 
             for node_id in 0..ui.store.nodes.len() {
@@ -147,7 +150,7 @@ pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, input: Ui
                             ui.set_selected_node(Some(hover_node));
                             ui.reset_interact_timer();
                             let (_, height, posx, _, _) = ui.cache.bounds(&hover_node).unwrap();
-                            ui.textbox_mut(&hover_node).unwrap().recv_click(text_measurer, x, posx, height);
+                            ui.textbox_mut(&hover_node).unwrap().recv_click(text_measurer, x, posx, height, &modifiers);
                         }
                         _ => {}
                     }
