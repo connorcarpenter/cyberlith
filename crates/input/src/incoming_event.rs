@@ -4,70 +4,70 @@ use crate::{Key, Modifiers, MouseButton};
 #[derive(Clone, Debug)]
 pub enum IncomingEvent {
     /// Fired when a button is pressed or the screen is touched.
-    MousePress {
+    MousePress(
         /// Type of button
-        button: MouseButton,
+        MouseButton,
         /// The screen position in logical pixels, to get it in physical pixels, multiply it with the device pixel ratio.
         /// The first value defines the position on the horizontal axis with zero being at the left border of the window
         /// and the second on the vertical axis with zero being at the top edge of the window.
-        position: (f64, f64),
+        (f64, f64),
         /// The state of modifiers.
-        modifiers: Modifiers,
-    },
+        Modifiers,
+    ),
     /// Fired when a button is released or the screen is stopped being touched.
-    MouseRelease {
+    MouseRelease(
         /// Type of button
-        button: MouseButton,
+        MouseButton,
         /// The screen position in logical pixels, to get it in physical pixels, multiply it with the device pixel ratio.
         /// The first value defines the position on the horizontal axis with zero being at the left border of the window
         /// and the second on the vertical axis with zero being at the top edge of the window.
-        position: (f64, f64),
+        (f64, f64),
         /// The state of modifiers.
-        modifiers: Modifiers,
-    },
+        Modifiers,
+    ),
     /// Fired continuously when the mouse or a finger on the screen is moved.
-    MouseMotion {
+    MouseMotion(
         /// Type of button if a button is pressed.
-        button: Option<MouseButton>,
+        Option<MouseButton>,
         /// The relative movement of the mouse/finger since last [IncomingEvent::MouseMotion] event.
-        delta: (f64, f64),
+        (f64, f64),
         /// The screen position in logical pixels, to get it in physical pixels, multiply it with the device pixel ratio.
         /// The first value defines the position on the horizontal axis with zero being at the left border of the window
         /// and the second on the vertical axis with zero being at the top edge of the window.
-        position: (f64, f64),
+        (f64, f64),
         /// The state of modifiers.
-        modifiers: Modifiers,
-    },
+        Modifiers,
+    ),
     /// Fired continuously when the mouse wheel or equivalent is applied.
-    MouseWheel {
+    MouseWheel(
         /// The relative scrolling since the last [IncomingEvent::MouseWheel] event.
-        delta: (f64, f64),
+        (f64, f64),
         /// The screen position in logical pixels, to get it in physical pixels, multiply it with the device pixel ratio.
         /// The first value defines the position on the horizontal axis with zero being at the left border of the window
         /// and the second on the vertical axis with zero being at the top edge of the window.
-        position: (f64, f64),
+        (f64, f64),
         /// The state of modifiers.
-        modifiers: Modifiers,
-    },
+        Modifiers,
+    ),
     /// Fired when a key is pressed.
-    KeyPress {
+    KeyPress(
         /// The type of key.
-        kind: Key,
+        Key,
         /// The state of modifiers.
-        modifiers: Modifiers,
-    },
+        Modifiers,
+    ),
     /// Fired when a key is released.
-    KeyRelease {
+    KeyRelease(
         /// The type of key.
-        kind: Key,
+        Key,
         /// The state of modifiers.
-        modifiers: Modifiers,
-    },
+        Modifiers,
+    ),
     /// Fired when the modifiers change.
-    ModifiersChange {
+    ModifiersChange(
         /// The state of modifiers after the change.
-        modifiers: Modifiers,
-    },
+        Modifiers,
+    ),
     /// Fires when some text has been written.
     Text(String),
 }

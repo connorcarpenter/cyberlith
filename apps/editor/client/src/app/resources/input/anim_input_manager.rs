@@ -69,7 +69,7 @@ impl AnimInputManager {
                 InputEvent::MouseMoved(_mouse_position) => {
                     input_manager.queue_resync_hover_ui();
                 }
-                InputEvent::KeyPressed(key) => match key {
+                InputEvent::KeyPressed(key, _) => match key {
                     Key::Delete => Self::handle_delete_frame(world, input_manager),
                     Key::Insert => Self::handle_insert_frame(world, input_manager),
                     Key::Space => Self::handle_play_pause(world),
@@ -156,7 +156,7 @@ impl AnimInputManager {
                 InputEvent::MouseReleased(MouseButton::Left) => {
                     Self::reset_last_dragged_rotation(input_manager, world)
                 }
-                InputEvent::KeyPressed(key) => match key {
+                InputEvent::KeyPressed(key, _) => match key {
                     Key::S
                     | Key::W
                     | Key::D

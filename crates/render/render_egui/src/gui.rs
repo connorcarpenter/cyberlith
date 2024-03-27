@@ -89,34 +89,41 @@ impl GUI {
             events: events
                 .iter()
                 .filter_map(|event| match event {
-                    IncomingEvent::KeyPress {
+                    IncomingEvent::KeyPress(
                         kind,
                         modifiers,
-
-                    } => {
-                        Some(egui::Event::Key {
-                            key: gl_to_egui_key(kind),
-                            pressed: true,
-                            modifiers: gl_to_egui_modifiers(modifiers),
-                            repeat: false,
-                        })
+                    ) => {
+                        if let Some(key) = gl_to_egui_key(kind) {
+                            Some(egui::Event::Key {
+                                key,
+                                pressed: true,
+                                modifiers: gl_to_egui_modifiers(modifiers),
+                                repeat: false,
+                            })
+                        } else {
+                            None
+                        }
                     }
-                    IncomingEvent::KeyRelease {
+                    IncomingEvent::KeyRelease(
                         kind,
                         modifiers,
-                    } => {
-                        Some(egui::Event::Key {
-                            key: gl_to_egui_key(kind),
-                            pressed: false,
-                            modifiers: gl_to_egui_modifiers(modifiers),
-                            repeat: false,
-                        })
+                    ) => {
+                        if let Some(key) = gl_to_egui_key(kind) {
+                            Some(egui::Event::Key {
+                                key,
+                                pressed: false,
+                                modifiers: gl_to_egui_modifiers(modifiers),
+                                repeat: false,
+                            })
+                        } else {
+                            None
+                        }
                     }
-                    IncomingEvent::MousePress {
+                    IncomingEvent::MousePress(
                         button,
                         position,
                         modifiers,
-                    } => {
+                    ) => {
                         Some(egui::Event::PointerButton {
                             pos: egui::Pos2 {
                                 x: position.0 as f32,
@@ -127,11 +134,11 @@ impl GUI {
                             modifiers: gl_to_egui_modifiers(modifiers),
                         })
                     }
-                    IncomingEvent::MouseRelease {
+                    IncomingEvent::MouseRelease(
                         button,
                         position,
                         modifiers,
-                    } => {
+                    ) => {
                         Some(egui::Event::PointerButton {
                             pos: egui::Pos2 {
                                 x: position.0 as f32,
@@ -142,9 +149,9 @@ impl GUI {
                             modifiers: gl_to_egui_modifiers(modifiers),
                         })
                     }
-                    IncomingEvent::MouseMotion {
-                        position, ..
-                    } => {
+                    IncomingEvent::MouseMotion(
+                        _button, _delta, position, _modifiers
+                    ) => {
                         Some(egui::Event::PointerMoved(egui::Pos2 {
                             x: position.0 as f32,
                             y: position.1 as f32,
@@ -152,7 +159,7 @@ impl GUI {
                     }
                     IncomingEvent::Text(text) => Some(egui::Event::Text(text.clone())),
                     // IncomingEvent::MouseLeave => Some(egui::Event::PointerGone),
-                    IncomingEvent::MouseWheel { delta, .. } => {
+                    IncomingEvent::MouseWheel(delta, _position, _modifiers) => {
                         Some(egui::Event::Scroll(egui::Vec2::new(
                             delta.0 as f32,
                             delta.1 as f32,

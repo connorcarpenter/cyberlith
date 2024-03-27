@@ -56,7 +56,7 @@ impl SkelInputManager {
                     input_manager.reset_last_dragged_vertex(world);
                     Self::reset_last_dragged_edge(world, input_manager);
                 }
-                InputEvent::KeyPressed(key) => match key {
+                InputEvent::KeyPressed(key, _) => match key {
                     Key::S
                     | Key::W
                     | Key::D

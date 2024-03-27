@@ -40,7 +40,7 @@ impl SkinInputManager {
                     input_manager.queue_resync_hover_ui();
                     input_manager.queue_resync_selection_ui();
                 }
-                InputEvent::KeyPressed(key) => match key {
+                InputEvent::KeyPressed(key, _) => match key {
                     Key::S
                     | Key::W
                     | Key::D

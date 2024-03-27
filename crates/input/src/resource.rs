@@ -118,9 +118,7 @@ impl Input {
         }
         for event in events {
             match event {
-                IncomingEvent::MousePress {
-                    button, position, ..
-                } => {
+                IncomingEvent::MousePress(button, position, _modifiers) => {
                     if !self.pressed_mouse_buttons.contains(button) {
                         self.set_mouse_coords(position);
                         self.outgoing_actions
@@ -128,14 +126,14 @@ impl Input {
                         self.pressed_mouse_buttons.insert(*button);
                     }
                 }
-                IncomingEvent::MouseRelease { button, .. } => {
+                IncomingEvent::MouseRelease(button, _position, _modifiers) => {
                     if self.pressed_mouse_buttons.contains(button) {
                         self.outgoing_actions
                             .push(InputEvent::MouseReleased(*button));
                         self.pressed_mouse_buttons.remove(button);
                     }
                 }
-                IncomingEvent::MouseMotion { position, .. } => {
+                IncomingEvent::MouseMotion(_button, _delta, position, _modifiers) => {
                     self.set_mouse_coords(position);
 
                     if self.mouse_coords.x as i16 != self.last_mouse_position.x as i16
@@ -157,7 +155,7 @@ impl Input {
                             .push(InputEvent::MouseMoved(self.mouse_coords));
                     }
                 }
-                IncomingEvent::MouseWheel { delta, .. } => {
+                IncomingEvent::MouseWheel(delta, _position, _modifiers) => {
                     // for now, only pass Y value
                     self.mouse_scroll_y += delta.1 as f32;
 
@@ -168,13 +166,14 @@ impl Input {
                         self.mouse_scroll_y = 0.0;
                     }
                 }
-                IncomingEvent::KeyPress { kind, modifiers } => {
+                IncomingEvent::KeyPress(kind, modifiers) => {
                     if !self.pressed_keys.contains(kind) {
+                        info!("Key pressed: {:?}, modifiers: {:?}", kind, modifiers);
                         self.outgoing_actions.push(InputEvent::KeyPressed(*kind, *modifiers));
                         self.pressed_keys.insert(*kind);
                     }
                 }
-                IncomingEvent::KeyRelease { kind, .. } => {
+                IncomingEvent::KeyRelease(kind, _modifiers) => {
                     if self.pressed_keys.contains(kind) {
                         self.outgoing_actions.push(InputEvent::KeyReleased(*kind));
                         self.pressed_keys.remove(kind);

@@ -71,7 +71,7 @@ impl ModelInputManager {
                         model_manager.on_drag_transform_end(world, input_manager);
                     });
                 }
-                InputEvent::KeyPressed(key) => match key {
+                InputEvent::KeyPressed(key, _) => match key {
                     Key::S
                     | Key::W
                     | Key::D

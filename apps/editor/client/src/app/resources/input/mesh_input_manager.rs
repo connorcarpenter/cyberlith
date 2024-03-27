@@ -50,7 +50,7 @@ impl MeshInputManager {
                 InputEvent::MouseReleased(MouseButton::Left) => {
                     input_manager.reset_last_dragged_vertex(world)
                 }
-                InputEvent::KeyPressed(key) => match key {
+                InputEvent::KeyPressed(key, _) => match key {
                     Key::S
                     | Key::W
                     | Key::D

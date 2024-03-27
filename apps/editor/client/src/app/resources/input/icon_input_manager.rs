@@ -96,7 +96,7 @@ impl IconInputManager {
                         icon_manager.reset_last_dragged_vertex(world)
                     }
                 }
-                InputEvent::KeyPressed(key) => match key {
+                InputEvent::KeyPressed(key, _) => match key {
                     Key::S | Key::W => {
                         icon_manager.handle_keypress_camera_controls(key);
                     }
@@ -664,7 +664,7 @@ impl IconInputManager {
                 InputEvent::MouseMoved(_mouse_position) => {
                     icon_manager.queue_resync_hover_ui();
                 }
-                InputEvent::KeyPressed(key) => match key {
+                InputEvent::KeyPressed(key, _) => match key {
                     Key::Delete => Self::handle_delete_frame(world, icon_manager),
                     Key::Insert => Self::handle_insert_frame(world, icon_manager),
                     Key::Space => Self::handle_play_pause(icon_manager),

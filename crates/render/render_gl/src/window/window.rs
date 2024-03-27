@@ -324,35 +324,37 @@ impl<T: 'static + Clone> Window<T> {
 
                             let state = input.state == ElementState::Pressed;
                             if let Some(kind) = translate_virtual_key_code(keycode) {
-                                events.push(if state {
-                                    IncomingEvent::KeyPress { kind, modifiers }
-                                } else {
-                                    IncomingEvent::KeyRelease { kind, modifiers }
-                                });
-                            } else if keycode == VirtualKeyCode::LControl
-                                || keycode == VirtualKeyCode::RControl
-                            {
-                                modifiers.ctrl = state;
-                                if !cfg!(target_os = "macos") {
-                                    modifiers.command = state;
+
+                                match kind {
+                                    Key::LCtrl | Key::RCtrl => {
+                                        modifiers.ctrl = state;
+                                        if !cfg!(target_os = "macos") {
+                                            modifiers.command = state;
+                                        }
+                                        events.push(IncomingEvent::ModifiersChange(modifiers));
+                                    }
+                                    Key::LAlt | Key::RAlt => {
+                                        modifiers.alt = state;
+                                        events.push(IncomingEvent::ModifiersChange(modifiers));
+                                    }
+                                    Key::LShift | Key::RShift => {
+                                        modifiers.shift = state;
+                                        events.push(IncomingEvent::ModifiersChange(modifiers));
+                                    }
+                                    _ => {}
                                 }
-                                events.push(IncomingEvent::ModifiersChange { modifiers });
-                            } else if keycode == VirtualKeyCode::LAlt
-                                || keycode == VirtualKeyCode::RAlt
-                            {
-                                modifiers.alt = state;
-                                events.push(IncomingEvent::ModifiersChange { modifiers });
-                            } else if keycode == VirtualKeyCode::LShift
-                                || keycode == VirtualKeyCode::RShift
-                            {
-                                modifiers.shift = state;
-                                events.push(IncomingEvent::ModifiersChange { modifiers });
+
+                                events.push(if state {
+                                    IncomingEvent::KeyPress(kind, modifiers)
+                                } else {
+                                    IncomingEvent::KeyRelease(kind, modifiers)
+                                });
                             } else if (keycode == VirtualKeyCode::LWin
                                 || keycode == VirtualKeyCode::RWin)
                                 && cfg!(target_os = "macos")
                             {
                                 modifiers.command = state;
-                                events.push(IncomingEvent::ModifiersChange { modifiers });
+                                events.push(IncomingEvent::ModifiersChange(modifiers));
                             }
                         }
                     }
@@ -361,22 +363,22 @@ impl<T: 'static + Clone> Window<T> {
                             match delta {
                                 winit::event::MouseScrollDelta::LineDelta(x, y) => {
                                     let line_height = 24.0; // TODO
-                                    events.push(IncomingEvent::MouseWheel {
-                                        delta: (
+                                    events.push(IncomingEvent::MouseWheel(
+                                        (
                                             (*x * line_height) as f64,
                                             (*y * line_height) as f64,
                                         ),
                                         position,
                                         modifiers,
-                                    });
+                                    ));
                                 }
                                 winit::event::MouseScrollDelta::PixelDelta(delta) => {
                                     let d = delta.to_logical(self.window.scale_factor());
-                                    events.push(IncomingEvent::MouseWheel {
-                                        delta: (d.x, d.y),
+                                    events.push(IncomingEvent::MouseWheel(
+                                        (d.x, d.y),
                                         position,
                                         modifiers,
-                                    });
+                                    ));
                                 }
                             }
                         }
@@ -389,21 +391,21 @@ impl<T: 'static + Clone> Window<T> {
                                 WinitMouseButton::Right => Some(MouseButton::Right),
                                 _ => None,
                             };
-                            if let Some(b) = button {
+                            if let Some(button) = button {
                                 events.push(if *state == ElementState::Pressed {
-                                    mouse_pressed = Some(b);
-                                    IncomingEvent::MousePress {
-                                        button: b,
+                                    mouse_pressed = Some(button);
+                                    IncomingEvent::MousePress(
+                                        button,
                                         position,
                                         modifiers,
-                                    }
+                                    )
                                 } else {
                                     mouse_pressed = None;
-                                    IncomingEvent::MouseRelease {
-                                        button: b,
+                                    IncomingEvent::MouseRelease(
+                                        button,
                                         position,
                                         modifiers,
-                                    }
+                                    )
                                 });
                             }
                         }
@@ -415,12 +417,12 @@ impl<T: 'static + Clone> Window<T> {
                         } else {
                             (0.0, 0.0)
                         };
-                        events.push(IncomingEvent::MouseMotion {
-                            button: mouse_pressed,
+                        events.push(IncomingEvent::MouseMotion(
+                            mouse_pressed,
                             delta,
-                            position: (p.x, p.y),
+                            (p.x, p.y),
                             modifiers,
-                        });
+                        ));
                         cursor_pos = Some((p.x, p.y));
                     }
                     WindowEvent::ReceivedCharacter(ch) => {
@@ -439,11 +441,11 @@ impl<T: 'static + Clone> Window<T> {
                         match touch.phase {
                             TouchPhase::Started => {
                                 if finger_id.is_none() {
-                                    events.push(IncomingEvent::MousePress {
-                                        button: MouseButton::Left,
+                                    events.push(IncomingEvent::MousePress(
+                                        MouseButton::Left,
                                         position,
                                         modifiers,
-                                    });
+                                    ));
                                     cursor_pos = Some(position);
                                     finger_id = Some(touch.id);
                                 } else if secondary_finger_id.is_none() {
@@ -453,11 +455,11 @@ impl<T: 'static + Clone> Window<T> {
                             }
                             TouchPhase::Ended | TouchPhase::Cancelled => {
                                 if finger_id.map(|id| id == touch.id).unwrap_or(false) {
-                                    events.push(IncomingEvent::MouseRelease {
-                                        button: MouseButton::Left,
+                                    events.push(IncomingEvent::MouseRelease(
+                                        MouseButton::Left,
                                         position,
                                         modifiers,
-                                    });
+                                    ));
                                     cursor_pos = None;
                                     finger_id = None;
                                 } else if secondary_finger_id
@@ -472,24 +474,24 @@ impl<T: 'static + Clone> Window<T> {
                                 if finger_id.map(|id| id == touch.id).unwrap_or(false) {
                                     let last_pos = cursor_pos.unwrap();
                                     if let Some(p) = secondary_cursor_pos {
-                                        events.push(IncomingEvent::MouseWheel {
-                                            position,
-                                            modifiers,
-                                            delta: (
+                                        events.push(IncomingEvent::MouseWheel(
+                                            (
                                                 (position.0 - p.0).abs() - (last_pos.0 - p.0).abs(),
                                                 (position.1 - p.1).abs() - (last_pos.1 - p.1).abs(),
                                             ),
-                                        });
-                                    } else {
-                                        events.push(IncomingEvent::MouseMotion {
-                                            button: Some(MouseButton::Left),
                                             position,
                                             modifiers,
-                                            delta: (
+                                        ));
+                                    } else {
+                                        events.push(IncomingEvent::MouseMotion(
+                                            Some(MouseButton::Left),
+                                            (
                                                 position.0 - last_pos.0,
                                                 position.1 - last_pos.1,
                                             ),
-                                        });
+                                            position,
+                                            modifiers,
+                                        ));
                                     }
                                     cursor_pos = Some(position);
                                 } else if secondary_finger_id
@@ -498,14 +500,14 @@ impl<T: 'static + Clone> Window<T> {
                                 {
                                     let last_pos = secondary_cursor_pos.unwrap();
                                     if let Some(p) = cursor_pos {
-                                        events.push(IncomingEvent::MouseWheel {
-                                            position: p,
-                                            modifiers,
-                                            delta: (
+                                        events.push(IncomingEvent::MouseWheel(
+                                            (
                                                 (position.0 - p.0).abs() - (last_pos.0 - p.0).abs(),
                                                 (position.1 - p.1).abs() - (last_pos.1 - p.1).abs(),
                                             ),
-                                        });
+                                            p,
+                                            modifiers,
+                                        ));
                                     }
                                     secondary_cursor_pos = Some(position);
                                 }

@@ -1,5 +1,5 @@
 use bevy_ecs::event::EventReader;
-use bevy_log::warn;
+use bevy_log::{info, warn};
 
 use input::{CursorIcon, GamepadButtonType, Input, InputEvent, Key, MouseButton};
 use ui_layout::TextMeasurer;
@@ -53,60 +53,49 @@ impl UiInputConverter {
 
             // then, collect the actual events
             let output_event = match input_event {
-                InputEvent::KeyPressed(Key::ArrowUp, _) |
-                InputEvent::GamepadButtonPressed(_, GamepadButtonType::DPadUp)
-                => {
-                    Some(UiInputEvent::Up)
+                InputEvent::GamepadButtonPressed(_, button) => {
+                    match button {
+                        GamepadButtonType::DPadUp => Some(UiInputEvent::Up),
+                        GamepadButtonType::DPadDown => Some(UiInputEvent::Down),
+                        GamepadButtonType::DPadLeft => Some(UiInputEvent::Left),
+                        GamepadButtonType::DPadRight => Some(UiInputEvent::Right),
+                        GamepadButtonType::Start | GamepadButtonType::South => Some(UiInputEvent::SelectPressed),
+                        GamepadButtonType::East => Some(UiInputEvent::Back),
+                        _ => None,
+                    }
                 }
-                InputEvent::KeyPressed(Key::ArrowDown, _) |
-                InputEvent::GamepadButtonPressed(_, GamepadButtonType::DPadDown)
-                => {
-                    Some(UiInputEvent::Down)
-                }
-                InputEvent::KeyPressed(Key::ArrowLeft, _) |
-                InputEvent::GamepadButtonPressed(_, GamepadButtonType::DPadLeft)
-                => {
-                    Some(UiInputEvent::Left)
-                }
-                InputEvent::KeyPressed(Key::ArrowRight, _) |
-                InputEvent::GamepadButtonPressed(_, GamepadButtonType::DPadRight)
-                => {
-                    Some(UiInputEvent::Right)
-                }
-                InputEvent::KeyPressed(Key::Enter, _) |
-                InputEvent::GamepadButtonPressed(_, GamepadButtonType::Start) |
-                InputEvent::GamepadButtonPressed(_, GamepadButtonType::South)
-                => {
-                    Some(UiInputEvent::SelectPressed)
-                }
-                InputEvent::KeyReleased(Key::Enter) |
-                InputEvent::GamepadButtonReleased(_, GamepadButtonType::Start) |
-                InputEvent::GamepadButtonReleased(_, GamepadButtonType::South)
-                => {
-                    Some(UiInputEvent::SelectReleased)
-                }
-                InputEvent::KeyPressed(Key::Escape, _) |
-                InputEvent::GamepadButtonPressed(_, GamepadButtonType::East)
-                => {
-                    Some(UiInputEvent::Back)
-                }
-                InputEvent::KeyPressed(Key::Backspace, _) => {
-                    Some(UiInputEvent::Backspace)
-                }
-                InputEvent::KeyPressed(Key::Delete, _) => {
-                    Some(UiInputEvent::Delete)
-                }
-                InputEvent::KeyPressed(Key::Home, _) => {
-                    Some(UiInputEvent::Home)
-                }
-                InputEvent::KeyPressed(Key::End, _) => {
-                    Some(UiInputEvent::End)
+                InputEvent::GamepadButtonReleased(_, button) => {
+                    match button {
+                        GamepadButtonType::Start | GamepadButtonType::South => Some(UiInputEvent::SelectReleased),
+                        _ => None,
+                    }
                 }
                 InputEvent::KeyPressed(key, modifiers) => {
-                    if key.is_char() {
-                        Some(UiInputEvent::Key(key.to_char(modifiers.shift).unwrap()))
-                    } else {
-                        None
+                    match key {
+                        Key::ArrowUp => Some(UiInputEvent::Up),
+                        Key::ArrowDown => Some(UiInputEvent::Down),
+                        Key::ArrowLeft => Some(UiInputEvent::Left),
+                        Key::ArrowRight => Some(UiInputEvent::Right),
+                        Key::Enter => Some(UiInputEvent::SelectPressed),
+                        Key::Escape => Some(UiInputEvent::Back),
+                        Key::Backspace => Some(UiInputEvent::Backspace),
+                        Key::Delete => Some(UiInputEvent::Delete),
+                        Key::Home => Some(UiInputEvent::Home),
+                        Key::End => Some(UiInputEvent::End),
+                        key_val => {
+                            if key_val.is_char() {
+                                info!("key_val: {:?}, modifiers: {:?}", key_val, modifiers);
+                                Some(UiInputEvent::Key(key.to_char(modifiers.shift).unwrap()))
+                            } else {
+                                None
+                            }
+                        },
+                    }
+                }
+                InputEvent::KeyReleased(key) => {
+                    match key {
+                        Key::Enter => Some(UiInputEvent::SelectReleased),
+                        _ => None,
                     }
                 }
                 _ => None,
