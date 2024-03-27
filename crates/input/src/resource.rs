@@ -9,7 +9,7 @@ use bevy_log::info;
 use clipboard::ClipboardManager;
 use math::Vec2;
 
-use crate::{gamepad::{Axis, GamepadAxis, GamepadButton, GamepadInfo, Gamepads, ALL_AXIS_TYPES, ALL_BUTTON_TYPES,, GamepadButtonType, GamepadId}, is_button::IsButton, GamepadSettings, IncomingEvent, InputEvent, Joystick, Key, MouseButton, CursorIcon};
+use crate::{gamepad::{Axis, GamepadAxis, GamepadButton, GamepadInfo, Gamepads, ALL_AXIS_TYPES, ALL_BUTTON_TYPES, GamepadButtonType, GamepadId}, is_button::IsButton, GamepadSettings, IncomingEvent, InputEvent, Joystick, Key, MouseButton, CursorIcon};
 
 #[derive(Resource)]
 pub struct Input {

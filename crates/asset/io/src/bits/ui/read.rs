@@ -60,7 +60,9 @@ fn convert_actions_to_ui(actions: Vec<UiAction>) -> Ui {
     }
 
     // process nodes recursively
-    let root_node_serde = nodes.first().unwrap();
+    let Some(root_node_serde) = nodes.first() else {
+        panic!("Reading Ui with no nodes");
+    };
     //info!("0 - root_node_serde: {:?}", root_node_serde);
 
     let mut root_mut = ui.root_mut();
