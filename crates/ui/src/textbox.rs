@@ -13,7 +13,7 @@ pub struct Textbox {
     pub navigation: Navigation,
 
     pub text: String,
-    pub cursor: usize,
+    pub carat_index: usize,
 
     hover_color_handle: Option<Handle<CpuMaterial>>,
     active_color_handle: Option<Handle<CpuMaterial>>,
@@ -26,7 +26,7 @@ impl Textbox {
             id_str: id_str.to_string(),
             navigation: Navigation::new(),
             text: String::new(),
-            cursor: 0,
+            carat_index: 0,
             hover_color_handle: None,
             active_color_handle: None,
         }
@@ -67,40 +67,40 @@ impl Textbox {
     pub fn recv_input(&mut self, event: UiInputEvent) {
         match event {
             UiInputEvent::Left => {
-                if self.cursor > 0 {
-                    self.cursor -= 1;
+                if self.carat_index > 0 {
+                    self.carat_index -= 1;
                 }
             },
             UiInputEvent::Right => {
-                if self.cursor < self.text.len() {
-                    self.cursor += 1;
+                if self.carat_index < self.text.len() {
+                    self.carat_index += 1;
                 }
             },
             UiInputEvent::Text(new_char) => {
-                self.text.insert(self.cursor, new_char);
-                self.cursor += 1;
+                self.text.insert(self.carat_index, new_char);
+                self.carat_index += 1;
             },
             UiInputEvent::Backspace => {
-                if self.cursor > 0 {
-                    self.text.remove(self.cursor - 1);
-                    self.cursor -= 1;
+                if self.carat_index > 0 {
+                    self.text.remove(self.carat_index - 1);
+                    self.carat_index -= 1;
                 }
             },
             UiInputEvent::Delete => {
-                if self.cursor < self.text.len() {
-                    self.text.remove(self.cursor);
+                if self.carat_index < self.text.len() {
+                    self.text.remove(self.carat_index);
                 }
             },
             UiInputEvent::Home => {
-                self.cursor = 0;
+                self.carat_index = 0;
             },
             UiInputEvent::End => {
-                self.cursor = self.text.len();
+                self.carat_index = self.text.len();
             },
             UiInputEvent::Paste(text) => {
                 // TODO: validate pasted text? I did panic at some point here.
-                self.text.insert_str(self.cursor, &text);
-                self.cursor += text.len();
+                self.text.insert_str(self.carat_index, &text);
+                self.carat_index += text.len();
             }
             _ => panic!("Unhandled input event for textbox: {:?}", event),
         }
@@ -123,7 +123,7 @@ impl Textbox {
                 closest_index = char_index;
             } else {
                 // dist is increasing ... we can break
-                self.cursor = closest_index;
+                self.carat_index = closest_index;
                 return;
             }
 

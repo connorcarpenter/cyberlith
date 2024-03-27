@@ -86,7 +86,7 @@ impl AssetRenderer {
         mat_handle: &Handle<CpuMaterial>,
         transform: &Transform,
         text: &str,
-        cursor_opt: Option<usize>,
+        carat_index_opt: Option<usize>,
     ) {
         // info!("drawing text: {}, transform: {:?}, text_height: {:?}", text, transform);
 
@@ -104,7 +104,7 @@ impl AssetRenderer {
         cursor.scale.y = transform.scale.y / 200.0;
         cursor.scale.x = cursor.scale.y;
 
-        let mut cursor_line_x = if cursor_opt.is_some() { cursor.translation.x - 4.0 } else { 0.0 };
+        let mut carat_x = if carat_index_opt.is_some() { cursor.translation.x - 4.0 } else { 0.0 };
 
         for (char_index, c) in text.chars().enumerate() {
             let c: u8 = if c.is_ascii() {
@@ -141,15 +141,15 @@ impl AssetRenderer {
 
             cursor.translation.x += frame_actual_width;
             cursor.translation.x += 4.0 * cursor.scale.x; // between character spacing - TODO: replace with config
-            if let Some(cursor_line_id) = cursor_opt {
-                if char_index + 1 == cursor_line_id {
-                    cursor_line_x = cursor.translation.x;
+            if let Some(carat_index) = carat_index_opt {
+                if char_index + 1 == carat_index {
+                    carat_x = cursor.translation.x;
                 }
             }
             cursor.translation.x += 4.0 * cursor.scale.x; // between character spacing - TODO: replace with config
         }
 
-        if cursor_opt.is_some() {
+        if carat_index_opt.is_some() {
 
             let frame_index = (124 - 32) as usize;
 
@@ -162,7 +162,7 @@ impl AssetRenderer {
             let half_frame_actual_width = frame_actual_width * 0.5;
 
             let mut final_position = cursor.clone();
-            final_position.translation.x = cursor_line_x - 1.0;
+            final_position.translation.x = carat_x - 1.0;
             final_position.translation.x += half_frame_actual_width;
 
             Self::draw_icon_with_material(
@@ -380,7 +380,7 @@ impl AssetRenderer {
         let ui = ui_data.get_ui_ref();
         let text_icon_handle = ui_data.get_icon_handle();
 
-        let cursor_blink = blinkiness.enabled() || ui.interact_timer_was_recent();
+        let carat_blink = blinkiness.enabled() || ui.interact_timer_was_recent();
 
         for node_id in 0..ui.store.nodes.len() {
             let node_id = NodeId::from_usize(node_id);
@@ -388,7 +388,7 @@ impl AssetRenderer {
                 render_frame,
                 render_layer_opt,
                 asset_store,
-                cursor_blink,
+                carat_blink,
                 &ui,
                 &text_icon_handle,
                 &node_id,
@@ -401,7 +401,7 @@ fn draw_ui_node(
     render_frame: &mut RenderFrame,
     render_layer_opt: Option<&RenderLayer>,
     asset_store: &ProcessedAssetStore,
-    cursor_blink: bool,
+    carat_blink: bool,
     ui: &Ui,
     text_icon_handle: &AssetHandle<IconData>,
     id: &NodeId,
@@ -460,7 +460,7 @@ fn draw_ui_node(
                     render_frame,
                     render_layer_opt,
                     asset_store,
-                    cursor_blink,
+                    carat_blink,
                     ui,
                     text_icon_handle,
                     id,
@@ -587,7 +587,7 @@ fn draw_ui_textbox(
     render_frame: &mut RenderFrame,
     render_layer_opt: Option<&RenderLayer>,
     asset_store: &ProcessedAssetStore,
-    cursor_blink: bool,
+    carat_blink: bool,
     ui: &Ui,
     text_icon_handle: &AssetHandle<IconData>,
     node_id: &NodeId,
@@ -623,9 +623,9 @@ fn draw_ui_textbox(
     new_transform.translation.x += 8.0;
     new_transform.translation.z += 0.05;
 
-    let cursor_opt = if active_state == NodeActiveState::Active {
-        if cursor_blink {
-            Some(textbox_ref.cursor)
+    let carat_opt = if active_state == NodeActiveState::Active {
+        if carat_blink {
+            Some(textbox_ref.carat_index)
         } else {
             None
         }
@@ -641,6 +641,6 @@ fn draw_ui_textbox(
         text_color_handle,
         &new_transform,
         &textbox_ref.text,
-        cursor_opt
+        carat_opt
     );
 }
