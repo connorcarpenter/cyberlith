@@ -157,7 +157,7 @@ impl GUI {
                             y: position.1 as f32,
                         }))
                     }
-                    IncomingEvent::Text(text) => Some(egui::Event::Text(text.clone())),
+                    IncomingEvent::Text(text) => Some(egui::Event::Text(text.to_string())),
                     // IncomingEvent::MouseLeave => Some(egui::Event::PointerGone),
                     IncomingEvent::MouseWheel(delta, _position, _modifiers) => {
                         Some(egui::Event::Scroll(egui::Vec2::new(
@@ -165,7 +165,6 @@ impl GUI {
                             delta.1 as f32,
                         )))
                     }
-                    _ => None,
                 })
                 .collect::<Vec<_>>(),
             ..Default::default()

@@ -63,11 +63,6 @@ pub enum IncomingEvent {
         /// The state of modifiers.
         Modifiers,
     ),
-    /// Fired when the modifiers change.
-    ModifiersChange(
-        /// The state of modifiers after the change.
-        Modifiers,
-    ),
     /// Fires when some text has been written.
-    Text(String),
+    Text(char),
 }

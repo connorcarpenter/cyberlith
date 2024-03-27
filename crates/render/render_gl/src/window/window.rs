@@ -331,30 +331,26 @@ impl<T: 'static + Clone> Window<T> {
                                         if !cfg!(target_os = "macos") {
                                             modifiers.command = state;
                                         }
-                                        events.push(IncomingEvent::ModifiersChange(modifiers));
                                     }
                                     Key::LAlt | Key::RAlt => {
                                         modifiers.alt = state;
-                                        events.push(IncomingEvent::ModifiersChange(modifiers));
                                     }
                                     Key::LShift | Key::RShift => {
                                         modifiers.shift = state;
-                                        events.push(IncomingEvent::ModifiersChange(modifiers));
                                     }
                                     _ => {}
                                 }
 
-                                events.push(if state {
-                                    IncomingEvent::KeyPress(kind, modifiers)
+                                if state {
+                                    events.push(IncomingEvent::KeyPress(kind, modifiers));
                                 } else {
-                                    IncomingEvent::KeyRelease(kind, modifiers)
-                                });
+                                    events.push(IncomingEvent::KeyRelease(kind, modifiers));
+                                }
                             } else if (keycode == VirtualKeyCode::LWin
                                 || keycode == VirtualKeyCode::RWin)
                                 && cfg!(target_os = "macos")
                             {
                                 modifiers.command = state;
-                                events.push(IncomingEvent::ModifiersChange(modifiers));
                             }
                         }
                     }
@@ -427,7 +423,7 @@ impl<T: 'static + Clone> Window<T> {
                     }
                     WindowEvent::ReceivedCharacter(ch) => {
                         if is_printable_char(*ch) && !modifiers.ctrl && !modifiers.command {
-                            events.push(IncomingEvent::Text(ch.to_string()));
+                            events.push(IncomingEvent::Text(*ch));
                         }
                     }
                     WindowEvent::CursorLeft { .. } => {

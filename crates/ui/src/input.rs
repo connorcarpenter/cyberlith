@@ -40,7 +40,7 @@ impl UiInputConverter {
                 InputEvent::MouseClicked(_, _) | InputEvent::MouseReleased(_) | InputEvent::MouseMoved(_) | InputEvent::MouseDragged(_, _, _) | InputEvent::MouseMiddleScrolled(_) => {
                     Some(true)
                 }
-                InputEvent::KeyPressed(_, _) | InputEvent::KeyReleased(_) | InputEvent::GamepadButtonPressed(_, _) | InputEvent::GamepadButtonReleased(_, _) | InputEvent::GamepadJoystickMoved(_, _, _) => {
+                InputEvent::Text(_) | InputEvent::KeyPressed(_, _) | InputEvent::KeyReleased(_) | InputEvent::GamepadButtonPressed(_, _) | InputEvent::GamepadButtonReleased(_, _) | InputEvent::GamepadJoystickMoved(_, _, _) => {
                     Some(false)
                 }
                 _ => None,
@@ -70,7 +70,7 @@ impl UiInputConverter {
                         _ => None,
                     }
                 }
-                InputEvent::KeyPressed(key, modifiers) => {
+                InputEvent::KeyPressed(key, _modifiers) => {
                     match key {
                         Key::ArrowUp => Some(UiInputEvent::Up),
                         Key::ArrowDown => Some(UiInputEvent::Down),
@@ -82,14 +82,7 @@ impl UiInputConverter {
                         Key::Delete => Some(UiInputEvent::Delete),
                         Key::Home => Some(UiInputEvent::Home),
                         Key::End => Some(UiInputEvent::End),
-                        key_val => {
-                            if key_val.is_char() {
-                                info!("key_val: {:?}, modifiers: {:?}", key_val, modifiers);
-                                Some(UiInputEvent::Key(key.to_char(modifiers.shift).unwrap()))
-                            } else {
-                                None
-                            }
-                        },
+                        _ => None,
                     }
                 }
                 InputEvent::KeyReleased(key) => {
@@ -98,6 +91,7 @@ impl UiInputConverter {
                         _ => None,
                     }
                 }
+                InputEvent::Text(c) => Some(UiInputEvent::Key(*c)),
                 _ => None,
             };
             let Some(output_event) = output_event else {

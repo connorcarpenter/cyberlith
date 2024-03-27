@@ -168,7 +168,6 @@ impl Input {
                 }
                 IncomingEvent::KeyPress(kind, modifiers) => {
                     if !self.pressed_keys.contains(kind) {
-                        info!("Key pressed: {:?}, modifiers: {:?}", kind, modifiers);
                         self.outgoing_actions.push(InputEvent::KeyPressed(*kind, *modifiers));
                         self.pressed_keys.insert(*kind);
                     }
@@ -179,7 +178,9 @@ impl Input {
                         self.pressed_keys.remove(kind);
                     }
                 }
-                _ => {}
+                IncomingEvent::Text(c) => {
+                    self.outgoing_actions.push(InputEvent::Text(*c));
+                }
             }
         }
     }

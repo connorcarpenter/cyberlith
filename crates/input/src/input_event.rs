@@ -15,6 +15,7 @@ pub enum InputEvent {
     // keyboard
     KeyPressed(Key, Modifiers),
     KeyReleased(Key),
+    Text(char),
     // gamepad
     GamepadConnected(GamepadId),
     GamepadDisconnected(GamepadId),
