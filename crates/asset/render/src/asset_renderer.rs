@@ -1,15 +1,14 @@
 use bevy_log::warn;
 
 use render_api::{
-    base::CpuMaterial,
+    base::{CpuMaterial, CpuMesh},
     components::{RenderLayer, Transform},
     resources::RenderFrame,
 };
 use storage::Handle;
 use ui::{NodeActiveState, NodeId, Ui, WidgetKind};
 
-use crate::{asset_dependency::AssetComponentHandle, processed_asset_store::ProcessedAssetStore, AnimationData, AssetHandle, IconData, MeshData, ModelData, SceneData, SkinData, UiData, Blinkiness};
-use crate::asset_manager::UiTextMeasurer;
+use crate::{asset_manager::UiTextMeasurer, asset_dependency::AssetComponentHandle, processed_asset_store::ProcessedAssetStore, AnimationData, AssetHandle, IconData, MeshData, ModelData, SceneData, SkinData, UiData, Blinkiness};
 
 pub(crate) struct AssetRenderer;
 
@@ -156,14 +155,7 @@ impl AssetRenderer {
         cursor.scale.y = transform.scale.y / text_height;
         cursor.scale.x = cursor.scale.y;
 
-        for (char_index, x_position) in x_positions.iter().enumerate() {
-            let frame_x = x_position * cursor.scale.x;
-
-            if char_index == carat_index {
-                cursor.translation.x = transform.translation.x + frame_x;
-                break;
-            }
-        }
+        cursor.translation.x = transform.translation.x + (x_positions[carat_index] * cursor.scale.x);
 
         Self::draw_icon_with_material(
             render_frame,
@@ -174,6 +166,42 @@ impl AssetRenderer {
             (124 - 32) as usize, // pipe character '|'
             &cursor,
         );
+    }
+
+    pub(crate) fn draw_text_selection(
+        render_frame: &mut RenderFrame,
+        render_layer_opt: Option<&RenderLayer>,
+        asset_store: &ProcessedAssetStore,
+        text_icon_handle: &AssetHandle<IconData>,
+        mesh_handle: &Handle<CpuMesh>,
+        mat_handle: &Handle<CpuMaterial>,
+        transform: &Transform,
+        text: &str,
+        select_index: usize,
+        carat_index: usize,
+    ) {
+        let Some(icon_data) = asset_store.icons.get(text_icon_handle) else {
+            return;
+        };
+        let text_measurer = UiTextMeasurer::new(icon_data);
+        let subimage_indices = ui::Text::get_subimage_indices(text);
+        let (x_positions, text_height) = ui::Text::get_raw_text_rects(&text_measurer, &subimage_indices);
+        let text_scale = transform.scale.y / text_height;
+
+        let pos_a = transform.translation.x + (x_positions[carat_index] * text_scale);
+        let pos_b = transform.translation.x + (x_positions[select_index] * text_scale);
+        let (x_pos, x_scale) = if carat_index < select_index {
+            (pos_a, pos_b - pos_a)
+        } else {
+            (pos_b, pos_a - pos_b)
+        };
+
+        let mut box_transform = transform.clone();
+        box_transform.translation.x = x_pos;
+        box_transform.scale.x = x_scale;
+        box_transform.translation.y += 8.0;
+        box_transform.scale.y -= 16.0;
+        render_frame.draw_mesh(render_layer_opt, mesh_handle, mat_handle, &box_transform);
     }
 
     pub(crate) fn draw_skin(
@@ -617,29 +645,54 @@ fn draw_ui_textbox(
         panic!("No text color handle found in globals");
     };
 
-    let mut new_transform = transform.clone();
-    new_transform.translation.x += 8.0;
-    new_transform.translation.z += 0.05;
+    // draw text
+    let mut text_transform = transform.clone();
+    text_transform.translation.x += 8.0;
 
-    AssetRenderer::draw_text(
-        render_frame,
-        render_layer_opt,
-        asset_store,
-        text_icon_handle,
-        text_color_handle,
-        &new_transform,
-        &textbox_ref.text,
-    );
+    {
+        text_transform.translation.z = transform.translation.z + 0.05;
+        AssetRenderer::draw_text(
+            render_frame,
+            render_layer_opt,
+            asset_store,
+            text_icon_handle,
+            text_color_handle,
+            &text_transform,
+            &textbox_ref.text,
+        );
+    }
 
     if active_state == NodeActiveState::Active {
+
+        // draw selection box if needed
+        if let Some(select_index) = textbox_ref.select_index {
+            if let Some(mat_handle) = textbox_ref.get_selection_color_handle() {
+                text_transform.translation.z = transform.translation.z + 0.025;
+                AssetRenderer::draw_text_selection(
+                    render_frame,
+                    render_layer_opt,
+                    asset_store,
+                    text_icon_handle,
+                    ui.globals.get_box_mesh_handle().unwrap(),
+                    &mat_handle,
+                    &text_transform,
+                    &textbox_ref.text,
+                    select_index,
+                    textbox_ref.carat_index,
+                );
+            }
+        }
+
+        // draw carat if needed
         if carat_blink {
+            text_transform.translation.z = transform.translation.z + 0.05;
             AssetRenderer::draw_text_carat(
                 render_frame,
                 render_layer_opt,
                 asset_store,
                 text_icon_handle,
                 text_color_handle,
-                &new_transform,
+                &text_transform,
                 &textbox_ref.text,
                 textbox_ref.carat_index,
             );

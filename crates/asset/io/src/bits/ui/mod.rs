@@ -124,6 +124,7 @@ pub(crate) struct TextboxStyleBits {
     panel: PanelStyleBits,
     hover_color: Option<(u8, u8, u8)>,
     active_color: Option<(u8, u8, u8)>,
+    select_color: Option<(u8, u8, u8)>,
 }
 
 #[derive(Serde, Clone, PartialEq)]

@@ -122,6 +122,7 @@ pub(crate) struct TextboxStyleJson {
     panel: PanelStyleJson,
     hover_color: Option<ColorJson>,
     active_color: Option<ColorJson>,
+    select_color: Option<ColorJson>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

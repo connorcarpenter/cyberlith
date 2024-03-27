@@ -918,6 +918,10 @@ impl UiStyleBits {
             style.set_active_color(Color::new(*r, *g, *b));
         }
 
+        if let Some((r, g, b)) = &textbox_style_serde.select_color {
+            style.set_selection_color(Color::new(*r, *g, *b));
+        }
+
         // panel-specific
         let panel_style_serde = &textbox_style_serde.panel;
 

@@ -35,9 +35,9 @@ impl Color {
     /// Opaque blue
     pub const BLUE: Color = Color::new(0, 64, 255);
     /// Opaque light blue
-    pub const LIGHT_BLUE: Color = Color::new(0, 32, 255);
+    pub const LIGHT_BLUE: Color = Color::new(128, 158, 255);
     /// Opaque dark blue
-    pub const DARK_BLUE: Color = Color::new(0, 48, 192);
+    pub const DARK_BLUE: Color = Color::new(0, 18, 77);
     /// Opaque aqua
     pub const AQUA: Color = Color::new(0, 255, 255);
     /// Opaque white

@@ -818,6 +818,10 @@ impl UiStyleJson {
             let val = val_serde.to_color();
             style.set_active_color(val);
         }
+        if let Some(val_serde) = &textbox_style_serde.select_color {
+            let val = val_serde.to_color();
+            style.set_selection_color(val);
+        }
 
         // panel-specific
         let panel_style_serde = &textbox_style_serde.panel;

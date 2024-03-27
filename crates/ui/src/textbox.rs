@@ -18,6 +18,7 @@ pub struct Textbox {
 
     hover_color_handle: Option<Handle<CpuMaterial>>,
     active_color_handle: Option<Handle<CpuMaterial>>,
+    select_color_handle: Option<Handle<CpuMaterial>>,
 }
 
 impl Textbox {
@@ -31,6 +32,7 @@ impl Textbox {
             select_index: None,
             hover_color_handle: None,
             active_color_handle: None,
+            select_color_handle: None,
         }
     }
 
@@ -47,7 +49,7 @@ impl Textbox {
     }
 
     pub fn needs_color_handle(&self) -> bool {
-        self.panel.background_color_handle.is_none()
+        self.panel.background_color_handle.is_none() || self.hover_color_handle.is_none() || self.active_color_handle.is_none() || self.select_color_handle.is_none()
     }
 
     pub fn current_color_handle(&self, state: NodeActiveState) -> Option<Handle<CpuMaterial>> {
@@ -64,6 +66,14 @@ impl Textbox {
 
     pub fn set_active_color_handle(&mut self, val: Handle<CpuMaterial>) {
         self.active_color_handle = Some(val);
+    }
+
+    pub fn get_selection_color_handle(&self) -> Option<Handle<CpuMaterial>> {
+        self.select_color_handle
+    }
+
+    pub fn set_selection_color_handle(&mut self, val: Handle<CpuMaterial>) {
+        self.select_color_handle = Some(val);
     }
 
     pub fn recv_input(&mut self, event: UiInputEvent) {
@@ -193,6 +203,7 @@ pub struct TextboxStyle {
 
     pub hover_color: Option<Color>,
     pub active_color: Option<Color>,
+    pub select_color: Option<Color>,
 }
 
 impl TextboxStyle {
@@ -202,6 +213,7 @@ impl TextboxStyle {
 
             hover_color: None,
             active_color: None,
+            select_color: None,
         }
     }
 
@@ -227,6 +239,14 @@ impl TextboxStyle {
 
     pub(crate) fn set_active_color(&mut self, val: Color) {
         self.active_color = Some(val);
+    }
+
+    pub fn selection_color(&self) -> Option<Color> {
+        self.select_color
+    }
+
+    pub(crate) fn set_selection_color(&mut self, val: Color) {
+        self.select_color = Some(val);
     }
 }
 
@@ -365,6 +385,18 @@ impl<'a> TextboxStyleRef<'a> {
 
         output
     }
+
+    pub fn selection_color(&self) -> Color {
+        let mut output = Color::BLACK; // TODO: put into const var!
+
+        self.store.for_each_textbox_style(&self.node_id, |style| {
+            if let Some(color) = style.select_color {
+                output = color;
+            }
+        });
+
+        output
+    }
 }
 
 pub struct TextboxStyleMut<'a> {
@@ -408,6 +440,11 @@ impl<'a> TextboxStyleMut<'a> {
 
     pub fn set_active_color(&mut self, color: Color) -> &mut Self {
         self.get_textbox_style_mut().set_active_color(color);
+        self
+    }
+
+    pub fn set_selection_color(&mut self, color: Color) -> &mut Self {
+        self.get_textbox_style_mut().set_selection_color(color);
         self
     }
 

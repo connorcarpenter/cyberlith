@@ -198,6 +198,7 @@ impl Ui {
                     let background_color = textbox_style_ref.background_color();
                     let hover_color = textbox_style_ref.hover_color();
                     let active_color = textbox_style_ref.active_color();
+                    let select_color = textbox_style_ref.selection_color();
 
                     let textbox_mut = self.textbox_mut(&id).unwrap();
 
@@ -209,6 +210,9 @@ impl Ui {
 
                     let active_color_handle = materials.add(active_color);
                     textbox_mut.set_active_color_handle(active_color_handle);
+
+                    let select_color_handle = materials.add(select_color);
+                    textbox_mut.set_selection_color_handle(select_color_handle);
                 }
             }
         }
