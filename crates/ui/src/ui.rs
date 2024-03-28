@@ -122,11 +122,11 @@ impl Ui {
         self.globals.first_input = Some(id);
     }
 
-    pub fn get_selected_node(&self) -> Option<NodeId> {
+    pub fn get_active_node(&self) -> Option<NodeId> {
         self.selected_node
     }
 
-    pub fn set_selected_node(&mut self, id_opt: Option<NodeId>) {
+    pub fn set_active_node(&mut self, id_opt: Option<NodeId>) {
         self.selected_node = id_opt;
     }
 

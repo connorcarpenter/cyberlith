@@ -65,6 +65,9 @@ impl UiInputConverter {
                         mouse_position = Some(*position);
                         Some(MouseEvent::TripleClick(*button, *position))
                     }
+                    InputEvent::MouseReleased(button) => {
+                        Some(MouseEvent::Release(*button))
+                    }
                     _ => None,
                 };
                 let Some(mouse_event) = output_event else {
@@ -205,25 +208,25 @@ pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, input: Ui
             let hover_node = ui.get_hover().map(|id| {
                 (id, ui.node_ref(&id).unwrap().widget_kind())
             });
-            let active_node = ui.get_selected_node().map(|id| {
+            let active_node = ui.get_active_node().map(|id| {
                 (id, ui.node_ref(&id).unwrap().widget_kind())
             });
             for event in events {
                 match event {
                     MouseEvent::Release(MouseButton::Left) => {
                         if let Some((_, WidgetKind::Button)) = active_node {
-                            ui.set_selected_node(None);
+                            ui.set_active_node(None);
                         }
                     },
                     MouseEvent::SingleClick(MouseButton::Left, _, _) | MouseEvent::DoubleClick(MouseButton::Left, _) | MouseEvent::TripleClick(MouseButton::Left, _) => {
                         if let Some((hover_node, kind)) = hover_node {
                             match kind {
                                 WidgetKind::Button => {
-                                    ui.set_selected_node(Some(hover_node));
+                                    ui.set_active_node(Some(hover_node));
                                     ui.emit_node_event(&hover_node, UiNodeEvent::Clicked);
                                 }
                                 WidgetKind::Textbox => {
-                                    ui.set_selected_node(Some(hover_node));
+                                    ui.set_active_node(Some(hover_node));
                                     ui.reset_interact_timer();
                                     let (_, node_height, node_x, _, _) = ui.cache.bounds(&hover_node).unwrap();
                                     ui.textbox_mut(&hover_node).unwrap().recv_mouse_event(text_measurer, node_x, node_height, mouse_position, event);
@@ -244,80 +247,97 @@ pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, input: Ui
                 }
             }
         }
-        UiInput::KeyboardOrGamepad(events) => {
+        UiInput::KeyboardOrGamepad(mut events) => {
             let mut hover_node = ui.get_hover();
+            let mut active_node = ui.get_active_node().map(|id| {
+                (id, ui.node_ref(&id).unwrap().widget_kind())
+            });
 
-            // hover default ui element if none is hovered (coming from mouse mode)
-            if hover_node.is_none() {
-                let Some(first_input_id) = ui.get_first_input() else {
-                    panic!("no first input set, cannot process input events without somewhere to start");
-                };
-                ui.receive_hover(&first_input_id);
-                hover_node = Some(first_input_id);
-            }
-
-            // pipe event into textbox, if one is selected
-            if let Some(selected_id) = ui.get_selected_node() {
-                if ui.node_ref(&selected_id).unwrap().widget_kind() == WidgetKind::Textbox {
-                    let textbox_id = selected_id;
-                    for event in &events {
-                        match event {
+            // textbox events
+            {
+                if let Some((textbox_id, WidgetKind::Textbox)) = active_node {
+                    let mut next_events = Vec::new();
+                    for input_event in events {
+                        match input_event {
                             KeyboardOrGamepadEvent::Right(_) | KeyboardOrGamepadEvent::Left(_) | KeyboardOrGamepadEvent::Backspace(_) | KeyboardOrGamepadEvent::Delete(_) |
                             KeyboardOrGamepadEvent::Text(_) | KeyboardOrGamepadEvent::Home(_) | KeyboardOrGamepadEvent::End(_) | KeyboardOrGamepadEvent::Paste(_) |
                             KeyboardOrGamepadEvent::Copy | KeyboardOrGamepadEvent::Cut | KeyboardOrGamepadEvent::SelectAll
                             => {
                                 ui.reset_interact_timer();
-                                if let Some(events) = ui.textbox_mut(&textbox_id).unwrap().recv_keyboard_or_gamepad_event(event.clone()) {
-                                    for event in events {
-                                        ui.emit_global_event(event);
+                                if let Some(output_events) = ui.textbox_mut(&textbox_id).unwrap().recv_keyboard_or_gamepad_event(input_event) {
+                                    for output_event in output_events {
+                                        ui.emit_global_event(output_event);
                                     }
                                 }
-                                return;
                             }
-                            _ => {}
+                            _ => {
+                                next_events.push(input_event);
+                            }
                         }
                     }
+                    events = next_events;
                 }
             }
 
-            // handle navigation of hover elements && buttons
-            let hover_node = hover_node.unwrap();
+            // handle navigation of hover elements & button activation
             for event in &events {
                 match event {
-                    KeyboardOrGamepadEvent::Up => {
-                        if let Some(next_id) = ui.nav_get_up_id(&hover_node) {
-                            ui.receive_hover(&next_id);
+                    KeyboardOrGamepadEvent::Up | KeyboardOrGamepadEvent::Down | KeyboardOrGamepadEvent::Left(_) | KeyboardOrGamepadEvent::Right(_) => {
+
+                        // navigation ...
+
+                        // make sure hovering
+                        // hover default ui element if none is hovered (coming from mouse mode)
+                        if hover_node.is_none() {
+                            let Some(first_input_id) = ui.get_first_input() else {
+                                panic!("no first input set, cannot process input events without somewhere to start");
+                            };
+                            ui.receive_hover(&first_input_id);
+                            hover_node = Some(first_input_id);
+                            continue;
                         }
-                    }
-                    KeyboardOrGamepadEvent::Down => {
-                        if let Some(next_id) = ui.nav_get_down_id(&hover_node) {
+
+                        // handle navigation
+                        let hover_node_inside = hover_node.unwrap();
+                        if let Some(next_id) = match event {
+                            KeyboardOrGamepadEvent::Up => ui.nav_get_up_id(&hover_node_inside),
+                            KeyboardOrGamepadEvent::Down => ui.nav_get_down_id(&hover_node_inside),
+                            KeyboardOrGamepadEvent::Left(_) => ui.nav_get_left_id(&hover_node_inside),
+                            KeyboardOrGamepadEvent::Right(_) => ui.nav_get_right_id(&hover_node_inside),
+                            _ => None,
+                        } {
                             ui.receive_hover(&next_id);
-                        }
-                    }
-                    KeyboardOrGamepadEvent::Left(_) => {
-                        if let Some(next_id) = ui.nav_get_left_id(&hover_node) {
-                            ui.receive_hover(&next_id);
-                        }
-                    }
-                    KeyboardOrGamepadEvent::Right(_) => {
-                        if let Some(next_id) = ui.nav_get_right_id(&hover_node) {
-                            ui.receive_hover(&next_id);
+                            hover_node = Some(next_id);
+
+                            // deselect any other active nodes, as we've navigated away from it
+                            if active_node.is_some() {
+                                ui.set_active_node(None);
+                                active_node = None;
+                            }
                         }
                     }
                     KeyboardOrGamepadEvent::SelectPressed => {
-                        match ui.node_ref(&hover_node).unwrap().widget_kind() {
-                            WidgetKind::Button => {
-                                ui.set_selected_node(Some(hover_node));
-                                ui.emit_node_event(&hover_node, UiNodeEvent::Clicked);
+                        // if hover node is already hovering, can handle select pressed
+                        if let Some(hover_node) = hover_node {
+                            let widget_kind = ui.node_ref(&hover_node).unwrap().widget_kind();
+                            match widget_kind {
+                                WidgetKind::Button => {
+                                    ui.set_active_node(Some(hover_node));
+                                    ui.emit_node_event(&hover_node, UiNodeEvent::Clicked);
+                                }
+                                WidgetKind::Textbox => {
+                                    ui.set_active_node(Some(hover_node));
+                                    ui.textbox_mut(&hover_node).unwrap().recv_keyboard_or_gamepad_event(KeyboardOrGamepadEvent::End(Modifiers::default()));
+                                }
+                                _ => {}
                             }
-                            _ => {}
                         }
                     }
                     KeyboardOrGamepadEvent::SelectReleased => {
-                        if let Some(selected_node) = ui.get_selected_node() {
-                            match ui.node_ref(&selected_node).unwrap().widget_kind() {
+                        if let Some(active_node) = ui.get_active_node() {
+                            match ui.node_ref(&active_node).unwrap().widget_kind() {
                                 WidgetKind::Button => {
-                                    ui.set_selected_node(None);
+                                    ui.set_active_node(None);
                                 }
                                 _ => {}
                             }
