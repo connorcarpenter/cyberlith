@@ -125,25 +125,50 @@ impl Textbox {
                 }
             },
             UiInputEvent::Text(new_char) => {
-                self.text.insert(self.carat_index, new_char);
-                self.carat_index += 1;
+                if let Some(select_index) = self.select_index {
+                    // need to remove the selected text
+                    let start = self.carat_index.min(select_index);
+                    let end = self.carat_index.max(select_index);
+                    self.text.replace_range(start..end, new_char.to_string().as_str());
+                    self.carat_index = start + 1;
+                    self.select_index = None;
+                } else {
+                    self.text.insert(self.carat_index, new_char);
+                    self.carat_index += 1;
+                }
             },
             UiInputEvent::Backspace(modifiers) => {
-                if modifiers.ctrl {
-                    todo!()
+                if let Some(select_index) = self.select_index {
+                    let start = self.carat_index.min(select_index);
+                    let end = self.carat_index.max(select_index);
+                    self.text.drain(start..end);
+                    self.carat_index = start;
+                    self.select_index = None;
                 } else {
-                    if self.carat_index > 0 {
-                        self.text.remove(self.carat_index - 1);
-                        self.carat_index -= 1;
+                    if modifiers.ctrl {
+                        todo!()
+                    } else {
+                        if self.carat_index > 0 {
+                            self.text.remove(self.carat_index - 1);
+                            self.carat_index -= 1;
+                        }
                     }
                 }
             },
             UiInputEvent::Delete(modifiers) => {
-                if modifiers.ctrl {
-                    todo!()
+                if let Some(select_index) = self.select_index {
+                    let start = self.carat_index.min(select_index);
+                    let end = self.carat_index.max(select_index);
+                    self.text.drain(start..end);
+                    self.carat_index = start;
+                    self.select_index = None;
                 } else {
-                    if self.carat_index < self.text.len() {
-                        self.text.remove(self.carat_index);
+                    if modifiers.ctrl {
+                        todo!()
+                    } else {
+                        if self.carat_index < self.text.len() {
+                            self.text.remove(self.carat_index);
+                        }
                     }
                 }
             },
