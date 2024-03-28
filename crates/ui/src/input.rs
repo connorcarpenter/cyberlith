@@ -5,7 +5,7 @@ use input::{CursorIcon, GamepadButtonType, Input, InputEvent, Key, Modifiers, Mo
 use math::Vec2;
 use ui_layout::TextMeasurer;
 
-use crate::{NodeId, Ui, UiNodeEvent, WidgetKind};
+use crate::{NodeId, Ui, UiGlobalEvent, UiNodeEvent, WidgetKind};
 
 pub struct UiInputConverter;
 
@@ -258,15 +258,22 @@ pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, input: Ui
                 if let Some((textbox_id, WidgetKind::Textbox)) = active_node {
                     let mut next_events = Vec::new();
                     for input_event in events {
-                        match input_event {
+                        match &input_event {
                             KeyboardOrGamepadEvent::Right(_) | KeyboardOrGamepadEvent::Left(_) | KeyboardOrGamepadEvent::Backspace(_) | KeyboardOrGamepadEvent::Delete(_) |
                             KeyboardOrGamepadEvent::Text(_) | KeyboardOrGamepadEvent::Home(_) | KeyboardOrGamepadEvent::End(_) | KeyboardOrGamepadEvent::Paste(_) |
                             KeyboardOrGamepadEvent::Copy | KeyboardOrGamepadEvent::Cut | KeyboardOrGamepadEvent::SelectAll
                             => {
                                 ui.reset_interact_timer();
-                                if let Some(output_events) = ui.textbox_mut(&textbox_id).unwrap().recv_keyboard_or_gamepad_event(input_event) {
+                                if let Some(output_events) = ui.textbox_mut(&textbox_id).unwrap().recv_keyboard_or_gamepad_event(input_event.clone()) {
                                     for output_event in output_events {
-                                        ui.emit_global_event(output_event);
+                                        match &output_event {
+                                            UiGlobalEvent::Copied(_) => {
+                                                ui.emit_global_event(output_event);
+                                            }
+                                            UiGlobalEvent::PassThru => {
+                                                next_events.push(input_event.clone());
+                                            }
+                                        }
                                     }
                                 }
                             }

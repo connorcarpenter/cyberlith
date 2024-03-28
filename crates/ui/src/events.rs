@@ -5,6 +5,7 @@ use bevy_ecs::{
 
 pub enum UiGlobalEvent {
     Copied(String),
+    PassThru,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

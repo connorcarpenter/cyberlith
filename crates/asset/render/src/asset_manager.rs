@@ -117,6 +117,7 @@ impl AssetManager {
                 UiGlobalEvent::Copied(text) => {
                     clipboard_manager.set_contents(&text);
                 }
+                _ => {}
             }
         }
     }

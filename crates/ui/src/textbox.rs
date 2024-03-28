@@ -87,8 +87,14 @@ impl Textbox {
                     (false, false) => {
                         if self.carat_index > 0 {
                             self.carat_index -= 1;
+                        } else {
+                            if output.is_none() {
+                                output = Some(Vec::new());
+                            }
+                            output.as_mut().unwrap().push(UiGlobalEvent::PassThru);
                         }
                         self.select_index = None;
+
                     }
                     (true, false) => {
                         if self.carat_index > 0 {
@@ -139,6 +145,11 @@ impl Textbox {
                     (false, false) => {
                         if self.carat_index < self.text.len() {
                             self.carat_index += 1;
+                        } else {
+                            if output.is_none() {
+                                output = Some(Vec::new());
+                            }
+                            output.as_mut().unwrap().push(UiGlobalEvent::PassThru);
                         }
                         self.select_index = None;
                     }
