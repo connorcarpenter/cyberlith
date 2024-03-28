@@ -202,8 +202,16 @@ impl Textbox {
             },
             UiInputEvent::Paste(text) => {
                 // TODO: validate pasted text? I did panic at some point here.
-                self.text.insert_str(self.carat_index, &text);
-                self.carat_index += text.len();
+                if let Some(select_index) = self.select_index {
+                    let start = self.carat_index.min(select_index);
+                    let end = self.carat_index.max(select_index);
+                    self.text.replace_range(start..end, &text);
+                    self.carat_index = start + text.len();
+                    self.select_index = None;
+                } else {
+                    self.text.insert_str(self.carat_index, &text);
+                    self.carat_index += text.len();
+                }
             }
             _ => panic!("Unhandled input event for textbox: {:?}", event),
         }
