@@ -7,6 +7,7 @@ use bevy_ecs::{
 use bevy_log::info;
 
 use clipboard::ClipboardManager;
+use instant::Instant;
 use math::Vec2;
 
 use crate::{gamepad::{Axis, GamepadAxis, GamepadButton, GamepadInfo, Gamepads, ALL_AXIS_TYPES, ALL_BUTTON_TYPES, GamepadButtonType, GamepadId}, is_button::IsButton, GamepadSettings, IncomingEvent, InputEvent, Joystick, Key, MouseButton, CursorIcon};
@@ -32,6 +33,9 @@ pub struct Input {
     pressed_gamepad_buttons: HashSet<GamepadButton>,
 
     cursor_change: Option<CursorIcon>,
+    quick_clicks: u8,
+    last_click_instant: Instant,
+    last_click_button: MouseButton,
 }
 
 impl Input {
@@ -55,6 +59,9 @@ impl Input {
             pressed_gamepad_buttons: HashSet::new(),
 
             cursor_change: None,
+            quick_clicks: 0,
+            last_click_instant: Instant::now(),
+            last_click_button: MouseButton::Left,
         }
     }
 
@@ -119,9 +126,29 @@ impl Input {
                 IncomingEvent::MousePress(button, position, modifiers) => {
                     if !self.pressed_mouse_buttons.contains(button) {
                         self.set_mouse_coords(position);
-                        self.outgoing_actions
-                            .push(InputEvent::MouseClicked(*button, self.mouse_coords, modifiers.clone()));
                         self.pressed_mouse_buttons.insert(*button);
+
+                        if self.last_click_button == *button && self.last_click_instant.elapsed().as_millis() < 500 {
+                            self.quick_clicks += 1;
+                        } else {
+                            self.quick_clicks = 1;
+                        }
+                        self.last_click_instant = Instant::now();
+                        self.last_click_button = *button;
+                        match self.quick_clicks {
+                            2 => {
+                                self.outgoing_actions
+                                    .push(InputEvent::MouseDoubleClicked(*button, self.mouse_coords, modifiers.clone()));
+                            }
+                            3 => {
+                                self.outgoing_actions
+                                    .push(InputEvent::MouseTripleClicked(*button, self.mouse_coords, modifiers.clone()));
+                            }
+                            _ => {
+                                self.outgoing_actions
+                                    .push(InputEvent::MouseClicked(*button, self.mouse_coords, modifiers.clone()));
+                            }
+                        }
                     }
                 }
                 IncomingEvent::MouseRelease(button, _position, _modifiers) => {

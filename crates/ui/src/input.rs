@@ -21,7 +21,19 @@ impl UiInputConverter {
             if let Some(was_mouse) = match input_event {
                 InputEvent::MouseClicked(button, pos, modifiers) => {
                     if *button == MouseButton::Left {
-                        last_mouse_click = Some(UiInput::Mouse(pos.x, pos.y, true, modifiers.clone()));
+                        last_mouse_click = Some(UiInput::Mouse(pos.x, pos.y, 1, modifiers.clone()));
+                    }
+                    Some(true)
+                }
+                InputEvent::MouseDoubleClicked(button, pos, modifiers) => {
+                    if *button == MouseButton::Left {
+                        last_mouse_click = Some(UiInput::Mouse(pos.x, pos.y, 2, modifiers.clone()));
+                    }
+                    Some(true)
+                }
+                InputEvent::MouseTripleClicked(button, pos, modifiers) => {
+                    if *button == MouseButton::Left {
+                        last_mouse_click = Some(UiInput::Mouse(pos.x, pos.y, 3, modifiers.clone()));
                     }
                     Some(true)
                 }
@@ -113,7 +125,7 @@ impl UiInputConverter {
                 return Some(last_mouse_click);
             } else {
                 let mouse_pos = input.mouse_position();
-                return Some(UiInput::Mouse(mouse_pos.x, mouse_pos.y, false, Modifiers::default()));
+                return Some(UiInput::Mouse(mouse_pos.x, mouse_pos.y, 0, Modifiers::default()));
             }
         } else {
             if let Some(output_events) = output_events {
@@ -127,7 +139,7 @@ impl UiInputConverter {
 
 #[derive(Clone)]
 pub enum UiInput {
-    Mouse(f32, f32, bool, Modifiers),
+    Mouse(f32, f32, u8, Modifiers),
     Events(Vec<UiInputEvent>)
 }
 
@@ -141,7 +153,7 @@ pub enum UiInputEvent {
 
 pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, input: UiInput) {
     match input {
-        UiInput::Mouse(x, y, left_pressed, modifiers) => {
+        UiInput::Mouse(x, y, clicks, modifiers) => {
             ui.clear_hover();
 
             for node_id in 0..ui.store.nodes.len() {
@@ -149,7 +161,7 @@ pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, input: Ui
                 ui_update_hover(ui, &node_id, x, y);
             }
 
-            if left_pressed {
+            if clicks > 0 {
                 if let Some(hover_node) = ui.get_hover() {
                     match ui.node_ref(&hover_node).unwrap().widget_kind() {
                         WidgetKind::Button => {
@@ -160,7 +172,7 @@ pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, input: Ui
                             ui.set_selected_node(Some(hover_node));
                             ui.reset_interact_timer();
                             let (_, height, posx, _, _) = ui.cache.bounds(&hover_node).unwrap();
-                            ui.textbox_mut(&hover_node).unwrap().recv_click(text_measurer, x, posx, height, &modifiers);
+                            ui.textbox_mut(&hover_node).unwrap().recv_click(text_measurer, x, posx, height, clicks, &modifiers);
                         }
                         _ => {}
                     }

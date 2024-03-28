@@ -1,3 +1,4 @@
+use bevy_log::info;
 use unicode_segmentation::UnicodeSegmentation;
 
 use input::Modifiers;
@@ -326,27 +327,65 @@ impl Textbox {
         output
     }
 
-    pub fn recv_click(&mut self, text_measurer: &dyn TextMeasurer, click_x: f32, position_x: f32, height: f32, modifiers: &Modifiers) {
+    pub fn recv_click(&mut self, text_measurer: &dyn TextMeasurer, click_x: f32, position_x: f32, height: f32, clicks: u8, modifiers: &Modifiers) {
 
-        if !modifiers.shift {
-            self.select_index = None;
-        } else {
-            if self.select_index.is_none() {
-                self.select_index = Some(self.carat_index);
+        if clicks == 1 {
+            if !modifiers.shift {
+                self.select_index = None;
+            } else {
+                if self.select_index.is_none() {
+                    self.select_index = Some(self.carat_index);
+                }
             }
-        }
 
+            self.carat_index = Self::get_closest_index(&self.text, text_measurer, click_x, position_x, height);
+            if let Some(select_index) = self.select_index {
+                if self.carat_index == select_index {
+                    self.select_index = None;
+                }
+            }
+        } else if clicks == 2 {
+            // double click
+            info!("double click");
+            let click_index = Self::get_closest_index(&self.text, text_measurer, click_x, position_x, height);
+
+            // select word
+            let word_start = self.text
+                .unicode_word_indices()
+                .rev()
+                .map(|(i, _)| i)
+                .find(|&i| i < click_index)
+                .unwrap_or(0);
+            let word_end = self
+                .text
+                .unicode_word_indices()
+                .map(|(i, word)| i + word.len())
+                .find(|&i| i > click_index)
+                .unwrap_or(self.text.len());
+
+            self.select_index = Some(word_start);
+            self.carat_index = word_end;
+
+        } else if clicks == 3 {
+            // triple click
+            info!("triple click");
+            // select all
+            self.select_index = Some(0);
+            self.carat_index = self.text.len();
+        }
+    }
+
+    fn get_closest_index(text: &str, text_measurer: &dyn TextMeasurer, click_x: f32, position_x: f32, height: f32) -> usize {
         let click_x = click_x - position_x;
 
         let mut closest_x: f32 = f32::MAX;
         let mut closest_index: usize = usize::MAX;
 
-        let subimage_indices = Text::get_subimage_indices(&self.text);
+        let subimage_indices = Text::get_subimage_indices(text);
         let (x_positions, text_height) = Text::get_raw_text_rects(text_measurer, &subimage_indices);
         let scale = height / text_height;
 
         for (char_index, x_position) in x_positions.iter().enumerate() {
-
             let index_x = 8.0 + (x_position * scale);
             let dist = (click_x - index_x).abs();
             if dist < closest_x {
@@ -354,22 +393,11 @@ impl Textbox {
                 closest_index = char_index;
             } else {
                 // dist is increasing ... we can break
-                self.carat_index = closest_index;
-                if let Some(select_index) = self.select_index {
-                    if self.carat_index == select_index {
-                        self.select_index = None;
-                    }
-                }
-                return;
+                return closest_index;
             }
         }
 
-        self.carat_index = closest_index;
-        if let Some(select_index) = self.select_index {
-            if self.carat_index == select_index {
-                self.select_index = None;
-            }
-        }
+        return closest_index;
     }
 }
 

@@ -8,6 +8,8 @@ use crate::{gamepad::{GamepadButtonType, GamepadId}, JoystickType, Key, Modifier
 pub enum InputEvent {
     // mouse
     MouseClicked(MouseButton, Vec2, Modifiers),
+    MouseDoubleClicked(MouseButton, Vec2, Modifiers),
+    MouseTripleClicked(MouseButton, Vec2, Modifiers),
     MouseReleased(MouseButton),
     MouseMoved(Vec2),
     MouseDragged(MouseButton, Vec2, Vec2),
