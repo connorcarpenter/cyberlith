@@ -9,6 +9,7 @@ use bevy_ecs::{
 use bevy_log::warn;
 
 use asset_id::{AssetId, AssetType};
+use clipboard::ClipboardManager;
 use input::{CursorIcon, Input};
 use render_api::{
     base::CpuSkin,
@@ -17,7 +18,7 @@ use render_api::{
     resources::{RenderFrame, Time},
 };
 use storage::{Handle, Storage};
-use ui::{NodeId, TextMeasurer, Ui, UiEvent, UiEventHandler, UiInput};
+use ui::{NodeId, TextMeasurer, Ui, UiNodeEvent, UiNodeEventHandler, UiInput, UiGlobalEvent};
 
 use crate::{
     asset_renderer::AssetRenderer, processed_asset_store::ProcessedAssetStore, AnimationData,
@@ -28,9 +29,10 @@ use crate::{
 pub struct AssetManager {
     store: ProcessedAssetStore,
 
-    queued_ui_event_handlers: HashMap<AssetHandle<UiData>, Vec<(String, UiEventHandler)>>,
-    ui_event_handlers: HashMap<(AssetId, NodeId), UiEventHandler>,
-    ui_events: Vec<(AssetId, NodeId, UiEvent)>,
+    queued_ui_node_event_handlers: HashMap<AssetHandle<UiData>, Vec<(String, UiNodeEventHandler)>>,
+    ui_global_events: Vec<UiGlobalEvent>,
+    ui_node_event_handlers: HashMap<(AssetId, NodeId), UiNodeEventHandler>,
+    ui_node_events: Vec<(AssetId, NodeId, UiNodeEvent)>,
     cursor_icon_change: Option<CursorIcon>,
     last_cursor_icon: CursorIcon,
     blinkiness: Blinkiness,
@@ -40,9 +42,10 @@ impl Default for AssetManager {
     fn default() -> Self {
         Self {
             store: ProcessedAssetStore::default(),
-            ui_events: Vec::new(),
-            ui_event_handlers: HashMap::new(),
-            queued_ui_event_handlers: HashMap::new(),
+            ui_global_events: Vec::new(),
+            ui_node_events: Vec::new(),
+            ui_node_event_handlers: HashMap::new(),
+            queued_ui_node_event_handlers: HashMap::new(),
             cursor_icon_change: None,
             last_cursor_icon: CursorIcon::Default,
             blinkiness: Blinkiness::new(),
@@ -77,7 +80,7 @@ impl AssetManager {
         if let Some(new_uis) = asset_manager.store.sync_uis(&mut meshes, &mut materials) {
             for handle in new_uis {
                 if let Some(queued_handlers) =
-                    asset_manager.queued_ui_event_handlers.remove(&handle)
+                    asset_manager.queued_ui_node_event_handlers.remove(&handle)
                 {
                     for (id_str, handler) in queued_handlers {
                         let asset_id = handle.asset_id();
@@ -87,7 +90,7 @@ impl AssetManager {
                             .get_node_id_by_id_str(&id_str)
                             .unwrap();
                         asset_manager
-                            .ui_event_handlers
+                            .ui_node_event_handlers
                             .insert((asset_id, node_id), handler);
                     }
                 }
@@ -103,23 +106,39 @@ impl AssetManager {
     }
 
     // used as a system
-    pub fn process_ui_events(world: &mut World) {
+    pub fn process_ui_global_events(mut asset_manager: ResMut<AssetManager>, mut clipboard_manager: ResMut<ClipboardManager>) {
+        asset_manager.process_ui_global_events_impl(&mut clipboard_manager);
+    }
+
+    fn process_ui_global_events_impl(&mut self, clipboard_manager: &mut ClipboardManager) {
+        let global_events = std::mem::take(&mut self.ui_global_events);
+        for event in global_events {
+            match event {
+                UiGlobalEvent::Copied(text) => {
+                    clipboard_manager.set_contents(&text);
+                }
+            }
+        }
+    }
+
+    // used as a system
+    pub fn process_ui_node_events(world: &mut World) {
         world.resource_scope(|world, mut asset_manager: Mut<AssetManager>| {
-            asset_manager.process_ui_events_impl(world);
+            asset_manager.process_ui_node_events_impl(world);
         });
     }
 
-    fn process_ui_events_impl(&mut self, world: &mut World) {
-        if self.ui_events.is_empty() {
+    fn process_ui_node_events_impl(&mut self, world: &mut World) {
+        if self.ui_node_events.is_empty() {
             return;
         }
 
-        let events = std::mem::take(&mut self.ui_events);
-        for (asset_id, node_id, event) in events {
-            let Some(handler) = self.ui_event_handlers.get(&(asset_id, node_id)) else {
+        let events = std::mem::take(&mut self.ui_node_events);
+        for (ui_asset_id, node_id, event) in events {
+            let Some(handler) = self.ui_node_event_handlers.get(&(ui_asset_id, node_id)) else {
                 warn!(
                     "no handler for asset_id: {:?}, node_id: {:?}",
-                    asset_id, node_id
+                    ui_asset_id, node_id
                 );
                 continue;
             };
@@ -156,21 +175,21 @@ impl AssetManager {
         id_str: &str,
     ) {
         let asset_id = ui_handle.asset_id();
-        let event_handler = UiEventHandler::new::<T>();
+        let event_handler = UiNodeEventHandler::new::<T>();
 
         if let Some(ui_store) = self.store.uis.get(&ui_handle) {
             let Some(node_id) = ui_store.get_ui_ref().get_node_id_by_id_str(id_str) else {
                 panic!("no node_id for id_str: {:?}", id_str);
             };
 
-            self.ui_event_handlers
+            self.ui_node_event_handlers
                 .insert((asset_id, node_id), event_handler);
         } else {
-            if !self.queued_ui_event_handlers.contains_key(&ui_handle) {
-                self.queued_ui_event_handlers
+            if !self.queued_ui_node_event_handlers.contains_key(&ui_handle) {
+                self.queued_ui_node_event_handlers
                     .insert(ui_handle.clone(), Vec::new());
             }
-            self.queued_ui_event_handlers
+            self.queued_ui_node_event_handlers
                 .get_mut(&ui_handle)
                 .unwrap()
                 .push((id_str.to_string(), event_handler));
@@ -390,14 +409,18 @@ impl AssetManager {
         let ui = ui_data.get_ui_mut();
         ui.receive_input(&text_measurer, ui_input);
 
-        // get any events
-        let mut events: Vec<(AssetId, NodeId, UiEvent)> = ui
-            .take_events()
+        // get any global events
+        let mut global_events: Vec<UiGlobalEvent> = ui.take_global_events();
+        self.ui_global_events.append(&mut global_events);
+
+        // get any node events
+        let mut events: Vec<(AssetId, NodeId, UiNodeEvent)> = ui
+            .take_node_events()
             .iter()
             .map(|(node_id, event)| (ui_handle.asset_id(), *node_id, event.clone()))
             .collect();
 
-        self.ui_events.append(&mut events);
+        self.ui_node_events.append(&mut events);
 
         // get cursor icon change
         if let Some(cursor_icon) = ui.take_cursor_icon() {

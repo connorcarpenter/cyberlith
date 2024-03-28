@@ -4,7 +4,7 @@ use bevy_log::warn;
 use input::{CursorIcon, GamepadButtonType, Input, InputEvent, Key, Modifiers, MouseButton};
 use ui_layout::TextMeasurer;
 
-use crate::{NodeId, Ui, UiEvent, WidgetKind};
+use crate::{NodeId, Ui, UiNodeEvent, WidgetKind};
 
 pub struct UiInputConverter;
 
@@ -73,6 +73,13 @@ impl UiInputConverter {
                         Key::Delete => Some(UiInputEvent::Delete(*modifiers)),
                         Key::Home => Some(UiInputEvent::Home(*modifiers)),
                         Key::End => Some(UiInputEvent::End(*modifiers)),
+                        Key::A => {
+                            if modifiers.ctrl {
+                                Some(UiInputEvent::SelectAll)
+                            } else {
+                                None
+                            }
+                        }
                         _ => None,
                     }
                 }
@@ -84,6 +91,8 @@ impl UiInputConverter {
                 }
                 InputEvent::Text(c) => Some(UiInputEvent::Text(*c)),
                 InputEvent::Paste(text) => Some(UiInputEvent::Paste(text.clone())),
+                InputEvent::Copy => Some(UiInputEvent::Copy),
+                InputEvent::Cut => Some(UiInputEvent::Cut),
                 _ => None,
             };
             let Some(output_event) = output_event else {
@@ -127,7 +136,7 @@ pub enum UiInputEvent {
     Up, Down, Left(Modifiers), Right(Modifiers),
     SelectPressed, SelectReleased,
     Back, Backspace(Modifiers), Delete(Modifiers), Text(char), Home(Modifiers), End(Modifiers),
-    Copy, Cut, Paste(String),
+    Copy, Cut, Paste(String), SelectAll,
 }
 
 pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, input: UiInput) {
@@ -145,7 +154,7 @@ pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, input: Ui
                     match ui.node_ref(&hover_node).unwrap().widget_kind() {
                         WidgetKind::Button => {
                             ui.set_selected_node(Some(hover_node));
-                            ui.emit_event(&hover_node, UiEvent::Clicked);
+                            ui.emit_node_event(&hover_node, UiNodeEvent::Clicked);
                         }
                         WidgetKind::Textbox => {
                             ui.set_selected_node(Some(hover_node));
@@ -186,10 +195,15 @@ pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, input: Ui
                     for event in &events {
                         match event {
                             UiInputEvent::Right(_) | UiInputEvent::Left(_) | UiInputEvent::Backspace(_) | UiInputEvent::Delete(_) |
-                            UiInputEvent::Text(_) | UiInputEvent::Home(_) | UiInputEvent::End(_) | UiInputEvent::Paste(_)
+                            UiInputEvent::Text(_) | UiInputEvent::Home(_) | UiInputEvent::End(_) | UiInputEvent::Paste(_) |
+                            UiInputEvent::Copy | UiInputEvent::Cut | UiInputEvent::SelectAll
                             => {
                                 ui.reset_interact_timer();
-                                ui.textbox_mut(&textbox_id).unwrap().recv_input(event.clone());
+                                if let Some(events) = ui.textbox_mut(&textbox_id).unwrap().recv_input(event.clone()) {
+                                    for event in events {
+                                        ui.emit_global_event(event);
+                                    }
+                                }
                                 return;
                             }
                             _ => {}
@@ -226,7 +240,7 @@ pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, input: Ui
                         match ui.node_ref(&hover_node).unwrap().widget_kind() {
                             WidgetKind::Button => {
                                 ui.set_selected_node(Some(hover_node));
-                                ui.emit_event(&hover_node, UiEvent::Clicked);
+                                ui.emit_node_event(&hover_node, UiNodeEvent::Clicked);
                             }
                             _ => {}
                         }

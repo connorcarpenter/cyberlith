@@ -3,36 +3,40 @@ use bevy_ecs::{
     world::World,
 };
 
+pub enum UiGlobalEvent {
+    Copied(String),
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum UiEvent {
+pub enum UiNodeEvent {
     Clicked,
 }
 
-pub struct UiEventHandler {
-    inner: Box<dyn UiEventHandlerTrait>,
+pub struct UiNodeEventHandler {
+    inner: Box<dyn UiNodeEventHandlerTrait>,
 }
 
-impl UiEventHandler {
+impl UiNodeEventHandler {
     pub fn new<T: Event + Default>() -> Self {
         Self {
-            inner: Box::new(UiEventHandlerImpl::<T>::new()),
+            inner: Box::new(UiNodeEventHandlerImpl::<T>::new()),
         }
     }
 
-    pub fn handle(&self, world: &mut World, event: UiEvent) {
+    pub fn handle(&self, world: &mut World, event: UiNodeEvent) {
         self.inner.handle(world, event);
     }
 }
 
-trait UiEventHandlerTrait: Send + Sync + 'static {
-    fn handle(&self, world: &mut World, event: UiEvent);
+trait UiNodeEventHandlerTrait: Send + Sync + 'static {
+    fn handle(&self, world: &mut World, event: UiNodeEvent);
 }
 
-struct UiEventHandlerImpl<T: Event + Default> {
+struct UiNodeEventHandlerImpl<T: Event + Default> {
     _phantom: std::marker::PhantomData<T>,
 }
 
-impl<T: Event + Default> UiEventHandlerImpl<T> {
+impl<T: Event + Default> UiNodeEventHandlerImpl<T> {
     fn new() -> Self {
         Self {
             _phantom: std::marker::PhantomData,
@@ -40,10 +44,10 @@ impl<T: Event + Default> UiEventHandlerImpl<T> {
     }
 }
 
-impl<T: Event + Default> UiEventHandlerTrait for UiEventHandlerImpl<T> {
-    fn handle(&self, world: &mut World, event: UiEvent) {
+impl<T: Event + Default> UiNodeEventHandlerTrait for UiNodeEventHandlerImpl<T> {
+    fn handle(&self, world: &mut World, event: UiNodeEvent) {
         match event {
-            UiEvent::Clicked => {
+            UiNodeEvent::Clicked => {
                 let mut event_writer = world.get_resource_mut::<Events<T>>().unwrap();
                 event_writer.send(T::default());
             }

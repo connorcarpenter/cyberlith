@@ -19,7 +19,7 @@ pub use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits,
 
 // just for ui_io
 pub use button::{Button, ButtonMut, ButtonStyle, ButtonStyleMut, Navigation, NodeActiveState};
-pub use events::{UiEvent, UiEventHandler};
+pub use events::{UiNodeEvent, UiNodeEventHandler, UiGlobalEvent};
 pub use node::UiNode;
 pub use panel::{Panel, PanelMut, PanelStyle, PanelStyleMut};
 pub use style::{NodeStyle, StyleId, WidgetStyle};

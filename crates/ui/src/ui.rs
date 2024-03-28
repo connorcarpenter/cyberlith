@@ -12,7 +12,8 @@ use storage::{Handle, Storage};
 use ui_layout::{Cache, Node, SizeUnits, TextMeasurer};
 use instant::Instant;
 
-use crate::{cache::LayoutCache, node::UiNode, node_id::NodeId, panel::{Panel, PanelMut, PanelStyle, PanelStyleMut}, store::UiStore, style::{NodeStyle, StyleId, WidgetStyle}, text::{TextStyle, TextStyleMut}, widget::{Widget, WidgetKind}, input::ui_receive_input, Button, ButtonStyle, ButtonStyleMut, UiEvent, UiInput, button::NodeActiveState, Text, Textbox, TextboxStyleMut, TextboxStyle, Navigation};
+use crate::{cache::LayoutCache, node::UiNode, node_id::NodeId, panel::{Panel, PanelMut, PanelStyle, PanelStyleMut}, store::UiStore, style::{NodeStyle, StyleId, WidgetStyle}, text::{TextStyle, TextStyleMut}, widget::{Widget, WidgetKind}, input::ui_receive_input, Button, ButtonStyle, ButtonStyleMut, UiNodeEvent, UiInput, button::NodeActiveState, Text, Textbox, TextboxStyleMut, TextboxStyle, Navigation};
+use crate::events::UiGlobalEvent;
 
 pub struct Ui {
     pub globals: Globals,
@@ -22,7 +23,8 @@ pub struct Ui {
     recalc_layout: bool,
     last_viewport: Viewport,
     id_str_to_node_id_map: HashMap<String, NodeId>,
-    events: Vec<(NodeId, UiEvent)>,
+    global_events: Vec<UiGlobalEvent>,
+    node_events: Vec<(NodeId, UiNodeEvent)>,
     hovering_node: Option<NodeId>,
     selected_node: Option<NodeId>,
     cursor_icon: Option<CursorIcon>,
@@ -43,7 +45,8 @@ impl Ui {
             recalc_layout: false,
             last_viewport: Viewport::new_at_origin(0, 0),
             id_str_to_node_id_map: HashMap::new(),
-            events: Vec::new(),
+            global_events: Vec::new(),
+            node_events: Vec::new(),
             hovering_node: None,
             selected_node: None,
             cursor_icon: None,
@@ -127,12 +130,20 @@ impl Ui {
         self.selected_node = id_opt;
     }
 
-    pub fn emit_event(&mut self, node_id: &NodeId, event: UiEvent) {
-        self.events.push((*node_id, event));
+    pub fn emit_global_event(&mut self, event: UiGlobalEvent) {
+        self.global_events.push(event);
     }
 
-    pub fn take_events(&mut self) -> Vec<(NodeId, UiEvent)> {
-        std::mem::take(&mut self.events)
+    pub fn take_global_events(&mut self) -> Vec<UiGlobalEvent> {
+        std::mem::take(&mut self.global_events)
+    }
+
+    pub fn emit_node_event(&mut self, node_id: &NodeId, event: UiNodeEvent) {
+        self.node_events.push((*node_id, event));
+    }
+
+    pub fn take_node_events(&mut self) -> Vec<(NodeId, UiNodeEvent)> {
+        std::mem::take(&mut self.node_events)
     }
 
     // system methods

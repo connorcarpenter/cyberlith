@@ -3,8 +3,7 @@ use render_api::base::{Color, CpuMaterial};
 use storage::Handle;
 use ui_layout::{Alignment, MarginUnits, PositionType, SizeUnits, TextMeasurer};
 
-use crate::{button::NodeActiveState, node::UiNode, store::UiStore, style::{NodeStyle, StyleId, WidgetStyle}, NodeId, Panel, PanelMut, PanelStyle, Ui, Navigation, Text};
-use crate::input::UiInputEvent;
+use crate::{input::UiInputEvent, events::UiGlobalEvent, button::NodeActiveState, node::UiNode, store::UiStore, style::{NodeStyle, StyleId, WidgetStyle}, NodeId, Panel, PanelMut, PanelStyle, Ui, Navigation, Text};
 
 #[derive(Clone)]
 pub struct Textbox {
@@ -76,7 +75,8 @@ impl Textbox {
         self.select_color_handle = Some(val);
     }
 
-    pub fn recv_input(&mut self, event: UiInputEvent) {
+    pub fn recv_input(&mut self, event: UiInputEvent) -> Option<Vec<UiGlobalEvent>> {
+        let mut output = None;
         match event {
             UiInputEvent::Left(modifiers) => {
                 match (modifiers.shift, modifiers.ctrl) {
@@ -200,6 +200,32 @@ impl Textbox {
                     self.select_index = None;
                 }
             },
+            UiInputEvent::Copy => {
+                if let Some(select_index) = self.select_index {
+                    let start = self.carat_index.min(select_index);
+                    let end = self.carat_index.max(select_index);
+                    let copied_text = self.text[start..end].to_string();
+                    if output.is_none() {
+                        output = Some(Vec::new());
+                    }
+                    output.as_mut().unwrap().push(UiGlobalEvent::Copied(copied_text));
+                }
+            }
+            UiInputEvent::Cut => {
+                if let Some(select_index) = self.select_index {
+                    let start = self.carat_index.min(select_index);
+                    let end = self.carat_index.max(select_index);
+                    let copied_text = self.text[start..end].to_string();
+                    if output.is_none() {
+                        output = Some(Vec::new());
+                    }
+                    output.as_mut().unwrap().push(UiGlobalEvent::Copied(copied_text));
+
+                    self.text.drain(start..end);
+                    self.carat_index = start;
+                    self.select_index = None;
+                }
+            }
             UiInputEvent::Paste(text) => {
                 // TODO: validate pasted text? I did panic at some point here.
                 if let Some(select_index) = self.select_index {
@@ -213,8 +239,14 @@ impl Textbox {
                     self.carat_index += text.len();
                 }
             }
+            UiInputEvent::SelectAll => {
+                self.select_index = Some(0);
+                self.carat_index = self.text.len();
+            }
             _ => panic!("Unhandled input event for textbox: {:?}", event),
         }
+
+        output
     }
 
     pub fn recv_click(&mut self, text_measurer: &dyn TextMeasurer, click_x: f32, position_x: f32, height: f32, modifiers: &Modifiers) {
