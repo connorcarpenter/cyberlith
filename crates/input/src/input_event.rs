@@ -12,6 +12,7 @@ pub enum InputEvent {
     MouseTripleClicked(MouseButton, Vec2, Modifiers),
     MouseReleased(MouseButton),
     MouseMoved(Vec2),
+              //(button,  position, delta)
     MouseDragged(MouseButton, Vec2, Vec2),
     MouseMiddleScrolled(f32),
     // keyboard

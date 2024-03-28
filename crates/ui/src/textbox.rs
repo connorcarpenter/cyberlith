@@ -1,12 +1,12 @@
 use bevy_log::info;
 use unicode_segmentation::UnicodeSegmentation;
 
-use input::Modifiers;
+use input::{MouseButton};
 use render_api::base::{Color, CpuMaterial};
 use storage::Handle;
 use ui_layout::{Alignment, MarginUnits, PositionType, SizeUnits, TextMeasurer};
 
-use crate::{input::UiInputEvent, events::UiGlobalEvent, button::NodeActiveState, node::UiNode, store::UiStore, style::{NodeStyle, StyleId, WidgetStyle}, NodeId, Panel, PanelMut, PanelStyle, Ui, Navigation, Text};
+use crate::{input::{MouseEvent, KeyboardOrGamepadEvent}, events::UiGlobalEvent, button::NodeActiveState, node::UiNode, store::UiStore, style::{NodeStyle, StyleId, WidgetStyle}, NodeId, Panel, PanelMut, PanelStyle, Ui, Navigation, Text};
 
 #[derive(Clone)]
 pub struct Textbox {
@@ -78,10 +78,10 @@ impl Textbox {
         self.select_color_handle = Some(val);
     }
 
-    pub fn recv_input(&mut self, event: UiInputEvent) -> Option<Vec<UiGlobalEvent>> {
+    pub fn recv_keyboard_or_gamepad_event(&mut self, event: KeyboardOrGamepadEvent) -> Option<Vec<UiGlobalEvent>> {
         let mut output = None;
         match event {
-            UiInputEvent::Left(modifiers) => {
+            KeyboardOrGamepadEvent::Left(modifiers) => {
                 match (modifiers.shift, modifiers.ctrl) {
                     (false, false) => {
                         if self.carat_index > 0 {
@@ -133,7 +133,7 @@ impl Textbox {
                     }
                 }
             },
-            UiInputEvent::Right(modifiers) => {
+            KeyboardOrGamepadEvent::Right(modifiers) => {
                 match (modifiers.shift, modifiers.ctrl) {
                     (false, false) => {
                         if self.carat_index < self.text.len() {
@@ -185,7 +185,7 @@ impl Textbox {
                     }
                 }
             },
-            UiInputEvent::Text(new_char) => {
+            KeyboardOrGamepadEvent::Text(new_char) => {
                 if let Some(select_index) = self.select_index {
                     // need to remove the selected text
                     let start = self.carat_index.min(select_index);
@@ -198,7 +198,7 @@ impl Textbox {
                     self.carat_index += 1;
                 }
             },
-            UiInputEvent::Backspace(modifiers) => {
+            KeyboardOrGamepadEvent::Backspace(modifiers) => {
                 if let Some(select_index) = self.select_index {
                     let start = self.carat_index.min(select_index);
                     let end = self.carat_index.max(select_index);
@@ -225,7 +225,7 @@ impl Textbox {
                     }
                 }
             },
-            UiInputEvent::Delete(modifiers) => {
+            KeyboardOrGamepadEvent::Delete(modifiers) => {
                 if let Some(select_index) = self.select_index {
                     let start = self.carat_index.min(select_index);
                     let end = self.carat_index.max(select_index);
@@ -250,7 +250,7 @@ impl Textbox {
                     }
                 }
             },
-            UiInputEvent::Home(modifiers) => {
+            KeyboardOrGamepadEvent::Home(modifiers) => {
                 if modifiers.shift {
                     if self.select_index.is_none() {
                         self.select_index = Some(self.carat_index);
@@ -264,7 +264,7 @@ impl Textbox {
                     self.select_index = None;
                 }
             },
-            UiInputEvent::End(modifiers) => {
+            KeyboardOrGamepadEvent::End(modifiers) => {
                 if modifiers.shift {
                     if self.select_index.is_none() {
                         self.select_index = Some(self.carat_index);
@@ -278,7 +278,7 @@ impl Textbox {
                     self.select_index = None;
                 }
             },
-            UiInputEvent::Copy => {
+            KeyboardOrGamepadEvent::Copy => {
                 if let Some(select_index) = self.select_index {
                     let start = self.carat_index.min(select_index);
                     let end = self.carat_index.max(select_index);
@@ -289,7 +289,7 @@ impl Textbox {
                     output.as_mut().unwrap().push(UiGlobalEvent::Copied(copied_text));
                 }
             }
-            UiInputEvent::Cut => {
+            KeyboardOrGamepadEvent::Cut => {
                 if let Some(select_index) = self.select_index {
                     let start = self.carat_index.min(select_index);
                     let end = self.carat_index.max(select_index);
@@ -304,7 +304,7 @@ impl Textbox {
                     self.select_index = None;
                 }
             }
-            UiInputEvent::Paste(text) => {
+            KeyboardOrGamepadEvent::Paste(text) => {
                 // TODO: validate pasted text? I did panic at some point here.
                 if let Some(select_index) = self.select_index {
                     let start = self.carat_index.min(select_index);
@@ -317,7 +317,7 @@ impl Textbox {
                     self.carat_index += text.len();
                 }
             }
-            UiInputEvent::SelectAll => {
+            KeyboardOrGamepadEvent::SelectAll => {
                 self.select_index = Some(0);
                 self.carat_index = self.text.len();
             }
@@ -327,51 +327,60 @@ impl Textbox {
         output
     }
 
-    pub fn recv_click(&mut self, text_measurer: &dyn TextMeasurer, click_x: f32, position_x: f32, height: f32, clicks: u8, modifiers: &Modifiers) {
-
-        if clicks == 1 {
-            if !modifiers.shift {
-                self.select_index = None;
-            } else {
-                if self.select_index.is_none() {
-                    self.select_index = Some(self.carat_index);
-                }
-            }
-
-            self.carat_index = Self::get_closest_index(&self.text, text_measurer, click_x, position_x, height);
-            if let Some(select_index) = self.select_index {
-                if self.carat_index == select_index {
+    pub fn recv_mouse_event(
+        &mut self,
+        text_measurer: &dyn TextMeasurer,
+        node_x: f32,
+        node_h: f32,
+        mouse_event: MouseEvent,
+    ) {
+        match mouse_event {
+            MouseEvent::SingleClick(MouseButton::Left, click_position, modifiers) => {
+                if !modifiers.shift {
                     self.select_index = None;
+                } else {
+                    if self.select_index.is_none() {
+                        self.select_index = Some(self.carat_index);
+                    }
+                }
+
+                self.carat_index = Self::get_closest_index(&self.text, text_measurer, click_position.x, node_x, node_h);
+                if let Some(select_index) = self.select_index {
+                    if self.carat_index == select_index {
+                        self.select_index = None;
+                    }
                 }
             }
-        } else if clicks == 2 {
-            // double click
-            info!("double click");
-            let click_index = Self::get_closest_index(&self.text, text_measurer, click_x, position_x, height);
+            MouseEvent::DoubleClick(MouseButton::Left, click_position) => {
+                // double click
+                info!("double click");
+                let click_index = Self::get_closest_index(&self.text, text_measurer, click_position.x, node_x, node_h);
 
-            // select word
-            let word_start = self.text
-                .unicode_word_indices()
-                .rev()
-                .map(|(i, _)| i)
-                .find(|&i| i < click_index)
-                .unwrap_or(0);
-            let word_end = self
-                .text
-                .unicode_word_indices()
-                .map(|(i, word)| i + word.len())
-                .find(|&i| i > click_index)
-                .unwrap_or(self.text.len());
+                // select word
+                let word_start = self.text
+                    .unicode_word_indices()
+                    .rev()
+                    .map(|(i, _)| i)
+                    .find(|&i| i < click_index)
+                    .unwrap_or(0);
+                let word_end = self
+                    .text
+                    .unicode_word_indices()
+                    .map(|(i, word)| i + word.len())
+                    .find(|&i| i > click_index)
+                    .unwrap_or(self.text.len());
 
-            self.select_index = Some(word_start);
-            self.carat_index = word_end;
-
-        } else if clicks == 3 {
-            // triple click
-            info!("triple click");
-            // select all
-            self.select_index = Some(0);
-            self.carat_index = self.text.len();
+                self.select_index = Some(word_start);
+                self.carat_index = word_end;
+            }
+            MouseEvent::TripleClick(MouseButton::Left, _) => {
+                // triple click
+                info!("triple click");
+                // select all
+                self.select_index = Some(0);
+                self.carat_index = self.text.len();
+            }
+            _ => {}
         }
     }
 

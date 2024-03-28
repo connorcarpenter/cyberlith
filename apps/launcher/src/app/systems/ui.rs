@@ -86,14 +86,13 @@ pub fn ui_setup(
 
 pub fn ui_update(
     mut asset_manager: ResMut<AssetManager>,
-    input: Res<Input>,
     mut input_events: EventReader<InputEvent>,
     // Cameras
     cameras_q: Query<(&Camera, Option<&RenderLayer>)>,
     // UIs
     uis_q: Query<(&AssetHandle<UiData>, Option<&RenderLayer>)>,
 ) {
-    let ui_input = UiInputConverter::convert(&input, &mut input_events);
+    let ui_input = UiInputConverter::convert(&mut input_events);
 
     for (ui_handle, ui_render_layer_opt) in uis_q.iter() {
 
