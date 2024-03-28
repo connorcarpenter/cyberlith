@@ -149,16 +149,30 @@ impl Textbox {
             },
             UiInputEvent::Home(modifiers) => {
                 if modifiers.shift {
-                    todo!()
+                    if self.select_index.is_none() {
+                        self.select_index = Some(self.carat_index);
+                    }
+                    self.carat_index = 0;
+                    if self.carat_index == self.select_index.unwrap() {
+                        self.select_index = None;
+                    }
                 } else {
                     self.carat_index = 0;
+                    self.select_index = None;
                 }
             },
             UiInputEvent::End(modifiers) => {
                 if modifiers.shift {
-                    todo!()
+                    if self.select_index.is_none() {
+                        self.select_index = Some(self.carat_index);
+                    }
+                    self.carat_index = self.text.len();
+                    if self.carat_index == self.select_index.unwrap() {
+                        self.select_index = None;
+                    }
                 } else {
                     self.carat_index = self.text.len();
+                    self.select_index = None;
                 }
             },
             UiInputEvent::Paste(text) => {
