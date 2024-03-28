@@ -1,3 +1,5 @@
+use unicode_segmentation::UnicodeSegmentation;
+
 use input::Modifiers;
 use render_api::base::{Color, CpuMaterial};
 use storage::Handle;
@@ -98,7 +100,36 @@ impl Textbox {
                             }
                         }
                     }
-                    (_, _) => todo!(),
+                    (false, true) => {
+                        if self.carat_index > 0 {
+                            self.carat_index = self.text
+                                .unicode_word_indices()
+                                .rev()
+                                .map(|(i, _)| i)
+                                .find(|&i| i < self.carat_index)
+                                .unwrap_or(0);
+                        }
+                        self.select_index = None;
+                    }
+                    (true, true) => {
+                        if self.carat_index > 0 {
+                            if self.select_index.is_none() {
+                                // if there is no current selection, set it to the current carat index
+                                self.select_index = Some(self.carat_index);
+                            }
+
+                            self.carat_index = self.text
+                                .unicode_word_indices()
+                                .rev()
+                                .map(|(i, _)| i)
+                                .find(|&i| i < self.carat_index)
+                                .unwrap_or(0);
+
+                            if self.carat_index == self.select_index.unwrap() {
+                                self.select_index = None;
+                            }
+                        }
+                    }
                 }
             },
             UiInputEvent::Right(modifiers) => {
@@ -121,7 +152,36 @@ impl Textbox {
                             }
                         }
                     }
-                    _ => {}
+                    (false, true) => {
+                        if self.carat_index < self.text.len() {
+                            self.carat_index = self
+                                .text
+                                .unicode_word_indices()
+                                .map(|(i, word)| i + word.len())
+                                .find(|&i| i > self.carat_index)
+                                .unwrap_or(self.text.len());
+                        }
+                        self.select_index = None;
+                    }
+                    (true, true) => {
+                        if self.carat_index < self.text.len() {
+                            if self.select_index.is_none() {
+                                // if there is no current selection, set it to the current carat index
+                                self.select_index = Some(self.carat_index);
+                            }
+
+                            self.carat_index = self
+                                .text
+                                .unicode_word_indices()
+                                .map(|(i, word)| i + word.len())
+                                .find(|&i| i > self.carat_index)
+                                .unwrap_or(self.text.len());
+
+                            if self.carat_index == self.select_index.unwrap() {
+                                self.select_index = None;
+                            }
+                        }
+                    }
                 }
             },
             UiInputEvent::Text(new_char) => {
@@ -146,7 +206,16 @@ impl Textbox {
                     self.select_index = None;
                 } else {
                     if modifiers.ctrl {
-                        todo!()
+                        if self.carat_index > 0 {
+                            let target_index = self.text
+                                .unicode_word_indices()
+                                .rev()
+                                .map(|(i, _)| i)
+                                .find(|&i| i < self.carat_index)
+                                .unwrap_or(0);
+                            self.text.drain(target_index..self.carat_index);
+                            self.carat_index = target_index;
+                        }
                     } else {
                         if self.carat_index > 0 {
                             self.text.remove(self.carat_index - 1);
@@ -164,7 +233,15 @@ impl Textbox {
                     self.select_index = None;
                 } else {
                     if modifiers.ctrl {
-                        todo!()
+                        if self.carat_index < self.text.len() {
+                            let target_index = self
+                                .text
+                                .unicode_word_indices()
+                                .map(|(i, word)| i + word.len())
+                                .find(|&i| i > self.carat_index)
+                                .unwrap_or(self.text.len());
+                            self.text.drain(self.carat_index..target_index);
+                        }
                     } else {
                         if self.carat_index < self.text.len() {
                             self.text.remove(self.carat_index);
