@@ -11,10 +11,6 @@ pub struct UiInputConverter;
 impl UiInputConverter {
 
     pub fn convert(input: &Input, input_events: &mut EventReader<InputEvent>) -> Option<UiInput> {
-        Self::read_all(input_events)
-    }
-
-    fn read_all(input_events: &mut EventReader<InputEvent>) -> Option<UiInput> {
         let mut output_mode = None;
         let mut output_events = None;
         let mut last_mouse_click = None;
@@ -104,7 +100,12 @@ impl UiInputConverter {
             return None;
         };
         if last_was_mouse {
-            return last_mouse_click;
+            if let Some(last_mouse_click) = last_mouse_click {
+                return Some(last_mouse_click);
+            } else {
+                let mouse_pos = input.mouse_position();
+                return Some(UiInput::Mouse(mouse_pos.x, mouse_pos.y, false, Modifiers::default()));
+            }
         } else {
             if let Some(output_events) = output_events {
                 return Some(UiInput::Events(output_events));
