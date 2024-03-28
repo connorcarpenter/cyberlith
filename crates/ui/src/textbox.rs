@@ -188,6 +188,10 @@ impl Textbox {
 
         if !modifiers.shift {
             self.select_index = None;
+        } else {
+            if self.select_index.is_none() {
+                self.select_index = Some(self.carat_index);
+            }
         }
 
         let click_x = click_x - position_x;
@@ -209,11 +213,21 @@ impl Textbox {
             } else {
                 // dist is increasing ... we can break
                 self.carat_index = closest_index;
+                if let Some(select_index) = self.select_index {
+                    if self.carat_index == select_index {
+                        self.select_index = None;
+                    }
+                }
                 return;
             }
         }
 
         self.carat_index = closest_index;
+        if let Some(select_index) = self.select_index {
+            if self.carat_index == select_index {
+                self.select_index = None;
+            }
+        }
     }
 }
 
