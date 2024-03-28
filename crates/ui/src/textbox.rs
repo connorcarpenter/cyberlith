@@ -2,6 +2,7 @@ use bevy_log::info;
 use unicode_segmentation::UnicodeSegmentation;
 
 use input::{MouseButton};
+use math::Vec2;
 use render_api::base::{Color, CpuMaterial};
 use storage::Handle;
 use ui_layout::{Alignment, MarginUnits, PositionType, SizeUnits, TextMeasurer};
@@ -332,6 +333,7 @@ impl Textbox {
         text_measurer: &dyn TextMeasurer,
         node_x: f32,
         node_h: f32,
+        mouse_position_opt: Option<Vec2>,
         mouse_event: MouseEvent,
     ) {
         match mouse_event {
@@ -353,7 +355,6 @@ impl Textbox {
             }
             MouseEvent::DoubleClick(MouseButton::Left, click_position) => {
                 // double click
-                info!("double click");
                 let click_index = Self::get_closest_index(&self.text, text_measurer, click_position.x, node_x, node_h);
 
                 // select word
@@ -375,10 +376,37 @@ impl Textbox {
             }
             MouseEvent::TripleClick(MouseButton::Left, _) => {
                 // triple click
-                info!("triple click");
                 // select all
                 self.select_index = Some(0);
                 self.carat_index = self.text.len();
+            }
+            MouseEvent::Drag(MouseButton::Left, modifiers) => {
+                if let Some(mouse_position) = mouse_position_opt {
+                    if modifiers.shift {
+                        if self.select_index.is_none() {
+                            self.select_index = Some(self.carat_index);
+                        }
+                        self.carat_index = Self::get_closest_index(&self.text, text_measurer, mouse_position.x, node_x, node_h);
+                        if let Some(select_index) = self.select_index {
+                            if self.carat_index == select_index {
+                                self.select_index = None;
+                            }
+                        }
+                    } else {
+                        if let Some(select_index) = self.select_index {
+                            self.carat_index = Self::get_closest_index(&self.text, text_measurer, mouse_position.x, node_x, node_h);
+                            if self.carat_index == select_index {
+                                self.select_index = None;
+                            }
+                        } else {
+                            let new_index = Self::get_closest_index(&self.text, text_measurer, mouse_position.x, node_x, node_h);
+                            if new_index != self.carat_index {
+                                self.select_index = Some(self.carat_index);
+                                self.carat_index = new_index;
+                            }
+                        }
+                    }
+                }
             }
             _ => {}
         }

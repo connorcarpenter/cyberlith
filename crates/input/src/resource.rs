@@ -128,7 +128,7 @@ impl Input {
                         self.set_mouse_coords(position);
                         self.pressed_mouse_buttons.insert(*button);
 
-                        if self.last_click_button == *button && self.last_click_instant.elapsed().as_millis() < 500 {
+                        if self.last_click_button == *button && self.last_click_instant.elapsed().as_millis() < 400 { // TODO: put doubleclick time in settings
                             self.quick_clicks += 1;
                         } else {
                             self.quick_clicks = 1;
@@ -158,7 +158,7 @@ impl Input {
                         self.pressed_mouse_buttons.remove(button);
                     }
                 }
-                IncomingEvent::MouseMotion(_button, _delta, position, _modifiers) => {
+                IncomingEvent::MouseMotion(_button, _delta, position, modifiers) => {
                     self.set_mouse_coords(position);
 
                     if self.mouse_coords.x as i16 != self.last_mouse_position.x as i16
@@ -173,6 +173,7 @@ impl Input {
                                 *mouse_button,
                                 self.mouse_coords,
                                 self.mouse_delta,
+                                *modifiers,
                             ));
                         }
 

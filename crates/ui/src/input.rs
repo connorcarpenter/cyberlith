@@ -23,7 +23,7 @@ impl UiInputConverter {
             if let Some(was_mouse) = match input_event {
                 InputEvent::MouseClicked(_, _, _) | InputEvent::MouseDoubleClicked(_, _, _) | InputEvent::MouseTripleClicked(_, _, _) |
                 InputEvent::MouseReleased(_) | InputEvent::MouseMoved(_) |
-                InputEvent::MouseDragged(_, _, _) | InputEvent::MouseMiddleScrolled(_) => {
+                InputEvent::MouseDragged(_, _, _, _) | InputEvent::MouseMiddleScrolled(_) => {
                     Some(true)
                 }
                 InputEvent::Text(_) | InputEvent::KeyPressed(_, _) | InputEvent::KeyReleased(_) |
@@ -47,11 +47,11 @@ impl UiInputConverter {
                 let output_event = match input_event {
                     InputEvent::MouseMoved(position) => {
                         mouse_position = Some(*position);
-                        Some(MouseEvent::Move(*position))
+                        Some(MouseEvent::Move)
                     },
-                    InputEvent::MouseDragged(_button, position, _delta) => {
+                    InputEvent::MouseDragged(button, position, _delta, modifiers) => {
                         mouse_position = Some(*position);
-                        None // todo
+                        Some(MouseEvent::Drag(*button, *modifiers))
                     }
                     InputEvent::MouseClicked(button, position, modifiers) => {
                         mouse_position = Some(*position);
@@ -169,10 +169,10 @@ pub enum MouseEvent {
     DoubleClick(MouseButton, Vec2),
     // button, click position
     TripleClick(MouseButton, Vec2),
-    // button, drag start position, drag end position
-    Drag(MouseButton, Vec2, Vec2),
+    // button
+    Drag(MouseButton, Modifiers),
     // position
-    Move(Vec2),
+    Move,
 }
 
 #[derive(Clone)]
@@ -226,14 +226,20 @@ pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, input: Ui
                                     ui.set_selected_node(Some(hover_node));
                                     ui.reset_interact_timer();
                                     let (_, node_height, node_x, _, _) = ui.cache.bounds(&hover_node).unwrap();
-                                    ui.textbox_mut(&hover_node).unwrap().recv_mouse_event(text_measurer, node_x, node_height, event);
+                                    ui.textbox_mut(&hover_node).unwrap().recv_mouse_event(text_measurer, node_x, node_height, mouse_position, event);
                                 }
                                 _ => {}
                             }
                         }
                     }
-                    MouseEvent::Drag(_button, _position, _delta) => {}
-                    MouseEvent::Move(_position) => {}
+                    MouseEvent::Drag(MouseButton::Left, _) => {
+                        if let Some((hover_node, WidgetKind::Textbox)) = hover_node {
+                            ui.reset_interact_timer();
+                            let (_, node_height, node_x, _, _) = ui.cache.bounds(&hover_node).unwrap();
+                            ui.textbox_mut(&hover_node).unwrap().recv_mouse_event(text_measurer, node_x, node_height, mouse_position, event);
+                        }
+                    }
+                    MouseEvent::Move => {}
                     _ => {}
                 }
             }
