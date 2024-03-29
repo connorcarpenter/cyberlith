@@ -4,19 +4,21 @@ use bevy_ecs::{change_detection::{Mut, Res, ResMut}, event::Event, prelude::Worl
 use bevy_log::warn;
 
 use asset_id::AssetId;
-use asset_loader::{AssetHandle, AssetManager, AssetStorage, IconData, ProcessedAssetStore, TypedAssetId, UiConfigData, UiStateData, UiTextMeasurer};
+use asset_loader::{AssetHandle, AssetManager, AssetStorage, IconData, ProcessedAssetStore, TypedAssetId, UiConfigData, UiTextMeasurer};
 use clipboard::ClipboardManager;
 use input::{CursorIcon, Input};
 use math::Vec2;
 use render_api::{base::{CpuMaterial, CpuMesh}, components::Camera, resources::Time};
 use storage::Storage;
+
 use ui_input::{UiGlobalEvent, UiInputEvent, UiInputState, UiNodeEvent, UiNodeEventHandler};
+use ui_state::UiState;
 use ui_types::{NodeId, UiConfig};
 
 #[derive(Resource)]
 pub struct UiManager {
     pub ui_configs: AssetStorage<UiConfigData>,
-    pub ui_states: HashMap<AssetHandle<UiConfigData>, UiStateData>,
+    pub ui_states: HashMap<AssetHandle<UiConfigData>, UiState>,
     pub ui_input_states: HashMap<AssetHandle<UiConfigData>, UiInputState>,
     queued_uis: Vec<AssetHandle<UiConfigData>>,
 
@@ -111,7 +113,7 @@ impl UiManager {
             let ui_input_state = UiInputState::from_ui_config(&ui_config);
             self.ui_input_states.insert(handle, ui_input_state);
 
-            let ui_state_data = UiStateData::from_ui_config(&ui_config);
+            let ui_state_data = UiState::from_ui_config(&ui_config);
             self.ui_states.insert(handle, ui_state_data);
 
             let ui_config_data = UiConfigData::from_ui_config(ui_config);
@@ -145,7 +147,7 @@ impl UiManager {
 
             {
                 let ui = ui_data.get_ui_config_ref();
-                let ui_state_data = UiStateData::from_ui_config(ui);
+                let ui_state_data = UiState::from_ui_config(ui);
                 self.ui_states.insert(handle, ui_state_data);
                 let ui_input_state = UiInputState::from_ui_config(ui);
                 self.ui_input_states.insert(handle, ui_input_state);
@@ -305,12 +307,10 @@ impl UiManager {
         let Some(viewport) = camera.viewport else {
             return;
         };
-        let Some(ui_state_data) = self.ui_states.get_mut(ui_handle) else {
+        let Some(ui_state) = self.ui_states.get_mut(ui_handle) else {
             warn!("ui data not loaded 1: {:?}", ui_handle.asset_id());
             return;
         };
-
-        let ui_state = ui_state_data.get_ui_state_mut();
 
         ui_state.update_viewport(&viewport);
 
@@ -335,11 +335,11 @@ impl UiManager {
         let Some(ui_data) = self.ui_configs.get_mut(ui_handle) else {
             return;
         };
-        let Some(ui_state_data) = self.ui_states.get_mut(ui_handle) else {
+        let Some(ui_state) = self.ui_states.get_mut(ui_handle) else {
             return;
         };
 
-        ui_state_data.get_ui_state_mut().recalculate_layout(ui_data.get_ui_config_mut(), &text_measurer);
+        ui_state.recalculate_layout(ui_data.get_ui_config_mut(), &text_measurer);
     }
 
     pub fn update_ui_input(
@@ -354,7 +354,7 @@ impl UiManager {
             warn!("ui data not loaded 1: {:?}", ui_handle.asset_id());
             return;
         };
-        let Some(ui_state_data) = self.ui_states.get_mut(ui_handle) else {
+        let Some(ui_state) = self.ui_states.get_mut(ui_handle) else {
             warn!("ui state data not loaded 1: {:?}", ui_handle.asset_id());
             return;
         };
@@ -367,7 +367,6 @@ impl UiManager {
             return;
         };
         let text_measurer = UiTextMeasurer::new(icon_data);
-        let ui_state = ui_state_data.get_ui_state_mut();
         ui_input_state.receive_input(ui_data.get_ui_config_ref(), ui_state, &text_measurer, mouse_position, ui_input_events);
 
         // get any global events

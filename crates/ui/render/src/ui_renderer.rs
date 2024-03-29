@@ -32,11 +32,10 @@ impl UiRenderer {
         };
         let ui = ui_data.get_ui_config_ref();
 
-        let Some(ui_state_data) = ui_manager.ui_states.get(ui_handle) else {
+        let Some(ui_state) = ui_manager.ui_states.get(ui_handle) else {
             warn!("ui state data not loaded 2: {:?}", ui_handle.asset_id());
             return;
         };
-        let ui_state = ui_state_data.get_ui_state_ref();
         let Some(ui_input_state) = ui_manager.ui_input_states.get(ui_handle) else {
             warn!("ui input state data not loaded 2: {:?}", ui_handle.asset_id());
             return;

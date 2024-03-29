@@ -30,7 +30,7 @@ pub struct UiState {
 
 impl UiState {
 
-    pub fn new(ui_config: &UiConfig) -> Self {
+    pub fn from_ui_config(ui_config: &UiConfig) -> Self {
         let mut me = Self {
             globals: StateGlobals::new(),
             cache: LayoutCache::new(),
@@ -49,7 +49,7 @@ impl UiState {
         me
     }
 
-    pub fn set_handles(
+    pub fn load_cpu_data(
         &mut self,
         ui_config: &UiConfig,
         meshes: &mut Storage<CpuMesh>,
