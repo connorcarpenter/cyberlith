@@ -277,21 +277,21 @@ pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, mouse_pos
             UiInputEvent::UpPressed | UiInputEvent::DownPressed | UiInputEvent::LeftPressed(_) | UiInputEvent::RightPressed(_) | UiInputEvent::TabPressed => {
 
                 // navigation ...
-
+                if let Some((active_id, WidgetKind::Textbox)) = active_node {
+                    ui.receive_hover(&active_id);
+                    hover_node = Some(active_id);
+                    ui.set_active_node(None);
+                    active_node = None;
+                }
                 // make sure hovering
                 // hover default ui element if none is hovered (coming from mouse mode)
                 if hover_node.is_none() {
-                    if let Some((active_id, WidgetKind::Textbox)) = active_node {
-                        ui.receive_hover(&active_id);
-                        hover_node = Some(active_id);
-                    } else {
-                        let Some(first_input_id) = ui.get_first_input() else {
-                            panic!("no first input set, cannot process input events without somewhere to start");
-                        };
-                        ui.receive_hover(&first_input_id);
-                        hover_node = Some(first_input_id);
-                        continue;
-                    }
+                    let Some(first_input_id) = ui.get_first_input() else {
+                        panic!("no first input set, cannot process input events without somewhere to start");
+                    };
+                    ui.receive_hover(&first_input_id);
+                    hover_node = Some(first_input_id);
+                    continue;
                 }
 
                 // handle navigation
@@ -306,12 +306,6 @@ pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, mouse_pos
                 } {
                     ui.receive_hover(&next_id);
                     hover_node = Some(next_id);
-
-                    // deselect any other active nodes, as we've navigated away from it
-                    if active_node.is_some() {
-                        ui.set_active_node(None);
-                        active_node = None;
-                    }
                 }
             }
             UiInputEvent::BackPressed => {
@@ -322,20 +316,57 @@ pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, mouse_pos
                     // hover textbox
                     ui.receive_hover(&id);
                     hover_node = Some(id);
+                } else {
+                    // de-hover
+                    if hover_node.is_some() {
+                        ui.clear_hover();
+                        hover_node = None;
+                    }
                 }
             }
             UiInputEvent::SelectPressed => {
+                if let Some((active_id, WidgetKind::Textbox)) = active_node {
+                    if let Some(next_id) = ui.nav_get_tab_id(&active_id) {
+                        match ui.node_ref(&next_id).unwrap().widget_kind() {
+                            WidgetKind::Textbox => {
+                                // make next textbox active
+                                ui.set_active_node(Some(next_id));
+                                active_node = None;
+                                // clear hover
+                                ui.clear_hover();
+                                hover_node = None;
+                            }
+                            WidgetKind::Button => {
+                                // make textbox inactive
+                                ui.set_active_node(None);
+                                active_node = None;
+                                // hover button
+                                ui.receive_hover(&next_id);
+                                hover_node = Some(next_id);
+                            }
+                            _ => panic!("no navigation for other types")
+                        }
+
+                    } else {
+                        // make textbox inactive
+                        ui.set_active_node(None);
+                        active_node = None;
+                        // hover textbox
+                        ui.receive_hover(&active_id);
+                        hover_node = Some(active_id);
+                    }
+                }
                 // if hover node is already hovering, can handle select pressed
-                if let Some(hover_node) = hover_node {
-                    let widget_kind = ui.node_ref(&hover_node).unwrap().widget_kind();
+                else if let Some(hover_id) = hover_node {
+                    let widget_kind = ui.node_ref(&hover_id).unwrap().widget_kind();
                     match widget_kind {
                         WidgetKind::Button => {
-                            ui.set_active_node(Some(hover_node));
-                            ui.emit_node_event(&hover_node, UiNodeEvent::Clicked);
+                            ui.set_active_node(Some(hover_id));
+                            ui.emit_node_event(&hover_id, UiNodeEvent::Clicked);
                         }
                         WidgetKind::Textbox => {
-                            ui.set_active_node(Some(hover_node));
-                            ui.textbox_mut(&hover_node).unwrap().recv_keyboard_or_gamepad_event(UiInputEvent::EndPressed(Modifiers::default()));
+                            ui.set_active_node(Some(hover_id));
+                            ui.textbox_mut(&hover_id).unwrap().recv_keyboard_or_gamepad_event(UiInputEvent::EndPressed(Modifiers::default()));
                         }
                         _ => {}
                     }
