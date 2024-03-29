@@ -12,11 +12,10 @@ use render_api::{
     resources::{RenderFrame},
 };
 use storage::{Handle, Storage};
-use ui::{Ui};
 
 use crate::{
     asset_renderer::AssetRenderer, processed_asset_store::ProcessedAssetStore, AnimationData,
-    AssetHandle, IconData, MeshData, ModelData, SceneData, SkinData, UiData, ui_manager::{Blinkiness, UiManager}
+    AssetHandle, IconData, MeshData, ModelData, SceneData, SkinData, ui_manager::UiManager,
 };
 
 #[derive(Resource)]
@@ -42,10 +41,6 @@ impl AssetManager {
         self.store.load(asset_data_store, asset_id, asset_type);
     }
 
-    pub fn manual_load_ui(&mut self, asset_id: &AssetId, ui: Ui) {
-        self.store.manual_load_ui(asset_id, ui);
-    }
-
     // used as a system
     pub(crate) fn sync(
         mut asset_manager: ResMut<Self>,
@@ -57,9 +52,7 @@ impl AssetManager {
         asset_manager.store.sync_meshes(&mut meshes);
         asset_manager.store.sync_icons(&mut meshes);
         asset_manager.store.sync_palettes(&mut materials);
-        if let Some(new_uis) = asset_manager.store.sync_uis(&mut meshes, &mut materials) {
-            ui_manager.handle_new_uis(&asset_manager.store, new_uis);
-        }
+        ui_manager.sync_uis(&mut meshes, &mut materials);
 
         asset_manager
             .store
@@ -233,16 +226,5 @@ impl AssetManager {
             parent_transform,
             frame_time_ms,
         );
-    }
-
-    // called from UiManager
-    pub(crate) fn draw_ui(
-        &self,
-        render_frame: &mut RenderFrame,
-        render_layer_opt: Option<&RenderLayer>,
-        ui_handle: &AssetHandle<UiData>,
-        blinkiness: &Blinkiness,
-    ) {
-        AssetRenderer::draw_ui(render_frame, render_layer_opt, &self.store, blinkiness, ui_handle);
     }
 }

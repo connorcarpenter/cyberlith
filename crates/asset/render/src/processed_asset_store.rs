@@ -5,11 +5,10 @@ use bevy_log::{info, warn};
 use asset_id::{AssetId, AssetType};
 use render_api::base::{CpuMaterial, CpuMesh, CpuSkin};
 use storage::Storage;
-use ui::Ui;
 
 use crate::{
     asset_storage::AssetStorage, AnimationData, AssetHandle, IconData, MeshData, ModelData,
-    PaletteData, SceneData, SkeletonData, SkinData, TypedAssetId, UiData,
+    PaletteData, SceneData, SkeletonData, SkinData, TypedAssetId,
 };
 
 pub(crate) struct ProcessedAssetStore {
@@ -21,13 +20,12 @@ pub(crate) struct ProcessedAssetStore {
     pub(crate) skins: AssetStorage<SkinData>,
     pub(crate) models: AssetStorage<ModelData>,
     pub(crate) scenes: AssetStorage<SceneData>,
-    pub(crate) uis: AssetStorage<UiData>,
 
     // mesh file name, skin handle
     queued_meshes: Vec<AssetHandle<MeshData>>,
     queued_palettes: Vec<AssetHandle<PaletteData>>,
     queued_icons: Vec<AssetHandle<IconData>>,
-    queued_uis: Vec<AssetHandle<UiData>>,
+
     icons_waiting_on_palettes: HashMap<AssetHandle<PaletteData>, Vec<AssetHandle<IconData>>>,
     skins_waiting_on_palettes: HashMap<AssetHandle<PaletteData>, Vec<AssetHandle<SkinData>>>,
     skins_waiting_on_meshes: HashMap<AssetHandle<MeshData>, Vec<AssetHandle<SkinData>>>,
@@ -46,12 +44,10 @@ impl Default for ProcessedAssetStore {
             skins: AssetStorage::default(),
             models: AssetStorage::default(),
             scenes: AssetStorage::default(),
-            uis: AssetStorage::default(),
 
             queued_meshes: Vec::new(),
             queued_palettes: Vec::new(),
             queued_icons: Vec::new(),
-            queued_uis: Vec::new(),
             icons_waiting_on_palettes: HashMap::new(),
             skins_waiting_on_palettes: HashMap::new(),
             skins_waiting_on_meshes: HashMap::new(),
@@ -178,15 +174,7 @@ impl ProcessedAssetStore {
                 }
             }
             AssetType::Ui => {
-                let handle = AssetHandle::<UiData>::new(*asset_id);
-                if !self.uis.has(&handle) {
-                    let bytes = asset_data_store.get(asset_id).unwrap();
-                    let ui_data = UiData::from_bytes(bytes);
-                    self.uis.insert(handle, ui_data);
-                    let ui_data = self.uis.get(&handle).unwrap();
-                    ui_data.load_dependencies(handle, &mut dependencies);
-                    self.queued_uis.push(handle);
-                }
+                panic!("should be handled by uimanager")
             }
         };
 
@@ -200,26 +188,7 @@ impl ProcessedAssetStore {
         }
     }
 
-    pub(crate) fn manual_load_ui(&mut self, asset_id: &AssetId, ui: Ui) {
-        let mut dependencies: Vec<(TypedAssetId, TypedAssetId)> = Vec::new();
-
-        let handle = AssetHandle::<UiData>::new(*asset_id);
-        if !self.uis.has(&handle) {
-            let ui_data = UiData::from_ui(ui);
-            self.uis.insert(handle, ui_data);
-            let ui_data = self.uis.get(&handle).unwrap();
-            ui_data.load_dependencies(handle, &mut dependencies);
-            self.queued_uis.push(handle);
-        }
-
-        if !dependencies.is_empty() {
-            for (principal_handle, dependency_handle) in dependencies {
-                self.finish_dependency(principal_handle, dependency_handle);
-            }
-        }
-    }
-
-    fn finish_dependency(
+    pub(crate) fn finish_dependency(
         &mut self,
         principal_typed_id: TypedAssetId,
         dependency_typed_id: TypedAssetId,
@@ -227,6 +196,9 @@ impl ProcessedAssetStore {
         match principal_typed_id {
             TypedAssetId::Mesh(_) | TypedAssetId::Skeleton(_) | TypedAssetId::Palette(_) => {
                 panic!("unexpected dependency for this type of asset")
+            }
+            TypedAssetId::Ui(_) => {
+                panic!("should be handled by uimanager");
             }
             TypedAssetId::Animation(principal_id) => {
                 let principal_handle = AssetHandle::<AnimationData>::new(principal_id);
@@ -304,11 +276,6 @@ impl ProcessedAssetStore {
             TypedAssetId::Scene(principal_id) => {
                 let prinicipal_handle = AssetHandle::<SceneData>::new(principal_id);
                 let principal_data = self.scenes.get_mut(&prinicipal_handle).unwrap();
-                principal_data.finish_dependency(dependency_typed_id);
-            }
-            TypedAssetId::Ui(principal_id) => {
-                let principal_handle = AssetHandle::<UiData>::new(principal_id);
-                let principal_data = self.uis.get_mut(&principal_handle).unwrap();
                 principal_data.finish_dependency(dependency_typed_id);
             }
         }
@@ -446,25 +413,6 @@ impl ProcessedAssetStore {
                 self.ready_icons.push(icon_handle);
             }
         }
-    }
-
-    pub(crate) fn sync_uis(
-        &mut self,
-        meshes: &mut Storage<CpuMesh>,
-        materials: &mut Storage<CpuMaterial>,
-    ) -> Option<Vec<AssetHandle<UiData>>> {
-        if self.queued_uis.is_empty() {
-            return None;
-        }
-
-        let ui_handles = std::mem::take(&mut self.queued_uis);
-
-        for ui_handle in &ui_handles {
-            let ui_data = self.uis.get_mut(ui_handle).unwrap();
-            ui_data.load_cpu_data(meshes, materials);
-        }
-
-        Some(ui_handles)
     }
 
     fn palette_has_cpu_materials(&self, palette_handle: &AssetHandle<PaletteData>) -> bool {

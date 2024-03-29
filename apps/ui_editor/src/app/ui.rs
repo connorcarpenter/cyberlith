@@ -41,7 +41,6 @@ pub struct SubmitButtonEvent;
 pub fn setup(
     mut commands: Commands,
     mut embedded_asset_events: EventWriter<EmbeddedAssetEvent>,
-    mut asset_manager: ResMut<AssetManager>,
     mut ui_manager: ResMut<UiManager>,
 ) {
     // ui setup
@@ -55,13 +54,13 @@ pub fn setup(
     let ui = write_to_file(&ui_name, &ui_asset_id, &ui_etag, ui);
 
     // load ui into asset manager
-    asset_manager.manual_load_ui(&ui_asset_id, ui);
+    ui_manager.manual_load_ui(&ui_asset_id, ui);
 
     // make handle, add handle to entity
     let ui_handle = AssetHandle::<UiData>::new(ui_asset_id);
     let ui_entity = commands.spawn(ui_handle).id();
 
-    ui_manager.register_ui_event::<SubmitButtonEvent>(&asset_manager, &ui_handle, "login_button");
+    ui_manager.register_ui_event::<SubmitButtonEvent>(&ui_handle, "login_button");
 
     // scene setup now
     // ambient light
@@ -90,7 +89,7 @@ pub fn setup(
 pub fn ui_update(
     global: Res<Global>,
     mut ui_manager: ResMut<UiManager>,
-    mut asset_manager: ResMut<AssetManager>,
+    asset_manager: Res<AssetManager>,
     mut input_events: EventReader<InputEvent>,
     // Cameras
     cameras_q: Query<(&Camera, Option<&RenderLayer>)>,
@@ -108,14 +107,14 @@ pub fn ui_update(
         return;
     };
     if cam_render_layer_opt == ui_render_layer_opt {
-        ui_manager.update_ui_viewport(&mut asset_manager, camera, ui_handle);
+        ui_manager.update_ui_viewport(&asset_manager, camera, ui_handle);
     }
 
     // update with inputs
     let Some((mouse_position, ui_input_events)) = UiInputConverter::convert(&mut input_events) else {
         return;
     };
-    ui_manager.update_ui_input(&mut asset_manager, ui_handle, mouse_position, ui_input_events);
+    ui_manager.update_ui_input(&asset_manager, ui_handle, mouse_position, ui_input_events);
 }
 
 pub fn ui_handle_events(

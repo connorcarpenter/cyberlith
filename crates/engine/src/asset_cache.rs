@@ -9,7 +9,7 @@ use bevy_ecs::{
 use naia_serde::{BitWriter, Serde};
 
 use asset_id::{AssetId, AssetType, ETag};
-use asset_render::{AssetManager, AssetMetadataSerde, AssetMetadataStore};
+use asset_render::{AssetManager, AssetMetadataSerde, AssetMetadataStore, UiManager};
 use filesystem::{FileSystemManager, TaskKey, WriteResult};
 
 /// Stores asset data in RAM
@@ -46,6 +46,7 @@ impl AssetCache {
     pub fn handle_load_asset_with_data_message(
         &mut self,
         asset_manager: &mut AssetManager,
+        ui_manager: &mut UiManager,
         asset_loaded_event_writer: &mut EventWriter<AssetLoadedEvent>,
         file_system_manager: &mut FileSystemManager,
         metadata_store: &mut AssetMetadataStore,
@@ -84,6 +85,7 @@ impl AssetCache {
         // info!("loading asset into memory: {:?}", asset_file_path);
         self.handle_data_store_load_asset(
             asset_manager,
+            ui_manager,
             asset_loaded_event_writer,
             &asset_id,
             &asset_type,
@@ -97,6 +99,7 @@ impl AssetCache {
     pub fn handle_data_store_load_asset(
         &mut self,
         asset_manager: &mut AssetManager,
+        ui_manager: &mut UiManager,
         asset_loaded_event_writer: &mut EventWriter<AssetLoadedEvent>,
         asset_id: &AssetId,
         asset_type: &AssetType,
@@ -107,7 +110,11 @@ impl AssetCache {
         }
         self.data_store.insert(*asset_id, asset_data);
 
-        asset_manager.load(&self.data_store, asset_id, asset_type);
+        if asset_type == &AssetType::Ui {
+            ui_manager.load(asset_manager, &self.data_store, asset_id);
+        } else {
+            asset_manager.load(&self.data_store, asset_id, asset_type);
+        }
 
         asset_loaded_event_writer.send(AssetLoadedEvent {
             asset_id: *asset_id,

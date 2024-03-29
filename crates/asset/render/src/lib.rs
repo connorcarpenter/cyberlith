@@ -9,6 +9,7 @@ mod plugin;
 mod processed_asset_store;
 mod types;
 mod ui_manager;
+mod ui_renderer;
 
 pub use asset_handle::*;
 pub use asset_manager::*;
