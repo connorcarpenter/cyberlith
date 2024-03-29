@@ -6,7 +6,7 @@ use bevy_ecs::{
     system::{ResMut, Res, Resource},
     world::World,
 };
-use bevy_log::warn;
+use bevy_log::{info, warn};
 
 use asset_id::{AssetId, AssetType};
 use clipboard::ClipboardManager;
@@ -426,10 +426,9 @@ impl AssetManager {
         self.ui_node_events.append(&mut events);
 
         // get cursor icon change
-        if let Some(cursor_icon) = ui.take_cursor_icon() {
-            self.cursor_icon_change = Some(cursor_icon);
-        } else {
-            self.cursor_icon_change = Some(CursorIcon::Default);
+        let new_cursor_icon = ui.get_cursor_icon();
+        if new_cursor_icon != self.last_cursor_icon {
+            self.cursor_icon_change = Some(new_cursor_icon);
         }
     }
 

@@ -176,6 +176,7 @@ pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, mouse_pos
                 mouse_event_has_ocurred = true;
 
                 if let Some(mouse_position) = mouse_position {
+                    ui.set_cursor_icon(CursorIcon::Default);
                     ui.clear_hover();
 
                     for node_id in 0..ui.store.nodes.len() {

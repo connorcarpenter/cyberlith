@@ -29,7 +29,7 @@ pub struct Ui {
     node_events: Vec<(NodeId, UiNodeEvent)>,
     hovering_node: Option<NodeId>,
     selected_node: Option<NodeId>,
-    cursor_icon: Option<CursorIcon>,
+    cursor_icon: CursorIcon,
     interact_timer: Instant,
 }
 
@@ -51,7 +51,7 @@ impl Ui {
             node_events: Vec::new(),
             hovering_node: None,
             selected_node: None,
-            cursor_icon: None,
+            cursor_icon: CursorIcon::Default,
             interact_timer: Instant::now(),
         };
 
@@ -78,14 +78,12 @@ impl Ui {
         ui_receive_input(self, text_measurer, mouse_position, events);
     }
 
-    pub fn take_cursor_icon(&mut self) -> Option<CursorIcon> {
-        let output = self.cursor_icon;
-        self.cursor_icon = None;
-        output
+    pub fn get_cursor_icon(&self) -> CursorIcon {
+        self.cursor_icon
     }
 
     pub fn set_cursor_icon(&mut self, cursor_icon: CursorIcon) {
-        self.cursor_icon = Some(cursor_icon);
+        self.cursor_icon = cursor_icon;
     }
 
     pub fn get_hover(&self) -> Option<NodeId> {
