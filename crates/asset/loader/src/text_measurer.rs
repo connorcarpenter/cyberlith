@@ -1,4 +1,4 @@
-use ui::TextMeasurer;
+use ui_state::TextMeasurer;
 
 use crate::IconData;
 

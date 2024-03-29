@@ -11,7 +11,7 @@ use math::Vec2;
 use render_api::{base::{CpuMaterial, CpuMesh}, components::Camera, resources::Time};
 use storage::Storage;
 use ui_types::{NodeId, UiConfig};
-use ui::{TextMeasurer, UiGlobalEvent, UiInputEvent, UiNodeEvent, UiNodeEventHandler};
+use ui_state::{UiGlobalEvent, UiInputEvent, UiNodeEvent, UiNodeEventHandler};
 
 #[derive(Resource)]
 pub struct UiManager {

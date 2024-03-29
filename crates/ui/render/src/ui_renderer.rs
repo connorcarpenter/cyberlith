@@ -9,7 +9,7 @@ use render_api::{
 };
 use storage::Handle;
 use ui_types::{NodeId, UiConfig, WidgetKind};
-use ui::{NodeActiveState, UiState};
+use ui_state::{NodeActiveState, UiState};
 use ui_builder::{ButtonStyleRef, PanelStyleRef, TextboxStyleRef, TextStyleRef};
 use ui_loader::{Blinkiness, UiManager};
 

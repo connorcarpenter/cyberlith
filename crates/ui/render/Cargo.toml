@@ -11,7 +11,7 @@ asset_loader = { path = "../../asset/loader" }
 asset_render = { path = "../../asset/render" }
 render_api = { path = "../../render/render_api" }
 storage = { path = "../../storage" }
-ui = { path = "../../ui" }
+ui_state = { path = "../../ui/state" }
 ui_types = { path = "../../ui/types" }
 ui_builder = { path = "../../ui/builder" }
 ui_loader = { path = "../../ui/loader" }

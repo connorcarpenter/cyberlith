@@ -25,7 +25,7 @@ config = { path = "../../apps/config", features = ["client"]}
 storage = { path = "../storage" }
 asset_id = { path = "../asset/id" }
 filesystem = { path = "../filesystem" }
-ui = { path = "../ui" }
+ui_state = { path = "../ui/state" }
 ui_render = { path = "../ui/render" }
 ui_types = { path = "../ui/types" }
 ui_loader = { path = "../ui/loader" }

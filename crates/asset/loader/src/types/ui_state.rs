@@ -1,7 +1,7 @@
 use render_api::base::{CpuMaterial, CpuMesh};
 use storage::Storage;
 use ui_types::UiConfig;
-use ui::UiState;
+use ui_state::UiState;
 
 pub struct UiStateData {
     ui_state: UiState,

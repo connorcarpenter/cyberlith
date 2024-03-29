@@ -40,7 +40,7 @@ pub mod storage {
     pub use storage::*;
 }
 pub mod ui {
-    pub use ui::{Alignment, UiInputConverter};
+    pub use ui_state::{Alignment, UiInputConverter};
     pub use ui_loader::UiManager;
     pub use ui_render::UiRender;
     pub use ui_types::{NodeId, UiConfig};

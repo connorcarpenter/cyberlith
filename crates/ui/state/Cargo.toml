@@ -1,19 +1,19 @@
 [package]
-name = "ui"
+name = "ui_state"
 version = "0.1.0"
 edition = "2021"
-workspace = "../.."
+workspace = "../../.."
 
 [dependencies]
-asset_id = { path = "../asset/id" }
-render_api = { path = "../render/render_api" }
-storage = { path = "../storage" }
-input = { path = "../input" }
-instant = { path = "../instant" }
-math = { path = "../math" }
+asset_id = { path = "../../asset/id" }
+render_api = { path = "../../render/render_api" }
+storage = { path = "../../storage" }
+input = { path = "../../input" }
+instant = { path = "../../instant" }
+math = { path = "../../math" }
 
-ui_layout = { path = "layout" }
-ui_types = { path = "types" }
+ui_layout = { path = "../layout" }
+ui_types = { path = "../types" }
 
 bevy_app = { version = "0.13", default-features = false }
 bevy_ecs = { version = "0.13", default-features = false }
