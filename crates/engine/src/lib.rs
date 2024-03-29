@@ -17,7 +17,7 @@ mod renderer;
 
 pub mod asset {
     pub use asset_id::{AssetId, AssetType, ETag};
-    pub use asset_render::{
+    pub use asset_loader::{
         embedded_asset_event, AnimationData, AssetHandle, AssetManager, AssetMetadataSerde,
         EmbeddedAssetEvent, IconData, MeshData, ModelData, PaletteData, SceneData, SkeletonData,
         SkinData, UiData,
@@ -40,7 +40,7 @@ pub mod storage {
 }
 pub mod ui {
     pub use ui::{Alignment, NodeId, Ui, UiInputConverter};
-    pub use asset_render::{
+    pub use asset_loader::{
         UiManager,
     };
 }

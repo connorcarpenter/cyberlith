@@ -12,7 +12,7 @@ use naia_bevy_client::{events::InsertComponentEvents, Replicate};
 use world_server_naia_proto::components::{Alt1, AssetEntry, AssetRef, Main, Position};
 
 use asset_id::{AssetId, AssetType};
-use asset_render::AssetMetadataStore;
+use asset_loader::AssetMetadataStore;
 
 use crate::{asset_cache::AssetCache, world::WorldClient};
 

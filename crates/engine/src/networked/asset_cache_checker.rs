@@ -6,7 +6,7 @@ use naia_bevy_client::{Client, ResponseSendKey};
 use session_server_naia_proto::messages::{LoadAssetRequest, LoadAssetResponse};
 
 use asset_id::{AssetId, AssetType};
-use asset_render::{AssetManager, AssetMetadataStore};
+use asset_loader::{AssetManager, AssetMetadataStore};
 use filesystem::{FileSystemManager, ReadResult, TaskKey};
 
 use crate::asset_cache::{AssetCache, AssetLoadedEvent};

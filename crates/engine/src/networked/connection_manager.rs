@@ -14,7 +14,7 @@ use naia_bevy_client::{
     Client, Timer,
 };
 
-use asset_render::{AssetManager, AssetMetadataStore};
+use asset_loader::{AssetManager, AssetMetadataStore};
 use bevy_http_client::{HttpClient, ResponseKey};
 use config::{ORCHESTRATOR_PORT, PUBLIC_IP_ADDR};
 use filesystem::FileSystemManager;

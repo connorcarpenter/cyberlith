@@ -18,7 +18,7 @@ wgpu_renderer = [ ]
 math = { path = "../math" }
 render_api = { path = "../render/render_api" }
 input = { path = "../input" }
-asset_render = { path = "../asset/render" }
+asset_loader = { path = "../asset/loader" }
 bevy_http_client = { path = "../http/bevy_http_client" }
 config = { path = "../../apps/config", features = ["client"]}
 storage = { path = "../storage" }

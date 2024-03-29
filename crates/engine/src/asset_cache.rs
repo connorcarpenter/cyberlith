@@ -9,7 +9,7 @@ use bevy_ecs::{
 use naia_serde::{BitWriter, Serde};
 
 use asset_id::{AssetId, AssetType, ETag};
-use asset_render::{AssetManager, AssetMetadataSerde, AssetMetadataStore, UiManager};
+use asset_loader::{AssetManager, AssetMetadataSerde, AssetMetadataStore, UiManager};
 use filesystem::{FileSystemManager, TaskKey, WriteResult};
 
 /// Stores asset data in RAM

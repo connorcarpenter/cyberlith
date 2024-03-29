@@ -5,7 +5,7 @@ use bevy_ecs::{
 
 use naia_serde::{BitReader, Serde};
 
-use asset_render::{AssetManager, AssetMetadataSerde, AssetMetadataStore, EmbeddedAssetEvent, UiManager};
+use asset_loader::{AssetManager, AssetMetadataSerde, AssetMetadataStore, EmbeddedAssetEvent, UiManager};
 use filesystem::FileSystemManager;
 
 use crate::asset_cache::{AssetCache, AssetLoadedEvent};

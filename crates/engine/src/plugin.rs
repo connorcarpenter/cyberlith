@@ -2,7 +2,7 @@ use bevy_app::{App, Plugin, Startup, Update};
 use bevy_ecs::system::ResMut;
 use bevy_log::LogPlugin;
 
-use asset_render::AssetPlugin;
+use asset_loader::AssetPlugin;
 use bevy_http_client::HttpClientPlugin;
 use filesystem::FileSystemPlugin;
 use input::{Input, InputPlugin};

@@ -13,7 +13,7 @@ use bevy_log::info;
 use world_server_naia_proto::components::{Alt1, AssetEntry, AssetRef, Main};
 
 use asset_id::AssetId;
-use asset_render::{AssetMetadataStore, TypedAssetId};
+use asset_loader::{AssetMetadataStore, TypedAssetId};
 
 use crate::{
     asset_cache::{AssetCache, AssetLoadedEvent},
