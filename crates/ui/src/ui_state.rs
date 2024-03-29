@@ -12,7 +12,7 @@ use ui_layout::{Cache, Node, SizeUnits, TextMeasurer};
 use instant::Instant;
 use math::Vec2;
 
-use crate::{widget::WidgetState, textbox::TextboxState, text::TextState, panel::PanelState, button::ButtonState, state_store::UiStateStore, input::UiInputEvent, events::UiGlobalEvent, cache::LayoutCache, node_id::NodeId, input::ui_receive_input, UiNodeEvent, button::NodeActiveState, Ui, UiNodeState, WidgetKind};
+use crate::{widget::WidgetState, textbox::TextboxState, text::TextState, panel::PanelState, button::ButtonState, state_store::UiStateStore, input::UiInputEvent, events::UiGlobalEvent, cache::LayoutCache, node_id::NodeId, input::ui_receive_input, UiNodeEvent, button::NodeActiveState, UiConfig, UiNodeState, WidgetKind};
 
 pub struct UiState {
     pub globals: StateGlobals,
@@ -34,7 +34,7 @@ impl UiState {
     // confirmed below
     pub fn set_handles(
         &mut self,
-        ui: &Ui,
+        ui_config: &UiConfig,
         meshes: &mut Storage<CpuMesh>,
         materials: &mut Storage<CpuMaterial>,
     ) {
@@ -46,32 +46,32 @@ impl UiState {
 
         // set text color handle
         {
-            let mat_handle = materials.add(ui.globals.get_text_color());
+            let mat_handle = materials.add(ui_config.globals.get_text_color());
             self.globals.text_color_handle_opt = Some(mat_handle);
         }
 
         // set color handles
         let ids = self.collect_color_handles();
         for id in ids {
-            let node_ref = ui.node_ref(&id).unwrap();
+            let node_ref = ui_config.node_ref(&id).unwrap();
 
             match node_ref.widget_kind() {
                 WidgetKind::Panel => {
-                    let panel_style_ref = ui.store.panel_style_ref(&id);
+                    let panel_style_ref = ui_config.store.panel_style_ref(&id);
                     let color = panel_style_ref.background_color();
                     let panel_mut = self.panel_mut(&id).unwrap();
                     let mat_handle = materials.add(color);
                     panel_mut.background_color_handle = Some(mat_handle);
                 }
                 WidgetKind::Text => {
-                    let text_style_ref = ui.store.text_style_ref(&id);
+                    let text_style_ref = ui_config.store.text_style_ref(&id);
                     let color = text_style_ref.background_color();
                     let text_mut = self.text_mut(&id).unwrap();
                     let mat_handle = materials.add(color);
                     text_mut.background_color_handle = Some(mat_handle);
                 }
                 WidgetKind::Button => {
-                    let button_style_ref = ui.store.button_style_ref(&id);
+                    let button_style_ref = ui_config.store.button_style_ref(&id);
 
                     let background_color = button_style_ref.background_color();
                     let hover_color = button_style_ref.hover_color();
@@ -89,7 +89,7 @@ impl UiState {
                     button_mut.set_down_color_handle(down_color_handle);
                 }
                 WidgetKind::Textbox => {
-                    let textbox_style_ref = ui.store.textbox_style_ref(&id);
+                    let textbox_style_ref = ui_config.store.textbox_style_ref(&id);
 
                     let background_color = textbox_style_ref.background_color();
                     let hover_color = textbox_style_ref.hover_color();
@@ -149,7 +149,7 @@ impl UiState {
     // confirmed above
     // not confirmed below
 
-    pub fn new(ui: &Ui) -> Self {
+    pub fn new(ui_config: &UiConfig) -> Self {
         let mut me = Self {
             globals: StateGlobals::new(),
             cache: LayoutCache::new(),
@@ -165,7 +165,7 @@ impl UiState {
             interact_timer: Instant::now(),
         };
 
-        for node in ui.store.nodes.iter() {
+        for node in ui_config.store.nodes.iter() {
             me.store.node_state_init(node);
         }
 
@@ -173,8 +173,8 @@ impl UiState {
     }
 
     // events
-    pub fn receive_input(&mut self, ui: &Ui, text_measurer: &dyn TextMeasurer, mouse_position: Option<Vec2>, events: Vec<UiInputEvent>) {
-        ui_receive_input(ui, self, text_measurer, mouse_position, events);
+    pub fn receive_input(&mut self, ui_config: &UiConfig, text_measurer: &dyn TextMeasurer, mouse_position: Option<Vec2>, events: Vec<UiInputEvent>) {
+        ui_receive_input(ui_config, self, text_measurer, mouse_position, events);
     }
 
     pub fn get_cursor_icon(&self) -> CursorIcon {
@@ -256,34 +256,34 @@ impl UiState {
         self.recalc_layout
     }
 
-    pub fn recalculate_layout(&mut self, ui: &mut Ui, text_measurer: &dyn TextMeasurer) {
+    pub fn recalculate_layout(&mut self, ui_config: &mut UiConfig, text_measurer: &dyn TextMeasurer) {
         self.recalc_layout = false;
-        self.recalculate_layout_impl(ui, text_measurer);
+        self.recalculate_layout_impl(ui_config, text_measurer);
     }
 
-    fn recalculate_layout_impl(&mut self, ui: &mut Ui, text_measurer: &dyn TextMeasurer) {
+    fn recalculate_layout_impl(&mut self, ui_config: &mut UiConfig, text_measurer: &dyn TextMeasurer) {
         //info!("recalculating layout. viewport_width: {:?}, viewport_height: {:?}", self.viewport.width, self.viewport.height);
 
         let last_viewport_width: f32 = self.last_viewport.width as f32;
         let last_viewport_height: f32 = self.last_viewport.height as f32;
 
-        let root_panel_style_id = *ui
-            .node_ref(&Ui::ROOT_NODE_ID)
+        let root_panel_style_id = *ui_config
+            .node_ref(&UiConfig::ROOT_NODE_ID)
             .unwrap()
             .style_ids
             .last()
             .unwrap();
-        let root_panel_style = ui.style_mut(&root_panel_style_id).unwrap();
+        let root_panel_style = ui_config.style_mut(&root_panel_style_id).unwrap();
         root_panel_style.width = Some(SizeUnits::Pixels(last_viewport_width));
         root_panel_style.height = Some(SizeUnits::Pixels(last_viewport_height));
 
         let cache_mut = &mut self.cache;
-        let store_ref = &ui.store;
+        let store_ref = &ui_config.store;
         let state_store_ref = &self.store;
 
         // this calculates all the rects in cache_mut
-        Ui::ROOT_NODE_ID.layout(cache_mut, store_ref, state_store_ref, text_measurer);
-        finalize_rects(ui, self, &Ui::ROOT_NODE_ID, (0.0, 0.0, 0.0))
+        UiConfig::ROOT_NODE_ID.layout(cache_mut, store_ref, state_store_ref, text_measurer);
+        finalize_rects(ui_config, self, &UiConfig::ROOT_NODE_ID, (0.0, 0.0, 0.0))
 
         // print_node(&Self::ROOT_PANEL_ID, &self.cache, &self.panels, true, false, "".to_string());
     }
@@ -354,12 +354,12 @@ impl StateGlobals {
 
 // recurses through tree and sets the bounds of each node to their absolute position
 fn finalize_rects(
-    ui: &Ui,
+    ui_config: &UiConfig,
     ui_state: &mut UiState,
     id: &NodeId,
     parent_position: (f32, f32, f32),
 ) {
-    let Some(node) = ui.store.get_node(&id) else {
+    let Some(node) = ui_config.store.get_node(&id) else {
         warn!("no panel for id: {:?}", id);
         return;
     };
@@ -379,18 +379,18 @@ fn finalize_rects(
 
     match node.widget_kind() {
         WidgetKind::Panel => {
-            let Some(panel_ref) = ui.store.panel_ref(id) else {
+            let Some(panel_ref) = ui_config.store.panel_ref(id) else {
                 panic!("no panel ref for node_id: {:?}", id);
             };
 
             // update children
             let child_ids = panel_ref.children.clone();
             for child_id in child_ids {
-                finalize_rects(ui, ui_state, &child_id, child_position);
+                finalize_rects(ui_config, ui_state, &child_id, child_position);
             }
         }
         WidgetKind::Button => {
-            let Some(button_ref) = ui.store.button_ref(id) else {
+            let Some(button_ref) = ui_config.store.button_ref(id) else {
                 panic!("no button ref for node_id: {:?}", id);
             };
             let panel_ref = &button_ref.panel;
@@ -398,7 +398,7 @@ fn finalize_rects(
             // update children
             let child_ids = panel_ref.children.clone();
             for child_id in child_ids {
-                finalize_rects(ui, ui_state, &child_id, child_position);
+                finalize_rects(ui_config, ui_state, &child_id, child_position);
             }
         }
         _ => {}

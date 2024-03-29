@@ -5,7 +5,7 @@ use input::{CursorIcon, GamepadButtonType, InputEvent, Key, Modifiers, MouseButt
 use math::Vec2;
 use ui_layout::TextMeasurer;
 
-use crate::{NodeId, Panel, Ui, UiGlobalEvent, UiNodeEvent, UiState, WidgetKind};
+use crate::{NodeId, Panel, UiConfig, UiGlobalEvent, UiNodeEvent, UiState, WidgetKind};
 
 pub struct UiInputConverter;
 
@@ -168,7 +168,13 @@ impl UiInputEvent {
     }
 }
 
-pub fn ui_receive_input(ui: &Ui, ui_state: &mut UiState, text_measurer: &dyn TextMeasurer, mouse_position: Option<Vec2>, events: Vec<UiInputEvent>) {
+pub fn ui_receive_input(
+    ui_config: &UiConfig,
+    ui_state: &mut UiState,
+    text_measurer: &dyn TextMeasurer,
+    mouse_position: Option<Vec2>,
+    events: Vec<UiInputEvent>
+) {
 
     let mut mouse_event_has_ocurred = false;
     let mut mouse_hover_node = None;
@@ -187,15 +193,15 @@ pub fn ui_receive_input(ui: &Ui, ui_state: &mut UiState, text_measurer: &dyn Tex
 
                     for node_id in 0..ui_state.store.nodes.len() {
                         let node_id = NodeId::from_usize(node_id);
-                        ui_update_hover(ui, ui_state, &node_id, mouse_position.x, mouse_position.y);
+                        ui_update_hover(ui_config, ui_state, &node_id, mouse_position.x, mouse_position.y);
                     }
                 }
 
                 mouse_hover_node = ui_state.get_hover().map(|id| {
-                    (id, ui.node_ref(&id).unwrap().widget_kind())
+                    (id, ui_config.node_ref(&id).unwrap().widget_kind())
                 });
                 mouse_active_node = ui_state.get_active_node().map(|id| {
-                    (id, ui.node_ref(&id).unwrap().widget_kind())
+                    (id, ui_config.node_ref(&id).unwrap().widget_kind())
                 });
             }
 
@@ -243,7 +249,7 @@ pub fn ui_receive_input(ui: &Ui, ui_state: &mut UiState, text_measurer: &dyn Tex
 
     let mut hover_node = ui_state.get_hover();
     let mut active_node = ui_state.get_active_node().map(|id| {
-        (id, ui.node_ref(&id).unwrap().widget_kind())
+        (id, ui_config.node_ref(&id).unwrap().widget_kind())
     });
     let mut events = kb_or_gp_events;
 
@@ -293,7 +299,7 @@ pub fn ui_receive_input(ui: &Ui, ui_state: &mut UiState, text_measurer: &dyn Tex
                 // make sure hovering
                 // hover default ui element if none is hovered (coming from mouse mode)
                 if hover_node.is_none() {
-                    let Some(first_input_id) = ui.get_first_input() else {
+                    let Some(first_input_id) = ui_config.get_first_input() else {
                         panic!("no first input set, cannot process input events without somewhere to start");
                     };
                     ui_state.receive_hover(&first_input_id);
@@ -304,11 +310,11 @@ pub fn ui_receive_input(ui: &Ui, ui_state: &mut UiState, text_measurer: &dyn Tex
                 // handle navigation
                 let hover_node_inside = hover_node.unwrap();
                 if let Some(next_id) = match event {
-                    UiInputEvent::UpPressed => ui.nav_get_up_id(&hover_node_inside),
-                    UiInputEvent::DownPressed => ui.nav_get_down_id(&hover_node_inside),
-                    UiInputEvent::LeftPressed(_) => ui.nav_get_left_id(&hover_node_inside),
-                    UiInputEvent::RightPressed(_) => ui.nav_get_right_id(&hover_node_inside),
-                    UiInputEvent::TabPressed => ui.nav_get_tab_id(&hover_node_inside),
+                    UiInputEvent::UpPressed => ui_config.nav_get_up_id(&hover_node_inside),
+                    UiInputEvent::DownPressed => ui_config.nav_get_down_id(&hover_node_inside),
+                    UiInputEvent::LeftPressed(_) => ui_config.nav_get_left_id(&hover_node_inside),
+                    UiInputEvent::RightPressed(_) => ui_config.nav_get_right_id(&hover_node_inside),
+                    UiInputEvent::TabPressed => ui_config.nav_get_tab_id(&hover_node_inside),
                     _ => None,
                 } {
                     ui_state.receive_hover(&next_id);
@@ -333,8 +339,8 @@ pub fn ui_receive_input(ui: &Ui, ui_state: &mut UiState, text_measurer: &dyn Tex
             }
             UiInputEvent::SelectPressed => {
                 if let Some((active_id, WidgetKind::Textbox)) = active_node {
-                    if let Some(next_id) = ui.nav_get_tab_id(&active_id) {
-                        match ui.node_ref(&next_id).unwrap().widget_kind() {
+                    if let Some(next_id) = ui_config.nav_get_tab_id(&active_id) {
+                        match ui_config.node_ref(&next_id).unwrap().widget_kind() {
                             WidgetKind::Textbox => {
                                 // make next textbox active
                                 ui_state.set_active_node(Some(next_id));
@@ -365,7 +371,7 @@ pub fn ui_receive_input(ui: &Ui, ui_state: &mut UiState, text_measurer: &dyn Tex
                 }
                 // if hover node is already hovering, can handle select pressed
                 else if let Some(hover_id) = hover_node {
-                    let widget_kind = ui.node_ref(&hover_id).unwrap().widget_kind();
+                    let widget_kind = ui_config.node_ref(&hover_id).unwrap().widget_kind();
                     match widget_kind {
                         WidgetKind::Button => {
                             ui_state.set_active_node(Some(hover_id));
@@ -381,7 +387,7 @@ pub fn ui_receive_input(ui: &Ui, ui_state: &mut UiState, text_measurer: &dyn Tex
             }
             UiInputEvent::SelectReleased => {
                 if let Some(active_node) = ui_state.get_active_node() {
-                    match ui.node_ref(&active_node).unwrap().widget_kind() {
+                    match ui_config.node_ref(&active_node).unwrap().widget_kind() {
                         WidgetKind::Button => {
                             ui_state.set_active_node(None);
                         }
@@ -395,7 +401,7 @@ pub fn ui_receive_input(ui: &Ui, ui_state: &mut UiState, text_measurer: &dyn Tex
 }
 
 fn ui_update_hover(
-    ui: &Ui,
+    ui_config: &UiConfig,
     ui_state: &mut UiState,
     id: &NodeId,
     mouse_x: f32,
@@ -415,7 +421,7 @@ fn ui_update_hover(
         return;
     };
 
-    let Some(node) = ui.store.get_node(&id) else {
+    let Some(node) = ui_config.store.get_node(&id) else {
         warn!("no node for id: {:?}", id);
         return;
     };

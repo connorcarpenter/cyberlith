@@ -2,20 +2,20 @@ use std::collections::HashMap;
 
 use naia_serde::{FileBitWriter, SerdeInternal as Serde, UnsignedInteger, UnsignedVariableInteger};
 
-use ui::{Alignment, Button, ButtonStyle, LayoutType, MarginUnits, NodeStyle, Panel, PanelStyle, PositionType, SizeUnits, Solid, StyleId, Text, TextStyle, Ui, UiNode, Widget, WidgetStyle, Navigation, TextboxStyle, Textbox};
+use ui::{Alignment, Button, ButtonStyle, LayoutType, MarginUnits, NodeStyle, Panel, PanelStyle, PositionType, SizeUnits, Solid, StyleId, Text, TextStyle, UiConfig, UiNode, Widget, WidgetStyle, Navigation, TextboxStyle, Textbox};
 
 use crate::bits::{AlignmentBits, ButtonBits, NavigationBits, ButtonStyleBits, LayoutTypeBits, MarginUnitsBits, PanelBits, PanelStyleBits, PositionTypeBits, SizeUnitsBits, SolidBits, TextBits, TextStyleBits, UiAction, UiActionType, UiNodeBits, UiStyleBits, WidgetBits, WidgetStyleBits, TextboxStyleBits, TextboxBits};
 
-pub fn write_bits(ui: &Ui) -> Vec<u8> {
-    let actions = convert_ui_to_actions(ui);
+pub fn write_bits(ui_config: &UiConfig) -> Vec<u8> {
+    let actions = convert_ui_to_actions(ui_config);
     actions_to_bytes(actions)
 }
 
-fn convert_ui_to_actions(ui: &Ui) -> Vec<UiAction> {
+fn convert_ui_to_actions(ui_config: &UiConfig) -> Vec<UiAction> {
     let mut output = Vec::new();
 
     // write text color
-    let text_color = ui.get_text_color();
+    let text_color = ui_config.get_text_color();
     output.push(UiAction::TextColor(
         text_color.r,
         text_color.g,
@@ -23,11 +23,11 @@ fn convert_ui_to_actions(ui: &Ui) -> Vec<UiAction> {
     ));
 
     // write text icon AssetId
-    let text_icon_asset_id = ui.get_text_icon_asset_id();
+    let text_icon_asset_id = ui_config.get_text_icon_asset_id();
     output.push(UiAction::TextIconAssetId(*text_icon_asset_id));
 
     // write first input
-    let first_input_id = ui.get_first_input();
+    let first_input_id = ui_config.get_first_input();
     output.push(UiAction::FirstInput(first_input_id));
 
     // write styles
@@ -35,9 +35,9 @@ fn convert_ui_to_actions(ui: &Ui) -> Vec<UiAction> {
     let mut style_id_to_index = HashMap::new();
     let mut style_count = 0;
 
-    for (style_id, style) in ui.store.styles.iter().enumerate() {
+    for (style_id, style) in ui_config.store.styles.iter().enumerate() {
         let style_id = StyleId::new(style_id as u32);
-        if style_id == Ui::BASE_TEXT_STYLE_ID {
+        if style_id == UiConfig::BASE_TEXT_STYLE_ID {
             continue;
         }
         let next_index = style_count;
@@ -51,9 +51,9 @@ fn convert_ui_to_actions(ui: &Ui) -> Vec<UiAction> {
     }
 
     // write nodes
-    for node in ui.store.nodes.iter() {
+    for node in ui_config.store.nodes.iter() {
         output.push(UiAction::Node(UiNodeBits::from_node(
-            ui,
+            ui_config,
             &style_id_to_index,
             node,
         )));
@@ -393,14 +393,14 @@ impl LayoutTypeBits {
 }
 
 impl UiNodeBits {
-    fn from_node(ui: &Ui, style_id_to_index: &HashMap<StyleId, u8>, node: &UiNode) -> Self {
+    fn from_node(ui_config: &UiConfig, style_id_to_index: &HashMap<StyleId, u8>, node: &UiNode) -> Self {
         let mut me = Self {
             style_ids: Vec::new(),
-            widget: WidgetBits::from_widget(ui, &node.widget),
+            widget: WidgetBits::from_widget(ui_config, &node.widget),
         };
 
         for style_id in &node.style_ids {
-            if style_id == &Ui::BASE_TEXT_STYLE_ID {
+            if style_id == &UiConfig::BASE_TEXT_STYLE_ID {
                 continue;
             }
             let style_index = *style_id_to_index.get(style_id).unwrap();
@@ -412,12 +412,12 @@ impl UiNodeBits {
 }
 
 impl WidgetBits {
-    fn from_widget(ui: &Ui, widget: &Widget) -> Self {
+    fn from_widget(ui_config: &UiConfig, widget: &Widget) -> Self {
         match widget {
             Widget::Panel(panel) => Self::Panel(PanelBits::from_panel(panel)),
             Widget::Text(text) => Self::Text(TextBits::from_text(text)),
-            Widget::Button(button) => Self::Button(ButtonBits::from_button(ui, button)),
-            Widget::Textbox(textbox) => Self::Textbox(TextboxBits::from_textbox(ui, textbox)),
+            Widget::Button(button) => Self::Button(ButtonBits::from_button(ui_config, button)),
+            Widget::Textbox(textbox) => Self::Textbox(TextboxBits::from_textbox(ui_config, textbox)),
         }
     }
 }
@@ -448,9 +448,9 @@ impl TextBits {
 }
 
 impl ButtonBits {
-    fn from_button(ui: &Ui, button: &Button) -> Self {
+    fn from_button(ui_config: &UiConfig, button: &Button) -> Self {
         let panel_bits = PanelBits::from_panel(&button.panel);
-        let nav_bits = NavigationBits::from_navigation(ui, &button.navigation);
+        let nav_bits = NavigationBits::from_navigation(ui_config, &button.navigation);
         Self {
             panel: panel_bits,
             id_str: button.id_str.clone(),
@@ -460,9 +460,9 @@ impl ButtonBits {
 }
 
 impl TextboxBits {
-    fn from_textbox(ui: &Ui, textbox: &Textbox) -> Self {
+    fn from_textbox(ui_config: &UiConfig, textbox: &Textbox) -> Self {
         let panel_bits = PanelBits::from_panel(&textbox.panel);
-        let nav_bits = NavigationBits::from_navigation(ui, &textbox.navigation);
+        let nav_bits = NavigationBits::from_navigation(ui_config, &textbox.navigation);
         Self {
             panel: panel_bits,
             id_str: textbox.id_str.clone(),
@@ -472,7 +472,7 @@ impl TextboxBits {
 }
 
 impl NavigationBits {
-    fn from_navigation(ui: &Ui, navigation: &Navigation) -> Self {
+    fn from_navigation(ui_config: &UiConfig, navigation: &Navigation) -> Self {
         let Navigation {
             up_goes_to,
             down_goes_to,
@@ -481,11 +481,11 @@ impl NavigationBits {
             tab_goes_to,
         } = navigation;
 
-        let up = get_nav_id(ui, up_goes_to.as_ref().map(|s| s.as_str()));
-        let down = get_nav_id(ui, down_goes_to.as_ref().map(|s| s.as_str()));
-        let left = get_nav_id(ui, left_goes_to.as_ref().map(|s| s.as_str()));
-        let right = get_nav_id(ui, right_goes_to.as_ref().map(|s| s.as_str()));
-        let tab = get_nav_id(ui, tab_goes_to.as_ref().map(|s| s.as_str()));
+        let up = get_nav_id(ui_config, up_goes_to.as_ref().map(|s| s.as_str()));
+        let down = get_nav_id(ui_config, down_goes_to.as_ref().map(|s| s.as_str()));
+        let left = get_nav_id(ui_config, left_goes_to.as_ref().map(|s| s.as_str()));
+        let right = get_nav_id(ui_config, right_goes_to.as_ref().map(|s| s.as_str()));
+        let tab = get_nav_id(ui_config, tab_goes_to.as_ref().map(|s| s.as_str()));
 
         Self {
             up,
@@ -497,9 +497,9 @@ impl NavigationBits {
     }
 }
 
-fn get_nav_id(ui: &Ui, id_str: Option<&str>) -> Option<UnsignedVariableInteger<4>> {
+fn get_nav_id(ui_config: &UiConfig, id_str: Option<&str>) -> Option<UnsignedVariableInteger<4>> {
     let id_str = id_str?;
-    let id = ui.get_node_id_by_id_str(id_str)?;
+    let id = ui_config.get_node_id_by_id_str(id_str)?;
     let id = id.as_usize();
     Some(UnsignedVariableInteger::<4>::new(id as i128))
 }

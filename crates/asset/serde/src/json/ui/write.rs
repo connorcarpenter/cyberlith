@@ -1,36 +1,36 @@
 use std::collections::HashMap;
 
 use render_api::base::Color;
-use ui::{Alignment, Button, Navigation, ButtonStyle, LayoutType, MarginUnits, NodeStyle, Panel, PanelStyle, PositionType, SizeUnits, Solid, StyleId, Text, TextStyle, Ui, UiNode, Widget, WidgetStyle, TextboxStyle, Textbox};
+use ui::{Alignment, Button, Navigation, ButtonStyle, LayoutType, MarginUnits, NodeStyle, Panel, PanelStyle, PositionType, SizeUnits, Solid, StyleId, Text, TextStyle, UiConfig, UiNode, Widget, WidgetStyle, TextboxStyle, Textbox};
 
 use crate::json::{ButtonJson, NavigationJson, ButtonStyleJson, TextboxStyleJson, TextboxJson};
 use super::{
     AlignmentJson, ColorJson, LayoutTypeJson, MarginUnitsJson, PanelJson, PanelStyleJson,
-    PositionTypeJson, SizeUnitsJson, SolidJson, TextJson, TextStyleJson, UiJson, UiNodeJson,
+    PositionTypeJson, SizeUnitsJson, SolidJson, TextJson, TextStyleJson, UiConfigJson, UiNodeJson,
     UiStyleJson, WidgetJson, WidgetStyleJson,
 };
 
 // conversion
 
-impl UiJson {
-    pub fn from_ui(ui: &Ui) -> Self {
+impl UiConfigJson {
+    pub fn from_ui_config(ui_config: &UiConfig) -> Self {
         let mut style_id_to_index = HashMap::new();
 
-        let text_color = ColorJson::from_color(ui.get_text_color());
-        let text_icon_asset_id = ui.get_text_icon_asset_id().to_string();
+        let text_color = ColorJson::from_color(ui_config.get_text_color());
+        let text_icon_asset_id = ui_config.get_text_icon_asset_id().to_string();
 
         let mut me = Self {
             text_color,
             text_icon_asset_id,
-            first_input: ui.get_first_input().map(|id| id.as_usize()),
+            first_input: ui_config.get_first_input().map(|id| id.as_usize()),
             styles: Vec::new(),
             nodes: Vec::new(),
         };
 
         // styles
-        for (style_id, style) in ui.store.styles.iter().enumerate() {
+        for (style_id, style) in ui_config.store.styles.iter().enumerate() {
             let style_id = StyleId::new(style_id as u32);
-            if style_id == Ui::BASE_TEXT_STYLE_ID {
+            if style_id == UiConfig::BASE_TEXT_STYLE_ID {
                 continue;
             }
             let next_index = me.styles.len();
@@ -39,7 +39,7 @@ impl UiJson {
         }
 
         // nodes
-        for node in ui.store.nodes.iter() {
+        for node in ui_config.store.nodes.iter() {
             me.nodes
                 .push(UiNodeJson::from_node(&style_id_to_index, node));
         }
@@ -222,7 +222,7 @@ impl UiNodeJson {
         };
 
         for style_id in &node.style_ids {
-            if style_id == &Ui::BASE_TEXT_STYLE_ID {
+            if style_id == &UiConfig::BASE_TEXT_STYLE_ID {
                 continue;
             }
             let style_index: usize = *style_id_to_index.get(style_id).unwrap();

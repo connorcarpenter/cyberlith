@@ -1,7 +1,7 @@
-use game_engine::{ui::{Alignment, Ui}, render::base::Color, asset::{AssetId, ETag}};
+use game_engine::{ui::{Alignment, UiConfig}, render::base::Color, asset::{AssetId, ETag}};
 
 #[allow(unused)]
-pub fn ui_define() -> (String, AssetId, ETag, Ui) {
+pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
     // config
     let ui_name = "register";
     let ui_asset_id_str = "rckneg";//AssetId::get_random().as_string(); // keep this around to generate new AssetIds if needed!
@@ -13,7 +13,7 @@ pub fn ui_define() -> (String, AssetId, ETag, Ui) {
     let icon_asset_id = AssetId::from_str(icon_asset_id_str).unwrap();
 
     // Create UI !
-    let mut ui = Ui::new();
+    let mut ui = UiConfig::new();
 
     // styles
     let window_style = ui.create_panel_style(|s| {

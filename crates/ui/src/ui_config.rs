@@ -6,14 +6,14 @@ use ui_layout::SizeUnits;
 
 use crate::{node::UiNode, node_id::NodeId, panel::{Panel, PanelMut, PanelStyle, PanelStyleMut}, store::UiStore, style::{NodeStyle, StyleId, WidgetStyle}, text::{TextStyle, TextStyleMut}, widget::{Widget, WidgetKind}, ButtonStyle, ButtonStyleMut, TextboxStyleMut, TextboxStyle, Navigation};
 
-pub struct Ui {
+pub struct UiConfig {
     pub globals: Globals,
     pub store: UiStore,
 
     id_str_to_node_id_map: HashMap<String, NodeId>,
 }
 
-impl Ui {
+impl UiConfig {
     pub const ROOT_NODE_ID: NodeId = NodeId::new(0);
     // pub(crate) const ROOT_STYLE_ID: StyleId = StyleId::new(0);
     pub const BASE_TEXT_STYLE_ID: StyleId = StyleId::new(0);

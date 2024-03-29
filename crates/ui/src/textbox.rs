@@ -7,7 +7,7 @@ use render_api::base::{Color, CpuMaterial};
 use storage::Handle;
 use ui_layout::{Alignment, MarginUnits, PositionType, SizeUnits, TextMeasurer};
 
-use crate::{panel::PanelState, input::{UiInputEvent}, events::UiGlobalEvent, button::NodeActiveState, node::UiNode, store::UiStore, style::{NodeStyle, StyleId, WidgetStyle}, NodeId, Panel, PanelMut, PanelStyle, Ui, Navigation, Text};
+use crate::{panel::PanelState, input::{UiInputEvent}, events::UiGlobalEvent, button::NodeActiveState, node::UiNode, store::UiStore, style::{NodeStyle, StyleId, WidgetStyle}, NodeId, Panel, PanelMut, PanelStyle, UiConfig, Navigation, Text};
 
 #[derive(Clone)]
 pub struct Textbox {
@@ -504,49 +504,49 @@ impl TextboxStyle {
 }
 
 pub struct TextboxMut<'a> {
-    ui: &'a mut Ui,
+    ui_config: &'a mut UiConfig,
     node_id: NodeId,
 }
 
 impl<'a> TextboxMut<'a> {
-    pub(crate) fn new(ui: &'a mut Ui, node_id: NodeId) -> Self {
-        Self { ui, node_id }
+    pub(crate) fn new(ui_config: &'a mut UiConfig, node_id: NodeId) -> Self {
+        Self { ui_config, node_id }
     }
 
     pub fn set_as_first_input(&mut self) -> &mut Self {
-        self.ui.set_first_input(self.node_id);
+        self.ui_config.set_first_input(self.node_id);
         self
     }
 
     pub fn add_style(&mut self, style_id: StyleId) -> &mut Self {
-        let node = self.ui.node_mut(&self.node_id).unwrap();
+        let node = self.ui_config.node_mut(&self.node_id).unwrap();
         node.style_ids.push(style_id);
         self
     }
 
     pub fn navigation(&'a mut self, inner_fn: impl FnOnce(&mut TextboxNavigationMut)) -> &mut Self {
-        let mut context = TextboxNavigationMut::new(self.ui, self.node_id);
+        let mut context = TextboxNavigationMut::new(self.ui_config, self.node_id);
         inner_fn(&mut context);
         self
     }
 
     pub fn to_panel_mut(&mut self) -> PanelMut {
-        PanelMut::new(self.ui, self.node_id)
+        PanelMut::new(self.ui_config, self.node_id)
     }
 }
 
 pub struct TextboxNavigationMut<'a> {
-    ui: &'a mut Ui,
+    ui_config: &'a mut UiConfig,
     node_id: NodeId,
 }
 
 impl<'a> TextboxNavigationMut<'a> {
-    pub(crate) fn new(ui: &'a mut Ui, node_id: NodeId) -> Self {
-        Self { ui, node_id }
+    pub(crate) fn new(ui_config: &'a mut UiConfig, node_id: NodeId) -> Self {
+        Self { ui_config, node_id }
     }
 
     fn get_mut(&mut self) -> &mut UiNode {
-        self.ui.node_mut(&self.node_id).unwrap()
+        self.ui_config.node_mut(&self.node_id).unwrap()
     }
 
     fn get_textbox_mut(&mut self) -> &mut Textbox {
@@ -651,17 +651,17 @@ impl<'a> TextboxStyleRef<'a> {
 }
 
 pub struct TextboxStyleMut<'a> {
-    ui: &'a mut Ui,
+    ui_config: &'a mut UiConfig,
     style_id: StyleId,
 }
 
 impl<'a> TextboxStyleMut<'a> {
-    pub(crate) fn new(ui: &'a mut Ui, style_id: StyleId) -> Self {
-        Self { ui, style_id }
+    pub(crate) fn new(ui_config: &'a mut UiConfig, style_id: StyleId) -> Self {
+        Self { ui_config, style_id }
     }
 
     fn get_style_mut(&mut self) -> &mut NodeStyle {
-        self.ui.style_mut(&self.style_id).unwrap()
+        self.ui_config.style_mut(&self.style_id).unwrap()
     }
 
     fn get_textbox_style_mut(&mut self) -> &mut TextboxStyle {

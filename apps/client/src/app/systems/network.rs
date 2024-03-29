@@ -1,7 +1,7 @@
 use bevy_ecs::{event::EventReader, system::Commands};
 use bevy_log::info;
 
-use game_engine::asset::UiData;
+use game_engine::asset::UiConfigData;
 use game_engine::{
     asset::{
         AnimationData, AssetHandle, AssetType, IconData, MeshData, ModelData, PaletteData,
@@ -95,7 +95,7 @@ pub fn world_main_insert_asset_ref_events(
             AssetType::Ui => {
                 commands
                     .entity(entity)
-                    .insert(AssetHandle::<UiData>::new(asset_id));
+                    .insert(AssetHandle::<UiConfigData>::new(asset_id));
             }
         }
 

@@ -7,20 +7,20 @@ use bevy_ecs::{
 };
 use bevy_log::{info, warn};
 
-use asset_serde::json::{Asset, AssetData, AssetMeta, UiJson};
+use asset_serde::json::{Asset, AssetData, AssetMeta, UiConfigJson};
 use game_engine::{
     asset::{
         embedded_asset_event, AssetHandle, AssetId, AssetManager, AssetMetadataSerde, AssetType,
-        ETag, EmbeddedAssetEvent, UiData,
+        ETag, EmbeddedAssetEvent, UiConfigData,
     },
     render::{base::Color, components::{AmbientLight, CameraBundle, ClearOperation, OrthographicProjection, Projection, RenderTarget, RenderLayer, Camera}},
-    ui::{Ui, UiManager, UiInputConverter},
+    ui::{UiConfig, UiManager, UiInputConverter},
     input::{Input, InputEvent, GamepadRumbleIntensity, RumbleManager},
 };
 
 use crate::app::{ui_backups::*, global::Global};
 
-fn ui_define() -> (String, AssetId, ETag, Ui) {
+fn ui_define() -> (String, AssetId, ETag, UiConfig) {
     // start
     //return start::ui_define();
 
@@ -54,10 +54,10 @@ pub fn setup(
     let ui = write_to_file(&ui_name, &ui_asset_id, &ui_etag, ui);
 
     // load ui into asset manager
-    ui_manager.manual_load_ui(&ui_asset_id, ui);
+    ui_manager.manual_load_ui_config(&ui_asset_id, ui);
 
     // make handle, add handle to entity
-    let ui_handle = AssetHandle::<UiData>::new(ui_asset_id);
+    let ui_handle = AssetHandle::<UiConfigData>::new(ui_asset_id);
     let ui_entity = commands.spawn(ui_handle).id();
 
     ui_manager.register_ui_event::<SubmitButtonEvent>(&ui_handle, "login_button");
@@ -94,7 +94,7 @@ pub fn ui_update(
     // Cameras
     cameras_q: Query<(&Camera, Option<&RenderLayer>)>,
     // UIs
-    uis_q: Query<(&AssetHandle<UiData>, Option<&RenderLayer>)>,
+    uis_q: Query<(&AssetHandle<UiConfigData>, Option<&RenderLayer>)>,
 ) {
     let Ok((ui_handle, ui_render_layer_opt)) = uis_q.get(global.active_ui_entity) else {
         warn!("no active ui entity!");
@@ -130,13 +130,13 @@ pub fn ui_handle_events(
     }
 }
 
-fn write_to_file(name: &str, ui_asset_id: &AssetId, ui_etag: &ETag, ui: Ui) -> Ui {
+fn write_to_file(name: &str, ui_asset_id: &AssetId, ui_etag: &ETag, ui: UiConfig) -> UiConfig {
     let ui_asset_id_str = ui_asset_id.to_string();
 
     // ui -> JSON bytes
     let ui_bytes = {
-        let ui_json = UiJson::from_ui(&ui);
-        let new_meta = AssetMeta::new(&ui_asset_id, UiJson::CURRENT_SCHEMA_VERSION);
+        let ui_json = UiConfigJson::from_ui_config(&ui);
+        let new_meta = AssetMeta::new(&ui_asset_id, UiConfigJson::CURRENT_SCHEMA_VERSION);
         let asset = Asset::new(new_meta, AssetData::Ui(ui_json));
         let ui_bytes = serde_json::to_vec_pretty(&asset).unwrap();
         // info!("json byte count: {:?}", ui_bytes.len());

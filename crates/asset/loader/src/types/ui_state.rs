@@ -1,6 +1,6 @@
 use render_api::base::{CpuMaterial, CpuMesh};
 use storage::Storage;
-use ui::{Ui, UiState};
+use ui::{UiConfig, UiState};
 
 pub struct UiStateData {
     ui_state: UiState,
@@ -13,8 +13,8 @@ impl Default for UiStateData {
 }
 
 impl UiStateData {
-    pub fn from_ui(ui: &Ui) -> Self {
-        let ui_state = UiState::new(ui);
+    pub fn from_ui_config(ui_config: &UiConfig) -> Self {
+        let ui_state = UiState::new(ui_config);
 
         Self { ui_state }
     }
@@ -29,10 +29,10 @@ impl UiStateData {
 
     pub(crate) fn load_cpu_data(
         &mut self,
-        ui: &Ui,
+        ui_config: &UiConfig,
         meshes: &mut Storage<CpuMesh>,
         materials: &mut Storage<CpuMaterial>,
     ) {
-        self.ui_state.set_handles(ui, meshes, materials);
+        self.ui_state.set_handles(ui_config, meshes, materials);
     }
 }

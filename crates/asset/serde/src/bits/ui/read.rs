@@ -4,17 +4,17 @@ use naia_serde::{BitReader, SerdeErr, SerdeInternal as Serde, UnsignedVariableIn
 
 use asset_id::AssetId;
 use render_api::base::Color;
-use ui::{Alignment, ButtonMut, ButtonStyleMut, LayoutType, MarginUnits, NodeId, PanelMut, PanelStyleMut, PositionType, SizeUnits, Solid, StyleId, TextboxMut, TextboxStyleMut, TextStyleMut, Ui, WidgetKind};
+use ui::{Alignment, ButtonMut, ButtonStyleMut, LayoutType, MarginUnits, NodeId, PanelMut, PanelStyleMut, PositionType, SizeUnits, Solid, StyleId, TextboxMut, TextboxStyleMut, TextStyleMut, UiConfig, WidgetKind};
 
 use crate::bits::{AlignmentBits, ButtonBits, LayoutTypeBits, MarginUnitsBits, PanelBits, PositionTypeBits, SizeUnitsBits, SolidBits, TextboxBits, UiAction, UiActionType, UiNodeBits, UiStyleBits, WidgetBits, WidgetStyleBits};
 
-pub fn read_bits(data: &[u8]) -> Ui {
+pub fn read_bits(data: &[u8]) -> UiConfig {
     let actions = bytes_to_actions(data).unwrap();
-    convert_actions_to_ui(actions)
+    convert_actions_to_ui_config(actions)
 }
 
-fn convert_actions_to_ui(actions: Vec<UiAction>) -> Ui {
-    let mut ui = Ui::new();
+fn convert_actions_to_ui_config(actions: Vec<UiAction>) -> UiConfig {
+    let mut ui_config = UiConfig::new();
 
     let mut style_index_to_id: HashMap<usize, StyleId> = HashMap::new();
     let mut style_count = 0;
@@ -25,28 +25,28 @@ fn convert_actions_to_ui(actions: Vec<UiAction>) -> Ui {
         match action {
             UiAction::TextColor(r, g, b) => {
                 let color = Color::new(r, g, b);
-                ui.set_text_color(color);
+                ui_config.set_text_color(color);
             }
             UiAction::TextIconAssetId(asset_id) => {
-                ui.set_text_icon_asset_id(&asset_id);
+                ui_config.set_text_icon_asset_id(&asset_id);
             }
             UiAction::FirstInput(node_id_opt) => {
                 if let Some(node_id) = node_id_opt {
-                    ui.set_first_input(node_id)
+                    ui_config.set_first_input(node_id)
                 }
             }
             UiAction::Style(style_bits) => {
                 let style_id = match style_bits.widget_kind() {
-                    WidgetKind::Panel => ui.create_panel_style(|style| {
+                    WidgetKind::Panel => ui_config.create_panel_style(|style| {
                         style_bits.to_panel_style(style);
                     }),
-                    WidgetKind::Text => ui.create_text_style(|style| {
+                    WidgetKind::Text => ui_config.create_text_style(|style| {
                         style_bits.to_text_style(style);
                     }),
-                    WidgetKind::Button => ui.create_button_style(|style| {
+                    WidgetKind::Button => ui_config.create_button_style(|style| {
                         style_bits.to_button_style(style);
                     }),
-                    WidgetKind::Textbox => ui.create_textbox_style(|style| {
+                    WidgetKind::Textbox => ui_config.create_textbox_style(|style| {
                         style_bits.to_textbox_style(style);
                     }),
                 };
@@ -65,7 +65,7 @@ fn convert_actions_to_ui(actions: Vec<UiAction>) -> Ui {
     };
     //info!("0 - root_node_serde: {:?}", root_node_serde);
 
-    let mut root_mut = ui.root_mut();
+    let mut root_mut = ui_config.root_mut();
     for style_index in &root_node_serde.style_ids {
         let style_index = *style_index as usize;
         let style_id = *style_index_to_id.get(&style_index).unwrap();
@@ -76,7 +76,7 @@ fn convert_actions_to_ui(actions: Vec<UiAction>) -> Ui {
     };
     convert_nodes_recurse_panel(&style_index_to_id, &nodes, panel_serde, &mut root_mut);
 
-    ui
+    ui_config
 }
 
 fn bytes_to_actions(data: &[u8]) -> Result<Vec<UiAction>, SerdeErr> {

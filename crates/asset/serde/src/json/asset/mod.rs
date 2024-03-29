@@ -18,7 +18,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::json::{
     animation::AnimationJson, icon::IconJson, mesh::MeshJson, model::ModelJson,
-    palette::PaletteJson, scene::SceneJson, skeleton::SkeletonJson, skin::SkinJson, UiJson,
+    palette::PaletteJson, scene::SceneJson, skeleton::SkeletonJson, skin::SkinJson, UiConfigJson,
 };
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -76,7 +76,7 @@ pub enum AssetData {
     Skin(SkinJson),
     Scene(SceneJson),
     Model(ModelJson),
-    Ui(UiJson),
+    Ui(UiConfigJson),
 }
 
 impl AssetData {

@@ -2,7 +2,7 @@ use render_api::base::{Color, CpuMaterial};
 use storage::Handle;
 use ui_layout::{Alignment, MarginUnits, PositionType, SizeUnits, TextMeasurer};
 
-use crate::{store::UiStore, style::{NodeStyle, StyleId}, NodeId, Ui, WidgetStyle};
+use crate::{store::UiStore, style::{NodeStyle, StyleId}, NodeId, UiConfig, WidgetStyle};
 
 #[derive(Clone)]
 pub struct Text {
@@ -121,20 +121,20 @@ impl TextStyle {
 }
 
 pub struct TextMut<'a> {
-    ui: &'a mut Ui,
+    ui_config: &'a mut UiConfig,
     node_id: NodeId,
 }
 
 impl<'a> TextMut<'a> {
-    pub(crate) fn new(ui: &'a mut Ui, panel_id: NodeId) -> Self {
+    pub(crate) fn new(ui_config: &'a mut UiConfig, panel_id: NodeId) -> Self {
         Self {
-            ui,
+            ui_config,
             node_id: panel_id,
         }
     }
 
     pub fn add_style(&mut self, style_id: StyleId) -> &mut Self {
-        let node = self.ui.node_mut(&self.node_id).unwrap();
+        let node = self.ui_config.node_mut(&self.node_id).unwrap();
         node.style_ids.push(style_id);
         self
     }
@@ -176,17 +176,17 @@ impl<'a> TextStyleRef<'a> {
 }
 
 pub struct TextStyleMut<'a> {
-    ui: &'a mut Ui,
+    ui_config: &'a mut UiConfig,
     style_id: StyleId,
 }
 
 impl<'a> TextStyleMut<'a> {
-    pub(crate) fn new(ui: &'a mut Ui, style_id: StyleId) -> Self {
-        Self { ui, style_id }
+    pub(crate) fn new(ui_config: &'a mut UiConfig, style_id: StyleId) -> Self {
+        Self { ui_config, style_id }
     }
 
     fn get_style_mut(&mut self) -> &mut NodeStyle {
-        self.ui.style_mut(&self.style_id).unwrap()
+        self.ui_config.style_mut(&self.style_id).unwrap()
     }
 
     fn get_text_style_mut(&mut self) -> &mut TextStyle {

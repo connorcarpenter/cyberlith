@@ -8,14 +8,12 @@ use asset_id::{AssetId, AssetType};
 use render_api::{
     base::CpuSkin,
     base::{CpuMaterial, CpuMesh},
-    components::{RenderLayer, Transform},
-    resources::{RenderFrame},
 };
-use storage::{Handle, Storage};
+use storage::Storage;
 
 use crate::{
     processed_asset_store::ProcessedAssetStore, AnimationData,
-    AssetHandle, IconData, MeshData, ModelData, SceneData, SkinData, ui_manager::UiManager,
+    AssetHandle, IconData, ui_manager::UiManager,
 };
 
 #[derive(Resource)]

@@ -4,8 +4,8 @@ cfg_if! {
     if #[cfg(feature = "read_json")] {
         mod read;
 
-        pub fn read_ui_json(data: Vec<u8>) -> Ui {
-            let ui_json: UiJson = serde_json::from_slice(data.as_slice()).unwrap();
+        pub fn read_ui_json(data: Vec<u8>) -> UiConfig {
+            let ui_json: UiConfigJson = serde_json::from_slice(data.as_slice()).unwrap();
             ui_json.to_ui()
         }
     } else {}
@@ -15,8 +15,8 @@ cfg_if! {
     if #[cfg(feature = "write_json")] {
         mod write;
 
-        pub fn write_ui_json(ui: Ui) -> UiJson {
-            UiJson::from_ui(&ui)
+        pub fn write_ui_json(ui_config: UiConfig) -> UiConfigJson {
+            UiConfigJson::from_ui_config(&ui_config)
         }
     } else {}
 }
@@ -25,10 +25,10 @@ use asset_id::AssetId;
 ///
 use serde::{Deserialize, Serialize};
 
-use ui::{Ui, WidgetKind};
+use ui::{UiConfig, WidgetKind};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct UiJson {
+pub struct UiConfigJson {
     text_color: ColorJson,
     text_icon_asset_id: String,
     first_input: Option<usize>,
@@ -36,7 +36,7 @@ pub struct UiJson {
     nodes: Vec<UiNodeJson>,
 }
 
-impl UiJson {
+impl UiConfigJson {
     pub const CURRENT_SCHEMA_VERSION: u32 = 0;
 
     pub fn dependencies(&self) -> Vec<AssetId> {

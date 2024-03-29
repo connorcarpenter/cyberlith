@@ -2,12 +2,12 @@ use std::collections::HashMap;
 
 use asset_id::AssetId;
 use render_api::base::Color;
-use ui::{Alignment, ButtonMut, ButtonStyleMut, LayoutType, MarginUnits, NodeId, PanelMut, PanelStyleMut, PositionType, SizeUnits, Solid, StyleId, TextboxMut, TextboxStyleMut, TextStyleMut, Ui, WidgetKind};
+use ui::{Alignment, ButtonMut, ButtonStyleMut, LayoutType, MarginUnits, NodeId, PanelMut, PanelStyleMut, PositionType, SizeUnits, Solid, StyleId, TextboxMut, TextboxStyleMut, TextStyleMut, UiConfig, WidgetKind};
 
 use crate::json::{ButtonJson, TextboxJson};
 use super::{
     AlignmentJson, ColorJson, LayoutTypeJson, MarginUnitsJson, PanelJson, PositionTypeJson,
-    SizeUnitsJson, SolidJson, UiJson, UiNodeJson, UiStyleJson, WidgetJson, WidgetStyleJson,
+    SizeUnitsJson, SolidJson, UiConfigJson, UiNodeJson, UiStyleJson, WidgetJson, WidgetStyleJson,
 };
 
 fn convert_nodes_recurse_panel<'a>(
@@ -177,12 +177,12 @@ fn set_textbox_navigation<'a>(
         });
 }
 
-impl UiJson {
-    pub fn to_ui(self) -> Ui {
-        let mut ui = Ui::new();
+impl UiConfigJson {
+    pub fn to_ui(self) -> UiConfig {
+        let mut ui = UiConfig::new();
 
         // ui_serde -> ui
-        let UiJson {
+        let UiConfigJson {
             text_color,
             text_icon_asset_id,
             first_input,

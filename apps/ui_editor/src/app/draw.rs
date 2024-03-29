@@ -4,7 +4,7 @@ use bevy_ecs::{
 };
 
 use game_engine::{
-    asset::{AssetHandle, AssetManager, UiData},
+    asset::{AssetHandle, AssetManager, UiConfigData},
     render::{
         components::{AmbientLight, Camera, Projection, RenderLayer, Transform},
         resources::RenderFrame,
@@ -19,7 +19,7 @@ pub fn draw(
     // Cameras
     cameras_q: Query<(&Camera, &Transform, &Projection, Option<&RenderLayer>)>,
     // UIs
-    uis_q: Query<(&AssetHandle<UiData>, Option<&RenderLayer>)>,
+    uis_q: Query<(&AssetHandle<UiConfigData>, Option<&RenderLayer>)>,
     // Lights
     ambient_lights_q: Query<(&AmbientLight, Option<&RenderLayer>)>,
 ) {

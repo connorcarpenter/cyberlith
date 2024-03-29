@@ -8,7 +8,7 @@ use bevy_log::info;
 
 use game_engine::{
     input::{InputEvent, Input, GamepadRumbleIntensity, RumbleManager},
-    asset::{embedded_asset_event, AssetHandle, AssetId, AssetManager, EmbeddedAssetEvent, UiData},
+    asset::{embedded_asset_event, AssetHandle, AssetId, AssetManager, EmbeddedAssetEvent, UiConfigData},
     render::{
         base::Color,
         components::{
@@ -46,13 +46,13 @@ pub fn ui_setup(
 
     // ui
     // TODO: use some kind of catalog?
-    let start_ui_handle = AssetHandle::<UiData>::new(AssetId::from_str("tpp7za").unwrap());
+    let start_ui_handle = AssetHandle::<UiConfigData>::new(AssetId::from_str("tpp7za").unwrap());
     let start_ui_entity = commands.spawn(start_ui_handle).insert(layer).id();
 
-    let login_ui_handle = AssetHandle::<UiData>::new(AssetId::from_str("rckneg").unwrap());
+    let login_ui_handle = AssetHandle::<UiConfigData>::new(AssetId::from_str("rckneg").unwrap());
     let login_ui_entity = commands.spawn(login_ui_handle).insert(layer).id();
 
-    let register_ui_handle = AssetHandle::<UiData>::new(AssetId::from_str("3f5gej").unwrap());
+    let register_ui_handle = AssetHandle::<UiConfigData>::new(AssetId::from_str("3f5gej").unwrap());
     let register_ui_entity = commands.spawn(register_ui_handle).insert(layer).id();
 
     //asset_manager.register_ui_event::<StartButtonEvent>(&ui_handle, "login_button");
@@ -90,7 +90,7 @@ pub fn ui_update(
     // Cameras
     cameras_q: Query<(&Camera, Option<&RenderLayer>)>,
     // UIs
-    uis_q: Query<(&AssetHandle<UiData>, Option<&RenderLayer>)>,
+    uis_q: Query<(&AssetHandle<UiConfigData>, Option<&RenderLayer>)>,
 ) {
     let ui_input = UiInputConverter::convert(&mut input_events);
 

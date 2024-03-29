@@ -4,7 +4,7 @@ cfg_if! {
     if #[cfg(feature = "read_bits")] {
         mod read;
 
-        pub fn read_ui_bits(data: &[u8]) -> Ui {
+        pub fn read_ui_bits(data: &[u8]) -> UiConfig {
             read::read_bits(data)
         }
     } else {}
@@ -14,8 +14,8 @@ cfg_if! {
     if #[cfg(feature = "write_bits")] {
         mod write;
 
-        pub fn write_ui_bits(ui: &Ui) -> Vec<u8> {
-            write::write_bits(ui)
+        pub fn write_ui_bits(ui_config: &UiConfig) -> Vec<u8> {
+            write::write_bits(ui_config)
         }
     } else {}
 }
@@ -23,7 +23,7 @@ cfg_if! {
 use naia_serde::{SerdeInternal as Serde, UnsignedInteger, UnsignedVariableInteger};
 
 use asset_id::AssetId;
-use ui::{NodeId, Ui, WidgetKind};
+use ui::{NodeId, UiConfig, WidgetKind};
 
 // Actions
 #[derive(Clone)]

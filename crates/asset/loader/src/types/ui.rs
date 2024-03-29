@@ -1,38 +1,38 @@
 
-use ui::Ui;
+use ui::UiConfig;
 
 use crate::{asset_dependency::AssetDependency, AssetHandle, IconData, TypedAssetId};
 
-pub struct UiData {
+pub struct UiConfigData {
     icon_file: AssetDependency<IconData>,
-    ui: Ui,
+    ui_config: UiConfig,
 }
 
-impl Default for UiData {
+impl Default for UiConfigData {
     fn default() -> Self {
         panic!("");
     }
 }
 
-impl UiData {
-    pub fn from_ui(ui: Ui) -> Self {
-        let icon_asset_id = ui.get_text_icon_asset_id();
+impl UiConfigData {
+    pub fn from_ui_config(ui_config: UiConfig) -> Self {
+        let icon_asset_id = ui_config.get_text_icon_asset_id();
         let icon_file = AssetDependency::AssetId(*icon_asset_id);
 
-        Self { icon_file, ui }
+        Self { icon_file, ui_config }
     }
 
     pub fn from_bytes(bytes: &[u8]) -> Self {
         let ui = asset_serde::bits::read_ui_bits(bytes);
-        Self::from_ui(ui)
+        Self::from_ui_config(ui)
     }
 
-    pub fn get_ui_ref(&self) -> &Ui {
-        &self.ui
+    pub fn get_ui_config_ref(&self) -> &UiConfig {
+        &self.ui_config
     }
 
-    pub(crate) fn get_ui_mut(&mut self) -> &mut Ui {
-        &mut self.ui
+    pub(crate) fn get_ui_config_mut(&mut self) -> &mut UiConfig {
+        &mut self.ui_config
     }
 
     pub(crate) fn load_dependencies(

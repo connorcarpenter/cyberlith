@@ -7,7 +7,7 @@ use asset_serde::{
     },
     json::{
         AnimationJson, FileComponentType, IconJson, MeshJson, ModelJson, PaletteJson, SceneJson,
-        SkeletonJson, SkinJson, UiJson,
+        SkeletonJson, SkinJson, UiConfigJson,
     },
 };
 
@@ -200,7 +200,7 @@ pub(crate) fn model(data: ModelJson) -> Vec<u8> {
     ModelAction::write(actions).to_vec()
 }
 
-pub(crate) fn ui(data: UiJson) -> Vec<u8> {
+pub(crate) fn ui(data: UiConfigJson) -> Vec<u8> {
     let ui = data.to_ui();
     let ui_bytes = asset_serde::bits::write_ui_bits(&ui);
 

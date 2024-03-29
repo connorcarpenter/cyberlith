@@ -1,6 +1,6 @@
 use bevy_log::warn;
 
-use asset_loader::{AssetHandle, AssetManager, Blinkiness, IconData, UiData, UiManager, UiTextMeasurer};
+use asset_loader::{AssetHandle, AssetManager, Blinkiness, IconData, UiConfigData, UiManager, UiTextMeasurer};
 use asset_render::AssetRender;
 use render_api::{
     base::{CpuMaterial, CpuMesh},
@@ -8,7 +8,7 @@ use render_api::{
     resources::RenderFrame,
 };
 use storage::Handle;
-use ui::{NodeActiveState, NodeId, Ui, UiState, WidgetKind};
+use ui::{NodeActiveState, NodeId, UiConfig, UiState, WidgetKind};
 
 pub struct UiRenderer;
 
@@ -20,13 +20,13 @@ impl UiRenderer {
         render_frame: &mut RenderFrame,
         render_layer_opt: Option<&RenderLayer>,
         blinkiness: &Blinkiness,
-        ui_handle: &AssetHandle<UiData>,
+        ui_handle: &AssetHandle<UiConfigData>,
     ) {
-        let Some(ui_data) = ui_manager.uis.get(ui_handle) else {
+        let Some(ui_data) = ui_manager.ui_configs.get(ui_handle) else {
             warn!("ui data not loaded 2: {:?}", ui_handle.asset_id());
             return;
         };
-        let ui = ui_data.get_ui_ref();
+        let ui = ui_data.get_ui_config_ref();
 
         let Some(ui_state_data) = ui_manager.ui_states.get(ui_handle) else {
             warn!("ui state data not loaded 2: {:?}", ui_handle.asset_id());
@@ -134,7 +134,7 @@ fn draw_ui_node(
     render_layer_opt: Option<&RenderLayer>,
     asset_manager: &AssetManager,
     carat_blink: bool,
-    ui: &Ui,
+    ui_config: &UiConfig,
     ui_state: &UiState,
     text_icon_handle: &AssetHandle<IconData>,
     id: &NodeId,
@@ -144,7 +144,7 @@ fn draw_ui_node(
         return;
     };
 
-    let Some(node) = ui.store.get_node(&id) else {
+    let Some(node) = ui_config.store.get_node(&id) else {
         warn!("no node for id 1: {:?}", id);
         return;
     };
@@ -167,7 +167,7 @@ fn draw_ui_node(
                 draw_ui_panel(
                     render_frame,
                     render_layer_opt,
-                    ui,
+                    ui_config,
                     ui_state,
                     id,
                     &transform,
@@ -178,7 +178,7 @@ fn draw_ui_node(
                     render_frame,
                     render_layer_opt,
                     asset_manager,
-                    ui,
+                    ui_config,
                     ui_state,
                     text_icon_handle,
                     id,
@@ -189,7 +189,7 @@ fn draw_ui_node(
                 draw_ui_button(
                     render_frame,
                     render_layer_opt,
-                    ui,
+                    ui_config,
                     ui_state,
                     id,
                     &transform,
@@ -201,7 +201,7 @@ fn draw_ui_node(
                     render_layer_opt,
                     asset_manager,
                     carat_blink,
-                    ui,
+                    ui_config,
                     ui_state,
                     text_icon_handle,
                     id,
@@ -216,7 +216,7 @@ fn draw_ui_panel(
     //self was Panel
     render_frame: &mut RenderFrame,
     render_layer_opt: Option<&RenderLayer>,
-    ui: &Ui,
+    ui_config: &UiConfig,
     ui_state: &UiState,
     node_id: &NodeId,
     transform: &Transform,
@@ -227,7 +227,7 @@ fn draw_ui_panel(
 
     // draw panel
     if let Some(mat_handle) = panel_state_ref.background_color_handle {
-        let panel_style_ref = ui.store.panel_style_ref(node_id);
+        let panel_style_ref = ui_config.store.panel_style_ref(node_id);
         let background_alpha = panel_style_ref.background_alpha();
         if background_alpha > 0.0 {
             if background_alpha != 1.0 {
@@ -247,13 +247,13 @@ fn draw_ui_text(
     render_frame: &mut RenderFrame,
     render_layer_opt: Option<&RenderLayer>,
     asset_manager: &AssetManager,
-    ui: &Ui,
+    ui_config: &UiConfig,
     ui_state: &UiState,
     text_icon_handle: &AssetHandle<IconData>,
     node_id: &NodeId,
     transform: &Transform,
 ) {
-    let Some(text_ref) = ui
+    let Some(text_ref) = ui_config
         .store
         .get_node(node_id)
         .unwrap()
@@ -270,7 +270,7 @@ fn draw_ui_text(
 
     // draw background
     if let Some(mat_handle) = text_state_ref.background_color_handle {
-        let text_style_ref = ui.store.text_style_ref(node_id);
+        let text_style_ref = ui_config.store.text_style_ref(node_id);
         let background_alpha = text_style_ref.background_alpha();
         if background_alpha > 0.0 {
             if background_alpha != 1.0 {
@@ -304,7 +304,7 @@ fn draw_ui_button(
     //self was Button
     render_frame: &mut RenderFrame,
     render_layer_opt: Option<&RenderLayer>,
-    ui: &Ui,
+    ui_config: &UiConfig,
     ui_state: &UiState,
     node_id: &NodeId,
     transform: &Transform,
@@ -316,7 +316,7 @@ fn draw_ui_button(
     // draw button
     let active_state = ui_state.get_active_state(node_id);
     if let Some(mat_handle) = button_state_ref.current_color_handle(active_state) {
-        let button_style_ref = ui.store.button_style_ref(node_id);
+        let button_style_ref = ui_config.store.button_style_ref(node_id);
         let background_alpha = button_style_ref.background_alpha();
         if background_alpha > 0.0 {
             if background_alpha != 1.0 {
@@ -337,7 +337,7 @@ fn draw_ui_textbox(
     render_layer_opt: Option<&RenderLayer>,
     asset_manager: &AssetManager,
     carat_blink: bool,
-    ui: &Ui,
+    ui_config: &UiConfig,
     ui_state: &UiState,
     text_icon_handle: &AssetHandle<IconData>,
     node_id: &NodeId,
@@ -350,7 +350,7 @@ fn draw_ui_textbox(
     // draw textbox
     let active_state = ui_state.get_active_state(node_id);
     if let Some(mat_handle) = textbox_state_ref.current_color_handle(active_state) {
-        let textbox_style_ref = ui.store.textbox_style_ref(node_id);
+        let textbox_style_ref = ui_config.store.textbox_style_ref(node_id);
         let background_alpha = textbox_style_ref.background_alpha();
         if background_alpha > 0.0 {
             if background_alpha != 1.0 {

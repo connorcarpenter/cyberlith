@@ -2,7 +2,7 @@ use render_api::base::{Color, CpuMaterial};
 use storage::Handle;
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 
-use crate::{node::UiNode, store::UiStore, style::{NodeStyle, StyleId, WidgetStyle}, text::{Text, TextMut}, Button, ButtonMut, NodeId, Ui, Widget, TextboxMut, Textbox};
+use crate::{node::UiNode, store::UiStore, style::{NodeStyle, StyleId, WidgetStyle}, text::{Text, TextMut}, Button, ButtonMut, NodeId, UiConfig, Widget, TextboxMut, Textbox};
 
 #[derive(Clone)]
 pub struct Panel {
@@ -101,13 +101,13 @@ impl PanelStyle {
 }
 
 pub struct PanelMut<'a> {
-    ui: &'a mut Ui,
+    ui_config: &'a mut UiConfig,
     node_id: NodeId,
 }
 
 impl<'a> PanelMut<'a> {
-    pub(crate) fn new(ui: &'a mut Ui, node_id: NodeId) -> Self {
-        Self { ui, node_id }
+    pub(crate) fn new(ui_config: &'a mut UiConfig, node_id: NodeId) -> Self {
+        Self { ui_config, node_id }
     }
 
     // pub fn style(&mut self, inner_fn: impl FnOnce(&mut PanelStyleMut)) -> &mut Self {
@@ -117,13 +117,13 @@ impl<'a> PanelMut<'a> {
     // }
 
     pub fn add_style(&mut self, style_id: StyleId) -> &mut Self {
-        let node = self.ui.node_mut(&self.node_id).unwrap();
+        let node = self.ui_config.node_mut(&self.node_id).unwrap();
         node.style_ids.push(style_id);
         self
     }
 
     pub fn contents(&'a mut self, inner_fn: impl FnOnce(&mut PanelContentsMut)) -> &mut Self {
-        let mut context = PanelContentsMut::new(self.ui, self.node_id);
+        let mut context = PanelContentsMut::new(self.ui_config, self.node_id);
         inner_fn(&mut context);
         self
     }
@@ -131,17 +131,17 @@ impl<'a> PanelMut<'a> {
 
 // only used for adding children
 pub struct PanelContentsMut<'a> {
-    ui: &'a mut Ui,
+    ui_config: &'a mut UiConfig,
     node_id: NodeId,
 }
 
 impl<'a> PanelContentsMut<'a> {
-    pub(crate) fn new(ui: &'a mut Ui, node_id: NodeId) -> Self {
-        Self { ui, node_id }
+    pub(crate) fn new(ui_config: &'a mut UiConfig, node_id: NodeId) -> Self {
+        Self { ui_config, node_id }
     }
 
     fn get_mut(&mut self) -> &mut UiNode {
-        self.ui.node_mut(&self.node_id).unwrap()
+        self.ui_config.node_mut(&self.node_id).unwrap()
     }
 
     fn get_panel_mut(&mut self) -> &mut Panel {
@@ -150,26 +150,26 @@ impl<'a> PanelContentsMut<'a> {
 
     pub fn add_panel<'b>(self: &'b mut PanelContentsMut<'a>) -> PanelMut<'b> {
         // creates a new panel, returning a context for it
-        let new_id = self.ui.create_node(Widget::Panel(Panel::new()));
+        let new_id = self.ui_config.create_node(Widget::Panel(Panel::new()));
 
         // add new panel to children
         self.get_panel_mut().add_child(new_id);
 
-        PanelMut::<'b>::new(self.ui, new_id)
+        PanelMut::<'b>::new(self.ui_config, new_id)
     }
 
     pub fn add_text<'b>(self: &'b mut PanelContentsMut<'a>, text: &str) -> TextMut<'b> {
         // creates a new panel, returning a context for it
-        let new_id = self.ui.create_node(Widget::Text(Text::new(text)));
+        let new_id = self.ui_config.create_node(Widget::Text(Text::new(text)));
 
         // add base text style
-        let node_mut = self.ui.node_mut(&new_id).unwrap();
-        node_mut.style_ids.push(Ui::BASE_TEXT_STYLE_ID);
+        let node_mut = self.ui_config.node_mut(&new_id).unwrap();
+        node_mut.style_ids.push(UiConfig::BASE_TEXT_STYLE_ID);
 
         // add new panel to children
         self.get_panel_mut().add_child(new_id);
 
-        TextMut::<'b>::new(self.ui, new_id)
+        TextMut::<'b>::new(self.ui_config, new_id)
     }
 
     pub fn add_button<'b>(
@@ -178,13 +178,13 @@ impl<'a> PanelContentsMut<'a> {
     ) -> ButtonMut<'b> {
         // creates a new button, returning a context for it
         let new_id = self
-            .ui
+            .ui_config
             .create_node(Widget::Button(Button::new(button_id_str)));
 
         // add new panel to children
         self.get_panel_mut().add_child(new_id);
 
-        ButtonMut::<'b>::new(self.ui, new_id)
+        ButtonMut::<'b>::new(self.ui_config, new_id)
     }
 
     pub fn add_textbox<'b>(
@@ -193,13 +193,13 @@ impl<'a> PanelContentsMut<'a> {
     ) -> TextboxMut<'b> {
         // creates a new textbox, returning a context for it
         let new_id = self
-            .ui
+            .ui_config
             .create_node(Widget::Textbox(Textbox::new(textbox_id_str)));
 
         // add new panel to children
         self.get_panel_mut().add_child(new_id);
 
-        TextboxMut::<'b>::new(self.ui, new_id)
+        TextboxMut::<'b>::new(self.ui_config, new_id)
     }
 }
 
@@ -239,17 +239,17 @@ impl<'a> PanelStyleRef<'a> {
 }
 
 pub struct PanelStyleMut<'a> {
-    ui: &'a mut Ui,
+    ui_config: &'a mut UiConfig,
     style_id: StyleId,
 }
 
 impl<'a> PanelStyleMut<'a> {
-    pub(crate) fn new(ui: &'a mut Ui, style_id: StyleId) -> Self {
-        Self { ui, style_id }
+    pub(crate) fn new(ui_config: &'a mut UiConfig, style_id: StyleId) -> Self {
+        Self { ui_config, style_id }
     }
 
     fn get_style_mut(&mut self) -> &mut NodeStyle {
-        self.ui.style_mut(&self.style_id).unwrap()
+        self.ui_config.style_mut(&self.style_id).unwrap()
     }
 
     fn get_panel_style_mut(&mut self) -> &mut PanelStyle {

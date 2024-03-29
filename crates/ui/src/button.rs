@@ -2,7 +2,7 @@ use render_api::base::{Color, CpuMaterial};
 use storage::Handle;
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 
-use crate::{panel::PanelState, node::UiNode, store::UiStore, style::{NodeStyle, StyleId, WidgetStyle}, text::{Text, TextMut}, NodeId, Panel, PanelMut, PanelStyle, Ui, Widget};
+use crate::{panel::PanelState, node::UiNode, store::UiStore, style::{NodeStyle, StyleId, WidgetStyle}, text::{Text, TextMut}, NodeId, Panel, PanelMut, PanelStyle, UiConfig, Widget};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum NodeActiveState {
@@ -136,56 +136,56 @@ impl ButtonStyle {
 }
 
 pub struct ButtonMut<'a> {
-    ui: &'a mut Ui,
+    ui_config: &'a mut UiConfig,
     node_id: NodeId,
 }
 
 impl<'a> ButtonMut<'a> {
-    pub(crate) fn new(ui: &'a mut Ui, node_id: NodeId) -> Self {
-        Self { ui, node_id }
+    pub(crate) fn new(ui_config: &'a mut UiConfig, node_id: NodeId) -> Self {
+        Self { ui_config, node_id }
     }
 
     pub fn set_as_first_input(&mut self) -> &mut Self {
-        self.ui.set_first_input(self.node_id);
+        self.ui_config.set_first_input(self.node_id);
         self
     }
 
     pub fn add_style(&mut self, style_id: StyleId) -> &mut Self {
-        let node = self.ui.node_mut(&self.node_id).unwrap();
+        let node = self.ui_config.node_mut(&self.node_id).unwrap();
         node.style_ids.push(style_id);
         self
     }
 
     pub fn contents(&'a mut self, inner_fn: impl FnOnce(&mut ButtonContentsMut)) -> &mut Self {
-        let mut context = ButtonContentsMut::new(self.ui, self.node_id);
+        let mut context = ButtonContentsMut::new(self.ui_config, self.node_id);
         inner_fn(&mut context);
         self
     }
 
     pub fn navigation(&'a mut self, inner_fn: impl FnOnce(&mut ButtonNavigationMut)) -> &mut Self {
-        let mut context = ButtonNavigationMut::new(self.ui, self.node_id);
+        let mut context = ButtonNavigationMut::new(self.ui_config, self.node_id);
         inner_fn(&mut context);
         self
     }
 
     pub fn to_panel_mut(&mut self) -> PanelMut {
-        PanelMut::new(self.ui, self.node_id)
+        PanelMut::new(self.ui_config, self.node_id)
     }
 }
 
 // only used for adding children
 pub struct ButtonContentsMut<'a> {
-    ui: &'a mut Ui,
+    ui_config: &'a mut UiConfig,
     node_id: NodeId,
 }
 
 impl<'a> ButtonContentsMut<'a> {
-    pub(crate) fn new(ui: &'a mut Ui, node_id: NodeId) -> Self {
-        Self { ui, node_id }
+    pub(crate) fn new(ui_config: &'a mut UiConfig, node_id: NodeId) -> Self {
+        Self { ui_config, node_id }
     }
 
     fn get_mut(&mut self) -> &mut UiNode {
-        self.ui.node_mut(&self.node_id).unwrap()
+        self.ui_config.node_mut(&self.node_id).unwrap()
     }
 
     fn get_button_mut(&mut self) -> &mut Button {
@@ -194,43 +194,43 @@ impl<'a> ButtonContentsMut<'a> {
 
     pub fn add_panel<'b>(self: &'b mut ButtonContentsMut<'a>) -> PanelMut<'b> {
         // creates a new panel, returning a context for it
-        let new_id = self.ui.create_node(Widget::Panel(Panel::new()));
+        let new_id = self.ui_config.create_node(Widget::Panel(Panel::new()));
 
         // add new panel to children
         self.get_button_mut().add_child(new_id);
 
-        PanelMut::<'b>::new(self.ui, new_id)
+        PanelMut::<'b>::new(self.ui_config, new_id)
     }
 
     pub fn add_text<'b>(self: &'b mut ButtonContentsMut<'a>, text: &str) -> TextMut<'b> {
         // creates a new panel, returning a context for it
-        let new_id = self.ui.create_node(Widget::Text(Text::new(text)));
+        let new_id = self.ui_config.create_node(Widget::Text(Text::new(text)));
 
         // add base text style
-        let node_mut = self.ui.node_mut(&new_id).unwrap();
-        node_mut.style_ids.push(Ui::BASE_TEXT_STYLE_ID);
+        let node_mut = self.ui_config.node_mut(&new_id).unwrap();
+        node_mut.style_ids.push(UiConfig::BASE_TEXT_STYLE_ID);
 
         // add new text widget to children
         self.get_button_mut().add_child(new_id);
 
-        TextMut::<'b>::new(self.ui, new_id)
+        TextMut::<'b>::new(self.ui_config, new_id)
     }
 
     // no `add_button` for buttons-in-buttons ...
 }
 
 pub struct ButtonNavigationMut<'a> {
-    ui: &'a mut Ui,
+    ui_config: &'a mut UiConfig,
     node_id: NodeId,
 }
 
 impl<'a> ButtonNavigationMut<'a> {
-    pub(crate) fn new(ui: &'a mut Ui, node_id: NodeId) -> Self {
-        Self { ui, node_id }
+    pub(crate) fn new(ui_config: &'a mut UiConfig, node_id: NodeId) -> Self {
+        Self { ui_config, node_id }
     }
 
     fn get_mut(&mut self) -> &mut UiNode {
-        self.ui.node_mut(&self.node_id).unwrap()
+        self.ui_config.node_mut(&self.node_id).unwrap()
     }
 
     fn get_button_mut(&mut self) -> &mut Button {
@@ -323,17 +323,17 @@ impl<'a> ButtonStyleRef<'a> {
 }
 
 pub struct ButtonStyleMut<'a> {
-    ui: &'a mut Ui,
+    ui_config: &'a mut UiConfig,
     style_id: StyleId,
 }
 
 impl<'a> ButtonStyleMut<'a> {
-    pub(crate) fn new(ui: &'a mut Ui, style_id: StyleId) -> Self {
-        Self { ui, style_id }
+    pub(crate) fn new(ui_config: &'a mut UiConfig, style_id: StyleId) -> Self {
+        Self { ui_config, style_id }
     }
 
     fn get_style_mut(&mut self) -> &mut NodeStyle {
-        self.ui.style_mut(&self.style_id).unwrap()
+        self.ui_config.style_mut(&self.style_id).unwrap()
     }
 
     fn get_button_style_mut(&mut self) -> &mut ButtonStyle {

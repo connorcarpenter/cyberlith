@@ -7,7 +7,7 @@ mod panel;
 mod store;
 mod style;
 mod text;
-mod ui;
+mod ui_config;
 mod widget;
 mod input;
 mod textbox;
@@ -17,7 +17,7 @@ mod node_state;
 
 // just for engine
 pub use node_id::NodeId;
-pub use ui::Ui;
+pub use ui_config::UiConfig;
 pub use ui_state::UiState;
 pub use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid, TextMeasurer};
 

@@ -1,7 +1,7 @@
 use bevy_ecs::system::{Query, Res, ResMut};
 
 use game_engine::{
-    asset::{AssetHandle, AssetManager, UiData},
+    asset::{AssetHandle, AssetManager, UiConfigData},
     render::{
         base::{CpuMaterial, CpuMesh},
         components::{
@@ -19,7 +19,7 @@ pub fn draw(
     // Cameras
     cameras_q: Query<(&Camera, &Transform, &Projection, Option<&RenderLayer>)>,
     // UIs
-    uis_q: Query<(&AssetHandle<UiData>, Option<&RenderLayer>)>,
+    uis_q: Query<(&AssetHandle<UiConfigData>, Option<&RenderLayer>)>,
     // Meshes
     cpu_meshes_q: Query<(
         &Handle<CpuMesh>,

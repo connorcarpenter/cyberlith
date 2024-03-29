@@ -6,7 +6,7 @@ use asset_id::{AssetId, AssetType};
 
 use crate::{
     AnimationData, IconData, MeshData, ModelData, PaletteData, SceneData, SkeletonData, SkinData,
-    UiData,
+    UiConfigData,
 };
 
 #[derive(Clone, Copy, Eq, PartialEq, Hash)]
@@ -183,7 +183,7 @@ impl From<TypedAssetId> for AssetHandle<IconData> {
     }
 }
 
-impl From<TypedAssetId> for AssetHandle<UiData> {
+impl From<TypedAssetId> for AssetHandle<UiConfigData> {
     fn from(typed_asset_id: TypedAssetId) -> Self {
         let TypedAssetId::Ui(asset_id) = typed_asset_id else {
             panic!("expected ui id");
@@ -242,8 +242,8 @@ impl From<AssetHandle<IconData>> for TypedAssetId {
     }
 }
 
-impl From<AssetHandle<UiData>> for TypedAssetId {
-    fn from(handle: AssetHandle<UiData>) -> Self {
+impl From<AssetHandle<UiConfigData>> for TypedAssetId {
+    fn from(handle: AssetHandle<UiConfigData>) -> Self {
         Self::new(handle.asset_id, AssetType::Ui)
     }
 }
