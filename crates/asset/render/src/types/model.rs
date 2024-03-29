@@ -1,6 +1,6 @@
 use bevy_log::info;
 
-use asset_io::bits::ComponentFileType;
+use asset_serde::bits::ComponentFileType;
 use math::{Quat, Vec3};
 use render_api::components::Transform;
 
@@ -150,7 +150,7 @@ impl ModelData {
     }
 
     pub fn from_bytes(bytes: &[u8]) -> Self {
-        let actions = asset_io::bits::ModelAction::read(bytes).expect("unable to parse file");
+        let actions = asset_serde::bits::ModelAction::read(bytes).expect("unable to parse file");
 
         let mut skel_file_opt = None;
         let mut component_files = Vec::new();
@@ -158,11 +158,11 @@ impl ModelData {
         let mut file_index = 0;
         for action in actions {
             match action {
-                asset_io::bits::ModelAction::SkelFile(asset_id) => {
+                asset_serde::bits::ModelAction::SkelFile(asset_id) => {
                     info!("SkelFile: {:?}", asset_id);
                     skel_file_opt = Some(asset_id);
                 }
-                asset_io::bits::ModelAction::Component(asset_id, file_type) => {
+                asset_serde::bits::ModelAction::Component(asset_id, file_type) => {
                     info!(
                         "ComponentFile {} : {:?}. Type: {:?}",
                         file_index, asset_id, file_type
@@ -181,7 +181,7 @@ impl ModelData {
 
                     file_index += 1;
                 }
-                asset_io::bits::ModelAction::NetTransform(
+                asset_serde::bits::ModelAction::NetTransform(
                     file_index,
                     name,
                     x,

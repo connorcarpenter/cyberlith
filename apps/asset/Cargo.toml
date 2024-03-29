@@ -17,7 +17,7 @@ config = { path = "../config", features = ["asset"] }
 
 asset_server_http_proto = { path = "http_proto" }
 region_server_http_proto = { path = "../region/http_proto" }
-asset_io = { path = "../../crates/asset/io", features = ["read_json"] }
+asset_serde = { path = "../../crates/asset/serde", features = ["read_json"] }
 asset_id = { path = "../../crates/asset/id" }
 
 log = { version = "0.4", features = [] }

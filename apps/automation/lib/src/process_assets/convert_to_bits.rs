@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use asset_io::{
+use asset_serde::{
     bits::{
         AnimAction, ComponentFileType, IconAction, IconFrameAction, MeshAction, ModelAction,
         PaletteAction, SceneAction, SerdeQuat, SerdeRotation, SkelAction, SkinAction, Transition,
@@ -202,7 +202,7 @@ pub(crate) fn model(data: ModelJson) -> Vec<u8> {
 
 pub(crate) fn ui(data: UiJson) -> Vec<u8> {
     let ui = data.to_ui();
-    let ui_bytes = asset_io::bits::write_ui_bits(&ui);
+    let ui_bytes = asset_serde::bits::write_ui_bits(&ui);
 
     ui_bytes
 }

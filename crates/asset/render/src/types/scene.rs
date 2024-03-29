@@ -1,6 +1,6 @@
 use bevy_log::info;
 
-use asset_io::bits::ComponentFileType;
+use asset_serde::bits::ComponentFileType;
 use math::{Quat, Vec3};
 use render_api::components::Transform;
 
@@ -97,7 +97,7 @@ impl SceneData {
     }
 
     pub fn from_bytes(bytes: &[u8]) -> Self {
-        let actions = asset_io::bits::SceneAction::read(bytes).expect("unable to parse file");
+        let actions = asset_serde::bits::SceneAction::read(bytes).expect("unable to parse file");
 
         info!("--- reading scene ---");
 
@@ -106,7 +106,7 @@ impl SceneData {
         let mut file_index = 0;
         for action in actions {
             match action {
-                asset_io::bits::SceneAction::Component(asset_id, file_type) => {
+                asset_serde::bits::SceneAction::Component(asset_id, file_type) => {
                     info!(
                         "SkinOrSceneFile {} - type: {:?}, asset_id: {:?}. ",
                         file_index, file_type, asset_id
@@ -125,7 +125,7 @@ impl SceneData {
 
                     file_index += 1;
                 }
-                asset_io::bits::SceneAction::NetTransform(
+                asset_serde::bits::SceneAction::NetTransform(
                     file_index,
                     x,
                     y,

@@ -6,7 +6,7 @@ workspace = "../../.."
 
 [dependencies]
 # should never include "render_gl" or "render_wgpu" here!
-asset_io = { path = "../io", features = ["read_bits"] }
+asset_serde = { path = "../serde", features = ["read_bits"] }
 asset_id = { path = "../id" }
 render_api = { path = "../../render/render_api" }
 math = { path = "../../math" }

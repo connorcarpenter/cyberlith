@@ -14,7 +14,7 @@ path = "src/main.rs"
 # Internal
 # goal is to have ONLY game_engine here!!!
 game_engine = { path = "../../crates/engine", features = [ "gl_renderer", "local" ] }
-asset_io = { path = "../../crates/asset/io", features = [ "write_bits", "read_bits", "write_json", "read_json" ] }
+asset_serde = { path = "../../crates/asset/serde", features = [ "write_bits", "read_bits", "write_json", "read_json" ] }
 random = { path = "../../crates/random" }
 
 # External

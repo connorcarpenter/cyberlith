@@ -12,7 +12,7 @@ use bevy_ecs::{
 use bevy_log::info;
 use git2::{Cred, Repository, Tree};
 
-use asset_io::json::AssetMeta;
+use asset_serde::json::AssetMeta;
 use naia_bevy_server::{BigMap, CommandsExt, ReplicationConfig, RoomKey, Server, UserKey};
 
 use editor_proto::{

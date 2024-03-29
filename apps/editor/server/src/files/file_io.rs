@@ -10,7 +10,7 @@ use bevy_log::info;
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 
 use asset_id::AssetId;
-use asset_io::json::{AnimFileQuat, FileComponentType};
+use asset_serde::json::{AnimFileQuat, FileComponentType};
 use math::Quat;
 
 use editor_proto::{

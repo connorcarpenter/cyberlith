@@ -134,7 +134,7 @@ impl IconData {
     }
 
     pub fn from_bytes(bytes: &[u8]) -> Self {
-        let actions = asset_io::bits::IconAction::read(bytes).expect("unable to parse file");
+        let actions = asset_serde::bits::IconAction::read(bytes).expect("unable to parse file");
 
         let mut palette_file_opt = None;
         let mut max_width = 0.0;
@@ -142,10 +142,10 @@ impl IconData {
         let mut frames = Vec::new();
         for action in actions {
             match action {
-                asset_io::bits::IconAction::PaletteFile(asset_id) => {
+                asset_serde::bits::IconAction::PaletteFile(asset_id) => {
                     palette_file_opt = Some(asset_id);
                 }
-                asset_io::bits::IconAction::Frame(frame_actions) => {
+                asset_serde::bits::IconAction::Frame(frame_actions) => {
                     // info!("- Frame Start: {} -", frames.len());
 
                     let mut vertices = Vec::new();
@@ -155,12 +155,12 @@ impl IconData {
 
                     for frame_action in frame_actions {
                         match frame_action {
-                            asset_io::bits::IconFrameAction::Vertex(x, y) => {
+                            asset_serde::bits::IconFrameAction::Vertex(x, y) => {
                                 // info!("Vertex: ({}, {})", x, y);
                                 let vertex = Vec3::new(x as f32, y as f32, 0.0);
                                 vertices.push(vertex);
                             }
-                            asset_io::bits::IconFrameAction::Face(
+                            asset_serde::bits::IconFrameAction::Face(
                                 face_id,
                                 color_index,
                                 vertex_a_id,

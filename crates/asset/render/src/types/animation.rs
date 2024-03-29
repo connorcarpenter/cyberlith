@@ -178,7 +178,7 @@ impl AnimationData {
     }
 
     pub fn from_bytes(bytes: &[u8]) -> Self {
-        let actions = asset_io::bits::AnimAction::read(bytes).expect("unable to parse file");
+        let actions = asset_serde::bits::AnimAction::read(bytes).expect("unable to parse file");
 
         let mut skeleton_asset_id = None;
         let mut name_map = HashMap::new();
@@ -186,15 +186,15 @@ impl AnimationData {
         let mut total_animation_time_ms = 0.0;
         for action in actions {
             match action {
-                asset_io::bits::AnimAction::SkelFile(asset_id) => {
+                asset_serde::bits::AnimAction::SkelFile(asset_id) => {
                     info!("SkelFile: {}", asset_id.as_string());
                     skeleton_asset_id = Some(asset_id);
                 }
-                asset_io::bits::AnimAction::ShapeIndex(name) => {
+                asset_serde::bits::AnimAction::ShapeIndex(name) => {
                     //info!("ShapeIndex {}: {}", names.len(), name);
                     name_map.insert(name_map.len() as u16, name);
                 }
-                asset_io::bits::AnimAction::Frame(rotation_map, transition_time) => {
+                asset_serde::bits::AnimAction::Frame(rotation_map, transition_time) => {
                     info!(
                         "Frame {}: {:?}ms",
                         frames.len(),

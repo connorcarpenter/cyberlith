@@ -141,7 +141,7 @@ impl SkinData {
     pub fn from_bytes(bytes: &[u8]) -> Self {
         info!("--- reading skin ---");
 
-        let actions = asset_io::bits::SkinAction::read(bytes).expect("unable to parse file");
+        let actions = asset_serde::bits::SkinAction::read(bytes).expect("unable to parse file");
 
         let mut face_color_ids = Vec::new();
         let mut bck_color_index = None;
@@ -149,19 +149,19 @@ impl SkinData {
         let mut mesh_file_opt = None;
         for action in actions {
             match action {
-                asset_io::bits::SkinAction::PaletteFile(asset_id) => {
+                asset_serde::bits::SkinAction::PaletteFile(asset_id) => {
                     info!("palette file: {:?}", asset_id);
                     palette_file_opt = Some(asset_id);
                 }
-                asset_io::bits::SkinAction::MeshData(asset_id) => {
+                asset_serde::bits::SkinAction::MeshData(asset_id) => {
                     info!("mesh file: {:?}", asset_id);
                     mesh_file_opt = Some(asset_id);
                 }
-                asset_io::bits::SkinAction::BackgroundColor(color_index) => {
+                asset_serde::bits::SkinAction::BackgroundColor(color_index) => {
                     info!("background color: {}", color_index);
                     bck_color_index = Some(color_index);
                 }
-                asset_io::bits::SkinAction::SkinColor(face_index, color_index) => {
+                asset_serde::bits::SkinAction::SkinColor(face_index, color_index) => {
                     info!("face color: {} -> {}", face_index, color_index);
                     face_color_ids.push((face_index, color_index));
                 }

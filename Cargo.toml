@@ -31,7 +31,7 @@ members = [
     "crates/render/render_egui",
     "crates/math",
     "crates/input",
-    "crates/asset/io",
+    "crates/asset/serde",
     "crates/asset/render",
     "crates/asset/id",
     "crates/filesystem",

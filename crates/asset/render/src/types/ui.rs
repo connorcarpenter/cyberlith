@@ -23,7 +23,7 @@ impl UiData {
     }
 
     pub fn from_bytes(bytes: &[u8]) -> Self {
-        let ui = asset_io::bits::read_ui_bits(bytes);
+        let ui = asset_serde::bits::read_ui_bits(bytes);
         Self::from_ui(ui)
     }
 

@@ -3,7 +3,7 @@ use std::{collections::HashMap, fs};
 use log::info;
 
 use asset_id::{AssetId, AssetType, ETag};
-use asset_io::json::ProcessedAssetMeta;
+use asset_serde::json::ProcessedAssetMeta;
 
 pub struct AssetMetadata {
     path: String,

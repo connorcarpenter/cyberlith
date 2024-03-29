@@ -7,7 +7,7 @@ use bevy_ecs::{
 };
 use bevy_log::{info, warn};
 
-use asset_io::json::{Asset, AssetData, AssetMeta, UiJson};
+use asset_serde::json::{Asset, AssetData, AssetMeta, UiJson};
 use game_engine::{
     asset::{
         embedded_asset_event, AssetHandle, AssetId, AssetManager, AssetMetadataSerde, AssetType,
@@ -157,7 +157,7 @@ fn write_to_file(name: &str, ui_asset_id: &AssetId, ui_etag: &ETag, ui: Ui) -> U
     };
 
     // ui -> bit-packed bytes
-    let ui_bytes = asset_io::bits::write_ui_bits(&ui);
+    let ui_bytes = asset_serde::bits::write_ui_bits(&ui);
     // info!("bits byte count: {:?}", ui_bytes.len());
 
     // write bit-packed data to file
@@ -171,6 +171,6 @@ fn write_to_file(name: &str, ui_asset_id: &AssetId, ui_etag: &ETag, ui: Ui) -> U
     }
 
     // bit-packed bytes -> ui
-    let ui = asset_io::bits::read_ui_bits(&ui_bytes);
+    let ui = asset_serde::bits::read_ui_bits(&ui_bytes);
     ui
 }

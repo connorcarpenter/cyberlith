@@ -6,7 +6,7 @@ use asset_id::{AssetId, ETag};
 use git2::{Cred, FetchOptions, Index, Oid, PushOptions, Repository, Signature, Tree};
 use log::info;
 
-use asset_io::json::{Asset, AssetData, AssetMeta, ProcessedAssetMeta};
+use asset_serde::json::{Asset, AssetData, AssetMeta, ProcessedAssetMeta};
 
 use crate::CliError;
 
@@ -609,7 +609,7 @@ fn prune_unchanged_files(
 // use log::info;
 // use crypto::U32Token;
 //
-// use asset_io::json::{Asset, AssetData, AssetMeta};
+// use asset_serde::json::{Asset, AssetData, AssetMeta};
 //
 // use crate::{process_assets::convert, CliError};
 //

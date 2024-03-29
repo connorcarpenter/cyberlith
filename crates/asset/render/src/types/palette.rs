@@ -42,14 +42,14 @@ impl PaletteData {
     }
 
     pub fn from_bytes(bytes: &[u8]) -> Self {
-        let actions = asset_io::bits::PaletteAction::read(bytes).expect("unable to parse file");
+        let actions = asset_serde::bits::PaletteAction::read(bytes).expect("unable to parse file");
 
         // info!("--- reading palette ---");
 
         let mut colors = Vec::new();
         for action in actions {
             match action {
-                asset_io::bits::PaletteAction::Color(r, g, b) => {
+                asset_serde::bits::PaletteAction::Color(r, g, b) => {
                     // info!("loaded color {} : ({}, {}, {})", colors.len(), r, g, b);
                     colors.push(PaletteColor::Raw(r, g, b));
                 }

@@ -1,10 +1,10 @@
 // // use std::collections::HashMap;
 //
-// use asset_io::{
+// use asset_serde::{
 //     json::{AssetData, PaletteFile},
 //     bits::{AnimAction, FileTransformEntityType, IconAction, IconFrameAction, MeshAction, ModelAction, PaletteAction, SceneAction, SkelAction, SkinAction}
 // };
-// use asset_io::json::{AnimFile, AnimFileFrame, IconFile, IconFileFrame, MeshData, ModelFile, SceneFile, SkelFile, SkinFile};
+// use asset_serde::json::{AnimFile, AnimFileFrame, IconFile, IconFileFrame, MeshData, ModelFile, SceneFile, SkelFile, SkinFile};
 //
 // // use crate::process_assets::json::ProcessData;
 //
