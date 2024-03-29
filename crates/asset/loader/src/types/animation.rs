@@ -65,7 +65,7 @@ impl AnimationData {
         }
     }
 
-    pub(crate) fn get_skeleton_handle(&self) -> AssetHandle<SkeletonData> {
+    pub fn get_skeleton_handle(&self) -> AssetHandle<SkeletonData> {
         if let AssetDependency::<SkeletonData>::AssetHandle(handle) = &self.skeleton_file {
             *handle
         } else {
@@ -77,7 +77,7 @@ impl AnimationData {
         self.total_duration
     }
 
-    pub(crate) fn get_animated_components(
+    pub fn get_animated_components(
         &self,
         skeleton_data: &SkeletonData,
         model_data: &ModelData,

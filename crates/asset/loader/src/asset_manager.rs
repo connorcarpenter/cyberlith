@@ -14,7 +14,7 @@ use render_api::{
 use storage::{Handle, Storage};
 
 use crate::{
-    asset_renderer::AssetRenderer, processed_asset_store::ProcessedAssetStore, AnimationData,
+    processed_asset_store::ProcessedAssetStore, AnimationData,
     AssetHandle, IconData, MeshData, ModelData, SceneData, SkinData, ui_manager::UiManager,
 };
 
@@ -62,7 +62,7 @@ impl AssetManager {
             .sync_icon_skins(&meshes, &materials, &mut skins);
     }
 
-    pub(crate) fn get_store(&self) -> &ProcessedAssetStore {
+    pub fn get_store(&self) -> &ProcessedAssetStore {
         &self.store
     }
 
@@ -102,129 +102,5 @@ impl AssetManager {
     pub fn get_animation_duration(&self, handle: &AssetHandle<AnimationData>) -> f32 {
         let data = self.store.animations.get(handle).unwrap();
         data.get_duration()
-    }
-
-    pub fn draw_mesh(
-        &self,
-        render_frame: &mut RenderFrame,
-        mesh_handle: &AssetHandle<MeshData>,
-        mat_handle: &Handle<CpuMaterial>,
-        transform: &Transform,
-        render_layer_opt: Option<&RenderLayer>,
-    ) {
-        AssetRenderer::draw_mesh(
-            render_frame,
-            render_layer_opt,
-            &self.store,
-            mesh_handle,
-            mat_handle,
-            transform,
-        );
-    }
-
-    pub fn draw_icon(
-        &self,
-        render_frame: &mut RenderFrame,
-        icon_handle: &AssetHandle<IconData>,
-        subimage_index: usize,
-        transform: &Transform,
-        render_layer_opt: Option<&RenderLayer>,
-    ) {
-        AssetRenderer::draw_icon(
-            render_frame,
-            render_layer_opt,
-            &self.store,
-            icon_handle,
-            subimage_index,
-            transform,
-        );
-    }
-
-    pub fn draw_text(
-        &self,
-        render_frame: &mut RenderFrame,
-        render_layer_opt: Option<&RenderLayer>,
-        icon_handle: &AssetHandle<IconData>,
-        material_handle: &Handle<CpuMaterial>,
-        transform: &Transform,
-        text: &str,
-    ) {
-        AssetRenderer::draw_text(
-            render_frame,
-            render_layer_opt,
-            &self.store,
-            icon_handle,
-            material_handle,
-            transform,
-            text,
-        );
-    }
-
-    pub fn draw_skin(
-        &self,
-        render_frame: &mut RenderFrame,
-        skin_handle: &AssetHandle<SkinData>,
-        transform: &Transform,
-        render_layer_opt: Option<&RenderLayer>,
-    ) {
-        AssetRenderer::draw_skin(
-            render_frame,
-            render_layer_opt,
-            &self.store,
-            skin_handle,
-            transform,
-        );
-    }
-
-    pub fn draw_scene(
-        &self,
-        render_frame: &mut RenderFrame,
-        scene_handle: &AssetHandle<SceneData>,
-        parent_transform: &Transform,
-        render_layer_opt: Option<&RenderLayer>,
-    ) {
-        AssetRenderer::draw_scene(
-            render_frame,
-            render_layer_opt,
-            &self.store,
-            scene_handle,
-            parent_transform,
-        );
-    }
-
-    pub fn draw_model(
-        &self,
-        render_frame: &mut RenderFrame,
-        model_handle: &AssetHandle<ModelData>,
-        parent_transform: &Transform,
-        render_layer_opt: Option<&RenderLayer>,
-    ) {
-        AssetRenderer::draw_model(
-            render_frame,
-            render_layer_opt,
-            &self.store,
-            model_handle,
-            parent_transform,
-        );
-    }
-
-    pub fn draw_animated_model(
-        &self,
-        render_frame: &mut RenderFrame,
-        model_handle: &AssetHandle<ModelData>,
-        animation_handle: &AssetHandle<AnimationData>,
-        parent_transform: &Transform,
-        frame_time_ms: f32,
-        render_layer_opt: Option<&RenderLayer>,
-    ) {
-        AssetRenderer::draw_animated_model(
-            render_frame,
-            render_layer_opt,
-            &self.store,
-            model_handle,
-            animation_handle,
-            parent_transform,
-            frame_time_ms,
-        );
     }
 }

@@ -17,7 +17,7 @@ impl Default for MeshData {
 }
 
 impl MeshData {
-    pub(crate) fn get_cpu_mesh_handle(&self) -> Option<&Handle<CpuMesh>> {
+    pub fn get_cpu_mesh_handle(&self) -> Option<&Handle<CpuMesh>> {
         if let AssetDependency::<CpuMesh>::Handle(handle) = &self.path {
             Some(handle)
         } else {

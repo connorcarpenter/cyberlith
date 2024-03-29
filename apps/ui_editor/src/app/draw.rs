@@ -9,7 +9,7 @@ use game_engine::{
         components::{AmbientLight, Camera, Projection, RenderLayer, Transform},
         resources::RenderFrame,
     },
-    ui::UiManager,
+    ui::{UiManager, UiRender},
 };
 
 pub fn draw(

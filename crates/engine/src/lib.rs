@@ -22,6 +22,7 @@ pub mod asset {
         EmbeddedAssetEvent, IconData, MeshData, ModelData, PaletteData, SceneData, SkeletonData,
         SkinData, UiData,
     };
+    pub use asset_render::AssetRender;
 }
 pub mod input {
     pub use input::*;
@@ -43,6 +44,7 @@ pub mod ui {
     pub use asset_loader::{
         UiManager,
     };
+    pub use ui_render::UiRender;
 }
 pub mod random {
     pub use random::*;

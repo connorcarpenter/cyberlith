@@ -11,15 +11,15 @@ use crate::{
     PaletteData, SceneData, SkeletonData, SkinData, TypedAssetId,
 };
 
-pub(crate) struct ProcessedAssetStore {
-    pub(crate) meshes: AssetStorage<MeshData>,
-    pub(crate) skeletons: AssetStorage<SkeletonData>,
-    pub(crate) palettes: AssetStorage<PaletteData>,
-    pub(crate) animations: AssetStorage<AnimationData>,
-    pub(crate) icons: AssetStorage<IconData>,
-    pub(crate) skins: AssetStorage<SkinData>,
-    pub(crate) models: AssetStorage<ModelData>,
-    pub(crate) scenes: AssetStorage<SceneData>,
+pub struct ProcessedAssetStore {
+    pub meshes: AssetStorage<MeshData>,
+    pub skeletons: AssetStorage<SkeletonData>,
+    pub palettes: AssetStorage<PaletteData>,
+    pub animations: AssetStorage<AnimationData>,
+    pub icons: AssetStorage<IconData>,
+    pub skins: AssetStorage<SkinData>,
+    pub models: AssetStorage<ModelData>,
+    pub scenes: AssetStorage<SceneData>,
 
     // mesh file name, skin handle
     queued_meshes: Vec<AssetHandle<MeshData>>,

@@ -92,7 +92,7 @@ impl SceneData {
         true
     }
 
-    pub(crate) fn get_components(&self) -> Option<&Vec<(AssetComponentHandle, Transform)>> {
+    pub fn get_components(&self) -> Option<&Vec<(AssetComponentHandle, Transform)>> {
         self.computed_components.as_ref()
     }
 

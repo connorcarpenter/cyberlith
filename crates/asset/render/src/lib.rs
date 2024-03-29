@@ -7,7 +7,220 @@ use render_api::{
 };
 use storage::Handle;
 
-use crate::{ui_manager::UiTextMeasurer, asset_dependency::AssetComponentHandle, processed_asset_store::ProcessedAssetStore, AnimationData, AssetHandle, IconData, MeshData, ModelData, SceneData, SkinData};
+use asset_loader::{AssetManager, UiTextMeasurer, AssetComponentHandle, ProcessedAssetStore, AnimationData, AssetHandle, IconData, MeshData, ModelData, SceneData, SkinData};
+
+pub trait AssetRender {
+    fn draw_mesh(
+        &self,
+        render_frame: &mut RenderFrame,
+        mesh_handle: &AssetHandle<MeshData>,
+        mat_handle: &Handle<CpuMaterial>,
+        transform: &Transform,
+        render_layer_opt: Option<&RenderLayer>,
+    );
+    fn draw_icon(
+        &self,
+        render_frame: &mut RenderFrame,
+        icon_handle: &AssetHandle<IconData>,
+        subimage_index: usize,
+        transform: &Transform,
+        render_layer_opt: Option<&RenderLayer>,
+    );
+    fn draw_icon_with_material(
+        &self,
+        render_frame: &mut RenderFrame,
+        render_layer_opt: Option<&RenderLayer>,
+        icon_handle: &AssetHandle<IconData>,
+        mat_handle: &Handle<CpuMaterial>,
+        subimage_index: usize,
+        transform: &Transform,
+    );
+    fn draw_text(
+        &self,
+        render_frame: &mut RenderFrame,
+        render_layer_opt: Option<&RenderLayer>,
+        icon_handle: &AssetHandle<IconData>,
+        material_handle: &Handle<CpuMaterial>,
+        transform: &Transform,
+        text: &str,
+    );
+    fn draw_skin(
+        &self,
+        render_frame: &mut RenderFrame,
+        skin_handle: &AssetHandle<SkinData>,
+        transform: &Transform,
+        render_layer_opt: Option<&RenderLayer>,
+    );
+    fn draw_scene(
+        &self,
+        render_frame: &mut RenderFrame,
+        scene_handle: &AssetHandle<SceneData>,
+        parent_transform: &Transform,
+        render_layer_opt: Option<&RenderLayer>,
+    );
+    fn draw_model(
+        &self,
+        render_frame: &mut RenderFrame,
+        model_handle: &AssetHandle<ModelData>,
+        parent_transform: &Transform,
+        render_layer_opt: Option<&RenderLayer>,
+    );
+    fn draw_animated_model(
+        &self,
+        render_frame: &mut RenderFrame,
+        model_handle: &AssetHandle<ModelData>,
+        animation_handle: &AssetHandle<AnimationData>,
+        parent_transform: &Transform,
+        frame_time_ms: f32,
+        render_layer_opt: Option<&RenderLayer>,
+    );
+}
+
+impl AssetRender for AssetManager {
+    fn draw_mesh(
+        &self,
+        render_frame: &mut RenderFrame,
+        mesh_handle: &AssetHandle<MeshData>,
+        mat_handle: &Handle<CpuMaterial>,
+        transform: &Transform,
+        render_layer_opt: Option<&RenderLayer>,
+    ) {
+        AssetRenderer::draw_mesh(
+            render_frame,
+            render_layer_opt,
+            self.get_store(),
+            mesh_handle,
+            mat_handle,
+            transform,
+        );
+    }
+
+    fn draw_icon(
+        &self,
+        render_frame: &mut RenderFrame,
+        icon_handle: &AssetHandle<IconData>,
+        subimage_index: usize,
+        transform: &Transform,
+        render_layer_opt: Option<&RenderLayer>,
+    ) {
+        AssetRenderer::draw_icon(
+            render_frame,
+            render_layer_opt,
+            self.get_store(),
+            icon_handle,
+            subimage_index,
+            transform,
+        );
+    }
+
+    fn draw_icon_with_material(
+        &self,
+        render_frame: &mut RenderFrame,
+        render_layer_opt: Option<&RenderLayer>,
+        icon_handle: &AssetHandle<IconData>,
+        mat_handle: &Handle<CpuMaterial>,
+        subimage_index: usize,
+        transform: &Transform,
+    ) {
+        AssetRenderer::draw_icon_with_material(
+            render_frame,
+            render_layer_opt,
+            self.get_store(),
+            icon_handle,
+            mat_handle,
+            subimage_index,
+            transform,
+        );
+    }
+
+    fn draw_text(
+        &self,
+        render_frame: &mut RenderFrame,
+        render_layer_opt: Option<&RenderLayer>,
+        icon_handle: &AssetHandle<IconData>,
+        material_handle: &Handle<CpuMaterial>,
+        transform: &Transform,
+        text: &str,
+    ) {
+        AssetRenderer::draw_text(
+            render_frame,
+            render_layer_opt,
+            self.get_store(),
+            icon_handle,
+            material_handle,
+            transform,
+            text,
+        );
+    }
+
+    fn draw_skin(
+        &self,
+        render_frame: &mut RenderFrame,
+        skin_handle: &AssetHandle<SkinData>,
+        transform: &Transform,
+        render_layer_opt: Option<&RenderLayer>,
+    ) {
+        AssetRenderer::draw_skin(
+            render_frame,
+            render_layer_opt,
+            self.get_store(),
+            skin_handle,
+            transform,
+        );
+    }
+
+    fn draw_scene(
+        &self,
+        render_frame: &mut RenderFrame,
+        scene_handle: &AssetHandle<SceneData>,
+        parent_transform: &Transform,
+        render_layer_opt: Option<&RenderLayer>,
+    ) {
+        AssetRenderer::draw_scene(
+            render_frame,
+            render_layer_opt,
+            self.get_store(),
+            scene_handle,
+            parent_transform,
+        );
+    }
+
+    fn draw_model(
+        &self,
+        render_frame: &mut RenderFrame,
+        model_handle: &AssetHandle<ModelData>,
+        parent_transform: &Transform,
+        render_layer_opt: Option<&RenderLayer>,
+    ) {
+        AssetRenderer::draw_model(
+            render_frame,
+            render_layer_opt,
+            self.get_store(),
+            model_handle,
+            parent_transform,
+        );
+    }
+
+    fn draw_animated_model(
+        &self,
+        render_frame: &mut RenderFrame,
+        model_handle: &AssetHandle<ModelData>,
+        animation_handle: &AssetHandle<AnimationData>,
+        parent_transform: &Transform,
+        frame_time_ms: f32,
+        render_layer_opt: Option<&RenderLayer>,
+    ) {
+        AssetRenderer::draw_animated_model(
+            render_frame,
+            render_layer_opt,
+            self.get_store(),
+            model_handle,
+            animation_handle,
+            parent_transform,
+            frame_time_ms,
+        );
+    }
+}
 
 pub(crate) struct AssetRenderer;
 
@@ -45,10 +258,10 @@ impl AssetRenderer {
         };
         let Some((cpu_mesh_handle, cpu_skin_handle)) =
             icon_data.get_cpu_mesh_and_skin_handles(subimage_index)
-        else {
-            warn!("icon data not loaded 2: {:?}", icon_handle.asset_id());
-            return;
-        };
+            else {
+                warn!("icon data not loaded 2: {:?}", icon_handle.asset_id());
+                return;
+            };
         render_frame.draw_skinned_mesh(
             render_layer_opt,
             &cpu_mesh_handle,
@@ -285,10 +498,10 @@ impl AssetRenderer {
         };
         let Some(model_components) =
             animation_data.get_animated_components(skeleton_data, model_data, frame_time_ms)
-        else {
-            // not yet loaded all
-            return;
-        };
+            else {
+                // not yet loaded all
+                return;
+            };
         for (skin_or_scene_handle, mut component_transform) in model_components {
             component_transform = component_transform.multiply(parent_transform);
 

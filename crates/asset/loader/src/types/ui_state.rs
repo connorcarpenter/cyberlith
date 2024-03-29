@@ -19,7 +19,7 @@ impl UiStateData {
         Self { ui_state }
     }
 
-    pub(crate) fn get_ui_state_ref(&self) -> &UiState {
+    pub fn get_ui_state_ref(&self) -> &UiState {
         &self.ui_state
     }
 

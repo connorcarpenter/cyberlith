@@ -23,7 +23,7 @@ impl Default for SkinData {
 }
 
 impl SkinData {
-    pub(crate) fn get_mesh_file_handle(&self) -> Option<&AssetHandle<MeshData>> {
+    pub fn get_mesh_file_handle(&self) -> Option<&AssetHandle<MeshData>> {
         if let AssetDependency::<MeshData>::AssetHandle(handle) = &self.mesh_file {
             Some(handle)
         } else {
@@ -39,7 +39,7 @@ impl SkinData {
         }
     }
 
-    pub(crate) fn get_cpu_skin_handle(&self) -> Option<&Handle<CpuSkin>> {
+    pub fn get_cpu_skin_handle(&self) -> Option<&Handle<CpuSkin>> {
         self.cpu_skin_handle.as_ref()
     }
 

@@ -1,5 +1,7 @@
 use bevy_log::warn;
 
+use asset_loader::{AssetHandle, AssetManager, Blinkiness, IconData, UiData, UiManager, UiTextMeasurer};
+use asset_render::AssetRender;
 use render_api::{
     base::{CpuMaterial, CpuMesh},
     components::{RenderLayer, Transform},
@@ -8,91 +10,13 @@ use render_api::{
 use storage::Handle;
 use ui::{NodeActiveState, NodeId, Ui, UiState, WidgetKind};
 
-use crate::{asset_renderer::AssetRenderer, ui_manager::{Blinkiness, UiTextMeasurer}, processed_asset_store::ProcessedAssetStore, AssetHandle, IconData, UiData, UiManager};
-
-pub(crate) struct UiRenderer;
+pub struct UiRenderer;
 
 impl UiRenderer {
 
-    pub(crate) fn draw_text_carat(
-        render_frame: &mut RenderFrame,
-        render_layer_opt: Option<&RenderLayer>,
-        asset_store: &ProcessedAssetStore,
-        text_icon_handle: &AssetHandle<IconData>,
-        text_color_mat_handle: &Handle<CpuMaterial>,
-        transform: &Transform,
-        text: &str,
-        carat_index: usize,
-    ) {
-        let Some(icon_data) = asset_store.icons.get(text_icon_handle) else {
-            return;
-        };
-        let text_measurer = UiTextMeasurer::new(icon_data);
-        let subimage_indices = ui::Text::get_subimage_indices(text);
-        let (x_positions, text_height) = ui::Text::get_raw_text_rects(&text_measurer, &subimage_indices);
-
-        let mut cursor = Transform::from_xyz(
-            0.0,
-            transform.translation.y + (transform.scale.y * 0.5),
-            transform.translation.z,
-        );
-
-        // if we want to fill 200px, but raw_width is 100px, then scale_x would be 2.0
-        cursor.scale.y = transform.scale.y / text_height;
-        cursor.scale.x = cursor.scale.y;
-
-        cursor.translation.x = transform.translation.x + (x_positions[carat_index] * cursor.scale.x);
-
-        AssetRenderer::draw_icon_with_material(
-            render_frame,
-            render_layer_opt,
-            asset_store,
-            text_icon_handle,
-            text_color_mat_handle,
-            (124 - 32) as usize, // pipe character '|'
-            &cursor,
-        );
-    }
-
-    pub(crate) fn draw_text_selection(
-        render_frame: &mut RenderFrame,
-        render_layer_opt: Option<&RenderLayer>,
-        asset_store: &ProcessedAssetStore,
-        text_icon_handle: &AssetHandle<IconData>,
-        mesh_handle: &Handle<CpuMesh>,
-        mat_handle: &Handle<CpuMaterial>,
-        transform: &Transform,
-        text: &str,
-        select_index: usize,
-        carat_index: usize,
-    ) {
-        let Some(icon_data) = asset_store.icons.get(text_icon_handle) else {
-            return;
-        };
-        let text_measurer = UiTextMeasurer::new(icon_data);
-        let subimage_indices = ui::Text::get_subimage_indices(text);
-        let (x_positions, text_height) = ui::Text::get_raw_text_rects(&text_measurer, &subimage_indices);
-        let text_scale = transform.scale.y / text_height;
-
-        let pos_a = transform.translation.x + (x_positions[carat_index] * text_scale);
-        let pos_b = transform.translation.x + (x_positions[select_index] * text_scale);
-        let (x_pos, x_scale) = if carat_index < select_index {
-            (pos_a, pos_b - pos_a)
-        } else {
-            (pos_b, pos_a - pos_b)
-        };
-
-        let mut box_transform = transform.clone();
-        box_transform.translation.x = x_pos;
-        box_transform.scale.x = x_scale;
-        box_transform.translation.y += 8.0;
-        box_transform.scale.y -= 16.0;
-        render_frame.draw_mesh(render_layer_opt, mesh_handle, mat_handle, &box_transform);
-    }
-
-    pub(crate) fn draw_ui(
+    pub fn draw_ui(
         ui_manager: &UiManager,
-        asset_store: &ProcessedAssetStore,
+        asset_manager: &AssetManager,
         render_frame: &mut RenderFrame,
         render_layer_opt: Option<&RenderLayer>,
         blinkiness: &Blinkiness,
@@ -119,7 +43,7 @@ impl UiRenderer {
             draw_ui_node(
                 render_frame,
                 render_layer_opt,
-                asset_store,
+                asset_manager,
                 carat_blink,
                 &ui,
                 &ui_state,
@@ -128,12 +52,87 @@ impl UiRenderer {
             );
         }
     }
+
+    pub fn draw_text_carat(
+        render_frame: &mut RenderFrame,
+        render_layer_opt: Option<&RenderLayer>,
+        asset_manager: &AssetManager,
+        text_icon_handle: &AssetHandle<IconData>,
+        text_color_mat_handle: &Handle<CpuMaterial>,
+        transform: &Transform,
+        text: &str,
+        carat_index: usize,
+    ) {
+        let Some(icon_data) = asset_manager.get_store().icons.get(text_icon_handle) else {
+            return;
+        };
+        let text_measurer = UiTextMeasurer::new(icon_data);
+        let subimage_indices = ui::Text::get_subimage_indices(text);
+        let (x_positions, text_height) = ui::Text::get_raw_text_rects(&text_measurer, &subimage_indices);
+
+        let mut cursor = Transform::from_xyz(
+            0.0,
+            transform.translation.y + (transform.scale.y * 0.5),
+            transform.translation.z,
+        );
+
+        // if we want to fill 200px, but raw_width is 100px, then scale_x would be 2.0
+        cursor.scale.y = transform.scale.y / text_height;
+        cursor.scale.x = cursor.scale.y;
+
+        cursor.translation.x = transform.translation.x + (x_positions[carat_index] * cursor.scale.x);
+
+        asset_manager.draw_icon_with_material(
+            render_frame,
+            render_layer_opt,
+            text_icon_handle,
+            text_color_mat_handle,
+            (124 - 32) as usize, // pipe character '|'
+            &cursor,
+        );
+    }
+
+    pub fn draw_text_selection(
+        render_frame: &mut RenderFrame,
+        render_layer_opt: Option<&RenderLayer>,
+        asset_manager: &AssetManager,
+        text_icon_handle: &AssetHandle<IconData>,
+        mesh_handle: &Handle<CpuMesh>,
+        mat_handle: &Handle<CpuMaterial>,
+        transform: &Transform,
+        text: &str,
+        select_index: usize,
+        carat_index: usize,
+    ) {
+        let Some(icon_data) = asset_manager.get_store().icons.get(text_icon_handle) else {
+            return;
+        };
+        let text_measurer = UiTextMeasurer::new(icon_data);
+        let subimage_indices = ui::Text::get_subimage_indices(text);
+        let (x_positions, text_height) = ui::Text::get_raw_text_rects(&text_measurer, &subimage_indices);
+        let text_scale = transform.scale.y / text_height;
+
+        let pos_a = transform.translation.x + (x_positions[carat_index] * text_scale);
+        let pos_b = transform.translation.x + (x_positions[select_index] * text_scale);
+        let (x_pos, x_scale) = if carat_index < select_index {
+            (pos_a, pos_b - pos_a)
+        } else {
+            (pos_b, pos_a - pos_b)
+        };
+
+        let mut box_transform = transform.clone();
+        box_transform.translation.x = x_pos;
+        box_transform.scale.x = x_scale;
+        box_transform.translation.y += 8.0;
+        box_transform.scale.y -= 16.0;
+        render_frame.draw_mesh(render_layer_opt, mesh_handle, mat_handle, &box_transform);
+    }
 }
 
 fn draw_ui_node(
     render_frame: &mut RenderFrame,
     render_layer_opt: Option<&RenderLayer>,
-    asset_store: &ProcessedAssetStore,
+    asset_manager: &AssetManager,
     carat_blink: bool,
     ui: &Ui,
     ui_state: &UiState,
@@ -178,7 +177,7 @@ fn draw_ui_node(
                 draw_ui_text(
                     render_frame,
                     render_layer_opt,
-                    asset_store,
+                    asset_manager,
                     ui,
                     ui_state,
                     text_icon_handle,
@@ -200,7 +199,7 @@ fn draw_ui_node(
                 draw_ui_textbox(
                     render_frame,
                     render_layer_opt,
-                    asset_store,
+                    asset_manager,
                     carat_blink,
                     ui,
                     ui_state,
@@ -247,7 +246,7 @@ fn draw_ui_text(
     //&self, // self was text widget
     render_frame: &mut RenderFrame,
     render_layer_opt: Option<&RenderLayer>,
-    asset_store: &ProcessedAssetStore,
+    asset_manager: &AssetManager,
     ui: &Ui,
     ui_state: &UiState,
     text_icon_handle: &AssetHandle<IconData>,
@@ -291,10 +290,9 @@ fn draw_ui_text(
         panic!("No text color handle found in globals");
     };
 
-    AssetRenderer::draw_text(
+    asset_manager.draw_text(
         render_frame,
         render_layer_opt,
-        asset_store,
         text_icon_handle,
         text_color_handle,
         transform,
@@ -337,7 +335,7 @@ fn draw_ui_textbox(
     //self was Textbox
     render_frame: &mut RenderFrame,
     render_layer_opt: Option<&RenderLayer>,
-    asset_store: &ProcessedAssetStore,
+    asset_manager: &AssetManager,
     carat_blink: bool,
     ui: &Ui,
     ui_state: &UiState,
@@ -377,10 +375,10 @@ fn draw_ui_textbox(
 
     {
         text_transform.translation.z = transform.translation.z + 0.05;
-        AssetRenderer::draw_text(
+
+        asset_manager.draw_text(
             render_frame,
             render_layer_opt,
-            asset_store,
             text_icon_handle,
             text_color_handle,
             &text_transform,
@@ -397,7 +395,7 @@ fn draw_ui_textbox(
                 UiRenderer::draw_text_selection(
                     render_frame,
                     render_layer_opt,
-                    asset_store,
+                    asset_manager,
                     text_icon_handle,
                     ui_state.globals.get_box_mesh_handle().unwrap(),
                     &mat_handle,
@@ -415,7 +413,7 @@ fn draw_ui_textbox(
             UiRenderer::draw_text_carat(
                 render_frame,
                 render_layer_opt,
-                asset_store,
+                asset_manager,
                 text_icon_handle,
                 text_color_handle,
                 &text_transform,

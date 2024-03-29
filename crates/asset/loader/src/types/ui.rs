@@ -27,7 +27,7 @@ impl UiData {
         Self::from_ui(ui)
     }
 
-    pub(crate) fn get_ui_ref(&self) -> &Ui {
+    pub fn get_ui_ref(&self) -> &Ui {
         &self.ui
     }
 
@@ -58,7 +58,7 @@ impl UiData {
         }
     }
 
-    pub(crate) fn get_icon_handle(&self) -> AssetHandle<IconData> {
+    pub fn get_icon_handle(&self) -> AssetHandle<IconData> {
         if let AssetDependency::<IconData>::AssetHandle(handle) = &self.icon_file {
             *handle
         } else {

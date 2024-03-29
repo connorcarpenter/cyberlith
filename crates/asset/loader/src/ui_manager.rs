@@ -1,22 +1,22 @@
 use std::collections::HashMap;
 
-use bevy_ecs::{system::Resource, event::Event, prelude::World, change_detection::{Mut, Res, ResMut}};
+use bevy_ecs::{change_detection::{Mut, Res, ResMut}, event::Event, prelude::World, system::Resource};
 use bevy_log::warn;
 
-use asset_id::{AssetId};
+use asset_id::AssetId;
 use clipboard::ClipboardManager;
 use input::{CursorIcon, Input};
 use math::Vec2;
-use render_api::{base::{CpuMaterial, CpuMesh}, resources::{RenderFrame, Time}, components::{Camera, RenderLayer}};
+use render_api::{base::{CpuMaterial, CpuMesh}, components::{Camera, RenderLayer}, resources::{RenderFrame, Time}};
 use storage::Storage;
 use ui::{NodeId, TextMeasurer, Ui, UiGlobalEvent, UiInputEvent, UiNodeEvent, UiNodeEventHandler};
 
-use crate::{ui_renderer::UiRenderer, asset_storage::AssetStorage, processed_asset_store::ProcessedAssetStore, AssetHandle, AssetManager, IconData, UiData, TypedAssetId, UiStateData};
+use crate::{asset_storage::AssetStorage, AssetHandle, AssetManager, IconData, processed_asset_store::ProcessedAssetStore, TypedAssetId, UiData, UiStateData};
 
 #[derive(Resource)]
 pub struct UiManager {
-    pub(crate) uis: AssetStorage<UiData>,
-    pub(crate) ui_states: HashMap<AssetHandle<UiData>, UiStateData>,
+    pub uis: AssetStorage<UiData>,
+    pub ui_states: HashMap<AssetHandle<UiData>, UiStateData>,
     queued_uis: Vec<AssetHandle<UiData>>,
 
     queued_ui_node_event_handlers: HashMap<AssetHandle<UiData>, Vec<(String, UiNodeEventHandler)>>,
@@ -25,7 +25,7 @@ pub struct UiManager {
     ui_node_events: Vec<(AssetId, NodeId, UiNodeEvent)>,
     cursor_icon_change: Option<CursorIcon>,
     last_cursor_icon: CursorIcon,
-    blinkiness: Blinkiness,
+    pub blinkiness: Blinkiness,
 }
 
 impl Default for UiManager {
@@ -368,24 +368,14 @@ impl UiManager {
             self.cursor_icon_change = Some(new_cursor_icon);
         }
     }
-
-    pub fn draw_ui(
-        &self,
-        asset_manager: &AssetManager,
-        render_frame: &mut RenderFrame,
-        render_layer_opt: Option<&RenderLayer>,
-        ui_handle: &AssetHandle<UiData>,
-    ) {
-        UiRenderer::draw_ui(self, asset_manager.get_store(), render_frame, render_layer_opt, &self.blinkiness, ui_handle);
-    }
 }
 
-pub(crate)  struct UiTextMeasurer<'a> {
+pub struct UiTextMeasurer<'a> {
     icon_data: &'a IconData,
 }
 
 impl<'a> UiTextMeasurer<'a> {
-    pub(crate) fn new(icon_data: &'a IconData) -> Self {
+    pub fn new(icon_data: &'a IconData) -> Self {
         Self { icon_data }
     }
 }

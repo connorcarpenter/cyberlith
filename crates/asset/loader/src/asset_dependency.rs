@@ -33,7 +33,7 @@ pub(crate) enum AssetComponent {
     Scene(AssetDependency<SceneData>),
 }
 
-pub(crate) enum AssetComponentHandle {
+pub enum AssetComponentHandle {
     Skin(AssetHandle<SkinData>),
     Scene(AssetHandle<SceneData>),
 }

@@ -91,7 +91,7 @@ impl ModelData {
         true
     }
 
-    pub(crate) fn get_skeleton_handle(&self) -> AssetHandle<SkeletonData> {
+    pub fn get_skeleton_handle(&self) -> AssetHandle<SkeletonData> {
         if let AssetDependency::<SkeletonData>::AssetHandle(handle) = &self.skeleton_file {
             *handle
         } else {
@@ -123,7 +123,7 @@ impl ModelData {
         self.computed_components = Some(components);
     }
 
-    pub(crate) fn get_components_ref(&self) -> Option<&Vec<(AssetComponentHandle, Transform)>> {
+    pub fn get_components_ref(&self) -> Option<&Vec<(AssetComponentHandle, Transform)>> {
         self.computed_components.as_ref()
     }
 
