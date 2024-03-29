@@ -11,6 +11,7 @@ use storage::Handle;
 use ui_types::{NodeId, UiConfig, WidgetKind};
 use ui_state::{NodeActiveState, UiState};
 use ui_builder::{ButtonStyleRef, PanelStyleRef, TextboxStyleRef, TextStyleRef};
+use ui_input::UiInputState;
 use ui_loader::{Blinkiness, UiManager};
 
 pub struct UiRenderer;
@@ -36,10 +37,14 @@ impl UiRenderer {
             return;
         };
         let ui_state = ui_state_data.get_ui_state_ref();
+        let Some(ui_input_state) = ui_manager.ui_input_states.get(ui_handle) else {
+            warn!("ui input state data not loaded 2: {:?}", ui_handle.asset_id());
+            return;
+        };
 
         let text_icon_handle = ui_data.get_icon_handle();
 
-        let carat_blink = blinkiness.enabled() || ui_state.interact_timer_was_recent();
+        let carat_blink = blinkiness.enabled() || ui_input_state.interact_timer_was_recent();
 
         for node_id in 0..ui.store.nodes.len() {
             let node_id = NodeId::from_usize(node_id);
@@ -50,6 +55,7 @@ impl UiRenderer {
                 carat_blink,
                 &ui,
                 &ui_state,
+                ui_input_state,
                 &text_icon_handle,
                 &node_id,
             );
@@ -139,6 +145,7 @@ fn draw_ui_node(
     carat_blink: bool,
     ui_config: &UiConfig,
     ui_state: &UiState,
+    ui_input_state: &UiInputState,
     text_icon_handle: &AssetHandle<IconData>,
     id: &NodeId,
 ) {
@@ -194,6 +201,7 @@ fn draw_ui_node(
                     render_layer_opt,
                     ui_config,
                     ui_state,
+                    ui_input_state,
                     id,
                     &transform,
                 );
@@ -206,6 +214,7 @@ fn draw_ui_node(
                     carat_blink,
                     ui_config,
                     ui_state,
+                    ui_input_state,
                     text_icon_handle,
                     id,
                     &transform,
@@ -309,6 +318,7 @@ fn draw_ui_button(
     render_layer_opt: Option<&RenderLayer>,
     ui_config: &UiConfig,
     ui_state: &UiState,
+    ui_input_state: &UiInputState,
     node_id: &NodeId,
     transform: &Transform,
 ) {
@@ -317,7 +327,7 @@ fn draw_ui_button(
     };
 
     // draw button
-    let active_state = ui_state.get_active_state(node_id);
+    let active_state = ui_input_state.get_active_state(node_id);
     if let Some(mat_handle) = button_state_ref.current_color_handle(active_state) {
         let button_style_ref = ButtonStyleRef::new(&ui_config.store, *node_id);
         let background_alpha = button_style_ref.background_alpha();
@@ -342,16 +352,20 @@ fn draw_ui_textbox(
     carat_blink: bool,
     ui_config: &UiConfig,
     ui_state: &UiState,
+    ui_input_state: &UiInputState,
     text_icon_handle: &AssetHandle<IconData>,
     node_id: &NodeId,
     transform: &Transform,
 ) {
     let Some(textbox_state_ref) = ui_state.store.textbox_ref(node_id) else {
-        panic!("no textbox ref for node_id: {:?}", node_id);
+        panic!("no textbox state ref for node_id: {:?}", node_id);
+    };
+    let Some(textbox_input_state_ref) = ui_input_state.store.textbox_ref(node_id) else {
+        panic!("no textbox input state ref for node_id: {:?}", node_id);
     };
 
     // draw textbox
-    let active_state = ui_state.get_active_state(node_id);
+    let active_state = ui_input_state.get_active_state(node_id);
     if let Some(mat_handle) = textbox_state_ref.current_color_handle(active_state) {
         let textbox_style_ref = TextboxStyleRef::new(&ui_config.store, *node_id);
         let background_alpha = textbox_style_ref.background_alpha();
@@ -392,7 +406,7 @@ fn draw_ui_textbox(
     if active_state == NodeActiveState::Active {
 
         // draw selection box if needed
-        if let Some(select_index) = textbox_state_ref.select_index {
+        if let Some(select_index) = textbox_input_state_ref.select_index {
             if let Some(mat_handle) = textbox_state_ref.get_selection_color_handle() {
                 text_transform.translation.z = transform.translation.z + 0.025;
                 UiRenderer::draw_text_selection(
@@ -405,7 +419,7 @@ fn draw_ui_textbox(
                     &text_transform,
                     &textbox_state_ref.text,
                     select_index,
-                    textbox_state_ref.carat_index,
+                    textbox_input_state_ref.carat_index,
                 );
             }
         }
@@ -421,7 +435,7 @@ fn draw_ui_textbox(
                 text_color_handle,
                 &text_transform,
                 &textbox_state_ref.text,
-                textbox_state_ref.carat_index,
+                textbox_input_state_ref.carat_index,
             );
         }
     }

@@ -1,24 +1,21 @@
 
 use bevy_log::warn;
 
-use input::CursorIcon;
 use render_api::{
     base::{CpuMaterial, CpuMesh},
     components::Viewport,
     shapes::UnitSquare,
 };
 use storage::{Handle, Storage};
-use instant::Instant;
-use math::Vec2;
 use render_api::base::Color;
 
 use ui_types::{NodeId, UiConfig, UiVisibilityStore, WidgetKind};
 use ui_layout::{Cache, Node, SizeUnits, TextMeasurer};
 
 use crate::{
-    widget::WidgetState, textbox::TextboxState, text::TextState, panel::PanelState, button::ButtonState,
-    state_store::UiStateStore, input::UiInputEvent, events::UiGlobalEvent, cache::LayoutCache,
-    input::ui_receive_input, UiNodeEvent, button::NodeActiveState, UiNodeState
+    button::ButtonState, cache::LayoutCache, panel::PanelState, state_store::UiStateStore,
+    text::TextState, textbox::TextboxState,
+    UiNodeState, widget::WidgetState
 };
 
 pub struct UiState {
@@ -29,17 +26,29 @@ pub struct UiState {
 
     recalc_layout: bool,
     last_viewport: Viewport,
-    global_events: Vec<UiGlobalEvent>,
-    node_events: Vec<(NodeId, UiNodeEvent)>,
-    hovering_node: Option<NodeId>,
-    selected_node: Option<NodeId>,
-    cursor_icon: CursorIcon,
-    interact_timer: Instant,
 }
 
 impl UiState {
 
-    // confirmed below
+    pub fn new(ui_config: &UiConfig) -> Self {
+        let mut me = Self {
+            globals: StateGlobals::new(),
+            cache: LayoutCache::new(),
+            store: UiStateStore::new(),
+            visibility_store: UiVisibilityStore::new(),
+
+            recalc_layout: false,
+            last_viewport: Viewport::new_at_origin(0, 0),
+        };
+
+        for node in ui_config.store.nodes.iter() {
+            me.store.node_state_init(node);
+            me.visibility_store.node_state_init();
+        }
+
+        me
+    }
+
     pub fn set_handles(
         &mut self,
         ui_config: &UiConfig,
@@ -242,99 +251,6 @@ impl UiState {
         pending_mat_handles
     }
 
-    // confirmed above
-    // not confirmed below
-
-    pub fn new(ui_config: &UiConfig) -> Self {
-        let mut me = Self {
-            globals: StateGlobals::new(),
-            cache: LayoutCache::new(),
-            store: UiStateStore::new(),
-            visibility_store: UiVisibilityStore::new(),
-
-            recalc_layout: false,
-            last_viewport: Viewport::new_at_origin(0, 0),
-            global_events: Vec::new(),
-            node_events: Vec::new(),
-            hovering_node: None,
-            selected_node: None,
-            cursor_icon: CursorIcon::Default,
-            interact_timer: Instant::now(),
-        };
-
-        for node in ui_config.store.nodes.iter() {
-            me.store.node_state_init(node);
-            me.visibility_store.node_state_init();
-        }
-
-        me
-    }
-
-    // events
-    pub fn receive_input(&mut self, ui_config: &UiConfig, text_measurer: &dyn TextMeasurer, mouse_position: Option<Vec2>, events: Vec<UiInputEvent>) {
-        ui_receive_input(ui_config, self, text_measurer, mouse_position, events);
-    }
-
-    pub fn get_cursor_icon(&self) -> CursorIcon {
-        self.cursor_icon
-    }
-
-    pub fn set_cursor_icon(&mut self, cursor_icon: CursorIcon) {
-        self.cursor_icon = cursor_icon;
-    }
-
-    pub fn get_hover(&self) -> Option<NodeId> {
-        self.hovering_node
-    }
-
-    pub fn receive_hover(&mut self, id: &NodeId) {
-        self.hovering_node = Some(*id);
-    }
-
-    pub fn get_active_state(&self, id: &NodeId) -> NodeActiveState {
-        if let Some(select_id) = self.selected_node {
-            if select_id == *id {
-                return NodeActiveState::Active;
-            }
-        }
-
-        if let Some(hover_id) = self.hovering_node {
-            if hover_id == *id {
-                return NodeActiveState::Hover;
-            }
-        };
-
-        return NodeActiveState::Normal;
-    }
-
-    pub fn clear_hover(&mut self) {
-        self.hovering_node = None;
-    }
-
-    pub fn get_active_node(&self) -> Option<NodeId> {
-        self.selected_node
-    }
-
-    pub fn set_active_node(&mut self, id_opt: Option<NodeId>) {
-        self.selected_node = id_opt;
-    }
-
-    pub fn emit_global_event(&mut self, event: UiGlobalEvent) {
-        self.global_events.push(event);
-    }
-
-    pub fn take_global_events(&mut self) -> Vec<UiGlobalEvent> {
-        std::mem::take(&mut self.global_events)
-    }
-
-    pub fn emit_node_event(&mut self, node_id: &NodeId, event: UiNodeEvent) {
-        self.node_events.push((*node_id, event));
-    }
-
-    pub fn take_node_events(&mut self) -> Vec<(NodeId, UiNodeEvent)> {
-        std::mem::take(&mut self.node_events)
-    }
-
     // interface
 
     pub fn update_viewport(&mut self, viewport: &Viewport) {
@@ -413,18 +329,10 @@ impl UiState {
         Some(button_mut)
     }
 
-    pub(crate) fn textbox_mut(&mut self, id: &NodeId) -> Option<&mut TextboxState> {
+    pub fn textbox_mut(&mut self, id: &NodeId) -> Option<&mut TextboxState> {
         let node_mut = self.node_mut(id)?;
         let textbox_mut = node_mut.widget_textbox_mut()?;
         Some(textbox_mut)
-    }
-
-    pub(crate) fn reset_interact_timer(&mut self) {
-        self.interact_timer = Instant::now();
-    }
-
-    pub fn interact_timer_was_recent(&self) -> bool {
-        self.interact_timer.elapsed().as_secs_f32() < 1.0
     }
 }
 

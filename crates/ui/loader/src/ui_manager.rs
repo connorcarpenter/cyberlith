@@ -10,13 +10,14 @@ use input::{CursorIcon, Input};
 use math::Vec2;
 use render_api::{base::{CpuMaterial, CpuMesh}, components::Camera, resources::Time};
 use storage::Storage;
+use ui_input::{UiGlobalEvent, UiInputEvent, UiInputState, UiNodeEvent, UiNodeEventHandler};
 use ui_types::{NodeId, UiConfig};
-use ui_state::{UiGlobalEvent, UiInputEvent, UiNodeEvent, UiNodeEventHandler};
 
 #[derive(Resource)]
 pub struct UiManager {
     pub ui_configs: AssetStorage<UiConfigData>,
     pub ui_states: HashMap<AssetHandle<UiConfigData>, UiStateData>,
+    pub ui_input_states: HashMap<AssetHandle<UiConfigData>, UiInputState>,
     queued_uis: Vec<AssetHandle<UiConfigData>>,
 
     queued_ui_node_event_handlers: HashMap<AssetHandle<UiConfigData>, Vec<(String, UiNodeEventHandler)>>,
@@ -33,6 +34,7 @@ impl Default for UiManager {
         Self {
             ui_configs: AssetStorage::default(),
             ui_states: HashMap::default(),
+            ui_input_states: HashMap::default(),
             queued_uis: Vec::new(),
 
             ui_global_events: Vec::new(),
@@ -106,14 +108,17 @@ impl UiManager {
         let handle = AssetHandle::<UiConfigData>::new(*asset_id);
         if !self.ui_configs.has(&handle) {
 
+            let ui_input_state = UiInputState::from_ui_config(&ui_config);
+            self.ui_input_states.insert(handle, ui_input_state);
+
             let ui_state_data = UiStateData::from_ui_config(&ui_config);
             self.ui_states.insert(handle, ui_state_data);
 
-            let ui_data = UiConfigData::from_ui_config(ui_config);
-            self.ui_configs.insert(handle, ui_data);
+            let ui_config_data = UiConfigData::from_ui_config(ui_config);
+            self.ui_configs.insert(handle, ui_config_data);
 
-            let ui_data = self.ui_configs.get(&handle).unwrap();
-            ui_data.load_dependencies(handle, &mut dependencies);
+            let ui_config_data = self.ui_configs.get(&handle).unwrap();
+            ui_config_data.load_dependencies(handle, &mut dependencies);
 
             self.queued_uis.push(handle);
         }
@@ -142,6 +147,8 @@ impl UiManager {
                 let ui = ui_data.get_ui_config_ref();
                 let ui_state_data = UiStateData::from_ui_config(ui);
                 self.ui_states.insert(handle, ui_state_data);
+                let ui_input_state = UiInputState::from_ui_config(ui);
+                self.ui_input_states.insert(handle, ui_input_state);
             }
 
             self.ui_configs.insert(handle, ui_data);
@@ -348,7 +355,11 @@ impl UiManager {
             return;
         };
         let Some(ui_state_data) = self.ui_states.get_mut(ui_handle) else {
-            warn!("ui data not loaded 1: {:?}", ui_handle.asset_id());
+            warn!("ui state data not loaded 1: {:?}", ui_handle.asset_id());
+            return;
+        };
+        let Some(ui_input_state) = self.ui_input_states.get_mut(ui_handle) else {
+            warn!("ui input state data not loaded 1: {:?}", ui_handle.asset_id());
             return;
         };
         let icon_handle = ui_data.get_icon_handle();
@@ -357,14 +368,14 @@ impl UiManager {
         };
         let text_measurer = UiTextMeasurer::new(icon_data);
         let ui_state = ui_state_data.get_ui_state_mut();
-        ui_state.receive_input(ui_data.get_ui_config_ref(), &text_measurer, mouse_position, ui_input_events);
+        ui_input_state.receive_input(ui_data.get_ui_config_ref(), ui_state, &text_measurer, mouse_position, ui_input_events);
 
         // get any global events
-        let mut global_events: Vec<UiGlobalEvent> = ui_state.take_global_events();
+        let mut global_events: Vec<UiGlobalEvent> = ui_input_state.take_global_events();
         self.ui_global_events.append(&mut global_events);
 
         // get any node events
-        let mut events: Vec<(AssetId, NodeId, UiNodeEvent)> = ui_state
+        let mut events: Vec<(AssetId, NodeId, UiNodeEvent)> = ui_input_state
             .take_node_events()
             .iter()
             .map(|(node_id, event)| (ui_handle.asset_id(), *node_id, event.clone()))
@@ -373,7 +384,7 @@ impl UiManager {
         self.ui_node_events.append(&mut events);
 
         // get cursor icon change
-        let new_cursor_icon = ui_state.get_cursor_icon();
+        let new_cursor_icon = ui_input_state.get_cursor_icon();
         if new_cursor_icon != self.last_cursor_icon {
             self.cursor_icon_change = Some(new_cursor_icon);
         }

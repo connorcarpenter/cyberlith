@@ -15,5 +15,6 @@ ui_state = { path = "../../ui/state" }
 ui_types = { path = "../../ui/types" }
 ui_builder = { path = "../../ui/builder" }
 ui_loader = { path = "../../ui/loader" }
+ui_input = { path = "../../ui/input" }
 
 bevy_log = { version = "0.13", default-features=false }

@@ -1,0 +1,19 @@
+[package]
+name = "ui_input"
+version = "0.1.0"
+edition = "2021"
+workspace = "../../.."
+
+[dependencies]
+input = { path = "../../input" }
+math = { path = "../../math" }
+instant = { path = "../../instant" }
+
+ui_layout = { path = "../layout" }
+ui_types = { path = "../types" }
+ui_state = { path = "../state" }
+
+bevy_ecs = { version = "0.13", default-features = false }
+bevy_log = { version = "0.13", default-features=false }
+
+unicode-segmentation = { version = "1.10.1" }
