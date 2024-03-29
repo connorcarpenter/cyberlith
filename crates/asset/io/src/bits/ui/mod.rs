@@ -233,4 +233,5 @@ pub(crate) struct NavigationBits {
     down: Option<UnsignedVariableInteger<4>>,
     left: Option<UnsignedVariableInteger<4>>,
     right: Option<UnsignedVariableInteger<4>>,
+    tab: Option<UnsignedVariableInteger<4>>,
 }

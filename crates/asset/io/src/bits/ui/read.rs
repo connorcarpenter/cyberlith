@@ -248,6 +248,9 @@ fn convert_nodes_recurse_button<'a>(
             if let Some(nav_str) = get_nav_thang(nodes, button_nav_serde.right.as_ref()) {
                 n.right_goes_to(nav_str);
             }
+            if let Some(nav_str) = get_nav_thang(nodes, button_nav_serde.tab.as_ref()) {
+                n.tab_goes_to(nav_str);
+            }
         })
         .contents(|c| {
         for child_index in &button_serde.panel.children {
@@ -314,6 +317,9 @@ fn set_textbox_navigation<'a>(
             }
             if let Some(nav_str) = get_nav_thang(nodes, textbox_nav_serde.right.as_ref()) {
                 n.right_goes_to(nav_str);
+            }
+            if let Some(nav_str) = get_nav_thang(nodes, textbox_nav_serde.tab.as_ref()) {
+                n.tab_goes_to(nav_str);
             }
         });
 }

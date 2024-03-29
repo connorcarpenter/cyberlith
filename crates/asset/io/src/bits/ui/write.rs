@@ -479,18 +479,21 @@ impl NavigationBits {
             down_goes_to,
             left_goes_to,
             right_goes_to,
+            tab_goes_to,
         } = navigation;
 
         let up = get_nav_id(ui, up_goes_to.as_ref().map(|s| s.as_str()));
         let down = get_nav_id(ui, down_goes_to.as_ref().map(|s| s.as_str()));
         let left = get_nav_id(ui, left_goes_to.as_ref().map(|s| s.as_str()));
         let right = get_nav_id(ui, right_goes_to.as_ref().map(|s| s.as_str()));
+        let tab = get_nav_id(ui, tab_goes_to.as_ref().map(|s| s.as_str()));
 
         Self {
             up,
             down,
             left,
             right,
+            tab,
         }
     }
 }

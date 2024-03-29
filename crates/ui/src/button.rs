@@ -77,6 +77,7 @@ pub struct Navigation {
     pub right_goes_to: Option<String>,
     pub up_goes_to: Option<String>,
     pub down_goes_to: Option<String>,
+    pub tab_goes_to: Option<String>,
 }
 
 impl Navigation {
@@ -86,6 +87,7 @@ impl Navigation {
             right_goes_to: None,
             up_goes_to: None,
             down_goes_to: None,
+            tab_goes_to: None,
         }
     }
 }
@@ -258,6 +260,11 @@ impl<'a> ButtonNavigationMut<'a> {
 
     pub fn down_goes_to(&mut self, name: &str) -> &mut Self {
         self.get_button_mut().navigation.down_goes_to = Some(name.to_string());
+        self
+    }
+
+    pub fn tab_goes_to(&mut self, name: &str) -> &mut Self {
+        self.get_button_mut().navigation.tab_goes_to = Some(name.to_string());
         self
     }
 }

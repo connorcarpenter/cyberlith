@@ -174,7 +174,9 @@ pub fn ui_define() -> (String, AssetId, ETag, Ui) {
                                                 .navigation(|n| {
                                                     n
                                                         .left_goes_to("username_textbox")
-                                                        .down_goes_to("username_textbox");
+                                                        .down_goes_to("username_textbox")
+                                                        .tab_goes_to("username_textbox")
+                                                    ;
                                                 });
                                         });
                                 });
@@ -193,6 +195,7 @@ pub fn ui_define() -> (String, AssetId, ETag, Ui) {
                                 n
                                     .up_goes_to("login_button")
                                     .down_goes_to("email_textbox")
+                                    .tab_goes_to("email_textbox")
                                     .right_goes_to("login_button");
                             });
 
@@ -209,6 +212,7 @@ pub fn ui_define() -> (String, AssetId, ETag, Ui) {
                                 n
                                     .up_goes_to("username_textbox")
                                     .down_goes_to("password_textbox")
+                                    .tab_goes_to("password_textbox")
                                     .right_goes_to("login_button");
                             });
 
@@ -225,6 +229,7 @@ pub fn ui_define() -> (String, AssetId, ETag, Ui) {
                                 n
                                     .up_goes_to("email_textbox")
                                     .down_goes_to("confirm_password_textbox")
+                                    .tab_goes_to("confirm_password_textbox")
                                     .right_goes_to("login_button");
                             });
 
@@ -241,6 +246,7 @@ pub fn ui_define() -> (String, AssetId, ETag, Ui) {
                                 n
                                     .up_goes_to("password_textbox")
                                     .down_goes_to("submit_button")
+                                    .tab_goes_to("submit_button")
                                     .right_goes_to("login_button");
                             });
 
@@ -257,7 +263,8 @@ pub fn ui_define() -> (String, AssetId, ETag, Ui) {
                             .navigation(|n| {
                                 n
                                     .up_goes_to("confirm_password_textbox")
-                                    .right_goes_to("login_button");
+                                    .right_goes_to("login_button")
+                                    .tab_goes_to("login_button");
                             });
 
                 });

@@ -1,5 +1,5 @@
 use bevy_ecs::event::EventReader;
-use bevy_log::warn;
+use bevy_log::{info, warn};
 
 use input::{CursorIcon, GamepadButtonType, InputEvent, Key, Modifiers, MouseButton};
 use math::Vec2;
@@ -68,6 +68,7 @@ impl UiInputConverter {
                         Key::ArrowLeft => Some(UiInputEvent::LeftPressed(*modifiers)),
                         Key::ArrowRight => Some(UiInputEvent::RightPressed(*modifiers)),
                         Key::Enter => Some(UiInputEvent::SelectPressed),
+                        Key::Tab => Some(UiInputEvent::TabPressed),
                         Key::Escape => Some(UiInputEvent::BackPressed),
                         Key::Backspace => Some(UiInputEvent::BackspacePressed(*modifiers)),
                         Key::Delete => Some(UiInputEvent::DeletePressed(*modifiers)),
@@ -117,13 +118,22 @@ impl UiInputConverter {
 #[derive(Clone, PartialEq, Debug)]
 pub enum UiInputEvent {
 
-    // keyboard
+    // keyboard/gamepad
     UpPressed,
-    DownPressed, LeftPressed(Modifiers), RightPressed(Modifiers),
+    DownPressed,
+    LeftPressed(Modifiers),
+    RightPressed(Modifiers),
+    TabPressed,
     SelectPressed, SelectReleased,
-    BackPressed, BackspacePressed(Modifiers), DeletePressed(Modifiers), TextInsert(char), HomePressed(Modifiers), EndPressed(Modifiers),
+    BackPressed,
+    BackspacePressed(Modifiers),
+    DeletePressed(Modifiers),
+    TextInsert(char),
+    HomePressed(Modifiers),
+    EndPressed(Modifiers),
     TextCopy,
-    TextCut, TextPaste(String),
+    TextCut,
+    TextPaste(String),
     TextSelectAll,
 
     // mouse
@@ -264,7 +274,7 @@ pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, mouse_pos
     // handle navigation of hover elements & button activation
     for event in &events {
         match event {
-            UiInputEvent::UpPressed | UiInputEvent::DownPressed | UiInputEvent::LeftPressed(_) | UiInputEvent::RightPressed(_) => {
+            UiInputEvent::UpPressed | UiInputEvent::DownPressed | UiInputEvent::LeftPressed(_) | UiInputEvent::RightPressed(_) | UiInputEvent::TabPressed => {
 
                 // navigation ...
 
@@ -286,6 +296,10 @@ pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, mouse_pos
                     UiInputEvent::DownPressed => ui.nav_get_down_id(&hover_node_inside),
                     UiInputEvent::LeftPressed(_) => ui.nav_get_left_id(&hover_node_inside),
                     UiInputEvent::RightPressed(_) => ui.nav_get_right_id(&hover_node_inside),
+                    UiInputEvent::TabPressed => {
+                        info!("tab pressed");
+                        ui.nav_get_tab_id(&hover_node_inside)
+                    },
                     _ => None,
                 } {
                     ui.receive_hover(&next_id);

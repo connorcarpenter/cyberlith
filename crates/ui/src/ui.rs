@@ -472,6 +472,12 @@ impl Ui {
         self.get_node_id_by_id_str(right_str)
     }
 
+    pub(crate) fn nav_get_tab_id(&self, id: &NodeId) -> Option<NodeId> {
+        let nav = self.get_node_nav(id)?;
+        let tab_str: &str = nav.tab_goes_to.as_ref()?;
+        self.get_node_id_by_id_str(tab_str)
+    }
+
     fn get_node_nav(&self, id: &NodeId) -> Option<&Navigation> {
         let node = self.node_ref(id)?;
         match node.widget_kind() {

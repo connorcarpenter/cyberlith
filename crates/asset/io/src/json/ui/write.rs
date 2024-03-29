@@ -296,6 +296,7 @@ impl NavigationJson {
             down: navigation.down_goes_to.clone(),
             left: navigation.left_goes_to.clone(),
             right: navigation.right_goes_to.clone(),
+            tab: navigation.tab_goes_to.clone(),
         }
     }
 }

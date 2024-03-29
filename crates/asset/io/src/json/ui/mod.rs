@@ -246,4 +246,5 @@ pub(crate) struct NavigationJson {
     down: Option<String>,
     left: Option<String>,
     right: Option<String>,
+    tab: Option<String>,
 }

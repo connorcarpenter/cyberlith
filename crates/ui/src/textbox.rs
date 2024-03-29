@@ -578,6 +578,11 @@ impl<'a> TextboxNavigationMut<'a> {
         self.get_textbox_mut().navigation.down_goes_to = Some(name.to_string());
         self
     }
+
+    pub fn tab_goes_to(&mut self, name: &str) -> &mut Self {
+        self.get_textbox_mut().navigation.tab_goes_to = Some(name.to_string());
+        self
+    }
 }
 
 pub struct TextboxStyleRef<'a> {
