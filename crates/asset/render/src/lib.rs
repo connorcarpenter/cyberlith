@@ -8,6 +8,7 @@ mod embedded;
 mod plugin;
 mod processed_asset_store;
 mod types;
+mod ui_manager;
 
 pub use asset_handle::*;
 pub use asset_manager::*;
@@ -15,3 +16,4 @@ pub use asset_metadata_store::*;
 pub use embedded::*;
 pub use plugin::*;
 pub use types::*;
+pub use ui_manager::{UiManager};

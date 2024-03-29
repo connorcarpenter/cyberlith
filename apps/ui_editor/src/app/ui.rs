@@ -14,7 +14,7 @@ use game_engine::{
         ETag, EmbeddedAssetEvent, UiData,
     },
     render::{base::Color, components::{AmbientLight, CameraBundle, ClearOperation, OrthographicProjection, Projection, RenderTarget, RenderLayer, Camera}},
-    ui::{Ui, UiInputConverter},
+    ui::{Ui, UiManager, UiInputConverter},
     input::{Input, InputEvent, GamepadRumbleIntensity, RumbleManager},
 };
 
@@ -42,6 +42,7 @@ pub fn setup(
     mut commands: Commands,
     mut embedded_asset_events: EventWriter<EmbeddedAssetEvent>,
     mut asset_manager: ResMut<AssetManager>,
+    mut ui_manager: ResMut<UiManager>,
 ) {
     // ui setup
     embedded_asset_events.send(embedded_asset_event!("embedded/8273wa")); // palette
@@ -60,7 +61,7 @@ pub fn setup(
     let ui_handle = AssetHandle::<UiData>::new(ui_asset_id);
     let ui_entity = commands.spawn(ui_handle).id();
 
-    //asset_manager.register_ui_event::<SubmitButtonEvent>(&ui_handle, "login_button");
+    ui_manager.register_ui_event::<SubmitButtonEvent>(&asset_manager, &ui_handle, "login_button");
 
     // scene setup now
     // ambient light
@@ -88,6 +89,7 @@ pub fn setup(
 
 pub fn ui_update(
     global: Res<Global>,
+    mut ui_manager: ResMut<UiManager>,
     mut asset_manager: ResMut<AssetManager>,
     mut input_events: EventReader<InputEvent>,
     // Cameras
@@ -106,14 +108,14 @@ pub fn ui_update(
         return;
     };
     if cam_render_layer_opt == ui_render_layer_opt {
-        asset_manager.update_ui_viewport(camera, ui_handle);
+        ui_manager.update_ui_viewport(&mut asset_manager, camera, ui_handle);
     }
 
     // update with inputs
     let Some((mouse_position, ui_input_events)) = UiInputConverter::convert(&mut input_events) else {
         return;
     };
-    asset_manager.update_ui_input(ui_handle, mouse_position, ui_input_events);
+    ui_manager.update_ui_input(&mut asset_manager, ui_handle, mouse_position, ui_input_events);
 }
 
 pub fn ui_handle_events(

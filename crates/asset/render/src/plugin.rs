@@ -2,7 +2,7 @@ use bevy_app::{App, Plugin, PostUpdate, PreUpdate, Startup, Update};
 
 use clipboard::ClipboardPlugin;
 
-use crate::{AssetManager, AssetMetadataStore, EmbeddedAssetEvent};
+use crate::{ui_manager::UiManager, AssetManager, AssetMetadataStore, EmbeddedAssetEvent};
 
 // Plugin
 pub struct AssetPlugin;
@@ -18,11 +18,13 @@ impl Plugin for AssetPlugin {
             // AssetManager
             .init_resource::<AssetManager>()
             .add_systems(Update, AssetManager::sync)
-            .add_systems(PreUpdate, AssetManager::prepare_cursor_change)
-            .add_systems(Update, AssetManager::process_ui_global_events)
-            .add_systems(Update, AssetManager::process_ui_node_events)
-            .add_systems(PostUpdate, AssetManager::process_cursor_change)
-            .add_systems(Update, AssetManager::update_blinkiness)
+            // UiManager
+            .init_resource::<UiManager>()
+            .add_systems(PreUpdate, UiManager::prepare_cursor_change)
+            .add_systems(Update, UiManager::process_ui_global_events)
+            .add_systems(Update, UiManager::process_ui_node_events)
+            .add_systems(PostUpdate, UiManager::process_cursor_change)
+            .add_systems(Update, UiManager::update_blinkiness)
             // AssetMetadataStore
             // TODO: AssetMetadataStore "assets" path here should be a config param somehow
             .insert_resource(AssetMetadataStore::new("assets"))

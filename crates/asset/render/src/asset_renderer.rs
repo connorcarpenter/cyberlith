@@ -8,7 +8,7 @@ use render_api::{
 use storage::Handle;
 use ui::{NodeActiveState, NodeId, Ui, WidgetKind};
 
-use crate::{asset_manager::UiTextMeasurer, asset_dependency::AssetComponentHandle, processed_asset_store::ProcessedAssetStore, AnimationData, AssetHandle, IconData, MeshData, ModelData, SceneData, SkinData, UiData, Blinkiness};
+use crate::{ui_manager::{Blinkiness, UiTextMeasurer}, asset_dependency::AssetComponentHandle, processed_asset_store::ProcessedAssetStore, AnimationData, AssetHandle, IconData, MeshData, ModelData, SceneData, SkinData, UiData};
 
 pub(crate) struct AssetRenderer;
 

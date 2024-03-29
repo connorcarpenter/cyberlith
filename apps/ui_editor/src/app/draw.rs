@@ -9,11 +9,13 @@ use game_engine::{
         components::{AmbientLight, Camera, Projection, RenderLayer, Transform},
         resources::RenderFrame,
     },
+    ui::UiManager,
 };
 
 pub fn draw(
     mut render_frame: ResMut<RenderFrame>,
     asset_manager: Res<AssetManager>,
+    ui_manager: Res<UiManager>,
     // Cameras
     cameras_q: Query<(&Camera, &Transform, &Projection, Option<&RenderLayer>)>,
     // UIs
@@ -36,6 +38,6 @@ pub fn draw(
 
     // Aggregate UIs
     for (ui_handle, render_layer_opt) in uis_q.iter() {
-        asset_manager.draw_ui(&mut render_frame, render_layer_opt, ui_handle);
+        ui_manager.draw_ui(&asset_manager, &mut render_frame, render_layer_opt, ui_handle);
     }
 }

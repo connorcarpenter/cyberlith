@@ -1,5 +1,5 @@
 use bevy_ecs::event::EventReader;
-use bevy_log::{info, warn};
+use bevy_log::warn;
 
 use input::{CursorIcon, GamepadButtonType, InputEvent, Key, Modifiers, MouseButton};
 use math::Vec2;
@@ -58,6 +58,8 @@ impl UiInputConverter {
                 InputEvent::GamepadButtonReleased(_, button) => {
                     match button {
                         GamepadButtonType::Start | GamepadButtonType::South => Some(UiInputEvent::SelectReleased),
+                        GamepadButtonType::DPadLeft => Some(UiInputEvent::LeftReleased),
+                        GamepadButtonType::DPadRight => Some(UiInputEvent::RightReleased),
                         _ => None,
                     }
                 }
@@ -87,6 +89,8 @@ impl UiInputConverter {
                 InputEvent::KeyReleased(key) => {
                     match key {
                         Key::Enter => Some(UiInputEvent::SelectReleased),
+                        Key::ArrowLeft => Some(UiInputEvent::LeftReleased),
+                        Key::ArrowRight => Some(UiInputEvent::RightReleased),
                         _ => None,
                     }
                 }
@@ -123,6 +127,8 @@ pub enum UiInputEvent {
     DownPressed,
     LeftPressed(Modifiers),
     RightPressed(Modifiers),
+    LeftReleased,
+    RightReleased,
     TabPressed,
     SelectPressed, SelectReleased,
     BackPressed,
