@@ -86,7 +86,7 @@ impl ProcessedAssetStore {
         data.get_frame_height(frame_index)
     }
 
-    pub(crate) fn load(
+    pub fn load(
         &mut self,
         asset_data_store: &HashMap<AssetId, Vec<u8>>,
         asset_id: &AssetId,

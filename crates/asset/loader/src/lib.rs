@@ -7,7 +7,7 @@ mod embedded;
 mod plugin;
 mod processed_asset_store;
 mod types;
-mod ui_manager;
+mod text_measurer;
 
 pub use asset_handle::*;
 pub use asset_manager::*;
@@ -16,5 +16,6 @@ pub use asset_dependency::*;
 pub use embedded::*;
 pub use plugin::*;
 pub use types::*;
-pub use ui_manager::*;
 pub use processed_asset_store::*;
+pub use text_measurer::*;
+pub use asset_storage::*;

@@ -14,5 +14,6 @@ storage = { path = "../../storage" }
 ui = { path = "../../ui" }
 ui_types = { path = "../../ui/types" }
 ui_builder = { path = "../../ui/builder" }
+ui_loader = { path = "../../ui/loader" }
 
 bevy_log = { version = "0.13", default-features=false }

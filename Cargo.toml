@@ -54,6 +54,7 @@ members = [
     "crates/ui/layout",
     "crates/ui/render",
     "crates/ui/types",
+    "crates/ui/loader",
     "crates/random",
     "crates/instant",
     "crates/clipboard",

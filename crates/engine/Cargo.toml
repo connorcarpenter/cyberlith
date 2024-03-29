@@ -28,6 +28,7 @@ filesystem = { path = "../filesystem" }
 ui = { path = "../ui" }
 ui_render = { path = "../ui/render" }
 ui_types = { path = "../ui/types" }
+ui_loader = { path = "../ui/loader" }
 random = { path = "../random" }
 
 # Networked Dependencies

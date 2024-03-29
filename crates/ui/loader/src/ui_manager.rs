@@ -4,6 +4,7 @@ use bevy_ecs::{change_detection::{Mut, Res, ResMut}, event::Event, prelude::Worl
 use bevy_log::warn;
 
 use asset_id::AssetId;
+use asset_loader::{AssetHandle, AssetManager, AssetStorage, IconData, ProcessedAssetStore, TypedAssetId, UiConfigData, UiStateData, UiTextMeasurer};
 use clipboard::ClipboardManager;
 use input::{CursorIcon, Input};
 use math::Vec2;
@@ -11,8 +12,6 @@ use render_api::{base::{CpuMaterial, CpuMesh}, components::Camera, resources::Ti
 use storage::Storage;
 use ui_types::{NodeId, UiConfig};
 use ui::{TextMeasurer, UiGlobalEvent, UiInputEvent, UiNodeEvent, UiNodeEventHandler};
-
-use crate::{asset_storage::AssetStorage, AssetHandle, AssetManager, IconData, processed_asset_store::ProcessedAssetStore, TypedAssetId, UiConfigData, UiStateData};
 
 #[derive(Resource)]
 pub struct UiManager {
@@ -48,25 +47,35 @@ impl Default for UiManager {
 }
 
 impl UiManager {
+
     // used as a system
-    pub(crate) fn prepare_cursor_change(mut ui_manager: ResMut<Self>) {
+    pub(crate) fn sync(
+        mut ui_manager: ResMut<Self>,
+        mut meshes: ResMut<Storage<CpuMesh>>,
+        mut materials: ResMut<Storage<CpuMaterial>>,
+    ) {
+        ui_manager.sync_uis(&mut meshes, &mut materials);
+    }
+
+    // used as a system
+    pub fn prepare_cursor_change(mut ui_manager: ResMut<Self>) {
         ui_manager.set_cursor_icon_change(None);
     }
 
     // used as a system
-    pub(crate) fn process_ui_global_events(mut ui_manager: ResMut<Self>, mut clipboard_manager: ResMut<ClipboardManager>) {
+    pub fn process_ui_global_events(mut ui_manager: ResMut<Self>, mut clipboard_manager: ResMut<ClipboardManager>) {
         ui_manager.process_ui_global_events_impl(&mut clipboard_manager);
     }
 
     // used as a system
-    pub(crate) fn process_ui_node_events(world: &mut World) {
+    pub fn process_ui_node_events(world: &mut World) {
         world.resource_scope(|world, mut ui_manager: Mut<Self>| {
             ui_manager.process_ui_node_events_impl(world);
         });
     }
 
     // used as a system
-    pub(crate) fn process_cursor_change(mut ui_manager: ResMut<Self>, mut input: ResMut<Input>) {
+    pub fn process_cursor_change(mut ui_manager: ResMut<Self>, mut input: ResMut<Input>) {
         let Some(cursor_change) = ui_manager.take_cursor_icon_change() else {
             return;
         };
@@ -77,7 +86,7 @@ impl UiManager {
     }
 
     // used as a system
-    pub(crate) fn update_blinkiness(mut ui_manager: ResMut<Self>, time: Res<Time>) {
+    pub fn update_blinkiness(mut ui_manager: ResMut<Self>, time: Res<Time>) {
         let elapsed = time.get_elapsed_ms();
         ui_manager.blinkiness.update(elapsed);
     }
@@ -165,7 +174,7 @@ impl UiManager {
         principal_data.finish_dependency(dependency_typed_id);
     }
 
-    pub(crate) fn sync_uis(
+    pub fn sync_uis(
         &mut self,
         meshes: &mut Storage<CpuMesh>,
         materials: &mut Storage<CpuMaterial>,
@@ -205,7 +214,7 @@ impl UiManager {
         }
     }
 
-    pub(crate) fn process_ui_global_events_impl(&mut self, clipboard_manager: &mut ClipboardManager) {
+    pub fn process_ui_global_events_impl(&mut self, clipboard_manager: &mut ClipboardManager) {
         let global_events = std::mem::take(&mut self.ui_global_events);
         for event in global_events {
             match event {
@@ -217,7 +226,7 @@ impl UiManager {
         }
     }
 
-    pub(crate) fn process_ui_node_events_impl(&mut self, world: &mut World) {
+    pub fn process_ui_node_events_impl(&mut self, world: &mut World) {
         if self.ui_node_events.is_empty() {
             return;
         }
@@ -236,19 +245,19 @@ impl UiManager {
         }
     }
 
-    pub(crate) fn set_cursor_icon_change(&mut self, cursor_icon: Option<CursorIcon>) {
+    pub fn set_cursor_icon_change(&mut self, cursor_icon: Option<CursorIcon>) {
         self.cursor_icon_change = cursor_icon;
     }
 
-    pub(crate) fn take_cursor_icon_change(&mut self) -> Option<CursorIcon> {
+    pub fn take_cursor_icon_change(&mut self) -> Option<CursorIcon> {
         self.cursor_icon_change.take()
     }
 
-    pub(crate) fn get_last_cursor_icon(&self) -> CursorIcon {
+    pub fn get_last_cursor_icon(&self) -> CursorIcon {
         self.last_cursor_icon
     }
 
-    pub(crate) fn set_last_cursor_icon(&mut self, cursor_icon: CursorIcon) {
+    pub fn set_last_cursor_icon(&mut self, cursor_icon: CursorIcon) {
         self.last_cursor_icon = cursor_icon;
     }
 
@@ -368,30 +377,6 @@ impl UiManager {
         if new_cursor_icon != self.last_cursor_icon {
             self.cursor_icon_change = Some(new_cursor_icon);
         }
-    }
-}
-
-pub struct UiTextMeasurer<'a> {
-    icon_data: &'a IconData,
-}
-
-impl<'a> UiTextMeasurer<'a> {
-    pub fn new(icon_data: &'a IconData) -> Self {
-        Self { icon_data }
-    }
-}
-
-impl<'a> TextMeasurer for UiTextMeasurer<'a> {
-
-    fn get_raw_char_width(&self, subimage: usize) -> f32 {
-        if subimage == 0 {
-            return 40.0;
-        }
-        self.icon_data.get_frame_width(subimage).unwrap_or(0.0)
-    }
-
-    fn get_raw_char_height(&self, _subimage: usize) -> f32 {
-        200.0
     }
 }
 

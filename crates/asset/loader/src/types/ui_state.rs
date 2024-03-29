@@ -24,11 +24,11 @@ impl UiStateData {
         &self.ui_state
     }
 
-    pub(crate) fn get_ui_state_mut(&mut self) -> &mut UiState {
+    pub fn get_ui_state_mut(&mut self) -> &mut UiState {
         &mut self.ui_state
     }
 
-    pub(crate) fn load_cpu_data(
+    pub fn load_cpu_data(
         &mut self,
         ui_config: &UiConfig,
         meshes: &mut Storage<CpuMesh>,

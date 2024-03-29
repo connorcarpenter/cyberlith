@@ -28,7 +28,7 @@ impl IconData {
         self.max_height
     }
 
-    pub(crate) fn get_frame_width(&self, index: usize) -> Option<f32> {
+    pub fn get_frame_width(&self, index: usize) -> Option<f32> {
         let frame = self.frames.get(index)?;
         Some(frame.get_width())
     }

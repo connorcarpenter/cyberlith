@@ -31,11 +31,11 @@ impl UiConfigData {
         &self.ui_config
     }
 
-    pub(crate) fn get_ui_config_mut(&mut self) -> &mut UiConfig {
+    pub fn get_ui_config_mut(&mut self) -> &mut UiConfig {
         &mut self.ui_config
     }
 
-    pub(crate) fn load_dependencies(
+    pub fn load_dependencies(
         &self,
         asset_handle: AssetHandle<Self>,
         dependencies: &mut Vec<(TypedAssetId, TypedAssetId)>,
@@ -46,7 +46,7 @@ impl UiConfigData {
         dependencies.push((asset_handle.into(), TypedAssetId::Icon(*asset_id)));
     }
 
-    pub(crate) fn finish_dependency(&mut self, dependency_typed_id: TypedAssetId) {
+    pub fn finish_dependency(&mut self, dependency_typed_id: TypedAssetId) {
         match dependency_typed_id {
             TypedAssetId::Icon(id) => {
                 let handle = AssetHandle::<IconData>::new(id);

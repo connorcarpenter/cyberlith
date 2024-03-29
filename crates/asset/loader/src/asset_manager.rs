@@ -1,19 +1,17 @@
 use std::collections::HashMap;
 
-use bevy_ecs::{
-    system::{ResMut, Resource},
-};
+use bevy_ecs::system::{ResMut, Resource};
 
 use asset_id::{AssetId, AssetType};
 use render_api::{
-    base::CpuSkin,
     base::{CpuMaterial, CpuMesh},
+    base::CpuSkin,
 };
 use storage::Storage;
 
 use crate::{
-    processed_asset_store::ProcessedAssetStore, AnimationData,
-    AssetHandle, IconData, ui_manager::UiManager,
+    AnimationData, AssetHandle,
+    IconData, processed_asset_store::ProcessedAssetStore,
 };
 
 #[derive(Resource)]
@@ -42,7 +40,6 @@ impl AssetManager {
     // used as a system
     pub(crate) fn sync(
         mut asset_manager: ResMut<Self>,
-        mut ui_manager: ResMut<UiManager>,
         mut meshes: ResMut<Storage<CpuMesh>>,
         mut materials: ResMut<Storage<CpuMaterial>>,
         mut skins: ResMut<Storage<CpuSkin>>,
@@ -50,7 +47,6 @@ impl AssetManager {
         asset_manager.store.sync_meshes(&mut meshes);
         asset_manager.store.sync_icons(&mut meshes);
         asset_manager.store.sync_palettes(&mut materials);
-        ui_manager.sync_uis(&mut meshes, &mut materials);
 
         asset_manager
             .store
@@ -64,7 +60,7 @@ impl AssetManager {
         &self.store
     }
 
-    pub(crate) fn get_store_mut(&mut self) -> &mut ProcessedAssetStore {
+    pub fn get_store_mut(&mut self) -> &mut ProcessedAssetStore {
         &mut self.store
     }
 

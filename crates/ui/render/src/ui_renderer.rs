@@ -1,6 +1,6 @@
 use bevy_log::warn;
 
-use asset_loader::{AssetHandle, AssetManager, Blinkiness, IconData, UiConfigData, UiManager, UiTextMeasurer};
+use asset_loader::{AssetHandle, AssetManager, IconData, UiConfigData, UiTextMeasurer};
 use asset_render::AssetRender;
 use render_api::{
     base::{CpuMaterial, CpuMesh},
@@ -11,6 +11,7 @@ use storage::Handle;
 use ui_types::{NodeId, UiConfig, WidgetKind};
 use ui::{NodeActiveState, UiState};
 use ui_builder::{ButtonStyleRef, PanelStyleRef, TextboxStyleRef, TextStyleRef};
+use ui_loader::{Blinkiness, UiManager};
 
 pub struct UiRenderer;
 
