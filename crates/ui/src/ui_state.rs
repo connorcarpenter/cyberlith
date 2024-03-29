@@ -13,7 +13,7 @@ use math::Vec2;
 use render_api::base::Color;
 
 use ui_types::{NodeId, UiConfig, UiVisibilityStore, WidgetKind};
-use ui_layout::{Alignment, Cache, Node, SizeUnits, TextMeasurer};
+use ui_layout::{Cache, Node, SizeUnits, TextMeasurer};
 
 use crate::{
     widget::WidgetState, textbox::TextboxState, text::TextState, panel::PanelState, button::ButtonState,

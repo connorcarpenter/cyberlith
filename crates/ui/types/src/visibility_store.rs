@@ -1,4 +1,4 @@
-use crate::{NodeId, UiNode};
+use crate::NodeId;
 
 pub struct UiVisibilityStore {
     pub nodes: Vec<bool>,
@@ -29,7 +29,7 @@ impl UiVisibilityStore {
         self.nodes.get(node_id.as_usize()).copied()
     }
 
-    pub(crate) fn set_node_visibility(&mut self, node_id: &NodeId, visible: bool) {
+    pub fn set_node_visibility(&mut self, node_id: &NodeId, visible: bool) {
         if let Some(node) = self.nodes.get_mut(node_id.as_usize()) {
             *node = visible;
         }

@@ -150,10 +150,6 @@ fn draw_ui_node(
         warn!("no node for id 1: {:?}", id);
         return;
     };
-    let Some(node_state) = ui_state.store.get_node(&id) else {
-        warn!("no node for id 2: {:?}", id);
-        return;
-    };
     let Some(node_visible) = ui_state.visibility_store.get_node_visibility(&id) else {
         warn!("no node for id 2: {:?}", id);
         return;
