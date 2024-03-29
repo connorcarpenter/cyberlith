@@ -1,0 +1,11 @@
+[package]
+name = "ui_builder"
+version = "0.1.0"
+edition = "2021"
+workspace = "../../.."
+
+[dependencies]
+render_api = { path = "../../render/render_api" }
+
+ui_layout = { path = "../layout" }
+ui_types = { path = "../types" }

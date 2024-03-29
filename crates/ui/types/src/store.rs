@@ -1,4 +1,10 @@
-use crate::{textbox::TextboxStyleRef, text::TextStyleRef, button::ButtonStyleRef, panel::{Panel, PanelStyle, PanelStyleRef}, style::{NodeStyle, StyleId, WidgetStyle}, widget::WidgetKind, Button, ButtonStyle, NodeId, UiNode, TextStyle, Text, TextboxStyle, Textbox};
+use crate::{
+    panel::{Panel, PanelStyle},
+    style::{NodeStyle, StyleId, WidgetStyle},
+    widget::WidgetKind,
+    Button, ButtonStyle, NodeId, UiNode, TextStyle, Text,
+    TextboxStyle, Textbox
+};
 
 pub struct UiStore {
     pub styles: Vec<NodeStyle>,
@@ -49,10 +55,6 @@ impl UiStore {
     pub(crate) fn get_style_mut(&mut self, style_id: &StyleId) -> Option<&mut NodeStyle> {
         self.styles.get_mut(style_id.as_usize())
     }
-
-    // pub(crate) fn iter(&self) -> impl Iterator<Item = (&NodeId, &UiNode)> {
-    //     self.map.iter()
-    // }
 
     // refs stuff
 
@@ -109,11 +111,11 @@ impl UiStore {
         &node.style_ids
     }
 
-    pub(crate) fn node_kind(&self, node_id: &NodeId) -> WidgetKind {
+    pub fn node_kind(&self, node_id: &NodeId) -> WidgetKind {
         self.get_node(node_id).unwrap().widget_kind()
     }
 
-    pub(crate) fn for_each_node_style(&self, node_id: &NodeId, mut func: impl FnMut(&NodeStyle)) {
+    pub fn for_each_node_style(&self, node_id: &NodeId, mut func: impl FnMut(&NodeStyle)) {
         for style_id in self.node_style_ids(node_id) {
             let Some(style) = self.get_style(style_id) else {
                 panic!("StyleId does not reference a Style");
@@ -122,7 +124,7 @@ impl UiStore {
         }
     }
 
-    pub(crate) fn for_each_panel_style(&self, node_id: &NodeId, mut func: impl FnMut(&PanelStyle)) {
+    pub fn for_each_panel_style(&self, node_id: &NodeId, mut func: impl FnMut(&PanelStyle)) {
         for style_id in self.node_style_ids(node_id) {
             let Some(style) = self.get_style(style_id) else {
                 panic!("StyleId does not reference a Style");
@@ -135,7 +137,7 @@ impl UiStore {
         }
     }
 
-    pub(crate) fn for_each_text_style(&self, node_id: &NodeId, mut func: impl FnMut(&TextStyle)) {
+    pub fn for_each_text_style(&self, node_id: &NodeId, mut func: impl FnMut(&TextStyle)) {
         for style_id in self.node_style_ids(node_id) {
             let Some(style) = self.get_style(style_id) else {
                 panic!("StyleId does not reference a Style");
@@ -147,7 +149,7 @@ impl UiStore {
         }
     }
 
-    pub(crate) fn for_each_button_style(
+    pub fn for_each_button_style(
         &self,
         node_id: &NodeId,
         mut func: impl FnMut(&ButtonStyle),
@@ -163,7 +165,7 @@ impl UiStore {
         }
     }
 
-    pub(crate) fn for_each_textbox_style(&self, node_id: &NodeId, mut func: impl FnMut(&TextboxStyle)) {
+    pub fn for_each_textbox_style(&self, node_id: &NodeId, mut func: impl FnMut(&TextboxStyle)) {
         for style_id in self.node_style_ids(node_id) {
             let Some(style) = self.get_style(style_id) else {
                 panic!("StyleId does not reference a Style");
@@ -173,21 +175,5 @@ impl UiStore {
             };
             func(&textbox_style);
         }
-    }
-
-    pub fn panel_style_ref(&self, node_id: &NodeId) -> PanelStyleRef {
-        PanelStyleRef::new(self, *node_id)
-    }
-
-    pub fn text_style_ref(&self, node_id: &NodeId) -> TextStyleRef {
-        TextStyleRef::new(self, *node_id)
-    }
-
-    pub fn button_style_ref(&self, node_id: &NodeId) -> ButtonStyleRef {
-        ButtonStyleRef::new(self, *node_id)
-    }
-
-    pub fn textbox_style_ref(&self, node_id: &NodeId) -> TextboxStyleRef {
-        TextboxStyleRef::new(self, *node_id)
     }
 }

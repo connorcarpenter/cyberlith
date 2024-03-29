@@ -1,15 +1,15 @@
-use crate::{button::ButtonState, widget::WidgetState, panel::PanelState, text::TextState, textbox::TextboxState, UiNode};
+use ui_types::UiNode;
+
+use crate::{button::ButtonState, widget::WidgetState, panel::PanelState, text::TextState, textbox::TextboxState};
 
 #[derive(Clone)]
 pub struct UiNodeState {
-    pub visible: bool,
     pub widget: WidgetState,
 }
 
 impl UiNodeState {
     pub(crate) fn new(widget: WidgetState) -> Self {
         Self {
-            visible: true,
             widget,
         }
     }

@@ -2,7 +2,9 @@ use std::collections::HashMap;
 
 use asset_id::AssetId;
 use render_api::base::Color;
-use ui::{Alignment, ButtonMut, ButtonStyleMut, LayoutType, MarginUnits, NodeId, PanelMut, PanelStyleMut, PositionType, SizeUnits, Solid, StyleId, TextboxMut, TextboxStyleMut, TextStyleMut, UiConfig, WidgetKind};
+use ui_builder::{ButtonMut, ButtonStyleMut, PanelMut, PanelStyleMut, TextboxMut, TextboxStyleMut, TextStyleMut, UiConfigBuilder};
+use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
+use ui_types::{NodeId, StyleId, UiConfig, WidgetKind};
 
 use crate::json::{ButtonJson, TextboxJson};
 use super::{
@@ -179,7 +181,7 @@ fn set_textbox_navigation<'a>(
 
 impl UiConfigJson {
     pub fn to_ui(self) -> UiConfig {
-        let mut ui = UiConfig::new();
+        let mut ui_config = UiConfig::new();
 
         // ui_serde -> ui
         let UiConfigJson {
@@ -191,15 +193,15 @@ impl UiConfigJson {
         } = self;
 
         // text color
-        ui.set_text_color(text_color.to_color());
+        ui_config.set_text_color(text_color.to_color());
 
         // text icon
         let text_icon_asset_id = AssetId::from_str(&text_icon_asset_id).unwrap();
-        ui.set_text_icon_asset_id(&text_icon_asset_id);
+        ui_config.set_text_icon_asset_id(&text_icon_asset_id);
 
         // first input
         if let Some(first_input_id) = first_input {
-            ui.set_first_input(NodeId::from_usize(first_input_id));
+            ui_config.set_first_input(NodeId::from_usize(first_input_id));
         }
 
         // styles
@@ -209,16 +211,16 @@ impl UiConfigJson {
             //info!("style_serde: {}, {:?}", style_index, style_serde);
 
             let style_id = match style_serde.widget_kind() {
-                WidgetKind::Panel => ui.create_panel_style(|style| {
+                WidgetKind::Panel => UiConfigBuilder::create_panel_style(&mut ui_config, |style| {
                     style_serde.to_panel_style(style);
                 }),
-                WidgetKind::Text => ui.create_text_style(|style| {
+                WidgetKind::Text => UiConfigBuilder::create_text_style(&mut ui_config, |style| {
                     style_serde.to_text_style(style);
                 }),
-                WidgetKind::Button => ui.create_button_style(|style| {
+                WidgetKind::Button => UiConfigBuilder::create_button_style(&mut ui_config, |style| {
                     style_serde.to_button_style(style);
                 }),
-                WidgetKind::Textbox => ui.create_textbox_style(|style| {
+                WidgetKind::Textbox => UiConfigBuilder::create_textbox_style(&mut ui_config, |style| {
                     style_serde.to_textbox_style(style);
                 }),
             };
@@ -229,7 +231,7 @@ impl UiConfigJson {
         let root_node_serde = nodes.first().unwrap();
         //info!("0 - root_node_serde: {:?}", root_node_serde);
 
-        let mut root_mut = ui.root_mut();
+        let mut root_mut = UiConfigBuilder::root_mut(&mut ui_config);
         for style_index in &root_node_serde.style_ids {
             let style_id = *style_index_to_id.get(style_index).unwrap();
             root_mut.add_style(style_id);
@@ -239,7 +241,7 @@ impl UiConfigJson {
         };
         convert_nodes_recurse_panel(&style_index_to_id, &nodes, panel_serde, &mut root_mut);
 
-        ui
+        ui_config
     }
 }
 

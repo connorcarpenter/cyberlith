@@ -8,16 +8,24 @@ use render_api::{
     shapes::UnitSquare,
 };
 use storage::{Handle, Storage};
-use ui_layout::{Cache, Node, SizeUnits, TextMeasurer};
 use instant::Instant;
 use math::Vec2;
+use render_api::base::Color;
 
-use crate::{widget::WidgetState, textbox::TextboxState, text::TextState, panel::PanelState, button::ButtonState, state_store::UiStateStore, input::UiInputEvent, events::UiGlobalEvent, cache::LayoutCache, node_id::NodeId, input::ui_receive_input, UiNodeEvent, button::NodeActiveState, UiConfig, UiNodeState, WidgetKind};
+use ui_types::{NodeId, UiConfig, UiVisibilityStore, WidgetKind};
+use ui_layout::{Alignment, Cache, Node, SizeUnits, TextMeasurer};
+
+use crate::{
+    widget::WidgetState, textbox::TextboxState, text::TextState, panel::PanelState, button::ButtonState,
+    state_store::UiStateStore, input::UiInputEvent, events::UiGlobalEvent, cache::LayoutCache,
+    input::ui_receive_input, UiNodeEvent, button::NodeActiveState, UiNodeState
+};
 
 pub struct UiState {
     pub globals: StateGlobals,
     pub cache: LayoutCache,
     pub store: UiStateStore,
+    pub visibility_store: UiVisibilityStore,
 
     recalc_layout: bool,
     last_viewport: Viewport,
@@ -57,25 +65,74 @@ impl UiState {
 
             match node_ref.widget_kind() {
                 WidgetKind::Panel => {
-                    let panel_style_ref = ui_config.store.panel_style_ref(&id);
-                    let color = panel_style_ref.background_color();
+                    // TODO: this is a ridiculous way to get color, simplify this
+                    let color = {
+                        let mut output = Color::BLACK;
+
+                        ui_config.store.for_each_panel_style(&id, |style| {
+                            if let Some(background_color) = style.background_color {
+                                output = background_color;
+                            }
+                        });
+
+                        output
+                    };
                     let panel_mut = self.panel_mut(&id).unwrap();
                     let mat_handle = materials.add(color);
                     panel_mut.background_color_handle = Some(mat_handle);
                 }
                 WidgetKind::Text => {
-                    let text_style_ref = ui_config.store.text_style_ref(&id);
-                    let color = text_style_ref.background_color();
+                    // TODO: this is a ridiculous way to get color, simplify this
+                    let color = {
+                        let mut output = Color::BLACK;
+
+                        ui_config.store.for_each_text_style(&id, |style| {
+                            if let Some(background_color) = style.background_color {
+                                output = background_color;
+                            }
+                        });
+
+                        output
+                    };
                     let text_mut = self.text_mut(&id).unwrap();
                     let mat_handle = materials.add(color);
                     text_mut.background_color_handle = Some(mat_handle);
                 }
                 WidgetKind::Button => {
-                    let button_style_ref = ui_config.store.button_style_ref(&id);
+                    // TODO: this is a ridiculous way to get color, simplify this
+                    let background_color = {
+                        let mut output = Color::BLACK;
 
-                    let background_color = button_style_ref.background_color();
-                    let hover_color = button_style_ref.hover_color();
-                    let down_color = button_style_ref.down_color();
+                        ui_config.store.for_each_button_style(&id, |style| {
+                            if let Some(color) = style.panel.background_color {
+                                output = color;
+                            }
+                        });
+
+                        output
+                    };
+                    let hover_color = {
+                        let mut output = Color::BLACK;
+
+                        ui_config.store.for_each_button_style(&id, |style| {
+                            if let Some(color) = style.hover_color {
+                                output = color;
+                            }
+                        });
+
+                        output
+                    };
+                    let down_color = {
+                        let mut output = Color::BLACK;
+
+                        ui_config.store.for_each_button_style(&id, |style| {
+                            if let Some(color) = style.down_color {
+                                output = color;
+                            }
+                        });
+
+                        output
+                    };
 
                     let button_mut = self.button_mut(&id).unwrap();
 
@@ -89,12 +146,51 @@ impl UiState {
                     button_mut.set_down_color_handle(down_color_handle);
                 }
                 WidgetKind::Textbox => {
-                    let textbox_style_ref = ui_config.store.textbox_style_ref(&id);
+                    // TODO: this is a ridiculous way to get color, simplify this
+                    let background_color = {
+                        let mut output = Color::BLACK;
 
-                    let background_color = textbox_style_ref.background_color();
-                    let hover_color = textbox_style_ref.hover_color();
-                    let active_color = textbox_style_ref.active_color();
-                    let select_color = textbox_style_ref.selection_color();
+                        ui_config.store.for_each_textbox_style(&id, |style| {
+                            if let Some(color) = style.panel.background_color {
+                                output = color;
+                            }
+                        });
+
+                        output
+                    };
+                    let hover_color = {
+                        let mut output = Color::BLACK;
+
+                        ui_config.store.for_each_textbox_style(&id, |style| {
+                            if let Some(color) = style.hover_color {
+                                output = color;
+                            }
+                        });
+
+                        output
+                    };
+                    let active_color = {
+                        let mut output = Color::BLACK;
+
+                        ui_config.store.for_each_textbox_style(&id, |style| {
+                            if let Some(color) = style.active_color {
+                                output = color;
+                            }
+                        });
+
+                        output
+                    };
+                    let select_color = {
+                        let mut output = Color::BLACK;
+
+                        ui_config.store.for_each_textbox_style(&id, |style| {
+                            if let Some(color) = style.select_color {
+                                output = color;
+                            }
+                        });
+
+                        output
+                    };
 
                     let textbox_mut = self.textbox_mut(&id).unwrap();
 
@@ -154,6 +250,7 @@ impl UiState {
             globals: StateGlobals::new(),
             cache: LayoutCache::new(),
             store: UiStateStore::new(),
+            visibility_store: UiVisibilityStore::new(),
 
             recalc_layout: false,
             last_viewport: Viewport::new_at_origin(0, 0),
@@ -167,6 +264,7 @@ impl UiState {
 
         for node in ui_config.store.nodes.iter() {
             me.store.node_state_init(node);
+            me.visibility_store.node_state_init();
         }
 
         me
@@ -279,10 +377,10 @@ impl UiState {
 
         let cache_mut = &mut self.cache;
         let store_ref = &ui_config.store;
-        let state_store_ref = &self.store;
+        let visibility_store_ref = &self.visibility_store;
 
         // this calculates all the rects in cache_mut
-        UiConfig::ROOT_NODE_ID.layout(cache_mut, store_ref, state_store_ref, text_measurer);
+        UiConfig::ROOT_NODE_ID.layout(cache_mut, store_ref, visibility_store_ref, text_measurer);
         finalize_rects(ui_config, self, &UiConfig::ROOT_NODE_ID, (0.0, 0.0, 0.0))
 
         // print_node(&Self::ROOT_PANEL_ID, &self.cache, &self.panels, true, false, "".to_string());

@@ -13,6 +13,7 @@ math = { path = "../../math" }
 storage = { path = "../../storage" }
 filesystem = { path = "../../filesystem" }
 ui = { path = "../../ui" }
+ui_types = { path = "../../ui/types" }
 random = { path = "../../random" }
 input = { path = "../../input" }
 instant = { path = "../../instant" }

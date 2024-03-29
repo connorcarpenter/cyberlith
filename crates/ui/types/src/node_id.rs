@@ -2,13 +2,13 @@ use std::fmt::{Display, Formatter};
 
 use ui_layout::{Alignment, LayoutType, MarginUnits, Node, PositionType, SizeUnits, Solid, TextMeasurer};
 
-use crate::{store::UiStore, Text, state_store::UiStateStore, widget::WidgetKind};
+use crate::{Text, UiStore, UiVisibilityStore, WidgetKind};
 
 #[derive(Clone, Copy, PartialEq, PartialOrd, Ord, Eq, Hash, Debug, Default)]
 pub struct NodeId(u32);
 
 impl NodeId {
-    pub(crate) const fn new(id: u32) -> Self {
+    pub const fn new(id: u32) -> Self {
         Self(id)
     }
 
@@ -29,7 +29,7 @@ impl Display for NodeId {
 
 impl Node for NodeId {
     type Store = UiStore;
-    type StateStore = UiStateStore;
+    type StateStore = UiVisibilityStore;
     type ChildIter<'t> = std::slice::Iter<'t, Self>;
     type CacheKey = Self;
 
@@ -37,7 +37,7 @@ impl Node for NodeId {
         *self
     }
 
-    fn children<'t>(&'t self, store: &'t UiStore) -> Self::ChildIter<'t> {
+    fn children<'t>(&'t self, store: &'t Self::Store) -> Self::ChildIter<'t> {
         if !store.node_kind(self).has_children() {
             return [].iter();
         }
@@ -56,15 +56,11 @@ impl Node for NodeId {
         }
     }
 
-    fn visible(&self, store: &UiStateStore) -> bool {
-        if let Some(node) = store.get_node(self) {
-            node.visible
-        } else {
-            false
-        }
+    fn visible(&self, store: &Self::StateStore) -> bool {
+        store.get_node_visibility(self).unwrap()
     }
 
-    fn layout_type(&self, store: &UiStore) -> Option<LayoutType> {
+    fn layout_type(&self, store: &Self::Store) -> Option<LayoutType> {
         if !store.node_kind(self).has_children() {
             return None;
         }
@@ -80,7 +76,7 @@ impl Node for NodeId {
         Some(output)
     }
 
-    fn position_type(&self, store: &UiStore) -> Option<PositionType> {
+    fn position_type(&self, store: &Self::Store) -> Option<PositionType> {
         let mut output = PositionType::default();
 
         store.for_each_node_style(self, |node_style| {
@@ -92,7 +88,7 @@ impl Node for NodeId {
         Some(output)
     }
 
-    fn width(&self, store: &UiStore) -> Option<SizeUnits> {
+    fn width(&self, store: &Self::Store) -> Option<SizeUnits> {
         let mut output = SizeUnits::default();
 
         if store.node_kind(self).is_text() {
@@ -108,7 +104,7 @@ impl Node for NodeId {
         Some(output)
     }
 
-    fn height(&self, store: &UiStore) -> Option<SizeUnits> {
+    fn height(&self, store: &Self::Store) -> Option<SizeUnits> {
         let mut output = SizeUnits::default();
 
         store.for_each_node_style(self, |node_style| {
@@ -120,7 +116,7 @@ impl Node for NodeId {
         Some(output)
     }
 
-    fn width_min(&self, store: &UiStore) -> Option<SizeUnits> {
+    fn width_min(&self, store: &Self::Store) -> Option<SizeUnits> {
         let mut output = SizeUnits::default();
 
         if store.node_kind(self).is_text() {
@@ -136,7 +132,7 @@ impl Node for NodeId {
         Some(output)
     }
 
-    fn height_min(&self, store: &UiStore) -> Option<SizeUnits> {
+    fn height_min(&self, store: &Self::Store) -> Option<SizeUnits> {
         let mut output = SizeUnits::default();
 
         if store.node_kind(self).is_text() {
@@ -152,7 +148,7 @@ impl Node for NodeId {
         Some(output)
     }
 
-    fn width_max(&self, store: &UiStore) -> Option<SizeUnits> {
+    fn width_max(&self, store: &Self::Store) -> Option<SizeUnits> {
         let mut output = SizeUnits::default();
 
         if store.node_kind(self).is_text() {
@@ -168,7 +164,7 @@ impl Node for NodeId {
         Some(output)
     }
 
-    fn height_max(&self, store: &UiStore) -> Option<SizeUnits> {
+    fn height_max(&self, store: &Self::Store) -> Option<SizeUnits> {
         let mut output = SizeUnits::default();
 
         if store.node_kind(self).is_text() {
@@ -184,7 +180,7 @@ impl Node for NodeId {
         Some(output)
     }
 
-    fn margin_left(&self, store: &UiStore) -> Option<MarginUnits> {
+    fn margin_left(&self, store: &Self::Store) -> Option<MarginUnits> {
         let mut output = MarginUnits::default();
 
         store.for_each_node_style(self, |node_style| {
@@ -196,7 +192,7 @@ impl Node for NodeId {
         Some(output)
     }
 
-    fn margin_right(&self, store: &UiStore) -> Option<MarginUnits> {
+    fn margin_right(&self, store: &Self::Store) -> Option<MarginUnits> {
         let mut output = MarginUnits::default();
 
         store.for_each_node_style(self, |node_style| {
@@ -208,7 +204,7 @@ impl Node for NodeId {
         Some(output)
     }
 
-    fn margin_top(&self, store: &UiStore) -> Option<MarginUnits> {
+    fn margin_top(&self, store: &Self::Store) -> Option<MarginUnits> {
         let mut output = MarginUnits::default();
 
         store.for_each_node_style(self, |node_style| {
@@ -220,7 +216,7 @@ impl Node for NodeId {
         Some(output)
     }
 
-    fn margin_bottom(&self, store: &UiStore) -> Option<MarginUnits> {
+    fn margin_bottom(&self, store: &Self::Store) -> Option<MarginUnits> {
         let mut output = MarginUnits::default();
 
         store.for_each_node_style(self, |node_style| {
@@ -232,7 +228,7 @@ impl Node for NodeId {
         Some(output)
     }
 
-    fn padding_left(&self, store: &UiStore) -> Option<SizeUnits> {
+    fn padding_left(&self, store: &Self::Store) -> Option<SizeUnits> {
         if !store.node_kind(self).has_children() {
             return None;
         }
@@ -248,7 +244,7 @@ impl Node for NodeId {
         Some(output)
     }
 
-    fn padding_right(&self, store: &UiStore) -> Option<SizeUnits> {
+    fn padding_right(&self, store: &Self::Store) -> Option<SizeUnits> {
         if !store.node_kind(self).has_children() {
             return None;
         }
@@ -264,7 +260,7 @@ impl Node for NodeId {
         Some(output)
     }
 
-    fn padding_top(&self, store: &UiStore) -> Option<SizeUnits> {
+    fn padding_top(&self, store: &Self::Store) -> Option<SizeUnits> {
         if !store.node_kind(self).has_children() {
             return None;
         }
@@ -280,7 +276,7 @@ impl Node for NodeId {
         Some(output)
     }
 
-    fn padding_bottom(&self, store: &UiStore) -> Option<SizeUnits> {
+    fn padding_bottom(&self, store: &Self::Store) -> Option<SizeUnits> {
         if !store.node_kind(self).has_children() {
             return None;
         }
@@ -296,7 +292,7 @@ impl Node for NodeId {
         Some(output)
     }
 
-    fn row_between(&self, store: &UiStore) -> Option<SizeUnits> {
+    fn row_between(&self, store: &Self::Store) -> Option<SizeUnits> {
         if !store.node_kind(self).has_children() {
             return None;
         }
@@ -312,7 +308,7 @@ impl Node for NodeId {
         Some(output)
     }
 
-    fn col_between(&self, store: &UiStore) -> Option<SizeUnits> {
+    fn col_between(&self, store: &Self::Store) -> Option<SizeUnits> {
         if !store.node_kind(self).has_children() {
             return None;
         }
@@ -328,19 +324,7 @@ impl Node for NodeId {
         Some(output)
     }
 
-    fn is_text(&self, store: &UiStore) -> bool {
-        store.node_kind(self).is_text()
-    }
-
-    fn calculate_text_width(&self, store: &Self::Store, text_measurer: &dyn TextMeasurer, height: f32) -> f32 {
-        let text_ref = store.text_ref(self).unwrap();
-        let text = text_ref.text.as_str();
-        let (raw_width, raw_height) = Text::measure_raw_text_size(text_measurer, text);
-        let scale = height / raw_height;
-        raw_width * scale
-    }
-
-    fn is_solid(&self, store: &UiStore) -> Option<Solid> {
+    fn is_solid(&self, store: &Self::Store) -> Option<Solid> {
         if !store.node_kind(self).can_solid() {
             return None;
         }
@@ -354,6 +338,18 @@ impl Node for NodeId {
         });
 
         output
+    }
+
+    fn is_text(&self, store: &Self::Store) -> bool {
+        store.node_kind(self).is_text()
+    }
+
+    fn calculate_text_width(&self, store: &Self::Store, text_measurer: &dyn TextMeasurer, height: f32) -> f32 {
+        let text_ref = store.text_ref(self).unwrap();
+        let text = text_ref.text.as_str();
+        let (raw_width, raw_height) = Text::measure_raw_text_size(text_measurer, text);
+        let scale = height / raw_height;
+        raw_width * scale
     }
 
     fn aspect_ratio(&self, store: &Self::Store) -> Option<f32> {

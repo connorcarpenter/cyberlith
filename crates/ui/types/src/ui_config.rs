@@ -4,7 +4,7 @@ use asset_id::AssetId;
 use render_api::base::Color;
 use ui_layout::SizeUnits;
 
-use crate::{node::UiNode, node_id::NodeId, panel::{Panel, PanelMut, PanelStyle, PanelStyleMut}, store::UiStore, style::{NodeStyle, StyleId, WidgetStyle}, text::{TextStyle, TextStyleMut}, widget::{Widget, WidgetKind}, ButtonStyle, ButtonStyleMut, TextboxStyleMut, TextboxStyle, Navigation};
+use crate::{node::UiNode, node_id::NodeId, panel::{Panel, PanelStyle}, store::UiStore, style::{NodeStyle, StyleId, WidgetStyle}, text::{TextStyle}, widget::{Widget, WidgetKind}, ButtonStyle, TextboxStyle, Navigation};
 
 pub struct UiConfig {
     pub globals: Globals,
@@ -73,47 +73,11 @@ impl UiConfig {
         self
     }
 
-    pub fn root_mut(&mut self) -> PanelMut {
-        PanelMut::new(self, Self::ROOT_NODE_ID)
-    }
-
-    pub fn create_panel_style(&mut self, inner_fn: impl FnOnce(&mut PanelStyleMut)) -> StyleId {
-        let new_style_id =
-            self.create_style(NodeStyle::empty(WidgetStyle::Panel(PanelStyle::empty())));
-        let mut panel_style_mut = PanelStyleMut::new(self, new_style_id);
-        inner_fn(&mut panel_style_mut);
-        new_style_id
-    }
-
-    pub fn create_text_style(&mut self, inner_fn: impl FnOnce(&mut TextStyleMut)) -> StyleId {
-        let new_style_id =
-            self.create_style(NodeStyle::empty(WidgetStyle::Text(TextStyle::empty())));
-        let mut text_style_mut = TextStyleMut::new(self, new_style_id);
-        inner_fn(&mut text_style_mut);
-        new_style_id
-    }
-
-    pub fn create_button_style(&mut self, inner_fn: impl FnOnce(&mut ButtonStyleMut)) -> StyleId {
-        let new_style_id =
-            self.create_style(NodeStyle::empty(WidgetStyle::Button(ButtonStyle::empty())));
-        let mut button_style_mut = ButtonStyleMut::new(self, new_style_id);
-        inner_fn(&mut button_style_mut);
-        new_style_id
-    }
-
-    pub fn create_textbox_style(&mut self, inner_fn: impl FnOnce(&mut TextboxStyleMut)) -> StyleId {
-        let new_style_id =
-            self.create_style(NodeStyle::empty(WidgetStyle::Textbox(TextboxStyle::empty())));
-        let mut textbox_style_mut = TextboxStyleMut::new(self, new_style_id);
-        inner_fn(&mut textbox_style_mut);
-        new_style_id
-    }
-
     pub fn get_node_id_by_id_str(&self, id_str: &str) -> Option<NodeId> {
         self.id_str_to_node_id_map.get(id_str).cloned()
     }
 
-    pub(crate) fn create_node(&mut self, widget: Widget) -> NodeId {
+    pub fn create_node(&mut self, widget: Widget) -> NodeId {
         let mut id_str_opt = None;
         match &widget {
             Widget::Button(button) => {
@@ -135,48 +99,52 @@ impl UiConfig {
         node_id
     }
 
-    pub(crate) fn node_ref(&self, id: &NodeId) -> Option<&UiNode> {
+    pub fn node_ref(&self, id: &NodeId) -> Option<&UiNode> {
         self.store.get_node(&id)
     }
 
-    pub(crate) fn node_mut(&mut self, id: &NodeId) -> Option<&mut UiNode> {
+    pub fn node_mut(&mut self, id: &NodeId) -> Option<&mut UiNode> {
         self.store.get_node_mut(&id)
     }
 
-    pub(crate) fn style_mut(&mut self, id: &StyleId) -> Option<&mut NodeStyle> {
+    pub fn style_ref(&self, id: &StyleId) -> Option<&NodeStyle> {
+        self.store.get_style(&id)
+    }
+
+    pub fn style_mut(&mut self, id: &StyleId) -> Option<&mut NodeStyle> {
         self.store.get_style_mut(&id)
     }
 
-    pub(crate) fn create_style(&mut self, style: NodeStyle) -> StyleId {
+    pub fn create_style(&mut self, style: NodeStyle) -> StyleId {
         self.store.insert_style(style)
     }
 
     // navigation
-    pub(crate) fn nav_get_up_id(&self, id: &NodeId) -> Option<NodeId> {
+    pub fn nav_get_up_id(&self, id: &NodeId) -> Option<NodeId> {
         let nav = self.get_node_nav(id)?;
         let up_str: &str = nav.up_goes_to.as_ref()?;
         self.get_node_id_by_id_str(up_str)
     }
 
-    pub(crate) fn nav_get_down_id(&self, id: &NodeId) -> Option<NodeId> {
+    pub fn nav_get_down_id(&self, id: &NodeId) -> Option<NodeId> {
         let nav = self.get_node_nav(id)?;
         let down_str: &str = nav.down_goes_to.as_ref()?;
         self.get_node_id_by_id_str(down_str)
     }
 
-    pub(crate) fn nav_get_left_id(&self, id: &NodeId) -> Option<NodeId> {
+    pub fn nav_get_left_id(&self, id: &NodeId) -> Option<NodeId> {
         let nav = self.get_node_nav(id)?;
         let left_str: &str = nav.left_goes_to.as_ref()?;
         self.get_node_id_by_id_str(left_str)
     }
 
-    pub(crate) fn nav_get_right_id(&self, id: &NodeId) -> Option<NodeId> {
+    pub fn nav_get_right_id(&self, id: &NodeId) -> Option<NodeId> {
         let nav = self.get_node_nav(id)?;
         let right_str: &str = nav.right_goes_to.as_ref()?;
         self.get_node_id_by_id_str(right_str)
     }
 
-    pub(crate) fn nav_get_tab_id(&self, id: &NodeId) -> Option<NodeId> {
+    pub fn nav_get_tab_id(&self, id: &NodeId) -> Option<NodeId> {
         let nav = self.get_node_nav(id)?;
         let tab_str: &str = nav.tab_goes_to.as_ref()?;
         self.get_node_id_by_id_str(tab_str)

@@ -4,8 +4,9 @@ use bevy_log::warn;
 use input::{CursorIcon, GamepadButtonType, InputEvent, Key, Modifiers, MouseButton};
 use math::Vec2;
 use ui_layout::TextMeasurer;
+use ui_types::{NodeId, Panel, UiConfig, WidgetKind};
 
-use crate::{NodeId, Panel, UiConfig, UiGlobalEvent, UiNodeEvent, UiState, WidgetKind};
+use crate::{UiGlobalEvent, UiNodeEvent, UiState};
 
 pub struct UiInputConverter;
 
@@ -407,15 +408,13 @@ fn ui_update_hover(
     mouse_x: f32,
     mouse_y: f32,
 ) {
-    let Some(node_state) = ui_state.store.get_node(&id) else {
-        warn!("no panel for id: {:?}", id);
+    let Some(visible) = ui_state.visibility_store.get_node_visibility(id) else {
+        warn!("no node for id: {:?}", id);
         return;
     };
-
-    if !node_state.visible {
+    if !visible {
         return;
     }
-
     let Some((width, height, child_offset_x, child_offset_y, _)) = ui_state.cache.bounds(id) else {
         warn!("no bounds for id 2: {:?}", id);
         return;

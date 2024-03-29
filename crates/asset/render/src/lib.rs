@@ -309,8 +309,8 @@ impl AssetRenderer {
             return;
         };
         let text_measurer = UiTextMeasurer::new(icon_data);
-        let subimage_indices = ui::Text::get_subimage_indices(text);
-        let (x_positions, text_height) = ui::Text::get_raw_text_rects(&text_measurer, &subimage_indices);
+        let subimage_indices = ui_types::Text::get_subimage_indices(text);
+        let (x_positions, text_height) = ui_types::Text::get_raw_text_rects(&text_measurer, &subimage_indices);
 
         let mut cursor = Transform::from_xyz(
             0.0,

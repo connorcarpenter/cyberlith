@@ -8,7 +8,9 @@ use render_api::{
     resources::RenderFrame,
 };
 use storage::Handle;
-use ui::{NodeActiveState, NodeId, UiConfig, UiState, WidgetKind};
+use ui_types::{NodeId, UiConfig, WidgetKind};
+use ui::{NodeActiveState, UiState};
+use ui_builder::{ButtonStyleRef, PanelStyleRef, TextboxStyleRef, TextStyleRef};
 
 pub struct UiRenderer;
 
@@ -67,8 +69,8 @@ impl UiRenderer {
             return;
         };
         let text_measurer = UiTextMeasurer::new(icon_data);
-        let subimage_indices = ui::Text::get_subimage_indices(text);
-        let (x_positions, text_height) = ui::Text::get_raw_text_rects(&text_measurer, &subimage_indices);
+        let subimage_indices = ui_types::Text::get_subimage_indices(text);
+        let (x_positions, text_height) = ui_types::Text::get_raw_text_rects(&text_measurer, &subimage_indices);
 
         let mut cursor = Transform::from_xyz(
             0.0,
@@ -108,8 +110,8 @@ impl UiRenderer {
             return;
         };
         let text_measurer = UiTextMeasurer::new(icon_data);
-        let subimage_indices = ui::Text::get_subimage_indices(text);
-        let (x_positions, text_height) = ui::Text::get_raw_text_rects(&text_measurer, &subimage_indices);
+        let subimage_indices = ui_types::Text::get_subimage_indices(text);
+        let (x_positions, text_height) = ui_types::Text::get_raw_text_rects(&text_measurer, &subimage_indices);
         let text_scale = transform.scale.y / text_height;
 
         let pos_a = transform.translation.x + (x_positions[carat_index] * text_scale);
@@ -152,6 +154,10 @@ fn draw_ui_node(
         warn!("no node for id 2: {:?}", id);
         return;
     };
+    let Some(node_visible) = ui_state.visibility_store.get_node_visibility(&id) else {
+        warn!("no node for id 2: {:?}", id);
+        return;
+    };
 
     let mut transform = Transform::from_xyz(
         child_offset_x,
@@ -161,7 +167,7 @@ fn draw_ui_node(
     transform.scale.x = width;
     transform.scale.y = height;
 
-    if node_state.visible {
+    if node_visible {
         match node.widget_kind() {
             WidgetKind::Panel => {
                 draw_ui_panel(
@@ -227,7 +233,7 @@ fn draw_ui_panel(
 
     // draw panel
     if let Some(mat_handle) = panel_state_ref.background_color_handle {
-        let panel_style_ref = ui_config.store.panel_style_ref(node_id);
+        let panel_style_ref = PanelStyleRef::new(&ui_config.store, *node_id);
         let background_alpha = panel_style_ref.background_alpha();
         if background_alpha > 0.0 {
             if background_alpha != 1.0 {
@@ -270,7 +276,7 @@ fn draw_ui_text(
 
     // draw background
     if let Some(mat_handle) = text_state_ref.background_color_handle {
-        let text_style_ref = ui_config.store.text_style_ref(node_id);
+        let text_style_ref = TextStyleRef::new(&ui_config.store, *node_id);
         let background_alpha = text_style_ref.background_alpha();
         if background_alpha > 0.0 {
             if background_alpha != 1.0 {
@@ -316,7 +322,7 @@ fn draw_ui_button(
     // draw button
     let active_state = ui_state.get_active_state(node_id);
     if let Some(mat_handle) = button_state_ref.current_color_handle(active_state) {
-        let button_style_ref = ui_config.store.button_style_ref(node_id);
+        let button_style_ref = ButtonStyleRef::new(&ui_config.store, *node_id);
         let background_alpha = button_style_ref.background_alpha();
         if background_alpha > 0.0 {
             if background_alpha != 1.0 {
@@ -350,7 +356,7 @@ fn draw_ui_textbox(
     // draw textbox
     let active_state = ui_state.get_active_state(node_id);
     if let Some(mat_handle) = textbox_state_ref.current_color_handle(active_state) {
-        let textbox_style_ref = ui_config.store.textbox_style_ref(node_id);
+        let textbox_style_ref = TextboxStyleRef::new(&ui_config.store, *node_id);
         let background_alpha = textbox_style_ref.background_alpha();
         if background_alpha > 0.0 {
             if background_alpha != 1.0 {

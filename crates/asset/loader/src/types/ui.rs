@@ -1,5 +1,5 @@
 
-use ui::UiConfig;
+use ui_types::UiConfig;
 
 use crate::{asset_dependency::AssetDependency, AssetHandle, IconData, TypedAssetId};
 

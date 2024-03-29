@@ -1,4 +1,5 @@
 use game_engine::{ui::{Alignment, UiConfig}, render::base::Color, asset::{AssetId, ETag}};
+use ui_builder::UiConfigBuilder;
 
 #[allow(unused)]
 pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
@@ -13,21 +14,21 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
     let icon_asset_id = AssetId::from_str(icon_asset_id_str).unwrap();
 
     // Create UI !
-    let mut ui = UiConfig::new();
+    let mut ui_config = UiConfig::new();
 
     // styles
-    let window_style = ui.create_panel_style(|s| {
+    let window_style = UiConfigBuilder::create_panel_style(&mut ui_config, |s| {
         s
             .set_background_alpha(0.);
     });
-    let main_container_style = ui.create_panel_style(|s| {
+    let main_container_style = UiConfigBuilder::create_panel_style(&mut ui_config, |s| {
         s
             .set_background_alpha(0.)
             .set_size_pc(100., 100.)
             .set_solid_fit()
             .set_aspect_ratio(16., 9.);
     });
-    let title_container_style = ui.create_panel_style(|s| {
+    let title_container_style = UiConfigBuilder::create_panel_style(&mut ui_config, |s| {
         s
             .set_background_alpha(0.)
             .set_size_pc(100., 33.)
@@ -35,12 +36,12 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
             .set_children_valign(Alignment::Start)
         ;
     });
-    let title_text_style = ui.create_text_style(|s| {
+    let title_text_style = UiConfigBuilder::create_text_style(&mut ui_config, |s| {
         s
             .set_background_alpha(0.)
             .set_size_pc(90.0);
     });
-    let body_container_style = ui.create_panel_style(|s| {
+    let body_container_style = UiConfigBuilder::create_panel_style(&mut ui_config, |s| {
         s
             .set_background_alpha(0.)
             .set_size_pc(100., 67.)
@@ -48,64 +49,64 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
             .set_children_valign(Alignment::Start)
             .set_row_between_px(20.0);
     });
-    let heading_container_style = ui.create_panel_style(|s| {
+    let heading_container_style = UiConfigBuilder::create_panel_style(&mut ui_config, |s| {
         s
             .set_background_alpha(0.)
             .set_width_pc(100.0)
             .set_height_pc(15.0)
             .set_horizontal();
     });
-    let heading_container_left_style = ui.create_panel_style(|s| {
+    let heading_container_left_style = UiConfigBuilder::create_panel_style(&mut ui_config, |s| {
         s
             .set_background_alpha(0.)
             .set_width_pc(50.0)
             .set_height_pc(100.0);
     });
-    let heading_container_right_style = ui.create_panel_style(|s| {
+    let heading_container_right_style = UiConfigBuilder::create_panel_style(&mut ui_config, |s| {
         s
             .set_background_alpha(0.)
             .set_width_pc(50.0)
             .set_height_pc(70.0);
     });
-    let heading_text_style = ui.create_text_style(|s| {
+    let heading_text_style = UiConfigBuilder::create_text_style(&mut ui_config, |s| {
         s
             .set_background_alpha(0.)
             .set_size_vp(7.0)
             .set_margin_left_px(20.0)
             .set_self_halign(Alignment::Start);
     });
-    let base_button_text_style = ui.create_text_style(|s| {
+    let base_button_text_style = UiConfigBuilder::create_text_style(&mut ui_config, |s| {
         s
             .set_size_vp(5.0)
             .set_self_halign(Alignment::Center)
             .set_self_valign(Alignment::Center)
             .set_margin_px(10.0, 10.0, 10.0, 10.0);
     });
-    let base_button_style = ui.create_button_style(|s| {
+    let base_button_style = UiConfigBuilder::create_button_style(&mut ui_config, |s| {
         s.set_background_color(Color::DARK_GRAY)
             .set_hover_color(Color::RED)
             .set_down_color(Color::BLUE);
     });
-    let submit_button_style = ui.create_button_style(|s| {
+    let submit_button_style = UiConfigBuilder::create_button_style(&mut ui_config, |s| {
         s
             .set_height_pc(10.0)
             .set_self_halign(Alignment::Start)
             .set_margin_left_px(40.);
     });
-    let register_button_style = ui.create_button_style(|s| {
+    let register_button_style = UiConfigBuilder::create_button_style(&mut ui_config, |s| {
         s
             .set_height_pc(100.)
             .set_self_halign(Alignment::End)
             .set_margin_right_px(10.0);
     });
-    let base_label_style = ui.create_text_style(|s| {
+    let base_label_style = UiConfigBuilder::create_text_style(&mut ui_config, |s| {
         s
             .set_background_alpha(0.)
             .set_size_vp(5.)
             .set_self_halign(Alignment::Start)
             .set_margin_left_px(40.0);
     });
-    let base_text_input_style = ui.create_panel_style(|s| {
+    let base_text_input_style = UiConfigBuilder::create_panel_style(&mut ui_config, |s| {
         s
             .set_background_color(Color::GRAY)
             .set_size_pc(45., 10.)
@@ -114,9 +115,10 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
     });
 
     // nodes
-    ui.set_text_icon_asset_id(&icon_asset_id)
-        .set_text_color(Color::WHITE)
-        .root_mut()
+    ui_config.set_text_icon_asset_id(&icon_asset_id)
+        .set_text_color(Color::WHITE);
+    let mut root_mut = UiConfigBuilder::root_mut(&mut ui_config);
+    root_mut
         .add_style(window_style)
         .contents(|c| {
 
@@ -174,5 +176,5 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
 
         });
 
-    (ui_name.to_string(), ui_asset_id, ui_etag, ui)
+    (ui_name.to_string(), ui_asset_id, ui_etag, ui_config)
 }

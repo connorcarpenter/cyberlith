@@ -49,7 +49,7 @@ pub struct NodeStyle {
 }
 
 impl NodeStyle {
-    pub(crate) fn empty(widget_style: WidgetStyle) -> Self {
+    pub fn empty(widget_style: WidgetStyle) -> Self {
         Self {
             widget_style,
             position_type: None,
@@ -78,7 +78,7 @@ impl NodeStyle {
         self.aspect_ratio
     }
 
-    pub(crate) fn set_aspect_ratio(&mut self, width: f32, height: f32) {
+    pub fn set_aspect_ratio(&mut self, width: f32, height: f32) {
         // validate
         if width.fract() != 0.0 || height.fract() != 0.0 {
             panic!(

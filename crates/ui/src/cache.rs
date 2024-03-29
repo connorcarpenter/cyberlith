@@ -1,8 +1,7 @@
 use std::collections::HashMap;
 
 use ui_layout::{Cache, Node};
-
-use crate::NodeId;
+use ui_types::NodeId;
 
 #[derive(Default)]
 pub struct LayoutCache {

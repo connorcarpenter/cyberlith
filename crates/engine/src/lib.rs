@@ -40,11 +40,12 @@ pub mod storage {
     pub use storage::*;
 }
 pub mod ui {
-    pub use ui::{Alignment, NodeId, UiConfig, UiInputConverter};
+    pub use ui::{Alignment, UiInputConverter};
     pub use asset_loader::{
         UiManager,
     };
     pub use ui_render::UiRender;
+    pub use ui_types::{NodeId, UiConfig};
 }
 pub mod random {
     pub use random::*;

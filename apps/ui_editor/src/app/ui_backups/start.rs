@@ -1,4 +1,5 @@
 use game_engine::{ui::{Alignment, UiConfig}, render::base::Color, asset::{AssetId, ETag}};
+use ui_builder::UiConfigBuilder;
 
 #[allow(unused)]
 pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
@@ -13,10 +14,10 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
     let icon_asset_id = AssetId::from_str(icon_asset_id_str).unwrap();
 
     // Create UI !
-    let mut ui = UiConfig::new();
+    let mut ui_config = UiConfig::new();
 
     // styles
-    let window_style = ui.create_panel_style(|s| {
+    let window_style = UiConfigBuilder::create_panel_style(&mut ui_config, |s| {
         s
             //.set_background_color(Color::BLACK)
             .set_background_alpha(0.0)
@@ -24,13 +25,13 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
             .set_vertical()
             .set_row_between_px(10.0);
     });
-    let container_style = ui.create_panel_style(|s| {
+    let container_style = UiConfigBuilder::create_panel_style(&mut ui_config, |s| {
         s.set_background_alpha(0.0)
             .set_size_pc(100., 38.)
             .set_solid_fit()
             .set_aspect_ratio(16., 4.);
     });
-    let base_button_style = ui.create_button_style(|s| {
+    let base_button_style = UiConfigBuilder::create_button_style(&mut ui_config, |s| {
         s.set_background_color(Color::DARK_GRAY)
             .set_hover_color(Color::RED)
             .set_down_color(Color::BLUE)
@@ -41,17 +42,18 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
             .set_aspect_ratio(16.0, 4.)
             .set_padding_px(10.0, 10.0, 10.0, 10.0);
     });
-    let login_button_style = ui.create_button_style(|s| {
+    let login_button_style = UiConfigBuilder::create_button_style(&mut ui_config, |s| {
         s.set_margin_right_px(40.0);
     });
-    let register_button_style = ui.create_button_style(|s| {
+    let register_button_style = UiConfigBuilder::create_button_style(&mut ui_config, |s| {
         s.set_margin_left_px(40.0);
     });
 
     // nodes
-    ui.set_text_icon_asset_id(&icon_asset_id)
-        .set_text_color(Color::WHITE)
-        .root_mut()
+
+    ui_config.set_text_icon_asset_id(&icon_asset_id)
+        .set_text_color(Color::WHITE);
+    UiConfigBuilder::root_mut(&mut ui_config)
         .add_style(window_style)
         .contents(|c| {
             // title container
@@ -87,5 +89,5 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
                 });
         });
 
-    (ui_name.to_string(), ui_asset_id, ui_etag, ui)
+    (ui_name.to_string(), ui_asset_id, ui_etag, ui_config)
 }

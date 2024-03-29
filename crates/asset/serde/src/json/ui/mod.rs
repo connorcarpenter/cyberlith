@@ -25,7 +25,7 @@ use asset_id::AssetId;
 ///
 use serde::{Deserialize, Serialize};
 
-use ui::{UiConfig, WidgetKind};
+use ui_types::{UiConfig, WidgetKind};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct UiConfigJson {

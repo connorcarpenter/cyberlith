@@ -29,9 +29,6 @@ fn ui_define() -> (String, AssetId, ETag, UiConfig) {
 
     // register
     return register::ui_define();
-
-    // temp
-    // return temp::ui_define();
 }
 
 #[derive(Event, Default)]

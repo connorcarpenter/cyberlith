@@ -2,7 +2,8 @@ use std::collections::HashMap;
 
 use naia_serde::{FileBitWriter, SerdeInternal as Serde, UnsignedInteger, UnsignedVariableInteger};
 
-use ui::{Alignment, Button, ButtonStyle, LayoutType, MarginUnits, NodeStyle, Panel, PanelStyle, PositionType, SizeUnits, Solid, StyleId, Text, TextStyle, UiConfig, UiNode, Widget, WidgetStyle, Navigation, TextboxStyle, Textbox};
+use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
+use ui_types::{Button, ButtonStyle, NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, UiConfig, UiNode, Widget, WidgetStyle, Navigation, TextboxStyle, Textbox};
 
 use crate::bits::{AlignmentBits, ButtonBits, NavigationBits, ButtonStyleBits, LayoutTypeBits, MarginUnitsBits, PanelBits, PanelStyleBits, PositionTypeBits, SizeUnitsBits, SolidBits, TextBits, TextStyleBits, UiAction, UiActionType, UiNodeBits, UiStyleBits, WidgetBits, WidgetStyleBits, TextboxStyleBits, TextboxBits};
 

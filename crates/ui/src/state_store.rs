@@ -1,4 +1,6 @@
-use crate::{panel::PanelState, button::ButtonState, NodeId, UiNodeState, text::TextState, textbox::TextboxState, UiNode};
+use ui_types::{NodeId, UiNode};
+
+use crate::{panel::PanelState, button::ButtonState, UiNodeState, text::TextState, textbox::TextboxState};
 
 pub struct UiStateStore {
     pub nodes: Vec<UiNodeState>,

@@ -11,5 +11,6 @@ asset_loader = { path = "../loader" }
 render_api = { path = "../../render/render_api" }
 storage = { path = "../../storage" }
 ui = { path = "../../ui" }
+ui_types = { path = "../../ui/types" }
 
 bevy_log = { version = "0.13", default-features=false }

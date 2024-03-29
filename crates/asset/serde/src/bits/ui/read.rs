@@ -4,7 +4,10 @@ use naia_serde::{BitReader, SerdeErr, SerdeInternal as Serde, UnsignedVariableIn
 
 use asset_id::AssetId;
 use render_api::base::Color;
-use ui::{Alignment, ButtonMut, ButtonStyleMut, LayoutType, MarginUnits, NodeId, PanelMut, PanelStyleMut, PositionType, SizeUnits, Solid, StyleId, TextboxMut, TextboxStyleMut, TextStyleMut, UiConfig, WidgetKind};
+
+use ui_builder::{ButtonMut, ButtonStyleMut, PanelMut, PanelStyleMut, TextboxMut, TextboxStyleMut, TextStyleMut, UiConfigBuilder};
+use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
+use ui_types::{NodeId, StyleId, UiConfig, WidgetKind};
 
 use crate::bits::{AlignmentBits, ButtonBits, LayoutTypeBits, MarginUnitsBits, PanelBits, PositionTypeBits, SizeUnitsBits, SolidBits, TextboxBits, UiAction, UiActionType, UiNodeBits, UiStyleBits, WidgetBits, WidgetStyleBits};
 
@@ -37,16 +40,16 @@ fn convert_actions_to_ui_config(actions: Vec<UiAction>) -> UiConfig {
             }
             UiAction::Style(style_bits) => {
                 let style_id = match style_bits.widget_kind() {
-                    WidgetKind::Panel => ui_config.create_panel_style(|style| {
+                    WidgetKind::Panel => UiConfigBuilder::create_panel_style(&mut ui_config, |style| {
                         style_bits.to_panel_style(style);
                     }),
-                    WidgetKind::Text => ui_config.create_text_style(|style| {
+                    WidgetKind::Text => UiConfigBuilder::create_text_style(&mut ui_config, |style| {
                         style_bits.to_text_style(style);
                     }),
-                    WidgetKind::Button => ui_config.create_button_style(|style| {
+                    WidgetKind::Button => UiConfigBuilder::create_button_style(&mut ui_config, |style| {
                         style_bits.to_button_style(style);
                     }),
-                    WidgetKind::Textbox => ui_config.create_textbox_style(|style| {
+                    WidgetKind::Textbox => UiConfigBuilder::create_textbox_style(&mut ui_config, |style| {
                         style_bits.to_textbox_style(style);
                     }),
                 };
@@ -65,7 +68,7 @@ fn convert_actions_to_ui_config(actions: Vec<UiAction>) -> UiConfig {
     };
     //info!("0 - root_node_serde: {:?}", root_node_serde);
 
-    let mut root_mut = ui_config.root_mut();
+    let mut root_mut = UiConfigBuilder::root_mut(&mut ui_config);
     for style_index in &root_node_serde.style_ids {
         let style_index = *style_index as usize;
         let style_id = *style_index_to_id.get(&style_index).unwrap();

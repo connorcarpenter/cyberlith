@@ -9,7 +9,8 @@ use input::{CursorIcon, Input};
 use math::Vec2;
 use render_api::{base::{CpuMaterial, CpuMesh}, components::Camera, resources::Time};
 use storage::Storage;
-use ui::{NodeId, TextMeasurer, UiConfig, UiGlobalEvent, UiInputEvent, UiNodeEvent, UiNodeEventHandler};
+use ui_types::{NodeId, UiConfig};
+use ui::{TextMeasurer, UiGlobalEvent, UiInputEvent, UiNodeEvent, UiNodeEventHandler};
 
 use crate::{asset_storage::AssetStorage, AssetHandle, AssetManager, IconData, processed_asset_store::ProcessedAssetStore, TypedAssetId, UiConfigData, UiStateData};
 
