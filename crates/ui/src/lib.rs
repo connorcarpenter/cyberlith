@@ -25,5 +25,5 @@ pub use panel::{Panel, PanelMut, PanelStyle, PanelStyleMut};
 pub use style::{NodeStyle, StyleId, WidgetStyle};
 pub use text::{Text, TextStyle, TextStyleMut};
 pub use widget::{Widget, WidgetKind};
-pub use input::{UiInputConverter, UiInput};
+pub use input::{UiInputConverter, UiInputEvent};
 pub use textbox::{Textbox, TextboxMut, TextboxStyle, TextboxStyleMut};

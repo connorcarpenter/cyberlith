@@ -5,7 +5,7 @@ use bevy_ecs::{
     prelude::Commands,
     system::{Res, Query, ResMut},
 };
-use bevy_log::info;
+use bevy_log::{info, warn};
 
 use asset_io::json::{Asset, AssetData, AssetMeta, UiJson};
 use game_engine::{
@@ -13,12 +13,12 @@ use game_engine::{
         embedded_asset_event, AssetHandle, AssetId, AssetManager, AssetMetadataSerde, AssetType,
         ETag, EmbeddedAssetEvent, UiData,
     },
-    render::{components::{RenderLayer, Camera}},
+    render::{base::Color, components::{AmbientLight, CameraBundle, ClearOperation, OrthographicProjection, Projection, RenderTarget, RenderLayer, Camera}},
     ui::{Ui, UiInputConverter},
     input::{Input, InputEvent, GamepadRumbleIntensity, RumbleManager},
 };
 
-use crate::app::ui_backups::*;
+use crate::app::{ui_backups::*, global::Global};
 
 fn ui_define() -> (String, AssetId, ETag, Ui) {
     // start
@@ -38,18 +38,17 @@ fn ui_define() -> (String, AssetId, ETag, Ui) {
 pub struct SubmitButtonEvent;
 
 // this is run as a system at startup
-pub fn ui_setup(
+pub fn setup(
     mut commands: Commands,
     mut embedded_asset_events: EventWriter<EmbeddedAssetEvent>,
     mut asset_manager: ResMut<AssetManager>,
 ) {
+    // ui setup
     embedded_asset_events.send(embedded_asset_event!("embedded/8273wa")); // palette
     embedded_asset_events.send(embedded_asset_event!("embedded/34mvvk")); // verdana icon
 
     // create ui
     let (ui_name, ui_asset_id, ui_etag, ui) = ui_define();
-
-    // finish
 
     // write JSON and bits files, metadata too
     let ui = write_to_file(&ui_name, &ui_asset_id, &ui_etag, ui);
@@ -59,12 +58,36 @@ pub fn ui_setup(
 
     // make handle, add handle to entity
     let ui_handle = AssetHandle::<UiData>::new(ui_asset_id);
-    let _ui_entity = commands.spawn(ui_handle).id();
+    let ui_entity = commands.spawn(ui_handle).id();
 
     //asset_manager.register_ui_event::<SubmitButtonEvent>(&ui_handle, "login_button");
+
+    // scene setup now
+    // ambient light
+    commands.spawn(AmbientLight::new(1.0, Color::WHITE));
+
+    // camera
+    let ui_camera_entity = commands
+        .spawn(CameraBundle {
+            camera: Camera {
+                viewport: None,
+                clear_operation: ClearOperation::from_rgba(0.0, 0.0, 0.0, 1.0),
+                target: RenderTarget::Screen,
+                ..Default::default()
+            },
+            projection: Projection::Orthographic(OrthographicProjection {
+                near: 0.0,
+                far: 2000.0,
+            }),
+            ..Default::default()
+        })
+        .id();
+
+    commands.insert_resource(Global::new(ui_camera_entity, ui_entity));
 }
 
 pub fn ui_update(
+    global: Res<Global>,
     mut asset_manager: ResMut<AssetManager>,
     mut input_events: EventReader<InputEvent>,
     // Cameras
@@ -72,24 +95,25 @@ pub fn ui_update(
     // UIs
     uis_q: Query<(&AssetHandle<UiData>, Option<&RenderLayer>)>,
 ) {
-    let ui_input = UiInputConverter::convert(&mut input_events);
+    let Ok((ui_handle, ui_render_layer_opt)) = uis_q.get(global.active_ui_entity) else {
+        warn!("no active ui entity!");
+        return;
+    };
 
-    for (ui_handle, ui_render_layer_opt) in uis_q.iter() {
-
-        // find camera, update viewport
-        for (camera, cam_render_layer_opt) in cameras_q.iter() {
-            if cam_render_layer_opt == ui_render_layer_opt {
-                asset_manager.update_ui_viewport(camera, ui_handle);
-                break;
-            }
-        }
-
-        // update with inputs
-        let Some(ui_input) = ui_input.clone() else {
-            continue;
-        };
-        asset_manager.update_ui_input(ui_input, ui_handle);
+    // find camera, update viewport
+    let Ok((camera, cam_render_layer_opt)) = cameras_q.get(global.ui_camera_entity) else {
+        warn!("no ui camera!");
+        return;
+    };
+    if cam_render_layer_opt == ui_render_layer_opt {
+        asset_manager.update_ui_viewport(camera, ui_handle);
     }
+
+    // update with inputs
+    let Some((mouse_position, ui_input_events)) = UiInputConverter::convert(&mut input_events) else {
+        return;
+    };
+    asset_manager.update_ui_input(ui_handle, mouse_position, ui_input_events);
 }
 
 pub fn ui_handle_events(

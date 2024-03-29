@@ -1,7 +1,7 @@
 use bevy_ecs::event::EventReader;
 use bevy_log::warn;
 
-use input::{CursorIcon, GamepadButtonType, Input, InputEvent, Key, Modifiers, MouseButton};
+use input::{CursorIcon, GamepadButtonType, InputEvent, Key, Modifiers, MouseButton};
 use math::Vec2;
 use ui_layout::TextMeasurer;
 
@@ -11,348 +11,321 @@ pub struct UiInputConverter;
 
 impl UiInputConverter {
 
-    pub fn convert(input_events: &mut EventReader<InputEvent>) -> Option<UiInput> {
-        let mut output_mode = None;
-        let mut keyboard_events = None;
-        let mut mouse_events = None;
+    pub fn convert(input_events: &mut EventReader<InputEvent>) -> Option<(Option<Vec2>, Vec<UiInputEvent>)> {
         let mut mouse_position = None;
+        let mut output_events = None;
 
         for input_event in input_events.read() {
 
-            // first, get the mode of the input event
-            if let Some(was_mouse) = match input_event {
-                InputEvent::MouseClicked(_, _, _) | InputEvent::MouseDoubleClicked(_, _, _) | InputEvent::MouseTripleClicked(_, _, _) |
-                InputEvent::MouseReleased(_) | InputEvent::MouseMoved(_) |
-                InputEvent::MouseDragged(_, _, _, _) | InputEvent::MouseMiddleScrolled(_) => {
-                    Some(true)
-                }
-                InputEvent::Text(_) | InputEvent::KeyPressed(_, _) | InputEvent::KeyReleased(_) |
-                InputEvent::GamepadButtonPressed(_, _) | InputEvent::GamepadButtonReleased(_, _) |
-                InputEvent::GamepadJoystickMoved(_, _, _) | InputEvent::Cut | InputEvent::Copy | InputEvent::Paste(_)  => {
-                    Some(false)
-                }
-                _ => None,
-            } {
-                if output_mode.is_none() {
-                    output_mode = Some(was_mouse);
-                }
-                *output_mode.as_mut().unwrap() = was_mouse;
-            }
+            let output_event = match input_event {
 
-            let Some(was_mouse) = output_mode else {
+                // Mouse
+                InputEvent::MouseMoved(position) => {
+                    mouse_position = Some(*position);
+                    Some(UiInputEvent::MouseMove)
+                },
+                InputEvent::MouseDragged(button, position, _delta, modifiers) => {
+                    mouse_position = Some(*position);
+                    Some(UiInputEvent::MouseButtonDrag(*button, *modifiers))
+                }
+                InputEvent::MouseClicked(button, position, modifiers) => {
+                    mouse_position = Some(*position);
+                    Some(UiInputEvent::MouseSingleClick(*button, *position, *modifiers))
+                }
+                InputEvent::MouseDoubleClicked(button, position, _modifiers) => {
+                    mouse_position = Some(*position);
+                    Some(UiInputEvent::MouseDoubleClick(*button, *position))
+                }
+                InputEvent::MouseTripleClicked(button, position, _modifiers) => {
+                    mouse_position = Some(*position);
+                    Some(UiInputEvent::MouseTripleClick(*button, *position))
+                }
+                InputEvent::MouseReleased(button) => {
+                    Some(UiInputEvent::MouseButtonRelease(*button))
+                }
+                // Gamepad
+                InputEvent::GamepadButtonPressed(_, button) => {
+                    match button {
+                        GamepadButtonType::DPadUp => Some(UiInputEvent::UpPressed),
+                        GamepadButtonType::DPadDown => Some(UiInputEvent::DownPressed),
+                        GamepadButtonType::DPadLeft => Some(UiInputEvent::LeftPressed(Modifiers::default())),
+                        GamepadButtonType::DPadRight => Some(UiInputEvent::RightPressed(Modifiers::default())),
+                        GamepadButtonType::Start | GamepadButtonType::South => Some(UiInputEvent::SelectPressed),
+                        GamepadButtonType::East => Some(UiInputEvent::BackPressed),
+                        _ => None,
+                    }
+                }
+                InputEvent::GamepadButtonReleased(_, button) => {
+                    match button {
+                        GamepadButtonType::Start | GamepadButtonType::South => Some(UiInputEvent::SelectReleased),
+                        _ => None,
+                    }
+                }
+                InputEvent::KeyPressed(key, modifiers) => {
+                    match key {
+                        Key::ArrowUp => Some(UiInputEvent::UpPressed),
+                        Key::ArrowDown => Some(UiInputEvent::DownPressed),
+                        Key::ArrowLeft => Some(UiInputEvent::LeftPressed(*modifiers)),
+                        Key::ArrowRight => Some(UiInputEvent::RightPressed(*modifiers)),
+                        Key::Enter => Some(UiInputEvent::SelectPressed),
+                        Key::Escape => Some(UiInputEvent::BackPressed),
+                        Key::Backspace => Some(UiInputEvent::BackspacePressed(*modifiers)),
+                        Key::Delete => Some(UiInputEvent::DeletePressed(*modifiers)),
+                        Key::Home => Some(UiInputEvent::HomePressed(*modifiers)),
+                        Key::End => Some(UiInputEvent::EndPressed(*modifiers)),
+                        Key::A => {
+                            if modifiers.ctrl {
+                                Some(UiInputEvent::TextSelectAll)
+                            } else {
+                                None
+                            }
+                        }
+                        _ => None,
+                    }
+                }
+                InputEvent::KeyReleased(key) => {
+                    match key {
+                        Key::Enter => Some(UiInputEvent::SelectReleased),
+                        _ => None,
+                    }
+                }
+                InputEvent::Text(c) => Some(UiInputEvent::TextInsert(*c)),
+                InputEvent::Paste(text) => Some(UiInputEvent::TextPaste(text.clone())),
+                InputEvent::Copy => Some(UiInputEvent::TextCopy),
+                InputEvent::Cut => Some(UiInputEvent::TextCut),
+                _ => None,
+            };
+
+            let Some(output_event) = output_event else {
                 continue;
             };
-            if was_mouse {
-                // collect the keyboard events
-                let output_event = match input_event {
-                    InputEvent::MouseMoved(position) => {
-                        mouse_position = Some(*position);
-                        Some(MouseEvent::Move)
-                    },
-                    InputEvent::MouseDragged(button, position, _delta, modifiers) => {
-                        mouse_position = Some(*position);
-                        Some(MouseEvent::Drag(*button, *modifiers))
-                    }
-                    InputEvent::MouseClicked(button, position, modifiers) => {
-                        mouse_position = Some(*position);
-                        Some(MouseEvent::SingleClick(*button, *position, *modifiers))
-                    }
-                    InputEvent::MouseDoubleClicked(button, position, _modifiers) => {
-                        mouse_position = Some(*position);
-                        Some(MouseEvent::DoubleClick(*button, *position))
-                    }
-                    InputEvent::MouseTripleClicked(button, position, _modifiers) => {
-                        mouse_position = Some(*position);
-                        Some(MouseEvent::TripleClick(*button, *position))
-                    }
-                    InputEvent::MouseReleased(button) => {
-                        Some(MouseEvent::Release(*button))
-                    }
-                    _ => None,
-                };
-                let Some(mouse_event) = output_event else {
-                    continue;
-                };
 
-                if mouse_events.is_none() {
-                    mouse_events = Some(Vec::new());
-                }
-                mouse_events.as_mut().unwrap().push(mouse_event);
-            } else {
-                // collect the keyboard events
-                let output_event = match input_event {
-                    InputEvent::GamepadButtonPressed(_, button) => {
-                        match button {
-                            GamepadButtonType::DPadUp => Some(KeyboardOrGamepadEvent::Up),
-                            GamepadButtonType::DPadDown => Some(KeyboardOrGamepadEvent::Down),
-                            GamepadButtonType::DPadLeft => Some(KeyboardOrGamepadEvent::Left(Modifiers::default())),
-                            GamepadButtonType::DPadRight => Some(KeyboardOrGamepadEvent::Right(Modifiers::default())),
-                            GamepadButtonType::Start | GamepadButtonType::South => Some(KeyboardOrGamepadEvent::SelectPressed),
-                            GamepadButtonType::East => Some(KeyboardOrGamepadEvent::Back),
-                            _ => None,
-                        }
-                    }
-                    InputEvent::GamepadButtonReleased(_, button) => {
-                        match button {
-                            GamepadButtonType::Start | GamepadButtonType::South => Some(KeyboardOrGamepadEvent::SelectReleased),
-                            _ => None,
-                        }
-                    }
-                    InputEvent::KeyPressed(key, modifiers) => {
-                        match key {
-                            Key::ArrowUp => Some(KeyboardOrGamepadEvent::Up),
-                            Key::ArrowDown => Some(KeyboardOrGamepadEvent::Down),
-                            Key::ArrowLeft => Some(KeyboardOrGamepadEvent::Left(*modifiers)),
-                            Key::ArrowRight => Some(KeyboardOrGamepadEvent::Right(*modifiers)),
-                            Key::Enter => Some(KeyboardOrGamepadEvent::SelectPressed),
-                            Key::Escape => Some(KeyboardOrGamepadEvent::Back),
-                            Key::Backspace => Some(KeyboardOrGamepadEvent::Backspace(*modifiers)),
-                            Key::Delete => Some(KeyboardOrGamepadEvent::Delete(*modifiers)),
-                            Key::Home => Some(KeyboardOrGamepadEvent::Home(*modifiers)),
-                            Key::End => Some(KeyboardOrGamepadEvent::End(*modifiers)),
-                            Key::A => {
-                                if modifiers.ctrl {
-                                    Some(KeyboardOrGamepadEvent::SelectAll)
-                                } else {
-                                    None
-                                }
-                            }
-                            _ => None,
-                        }
-                    }
-                    InputEvent::KeyReleased(key) => {
-                        match key {
-                            Key::Enter => Some(KeyboardOrGamepadEvent::SelectReleased),
-                            _ => None,
-                        }
-                    }
-                    InputEvent::Text(c) => Some(KeyboardOrGamepadEvent::Text(*c)),
-                    InputEvent::Paste(text) => Some(KeyboardOrGamepadEvent::Paste(text.clone())),
-                    InputEvent::Copy => Some(KeyboardOrGamepadEvent::Copy),
-                    InputEvent::Cut => Some(KeyboardOrGamepadEvent::Cut),
-                    _ => None,
-                };
-                let Some(keyboard_event) = output_event else {
-                    continue;
-                };
-
-                if keyboard_events.is_none() {
-                    keyboard_events = Some(Vec::new());
-                }
-                keyboard_events.as_mut().unwrap().push(keyboard_event);
+            if output_events.is_none() {
+                output_events = Some(Vec::new());
             }
+            output_events.as_mut().unwrap().push(output_event);
         }
 
-        let Some(last_was_mouse) = output_mode else {
-            return None;
-        };
-        if last_was_mouse {
-            if let Some(output_events) = mouse_events {
-                return Some(UiInput::Mouse(mouse_position, output_events));
-            } else {
-                return None;
-            }
+        if let Some(output_events) = output_events {
+            Some((mouse_position, output_events))
         } else {
-            if let Some(output_events) = keyboard_events {
-                return Some(UiInput::KeyboardOrGamepad(output_events));
-            } else {
-                return None;
-            }
+            None
         }
     }
 }
 
-#[derive(Clone)]
-pub enum MouseEvent {
-    // release
-    Release(MouseButton),
-    // button, click position, modifiers
-    SingleClick(MouseButton, Vec2, Modifiers),
-    // button, click position
-    DoubleClick(MouseButton, Vec2),
-    // button, click position
-    TripleClick(MouseButton, Vec2),
-    // button
-    Drag(MouseButton, Modifiers),
-    // position
-    Move,
-}
+#[derive(Clone, PartialEq, Debug)]
+pub enum UiInputEvent {
 
-#[derive(Clone)]
-pub enum UiInput {
-    Mouse(Option<Vec2>, Vec<MouseEvent>),
-    KeyboardOrGamepad(Vec<KeyboardOrGamepadEvent>)
-}
-
-#[derive(Clone, Eq, PartialEq, Debug)]
-pub enum KeyboardOrGamepadEvent {
-    Up, Down, Left(Modifiers), Right(Modifiers),
+    // keyboard
+    UpPressed,
+    DownPressed, LeftPressed(Modifiers), RightPressed(Modifiers),
     SelectPressed, SelectReleased,
-    Back, Backspace(Modifiers), Delete(Modifiers), Text(char), Home(Modifiers), End(Modifiers),
-    Copy, Cut, Paste(String), SelectAll,
+    BackPressed, BackspacePressed(Modifiers), DeletePressed(Modifiers), TextInsert(char), HomePressed(Modifiers), EndPressed(Modifiers),
+    TextCopy,
+    TextCut, TextPaste(String),
+    TextSelectAll,
+
+    // mouse
+    MouseButtonRelease(MouseButton),
+    // button, click position, modifiers
+    MouseSingleClick(MouseButton, Vec2, Modifiers),
+    // button, click position
+    MouseDoubleClick(MouseButton, Vec2),
+    // button, click position
+    MouseTripleClick(MouseButton, Vec2),
+    // button
+    MouseButtonDrag(MouseButton, Modifiers),
+    // position
+    MouseMove,
 }
 
-pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, input: UiInput) {
-    match input {
-        UiInput::Mouse(mouse_position, events) => {
+impl UiInputEvent {
+    pub fn is_mouse_event(&self) -> bool {
+        match self {
+            Self::MouseButtonRelease(_) | Self::MouseSingleClick(_, _, _) |
+            Self::MouseDoubleClick(_, _) | Self::MouseTripleClick(_, _) | Self::MouseButtonDrag(_, _) | Self::MouseMove => {
+                true
+            }
+            _ => false,
+        }
+    }
+}
 
-            if let Some(mouse_position) = mouse_position {
-                ui.clear_hover();
+pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, mouse_position: Option<Vec2>, events: Vec<UiInputEvent>) {
 
-                for node_id in 0..ui.store.nodes.len() {
-                    let node_id = NodeId::from_usize(node_id);
-                    ui_update_hover(ui, &node_id, mouse_position.x, mouse_position.y);
+    let mut mouse_event_has_ocurred = false;
+    let mut mouse_hover_node = None;
+    let mut mouse_active_node = None;
+
+    let mut kb_or_gp_events = Vec::new();
+
+    for event in events {
+        if event.is_mouse_event() {
+            if !mouse_event_has_ocurred {
+                mouse_event_has_ocurred = true;
+
+                if let Some(mouse_position) = mouse_position {
+                    ui.clear_hover();
+
+                    for node_id in 0..ui.store.nodes.len() {
+                        let node_id = NodeId::from_usize(node_id);
+                        ui_update_hover(ui, &node_id, mouse_position.x, mouse_position.y);
+                    }
                 }
+
+                mouse_hover_node = ui.get_hover().map(|id| {
+                    (id, ui.node_ref(&id).unwrap().widget_kind())
+                });
+                mouse_active_node = ui.get_active_node().map(|id| {
+                    (id, ui.node_ref(&id).unwrap().widget_kind())
+                });
             }
 
-            let hover_node = ui.get_hover().map(|id| {
-                (id, ui.node_ref(&id).unwrap().widget_kind())
-            });
-            let active_node = ui.get_active_node().map(|id| {
-                (id, ui.node_ref(&id).unwrap().widget_kind())
-            });
-            for event in events {
-                match event {
-                    MouseEvent::Release(MouseButton::Left) => {
-                        if let Some((_, WidgetKind::Button)) = active_node {
-                            ui.set_active_node(None);
+            match event {
+                UiInputEvent::MouseButtonRelease(MouseButton::Left) => {
+                    if let Some((_, WidgetKind::Button)) = mouse_active_node {
+                        ui.set_active_node(None);
+                    }
+                },
+                UiInputEvent::MouseSingleClick(MouseButton::Left, _, _) | UiInputEvent::MouseDoubleClick(MouseButton::Left, _) | UiInputEvent::MouseTripleClick(MouseButton::Left, _) => {
+                    if let Some((hover_node, kind)) = mouse_hover_node {
+                        match kind {
+                            WidgetKind::Button => {
+                                ui.set_active_node(Some(hover_node));
+                                ui.emit_node_event(&hover_node, UiNodeEvent::Clicked);
+                            }
+                            WidgetKind::Textbox => {
+                                ui.set_active_node(Some(hover_node));
+                                ui.reset_interact_timer();
+                                let (_, node_height, node_x, _, _) = ui.cache.bounds(&hover_node).unwrap();
+                                ui.textbox_mut(&hover_node).unwrap().recv_mouse_event(text_measurer, node_x, node_height, mouse_position, event);
+                            }
+                            _ => {}
                         }
-                    },
-                    MouseEvent::SingleClick(MouseButton::Left, _, _) | MouseEvent::DoubleClick(MouseButton::Left, _) | MouseEvent::TripleClick(MouseButton::Left, _) => {
-                        if let Some((hover_node, kind)) = hover_node {
-                            match kind {
-                                WidgetKind::Button => {
-                                    ui.set_active_node(Some(hover_node));
-                                    ui.emit_node_event(&hover_node, UiNodeEvent::Clicked);
+                    }
+                }
+                UiInputEvent::MouseButtonDrag(MouseButton::Left, _) => {
+                    if let Some((hover_node, WidgetKind::Textbox)) = mouse_hover_node {
+                        ui.reset_interact_timer();
+                        let (_, node_height, node_x, _, _) = ui.cache.bounds(&hover_node).unwrap();
+                        ui.textbox_mut(&hover_node).unwrap().recv_mouse_event(text_measurer, node_x, node_height, mouse_position, event);
+                    }
+                }
+                UiInputEvent::MouseMove => {}
+                _ => {}
+            }
+        } else {
+            kb_or_gp_events.push(event);
+        }
+    }
+
+    if kb_or_gp_events.is_empty() {
+        return;
+    }
+
+    let mut hover_node = ui.get_hover();
+    let mut active_node = ui.get_active_node().map(|id| {
+        (id, ui.node_ref(&id).unwrap().widget_kind())
+    });
+    let mut events = kb_or_gp_events;
+
+    // textbox events
+    if let Some((textbox_id, WidgetKind::Textbox)) = active_node {
+        let mut next_events = Vec::new();
+        for input_event in events {
+            match &input_event {
+                UiInputEvent::RightPressed(_) | UiInputEvent::LeftPressed(_) | UiInputEvent::BackspacePressed(_) | UiInputEvent::DeletePressed(_) |
+                UiInputEvent::TextInsert(_) | UiInputEvent::HomePressed(_) | UiInputEvent::EndPressed(_) | UiInputEvent::TextPaste(_) |
+                UiInputEvent::TextCopy | UiInputEvent::TextCut | UiInputEvent::TextSelectAll
+                => {
+                    ui.reset_interact_timer();
+                    if let Some(output_events) = ui.textbox_mut(&textbox_id).unwrap().recv_keyboard_or_gamepad_event(input_event.clone()) {
+                        for output_event in output_events {
+                            match &output_event {
+                                UiGlobalEvent::Copied(_) => {
+                                    ui.emit_global_event(output_event);
                                 }
-                                WidgetKind::Textbox => {
-                                    ui.set_active_node(Some(hover_node));
-                                    ui.reset_interact_timer();
-                                    let (_, node_height, node_x, _, _) = ui.cache.bounds(&hover_node).unwrap();
-                                    ui.textbox_mut(&hover_node).unwrap().recv_mouse_event(text_measurer, node_x, node_height, mouse_position, event);
+                                UiGlobalEvent::PassThru => {
+                                    next_events.push(input_event.clone());
                                 }
-                                _ => {}
                             }
                         }
                     }
-                    MouseEvent::Drag(MouseButton::Left, _) => {
-                        if let Some((hover_node, WidgetKind::Textbox)) = hover_node {
-                            ui.reset_interact_timer();
-                            let (_, node_height, node_x, _, _) = ui.cache.bounds(&hover_node).unwrap();
-                            ui.textbox_mut(&hover_node).unwrap().recv_mouse_event(text_measurer, node_x, node_height, mouse_position, event);
-                        }
-                    }
-                    MouseEvent::Move => {}
-                    _ => {}
+                }
+                _ => {
+                    next_events.push(input_event);
                 }
             }
         }
-        UiInput::KeyboardOrGamepad(mut events) => {
-            let mut hover_node = ui.get_hover();
-            let mut active_node = ui.get_active_node().map(|id| {
-                (id, ui.node_ref(&id).unwrap().widget_kind())
-            });
+        events = next_events;
+    }
 
-            // textbox events
-            {
-                if let Some((textbox_id, WidgetKind::Textbox)) = active_node {
-                    let mut next_events = Vec::new();
-                    for input_event in events {
-                        match &input_event {
-                            KeyboardOrGamepadEvent::Right(_) | KeyboardOrGamepadEvent::Left(_) | KeyboardOrGamepadEvent::Backspace(_) | KeyboardOrGamepadEvent::Delete(_) |
-                            KeyboardOrGamepadEvent::Text(_) | KeyboardOrGamepadEvent::Home(_) | KeyboardOrGamepadEvent::End(_) | KeyboardOrGamepadEvent::Paste(_) |
-                            KeyboardOrGamepadEvent::Copy | KeyboardOrGamepadEvent::Cut | KeyboardOrGamepadEvent::SelectAll
-                            => {
-                                ui.reset_interact_timer();
-                                if let Some(output_events) = ui.textbox_mut(&textbox_id).unwrap().recv_keyboard_or_gamepad_event(input_event.clone()) {
-                                    for output_event in output_events {
-                                        match &output_event {
-                                            UiGlobalEvent::Copied(_) => {
-                                                ui.emit_global_event(output_event);
-                                            }
-                                            UiGlobalEvent::PassThru => {
-                                                next_events.push(input_event.clone());
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            _ => {
-                                next_events.push(input_event);
-                            }
-                        }
+    // handle navigation of hover elements & button activation
+    for event in &events {
+        match event {
+            UiInputEvent::UpPressed | UiInputEvent::DownPressed | UiInputEvent::LeftPressed(_) | UiInputEvent::RightPressed(_) => {
+
+                // navigation ...
+
+                // make sure hovering
+                // hover default ui element if none is hovered (coming from mouse mode)
+                if hover_node.is_none() {
+                    let Some(first_input_id) = ui.get_first_input() else {
+                        panic!("no first input set, cannot process input events without somewhere to start");
+                    };
+                    ui.receive_hover(&first_input_id);
+                    hover_node = Some(first_input_id);
+                    continue;
+                }
+
+                // handle navigation
+                let hover_node_inside = hover_node.unwrap();
+                if let Some(next_id) = match event {
+                    UiInputEvent::UpPressed => ui.nav_get_up_id(&hover_node_inside),
+                    UiInputEvent::DownPressed => ui.nav_get_down_id(&hover_node_inside),
+                    UiInputEvent::LeftPressed(_) => ui.nav_get_left_id(&hover_node_inside),
+                    UiInputEvent::RightPressed(_) => ui.nav_get_right_id(&hover_node_inside),
+                    _ => None,
+                } {
+                    ui.receive_hover(&next_id);
+                    hover_node = Some(next_id);
+
+                    // deselect any other active nodes, as we've navigated away from it
+                    if active_node.is_some() {
+                        ui.set_active_node(None);
+                        active_node = None;
                     }
-                    events = next_events;
                 }
             }
-
-            // handle navigation of hover elements & button activation
-            for event in &events {
-                match event {
-                    KeyboardOrGamepadEvent::Up | KeyboardOrGamepadEvent::Down | KeyboardOrGamepadEvent::Left(_) | KeyboardOrGamepadEvent::Right(_) => {
-
-                        // navigation ...
-
-                        // make sure hovering
-                        // hover default ui element if none is hovered (coming from mouse mode)
-                        if hover_node.is_none() {
-                            let Some(first_input_id) = ui.get_first_input() else {
-                                panic!("no first input set, cannot process input events without somewhere to start");
-                            };
-                            ui.receive_hover(&first_input_id);
-                            hover_node = Some(first_input_id);
-                            continue;
+            UiInputEvent::SelectPressed => {
+                // if hover node is already hovering, can handle select pressed
+                if let Some(hover_node) = hover_node {
+                    let widget_kind = ui.node_ref(&hover_node).unwrap().widget_kind();
+                    match widget_kind {
+                        WidgetKind::Button => {
+                            ui.set_active_node(Some(hover_node));
+                            ui.emit_node_event(&hover_node, UiNodeEvent::Clicked);
                         }
-
-                        // handle navigation
-                        let hover_node_inside = hover_node.unwrap();
-                        if let Some(next_id) = match event {
-                            KeyboardOrGamepadEvent::Up => ui.nav_get_up_id(&hover_node_inside),
-                            KeyboardOrGamepadEvent::Down => ui.nav_get_down_id(&hover_node_inside),
-                            KeyboardOrGamepadEvent::Left(_) => ui.nav_get_left_id(&hover_node_inside),
-                            KeyboardOrGamepadEvent::Right(_) => ui.nav_get_right_id(&hover_node_inside),
-                            _ => None,
-                        } {
-                            ui.receive_hover(&next_id);
-                            hover_node = Some(next_id);
-
-                            // deselect any other active nodes, as we've navigated away from it
-                            if active_node.is_some() {
-                                ui.set_active_node(None);
-                                active_node = None;
-                            }
+                        WidgetKind::Textbox => {
+                            ui.set_active_node(Some(hover_node));
+                            ui.textbox_mut(&hover_node).unwrap().recv_keyboard_or_gamepad_event(UiInputEvent::EndPressed(Modifiers::default()));
                         }
+                        _ => {}
                     }
-                    KeyboardOrGamepadEvent::SelectPressed => {
-                        // if hover node is already hovering, can handle select pressed
-                        if let Some(hover_node) = hover_node {
-                            let widget_kind = ui.node_ref(&hover_node).unwrap().widget_kind();
-                            match widget_kind {
-                                WidgetKind::Button => {
-                                    ui.set_active_node(Some(hover_node));
-                                    ui.emit_node_event(&hover_node, UiNodeEvent::Clicked);
-                                }
-                                WidgetKind::Textbox => {
-                                    ui.set_active_node(Some(hover_node));
-                                    ui.textbox_mut(&hover_node).unwrap().recv_keyboard_or_gamepad_event(KeyboardOrGamepadEvent::End(Modifiers::default()));
-                                }
-                                _ => {}
-                            }
-                        }
-                    }
-                    KeyboardOrGamepadEvent::SelectReleased => {
-                        if let Some(active_node) = ui.get_active_node() {
-                            match ui.node_ref(&active_node).unwrap().widget_kind() {
-                                WidgetKind::Button => {
-                                    ui.set_active_node(None);
-                                }
-                                _ => {}
-                            }
-                        }
-                    }
-                    _ => {}
                 }
             }
+            UiInputEvent::SelectReleased => {
+                if let Some(active_node) = ui.get_active_node() {
+                    match ui.node_ref(&active_node).unwrap().widget_kind() {
+                        WidgetKind::Button => {
+                            ui.set_active_node(None);
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            _ => {}
         }
     }
 }

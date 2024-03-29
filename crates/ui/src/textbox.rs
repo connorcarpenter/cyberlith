@@ -1,4 +1,4 @@
-use bevy_log::info;
+
 use unicode_segmentation::UnicodeSegmentation;
 
 use input::{MouseButton};
@@ -7,7 +7,7 @@ use render_api::base::{Color, CpuMaterial};
 use storage::Handle;
 use ui_layout::{Alignment, MarginUnits, PositionType, SizeUnits, TextMeasurer};
 
-use crate::{input::{MouseEvent, KeyboardOrGamepadEvent}, events::UiGlobalEvent, button::NodeActiveState, node::UiNode, store::UiStore, style::{NodeStyle, StyleId, WidgetStyle}, NodeId, Panel, PanelMut, PanelStyle, Ui, Navigation, Text};
+use crate::{input::{UiInputEvent}, events::UiGlobalEvent, button::NodeActiveState, node::UiNode, store::UiStore, style::{NodeStyle, StyleId, WidgetStyle}, NodeId, Panel, PanelMut, PanelStyle, Ui, Navigation, Text};
 
 #[derive(Clone)]
 pub struct Textbox {
@@ -79,10 +79,10 @@ impl Textbox {
         self.select_color_handle = Some(val);
     }
 
-    pub fn recv_keyboard_or_gamepad_event(&mut self, event: KeyboardOrGamepadEvent) -> Option<Vec<UiGlobalEvent>> {
+    pub fn recv_keyboard_or_gamepad_event(&mut self, event: UiInputEvent) -> Option<Vec<UiGlobalEvent>> {
         let mut output = None;
         match event {
-            KeyboardOrGamepadEvent::Left(modifiers) => {
+            UiInputEvent::LeftPressed(modifiers) => {
                 match (modifiers.shift, modifiers.ctrl) {
                     (false, false) => {
                         if self.carat_index > 0 {
@@ -140,7 +140,7 @@ impl Textbox {
                     }
                 }
             },
-            KeyboardOrGamepadEvent::Right(modifiers) => {
+            UiInputEvent::RightPressed(modifiers) => {
                 match (modifiers.shift, modifiers.ctrl) {
                     (false, false) => {
                         if self.carat_index < self.text.len() {
@@ -197,7 +197,7 @@ impl Textbox {
                     }
                 }
             },
-            KeyboardOrGamepadEvent::Text(new_char) => {
+            UiInputEvent::TextInsert(new_char) => {
                 if let Some(select_index) = self.select_index {
                     // need to remove the selected text
                     let start = self.carat_index.min(select_index);
@@ -210,7 +210,7 @@ impl Textbox {
                     self.carat_index += 1;
                 }
             },
-            KeyboardOrGamepadEvent::Backspace(modifiers) => {
+            UiInputEvent::BackspacePressed(modifiers) => {
                 if let Some(select_index) = self.select_index {
                     let start = self.carat_index.min(select_index);
                     let end = self.carat_index.max(select_index);
@@ -237,7 +237,7 @@ impl Textbox {
                     }
                 }
             },
-            KeyboardOrGamepadEvent::Delete(modifiers) => {
+            UiInputEvent::DeletePressed(modifiers) => {
                 if let Some(select_index) = self.select_index {
                     let start = self.carat_index.min(select_index);
                     let end = self.carat_index.max(select_index);
@@ -262,7 +262,7 @@ impl Textbox {
                     }
                 }
             },
-            KeyboardOrGamepadEvent::Home(modifiers) => {
+            UiInputEvent::HomePressed(modifiers) => {
                 if modifiers.shift {
                     if self.select_index.is_none() {
                         self.select_index = Some(self.carat_index);
@@ -276,7 +276,7 @@ impl Textbox {
                     self.select_index = None;
                 }
             },
-            KeyboardOrGamepadEvent::End(modifiers) => {
+            UiInputEvent::EndPressed(modifiers) => {
                 if modifiers.shift {
                     if self.select_index.is_none() {
                         self.select_index = Some(self.carat_index);
@@ -290,7 +290,7 @@ impl Textbox {
                     self.select_index = None;
                 }
             },
-            KeyboardOrGamepadEvent::Copy => {
+            UiInputEvent::TextCopy => {
                 if let Some(select_index) = self.select_index {
                     let start = self.carat_index.min(select_index);
                     let end = self.carat_index.max(select_index);
@@ -301,7 +301,7 @@ impl Textbox {
                     output.as_mut().unwrap().push(UiGlobalEvent::Copied(copied_text));
                 }
             }
-            KeyboardOrGamepadEvent::Cut => {
+            UiInputEvent::TextCut => {
                 if let Some(select_index) = self.select_index {
                     let start = self.carat_index.min(select_index);
                     let end = self.carat_index.max(select_index);
@@ -316,7 +316,7 @@ impl Textbox {
                     self.select_index = None;
                 }
             }
-            KeyboardOrGamepadEvent::Paste(text) => {
+            UiInputEvent::TextPaste(text) => {
                 // TODO: validate pasted text? I did panic at some point here.
                 if let Some(select_index) = self.select_index {
                     let start = self.carat_index.min(select_index);
@@ -329,7 +329,7 @@ impl Textbox {
                     self.carat_index += text.len();
                 }
             }
-            KeyboardOrGamepadEvent::SelectAll => {
+            UiInputEvent::TextSelectAll => {
                 self.select_index = Some(0);
                 self.carat_index = self.text.len();
             }
@@ -345,10 +345,10 @@ impl Textbox {
         node_x: f32,
         node_h: f32,
         mouse_position_opt: Option<Vec2>,
-        mouse_event: MouseEvent,
+        mouse_event: UiInputEvent,
     ) {
         match mouse_event {
-            MouseEvent::SingleClick(MouseButton::Left, click_position, modifiers) => {
+            UiInputEvent::MouseSingleClick(MouseButton::Left, click_position, modifiers) => {
                 if !modifiers.shift {
                     self.select_index = None;
                 } else {
@@ -364,7 +364,7 @@ impl Textbox {
                     }
                 }
             }
-            MouseEvent::DoubleClick(MouseButton::Left, click_position) => {
+            UiInputEvent::MouseDoubleClick(MouseButton::Left, click_position) => {
                 // double click
                 let click_index = Self::get_closest_index(&self.text, text_measurer, click_position.x, node_x, node_h);
 
@@ -385,13 +385,13 @@ impl Textbox {
                 self.select_index = Some(word_start);
                 self.carat_index = word_end;
             }
-            MouseEvent::TripleClick(MouseButton::Left, _) => {
+            UiInputEvent::MouseTripleClick(MouseButton::Left, _) => {
                 // triple click
                 // select all
                 self.select_index = Some(0);
                 self.carat_index = self.text.len();
             }
-            MouseEvent::Drag(MouseButton::Left, modifiers) => {
+            UiInputEvent::MouseButtonDrag(MouseButton::Left, modifiers) => {
                 if let Some(mouse_position) = mouse_position_opt {
                     if modifiers.shift {
                         if self.select_index.is_none() {

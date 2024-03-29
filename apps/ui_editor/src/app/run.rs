@@ -5,7 +5,7 @@ use game_engine::{
     EnginePlugin,
 };
 
-use super::{draw, resize, scene, ui};
+use super::{draw, resize, ui};
 use crate::app::ui::SubmitButtonEvent;
 
 pub fn run() {
@@ -22,11 +22,9 @@ pub fn run() {
         // events
         .add_event::<SubmitButtonEvent>()
         // ui systems
-        .add_systems(Startup, ui::ui_setup)
+        .add_systems(Startup, ui::setup)
         .add_systems(Update, ui::ui_update)
         .add_systems(Update, ui::ui_handle_events)
-        // scene systems
-        .add_systems(Startup, scene::scene_setup)
         // viewport resize
         .add_systems(Update, resize::handle_viewport_resize)
         // draw

@@ -11,9 +11,11 @@ use render_api::{
 use storage::{Handle, Storage};
 use ui_layout::{Cache, Node, SizeUnits, TextMeasurer};
 use instant::Instant;
+use math::Vec2;
 
-use crate::{cache::LayoutCache, node::UiNode, node_id::NodeId, panel::{Panel, PanelMut, PanelStyle, PanelStyleMut}, store::UiStore, style::{NodeStyle, StyleId, WidgetStyle}, text::{TextStyle, TextStyleMut}, widget::{Widget, WidgetKind}, input::ui_receive_input, Button, ButtonStyle, ButtonStyleMut, UiNodeEvent, UiInput, button::NodeActiveState, Text, Textbox, TextboxStyleMut, TextboxStyle, Navigation};
+use crate::{cache::LayoutCache, node::UiNode, node_id::NodeId, panel::{Panel, PanelMut, PanelStyle, PanelStyleMut}, store::UiStore, style::{NodeStyle, StyleId, WidgetStyle}, text::{TextStyle, TextStyleMut}, widget::{Widget, WidgetKind}, input::ui_receive_input, Button, ButtonStyle, ButtonStyleMut, UiNodeEvent, button::NodeActiveState, Text, Textbox, TextboxStyleMut, TextboxStyle, Navigation};
 use crate::events::UiGlobalEvent;
+use crate::input::UiInputEvent;
 
 pub struct Ui {
     pub globals: Globals,
@@ -72,8 +74,8 @@ impl Ui {
     }
 
     // events
-    pub fn receive_input(&mut self, text_measurer: &dyn TextMeasurer, input: UiInput) {
-        ui_receive_input(self, text_measurer, input);
+    pub fn receive_input(&mut self, text_measurer: &dyn TextMeasurer, mouse_position: Option<Vec2>, events: Vec<UiInputEvent>) {
+        ui_receive_input(self, text_measurer, mouse_position, events);
     }
 
     pub fn take_cursor_icon(&mut self) -> Option<CursorIcon> {

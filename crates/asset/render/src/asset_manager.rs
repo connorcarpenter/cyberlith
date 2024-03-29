@@ -11,6 +11,7 @@ use bevy_log::warn;
 use asset_id::{AssetId, AssetType};
 use clipboard::ClipboardManager;
 use input::{CursorIcon, Input};
+use math::Vec2;
 use render_api::{
     base::CpuSkin,
     base::{CpuMaterial, CpuMesh},
@@ -18,7 +19,7 @@ use render_api::{
     resources::{RenderFrame, Time},
 };
 use storage::{Handle, Storage};
-use ui::{NodeId, TextMeasurer, Ui, UiNodeEvent, UiNodeEventHandler, UiInput, UiGlobalEvent};
+use ui::{NodeId, TextMeasurer, Ui, UiNodeEvent, UiNodeEventHandler, UiGlobalEvent, UiInputEvent};
 
 use crate::{
     asset_renderer::AssetRenderer, processed_asset_store::ProcessedAssetStore, AnimationData,
@@ -395,8 +396,9 @@ impl AssetManager {
 
     pub fn update_ui_input(
         &mut self,
-        ui_input: UiInput,
         ui_handle: &AssetHandle<UiData>,
+        mouse_position: Option<Vec2>,
+        ui_input_events: Vec<UiInputEvent>,
     ) {
         let Some(ui_data) = self.store.uis.get_mut(ui_handle) else {
             warn!("ui data not loaded 1: {:?}", ui_handle.asset_id());
@@ -408,7 +410,7 @@ impl AssetManager {
         };
         let text_measurer = UiTextMeasurer::new(icon_data);
         let ui = ui_data.get_ui_mut();
-        ui.receive_input(&text_measurer, ui_input);
+        ui.receive_input(&text_measurer, mouse_position, ui_input_events);
 
         // get any global events
         let mut global_events: Vec<UiGlobalEvent> = ui.take_global_events();
