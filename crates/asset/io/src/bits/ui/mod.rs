@@ -179,7 +179,6 @@ pub(crate) enum LayoutTypeBits {
 
 #[derive(Serde, Clone, PartialEq)]
 pub(crate) struct UiNodeBits {
-    visible: bool,
     style_ids: Vec<u8>, // TODO: is this a good value type for this? how many styles are we likely to have?
     widget: WidgetBits,
 }

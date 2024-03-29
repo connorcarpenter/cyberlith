@@ -1,44 +1,18 @@
 use crate::{layout, types::*, Cache, TextMeasurer};
 
-/// A `Node` represents a layout element which can be sized and positioned based on
-/// a number of layout properties.
-///
-/// The getter methods in this trait allow for the layout function to retrieve the
-/// layout properties of the node. The `Node` trait allows for its layout properties to optionally
-/// be stored externally from the node type itself by providing a `Store` associated type, a reference to
-/// which is passed to the layout property methods.
-///
-/// Similarly, the children of the node can be optionally stored externally using the `Tree` associated type,
-/// a reference to which is passed to the [`children`](crate::Node::children) method, which returns an iterator on the children of the node,
-/// the type of which is specified by the `ChildIter` associated type.
 pub trait Node: Sized {
-    /// A type representing a store where layout properties can be stored.
     type Store;
-    /// A type representing a tree structure where the children of the node can be stored.
-    type Tree;
-    /// An type representing an iterator over the children of the node.
+    type StateStore;
     type ChildIter<'t>: Iterator<Item = &'t Self>
     where
         Self: 't;
-    /// A type representing a key to store and retrieve values from the [`Cache`].
     type CacheKey;
 
-    /// Performs layout on the given node returning its computed size.
-    ///
-    /// The algorithm recurses down the tree, in depth-first order, and performs
-    /// layout on every node starting from the input `node`.
-    ///
-    /// # Arguments
-    ///
-    /// * `cache` - A mutable reference to the [`Cache`].
-    /// * `tree` - A mutable reference to the [`Tree`](crate::Node::Tree).
-    /// * `store` - A mutable reference to the [`Store`](crate::Node::Store).
-    ///
     fn layout<C: Cache<Node = Self>>(
         &self,
         cache: &mut C,
-        tree: &Self::Tree,
         store: &Self::Store,
+        state_store: &Self::StateStore,
         text_measurer: &dyn TextMeasurer,
     ) -> Size {
         let width = self
@@ -59,17 +33,17 @@ pub trait Node: Sized {
 
         cache.set_bounds(self, cache.posx(self), cache.posy(self), 0.0, width, height);
 
-        layout(self, LayoutType::Column, (width, height), height, width, cache, tree, store, text_measurer)
+        layout(self, LayoutType::Column, (width, height), height, width, cache, store, state_store, text_measurer)
     }
 
     /// Returns a key which can be used to set/get computed layout data from the [`cache`](crate::Cache).
     fn key(&self) -> Self::CacheKey;
 
     /// Returns an iterator over the children of the node.
-    fn children<'t>(&'t self, tree: &'t Self::Tree) -> Self::ChildIter<'t>;
+    fn children<'t>(&'t self, store: &'t Self::Store) -> Self::ChildIter<'t>;
 
     /// Returns a boolean representing whether the node is visible to layout.
-    fn visible(&self, store: &Self::Store) -> bool;
+    fn visible(&self, state_store: &Self::StateStore) -> bool;
 
     /// Returns the layout type of the node.
     fn layout_type(&self, store: &Self::Store) -> Option<LayoutType>;

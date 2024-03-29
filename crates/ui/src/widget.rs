@@ -1,4 +1,4 @@
-use crate::{Button, Panel, Text, Textbox};
+use crate::{Button, textbox::TextboxState, text::TextState, Panel, panel::PanelState, Text, Textbox, button::ButtonState};
 
 #[derive(PartialEq, Eq, Clone, Copy)]
 pub enum WidgetKind {
@@ -48,10 +48,29 @@ pub enum Widget {
 impl Widget {
     pub fn kind(&self) -> WidgetKind {
         match self {
-            Widget::Panel(_) => WidgetKind::Panel,
-            Widget::Text(_) => WidgetKind::Text,
-            Widget::Button(_) => WidgetKind::Button,
-            Widget::Textbox(_) => WidgetKind::Textbox,
+            Self::Panel(_) => WidgetKind::Panel,
+            Self::Text(_) => WidgetKind::Text,
+            Self::Button(_) => WidgetKind::Button,
+            Self::Textbox(_) => WidgetKind::Textbox,
+        }
+    }
+}
+
+#[derive(Clone)]
+pub enum WidgetState {
+    Panel(PanelState),
+    Text(TextState),
+    Button(ButtonState),
+    Textbox(TextboxState),
+}
+
+impl WidgetState {
+    pub(crate) fn from_widget(widget: &Widget) -> Self {
+        match widget.kind() {
+            WidgetKind::Panel => Self::Panel(PanelState::new()),
+            WidgetKind::Text => Self::Text(TextState::new()),
+            WidgetKind::Button => Self::Button(ButtonState::new()),
+            WidgetKind::Textbox => Self::Textbox(TextboxState::new()),
         }
     }
 }

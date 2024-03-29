@@ -2,7 +2,6 @@ use crate::{panel::Panel, style::StyleId, widget::Widget, widget::WidgetKind, Bu
 
 #[derive(Clone)]
 pub struct UiNode {
-    pub visible: bool,
     pub style_ids: Vec<StyleId>,
     pub widget: Widget,
 }
@@ -10,7 +9,6 @@ pub struct UiNode {
 impl UiNode {
     pub(crate) fn new(widget: Widget) -> Self {
         Self {
-            visible: true,
             style_ids: Vec::new(),
             widget,
         }

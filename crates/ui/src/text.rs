@@ -7,14 +7,12 @@ use crate::{store::UiStore, style::{NodeStyle, StyleId}, NodeId, Ui, WidgetStyle
 #[derive(Clone)]
 pub struct Text {
     pub text: String,
-    pub background_color_handle: Option<Handle<CpuMaterial>>,
 }
 
 impl Text {
     pub fn new(text: &str) -> Self {
         Self {
             text: text.to_string(),
-            background_color_handle: None,
         }
     }
 
@@ -78,6 +76,19 @@ impl Text {
     }
 }
 
+#[derive(Clone)]
+pub struct TextState {
+    pub background_color_handle: Option<Handle<CpuMaterial>>,
+}
+
+impl TextState {
+    pub fn new() -> Self {
+        Self {
+            background_color_handle: None,
+        }
+    }
+}
+
 #[derive(Clone, Copy)]
 pub struct TextStyle {
     pub background_color: Option<Color>,
@@ -120,13 +131,6 @@ impl<'a> TextMut<'a> {
             ui,
             node_id: panel_id,
         }
-    }
-
-    pub fn set_visible(&mut self, visible: bool) -> &mut Self {
-        if let Some(panel) = self.ui.node_mut(&self.node_id) {
-            panel.visible = visible;
-        }
-        self
     }
 
     pub fn add_style(&mut self, style_id: StyleId) -> &mut Self {

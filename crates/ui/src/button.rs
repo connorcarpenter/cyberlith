@@ -2,7 +2,7 @@ use render_api::base::{Color, CpuMaterial};
 use storage::Handle;
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 
-use crate::{node::UiNode, store::UiStore, style::{NodeStyle, StyleId, WidgetStyle}, text::{Text, TextMut}, NodeId, Panel, PanelMut, PanelStyle, Ui, Widget};
+use crate::{panel::PanelState, node::UiNode, store::UiStore, style::{NodeStyle, StyleId, WidgetStyle}, text::{Text, TextMut}, NodeId, Panel, PanelMut, PanelStyle, Ui, Widget};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum NodeActiveState {
@@ -16,9 +16,6 @@ pub struct Button {
     pub panel: Panel,
     pub id_str: String,
     pub navigation: Navigation,
-
-    hover_color_handle: Option<Handle<CpuMaterial>>,
-    down_color_handle: Option<Handle<CpuMaterial>>,
 }
 
 impl Button {
@@ -27,21 +24,29 @@ impl Button {
             panel: Panel::new(),
             id_str: id_str.to_string(),
             navigation: Navigation::new(),
-            hover_color_handle: None,
-            down_color_handle: None,
         }
     }
 
-    // returns whether or not mouse is inside the button
-    pub fn mouse_is_inside(
-        &mut self,
-        layout: (f32, f32, f32, f32),
-        mouse_x: f32,
-        mouse_y: f32,
-    ) -> bool {
-        let (width, height, posx, posy) = layout;
+    pub fn add_child(&mut self, child_id: NodeId) {
+        self.panel.add_child(child_id);
+    }
+}
 
-        mouse_x >= posx && mouse_x <= posx + width + 1.0 && mouse_y >= posy && mouse_y <= posy + height + 1.0
+#[derive(Clone)]
+pub struct ButtonState {
+    pub panel: PanelState,
+
+    hover_color_handle: Option<Handle<CpuMaterial>>,
+    down_color_handle: Option<Handle<CpuMaterial>>,
+}
+
+impl ButtonState {
+    pub fn new() -> Self {
+        Self {
+            panel: PanelState::new(),
+            hover_color_handle: None,
+            down_color_handle: None,
+        }
     }
 
     pub fn needs_color_handle(&self) -> bool {
@@ -56,10 +61,6 @@ impl Button {
             NodeActiveState::Hover => self.hover_color_handle,
             NodeActiveState::Active => self.down_color_handle,
         }
-    }
-
-    pub fn add_child(&mut self, child_id: NodeId) {
-        self.panel.add_child(child_id);
     }
 
     pub fn set_hover_color_handle(&mut self, val: Handle<CpuMaterial>) {
@@ -142,13 +143,6 @@ pub struct ButtonMut<'a> {
 impl<'a> ButtonMut<'a> {
     pub(crate) fn new(ui: &'a mut Ui, node_id: NodeId) -> Self {
         Self { ui, node_id }
-    }
-
-    pub fn set_visible(&mut self, visible: bool) -> &mut Self {
-        if let Some(node) = self.ui.node_mut(&self.node_id) {
-            node.visible = visible;
-        }
-        self
     }
 
     pub fn set_as_first_input(&mut self) -> &mut Self {

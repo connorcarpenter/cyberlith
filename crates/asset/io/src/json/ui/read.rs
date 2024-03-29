@@ -26,7 +26,6 @@ fn convert_nodes_recurse_panel<'a>(
             match child_node_serde.widget_kind() {
                 WidgetKind::Panel => {
                     let mut child_panel_mut = c.add_panel();
-                    child_panel_mut.set_visible(child_node_serde.visible);
                     for style_index in &child_node_serde.style_ids {
                         let style_id = *style_index_to_id.get(style_index).unwrap();
                         child_panel_mut.add_style(style_id);
@@ -46,7 +45,6 @@ fn convert_nodes_recurse_panel<'a>(
                         panic!("Expected text widget");
                     };
                     let mut child_text_mut = c.add_text(child_text_serde.text.as_str());
-                    child_text_mut.set_visible(child_node_serde.visible);
                     for style_index in &child_node_serde.style_ids {
                         let style_id = *style_index_to_id.get(style_index).unwrap();
                         child_text_mut.add_style(style_id);
@@ -57,7 +55,6 @@ fn convert_nodes_recurse_panel<'a>(
                         panic!("Expected button widget");
                     };
                     let mut child_button_mut = c.add_button(child_button_serde.id_str.as_str());
-                    child_button_mut.set_visible(child_node_serde.visible);
                     for style_index in &child_node_serde.style_ids {
                         let style_id = *style_index_to_id.get(style_index).unwrap();
                         child_button_mut.add_style(style_id);
@@ -74,7 +71,6 @@ fn convert_nodes_recurse_panel<'a>(
                         panic!("Expected textbox widget");
                     };
                     let mut child_textbox_mut = c.add_textbox(child_textbox_serde.id_str.as_str());
-                    child_textbox_mut.set_visible(child_node_serde.visible);
                     for style_index in &child_node_serde.style_ids {
                         let style_id = *style_index_to_id.get(style_index).unwrap();
                         child_textbox_mut.add_style(style_id);
@@ -124,7 +120,6 @@ fn convert_nodes_recurse_button<'a>(
             match child_node_serde.widget_kind() {
                 WidgetKind::Panel => {
                     let mut child_panel_mut = c.add_panel();
-                    child_panel_mut.set_visible(child_node_serde.visible);
                     for style_index in &child_node_serde.style_ids {
                         let style_id = *style_index_to_id.get(style_index).unwrap();
                         child_panel_mut.add_style(style_id);
@@ -144,7 +139,6 @@ fn convert_nodes_recurse_button<'a>(
                         panic!("Expected text widget");
                     };
                     let mut child_text_mut = c.add_text(child_text_serde.text.as_str());
-                    child_text_mut.set_visible(child_node_serde.visible);
                     for style_index in &child_node_serde.style_ids {
                         let style_id = *style_index_to_id.get(style_index).unwrap();
                         child_text_mut.add_style(style_id);
@@ -236,7 +230,6 @@ impl UiJson {
         //info!("0 - root_node_serde: {:?}", root_node_serde);
 
         let mut root_mut = ui.root_mut();
-        root_mut.set_visible(root_node_serde.visible);
         for style_index in &root_node_serde.style_ids {
             let style_id = *style_index_to_id.get(style_index).unwrap();
             root_mut.add_style(style_id);

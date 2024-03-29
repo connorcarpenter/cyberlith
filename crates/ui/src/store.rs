@@ -31,16 +31,6 @@ impl UiStore {
         self.nodes.get_mut(node_id.as_usize())
     }
 
-    pub(crate) fn node_ids(&self) -> Vec<NodeId> {
-        let mut output = Vec::new();
-
-        for i in 0..self.nodes.len() {
-            output.push(NodeId::new(i as u32));
-        }
-
-        output
-    }
-
     // styles
 
     pub(crate) fn insert_style(&mut self, style: NodeStyle) -> StyleId {

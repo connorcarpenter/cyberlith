@@ -7,19 +7,41 @@ use crate::{node::UiNode, store::UiStore, style::{NodeStyle, StyleId, WidgetStyl
 #[derive(Clone)]
 pub struct Panel {
     pub children: Vec<NodeId>,
-    pub background_color_handle: Option<Handle<CpuMaterial>>,
 }
 
 impl Panel {
     pub fn new() -> Self {
         Self {
             children: Vec::new(),
-            background_color_handle: None,
         }
     }
 
     pub fn add_child(&mut self, child_id: NodeId) {
         self.children.push(child_id);
+    }
+
+    // returns whether or not mouse is inside the rect
+    pub fn mouse_is_inside(
+        layout: (f32, f32, f32, f32),
+        mouse_x: f32,
+        mouse_y: f32,
+    ) -> bool {
+        let (width, height, posx, posy) = layout;
+
+        mouse_x >= posx && mouse_x <= posx + width + 1.0 && mouse_y >= posy && mouse_y <= posy + height + 1.0
+    }
+}
+
+#[derive(Clone)]
+pub struct PanelState {
+    pub background_color_handle: Option<Handle<CpuMaterial>>,
+}
+
+impl PanelState {
+    pub fn new() -> Self {
+        Self {
+            background_color_handle: None,
+        }
     }
 }
 
@@ -86,13 +108,6 @@ pub struct PanelMut<'a> {
 impl<'a> PanelMut<'a> {
     pub(crate) fn new(ui: &'a mut Ui, node_id: NodeId) -> Self {
         Self { ui, node_id }
-    }
-
-    pub fn set_visible(&mut self, visible: bool) -> &mut Self {
-        if let Some(panel) = self.ui.node_mut(&self.node_id) {
-            panel.visible = visible;
-        }
-        self
     }
 
     // pub fn style(&mut self, inner_fn: impl FnOnce(&mut PanelStyleMut)) -> &mut Self {

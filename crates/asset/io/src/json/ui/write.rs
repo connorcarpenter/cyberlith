@@ -217,7 +217,6 @@ impl ColorJson {
 impl UiNodeJson {
     fn from_node(style_id_to_index: &HashMap<StyleId, usize>, node: &UiNode) -> Self {
         let mut me = Self {
-            visible: node.visible,
             style_ids: Vec::new(),
             widget: WidgetJson::from_widget(&node.widget),
         };

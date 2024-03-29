@@ -191,7 +191,6 @@ pub(crate) struct ColorJson {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub(crate) struct UiNodeJson {
-    visible: bool,
     style_ids: Vec<usize>,
     widget: WidgetJson,
 }

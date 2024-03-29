@@ -6,7 +6,7 @@ use render_api::{
     resources::RenderFrame,
 };
 use storage::Handle;
-use ui::{NodeActiveState, NodeId, Ui, WidgetKind};
+use ui::{NodeActiveState, NodeId, Ui, UiState, WidgetKind};
 
 use crate::{asset_renderer::AssetRenderer, ui_manager::{Blinkiness, UiTextMeasurer}, processed_asset_store::ProcessedAssetStore, AssetHandle, IconData, UiData, UiManager};
 
@@ -102,11 +102,17 @@ impl UiRenderer {
             warn!("ui data not loaded 2: {:?}", ui_handle.asset_id());
             return;
         };
-
         let ui = ui_data.get_ui_ref();
+
+        let Some(ui_state_data) = ui_manager.ui_states.get(ui_handle) else {
+            warn!("ui state data not loaded 2: {:?}", ui_handle.asset_id());
+            return;
+        };
+        let ui_state = ui_state_data.get_ui_state_ref();
+
         let text_icon_handle = ui_data.get_icon_handle();
 
-        let carat_blink = blinkiness.enabled() || ui.interact_timer_was_recent();
+        let carat_blink = blinkiness.enabled() || ui_state.interact_timer_was_recent();
 
         for node_id in 0..ui.store.nodes.len() {
             let node_id = NodeId::from_usize(node_id);
@@ -116,6 +122,7 @@ impl UiRenderer {
                 asset_store,
                 carat_blink,
                 &ui,
+                &ui_state,
                 &text_icon_handle,
                 &node_id,
             );
@@ -129,16 +136,21 @@ fn draw_ui_node(
     asset_store: &ProcessedAssetStore,
     carat_blink: bool,
     ui: &Ui,
+    ui_state: &UiState,
     text_icon_handle: &AssetHandle<IconData>,
     id: &NodeId,
 ) {
-    let Some((width, height, child_offset_x, child_offset_y, child_offset_z)) = ui.cache.bounds(id) else {
-        warn!("no bounds for id: {:?}", id);
+    let Some((width, height, child_offset_x, child_offset_y, child_offset_z)) = ui_state.cache.bounds(id) else {
+        warn!("no bounds for id 1: {:?}", id);
         return;
     };
 
     let Some(node) = ui.store.get_node(&id) else {
-        warn!("no panel for id: {:?}", id);
+        warn!("no node for id 1: {:?}", id);
+        return;
+    };
+    let Some(node_state) = ui_state.store.get_node(&id) else {
+        warn!("no node for id 2: {:?}", id);
         return;
     };
 
@@ -150,13 +162,14 @@ fn draw_ui_node(
     transform.scale.x = width;
     transform.scale.y = height;
 
-    if node.visible {
+    if node_state.visible {
         match node.widget_kind() {
             WidgetKind::Panel => {
                 draw_ui_panel(
                     render_frame,
                     render_layer_opt,
                     ui,
+                    ui_state,
                     id,
                     &transform,
                 );
@@ -167,6 +180,7 @@ fn draw_ui_node(
                     render_layer_opt,
                     asset_store,
                     ui,
+                    ui_state,
                     text_icon_handle,
                     id,
                     &transform,
@@ -177,6 +191,7 @@ fn draw_ui_node(
                     render_frame,
                     render_layer_opt,
                     ui,
+                    ui_state,
                     id,
                     &transform,
                 );
@@ -188,6 +203,7 @@ fn draw_ui_node(
                     asset_store,
                     carat_blink,
                     ui,
+                    ui_state,
                     text_icon_handle,
                     id,
                     &transform,
@@ -202,22 +218,23 @@ fn draw_ui_panel(
     render_frame: &mut RenderFrame,
     render_layer_opt: Option<&RenderLayer>,
     ui: &Ui,
+    ui_state: &UiState,
     node_id: &NodeId,
     transform: &Transform,
 ) {
-    let Some(panel_ref) = ui.store.panel_ref(node_id) else {
+    let Some(panel_state_ref) = ui_state.store.panel_ref(node_id) else {
         panic!("no panel ref for node_id: {:?}", node_id);
     };
 
     // draw panel
-    if let Some(mat_handle) = panel_ref.background_color_handle {
+    if let Some(mat_handle) = panel_state_ref.background_color_handle {
         let panel_style_ref = ui.store.panel_style_ref(node_id);
         let background_alpha = panel_style_ref.background_alpha();
         if background_alpha > 0.0 {
             if background_alpha != 1.0 {
                 panic!("partial background_alpha not implemented yet!");
             }
-            let box_handle = ui.globals.get_box_mesh_handle().unwrap();
+            let box_handle = ui_state.globals.get_box_mesh_handle().unwrap();
             render_frame.draw_mesh(render_layer_opt, box_handle, &mat_handle, &transform);
         }
     } else {
@@ -232,6 +249,7 @@ fn draw_ui_text(
     render_layer_opt: Option<&RenderLayer>,
     asset_store: &ProcessedAssetStore,
     ui: &Ui,
+    ui_state: &UiState,
     text_icon_handle: &AssetHandle<IconData>,
     node_id: &NodeId,
     transform: &Transform,
@@ -243,16 +261,23 @@ fn draw_ui_text(
         .widget_text_ref() else {
         panic!("no text ref for node_id: {:?}", node_id);
     };
+    let Some(text_state_ref) = ui_state
+        .store
+        .get_node(node_id)
+        .unwrap()
+        .widget_text_ref() else {
+        panic!("no text ref for node_id: {:?}", node_id);
+    };
 
     // draw background
-    if let Some(mat_handle) = text_ref.background_color_handle {
+    if let Some(mat_handle) = text_state_ref.background_color_handle {
         let text_style_ref = ui.store.text_style_ref(node_id);
         let background_alpha = text_style_ref.background_alpha();
         if background_alpha > 0.0 {
             if background_alpha != 1.0 {
                 panic!("partial background_alpha not implemented yet!");
             }
-            let box_handle = ui.globals.get_box_mesh_handle().unwrap();
+            let box_handle = ui_state.globals.get_box_mesh_handle().unwrap();
             let mut new_transform = transform.clone();
             new_transform.translation.z -= 0.025;
             render_frame.draw_mesh(render_layer_opt, box_handle, &mat_handle, &new_transform);
@@ -262,7 +287,7 @@ fn draw_ui_text(
         return;
     };
 
-    let Some(text_color_handle) = ui.globals.get_text_color_handle() else {
+    let Some(text_color_handle) = ui_state.globals.get_text_color_handle() else {
         panic!("No text color handle found in globals");
     };
 
@@ -282,23 +307,24 @@ fn draw_ui_button(
     render_frame: &mut RenderFrame,
     render_layer_opt: Option<&RenderLayer>,
     ui: &Ui,
+    ui_state: &UiState,
     node_id: &NodeId,
     transform: &Transform,
 ) {
-    let Some(button_ref) = ui.store.button_ref(node_id) else {
+    let Some(button_state_ref) = ui_state.store.button_ref(node_id) else {
         panic!("no button ref for node_id: {:?}", node_id);
     };
 
     // draw button
-    let active_state = ui.get_active_state(node_id);
-    if let Some(mat_handle) = button_ref.current_color_handle(active_state) {
+    let active_state = ui_state.get_active_state(node_id);
+    if let Some(mat_handle) = button_state_ref.current_color_handle(active_state) {
         let button_style_ref = ui.store.button_style_ref(node_id);
         let background_alpha = button_style_ref.background_alpha();
         if background_alpha > 0.0 {
             if background_alpha != 1.0 {
                 panic!("partial background_alpha not implemented yet!");
             }
-            let box_handle = ui.globals.get_box_mesh_handle().unwrap();
+            let box_handle = ui_state.globals.get_box_mesh_handle().unwrap();
             render_frame.draw_mesh(render_layer_opt, box_handle, &mat_handle, &transform);
         }
     } else {
@@ -314,24 +340,25 @@ fn draw_ui_textbox(
     asset_store: &ProcessedAssetStore,
     carat_blink: bool,
     ui: &Ui,
+    ui_state: &UiState,
     text_icon_handle: &AssetHandle<IconData>,
     node_id: &NodeId,
     transform: &Transform,
 ) {
-    let Some(textbox_ref) = ui.store.textbox_ref(node_id) else {
+    let Some(textbox_state_ref) = ui_state.store.textbox_ref(node_id) else {
         panic!("no textbox ref for node_id: {:?}", node_id);
     };
 
     // draw textbox
-    let active_state = ui.get_active_state(node_id);
-    if let Some(mat_handle) = textbox_ref.current_color_handle(active_state) {
+    let active_state = ui_state.get_active_state(node_id);
+    if let Some(mat_handle) = textbox_state_ref.current_color_handle(active_state) {
         let textbox_style_ref = ui.store.textbox_style_ref(node_id);
         let background_alpha = textbox_style_ref.background_alpha();
         if background_alpha > 0.0 {
             if background_alpha != 1.0 {
                 panic!("partial background_alpha not implemented yet!");
             }
-            let box_handle = ui.globals.get_box_mesh_handle().unwrap();
+            let box_handle = ui_state.globals.get_box_mesh_handle().unwrap();
             render_frame.draw_mesh(render_layer_opt, box_handle, &mat_handle, &transform);
         }
     } else {
@@ -340,7 +367,7 @@ fn draw_ui_textbox(
     };
 
     // draw text
-    let Some(text_color_handle) = ui.globals.get_text_color_handle() else {
+    let Some(text_color_handle) = ui_state.globals.get_text_color_handle() else {
         panic!("No text color handle found in globals");
     };
 
@@ -357,27 +384,27 @@ fn draw_ui_textbox(
             text_icon_handle,
             text_color_handle,
             &text_transform,
-            &textbox_ref.text,
+            &textbox_state_ref.text,
         );
     }
 
     if active_state == NodeActiveState::Active {
 
         // draw selection box if needed
-        if let Some(select_index) = textbox_ref.select_index {
-            if let Some(mat_handle) = textbox_ref.get_selection_color_handle() {
+        if let Some(select_index) = textbox_state_ref.select_index {
+            if let Some(mat_handle) = textbox_state_ref.get_selection_color_handle() {
                 text_transform.translation.z = transform.translation.z + 0.025;
                 UiRenderer::draw_text_selection(
                     render_frame,
                     render_layer_opt,
                     asset_store,
                     text_icon_handle,
-                    ui.globals.get_box_mesh_handle().unwrap(),
+                    ui_state.globals.get_box_mesh_handle().unwrap(),
                     &mat_handle,
                     &text_transform,
-                    &textbox_ref.text,
+                    &textbox_state_ref.text,
                     select_index,
-                    textbox_ref.carat_index,
+                    textbox_state_ref.carat_index,
                 );
             }
         }
@@ -392,8 +419,8 @@ fn draw_ui_textbox(
                 text_icon_handle,
                 text_color_handle,
                 &text_transform,
-                &textbox_ref.text,
-                textbox_ref.carat_index,
+                &textbox_state_ref.text,
+                textbox_state_ref.carat_index,
             );
         }
     }

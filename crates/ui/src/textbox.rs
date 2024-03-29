@@ -7,13 +7,28 @@ use render_api::base::{Color, CpuMaterial};
 use storage::Handle;
 use ui_layout::{Alignment, MarginUnits, PositionType, SizeUnits, TextMeasurer};
 
-use crate::{input::{UiInputEvent}, events::UiGlobalEvent, button::NodeActiveState, node::UiNode, store::UiStore, style::{NodeStyle, StyleId, WidgetStyle}, NodeId, Panel, PanelMut, PanelStyle, Ui, Navigation, Text};
+use crate::{panel::PanelState, input::{UiInputEvent}, events::UiGlobalEvent, button::NodeActiveState, node::UiNode, store::UiStore, style::{NodeStyle, StyleId, WidgetStyle}, NodeId, Panel, PanelMut, PanelStyle, Ui, Navigation, Text};
 
 #[derive(Clone)]
 pub struct Textbox {
     pub panel: Panel,
     pub id_str: String,
     pub navigation: Navigation,
+}
+
+impl Textbox {
+    pub fn new(id_str: &str) -> Self {
+        Self {
+            panel: Panel::new(),
+            id_str: id_str.to_string(),
+            navigation: Navigation::new(),
+        }
+    }
+}
+
+#[derive(Clone)]
+pub struct TextboxState {
+    pub panel: PanelState,
 
     pub text: String,
     pub carat_index: usize,
@@ -24,12 +39,10 @@ pub struct Textbox {
     select_color_handle: Option<Handle<CpuMaterial>>,
 }
 
-impl Textbox {
-    pub fn new(id_str: &str) -> Self {
+impl TextboxState {
+    pub fn new() -> Self {
         Self {
-            panel: Panel::new(),
-            id_str: id_str.to_string(),
-            navigation: Navigation::new(),
+            panel: PanelState::new(),
             text: String::new(),
             carat_index: 0,
             select_index: None,
@@ -37,18 +50,6 @@ impl Textbox {
             active_color_handle: None,
             select_color_handle: None,
         }
-    }
-
-    // returns whether or not mouse is inside the textbox
-    pub fn mouse_is_inside(
-        &mut self,
-        layout: (f32, f32, f32, f32),
-        mouse_x: f32,
-        mouse_y: f32,
-    ) -> bool {
-        let (width, height, posx, posy) = layout;
-
-        mouse_x >= posx && mouse_x <= posx + width + 1.0 && mouse_y >= posy && mouse_y <= posy + height + 1.0
     }
 
     pub fn needs_color_handle(&self) -> bool {
@@ -510,13 +511,6 @@ pub struct TextboxMut<'a> {
 impl<'a> TextboxMut<'a> {
     pub(crate) fn new(ui: &'a mut Ui, node_id: NodeId) -> Self {
         Self { ui, node_id }
-    }
-
-    pub fn set_visible(&mut self, visible: bool) -> &mut Self {
-        if let Some(node) = self.ui.node_mut(&self.node_id) {
-            node.visible = visible;
-        }
-        self
     }
 
     pub fn set_as_first_input(&mut self) -> &mut Self {

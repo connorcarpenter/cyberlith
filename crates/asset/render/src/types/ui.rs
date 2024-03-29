@@ -1,5 +1,4 @@
-use render_api::base::{CpuMaterial, CpuMesh};
-use storage::Storage;
+
 use ui::Ui;
 
 use crate::{asset_dependency::AssetDependency, AssetHandle, IconData, TypedAssetId};
@@ -65,13 +64,5 @@ impl UiData {
         } else {
             panic!("expected icon handle");
         }
-    }
-
-    pub(crate) fn load_cpu_data(
-        &mut self,
-        meshes: &mut Storage<CpuMesh>,
-        materials: &mut Storage<CpuMaterial>,
-    ) {
-        self.ui.set_handles(meshes, materials);
     }
 }

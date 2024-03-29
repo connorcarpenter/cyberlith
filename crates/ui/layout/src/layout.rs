@@ -70,8 +70,8 @@ pub(crate) fn layout<N, C>(
     init_parent_main: f32,
     init_parent_cross: f32,
     cache: &mut C,
-    tree: &<N as Node>::Tree,
     store: &<N as Node>::Store,
+    state_store: &<N as Node>::StateStore,
     text_measurer: &dyn TextMeasurer,
 ) -> Size
 where
@@ -153,7 +153,7 @@ where
     // Cross size is determined by the parent.
     let mut computed_cross = init_parent_cross;
 
-    let node_children = node.children(tree).filter(|child| child.visible(store));
+    let node_children = node.children(store).filter(|child| child.visible(state_store));
 
     let node_children_align = node.children_align(store, layout_type);
 
@@ -162,9 +162,9 @@ where
 
     // Get the total number of relative-typed children of the node.
     let num_relative_children = node
-        .children(tree)
+        .children(store)
         .filter(|child| child.position_type(store).unwrap_or_default() == PositionType::Relative)
-        .filter(|child| child.visible(store))
+        .filter(|child| child.visible(state_store))
         .count();
 
     // Apply main-axis size constraints for pixels and percentage.
@@ -211,8 +211,8 @@ where
 
     // Determine index of first and last relative child nodes.
     let mut iter = node
-        .children(tree)
-        .filter(|child| child.visible(store))
+        .children(store)
+        .filter(|child| child.visible(state_store))
         .filter(|child| child.position_type(store).unwrap_or_default() == PositionType::Relative)
         .enumerate();
 
@@ -220,8 +220,8 @@ where
     let last = iter.last().map_or(first, |(index, _)| Some(index));
 
     let mut node_children = node
-        .children(tree)
-        .filter(|child| child.visible(store))
+        .children(store)
+        .filter(|child| child.visible(state_store))
         .filter(|child| child.position_type(store).unwrap_or_default() == PositionType::Relative)
         .enumerate()
         .peekable();
@@ -288,8 +288,8 @@ where
                 parent_main,
                 computed_child_cross,
                 cache,
-                tree,
                 store,
+                state_store,
                 text_measurer,
             );
 
@@ -531,9 +531,9 @@ where
     }
 
     let node_children = node
-        .children(tree)
+        .children(store)
         .filter(|child| child.position_type(store).unwrap_or_default() == PositionType::Absolute)
-        .filter(|child| child.visible(store));
+        .filter(|child| child.visible(state_store));
 
     // Compute space and size of non-flexible self-directed children.
     for child in node_children {
@@ -586,8 +586,8 @@ where
                 parent_main,
                 computed_child_cross,
                 cache,
-                tree,
                 store,
+                state_store,
                 text_measurer,
             );
 

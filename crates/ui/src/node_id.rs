@@ -2,7 +2,7 @@ use std::fmt::{Display, Formatter};
 
 use ui_layout::{Alignment, LayoutType, MarginUnits, Node, PositionType, SizeUnits, Solid, TextMeasurer};
 
-use crate::{store::UiStore, Text, widget::WidgetKind};
+use crate::{store::UiStore, Text, state_store::UiStateStore, widget::WidgetKind};
 
 #[derive(Clone, Copy, PartialEq, PartialOrd, Ord, Eq, Hash, Debug, Default)]
 pub struct NodeId(u32);
@@ -29,7 +29,7 @@ impl Display for NodeId {
 
 impl Node for NodeId {
     type Store = UiStore;
-    type Tree = UiStore;
+    type StateStore = UiStateStore;
     type ChildIter<'t> = std::slice::Iter<'t, Self>;
     type CacheKey = Self;
 
@@ -56,7 +56,7 @@ impl Node for NodeId {
         }
     }
 
-    fn visible(&self, store: &UiStore) -> bool {
+    fn visible(&self, store: &UiStateStore) -> bool {
         if let Some(node) = store.get_node(self) {
             node.visible
         } else {

@@ -5,7 +5,7 @@ use input::{CursorIcon, GamepadButtonType, InputEvent, Key, Modifiers, MouseButt
 use math::Vec2;
 use ui_layout::TextMeasurer;
 
-use crate::{NodeId, Ui, UiGlobalEvent, UiNodeEvent, WidgetKind};
+use crate::{NodeId, Panel, Ui, UiGlobalEvent, UiNodeEvent, UiState, WidgetKind};
 
 pub struct UiInputConverter;
 
@@ -168,7 +168,7 @@ impl UiInputEvent {
     }
 }
 
-pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, mouse_position: Option<Vec2>, events: Vec<UiInputEvent>) {
+pub fn ui_receive_input(ui: &Ui, ui_state: &mut UiState, text_measurer: &dyn TextMeasurer, mouse_position: Option<Vec2>, events: Vec<UiInputEvent>) {
 
     let mut mouse_event_has_ocurred = false;
     let mut mouse_hover_node = None;
@@ -182,19 +182,19 @@ pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, mouse_pos
                 mouse_event_has_ocurred = true;
 
                 if let Some(mouse_position) = mouse_position {
-                    ui.set_cursor_icon(CursorIcon::Default);
-                    ui.clear_hover();
+                    ui_state.set_cursor_icon(CursorIcon::Default);
+                    ui_state.clear_hover();
 
-                    for node_id in 0..ui.store.nodes.len() {
+                    for node_id in 0..ui_state.store.nodes.len() {
                         let node_id = NodeId::from_usize(node_id);
-                        ui_update_hover(ui, &node_id, mouse_position.x, mouse_position.y);
+                        ui_update_hover(ui, ui_state, &node_id, mouse_position.x, mouse_position.y);
                     }
                 }
 
-                mouse_hover_node = ui.get_hover().map(|id| {
+                mouse_hover_node = ui_state.get_hover().map(|id| {
                     (id, ui.node_ref(&id).unwrap().widget_kind())
                 });
-                mouse_active_node = ui.get_active_node().map(|id| {
+                mouse_active_node = ui_state.get_active_node().map(|id| {
                     (id, ui.node_ref(&id).unwrap().widget_kind())
                 });
             }
@@ -202,21 +202,21 @@ pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, mouse_pos
             match event {
                 UiInputEvent::MouseButtonRelease(MouseButton::Left) => {
                     if let Some((_, WidgetKind::Button)) = mouse_active_node {
-                        ui.set_active_node(None);
+                        ui_state.set_active_node(None);
                     }
                 },
                 UiInputEvent::MouseSingleClick(MouseButton::Left, _, _) | UiInputEvent::MouseDoubleClick(MouseButton::Left, _) | UiInputEvent::MouseTripleClick(MouseButton::Left, _) => {
                     if let Some((hover_node, kind)) = mouse_hover_node {
                         match kind {
                             WidgetKind::Button => {
-                                ui.set_active_node(Some(hover_node));
-                                ui.emit_node_event(&hover_node, UiNodeEvent::Clicked);
+                                ui_state.set_active_node(Some(hover_node));
+                                ui_state.emit_node_event(&hover_node, UiNodeEvent::Clicked);
                             }
                             WidgetKind::Textbox => {
-                                ui.set_active_node(Some(hover_node));
-                                ui.reset_interact_timer();
-                                let (_, node_height, node_x, _, _) = ui.cache.bounds(&hover_node).unwrap();
-                                ui.textbox_mut(&hover_node).unwrap().recv_mouse_event(text_measurer, node_x, node_height, mouse_position, event);
+                                ui_state.set_active_node(Some(hover_node));
+                                ui_state.reset_interact_timer();
+                                let (_, node_height, node_x, _, _) = ui_state.cache.bounds(&hover_node).unwrap();
+                                ui_state.textbox_mut(&hover_node).unwrap().recv_mouse_event(text_measurer, node_x, node_height, mouse_position, event);
                             }
                             _ => {}
                         }
@@ -224,9 +224,9 @@ pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, mouse_pos
                 }
                 UiInputEvent::MouseButtonDrag(MouseButton::Left, _) => {
                     if let Some((hover_node, WidgetKind::Textbox)) = mouse_hover_node {
-                        ui.reset_interact_timer();
-                        let (_, node_height, node_x, _, _) = ui.cache.bounds(&hover_node).unwrap();
-                        ui.textbox_mut(&hover_node).unwrap().recv_mouse_event(text_measurer, node_x, node_height, mouse_position, event);
+                        ui_state.reset_interact_timer();
+                        let (_, node_height, node_x, _, _) = ui_state.cache.bounds(&hover_node).unwrap();
+                        ui_state.textbox_mut(&hover_node).unwrap().recv_mouse_event(text_measurer, node_x, node_height, mouse_position, event);
                     }
                 }
                 UiInputEvent::MouseMove => {}
@@ -241,8 +241,8 @@ pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, mouse_pos
         return;
     }
 
-    let mut hover_node = ui.get_hover();
-    let mut active_node = ui.get_active_node().map(|id| {
+    let mut hover_node = ui_state.get_hover();
+    let mut active_node = ui_state.get_active_node().map(|id| {
         (id, ui.node_ref(&id).unwrap().widget_kind())
     });
     let mut events = kb_or_gp_events;
@@ -256,12 +256,12 @@ pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, mouse_pos
                 UiInputEvent::TextInsert(_) | UiInputEvent::HomePressed(_) | UiInputEvent::EndPressed(_) | UiInputEvent::TextPaste(_) |
                 UiInputEvent::TextCopy | UiInputEvent::TextCut | UiInputEvent::TextSelectAll
                 => {
-                    ui.reset_interact_timer();
-                    if let Some(output_events) = ui.textbox_mut(&textbox_id).unwrap().recv_keyboard_or_gamepad_event(input_event.clone()) {
+                    ui_state.reset_interact_timer();
+                    if let Some(output_events) = ui_state.textbox_mut(&textbox_id).unwrap().recv_keyboard_or_gamepad_event(input_event.clone()) {
                         for output_event in output_events {
                             match &output_event {
                                 UiGlobalEvent::Copied(_) => {
-                                    ui.emit_global_event(output_event);
+                                    ui_state.emit_global_event(output_event);
                                 }
                                 UiGlobalEvent::PassThru => {
                                     next_events.push(input_event.clone());
@@ -285,9 +285,9 @@ pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, mouse_pos
 
                 // navigation ...
                 if let Some((active_id, WidgetKind::Textbox)) = active_node {
-                    ui.receive_hover(&active_id);
+                    ui_state.receive_hover(&active_id);
                     hover_node = Some(active_id);
-                    ui.set_active_node(None);
+                    ui_state.set_active_node(None);
                     active_node = None;
                 }
                 // make sure hovering
@@ -296,7 +296,7 @@ pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, mouse_pos
                     let Some(first_input_id) = ui.get_first_input() else {
                         panic!("no first input set, cannot process input events without somewhere to start");
                     };
-                    ui.receive_hover(&first_input_id);
+                    ui_state.receive_hover(&first_input_id);
                     hover_node = Some(first_input_id);
                     continue;
                 }
@@ -311,22 +311,22 @@ pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, mouse_pos
                     UiInputEvent::TabPressed => ui.nav_get_tab_id(&hover_node_inside),
                     _ => None,
                 } {
-                    ui.receive_hover(&next_id);
+                    ui_state.receive_hover(&next_id);
                     hover_node = Some(next_id);
                 }
             }
             UiInputEvent::BackPressed => {
                 if let Some((id, WidgetKind::Textbox)) = active_node {
                     // make textbox inactive
-                    ui.set_active_node(None);
+                    ui_state.set_active_node(None);
                     active_node = None;
                     // hover textbox
-                    ui.receive_hover(&id);
+                    ui_state.receive_hover(&id);
                     hover_node = Some(id);
                 } else {
                     // de-hover
                     if hover_node.is_some() {
-                        ui.clear_hover();
+                        ui_state.clear_hover();
                         hover_node = None;
                     }
                 }
@@ -337,18 +337,18 @@ pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, mouse_pos
                         match ui.node_ref(&next_id).unwrap().widget_kind() {
                             WidgetKind::Textbox => {
                                 // make next textbox active
-                                ui.set_active_node(Some(next_id));
+                                ui_state.set_active_node(Some(next_id));
                                 active_node = None;
                                 // clear hover
-                                ui.clear_hover();
+                                ui_state.clear_hover();
                                 hover_node = None;
                             }
                             WidgetKind::Button => {
                                 // make textbox inactive
-                                ui.set_active_node(None);
+                                ui_state.set_active_node(None);
                                 active_node = None;
                                 // hover button
-                                ui.receive_hover(&next_id);
+                                ui_state.receive_hover(&next_id);
                                 hover_node = Some(next_id);
                             }
                             _ => panic!("no navigation for other types")
@@ -356,10 +356,10 @@ pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, mouse_pos
 
                     } else {
                         // make textbox inactive
-                        ui.set_active_node(None);
+                        ui_state.set_active_node(None);
                         active_node = None;
                         // hover textbox
-                        ui.receive_hover(&active_id);
+                        ui_state.receive_hover(&active_id);
                         hover_node = Some(active_id);
                     }
                 }
@@ -368,22 +368,22 @@ pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, mouse_pos
                     let widget_kind = ui.node_ref(&hover_id).unwrap().widget_kind();
                     match widget_kind {
                         WidgetKind::Button => {
-                            ui.set_active_node(Some(hover_id));
-                            ui.emit_node_event(&hover_id, UiNodeEvent::Clicked);
+                            ui_state.set_active_node(Some(hover_id));
+                            ui_state.emit_node_event(&hover_id, UiNodeEvent::Clicked);
                         }
                         WidgetKind::Textbox => {
-                            ui.set_active_node(Some(hover_id));
-                            ui.textbox_mut(&hover_id).unwrap().recv_keyboard_or_gamepad_event(UiInputEvent::EndPressed(Modifiers::default()));
+                            ui_state.set_active_node(Some(hover_id));
+                            ui_state.textbox_mut(&hover_id).unwrap().recv_keyboard_or_gamepad_event(UiInputEvent::EndPressed(Modifiers::default()));
                         }
                         _ => {}
                     }
                 }
             }
             UiInputEvent::SelectReleased => {
-                if let Some(active_node) = ui.get_active_node() {
+                if let Some(active_node) = ui_state.get_active_node() {
                     match ui.node_ref(&active_node).unwrap().widget_kind() {
                         WidgetKind::Button => {
-                            ui.set_active_node(None);
+                            ui_state.set_active_node(None);
                         }
                         _ => {}
                     }
@@ -395,50 +395,42 @@ pub fn ui_receive_input(ui: &mut Ui, text_measurer: &dyn TextMeasurer, mouse_pos
 }
 
 fn ui_update_hover(
-    ui: &mut Ui,
+    ui: &Ui,
+    ui_state: &mut UiState,
     id: &NodeId,
     mouse_x: f32,
     mouse_y: f32,
 ) {
-    let Some(node) = ui.store.get_node(&id) else {
+    let Some(node_state) = ui_state.store.get_node(&id) else {
         warn!("no panel for id: {:?}", id);
         return;
     };
 
-    if !node.visible {
+    if !node_state.visible {
         return;
     }
 
-    let Some((width, height, child_offset_x, child_offset_y, _)) = ui.cache.bounds(id) else {
-        warn!("no bounds for id: {:?}", id);
+    let Some((width, height, child_offset_x, child_offset_y, _)) = ui_state.cache.bounds(id) else {
+        warn!("no bounds for id 2: {:?}", id);
         return;
     };
 
-    match node.widget_kind() {
-        WidgetKind::Button => {
-            let Some(button_mut) = ui.store.button_mut(id) else {
-                panic!("no button mut for node_id: {:?}", id);
-            };
-            if button_mut.mouse_is_inside(
-                (width, height, child_offset_x, child_offset_y),
-                mouse_x, mouse_y,
-            ) {
-                ui.receive_hover(id);
-                ui.set_cursor_icon(CursorIcon::Hand);
-            }
+    let Some(node) = ui.store.get_node(&id) else {
+        warn!("no node for id: {:?}", id);
+        return;
+    };
+    let check = match node.widget_kind() {
+        WidgetKind::Button => Some(CursorIcon::Hand),
+        WidgetKind::Textbox => Some(CursorIcon::Text),
+        _ => None,
+    };
+    if let Some(cursor_icon) = check {
+        if Panel::mouse_is_inside(
+            (width, height, child_offset_x, child_offset_y),
+            mouse_x, mouse_y,
+        ) {
+            ui_state.receive_hover(id);
+            ui_state.set_cursor_icon(cursor_icon);
         }
-        WidgetKind::Textbox => {
-            let Some(textbox_mut) = ui.store.textbox_mut(id) else {
-                panic!("no textbox mut for node_id: {:?}", id);
-            };
-            if textbox_mut.mouse_is_inside(
-                (width, height, child_offset_x, child_offset_y),
-                mouse_x, mouse_y,
-            ) {
-                ui.receive_hover(id);
-                ui.set_cursor_icon(CursorIcon::Text);
-            }
-        }
-        _ => {}
     }
 }

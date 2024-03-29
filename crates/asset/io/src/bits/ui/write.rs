@@ -395,7 +395,6 @@ impl LayoutTypeBits {
 impl UiNodeBits {
     fn from_node(ui: &Ui, style_id_to_index: &HashMap<StyleId, u8>, node: &UiNode) -> Self {
         let mut me = Self {
-            visible: node.visible,
             style_ids: Vec::new(),
             widget: WidgetBits::from_widget(ui, &node.widget),
         };
