@@ -43,7 +43,7 @@ impl UiConfig {
 
         // Base Text Style
         let base_text_style_id =
-            me.create_style(NodeStyle::empty(WidgetStyle::Text(TextStyle::empty())));
+            me.insert_style(NodeStyle::empty(WidgetStyle::Text(TextStyle::empty())));
         if base_text_style_id != Self::BASE_TEXT_STYLE_ID {
             panic!("base text style id is {:?}, not 1!", base_text_style_id);
         }
@@ -124,7 +124,7 @@ impl UiConfig {
         self.store.get_style_mut(&id)
     }
 
-    pub fn create_style(&mut self, style: NodeStyle) -> StyleId {
+    pub fn insert_style(&mut self, style: NodeStyle) -> StyleId {
         self.store.insert_style(style)
     }
 
@@ -165,6 +165,49 @@ impl UiConfig {
             WidgetKind::Button => Some(&node.widget_button_ref()?.navigation),
             WidgetKind::Textbox => Some(&node.widget_textbox_ref()?.navigation),
             _ => None,
+        }
+    }
+
+    pub fn get_style_background_alpha(&self, id: &NodeId) -> f32 {
+
+        let node_ref = self.node_ref(id).unwrap();
+        match node_ref.widget_kind() {
+            WidgetKind::Panel => {
+                let mut output = 1.0;
+                self.store.for_each_panel_style(id, |style| {
+                    if let Some(alpha) = style.background_alpha {
+                        output = alpha;
+                    }
+                });
+                output
+            }
+            WidgetKind::Text => {
+                let mut output = 0.0;
+                self.store.for_each_text_style(id, |style| {
+                    if let Some(alpha) = style.background_alpha {
+                        output = alpha;
+                    }
+                });
+                output
+            }
+            WidgetKind::Button => {
+                let mut output = 1.0;
+                self.store.for_each_button_style(id, |style| {
+                    if let Some(alpha) = style.panel.background_alpha {
+                        output = alpha;
+                    }
+                });
+                output
+            }
+            WidgetKind::Textbox => {
+                let mut output = 1.0;
+                self.store.for_each_textbox_style(id, |style| {
+                    if let Some(alpha) = style.panel.background_alpha {
+                        output = alpha;
+                    }
+                });
+                output
+            }
         }
     }
 }

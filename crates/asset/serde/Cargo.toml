@@ -18,7 +18,6 @@ render_api = { path = "../../render/render_api" }
 asset_id = { path = "../id" }
 crypto = { path = "../../crypto" }
 
-ui_builder = { path = "../../ui/builder" }
 ui_types = { path = "../../ui/types" }
 ui_layout = { path = "../../ui/layout" }
 

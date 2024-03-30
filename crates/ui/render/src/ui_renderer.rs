@@ -10,7 +10,6 @@ use render_api::{
 use storage::Handle;
 use ui_types::{NodeId, UiConfig, WidgetKind};
 use ui_state::{NodeActiveState, UiState};
-use ui_builder::{ButtonStyleRef, PanelStyleRef, TextboxStyleRef, TextStyleRef};
 use ui_input::UiInputState;
 use ui_loader::{Blinkiness, UiManager};
 
@@ -238,8 +237,7 @@ fn draw_ui_panel(
 
     // draw panel
     if let Some(mat_handle) = panel_state_ref.background_color_handle {
-        let panel_style_ref = PanelStyleRef::new(&ui_config.store, *node_id);
-        let background_alpha = panel_style_ref.background_alpha();
+        let background_alpha = ui_config.get_style_background_alpha(node_id);
         if background_alpha > 0.0 {
             if background_alpha != 1.0 {
                 panic!("partial background_alpha not implemented yet!");
@@ -281,8 +279,7 @@ fn draw_ui_text(
 
     // draw background
     if let Some(mat_handle) = text_state_ref.background_color_handle {
-        let text_style_ref = TextStyleRef::new(&ui_config.store, *node_id);
-        let background_alpha = text_style_ref.background_alpha();
+        let background_alpha = ui_config.get_style_background_alpha(node_id);
         if background_alpha > 0.0 {
             if background_alpha != 1.0 {
                 panic!("partial background_alpha not implemented yet!");
@@ -328,8 +325,7 @@ fn draw_ui_button(
     // draw button
     let active_state = ui_input_state.get_active_state(node_id);
     if let Some(mat_handle) = button_state_ref.current_color_handle(active_state) {
-        let button_style_ref = ButtonStyleRef::new(&ui_config.store, *node_id);
-        let background_alpha = button_style_ref.background_alpha();
+        let background_alpha = ui_config.get_style_background_alpha(node_id);
         if background_alpha > 0.0 {
             if background_alpha != 1.0 {
                 panic!("partial background_alpha not implemented yet!");
@@ -366,8 +362,7 @@ fn draw_ui_textbox(
     // draw textbox
     let active_state = ui_input_state.get_active_state(node_id);
     if let Some(mat_handle) = textbox_state_ref.current_color_handle(active_state) {
-        let textbox_style_ref = TextboxStyleRef::new(&ui_config.store, *node_id);
-        let background_alpha = textbox_style_ref.background_alpha();
+        let background_alpha = ui_config.get_style_background_alpha(node_id);
         if background_alpha > 0.0 {
             if background_alpha != 1.0 {
                 panic!("partial background_alpha not implemented yet!");

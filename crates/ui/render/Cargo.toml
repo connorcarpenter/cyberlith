@@ -13,7 +13,6 @@ render_api = { path = "../../render/render_api" }
 storage = { path = "../../storage" }
 ui_state = { path = "../../ui/state" }
 ui_types = { path = "../../ui/types" }
-ui_builder = { path = "../../ui/builder" }
 ui_loader = { path = "../../ui/loader" }
 ui_input = { path = "../../ui/input" }
 

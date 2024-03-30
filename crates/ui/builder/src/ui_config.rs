@@ -12,7 +12,8 @@ impl UiConfigBuilder {
 
     pub fn create_panel_style(ui_config: &mut UiConfig, mut func: impl FnMut(&mut PanelStyleMut)) -> StyleId {
 
-        let new_style_id = ui_config.create_style(NodeStyle::empty(WidgetStyle::Panel(PanelStyle::empty())));
+        let new_style = NodeStyle::empty(WidgetStyle::Panel(PanelStyle::empty()));
+        let new_style_id = ui_config.insert_style(new_style);
         let mut style_mut = PanelStyleMut::new(ui_config, new_style_id);
         func(&mut style_mut);
 
@@ -21,7 +22,8 @@ impl UiConfigBuilder {
 
     pub fn create_button_style(ui_config: &mut UiConfig, mut func: impl FnMut(&mut ButtonStyleMut)) -> StyleId {
 
-        let new_style_id = ui_config.create_style(NodeStyle::empty(WidgetStyle::Button(ButtonStyle::empty())));
+        let new_style = NodeStyle::empty(WidgetStyle::Button(ButtonStyle::empty()));
+        let new_style_id = ui_config.insert_style(new_style);
         let mut style_mut = ButtonStyleMut::new(ui_config, new_style_id);
         func(&mut style_mut);
 
@@ -30,7 +32,8 @@ impl UiConfigBuilder {
 
     pub fn create_text_style(ui_config: &mut UiConfig, mut func: impl FnMut(&mut TextStyleMut)) -> StyleId {
 
-        let new_style_id = ui_config.create_style(NodeStyle::empty(WidgetStyle::Text(TextStyle::empty())));
+        let new_style = NodeStyle::empty(WidgetStyle::Text(TextStyle::empty()));
+        let new_style_id = ui_config.insert_style(new_style);
         let mut style_mut = TextStyleMut::new(ui_config, new_style_id);
         func(&mut style_mut);
 
@@ -39,7 +42,8 @@ impl UiConfigBuilder {
 
     pub fn create_textbox_style(ui_config: &mut UiConfig, mut func: impl FnMut(&mut TextboxStyleMut)) -> StyleId {
 
-        let new_style_id = ui_config.create_style(NodeStyle::empty(WidgetStyle::Textbox(TextboxStyle::empty())));
+        let new_style = NodeStyle::empty(WidgetStyle::Textbox(TextboxStyle::empty()));
+        let new_style_id = ui_config.insert_style(new_style);
         let mut style_mut = TextboxStyleMut::new(ui_config, new_style_id);
         func(&mut style_mut);
 

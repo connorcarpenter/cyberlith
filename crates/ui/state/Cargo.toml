@@ -8,7 +8,6 @@ workspace = "../../.."
 asset_id = { path = "../../asset/id" }
 render_api = { path = "../../render/render_api" }
 storage = { path = "../../storage" }
-input = { path = "../../input" }
 instant = { path = "../../instant" }
 math = { path = "../../math" }
 
