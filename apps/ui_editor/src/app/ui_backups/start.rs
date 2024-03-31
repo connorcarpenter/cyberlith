@@ -54,18 +54,18 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
     ui_config.set_text_icon_asset_id(&icon_asset_id)
         .set_text_color(Color::WHITE)
         .root_mut()
-        .add_style(window_style)
+        .set_style(window_style)
         .contents(|c| {
             // title container
-            c.add_panel().add_style(container_style).contents(|c| {
+            c.add_panel().set_style(container_style).contents(|c| {
                 c.add_text("c y b e r l i t h");
             });
 
             // login button
             c.add_button("login_button")
                 .set_as_first_input()
-                .add_style(base_button_style)
-                .add_style(login_button_style)
+                .set_style(base_button_style)
+                .set_style(login_button_style)
                 .contents(|c| {
                     c.add_text("login");
                 })
@@ -77,8 +77,8 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
 
             // continue button
             c.add_button("register_button")
-                .add_style(base_button_style)
-                .add_style(register_button_style)
+                .set_style(base_button_style)
+                .set_style(register_button_style)
                 .contents(|c| {
                     c.add_text("register");
                 })

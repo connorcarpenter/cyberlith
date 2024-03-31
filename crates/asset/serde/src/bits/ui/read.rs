@@ -8,7 +8,7 @@ use render_api::base::Color;
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 use ui_types::{Button, ButtonStyle, NodeId, NodeStyle, Panel, PanelStyle, StyleId, Text, Textbox, TextboxStyle, TextStyle, UiConfig, Widget, WidgetKind, WidgetStyle};
 
-use crate::bits::{AlignmentBits, ButtonBits, LayoutTypeBits, MarginUnitsBits, PanelBits, PanelStyleBits, PositionTypeBits, SizeUnitsBits, SolidBits, TextboxBits, UiAction, UiActionType, UiNodeBits, UiStyleBits, WidgetBits, WidgetStyleBits};
+use crate::bits::{AlignmentBits, ButtonBits, ColorBits, LayoutTypeBits, MarginUnitsBits, PanelBits, PanelStyleBits, PositionTypeBits, SizeUnitsBits, SolidBits, TextboxBits, UiAction, UiActionType, UiNodeBits, UiStyleBits, WidgetBits, WidgetStyleBits};
 
 pub fn read_bits(data: &[u8]) -> UiConfig {
     let actions = bytes_to_actions(data).unwrap();
@@ -25,9 +25,8 @@ fn convert_actions_to_ui_config(actions: Vec<UiAction>) -> UiConfig {
 
     for action in actions {
         match action {
-            UiAction::TextColor(r, g, b) => {
-                let color = Color::new(r, g, b);
-                ui_config.set_text_color(color);
+            UiAction::TextColor(text_color) => {
+                ui_config.set_text_color(text_color.to_color());
             }
             UiAction::TextIconAssetId(asset_id) => {
                 ui_config.set_text_icon_asset_id(&asset_id);
@@ -87,10 +86,10 @@ fn convert_actions_to_ui_config(actions: Vec<UiAction>) -> UiConfig {
     //info!("0 - root_node_serde: {:?}", root_node_serde);
 
     let root_mut = ui_config.node_mut(&UiConfig::ROOT_NODE_ID).unwrap();
-    for style_index in &root_node_serde.style_ids {
+    if let Some(style_index) = &root_node_serde.style_id {
         let style_index = *style_index as usize;
         let style_id = *style_index_to_id.get(&style_index).unwrap();
-        root_mut.style_ids.push(style_id);
+        root_mut.set_style_id(style_id);
     }
     let WidgetBits::Panel(panel_serde) = &root_node_serde.widget else {
         panic!("Expected panel widget");
@@ -110,10 +109,8 @@ fn bytes_to_actions(data: &[u8]) -> Result<Vec<UiAction>, SerdeErr> {
 
         match action_type {
             UiActionType::TextColor => {
-                let r = u8::de(bit_reader)?;
-                let g = u8::de(bit_reader)?;
-                let b = u8::de(bit_reader)?;
-                actions.push(UiAction::TextColor(r, g, b));
+                let text_color = ColorBits::de(bit_reader)?;
+                actions.push(UiAction::TextColor(text_color));
             }
             UiActionType::TextIconAssetId => {
                 let val = u32::de(bit_reader)?;
@@ -167,11 +164,11 @@ fn convert_nodes_recurse_panel(
                 panel.add_child(child_panel_id);
 
                 // add style
-                for style_index in &child_node_serde.style_ids {
+                if let Some(style_index) = &child_node_serde.style_id {
                     let style_index = *style_index as usize;
                     let style_id = *style_index_to_id.get(&style_index).unwrap();
                     let child_node = ui_config.node_mut(&child_panel_id).unwrap();
-                    child_node.style_ids.push(style_id);
+                    child_node.set_style_id(style_id);
                 }
 
                 // recurse
@@ -199,11 +196,11 @@ fn convert_nodes_recurse_panel(
                 panel.add_child(child_text_id);
 
                 // add style
-                for style_index in &child_node_serde.style_ids {
+                if let Some(style_index) = &child_node_serde.style_id {
                     let style_index = *style_index as usize;
                     let style_id = *style_index_to_id.get(&style_index).unwrap();
                     let child_node = ui_config.node_mut(&child_text_id).unwrap();
-                    child_node.style_ids.push(style_id);
+                    child_node.set_style_id(style_id);
                 }
             }
             WidgetKind::Button => {
@@ -219,11 +216,11 @@ fn convert_nodes_recurse_panel(
                 panel.add_child(child_button_id);
 
                 // add style
-                for style_index in &child_node_serde.style_ids {
+                if let Some(style_index) = &child_node_serde.style_id {
                     let style_index = *style_index as usize;
                     let style_id = *style_index_to_id.get(&style_index).unwrap();
                     let child_node = ui_config.node_mut(&child_button_id).unwrap();
-                    child_node.style_ids.push(style_id);
+                    child_node.set_style_id(style_id);
                 }
 
                 // add navigation
@@ -256,11 +253,11 @@ fn convert_nodes_recurse_panel(
                 panel.add_child(child_textbox_id);
 
                 // add style
-                for style_index in &child_node_serde.style_ids {
+                for style_index in &child_node_serde.style_id {
                     let style_index = *style_index as usize;
                     let style_id = *style_index_to_id.get(&style_index).unwrap();
                     let child_node = ui_config.node_mut(&child_textbox_id).unwrap();
-                    child_node.style_ids.push(style_id);
+                    child_node.set_style_id(style_id);
                 }
 
                 // add navigation
@@ -350,11 +347,11 @@ fn convert_nodes_recurse_button(
                 button.add_child(child_panel_id);
 
                 // add style
-                for style_index in &child_node_serde.style_ids {
+                if let Some(style_index) = &child_node_serde.style_id {
                     let style_index = *style_index as usize;
                     let style_id = *style_index_to_id.get(&style_index).unwrap();
                     let child_node = ui_config.node_mut(&child_panel_id).unwrap();
-                    child_node.style_ids.push(style_id);
+                    child_node.set_style_id(style_id);
                 }
                 let WidgetBits::Panel(child_panel_serde) = &child_node_serde.widget else {
                     panic!("Expected panel widget");
@@ -382,11 +379,11 @@ fn convert_nodes_recurse_button(
                 button.add_child(child_text_id);
 
                 // add style
-                for style_index in &child_node_serde.style_ids {
+                if let Some(style_index) = &child_node_serde.style_id {
                     let style_index = *style_index as usize;
                     let style_id = *style_index_to_id.get(&style_index).unwrap();
                     let child_node = ui_config.node_mut(&child_text_id).unwrap();
-                    child_node.style_ids.push(style_id);
+                    child_node.set_style_id(style_id);
                 }
             }
             _ => {
@@ -509,6 +506,12 @@ impl LayoutTypeBits {
     }
 }
 
+impl ColorBits {
+    fn to_color(&self) -> Color {
+        Color::new(self.r, self.g, self.b)
+    }
+}
+
 impl UiStyleBits {
 
     fn to_node_style(&self, style: &mut NodeStyle) {
@@ -541,8 +544,8 @@ impl UiStyleBits {
     }
 
     fn to_panel_style_impl(panel_style: &mut PanelStyle, panel_style_serde: &PanelStyleBits) {
-        if let Some((r, g, b)) = &panel_style_serde.background_color {
-            panel_style.background_color = Some(Color::new(*r, *g, *b));
+        if let Some(background_color) = &panel_style_serde.background_color {
+            panel_style.background_color = Some(background_color.to_color());
         }
         if let Some(background_alpha) = panel_style_serde.background_alpha {
             let val: u8 = background_alpha.to();
@@ -566,8 +569,8 @@ impl UiStyleBits {
         let WidgetStyleBits::Text(text_style_serde) = &self.widget_style else {
             panic!("Expected text style");
         };
-        if let Some((r, g, b)) = &text_style_serde.background_color {
-            text_style.background_color = Some(Color::new(*r, *g, *b));
+        if let Some(background_color) = &text_style_serde.background_color {
+            text_style.background_color = Some(background_color.to_color());
         }
         if let Some(background_alpha) = text_style_serde.background_alpha {
             let val: u8 = background_alpha.to();
@@ -583,11 +586,11 @@ impl UiStyleBits {
         let WidgetStyleBits::Button(button_style_serde) = &self.widget_style else {
             panic!("Expected panel style");
         };
-        if let Some((r, g, b)) = &button_style_serde.hover_color {
-            button_style.set_hover_color(Color::new(*r, *g, *b));
+        if let Some(hover_color) = &button_style_serde.hover_color {
+            button_style.set_hover_color(hover_color.to_color());
         }
-        if let Some((r, g, b)) = &button_style_serde.down_color {
-            button_style.set_down_color(Color::new(*r, *g, *b));
+        if let Some(down_color) = &button_style_serde.down_color {
+            button_style.set_down_color(down_color.to_color());
         }
 
         // panel-specific
@@ -600,17 +603,14 @@ impl UiStyleBits {
         let WidgetStyleBits::Textbox(textbox_style_serde) = &self.widget_style else {
             panic!("Expected textbox style");
         };
-
-        if let Some((r, g, b)) = &textbox_style_serde.hover_color {
-            textbox_style.set_hover_color(Color::new(*r, *g, *b));
+        if let Some(hover_color) = &textbox_style_serde.hover_color {
+            textbox_style.set_hover_color(hover_color.to_color());
         }
-
-        if let Some((r, g, b)) = &textbox_style_serde.active_color {
-            textbox_style.set_active_color(Color::new(*r, *g, *b));
+        if let Some(active_color) = &textbox_style_serde.active_color {
+            textbox_style.set_active_color(active_color.to_color());
         }
-
-        if let Some((r, g, b)) = &textbox_style_serde.select_color {
-            textbox_style.set_selection_color(Color::new(*r, *g, *b));
+        if let Some(select_color) = &textbox_style_serde.select_color {
+            textbox_style.set_selection_color(select_color.to_color());
         }
 
         // panel-specific

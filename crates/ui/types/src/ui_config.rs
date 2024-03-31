@@ -2,15 +2,13 @@ use std::collections::HashMap;
 
 use asset_id::AssetId;
 use render_api::base::Color;
-use ui_layout::SizeUnits;
 
 use crate::{
     node::UiNode,
     node_id::NodeId,
     panel::Panel,
     store::UiStore,
-    style::{NodeStyle, StyleId, WidgetStyle},
-    text::{TextStyle},
+    style::{NodeStyle, StyleId},
     widget::{Widget, WidgetKind},
     Navigation
 };
@@ -24,8 +22,6 @@ pub struct UiConfig {
 
 impl UiConfig {
     pub const ROOT_NODE_ID: NodeId = NodeId::new(0);
-    // pub(crate) const ROOT_STYLE_ID: StyleId = StyleId::new(0);
-    pub const BASE_TEXT_STYLE_ID: StyleId = StyleId::new(0);
 
     pub fn new() -> Self {
         let mut me = Self {
@@ -40,15 +36,6 @@ impl UiConfig {
         if root_panel_id != Self::ROOT_NODE_ID {
             panic!("root panel id is not 0");
         }
-
-        // Base Text Style
-        let base_text_style_id =
-            me.insert_style(NodeStyle::empty(WidgetStyle::Text(TextStyle::empty())));
-        if base_text_style_id != Self::BASE_TEXT_STYLE_ID {
-            panic!("base text style id is {:?}, not 1!", base_text_style_id);
-        }
-        me.style_mut(&base_text_style_id).unwrap().width = Some(SizeUnits::Percentage(100.0));
-        me.style_mut(&base_text_style_id).unwrap().height = Some(SizeUnits::Percentage(100.0));
 
         me
     }
@@ -174,38 +161,38 @@ impl UiConfig {
         match node_ref.widget_kind() {
             WidgetKind::Panel => {
                 let mut output = 1.0;
-                self.store.for_each_panel_style(id, |style| {
-                    if let Some(alpha) = style.background_alpha {
+                if let Some(panel_style) = self.store.panel_style(id) {
+                    if let Some(alpha) = panel_style.background_alpha {
                         output = alpha;
                     }
-                });
+                }
                 output
             }
             WidgetKind::Text => {
                 let mut output = 0.0;
-                self.store.for_each_text_style(id, |style| {
-                    if let Some(alpha) = style.background_alpha {
+                if let Some(text_style) = self.store.text_style(id) {
+                    if let Some(alpha) = text_style.background_alpha {
                         output = alpha;
                     }
-                });
+                }
                 output
             }
             WidgetKind::Button => {
                 let mut output = 1.0;
-                self.store.for_each_button_style(id, |style| {
-                    if let Some(alpha) = style.panel.background_alpha {
+                if let Some(panel_style) = self.store.panel_style(id) {
+                    if let Some(alpha) = panel_style.background_alpha {
                         output = alpha;
                     }
-                });
+                }
                 output
             }
             WidgetKind::Textbox => {
                 let mut output = 1.0;
-                self.store.for_each_textbox_style(id, |style| {
-                    if let Some(alpha) = style.panel.background_alpha {
+                if let Some(panel_style) = self.store.panel_style(id) {
+                    if let Some(alpha) = panel_style.background_alpha {
                         output = alpha;
                     }
-                });
+                }
                 output
             }
         }

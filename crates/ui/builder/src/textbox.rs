@@ -20,9 +20,9 @@ impl<'a> TextboxMut<'a> {
         self
     }
 
-    pub fn add_style(&mut self, style_id: StyleId) -> &mut Self {
+    pub fn set_style(&mut self, style_id: StyleId) -> &mut Self {
         let node = self.ui_config.node_mut(&self.node_id).unwrap();
-        node.style_ids.push(style_id);
+        node.set_style_id(style_id);
         self
     }
 
@@ -81,77 +81,6 @@ impl<'a> TextboxNavigationMut<'a> {
     }
 }
 
-pub struct TextboxStyleRef<'a> {
-    store: &'a UiStore,
-    node_id: NodeId,
-}
-
-impl<'a> TextboxStyleRef<'a> {
-    pub fn new(store: &'a UiStore, node_id: NodeId) -> Self {
-        Self { store, node_id }
-    }
-
-    pub fn background_color(&self) -> Color {
-        let mut output = Color::BLACK; // TODO: put into const var!
-
-        self.store.for_each_textbox_style(&self.node_id, |style| {
-            if let Some(color) = style.panel.background_color {
-                output = color;
-            }
-        });
-
-        output
-    }
-
-    pub fn background_alpha(&self) -> f32 {
-        let mut output = 1.0; // TODO: put into const var!
-
-        self.store.for_each_textbox_style(&self.node_id, |style| {
-            if let Some(alpha) = style.panel.background_alpha {
-                output = alpha;
-            }
-        });
-
-        output
-    }
-
-    pub fn hover_color(&self) -> Color {
-        let mut output = Color::BLACK; // TODO: put into const var!
-
-        self.store.for_each_textbox_style(&self.node_id, |style| {
-            if let Some(color) = style.hover_color {
-                output = color;
-            }
-        });
-
-        output
-    }
-
-    pub fn active_color(&self) -> Color {
-        let mut output = Color::BLACK; // TODO: put into const var!
-
-        self.store.for_each_textbox_style(&self.node_id, |style| {
-            if let Some(color) = style.active_color {
-                output = color;
-            }
-        });
-
-        output
-    }
-
-    pub fn selection_color(&self) -> Color {
-        let mut output = Color::BLACK; // TODO: put into const var!
-
-        self.store.for_each_textbox_style(&self.node_id, |style| {
-            if let Some(color) = style.select_color {
-                output = color;
-            }
-        });
-
-        output
-    }
-}
-
 pub struct TextboxStyleMut<'a> {
     ui_config: &'a mut UiConfig,
     style_id: StyleId,
@@ -175,6 +104,11 @@ impl<'a> TextboxStyleMut<'a> {
     }
 
     // setters
+
+    pub fn set_parent_style(&mut self, style_id: StyleId) -> &mut Self {
+        self.get_style_mut().parent_style = Some(style_id);
+        self
+    }
 
     pub fn set_background_color(&mut self, color: Color) -> &mut Self {
         self.get_textbox_style_mut().panel.background_color = Some(color);

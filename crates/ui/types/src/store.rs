@@ -1,3 +1,4 @@
+use render_api::base::Color;
 use crate::{
     panel::{Panel, PanelStyle},
     style::{NodeStyle, StyleId, WidgetStyle},
@@ -58,6 +59,64 @@ impl UiStore {
 
     // refs stuff
 
+    pub fn node_kind(&self, node_id: &NodeId) -> WidgetKind {
+        self.get_node(node_id).unwrap().widget_kind()
+    }
+
+    pub fn node_style(&self, node_id: &NodeId) -> Option<&NodeStyle> {
+        let node = self.get_node(node_id)?;
+        node.style_id().map(|style_id| self.get_style(&style_id)).flatten()
+    }
+
+    fn widget_style(&self, node_id: &NodeId) -> Option<&WidgetStyle> {
+        let style = self.node_style(node_id)?;
+        Some(&style.widget_style)
+    }
+
+    pub fn node_background_color(&self, node_id: &NodeId) -> Option<&Color> {
+        let widget_style = self.widget_style(node_id)?;
+        if let WidgetStyle::Text(text_style) = widget_style {
+            text_style.background_color.as_ref()
+        } else {
+            let panel_style = self.panel_style(node_id)?;
+            panel_style.background_color.as_ref()
+        }
+    }
+
+    pub fn panel_style(&self, node_id: &NodeId) -> Option<&PanelStyle> {
+        let widget_style = self.widget_style(node_id)?;
+        match widget_style {
+            WidgetStyle::Panel(panel_style) => Some(panel_style),
+            WidgetStyle::Button(button_style) => Some(&button_style.panel),
+            WidgetStyle::Textbox(textbox_style) => Some(&textbox_style.panel),
+            _ => None,
+        }
+    }
+
+    pub fn text_style(&self, node_id: &NodeId) -> Option<&TextStyle> {
+        let widget_style = self.widget_style(node_id)?;
+        match widget_style {
+            WidgetStyle::Text(text_style) => Some(text_style),
+            _ => None,
+        }
+    }
+
+    pub fn button_style(&self, node_id: &NodeId) -> Option<&ButtonStyle> {
+        let widget_style = self.widget_style(node_id)?;
+        match widget_style {
+            WidgetStyle::Button(button_style) => Some(button_style),
+            _ => None,
+        }
+    }
+
+    pub fn textbox_style(&self, node_id: &NodeId) -> Option<&TextboxStyle> {
+        let widget_style = self.widget_style(node_id)?;
+        match widget_style {
+            WidgetStyle::Textbox(textbox_style) => Some(textbox_style),
+            _ => None,
+        }
+    }
+
     pub fn panel_ref(&self, node_id: &NodeId) -> Option<&Panel> {
         let node = self.get_node(node_id)?;
         if node.widget_kind() == WidgetKind::Panel {
@@ -104,76 +163,5 @@ impl UiStore {
             return node.widget_textbox_mut();
         }
         None
-    }
-
-    fn node_style_ids(&self, node_id: &NodeId) -> &Vec<StyleId> {
-        let node = self.get_node(node_id).unwrap();
-        &node.style_ids
-    }
-
-    pub fn node_kind(&self, node_id: &NodeId) -> WidgetKind {
-        self.get_node(node_id).unwrap().widget_kind()
-    }
-
-    pub fn for_each_node_style(&self, node_id: &NodeId, mut func: impl FnMut(&NodeStyle)) {
-        for style_id in self.node_style_ids(node_id) {
-            let Some(style) = self.get_style(style_id) else {
-                panic!("StyleId does not reference a Style");
-            };
-            func(style);
-        }
-    }
-
-    pub fn for_each_panel_style(&self, node_id: &NodeId, mut func: impl FnMut(&PanelStyle)) {
-        for style_id in self.node_style_ids(node_id) {
-            let Some(style) = self.get_style(style_id) else {
-                panic!("StyleId does not reference a Style");
-            };
-            match style.widget_style {
-                WidgetStyle::Panel(panel_style) => func(&panel_style),
-                WidgetStyle::Button(button_style) => func(&button_style.panel),
-                _ => panic!("StyleId does not reference a PanelStyle"),
-            }
-        }
-    }
-
-    pub fn for_each_text_style(&self, node_id: &NodeId, mut func: impl FnMut(&TextStyle)) {
-        for style_id in self.node_style_ids(node_id) {
-            let Some(style) = self.get_style(style_id) else {
-                panic!("StyleId does not reference a Style");
-            };
-            let WidgetStyle::Text(text_style) = style.widget_style else {
-                panic!("StyleId does not reference a TextStyle");
-            };
-            func(&text_style);
-        }
-    }
-
-    pub fn for_each_button_style(
-        &self,
-        node_id: &NodeId,
-        mut func: impl FnMut(&ButtonStyle),
-    ) {
-        for style_id in self.node_style_ids(node_id) {
-            let Some(style) = self.get_style(style_id) else {
-                panic!("StyleId does not reference a Style");
-            };
-            let WidgetStyle::Button(button_style) = style.widget_style else {
-                panic!("StyleId does not reference a ButtonStyle");
-            };
-            func(&button_style);
-        }
-    }
-
-    pub fn for_each_textbox_style(&self, node_id: &NodeId, mut func: impl FnMut(&TextboxStyle)) {
-        for style_id in self.node_style_ids(node_id) {
-            let Some(style) = self.get_style(style_id) else {
-                panic!("StyleId does not reference a Style");
-            };
-            let WidgetStyle::Textbox(textbox_style) = style.widget_style else {
-                panic!("StyleId does not reference a TextboxStyle");
-            };
-            func(&textbox_style);
-        }
     }
 }

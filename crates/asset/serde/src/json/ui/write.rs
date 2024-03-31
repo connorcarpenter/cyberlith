@@ -32,9 +32,6 @@ impl UiConfigJson {
         // styles
         for (style_id, style) in ui_config.store.styles.iter().enumerate() {
             let style_id = StyleId::new(style_id as u32);
-            if style_id == UiConfig::BASE_TEXT_STYLE_ID {
-                continue;
-            }
             let next_index = me.styles.len();
             style_id_to_index.insert(style_id, next_index);
             me.styles.push(UiStyleJson::from_style(style));
@@ -53,6 +50,7 @@ impl UiConfigJson {
 impl UiStyleJson {
     fn from_style(style: &NodeStyle) -> Self {
         Self {
+            parent_style: style.parent_style.map(|id| id.as_usize()),
             widget_style: WidgetStyleJson::from_style(&style.widget_style),
 
             position_type: style
@@ -219,16 +217,13 @@ impl ColorJson {
 impl UiNodeJson {
     fn from_node(style_id_to_index: &HashMap<StyleId, usize>, node: &UiNode) -> Self {
         let mut me = Self {
-            style_ids: Vec::new(),
+            style_id: None,
             widget: WidgetJson::from_widget(&node.widget),
         };
 
-        for style_id in &node.style_ids {
-            if style_id == &UiConfig::BASE_TEXT_STYLE_ID {
-                continue;
-            }
-            let style_index: usize = *style_id_to_index.get(style_id).unwrap();
-            me.style_ids.push(style_index);
+        if let Some(style_id) = node.style_id() {
+            let style_index: usize = *style_id_to_index.get(&style_id).unwrap();
+            me.style_id = Some(style_index);
         }
 
         me

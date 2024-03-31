@@ -119,33 +119,33 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
         .set_text_icon_asset_id(&icon_asset_id)
         .set_text_color(Color::WHITE)
         .root_mut()
-        .add_style(window_style)
+        .set_style(window_style)
         .contents(|c| {
 
             // main container
-            c.add_panel().add_style(main_container_style).contents(|c| {
+            c.add_panel().set_style(main_container_style).contents(|c| {
                 // title container
-                c.add_panel().add_style(title_container_style).contents(|c| {
-                    c.add_text("c y b e r l i t h").add_style(title_text_style);
+                c.add_panel().set_style(title_container_style).contents(|c| {
+                    c.add_text("c y b e r l i t h").set_style(title_text_style);
                 });
 
                 // body container
-                c.add_panel().add_style(body_container_style).contents(|c| {
+                c.add_panel().set_style(body_container_style).contents(|c| {
                     // heading container
-                    c.add_panel().add_style(heading_container_style).contents(|c| {
+                    c.add_panel().set_style(heading_container_style).contents(|c| {
                         // heading container left
-                        c.add_panel().add_style(heading_container_left_style).contents(|c| {
-                            c.add_text("please log in").add_style(heading_text_style);
+                        c.add_panel().set_style(heading_container_left_style).contents(|c| {
+                            c.add_text("please log in").set_style(heading_text_style);
                         });
 
                         // heading container right
-                        c.add_panel().add_style(heading_container_right_style).contents(|c| {
+                        c.add_panel().set_style(heading_container_right_style).contents(|c| {
                             // register button
                             c.add_button("register_button")
-                                .add_style(base_button_style)
-                                .add_style(register_button_style)
+                                .set_style(base_button_style)
+                                .set_style(register_button_style)
                                 .contents(|c| {
-                                    c.add_text("register").add_style(base_button_text_style);
+                                    c.add_text("register").set_style(base_button_text_style);
                                 });
                         });
 
@@ -153,22 +153,22 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
 
                     // username input
                     // text
-                    c.add_text("username:").add_style(base_label_style);
+                    c.add_text("username:").set_style(base_label_style);
                     // text-edit
-                    c.add_panel().add_style(base_text_input_style);
+                    c.add_panel().set_style(base_text_input_style);
 
                     // password input
                     // text
-                    c.add_text("password:").add_style(base_label_style);
+                    c.add_text("password:").set_style(base_label_style);
                     // text-edit
-                    c.add_panel().add_style(base_text_input_style);
+                    c.add_panel().set_style(base_text_input_style);
 
                     // submit button
                     c.add_button("submit_button")
-                        .add_style(base_button_style)
-                        .add_style(submit_button_style)
+                        .set_style(base_button_style)
+                        .set_style(submit_button_style)
                         .contents(|c| {
-                            c.add_text("submit").add_style(base_button_text_style);
+                            c.add_text("submit").set_style(base_button_text_style);
                         });
 
                 });

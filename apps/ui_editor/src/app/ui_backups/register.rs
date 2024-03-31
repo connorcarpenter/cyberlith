@@ -93,11 +93,13 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
     });
     let submit_button_style = ui_config.create_button_style(|s| {
         s
+            .set_parent_style(base_button_style)
             .set_self_halign(Alignment::Start)
             .set_margin_left_px(40.);
     });
     let register_button_style = ui_config.create_button_style(|s| {
         s
+            .set_parent_style(base_button_style)
             .set_self_halign(Alignment::End)
             .set_margin_right_px(10.0);
     });
@@ -124,57 +126,57 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
         .set_text_icon_asset_id(&icon_asset_id)
         .set_text_color(Color::WHITE)
         .root_mut()
-        .add_style(window_style)
+        .set_style(window_style)
         .contents(|c| {
 
             // main container
             c
                 .add_panel()
-                .add_style(main_container_style)
+                .set_style(main_container_style)
                 .contents(|c| {
                     // title container
                     c
                         .add_panel()
-                        .add_style(title_container_style)
+                        .set_style(title_container_style)
                         .contents(|c| {
                             c
                                 .add_text("c y b e r l i t h")
-                                .add_style(title_text_style);
+                                .set_style(title_text_style);
                         });
 
                     // body container
                     c
                         .add_panel()
-                        .add_style(body_container_style)
+                        .set_style(body_container_style)
                         .contents(|c| {
                             // heading container
                             c
                                 .add_panel()
-                                .add_style(heading_container_style)
+                                .set_style(heading_container_style)
                                 .contents(|c| {
                                     // heading container left
                                     c
                                         .add_panel()
-                                        .add_style(heading_container_left_style)
+                                        .set_style(heading_container_left_style)
                                         .contents(|c| {
                                             c
                                                 .add_text("register your account")
-                                                .add_style(heading_text_style);
+                                                .set_style(heading_text_style);
                                         });
 
                                     // heading container right
                                     c
                                         .add_panel()
-                                        .add_style(heading_container_right_style)
+                                        .set_style(heading_container_right_style)
                                         .contents(|c| {
                                             // register button
                                             c.add_button("login_button")
-                                                .add_style(base_button_style)
-                                                .add_style(register_button_style)
+                                                .set_style(base_button_style)
+                                                .set_style(register_button_style)
                                                 .contents(|c| {
                                                     c
                                                         .add_text("login")
-                                                        .add_style(base_button_text_style);
+                                                        .set_style(base_button_text_style);
                                                 })
                                                 .navigation(|n| {
                                                     n
@@ -190,11 +192,11 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
                         // text
                         c
                             .add_text("username:")
-                            .add_style(base_label_style);
+                            .set_style(base_label_style);
                         // text-edit
                         c
                             .add_textbox("username_textbox")
-                            .add_style(base_textbox_style)
+                            .set_style(base_textbox_style)
                             .set_as_first_input()
                             .navigation(|n| {
                                 n
@@ -208,11 +210,11 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
                         // text
                         c
                             .add_text("email address:")
-                            .add_style(base_label_style);
+                            .set_style(base_label_style);
                         // text-edit
                         c
                             .add_textbox("email_textbox")
-                            .add_style(base_textbox_style)
+                            .set_style(base_textbox_style)
                             .navigation(|n| {
                                 n
                                     .up_goes_to("username_textbox")
@@ -225,11 +227,11 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
                         // text
                         c
                             .add_text("password:")
-                            .add_style(base_label_style);
+                            .set_style(base_label_style);
                         // text-edit
                         c
                             .add_textbox("password_textbox")
-                            .add_style(base_textbox_style)
+                            .set_style(base_textbox_style)
                             .navigation(|n| {
                                 n
                                     .up_goes_to("email_textbox")
@@ -242,11 +244,11 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
                         // text
                         c
                             .add_text("confirm password:")
-                            .add_style(base_label_style);
+                            .set_style(base_label_style);
                         // text-edit
                         c
                             .add_textbox("confirm_password_textbox")
-                            .add_style(base_textbox_style)
+                            .set_style(base_textbox_style)
                             .navigation(|n| {
                                 n
                                     .up_goes_to("password_textbox")
@@ -258,12 +260,12 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
                         // submit button
                         c
                             .add_button("submit_button")
-                            .add_style(base_button_style)
-                            .add_style(submit_button_style)
+                            .set_style(base_button_style)
+                            .set_style(submit_button_style)
                             .contents(|c| {
                                 c
                                     .add_text("submit")
-                                    .add_style(base_button_text_style);
+                                    .set_style(base_button_text_style);
                             })
                             .navigation(|n| {
                                 n

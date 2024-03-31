@@ -74,74 +74,22 @@ impl UiState {
 
             match node_ref.widget_kind() {
                 WidgetKind::Panel => {
-                    // TODO: this is a ridiculous way to get color, simplify this
-                    let color = {
-                        let mut output = Color::BLACK;
-
-                        ui_config.store.for_each_panel_style(&id, |style| {
-                            if let Some(background_color) = style.background_color {
-                                output = background_color;
-                            }
-                        });
-
-                        output
-                    };
+                    let background_color = ui_config.store.node_background_color(&id).copied().unwrap_or(Color::BLACK);
                     let panel_mut = self.panel_mut(&id).unwrap();
-                    let mat_handle = materials.add(color);
+                    let mat_handle = materials.add(background_color);
                     panel_mut.background_color_handle = Some(mat_handle);
                 }
                 WidgetKind::Text => {
-                    // TODO: this is a ridiculous way to get color, simplify this
-                    let color = {
-                        let mut output = Color::BLACK;
-
-                        ui_config.store.for_each_text_style(&id, |style| {
-                            if let Some(background_color) = style.background_color {
-                                output = background_color;
-                            }
-                        });
-
-                        output
-                    };
+                    let background_color = ui_config.store.node_background_color(&id).copied().unwrap_or(Color::BLACK);
                     let text_mut = self.text_mut(&id).unwrap();
-                    let mat_handle = materials.add(color);
+                    let mat_handle = materials.add(background_color);
                     text_mut.background_color_handle = Some(mat_handle);
                 }
                 WidgetKind::Button => {
-                    // TODO: this is a ridiculous way to get color, simplify this
-                    let background_color = {
-                        let mut output = Color::BLACK;
-
-                        ui_config.store.for_each_button_style(&id, |style| {
-                            if let Some(color) = style.panel.background_color {
-                                output = color;
-                            }
-                        });
-
-                        output
-                    };
-                    let hover_color = {
-                        let mut output = Color::BLACK;
-
-                        ui_config.store.for_each_button_style(&id, |style| {
-                            if let Some(color) = style.hover_color {
-                                output = color;
-                            }
-                        });
-
-                        output
-                    };
-                    let down_color = {
-                        let mut output = Color::BLACK;
-
-                        ui_config.store.for_each_button_style(&id, |style| {
-                            if let Some(color) = style.down_color {
-                                output = color;
-                            }
-                        });
-
-                        output
-                    };
+                    let background_color = ui_config.store.node_background_color(&id).copied().unwrap_or(Color::BLACK);
+                    let button_style = ui_config.store.button_style(&id);
+                    let hover_color = button_style.map(|style| style.hover_color).flatten().unwrap_or(Color::BLACK);
+                    let down_color = button_style.map(|style| style.down_color).flatten().unwrap_or(Color::BLACK);
 
                     let button_mut = self.button_mut(&id).unwrap();
 
@@ -155,51 +103,11 @@ impl UiState {
                     button_mut.set_down_color_handle(down_color_handle);
                 }
                 WidgetKind::Textbox => {
-                    // TODO: this is a ridiculous way to get color, simplify this
-                    let background_color = {
-                        let mut output = Color::BLACK;
-
-                        ui_config.store.for_each_textbox_style(&id, |style| {
-                            if let Some(color) = style.panel.background_color {
-                                output = color;
-                            }
-                        });
-
-                        output
-                    };
-                    let hover_color = {
-                        let mut output = Color::BLACK;
-
-                        ui_config.store.for_each_textbox_style(&id, |style| {
-                            if let Some(color) = style.hover_color {
-                                output = color;
-                            }
-                        });
-
-                        output
-                    };
-                    let active_color = {
-                        let mut output = Color::BLACK;
-
-                        ui_config.store.for_each_textbox_style(&id, |style| {
-                            if let Some(color) = style.active_color {
-                                output = color;
-                            }
-                        });
-
-                        output
-                    };
-                    let select_color = {
-                        let mut output = Color::BLACK;
-
-                        ui_config.store.for_each_textbox_style(&id, |style| {
-                            if let Some(color) = style.select_color {
-                                output = color;
-                            }
-                        });
-
-                        output
-                    };
+                    let background_color = ui_config.store.node_background_color(&id).copied().unwrap_or(Color::BLACK);
+                    let textbox_style = ui_config.store.textbox_style(&id);
+                    let hover_color = textbox_style.map(|style| style.hover_color).flatten().unwrap_or(Color::BLACK);
+                    let active_color = textbox_style.map(|style| style.active_color).flatten().unwrap_or(Color::BLACK);
+                    let select_color = textbox_style.map(|style| style.select_color).flatten().unwrap_or(Color::BLACK);
 
                     let textbox_mut = self.textbox_mut(&id).unwrap();
 

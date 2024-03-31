@@ -42,58 +42,58 @@ pub trait Node: Sized {
     fn visible(&self, state_store: &Self::StateStore) -> bool;
 
     /// Returns the layout type of the node.
-    fn layout_type(&self, store: &Self::Store) -> Option<LayoutType>;
+    fn layout_type(&self, store: &Self::Store) -> LayoutType;
 
     /// Returns the position type of the node.
-    fn position_type(&self, store: &Self::Store) -> Option<PositionType>;
+    fn position_type(&self, store: &Self::Store) -> PositionType;
 
     /// Returns the desired width of the node.
-    fn width(&self, store: &Self::Store) -> Option<SizeUnits>;
+    fn width(&self, store: &Self::Store) -> SizeUnits;
 
     /// Returns the desired height of the node.
-    fn height(&self, store: &Self::Store) -> Option<SizeUnits>;
+    fn height(&self, store: &Self::Store) -> SizeUnits;
 
     /// Returns the minimum width of the node.
-    fn width_min(&self, store: &Self::Store) -> Option<SizeUnits>;
+    fn width_min(&self, store: &Self::Store) -> SizeUnits;
 
     /// Returns the minimum height of the node.
-    fn height_min(&self, store: &Self::Store) -> Option<SizeUnits>;
+    fn height_min(&self, store: &Self::Store) -> SizeUnits;
 
     /// Returns the maximum width of the node.
-    fn width_max(&self, store: &Self::Store) -> Option<SizeUnits>;
+    fn width_max(&self, store: &Self::Store) -> SizeUnits;
 
     /// Returns the maximum height of the node.
-    fn height_max(&self, store: &Self::Store) -> Option<SizeUnits>;
+    fn height_max(&self, store: &Self::Store) -> SizeUnits;
 
     /// Returns the desired left-side space of the node.
-    fn margin_left(&self, store: &Self::Store) -> Option<MarginUnits>;
+    fn margin_left(&self, store: &Self::Store) -> MarginUnits;
 
     /// Returns the desired right-side space of the node.
-    fn margin_right(&self, store: &Self::Store) -> Option<MarginUnits>;
+    fn margin_right(&self, store: &Self::Store) -> MarginUnits;
 
     /// Returns the desired top-side space of the node.
-    fn margin_top(&self, store: &Self::Store) -> Option<MarginUnits>;
+    fn margin_top(&self, store: &Self::Store) -> MarginUnits;
 
     /// Returns the desired bottom-side space of the node.
-    fn margin_bottom(&self, store: &Self::Store) -> Option<MarginUnits>;
+    fn margin_bottom(&self, store: &Self::Store) -> MarginUnits;
 
     /// Returns the desired left-side child-space of the node.
-    fn padding_left(&self, store: &Self::Store) -> Option<SizeUnits>;
+    fn padding_left(&self, store: &Self::Store) -> SizeUnits;
 
     /// Returns the desired left-side child-space of the node.
-    fn padding_right(&self, store: &Self::Store) -> Option<SizeUnits>;
+    fn padding_right(&self, store: &Self::Store) -> SizeUnits;
 
     /// Returns the desired left-side child-space of the node.
-    fn padding_top(&self, store: &Self::Store) -> Option<SizeUnits>;
+    fn padding_top(&self, store: &Self::Store) -> SizeUnits;
 
     /// Returns the desired left-side child-space of the node.
-    fn padding_bottom(&self, store: &Self::Store) -> Option<SizeUnits>;
+    fn padding_bottom(&self, store: &Self::Store) -> SizeUnits;
 
     /// Returns the desired space to applied between the children of the node on the vertical axis.
-    fn row_between(&self, store: &Self::Store) -> Option<SizeUnits>;
+    fn row_between(&self, store: &Self::Store) -> SizeUnits;
 
     /// Returns the desired space to be applied between the children of the node on the horizontal axis.
-    fn col_between(&self, store: &Self::Store) -> Option<SizeUnits>;
+    fn col_between(&self, store: &Self::Store) -> SizeUnits;
 
     /// Returns the solid override of the node.
     fn is_solid(&self, store: &Self::Store) -> Option<Solid>;
@@ -108,16 +108,16 @@ pub trait Node: Sized {
     fn aspect_ratio(&self, store: &Self::Store) -> Option<f32>;
 
     /// Returns the horizontal alignment of the node.
-    fn self_halign(&self, store: &Self::Store) -> Option<Alignment>;
+    fn self_halign(&self, store: &Self::Store) -> Alignment;
 
     /// Returns the vertical alignment of the node.
-    fn self_valign(&self, store: &Self::Store) -> Option<Alignment>;
+    fn self_valign(&self, store: &Self::Store) -> Alignment;
 
     /// Returns the horizontal alignment of the node's children
-    fn children_halign(&self, store: &Self::Store) -> Option<Alignment>;
+    fn children_halign(&self, store: &Self::Store) -> Alignment;
 
     /// Returns the vertical alignment of the node's children
-    fn children_valign(&self, store: &Self::Store) -> Option<Alignment>;
+    fn children_valign(&self, store: &Self::Store) -> Alignment;
 }
 
 #[derive(Eq, PartialEq, Clone, Copy, Default)]
@@ -148,51 +148,48 @@ impl Alignment {
 pub(crate) trait NodeExt: Node {
     fn main(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SizeUnits {
         match parent_layout_type {
-            LayoutType::Row => self.width(store).unwrap_or(SizeUnits::Percentage(100.0)),
-            LayoutType::Column => self.height(store).unwrap_or(SizeUnits::Percentage(100.0)),
+            LayoutType::Row => self.width(store),
+            LayoutType::Column => self.height(store),
         }
     }
 
     fn main_min(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SizeUnits {
-        parent_layout_type.select_unwrap_default(
+        parent_layout_type.select(
             store,
             |store| self.width_min(store),
             |store| self.height_min(store),
-            SizeUnits::Pixels(0.0),
         )
     }
 
     fn main_max(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SizeUnits {
-        parent_layout_type.select_unwrap_default(
+        parent_layout_type.select(
             store,
             |store| self.width_max(store),
             |store| self.height_max(store),
-            SizeUnits::Pixels(f32::MAX),
         )
     }
 
     fn cross(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SizeUnits {
-        match parent_layout_type {
-            LayoutType::Row => self.height(store).unwrap_or(SizeUnits::Percentage(100.0)),
-            LayoutType::Column => self.width(store).unwrap_or(SizeUnits::Percentage(100.0)),
-        }
+        parent_layout_type.select(
+            store,
+            |store| self.height(store),
+            |store| self.width(store)
+        )
     }
 
     fn cross_min(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SizeUnits {
-        parent_layout_type.select_unwrap_default(
+        parent_layout_type.select(
             store,
             |store| self.height_min(store),
             |store| self.width_min(store),
-            SizeUnits::Pixels(0.0),
         )
     }
 
     fn cross_max(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SizeUnits {
-        parent_layout_type.select_unwrap_default(
+        parent_layout_type.select(
             store,
             |store| self.height_max(store),
             |store| self.width_max(store),
-            SizeUnits::Pixels(f32::MAX),
         )
     }
 
@@ -201,7 +198,7 @@ pub(crate) trait NodeExt: Node {
         store: &Self::Store,
         parent_layout_type: LayoutType,
     ) -> MarginUnits {
-        parent_layout_type.select_unwrap(
+        parent_layout_type.select(
             store,
             |store| self.margin_left(store),
             |store| self.margin_top(store),
@@ -213,7 +210,7 @@ pub(crate) trait NodeExt: Node {
         store: &Self::Store,
         parent_layout_type: LayoutType,
     ) -> MarginUnits {
-        parent_layout_type.select_unwrap(
+        parent_layout_type.select(
             store,
             |store| self.margin_right(store),
             |store| self.margin_bottom(store),
@@ -225,7 +222,7 @@ pub(crate) trait NodeExt: Node {
         store: &Self::Store,
         parent_layout_type: LayoutType,
     ) -> MarginUnits {
-        parent_layout_type.select_unwrap(
+        parent_layout_type.select(
             store,
             |store| self.margin_top(store),
             |store| self.margin_left(store),
@@ -237,7 +234,7 @@ pub(crate) trait NodeExt: Node {
         store: &Self::Store,
         parent_layout_type: LayoutType,
     ) -> MarginUnits {
-        parent_layout_type.select_unwrap(
+        parent_layout_type.select(
             store,
             |store| self.margin_bottom(store),
             |store| self.margin_right(store),
@@ -249,7 +246,7 @@ pub(crate) trait NodeExt: Node {
         store: &Self::Store,
         parent_layout_type: LayoutType,
     ) -> SizeUnits {
-        parent_layout_type.select_unwrap(
+        parent_layout_type.select(
             store,
             |store| self.padding_left(store),
             |store| self.padding_top(store),
@@ -257,7 +254,7 @@ pub(crate) trait NodeExt: Node {
     }
 
     fn padding_main_after(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SizeUnits {
-        parent_layout_type.select_unwrap(
+        parent_layout_type.select(
             store,
             |store| self.padding_right(store),
             |store| self.padding_bottom(store),
@@ -269,7 +266,7 @@ pub(crate) trait NodeExt: Node {
         store: &Self::Store,
         parent_layout_type: LayoutType,
     ) -> SizeUnits {
-        parent_layout_type.select_unwrap(
+        parent_layout_type.select(
             store,
             |store| self.padding_top(store),
             |store| self.padding_left(store),
@@ -281,7 +278,7 @@ pub(crate) trait NodeExt: Node {
         store: &Self::Store,
         parent_layout_type: LayoutType,
     ) -> SizeUnits {
-        parent_layout_type.select_unwrap(
+        parent_layout_type.select(
             store,
             |store| self.padding_bottom(store),
             |store| self.padding_right(store),
@@ -289,7 +286,7 @@ pub(crate) trait NodeExt: Node {
     }
 
     fn main_between(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SizeUnits {
-        parent_layout_type.select_unwrap(
+        parent_layout_type.select(
             store,
             |store| self.col_between(store),
             |store| self.row_between(store),
@@ -298,7 +295,7 @@ pub(crate) trait NodeExt: Node {
 
     // Currently unused until wrapping is implemented
     fn cross_between(&self, store: &Self::Store, parent_layout_type: LayoutType) -> SizeUnits {
-        parent_layout_type.select_unwrap(
+        parent_layout_type.select(
             store,
             |store| self.row_between(store),
             |store| self.col_between(store),
@@ -306,7 +303,7 @@ pub(crate) trait NodeExt: Node {
     }
 
     fn self_align(&self, store: &Self::Store, parent_layout_type: LayoutType) -> Alignment {
-        parent_layout_type.select_unwrap(
+        parent_layout_type.select(
             store,
             |store| self.self_valign(store),
             |store| self.self_halign(store),
@@ -314,7 +311,7 @@ pub(crate) trait NodeExt: Node {
     }
 
     fn children_align(&self, store: &Self::Store, layout_type: LayoutType) -> Alignment {
-        layout_type.select_unwrap(
+        layout_type.select(
             store,
             |store| self.children_halign(store),
             |store| self.children_valign(store),

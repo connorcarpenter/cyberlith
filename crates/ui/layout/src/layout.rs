@@ -103,7 +103,7 @@ where
     };
 
     // The layout type of the node. Determines the main and cross axes of the children.
-    let layout_type = node.layout_type(store).unwrap_or_default();
+    let layout_type = node.layout_type(store);
 
     // The desired main-axis and cross-axis sizes of the node.
     let main = if node_is_root {
@@ -188,7 +188,7 @@ where
     // Get the total number of relative-typed children of the node.
     let num_relative_children = node
         .children(store)
-        .filter(|child| child.position_type(store).unwrap_or_default() == PositionType::Relative)
+        .filter(|child| child.position_type(store) == PositionType::Relative)
         .filter(|child| child.visible(state_store))
         .count();
 
@@ -238,7 +238,7 @@ where
     let mut iter = node
         .children(store)
         .filter(|child| child.visible(state_store))
-        .filter(|child| child.position_type(store).unwrap_or_default() == PositionType::Relative)
+        .filter(|child| child.position_type(store) == PositionType::Relative)
         .enumerate();
 
     let first = iter.next().map(|(index, _)| index);
@@ -247,7 +247,7 @@ where
     let mut node_children = node
         .children(store)
         .filter(|child| child.visible(state_store))
-        .filter(|child| child.position_type(store).unwrap_or_default() == PositionType::Relative)
+        .filter(|child| child.position_type(store) == PositionType::Relative)
         .enumerate()
         .peekable();
 
@@ -355,7 +355,7 @@ where
     for (index, child) in children
         .iter_mut()
         .filter(|child| {
-            child.node.position_type(store).unwrap_or_default() == PositionType::Relative
+            child.node.position_type(store) == PositionType::Relative
         })
         .filter(|child| !child.node.cross(store, layout_type).is_auto())
         .enumerate()
@@ -506,7 +506,7 @@ where
             cross_axis_stretch_nodes.push(StretchItem::new(Some(index), 1.0, ItemType::After));
         }
 
-        let child_position_type = child.node.position_type(store).unwrap_or_default();
+        let child_position_type = child.node.position_type(store);
 
         loop {
             // If all stretch items are frozen, exit the loop.
@@ -559,7 +559,7 @@ where
 
     let node_children = node
         .children(store)
-        .filter(|child| child.position_type(store).unwrap_or_default() == PositionType::Absolute)
+        .filter(|child| child.position_type(store) == PositionType::Absolute)
         .filter(|child| child.visible(state_store));
 
     // Compute space and size of non-flexible self-directed children.
@@ -638,7 +638,7 @@ where
     for (index, child) in children
         .iter_mut()
         .filter(|child| {
-            child.node.position_type(store).unwrap_or_default() == PositionType::Absolute
+            child.node.position_type(store) == PositionType::Absolute
         })
         .enumerate()
     {
@@ -660,7 +660,7 @@ where
             cross_axis_stretch_nodes.push(StretchItem::new(Some(index), 1.0, ItemType::After));
         }
 
-        let child_position_type = child.node.position_type(store).unwrap_or_default();
+        let child_position_type = child.node.position_type(store);
 
         loop {
             // If all stretch items are frozen, exit the loop.
@@ -715,7 +715,7 @@ where
     for (index, child) in children
         .iter_mut()
         .filter(|child| {
-            child.node.position_type(store).unwrap_or_default() == PositionType::Absolute
+            child.node.position_type(store) == PositionType::Absolute
         })
         .enumerate()
     {
@@ -785,7 +785,7 @@ where
     // Set size and position of children in the cache.
     let mut main_pos = 0.0;
     for child in children.iter() {
-        let child_position_type = child.node.position_type(store).unwrap_or_default();
+        let child_position_type = child.node.position_type(store);
         match child_position_type {
             PositionType::Absolute => {
                 cache.set_rect(

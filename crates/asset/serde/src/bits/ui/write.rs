@@ -1,11 +1,12 @@
 use std::collections::HashMap;
 
 use naia_serde::{FileBitWriter, SerdeInternal as Serde, UnsignedInteger, UnsignedVariableInteger};
+use render_api::base::Color;
 
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 use ui_types::{Button, ButtonStyle, NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, UiConfig, UiNode, Widget, WidgetStyle, Navigation, TextboxStyle, Textbox};
 
-use crate::bits::{AlignmentBits, ButtonBits, NavigationBits, ButtonStyleBits, LayoutTypeBits, MarginUnitsBits, PanelBits, PanelStyleBits, PositionTypeBits, SizeUnitsBits, SolidBits, TextBits, TextStyleBits, UiAction, UiActionType, UiNodeBits, UiStyleBits, WidgetBits, WidgetStyleBits, TextboxStyleBits, TextboxBits};
+use crate::bits::{AlignmentBits, ButtonBits, NavigationBits, ButtonStyleBits, LayoutTypeBits, MarginUnitsBits, PanelBits, PanelStyleBits, PositionTypeBits, SizeUnitsBits, SolidBits, TextBits, TextStyleBits, UiAction, UiActionType, UiNodeBits, UiStyleBits, WidgetBits, WidgetStyleBits, TextboxStyleBits, TextboxBits, ColorBits};
 
 pub fn write_bits(ui_config: &UiConfig) -> Vec<u8> {
     let actions = convert_ui_to_actions(ui_config);
@@ -17,11 +18,7 @@ fn convert_ui_to_actions(ui_config: &UiConfig) -> Vec<UiAction> {
 
     // write text color
     let text_color = ui_config.get_text_color();
-    output.push(UiAction::TextColor(
-        text_color.r,
-        text_color.g,
-        text_color.b,
-    ));
+    output.push(UiAction::TextColor(ColorBits::from(text_color)));
 
     // write text icon AssetId
     let text_icon_asset_id = ui_config.get_text_icon_asset_id();
@@ -38,9 +35,6 @@ fn convert_ui_to_actions(ui_config: &UiConfig) -> Vec<UiAction> {
 
     for (style_id, style) in ui_config.store.styles.iter().enumerate() {
         let style_id = StyleId::new(style_id as u32);
-        if style_id == UiConfig::BASE_TEXT_STYLE_ID {
-            continue;
-        }
         let next_index = style_count;
         if style_count == u8::MAX {
             panic!("Too many styles, max is {}", u8::MAX);
@@ -68,11 +62,9 @@ fn actions_to_bytes(actions: Vec<UiAction>) -> Vec<u8> {
 
     for action in actions {
         match action {
-            UiAction::TextColor(r, g, b) => {
+            UiAction::TextColor(text_color) => {
                 UiActionType::TextColor.ser(&mut bit_writer);
-                r.ser(&mut bit_writer);
-                g.ser(&mut bit_writer);
-                b.ser(&mut bit_writer);
+                text_color.ser(&mut bit_writer);
             }
             UiAction::TextIconAssetId(asset_id) => {
                 UiActionType::TextIconAssetId.ser(&mut bit_writer);
@@ -132,6 +124,7 @@ impl UiStyleBits {
         });
 
         Self {
+            parent_style: style.parent_style.map(|val| val.as_usize() as u8),
             widget_style: WidgetStyleBits::from_style(&style.widget_style),
 
             position_type: style
@@ -173,7 +166,7 @@ impl WidgetStyleBits {
 impl PanelStyleBits {
     fn from_panel_style(style: &PanelStyle) -> Self {
         Self {
-            background_color: style.background_color.map(|val| (val.r, val.g, val.b)),
+            background_color: style.background_color.map(ColorBits::from),
             background_alpha: style.background_alpha().map(|val| {
                 let val = (val * 10.0) as u8;
                 UnsignedInteger::<4>::new(val)
@@ -197,7 +190,7 @@ impl PanelStyleBits {
 impl TextStyleBits {
     fn from_text_style(style: &TextStyle) -> Self {
         Self {
-            background_color: style.background_color.map(|val| (val.r, val.g, val.b)),
+            background_color: style.background_color.map(ColorBits::from),
             background_alpha: style.background_alpha().map(|val| {
                 let val = (val * 10.0) as u8;
                 UnsignedInteger::<4>::new(val)
@@ -210,8 +203,8 @@ impl ButtonStyleBits {
     fn from_button_style(style: &ButtonStyle) -> Self {
         Self {
             panel: PanelStyleBits::from_panel_style(&style.panel),
-            hover_color: style.hover_color.map(|val| (val.r, val.g, val.b)),
-            down_color: style.down_color.map(|val| (val.r, val.g, val.b)),
+            hover_color: style.hover_color.map(ColorBits::from),
+            down_color: style.down_color.map(ColorBits::from),
         }
     }
 }
@@ -220,9 +213,9 @@ impl TextboxStyleBits {
     fn from_textbox_style(style: &TextboxStyle) -> Self {
         Self {
             panel: PanelStyleBits::from_panel_style(&style.panel),
-            hover_color: style.hover_color.map(|val| (val.r, val.g, val.b)),
-            active_color: style.active_color.map(|val| (val.r, val.g, val.b)),
-            select_color: style.select_color.map(|val| (val.r, val.g, val.b)),
+            hover_color: style.hover_color.map(ColorBits::from),
+            active_color: style.active_color.map(ColorBits::from),
+            select_color: style.select_color.map(ColorBits::from),
         }
     }
 }
@@ -393,19 +386,27 @@ impl LayoutTypeBits {
     }
 }
 
+impl From<Color> for ColorBits {
+    fn from(color: Color) -> Self {
+        Self {
+            r: color.r,
+            g: color.g,
+            b: color.b,
+        }
+    }
+
+}
+
 impl UiNodeBits {
     fn from_node(ui_config: &UiConfig, style_id_to_index: &HashMap<StyleId, u8>, node: &UiNode) -> Self {
         let mut me = Self {
-            style_ids: Vec::new(),
+            style_id: None,
             widget: WidgetBits::from_widget(ui_config, &node.widget),
         };
 
-        for style_id in &node.style_ids {
-            if style_id == &UiConfig::BASE_TEXT_STYLE_ID {
-                continue;
-            }
+        if let Some(style_id) = &node.style_id() {
             let style_index = *style_id_to_index.get(style_id).unwrap();
-            me.style_ids.push(style_index);
+            me.style_id = Some(style_index);
         }
 
         me

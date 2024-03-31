@@ -52,6 +52,7 @@ impl UiConfigJson {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub(crate) struct UiStyleJson {
+    parent_style: Option<usize>,
     widget_style: WidgetStyleJson,
 
     position_type: Option<PositionTypeJson>,
@@ -191,7 +192,7 @@ pub(crate) struct ColorJson {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub(crate) struct UiNodeJson {
-    style_ids: Vec<usize>,
+    style_id: Option<usize>,
     widget: WidgetJson,
 }
 

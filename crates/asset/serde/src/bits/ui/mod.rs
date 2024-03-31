@@ -21,6 +21,7 @@ cfg_if! {
 }
 
 use naia_serde::{SerdeInternal as Serde, UnsignedInteger, UnsignedVariableInteger};
+use serde::{Deserialize, Serialize};
 
 use asset_id::AssetId;
 use ui_types::{NodeId, UiConfig, WidgetKind};
@@ -28,8 +29,8 @@ use ui_types::{NodeId, UiConfig, WidgetKind};
 // Actions
 #[derive(Clone)]
 pub(crate) enum UiAction {
-    // r, g, b
-    TextColor(u8, u8, u8),
+    // rgb
+    TextColor(ColorBits),
     // assetid
     TextIconAssetId(AssetId),
     // default button
@@ -54,6 +55,7 @@ pub(crate) enum UiActionType {
 // Style
 #[derive(Serde, Clone, PartialEq)]
 pub(crate) struct UiStyleBits {
+    parent_style: Option<u8>, // TODO: is this a good value type for this? how many styles are we likely to have?
     widget_style: WidgetStyleBits,
 
     position_type: Option<PositionTypeBits>,
@@ -90,7 +92,7 @@ impl UiStyleBits {
 
 #[derive(Serde, Clone, PartialEq)]
 pub(crate) struct PanelStyleBits {
-    background_color: Option<(u8, u8, u8)>,
+    background_color: Option<ColorBits>,
     background_alpha: Option<UnsignedInteger<4>>,
 
     layout_type: Option<LayoutTypeBits>,
@@ -108,23 +110,23 @@ pub(crate) struct PanelStyleBits {
 
 #[derive(Serde, Clone, PartialEq)]
 pub(crate) struct TextStyleBits {
-    background_color: Option<(u8, u8, u8)>,
+    background_color: Option<ColorBits>,
     background_alpha: Option<UnsignedInteger<4>>,
 }
 
 #[derive(Serde, Clone, PartialEq)]
 pub(crate) struct ButtonStyleBits {
     panel: PanelStyleBits,
-    hover_color: Option<(u8, u8, u8)>,
-    down_color: Option<(u8, u8, u8)>,
+    hover_color: Option<ColorBits>,
+    down_color: Option<ColorBits>,
 }
 
 #[derive(Serde, Clone, PartialEq)]
 pub(crate) struct TextboxStyleBits {
     panel: PanelStyleBits,
-    hover_color: Option<(u8, u8, u8)>,
-    active_color: Option<(u8, u8, u8)>,
-    select_color: Option<(u8, u8, u8)>,
+    hover_color: Option<ColorBits>,
+    active_color: Option<ColorBits>,
+    select_color: Option<ColorBits>,
 }
 
 #[derive(Serde, Clone, PartialEq)]
@@ -175,11 +177,18 @@ pub(crate) enum LayoutTypeBits {
     Column,
 }
 
+#[derive(Serde, Clone, PartialEq)]
+pub(crate) struct ColorBits {
+    r: u8,
+    g: u8,
+    b: u8,
+}
+
 // Node
 
 #[derive(Serde, Clone, PartialEq)]
 pub(crate) struct UiNodeBits {
-    style_ids: Vec<u8>, // TODO: is this a good value type for this? how many styles are we likely to have?
+    style_id: Option<u8>, // TODO: is this a good value type for this? how many styles are we likely to have?
     widget: WidgetBits,
 }
 

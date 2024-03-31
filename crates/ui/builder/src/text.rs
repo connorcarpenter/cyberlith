@@ -1,7 +1,7 @@
 
 use render_api::base::Color;
 use ui_layout::{Alignment, MarginUnits, PositionType, SizeUnits};
-use ui_types::{NodeId, NodeStyle, StyleId, TextStyle, UiConfig, UiStore, WidgetStyle};
+use ui_types::{NodeId, NodeStyle, StyleId, TextStyle, UiConfig, WidgetStyle};
 
 pub struct TextMut<'a> {
     ui_config: &'a mut UiConfig,
@@ -16,45 +16,10 @@ impl<'a> TextMut<'a> {
         }
     }
 
-    pub fn add_style(&mut self, style_id: StyleId) -> &mut Self {
+    pub fn set_style(&mut self, style_id: StyleId) -> &mut Self {
         let node = self.ui_config.node_mut(&self.node_id).unwrap();
-        node.style_ids.push(style_id);
+        node.set_style_id(style_id);
         self
-    }
-}
-
-pub struct TextStyleRef<'a> {
-    store: &'a UiStore,
-    node_id: NodeId,
-}
-
-impl<'a> TextStyleRef<'a> {
-    pub fn new(store: &'a UiStore, node_id: NodeId) -> Self {
-        Self { store, node_id }
-    }
-
-    pub fn background_color(&self) -> Color {
-        let mut output = Color::BLACK; // TODO: put into const var!
-
-        self.store.for_each_text_style(&self.node_id, |style| {
-            if let Some(color) = style.background_color {
-                output = color;
-            }
-        });
-
-        output
-    }
-
-    pub fn background_alpha(&self) -> f32 {
-        let mut output = 0.0; // TODO: put into const var!
-
-        self.store.for_each_text_style(&self.node_id, |style| {
-            if let Some(alpha) = style.background_alpha {
-                output = alpha;
-            }
-        });
-
-        output
     }
 }
 
@@ -78,6 +43,12 @@ impl<'a> TextStyleMut<'a> {
         } else {
             panic!("StyleId does not reference a TextStyle");
         }
+    }
+
+    // setters
+    pub fn set_parent_style(&mut self, style_id: StyleId) -> &mut Self {
+        self.get_style_mut().parent_style = Some(style_id);
+        self
     }
 
     pub fn set_background_color(&mut self, color: Color) -> &mut Self {

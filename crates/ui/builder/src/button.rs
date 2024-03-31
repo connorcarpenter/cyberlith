@@ -1,6 +1,6 @@
 use render_api::base::Color;
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
-use ui_types::{Button, ButtonStyle, NodeId, NodeStyle, Panel, StyleId, Text, UiConfig, UiNode, UiStore, Widget, WidgetStyle};
+use ui_types::{Button, ButtonStyle, NodeId, NodeStyle, Panel, StyleId, Text, UiConfig, UiNode, Widget, WidgetStyle};
 
 use crate::{PanelMut, TextMut};
 
@@ -19,9 +19,9 @@ impl<'a> ButtonMut<'a> {
         self
     }
 
-    pub fn add_style(&mut self, style_id: StyleId) -> &mut Self {
+    pub fn set_style(&mut self, style_id: StyleId) -> &mut Self {
         let node = self.ui_config.node_mut(&self.node_id).unwrap();
-        node.style_ids.push(style_id);
+        node.set_style_id(style_id);
         self
     }
 
@@ -74,10 +74,6 @@ impl<'a> ButtonContentsMut<'a> {
     pub fn add_text<'b>(self: &'b mut ButtonContentsMut<'a>, text: &str) -> TextMut<'b> {
         // creates a new panel, returning a context for it
         let new_id = self.ui_config.create_node(Widget::Text(Text::new(text)));
-
-        // add base text style
-        let node_mut = self.ui_config.node_mut(&new_id).unwrap();
-        node_mut.style_ids.push(UiConfig::BASE_TEXT_STYLE_ID);
 
         // add new text widget to children
         self.get_button_mut().add_child(new_id);
@@ -132,65 +128,6 @@ impl<'a> ButtonNavigationMut<'a> {
     }
 }
 
-pub struct ButtonStyleRef<'a> {
-    store: &'a UiStore,
-    node_id: NodeId,
-}
-
-impl<'a> ButtonStyleRef<'a> {
-    pub fn new(store: &'a UiStore, node_id: NodeId) -> Self {
-        Self { store, node_id }
-    }
-
-    pub fn background_color(&self) -> Color {
-        let mut output = Color::BLACK; // TODO: put into const var!
-
-        self.store.for_each_button_style(&self.node_id, |style| {
-            if let Some(color) = style.panel.background_color {
-                output = color;
-            }
-        });
-
-        output
-    }
-
-    pub fn background_alpha(&self) -> f32 {
-        let mut output = 1.0; // TODO: put into const var!
-
-        self.store.for_each_button_style(&self.node_id, |style| {
-            if let Some(alpha) = style.panel.background_alpha {
-                output = alpha;
-            }
-        });
-
-        output
-    }
-
-    pub fn hover_color(&self) -> Color {
-        let mut output = Color::BLACK; // TODO: put into const var!
-
-        self.store.for_each_button_style(&self.node_id, |style| {
-            if let Some(color) = style.hover_color {
-                output = color;
-            }
-        });
-
-        output
-    }
-
-    pub fn down_color(&self) -> Color {
-        let mut output = Color::BLACK; // TODO: put into const var!
-
-        self.store.for_each_button_style(&self.node_id, |style| {
-            if let Some(color) = style.down_color {
-                output = color;
-            }
-        });
-
-        output
-    }
-}
-
 pub struct ButtonStyleMut<'a> {
     ui_config: &'a mut UiConfig,
     style_id: StyleId,
@@ -214,6 +151,11 @@ impl<'a> ButtonStyleMut<'a> {
     }
 
     // setters
+
+    pub fn set_parent_style(&mut self, style_id: StyleId) -> &mut Self {
+        self.get_style_mut().parent_style = Some(style_id);
+        self
+    }
 
     pub fn set_hover_color(&mut self, color: Color) -> &mut Self {
         self.get_button_style_mut().set_hover_color(color);

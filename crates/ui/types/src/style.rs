@@ -10,7 +10,7 @@ impl StyleId {
         Self(id)
     }
 
-    pub(crate) fn as_usize(&self) -> usize {
+    pub fn as_usize(&self) -> usize {
         self.0 as usize
     }
 }
@@ -25,6 +25,8 @@ pub enum WidgetStyle {
 
 #[derive(Clone, Copy)]
 pub struct NodeStyle {
+    pub parent_style: Option<StyleId>,
+
     pub widget_style: WidgetStyle,
 
     pub position_type: Option<PositionType>,
@@ -51,6 +53,7 @@ pub struct NodeStyle {
 impl NodeStyle {
     pub fn empty(widget_style: WidgetStyle) -> Self {
         Self {
+            parent_style: None,
             widget_style,
             position_type: None,
 

@@ -2,16 +2,27 @@ use crate::{panel::Panel, style::StyleId, widget::Widget, widget::WidgetKind, Bu
 
 #[derive(Clone)]
 pub struct UiNode {
-    pub style_ids: Vec<StyleId>,
+    style_id: Option<StyleId>,
     pub widget: Widget,
 }
 
 impl UiNode {
     pub(crate) fn new(widget: Widget) -> Self {
         Self {
-            style_ids: Vec::new(),
+            style_id: None,
             widget,
         }
+    }
+
+    pub fn style_id(&self) -> Option<StyleId> {
+        self.style_id
+    }
+
+    pub fn set_style_id(&mut self, style_id: StyleId) {
+        if self.style_id.is_some() {
+            panic!("Node already has a style_id");
+        }
+        self.style_id = Some(style_id);
     }
 
     pub fn widget_kind(&self) -> WidgetKind {

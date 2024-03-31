@@ -60,284 +60,298 @@ impl Node for NodeId {
         store.get_node_visibility(self).unwrap()
     }
 
-    fn layout_type(&self, store: &Self::Store) -> Option<LayoutType> {
-        if !store.node_kind(self).has_children() {
-            return None;
-        }
-
+    // all of these unwrap_or_default
+    fn layout_type(&self, store: &Self::Store) -> LayoutType {
         let mut output = LayoutType::default();
 
-        store.for_each_panel_style(self, |panel_style| {
-            if let Some(layout_type) = panel_style.layout_type {
-                output = layout_type;
+        if store.node_kind(self).has_children() {
+            if let Some(panel_style) = store.panel_style(self) {
+                if let Some(layout_type) = panel_style.layout_type {
+                    output = layout_type;
+                }
             }
-        });
-
-        Some(output)
-    }
-
-    fn position_type(&self, store: &Self::Store) -> Option<PositionType> {
-        let mut output = PositionType::default();
-
-        store.for_each_node_style(self, |node_style| {
-            if let Some(position_type) = node_style.position_type {
-                output = position_type;
-            }
-        });
-
-        Some(output)
-    }
-
-    fn width(&self, store: &Self::Store) -> Option<SizeUnits> {
-        let mut output = SizeUnits::default();
-
-        if store.node_kind(self).is_text() {
-            return Some(output);
         }
 
-        store.for_each_node_style(self, |node_style| {
+        output
+    }
+
+    // all of these unwrap_or_default
+    fn position_type(&self, store: &Self::Store) -> PositionType {
+        let mut output = PositionType::default();
+
+        if let Some(node_style) = store.node_style(self) {
+            if let Some(layout_type) = node_style.position_type {
+                output = layout_type;
+            }
+        }
+
+        output
+    }
+
+    // all of these unwrap_or(SizeUnits::Percentage(100.0))
+    fn width(&self, store: &Self::Store) -> SizeUnits {
+
+        if store.node_kind(self).is_text() {
+            return SizeUnits::Auto;
+        }
+
+        let mut output = SizeUnits::Percentage(100.0);
+
+        if let Some(node_style) = store.node_style(self) {
             if let Some(width) = node_style.width {
                 output = width;
             }
-        });
+        }
 
-        Some(output)
+        output
     }
 
-    fn height(&self, store: &Self::Store) -> Option<SizeUnits> {
-        let mut output = SizeUnits::default();
+    // all of these unwrap_or(SizeUnits::Percentage(100.0))
+    fn height(&self, store: &Self::Store) -> SizeUnits {
+        if store.node_kind(self).is_text() {
+            return SizeUnits::Auto;
+        }
 
-        store.for_each_node_style(self, |node_style| {
+        let mut output = SizeUnits::Percentage(100.0);
+
+        if let Some(node_style) = store.node_style(self) {
             if let Some(height) = node_style.height {
                 output = height;
             }
-        });
-
-        Some(output)
-    }
-
-    fn width_min(&self, store: &Self::Store) -> Option<SizeUnits> {
-        let mut output = SizeUnits::default();
-
-        if store.node_kind(self).is_text() {
-            return Some(output);
         }
 
-        store.for_each_node_style(self, |node_style| {
+        output
+    }
+
+    // all of these unwrap_or(SizeUnits::Pixels(0.0))
+    fn width_min(&self, store: &Self::Store) -> SizeUnits {
+        if store.node_kind(self).is_text() {
+            return SizeUnits::Auto;
+        }
+
+        let mut output = SizeUnits::Pixels(0.0);
+
+        if let Some(node_style) = store.node_style(self) {
             if let Some(width_min) = node_style.width_min {
                 output = width_min;
             }
-        });
-
-        Some(output)
-    }
-
-    fn height_min(&self, store: &Self::Store) -> Option<SizeUnits> {
-        let mut output = SizeUnits::default();
-
-        if store.node_kind(self).is_text() {
-            return Some(output);
         }
 
-        store.for_each_node_style(self, |node_style| {
+        output
+    }
+
+    // all of these unwrap_or(SizeUnits::Pixels(0.0))
+    fn height_min(&self, store: &Self::Store) -> SizeUnits {
+        if store.node_kind(self).is_text() {
+            return SizeUnits::Auto;
+        }
+
+        let mut output = SizeUnits::Pixels(0.0);
+
+        if let Some(node_style) = store.node_style(self) {
             if let Some(height_min) = node_style.height_min {
                 output = height_min;
             }
-        });
-
-        Some(output)
-    }
-
-    fn width_max(&self, store: &Self::Store) -> Option<SizeUnits> {
-        let mut output = SizeUnits::default();
-
-        if store.node_kind(self).is_text() {
-            return Some(output);
         }
 
-        store.for_each_node_style(self, |node_style| {
+        output
+    }
+
+    // all of these unwrap_or(SizeUnits::Pixels(f32::MAX))
+    fn width_max(&self, store: &Self::Store) -> SizeUnits {
+        if store.node_kind(self).is_text() {
+            return SizeUnits::Auto;
+        }
+
+        let mut output = SizeUnits::Pixels(f32::MAX);
+
+        if let Some(node_style) = store.node_style(self) {
             if let Some(width_max) = node_style.width_max {
                 output = width_max;
             }
-        });
-
-        Some(output)
-    }
-
-    fn height_max(&self, store: &Self::Store) -> Option<SizeUnits> {
-        let mut output = SizeUnits::default();
-
-        if store.node_kind(self).is_text() {
-            return Some(output);
         }
 
-        store.for_each_node_style(self, |node_style| {
+        output
+    }
+
+    // all of these unwrap_or(SizeUnits::Pixels(f32::MAX))
+    fn height_max(&self, store: &Self::Store) -> SizeUnits {
+        if store.node_kind(self).is_text() {
+            return SizeUnits::Auto;
+        }
+
+        let mut output = SizeUnits::Pixels(f32::MAX);
+
+        if let Some(node_style) = store.node_style(self) {
             if let Some(height_max) = node_style.height_max {
                 output = height_max;
             }
-        });
+        }
 
-        Some(output)
+        output
     }
 
-    fn margin_left(&self, store: &Self::Store) -> Option<MarginUnits> {
+    // all of these unwrap_or_default
+    fn margin_left(&self, store: &Self::Store) -> MarginUnits {
         let mut output = MarginUnits::default();
 
-        store.for_each_node_style(self, |node_style| {
+        if let Some(node_style) = store.node_style(self) {
             if let Some(margin_left) = node_style.margin_left {
                 output = margin_left;
             }
-        });
+        }
 
-        Some(output)
+        output
     }
 
-    fn margin_right(&self, store: &Self::Store) -> Option<MarginUnits> {
+    // all of these unwrap_or_default
+    fn margin_right(&self, store: &Self::Store) -> MarginUnits {
         let mut output = MarginUnits::default();
 
-        store.for_each_node_style(self, |node_style| {
+        if let Some(node_style) = store.node_style(self) {
             if let Some(margin_right) = node_style.margin_right {
                 output = margin_right;
             }
-        });
+        }
 
-        Some(output)
+        output
     }
 
-    fn margin_top(&self, store: &Self::Store) -> Option<MarginUnits> {
+    // all of these unwrap_or_default
+    fn margin_top(&self, store: &Self::Store) -> MarginUnits {
         let mut output = MarginUnits::default();
 
-        store.for_each_node_style(self, |node_style| {
+        if let Some(node_style) = store.node_style(self) {
             if let Some(margin_top) = node_style.margin_top {
                 output = margin_top;
             }
-        });
+        }
 
-        Some(output)
+        output
     }
 
-    fn margin_bottom(&self, store: &Self::Store) -> Option<MarginUnits> {
+    // all of these unwrap_or_default
+    fn margin_bottom(&self, store: &Self::Store) -> MarginUnits {
         let mut output = MarginUnits::default();
 
-        store.for_each_node_style(self, |node_style| {
+        if let Some(node_style) = store.node_style(self) {
             if let Some(margin_bottom) = node_style.margin_bottom {
                 output = margin_bottom;
             }
-        });
-
-        Some(output)
-    }
-
-    fn padding_left(&self, store: &Self::Store) -> Option<SizeUnits> {
-        if !store.node_kind(self).has_children() {
-            return None;
         }
 
+        output
+    }
+
+    // all of these unwrap_or_default
+    fn padding_left(&self, store: &Self::Store) -> SizeUnits {
         let mut output = SizeUnits::default();
 
-        store.for_each_panel_style(self, |panel_style| {
+        if !store.node_kind(self).has_children() {
+            return output;
+        }
+
+        if let Some(panel_style) = store.panel_style(self) {
             if let Some(padding_left) = panel_style.padding_left {
                 output = padding_left;
             }
-        });
-
-        Some(output)
-    }
-
-    fn padding_right(&self, store: &Self::Store) -> Option<SizeUnits> {
-        if !store.node_kind(self).has_children() {
-            return None;
         }
 
+        output
+    }
+
+    // all of these unwrap_or_default
+    fn padding_right(&self, store: &Self::Store) -> SizeUnits {
         let mut output = SizeUnits::default();
 
-        store.for_each_panel_style(self, |panel_style| {
+        if !store.node_kind(self).has_children() {
+            return output;
+        }
+
+        if let Some(panel_style) = store.panel_style(self) {
             if let Some(padding_right) = panel_style.padding_right {
                 output = padding_right;
             }
-        });
-
-        Some(output)
-    }
-
-    fn padding_top(&self, store: &Self::Store) -> Option<SizeUnits> {
-        if !store.node_kind(self).has_children() {
-            return None;
         }
 
+        output
+    }
+
+    // all of these unwrap_or_default
+    fn padding_top(&self, store: &Self::Store) -> SizeUnits {
         let mut output = SizeUnits::default();
 
-        store.for_each_panel_style(self, |panel_style| {
+        if !store.node_kind(self).has_children() {
+            return output;
+        }
+
+        if let Some(panel_style) = store.panel_style(self) {
             if let Some(padding_top) = panel_style.padding_top {
                 output = padding_top;
             }
-        });
-
-        Some(output)
-    }
-
-    fn padding_bottom(&self, store: &Self::Store) -> Option<SizeUnits> {
-        if !store.node_kind(self).has_children() {
-            return None;
         }
 
+        output
+    }
+
+    // all of these unwrap_or_default
+    fn padding_bottom(&self, store: &Self::Store) -> SizeUnits {
         let mut output = SizeUnits::default();
 
-        store.for_each_panel_style(self, |panel_style| {
+        if !store.node_kind(self).has_children() {
+            return output;
+        }
+
+        if let Some(panel_style) = store.panel_style(self) {
             if let Some(padding_bottom) = panel_style.padding_bottom {
                 output = padding_bottom;
             }
-        });
-
-        Some(output)
-    }
-
-    fn row_between(&self, store: &Self::Store) -> Option<SizeUnits> {
-        if !store.node_kind(self).has_children() {
-            return None;
         }
 
+        output
+    }
+
+    // all of these unwrap_or_default
+    fn row_between(&self, store: &Self::Store) -> SizeUnits {
         let mut output = SizeUnits::default();
 
-        store.for_each_panel_style(self, |panel_style| {
+        if !store.node_kind(self).has_children() {
+            return output;
+        }
+
+        if let Some(panel_style) = store.panel_style(self) {
             if let Some(row_between) = panel_style.row_between {
                 output = row_between;
             }
-        });
-
-        Some(output)
-    }
-
-    fn col_between(&self, store: &Self::Store) -> Option<SizeUnits> {
-        if !store.node_kind(self).has_children() {
-            return None;
         }
 
+        output
+    }
+
+    // all of these unwrap_or_default
+    fn col_between(&self, store: &Self::Store) -> SizeUnits {
         let mut output = SizeUnits::default();
 
-        store.for_each_panel_style(self, |panel_style| {
+        if !store.node_kind(self).has_children() {
+            return output;
+        }
+
+        if let Some(panel_style) = store.panel_style(self) {
             if let Some(col_between) = panel_style.col_between {
                 output = col_between;
             }
-        });
+        }
 
-        Some(output)
+        output
     }
 
+    // no default here .. None doesn't do anything, Some does
     fn is_solid(&self, store: &Self::Store) -> Option<Solid> {
         if !store.node_kind(self).can_solid() {
             return None;
         }
 
-        let mut output = None;
-
-        store.for_each_node_style(self, |node_style| {
-            if let Some(solid) = node_style.solid_override {
-                output = Some(solid);
-            }
-        });
-
-        output
+        store.node_style(self)?.solid_override
     }
 
     fn is_text(&self, store: &Self::Store) -> bool {
@@ -352,6 +366,7 @@ impl Node for NodeId {
         raw_width * scale
     }
 
+    // panics if solid() is None but this isn't ..
     fn aspect_ratio(&self, store: &Self::Store) -> Option<f32> {
 
         let mut output = 1.0; // TODO: put this into a constant
@@ -360,68 +375,72 @@ impl Node for NodeId {
             return Some(output);
         }
 
-        store.for_each_node_style(self, |node_style| {
+        if let Some(node_style) = store.node_style(self) {
             if let Some((w, h)) = node_style.aspect_ratio() {
                 output = w / h;
             }
-        });
+        }
 
         Some(output)
     }
 
-    fn self_halign(&self, store: &Self::Store) -> Option<Alignment> {
+    // all of these unwrap_or_default
+    fn self_halign(&self, store: &Self::Store) -> Alignment {
         let mut output = Alignment::default();
 
-        store.for_each_node_style(self, |node_style| {
+        if let Some(node_style) = store.node_style(self) {
             if let Some(self_halign) = node_style.self_halign {
                 output = self_halign;
             }
-        });
+        }
 
-        Some(output)
+        output
     }
 
-    fn self_valign(&self, store: &Self::Store) -> Option<Alignment> {
+    // all of these unwrap_or_default
+    fn self_valign(&self, store: &Self::Store) -> Alignment {
         let mut output = Alignment::default();
 
-        store.for_each_node_style(self, |node_style| {
+        if let Some(node_style) = store.node_style(self) {
             if let Some(self_valign) = node_style.self_valign {
                 output = self_valign;
             }
-        });
-
-        Some(output)
-    }
-
-    fn children_halign(&self, store: &Self::Store) -> Option<Alignment> {
-        if !store.node_kind(self).has_children() {
-            return None;
         }
 
+        output
+    }
+
+    // all of these unwrap_or_default
+    fn children_halign(&self, store: &Self::Store) -> Alignment {
         let mut output = Alignment::default();
 
-        store.for_each_panel_style(self, |panel_style| {
+        if !store.node_kind(self).has_children() {
+            return output;
+        }
+
+        if let Some(panel_style) = store.panel_style(self) {
             if let Some(children_halign) = panel_style.children_halign {
                 output = children_halign;
             }
-        });
-
-        Some(output)
-    }
-
-    fn children_valign(&self, store: &Self::Store) -> Option<Alignment> {
-        if !store.node_kind(self).has_children() {
-            return None;
         }
 
+        output
+    }
+
+    // all of these unwrap_or_default
+    fn children_valign(&self, store: &Self::Store) -> Alignment {
         let mut output = Alignment::default();
 
-        store.for_each_panel_style(self, |panel_style| {
+        if !store.node_kind(self).has_children() {
+            return output;
+        }
+
+        if let Some(panel_style) = store.panel_style(self) {
             if let Some(children_valign) = panel_style.children_valign {
                 output = children_valign;
             }
-        });
+        }
 
-        Some(output)
+        output
     }
 }

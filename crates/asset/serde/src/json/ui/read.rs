@@ -84,9 +84,9 @@ impl UiConfigJson {
         //info!("0 - root_node_serde: {:?}", root_node_serde);
 
         let root_mut = ui_config.node_mut(&UiConfig::ROOT_NODE_ID).unwrap();
-        for style_index in &root_node_serde.style_ids {
+        if let Some(style_index) = &root_node_serde.style_id {
             let style_id = *style_index_to_id.get(style_index).unwrap();
-            root_mut.style_ids.push(style_id);
+            root_mut.set_style_id(style_id);
         }
         let WidgetJson::Panel(panel_serde) = &root_node_serde.widget else {
             panic!("Expected panel widget");
@@ -121,11 +121,10 @@ fn convert_nodes_recurse_panel(
                 panel.add_child(child_panel_id);
 
                 // add style
-                for style_index in &child_node_serde.style_ids {
-                    let style_index = *style_index as usize;
-                    let style_id = *style_index_to_id.get(&style_index).unwrap();
+                if let Some(style_index) = &child_node_serde.style_id {
+                    let style_id = *style_index_to_id.get(style_index).unwrap();
                     let child_node = ui_config.node_mut(&child_panel_id).unwrap();
-                    child_node.style_ids.push(style_id);
+                    child_node.set_style_id(style_id);
                 }
 
                 // recurse
@@ -153,11 +152,10 @@ fn convert_nodes_recurse_panel(
                 panel.add_child(child_text_id);
 
                 // add style
-                for style_index in &child_node_serde.style_ids {
-                    let style_index = *style_index as usize;
-                    let style_id = *style_index_to_id.get(&style_index).unwrap();
+                if let Some(style_index) = &child_node_serde.style_id {
+                    let style_id = *style_index_to_id.get(style_index).unwrap();
                     let child_node = ui_config.node_mut(&child_text_id).unwrap();
-                    child_node.style_ids.push(style_id);
+                    child_node.set_style_id(style_id);
                 }
             }
             WidgetKind::Button => {
@@ -173,11 +171,10 @@ fn convert_nodes_recurse_panel(
                 panel.add_child(child_button_id);
 
                 // add style
-                for style_index in &child_node_serde.style_ids {
-                    let style_index = *style_index as usize;
-                    let style_id = *style_index_to_id.get(&style_index).unwrap();
+                if let Some(style_index) = &child_node_serde.style_id {
+                    let style_id = *style_index_to_id.get(style_index).unwrap();
                     let child_node = ui_config.node_mut(&child_button_id).unwrap();
-                    child_node.style_ids.push(style_id);
+                    child_node.set_style_id(style_id);
                 }
 
                 // add navigation
@@ -209,11 +206,10 @@ fn convert_nodes_recurse_panel(
                 panel.add_child(child_textbox_id);
 
                 // add style
-                for style_index in &child_node_serde.style_ids {
-                    let style_index = *style_index as usize;
-                    let style_id = *style_index_to_id.get(&style_index).unwrap();
+                if let Some(style_index) = &child_node_serde.style_id {
+                    let style_id = *style_index_to_id.get(style_index).unwrap();
                     let child_node = ui_config.node_mut(&child_textbox_id).unwrap();
-                    child_node.style_ids.push(style_id);
+                    child_node.set_style_id(style_id);
                 }
 
                 // add navigation
@@ -281,11 +277,10 @@ fn convert_nodes_recurse_button(
                 button.add_child(child_panel_id);
 
                 // add style
-                for style_index in &child_node_serde.style_ids {
-                    let style_index = *style_index as usize;
-                    let style_id = *style_index_to_id.get(&style_index).unwrap();
+                if let Some(style_index) = &child_node_serde.style_id {
+                    let style_id = *style_index_to_id.get(style_index).unwrap();
                     let child_node = ui_config.node_mut(&child_panel_id).unwrap();
-                    child_node.style_ids.push(style_id);
+                    child_node.set_style_id(style_id);
                 }
                 let WidgetJson::Panel(child_panel_serde) = &child_node_serde.widget else {
                     panic!("Expected panel widget");
@@ -313,11 +308,10 @@ fn convert_nodes_recurse_button(
                 button.add_child(child_text_id);
 
                 // add style
-                for style_index in &child_node_serde.style_ids {
-                    let style_index = *style_index as usize;
-                    let style_id = *style_index_to_id.get(&style_index).unwrap();
+                for style_index in &child_node_serde.style_id {
+                    let style_id = *style_index_to_id.get(style_index).unwrap();
                     let child_node = ui_config.node_mut(&child_text_id).unwrap();
-                    child_node.style_ids.push(style_id);
+                    child_node.set_style_id(style_id);
                 }
             }
             _ => {

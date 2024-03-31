@@ -1,7 +1,7 @@
 
 use render_api::base::Color;
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
-use ui_types::{Button, NodeId, NodeStyle, Panel, PanelStyle, StyleId, Text, Textbox, UiConfig, UiNode, UiStore, Widget, WidgetStyle};
+use ui_types::{Button, NodeId, NodeStyle, Panel, PanelStyle, StyleId, Text, Textbox, UiConfig, UiNode, Widget, WidgetStyle};
 
 use crate::{ButtonMut, TextboxMut, TextMut};
 
@@ -21,9 +21,9 @@ impl<'a> PanelMut<'a> {
     //     self
     // }
 
-    pub fn add_style(&mut self, style_id: StyleId) -> &mut Self {
+    pub fn set_style(&mut self, style_id: StyleId) -> &mut Self {
         let node = self.ui_config.node_mut(&self.node_id).unwrap();
-        node.style_ids.push(style_id);
+        node.set_style_id(style_id);
         self
     }
 
@@ -67,10 +67,6 @@ impl<'a> PanelContentsMut<'a> {
         // creates a new panel, returning a context for it
         let new_id = self.ui_config.create_node(Widget::Text(Text::new(text)));
 
-        // add base text style
-        let node_mut = self.ui_config.node_mut(&new_id).unwrap();
-        node_mut.style_ids.push(UiConfig::BASE_TEXT_STYLE_ID);
-
         // add new panel to children
         self.get_panel_mut().add_child(new_id);
 
@@ -108,41 +104,6 @@ impl<'a> PanelContentsMut<'a> {
     }
 }
 
-pub struct PanelStyleRef<'a> {
-    store: &'a UiStore,
-    node_id: NodeId,
-}
-
-impl<'a> PanelStyleRef<'a> {
-    pub fn new(store: &'a UiStore, node_id: NodeId) -> Self {
-        Self { store, node_id }
-    }
-
-    pub fn background_color(&self) -> Color {
-        let mut output = Color::BLACK; // TODO: put into const var!
-
-        self.store.for_each_panel_style(&self.node_id, |style| {
-            if let Some(color) = style.background_color {
-                output = color;
-            }
-        });
-
-        output
-    }
-
-    pub fn background_alpha(&self) -> f32 {
-        let mut output = 1.0; // TODO: put into const var!
-
-        self.store.for_each_panel_style(&self.node_id, |style| {
-            if let Some(alpha) = style.background_alpha {
-                output = alpha;
-            }
-        });
-
-        output
-    }
-}
-
 pub struct PanelStyleMut<'a> {
     ui_config: &'a mut UiConfig,
     style_id: StyleId,
@@ -166,6 +127,11 @@ impl<'a> PanelStyleMut<'a> {
     }
 
     // setters
+
+    pub fn set_parent_style(&mut self, style_id: StyleId) -> &mut Self {
+        self.get_style_mut().parent_style = Some(style_id);
+        self
+    }
 
     pub fn set_background_color(&mut self, color: Color) -> &mut Self {
         self.get_panel_style_mut().background_color = Some(color);
