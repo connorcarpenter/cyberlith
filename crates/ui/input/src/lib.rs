@@ -1,8 +1,6 @@
 mod events;
 mod input;
 mod input_state;
-mod input_state_store;
-mod node_input_state;
 mod textbox_input_state;
 
 pub use input::{UiInputConverter, UiInputEvent};

@@ -110,7 +110,7 @@ impl UiManager {
         let handle = AssetHandle::<UiConfigData>::new(*asset_id);
         if !self.ui_configs.has(&handle) {
 
-            let ui_input_state = UiInputState::from_ui_config(&ui_config);
+            let ui_input_state = UiInputState::from_ui_config();
             self.ui_input_states.insert(handle, ui_input_state);
 
             let ui_state_data = UiState::from_ui_config(&ui_config);
@@ -149,7 +149,7 @@ impl UiManager {
                 let ui = ui_data.get_ui_config_ref();
                 let ui_state_data = UiState::from_ui_config(ui);
                 self.ui_states.insert(handle, ui_state_data);
-                let ui_input_state = UiInputState::from_ui_config(ui);
+                let ui_input_state = UiInputState::from_ui_config();
                 self.ui_input_states.insert(handle, ui_input_state);
             }
 

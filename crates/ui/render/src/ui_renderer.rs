@@ -355,9 +355,6 @@ fn draw_ui_textbox(
     let Some(textbox_state_ref) = ui_state.store.textbox_ref(node_id) else {
         panic!("no textbox state ref for node_id: {:?}", node_id);
     };
-    let Some(textbox_input_state_ref) = ui_input_state.store.textbox_ref(node_id) else {
-        panic!("no textbox input state ref for node_id: {:?}", node_id);
-    };
 
     // draw textbox
     let active_state = ui_input_state.get_active_state(node_id);
@@ -400,7 +397,7 @@ fn draw_ui_textbox(
     if active_state == NodeActiveState::Active {
 
         // draw selection box if needed
-        if let Some(select_index) = textbox_input_state_ref.select_index {
+        if let Some(select_index) = ui_input_state.select_index {
             if let Some(mat_handle) = textbox_state_ref.get_selection_color_handle() {
                 text_transform.translation.z = transform.translation.z + 0.025;
                 UiRenderer::draw_text_selection(
@@ -413,7 +410,7 @@ fn draw_ui_textbox(
                     &text_transform,
                     &textbox_state_ref.text,
                     select_index,
-                    textbox_input_state_ref.carat_index,
+                    ui_input_state.carat_index,
                 );
             }
         }
@@ -429,7 +426,7 @@ fn draw_ui_textbox(
                 text_color_handle,
                 &text_transform,
                 &textbox_state_ref.text,
-                textbox_input_state_ref.carat_index,
+                ui_input_state.carat_index,
             );
         }
     }

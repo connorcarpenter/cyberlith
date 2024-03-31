@@ -8,78 +8,69 @@ use ui_layout::TextMeasurer;
 use ui_state::TextboxState;
 use ui_types::Text;
 
-use crate::{UiGlobalEvent, UiInputEvent};
+use crate::{UiGlobalEvent, UiInputEvent, UiInputState};
 
 #[derive(Clone)]
-pub struct TextboxInputState {
-    pub carat_index: usize,
-    pub select_index: Option<usize>,
-}
+pub struct TextboxInputState;
 
 impl TextboxInputState {
-    pub fn new() -> Self {
-        Self {
-            carat_index: 0,
-            select_index: None,
-        }
-    }
 
-    pub fn recv_keyboard_or_gamepad_event(&mut self, textbox_state: &mut TextboxState, event: UiInputEvent) -> Option<Vec<UiGlobalEvent>> {
+    pub fn recv_keyboard_or_gamepad_event(input_state: &mut UiInputState, textbox_state: &mut TextboxState, event: UiInputEvent) -> Option<Vec<UiGlobalEvent>> {
         let mut output = None;
         match event {
             UiInputEvent::LeftPressed(modifiers) => {
                 match (modifiers.shift, modifiers.ctrl) {
                     (false, false) => {
-                        if self.carat_index > 0 {
-                            self.carat_index -= 1;
+                        if input_state.carat_index > 0 {
+                            input_state.carat_index -= 1;
                         } else {
                             if output.is_none() {
                                 output = Some(Vec::new());
                             }
                             output.as_mut().unwrap().push(UiGlobalEvent::PassThru);
                         }
-                        self.select_index = None;
+                        input_state.select_index = None;
 
                     }
                     (true, false) => {
-                        if self.carat_index > 0 {
-                            if self.select_index.is_none() {
+                        if input_state.carat_index > 0 {
+                            if input_state.select_index.is_none() {
                                 // if there is no current selection, set it to the current carat index
-                                self.select_index = Some(self.carat_index);
+                                input_state.select_index = Some(input_state.carat_index);
                             }
-                            self.carat_index -= 1;
-                            if self.carat_index == self.select_index.unwrap() {
-                                self.select_index = None;
+                            input_state.carat_index -= 1;
+                            if input_state.carat_index == input_state.select_index.unwrap() {
+                                input_state.select_index = None;
                             }
                         }
                     }
                     (false, true) => {
-                        if self.carat_index > 0 {
-                            self.carat_index = textbox_state.text
+                        if input_state.carat_index > 0 {
+                            input_state.carat_index = textbox_state.text
                                 .unicode_word_indices()
                                 .rev()
                                 .map(|(i, _)| i)
-                                .find(|&i| i < self.carat_index)
+                                .find(|&i| i < input_state.carat_index)
                                 .unwrap_or(0);
                         }
-                        self.select_index = None;
+                        input_state.select_index = None;
                     }
                     (true, true) => {
-                        if self.carat_index > 0 {
-                            if self.select_index.is_none() {
+                        if input_state.carat_index > 0 {
+                            if input_state.select_index.is_none() {
                                 // if there is no current selection, set it to the current carat index
-                                self.select_index = Some(self.carat_index);
+                                input_state.select_index = Some(input_state.carat_index);
                             }
 
-                            self.carat_index = textbox_state.text
+                            input_state.carat_index = textbox_state.text
                                 .unicode_word_indices()
                                 .rev()
                                 .map(|(i, _)| i)
-                                .find(|&i| i < self.carat_index)
+                                .find(|&i| i < input_state.carat_index)
                                 .unwrap_or(0);
 
-                            if self.carat_index == self.select_index.unwrap() {
-                                self.select_index = None;
+                            if input_state.carat_index == input_state.select_index.unwrap() {
+                                input_state.select_index = None;
                             }
                         }
                     }
@@ -88,157 +79,157 @@ impl TextboxInputState {
             UiInputEvent::RightPressed(modifiers) => {
                 match (modifiers.shift, modifiers.ctrl) {
                     (false, false) => {
-                        if self.carat_index < textbox_state.text.len() {
-                            self.carat_index += 1;
+                        if input_state.carat_index < textbox_state.text.len() {
+                            input_state.carat_index += 1;
                         } else {
                             if output.is_none() {
                                 output = Some(Vec::new());
                             }
                             output.as_mut().unwrap().push(UiGlobalEvent::PassThru);
                         }
-                        self.select_index = None;
+                        input_state.select_index = None;
                     }
                     (true, false) => {
-                        if self.carat_index < textbox_state.text.len() {
-                            if self.select_index.is_none() {
+                        if input_state.carat_index < textbox_state.text.len() {
+                            if input_state.select_index.is_none() {
                                 // if there is no current selection, set it to the current carat index
-                                self.select_index = Some(self.carat_index);
+                                input_state.select_index = Some(input_state.carat_index);
                             }
-                            self.carat_index += 1;
-                            if self.carat_index == self.select_index.unwrap() {
-                                self.select_index = None;
+                            input_state.carat_index += 1;
+                            if input_state.carat_index == input_state.select_index.unwrap() {
+                                input_state.select_index = None;
                             }
                         }
                     }
                     (false, true) => {
-                        if self.carat_index < textbox_state.text.len() {
-                            self.carat_index = textbox_state
+                        if input_state.carat_index < textbox_state.text.len() {
+                            input_state.carat_index = textbox_state
                                 .text
                                 .unicode_word_indices()
                                 .map(|(i, word)| i + word.len())
-                                .find(|&i| i > self.carat_index)
+                                .find(|&i| i > input_state.carat_index)
                                 .unwrap_or(textbox_state.text.len());
                         }
-                        self.select_index = None;
+                        input_state.select_index = None;
                     }
                     (true, true) => {
-                        if self.carat_index < textbox_state.text.len() {
-                            if self.select_index.is_none() {
+                        if input_state.carat_index < textbox_state.text.len() {
+                            if input_state.select_index.is_none() {
                                 // if there is no current selection, set it to the current carat index
-                                self.select_index = Some(self.carat_index);
+                                input_state.select_index = Some(input_state.carat_index);
                             }
 
-                            self.carat_index = textbox_state
+                            input_state.carat_index = textbox_state
                                 .text
                                 .unicode_word_indices()
                                 .map(|(i, word)| i + word.len())
-                                .find(|&i| i > self.carat_index)
+                                .find(|&i| i > input_state.carat_index)
                                 .unwrap_or(textbox_state.text.len());
 
-                            if self.carat_index == self.select_index.unwrap() {
-                                self.select_index = None;
+                            if input_state.carat_index == input_state.select_index.unwrap() {
+                                input_state.select_index = None;
                             }
                         }
                     }
                 }
             },
             UiInputEvent::TextInsert(new_char) => {
-                if let Some(select_index) = self.select_index {
+                if let Some(select_index) = input_state.select_index {
                     // need to remove the selected text
-                    let start = self.carat_index.min(select_index);
-                    let end = self.carat_index.max(select_index);
+                    let start = input_state.carat_index.min(select_index);
+                    let end = input_state.carat_index.max(select_index);
                     textbox_state.text.replace_range(start..end, new_char.to_string().as_str());
-                    self.carat_index = start + 1;
-                    self.select_index = None;
+                    input_state.carat_index = start + 1;
+                    input_state.select_index = None;
                 } else {
-                    textbox_state.text.insert(self.carat_index, new_char);
-                    self.carat_index += 1;
+                    textbox_state.text.insert(input_state.carat_index, new_char);
+                    input_state.carat_index += 1;
                 }
             },
             UiInputEvent::BackspacePressed(modifiers) => {
-                if let Some(select_index) = self.select_index {
-                    let start = self.carat_index.min(select_index);
-                    let end = self.carat_index.max(select_index);
+                if let Some(select_index) = input_state.select_index {
+                    let start = input_state.carat_index.min(select_index);
+                    let end = input_state.carat_index.max(select_index);
                     textbox_state.text.drain(start..end);
-                    self.carat_index = start;
-                    self.select_index = None;
+                    input_state.carat_index = start;
+                    input_state.select_index = None;
                 } else {
                     if modifiers.ctrl {
-                        if self.carat_index > 0 {
+                        if input_state.carat_index > 0 {
                             let target_index = textbox_state.text
                                 .unicode_word_indices()
                                 .rev()
                                 .map(|(i, _)| i)
-                                .find(|&i| i < self.carat_index)
+                                .find(|&i| i < input_state.carat_index)
                                 .unwrap_or(0);
-                            textbox_state.text.drain(target_index..self.carat_index);
-                            self.carat_index = target_index;
+                            textbox_state.text.drain(target_index..input_state.carat_index);
+                            input_state.carat_index = target_index;
                         }
                     } else {
-                        if self.carat_index > 0 {
-                            textbox_state.text.remove(self.carat_index - 1);
-                            self.carat_index -= 1;
+                        if input_state.carat_index > 0 {
+                            textbox_state.text.remove(input_state.carat_index - 1);
+                            input_state.carat_index -= 1;
                         }
                     }
                 }
             },
             UiInputEvent::DeletePressed(modifiers) => {
-                if let Some(select_index) = self.select_index {
-                    let start = self.carat_index.min(select_index);
-                    let end = self.carat_index.max(select_index);
+                if let Some(select_index) = input_state.select_index {
+                    let start = input_state.carat_index.min(select_index);
+                    let end = input_state.carat_index.max(select_index);
                     textbox_state.text.drain(start..end);
-                    self.carat_index = start;
-                    self.select_index = None;
+                    input_state.carat_index = start;
+                    input_state.select_index = None;
                 } else {
                     if modifiers.ctrl {
-                        if self.carat_index < textbox_state.text.len() {
+                        if input_state.carat_index < textbox_state.text.len() {
                             let target_index = textbox_state
                                 .text
                                 .unicode_word_indices()
                                 .map(|(i, word)| i + word.len())
-                                .find(|&i| i > self.carat_index)
+                                .find(|&i| i > input_state.carat_index)
                                 .unwrap_or(textbox_state.text.len());
-                            textbox_state.text.drain(self.carat_index..target_index);
+                            textbox_state.text.drain(input_state.carat_index..target_index);
                         }
                     } else {
-                        if self.carat_index < textbox_state.text.len() {
-                            textbox_state.text.remove(self.carat_index);
+                        if input_state.carat_index < textbox_state.text.len() {
+                            textbox_state.text.remove(input_state.carat_index);
                         }
                     }
                 }
             },
             UiInputEvent::HomePressed(modifiers) => {
                 if modifiers.shift {
-                    if self.select_index.is_none() {
-                        self.select_index = Some(self.carat_index);
+                    if input_state.select_index.is_none() {
+                        input_state.select_index = Some(input_state.carat_index);
                     }
-                    self.carat_index = 0;
-                    if self.carat_index == self.select_index.unwrap() {
-                        self.select_index = None;
+                    input_state.carat_index = 0;
+                    if input_state.carat_index == input_state.select_index.unwrap() {
+                        input_state.select_index = None;
                     }
                 } else {
-                    self.carat_index = 0;
-                    self.select_index = None;
+                    input_state.carat_index = 0;
+                    input_state.select_index = None;
                 }
             },
             UiInputEvent::EndPressed(modifiers) => {
                 if modifiers.shift {
-                    if self.select_index.is_none() {
-                        self.select_index = Some(self.carat_index);
+                    if input_state.select_index.is_none() {
+                        input_state.select_index = Some(input_state.carat_index);
                     }
-                    self.carat_index = textbox_state.text.len();
-                    if self.carat_index == self.select_index.unwrap() {
-                        self.select_index = None;
+                    input_state.carat_index = textbox_state.text.len();
+                    if input_state.carat_index == input_state.select_index.unwrap() {
+                        input_state.select_index = None;
                     }
                 } else {
-                    self.carat_index = textbox_state.text.len();
-                    self.select_index = None;
+                    input_state.carat_index = textbox_state.text.len();
+                    input_state.select_index = None;
                 }
             },
             UiInputEvent::TextCopy => {
-                if let Some(select_index) = self.select_index {
-                    let start = self.carat_index.min(select_index);
-                    let end = self.carat_index.max(select_index);
+                if let Some(select_index) = input_state.select_index {
+                    let start = input_state.carat_index.min(select_index);
+                    let end = input_state.carat_index.max(select_index);
                     let copied_text = textbox_state.text[start..end].to_string();
                     if output.is_none() {
                         output = Some(Vec::new());
@@ -247,9 +238,9 @@ impl TextboxInputState {
                 }
             }
             UiInputEvent::TextCut => {
-                if let Some(select_index) = self.select_index {
-                    let start = self.carat_index.min(select_index);
-                    let end = self.carat_index.max(select_index);
+                if let Some(select_index) = input_state.select_index {
+                    let start = input_state.carat_index.min(select_index);
+                    let end = input_state.carat_index.max(select_index);
                     let copied_text = textbox_state.text[start..end].to_string();
                     if output.is_none() {
                         output = Some(Vec::new());
@@ -257,26 +248,26 @@ impl TextboxInputState {
                     output.as_mut().unwrap().push(UiGlobalEvent::Copied(copied_text));
 
                     textbox_state.text.drain(start..end);
-                    self.carat_index = start;
-                    self.select_index = None;
+                    input_state.carat_index = start;
+                    input_state.select_index = None;
                 }
             }
             UiInputEvent::TextPaste(text) => {
                 // TODO: validate pasted text? I did panic at some point here.
-                if let Some(select_index) = self.select_index {
-                    let start = self.carat_index.min(select_index);
-                    let end = self.carat_index.max(select_index);
+                if let Some(select_index) = input_state.select_index {
+                    let start = input_state.carat_index.min(select_index);
+                    let end = input_state.carat_index.max(select_index);
                     textbox_state.text.replace_range(start..end, &text);
-                    self.carat_index = start + text.len();
-                    self.select_index = None;
+                    input_state.carat_index = start + text.len();
+                    input_state.select_index = None;
                 } else {
-                    textbox_state.text.insert_str(self.carat_index, &text);
-                    self.carat_index += text.len();
+                    textbox_state.text.insert_str(input_state.carat_index, &text);
+                    input_state.carat_index += text.len();
                 }
             }
             UiInputEvent::TextSelectAll => {
-                self.select_index = Some(0);
-                self.carat_index = textbox_state.text.len();
+                input_state.select_index = Some(0);
+                input_state.carat_index = textbox_state.text.len();
             }
             _ => panic!("Unhandled input event for textbox: {:?}", event),
         }
@@ -285,7 +276,7 @@ impl TextboxInputState {
     }
 
     pub fn recv_mouse_event(
-        &mut self,
+        input_state: &mut UiInputState,
         text_measurer: &dyn TextMeasurer,
         textbox_state: &mut TextboxState,
         node_x: f32,
@@ -296,17 +287,17 @@ impl TextboxInputState {
         match mouse_event {
             UiInputEvent::MouseSingleClick(MouseButton::Left, click_position, modifiers) => {
                 if !modifiers.shift {
-                    self.select_index = None;
+                    input_state.select_index = None;
                 } else {
-                    if self.select_index.is_none() {
-                        self.select_index = Some(self.carat_index);
+                    if input_state.select_index.is_none() {
+                        input_state.select_index = Some(input_state.carat_index);
                     }
                 }
 
-                self.carat_index = Self::get_closest_index(&textbox_state.text, text_measurer, click_position.x, node_x, node_h);
-                if let Some(select_index) = self.select_index {
-                    if self.carat_index == select_index {
-                        self.select_index = None;
+                input_state.carat_index = Self::get_closest_index(&textbox_state.text, text_measurer, click_position.x, node_x, node_h);
+                if let Some(select_index) = input_state.select_index {
+                    if input_state.carat_index == select_index {
+                        input_state.select_index = None;
                     }
                 }
             }
@@ -328,38 +319,38 @@ impl TextboxInputState {
                     .find(|&i| i > click_index)
                     .unwrap_or(textbox_state.text.len());
 
-                self.select_index = Some(word_start);
-                self.carat_index = word_end;
+                input_state.select_index = Some(word_start);
+                input_state.carat_index = word_end;
             }
             UiInputEvent::MouseTripleClick(MouseButton::Left, _) => {
                 // triple click
                 // select all
-                self.select_index = Some(0);
-                self.carat_index = textbox_state.text.len();
+                input_state.select_index = Some(0);
+                input_state.carat_index = textbox_state.text.len();
             }
             UiInputEvent::MouseButtonDrag(MouseButton::Left, modifiers) => {
                 if let Some(mouse_position) = mouse_position_opt {
                     if modifiers.shift {
-                        if self.select_index.is_none() {
-                            self.select_index = Some(self.carat_index);
+                        if input_state.select_index.is_none() {
+                            input_state.select_index = Some(input_state.carat_index);
                         }
-                        self.carat_index = Self::get_closest_index(&textbox_state.text, text_measurer, mouse_position.x, node_x, node_h);
-                        if let Some(select_index) = self.select_index {
-                            if self.carat_index == select_index {
-                                self.select_index = None;
+                        input_state.carat_index = Self::get_closest_index(&textbox_state.text, text_measurer, mouse_position.x, node_x, node_h);
+                        if let Some(select_index) = input_state.select_index {
+                            if input_state.carat_index == select_index {
+                                input_state.select_index = None;
                             }
                         }
                     } else {
-                        if let Some(select_index) = self.select_index {
-                            self.carat_index = Self::get_closest_index(&textbox_state.text, text_measurer, mouse_position.x, node_x, node_h);
-                            if self.carat_index == select_index {
-                                self.select_index = None;
+                        if let Some(select_index) = input_state.select_index {
+                            input_state.carat_index = Self::get_closest_index(&textbox_state.text, text_measurer, mouse_position.x, node_x, node_h);
+                            if input_state.carat_index == select_index {
+                                input_state.select_index = None;
                             }
                         } else {
                             let new_index = Self::get_closest_index(&textbox_state.text, text_measurer, mouse_position.x, node_x, node_h);
-                            if new_index != self.carat_index {
-                                self.select_index = Some(self.carat_index);
-                                self.carat_index = new_index;
+                            if new_index != input_state.carat_index {
+                                input_state.select_index = Some(input_state.carat_index);
+                                input_state.carat_index = new_index;
                             }
                         }
                     }

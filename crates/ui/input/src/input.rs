@@ -6,8 +6,8 @@ use math::Vec2;
 use ui_layout::TextMeasurer;
 use ui_state::UiState;
 use ui_types::{NodeId, Panel, UiConfig, WidgetKind};
-use crate::{UiGlobalEvent, UiNodeEvent};
-use crate::input_state::UiInputState;
+
+use crate::{UiGlobalEvent, UiNodeEvent, input_state::UiInputState, textbox_input_state::TextboxInputState};
 
 pub struct UiInputConverter;
 
@@ -226,7 +226,7 @@ pub fn ui_receive_input(
                                 ui_input_state.reset_interact_timer();
                                 let (_, node_height, node_x, _, _) = ui_state.cache.bounds(&hover_node).unwrap();
                                 let textbox_state = ui_state.store.textbox_mut(&hover_node).unwrap();
-                                ui_input_state.store.textbox_mut(&hover_node).unwrap().recv_mouse_event(text_measurer, textbox_state, node_x, node_height, mouse_position, event);
+                                TextboxInputState::recv_mouse_event(ui_input_state, text_measurer, textbox_state, node_x, node_height, mouse_position, event);
                             }
                             _ => {}
                         }
@@ -237,7 +237,7 @@ pub fn ui_receive_input(
                         ui_input_state.reset_interact_timer();
                         let (_, node_height, node_x, _, _) = ui_state.cache.bounds(&hover_node).unwrap();
                         let textbox_state = ui_state.store.textbox_mut(&hover_node).unwrap();
-                        ui_input_state.store.textbox_mut(&hover_node).unwrap().recv_mouse_event(text_measurer, textbox_state, node_x, node_height, mouse_position, event);
+                        TextboxInputState::recv_mouse_event(ui_input_state, text_measurer, textbox_state, node_x, node_height, mouse_position, event);
                     }
                 }
                 UiInputEvent::MouseMove => {}
@@ -270,7 +270,7 @@ pub fn ui_receive_input(
                     ui_input_state.reset_interact_timer();
 
                     let textbox_state = ui_state.textbox_mut(&textbox_id).unwrap();
-                    let output_events = ui_input_state.store.textbox_mut(&textbox_id).unwrap().recv_keyboard_or_gamepad_event(textbox_state, input_event.clone());
+                    let output_events = TextboxInputState::recv_keyboard_or_gamepad_event(ui_input_state, textbox_state, input_event.clone());
 
                     if let Some(output_events) = output_events {
                         for output_event in output_events {
@@ -389,7 +389,7 @@ pub fn ui_receive_input(
                         WidgetKind::Textbox => {
                             ui_input_state.set_active_node(Some(hover_id));
                             let textbox_state = ui_state.textbox_mut(&hover_id).unwrap();
-                            ui_input_state.store.textbox_mut(&hover_id).unwrap().recv_keyboard_or_gamepad_event(textbox_state, UiInputEvent::EndPressed(Modifiers::default()));
+                            TextboxInputState::recv_keyboard_or_gamepad_event(ui_input_state, textbox_state, UiInputEvent::EndPressed(Modifiers::default()));
                         }
                         _ => {}
                     }

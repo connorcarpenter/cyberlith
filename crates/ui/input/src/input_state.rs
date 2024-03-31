@@ -7,37 +7,34 @@ use ui_types::{NodeId, UiConfig};
 use ui_layout::TextMeasurer;
 use ui_state::{NodeActiveState, UiState};
 
-use crate::{input_state_store::UiInputStateStore, input::ui_receive_input, UiGlobalEvent, UiInputEvent, UiNodeEvent};
+use crate::{input::ui_receive_input, UiGlobalEvent, UiInputEvent, UiNodeEvent};
 
 pub struct UiInputState {
-    pub store: UiInputStateStore,
-
     global_events: Vec<UiGlobalEvent>,
     node_events: Vec<(NodeId, UiNodeEvent)>,
     hovering_node: Option<NodeId>,
     selected_node: Option<NodeId>,
     cursor_icon: CursorIcon,
     interact_timer: Instant,
+
+    pub carat_index: usize,
+    pub select_index: Option<usize>,
 }
 
 impl UiInputState {
 
-    pub fn from_ui_config(ui_config: &UiConfig) -> Self {
-        let mut me = Self {
-            store: UiInputStateStore::new(),
+    pub fn from_ui_config() -> Self {
+        Self {
             global_events: Vec::new(),
             node_events: Vec::new(),
             hovering_node: None,
             selected_node: None,
             cursor_icon: CursorIcon::Default,
             interact_timer: Instant::now(),
-        };
 
-        for node in ui_config.store.nodes.iter() {
-            me.store.node_state_init(node);
+            carat_index: 0,
+            select_index: None,
         }
-
-        me
     }
 
     // events

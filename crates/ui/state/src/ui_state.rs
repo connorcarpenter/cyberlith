@@ -10,7 +10,7 @@ use storage::{Handle, Storage};
 use render_api::base::Color;
 
 use ui_types::{NodeId, UiConfig, UiVisibilityStore, WidgetKind};
-use ui_layout::{Cache, Node, SizeUnits, TextMeasurer};
+use ui_layout::{Cache, Node, TextMeasurer};
 
 use crate::{
     button::ButtonState, cache::LayoutCache, panel::PanelState, state_store::UiStateStore,
