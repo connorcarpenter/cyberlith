@@ -201,7 +201,7 @@ pub(crate) fn model(data: ModelJson) -> Vec<u8> {
 }
 
 pub(crate) fn ui(data: UiConfigJson) -> Vec<u8> {
-    let ui = data.to_ui();
+    let ui = data.into();
     let ui_bytes = asset_serde::bits::write_ui_bits(&ui);
 
     ui_bytes

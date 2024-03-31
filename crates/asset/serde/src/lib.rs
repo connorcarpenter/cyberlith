@@ -1,6 +1,8 @@
 mod error;
 pub use error::AssetIoError;
 
+mod traits;
+
 use cfg_if::cfg_if;
 
 cfg_if! {

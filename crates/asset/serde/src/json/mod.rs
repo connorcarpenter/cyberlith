@@ -37,7 +37,6 @@ cfg_if! {
 }
 
 mod components;
-
 pub use components::FileComponentType;
 
 pub const MAX_QUAT_COMPONENT_SIZE: f32 = 32.0;

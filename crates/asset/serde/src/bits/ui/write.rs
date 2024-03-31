@@ -42,7 +42,7 @@ fn convert_ui_to_actions(ui_config: &UiConfig) -> Vec<UiAction> {
         style_count += 1;
         style_id_to_index.insert(style_id, next_index);
 
-        output.push(UiAction::Style(UiStyleBits::from_style(style)));
+        output.push(UiAction::Style(UiStyleBits::from(style)));
     }
 
     // write nodes
@@ -97,8 +97,8 @@ fn actions_to_bytes(actions: Vec<UiAction>) -> Vec<u8> {
 }
 
 // conversion
-impl UiStyleBits {
-    pub(crate) fn from_style(style: &NodeStyle) -> Self {
+impl From<&NodeStyle> for UiStyleBits {
+    fn from(style: &NodeStyle) -> Self {
         let aspect_ratio = style.aspect_ratio().map(|(width, height)| {
             // validate
             if width.fract() != 0.0 || height.fract() != 0.0 {
@@ -125,46 +125,46 @@ impl UiStyleBits {
 
         Self {
             parent_style: style.parent_style.map(|val| val.as_usize() as u8),
-            widget_style: WidgetStyleBits::from_style(&style.widget_style),
+            widget_style: WidgetStyleBits::from(&style.widget_style),
 
             position_type: style
                 .position_type
-                .map(PositionTypeBits::from_position_type),
+                .map(PositionTypeBits::from),
 
-            width: style.width.map(SizeUnitsBits::from_size_units),
-            height: style.height.map(SizeUnitsBits::from_size_units),
-            width_min: style.width_min.map(SizeUnitsBits::from_size_units),
-            width_max: style.width_max.map(SizeUnitsBits::from_size_units),
-            height_min: style.height_min.map(SizeUnitsBits::from_size_units),
-            height_max: style.height_max.map(SizeUnitsBits::from_size_units),
+            width: style.width.map(SizeUnitsBits::from),
+            height: style.height.map(SizeUnitsBits::from),
+            width_min: style.width_min.map(SizeUnitsBits::from),
+            width_max: style.width_max.map(SizeUnitsBits::from),
+            height_min: style.height_min.map(SizeUnitsBits::from),
+            height_max: style.height_max.map(SizeUnitsBits::from),
 
-            margin_left: style.margin_left.map(MarginUnitsBits::from_margin_units),
-            margin_right: style.margin_right.map(MarginUnitsBits::from_margin_units),
-            margin_top: style.margin_top.map(MarginUnitsBits::from_margin_units),
-            margin_bottom: style.margin_bottom.map(MarginUnitsBits::from_margin_units),
+            margin_left: style.margin_left.map(MarginUnitsBits::from),
+            margin_right: style.margin_right.map(MarginUnitsBits::from),
+            margin_top: style.margin_top.map(MarginUnitsBits::from),
+            margin_bottom: style.margin_bottom.map(MarginUnitsBits::from),
 
-            solid_override: style.solid_override.map(SolidBits::from_solid),
+            solid_override: style.solid_override.map(SolidBits::from),
             aspect_ratio,
 
-            self_halign: style.self_halign.map(AlignmentBits::from_alignment),
-            self_valign: style.self_valign.map(AlignmentBits::from_alignment),
+            self_halign: style.self_halign.map(AlignmentBits::from),
+            self_valign: style.self_valign.map(AlignmentBits::from),
         }
     }
 }
 
-impl WidgetStyleBits {
-    fn from_style(style: &WidgetStyle) -> Self {
+impl From<&WidgetStyle> for WidgetStyleBits {
+    fn from(style: &WidgetStyle) -> Self {
         match style {
-            WidgetStyle::Panel(panel) => Self::Panel(PanelStyleBits::from_panel_style(panel)),
-            WidgetStyle::Text(text) => Self::Text(TextStyleBits::from_text_style(text)),
-            WidgetStyle::Button(button) => Self::Button(ButtonStyleBits::from_button_style(button)),
-            WidgetStyle::Textbox(textbox) => Self::Textbox(TextboxStyleBits::from_textbox_style(textbox)),
+            WidgetStyle::Panel(panel) => Self::Panel(PanelStyleBits::from(panel)),
+            WidgetStyle::Text(text) => Self::Text(TextStyleBits::from(text)),
+            WidgetStyle::Button(button) => Self::Button(ButtonStyleBits::from(button)),
+            WidgetStyle::Textbox(textbox) => Self::Textbox(TextboxStyleBits::from(textbox)),
         }
     }
 }
 
-impl PanelStyleBits {
-    fn from_panel_style(style: &PanelStyle) -> Self {
+impl From<&PanelStyle> for PanelStyleBits {
+    fn from(style: &PanelStyle) -> Self {
         Self {
             background_color: style.background_color.map(ColorBits::from),
             background_alpha: style.background_alpha().map(|val| {
@@ -172,23 +172,23 @@ impl PanelStyleBits {
                 UnsignedInteger::<4>::new(val)
             }),
 
-            layout_type: style.layout_type.map(LayoutTypeBits::from_layout_type),
+            layout_type: style.layout_type.map(LayoutTypeBits::from),
 
-            padding_left: style.padding_left.map(SizeUnitsBits::from_size_units),
-            padding_right: style.padding_right.map(SizeUnitsBits::from_size_units),
-            padding_top: style.padding_top.map(SizeUnitsBits::from_size_units),
-            padding_bottom: style.padding_bottom.map(SizeUnitsBits::from_size_units),
+            padding_left: style.padding_left.map(SizeUnitsBits::from),
+            padding_right: style.padding_right.map(SizeUnitsBits::from),
+            padding_top: style.padding_top.map(SizeUnitsBits::from),
+            padding_bottom: style.padding_bottom.map(SizeUnitsBits::from),
 
-            row_between: style.row_between.map(SizeUnitsBits::from_size_units),
-            col_between: style.col_between.map(SizeUnitsBits::from_size_units),
-            children_halign: style.children_halign.map(AlignmentBits::from_alignment),
-            children_valign: style.children_valign.map(AlignmentBits::from_alignment),
+            row_between: style.row_between.map(SizeUnitsBits::from),
+            col_between: style.col_between.map(SizeUnitsBits::from),
+            children_halign: style.children_halign.map(AlignmentBits::from),
+            children_valign: style.children_valign.map(AlignmentBits::from),
         }
     }
 }
 
-impl TextStyleBits {
-    fn from_text_style(style: &TextStyle) -> Self {
+impl From<&TextStyle> for TextStyleBits {
+    fn from(style: &TextStyle) -> Self {
         Self {
             background_color: style.background_color.map(ColorBits::from),
             background_alpha: style.background_alpha().map(|val| {
@@ -199,20 +199,20 @@ impl TextStyleBits {
     }
 }
 
-impl ButtonStyleBits {
-    fn from_button_style(style: &ButtonStyle) -> Self {
+impl From<&ButtonStyle> for ButtonStyleBits {
+    fn from(style: &ButtonStyle) -> Self {
         Self {
-            panel: PanelStyleBits::from_panel_style(&style.panel),
+            panel: PanelStyleBits::from(&style.panel),
             hover_color: style.hover_color.map(ColorBits::from),
             down_color: style.down_color.map(ColorBits::from),
         }
     }
 }
 
-impl TextboxStyleBits {
-    fn from_textbox_style(style: &TextboxStyle) -> Self {
+impl From<&TextboxStyle> for TextboxStyleBits {
+    fn from(style: &TextboxStyle) -> Self {
         Self {
-            panel: PanelStyleBits::from_panel_style(&style.panel),
+            panel: PanelStyleBits::from(&style.panel),
             hover_color: style.hover_color.map(ColorBits::from),
             active_color: style.active_color.map(ColorBits::from),
             select_color: style.select_color.map(ColorBits::from),
@@ -220,8 +220,8 @@ impl TextboxStyleBits {
     }
 }
 
-impl PositionTypeBits {
-    fn from_position_type(position_type: PositionType) -> Self {
+impl From<PositionType> for PositionTypeBits {
+    fn from(position_type: PositionType) -> Self {
         match position_type {
             PositionType::Absolute => Self::Absolute,
             PositionType::Relative => Self::Relative,
@@ -229,8 +229,8 @@ impl PositionTypeBits {
     }
 }
 
-impl SizeUnitsBits {
-    fn from_size_units(size_units: SizeUnits) -> Self {
+impl From<SizeUnits> for SizeUnitsBits {
+    fn from(size_units: SizeUnits) -> Self {
         match size_units {
             SizeUnits::Pixels(val) => {
                 // validate
@@ -294,8 +294,8 @@ impl SizeUnitsBits {
     }
 }
 
-impl MarginUnitsBits {
-    fn from_margin_units(margin_units: MarginUnits) -> Self {
+impl From<MarginUnits> for MarginUnitsBits {
+    fn from(margin_units: MarginUnits) -> Self {
         match margin_units {
             MarginUnits::Pixels(val) => {
                 // validate
@@ -358,8 +358,8 @@ impl MarginUnitsBits {
     }
 }
 
-impl SolidBits {
-    fn from_solid(solid: Solid) -> Self {
+impl From<Solid> for SolidBits {
+    fn from(solid: Solid) -> Self {
         match solid {
             Solid::Fit => Self::Fit,
             Solid::Fill => Self::Fill,
@@ -367,8 +367,8 @@ impl SolidBits {
     }
 }
 
-impl AlignmentBits {
-    fn from_alignment(alignment: Alignment) -> Self {
+impl From<Alignment> for AlignmentBits {
+    fn from(alignment: Alignment) -> Self {
         match alignment {
             Alignment::Start => Self::Start,
             Alignment::Center => Self::Center,
@@ -377,8 +377,8 @@ impl AlignmentBits {
     }
 }
 
-impl LayoutTypeBits {
-    fn from_layout_type(layout_type: LayoutType) -> Self {
+impl From<LayoutType> for LayoutTypeBits {
+    fn from(layout_type: LayoutType) -> Self {
         match layout_type {
             LayoutType::Row => Self::Row,
             LayoutType::Column => Self::Column,
@@ -416,16 +416,16 @@ impl UiNodeBits {
 impl WidgetBits {
     fn from_widget(ui_config: &UiConfig, widget: &Widget) -> Self {
         match widget {
-            Widget::Panel(panel) => Self::Panel(PanelBits::from_panel(panel)),
-            Widget::Text(text) => Self::Text(TextBits::from_text(text)),
+            Widget::Panel(panel) => Self::Panel(PanelBits::from(panel)),
+            Widget::Text(text) => Self::Text(TextBits::from(text)),
             Widget::Button(button) => Self::Button(ButtonBits::from_button(ui_config, button)),
             Widget::Textbox(textbox) => Self::Textbox(TextboxBits::from_textbox(ui_config, textbox)),
         }
     }
 }
 
-impl PanelBits {
-    fn from_panel(panel: &Panel) -> Self {
+impl From<&Panel> for PanelBits {
+    fn from(panel: &Panel) -> Self {
         let mut me = Self {
             children: Vec::new(),
         };
@@ -441,8 +441,8 @@ impl PanelBits {
     }
 }
 
-impl TextBits {
-    fn from_text(text: &Text) -> Self {
+impl From<&Text> for TextBits {
+    fn from(text: &Text) -> Self {
         Self {
             text: text.inner_text().to_string(),
         }
@@ -451,7 +451,7 @@ impl TextBits {
 
 impl ButtonBits {
     fn from_button(ui_config: &UiConfig, button: &Button) -> Self {
-        let panel_bits = PanelBits::from_panel(&button.panel);
+        let panel_bits = PanelBits::from(&button.panel);
         let nav_bits = NavigationBits::from_navigation(ui_config, &button.navigation);
         Self {
             panel: panel_bits,
@@ -463,7 +463,7 @@ impl ButtonBits {
 
 impl TextboxBits {
     fn from_textbox(ui_config: &UiConfig, textbox: &Textbox) -> Self {
-        let panel_bits = PanelBits::from_panel(&textbox.panel);
+        let panel_bits = PanelBits::from(&textbox.panel);
         let nav_bits = NavigationBits::from_navigation(ui_config, &textbox.navigation);
         Self {
             panel: panel_bits,

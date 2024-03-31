@@ -21,7 +21,6 @@ cfg_if! {
 }
 
 use naia_serde::{SerdeInternal as Serde, UnsignedInteger, UnsignedVariableInteger};
-use serde::{Deserialize, Serialize};
 
 use asset_id::AssetId;
 use ui_types::{NodeId, UiConfig, WidgetKind};

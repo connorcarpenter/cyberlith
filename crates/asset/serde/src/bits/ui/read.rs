@@ -6,9 +6,19 @@ use asset_id::AssetId;
 use render_api::base::Color;
 
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
-use ui_types::{Button, ButtonStyle, NodeId, NodeStyle, Panel, PanelStyle, StyleId, Text, Textbox, TextboxStyle, TextStyle, UiConfig, Widget, WidgetKind, WidgetStyle};
+use ui_types::{
+    Button, ButtonStyle, NodeId, NodeStyle, Panel, PanelStyle, StyleId, Text, Textbox,
+    TextboxStyle, TextStyle, UiConfig, Widget, WidgetKind, WidgetStyle
+};
 
-use crate::bits::{AlignmentBits, ButtonBits, ColorBits, LayoutTypeBits, MarginUnitsBits, PanelBits, PanelStyleBits, PositionTypeBits, SizeUnitsBits, SolidBits, TextboxBits, UiAction, UiActionType, UiNodeBits, UiStyleBits, WidgetBits, WidgetStyleBits};
+use crate::{
+    traits::RefTo,
+    bits::{
+        AlignmentBits, ButtonBits, ColorBits, LayoutTypeBits, MarginUnitsBits, PanelBits,
+        PanelStyleBits, PositionTypeBits, SizeUnitsBits, SolidBits, TextboxBits, UiAction,
+        UiActionType, UiNodeBits, UiStyleBits, WidgetBits, WidgetStyleBits
+    }
+};
 
 pub fn read_bits(data: &[u8]) -> UiConfig {
     let actions = bytes_to_actions(data).unwrap();
@@ -26,7 +36,7 @@ fn convert_actions_to_ui_config(actions: Vec<UiAction>) -> UiConfig {
     for action in actions {
         match action {
             UiAction::TextColor(text_color) => {
-                ui_config.set_text_color(text_color.to_color());
+                ui_config.set_text_color(text_color.ref_to());
             }
             UiAction::TextIconAssetId(asset_id) => {
                 ui_config.set_text_icon_asset_id(&asset_id);
@@ -424,8 +434,8 @@ fn set_textbox_navigation(
     }
 }
 
-impl PositionTypeBits {
-    fn to_position_type(&self) -> PositionType {
+impl RefTo<PositionType> for PositionTypeBits {
+    fn ref_to(&self) -> PositionType {
         match self {
             Self::Absolute => PositionType::Absolute,
             Self::Relative => PositionType::Relative,
@@ -433,8 +443,8 @@ impl PositionTypeBits {
     }
 }
 
-impl SizeUnitsBits {
-    fn to_size_units(&self) -> SizeUnits {
+impl RefTo<SizeUnits> for SizeUnitsBits {
+    fn ref_to(&self) -> SizeUnits {
         match self {
             Self::Pixels(val) => {
                 let val: u64 = val.to();
@@ -456,8 +466,8 @@ impl SizeUnitsBits {
     }
 }
 
-impl MarginUnitsBits {
-    fn to_margin_units(&self) -> MarginUnits {
+impl RefTo<MarginUnits> for MarginUnitsBits {
+    fn ref_to(&self) -> MarginUnits {
         match self {
             Self::Pixels(val) => {
                 let val: u64 = val.to();
@@ -478,8 +488,8 @@ impl MarginUnitsBits {
     }
 }
 
-impl SolidBits {
-    fn to_solid(&self) -> Solid {
+impl RefTo<Solid> for SolidBits {
+    fn ref_to(&self) -> Solid {
         match self {
             Self::Fit => Solid::Fit,
             Self::Fill => Solid::Fill,
@@ -487,8 +497,8 @@ impl SolidBits {
     }
 }
 
-impl AlignmentBits {
-    fn to_alignment(&self) -> Alignment {
+impl RefTo<Alignment> for AlignmentBits {
+    fn ref_to(&self) -> Alignment {
         match self {
             Self::Start => Alignment::Start,
             Self::Center => Alignment::Center,
@@ -497,8 +507,8 @@ impl AlignmentBits {
     }
 }
 
-impl LayoutTypeBits {
-    fn to_layout_type(&self) -> LayoutType {
+impl RefTo<LayoutType> for LayoutTypeBits {
+    fn ref_to(&self) -> LayoutType {
         match self {
             Self::Row => LayoutType::Row,
             Self::Column => LayoutType::Column,
@@ -506,8 +516,8 @@ impl LayoutTypeBits {
     }
 }
 
-impl ColorBits {
-    fn to_color(&self) -> Color {
+impl RefTo<Color> for ColorBits {
+    fn ref_to(&self) -> Color {
         Color::new(self.r, self.g, self.b)
     }
 }
@@ -515,23 +525,23 @@ impl ColorBits {
 impl UiStyleBits {
 
     fn to_node_style(&self, style: &mut NodeStyle) {
-        style.position_type = self.position_type.as_ref().map(|val| val.to_position_type());
-        style.width = self.width.as_ref().map(|val| val.to_size_units());
-        style.height = self.height.as_ref().map(|val| val.to_size_units());
-        style.width_min = self.width_min.as_ref().map(|val| val.to_size_units());
-        style.width_max = self.width_max.as_ref().map(|val| val.to_size_units());
-        style.height_min = self.height_min.as_ref().map(|val| val.to_size_units());
-        style.height_max = self.height_max.as_ref().map(|val| val.to_size_units());
-        style.margin_left = self.margin_left.as_ref().map(|val| val.to_margin_units());
-        style.margin_right = self.margin_right.as_ref().map(|val| val.to_margin_units());
-        style.margin_top = self.margin_top.as_ref().map(|val| val.to_margin_units());
-        style.margin_bottom = self.margin_bottom.as_ref().map(|val| val.to_margin_units());
-        style.solid_override = self.solid_override.as_ref().map(|val| val.to_solid());
+        style.position_type = self.position_type.as_ref().map(|val| val.ref_to());
+        style.width = self.width.as_ref().map(|val| val.ref_to());
+        style.height = self.height.as_ref().map(|val| val.ref_to());
+        style.width_min = self.width_min.as_ref().map(|val| val.ref_to());
+        style.width_max = self.width_max.as_ref().map(|val| val.ref_to());
+        style.height_min = self.height_min.as_ref().map(|val| val.ref_to());
+        style.height_max = self.height_max.as_ref().map(|val| val.ref_to());
+        style.margin_left = self.margin_left.as_ref().map(|val| val.ref_to());
+        style.margin_right = self.margin_right.as_ref().map(|val| val.ref_to());
+        style.margin_top = self.margin_top.as_ref().map(|val| val.ref_to());
+        style.margin_bottom = self.margin_bottom.as_ref().map(|val| val.ref_to());
+        style.solid_override = self.solid_override.as_ref().map(|val| val.ref_to());
         if let Some((w, h)) = self.aspect_ratio {
             style.set_aspect_ratio(w as f32, h as f32);
         }
-        style.self_halign = self.self_halign.as_ref().map(|val| val.to_alignment());
-        style.self_valign = self.self_valign.as_ref().map(|val| val.to_alignment());
+        style.self_halign = self.self_halign.as_ref().map(|val| val.ref_to());
+        style.self_valign = self.self_valign.as_ref().map(|val| val.ref_to());
     }
 
     fn to_panel_style(&self, panel_style: &mut PanelStyle) {
@@ -545,7 +555,7 @@ impl UiStyleBits {
 
     fn to_panel_style_impl(panel_style: &mut PanelStyle, panel_style_serde: &PanelStyleBits) {
         if let Some(background_color) = &panel_style_serde.background_color {
-            panel_style.background_color = Some(background_color.to_color());
+            panel_style.background_color = Some(background_color.ref_to());
         }
         if let Some(background_alpha) = panel_style_serde.background_alpha {
             let val: u8 = background_alpha.to();
@@ -553,15 +563,15 @@ impl UiStyleBits {
             let val = val / 10.0;
             panel_style.set_background_alpha(val);
         }
-        panel_style.layout_type = panel_style_serde.layout_type.as_ref().map(|val| val.to_layout_type());
-        panel_style.padding_left = panel_style_serde.padding_left.as_ref().map(|val| val.to_size_units());
-        panel_style.padding_right = panel_style_serde.padding_right.as_ref().map(|val| val.to_size_units());
-        panel_style.padding_top = panel_style_serde.padding_top.as_ref().map(|val| val.to_size_units());
-        panel_style.padding_bottom = panel_style_serde.padding_bottom.as_ref().map(|val| val.to_size_units());
-        panel_style.row_between = panel_style_serde.row_between.as_ref().map(|val| val.to_size_units());
-        panel_style.col_between = panel_style_serde.col_between.as_ref().map(|val| val.to_size_units());
-        panel_style.children_halign = panel_style_serde.children_halign.as_ref().map(|val| val.to_alignment());
-        panel_style.children_valign = panel_style_serde.children_valign.as_ref().map(|val| val.to_alignment());
+        panel_style.layout_type = panel_style_serde.layout_type.as_ref().map(|val| val.ref_to());
+        panel_style.padding_left = panel_style_serde.padding_left.as_ref().map(|val| val.ref_to());
+        panel_style.padding_right = panel_style_serde.padding_right.as_ref().map(|val| val.ref_to());
+        panel_style.padding_top = panel_style_serde.padding_top.as_ref().map(|val| val.ref_to());
+        panel_style.padding_bottom = panel_style_serde.padding_bottom.as_ref().map(|val| val.ref_to());
+        panel_style.row_between = panel_style_serde.row_between.as_ref().map(|val| val.ref_to());
+        panel_style.col_between = panel_style_serde.col_between.as_ref().map(|val| val.ref_to());
+        panel_style.children_halign = panel_style_serde.children_halign.as_ref().map(|val| val.ref_to());
+        panel_style.children_valign = panel_style_serde.children_valign.as_ref().map(|val| val.ref_to());
     }
 
     fn to_text_style(&self, text_style: &mut TextStyle) {
@@ -570,7 +580,7 @@ impl UiStyleBits {
             panic!("Expected text style");
         };
         if let Some(background_color) = &text_style_serde.background_color {
-            text_style.background_color = Some(background_color.to_color());
+            text_style.background_color = Some(background_color.ref_to());
         }
         if let Some(background_alpha) = text_style_serde.background_alpha {
             let val: u8 = background_alpha.to();
@@ -587,10 +597,10 @@ impl UiStyleBits {
             panic!("Expected panel style");
         };
         if let Some(hover_color) = &button_style_serde.hover_color {
-            button_style.set_hover_color(hover_color.to_color());
+            button_style.set_hover_color(hover_color.ref_to());
         }
         if let Some(down_color) = &button_style_serde.down_color {
-            button_style.set_down_color(down_color.to_color());
+            button_style.set_down_color(down_color.ref_to());
         }
 
         // panel-specific
@@ -604,13 +614,13 @@ impl UiStyleBits {
             panic!("Expected textbox style");
         };
         if let Some(hover_color) = &textbox_style_serde.hover_color {
-            textbox_style.set_hover_color(hover_color.to_color());
+            textbox_style.set_hover_color(hover_color.ref_to());
         }
         if let Some(active_color) = &textbox_style_serde.active_color {
-            textbox_style.set_active_color(active_color.to_color());
+            textbox_style.set_active_color(active_color.ref_to());
         }
         if let Some(select_color) = &textbox_style_serde.select_color {
-            textbox_style.set_selection_color(select_color.to_color());
+            textbox_style.set_selection_color(select_color.ref_to());
         }
 
         // panel-specific

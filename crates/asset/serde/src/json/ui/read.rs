@@ -5,14 +5,14 @@ use render_api::base::Color;
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 use ui_types::{Button, ButtonStyle, NodeId, NodeStyle, Panel, PanelStyle, StyleId, Text, Textbox, TextboxStyle, TextStyle, UiConfig, Widget, WidgetKind, WidgetStyle};
 
-use crate::json::{ButtonJson, PanelStyleJson, TextboxJson};
+use crate::{traits::RefTo, json::{ButtonJson, PanelStyleJson, TextboxJson}};
 use super::{
     AlignmentJson, ColorJson, LayoutTypeJson, MarginUnitsJson, PanelJson, PositionTypeJson,
     SizeUnitsJson, SolidJson, UiConfigJson, UiNodeJson, UiStyleJson, WidgetJson, WidgetStyleJson,
 };
 
-impl UiConfigJson {
-    pub fn to_ui(self) -> UiConfig {
+impl Into<UiConfig> for UiConfigJson {
+    fn into(self) -> UiConfig {
         let mut ui_config = UiConfig::new();
 
         // ui_serde -> ui
@@ -25,7 +25,7 @@ impl UiConfigJson {
         } = self;
 
         // text color
-        ui_config.set_text_color(text_color.to_color());
+        ui_config.set_text_color(text_color.ref_to());
 
         // text icon
         let text_icon_asset_id = AssetId::from_str(&text_icon_asset_id).unwrap();
@@ -351,8 +351,8 @@ fn set_textbox_navigation(
     }
 }
 
-impl PositionTypeJson {
-    fn to_position_type(&self) -> PositionType {
+impl RefTo<PositionType> for PositionTypeJson {
+    fn ref_to(&self) -> PositionType {
         match self {
             Self::Absolute => PositionType::Absolute,
             Self::Relative => PositionType::Relative,
@@ -360,8 +360,8 @@ impl PositionTypeJson {
     }
 }
 
-impl SizeUnitsJson {
-    fn to_size_units(&self) -> SizeUnits {
+impl RefTo<SizeUnits> for SizeUnitsJson {
+    fn ref_to(&self) -> SizeUnits {
         match self {
             Self::Pixels(pixels) => SizeUnits::Pixels(*pixels),
             Self::Percentage(percentage) => SizeUnits::Percentage(*percentage),
@@ -371,8 +371,8 @@ impl SizeUnitsJson {
     }
 }
 
-impl MarginUnitsJson {
-    fn to_margin_units(&self) -> MarginUnits {
+impl RefTo<MarginUnits> for MarginUnitsJson {
+    fn ref_to(&self) -> MarginUnits {
         match self {
             Self::Pixels(pixels) => MarginUnits::Pixels(*pixels),
             Self::Percentage(percentage) => MarginUnits::Percentage(*percentage),
@@ -381,8 +381,8 @@ impl MarginUnitsJson {
     }
 }
 
-impl SolidJson {
-    fn to_solid(&self) -> Solid {
+impl RefTo<Solid> for SolidJson {
+    fn ref_to(&self) -> Solid {
         match self {
             Self::Fit => Solid::Fit,
             Self::Fill => Solid::Fill,
@@ -390,8 +390,8 @@ impl SolidJson {
     }
 }
 
-impl AlignmentJson {
-    fn to_alignment(&self) -> Alignment {
+impl RefTo<Alignment> for AlignmentJson {
+    fn ref_to(&self) -> Alignment {
         match self {
             Self::Start => Alignment::Start,
             Self::Center => Alignment::Center,
@@ -400,8 +400,8 @@ impl AlignmentJson {
     }
 }
 
-impl LayoutTypeJson {
-    fn to_layout_type(&self) -> LayoutType {
+impl RefTo<LayoutType> for LayoutTypeJson {
+    fn ref_to(&self) -> LayoutType {
         match self {
             Self::Row => LayoutType::Row,
             Self::Column => LayoutType::Column,
@@ -409,8 +409,8 @@ impl LayoutTypeJson {
     }
 }
 
-impl ColorJson {
-    fn to_color(&self) -> Color {
+impl RefTo<Color> for ColorJson {
+    fn ref_to(&self) -> Color {
         Color::new(self.r, self.g, self.b)
     }
 }
@@ -418,23 +418,23 @@ impl ColorJson {
 impl UiStyleJson {
 
     fn to_node_style(&self, style: &mut NodeStyle) {
-        style.position_type = self.position_type.as_ref().map(|val| val.to_position_type());
-        style.width = self.width.as_ref().map(|val| val.to_size_units());
-        style.height = self.height.as_ref().map(|val| val.to_size_units());
-        style.width_min = self.width_min.as_ref().map(|val| val.to_size_units());
-        style.width_max = self.width_max.as_ref().map(|val| val.to_size_units());
-        style.height_min = self.height_min.as_ref().map(|val| val.to_size_units());
-        style.height_max = self.height_max.as_ref().map(|val| val.to_size_units());
-        style.margin_left = self.margin_left.as_ref().map(|val| val.to_margin_units());
-        style.margin_right = self.margin_right.as_ref().map(|val| val.to_margin_units());
-        style.margin_top = self.margin_top.as_ref().map(|val| val.to_margin_units());
-        style.margin_bottom = self.margin_bottom.as_ref().map(|val| val.to_margin_units());
-        style.solid_override = self.solid_override.as_ref().map(|val| val.to_solid());
+        style.position_type = self.position_type.as_ref().map(|val| val.ref_to());
+        style.width = self.width.as_ref().map(|val| val.ref_to());
+        style.height = self.height.as_ref().map(|val| val.ref_to());
+        style.width_min = self.width_min.as_ref().map(|val| val.ref_to());
+        style.width_max = self.width_max.as_ref().map(|val| val.ref_to());
+        style.height_min = self.height_min.as_ref().map(|val| val.ref_to());
+        style.height_max = self.height_max.as_ref().map(|val| val.ref_to());
+        style.margin_left = self.margin_left.as_ref().map(|val| val.ref_to());
+        style.margin_right = self.margin_right.as_ref().map(|val| val.ref_to());
+        style.margin_top = self.margin_top.as_ref().map(|val| val.ref_to());
+        style.margin_bottom = self.margin_bottom.as_ref().map(|val| val.ref_to());
+        style.solid_override = self.solid_override.as_ref().map(|val| val.ref_to());
         if let Some((w, h)) = self.aspect_ratio {
             style.set_aspect_ratio(w as f32, h as f32);
         }
-        style.self_halign = self.self_halign.as_ref().map(|val| val.to_alignment());
-        style.self_valign = self.self_valign.as_ref().map(|val| val.to_alignment());
+        style.self_halign = self.self_halign.as_ref().map(|val| val.ref_to());
+        style.self_valign = self.self_valign.as_ref().map(|val| val.ref_to());
     }
 
     fn to_panel_style(&self, panel_style: &mut PanelStyle) {
@@ -447,19 +447,19 @@ impl UiStyleJson {
     }
 
     fn to_panel_style_impl(panel_style: &mut PanelStyle, panel_style_serde: &PanelStyleJson) {
-        panel_style.background_color = panel_style_serde.background_color.as_ref().map(|val| val.to_color());
+        panel_style.background_color = panel_style_serde.background_color.as_ref().map(|val| val.ref_to());
         if let Some(background_alpha) = panel_style_serde.background_alpha {
             panel_style.set_background_alpha(background_alpha);
         }
-        panel_style.layout_type = panel_style_serde.layout_type.as_ref().map(|val| val.to_layout_type());
-        panel_style.padding_left = panel_style_serde.padding_left.as_ref().map(|val| val.to_size_units());
-        panel_style.padding_right = panel_style_serde.padding_right.as_ref().map(|val| val.to_size_units());
-        panel_style.padding_top = panel_style_serde.padding_top.as_ref().map(|val| val.to_size_units());
-        panel_style.padding_bottom = panel_style_serde.padding_bottom.as_ref().map(|val| val.to_size_units());
-        panel_style.row_between = panel_style_serde.row_between.as_ref().map(|val| val.to_size_units());
-        panel_style.col_between = panel_style_serde.col_between.as_ref().map(|val| val.to_size_units());
-        panel_style.children_halign = panel_style_serde.children_halign.as_ref().map(|val| val.to_alignment());
-        panel_style.children_valign = panel_style_serde.children_valign.as_ref().map(|val| val.to_alignment());
+        panel_style.layout_type = panel_style_serde.layout_type.as_ref().map(|val| val.ref_to());
+        panel_style.padding_left = panel_style_serde.padding_left.as_ref().map(|val| val.ref_to());
+        panel_style.padding_right = panel_style_serde.padding_right.as_ref().map(|val| val.ref_to());
+        panel_style.padding_top = panel_style_serde.padding_top.as_ref().map(|val| val.ref_to());
+        panel_style.padding_bottom = panel_style_serde.padding_bottom.as_ref().map(|val| val.ref_to());
+        panel_style.row_between = panel_style_serde.row_between.as_ref().map(|val| val.ref_to());
+        panel_style.col_between = panel_style_serde.col_between.as_ref().map(|val| val.ref_to());
+        panel_style.children_halign = panel_style_serde.children_halign.as_ref().map(|val| val.ref_to());
+        panel_style.children_valign = panel_style_serde.children_valign.as_ref().map(|val| val.ref_to());
     }
 
     fn to_text_style(&self, text_style: &mut TextStyle) {
@@ -467,7 +467,7 @@ impl UiStyleJson {
         let WidgetStyleJson::Text(text_style_serde) = &self.widget_style else {
             panic!("Expected text style");
         };
-        text_style.background_color = text_style_serde.background_color.as_ref().map(|val| val.to_color());
+        text_style.background_color = text_style_serde.background_color.as_ref().map(|val| val.ref_to());
         if let Some(background_alpha) = text_style_serde.background_alpha {
             text_style.set_background_alpha(background_alpha);
         }
@@ -479,8 +479,8 @@ impl UiStyleJson {
         let WidgetStyleJson::Button(button_style_serde) = &self.widget_style else {
             panic!("Expected panel style");
         };
-        button_style.hover_color = button_style_serde.hover_color.as_ref().map(|val| val.to_color());
-        button_style.down_color = button_style_serde.down_color.as_ref().map(|val| val.to_color());
+        button_style.hover_color = button_style_serde.hover_color.as_ref().map(|val| val.ref_to());
+        button_style.down_color = button_style_serde.down_color.as_ref().map(|val| val.ref_to());
 
         // panel-specific
         Self::to_panel_style_impl(&mut button_style.panel, &button_style_serde.panel);
@@ -493,9 +493,9 @@ impl UiStyleJson {
             panic!("Expected textbox style");
         };
 
-        textbox_style.hover_color = textbox_style_serde.hover_color.as_ref().map(|val| val.to_color());
-        textbox_style.active_color = textbox_style_serde.active_color.as_ref().map(|val| val.to_color());
-        textbox_style.select_color = textbox_style_serde.select_color.as_ref().map(|val| val.to_color());
+        textbox_style.hover_color = textbox_style_serde.hover_color.as_ref().map(|val| val.ref_to());
+        textbox_style.active_color = textbox_style_serde.active_color.as_ref().map(|val| val.ref_to());
+        textbox_style.select_color = textbox_style_serde.select_color.as_ref().map(|val| val.ref_to());
 
         // panel-specific
         let panel_style_serde = &textbox_style_serde.panel;

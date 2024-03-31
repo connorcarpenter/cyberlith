@@ -132,7 +132,7 @@ fn write_to_file(name: &str, ui_asset_id: &AssetId, ui_etag: &ETag, ui: UiConfig
 
     // ui -> JSON bytes
     let ui_bytes = {
-        let ui_json = UiConfigJson::from_ui_config(&ui);
+        let ui_json = UiConfigJson::from(&ui);
         let new_meta = AssetMeta::new(&ui_asset_id, UiConfigJson::CURRENT_SCHEMA_VERSION);
         let asset = Asset::new(new_meta, AssetData::Ui(ui_json));
         let ui_bytes = serde_json::to_vec_pretty(&asset).unwrap();
@@ -150,7 +150,7 @@ fn write_to_file(name: &str, ui_asset_id: &AssetId, ui_etag: &ETag, ui: UiConfig
         let AssetData::Ui(ui_json) = data else {
             panic!("expected UiData");
         };
-        ui_json.to_ui()
+        ui_json.into()
     };
 
     // ui -> bit-packed bytes

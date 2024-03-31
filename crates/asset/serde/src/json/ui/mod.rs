@@ -6,7 +6,7 @@ cfg_if! {
 
         pub fn read_ui_json(data: Vec<u8>) -> UiConfig {
             let ui_json: UiConfigJson = serde_json::from_slice(data.as_slice()).unwrap();
-            ui_json.to_ui()
+            ui_json.into()
         }
     } else {}
 }
@@ -16,7 +16,7 @@ cfg_if! {
         mod write;
 
         pub fn write_ui_json(ui_config: UiConfig) -> UiConfigJson {
-            UiConfigJson::from_ui_config(&ui_config)
+            UiConfigJson::from(&ui_config)
         }
     } else {}
 }
