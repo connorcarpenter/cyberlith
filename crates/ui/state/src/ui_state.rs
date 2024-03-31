@@ -270,33 +270,23 @@ impl UiState {
         self.recalc_layout
     }
 
-    pub fn recalculate_layout(&mut self, ui_config: &mut UiConfig, text_measurer: &dyn TextMeasurer) {
+    pub fn recalculate_layout(&mut self, ui_config: &UiConfig, text_measurer: &dyn TextMeasurer) {
         self.recalc_layout = false;
         self.recalculate_layout_impl(ui_config, text_measurer);
     }
 
-    fn recalculate_layout_impl(&mut self, ui_config: &mut UiConfig, text_measurer: &dyn TextMeasurer) {
+    fn recalculate_layout_impl(&mut self, ui_config: &UiConfig, text_measurer: &dyn TextMeasurer) {
         //info!("recalculating layout. viewport_width: {:?}, viewport_height: {:?}", self.viewport.width, self.viewport.height);
 
         let last_viewport_width: f32 = self.last_viewport.width as f32;
         let last_viewport_height: f32 = self.last_viewport.height as f32;
-
-        let root_panel_style_id = *ui_config
-            .node_ref(&UiConfig::ROOT_NODE_ID)
-            .unwrap()
-            .style_ids
-            .last()
-            .unwrap();
-        let root_panel_style = ui_config.style_mut(&root_panel_style_id).unwrap();
-        root_panel_style.width = Some(SizeUnits::Pixels(last_viewport_width));
-        root_panel_style.height = Some(SizeUnits::Pixels(last_viewport_height));
 
         let cache_mut = &mut self.cache;
         let store_ref = &ui_config.store;
         let visibility_store_ref = &self.visibility_store;
 
         // this calculates all the rects in cache_mut
-        UiConfig::ROOT_NODE_ID.layout(cache_mut, store_ref, visibility_store_ref, text_measurer);
+        UiConfig::ROOT_NODE_ID.layout(cache_mut, store_ref, visibility_store_ref, text_measurer, last_viewport_width, last_viewport_height);
         finalize_rects(ui_config, self, &UiConfig::ROOT_NODE_ID, (0.0, 0.0, 0.0))
 
         // print_node(&Self::ROOT_PANEL_ID, &self.cache, &self.panels, true, false, "".to_string());

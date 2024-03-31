@@ -332,14 +332,14 @@ impl UiManager {
         };
         let text_measurer = UiTextMeasurer::new(icon_data);
 
-        let Some(ui_data) = self.ui_configs.get_mut(ui_handle) else {
+        let Some(ui_data) = self.ui_configs.get(ui_handle) else {
             return;
         };
         let Some(ui_state) = self.ui_states.get_mut(ui_handle) else {
             return;
         };
 
-        ui_state.recalculate_layout(ui_data.get_ui_config_mut(), &text_measurer);
+        ui_state.recalculate_layout(ui_data.get_ui_config_ref(), &text_measurer);
     }
 
     pub fn update_ui_input(

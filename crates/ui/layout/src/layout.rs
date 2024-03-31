@@ -64,6 +64,7 @@ struct ChildNode<'a, N: Node> {
 ///
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn layout<N, C>(
+    node_is_root: bool,
     node: &N,
     parent_layout_type: LayoutType,
     viewport_size: (f32, f32),
@@ -105,8 +106,32 @@ where
     let layout_type = node.layout_type(store).unwrap_or_default();
 
     // The desired main-axis and cross-axis sizes of the node.
-    let main = node.main(store, parent_layout_type);
-    let cross = node.cross(store, parent_layout_type);
+    let main = if node_is_root {
+        SizeUnits::Pixels(viewport_size.1)
+    } else {
+        node.main(store, parent_layout_type)
+    };
+    let cross = if node_is_root {
+        SizeUnits::Pixels(viewport_size.0)
+    } else {
+        node.cross(store, parent_layout_type)
+    };
+    let main_for_children = if node_is_root {
+        match layout_type {
+            LayoutType::Row => SizeUnits::Pixels(viewport_size.0),
+            LayoutType::Column => SizeUnits::Pixels(viewport_size.1),
+        }
+    } else {
+        node.main(store, layout_type)
+    };
+    let cross_for_children = if node_is_root {
+        match layout_type {
+            LayoutType::Row => SizeUnits::Pixels(viewport_size.1),
+            LayoutType::Column => SizeUnits::Pixels(viewport_size.0),
+        }
+    } else {
+        node.cross(store, layout_type)
+    };
 
     let viewport_main = viewport_size.main(parent_layout_type);
     let viewport_cross = viewport_size.cross(parent_layout_type);
@@ -279,9 +304,11 @@ where
             child_margin_main_after.to_px(viewport_main, parent_main, parent_padding_main);
 
         let computed_child_main;
+
         // Compute fixed-size child main.
         {
             let child_size = layout(
+                false,
                 child,
                 layout_type,
                 viewport_size,
@@ -320,7 +347,7 @@ where
     }
 
     // Determine cross-size of auto node from children.
-    if num_relative_children != 0 && node.cross(store, layout_type) == SizeUnits::Auto {
+    if num_relative_children != 0 && cross_for_children == SizeUnits::Auto {
         parent_cross = children_cross_max.min(cross_max).max(cross_min);
     }
 
@@ -398,7 +425,7 @@ where
     }
 
     // Determine main-size of auto node from children.
-    if num_relative_children != 0 && node.main(store, layout_type) == SizeUnits::Auto {
+    if num_relative_children != 0 && main_for_children == SizeUnits::Auto {
         parent_main = parent_main
             .max(children_main_sum)
             .min(main_max)
@@ -580,6 +607,7 @@ where
         // Compute fixed-size child main.
         {
             let child_size = layout(
+                false,
                 child,
                 layout_type,
                 viewport_size,

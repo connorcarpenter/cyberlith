@@ -19,14 +19,18 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
     // styles
     let window_style = ui_config.create_panel_style(|s| {
         s
-            .set_background_alpha(0.);
+            .set_background_alpha(0.)
+            .set_vertical()
+            .set_children_halign(Alignment::Center);
     });
     let main_container_style = ui_config.create_panel_style(|s| {
         s
             .set_background_alpha(0.)
             .set_size_pc(100., 100.)
             .set_solid_fit()
-            .set_aspect_ratio(16., 9.);
+            .set_aspect_ratio(16., 9.)
+            .set_self_halign(Alignment::Center)
+        ;
     });
     let title_container_style = ui_config.create_panel_style(|s| {
         s

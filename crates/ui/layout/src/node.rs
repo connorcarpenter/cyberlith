@@ -14,26 +14,22 @@ pub trait Node: Sized {
         store: &Self::Store,
         state_store: &Self::StateStore,
         text_measurer: &dyn TextMeasurer,
+        viewport_width: f32,
+        viewport_height: f32,
     ) -> Size {
-        let width = self
-            .width(store)
-            .map(|w| match w {
-                SizeUnits::Pixels(px) => px,
-                _ => panic!("Root node must have fixed size."),
-            })
-            .expect("Failed to get width for node");
-
-        let height = self
-            .height(store)
-            .map(|w| match w {
-                SizeUnits::Pixels(px) => px,
-                _ => panic!("Root node must have fixed size."),
-            })
-            .expect("Failed to get height for node");
-
-        cache.set_bounds(self, cache.posx(self), cache.posy(self), 0.0, width, height);
-
-        layout(self, LayoutType::Column, (width, height), height, width, cache, store, state_store, text_measurer)
+        cache.set_bounds(self, 0.0, 0.0, 0.0, viewport_width, viewport_height);
+        layout(
+            true,
+            self,
+            LayoutType::Column,
+            (viewport_width, viewport_height),
+            viewport_height,
+            viewport_width,
+            cache,
+            store,
+            state_store,
+            text_measurer
+        )
     }
 
     /// Returns a key which can be used to set/get computed layout data from the [`cache`](crate::Cache).
