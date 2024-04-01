@@ -9,8 +9,7 @@ use crate::{
     panel::Panel,
     store::UiStore,
     style::{NodeStyle, StyleId},
-    widget::{Widget, WidgetKind},
-    Navigation
+    widget::Widget,
 };
 
 pub struct UiConfig {
@@ -107,98 +106,12 @@ impl UiConfig {
         self.store.get_node_mut(&id)
     }
 
-    pub fn style_ref(&self, id: &StyleId) -> Option<&NodeStyle> {
-        self.store.get_style(&id)
-    }
-
     pub fn style_mut(&mut self, id: &StyleId) -> Option<&mut NodeStyle> {
         self.store.get_style_mut(&id)
     }
 
     pub fn insert_style(&mut self, style: NodeStyle) -> StyleId {
         self.store.insert_style(style)
-    }
-
-    // navigation
-    pub fn nav_get_up_id(&self, id: &NodeId) -> Option<NodeId> {
-        let nav = self.get_node_nav(id)?;
-        let up_str: &str = nav.up_goes_to.as_ref()?;
-        self.get_node_id_by_id_str(up_str)
-    }
-
-    pub fn nav_get_down_id(&self, id: &NodeId) -> Option<NodeId> {
-        let nav = self.get_node_nav(id)?;
-        let down_str: &str = nav.down_goes_to.as_ref()?;
-        self.get_node_id_by_id_str(down_str)
-    }
-
-    pub fn nav_get_left_id(&self, id: &NodeId) -> Option<NodeId> {
-        let nav = self.get_node_nav(id)?;
-        let left_str: &str = nav.left_goes_to.as_ref()?;
-        self.get_node_id_by_id_str(left_str)
-    }
-
-    pub fn nav_get_right_id(&self, id: &NodeId) -> Option<NodeId> {
-        let nav = self.get_node_nav(id)?;
-        let right_str: &str = nav.right_goes_to.as_ref()?;
-        self.get_node_id_by_id_str(right_str)
-    }
-
-    pub fn nav_get_tab_id(&self, id: &NodeId) -> Option<NodeId> {
-        let nav = self.get_node_nav(id)?;
-        let tab_str: &str = nav.tab_goes_to.as_ref()?;
-        self.get_node_id_by_id_str(tab_str)
-    }
-
-    fn get_node_nav(&self, id: &NodeId) -> Option<&Navigation> {
-        let node = self.node_ref(id)?;
-        match node.widget_kind() {
-            WidgetKind::Button => Some(&node.widget_button_ref()?.navigation),
-            WidgetKind::Textbox => Some(&node.widget_textbox_ref()?.navigation),
-            _ => None,
-        }
-    }
-
-    pub fn get_style_background_alpha(&self, id: &NodeId) -> f32 {
-
-        match self.node_ref(id).unwrap().widget_kind() {
-            WidgetKind::Panel => {
-                let mut output = 1.0;
-                if let Some(panel_style) = self.store.panel_style(id) {
-                    if let Some(alpha) = panel_style.background_alpha {
-                        output = alpha;
-                    }
-                }
-                output
-            }
-            WidgetKind::Text => {
-                let mut output = 0.0;
-                if let Some(text_style) = self.store.text_style(id) {
-                    if let Some(alpha) = text_style.background_alpha {
-                        output = alpha;
-                    }
-                }
-                output
-            }
-            WidgetKind::Button => {
-                let mut output = 1.0;
-                if let Some(panel_style) = self.store.panel_style(id) {
-                    if let Some(alpha) = panel_style.background_alpha {
-                        output = alpha;
-                    }
-                }
-                output
-            }
-            WidgetKind::Textbox => {
-                let mut output = 1.0;
-                if let Some(textbox_style) = self.store.textbox_style(id) {
-                    if let Some(alpha) = textbox_style.background_alpha {
-                        output = alpha;
-                    }
-                }
-                output
-            }
-        }
     }
 }
 
@@ -215,10 +128,6 @@ impl Globals {
             text_color: Color::BLACK,
             first_input: None,
         }
-    }
-
-    pub fn get_text_icon_handle(&self) -> Option<&AssetId> {
-        self.text_icon_asset_id_opt.as_ref()
     }
 
     pub fn get_first_input_node_id(&self) -> NodeId {

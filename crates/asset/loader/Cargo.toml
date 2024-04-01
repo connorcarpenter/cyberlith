@@ -12,11 +12,12 @@ render_api = { path = "../../render/render_api" }
 math = { path = "../../math" }
 storage = { path = "../../storage" }
 filesystem = { path = "../../filesystem" }
-ui_state = { path = "../../ui/state" }
-ui_types = { path = "../../ui/types" }
+
 random = { path = "../../random" }
 input = { path = "../../input" }
 instant = { path = "../../instant" }
+
+ui_runtime_config = { path = "../../ui/runtime_config" }
 
 naia-serde = { path = "../../../../naia/shared/serde" }
 

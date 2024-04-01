@@ -25,5 +25,4 @@ pub use skeleton::SkelAction;
 mod skin;
 pub use skin::SkinAction;
 
-mod ui;
-pub use ui::*;
+pub use ui_serde::bits::*;

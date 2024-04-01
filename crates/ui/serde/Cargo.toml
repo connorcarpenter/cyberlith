@@ -1,24 +1,25 @@
 [package]
-name = "asset_serde"
+name = "ui_serde"
 version = "0.1.0"
 edition = "2021"
 workspace = "../../.."
 
 [features]
-read_bits = [ "naia-serde", "ui_serde/read_bits" ]
-write_bits = [ "naia-serde", "ui_serde/write_bits" ]
-read_json = [ "serde", "serde_json", "ui_serde/read_json" ]
-write_json = [ "serde", "serde_json", "ui_serde/write_json" ]
+read_bits = [ "naia-serde" ]
+write_bits = [ "naia-serde" ]
+read_json = [ "serde", "serde_json" ]
+write_json = [ "serde", "serde_json" ]
 
 [dependencies]
 cfg-if = { version = "1.0" }
 log = { version = "0.4" }
 
 render_api = { path = "../../render/render_api" }
-asset_id = { path = "../id" }
+asset_id = { path = "../../asset/id" }
 crypto = { path = "../../crypto" }
 
-ui_serde = { path = "../../ui/serde" }
+ui_types = { path = "../../ui/types" }
+ui_layout = { path = "../../ui/layout" }
 
 # for BITS
 naia-serde = { path = "../../../../naia/shared/serde", optional = true }

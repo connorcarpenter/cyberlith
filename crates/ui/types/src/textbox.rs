@@ -54,28 +54,4 @@ impl TextboxStyle {
 
         self.background_alpha = Some(val);
     }
-
-    pub fn hover_color(&self) -> Option<Color> {
-        self.hover_color
-    }
-
-    pub fn set_hover_color(&mut self, val: Color) {
-        self.hover_color = Some(val);
-    }
-
-    pub fn active_color(&self) -> Option<Color> {
-        self.active_color
-    }
-
-    pub fn set_active_color(&mut self, val: Color) {
-        self.active_color = Some(val);
-    }
-
-    pub fn selection_color(&self) -> Option<Color> {
-        self.select_color
-    }
-
-    pub fn set_selection_color(&mut self, val: Color) {
-        self.select_color = Some(val);
-    }
 }

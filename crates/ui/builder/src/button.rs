@@ -158,12 +158,12 @@ impl<'a> ButtonStyleMut<'a> {
     }
 
     pub fn set_hover_color(&mut self, color: Color) -> &mut Self {
-        self.get_button_style_mut().set_hover_color(color);
+        self.get_button_style_mut().hover_color = Some(color);
         self
     }
 
     pub fn set_down_color(&mut self, color: Color) -> &mut Self {
-        self.get_button_style_mut().set_down_color(color);
+        self.get_button_style_mut().down_color = Some(color);
         self
     }
 

@@ -1,5 +1,5 @@
-use game_engine::{ui::{Alignment, UiConfig}, render::base::Color, asset::{AssetId, ETag}};
-use ui_builder::UiConfigBuild;
+use game_engine::{render::base::Color, asset::{AssetId, ETag}};
+use ui_builder::{UiConfig, Alignment, UiConfigBuild};
 
 #[allow(unused)]
 pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {

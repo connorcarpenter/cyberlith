@@ -18,7 +18,7 @@ pub struct UiRuntime {
 impl UiRuntime {
 
     pub(crate) fn load_from_bytes(bytes: &[u8]) -> Self {
-        let config = UiDependencies::load_config_from_bytes(bytes);
+        let config = ui_serde::bits::read_ui_bits(bytes);
         Self::load_from_config(config)
     }
 

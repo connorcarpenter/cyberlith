@@ -9,7 +9,6 @@ input = { path = "../../input" }
 math = { path = "../../math" }
 instant = { path = "../../instant" }
 
-ui_layout = { path = "../layout" }
 ui_state = { path = "../state" }
 ui_runtime_config = { path = "../runtime_config" }
 

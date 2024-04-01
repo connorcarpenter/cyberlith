@@ -1,4 +1,3 @@
-use ui_types::NodeId;
 
 use crate::UiId;
 
@@ -15,10 +14,6 @@ impl UiVisibilityStore {
 
     // nodes
     pub fn node_state_init(&mut self) {
-        self.insert_node();
-    }
-
-    fn insert_node(&mut self) {
         if self.nodes.len() >= 255 {
             panic!("1 UI can only hold up to 255 nodes, too many nodes!");
         }
@@ -29,7 +24,7 @@ impl UiVisibilityStore {
         self.nodes.get(node_id.as_usize()).copied()
     }
 
-    pub fn set_node_visibility(&mut self, node_id: &NodeId, visible: bool) {
+    pub fn set_node_visibility(&mut self, node_id: &UiId, visible: bool) {
         if let Some(node) = self.nodes.get_mut(node_id.as_usize()) {
             *node = visible;
         }

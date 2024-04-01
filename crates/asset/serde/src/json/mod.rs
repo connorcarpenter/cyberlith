@@ -24,8 +24,7 @@ pub use skeleton::SkeletonJson;
 mod skin;
 pub use skin::SkinJson;
 
-mod ui;
-pub use ui::*;
+pub use ui_serde::json::*;
 
 mod asset;
 pub use asset::{Asset, AssetData, AssetMeta};

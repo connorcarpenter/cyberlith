@@ -172,7 +172,7 @@ impl UiRuntimeConfig {
             WidgetKind::Panel => {
                 let mut output = 1.0;
                 if let Some(panel_style) = self.store.panel_style(id) {
-                    if let Some(alpha) = panel_style.background_alpha {
+                    if let Some(alpha) = panel_style.background_alpha() {
                         output = alpha;
                     }
                 }
@@ -190,7 +190,7 @@ impl UiRuntimeConfig {
             WidgetKind::Button => {
                 let mut output = 1.0;
                 if let Some(panel_style) = self.store.panel_style(id) {
-                    if let Some(alpha) = panel_style.background_alpha {
+                    if let Some(alpha) = panel_style.background_alpha() {
                         output = alpha;
                     }
                 }

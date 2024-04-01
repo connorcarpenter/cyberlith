@@ -23,13 +23,6 @@ impl UiNodeR {
         self.style_id
     }
 
-    pub fn set_style_id(&mut self, style_id: StyleId) {
-        if self.style_id.is_some() {
-            panic!("Node already has a style_id");
-        }
-        self.style_id = Some(style_id);
-    }
-
     pub fn widget_kind(&self) -> WidgetKind {
         self.widget.kind()
     }

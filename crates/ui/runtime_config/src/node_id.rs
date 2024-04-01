@@ -1,9 +1,9 @@
 use std::fmt::{Display, Formatter};
 
 use ui_layout::{Alignment, LayoutType, MarginUnits, Node, PositionType, SizeUnits, Solid, TextMeasurer};
-use ui_types::{Text, WidgetKind, NodeId};
+use ui_types::{WidgetKind, NodeId};
 
-use crate::{UiRuntimeConfig, UiVisibilityStore};
+use crate::{TextR, UiRuntimeConfig, UiVisibilityStore};
 
 #[derive(Clone, Copy, PartialEq, PartialOrd, Ord, Eq, Hash, Debug, Default)]
 pub struct UiId(u32);
@@ -379,7 +379,7 @@ impl Node for UiId {
     fn calculate_text_width(&self, store: &Self::Store, text_measurer: &dyn TextMeasurer, height: f32) -> f32 {
         let text_ref = store.text_ref(self).unwrap();
         let text = text_ref.text.as_str();
-        let (raw_width, raw_height) = Text::measure_raw_text_size(text_measurer, text);
+        let (raw_width, raw_height) = TextR::measure_raw_text_size(text_measurer, text);
         let scale = height / raw_height;
         raw_width * scale
     }

@@ -27,7 +27,6 @@ asset_id = { path = "../asset/id" }
 filesystem = { path = "../filesystem" }
 ui_state = { path = "../ui/state" }
 ui_render = { path = "../ui/render" }
-ui_types = { path = "../ui/types" }
 ui_runtime = { path = "../ui/runtime" }
 ui_input = { path = "../ui/input" }
 random = { path = "../random" }

@@ -1,5 +1,4 @@
 use asset_id::AssetId;
-use ui_types::UiConfig;
 
 use crate::{asset_dependency::AssetDependency, AssetHandle, IconData, TypedAssetId};
 
@@ -21,10 +20,6 @@ impl UiDependencies {
         Self {
             icon_file,
         }
-    }
-
-    pub fn load_config_from_bytes(bytes: &[u8]) -> UiConfig {
-        asset_serde::bits::read_ui_bits(bytes)
     }
 
     pub fn load_dependencies(

@@ -14,9 +14,10 @@ use game_engine::{
         ETag, EmbeddedAssetEvent,
     },
     render::{base::Color, components::{AmbientLight, CameraBundle, ClearOperation, OrthographicProjection, Projection, RenderTarget, RenderLayer, Camera}},
-    ui::{UiRuntime, UiConfig, UiManager, UiInputConverter},
+    ui::{UiRuntime, UiManager, UiInputConverter},
     input::{Input, InputEvent, GamepadRumbleIntensity, RumbleManager},
 };
+use ui_builder::UiConfig;
 
 use crate::app::{ui_backups::*, global::Global};
 

@@ -8,6 +8,7 @@ use render_api::{
 use storage::Handle;
 
 use asset_loader::{AssetManager, AssetComponentHandle, ProcessedAssetStore, AnimationData, AssetHandle, IconData, MeshData, ModelData, SceneData, SkinData, UiTextMeasurer};
+use ui_runtime_config::TextR;
 
 pub trait AssetRender {
     fn draw_mesh(
@@ -309,8 +310,8 @@ impl AssetRenderer {
             return;
         };
         let text_measurer = UiTextMeasurer::new(icon_data);
-        let subimage_indices = ui_types::Text::get_subimage_indices(text);
-        let (x_positions, text_height) = ui_types::Text::get_raw_text_rects(&text_measurer, &subimage_indices);
+        let subimage_indices = TextR::get_subimage_indices(text);
+        let (x_positions, text_height) = TextR::get_raw_text_rects(&text_measurer, &subimage_indices);
 
         let mut cursor = Transform::from_xyz(
             0.0,

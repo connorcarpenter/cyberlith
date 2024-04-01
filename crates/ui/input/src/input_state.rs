@@ -3,8 +3,7 @@ use input::CursorIcon;
 use instant::Instant;
 use math::Vec2;
 
-use ui_layout::TextMeasurer;
-use ui_runtime_config::{UiId, UiRuntimeConfig};
+use ui_runtime_config::{TextMeasurer, UiId, UiRuntimeConfig};
 use ui_state::{NodeActiveState, UiState};
 
 use crate::{input::ui_receive_input, UiGlobalEvent, UiInputEvent, UiNodeEvent};

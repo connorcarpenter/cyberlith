@@ -18,23 +18,12 @@ impl Panel {
     pub fn add_child(&mut self, child_id: NodeId) {
         self.children.push(child_id);
     }
-
-    // returns whether or not mouse is inside the rect
-    pub fn mouse_is_inside(
-        layout: (f32, f32, f32, f32),
-        mouse_x: f32,
-        mouse_y: f32,
-    ) -> bool {
-        let (width, height, posx, posy) = layout;
-
-        mouse_x >= posx && mouse_x <= posx + width + 1.0 && mouse_y >= posy && mouse_y <= posy + height + 1.0
-    }
 }
 
 #[derive(Clone, Copy)]
 pub struct PanelStyle {
     pub background_color: Option<Color>,
-    pub background_alpha: Option<f32>,
+    pub background_alpha: Option<f32>, // keep it private, need to validate
 
     pub layout_type: Option<LayoutType>,
 

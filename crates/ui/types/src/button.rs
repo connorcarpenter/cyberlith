@@ -61,27 +61,7 @@ impl ButtonStyle {
         }
     }
 
-    pub fn background_alpha(&self) -> Option<f32> {
-        self.panel.background_alpha()
-    }
-
     pub fn set_background_alpha(&mut self, val: f32) {
         self.panel.set_background_alpha(val);
-    }
-
-    pub fn hover_color(&self) -> Option<Color> {
-        self.hover_color
-    }
-
-    pub fn set_hover_color(&mut self, val: Color) {
-        self.hover_color = Some(val);
-    }
-
-    pub fn down_color(&self) -> Option<Color> {
-        self.down_color
-    }
-
-    pub fn set_down_color(&mut self, val: Color) {
-        self.down_color = Some(val);
     }
 }

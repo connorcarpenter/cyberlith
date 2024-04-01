@@ -121,17 +121,17 @@ impl<'a> TextboxStyleMut<'a> {
     }
 
     pub fn set_hover_color(&mut self, color: Color) -> &mut Self {
-        self.get_textbox_style_mut().set_hover_color(color);
+        self.get_textbox_style_mut().hover_color = Some(color);
         self
     }
 
     pub fn set_active_color(&mut self, color: Color) -> &mut Self {
-        self.get_textbox_style_mut().set_active_color(color);
+        self.get_textbox_style_mut().active_color = Some(color);
         self
     }
 
     pub fn set_selection_color(&mut self, color: Color) -> &mut Self {
-        self.get_textbox_style_mut().set_selection_color(color);
+        self.get_textbox_style_mut().select_color = Some(color);
         self
     }
 
