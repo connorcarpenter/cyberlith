@@ -1,9 +1,10 @@
 mod ui_manager;
-mod plugin;
-mod runtime;
-
 pub use ui_manager::{UiManager, Blinkiness};
+
+mod plugin;
 pub use plugin::UiPlugin;
+
+mod runtime;
 pub use runtime::UiRuntime;
 
 pub mod config {

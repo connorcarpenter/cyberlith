@@ -8,5 +8,5 @@ workspace = "../../../.."
 
 [dependencies]
 asset_id = { path = "../../../asset/id" }
-ui_layout = { path = "../../layout" }
 render_api = { path = "../../../render/render_api" }
+ui_layout = { path = "../../layout" }
