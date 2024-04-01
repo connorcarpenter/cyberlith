@@ -18,6 +18,7 @@ use asset_loader::{AssetManager, AssetMetadataStore};
 use bevy_http_client::{HttpClient, ResponseKey};
 use config::{ORCHESTRATOR_PORT, PUBLIC_IP_ADDR};
 use filesystem::FileSystemManager;
+use ui_runner::UiManager;
 
 cfg_if! {
 if #[cfg(feature = "networked")]
@@ -127,6 +128,7 @@ impl ConnectionManager {
         mut world_client: WorldClient,
         mut asset_cache: ResMut<AssetCache>,
         mut asset_manager: ResMut<AssetManager>,
+        mut ui_manager: ResMut<UiManager>,
         mut file_system_manager: ResMut<FileSystemManager>,
         mut metadata_store: ResMut<AssetMetadataStore>,
         mut event_reader: EventReader<MessageEvents<Session>>,
@@ -162,6 +164,7 @@ impl ConnectionManager {
 
                 asset_cache.handle_load_asset_with_data_message(
                     &mut asset_manager,
+                    &mut ui_manager,
                     &mut asset_loaded_event_writer,
                     &mut file_system_manager,
                     &mut metadata_store,

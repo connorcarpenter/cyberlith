@@ -5,7 +5,7 @@ use bevy_ecs::{
 };
 
 use game_engine::{
-    asset::{AnimationData, AssetHandle, AssetManager, ModelData},
+    asset::{AnimationData, AssetHandle, AssetManager, ModelData, AssetRender},
     math::{Quat, Vec3},
     render::{
         base::{Color, CpuMaterial, CpuMesh},

@@ -1,5 +1,4 @@
 use bevy_ecs::{event::EventWriter, prelude::Resource, system::ResMut};
-use bevy_log::info;
 
 use naia_bevy_client::{Client, ResponseSendKey};
 
@@ -8,12 +7,11 @@ use session_server_naia_proto::messages::{LoadAssetRequest, LoadAssetResponse};
 use asset_id::{AssetId, AssetType};
 use asset_loader::{AssetManager, AssetMetadataStore};
 use filesystem::{FileSystemManager, ReadResult, TaskKey};
+use ui_runner::UiManager;
 
-use crate::asset_cache::{AssetCache, AssetLoadedEvent};
+use crate::{asset_cache::{AssetCache, AssetLoadedEvent}, networked::client_markers::Session};
 
 type SessionClient<'a> = Client<'a, Session>;
-
-use crate::networked::client_markers::Session;
 
 #[cfg(feature = "networked")]
 pub enum LoadAssetTask {
@@ -39,6 +37,7 @@ impl AssetCacheChecker {
         mut session_client: SessionClient,
         mut fs_manager: ResMut<FileSystemManager>,
         mut asset_manager: ResMut<AssetManager>,
+        mut ui_manager: ResMut<UiManager>,
         mut asset_loaded_event_writer: EventWriter<AssetLoadedEvent>,
     ) {
         let load_asset_tasks = std::mem::take(&mut asset_cache_checker.load_asset_tasks);
@@ -55,6 +54,7 @@ impl AssetCacheChecker {
                             let asset_bytes = result.bytes;
                             asset_cache.handle_data_store_load_asset(
                                 &mut asset_manager,
+                                &mut ui_manager,
                                 &mut asset_loaded_event_writer,
                                 &asset_id,
                                 &asset_type,
