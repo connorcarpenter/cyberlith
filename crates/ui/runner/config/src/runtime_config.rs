@@ -118,6 +118,10 @@ impl UiRuntimeConfig {
 
     // styles
 
+    pub fn styles_iter(&self) -> Iter<'_, BaseNodeStyle> {
+        self.styles.iter()
+    }
+
     fn get_style(&self, style_id: &StyleId) -> Option<&BaseNodeStyle> {
         self.styles.get(style_id.as_usize())
     }

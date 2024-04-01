@@ -1,6 +1,6 @@
 use crate::{Button, Panel, Text, Textbox};
 
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(PartialEq, Eq, Clone, Copy, Hash)]
 pub enum WidgetKind {
     Panel,
     Text,

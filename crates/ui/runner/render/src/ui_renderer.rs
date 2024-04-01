@@ -223,12 +223,12 @@ fn draw_ui_panel(
     id: &NodeId,
     transform: &Transform,
 ) {
-    let Some(panel_state_ref) = ui_state.store.panel_ref(id) else {
+    let Some(panel_style_state) = ui_state.panel_style_state(ui_config, id) else {
         panic!("no panel ref for node_id: {:?}", id);
     };
 
     // draw panel
-    if let Some(mat_handle) = panel_state_ref.background_color_handle {
+    if let Some(mat_handle) = panel_style_state.background_color_handle() {
         let background_alpha = ui_config.node_background_alpha(id);
         if background_alpha > 0.0 {
             if background_alpha != 1.0 {
@@ -257,12 +257,12 @@ fn draw_ui_text(
     let Some(text_ref) = ui_config.get_node(id).unwrap().widget_text_ref() else {
         panic!("no text ref for node_id: {:?}", id);
     };
-    let Some(text_state_ref) = ui_state.store.get_node(id).unwrap().widget_text_ref() else {
-        panic!("no text ref for node_id: {:?}", id);
+    let Some(text_style_state) = ui_state.text_style_state(ui_config, id) else {
+        panic!("no text style state ref for node_id: {:?}", id);
     };
 
     // draw background
-    if let Some(mat_handle) = text_state_ref.background_color_handle {
+    if let Some(mat_handle) = text_style_state.background_color_handle() {
         let background_alpha = ui_config.node_background_alpha(id);
         if background_alpha > 0.0 {
             if background_alpha != 1.0 {
@@ -302,13 +302,13 @@ fn draw_ui_button(
     id: &NodeId,
     transform: &Transform,
 ) {
-    let Some(button_state_ref) = ui_state.store.button_ref(id) else {
-        panic!("no button ref for node_id: {:?}", id);
+    let Some(button_style_state) = ui_state.button_style_state(ui_config, id) else {
+        panic!("no button style state ref for node_id: {:?}", id);
     };
 
     // draw button
     let active_state = ui_input_state.get_active_state(id);
-    if let Some(mat_handle) = button_state_ref.current_color_handle(active_state) {
+    if let Some(mat_handle) = button_style_state.current_color_handle(active_state) {
         let background_alpha = ui_config.node_background_alpha(id);
         if background_alpha > 0.0 {
             if background_alpha != 1.0 {
@@ -336,13 +336,16 @@ fn draw_ui_textbox(
     id: &NodeId,
     transform: &Transform,
 ) {
-    let Some(textbox_state_ref) = ui_state.store.textbox_ref(id) else {
-        panic!("no textbox state ref for node_id: {:?}", id);
+    let Some(textbox_state) = ui_state.store.textbox_ref(id) else {
+        panic!("no textbox state for node_id: {:?}", id);
+    };
+    let Some(textbox_style_state) = ui_state.textbox_style_state(ui_config, id) else {
+        panic!("no textbox style state for node_id: {:?}", id);
     };
 
     // draw textbox
     let active_state = ui_input_state.get_active_state(id);
-    if let Some(mat_handle) = textbox_state_ref.current_color_handle(active_state) {
+    if let Some(mat_handle) = textbox_style_state.current_color_handle(active_state) {
         let background_alpha = ui_config.node_background_alpha(id);
         if background_alpha > 0.0 {
             if background_alpha != 1.0 {
@@ -374,14 +377,14 @@ fn draw_ui_textbox(
             text_icon_handle,
             text_color_handle,
             &text_transform,
-            &textbox_state_ref.text,
+            &textbox_state.text,
         );
     }
 
     if active_state == NodeActiveState::Active {
         // draw selection box if needed
         if let Some(select_index) = ui_input_state.select_index {
-            if let Some(mat_handle) = textbox_state_ref.get_selection_color_handle() {
+            if let Some(mat_handle) = textbox_style_state.select_color_handle() {
                 text_transform.translation.z = transform.translation.z + 0.025;
                 UiRenderer::draw_text_selection(
                     render_frame,
@@ -391,7 +394,7 @@ fn draw_ui_textbox(
                     ui_state.globals.get_box_mesh_handle().unwrap(),
                     &mat_handle,
                     &text_transform,
-                    &textbox_state_ref.text,
+                    &textbox_state.text,
                     select_index,
                     ui_input_state.carat_index,
                 );
@@ -408,7 +411,7 @@ fn draw_ui_textbox(
                 text_icon_handle,
                 text_color_handle,
                 &text_transform,
-                &textbox_state_ref.text,
+                &textbox_state.text,
                 ui_input_state.carat_index,
             );
         }

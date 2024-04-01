@@ -11,9 +11,11 @@ use ui_runner_config::{
 };
 
 use crate::{
-    button::ButtonState, panel::PanelState, state_store::UiStateStore, text::TextState,
-    textbox::TextboxState, widget::WidgetState, UiNodeState,
+    button::ButtonStyleState, panel::PanelStyleState, state_store::UiStateStore, text::TextStyleState,
+    textbox::TextboxState, UiNodeState,
 };
+use crate::style_state::StyleState;
+use crate::textbox::TextboxStyleState;
 
 pub struct UiState {
     pub globals: StateGlobals,
@@ -42,7 +44,65 @@ impl UiState {
             me.visibility_store.node_state_init();
         }
 
+        for style in ui_config.styles_iter() {
+            me.store.style_state_init(&style.widget_style.kind());
+        }
+
         me
+    }
+
+    // nodes
+
+    pub(crate) fn node_mut(&mut self, id: &NodeId) -> Option<&mut UiNodeState> {
+        self.queue_recalculate_layout();
+        self.store.get_node_mut(&id)
+    }
+
+    pub fn textbox_mut(&mut self, id: &NodeId) -> Option<&mut TextboxState> {
+        let node_mut = self.node_mut(id)?;
+        let textbox_mut = node_mut.widget_textbox_mut()?;
+        Some(textbox_mut)
+    }
+
+    // styles
+
+    fn node_style_state(&self, config: &UiRuntimeConfig, id: &NodeId) -> Option<&StyleState> {
+        let node = config.get_node(id)?;
+        let widget_kind = node.widget_kind();
+        let style_id = node.style_id();
+        self.store.get_style_state(widget_kind, style_id)
+    }
+
+    pub fn panel_style_state(&self, config: &UiRuntimeConfig, id: &NodeId) -> Option<&PanelStyleState> {
+        let style_state = self.node_style_state(config, id)?;
+        let StyleState::Panel(panel_style_state) = style_state else {
+            return None;
+        };
+        return Some(panel_style_state);
+    }
+
+    pub fn text_style_state(&self, config: &UiRuntimeConfig, id: &NodeId) -> Option<&TextStyleState> {
+        let style_state = self.node_style_state(config, id)?;
+        let StyleState::Text(text_style_state) = style_state else {
+            return None;
+        };
+        return Some(text_style_state);
+    }
+
+    pub fn button_style_state(&self, config: &UiRuntimeConfig, id: &NodeId) -> Option<&ButtonStyleState> {
+        let style_state = self.node_style_state(config, id)?;
+        let StyleState::Button(button_style_state) = style_state else {
+            return None;
+        };
+        return Some(button_style_state);
+    }
+
+    pub fn textbox_style_state(&self, config: &UiRuntimeConfig, id: &NodeId) -> Option<&TextboxStyleState> {
+        let style_state = self.node_style_state(config, id)?;
+        let StyleState::Textbox(textbox_style_state) = style_state else {
+            return None;
+        };
+        return Some(textbox_style_state);
     }
 
     pub fn load_cpu_data(
@@ -64,125 +124,106 @@ impl UiState {
         }
 
         // set color handles
-        let ids = self.collect_color_handles();
-        for id in ids {
-            let node_ref = ui_config.get_node(&id).unwrap();
+        for id in self.store.node_ids() {
+            let node = ui_config.get_node(&id).unwrap();
+            let widget_kind = node.widget_kind();
+            let style_id = node.style_id();
 
-            match node_ref.widget_kind() {
+            match widget_kind {
                 WidgetKind::Panel => {
-                    let background_color = ui_config
-                        .node_background_color(&id)
-                        .copied()
-                        .unwrap_or(Color::BLACK);
-                    let panel_mut = self.panel_mut(&id).unwrap();
-                    let mat_handle = materials.add(background_color);
-                    panel_mut.background_color_handle = Some(mat_handle);
+                    if let Some(panel_style_mut) = self.store.create_panel_style(style_id) {
+                        let background_color = ui_config
+                            .node_background_color(&id)
+                            .copied()
+                            .unwrap_or(Color::BLACK);
+                        let background_color_handle = materials.add(background_color);
+                        panel_style_mut.set_background_color_handle(background_color_handle);
+                    }
                 }
                 WidgetKind::Text => {
-                    let background_color = ui_config
-                        .node_background_color(&id)
-                        .copied()
-                        .unwrap_or(Color::BLACK);
-                    let text_mut = self.text_mut(&id).unwrap();
-                    let mat_handle = materials.add(background_color);
-                    text_mut.background_color_handle = Some(mat_handle);
+                    if let Some(text_style_mut) = self.store.create_text_style(style_id) {
+
+                        // background color
+                        let background_color = ui_config
+                            .node_background_color(&id)
+                            .copied()
+                            .unwrap_or(Color::BLACK);
+                        let background_color_handle = materials.add(background_color);
+                        text_style_mut.set_background_color_handle(background_color_handle);
+                    }
                 }
                 WidgetKind::Button => {
-                    let background_color = ui_config
-                        .node_background_color(&id)
-                        .copied()
-                        .unwrap_or(Color::BLACK);
-                    let button_style = ui_config.button_style(&id);
-                    let hover_color = button_style
-                        .map(|style| style.hover_color)
-                        .flatten()
-                        .unwrap_or(Color::BLACK);
-                    let down_color = button_style
-                        .map(|style| style.down_color)
-                        .flatten()
-                        .unwrap_or(Color::BLACK);
+                    if let Some(button_style_mut) = self.store.create_button_style(style_id) {
 
-                    let button_mut = self.button_mut(&id).unwrap();
+                        // background color
+                        let background_color = ui_config
+                            .node_background_color(&id)
+                            .copied()
+                            .unwrap_or(Color::BLACK);
+                        let background_color_handle = materials.add(background_color);
+                        button_style_mut.set_background_color_handle(background_color_handle);
 
-                    let background_color_handle = materials.add(background_color);
-                    button_mut.panel.background_color_handle = Some(background_color_handle);
+                        // button-specific
+                        let button_style = ui_config.button_style(&id);
+                        // hover color
+                        let hover_color = button_style
+                            .map(|style| style.hover_color)
+                            .flatten()
+                            .unwrap_or(Color::BLACK);
+                        let hover_color_handle = materials.add(hover_color);
+                        button_style_mut.set_hover_color_handle(hover_color_handle);
 
-                    let hover_color_handle = materials.add(hover_color);
-                    button_mut.set_hover_color_handle(hover_color_handle);
-
-                    let down_color_handle = materials.add(down_color);
-                    button_mut.set_down_color_handle(down_color_handle);
+                        // down color
+                        let down_color = button_style
+                            .map(|style| style.down_color)
+                            .flatten()
+                            .unwrap_or(Color::BLACK);
+                        let down_color_handle = materials.add(down_color);
+                        button_style_mut.set_down_color_handle(down_color_handle);
+                    }
                 }
                 WidgetKind::Textbox => {
-                    let background_color = ui_config
-                        .node_background_color(&id)
-                        .copied()
-                        .unwrap_or(Color::BLACK);
-                    let textbox_style = ui_config.textbox_style(&id);
-                    let hover_color = textbox_style
-                        .map(|style| style.hover_color)
-                        .flatten()
-                        .unwrap_or(Color::BLACK);
-                    let active_color = textbox_style
-                        .map(|style| style.active_color)
-                        .flatten()
-                        .unwrap_or(Color::BLACK);
-                    let select_color = textbox_style
-                        .map(|style| style.select_color)
-                        .flatten()
-                        .unwrap_or(Color::BLACK);
+                    if let Some(textbox_style_mut) = self.store.create_textbox_style(style_id) {
+                        // background color
+                        let background_color = ui_config
+                            .node_background_color(&id)
+                            .copied()
+                            .unwrap_or(Color::BLACK);
+                        let background_color_handle = materials.add(background_color);
+                        textbox_style_mut.set_background_color_handle(background_color_handle);
 
-                    let textbox_mut = self.textbox_mut(&id).unwrap();
+                        // textbox-specific
+                        let textbox_style = ui_config.textbox_style(&id);
+                        // hover color
+                        let hover_color = textbox_style
+                            .map(|style| style.hover_color)
+                            .flatten()
+                            .unwrap_or(Color::BLACK);
+                        let hover_color_handle = materials.add(hover_color);
+                        textbox_style_mut.set_hover_color_handle(hover_color_handle);
 
-                    let background_color_handle = materials.add(background_color);
-                    textbox_mut.panel.background_color_handle = Some(background_color_handle);
+                        // active color
+                        let active_color = textbox_style
+                            .map(|style| style.active_color)
+                            .flatten()
+                            .unwrap_or(Color::BLACK);
+                        let active_color_handle = materials.add(active_color);
+                        textbox_style_mut.set_active_color_handle(active_color_handle);
 
-                    let hover_color_handle = materials.add(hover_color);
-                    textbox_mut.set_hover_color_handle(hover_color_handle);
-
-                    let active_color_handle = materials.add(active_color);
-                    textbox_mut.set_active_color_handle(active_color_handle);
-
-                    let select_color_handle = materials.add(select_color);
-                    textbox_mut.set_selection_color_handle(select_color_handle);
+                        // select color
+                        let select_color = textbox_style
+                            .map(|style| style.select_color)
+                            .flatten()
+                            .unwrap_or(Color::BLACK);
+                        let select_color_handle = materials.add(select_color);
+                        textbox_style_mut.set_select_color_handle(select_color_handle);
+                    }
                 }
             }
         }
     }
 
-    pub fn collect_color_handles(&mut self) -> Vec<NodeId> {
-        let mut pending_mat_handles = Vec::new();
-        for id in self.store.node_ids() {
-            let Some(node_ref) = self.node_ref(&id) else {
-                continue;
-            };
-            match &node_ref.widget {
-                WidgetState::Panel(panel_state) => {
-                    if panel_state.background_color_handle.is_none() {
-                        pending_mat_handles.push(id);
-                    }
-                }
-                WidgetState::Text(text_state) => {
-                    if text_state.background_color_handle.is_none() {
-                        pending_mat_handles.push(id);
-                    }
-                }
-                WidgetState::Button(button_state) => {
-                    if button_state.needs_color_handle() {
-                        pending_mat_handles.push(id);
-                    }
-                }
-                WidgetState::Textbox(txtbox_state) => {
-                    if txtbox_state.needs_color_handle() {
-                        pending_mat_handles.push(id);
-                    }
-                }
-            }
-        }
-        pending_mat_handles
-    }
-
-    // interface
+    // layout
 
     pub fn update_viewport(&mut self, viewport: &Viewport) {
         let viewport = *viewport;
@@ -240,39 +281,6 @@ impl UiState {
         )
 
         // print_node(&Self::ROOT_PANEL_ID, &self.cache, &self.panels, true, false, "".to_string());
-    }
-
-    pub(crate) fn node_ref(&self, id: &NodeId) -> Option<&UiNodeState> {
-        self.store.get_node(&id)
-    }
-
-    pub(crate) fn node_mut(&mut self, id: &NodeId) -> Option<&mut UiNodeState> {
-        self.queue_recalculate_layout();
-        self.store.get_node_mut(&id)
-    }
-
-    pub(crate) fn panel_mut(&mut self, id: &NodeId) -> Option<&mut PanelState> {
-        let node_mut = self.node_mut(id)?;
-        let panel_mut = node_mut.widget_panel_mut()?;
-        Some(panel_mut)
-    }
-
-    pub(crate) fn text_mut(&mut self, id: &NodeId) -> Option<&mut TextState> {
-        let node_mut = self.node_mut(id)?;
-        let text_mut = node_mut.widget_text_mut()?;
-        Some(text_mut)
-    }
-
-    pub(crate) fn button_mut(&mut self, id: &NodeId) -> Option<&mut ButtonState> {
-        let node_mut = self.node_mut(id)?;
-        let button_mut = node_mut.widget_button_mut()?;
-        Some(button_mut)
-    }
-
-    pub fn textbox_mut(&mut self, id: &NodeId) -> Option<&mut TextboxState> {
-        let node_mut = self.node_mut(id)?;
-        let textbox_mut = node_mut.widget_textbox_mut()?;
-        Some(textbox_mut)
     }
 }
 

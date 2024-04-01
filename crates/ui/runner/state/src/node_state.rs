@@ -1,7 +1,7 @@
 use ui_runner_config::WidgetKind;
 
 use crate::{
-    button::ButtonState, panel::PanelState, text::TextState, textbox::TextboxState,
+    textbox::TextboxState,
     widget::WidgetState,
 };
 
@@ -19,48 +19,6 @@ impl UiNodeState {
         let widget_state = WidgetState::from_widget(widget_kind);
 
         Self::new(widget_state)
-    }
-
-    pub fn widget_panel_ref(&self) -> Option<&PanelState> {
-        match &self.widget {
-            WidgetState::Panel(panel) => Some(panel),
-            _ => None,
-        }
-    }
-
-    pub fn widget_panel_mut(&mut self) -> Option<&mut PanelState> {
-        match &mut self.widget {
-            WidgetState::Panel(panel) => Some(panel),
-            _ => None,
-        }
-    }
-
-    pub fn widget_text_ref(&self) -> Option<&TextState> {
-        match &self.widget {
-            WidgetState::Text(text) => Some(text),
-            _ => None,
-        }
-    }
-
-    pub fn widget_text_mut(&mut self) -> Option<&mut TextState> {
-        match &mut self.widget {
-            WidgetState::Text(text) => Some(text),
-            _ => None,
-        }
-    }
-
-    pub fn widget_button_ref(&self) -> Option<&ButtonState> {
-        match &self.widget {
-            WidgetState::Button(button) => Some(button),
-            _ => None,
-        }
-    }
-
-    pub fn widget_button_mut(&mut self) -> Option<&mut ButtonState> {
-        match &mut self.widget {
-            WidgetState::Button(button) => Some(button),
-            _ => None,
-        }
     }
 
     pub fn widget_textbox_ref(&self) -> Option<&TextboxState> {

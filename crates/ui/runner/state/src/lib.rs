@@ -6,6 +6,7 @@ mod text;
 mod textbox;
 mod ui_state;
 mod widget;
+mod style_state;
 
 // just for engine
 pub use ui_state::UiState;
