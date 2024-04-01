@@ -91,11 +91,11 @@ impl Node for NodeId {
     // all of these unwrap_or(SizeUnits::Percentage(100.0))
     fn width(&self, store: &Self::Store) -> SizeUnits {
 
-        if store.node_kind(self).is_text() {
-            return SizeUnits::Auto;
-        }
+        let mut output = SizeUnits::default();
 
-        let mut output = SizeUnits::Percentage(100.0);
+        if store.node_kind(self).is_text() {
+            return output;
+        }
 
         if let Some(node_style) = store.node_style(self) {
             if let Some(width) = node_style.width {
@@ -108,11 +108,12 @@ impl Node for NodeId {
 
     // all of these unwrap_or(SizeUnits::Percentage(100.0))
     fn height(&self, store: &Self::Store) -> SizeUnits {
-        if store.node_kind(self).is_text() {
-            return SizeUnits::Auto;
-        }
 
-        let mut output = SizeUnits::Percentage(100.0);
+        let mut output = SizeUnits::Auto;
+
+        if store.node_kind(self).is_text() {
+            output = SizeUnits::Percentage(100.0);
+        }
 
         if let Some(node_style) = store.node_style(self) {
             if let Some(height) = node_style.height {
@@ -125,11 +126,12 @@ impl Node for NodeId {
 
     // all of these unwrap_or(SizeUnits::Pixels(0.0))
     fn width_min(&self, store: &Self::Store) -> SizeUnits {
-        if store.node_kind(self).is_text() {
-            return SizeUnits::Auto;
-        }
 
-        let mut output = SizeUnits::Pixels(0.0);
+        let mut output = SizeUnits::default();
+
+        if store.node_kind(self).is_text() {
+            return output;
+        }
 
         if let Some(node_style) = store.node_style(self) {
             if let Some(width_min) = node_style.width_min {
@@ -142,11 +144,12 @@ impl Node for NodeId {
 
     // all of these unwrap_or(SizeUnits::Pixels(0.0))
     fn height_min(&self, store: &Self::Store) -> SizeUnits {
-        if store.node_kind(self).is_text() {
-            return SizeUnits::Auto;
-        }
 
-        let mut output = SizeUnits::Pixels(0.0);
+        let mut output = SizeUnits::default();
+
+        if store.node_kind(self).is_text() {
+            return output;
+        }
 
         if let Some(node_style) = store.node_style(self) {
             if let Some(height_min) = node_style.height_min {
@@ -159,11 +162,12 @@ impl Node for NodeId {
 
     // all of these unwrap_or(SizeUnits::Pixels(f32::MAX))
     fn width_max(&self, store: &Self::Store) -> SizeUnits {
-        if store.node_kind(self).is_text() {
-            return SizeUnits::Auto;
-        }
 
-        let mut output = SizeUnits::Pixels(f32::MAX);
+        let mut output = SizeUnits::default();
+
+        if store.node_kind(self).is_text() {
+            return output;
+        }
 
         if let Some(node_style) = store.node_style(self) {
             if let Some(width_max) = node_style.width_max {
@@ -176,11 +180,12 @@ impl Node for NodeId {
 
     // all of these unwrap_or(SizeUnits::Pixels(f32::MAX))
     fn height_max(&self, store: &Self::Store) -> SizeUnits {
-        if store.node_kind(self).is_text() {
-            return SizeUnits::Auto;
-        }
 
-        let mut output = SizeUnits::Pixels(f32::MAX);
+        let mut output = SizeUnits::default();
+
+        if store.node_kind(self).is_text() {
+            return output;
+        }
 
         if let Some(node_style) = store.node_style(self) {
             if let Some(height_max) = node_style.height_max {

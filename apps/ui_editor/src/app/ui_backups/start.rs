@@ -31,8 +31,24 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
             .set_solid_fit()
             .set_aspect_ratio(16., 4.);
     });
-    let base_button_style = ui_config.create_button_style(|s| {
-        s.set_background_color(Color::DARK_GRAY)
+    let text_style = ui_config.create_text_style(|s| {
+        s.set_size_pc(80.);
+    });
+    // let base_button_style = ui_config.create_button_style(|s| {
+    //     s.set_background_color(Color::DARK_GRAY)
+    //         .set_hover_color(Color::RED)
+    //         .set_down_color(Color::BLUE)
+    //         .set_self_halign(Alignment::Center)
+    //         .set_size_pc(50.0, 20.0)
+    //         .set_size_max_px(240.0, 90.0)
+    //         .set_solid_fit()
+    //         .set_aspect_ratio(16.0, 4.)
+    //         .set_padding_px(10.0, 10.0, 10.0, 10.0);
+    // });
+    let login_button_style = ui_config.create_button_style(|s| {
+        s
+            // .set_parent_style(base_button_style)
+            .set_background_color(Color::DARK_GRAY)
             .set_hover_color(Color::RED)
             .set_down_color(Color::BLUE)
             .set_self_halign(Alignment::Center)
@@ -40,13 +56,22 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
             .set_size_max_px(240.0, 90.0)
             .set_solid_fit()
             .set_aspect_ratio(16.0, 4.)
-            .set_padding_px(10.0, 10.0, 10.0, 10.0);
-    });
-    let login_button_style = ui_config.create_button_style(|s| {
-        s.set_margin_right_px(40.0);
+            .set_padding_px(10.0, 10.0, 10.0, 10.0)
+            .set_margin_right_px(40.0);
     });
     let register_button_style = ui_config.create_button_style(|s| {
-        s.set_margin_left_px(40.0);
+        s
+            // .set_parent_style(base_button_style)
+            .set_background_color(Color::DARK_GRAY)
+            .set_hover_color(Color::RED)
+            .set_down_color(Color::BLUE)
+            .set_self_halign(Alignment::Center)
+            .set_size_pc(50.0, 20.0)
+            .set_size_max_px(240.0, 90.0)
+            .set_solid_fit()
+            .set_aspect_ratio(16.0, 4.)
+            .set_padding_px(10.0, 10.0, 10.0, 10.0)
+            .set_margin_left_px(40.0);
     });
 
     // nodes
@@ -58,16 +83,15 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
         .contents(|c| {
             // title container
             c.add_panel().set_style(container_style).contents(|c| {
-                c.add_text("c y b e r l i t h");
+                c.add_text("c y b e r l i t h").set_style(text_style);
             });
 
             // login button
             c.add_button("login_button")
                 .set_as_first_input()
-                .set_style(base_button_style)
                 .set_style(login_button_style)
                 .contents(|c| {
-                    c.add_text("login");
+                    c.add_text("login").set_style(text_style);
                 })
                 .navigation(|n| {
                     n
@@ -77,10 +101,9 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
 
             // continue button
             c.add_button("register_button")
-                .set_style(base_button_style)
                 .set_style(register_button_style)
                 .contents(|c| {
-                    c.add_text("register");
+                    c.add_text("register").set_style(text_style);
                 })
                 .navigation(|n| {
                     n

@@ -86,20 +86,26 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
             .set_self_valign(Alignment::Center)
             .set_margin_px(10.0, 10.0, 10.0, 10.0);
     });
-    let base_button_style = ui_config.create_button_style(|s| {
-        s.set_background_color(Color::DARK_GRAY)
-            .set_hover_color(Color::RED)
-            .set_down_color(Color::BLUE);
-    });
+    // let base_button_style = ui_config.create_button_style(|s| {
+    //     s.set_background_color(Color::DARK_GRAY)
+    //         .set_hover_color(Color::RED)
+    //         .set_down_color(Color::BLUE);
+    // });
     let submit_button_style = ui_config.create_button_style(|s| {
         s
-            .set_parent_style(base_button_style)
+            // .set_parent_style(base_button_style)
+            .set_background_color(Color::DARK_GRAY)
+            .set_hover_color(Color::RED)
+            .set_down_color(Color::BLUE)
             .set_self_halign(Alignment::Start)
             .set_margin_left_px(40.);
     });
     let register_button_style = ui_config.create_button_style(|s| {
         s
-            .set_parent_style(base_button_style)
+            // .set_parent_style(base_button_style)
+            .set_background_color(Color::DARK_GRAY)
+            .set_hover_color(Color::RED)
+            .set_down_color(Color::BLUE)
             .set_self_halign(Alignment::End)
             .set_margin_right_px(10.0);
     });
@@ -171,7 +177,6 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
                                         .contents(|c| {
                                             // register button
                                             c.add_button("login_button")
-                                                .set_style(base_button_style)
                                                 .set_style(register_button_style)
                                                 .contents(|c| {
                                                     c
@@ -260,7 +265,6 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
                         // submit button
                         c
                             .add_button("submit_button")
-                            .set_style(base_button_style)
                             .set_style(submit_button_style)
                             .contents(|c| {
                                 c
