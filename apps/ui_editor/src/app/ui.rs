@@ -18,7 +18,7 @@ use game_engine::{
     input::{Input, InputEvent, GamepadRumbleIntensity, RumbleManager},
 };
 use ui_builder::UiConfig;
-use ui_runtime_config::UiRuntimeConfig;
+use ui_runner_config::UiRuntimeConfig;
 
 use crate::app::{ui_backups::*, global::Global};
 

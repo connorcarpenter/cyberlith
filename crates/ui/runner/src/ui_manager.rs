@@ -12,7 +12,7 @@ use render_api::{base::{CpuMaterial, CpuMesh}, components::Camera, resources::Ti
 use storage::Storage;
 
 use ui_input::{UiGlobalEvent, UiInputEvent, UiNodeEvent, UiNodeEventHandler};
-use ui_runtime_config::{UiId, UiRuntimeConfig};
+use ui_runner_config::{UiId, UiRuntimeConfig};
 
 use crate::runtime::UiRuntime;
 

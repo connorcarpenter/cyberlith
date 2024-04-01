@@ -25,10 +25,10 @@ config = { path = "../../apps/config", features = ["client"]}
 storage = { path = "../storage" }
 asset_id = { path = "../asset/id" }
 filesystem = { path = "../filesystem" }
-ui_state = { path = "../ui/state" }
-ui_render = { path = "../ui/render" }
-ui_runtime = { path = "../ui/runtime" }
-ui_input = { path = "../ui/input" }
+ui_state = { path = "../ui/runner/state" }
+ui_render = { path = "../ui/runner/render" }
+ui_runner = { path = "../ui/runner" }
+ui_input = { path = "../ui/runner/input" }
 random = { path = "../random" }
 
 # Networked Dependencies

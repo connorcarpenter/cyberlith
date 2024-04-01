@@ -4,7 +4,7 @@ use unicode_segmentation::UnicodeSegmentation;
 use input::MouseButton;
 use math::Vec2;
 
-use ui_runtime_config::{TextMeasurer, TextR};
+use ui_runner_config::{TextMeasurer, TextR};
 use ui_state::TextboxState;
 
 use crate::{UiGlobalEvent, UiInputEvent, UiInputState};

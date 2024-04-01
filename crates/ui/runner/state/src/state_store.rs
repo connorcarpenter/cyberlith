@@ -1,4 +1,4 @@
-use ui_runtime_config::{UiId, UiNodeR};
+use ui_runner_config::{UiId, UiNodeR};
 use crate::{panel::PanelState, button::ButtonState, UiNodeState, text::TextState, textbox::TextboxState};
 
 pub struct UiStateStore {

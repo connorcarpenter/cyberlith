@@ -7,7 +7,7 @@ use bevy_http_client::HttpClientPlugin;
 use filesystem::FileSystemPlugin;
 use input::{Input, InputPlugin};
 use render_api::RenderApiPlugin;
-use ui_runtime::UiPlugin;
+use ui_runner::UiPlugin;
 
 use crate::{
     asset_cache::{AssetCache, AssetLoadedEvent},

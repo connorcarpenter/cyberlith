@@ -10,7 +10,7 @@ workspace = "../../.."
 asset_loader = { path = "../loader" }
 render_api = { path = "../../render/render_api" }
 storage = { path = "../../storage" }
-ui_state = { path = "../../ui/state" }
-ui_runtime_config = { path = "../../ui/runtime/config" }
+ui_state = { path = "../../ui/runner/state" }
+ui_runner_config = { path = "../../ui/runner/config" }
 
 bevy_log = { version = "0.13", default-features=false }

@@ -8,7 +8,7 @@ use render_api::{
     resources::RenderFrame,
 };
 use storage::Handle;
-use ui_runtime::{Blinkiness, UiManager, UiRuntime, state::{NodeActiveState, UiState}, input::{UiInputState}, config::{TextR, UiId, UiRuntimeConfig, WidgetKind}};
+use ui_runner::{Blinkiness, UiManager, UiRuntime, state::{NodeActiveState, UiState}, input::{UiInputState}, config::{TextR, UiId, UiRuntimeConfig, WidgetKind}};
 
 pub struct UiRenderer;
 
@@ -22,14 +22,14 @@ impl UiRenderer {
         blinkiness: &Blinkiness,
         ui_handle: &AssetHandle<UiRuntime>,
     ) {
-        let Some(ui_runtime) = ui_manager.ui_runtimes.get(ui_handle) else {
+        let Some(ui_runner) = ui_manager.ui_runtimes.get(ui_handle) else {
             warn!("ui data not loaded 2: {:?}", ui_handle.asset_id());
             return;
         };
 
-        let (ui_state, ui_input_state, ui, _) = ui_runtime.decompose_to_refs();
+        let (ui_state, ui_input_state, ui, _) = ui_runner.decompose_to_refs();
 
-        let text_icon_handle = ui_runtime.get_icon_handle();
+        let text_icon_handle = ui_runner.get_icon_handle();
 
         let carat_blink = blinkiness.enabled() || ui_input_state.interact_timer_was_recent();
 

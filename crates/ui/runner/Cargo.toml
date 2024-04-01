@@ -1,5 +1,5 @@
 [package]
-name = "ui_runtime"
+name = "ui_runner"
 version = "0.1.0"
 edition = "2021"
 workspace = "../../.."
@@ -15,9 +15,9 @@ asset_id = { path = "../../asset/id" }
 input = { path = "../../input" }
 math = { path = "../../math" }
 
-ui_state = { path = "../../ui/state" }
-ui_input = { path = "../../ui/input" }
-ui_runtime_config = { path = "config" }
+ui_state = { path = "state" }
+ui_input = { path = "input" }
+ui_runner_config = { path = "config" }
 
 bevy_app = { version = "0.13", default-features = false }
 bevy_ecs = { version = "0.13", default-features = false }

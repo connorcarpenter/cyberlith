@@ -17,7 +17,7 @@ random = { path = "../../random" }
 input = { path = "../../input" }
 instant = { path = "../../instant" }
 
-ui_runtime_config = { path = "../../ui/runtime/config" }
+ui_runner_config = { path = "../../ui/runner/config" }
 
 naia-serde = { path = "../../../../naia/shared/serde" }
 

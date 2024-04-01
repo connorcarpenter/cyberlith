@@ -4,7 +4,7 @@ use math::Vec2;
 use render_api::{base::{CpuMaterial, CpuMesh}, components::Viewport};
 use storage::Storage;
 use ui_input::{UiGlobalEvent, UiInputEvent, UiInputState, UiNodeEvent};
-use ui_runtime_config::{UiId, UiRuntimeConfig};
+use ui_runner_config::{UiId, UiRuntimeConfig};
 use ui_state::UiState;
 
 pub struct UiRuntime {

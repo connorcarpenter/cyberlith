@@ -8,7 +8,7 @@ use render_api::{
 };
 use storage::{Handle, Storage};
 
-use ui_runtime_config::{Cache, Node, TextMeasurer, UiId, UiRuntimeConfig, UiVisibilityStore, WidgetKind};
+use ui_runner_config::{Cache, Node, TextMeasurer, UiId, UiRuntimeConfig, UiVisibilityStore, WidgetKind};
 
 use crate::{
     button::ButtonState, cache::LayoutCache, panel::PanelState, state_store::UiStateStore,

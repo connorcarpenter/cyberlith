@@ -7,7 +7,7 @@ pub use plugin::UiPlugin;
 pub use runtime::UiRuntime;
 
 pub mod config {
-    pub use ui_runtime_config::*;
+    pub use ui_runner_config::*;
 }
 pub mod state {
     pub use ui_state::*;

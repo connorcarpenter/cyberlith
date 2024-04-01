@@ -1,0 +1,17 @@
+[package]
+name = "ui_render"
+version = "0.1.0"
+edition = "2021"
+workspace = "../../../.."
+
+[features]
+
+[dependencies]
+asset_loader = { path = "../../../asset/loader" }
+asset_render = { path = "../../../asset/render" }
+render_api = { path = "../../../render/render_api" }
+storage = { path = "../../../storage" }
+
+ui_runner = { path = ".." }
+
+bevy_log = { version = "0.13", default-features=false }

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use ui_runtime_config::{Cache, Node, UiId};
+use ui_runner_config::{Cache, Node, UiId};
 
 #[derive(Default)]
 pub struct LayoutCache {

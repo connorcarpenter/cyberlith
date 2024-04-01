@@ -1,4 +1,4 @@
-use ui_runtime_config::{WidgetKind, WidgetR};
+use ui_runner_config::{WidgetKind, WidgetR};
 
 use crate::{panel::PanelState, button::ButtonState, text::TextState, textbox::TextboxState};
 

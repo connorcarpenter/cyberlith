@@ -1,5 +1,5 @@
 [package]
-name = "ui_runtime_config"
+name = "ui_runner_config"
 version = "0.1.0"
 edition = "2021"
 workspace = "../../../.."

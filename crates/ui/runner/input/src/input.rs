@@ -4,7 +4,7 @@ use bevy_log::warn;
 use input::{CursorIcon, GamepadButtonType, InputEvent, Key, Modifiers, MouseButton};
 use math::Vec2;
 
-use ui_runtime_config::{PanelR, TextMeasurer, UiId, UiRuntimeConfig, WidgetKind};
+use ui_runner_config::{PanelR, TextMeasurer, UiId, UiRuntimeConfig, WidgetKind};
 use ui_state::UiState;
 
 use crate::{UiGlobalEvent, UiNodeEvent, input_state::UiInputState, textbox_input_state::TextboxInputState};

@@ -8,7 +8,7 @@ use render_api::{
 use storage::Handle;
 
 use asset_loader::{AssetManager, AssetComponentHandle, ProcessedAssetStore, AnimationData, AssetHandle, IconData, MeshData, ModelData, SceneData, SkinData, UiTextMeasurer};
-use ui_runtime_config::TextR;
+use ui_runner_config::TextR;
 
 pub trait AssetRender {
     fn draw_mesh(

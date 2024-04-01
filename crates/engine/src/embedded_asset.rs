@@ -7,7 +7,7 @@ use naia_serde::{BitReader, Serde};
 
 use asset_loader::{AssetManager, AssetMetadataSerde, AssetMetadataStore, EmbeddedAssetEvent};
 use filesystem::FileSystemManager;
-use ui_runtime::UiManager;
+use ui_runner::UiManager;
 
 use crate::asset_cache::{AssetCache, AssetLoadedEvent};
 
