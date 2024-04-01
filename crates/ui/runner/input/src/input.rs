@@ -4,7 +4,7 @@ use bevy_log::warn;
 use input::{CursorIcon, GamepadButtonType, InputEvent, Key, Modifiers, MouseButton};
 use math::Vec2;
 
-use ui_runner_config::{PanelR, TextMeasurer, UiId, UiRuntimeConfig, WidgetKind};
+use ui_runner_config::{PanelR, TextMeasurer, NodeId, UiRuntimeConfig, WidgetKind};
 use ui_state::UiState;
 
 use crate::{UiGlobalEvent, UiNodeEvent, input_state::UiInputState, textbox_input_state::TextboxInputState};
@@ -195,7 +195,7 @@ pub fn ui_receive_input(
                     ui_input_state.clear_hover();
 
                     for node_id in 0..ui_state.store.nodes.len() {
-                        let node_id = UiId::from_usize(node_id);
+                        let node_id = NodeId::from_usize(node_id);
                         ui_update_hover(ui_config, ui_state, ui_input_state, &node_id, mouse_position.x, mouse_position.y);
                     }
                 }
@@ -412,7 +412,7 @@ fn ui_update_hover(
     ui_config: &UiRuntimeConfig,
     ui_state: &mut UiState,
     ui_input_state: &mut UiInputState,
-    id: &UiId,
+    id: &NodeId,
     mouse_x: f32,
     mouse_y: f32,
 ) {

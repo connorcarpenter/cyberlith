@@ -8,7 +8,7 @@ use render_api::{
     resources::RenderFrame,
 };
 use storage::Handle;
-use ui_runner::{Blinkiness, UiManager, UiRuntime, state::{NodeActiveState, UiState}, input::{UiInputState}, config::{TextR, UiId, UiRuntimeConfig, WidgetKind}};
+use ui_runner::{Blinkiness, UiManager, UiRuntime, state::{NodeActiveState, UiState}, input::{UiInputState}, config::{TextR, NodeId, UiRuntimeConfig, WidgetKind}};
 
 pub struct UiRenderer;
 
@@ -34,7 +34,7 @@ impl UiRenderer {
         let carat_blink = blinkiness.enabled() || ui_input_state.interact_timer_was_recent();
 
         for node_id in 0..ui.nodes_len() {
-            let node_id = UiId::from_usize(node_id);
+            let node_id = NodeId::from_usize(node_id);
             draw_ui_node(
                 render_frame,
                 render_layer_opt,
@@ -134,7 +134,7 @@ fn draw_ui_node(
     ui_state: &UiState,
     ui_input_state: &UiInputState,
     text_icon_handle: &AssetHandle<IconData>,
-    id: &UiId,
+    id: &NodeId,
 ) {
     let Some((width, height, child_offset_x, child_offset_y, child_offset_z)) = ui_state.cache.bounds(id) else {
         warn!("no bounds for id 1: {:?}", id);
@@ -217,7 +217,7 @@ fn draw_ui_panel(
     render_layer_opt: Option<&RenderLayer>,
     ui_config: &UiRuntimeConfig,
     ui_state: &UiState,
-    node_id: &UiId,
+    node_id: &NodeId,
     transform: &Transform,
 ) {
     let Some(panel_state_ref) = ui_state.store.panel_ref(node_id) else {
@@ -248,7 +248,7 @@ fn draw_ui_text(
     ui_config: &UiRuntimeConfig,
     ui_state: &UiState,
     text_icon_handle: &AssetHandle<IconData>,
-    node_id: &UiId,
+    node_id: &NodeId,
     transform: &Transform,
 ) {
     let Some(text_ref) = ui_config
@@ -303,7 +303,7 @@ fn draw_ui_button(
     ui_config: &UiRuntimeConfig,
     ui_state: &UiState,
     ui_input_state: &UiInputState,
-    node_id: &UiId,
+    node_id: &NodeId,
     transform: &Transform,
 ) {
     let Some(button_state_ref) = ui_state.store.button_ref(node_id) else {
@@ -337,7 +337,7 @@ fn draw_ui_textbox(
     ui_state: &UiState,
     ui_input_state: &UiInputState,
     text_icon_handle: &AssetHandle<IconData>,
-    node_id: &UiId,
+    node_id: &NodeId,
     transform: &Transform,
 ) {
     let Some(textbox_state_ref) = ui_state.store.textbox_ref(node_id) else {

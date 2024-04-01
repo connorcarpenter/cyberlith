@@ -4,7 +4,7 @@ use math::Vec2;
 use render_api::{base::{CpuMaterial, CpuMesh}, components::Viewport};
 use storage::Storage;
 use ui_input::{UiGlobalEvent, UiInputEvent, UiInputState, UiNodeEvent};
-use ui_runner_config::{UiId, UiRuntimeConfig};
+use ui_runner_config::{NodeId, UiRuntimeConfig};
 use ui_state::UiState;
 
 pub struct UiRuntime {
@@ -62,7 +62,7 @@ impl UiRuntime {
 
     // config
 
-    pub(crate) fn get_node_id_by_id_str(&self, id_str: &str) -> Option<UiId> {
+    pub(crate) fn get_node_id_by_id_str(&self, id_str: &str) -> Option<NodeId> {
         self.config.get_node_id_by_id_str(id_str)
     }
 
@@ -94,7 +94,7 @@ impl UiRuntime {
         self.input_state.take_global_events()
     }
 
-    pub(crate) fn take_node_events(&mut self) -> Vec<(UiId, UiNodeEvent)> {
+    pub(crate) fn take_node_events(&mut self) -> Vec<(NodeId, UiNodeEvent)> {
         self.input_state.take_node_events()
     }
 

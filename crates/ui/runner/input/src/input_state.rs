@@ -3,16 +3,16 @@ use input::CursorIcon;
 use instant::Instant;
 use math::Vec2;
 
-use ui_runner_config::{TextMeasurer, UiId, UiRuntimeConfig};
+use ui_runner_config::{TextMeasurer, NodeId, UiRuntimeConfig};
 use ui_state::{NodeActiveState, UiState};
 
 use crate::{input::ui_receive_input, UiGlobalEvent, UiInputEvent, UiNodeEvent};
 
 pub struct UiInputState {
     global_events: Vec<UiGlobalEvent>,
-    node_events: Vec<(UiId, UiNodeEvent)>,
-    hovering_node: Option<UiId>,
-    selected_node: Option<UiId>,
+    node_events: Vec<(NodeId, UiNodeEvent)>,
+    hovering_node: Option<NodeId>,
+    selected_node: Option<NodeId>,
     cursor_icon: CursorIcon,
     interact_timer: Instant,
 
@@ -49,15 +49,15 @@ impl UiInputState {
         self.cursor_icon = cursor_icon;
     }
 
-    pub fn get_hover(&self) -> Option<UiId> {
+    pub fn get_hover(&self) -> Option<NodeId> {
         self.hovering_node
     }
 
-    pub fn receive_hover(&mut self, id: &UiId) {
+    pub fn receive_hover(&mut self, id: &NodeId) {
         self.hovering_node = Some(*id);
     }
 
-    pub fn get_active_state(&self, id: &UiId) -> NodeActiveState {
+    pub fn get_active_state(&self, id: &NodeId) -> NodeActiveState {
         if let Some(select_id) = self.selected_node {
             if select_id == *id {
                 return NodeActiveState::Active;
@@ -77,11 +77,11 @@ impl UiInputState {
         self.hovering_node = None;
     }
 
-    pub fn get_active_node(&self) -> Option<UiId> {
+    pub fn get_active_node(&self) -> Option<NodeId> {
         self.selected_node
     }
 
-    pub fn set_active_node(&mut self, id_opt: Option<UiId>) {
+    pub fn set_active_node(&mut self, id_opt: Option<NodeId>) {
         self.selected_node = id_opt;
     }
 
@@ -93,11 +93,11 @@ impl UiInputState {
         std::mem::take(&mut self.global_events)
     }
 
-    pub fn emit_node_event(&mut self, node_id: &UiId, event: UiNodeEvent) {
+    pub fn emit_node_event(&mut self, node_id: &NodeId, event: UiNodeEvent) {
         self.node_events.push((*node_id, event));
     }
 
-    pub fn take_node_events(&mut self) -> Vec<(UiId, UiNodeEvent)> {
+    pub fn take_node_events(&mut self) -> Vec<(NodeId, UiNodeEvent)> {
         std::mem::take(&mut self.node_events)
     }
 

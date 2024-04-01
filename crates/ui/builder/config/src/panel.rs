@@ -1,7 +1,5 @@
 use render_api::base::Color;
-use ui_layout::{Alignment, LayoutType, SizeUnits};
-
-use crate::NodeId;
+use ui_layout::{Alignment, LayoutType, NodeId, SizeUnits};
 
 #[derive(Clone)]
 pub struct Panel {

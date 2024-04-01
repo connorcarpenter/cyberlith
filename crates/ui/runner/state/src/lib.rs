@@ -1,5 +1,4 @@
 mod button;
-mod cache;
 mod panel;
 mod text;
 mod widget;

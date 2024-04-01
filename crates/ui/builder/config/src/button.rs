@@ -1,6 +1,7 @@
 use render_api::base::Color;
+use ui_layout::NodeId;
 
-use crate::{NodeId, Panel, PanelStyle};
+use crate::{Panel, PanelStyle};
 
 #[derive(Clone)]
 pub struct Button {

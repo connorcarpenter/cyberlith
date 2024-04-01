@@ -2,10 +2,10 @@ use std::collections::HashMap;
 
 use asset_id::AssetId;
 use render_api::base::Color;
+use ui_layout::NodeId;
 
 use crate::{
     node::UiNode,
-    node_id::NodeId,
     panel::Panel,
     store::UiStore,
     style::{NodeStyle, StyleId},

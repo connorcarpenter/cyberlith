@@ -1,32 +1,80 @@
-use crate::{LayoutType, Node};
+use std::collections::HashMap;
 
-/// The `Cache` is a store which contains the computed size and position of nodes
-/// after a layout calculation.
-///
-/// The `Node` associated type, which implements the [`Node`] trait, provides
-/// a [`CacheKey`](crate::Node::CacheKey) associated type which can be used as key for storage types
-/// within the cache if the `Node` type itself cannot be used. For example, as the key to a hashmap/slotmap.
-pub trait Cache {
-    /// A type which represents a layout node and implements the [`Node`] trait.
-    type Node: Node;
-    /// Returns the cached width of the given node.
-    fn width(&self, node: &Self::Node) -> f32;
-    /// Returns the cached height of the given node.
-    fn height(&self, node: &Self::Node) -> f32;
-    /// Returns the cached horizontal position of the given node.
-    fn posx(&self, node: &Self::Node) -> f32;
-    /// Returns the cached vertical position of the given node.
-    fn posy(&self, node: &Self::Node) -> f32;
+use crate::{LayoutType, NodeId};
 
-    /// Sets the cached position and size of the given node.
-    fn set_bounds(&mut self, node: &Self::Node, posx: f32, posy: f32, posz: f32, width: f32, height: f32);
+#[derive(Default)]
+pub struct LayoutCache {
+    // width, height, x, y, z
+    rect: HashMap<NodeId, (f32, f32, f32, f32, f32)>,
 }
 
-/// Helper trait for getting/setting node position/size in a direction agnostic way.
-pub(crate) trait CacheExt: Cache {
-    fn set_rect(
+impl LayoutCache {
+    pub fn new() -> Self {
+        Self {
+            rect: HashMap::new(),
+        }
+    }
+
+    pub fn bounds(&self, node: &NodeId) -> Option<(f32, f32, f32, f32, f32)> {
+        self.rect
+            .get(node)
+            .map(|(width, height, posx, posy, posz)| (*width, *height, *posx, *posy, *posz))
+    }
+}
+
+impl LayoutCache {
+
+    fn width(&self, node: &NodeId) -> f32 {
+        if let Some(rect) = self.rect.get(node) {
+            return rect.0;
+        }
+
+        0.0
+    }
+
+    fn height(&self, node: &NodeId) -> f32 {
+        if let Some(rect) = self.rect.get(node) {
+            return rect.1;
+        }
+
+        0.0
+    }
+
+    fn posx(&self, node: &NodeId) -> f32 {
+        if let Some(rect) = self.rect.get(node) {
+            return rect.2;
+        }
+
+        0.0
+    }
+
+    fn posy(&self, node: &NodeId) -> f32 {
+        if let Some(rect) = self.rect.get(node) {
+            return rect.3;
+        }
+
+        0.0
+    }
+
+    pub fn set_bounds(&mut self, node: &NodeId, posx: f32, posy: f32, posz: f32, width: f32, height: f32) {
+        if let Some(rect) = self.rect.get_mut(node) {
+            //info!("setting bounds for node: {:?}", node.key());
+            rect.0 = width;
+            rect.1 = height;
+            rect.2 = posx;
+            rect.3 = posy;
+            rect.4 = posz;
+        } else {
+            //info!("inserting bounds for node: {:?}", node.key());
+            self.rect.insert(*node, (width, height, posx, posy, posz));
+        }
+    }
+}
+
+impl LayoutCache {
+    pub(crate) fn set_rect(
         &mut self,
-        node: &Self::Node,
+        node: &NodeId,
         parent_layout_type: LayoutType,
         main_pos: f32,
         cross_pos: f32,
@@ -39,6 +87,3 @@ pub(crate) trait CacheExt: Cache {
         }
     }
 }
-
-// Implement `CacheExt` for all types which implement `Cache`.
-impl<C: Cache> CacheExt for C {}

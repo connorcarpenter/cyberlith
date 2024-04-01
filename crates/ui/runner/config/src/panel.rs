@@ -1,10 +1,9 @@
 use ui_builder_config::Panel;
-
-use crate::UiId;
+use ui_layout::NodeId;
 
 #[derive(Clone)]
 pub struct PanelR {
-    pub children: Vec<UiId>,
+    pub children: Vec<NodeId>,
 }
 
 impl From<Panel> for PanelR {

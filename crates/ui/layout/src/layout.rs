@@ -1,6 +1,6 @@
 use smallvec::SmallVec;
 
-use crate::{percentage_calc, Cache, CacheExt, LayoutType, Node, NodeExt, PositionType, Size, SizeUnits, Solid, TextMeasurer};
+use crate::{percentage_calc, LayoutType, PositionType, Size, SizeUnits, Solid, TextMeasurer, NodeId, LayoutCache, NodeStore, UiVisibilityStore};
 
 const DEFAULT_MIN: f32 = -f32::MAX;
 const DEFAULT_MAX: f32 = f32::MAX;
@@ -40,9 +40,9 @@ impl StretchItem {
 }
 
 #[derive(Debug, Copy, Clone)]
-struct ChildNode<'a, N: Node> {
+struct ChildNode<'a> {
     // A reference to the node.
-    node: &'a N,
+    node: &'a NodeId,
     // Computed cross-before space of the node.
     cross_before: f32,
     // Computed cross size of the node.
@@ -63,22 +63,18 @@ struct ChildNode<'a, N: Node> {
 /// layout on every node starting from the input `node`.
 ///
 #[allow(clippy::too_many_arguments)]
-pub(crate) fn layout<N, C>(
+pub(crate) fn layout(
     node_is_root: bool,
-    node: &N,
+    node: &NodeId,
     parent_layout_type: LayoutType,
     viewport_size: (f32, f32),
     init_parent_main: f32,
     init_parent_cross: f32,
-    cache: &mut C,
-    store: &<N as Node>::Store,
-    state_store: &<N as Node>::StateStore,
+    cache: &mut LayoutCache,
+    store: &dyn NodeStore,
+    state_store: &UiVisibilityStore,
     text_measurer: &dyn TextMeasurer,
-) -> Size
-where
-    N: Node,
-    C: Cache<Node = N>,
-{
+) -> Size {
     let parent_padding_main: f32 = match node.padding_main_before(store, parent_layout_type) {
         SizeUnits::Pixels(val) => val,
         SizeUnits::Percentage(val) => percentage_calc(val, init_parent_main, 0.0),
@@ -226,7 +222,7 @@ where
     let mut children_cross_max = 0.0f32;
 
     // List of child nodes for the current node.
-    let mut children = SmallVec::<[ChildNode<N>; 32]>::with_capacity(num_children);
+    let mut children = SmallVec::<[ChildNode; 32]>::with_capacity(num_children);
 
     // List of stretch nodes for the current node.
     // A stretch node is any flexible space/size. e.g. main_before, and main_after are separate stretch nodes
@@ -837,7 +833,7 @@ where
     }
 }
 
-fn apply_solid_layout<N: Node>(node: &N, store: &N::Store, main: &mut f32, cross: &mut f32) {
+fn apply_solid_layout(node: &NodeId, store: &dyn NodeStore, main: &mut f32, cross: &mut f32) {
     // Apply solid layout stuff
     let node_solid = node.is_solid(store);
     if node_solid.is_some() {
@@ -862,9 +858,9 @@ fn apply_solid_layout<N: Node>(node: &N, store: &N::Store, main: &mut f32, cross
     }
 }
 
-fn apply_text_layout<N: Node>(
-    node: &N,
-    store: &N::Store,
+fn apply_text_layout(
+    node: &NodeId,
+    store: &dyn NodeStore,
     text_measurer: &dyn TextMeasurer,
     parent_layout_type: LayoutType,
     main: &mut f32,

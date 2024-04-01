@@ -1,6 +1,5 @@
 mod button;
 mod node;
-mod node_id;
 mod panel;
 mod store;
 mod style;
@@ -10,7 +9,6 @@ mod widget;
 mod textbox;
 
 // just for engine
-pub use node_id::NodeId;
 pub use ui_config::UiConfig;
 
 // just for ui_io
@@ -22,3 +20,5 @@ pub use text::{Text, TextStyle};
 pub use widget::{Widget, WidgetKind};
 pub use textbox::{Textbox, TextboxStyle};
 pub use store::UiStore;
+
+pub use ui_layout::NodeId;

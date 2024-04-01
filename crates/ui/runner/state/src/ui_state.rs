@@ -8,10 +8,10 @@ use render_api::{
 };
 use storage::{Handle, Storage};
 
-use ui_runner_config::{Cache, Node, TextMeasurer, UiId, UiRuntimeConfig, UiVisibilityStore, WidgetKind};
+use ui_runner_config::{LayoutCache, NodeId, TextMeasurer, UiRuntimeConfig, UiVisibilityStore, WidgetKind};
 
 use crate::{
-    button::ButtonState, cache::LayoutCache, panel::PanelState, state_store::UiStateStore,
+    button::ButtonState, panel::PanelState, state_store::UiStateStore,
     text::TextState, textbox::TextboxState,
     UiNodeState, widget::WidgetState
 };
@@ -125,7 +125,7 @@ impl UiState {
         }
     }
 
-    pub fn collect_color_handles(&mut self) -> Vec<UiId> {
+    pub fn collect_color_handles(&mut self) -> Vec<NodeId> {
         let mut pending_mat_handles = Vec::new();
         for id in self.store.node_ids() {
             let Some(node_ref) = self.node_ref(&id) else {
@@ -191,40 +191,40 @@ impl UiState {
         let visibility_store_ref = &self.visibility_store;
 
         // this calculates all the rects in cache_mut
-        UiRuntimeConfig::ROOT_NODE_ID.layout(cache_mut, ui_config, visibility_store_ref, text_measurer, last_viewport_width, last_viewport_height);
+        UiRuntimeConfig::ROOT_NODE_ID.layout(cache_mut, ui_config.get_node_store(), visibility_store_ref, text_measurer, last_viewport_width, last_viewport_height);
         finalize_rects(ui_config, self, &UiRuntimeConfig::ROOT_NODE_ID, (0.0, 0.0, 0.0))
 
         // print_node(&Self::ROOT_PANEL_ID, &self.cache, &self.panels, true, false, "".to_string());
     }
 
-    pub(crate) fn node_ref(&self, id: &UiId) -> Option<&UiNodeState> {
+    pub(crate) fn node_ref(&self, id: &NodeId) -> Option<&UiNodeState> {
         self.store.get_node(&id)
     }
 
-    pub(crate) fn node_mut(&mut self, id: &UiId) -> Option<&mut UiNodeState> {
+    pub(crate) fn node_mut(&mut self, id: &NodeId) -> Option<&mut UiNodeState> {
         self.queue_recalculate_layout();
         self.store.get_node_mut(&id)
     }
 
-    pub(crate) fn panel_mut(&mut self, id: &UiId) -> Option<&mut PanelState> {
+    pub(crate) fn panel_mut(&mut self, id: &NodeId) -> Option<&mut PanelState> {
         let node_mut = self.node_mut(id)?;
         let panel_mut = node_mut.widget_panel_mut()?;
         Some(panel_mut)
     }
 
-    pub(crate) fn text_mut(&mut self, id: &UiId) -> Option<&mut TextState> {
+    pub(crate) fn text_mut(&mut self, id: &NodeId) -> Option<&mut TextState> {
         let node_mut = self.node_mut(id)?;
         let text_mut = node_mut.widget_text_mut()?;
         Some(text_mut)
     }
 
-    pub(crate) fn button_mut(&mut self, id: &UiId) -> Option<&mut ButtonState> {
+    pub(crate) fn button_mut(&mut self, id: &NodeId) -> Option<&mut ButtonState> {
         let node_mut = self.node_mut(id)?;
         let button_mut = node_mut.widget_button_mut()?;
         Some(button_mut)
     }
 
-    pub fn textbox_mut(&mut self, id: &UiId) -> Option<&mut TextboxState> {
+    pub fn textbox_mut(&mut self, id: &NodeId) -> Option<&mut TextboxState> {
         let node_mut = self.node_mut(id)?;
         let textbox_mut = node_mut.widget_textbox_mut()?;
         Some(textbox_mut)
@@ -257,7 +257,7 @@ impl StateGlobals {
 fn finalize_rects(
     ui_config: &UiRuntimeConfig,
     ui_state: &mut UiState,
-    id: &UiId,
+    id: &NodeId,
     parent_position: (f32, f32, f32),
 ) {
     let Some(node) = ui_config.get_node(&id) else {
