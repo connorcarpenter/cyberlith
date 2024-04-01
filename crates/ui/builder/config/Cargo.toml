@@ -1,0 +1,12 @@
+[package]
+name = "ui_builder_config"
+version = "0.1.0"
+edition = "2021"
+workspace = "../../../.."
+
+[features]
+
+[dependencies]
+asset_id = { path = "../../../asset/id" }
+ui_layout = { path = "../../layout" }
+render_api = { path = "../../../render/render_api" }

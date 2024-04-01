@@ -4,7 +4,7 @@ use asset_id::AssetId;
 use render_api::base::Color;
 
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
-use ui_types::{BaseNodeStyle, Button, ButtonStyle, NodeId, NodeStyle, Panel, PanelStyle, StyleId, Text, Textbox, TextboxStyle, TextStyle, UiConfig, Widget, WidgetKind, WidgetStyle};
+use ui_builder_config::{BaseNodeStyle, Button, ButtonStyle, NodeId, NodeStyle, Panel, PanelStyle, StyleId, Text, Textbox, TextboxStyle, TextStyle, UiConfig, Widget, WidgetKind, WidgetStyle};
 
 use crate::{json::{ButtonStyleJson, TextboxStyleJson, TextStyleJson, ButtonJson, PanelStyleJson, TextboxJson}};
 use super::{

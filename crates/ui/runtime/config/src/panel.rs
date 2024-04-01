@@ -1,4 +1,4 @@
-use ui_types::Panel;
+use ui_builder_config::Panel;
 
 use crate::UiId;
 

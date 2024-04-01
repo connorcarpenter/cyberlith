@@ -17,7 +17,7 @@ math = { path = "../../math" }
 
 ui_state = { path = "../../ui/state" }
 ui_input = { path = "../../ui/input" }
-ui_runtime_config = { path = "../../ui/runtime_config" }
+ui_runtime_config = { path = "config" }
 
 bevy_app = { version = "0.13", default-features = false }
 bevy_ecs = { version = "0.13", default-features = false }

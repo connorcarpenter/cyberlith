@@ -18,7 +18,7 @@ render_api = { path = "../../render/render_api" }
 asset_id = { path = "../../asset/id" }
 crypto = { path = "../../crypto" }
 
-ui_types = { path = "../../ui/types" }
+ui_builder_config = { path = "../builder/config" }
 ui_layout = { path = "../../ui/layout" }
 
 # for BITS

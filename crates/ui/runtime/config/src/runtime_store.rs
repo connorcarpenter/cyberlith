@@ -1,7 +1,7 @@
 use std::slice::Iter;
 
 use render_api::base::Color;
-use ui_types::{BaseNodeStyle, ButtonStyle, PanelStyle, StyleId, TextboxStyle, TextStyle, UiStore, WidgetStyle};
+use ui_builder_config::{BaseNodeStyle, ButtonStyle, PanelStyle, StyleId, TextboxStyle, TextStyle, UiStore, WidgetStyle};
 
 use crate::{UiId, node::UiNodeR};
 

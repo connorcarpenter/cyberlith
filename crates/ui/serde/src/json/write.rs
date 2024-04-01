@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use render_api::base::Color;
 
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
-use ui_types::{Button, Navigation, ButtonStyle, NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, UiConfig, UiNode, Widget, WidgetStyle, TextboxStyle, Textbox};
+use ui_builder_config::{Button, Navigation, ButtonStyle, NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, UiConfig, UiNode, Widget, WidgetStyle, TextboxStyle, Textbox};
 
 use crate::json::{ButtonJson, NavigationJson, ButtonStyleJson, TextboxStyleJson, TextboxJson};
 use super::{

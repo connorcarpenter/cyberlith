@@ -1,6 +1,6 @@
 
 use ui_layout::TextMeasurer;
-use ui_types::Text;
+use ui_builder_config::Text;
 
 #[derive(Clone)]
 pub struct TextR {

@@ -10,7 +10,7 @@ math = { path = "../../math" }
 instant = { path = "../../instant" }
 
 ui_state = { path = "../state" }
-ui_runtime_config = { path = "../runtime_config" }
+ui_runtime_config = { path = "../runtime/config" }
 
 bevy_ecs = { version = "0.13", default-features = false }
 bevy_log = { version = "0.13", default-features=false }

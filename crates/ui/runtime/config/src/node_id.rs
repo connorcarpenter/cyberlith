@@ -1,7 +1,7 @@
 use std::fmt::{Display, Formatter};
 
 use ui_layout::{Alignment, LayoutType, MarginUnits, Node, PositionType, SizeUnits, Solid, TextMeasurer};
-use ui_types::{WidgetKind, NodeId};
+use ui_builder_config::{WidgetKind, NodeId};
 
 use crate::{TextR, UiRuntimeConfig, UiVisibilityStore};
 

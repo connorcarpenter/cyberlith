@@ -23,7 +23,7 @@ cfg_if! {
 use naia_serde::{SerdeInternal as Serde, UnsignedInteger, UnsignedVariableInteger};
 
 use asset_id::AssetId;
-use ui_types::{NodeId, UiConfig, WidgetKind};
+use ui_builder_config::{NodeId, UiConfig, WidgetKind};
 
 // Actions
 #[derive(Clone)]

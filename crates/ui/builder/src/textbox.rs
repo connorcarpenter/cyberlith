@@ -1,7 +1,7 @@
 
 use render_api::base::{Color};
 use ui_layout::{Alignment, MarginUnits, PositionType, SizeUnits};
-use ui_types::{NodeId, NodeStyle, StyleId, Textbox, TextboxStyle, UiConfig, UiNode, WidgetStyle};
+use ui_builder_config::{NodeId, NodeStyle, StyleId, Textbox, TextboxStyle, UiConfig, UiNode, WidgetStyle};
 
 use crate::PanelMut;
 

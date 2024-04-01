@@ -1,24 +1,29 @@
 
-use ui_types::{Navigation, Textbox};
+use ui_builder_config::{Button, Navigation};
+
+use crate::panel::PanelR;
 
 #[derive(Clone)]
-pub struct TextboxR {
+pub struct ButtonR {
+    pub panel: PanelR,
     pub id_str: String,
     pub navigation: Navigation,
 }
 
-impl From<Textbox> for TextboxR {
-    fn from(value: Textbox) -> Self {
+impl From<Button> for ButtonR {
+    fn from(value: Button) -> Self {
         Self {
+            panel: value.panel.into(),
             id_str: value.id_str,
             navigation: value.navigation,
         }
     }
 }
 
-impl TextboxR {
+impl ButtonR {
     pub fn new(id_str: &str) -> Self {
         Self {
+            panel: PanelR::new(),
             id_str: id_str.to_string(),
             navigation: Navigation::new(),
         }

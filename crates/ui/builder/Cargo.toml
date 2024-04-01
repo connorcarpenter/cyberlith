@@ -8,4 +8,4 @@ workspace = "../../.."
 render_api = { path = "../../render/render_api" }
 
 ui_layout = { path = "../layout" }
-ui_types = { path = "../types" }
+ui_builder_config = { path = "config" }

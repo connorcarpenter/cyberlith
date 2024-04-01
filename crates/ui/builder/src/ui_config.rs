@@ -1,4 +1,4 @@
-use ui_types::{ButtonStyle, NodeStyle, PanelStyle, StyleId, TextboxStyle, TextStyle, UiConfig, WidgetStyle};
+use ui_builder_config::{ButtonStyle, NodeStyle, PanelStyle, StyleId, TextboxStyle, TextStyle, UiConfig, WidgetStyle};
 
 use crate::{ButtonStyleMut, PanelMut, PanelStyleMut, TextboxStyleMut, TextStyleMut};
 

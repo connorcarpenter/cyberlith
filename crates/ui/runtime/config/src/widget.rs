@@ -1,4 +1,4 @@
-use ui_types::{Widget, WidgetKind};
+use ui_builder_config::{Widget, WidgetKind};
 
 use crate::{textbox::TextboxR, text::TextR, button::ButtonR, panel::PanelR};
 

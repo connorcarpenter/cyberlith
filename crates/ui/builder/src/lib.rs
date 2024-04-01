@@ -14,4 +14,4 @@ mod ui_config;
 pub use ui_config::*;
 
 pub use ui_layout::Alignment;
-pub use ui_types::UiConfig;
+pub use ui_builder_config::UiConfig;

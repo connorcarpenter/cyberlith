@@ -3,7 +3,7 @@ use std::slice::Iter;
 use asset_id::AssetId;
 
 use render_api::base::Color;
-use ui_types::{BaseNodeStyle, ButtonStyle, Navigation, PanelStyle, StyleId, TextboxStyle, UiConfig, WidgetKind, WidgetStyle};
+use ui_builder_config::{BaseNodeStyle, ButtonStyle, Navigation, PanelStyle, StyleId, TextboxStyle, UiConfig, WidgetKind, WidgetStyle};
 
 use crate::{UiId, panel::PanelR, node::UiNodeR, button::ButtonR, runtime_store::UiRuntimeStore, text::TextR};
 
