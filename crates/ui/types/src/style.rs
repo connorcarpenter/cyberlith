@@ -44,7 +44,7 @@ pub struct NodeStyle {
     pub margin_bottom: Option<MarginUnits>,
 
     pub solid_override: Option<Solid>,
-    aspect_ratio: Option<(f32, f32)>,
+    pub aspect_ratio: Option<(f32, f32)>,
 
     pub self_halign: Option<Alignment>,
     pub self_valign: Option<Alignment>,

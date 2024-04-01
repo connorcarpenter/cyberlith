@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use naia_serde::{BitReader, SerdeErr, SerdeInternal as Serde, UnsignedVariableInteger};
+use naia_serde::{BitReader, SerdeErr, SerdeInternal as Serde, UnsignedInteger, UnsignedVariableInteger};
 
 use asset_id::AssetId;
 use render_api::base::Color;
@@ -12,8 +12,7 @@ use ui_types::{
 };
 
 use crate::{
-    traits::RefTo,
-    bits::{
+    bits::{ButtonStyleBits, TextboxStyleBits, TextStyleBits,
         AlignmentBits, ButtonBits, ColorBits, LayoutTypeBits, MarginUnitsBits, PanelBits,
         PanelStyleBits, PositionTypeBits, SizeUnitsBits, SolidBits, TextboxBits, UiAction,
         UiActionType, UiNodeBits, UiStyleBits, WidgetBits, WidgetStyleBits
@@ -36,7 +35,7 @@ fn convert_actions_to_ui_config(actions: Vec<UiAction>) -> UiConfig {
     for action in actions {
         match action {
             UiAction::TextColor(text_color) => {
-                ui_config.set_text_color(text_color.ref_to());
+                ui_config.set_text_color(text_color.into());
             }
             UiAction::TextIconAssetId(asset_id) => {
                 ui_config.set_text_icon_asset_id(&asset_id);
@@ -48,37 +47,7 @@ fn convert_actions_to_ui_config(actions: Vec<UiAction>) -> UiConfig {
             }
             UiAction::Style(style_serde) => {
 
-                let style_widget_kind = style_serde.widget_kind();
-                let new_style = match style_widget_kind {
-                    WidgetKind::Panel => {
-                        let mut panel_style = PanelStyle::empty();
-                        style_serde.to_panel_style(&mut panel_style);
-                        let mut node_style = NodeStyle::empty(WidgetStyle::Panel(panel_style));
-                        style_serde.to_node_style(&mut node_style);
-                        node_style
-                    },
-                    WidgetKind::Text => {
-                        let mut text_style = TextStyle::empty();
-                        style_serde.to_text_style(&mut text_style);
-                        let mut node_style = NodeStyle::empty(WidgetStyle::Text(text_style));
-                        style_serde.to_node_style(&mut node_style);
-                        node_style
-                    },
-                    WidgetKind::Button => {
-                        let mut button_style = ButtonStyle::empty();
-                        style_serde.to_button_style(&mut button_style);
-                        let mut node_style = NodeStyle::empty(WidgetStyle::Button(button_style));
-                        style_serde.to_node_style(&mut node_style);
-                        node_style
-                    },
-                    WidgetKind::Textbox => {
-                        let mut textbox_style = TextboxStyle::empty();
-                        style_serde.to_textbox_style(&mut textbox_style);
-                        let mut node_style = NodeStyle::empty(WidgetStyle::Textbox(textbox_style));
-                        style_serde.to_node_style(&mut node_style);
-                        node_style
-                    },
-                };
+                let new_style: NodeStyle = style_serde.into();
                 let style_id = ui_config.insert_style(new_style);
                 style_index_to_id.insert(style_count, style_id);
                 style_count += 1;
@@ -434,8 +403,8 @@ fn set_textbox_navigation(
     }
 }
 
-impl RefTo<PositionType> for PositionTypeBits {
-    fn ref_to(&self) -> PositionType {
+impl Into<PositionType> for PositionTypeBits {
+    fn into(self) -> PositionType {
         match self {
             Self::Absolute => PositionType::Absolute,
             Self::Relative => PositionType::Relative,
@@ -443,8 +412,8 @@ impl RefTo<PositionType> for PositionTypeBits {
     }
 }
 
-impl RefTo<SizeUnits> for SizeUnitsBits {
-    fn ref_to(&self) -> SizeUnits {
+impl Into<SizeUnits> for SizeUnitsBits {
+    fn into(self) -> SizeUnits {
         match self {
             Self::Pixels(val) => {
                 let val: u64 = val.to();
@@ -466,8 +435,8 @@ impl RefTo<SizeUnits> for SizeUnitsBits {
     }
 }
 
-impl RefTo<MarginUnits> for MarginUnitsBits {
-    fn ref_to(&self) -> MarginUnits {
+impl Into<MarginUnits> for MarginUnitsBits {
+    fn into(self) -> MarginUnits {
         match self {
             Self::Pixels(val) => {
                 let val: u64 = val.to();
@@ -488,8 +457,8 @@ impl RefTo<MarginUnits> for MarginUnitsBits {
     }
 }
 
-impl RefTo<Solid> for SolidBits {
-    fn ref_to(&self) -> Solid {
+impl Into<Solid> for SolidBits {
+    fn into(self) -> Solid {
         match self {
             Self::Fit => Solid::Fit,
             Self::Fill => Solid::Fill,
@@ -497,8 +466,8 @@ impl RefTo<Solid> for SolidBits {
     }
 }
 
-impl RefTo<Alignment> for AlignmentBits {
-    fn ref_to(&self) -> Alignment {
+impl Into<Alignment> for AlignmentBits {
+    fn into(self) -> Alignment {
         match self {
             Self::Start => Alignment::Start,
             Self::Center => Alignment::Center,
@@ -507,8 +476,8 @@ impl RefTo<Alignment> for AlignmentBits {
     }
 }
 
-impl RefTo<LayoutType> for LayoutTypeBits {
-    fn ref_to(&self) -> LayoutType {
+impl Into<LayoutType> for LayoutTypeBits {
+    fn into(self) -> LayoutType {
         match self {
             Self::Row => LayoutType::Row,
             Self::Column => LayoutType::Column,
@@ -516,115 +485,97 @@ impl RefTo<LayoutType> for LayoutTypeBits {
     }
 }
 
-impl RefTo<Color> for ColorBits {
-    fn ref_to(&self) -> Color {
+impl Into<Color> for ColorBits {
+    fn into(self) -> Color {
         Color::new(self.r, self.g, self.b)
     }
 }
 
-impl UiStyleBits {
-
-    fn to_node_style(&self, style: &mut NodeStyle) {
-        style.position_type = self.position_type.as_ref().map(|val| val.ref_to());
-        style.width = self.width.as_ref().map(|val| val.ref_to());
-        style.height = self.height.as_ref().map(|val| val.ref_to());
-        style.width_min = self.width_min.as_ref().map(|val| val.ref_to());
-        style.width_max = self.width_max.as_ref().map(|val| val.ref_to());
-        style.height_min = self.height_min.as_ref().map(|val| val.ref_to());
-        style.height_max = self.height_max.as_ref().map(|val| val.ref_to());
-        style.margin_left = self.margin_left.as_ref().map(|val| val.ref_to());
-        style.margin_right = self.margin_right.as_ref().map(|val| val.ref_to());
-        style.margin_top = self.margin_top.as_ref().map(|val| val.ref_to());
-        style.margin_bottom = self.margin_bottom.as_ref().map(|val| val.ref_to());
-        style.solid_override = self.solid_override.as_ref().map(|val| val.ref_to());
-        if let Some((w, h)) = self.aspect_ratio {
-            style.set_aspect_ratio(w as f32, h as f32);
-        }
-        style.self_halign = self.self_halign.as_ref().map(|val| val.ref_to());
-        style.self_valign = self.self_valign.as_ref().map(|val| val.ref_to());
-    }
-
-    fn to_panel_style(&self, panel_style: &mut PanelStyle) {
-        // panel-specific
-        let WidgetStyleBits::Panel(panel_style_serde) = &self.widget_style else {
-            panic!("Expected panel style");
-        };
-
-        Self::to_panel_style_impl(panel_style, panel_style_serde);
-    }
-
-    fn to_panel_style_impl(panel_style: &mut PanelStyle, panel_style_serde: &PanelStyleBits) {
-        if let Some(background_color) = &panel_style_serde.background_color {
-            panel_style.background_color = Some(background_color.ref_to());
-        }
-        if let Some(background_alpha) = panel_style_serde.background_alpha {
-            let val: u8 = background_alpha.to();
-            let val: f32 = val as f32;
-            let val = val / 10.0;
-            panel_style.set_background_alpha(val);
-        }
-        panel_style.layout_type = panel_style_serde.layout_type.as_ref().map(|val| val.ref_to());
-        panel_style.padding_left = panel_style_serde.padding_left.as_ref().map(|val| val.ref_to());
-        panel_style.padding_right = panel_style_serde.padding_right.as_ref().map(|val| val.ref_to());
-        panel_style.padding_top = panel_style_serde.padding_top.as_ref().map(|val| val.ref_to());
-        panel_style.padding_bottom = panel_style_serde.padding_bottom.as_ref().map(|val| val.ref_to());
-        panel_style.row_between = panel_style_serde.row_between.as_ref().map(|val| val.ref_to());
-        panel_style.col_between = panel_style_serde.col_between.as_ref().map(|val| val.ref_to());
-        panel_style.children_halign = panel_style_serde.children_halign.as_ref().map(|val| val.ref_to());
-        panel_style.children_valign = panel_style_serde.children_valign.as_ref().map(|val| val.ref_to());
-    }
-
-    fn to_text_style(&self, text_style: &mut TextStyle) {
-        // text-specific
-        let WidgetStyleBits::Text(text_style_serde) = &self.widget_style else {
-            panic!("Expected text style");
-        };
-        if let Some(background_color) = &text_style_serde.background_color {
-            text_style.background_color = Some(background_color.ref_to());
-        }
-        if let Some(background_alpha) = text_style_serde.background_alpha {
-            let val: u8 = background_alpha.to();
-            let val: f32 = val as f32;
-            let val = val / 10.0;
-            text_style.set_background_alpha(val);
+impl Into<NodeStyle> for UiStyleBits {
+    fn into(self) -> NodeStyle {
+        NodeStyle {
+            parent_style:   self.parent_style.map(|val| StyleId::new(val as u32)),
+            widget_style:   self.widget_style.into(),
+            position_type:  self.position_type.map(Into::into),
+            width:          self.width.map(Into::into),
+            height:         self.height.map(Into::into),
+            width_min:      self.width_min.map(Into::into),
+            width_max:      self.width_max.map(Into::into),
+            height_min:     self.height_min.map(Into::into),
+            height_max:     self.height_max.map(Into::into),
+            margin_left:    self.margin_left.map(Into::into),
+            margin_right:   self.margin_right.map(Into::into),
+            margin_top:     self.margin_top.map(Into::into),
+            margin_bottom:  self.margin_bottom.map(Into::into),
+            solid_override: self.solid_override.map(Into::into),
+            aspect_ratio:   self.aspect_ratio.map(|(w, h)| (w as f32, h as f32)),
+            self_halign:    self.self_halign.map(Into::into),
+            self_valign:    self.self_valign.map(Into::into),
         }
     }
+}
 
-    fn to_button_style(&self, button_style: &mut ButtonStyle) {
-
-        // button-specific
-        let WidgetStyleBits::Button(button_style_serde) = &self.widget_style else {
-            panic!("Expected panel style");
-        };
-        if let Some(hover_color) = &button_style_serde.hover_color {
-            button_style.set_hover_color(hover_color.ref_to());
+impl Into<WidgetStyle> for WidgetStyleBits {
+    fn into(self) -> WidgetStyle {
+        match self {
+            WidgetStyleBits::Panel(panel_style) => WidgetStyle::Panel(panel_style.into()),
+            WidgetStyleBits::Text(text_style) => WidgetStyle::Text(text_style.into()),
+            WidgetStyleBits::Button(button_style) => WidgetStyle::Button(button_style.into()),
+            WidgetStyleBits::Textbox(textbox_style) => WidgetStyle::Textbox(textbox_style.into()),
         }
-        if let Some(down_color) = &button_style_serde.down_color {
-            button_style.set_down_color(down_color.ref_to());
-        }
-
-        // panel-specific
-        Self::to_panel_style_impl(&mut button_style.panel, &button_style_serde.panel);
     }
+}
 
-    fn to_textbox_style(&self, textbox_style: &mut TextboxStyle) {
-
-        // textbox specific
-        let WidgetStyleBits::Textbox(textbox_style_serde) = &self.widget_style else {
-            panic!("Expected textbox style");
-        };
-        if let Some(hover_color) = &textbox_style_serde.hover_color {
-            textbox_style.set_hover_color(hover_color.ref_to());
+impl Into<PanelStyle> for PanelStyleBits {
+    fn into(self) -> PanelStyle {
+        PanelStyle {
+            background_color:   self.background_color.map(Into::into),
+            background_alpha:   self.background_alpha.map(bits_into_alpha),
+            layout_type:        self.layout_type.map(Into::into),
+            padding_left:       self.padding_left.map(Into::into),
+            padding_right:      self.padding_right.map(Into::into),
+            padding_top:        self.padding_top.map(Into::into),
+            padding_bottom:     self.padding_bottom.map(Into::into),
+            row_between:        self.row_between.map(Into::into),
+            col_between:        self.col_between.map(Into::into),
+            children_halign:    self.children_halign.map(Into::into),
+            children_valign:    self.children_valign.map(Into::into),
         }
-        if let Some(active_color) = &textbox_style_serde.active_color {
-            textbox_style.set_active_color(active_color.ref_to());
-        }
-        if let Some(select_color) = &textbox_style_serde.select_color {
-            textbox_style.set_selection_color(select_color.ref_to());
-        }
-
-        // panel-specific
-        let panel_style_serde = &textbox_style_serde.panel;
-        Self::to_panel_style_impl(&mut textbox_style.panel, panel_style_serde);
     }
+}
+
+impl Into<TextStyle> for TextStyleBits {
+    fn into(self) -> TextStyle {
+        TextStyle {
+            background_color: self.background_color.map(Into::into),
+            background_alpha: self.background_alpha.map(bits_into_alpha),
+        }
+    }
+}
+
+impl Into<ButtonStyle> for ButtonStyleBits {
+    fn into(self) -> ButtonStyle {
+        ButtonStyle {
+            panel:          self.panel.into(),
+            hover_color:    self.hover_color.map(|val| val.into()),
+            down_color:     self.down_color.map(|val| val.into()),
+        }
+    }
+}
+
+impl Into<TextboxStyle> for TextboxStyleBits {
+    fn into(self) -> TextboxStyle {
+        TextboxStyle {
+            panel:          self.panel.into(),
+            hover_color:    self.hover_color.map(|val| val.into()),
+            active_color:   self.active_color.map(|val| val.into()),
+            select_color:   self.select_color.map(|val| val.into()),
+        }
+    }
+}
+
+fn bits_into_alpha(bits_val: UnsignedInteger<4>) -> f32 {
+    let val: u8 = bits_val.to();
+    let val: f32 = val as f32;
+    val / 10.0
 }

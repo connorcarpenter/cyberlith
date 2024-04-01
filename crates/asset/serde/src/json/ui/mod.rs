@@ -76,17 +76,6 @@ pub(crate) struct UiStyleJson {
     self_valign: Option<AlignmentJson>,
 }
 
-impl UiStyleJson {
-    pub(crate) fn widget_kind(&self) -> WidgetKind {
-        match &self.widget_style {
-            WidgetStyleJson::Panel(_) => WidgetKind::Panel,
-            WidgetStyleJson::Text(_) => WidgetKind::Text,
-            WidgetStyleJson::Button(_) => WidgetKind::Button,
-            WidgetStyleJson::Textbox(_) => WidgetKind::Textbox,
-        }
-    }
-}
-
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub(crate) struct PanelStyleJson {
     background_color: Option<ColorJson>,

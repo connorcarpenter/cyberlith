@@ -78,17 +78,6 @@ pub(crate) struct UiStyleBits {
     self_valign: Option<AlignmentBits>,
 }
 
-impl UiStyleBits {
-    pub(crate) fn widget_kind(&self) -> WidgetKind {
-        match &self.widget_style {
-            WidgetStyleBits::Panel(_) => WidgetKind::Panel,
-            WidgetStyleBits::Text(_) => WidgetKind::Text,
-            WidgetStyleBits::Button(_) => WidgetKind::Button,
-            WidgetStyleBits::Textbox(_) => WidgetKind::Textbox,
-        }
-    }
-}
-
 #[derive(Serde, Clone, PartialEq)]
 pub(crate) struct PanelStyleBits {
     background_color: Option<ColorBits>,
