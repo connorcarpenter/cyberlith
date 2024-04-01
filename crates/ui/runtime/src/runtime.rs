@@ -6,7 +6,6 @@ use storage::Storage;
 use ui_input::{UiGlobalEvent, UiInputEvent, UiInputState, UiNodeEvent};
 use ui_runtime_config::{UiId, UiRuntimeConfig};
 use ui_state::UiState;
-use ui_types::UiConfig;
 
 pub struct UiRuntime {
     state: UiState,
@@ -18,23 +17,22 @@ pub struct UiRuntime {
 impl UiRuntime {
 
     pub(crate) fn load_from_bytes(bytes: &[u8]) -> Self {
-        let config = ui_serde::bits::read_ui_bits(bytes);
+        let config = UiRuntimeConfig::load_from_bytes(bytes);
         Self::load_from_config(config)
     }
 
-    pub(crate) fn load_from_config(config: UiConfig) -> Self {
+    pub(crate) fn load_from_config(config: UiRuntimeConfig) -> Self {
 
         let icon_asset_id = config.get_text_icon_asset_id();
-        let dependencies = UiDependencies::new(icon_asset_id);
+        let dependencies = UiDependencies::new(&icon_asset_id);
         let input_state = UiInputState::new();
-        let runtime_config = UiRuntimeConfig::new(config);
-        let state = UiState::from_ui_config(&runtime_config);
+        let state = UiState::from_ui_config(&config);
 
 
         Self {
             state,
             input_state,
-            config: runtime_config,
+            config,
             dependencies,
         }
     }

@@ -8,10 +8,7 @@ use render_api::{
     resources::RenderFrame,
 };
 use storage::Handle;
-use ui_state::{NodeActiveState, UiState};
-use ui_input::UiInputState;
-use ui_runtime::{Blinkiness, UiManager, UiRuntime};
-use ui_runtime_config::{TextR, UiId, UiRuntimeConfig, WidgetKind};
+use ui_runtime::{Blinkiness, UiManager, UiRuntime, state::{NodeActiveState, UiState}, input::{UiInputState}, config::{TextR, UiId, UiRuntimeConfig, WidgetKind}};
 
 pub struct UiRenderer;
 

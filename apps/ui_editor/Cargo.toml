@@ -17,6 +17,7 @@ game_engine = { path = "../../crates/engine", features = [ "gl_renderer", "local
 asset_serde = { path = "../../crates/asset/serde", features = [ "write_bits", "read_bits", "write_json", "read_json" ] }
 random = { path = "../../crates/random" }
 ui_builder = { path = "../../crates/ui/builder" }
+ui_runtime_config = { path = "../../crates/ui/runtime_config" }
 
 # External
 bevy_app = { version = "0.13", default-features=false }

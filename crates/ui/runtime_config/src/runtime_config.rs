@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::slice::Iter;
+use asset_id::AssetId;
 
 use render_api::base::Color;
 use ui_types::{BaseNodeStyle, ButtonStyle, Navigation, PanelStyle, StyleId, TextboxStyle, UiConfig, WidgetKind, WidgetStyle};
@@ -12,14 +13,25 @@ pub struct UiRuntimeConfig {
     text_color: Color,
     first_input: UiId,
     id_str_to_node_id_map: HashMap<String, UiId>,
+    text_icon_asset_id: AssetId,
 }
 
 impl UiRuntimeConfig {
 
     pub const ROOT_NODE_ID: UiId = UiId::new(0);
 
-    pub fn new(ui_config: UiConfig) -> Self {
+    pub fn load_from_bytes(bytes: &[u8]) -> Self {
+        let config = ui_serde::bits::read_ui_bits(bytes);
+        Self::load_from_builder_config(config)
+    }
 
+    pub fn get_text_icon_asset_id(&self) -> AssetId {
+        self.text_icon_asset_id
+    }
+
+    pub fn load_from_builder_config(ui_config: UiConfig) -> Self {
+
+        let text_icon_asset_id = ui_config.get_text_icon_asset_id();
         let (store, globals, node_map) = ui_config.decompose();
         let node_map = node_map.into_iter().map(|(k, v)| (k.to_string(), v.into())).collect();
 
@@ -28,6 +40,7 @@ impl UiRuntimeConfig {
             text_color: globals.get_text_color(),
             first_input: globals.get_first_input_node_id().into(),
             id_str_to_node_id_map: node_map,
+            text_icon_asset_id,
         }
     }
 

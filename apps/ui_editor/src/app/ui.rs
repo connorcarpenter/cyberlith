@@ -18,6 +18,7 @@ use game_engine::{
     input::{Input, InputEvent, GamepadRumbleIntensity, RumbleManager},
 };
 use ui_builder::UiConfig;
+use ui_runtime_config::UiRuntimeConfig;
 
 use crate::app::{ui_backups::*, global::Global};
 
@@ -52,7 +53,7 @@ pub fn setup(
     let ui = write_to_file(&ui_name, &ui_asset_id, &ui_etag, ui);
 
     // load ui into asset manager
-    ui_manager.manual_load_ui_config(&ui_asset_id, ui);
+    ui_manager.manual_load_ui_config(&ui_asset_id, UiRuntimeConfig::load_from_builder_config(ui));
 
     // make handle, add handle to entity
     let ui_handle = AssetHandle::<UiRuntime>::new(ui_asset_id);

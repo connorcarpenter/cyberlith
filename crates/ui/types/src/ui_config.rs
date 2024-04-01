@@ -54,8 +54,8 @@ impl UiConfig {
 
     // interface
 
-    pub fn get_text_icon_asset_id(&self) -> &AssetId {
-        self.globals.text_icon_asset_id_opt.as_ref().unwrap()
+    pub fn get_text_icon_asset_id(&self) -> AssetId {
+        *self.globals.text_icon_asset_id_opt.as_ref().unwrap()
     }
 
     pub fn set_text_icon_asset_id(&mut self, text_icon_asset_id: &AssetId) -> &mut Self {

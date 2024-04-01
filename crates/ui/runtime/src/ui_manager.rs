@@ -12,8 +12,7 @@ use render_api::{base::{CpuMaterial, CpuMesh}, components::Camera, resources::Ti
 use storage::Storage;
 
 use ui_input::{UiGlobalEvent, UiInputEvent, UiNodeEvent, UiNodeEventHandler};
-use ui_runtime_config::UiId;
-use ui_types::UiConfig;
+use ui_runtime_config::{UiId, UiRuntimeConfig};
 
 use crate::runtime::UiRuntime;
 
@@ -102,7 +101,7 @@ impl UiManager {
         self.load_impl(asset_manager.get_store_mut(), asset_data_store, asset_id);
     }
 
-    pub fn manual_load_ui_config(&mut self, asset_id: &AssetId, ui_config: UiConfig) {
+    pub fn manual_load_ui_config(&mut self, asset_id: &AssetId, ui_config: UiRuntimeConfig) {
         let mut dependencies: Vec<(TypedAssetId, TypedAssetId)> = Vec::new();
 
         let handle = AssetHandle::<UiRuntime>::new(*asset_id);

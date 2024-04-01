@@ -22,7 +22,7 @@ fn convert_ui_to_actions(ui_config: &UiConfig) -> Vec<UiAction> {
 
     // write text icon AssetId
     let text_icon_asset_id = ui_config.get_text_icon_asset_id();
-    output.push(UiAction::TextIconAssetId(*text_icon_asset_id));
+    output.push(UiAction::TextIconAssetId(text_icon_asset_id));
 
     // write first input
     let first_input_id = ui_config.get_first_input();

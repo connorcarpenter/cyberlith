@@ -15,11 +15,9 @@ asset_id = { path = "../../asset/id" }
 input = { path = "../../input" }
 math = { path = "../../math" }
 
-ui_types = { path = "../../ui/types" }
 ui_state = { path = "../../ui/state" }
 ui_input = { path = "../../ui/input" }
 ui_runtime_config = { path = "../../ui/runtime_config" }
-ui_serde = { path = "../../ui/serde" }
 
 bevy_app = { version = "0.13", default-features = false }
 bevy_ecs = { version = "0.13", default-features = false }
