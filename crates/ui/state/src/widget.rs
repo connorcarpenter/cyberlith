@@ -1,4 +1,4 @@
-use ui_types::{Widget, WidgetKind};
+use ui_runtime_config::{WidgetKind, WidgetR};
 
 use crate::{panel::PanelState, button::ButtonState, text::TextState, textbox::TextboxState};
 
@@ -11,7 +11,7 @@ pub enum WidgetState {
 }
 
 impl WidgetState {
-    pub(crate) fn from_widget(widget: &Widget) -> Self {
+    pub(crate) fn from_widget(widget: &WidgetR) -> Self {
         match widget.kind() {
             WidgetKind::Panel => Self::Panel(PanelState::new()),
             WidgetKind::Text => Self::Text(TextState::new()),

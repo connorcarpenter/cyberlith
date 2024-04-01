@@ -1,4 +1,6 @@
-use crate::NodeId;
+use ui_types::NodeId;
+
+use crate::UiId;
 
 pub struct UiVisibilityStore {
     pub nodes: Vec<bool>,
@@ -16,16 +18,14 @@ impl UiVisibilityStore {
         self.insert_node();
     }
 
-    fn insert_node(&mut self) -> NodeId {
+    fn insert_node(&mut self) {
         if self.nodes.len() >= 255 {
             panic!("1 UI can only hold up to 255 nodes, too many nodes!");
         }
-        let index = self.nodes.len();
         self.nodes.push(true); // all nodes are initialized with full visibility
-        NodeId::new(index as u32)
     }
 
-    pub fn get_node_visibility(&self, node_id: &NodeId) -> Option<bool> {
+    pub fn get_node_visibility(&self, node_id: &UiId) -> Option<bool> {
         self.nodes.get(node_id.as_usize()).copied()
     }
 

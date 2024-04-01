@@ -12,7 +12,8 @@ use render_api::{base::{CpuMaterial, CpuMesh}, components::Camera, resources::Ti
 use storage::Storage;
 
 use ui_input::{UiGlobalEvent, UiInputEvent, UiNodeEvent, UiNodeEventHandler};
-use ui_types::{NodeId, UiConfig};
+use ui_runtime_config::UiId;
+use ui_types::UiConfig;
 
 use crate::runtime::UiRuntime;
 
@@ -23,8 +24,8 @@ pub struct UiManager {
 
     queued_ui_node_event_handlers: HashMap<AssetHandle<UiRuntime>, Vec<(String, UiNodeEventHandler)>>,
     ui_global_events: Vec<UiGlobalEvent>,
-    ui_node_event_handlers: HashMap<(AssetId, NodeId), UiNodeEventHandler>,
-    ui_node_events: Vec<(AssetId, NodeId, UiNodeEvent)>,
+    ui_node_event_handlers: HashMap<(AssetId, UiId), UiNodeEventHandler>,
+    ui_node_events: Vec<(AssetId, UiId, UiNodeEvent)>,
     cursor_icon_change: Option<CursorIcon>,
     last_cursor_icon: CursorIcon,
     pub blinkiness: Blinkiness,
@@ -344,7 +345,7 @@ impl UiManager {
         self.ui_global_events.append(&mut global_events);
 
         // get any node events
-        let mut events: Vec<(AssetId, NodeId, UiNodeEvent)> = ui_runtime
+        let mut events: Vec<(AssetId, UiId, UiNodeEvent)> = ui_runtime
             .take_node_events()
             .iter()
             .map(|(node_id, event)| (ui_handle.asset_id(), *node_id, event.clone()))

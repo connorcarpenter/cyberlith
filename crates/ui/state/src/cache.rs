@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 
 use ui_layout::{Cache, Node};
-use ui_types::NodeId;
+use ui_runtime_config::UiId;
 
 #[derive(Default)]
 pub struct LayoutCache {
     // width, height, x, y, z
-    rect: HashMap<NodeId, (f32, f32, f32, f32, f32)>,
+    rect: HashMap<UiId, (f32, f32, f32, f32, f32)>,
 }
 
 impl LayoutCache {
@@ -16,7 +16,7 @@ impl LayoutCache {
         }
     }
 
-    pub fn bounds(&self, node: &NodeId) -> Option<(f32, f32, f32, f32, f32)> {
+    pub fn bounds(&self, node: &UiId) -> Option<(f32, f32, f32, f32, f32)> {
         self.rect
             .get(node)
             .map(|(width, height, posx, posy, posz)| (*width, *height, *posx, *posy, *posz))
@@ -24,7 +24,7 @@ impl LayoutCache {
 }
 
 impl Cache for LayoutCache {
-    type Node = NodeId;
+    type Node = UiId;
 
     fn width(&self, node: &Self::Node) -> f32 {
         if let Some(rect) = self.rect.get(&node.key()) {

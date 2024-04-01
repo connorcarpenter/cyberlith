@@ -56,6 +56,7 @@ members = [
     "crates/ui/runtime",
     "crates/ui/state",
     "crates/ui/input",
+    "crates/ui/runtime_config",
     "crates/random",
     "crates/instant",
     "crates/clipboard",

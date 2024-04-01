@@ -1,5 +1,5 @@
 [package]
-name = "ui_runtime"
+name = "ui_runtime_config"
 version = "0.1.0"
 edition = "2021"
 workspace = "../../.."
@@ -7,18 +7,12 @@ workspace = "../../.."
 [features]
 
 [dependencies]
-asset_loader = { path = "../../asset/loader" }
-clipboard = { path = "../../clipboard" }
-storage = { path = "../../storage" }
 render_api = { path = "../../render/render_api" }
 asset_id = { path = "../../asset/id" }
-input = { path = "../../input" }
 math = { path = "../../math" }
 
+ui_layout = { path = "../layout" }
 ui_types = { path = "../../ui/types" }
-ui_state = { path = "../../ui/state" }
-ui_input = { path = "../../ui/input" }
-ui_runtime_config = { path = "../../ui/runtime_config" }
 
 bevy_app = { version = "0.13", default-features = false }
 bevy_ecs = { version = "0.13", default-features = false }

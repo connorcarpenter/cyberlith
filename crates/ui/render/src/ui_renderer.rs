@@ -8,10 +8,10 @@ use render_api::{
     resources::RenderFrame,
 };
 use storage::Handle;
-use ui_types::{NodeId, UiRuntimeConfig, WidgetKind};
 use ui_state::{NodeActiveState, UiState};
 use ui_input::UiInputState;
 use ui_runtime::{Blinkiness, UiManager, UiRuntime};
+use ui_runtime_config::{TextR, UiId, UiRuntimeConfig, WidgetKind};
 
 pub struct UiRenderer;
 
@@ -37,7 +37,7 @@ impl UiRenderer {
         let carat_blink = blinkiness.enabled() || ui_input_state.interact_timer_was_recent();
 
         for node_id in 0..ui.nodes_len() {
-            let node_id = NodeId::from_usize(node_id);
+            let node_id = UiId::from_usize(node_id);
             draw_ui_node(
                 render_frame,
                 render_layer_opt,
@@ -66,8 +66,8 @@ impl UiRenderer {
             return;
         };
         let text_measurer = UiTextMeasurer::new(icon_data);
-        let subimage_indices = ui_types::Text::get_subimage_indices(text);
-        let (x_positions, text_height) = ui_types::Text::get_raw_text_rects(&text_measurer, &subimage_indices);
+        let subimage_indices = TextR::get_subimage_indices(text);
+        let (x_positions, text_height) = TextR::get_raw_text_rects(&text_measurer, &subimage_indices);
 
         let mut cursor = Transform::from_xyz(
             0.0,
@@ -107,8 +107,8 @@ impl UiRenderer {
             return;
         };
         let text_measurer = UiTextMeasurer::new(icon_data);
-        let subimage_indices = ui_types::Text::get_subimage_indices(text);
-        let (x_positions, text_height) = ui_types::Text::get_raw_text_rects(&text_measurer, &subimage_indices);
+        let subimage_indices = TextR::get_subimage_indices(text);
+        let (x_positions, text_height) = TextR::get_raw_text_rects(&text_measurer, &subimage_indices);
         let text_scale = transform.scale.y / text_height;
 
         let pos_a = transform.translation.x + (x_positions[carat_index] * text_scale);
@@ -137,7 +137,7 @@ fn draw_ui_node(
     ui_state: &UiState,
     ui_input_state: &UiInputState,
     text_icon_handle: &AssetHandle<IconData>,
-    id: &NodeId,
+    id: &UiId,
 ) {
     let Some((width, height, child_offset_x, child_offset_y, child_offset_z)) = ui_state.cache.bounds(id) else {
         warn!("no bounds for id 1: {:?}", id);
@@ -220,7 +220,7 @@ fn draw_ui_panel(
     render_layer_opt: Option<&RenderLayer>,
     ui_config: &UiRuntimeConfig,
     ui_state: &UiState,
-    node_id: &NodeId,
+    node_id: &UiId,
     transform: &Transform,
 ) {
     let Some(panel_state_ref) = ui_state.store.panel_ref(node_id) else {
@@ -251,7 +251,7 @@ fn draw_ui_text(
     ui_config: &UiRuntimeConfig,
     ui_state: &UiState,
     text_icon_handle: &AssetHandle<IconData>,
-    node_id: &NodeId,
+    node_id: &UiId,
     transform: &Transform,
 ) {
     let Some(text_ref) = ui_config
@@ -306,7 +306,7 @@ fn draw_ui_button(
     ui_config: &UiRuntimeConfig,
     ui_state: &UiState,
     ui_input_state: &UiInputState,
-    node_id: &NodeId,
+    node_id: &UiId,
     transform: &Transform,
 ) {
     let Some(button_state_ref) = ui_state.store.button_ref(node_id) else {
@@ -340,7 +340,7 @@ fn draw_ui_textbox(
     ui_state: &UiState,
     ui_input_state: &UiInputState,
     text_icon_handle: &AssetHandle<IconData>,
-    node_id: &NodeId,
+    node_id: &UiId,
     transform: &Transform,
 ) {
     let Some(textbox_state_ref) = ui_state.store.textbox_ref(node_id) else {

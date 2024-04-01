@@ -4,8 +4,9 @@ use math::Vec2;
 use render_api::{base::{CpuMaterial, CpuMesh}, components::Viewport};
 use storage::Storage;
 use ui_input::{UiGlobalEvent, UiInputEvent, UiInputState, UiNodeEvent};
+use ui_runtime_config::{UiId, UiRuntimeConfig};
 use ui_state::UiState;
-use ui_types::{NodeId, UiConfig, UiRuntimeConfig};
+use ui_types::UiConfig;
 
 pub struct UiRuntime {
     state: UiState,
@@ -26,8 +27,9 @@ impl UiRuntime {
         let icon_asset_id = config.get_text_icon_asset_id();
         let dependencies = UiDependencies::new(icon_asset_id);
         let input_state = UiInputState::new();
-        let state = UiState::from_ui_config(&config);
         let runtime_config = UiRuntimeConfig::new(config);
+        let state = UiState::from_ui_config(&runtime_config);
+
 
         Self {
             state,
@@ -62,7 +64,7 @@ impl UiRuntime {
 
     // config
 
-    pub(crate) fn get_node_id_by_id_str(&self, id_str: &str) -> Option<NodeId> {
+    pub(crate) fn get_node_id_by_id_str(&self, id_str: &str) -> Option<UiId> {
         self.config.get_node_id_by_id_str(id_str)
     }
 
@@ -94,7 +96,7 @@ impl UiRuntime {
         self.input_state.take_global_events()
     }
 
-    pub(crate) fn take_node_events(&mut self) -> Vec<(NodeId, UiNodeEvent)> {
+    pub(crate) fn take_node_events(&mut self) -> Vec<(UiId, UiNodeEvent)> {
         self.input_state.take_node_events()
     }
 

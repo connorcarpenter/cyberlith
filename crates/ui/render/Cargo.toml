@@ -11,9 +11,10 @@ asset_loader = { path = "../../asset/loader" }
 asset_render = { path = "../../asset/render" }
 render_api = { path = "../../render/render_api" }
 storage = { path = "../../storage" }
+
 ui_state = { path = "../../ui/state" }
-ui_types = { path = "../../ui/types" }
 ui_runtime = { path = "../../ui/runtime" }
+ui_runtime_config = { path = "../../ui/runtime_config" }
 ui_input = { path = "../../ui/input" }
 
 bevy_log = { version = "0.13", default-features=false }

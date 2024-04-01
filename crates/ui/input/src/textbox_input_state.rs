@@ -5,8 +5,8 @@ use input::MouseButton;
 use math::Vec2;
 
 use ui_layout::TextMeasurer;
+use ui_runtime_config::TextR;
 use ui_state::TextboxState;
-use ui_types::Text;
 
 use crate::{UiGlobalEvent, UiInputEvent, UiInputState};
 
@@ -366,8 +366,8 @@ impl TextboxInputState {
         let mut closest_x: f32 = f32::MAX;
         let mut closest_index: usize = usize::MAX;
 
-        let subimage_indices = Text::get_subimage_indices(text);
-        let (x_positions, text_height) = Text::get_raw_text_rects(text_measurer, &subimage_indices);
+        let subimage_indices = TextR::get_subimage_indices(text);
+        let (x_positions, text_height) = TextR::get_raw_text_rects(text_measurer, &subimage_indices);
         let scale = height / text_height;
 
         for (char_index, x_position) in x_positions.iter().enumerate() {

@@ -23,7 +23,7 @@ impl UiStore {
         }
     }
 
-    pub(crate) fn decompose(self) -> (Vec<NodeStyle>, Vec<UiNode>) {
+    pub fn decompose(self) -> (Vec<NodeStyle>, Vec<UiNode>) {
         (self.styles, self.nodes)
     }
 
