@@ -1,7 +1,6 @@
-use bevy_ecs::system::{Query, Res, ResMut};
+use bevy_ecs::system::{Query, ResMut};
 
 use game_engine::{
-    asset::{AssetHandle, AssetManager, UiConfigData},
     render::{
         base::{CpuMaterial, CpuMesh},
         components::{
@@ -15,11 +14,8 @@ use game_engine::{
 
 pub fn draw(
     mut render_frame: ResMut<RenderFrame>,
-    asset_manager: Res<AssetManager>,
     // Cameras
     cameras_q: Query<(&Camera, &Transform, &Projection, Option<&RenderLayer>)>,
-    // UIs
-    uis_q: Query<(&AssetHandle<UiConfigData>, Option<&RenderLayer>)>,
     // Meshes
     cpu_meshes_q: Query<(
         &Handle<CpuMesh>,
@@ -62,10 +58,5 @@ pub fn draw(
             continue;
         }
         render_frame.draw_mesh(render_layer_opt, mesh_handle, mat_handle, transform);
-    }
-
-    // Aggregate UIs
-    for (ui_handle, render_layer_opt) in uis_q.iter() {
-        asset_manager.draw_ui(&mut render_frame, render_layer_opt, ui_handle);
     }
 }

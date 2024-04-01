@@ -31,7 +31,6 @@ pub fn run() {
         .add_event::<ContinueButtonEvent>()
         // ui systems
         .add_systems(Startup, ui::ui_setup)
-        .add_systems(Update, ui::ui_update)
         .add_systems(Update, ui::ui_handle_events)
         // scene systems
         .add_systems(Startup, scene::scene_setup)

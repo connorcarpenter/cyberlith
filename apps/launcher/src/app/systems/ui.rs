@@ -2,23 +2,23 @@ use std::time::Duration;
 
 use bevy_ecs::{
     event::{Event, EventReader, EventWriter},
-    system::{Commands, Query, Res, ResMut},
+    system::{Commands, Res, ResMut},
 };
 use bevy_log::info;
 
 use game_engine::{
     asset::{
-        embedded_asset_event, AssetHandle, AssetId, AssetManager, EmbeddedAssetEvent, UiConfigData,
+        embedded_asset_event, AssetId, EmbeddedAssetEvent,
     },
-    input::{GamepadRumbleIntensity, Input, InputEvent, RumbleManager},
+    input::{GamepadRumbleIntensity, Input, RumbleManager},
     render::{
         base::Color,
         components::{
             AmbientLight, Camera, CameraBundle, ClearOperation, OrthographicProjection, Projection,
-            RenderLayer, RenderLayers, RenderTarget,
+            RenderLayers, RenderTarget,
         },
     },
-    ui::UiInputConverter,
+    ui::{UiHandle, UiManager},
 };
 
 use crate::app::resources::Global;
@@ -32,7 +32,7 @@ pub struct ContinueButtonEvent;
 pub fn ui_setup(
     mut commands: Commands,
     mut global: ResMut<Global>,
-    mut asset_manager: ResMut<AssetManager>,
+    mut ui_manager: ResMut<UiManager>,
     mut embedded_asset_events: EventWriter<EmbeddedAssetEvent>,
 ) {
     // TODO: use some kind of catalog here?
@@ -40,22 +40,19 @@ pub fn ui_setup(
     embedded_asset_events.send(embedded_asset_event!("../embedded/34mvvk")); // verdana icon
 
     // embedded_asset_events.send(embedded_asset_event!("../embedded/tpp7za")); // start ui
-    // embedded_asset_events.send(embedded_asset_event!("../embedded/rckneg")); // login ui
-    embedded_asset_events.send(embedded_asset_event!("../embedded/3f5gej")); // register ui
+    // embedded_asset_events.send(embedded_asset_event!("../embedded/?")); // login ui
+    embedded_asset_events.send(embedded_asset_event!("../embedded/rckneg")); // register ui
 
     // render_layer
     let layer = RenderLayers::layer(1);
 
     // ui
     // TODO: use some kind of catalog?
-    let start_ui_handle = AssetHandle::<UiConfigData>::new(AssetId::from_str("tpp7za").unwrap());
-    let start_ui_entity = commands.spawn(start_ui_handle).insert(layer).id();
-
-    let login_ui_handle = AssetHandle::<UiConfigData>::new(AssetId::from_str("rckneg").unwrap());
-    let login_ui_entity = commands.spawn(login_ui_handle).insert(layer).id();
-
-    let register_ui_handle = AssetHandle::<UiConfigData>::new(AssetId::from_str("3f5gej").unwrap());
-    let register_ui_entity = commands.spawn(register_ui_handle).insert(layer).id();
+    // let _start_ui_handle = UiHandle::new(AssetId::from_str("tpp7za").unwrap());
+    // let _login_ui_handle = UiHandle::new(AssetId::from_str("rckneg").unwrap());
+    let register_ui_handle = UiHandle::new(AssetId::from_str("rckneg").unwrap());
+    ui_manager.set_render_layer(layer);
+    ui_manager.enable_ui(&register_ui_handle);
 
     //asset_manager.register_ui_event::<StartButtonEvent>(&ui_handle, "login_button");
     //asset_manager.register_ui_event::<ContinueButtonEvent>(&ui_handle, "register_button");
@@ -84,33 +81,6 @@ pub fn ui_setup(
         .id();
 
     global.camera_ui = camera_id;
-}
-
-pub fn ui_update(
-    mut asset_manager: ResMut<AssetManager>,
-    mut input_events: EventReader<InputEvent>,
-    // Cameras
-    cameras_q: Query<(&Camera, Option<&RenderLayer>)>,
-    // UIs
-    uis_q: Query<(&AssetHandle<UiConfigData>, Option<&RenderLayer>)>,
-) {
-    let ui_input = UiInputConverter::convert(&mut input_events);
-
-    for (ui_handle, ui_render_layer_opt) in uis_q.iter() {
-        // find camera, update viewport
-        for (camera, cam_render_layer_opt) in cameras_q.iter() {
-            if cam_render_layer_opt == ui_render_layer_opt {
-                asset_manager.update_ui_viewport(camera, ui_handle);
-                break;
-            }
-        }
-
-        // update with inputs
-        let Some(ui_input) = ui_input.clone() else {
-            continue;
-        };
-        asset_manager.update_ui_input(ui_input, ui_handle);
-    }
 }
 
 pub fn ui_handle_events(
