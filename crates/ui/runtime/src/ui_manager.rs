@@ -14,7 +14,7 @@ use storage::Storage;
 use ui_input::{UiGlobalEvent, UiInputEvent, UiNodeEvent, UiNodeEventHandler};
 use ui_types::{NodeId, UiConfig};
 
-use crate::ui_runtime::UiRuntime;
+use crate::runtime::UiRuntime;
 
 #[derive(Resource)]
 pub struct UiManager {
