@@ -3,25 +3,25 @@ use std::time::Duration;
 use bevy_ecs::{
     event::{Event, EventReader, EventWriter},
     prelude::Commands,
-    system::{Query, Res, ResMut},
+    system::{Res, ResMut},
 };
-use bevy_log::{info, warn};
+use bevy_log::{info};
 
 use asset_serde::json::{Asset, AssetData, AssetMeta, UiConfigJson};
 use game_engine::{
     asset::{
-        embedded_asset_event, AssetId, AssetManager, AssetMetadataSerde, AssetType,
+        embedded_asset_event, AssetId, AssetMetadataSerde, AssetType,
         ETag, EmbeddedAssetEvent,
     },
-    input::{GamepadRumbleIntensity, Input, InputEvent, RumbleManager},
+    input::{GamepadRumbleIntensity, Input, RumbleManager},
     render::{
         base::Color,
         components::{
             AmbientLight, Camera, CameraBundle, ClearOperation, OrthographicProjection, Projection,
-            RenderLayer, RenderTarget,
+            RenderTarget,
         },
     },
-    ui::{UiInputConverter, UiManager},
+    ui::UiManager,
 };
 use ui_builder::UiConfig;
 use ui_runner_config::UiRuntimeConfig;
@@ -88,37 +88,7 @@ pub fn setup(
     commands.insert_resource(Global::new(ui_camera_entity));
 }
 
-pub fn ui_update(
-    global: Res<Global>,
-    mut ui_manager: ResMut<UiManager>,
-    asset_manager: Res<AssetManager>,
-    mut input_events: EventReader<InputEvent>,
-    // Cameras
-    cameras_q: Query<(&Camera, Option<&RenderLayer>)>,
-) {
-    let Some(ui_handle) = ui_manager.active_ui() else {
-        return;
-    };
-    let ui_render_layer_opt = ui_manager.render_layer();
-
-    // find camera, update viewport
-    let Ok((camera, cam_render_layer_opt)) = cameras_q.get(global.ui_camera_entity) else {
-        warn!("no ui camera!");
-        return;
-    };
-    if cam_render_layer_opt == ui_render_layer_opt.as_ref() {
-        ui_manager.update_ui_viewport(&asset_manager, camera, &ui_handle);
-    }
-
-    // update with inputs
-    let Some((mouse_position, ui_input_events)) = UiInputConverter::convert(&mut input_events)
-    else {
-        return;
-    };
-    ui_manager.update_ui_input(&asset_manager, &ui_handle, mouse_position, ui_input_events);
-}
-
-pub fn ui_handle_events(
+pub fn handle_events(
     input: Res<Input>,
     mut rumble_manager: ResMut<RumbleManager>,
     mut login_btn_rdr: EventReader<SubmitButtonEvent>,

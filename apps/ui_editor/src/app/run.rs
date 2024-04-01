@@ -23,8 +23,7 @@ pub fn run() {
         .add_event::<SubmitButtonEvent>()
         // ui systems
         .add_systems(Startup, ui::setup)
-        .add_systems(Update, ui::ui_update)
-        .add_systems(Update, ui::ui_handle_events)
+        .add_systems(Update, ui::handle_events)
         // viewport resize
         .add_systems(Update, resize::handle_viewport_resize)
         // draw

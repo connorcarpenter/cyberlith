@@ -2,7 +2,7 @@ use bevy_app::{App, Plugin, PostUpdate, PreUpdate, Update};
 
 use clipboard::ClipboardPlugin;
 
-use crate::UiManager;
+use crate::{systems, UiManager};
 
 // Plugin
 pub struct UiPlugin;
@@ -16,11 +16,16 @@ impl Plugin for UiPlugin {
         app
             // UiManager
             .init_resource::<UiManager>()
-            .add_systems(Update, UiManager::sync)
+            // systems
+
             .add_systems(PreUpdate, UiManager::prepare_cursor_change)
+            .add_systems(Update, systems::ui_update)
+            .add_systems(PostUpdate, UiManager::process_cursor_change)
+
+            .add_systems(Update, UiManager::sync_assets)
             .add_systems(Update, UiManager::process_ui_global_events)
             .add_systems(Update, UiManager::process_ui_node_events)
-            .add_systems(PostUpdate, UiManager::process_cursor_change)
-            .add_systems(Update, UiManager::update_blinkiness);
+            .add_systems(Update, UiManager::update_blinkiness)
+            ;
     }
 }

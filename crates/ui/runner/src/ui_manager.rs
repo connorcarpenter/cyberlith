@@ -68,7 +68,7 @@ impl Default for UiManager {
 
 impl UiManager {
     // used as a system
-    pub(crate) fn sync(
+    pub(crate) fn sync_assets(
         mut ui_manager: ResMut<Self>,
         mut meshes: ResMut<Storage<CpuMesh>>,
         mut materials: ResMut<Storage<CpuMaterial>>,
