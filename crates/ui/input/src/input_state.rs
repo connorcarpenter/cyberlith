@@ -23,7 +23,7 @@ pub struct UiInputState {
 
 impl UiInputState {
 
-    pub fn from_ui_config() -> Self {
+    pub fn new() -> Self {
         Self {
             global_events: Vec::new(),
             node_events: Vec::new(),

@@ -1,6 +1,6 @@
 use bevy_log::warn;
 
-use asset_loader::{AssetHandle, AssetManager, IconData, UiConfigData, UiTextMeasurer};
+use asset_loader::{AssetHandle, AssetManager, IconData, UiTextMeasurer};
 use asset_render::AssetRender;
 use render_api::{
     base::{CpuMaterial, CpuMesh},
@@ -11,7 +11,7 @@ use storage::Handle;
 use ui_types::{NodeId, UiConfig, WidgetKind};
 use ui_state::{NodeActiveState, UiState};
 use ui_input::UiInputState;
-use ui_loader::{Blinkiness, UiManager};
+use ui_loader::{Blinkiness, UiManager, UiRuntime};
 
 pub struct UiRenderer;
 
@@ -23,24 +23,16 @@ impl UiRenderer {
         render_frame: &mut RenderFrame,
         render_layer_opt: Option<&RenderLayer>,
         blinkiness: &Blinkiness,
-        ui_handle: &AssetHandle<UiConfigData>,
+        ui_handle: &AssetHandle<UiRuntime>,
     ) {
-        let Some(ui_data) = ui_manager.ui_configs.get(ui_handle) else {
+        let Some(ui_runtime) = ui_manager.ui_runtimes.get(ui_handle) else {
             warn!("ui data not loaded 2: {:?}", ui_handle.asset_id());
             return;
         };
-        let ui = ui_data.get_ui_config_ref();
 
-        let Some(ui_state) = ui_manager.ui_states.get(ui_handle) else {
-            warn!("ui state data not loaded 2: {:?}", ui_handle.asset_id());
-            return;
-        };
-        let Some(ui_input_state) = ui_manager.ui_input_states.get(ui_handle) else {
-            warn!("ui input state data not loaded 2: {:?}", ui_handle.asset_id());
-            return;
-        };
+        let (ui_state, ui_input_state, ui, _) = ui_runtime.decompose_to_refs();
 
-        let text_icon_handle = ui_data.get_icon_handle();
+        let text_icon_handle = ui_runtime.get_icon_handle();
 
         let carat_blink = blinkiness.enabled() || ui_input_state.interact_timer_was_recent();
 
@@ -51,8 +43,8 @@ impl UiRenderer {
                 render_layer_opt,
                 asset_manager,
                 carat_blink,
-                &ui,
-                &ui_state,
+                ui,
+                ui_state,
                 ui_input_state,
                 &text_icon_handle,
                 &node_id,

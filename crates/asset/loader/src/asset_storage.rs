@@ -2,9 +2,16 @@ use std::{collections::HashMap, default::Default};
 
 use crate::AssetHandle;
 
-#[derive(Default)]
 pub struct AssetStorage<T> {
     data_map: HashMap<AssetHandle<T>, T>,
+}
+
+impl<T> Default for AssetStorage<T> {
+    fn default() -> Self {
+        Self {
+            data_map: HashMap::new(),
+        }
+    }
 }
 
 impl<T> AssetStorage<T> {

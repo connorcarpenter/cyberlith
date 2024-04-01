@@ -11,10 +11,10 @@ use asset_serde::json::{Asset, AssetData, AssetMeta, UiConfigJson};
 use game_engine::{
     asset::{
         embedded_asset_event, AssetHandle, AssetId, AssetManager, AssetMetadataSerde, AssetType,
-        ETag, EmbeddedAssetEvent, UiConfigData,
+        ETag, EmbeddedAssetEvent,
     },
     render::{base::Color, components::{AmbientLight, CameraBundle, ClearOperation, OrthographicProjection, Projection, RenderTarget, RenderLayer, Camera}},
-    ui::{UiConfig, UiManager, UiInputConverter},
+    ui::{UiRuntime, UiConfig, UiManager, UiInputConverter},
     input::{Input, InputEvent, GamepadRumbleIntensity, RumbleManager},
 };
 
@@ -54,7 +54,7 @@ pub fn setup(
     ui_manager.manual_load_ui_config(&ui_asset_id, ui);
 
     // make handle, add handle to entity
-    let ui_handle = AssetHandle::<UiConfigData>::new(ui_asset_id);
+    let ui_handle = AssetHandle::<UiRuntime>::new(ui_asset_id);
     let ui_entity = commands.spawn(ui_handle).id();
 
     ui_manager.register_ui_event::<SubmitButtonEvent>(&ui_handle, "login_button");
@@ -91,7 +91,7 @@ pub fn ui_update(
     // Cameras
     cameras_q: Query<(&Camera, Option<&RenderLayer>)>,
     // UIs
-    uis_q: Query<(&AssetHandle<UiConfigData>, Option<&RenderLayer>)>,
+    uis_q: Query<(&AssetHandle<UiRuntime>, Option<&RenderLayer>)>,
 ) {
     let Ok((ui_handle, ui_render_layer_opt)) = uis_q.get(global.active_ui_entity) else {
         warn!("no active ui entity!");

@@ -1,6 +1,6 @@
-use asset_loader::{AssetHandle, AssetManager, UiConfigData};
+use asset_loader::{AssetHandle, AssetManager};
 use render_api::{resources::RenderFrame, components::RenderLayer};
-use ui_loader::UiManager;
+use ui_loader::{UiManager, UiRuntime};
 
 use crate::ui_renderer::UiRenderer;
 
@@ -12,7 +12,7 @@ pub trait UiRender {
         asset_manager: &AssetManager,
         render_frame: &mut RenderFrame,
         render_layer_opt: Option<&RenderLayer>,
-        ui_handle: &AssetHandle<UiConfigData>,
+        ui_handle: &AssetHandle<UiRuntime>,
     );
 }
 
@@ -22,7 +22,7 @@ impl UiRender for UiManager {
         asset_manager: &AssetManager,
         render_frame: &mut RenderFrame,
         render_layer_opt: Option<&RenderLayer>,
-        ui_handle: &AssetHandle<UiConfigData>,
+        ui_handle: &AssetHandle<UiRuntime>,
     ) {
         UiRenderer::draw_ui(self, asset_manager, render_frame, render_layer_opt, &self.blinkiness, ui_handle);
     }

@@ -11,18 +11,17 @@ use math::Vec2;
 use render_api::{base::{CpuMaterial, CpuMesh}, components::Camera, resources::Time};
 use storage::Storage;
 
-use ui_input::{UiGlobalEvent, UiInputEvent, UiInputState, UiNodeEvent, UiNodeEventHandler};
-use ui_state::UiState;
+use ui_input::{UiGlobalEvent, UiInputEvent, UiNodeEvent, UiNodeEventHandler};
 use ui_types::{NodeId, UiConfig};
+
+use crate::ui_runtime::UiRuntime;
 
 #[derive(Resource)]
 pub struct UiManager {
-    pub ui_configs: AssetStorage<UiConfigData>,
-    pub ui_states: HashMap<AssetHandle<UiConfigData>, UiState>,
-    pub ui_input_states: HashMap<AssetHandle<UiConfigData>, UiInputState>,
-    queued_uis: Vec<AssetHandle<UiConfigData>>,
+    pub ui_runtimes: AssetStorage<UiRuntime>,
+    queued_uis: Vec<AssetHandle<UiRuntime>>,
 
-    queued_ui_node_event_handlers: HashMap<AssetHandle<UiConfigData>, Vec<(String, UiNodeEventHandler)>>,
+    queued_ui_node_event_handlers: HashMap<AssetHandle<UiRuntime>, Vec<(String, UiNodeEventHandler)>>,
     ui_global_events: Vec<UiGlobalEvent>,
     ui_node_event_handlers: HashMap<(AssetId, NodeId), UiNodeEventHandler>,
     ui_node_events: Vec<(AssetId, NodeId, UiNodeEvent)>,
@@ -34,9 +33,7 @@ pub struct UiManager {
 impl Default for UiManager {
     fn default() -> Self {
         Self {
-            ui_configs: AssetStorage::default(),
-            ui_states: HashMap::default(),
-            ui_input_states: HashMap::default(),
+            ui_runtimes: AssetStorage::default(),
             queued_uis: Vec::new(),
 
             ui_global_events: Vec::new(),
@@ -107,20 +104,15 @@ impl UiManager {
     pub fn manual_load_ui_config(&mut self, asset_id: &AssetId, ui_config: UiConfig) {
         let mut dependencies: Vec<(TypedAssetId, TypedAssetId)> = Vec::new();
 
-        let handle = AssetHandle::<UiConfigData>::new(*asset_id);
-        if !self.ui_configs.has(&handle) {
+        let handle = AssetHandle::<UiRuntime>::new(*asset_id);
+        if !self.ui_runtimes.has(&handle) {
 
-            let ui_input_state = UiInputState::from_ui_config();
-            self.ui_input_states.insert(handle, ui_input_state);
+            let (ui_config_data, ui_config) = UiConfigData::from_ui_config(ui_config);
+            let runtime = UiRuntime::new(ui_config, ui_config_data);
+            self.ui_runtimes.insert(handle, runtime);
 
-            let ui_state_data = UiState::from_ui_config(&ui_config);
-            self.ui_states.insert(handle, ui_state_data);
-
-            let ui_config_data = UiConfigData::from_ui_config(ui_config);
-            self.ui_configs.insert(handle, ui_config_data);
-
-            let ui_config_data = self.ui_configs.get(&handle).unwrap();
-            ui_config_data.load_dependencies(handle, &mut dependencies);
+            let runtime = self.ui_runtimes.get(&handle).unwrap();
+            runtime.load_dependencies(handle, &mut dependencies);
 
             self.queued_uis.push(handle);
         }
@@ -140,23 +132,16 @@ impl UiManager {
     ) {
         let mut dependencies: Vec<(TypedAssetId, TypedAssetId)> = Vec::new();
 
-        let handle = AssetHandle::<UiConfigData>::new(*asset_id);
-        if !self.ui_configs.has(&handle) {
+        let handle = AssetHandle::<UiRuntime>::new(*asset_id);
+        if !self.ui_runtimes.has(&handle) {
             let bytes = asset_data_store.get(asset_id).unwrap();
-            let ui_data = UiConfigData::from_bytes(bytes);
+            let (ui_data, ui_config) = UiConfigData::from_bytes(bytes);
+            let runtime = UiRuntime::new(ui_config, ui_data);
 
-            {
-                let ui = ui_data.get_ui_config_ref();
-                let ui_state_data = UiState::from_ui_config(ui);
-                self.ui_states.insert(handle, ui_state_data);
-                let ui_input_state = UiInputState::from_ui_config();
-                self.ui_input_states.insert(handle, ui_input_state);
-            }
+            self.ui_runtimes.insert(handle, runtime);
 
-            self.ui_configs.insert(handle, ui_data);
-
-            let ui_data = self.ui_configs.get(&handle).unwrap();
-            ui_data.load_dependencies(handle, &mut dependencies);
+            let runtime = self.ui_runtimes.get(&handle).unwrap();
+            runtime.load_dependencies(handle, &mut dependencies);
 
             self.queued_uis.push(handle);
         }
@@ -178,8 +163,8 @@ impl UiManager {
     ) {
         let TypedAssetId::Ui(principal_id) = principal_typed_id else { panic!(""); };
 
-        let principal_handle = AssetHandle::<UiConfigData>::new(principal_id);
-        let principal_data = self.ui_configs.get_mut(&principal_handle).unwrap();
+        let principal_handle = AssetHandle::<UiRuntime>::new(principal_id);
+        let principal_data = self.ui_runtimes.get_mut(&principal_handle).unwrap();
         principal_data.finish_dependency(dependency_typed_id);
     }
 
@@ -195,24 +180,22 @@ impl UiManager {
         let ui_handles = std::mem::take(&mut self.queued_uis);
 
         for ui_handle in &ui_handles {
-            let ui = self.ui_configs.get(ui_handle).unwrap();
-            let ui_data = self.ui_states.get_mut(ui_handle).unwrap();
-            ui_data.load_cpu_data(ui.get_ui_config_ref(), meshes, materials);
+            let ui = self.ui_runtimes.get_mut(ui_handle).unwrap();
+            ui.load_cpu_data(meshes, materials);
         }
 
         self.handle_new_uis(ui_handles);
     }
 
-    fn handle_new_uis(&mut self, new_uis: Vec<AssetHandle<UiConfigData>>) {
+    fn handle_new_uis(&mut self, new_uis: Vec<AssetHandle<UiRuntime>>) {
         for handle in new_uis {
             if let Some(queued_handlers) =
                 self.queued_ui_node_event_handlers.remove(&handle)
             {
                 for (id_str, handler) in queued_handlers {
                     let asset_id = handle.asset_id();
-                    let ui_data = self.ui_configs.get(&handle).unwrap();
-                    let node_id = ui_data
-                        .get_ui_config_ref()
+                    let ui_runtime = self.ui_runtimes.get(&handle).unwrap();
+                    let node_id = ui_runtime
                         .get_node_id_by_id_str(&id_str)
                         .unwrap();
                     self
@@ -272,14 +255,14 @@ impl UiManager {
 
     pub fn register_ui_event<T: Event + Default>(
         &mut self,
-        ui_handle: &AssetHandle<UiConfigData>,
+        ui_handle: &AssetHandle<UiRuntime>,
         id_str: &str,
     ) {
         let asset_id = ui_handle.asset_id();
         let event_handler = UiNodeEventHandler::new::<T>();
 
-        if let Some(ui_store) = self.ui_configs.get(&ui_handle) {
-            let Some(node_id) = ui_store.get_ui_config_ref().get_node_id_by_id_str(id_str) else {
+        if let Some(ui_runtime) = self.ui_runtimes.get(&ui_handle) {
+            let Some(node_id) = ui_runtime.get_node_id_by_id_str(id_str) else {
                 panic!("no node_id for id_str: {:?}", id_str);
             };
 
@@ -301,80 +284,69 @@ impl UiManager {
         &mut self,
         asset_manager: &AssetManager,
         camera: &Camera,
-        ui_handle: &AssetHandle<UiConfigData>,
+        ui_handle: &AssetHandle<UiRuntime>,
     ) {
         let store = asset_manager.get_store();
         let Some(viewport) = camera.viewport else {
             return;
         };
-        let Some(ui_state) = self.ui_states.get_mut(ui_handle) else {
+        let Some(ui_runtime) = self.ui_runtimes.get_mut(ui_handle) else {
             warn!("ui data not loaded 1: {:?}", ui_handle.asset_id());
             return;
         };
 
-        ui_state.update_viewport(&viewport);
+        ui_runtime.update_viewport(&viewport);
 
-        let needs_to_recalc = ui_state.needs_to_recalculate_layout();
+        let needs_to_recalc = ui_runtime.needs_to_recalculate_layout();
 
         if needs_to_recalc {
-            let Some(ui_data) = self.ui_configs.get(ui_handle) else {
+            let Some(ui_runtime) = self.ui_runtimes.get(ui_handle) else {
                 warn!("ui data not loaded 1: {:?}", ui_handle.asset_id());
                 return;
             };
-            let icon_handle = ui_data.get_icon_handle();
+            let icon_handle = ui_runtime.get_icon_handle();
             self.recalculate_ui_layout(store, ui_handle, &icon_handle);
         }
     }
 
-    fn recalculate_ui_layout(&mut self, store: &ProcessedAssetStore, ui_handle: &AssetHandle<UiConfigData>, icon_handle: &AssetHandle<IconData>) {
+    fn recalculate_ui_layout(&mut self, store: &ProcessedAssetStore, ui_handle: &AssetHandle<UiRuntime>, icon_handle: &AssetHandle<IconData>) {
         let Some(icon_data) = store.icons.get(&icon_handle) else {
             return;
         };
         let text_measurer = UiTextMeasurer::new(icon_data);
 
-        let Some(ui_data) = self.ui_configs.get(ui_handle) else {
-            return;
-        };
-        let Some(ui_state) = self.ui_states.get_mut(ui_handle) else {
+        let Some(ui_runtime) = self.ui_runtimes.get_mut(ui_handle) else {
             return;
         };
 
-        ui_state.recalculate_layout(ui_data.get_ui_config_ref(), &text_measurer);
+        ui_runtime.recalculate_layout(&text_measurer);
     }
 
     pub fn update_ui_input(
         &mut self,
         asset_manager: &AssetManager,
-        ui_handle: &AssetHandle<UiConfigData>,
+        ui_handle: &AssetHandle<UiRuntime>,
         mouse_position: Option<Vec2>,
         ui_input_events: Vec<UiInputEvent>,
     ) {
         let store = asset_manager.get_store();
-        let Some(ui_data) = self.ui_configs.get(ui_handle) else {
+        let Some(ui_runtime) = self.ui_runtimes.get_mut(ui_handle) else {
             warn!("ui data not loaded 1: {:?}", ui_handle.asset_id());
             return;
         };
-        let Some(ui_state) = self.ui_states.get_mut(ui_handle) else {
-            warn!("ui state data not loaded 1: {:?}", ui_handle.asset_id());
-            return;
-        };
-        let Some(ui_input_state) = self.ui_input_states.get_mut(ui_handle) else {
-            warn!("ui input state data not loaded 1: {:?}", ui_handle.asset_id());
-            return;
-        };
-        let icon_handle = ui_data.get_icon_handle();
+        let icon_handle = ui_runtime.get_icon_handle();
         let Some(icon_data) = store.icons.get(&icon_handle) else {
             return;
         };
         let text_measurer = UiTextMeasurer::new(icon_data);
-        ui_input_state.receive_input(ui_data.get_ui_config_ref(), ui_state, &text_measurer, mouse_position, ui_input_events);
+        ui_runtime.receive_input(&text_measurer, mouse_position, ui_input_events);
 
         // get any global events
-        let mut global_events: Vec<UiGlobalEvent> = ui_input_state.take_global_events();
+        let mut global_events: Vec<UiGlobalEvent> = ui_runtime.take_global_events();
         self.ui_global_events.append(&mut global_events);
 
         // get any node events
-        let mut events: Vec<(AssetId, NodeId, UiNodeEvent)> = ui_input_state
+        let mut events: Vec<(AssetId, NodeId, UiNodeEvent)> = ui_runtime
             .take_node_events()
             .iter()
             .map(|(node_id, event)| (ui_handle.asset_id(), *node_id, event.clone()))
@@ -383,7 +355,7 @@ impl UiManager {
         self.ui_node_events.append(&mut events);
 
         // get cursor icon change
-        let new_cursor_icon = ui_input_state.get_cursor_icon();
+        let new_cursor_icon = ui_runtime.get_cursor_icon();
         if new_cursor_icon != self.last_cursor_icon {
             self.cursor_icon_change = Some(new_cursor_icon);
         }
