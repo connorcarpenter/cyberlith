@@ -2,7 +2,7 @@ use std::slice::Iter;
 
 use render_api::base::Color;
 
-use ui_builder_config::{BaseNodeStyle, Button, ButtonStyle, Panel, PanelStyle, StyleId, Text, TextboxStyle, TextStyle, UiNode, UiStore, WidgetKind, WidgetStyle};
+use ui_builder_config::{BaseNodeStyle, Button, ButtonStyle, NodeStyle, Panel, PanelStyle, StyleId, Text, TextboxStyle, TextStyle, UiNode, WidgetKind, WidgetStyle};
 use ui_layout::{Alignment, LayoutType, MarginUnits, NodeId, NodeStore, PositionType, SizeUnits, Solid, TextMeasurer};
 
 use crate::utils::text_measure_raw_size;
@@ -13,12 +13,9 @@ pub struct UiRuntimeStore {
 }
 
 impl UiRuntimeStore {
-    pub fn new(store: UiStore) -> Self {
-
-        let (styles, nodes) = store.decompose();
+    pub fn new(styles: Vec<NodeStyle>, nodes: Vec<UiNode>) -> Self {
 
         let styles = styles.into_iter().map(|style| style.base).collect();
-        let nodes = nodes.into_iter().map(|node| node.into()).collect();
 
         Self {
             styles,

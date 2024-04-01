@@ -11,10 +11,11 @@ use crate::{runtime_store::UiRuntimeStore};
 pub struct UiRuntimeConfig {
 
     store: UiRuntimeStore,
+
     text_color: Color,
     first_input: NodeId,
-    id_str_to_node_id_map: HashMap<String, NodeId>,
     text_icon_asset_id: AssetId,
+    id_str_to_node_id_map: HashMap<String, NodeId>,
 }
 
 impl UiRuntimeConfig {
@@ -32,14 +33,13 @@ impl UiRuntimeConfig {
 
     pub fn load_from_builder_config(ui_config: UiConfig) -> Self {
 
-        let text_icon_asset_id = ui_config.get_text_icon_asset_id();
-        let (store, globals, node_map) = ui_config.decompose();
+        let (styles, nodes, text_color, first_input, text_icon_asset_id, node_map) = ui_config.decompose();
         let node_map = node_map.into_iter().map(|(k, v)| (k.to_string(), v.into())).collect();
 
         Self {
-            store: UiRuntimeStore::new(store),
-            text_color: globals.get_text_color(),
-            first_input: globals.get_first_input_node_id().into(),
+            store: UiRuntimeStore::new(styles, nodes),
+            text_color,
+            first_input,
             id_str_to_node_id_map: node_map,
             text_icon_asset_id,
         }

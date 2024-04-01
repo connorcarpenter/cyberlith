@@ -33,7 +33,7 @@ fn convert_ui_to_actions(ui_config: &UiConfig) -> Vec<UiAction> {
     let mut style_id_to_index = HashMap::new();
     let mut style_count = 0;
 
-    for (style_id, style) in ui_config.store.styles_iter().enumerate() {
+    for (style_id, style) in ui_config.styles_iter().enumerate() {
         let style_id = StyleId::new(style_id as u32);
         let next_index = style_count;
         if style_count == u8::MAX {
@@ -46,7 +46,7 @@ fn convert_ui_to_actions(ui_config: &UiConfig) -> Vec<UiAction> {
     }
 
     // write nodes
-    for node in ui_config.store.nodes_iter() {
+    for node in ui_config.nodes_iter() {
         output.push(UiAction::Node(UiNodeBits::from_node(
             ui_config,
             &style_id_to_index,

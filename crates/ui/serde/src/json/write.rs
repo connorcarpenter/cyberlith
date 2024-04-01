@@ -30,7 +30,7 @@ impl From<&UiConfig> for UiConfigJson {
         };
 
         // styles
-        for (style_id, style) in ui_config.store.styles_iter().enumerate() {
+        for (style_id, style) in ui_config.styles_iter().enumerate() {
             let style_id = StyleId::new(style_id as u32);
             let next_index = me.styles.len();
             style_id_to_index.insert(style_id, next_index);
@@ -38,7 +38,7 @@ impl From<&UiConfig> for UiConfigJson {
         }
 
         // nodes
-        for node in ui_config.store.nodes_iter() {
+        for node in ui_config.nodes_iter() {
             me.nodes
                 .push(UiNodeJson::from_node(&style_id_to_index, node));
         }

@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::slice::Iter;
 
 use asset_id::AssetId;
 use render_api::base::Color;
@@ -7,15 +8,18 @@ use ui_layout::NodeId;
 use crate::{
     node::UiNode,
     panel::Panel,
-    store::UiStore,
     style::{NodeStyle, StyleId},
     widget::Widget,
 };
 
 pub struct UiConfig {
-    pub globals: Globals,
-    pub store: UiStore,
 
+    styles: Vec<NodeStyle>,
+    nodes: Vec<UiNode>,
+
+    text_color: Color,
+    first_input: Option<NodeId>,
+    text_icon_asset_id_opt: Option<AssetId>,
     id_str_to_node_id_map: HashMap<String, NodeId>,
 }
 
@@ -24,9 +28,13 @@ impl UiConfig {
 
     pub fn new() -> Self {
         let mut me = Self {
-            globals: Globals::new(),
-            store: UiStore::new(),
 
+            styles: Vec::new(),
+            nodes: Vec::new(),
+
+            text_color: Color::BLACK,
+            first_input: None,
+            text_icon_asset_id_opt: None,
             id_str_to_node_id_map: HashMap::new(),
         };
 
@@ -39,41 +47,18 @@ impl UiConfig {
         me
     }
 
-    pub fn decompose(self) -> (UiStore, Globals, HashMap<String, NodeId>) {
-        (self.store, self.globals, self.id_str_to_node_id_map)
+    pub fn decompose(self) -> (Vec<NodeStyle>, Vec<UiNode>, Color, NodeId, AssetId, HashMap<String, NodeId>) {
+        (self.styles, self.nodes, self.text_color, self.first_input.unwrap(), self.text_icon_asset_id_opt.unwrap(), self.id_str_to_node_id_map)
     }
 
-    // events
-    pub fn get_first_input(&self) -> Option<NodeId> {
-        self.globals.first_input
+    // nodes
+
+    pub fn node_mut(&mut self, id: &NodeId) -> Option<&mut UiNode> {
+        self.nodes.get_mut(id.as_usize())
     }
 
-    pub fn set_first_input(&mut self, id: NodeId) {
-        self.globals.first_input = Some(id);
-    }
-
-    // interface
-
-    pub fn get_text_icon_asset_id(&self) -> AssetId {
-        *self.globals.text_icon_asset_id_opt.as_ref().unwrap()
-    }
-
-    pub fn set_text_icon_asset_id(&mut self, text_icon_asset_id: &AssetId) -> &mut Self {
-        self.globals.text_icon_asset_id_opt = Some(text_icon_asset_id.clone());
-        self
-    }
-
-    pub fn get_text_color(&self) -> Color {
-        self.globals.text_color
-    }
-
-    pub fn set_text_color(&mut self, text_color: Color) -> &mut Self {
-        self.globals.set_text_color(text_color);
-        self
-    }
-
-    pub fn get_node_id_by_id_str(&self, id_str: &str) -> Option<NodeId> {
-        self.id_str_to_node_id_map.get(id_str).cloned()
+    pub fn nodes_iter(&self) -> Iter<'_, UiNode> {
+        self.nodes.iter()
     }
 
     pub fn create_node(&mut self, widget: Widget) -> NodeId {
@@ -89,7 +74,7 @@ impl UiConfig {
         }
 
         let ui_node = UiNode::new(widget);
-        let node_id = self.store.insert_node(ui_node);
+        let node_id = self.insert_node(ui_node);
 
         if let Some(id_str) = id_str_opt {
             self.id_str_to_node_id_map.insert(id_str, node_id);
@@ -98,50 +83,63 @@ impl UiConfig {
         node_id
     }
 
-    pub fn node_ref(&self, id: &NodeId) -> Option<&UiNode> {
-        self.store.get_node(&id)
+    pub(crate) fn insert_node(&mut self, node: UiNode) -> NodeId {
+        if self.nodes.len() >= 255 {
+            panic!("1 UI can only hold up to 255 nodes, too many nodes!");
+        }
+        let index = self.nodes.len();
+        self.nodes.push(node);
+        NodeId::new(index as u32)
     }
 
-    pub fn node_mut(&mut self, id: &NodeId) -> Option<&mut UiNode> {
-        self.store.get_node_mut(&id)
-    }
+    // styles
 
     pub fn style_mut(&mut self, id: &StyleId) -> Option<&mut NodeStyle> {
-        self.store.get_style_mut(&id)
+        self.styles.get_mut(id.as_usize())
+    }
+
+    pub fn styles_iter(&self) -> Iter<'_, NodeStyle> {
+        self.styles.iter()
     }
 
     pub fn insert_style(&mut self, style: NodeStyle) -> StyleId {
-        self.store.insert_style(style)
-    }
-}
-
-pub struct Globals {
-    text_icon_asset_id_opt: Option<AssetId>,
-    text_color: Color,
-    first_input: Option<NodeId>,
-}
-
-impl Globals {
-    pub(crate) fn new() -> Self {
-        Self {
-            text_icon_asset_id_opt: None,
-            text_color: Color::BLACK,
-            first_input: None,
+        if self.styles.len() >= 255 {
+            panic!("1 UI can only hold up to 255 styles, too many styles!");
         }
+        let index = self.styles.len();
+        self.styles.push(style);
+        StyleId::new(index as u32)
     }
 
-    pub fn get_first_input_node_id(&self) -> NodeId {
-        self.first_input.unwrap_or(UiConfig::ROOT_NODE_ID)
+    // globals
+
+    pub fn get_first_input(&self) -> Option<NodeId> {
+        self.first_input
+    }
+
+    pub fn set_first_input(&mut self, id: NodeId) {
+        self.first_input = Some(id);
+    }
+
+    pub fn get_text_icon_asset_id(&self) -> AssetId {
+        *self.text_icon_asset_id_opt.as_ref().unwrap()
+    }
+
+    pub fn set_text_icon_asset_id(&mut self, text_icon_asset_id: &AssetId) -> &mut Self {
+        self.text_icon_asset_id_opt = Some(text_icon_asset_id.clone());
+        self
     }
 
     pub fn get_text_color(&self) -> Color {
         self.text_color
     }
 
-    pub fn set_text_color(&mut self, color: Color) {
-        if color == self.text_color {
-            return;
-        }
-        self.text_color = color;
+    pub fn set_text_color(&mut self, text_color: Color) -> &mut Self {
+        self.text_color = text_color;
+        self
+    }
+
+    pub fn get_node_id_by_id_str(&self, id_str: &str) -> Option<NodeId> {
+        self.id_str_to_node_id_map.get(id_str).cloned()
     }
 }

@@ -1,7 +1,6 @@
 mod button;
 mod node;
 mod panel;
-mod store;
 mod style;
 mod text;
 mod ui_config;
@@ -19,6 +18,5 @@ pub use style::{BaseNodeStyle, NodeStyle, StyleId, WidgetStyle};
 pub use text::{Text, TextStyle};
 pub use widget::{Widget, WidgetKind};
 pub use textbox::{Textbox, TextboxStyle};
-pub use store::UiStore;
 
 pub use ui_layout::NodeId;
