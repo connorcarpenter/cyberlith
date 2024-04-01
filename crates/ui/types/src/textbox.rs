@@ -1,11 +1,10 @@
 
 use render_api::base::Color;
 
-use crate::{Panel, PanelStyle, Navigation};
+use crate::Navigation;
 
 #[derive(Clone)]
 pub struct Textbox {
-    pub panel: Panel,
     pub id_str: String,
     pub navigation: Navigation,
 }
@@ -13,7 +12,6 @@ pub struct Textbox {
 impl Textbox {
     pub fn new(id_str: &str) -> Self {
         Self {
-            panel: Panel::new(),
             id_str: id_str.to_string(),
             navigation: Navigation::new(),
         }
@@ -22,7 +20,8 @@ impl Textbox {
 
 #[derive(Clone, Copy)]
 pub struct TextboxStyle {
-    pub panel: PanelStyle,
+    pub background_color: Option<Color>,
+    pub background_alpha: Option<f32>,
 
     pub hover_color: Option<Color>,
     pub active_color: Option<Color>,
@@ -32,8 +31,8 @@ pub struct TextboxStyle {
 impl TextboxStyle {
     pub fn empty() -> Self {
         Self {
-            panel: PanelStyle::empty(),
-
+            background_color: None,
+            background_alpha: None,
             hover_color: None,
             active_color: None,
             select_color: None,
@@ -41,11 +40,19 @@ impl TextboxStyle {
     }
 
     pub fn background_alpha(&self) -> Option<f32> {
-        self.panel.background_alpha()
+        self.background_alpha
     }
 
     pub fn set_background_alpha(&mut self, val: f32) {
-        self.panel.set_background_alpha(val);
+        // validate
+        if val < 0.0 || val > 1.0 {
+            panic!("background_alpha must be between 0.0 and 1.0");
+        }
+        if (val * 10.0).fract() != 0.0 {
+            panic!("background_alpha must be a multiple of 0.1");
+        }
+
+        self.background_alpha = Some(val);
     }
 
     pub fn hover_color(&self) -> Option<Color> {

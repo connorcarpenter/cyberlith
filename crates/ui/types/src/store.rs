@@ -1,4 +1,7 @@
+use std::slice::Iter;
+
 use render_api::base::Color;
+
 use crate::{
     panel::{Panel, PanelStyle},
     style::{NodeStyle, StyleId, WidgetStyle},
@@ -8,8 +11,8 @@ use crate::{
 };
 
 pub struct UiStore {
-    pub styles: Vec<NodeStyle>,
-    pub nodes: Vec<UiNode>,
+    styles: Vec<NodeStyle>,
+    nodes: Vec<UiNode>,
 }
 
 impl UiStore {
@@ -21,6 +24,15 @@ impl UiStore {
     }
 
     // nodes
+
+    pub fn nodes_len(&self) -> usize {
+        self.nodes.len()
+    }
+
+    pub fn nodes_iter(&self) -> Iter<'_, UiNode> {
+        self.nodes.iter()
+    }
+
     pub(crate) fn insert_node(&mut self, node: UiNode) -> NodeId {
         if self.nodes.len() >= 255 {
             panic!("1 UI can only hold up to 255 nodes, too many nodes!");
@@ -39,6 +51,10 @@ impl UiStore {
     }
 
     // styles
+
+    pub fn styles_iter(&self) -> Iter<'_, NodeStyle> {
+        self.styles.iter()
+    }
 
     pub(crate) fn insert_style(&mut self, style: NodeStyle) -> StyleId {
         if self.styles.len() >= 255 {
@@ -63,6 +79,15 @@ impl UiStore {
         self.get_node(node_id).unwrap().widget_kind()
     }
 
+    pub fn node_background_color(&self, node_id: &NodeId) -> Option<&Color> {
+        match self.widget_style(node_id)? {
+            WidgetStyle::Text(text_style) => text_style.background_color.as_ref(),
+            WidgetStyle::Button(button_style) => button_style.panel.background_color.as_ref(),
+            WidgetStyle::Textbox(textbox_style) => textbox_style.background_color.as_ref(),
+            WidgetStyle::Panel(panel_style) => panel_style.background_color.as_ref(),
+        }
+    }
+
     pub fn node_style(&self, node_id: &NodeId) -> Option<&NodeStyle> {
         let node = self.get_node(node_id)?;
         node.style_id().map(|style_id| self.get_style(&style_id)).flatten()
@@ -73,22 +98,11 @@ impl UiStore {
         Some(&style.widget_style)
     }
 
-    pub fn node_background_color(&self, node_id: &NodeId) -> Option<&Color> {
-        let widget_style = self.widget_style(node_id)?;
-        if let WidgetStyle::Text(text_style) = widget_style {
-            text_style.background_color.as_ref()
-        } else {
-            let panel_style = self.panel_style(node_id)?;
-            panel_style.background_color.as_ref()
-        }
-    }
-
     pub fn panel_style(&self, node_id: &NodeId) -> Option<&PanelStyle> {
         let widget_style = self.widget_style(node_id)?;
         match widget_style {
             WidgetStyle::Panel(panel_style) => Some(panel_style),
             WidgetStyle::Button(button_style) => Some(&button_style.panel),
-            WidgetStyle::Textbox(textbox_style) => Some(&textbox_style.panel),
             _ => None,
         }
     }
@@ -117,6 +131,7 @@ impl UiStore {
         }
     }
 
+    // node widget-specific
     pub fn panel_ref(&self, node_id: &NodeId) -> Option<&Panel> {
         let node = self.get_node(node_id)?;
         if node.widget_kind() == WidgetKind::Panel {

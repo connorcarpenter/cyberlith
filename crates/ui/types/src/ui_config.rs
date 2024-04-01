@@ -157,8 +157,7 @@ impl UiConfig {
 
     pub fn get_style_background_alpha(&self, id: &NodeId) -> f32 {
 
-        let node_ref = self.node_ref(id).unwrap();
-        match node_ref.widget_kind() {
+        match self.node_ref(id).unwrap().widget_kind() {
             WidgetKind::Panel => {
                 let mut output = 1.0;
                 if let Some(panel_style) = self.store.panel_style(id) {
@@ -188,8 +187,8 @@ impl UiConfig {
             }
             WidgetKind::Textbox => {
                 let mut output = 1.0;
-                if let Some(panel_style) = self.store.panel_style(id) {
-                    if let Some(alpha) = panel_style.background_alpha {
+                if let Some(textbox_style) = self.store.textbox_style(id) {
+                    if let Some(alpha) = textbox_style.background_alpha {
                         output = alpha;
                     }
                 }

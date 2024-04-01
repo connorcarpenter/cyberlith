@@ -41,7 +41,7 @@ impl UiState {
             last_viewport: Viewport::new_at_origin(0, 0),
         };
 
-        for node in ui_config.store.nodes.iter() {
+        for node in ui_config.store.nodes_iter() {
             me.store.node_state_init(node);
             me.visibility_store.node_state_init();
         }

@@ -566,10 +566,11 @@ impl Into<ButtonStyle> for ButtonStyleBits {
 impl Into<TextboxStyle> for TextboxStyleBits {
     fn into(self) -> TextboxStyle {
         TextboxStyle {
-            panel:          self.panel.into(),
-            hover_color:    self.hover_color.map(|val| val.into()),
-            active_color:   self.active_color.map(|val| val.into()),
-            select_color:   self.select_color.map(|val| val.into()),
+            background_color: self.background_color.map(Into::into),
+            background_alpha: self.background_alpha.map(bits_into_alpha),
+            hover_color:      self.hover_color.map(|val| val.into()),
+            active_color:     self.active_color.map(|val| val.into()),
+            select_color:     self.select_color.map(|val| val.into()),
         }
     }
 }

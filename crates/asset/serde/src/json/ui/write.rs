@@ -30,7 +30,7 @@ impl From<&UiConfig> for UiConfigJson {
         };
 
         // styles
-        for (style_id, style) in ui_config.store.styles.iter().enumerate() {
+        for (style_id, style) in ui_config.store.styles_iter().enumerate() {
             let style_id = StyleId::new(style_id as u32);
             let next_index = me.styles.len();
             style_id_to_index.insert(style_id, next_index);
@@ -38,7 +38,7 @@ impl From<&UiConfig> for UiConfigJson {
         }
 
         // nodes
-        for node in ui_config.store.nodes.iter() {
+        for node in ui_config.store.nodes_iter() {
             me.nodes
                 .push(UiNodeJson::from_node(&style_id_to_index, node));
         }
@@ -129,10 +129,9 @@ impl From<&ButtonStyle> for ButtonStyleJson {
 
 impl From<&TextboxStyle> for TextboxStyleJson {
     fn from(style: &TextboxStyle) -> Self {
-        let panel_json = From::from(&style.panel);
-
         Self {
-            panel:          panel_json,
+            background_color:   style.background_color.map(From::from),
+            background_alpha:   style.background_alpha(),
             hover_color:    style.hover_color.map(From::from),
             active_color:   style.active_color.map(From::from),
             select_color:   style.select_color.map(From::from),
@@ -269,9 +268,7 @@ impl From<&Button> for ButtonJson {
 
 impl From<&Textbox> for TextboxJson {
     fn from(textbox: &Textbox) -> Self {
-        let panel_json =  From::from(&textbox.panel);
         Self {
-            panel:      panel_json,
             id_str:     textbox.id_str.to_string(),
             navigation: From::from(&textbox.navigation),
         }

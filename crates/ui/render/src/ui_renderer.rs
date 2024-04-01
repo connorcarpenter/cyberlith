@@ -44,7 +44,7 @@ impl UiRenderer {
 
         let carat_blink = blinkiness.enabled() || ui_input_state.interact_timer_was_recent();
 
-        for node_id in 0..ui.store.nodes.len() {
+        for node_id in 0..ui.store.nodes_len() {
             let node_id = NodeId::from_usize(node_id);
             draw_ui_node(
                 render_frame,

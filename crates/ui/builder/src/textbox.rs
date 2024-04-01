@@ -111,7 +111,7 @@ impl<'a> TextboxStyleMut<'a> {
     }
 
     pub fn set_background_color(&mut self, color: Color) -> &mut Self {
-        self.get_textbox_style_mut().panel.background_color = Some(color);
+        self.get_textbox_style_mut().background_color = Some(color);
         self
     }
 

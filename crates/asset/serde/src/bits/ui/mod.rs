@@ -111,7 +111,8 @@ pub(crate) struct ButtonStyleBits {
 
 #[derive(Serde, Clone, PartialEq)]
 pub(crate) struct TextboxStyleBits {
-    panel: PanelStyleBits,
+    background_color: Option<ColorBits>,
+    background_alpha: Option<UnsignedInteger<4>>,
     hover_color: Option<ColorBits>,
     active_color: Option<ColorBits>,
     select_color: Option<ColorBits>,
@@ -218,7 +219,6 @@ pub(crate) struct ButtonBits {
 
 #[derive(Serde, Clone, PartialEq)]
 pub(crate) struct TextboxBits {
-    panel: PanelBits,
     id_str: String,
     navigation: NavigationBits,
 }

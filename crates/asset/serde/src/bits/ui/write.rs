@@ -33,7 +33,7 @@ fn convert_ui_to_actions(ui_config: &UiConfig) -> Vec<UiAction> {
     let mut style_id_to_index = HashMap::new();
     let mut style_count = 0;
 
-    for (style_id, style) in ui_config.store.styles.iter().enumerate() {
+    for (style_id, style) in ui_config.store.styles_iter().enumerate() {
         let style_id = StyleId::new(style_id as u32);
         let next_index = style_count;
         if style_count == u8::MAX {
@@ -46,7 +46,7 @@ fn convert_ui_to_actions(ui_config: &UiConfig) -> Vec<UiAction> {
     }
 
     // write nodes
-    for node in ui_config.store.nodes.iter() {
+    for node in ui_config.store.nodes_iter() {
         output.push(UiAction::Node(UiNodeBits::from_node(
             ui_config,
             &style_id_to_index,
@@ -165,10 +165,7 @@ impl From<&PanelStyle> for PanelStyleBits {
     fn from(style: &PanelStyle) -> Self {
         Self {
             background_color: style.background_color.map(From::from),
-            background_alpha: style.background_alpha().map(|val| {
-                let val = (val * 10.0) as u8;
-                UnsignedInteger::<4>::new(val)
-            }),
+            background_alpha: style.background_alpha().map(bits_from_alpha),
 
             layout_type:        style.layout_type.map(From::from),
 
@@ -189,10 +186,7 @@ impl From<&TextStyle> for TextStyleBits {
     fn from(style: &TextStyle) -> Self {
         Self {
             background_color: style.background_color.map(From::from),
-            background_alpha: style.background_alpha().map(|val| {
-                let val = (val * 10.0) as u8;
-                UnsignedInteger::<4>::new(val)
-            }),
+            background_alpha: style.background_alpha().map(bits_from_alpha),
         }
     }
 }
@@ -210,10 +204,11 @@ impl From<&ButtonStyle> for ButtonStyleBits {
 impl From<&TextboxStyle> for TextboxStyleBits {
     fn from(style: &TextboxStyle) -> Self {
         Self {
-            panel:          From::from(&style.panel),
-            hover_color:    style.hover_color.map(From::from),
-            active_color:   style.active_color.map(From::from),
-            select_color:   style.select_color.map(From::from),
+            background_color: style.background_color.map(From::from),
+            background_alpha: style.background_alpha().map(bits_from_alpha),
+            hover_color:      style.hover_color.map(From::from),
+            active_color:     style.active_color.map(From::from),
+            select_color:     style.select_color.map(From::from),
         }
     }
 }
@@ -461,12 +456,9 @@ impl ButtonBits {
 
 impl TextboxBits {
     fn from_textbox(ui_config: &UiConfig, textbox: &Textbox) -> Self {
-        let panel_bits =    From::from(&textbox.panel);
-        let nav_bits =  NavigationBits::from_navigation(ui_config, &textbox.navigation);
         Self {
-            panel: panel_bits,
             id_str: textbox.id_str.clone(),
-            navigation: nav_bits,
+            navigation: NavigationBits::from_navigation(ui_config, &textbox.navigation),
         }
     }
 }
@@ -502,4 +494,9 @@ fn get_nav_id(ui_config: &UiConfig, id_str: Option<&str>) -> Option<UnsignedVari
     let id = ui_config.get_node_id_by_id_str(id_str)?;
     let id = id.as_usize();
     Some(UnsignedVariableInteger::<4>::new(id as i128))
+}
+
+fn bits_from_alpha(val: f32) -> UnsignedInteger<4> {
+    let val = (val * 10.0) as u8;
+    UnsignedInteger::<4>::new(val)
 }

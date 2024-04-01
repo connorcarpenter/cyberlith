@@ -463,10 +463,11 @@ impl Into<ButtonStyle> for ButtonStyleJson {
 impl Into<TextboxStyle> for TextboxStyleJson {
     fn into(self) -> TextboxStyle {
         TextboxStyle {
-            panel:          self.panel.into(),
-            hover_color:    self.hover_color.map(Into::into),
-            active_color:   self.active_color.map(Into::into),
-            select_color:   self.select_color.map(Into::into),
+            background_color:  self.background_color.map(Into::into),
+            background_alpha:  self.background_alpha,
+            hover_color:       self.hover_color.map(Into::into),
+            active_color:      self.active_color.map(Into::into),
+            select_color:      self.select_color.map(Into::into),
         }
     }
 }
