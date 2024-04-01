@@ -26,12 +26,12 @@ impl UiStateStore {
         self.nodes.push(node);
     }
 
-    pub fn get_node(&self, node_id: &NodeId) -> Option<&UiNodeState> {
-        self.nodes.get(node_id.as_usize())
+    pub fn get_node(&self, id: &NodeId) -> Option<&UiNodeState> {
+        self.nodes.get(id.as_usize())
     }
 
-    pub(crate) fn get_node_mut(&mut self, node_id: &NodeId) -> Option<&mut UiNodeState> {
-        self.nodes.get_mut(node_id.as_usize())
+    pub(crate) fn get_node_mut(&mut self, id: &NodeId) -> Option<&mut UiNodeState> {
+        self.nodes.get_mut(id.as_usize())
     }
 
     pub(crate) fn node_ids(&self) -> Vec<NodeId> {
@@ -46,27 +46,27 @@ impl UiStateStore {
 
     // refs stuff
 
-    pub fn panel_ref(&self, node_id: &NodeId) -> Option<&PanelState> {
-        self.get_node(node_id)?.widget_panel_ref()
+    pub fn panel_ref(&self, id: &NodeId) -> Option<&PanelState> {
+        self.get_node(id)?.widget_panel_ref()
     }
 
-    pub fn text_ref(&self, node_id: &NodeId) -> Option<&TextState> {
-        self.get_node(node_id)?.widget_text_ref()
+    pub fn text_ref(&self, id: &NodeId) -> Option<&TextState> {
+        self.get_node(id)?.widget_text_ref()
     }
 
-    pub fn button_ref(&self, node_id: &NodeId) -> Option<&ButtonState> {
-        self.get_node(node_id)?.widget_button_ref()
+    pub fn button_ref(&self, id: &NodeId) -> Option<&ButtonState> {
+        self.get_node(id)?.widget_button_ref()
     }
 
-    pub fn button_mut(&mut self, node_id: &NodeId) -> Option<&mut ButtonState> {
-        self.get_node_mut(node_id)?.widget_button_mut()
+    pub fn button_mut(&mut self, id: &NodeId) -> Option<&mut ButtonState> {
+        self.get_node_mut(id)?.widget_button_mut()
     }
 
-    pub fn textbox_ref(&self, node_id: &NodeId) -> Option<&TextboxState> {
-        self.get_node(node_id)?.widget_textbox_ref()
+    pub fn textbox_ref(&self, id: &NodeId) -> Option<&TextboxState> {
+        self.get_node(id)?.widget_textbox_ref()
     }
 
-    pub fn textbox_mut(&mut self, node_id: &NodeId) -> Option<&mut TextboxState> {
-        self.get_node_mut(node_id)?.widget_textbox_mut()
+    pub fn textbox_mut(&mut self, id: &NodeId) -> Option<&mut TextboxState> {
+        self.get_node_mut(id)?.widget_textbox_mut()
     }
 }

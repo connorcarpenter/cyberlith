@@ -19,12 +19,12 @@ impl UiVisibilityStore {
         self.nodes.push(true); // all nodes are initialized with full visibility
     }
 
-    pub fn get_node_visibility(&self, node_id: &NodeId) -> Option<bool> {
-        self.nodes.get(node_id.as_usize()).copied()
+    pub fn get_node_visibility(&self, id: &NodeId) -> Option<bool> {
+        self.nodes.get(id.as_usize()).copied()
     }
 
-    pub fn set_node_visibility(&mut self, node_id: &NodeId, visible: bool) {
-        if let Some(node) = self.nodes.get_mut(node_id.as_usize()) {
+    pub fn set_node_visibility(&mut self, id: &NodeId, visible: bool) {
+        if let Some(node) = self.nodes.get_mut(id.as_usize()) {
             *node = visible;
         }
     }

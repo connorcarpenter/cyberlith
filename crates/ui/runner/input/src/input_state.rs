@@ -93,8 +93,8 @@ impl UiInputState {
         std::mem::take(&mut self.global_events)
     }
 
-    pub fn emit_node_event(&mut self, node_id: &NodeId, event: UiNodeEvent) {
-        self.node_events.push((*node_id, event));
+    pub fn emit_node_event(&mut self, id: &NodeId, event: UiNodeEvent) {
+        self.node_events.push((*id, event));
     }
 
     pub fn take_node_events(&mut self) -> Vec<(NodeId, UiNodeEvent)> {

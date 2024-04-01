@@ -218,16 +218,16 @@ fn draw_ui_panel(
     render_layer_opt: Option<&RenderLayer>,
     ui_config: &UiRuntimeConfig,
     ui_state: &UiState,
-    node_id: &NodeId,
+    id: &NodeId,
     transform: &Transform,
 ) {
-    let Some(panel_state_ref) = ui_state.store.panel_ref(node_id) else {
-        panic!("no panel ref for node_id: {:?}", node_id);
+    let Some(panel_state_ref) = ui_state.store.panel_ref(id) else {
+        panic!("no panel ref for node_id: {:?}", id);
     };
 
     // draw panel
     if let Some(mat_handle) = panel_state_ref.background_color_handle {
-        let background_alpha = ui_config.node_background_alpha(node_id);
+        let background_alpha = ui_config.node_background_alpha(id);
         if background_alpha > 0.0 {
             if background_alpha != 1.0 {
                 panic!("partial background_alpha not implemented yet!");
@@ -249,26 +249,26 @@ fn draw_ui_text(
     ui_config: &UiRuntimeConfig,
     ui_state: &UiState,
     text_icon_handle: &AssetHandle<IconData>,
-    node_id: &NodeId,
+    id: &NodeId,
     transform: &Transform,
 ) {
     let Some(text_ref) = ui_config
-        .get_node(node_id)
+        .get_node(id)
         .unwrap()
         .widget_text_ref() else {
-        panic!("no text ref for node_id: {:?}", node_id);
+        panic!("no text ref for node_id: {:?}", id);
     };
     let Some(text_state_ref) = ui_state
         .store
-        .get_node(node_id)
+        .get_node(id)
         .unwrap()
         .widget_text_ref() else {
-        panic!("no text ref for node_id: {:?}", node_id);
+        panic!("no text ref for node_id: {:?}", id);
     };
 
     // draw background
     if let Some(mat_handle) = text_state_ref.background_color_handle {
-        let background_alpha = ui_config.node_background_alpha(node_id);
+        let background_alpha = ui_config.node_background_alpha(id);
         if background_alpha > 0.0 {
             if background_alpha != 1.0 {
                 panic!("partial background_alpha not implemented yet!");
@@ -304,17 +304,17 @@ fn draw_ui_button(
     ui_config: &UiRuntimeConfig,
     ui_state: &UiState,
     ui_input_state: &UiInputState,
-    node_id: &NodeId,
+    id: &NodeId,
     transform: &Transform,
 ) {
-    let Some(button_state_ref) = ui_state.store.button_ref(node_id) else {
-        panic!("no button ref for node_id: {:?}", node_id);
+    let Some(button_state_ref) = ui_state.store.button_ref(id) else {
+        panic!("no button ref for node_id: {:?}", id);
     };
 
     // draw button
-    let active_state = ui_input_state.get_active_state(node_id);
+    let active_state = ui_input_state.get_active_state(id);
     if let Some(mat_handle) = button_state_ref.current_color_handle(active_state) {
-        let background_alpha = ui_config.node_background_alpha(node_id);
+        let background_alpha = ui_config.node_background_alpha(id);
         if background_alpha > 0.0 {
             if background_alpha != 1.0 {
                 panic!("partial background_alpha not implemented yet!");
@@ -338,17 +338,17 @@ fn draw_ui_textbox(
     ui_state: &UiState,
     ui_input_state: &UiInputState,
     text_icon_handle: &AssetHandle<IconData>,
-    node_id: &NodeId,
+    id: &NodeId,
     transform: &Transform,
 ) {
-    let Some(textbox_state_ref) = ui_state.store.textbox_ref(node_id) else {
-        panic!("no textbox state ref for node_id: {:?}", node_id);
+    let Some(textbox_state_ref) = ui_state.store.textbox_ref(id) else {
+        panic!("no textbox state ref for node_id: {:?}", id);
     };
 
     // draw textbox
-    let active_state = ui_input_state.get_active_state(node_id);
+    let active_state = ui_input_state.get_active_state(id);
     if let Some(mat_handle) = textbox_state_ref.current_color_handle(active_state) {
-        let background_alpha = ui_config.node_background_alpha(node_id);
+        let background_alpha = ui_config.node_background_alpha(id);
         if background_alpha > 0.0 {
             if background_alpha != 1.0 {
                 panic!("partial background_alpha not implemented yet!");

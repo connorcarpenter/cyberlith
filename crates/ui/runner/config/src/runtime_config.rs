@@ -62,12 +62,12 @@ impl UiRuntimeConfig {
 
     // nodes
 
-    pub fn get_node(&self, node_id: &NodeId) -> Option<&UiNode> {
-        self.nodes.get(node_id.as_usize())
+    pub fn get_node(&self, id: &NodeId) -> Option<&UiNode> {
+        self.nodes.get(id.as_usize())
     }
 
-    pub(crate) fn node_kind(&self, node_id: &NodeId) -> WidgetKind {
-        self.get_node(node_id).unwrap().widget_kind()
+    pub(crate) fn node_kind(&self, id: &NodeId) -> WidgetKind {
+        self.get_node(id).unwrap().widget_kind()
     }
 
     pub fn nodes_len(&self) -> usize {
@@ -78,24 +78,24 @@ impl UiRuntimeConfig {
         self.nodes.iter()
     }
 
-    pub fn panel_ref(&self, node_id: &NodeId) -> Option<&Panel> {
-        let node = self.get_node(node_id)?;
+    pub fn panel_ref(&self, id: &NodeId) -> Option<&Panel> {
+        let node = self.get_node(id)?;
         if node.widget_kind() == WidgetKind::Panel {
             return node.widget_panel_ref();
         }
         None
     }
 
-    pub fn button_ref(&self, node_id: &NodeId) -> Option<&Button> {
-        let node = self.get_node(node_id)?;
+    pub fn button_ref(&self, id: &NodeId) -> Option<&Button> {
+        let node = self.get_node(id)?;
         if node.widget_kind() == WidgetKind::Button {
             return node.widget_button_ref();
         }
         None
     }
 
-    pub(crate) fn text_ref(&self, node_id: &NodeId) -> Option<&Text> {
-        let node = self.get_node(node_id)?;
+    pub(crate) fn text_ref(&self, id: &NodeId) -> Option<&Text> {
+        let node = self.get_node(id)?;
         if node.widget_kind() == WidgetKind::Text {
             return node.widget_text_ref();
         }
@@ -108,18 +108,18 @@ impl UiRuntimeConfig {
         self.styles.get(style_id.as_usize())
     }
 
-    fn node_style(&self, node_id: &NodeId) -> Option<&BaseNodeStyle> {
-        let node = self.get_node(node_id)?;
+    fn node_style(&self, id: &NodeId) -> Option<&BaseNodeStyle> {
+        let node = self.get_node(id)?;
         node.style_id().map(|style_id| self.get_style(&style_id)).flatten()
     }
 
-    fn widget_style(&self, node_id: &NodeId) -> Option<&WidgetStyle> {
-        let style = self.node_style(node_id)?;
+    fn widget_style(&self, id: &NodeId) -> Option<&WidgetStyle> {
+        let style = self.node_style(id)?;
         Some(&style.widget_style)
     }
 
-    fn panel_style(&self, node_id: &NodeId) -> Option<&PanelStyle> {
-        let widget_style = self.widget_style(node_id)?;
+    fn panel_style(&self, id: &NodeId) -> Option<&PanelStyle> {
+        let widget_style = self.widget_style(id)?;
         match widget_style {
             WidgetStyle::Panel(panel_style) => Some(panel_style),
             WidgetStyle::Button(button_style) => Some(&button_style.panel),
@@ -127,32 +127,32 @@ impl UiRuntimeConfig {
         }
     }
 
-    fn text_style(&self, node_id: &NodeId) -> Option<&TextStyle> {
-        let widget_style = self.widget_style(node_id)?;
+    fn text_style(&self, id: &NodeId) -> Option<&TextStyle> {
+        let widget_style = self.widget_style(id)?;
         match widget_style {
             WidgetStyle::Text(text_style) => Some(text_style),
             _ => None,
         }
     }
 
-    pub fn button_style(&self, node_id: &NodeId) -> Option<&ButtonStyle> {
-        let widget_style = self.widget_style(node_id)?;
+    pub fn button_style(&self, id: &NodeId) -> Option<&ButtonStyle> {
+        let widget_style = self.widget_style(id)?;
         match widget_style {
             WidgetStyle::Button(button_style) => Some(button_style),
             _ => None,
         }
     }
 
-    pub fn textbox_style(&self, node_id: &NodeId) -> Option<&TextboxStyle> {
-        let widget_style = self.widget_style(node_id)?;
+    pub fn textbox_style(&self, id: &NodeId) -> Option<&TextboxStyle> {
+        let widget_style = self.widget_style(id)?;
         match widget_style {
             WidgetStyle::Textbox(textbox_style) => Some(textbox_style),
             _ => None,
         }
     }
 
-    pub fn node_background_color(&self, node_id: &NodeId) -> Option<&Color> {
-        match self.widget_style(node_id)? {
+    pub fn node_background_color(&self, id: &NodeId) -> Option<&Color> {
+        match self.widget_style(id)? {
             WidgetStyle::Text(text_style) => text_style.background_color.as_ref(),
             WidgetStyle::Button(button_style) => button_style.panel.background_color.as_ref(),
             WidgetStyle::Textbox(textbox_style) => textbox_style.background_color.as_ref(),
