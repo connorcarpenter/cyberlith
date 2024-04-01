@@ -7,6 +7,7 @@ use bevy_http_client::HttpClientPlugin;
 use filesystem::FileSystemPlugin;
 use input::{Input, InputPlugin};
 use render_api::RenderApiPlugin;
+use ui_render::UiRenderPlugin;
 use ui_runner::UiPlugin;
 
 use crate::{
@@ -29,6 +30,7 @@ impl Plugin for EnginePlugin {
             .add_plugins(InputPlugin)
             .add_plugins(AssetPlugin)
             .add_plugins(UiPlugin)
+            .add_plugins(UiRenderPlugin)
             .add_plugins(HttpClientPlugin)
             .add_plugins(FileSystemPlugin)
             .add_systems(Startup, engine_startup)

@@ -10,6 +10,34 @@ use render_api::{
 use storage::Handle;
 use ui_runner::{config::{text_get_raw_rects, text_get_subimage_indices, NodeId, UiRuntimeConfig, WidgetKind}, input::UiInputState, state::{NodeActiveState, UiState}, Blinkiness, UiManager, UiHandle};
 
+pub trait UiRender {
+    fn draw_ui(
+        &self,
+        asset_manager: &AssetManager,
+        render_frame: &mut RenderFrame,
+    );
+}
+
+impl UiRender for UiManager {
+    fn draw_ui(
+        &self,
+        asset_manager: &AssetManager,
+        render_frame: &mut RenderFrame,
+    ) {
+        let render_layer_opt = self.render_layer();
+        if let Some(active_ui_handle) = self.active_ui() {
+            UiRenderer::draw_ui(
+                self,
+                asset_manager,
+                render_frame,
+                render_layer_opt.as_ref(),
+                &self.blinkiness,
+                &active_ui_handle,
+            );
+        }
+    }
+}
+
 pub struct UiRenderer;
 
 impl UiRenderer {
