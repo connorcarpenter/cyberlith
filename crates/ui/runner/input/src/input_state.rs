@@ -1,9 +1,8 @@
-
 use input::CursorIcon;
 use instant::Instant;
 use math::Vec2;
 
-use ui_runner_config::{TextMeasurer, NodeId, UiRuntimeConfig};
+use ui_runner_config::{NodeId, TextMeasurer, UiRuntimeConfig};
 use ui_state::{NodeActiveState, UiState};
 
 use crate::{input::ui_receive_input, UiGlobalEvent, UiInputEvent, UiNodeEvent};
@@ -21,7 +20,6 @@ pub struct UiInputState {
 }
 
 impl UiInputState {
-
     pub fn new() -> Self {
         Self {
             global_events: Vec::new(),
@@ -37,8 +35,22 @@ impl UiInputState {
     }
 
     // events
-    pub fn receive_input(&mut self, ui_config: &UiRuntimeConfig, ui_state: &mut UiState, text_measurer: &dyn TextMeasurer, mouse_position: Option<Vec2>, events: Vec<UiInputEvent>) {
-        ui_receive_input(ui_config, ui_state, self, text_measurer, mouse_position, events);
+    pub fn receive_input(
+        &mut self,
+        ui_config: &UiRuntimeConfig,
+        ui_state: &mut UiState,
+        text_measurer: &dyn TextMeasurer,
+        mouse_position: Option<Vec2>,
+        events: Vec<UiInputEvent>,
+    ) {
+        ui_receive_input(
+            ui_config,
+            ui_state,
+            self,
+            text_measurer,
+            mouse_position,
+            events,
+        );
     }
 
     pub fn get_cursor_icon(&self) -> CursorIcon {

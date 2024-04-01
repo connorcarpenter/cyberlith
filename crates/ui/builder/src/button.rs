@@ -1,6 +1,9 @@
 use render_api::base::Color;
+use ui_builder_config::{
+    Button, ButtonStyle, NodeId, NodeStyle, Panel, StyleId, Text, UiConfig, UiNode, Widget,
+    WidgetStyle,
+};
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
-use ui_builder_config::{Button, ButtonStyle, NodeId, NodeStyle, Panel, StyleId, Text, UiConfig, UiNode, Widget, WidgetStyle};
 
 use crate::{PanelMut, TextMut};
 
@@ -135,7 +138,10 @@ pub struct ButtonStyleMut<'a> {
 
 impl<'a> ButtonStyleMut<'a> {
     pub(crate) fn new(ui_config: &'a mut UiConfig, style_id: StyleId) -> Self {
-        Self { ui_config, style_id }
+        Self {
+            ui_config,
+            style_id,
+        }
     }
 
     fn get_style_mut(&mut self) -> &mut NodeStyle {

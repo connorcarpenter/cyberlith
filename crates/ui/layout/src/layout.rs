@@ -1,6 +1,9 @@
 use smallvec::SmallVec;
 
-use crate::{percentage_calc, LayoutType, PositionType, Size, SizeUnits, Solid, TextMeasurer, NodeId, LayoutCache, NodeStore, UiVisibilityStore};
+use crate::{
+    percentage_calc, LayoutCache, LayoutType, NodeId, NodeStore, PositionType, Size, SizeUnits,
+    Solid, TextMeasurer, UiVisibilityStore,
+};
 
 const DEFAULT_MIN: f32 = -f32::MAX;
 const DEFAULT_MAX: f32 = f32::MAX;
@@ -165,16 +168,16 @@ pub(crate) fn layout(
         SizeUnits::Percentage(val) => {
             percentage_calc(val, init_parent_main, parent_padding_main).round()
         }
-        SizeUnits::Viewport(val) => {
-            percentage_calc(val, viewport_main, 0.0).round()
-        }
+        SizeUnits::Viewport(val) => percentage_calc(val, viewport_main, 0.0).round(),
         SizeUnits::Auto => 0.0,
     };
 
     // Cross size is determined by the parent.
     let mut computed_cross = init_parent_cross;
 
-    let node_children = node.children(store).filter(|child| child.visible(state_store));
+    let node_children = node
+        .children(store)
+        .filter(|child| child.visible(state_store));
 
     let node_children_align = node.children_align(store, layout_type);
 
@@ -194,7 +197,14 @@ pub(crate) fn layout(
     // TODO: Figure out how to constrain content size on cross axis.
 
     apply_solid_layout(node, store, &mut computed_main, &mut computed_cross);
-    apply_text_layout(node, store, text_measurer, parent_layout_type, &mut computed_main, &mut computed_cross);
+    apply_text_layout(
+        node,
+        store,
+        text_measurer,
+        parent_layout_type,
+        &mut computed_main,
+        &mut computed_cross,
+    );
 
     // Return early if there's no children to layout.
     if num_children == 0 {
@@ -350,9 +360,7 @@ pub(crate) fn layout(
     // Compute flexible space and size on the cross-axis for parent-directed children.
     for (index, child) in children
         .iter_mut()
-        .filter(|child| {
-            child.node.position_type(store) == PositionType::Relative
-        })
+        .filter(|child| child.node.position_type(store) == PositionType::Relative)
         .filter(|child| !child.node.cross(store, layout_type).is_auto())
         .enumerate()
     {
@@ -633,9 +641,7 @@ pub(crate) fn layout(
     // Compute flexible space and size on the cross-axis for absolute-typed nodes.
     for (index, child) in children
         .iter_mut()
-        .filter(|child| {
-            child.node.position_type(store) == PositionType::Absolute
-        })
+        .filter(|child| child.node.position_type(store) == PositionType::Absolute)
         .enumerate()
     {
         let child_align = child.node.self_align(store, layout_type);
@@ -710,9 +716,7 @@ pub(crate) fn layout(
     // Compute flexible space and size on the main-axis for absolute nodes.
     for (index, child) in children
         .iter_mut()
-        .filter(|child| {
-            child.node.position_type(store) == PositionType::Absolute
-        })
+        .filter(|child| child.node.position_type(store) == PositionType::Absolute)
         .enumerate()
     {
         let child_align = child.node.self_align(store, layout_type);
@@ -864,11 +868,9 @@ fn apply_text_layout(
     text_measurer: &dyn TextMeasurer,
     parent_layout_type: LayoutType,
     main: &mut f32,
-    cross: &mut f32
+    cross: &mut f32,
 ) {
-
     if node.is_text(store) {
-
         let width: &mut f32;
         let height: &mut f32;
         match parent_layout_type {

@@ -3,9 +3,9 @@ mod node;
 mod panel;
 mod style;
 mod text;
+mod textbox;
 mod ui_config;
 mod widget;
-mod textbox;
 
 // just for engine
 pub use ui_config::UiConfig;
@@ -16,7 +16,7 @@ pub use node::UiNode;
 pub use panel::{Panel, PanelStyle};
 pub use style::{BaseNodeStyle, NodeStyle, StyleId, WidgetStyle};
 pub use text::{Text, TextStyle};
-pub use widget::{Widget, WidgetKind};
 pub use textbox::{Textbox, TextboxStyle};
+pub use widget::{Widget, WidgetKind};
 
 pub use ui_layout::NodeId;

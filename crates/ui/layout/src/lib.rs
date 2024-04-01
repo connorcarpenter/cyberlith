@@ -20,4 +20,3 @@ pub use visibility_store::*;
 
 mod store;
 pub use store::NodeStore;
-

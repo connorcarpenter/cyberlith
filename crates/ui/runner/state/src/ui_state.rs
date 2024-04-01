@@ -1,4 +1,3 @@
-
 use bevy_log::warn;
 
 use render_api::{
@@ -7,13 +6,13 @@ use render_api::{
     shapes::UnitSquare,
 };
 use storage::{Handle, Storage};
-
-use ui_runner_config::{LayoutCache, NodeId, TextMeasurer, UiRuntimeConfig, UiVisibilityStore, WidgetKind};
+use ui_runner_config::{
+    LayoutCache, NodeId, TextMeasurer, UiRuntimeConfig, UiVisibilityStore, WidgetKind,
+};
 
 use crate::{
-    button::ButtonState, panel::PanelState, state_store::UiStateStore,
-    text::TextState, textbox::TextboxState,
-    UiNodeState, widget::WidgetState
+    button::ButtonState, panel::PanelState, state_store::UiStateStore, text::TextState,
+    textbox::TextboxState, widget::WidgetState, UiNodeState,
 };
 
 pub struct UiState {
@@ -27,7 +26,6 @@ pub struct UiState {
 }
 
 impl UiState {
-
     pub fn from_ui_config(ui_config: &UiRuntimeConfig) -> Self {
         let mut me = Self {
             globals: StateGlobals::new(),
@@ -72,22 +70,37 @@ impl UiState {
 
             match node_ref.widget_kind() {
                 WidgetKind::Panel => {
-                    let background_color = ui_config.node_background_color(&id).copied().unwrap_or(Color::BLACK);
+                    let background_color = ui_config
+                        .node_background_color(&id)
+                        .copied()
+                        .unwrap_or(Color::BLACK);
                     let panel_mut = self.panel_mut(&id).unwrap();
                     let mat_handle = materials.add(background_color);
                     panel_mut.background_color_handle = Some(mat_handle);
                 }
                 WidgetKind::Text => {
-                    let background_color = ui_config.node_background_color(&id).copied().unwrap_or(Color::BLACK);
+                    let background_color = ui_config
+                        .node_background_color(&id)
+                        .copied()
+                        .unwrap_or(Color::BLACK);
                     let text_mut = self.text_mut(&id).unwrap();
                     let mat_handle = materials.add(background_color);
                     text_mut.background_color_handle = Some(mat_handle);
                 }
                 WidgetKind::Button => {
-                    let background_color = ui_config.node_background_color(&id).copied().unwrap_or(Color::BLACK);
+                    let background_color = ui_config
+                        .node_background_color(&id)
+                        .copied()
+                        .unwrap_or(Color::BLACK);
                     let button_style = ui_config.button_style(&id);
-                    let hover_color = button_style.map(|style| style.hover_color).flatten().unwrap_or(Color::BLACK);
-                    let down_color = button_style.map(|style| style.down_color).flatten().unwrap_or(Color::BLACK);
+                    let hover_color = button_style
+                        .map(|style| style.hover_color)
+                        .flatten()
+                        .unwrap_or(Color::BLACK);
+                    let down_color = button_style
+                        .map(|style| style.down_color)
+                        .flatten()
+                        .unwrap_or(Color::BLACK);
 
                     let button_mut = self.button_mut(&id).unwrap();
 
@@ -101,11 +114,23 @@ impl UiState {
                     button_mut.set_down_color_handle(down_color_handle);
                 }
                 WidgetKind::Textbox => {
-                    let background_color = ui_config.node_background_color(&id).copied().unwrap_or(Color::BLACK);
+                    let background_color = ui_config
+                        .node_background_color(&id)
+                        .copied()
+                        .unwrap_or(Color::BLACK);
                     let textbox_style = ui_config.textbox_style(&id);
-                    let hover_color = textbox_style.map(|style| style.hover_color).flatten().unwrap_or(Color::BLACK);
-                    let active_color = textbox_style.map(|style| style.active_color).flatten().unwrap_or(Color::BLACK);
-                    let select_color = textbox_style.map(|style| style.select_color).flatten().unwrap_or(Color::BLACK);
+                    let hover_color = textbox_style
+                        .map(|style| style.hover_color)
+                        .flatten()
+                        .unwrap_or(Color::BLACK);
+                    let active_color = textbox_style
+                        .map(|style| style.active_color)
+                        .flatten()
+                        .unwrap_or(Color::BLACK);
+                    let select_color = textbox_style
+                        .map(|style| style.select_color)
+                        .flatten()
+                        .unwrap_or(Color::BLACK);
 
                     let textbox_mut = self.textbox_mut(&id).unwrap();
 
@@ -176,12 +201,20 @@ impl UiState {
         self.recalc_layout
     }
 
-    pub fn recalculate_layout(&mut self, ui_config: &UiRuntimeConfig, text_measurer: &dyn TextMeasurer) {
+    pub fn recalculate_layout(
+        &mut self,
+        ui_config: &UiRuntimeConfig,
+        text_measurer: &dyn TextMeasurer,
+    ) {
         self.recalc_layout = false;
         self.recalculate_layout_impl(ui_config, text_measurer);
     }
 
-    fn recalculate_layout_impl(&mut self, ui_config: &UiRuntimeConfig, text_measurer: &dyn TextMeasurer) {
+    fn recalculate_layout_impl(
+        &mut self,
+        ui_config: &UiRuntimeConfig,
+        text_measurer: &dyn TextMeasurer,
+    ) {
         //info!("recalculating layout. viewport_width: {:?}, viewport_height: {:?}", self.viewport.width, self.viewport.height);
 
         let last_viewport_width: f32 = self.last_viewport.width as f32;
@@ -191,8 +224,20 @@ impl UiState {
         let visibility_store_ref = &self.visibility_store;
 
         // this calculates all the rects in cache_mut
-        UiRuntimeConfig::ROOT_NODE_ID.layout(cache_mut, ui_config, visibility_store_ref, text_measurer, last_viewport_width, last_viewport_height);
-        finalize_rects(ui_config, self, &UiRuntimeConfig::ROOT_NODE_ID, (0.0, 0.0, 0.0))
+        UiRuntimeConfig::ROOT_NODE_ID.layout(
+            cache_mut,
+            ui_config,
+            visibility_store_ref,
+            text_measurer,
+            last_viewport_width,
+            last_viewport_height,
+        );
+        finalize_rects(
+            ui_config,
+            self,
+            &UiRuntimeConfig::ROOT_NODE_ID,
+            (0.0, 0.0, 0.0),
+        )
 
         // print_node(&Self::ROOT_PANEL_ID, &self.cache, &self.panels, true, false, "".to_string());
     }
@@ -276,7 +321,14 @@ fn finalize_rects(
         parent_position.2 + 0.1,
     );
 
-    ui_state.cache.set_bounds(id, child_position.0, child_position.1, child_position.2, width, height);
+    ui_state.cache.set_bounds(
+        id,
+        child_position.0,
+        child_position.1,
+        child_position.2,
+        width,
+        height,
+    );
 
     match node.widget_kind() {
         WidgetKind::Panel => {

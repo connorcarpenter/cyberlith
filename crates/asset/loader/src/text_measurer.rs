@@ -13,7 +13,6 @@ impl<'a> UiTextMeasurer<'a> {
 }
 
 impl<'a> TextMeasurer for UiTextMeasurer<'a> {
-
     fn get_raw_char_width(&self, subimage: usize) -> f32 {
         if subimage == 0 {
             return 40.0;

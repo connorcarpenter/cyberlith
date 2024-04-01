@@ -3,7 +3,7 @@ use bevy_ecs::system::{NonSendMut, ResMut};
 use crossbeam_channel::{Receiver, Sender};
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use wasm_bindgen_futures::spawn_local;
-use web_sys::{ClipboardEvent, EventTarget, Document, window};
+use web_sys::{window, ClipboardEvent, Document, EventTarget};
 
 use crate::ClipboardManager;
 
@@ -134,8 +134,7 @@ fn setup_clipboard_copy(subscribed_events: &mut SubscribedEvents, tx: Sender<Web
         return;
     };
     subscribed_events.event_closures.push(EventClosure {
-        target: <Document as std::convert::AsRef<EventTarget>>::as_ref(&document)
-            .clone(),
+        target: <Document as std::convert::AsRef<EventTarget>>::as_ref(&document).clone(),
         event_name: "copy".to_owned(),
         closure,
     });
@@ -168,8 +167,7 @@ fn setup_clipboard_cut(subscribed_events: &mut SubscribedEvents, tx: Sender<WebC
         return;
     };
     subscribed_events.event_closures.push(EventClosure {
-        target: <Document as std::convert::AsRef<EventTarget>>::as_ref(&document)
-            .clone(),
+        target: <Document as std::convert::AsRef<EventTarget>>::as_ref(&document).clone(),
         event_name: "cut".to_owned(),
         closure,
     });
@@ -216,8 +214,7 @@ fn setup_clipboard_paste(subscribed_events: &mut SubscribedEvents, tx: Sender<We
         return;
     };
     subscribed_events.event_closures.push(EventClosure {
-        target: <Document as std::convert::AsRef<EventTarget>>::as_ref(&document)
-            .clone(),
+        target: <Document as std::convert::AsRef<EventTarget>>::as_ref(&document).clone(),
         event_name: "paste".to_owned(),
         closure,
     });

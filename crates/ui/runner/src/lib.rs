@@ -1,5 +1,5 @@
 mod ui_manager;
-pub use ui_manager::{UiManager, Blinkiness};
+pub use ui_manager::{Blinkiness, UiManager};
 
 mod plugin;
 pub use plugin::UiPlugin;

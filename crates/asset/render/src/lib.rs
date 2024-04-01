@@ -1,13 +1,15 @@
 use bevy_log::warn;
 
+use asset_loader::{
+    AnimationData, AssetComponentHandle, AssetHandle, AssetManager, IconData, MeshData, ModelData,
+    ProcessedAssetStore, SceneData, SkinData, UiTextMeasurer,
+};
 use render_api::{
     base::CpuMaterial,
     components::{RenderLayer, Transform},
     resources::RenderFrame,
 };
 use storage::Handle;
-
-use asset_loader::{AssetManager, AssetComponentHandle, ProcessedAssetStore, AnimationData, AssetHandle, IconData, MeshData, ModelData, SceneData, SkinData, UiTextMeasurer};
 use ui_runner_config::{text_get_raw_rects, text_get_subimage_indices};
 
 pub trait AssetRender {
@@ -259,10 +261,10 @@ impl AssetRenderer {
         };
         let Some((cpu_mesh_handle, cpu_skin_handle)) =
             icon_data.get_cpu_mesh_and_skin_handles(subimage_index)
-            else {
-                warn!("icon data not loaded 2: {:?}", icon_handle.asset_id());
-                return;
-            };
+        else {
+            warn!("icon data not loaded 2: {:?}", icon_handle.asset_id());
+            return;
+        };
         render_frame.draw_skinned_mesh(
             render_layer_opt,
             &cpu_mesh_handle,
@@ -323,8 +325,8 @@ impl AssetRenderer {
         cursor.scale.x = cursor.scale.y;
 
         for char_index in 0..subimage_indices.len() {
-            let frame_x = x_positions[char_index]  * cursor.scale.x;
-            let next_frame_x = x_positions[char_index+1] * cursor.scale.x;
+            let frame_x = x_positions[char_index] * cursor.scale.x;
+            let next_frame_x = x_positions[char_index + 1] * cursor.scale.x;
             let frame_index = subimage_indices[char_index];
 
             cursor.translation.x = transform.translation.x + (frame_x + next_frame_x) / 2.0;
@@ -499,10 +501,10 @@ impl AssetRenderer {
         };
         let Some(model_components) =
             animation_data.get_animated_components(skeleton_data, model_data, frame_time_ms)
-            else {
-                // not yet loaded all
-                return;
-            };
+        else {
+            // not yet loaded all
+            return;
+        };
         for (skin_or_scene_handle, mut component_transform) in model_components {
             component_transform = component_transform.multiply(parent_transform);
 

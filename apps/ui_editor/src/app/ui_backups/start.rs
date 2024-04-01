@@ -1,5 +1,8 @@
-use game_engine::{render::base::Color, asset::{AssetId, ETag}};
-use ui_builder::{UiConfig, Alignment, UiConfigBuild};
+use game_engine::{
+    asset::{AssetId, ETag},
+    render::base::Color,
+};
+use ui_builder::{Alignment, UiConfig, UiConfigBuild};
 
 #[allow(unused)]
 pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
@@ -76,7 +79,8 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
 
     // nodes
 
-    ui_config.set_text_icon_asset_id(&icon_asset_id)
+    ui_config
+        .set_text_icon_asset_id(&icon_asset_id)
         .set_text_color(Color::WHITE)
         .root_mut()
         .set_style(window_style)
@@ -94,8 +98,7 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
                     c.add_text("login").set_style(text_style);
                 })
                 .navigation(|n| {
-                    n
-                        .down_goes_to("register_button")
+                    n.down_goes_to("register_button")
                         .right_goes_to("register_button");
                 });
 
@@ -106,9 +109,7 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
                     c.add_text("register").set_style(text_style);
                 })
                 .navigation(|n| {
-                    n
-                        .up_goes_to("login_button")
-                        .left_goes_to("login_button");
+                    n.up_goes_to("login_button").left_goes_to("login_button");
                 });
         });
 

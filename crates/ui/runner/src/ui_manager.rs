@@ -1,16 +1,27 @@
 use std::collections::HashMap;
 
-use bevy_ecs::{change_detection::{Mut, Res, ResMut}, event::Event, prelude::World, system::Resource};
+use bevy_ecs::{
+    change_detection::{Mut, Res, ResMut},
+    event::Event,
+    prelude::World,
+    system::Resource,
+};
 use bevy_log::warn;
 
 use asset_id::AssetId;
-use asset_loader::{AssetHandle, AssetManager, AssetStorage, IconData, ProcessedAssetStore, TypedAssetId, UiTextMeasurer};
+use asset_loader::{
+    AssetHandle, AssetManager, AssetStorage, IconData, ProcessedAssetStore, TypedAssetId,
+    UiTextMeasurer,
+};
 use clipboard::ClipboardManager;
 use input::{CursorIcon, Input};
 use math::Vec2;
-use render_api::{base::{CpuMaterial, CpuMesh}, components::Camera, resources::Time};
+use render_api::{
+    base::{CpuMaterial, CpuMesh},
+    components::Camera,
+    resources::Time,
+};
 use storage::Storage;
-
 use ui_input::{UiGlobalEvent, UiInputEvent, UiNodeEvent, UiNodeEventHandler};
 use ui_runner_config::{NodeId, UiRuntimeConfig};
 
@@ -21,7 +32,8 @@ pub struct UiManager {
     pub ui_runtimes: AssetStorage<UiRuntime>,
     queued_uis: Vec<AssetHandle<UiRuntime>>,
 
-    queued_ui_node_event_handlers: HashMap<AssetHandle<UiRuntime>, Vec<(String, UiNodeEventHandler)>>,
+    queued_ui_node_event_handlers:
+        HashMap<AssetHandle<UiRuntime>, Vec<(String, UiNodeEventHandler)>>,
     ui_global_events: Vec<UiGlobalEvent>,
     ui_node_event_handlers: HashMap<(AssetId, NodeId), UiNodeEventHandler>,
     ui_node_events: Vec<(AssetId, NodeId, UiNodeEvent)>,
@@ -48,7 +60,6 @@ impl Default for UiManager {
 }
 
 impl UiManager {
-
     // used as a system
     pub(crate) fn sync(
         mut ui_manager: ResMut<Self>,
@@ -64,7 +75,10 @@ impl UiManager {
     }
 
     // used as a system
-    pub fn process_ui_global_events(mut ui_manager: ResMut<Self>, mut clipboard_manager: ResMut<ClipboardManager>) {
+    pub fn process_ui_global_events(
+        mut ui_manager: ResMut<Self>,
+        mut clipboard_manager: ResMut<ClipboardManager>,
+    ) {
         ui_manager.process_ui_global_events_impl(&mut clipboard_manager);
     }
 
@@ -106,7 +120,6 @@ impl UiManager {
 
         let handle = AssetHandle::<UiRuntime>::new(*asset_id);
         if !self.ui_runtimes.has(&handle) {
-
             let runtime = UiRuntime::load_from_config(ui_config);
             self.ui_runtimes.insert(handle, runtime);
 
@@ -159,7 +172,9 @@ impl UiManager {
         principal_typed_id: TypedAssetId,
         dependency_typed_id: TypedAssetId,
     ) {
-        let TypedAssetId::Ui(principal_id) = principal_typed_id else { panic!(""); };
+        let TypedAssetId::Ui(principal_id) = principal_typed_id else {
+            panic!("");
+        };
 
         let principal_handle = AssetHandle::<UiRuntime>::new(principal_id);
         let principal_data = self.ui_runtimes.get_mut(&principal_handle).unwrap();
@@ -187,17 +202,12 @@ impl UiManager {
 
     fn handle_new_uis(&mut self, new_uis: Vec<AssetHandle<UiRuntime>>) {
         for handle in new_uis {
-            if let Some(queued_handlers) =
-                self.queued_ui_node_event_handlers.remove(&handle)
-            {
+            if let Some(queued_handlers) = self.queued_ui_node_event_handlers.remove(&handle) {
                 for (id_str, handler) in queued_handlers {
                     let asset_id = handle.asset_id();
                     let ui_runtime = self.ui_runtimes.get(&handle).unwrap();
-                    let node_id = ui_runtime
-                        .get_node_id_by_id_str(&id_str)
-                        .unwrap();
-                    self
-                        .ui_node_event_handlers
+                    let node_id = ui_runtime.get_node_id_by_id_str(&id_str).unwrap();
+                    self.ui_node_event_handlers
                         .insert((asset_id, node_id), handler);
                 }
             }
@@ -307,7 +317,12 @@ impl UiManager {
         }
     }
 
-    fn recalculate_ui_layout(&mut self, store: &ProcessedAssetStore, ui_handle: &AssetHandle<UiRuntime>, icon_handle: &AssetHandle<IconData>) {
+    fn recalculate_ui_layout(
+        &mut self,
+        store: &ProcessedAssetStore,
+        ui_handle: &AssetHandle<UiRuntime>,
+        icon_handle: &AssetHandle<IconData>,
+    ) {
         let Some(icon_data) = store.icons.get(&icon_handle) else {
             return;
         };

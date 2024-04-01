@@ -10,7 +10,14 @@ use clipboard::ClipboardManager;
 use instant::Instant;
 use math::Vec2;
 
-use crate::{gamepad::{Axis, GamepadAxis, GamepadButton, GamepadInfo, Gamepads, ALL_AXIS_TYPES, ALL_BUTTON_TYPES, GamepadButtonType, GamepadId}, is_button::IsButton, GamepadSettings, IncomingEvent, InputEvent, Joystick, Key, MouseButton, CursorIcon};
+use crate::{
+    gamepad::{
+        Axis, GamepadAxis, GamepadButton, GamepadButtonType, GamepadId, GamepadInfo, Gamepads,
+        ALL_AXIS_TYPES, ALL_BUTTON_TYPES,
+    },
+    is_button::IsButton,
+    CursorIcon, GamepadSettings, IncomingEvent, InputEvent, Joystick, Key, MouseButton,
+};
 
 #[derive(Resource)]
 pub struct Input {
@@ -128,7 +135,10 @@ impl Input {
                         self.set_mouse_coords(position);
                         self.pressed_mouse_buttons.insert(*button);
 
-                        if self.last_click_button == *button && self.last_click_instant.elapsed().as_millis() < 400 { // TODO: put doubleclick time in settings
+                        if self.last_click_button == *button
+                            && self.last_click_instant.elapsed().as_millis() < 400
+                        {
+                            // TODO: put doubleclick time in settings
                             self.quick_clicks += 1;
                         } else {
                             self.quick_clicks = 1;
@@ -137,16 +147,25 @@ impl Input {
                         self.last_click_button = *button;
                         match self.quick_clicks {
                             2 => {
-                                self.outgoing_actions
-                                    .push(InputEvent::MouseDoubleClicked(*button, self.mouse_coords, modifiers.clone()));
+                                self.outgoing_actions.push(InputEvent::MouseDoubleClicked(
+                                    *button,
+                                    self.mouse_coords,
+                                    modifiers.clone(),
+                                ));
                             }
                             3 => {
-                                self.outgoing_actions
-                                    .push(InputEvent::MouseTripleClicked(*button, self.mouse_coords, modifiers.clone()));
+                                self.outgoing_actions.push(InputEvent::MouseTripleClicked(
+                                    *button,
+                                    self.mouse_coords,
+                                    modifiers.clone(),
+                                ));
                             }
                             _ => {
-                                self.outgoing_actions
-                                    .push(InputEvent::MouseClicked(*button, self.mouse_coords, modifiers.clone()));
+                                self.outgoing_actions.push(InputEvent::MouseClicked(
+                                    *button,
+                                    self.mouse_coords,
+                                    modifiers.clone(),
+                                ));
                             }
                         }
                     }
@@ -214,7 +233,8 @@ impl Input {
                     }
 
                     if !self.pressed_keys.contains(kind) {
-                        self.outgoing_actions.push(InputEvent::KeyPressed(*kind, *modifiers));
+                        self.outgoing_actions
+                            .push(InputEvent::KeyPressed(*kind, *modifiers));
                         self.pressed_keys.insert(*kind);
                     }
                 }

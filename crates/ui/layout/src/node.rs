@@ -1,5 +1,4 @@
-use crate::{NodeId, NodeStore};
-use crate::types::*;
+use crate::{LayoutType, MarginUnits, NodeId, NodeStore, SizeUnits};
 
 #[derive(Eq, PartialEq, Clone, Copy, Default)]
 pub enum Alignment {
@@ -34,7 +33,11 @@ impl NodeId {
         }
     }
 
-    pub(crate) fn main_min(&self, store: &dyn NodeStore, parent_layout_type: LayoutType) -> SizeUnits {
+    pub(crate) fn main_min(
+        &self,
+        store: &dyn NodeStore,
+        parent_layout_type: LayoutType,
+    ) -> SizeUnits {
         parent_layout_type.select(
             store,
             |store| self.width_min(store),
@@ -42,7 +45,11 @@ impl NodeId {
         )
     }
 
-    pub(crate) fn main_max(&self, store: &dyn NodeStore, parent_layout_type: LayoutType) -> SizeUnits {
+    pub(crate) fn main_max(
+        &self,
+        store: &dyn NodeStore,
+        parent_layout_type: LayoutType,
+    ) -> SizeUnits {
         parent_layout_type.select(
             store,
             |store| self.width_max(store),
@@ -51,14 +58,14 @@ impl NodeId {
     }
 
     pub(crate) fn cross(&self, store: &dyn NodeStore, parent_layout_type: LayoutType) -> SizeUnits {
-        parent_layout_type.select(
-            store,
-            |store| self.height(store),
-            |store| self.width(store)
-        )
+        parent_layout_type.select(store, |store| self.height(store), |store| self.width(store))
     }
 
-    pub(crate) fn cross_min(&self, store: &dyn NodeStore, parent_layout_type: LayoutType) -> SizeUnits {
+    pub(crate) fn cross_min(
+        &self,
+        store: &dyn NodeStore,
+        parent_layout_type: LayoutType,
+    ) -> SizeUnits {
         parent_layout_type.select(
             store,
             |store| self.height_min(store),
@@ -66,7 +73,11 @@ impl NodeId {
         )
     }
 
-    pub(crate) fn cross_max(&self, store: &dyn NodeStore, parent_layout_type: LayoutType) -> SizeUnits {
+    pub(crate) fn cross_max(
+        &self,
+        store: &dyn NodeStore,
+        parent_layout_type: LayoutType,
+    ) -> SizeUnits {
         parent_layout_type.select(
             store,
             |store| self.height_max(store),
@@ -134,7 +145,11 @@ impl NodeId {
         )
     }
 
-    pub(crate) fn padding_main_after(&self, store: &dyn NodeStore, parent_layout_type: LayoutType) -> SizeUnits {
+    pub(crate) fn padding_main_after(
+        &self,
+        store: &dyn NodeStore,
+        parent_layout_type: LayoutType,
+    ) -> SizeUnits {
         parent_layout_type.select(
             store,
             |store| self.padding_right(store),
@@ -166,7 +181,11 @@ impl NodeId {
         )
     }
 
-    pub(crate) fn main_between(&self, store: &dyn NodeStore, parent_layout_type: LayoutType) -> SizeUnits {
+    pub(crate) fn main_between(
+        &self,
+        store: &dyn NodeStore,
+        parent_layout_type: LayoutType,
+    ) -> SizeUnits {
         parent_layout_type.select(
             store,
             |store| self.col_between(store),
@@ -174,7 +193,11 @@ impl NodeId {
         )
     }
 
-    pub(crate) fn self_align(&self, store: &dyn NodeStore, parent_layout_type: LayoutType) -> Alignment {
+    pub(crate) fn self_align(
+        &self,
+        store: &dyn NodeStore,
+        parent_layout_type: LayoutType,
+    ) -> Alignment {
         parent_layout_type.select(
             store,
             |store| self.self_valign(store),
@@ -182,7 +205,11 @@ impl NodeId {
         )
     }
 
-    pub(crate) fn children_align(&self, store: &dyn NodeStore, layout_type: LayoutType) -> Alignment {
+    pub(crate) fn children_align(
+        &self,
+        store: &dyn NodeStore,
+        layout_type: LayoutType,
+    ) -> Alignment {
         layout_type.select(
             store,
             |store| self.children_halign(store),

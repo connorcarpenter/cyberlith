@@ -34,11 +34,8 @@ impl RumbleManager {
         duration: Duration,
         intensity: GamepadRumbleIntensity,
     ) {
-        self.requests.push(GamepadRumbleRequest::new(
-            duration,
-            intensity,
-            gamepad,
-        ));
+        self.requests
+            .push(GamepadRumbleRequest::new(duration, intensity, gamepad));
     }
 
     // will be used as a system
@@ -57,9 +54,7 @@ impl RumbleManager {
                 Ok(()) => {}
                 Err(RumbleError::GilrsError(err)) => {
                     if let ff::Error::FfNotSupported(_) = err {
-                        warn!(
-                            "Tried to rumble {gamepad:?}, but it doesn't support force feedback"
-                        );
+                        warn!("Tried to rumble {gamepad:?}, but it doesn't support force feedback");
                     } else {
                         warn!(
                         "Tried to handle rumble request for {gamepad:?} but an error occurred: {err}"
@@ -211,10 +206,12 @@ impl Default for RunningRumbleEffects {
 }
 
 impl RunningRumbleEffects {
-
     // unused in native, used in wasm
     #[allow(unused)]
-    pub fn get_current_rumble(&self, gamepad_id: &GamepadId) -> Option<(Duration, GamepadRumbleIntensity)> {
+    pub fn get_current_rumble(
+        &self,
+        gamepad_id: &GamepadId,
+    ) -> Option<(Duration, GamepadRumbleIntensity)> {
         if let Some(rumbles) = self.rumbles.get(gamepad_id) {
             let duration = rumbles.last_deadline.until();
             let current_rumble = rumbles.current_rumble;
@@ -227,7 +224,13 @@ impl RunningRumbleEffects {
         }
     }
 
-    pub(crate) fn add_rumble(&mut self, id: &GamepadId, duration: Duration, intensity: GamepadRumbleIntensity, effect: Option<Effect>) {
+    pub(crate) fn add_rumble(
+        &mut self,
+        id: &GamepadId,
+        duration: Duration,
+        intensity: GamepadRumbleIntensity,
+        effect: Option<Effect>,
+    ) {
         self.rumbles
             .entry(*id)
             .or_insert_with(GamepadRunningRumbleEffects::default)
@@ -236,7 +239,6 @@ impl RunningRumbleEffects {
 
     // returns list of gamepads that should be updated
     pub(crate) fn update(&mut self) -> Option<Vec<GamepadId>> {
-
         let mut output = None;
 
         let now = Instant::now();
@@ -254,9 +256,7 @@ impl RunningRumbleEffects {
     }
 
     pub(crate) fn cleanup(&mut self) {
-        self
-            .rumbles
-            .retain(|_gamepad, rumbles| !rumbles.is_empty());
+        self.rumbles.retain(|_gamepad, rumbles| !rumbles.is_empty());
     }
 }
 
@@ -282,8 +282,12 @@ impl Default for GamepadRunningRumbleEffects {
 }
 
 impl GamepadRunningRumbleEffects {
-    pub(crate) fn add_rumble(&mut self, duration: Duration, intensity: GamepadRumbleIntensity, effect: Option<Effect>) {
-
+    pub(crate) fn add_rumble(
+        &mut self,
+        duration: Duration,
+        intensity: GamepadRumbleIntensity,
+        effect: Option<Effect>,
+    ) {
         let duration_millis = duration.as_millis();
         let mut real_deadline = Instant::now();
         real_deadline.add_millis(duration_millis as u32);
@@ -296,12 +300,11 @@ impl GamepadRunningRumbleEffects {
         let mut used_deadline = real_deadline.clone();
         used_deadline.add_millis(20);
 
-        self.rumbles
-            .push(RunningRumble {
-                deadline: used_deadline,
-                effect,
-                intensity,
-            });
+        self.rumbles.push(RunningRumble {
+            deadline: used_deadline,
+            effect,
+            intensity,
+        });
 
         self.add_rumble_intensity(intensity);
     }
@@ -314,7 +317,6 @@ impl GamepadRunningRumbleEffects {
             if rumble.deadline > *now {
                 self.rumbles.push(rumble);
             } else {
-
                 let intensity = rumble.intensity;
                 self.remove_rumble_intensity(intensity);
             }

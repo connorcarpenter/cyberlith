@@ -13,13 +13,10 @@ impl Default for UiDependencies {
 }
 
 impl UiDependencies {
-
     pub fn new(icon_asset_id: &AssetId) -> Self {
         let icon_file = AssetDependency::AssetId(*icon_asset_id);
 
-        Self {
-            icon_file,
-        }
+        Self { icon_file }
     }
 
     pub fn load_dependencies(

@@ -95,13 +95,56 @@ pub enum Key {
 impl Key {
     pub fn is_char(&self) -> bool {
         match self {
-            Key::A | Key::B | Key::C | Key::D | Key::E | Key::F | Key::G | Key::H | Key::I | Key::J |
-            Key::K | Key::L | Key::M | Key::N | Key::O | Key::P | Key::Q | Key::R | Key::S | Key::T |
-            Key::U | Key::V | Key::W | Key::X | Key::Y | Key::Z |
-            Key::Num0 | Key::Num1 | Key::Num2 | Key::Num3 | Key::Num4 | Key::Num5 | Key::Num6 | Key::Num7 | Key::Num8 | Key::Num9 |
-            Key::Space | Key::Plus | Key::Slash | Key::Period | Key::Equals | Key::Asterisk | Key::Minus |
-            Key::Grave | Key::LBracket | Key::RBracket | Key::Backslash | Key::Semicolon | Key::Apostrophe |
-            Key::Comma => true,
+            Key::A
+            | Key::B
+            | Key::C
+            | Key::D
+            | Key::E
+            | Key::F
+            | Key::G
+            | Key::H
+            | Key::I
+            | Key::J
+            | Key::K
+            | Key::L
+            | Key::M
+            | Key::N
+            | Key::O
+            | Key::P
+            | Key::Q
+            | Key::R
+            | Key::S
+            | Key::T
+            | Key::U
+            | Key::V
+            | Key::W
+            | Key::X
+            | Key::Y
+            | Key::Z
+            | Key::Num0
+            | Key::Num1
+            | Key::Num2
+            | Key::Num3
+            | Key::Num4
+            | Key::Num5
+            | Key::Num6
+            | Key::Num7
+            | Key::Num8
+            | Key::Num9
+            | Key::Space
+            | Key::Plus
+            | Key::Slash
+            | Key::Period
+            | Key::Equals
+            | Key::Asterisk
+            | Key::Minus
+            | Key::Grave
+            | Key::LBracket
+            | Key::RBracket
+            | Key::Backslash
+            | Key::Semicolon
+            | Key::Apostrophe
+            | Key::Comma => true,
             _ => false,
         }
     }
@@ -161,7 +204,7 @@ impl Key {
                 Key::Comma => '<',
                 _ => {
                     return None;
-                },
+                }
             });
         } else {
             return Some(match self {
@@ -217,7 +260,7 @@ impl Key {
                 Key::Comma => ',',
                 _ => {
                     return None;
-                },
+                }
             });
         }
     }

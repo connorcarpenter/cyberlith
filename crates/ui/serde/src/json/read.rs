@@ -2,14 +2,18 @@ use std::collections::HashMap;
 
 use asset_id::AssetId;
 use render_api::base::Color;
-
+use ui_builder_config::{
+    BaseNodeStyle, Button, ButtonStyle, NodeId, NodeStyle, Panel, PanelStyle, StyleId, Text,
+    TextStyle, Textbox, TextboxStyle, UiConfig, Widget, WidgetKind, WidgetStyle,
+};
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
-use ui_builder_config::{BaseNodeStyle, Button, ButtonStyle, NodeId, NodeStyle, Panel, PanelStyle, StyleId, Text, Textbox, TextboxStyle, TextStyle, UiConfig, Widget, WidgetKind, WidgetStyle};
 
-use crate::{json::{ButtonStyleJson, TextboxStyleJson, TextStyleJson, ButtonJson, PanelStyleJson, TextboxJson}};
 use super::{
     AlignmentJson, ColorJson, LayoutTypeJson, MarginUnitsJson, PanelJson, PositionTypeJson,
     SizeUnitsJson, SolidJson, UiConfigJson, UiNodeJson, UiStyleJson, WidgetJson, WidgetStyleJson,
+};
+use crate::json::{
+    ButtonJson, ButtonStyleJson, PanelStyleJson, TextStyleJson, TextboxJson, TextboxStyleJson,
 };
 
 impl Into<UiConfig> for UiConfigJson {
@@ -64,7 +68,13 @@ impl Into<UiConfig> for UiConfigJson {
         let WidgetJson::Panel(panel_serde) = &root_node_serde.widget else {
             panic!("Expected panel widget");
         };
-        convert_nodes_recurse_panel(&style_index_to_id, &nodes, panel_serde, &mut ui_config, &UiConfig::ROOT_NODE_ID);
+        convert_nodes_recurse_panel(
+            &style_index_to_id,
+            &nodes,
+            panel_serde,
+            &mut ui_config,
+            &UiConfig::ROOT_NODE_ID,
+        );
 
         ui_config
     }
@@ -85,7 +95,6 @@ fn convert_nodes_recurse_panel(
 
         match child_node_serde.widget_kind() {
             WidgetKind::Panel => {
-
                 // creates a new panel
                 let child_panel_id = ui_config.create_node(Widget::Panel(Panel::new()));
                 let Widget::Panel(panel) = &mut ui_config.node_mut(panel_id).unwrap().widget else {
@@ -118,7 +127,8 @@ fn convert_nodes_recurse_panel(
                 };
 
                 // creates a new text
-                let child_text_id = ui_config.create_node(Widget::Text(Text::new(child_text_serde.text.as_str())));
+                let child_text_id =
+                    ui_config.create_node(Widget::Text(Text::new(child_text_serde.text.as_str())));
                 let Widget::Panel(panel) = &mut ui_config.node_mut(panel_id).unwrap().widget else {
                     panic!("Expected panel widget");
                 };
@@ -137,7 +147,9 @@ fn convert_nodes_recurse_panel(
                 };
 
                 // creates a new button
-                let child_button_id = ui_config.create_node(Widget::Button(Button::new(child_button_serde.id_str.as_str())));
+                let child_button_id = ui_config.create_node(Widget::Button(Button::new(
+                    child_button_serde.id_str.as_str(),
+                )));
                 let Widget::Panel(panel) = &mut ui_config.node_mut(panel_id).unwrap().widget else {
                     panic!("Expected panel widget");
                 };
@@ -151,11 +163,7 @@ fn convert_nodes_recurse_panel(
                 }
 
                 // add navigation
-                set_button_navigation(
-                    child_button_serde,
-                    ui_config,
-                    &child_button_id,
-                );
+                set_button_navigation(child_button_serde, ui_config, &child_button_id);
 
                 // recurse
                 convert_nodes_recurse_button(
@@ -172,7 +180,9 @@ fn convert_nodes_recurse_panel(
                 };
 
                 // creates a new textbox
-                let child_textbox_id = ui_config.create_node(Widget::Textbox(Textbox::new(child_textbox_serde.id_str.as_str())));
+                let child_textbox_id = ui_config.create_node(Widget::Textbox(Textbox::new(
+                    child_textbox_serde.id_str.as_str(),
+                )));
                 let Widget::Panel(panel) = &mut ui_config.node_mut(panel_id).unwrap().widget else {
                     panic!("Expected panel widget");
                 };
@@ -186,21 +196,13 @@ fn convert_nodes_recurse_panel(
                 }
 
                 // add navigation
-                set_textbox_navigation(
-                    child_textbox_serde,
-                    ui_config,
-                    &child_textbox_id,
-                );
+                set_textbox_navigation(child_textbox_serde, ui_config, &child_textbox_id);
             }
         }
     }
 }
 
-fn set_button_navigation(
-    button_serde: &ButtonJson,
-    ui_config: &mut UiConfig,
-    button_id: &NodeId,
-) {
+fn set_button_navigation(button_serde: &ButtonJson, ui_config: &mut UiConfig, button_id: &NodeId) {
     let button_nav_serde = &button_serde.navigation;
 
     let node = ui_config.node_mut(button_id).unwrap();
@@ -241,10 +243,10 @@ fn convert_nodes_recurse_button(
 
         match child_node_serde.widget_kind() {
             WidgetKind::Panel => {
-
                 // creates a new panel
                 let child_panel_id = ui_config.create_node(Widget::Panel(Panel::new()));
-                let Widget::Button(button) = &mut ui_config.node_mut(button_id).unwrap().widget else {
+                let Widget::Button(button) = &mut ui_config.node_mut(button_id).unwrap().widget
+                else {
                     panic!("Expected button widget");
                 };
                 button.add_child(child_panel_id);
@@ -274,8 +276,10 @@ fn convert_nodes_recurse_button(
                 };
 
                 // creates a new text
-                let child_text_id = ui_config.create_node(Widget::Text(Text::new(child_text_serde.text.as_str())));
-                let Widget::Button(button) = &mut ui_config.node_mut(button_id).unwrap().widget else {
+                let child_text_id =
+                    ui_config.create_node(Widget::Text(Text::new(child_text_serde.text.as_str())));
+                let Widget::Button(button) = &mut ui_config.node_mut(button_id).unwrap().widget
+                else {
                     panic!("Expected button widget");
                 };
                 button.add_child(child_text_id);
@@ -391,7 +395,7 @@ impl Into<Color> for ColorJson {
 impl Into<NodeStyle> for UiStyleJson {
     fn into(self) -> NodeStyle {
         NodeStyle {
-            parent_style:       self.parent_style.map(|id| StyleId::new(id as u32)),
+            parent_style: self.parent_style.map(|id| StyleId::new(id as u32)),
             base: BaseNodeStyle {
                 widget_style: self.widget_style.into(),
                 position_type: self.position_type.map(Into::into),
@@ -409,7 +413,7 @@ impl Into<NodeStyle> for UiStyleJson {
                 aspect_ratio: self.aspect_ratio,
                 self_halign: self.self_halign.map(Into::into),
                 self_valign: self.self_valign.map(Into::into),
-            }
+            },
         }
     }
 }
@@ -428,17 +432,17 @@ impl Into<WidgetStyle> for WidgetStyleJson {
 impl Into<PanelStyle> for PanelStyleJson {
     fn into(self) -> PanelStyle {
         PanelStyle {
-            background_color:       self.background_color.map(Into::into),
-            background_alpha:       self.background_alpha,
-            layout_type:            self.layout_type.map(Into::into),
-            padding_left:           self.padding_left.map(Into::into),
-            padding_right:          self.padding_right.map(Into::into),
-            padding_top:            self.padding_top.map(Into::into),
-            padding_bottom:         self.padding_bottom.map(Into::into),
-            row_between:            self.row_between.map(Into::into),
-            col_between:            self.col_between.map(Into::into),
-            children_halign:        self.children_halign.map(Into::into),
-            children_valign:        self.children_valign.map(Into::into),
+            background_color: self.background_color.map(Into::into),
+            background_alpha: self.background_alpha,
+            layout_type: self.layout_type.map(Into::into),
+            padding_left: self.padding_left.map(Into::into),
+            padding_right: self.padding_right.map(Into::into),
+            padding_top: self.padding_top.map(Into::into),
+            padding_bottom: self.padding_bottom.map(Into::into),
+            row_between: self.row_between.map(Into::into),
+            col_between: self.col_between.map(Into::into),
+            children_halign: self.children_halign.map(Into::into),
+            children_valign: self.children_valign.map(Into::into),
         }
     }
 }
@@ -446,8 +450,8 @@ impl Into<PanelStyle> for PanelStyleJson {
 impl Into<TextStyle> for TextStyleJson {
     fn into(self) -> TextStyle {
         TextStyle {
-            background_color:       self.background_color.map(Into::into),
-            background_alpha:       self.background_alpha,
+            background_color: self.background_color.map(Into::into),
+            background_alpha: self.background_alpha,
         }
     }
 }
@@ -455,9 +459,9 @@ impl Into<TextStyle> for TextStyleJson {
 impl Into<ButtonStyle> for ButtonStyleJson {
     fn into(self) -> ButtonStyle {
         ButtonStyle {
-            panel:          self.panel.into(),
-            hover_color:    self.hover_color.map(Into::into),
-            down_color:     self.down_color.map(Into::into),
+            panel: self.panel.into(),
+            hover_color: self.hover_color.map(Into::into),
+            down_color: self.down_color.map(Into::into),
         }
     }
 }
@@ -465,11 +469,11 @@ impl Into<ButtonStyle> for ButtonStyleJson {
 impl Into<TextboxStyle> for TextboxStyleJson {
     fn into(self) -> TextboxStyle {
         TextboxStyle {
-            background_color:  self.background_color.map(Into::into),
-            background_alpha:  self.background_alpha,
-            hover_color:       self.hover_color.map(Into::into),
-            active_color:      self.active_color.map(Into::into),
-            select_color:      self.select_color.map(Into::into),
+            background_color: self.background_color.map(Into::into),
+            background_alpha: self.background_alpha,
+            hover_color: self.hover_color.map(Into::into),
+            active_color: self.active_color.map(Into::into),
+            select_color: self.select_color.map(Into::into),
         }
     }
 }

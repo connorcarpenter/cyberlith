@@ -1,6 +1,6 @@
-use ui_runner_config::{WidgetKind};
+use ui_runner_config::WidgetKind;
 
-use crate::{panel::PanelState, button::ButtonState, text::TextState, textbox::TextboxState};
+use crate::{button::ButtonState, panel::PanelState, text::TextState, textbox::TextboxState};
 
 #[derive(Clone)]
 pub enum WidgetState {

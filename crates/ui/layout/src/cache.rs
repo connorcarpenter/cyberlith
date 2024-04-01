@@ -21,7 +21,15 @@ impl LayoutCache {
             .map(|(width, height, posx, posy, posz)| (*width, *height, *posx, *posy, *posz))
     }
 
-    pub fn set_bounds(&mut self, node: &NodeId, posx: f32, posy: f32, posz: f32, width: f32, height: f32) {
+    pub fn set_bounds(
+        &mut self,
+        node: &NodeId,
+        posx: f32,
+        posy: f32,
+        posz: f32,
+        width: f32,
+        height: f32,
+    ) {
         if let Some(rect) = self.rect.get_mut(node) {
             //info!("setting bounds for node: {:?}", node.key());
             rect.0 = width;

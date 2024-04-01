@@ -1,4 +1,3 @@
-
 use unicode_segmentation::UnicodeSegmentation;
 
 use input::MouseButton;
@@ -13,8 +12,11 @@ use crate::{UiGlobalEvent, UiInputEvent, UiInputState};
 pub struct TextboxInputState;
 
 impl TextboxInputState {
-
-    pub fn recv_keyboard_or_gamepad_event(input_state: &mut UiInputState, textbox_state: &mut TextboxState, event: UiInputEvent) -> Option<Vec<UiGlobalEvent>> {
+    pub fn recv_keyboard_or_gamepad_event(
+        input_state: &mut UiInputState,
+        textbox_state: &mut TextboxState,
+        event: UiInputEvent,
+    ) -> Option<Vec<UiGlobalEvent>> {
         let mut output = None;
         match event {
             UiInputEvent::LeftPressed(modifiers) => {
@@ -29,7 +31,6 @@ impl TextboxInputState {
                             output.as_mut().unwrap().push(UiGlobalEvent::PassThru);
                         }
                         input_state.select_index = None;
-
                     }
                     (true, false) => {
                         if input_state.carat_index > 0 {
@@ -45,7 +46,8 @@ impl TextboxInputState {
                     }
                     (false, true) => {
                         if input_state.carat_index > 0 {
-                            input_state.carat_index = textbox_state.text
+                            input_state.carat_index = textbox_state
+                                .text
                                 .unicode_word_indices()
                                 .rev()
                                 .map(|(i, _)| i)
@@ -61,7 +63,8 @@ impl TextboxInputState {
                                 input_state.select_index = Some(input_state.carat_index);
                             }
 
-                            input_state.carat_index = textbox_state.text
+                            input_state.carat_index = textbox_state
+                                .text
                                 .unicode_word_indices()
                                 .rev()
                                 .map(|(i, _)| i)
@@ -74,7 +77,7 @@ impl TextboxInputState {
                         }
                     }
                 }
-            },
+            }
             UiInputEvent::RightPressed(modifiers) => {
                 match (modifiers.shift, modifiers.ctrl) {
                     (false, false) => {
@@ -131,20 +134,22 @@ impl TextboxInputState {
                         }
                     }
                 }
-            },
+            }
             UiInputEvent::TextInsert(new_char) => {
                 if let Some(select_index) = input_state.select_index {
                     // need to remove the selected text
                     let start = input_state.carat_index.min(select_index);
                     let end = input_state.carat_index.max(select_index);
-                    textbox_state.text.replace_range(start..end, new_char.to_string().as_str());
+                    textbox_state
+                        .text
+                        .replace_range(start..end, new_char.to_string().as_str());
                     input_state.carat_index = start + 1;
                     input_state.select_index = None;
                 } else {
                     textbox_state.text.insert(input_state.carat_index, new_char);
                     input_state.carat_index += 1;
                 }
-            },
+            }
             UiInputEvent::BackspacePressed(modifiers) => {
                 if let Some(select_index) = input_state.select_index {
                     let start = input_state.carat_index.min(select_index);
@@ -155,13 +160,16 @@ impl TextboxInputState {
                 } else {
                     if modifiers.ctrl {
                         if input_state.carat_index > 0 {
-                            let target_index = textbox_state.text
+                            let target_index = textbox_state
+                                .text
                                 .unicode_word_indices()
                                 .rev()
                                 .map(|(i, _)| i)
                                 .find(|&i| i < input_state.carat_index)
                                 .unwrap_or(0);
-                            textbox_state.text.drain(target_index..input_state.carat_index);
+                            textbox_state
+                                .text
+                                .drain(target_index..input_state.carat_index);
                             input_state.carat_index = target_index;
                         }
                     } else {
@@ -171,7 +179,7 @@ impl TextboxInputState {
                         }
                     }
                 }
-            },
+            }
             UiInputEvent::DeletePressed(modifiers) => {
                 if let Some(select_index) = input_state.select_index {
                     let start = input_state.carat_index.min(select_index);
@@ -188,7 +196,9 @@ impl TextboxInputState {
                                 .map(|(i, word)| i + word.len())
                                 .find(|&i| i > input_state.carat_index)
                                 .unwrap_or(textbox_state.text.len());
-                            textbox_state.text.drain(input_state.carat_index..target_index);
+                            textbox_state
+                                .text
+                                .drain(input_state.carat_index..target_index);
                         }
                     } else {
                         if input_state.carat_index < textbox_state.text.len() {
@@ -196,7 +206,7 @@ impl TextboxInputState {
                         }
                     }
                 }
-            },
+            }
             UiInputEvent::HomePressed(modifiers) => {
                 if modifiers.shift {
                     if input_state.select_index.is_none() {
@@ -210,7 +220,7 @@ impl TextboxInputState {
                     input_state.carat_index = 0;
                     input_state.select_index = None;
                 }
-            },
+            }
             UiInputEvent::EndPressed(modifiers) => {
                 if modifiers.shift {
                     if input_state.select_index.is_none() {
@@ -224,7 +234,7 @@ impl TextboxInputState {
                     input_state.carat_index = textbox_state.text.len();
                     input_state.select_index = None;
                 }
-            },
+            }
             UiInputEvent::TextCopy => {
                 if let Some(select_index) = input_state.select_index {
                     let start = input_state.carat_index.min(select_index);
@@ -233,7 +243,10 @@ impl TextboxInputState {
                     if output.is_none() {
                         output = Some(Vec::new());
                     }
-                    output.as_mut().unwrap().push(UiGlobalEvent::Copied(copied_text));
+                    output
+                        .as_mut()
+                        .unwrap()
+                        .push(UiGlobalEvent::Copied(copied_text));
                 }
             }
             UiInputEvent::TextCut => {
@@ -244,7 +257,10 @@ impl TextboxInputState {
                     if output.is_none() {
                         output = Some(Vec::new());
                     }
-                    output.as_mut().unwrap().push(UiGlobalEvent::Copied(copied_text));
+                    output
+                        .as_mut()
+                        .unwrap()
+                        .push(UiGlobalEvent::Copied(copied_text));
 
                     textbox_state.text.drain(start..end);
                     input_state.carat_index = start;
@@ -260,7 +276,9 @@ impl TextboxInputState {
                     input_state.carat_index = start + text.len();
                     input_state.select_index = None;
                 } else {
-                    textbox_state.text.insert_str(input_state.carat_index, &text);
+                    textbox_state
+                        .text
+                        .insert_str(input_state.carat_index, &text);
                     input_state.carat_index += text.len();
                 }
             }
@@ -293,7 +311,13 @@ impl TextboxInputState {
                     }
                 }
 
-                input_state.carat_index = Self::get_closest_index(&textbox_state.text, text_measurer, click_position.x, node_x, node_h);
+                input_state.carat_index = Self::get_closest_index(
+                    &textbox_state.text,
+                    text_measurer,
+                    click_position.x,
+                    node_x,
+                    node_h,
+                );
                 if let Some(select_index) = input_state.select_index {
                     if input_state.carat_index == select_index {
                         input_state.select_index = None;
@@ -302,10 +326,17 @@ impl TextboxInputState {
             }
             UiInputEvent::MouseDoubleClick(MouseButton::Left, click_position) => {
                 // double click
-                let click_index = Self::get_closest_index(&textbox_state.text, text_measurer, click_position.x, node_x, node_h);
+                let click_index = Self::get_closest_index(
+                    &textbox_state.text,
+                    text_measurer,
+                    click_position.x,
+                    node_x,
+                    node_h,
+                );
 
                 // select word
-                let word_start = textbox_state.text
+                let word_start = textbox_state
+                    .text
                     .unicode_word_indices()
                     .rev()
                     .map(|(i, _)| i)
@@ -333,7 +364,13 @@ impl TextboxInputState {
                         if input_state.select_index.is_none() {
                             input_state.select_index = Some(input_state.carat_index);
                         }
-                        input_state.carat_index = Self::get_closest_index(&textbox_state.text, text_measurer, mouse_position.x, node_x, node_h);
+                        input_state.carat_index = Self::get_closest_index(
+                            &textbox_state.text,
+                            text_measurer,
+                            mouse_position.x,
+                            node_x,
+                            node_h,
+                        );
                         if let Some(select_index) = input_state.select_index {
                             if input_state.carat_index == select_index {
                                 input_state.select_index = None;
@@ -341,12 +378,24 @@ impl TextboxInputState {
                         }
                     } else {
                         if let Some(select_index) = input_state.select_index {
-                            input_state.carat_index = Self::get_closest_index(&textbox_state.text, text_measurer, mouse_position.x, node_x, node_h);
+                            input_state.carat_index = Self::get_closest_index(
+                                &textbox_state.text,
+                                text_measurer,
+                                mouse_position.x,
+                                node_x,
+                                node_h,
+                            );
                             if input_state.carat_index == select_index {
                                 input_state.select_index = None;
                             }
                         } else {
-                            let new_index = Self::get_closest_index(&textbox_state.text, text_measurer, mouse_position.x, node_x, node_h);
+                            let new_index = Self::get_closest_index(
+                                &textbox_state.text,
+                                text_measurer,
+                                mouse_position.x,
+                                node_x,
+                                node_h,
+                            );
                             if new_index != input_state.carat_index {
                                 input_state.select_index = Some(input_state.carat_index);
                                 input_state.carat_index = new_index;
@@ -359,7 +408,13 @@ impl TextboxInputState {
         }
     }
 
-    fn get_closest_index(text: &str, text_measurer: &dyn TextMeasurer, click_x: f32, position_x: f32, height: f32) -> usize {
+    fn get_closest_index(
+        text: &str,
+        text_measurer: &dyn TextMeasurer,
+        click_x: f32,
+        position_x: f32,
+        height: f32,
+    ) -> usize {
         let click_x = click_x - position_x;
 
         let mut closest_x: f32 = f32::MAX;

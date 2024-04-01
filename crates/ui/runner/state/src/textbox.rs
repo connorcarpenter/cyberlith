@@ -1,4 +1,3 @@
-
 use render_api::base::CpuMaterial;
 use storage::Handle;
 
@@ -27,7 +26,10 @@ impl TextboxState {
     }
 
     pub fn needs_color_handle(&self) -> bool {
-        self.panel.background_color_handle.is_none() || self.hover_color_handle.is_none() || self.active_color_handle.is_none() || self.select_color_handle.is_none()
+        self.panel.background_color_handle.is_none()
+            || self.hover_color_handle.is_none()
+            || self.active_color_handle.is_none()
+            || self.select_color_handle.is_none()
     }
 
     pub fn current_color_handle(&self, state: NodeActiveState) -> Option<Handle<CpuMaterial>> {

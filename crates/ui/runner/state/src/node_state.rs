@@ -1,6 +1,9 @@
 use ui_runner_config::WidgetKind;
 
-use crate::{button::ButtonState, widget::WidgetState, panel::PanelState, text::TextState, textbox::TextboxState};
+use crate::{
+    button::ButtonState, panel::PanelState, text::TextState, textbox::TextboxState,
+    widget::WidgetState,
+};
 
 #[derive(Clone)]
 pub struct UiNodeState {
@@ -9,9 +12,7 @@ pub struct UiNodeState {
 
 impl UiNodeState {
     pub(crate) fn new(widget: WidgetState) -> Self {
-        Self {
-            widget,
-        }
+        Self { widget }
     }
 
     pub(crate) fn from_node(widget_kind: &WidgetKind) -> Self {

@@ -1,6 +1,8 @@
 use ui_runner_config::{NodeId, WidgetKind};
 
-use crate::{panel::PanelState, button::ButtonState, UiNodeState, text::TextState, textbox::TextboxState};
+use crate::{
+    button::ButtonState, panel::PanelState, text::TextState, textbox::TextboxState, UiNodeState,
+};
 
 pub struct UiStateStore {
     pub nodes: Vec<UiNodeState>,
@@ -8,9 +10,7 @@ pub struct UiStateStore {
 
 impl UiStateStore {
     pub(crate) fn new() -> Self {
-        Self {
-            nodes: Vec::new(),
-        }
+        Self { nodes: Vec::new() }
     }
 
     // nodes

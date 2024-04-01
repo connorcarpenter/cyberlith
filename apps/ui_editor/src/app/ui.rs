@@ -3,7 +3,7 @@ use std::time::Duration;
 use bevy_ecs::{
     event::{Event, EventReader, EventWriter},
     prelude::Commands,
-    system::{Res, Query, ResMut},
+    system::{Query, Res, ResMut},
 };
 use bevy_log::{info, warn};
 
@@ -13,14 +13,20 @@ use game_engine::{
         embedded_asset_event, AssetHandle, AssetId, AssetManager, AssetMetadataSerde, AssetType,
         ETag, EmbeddedAssetEvent,
     },
-    render::{base::Color, components::{AmbientLight, CameraBundle, ClearOperation, OrthographicProjection, Projection, RenderTarget, RenderLayer, Camera}},
-    ui::{UiRuntime, UiManager, UiInputConverter},
-    input::{Input, InputEvent, GamepadRumbleIntensity, RumbleManager},
+    input::{GamepadRumbleIntensity, Input, InputEvent, RumbleManager},
+    render::{
+        base::Color,
+        components::{
+            AmbientLight, Camera, CameraBundle, ClearOperation, OrthographicProjection, Projection,
+            RenderLayer, RenderTarget,
+        },
+    },
+    ui::{UiInputConverter, UiManager, UiRuntime},
 };
 use ui_builder::UiConfig;
 use ui_runner_config::UiRuntimeConfig;
 
-use crate::app::{ui_backups::*, global::Global};
+use crate::app::{global::Global, ui_backups::*};
 
 fn ui_define() -> (String, AssetId, ETag, UiConfig) {
     // start
@@ -110,7 +116,8 @@ pub fn ui_update(
     }
 
     // update with inputs
-    let Some((mouse_position, ui_input_events)) = UiInputConverter::convert(&mut input_events) else {
+    let Some((mouse_position, ui_input_events)) = UiInputConverter::convert(&mut input_events)
+    else {
         return;
     };
     ui_manager.update_ui_input(&asset_manager, ui_handle, mouse_position, ui_input_events);
@@ -124,7 +131,11 @@ pub fn ui_handle_events(
     for _ in login_btn_rdr.read() {
         info!("login button clicked!");
         if let Some(id) = input.gamepad_first() {
-            rumble_manager.add_rumble(id, Duration::from_millis(200), GamepadRumbleIntensity::weak_motor(0.4));
+            rumble_manager.add_rumble(
+                id,
+                Duration::from_millis(200),
+                GamepadRumbleIntensity::weak_motor(0.4),
+            );
         }
     }
 }

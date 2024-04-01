@@ -1,13 +1,16 @@
-
-use winit::window::CursorIcon as WinitCursorIcon;
 use bevy_ecs::system::{NonSendMut, ResMut};
-use clipboard::ClipboardManager;
+use winit::window::CursorIcon as WinitCursorIcon;
 
+use clipboard::ClipboardManager;
 use input::{CursorIcon, Input};
 
 use crate::window::{FrameInput, OutgoingEvent};
 
-pub fn run(frame_input: NonSendMut<FrameInput>, mut input: ResMut<Input>, mut clipboard: ResMut<ClipboardManager>) {
+pub fn run(
+    frame_input: NonSendMut<FrameInput>,
+    mut input: ResMut<Input>,
+    mut clipboard: ResMut<ClipboardManager>,
+) {
     input.recv_events(&mut clipboard, &frame_input.incoming_events);
 }
 
@@ -50,6 +53,8 @@ pub fn update_cursor(mut frame_input: NonSendMut<FrameInput>, mut input: ResMut<
             CursorIcon::ColResize => WinitCursorIcon::ColResize,
             CursorIcon::RowResize => WinitCursorIcon::RowResize,
         };
-        frame_input.outgoing_events.push(OutgoingEvent::CursorChanged(winit_cursor_icon));
+        frame_input
+            .outgoing_events
+            .push(OutgoingEvent::CursorChanged(winit_cursor_icon));
     }
 }

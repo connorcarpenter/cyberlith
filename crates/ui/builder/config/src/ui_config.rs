@@ -13,7 +13,6 @@ use crate::{
 };
 
 pub struct UiConfig {
-
     styles: Vec<NodeStyle>,
     nodes: Vec<UiNode>,
 
@@ -28,7 +27,6 @@ impl UiConfig {
 
     pub fn new() -> Self {
         let mut me = Self {
-
             styles: Vec::new(),
             nodes: Vec::new(),
 
@@ -47,8 +45,24 @@ impl UiConfig {
         me
     }
 
-    pub fn decompose(self) -> (Vec<NodeStyle>, Vec<UiNode>, Color, NodeId, AssetId, HashMap<String, NodeId>) {
-        (self.styles, self.nodes, self.text_color, self.first_input.unwrap(), self.text_icon_asset_id_opt.unwrap(), self.id_str_to_node_id_map)
+    pub fn decompose(
+        self,
+    ) -> (
+        Vec<NodeStyle>,
+        Vec<UiNode>,
+        Color,
+        NodeId,
+        AssetId,
+        HashMap<String, NodeId>,
+    ) {
+        (
+            self.styles,
+            self.nodes,
+            self.text_color,
+            self.first_input.unwrap(),
+            self.text_icon_asset_id_opt.unwrap(),
+            self.id_str_to_node_id_map,
+        )
     }
 
     // nodes

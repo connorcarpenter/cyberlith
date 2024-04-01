@@ -2,17 +2,15 @@ use std::cell::{RefCell, RefMut};
 
 use arboard::Clipboard;
 
-use bevy_ecs::system::Resource;
 use bevy_app::{App, Plugin};
+use bevy_ecs::system::Resource;
 
 #[derive(Default)]
 pub struct ClipboardPlugin;
 
 impl Plugin for ClipboardPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .init_resource::<ClipboardManager>()
-        ;
+        app.init_resource::<ClipboardManager>();
     }
 }
 

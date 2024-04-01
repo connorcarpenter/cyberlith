@@ -1,19 +1,22 @@
 use std::collections::HashMap;
 
-use naia_serde::{BitReader, SerdeErr, SerdeInternal as Serde, UnsignedInteger, UnsignedVariableInteger};
+use naia_serde::{
+    BitReader, SerdeErr, SerdeInternal as Serde, UnsignedInteger, UnsignedVariableInteger,
+};
 
 use asset_id::AssetId;
 use render_api::base::Color;
-
+use ui_builder_config::{
+    BaseNodeStyle, Button, ButtonStyle, NodeId, NodeStyle, Panel, PanelStyle, StyleId, Text,
+    TextStyle, Textbox, TextboxStyle, UiConfig, Widget, WidgetKind, WidgetStyle,
+};
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
-use ui_builder_config::{BaseNodeStyle, Button, ButtonStyle, NodeId, NodeStyle, Panel, PanelStyle, StyleId, Text, Textbox, TextboxStyle, TextStyle, UiConfig, Widget, WidgetKind, WidgetStyle};
 
-use crate::{
-    bits::{ButtonStyleBits, TextboxStyleBits, TextStyleBits,
-        AlignmentBits, ButtonBits, ColorBits, LayoutTypeBits, MarginUnitsBits, PanelBits,
-        PanelStyleBits, PositionTypeBits, SizeUnitsBits, SolidBits, TextboxBits, UiAction,
-        UiActionType, UiNodeBits, UiStyleBits, WidgetBits, WidgetStyleBits
-    }
+use crate::bits::{
+    AlignmentBits, ButtonBits, ButtonStyleBits, ColorBits, LayoutTypeBits, MarginUnitsBits,
+    PanelBits, PanelStyleBits, PositionTypeBits, SizeUnitsBits, SolidBits, TextStyleBits,
+    TextboxBits, TextboxStyleBits, UiAction, UiActionType, UiNodeBits, UiStyleBits, WidgetBits,
+    WidgetStyleBits,
 };
 
 pub fn read_bits(data: &[u8]) -> UiConfig {
@@ -43,7 +46,6 @@ fn convert_actions_to_ui_config(actions: Vec<UiAction>) -> UiConfig {
                 }
             }
             UiAction::Style(style_serde) => {
-
                 let new_style: NodeStyle = style_serde.into();
                 let style_id = ui_config.insert_style(new_style);
                 style_index_to_id.insert(style_count, style_id);
@@ -70,7 +72,13 @@ fn convert_actions_to_ui_config(actions: Vec<UiAction>) -> UiConfig {
     let WidgetBits::Panel(panel_serde) = &root_node_serde.widget else {
         panic!("Expected panel widget");
     };
-    convert_nodes_recurse_panel(&style_index_to_id, &nodes, panel_serde, &mut ui_config, &UiConfig::ROOT_NODE_ID);
+    convert_nodes_recurse_panel(
+        &style_index_to_id,
+        &nodes,
+        panel_serde,
+        &mut ui_config,
+        &UiConfig::ROOT_NODE_ID,
+    );
 
     ui_config
 }
@@ -131,7 +139,6 @@ fn convert_nodes_recurse_panel(
 
         match child_node_serde.widget_kind() {
             WidgetKind::Panel => {
-
                 // creates a new panel
                 let child_panel_id = ui_config.create_node(Widget::Panel(Panel::new()));
                 let Widget::Panel(panel) = &mut ui_config.node_mut(panel_id).unwrap().widget else {
@@ -165,7 +172,8 @@ fn convert_nodes_recurse_panel(
                 };
 
                 // creates a new text
-                let child_text_id = ui_config.create_node(Widget::Text(Text::new(child_text_serde.text.as_str())));
+                let child_text_id =
+                    ui_config.create_node(Widget::Text(Text::new(child_text_serde.text.as_str())));
                 let Widget::Panel(panel) = &mut ui_config.node_mut(panel_id).unwrap().widget else {
                     panic!("Expected panel widget");
                 };
@@ -185,7 +193,9 @@ fn convert_nodes_recurse_panel(
                 };
 
                 // creates a new button
-                let child_button_id = ui_config.create_node(Widget::Button(Button::new(child_button_serde.id_str.as_str())));
+                let child_button_id = ui_config.create_node(Widget::Button(Button::new(
+                    child_button_serde.id_str.as_str(),
+                )));
                 let Widget::Panel(panel) = &mut ui_config.node_mut(panel_id).unwrap().widget else {
                     panic!("Expected panel widget");
                 };
@@ -200,12 +210,7 @@ fn convert_nodes_recurse_panel(
                 }
 
                 // add navigation
-                set_button_navigation(
-                    nodes,
-                    child_button_serde,
-                    ui_config,
-                    &child_button_id,
-                );
+                set_button_navigation(nodes, child_button_serde, ui_config, &child_button_id);
 
                 // recurse
                 convert_nodes_recurse_button(
@@ -222,7 +227,9 @@ fn convert_nodes_recurse_panel(
                 };
 
                 // creates a new textbox
-                let child_textbox_id = ui_config.create_node(Widget::Textbox(Textbox::new(child_textbox_serde.id_str.as_str())));
+                let child_textbox_id = ui_config.create_node(Widget::Textbox(Textbox::new(
+                    child_textbox_serde.id_str.as_str(),
+                )));
                 let Widget::Panel(panel) = &mut ui_config.node_mut(panel_id).unwrap().widget else {
                     panic!("Expected panel widget");
                 };
@@ -237,12 +244,7 @@ fn convert_nodes_recurse_panel(
                 }
 
                 // add navigation
-                set_textbox_navigation(
-                    nodes,
-                    child_textbox_serde,
-                    ui_config,
-                    &child_textbox_id,
-                );
+                set_textbox_navigation(nodes, child_textbox_serde, ui_config, &child_textbox_id);
             }
         }
     }
@@ -250,7 +252,7 @@ fn convert_nodes_recurse_panel(
 
 fn get_nav_thang<'a>(
     nodes: &'a Vec<UiNodeBits>,
-    input_int: Option<&UnsignedVariableInteger<4>>
+    input_int: Option<&UnsignedVariableInteger<4>>,
 ) -> Option<&'a str> {
     let input_int = input_int?;
     let nav_index = input_int.to::<u32>() as usize;
@@ -314,10 +316,10 @@ fn convert_nodes_recurse_button(
 
         match child_node_serde.widget_kind() {
             WidgetKind::Panel => {
-
                 // creates a new panel
                 let child_panel_id = ui_config.create_node(Widget::Panel(Panel::new()));
-                let Widget::Button(button) = &mut ui_config.node_mut(button_id).unwrap().widget else {
+                let Widget::Button(button) = &mut ui_config.node_mut(button_id).unwrap().widget
+                else {
                     panic!("Expected button widget");
                 };
                 button.add_child(child_panel_id);
@@ -348,8 +350,10 @@ fn convert_nodes_recurse_button(
                 };
 
                 // creates a new text
-                let child_text_id = ui_config.create_node(Widget::Text(Text::new(child_text_serde.text.as_str())));
-                let Widget::Button(button) = &mut ui_config.node_mut(button_id).unwrap().widget else {
+                let child_text_id =
+                    ui_config.create_node(Widget::Text(Text::new(child_text_serde.text.as_str())));
+                let Widget::Button(button) = &mut ui_config.node_mut(button_id).unwrap().widget
+                else {
                     panic!("Expected button widget");
                 };
                 button.add_child(child_text_id);
@@ -491,7 +495,7 @@ impl Into<Color> for ColorBits {
 impl Into<NodeStyle> for UiStyleBits {
     fn into(self) -> NodeStyle {
         NodeStyle {
-            parent_style:   self.parent_style.map(|val| StyleId::new(val as u32)),
+            parent_style: self.parent_style.map(|val| StyleId::new(val as u32)),
             base: BaseNodeStyle {
                 widget_style: self.widget_style.into(),
                 position_type: self.position_type.map(Into::into),
@@ -509,7 +513,7 @@ impl Into<NodeStyle> for UiStyleBits {
                 aspect_ratio: self.aspect_ratio.map(|(w, h)| (w as f32, h as f32)),
                 self_halign: self.self_halign.map(Into::into),
                 self_valign: self.self_valign.map(Into::into),
-            }
+            },
         }
     }
 }
@@ -528,17 +532,17 @@ impl Into<WidgetStyle> for WidgetStyleBits {
 impl Into<PanelStyle> for PanelStyleBits {
     fn into(self) -> PanelStyle {
         PanelStyle {
-            background_color:   self.background_color.map(Into::into),
-            background_alpha:   self.background_alpha.map(bits_into_alpha),
-            layout_type:        self.layout_type.map(Into::into),
-            padding_left:       self.padding_left.map(Into::into),
-            padding_right:      self.padding_right.map(Into::into),
-            padding_top:        self.padding_top.map(Into::into),
-            padding_bottom:     self.padding_bottom.map(Into::into),
-            row_between:        self.row_between.map(Into::into),
-            col_between:        self.col_between.map(Into::into),
-            children_halign:    self.children_halign.map(Into::into),
-            children_valign:    self.children_valign.map(Into::into),
+            background_color: self.background_color.map(Into::into),
+            background_alpha: self.background_alpha.map(bits_into_alpha),
+            layout_type: self.layout_type.map(Into::into),
+            padding_left: self.padding_left.map(Into::into),
+            padding_right: self.padding_right.map(Into::into),
+            padding_top: self.padding_top.map(Into::into),
+            padding_bottom: self.padding_bottom.map(Into::into),
+            row_between: self.row_between.map(Into::into),
+            col_between: self.col_between.map(Into::into),
+            children_halign: self.children_halign.map(Into::into),
+            children_valign: self.children_valign.map(Into::into),
         }
     }
 }
@@ -555,9 +559,9 @@ impl Into<TextStyle> for TextStyleBits {
 impl Into<ButtonStyle> for ButtonStyleBits {
     fn into(self) -> ButtonStyle {
         ButtonStyle {
-            panel:          self.panel.into(),
-            hover_color:    self.hover_color.map(|val| val.into()),
-            down_color:     self.down_color.map(|val| val.into()),
+            panel: self.panel.into(),
+            hover_color: self.hover_color.map(|val| val.into()),
+            down_color: self.down_color.map(|val| val.into()),
         }
     }
 }
@@ -567,9 +571,9 @@ impl Into<TextboxStyle> for TextboxStyleBits {
         TextboxStyle {
             background_color: self.background_color.map(Into::into),
             background_alpha: self.background_alpha.map(bits_into_alpha),
-            hover_color:      self.hover_color.map(|val| val.into()),
-            active_color:     self.active_color.map(|val| val.into()),
-            select_color:     self.select_color.map(|val| val.into()),
+            hover_color: self.hover_color.map(|val| val.into()),
+            active_color: self.active_color.map(|val| val.into()),
+            select_color: self.select_color.map(|val| val.into()),
         }
     }
 }

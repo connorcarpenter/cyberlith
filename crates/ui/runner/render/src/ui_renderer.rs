@@ -8,13 +8,16 @@ use render_api::{
     resources::RenderFrame,
 };
 use storage::Handle;
-use ui_runner::{Blinkiness, UiManager, UiRuntime, state::{NodeActiveState, UiState}, input::{UiInputState}, config::{NodeId, UiRuntimeConfig, WidgetKind}};
-use ui_runner::config::{text_get_raw_rects, text_get_subimage_indices};
+use ui_runner::{
+    config::{text_get_raw_rects, text_get_subimage_indices, NodeId, UiRuntimeConfig, WidgetKind},
+    input::UiInputState,
+    state::{NodeActiveState, UiState},
+    Blinkiness, UiManager, UiRuntime,
+};
 
 pub struct UiRenderer;
 
 impl UiRenderer {
-
     pub fn draw_ui(
         ui_manager: &UiManager,
         asset_manager: &AssetManager,
@@ -77,7 +80,8 @@ impl UiRenderer {
         cursor.scale.y = transform.scale.y / text_height;
         cursor.scale.x = cursor.scale.y;
 
-        cursor.translation.x = transform.translation.x + (x_positions[carat_index] * cursor.scale.x);
+        cursor.translation.x =
+            transform.translation.x + (x_positions[carat_index] * cursor.scale.x);
 
         asset_manager.draw_icon_with_material(
             render_frame,
@@ -137,7 +141,9 @@ fn draw_ui_node(
     text_icon_handle: &AssetHandle<IconData>,
     id: &NodeId,
 ) {
-    let Some((width, height, child_offset_x, child_offset_y, child_offset_z)) = ui_state.cache.bounds(id) else {
+    let Some((width, height, child_offset_x, child_offset_y, child_offset_z)) =
+        ui_state.cache.bounds(id)
+    else {
         warn!("no bounds for id 1: {:?}", id);
         return;
     };
@@ -151,11 +157,7 @@ fn draw_ui_node(
         return;
     };
 
-    let mut transform = Transform::from_xyz(
-        child_offset_x,
-        child_offset_y,
-        child_offset_z,
-    );
+    let mut transform = Transform::from_xyz(child_offset_x, child_offset_y, child_offset_z);
     transform.scale.x = width;
     transform.scale.y = height;
 
@@ -252,17 +254,10 @@ fn draw_ui_text(
     id: &NodeId,
     transform: &Transform,
 ) {
-    let Some(text_ref) = ui_config
-        .get_node(id)
-        .unwrap()
-        .widget_text_ref() else {
+    let Some(text_ref) = ui_config.get_node(id).unwrap().widget_text_ref() else {
         panic!("no text ref for node_id: {:?}", id);
     };
-    let Some(text_state_ref) = ui_state
-        .store
-        .get_node(id)
-        .unwrap()
-        .widget_text_ref() else {
+    let Some(text_state_ref) = ui_state.store.get_node(id).unwrap().widget_text_ref() else {
         panic!("no text ref for node_id: {:?}", id);
     };
 
@@ -384,7 +379,6 @@ fn draw_ui_textbox(
     }
 
     if active_state == NodeActiveState::Active {
-
         // draw selection box if needed
         if let Some(select_index) = ui_input_state.select_index {
             if let Some(mat_handle) = textbox_state_ref.get_selection_color_handle() {

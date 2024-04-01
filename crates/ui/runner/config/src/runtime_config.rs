@@ -1,14 +1,19 @@
-use std::{slice::Iter, collections::HashMap};
+use std::{collections::HashMap, slice::Iter};
 
 use asset_id::AssetId;
 use render_api::base::Color;
-use ui_builder_config::{BaseNodeStyle, Button, ButtonStyle, Navigation, Panel, PanelStyle, StyleId, Text, TextboxStyle, TextStyle, UiConfig, UiNode, WidgetKind, WidgetStyle};
-use ui_layout::{Alignment, LayoutType, MarginUnits, NodeId, NodeStore, PositionType, SizeUnits, Solid, TextMeasurer};
+use ui_builder_config::{
+    BaseNodeStyle, Button, ButtonStyle, Navigation, Panel, PanelStyle, StyleId, Text, TextStyle,
+    TextboxStyle, UiConfig, UiNode, WidgetKind, WidgetStyle,
+};
+use ui_layout::{
+    Alignment, LayoutType, MarginUnits, NodeId, NodeStore, PositionType, SizeUnits, Solid,
+    TextMeasurer,
+};
 
 use crate::text_measure_raw_size;
 
 pub struct UiRuntimeConfig {
-
     styles: Vec<BaseNodeStyle>,
     nodes: Vec<UiNode>,
 
@@ -19,7 +24,6 @@ pub struct UiRuntimeConfig {
 }
 
 impl UiRuntimeConfig {
-
     pub const ROOT_NODE_ID: NodeId = NodeId::new(0);
 
     pub fn load_from_bytes(bytes: &[u8]) -> Self {
@@ -28,9 +32,12 @@ impl UiRuntimeConfig {
     }
 
     pub fn load_from_builder_config(ui_config: UiConfig) -> Self {
-
-        let (styles, nodes, text_color, first_input, text_icon_asset_id, node_map) = ui_config.decompose();
-        let node_map = node_map.into_iter().map(|(k, v)| (k.to_string(), v.into())).collect();
+        let (styles, nodes, text_color, first_input, text_icon_asset_id, node_map) =
+            ui_config.decompose();
+        let node_map = node_map
+            .into_iter()
+            .map(|(k, v)| (k.to_string(), v.into()))
+            .collect();
 
         let styles = styles.into_iter().map(|style| style.base).collect();
 
@@ -110,7 +117,9 @@ impl UiRuntimeConfig {
 
     fn node_style(&self, id: &NodeId) -> Option<&BaseNodeStyle> {
         let node = self.get_node(id)?;
-        node.style_id().map(|style_id| self.get_style(&style_id)).flatten()
+        node.style_id()
+            .map(|style_id| self.get_style(&style_id))
+            .flatten()
     }
 
     fn widget_style(&self, id: &NodeId) -> Option<&WidgetStyle> {
@@ -161,7 +170,6 @@ impl UiRuntimeConfig {
     }
 
     pub fn node_background_alpha(&self, id: &NodeId) -> f32 {
-
         match self.get_node(id).unwrap().widget_kind() {
             WidgetKind::Panel => {
                 let mut output = 1.0;
@@ -244,7 +252,6 @@ impl UiRuntimeConfig {
 }
 
 impl NodeStore for UiRuntimeConfig {
-
     fn node_children(&self, id: &NodeId) -> Iter<NodeId> {
         if !self.node_kind(id).has_children() {
             return [].iter();
@@ -294,7 +301,6 @@ impl NodeStore for UiRuntimeConfig {
 
     // all of these unwrap_or(SizeUnits::Percentage(100.0))
     fn node_width(&self, id: &NodeId) -> SizeUnits {
-
         let mut output = SizeUnits::default();
 
         if self.node_kind(id).is_text() {
@@ -312,7 +318,6 @@ impl NodeStore for UiRuntimeConfig {
 
     // all of these unwrap_or(SizeUnits::Percentage(100.0))
     fn node_height(&self, id: &NodeId) -> SizeUnits {
-
         let mut output = SizeUnits::Auto;
 
         if self.node_kind(id).is_text() {
@@ -330,7 +335,6 @@ impl NodeStore for UiRuntimeConfig {
 
     // all of these unwrap_or(SizeUnits::Pixels(0.0))
     fn node_width_min(&self, id: &NodeId) -> SizeUnits {
-
         let mut output = SizeUnits::default();
 
         if self.node_kind(id).is_text() {
@@ -348,7 +352,6 @@ impl NodeStore for UiRuntimeConfig {
 
     // all of these unwrap_or(SizeUnits::Pixels(0.0))
     fn node_height_min(&self, id: &NodeId) -> SizeUnits {
-
         let mut output = SizeUnits::default();
 
         if self.node_kind(id).is_text() {
@@ -366,7 +369,6 @@ impl NodeStore for UiRuntimeConfig {
 
     // all of these unwrap_or(SizeUnits::Pixels(f32::MAX))
     fn node_width_max(&self, id: &NodeId) -> SizeUnits {
-
         let mut output = SizeUnits::default();
 
         if self.node_kind(id).is_text() {
@@ -384,7 +386,6 @@ impl NodeStore for UiRuntimeConfig {
 
     // all of these unwrap_or(SizeUnits::Pixels(f32::MAX))
     fn node_height_max(&self, id: &NodeId) -> SizeUnits {
-
         let mut output = SizeUnits::default();
 
         if self.node_kind(id).is_text() {
@@ -567,7 +568,12 @@ impl NodeStore for UiRuntimeConfig {
         self.node_kind(id).is_text()
     }
 
-    fn node_calculate_text_width(&self, id: &NodeId, text_measurer: &dyn TextMeasurer, height: f32) -> f32 {
+    fn node_calculate_text_width(
+        &self,
+        id: &NodeId,
+        text_measurer: &dyn TextMeasurer,
+        height: f32,
+    ) -> f32 {
         let text_ref = self.text_ref(id).unwrap();
         let text = text_ref.text.as_str();
         let (raw_width, raw_height) = text_measure_raw_size(text_measurer, text);
@@ -577,7 +583,6 @@ impl NodeStore for UiRuntimeConfig {
 
     // panics if solid() is None but this isn't ..
     fn node_aspect_ratio(&self, id: &NodeId) -> Option<f32> {
-
         let mut output = 1.0; // TODO: put this into a constant
 
         if !self.node_kind(id).can_solid() {

@@ -59,11 +59,7 @@ impl GUI {
     /// Construct the GUI (Add panels, widgets etc.) using the [egui::Context] in the callback function.
     /// This function returns whether or not the GUI has changed, ie. if it consumes any events, and therefore needs to be rendered again.
     ///
-    pub fn pre_update(
-        &mut self,
-        egui_context: &egui::Context,
-        frame_input: &mut FrameInput,
-    ) {
+    pub fn pre_update(&mut self, egui_context: &egui::Context, frame_input: &mut FrameInput) {
         let events: &mut [IncomingEvent] = frame_input.incoming_events.as_mut_slice();
         let accumulated_time_in_ms: f64 = frame_input.accumulated_time_ms;
         let viewport: Viewport = frame_input.physical_size;
@@ -89,10 +85,7 @@ impl GUI {
             events: events
                 .iter()
                 .filter_map(|event| match event {
-                    IncomingEvent::KeyPress(
-                        kind,
-                        modifiers,
-                    ) => {
+                    IncomingEvent::KeyPress(kind, modifiers) => {
                         if let Some(key) = gl_to_egui_key(kind) {
                             Some(egui::Event::Key {
                                 key,
@@ -104,10 +97,7 @@ impl GUI {
                             None
                         }
                     }
-                    IncomingEvent::KeyRelease(
-                        kind,
-                        modifiers,
-                    ) => {
+                    IncomingEvent::KeyRelease(kind, modifiers) => {
                         if let Some(key) = gl_to_egui_key(kind) {
                             Some(egui::Event::Key {
                                 key,
@@ -119,11 +109,7 @@ impl GUI {
                             None
                         }
                     }
-                    IncomingEvent::MousePress(
-                        button,
-                        position,
-                        modifiers,
-                    ) => {
+                    IncomingEvent::MousePress(button, position, modifiers) => {
                         Some(egui::Event::PointerButton {
                             pos: egui::Pos2 {
                                 x: position.0 as f32,
@@ -134,11 +120,7 @@ impl GUI {
                             modifiers: gl_to_egui_modifiers(modifiers),
                         })
                     }
-                    IncomingEvent::MouseRelease(
-                        button,
-                        position,
-                        modifiers,
-                    ) => {
+                    IncomingEvent::MouseRelease(button, position, modifiers) => {
                         Some(egui::Event::PointerButton {
                             pos: egui::Pos2 {
                                 x: position.0 as f32,
@@ -149,9 +131,7 @@ impl GUI {
                             modifiers: gl_to_egui_modifiers(modifiers),
                         })
                     }
-                    IncomingEvent::MouseMotion(
-                        _button, _delta, position, _modifiers
-                    ) => {
+                    IncomingEvent::MouseMotion(_button, _delta, position, _modifiers) => {
                         Some(egui::Event::PointerMoved(egui::Pos2 {
                             x: position.0 as f32,
                             y: position.1 as f32,
@@ -159,12 +139,9 @@ impl GUI {
                     }
                     IncomingEvent::Text(text) => Some(egui::Event::Text(text.to_string())),
                     // IncomingEvent::MouseLeave => Some(egui::Event::PointerGone),
-                    IncomingEvent::MouseWheel(delta, _position, _modifiers) => {
-                        Some(egui::Event::Scroll(egui::Vec2::new(
-                            delta.0 as f32,
-                            delta.1 as f32,
-                        )))
-                    }
+                    IncomingEvent::MouseWheel(delta, _position, _modifiers) => Some(
+                        egui::Event::Scroll(egui::Vec2::new(delta.0 as f32, delta.1 as f32)),
+                    ),
                 })
                 .collect::<Vec<_>>(),
             ..Default::default()
@@ -178,11 +155,7 @@ impl GUI {
     /// Construct the GUI (Add panels, widgets etc.) using the [egui::Context] in the callback function.
     /// This function returns whether or not the GUI has changed, ie. if it consumes any events, and therefore needs to be rendered again.
     ///
-    pub fn post_update(
-        &mut self,
-        egui_context: &egui::Context,
-        frame_input: &mut FrameInput,
-    ) {
+    pub fn post_update(&mut self, egui_context: &egui::Context, frame_input: &mut FrameInput) {
         let mut end_frame = egui_context.end_frame();
 
         // Output Events

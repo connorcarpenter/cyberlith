@@ -2,21 +2,23 @@ use std::time::Duration;
 
 use bevy_ecs::{
     event::{Event, EventReader, EventWriter},
-    system::{Commands, Res, ResMut, Query},
+    system::{Commands, Query, Res, ResMut},
 };
 use bevy_log::info;
 
 use game_engine::{
-    input::{InputEvent, Input, GamepadRumbleIntensity, RumbleManager},
-    asset::{embedded_asset_event, AssetHandle, AssetId, AssetManager, EmbeddedAssetEvent, UiConfigData},
+    asset::{
+        embedded_asset_event, AssetHandle, AssetId, AssetManager, EmbeddedAssetEvent, UiConfigData,
+    },
+    input::{GamepadRumbleIntensity, Input, InputEvent, RumbleManager},
     render::{
         base::Color,
         components::{
-            RenderLayer, AmbientLight, Camera, CameraBundle, ClearOperation, OrthographicProjection, Projection,
-            RenderLayers, RenderTarget,
+            AmbientLight, Camera, CameraBundle, ClearOperation, OrthographicProjection, Projection,
+            RenderLayer, RenderLayers, RenderTarget,
         },
     },
-    ui::{UiInputConverter},
+    ui::UiInputConverter,
 };
 
 use crate::app::resources::Global;
@@ -95,7 +97,6 @@ pub fn ui_update(
     let ui_input = UiInputConverter::convert(&mut input_events);
 
     for (ui_handle, ui_render_layer_opt) in uis_q.iter() {
-
         // find camera, update viewport
         for (camera, cam_render_layer_opt) in cameras_q.iter() {
             if cam_render_layer_opt == ui_render_layer_opt {
@@ -121,13 +122,21 @@ pub fn ui_handle_events(
     for _ in login_btn_rdr.read() {
         info!("login button clicked!");
         if let Some(id) = input.gamepad_first() {
-            rumble_manager.add_rumble(id, Duration::from_millis(200), GamepadRumbleIntensity::strong_motor(0.4));
+            rumble_manager.add_rumble(
+                id,
+                Duration::from_millis(200),
+                GamepadRumbleIntensity::strong_motor(0.4),
+            );
         }
     }
     for _ in register_btn_rdr.read() {
         info!("register button clicked!");
         if let Some(id) = input.gamepad_first() {
-            rumble_manager.add_rumble(id, Duration::from_millis(200), GamepadRumbleIntensity::strong_motor(0.4));
+            rumble_manager.add_rumble(
+                id,
+                Duration::from_millis(200),
+                GamepadRumbleIntensity::strong_motor(0.4),
+            );
         }
     }
 }

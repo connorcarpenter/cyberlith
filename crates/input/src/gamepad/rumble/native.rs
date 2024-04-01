@@ -1,11 +1,15 @@
 use std::time::Duration;
 
-use gilrs::{ff, ff::Repeat};
-use gilrs::ff::{BaseEffect, BaseEffectType, Replay};
+use gilrs::{
+    ff,
+    ff::{BaseEffect, BaseEffectType, Repeat, Replay},
+};
 
-use crate::gamepad::{rumble::RumbleError, converter::convert_gamepad_id, gilrs::GilrsWrapper};
-use crate::GamepadRumbleIntensity;
-use super::common::{GamepadRumbleRequest};
+use super::common::GamepadRumbleRequest;
+use crate::{
+    gamepad::{converter::convert_gamepad_id, gilrs::GilrsWrapper, rumble::RumbleError},
+    GamepadRumbleIntensity,
+};
 
 pub(crate) fn handle_rumble_request(
     rumble_request: GamepadRumbleRequest,
@@ -36,7 +40,12 @@ pub(crate) fn handle_rumble_request(
         .map_err(|e| RumbleError::GilrsError(e))?;
     effect.play().map_err(|e| RumbleError::GilrsError(e))?;
 
-    input_gilrs.add_rumble(&convert_gamepad_id(gamepad_id), duration, intensity, Some(effect));
+    input_gilrs.add_rumble(
+        &convert_gamepad_id(gamepad_id),
+        duration,
+        intensity,
+        Some(effect),
+    );
 
     Ok(())
 }

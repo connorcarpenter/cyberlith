@@ -6,9 +6,7 @@ pub struct UiVisibilityStore {
 
 impl UiVisibilityStore {
     pub fn new() -> Self {
-        Self {
-            nodes: Vec::new(),
-        }
+        Self { nodes: Vec::new() }
     }
 
     // nodes

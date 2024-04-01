@@ -4,15 +4,12 @@ use bevy_ecs::system::{ResMut, Resource};
 
 use asset_id::{AssetId, AssetType};
 use render_api::{
-    base::{CpuMaterial, CpuMesh},
     base::CpuSkin,
+    base::{CpuMaterial, CpuMesh},
 };
 use storage::Storage;
 
-use crate::{
-    AnimationData, AssetHandle,
-    IconData, processed_asset_store::ProcessedAssetStore,
-};
+use crate::{processed_asset_store::ProcessedAssetStore, AnimationData, AssetHandle, IconData};
 
 #[derive(Resource)]
 pub struct AssetManager {

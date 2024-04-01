@@ -1,7 +1,16 @@
 use std::sync::{Arc, RwLock};
 
 use bevy_log::info;
-use winit::{dpi, event::{Event as WinitEvent, TouchPhase, WindowEvent, ElementState, VirtualKeyCode, MouseButton as WinitMouseButton}, event_loop::{ControlFlow, EventLoop}, window, window::WindowBuilder};
+use winit::{
+    dpi,
+    event::{
+        ElementState, Event as WinitEvent, MouseButton as WinitMouseButton, TouchPhase,
+        VirtualKeyCode, WindowEvent,
+    },
+    event_loop::{ControlFlow, EventLoop},
+    window,
+    window::WindowBuilder,
+};
 
 use input::{IncomingEvent, Key, Modifiers, MouseButton};
 use render_api::{
@@ -321,10 +330,8 @@ impl<T: 'static + Clone> Window<T> {
                     }
                     WindowEvent::KeyboardInput { input, .. } => {
                         if let Some(keycode) = input.virtual_keycode {
-
                             let state = input.state == ElementState::Pressed;
                             if let Some(kind) = translate_virtual_key_code(keycode) {
-
                                 match kind {
                                     Key::LCtrl | Key::RCtrl => {
                                         modifiers.ctrl = state;
@@ -360,10 +367,7 @@ impl<T: 'static + Clone> Window<T> {
                                 winit::event::MouseScrollDelta::LineDelta(x, y) => {
                                     let line_height = 24.0; // TODO
                                     events.push(IncomingEvent::MouseWheel(
-                                        (
-                                            (*x * line_height) as f64,
-                                            (*y * line_height) as f64,
-                                        ),
+                                        ((*x * line_height) as f64, (*y * line_height) as f64),
                                         position,
                                         modifiers,
                                     ));
@@ -390,18 +394,10 @@ impl<T: 'static + Clone> Window<T> {
                             if let Some(button) = button {
                                 events.push(if *state == ElementState::Pressed {
                                     mouse_pressed = Some(button);
-                                    IncomingEvent::MousePress(
-                                        button,
-                                        position,
-                                        modifiers,
-                                    )
+                                    IncomingEvent::MousePress(button, position, modifiers)
                                 } else {
                                     mouse_pressed = None;
-                                    IncomingEvent::MouseRelease(
-                                        button,
-                                        position,
-                                        modifiers,
-                                    )
+                                    IncomingEvent::MouseRelease(button, position, modifiers)
                                 });
                             }
                         }
@@ -481,10 +477,7 @@ impl<T: 'static + Clone> Window<T> {
                                     } else {
                                         events.push(IncomingEvent::MouseMotion(
                                             Some(MouseButton::Left),
-                                            (
-                                                position.0 - last_pos.0,
-                                                position.1 - last_pos.1,
-                                            ),
+                                            (position.0 - last_pos.0, position.1 - last_pos.1),
                                             position,
                                             modifiers,
                                         ));
@@ -562,7 +555,6 @@ fn is_printable_char(chr: char) -> bool {
 }
 
 fn translate_virtual_key_code(key: VirtualKeyCode) -> Option<Key> {
-
     Some(match key {
         VirtualKeyCode::Down => Key::ArrowDown,
         VirtualKeyCode::Left => Key::ArrowLeft,

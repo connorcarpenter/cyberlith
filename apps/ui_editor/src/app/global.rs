@@ -7,10 +7,7 @@ pub struct Global {
 }
 
 impl Global {
-    pub fn new(
-        ui_camera_entity: Entity,
-        active_ui_entity: Entity,
-    ) -> Self {
+    pub fn new(ui_camera_entity: Entity, active_ui_entity: Entity) -> Self {
         Self {
             ui_camera_entity,
             active_ui_entity,

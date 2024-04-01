@@ -1,4 +1,3 @@
-
 use storage::Handle;
 
 use crate::base::CpuMaterial;
@@ -13,7 +12,7 @@ impl CpuSkin {
     pub fn log(&self) {
         // info!("--- loaded cpu skin ---");
         // for (index, handle) in self.face_to_material.iter().enumerate() {
-            // info!("face: {}, material: {:?}", index, handle.id);
+        // info!("face: {}, material: {:?}", index, handle.id);
         // }
         // info!("--- end cpu skin ---");
     }

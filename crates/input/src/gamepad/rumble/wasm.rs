@@ -4,7 +4,15 @@ use js_sys::{Array, Function, Object};
 use wasm_bindgen::JsValue;
 use web_sys::Gamepad as WebGamepad;
 
-use crate::{GamepadRumbleIntensity, gamepad::{rumble::{GamepadRumbleRequest, RumbleError}, gilrs::GilrsWrapper, converter::convert_gamepad_id, GamepadId}};
+use crate::{
+    gamepad::{
+        converter::convert_gamepad_id,
+        gilrs::GilrsWrapper,
+        rumble::{GamepadRumbleRequest, RumbleError},
+        GamepadId,
+    },
+    GamepadRumbleIntensity,
+};
 
 pub(crate) fn handle_rumble_request(
     rumble_request: GamepadRumbleRequest,
@@ -25,10 +33,16 @@ pub(crate) fn set_total_rumbles(
     input_gilrs: &mut GilrsWrapper,
     gamepad_ids: Vec<GamepadId>,
 ) -> Result<(), RumbleError> {
-
     for gamepad_id in gamepad_ids {
-        if let Some((current_rumble_duration, current_rumble_intensity)) = input_gilrs.get_current_rumble(&gamepad_id) {
-            set_total_rumble(input_gilrs, &gamepad_id, current_rumble_duration, current_rumble_intensity)?;
+        if let Some((current_rumble_duration, current_rumble_intensity)) =
+            input_gilrs.get_current_rumble(&gamepad_id)
+        {
+            set_total_rumble(
+                input_gilrs,
+                &gamepad_id,
+                current_rumble_duration,
+                current_rumble_intensity,
+            )?;
         }
     }
 
@@ -74,8 +88,8 @@ fn set_total_rumble(
     };
 
     let gamepad_js = JsValue::from(gamepad);
-    let vibration_actuator_js = js_sys::Reflect::get(&gamepad_js, &JsValue::from_str("vibrationActuator"))
-        .unwrap();
+    let vibration_actuator_js =
+        js_sys::Reflect::get(&gamepad_js, &JsValue::from_str("vibrationActuator")).unwrap();
     let play_effect_function_js =
         js_sys::Reflect::get(&vibration_actuator_js, &JsValue::from("playEffect")).unwrap();
     let play_effect_function: Function = play_effect_function_js
@@ -88,15 +102,39 @@ fn set_total_rumble(
     play_effect_args.push(&JsValue::from_str("dual-rumble"));
 
     let rumble_vars_js_obj = JsValue::from(Object::new());
-    js_sys::Reflect::set(&rumble_vars_js_obj, &JsValue::from("startDelay"), &JsValue::from(0)).unwrap();
-    js_sys::Reflect::set(&rumble_vars_js_obj, &JsValue::from("duration"), &JsValue::from(duration.as_millis() as u32)).unwrap();
-    js_sys::Reflect::set(&rumble_vars_js_obj, &JsValue::from("weakMagnitude"), &JsValue::from(weak_motor)).unwrap();
-    js_sys::Reflect::set(&rumble_vars_js_obj, &JsValue::from("strongMagnitude"), &JsValue::from(strong_motor)).unwrap();
+    js_sys::Reflect::set(
+        &rumble_vars_js_obj,
+        &JsValue::from("startDelay"),
+        &JsValue::from(0),
+    )
+    .unwrap();
+    js_sys::Reflect::set(
+        &rumble_vars_js_obj,
+        &JsValue::from("duration"),
+        &JsValue::from(duration.as_millis() as u32),
+    )
+    .unwrap();
+    js_sys::Reflect::set(
+        &rumble_vars_js_obj,
+        &JsValue::from("weakMagnitude"),
+        &JsValue::from(weak_motor),
+    )
+    .unwrap();
+    js_sys::Reflect::set(
+        &rumble_vars_js_obj,
+        &JsValue::from("strongMagnitude"),
+        &JsValue::from(strong_motor),
+    )
+    .unwrap();
     play_effect_args.push(&rumble_vars_js_obj);
 
     // call playEffect function with args
-    js_sys::Reflect::apply(&play_effect_function, &vibration_actuator_js, &play_effect_args)
-        .expect("Failed to call playEffect function");
+    js_sys::Reflect::apply(
+        &play_effect_function,
+        &vibration_actuator_js,
+        &play_effect_args,
+    )
+    .expect("Failed to call playEffect function");
 
     Ok(())
 }

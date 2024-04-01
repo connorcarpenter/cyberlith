@@ -165,7 +165,13 @@ pub enum SizeUnits {
 
 impl SizeUnits {
     /// Returns the units converted to pixels or a provided default.
-    pub fn to_px(&self, viewport_value: f32, parent_value: f32, parent_padding: f32, default: f32) -> f32 {
+    pub fn to_px(
+        &self,
+        viewport_value: f32,
+        parent_value: f32,
+        parent_padding: f32,
+        default: f32,
+    ) -> f32 {
         match self {
             SizeUnits::Pixels(pixels) => *pixels,
             SizeUnits::Percentage(percentage) => {
@@ -212,11 +218,9 @@ impl SizeUnits {
                 SizeUnits::Percentage(min),
                 SizeUnits::Percentage(max),
             ) => SizeUnits::Percentage(val.min(max).max(min)),
-            (
-                SizeUnits::Viewport(val),
-                SizeUnits::Viewport(min),
-                SizeUnits::Viewport(max),
-            ) => SizeUnits::Viewport(val.min(max).max(min)),
+            (SizeUnits::Viewport(val), SizeUnits::Viewport(min), SizeUnits::Viewport(max)) => {
+                SizeUnits::Viewport(val.min(max).max(min))
+            }
             _ => *self,
         }
     }

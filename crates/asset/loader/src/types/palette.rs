@@ -1,4 +1,3 @@
-
 use render_api::base::{Color, CpuMaterial};
 use storage::{Handle, Storage};
 

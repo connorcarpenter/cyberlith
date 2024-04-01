@@ -17,7 +17,7 @@ pub fn gen_bool() -> bool {
 }
 
 // direct from rand
-use rand::{thread_rng, Rng, seq::SliceRandom};
+use rand::{seq::SliceRandom, thread_rng, Rng};
 
 pub fn generate_random_string(length: usize) -> String {
     const CHARSET: &[u8] = b"abcdefghjkmnpqrstuvwxyz123456789";

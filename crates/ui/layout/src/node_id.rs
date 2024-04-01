@@ -1,7 +1,9 @@
 use std::fmt::{Display, Formatter};
 
-use crate::{Alignment, LayoutCache, LayoutType, MarginUnits, NodeStore, PositionType, Size, SizeUnits, Solid, TextMeasurer, UiVisibilityStore};
-use crate::layout::layout;
+use crate::{
+    layout::layout, Alignment, LayoutCache, LayoutType, MarginUnits, NodeStore, PositionType, Size,
+    SizeUnits, Solid, TextMeasurer, UiVisibilityStore,
+};
 
 #[derive(Clone, Copy, PartialEq, PartialOrd, Ord, Eq, Hash, Debug, Default)]
 pub struct NodeId(u32);
@@ -47,13 +49,12 @@ impl NodeId {
             cache,
             store,
             state_store,
-            text_measurer
+            text_measurer,
         )
     }
 }
 
 impl NodeId {
-
     pub(crate) fn children<'a>(&'a self, store: &'a dyn NodeStore) -> std::slice::Iter<NodeId> {
         store.node_children(self)
     }
@@ -161,7 +162,12 @@ impl NodeId {
         store.node_is_text(self)
     }
 
-    pub(crate) fn calculate_text_width(&self, store: &dyn NodeStore, text_measurer: &dyn TextMeasurer, height: f32) -> f32 {
+    pub(crate) fn calculate_text_width(
+        &self,
+        store: &dyn NodeStore,
+        text_measurer: &dyn TextMeasurer,
+        height: f32,
+    ) -> f32 {
         store.node_calculate_text_width(self, text_measurer, height)
     }
 

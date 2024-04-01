@@ -1,5 +1,5 @@
 use asset_loader::{AssetHandle, AssetManager};
-use render_api::{resources::RenderFrame, components::RenderLayer};
+use render_api::{components::RenderLayer, resources::RenderFrame};
 use ui_runner::{UiManager, UiRuntime};
 
 use crate::ui_renderer::UiRenderer;
@@ -24,6 +24,13 @@ impl UiRender for UiManager {
         render_layer_opt: Option<&RenderLayer>,
         ui_handle: &AssetHandle<UiRuntime>,
     ) {
-        UiRenderer::draw_ui(self, asset_manager, render_frame, render_layer_opt, &self.blinkiness, ui_handle);
+        UiRenderer::draw_ui(
+            self,
+            asset_manager,
+            render_frame,
+            render_layer_opt,
+            &self.blinkiness,
+            ui_handle,
+        );
     }
 }

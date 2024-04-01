@@ -1,7 +1,6 @@
-
 use render_api::base::Color;
-use ui_layout::{Alignment, MarginUnits, PositionType, SizeUnits};
 use ui_builder_config::{NodeId, NodeStyle, StyleId, TextStyle, UiConfig, WidgetStyle};
+use ui_layout::{Alignment, MarginUnits, PositionType, SizeUnits};
 
 pub struct TextMut<'a> {
     ui_config: &'a mut UiConfig,
@@ -30,7 +29,10 @@ pub struct TextStyleMut<'a> {
 
 impl<'a> TextStyleMut<'a> {
     pub(crate) fn new(ui_config: &'a mut UiConfig, style_id: StyleId) -> Self {
-        Self { ui_config, style_id }
+        Self {
+            ui_config,
+            style_id,
+        }
     }
 
     fn get_style_mut(&mut self) -> &mut NodeStyle {

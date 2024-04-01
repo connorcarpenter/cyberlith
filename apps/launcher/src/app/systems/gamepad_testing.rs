@@ -1,15 +1,9 @@
 use std::time::Duration;
 
-use bevy_ecs::{
-    event::EventReader,
-    system::ResMut,
-};
+use bevy_ecs::{event::EventReader, system::ResMut};
 use bevy_log::info;
 
-use game_engine::input::{
-    GamepadButtonType, GamepadRumbleIntensity, InputEvent,
-    RumbleManager,
-};
+use game_engine::input::{GamepadButtonType, GamepadRumbleIntensity, InputEvent, RumbleManager};
 
 #[allow(unused)]
 pub(crate) fn gamepad_testing_system(
@@ -32,7 +26,6 @@ pub(crate) fn gamepad_testing_system(
                 info!("---");
 
                 if *btn == GamepadButtonType::RightBumper {
-
                     // TESTING
                     let duration = 1000; //duration.as_millis() as u32;
                     let (weak, strong) = if game_engine::random::gen_bool() {
