@@ -1,6 +1,6 @@
 use ui_layout::{Alignment, MarginUnits, PositionType, SizeUnits, Solid};
 
-use crate::{panel::PanelStyle, text::TextStyle, ButtonStyle, TextboxStyle};
+use crate::{panel::PanelStyle, text::TextStyle, ButtonStyle, TextboxStyle, WidgetKind};
 
 #[derive(Clone, Copy, PartialEq, PartialOrd, Ord, Eq, Hash, Debug, Default)]
 pub struct StyleId(u32);
@@ -21,6 +21,27 @@ pub enum WidgetStyle {
     Text(TextStyle),
     Button(ButtonStyle),
     Textbox(TextboxStyle),
+}
+
+impl WidgetStyle {
+    pub fn kind(&self) -> WidgetKind {
+        match self {
+            Self::Panel(_) => WidgetKind::Panel,
+            Self::Text(_) => WidgetKind::Text,
+            Self::Button(_) => WidgetKind::Button,
+            Self::Textbox(_) => WidgetKind::Textbox,
+        }
+    }
+
+    pub fn merge(&mut self, other: &Self) {
+        match (self, other) {
+            (Self::Panel(style), Self::Panel(other_style)) => style.merge(other_style),
+            (Self::Text(style), Self::Text(other_style)) => style.merge(other_style),
+            (Self::Button(style), Self::Button(other_style)) => style.merge(other_style),
+            (Self::Textbox(style), Self::Textbox(other_style)) => style.merge(other_style),
+            _ => panic!("Cannot merge different widget styles"),
+        }
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -86,6 +107,28 @@ pub struct BaseNodeStyle {
 
     pub self_halign: Option<Alignment>,
     pub self_valign: Option<Alignment>,
+}
+
+impl BaseNodeStyle {
+    pub fn merge(&mut self, other: &Self) {
+        self.widget_style.merge(&other.widget_style);
+
+        self.position_type = other.position_type.or(self.position_type);
+        self.width = other.width.or(self.width);
+        self.height = other.height.or(self.height);
+        self.width_min = other.width_min.or(self.width_min);
+        self.width_max = other.width_max.or(self.width_max);
+        self.height_min = other.height_min.or(self.height_min);
+        self.height_max = other.height_max.or(self.height_max);
+        self.margin_left = other.margin_left.or(self.margin_left);
+        self.margin_right = other.margin_right.or(self.margin_right);
+        self.margin_top = other.margin_top.or(self.margin_top);
+        self.margin_bottom = other.margin_bottom.or(self.margin_bottom);
+        self.solid_override = other.solid_override.or(self.solid_override);
+        self.aspect_ratio = other.aspect_ratio.or(self.aspect_ratio);
+        self.self_halign = other.self_halign.or(self.self_halign);
+        self.self_valign = other.self_valign.or(self.self_valign);
+    }
 }
 
 impl BaseNodeStyle {

@@ -10,6 +10,7 @@ use ui_layout::{
     Alignment, LayoutType, MarginUnits, NodeId, NodeStore, PositionType, SizeUnits, Solid,
     TextMeasurer,
 };
+use crate::styles::compute_styles;
 
 use crate::text_measure_raw_size;
 
@@ -32,14 +33,20 @@ impl UiRuntimeConfig {
     }
 
     pub fn load_from_builder_config(ui_config: UiConfig) -> Self {
-        let (styles, nodes, text_color, first_input, text_icon_asset_id, node_map) =
-            ui_config.decompose();
+        let (
+            styles,
+            nodes,
+            text_color,
+            first_input,
+            text_icon_asset_id,
+            node_map
+        ) = ui_config.decompose();
         let node_map = node_map
             .into_iter()
             .map(|(k, v)| (k.to_string(), v.into()))
             .collect();
 
-        let styles = styles.into_iter().map(|style| style.base).collect();
+        let styles = compute_styles(styles);
 
         Self {
             styles,

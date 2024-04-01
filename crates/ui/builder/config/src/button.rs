@@ -54,6 +54,14 @@ pub struct ButtonStyle {
 }
 
 impl ButtonStyle {
+    pub fn merge(&mut self, other: &Self) {
+        self.panel.merge(&other.panel);
+        self.hover_color = other.hover_color.or(self.hover_color);
+        self.down_color = other.down_color.or(self.down_color);
+    }
+}
+
+impl ButtonStyle {
     pub fn empty() -> Self {
         Self {
             panel: PanelStyle::empty(),

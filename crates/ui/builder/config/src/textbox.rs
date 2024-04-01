@@ -28,6 +28,16 @@ pub struct TextboxStyle {
 }
 
 impl TextboxStyle {
+    pub fn merge(&mut self, other: &Self) {
+        self.background_color = other.background_color.or(self.background_color);
+        self.background_alpha = other.background_alpha.or(self.background_alpha);
+        self.hover_color = other.hover_color.or(self.hover_color);
+        self.active_color = other.active_color.or(self.active_color);
+        self.select_color = other.select_color.or(self.select_color);
+    }
+}
+
+impl TextboxStyle {
     pub fn empty() -> Self {
         Self {
             background_color: None,

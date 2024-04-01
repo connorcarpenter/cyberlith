@@ -37,6 +37,22 @@ pub struct PanelStyle {
 }
 
 impl PanelStyle {
+    pub fn merge(&mut self, other: &Self) {
+        self.background_color = other.background_color.or(self.background_color);
+        self.background_alpha = other.background_alpha.or(self.background_alpha);
+        self.layout_type = other.layout_type.or(self.layout_type);
+        self.padding_left = other.padding_left.or(self.padding_left);
+        self.padding_right = other.padding_right.or(self.padding_right);
+        self.padding_top = other.padding_top.or(self.padding_top);
+        self.padding_bottom = other.padding_bottom.or(self.padding_bottom);
+        self.row_between = other.row_between.or(self.row_between);
+        self.col_between = other.col_between.or(self.col_between);
+        self.children_halign = other.children_halign.or(self.children_halign);
+        self.children_valign = other.children_valign.or(self.children_valign);
+    }
+}
+
+impl PanelStyle {
     pub fn empty() -> Self {
         Self {
             background_color: None,

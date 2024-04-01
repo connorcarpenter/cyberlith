@@ -24,6 +24,13 @@ pub struct TextStyle {
 }
 
 impl TextStyle {
+    pub fn merge(&mut self, other: &Self) {
+        self.background_color = other.background_color.or(self.background_color);
+        self.background_alpha = other.background_alpha.or(self.background_alpha);
+    }
+}
+
+impl TextStyle {
     pub fn empty() -> Self {
         Self {
             background_color: None,
