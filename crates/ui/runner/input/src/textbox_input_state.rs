@@ -4,7 +4,7 @@ use unicode_segmentation::UnicodeSegmentation;
 use input::MouseButton;
 use math::Vec2;
 
-use ui_runner_config::{TextMeasurer, TextR};
+use ui_runner_config::{text_get_raw_rects, text_get_subimage_indices, TextMeasurer};
 use ui_state::TextboxState;
 
 use crate::{UiGlobalEvent, UiInputEvent, UiInputState};
@@ -365,8 +365,8 @@ impl TextboxInputState {
         let mut closest_x: f32 = f32::MAX;
         let mut closest_index: usize = usize::MAX;
 
-        let subimage_indices = TextR::get_subimage_indices(text);
-        let (x_positions, text_height) = TextR::get_raw_text_rects(text_measurer, &subimage_indices);
+        let subimage_indices = text_get_subimage_indices(text);
+        let (x_positions, text_height) = text_get_raw_rects(text_measurer, &subimage_indices);
         let scale = height / text_height;
 
         for (char_index, x_position) in x_positions.iter().enumerate() {

@@ -20,41 +20,6 @@ impl LayoutCache {
             .get(node)
             .map(|(width, height, posx, posy, posz)| (*width, *height, *posx, *posy, *posz))
     }
-}
-
-impl LayoutCache {
-
-    fn width(&self, node: &NodeId) -> f32 {
-        if let Some(rect) = self.rect.get(node) {
-            return rect.0;
-        }
-
-        0.0
-    }
-
-    fn height(&self, node: &NodeId) -> f32 {
-        if let Some(rect) = self.rect.get(node) {
-            return rect.1;
-        }
-
-        0.0
-    }
-
-    fn posx(&self, node: &NodeId) -> f32 {
-        if let Some(rect) = self.rect.get(node) {
-            return rect.2;
-        }
-
-        0.0
-    }
-
-    fn posy(&self, node: &NodeId) -> f32 {
-        if let Some(rect) = self.rect.get(node) {
-            return rect.3;
-        }
-
-        0.0
-    }
 
     pub fn set_bounds(&mut self, node: &NodeId, posx: f32, posy: f32, posz: f32, width: f32, height: f32) {
         if let Some(rect) = self.rect.get_mut(node) {

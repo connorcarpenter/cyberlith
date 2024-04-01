@@ -1,4 +1,4 @@
-use ui_runner_config::{WidgetKind, WidgetR};
+use ui_runner_config::{WidgetKind};
 
 use crate::{panel::PanelState, button::ButtonState, text::TextState, textbox::TextboxState};
 
@@ -11,8 +11,8 @@ pub enum WidgetState {
 }
 
 impl WidgetState {
-    pub(crate) fn from_widget(widget: &WidgetR) -> Self {
-        match widget.kind() {
+    pub(crate) fn from_widget(widget: &WidgetKind) -> Self {
+        match widget {
             WidgetKind::Panel => Self::Panel(PanelState::new()),
             WidgetKind::Text => Self::Text(TextState::new()),
             WidgetKind::Button => Self::Button(ButtonState::new()),

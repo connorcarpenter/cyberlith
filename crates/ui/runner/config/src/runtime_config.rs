@@ -3,10 +3,10 @@ use std::slice::Iter;
 
 use asset_id::AssetId;
 use render_api::base::Color;
-use ui_builder_config::{BaseNodeStyle, ButtonStyle, Navigation, PanelStyle, StyleId, TextboxStyle, UiConfig, WidgetKind, WidgetStyle};
+use ui_builder_config::{BaseNodeStyle, Button, ButtonStyle, Navigation, Panel, PanelStyle, StyleId, Text, TextboxStyle, UiConfig, UiNode, WidgetKind, WidgetStyle};
 use ui_layout::{NodeId, NodeStore};
 
-use crate::{panel::PanelR, node::UiNodeR, button::ButtonR, runtime_store::UiRuntimeStore, text::TextR};
+use crate::{runtime_store::UiRuntimeStore};
 
 pub struct UiRuntimeConfig {
 
@@ -59,7 +59,7 @@ impl UiRuntimeConfig {
         self.store.nodes_len()
     }
 
-    pub fn nodes_iter(&self) -> Iter<'_, UiNodeR> {
+    pub fn nodes_iter(&self) -> Iter<'_, UiNode> {
         self.store.nodes_iter()
     }
 
@@ -71,7 +71,7 @@ impl UiRuntimeConfig {
         self.id_str_to_node_id_map.get(id_str).cloned()
     }
 
-    pub fn get_node(&self, id: &NodeId) -> Option<&UiNodeR> {
+    pub fn get_node(&self, id: &NodeId) -> Option<&UiNode> {
         self.store.get_node(&id)
     }
 
@@ -79,7 +79,7 @@ impl UiRuntimeConfig {
         self.get_node(node_id).unwrap().widget_kind()
     }
 
-    pub fn panel_ref(&self, node_id: &NodeId) -> Option<&PanelR> {
+    pub fn panel_ref(&self, node_id: &NodeId) -> Option<&Panel> {
         let node = self.get_node(node_id)?;
         if node.widget_kind() == WidgetKind::Panel {
             return node.widget_panel_ref();
@@ -87,7 +87,7 @@ impl UiRuntimeConfig {
         None
     }
 
-    pub fn text_ref(&self, node_id: &NodeId) -> Option<&TextR> {
+    pub fn text_ref(&self, node_id: &NodeId) -> Option<&Text> {
         let node = self.get_node(node_id)?;
         if node.widget_kind() == WidgetKind::Text {
             return node.widget_text_ref();
@@ -95,7 +95,7 @@ impl UiRuntimeConfig {
         None
     }
 
-    pub fn button_ref(&self, node_id: &NodeId) -> Option<&ButtonR> {
+    pub fn button_ref(&self, node_id: &NodeId) -> Option<&Button> {
         let node = self.get_node(node_id)?;
         if node.widget_kind() == WidgetKind::Button {
             return node.widget_button_ref();

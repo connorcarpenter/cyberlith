@@ -40,7 +40,7 @@ impl UiState {
         };
 
         for node in ui_config.nodes_iter() {
-            me.store.node_state_init(node);
+            me.store.node_state_init(&node.widget_kind());
             me.visibility_store.node_state_init();
         }
 

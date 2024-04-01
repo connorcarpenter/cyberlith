@@ -174,15 +174,6 @@ impl NodeId {
         )
     }
 
-    // Currently unused until wrapping is implemented
-    fn cross_between(&self, store: &dyn NodeStore, parent_layout_type: LayoutType) -> SizeUnits {
-        parent_layout_type.select(
-            store,
-            |store| self.row_between(store),
-            |store| self.col_between(store),
-        )
-    }
-
     pub(crate) fn self_align(&self, store: &dyn NodeStore, parent_layout_type: LayoutType) -> Alignment {
         parent_layout_type.select(
             store,

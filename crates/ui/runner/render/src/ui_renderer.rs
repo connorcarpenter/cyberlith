@@ -8,7 +8,8 @@ use render_api::{
     resources::RenderFrame,
 };
 use storage::Handle;
-use ui_runner::{Blinkiness, UiManager, UiRuntime, state::{NodeActiveState, UiState}, input::{UiInputState}, config::{TextR, NodeId, UiRuntimeConfig, WidgetKind}};
+use ui_runner::{Blinkiness, UiManager, UiRuntime, state::{NodeActiveState, UiState}, input::{UiInputState}, config::{NodeId, UiRuntimeConfig, WidgetKind}};
+use ui_runner::config::{text_get_raw_rects, text_get_subimage_indices};
 
 pub struct UiRenderer;
 
@@ -63,8 +64,8 @@ impl UiRenderer {
             return;
         };
         let text_measurer = UiTextMeasurer::new(icon_data);
-        let subimage_indices = TextR::get_subimage_indices(text);
-        let (x_positions, text_height) = TextR::get_raw_text_rects(&text_measurer, &subimage_indices);
+        let subimage_indices = text_get_subimage_indices(text);
+        let (x_positions, text_height) = text_get_raw_rects(&text_measurer, &subimage_indices);
 
         let mut cursor = Transform::from_xyz(
             0.0,
@@ -104,8 +105,8 @@ impl UiRenderer {
             return;
         };
         let text_measurer = UiTextMeasurer::new(icon_data);
-        let subimage_indices = TextR::get_subimage_indices(text);
-        let (x_positions, text_height) = TextR::get_raw_text_rects(&text_measurer, &subimage_indices);
+        let subimage_indices = text_get_subimage_indices(text);
+        let (x_positions, text_height) = text_get_raw_rects(&text_measurer, &subimage_indices);
         let text_scale = transform.scale.y / text_height;
 
         let pos_a = transform.translation.x + (x_positions[carat_index] * text_scale);

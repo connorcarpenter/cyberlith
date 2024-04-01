@@ -1,4 +1,4 @@
-use ui_runner_config::UiNodeR;
+use ui_runner_config::WidgetKind;
 
 use crate::{button::ButtonState, widget::WidgetState, panel::PanelState, text::TextState, textbox::TextboxState};
 
@@ -14,8 +14,8 @@ impl UiNodeState {
         }
     }
 
-    pub(crate) fn from_node(ui_node: &UiNodeR) -> Self {
-        let widget_state = WidgetState::from_widget(&ui_node.widget);
+    pub(crate) fn from_node(widget_kind: &WidgetKind) -> Self {
+        let widget_state = WidgetState::from_widget(widget_kind);
 
         Self::new(widget_state)
     }

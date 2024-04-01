@@ -4,7 +4,7 @@ use bevy_log::warn;
 use input::{CursorIcon, GamepadButtonType, InputEvent, Key, Modifiers, MouseButton};
 use math::Vec2;
 
-use ui_runner_config::{PanelR, TextMeasurer, NodeId, UiRuntimeConfig, WidgetKind};
+use ui_runner_config::{TextMeasurer, NodeId, UiRuntimeConfig, WidgetKind, point_is_inside};
 use ui_state::UiState;
 
 use crate::{UiGlobalEvent, UiNodeEvent, input_state::UiInputState, textbox_input_state::TextboxInputState};
@@ -438,7 +438,7 @@ fn ui_update_hover(
         _ => None,
     };
     if let Some(cursor_icon) = check {
-        if PanelR::mouse_is_inside(
+        if point_is_inside(
             (width, height, child_offset_x, child_offset_y),
             mouse_x, mouse_y,
         ) {

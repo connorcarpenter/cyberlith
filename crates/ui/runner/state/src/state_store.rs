@@ -1,4 +1,4 @@
-use ui_runner_config::{NodeId, UiNodeR};
+use ui_runner_config::{NodeId, WidgetKind};
 
 use crate::{panel::PanelState, button::ButtonState, UiNodeState, text::TextState, textbox::TextboxState};
 
@@ -14,8 +14,8 @@ impl UiStateStore {
     }
 
     // nodes
-    pub(crate) fn node_state_init(&mut self, node: &UiNodeR) {
-        let node_state = UiNodeState::from_node(node);
+    pub(crate) fn node_state_init(&mut self, widget_kind: &WidgetKind) {
+        let node_state = UiNodeState::from_node(widget_kind);
         self.insert_node(node_state);
     }
 

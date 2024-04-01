@@ -1,16 +1,15 @@
 use std::slice::Iter;
 
 use render_api::base::Color;
-use ui_builder_config::{BaseNodeStyle, ButtonStyle, PanelStyle, StyleId, TextboxStyle, TextStyle, UiStore, WidgetKind, WidgetStyle};
-use ui_layout::{Alignment, LayoutType, MarginUnits, NodeId, NodeStore, PositionType, SizeUnits, Solid, TextMeasurer, UiVisibilityStore};
 
-use crate::node::UiNodeR;
-use crate::{PanelR, TextR};
-use crate::button::ButtonR;
+use ui_builder_config::{BaseNodeStyle, Button, ButtonStyle, Panel, PanelStyle, StyleId, Text, TextboxStyle, TextStyle, UiNode, UiStore, WidgetKind, WidgetStyle};
+use ui_layout::{Alignment, LayoutType, MarginUnits, NodeId, NodeStore, PositionType, SizeUnits, Solid, TextMeasurer};
+
+use crate::utils::text_measure_raw_size;
 
 pub struct UiRuntimeStore {
     styles: Vec<BaseNodeStyle>,
-    nodes: Vec<UiNodeR>,
+    nodes: Vec<UiNode>,
 }
 
 impl UiRuntimeStore {
@@ -33,11 +32,11 @@ impl UiRuntimeStore {
         self.nodes.len()
     }
 
-    pub fn nodes_iter(&self) -> Iter<'_, UiNodeR> {
+    pub fn nodes_iter(&self) -> Iter<'_, UiNode> {
         self.nodes.iter()
     }
 
-    pub fn get_node(&self, node_id: &NodeId) -> Option<&UiNodeR> {
+    pub fn get_node(&self, node_id: &NodeId) -> Option<&UiNode> {
         self.nodes.get(node_id.as_usize())
     }
 
@@ -45,7 +44,7 @@ impl UiRuntimeStore {
         self.get_node(node_id).unwrap().widget_kind()
     }
 
-    pub fn panel_ref(&self, node_id: &NodeId) -> Option<&PanelR> {
+    pub fn panel_ref(&self, node_id: &NodeId) -> Option<&Panel> {
         let node = self.get_node(node_id)?;
         if node.widget_kind() == WidgetKind::Panel {
             return node.widget_panel_ref();
@@ -53,7 +52,7 @@ impl UiRuntimeStore {
         None
     }
 
-    pub fn button_ref(&self, node_id: &NodeId) -> Option<&ButtonR> {
+    pub fn button_ref(&self, node_id: &NodeId) -> Option<&Button> {
         let node = self.get_node(node_id)?;
         if node.widget_kind() == WidgetKind::Button {
             return node.widget_button_ref();
@@ -61,7 +60,7 @@ impl UiRuntimeStore {
         None
     }
 
-    pub fn text_ref(&self, node_id: &NodeId) -> Option<&TextR> {
+    pub fn text_ref(&self, node_id: &NodeId) -> Option<&Text> {
         let node = self.get_node(node_id)?;
         if node.widget_kind() == WidgetKind::Text {
             return node.widget_text_ref();
@@ -455,7 +454,7 @@ impl NodeStore for UiRuntimeStore {
     fn node_calculate_text_width(&self, id: &NodeId, text_measurer: &dyn TextMeasurer, height: f32) -> f32 {
         let text_ref = self.text_ref(id).unwrap();
         let text = text_ref.text.as_str();
-        let (raw_width, raw_height) = TextR::measure_raw_text_size(text_measurer, text);
+        let (raw_width, raw_height) = text_measure_raw_size(text_measurer, text);
         let scale = height / raw_height;
         raw_width * scale
     }
