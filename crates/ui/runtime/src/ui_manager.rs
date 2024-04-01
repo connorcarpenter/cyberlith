@@ -4,7 +4,7 @@ use bevy_ecs::{change_detection::{Mut, Res, ResMut}, event::Event, prelude::Worl
 use bevy_log::warn;
 
 use asset_id::AssetId;
-use asset_loader::{AssetHandle, AssetManager, AssetStorage, IconData, ProcessedAssetStore, TypedAssetId, UiConfigData, UiTextMeasurer};
+use asset_loader::{AssetHandle, AssetManager, AssetStorage, IconData, ProcessedAssetStore, TypedAssetId, UiTextMeasurer};
 use clipboard::ClipboardManager;
 use input::{CursorIcon, Input};
 use math::Vec2;
@@ -107,8 +107,7 @@ impl UiManager {
         let handle = AssetHandle::<UiRuntime>::new(*asset_id);
         if !self.ui_runtimes.has(&handle) {
 
-            let (ui_config_data, ui_config) = UiConfigData::from_ui_config(ui_config);
-            let runtime = UiRuntime::new(ui_config, ui_config_data);
+            let runtime = UiRuntime::load_from_config(ui_config);
             self.ui_runtimes.insert(handle, runtime);
 
             let runtime = self.ui_runtimes.get(&handle).unwrap();
@@ -135,8 +134,7 @@ impl UiManager {
         let handle = AssetHandle::<UiRuntime>::new(*asset_id);
         if !self.ui_runtimes.has(&handle) {
             let bytes = asset_data_store.get(asset_id).unwrap();
-            let (ui_data, ui_config) = UiConfigData::from_bytes(bytes);
-            let runtime = UiRuntime::new(ui_config, ui_data);
+            let runtime = UiRuntime::load_from_bytes(bytes);
 
             self.ui_runtimes.insert(handle, runtime);
 

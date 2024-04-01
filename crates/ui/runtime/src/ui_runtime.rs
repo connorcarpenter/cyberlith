@@ -1,4 +1,4 @@
-use asset_loader::{AssetHandle, IconData, TypedAssetId, UiConfigData, UiTextMeasurer};
+use asset_loader::{AssetHandle, IconData, TypedAssetId, UiDependencies, UiTextMeasurer};
 use input::CursorIcon;
 use math::Vec2;
 use render_api::{base::{CpuMaterial, CpuMesh}, components::Viewport};
@@ -11,12 +11,20 @@ pub struct UiRuntime {
     state: UiState,
     input_state: UiInputState,
     config: UiConfig,
-    dependencies: UiConfigData,
+    dependencies: UiDependencies,
 }
 
 impl UiRuntime {
-    pub(crate) fn new(config: UiConfig, dependencies: UiConfigData) -> Self {
 
+    pub(crate) fn load_from_bytes(bytes: &[u8]) -> Self {
+        let config = UiDependencies::load_config_from_bytes(bytes);
+        Self::load_from_config(config)
+    }
+
+    pub(crate) fn load_from_config(config: UiConfig) -> Self {
+
+        let icon_asset_id = config.get_text_icon_asset_id();
+        let dependencies = UiDependencies::new(icon_asset_id);
         let input_state = UiInputState::new();
         let state = UiState::from_ui_config(&config);
 
@@ -28,7 +36,7 @@ impl UiRuntime {
         }
     }
 
-    pub fn decompose_to_refs(&self) -> (&UiState, &UiInputState, &UiConfig, &UiConfigData) {
+    pub fn decompose_to_refs(&self) -> (&UiState, &UiInputState, &UiConfig, &UiDependencies) {
         (&self.state, &self.input_state, &self.config, &self.dependencies)
     }
 
