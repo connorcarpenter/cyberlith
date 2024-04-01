@@ -9,7 +9,7 @@ use render_api::{
 use storage::{Handle, Storage};
 use render_api::base::Color;
 
-use ui_types::{NodeId, UiConfig, UiVisibilityStore, WidgetKind};
+use ui_types::{NodeId, UiConfig, UiRuntimeConfig, UiVisibilityStore, WidgetKind};
 use ui_layout::{Cache, Node, TextMeasurer};
 
 use crate::{
@@ -51,7 +51,7 @@ impl UiState {
 
     pub fn load_cpu_data(
         &mut self,
-        ui_config: &UiConfig,
+        ui_config: &UiRuntimeConfig,
         meshes: &mut Storage<CpuMesh>,
         materials: &mut Storage<CpuMaterial>,
     ) {
@@ -63,31 +63,31 @@ impl UiState {
 
         // set text color handle
         {
-            let mat_handle = materials.add(ui_config.globals.get_text_color());
+            let mat_handle = materials.add(ui_config.get_text_color());
             self.globals.text_color_handle_opt = Some(mat_handle);
         }
 
         // set color handles
         let ids = self.collect_color_handles();
         for id in ids {
-            let node_ref = ui_config.node_ref(&id).unwrap();
+            let node_ref = ui_config.get_node(&id).unwrap();
 
             match node_ref.widget_kind() {
                 WidgetKind::Panel => {
-                    let background_color = ui_config.store.node_background_color(&id).copied().unwrap_or(Color::BLACK);
+                    let background_color = ui_config.node_background_color(&id).copied().unwrap_or(Color::BLACK);
                     let panel_mut = self.panel_mut(&id).unwrap();
                     let mat_handle = materials.add(background_color);
                     panel_mut.background_color_handle = Some(mat_handle);
                 }
                 WidgetKind::Text => {
-                    let background_color = ui_config.store.node_background_color(&id).copied().unwrap_or(Color::BLACK);
+                    let background_color = ui_config.node_background_color(&id).copied().unwrap_or(Color::BLACK);
                     let text_mut = self.text_mut(&id).unwrap();
                     let mat_handle = materials.add(background_color);
                     text_mut.background_color_handle = Some(mat_handle);
                 }
                 WidgetKind::Button => {
-                    let background_color = ui_config.store.node_background_color(&id).copied().unwrap_or(Color::BLACK);
-                    let button_style = ui_config.store.button_style(&id);
+                    let background_color = ui_config.node_background_color(&id).copied().unwrap_or(Color::BLACK);
+                    let button_style = ui_config.button_style(&id);
                     let hover_color = button_style.map(|style| style.hover_color).flatten().unwrap_or(Color::BLACK);
                     let down_color = button_style.map(|style| style.down_color).flatten().unwrap_or(Color::BLACK);
 
@@ -103,8 +103,8 @@ impl UiState {
                     button_mut.set_down_color_handle(down_color_handle);
                 }
                 WidgetKind::Textbox => {
-                    let background_color = ui_config.store.node_background_color(&id).copied().unwrap_or(Color::BLACK);
-                    let textbox_style = ui_config.store.textbox_style(&id);
+                    let background_color = ui_config.node_background_color(&id).copied().unwrap_or(Color::BLACK);
+                    let textbox_style = ui_config.textbox_style(&id);
                     let hover_color = textbox_style.map(|style| style.hover_color).flatten().unwrap_or(Color::BLACK);
                     let active_color = textbox_style.map(|style| style.active_color).flatten().unwrap_or(Color::BLACK);
                     let select_color = textbox_style.map(|style| style.select_color).flatten().unwrap_or(Color::BLACK);
@@ -178,23 +178,22 @@ impl UiState {
         self.recalc_layout
     }
 
-    pub fn recalculate_layout(&mut self, ui_config: &UiConfig, text_measurer: &dyn TextMeasurer) {
+    pub fn recalculate_layout(&mut self, ui_config: &UiRuntimeConfig, text_measurer: &dyn TextMeasurer) {
         self.recalc_layout = false;
         self.recalculate_layout_impl(ui_config, text_measurer);
     }
 
-    fn recalculate_layout_impl(&mut self, ui_config: &UiConfig, text_measurer: &dyn TextMeasurer) {
+    fn recalculate_layout_impl(&mut self, ui_config: &UiRuntimeConfig, text_measurer: &dyn TextMeasurer) {
         //info!("recalculating layout. viewport_width: {:?}, viewport_height: {:?}", self.viewport.width, self.viewport.height);
 
         let last_viewport_width: f32 = self.last_viewport.width as f32;
         let last_viewport_height: f32 = self.last_viewport.height as f32;
 
         let cache_mut = &mut self.cache;
-        let store_ref = &ui_config.store;
         let visibility_store_ref = &self.visibility_store;
 
         // this calculates all the rects in cache_mut
-        UiConfig::ROOT_NODE_ID.layout(cache_mut, store_ref, visibility_store_ref, text_measurer, last_viewport_width, last_viewport_height);
+        UiConfig::ROOT_NODE_ID.layout(cache_mut, ui_config, visibility_store_ref, text_measurer, last_viewport_width, last_viewport_height);
         finalize_rects(ui_config, self, &UiConfig::ROOT_NODE_ID, (0.0, 0.0, 0.0))
 
         // print_node(&Self::ROOT_PANEL_ID, &self.cache, &self.panels, true, false, "".to_string());
@@ -258,12 +257,12 @@ impl StateGlobals {
 
 // recurses through tree and sets the bounds of each node to their absolute position
 fn finalize_rects(
-    ui_config: &UiConfig,
+    ui_config: &UiRuntimeConfig,
     ui_state: &mut UiState,
     id: &NodeId,
     parent_position: (f32, f32, f32),
 ) {
-    let Some(node) = ui_config.store.get_node(&id) else {
+    let Some(node) = ui_config.get_node(&id) else {
         warn!("no panel for id: {:?}", id);
         return;
     };
@@ -283,7 +282,7 @@ fn finalize_rects(
 
     match node.widget_kind() {
         WidgetKind::Panel => {
-            let Some(panel_ref) = ui_config.store.panel_ref(id) else {
+            let Some(panel_ref) = ui_config.panel_ref(id) else {
                 panic!("no panel ref for node_id: {:?}", id);
             };
 
@@ -294,7 +293,7 @@ fn finalize_rects(
             }
         }
         WidgetKind::Button => {
-            let Some(button_ref) = ui_config.store.button_ref(id) else {
+            let Some(button_ref) = ui_config.button_ref(id) else {
                 panic!("no button ref for node_id: {:?}", id);
             };
             let panel_ref = &button_ref.panel;

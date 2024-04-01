@@ -5,12 +5,12 @@ use render_api::{base::{CpuMaterial, CpuMesh}, components::Viewport};
 use storage::Storage;
 use ui_input::{UiGlobalEvent, UiInputEvent, UiInputState, UiNodeEvent};
 use ui_state::UiState;
-use ui_types::{NodeId, UiConfig};
+use ui_types::{NodeId, UiConfig, UiRuntimeConfig};
 
 pub struct UiRuntime {
     state: UiState,
     input_state: UiInputState,
-    config: UiConfig,
+    config: UiRuntimeConfig,
     dependencies: UiDependencies,
 }
 
@@ -27,16 +27,17 @@ impl UiRuntime {
         let dependencies = UiDependencies::new(icon_asset_id);
         let input_state = UiInputState::new();
         let state = UiState::from_ui_config(&config);
+        let runtime_config = UiRuntimeConfig::new(config);
 
         Self {
             state,
             input_state,
-            config,
+            config: runtime_config,
             dependencies,
         }
     }
 
-    pub fn decompose_to_refs(&self) -> (&UiState, &UiInputState, &UiConfig, &UiDependencies) {
+    pub fn decompose_to_refs(&self) -> (&UiState, &UiInputState, &UiRuntimeConfig, &UiDependencies) {
         (&self.state, &self.input_state, &self.config, &self.dependencies)
     }
 

@@ -6,10 +6,7 @@ use asset_id::AssetId;
 use render_api::base::Color;
 
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
-use ui_types::{
-    Button, ButtonStyle, NodeId, NodeStyle, Panel, PanelStyle, StyleId, Text, Textbox,
-    TextboxStyle, TextStyle, UiConfig, Widget, WidgetKind, WidgetStyle
-};
+use ui_types::{BaseNodeStyle, Button, ButtonStyle, NodeId, NodeStyle, Panel, PanelStyle, StyleId, Text, Textbox, TextboxStyle, TextStyle, UiConfig, Widget, WidgetKind, WidgetStyle};
 
 use crate::{
     bits::{ButtonStyleBits, TextboxStyleBits, TextStyleBits,
@@ -495,22 +492,24 @@ impl Into<NodeStyle> for UiStyleBits {
     fn into(self) -> NodeStyle {
         NodeStyle {
             parent_style:   self.parent_style.map(|val| StyleId::new(val as u32)),
-            widget_style:   self.widget_style.into(),
-            position_type:  self.position_type.map(Into::into),
-            width:          self.width.map(Into::into),
-            height:         self.height.map(Into::into),
-            width_min:      self.width_min.map(Into::into),
-            width_max:      self.width_max.map(Into::into),
-            height_min:     self.height_min.map(Into::into),
-            height_max:     self.height_max.map(Into::into),
-            margin_left:    self.margin_left.map(Into::into),
-            margin_right:   self.margin_right.map(Into::into),
-            margin_top:     self.margin_top.map(Into::into),
-            margin_bottom:  self.margin_bottom.map(Into::into),
-            solid_override: self.solid_override.map(Into::into),
-            aspect_ratio:   self.aspect_ratio.map(|(w, h)| (w as f32, h as f32)),
-            self_halign:    self.self_halign.map(Into::into),
-            self_valign:    self.self_valign.map(Into::into),
+            base: BaseNodeStyle {
+                widget_style: self.widget_style.into(),
+                position_type: self.position_type.map(Into::into),
+                width: self.width.map(Into::into),
+                height: self.height.map(Into::into),
+                width_min: self.width_min.map(Into::into),
+                width_max: self.width_max.map(Into::into),
+                height_min: self.height_min.map(Into::into),
+                height_max: self.height_max.map(Into::into),
+                margin_left: self.margin_left.map(Into::into),
+                margin_right: self.margin_right.map(Into::into),
+                margin_top: self.margin_top.map(Into::into),
+                margin_bottom: self.margin_bottom.map(Into::into),
+                solid_override: self.solid_override.map(Into::into),
+                aspect_ratio: self.aspect_ratio.map(|(w, h)| (w as f32, h as f32)),
+                self_halign: self.self_halign.map(Into::into),
+                self_valign: self.self_valign.map(Into::into),
+            }
         }
     }
 }

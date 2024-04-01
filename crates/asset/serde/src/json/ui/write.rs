@@ -51,27 +51,27 @@ impl From<&NodeStyle> for UiStyleJson {
     fn from(style: &NodeStyle) -> Self {
         Self {
             parent_style:   style.parent_style.map(|id| id.as_usize()),
-            widget_style:   From::from(&style.widget_style),
+            widget_style:   From::from(&style.base.widget_style),
 
-            position_type:  style.position_type.map(From::from),
+            position_type:  style.base.position_type.map(From::from),
 
-            width:          style.width.map(From::from),
-            height:         style.height.map(From::from),
-            width_min:      style.width_min.map(From::from),
-            width_max:      style.width_max.map(From::from),
-            height_min:     style.height_min.map(From::from),
-            height_max:     style.height_max.map(From::from),
+            width:          style.base.width.map(From::from),
+            height:         style.base.height.map(From::from),
+            width_min:      style.base.width_min.map(From::from),
+            width_max:      style.base.width_max.map(From::from),
+            height_min:     style.base.height_min.map(From::from),
+            height_max:     style.base.height_max.map(From::from),
 
-            margin_left:    style.margin_left.map(From::from),
-            margin_right:   style.margin_right.map(From::from),
-            margin_top:     style.margin_top.map(From::from),
-            margin_bottom:  style.margin_bottom.map(From::from),
+            margin_left:    style.base.margin_left.map(From::from),
+            margin_right:   style.base.margin_right.map(From::from),
+            margin_top:     style.base.margin_top.map(From::from),
+            margin_bottom:  style.base.margin_bottom.map(From::from),
 
-            solid_override: style.solid_override.map(From::from),
+            solid_override: style.base.solid_override.map(From::from),
             aspect_ratio:   style.aspect_ratio(),
 
-            self_halign:    style.self_halign.map(From::from),
-            self_valign:    style.self_valign.map(From::from),
+            self_halign:    style.base.self_halign.map(From::from),
+            self_valign:    style.base.self_valign.map(From::from),
         }
     }
 }

@@ -40,6 +40,10 @@ impl UiConfig {
         me
     }
 
+    pub fn decompose(self) -> (UiStore, Globals, HashMap<String, NodeId>) {
+        (self.store, self.globals, self.id_str_to_node_id_map)
+    }
+
     // events
     pub fn get_first_input(&self) -> Option<NodeId> {
         self.globals.first_input
@@ -215,6 +219,10 @@ impl Globals {
 
     pub fn get_text_icon_handle(&self) -> Option<&AssetId> {
         self.text_icon_asset_id_opt.as_ref()
+    }
+
+    pub fn get_first_input_node_id(&self) -> NodeId {
+        self.first_input.unwrap_or(UiConfig::ROOT_NODE_ID)
     }
 
     pub fn get_text_color(&self) -> Color {

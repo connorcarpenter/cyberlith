@@ -3,7 +3,7 @@ use input::CursorIcon;
 use instant::Instant;
 use math::Vec2;
 
-use ui_types::{NodeId, UiConfig};
+use ui_types::{NodeId, UiRuntimeConfig};
 use ui_layout::TextMeasurer;
 use ui_state::{NodeActiveState, UiState};
 
@@ -38,7 +38,7 @@ impl UiInputState {
     }
 
     // events
-    pub fn receive_input(&mut self, ui_config: &UiConfig, ui_state: &mut UiState, text_measurer: &dyn TextMeasurer, mouse_position: Option<Vec2>, events: Vec<UiInputEvent>) {
+    pub fn receive_input(&mut self, ui_config: &UiRuntimeConfig, ui_state: &mut UiState, text_measurer: &dyn TextMeasurer, mouse_position: Option<Vec2>, events: Vec<UiInputEvent>) {
         ui_receive_input(ui_config, ui_state, self, text_measurer, mouse_position, events);
     }
 

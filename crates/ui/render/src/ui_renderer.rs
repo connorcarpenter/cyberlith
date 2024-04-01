@@ -8,7 +8,7 @@ use render_api::{
     resources::RenderFrame,
 };
 use storage::Handle;
-use ui_types::{NodeId, UiConfig, WidgetKind};
+use ui_types::{NodeId, UiRuntimeConfig, WidgetKind};
 use ui_state::{NodeActiveState, UiState};
 use ui_input::UiInputState;
 use ui_runtime::{Blinkiness, UiManager, UiRuntime};
@@ -36,7 +36,7 @@ impl UiRenderer {
 
         let carat_blink = blinkiness.enabled() || ui_input_state.interact_timer_was_recent();
 
-        for node_id in 0..ui.store.nodes_len() {
+        for node_id in 0..ui.nodes_len() {
             let node_id = NodeId::from_usize(node_id);
             draw_ui_node(
                 render_frame,
@@ -133,7 +133,7 @@ fn draw_ui_node(
     render_layer_opt: Option<&RenderLayer>,
     asset_manager: &AssetManager,
     carat_blink: bool,
-    ui_config: &UiConfig,
+    ui_config: &UiRuntimeConfig,
     ui_state: &UiState,
     ui_input_state: &UiInputState,
     text_icon_handle: &AssetHandle<IconData>,
@@ -144,7 +144,7 @@ fn draw_ui_node(
         return;
     };
 
-    let Some(node) = ui_config.store.get_node(&id) else {
+    let Some(node) = ui_config.get_node(&id) else {
         warn!("no node for id 1: {:?}", id);
         return;
     };
@@ -218,7 +218,7 @@ fn draw_ui_panel(
     //self was Panel
     render_frame: &mut RenderFrame,
     render_layer_opt: Option<&RenderLayer>,
-    ui_config: &UiConfig,
+    ui_config: &UiRuntimeConfig,
     ui_state: &UiState,
     node_id: &NodeId,
     transform: &Transform,
@@ -248,14 +248,13 @@ fn draw_ui_text(
     render_frame: &mut RenderFrame,
     render_layer_opt: Option<&RenderLayer>,
     asset_manager: &AssetManager,
-    ui_config: &UiConfig,
+    ui_config: &UiRuntimeConfig,
     ui_state: &UiState,
     text_icon_handle: &AssetHandle<IconData>,
     node_id: &NodeId,
     transform: &Transform,
 ) {
     let Some(text_ref) = ui_config
-        .store
         .get_node(node_id)
         .unwrap()
         .widget_text_ref() else {
@@ -304,7 +303,7 @@ fn draw_ui_button(
     //self was Button
     render_frame: &mut RenderFrame,
     render_layer_opt: Option<&RenderLayer>,
-    ui_config: &UiConfig,
+    ui_config: &UiRuntimeConfig,
     ui_state: &UiState,
     ui_input_state: &UiInputState,
     node_id: &NodeId,
@@ -337,7 +336,7 @@ fn draw_ui_textbox(
     render_layer_opt: Option<&RenderLayer>,
     asset_manager: &AssetManager,
     carat_blink: bool,
-    ui_config: &UiConfig,
+    ui_config: &UiRuntimeConfig,
     ui_state: &UiState,
     ui_input_state: &UiInputState,
     text_icon_handle: &AssetHandle<IconData>,

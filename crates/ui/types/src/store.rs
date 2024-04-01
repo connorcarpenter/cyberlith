@@ -23,6 +23,10 @@ impl UiStore {
         }
     }
 
+    pub(crate) fn decompose(self) -> (Vec<NodeStyle>, Vec<UiNode>) {
+        (self.styles, self.nodes)
+    }
+
     // nodes
 
     pub fn nodes_len(&self) -> usize {
@@ -95,7 +99,7 @@ impl UiStore {
 
     fn widget_style(&self, node_id: &NodeId) -> Option<&WidgetStyle> {
         let style = self.node_style(node_id)?;
-        Some(&style.widget_style)
+        Some(&style.base.widget_style)
     }
 
     pub fn panel_style(&self, node_id: &NodeId) -> Option<&PanelStyle> {

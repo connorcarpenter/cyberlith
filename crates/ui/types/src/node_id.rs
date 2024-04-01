@@ -2,7 +2,7 @@ use std::fmt::{Display, Formatter};
 
 use ui_layout::{Alignment, LayoutType, MarginUnits, Node, PositionType, SizeUnits, Solid, TextMeasurer};
 
-use crate::{Text, UiStore, UiVisibilityStore, WidgetKind};
+use crate::{Text, UiRuntimeConfig, UiVisibilityStore, WidgetKind};
 
 #[derive(Clone, Copy, PartialEq, PartialOrd, Ord, Eq, Hash, Debug, Default)]
 pub struct NodeId(u32);
@@ -28,7 +28,7 @@ impl Display for NodeId {
 }
 
 impl Node for NodeId {
-    type Store = UiStore;
+    type Store = UiRuntimeConfig;
     type StateStore = UiVisibilityStore;
     type ChildIter<'t> = std::slice::Iter<'t, Self>;
     type CacheKey = Self;

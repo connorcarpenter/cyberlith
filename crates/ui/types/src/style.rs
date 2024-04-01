@@ -26,7 +26,45 @@ pub enum WidgetStyle {
 #[derive(Clone, Copy)]
 pub struct NodeStyle {
     pub parent_style: Option<StyleId>,
+    pub base: BaseNodeStyle,
+}
 
+impl NodeStyle {
+    pub fn empty(widget_style: WidgetStyle) -> Self {
+        Self {
+            parent_style: None,
+            base: BaseNodeStyle::empty(widget_style),
+        }
+    }
+
+    pub fn aspect_ratio(&self) -> Option<(f32, f32)> {
+        self.base.aspect_ratio
+    }
+
+    pub fn set_aspect_ratio(&mut self, width: f32, height: f32) {
+        // validate
+        if width.fract() != 0.0 || height.fract() != 0.0 {
+            panic!(
+                "Aspect ratio must be a whole number, got: {} / {}",
+                width, height
+            );
+        }
+        if width < 0.0 || height < 0.0 {
+            panic!(
+                "Aspect ratio must be a positive number, got: {} / {}",
+                width, height
+            );
+        }
+        if width >= 256.0 || height >= 256.0 {
+            panic!("Aspect ratio must be <= 256, got: {} / {}", width, height);
+        }
+
+        self.base.aspect_ratio = Some((width, height));
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct BaseNodeStyle {
     pub widget_style: WidgetStyle,
 
     pub position_type: Option<PositionType>,
@@ -50,10 +88,9 @@ pub struct NodeStyle {
     pub self_valign: Option<Alignment>,
 }
 
-impl NodeStyle {
+impl BaseNodeStyle {
     pub fn empty(widget_style: WidgetStyle) -> Self {
         Self {
-            parent_style: None,
             widget_style,
             position_type: None,
 
@@ -79,26 +116,5 @@ impl NodeStyle {
 
     pub fn aspect_ratio(&self) -> Option<(f32, f32)> {
         self.aspect_ratio
-    }
-
-    pub fn set_aspect_ratio(&mut self, width: f32, height: f32) {
-        // validate
-        if width.fract() != 0.0 || height.fract() != 0.0 {
-            panic!(
-                "Aspect ratio must be a whole number, got: {} / {}",
-                width, height
-            );
-        }
-        if width < 0.0 || height < 0.0 {
-            panic!(
-                "Aspect ratio must be a positive number, got: {} / {}",
-                width, height
-            );
-        }
-        if width >= 256.0 || height >= 256.0 {
-            panic!("Aspect ratio must be <= 256, got: {} / {}", width, height);
-        }
-
-        self.aspect_ratio = Some((width, height));
     }
 }

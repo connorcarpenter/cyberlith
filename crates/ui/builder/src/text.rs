@@ -38,7 +38,7 @@ impl<'a> TextStyleMut<'a> {
     }
 
     fn get_text_style_mut(&mut self) -> &mut TextStyle {
-        if let WidgetStyle::Text(text_style) = &mut self.get_style_mut().widget_style {
+        if let WidgetStyle::Text(text_style) = &mut self.get_style_mut().base.widget_style {
             text_style
         } else {
             panic!("StyleId does not reference a TextStyle");
@@ -62,40 +62,40 @@ impl<'a> TextStyleMut<'a> {
     }
 
     pub fn set_absolute(&mut self) -> &mut Self {
-        self.get_style_mut().position_type = Some(PositionType::Absolute);
+        self.get_style_mut().base.position_type = Some(PositionType::Absolute);
         self
     }
 
     pub fn set_relative(&mut self) -> &mut Self {
-        self.get_style_mut().position_type = Some(PositionType::Relative);
+        self.get_style_mut().base.position_type = Some(PositionType::Relative);
         self
     }
 
     pub fn set_self_halign(&mut self, align: Alignment) -> &mut Self {
-        self.get_style_mut().self_halign = Some(align);
+        self.get_style_mut().base.self_halign = Some(align);
         self
     }
 
     pub fn set_self_valign(&mut self, align: Alignment) -> &mut Self {
-        self.get_style_mut().self_valign = Some(align);
+        self.get_style_mut().base.self_valign = Some(align);
         self
     }
 
     // set height
     fn set_height_units(&mut self, height: SizeUnits) -> &mut Self {
-        self.get_style_mut().height = Some(height);
+        self.get_style_mut().base.height = Some(height);
         self
     }
 
     // set_height_min
     fn set_height_min_units(&mut self, min_height: SizeUnits) -> &mut Self {
-        self.get_style_mut().height_min = Some(min_height);
+        self.get_style_mut().base.height_min = Some(min_height);
         self
     }
 
     // set_height_max
     fn set_height_max_units(&mut self, max_height: SizeUnits) -> &mut Self {
-        self.get_style_mut().height_max = Some(max_height);
+        self.get_style_mut().base.height_max = Some(max_height);
         self
     }
 
@@ -164,7 +164,7 @@ impl<'a> TextStyleMut<'a> {
 
     // set_left
     fn set_margin_left_units(&mut self, left: MarginUnits) -> &mut Self {
-        self.get_style_mut().margin_left = Some(left);
+        self.get_style_mut().base.margin_left = Some(left);
         self
     }
 
@@ -182,7 +182,7 @@ impl<'a> TextStyleMut<'a> {
 
     // set_right
     fn set_margin_right_units(&mut self, right: MarginUnits) -> &mut Self {
-        self.get_style_mut().margin_right = Some(right);
+        self.get_style_mut().base.margin_right = Some(right);
         self
     }
 
@@ -200,7 +200,7 @@ impl<'a> TextStyleMut<'a> {
 
     // set_top
     fn set_margin_top_units(&mut self, top: MarginUnits) -> &mut Self {
-        self.get_style_mut().margin_top = Some(top);
+        self.get_style_mut().base.margin_top = Some(top);
         self
     }
 
@@ -218,7 +218,7 @@ impl<'a> TextStyleMut<'a> {
 
     // set_bottom
     fn set_margin_bottom_units(&mut self, bottom: MarginUnits) -> &mut Self {
-        self.get_style_mut().margin_bottom = Some(bottom);
+        self.get_style_mut().base.margin_bottom = Some(bottom);
         self
     }
 
