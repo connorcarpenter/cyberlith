@@ -227,7 +227,7 @@ fn draw_ui_panel(
 
     // draw panel
     if let Some(mat_handle) = panel_state_ref.background_color_handle {
-        let background_alpha = ui_config.get_style_background_alpha(node_id);
+        let background_alpha = ui_config.node_background_alpha(node_id);
         if background_alpha > 0.0 {
             if background_alpha != 1.0 {
                 panic!("partial background_alpha not implemented yet!");
@@ -268,7 +268,7 @@ fn draw_ui_text(
 
     // draw background
     if let Some(mat_handle) = text_state_ref.background_color_handle {
-        let background_alpha = ui_config.get_style_background_alpha(node_id);
+        let background_alpha = ui_config.node_background_alpha(node_id);
         if background_alpha > 0.0 {
             if background_alpha != 1.0 {
                 panic!("partial background_alpha not implemented yet!");
@@ -314,7 +314,7 @@ fn draw_ui_button(
     // draw button
     let active_state = ui_input_state.get_active_state(node_id);
     if let Some(mat_handle) = button_state_ref.current_color_handle(active_state) {
-        let background_alpha = ui_config.get_style_background_alpha(node_id);
+        let background_alpha = ui_config.node_background_alpha(node_id);
         if background_alpha > 0.0 {
             if background_alpha != 1.0 {
                 panic!("partial background_alpha not implemented yet!");
@@ -348,7 +348,7 @@ fn draw_ui_textbox(
     // draw textbox
     let active_state = ui_input_state.get_active_state(node_id);
     if let Some(mat_handle) = textbox_state_ref.current_color_handle(active_state) {
-        let background_alpha = ui_config.get_style_background_alpha(node_id);
+        let background_alpha = ui_config.node_background_alpha(node_id);
         if background_alpha > 0.0 {
             if background_alpha != 1.0 {
                 panic!("partial background_alpha not implemented yet!");

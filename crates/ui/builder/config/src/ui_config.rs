@@ -83,7 +83,7 @@ impl UiConfig {
         node_id
     }
 
-    pub(crate) fn insert_node(&mut self, node: UiNode) -> NodeId {
+    fn insert_node(&mut self, node: UiNode) -> NodeId {
         if self.nodes.len() >= 255 {
             panic!("1 UI can only hold up to 255 nodes, too many nodes!");
         }

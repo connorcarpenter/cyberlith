@@ -50,13 +50,6 @@ impl UiNode {
         }
     }
 
-    pub fn widget_text_mut(&mut self) -> Option<&mut Text> {
-        match &mut self.widget {
-            Widget::Text(text) => Some(text),
-            _ => None,
-        }
-    }
-
     pub fn widget_button_ref(&self) -> Option<&Button> {
         match &self.widget {
             Widget::Button(button) => Some(button),

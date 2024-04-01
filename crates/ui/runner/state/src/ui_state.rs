@@ -191,7 +191,7 @@ impl UiState {
         let visibility_store_ref = &self.visibility_store;
 
         // this calculates all the rects in cache_mut
-        UiRuntimeConfig::ROOT_NODE_ID.layout(cache_mut, ui_config.get_node_store(), visibility_store_ref, text_measurer, last_viewport_width, last_viewport_height);
+        UiRuntimeConfig::ROOT_NODE_ID.layout(cache_mut, ui_config, visibility_store_ref, text_measurer, last_viewport_width, last_viewport_height);
         finalize_rects(ui_config, self, &UiRuntimeConfig::ROOT_NODE_ID, (0.0, 0.0, 0.0))
 
         // print_node(&Self::ROOT_PANEL_ID, &self.cache, &self.panels, true, false, "".to_string());
