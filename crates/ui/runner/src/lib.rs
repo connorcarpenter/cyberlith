@@ -7,6 +7,9 @@ pub use plugin::UiPlugin;
 mod runtime;
 pub use runtime::UiRuntime;
 
+mod handle;
+pub use handle::UiHandle;
+
 pub mod config {
     pub use ui_runner_config::*;
 }

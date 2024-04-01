@@ -10,7 +10,7 @@ use bevy_log::warn;
 
 use asset_id::AssetId;
 use asset_loader::{
-    AssetHandle, AssetManager, AssetStorage, IconData, ProcessedAssetStore, TypedAssetId,
+    AssetHandle, AssetManager, IconData, ProcessedAssetStore, TypedAssetId,
     UiTextMeasurer,
 };
 use clipboard::ClipboardManager;
@@ -21,19 +21,23 @@ use render_api::{
     components::Camera,
     resources::Time,
 };
+use render_api::components::RenderLayer;
 use storage::Storage;
 use ui_input::{UiGlobalEvent, UiInputEvent, UiNodeEvent, UiNodeEventHandler};
 use ui_runner_config::{NodeId, UiRuntimeConfig};
+use crate::handle::UiHandle;
 
 use crate::runtime::UiRuntime;
 
 #[derive(Resource)]
 pub struct UiManager {
-    pub ui_runtimes: AssetStorage<UiRuntime>,
-    queued_uis: Vec<AssetHandle<UiRuntime>>,
+    active_ui: Option<UiHandle>,
+    active_render_layer: Option<RenderLayer>,
+    pub ui_runtimes: HashMap<UiHandle, UiRuntime>,
+    queued_uis: Vec<UiHandle>,
 
     queued_ui_node_event_handlers:
-        HashMap<AssetHandle<UiRuntime>, Vec<(String, UiNodeEventHandler)>>,
+        HashMap<UiHandle, Vec<(String, UiNodeEventHandler)>>,
     ui_global_events: Vec<UiGlobalEvent>,
     ui_node_event_handlers: HashMap<(AssetId, NodeId), UiNodeEventHandler>,
     ui_node_events: Vec<(AssetId, NodeId, UiNodeEvent)>,
@@ -45,7 +49,10 @@ pub struct UiManager {
 impl Default for UiManager {
     fn default() -> Self {
         Self {
-            ui_runtimes: AssetStorage::default(),
+            active_ui: None,
+            active_render_layer: None,
+
+            ui_runtimes: HashMap::new(),
             queued_uis: Vec::new(),
 
             ui_global_events: Vec::new(),
@@ -115,11 +122,11 @@ impl UiManager {
         self.load_impl(asset_manager.get_store_mut(), asset_data_store, asset_id);
     }
 
-    pub fn manual_load_ui_config(&mut self, asset_id: &AssetId, ui_config: UiRuntimeConfig) {
+    pub fn manual_load_ui_config(&mut self, asset_id: &AssetId, ui_config: UiRuntimeConfig) -> UiHandle {
         let mut dependencies: Vec<(TypedAssetId, TypedAssetId)> = Vec::new();
 
-        let handle = AssetHandle::<UiRuntime>::new(*asset_id);
-        if !self.ui_runtimes.has(&handle) {
+        let handle = UiHandle::new(*asset_id);
+        if !self.ui_runtimes.contains_key(&handle) {
             let runtime = UiRuntime::load_from_config(ui_config);
             self.ui_runtimes.insert(handle, runtime);
 
@@ -134,6 +141,28 @@ impl UiManager {
                 self.finish_dependency_impl(principal_handle, dependency_handle);
             }
         }
+
+        handle
+    }
+
+    pub fn enable_ui(&mut self, handle: &UiHandle) {
+        self.active_ui = Some(*handle);
+    }
+
+    pub fn disable_ui(&mut self) {
+        self.active_ui = None;
+    }
+
+    pub fn active_ui(&self) -> Option<UiHandle> {
+        self.active_ui
+    }
+
+    pub fn set_render_layer(&mut self, render_layer: RenderLayer) {
+        self.active_render_layer = Some(render_layer);
+    }
+
+    pub fn render_layer(&self) -> Option<RenderLayer> {
+        self.active_render_layer
     }
 
     fn load_impl(
@@ -144,8 +173,8 @@ impl UiManager {
     ) {
         let mut dependencies: Vec<(TypedAssetId, TypedAssetId)> = Vec::new();
 
-        let handle = AssetHandle::<UiRuntime>::new(*asset_id);
-        if !self.ui_runtimes.has(&handle) {
+        let handle = UiHandle::new(*asset_id);
+        if !self.ui_runtimes.contains_key(&handle) {
             let bytes = asset_data_store.get(asset_id).unwrap();
             let runtime = UiRuntime::load_from_bytes(bytes);
 
@@ -176,7 +205,7 @@ impl UiManager {
             panic!("");
         };
 
-        let principal_handle = AssetHandle::<UiRuntime>::new(principal_id);
+        let principal_handle = UiHandle::new(principal_id);
         let principal_data = self.ui_runtimes.get_mut(&principal_handle).unwrap();
         principal_data.finish_dependency(dependency_typed_id);
     }
@@ -200,7 +229,7 @@ impl UiManager {
         self.handle_new_uis(ui_handles);
     }
 
-    fn handle_new_uis(&mut self, new_uis: Vec<AssetHandle<UiRuntime>>) {
+    fn handle_new_uis(&mut self, new_uis: Vec<UiHandle>) {
         for handle in new_uis {
             if let Some(queued_handlers) = self.queued_ui_node_event_handlers.remove(&handle) {
                 for (id_str, handler) in queued_handlers {
@@ -263,7 +292,7 @@ impl UiManager {
 
     pub fn register_ui_event<T: Event + Default>(
         &mut self,
-        ui_handle: &AssetHandle<UiRuntime>,
+        ui_handle: &UiHandle,
         id_str: &str,
     ) {
         let asset_id = ui_handle.asset_id();
@@ -292,7 +321,7 @@ impl UiManager {
         &mut self,
         asset_manager: &AssetManager,
         camera: &Camera,
-        ui_handle: &AssetHandle<UiRuntime>,
+        ui_handle: &UiHandle,
     ) {
         let store = asset_manager.get_store();
         let Some(viewport) = camera.viewport else {
@@ -320,7 +349,7 @@ impl UiManager {
     fn recalculate_ui_layout(
         &mut self,
         store: &ProcessedAssetStore,
-        ui_handle: &AssetHandle<UiRuntime>,
+        ui_handle: &UiHandle,
         icon_handle: &AssetHandle<IconData>,
     ) {
         let Some(icon_data) = store.icons.get(&icon_handle) else {
@@ -338,7 +367,7 @@ impl UiManager {
     pub fn update_ui_input(
         &mut self,
         asset_manager: &AssetManager,
-        ui_handle: &AssetHandle<UiRuntime>,
+        ui_handle: &UiHandle,
         mouse_position: Option<Vec2>,
         ui_input_events: Vec<UiInputEvent>,
     ) {

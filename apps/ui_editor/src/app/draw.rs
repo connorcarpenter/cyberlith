@@ -4,12 +4,12 @@ use bevy_ecs::{
 };
 
 use game_engine::{
-    asset::{AssetHandle, AssetManager},
+    asset::AssetManager,
     render::{
         components::{AmbientLight, Camera, Projection, RenderLayer, Transform},
         resources::RenderFrame,
     },
-    ui::{UiManager, UiRender, UiRuntime},
+    ui::{UiManager, UiRender},
 };
 
 pub fn draw(
@@ -18,8 +18,6 @@ pub fn draw(
     ui_manager: Res<UiManager>,
     // Cameras
     cameras_q: Query<(&Camera, &Transform, &Projection, Option<&RenderLayer>)>,
-    // UIs
-    uis_q: Query<(&AssetHandle<UiRuntime>, Option<&RenderLayer>)>,
     // Lights
     ambient_lights_q: Query<(&AmbientLight, Option<&RenderLayer>)>,
 ) {
@@ -37,12 +35,5 @@ pub fn draw(
     }
 
     // Aggregate UIs
-    for (ui_handle, render_layer_opt) in uis_q.iter() {
-        ui_manager.draw_ui(
-            &asset_manager,
-            &mut render_frame,
-            render_layer_opt,
-            ui_handle,
-        );
-    }
+    ui_manager.draw_ui(&asset_manager, &mut render_frame);
 }

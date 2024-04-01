@@ -10,6 +10,8 @@ use ui_input::{UiGlobalEvent, UiInputEvent, UiInputState, UiNodeEvent};
 use ui_runner_config::{NodeId, UiRuntimeConfig};
 use ui_state::UiState;
 
+use crate::handle::UiHandle;
+
 pub struct UiRuntime {
     state: UiState,
     input_state: UiInputState,
@@ -52,10 +54,10 @@ impl UiRuntime {
 
     pub(crate) fn load_dependencies(
         &self,
-        asset_handle: AssetHandle<Self>,
+        ui_handle: UiHandle,
         dependencies: &mut Vec<(TypedAssetId, TypedAssetId)>,
     ) {
-        let typed_asset_id = TypedAssetId::Ui(asset_handle.asset_id());
+        let typed_asset_id = TypedAssetId::Ui(ui_handle.asset_id());
         self.dependencies
             .load_dependencies(typed_asset_id, dependencies);
     }

@@ -8,12 +8,7 @@ use render_api::{
     resources::RenderFrame,
 };
 use storage::Handle;
-use ui_runner::{
-    config::{text_get_raw_rects, text_get_subimage_indices, NodeId, UiRuntimeConfig, WidgetKind},
-    input::UiInputState,
-    state::{NodeActiveState, UiState},
-    Blinkiness, UiManager, UiRuntime,
-};
+use ui_runner::{config::{text_get_raw_rects, text_get_subimage_indices, NodeId, UiRuntimeConfig, WidgetKind}, input::UiInputState, state::{NodeActiveState, UiState}, Blinkiness, UiManager, UiHandle};
 
 pub struct UiRenderer;
 
@@ -24,7 +19,7 @@ impl UiRenderer {
         render_frame: &mut RenderFrame,
         render_layer_opt: Option<&RenderLayer>,
         blinkiness: &Blinkiness,
-        ui_handle: &AssetHandle<UiRuntime>,
+        ui_handle: &UiHandle,
     ) {
         let Some(ui_runner) = ui_manager.ui_runtimes.get(ui_handle) else {
             warn!("ui data not loaded 2: {:?}", ui_handle.asset_id());

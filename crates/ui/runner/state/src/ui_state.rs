@@ -12,10 +12,8 @@ use ui_runner_config::{
 
 use crate::{
     button::ButtonStyleState, panel::PanelStyleState, state_store::UiStateStore, text::TextStyleState,
-    textbox::TextboxState, UiNodeState,
+    textbox::TextboxState, UiNodeState, style_state::StyleState, textbox::TextboxStyleState
 };
-use crate::style_state::StyleState;
-use crate::textbox::TextboxStyleState;
 
 pub struct UiState {
     pub globals: StateGlobals,

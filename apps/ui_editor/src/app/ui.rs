@@ -10,7 +10,7 @@ use bevy_log::{info, warn};
 use asset_serde::json::{Asset, AssetData, AssetMeta, UiConfigJson};
 use game_engine::{
     asset::{
-        embedded_asset_event, AssetHandle, AssetId, AssetManager, AssetMetadataSerde, AssetType,
+        embedded_asset_event, AssetId, AssetManager, AssetMetadataSerde, AssetType,
         ETag, EmbeddedAssetEvent,
     },
     input::{GamepadRumbleIntensity, Input, InputEvent, RumbleManager},
@@ -21,7 +21,7 @@ use game_engine::{
             RenderLayer, RenderTarget,
         },
     },
-    ui::{UiInputConverter, UiManager, UiRuntime},
+    ui::{UiInputConverter, UiManager},
 };
 use ui_builder::UiConfig;
 use ui_runner_config::UiRuntimeConfig;
@@ -59,12 +59,9 @@ pub fn setup(
     let ui = write_to_file(&ui_name, &ui_asset_id, &ui_etag, ui);
 
     // load ui into asset manager
-    ui_manager.manual_load_ui_config(&ui_asset_id, UiRuntimeConfig::load_from_builder_config(ui));
+    let ui_handle = ui_manager.manual_load_ui_config(&ui_asset_id, UiRuntimeConfig::load_from_builder_config(ui));
 
-    // make handle, add handle to entity
-    let ui_handle = AssetHandle::<UiRuntime>::new(ui_asset_id);
-    let ui_entity = commands.spawn(ui_handle).id();
-
+    ui_manager.enable_ui(&ui_handle);
     ui_manager.register_ui_event::<SubmitButtonEvent>(&ui_handle, "login_button");
 
     // scene setup now
@@ -88,7 +85,7 @@ pub fn setup(
         })
         .id();
 
-    commands.insert_resource(Global::new(ui_camera_entity, ui_entity));
+    commands.insert_resource(Global::new(ui_camera_entity));
 }
 
 pub fn ui_update(
@@ -98,21 +95,19 @@ pub fn ui_update(
     mut input_events: EventReader<InputEvent>,
     // Cameras
     cameras_q: Query<(&Camera, Option<&RenderLayer>)>,
-    // UIs
-    uis_q: Query<(&AssetHandle<UiRuntime>, Option<&RenderLayer>)>,
 ) {
-    let Ok((ui_handle, ui_render_layer_opt)) = uis_q.get(global.active_ui_entity) else {
-        warn!("no active ui entity!");
+    let Some(ui_handle) = ui_manager.active_ui() else {
         return;
     };
+    let ui_render_layer_opt = ui_manager.render_layer();
 
     // find camera, update viewport
     let Ok((camera, cam_render_layer_opt)) = cameras_q.get(global.ui_camera_entity) else {
         warn!("no ui camera!");
         return;
     };
-    if cam_render_layer_opt == ui_render_layer_opt {
-        ui_manager.update_ui_viewport(&asset_manager, camera, ui_handle);
+    if cam_render_layer_opt == ui_render_layer_opt.as_ref() {
+        ui_manager.update_ui_viewport(&asset_manager, camera, &ui_handle);
     }
 
     // update with inputs
@@ -120,7 +115,7 @@ pub fn ui_update(
     else {
         return;
     };
-    ui_manager.update_ui_input(&asset_manager, ui_handle, mouse_position, ui_input_events);
+    ui_manager.update_ui_input(&asset_manager, &ui_handle, mouse_position, ui_input_events);
 }
 
 pub fn ui_handle_events(
