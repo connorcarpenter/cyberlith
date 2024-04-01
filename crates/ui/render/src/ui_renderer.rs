@@ -11,7 +11,7 @@ use storage::Handle;
 use ui_types::{NodeId, UiConfig, WidgetKind};
 use ui_state::{NodeActiveState, UiState};
 use ui_input::UiInputState;
-use ui_loader::{Blinkiness, UiManager, UiRuntime};
+use ui_runtime::{Blinkiness, UiManager, UiRuntime};
 
 pub struct UiRenderer;
 

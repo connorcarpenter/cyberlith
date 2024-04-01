@@ -1,6 +1,6 @@
 use asset_loader::{AssetHandle, AssetManager};
 use render_api::{resources::RenderFrame, components::RenderLayer};
-use ui_loader::{UiManager, UiRuntime};
+use ui_runtime::{UiManager, UiRuntime};
 
 use crate::ui_renderer::UiRenderer;
 

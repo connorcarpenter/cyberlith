@@ -1,5 +1,5 @@
 [package]
-name = "ui_loader"
+name = "ui_runtime"
 version = "0.1.0"
 edition = "2021"
 workspace = "../../.."

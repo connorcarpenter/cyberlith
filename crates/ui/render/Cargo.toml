@@ -13,7 +13,7 @@ render_api = { path = "../../render/render_api" }
 storage = { path = "../../storage" }
 ui_state = { path = "../../ui/state" }
 ui_types = { path = "../../ui/types" }
-ui_loader = { path = "../../ui/loader" }
+ui_runtime = { path = "../../ui/runtime" }
 ui_input = { path = "../../ui/input" }
 
 bevy_log = { version = "0.13", default-features=false }

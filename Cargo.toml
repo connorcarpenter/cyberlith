@@ -53,7 +53,7 @@ members = [
     "crates/ui/layout",
     "crates/ui/render",
     "crates/ui/types",
-    "crates/ui/loader",
+    "crates/ui/runtime",
     "crates/ui/state",
     "crates/ui/input",
     "crates/random",
