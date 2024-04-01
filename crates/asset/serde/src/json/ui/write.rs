@@ -18,7 +18,7 @@ impl From<&UiConfig> for UiConfigJson {
     fn from(ui_config: &UiConfig) -> Self {
         let mut style_id_to_index = HashMap::new();
 
-        let text_color = ColorJson::from(ui_config.get_text_color());
+        let text_color = From::from(ui_config.get_text_color());
         let text_icon_asset_id = ui_config.get_text_icon_asset_id().to_string();
 
         let mut me = Self {
@@ -34,7 +34,7 @@ impl From<&UiConfig> for UiConfigJson {
             let style_id = StyleId::new(style_id as u32);
             let next_index = me.styles.len();
             style_id_to_index.insert(style_id, next_index);
-            me.styles.push(UiStyleJson::from(style));
+            me.styles.push(From::from(style));
         }
 
         // nodes
@@ -50,30 +50,28 @@ impl From<&UiConfig> for UiConfigJson {
 impl From<&NodeStyle> for UiStyleJson {
     fn from(style: &NodeStyle) -> Self {
         Self {
-            parent_style: style.parent_style.map(|id| id.as_usize()),
-            widget_style: WidgetStyleJson::from(&style.widget_style),
+            parent_style:   style.parent_style.map(|id| id.as_usize()),
+            widget_style:   From::from(&style.widget_style),
 
-            position_type: style
-                .position_type
-                .map(PositionTypeJson::from),
+            position_type:  style.position_type.map(From::from),
 
-            width: style.width.map(SizeUnitsJson::from),
-            height: style.height.map(SizeUnitsJson::from),
-            width_min: style.width_min.map(SizeUnitsJson::from),
-            width_max: style.width_max.map(SizeUnitsJson::from),
-            height_min: style.height_min.map(SizeUnitsJson::from),
-            height_max: style.height_max.map(SizeUnitsJson::from),
+            width:          style.width.map(From::from),
+            height:         style.height.map(From::from),
+            width_min:      style.width_min.map(From::from),
+            width_max:      style.width_max.map(From::from),
+            height_min:     style.height_min.map(From::from),
+            height_max:     style.height_max.map(From::from),
 
-            margin_left: style.margin_left.map(MarginUnitsJson::from),
-            margin_right: style.margin_right.map(MarginUnitsJson::from),
-            margin_top: style.margin_top.map(MarginUnitsJson::from),
-            margin_bottom: style.margin_bottom.map(MarginUnitsJson::from),
+            margin_left:    style.margin_left.map(From::from),
+            margin_right:   style.margin_right.map(From::from),
+            margin_top:     style.margin_top.map(From::from),
+            margin_bottom:  style.margin_bottom.map(From::from),
 
-            solid_override: style.solid_override.map(SolidJson::from),
-            aspect_ratio: style.aspect_ratio(),
+            solid_override: style.solid_override.map(From::from),
+            aspect_ratio:   style.aspect_ratio(),
 
-            self_halign: style.self_halign.map(AlignmentJson::from),
-            self_valign: style.self_valign.map(AlignmentJson::from),
+            self_halign:    style.self_halign.map(From::from),
+            self_valign:    style.self_valign.map(From::from),
         }
     }
 }
@@ -81,10 +79,10 @@ impl From<&NodeStyle> for UiStyleJson {
 impl From<&WidgetStyle> for WidgetStyleJson {
     fn from(style: &WidgetStyle) -> Self {
         match style {
-            WidgetStyle::Panel(panel) => Self::Panel(PanelStyleJson::from(panel)),
-            WidgetStyle::Text(text) => Self::Text(TextStyleJson::from(text)),
-            WidgetStyle::Button(button) => Self::Button(ButtonStyleJson::from(button)),
-            WidgetStyle::Textbox(textbox) => Self::Textbox(TextboxStyleJson::from(textbox)),
+            WidgetStyle::Panel(panel) =>        Self::Panel(From::from(panel)),
+            WidgetStyle::Text(text) =>           Self::Text(From::from(text)),
+            WidgetStyle::Button(button) =>      Self::Button(From::from(button)),
+            WidgetStyle::Textbox(textbox) =>   Self::Textbox(From::from(textbox)),
         }
     }
 }
@@ -92,20 +90,20 @@ impl From<&WidgetStyle> for WidgetStyleJson {
 impl From<&PanelStyle> for PanelStyleJson {
     fn from(style: &PanelStyle) -> Self {
         Self {
-            background_color: style.background_color.map(ColorJson::from),
-            background_alpha: style.background_alpha(),
+            background_color:   style.background_color.map(From::from),
+            background_alpha:   style.background_alpha(),
 
-            layout_type: style.layout_type.map(LayoutTypeJson::from),
+            layout_type:        style.layout_type.map(From::from),
 
-            padding_left: style.padding_left.map(SizeUnitsJson::from),
-            padding_right: style.padding_right.map(SizeUnitsJson::from),
-            padding_top: style.padding_top.map(SizeUnitsJson::from),
-            padding_bottom: style.padding_bottom.map(SizeUnitsJson::from),
+            padding_left:       style.padding_left.map(From::from),
+            padding_right:      style.padding_right.map(From::from),
+            padding_top:        style.padding_top.map(From::from),
+            padding_bottom:     style.padding_bottom.map(From::from),
 
-            row_between: style.row_between.map(SizeUnitsJson::from),
-            col_between: style.col_between.map(SizeUnitsJson::from),
-            children_halign: style.children_halign.map(AlignmentJson::from),
-            children_valign: style.children_valign.map(AlignmentJson::from),
+            row_between:        style.row_between.map(From::from),
+            col_between:        style.col_between.map(From::from),
+            children_halign:    style.children_halign.map(From::from),
+            children_valign:    style.children_valign.map(From::from),
         }
     }
 }
@@ -113,35 +111,31 @@ impl From<&PanelStyle> for PanelStyleJson {
 impl From<&TextStyle> for TextStyleJson {
     fn from(style: &TextStyle) -> Self {
         Self {
-            background_color: style.background_color.map(ColorJson::from),
-            background_alpha: style.background_alpha(),
+            background_color:   style.background_color.map(From::from),
+            background_alpha:   style.background_alpha(),
         }
     }
 }
 
 impl From<&ButtonStyle> for ButtonStyleJson {
     fn from(style: &ButtonStyle) -> Self {
-        let panel_style = &style.panel;
-        let panel_json = PanelStyleJson::from(panel_style);
-
         Self {
-            panel: panel_json,
-            hover_color: style.hover_color.map(ColorJson::from),
-            down_color: style.down_color.map(ColorJson::from),
+            panel:          From::from(&style.panel),
+            hover_color:    style.hover_color.map(From::from),
+            down_color:     style.down_color.map(From::from),
         }
     }
 }
 
 impl From<&TextboxStyle> for TextboxStyleJson {
     fn from(style: &TextboxStyle) -> Self {
-        let panel_style = &style.panel;
-        let panel_json = PanelStyleJson::from(panel_style);
+        let panel_json = From::from(&style.panel);
 
         Self {
-            panel: panel_json,
-            hover_color: style.hover_color.map(ColorJson::from),
-            active_color: style.active_color.map(ColorJson::from),
-            select_color: style.select_color.map(ColorJson::from),
+            panel:          panel_json,
+            hover_color:    style.hover_color.map(From::from),
+            active_color:   style.active_color.map(From::from),
+            select_color:   style.select_color.map(From::from),
         }
     }
 }
@@ -158,10 +152,10 @@ impl From<PositionType> for PositionTypeJson {
 impl From<SizeUnits> for SizeUnitsJson {
     fn from(size_units: SizeUnits) -> Self {
         match size_units {
-            SizeUnits::Pixels(pixels) => Self::Pixels(pixels),
+            SizeUnits::Pixels(pixels) =>         Self::Pixels(pixels),
             SizeUnits::Percentage(percentage) => Self::Percentage(percentage),
-            SizeUnits::Viewport(percentage) => Self::Viewport(percentage),
-            SizeUnits::Auto => Self::Auto,
+            SizeUnits::Viewport(percentage) =>   Self::Viewport(percentage),
+            SizeUnits::Auto =>                        Self::Auto,
         }
     }
 }
@@ -169,9 +163,9 @@ impl From<SizeUnits> for SizeUnitsJson {
 impl From<MarginUnits> for MarginUnitsJson {
     fn from(margin_units: MarginUnits) -> Self {
         match margin_units {
-            MarginUnits::Pixels(pixels) => Self::Pixels(pixels),
-            MarginUnits::Percentage(percentage) => Self::Percentage(percentage),
-            MarginUnits::Viewport(percentage) => Self::Viewport(percentage),
+            MarginUnits::Pixels(pixels) =>          Self::Pixels(pixels),
+            MarginUnits::Percentage(percentage) =>  Self::Percentage(percentage),
+            MarginUnits::Viewport(percentage) =>    Self::Viewport(percentage),
         }
     }
 }
@@ -179,7 +173,7 @@ impl From<MarginUnits> for MarginUnitsJson {
 impl From<Solid> for SolidJson {
     fn from(solid: Solid) -> Self {
         match solid {
-            Solid::Fit => Self::Fit,
+            Solid::Fit =>  Self::Fit,
             Solid::Fill => Self::Fill,
         }
     }
@@ -188,9 +182,9 @@ impl From<Solid> for SolidJson {
 impl From<Alignment> for AlignmentJson {
     fn from(alignment: Alignment) -> Self {
         match alignment {
-            Alignment::Start => Self::Start,
+            Alignment::Start =>  Self::Start,
             Alignment::Center => Self::Center,
-            Alignment::End => Self::End,
+            Alignment::End =>    Self::End,
         }
     }
 }
@@ -198,7 +192,7 @@ impl From<Alignment> for AlignmentJson {
 impl From<LayoutType> for LayoutTypeJson {
     fn from(layout_type: LayoutType) -> Self {
         match layout_type {
-            LayoutType::Row => Self::Row,
+            LayoutType::Row =>    Self::Row,
             LayoutType::Column => Self::Column,
         }
     }
@@ -218,7 +212,7 @@ impl UiNodeJson {
     fn from_node(style_id_to_index: &HashMap<StyleId, usize>, node: &UiNode) -> Self {
         let mut me = Self {
             style_id: None,
-            widget: WidgetJson::from(&node.widget),
+            widget: From::from(&node.widget),
         };
 
         if let Some(style_id) = node.style_id() {
@@ -233,10 +227,10 @@ impl UiNodeJson {
 impl From<&Widget> for WidgetJson {
     fn from(widget: &Widget) -> Self {
         match widget {
-            Widget::Panel(panel) => Self::Panel(PanelJson::from(panel)),
-            Widget::Text(text) => Self::Text(TextJson::from(text)),
-            Widget::Button(button) => Self::Button(ButtonJson::from(button)),
-            Widget::Textbox(textbox) => Self::Textbox(TextboxJson::from(textbox)),
+            Widget::Panel(panel) =>        Self::Panel(From::from(panel)),
+            Widget::Text(text) =>           Self::Text(From::from(text)),
+            Widget::Button(button) =>     Self::Button(From::from(button)),
+            Widget::Textbox(textbox) =>  Self::Textbox(From::from(textbox)),
         }
     }
 }
@@ -263,24 +257,23 @@ impl From<&Text> for TextJson {
 
 impl From<&Button> for ButtonJson {
     fn from(button: &Button) -> Self {
-        let panel = &button.panel;
-        let panel_json = PanelJson::from(panel);
+        let panel_json = From::from(&button.panel);
+
         Self {
-            panel: panel_json,
-            id_str: button.id_str.to_string(),
-            navigation: NavigationJson::from(&button.navigation),
+            panel:      panel_json,
+            id_str:     button.id_str.to_string(),
+            navigation: From::from(&button.navigation),
         }
     }
 }
 
 impl From<&Textbox> for TextboxJson {
     fn from(textbox: &Textbox) -> Self {
-        let panel = &textbox.panel;
-        let panel_json = PanelJson::from(panel);
+        let panel_json =  From::from(&textbox.panel);
         Self {
-            panel: panel_json,
-            id_str: textbox.id_str.to_string(),
-            navigation: NavigationJson::from(&textbox.navigation),
+            panel:      panel_json,
+            id_str:     textbox.id_str.to_string(),
+            navigation: From::from(&textbox.navigation),
         }
     }
 }

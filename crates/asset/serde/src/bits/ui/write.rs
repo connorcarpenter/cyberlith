@@ -124,30 +124,28 @@ impl From<&NodeStyle> for UiStyleBits {
         });
 
         Self {
-            parent_style: style.parent_style.map(|val| val.as_usize() as u8),
-            widget_style: WidgetStyleBits::from(&style.widget_style),
+            parent_style:       style.parent_style.map(|val| val.as_usize() as u8),
+            widget_style:       From::from(&style.widget_style),
 
-            position_type: style
-                .position_type
-                .map(PositionTypeBits::from),
+            position_type:      style.position_type.map(From::from),
 
-            width: style.width.map(SizeUnitsBits::from),
-            height: style.height.map(SizeUnitsBits::from),
-            width_min: style.width_min.map(SizeUnitsBits::from),
-            width_max: style.width_max.map(SizeUnitsBits::from),
-            height_min: style.height_min.map(SizeUnitsBits::from),
-            height_max: style.height_max.map(SizeUnitsBits::from),
+            width:              style.width.map(From::from),
+            height:             style.height.map(From::from),
+            width_min:          style.width_min.map(From::from),
+            width_max:          style.width_max.map(From::from),
+            height_min:         style.height_min.map(From::from),
+            height_max:         style.height_max.map(From::from),
 
-            margin_left: style.margin_left.map(MarginUnitsBits::from),
-            margin_right: style.margin_right.map(MarginUnitsBits::from),
-            margin_top: style.margin_top.map(MarginUnitsBits::from),
-            margin_bottom: style.margin_bottom.map(MarginUnitsBits::from),
+            margin_left:        style.margin_left.map(From::from),
+            margin_right:       style.margin_right.map(From::from),
+            margin_top:         style.margin_top.map(From::from),
+            margin_bottom:      style.margin_bottom.map(From::from),
 
-            solid_override: style.solid_override.map(SolidBits::from),
+            solid_override:     style.solid_override.map(From::from),
             aspect_ratio,
 
-            self_halign: style.self_halign.map(AlignmentBits::from),
-            self_valign: style.self_valign.map(AlignmentBits::from),
+            self_halign:        style.self_halign.map(From::from),
+            self_valign:        style.self_valign.map(From::from),
         }
     }
 }
@@ -155,10 +153,10 @@ impl From<&NodeStyle> for UiStyleBits {
 impl From<&WidgetStyle> for WidgetStyleBits {
     fn from(style: &WidgetStyle) -> Self {
         match style {
-            WidgetStyle::Panel(panel) => Self::Panel(PanelStyleBits::from(panel)),
-            WidgetStyle::Text(text) => Self::Text(TextStyleBits::from(text)),
-            WidgetStyle::Button(button) => Self::Button(ButtonStyleBits::from(button)),
-            WidgetStyle::Textbox(textbox) => Self::Textbox(TextboxStyleBits::from(textbox)),
+            WidgetStyle::Panel(panel) =>        Self::Panel(From::from(panel)),
+            WidgetStyle::Text(text) =>           Self::Text(From::from(text)),
+            WidgetStyle::Button(button) =>      Self::Button(From::from(button)),
+            WidgetStyle::Textbox(textbox) =>   Self::Textbox(From::from(textbox)),
         }
     }
 }
@@ -166,23 +164,23 @@ impl From<&WidgetStyle> for WidgetStyleBits {
 impl From<&PanelStyle> for PanelStyleBits {
     fn from(style: &PanelStyle) -> Self {
         Self {
-            background_color: style.background_color.map(ColorBits::from),
+            background_color: style.background_color.map(From::from),
             background_alpha: style.background_alpha().map(|val| {
                 let val = (val * 10.0) as u8;
                 UnsignedInteger::<4>::new(val)
             }),
 
-            layout_type: style.layout_type.map(LayoutTypeBits::from),
+            layout_type:        style.layout_type.map(From::from),
 
-            padding_left: style.padding_left.map(SizeUnitsBits::from),
-            padding_right: style.padding_right.map(SizeUnitsBits::from),
-            padding_top: style.padding_top.map(SizeUnitsBits::from),
-            padding_bottom: style.padding_bottom.map(SizeUnitsBits::from),
+            padding_left:       style.padding_left.map(From::from),
+            padding_right:      style.padding_right.map(From::from),
+            padding_top:        style.padding_top.map(From::from),
+            padding_bottom:     style.padding_bottom.map(From::from),
 
-            row_between: style.row_between.map(SizeUnitsBits::from),
-            col_between: style.col_between.map(SizeUnitsBits::from),
-            children_halign: style.children_halign.map(AlignmentBits::from),
-            children_valign: style.children_valign.map(AlignmentBits::from),
+            row_between:        style.row_between.map(From::from),
+            col_between:        style.col_between.map(From::from),
+            children_halign:    style.children_halign.map(From::from),
+            children_valign:    style.children_valign.map(From::from),
         }
     }
 }
@@ -190,7 +188,7 @@ impl From<&PanelStyle> for PanelStyleBits {
 impl From<&TextStyle> for TextStyleBits {
     fn from(style: &TextStyle) -> Self {
         Self {
-            background_color: style.background_color.map(ColorBits::from),
+            background_color: style.background_color.map(From::from),
             background_alpha: style.background_alpha().map(|val| {
                 let val = (val * 10.0) as u8;
                 UnsignedInteger::<4>::new(val)
@@ -202,9 +200,9 @@ impl From<&TextStyle> for TextStyleBits {
 impl From<&ButtonStyle> for ButtonStyleBits {
     fn from(style: &ButtonStyle) -> Self {
         Self {
-            panel: PanelStyleBits::from(&style.panel),
-            hover_color: style.hover_color.map(ColorBits::from),
-            down_color: style.down_color.map(ColorBits::from),
+            panel:          From::from(&style.panel),
+            hover_color:    style.hover_color.map(From::from),
+            down_color:     style.down_color.map(From::from),
         }
     }
 }
@@ -212,10 +210,10 @@ impl From<&ButtonStyle> for ButtonStyleBits {
 impl From<&TextboxStyle> for TextboxStyleBits {
     fn from(style: &TextboxStyle) -> Self {
         Self {
-            panel: PanelStyleBits::from(&style.panel),
-            hover_color: style.hover_color.map(ColorBits::from),
-            active_color: style.active_color.map(ColorBits::from),
-            select_color: style.select_color.map(ColorBits::from),
+            panel:          From::from(&style.panel),
+            hover_color:    style.hover_color.map(From::from),
+            active_color:   style.active_color.map(From::from),
+            select_color:   style.select_color.map(From::from),
         }
     }
 }
@@ -416,10 +414,10 @@ impl UiNodeBits {
 impl WidgetBits {
     fn from_widget(ui_config: &UiConfig, widget: &Widget) -> Self {
         match widget {
-            Widget::Panel(panel) => Self::Panel(PanelBits::from(panel)),
-            Widget::Text(text) => Self::Text(TextBits::from(text)),
-            Widget::Button(button) => Self::Button(ButtonBits::from_button(ui_config, button)),
-            Widget::Textbox(textbox) => Self::Textbox(TextboxBits::from_textbox(ui_config, textbox)),
+            Widget::Panel(panel) =>          Self::Panel(From::from(panel)),
+            Widget::Text(text) =>             Self::Text(From::from(text)),
+            Widget::Button(button) =>        Self::Button(ButtonBits::from_button(ui_config, button)),
+            Widget::Textbox(textbox) =>     Self::Textbox(TextboxBits::from_textbox(ui_config, textbox)),
         }
     }
 }
@@ -451,8 +449,8 @@ impl From<&Text> for TextBits {
 
 impl ButtonBits {
     fn from_button(ui_config: &UiConfig, button: &Button) -> Self {
-        let panel_bits = PanelBits::from(&button.panel);
-        let nav_bits = NavigationBits::from_navigation(ui_config, &button.navigation);
+        let panel_bits =    From::from(&button.panel);
+        let nav_bits =  NavigationBits::from_navigation(ui_config, &button.navigation);
         Self {
             panel: panel_bits,
             id_str: button.id_str.clone(),
@@ -463,8 +461,8 @@ impl ButtonBits {
 
 impl TextboxBits {
     fn from_textbox(ui_config: &UiConfig, textbox: &Textbox) -> Self {
-        let panel_bits = PanelBits::from(&textbox.panel);
-        let nav_bits = NavigationBits::from_navigation(ui_config, &textbox.navigation);
+        let panel_bits =    From::from(&textbox.panel);
+        let nav_bits =  NavigationBits::from_navigation(ui_config, &textbox.navigation);
         Self {
             panel: panel_bits,
             id_str: textbox.id_str.clone(),
