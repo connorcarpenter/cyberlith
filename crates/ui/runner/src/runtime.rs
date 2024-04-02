@@ -20,7 +20,7 @@ pub struct UiRuntime {
 }
 
 impl UiRuntime {
-    pub(crate) fn generate_new_inputs(&self, next_inputs: &mut Vec<UiInputEvent>) {
+    pub(crate) fn generate_new_inputs(&mut self, next_inputs: &mut Vec<UiInputEvent>) {
         self.input_state.generate_new_inputs(&self.config, next_inputs);
     }
 }

@@ -58,7 +58,7 @@ impl UiRenderer {
 
         let text_icon_handle = ui_runner.get_icon_handle();
 
-        let carat_blink = blinkiness.enabled() || ui_input_state.interact_timer_was_recent();
+        let carat_blink = blinkiness.enabled() || ui_input_state.interact_timer_within_seconds(1.0);
 
         for node_id in 0..ui.nodes_len() {
             let node_id = NodeId::from_usize(node_id);

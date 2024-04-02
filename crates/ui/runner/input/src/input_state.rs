@@ -19,22 +19,39 @@ pub struct UiInputState {
     pub carat_index: usize,
     pub select_index: Option<usize>,
     interact_timer: Instant,
+    carat_held: bool,
     left_pressed: Option<Modifiers>,
     right_pressed: Option<Modifiers>,
 }
 
 impl UiInputState {
-    pub fn generate_new_inputs(&self, ui_config: &UiRuntimeConfig, next_inputs: &mut Vec<UiInputEvent>) {
+    pub fn generate_new_inputs(&mut self, ui_config: &UiRuntimeConfig, next_inputs: &mut Vec<UiInputEvent>) {
         let Some(node_id) = self.get_active_node() else {
             return;
         };
         if WidgetKind::Textbox != ui_config.get_node(&node_id).unwrap().widget_kind() {
             return;
         }
-        if let Some(modifiers) = self.left_pressed {
-            next_inputs.push(UiInputEvent::LeftHeld(modifiers));
-        } else if let Some(modifiers) = self.right_pressed {
-            next_inputs.push(UiInputEvent::RightHeld(modifiers));
+
+        if !self.carat_held {
+            if self.left_pressed.is_some() || self.right_pressed.is_some() {
+                if self.interact_timer_elapsed_seconds(0.5) {
+                    self.carat_held = true;
+                }
+            }
+        } else {
+            if self.left_pressed.is_none() && self.right_pressed.is_none() {
+                self.carat_held = false;
+            }
+        }
+        if self.carat_held {
+            if self.interact_timer_elapsed_seconds(0.05) {
+                if let Some(modifiers) = self.left_pressed {
+                    next_inputs.push(UiInputEvent::LeftHeld(modifiers));
+                } else if let Some(modifiers) = self.right_pressed {
+                    next_inputs.push(UiInputEvent::RightHeld(modifiers));
+                }
+            }
         }
     }
 }
@@ -69,6 +86,7 @@ impl UiInputState {
 
             carat_index: 0,
             select_index: None,
+            carat_held: false,
             left_pressed: None,
             right_pressed: None,
         }
@@ -157,7 +175,11 @@ impl UiInputState {
         self.interact_timer = Instant::now();
     }
 
-    pub fn interact_timer_was_recent(&self) -> bool {
-        self.interact_timer.elapsed().as_secs_f32() < 1.0
+    pub fn interact_timer_within_seconds(&self, secs: f32) -> bool {
+        self.interact_timer.elapsed().as_secs_f32() < secs
+    }
+
+    pub fn interact_timer_elapsed_seconds(&self, secs: f32) -> bool {
+        !self.interact_timer_within_seconds(secs)
     }
 }

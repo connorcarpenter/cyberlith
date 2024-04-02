@@ -364,8 +364,8 @@ impl UiManager {
         ui_runtime.recalculate_layout(&text_measurer);
     }
 
-    pub fn generate_new_inputs(&self, ui_handle: &UiHandle, next_inputs: &mut Vec<UiInputEvent>) {
-        let Some(ui_runtime) = self.ui_runtimes.get(ui_handle) else {
+    pub fn generate_new_inputs(&mut self, ui_handle: &UiHandle, next_inputs: &mut Vec<UiInputEvent>) {
+        let Some(ui_runtime) = self.ui_runtimes.get_mut(ui_handle) else {
             warn!("ui data not loaded 1: {:?}", ui_handle.asset_id());
             return;
         };
