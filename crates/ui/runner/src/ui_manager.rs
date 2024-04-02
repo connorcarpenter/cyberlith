@@ -14,7 +14,7 @@ use asset_loader::{
     UiTextMeasurer,
 };
 use clipboard::ClipboardManager;
-use input::{CursorIcon, Input};
+use input::{CursorIcon, Input, InputEvent};
 use math::Vec2;
 use render_api::{
     base::{CpuMaterial, CpuMesh},
@@ -362,6 +362,14 @@ impl UiManager {
         };
 
         ui_runtime.recalculate_layout(&text_measurer);
+    }
+
+    pub fn generate_new_inputs(&self, ui_handle: &UiHandle, next_inputs: &mut Vec<UiInputEvent>) {
+        let Some(ui_runtime) = self.ui_runtimes.get(ui_handle) else {
+            warn!("ui data not loaded 1: {:?}", ui_handle.asset_id());
+            return;
+        };
+        ui_runtime.generate_new_inputs(next_inputs);
     }
 
     pub fn update_ui_input(

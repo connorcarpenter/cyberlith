@@ -1,8 +1,8 @@
-use input::CursorIcon;
+use input::{CursorIcon, InputEvent, Key, Modifiers};
 use instant::Instant;
 use math::Vec2;
 
-use ui_runner_config::{NodeId, TextMeasurer, UiRuntimeConfig};
+use ui_runner_config::{NodeId, TextMeasurer, UiRuntimeConfig, WidgetKind};
 use ui_state::{NodeActiveState, UiState};
 
 use crate::{input::ui_receive_input, UiGlobalEvent, UiInputEvent, UiNodeEvent};
@@ -10,13 +10,51 @@ use crate::{input::ui_receive_input, UiGlobalEvent, UiInputEvent, UiNodeEvent};
 pub struct UiInputState {
     global_events: Vec<UiGlobalEvent>,
     node_events: Vec<(NodeId, UiNodeEvent)>,
+
     hovering_node: Option<NodeId>,
     selected_node: Option<NodeId>,
     cursor_icon: CursorIcon,
-    interact_timer: Instant,
 
+    // for textbox
     pub carat_index: usize,
     pub select_index: Option<usize>,
+    interact_timer: Instant,
+    left_pressed: Option<Modifiers>,
+    right_pressed: Option<Modifiers>,
+}
+
+impl UiInputState {
+    pub fn generate_new_inputs(&self, ui_config: &UiRuntimeConfig, next_inputs: &mut Vec<UiInputEvent>) {
+        let Some(node_id) = self.get_active_node() else {
+            return;
+        };
+        if WidgetKind::Textbox != ui_config.get_node(&node_id).unwrap().widget_kind() {
+            return;
+        }
+        if let Some(modifiers) = self.left_pressed {
+            next_inputs.push(UiInputEvent::LeftHeld(modifiers));
+        } else if let Some(modifiers) = self.right_pressed {
+            next_inputs.push(UiInputEvent::RightHeld(modifiers));
+        }
+    }
+}
+
+impl UiInputState {
+    pub(crate) fn set_left_pressed(&mut self, modifiers: Modifiers) {
+        self.left_pressed = Some(modifiers);
+    }
+
+    pub(crate) fn set_left_released(&mut self) {
+        self.left_pressed = None;
+    }
+
+    pub(crate) fn set_right_pressed(&mut self, modifiers: Modifiers) {
+        self.right_pressed = Some(modifiers);
+    }
+
+    pub(crate) fn set_right_released(&mut self) {
+        self.right_pressed = None;
+    }
 }
 
 impl UiInputState {
@@ -31,6 +69,8 @@ impl UiInputState {
 
             carat_index: 0,
             select_index: None,
+            left_pressed: None,
+            right_pressed: None,
         }
     }
 

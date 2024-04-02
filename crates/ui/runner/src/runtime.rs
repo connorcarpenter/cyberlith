@@ -1,5 +1,5 @@
 use asset_loader::{AssetHandle, IconData, TypedAssetId, UiDependencies, UiTextMeasurer};
-use input::CursorIcon;
+use input::{CursorIcon, InputEvent};
 use math::Vec2;
 use render_api::{
     base::{CpuMaterial, CpuMesh},
@@ -17,6 +17,12 @@ pub struct UiRuntime {
     input_state: UiInputState,
     config: UiRuntimeConfig,
     dependencies: UiDependencies,
+}
+
+impl UiRuntime {
+    pub(crate) fn generate_new_inputs(&self, next_inputs: &mut Vec<UiInputEvent>) {
+        self.input_state.generate_new_inputs(&self.config, next_inputs);
+    }
 }
 
 impl UiRuntime {

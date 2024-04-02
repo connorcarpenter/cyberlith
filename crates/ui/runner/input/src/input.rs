@@ -15,38 +15,38 @@ pub struct UiInputConverter;
 
 impl UiInputConverter {
     pub fn convert(
-        input_events: &mut EventReader<InputEvent>,
+        next_inputs: Vec<InputEvent>
     ) -> Option<(Option<Vec2>, Vec<UiInputEvent>)> {
         let mut mouse_position = None;
         let mut output_events = None;
 
-        for input_event in input_events.read() {
+        for input_event in next_inputs {
             let output_event = match input_event {
                 // Mouse
                 InputEvent::MouseMoved(position) => {
-                    mouse_position = Some(*position);
+                    mouse_position = Some(position);
                     Some(UiInputEvent::MouseMove)
                 }
                 InputEvent::MouseDragged(button, position, _delta, modifiers) => {
-                    mouse_position = Some(*position);
-                    Some(UiInputEvent::MouseButtonDrag(*button, *modifiers))
+                    mouse_position = Some(position);
+                    Some(UiInputEvent::MouseButtonDrag(button, modifiers))
                 }
                 InputEvent::MouseClicked(button, position, modifiers) => {
-                    mouse_position = Some(*position);
+                    mouse_position = Some(position);
                     Some(UiInputEvent::MouseSingleClick(
-                        *button, *position, *modifiers,
+                        button, position, modifiers,
                     ))
                 }
                 InputEvent::MouseDoubleClicked(button, position, _modifiers) => {
-                    mouse_position = Some(*position);
-                    Some(UiInputEvent::MouseDoubleClick(*button, *position))
+                    mouse_position = Some(position);
+                    Some(UiInputEvent::MouseDoubleClick(button, position))
                 }
                 InputEvent::MouseTripleClicked(button, position, _modifiers) => {
-                    mouse_position = Some(*position);
-                    Some(UiInputEvent::MouseTripleClick(*button, *position))
+                    mouse_position = Some(position);
+                    Some(UiInputEvent::MouseTripleClick(button, position))
                 }
                 InputEvent::MouseReleased(button) => {
-                    Some(UiInputEvent::MouseButtonRelease(*button))
+                    Some(UiInputEvent::MouseButtonRelease(button))
                 }
                 // Gamepad
                 InputEvent::GamepadButtonPressed(_, button) => match button {
@@ -75,15 +75,15 @@ impl UiInputConverter {
                 InputEvent::KeyPressed(key, modifiers) => match key {
                     Key::ArrowUp => Some(UiInputEvent::UpPressed),
                     Key::ArrowDown => Some(UiInputEvent::DownPressed),
-                    Key::ArrowLeft => Some(UiInputEvent::LeftPressed(*modifiers)),
-                    Key::ArrowRight => Some(UiInputEvent::RightPressed(*modifiers)),
+                    Key::ArrowLeft => Some(UiInputEvent::LeftPressed(modifiers)),
+                    Key::ArrowRight => Some(UiInputEvent::RightPressed(modifiers)),
                     Key::Enter => Some(UiInputEvent::SelectPressed),
                     Key::Tab => Some(UiInputEvent::TabPressed),
                     Key::Escape => Some(UiInputEvent::BackPressed),
-                    Key::Backspace => Some(UiInputEvent::BackspacePressed(*modifiers)),
-                    Key::Delete => Some(UiInputEvent::DeletePressed(*modifiers)),
-                    Key::Home => Some(UiInputEvent::HomePressed(*modifiers)),
-                    Key::End => Some(UiInputEvent::EndPressed(*modifiers)),
+                    Key::Backspace => Some(UiInputEvent::BackspacePressed(modifiers)),
+                    Key::Delete => Some(UiInputEvent::DeletePressed(modifiers)),
+                    Key::Home => Some(UiInputEvent::HomePressed(modifiers)),
+                    Key::End => Some(UiInputEvent::EndPressed(modifiers)),
                     Key::A => {
                         if modifiers.ctrl {
                             Some(UiInputEvent::TextSelectAll)
@@ -99,7 +99,7 @@ impl UiInputConverter {
                     Key::ArrowRight => Some(UiInputEvent::RightReleased),
                     _ => None,
                 },
-                InputEvent::Text(c) => Some(UiInputEvent::TextInsert(*c)),
+                InputEvent::Text(c) => Some(UiInputEvent::TextInsert(c)),
                 InputEvent::Paste(text) => Some(UiInputEvent::TextPaste(text.clone())),
                 InputEvent::Copy => Some(UiInputEvent::TextCopy),
                 InputEvent::Cut => Some(UiInputEvent::TextCut),
@@ -130,7 +130,9 @@ pub enum UiInputEvent {
     UpPressed,
     DownPressed,
     LeftPressed(Modifiers),
+    LeftHeld(Modifiers),
     RightPressed(Modifiers),
+    RightHeld(Modifiers),
     LeftReleased,
     RightReleased,
     TabPressed,
@@ -296,7 +298,11 @@ pub fn ui_receive_input(
         for input_event in events {
             match &input_event {
                 UiInputEvent::RightPressed(_)
+                | UiInputEvent::RightHeld(_)
+                | UiInputEvent::RightReleased
                 | UiInputEvent::LeftPressed(_)
+                | UiInputEvent::LeftHeld(_)
+                | UiInputEvent::LeftReleased
                 | UiInputEvent::BackspacePressed(_)
                 | UiInputEvent::DeletePressed(_)
                 | UiInputEvent::TextInsert(_)

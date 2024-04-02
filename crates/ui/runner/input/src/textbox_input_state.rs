@@ -1,6 +1,6 @@
 use unicode_segmentation::UnicodeSegmentation;
 
-use input::MouseButton;
+use input::{Modifiers, MouseButton};
 use math::Vec2;
 
 use ui_runner_config::{text_get_raw_rects, text_get_subimage_indices, TextMeasurer};
@@ -20,120 +20,24 @@ impl TextboxInputState {
         let mut output = None;
         match event {
             UiInputEvent::LeftPressed(modifiers) => {
-                match (modifiers.shift, modifiers.ctrl) {
-                    (false, false) => {
-                        if input_state.carat_index > 0 {
-                            input_state.carat_index -= 1;
-                        } else {
-                            if output.is_none() {
-                                output = Some(Vec::new());
-                            }
-                            output.as_mut().unwrap().push(UiGlobalEvent::PassThru);
-                        }
-                        input_state.select_index = None;
-                    }
-                    (true, false) => {
-                        if input_state.carat_index > 0 {
-                            if input_state.select_index.is_none() {
-                                // if there is no current selection, set it to the current carat index
-                                input_state.select_index = Some(input_state.carat_index);
-                            }
-                            input_state.carat_index -= 1;
-                            if input_state.carat_index == input_state.select_index.unwrap() {
-                                input_state.select_index = None;
-                            }
-                        }
-                    }
-                    (false, true) => {
-                        if input_state.carat_index > 0 {
-                            input_state.carat_index = textbox_state
-                                .text
-                                .unicode_word_indices()
-                                .rev()
-                                .map(|(i, _)| i)
-                                .find(|&i| i < input_state.carat_index)
-                                .unwrap_or(0);
-                        }
-                        input_state.select_index = None;
-                    }
-                    (true, true) => {
-                        if input_state.carat_index > 0 {
-                            if input_state.select_index.is_none() {
-                                // if there is no current selection, set it to the current carat index
-                                input_state.select_index = Some(input_state.carat_index);
-                            }
-
-                            input_state.carat_index = textbox_state
-                                .text
-                                .unicode_word_indices()
-                                .rev()
-                                .map(|(i, _)| i)
-                                .find(|&i| i < input_state.carat_index)
-                                .unwrap_or(0);
-
-                            if input_state.carat_index == input_state.select_index.unwrap() {
-                                input_state.select_index = None;
-                            }
-                        }
-                    }
-                }
+                input_state.set_left_pressed(modifiers);
+                Self::handle_left(input_state, textbox_state, modifiers, &mut output);
+            }
+            UiInputEvent::LeftHeld(modifiers) => {
+                Self::handle_left(input_state, textbox_state, modifiers, &mut output);
+            }
+            UiInputEvent::LeftReleased => {
+                input_state.set_left_released();
             }
             UiInputEvent::RightPressed(modifiers) => {
-                match (modifiers.shift, modifiers.ctrl) {
-                    (false, false) => {
-                        if input_state.carat_index < textbox_state.text.len() {
-                            input_state.carat_index += 1;
-                        } else {
-                            if output.is_none() {
-                                output = Some(Vec::new());
-                            }
-                            output.as_mut().unwrap().push(UiGlobalEvent::PassThru);
-                        }
-                        input_state.select_index = None;
-                    }
-                    (true, false) => {
-                        if input_state.carat_index < textbox_state.text.len() {
-                            if input_state.select_index.is_none() {
-                                // if there is no current selection, set it to the current carat index
-                                input_state.select_index = Some(input_state.carat_index);
-                            }
-                            input_state.carat_index += 1;
-                            if input_state.carat_index == input_state.select_index.unwrap() {
-                                input_state.select_index = None;
-                            }
-                        }
-                    }
-                    (false, true) => {
-                        if input_state.carat_index < textbox_state.text.len() {
-                            input_state.carat_index = textbox_state
-                                .text
-                                .unicode_word_indices()
-                                .map(|(i, word)| i + word.len())
-                                .find(|&i| i > input_state.carat_index)
-                                .unwrap_or(textbox_state.text.len());
-                        }
-                        input_state.select_index = None;
-                    }
-                    (true, true) => {
-                        if input_state.carat_index < textbox_state.text.len() {
-                            if input_state.select_index.is_none() {
-                                // if there is no current selection, set it to the current carat index
-                                input_state.select_index = Some(input_state.carat_index);
-                            }
-
-                            input_state.carat_index = textbox_state
-                                .text
-                                .unicode_word_indices()
-                                .map(|(i, word)| i + word.len())
-                                .find(|&i| i > input_state.carat_index)
-                                .unwrap_or(textbox_state.text.len());
-
-                            if input_state.carat_index == input_state.select_index.unwrap() {
-                                input_state.select_index = None;
-                            }
-                        }
-                    }
-                }
+                input_state.set_right_pressed(modifiers);
+                Self::handle_right(input_state, textbox_state, modifiers, &mut output);
+            }
+            UiInputEvent::RightHeld(modifiers) => {
+                Self::handle_right(input_state, textbox_state, modifiers, &mut output);
+            }
+            UiInputEvent::RightReleased => {
+                input_state.set_right_released();
             }
             UiInputEvent::TextInsert(new_char) => {
                 if let Some(select_index) = input_state.select_index {
@@ -290,6 +194,124 @@ impl TextboxInputState {
         }
 
         output
+    }
+
+    fn handle_left(input_state: &mut UiInputState, textbox_state: &mut TextboxState, modifiers: Modifiers, output: &mut Option<Vec<UiGlobalEvent>>) {
+        match (modifiers.shift, modifiers.ctrl) {
+            (false, false) => {
+                if input_state.carat_index > 0 {
+                    input_state.carat_index -= 1;
+                } else {
+                    if output.is_none() {
+                        *output = Some(Vec::new());
+                    }
+                    output.as_mut().unwrap().push(UiGlobalEvent::PassThru);
+                }
+                input_state.select_index = None;
+            }
+            (true, false) => {
+                if input_state.carat_index > 0 {
+                    if input_state.select_index.is_none() {
+                        // if there is no current selection, set it to the current carat index
+                        input_state.select_index = Some(input_state.carat_index);
+                    }
+                    input_state.carat_index -= 1;
+                    if input_state.carat_index == input_state.select_index.unwrap() {
+                        input_state.select_index = None;
+                    }
+                }
+            }
+            (false, true) => {
+                if input_state.carat_index > 0 {
+                    input_state.carat_index = textbox_state
+                        .text
+                        .unicode_word_indices()
+                        .rev()
+                        .map(|(i, _)| i)
+                        .find(|&i| i < input_state.carat_index)
+                        .unwrap_or(0);
+                }
+                input_state.select_index = None;
+            }
+            (true, true) => {
+                if input_state.carat_index > 0 {
+                    if input_state.select_index.is_none() {
+                        // if there is no current selection, set it to the current carat index
+                        input_state.select_index = Some(input_state.carat_index);
+                    }
+
+                    input_state.carat_index = textbox_state
+                        .text
+                        .unicode_word_indices()
+                        .rev()
+                        .map(|(i, _)| i)
+                        .find(|&i| i < input_state.carat_index)
+                        .unwrap_or(0);
+
+                    if input_state.carat_index == input_state.select_index.unwrap() {
+                        input_state.select_index = None;
+                    }
+                }
+            }
+        }
+    }
+
+    fn handle_right(input_state: &mut UiInputState, textbox_state: &mut TextboxState, modifiers: Modifiers, output: &mut Option<Vec<UiGlobalEvent>>) {
+        match (modifiers.shift, modifiers.ctrl) {
+            (false, false) => {
+                if input_state.carat_index < textbox_state.text.len() {
+                    input_state.carat_index += 1;
+                } else {
+                    if output.is_none() {
+                        *output = Some(Vec::new());
+                    }
+                    output.as_mut().unwrap().push(UiGlobalEvent::PassThru);
+                }
+                input_state.select_index = None;
+            }
+            (true, false) => {
+                if input_state.carat_index < textbox_state.text.len() {
+                    if input_state.select_index.is_none() {
+                        // if there is no current selection, set it to the current carat index
+                        input_state.select_index = Some(input_state.carat_index);
+                    }
+                    input_state.carat_index += 1;
+                    if input_state.carat_index == input_state.select_index.unwrap() {
+                        input_state.select_index = None;
+                    }
+                }
+            }
+            (false, true) => {
+                if input_state.carat_index < textbox_state.text.len() {
+                    input_state.carat_index = textbox_state
+                        .text
+                        .unicode_word_indices()
+                        .map(|(i, word)| i + word.len())
+                        .find(|&i| i > input_state.carat_index)
+                        .unwrap_or(textbox_state.text.len());
+                }
+                input_state.select_index = None;
+            }
+            (true, true) => {
+                if input_state.carat_index < textbox_state.text.len() {
+                    if input_state.select_index.is_none() {
+                        // if there is no current selection, set it to the current carat index
+                        input_state.select_index = Some(input_state.carat_index);
+                    }
+
+                    input_state.carat_index = textbox_state
+                        .text
+                        .unicode_word_indices()
+                        .map(|(i, word)| i + word.len())
+                        .find(|&i| i > input_state.carat_index)
+                        .unwrap_or(textbox_state.text.len());
+
+                    if input_state.carat_index == input_state.select_index.unwrap() {
+                        input_state.select_index = None;
+                    }
+                }
+            }
+        }
     }
 
     pub fn recv_mouse_event(

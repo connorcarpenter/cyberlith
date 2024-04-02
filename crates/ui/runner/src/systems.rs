@@ -27,9 +27,18 @@ pub fn ui_update(
     }
 
     // update with inputs
-    let Some((mouse_position, ui_input_events)) = UiInputConverter::convert(&mut input_events)
-        else {
-            return;
-        };
-    ui_manager.update_ui_input(&asset_manager, &ui_handle, mouse_position, ui_input_events);
+    let mut mouse_position_ctnr = None;
+    let mut ui_input_events_ctnr = Vec::new();
+    ui_manager.generate_new_inputs(&ui_handle, &mut ui_input_events_ctnr);
+
+    let mut next_inputs = Vec::new();
+    for event in input_events.read() {
+        next_inputs.push(event.clone());
+    }
+
+    if let Some((mouse_position, mut ui_input_events)) = UiInputConverter::convert(next_inputs) {
+        mouse_position_ctnr = mouse_position;
+        ui_input_events_ctnr.append(&mut ui_input_events);
+    }
+    ui_manager.update_ui_input(&asset_manager, &ui_handle, mouse_position_ctnr, ui_input_events_ctnr);
 }
