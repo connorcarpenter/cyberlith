@@ -80,16 +80,17 @@ impl AssetManager {
         asset_id: &AssetId,
         added: bool,
     ) {
-        let user_assets = self.users.get_mut(&user_key).unwrap();
-        user_assets.handle_user_asset_request(
-            server,
-            http_client,
-            asset_server_addr,
-            asset_server_port,
-            &self.asset_store,
-            asset_id,
-            added,
-        );
+        if let Some(user_assets) = self.users.get_mut(&user_key) {
+            user_assets.handle_user_asset_request(
+                server,
+                http_client,
+                asset_server_addr,
+                asset_server_port,
+                &self.asset_store,
+                asset_id,
+                added,
+            );
+        }
     }
 
     pub fn process_in_flight_requests(

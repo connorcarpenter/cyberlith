@@ -1,9 +1,10 @@
 pub mod web_clipboard;
 
-use std::cell::{RefCell, RefMut};
+use bevy_app::{App, Plugin, PreStartup, PreUpdate};
+use bevy_ecs::system::{ResMut, Resource};
+use log::info;
 
-use bevy_app::{App, Plugin};
-use bevy_ecs::system::Resource;
+use crate::wasm::web_clipboard::WebClipboard;
 
 #[derive(Default)]
 pub struct ClipboardPlugin;
@@ -19,7 +20,7 @@ impl Plugin for ClipboardPlugin {
 
 #[derive(Resource)]
 pub struct ClipboardManager {
-    clipboard: web_clipboard::WebClipboard,
+    clipboard: WebClipboard,
 }
 
 impl Default for ClipboardManager {

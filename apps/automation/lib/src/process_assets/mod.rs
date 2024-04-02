@@ -302,7 +302,7 @@ fn delete_all_files(repo: &Repository, file_entries: &Vec<UnprocessedFile>) {
     for file_entry in file_entries {
         let file_path = format!("{}{}", file_entry.path, file_entry.name);
         let full_path = format!(
-            "{}/{}",
+            "{}{}",
             repo.workdir().unwrap().to_str().unwrap(),
             file_path
         );
