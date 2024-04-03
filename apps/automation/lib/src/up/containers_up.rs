@@ -79,7 +79,7 @@ async fn images_push() -> Result<(), CliError> {
     .await?;
 
     image_push("content").await?;
-    image_push("orchestrator").await?;
+    image_push("gateway").await?;
     image_push("region").await?;
     image_push("session").await?;
     image_push("world").await?;
@@ -100,7 +100,7 @@ async fn images_pull(session: &Session) -> Result<(), CliError> {
     .await?;
 
     image_pull(session, "content").await?;
-    image_pull(session, "orchestrator").await?;
+    image_pull(session, "gateway").await?;
     image_pull(session, "region").await?;
     image_pull(session, "session").await?;
     image_pull(session, "world").await?;
@@ -124,7 +124,7 @@ async fn remove_network(session: &Session) -> Result<(), CliError> {
 
 async fn containers_start(session: &Session) -> Result<(), CliError> {
     container_create_and_start(session, "content", "-p 80:80/tcp").await?;
-    container_create_and_start(session, "orchestrator", "-p 14197:14197/tcp").await?;
+    container_create_and_start(session, "gateway", "-p 14197:14197/tcp").await?;
     container_create_and_start(session, "region", "-p 14198:14198/tcp").await?;
     container_create_and_start(session, "session", "-p 14200:14200/tcp -p 14201:14201/udp").await?;
     container_create_and_start(session, "world", "-p 14203:14203/tcp -p 14204:14204/udp").await?;
@@ -140,7 +140,7 @@ async fn images_prune(session: &Session) -> Result<(), CliError> {
 
 async fn containers_stop(session: &Session) -> Result<(), CliError> {
     container_stop_and_remove(session, "content").await?;
-    container_stop_and_remove(session, "orchestrator").await?;
+    container_stop_and_remove(session, "gateway").await?;
     container_stop_and_remove(session, "region").await?;
     container_stop_and_remove(session, "session").await?;
     container_stop_and_remove(session, "world").await?;

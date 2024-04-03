@@ -5,23 +5,23 @@ use http_common::{ApiRequest, ApiResponse, Method};
 // Request
 #[derive(Serde, PartialEq, Clone)]
 pub struct SessionUserLoginRequest {
-    orchestrator_secret: String,
+    gateway_secret: String,
     // TODO: shouldn't send username & password in plaintext here
     pub username: String,
     pub password: String,
 }
 
 impl SessionUserLoginRequest {
-    pub fn new(orchestrator_secret: &str, username: &str, password: &str) -> Self {
+    pub fn new(gateway_secret: &str, username: &str, password: &str) -> Self {
         Self {
-            orchestrator_secret: orchestrator_secret.to_string(),
+            gateway_secret: gateway_secret.to_string(),
             username: username.to_string(),
             password: password.to_string(),
         }
     }
 
-    pub fn orchestrator_secret(&self) -> &str {
-        &self.orchestrator_secret
+    pub fn gateway_secret(&self) -> &str {
+        &self.gateway_secret
     }
 }
 

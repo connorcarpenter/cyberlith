@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Run Orchestrator" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
+  <configuration default="false" name="Run Gateway" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
     <option name="command" value="run --features &quot;local&quot;" />
-    <option name="workingDirectory" value="file://$PROJECT_DIR$/apps/orchestrator" />
+    <option name="workingDirectory" value="file://$PROJECT_DIR$/apps/gateway" />
     <envs />
     <option name="emulateTerminal" value="false" />
     <option name="channel" value="DEFAULT" />

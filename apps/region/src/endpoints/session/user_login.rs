@@ -3,7 +3,7 @@ use log::{info, warn};
 use http_client::{HttpClient, ResponseError};
 use http_server::{async_dup::Arc, smol::lock::RwLock, Server};
 
-use config::{ORCHESTRATOR_SECRET, REGION_SERVER_SECRET};
+use config::{GATEWAY_SECRET, REGION_SERVER_SECRET};
 use region_server_http_proto::{SessionUserLoginRequest, SessionUserLoginResponse};
 use session_server_http_proto::IncomingUserRequest;
 
@@ -20,12 +20,12 @@ async fn async_impl(
     state: Arc<RwLock<State>>,
     incoming_request: SessionUserLoginRequest,
 ) -> Result<SessionUserLoginResponse, ResponseError> {
-    if incoming_request.orchestrator_secret() != ORCHESTRATOR_SECRET {
+    if incoming_request.gateway_secret() != GATEWAY_SECRET {
         warn!("invalid request secret");
         return Err(ResponseError::Unauthenticated);
     }
 
-    info!("session user login request received from orchestrator");
+    info!("session user login request received from gateway");
 
     let state = state.read().await;
     let Some(session_server) = state.get_available_session_server() else {
@@ -55,7 +55,7 @@ async fn async_impl(
 
     info!("Received incoming user response from session server");
 
-    info!("Sending user login response to orchestrator");
+    info!("Sending user login response to gateway");
 
     Ok(SessionUserLoginResponse::new(
         &session_server_public_webrtc_url,

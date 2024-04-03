@@ -23,8 +23,8 @@ pub fn up() -> Result<(), CliError> {
     let content_rcvr = thread_init(server_build::server_build_content);
     let mut content_rdy = false;
 
-    let orch_rcvr = thread_init(server_build::server_build_orchestrator);
-    let mut orch_rdy = false;
+    let gateway_rcvr = thread_init(server_build::server_build_gateway);
+    let mut gateway_rdy = false;
 
     let region_rcvr = thread_init(server_build::server_build_region);
     let mut region_rdy = false;
@@ -40,12 +40,12 @@ pub fn up() -> Result<(), CliError> {
 
         check_channel(&instance_rcvr, &mut instance_rdy)?;
         check_channel(&content_rcvr, &mut content_rdy)?;
-        check_channel(&orch_rcvr, &mut orch_rdy)?;
+        check_channel(&gateway_rcvr, &mut gateway_rdy)?;
         check_channel(&region_rcvr, &mut region_rdy)?;
         check_channel(&session_rcvr, &mut session_rdy)?;
         check_channel(&world_rcvr, &mut world_rdy)?;
 
-        if instance_rdy && content_rdy && orch_rdy && region_rdy && session_rdy && world_rdy {
+        if instance_rdy && content_rdy && gateway_rdy && region_rdy && session_rdy && world_rdy {
             break;
         }
     }

@@ -16,14 +16,14 @@ use naia_bevy_client::{
 
 use asset_loader::{AssetManager, AssetMetadataStore};
 use bevy_http_client::{HttpClient, ResponseKey};
-use config::{ORCHESTRATOR_PORT, PUBLIC_IP_ADDR};
+use config::{GATEWAY_PORT, PUBLIC_IP_ADDR};
 use filesystem::FileSystemManager;
 use ui_runner::UiManager;
 
 cfg_if! {
 if #[cfg(feature = "networked")]
     {
-        use orchestrator_http_proto::{LoginRequest, LoginResponse};
+        use gateway_http_proto::{LoginRequest, LoginResponse};
         use session_server_naia_proto::{
             channels::{PrimaryChannel, RequestChannel},
             messages::{Auth as SessionAuth, LoadAssetRequest, LoadAssetWithData, WorldConnectToken},
@@ -47,8 +47,8 @@ type WorldClient<'a> = Client<'a, World>;
 #[derive(Clone, PartialEq)]
 pub enum ConnectionState {
     Disconnected,
-    SentToOrchestrator(ResponseKey<LoginResponse>),
-    ReceivedFromOrchestrator(LoginResponse),
+    SentToGateway(ResponseKey<LoginResponse>),
+    ReceivedFromGateway(LoginResponse),
     ConnectedToSession,
     ConnectedToWorld,
 }
@@ -89,7 +89,7 @@ impl ConnectionManager {
                 server_address
             );
 
-            let ConnectionState::ReceivedFromOrchestrator(_) = &connection_manager.connection_state
+            let ConnectionState::ReceivedFromGateway(_) = &connection_manager.connection_state
             else {
                 panic!("Shouldn't happen");
             };
@@ -219,21 +219,21 @@ impl ConnectionManager {
 
         match &self.connection_state {
             ConnectionState::Disconnected => {
-                info!("sending to orchestrator..");
+                info!("sending to gateway..");
                 let request = LoginRequest::new("charlie", "12345");
-                let key = http_client.send(PUBLIC_IP_ADDR, ORCHESTRATOR_PORT, request);
-                self.connection_state = ConnectionState::SentToOrchestrator(key);
+                let key = http_client.send(PUBLIC_IP_ADDR, GATEWAY_PORT, request);
+                self.connection_state = ConnectionState::SentToGateway(key);
             }
-            ConnectionState::SentToOrchestrator(key) => {
+            ConnectionState::SentToGateway(key) => {
                 if let Some(result) = http_client.recv(key) {
                     match result {
                         Ok(response) => {
                             info!(
-                                "received from orchestrator: (webrtc url: {:?}, token: {:?})",
+                                "received from gateway: (webrtc url: {:?}, token: {:?})",
                                 response.session_server_public_webrtc_url, response.token
                             );
                             self.connection_state =
-                                ConnectionState::ReceivedFromOrchestrator(response.clone());
+                                ConnectionState::ReceivedFromGateway(response.clone());
 
                             session_client.auth(SessionAuth::new(&response.token));
                             info!(
@@ -247,13 +247,13 @@ impl ConnectionManager {
                             session_client.connect(socket);
                         }
                         Err(_) => {
-                            info!("resending to orchestrator..");
+                            info!("resending to gateway..");
                             self.connection_state = ConnectionState::Disconnected;
                         }
                     }
                 }
             }
-            ConnectionState::ReceivedFromOrchestrator(_response) => {
+            ConnectionState::ReceivedFromGateway(_response) => {
                 // waiting for connect event ..
             }
             ConnectionState::ConnectedToSession => {}

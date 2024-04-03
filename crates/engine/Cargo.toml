@@ -7,7 +7,7 @@ edition = "2021"
 publish = false
 
 [features]
-networked = [ "orchestrator_http_proto", "session_server_naia_proto", "world_server_naia_proto" ]
+networked = [ "gateway_http_proto", "session_server_naia_proto", "world_server_naia_proto" ]
 local = [ "config/local" ]
 prod = [ "config/prod" ]
 gl_renderer = [ "render_gl" ]
@@ -32,7 +32,7 @@ ui_input = { path = "../ui/runner/input" }
 random = { path = "../random" }
 
 # Networked Dependencies
-orchestrator_http_proto = { path = "../../apps/orchestrator/http_proto", optional = true }
+gateway_http_proto = { path = "../../apps/gateway/http_proto", optional = true }
 session_server_naia_proto = { path = "../../apps/session/naia_proto", optional = true }
 world_server_naia_proto = { path = "../../apps/world/naia_proto", optional = true }
 

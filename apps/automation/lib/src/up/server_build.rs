@@ -46,8 +46,8 @@ pub async fn server_build_content() -> Result<(), CliError> {
     Ok(())
 }
 
-pub async fn server_build_orchestrator() -> Result<(), CliError> {
-    return server_build_common("orchestrator", "orchestrator").await;
+pub async fn server_build_gateway() -> Result<(), CliError> {
+    return server_build_common("gateway", "gateway").await;
 }
 
 pub async fn server_build_region() -> Result<(), CliError> {

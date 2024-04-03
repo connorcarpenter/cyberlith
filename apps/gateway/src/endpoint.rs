@@ -3,8 +3,8 @@ use log::{info, warn};
 use http_client::{HttpClient, ResponseError};
 use http_server::Server;
 
-use config::{ORCHESTRATOR_SECRET, REGION_SERVER_PORT, REGION_SERVER_RECV_ADDR};
-use orchestrator_http_proto::{LoginRequest, LoginResponse};
+use config::{GATEWAY_SECRET, REGION_SERVER_PORT, REGION_SERVER_RECV_ADDR};
+use gateway_http_proto::{LoginRequest, LoginResponse};
 use region_server_http_proto::SessionUserLoginRequest;
 
 pub fn world_user_login(server: &mut Server) {
@@ -17,7 +17,7 @@ async fn async_impl(incoming_request: LoginRequest) -> Result<LoginResponse, Res
     info!("Sending login request to region server");
 
     let region_request = SessionUserLoginRequest::new(
-        ORCHESTRATOR_SECRET,
+        GATEWAY_SECRET,
         &incoming_request.username,
         &incoming_request.password,
     );

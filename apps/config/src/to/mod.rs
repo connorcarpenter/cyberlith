@@ -3,9 +3,9 @@ cfg_if! {
         mod client;
         pub use self::client::*;
     }
-    else if #[cfg(feature = "orchestrator")] {
-        mod orchestrator;
-        pub use self::orchestrator::*;
+    else if #[cfg(feature = "gateway")] {
+        mod gateway;
+        pub use self::gateway::*;
     }
     else if #[cfg(feature = "region")] {
         mod region;

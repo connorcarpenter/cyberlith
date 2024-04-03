@@ -1,5 +1,5 @@
 [package]
-name = "orchestrator"
+name = "gateway"
 version = "0.1.0"
 authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
 workspace = "../.."
@@ -13,9 +13,9 @@ prod = [ "config/prod" ]
 [dependencies]
 http_server = { path = "../../crates/http/http_server" }
 http_client = { path = "../../crates/http/http_client" }
-config = { path = "../config", features = ["orchestrator"]}
+config = { path = "../config", features = ["gateway"]}
 
-orchestrator_http_proto = { path = "http_proto" }
+gateway_http_proto = { path = "http_proto" }
 region_server_http_proto = { path = "../region/http_proto" }
 
 log = { version = "0.4", features = [] }

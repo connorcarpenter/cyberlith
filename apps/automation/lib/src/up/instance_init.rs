@@ -76,7 +76,7 @@ async fn setup_docker(session: &Session) -> Result<(), CliError> {
 //     info!("# allow port 80 (content server)");
 //     run_ssh_command(&session, "sudo iptables -A INPUT -p tcp --dport 80 -j ACCEPT").await?;
 //
-//     info!("# allow port 14197 (orchestrator)");
+//     info!("# allow port 14197 (gateway)");
 //     run_ssh_command(&session, "sudo iptables -A INPUT -p tcp --dport 14197 -j ACCEPT").await?;
 //
 //     info!("# allow port 14200 (session signal)");
