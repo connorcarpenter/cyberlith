@@ -2,7 +2,6 @@ pub mod core;
 pub mod renderer;
 pub mod window;
 
-mod base_set;
 mod gpu_material_manager;
 mod gpu_mesh_manager;
 mod gpu_skin_manager;

@@ -358,21 +358,22 @@ impl IconReader {
         let mut frame_index = 0;
 
         // Palette Dependency
-        let asset_id = data.get_palette_asset_id();
-        let dependency_key = project.file_key_from_asset_id(&asset_id).unwrap();
-        let (new_entity, _) = add_file_dependency(
-            project,
-            file_key,
-            file_entity,
-            &mut commands,
-            &mut server,
-            FileExtension::Palette,
-            &dependency_key,
-        );
-        output.push((
-            new_entity,
-            ContentEntityTypeData::Dependency(dependency_key),
-        ));
+        if let Some(asset_id) = data.get_palette_asset_id() {
+            let dependency_key = project.file_key_from_asset_id(&asset_id).unwrap();
+            let (new_entity, _) = add_file_dependency(
+                project,
+                file_key,
+                file_entity,
+                &mut commands,
+                &mut server,
+                FileExtension::Palette,
+                &dependency_key,
+            );
+            output.push((
+                new_entity,
+                ContentEntityTypeData::Dependency(dependency_key),
+            ));
+        }
 
         // Frames
         for frame in data.get_frames() {

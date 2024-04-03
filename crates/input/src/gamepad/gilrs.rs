@@ -1,21 +1,19 @@
 use std::time::Duration;
+use bevy_ecs::event::EventWriter;
 
 use bevy_ecs::system::{NonSend, NonSendMut, ResMut};
 
 use gilrs::{ff, EventType, Filter, Gilrs};
 
-use crate::{
-    gamepad::{
-        converter::{
-            axis_dpad_to_button_filter, axis_triggers_to_button_filter, convert_axis,
-            convert_button, convert_gamepad_id,
-        },
-        rumble,
-        rumble::RunningRumbleEffects,
-        GamepadAxis, GamepadButton, GamepadInfo,
+use crate::{gamepad::{
+    converter::{
+        axis_dpad_to_button_filter, axis_triggers_to_button_filter, convert_axis,
+        convert_button, convert_gamepad_id,
     },
-    GamepadId, GamepadRumbleIntensity, Input,
-};
+    rumble,
+    rumble::RunningRumbleEffects,
+    GamepadAxis, GamepadButton, GamepadInfo,
+}, GamepadId, GamepadRumbleIntensity, Input, InputEvent};
 
 pub struct GilrsWrapper {
     gilrs: Gilrs,
@@ -67,18 +65,22 @@ impl GilrsWrapper {
     }
 
     // used as a system
-    pub fn startup(input_gilrs: NonSend<GilrsWrapper>, mut input: ResMut<Input>) {
+    pub fn startup(
+        input_gilrs: NonSend<GilrsWrapper>,
+        mut input: ResMut<Input>,
+        mut event_writer: EventWriter<InputEvent>
+    ) {
         for (id, gamepad) in input_gilrs.gilrs.gamepads() {
             let info = GamepadInfo {
                 name: gamepad.name().into(),
             };
 
-            input.recv_gilrs_gamepad_connect(convert_gamepad_id(id), info);
+            input.recv_gilrs_gamepad_connect(&mut event_writer, convert_gamepad_id(id), info);
         }
     }
 
     // used as a system
-    pub fn update(mut gilrs_wrapper: NonSendMut<GilrsWrapper>, mut input: ResMut<Input>) {
+    pub fn update(mut gilrs_wrapper: NonSendMut<GilrsWrapper>, mut input: ResMut<Input>, mut event_writer: EventWriter<InputEvent>) {
         let mut gilrs = &mut gilrs_wrapper.gilrs;
 
         while let Some(gilrs_event) = gilrs.next_event() {
@@ -106,10 +108,10 @@ impl GilrsWrapper {
                         name: pad.name().into(),
                     };
 
-                    input.recv_gilrs_gamepad_connect(gamepad, info);
+                    input.recv_gilrs_gamepad_connect(&mut event_writer, gamepad, info);
                 }
                 EventType::Disconnected => {
-                    input.recv_gilrs_gamepad_disconnect(gamepad);
+                    input.recv_gilrs_gamepad_disconnect(&mut event_writer, gamepad);
                 }
                 EventType::ButtonChanged(gilrs_button, raw_value, _) => {
                     if let Some(button_type) = convert_button(gilrs_button) {
@@ -129,7 +131,7 @@ impl GilrsWrapper {
                                 if button_property.is_released(value) {
                                     // Check if button was previously pressed
                                     if input.is_pressed(button) {
-                                        input.recv_gilrs_button_release(gamepad, button_type);
+                                        input.recv_gilrs_button_release(&mut event_writer, gamepad, button_type);
                                     }
                                     // We don't have to check if the button was previously pressed here
                                     // because that check is performed within Input<T>::release()
@@ -137,7 +139,7 @@ impl GilrsWrapper {
                                 } else if button_property.is_pressed(value) {
                                     // Check if button was previously not pressed
                                     if !input.is_pressed(button) {
-                                        input.recv_gilrs_button_press(gamepad, button_type);
+                                        input.recv_gilrs_button_press(&mut event_writer, gamepad, button_type);
                                     }
                                     input.gamepad_button_press(button);
                                 };
@@ -158,7 +160,7 @@ impl GilrsWrapper {
                         // Only send events that pass the user-defined change threshold
                         if let Some(filtered_value) = axis_settings.filter(raw_value, old_value) {
                             let axis = GamepadAxis::new(gamepad, axis_type);
-                            input.gamepad_axis_set(axis, filtered_value);
+                            input.gamepad_axis_set(&mut event_writer, axis, filtered_value);
                         }
                     }
                 }

@@ -63,7 +63,7 @@ impl IconInputManager {
         let wired = icon_manager.is_wired();
         for action in input_actions {
             match action {
-                InputEvent::MouseClicked(click_type, mouse_position) => {
+                InputEvent::MouseClicked(click_type, mouse_position, _) => {
                     if wired {
                         Self::handle_mouse_click_meshing(
                             world,
@@ -74,7 +74,7 @@ impl IconInputManager {
                         )
                     }
                 }
-                InputEvent::MouseDragged(click_type, mouse_position, delta) => {
+                InputEvent::MouseDragged(click_type, mouse_position, delta, _) => {
                     Self::handle_mouse_drag_meshing(
                         world,
                         icon_manager,
@@ -647,7 +647,7 @@ impl IconInputManager {
     ) {
         for action in input_actions {
             match action {
-                InputEvent::MouseClicked(click_type, mouse_position) => {
+                InputEvent::MouseClicked(click_type, mouse_position, _) => {
                     Self::handle_mouse_click_framing(
                         world,
                         icon_manager,
@@ -655,7 +655,7 @@ impl IconInputManager {
                         &mouse_position,
                     )
                 }
-                InputEvent::MouseDragged(click_type, _mouse_position, delta) => {
+                InputEvent::MouseDragged(click_type, _mouse_position, delta, _) => {
                     Self::handle_mouse_drag_framing(world, icon_manager, click_type, delta)
                 }
                 InputEvent::MouseMiddleScrolled(scroll_y) => {

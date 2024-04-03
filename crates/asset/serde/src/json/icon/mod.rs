@@ -180,13 +180,16 @@ impl IconJson {
     pub fn dependencies(&self) -> Vec<AssetId> {
         let mut output = Vec::new();
 
-        output.push(self.get_palette_asset_id());
+        let Some(asset_id) = self.get_palette_asset_id() else {
+            panic!("icon missing palette");
+        };
+        output.push(asset_id);
 
         output
     }
 
-    pub fn get_palette_asset_id(&self) -> AssetId {
-        AssetId::from_str(&self.palette_asset_id).unwrap()
+    pub fn get_palette_asset_id(&self) -> Option<AssetId> {
+        AssetId::from_str(&self.palette_asset_id).ok()
     }
 
     pub fn set_palette_asset_id(&mut self, asset_id: &AssetId) {

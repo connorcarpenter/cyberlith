@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use bevy_ecs::{
     event::EventWriter,
-    system::{ResMut, Resource},
+    system::Resource,
 };
 use bevy_log::info;
 
@@ -27,7 +27,6 @@ pub struct Input {
     mouse_scroll_y: f32,
     pressed_mouse_buttons: HashSet<MouseButton>,
     pressed_keys: HashSet<Key>,
-    outgoing_actions: Vec<InputEvent>,
     enabled: bool,
 
     last_mouse_position: Vec2,
@@ -54,7 +53,6 @@ impl Input {
             mouse_scroll_y: 0.0,
             last_mouse_position: Vec2::ZERO,
             pressed_keys: HashSet::new(),
-            outgoing_actions: Vec::new(),
             enabled: false,
             has_canvas_props: false,
             mouse_delta: Vec2::ZERO,
@@ -69,14 +67,6 @@ impl Input {
             quick_clicks: 0,
             last_click_instant: Instant::now(),
             last_click_button: MouseButton::Left,
-        }
-    }
-
-    // will be used as system
-    pub fn update(mut input: ResMut<Input>, mut event_writer: EventWriter<InputEvent>) {
-        let events = std::mem::take(&mut input.outgoing_actions);
-        for event in events {
-            event_writer.send(event);
         }
     }
 
@@ -124,7 +114,12 @@ impl Input {
     }
 
     // should only be used in `render_gl` crate
-    pub fn recv_events(&mut self, clipboard: &mut ClipboardManager, events: &Vec<IncomingEvent>) {
+    pub fn recv_events(
+        &mut self,
+        clipboard: &mut ClipboardManager,
+        event_writer: &mut EventWriter<InputEvent>,
+        events: &Vec<IncomingEvent>
+    ) {
         if !self.enabled {
             return;
         }
@@ -147,21 +142,21 @@ impl Input {
                         self.last_click_button = *button;
                         match self.quick_clicks {
                             2 => {
-                                self.outgoing_actions.push(InputEvent::MouseDoubleClicked(
+                                event_writer.send(InputEvent::MouseDoubleClicked(
                                     *button,
                                     self.mouse_coords,
                                     modifiers.clone(),
                                 ));
                             }
                             3 => {
-                                self.outgoing_actions.push(InputEvent::MouseTripleClicked(
+                                event_writer.send(InputEvent::MouseTripleClicked(
                                     *button,
                                     self.mouse_coords,
                                     modifiers.clone(),
                                 ));
                             }
                             _ => {
-                                self.outgoing_actions.push(InputEvent::MouseClicked(
+                                event_writer.send(InputEvent::MouseClicked(
                                     *button,
                                     self.mouse_coords,
                                     modifiers.clone(),
@@ -172,8 +167,7 @@ impl Input {
                 }
                 IncomingEvent::MouseRelease(button, _position, _modifiers) => {
                     if self.pressed_mouse_buttons.contains(button) {
-                        self.outgoing_actions
-                            .push(InputEvent::MouseReleased(*button));
+                        event_writer.send(InputEvent::MouseReleased(*button));
                         self.pressed_mouse_buttons.remove(button);
                     }
                 }
@@ -188,7 +182,7 @@ impl Input {
                         self.last_mouse_position = self.mouse_coords;
 
                         for mouse_button in self.pressed_mouse_buttons.iter() {
-                            self.outgoing_actions.push(InputEvent::MouseDragged(
+                            event_writer.send(InputEvent::MouseDragged(
                                 *mouse_button,
                                 self.mouse_coords,
                                 self.mouse_delta,
@@ -196,8 +190,7 @@ impl Input {
                             ));
                         }
 
-                        self.outgoing_actions
-                            .push(InputEvent::MouseMoved(self.mouse_coords));
+                        event_writer.send(InputEvent::MouseMoved(self.mouse_coords));
                     }
                 }
                 IncomingEvent::MouseWheel(delta, _position, _modifiers) => {
@@ -206,8 +199,7 @@ impl Input {
 
                     // mouse wheel zoom..
                     if self.mouse_scroll_y > 0.1 || self.mouse_scroll_y < -0.1 {
-                        self.outgoing_actions
-                            .push(InputEvent::MouseMiddleScrolled(self.mouse_scroll_y));
+                        event_writer.send(InputEvent::MouseMiddleScrolled(self.mouse_scroll_y));
                         self.mouse_scroll_y = 0.0;
                     }
                 }
@@ -215,16 +207,16 @@ impl Input {
                     if modifiers.ctrl {
                         match kind {
                             Key::C => {
-                                self.outgoing_actions.push(InputEvent::Copy);
+                                event_writer.send(InputEvent::Copy);
                                 continue;
                             }
                             Key::X => {
-                                self.outgoing_actions.push(InputEvent::Cut);
+                                event_writer.send(InputEvent::Cut);
                                 continue;
                             }
                             Key::V => {
                                 if let Some(text) = clipboard.get_contents() {
-                                    self.outgoing_actions.push(InputEvent::Paste(text));
+                                    event_writer.send(InputEvent::Paste(text));
                                 }
                                 continue;
                             }
@@ -233,19 +225,18 @@ impl Input {
                     }
 
                     if !self.pressed_keys.contains(kind) {
-                        self.outgoing_actions
-                            .push(InputEvent::KeyPressed(*kind, *modifiers));
+                        event_writer.send(InputEvent::KeyPressed(*kind, *modifiers));
                         self.pressed_keys.insert(*kind);
                     }
                 }
                 IncomingEvent::KeyRelease(kind, _modifiers) => {
                     if self.pressed_keys.contains(kind) {
-                        self.outgoing_actions.push(InputEvent::KeyReleased(*kind));
+                        event_writer.send(InputEvent::KeyReleased(*kind));
                         self.pressed_keys.remove(kind);
                     }
                 }
                 IncomingEvent::Text(c) => {
-                    self.outgoing_actions.push(InputEvent::Text(*c));
+                    event_writer.send(InputEvent::Text(*c));
                 }
             }
         }
@@ -317,8 +308,13 @@ impl Input {
         self.pressed_gamepad_buttons.remove(&input);
     }
 
-    pub(crate) fn recv_gilrs_gamepad_connect(&mut self, id: GamepadId, info: GamepadInfo) {
-        self.outgoing_actions.push(InputEvent::GamepadConnected(id));
+    pub(crate) fn recv_gilrs_gamepad_connect(
+        &mut self,
+        event_writer: &mut EventWriter<InputEvent>,
+        id: GamepadId,
+        info: GamepadInfo
+    ) {
+        event_writer.send(InputEvent::GamepadConnected(id));
 
         self.gamepads.register(id, info.clone());
         info!("{:?} Connected", id);
@@ -333,9 +329,12 @@ impl Input {
         }
     }
 
-    pub(crate) fn recv_gilrs_gamepad_disconnect(&mut self, id: GamepadId) {
-        self.outgoing_actions
-            .push(InputEvent::GamepadDisconnected(id));
+    pub(crate) fn recv_gilrs_gamepad_disconnect(
+        &mut self,
+        event_writer: &mut EventWriter<InputEvent>,
+        id: GamepadId
+    ) {
+        event_writer.send(InputEvent::GamepadDisconnected(id));
 
         self.gamepads.deregister(id);
         info!("{:?} Disconnected", id);
@@ -350,21 +349,34 @@ impl Input {
         }
     }
 
-    pub(crate) fn recv_gilrs_button_press(&mut self, id: GamepadId, button: GamepadButtonType) {
-        self.outgoing_actions
-            .push(InputEvent::GamepadButtonPressed(id, button));
+    pub(crate) fn recv_gilrs_button_press(
+        &mut self,
+        event_writer: &mut EventWriter<InputEvent>,
+        id: GamepadId,
+        button: GamepadButtonType
+    ) {
+        event_writer.send(InputEvent::GamepadButtonPressed(id, button));
     }
 
-    pub(crate) fn recv_gilrs_button_release(&mut self, id: GamepadId, button: GamepadButtonType) {
-        self.outgoing_actions
-            .push(InputEvent::GamepadButtonReleased(id, button));
+    pub(crate) fn recv_gilrs_button_release(
+        &mut self,
+        event_writer: &mut EventWriter<InputEvent>,
+        id: GamepadId,
+        button: GamepadButtonType
+    ) {
+        event_writer.send(InputEvent::GamepadButtonReleased(id, button));
     }
 
-    pub(crate) fn gamepad_axis_set(&mut self, axis: GamepadAxis, val: f32) {
+    pub(crate) fn gamepad_axis_set(
+        &mut self,
+        event_writer: &mut EventWriter<InputEvent>,
+        axis: GamepadAxis,
+        val: f32
+    ) {
         self.gamepad_axis.set(axis, val);
         let joystick_type = axis.axis_type.to_joystick();
         let joystick_position = self.joystick_position(Joystick::new(axis.gamepad, joystick_type));
-        self.outgoing_actions.push(InputEvent::GamepadJoystickMoved(
+        event_writer.send(InputEvent::GamepadJoystickMoved(
             axis.gamepad,
             joystick_type,
             joystick_position,

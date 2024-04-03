@@ -106,7 +106,7 @@ pub(crate) fn animation(data: AnimationJson) -> Vec<u8> {
 pub(crate) fn icon(data: IconJson) -> Vec<u8> {
     let mut actions = Vec::new();
 
-    let palette_id = data.get_palette_asset_id();
+    let palette_id = data.get_palette_asset_id().expect("cannot process icon without palette");
     actions.push(IconAction::PaletteFile(palette_id));
 
     for frame in data.get_frames() {

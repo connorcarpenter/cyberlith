@@ -34,10 +34,10 @@ impl MeshInputManager {
     ) {
         for action in input_actions {
             match action {
-                InputEvent::MouseClicked(click_type, mouse_position) => {
+                InputEvent::MouseClicked(click_type, mouse_position, _) => {
                     Self::handle_mouse_click(world, input_manager, &mouse_position, click_type)
                 }
-                InputEvent::MouseDragged(click_type, mouse_position, delta) => {
+                InputEvent::MouseDragged(click_type, mouse_position, delta, _) => {
                     Self::handle_mouse_drag(world, input_manager, mouse_position, delta, click_type)
                 }
                 InputEvent::MouseMiddleScrolled(scroll_y) => {

@@ -1,7 +1,7 @@
 use std::sync::{Arc, RwLock};
 
 use bevy_app::{
-    App, First, Last, Main, MainScheduleOrder, Plugin, PostUpdate, PreStartup, PreUpdate,
+    App, First, Last, Main, Plugin, PostUpdate, PreStartup, PreUpdate,
     RunFixedMainLoop, StateTransition, Update,
 };
 use bevy_ecs::schedule::{ExecutorKind, Schedule};
@@ -10,7 +10,6 @@ use clipboard::ClipboardPlugin;
 use render_api::{Render, Window};
 
 use crate::{
-    base_set::GlInput,
     input,
     render::render,
     runner::{runner_func, StopSignal, STOP_SIGNAL},
@@ -41,17 +40,9 @@ impl Plugin for RenderGlPlugin {
             // Systems
             .add_systems(PreStartup, window::sync)
             .add_systems(First, window::sync)
-            .add_systems(GlInput, input::run)
+            .add_systems(PreUpdate, input::run)
             .add_systems(PostUpdate, input::update_cursor)
             .add_systems(Render, render);
-
-        let mut order = app.world.resource_mut::<MainScheduleOrder>();
-        order.insert_after(PreUpdate, GlInput);
-
-        let make_single_threaded_fn = |schedule: &mut Schedule| {
-            schedule.set_executor_kind(ExecutorKind::SingleThreaded);
-        };
-        app.edit_schedule(GlInput, make_single_threaded_fn.clone());
     }
 }
 

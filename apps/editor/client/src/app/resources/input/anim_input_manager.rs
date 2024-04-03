@@ -52,7 +52,7 @@ impl AnimInputManager {
     ) {
         for action in input_actions {
             match action {
-                InputEvent::MouseClicked(click_type, mouse_position) => {
+                InputEvent::MouseClicked(click_type, mouse_position, _) => {
                     Self::handle_mouse_click_framing(
                         world,
                         input_manager,
@@ -60,7 +60,7 @@ impl AnimInputManager {
                         &mouse_position,
                     )
                 }
-                InputEvent::MouseDragged(click_type, _mouse_position, delta) => {
+                InputEvent::MouseDragged(click_type, _mouse_position, delta, _) => {
                     Self::handle_mouse_drag_framing(world, click_type, delta)
                 }
                 InputEvent::MouseMiddleScrolled(scroll_y) => {
@@ -129,7 +129,7 @@ impl AnimInputManager {
     ) {
         for action in input_actions {
             match action {
-                InputEvent::MouseClicked(click_type, mouse_position) => {
+                InputEvent::MouseClicked(click_type, mouse_position, _) => {
                     Self::handle_mouse_click_posing(
                         world,
                         input_manager,
@@ -137,7 +137,7 @@ impl AnimInputManager {
                         &mouse_position,
                     )
                 }
-                InputEvent::MouseDragged(click_type, mouse_position, delta) => {
+                InputEvent::MouseDragged(click_type, mouse_position, delta, _) => {
                     Self::handle_mouse_drag_posing(
                         world,
                         input_manager,

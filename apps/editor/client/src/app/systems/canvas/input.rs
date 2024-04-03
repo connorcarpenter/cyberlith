@@ -24,7 +24,7 @@ pub fn input(world: &mut World) {
 
     let mut input_events = Vec::new();
     for event in input_reader.read() {
-        input_events.push(*event);
+        input_events.push(event.clone());
     }
 
     world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
