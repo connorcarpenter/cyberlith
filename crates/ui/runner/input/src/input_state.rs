@@ -1,4 +1,4 @@
-use input::{CursorIcon, InputEvent, Key, Modifiers};
+use input::{CursorIcon, Modifiers};
 use instant::Instant;
 use math::Vec2;
 

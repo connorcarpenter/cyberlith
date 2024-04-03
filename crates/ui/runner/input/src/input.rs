@@ -1,4 +1,4 @@
-use bevy_ecs::event::EventReader;
+
 use bevy_log::warn;
 
 use input::{CursorIcon, GamepadButtonType, InputEvent, Key, Modifiers, MouseButton};

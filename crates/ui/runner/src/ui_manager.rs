@@ -14,7 +14,7 @@ use asset_loader::{
     UiTextMeasurer,
 };
 use clipboard::ClipboardManager;
-use input::{CursorIcon, Input, InputEvent};
+use input::{CursorIcon, Input};
 use math::Vec2;
 use render_api::{
     base::{CpuMaterial, CpuMesh},

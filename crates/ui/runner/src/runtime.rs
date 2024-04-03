@@ -1,5 +1,5 @@
 use asset_loader::{AssetHandle, IconData, TypedAssetId, UiDependencies, UiTextMeasurer};
-use input::{CursorIcon, InputEvent};
+use input::CursorIcon;
 use math::Vec2;
 use render_api::{
     base::{CpuMaterial, CpuMesh},
