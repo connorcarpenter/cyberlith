@@ -24,3 +24,4 @@ node_modules
 /apps/asset/assets
 /apps/asset/assets/
 /apps/asset/assets/*
+/apps/auth/target

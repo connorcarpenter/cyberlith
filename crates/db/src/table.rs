@@ -1,4 +1,5 @@
 use std::{collections::HashMap, any::Any};
+use log::info;
 
 use crate::{DbRowValue, DbTableKey};
 use crate::git_ops::pull_repo_get_all_files;
@@ -39,6 +40,7 @@ impl<K: DbTableKey> TableImpl<K> {
                     let Ok(val) = serde_json::from_slice::<u64>(&file.bytes) else {
                         panic!("failed to deserialize file: {}", file.name);
                     };
+                    info!("found next_id: {}", val);
                     next_id = val;
                 }
                 ".json" => {
