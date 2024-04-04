@@ -16,6 +16,7 @@ session = []
 world = []
 content = []
 asset = []
+auth = []
 
 [dependencies]
 cfg-if = { version = "1.0" }

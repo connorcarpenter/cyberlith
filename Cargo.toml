@@ -7,6 +7,8 @@ members = [
     "apps/ui_editor",
     "apps/config",
     "apps/content",
+    "apps/auth",
+    "apps/auth/http_proto",
     "apps/automation/cli",
     "apps/automation/lib",
     "apps/automation/crates/vultr",

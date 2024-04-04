@@ -19,7 +19,7 @@ use world_server_http_proto::HeartbeatRequest as WorldHeartbeatRequest;
 use crate::instances::{AssetInstance, SessionInstance, WorldInstance};
 
 pub struct State {
-    timeout: Duration,
+    disconnect_timeout: Duration,
     session_instances: HashMap<(String, u16), SessionInstance>,
     world_instances: HashMap<(String, u16), WorldInstance>,
     asset_instance: Option<AssetInstance>,
@@ -29,7 +29,7 @@ pub struct State {
 impl State {
     pub fn new(timeout: Duration) -> Self {
         State {
-            timeout,
+            disconnect_timeout: timeout,
             session_instances: HashMap::new(),
             world_instances: HashMap::new(),
             asset_instance: None,
@@ -306,7 +306,7 @@ impl State {
     async fn disconnect_unheard_instances(&mut self, now: Instant) {
         // clean up instances that have disconnected
 
-        let timeout = self.timeout;
+        let timeout = self.disconnect_timeout;
 
         {
             let mut disconnected_instances = Vec::new();

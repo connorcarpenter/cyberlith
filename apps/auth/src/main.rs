@@ -1,12 +1,15 @@
 mod endpoints;
+mod state;
 
 use std::{net::SocketAddr, time::Duration};
 
 use log::{info, LevelFilter};
 use simple_logger::SimpleLogger;
 
-use config::{GATEWAY_PORT, SELF_BINDING_ADDR};
-use http_server::Server;
+use config::{AUTH_SERVER_PORT, SELF_BINDING_ADDR};
+use http_server::{async_dup::Arc, smol::lock::RwLock, Server};
+
+use crate::state::State;
 
 pub fn main() {
     SimpleLogger::new()
@@ -14,17 +17,14 @@ pub fn main() {
         .init()
         .expect("A logger was already initialized");
 
-    info!("Gateway starting up...");
+    info!("Auth Server starting up...");
     let socket_addr: SocketAddr =
-        SocketAddr::new(SELF_BINDING_ADDR.parse().unwrap(), GATEWAY_PORT);
+        SocketAddr::new(SELF_BINDING_ADDR.parse().unwrap(), AUTH_SERVER_PORT);
 
     let mut server = Server::new(socket_addr);
+    let state = Arc::new(RwLock::new(State::new()));
 
-    // game client logs into session server
-    endpoints::session_connect(&mut server);
-
-    // user registers for the first time
-    endpoints::user_register(&mut server);
+    endpoints::user_register(&mut server, state.clone());
 
     server.start();
 

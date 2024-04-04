@@ -5,6 +5,9 @@ pub const SELF_BINDING_ADDR: &str = "127.0.0.1";
 pub const PUBLIC_IP_ADDR: &str = "127.0.0.1";
 
 #[allow(dead_code)]
+pub const AUTH_SERVER_RECV_ADDR: &str = "127.0.0.1";
+
+#[allow(dead_code)]
 pub const REGION_SERVER_RECV_ADDR: &str = "127.0.0.1";
 
 #[allow(dead_code)]
@@ -24,6 +27,9 @@ pub const CONTENT_SERVER_PORT: u16 = 14196;
 
 #[allow(dead_code)]
 pub const GATEWAY_PORT: u16 = 14197;
+
+#[allow(dead_code)]
+pub const AUTH_SERVER_PORT: u16 = 14195;
 
 #[allow(dead_code)]
 pub const REGION_SERVER_PORT: u16 = 14198;
@@ -54,6 +60,9 @@ pub const CLIENT_SECRET: &str = "35aSlQxlQ7RKY03JJMSf4xvbxZGhIaZOE";
 
 #[allow(dead_code)]
 pub const GATEWAY_SECRET: &str = "bvVKHPxlQ72VBQnSDAZqN0vxZS36Vq3c";
+
+#[allow(dead_code)]
+pub const AUTH_SERVER_SECRET: &str = "rQxvRSZmRSf4vbLVuSf4vbLVusAsAmRSf4";
 
 #[allow(dead_code)]
 pub const REGION_SERVER_SECRET: &str = "ArQZmRSf4xvbLVusVjrqGhIaZOExAeIq";

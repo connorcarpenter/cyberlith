@@ -6,7 +6,7 @@ use naia_bevy_server::Server;
 use bevy_http_client::{HttpClient, ResponseError};
 use bevy_http_server::HttpServer;
 
-use region_server_http_proto::WorldUserLoginRequest;
+use region_server_http_proto::WorldConnectRequest;
 use session_server_http_proto::{UserAssetIdRequest, UserAssetIdResponse};
 use session_server_naia_proto::{channels::PrimaryChannel, messages::WorldConnectToken};
 
@@ -17,7 +17,7 @@ use crate::{asset::asset_manager::AssetManager, global::Global};
 pub fn send_world_connect_request(mut http_client: ResMut<HttpClient>, mut global: ResMut<Global>) {
     let worldless_users = global.take_worldless_users();
     for user_key in worldless_users {
-        let request = WorldUserLoginRequest::new(global.instance_secret());
+        let request = WorldConnectRequest::new(global.instance_secret());
         let key = http_client.send(REGION_SERVER_RECV_ADDR, REGION_SERVER_PORT, request);
         global.add_world_connect_response_key(&user_key, key);
     }

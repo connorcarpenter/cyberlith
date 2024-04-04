@@ -27,6 +27,10 @@ cfg_if! {
         mod asset;
         pub use self::asset::*;
     }
+    else if #[cfg(feature = "auth")] {
+        mod auth;
+        pub use self::auth::*;
+    }
     else {
         compile_error!("Required to specify a feature flag for the target environment, either 'local' or 'prod'");
     }

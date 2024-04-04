@@ -5,12 +5,12 @@ use bevy_http_client::ResponseError;
 use bevy_http_server::HttpServer;
 
 use config::REGION_SERVER_SECRET;
-use world_server_http_proto::{IncomingUserRequest, IncomingUserResponse};
+use world_server_http_proto::{WorldConnectRequest, IncomingUserResponse};
 
 use crate::global::Global;
 
 pub fn recv_login_request(mut global: ResMut<Global>, mut server: ResMut<HttpServer>) {
-    while let Some((_addr, request, response_key)) = server.receive::<IncomingUserRequest>() {
+    while let Some((_addr, request, response_key)) = server.receive::<WorldConnectRequest>() {
         if request.region_secret() != REGION_SERVER_SECRET {
             warn!("invalid request secret");
             server.respond(response_key, Err(ResponseError::Unauthenticated));

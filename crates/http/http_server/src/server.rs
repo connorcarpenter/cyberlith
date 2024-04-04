@@ -94,8 +94,13 @@ fn endpoint_2<
         let pure_request = args.1;
 
         let Ok(typed_request) = TypeRequest::from_request(pure_request) else {
-            panic!("unable to convert request to typed request, handle this better in future!");
+            // serde error!
+            return Box::pin(async move {
+                Err(ResponseError::SerdeError)
+            });
         };
+
+        // success!
 
         let typed_future = handler((addr, typed_request));
 
@@ -111,7 +116,7 @@ fn endpoint_2<
             }
         };
 
-        Box::pin(pure_future)
+        return Box::pin(pure_future);
     })
 }
 

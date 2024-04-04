@@ -4,11 +4,11 @@ use http_common::{ApiRequest, ApiResponse, Method};
 
 // Request
 #[derive(Serde, PartialEq, Clone)]
-pub struct WorldUserLoginRequest {
+pub struct WorldConnectRequest {
     pub session_server_instance_secret: String,
 }
 
-impl WorldUserLoginRequest {
+impl WorldConnectRequest {
     pub fn new(session_server_instance_secret: &str) -> Self {
         Self {
             session_server_instance_secret: session_server_instance_secret.to_string(),
@@ -18,14 +18,14 @@ impl WorldUserLoginRequest {
 
 // Response
 #[derive(Serde, PartialEq, Clone, Eq, Hash)]
-pub struct WorldUserLoginResponse {
+pub struct WorldConnectResponse {
     pub world_server_instance_secret: String,
     pub world_server_user_id: u64,
     pub world_server_public_webrtc_url: String,
     pub login_token: String,
 }
 
-impl WorldUserLoginResponse {
+impl WorldConnectResponse {
     pub fn new(
         world_server_instance_secret: &str,
         world_server_user_id: u64,
@@ -42,16 +42,16 @@ impl WorldUserLoginResponse {
 }
 
 // Traits
-impl ApiRequest for WorldUserLoginRequest {
-    type Response = WorldUserLoginResponse;
+impl ApiRequest for WorldConnectRequest {
+    type Response = WorldConnectResponse;
 
     fn method() -> Method {
         Method::Post
     }
 
     fn path() -> &'static str {
-        "world/user_login"
+        "world/connect"
     }
 }
 
-impl ApiResponse for WorldUserLoginResponse {}
+impl ApiResponse for WorldConnectResponse {}

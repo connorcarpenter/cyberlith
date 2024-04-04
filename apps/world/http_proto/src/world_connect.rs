@@ -4,14 +4,14 @@ use bevy_http_shared::{ApiRequest, ApiResponse, Method};
 
 // Request
 #[derive(Serde, PartialEq, Clone)]
-pub struct IncomingUserRequest {
+pub struct WorldConnectRequest {
     region_secret: String,
     pub session_server_addr: String,
     pub session_server_port: u16,
     pub login_token: String,
 }
 
-impl IncomingUserRequest {
+impl WorldConnectRequest {
     pub fn new(
         region_secret: &str,
         session_server_addr: &str,
@@ -44,7 +44,7 @@ impl IncomingUserResponse {
 }
 
 // Traits
-impl ApiRequest for IncomingUserRequest {
+impl ApiRequest for WorldConnectRequest {
     type Response = IncomingUserResponse;
 
     fn method() -> Method {

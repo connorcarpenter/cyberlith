@@ -23,7 +23,7 @@ use ui_runner::UiManager;
 cfg_if! {
 if #[cfg(feature = "networked")]
     {
-        use gateway_http_proto::{LoginRequest, LoginResponse};
+        use gateway_http_proto::{SessionConnectRequest, SessionConnectResponse};
         use session_server_naia_proto::{
             channels::{PrimaryChannel, RequestChannel},
             messages::{Auth as SessionAuth, LoadAssetRequest, LoadAssetWithData, WorldConnectToken},
@@ -47,8 +47,8 @@ type WorldClient<'a> = Client<'a, World>;
 #[derive(Clone, PartialEq)]
 pub enum ConnectionState {
     Disconnected,
-    SentToGateway(ResponseKey<LoginResponse>),
-    ReceivedFromGateway(LoginResponse),
+    SentToGateway(ResponseKey<SessionConnectResponse>),
+    ReceivedFromGateway(SessionConnectResponse),
     ConnectedToSession,
     ConnectedToWorld,
 }
@@ -220,7 +220,7 @@ impl ConnectionManager {
         match &self.connection_state {
             ConnectionState::Disconnected => {
                 info!("sending to gateway..");
-                let request = LoginRequest::new("charlie", "12345");
+                let request = SessionConnectRequest::new("charlie", "12345");
                 let key = http_client.send(PUBLIC_IP_ADDR, GATEWAY_PORT, request);
                 self.connection_state = ConnectionState::SentToGateway(key);
             }

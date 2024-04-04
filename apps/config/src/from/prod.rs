@@ -23,6 +23,9 @@ pub const CONTENT_SERVER_ASSET_FILE_PATH: &str = "/usr/local/bin/assets/";
 pub const CONTENT_SERVER_PORT: u16 = 80;
 
 #[allow(dead_code)]
+pub const AUTH_SERVER_PORT: u16 = 14195;
+
+#[allow(dead_code)]
 pub const GATEWAY_PORT: u16 = 14197;
 
 #[allow(dead_code)]
@@ -54,6 +57,9 @@ pub const CLIENT_SECRET: &str = "35aSlQxlQ7RKY03JJMSf4xvbxZGhIaZOE";
 
 #[allow(dead_code)]
 pub const GATEWAY_SECRET: &str = "bvVKHPxlQ72VBQnSDAZqN0vxZS36Vq3c";
+
+#[allow(dead_code)]
+pub const AUTH_SERVER_SECRET: &str = "rQxvRSZmRSf4vbLVuSf4vbLVusAsAmRSf4";
 
 #[allow(dead_code)]
 pub const REGION_SERVER_SECRET: &str = "ArQZmRSf4xvbLVusVjrqGhIaZOExAeIq";

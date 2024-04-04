@@ -10,7 +10,7 @@ use naia_bevy_server::UserKey;
 
 use bevy_http_client::ResponseKey as ClientResponseKey;
 
-use region_server_http_proto::{SessionRegisterInstanceResponse, WorldUserLoginResponse};
+use region_server_http_proto::{SessionRegisterInstanceResponse, WorldConnectResponse};
 
 pub enum ConnectionState {
     Disconnected,
@@ -55,7 +55,7 @@ pub struct Global {
     region_server_last_sent: Instant,
     region_server_last_heard: Instant,
     register_instance_response_key: Option<ClientResponseKey<SessionRegisterInstanceResponse>>,
-    world_connect_response_keys: HashMap<ClientResponseKey<WorldUserLoginResponse>, UserKey>,
+    world_connect_response_keys: HashMap<ClientResponseKey<WorldConnectResponse>, UserKey>,
     registration_resend_rate: Duration,
     region_server_disconnect_timeout: Duration,
     world_connect_resend_rate: Duration,
@@ -185,7 +185,7 @@ impl Global {
     pub fn add_world_connect_response_key(
         &mut self,
         user_key: &UserKey,
-        response_key: ClientResponseKey<WorldUserLoginResponse>,
+        response_key: ClientResponseKey<WorldConnectResponse>,
     ) {
         self.world_connect_response_keys
             .insert(response_key, user_key.clone());
@@ -193,14 +193,14 @@ impl Global {
 
     pub fn remove_world_connect_response_key(
         &mut self,
-        response_key: &ClientResponseKey<WorldUserLoginResponse>,
+        response_key: &ClientResponseKey<WorldConnectResponse>,
     ) {
         self.world_connect_response_keys.remove(response_key);
     }
 
     pub fn world_connect_response_keys(
         &self,
-    ) -> Vec<(ClientResponseKey<WorldUserLoginResponse>, UserKey)> {
+    ) -> Vec<(ClientResponseKey<WorldConnectResponse>, UserKey)> {
         let mut out = Vec::new();
         for (res_key, usr_key) in self.world_connect_response_keys.iter() {
             out.push((res_key.clone(), *usr_key));

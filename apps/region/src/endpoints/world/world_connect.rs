@@ -4,12 +4,12 @@ use http_client::{HttpClient, ResponseError};
 use http_server::{async_dup::Arc, smol::lock::RwLock, Server};
 
 use config::REGION_SERVER_SECRET;
-use region_server_http_proto::{WorldUserLoginRequest, WorldUserLoginResponse};
-use world_server_http_proto::IncomingUserRequest;
+use region_server_http_proto::{WorldConnectRequest, WorldConnectResponse};
+use world_server_http_proto::WorldConnectRequest;
 
 use crate::state::State;
 
-pub fn world_user_login(server: &mut Server, state: Arc<RwLock<State>>) {
+pub fn world_connect(server: &mut Server, state: Arc<RwLock<State>>) {
     server.endpoint(move |(_addr, req)| {
         let state = state.clone();
         async move { async_impl(state, req).await }
@@ -18,8 +18,8 @@ pub fn world_user_login(server: &mut Server, state: Arc<RwLock<State>>) {
 
 async fn async_impl(
     state: Arc<RwLock<State>>,
-    incoming_request: WorldUserLoginRequest,
-) -> Result<WorldUserLoginResponse, ResponseError> {
+    incoming_request: WorldConnectRequest,
+) -> Result<WorldConnectResponse, ResponseError> {
     let state = state.read().await;
 
     info!(
@@ -34,7 +34,7 @@ async fn async_impl(
         return Err(ResponseError::Unauthenticated);
     };
 
-    info!("world user login request received from session server");
+    info!("world_connect request received from session server");
 
     let Some(world_server) = state.get_available_world_server() else {
         warn!("no available world server");
@@ -51,11 +51,11 @@ async fn async_impl(
     let world_server_http_port = world_server.http_port();
     let world_server_public_webrtc_url = world_server.public_webrtc_url();
 
-    info!("sending incoming user request to world server");
+    info!("sending world_connect request to world server");
 
     let temp_token = random::generate_random_string(16);
 
-    let world_server_request = IncomingUserRequest::new(
+    let world_server_request = WorldConnectRequest::new(
         REGION_SERVER_SECRET,
         session_server_addr,
         session_server_port,
@@ -81,7 +81,7 @@ async fn async_impl(
 
     info!("Sending user login response to session server");
 
-    Ok(WorldUserLoginResponse::new(
+    Ok(WorldConnectResponse::new(
         world_server_instance_secret,
         user_id,
         world_server_public_webrtc_url,
