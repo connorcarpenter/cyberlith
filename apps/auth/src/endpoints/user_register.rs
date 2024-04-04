@@ -1,7 +1,7 @@
 use log::{info, warn};
 
 use http_client::{HttpClient, ResponseError};
-use http_server::{async_dup::Arc, smol::lock::RwLock, Server};
+use http_server::{async_dup::Arc, smol::lock::RwLock, Server, http_log_util};
 
 use config::{GATEWAY_SECRET, AUTH_SERVER_SECRET};
 use auth_server_http_proto::{UserRegisterRequest, UserRegisterResponse};
@@ -24,11 +24,11 @@ async fn async_impl(
         return Err(ResponseError::Unauthenticated);
     }
 
-    info!("user_register request <- gateway");
+    http_log_util::recv_req("auth_server", "gateway", "user_register");
 
     let state = state.read().await;
 
-    info!("user_register response -> gateway");
+    http_log_util::send_res("auth_server", "gateway", "user_register");
 
     Ok(UserRegisterResponse::new())
 }

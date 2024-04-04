@@ -27,6 +27,8 @@ crate-type = ["cdylib", "rlib"]
 game_engine = { path = "../../crates/engine" }
 #naia-serde = { path = "../../../naia/shared/serde" }
 
+gateway_http_proto = { path = "../../apps/gateway/http_proto" }
+
 # External
 bevy_app = { version = "0.13", default-features=false }
 bevy_ecs = { version = "0.13", default-features=false }

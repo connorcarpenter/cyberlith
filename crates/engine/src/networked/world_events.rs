@@ -15,7 +15,6 @@ use asset_id::{AssetId, AssetType};
 use asset_loader::AssetMetadataStore;
 
 use crate::{asset_cache::AssetCache, world::WorldClient};
-
 use super::{
     asset_ref_processor::{AssetProcessor, AssetRefProcessor},
     client_markers::World,

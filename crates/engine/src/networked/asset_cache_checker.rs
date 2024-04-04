@@ -13,7 +13,6 @@ use crate::{asset_cache::{AssetCache, AssetLoadedEvent}, networked::client_marke
 
 type SessionClient<'a> = Client<'a, Session>;
 
-#[cfg(feature = "networked")]
 pub enum LoadAssetTask {
     HasResponse(ResponseSendKey<LoadAssetResponse>, LoadAssetResponse),
     HasFsTask(

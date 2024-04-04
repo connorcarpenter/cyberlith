@@ -9,7 +9,6 @@ use world_server_naia_proto::{
 };
 
 use crate::EnginePlugin;
-
 use super::{
     asset_cache_checker::AssetCacheChecker,
     asset_ref_processor::AssetRefProcessor,

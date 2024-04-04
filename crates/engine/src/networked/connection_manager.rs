@@ -20,21 +20,12 @@ use config::{GATEWAY_PORT, PUBLIC_IP_ADDR};
 use filesystem::FileSystemManager;
 use ui_runner::UiManager;
 
-cfg_if! {
-if #[cfg(feature = "networked")]
-    {
-        use gateway_http_proto::{SessionConnectRequest, SessionConnectResponse};
-        use session_server_naia_proto::{
-            channels::{PrimaryChannel, RequestChannel},
-            messages::{Auth as SessionAuth, LoadAssetRequest, LoadAssetWithData, WorldConnectToken},
-        };
-        use world_server_naia_proto::messages::Auth as WorldAuth;
-    }
-    else
-    {
-
-    }
-}
+use gateway_http_proto::{SessionConnectRequest, SessionConnectResponse};
+use session_server_naia_proto::{
+    channels::{PrimaryChannel, RequestChannel},
+    messages::{Auth as SessionAuth, LoadAssetRequest, LoadAssetWithData, WorldConnectToken},
+};
+use world_server_naia_proto::messages::Auth as WorldAuth;
 
 use crate::asset_cache::{AssetCache, AssetLoadedEvent};
 use crate::networked::asset_cache_checker::AssetCacheChecker;
