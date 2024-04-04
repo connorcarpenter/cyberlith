@@ -14,7 +14,6 @@ async fn async_impl(incoming_request: GatewayUserRegisterRequest) -> Result<Gate
     http_log_util::recv_req("gateway", "client", "user_register");
 
     http_log_util::send_req("gateway", "auth_server", "user_register");
-
     let auth_server_request = AuthUserRegisterRequest::new(
         GATEWAY_SECRET,
         &incoming_request.username,
@@ -26,10 +25,8 @@ async fn async_impl(incoming_request: GatewayUserRegisterRequest) -> Result<Gate
     else {
         return http_log_util::fail_recv_res("gateway", "auth_server", "user_register");
     };
-
     http_log_util::recv_res("gateway", "auth_server", "user_register");
 
     http_log_util::send_res("gateway", "client", "user_register");
-
     Ok(GatewayUserRegisterResponse::new())
 }

@@ -26,6 +26,21 @@ pub fn main() {
     // user registers for the first time
     endpoints::auth::user_register(&mut server);
 
+    // user confirms registration
+    endpoints::auth::user_register_confirm(&mut server);
+
+    // user login
+    endpoints::auth::user_login(&mut server);
+
+    // user name forgot
+    endpoints::auth::user_name_forgot(&mut server);
+
+    // user password forgot
+    endpoints::auth::user_password_forgot(&mut server);
+
+    // user password reset
+    endpoints::auth::user_password_reset(&mut server);
+
     server.start();
 
     loop {

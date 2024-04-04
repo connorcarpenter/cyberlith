@@ -56,13 +56,30 @@ pub async fn finished() {
     wait_for_finish().await;
 }
 
-use gateway_http_proto::{UserRegisterRequest, UserRegisterResponse};
+use gateway_http_proto::{UserRegisterConfirmRequest, UserRegisterRequest, UserLoginRequest, UserNameForgotRequest, UserPasswordForgotRequest, UserPasswordResetRequest};
 
 // used as a system
 pub fn test_request(
     mut http_client: ResMut<HttpClient>,
 ) {
+    // user register
     let request = UserRegisterRequest::new("charlie", "c@gmail.com", "12345");
+    let key = http_client.send(PUBLIC_IP_ADDR, GATEWAY_PORT, request);
+
+    // user register confirm
+    let request = UserRegisterConfirmRequest::new("register_token");
+    let key = http_client.send(PUBLIC_IP_ADDR, GATEWAY_PORT, request);
+
+    // user name forgot
+    let request = UserNameForgotRequest::new("c@gmail.com");
+    let key = http_client.send(PUBLIC_IP_ADDR, GATEWAY_PORT, request);
+
+    // user password forgot
+    let request = UserPasswordForgotRequest::new("c@gmail.com");
+    let key = http_client.send(PUBLIC_IP_ADDR, GATEWAY_PORT, request);
+
+    // user password reset
+    let request = UserPasswordResetRequest::new("reset_password_token", "new_password");
     let key = http_client.send(PUBLIC_IP_ADDR, GATEWAY_PORT, request);
 }
 
