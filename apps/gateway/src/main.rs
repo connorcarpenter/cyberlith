@@ -21,10 +21,10 @@ pub fn main() {
     let mut server = Server::new(socket_addr);
 
     // game client logs into session server
-    endpoints::session_connect(&mut server);
+    endpoints::region::session_connect(&mut server);
 
     // user registers for the first time
-    endpoints::user_register(&mut server);
+    endpoints::auth::user_register(&mut server);
 
     server.start();
 
