@@ -18,6 +18,7 @@ config = { path = "../config", features = ["auth"] }
 random = { path = "../../crates/random" }
 
 auth_server_http_proto = { path = "http_proto" }
+auth_server_db = { path = "db" }
 
 log = { version = "0.4", features = [] }
 simple_logger = { version = "4.0", default-features = false, features = ["timestamps"] }

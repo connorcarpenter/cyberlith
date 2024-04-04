@@ -57,6 +57,8 @@ members = [
     "crates/input",
     # Filesystem
     "crates/filesystem",
+    # DB
+    "crates/db",
     # Cryptography
     "crates/crypto",
     # Random

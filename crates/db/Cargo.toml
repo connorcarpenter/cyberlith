@@ -1,0 +1,9 @@
+[package]
+name = "db"
+version = "0.1.0"
+edition = "2021"
+workspace = "../.."
+
+[dependencies]
+serde = { version = "1.0.189", features = ["derive"] }
+serde_json = { version = "1.0.107" }
