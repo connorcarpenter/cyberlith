@@ -2,44 +2,85 @@
 resolver = "2"
 # all crates should be listed here
 members = [
-    "apps/client",
-    "apps/launcher",
-    "apps/ui_editor",
+    # Apps
+
+    # Configs
     "apps/config",
+
+    # Launcher Client
+    "apps/launcher",
+    # Game Client
+    "apps/client",
+
+
+    # Content Server
     "apps/content",
-    "apps/auth",
-    "apps/auth/http_proto",
-    "apps/automation/cli",
-    "apps/automation/lib",
-    "apps/automation/crates/vultr",
+    # Gateway Server
     "apps/gateway",
     "apps/gateway/http_proto",
+    # Auth Server
+    "apps/auth",
+    "apps/auth/http_proto",
+    "apps/auth/db",
+    # Region Server
     "apps/region",
     "apps/region/http_proto",
+    # Session Server
     "apps/session",
     "apps/session/http_proto",
     "apps/session/naia_proto",
+    # World Server
     "apps/world",
     "apps/world/http_proto",
     "apps/world/naia_proto",
+    # Asset Server
     "apps/asset",
     "apps/asset/http_proto",
+
+    # Tools
+    # Automation CLI / Library
+    "apps/automation/cli",
+    "apps/automation/lib",
+    "apps/automation/crates/vultr",
+    # Asset Editor
     "apps/editor/client",
     "apps/editor/server/proto",
     "apps/editor/server",
+    # Ui Editor
+    "apps/ui_editor",
+
+    # Engine
     "crates/engine",
+    # Math
+    "crates/math",
+    # Input
+    "crates/input",
+    # Filesystem
+    "crates/filesystem",
+    # Cryptography
+    "crates/crypto",
+    # Random
+    "crates/random",
+    # Time
+    "crates/instant",
+    # Clipboard
+    "crates/clipboard",
+    # Multithreading / Executor
+    "crates/executor",
+    # In-Memory Storage Types .. possibly useless
+    "crates/storage",
+    # Rendering
     "crates/render/render_api",
     "crates/render/render_gl",
     "crates/render/render_egui",
-    "crates/math",
-    "crates/input",
+    "crates/render/gl",
+    "crates/render/egui_gl",
+    # Assets
     "crates/asset/serde",
     "crates/asset/loader",
     "crates/asset/render",
     "crates/asset/id",
-    "crates/filesystem",
-    "crates/render/gl",
-    "crates/render/egui_gl",
+    # Http
     "crates/http/bevy_http_client",
     "crates/http/bevy_http_server",
     "crates/http/bevy_http_shared",
@@ -48,9 +89,7 @@ members = [
     "crates/http/http_client",
     "crates/http/http_common",
     "crates/http/http_client_shared",
-    "crates/crypto",
-    "crates/executor",
-    "crates/storage",
+    # UI
     "crates/ui/builder",
     "crates/ui/layout",
     "crates/ui/runner/render",
@@ -60,14 +99,9 @@ members = [
     "crates/ui/runner/input",
     "crates/ui/runner/config",
     "crates/ui/serde",
-    "crates/random",
-    "crates/instant",
-    "crates/clipboard",
 ]
 # any crates with conflicting dependencies / feature flags cannot be put here
-default-members = [
-
-]
+default-members = []
 
 [profile.release]
 opt-level = 's'
