@@ -10,7 +10,7 @@ impl DatabaseManager {
 
     pub fn init() -> Self {
         let mut wrapper = DatabaseWrapper::init();
-        wrapper.table_open::<Users>("cyberlith_users");
+        wrapper.table_open::<Users>();
         Self {
             wrapper,
         }

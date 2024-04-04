@@ -1,6 +1,7 @@
 use std::{collections::HashMap, any::Any};
 
-use crate::DbTableKey;
+use crate::{DbRowValue, DbTableKey};
+use crate::git_ops::pull_repo_get_all_files;
 
 // Table trait
 pub trait Table: Send + Sync {
@@ -25,11 +26,37 @@ impl<K: DbTableKey> Table for TableImpl<K> {
 }
 
 impl<K: DbTableKey> TableImpl<K> {
-    pub fn new(repo_name: &str) -> Self {
+    pub fn init() -> Self {
         // lot to do here ..
+        let files = pull_repo_get_all_files(K::repo_name());
+
+        let mut next_id: u64 = 0;
+        let mut store = HashMap::new();
+
+        for file in files {
+            match file.name.as_str() {
+                ".nextid" => {
+                    let Ok(val) = serde_json::from_slice::<u64>(&file.bytes) else {
+                        panic!("failed to deserialize file: {}", file.name);
+                    };
+                    next_id = val;
+                }
+                ".json" => {
+                    let Ok(file_value) = serde_json::from_slice::<K::Value>(&file.bytes) else {
+                        panic!("failed to deserialize file: {}", file.name);
+                    };
+                    let file_key = file_value.get_key();
+                    store.insert(file_key, file_value);
+                }
+                _ => {
+                    panic!("unknown file extension for: {}", file.name);
+                }
+            }
+        }
+
         Self {
-            next_id: 0,
-            store: HashMap::new(),
+            next_id,
+            store,
         }
     }
 

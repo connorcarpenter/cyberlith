@@ -5,3 +5,4 @@ mod key;
 pub use key::{DbTableKey, DbRowValue, DbRowKey};
 
 mod table;
+mod git_ops;

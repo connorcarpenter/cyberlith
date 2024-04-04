@@ -9,6 +9,10 @@ pub struct Users;
 impl DbTableKey for Users {
     type Key = UserId;
     type Value = User;
+
+    fn repo_name() -> &'static str {
+        "cyberlith_users"
+    }
 }
 
 // user id
@@ -57,7 +61,13 @@ pub struct User {
     role: UserRole,
 }
 
-impl DbRowValue for User {}
+impl DbRowValue for User {
+    type Key = UserId;
+
+    fn get_key(&self) -> <Self as DbRowValue>::Key {
+        self.id
+    }
+}
 
 impl User {
     pub fn new(

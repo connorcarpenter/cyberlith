@@ -13,8 +13,8 @@ impl DatabaseWrapper {
         }
     }
 
-    pub fn table_open<K: DbTableKey>(&mut self, repo_name: &str) {
-        let table_impl = TableImpl::<K>::new(repo_name);
+    pub fn table_open<K: DbTableKey>(&mut self) {
+        let table_impl = TableImpl::<K>::init();
         self.tables.insert(TypeId::of::<K>(), Box::new(table_impl));
     }
 
