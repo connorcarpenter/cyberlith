@@ -1,7 +1,7 @@
-use log::{info, warn};
+use log::info;
 
 use http_client::{HttpClient, ResponseError};
-use http_server::Server;
+use http_server::{http_log_util, Server};
 
 use config::{GATEWAY_SECRET, REGION_SERVER_PORT, REGION_SERVER_RECV_ADDR};
 use gateway_http_proto::{SessionConnectRequest as GatewaySessionConnectRequest, SessionConnectResponse as GatewaySessionConnectResponse};
@@ -12,10 +12,9 @@ pub fn session_connect(server: &mut Server) {
 }
 
 async fn async_impl(incoming_request: GatewaySessionConnectRequest) -> Result<GatewaySessionConnectResponse, ResponseError> {
-    info!("session_connect request <- client");
+    http_log_util::recv_req("gateway", "client", "session_connect");
 
-    info!("session_connect request -> region server");
-
+    http_log_util::send_req("gateway", "region_server", "session_connect");
     let region_request = RegionSessionConnectRequest::new(
         GATEWAY_SECRET,
         &incoming_request.username,
@@ -24,19 +23,16 @@ async fn async_impl(incoming_request: GatewaySessionConnectRequest) -> Result<Ga
     let Ok(region_response) =
         HttpClient::send(REGION_SERVER_RECV_ADDR, REGION_SERVER_PORT, region_request).await
     else {
-        warn!("FAILED session_connect request -> region server");
-        return Err(ResponseError::InternalServerError(
-            "FAILED session_connect request -> region server".to_string(),
-        ));
+        return http_log_util::fail_recv_res("gateway", "region_server", "session_connect");
     };
 
+    http_log_util::recv_res("gateway", "region_server", "session_connect");
     info!(
-        "session_connect response <- region server: (webrtc_url: {:?}, token: {})",
+        "[webrtc_url: {:?}, token: {}]",
         region_response.session_server_public_webrtc_url, region_response.token,
     );
 
-    info!("session_connect response -> client");
-
+    http_log_util::send_res("gateway", "client", "session_connect");
     Ok(GatewaySessionConnectResponse::new(
         &region_response.session_server_public_webrtc_url,
         &region_response.token,
