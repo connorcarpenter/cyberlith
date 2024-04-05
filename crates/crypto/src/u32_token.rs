@@ -20,7 +20,7 @@ impl U32Token {
     const MAX_LENGTH: u32 = 6;
     const MAX_VALUE: u32 = Self::MAX_CHARS.pow(Self::MAX_LENGTH);
 
-    pub fn get_random() -> Self {
+    pub fn gen_random() -> Self {
         let value = random::gen_range_u32(0, Self::MAX_VALUE);
         Self { value }
     }
@@ -71,7 +71,7 @@ mod tests {
         for _ in 0..1000 {
             // to/from string
             {
-                let token = U32Token::get_random();
+                let token = U32Token::gen_random();
                 let token_str = token.as_string();
                 let token2 = U32Token::from_str(&token_str).unwrap();
                 println!("{:?} == {:?}", token, token2);
@@ -80,7 +80,7 @@ mod tests {
 
             // to/from u32
             {
-                let token = U32Token::get_random();
+                let token = U32Token::gen_random();
                 let token_u32 = token.as_u32();
                 let token2 = U32Token::from_u32(token_u32).unwrap();
                 assert_eq!(token, token2);

@@ -96,7 +96,7 @@ pub fn convert_ttf_to_icon(ttf_file_name: &str) -> Result<(), CliError> {
     //info!("max_vert_x: {}  max_vert_y: {}  min_vert_x: {}  min_vert_y: {}", max_vert_x, max_vert_y, min_vert_x, min_vert_y);
     //std::process::exit(0);
     // write out icon file
-    let output_bytes = output_file.write(&AssetId::get_random());
+    let output_bytes = output_file.write(&AssetId::gen_random());
 
     // remove .ttf from ttf_file_name
     let mut file_name_path = std::path::Path::new(ttf_file_name);

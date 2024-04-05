@@ -10,8 +10,17 @@ pub trait DbTableKey: 'static {
 }
 
 pub trait DbRowKey: Send + Sync + Clone + Copy + Eq + PartialEq + Ord + PartialOrd + Hash + From<u64> + Into<u64> + Serialize + DeserializeOwned {}
-pub trait DbRowValue: Send + Sync + Serialize + DeserializeOwned {
+pub trait DbRowValue: Send + Sync + Clone + Serialize + DeserializeOwned {
     type Key: DbRowKey;
 
     fn get_key(&self) -> <Self as DbRowValue>::Key;
+    fn set_key(&mut self, key: <Self as DbRowValue>::Key);
+
+    fn get_file_name(&self) -> String;
+    fn get_commit_message(&self) -> String;
+    fn to_bytes(self) -> Vec<u8> {
+        serde_json::to_vec_pretty(&self)
+            .unwrap()
+            .to_vec()
+    }
 }

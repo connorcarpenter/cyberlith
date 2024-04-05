@@ -58,8 +58,8 @@ impl Serde for AssetId {
 }
 
 impl AssetId {
-    pub fn get_random() -> Self {
-        Self(U32Token::get_random())
+    pub fn gen_random() -> Self {
+        Self(U32Token::gen_random())
     }
 
     pub fn from_str(s: &str) -> Result<Self, SerdeErr> {
@@ -122,8 +122,8 @@ impl Serde for ETag {
 }
 
 impl ETag {
-    pub fn new_random() -> Self {
-        Self(U32Token::get_random())
+    pub fn gen_random() -> Self {
+        Self(U32Token::gen_random())
     }
 
     pub fn from_str(s: &str) -> Result<Self, SerdeErr> {

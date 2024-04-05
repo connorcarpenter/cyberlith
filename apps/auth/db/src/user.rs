@@ -1,4 +1,4 @@
-
+use std::fmt::Display;
 use serde::{Deserialize, Serialize};
 
 use db::{DbRowKey, DbRowValue, DbTableKey};
@@ -50,14 +50,25 @@ pub enum UserRole {
     Free,
 }
 
+impl Display for UserRole {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            UserRole::Admin => write!(f, "Admin"),
+            UserRole::Staff => write!(f, "Staff"),
+            UserRole::Paid => write!(f, "Paid"),
+            UserRole::Free => write!(f, "Free"),
+        }
+    }
+}
+
 // user
 #[derive(Serialize, Deserialize, Clone)]
 pub struct User {
-    id: UserId,
+    id: Option<UserId>,
     name: String,
     email: String,
     password: String,
-    date_joined: chrono::DateTime<chrono::Utc>,
+    create_date: chrono::DateTime<chrono::Utc>,
     role: UserRole,
 }
 
@@ -65,25 +76,38 @@ impl DbRowValue for User {
     type Key = UserId;
 
     fn get_key(&self) -> <Self as DbRowValue>::Key {
-        self.id
+        self.id.unwrap()
+    }
+
+    fn set_key(&mut self, key: <Self as DbRowValue>::Key) {
+        self.id = Some(key);
+    }
+
+    fn get_file_name(&self) -> String {
+        format!("{}_{}", self.id.unwrap().id, self.name)
+    }
+
+    fn get_commit_message(&self) -> String {
+        format!("adding: [User: (id: {}, name: {}, email: {}, role: {})]", self.id.unwrap().id, self.name, self.email, self.role.to_string())
     }
 }
 
 impl User {
     pub fn new(
-        id: u64,
         name: &str,
         email: &str,
         password: &str,
-        date_joined: chrono::DateTime<chrono::Utc>,
         role: UserRole,
     ) -> Self {
+
+        let create_date: chrono::DateTime<chrono::Utc> = chrono::Utc::now();
+
         Self {
-            id: UserId::new(id),
+            id: None,
             name: name.to_string(),
             email: email.to_string(),
             password: password.to_string(),
-            date_joined,
+            create_date,
             role,
         }
     }

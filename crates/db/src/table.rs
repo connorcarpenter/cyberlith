@@ -2,7 +2,7 @@ use std::{collections::HashMap, any::Any};
 use log::info;
 
 use crate::{DbRowValue, DbTableKey};
-use crate::git_ops::pull_repo_get_all_files;
+use crate::git_ops::{create_new_file, pull_repo_get_all_files};
 
 // Table trait
 pub trait Table: Send + Sync {
@@ -29,7 +29,7 @@ impl<K: DbTableKey> Table for TableImpl<K> {
 impl<K: DbTableKey> TableImpl<K> {
     pub fn init() -> Self {
         // lot to do here ..
-        let files = pull_repo_get_all_files(K::repo_name());
+        let files = pull_repo_get_all_files::<K>();
 
         let mut next_id: u64 = 0;
         let mut store = HashMap::new();
@@ -62,16 +62,25 @@ impl<K: DbTableKey> TableImpl<K> {
         }
     }
 
-    fn increment_key(&mut self) {
+    fn get_next_key(&mut self) -> K::Key {
+        let next_key = K::Key::from(self.next_id);
         self.next_id += 1;
+        next_key
     }
 
-    pub fn insert(&mut self, value: K::Value) -> K::Key {
-        // TODO: queue sync with actual datastore, this just modifies in-memory
+    pub fn insert(&mut self, mut value: K::Value) -> K::Key {
 
-        let key = K::Key::from(self.next_id);
-        self.increment_key();
-        self.store.insert(key, value);
+        // get next key
+        let key = self.get_next_key();
+        value.set_key(key);
+
+        // insert into in-memory store
+        self.store.insert(key, value.clone());
+
+        // upload to database
+        //pub fn create_new_file(repo_name: &str, file_name: &str, file_contents: Vec<u8>, commit_message: &str);
+        create_new_file::<K>(value);
+
         key
     }
 

@@ -26,7 +26,8 @@ async fn async_impl(
 
     http_log_util::recv_req("auth_server", "gateway", "user_register_confirm");
 
-    let _state = state.read().await;
+    let mut state = state.write().await;
+    state.user_register_confirm(incoming_request);
 
     http_log_util::send_res("auth_server", "gateway", "user_register_confirm");
 

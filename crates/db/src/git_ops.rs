@@ -3,11 +3,81 @@ use std::{fs, fs::File, io::Read, path::Path};
 
 use git2::{Cred, FetchOptions, Index, Oid, PushOptions, Repository, Signature, Tree};
 use log::info;
+use crate::{DbRowValue, DbTableKey};
 
-pub fn pull_repo_get_all_files(repo_name: &str) -> Vec<GitFile> {
+pub(crate) struct GitFile {
+    path: String,
+    pub(crate) name: String,
+    pub(crate) bytes: Vec<u8>,
+}
+
+impl GitFile {
+    pub(crate) fn new(path: &str, name: &str, bytes: Vec<u8>) -> Self {
+        Self {
+            path: path.to_string(),
+            name: name.to_string(),
+            bytes,
+        }
+    }
+}
+
+pub fn pull_repo_get_all_files<K: DbTableKey>() -> Vec<GitFile> {
+
+    // get creds
+    let repo_name = K::repo_name();
+
     // pull all assets into memory, from "main" branch
     let (dir_path, repo) = repo_init(repo_name);
     load_all_files(dir_path, repo)
+}
+
+pub fn create_new_file<K: DbTableKey>(file: K::Value) {
+    // get creds
+    let repo_name = K::repo_name();
+    let file_name = file.get_file_name();
+    let commit_message = file.get_commit_message();
+    let file_contents = file.to_bytes();
+
+    // get repo
+    let (dir_path, repo) = repo_init(repo_name);
+    let mut index = repo.index().expect("Failed to open index");
+
+    info!("dir_path: {}", dir_path);
+    let file_name = format!("{}.json", file_name);
+    info!("file_name: {}", file_name);
+    let file_path = format!("{}/{}", dir_path, file_name);
+    info!("file_path: {}", file_path);
+    let full_path = format!("{}{}", repo.workdir().unwrap().to_str().unwrap(), file_name);
+    info!("full_path: {}", full_path);
+
+    // write new file, add to index
+    write_new_file(&mut index, &full_path, &file_name, file_contents);
+
+    // commit, push, pull
+    git_commit(&repo, &commit_message);
+    git_push(&repo);
+    git_pull(&repo);
+}
+
+fn write_new_file(index: &mut Index, full_path: &str, file_path: &str, bytes: Vec<u8>) {
+    // if file exists, delete it
+    let path = Path::new(full_path);
+    let file_exists = path.exists();
+    if file_exists {
+        panic!("file already exists: {}", full_path);
+    }
+
+    // write data file
+    match fs::write(full_path, &bytes) {
+        Ok(()) => {}
+        Err(err) => panic!("failed to write (file: `{}`) err: {}", full_path, err),
+    };
+
+    // add_path will also update the index
+    if let Err(e) = index
+        .add_path(Path::new(&file_path)) {
+        panic!("Failed to add file `{}` to index: {}", file_path, e);
+    }
 }
 
 fn get_remote_callbacks(access_token: &str) -> git2::RemoteCallbacks {
@@ -73,33 +143,17 @@ fn repo_init(repo_name: &str) -> (String, Repository) {
     (dir_name, repo)
 }
 
-pub(crate) struct GitFile {
-    path: String,
-    pub(crate) name: String,
-    pub(crate) bytes: Vec<u8>,
-}
-
-impl GitFile {
-    pub(crate) fn new(path: &str, name: &str, bytes: Vec<u8>) -> Self {
-        Self {
-            path: path.to_string(),
-            name: name.to_string(),
-            bytes,
-        }
-    }
-}
-
 fn load_all_files(dir_path: String, repo: Repository) -> Vec<GitFile> {
     let mut output = Vec::new();
     let head = repo.head().unwrap();
     let tree = head.peel_to_tree().unwrap();
 
-    collect_unprocessed_files(&mut output, &dir_path, &repo, &tree, "");
+    collect_files(&mut output, &dir_path, &repo, &tree, "");
 
     output
 }
 
-fn collect_unprocessed_files(
+fn collect_files(
     output: &mut Vec<GitFile>,
     root: &str,
     repo: &Repository,
@@ -115,7 +169,7 @@ fn collect_unprocessed_files(
 
                 let git_children = git_entry.to_object(repo).unwrap().peel_to_tree().unwrap();
 
-                collect_unprocessed_files(output, root, repo, &git_children, &new_path);
+                collect_files(output, root, repo, &git_children, &new_path);
             }
             Some(git2::ObjectType::Blob) => {
                 let bytes = get_file_contents(root, path, &name);
@@ -153,7 +207,7 @@ fn get_file_contents(root: &str, path: &str, file: &str) -> Vec<u8> {
     }
 }
 
-fn git_commit(repo: &Repository, branch_name: &str, commit_message: &str) -> Oid {
+fn git_commit(repo: &Repository, commit_message: &str) -> Oid {
     let tree_id = repo
         .index()
         .expect("Failed to open index")
@@ -184,25 +238,26 @@ fn git_commit(repo: &Repository, branch_name: &str, commit_message: &str) -> Oid
         )
         .expect("Failed to create commit");
 
-    info!("committed to local {:?} branch!", branch_name);
+    info!("committed to local `main` branch!");
 
     commit_id
 }
 
-fn git_push(repo: &Repository, branch_name: &str) {
+fn git_push(repo: &Repository) {
     let mut remote = repo
         .find_remote("origin")
         .expect("Failed to find remote 'origin'");
     let mut push_options = get_push_options();
-    let branch_ref = format!("refs/heads/{}", branch_name);
+    let branch_ref = "refs/heads/main";
     remote
         .push(&[branch_ref], Some(&mut push_options))
         .expect("Failed to push commit");
 
-    info!("pushed to remote {:?} branch!", branch_name);
+    info!("pushed to remote `origin/main` branch!");
 }
 
-fn git_pull(repo: &Repository, branch_name: &str) {
+fn git_pull(repo: &Repository) {
+    let branch_name = "main";
     // Fetch changes from the remote
     let mut remote = repo.find_remote("origin").unwrap();
     let mut fetch_options = get_fetch_options();

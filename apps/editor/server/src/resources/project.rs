@@ -1156,9 +1156,9 @@ impl Project {
     }
 
     pub(crate) fn get_new_unique_asset_id(&mut self, file_key: &FileKey) -> AssetId {
-        let mut output = AssetId::get_random();
+        let mut output = AssetId::gen_random();
         while self.asset_id_map.contains_key(&output) {
-            output = AssetId::get_random();
+            output = AssetId::gen_random();
         }
         self.asset_id_map.insert(output, file_key.clone());
         output

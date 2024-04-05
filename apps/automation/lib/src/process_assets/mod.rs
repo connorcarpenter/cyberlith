@@ -514,7 +514,7 @@ fn process_new_meta_file(
 ) -> ProcessedAssetMeta {
     ProcessedAssetMeta::new(
         unprocessed_meta.asset_id(),
-        ETag::new_random(),
+        ETag::gen_random(),
         unprocessed_meta.schema_version(),
         dependencies,
         hash.to_vec(),

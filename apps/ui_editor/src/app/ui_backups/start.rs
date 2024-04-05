@@ -10,7 +10,7 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
     let ui_name = "start";
     let ui_asset_id_str = "tpp7za"; // AssetId::get_random(); // keep this around to generate new AssetIds if needed!
     let icon_asset_id_str = "34mvvk";
-    let ui_etag = ETag::new_random();
+    let ui_etag = ETag::gen_random();
 
     // asset ids ..
     let ui_asset_id = AssetId::from_str(ui_asset_id_str).unwrap();
