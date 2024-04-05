@@ -64,7 +64,7 @@ impl Display for UserRole {
 // user
 #[derive(Serialize, Deserialize, Clone)]
 pub struct User {
-    id: Option<UserId>,
+    id: Option<u64>,
     name: String,
     email: String,
     password: String,
@@ -76,19 +76,19 @@ impl DbRowValue for User {
     type Key = UserId;
 
     fn get_key(&self) -> <Self as DbRowValue>::Key {
-        self.id.unwrap()
+        <Self as DbRowValue>::Key::from(self.id.unwrap())
     }
 
     fn set_key(&mut self, key: <Self as DbRowValue>::Key) {
-        self.id = Some(key);
+        self.id = Some(key.into());
     }
 
     fn get_file_name(&self) -> String {
-        format!("{}_{}", self.id.unwrap().id, self.name)
+        format!("{}_{}", self.id.unwrap(), self.name)
     }
 
     fn get_commit_message(&self) -> String {
-        format!("adding: [User: (id: {}, name: {}, email: {}, role: {})]", self.id.unwrap().id, self.name, self.email, self.role.to_string())
+        format!("adding: [User: (id: {}, name: {}, email: {}, role: {})]", self.id.unwrap(), self.name, self.email, self.role.to_string())
     }
 }
 
