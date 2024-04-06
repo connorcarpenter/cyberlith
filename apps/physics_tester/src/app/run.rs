@@ -4,9 +4,9 @@ use game_engine::{
     render::{resources::WindowSettings, Draw},
     EnginePlugin,
 };
+use crate::app::global::Global;
 
-use super::{draw, resize, ui};
-use crate::app::ui::SubmitButtonEvent;
+use super::{draw, resize, startup::startup};
 
 pub fn run() {
     let mut app = App::default();
@@ -14,16 +14,13 @@ pub fn run() {
     app.add_plugins(EnginePlugin)
         // Add Window Settings Plugin
         .insert_resource(WindowSettings {
-            title: "UI Editor".to_string(),
+            title: "Physics Tester".to_string(),
             min_size: (320, 180),
             max_size: None,
             ..Default::default()
         })
-        // events
-        .add_event::<SubmitButtonEvent>()
-        // ui systems
-        .add_systems(Startup, ui::setup)
-        .add_systems(Update, ui::handle_events)
+        // startup
+        .add_systems(Startup, startup)
         // viewport resize
         .add_systems(Update, resize::handle_viewport_resize)
         // draw

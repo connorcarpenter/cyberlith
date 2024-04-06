@@ -13,6 +13,9 @@ node_modules
 /apps/ui_editor/target
 /apps/ui_editor/assets
 /apps/ui_editor/output
+/apps/physics_tester/target
+/apps/physics_tester/assets
+/apps/physics_tester/output
 /apps/editor/client/target
 /apps/editor/server/target
 /apps/automation/cli/target

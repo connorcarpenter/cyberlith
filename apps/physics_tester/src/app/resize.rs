@@ -25,7 +25,7 @@ pub fn handle_viewport_resize(
     };
 
     // resize ui camera
-    let Ok((mut camera, mut transform)) = cameras_q.get_mut(global.ui_camera_entity) else {
+    let Ok((mut camera, mut transform)) = cameras_q.get_mut(global.camera_entity) else {
         return;
     };
 

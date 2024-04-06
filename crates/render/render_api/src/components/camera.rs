@@ -4,9 +4,7 @@ use bevy_ecs::{bundle::Bundle, component::Component};
 
 use math::Vec3;
 
-use crate::components::{
-    ClearOperation, OrthographicProjection, Projection, RenderTarget, Transform, Viewport,
-};
+use crate::components::{ClearOperation, OrthographicProjection, PerspectiveProjection, Projection, RenderTarget, Transform, Viewport};
 
 // Camera Bundle
 #[derive(Default, Bundle)]
@@ -40,6 +38,62 @@ impl CameraBundle {
                 near: 0.0,
                 far: 2000.0,
             }),
+        }
+    }
+
+    pub fn default_3d_perspective(viewport: &Viewport) -> Self {
+
+        Self {
+            camera: Camera {
+                viewport: Some(*viewport),
+                clear_operation: ClearOperation::from_rgba(0.0, 0.0, 0.0, 1.0),
+                target: RenderTarget::Screen,
+                ..Default::default()
+            },
+            transform: Transform::from_xyz(
+                100.0,
+                100.0,
+                100.0,
+            ).looking_at(
+                Vec3::new(
+                    0.0,
+                    0.0,
+                    0.0,
+                ),
+                Vec3::Z,
+            ),
+            projection: Projection::Perspective(PerspectiveProjection {
+                fov: std::f32::consts::PI / 4.0,
+                near: 0.1,
+                far: 10000.0,
+            }),
+            ..Default::default()
+        }
+    }
+
+    pub fn default_3d_orthographic(viewport: &Viewport) -> Self {
+
+        Self {
+            camera: Camera {
+                viewport: Some(*viewport),
+                clear_operation: ClearOperation::from_rgba(0.0, 0.0, 0.0, 1.0),
+                target: RenderTarget::Screen,
+                ..Default::default()
+            },
+            transform: Transform::from_xyz(
+                100.0,
+                100.0,
+                100.0,
+            ).looking_at(
+                Vec3::new(
+                    0.0,
+                    0.0,
+                    0.0,
+                ),
+                Vec3::Z,
+            ),
+            projection: Projection::Orthographic(OrthographicProjection::new(0.0, 1000.0)),
+            ..Default::default()
         }
     }
 }

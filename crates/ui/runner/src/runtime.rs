@@ -1,10 +1,11 @@
 use asset_loader::{AssetHandle, IconData, TypedAssetId, UiDependencies, UiTextMeasurer};
 use input::CursorIcon;
-use math::Vec2;
+use math::{Vec2, Vec3};
 use render_api::{
     base::{CpuMaterial, CpuMesh},
     components::Viewport,
 };
+use render_api::components::{CameraBundle, CameraProjection, ClearOperation, Transform};
 use storage::Storage;
 use ui_input::{UiGlobalEvent, UiInputEvent, UiInputState, UiNodeEvent};
 use ui_runner_config::{NodeId, UiRuntimeConfig};
@@ -17,15 +18,15 @@ pub struct UiRuntime {
     input_state: UiInputState,
     config: UiRuntimeConfig,
     dependencies: UiDependencies,
+    camera: CameraBundle
 }
 
 impl UiRuntime {
+
     pub(crate) fn generate_new_inputs(&mut self, next_inputs: &mut Vec<UiInputEvent>) {
         self.input_state.generate_new_inputs(&self.config, next_inputs);
     }
-}
 
-impl UiRuntime {
     pub(crate) fn load_from_bytes(bytes: &[u8]) -> Self {
         let config = UiRuntimeConfig::load_from_bytes(bytes);
         Self::load_from_config(config)
@@ -37,11 +38,29 @@ impl UiRuntime {
         let input_state = UiInputState::new();
         let state = UiState::from_ui_config(&config);
 
+        let mut default_bundle = CameraBundle::default_3d_perspective(&Viewport::new_at_origin(0, 0));
+
+        default_bundle.camera.clear_operation = ClearOperation::from_rgba(0.0, 0.0, 0.0, 0.0);
+        default_bundle.transform = Transform::from_xyz(
+            0.0,
+            0.0,
+            1000.0,
+        )
+            .looking_at(
+                Vec3::new(
+                    0.0,
+                    0.0,
+                    0.0,
+                ),
+                Vec3::NEG_Y,
+            );
+
         Self {
             state,
             input_state,
             config,
             dependencies,
+            camera: default_bundle
         }
     }
 
