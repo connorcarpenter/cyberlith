@@ -14,28 +14,28 @@ members = [
 
 
     # Content Server
-    "apps/content",
+    "services/content",
     # Gateway Server
-    "apps/gateway",
-    "apps/gateway/http_proto",
+    "services/gateway",
+    "services/gateway/http_proto",
     # Auth Server
-    "apps/auth",
-    "apps/auth/http_proto",
-    "apps/auth/db",
+    "services/auth",
+    "services/auth/http_proto",
+    "services/auth/db",
     # Region Server
-    "apps/region",
-    "apps/region/http_proto",
+    "services/region",
+    "services/region/http_proto",
     # Session Server
-    "apps/session",
-    "apps/session/http_proto",
-    "apps/session/naia_proto",
+    "services/session",
+    "services/session/http_proto",
+    "services/session/naia_proto",
     # World Server
-    "apps/world",
-    "apps/world/http_proto",
-    "apps/world/naia_proto",
+    "services/world",
+    "services/world/http_proto",
+    "services/world/naia_proto",
     # Asset Server
-    "apps/asset",
-    "apps/asset/http_proto",
+    "services/asset",
+    "services/asset/http_proto",
 
     # Tools
     # Automation CLI / Library

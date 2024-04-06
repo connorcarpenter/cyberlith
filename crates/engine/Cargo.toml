@@ -32,9 +32,9 @@ ui_input = { path = "../ui/runner/input" }
 random = { path = "../random" }
 
 # Networked Dependencies
-gateway_http_proto = { path = "../../apps/gateway/http_proto", optional = true }
-session_server_naia_proto = { path = "../../apps/session/naia_proto", optional = true }
-world_server_naia_proto = { path = "../../apps/world/naia_proto", optional = true }
+gateway_http_proto = { path = "../../services/gateway/http_proto", optional = true }
+session_server_naia_proto = { path = "../../services/session/naia_proto", optional = true }
+world_server_naia_proto = { path = "../../services/world/naia_proto", optional = true }
 
 # `render_gl` and `render_wgpu` SHOULD *ALWAYS* be optional
 render_gl = { path = "../render/render_gl", optional = true }

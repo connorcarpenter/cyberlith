@@ -9,7 +9,7 @@ publish = false
 [features]
 
 [dependencies]
-db = { path = "../../../crates/db"}
+db = { path = "../../../crates/db" }
 
 serde = { version = "1.0.189", features = ["derive"] }
 serde_json = { version = "1.0.107" }

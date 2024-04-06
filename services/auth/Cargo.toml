@@ -1,5 +1,5 @@
 [package]
-name = "gateway"
+name = "auth_server"
 version = "0.1.0"
 authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
 workspace = "../.."
@@ -13,11 +13,12 @@ prod = [ "config/prod" ]
 [dependencies]
 http_server = { path = "../../crates/http/http_server" }
 http_client = { path = "../../crates/http/http_client" }
-config = { path = "../config", features = ["gateway"]}
+crypto = { path = "../../crates/crypto" }
+config = { path = "../../apps/config", features = ["auth"] }
+random = { path = "../../crates/random" }
 
-gateway_http_proto = { path = "http_proto" }
-region_server_http_proto = { path = "../region/http_proto" }
-auth_server_http_proto = { path = "../auth/http_proto" }
+auth_server_http_proto = { path = "http_proto" }
+auth_server_db = { path = "db" }
 
 log = { version = "0.4", features = [] }
 simple_logger = { version = "4.0", default-features = false, features = ["timestamps"] }

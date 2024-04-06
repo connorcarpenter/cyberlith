@@ -24,7 +24,7 @@ node_modules
 /apps/automation/cli/target/repo
 /apps/automation/cli/target/repo/
 /apps/automation/cli/target/repo/*
-/apps/asset/assets
-/apps/asset/assets/
-/apps/asset/assets/*
-/apps/auth/target
+/services/asset/assets
+/services/asset/assets/
+/services/asset/assets/*
+/services/auth/target
