@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Run Content Server" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
     <option name="command" value="run --features &quot;local&quot;" />
-    <option name="workingDirectory" value="file://$PROJECT_DIR$/apps/content" />
+    <option name="workingDirectory" value="file://$PROJECT_DIR$/services/content" />
     <envs />
     <option name="emulateTerminal" value="false" />
     <option name="channel" value="DEFAULT" />
