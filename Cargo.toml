@@ -65,6 +65,8 @@ members = [
     "crates/random",
     # Time
     "crates/instant",
+    # Physics
+    "crates/physics",
     # Clipboard
     "crates/clipboard",
     # Multithreading / Executor
