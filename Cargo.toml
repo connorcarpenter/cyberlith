@@ -67,6 +67,7 @@ members = [
     "crates/instant",
     # Physics
     "crates/physics",
+    "apps/physics_tester",
     # Clipboard
     "crates/clipboard",
     # Multithreading / Executor
