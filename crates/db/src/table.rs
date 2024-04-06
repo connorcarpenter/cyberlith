@@ -43,15 +43,13 @@ impl<K: DbTableKey> TableImpl<K> {
                     info!("found next_id: {}", val);
                     next_id = val;
                 }
-                ".json" => {
+                // ".json" => {
+                _ => {
                     let Ok(file_value) = serde_json::from_slice::<K::Value>(&file.bytes) else {
                         panic!("failed to deserialize file: {}", file.name);
                     };
                     let file_key = file_value.get_key();
                     store.insert(file_key, file_value);
-                }
-                _ => {
-                    panic!("unknown file extension for: {}", file.name);
                 }
             }
         }

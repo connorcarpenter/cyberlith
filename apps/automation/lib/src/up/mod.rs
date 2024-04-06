@@ -36,7 +36,7 @@ pub fn up() -> Result<(), CliError> {
     let mut world_rdy = false;
 
     loop {
-        std::thread::sleep(Duration::from_secs(5));
+        thread::sleep(Duration::from_secs(5));
 
         check_channel(&instance_rcvr, &mut instance_rdy)?;
         check_channel(&content_rcvr, &mut content_rdy)?;

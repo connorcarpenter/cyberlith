@@ -16,7 +16,7 @@ pub fn down() -> Result<(), CliError> {
     let mut rdy = false;
 
     loop {
-        std::thread::sleep(Duration::from_secs(5));
+        thread::sleep(Duration::from_secs(5));
 
         check_channel(&rcvr, &mut rdy)?;
 

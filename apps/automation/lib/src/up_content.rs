@@ -20,7 +20,7 @@ pub fn up_content() -> Result<(), CliError> {
     let mut content_rdy = false;
 
     loop {
-        std::thread::sleep(Duration::from_secs(5));
+        thread::sleep(Duration::from_secs(5));
 
         check_channel(&content_rcvr, &mut content_rdy)?;
 
@@ -39,7 +39,7 @@ fn containers_up() -> Result<(), CliError> {
     let rcvr = thread_init_compat(containers_up_impl);
 
     loop {
-        std::thread::sleep(Duration::from_secs(5));
+        thread::sleep(Duration::from_secs(5));
 
         match rcvr.try_recv() {
             Ok(result) => return result,

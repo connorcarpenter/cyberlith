@@ -4,8 +4,8 @@ use http_client::{HttpClient, ResponseError};
 use http_server::{async_dup::Arc, smol::lock::RwLock, Server};
 
 use config::REGION_SERVER_SECRET;
-use region_server_http_proto::{WorldConnectRequest, WorldConnectResponse};
-use world_server_http_proto::WorldConnectRequest;
+use region_server_http_proto::{WorldConnectRequest as RegionWorldConnectRequest, WorldConnectResponse as RegionWorldConnectResponse};
+use world_server_http_proto::WorldConnectRequest as WorldWorldConnectRequest;
 
 use crate::state::State;
 
@@ -18,8 +18,8 @@ pub fn world_connect(server: &mut Server, state: Arc<RwLock<State>>) {
 
 async fn async_impl(
     state: Arc<RwLock<State>>,
-    incoming_request: WorldConnectRequest,
-) -> Result<WorldConnectResponse, ResponseError> {
+    incoming_request: RegionWorldConnectRequest,
+) -> Result<RegionWorldConnectResponse, ResponseError> {
     let state = state.read().await;
 
     info!(
@@ -55,7 +55,7 @@ async fn async_impl(
 
     let temp_token = random::generate_random_string(16);
 
-    let world_server_request = WorldConnectRequest::new(
+    let world_server_request = WorldWorldConnectRequest::new(
         REGION_SERVER_SECRET,
         session_server_addr,
         session_server_port,
@@ -81,7 +81,7 @@ async fn async_impl(
 
     info!("Sending user login response to session server");
 
-    Ok(WorldConnectResponse::new(
+    Ok(RegionWorldConnectRequest::new(
         world_server_instance_secret,
         user_id,
         world_server_public_webrtc_url,

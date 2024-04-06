@@ -60,7 +60,7 @@ pub fn main() {
     server.start();
 
     loop {
-        std::thread::sleep(Duration::from_secs(5));
+        thread::sleep(Duration::from_secs(5));
         info!(".");
 
         // send registration

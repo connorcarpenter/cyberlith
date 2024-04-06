@@ -1,7 +1,7 @@
 mod endpoints;
 mod state;
 
-use std::{net::SocketAddr, time::Duration};
+use std::{net::SocketAddr, thread, time::Duration};
 
 use log::{info, LevelFilter};
 use simple_logger::SimpleLogger;
@@ -34,7 +34,7 @@ pub fn main() {
     server.start();
 
     loop {
-        std::thread::sleep(Duration::from_secs(5));
+        thread::sleep(Duration::from_secs(5));
         info!(".");
     }
 }
