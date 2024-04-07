@@ -16,6 +16,8 @@ pub fn ui_update(
     // Cameras
     cameras_q: Query<(&Camera, Option<&RenderLayer>)>,
 ) {
+    ui_manager.update_ui_state();
+
     let Some(ui_handle) = ui_manager.active_ui() else {
         return;
     };

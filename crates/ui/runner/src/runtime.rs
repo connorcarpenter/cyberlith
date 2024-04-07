@@ -1,3 +1,4 @@
+use bevy_log::info;
 use asset_loader::{AssetHandle, IconData, TypedAssetId, UiDependencies, UiTextMeasurer};
 use input::CursorIcon;
 use math::{Vec2, Vec3};
@@ -5,7 +6,7 @@ use render_api::{
     base::{CpuMaterial, CpuMesh},
     components::Viewport,
 };
-use render_api::components::{CameraBundle, ClearOperation, Transform};
+use render_api::components::{CameraBundle, ClearOperation, Projection, Transform};
 use storage::Storage;
 use ui_input::{UiGlobalEvent, UiInputEvent, UiInputState, UiNodeEvent};
 use ui_runner_config::{NodeId, UiRuntimeConfig};
@@ -58,7 +59,7 @@ impl UiRuntime {
         default_bundle.transform = Transform::from_xyz(
             0.0,
             0.0,
-            5.0,
+            1000.0,
         )
             .looking_at(
                 Vec3::ZERO,
@@ -66,6 +67,36 @@ impl UiRuntime {
             );
 
         default_bundle
+    }
+
+    pub(crate) fn update_state(&mut self) {
+        self.state.update();
+    }
+
+    pub(crate) fn update_viewport(&mut self, viewport: &Viewport) {
+
+        // update ui camera
+        if viewport != self.camera.camera.viewport.as_ref().unwrap() {
+
+            info!("ui viewport updated: {:?}", viewport);
+
+            self.camera.camera.viewport = Some(*viewport);
+
+            let Projection::Perspective(perspective) = &self.camera.projection else {
+                panic!("expected perspective projection");
+            };
+            let distance = ((viewport.width.min(viewport.height) as f32) / 2.0) / f32::tan(perspective.fov / 2.0);
+            //let distance = 1000.0;
+            let x = viewport.width as f32 * 0.5;
+            let y = viewport.height as f32 * 0.5;
+            self.camera.transform.translation.x = x;
+            self.camera.transform.translation.y = y;
+            info!("distance: {}", distance);
+            self.camera.transform.translation.z = distance;
+            self.camera.transform.look_at(Vec3::new(x, y, 0.0), Vec3::NEG_Y);
+
+            self.state.queue_recalculate_layout();
+        }
     }
 
     pub fn decompose_to_refs(
@@ -114,29 +145,6 @@ impl UiRuntime {
         materials: &mut Storage<CpuMaterial>,
     ) {
         self.state.load_cpu_data(&self.config, meshes, materials);
-    }
-
-    pub(crate) fn update_viewport(&mut self, viewport: &Viewport) {
-
-        // update ui camera
-        if viewport != self.camera.camera.viewport.as_ref().unwrap() {
-            self.camera.camera.viewport = Some(*viewport);
-            self.camera.transform = Transform::from_xyz(
-                viewport.width as f32 * 0.5,
-                viewport.height as f32 * 0.5,
-                1000.0,
-            )
-                .looking_at(
-                    Vec3::new(
-                        viewport.width as f32 * 0.5,
-                        viewport.height as f32 * 0.5,
-                        0.0,
-                    ),
-                    Vec3::NEG_Y,
-                );
-
-            self.state.queue_recalculate_layout();
-        }
     }
 
     pub(crate) fn needs_to_recalculate_layout(&self) -> bool {

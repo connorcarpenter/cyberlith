@@ -1,5 +1,5 @@
 
-use bevy_log::warn;
+use bevy_log::{info, warn};
 
 use input::{CursorIcon, GamepadButtonType, InputEvent, Key, Modifiers, MouseButton};
 use math::Vec2;
@@ -73,6 +73,10 @@ impl UiInputConverter {
                     _ => None,
                 },
                 InputEvent::KeyPressed(key, modifiers) => match key {
+                    //Testing
+                    Key::J => Some(UiInputEvent::JPressed),
+                    Key::K => Some(UiInputEvent::KPressed),
+                    //
                     Key::ArrowUp => Some(UiInputEvent::UpPressed),
                     Key::ArrowDown => Some(UiInputEvent::DownPressed),
                     Key::ArrowLeft => Some(UiInputEvent::LeftPressed(modifiers)),
@@ -126,6 +130,11 @@ impl UiInputConverter {
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum UiInputEvent {
+
+    // testing
+    JPressed,
+    KPressed,
+
     // keyboard/gamepad
     UpPressed,
     DownPressed,
@@ -345,6 +354,15 @@ pub fn ui_receive_input(
     // handle navigation of hover elements & button activation
     for event in &events {
         match event {
+            UiInputEvent::JPressed => {
+                ui_state.breath += 5.0;
+                info!("breath: {}", ui_state.breath);
+            }
+            UiInputEvent::KPressed => {
+                ui_state.breath -= 5.0;
+
+                info!("breath: {}", ui_state.breath);
+            }
             UiInputEvent::UpPressed
             | UiInputEvent::DownPressed
             | UiInputEvent::LeftPressed(_)

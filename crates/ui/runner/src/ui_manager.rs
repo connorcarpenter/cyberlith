@@ -70,6 +70,13 @@ impl Default for UiManager {
 }
 
 impl UiManager {
+
+    pub(crate) fn update_ui_state(&mut self) {
+        for (_, ui) in self.ui_runtimes.iter_mut() {
+            ui.update_state();
+        }
+    }
+
     // used as a system
     pub(crate) fn sync_assets(
         mut ui_manager: ResMut<Self>,

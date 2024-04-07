@@ -21,6 +21,9 @@ pub struct UiState {
     pub store: UiStateStore,
     pub visibility_store: UiVisibilityStore,
 
+    pub breath: f32,
+    breath_up: bool,
+
     recalc_layout: bool,
 }
 
@@ -31,6 +34,8 @@ impl UiState {
             cache: LayoutCache::new(),
             store: UiStateStore::new(),
             visibility_store: UiVisibilityStore::new(),
+            breath: -20.0,
+            breath_up: true,
 
             recalc_layout: false,
         };
@@ -45,6 +50,29 @@ impl UiState {
         }
 
         me
+    }
+
+    pub fn update(&mut self) {
+        // if self.breath_up {
+        //     self.breath += 0.5;
+        //     if self.breath > 20.0 {
+        //         self.breath = 0.0;
+        //         // self.breath_up = false;
+        //     }
+        // } else {
+        //     self.breath -= 0.5;
+        //     if self.breath < 0.5 {
+        //         self.breath_up = true;
+        //     }
+        // }
+    }
+
+    pub fn breath(&self) -> f32 {
+        self.breath
+    }
+
+    pub fn set_breath(&mut self, breath: f32) {
+        self.breath = breath;
     }
 
     // nodes
@@ -245,7 +273,7 @@ impl UiState {
         text_measurer: &dyn TextMeasurer,
         viewport: &Viewport,
     ) {
-        info!("recalculating layout. viewport_width: {:?}, viewport_height: {:?}", viewport.width, viewport.height);
+        //info!("recalculating layout. viewport_width: {:?}, viewport_height: {:?}", viewport.width, viewport.height);
 
         let last_viewport_width: f32 = viewport.width as f32;
         let last_viewport_height: f32 = viewport.height as f32;
