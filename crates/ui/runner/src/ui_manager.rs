@@ -32,7 +32,10 @@ use crate::runtime::UiRuntime;
 #[derive(Resource)]
 pub struct UiManager {
     active_ui: Option<UiHandle>,
-    active_render_layer: Option<RenderLayer>,
+
+    // this is the RenderLayer that RenderLayer::UI seeks to mirror
+    target_render_layer: Option<RenderLayer>,
+
     pub ui_runtimes: HashMap<UiHandle, UiRuntime>,
     queued_uis: Vec<UiHandle>,
 
@@ -50,7 +53,7 @@ impl Default for UiManager {
     fn default() -> Self {
         Self {
             active_ui: None,
-            active_render_layer: None,
+            target_render_layer: None,
 
             ui_runtimes: HashMap::new(),
             queued_uis: Vec::new(),
@@ -157,12 +160,16 @@ impl UiManager {
         self.active_ui
     }
 
-    pub fn set_render_layer(&mut self, render_layer: RenderLayer) {
-        self.active_render_layer = Some(render_layer);
+
+
+    // this is the RenderLayer that RenderLayer::UI seeks to mirror
+    pub fn target_render_layer(&self) -> Option<RenderLayer> {
+        self.target_render_layer
     }
 
-    pub fn render_layer(&self) -> Option<RenderLayer> {
-        self.active_render_layer
+    // this is the RenderLayer that RenderLayer::UI seeks to mirror
+    pub fn set_target_render_layer(&mut self, render_layer: RenderLayer) {
+        self.target_render_layer = Some(render_layer);
     }
 
     fn load_impl(
@@ -320,11 +327,11 @@ impl UiManager {
     pub fn update_ui_viewport(
         &mut self,
         asset_manager: &AssetManager,
-        camera: &Camera,
+        target_camera: &Camera,
         ui_handle: &UiHandle,
     ) {
         let store = asset_manager.get_store();
-        let Some(viewport) = camera.viewport else {
+        let Some(viewport) = target_camera.viewport else {
             return;
         };
         let Some(ui_runtime) = self.ui_runtimes.get_mut(ui_handle) else {

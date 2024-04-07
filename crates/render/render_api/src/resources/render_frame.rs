@@ -1,6 +1,7 @@
 use std::default::Default;
 
 use bevy_ecs::system::Resource;
+use bevy_log::info;
 
 use storage::Handle;
 
@@ -28,8 +29,8 @@ impl Default for RenderFrame {
 
 impl RenderFrame {
     fn new_render_passes() -> Vec<Option<RenderPass>> {
-        let mut contents = Vec::with_capacity(Camera::MAX_CAMERAS);
-        for _ in 0..Camera::MAX_CAMERAS {
+        let mut contents = Vec::with_capacity(RenderLayers::MAX_LAYERS_INTERNAL);
+        for _ in 0..RenderLayers::MAX_LAYERS_INTERNAL {
             contents.push(None);
         }
         contents
@@ -54,11 +55,13 @@ impl RenderFrame {
 
     fn get_render_pass_mut(&mut self, render_layer_opt: Option<&RenderLayer>) -> &mut RenderPass {
         let id = convert_wrapper(render_layer_opt.copied());
+        if id >= RenderLayers::MAX_LAYERS_INTERNAL {
+            panic!("RenderLayer index out of bounds!");
+        }
 
         if self.render_passes[id].is_none() {
-            if id >= Camera::MAX_CAMERAS {
-                panic!("RenderLayer index out of bounds!");
-            }
+            // info!("making render pass for render layer: {:?}", render_layer_opt);
+            // init pass
             self.render_passes[id] = Some(RenderPass::default());
         }
 
@@ -76,6 +79,7 @@ impl RenderFrame {
         contents.camera_opt = Some(camera.clone());
         contents.camera_transform_opt = Some(*transform);
         contents.camera_projection_opt = Some(*projection);
+        contents.render_layer = Some(RenderLayers::layer_unchecked(convert_wrapper(render_layer_opt.copied())));
     }
 
     pub fn draw_point_light(&mut self, render_layer_opt: Option<&RenderLayer>, light: &PointLight) {
@@ -140,7 +144,7 @@ pub enum MaterialOrSkinHandle {
 
 fn convert_wrapper(w: Option<RenderLayer>) -> usize {
     if let Some(r) = w {
-        r.0
+        r.as_usize()
     } else {
         RenderLayers::DEFAULT
     }

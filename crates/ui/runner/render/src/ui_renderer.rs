@@ -7,6 +7,8 @@ use render_api::{
     components::{RenderLayer, Transform},
     resources::RenderFrame,
 };
+use render_api::base::Color;
+use render_api::components::{AmbientLight, RenderLayers};
 use storage::Handle;
 use ui_runner::{config::{text_get_raw_rects, text_get_subimage_indices, NodeId, UiRuntimeConfig, WidgetKind}, input::UiInputState, state::{NodeActiveState, UiState}, Blinkiness, UiManager, UiHandle};
 
@@ -24,13 +26,11 @@ impl UiRender for UiManager {
         asset_manager: &AssetManager,
         render_frame: &mut RenderFrame,
     ) {
-        let render_layer_opt = self.render_layer();
         if let Some(active_ui_handle) = self.active_ui() {
             UiRenderer::draw_ui(
                 self,
                 asset_manager,
                 render_frame,
-                render_layer_opt.as_ref(),
                 &self.blinkiness,
                 &active_ui_handle,
             );
@@ -45,7 +45,6 @@ impl UiRenderer {
         ui_manager: &UiManager,
         asset_manager: &AssetManager,
         render_frame: &mut RenderFrame,
-        render_layer_opt: Option<&RenderLayer>,
         blinkiness: &Blinkiness,
         ui_handle: &UiHandle,
     ) {
@@ -54,7 +53,10 @@ impl UiRenderer {
             return;
         };
 
-        let (ui_state, ui_input_state, ui, _) = ui_runner.decompose_to_refs();
+        let (ui_state, ui_input_state, ui, _, camera_bundle) = ui_runner.decompose_to_refs();
+
+        render_frame.draw_camera(Some(&RenderLayer::UI), &camera_bundle.camera, &camera_bundle.transform, &camera_bundle.projection);
+        render_frame.draw_ambient_light(Some(&RenderLayer::UI), &AmbientLight::new(1.0, Color::WHITE));
 
         let text_icon_handle = ui_runner.get_icon_handle();
 
@@ -64,7 +66,6 @@ impl UiRenderer {
             let node_id = NodeId::from_usize(node_id);
             draw_ui_node(
                 render_frame,
-                render_layer_opt,
                 asset_manager,
                 carat_blink,
                 ui,
@@ -78,7 +79,6 @@ impl UiRenderer {
 
     pub fn draw_text_carat(
         render_frame: &mut RenderFrame,
-        render_layer_opt: Option<&RenderLayer>,
         asset_manager: &AssetManager,
         text_icon_handle: &AssetHandle<IconData>,
         text_color_mat_handle: &Handle<CpuMaterial>,
@@ -108,7 +108,7 @@ impl UiRenderer {
 
         asset_manager.draw_icon_with_material(
             render_frame,
-            render_layer_opt,
+            Some(&RenderLayer::UI),
             text_icon_handle,
             text_color_mat_handle,
             (124 - 32) as usize, // pipe character '|'
@@ -118,7 +118,6 @@ impl UiRenderer {
 
     pub fn draw_text_selection(
         render_frame: &mut RenderFrame,
-        render_layer_opt: Option<&RenderLayer>,
         asset_manager: &AssetManager,
         text_icon_handle: &AssetHandle<IconData>,
         mesh_handle: &Handle<CpuMesh>,
@@ -149,13 +148,12 @@ impl UiRenderer {
         box_transform.scale.x = x_scale;
         box_transform.translation.y += 8.0;
         box_transform.scale.y -= 16.0;
-        render_frame.draw_mesh(render_layer_opt, mesh_handle, mat_handle, &box_transform);
+        render_frame.draw_mesh(Some(&RenderLayer::UI), mesh_handle, mat_handle, &box_transform);
     }
 }
 
 fn draw_ui_node(
     render_frame: &mut RenderFrame,
-    render_layer_opt: Option<&RenderLayer>,
     asset_manager: &AssetManager,
     carat_blink: bool,
     ui_config: &UiRuntimeConfig,
@@ -189,7 +187,6 @@ fn draw_ui_node(
             WidgetKind::Panel => {
                 draw_ui_panel(
                     render_frame,
-                    render_layer_opt,
                     ui_config,
                     ui_state,
                     id,
@@ -199,7 +196,6 @@ fn draw_ui_node(
             WidgetKind::Text => {
                 draw_ui_text(
                     render_frame,
-                    render_layer_opt,
                     asset_manager,
                     ui_config,
                     ui_state,
@@ -211,7 +207,6 @@ fn draw_ui_node(
             WidgetKind::Button => {
                 draw_ui_button(
                     render_frame,
-                    render_layer_opt,
                     ui_config,
                     ui_state,
                     ui_input_state,
@@ -222,7 +217,6 @@ fn draw_ui_node(
             WidgetKind::Textbox => {
                 draw_ui_textbox(
                     render_frame,
-                    render_layer_opt,
                     asset_manager,
                     carat_blink,
                     ui_config,
@@ -240,7 +234,6 @@ fn draw_ui_node(
 fn draw_ui_panel(
     //self was Panel
     render_frame: &mut RenderFrame,
-    render_layer_opt: Option<&RenderLayer>,
     ui_config: &UiRuntimeConfig,
     ui_state: &UiState,
     id: &NodeId,
@@ -258,7 +251,7 @@ fn draw_ui_panel(
                 panic!("partial background_alpha not implemented yet!");
             }
             let box_handle = ui_state.globals.get_box_mesh_handle().unwrap();
-            render_frame.draw_mesh(render_layer_opt, box_handle, &mat_handle, &transform);
+            render_frame.draw_mesh(Some(&RenderLayer::UI), box_handle, &mat_handle, &transform);
         }
     } else {
         warn!("no color handle for panel"); // probably will need to do better debugging later
@@ -269,7 +262,6 @@ fn draw_ui_panel(
 fn draw_ui_text(
     //&self, // self was text widget
     render_frame: &mut RenderFrame,
-    render_layer_opt: Option<&RenderLayer>,
     asset_manager: &AssetManager,
     ui_config: &UiRuntimeConfig,
     ui_state: &UiState,
@@ -294,7 +286,7 @@ fn draw_ui_text(
             let box_handle = ui_state.globals.get_box_mesh_handle().unwrap();
             let mut new_transform = transform.clone();
             new_transform.translation.z -= 0.025;
-            render_frame.draw_mesh(render_layer_opt, box_handle, &mat_handle, &new_transform);
+            render_frame.draw_mesh(Some(&RenderLayer::UI), box_handle, &mat_handle, &new_transform);
         }
     } else {
         warn!("no background color handle for text"); // probably will need to do better debugging later
@@ -307,7 +299,7 @@ fn draw_ui_text(
 
     asset_manager.draw_text(
         render_frame,
-        render_layer_opt,
+        Some(&RenderLayer::UI),
         text_icon_handle,
         text_color_handle,
         transform,
@@ -318,7 +310,6 @@ fn draw_ui_text(
 fn draw_ui_button(
     //self was Button
     render_frame: &mut RenderFrame,
-    render_layer_opt: Option<&RenderLayer>,
     ui_config: &UiRuntimeConfig,
     ui_state: &UiState,
     ui_input_state: &UiInputState,
@@ -338,7 +329,7 @@ fn draw_ui_button(
                 panic!("partial background_alpha not implemented yet!");
             }
             let box_handle = ui_state.globals.get_box_mesh_handle().unwrap();
-            render_frame.draw_mesh(render_layer_opt, box_handle, &mat_handle, &transform);
+            render_frame.draw_mesh(Some(&RenderLayer::UI), box_handle, &mat_handle, &transform);
         }
     } else {
         warn!("no color handle for button"); // probably will need to do better debugging later
@@ -349,7 +340,6 @@ fn draw_ui_button(
 fn draw_ui_textbox(
     //self was Textbox
     render_frame: &mut RenderFrame,
-    render_layer_opt: Option<&RenderLayer>,
     asset_manager: &AssetManager,
     carat_blink: bool,
     ui_config: &UiRuntimeConfig,
@@ -375,7 +365,7 @@ fn draw_ui_textbox(
                 panic!("partial background_alpha not implemented yet!");
             }
             let box_handle = ui_state.globals.get_box_mesh_handle().unwrap();
-            render_frame.draw_mesh(render_layer_opt, box_handle, &mat_handle, &transform);
+            render_frame.draw_mesh(Some(&RenderLayer::UI), box_handle, &mat_handle, &transform);
         }
     } else {
         warn!("no color handle for textbox"); // probably will need to do better debugging later
@@ -396,7 +386,7 @@ fn draw_ui_textbox(
 
         asset_manager.draw_text(
             render_frame,
-            render_layer_opt,
+            Some(&RenderLayer::UI),
             text_icon_handle,
             text_color_handle,
             &text_transform,
@@ -411,7 +401,6 @@ fn draw_ui_textbox(
                 text_transform.translation.z = transform.translation.z + 0.025;
                 UiRenderer::draw_text_selection(
                     render_frame,
-                    render_layer_opt,
                     asset_manager,
                     text_icon_handle,
                     ui_state.globals.get_box_mesh_handle().unwrap(),
@@ -429,7 +418,6 @@ fn draw_ui_textbox(
             text_transform.translation.z = transform.translation.z + 0.05;
             UiRenderer::draw_text_carat(
                 render_frame,
-                render_layer_opt,
                 asset_manager,
                 text_icon_handle,
                 text_color_handle,

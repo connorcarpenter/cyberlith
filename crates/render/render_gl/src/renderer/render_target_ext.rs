@@ -28,6 +28,7 @@ pub trait RenderTargetExt {
         render_pass: RenderPass,
     ) -> &Self {
         let RenderPass {
+            render_layer,
             camera_opt,
             camera_transform_opt,
             camera_projection_opt,

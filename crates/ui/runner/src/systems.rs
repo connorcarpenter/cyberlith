@@ -2,7 +2,9 @@ use bevy_ecs::{prelude::Query, event::EventReader, change_detection::{Res, ResMu
 
 use asset_loader::AssetManager;
 use input::InputEvent;
-use render_api::components::{Camera, RenderLayer};
+use math::Vec3;
+use render_api::components::{Camera, RenderLayer, Transform, Viewport};
+use render_api::Window;
 use ui_input::UiInputConverter;
 
 use crate::UiManager;
@@ -17,12 +19,12 @@ pub fn ui_update(
     let Some(ui_handle) = ui_manager.active_ui() else {
         return;
     };
-    let ui_render_layer_opt = ui_manager.render_layer();
+    let ui_render_layer_opt = ui_manager.target_render_layer();
 
     // find camera, update viewport
-    for (camera, cam_render_layer_opt) in cameras_q.iter() {
-        if cam_render_layer_opt == ui_render_layer_opt.as_ref() {
-            ui_manager.update_ui_viewport(&asset_manager, camera, &ui_handle);
+    for (target_camera, target_render_layer_opt) in cameras_q.iter() {
+        if target_render_layer_opt == ui_render_layer_opt.as_ref() {
+            ui_manager.update_ui_viewport(&asset_manager, target_camera, &ui_handle);
         }
     }
 

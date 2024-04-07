@@ -1,8 +1,10 @@
 use bevy_ecs::system::{NonSendMut, Res, ResMut};
+use bevy_log::info;
 
 use render_api::{
     base::CpuTexture2D, components::RenderTarget as CameraRenderTarget, resources::RenderFrame,
 };
+use render_api::components::RenderLayer;
 use storage::SideStorage;
 
 use crate::{
@@ -30,6 +32,16 @@ pub fn render(
             continue;
         }
         let render_pass = render_pass_opt.unwrap();
+        let Some(render_layer) =  render_pass.render_layer else {
+            panic!("RenderPass has no RenderLayer!")
+        };
+
+        if render_layer == RenderLayer::UI {
+            info!("Rendering RenderLayer::UI");
+        } else {
+            info!("Rendering RenderLayer {:?}", render_layer);
+        }
+
         let Some(camera) = render_pass.camera_opt.as_ref() else {
             continue;
         };

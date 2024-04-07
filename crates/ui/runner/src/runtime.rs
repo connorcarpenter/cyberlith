@@ -5,7 +5,7 @@ use render_api::{
     base::{CpuMaterial, CpuMesh},
     components::Viewport,
 };
-use render_api::components::{CameraBundle, CameraProjection, ClearOperation, Transform};
+use render_api::components::{CameraBundle, ClearOperation, Transform};
 use storage::Storage;
 use ui_input::{UiGlobalEvent, UiInputEvent, UiInputState, UiNodeEvent};
 use ui_runner_config::{NodeId, UiRuntimeConfig};
@@ -23,6 +23,10 @@ pub struct UiRuntime {
 
 impl UiRuntime {
 
+    pub(crate) fn camera_bundle(&self) -> &CameraBundle {
+        &self.camera
+    }
+
     pub(crate) fn generate_new_inputs(&mut self, next_inputs: &mut Vec<UiInputEvent>) {
         self.input_state.generate_new_inputs(&self.config, next_inputs);
     }
@@ -38,9 +42,19 @@ impl UiRuntime {
         let input_state = UiInputState::new();
         let state = UiState::from_ui_config(&config);
 
+        Self {
+            state,
+            input_state,
+            config,
+            dependencies,
+            camera: Self::default_camera_bundle()
+        }
+    }
+
+    fn default_camera_bundle() -> CameraBundle {
         let mut default_bundle = CameraBundle::default_3d_perspective(&Viewport::new_at_origin(0, 0));
 
-        default_bundle.camera.clear_operation = ClearOperation::from_rgba(0.0, 0.0, 0.0, 0.0);
+        default_bundle.camera.clear_operation = ClearOperation::none();
         default_bundle.transform = Transform::from_xyz(
             0.0,
             0.0,
@@ -55,23 +69,18 @@ impl UiRuntime {
                 Vec3::NEG_Y,
             );
 
-        Self {
-            state,
-            input_state,
-            config,
-            dependencies,
-            camera: default_bundle
-        }
+        default_bundle
     }
 
     pub fn decompose_to_refs(
         &self,
-    ) -> (&UiState, &UiInputState, &UiRuntimeConfig, &UiDependencies) {
+    ) -> (&UiState, &UiInputState, &UiRuntimeConfig, &UiDependencies, &CameraBundle) {
         (
             &self.state,
             &self.input_state,
             &self.config,
             &self.dependencies,
+            &self.camera,
         )
     }
 
@@ -112,7 +121,26 @@ impl UiRuntime {
     }
 
     pub(crate) fn update_viewport(&mut self, viewport: &Viewport) {
-        self.state.update_viewport(viewport);
+
+        // update ui camera
+        if viewport != self.camera.camera.viewport.as_ref().unwrap() {
+            self.camera.camera.viewport = Some(*viewport);
+            self.camera.transform = Transform::from_xyz(
+                viewport.width as f32 * 0.5,
+                viewport.height as f32 * 0.5,
+                1000.0,
+            )
+                .looking_at(
+                    Vec3::new(
+                        viewport.width as f32 * 0.5,
+                        viewport.height as f32 * 0.5,
+                        0.0,
+                    ),
+                    Vec3::NEG_Y,
+                );
+
+            self.state.queue_recalculate_layout();
+        }
     }
 
     pub(crate) fn needs_to_recalculate_layout(&self) -> bool {
@@ -120,7 +148,7 @@ impl UiRuntime {
     }
 
     pub(crate) fn recalculate_layout(&mut self, text_measurer: &UiTextMeasurer) {
-        self.state.recalculate_layout(&self.config, text_measurer);
+        self.state.recalculate_layout(&self.config, text_measurer, self.camera.camera.viewport.as_ref().unwrap());
     }
 
     // input

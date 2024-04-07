@@ -23,6 +23,7 @@ use game_engine::{
     },
     ui::UiManager,
 };
+use game_engine::render::components::RenderLayers;
 use ui_builder::UiConfig;
 use ui_runner_config::UiRuntimeConfig;
 
@@ -61,15 +62,16 @@ pub fn setup(
     // load ui into asset manager
     let ui_handle = ui_manager.manual_load_ui_config(&ui_asset_id, UiRuntimeConfig::load_from_builder_config(ui));
 
+    ui_manager.set_target_render_layer(RenderLayers::layer(0));
     ui_manager.enable_ui(&ui_handle);
     ui_manager.register_ui_event::<SubmitButtonEvent>(&ui_handle, "login_button");
 
     // scene setup now
     // ambient light
-    commands.spawn(AmbientLight::new(1.0, Color::WHITE));
-
-    // camera
-    let ui_camera_entity = commands
+    // commands.spawn(AmbientLight::new(1.0, Color::WHITE)).insert(RenderLayers::layer(0));
+    //
+    // // camera
+    let scene_camera_entity = commands
         .spawn(CameraBundle {
             camera: Camera {
                 viewport: None,
@@ -83,9 +85,10 @@ pub fn setup(
             }),
             ..Default::default()
         })
+        .insert(RenderLayers::layer(0))
         .id();
 
-    commands.insert_resource(Global::new(ui_camera_entity));
+    commands.insert_resource(Global::new(scene_camera_entity));
 }
 
 pub fn handle_events(

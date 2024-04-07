@@ -1,4 +1,4 @@
-use bevy_log::warn;
+use bevy_log::{info, warn};
 
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
@@ -22,7 +22,6 @@ pub struct UiState {
     pub visibility_store: UiVisibilityStore,
 
     recalc_layout: bool,
-    last_viewport: Viewport,
 }
 
 impl UiState {
@@ -34,7 +33,6 @@ impl UiState {
             visibility_store: UiVisibilityStore::new(),
 
             recalc_layout: false,
-            last_viewport: Viewport::new_at_origin(0, 0),
         };
 
         for node in ui_config.nodes_iter() {
@@ -223,16 +221,7 @@ impl UiState {
 
     // layout
 
-    pub fn update_viewport(&mut self, viewport: &Viewport) {
-        let viewport = *viewport;
-        if self.last_viewport == viewport {
-            return;
-        }
-        self.last_viewport = viewport;
-        self.queue_recalculate_layout();
-    }
-
-    fn queue_recalculate_layout(&mut self) {
+    pub fn queue_recalculate_layout(&mut self) {
         self.recalc_layout = true;
     }
 
@@ -244,20 +233,22 @@ impl UiState {
         &mut self,
         ui_config: &UiRuntimeConfig,
         text_measurer: &dyn TextMeasurer,
+        viewport: &Viewport,
     ) {
         self.recalc_layout = false;
-        self.recalculate_layout_impl(ui_config, text_measurer);
+        self.recalculate_layout_impl(ui_config, text_measurer, viewport);
     }
 
     fn recalculate_layout_impl(
         &mut self,
         ui_config: &UiRuntimeConfig,
         text_measurer: &dyn TextMeasurer,
+        viewport: &Viewport,
     ) {
-        //info!("recalculating layout. viewport_width: {:?}, viewport_height: {:?}", self.viewport.width, self.viewport.height);
+        info!("recalculating layout. viewport_width: {:?}, viewport_height: {:?}", viewport.width, viewport.height);
 
-        let last_viewport_width: f32 = self.last_viewport.width as f32;
-        let last_viewport_height: f32 = self.last_viewport.height as f32;
+        let last_viewport_width: f32 = viewport.width as f32;
+        let last_viewport_height: f32 = viewport.height as f32;
 
         let cache_mut = &mut self.cache;
         let visibility_store_ref = &self.visibility_store;
