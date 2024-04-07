@@ -64,8 +64,8 @@ impl CameraBundle {
             ),
             projection: Projection::Perspective(PerspectiveProjection {
                 fov: std::f32::consts::PI / 4.0,
-                near: -2000.0,
-                far: 2000.0,
+                near: 0.1,
+                far: 1000.0,
             }),
             ..Default::default()
         }

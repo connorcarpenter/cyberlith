@@ -58,14 +58,10 @@ impl UiRuntime {
         default_bundle.transform = Transform::from_xyz(
             0.0,
             0.0,
-            1000.0,
+            5.0,
         )
             .looking_at(
-                Vec3::new(
-                    0.0,
-                    0.0,
-                    0.0,
-                ),
+                Vec3::ZERO,
                 Vec3::NEG_Y,
             );
 
