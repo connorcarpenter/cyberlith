@@ -315,7 +315,7 @@ fn finalize_rects(
     let child_position = (
         parent_position.0 + child_offset_x,
         parent_position.1 + child_offset_y,
-        parent_position.2 + 0.1,
+        parent_position.2 + 1.0,
     );
 
     ui_state.cache.set_bounds(
