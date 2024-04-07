@@ -266,7 +266,7 @@ impl UiState {
             ui_config,
             self,
             &UiRuntimeConfig::ROOT_NODE_ID,
-            (0.0, 0.0, 0.0),
+            (0.0, 0.0, 10.0),
         )
 
         // print_node(&Self::ROOT_PANEL_ID, &self.cache, &self.panels, true, false, "".to_string());

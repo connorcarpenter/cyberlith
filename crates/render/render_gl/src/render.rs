@@ -32,15 +32,15 @@ pub fn render(
             continue;
         }
         let render_pass = render_pass_opt.unwrap();
-        let Some(render_layer) =  render_pass.render_layer else {
-            panic!("RenderPass has no RenderLayer!")
-        };
 
-        if render_layer == RenderLayer::UI {
-            info!("Rendering RenderLayer::UI");
-        } else {
-            info!("Rendering RenderLayer {:?}", render_layer);
-        }
+        // let Some(render_layer) =  render_pass.render_layer else {
+        //     panic!("RenderPass has no RenderLayer!")
+        // };
+        // if render_layer == RenderLayer::UI {
+        //     info!("Rendering RenderLayer::UI");
+        // } else {
+        //     info!("Rendering RenderLayer {:?}", render_layer);
+        // }
 
         let Some(camera) = render_pass.camera_opt.as_ref() else {
             continue;

@@ -382,7 +382,7 @@ fn draw_ui_textbox(
     text_transform.translation.x += 8.0;
 
     {
-        text_transform.translation.z = transform.translation.z + 0.05;
+        text_transform.translation.z = transform.translation.z + 1.0;
 
         asset_manager.draw_text(
             render_frame,
