@@ -286,7 +286,7 @@ fn draw_ui_text(
             }
             let box_handle = ui_state.globals.get_box_mesh_handle().unwrap();
             let mut new_transform = transform.clone();
-            new_transform.translation.z -= 0.025;
+            new_transform.translation.z += UiRuntimeConfig::Z_STEP_RENDER;
             render_frame.draw_mesh(Some(&RenderLayer::UI), box_handle, &mat_handle, &new_transform);
         }
     } else {
@@ -383,8 +383,7 @@ fn draw_ui_textbox(
     text_transform.translation.x += 8.0;
 
     {
-        text_transform.translation.z = transform.translation.z + 1.0;
-
+        text_transform.translation.z = transform.translation.z + (UiRuntimeConfig::Z_STEP_RENDER * 2.0);
         asset_manager.draw_text(
             render_frame,
             Some(&RenderLayer::UI),
@@ -399,7 +398,7 @@ fn draw_ui_textbox(
         // draw selection box if needed
         if let Some(select_index) = ui_input_state.select_index {
             if let Some(mat_handle) = textbox_style_state.select_color_handle() {
-                text_transform.translation.z = transform.translation.z + 0.025;
+                text_transform.translation.z = transform.translation.z + (UiRuntimeConfig::Z_STEP_RENDER * 1.0);
                 UiRenderer::draw_text_selection(
                     render_frame,
                     asset_manager,
@@ -416,7 +415,7 @@ fn draw_ui_textbox(
 
         // draw carat if needed
         if carat_blink {
-            text_transform.translation.z = transform.translation.z + 0.05;
+            text_transform.translation.z = transform.translation.z + (UiRuntimeConfig::Z_STEP_RENDER * 2.0);
             UiRenderer::draw_text_carat(
                 render_frame,
                 asset_manager,

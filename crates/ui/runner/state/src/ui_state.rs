@@ -343,7 +343,7 @@ fn finalize_rects(
     let child_position = (
         parent_position.0 + child_offset_x,
         parent_position.1 + child_offset_y,
-        parent_position.2 + 1.0,
+        parent_position.2 + UiRuntimeConfig::Z_STEP_RENDER,
     );
 
     ui_state.cache.set_bounds(
