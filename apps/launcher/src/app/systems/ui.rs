@@ -51,7 +51,7 @@ pub fn ui_setup(
     // let _start_ui_handle = UiHandle::new(AssetId::from_str("tpp7za").unwrap());
     // let _login_ui_handle = UiHandle::new(AssetId::from_str("rckneg").unwrap());
     let register_ui_handle = UiHandle::new(AssetId::from_str("rckneg").unwrap());
-    ui_manager.set_render_layer(layer);
+    ui_manager.set_target_render_layer(layer);
     ui_manager.enable_ui(&register_ui_handle);
 
     //asset_manager.register_ui_event::<StartButtonEvent>(&ui_handle, "login_button");

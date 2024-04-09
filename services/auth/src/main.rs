@@ -1,7 +1,7 @@
 mod endpoints;
 mod state;
 
-use std::{net::SocketAddr, thread, time::Duration};
+use std::{net::SocketAddr, thread};
 
 use log::{info, LevelFilter};
 use simple_logger::SimpleLogger;

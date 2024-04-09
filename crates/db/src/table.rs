@@ -1,8 +1,9 @@
-use std::{collections::HashMap, any::Any};
+use std::{sync::{Arc, Mutex}, collections::HashMap, any::Any};
+
+use git2::Repository;
 use log::info;
 
-use crate::{DbRowValue, DbTableKey};
-use crate::git_ops::{create_new_file, pull_repo_get_all_files};
+use crate::{git_ops::{create_new_file, pull_repo_get_all_files, repo_init, update_nextid}, DbRowValue, DbTableKey};
 
 // Table trait
 pub trait Table: Send + Sync {
@@ -12,7 +13,11 @@ pub trait Table: Send + Sync {
 
 // TableImpl
 pub struct TableImpl<K: DbTableKey> {
+    dir_name: String,
+    repo: Arc<Mutex<Repository>>,
+
     next_id: u64,
+    next_key_has_changed: bool,
     store: HashMap<K::Key, K::Value>,
 }
 
@@ -29,7 +34,8 @@ impl<K: DbTableKey> Table for TableImpl<K> {
 impl<K: DbTableKey> TableImpl<K> {
     pub fn init() -> Self {
         // lot to do here ..
-        let files = pull_repo_get_all_files::<K>();
+        let (dir_name, git_repo) = repo_init(K::repo_name());
+        let files = pull_repo_get_all_files(&dir_name, &git_repo);
 
         let mut next_id: u64 = 0;
         let mut store = HashMap::new();
@@ -55,7 +61,10 @@ impl<K: DbTableKey> TableImpl<K> {
         }
 
         Self {
+            dir_name,
+            repo: Arc::new(Mutex::new(git_repo)),
             next_id,
+            next_key_has_changed: false,
             store,
         }
     }
@@ -63,6 +72,7 @@ impl<K: DbTableKey> TableImpl<K> {
     fn get_next_key(&mut self) -> K::Key {
         let next_key = K::Key::from(self.next_id);
         self.next_id += 1;
+        self.next_key_has_changed = true;
         next_key
     }
 
@@ -77,7 +87,13 @@ impl<K: DbTableKey> TableImpl<K> {
 
         // upload to database
         //pub fn create_new_file(repo_name: &str, file_name: &str, file_contents: Vec<u8>, commit_message: &str);
-        create_new_file::<K>(value);
+        {
+            let repo = self.repo.lock().unwrap();
+            create_new_file::<K>(&self.dir_name, &repo, value);
+        }
+
+        // update nextkey
+        self.update_nextid();
 
         key
     }
@@ -96,6 +112,16 @@ impl<K: DbTableKey> TableImpl<K> {
         // TODO: queue sync with actual datastore, this just modifies in-memory
 
         self.store.remove(key)
+    }
+
+    fn update_nextid(&mut self) {
+        if !self.next_key_has_changed {
+            return;
+        }
+        self.next_key_has_changed = false;
+
+        let repo = self.repo.lock().unwrap();
+        update_nextid(&self.dir_name, &repo, self.next_id);
     }
 }
 

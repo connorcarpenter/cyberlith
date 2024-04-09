@@ -3,43 +3,72 @@ use std::{fs, fs::File, io::Read, path::Path};
 
 use git2::{Cred, FetchOptions, Index, Oid, PushOptions, Repository, Signature, Tree};
 use log::info;
+
 use crate::{DbRowValue, DbTableKey};
 
 pub(crate) struct GitFile {
-    path: String,
     pub(crate) name: String,
     pub(crate) bytes: Vec<u8>,
 }
 
 impl GitFile {
-    pub(crate) fn new(path: &str, name: &str, bytes: Vec<u8>) -> Self {
+    pub(crate) fn new(name: &str, bytes: Vec<u8>) -> Self {
         Self {
-            path: path.to_string(),
             name: name.to_string(),
             bytes,
         }
     }
 }
 
-pub fn pull_repo_get_all_files<K: DbTableKey>() -> Vec<GitFile> {
+pub fn repo_init(repo_name: &str) -> (String, Repository) {
+    // Create Working directory if it doesn't already exist
+    let dir_name = format!("{}{}", "target/", repo_name);
+    let dir_path = Path::new(&dir_name);
+    let repo_url_root = get_repo_url_root();
+    let repo_url = format!("{}{}.git", repo_url_root, repo_name);
+    let fetch_options = get_fetch_options();
 
-    // get creds
-    let repo_name = K::repo_name();
+    if dir_path.exists() {
+        info!("repo: `{}` exists, removing..", dir_name);
+        fs::remove_dir_all(dir_path).unwrap();
+    }
 
-    // pull all assets into memory, from "main" branch
-    let (dir_path, repo) = repo_init(repo_name);
-    load_all_files(dir_path, repo)
+    if dir_path.exists() {
+        panic!("should have removed directory but didn't!: {:?}", dir_path);
+    }
+
+    // Create new directory
+    fs::create_dir_all(dir_path).unwrap();
+
+    // Put fetch options into builder
+    let mut builder = git2::build::RepoBuilder::new();
+    builder.fetch_options(fetch_options);
+
+    // Clone repo
+    let repo = builder.clone(&repo_url, dir_path).unwrap();
+
+    info!("initialized repo at: `{}`", dir_path.to_str().unwrap());
+
+    (dir_name, repo)
 }
 
-pub fn create_new_file<K: DbTableKey>(file: K::Value) {
+pub fn pull_repo_get_all_files(dir_path: &str, repo: &Repository) -> Vec<GitFile> {
+    // pull all assets into memory, from "main" branch
+    let mut output = Vec::new();
+    let head = repo.head().unwrap();
+    let tree = head.peel_to_tree().unwrap();
+
+    collect_files(&mut output, dir_path, repo, &tree, "");
+
+    output
+}
+
+pub fn create_new_file<K: DbTableKey>(dir_path: &str, repo: &Repository, file: K::Value) {
     // get creds
-    let repo_name = K::repo_name();
     let file_name = file.get_file_name();
     let commit_message = file.get_commit_message();
     let file_contents = file.to_bytes();
 
-    // get repo
-    let (dir_path, repo) = repo_init(repo_name);
     let mut index = repo.index().expect("Failed to open index");
 
     info!("dir_path: {}", dir_path);
@@ -54,17 +83,61 @@ pub fn create_new_file<K: DbTableKey>(file: K::Value) {
     write_new_file(&mut index, &full_path, &file_name, file_contents);
 
     // commit, push, pull
-    git_commit(&repo, &commit_message);
-    git_push(&repo);
-    git_pull(&repo);
+    git_commit(repo, &commit_message);
+    git_push(repo);
+    git_pull(repo);
+}
+
+pub fn update_nextid(dir_path: &str, repo: &Repository, next_id: u64) {
+    // get creds
+    let file_name = ".nextid";
+    let commit_message = format!("update .nextid to {}", next_id);
+    let file_contents = serde_json::to_vec_pretty(&next_id)
+        .unwrap()
+        .to_vec();
+
+    let mut index = repo.index().expect("Failed to open index");
+    info!("dir_path: {}", dir_path);
+    info!("file_name: {}", file_name);
+    let file_path = format!("{}/{}", dir_path, file_name);
+    info!("file_path: {}", file_path);
+    let full_path = format!("{}{}", repo.workdir().unwrap().to_str().unwrap(), file_name);
+    info!("full_path: {}", full_path);
+
+    // update & write file
+    update_file(&mut index, &full_path, &file_name, file_contents);
+
+    // commit, push, pull
+    git_commit(repo, &commit_message);
+    git_push(repo);
+    git_pull(repo);
 }
 
 fn write_new_file(index: &mut Index, full_path: &str, file_path: &str, bytes: Vec<u8>) {
-    // if file exists, delete it
     let path = Path::new(full_path);
     let file_exists = path.exists();
     if file_exists {
         panic!("file already exists: {}", full_path);
+    }
+
+    // write data file
+    match fs::write(full_path, &bytes) {
+        Ok(()) => {}
+        Err(err) => panic!("failed to write (file: `{}`) err: {}", full_path, err),
+    };
+
+    // add_path will also update the index
+    if let Err(e) = index
+        .add_path(Path::new(&file_path)) {
+        panic!("Failed to add file `{}` to index: {}", file_path, e);
+    }
+}
+
+fn update_file(index: &mut Index, full_path: &str, file_path: &str, bytes: Vec<u8>) {
+    let path = Path::new(full_path);
+    let file_exists = path.exists();
+    if !file_exists {
+        panic!("file does not exist: {}", full_path);
     }
 
     // write data file
@@ -111,48 +184,6 @@ fn get_push_options() -> PushOptions<'static> {
     push_options
 }
 
-fn repo_init(repo_name: &str) -> (String, Repository) {
-    // Create Working directory if it doesn't already exist
-    let dir_name = format!("{}{}", "target/", repo_name);
-    let dir_path = Path::new(&dir_name);
-    let repo_url_root = get_repo_url_root();
-    let repo_url = format!("{}{}.git", repo_url_root, repo_name);
-    let fetch_options = get_fetch_options();
-
-    if dir_path.exists() {
-        info!("repo: `{}` exists, removing..", dir_name);
-        fs::remove_dir_all(dir_path).unwrap();
-    }
-
-    if dir_path.exists() {
-        panic!("should have removed directory but didn't!: {:?}", dir_path);
-    }
-
-    // Create new directory
-    fs::create_dir_all(dir_path).unwrap();
-
-    // Put fetch options into builder
-    let mut builder = git2::build::RepoBuilder::new();
-    builder.fetch_options(fetch_options);
-
-    // Clone repo
-    let repo = builder.clone(&repo_url, dir_path).unwrap();
-
-    info!("initialized repo at: `{}`", dir_path.to_str().unwrap());
-
-    (dir_name, repo)
-}
-
-fn load_all_files(dir_path: String, repo: Repository) -> Vec<GitFile> {
-    let mut output = Vec::new();
-    let head = repo.head().unwrap();
-    let tree = head.peel_to_tree().unwrap();
-
-    collect_files(&mut output, &dir_path, &repo, &tree, "");
-
-    output
-}
-
 fn collect_files(
     output: &mut Vec<GitFile>,
     root: &str,
@@ -175,7 +206,7 @@ fn collect_files(
                 let bytes = get_file_contents(root, path, &name);
                 // let bytes_len = bytes.len();
 
-                let file_entry = GitFile::new(path, &name, bytes);
+                let file_entry = GitFile::new(&name, bytes);
 
                 info!("read file: {}", file_entry.name);
 
