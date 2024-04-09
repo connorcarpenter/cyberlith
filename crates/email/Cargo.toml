@@ -1,0 +1,10 @@
+[package]
+name = "email"
+version = "0.1.0"
+edition = "2021"
+workspace = "../.."
+
+[dependencies]
+lettre = { version = "0.10", features = ["builder", "tokio1-native-tls"] }
+
+log = { version = "0.4" }

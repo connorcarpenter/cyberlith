@@ -16,6 +16,7 @@ http_client = { path = "../../crates/http/http_client" }
 crypto = { path = "../../crates/crypto" }
 config = { path = "../../apps/config", features = ["auth"] }
 random = { path = "../../crates/random" }
+email = { path = "../../crates/email" }
 
 auth_server_http_proto = { path = "http_proto" }
 auth_server_db = { path = "db" }

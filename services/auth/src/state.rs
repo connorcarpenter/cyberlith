@@ -31,11 +31,22 @@ impl State {
         info!("storing temporary registration");
         let reg_token = RegisterToken::gen_random();
         let temp_reg = TempRegistration::from(request);
+        let email: String = temp_reg.email.clone();
 
         if self.temp_regs.contains_key(&reg_token) {
             panic!("register token collision");
         }
         self.temp_regs.insert(reg_token, temp_reg);
+
+        info!("sending token to user's email: {:?}", &email);
+        let _ = email::send(
+            "cyberlithgame@gmail.com",
+            "connorcarpenter@gmail.com",
+            "Cyber Test Email",
+            "Hello, this is a test",
+            "<h1>Hello</h1><p>This is a test email with HTML content.</p>"
+        );
+        info!("success!");
     }
 
     pub fn user_register_confirm(&mut self, request: UserRegisterConfirmRequest) {
@@ -69,7 +80,7 @@ impl From<U32Token> for RegisterToken {
 impl RegisterToken {
     pub fn gen_random() -> Self {
         Self {
-            value: U32Token::from_u32(17).unwrap() // U32Token::gen_random(),
+            value: U32Token::from_u32(17).unwrap() // U32Token::gen_random(), // TODO: revert this!!
         }
     }
 }

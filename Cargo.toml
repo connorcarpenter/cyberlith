@@ -70,6 +70,8 @@ members = [
     "apps/physics_tester",
     # Clipboard
     "crates/clipboard",
+    # Email
+    "crates/email",
     # Multithreading / Executor
     "crates/executor",
     # In-Memory Storage Types .. possibly useless
