@@ -10,7 +10,6 @@ use crate::{
 };
 
 pub struct RenderPass {
-    pub render_layer: Option<RenderLayer>,
     pub camera_opt: Option<Camera>,
     pub camera_transform_opt: Option<Transform>,
     pub camera_projection_opt: Option<Projection>,
@@ -21,7 +20,6 @@ pub struct RenderPass {
 impl Default for RenderPass {
     fn default() -> Self {
         Self {
-            render_layer: None,
             camera_opt: None,
             camera_transform_opt: None,
             camera_projection_opt: None,

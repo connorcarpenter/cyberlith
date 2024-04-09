@@ -55,7 +55,13 @@ impl UiRuntime {
     fn default_camera_bundle() -> CameraBundle {
         let mut default_bundle = CameraBundle::default_3d_perspective(&Viewport::new_at_origin(0, 0));
 
-        default_bundle.camera.clear_operation = ClearOperation::none();
+        default_bundle.camera.clear_operation = ClearOperation {
+            red: None,
+            green: None,
+            blue: None,
+            alpha: None,
+            depth: Some(1.0),
+        };
         default_bundle.transform = Transform::from_xyz(
             0.0,
             0.0,

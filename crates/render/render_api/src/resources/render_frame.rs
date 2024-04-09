@@ -78,7 +78,6 @@ impl RenderFrame {
         contents.camera_opt = Some(camera.clone());
         contents.camera_transform_opt = Some(*transform);
         contents.camera_projection_opt = Some(*projection);
-        contents.render_layer = Some(RenderLayers::layer_unchecked(convert_wrapper(render_layer_opt.copied())));
     }
 
     pub fn draw_point_light(&mut self, render_layer_opt: Option<&RenderLayer>, light: &PointLight) {

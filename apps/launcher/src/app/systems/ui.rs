@@ -30,8 +30,6 @@ pub struct StartButtonEvent;
 pub struct ContinueButtonEvent;
 
 pub fn ui_setup(
-    mut commands: Commands,
-    mut global: ResMut<Global>,
     mut ui_manager: ResMut<UiManager>,
     mut embedded_asset_events: EventWriter<EmbeddedAssetEvent>,
 ) {
@@ -44,7 +42,7 @@ pub fn ui_setup(
     embedded_asset_events.send(embedded_asset_event!("../embedded/rckneg")); // register ui
 
     // render_layer
-    let layer = RenderLayers::layer(1);
+    let layer = RenderLayers::layer(0);
 
     // ui
     // TODO: use some kind of catalog?
@@ -56,31 +54,6 @@ pub fn ui_setup(
 
     //asset_manager.register_ui_event::<StartButtonEvent>(&ui_handle, "login_button");
     //asset_manager.register_ui_event::<ContinueButtonEvent>(&ui_handle, "register_button");
-
-    // light
-    commands
-        .spawn(AmbientLight::new(1.0, Color::WHITE))
-        .insert(layer);
-
-    // camera
-    let camera_id = commands
-        .spawn(CameraBundle {
-            camera: Camera {
-                viewport: None, // this will set later
-                target: RenderTarget::Screen,
-                clear_operation: ClearOperation::none(),
-                ..Default::default()
-            },
-            projection: Projection::Orthographic(OrthographicProjection {
-                near: 0.0,
-                far: 2000.0,
-            }),
-            ..Default::default()
-        })
-        .insert(layer)
-        .id();
-
-    global.camera_ui = camera_id;
 }
 
 pub fn ui_handle_events(

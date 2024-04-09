@@ -34,6 +34,7 @@ pub fn draw(
         if !camera.is_active {
             continue;
         }
+        // info!("drawing camera for render layer: {:?}", render_layer_opt);
         render_frame.draw_camera(render_layer_opt, camera, transform, projection);
     }
 
