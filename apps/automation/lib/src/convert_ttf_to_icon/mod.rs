@@ -38,7 +38,7 @@ pub fn convert_ttf_to_icon(ttf_file_name: &str) -> Result<(), CliError> {
         let mut max_vert_x = -10000.0;
         let mut min_vert_x = 10000.0;
         for vertex in mesh_2d.iter_vertices() {
-            let (x, y) = vertex.val();
+            let (x, _y) = vertex.val();
             if x > max_vert_x {
                 max_vert_x = x;
             }
@@ -99,7 +99,7 @@ pub fn convert_ttf_to_icon(ttf_file_name: &str) -> Result<(), CliError> {
     let output_bytes = output_file.write(&AssetId::gen_random());
 
     // remove .ttf from ttf_file_name
-    let mut file_name_path = std::path::Path::new(ttf_file_name);
+    let file_name_path = std::path::Path::new(ttf_file_name);
     let file_name = file_name_path.file_stem().unwrap().to_str().unwrap();
     let output_file_name = format!("{}.icon.json", file_name);
 

@@ -6,7 +6,7 @@ mod instance_wait;
 pub mod server_build;
 mod ssh_init;
 
-use std::time::Duration;
+use std::{time::Duration, thread};
 
 use log::info;
 

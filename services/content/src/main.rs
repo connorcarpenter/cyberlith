@@ -1,8 +1,6 @@
 mod server;
 
-use std::net::SocketAddr;
-use std::thread;
-use std::time::Duration;
+use std::{net::SocketAddr, thread};
 
 use log::{info, LevelFilter};
 use simple_logger::SimpleLogger;
@@ -30,8 +28,7 @@ pub fn main() {
 
     server.start();
 
-    loop {
-        thread::sleep(Duration::from_secs(5));
-        info!(".");
-    }
+    thread::park();
+
+    info!("Shutting down...");
 }

@@ -34,20 +34,25 @@ pub fn main() {
 
     server.start();
 
-    loop {
-        thread::sleep(Duration::from_secs(5));
-        info!(".");
-
-        let state_clone = state.clone();
-        Server::spawn(async move {
+    let state_clone = state.clone();
+    Server::spawn(async move {
+        loop {
             let mut state = state_clone.write().await;
             state.send_heartbeats().await;
-        });
+            thread::sleep(Duration::from_secs(5));
+        }
+    });
 
-        let state_clone = state.clone();
-        Server::spawn(async move {
+    let state_clone = state.clone();
+    Server::spawn(async move {
+        loop {
             let mut state = state_clone.write().await;
             state.sync_asset_session_instances().await;
-        });
-    }
+            thread::sleep(Duration::from_secs(5));
+        }
+    });
+
+    thread::park();
+
+    info!("Shutting down...");
 }

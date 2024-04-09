@@ -43,8 +43,7 @@ pub fn main() {
 
     server.start();
 
-    loop {
-        thread::sleep(Duration::from_secs(5));
-        info!(".");
-    }
+    thread::park();
+
+    info!("Shutting down...");
 }

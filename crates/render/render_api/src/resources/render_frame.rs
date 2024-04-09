@@ -1,7 +1,6 @@
 use std::default::Default;
 
 use bevy_ecs::system::Resource;
-use bevy_log::info;
 
 use storage::Handle;
 

@@ -81,7 +81,7 @@ async fn async_impl(
 
     info!("Sending user login response to session server");
 
-    Ok(RegionWorldConnectRequest::new(
+    Ok(RegionWorldConnectResponse::new(
         world_server_instance_secret,
         user_id,
         world_server_public_webrtc_url,

@@ -13,7 +13,7 @@ cfg_if! {
     } else {}
 }
 
-use std::{net::SocketAddr, time::Duration};
+use std::{net::SocketAddr, thread, time::Duration};
 
 use log::{info, LevelFilter};
 use simple_logger::SimpleLogger;
@@ -59,20 +59,27 @@ pub fn main() {
 
     server.start();
 
-    loop {
-        thread::sleep(Duration::from_secs(5));
-        info!(".");
+    // send registration
+    let state_clone = state.clone();
+    Server::spawn(async move {
+        loop {
+            let state_clone_2 = state_clone.clone();
+            region_connection::send_register_instance_request(state_clone_2).await;
+            thread::sleep(Duration::from_secs(5));
+        }
+    });
 
-        // send registration
-        let state_clone = state.clone();
-        Server::spawn(async move {
-            region_connection::send_register_instance_request(state_clone).await;
-        });
+    // handle disconnection
+    let state_clone = state.clone();
+    Server::spawn(async move {
+        loop {
+            let state_clone_2 = state_clone.clone();
+            region_connection::process_region_server_disconnect(state_clone_2).await;
+            thread::sleep(Duration::from_secs(5));
+        }
+    });
 
-        // handle disconnection
-        let state_clone = state.clone();
-        Server::spawn(async move {
-            region_connection::process_region_server_disconnect(state_clone).await;
-        });
-    }
+    thread::park();
+
+    info!("Shutting down...");
 }
