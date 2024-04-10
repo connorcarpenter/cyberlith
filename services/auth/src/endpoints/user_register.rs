@@ -1,4 +1,4 @@
-use log::warn;
+use log::{info, warn};
 
 use http_client::ResponseError;
 use http_server::{async_dup::Arc, smol::lock::RwLock, Server, http_log_util};
@@ -6,8 +6,7 @@ use http_server::{async_dup::Arc, smol::lock::RwLock, Server, http_log_util};
 use config::GATEWAY_SECRET;
 use auth_server_http_proto::{UserRegisterRequest, UserRegisterResponse};
 
-use crate::error::AuthServerError;
-use crate::state::State;
+use crate::{state::State, error::AuthServerError, types::{RegisterToken, TempRegistration}};
 
 pub fn user_register(server: &mut Server, state: Arc<RwLock<State>>) {
     server.endpoint(move |(_addr, req)| {
@@ -42,4 +41,61 @@ async fn async_impl(
 
     http_log_util::send_res("auth_server", "gateway", "user_register");
     return response;
+}
+
+impl State {
+    fn user_register(&mut self, request: UserRegisterRequest) -> Result<(), AuthServerError> {
+
+        // TODO: validate data?
+        // TODO: hash password?
+        // TODO: expire registration token?
+
+        if self.username_to_id_map.contains_key(&request.username) {
+            return Err(AuthServerError::UsernameAlreadyExists);
+        }
+        if self.email_to_id_map.contains_key(&request.email) {
+            return Err(AuthServerError::EmailAlreadyExists);
+        }
+
+        let mut reg_token = RegisterToken::gen_random();
+        while self.temp_regs.contains_key(&reg_token) {
+            reg_token = RegisterToken::gen_random();
+        }
+
+        let temp_reg = TempRegistration::from(request);
+
+        let email_subject = "Cyberlith Email Verification";
+        let sending_email = "cyberlithgame@gmail.com";
+        let username = temp_reg.name.clone();
+        let user_email: String = temp_reg.email.clone();
+        let reg_token_str = reg_token.value.as_string();
+        let link_url = format!("register_token={}", reg_token_str); // TODO: replace with working URL
+
+        info!("sending registration token to user's email: {:?}", &user_email);
+
+        let text_msg = self.email_catalog.register_verification_txt(&username, &link_url);
+        let html_msg = self.email_catalog.register_verification_html(&username, &link_url);
+
+        match email::send(
+            sending_email,
+            &user_email,
+            email_subject,
+            &text_msg,
+            &html_msg,
+        ) {
+            Ok(_response) => {
+                info!("email send success!");
+
+                self.temp_regs.insert(reg_token, temp_reg);
+                self.username_to_id_map.insert(username, None);
+                self.email_to_id_map.insert(user_email, None);
+
+                return Ok(());
+            }
+            Err(err) => {
+                warn!("email send failed: {:?}", err);
+                return Err(AuthServerError::EmailSendFailed(err.to_string()));
+            }
+        }
+    }
 }

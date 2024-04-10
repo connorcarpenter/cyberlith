@@ -2,6 +2,7 @@ mod endpoints;
 mod state;
 mod error;
 mod emails;
+mod types;
 
 use std::{net::SocketAddr, thread};
 
