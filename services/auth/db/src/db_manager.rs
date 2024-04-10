@@ -1,6 +1,6 @@
-use db::{DatabaseWrapper};
+use db::{DatabaseWrapper, DbError};
 
-use crate::{user::{Users, User, UserId}};
+use crate::{error::AuthServerDbError, user::{Users, User, UserId}};
 
 pub struct DatabaseManager {
     wrapper: DatabaseWrapper,
@@ -17,8 +17,12 @@ impl DatabaseManager {
     }
 
     // user create
-    pub fn create_user(&mut self, user: User) -> UserId {
-        self.wrapper.table_mut::<Users>().insert(user)
+    pub fn create_user(&mut self, user: User) -> Result<UserId, AuthServerDbError> {
+        self.wrapper.table_mut::<Users>().insert(user).map_err(|err| {
+            match err {
+                DbError::KeyAlreadyExists => AuthServerDbError::InsertedDuplicateUserId,
+            }
+        })
     }
 
     // user read

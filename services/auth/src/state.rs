@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use log::{info, warn};
 
-use auth_server_db::{DatabaseManager, User, UserRole};
+use auth_server_db::{AuthServerDbError, DatabaseManager, User, UserRole};
 use auth_server_http_proto::{UserRegisterConfirmRequest, UserRegisterRequest};
 use crypto::U32Token;
 
@@ -74,15 +74,19 @@ impl State {
     pub fn user_register_confirm(&mut self, request: UserRegisterConfirmRequest) -> Result<(), AuthServerError> {
 
         let Some(reg_token) = U32Token::from_str(&request.register_token) else {
-            return Err(AuthServerError::TokenSerdeError);
+            return Err(AuthServerError::RegisterTokenSerdeError);
         };
         let reg_token = RegisterToken::from(reg_token);
         let Some(temp_reg) = self.temp_regs.remove(&reg_token) else {
-            return Err(AuthServerError::TokenNotFound);
+            return Err(AuthServerError::RegisterTokenNotFound);
         };
 
         let new_user = User::new(&temp_reg.name, &temp_reg.email, &temp_reg.password, UserRole::Free);
-        let new_user_id = self.database_manager.create_user(new_user);
+        let new_user_id = self.database_manager.create_user(new_user).map_err(|err| {
+            match err {
+                AuthServerDbError::InsertedDuplicateUserId => AuthServerError::InsertedDuplicateUserId,
+            }
+        })?;
         let new_user_id: u64 = new_user_id.into();
         info!("new user created: {:?} - {:?}", new_user_id, temp_reg.name);
         Ok(())

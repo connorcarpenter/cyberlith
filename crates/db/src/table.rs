@@ -3,7 +3,7 @@ use std::{sync::{Arc, Mutex}, collections::HashMap, any::Any};
 use git2::Repository;
 use log::info;
 
-use crate::{git_ops::{create_new_file, pull_repo_get_all_files, repo_init, update_nextid}, DbRowValue, DbTableKey};
+use crate::{error::DbError, git_ops::{create_new_file, pull_repo_get_all_files, repo_init, update_nextid}, DbRowValue, DbTableKey};
 
 // Table trait
 pub trait Table: Send + Sync {
@@ -32,6 +32,7 @@ impl<K: DbTableKey> Table for TableImpl<K> {
 }
 
 impl<K: DbTableKey> TableImpl<K> {
+
     pub fn init() -> Self {
         // lot to do here ..
         let (dir_name, git_repo) = repo_init(K::repo_name());
@@ -69,24 +70,19 @@ impl<K: DbTableKey> TableImpl<K> {
         }
     }
 
-    fn get_next_key(&mut self) -> K::Key {
-        let next_key = K::Key::from(self.next_id);
-        self.next_id += 1;
-        self.next_key_has_changed = true;
-        next_key
-    }
-
-    pub fn insert(&mut self, mut value: K::Value) -> K::Key {
+    pub fn insert(&mut self, mut value: K::Value) -> Result<K::Key, DbError> {
 
         // get next key
         let key = self.get_next_key();
         value.set_key(key);
 
         // insert into in-memory store
+        if self.store.contains_key(&key) {
+            return Err(DbError::KeyAlreadyExists);
+        }
         self.store.insert(key, value.clone());
 
         // upload to database
-        //pub fn create_new_file(repo_name: &str, file_name: &str, file_contents: Vec<u8>, commit_message: &str);
         {
             let repo = self.repo.lock().unwrap();
             create_new_file::<K>(&self.dir_name, &repo, value);
@@ -95,23 +91,32 @@ impl<K: DbTableKey> TableImpl<K> {
         // update nextkey
         self.update_nextid();
 
-        key
+        Ok(key)
     }
 
     pub fn get(&self, key: &K::Key) -> Option<&K::Value> {
         self.store.get(key)
     }
 
-    pub fn get_mut(&mut self, key: &K::Key) -> Option<&mut K::Value> {
+    pub fn get_mut(&mut self, _key: &K::Key) -> Option<&mut K::Value> {
         // TODO: queue sync with actual datastore, this just modifies in-memory
 
-        self.store.get_mut(key)
+        //self.store.get_mut(key)
+        todo!()
     }
 
-    pub fn remove(&mut self, key: &K::Key) -> Option<K::Value> {
+    pub fn remove(&mut self, _key: &K::Key) -> Option<K::Value> {
         // TODO: queue sync with actual datastore, this just modifies in-memory
 
-        self.store.remove(key)
+        //self.store.remove(key)
+        todo!()
+    }
+
+    fn get_next_key(&mut self) -> K::Key {
+        let next_key = K::Key::from(self.next_id);
+        self.next_id += 1;
+        self.next_key_has_changed = true;
+        next_key
     }
 
     fn update_nextid(&mut self) {

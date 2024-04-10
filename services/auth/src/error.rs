@@ -1,5 +1,6 @@
 pub(crate) enum AuthServerError {
     EmailSendFailed(String),
-    TokenSerdeError,
-    TokenNotFound,
+    RegisterTokenSerdeError,
+    RegisterTokenNotFound,
+    InsertedDuplicateUserId,
 }

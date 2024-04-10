@@ -32,11 +32,14 @@ async fn async_impl(
         Ok(()) => {
             Ok(UserRegisterConfirmResponse::new("faketoken"))
         }
-        Err(AuthServerError::TokenSerdeError) => {
+        Err(AuthServerError::RegisterTokenSerdeError) => {
             Err(ResponseError::InternalServerError("TokenSerdeError".to_string()))
         }
-        Err(AuthServerError::TokenNotFound) => {
+        Err(AuthServerError::RegisterTokenNotFound) => {
             Err(ResponseError::InternalServerError("TokenNotFound".to_string()))
+        }
+        Err(AuthServerError::InsertedDuplicateUserId) => {
+            Err(ResponseError::InternalServerError("InsertedDuplicateUserId".to_string()))
         }
         Err(_) => {
             panic!("unhandled error for this endpoint");
