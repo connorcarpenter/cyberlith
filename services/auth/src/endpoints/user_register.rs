@@ -68,7 +68,7 @@ impl State {
         let temp_reg = TempRegistration::from(request);
 
         let email_subject = "Cyberlith Email Verification"; // TODO: put into config
-        let sending_email = "cyberlithgame@gmail.com"; // TODO: put into config
+        let sending_email = "admin@cyberlith.com"; // TODO: put into config
         let username = temp_reg.name.clone();
         let user_email: String = temp_reg.email.clone();
         let reg_token_str = reg_token.to_string();
