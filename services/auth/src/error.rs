@@ -3,4 +3,7 @@ pub(crate) enum AuthServerError {
     RegisterTokenSerdeError,
     RegisterTokenNotFound,
     InsertedDuplicateUserId,
+    UsernameAlreadyExists,
+    EmailAlreadyExists,
+    Unknown(String),
 }

@@ -94,6 +94,10 @@ impl<K: DbTableKey> TableImpl<K> {
         Ok(key)
     }
 
+    pub fn list(&self) -> Vec<(&K::Key, &K::Value)> {
+        self.store.iter().collect()
+    }
+
     pub fn get(&self, key: &K::Key) -> Option<&K::Value> {
         self.store.get(key)
     }

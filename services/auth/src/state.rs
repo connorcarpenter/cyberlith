@@ -2,26 +2,38 @@ use std::collections::HashMap;
 
 use log::{info, warn};
 
-use auth_server_db::{AuthServerDbError, DatabaseManager, User, UserRole};
+use auth_server_db::{AuthServerDbError, DatabaseManager, User, UserId, UserRole};
 use auth_server_http_proto::{UserRegisterConfirmRequest, UserRegisterRequest};
 use crypto::U32Token;
 
-use crate::emails::EmailCatalog;
-use crate::error::AuthServerError;
+use crate::{error::AuthServerError, emails::EmailCatalog};
 
 pub struct State {
     database_manager: DatabaseManager,
     email_catalog: EmailCatalog,
-
     temp_regs: HashMap<RegisterToken, TempRegistration>,
+    username_to_id_map: HashMap<String, Option<UserId>>,
+    email_to_id_map: HashMap<String, Option<UserId>>,
 }
 
 impl State {
     pub fn new() -> Self {
+
+        let database_manager = DatabaseManager::init();
+        let mut username_to_id_map = HashMap::new();
+        let mut email_to_id_map = HashMap::new();
+
+        for (id, user) in database_manager.list_users() {
+            username_to_id_map.insert(user.username().to_string(), Some(*id));
+            email_to_id_map.insert(user.email().to_string(), Some(*id));
+        }
+
         Self {
             email_catalog: EmailCatalog::new(),
-            database_manager: DatabaseManager::init(),
+            database_manager,
             temp_regs: HashMap::new(),
+            username_to_id_map,
+            email_to_id_map,
         }
     }
 
@@ -29,8 +41,14 @@ impl State {
 
         // TODO: validate data?
         // TODO: hash password?
-        // TODO: check if user already exists?
         // TODO: expire registration token?
+
+        if self.username_to_id_map.contains_key(&request.username) {
+            return Err(AuthServerError::UsernameAlreadyExists);
+        }
+        if self.email_to_id_map.contains_key(&request.email) {
+            return Err(AuthServerError::EmailAlreadyExists);
+        }
 
         let mut reg_token = RegisterToken::gen_random();
         while self.temp_regs.contains_key(&reg_token) {
@@ -46,8 +64,6 @@ impl State {
         let reg_token_str = reg_token.value.as_string();
         let link_url = format!("register_token={}", reg_token_str); // TODO: replace with working URL
 
-        self.temp_regs.insert(reg_token, temp_reg);
-
         info!("sending registration token to user's email: {:?}", &user_email);
 
         let text_msg = self.email_catalog.register_verification_txt(&username, &link_url);
@@ -62,6 +78,11 @@ impl State {
         ) {
             Ok(_response) => {
                 info!("email send success!");
+
+                self.temp_regs.insert(reg_token, temp_reg);
+                self.username_to_id_map.insert(username, None);
+                self.email_to_id_map.insert(user_email, None);
+
                 return Ok(());
             }
             Err(err) => {
@@ -87,8 +108,28 @@ impl State {
                 AuthServerDbError::InsertedDuplicateUserId => AuthServerError::InsertedDuplicateUserId,
             }
         })?;
+
+        // add to username -> id map
+        let Some(id_opt) = self.username_to_id_map.get_mut(&temp_reg.name) else {
+            return Err(AuthServerError::Unknown("username not found AFTER register confirm".to_string()));
+        };
+        if id_opt.is_some() {
+            return Err(AuthServerError::Unknown("username already exists AFTER register confirm".to_string()));
+        }
+        *id_opt = Some(new_user_id);
+
+        // add to email -> id map
+        let Some(id_opt) = self.email_to_id_map.get_mut(&temp_reg.email) else {
+            return Err(AuthServerError::Unknown("email not found AFTER register confirm".to_string()));
+        };
+        if id_opt.is_some() {
+            return Err(AuthServerError::Unknown("email already exists AFTER register confirm".to_string()));
+        }
+        *id_opt = Some(new_user_id);
+
         let new_user_id: u64 = new_user_id.into();
         info!("new user created: {:?} - {:?}", new_user_id, temp_reg.name);
+
         Ok(())
     }
 }

@@ -39,4 +39,9 @@ impl DatabaseManager {
     pub fn delete_user(&mut self, id: &UserId) {
         self.wrapper.table_mut::<Users>().remove(id);
     }
+
+    // user list
+    pub fn list_users(&self) -> Vec<(&UserId, &User)> {
+        self.wrapper.table::<Users>().list()
+    }
 }

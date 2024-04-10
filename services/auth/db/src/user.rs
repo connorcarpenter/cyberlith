@@ -111,4 +111,12 @@ impl User {
             role,
         }
     }
+
+    pub fn username(&self) -> &str {
+        &self.name
+    }
+
+    pub fn email(&self) -> &str {
+        &self.email
+    }
 }
