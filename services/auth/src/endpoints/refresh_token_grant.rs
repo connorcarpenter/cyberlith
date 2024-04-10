@@ -5,10 +5,8 @@ use http_server::{async_dup::Arc, smol::lock::RwLock, Server, http_log_util};
 
 use config::GATEWAY_SECRET;
 use auth_server_http_proto::{RefreshTokenGrantRequest, RefreshTokenGrantResponse};
-use crate::error::AuthServerError;
 
-use crate::state::State;
-use crate::types::{AccessToken, RefreshToken};
+use crate::{error::AuthServerError, state::State, types::{AccessToken, RefreshToken}};
 
 pub fn refresh_token_grant(server: &mut Server, state: Arc<RwLock<State>>) {
     server.endpoint(move |(_addr, req)| {
