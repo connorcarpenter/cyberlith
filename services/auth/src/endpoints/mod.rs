@@ -18,3 +18,6 @@ pub use user_password_reset::*;
 
 mod access_token_validate;
 pub use access_token_validate::*;
+
+mod refresh_token_grant;
+pub use refresh_token_grant::*;
