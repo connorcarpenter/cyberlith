@@ -2,7 +2,6 @@ use log::{info, warn};
 
 use http_client::ResponseError;
 use http_server::{async_dup::Arc, smol::lock::RwLock, Server, http_log_util};
-use crypto::U32Token;
 
 use config::GATEWAY_SECRET;
 use auth_server_http_proto::{UserRegisterConfirmRequest, UserRegisterConfirmResponse};
@@ -58,7 +57,7 @@ async fn async_impl(
 impl State {
     pub fn user_register_confirm(&mut self, request: UserRegisterConfirmRequest) -> Result<(), AuthServerError> {
 
-        let Some(reg_token) = U32Token::from_str(&request.register_token) else {
+        let Some(reg_token) = RegisterToken::from_str(&request.register_token) else {
             return Err(AuthServerError::RegisterTokenSerdeError);
         };
         let reg_token = RegisterToken::from(reg_token);

@@ -31,6 +31,12 @@ async fn async_impl(
         Ok(_) => {
             Ok(UserRegisterResponse::new())
         }
+        Err(AuthServerError::UsernameAlreadyExists) => {
+            Err(ResponseError::InternalServerError("UsernameAlreadyExists".to_string()))
+        }
+        Err(AuthServerError::EmailAlreadyExists) => {
+            Err(ResponseError::InternalServerError("EmailAlreadyExists".to_string()))
+        }
         Err(AuthServerError::EmailSendFailed(inner_message)) => {
             Err(ResponseError::InternalServerError(format!("Email send failed: {}", inner_message)))
         }
@@ -61,12 +67,12 @@ impl State {
 
         let temp_reg = TempRegistration::from(request);
 
-        let email_subject = "Cyberlith Email Verification";
-        let sending_email = "cyberlithgame@gmail.com";
+        let email_subject = "Cyberlith Email Verification"; // TODO: put into config
+        let sending_email = "cyberlithgame@gmail.com"; // TODO: put into config
         let username = temp_reg.name.clone();
         let user_email: String = temp_reg.email.clone();
-        let reg_token_str = reg_token.value.as_string();
-        let link_url = format!("register_token={}", reg_token_str); // TODO: replace with working URL
+        let reg_token_str = reg_token.to_string();
+        let link_url = format!("register_token={}", reg_token_str); // TODO: replace with working URL from config
 
         info!("sending registration token to user's email: {:?}", &user_email);
 

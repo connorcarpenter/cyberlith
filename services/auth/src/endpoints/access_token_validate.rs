@@ -6,7 +6,7 @@ use http_server::{async_dup::Arc, smol::lock::RwLock, Server, http_log_util};
 use config::GATEWAY_SECRET;
 use auth_server_http_proto::{AccessTokenValidateRequest, AccessTokenValidateResponse};
 
-use crate::state::State;
+use crate::{state::State, error::AuthServerError, types::AccessToken};
 
 pub fn access_token_validate(server: &mut Server, state: Arc<RwLock<State>>) {
     server.endpoint(move |(_addr, req)| {
@@ -26,9 +26,36 @@ async fn async_impl(
 
     http_log_util::recv_req("auth_server", "gateway", "access_token_validate");
 
-    let _state = state.read().await;
+    let mut state = state.write().await;
+    let response = match state.access_token_validate(incoming_request) {
+        Ok(_) => {
+            Ok(AccessTokenValidateResponse::new())
+        }
+        Err(AuthServerError::AccessTokenSerdeError) => {
+            Err(ResponseError::SerdeError)
+        }
+        Err(AuthServerError::AccessTokenNotFound) => {
+            Err(ResponseError::Unauthenticated)
+        }
+        Err(_) => {
+            panic!("unhandled error for this endpoint");
+        }
+    };
 
     http_log_util::send_res("auth_server", "gateway", "access_token_validate");
+    return response;
+}
 
-    Ok(AccessTokenValidateResponse::new())
+impl State {
+    fn access_token_validate(&mut self, request: AccessTokenValidateRequest) -> Result<(), AuthServerError> {
+        let Some(access_token) = AccessToken::from_str(&request.access_token) else {
+            return Err(AuthServerError::AccessTokenSerdeError);
+        };
+
+        if !self.has_access_token(&access_token) {
+            return Err(AuthServerError::AccessTokenNotFound);
+        }
+
+        return Ok(());
+    }
 }

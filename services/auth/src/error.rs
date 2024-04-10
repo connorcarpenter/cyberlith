@@ -7,5 +7,7 @@ pub(crate) enum AuthServerError {
     EmailAlreadyExists,
     UsernameOrEmailNotFound,
     PasswordIncorrect,
+    AccessTokenSerdeError,
+    AccessTokenNotFound,
     Unknown(String),
 }

@@ -96,5 +96,9 @@ impl State {
 
         token
     }
+
+    pub(crate) fn has_access_token(&self, access_token: &AccessToken) -> bool {
+        self.access_tokens.contains_key(access_token)
+    }
 }
 
