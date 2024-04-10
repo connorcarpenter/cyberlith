@@ -16,7 +16,7 @@ impl DbTableKey for Users {
 }
 
 // user id
-#[derive(Serialize, Deserialize, Clone, Copy, Hash, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Serialize, Deserialize, Clone, Copy, Hash, Eq, PartialEq, Ord, PartialOrd, Debug)]
 pub struct UserId {
     id: u64,
 }
@@ -70,6 +70,12 @@ pub struct User {
     password: String,
     create_date: chrono::DateTime<chrono::Utc>,
     role: UserRole,
+}
+
+impl User {
+    pub fn check_password(&self, password: &String) -> bool {
+        self.password == *password
+    }
 }
 
 impl DbRowValue for User {

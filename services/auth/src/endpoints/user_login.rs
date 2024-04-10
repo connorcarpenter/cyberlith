@@ -1,4 +1,5 @@
-use log::warn;
+use log::{info, warn};
+use auth_server_db::UserId;
 
 use http_client::ResponseError;
 use http_server::{async_dup::Arc, smol::lock::RwLock, Server, http_log_util};
@@ -6,7 +7,7 @@ use http_server::{async_dup::Arc, smol::lock::RwLock, Server, http_log_util};
 use config::GATEWAY_SECRET;
 use auth_server_http_proto::{UserLoginRequest, UserLoginResponse};
 
-use crate::state::State;
+use crate::{types::AccessToken, state::State, error::AuthServerError};
 
 pub fn user_login(server: &mut Server, state: Arc<RwLock<State>>) {
     server.endpoint(move |(_addr, req)| {
@@ -26,9 +27,52 @@ async fn async_impl(
 
     http_log_util::recv_req("auth_server", "gateway", "user_login");
 
-    let _state = state.read().await;
+    let mut state = state.write().await;
+    let response = match state.user_login(incoming_request) {
+        Ok(access_token) => {
+            let access_token = access_token.to_string();
+            Ok(UserLoginResponse::new(&access_token))
+        }
+        Err(AuthServerError::UsernameOrEmailNotFound) => {
+            Err(ResponseError::Unauthenticated)
+        }
+        Err(AuthServerError::PasswordIncorrect) => {
+            Err(ResponseError::Unauthenticated)
+        }
+        Err(_) => {
+            panic!("unhandled error for this endpoint");
+        }
+    };
 
     http_log_util::send_res("auth_server", "gateway", "user_login");
+    return response;
+}
 
-    Ok(UserLoginResponse::new("faketoken"))
+impl State {
+    fn user_login(&mut self, request: UserLoginRequest) -> Result<AccessToken, AuthServerError> {
+        let handle = request.handle;
+        let password = request.password;
+
+        // find user_id for given handle
+        let user_id: UserId;
+        if let Some(Some(id)) = self.username_to_id_map.get(&handle) {
+            user_id = *id;
+        } else if let Some(Some(id)) = self.email_to_id_map.get(&handle) {
+            user_id = *id;
+        } else {
+            return Err(AuthServerError::UsernameOrEmailNotFound);
+        }
+
+        info!("user_login: with handle {:?}, found user_id: {:?}", handle, user_id);
+
+        // check password
+        let user = self.database_manager.get_user(&user_id).unwrap();
+        if !user.check_password(&password) {
+            return Err(AuthServerError::PasswordIncorrect);
+        }
+
+        // create and store new access token
+        let access_token = self.create_and_store_new_access_token(&user_id);
+        Ok(access_token)
+    }
 }

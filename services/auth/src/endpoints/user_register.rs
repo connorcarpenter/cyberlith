@@ -6,7 +6,7 @@ use http_server::{async_dup::Arc, smol::lock::RwLock, Server, http_log_util};
 use config::GATEWAY_SECRET;
 use auth_server_http_proto::{UserRegisterRequest, UserRegisterResponse};
 
-use crate::{state::State, error::AuthServerError, types::{RegisterToken, TempRegistration}};
+use crate::{state::State, error::AuthServerError, types::{TempRegistration}};
 
 pub fn user_register(server: &mut Server, state: Arc<RwLock<State>>) {
     server.endpoint(move |(_addr, req)| {
@@ -57,10 +57,7 @@ impl State {
             return Err(AuthServerError::EmailAlreadyExists);
         }
 
-        let mut reg_token = RegisterToken::gen_random();
-        while self.temp_regs.contains_key(&reg_token) {
-            reg_token = RegisterToken::gen_random();
-        }
+        let reg_token = self.create_new_register_token();
 
         let temp_reg = TempRegistration::from(request);
 
@@ -86,7 +83,7 @@ impl State {
             Ok(_response) => {
                 info!("email send success!");
 
-                self.temp_regs.insert(reg_token, temp_reg);
+                self.store_register_token(reg_token, temp_reg);
                 self.username_to_id_map.insert(username, None);
                 self.email_to_id_map.insert(user_email, None);
 
