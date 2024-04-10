@@ -32,10 +32,10 @@ async fn async_impl(
         Ok(()) => {
             Ok(UserRegisterConfirmResponse::new("faketoken"))
         }
-        Err(AuthServerError::RegisterTokenSerdeError) => {
+        Err(AuthServerError::TokenSerdeError) => {
             Err(ResponseError::InternalServerError("TokenSerdeError".to_string()))
         }
-        Err(AuthServerError::RegisterTokenNotFound) => {
+        Err(AuthServerError::TokenNotFound) => {
             Err(ResponseError::InternalServerError("TokenNotFound".to_string()))
         }
         Err(AuthServerError::InsertedDuplicateUserId) => {
@@ -58,11 +58,11 @@ impl State {
     pub fn user_register_confirm(&mut self, request: UserRegisterConfirmRequest) -> Result<(), AuthServerError> {
 
         let Some(reg_token) = RegisterToken::from_str(&request.register_token) else {
-            return Err(AuthServerError::RegisterTokenSerdeError);
+            return Err(AuthServerError::TokenSerdeError);
         };
         let reg_token = RegisterToken::from(reg_token);
         let Some(temp_reg) = self.remove_register_token(&reg_token) else {
-            return Err(AuthServerError::RegisterTokenNotFound);
+            return Err(AuthServerError::TokenNotFound);
         };
 
         let new_user = User::new(&temp_reg.name, &temp_reg.email, &temp_reg.password, UserRole::Free);

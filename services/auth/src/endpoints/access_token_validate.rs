@@ -31,10 +31,10 @@ async fn async_impl(
         Ok(_) => {
             Ok(AccessTokenValidateResponse::new())
         }
-        Err(AuthServerError::AccessTokenSerdeError) => {
+        Err(AuthServerError::TokenSerdeError) => {
             Err(ResponseError::SerdeError)
         }
-        Err(AuthServerError::AccessTokenNotFound) => {
+        Err(AuthServerError::TokenNotFound) => {
             Err(ResponseError::Unauthenticated)
         }
         Err(_) => {
@@ -49,11 +49,11 @@ async fn async_impl(
 impl State {
     fn access_token_validate(&mut self, request: AccessTokenValidateRequest) -> Result<(), AuthServerError> {
         let Some(access_token) = AccessToken::from_str(&request.access_token) else {
-            return Err(AuthServerError::AccessTokenSerdeError);
+            return Err(AuthServerError::TokenSerdeError);
         };
 
         if !self.has_access_token(&access_token) {
-            return Err(AuthServerError::AccessTokenNotFound);
+            return Err(AuthServerError::TokenNotFound);
         }
 
         return Ok(());

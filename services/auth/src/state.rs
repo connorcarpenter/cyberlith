@@ -83,7 +83,7 @@ impl State {
         token
     }
 
-    fn create_and_store_access_token(&mut self, user_id: &UserId) -> AccessToken {
+    pub(crate) fn create_and_store_access_token(&mut self, user_id: &UserId) -> AccessToken {
         let mut token = AccessToken::gen_random();
         while self.access_tokens.contains_key(&token) {
             token = AccessToken::gen_random();
@@ -97,8 +97,16 @@ impl State {
         token
     }
 
+    pub(crate) fn has_refresh_token(&self, refresh_token: &RefreshToken) -> bool {
+        self.refresh_tokens.contains_key(refresh_token)
+    }
+
     pub(crate) fn has_access_token(&self, access_token: &AccessToken) -> bool {
         self.access_tokens.contains_key(access_token)
+    }
+
+    pub(crate) fn get_user_id_by_refresh_token(&self, refresh_token: &RefreshToken) -> Option<&UserId> {
+        self.refresh_tokens.get(refresh_token)
     }
 }
 
