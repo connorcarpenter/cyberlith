@@ -2,9 +2,7 @@ use bevy_ecs::{prelude::Query, event::EventReader, change_detection::{Res, ResMu
 
 use asset_loader::AssetManager;
 use input::InputEvent;
-use math::Vec3;
-use render_api::components::{Camera, RenderLayer, Transform, Viewport};
-use render_api::Window;
+use render_api::components::{Camera, RenderLayer};
 use ui_input::UiInputConverter;
 
 use crate::UiManager;

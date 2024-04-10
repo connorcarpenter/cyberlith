@@ -178,8 +178,7 @@ fn draw_ui_node(
         return;
     };
 
-    let child_offset_z = child_offset_z + ui_state.breath;
-    let mut transform = Transform::from_xyz(child_offset_x, child_offset_y, child_offset_z);
+    let mut transform = Transform::from_xyz(child_offset_x, child_offset_y, child_offset_z - 20.0);
     transform.scale.x = width;
     transform.scale.y = height;
 

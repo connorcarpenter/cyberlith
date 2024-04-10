@@ -24,10 +24,6 @@ pub struct UiRuntime {
 
 impl UiRuntime {
 
-    pub(crate) fn camera_bundle(&self) -> &CameraBundle {
-        &self.camera
-    }
-
     pub(crate) fn generate_new_inputs(&mut self, next_inputs: &mut Vec<UiInputEvent>) {
         self.input_state.generate_new_inputs(&self.config, next_inputs);
     }
@@ -84,7 +80,7 @@ impl UiRuntime {
         // update ui camera
         if viewport != self.camera.camera.viewport.as_ref().unwrap() {
 
-            info!("ui viewport updated: {:?}", viewport);
+            // info!("ui viewport updated: {:?}", viewport);
 
             self.camera.camera.viewport = Some(*viewport);
 
@@ -97,7 +93,6 @@ impl UiRuntime {
             let y = viewport.height as f32 * 0.5;
             self.camera.transform.translation.x = x;
             self.camera.transform.translation.y = y;
-            info!("distance: {}", distance);
             self.camera.transform.translation.z = distance;
             self.camera.transform.look_at(Vec3::new(x, y, 0.0), Vec3::NEG_Y);
 

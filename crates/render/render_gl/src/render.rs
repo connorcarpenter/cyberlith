@@ -1,10 +1,8 @@
 use bevy_ecs::system::{NonSendMut, Res, ResMut};
-use bevy_log::info;
 
 use render_api::{
     base::CpuTexture2D, components::RenderTarget as CameraRenderTarget, resources::RenderFrame,
 };
-use render_api::components::RenderLayer;
 use storage::SideStorage;
 
 use crate::{

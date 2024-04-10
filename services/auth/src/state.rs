@@ -1,12 +1,17 @@
 use std::collections::HashMap;
-use log::info;
+
+use log::{info, warn};
 
 use auth_server_db::{DatabaseManager, User, UserRole};
 use auth_server_http_proto::{UserRegisterConfirmRequest, UserRegisterRequest};
 use crypto::U32Token;
 
+use crate::emails::EmailCatalog;
+use crate::error::AuthServerError;
+
 pub struct State {
     database_manager: DatabaseManager,
+    email_catalog: EmailCatalog,
 
     temp_regs: HashMap<RegisterToken, TempRegistration>,
 }
@@ -14,55 +19,73 @@ pub struct State {
 impl State {
     pub fn new() -> Self {
         Self {
+            email_catalog: EmailCatalog::new(),
             database_manager: DatabaseManager::init(),
             temp_regs: HashMap::new(),
         }
     }
 
-    pub fn user_register(&mut self, request: UserRegisterRequest) {
+    pub fn user_register(&mut self, request: UserRegisterRequest) -> Result<(), AuthServerError> {
 
         // TODO: validate data?
         // TODO: hash password?
         // TODO: check if user already exists?
-        // TODO: send email confirmation?
         // TODO: expire registration token?
-        // TODO: return result?
 
-        info!("storing temporary registration");
-        let reg_token = RegisterToken::gen_random();
-        let temp_reg = TempRegistration::from(request);
-        let email: String = temp_reg.email.clone();
-
-        if self.temp_regs.contains_key(&reg_token) {
-            panic!("register token collision");
+        let mut reg_token = RegisterToken::gen_random();
+        while self.temp_regs.contains_key(&reg_token) {
+            reg_token = RegisterToken::gen_random();
         }
+
+        let temp_reg = TempRegistration::from(request);
+
+        let email_subject = "Cyberlith Email Verification";
+        let sending_email = "cyberlithgame@gmail.com";
+        let username = temp_reg.name.clone();
+        let user_email: String = temp_reg.email.clone();
+        let reg_token_str = reg_token.value.as_string();
+        let link_url = format!("http://localhost:4000/?register_token={}", reg_token_str);
+
         self.temp_regs.insert(reg_token, temp_reg);
 
-        info!("sending token to user's email: {:?}", &email);
-        let _ = email::send(
-            "cyberlithgame@gmail.com",
-            "connorcarpenter@gmail.com",
-            "Cyber Test Email",
-            "Hello, this is a test",
-            "<h1>Hello</h1><p>This is a test email with HTML content.</p>"
-        );
-        info!("success!");
+        info!("sending registration token to user's email: {:?}", &user_email);
+
+        let text_msg = self.email_catalog.register_verification_txt(&username, &link_url);
+        let html_msg = self.email_catalog.register_verification_html(&username, &link_url);
+
+        match email::send(
+            sending_email,
+            &user_email,
+            email_subject,
+            &text_msg,
+            &html_msg,
+        ) {
+            Ok(_response) => {
+                info!("email send success!");
+                return Ok(());
+            }
+            Err(err) => {
+                warn!("email send failed: {:?}", err);
+                return Err(AuthServerError::EmailSendFailed(err.to_string()));
+            }
+        }
     }
 
-    pub fn user_register_confirm(&mut self, request: UserRegisterConfirmRequest) {
+    pub fn user_register_confirm(&mut self, request: UserRegisterConfirmRequest) -> Result<(), AuthServerError> {
 
         let Some(reg_token) = U32Token::from_str(&request.register_token) else {
-            panic!("invalid register token");
+            return Err(AuthServerError::TokenSerdeError);
         };
         let reg_token = RegisterToken::from(reg_token);
         let Some(temp_reg) = self.temp_regs.remove(&reg_token) else {
-            panic!("register token not found");
+            return Err(AuthServerError::TokenNotFound);
         };
 
         let new_user = User::new(&temp_reg.name, &temp_reg.email, &temp_reg.password, UserRole::Free);
         let new_user_id = self.database_manager.create_user(new_user);
         let new_user_id: u64 = new_user_id.into();
         info!("new user created: {:?} - {:?}", new_user_id, temp_reg.name);
+        Ok(())
     }
 }
 
@@ -80,7 +103,7 @@ impl From<U32Token> for RegisterToken {
 impl RegisterToken {
     pub fn gen_random() -> Self {
         Self {
-            value: U32Token::from_u32(17).unwrap() // U32Token::gen_random(), // TODO: revert this!!
+            value: U32Token::gen_random(),
         }
     }
 }

@@ -1,5 +1,7 @@
 mod endpoints;
 mod state;
+mod error;
+mod emails;
 
 use std::{net::SocketAddr, thread};
 

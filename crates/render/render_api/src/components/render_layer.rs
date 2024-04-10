@@ -14,10 +14,6 @@ impl RenderLayers {
         }
         RenderLayer(layer)
     }
-
-    pub(crate) fn layer_unchecked(layer: usize) -> RenderLayer {
-        RenderLayer(layer)
-    }
 }
 
 #[derive(Component, Clone, Copy, Eq, PartialEq, Debug)]

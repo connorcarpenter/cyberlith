@@ -1,4 +1,4 @@
-use bevy_log::{info, warn};
+use bevy_log::warn;
 
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
@@ -21,9 +21,6 @@ pub struct UiState {
     pub store: UiStateStore,
     pub visibility_store: UiVisibilityStore,
 
-    pub breath: f32,
-    breath_up: bool,
-
     recalc_layout: bool,
 }
 
@@ -34,8 +31,6 @@ impl UiState {
             cache: LayoutCache::new(),
             store: UiStateStore::new(),
             visibility_store: UiVisibilityStore::new(),
-            breath: -20.0,
-            breath_up: true,
 
             recalc_layout: false,
         };
@@ -65,14 +60,6 @@ impl UiState {
         //         self.breath_up = true;
         //     }
         // }
-    }
-
-    pub fn breath(&self) -> f32 {
-        self.breath
-    }
-
-    pub fn set_breath(&mut self, breath: f32) {
-        self.breath = breath;
     }
 
     // nodes

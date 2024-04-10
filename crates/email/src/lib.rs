@@ -1,5 +1,10 @@
-use lettre::{SmtpTransport, Transport, transport::smtp::authentication::Credentials};
-use lettre::message::Body;
+use lettre::{message::Body, SmtpTransport, Transport, transport::smtp::{authentication::Credentials}};
+
+mod smtp_alias {
+    pub use lettre::transport::smtp::{response::Response as SmtpResponse, Error as SmtpError};
+}
+
+pub use smtp_alias::{SmtpResponse, SmtpError};
 
 pub fn send(
     sender_email: &str,
@@ -7,7 +12,7 @@ pub fn send(
     subject: &str,
     text_content: &str,
     html_content: &str
-) -> Result<(), String> {
+) -> Result<SmtpResponse, SmtpError> {
 
     let text_content = text_content.to_string();
     let text_content = Body::new(text_content);
@@ -51,7 +56,5 @@ pub fn send(
         .build();  // Construct the transport
 
     // Send the email
-    mailer.send(&email).unwrap();
-
-    Ok(())
+    return mailer.send(&email);
 }

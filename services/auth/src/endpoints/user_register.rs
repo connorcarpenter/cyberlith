@@ -6,6 +6,7 @@ use http_server::{async_dup::Arc, smol::lock::RwLock, Server, http_log_util};
 use config::GATEWAY_SECRET;
 use auth_server_http_proto::{UserRegisterRequest, UserRegisterResponse};
 
+use crate::error::AuthServerError;
 use crate::state::State;
 
 pub fn user_register(server: &mut Server, state: Arc<RwLock<State>>) {
@@ -27,9 +28,18 @@ async fn async_impl(
     http_log_util::recv_req("auth_server", "gateway", "user_register");
 
     let mut state = state.write().await;
-    state.user_register(incoming_request);
+    let response = match state.user_register(incoming_request) {
+        Ok(_) => {
+            Ok(UserRegisterResponse::new())
+        }
+        Err(AuthServerError::EmailSendFailed(inner_message)) => {
+            Err(ResponseError::InternalServerError(format!("Email send failed: {}", inner_message)))
+        }
+        Err(_) => {
+            panic!("unhandled error for this endpoint");
+        }
+    };
 
     http_log_util::send_res("auth_server", "gateway", "user_register");
-
-    Ok(UserRegisterResponse::new())
+    return response;
 }

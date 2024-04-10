@@ -1,0 +1,5 @@
+Hello there {username},
+
+In order to finalize your account creation, please go to the following link:
+
+{link}

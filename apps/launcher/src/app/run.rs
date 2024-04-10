@@ -65,7 +65,7 @@ pub fn test_request(
     mut global: ResMut<Global>,
 ) {
     // user register
-    let request = UserRegisterRequest::new("ethan", "e@gmail.com", "12345");
+    let request = UserRegisterRequest::new("connorc", "connorcarpenter@gmail.com", "12345");
     let key = http_client.send(PUBLIC_IP_ADDR, GATEWAY_PORT, request);
     global.user_register_response_key_opt = Some(key);
     info!("client -> gateway: (UserRegisterRequest)");

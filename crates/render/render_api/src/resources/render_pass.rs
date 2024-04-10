@@ -5,7 +5,7 @@ use storage::Handle;
 
 use crate::{
     base::CpuMesh,
-    components::{Camera, RenderLayer, Projection, Transform, TypedLight},
+    components::{Camera, Projection, Transform, TypedLight},
     resources::MaterialOrSkinHandle,
 };
 
