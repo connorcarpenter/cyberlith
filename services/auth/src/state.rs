@@ -117,6 +117,10 @@ impl State {
         self.database_manager.get_user(&user_id).unwrap().username().to_string()
     }
 
+    pub(crate) fn get_user_id_by_email(&self, email: &str) -> UserId {
+        self.email_to_id_map.get(email).unwrap().unwrap()
+    }
+
     // reset password tokens
     pub(crate) fn create_new_reset_password_token(&self) -> ResetPasswordToken {
         let mut token = ResetPasswordToken::gen_random();

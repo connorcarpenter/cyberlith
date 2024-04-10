@@ -61,7 +61,7 @@ impl State {
         let sending_email = "admin@cyberlith.com"; // TODO: put into config
         let link_url = "https://cyberlith.com"; // TODO: put into config
 
-        info!("sending reset password token to user's email: {:?}", &user_email);
+        info!("sending forgotten username to user's email: {:?}", &user_email);
 
         let text_msg = self.email_catalog.user_name_forgot_txt(&username, link_url);
         let html_msg = self.email_catalog.user_name_forgot_html(&username, link_url);
