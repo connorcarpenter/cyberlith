@@ -31,13 +31,13 @@ use crate::app::{global::Global, ui_backups::*};
 
 fn ui_define() -> (String, AssetId, ETag, UiConfig) {
     // start
-    //return start::ui_define();
+    return start::ui_define();
 
     // login
     // return login::ui_define();
 
     // register
-    return register::ui_define();
+    // return register::ui_define();
 }
 
 #[derive(Event, Default)]
@@ -64,7 +64,7 @@ pub fn setup(
 
     ui_manager.set_target_render_layer(RenderLayers::layer(0));
     ui_manager.enable_ui(&ui_handle);
-    ui_manager.register_ui_event::<SubmitButtonEvent>(&ui_handle, "login_button");
+    // ui_manager.register_ui_event::<SubmitButtonEvent>(&ui_handle, "login_button");
 
     // scene setup now
     // ambient light

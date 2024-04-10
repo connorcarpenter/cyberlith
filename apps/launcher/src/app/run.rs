@@ -13,7 +13,7 @@ use crate::app::{
     resources::Global,
     systems::{
         draw, resize, scene, ui,
-        ui::{ContinueButtonEvent, StartButtonEvent},
+        ui::{},
     },
 };
 
@@ -31,8 +31,10 @@ pub fn run() {
         // global resource
         .init_resource::<Global>()
         // events
-        .add_event::<StartButtonEvent>()
-        .add_event::<ContinueButtonEvent>()
+
+        .add_event::<LoginButtonClickedEvent>()
+        .add_event::<RegisterButtonClickedEvent>()
+        .add_event::<SubmitButtonClickedEvent>()
         // ui systems
         .add_systems(Startup, ui::ui_setup)
         .add_systems(Update, ui::ui_handle_events)
@@ -58,6 +60,7 @@ pub async fn finished() {
 }
 
 use gateway_http_proto::UserPasswordResetRequest;
+use crate::app::resources::{LoginButtonClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent};
 
 // used as a system
 pub fn test_request(

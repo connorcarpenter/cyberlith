@@ -102,7 +102,7 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
                         .right_goes_to("register_button");
                 });
 
-            // continue button
+            // register button
             c.add_button("register_button")
                 .set_style(register_button_style)
                 .contents(|c| {

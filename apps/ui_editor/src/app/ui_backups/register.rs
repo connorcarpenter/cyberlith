@@ -149,7 +149,7 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
                             c.add_panel()
                                 .set_style(heading_container_right_style)
                                 .contents(|c| {
-                                    // register button
+                                    // login button
                                     c.add_button("login_button")
                                         .set_style(register_button_style)
                                         .contents(|c| {

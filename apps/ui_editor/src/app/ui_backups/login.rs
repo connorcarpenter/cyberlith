@@ -79,12 +79,14 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
             .set_down_color(Color::BLUE);
     });
     let submit_button_style = ui_config.create_button_style(|s| {
-        s.set_height_pc(10.0)
+        s.set_parent_style(base_button_style)
+            .set_height_pc(10.0)
             .set_self_halign(Alignment::Start)
             .set_margin_left_px(40.);
     });
     let register_button_style = ui_config.create_button_style(|s| {
-        s.set_height_pc(100.)
+        s.set_parent_style(base_button_style)
+            .set_height_pc(100.)
             .set_self_halign(Alignment::End)
             .set_margin_right_px(10.0);
     });
@@ -94,8 +96,11 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
             .set_self_halign(Alignment::Start)
             .set_margin_left_px(40.0);
     });
-    let base_text_input_style = ui_config.create_panel_style(|s| {
+    let base_textbox_style = ui_config.create_textbox_style(|s| {
         s.set_background_color(Color::GRAY)
+            .set_hover_color(Color::RED)
+            .set_active_color(Color::BLUE)
+            .set_selection_color(Color::DARK_BLUE)
             .set_size_pc(45., 10.)
             .set_self_halign(Alignment::Start)
             .set_margin_left_px(40.0);
@@ -136,7 +141,6 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
                                 .contents(|c| {
                                     // register button
                                     c.add_button("register_button")
-                                        .set_style(base_button_style)
                                         .set_style(register_button_style)
                                         .contents(|c| {
                                             c.add_text("register")
@@ -149,20 +153,39 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
                     // text
                     c.add_text("username:").set_style(base_label_style);
                     // text-edit
-                    c.add_panel().set_style(base_text_input_style);
+                    c.add_textbox("username_textbox")
+                        .set_style(base_textbox_style)
+                        .set_as_first_input()
+                        .navigation(|n| {
+                            n.up_goes_to("register_button")
+                                .down_goes_to("password_textbox")
+                                .tab_goes_to("password_textbox")
+                                .right_goes_to("register_button");
+                        });
 
                     // password input
                     // text
                     c.add_text("password:").set_style(base_label_style);
                     // text-edit
-                    c.add_panel().set_style(base_text_input_style);
+                    c.add_textbox("password_textbox")
+                        .set_style(base_textbox_style)
+                        .navigation(|n| {
+                            n.up_goes_to("username_textbox")
+                                .down_goes_to("submit_button")
+                                .tab_goes_to("submit_button")
+                                .right_goes_to("register_button");
+                        });
 
                     // submit button
                     c.add_button("submit_button")
-                        .set_style(base_button_style)
                         .set_style(submit_button_style)
                         .contents(|c| {
                             c.add_text("submit").set_style(base_button_text_style);
+                        })
+                        .navigation(|n| {
+                            n.up_goes_to("password_textbox")
+                                .right_goes_to("register_button")
+                                .tab_goes_to("register_button");
                         });
                 });
             });
