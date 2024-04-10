@@ -4,13 +4,13 @@ use http_common::{ApiRequest, ApiResponse, Method};
 
 // Request
 #[derive(Serde, PartialEq, Clone)]
-pub struct TokenValidateRequest {
+pub struct AccessTokenValidateRequest {
     gateway_secret: String,
 
     pub access_token: String,
 }
 
-impl TokenValidateRequest {
+impl AccessTokenValidateRequest {
     pub fn new(gateway_secret: &str, access_token: &str) -> Self {
         Self {
             gateway_secret: gateway_secret.to_string(),
@@ -26,23 +26,23 @@ impl TokenValidateRequest {
 
 // Response
 #[derive(Serde, PartialEq, Clone)]
-pub struct TokenValidateResponse;
+pub struct AccessTokenValidateResponse;
 
-impl TokenValidateResponse {
+impl AccessTokenValidateResponse {
     pub fn new() -> Self { Self }
 }
 
 // Traits
-impl ApiRequest for TokenValidateRequest {
-    type Response = TokenValidateResponse;
+impl ApiRequest for AccessTokenValidateRequest {
+    type Response = AccessTokenValidateResponse;
 
     fn method() -> Method {
         Method::Post
     }
 
     fn path() -> &'static str {
-        "token_validate"
+        "access_token_validate"
     }
 }
 
-impl ApiResponse for TokenValidateResponse {}
+impl ApiResponse for AccessTokenValidateResponse {}

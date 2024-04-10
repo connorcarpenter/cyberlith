@@ -32,12 +32,14 @@ impl UserLoginRequest {
 // Response
 #[derive(Serde, PartialEq, Clone)]
 pub struct UserLoginResponse {
+    pub refresh_token: String,
     pub access_token: String,
 }
 
 impl UserLoginResponse {
-    pub fn new(access_token: &str) -> Self {
+    pub fn new(refresh_token: &str, access_token: &str) -> Self {
         Self {
+            refresh_token: refresh_token.to_string(),
             access_token: access_token.to_string(),
         }
     }

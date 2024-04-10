@@ -16,5 +16,5 @@ pub use user_password_forgot::*;
 mod user_password_reset;
 pub use user_password_reset::*;
 
-mod token_validate;
-pub use token_validate::*;
+mod access_token_validate;
+pub use access_token_validate::*;

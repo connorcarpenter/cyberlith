@@ -8,6 +8,7 @@ use config::GATEWAY_SECRET;
 use auth_server_http_proto::{UserLoginRequest, UserLoginResponse};
 
 use crate::{types::AccessToken, state::State, error::AuthServerError};
+use crate::types::RefreshToken;
 
 pub fn user_login(server: &mut Server, state: Arc<RwLock<State>>) {
     server.endpoint(move |(_addr, req)| {
@@ -29,9 +30,10 @@ async fn async_impl(
 
     let mut state = state.write().await;
     let response = match state.user_login(incoming_request) {
-        Ok(access_token) => {
+        Ok((refresh_token, access_token)) => {
+            let refresh_token = refresh_token.to_string();
             let access_token = access_token.to_string();
-            Ok(UserLoginResponse::new(&access_token))
+            Ok(UserLoginResponse::new(&refresh_token, &access_token))
         }
         Err(AuthServerError::UsernameOrEmailNotFound) => {
             Err(ResponseError::Unauthenticated)
@@ -49,7 +51,7 @@ async fn async_impl(
 }
 
 impl State {
-    fn user_login(&mut self, request: UserLoginRequest) -> Result<AccessToken, AuthServerError> {
+    fn user_login(&mut self, request: UserLoginRequest) -> Result<(RefreshToken, AccessToken), AuthServerError> {
         let handle = request.handle;
         let password = request.password;
 
@@ -72,7 +74,7 @@ impl State {
         }
 
         // create and store new access token
-        let access_token = self.create_and_store_new_access_token(&user_id);
-        Ok(access_token)
+        let (refresh_token, access_token) = self.user_new_login_gen_tokens(&user_id);
+        Ok((refresh_token, access_token))
     }
 }

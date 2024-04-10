@@ -32,7 +32,7 @@ pub fn main() {
     endpoints::user_name_forgot(&mut server, state.clone());
     endpoints::user_password_forgot(&mut server, state.clone());
     endpoints::user_password_reset(&mut server, state.clone());
-    endpoints::token_validate(&mut server, state.clone());
+    endpoints::access_token_validate(&mut server, state.clone());
 
     server.start();
 
