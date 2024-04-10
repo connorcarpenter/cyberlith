@@ -137,5 +137,11 @@ impl State {
     pub(crate) fn remove_reset_password_token(&mut self, token: &ResetPasswordToken) -> Option<UserId> {
         self.reset_password_tokens.remove(token)
     }
+
+    pub(crate) fn set_user_password(&mut self, user_id: UserId, new_password: String) {
+        self.database_manager.get_user_mut(&user_id, |user| {
+            user.set_password(&new_password);
+        });
+    }
 }
 

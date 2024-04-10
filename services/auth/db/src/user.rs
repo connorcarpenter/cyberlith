@@ -73,9 +73,7 @@ pub struct User {
 }
 
 impl User {
-    pub fn check_password(&self, password: &String) -> bool {
-        self.password == *password
-    }
+
 }
 
 impl DbRowValue for User {
@@ -93,8 +91,12 @@ impl DbRowValue for User {
         format!("{}_{}", self.id.unwrap(), self.name)
     }
 
-    fn get_commit_message(&self) -> String {
+    fn get_insert_commit_message(&self) -> String {
         format!("adding: [User: (id: {}, name: {}, email: {}, role: {})]", self.id.unwrap(), self.name, self.email, self.role.to_string())
+    }
+
+    fn get_update_commit_message(&self) -> String {
+        format!("updating: [User: (id: {}, name: {}, email: {}, role: {})]", self.id.unwrap(), self.name, self.email, self.role.to_string())
     }
 }
 
@@ -124,5 +126,13 @@ impl User {
 
     pub fn email(&self) -> &str {
         &self.email
+    }
+
+    pub fn check_password(&self, password: &str) -> bool {
+        self.password == *password
+    }
+
+    pub fn set_password(&mut self, password: &str) {
+        self.password = password.to_string();
     }
 }

@@ -1,4 +1,4 @@
-use bevy_log::info;
+
 use asset_loader::{AssetHandle, IconData, TypedAssetId, UiDependencies, UiTextMeasurer};
 use input::CursorIcon;
 use math::{Vec2, Vec3};

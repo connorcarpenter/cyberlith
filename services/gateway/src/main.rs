@@ -1,6 +1,6 @@
 mod endpoints;
 
-use std::{net::SocketAddr, thread, time::Duration};
+use std::{net::SocketAddr, thread};
 
 use log::{info, LevelFilter};
 use simple_logger::SimpleLogger;
@@ -31,6 +31,9 @@ pub fn main() {
 
     // user login
     endpoints::auth::user_login(&mut server);
+
+    // refresh token grant
+    endpoints::auth::refresh_token_grant(&mut server);
 
     // user name forgot
     endpoints::auth::user_name_forgot(&mut server);

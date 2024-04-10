@@ -66,7 +66,7 @@ pub fn pull_repo_get_all_files(dir_path: &str, repo: &Repository) -> Vec<GitFile
 pub fn create_new_file<K: DbTableKey>(dir_path: &str, repo: &Repository, file: K::Value) {
     // get creds
     let file_name = file.get_file_name();
-    let commit_message = file.get_commit_message();
+    let commit_message = file.get_insert_commit_message();
     let file_contents = file.to_bytes();
 
     let mut index = repo.index().expect("Failed to open index");
@@ -81,6 +81,31 @@ pub fn create_new_file<K: DbTableKey>(dir_path: &str, repo: &Repository, file: K
 
     // write new file, add to index
     write_new_file(&mut index, &full_path, &file_name, file_contents);
+
+    // commit, push, pull
+    git_commit(repo, &commit_message);
+    git_push(repo);
+    git_pull(repo);
+}
+
+pub fn update_file<K: DbTableKey>(dir_path: &str, repo: &Repository, file: &K::Value) {
+    // get creds
+    let file_name = file.get_file_name();
+    let commit_message = file.get_update_commit_message();
+    let file_contents = file.to_bytes();
+
+    let mut index = repo.index().expect("Failed to open index");
+
+    info!("dir_path: {}", dir_path);
+    let file_name = format!("{}.json", file_name);
+    info!("file_name: {}", file_name);
+    let file_path = format!("{}/{}", dir_path, file_name);
+    info!("file_path: {}", file_path);
+    let full_path = format!("{}{}", repo.workdir().unwrap().to_str().unwrap(), file_name);
+    info!("full_path: {}", full_path);
+
+    // update & write file
+    update_file_impl(&mut index, &full_path, &file_name, file_contents);
 
     // commit, push, pull
     git_commit(repo, &commit_message);
@@ -105,7 +130,7 @@ pub fn update_nextid(dir_path: &str, repo: &Repository, next_id: u64) {
     info!("full_path: {}", full_path);
 
     // update & write file
-    update_file(&mut index, &full_path, &file_name, file_contents);
+    update_file_impl(&mut index, &full_path, &file_name, file_contents);
 
     // commit, push, pull
     git_commit(repo, &commit_message);
@@ -133,7 +158,7 @@ fn write_new_file(index: &mut Index, full_path: &str, file_path: &str, bytes: Ve
     }
 }
 
-fn update_file(index: &mut Index, full_path: &str, file_path: &str, bytes: Vec<u8>) {
+fn update_file_impl(index: &mut Index, full_path: &str, file_path: &str, bytes: Vec<u8>) {
     let path = Path::new(full_path);
     let file_exists = path.exists();
     if !file_exists {

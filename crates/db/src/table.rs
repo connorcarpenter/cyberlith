@@ -4,6 +4,7 @@ use git2::Repository;
 use log::info;
 
 use crate::{error::DbError, git_ops::{create_new_file, pull_repo_get_all_files, repo_init, update_nextid}, DbRowValue, DbTableKey};
+use crate::git_ops::update_file;
 
 // Table trait
 pub trait Table: Send + Sync {
@@ -102,11 +103,19 @@ impl<K: DbTableKey> TableImpl<K> {
         self.store.get(key)
     }
 
-    pub fn get_mut(&mut self, _key: &K::Key) -> Option<&mut K::Value> {
-        // TODO: queue sync with actual datastore, this just modifies in-memory
+    pub fn get_mut<F: FnMut(&mut K::Value)>(&mut self, key: &K::Key, mut func: F) {
+        {
+            // change the file via closure
+            let item_mut = self.store.get_mut(key).unwrap();
+            func(item_mut);
+        }
 
-        //self.store.get_mut(key)
-        todo!()
+        // upload to database
+        {
+            let item_ref = self.store.get(key).unwrap();
+            let repo = self.repo.lock().unwrap();
+            update_file::<K>(&self.dir_name, &repo, item_ref);
+        }
     }
 
     pub fn remove(&mut self, _key: &K::Key) -> Option<K::Value> {

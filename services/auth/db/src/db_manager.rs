@@ -31,8 +31,8 @@ impl DatabaseManager {
     }
 
     // user update
-    pub fn get_user_mut(&mut self, id: &UserId) -> Option<&mut User> {
-        self.wrapper.table_mut::<Users>().get_mut(id)
+    pub fn get_user_mut<F: FnMut(&mut User)>(&mut self, id: &UserId, func: F) {
+        self.wrapper.table_mut::<Users>().get_mut(id, func);
     }
 
     // user delete

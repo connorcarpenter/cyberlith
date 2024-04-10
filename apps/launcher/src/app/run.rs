@@ -57,7 +57,7 @@ pub async fn finished() {
     wait_for_finish().await;
 }
 
-use gateway_http_proto::{UserRegisterConfirmRequest, UserRegisterRequest, UserLoginRequest, UserNameForgotRequest, UserPasswordForgotRequest, UserPasswordResetRequest};
+use gateway_http_proto::UserPasswordResetRequest;
 
 // used as a system
 pub fn test_request(
@@ -71,22 +71,26 @@ pub fn test_request(
     // info!("client -> gateway: (UserRegisterRequest)");
 
     // user register confirm
-    let request = UserRegisterConfirmRequest::new("1vnv1v");
-    let key = http_client.send(PUBLIC_IP_ADDR, GATEWAY_PORT, request);
-    global.user_register_confirm_response_key_opt = Some(key);
-    info!("client -> gateway: (UserRegisterConfirmRequest)");
+    // let request = UserRegisterConfirmRequest::new("1vnv1v");
+    // let key = http_client.send(PUBLIC_IP_ADDR, GATEWAY_PORT, request);
+    // global.user_register_confirm_response_key_opt = Some(key);
+    // info!("client -> gateway: (UserRegisterConfirmRequest)");
 
     // user name forgot
     // let request = UserNameForgotRequest::new("c@gmail.com");
     // let key = http_client.send(PUBLIC_IP_ADDR, GATEWAY_PORT, request);
 
     // user password forgot
-    // let request = UserPasswordForgotRequest::new("c@gmail.com");
+    // let request = UserPasswordForgotRequest::new("connorcarpenter@gmail.com");
     // let key = http_client.send(PUBLIC_IP_ADDR, GATEWAY_PORT, request);
+    // global.user_password_forgot_response_key_opt = Some(key);
+    // info!("client -> gateway: (UserForgotPasswordRequest)");
 
     // user password reset
-    // let request = UserPasswordResetRequest::new("reset_password_token", "new_password");
-    // let key = http_client.send(PUBLIC_IP_ADDR, GATEWAY_PORT, request);
+    let request = UserPasswordResetRequest::new("avpc7u", "my_cool_new_password");
+    let key = http_client.send(PUBLIC_IP_ADDR, GATEWAY_PORT, request);
+    global.user_password_reset_response_key_opt = Some(key);
+    info!("client -> gateway: (UserResetPasswordRequest)");
 }
 
 fn test_request_process(
@@ -124,6 +128,40 @@ fn test_request_process(
             }
             Err(err) => {
                 info!("client <- gateway: (UserRegisterConfirmResponse - ERROR! {})", err.to_string());
+            }
+        }
+    }
+    if global.user_password_forgot_response_key_opt.is_some() {
+        let Some(key) = &global.user_password_forgot_response_key_opt else {
+            return;
+        };
+        let Some(result) = http_client.recv(key) else {
+            return;
+        };
+        match result {
+            Ok(_response) => {
+                info!("client <- gateway: (UserPasswordForgotResponse - 200 OK)");
+                global.user_password_forgot_response_key_opt = None;
+            }
+            Err(err) => {
+                info!("client <- gateway: (UserPasswordForgotResponse - ERROR! {})", err.to_string());
+            }
+        }
+    }
+    if global.user_password_reset_response_key_opt.is_some() {
+        let Some(key) = &global.user_password_reset_response_key_opt else {
+            return;
+        };
+        let Some(result) = http_client.recv(key) else {
+            return;
+        };
+        match result {
+            Ok(_response) => {
+                info!("client <- gateway: (UserPasswordResetResponse - 200 OK)");
+                global.user_password_reset_response_key_opt = None;
+            }
+            Err(err) => {
+                info!("client <- gateway: (UserPasswordResetResponse - ERROR! {})", err.to_string());
             }
         }
     }

@@ -15,3 +15,6 @@ pub use user_password_forgot::*;
 
 mod user_password_reset;
 pub use user_password_reset::*;
+
+mod refresh_token_grant;
+pub use refresh_token_grant::*;

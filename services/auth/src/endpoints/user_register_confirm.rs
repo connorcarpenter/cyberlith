@@ -60,7 +60,6 @@ impl State {
         let Some(reg_token) = RegisterToken::from_str(&request.register_token) else {
             return Err(AuthServerError::TokenSerdeError);
         };
-        let reg_token = RegisterToken::from(reg_token);
         let Some(temp_reg) = self.remove_register_token(&reg_token) else {
             return Err(AuthServerError::TokenNotFound);
         };

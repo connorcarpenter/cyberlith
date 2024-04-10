@@ -17,9 +17,10 @@ pub trait DbRowValue: Send + Sync + Clone + Serialize + DeserializeOwned {
     fn set_key(&mut self, key: <Self as DbRowValue>::Key);
 
     fn get_file_name(&self) -> String;
-    fn get_commit_message(&self) -> String;
-    fn to_bytes(self) -> Vec<u8> {
-        serde_json::to_vec_pretty(&self)
+    fn get_insert_commit_message(&self) -> String;
+    fn get_update_commit_message(&self) -> String;
+    fn to_bytes(&self) -> Vec<u8> {
+        serde_json::to_vec_pretty(self)
             .unwrap()
             .to_vec()
     }

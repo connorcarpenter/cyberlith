@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use bevy_ecs::{
     event::{Event, EventReader, EventWriter},
-    system::{Commands, Res, ResMut},
+    system::{Res, ResMut},
 };
 use bevy_log::info;
 
@@ -11,17 +11,9 @@ use game_engine::{
         embedded_asset_event, AssetId, EmbeddedAssetEvent,
     },
     input::{GamepadRumbleIntensity, Input, RumbleManager},
-    render::{
-        base::Color,
-        components::{
-            AmbientLight, Camera, CameraBundle, ClearOperation, OrthographicProjection, Projection,
-            RenderLayers, RenderTarget,
-        },
-    },
+    render::components::RenderLayers,
     ui::{UiHandle, UiManager},
 };
-
-use crate::app::resources::Global;
 
 #[derive(Event, Default)]
 pub struct StartButtonEvent;

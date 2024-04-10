@@ -19,7 +19,7 @@ async fn async_impl(incoming_request: GatewayUserLoginRequest) -> Result<Gateway
         &incoming_request.handle,
         &incoming_request.password,
     );
-    let Ok(_auth_server_response) =
+    let Ok(auth_server_response) =
         HttpClient::send(AUTH_SERVER_RECV_ADDR, AUTH_SERVER_PORT, auth_server_request).await
     else {
         return http_log_util::fail_recv_res("gateway", "auth_server", "user_login");
@@ -27,5 +27,5 @@ async fn async_impl(incoming_request: GatewayUserLoginRequest) -> Result<Gateway
     http_log_util::recv_res("gateway", "auth_server", "user_login");
 
     http_log_util::send_res("gateway", "client", "user_login");
-    Ok(GatewayUserLoginResponse::new("faketoken"))
+    Ok(GatewayUserLoginResponse::new(auth_server_response.access_token.as_str()))
 }
