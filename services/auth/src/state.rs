@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use auth_server_db::{DatabaseManager, UserId};
 
-use crate::{types::{UserData, RefreshToken, RegisterToken, AccessToken, TempRegistration}, emails::EmailCatalog};
+use crate::{types::{ResetPasswordToken, UserData, RefreshToken, RegisterToken, AccessToken, TempRegistration}, emails::EmailCatalog};
 
 pub struct State {
     pub(crate) email_catalog: EmailCatalog,
@@ -12,6 +12,7 @@ pub struct State {
     pub(crate) email_to_id_map: HashMap<String, Option<UserId>>,
 
     register_tokens: HashMap<RegisterToken, TempRegistration>,
+    reset_password_tokens: HashMap<ResetPasswordToken, UserId>,
     access_tokens: HashMap<AccessToken, UserId>,
     refresh_tokens: HashMap<RefreshToken, UserId>,
     user_data: HashMap<UserId, UserData>,
@@ -40,6 +41,7 @@ impl State {
             user_data: user_data_map,
 
             register_tokens: HashMap::new(),
+            reset_password_tokens: HashMap::new(),
             access_tokens: HashMap::new(),
             refresh_tokens: HashMap::new(),
         }
@@ -107,6 +109,29 @@ impl State {
 
     pub(crate) fn get_user_id_by_refresh_token(&self, refresh_token: &RefreshToken) -> Option<&UserId> {
         self.refresh_tokens.get(refresh_token)
+    }
+
+    // for username recovery
+    pub(crate) fn get_user_name_by_email(&self, email: &str) -> String {
+        let user_id = self.email_to_id_map.get(email).unwrap().unwrap();
+        self.database_manager.get_user(&user_id).unwrap().username().to_string()
+    }
+
+    // reset password tokens
+    pub(crate) fn create_new_reset_password_token(&self) -> ResetPasswordToken {
+        let mut token = ResetPasswordToken::gen_random();
+        while self.reset_password_tokens.contains_key(&token) {
+            token = ResetPasswordToken::gen_random();
+        }
+        token
+    }
+
+    pub(crate) fn store_reset_password_token(&mut self, user_id: UserId, token: ResetPasswordToken) {
+        self.reset_password_tokens.insert(token, user_id);
+    }
+
+    pub(crate) fn remove_reset_password_token(&mut self, token: &ResetPasswordToken) -> Option<UserId> {
+        self.reset_password_tokens.remove(token)
     }
 }
 

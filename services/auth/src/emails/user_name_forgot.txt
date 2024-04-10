@@ -1,0 +1,5 @@
+Hello,
+
+Your username is: `{username}`
+
+Login to Cyberlith here: {link}

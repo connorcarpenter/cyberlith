@@ -1,4 +1,4 @@
-use log::warn;
+use log::{info, warn};
 
 use http_client::ResponseError;
 use http_server::{async_dup::Arc, smol::lock::RwLock, Server, http_log_util};
@@ -6,7 +6,7 @@ use http_server::{async_dup::Arc, smol::lock::RwLock, Server, http_log_util};
 use config::GATEWAY_SECRET;
 use auth_server_http_proto::{UserNameForgotRequest, UserNameForgotResponse};
 
-use crate::state::State;
+use crate::{state::State, error::AuthServerError};
 
 pub fn user_name_forgot(server: &mut Server, state: Arc<RwLock<State>>) {
     server.endpoint(move |(_addr, req)| {
@@ -26,9 +26,61 @@ async fn async_impl(
 
     http_log_util::recv_req("auth_server", "gateway", "user_name_forgot");
 
-    let _state = state.read().await;
+    let mut state = state.write().await;
+    let response = match state.user_name_forgot(incoming_request) {
+        Ok(()) => {
+            Ok(UserNameForgotResponse::new())
+        }
+        Err(AuthServerError::EmailNotFound) => {
+            Ok(UserNameForgotResponse::new()) // we don't want to leak if an email is in the system or not
+        }
+        Err(AuthServerError::EmailSendFailed(inner_message)) => {
+            Err(ResponseError::InternalServerError(format!("Email send failed: {}", inner_message)))
+        }
+        Err(_) => {
+            panic!("unhandled error for this endpoint");
+        }
+    };
 
     http_log_util::send_res("auth_server", "gateway", "user_name_forgot");
+    return response;
+}
 
-    Ok(UserNameForgotResponse::new())
+impl State {
+    fn user_name_forgot(&mut self, request: UserNameForgotRequest) -> Result<(), AuthServerError> {
+
+        let user_email = request.email;
+
+        if !self.email_to_id_map.contains_key(&user_email) {
+            return Err(AuthServerError::EmailNotFound);
+        }
+
+        let username = self.get_user_name_by_email(&user_email);
+
+        let email_subject = "Cyberlith Username Recovery"; // TODO: put into config
+        let sending_email = "admin@cyberlith.com"; // TODO: put into config
+        let link_url = "https://cyberlith.com"; // TODO: put into config
+
+        info!("sending reset password token to user's email: {:?}", &user_email);
+
+        let text_msg = self.email_catalog.user_name_forgot_txt(&username, link_url);
+        let html_msg = self.email_catalog.user_name_forgot_html(&username, link_url);
+
+        match email::send(
+            sending_email,
+            &user_email,
+            email_subject,
+            &text_msg,
+            &html_msg,
+        ) {
+            Ok(_response) => {
+                info!("email send success!");
+                return Ok(());
+            }
+            Err(err) => {
+                warn!("email send failed: {:?}", err);
+                return Err(AuthServerError::EmailSendFailed(err.to_string()));
+            }
+        }
+    }
 }
