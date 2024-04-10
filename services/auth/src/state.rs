@@ -44,7 +44,7 @@ impl State {
         let username = temp_reg.name.clone();
         let user_email: String = temp_reg.email.clone();
         let reg_token_str = reg_token.value.as_string();
-        let link_url = format!("http://localhost:4000/?register_token={}", reg_token_str);
+        let link_url = format!("register_token={}", reg_token_str); // TODO: replace with working URL
 
         self.temp_regs.insert(reg_token, temp_reg);
 

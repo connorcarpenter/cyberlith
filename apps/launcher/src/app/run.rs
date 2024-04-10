@@ -65,14 +65,16 @@ pub fn test_request(
     mut global: ResMut<Global>,
 ) {
     // user register
-    let request = UserRegisterRequest::new("connorc", "connorcarpenter@gmail.com", "12345");
-    let key = http_client.send(PUBLIC_IP_ADDR, GATEWAY_PORT, request);
-    global.user_register_response_key_opt = Some(key);
-    info!("client -> gateway: (UserRegisterRequest)");
+    // let request = UserRegisterRequest::new("connorc", "connorcarpenter@gmail.com", "12345");
+    // let key = http_client.send(PUBLIC_IP_ADDR, GATEWAY_PORT, request);
+    // global.user_register_response_key_opt = Some(key);
+    // info!("client -> gateway: (UserRegisterRequest)");
 
     // user register confirm
-    // let request = UserRegisterConfirmRequest::new("register_token");
-    // let key = http_client.send(PUBLIC_IP_ADDR, GATEWAY_PORT, request);
+    let request = UserRegisterConfirmRequest::new("1vnv1v");
+    let key = http_client.send(PUBLIC_IP_ADDR, GATEWAY_PORT, request);
+    global.user_register_confirm_response_key_opt = Some(key);
+    info!("client -> gateway: (UserRegisterConfirmRequest)");
 
     // user name forgot
     // let request = UserNameForgotRequest::new("c@gmail.com");
@@ -91,7 +93,7 @@ fn test_request_process(
     mut http_client: ResMut<HttpClient>,
     mut global: ResMut<Global>,
 ) {
-    if global.user_register_response_key_opt.is_some() && global.user_register_confirm_response_key_opt.is_none() {
+    if global.user_register_response_key_opt.is_some() {
         let Some(key) = &global.user_register_response_key_opt else {
             return;
         };
@@ -102,21 +104,13 @@ fn test_request_process(
             Ok(_response) => {
                 info!("client <- gateway: (UserRegisterResponse - 200 OK)");
                 global.user_register_response_key_opt = None;
-
-                // send confirm request
-                let token = crypto::U32Token::from_u32(17).unwrap();
-                let token_str = token.as_string();
-                let request = UserRegisterConfirmRequest::new(&token_str);
-                let key = http_client.send(PUBLIC_IP_ADDR, GATEWAY_PORT, request);
-                global.user_register_confirm_response_key_opt = Some(key);
-                info!("client -> gateway: (UserRegisterRequest)");
             }
             Err(err) => {
                 info!("client <- gateway: (UserRegisterResponse - ERROR! {})", err.to_string());
             }
         }
     }
-    if global.user_register_response_key_opt.is_none() && global.user_register_confirm_response_key_opt.is_some() {
+    if global.user_register_confirm_response_key_opt.is_some() {
         let Some(key) = &global.user_register_confirm_response_key_opt else {
             return;
         };
