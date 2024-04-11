@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use bevy_ecs::{
-    event::{Event, EventReader, EventWriter},
+    event::{EventReader, EventWriter},
     system::{Res, ResMut},
 };
 use bevy_log::info;
@@ -68,128 +68,147 @@ pub fn ui_handle_events(
     mut register_btn_rdr: EventReader<RegisterButtonClickedEvent>,
     mut submit_btn_rdr: EventReader<SubmitButtonClickedEvent>,
 ) {
-    let mut should_rumble = false;
     let current_ui_handle = ui_manager.active_ui();
 
+    let mut should_rumble = false;
+
     if current_ui_handle == global.ui_start_handle {
-        // in Start Ui
-
-        // Login Button Click
-        let mut login_clicked = false;
-        for _ in login_btn_rdr.read() {
-            login_clicked = true;
-        }
-        if login_clicked {
-            info!("login button clicked!");
-            ui_manager.enable_ui(&global.ui_login_handle.unwrap());
-            should_rumble = true;
-        }
-
-        // Register Button Click
-        let mut register_clicked = false;
-        for _ in register_btn_rdr.read() {
-            register_clicked = true;
-        }
-        if register_clicked {
-            info!("register button clicked!");
-            ui_manager.enable_ui(&global.ui_register_handle.unwrap());
-            should_rumble = true;
-        }
-
-        // drain others
-        for _ in submit_btn_rdr.read() {
-            // ignore
-        }
-
-        // handle rumble
-        if should_rumble {
-            if let Some(id) = input.gamepad_first() {
-                rumble_manager.add_rumble(
-                    id,
-                    Duration::from_millis(200),
-                    GamepadRumbleIntensity::strong_motor(0.4),
-                );
-            }
-        }
+        handle_events_ui_start(
+            &mut ui_manager,
+            &mut global,
+            &mut login_btn_rdr,
+            &mut register_btn_rdr,
+            &mut submit_btn_rdr,
+            &mut should_rumble
+        );
     } else if current_ui_handle == global.ui_login_handle {
-        // in Login Ui
-
-        // Register Button Click
-        let mut register_clicked = false;
-        for _ in register_btn_rdr.read() {
-            register_clicked = true;
-        }
-        if register_clicked {
-            info!("register button clicked!");
-            ui_manager.enable_ui(&global.ui_register_handle.unwrap());
-            should_rumble = true;
-        }
-
-        // Submit Button Click
-        let mut submit_clicked = false;
-        for _ in submit_btn_rdr.read() {
-            submit_clicked = true;
-        }
-        if submit_clicked {
-            info!("submit button clicked!");
-            // TODO!
-            should_rumble = true;
-        }
-
-        // drain others
-        for _ in login_btn_rdr.read() {
-            // ignore
-        }
-
-        // handle rumble
-        if should_rumble {
-            if let Some(id) = input.gamepad_first() {
-                rumble_manager.add_rumble(
-                    id,
-                    Duration::from_millis(200),
-                    GamepadRumbleIntensity::strong_motor(0.4),
-                );
-            }
-        }
+        ui_login_handle_events(
+            &mut ui_manager,
+            &mut global,
+            &mut login_btn_rdr,
+            &mut register_btn_rdr,
+            &mut submit_btn_rdr,
+            &mut should_rumble
+        );
     } else if current_ui_handle == global.ui_register_handle {
-        // in Register Ui
+        register_event_handle(
+            &mut ui_manager,
+            &mut global,
+            &mut login_btn_rdr,
+            &mut register_btn_rdr,
+            &mut submit_btn_rdr,
+            &mut should_rumble
+        );
+    }
 
-        // Login Button Click
-        let mut login_clicked = false;
-        for _ in login_btn_rdr.read() {
-            login_clicked = true;
+    // handle rumble
+    if should_rumble {
+        if let Some(id) = input.gamepad_first() {
+            rumble_manager.add_rumble(
+                id,
+                Duration::from_millis(200),
+                GamepadRumbleIntensity::strong_motor(0.4),
+            );
         }
-        if login_clicked {
-            info!("login button clicked!");
-            ui_manager.enable_ui(&global.ui_login_handle.unwrap());
-            should_rumble = true;
-        }
+    }
+}
 
-        // Submit Button Click
-        let mut submit_clicked = false;
-        for _ in submit_btn_rdr.read() {
-            submit_clicked = true;
-        }
-        if submit_clicked {
-            info!("submit button clicked!");
-            // TODO!
-            should_rumble = true;
-        }
+fn handle_events_ui_start(
+    ui_manager: &mut ResMut<UiManager>,
+    global: &mut ResMut<Global>,
+    login_btn_rdr: &mut EventReader<LoginButtonClickedEvent>,
+    register_btn_rdr: &mut EventReader<RegisterButtonClickedEvent>,
+    submit_btn_rdr: &mut EventReader<SubmitButtonClickedEvent>,
+    should_rumble: &mut bool
+) {
+// in Start Ui
 
-        // drain others
-        for _ in register_btn_rdr.read() {
-            // ignore
-        }
+    // Login Button Click
+    let mut login_clicked = false;
+    for _ in login_btn_rdr.read() {
+        login_clicked = true;
+    }
+    if login_clicked {
+        info!("login button clicked!");
+        ui_manager.enable_ui(&global.ui_login_handle.unwrap());
+        *should_rumble = true;
+    }
 
-        // handle rumble
-        if should_rumble {
-            if let Some(id) = input.gamepad_first() {
-                rumble_manager.add_rumble(
-                    id,
-                    Duration::from_millis(200),
-                    GamepadRumbleIntensity::strong_motor(0.4),
-                );
-            }
-        }
+    // Register Button Click
+    let mut register_clicked = false;
+    for _ in register_btn_rdr.read() {
+        register_clicked = true;
+    }
+    if register_clicked {
+        info!("register button clicked!");
+        ui_manager.enable_ui(&global.ui_register_handle.unwrap());
+        *should_rumble = true;
+    }
+
+    // drain others
+    for _ in submit_btn_rdr.read() {
+        // ignore
+    }
+}
+
+fn register_event_handle(ui_manager: &mut ResMut<UiManager>, global: &mut ResMut<Global>, login_btn_rdr: &mut EventReader<LoginButtonClickedEvent>, register_btn_rdr: &mut EventReader<RegisterButtonClickedEvent>, submit_btn_rdr: &mut EventReader<SubmitButtonClickedEvent>, should_rumble: &mut bool) {
+// in Register Ui
+
+    // Login Button Click
+    let mut login_clicked = false;
+    for _ in login_btn_rdr.read() {
+        login_clicked = true;
+    }
+    if login_clicked {
+        info!("login button clicked!");
+        ui_manager.enable_ui(&global.ui_login_handle.unwrap());
+        *should_rumble = true;
+    }
+
+    // Submit Button Click
+    let mut submit_clicked = false;
+    for _ in submit_btn_rdr.read() {
+        submit_clicked = true;
+    }
+    if submit_clicked {
+        info!("submit button clicked!");
+        // TODO!
+        *should_rumble = true;
+    }
+
+    // drain others
+    for _ in register_btn_rdr.read() {
+        // ignore
+    }
+}
+
+fn ui_login_handle_events(ui_manager: &mut ResMut<UiManager>, global: &mut ResMut<Global>, login_btn_rdr: &mut EventReader<LoginButtonClickedEvent>, register_btn_rdr: &mut EventReader<RegisterButtonClickedEvent>, submit_btn_rdr: &mut EventReader<SubmitButtonClickedEvent>, should_rumble: &mut bool) {
+// in Login Ui
+
+    // Register Button Click
+    let mut register_clicked = false;
+    for _ in register_btn_rdr.read() {
+        register_clicked = true;
+    }
+    if register_clicked {
+        info!("register button clicked!");
+        ui_manager.enable_ui(&global.ui_register_handle.unwrap());
+        *should_rumble = true;
+    }
+
+    // Submit Button Click
+    let mut submit_clicked = false;
+    for _ in submit_btn_rdr.read() {
+        submit_clicked = true;
+    }
+    if submit_clicked {
+        info!("submit button clicked!");
+        // TODO!
+        *should_rumble = true;
+    }
+
+    // drain others
+    for _ in login_btn_rdr.read() {
+        // ignore
     }
 }

@@ -13,7 +13,6 @@ use crate::app::{
     resources::Global,
     systems::{
         draw, resize, scene, ui,
-        ui::{},
     },
 };
 
