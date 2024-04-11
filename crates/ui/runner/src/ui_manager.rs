@@ -423,6 +423,14 @@ impl UiManager {
             self.cursor_icon_change = Some(new_cursor_icon);
         }
     }
+
+    pub fn get_textbox_text(&self, ui_handle: &UiHandle, id_str: &str) -> Option<String> {
+        let Some(ui_runtime) = self.ui_runtimes.get(ui_handle) else {
+            warn!("ui data not loaded 1: {:?}", ui_handle.asset_id());
+            return None;
+        };
+        ui_runtime.get_textbox_text(id_str)
+    }
 }
 
 pub struct Blinkiness {

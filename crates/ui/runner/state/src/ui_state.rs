@@ -76,6 +76,12 @@ impl UiState {
         Some(textbox_mut)
     }
 
+    pub fn get_textbox_text(&self, node_id: &NodeId) -> Option<String> {
+        let node = self.store.get_node(node_id)?;
+        let textbox = node.widget_textbox_ref()?;
+        Some(textbox.text.clone())
+    }
+
     // styles
 
     fn node_style_state(&self, config: &UiRuntimeConfig, id: &NodeId) -> Option<&StyleState> {

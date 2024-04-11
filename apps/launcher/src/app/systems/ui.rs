@@ -63,7 +63,7 @@ pub fn ui_handle_events(
     input: Res<Input>,
     mut ui_manager: ResMut<UiManager>,
     mut rumble_manager: ResMut<RumbleManager>,
-    mut global: ResMut<Global>,
+    global: Res<Global>,
     mut login_btn_rdr: EventReader<LoginButtonClickedEvent>,
     mut register_btn_rdr: EventReader<RegisterButtonClickedEvent>,
     mut submit_btn_rdr: EventReader<SubmitButtonClickedEvent>,
@@ -75,7 +75,7 @@ pub fn ui_handle_events(
     if current_ui_handle == global.ui_start_handle {
         ui_start_handle_events(
             &mut ui_manager,
-            &mut global,
+            &global,
             &mut login_btn_rdr,
             &mut register_btn_rdr,
             &mut submit_btn_rdr,
@@ -84,7 +84,7 @@ pub fn ui_handle_events(
     } else if current_ui_handle == global.ui_login_handle {
         ui_login_handle_events(
             &mut ui_manager,
-            &mut global,
+            &global,
             &mut login_btn_rdr,
             &mut register_btn_rdr,
             &mut submit_btn_rdr,
@@ -93,7 +93,7 @@ pub fn ui_handle_events(
     } else if current_ui_handle == global.ui_register_handle {
         ui_register_handle_events(
             &mut ui_manager,
-            &mut global,
+            &global,
             &mut login_btn_rdr,
             &mut register_btn_rdr,
             &mut submit_btn_rdr,
@@ -114,8 +114,8 @@ pub fn ui_handle_events(
 }
 
 fn ui_start_handle_events(
-    ui_manager: &mut ResMut<UiManager>,
-    global: &mut ResMut<Global>,
+    ui_manager: &mut UiManager,
+    global: &Global,
     login_btn_rdr: &mut EventReader<LoginButtonClickedEvent>,
     register_btn_rdr: &mut EventReader<RegisterButtonClickedEvent>,
     submit_btn_rdr: &mut EventReader<SubmitButtonClickedEvent>,
@@ -152,8 +152,8 @@ fn ui_start_handle_events(
 }
 
 fn ui_register_handle_events(
-    ui_manager: &mut ResMut<UiManager>,
-    global: &mut ResMut<Global>,
+    ui_manager: &mut UiManager,
+    global: &Global,
     login_btn_rdr: &mut EventReader<LoginButtonClickedEvent>,
     register_btn_rdr: &mut EventReader<RegisterButtonClickedEvent>,
     submit_btn_rdr: &mut EventReader<SubmitButtonClickedEvent>,
@@ -179,7 +179,9 @@ fn ui_register_handle_events(
     }
     if submit_clicked {
         info!("submit button clicked!");
-        // TODO!
+
+        backend_send_register_request(global, ui_manager);
+
         *should_rumble = true;
     }
 
@@ -190,8 +192,8 @@ fn ui_register_handle_events(
 }
 
 fn ui_login_handle_events(
-    ui_manager: &mut ResMut<UiManager>,
-    global: &mut ResMut<Global>,
+    ui_manager: &mut UiManager,
+    global: &Global,
     login_btn_rdr: &mut EventReader<LoginButtonClickedEvent>,
     register_btn_rdr: &mut EventReader<RegisterButtonClickedEvent>,
     submit_btn_rdr: &mut EventReader<SubmitButtonClickedEvent>,
@@ -217,7 +219,9 @@ fn ui_login_handle_events(
     }
     if submit_clicked {
         info!("submit button clicked!");
-        // TODO!
+
+        backend_send_login_request(global, ui_manager);
+
         *should_rumble = true;
     }
 
@@ -225,4 +229,32 @@ fn ui_login_handle_events(
     for _ in login_btn_rdr.read() {
         // ignore
     }
+}
+
+fn backend_send_login_request(
+    global: &Global,
+    ui_manager: &UiManager,
+) {
+    let login_ui_handle = global.ui_login_handle.unwrap();
+    let username = ui_manager.get_textbox_text(&login_ui_handle, "username_textbox").unwrap_or("".to_string());
+    let password = ui_manager.get_textbox_text(&login_ui_handle, "password_textbox").unwrap_or("".to_string());
+
+    info!("username: {}", username);
+    info!("password: {}", password);
+}
+
+fn backend_send_register_request(
+    global: &Global,
+    ui_manager: &UiManager,
+) {
+    let register_ui_handle = global.ui_register_handle.unwrap();
+    let username = ui_manager.get_textbox_text(&register_ui_handle, "username_textbox").unwrap_or("".to_string());
+    let email = ui_manager.get_textbox_text(&register_ui_handle, "email_textbox").unwrap_or("".to_string());
+    let password = ui_manager.get_textbox_text(&register_ui_handle, "password_textbox").unwrap_or("".to_string());
+    let confirm_password = ui_manager.get_textbox_text(&register_ui_handle, "confirm_password_textbox").unwrap_or("".to_string());
+
+    info!("username: {}", username);
+    info!("email: {}", email);
+    info!("password: {}", password);
+    info!("confirm_password: {}", confirm_password);
 }

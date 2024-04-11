@@ -160,6 +160,15 @@ impl UiRuntime {
         );
     }
 
+    pub(crate) fn get_textbox_text(&self, id_str: &str) -> Option<String> {
+
+        // get node_id from id_str
+        let node_id = self.get_node_id_by_id_str(id_str)?;
+
+        // get result from state
+        self.state.get_textbox_text(&node_id)
+    }
+
     // input
 
     pub(crate) fn receive_input(
