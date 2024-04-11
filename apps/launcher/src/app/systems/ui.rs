@@ -14,9 +14,11 @@ use game_engine::{
     render::components::RenderLayers,
     ui::{UiHandle, UiManager},
 };
-use crate::app::resources::{LoginButtonClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent};
+
+use crate::app::resources::{Global, LoginButtonClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent};
 
 pub fn ui_setup(
+    mut global: ResMut<Global>,
     mut ui_manager: ResMut<UiManager>,
     mut embedded_asset_events: EventWriter<EmbeddedAssetEvent>,
 ) {
@@ -30,65 +32,164 @@ pub fn ui_setup(
 
     // render_layer
     let layer = RenderLayers::layer(0);
+    ui_manager.set_target_render_layer(layer);
 
     // ui
     // TODO: use some kind of catalog?
 
     // start
     let start_ui_handle = UiHandle::new(AssetId::from_str("tpp7za").unwrap());
+    global.ui_start_handle = Some(start_ui_handle);
     ui_manager.register_ui_event::<LoginButtonClickedEvent>(&start_ui_handle, "login_button");
     ui_manager.register_ui_event::<RegisterButtonClickedEvent>(&start_ui_handle, "register_button");
 
     // login
     let login_ui_handle = UiHandle::new(AssetId::from_str("3f5gej").unwrap());
+    global.ui_login_handle = Some(login_ui_handle);
     ui_manager.register_ui_event::<RegisterButtonClickedEvent>(&login_ui_handle, "register_button");
     ui_manager.register_ui_event::<SubmitButtonClickedEvent>(&login_ui_handle, "submit_button");
 
     // register
     let register_ui_handle = UiHandle::new(AssetId::from_str("rckneg").unwrap());
+    global.ui_register_handle = Some(register_ui_handle);
     ui_manager.register_ui_event::<LoginButtonClickedEvent>(&register_ui_handle, "login_button");
     ui_manager.register_ui_event::<SubmitButtonClickedEvent>(&register_ui_handle, "submit_button");
 
     // other config
-    ui_manager.set_target_render_layer(layer);
     ui_manager.enable_ui(&start_ui_handle);
 }
 
 pub fn ui_handle_events(
     input: Res<Input>,
+    mut ui_manager: ResMut<UiManager>,
     mut rumble_manager: ResMut<RumbleManager>,
+    mut global: ResMut<Global>,
     mut login_btn_rdr: EventReader<LoginButtonClickedEvent>,
     mut register_btn_rdr: EventReader<RegisterButtonClickedEvent>,
     mut submit_btn_rdr: EventReader<SubmitButtonClickedEvent>,
 ) {
-    for _ in login_btn_rdr.read() {
-        info!("login button clicked!");
-        if let Some(id) = input.gamepad_first() {
-            rumble_manager.add_rumble(
-                id,
-                Duration::from_millis(200),
-                GamepadRumbleIntensity::strong_motor(0.4),
-            );
+    let mut should_rumble = false;
+    let current_ui_handle = ui_manager.active_ui();
+
+    if current_ui_handle == global.ui_start_handle {
+        // in Start Ui
+
+        // Login Button Click
+        let mut login_clicked = false;
+        for _ in login_btn_rdr.read() {
+            login_clicked = true;
         }
-    }
-    for _ in register_btn_rdr.read() {
-        info!("register button clicked!");
-        if let Some(id) = input.gamepad_first() {
-            rumble_manager.add_rumble(
-                id,
-                Duration::from_millis(200),
-                GamepadRumbleIntensity::strong_motor(0.4),
-            );
+        if login_clicked {
+            info!("login button clicked!");
+            ui_manager.enable_ui(&global.ui_login_handle.unwrap());
+            should_rumble = true;
         }
-    }
-    for _ in submit_btn_rdr.read() {
-        info!("submit button clicked!");
-        if let Some(id) = input.gamepad_first() {
-            rumble_manager.add_rumble(
-                id,
-                Duration::from_millis(200),
-                GamepadRumbleIntensity::strong_motor(0.4),
-            );
+
+        // Register Button Click
+        let mut register_clicked = false;
+        for _ in register_btn_rdr.read() {
+            register_clicked = true;
+        }
+        if register_clicked {
+            info!("register button clicked!");
+            ui_manager.enable_ui(&global.ui_register_handle.unwrap());
+            should_rumble = true;
+        }
+
+        // drain others
+        for _ in submit_btn_rdr.read() {
+            // ignore
+        }
+
+        // handle rumble
+        if should_rumble {
+            if let Some(id) = input.gamepad_first() {
+                rumble_manager.add_rumble(
+                    id,
+                    Duration::from_millis(200),
+                    GamepadRumbleIntensity::strong_motor(0.4),
+                );
+            }
+        }
+    } else if current_ui_handle == global.ui_login_handle {
+        // in Login Ui
+
+        // Register Button Click
+        let mut register_clicked = false;
+        for _ in register_btn_rdr.read() {
+            register_clicked = true;
+        }
+        if register_clicked {
+            info!("register button clicked!");
+            ui_manager.enable_ui(&global.ui_register_handle.unwrap());
+            should_rumble = true;
+        }
+
+        // Submit Button Click
+        let mut submit_clicked = false;
+        for _ in submit_btn_rdr.read() {
+            submit_clicked = true;
+        }
+        if submit_clicked {
+            info!("submit button clicked!");
+            // TODO!
+            should_rumble = true;
+        }
+
+        // drain others
+        for _ in login_btn_rdr.read() {
+            // ignore
+        }
+
+        // handle rumble
+        if should_rumble {
+            if let Some(id) = input.gamepad_first() {
+                rumble_manager.add_rumble(
+                    id,
+                    Duration::from_millis(200),
+                    GamepadRumbleIntensity::strong_motor(0.4),
+                );
+            }
+        }
+    } else if current_ui_handle == global.ui_register_handle {
+        // in Register Ui
+
+        // Login Button Click
+        let mut login_clicked = false;
+        for _ in login_btn_rdr.read() {
+            login_clicked = true;
+        }
+        if login_clicked {
+            info!("login button clicked!");
+            ui_manager.enable_ui(&global.ui_login_handle.unwrap());
+            should_rumble = true;
+        }
+
+        // Submit Button Click
+        let mut submit_clicked = false;
+        for _ in submit_btn_rdr.read() {
+            submit_clicked = true;
+        }
+        if submit_clicked {
+            info!("submit button clicked!");
+            // TODO!
+            should_rumble = true;
+        }
+
+        // drain others
+        for _ in register_btn_rdr.read() {
+            // ignore
+        }
+
+        // handle rumble
+        if should_rumble {
+            if let Some(id) = input.gamepad_first() {
+                rumble_manager.add_rumble(
+                    id,
+                    Duration::from_millis(200),
+                    GamepadRumbleIntensity::strong_motor(0.4),
+                );
+            }
         }
     }
 }
