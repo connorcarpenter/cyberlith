@@ -8,7 +8,6 @@ use world_server_naia_proto::{
     protocol as world_server_naia_protocol,
 };
 
-use crate::EnginePlugin;
 use super::{
     asset_cache_checker::AssetCacheChecker,
     asset_ref_processor::AssetRefProcessor,
@@ -17,6 +16,7 @@ use super::{
     world_events,
     world_events::{InsertAssetRefEvent, InsertComponentEvent},
 };
+use crate::EnginePlugin;
 
 pub struct NetworkedEnginePlugin;
 

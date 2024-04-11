@@ -40,7 +40,7 @@ pub mod storage {
     pub use storage::*;
 }
 pub mod ui {
-    pub use ui_runner::{UiManager, UiHandle};
+    pub use ui_runner::{UiHandle, UiManager};
 }
 pub mod random {
     pub use random::*;

@@ -95,9 +95,7 @@ fn endpoint_2<
 
         let Ok(typed_request) = TypeRequest::from_request(pure_request) else {
             // serde error!
-            return Box::pin(async move {
-                Err(ResponseError::SerdeError)
-            });
+            return Box::pin(async move { Err(ResponseError::SerdeError) });
         };
 
         // success!

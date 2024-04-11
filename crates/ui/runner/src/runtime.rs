@@ -1,12 +1,11 @@
-
 use asset_loader::{AssetHandle, IconData, TypedAssetId, UiDependencies, UiTextMeasurer};
 use input::CursorIcon;
 use math::{Vec2, Vec3};
+use render_api::components::{CameraBundle, ClearOperation, Projection, Transform};
 use render_api::{
     base::{CpuMaterial, CpuMesh},
     components::Viewport,
 };
-use render_api::components::{CameraBundle, ClearOperation, Projection, Transform};
 use storage::Storage;
 use ui_input::{UiGlobalEvent, UiInputEvent, UiInputState, UiNodeEvent};
 use ui_runner_config::{NodeId, UiRuntimeConfig};
@@ -19,13 +18,13 @@ pub struct UiRuntime {
     input_state: UiInputState,
     config: UiRuntimeConfig,
     dependencies: UiDependencies,
-    camera: CameraBundle
+    camera: CameraBundle,
 }
 
 impl UiRuntime {
-
     pub(crate) fn generate_new_inputs(&mut self, next_inputs: &mut Vec<UiInputEvent>) {
-        self.input_state.generate_new_inputs(&self.config, next_inputs);
+        self.input_state
+            .generate_new_inputs(&self.config, next_inputs);
     }
 
     pub(crate) fn load_from_bytes(bytes: &[u8]) -> Self {
@@ -44,12 +43,13 @@ impl UiRuntime {
             input_state,
             config,
             dependencies,
-            camera: Self::default_camera_bundle()
+            camera: Self::default_camera_bundle(),
         }
     }
 
     fn default_camera_bundle() -> CameraBundle {
-        let mut default_bundle = CameraBundle::default_3d_perspective(&Viewport::new_at_origin(0, 0));
+        let mut default_bundle =
+            CameraBundle::default_3d_perspective(&Viewport::new_at_origin(0, 0));
 
         default_bundle.camera.clear_operation = ClearOperation {
             red: None,
@@ -58,15 +58,8 @@ impl UiRuntime {
             alpha: None,
             depth: Some(1.0),
         };
-        default_bundle.transform = Transform::from_xyz(
-            0.0,
-            0.0,
-            1000.0,
-        )
-            .looking_at(
-                Vec3::ZERO,
-                Vec3::NEG_Y,
-            );
+        default_bundle.transform =
+            Transform::from_xyz(0.0, 0.0, 1000.0).looking_at(Vec3::ZERO, Vec3::NEG_Y);
 
         default_bundle
     }
@@ -76,10 +69,8 @@ impl UiRuntime {
     }
 
     pub(crate) fn update_viewport(&mut self, viewport: &Viewport) {
-
         // update ui camera
         if viewport != self.camera.camera.viewport.as_ref().unwrap() {
-
             // info!("ui viewport updated: {:?}", viewport);
 
             self.camera.camera.viewport = Some(*viewport);
@@ -87,14 +78,17 @@ impl UiRuntime {
             let Projection::Perspective(perspective) = &self.camera.projection else {
                 panic!("expected perspective projection");
             };
-            let distance = ((viewport.width.min(viewport.height) as f32) / 2.0) / f32::tan(perspective.fov / 2.0);
+            let distance = ((viewport.width.min(viewport.height) as f32) / 2.0)
+                / f32::tan(perspective.fov / 2.0);
             //let distance = 1000.0;
             let x = viewport.width as f32 * 0.5;
             let y = viewport.height as f32 * 0.5;
             self.camera.transform.translation.x = x;
             self.camera.transform.translation.y = y;
             self.camera.transform.translation.z = distance;
-            self.camera.transform.look_at(Vec3::new(x, y, 0.0), Vec3::NEG_Y);
+            self.camera
+                .transform
+                .look_at(Vec3::new(x, y, 0.0), Vec3::NEG_Y);
 
             self.state.queue_recalculate_layout();
         }
@@ -102,7 +96,13 @@ impl UiRuntime {
 
     pub fn decompose_to_refs(
         &self,
-    ) -> (&UiState, &UiInputState, &UiRuntimeConfig, &UiDependencies, &CameraBundle) {
+    ) -> (
+        &UiState,
+        &UiInputState,
+        &UiRuntimeConfig,
+        &UiDependencies,
+        &CameraBundle,
+    ) {
         (
             &self.state,
             &self.input_state,
@@ -153,7 +153,11 @@ impl UiRuntime {
     }
 
     pub(crate) fn recalculate_layout(&mut self, text_measurer: &UiTextMeasurer) {
-        self.state.recalculate_layout(&self.config, text_measurer, self.camera.camera.viewport.as_ref().unwrap());
+        self.state.recalculate_layout(
+            &self.config,
+            text_measurer,
+            self.camera.camera.viewport.as_ref().unwrap(),
+        );
     }
 
     // input

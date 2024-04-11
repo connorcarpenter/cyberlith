@@ -1,6 +1,9 @@
-use std::{any::{TypeId}, collections::HashMap};
+use std::{any::TypeId, collections::HashMap};
 
-use crate::{DbTableKey, table::{Table, TableImpl}};
+use crate::{
+    table::{Table, TableImpl},
+    DbTableKey,
+};
 
 pub struct DatabaseWrapper {
     tables: HashMap<TypeId, Box<dyn Table>>,

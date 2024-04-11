@@ -10,5 +10,3 @@ pub use user::{User, UserId, UserRole};
 
 mod error;
 pub use error::AuthServerDbError;
-
-

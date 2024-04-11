@@ -25,7 +25,11 @@ pub struct UiInputState {
 }
 
 impl UiInputState {
-    pub fn generate_new_inputs(&mut self, ui_config: &UiRuntimeConfig, next_inputs: &mut Vec<UiInputEvent>) {
+    pub fn generate_new_inputs(
+        &mut self,
+        ui_config: &UiRuntimeConfig,
+        next_inputs: &mut Vec<UiInputEvent>,
+    ) {
         let Some(node_id) = self.get_active_node() else {
             return;
         };

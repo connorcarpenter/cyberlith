@@ -1,13 +1,11 @@
 use std::collections::HashMap;
 use ui_runner_config::{NodeId, StyleId, WidgetKind};
 
-use crate::{
-    textbox::TextboxState, UiNodeState, style_state::StyleState,
-};
 use crate::button::ButtonStyleState;
 use crate::panel::PanelStyleState;
 use crate::text::TextStyleState;
 use crate::textbox::TextboxStyleState;
+use crate::{style_state::StyleState, textbox::TextboxState, UiNodeState};
 
 pub struct UiStateStore {
     pub nodes: Vec<UiNodeState>,
@@ -20,7 +18,7 @@ impl UiStateStore {
         Self {
             nodes: Vec::new(),
             default_styles: HashMap::new(),
-            styles: Vec::new()
+            styles: Vec::new(),
         }
     }
 
@@ -65,7 +63,11 @@ impl UiStateStore {
 
     // styles
 
-    pub(crate) fn get_style_state(&self, widget_kind: WidgetKind, style_id: Option<StyleId>) -> Option<&StyleState> {
+    pub(crate) fn get_style_state(
+        &self,
+        widget_kind: WidgetKind,
+        style_id: Option<StyleId>,
+    ) -> Option<&StyleState> {
         if let Some(style_id) = style_id {
             let style_id = style_id.as_usize();
             self.styles.get(style_id)
@@ -86,7 +88,10 @@ impl UiStateStore {
         self.styles.push(style);
     }
 
-    pub(crate) fn create_panel_style(&mut self, style_id: Option<StyleId>) -> Option<&mut PanelStyleState> {
+    pub(crate) fn create_panel_style(
+        &mut self,
+        style_id: Option<StyleId>,
+    ) -> Option<&mut PanelStyleState> {
         if let Some(style_id) = style_id {
             let style_id = style_id.as_usize();
             let Some(StyleState::Panel(style)) = self.styles.get_mut(style_id) else {
@@ -99,7 +104,8 @@ impl UiStateStore {
             return Some(style);
         } else {
             if !self.default_styles.contains_key(&WidgetKind::Panel) {
-                self.default_styles.insert(WidgetKind::Panel, StyleState::Panel(PanelStyleState::new()));
+                self.default_styles
+                    .insert(WidgetKind::Panel, StyleState::Panel(PanelStyleState::new()));
                 let panel_style_state = self.default_styles.get_mut(&WidgetKind::Panel).unwrap();
                 let StyleState::Panel(panel_style_state) = panel_style_state else {
                     panic!("impossible");
@@ -112,7 +118,10 @@ impl UiStateStore {
         }
     }
 
-    pub(crate) fn create_text_style(&mut self, style_id: Option<StyleId>) -> Option<&mut TextStyleState> {
+    pub(crate) fn create_text_style(
+        &mut self,
+        style_id: Option<StyleId>,
+    ) -> Option<&mut TextStyleState> {
         if let Some(style_id) = style_id {
             let style_id = style_id.as_usize();
             let Some(StyleState::Text(style)) = self.styles.get_mut(style_id) else {
@@ -125,7 +134,8 @@ impl UiStateStore {
             return Some(style);
         } else {
             if !self.default_styles.contains_key(&WidgetKind::Text) {
-                self.default_styles.insert(WidgetKind::Text, StyleState::Text(TextStyleState::new()));
+                self.default_styles
+                    .insert(WidgetKind::Text, StyleState::Text(TextStyleState::new()));
                 let text_style_state = self.default_styles.get_mut(&WidgetKind::Text).unwrap();
                 let StyleState::Text(text_style_state) = text_style_state else {
                     panic!("impossible");
@@ -138,7 +148,10 @@ impl UiStateStore {
         }
     }
 
-    pub(crate) fn create_button_style(&mut self, style_id: Option<StyleId>) -> Option<&mut ButtonStyleState> {
+    pub(crate) fn create_button_style(
+        &mut self,
+        style_id: Option<StyleId>,
+    ) -> Option<&mut ButtonStyleState> {
         if let Some(style_id) = style_id {
             let style_id = style_id.as_usize();
             let Some(StyleState::Button(style)) = self.styles.get_mut(style_id) else {
@@ -151,7 +164,10 @@ impl UiStateStore {
             return Some(style);
         } else {
             if !self.default_styles.contains_key(&WidgetKind::Button) {
-                self.default_styles.insert(WidgetKind::Button, StyleState::Button(ButtonStyleState::new()));
+                self.default_styles.insert(
+                    WidgetKind::Button,
+                    StyleState::Button(ButtonStyleState::new()),
+                );
                 let button_style_state = self.default_styles.get_mut(&WidgetKind::Button).unwrap();
                 let StyleState::Button(button_style) = button_style_state else {
                     panic!("impossible");
@@ -164,7 +180,10 @@ impl UiStateStore {
         }
     }
 
-    pub(crate) fn create_textbox_style(&mut self, style_id: Option<StyleId>) -> Option<&mut TextboxStyleState> {
+    pub(crate) fn create_textbox_style(
+        &mut self,
+        style_id: Option<StyleId>,
+    ) -> Option<&mut TextboxStyleState> {
         if let Some(style_id) = style_id {
             let style_id = style_id.as_usize();
             let Some(StyleState::Textbox(style)) = self.styles.get_mut(style_id) else {
@@ -177,8 +196,12 @@ impl UiStateStore {
             return Some(style);
         } else {
             if !self.default_styles.contains_key(&WidgetKind::Textbox) {
-                self.default_styles.insert(WidgetKind::Textbox, StyleState::Textbox(TextboxStyleState::new()));
-                let textbox_style_state = self.default_styles.get_mut(&WidgetKind::Textbox).unwrap();
+                self.default_styles.insert(
+                    WidgetKind::Textbox,
+                    StyleState::Textbox(TextboxStyleState::new()),
+                );
+                let textbox_style_state =
+                    self.default_styles.get_mut(&WidgetKind::Textbox).unwrap();
                 let StyleState::Textbox(textbox_style_state) = textbox_style_state else {
                     panic!("impossible");
                 };

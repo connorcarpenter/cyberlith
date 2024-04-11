@@ -1,12 +1,12 @@
 use log::{info, warn};
 
 use http_client::ResponseError;
-use http_server::{async_dup::Arc, smol::lock::RwLock, Server, http_log_util};
+use http_server::{async_dup::Arc, http_log_util, smol::lock::RwLock, Server};
 
-use config::GATEWAY_SECRET;
 use auth_server_http_proto::{UserRegisterRequest, UserRegisterResponse};
+use config::GATEWAY_SECRET;
 
-use crate::{state::State, error::AuthServerError, types::{TempRegistration}};
+use crate::{error::AuthServerError, state::State, types::TempRegistration};
 
 pub fn user_register(server: &mut Server, state: Arc<RwLock<State>>) {
     server.endpoint(move |(_addr, req)| {
@@ -28,18 +28,16 @@ async fn async_impl(
 
     let mut state = state.write().await;
     let response = match state.user_register(incoming_request) {
-        Ok(_) => {
-            Ok(UserRegisterResponse::new())
-        }
-        Err(AuthServerError::UsernameAlreadyExists) => {
-            Err(ResponseError::InternalServerError("UsernameAlreadyExists".to_string()))
-        }
-        Err(AuthServerError::EmailAlreadyExists) => {
-            Err(ResponseError::InternalServerError("EmailAlreadyExists".to_string()))
-        }
-        Err(AuthServerError::EmailSendFailed(inner_message)) => {
-            Err(ResponseError::InternalServerError(format!("Email send failed: {}", inner_message)))
-        }
+        Ok(_) => Ok(UserRegisterResponse::new()),
+        Err(AuthServerError::UsernameAlreadyExists) => Err(ResponseError::InternalServerError(
+            "UsernameAlreadyExists".to_string(),
+        )),
+        Err(AuthServerError::EmailAlreadyExists) => Err(ResponseError::InternalServerError(
+            "EmailAlreadyExists".to_string(),
+        )),
+        Err(AuthServerError::EmailSendFailed(inner_message)) => Err(
+            ResponseError::InternalServerError(format!("Email send failed: {}", inner_message)),
+        ),
         Err(_) => {
             panic!("unhandled error for this endpoint");
         }
@@ -51,7 +49,6 @@ async fn async_impl(
 
 impl State {
     fn user_register(&mut self, request: UserRegisterRequest) -> Result<(), AuthServerError> {
-
         // TODO: validate data?
         // TODO: hash password?
         // TODO: expire registration token?
@@ -74,10 +71,17 @@ impl State {
         let reg_token_str = reg_token.to_string();
         let link_url = format!("register_token={}", reg_token_str); // TODO: replace with working URL from config
 
-        info!("sending registration token to user's email: {:?}", &user_email);
+        info!(
+            "sending registration token to user's email: {:?}",
+            &user_email
+        );
 
-        let text_msg = self.email_catalog.register_verification_txt(&username, &link_url);
-        let html_msg = self.email_catalog.register_verification_html(&username, &link_url);
+        let text_msg = self
+            .email_catalog
+            .register_verification_txt(&username, &link_url);
+        let html_msg = self
+            .email_catalog
+            .register_verification_html(&username, &link_url);
 
         match email::send(
             sending_email,

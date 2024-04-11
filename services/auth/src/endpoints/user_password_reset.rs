@@ -1,10 +1,10 @@
 use log::warn;
 
 use http_client::ResponseError;
-use http_server::{async_dup::Arc, smol::lock::RwLock, Server, http_log_util};
+use http_server::{async_dup::Arc, http_log_util, smol::lock::RwLock, Server};
 
-use config::GATEWAY_SECRET;
 use auth_server_http_proto::{UserPasswordResetRequest, UserPasswordResetResponse};
+use config::GATEWAY_SECRET;
 
 use crate::{error::AuthServerError, state::State, types::ResetPasswordToken};
 
@@ -28,18 +28,16 @@ async fn async_impl(
 
     let mut state = state.write().await;
     let response = match state.user_password_reset(incoming_request) {
-        Ok(()) => {
-            Ok(UserPasswordResetResponse::new())
-        }
+        Ok(()) => Ok(UserPasswordResetResponse::new()),
         Err(AuthServerError::TokenNotFound) => {
             Err(ResponseError::InternalServerError("NotFound".to_string()))
         }
         Err(AuthServerError::TokenSerdeError) => {
             Err(ResponseError::InternalServerError("SerdeError".to_string()))
         }
-        Err(AuthServerError::EmailSendFailed(inner_message)) => {
-            Err(ResponseError::InternalServerError(format!("Email send failed: {}", inner_message)))
-        }
+        Err(AuthServerError::EmailSendFailed(inner_message)) => Err(
+            ResponseError::InternalServerError(format!("Email send failed: {}", inner_message)),
+        ),
         Err(_) => {
             panic!("unhandled error for this endpoint");
         }
@@ -50,8 +48,10 @@ async fn async_impl(
 }
 
 impl State {
-    fn user_password_reset(&mut self, request: UserPasswordResetRequest) -> Result<(), AuthServerError> {
-
+    fn user_password_reset(
+        &mut self,
+        request: UserPasswordResetRequest,
+    ) -> Result<(), AuthServerError> {
         let new_password = request.new_password;
         let Some(reset_token) = ResetPasswordToken::from_str(&request.reset_password_token) else {
             return Err(AuthServerError::TokenSerdeError);

@@ -9,9 +9,7 @@ pub struct UiHandle {
 
 impl UiHandle {
     pub fn new(asset_id: AssetId) -> Self {
-        Self {
-            asset_id,
-        }
+        Self { asset_id }
     }
 
     pub fn asset_id(&self) -> AssetId {

@@ -1,14 +1,14 @@
-use log::{info, warn};
 use auth_server_db::UserId;
+use log::{info, warn};
 
 use http_client::ResponseError;
-use http_server::{async_dup::Arc, smol::lock::RwLock, Server, http_log_util};
+use http_server::{async_dup::Arc, http_log_util, smol::lock::RwLock, Server};
 
-use config::GATEWAY_SECRET;
 use auth_server_http_proto::{UserLoginRequest, UserLoginResponse};
+use config::GATEWAY_SECRET;
 
-use crate::{types::AccessToken, state::State, error::AuthServerError};
 use crate::types::RefreshToken;
+use crate::{error::AuthServerError, state::State, types::AccessToken};
 
 pub fn user_login(server: &mut Server, state: Arc<RwLock<State>>) {
     server.endpoint(move |(_addr, req)| {
@@ -35,12 +35,8 @@ async fn async_impl(
             let access_token = access_token.to_string();
             Ok(UserLoginResponse::new(&refresh_token, &access_token))
         }
-        Err(AuthServerError::UsernameOrEmailNotFound) => {
-            Err(ResponseError::Unauthenticated)
-        }
-        Err(AuthServerError::PasswordIncorrect) => {
-            Err(ResponseError::Unauthenticated)
-        }
+        Err(AuthServerError::UsernameOrEmailNotFound) => Err(ResponseError::Unauthenticated),
+        Err(AuthServerError::PasswordIncorrect) => Err(ResponseError::Unauthenticated),
         Err(_) => {
             panic!("unhandled error for this endpoint");
         }
@@ -51,7 +47,10 @@ async fn async_impl(
 }
 
 impl State {
-    fn user_login(&mut self, request: UserLoginRequest) -> Result<(RefreshToken, AccessToken), AuthServerError> {
+    fn user_login(
+        &mut self,
+        request: UserLoginRequest,
+    ) -> Result<(RefreshToken, AccessToken), AuthServerError> {
         let handle = request.handle;
         let password = request.password;
 
@@ -65,7 +64,10 @@ impl State {
             return Err(AuthServerError::UsernameOrEmailNotFound);
         }
 
-        info!("user_login: with handle {:?}, found user_id: {:?}", handle, user_id);
+        info!(
+            "user_login: with handle {:?}, found user_id: {:?}",
+            handle, user_id
+        );
 
         // check password
         let user = self.database_manager.get_user(&user_id).unwrap();

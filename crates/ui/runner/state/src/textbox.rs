@@ -1,6 +1,6 @@
+use crate::NodeActiveState;
 use render_api::base::CpuMaterial;
 use storage::Handle;
-use crate::NodeActiveState;
 
 #[derive(Clone)]
 pub struct TextboxState {

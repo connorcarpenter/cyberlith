@@ -8,8 +8,6 @@ pub struct UiRenderPlugin;
 
 impl Plugin for UiRenderPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .add_systems(Draw, draw_system::draw)
-        ;
+        app.add_systems(Draw, draw_system::draw);
     }
 }

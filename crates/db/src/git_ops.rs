@@ -1,4 +1,3 @@
-
 use std::{fs, fs::File, io::Read, path::Path};
 
 use git2::{Cred, FetchOptions, Index, Oid, PushOptions, Repository, Signature, Tree};
@@ -117,9 +116,7 @@ pub fn update_nextid(dir_path: &str, repo: &Repository, next_id: u64) {
     // get creds
     let file_name = ".nextid";
     let commit_message = format!("update .nextid to {}", next_id);
-    let file_contents = serde_json::to_vec_pretty(&next_id)
-        .unwrap()
-        .to_vec();
+    let file_contents = serde_json::to_vec_pretty(&next_id).unwrap().to_vec();
 
     let mut index = repo.index().expect("Failed to open index");
     info!("dir_path: {}", dir_path);
@@ -152,8 +149,7 @@ fn write_new_file(index: &mut Index, full_path: &str, file_path: &str, bytes: Ve
     };
 
     // add_path will also update the index
-    if let Err(e) = index
-        .add_path(Path::new(&file_path)) {
+    if let Err(e) = index.add_path(Path::new(&file_path)) {
         panic!("Failed to add file `{}` to index: {}", file_path, e);
     }
 }
@@ -172,8 +168,7 @@ fn update_file_impl(index: &mut Index, full_path: &str, file_path: &str, bytes: 
     };
 
     // add_path will also update the index
-    if let Err(e) = index
-        .add_path(Path::new(&file_path)) {
+    if let Err(e) = index.add_path(Path::new(&file_path)) {
         panic!("Failed to add file `{}` to index: {}", file_path, e);
     }
 }
@@ -337,7 +332,7 @@ fn git_pull(repo: &Repository) {
         git2::ResetType::Hard,
         Some(&mut checkout_builder),
     )
-        .unwrap();
+    .unwrap();
 
     // Create a local reference pointing to the head of the local branch
     let branch_ref = format!("refs/heads/{}", branch_name);
@@ -351,7 +346,7 @@ fn git_pull(repo: &Repository) {
         true,
         "Updating local reference",
     )
-        .unwrap();
+    .unwrap();
 
     // Push the new branch to the remote, (linking it to the remote branch)
     let mut push_options = get_push_options();

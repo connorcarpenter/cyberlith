@@ -1,11 +1,11 @@
 use log::{info, warn};
 
 use http_client::ResponseError;
-use http_server::{async_dup::Arc, smol::lock::RwLock, Server, http_log_util};
+use http_server::{async_dup::Arc, http_log_util, smol::lock::RwLock, Server};
 
-use config::GATEWAY_SECRET;
-use auth_server_http_proto::{UserPasswordForgotRequest, UserPasswordForgotResponse};
 use crate::error::AuthServerError;
+use auth_server_http_proto::{UserPasswordForgotRequest, UserPasswordForgotResponse};
+use config::GATEWAY_SECRET;
 
 use crate::state::State;
 
@@ -29,15 +29,13 @@ async fn async_impl(
 
     let mut state = state.write().await;
     let response = match state.user_password_forgot(incoming_request) {
-        Ok(()) => {
-            Ok(UserPasswordForgotResponse::new())
-        }
+        Ok(()) => Ok(UserPasswordForgotResponse::new()),
         Err(AuthServerError::EmailNotFound) => {
             Ok(UserPasswordForgotResponse::new()) // we don't want to leak if an email is in the system or not
         }
-        Err(AuthServerError::EmailSendFailed(inner_message)) => {
-            Err(ResponseError::InternalServerError(format!("Email send failed: {}", inner_message)))
-        }
+        Err(AuthServerError::EmailSendFailed(inner_message)) => Err(
+            ResponseError::InternalServerError(format!("Email send failed: {}", inner_message)),
+        ),
         Err(_) => {
             panic!("unhandled error for this endpoint");
         }
@@ -48,8 +46,10 @@ async fn async_impl(
 }
 
 impl State {
-    fn user_password_forgot(&mut self, request: UserPasswordForgotRequest) -> Result<(), AuthServerError> {
-
+    fn user_password_forgot(
+        &mut self,
+        request: UserPasswordForgotRequest,
+    ) -> Result<(), AuthServerError> {
         let user_email = request.email;
 
         if !self.email_to_id_map.contains_key(&user_email) {
@@ -65,10 +65,17 @@ impl State {
         let reset_token_str = reset_token.to_string();
         let link_url = format!("reset_password_token={}", reset_token_str); // TODO: replace with working URL from config
 
-        info!("sending reset password token to user's email: {:?}", &user_email);
+        info!(
+            "sending reset password token to user's email: {:?}",
+            &user_email
+        );
 
-        let text_msg = self.email_catalog.user_password_forgot_txt(&user_name, &link_url);
-        let html_msg = self.email_catalog.user_password_forgot_html(&user_name, &link_url);
+        let text_msg = self
+            .email_catalog
+            .user_password_forgot_txt(&user_name, &link_url);
+        let html_msg = self
+            .email_catalog
+            .user_password_forgot_html(&user_name, &link_url);
 
         match email::send(
             sending_email,

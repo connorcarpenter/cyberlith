@@ -1,4 +1,3 @@
-
 use bevy_log::warn;
 
 use input::{CursorIcon, GamepadButtonType, InputEvent, Key, Modifiers, MouseButton};
@@ -14,9 +13,7 @@ use crate::{
 pub struct UiInputConverter;
 
 impl UiInputConverter {
-    pub fn convert(
-        next_inputs: Vec<InputEvent>
-    ) -> Option<(Option<Vec2>, Vec<UiInputEvent>)> {
+    pub fn convert(next_inputs: Vec<InputEvent>) -> Option<(Option<Vec2>, Vec<UiInputEvent>)> {
         let mut mouse_position = None;
         let mut output_events = None;
 
@@ -33,9 +30,7 @@ impl UiInputConverter {
                 }
                 InputEvent::MouseClicked(button, position, modifiers) => {
                     mouse_position = Some(position);
-                    Some(UiInputEvent::MouseSingleClick(
-                        button, position, modifiers,
-                    ))
+                    Some(UiInputEvent::MouseSingleClick(button, position, modifiers))
                 }
                 InputEvent::MouseDoubleClicked(button, position, _modifiers) => {
                     mouse_position = Some(position);
@@ -45,9 +40,7 @@ impl UiInputConverter {
                     mouse_position = Some(position);
                     Some(UiInputEvent::MouseTripleClick(button, position))
                 }
-                InputEvent::MouseReleased(button) => {
-                    Some(UiInputEvent::MouseButtonRelease(button))
-                }
+                InputEvent::MouseReleased(button) => Some(UiInputEvent::MouseButtonRelease(button)),
                 // Gamepad
                 InputEvent::GamepadButtonPressed(_, button) => match button {
                     GamepadButtonType::DPadUp => Some(UiInputEvent::UpPressed),
@@ -127,7 +120,6 @@ impl UiInputConverter {
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum UiInputEvent {
-
     // keyboard/gamepad
     UpPressed,
     DownPressed,

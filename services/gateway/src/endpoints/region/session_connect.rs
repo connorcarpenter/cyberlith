@@ -4,14 +4,19 @@ use http_client::{HttpClient, ResponseError};
 use http_server::{http_log_util, Server};
 
 use config::{GATEWAY_SECRET, REGION_SERVER_PORT, REGION_SERVER_RECV_ADDR};
-use gateway_http_proto::{SessionConnectRequest as GatewaySessionConnectRequest, SessionConnectResponse as GatewaySessionConnectResponse};
+use gateway_http_proto::{
+    SessionConnectRequest as GatewaySessionConnectRequest,
+    SessionConnectResponse as GatewaySessionConnectResponse,
+};
 use region_server_http_proto::SessionConnectRequest as RegionSessionConnectRequest;
 
 pub fn session_connect(server: &mut Server) {
     server.endpoint(move |(_addr, req)| async move { async_impl(req).await });
 }
 
-async fn async_impl(incoming_request: GatewaySessionConnectRequest) -> Result<GatewaySessionConnectResponse, ResponseError> {
+async fn async_impl(
+    incoming_request: GatewaySessionConnectRequest,
+) -> Result<GatewaySessionConnectResponse, ResponseError> {
     http_log_util::recv_req("gateway", "client", "session_connect");
 
     http_log_util::send_req("gateway", "region_server", "session_connect");

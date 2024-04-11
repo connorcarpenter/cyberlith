@@ -1,13 +1,8 @@
-use bevy_ecs::{
-    change_detection::{ResMut},
-    prelude::Query,
-};
+use bevy_ecs::{change_detection::ResMut, prelude::Query};
 
-use game_engine::{
-    render::{
-        components::{AmbientLight, Camera, Projection, RenderLayer, Transform},
-        resources::RenderFrame,
-    },
+use game_engine::render::{
+    components::{AmbientLight, Camera, Projection, RenderLayer, Transform},
+    resources::RenderFrame,
 };
 
 pub fn draw(

@@ -3,17 +3,15 @@ use bevy_ecs::change_detection::ResMut;
 use bevy_log::info;
 
 use game_engine::{
+    config::{GATEWAY_PORT, PUBLIC_IP_ADDR},
+    http::HttpClient,
     render::{resources::WindowSettings, Draw},
     wait_for_finish, EnginePlugin,
-    http::HttpClient,
-    config::{GATEWAY_PORT, PUBLIC_IP_ADDR},
 };
 
 use crate::app::{
     resources::Global,
-    systems::{
-        draw, resize, scene, ui,
-    },
+    systems::{draw, resize, scene, ui},
 };
 
 pub fn run() {
@@ -30,7 +28,6 @@ pub fn run() {
         // global resource
         .init_resource::<Global>()
         // events
-
         .add_event::<LoginButtonClickedEvent>()
         .add_event::<RegisterButtonClickedEvent>()
         .add_event::<SubmitButtonClickedEvent>()
@@ -45,11 +42,9 @@ pub fn run() {
         .add_systems(Update, resize::handle_viewport_resize)
         // draw
         .add_systems(Draw, draw::draw)
-
         // test gateway request
         .add_systems(Startup, test_request)
-        .add_systems(Update, test_request_process)
-    ;
+        .add_systems(Update, test_request_process);
     app.run();
 }
 
@@ -58,14 +53,13 @@ pub async fn finished() {
     wait_for_finish().await;
 }
 
+use crate::app::resources::{
+    LoginButtonClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent,
+};
 use gateway_http_proto::UserPasswordResetRequest;
-use crate::app::resources::{LoginButtonClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent};
 
 // used as a system
-pub fn test_request(
-    mut http_client: ResMut<HttpClient>,
-    mut global: ResMut<Global>,
-) {
+pub fn test_request(mut http_client: ResMut<HttpClient>, mut global: ResMut<Global>) {
     // user register
     // let request = UserRegisterRequest::new("connorc", "connorcarpenter@gmail.com", "12345");
     // let key = http_client.send(PUBLIC_IP_ADDR, GATEWAY_PORT, request);
@@ -95,10 +89,7 @@ pub fn test_request(
     info!("client -> gateway: (UserResetPasswordRequest)");
 }
 
-fn test_request_process(
-    mut http_client: ResMut<HttpClient>,
-    mut global: ResMut<Global>,
-) {
+fn test_request_process(mut http_client: ResMut<HttpClient>, mut global: ResMut<Global>) {
     if global.user_register_response_key_opt.is_some() {
         let Some(key) = &global.user_register_response_key_opt else {
             return;
@@ -112,7 +103,10 @@ fn test_request_process(
                 global.user_register_response_key_opt = None;
             }
             Err(err) => {
-                info!("client <- gateway: (UserRegisterResponse - ERROR! {})", err.to_string());
+                info!(
+                    "client <- gateway: (UserRegisterResponse - ERROR! {})",
+                    err.to_string()
+                );
             }
         }
     }
@@ -129,7 +123,10 @@ fn test_request_process(
                 global.user_register_confirm_response_key_opt = None;
             }
             Err(err) => {
-                info!("client <- gateway: (UserRegisterConfirmResponse - ERROR! {})", err.to_string());
+                info!(
+                    "client <- gateway: (UserRegisterConfirmResponse - ERROR! {})",
+                    err.to_string()
+                );
             }
         }
     }
@@ -146,7 +143,10 @@ fn test_request_process(
                 global.user_password_forgot_response_key_opt = None;
             }
             Err(err) => {
-                info!("client <- gateway: (UserPasswordForgotResponse - ERROR! {})", err.to_string());
+                info!(
+                    "client <- gateway: (UserPasswordForgotResponse - ERROR! {})",
+                    err.to_string()
+                );
             }
         }
     }
@@ -163,7 +163,10 @@ fn test_request_process(
                 global.user_password_reset_response_key_opt = None;
             }
             Err(err) => {
-                info!("client <- gateway: (UserPasswordResetResponse - ERROR! {})", err.to_string());
+                info!(
+                    "client <- gateway: (UserPasswordResetResponse - ERROR! {})",
+                    err.to_string()
+                );
             }
         }
     }

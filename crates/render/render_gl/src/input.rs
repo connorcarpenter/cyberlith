@@ -11,9 +11,13 @@ pub fn run(
     frame_input: NonSendMut<FrameInput>,
     mut input: ResMut<Input>,
     mut clipboard: ResMut<ClipboardManager>,
-    mut event_writer: EventWriter<InputEvent>
+    mut event_writer: EventWriter<InputEvent>,
 ) {
-    input.recv_events(&mut clipboard, &mut event_writer, &frame_input.incoming_events);
+    input.recv_events(
+        &mut clipboard,
+        &mut event_writer,
+        &frame_input.incoming_events,
+    );
 }
 
 pub fn update_cursor(mut frame_input: NonSendMut<FrameInput>, mut input: ResMut<Input>) {

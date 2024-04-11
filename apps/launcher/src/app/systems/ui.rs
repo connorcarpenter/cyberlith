@@ -7,15 +7,15 @@ use bevy_ecs::{
 use bevy_log::info;
 
 use game_engine::{
-    asset::{
-        embedded_asset_event, AssetId, EmbeddedAssetEvent,
-    },
+    asset::{embedded_asset_event, AssetId, EmbeddedAssetEvent},
     input::{GamepadRumbleIntensity, Input, RumbleManager},
     render::components::RenderLayers,
     ui::{UiHandle, UiManager},
 };
 
-use crate::app::resources::{Global, LoginButtonClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent};
+use crate::app::resources::{
+    Global, LoginButtonClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent,
+};
 
 pub fn ui_setup(
     mut global: ResMut<Global>,
@@ -73,13 +73,13 @@ pub fn ui_handle_events(
     let mut should_rumble = false;
 
     if current_ui_handle == global.ui_start_handle {
-        handle_events_ui_start(
+        ui_start_handle_events(
             &mut ui_manager,
             &mut global,
             &mut login_btn_rdr,
             &mut register_btn_rdr,
             &mut submit_btn_rdr,
-            &mut should_rumble
+            &mut should_rumble,
         );
     } else if current_ui_handle == global.ui_login_handle {
         ui_login_handle_events(
@@ -88,16 +88,16 @@ pub fn ui_handle_events(
             &mut login_btn_rdr,
             &mut register_btn_rdr,
             &mut submit_btn_rdr,
-            &mut should_rumble
+            &mut should_rumble,
         );
     } else if current_ui_handle == global.ui_register_handle {
-        register_event_handle(
+        ui_register_handle_events(
             &mut ui_manager,
             &mut global,
             &mut login_btn_rdr,
             &mut register_btn_rdr,
             &mut submit_btn_rdr,
-            &mut should_rumble
+            &mut should_rumble,
         );
     }
 
@@ -113,15 +113,15 @@ pub fn ui_handle_events(
     }
 }
 
-fn handle_events_ui_start(
+fn ui_start_handle_events(
     ui_manager: &mut ResMut<UiManager>,
     global: &mut ResMut<Global>,
     login_btn_rdr: &mut EventReader<LoginButtonClickedEvent>,
     register_btn_rdr: &mut EventReader<RegisterButtonClickedEvent>,
     submit_btn_rdr: &mut EventReader<SubmitButtonClickedEvent>,
-    should_rumble: &mut bool
+    should_rumble: &mut bool,
 ) {
-// in Start Ui
+    // in Start Ui
 
     // Login Button Click
     let mut login_clicked = false;
@@ -151,8 +151,15 @@ fn handle_events_ui_start(
     }
 }
 
-fn register_event_handle(ui_manager: &mut ResMut<UiManager>, global: &mut ResMut<Global>, login_btn_rdr: &mut EventReader<LoginButtonClickedEvent>, register_btn_rdr: &mut EventReader<RegisterButtonClickedEvent>, submit_btn_rdr: &mut EventReader<SubmitButtonClickedEvent>, should_rumble: &mut bool) {
-// in Register Ui
+fn ui_register_handle_events(
+    ui_manager: &mut ResMut<UiManager>,
+    global: &mut ResMut<Global>,
+    login_btn_rdr: &mut EventReader<LoginButtonClickedEvent>,
+    register_btn_rdr: &mut EventReader<RegisterButtonClickedEvent>,
+    submit_btn_rdr: &mut EventReader<SubmitButtonClickedEvent>,
+    should_rumble: &mut bool,
+) {
+    // in Register Ui
 
     // Login Button Click
     let mut login_clicked = false;
@@ -182,8 +189,15 @@ fn register_event_handle(ui_manager: &mut ResMut<UiManager>, global: &mut ResMut
     }
 }
 
-fn ui_login_handle_events(ui_manager: &mut ResMut<UiManager>, global: &mut ResMut<Global>, login_btn_rdr: &mut EventReader<LoginButtonClickedEvent>, register_btn_rdr: &mut EventReader<RegisterButtonClickedEvent>, submit_btn_rdr: &mut EventReader<SubmitButtonClickedEvent>, should_rumble: &mut bool) {
-// in Login Ui
+fn ui_login_handle_events(
+    ui_manager: &mut ResMut<UiManager>,
+    global: &mut ResMut<Global>,
+    login_btn_rdr: &mut EventReader<LoginButtonClickedEvent>,
+    register_btn_rdr: &mut EventReader<RegisterButtonClickedEvent>,
+    submit_btn_rdr: &mut EventReader<SubmitButtonClickedEvent>,
+    should_rumble: &mut bool,
+) {
+    // in Login Ui
 
     // Register Button Click
     let mut register_clicked = false;

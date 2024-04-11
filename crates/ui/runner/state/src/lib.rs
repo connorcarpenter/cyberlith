@@ -2,11 +2,11 @@ mod button;
 mod node_state;
 mod panel;
 mod state_store;
+mod style_state;
 mod text;
 mod textbox;
 mod ui_state;
 mod widget;
-mod style_state;
 
 // just for engine
 pub use ui_state::UiState;

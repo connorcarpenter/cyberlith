@@ -1,10 +1,18 @@
-use std::{sync::{Arc, Mutex}, collections::HashMap, any::Any};
+use std::{
+    any::Any,
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
 
 use git2::Repository;
 use log::info;
 
-use crate::{error::DbError, git_ops::{create_new_file, pull_repo_get_all_files, repo_init, update_nextid}, DbRowValue, DbTableKey};
 use crate::git_ops::update_file;
+use crate::{
+    error::DbError,
+    git_ops::{create_new_file, pull_repo_get_all_files, repo_init, update_nextid},
+    DbRowValue, DbTableKey,
+};
 
 // Table trait
 pub trait Table: Send + Sync {
@@ -33,7 +41,6 @@ impl<K: DbTableKey> Table for TableImpl<K> {
 }
 
 impl<K: DbTableKey> TableImpl<K> {
-
     pub fn init() -> Self {
         // lot to do here ..
         let (dir_name, git_repo) = repo_init(K::repo_name());
@@ -72,7 +79,6 @@ impl<K: DbTableKey> TableImpl<K> {
     }
 
     pub fn insert(&mut self, mut value: K::Value) -> Result<K::Key, DbError> {
-
         // get next key
         let key = self.get_next_key();
         value.set_key(key);
@@ -142,4 +148,3 @@ impl<K: DbTableKey> TableImpl<K> {
         update_nextid(&self.dir_name, &repo, self.next_id);
     }
 }
-

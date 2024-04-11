@@ -2,30 +2,27 @@ use bevy_log::warn;
 
 use asset_loader::{AssetHandle, AssetManager, IconData, UiTextMeasurer};
 use asset_render::AssetRender;
+use render_api::base::Color;
+use render_api::components::AmbientLight;
 use render_api::{
     base::{CpuMaterial, CpuMesh},
     components::{RenderLayer, Transform},
     resources::RenderFrame,
 };
-use render_api::base::Color;
-use render_api::components::AmbientLight;
 use storage::Handle;
-use ui_runner::{config::{text_get_raw_rects, text_get_subimage_indices, NodeId, UiRuntimeConfig, WidgetKind}, input::UiInputState, state::{NodeActiveState, UiState}, Blinkiness, UiManager, UiHandle};
+use ui_runner::{
+    config::{text_get_raw_rects, text_get_subimage_indices, NodeId, UiRuntimeConfig, WidgetKind},
+    input::UiInputState,
+    state::{NodeActiveState, UiState},
+    Blinkiness, UiHandle, UiManager,
+};
 
 pub trait UiRender {
-    fn draw_ui(
-        &self,
-        asset_manager: &AssetManager,
-        render_frame: &mut RenderFrame,
-    );
+    fn draw_ui(&self, asset_manager: &AssetManager, render_frame: &mut RenderFrame);
 }
 
 impl UiRender for UiManager {
-    fn draw_ui(
-        &self,
-        asset_manager: &AssetManager,
-        render_frame: &mut RenderFrame,
-    ) {
+    fn draw_ui(&self, asset_manager: &AssetManager, render_frame: &mut RenderFrame) {
         if let Some(active_ui_handle) = self.active_ui() {
             UiRenderer::draw_ui(
                 self,
@@ -55,8 +52,16 @@ impl UiRenderer {
 
         let (ui_state, ui_input_state, ui, _, camera_bundle) = ui_runner.decompose_to_refs();
 
-        render_frame.draw_camera(Some(&RenderLayer::UI), &camera_bundle.camera, &camera_bundle.transform, &camera_bundle.projection);
-        render_frame.draw_ambient_light(Some(&RenderLayer::UI), &AmbientLight::new(1.0, Color::WHITE));
+        render_frame.draw_camera(
+            Some(&RenderLayer::UI),
+            &camera_bundle.camera,
+            &camera_bundle.transform,
+            &camera_bundle.projection,
+        );
+        render_frame.draw_ambient_light(
+            Some(&RenderLayer::UI),
+            &AmbientLight::new(1.0, Color::WHITE),
+        );
 
         let text_icon_handle = ui_runner.get_icon_handle();
 
@@ -148,7 +153,12 @@ impl UiRenderer {
         box_transform.scale.x = x_scale;
         box_transform.translation.y += 8.0;
         box_transform.scale.y -= 16.0;
-        render_frame.draw_mesh(Some(&RenderLayer::UI), mesh_handle, mat_handle, &box_transform);
+        render_frame.draw_mesh(
+            Some(&RenderLayer::UI),
+            mesh_handle,
+            mat_handle,
+            &box_transform,
+        );
     }
 }
 
@@ -185,13 +195,7 @@ fn draw_ui_node(
     if node_visible {
         match node.widget_kind() {
             WidgetKind::Panel => {
-                draw_ui_panel(
-                    render_frame,
-                    ui_config,
-                    ui_state,
-                    id,
-                    &transform,
-                );
+                draw_ui_panel(render_frame, ui_config, ui_state, id, &transform);
             }
             WidgetKind::Text => {
                 draw_ui_text(
@@ -286,7 +290,12 @@ fn draw_ui_text(
             let box_handle = ui_state.globals.get_box_mesh_handle().unwrap();
             let mut new_transform = transform.clone();
             new_transform.translation.z += UiRuntimeConfig::Z_STEP_RENDER;
-            render_frame.draw_mesh(Some(&RenderLayer::UI), box_handle, &mat_handle, &new_transform);
+            render_frame.draw_mesh(
+                Some(&RenderLayer::UI),
+                box_handle,
+                &mat_handle,
+                &new_transform,
+            );
         }
     } else {
         warn!("no background color handle for text"); // probably will need to do better debugging later
@@ -382,7 +391,8 @@ fn draw_ui_textbox(
     text_transform.translation.x += 8.0;
 
     {
-        text_transform.translation.z = transform.translation.z + (UiRuntimeConfig::Z_STEP_RENDER * 2.0);
+        text_transform.translation.z =
+            transform.translation.z + (UiRuntimeConfig::Z_STEP_RENDER * 2.0);
         asset_manager.draw_text(
             render_frame,
             Some(&RenderLayer::UI),
@@ -397,7 +407,8 @@ fn draw_ui_textbox(
         // draw selection box if needed
         if let Some(select_index) = ui_input_state.select_index {
             if let Some(mat_handle) = textbox_style_state.select_color_handle() {
-                text_transform.translation.z = transform.translation.z + (UiRuntimeConfig::Z_STEP_RENDER * 1.0);
+                text_transform.translation.z =
+                    transform.translation.z + (UiRuntimeConfig::Z_STEP_RENDER * 1.0);
                 UiRenderer::draw_text_selection(
                     render_frame,
                     asset_manager,
@@ -414,7 +425,8 @@ fn draw_ui_textbox(
 
         // draw carat if needed
         if carat_blink {
-            text_transform.translation.z = transform.translation.z + (UiRuntimeConfig::Z_STEP_RENDER * 2.0);
+            text_transform.translation.z =
+                transform.translation.z + (UiRuntimeConfig::Z_STEP_RENDER * 2.0);
             UiRenderer::draw_text_carat(
                 render_frame,
                 asset_manager,

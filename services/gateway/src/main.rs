@@ -15,8 +15,7 @@ pub fn main() {
         .expect("A logger was already initialized");
 
     info!("Gateway starting up...");
-    let socket_addr: SocketAddr =
-        SocketAddr::new(SELF_BINDING_ADDR.parse().unwrap(), GATEWAY_PORT);
+    let socket_addr: SocketAddr = SocketAddr::new(SELF_BINDING_ADDR.parse().unwrap(), GATEWAY_PORT);
 
     let mut server = Server::new(socket_addr);
 

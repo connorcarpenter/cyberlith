@@ -21,7 +21,9 @@ impl UserNameForgotRequest {
 pub struct UserNameForgotResponse;
 
 impl UserNameForgotResponse {
-    pub fn new() -> Self { Self }
+    pub fn new() -> Self {
+        Self
+    }
 }
 
 // Traits

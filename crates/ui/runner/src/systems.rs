@@ -1,4 +1,8 @@
-use bevy_ecs::{prelude::Query, event::EventReader, change_detection::{Res, ResMut}};
+use bevy_ecs::{
+    change_detection::{Res, ResMut},
+    event::EventReader,
+    prelude::Query,
+};
 
 use asset_loader::AssetManager;
 use input::InputEvent;
@@ -42,5 +46,10 @@ pub fn ui_update(
         mouse_position_ctnr = mouse_position;
         ui_input_events_ctnr.append(&mut ui_input_events);
     }
-    ui_manager.update_ui_input(&asset_manager, &ui_handle, mouse_position_ctnr, ui_input_events_ctnr);
+    ui_manager.update_ui_input(
+        &asset_manager,
+        &ui_handle,
+        mouse_position_ctnr,
+        ui_input_events_ctnr,
+    );
 }

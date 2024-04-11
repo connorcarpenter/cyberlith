@@ -31,7 +31,9 @@ impl UserPasswordResetRequest {
 pub struct UserPasswordResetResponse;
 
 impl UserPasswordResetResponse {
-    pub fn new() -> Self { Self }
+    pub fn new() -> Self {
+        Self
+    }
 }
 
 // Traits

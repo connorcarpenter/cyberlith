@@ -1,6 +1,9 @@
 use ui_runner_config::WidgetKind;
 
-use crate::{text::TextStyleState, panel::PanelStyleState, button::ButtonStyleState, textbox::TextboxStyleState};
+use crate::{
+    button::ButtonStyleState, panel::PanelStyleState, text::TextStyleState,
+    textbox::TextboxStyleState,
+};
 
 pub enum StyleState {
     Panel(PanelStyleState),

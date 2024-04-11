@@ -1,9 +1,6 @@
 use std::collections::HashSet;
 
-use bevy_ecs::{
-    event::EventWriter,
-    system::Resource,
-};
+use bevy_ecs::{event::EventWriter, system::Resource};
 use bevy_log::info;
 
 use clipboard::ClipboardManager;
@@ -118,7 +115,7 @@ impl Input {
         &mut self,
         clipboard: &mut ClipboardManager,
         event_writer: &mut EventWriter<InputEvent>,
-        events: &Vec<IncomingEvent>
+        events: &Vec<IncomingEvent>,
     ) {
         if !self.enabled {
             return;
@@ -312,7 +309,7 @@ impl Input {
         &mut self,
         event_writer: &mut EventWriter<InputEvent>,
         id: GamepadId,
-        info: GamepadInfo
+        info: GamepadInfo,
     ) {
         event_writer.send(InputEvent::GamepadConnected(id));
 
@@ -332,7 +329,7 @@ impl Input {
     pub(crate) fn recv_gilrs_gamepad_disconnect(
         &mut self,
         event_writer: &mut EventWriter<InputEvent>,
-        id: GamepadId
+        id: GamepadId,
     ) {
         event_writer.send(InputEvent::GamepadDisconnected(id));
 
@@ -353,7 +350,7 @@ impl Input {
         &mut self,
         event_writer: &mut EventWriter<InputEvent>,
         id: GamepadId,
-        button: GamepadButtonType
+        button: GamepadButtonType,
     ) {
         event_writer.send(InputEvent::GamepadButtonPressed(id, button));
     }
@@ -362,7 +359,7 @@ impl Input {
         &mut self,
         event_writer: &mut EventWriter<InputEvent>,
         id: GamepadId,
-        button: GamepadButtonType
+        button: GamepadButtonType,
     ) {
         event_writer.send(InputEvent::GamepadButtonReleased(id, button));
     }
@@ -371,7 +368,7 @@ impl Input {
         &mut self,
         event_writer: &mut EventWriter<InputEvent>,
         axis: GamepadAxis,
-        val: f32
+        val: f32,
     ) {
         self.gamepad_axis.set(axis, val);
         let joystick_type = axis.axis_type.to_joystick();

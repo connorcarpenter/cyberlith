@@ -4,7 +4,10 @@ use bevy_ecs::{bundle::Bundle, component::Component};
 
 use math::Vec3;
 
-use crate::components::{ClearOperation, OrthographicProjection, PerspectiveProjection, Projection, RenderTarget, Transform, Viewport};
+use crate::components::{
+    ClearOperation, OrthographicProjection, PerspectiveProjection, Projection, RenderTarget,
+    Transform, Viewport,
+};
 
 // Camera Bundle
 #[derive(Default, Bundle)]
@@ -42,7 +45,6 @@ impl CameraBundle {
     }
 
     pub fn default_3d_perspective(viewport: &Viewport) -> Self {
-
         Self {
             camera: Camera {
                 viewport: Some(*viewport),
@@ -50,18 +52,8 @@ impl CameraBundle {
                 target: RenderTarget::Screen,
                 ..Default::default()
             },
-            transform: Transform::from_xyz(
-                100.0,
-                100.0,
-                100.0,
-            ).looking_at(
-                Vec3::new(
-                    0.0,
-                    0.0,
-                    0.0,
-                ),
-                Vec3::Z,
-            ),
+            transform: Transform::from_xyz(100.0, 100.0, 100.0)
+                .looking_at(Vec3::new(0.0, 0.0, 0.0), Vec3::Z),
             projection: Projection::Perspective(PerspectiveProjection {
                 fov: std::f32::consts::PI / 4.0,
                 near: 0.1,
@@ -72,7 +64,6 @@ impl CameraBundle {
     }
 
     pub fn default_3d_orthographic(viewport: &Viewport) -> Self {
-
         Self {
             camera: Camera {
                 viewport: Some(*viewport),
@@ -80,18 +71,8 @@ impl CameraBundle {
                 target: RenderTarget::Screen,
                 ..Default::default()
             },
-            transform: Transform::from_xyz(
-                100.0,
-                100.0,
-                100.0,
-            ).looking_at(
-                Vec3::new(
-                    0.0,
-                    0.0,
-                    0.0,
-                ),
-                Vec3::Z,
-            ),
+            transform: Transform::from_xyz(100.0, 100.0, 100.0)
+                .looking_at(Vec3::new(0.0, 0.0, 0.0), Vec3::Z),
             projection: Projection::Orthographic(OrthographicProjection::new(0.0, 1000.0)),
             ..Default::default()
         }

@@ -1,19 +1,22 @@
-use std::time::Duration;
 use bevy_ecs::event::EventWriter;
+use std::time::Duration;
 
 use bevy_ecs::system::{NonSend, NonSendMut, ResMut};
 
 use gilrs::{ff, EventType, Filter, Gilrs};
 
-use crate::{gamepad::{
-    converter::{
-        axis_dpad_to_button_filter, axis_triggers_to_button_filter, convert_axis,
-        convert_button, convert_gamepad_id,
+use crate::{
+    gamepad::{
+        converter::{
+            axis_dpad_to_button_filter, axis_triggers_to_button_filter, convert_axis,
+            convert_button, convert_gamepad_id,
+        },
+        rumble,
+        rumble::RunningRumbleEffects,
+        GamepadAxis, GamepadButton, GamepadInfo,
     },
-    rumble,
-    rumble::RunningRumbleEffects,
-    GamepadAxis, GamepadButton, GamepadInfo,
-}, GamepadId, GamepadRumbleIntensity, Input, InputEvent};
+    GamepadId, GamepadRumbleIntensity, Input, InputEvent,
+};
 
 pub struct GilrsWrapper {
     gilrs: Gilrs,
@@ -68,7 +71,7 @@ impl GilrsWrapper {
     pub fn startup(
         input_gilrs: NonSend<GilrsWrapper>,
         mut input: ResMut<Input>,
-        mut event_writer: EventWriter<InputEvent>
+        mut event_writer: EventWriter<InputEvent>,
     ) {
         for (id, gamepad) in input_gilrs.gilrs.gamepads() {
             let info = GamepadInfo {
@@ -80,7 +83,11 @@ impl GilrsWrapper {
     }
 
     // used as a system
-    pub fn update(mut gilrs_wrapper: NonSendMut<GilrsWrapper>, mut input: ResMut<Input>, mut event_writer: EventWriter<InputEvent>) {
+    pub fn update(
+        mut gilrs_wrapper: NonSendMut<GilrsWrapper>,
+        mut input: ResMut<Input>,
+        mut event_writer: EventWriter<InputEvent>,
+    ) {
         let mut gilrs = &mut gilrs_wrapper.gilrs;
 
         while let Some(gilrs_event) = gilrs.next_event() {
@@ -131,7 +138,11 @@ impl GilrsWrapper {
                                 if button_property.is_released(value) {
                                     // Check if button was previously pressed
                                     if input.is_pressed(button) {
-                                        input.recv_gilrs_button_release(&mut event_writer, gamepad, button_type);
+                                        input.recv_gilrs_button_release(
+                                            &mut event_writer,
+                                            gamepad,
+                                            button_type,
+                                        );
                                     }
                                     // We don't have to check if the button was previously pressed here
                                     // because that check is performed within Input<T>::release()
@@ -139,7 +150,11 @@ impl GilrsWrapper {
                                 } else if button_property.is_pressed(value) {
                                     // Check if button was previously not pressed
                                     if !input.is_pressed(button) {
-                                        input.recv_gilrs_button_press(&mut event_writer, gamepad, button_type);
+                                        input.recv_gilrs_button_press(
+                                            &mut event_writer,
+                                            gamepad,
+                                            button_type,
+                                        );
                                     }
                                     input.gamepad_button_press(button);
                                 };

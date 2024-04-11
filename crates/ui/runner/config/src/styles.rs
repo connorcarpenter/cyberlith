@@ -1,7 +1,9 @@
-use ui_builder_config::{BaseNodeStyle, ButtonStyle, NodeStyle, PanelStyle, StyleId, TextboxStyle, TextStyle, WidgetKind, WidgetStyle};
+use ui_builder_config::{
+    BaseNodeStyle, ButtonStyle, NodeStyle, PanelStyle, StyleId, TextStyle, TextboxStyle,
+    WidgetKind, WidgetStyle,
+};
 
 pub(crate) fn compute_styles(styles: Vec<NodeStyle>) -> Vec<BaseNodeStyle> {
-
     let mut output = Vec::new();
 
     for style in styles.iter() {
@@ -23,7 +25,11 @@ pub(crate) fn compute_styles(styles: Vec<NodeStyle>) -> Vec<BaseNodeStyle> {
     output
 }
 
-fn apply_parent_styles(styles: &Vec<NodeStyle>, parent_style_id_opt: Option<StyleId>, output_style: &mut BaseNodeStyle) {
+fn apply_parent_styles(
+    styles: &Vec<NodeStyle>,
+    parent_style_id_opt: Option<StyleId>,
+    output_style: &mut BaseNodeStyle,
+) {
     if let Some(parent_style_id) = parent_style_id_opt {
         let parent_style_id: usize = parent_style_id.as_usize();
         let parent_style = styles.get(parent_style_id).unwrap();

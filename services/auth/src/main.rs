@@ -1,7 +1,7 @@
-mod endpoints;
-mod state;
-mod error;
 mod emails;
+mod endpoints;
+mod error;
+mod state;
 mod types;
 
 use std::{net::SocketAddr, thread};
@@ -21,7 +21,8 @@ pub fn main() {
         .expect("A logger was already initialized");
 
     info!("Auth Server starting up...");
-    let socket_addr: SocketAddr = SocketAddr::new(SELF_BINDING_ADDR.parse().unwrap(), AUTH_SERVER_PORT);
+    let socket_addr: SocketAddr =
+        SocketAddr::new(SELF_BINDING_ADDR.parse().unwrap(), AUTH_SERVER_PORT);
 
     let mut server = Server::new(socket_addr);
     let state = Arc::new(RwLock::new(State::new()));

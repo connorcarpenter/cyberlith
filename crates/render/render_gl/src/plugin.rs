@@ -1,8 +1,8 @@
 use std::sync::{Arc, RwLock};
 
 use bevy_app::{
-    App, First, Last, Main, Plugin, PostUpdate, PreStartup, PreUpdate,
-    RunFixedMainLoop, StateTransition, Update,
+    App, First, Last, Main, Plugin, PostUpdate, PreStartup, PreUpdate, RunFixedMainLoop,
+    StateTransition, Update,
 };
 use bevy_ecs::schedule::{ExecutorKind, Schedule};
 

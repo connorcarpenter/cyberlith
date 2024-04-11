@@ -82,8 +82,7 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
             .set_down_color(Color::BLUE);
     });
     let submit_button_style = ui_config.create_button_style(|s| {
-        s
-            .set_parent_style(base_button_style)
+        s.set_parent_style(base_button_style)
             // .set_background_color(Color::DARK_GRAY)
             // .set_hover_color(Color::RED)
             // .set_down_color(Color::BLUE)
@@ -91,8 +90,7 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
             .set_margin_left_px(40.);
     });
     let register_button_style = ui_config.create_button_style(|s| {
-        s
-            .set_parent_style(base_button_style)
+        s.set_parent_style(base_button_style)
             // .set_background_color(Color::DARK_GRAY)
             // .set_hover_color(Color::RED)
             // .set_down_color(Color::BLUE)

@@ -11,7 +11,8 @@ impl EmailCatalog {
     pub fn new() -> Self {
         Self {
             register_verification_txt: include_str!("register_email_verification.txt").to_string(),
-            register_verification_html: include_str!("register_email_verification.html").to_string(),
+            register_verification_html: include_str!("register_email_verification.html")
+                .to_string(),
             user_name_forgot_txt: include_str!("user_name_forgot.txt").to_string(),
             user_name_forgot_html: include_str!("user_name_forgot.html").to_string(),
             user_password_forgot_txt: include_str!("user_password_forgot.txt").to_string(),

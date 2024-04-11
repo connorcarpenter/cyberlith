@@ -5,7 +5,7 @@ use bevy_http_client::ResponseError;
 use bevy_http_server::HttpServer;
 
 use config::REGION_SERVER_SECRET;
-use world_server_http_proto::{WorldConnectRequest, IncomingUserResponse};
+use world_server_http_proto::{IncomingUserResponse, WorldConnectRequest};
 
 use crate::global::Global;
 

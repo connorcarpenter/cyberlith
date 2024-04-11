@@ -1,10 +1,10 @@
 use bevy_app::{App, Startup, Update};
 
+use crate::app::global::Global;
 use game_engine::{
     render::{resources::WindowSettings, Draw},
     EnginePlugin,
 };
-use crate::app::global::Global;
 
 use super::{draw, resize, startup::startup};
 

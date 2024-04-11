@@ -1,10 +1,8 @@
 use bevy_ecs::system::{Query, Res, ResMut};
 
-use game_engine::{
-    render::{
-        components::{Camera, Transform, Viewport},
-        Window,
-    },
+use game_engine::render::{
+    components::{Camera, Transform, Viewport},
+    Window,
 };
 
 use crate::app::resources::Global;

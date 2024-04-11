@@ -2,7 +2,12 @@ use std::collections::HashMap;
 
 use auth_server_db::{DatabaseManager, UserId};
 
-use crate::{types::{ResetPasswordToken, UserData, RefreshToken, RegisterToken, AccessToken, TempRegistration}, emails::EmailCatalog};
+use crate::{
+    emails::EmailCatalog,
+    types::{
+        AccessToken, RefreshToken, RegisterToken, ResetPasswordToken, TempRegistration, UserData,
+    },
+};
 
 pub struct State {
     pub(crate) email_catalog: EmailCatalog,
@@ -20,7 +25,6 @@ pub struct State {
 
 impl State {
     pub fn new() -> Self {
-
         let database_manager = DatabaseManager::init();
         let mut username_to_id_map = HashMap::new();
         let mut email_to_id_map = HashMap::new();
@@ -56,16 +60,26 @@ impl State {
         token
     }
 
-    pub(crate) fn store_register_token(&mut self, token: RegisterToken, temp_reg: TempRegistration) {
+    pub(crate) fn store_register_token(
+        &mut self,
+        token: RegisterToken,
+        temp_reg: TempRegistration,
+    ) {
         self.register_tokens.insert(token, temp_reg);
     }
 
-    pub(crate) fn remove_register_token(&mut self, token: &RegisterToken) -> Option<TempRegistration> {
+    pub(crate) fn remove_register_token(
+        &mut self,
+        token: &RegisterToken,
+    ) -> Option<TempRegistration> {
         self.register_tokens.remove(token)
     }
 
     // refresh and access tokens
-    pub(crate) fn user_new_login_gen_tokens(&mut self, user_id: &UserId) -> (RefreshToken, AccessToken) {
+    pub(crate) fn user_new_login_gen_tokens(
+        &mut self,
+        user_id: &UserId,
+    ) -> (RefreshToken, AccessToken) {
         let access_token = self.create_and_store_access_token(user_id);
         let refresh_token = self.create_and_store_refresh_token(user_id);
         (refresh_token, access_token)
@@ -80,7 +94,10 @@ impl State {
         self.refresh_tokens.insert(token, *user_id);
 
         // insert into userdata
-        self.user_data.get_mut(user_id).unwrap().current_refresh_token = Some(token);
+        self.user_data
+            .get_mut(user_id)
+            .unwrap()
+            .current_refresh_token = Some(token);
 
         token
     }
@@ -94,7 +111,10 @@ impl State {
         self.access_tokens.insert(token, *user_id);
 
         // insert into userdata
-        self.user_data.get_mut(user_id).unwrap().current_access_token = Some(token);
+        self.user_data
+            .get_mut(user_id)
+            .unwrap()
+            .current_access_token = Some(token);
 
         token
     }
@@ -107,14 +127,21 @@ impl State {
         self.access_tokens.contains_key(access_token)
     }
 
-    pub(crate) fn get_user_id_by_refresh_token(&self, refresh_token: &RefreshToken) -> Option<&UserId> {
+    pub(crate) fn get_user_id_by_refresh_token(
+        &self,
+        refresh_token: &RefreshToken,
+    ) -> Option<&UserId> {
         self.refresh_tokens.get(refresh_token)
     }
 
     // for username recovery
     pub(crate) fn get_user_name_by_email(&self, email: &str) -> String {
         let user_id = self.email_to_id_map.get(email).unwrap().unwrap();
-        self.database_manager.get_user(&user_id).unwrap().username().to_string()
+        self.database_manager
+            .get_user(&user_id)
+            .unwrap()
+            .username()
+            .to_string()
     }
 
     pub(crate) fn get_user_id_by_email(&self, email: &str) -> UserId {
@@ -130,11 +157,18 @@ impl State {
         token
     }
 
-    pub(crate) fn store_reset_password_token(&mut self, user_id: UserId, token: ResetPasswordToken) {
+    pub(crate) fn store_reset_password_token(
+        &mut self,
+        user_id: UserId,
+        token: ResetPasswordToken,
+    ) {
         self.reset_password_tokens.insert(token, user_id);
     }
 
-    pub(crate) fn remove_reset_password_token(&mut self, token: &ResetPasswordToken) -> Option<UserId> {
+    pub(crate) fn remove_reset_password_token(
+        &mut self,
+        token: &ResetPasswordToken,
+    ) -> Option<UserId> {
         self.reset_password_tokens.remove(token)
     }
 
@@ -144,4 +178,3 @@ impl State {
         });
     }
 }
-

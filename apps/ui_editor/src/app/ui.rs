@@ -5,13 +5,13 @@ use bevy_ecs::{
     prelude::Commands,
     system::{Res, ResMut},
 };
-use bevy_log::{info};
+use bevy_log::info;
 
 use asset_serde::json::{Asset, AssetData, AssetMeta, UiConfigJson};
+use game_engine::render::components::RenderLayers;
 use game_engine::{
     asset::{
-        embedded_asset_event, AssetId, AssetMetadataSerde, AssetType,
-        ETag, EmbeddedAssetEvent,
+        embedded_asset_event, AssetId, AssetMetadataSerde, AssetType, ETag, EmbeddedAssetEvent,
     },
     input::{GamepadRumbleIntensity, Input, RumbleManager},
     render::{
@@ -23,7 +23,6 @@ use game_engine::{
     },
     ui::UiManager,
 };
-use game_engine::render::components::RenderLayers;
 use ui_builder::UiConfig;
 use ui_runner_config::UiRuntimeConfig;
 
@@ -60,7 +59,8 @@ pub fn setup(
     let ui = write_to_file(&ui_name, &ui_asset_id, &ui_etag, ui);
 
     // load ui into asset manager
-    let ui_handle = ui_manager.manual_load_ui_config(&ui_asset_id, UiRuntimeConfig::load_from_builder_config(ui));
+    let ui_handle = ui_manager
+        .manual_load_ui_config(&ui_asset_id, UiRuntimeConfig::load_from_builder_config(ui));
 
     ui_manager.set_target_render_layer(RenderLayers::layer(0));
     ui_manager.enable_ui(&ui_handle);

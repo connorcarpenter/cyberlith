@@ -8,24 +8,23 @@ use bevy_ecs::{
 };
 use bevy_log::warn;
 
+use crate::handle::UiHandle;
 use asset_id::AssetId;
 use asset_loader::{
-    AssetHandle, AssetManager, IconData, ProcessedAssetStore, TypedAssetId,
-    UiTextMeasurer,
+    AssetHandle, AssetManager, IconData, ProcessedAssetStore, TypedAssetId, UiTextMeasurer,
 };
 use clipboard::ClipboardManager;
 use input::{CursorIcon, Input};
 use math::Vec2;
+use render_api::components::RenderLayer;
 use render_api::{
     base::{CpuMaterial, CpuMesh},
     components::Camera,
     resources::Time,
 };
-use render_api::components::RenderLayer;
 use storage::Storage;
 use ui_input::{UiGlobalEvent, UiInputEvent, UiNodeEvent, UiNodeEventHandler};
 use ui_runner_config::{NodeId, UiRuntimeConfig};
-use crate::handle::UiHandle;
 
 use crate::runtime::UiRuntime;
 
@@ -39,8 +38,7 @@ pub struct UiManager {
     pub ui_runtimes: HashMap<UiHandle, UiRuntime>,
     queued_uis: Vec<UiHandle>,
 
-    queued_ui_node_event_handlers:
-        HashMap<UiHandle, Vec<(String, UiNodeEventHandler)>>,
+    queued_ui_node_event_handlers: HashMap<UiHandle, Vec<(String, UiNodeEventHandler)>>,
     ui_global_events: Vec<UiGlobalEvent>,
     ui_node_event_handlers: HashMap<(AssetId, NodeId), UiNodeEventHandler>,
     ui_node_events: Vec<(AssetId, NodeId, UiNodeEvent)>,
@@ -70,7 +68,6 @@ impl Default for UiManager {
 }
 
 impl UiManager {
-
     pub(crate) fn update_ui_state(&mut self) {
         for (_, ui) in self.ui_runtimes.iter_mut() {
             ui.update_state();
@@ -132,7 +129,11 @@ impl UiManager {
         self.load_impl(asset_manager.get_store_mut(), asset_data_store, asset_id);
     }
 
-    pub fn manual_load_ui_config(&mut self, asset_id: &AssetId, ui_config: UiRuntimeConfig) -> UiHandle {
+    pub fn manual_load_ui_config(
+        &mut self,
+        asset_id: &AssetId,
+        ui_config: UiRuntimeConfig,
+    ) -> UiHandle {
         let mut dependencies: Vec<(TypedAssetId, TypedAssetId)> = Vec::new();
 
         let handle = UiHandle::new(*asset_id);
@@ -166,8 +167,6 @@ impl UiManager {
     pub fn active_ui(&self) -> Option<UiHandle> {
         self.active_ui
     }
-
-
 
     // this is the RenderLayer that RenderLayer::UI seeks to mirror
     pub fn target_render_layer(&self) -> Option<RenderLayer> {
@@ -304,11 +303,7 @@ impl UiManager {
         self.last_cursor_icon = cursor_icon;
     }
 
-    pub fn register_ui_event<T: Event + Default>(
-        &mut self,
-        ui_handle: &UiHandle,
-        id_str: &str,
-    ) {
+    pub fn register_ui_event<T: Event + Default>(&mut self, ui_handle: &UiHandle, id_str: &str) {
         let asset_id = ui_handle.asset_id();
         let event_handler = UiNodeEventHandler::new::<T>();
 
@@ -378,7 +373,11 @@ impl UiManager {
         ui_runtime.recalculate_layout(&text_measurer);
     }
 
-    pub fn generate_new_inputs(&mut self, ui_handle: &UiHandle, next_inputs: &mut Vec<UiInputEvent>) {
+    pub fn generate_new_inputs(
+        &mut self,
+        ui_handle: &UiHandle,
+        next_inputs: &mut Vec<UiInputEvent>,
+    ) {
         let Some(ui_runtime) = self.ui_runtimes.get_mut(ui_handle) else {
             warn!("ui data not loaded 1: {:?}", ui_handle.asset_id());
             return;

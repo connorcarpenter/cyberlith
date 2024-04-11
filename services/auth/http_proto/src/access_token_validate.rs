@@ -29,7 +29,9 @@ impl AccessTokenValidateRequest {
 pub struct AccessTokenValidateResponse;
 
 impl AccessTokenValidateResponse {
-    pub fn new() -> Self { Self }
+    pub fn new() -> Self {
+        Self
+    }
 }
 
 // Traits

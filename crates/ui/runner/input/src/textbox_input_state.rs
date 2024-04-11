@@ -196,7 +196,12 @@ impl TextboxInputState {
         output
     }
 
-    fn handle_left(input_state: &mut UiInputState, textbox_state: &mut TextboxState, modifiers: Modifiers, output: &mut Option<Vec<UiGlobalEvent>>) {
+    fn handle_left(
+        input_state: &mut UiInputState,
+        textbox_state: &mut TextboxState,
+        modifiers: Modifiers,
+        output: &mut Option<Vec<UiGlobalEvent>>,
+    ) {
         match (modifiers.shift, modifiers.ctrl) {
             (false, false) => {
                 if input_state.carat_index > 0 {
@@ -256,7 +261,12 @@ impl TextboxInputState {
         }
     }
 
-    fn handle_right(input_state: &mut UiInputState, textbox_state: &mut TextboxState, modifiers: Modifiers, output: &mut Option<Vec<UiGlobalEvent>>) {
+    fn handle_right(
+        input_state: &mut UiInputState,
+        textbox_state: &mut TextboxState,
+        modifiers: Modifiers,
+        output: &mut Option<Vec<UiGlobalEvent>>,
+    ) {
         match (modifiers.shift, modifiers.ctrl) {
             (false, false) => {
                 if input_state.carat_index < textbox_state.text.len() {

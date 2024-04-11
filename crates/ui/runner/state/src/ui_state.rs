@@ -11,8 +11,9 @@ use ui_runner_config::{
 };
 
 use crate::{
-    button::ButtonStyleState, panel::PanelStyleState, state_store::UiStateStore, text::TextStyleState,
-    textbox::TextboxState, UiNodeState, style_state::StyleState, textbox::TextboxStyleState
+    button::ButtonStyleState, panel::PanelStyleState, state_store::UiStateStore,
+    style_state::StyleState, text::TextStyleState, textbox::TextboxState,
+    textbox::TextboxStyleState, UiNodeState,
 };
 
 pub struct UiState {
@@ -84,7 +85,11 @@ impl UiState {
         self.store.get_style_state(widget_kind, style_id)
     }
 
-    pub fn panel_style_state(&self, config: &UiRuntimeConfig, id: &NodeId) -> Option<&PanelStyleState> {
+    pub fn panel_style_state(
+        &self,
+        config: &UiRuntimeConfig,
+        id: &NodeId,
+    ) -> Option<&PanelStyleState> {
         let style_state = self.node_style_state(config, id)?;
         let StyleState::Panel(panel_style_state) = style_state else {
             return None;
@@ -92,7 +97,11 @@ impl UiState {
         return Some(panel_style_state);
     }
 
-    pub fn text_style_state(&self, config: &UiRuntimeConfig, id: &NodeId) -> Option<&TextStyleState> {
+    pub fn text_style_state(
+        &self,
+        config: &UiRuntimeConfig,
+        id: &NodeId,
+    ) -> Option<&TextStyleState> {
         let style_state = self.node_style_state(config, id)?;
         let StyleState::Text(text_style_state) = style_state else {
             return None;
@@ -100,7 +109,11 @@ impl UiState {
         return Some(text_style_state);
     }
 
-    pub fn button_style_state(&self, config: &UiRuntimeConfig, id: &NodeId) -> Option<&ButtonStyleState> {
+    pub fn button_style_state(
+        &self,
+        config: &UiRuntimeConfig,
+        id: &NodeId,
+    ) -> Option<&ButtonStyleState> {
         let style_state = self.node_style_state(config, id)?;
         let StyleState::Button(button_style_state) = style_state else {
             return None;
@@ -108,7 +121,11 @@ impl UiState {
         return Some(button_style_state);
     }
 
-    pub fn textbox_style_state(&self, config: &UiRuntimeConfig, id: &NodeId) -> Option<&TextboxStyleState> {
+    pub fn textbox_style_state(
+        &self,
+        config: &UiRuntimeConfig,
+        id: &NodeId,
+    ) -> Option<&TextboxStyleState> {
         let style_state = self.node_style_state(config, id)?;
         let StyleState::Textbox(textbox_style_state) = style_state else {
             return None;
@@ -153,7 +170,6 @@ impl UiState {
                 }
                 WidgetKind::Text => {
                     if let Some(text_style_mut) = self.store.create_text_style(style_id) {
-
                         // background color
                         let background_color = ui_config
                             .node_background_color(&id)
@@ -165,7 +181,6 @@ impl UiState {
                 }
                 WidgetKind::Button => {
                     if let Some(button_style_mut) = self.store.create_button_style(style_id) {
-
                         // background color
                         let background_color = ui_config
                             .node_background_color(&id)

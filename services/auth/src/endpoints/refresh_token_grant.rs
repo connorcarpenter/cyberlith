@@ -1,12 +1,16 @@
 use log::warn;
 
 use http_client::ResponseError;
-use http_server::{async_dup::Arc, smol::lock::RwLock, Server, http_log_util};
+use http_server::{async_dup::Arc, http_log_util, smol::lock::RwLock, Server};
 
-use config::GATEWAY_SECRET;
 use auth_server_http_proto::{RefreshTokenGrantRequest, RefreshTokenGrantResponse};
+use config::GATEWAY_SECRET;
 
-use crate::{error::AuthServerError, state::State, types::{AccessToken, RefreshToken}};
+use crate::{
+    error::AuthServerError,
+    state::State,
+    types::{AccessToken, RefreshToken},
+};
 
 pub fn refresh_token_grant(server: &mut Server, state: Arc<RwLock<State>>) {
     server.endpoint(move |(_addr, req)| {
@@ -32,12 +36,8 @@ async fn async_impl(
             let access_token = access_token.to_string();
             Ok(RefreshTokenGrantResponse::new(&access_token))
         }
-        Err(AuthServerError::TokenSerdeError) => {
-            Err(ResponseError::SerdeError)
-        }
-        Err(AuthServerError::TokenNotFound) => {
-            Err(ResponseError::Unauthenticated)
-        }
+        Err(AuthServerError::TokenSerdeError) => Err(ResponseError::SerdeError),
+        Err(AuthServerError::TokenNotFound) => Err(ResponseError::Unauthenticated),
         Err(_) => {
             panic!("unhandled error for this endpoint");
         }
@@ -48,7 +48,10 @@ async fn async_impl(
 }
 
 impl State {
-    fn refresh_token_grant(&mut self, request: RefreshTokenGrantRequest) -> Result<AccessToken, AuthServerError> {
+    fn refresh_token_grant(
+        &mut self,
+        request: RefreshTokenGrantRequest,
+    ) -> Result<AccessToken, AuthServerError> {
         let Some(refresh_token) = RefreshToken::from_str(&request.refresh_token) else {
             return Err(AuthServerError::TokenSerdeError);
         };
@@ -65,4 +68,3 @@ impl State {
         return Ok(access_token);
     }
 }
-

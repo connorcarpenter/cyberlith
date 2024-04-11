@@ -1,16 +1,20 @@
-
 use http_client::{HttpClient, ResponseError};
 use http_server::{http_log_util, Server};
 
-use config::{GATEWAY_SECRET, AUTH_SERVER_PORT, AUTH_SERVER_RECV_ADDR};
-use gateway_http_proto::{UserRegisterRequest as GatewayUserRegisterRequest, UserRegisterResponse as GatewayUserRegisterResponse};
 use auth_server_http_proto::UserRegisterRequest as AuthUserRegisterRequest;
+use config::{AUTH_SERVER_PORT, AUTH_SERVER_RECV_ADDR, GATEWAY_SECRET};
+use gateway_http_proto::{
+    UserRegisterRequest as GatewayUserRegisterRequest,
+    UserRegisterResponse as GatewayUserRegisterResponse,
+};
 
 pub fn user_register(server: &mut Server) {
     server.endpoint(move |(_addr, req)| async move { async_impl(req).await });
 }
 
-async fn async_impl(incoming_request: GatewayUserRegisterRequest) -> Result<GatewayUserRegisterResponse, ResponseError> {
+async fn async_impl(
+    incoming_request: GatewayUserRegisterRequest,
+) -> Result<GatewayUserRegisterResponse, ResponseError> {
     http_log_util::recv_req("gateway", "client", "user_register");
 
     http_log_util::send_req("gateway", "auth_server", "user_register");

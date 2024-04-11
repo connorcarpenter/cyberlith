@@ -1,19 +1,20 @@
-use lettre::{message::Body, SmtpTransport, Transport, transport::smtp::{authentication::Credentials}};
+use lettre::{
+    message::Body, transport::smtp::authentication::Credentials, SmtpTransport, Transport,
+};
 
 mod smtp_alias {
     pub use lettre::transport::smtp::{response::Response as SmtpResponse, Error as SmtpError};
 }
 
-pub use smtp_alias::{SmtpResponse, SmtpError};
+pub use smtp_alias::{SmtpError, SmtpResponse};
 
 pub fn send(
     sender_email: &str,
     recipient_email: &str,
     subject: &str,
     text_content: &str,
-    html_content: &str
+    html_content: &str,
 ) -> Result<SmtpResponse, SmtpError> {
-
     let text_content = text_content.to_string();
     let text_content = Body::new(text_content);
     let html_content = html_content.to_string();
@@ -21,14 +22,8 @@ pub fn send(
 
     // build email
     let email = lettre::Message::builder()
-        .from(
-            sender_email
-                .parse()
-                .unwrap(),
-        )
-        .to(recipient_email
-            .parse()
-            .unwrap())
+        .from(sender_email.parse().unwrap())
+        .to(recipient_email.parse().unwrap())
         .subject(subject)
         .multipart(
             lettre::message::MultiPart::alternative()
@@ -51,9 +46,9 @@ pub fn send(
 
     // Open a secure connection to the SMTP server using STARTTLS
     let mailer = SmtpTransport::starttls_relay("smtp.sendgrid.net")
-        .unwrap()  // Unwrap the Result, panics in case of error
-        .credentials(creds)  // Provide the credentials to the transport
-        .build();  // Construct the transport
+        .unwrap() // Unwrap the Result, panics in case of error
+        .credentials(creds) // Provide the credentials to the transport
+        .build(); // Construct the transport
 
     // Send the email
     return mailer.send(&email);

@@ -9,7 +9,10 @@ use asset_loader::{AssetManager, AssetMetadataStore};
 use filesystem::{FileSystemManager, ReadResult, TaskKey};
 use ui_runner::UiManager;
 
-use crate::{asset_cache::{AssetCache, AssetLoadedEvent}, networked::client_markers::Session};
+use crate::{
+    asset_cache::{AssetCache, AssetLoadedEvent},
+    networked::client_markers::Session,
+};
 
 type SessionClient<'a> = Client<'a, Session>;
 

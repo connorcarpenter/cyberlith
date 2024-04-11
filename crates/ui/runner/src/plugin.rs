@@ -17,15 +17,12 @@ impl Plugin for UiPlugin {
             // UiManager
             .init_resource::<UiManager>()
             // systems
-
             .add_systems(PreUpdate, UiManager::prepare_cursor_change)
             .add_systems(Update, systems::ui_update)
             .add_systems(PostUpdate, UiManager::process_cursor_change)
-
             .add_systems(Update, UiManager::sync_assets)
             .add_systems(Update, UiManager::process_ui_global_events)
             .add_systems(Update, UiManager::process_ui_node_events)
-            .add_systems(Update, UiManager::update_blinkiness)
-            ;
+            .add_systems(Update, UiManager::update_blinkiness);
     }
 }

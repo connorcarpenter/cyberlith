@@ -1,16 +1,20 @@
-
 use http_client::{HttpClient, ResponseError};
 use http_server::{http_log_util, Server};
 
-use config::{GATEWAY_SECRET, AUTH_SERVER_PORT, AUTH_SERVER_RECV_ADDR};
-use gateway_http_proto::{UserPasswordResetRequest as GatewayUserPasswordResetRequest, UserPasswordResetResponse as GatewayUserPasswordResetResponse};
 use auth_server_http_proto::UserPasswordResetRequest as AuthUserPasswordResetRequest;
+use config::{AUTH_SERVER_PORT, AUTH_SERVER_RECV_ADDR, GATEWAY_SECRET};
+use gateway_http_proto::{
+    UserPasswordResetRequest as GatewayUserPasswordResetRequest,
+    UserPasswordResetResponse as GatewayUserPasswordResetResponse,
+};
 
 pub fn user_password_reset(server: &mut Server) {
     server.endpoint(move |(_addr, req)| async move { async_impl(req).await });
 }
 
-async fn async_impl(incoming_request: GatewayUserPasswordResetRequest) -> Result<GatewayUserPasswordResetResponse, ResponseError> {
+async fn async_impl(
+    incoming_request: GatewayUserPasswordResetRequest,
+) -> Result<GatewayUserPasswordResetResponse, ResponseError> {
     http_log_util::recv_req("gateway", "client", "user_password_reset");
 
     http_log_util::send_req("gateway", "auth_server", "user_password_reset");

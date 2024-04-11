@@ -1,7 +1,7 @@
 mod heartbeat;
-mod world_connect;
 mod protocol;
+mod world_connect;
 
 pub use heartbeat::*;
-pub use world_connect::*;
 pub use protocol::protocol;
+pub use world_connect::*;

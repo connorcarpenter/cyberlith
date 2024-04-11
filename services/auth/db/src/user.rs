@@ -1,5 +1,5 @@
-use std::fmt::Display;
 use serde::{Deserialize, Serialize};
+use std::fmt::Display;
 
 use db::{DbRowKey, DbRowValue, DbTableKey};
 
@@ -72,9 +72,7 @@ pub struct User {
     role: UserRole,
 }
 
-impl User {
-
-}
+impl User {}
 
 impl DbRowValue for User {
     type Key = UserId;
@@ -92,22 +90,28 @@ impl DbRowValue for User {
     }
 
     fn get_insert_commit_message(&self) -> String {
-        format!("adding: [User: (id: {}, name: {}, email: {}, role: {})]", self.id.unwrap(), self.name, self.email, self.role.to_string())
+        format!(
+            "adding: [User: (id: {}, name: {}, email: {}, role: {})]",
+            self.id.unwrap(),
+            self.name,
+            self.email,
+            self.role.to_string()
+        )
     }
 
     fn get_update_commit_message(&self) -> String {
-        format!("updating: [User: (id: {}, name: {}, email: {}, role: {})]", self.id.unwrap(), self.name, self.email, self.role.to_string())
+        format!(
+            "updating: [User: (id: {}, name: {}, email: {}, role: {})]",
+            self.id.unwrap(),
+            self.name,
+            self.email,
+            self.role.to_string()
+        )
     }
 }
 
 impl User {
-    pub fn new(
-        name: &str,
-        email: &str,
-        password: &str,
-        role: UserRole,
-    ) -> Self {
-
+    pub fn new(name: &str, email: &str, password: &str, role: UserRole) -> Self {
         let create_date: chrono::DateTime<chrono::Utc> = chrono::Utc::now();
 
         Self {
