@@ -1,0 +1,15 @@
+[package]
+name = "standalone_native_deploy"
+version = "0.1.0"
+authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
+workspace = "../.."
+edition = "2021"
+publish = false
+
+[features]
+
+[dependencies]
+kernel = { path = "../../crates/kernel" }
+
+log = { version = "0.4", features = [] }
+cfg-if = { version = "1.0" }

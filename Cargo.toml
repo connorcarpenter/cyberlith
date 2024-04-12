@@ -2,17 +2,26 @@
 resolver = "2"
 # all crates should be listed here
 members = [
-    # Apps
 
+    ### Deployments ###
+    # Standalone [Native]
+    "deployments/native",
+    # Launcher [Web]
+    "deployments/web/launcher",
+    # Game [Web]
+    "deployments/web/game",
+    # Level Editor [Web]
+    "deployments/web/level_editor",
+
+    ### Apps ###
     # Configs
     "apps/config",
-
-    # Launcher Client
+    # Launcher
     "apps/launcher",
-    # Game Client
+    # Game
     "apps/client",
 
-
+    ### Services ###
     # Content Server
     "services/content",
     # Gateway Server
@@ -37,7 +46,7 @@ members = [
     "services/asset",
     "services/asset/http_proto",
 
-    # Tools
+    ### Tools ###
     # Automation CLI / Library
     "apps/automation/cli",
     "apps/automation/lib",
@@ -48,7 +57,10 @@ members = [
     "apps/editor/server",
     # Ui Editor
     "apps/ui_editor",
+    # Physics Tester
+    "apps/physics_tester",
 
+    ### Crates ###
     # Engine
     "crates/engine",
     # Math
@@ -67,7 +79,8 @@ members = [
     "crates/instant",
     # Physics
     "crates/physics",
-    "apps/physics_tester",
+    # Kernel
+    "crates/kernel",
     # Clipboard
     "crates/clipboard",
     # Email
