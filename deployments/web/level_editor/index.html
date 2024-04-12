@@ -2,7 +2,7 @@
 <html lang="en">
     <head>
         <meta charset="utf-8"/>
-        <title>Cyberlith Launcher</title>
+        <title>Cyberlith Level Editor</title>
     </head>
     <style>
         body {
@@ -16,12 +16,9 @@
     <body>
     <canvas id="canvas"></canvas>
         <script type="module">
-            import app, { finished } from "./target/launcher.js";
+            import app from "./target/level_editor.js";
             async function start() {
                 await app();
-                console.log("app is running");
-                await finished();
-                console.log("app is finished");
             }
             start();
         </script>

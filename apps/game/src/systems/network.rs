@@ -14,7 +14,7 @@ use game_engine::{
     },
 };
 
-use crate::app::systems::scene::{WalkAnimation, WalkerMarker};
+use crate::systems::scene::{WalkAnimation, WalkerMarker};
 
 pub fn world_spawn_entity_events(mut event_reader: EventReader<WorldSpawnEntityEvent>) {
     for event in event_reader.read() {

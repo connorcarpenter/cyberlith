@@ -2,4 +2,4 @@ pub(crate) mod resources;
 pub(crate) mod systems;
 
 mod app;
-pub use app::LauncherApp;
+pub use app::GameApp;

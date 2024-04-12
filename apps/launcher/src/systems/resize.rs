@@ -5,7 +5,7 @@ use game_engine::render::{
     Window,
 };
 
-use crate::app::resources::Global;
+use crate::resources::Global;
 
 pub fn handle_viewport_resize(
     global: Res<Global>,

@@ -1,5 +1,5 @@
 [package]
-name = "launcher"
+name = "launcher_app"
 version = "0.1.0"
 authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
 workspace = "../.."
@@ -11,15 +11,6 @@ local = [ "game_engine/local" ]
 prod = [ "game_engine/prod" ]
 gl_renderer = [ "game_engine/gl_renderer" ]
 wgpu_renderer = [ "game_engine/wgpu_renderer" ]
-
-[[bin]]
-name = "launcher"
-path = "src/main.rs"
-
-[lib]
-name = "launcher"
-path = "src/lib.rs"
-crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 # Internal
@@ -36,7 +27,3 @@ bevy_ecs = { version = "0.13", default-features=false }
 bevy_log = { version = "0.13", default-features=false }
 
 cfg-if = { version = "1.0" }
-
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-wasm-bindgen = { version = "0.2", features = [ "serde-serialize" ] }
-wasm-bindgen-futures = { version = "0.4.40" }

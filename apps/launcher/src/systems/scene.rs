@@ -19,7 +19,7 @@ use game_engine::{
     storage::Storage,
 };
 
-use crate::app::resources::Global;
+use crate::resources::Global;
 
 #[derive(Component)]
 pub struct CubeMarker;

@@ -15,6 +15,9 @@ mod asset_cache;
 mod embedded_asset;
 mod renderer;
 
+pub mod kernel {
+    pub use kernel::KernelApp;
+}
 pub mod asset {
     pub use asset_id::{AssetId, AssetType, ETag};
     pub use asset_loader::{

@@ -20,7 +20,7 @@ members = [
     # Launcher
     "apps/launcher",
     # Game
-    "apps/client",
+    "apps/game",
 
     ### Services ###
     # Content Server

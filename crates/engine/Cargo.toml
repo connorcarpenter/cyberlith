@@ -30,6 +30,7 @@ ui_render = { path = "../ui/runner/render" }
 ui_runner = { path = "../ui/runner" }
 ui_input = { path = "../ui/runner/input" }
 random = { path = "../random" }
+kernel = { path = "../kernel" }
 
 # Networked Dependencies
 gateway_http_proto = { path = "../../services/gateway/http_proto", optional = true }

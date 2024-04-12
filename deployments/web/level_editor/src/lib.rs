@@ -5,3 +5,10 @@ cfg_if! {
         compile_error!("this should only be compiled for wasm, it is for web only");
     } else {}
 }
+
+use wasm_bindgen::prelude::*;
+
+#[wasm_bindgen(start)]
+pub fn main() {
+
+}

@@ -6,10 +6,22 @@ workspace = "../.."
 edition = "2021"
 publish = false
 
+[[bin]]
+name = "standalone"
+path = "src/main.rs"
+
 [features]
+local = [ "launcher_app/local" ]
+prod = [ "launcher_app/prod" ]
+gl_renderer = [ "launcher_app/gl_renderer" ]
+wgpu_renderer = [ "launcher_app/wgpu_renderer" ]
 
 [dependencies]
+# should only be kernel & apps here
 kernel = { path = "../../crates/kernel" }
+launcher_app = { path = "../../apps/launcher" }
+game_app = { path = "../../apps/game" }
 
+# others
 log = { version = "0.4", features = [] }
 cfg-if = { version = "1.0" }

@@ -14,7 +14,7 @@ use game_engine::{
     http::HttpClient
 };
 
-use crate::app::{
+use crate::{
     systems::backend::{backend_send_login_request, backend_send_register_request},
     resources::{
         Global, LoginButtonClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent,

@@ -5,7 +5,7 @@ use game_engine::{ui::UiManager, http::HttpClient, config::{GATEWAY_PORT, PUBLIC
 
 use gateway_http_proto::{UserLoginRequest, UserRegisterRequest};
 
-use crate::app::resources::Global;
+use crate::resources::Global;
 
 pub(crate) fn backend_send_login_request(
     global: &mut Global,
