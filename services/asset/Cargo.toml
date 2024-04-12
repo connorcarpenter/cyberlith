@@ -13,7 +13,7 @@ prod = [ "config/prod" ]
 [dependencies]
 http_server = { path = "../../crates/http/http_server" }
 http_client = { path = "../../crates/http/http_client" }
-config = { path = "../../apps/config", features = ["asset"] }
+config = { path = "../../config", features = ["asset"] }
 
 asset_server_http_proto = { path = "http_proto" }
 region_server_http_proto = { path = "../region/http_proto" }

@@ -14,7 +14,7 @@ prod = [ "config/prod" ]
 naia-bevy-server = { path = "../../../naia/adapters/bevy/server", features = [ "transport_webrtc" ] }
 bevy_http_server = { path = "../../crates/http/bevy_http_server" }
 bevy_http_client = { path = "../../crates/http/bevy_http_client" }
-config = { path = "../../apps/config", features = ["world"] }
+config = { path = "../../config", features = ["world"] }
 crypto = { path = "../../crates/crypto" }
 asset_id = { path = "../../crates/asset/id" }
 random = { path = "../../crates/random" }

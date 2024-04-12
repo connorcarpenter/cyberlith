@@ -3,6 +3,9 @@ resolver = "2"
 # all crates should be listed here
 members = [
 
+    ### Config ###
+    "config",
+
     ### Deployments ###
     # Standalone [Native]
     "deployments/native",
@@ -14,8 +17,6 @@ members = [
     "deployments/web/level_editor",
 
     ### Apps ###
-    # Configs
-    "apps/config",
     # Launcher
     "apps/launcher",
     # Game

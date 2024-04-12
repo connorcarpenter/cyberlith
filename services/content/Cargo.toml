@@ -14,7 +14,7 @@ prod = [ "config/prod" ]
 http_common = { path = "../../crates/http/http_common" }
 http_server_shared = { path = "../../crates/http/http_server_shared" }
 naia-serde = { path = "../../../naia/shared/serde" }
-config = { path = "../../apps/config", features = ["content"]}
+config = { path = "../../config", features = ["content"]}
 
 log = { version = "0.4", features = [] }
 simple_logger = { version = "4.0", default-features = false, features = ["timestamps"] }
