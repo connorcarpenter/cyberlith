@@ -44,8 +44,8 @@ impl AppExitAction {
         AppExitAction::JustExit
     }
 
-    pub fn go_to(app_name: String) -> Self {
-        AppExitAction::GoTo(app_name)
+    pub fn go_to(app_name: &str) -> Self {
+        AppExitAction::GoTo(app_name.to_string())
     }
 }
 

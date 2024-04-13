@@ -6,7 +6,7 @@ use game_engine::{
     kernel::{KernelApp},
 };
 
-use super::systems::{network, scene};
+use super::systems::{keyboard_input, network, scene};
 
 pub struct GameApp;
 
@@ -26,6 +26,8 @@ impl Plugin for GameApp {
                 max_size: None,
                 ..Default::default()
             })
+            // other input
+            .add_systems(Update, keyboard_input::process)
             // Scene Systems
             .add_systems(Startup, scene::scene_setup)
             .add_systems(Update, scene::scene_step)
