@@ -11,16 +11,8 @@ use crate::{systems::{backend, draw, resize, scene, ui}, resources::{Global, Log
 pub struct LauncherApp;
 
 impl KernelApp for LauncherApp {
-    fn get_boxed() -> Box<Self> where Self: Sized {
-        Box::new(Self)
-    }
-
-    fn run(&self) -> String {
-        let mut app = App::default();
-        app.add_plugins(Self);
-        app.run();
-        // todo: return the next app to load
-        "exit".to_string()
+    fn init() -> Self where Self: Sized {
+        Self
     }
 }
 

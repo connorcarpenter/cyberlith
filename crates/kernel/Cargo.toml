@@ -5,7 +5,10 @@ edition = "2021"
 workspace = "../.."
 
 [dependencies]
+render_gl = { path = "../render/render_gl" }
+
 bevy_app = { version = "0.13", default-features=false }
+bevy_ecs = { version = "0.13", default-features=false }
 
 log = { version = "0.4" }
 

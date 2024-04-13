@@ -6,6 +6,7 @@ use asset_loader::AssetPlugin;
 use bevy_http_client::HttpClientPlugin;
 use filesystem::FileSystemPlugin;
 use input::{Input, InputPlugin};
+use kernel::KernelPlugin;
 use render_api::RenderApiPlugin;
 use ui_render::UiRenderPlugin;
 use ui_runner::UiPlugin;
@@ -27,6 +28,7 @@ impl Plugin for EnginePlugin {
             .add_plugins(RenderApiPlugin)
             .add_plugins(RendererPlugin)
             // Add misc crates Plugins
+            .add_plugins(KernelPlugin)
             .add_plugins(InputPlugin)
             .add_plugins(AssetPlugin)
             .add_plugins(UiPlugin)

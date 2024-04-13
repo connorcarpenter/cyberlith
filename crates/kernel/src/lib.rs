@@ -1,22 +1,11 @@
-use bevy_app::{Plugin};
+mod app_exit;
+pub use app_exit::AppExitAction;
 
-pub struct App {
-    inner: Box<dyn KernelApp>
-}
+mod plugin;
+pub use plugin::KernelPlugin;
 
-impl App {
-    pub fn load<A: KernelApp>() -> Self {
-        Self {
-            inner: A::get_boxed()
-        }
-    }
+mod kernel;
+pub use kernel::{Kernel, KernelApp};
 
-    pub fn run(&self) -> String {
-        self.inner.run()
-    }
-}
 
-pub trait KernelApp: Plugin {
-    fn get_boxed() -> Box<Self> where Self: Sized;
-    fn run(&self) -> String;
-}
+

@@ -11,16 +11,8 @@ use super::systems::{network, scene};
 pub struct GameApp;
 
 impl KernelApp for GameApp {
-    fn get_boxed() -> Box<Self> where Self: Sized {
-        Box::new(Self)
-    }
-
-    fn run(&self) -> String {
-        let mut app = App::default();
-        app.add_plugins(Self);
-        app.run();
-        // todo: return the next app to load
-        "exit".to_string()
+    fn init() -> Self where Self: Sized {
+        Self
     }
 }
 

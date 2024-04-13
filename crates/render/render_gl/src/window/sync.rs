@@ -3,6 +3,7 @@ use bevy_ecs::{
     event::EventReader,
     system::{NonSendMut, ResMut},
 };
+use bevy_log::info;
 
 use render_api::{resources::Time, Window};
 
@@ -12,7 +13,6 @@ pub fn sync(
     mut frame_input: NonSendMut<FrameInput>,
     mut window: ResMut<Window>,
     mut time: ResMut<Time>,
-    mut exit_event_reader: EventReader<AppExit>,
 ) {
     // update window res
     let mut update_window_resolution = false;
@@ -31,9 +31,4 @@ pub fn sync(
 
     // update elapsed time
     time.set_elapsed_ms(frame_input.elapsed_time_ms as f32);
-
-    // read exit events
-    for _ in exit_event_reader.read() {
-        frame_input.outgoing_events.push(OutgoingEvent::Exit);
-    }
 }

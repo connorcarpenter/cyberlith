@@ -9,22 +9,29 @@ use log::info;
 
 use game_app::GameApp;
 use launcher_app::LauncherApp;
-use kernel::{App};
+use kernel::{Kernel};
 
 fn main() {
-    let mut loaded_app = Some(App::load::<GameApp>());
+    let mut kernel = Kernel::new();
+    kernel.load::<LauncherApp>();
     loop {
-        if let Some(app) = loaded_app {
-            let result = app.run();
-            match result.as_str() {
-                "exit" => loaded_app = None,
-                "launcher" => loaded_app = Some(App::load::<LauncherApp>()),
-                "game" => loaded_app = Some(App::load::<GameApp>()),
-                _ => panic!("Unknown app: {}", result),
-            }
-        } else {
-            info!("Exiting...");
-            break;
+        let app_result = kernel.run();
+        match app_result.as_str() {
+            "exit" => {
+                info!("Exiting...");
+                break;
+            },
+            "launcher" => {
+                info!("Loading LauncherApp...");
+                kernel.load::<LauncherApp>();
+            },
+            "game" => {
+                info!("Loading GameApp...");
+                kernel.load::<GameApp>();
+            },
+            _ => {
+                panic!("Unknown app: {}", app_result);
+            },
         }
     }
     info!("Done.")
