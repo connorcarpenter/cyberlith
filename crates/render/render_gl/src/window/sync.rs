@@ -1,16 +1,12 @@
-use bevy_app::AppExit;
-use bevy_ecs::{
-    event::EventReader,
-    system::{NonSendMut, ResMut},
-};
-use bevy_log::info;
+
+use bevy_ecs::system::{NonSend, ResMut};
 
 use render_api::{resources::Time, Window};
 
-use crate::window::{FrameInput, OutgoingEvent};
+use crate::window::{FrameInput};
 
 pub fn sync(
-    mut frame_input: NonSendMut<FrameInput>,
+    frame_input: NonSend<FrameInput>,
     mut window: ResMut<Window>,
     mut time: ResMut<Time>,
 ) {

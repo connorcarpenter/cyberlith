@@ -1,4 +1,3 @@
-use std::sync::{Arc, RwLock};
 
 use bevy_app::{
     App, First, Last, Main, Plugin, PostUpdate, PreStartup, PreUpdate, RunFixedMainLoop,
@@ -12,7 +11,7 @@ use render_api::{Render, Window};
 use crate::{
     input,
     render::render,
-    runner::{runner_func, StopSignal, STOP_SIGNAL},
+    runner::{runner_func},
     sync::SyncPlugin,
     window,
 };
@@ -21,9 +20,6 @@ pub struct RenderGlPlugin;
 
 impl Plugin for RenderGlPlugin {
     fn build(&self, app: &mut App) {
-        unsafe {
-            STOP_SIGNAL = Some(Arc::new(RwLock::new(StopSignal { stopped: false })));
-        }
 
         if !app.is_plugin_added::<ClipboardPlugin>() {
             app.add_plugins(ClipboardPlugin);

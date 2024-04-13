@@ -51,6 +51,3 @@ pub mod random {
 pub mod http {
     pub use bevy_http_client::*;
 }
-
-// TODO: should these find a home?
-pub use renderer::wait_for_finish;

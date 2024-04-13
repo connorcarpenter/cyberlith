@@ -1,4 +1,3 @@
-use std::sync::{Arc, RwLock};
 
 use bevy_log::info;
 use winit::{
@@ -25,7 +24,6 @@ use winit::platform::run_return::EventLoopExtRunReturn;
 use winit::platform::web::EventLoopExtWebSys;
 
 use crate::{
-    runner::StopSignal,
     window::{FrameInput, FrameOutput, OutgoingEvent, WindowError, WindowedContext},
 };
 
@@ -61,7 +59,7 @@ impl<T: 'static + Clone> Window<T> {
     ///
     /// [proxy]: winit::event_loop::EventLoopProxy
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn from_event_loop(
+    fn from_event_loop(
         window_settings: WindowSettings,
         event_loop: EventLoop<T>,
     ) -> Result<Self, WindowError> {
@@ -193,14 +191,11 @@ impl<T: 'static + Clone> Window<T> {
         })
     }
 
-    pub fn wait_for_stop(&self) {}
-
     ///
     /// Start the main render loop which calls the `callback` closure each frame.
     ///
     pub fn render_loop<F: 'static + FnMut(FrameInput) -> FrameOutput>(
         #[allow(unused_mut)] mut self,
-        stop_signal: Arc<RwLock<StopSignal>>,
         mut callback: F,
     ) {
         #[cfg(not(target_arch = "wasm32"))]
@@ -217,9 +212,7 @@ impl<T: 'static + Clone> Window<T> {
         let mut modifiers = Modifiers::default();
         let mut first_frame = true;
         let mut mouse_pressed = None;
-        let stop_signal = stop_signal.clone();
         let loop_func = move |event: WinitEvent<'_, T>, _: &_, control_flow: &mut _| {
-            let stop_signal = stop_signal.clone();
             match event {
                 WinitEvent::LoopDestroyed => {
                     #[cfg(target_arch = "wasm32")]
@@ -233,12 +226,6 @@ impl<T: 'static + Clone> Window<T> {
                                 self.closure.as_ref().unchecked_ref(),
                             )
                             .unwrap();
-                    }
-
-                    if let Ok(mut stop_signal) = stop_signal.write() {
-                        stop_signal.stopped = true;
-                    } else {
-                        panic!("failed to write stop signal");
                     }
                 }
                 WinitEvent::MainEventsCleared => {

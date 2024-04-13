@@ -5,6 +5,6 @@ edition = "2021"
 workspace = "../.."
 
 [dependencies]
-naia-socket-shared = { path = "../../../naia/socket/shared" }
+naia-socket-shared = { path = "../../../naia/socket/shared", features = [ "wbindgen" ] }
 
 log = { version = "0.4" }
