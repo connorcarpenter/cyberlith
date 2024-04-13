@@ -17,6 +17,7 @@ gl = { path = "../gl" }
 storage = { path = "../../storage" }
 random = { path = "../../random" }
 clipboard = { path = "../../clipboard" }
+instant = { path = "../../instant" }
 
 # External Crates
 bevy_app = { version = "0.13", default-features = false }
@@ -36,5 +37,3 @@ wasm-bindgen = { version = "0.2" }
 serde = { version = "1", features = ["derive"] }
 serde-wasm-bindgen = { version = "0.5" }
 web-sys = { version = "0.3", features = ['Document', 'HtmlCollection', 'HtmlCanvasElement', 'Window'] }
-web-time = { version = "0.2" }
-gloo-timers = { version = "0.3.0", features = ["futures"] }

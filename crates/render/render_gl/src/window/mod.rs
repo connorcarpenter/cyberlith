@@ -3,6 +3,7 @@ mod frame_io;
 mod sync;
 mod window;
 mod windowed_context;
+mod render_loop_context;
 
 pub use error::*;
 pub use frame_io::*;

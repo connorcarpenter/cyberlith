@@ -9,31 +9,6 @@ pub fn runner_func(mut app: App) {
     // Get Window Settings
     let window_settings = app.world.remove_resource::<WindowSettings>().unwrap();
 
-    // Create a Window
-    let window = Window::take_or_new(window_settings);
-
-    // Start the main render loop
-    let next_window_opt = window.render_loop(
-        move |new_frame_input| // Begin a new frame with an updated frame input
-            {
-                // Insert FrameInput
-                app
-                    .world
-                    .insert_non_send_resource(new_frame_input);
-
-                // update app
-                app.update();
-
-                // Remove FrameInput
-                let old_frame_input = app
-                    .world
-                    .remove_non_send_resource::<FrameInput>().unwrap();
-
-                // Returns default frame output to end the frame
-                FrameOutput::from(old_frame_input)
-            },
-    );
-    if let Some(next_window) = next_window_opt {
-        Window::set(next_window);
-    }
+    // Run
+    Window::run_render_loop(window_settings, app);
 }
