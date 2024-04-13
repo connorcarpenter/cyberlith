@@ -1,5 +1,6 @@
 
 use bevy_log::info;
+use cfg_if::cfg_if;
 use winit::{
     dpi,
     event::{
@@ -26,14 +27,16 @@ use winit::platform::web::EventLoopExtWebSys;
 use crate::{
     window::{FrameInput, FrameOutput, OutgoingEvent, WindowError, WindowedContext},
 };
+use crate::core::Context;
+use crate::window::event_loop::EventLoopContainer;
 
 ///
 /// Window and event handling.
 /// Use [Window::new] to create a new window or [Window::from_winit_window] which provides full control over the creation of the window.
 ///
-pub struct Window<T: 'static + Clone> {
+pub struct Window {
     window: winit::window::Window,
-    event_loop: EventLoop<T>,
+    event_loop: EventLoop<()>,
     #[cfg(target_arch = "wasm32")]
     closure: wasm_bindgen::closure::Closure<dyn FnMut(web_sys::Event)>,
     gl: WindowedContext,
@@ -41,18 +44,16 @@ pub struct Window<T: 'static + Clone> {
     maximized: bool,
 }
 
-impl Window<()> {
+impl Window {
     ///
     /// Constructs a new Window with the given [settings].
     ///
     ///
     /// [settings]: WindowSettings
-    pub fn new(window_settings: WindowSettings) -> Result<Window<()>, WindowError> {
-        Self::from_event_loop(window_settings, EventLoop::new())
+    pub fn new(window_settings: WindowSettings) -> Result<Window, WindowError> {
+        Self::from_event_loop(window_settings, EventLoopContainer::take_or_init())
     }
-}
 
-impl<T: 'static + Clone> Window<T> {
     /// Exactly the same as [`Window::new()`] except with the ability to supply
     /// an existing [`EventLoop`]. Use the event loop's [proxy] to push custom
     /// events into the render loop (from any thread). Not available for web.
@@ -61,7 +62,7 @@ impl<T: 'static + Clone> Window<T> {
     #[cfg(not(target_arch = "wasm32"))]
     fn from_event_loop(
         window_settings: WindowSettings,
-        event_loop: EventLoop<T>,
+        event_loop: EventLoop<()>,
     ) -> Result<Self, WindowError> {
         let winit_window = if let Some((width, height)) = window_settings.max_size {
             WindowBuilder::new()
@@ -96,9 +97,9 @@ impl<T: 'static + Clone> Window<T> {
     ///
     /// [proxy]: winit::event_loop::EventLoopProxy
     #[cfg(target_arch = "wasm32")]
-    pub fn from_event_loop(
+    fn from_event_loop(
         window_settings: WindowSettings,
-        event_loop: EventLoop<T>,
+        event_loop: EventLoop<()>,
     ) -> Result<Self, WindowError> {
         use wasm_bindgen::JsCast;
         use winit::{dpi::LogicalSize, platform::web::WindowBuilderExtWebSys};
@@ -157,7 +158,7 @@ impl<T: 'static + Clone> Window<T> {
     ///
     pub fn from_winit_window(
         winit_window: window::Window,
-        event_loop: EventLoop<T>,
+        event_loop: EventLoop<()>,
         surface_settings: SurfaceSettings,
         maximized: bool,
     ) -> Result<Self, WindowError> {
@@ -212,7 +213,7 @@ impl<T: 'static + Clone> Window<T> {
         let mut modifiers = Modifiers::default();
         let mut first_frame = true;
         let mut mouse_pressed = None;
-        let loop_func = move |event: WinitEvent<'_, T>, _: &_, control_flow: &mut _| {
+        let loop_func = move |event: WinitEvent<'_, ()>, _: &_, control_flow: &mut _| {
             match event {
                 WinitEvent::LoopDestroyed => {
                     #[cfg(target_arch = "wasm32")]
@@ -496,11 +497,29 @@ impl<T: 'static + Clone> Window<T> {
             }
         };
 
-        #[cfg(not(target_arch = "wasm32"))]
-        EventLoop::<T>::run_return(&mut self.event_loop, loop_func);
+        cfg_if! {
+            if #[cfg(target_arch = "wasm32")] {
+                EventLoop::<()>::spawn(self.event_loop, loop_func);
+            } else {
 
-        #[cfg(target_arch = "wasm32")]
-        EventLoop::<T>::spawn(self.event_loop, loop_func);
+
+
+                let mut event_loop = self.event_loop;
+
+                // run
+                EventLoop::<()>::run_return(&mut event_loop, loop_func);
+
+                // cleanup
+
+                // reset gl context
+                info!("clean up gl context");
+                Context::reset();
+
+                // put event loop back
+                info!("clean up event loop");
+                EventLoopContainer::set(event_loop);
+            }
+        }
     }
 
     ///
@@ -528,7 +547,7 @@ impl<T: 'static + Clone> Window<T> {
     ///
     /// [`Event::UserEvent`]: crate::control::Event::UserEvent
     /// [`send_event`]: winit::event_loop::EventLoopProxy::send_event
-    pub fn event_loop_proxy(&self) -> winit::event_loop::EventLoopProxy<T> {
+    pub fn event_loop_proxy(&self) -> winit::event_loop::EventLoopProxy<()> {
         self.event_loop.create_proxy()
     }
 }

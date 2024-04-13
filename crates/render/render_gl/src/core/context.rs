@@ -10,7 +10,7 @@ use render_api::components::Viewport;
 
 use super::*;
 
-pub static mut CONTEXT: Option<Context> = None;
+static mut CONTEXT: Option<Context> = None;
 
 ///
 /// Contains the low-level OpenGL/WebGL graphics context as well as other "global" variables.
@@ -54,10 +54,27 @@ impl Context {
         };
 
         unsafe {
+            if CONTEXT.is_some() {
+                panic!("Context already initialized!");
+            }
             CONTEXT = Some(c);
         }
 
         Ok(())
+    }
+
+    pub fn reset() {
+
+        unsafe {
+            if CONTEXT.is_none() {
+                return;
+            }
+
+            let mut context = Self::get();
+            context.unload_programs();
+
+            CONTEXT = None;
+        }
     }
 
     pub fn get() -> Context {
@@ -318,6 +335,15 @@ impl Context {
             }?;
         }
         Ok(())
+    }
+
+    pub fn unload_programs(&mut self) {
+        let mut binding = self.programs.write();
+        let program_muts: &mut HashMap<(String, String), Program> = binding.as_mut().unwrap();
+        let program_muts = std::mem::replace(program_muts, HashMap::new());
+        for (_key, mut program) in program_muts {
+            std::mem::drop(program);
+        }
     }
 }
 
