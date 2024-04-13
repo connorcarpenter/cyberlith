@@ -1,5 +1,5 @@
 
-use bevy_log::info;
+use bevy_log::{info, LogPlugin};
 use cfg_if::cfg_if;
 use winit::{
     dpi,
@@ -25,10 +25,11 @@ use winit::platform::run_return::EventLoopExtRunReturn;
 use winit::platform::web::EventLoopExtWebSys;
 
 use crate::{
+    core::Context,
     window::{FrameInput, FrameOutput, OutgoingEvent, WindowError, WindowedContext},
 };
-use crate::core::Context;
-use crate::window::event_loop::EventLoopContainer;
+
+static mut WINDOW_CONTAINER: Option<Window> = None;
 
 ///
 /// Window and event handling.
@@ -45,13 +46,34 @@ pub struct Window {
 }
 
 impl Window {
+
+    pub fn take_or_new(window_settings: WindowSettings) -> Window {
+        unsafe {
+            if WINDOW_CONTAINER.is_none() {
+                info!("creating new window");
+                return Self::new(window_settings).unwrap();
+            }
+            info!("using old window");
+            return WINDOW_CONTAINER.take().unwrap();
+        }
+    }
+
+    pub fn set(window: Window) {
+        unsafe {
+            if WINDOW_CONTAINER.is_some() {
+                panic!("Window container already set");
+            }
+            WINDOW_CONTAINER = Some(window);
+        }
+    }
+
     ///
     /// Constructs a new Window with the given [settings].
     ///
     ///
     /// [settings]: WindowSettings
     pub fn new(window_settings: WindowSettings) -> Result<Window, WindowError> {
-        Self::from_event_loop(window_settings, EventLoopContainer::take_or_init())
+        Self::from_event_loop(window_settings, EventLoop::new())
     }
 
     /// Exactly the same as [`Window::new()`] except with the ability to supply
@@ -198,7 +220,8 @@ impl Window {
     pub fn render_loop<F: 'static + FnMut(FrameInput) -> FrameOutput>(
         #[allow(unused_mut)] mut self,
         mut callback: F,
-    ) {
+    ) -> Option<Self> {
+        {
         #[cfg(not(target_arch = "wasm32"))]
         let mut last_time = std::time::Instant::now();
         #[cfg(target_arch = "wasm32")]
@@ -213,14 +236,16 @@ impl Window {
         let mut modifiers = Modifiers::default();
         let mut first_frame = true;
         let mut mouse_pressed = None;
-        let loop_func = move |event: WinitEvent<'_, ()>, _: &_, control_flow: &mut _| {
+        let gl = &self.gl;
+        let window = &mut self.window;
+        let loop_func = |event: WinitEvent<'_, ()>, _: &_, control_flow: &mut _| {
             match event {
                 WinitEvent::LoopDestroyed => {
                     #[cfg(target_arch = "wasm32")]
                     {
                         use wasm_bindgen::JsCast;
                         use winit::platform::web::WindowExtWebSys;
-                        self.window
+                        window
                             .canvas()
                             .remove_event_listener_with_callback(
                                 "contextmenu",
@@ -230,13 +255,13 @@ impl Window {
                     }
                 }
                 WinitEvent::MainEventsCleared => {
-                    self.window.request_redraw();
+                    window.request_redraw();
                 }
                 WinitEvent::RedrawRequested(_) => {
                     #[cfg(not(target_arch = "wasm32"))]
-                    let now = std::time::Instant::now();
+                        let now = std::time::Instant::now();
                     #[cfg(target_arch = "wasm32")]
-                    let now = web_time::Instant::now();
+                        let now = web_time::Instant::now();
 
                     let duration = now.duration_since(last_time);
                     last_time = now;
@@ -248,24 +273,22 @@ impl Window {
                     if self.maximized {
                         use winit::platform::web::WindowExtWebSys;
 
-                        let html_canvas = self.window.canvas();
+                        let html_canvas = window.canvas();
                         let browser_window = html_canvas
                             .owner_document()
                             .and_then(|doc| doc.default_view())
                             .or_else(web_sys::window)
                             .unwrap();
 
-                        self.window.set_inner_size(dpi::LogicalSize {
+                        window.set_inner_size(dpi::LogicalSize {
                             width: browser_window.inner_width().unwrap().as_f64().unwrap(),
                             height: browser_window.inner_height().unwrap().as_f64().unwrap(),
                         });
                     }
 
-                    let (physical_width, physical_height): (u32, u32) =
-                        self.window.inner_size().into();
-                    let device_pixel_ratio = self.window.scale_factor();
-                    let (logical_width, logical_height): (u32, u32) = self
-                        .window
+                    let (physical_width, physical_height): (u32, u32) = window.inner_size().into();
+                    let device_pixel_ratio = window.scale_factor();
+                    let (logical_width, logical_height): (u32, u32) = window
                         .inner_size()
                         .to_logical::<f64>(device_pixel_ratio)
                         .into();
@@ -285,7 +308,7 @@ impl Window {
                     for event in frame_output.events.unwrap() {
                         match event {
                             OutgoingEvent::CursorChanged(cursor_icon) => {
-                                self.window.set_cursor_icon(cursor_icon);
+                                window.set_cursor_icon(cursor_icon);
                             }
                             OutgoingEvent::Exit => {
                                 *control_flow = ControlFlow::Exit;
@@ -298,19 +321,19 @@ impl Window {
                     } else {
                         if frame_output.swap_buffers {
                             #[cfg(not(target_arch = "wasm32"))]
-                            self.gl.swap_buffers().unwrap();
+                            gl.swap_buffers().unwrap();
                         }
                         if frame_output.wait_next_event {
                             *control_flow = ControlFlow::Wait;
                         } else {
                             *control_flow = ControlFlow::Poll;
-                            self.window.request_redraw();
+                            window.request_redraw();
                         }
                     }
                 }
                 WinitEvent::WindowEvent { ref event, .. } => match event {
                     WindowEvent::Resized(physical_size) => {
-                        self.gl.resize(*physical_size);
+                        gl.resize(*physical_size);
                     }
                     WindowEvent::CloseRequested => {
                         *control_flow = ControlFlow::Exit;
@@ -361,7 +384,7 @@ impl Window {
                                     ));
                                 }
                                 winit::event::MouseScrollDelta::PixelDelta(delta) => {
-                                    let d = delta.to_logical(self.window.scale_factor());
+                                    let d = delta.to_logical(window.scale_factor());
                                     events.push(IncomingEvent::MouseWheel(
                                         (d.x, d.y),
                                         position,
@@ -391,7 +414,7 @@ impl Window {
                         }
                     }
                     WindowEvent::CursorMoved { position, .. } => {
-                        let p = position.to_logical(self.window.scale_factor());
+                        let p = position.to_logical(window.scale_factor());
                         let delta = if let Some(last_pos) = cursor_pos {
                             (p.x - last_pos.0, p.y - last_pos.1)
                         } else {
@@ -416,7 +439,7 @@ impl Window {
                     WindowEvent::Touch(touch) => {
                         let position = touch
                             .location
-                            .to_logical::<f64>(self.window.scale_factor())
+                            .to_logical::<f64>(window.scale_factor())
                             .into();
                         match touch.phase {
                             TouchPhase::Started => {
@@ -500,26 +523,23 @@ impl Window {
         cfg_if! {
             if #[cfg(target_arch = "wasm32")] {
                 EventLoop::<()>::spawn(self.event_loop, loop_func);
+                return None;
             } else {
 
-
-
-                let mut event_loop = self.event_loop;
-
                 // run
-                EventLoop::<()>::run_return(&mut event_loop, loop_func);
+                EventLoop::<()>::run_return(&mut self.event_loop, loop_func);
 
                 // cleanup
 
                 // reset gl context
                 info!("clean up gl context");
-                Context::reset();
-
-                // put event loop back
-                info!("clean up event loop");
-                EventLoopContainer::set(event_loop);
+                let mut context = Context::get();
+                context.unload_programs();
             }
         }
+    }
+
+        return Some(self);
     }
 
     ///

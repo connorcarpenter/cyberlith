@@ -63,20 +63,6 @@ impl Context {
         Ok(())
     }
 
-    pub fn reset() {
-
-        unsafe {
-            if CONTEXT.is_none() {
-                return;
-            }
-
-            let mut context = Self::get();
-            context.unload_programs();
-
-            CONTEXT = None;
-        }
-    }
-
     pub fn get() -> Context {
         unsafe {
             CONTEXT
@@ -338,6 +324,8 @@ impl Context {
     }
 
     pub fn unload_programs(&mut self) {
+
+        // drop all programs
         let mut binding = self.programs.write();
         let program_muts: &mut HashMap<(String, String), Program> = binding.as_mut().unwrap();
         let program_muts = std::mem::replace(program_muts, HashMap::new());

@@ -10,10 +10,10 @@ pub fn runner_func(mut app: App) {
     let window_settings = app.world.remove_resource::<WindowSettings>().unwrap();
 
     // Create a Window
-    let window = Window::new(window_settings).unwrap();
+    let window = Window::take_or_new(window_settings);
 
     // Start the main render loop
-    window.render_loop(
+    let next_window_opt = window.render_loop(
         move |new_frame_input| // Begin a new frame with an updated frame input
             {
                 // Insert FrameInput
@@ -33,4 +33,7 @@ pub fn runner_func(mut app: App) {
                 FrameOutput::from(old_frame_input)
             },
     );
+    if let Some(next_window) = next_window_opt {
+        Window::set(next_window);
+    }
 }
