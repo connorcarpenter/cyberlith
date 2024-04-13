@@ -2,7 +2,7 @@ use bevy_ecs::{
     prelude::{Entity, World},
     system::{Commands, Query, ResMut, SystemState},
 };
-use bevy_log::info;
+use logging::info;
 
 use naia_bevy_client::{Client, CommandsExt};
 

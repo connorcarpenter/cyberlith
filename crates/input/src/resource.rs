@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use bevy_ecs::{event::EventWriter, system::Resource};
-use bevy_log::info;
+use logging::info;
 
 use clipboard::ClipboardManager;
 use instant::Instant;

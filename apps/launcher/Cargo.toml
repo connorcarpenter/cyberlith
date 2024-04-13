@@ -20,10 +20,10 @@ game_engine = { path = "../../crates/engine" }
 
 crypto = { path = "../../crates/crypto" }
 gateway_http_proto = { path = "../../services/gateway/http_proto" }
+logging = { path = "../../crates/logging" }
 
 # External
 bevy_app = { version = "0.13", default-features=false }
 bevy_ecs = { version = "0.13", default-features=false }
-bevy_log = { version = "0.13", default-features=false }
 
 cfg-if = { version = "1.0" }

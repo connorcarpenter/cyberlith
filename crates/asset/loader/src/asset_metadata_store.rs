@@ -1,7 +1,7 @@
 use std::{collections::HashMap, path::PathBuf};
 
 use bevy_ecs::{change_detection::ResMut, system::Resource};
-use bevy_log::{info, warn};
+use logging::{info, warn};
 
 use naia_serde::{BitReader, BitWriter, SerdeInternal as Serde};
 

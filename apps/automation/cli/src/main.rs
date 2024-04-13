@@ -1,6 +1,6 @@
 use automation_lib::CliError;
 use clap::{Arg, Command};
-use log::{warn, LevelFilter};
+use logging::{warn, LevelFilter};
 use simple_logger::SimpleLogger;
 
 fn cli() -> Command {

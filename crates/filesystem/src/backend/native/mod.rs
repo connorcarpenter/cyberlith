@@ -3,7 +3,7 @@ use bevy_tasks::{AsyncComputeTaskPool, Task};
 use futures_lite::future;
 
 use async_channel::{Receiver, Sender};
-use log::info;
+use logging::info;
 
 use crate::{
     error::TaskError,

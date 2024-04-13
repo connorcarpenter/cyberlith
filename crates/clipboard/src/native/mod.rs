@@ -41,7 +41,7 @@ impl ClipboardManager {
     fn set_contents_impl(&mut self, contents: &str) {
         if let Some(mut clipboard) = self.get() {
             if let Err(err) = clipboard.set_text(contents.to_owned()) {
-                log::error!("Failed to set clipboard contents: {:?}", err);
+                logging::error!("Failed to set clipboard contents: {:?}", err);
             }
         }
     }
@@ -50,7 +50,7 @@ impl ClipboardManager {
         if let Some(mut clipboard) = self.get() {
             match clipboard.get_text() {
                 Ok(contents) => return Some(contents),
-                Err(err) => log::error!("Failed to get clipboard contents: {:?}", err),
+                Err(err) => logging::error!("Failed to get clipboard contents: {:?}", err),
             }
         };
         None
@@ -62,7 +62,7 @@ impl ClipboardManager {
                 Clipboard::new()
                     .map(RefCell::new)
                     .map_err(|err| {
-                        log::error!("Failed to initialize clipboard: {:?}", err);
+                        logging::error!("Failed to initialize clipboard: {:?}", err);
                     })
                     .ok()
             })

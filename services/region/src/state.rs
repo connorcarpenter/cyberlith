@@ -3,7 +3,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use log::{info, warn};
+use logging::{info, warn};
 
 use http_client::{HttpClient, RequestOptions};
 use http_server::Server;

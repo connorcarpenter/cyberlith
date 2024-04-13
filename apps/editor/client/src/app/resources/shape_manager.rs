@@ -1,5 +1,5 @@
 use bevy_ecs::entity::Entity;
-use bevy_log::info;
+use logging::info;
 
 use crate::app::resources::{
     edge_manager::EdgeManager, face_manager::FaceManager, file_manager::FileManager,

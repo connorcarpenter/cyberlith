@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use bevy_ecs::{entity::Entity, system::Resource};
-use bevy_log::info;
+use logging::info;
 
 use editor_proto::resources::DependencyMap;
 

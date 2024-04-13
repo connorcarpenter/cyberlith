@@ -16,11 +16,9 @@ http_client = { path = "../../crates/http/http_client" }
 crypto = { path = "../../crates/crypto" }
 config = { path = "../../config", features = ["region"] }
 random = { path = "../../crates/random" }
+logging = { path = "../../crates/logging" }
 
 region_server_http_proto = { path = "http_proto" }
 session_server_http_proto = { path = "../session/http_proto" }
 world_server_http_proto = { path = "../world/http_proto" }
 asset_server_http_proto = { path = "../asset/http_proto" }
-
-log = { version = "0.4", features = [] }
-simple_logger = { version = "4.0", default-features = false, features = ["timestamps"] }

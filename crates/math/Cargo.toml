@@ -5,8 +5,10 @@ edition = "2021"
 workspace = "../.."
 
 [dependencies]
-glam = { version = "0.23" }
-naia-serde = { path = "../../../naia/shared/serde" }
 random = { path = "../random" }
-log = { version = "0.4" }
+logging = { path = "../logging" }
+
+naia-serde = { path = "../../../naia/shared/serde" }
+
+glam = { version = "0.23" }
 

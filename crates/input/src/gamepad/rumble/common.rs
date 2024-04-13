@@ -2,7 +2,7 @@
 use std::{collections::HashMap, time::Duration};
 
 use bevy_ecs::system::{NonSendMut, ResMut, Resource};
-use bevy_log::warn;
+use logging::warn;
 
 use gilrs::ff::{self, Effect};
 

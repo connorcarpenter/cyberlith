@@ -2,7 +2,7 @@ use bevy_ecs::{
     prelude::World,
     system::{Commands, SystemState},
 };
-use bevy_log::{info, warn};
+use logging::{info, warn};
 
 use naia_bevy_client::{Client, CommandsExt};
 

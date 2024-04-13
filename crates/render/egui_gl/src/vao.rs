@@ -59,7 +59,7 @@ impl VertexArrayObject {
 
             Some(vao)
         } else {
-            log::debug!("VAO not supported");
+            logging::debug!("VAO not supported");
             None
         };
 
@@ -113,7 +113,7 @@ fn supports_vao(gl: &gl::Context) -> bool {
     const OPENGL_ES_PREFIX: &str = "OpenGL ES ";
 
     let version_string = unsafe { gl.get_parameter_string(gl::VERSION) };
-    log::debug!("GL version: {:?}.", version_string);
+    logging::debug!("GL version: {:?}.", version_string);
 
     // Examples:
     // * "WebGL 2.0 (OpenGL ES 3.0 Chromium)"
@@ -124,7 +124,7 @@ fn supports_vao(gl: &gl::Context) -> bool {
         if version_str.contains("1.0") {
             // need to test OES_vertex_array_object .
             let supported_extensions = gl.supported_extensions();
-            log::debug!("Supported OpenGL extensions: {:?}", supported_extensions);
+            logging::debug!("Supported OpenGL extensions: {:?}", supported_extensions);
             supported_extensions.contains("OES_vertex_array_object")
                 || supported_extensions.contains("GL_OES_vertex_array_object")
         } else {
@@ -135,7 +135,7 @@ fn supports_vao(gl: &gl::Context) -> bool {
         if version_string.contains("2.0") {
             // need to test OES_vertex_array_object .
             let supported_extensions = gl.supported_extensions();
-            log::debug!("Supported OpenGL extensions: {:?}", supported_extensions);
+            logging::debug!("Supported OpenGL extensions: {:?}", supported_extensions);
             supported_extensions.contains("OES_vertex_array_object")
                 || supported_extensions.contains("GL_OES_vertex_array_object")
         } else {
@@ -147,7 +147,7 @@ fn supports_vao(gl: &gl::Context) -> bool {
             // I found APPLE_vertex_array_object , GL_ATI_vertex_array_object ,ARB_vertex_array_object
             // but APPLE's and ATI's very old extension.
             let supported_extensions = gl.supported_extensions();
-            log::debug!("Supported OpenGL extensions: {:?}", supported_extensions);
+            logging::debug!("Supported OpenGL extensions: {:?}", supported_extensions);
             supported_extensions.contains("ARB_vertex_array_object")
                 || supported_extensions.contains("GL_ARB_vertex_array_object")
         } else {

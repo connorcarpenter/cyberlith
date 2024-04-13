@@ -2,7 +2,7 @@ use bevy_ecs::{
     prelude::World,
     system::{Query, Res, ResMut, SystemState},
 };
-use bevy_log::info;
+use logging::info;
 
 use editor_proto::components::EdgeAngle;
 

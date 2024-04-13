@@ -1,7 +1,7 @@
 use std::net::SocketAddr;
 
 use bevy_ecs::{change_detection::ResMut, event::EventReader};
-use bevy_log::{info, warn};
+use logging::{info, warn};
 
 use naia_bevy_server::{
     events::{AuthEvents, ConnectEvent, DisconnectEvent, ErrorEvent},

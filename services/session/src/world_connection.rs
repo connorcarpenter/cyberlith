@@ -1,5 +1,5 @@
 use bevy_ecs::change_detection::ResMut;
-use bevy_log::{info, warn};
+use logging::{info, warn};
 
 use naia_bevy_server::Server;
 

@@ -6,9 +6,12 @@ workspace = "../.."
 
 [dependencies]
 render_gl = { path = "../render/render_gl" }
+logging = { path = "../logging" }
 
 bevy_app = { version = "0.13", default-features=false }
 bevy_ecs = { version = "0.13", default-features=false }
 
-log = { version = "0.4" }
+cfg-if = { version = "1.0" }
 
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+futures = { version = "0.3" }

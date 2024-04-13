@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use log::{info, warn};
+use logging::{info, warn};
 use vultr::VultrApi;
 
 use crate::{get_api_key, CliError};

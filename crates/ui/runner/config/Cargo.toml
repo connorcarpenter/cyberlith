@@ -10,6 +10,7 @@ workspace = "../../../.."
 render_api = { path = "../../../render/render_api" }
 asset_id = { path = "../../../asset/id" }
 math = { path = "../../../math" }
+logging = { path = "../../../logging" }
 
 ui_layout = { path = "../../layout" }
 ui_builder_config = { path = "../../builder/config" }
@@ -17,4 +18,3 @@ ui_serde = { path = "../../serde" }
 
 bevy_app = { version = "0.13", default-features = false }
 bevy_ecs = { version = "0.13", default-features = false }
-bevy_log = { version = "0.13", default-features=false }

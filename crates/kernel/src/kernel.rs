@@ -1,6 +1,5 @@
 use bevy_app::{Plugin, App as BevyApp};
-
-use crate::app_exit::ExitActionContainer;
+use crate::exit_action_container::ExitActionContainer;
 
 pub struct Kernel {
     current_app: Option<Box<dyn KernelAppInner>>
@@ -8,6 +7,9 @@ pub struct Kernel {
 
 impl Kernel {
     pub fn new() -> Self {
+
+        logging::initialize();
+
         Self {
             current_app: None
         }
@@ -17,13 +19,31 @@ impl Kernel {
         self.current_app = Some(A::get_boxed());
     }
 
-    pub fn run(&self) -> String {
-        let Some(current_app) = &self.current_app else {
-            panic!("Kernel has no app loaded. Call kernel.load::<App>() first.");
-        };
-        current_app.run_until_quit();
+    cfg_if::cfg_if! {
+        if #[cfg(target_arch = "wasm32")] {
 
-        ExitActionContainer::take()
+            pub async fn run_async(&self) -> String {
+                use crate::wasm;
+
+                let recvr = wasm::init();
+
+                let Some(current_app) = &self.current_app else {
+                    panic!("Kernel has no app loaded. Call kernel.load::<App>() first.");
+                };
+                current_app.run_until_quit();
+
+                recvr.await.unwrap()
+            }
+        } else {
+            pub fn run(&self) -> String {
+                let Some(current_app) = &self.current_app else {
+                    panic!("Kernel has no app loaded. Call kernel.load::<App>() first.");
+                };
+                current_app.run_until_quit();
+
+                ExitActionContainer::take()
+            }
+        }
     }
 }
 

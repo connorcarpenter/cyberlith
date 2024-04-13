@@ -2,7 +2,7 @@ use bevy_ecs::{
     system::{Query, Res, ResMut, SystemState},
     world::World,
 };
-use bevy_log::info;
+use logging::info;
 
 use input::Input;
 use math::Vec2;

@@ -1,4 +1,4 @@
-use bevy_log::info;
+use logging::info;
 
 use naia_bevy_server::{transport::webrtc, Server};
 

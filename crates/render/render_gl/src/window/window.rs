@@ -1,5 +1,5 @@
 use bevy_app::App;
-use bevy_log::{info, LogPlugin};
+use logging::{info};
 use cfg_if::cfg_if;
 use winit::{
     dpi,
@@ -12,7 +12,7 @@ use winit::{
     window::WindowBuilder,
 };
 
-use input::{IncomingEvent, Key, Modifiers, MouseButton};
+use input::{IncomingEvent, Key, MouseButton};
 use render_api::{
     components::Viewport,
     resources::{SurfaceSettings, WindowSettings},
@@ -46,9 +46,9 @@ pub struct Window {
 }
 
 impl Window {
-    pub(crate) fn run_render_loop(settings: WindowSettings, mut app: App) {
+    pub(crate) fn run_render_loop(settings: WindowSettings, app: App) {
         // Create a Window
-        let mut window = Self::take_or_new(settings);
+        let window = Self::take_or_new(settings);
 
         // Run the main render loop
         let window_opt = Window::render_loop(window, app);
@@ -250,8 +250,18 @@ impl Window {
 
         let mut event_loop = self.event_loop_opt.take().unwrap();
         let mut rlc = RenderLoopContext::new();
-        let gl = &self.gl;
-        let window = &mut self.window;
+
+        cfg_if! {
+            if #[cfg(target_arch = "wasm32")] {
+                let gl = self.gl;
+                let mut window = self.window;
+                let closure = self.closure;
+                let maximized = self.maximized;
+            } else {
+                let gl = &self.gl;
+                let window = &mut self.window;
+            }
+        }
 
         let loop_func = move |event: WinitEvent<'_, ()>, _: &_, control_flow: &mut _| {
             match event {
@@ -263,7 +273,7 @@ impl Window {
                         window.canvas()
                             .remove_event_listener_with_callback(
                                 "contextmenu",
-                                self.closure.as_ref().unchecked_ref(),
+                                closure.as_ref().unchecked_ref(),
                             )
                             .unwrap();
                     }
@@ -279,7 +289,7 @@ impl Window {
                     rlc.accumulated_time += elapsed_time;
 
                     #[cfg(target_arch = "wasm32")]
-                    if self.maximized {
+                    if maximized {
                         use winit::platform::web::WindowExtWebSys;
 
                         let html_canvas = window.canvas();
@@ -319,6 +329,7 @@ impl Window {
                                 window.set_cursor_icon(cursor_icon);
                             }
                             OutgoingEvent::Exit => {
+                                info!("exit requested");
                                 *control_flow = ControlFlow::Exit;
                             }
                         }

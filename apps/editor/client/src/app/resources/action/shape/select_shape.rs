@@ -3,7 +3,7 @@ use bevy_ecs::{
     system::{Res, ResMut, SystemState},
     world::Mut,
 };
-use bevy_log::info;
+use logging::info;
 
 use naia_bevy_client::{Client, CommandsExt};
 

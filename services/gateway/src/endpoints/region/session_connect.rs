@@ -1,4 +1,4 @@
-use log::info;
+use logging::info;
 
 use http_client::{HttpClient, ResponseError};
 use http_server::{http_log_util, Server};

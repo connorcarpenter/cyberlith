@@ -1,6 +1,6 @@
 use bevy_ecs::system::{Query, Res, SystemState};
 use bevy_ecs::{entity::Entity, prelude::World, world::Mut};
-use bevy_log::info;
+use logging::info;
 use editor_proto::components::ShapeName;
 
 use crate::app::resources::{

@@ -5,7 +5,7 @@ use bevy_ecs::{
     prelude::{Query, Resource, World as BevyWorld},
     system::{Res, SystemState},
 };
-use bevy_log::info;
+use logging::info;
 
 use naia_bevy_client::{events::InsertComponentEvents, Replicate};
 

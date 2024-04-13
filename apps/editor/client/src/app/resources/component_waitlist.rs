@@ -4,7 +4,7 @@ use bevy_ecs::{
     entity::Entity,
     system::{Commands, Query, Resource},
 };
-use bevy_log::{info, warn};
+use logging::{info, warn};
 
 use math::{Vec2, Vec3};
 use render_api::base::{CpuMaterial, CpuMesh};

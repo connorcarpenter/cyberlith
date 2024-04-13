@@ -1,7 +1,7 @@
 use std::{thread, time::Duration};
 
 use crossbeam_channel::TryRecvError;
-use log::{info, warn};
+use logging::{info, warn};
 
 use crate::{
     containers_up::{

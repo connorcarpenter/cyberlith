@@ -5,7 +5,8 @@ edition = "2021"
 workspace = "../.."
 
 [dependencies]
+logging = { path = "../logging" }
+
 serde = { version = "1.0.189", features = ["derive"] }
 serde_json = { version = "1.0.107" }
 git2 = { version = "0.17" }
-log = { version = "0.4" }

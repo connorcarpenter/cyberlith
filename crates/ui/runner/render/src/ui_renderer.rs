@@ -1,4 +1,4 @@
-use bevy_log::warn;
+use logging::warn;
 
 use asset_loader::{AssetHandle, AssetManager, IconData, UiTextMeasurer};
 use asset_render::AssetRender;

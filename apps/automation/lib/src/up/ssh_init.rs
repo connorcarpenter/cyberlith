@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use log::{info, warn};
+use logging::{info, warn};
 use openssh::Session;
 
 use crate::{

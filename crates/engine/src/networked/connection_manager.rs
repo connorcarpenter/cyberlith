@@ -6,7 +6,7 @@ use bevy_ecs::{
     event::{Event, EventReader, EventWriter},
     system::Resource,
 };
-use bevy_log::info;
+use logging::info;
 
 use naia_bevy_client::{
     events::{ConnectEvent, MessageEvents, RequestEvents},

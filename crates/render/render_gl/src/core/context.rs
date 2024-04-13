@@ -3,7 +3,7 @@ use std::{
     sync::{Arc, RwLock},
 };
 
-use bevy_log::info;
+use logging::info;
 use gl::HasContext;
 
 use render_api::components::Viewport;
@@ -329,7 +329,7 @@ impl Context {
         let mut binding = self.programs.write();
         let program_muts: &mut HashMap<(String, String), Program> = binding.as_mut().unwrap();
         let program_muts = std::mem::replace(program_muts, HashMap::new());
-        for (_key, mut program) in program_muts {
+        for (_key, program) in program_muts {
             std::mem::drop(program);
         }
     }

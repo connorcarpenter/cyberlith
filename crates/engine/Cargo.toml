@@ -31,6 +31,7 @@ ui_runner = { path = "../ui/runner" }
 ui_input = { path = "../ui/runner/input" }
 random = { path = "../random" }
 kernel = { path = "../kernel" }
+logging = { path = "../logging" }
 
 # Networked Dependencies
 gateway_http_proto = { path = "../../services/gateway/http_proto", optional = true }
@@ -47,6 +48,5 @@ naia-bevy-client = { path = "../../../naia/adapters/bevy/client", features = ["t
 
 bevy_app = { version = "0.13", default-features=false }
 bevy_ecs = { version = "0.13", default-features=false }
-bevy_log = { version = "0.13", default-features=false }
 
 cfg-if = { version = "1.0" }

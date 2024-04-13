@@ -5,7 +5,7 @@ use std::{
 };
 
 use async_dup::Arc;
-use log::info;
+use logging::info;
 use smol::{future::Future, lock::RwLock, Async};
 
 use config::CONTENT_SERVER_ASSET_FILE_PATH;

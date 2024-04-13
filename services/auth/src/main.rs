@@ -6,7 +6,7 @@ mod types;
 
 use std::{net::SocketAddr, thread};
 
-use log::{info, LevelFilter};
+use logging::{info, LevelFilter};
 use simple_logger::SimpleLogger;
 
 use config::{AUTH_SERVER_PORT, SELF_BINDING_ADDR};

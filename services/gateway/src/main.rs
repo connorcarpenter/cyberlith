@@ -2,7 +2,7 @@ mod endpoints;
 
 use std::{net::SocketAddr, thread};
 
-use log::{info, LevelFilter};
+use logging::{info, LevelFilter};
 use simple_logger::SimpleLogger;
 
 use config::{GATEWAY_PORT, SELF_BINDING_ADDR};

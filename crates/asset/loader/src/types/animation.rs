@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use bevy_log::info;
+use logging::info;
 
 use math::Quat;
 use render_api::components::Transform;

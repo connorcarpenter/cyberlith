@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use bevy_app::{App, ScheduleRunnerPlugin, Startup, Update};
 use bevy_ecs::schedule::IntoSystemConfigs;
-use bevy_log::LogPlugin;
+use logging::LogPlugin;
 
 use naia_bevy_server::{
     Plugin as NaiaServerPlugin, ReceiveEvents, ServerConfig as NaiaServerConfig,

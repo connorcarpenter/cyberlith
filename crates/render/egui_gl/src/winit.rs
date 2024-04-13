@@ -30,7 +30,7 @@ impl Eguigl {
     ) -> Self {
         let painter = crate::Painter::new(gl, "", shader_version)
             .map_err(|err| {
-                log::error!("error occurred in initializing painter:\n{err}");
+                logging::error!("error occurred in initializing painter:\n{err}");
             })
             .unwrap();
 
@@ -72,7 +72,7 @@ impl Eguigl {
         } = self.egui_ctx.run(raw_input, run_ui);
 
         if viewport_output.len() > 1 {
-            log::warn!("Multiple viewports not yet supported by Eguigl");
+            logging::warn!("Multiple viewports not yet supported by Eguigl");
         }
         for (_, ViewportOutput { commands, .. }) in viewport_output {
             let mut screenshot_requested = false;
@@ -84,7 +84,7 @@ impl Eguigl {
                 &mut screenshot_requested,
             );
             if screenshot_requested {
-                log::warn!("Screenshot not yet supported by Eguigl");
+                logging::warn!("Screenshot not yet supported by Eguigl");
             }
         }
 

@@ -21,7 +21,7 @@ wgpu_renderer = [ "launcher_app/wgpu_renderer" ]
 kernel = { path = "../../crates/kernel" }
 launcher_app = { path = "../../apps/launcher" }
 game_app = { path = "../../apps/game" }
+logging = { path = "../../crates/logging" }
 
 # others
-log = { version = "0.4", features = [] }
 cfg-if = { version = "1.0" }

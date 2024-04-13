@@ -20,7 +20,7 @@ pub mod http_log_util {
         othe_service_recver_name: &str,
         request_name: &str,
     ) {
-        log::info!(
+        logging::info!(
             "{} -> {}: {} request",
             self_service_sender_name,
             othe_service_recver_name,
@@ -33,7 +33,7 @@ pub mod http_log_util {
         othe_service_sender_name: &str,
         response_name: &str,
     ) {
-        log::info!(
+        logging::info!(
             "{} <- {}: {} request",
             self_service_recver_name,
             othe_service_sender_name,
@@ -46,7 +46,7 @@ pub mod http_log_util {
         othe_service_recver_name: &str,
         request_name: &str,
     ) {
-        log::info!(
+        logging::info!(
             "{} -> {}: {} response",
             self_service_sender_name,
             othe_service_recver_name,
@@ -59,7 +59,7 @@ pub mod http_log_util {
         othe_service_sender_name: &str,
         response_name: &str,
     ) {
-        log::info!(
+        logging::info!(
             "{} <- {}: {} response",
             self_service_recver_name,
             othe_service_sender_name,
@@ -76,7 +76,7 @@ pub mod http_log_util {
             "{} <- {}: {} response FAIL!",
             self_service_recver_name, othe_service_sender_name, response_name
         );
-        log::warn!("{}", error_msg);
+        logging::warn!("{}", error_msg);
         Err(ResponseError::InternalServerError(error_msg))
     }
 }

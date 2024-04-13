@@ -25,7 +25,7 @@ pub mod winit;
 #[cfg(all(not(target_arch = "wasm32"), feature = "winit"))]
 pub use winit::*;
 
-/// Check for OpenGL error and report it using `log::error`.
+/// Check for OpenGL error and report it using `logging::error`.
 ///
 /// Only active in debug builds!
 ///
@@ -49,7 +49,7 @@ macro_rules! check_for_gl_error {
     }};
 }
 
-/// Check for OpenGL error and report it using `log::error`.
+/// Check for OpenGL error and report it using `logging::error`.
 ///
 /// WARNING: slow! Only use during setup!
 ///
@@ -90,7 +90,7 @@ pub fn check_for_gl_error_impl(gl: &gl::Context, file: &str, line: u32, context:
         };
 
         if context.is_empty() {
-            log::error!(
+            logging::error!(
                 "GL error, at {}:{}: {} (0x{:X}). Please file a bug at https://github.com/emilk/egui/issues",
                 file,
                 line,
@@ -98,7 +98,7 @@ pub fn check_for_gl_error_impl(gl: &gl::Context, file: &str, line: u32, context:
                 error_code,
             );
         } else {
-            log::error!(
+            logging::error!(
                 "GL error, at {}:{} ({}): {} (0x{:X}). Please file a bug at https://github.com/emilk/egui/issues",
                 file,
                 line,

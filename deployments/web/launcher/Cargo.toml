@@ -12,15 +12,16 @@ path = "src/lib.rs"
 crate-type = ["cdylib", "rlib"]
 
 [features]
-local = [ ]
-prod = [ ]
-gl_renderer = [ ]
-wgpu_renderer = [ ]
+local = [ "launcher_app/local" ]
+prod = [ "launcher_app/prod" ]
+gl_renderer = [ "launcher_app/gl_renderer" ]
+wgpu_renderer = [ "launcher_app/wgpu_renderer" ]
 
 [dependencies]
 kernel = { path = "../../../crates/kernel" }
+logging = { path = "../../../crates/logging" }
+launcher_app = { path = "../../../apps/launcher" }
 
-log = { version = "0.4", features = [] }
 cfg-if = { version = "1.0" }
 
 wasm-bindgen = { version = "0.2", features = [ "serde-serialize" ] }

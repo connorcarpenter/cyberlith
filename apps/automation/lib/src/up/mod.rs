@@ -8,7 +8,7 @@ mod ssh_init;
 
 use std::{thread, time::Duration};
 
-use log::info;
+use logging::info;
 
 use crate::{
     up::containers_up::containers_up,

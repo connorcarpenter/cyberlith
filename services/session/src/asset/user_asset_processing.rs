@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use bevy_log::info;
+use logging::info;
 
 use naia_bevy_server::{ResponseReceiveKey, Server, UserKey};
 

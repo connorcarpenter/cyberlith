@@ -5,7 +5,7 @@ use std::{
 };
 
 use async_dup::Arc;
-use log::info;
+use logging::info;
 use smol::{future::Future, lock::RwLock, Async};
 
 use http_common::{ApiRequest, ApiResponse, Request, Response, ResponseError};

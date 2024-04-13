@@ -6,7 +6,7 @@ use bevy_ecs::{
     prelude::Resource,
     system::{Commands, EntityCommands},
 };
-use bevy_log::info;
+use logging::info;
 
 use naia_bevy_server::{CommandsExt, RoomKey, Server, UserKey};
 

@@ -1,6 +1,5 @@
 use bevy_app::{App, Plugin, Startup, Update};
 use bevy_ecs::system::ResMut;
-use bevy_log::LogPlugin;
 
 use asset_loader::AssetPlugin;
 use bevy_http_client::HttpClientPlugin;
@@ -22,8 +21,6 @@ pub struct EnginePlugin;
 impl Plugin for EnginePlugin {
     fn build(&self, app: &mut App) {
         app
-            // Bevy Plugins
-            .add_plugins(LogPlugin::default())
             // Add Render Plugins
             .add_plugins(RenderApiPlugin)
             .add_plugins(RendererPlugin)

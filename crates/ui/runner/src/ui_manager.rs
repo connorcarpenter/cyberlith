@@ -6,7 +6,7 @@ use bevy_ecs::{
     prelude::World,
     system::Resource,
 };
-use bevy_log::warn;
+use logging::warn;
 
 use crate::handle::UiHandle;
 use asset_id::AssetId;

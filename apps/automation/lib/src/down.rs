@@ -1,6 +1,6 @@
 use std::{thread, time::Duration};
 
-use log::info;
+use logging::info;
 use vultr::VultrApi;
 
 use crate::{

@@ -5,7 +5,7 @@ use bevy_ecs::{
     prelude::{Commands, World},
     system::{Query, ResMut, SystemState},
 };
-use bevy_log::info;
+use logging::info;
 
 use asset_id::AssetId;
 

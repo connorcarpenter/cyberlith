@@ -1,4 +1,4 @@
-use bevy_log::info;
+use logging::info;
 
 use asset_serde::bits::ComponentFileType;
 use math::{Quat, Vec3};

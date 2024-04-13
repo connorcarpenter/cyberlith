@@ -1,5 +1,5 @@
 use bevy_ecs::{event::EventReader, system::ResMut};
-use bevy_log::info;
+use logging::info;
 
 use naia_bevy_client::events::RejectEvent;
 

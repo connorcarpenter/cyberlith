@@ -10,7 +10,7 @@ use bevy_ecs::{
     event::EventReader,
     system::{Commands, Res},
 };
-use bevy_log::{info, warn};
+use logging::{info, warn};
 
 use bevy_http_client::HttpClient;
 use naia_bevy_server::events::TickEvent;

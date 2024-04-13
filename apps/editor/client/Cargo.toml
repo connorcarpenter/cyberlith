@@ -24,12 +24,12 @@ render_gl = { path = "../../../crates/render/render_gl" }
 render_egui = { path = "../../../crates/render/render_egui" }
 input = { path = "../../../crates/input" }
 storage = { path = "../../../crates/storage" }
+logging = { path = "../../../crates/logging" }
 
 # External Crates
 naia-bevy-client = { path = "../../../../naia/adapters/bevy/client", features = ["transport_webrtc"] }
 bevy_app = { version = "0.13", default-features=false }
 bevy_ecs = { version = "0.13", default-features=false }
-bevy_log = { version = "0.13", default-features=false }
 cfg-if = { version = "1.0" }
 egui-modal = { version = "0.2.2" }
 config_rs = { version ="0.13", package = "config", default-features = false, features = ["yaml"] }

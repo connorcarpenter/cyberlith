@@ -15,7 +15,7 @@ cfg_if! {
 
 use std::{net::SocketAddr, thread, time::Duration};
 
-use log::{info, LevelFilter};
+use logging::{info, LevelFilter};
 use simple_logger::SimpleLogger;
 
 use http_server::{async_dup::Arc, smol::lock::RwLock, Server};

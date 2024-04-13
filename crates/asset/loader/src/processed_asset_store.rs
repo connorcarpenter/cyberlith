@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use bevy_log::{info, warn};
+use logging::{info, warn};
 
 use asset_id::{AssetId, AssetType};
 use render_api::base::{CpuMaterial, CpuMesh, CpuSkin};

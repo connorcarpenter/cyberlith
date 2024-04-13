@@ -8,7 +8,7 @@ use bevy_ecs::{
     system::SystemState,
     world::World,
 };
-use bevy_log::info;
+use logging::info;
 
 use world_server_naia_proto::components::{Alt1, AssetEntry, AssetRef, Main};
 

@@ -2,7 +2,7 @@ use bevy_ecs::{
     event::EventReader,
     system::{Commands, Query, Res, ResMut},
 };
-use bevy_log::{info, warn};
+use logging::{info, warn};
 
 use naia_bevy_server::{events::UpdateComponentEvents, CommandsExt, EntityAuthStatus, Server};
 

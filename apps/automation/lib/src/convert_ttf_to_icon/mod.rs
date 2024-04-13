@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use log::{info, warn};
+use logging::{info, warn};
 use ttf2mesh::{Quality, TTFFile, Value};
 
 use asset_id::AssetId;

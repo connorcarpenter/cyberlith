@@ -4,7 +4,7 @@ use std::{fs, fs::File, io::Read, path::Path};
 
 use asset_id::{AssetId, ETag};
 use git2::{Cred, FetchOptions, Index, Oid, PushOptions, Repository, Signature, Tree};
-use log::info;
+use logging::info;
 
 use asset_serde::json::{Asset, AssetData, AssetMeta, ProcessedAssetMeta};
 
@@ -602,7 +602,7 @@ fn prune_unchanged_files(
 // use std::{fs, fs::File, io::{Read, Write}, path::Path, collections::{HashSet, HashMap}};
 //
 // use git2::{Cred, PushOptions, Repository, Tree};
-// use log::info;
+// use logging::info;
 // use crypto::U32Token;
 //
 // use asset_serde::json::{Asset, AssetData, AssetMeta};

@@ -19,5 +19,6 @@ asset = []
 auth = []
 
 [dependencies]
+logging = { path = "../crates/logging" }
+
 cfg-if = { version = "1.0" }
-log = { version = "0.4" }

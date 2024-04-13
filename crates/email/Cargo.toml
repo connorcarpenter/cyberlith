@@ -5,6 +5,6 @@ edition = "2021"
 workspace = "../.."
 
 [dependencies]
-lettre = { version = "0.10", features = ["builder", "tokio1-native-tls"] }
+logging = { path = "../logging" }
 
-log = { version = "0.4" }
+lettre = { version = "0.10", features = ["builder", "tokio1-native-tls"] }

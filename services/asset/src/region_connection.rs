@@ -1,5 +1,5 @@
 use asset_server_http_proto::{HeartbeatRequest, HeartbeatResponse};
-use log::{info, warn};
+use logging::{info, warn};
 
 use http_client::{HttpClient, ResponseError};
 use http_server::{async_dup::Arc, smol::lock::RwLock, Server};

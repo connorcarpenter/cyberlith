@@ -12,7 +12,7 @@ use bevy_ecs::{
     schedule::{apply_deferred, IntoSystemConfigs},
     system::{Res, ResMut},
 };
-use bevy_log::{info, LogPlugin};
+use logging::{info, LogPlugin};
 
 use naia_bevy_server::{Plugin as ServerPlugin, ReceiveEvents, ServerConfig};
 

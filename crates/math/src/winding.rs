@@ -1,5 +1,5 @@
 use glam::Vec3;
-use log::warn;
+use logging::warn;
 
 // returns whether last two vertices were swapped
 pub fn reorder_triangle_winding(

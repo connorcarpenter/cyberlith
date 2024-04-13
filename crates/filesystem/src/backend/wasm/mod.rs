@@ -2,7 +2,7 @@ use bevy_tasks::AsyncComputeTaskPool;
 
 use crossbeam_channel::{bounded, Receiver};
 use js_sys::{Array, AsyncIterator, Function, Promise, Uint8Array};
-use log::info;
+use logging::info;
 use wasm_bindgen::JsValue;
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{

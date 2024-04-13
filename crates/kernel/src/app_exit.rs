@@ -2,40 +2,13 @@ use std::sync::{Arc, RwLock};
 
 use bevy_app::AppExit;
 use bevy_ecs::{event::{Event, EventReader}, system::NonSendMut};
+use logging::info;
 
 use render_gl::window::{FrameInput, OutgoingEvent};
+use crate::exit_action_container::ExitActionContainer;
 
-pub(crate) static mut EXIT_ACTION_CONTAINER: Option<Arc<RwLock<String>>> = None;
-pub(crate) struct ExitActionContainer;
-impl ExitActionContainer {
-    pub fn is_set() -> bool {
-        unsafe { EXIT_ACTION_CONTAINER.is_some() }
-    }
-    pub fn set(action: String) {
-        unsafe {
-            if EXIT_ACTION_CONTAINER.is_some() {
-                panic!("ExitActionContainer already set");
-            }
-            EXIT_ACTION_CONTAINER = Some(Arc::new(RwLock::new(action)));
-        }
-    }
-    pub fn take() -> String {
-        unsafe {
-            let Some(output) = EXIT_ACTION_CONTAINER
-                .as_ref() else {
-                return "exit".to_string();
-            };
-            let output = output
-                .read()
-                .unwrap()
-                .clone();
-            EXIT_ACTION_CONTAINER = None;
-            output
-        }
-    }
-}
 
-#[derive(Event)]
+#[derive(Event, Debug)]
 pub enum AppExitAction {
     JustExit,
     GoTo(String),
@@ -62,6 +35,8 @@ pub fn process(
     }
     // read exit action events
     if let Some(first_action) = exit_action_event_reader.read().next() {
+
+        info!("system received exit action event: {:?}", first_action);
 
         frame_input.outgoing_events.push(OutgoingEvent::Exit);
 

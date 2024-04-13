@@ -2,7 +2,7 @@ use bevy_ecs::{
     entity::Entity,
     system::{Query, Resource},
 };
-use bevy_log::warn;
+use logging::warn;
 
 use math::{EulerRot, Quat, Vec2, Vec3};
 use render_api::components::{

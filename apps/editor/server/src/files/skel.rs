@@ -5,7 +5,7 @@ use bevy_ecs::{
     prelude::{Commands, World},
     system::{Query, Res, ResMut, SystemState},
 };
-use bevy_log::info;
+use logging::info;
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 

@@ -1,4 +1,4 @@
-use bevy_log::info;
+use logging::info;
 use math::Vec2;
 
 #[derive(Clone, Copy)]

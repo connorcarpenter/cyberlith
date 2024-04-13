@@ -1,7 +1,7 @@
 use std::{thread, time::Duration};
 
 use crossbeam_channel::TryRecvError;
-use log::{info, warn};
+use logging::{info, warn};
 use openssh::Session;
 
 use crate::{

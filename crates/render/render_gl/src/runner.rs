@@ -3,7 +3,7 @@ use bevy_app::App;
 
 use render_api::resources::WindowSettings;
 
-use crate::window::{FrameInput, FrameOutput, Window};
+use crate::window::Window;
 
 pub fn runner_func(mut app: App) {
     // Get Window Settings

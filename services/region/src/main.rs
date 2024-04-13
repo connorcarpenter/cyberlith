@@ -4,7 +4,7 @@ mod state;
 
 use std::{net::SocketAddr, thread, time::Duration};
 
-use log::{info, LevelFilter};
+use logging::{info, LevelFilter};
 use simple_logger::SimpleLogger;
 
 use config::{REGION_SERVER_PORT, SELF_BINDING_ADDR};

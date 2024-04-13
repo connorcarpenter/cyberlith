@@ -1,5 +1,5 @@
 use bevy_ecs::system::ResMut;
-use bevy_log::{info, warn};
+use logging::{info, warn};
 
 use bevy_http_client::ResponseError;
 use bevy_http_server::HttpServer;

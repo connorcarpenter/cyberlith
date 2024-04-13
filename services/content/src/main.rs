@@ -2,7 +2,7 @@ mod server;
 
 use std::{net::SocketAddr, thread};
 
-use log::{info, LevelFilter};
+use logging::{info, LevelFilter};
 use simple_logger::SimpleLogger;
 
 use config::{CONTENT_SERVER_PORT, SELF_BINDING_ADDR};

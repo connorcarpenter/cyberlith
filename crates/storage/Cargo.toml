@@ -5,5 +5,7 @@ edition = "2021"
 workspace = "../.."
 
 [dependencies]
+logging = { path = "../logging" }
+
 bevy_ecs = { version = "0.13", default-features=false }
-log = { version = "0.4" }
+

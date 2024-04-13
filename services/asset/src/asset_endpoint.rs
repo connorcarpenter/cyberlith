@@ -1,4 +1,4 @@
-use log::info;
+use logging::info;
 
 use http_client::ResponseError;
 use http_server::{async_dup::Arc, smol::lock::RwLock, Server};

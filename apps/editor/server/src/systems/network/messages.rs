@@ -2,7 +2,7 @@ use bevy_ecs::{
     event::EventReader,
     system::{Query, ResMut},
 };
-use bevy_log::info;
+use logging::info;
 
 use naia_bevy_server::{events::MessageEvents, Server};
 

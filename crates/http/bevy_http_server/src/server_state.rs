@@ -5,7 +5,7 @@ use std::{
 };
 
 use async_dup::Arc;
-use log::info;
+use logging::info;
 use smol::{
     channel,
     channel::{Receiver, Sender},

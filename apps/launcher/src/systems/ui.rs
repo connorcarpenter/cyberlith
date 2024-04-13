@@ -4,7 +4,7 @@ use bevy_ecs::{
     event::{EventReader, EventWriter},
     system::{Res, ResMut},
 };
-use bevy_log::info;
+use logging::info;
 
 use game_engine::{
     asset::{embedded_asset_event, AssetId, EmbeddedAssetEvent},

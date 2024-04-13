@@ -4,7 +4,7 @@ use bevy_ecs::{
     system::{Query, Res, ResMut, Resource, SystemState},
     world::{Mut, World},
 };
-use bevy_log::info;
+use logging::info;
 
 use naia_bevy_client::{events::UpdateComponentEvents, Client};
 

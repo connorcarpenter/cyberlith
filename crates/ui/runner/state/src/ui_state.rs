@@ -1,4 +1,4 @@
-use bevy_log::warn;
+use logging::warn;
 
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},

@@ -124,7 +124,7 @@ use std::os::raw::*;
 
 #[cfg(feature = "log")]
 #[allow(unused)]
-use log::{error, trace};
+use logging::{error, trace};
 #[cfg(all(not(feature = "log"), feature = "debug_trace_calls"))]
 macro_rules! trace { ($($arg:tt)*) => { std::println!($($arg)*) } }
 #[cfg(all(not(feature = "log"), feature = "debug_automatic_glGetError"))]
@@ -4898,7 +4898,7 @@ pub use struct_commands::*;
 pub mod struct_commands {
     //! Contains the [`GlFns`] type for using the struct GL loader.
     use super::*;
-    use log::info;
+    use logging::info;
     impl GlFns {
         /// Constructs a new struct with all pointers loaded by the `get_proc_address` given.
         pub unsafe fn load_with<F>(mut get_proc_address: F) -> Self

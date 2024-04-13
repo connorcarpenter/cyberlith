@@ -2,7 +2,7 @@ use std::{future::Future, path::Path};
 
 use async_compat::Compat;
 use crossbeam_channel::{bounded, Receiver, TryRecvError};
-use log::{info, warn};
+use logging::{info, warn};
 use openssh::{KnownHosts, Session, SessionBuilder};
 use smol::channel::bounded as smol_bounded;
 use subprocess::{Exec, Redirection};

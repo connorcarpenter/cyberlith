@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use bevy_ecs::{event::EventReader, system::ResMut};
-use bevy_log::info;
+use logging::info;
 
 use game_engine::input::{GamepadButtonType, GamepadRumbleIntensity, InputEvent, RumbleManager};
 

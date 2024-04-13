@@ -1,4 +1,4 @@
-use log::info;
+use logging::info;
 
 use crate::{utils::run_command, CliError};
 

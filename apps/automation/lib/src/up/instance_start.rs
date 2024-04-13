@@ -1,4 +1,4 @@
-use log::info;
+use logging::info;
 use vultr::{VultrApi, VultrInstanceType};
 
 use crate::{get_api_key, CliError};

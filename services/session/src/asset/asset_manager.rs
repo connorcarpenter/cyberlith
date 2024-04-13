@@ -4,7 +4,7 @@ use bevy_ecs::{
     prelude::Resource,
     system::{Res, ResMut},
 };
-use bevy_log::info;
+use logging::info;
 
 use naia_bevy_server::{Server, UserKey};
 

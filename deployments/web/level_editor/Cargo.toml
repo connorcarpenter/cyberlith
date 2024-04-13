@@ -19,8 +19,8 @@ wgpu_renderer = [ ]
 
 [dependencies]
 kernel = { path = "../../../crates/kernel" }
+logging = { path = "../../../crates/logging" }
 
-log = { version = "0.4", features = [] }
 cfg-if = { version = "1.0" }
 
 wasm-bindgen = { version = "0.2", features = [ "serde-serialize" ] }

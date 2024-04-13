@@ -4,7 +4,7 @@ use std::{
 };
 
 use async_dup::Arc;
-use log::{info, warn};
+use logging::{info, warn};
 use smol::{
     future::Future,
     io::{AsyncReadExt, AsyncWriteExt, BufReader},

@@ -6,7 +6,7 @@ use bevy_ecs::{
     system::{Query, Res, ResMut, SystemState},
     world::{Mut, World},
 };
-use bevy_log::warn;
+use logging::warn;
 
 use naia_bevy_client::Client;
 

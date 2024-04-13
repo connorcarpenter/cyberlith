@@ -1,4 +1,4 @@
-use bevy_log::warn;
+use logging::warn;
 
 use asset_loader::{
     AnimationData, AssetComponentHandle, AssetHandle, AssetManager, IconData, MeshData, ModelData,

@@ -1,7 +1,7 @@
 use std::net::SocketAddr;
 
 use bevy_ecs::change_detection::ResMut;
-use bevy_log::info;
+use logging::info;
 
 use bevy_http_server::HttpServer;
 

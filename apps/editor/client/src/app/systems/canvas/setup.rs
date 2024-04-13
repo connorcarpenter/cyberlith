@@ -1,5 +1,5 @@
 use bevy_ecs::system::{Commands, Res, ResMut};
-use bevy_log::info;
+use logging::info;
 
 use math::{Vec2, Vec3};
 use render_api::{

@@ -5,7 +5,7 @@ cfg_if! {
     } else {}
 }
 
-use log::info;
+use logging::info;
 
 use game_app::GameApp;
 use launcher_app::LauncherApp;
@@ -34,5 +34,5 @@ fn main() {
             },
         }
     }
-    info!("Done.")
+    info!("Done.");
 }

@@ -1,4 +1,4 @@
-use bevy_log::warn;
+use logging::warn;
 
 use input::{CursorIcon, GamepadButtonType, InputEvent, Key, Modifiers, MouseButton};
 use math::Vec2;

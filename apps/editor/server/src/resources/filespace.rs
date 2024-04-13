@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use bevy_ecs::entity::Entity;
 use bevy_ecs::system::SystemState;
 use bevy_ecs::world::World;
-use bevy_log::info;
+use logging::info;
 
 use naia_bevy_server::{RoomKey, Server, UserKey};
 

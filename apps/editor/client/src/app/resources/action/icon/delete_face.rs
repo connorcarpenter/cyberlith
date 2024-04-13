@@ -2,7 +2,7 @@ use bevy_ecs::{
     prelude::{Commands, World},
     system::{ResMut, SystemState},
 };
-use bevy_log::info;
+use logging::info;
 
 use render_api::base::CpuMesh;
 use storage::Storage;

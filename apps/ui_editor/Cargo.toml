@@ -18,11 +18,11 @@ asset_serde = { path = "../../crates/asset/serde", features = [ "write_bits", "r
 random = { path = "../../crates/random" }
 ui_builder = { path = "../../crates/ui/builder" }
 ui_runner_config = { path = "../../crates/ui/runner/config" }
+logging = { path = "../../crates/logging" }
 
 # External
 bevy_app = { version = "0.13", default-features=false }
 bevy_ecs = { version = "0.13", default-features=false }
-bevy_log = { version = "0.13", default-features=false }
 
 cfg-if = { version = "1.0" }
 

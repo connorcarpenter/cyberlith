@@ -1,6 +1,6 @@
 use std::net::SocketAddr;
 
-use log::{info, warn};
+use logging::{info, warn};
 
 use http_client::ResponseError;
 use http_server::{async_dup::Arc, smol::lock::RwLock, Server};

@@ -1,5 +1,5 @@
 use bevy_app::App;
-use bevy_log::LogPlugin;
+use logging::LogPlugin;
 
 use input::InputPlugin;
 use render_api::RenderApiPlugin;

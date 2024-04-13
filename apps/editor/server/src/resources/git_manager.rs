@@ -9,7 +9,7 @@ use bevy_ecs::{
     system::{Commands, Query, Res, ResMut, Resource, SystemState},
     world::{Mut, World},
 };
-use bevy_log::info;
+use logging::info;
 use git2::{Cred, Repository, Tree};
 
 use asset_serde::json::AssetMeta;

@@ -2,7 +2,7 @@ pub mod web_clipboard;
 
 use bevy_app::{App, Plugin, PreStartup, PreUpdate};
 use bevy_ecs::system::{ResMut, Resource};
-use log::info;
+use logging::info;
 
 use crate::wasm::web_clipboard::WebClipboard;
 

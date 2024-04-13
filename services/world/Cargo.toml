@@ -18,6 +18,7 @@ config = { path = "../../config", features = ["world"] }
 crypto = { path = "../../crates/crypto" }
 asset_id = { path = "../../crates/asset/id" }
 random = { path = "../../crates/random" }
+logging = { path = "../../crates/logging" }
 
 world_server_naia_proto = { path = "naia_proto" }
 world_server_http_proto = { path = "http_proto" }
@@ -27,7 +28,6 @@ session_server_http_proto = { path = "../session/http_proto" }
 # These are the official Bevy crates, we can use them because the Server isn't built for Wasm
 bevy_app = { version = "0.13", default-features=false }
 bevy_ecs = { version = "0.13", default-features=false }
-bevy_log = { version = "0.13", default-features=false }
 
 # TODO: remove this once bevy_log is updates the underlying tracing-log requirement from 0.1.2 to 0.2.0
 regex = { version = "1.10.3", features = ["unicode-case"] }

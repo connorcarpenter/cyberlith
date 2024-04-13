@@ -1,4 +1,4 @@
-use bevy_log::info;
+use logging::info;
 
 use math::Vec3;
 use render_api::base::CpuMesh;

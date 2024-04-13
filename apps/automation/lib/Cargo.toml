@@ -14,6 +14,7 @@ executor = { path = "../../../crates/executor" }
 asset_serde = { path = "../../../crates/asset/serde", features = ["write_bits", "read_json", "write_json"] }
 crypto = { path = "../../../crates/crypto" }
 asset_id = {path = "../../../crates/asset/id" }
+logging = { path = "../../../crates/logging" }
 
 openssh = { version = "0.10" }
 async-compat = { version = "0.2" }
@@ -21,7 +22,6 @@ once_cell = { version = "1.4.1" }
 smol = { version = "1.3" }
 async-dup = { version = "1.2.2" }
 crossbeam-channel = "0.5.7"
-log = { version = "0.4", features = [] }
 futures-lite = { version = "1.11.3" }
 subprocess = "0.2.9"
 git2 = { version = "0.17" }

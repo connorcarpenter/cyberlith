@@ -4,7 +4,7 @@ use bevy_ecs::{
     entity::Entity,
     system::{Commands, Query, Resource},
 };
-use bevy_log::{info, warn};
+use logging::{info, warn};
 
 use naia_bevy_server::{CommandsExt, Server};
 

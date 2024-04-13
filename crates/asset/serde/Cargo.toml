@@ -12,12 +12,11 @@ write_json = [ "serde", "serde_json", "ui_serde/write_json" ]
 
 [dependencies]
 cfg-if = { version = "1.0" }
-log = { version = "0.4" }
 
 render_api = { path = "../../render/render_api" }
 asset_id = { path = "../id" }
 crypto = { path = "../../crypto" }
-
+logging = { path = "../../../crates/logging" }
 ui_serde = { path = "../../ui/serde" }
 
 # for BITS

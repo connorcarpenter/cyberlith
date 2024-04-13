@@ -6,7 +6,7 @@ use bevy_ecs::{
     system::{Commands, Local, Query, Res, ResMut, Resource, SystemState},
     world::{Mut, World},
 };
-use bevy_log::info;
+use logging::info;
 
 use naia_bevy_server::{events::InsertComponentEvents, Replicate, Server};
 

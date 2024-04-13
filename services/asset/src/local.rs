@@ -1,6 +1,6 @@
 use std::process::Command;
 
-use log::info;
+use logging::info;
 
 pub(crate) fn setup() {
     info!("Setting up local environment");

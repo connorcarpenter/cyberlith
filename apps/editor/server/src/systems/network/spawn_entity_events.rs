@@ -2,7 +2,7 @@ use bevy_ecs::{
     event::EventReader,
     system::{Commands, Query, Res, ResMut},
 };
-use bevy_log::info;
+use logging::info;
 
 use naia_bevy_server::{
     events::{DespawnEntityEvent, SpawnEntityEvent},

@@ -15,16 +15,16 @@ asset_serde = { path = "../../../crates/asset/serde", features = ["read_json", "
 asset_id = { path = "../../../crates/asset/id" }
 math = { path = "../../../crates/math" }
 crypto = { path = "../../../crates/crypto" }
+logging = { path = "../../../crates/logging" }
 
 # These are the official Bevy crates, going forward, we can use them because the Server isn't built for Wasm
 bevy_app = { version = "0.13", default-features=false }
 bevy_ecs = { version = "0.13", default-features=false }
-bevy_log = { version = "0.13", default-features=false }
 
 # External crates
 git2 = { version = "0.17" }
 config_rs = { version ="0.13", package = "config", default-features = false, features = ["yaml"] }
 serde = { version = "1.0", features = [ "derive" ] }
 
-# TODO: remove this once bevy_log is updates the underlying tracing-log requirement from 0.1.2 to 0.2.0
+# TODO: remove this once loggin is updated the underlying tracing-log requirement from 0.1.2 to 0.2.0
 regex = { version = "1.10.3", features = ["unicode-case"] }

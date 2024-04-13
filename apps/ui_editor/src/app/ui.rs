@@ -5,7 +5,7 @@ use bevy_ecs::{
     prelude::Commands,
     system::{Res, ResMut},
 };
-use bevy_log::info;
+use logging::info;
 
 use asset_serde::json::{Asset, AssetData, AssetMeta, UiConfigJson};
 use game_engine::render::components::RenderLayers;

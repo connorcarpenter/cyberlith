@@ -1,5 +1,5 @@
 use bevy_ecs::{event::EventReader, system::Commands};
-use bevy_log::info;
+use logging::info;
 
 use game_engine::{
     asset::{

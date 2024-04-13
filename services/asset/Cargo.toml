@@ -19,9 +19,8 @@ asset_server_http_proto = { path = "http_proto" }
 region_server_http_proto = { path = "../region/http_proto" }
 asset_serde = { path = "../../crates/asset/serde", features = ["read_json"] }
 asset_id = { path = "../../crates/asset/id" }
+logging = { path = "../../crates/logging" }
 
-log = { version = "0.4", features = [] }
-simple_logger = { version = "4.0", default-features = false, features = ["timestamps"] }
 cfg-if = { version = "1.0" }
 
 automation_lib = { path = "../../apps/automation/lib", optional = true }

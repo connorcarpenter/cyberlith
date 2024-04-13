@@ -6,7 +6,7 @@ use bevy_ecs::{
     system::{Commands, Query, ResMut, SystemState},
     world::{Mut, World},
 };
-use bevy_log::info;
+use logging::info;
 
 use naia_bevy_client::{Client, CommandsExt};
 

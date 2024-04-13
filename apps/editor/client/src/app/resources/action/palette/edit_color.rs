@@ -2,7 +2,7 @@ use bevy_ecs::{
     prelude::{Query, World},
     system::SystemState,
 };
-use bevy_log::info;
+use logging::info;
 
 use editor_proto::components::PaletteColor;
 

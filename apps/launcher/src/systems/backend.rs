@@ -1,5 +1,5 @@
 use bevy_ecs::system::ResMut;
-use bevy_log::{info, warn};
+use logging::{info, warn};
 
 use game_engine::{ui::UiManager, http::HttpClient, config::{GATEWAY_PORT, PUBLIC_IP_ADDR}};
 

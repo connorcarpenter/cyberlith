@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use bevy_log::info;
+use logging::info;
 
 use math::{quat_from_spin_direction, Quat, Vec3};
 use render_api::components::Transform;

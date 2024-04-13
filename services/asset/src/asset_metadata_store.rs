@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fs};
 
-use log::info;
+use logging::info;
 
 use asset_id::{AssetId, AssetType, ETag};
 use asset_serde::json::ProcessedAssetMeta;

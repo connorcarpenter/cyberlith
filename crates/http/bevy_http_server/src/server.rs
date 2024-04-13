@@ -2,7 +2,7 @@ use std::{any::TypeId, collections::HashMap, net::SocketAddr};
 
 use bevy_ecs::system::Resource;
 
-use log::warn;
+use logging::warn;
 use smol::channel::{Receiver, Sender};
 
 use bevy_http_shared::Protocol;

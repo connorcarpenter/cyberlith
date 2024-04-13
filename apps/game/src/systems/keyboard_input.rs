@@ -1,5 +1,5 @@
 use bevy_ecs::{system::Res, event::EventWriter};
-use bevy_log::info;
+use logging::info;
 
 use game_engine::{kernel::AppExitAction, input::{Input, Key}};
 

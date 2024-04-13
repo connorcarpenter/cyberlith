@@ -5,7 +5,7 @@ use std::{
 };
 
 use git2::Repository;
-use log::info;
+use logging::info;
 
 use crate::git_ops::update_file;
 use crate::{

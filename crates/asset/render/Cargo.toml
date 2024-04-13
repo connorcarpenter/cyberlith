@@ -12,5 +12,4 @@ render_api = { path = "../../render/render_api" }
 storage = { path = "../../storage" }
 ui_state = { path = "../../ui/runner/state" }
 ui_runner_config = { path = "../../ui/runner/config" }
-
-bevy_log = { version = "0.13", default-features=false }
+logging = { path = "../../logging" }

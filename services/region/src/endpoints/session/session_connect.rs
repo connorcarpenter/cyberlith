@@ -1,4 +1,4 @@
-use log::{info, warn};
+use logging::{info, warn};
 
 use http_client::{HttpClient, ResponseError};
 use http_server::{async_dup::Arc, smol::lock::RwLock, Server};

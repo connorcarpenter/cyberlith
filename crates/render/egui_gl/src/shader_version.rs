@@ -23,7 +23,7 @@ impl ShaderVersion {
         use gl::HasContext as _;
         let shading_lang_string = unsafe { gl.get_parameter_string(gl::SHADING_LANGUAGE_VERSION) };
         let shader_version = Self::parse(&shading_lang_string);
-        log::debug!(
+        logging::debug!(
             "Shader version: {:?} ({:?}).",
             shader_version,
             shading_lang_string

@@ -1,7 +1,7 @@
 use std::{fs, fs::File, io::Read, path::Path};
 
 use git2::{Cred, FetchOptions, Index, Oid, PushOptions, Repository, Signature, Tree};
-use log::info;
+use logging::info;
 
 use crate::{DbRowValue, DbTableKey};
 
