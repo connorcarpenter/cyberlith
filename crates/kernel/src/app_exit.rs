@@ -21,9 +21,11 @@ impl ExitActionContainer {
     }
     pub fn take() -> String {
         unsafe {
-            let output = EXIT_ACTION_CONTAINER
-                .as_ref()
-                .unwrap()
+            let Some(output) = EXIT_ACTION_CONTAINER
+                .as_ref() else {
+                return "exit".to_string();
+            };
+            let output = output
                 .read()
                 .unwrap()
                 .clone();
