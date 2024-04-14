@@ -8,7 +8,7 @@ cfg_if! {
 }
 
 use wasm_bindgen::prelude::*;
-use kernel::Kernel;
+use kernel::{Kernel, redirect_to_url};
 use launcher_app::LauncherApp;
 
 #[wasm_bindgen(start)]
@@ -29,7 +29,7 @@ pub async fn main() -> Result<(), JsValue> {
         },
         "game" => {
             println!("Loading GameApp...");
-            todo!("load gameapp by redirecting to another URL");
+            redirect_to_url("game.html");
         },
         _ => {
             panic!("Unknown AppExitAction: {}", app_result);

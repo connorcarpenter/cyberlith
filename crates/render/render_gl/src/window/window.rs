@@ -21,13 +21,13 @@ use render_api::{
 #[cfg(not(target_arch = "wasm32"))]
 use winit::platform::run_return::EventLoopExtRunReturn;
 
+#[cfg(not(target_arch = "wasm32"))]
+use crate::core::Context;
+
 #[cfg(target_arch = "wasm32")]
 use winit::platform::web::EventLoopExtWebSys;
 
-use crate::{
-    core::Context,
-    window::{render_loop_context::RenderLoopContext, FrameInput, FrameOutput, OutgoingEvent, WindowError, WindowedContext},
-};
+use crate::window::{render_loop_context::RenderLoopContext, FrameInput, FrameOutput, OutgoingEvent, WindowError, WindowedContext};
 
 static mut WINDOW_CONTAINER: Option<Window> = None;
 
@@ -248,16 +248,17 @@ impl Window {
     ///
     pub fn render_loop(mut self, mut app: App) -> Option<Self> {
 
-        let mut event_loop = self.event_loop_opt.take().unwrap();
         let mut rlc = RenderLoopContext::new();
 
         cfg_if! {
             if #[cfg(target_arch = "wasm32")] {
+                let event_loop = self.event_loop_opt.take().unwrap();
                 let gl = self.gl;
-                let mut window = self.window;
+                let window = self.window;
                 let closure = self.closure;
                 let maximized = self.maximized;
             } else {
+                let mut event_loop = self.event_loop_opt.take().unwrap();
                 let gl = &self.gl;
                 let window = &mut self.window;
             }

@@ -79,31 +79,34 @@ pub struct SubscribedEvents {
     event_closures: Vec<EventClosure>,
 }
 
-impl SubscribedEvents {
-    /// Use this method to unsubscribe from all the clipboard events, this can be useful
-    /// for gracefully destroying a Bevy instance in a page.
-    pub fn unsubscribe_from_events(&mut self) {
-        let events_to_unsubscribe = std::mem::take(&mut self.event_closures);
-
-        if !events_to_unsubscribe.is_empty() {
-            for event in events_to_unsubscribe {
-                if let Err(err) = event.target.remove_event_listener_with_callback(
-                    event.event_name.as_str(),
-                    event.closure.as_ref().unchecked_ref(),
-                ) {
-                    logging::error!(
-                        "Failed to unsubscribe from event: {}",
-                        string_from_js_value(&err)
-                    );
-                }
-            }
-        }
-    }
-}
+// impl SubscribedEvents {
+//     /// Use this method to unsubscribe from all the clipboard events, this can be useful
+//     /// for gracefully destroying a Bevy instance in a page.
+//     pub fn unsubscribe_from_events(&mut self) {
+//         let events_to_unsubscribe = std::mem::take(&mut self.event_closures);
+//
+//         if !events_to_unsubscribe.is_empty() {
+//             for event in events_to_unsubscribe {
+//                 if let Err(err) = event.target.remove_event_listener_with_callback(
+//                     event.event_name.as_str(),
+//                     event.closure.as_ref().unchecked_ref(),
+//                 ) {
+//                     logging::error!(
+//                         "Failed to unsubscribe from event: {}",
+//                         string_from_js_value(&err)
+//                     );
+//                 }
+//             }
+//         }
+//     }
+// }
 
 struct EventClosure {
+    #[allow(dead_code)]
     target: EventTarget,
+    #[allow(dead_code)]
     event_name: String,
+    #[allow(dead_code)]
     closure: Closure<dyn FnMut(ClipboardEvent)>,
 }
 

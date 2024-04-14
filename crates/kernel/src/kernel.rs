@@ -23,9 +23,8 @@ impl Kernel {
         if #[cfg(target_arch = "wasm32")] {
 
             pub async fn run_async(&self) -> String {
-                use crate::wasm;
 
-                let recvr = wasm::init();
+                let recvr = ExitActionContainer::init();
 
                 let Some(current_app) = &self.current_app else {
                     panic!("Kernel has no app loaded. Call kernel.load::<App>() first.");

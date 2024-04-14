@@ -1,12 +1,11 @@
-use std::sync::{Arc, RwLock};
 
 use bevy_app::AppExit;
 use bevy_ecs::{event::{Event, EventReader}, system::NonSendMut};
+
 use logging::info;
-
 use render_gl::window::{FrameInput, OutgoingEvent};
-use crate::exit_action_container::ExitActionContainer;
 
+use crate::exit_action_container::ExitActionContainer;
 
 #[derive(Event, Debug)]
 pub enum AppExitAction {
