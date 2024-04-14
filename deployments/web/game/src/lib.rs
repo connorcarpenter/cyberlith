@@ -7,8 +7,35 @@ cfg_if! {
 }
 
 use wasm_bindgen::prelude::*;
+use kernel::{Kernel, redirect_to_url};
+use game_app::GameApp;
+use logging::info;
 
 #[wasm_bindgen(start)]
-pub fn main() {
+pub async fn main() -> Result<(), JsValue> {
 
+    let mut kernel = Kernel::new();
+
+    info!("Starting GameApp...");
+    kernel.load::<GameApp>();
+
+    info!("Running Kernel...");
+    let app_result = kernel.run_async().await;
+
+    info!("Kernel ran app, received AppExitAction: {}", app_result);
+    match app_result.as_str() {
+        "exit" => {
+            println!("Exiting...");
+        },
+        "launcher" => {
+            println!("Loading LauncherApp...");
+            let domain_str = "http://127.0.0.1:14196"; // TODO: get this from config
+            redirect_to_url(&format!("{}/", domain_str)); // root goes to launcher
+        },
+        _ => {
+            panic!("Unknown AppExitAction: {}", app_result);
+        },
+    }
+
+    Ok(())
 }

@@ -2,18 +2,14 @@ mod server;
 
 use std::{net::SocketAddr, thread};
 
-use logging::{info, LevelFilter};
-use simple_logger::SimpleLogger;
+use logging::info;
 
 use config::{CONTENT_SERVER_PORT, SELF_BINDING_ADDR};
 
 use crate::server::Server;
 
 pub fn main() {
-    SimpleLogger::new()
-        .with_level(LevelFilter::Info)
-        .init()
-        .expect("A logger was already initialized");
+    logging::initialize();
 
     info!("Content Server starting up...");
     let socket_addr: SocketAddr =
@@ -21,10 +17,13 @@ pub fn main() {
 
     let mut server = Server::new(socket_addr);
 
-    server.serve_file_masked("", "index.html");
-    server.serve_file("index.html");
-    server.serve_file("target/game_client.js");
-    server.serve_file("target/game_client_bg.wasm");
+    server.serve_file_masked("", "launcher.html");
+    server.serve_file("launcher.js");
+    server.serve_file("launcher_bg.wasm");
+
+    server.serve_file_masked("game", "game.html");
+    server.serve_file("game.js");
+    server.serve_file("game_bg.wasm");
 
     server.start();
 

@@ -2,17 +2,12 @@ mod endpoints;
 
 use std::{net::SocketAddr, thread};
 
-use logging::{info, LevelFilter};
-use simple_logger::SimpleLogger;
-
+use logging::info;
 use config::{GATEWAY_PORT, SELF_BINDING_ADDR};
 use http_server::Server;
 
 pub fn main() {
-    SimpleLogger::new()
-        .with_level(LevelFilter::Info)
-        .init()
-        .expect("A logger was already initialized");
+    logging::initialize();
 
     info!("Gateway starting up...");
     let socket_addr: SocketAddr = SocketAddr::new(SELF_BINDING_ADDR.parse().unwrap(), GATEWAY_PORT);

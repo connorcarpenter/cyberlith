@@ -1,7 +1,7 @@
-use automation_lib::CliError;
 use clap::{Arg, Command};
-use logging::{warn, LevelFilter};
-use simple_logger::SimpleLogger;
+
+use automation_lib::CliError;
+use logging::warn;
 
 fn cli() -> Command {
     Command::new("deploy_cli")
@@ -32,10 +32,7 @@ fn cli() -> Command {
 }
 
 fn main() {
-    SimpleLogger::new()
-        .with_level(LevelFilter::Info)
-        .init()
-        .expect("A logger was already initialized");
+    logging::initialize();
 
     let matches = cli().get_matches();
 

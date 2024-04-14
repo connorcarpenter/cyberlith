@@ -4,19 +4,14 @@ mod state;
 
 use std::{net::SocketAddr, thread, time::Duration};
 
-use logging::{info, LevelFilter};
-use simple_logger::SimpleLogger;
-
+use logging::info;
 use config::{REGION_SERVER_PORT, SELF_BINDING_ADDR};
 use http_server::{async_dup::Arc, smol::lock::RwLock, Server};
 
 use crate::state::State;
 
 pub fn main() {
-    SimpleLogger::new()
-        .with_level(LevelFilter::Info)
-        .init()
-        .expect("A logger was already initialized");
+    logging::initialize();
 
     info!("Region Server starting up...");
     let socket_addr: SocketAddr =

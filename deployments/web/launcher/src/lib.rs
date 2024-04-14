@@ -1,5 +1,4 @@
 use cfg_if::cfg_if;
-use logging::info;
 
 cfg_if! {
     if #[cfg(not(target_arch = "wasm32"))] {
@@ -10,6 +9,7 @@ cfg_if! {
 use wasm_bindgen::prelude::*;
 use kernel::{Kernel, redirect_to_url};
 use launcher_app::LauncherApp;
+use logging::info;
 
 #[wasm_bindgen(start)]
 pub async fn main() -> Result<(), JsValue> {
@@ -29,7 +29,8 @@ pub async fn main() -> Result<(), JsValue> {
         },
         "game" => {
             println!("Loading GameApp...");
-            redirect_to_url("game.html");
+            let domain_str = "http://127.0.0.1:14196"; // TODO: get this from config
+            redirect_to_url(&format!("{}/game", domain_str));
         },
         _ => {
             panic!("Unknown AppExitAction: {}", app_result);

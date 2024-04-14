@@ -5,7 +5,7 @@ use std::{
 };
 
 use async_dup::Arc;
-use logging::info;
+use logging::{info, warn};
 use smol::{future::Future, lock::RwLock, Async};
 
 use config::CONTENT_SERVER_ASSET_FILE_PATH;
@@ -87,9 +87,11 @@ fn endpoint_2(
 
             // info!("reading file: {}", file_name);
 
+            let file_path = format!("{}{}", CONTENT_SERVER_ASSET_FILE_PATH, file_name);
             let Ok(bytes) =
-                std::fs::read(format!("{}{}", CONTENT_SERVER_ASSET_FILE_PATH, file_name))
+                std::fs::read(&file_path)
             else {
+                warn!("file not found: {}", &file_path);
                 return Err(ResponseError::NotFound);
             };
 
@@ -128,6 +130,7 @@ async fn listen(server: Arc<RwLock<Server>>) {
     let socket_addr = server.read().await.socket_addr;
     let listener = Async::<TcpListener>::bind(socket_addr)
         .expect("unable to bind a TCP Listener to the supplied socket address");
+
     info!(
         "HTTP Listening at http://{}/",
         listener
@@ -142,8 +145,6 @@ async fn listen(server: Arc<RwLock<Server>>) {
             .accept()
             .await
             .expect("was not able to accept the incoming stream from the listener");
-
-        info!("received request from {}", incoming_address);
 
         let self_clone = server.clone();
 
@@ -177,6 +178,7 @@ async fn serve(
             let endpoint_key_ref_3 = endpoint_key_ref_1.clone();
             async move {
                 let server = server_3.read().await;
+                info!("content_server <- [{}] {}", incoming_address, key);
                 if server.endpoints.contains_key(&key) {
                     let mut endpoint_key = endpoint_key_ref_3.write().await;
                     *endpoint_key = Some(key);

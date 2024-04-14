@@ -101,7 +101,7 @@ pub async fn serve_impl<
                         if let Some(method) = method.clone() {
                             if method == Method::Get {
                                 read_state = ReadState::Finished;
-                                info!("GET req has no body to read. finished.");
+                                // info!("GET req has no body to read. finished.");
                                 break;
                             }
                         }

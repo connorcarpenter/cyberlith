@@ -1,4 +1,5 @@
 use bevy_app::{Plugin, App as BevyApp};
+
 use crate::exit_action_container::ExitActionContainer;
 
 pub struct Kernel {

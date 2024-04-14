@@ -1,10 +1,9 @@
-//use std::sync::{Arc, RwLock};
 
 use futures::channel::oneshot::{Receiver, Sender};
 use logging::info;
 
 pub fn redirect_to_url(url: &str) {
-    todo!("redirecting to url: {}", url);
+    web_sys::window().unwrap().location().set_href(url).unwrap();
 }
 
 static mut EXIT_ACTION_CONTAINER: Option<Sender<String>> = None;

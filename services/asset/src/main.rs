@@ -15,21 +15,14 @@ cfg_if! {
 
 use std::{net::SocketAddr, thread, time::Duration};
 
-use logging::{info, LevelFilter};
-use simple_logger::SimpleLogger;
-
+use logging::info;
 use http_server::{async_dup::Arc, smol::lock::RwLock, Server};
-
 use config::{ASSET_SERVER_PORT, SELF_BINDING_ADDR};
 
 use crate::{asset_metadata_store::AssetMetadataStore, state::State};
 
 pub fn main() {
-    // setup logging
-    SimpleLogger::new()
-        .with_level(LevelFilter::Info)
-        .init()
-        .expect("A logger was already initialized");
+    logging::initialize();
 
     #[cfg(feature = "local")]
     local::setup();
