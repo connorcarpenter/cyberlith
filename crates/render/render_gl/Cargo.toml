@@ -19,6 +19,7 @@ random = { path = "../../random" }
 clipboard = { path = "../../clipboard" }
 instant = { path = "../../instant" }
 logging = { path = "../../logging" }
+kernel = { path = "../../kernel" }
 
 # External Crates
 bevy_app = { version = "0.13", default-features = false }

@@ -1,7 +1,6 @@
 
-
 static mut EXIT_ACTION_CONTAINER: Option<String> = None;
-pub(crate) struct ExitActionContainer;
+pub struct ExitActionContainer;
 impl ExitActionContainer {
     pub fn is_set() -> bool {
         unsafe { EXIT_ACTION_CONTAINER.is_some() }

@@ -5,7 +5,6 @@ edition = "2021"
 workspace = "../.."
 
 [dependencies]
-render_gl = { path = "../render/render_gl" }
 logging = { path = "../logging" }
 
 bevy_app = { version = "0.13", default-features=false }

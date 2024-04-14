@@ -1,13 +1,11 @@
-use bevy_app::{Plugin, App, PostUpdate};
+use bevy_app::{Plugin, App};
 
-use crate::{app_exit, AppExitAction};
+use crate::AppExitAction;
 
 pub struct KernelPlugin;
 
 impl Plugin for KernelPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .add_event::<AppExitAction>()
-            .add_systems(PostUpdate, app_exit::process);
+        app.add_event::<AppExitAction>();
     }
 }

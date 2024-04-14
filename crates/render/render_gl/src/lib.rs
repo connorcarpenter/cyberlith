@@ -10,6 +10,7 @@ mod plugin;
 mod render;
 mod runner;
 mod sync;
+mod kernel;
 
 pub use gpu_material_manager::*;
 pub use gpu_mesh_manager::*;

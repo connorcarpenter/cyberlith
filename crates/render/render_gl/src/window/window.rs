@@ -26,6 +26,7 @@ use crate::core::Context;
 
 #[cfg(target_arch = "wasm32")]
 use winit::platform::web::EventLoopExtWebSys;
+use kernel::ExitActionContainer;
 
 use crate::window::{render_loop_context::RenderLoopContext, FrameInput, FrameOutput, OutgoingEvent, WindowError, WindowedContext};
 
@@ -357,7 +358,7 @@ impl Window {
                     }
                     WindowEvent::CloseRequested => {
                         *control_flow = ControlFlow::Exit;
-                        info!("close requested");
+                        ExitActionContainer::set("exit".to_string());
                     }
                     WindowEvent::KeyboardInput { input, .. } => {
                         if let Some(keycode) = input.virtual_keycode {

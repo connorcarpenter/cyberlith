@@ -14,6 +14,7 @@ use crate::{
     runner::{runner_func},
     sync::SyncPlugin,
     window,
+    kernel,
 };
 
 pub struct RenderGlPlugin;
@@ -38,6 +39,7 @@ impl Plugin for RenderGlPlugin {
             .add_systems(First, window::sync)
             .add_systems(PreUpdate, input::run)
             .add_systems(PostUpdate, input::update_cursor)
+            .add_systems(PostUpdate, kernel::app_exit)
             .add_systems(Render, render);
     }
 }

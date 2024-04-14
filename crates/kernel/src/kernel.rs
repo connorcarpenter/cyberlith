@@ -1,6 +1,6 @@
 use bevy_app::{Plugin, App as BevyApp};
 
-use crate::exit_action_container::ExitActionContainer;
+use crate::ExitActionContainer;
 
 pub struct Kernel {
     current_app: Option<Box<dyn KernelAppInner>>
