@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Cleann" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
+  <configuration default="false" name="---" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
     <option name="command" value="clean" />
     <option name="workingDirectory" value="file://$PROJECT_DIR$" />
     <envs />
