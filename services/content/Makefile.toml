@@ -99,27 +99,84 @@ command = "cargo"
 args = ["run", "--features", "local"]
 dependencies = ["game-copy-html", "launcher-copy-html"]
 
-## Release
-#
-## Cargo Build
-#[tasks.cargo-build-wasm-release]
-#command = "cargo"
-#args = ["build", "--release", "--features", "gl_renderer,local", "--target", "wasm32-unknown-unknown", "--lib", "--target-dir", "target"]
-#dependencies = ["install-target-wasm32-unknown-unknown"]
-#
-## Wasm-Bindgen
-#[tasks.wasm-bindgen-release]
-#command = "wasm-bindgen"
-#args = ["--out-dir", "target", "--out-name", "game", "--target", "web", "--no-typescript", "target/wasm32-unknown-unknown/release/game.wasm"]
-#dependencies = ["cargo-build-wasm-release", "install-wasm-bindgen-cli"]
-#
-## Serve
-#[tasks.serve-release]
-#command = "basic-http-server"
-#args = ["-x"]
-#dependencies = ["wasm-bindgen-release", "install-basic-http-server"]
+### Release ###
 
+### Game ###
 
+# Game Cargo Build
+[tasks.game-cargo-build-release]
+command = "cargo"
+args = [
+    "build",
+    "--release",
+    "--manifest-path", "./../../deployments/web/game/Cargo.toml",
+    "--target-dir", "./../../deployments/web/game/target",
+    "--features", "gl_renderer,local",
+    "--target", "wasm32-unknown-unknown",
+    "--lib",
+]
+dependencies = ["content-add-assets", "install-target-wasm32-unknown-unknown"]
 
+# Game Wasm-Bindgen
+[tasks.game-wasm-bindgen-release]
+command = "wasm-bindgen"
+args = [
+    "--out-dir", "assets",
+    "--out-name", "game",
+    "--target", "web",
+    "--no-typescript",
+    "./../../deployments/web/game/target/wasm32-unknown-unknown/release/game.wasm"
+]
+dependencies = ["game-cargo-build-release", "install-wasm-bindgen-cli"]
 
+# Game Copy HTML
+[tasks.game-copy-html-release]
+command = "cp"
+args = [
+    "./../../deployments/web/game/game.html",
+    "assets/game.html"
+]
+dependencies = ["game-wasm-bindgen-release"]
 
+### Launcher ###
+
+# Launcher Cargo Build
+[tasks.launcher-cargo-build-release]
+command = "cargo"
+args = [
+    "build",
+    "--release",
+    "--manifest-path", "./../../deployments/web/launcher/Cargo.toml",
+    "--target-dir", "./../../deployments/web/launcher/target",
+    "--features", "gl_renderer,local",
+    "--target", "wasm32-unknown-unknown",
+    "--lib",
+]
+dependencies = ["content-add-assets", "install-target-wasm32-unknown-unknown"]
+
+# Launcher Wasm-Bindgen
+[tasks.launcher-wasm-bindgen-release]
+command = "wasm-bindgen"
+args = [
+    "--out-dir", "assets",
+    "--out-name", "launcher",
+    "--target", "web",
+    "--no-typescript",
+    "./../../deployments/web/launcher/target/wasm32-unknown-unknown/release/launcher.wasm"
+]
+dependencies = ["launcher-cargo-build-release", "install-wasm-bindgen-cli"]
+
+# Launcher Copy HTML
+[tasks.launcher-copy-html-release]
+command = "cp"
+args = [
+    "./../../deployments/web/launcher/launcher.html",
+    "assets/launcher.html"
+]
+dependencies = ["launcher-wasm-bindgen-release"]
+
+### Serve ###
+[tasks.serve-release]
+command = "cargo"
+args = ["run", "--features", "local"]
+dependencies = ["game-copy-html-release", "launcher-copy-html-release"]
