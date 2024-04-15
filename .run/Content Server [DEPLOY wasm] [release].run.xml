@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Run Content Server [&amp; DEPLOY]" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
-    <option name="command" value="make serve" />
+  <configuration default="false" name="Content Server [DEPLOY wasm] [release]" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
+    <option name="command" value="make serve-release" />
     <option name="workingDirectory" value="file://$PROJECT_DIR$/services/content" />
     <envs />
     <option name="emulateTerminal" value="false" />

@@ -120,7 +120,18 @@ async fn create_network(session: &Session) -> Result<(), CliError> {
 
 async fn remove_network(session: &Session) -> Result<(), CliError> {
     if let Err(err) = run_ssh_command(session, "docker network rm primary_network").await {
-        warn!("ignoring error while removing network: {:?}", err);
+        match &err {
+            CliError::Message(inner_msg) => {
+                if inner_msg.contains("network primary_network not found") {
+                    info!("network `primary_network` does not exist on this instance. Ignore this if the instance was not running before this deployment.");
+                } else {
+                    warn!("ignoring error while removing network: {:?}", err);
+                }
+            }
+            CliError::Vultr(_) => {
+                warn!("ignoring error while removing network: {:?}", err);
+            }
+        }
     }
 
     Ok(())
@@ -228,14 +239,36 @@ pub async fn container_stop_and_remove(session: &Session, app_name: &str) -> Res
     if let Err(ignored_err) =
         run_ssh_command(session, format!("docker kill {}_server", app_name).as_str()).await
     {
-        warn!("ignoring error while killing container: {:?}", ignored_err);
+        match &ignored_err {
+            CliError::Message(inner_msg) => {
+                if inner_msg.contains("No such container") {
+                    info!("container `{}_server` does not exist on this instance. Ignore this if the instance was not running before this deployment.", app_name);
+                } else {
+                    warn!("error while killing container: {:?}", ignored_err);
+                }
+            }
+            CliError::Vultr(_) => {
+                warn!("error while killing container: {:?}", ignored_err);
+            }
+        }
     }
 
     // remove container
     if let Err(ignored_err) =
         run_ssh_command(session, format!("docker rm {}_server", app_name).as_str()).await
     {
-        warn!("ignoring error while removing container: {:?}", ignored_err);
+        match &ignored_err {
+            CliError::Message(inner_msg) => {
+                if inner_msg.contains("No such container") {
+                    info!("container `{}_server` does not exist on this instance. Ignore this if the instance was NOT running before this deployment.", app_name);
+                } else {
+                    warn!("error while removing container: {:?}", ignored_err);
+                }
+            }
+            CliError::Vultr(_) => {
+                warn!("error while removing container: {:?}", ignored_err);
+            }
+        }
     }
 
     Ok(())
