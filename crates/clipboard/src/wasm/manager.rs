@@ -19,12 +19,12 @@ impl Default for ClipboardManagerImpl {
 impl ClipboardManagerImpl {
     /// Sets clipboard contents.
     pub(crate) fn set_contents(&mut self, contents: &str) {
-        self.set_contents_impl(contents);
+        self.clipboard.set_contents(contents);
     }
 
     /// Gets clipboard contents. Returns [`None`] if clipboard provider is unavailable or returns an error.
     pub(crate) fn get_contents(&mut self) -> Option<String> {
-        self.get_contents_impl()
+        self.clipboard.get_contents()
     }
 
     /// Sets the internal buffer of clipboard contents.
@@ -36,13 +36,5 @@ impl ClipboardManagerImpl {
     /// Receives a clipboard event sent by the `copy`/`cut`/`paste` listeners.
     pub fn try_receive_clipboard_event(&self) -> Option<WebClipboardEvent> {
         self.clipboard.try_receive_clipboard_event()
-    }
-
-    fn set_contents_impl(&mut self, contents: &str) {
-        self.clipboard.set_contents(contents);
-    }
-
-    fn get_contents_impl(&mut self) -> Option<String> {
-        self.clipboard.get_contents()
     }
 }
