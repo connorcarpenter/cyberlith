@@ -20,9 +20,9 @@ node_modules
 /services/asset/assets
 /services/asset/assets/
 /services/asset/assets/*
-/services/content/assets
-/services/content/assets/
-/services/content/assets/*
+/services/content/files
+/services/content/files/
+/services/content/files/*
 
 /apps/ui_editor/target
 /apps/ui_editor/assets

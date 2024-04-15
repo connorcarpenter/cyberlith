@@ -8,7 +8,7 @@ use async_dup::Arc;
 use logging::{info, warn};
 use smol::{future::Future, lock::RwLock, Async};
 
-use config::CONTENT_SERVER_ASSET_FILE_PATH;
+use config::CONTENT_SERVER_FILES_PATH;
 use http_common::{Request, Response, ResponseError};
 use http_server_shared::{executor, serve_impl};
 
@@ -87,7 +87,7 @@ fn endpoint_2(
 
             // info!("reading file: {}", file_name);
 
-            let file_path = format!("{}{}", CONTENT_SERVER_ASSET_FILE_PATH, file_name);
+            let file_path = format!("{}{}", CONTENT_SERVER_FILES_PATH, file_name);
             let Ok(bytes) =
                 std::fs::read(&file_path)
             else {

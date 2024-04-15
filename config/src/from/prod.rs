@@ -17,7 +17,7 @@ pub const WORLD_SERVER_RECV_ADDR: &str = "world_server";
 pub const ASSET_SERVER_RECV_ADDR: &str = "asset_server";
 
 #[allow(dead_code)]
-pub const CONTENT_SERVER_ASSET_FILE_PATH: &str = "/usr/local/bin/assets/";
+pub const CONTENT_SERVER_FILES_PATH: &str = "/usr/local/bin/files/";
 
 #[allow(dead_code)]
 pub const CONTENT_SERVER_PORT: u16 = 80;

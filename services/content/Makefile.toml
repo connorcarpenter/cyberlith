@@ -7,19 +7,19 @@ install_crate = { crate_name = "wasm-bindgen-cli", binary = "wasm-bindgen", test
 
 # Dev
 
-### Content Assets ###
+### Content Files ###
 
-# Content Remove Assets
-[tasks.content-remove-assets]
+# Content Remove Files
+[tasks.content-remove-files]
 command = "rm"
-args = ["-r", "assets"]
+args = ["-r", "files"]
 dependencies = []
 
-# Content Add Assets
-[tasks.content-add-assets]
+# Content Add Files
+[tasks.content-add-files]
 command = "mkdir"
-args = ["assets"]
-dependencies = ["content-remove-assets"]
+args = ["files"]
+dependencies = ["content-remove-files"]
 
 ### Game ###
 
@@ -34,13 +34,13 @@ args = [
     "--target", "wasm32-unknown-unknown",
     "--lib",
 ]
-dependencies = ["content-add-assets", "install-target-wasm32-unknown-unknown"]
+dependencies = ["content-add-files", "install-target-wasm32-unknown-unknown"]
 
 # Game Wasm-Bindgen
 [tasks.game-wasm-bindgen]
 command = "wasm-bindgen"
 args = [
-    "--out-dir", "assets",
+    "--out-dir", "files",
     "--out-name", "game",
     "--target", "web",
     "--no-typescript",
@@ -53,7 +53,7 @@ dependencies = ["game-cargo-build", "install-wasm-bindgen-cli"]
 command = "cp"
 args = [
     "./../../deployments/web/game/game.html",
-    "assets/game.html"
+    "files/game.html"
 ]
 dependencies = ["game-wasm-bindgen"]
 
@@ -70,13 +70,13 @@ args = [
     "--target", "wasm32-unknown-unknown",
     "--lib",
 ]
-dependencies = ["content-add-assets", "install-target-wasm32-unknown-unknown"]
+dependencies = ["content-add-files", "install-target-wasm32-unknown-unknown"]
 
 # Launcher Wasm-Bindgen
 [tasks.launcher-wasm-bindgen]
 command = "wasm-bindgen"
 args = [
-    "--out-dir", "assets",
+    "--out-dir", "files",
     "--out-name", "launcher",
     "--target", "web",
     "--no-typescript",
@@ -89,7 +89,7 @@ dependencies = ["launcher-cargo-build", "install-wasm-bindgen-cli"]
 command = "cp"
 args = [
     "./../../deployments/web/launcher/launcher.html",
-    "assets/launcher.html"
+    "files/launcher.html"
 ]
 dependencies = ["launcher-wasm-bindgen"]
 
@@ -115,13 +115,13 @@ args = [
     "--target", "wasm32-unknown-unknown",
     "--lib",
 ]
-dependencies = ["content-add-assets", "install-target-wasm32-unknown-unknown"]
+dependencies = ["content-add-files", "install-target-wasm32-unknown-unknown"]
 
 # Game Wasm-Bindgen
 [tasks.game-wasm-bindgen-release]
 command = "wasm-bindgen"
 args = [
-    "--out-dir", "assets",
+    "--out-dir", "files",
     "--out-name", "game",
     "--target", "web",
     "--no-typescript",
@@ -134,7 +134,7 @@ dependencies = ["game-cargo-build-release", "install-wasm-bindgen-cli"]
 command = "cp"
 args = [
     "./../../deployments/web/game/game.html",
-    "assets/game.html"
+    "files/game.html"
 ]
 dependencies = ["game-wasm-bindgen-release"]
 
@@ -152,13 +152,13 @@ args = [
     "--target", "wasm32-unknown-unknown",
     "--lib",
 ]
-dependencies = ["content-add-assets", "install-target-wasm32-unknown-unknown"]
+dependencies = ["content-add-files", "install-target-wasm32-unknown-unknown"]
 
 # Launcher Wasm-Bindgen
 [tasks.launcher-wasm-bindgen-release]
 command = "wasm-bindgen"
 args = [
-    "--out-dir", "assets",
+    "--out-dir", "files",
     "--out-name", "launcher",
     "--target", "web",
     "--no-typescript",
@@ -171,7 +171,7 @@ dependencies = ["launcher-cargo-build-release", "install-wasm-bindgen-cli"]
 command = "cp"
 args = [
     "./../../deployments/web/launcher/launcher.html",
-    "assets/launcher.html"
+    "files/launcher.html"
 ]
 dependencies = ["launcher-wasm-bindgen-release"]
 

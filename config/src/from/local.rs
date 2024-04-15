@@ -20,7 +20,7 @@ pub const WORLD_SERVER_RECV_ADDR: &str = "127.0.0.1";
 pub const ASSET_SERVER_RECV_ADDR: &str = "127.0.0.1";
 
 #[allow(dead_code)]
-pub const CONTENT_SERVER_ASSET_FILE_PATH: &str = "./assets/";
+pub const CONTENT_SERVER_FILES_PATH: &str = "./files/";
 
 #[allow(dead_code)]
 pub const CONTENT_SERVER_PORT: u16 = 14196;
