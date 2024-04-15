@@ -18,9 +18,7 @@ wgpu_renderer = [ "game_engine/wgpu_renderer" ]
 game_engine = { path = "../../crates/engine" }
 #naia-serde = { path = "../../../naia/shared/serde" }
 
-crypto = { path = "../../crates/crypto" }
 gateway_http_proto = { path = "../../services/gateway/http_proto" }
-logging = { path = "../../crates/logging" }
 
 # External
 bevy_app = { version = "0.13", default-features=false }

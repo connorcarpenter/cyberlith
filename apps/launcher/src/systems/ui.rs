@@ -4,14 +4,14 @@ use bevy_ecs::{
     event::{EventReader, EventWriter},
     system::{Res, ResMut},
 };
-use logging::info;
 
 use game_engine::{
     asset::{embedded_asset_event, AssetId, EmbeddedAssetEvent},
     input::{GamepadRumbleIntensity, Input, RumbleManager},
     render::components::RenderLayers,
     ui::{UiHandle, UiManager},
-    http::HttpClient
+    http::HttpClient,
+    logging::info,
 };
 
 use crate::{

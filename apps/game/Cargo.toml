@@ -16,9 +16,6 @@ wgpu_renderer = [ "game_engine/wgpu_renderer" ]
 # Internal
 # goal is to have ONLY game_engine here!!!
 game_engine = { path = "../../crates/engine", features = ["networked"] }
-naia-serde = { path = "../../../naia/shared/serde" }
-random = { path = "../../crates/random" }
-logging = { path = "../../crates/logging" }
 
 # External
 bevy_app = { version = "0.13", default-features=false }

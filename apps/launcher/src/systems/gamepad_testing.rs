@@ -1,9 +1,8 @@
 use std::time::Duration;
 
 use bevy_ecs::{event::EventReader, system::ResMut};
-use logging::info;
 
-use game_engine::input::{GamepadButtonType, GamepadRumbleIntensity, InputEvent, RumbleManager};
+use game_engine::{input::{GamepadButtonType, GamepadRumbleIntensity, InputEvent, RumbleManager}, logging::info};
 
 #[allow(unused)]
 pub(crate) fn gamepad_testing_system(

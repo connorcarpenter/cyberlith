@@ -1,7 +1,6 @@
-use bevy_ecs::system::ResMut;
-use logging::{info, warn};
+use bevy_ecs::{system::ResMut, event::EventWriter};
 
-use game_engine::{ui::UiManager, http::HttpClient, config::{GATEWAY_PORT, PUBLIC_IP_ADDR}};
+use game_engine::{logging::{info, warn}, kernel::AppExitAction, ui::UiManager, http::HttpClient, config::{GATEWAY_PORT, PUBLIC_IP_ADDR}};
 
 use gateway_http_proto::{UserLoginRequest, UserRegisterRequest};
 
@@ -53,14 +52,16 @@ pub(crate) fn backend_send_register_request(
 pub(crate) fn backend_process_responses(
     mut global: ResMut<Global>,
     mut http_client: ResMut<HttpClient>,
+    mut app_exit_action_writer: EventWriter<AppExitAction>,
 ) {
-    user_login_response_process(&mut global, &mut http_client);
+    user_login_response_process(&mut global, &mut http_client, &mut app_exit_action_writer);
     user_register_response_process(&mut global, &mut http_client);
 }
 
 fn user_login_response_process(
     global: &mut Global,
     http_client: &mut HttpClient,
+    app_exit_action_writer: &mut EventWriter<AppExitAction>,
 ) {
     if global.user_login_response_key_opt.is_some() {
         let Some(key) = &global.user_login_response_key_opt else {
@@ -73,7 +74,8 @@ fn user_login_response_process(
         match result {
             Ok(_response) => {
                 info!("client <- gateway: (UserLoginResponse - 200 OK)");
-
+                info!("redirecting to game app");
+                app_exit_action_writer.send(AppExitAction::go_to("game"));
             }
             Err(err) => {
                 info!(

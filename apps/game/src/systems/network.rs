@@ -1,5 +1,4 @@
 use bevy_ecs::{event::EventReader, system::Commands};
-use logging::info;
 
 use game_engine::{
     asset::{
@@ -12,6 +11,7 @@ use game_engine::{
         Alt1, Main, Position, WorldInsertAssetRefEvent, WorldInsertComponentEvent,
         WorldSpawnEntityEvent,
     },
+    logging::info,
 };
 
 use crate::systems::scene::{WalkAnimation, WalkerMarker};

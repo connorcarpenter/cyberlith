@@ -6,7 +6,7 @@ use game_engine::{
     EnginePlugin,
 };
 
-use crate::{systems::{keyboard_input, backend, draw, resize, scene, ui}, resources::{Global, LoginButtonClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent}};
+use crate::{systems::{backend, draw, resize, scene, ui}, resources::{Global, LoginButtonClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent}};
 
 pub struct LauncherApp;
 
@@ -32,8 +32,6 @@ impl Plugin for LauncherApp {
             .add_event::<LoginButtonClickedEvent>()
             .add_event::<RegisterButtonClickedEvent>()
             .add_event::<SubmitButtonClickedEvent>()
-            // other input
-            .add_systems(Update, keyboard_input::process)
             // ui systems
             .add_systems(Startup, ui::ui_setup)
             .add_systems(Update, ui::ui_handle_events)

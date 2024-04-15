@@ -1,7 +1,6 @@
 use bevy_ecs::{system::Res, event::EventWriter};
-use logging::info;
 
-use game_engine::{kernel::AppExitAction, input::{Input, Key}};
+use game_engine::{logging::info, kernel::AppExitAction, input::{Input, Key}};
 
 pub fn process(
     input: Res<Input>,

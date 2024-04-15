@@ -51,3 +51,4 @@ pub mod random {
 pub mod http {
     pub use bevy_http_client::*;
 }
+pub use logging;
