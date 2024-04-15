@@ -9,7 +9,6 @@ use std::time::Duration;
 
 use bevy_app::{App, ScheduleRunnerPlugin, Startup, Update};
 use bevy_ecs::schedule::IntoSystemConfigs;
-use logging::LogPlugin;
 
 use naia_bevy_server::{
     Plugin as NaiaServerPlugin, ReceiveEvents, ServerConfig as NaiaServerConfig,
@@ -24,11 +23,11 @@ use world_server_naia_proto::protocol as naia_protocol;
 use crate::asset_manager::AssetManager;
 
 fn main() {
+    logging::initialize();
     // Build App
     App::default()
         // Plugins
         .add_plugins(ScheduleRunnerPlugin::run_loop(Duration::from_millis(5)))
-        .add_plugins(LogPlugin::default())
         .add_plugins(NaiaServerPlugin::new(
             NaiaServerConfig::default(),
             naia_protocol(),

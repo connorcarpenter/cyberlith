@@ -35,6 +35,12 @@ pub fn up() -> Result<(), CliError> {
     let world_rcvr = thread_init(server_build::server_build_world);
     let mut world_rdy = false;
 
+    let asset_rcvr = thread_init(server_build::server_build_asset);
+    let mut asset_rdy = false;
+
+    let auth_rcvr = thread_init(server_build::server_build_auth);
+    let mut auth_rdy = false;
+
     loop {
         thread::sleep(Duration::from_secs(5));
 
@@ -44,8 +50,10 @@ pub fn up() -> Result<(), CliError> {
         check_channel(&region_rcvr, &mut region_rdy)?;
         check_channel(&session_rcvr, &mut session_rdy)?;
         check_channel(&world_rcvr, &mut world_rdy)?;
+        check_channel(&asset_rcvr, &mut asset_rdy)?;
+        check_channel(&auth_rcvr, &mut auth_rdy)?;
 
-        if instance_rdy && content_rdy && gateway_rdy && region_rdy && session_rdy && world_rdy {
+        if instance_rdy && content_rdy && gateway_rdy && region_rdy && session_rdy && world_rdy && asset_rdy && auth_rdy {
             break;
         }
     }

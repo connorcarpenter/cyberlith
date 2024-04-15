@@ -83,6 +83,8 @@ async fn images_push() -> Result<(), CliError> {
     image_push("region").await?;
     image_push("session").await?;
     image_push("world").await?;
+    image_push("asset").await?;
+    image_push("auth").await?;
 
     Ok(())
 }
@@ -104,6 +106,8 @@ async fn images_pull(session: &Session) -> Result<(), CliError> {
     image_pull(session, "region").await?;
     image_pull(session, "session").await?;
     image_pull(session, "world").await?;
+    image_pull(session, "asset").await?;
+    image_pull(session, "auth").await?;
 
     Ok(())
 }
@@ -128,6 +132,8 @@ async fn containers_start(session: &Session) -> Result<(), CliError> {
     container_create_and_start(session, "region", "-p 14198:14198/tcp").await?;
     container_create_and_start(session, "session", "-p 14200:14200/tcp -p 14201:14201/udp").await?;
     container_create_and_start(session, "world", "-p 14203:14203/tcp -p 14204:14204/udp").await?;
+    container_create_and_start(session, "asset", "-p 14205:14205/tcp").await?; // TODO: replace with appropriate ports!
+    container_create_and_start(session, "auth", "-p 14206:14206/tcp").await?; // TODO: replace with appropriate ports!
 
     Ok(())
 }
@@ -144,6 +150,8 @@ async fn containers_stop(session: &Session) -> Result<(), CliError> {
     container_stop_and_remove(session, "region").await?;
     container_stop_and_remove(session, "session").await?;
     container_stop_and_remove(session, "world").await?;
+    container_stop_and_remove(session, "asset").await?;
+    container_stop_and_remove(session, "auth").await?;
 
     Ok(())
 }

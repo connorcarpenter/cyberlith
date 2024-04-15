@@ -5,9 +5,6 @@ pub const SELF_BINDING_ADDR: &str = "127.0.0.1";
 pub const PUBLIC_IP_ADDR: &str = "127.0.0.1";
 
 #[allow(dead_code)]
-pub const AUTH_SERVER_RECV_ADDR: &str = "127.0.0.1";
-
-#[allow(dead_code)]
 pub const REGION_SERVER_RECV_ADDR: &str = "127.0.0.1";
 
 #[allow(dead_code)]
@@ -20,6 +17,9 @@ pub const WORLD_SERVER_RECV_ADDR: &str = "127.0.0.1";
 pub const ASSET_SERVER_RECV_ADDR: &str = "127.0.0.1";
 
 #[allow(dead_code)]
+pub const AUTH_SERVER_RECV_ADDR: &str = "127.0.0.1";
+
+#[allow(dead_code)]
 pub const CONTENT_SERVER_FILES_PATH: &str = "./files/";
 
 #[allow(dead_code)]
@@ -27,9 +27,6 @@ pub const CONTENT_SERVER_PORT: u16 = 14196;
 
 #[allow(dead_code)]
 pub const GATEWAY_PORT: u16 = 14197;
-
-#[allow(dead_code)]
-pub const AUTH_SERVER_PORT: u16 = 14195;
 
 #[allow(dead_code)]
 pub const REGION_SERVER_PORT: u16 = 14198;
@@ -54,6 +51,9 @@ pub const WORLD_SERVER_WEBRTC_PORT: u16 = 14204;
 
 #[allow(dead_code)]
 pub const ASSET_SERVER_PORT: u16 = 14205;
+
+#[allow(dead_code)]
+pub const AUTH_SERVER_PORT: u16 = 14206;
 
 #[allow(dead_code)]
 pub const CLIENT_SECRET: &str = "35aSlQxlQ7RKY03JJMSf4xvbxZGhIaZOE";
