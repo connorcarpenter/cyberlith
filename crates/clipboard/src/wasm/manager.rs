@@ -1,79 +1,23 @@
 
-use bevy_ecs::system::{Resource};
-use wasm_bindgen::JsValue;
 use wasm_bindgen_futures::spawn_local;
 use web_sys::window;
 use logging::{warn, info};
 
-#[derive(Resource)]
-pub(crate) struct ClipboardManagerImpl {
+use crate::wasm::string_from_js_value;
 
-}
+pub(crate) struct ClipboardManagerImpl;
 
-impl Default for ClipboardManagerImpl {
-    fn default() -> Self {
-        Self {
-
-        }
+impl ClipboardManagerImpl {
+    pub(crate) fn init() {
+        // Nothing to do here
     }
 }
 
 impl ClipboardManagerImpl {
     /// Sets clipboard contents.
-    pub(crate) fn set_contents(&mut self, contents: &str) {
+    pub(crate) fn set_contents(contents: &str) {
         clipboard_set(contents.to_owned());
     }
-
-    /// Gets clipboard contents. Returns [`None`] if clipboard provider is unavailable or returns an error.
-    pub(crate) fn get_contents(&mut self) -> Option<String> {
-        clipboard_get()
-    }
-}
-
-/// Sets contents of the clipboard via the Web API.
-fn clipboard_get() -> Option<String> {
-
-    spawn_local(async move {
-        let Some(window) = window() else {
-            warn!("Failed to access the window object");
-            return;
-        };
-
-        let nav = window.navigator();
-        let Some(clipboard) = nav.clipboard() else {
-            warn!("Failed to access clipboard");
-            return;
-        };
-
-        info!("reading from clipboard");
-        let promise = clipboard.read_text();
-        match wasm_bindgen_futures::JsFuture::from(promise).await {
-            Ok(value) => {
-                match value.as_string() {
-                    Some(contents) => {
-                        info!("read from clipboard: {}", contents);
-                        //sender.send(Some(contents)).unwrap();
-                        return;
-                    }
-                    None => {
-                        warn!("Failed to read from clipboard: empty value");
-                        return;
-                    }
-                }
-            },
-            Err(err) => {
-                warn!(
-                    "Failed to read from clipboard: {}",
-                    string_from_js_value(&err)
-                );
-                return;
-            }
-        }
-
-        //sender.send(None).unwrap();
-    });
-
-    None
 }
 
 /// Sets contents of the clipboard via the Web API.
@@ -99,8 +43,4 @@ fn clipboard_set(contents: String) {
             );
         }
     });
-}
-
-fn string_from_js_value(value: &JsValue) -> String {
-    value.as_string().unwrap_or_else(|| format!("{value:#?}"))
 }

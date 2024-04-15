@@ -1,32 +1,23 @@
 use std::cell::{RefCell, RefMut};
 
 use arboard::Clipboard;
-use bevy_ecs::system::Resource;
 use thread_local::ThreadLocal;
 
-pub(crate) static mut THREAD_LOCAL_CLIPBOARD: Option<ThreadLocal<RefCell<Clipboard>>> = None;
+static mut THREAD_LOCAL_CLIPBOARD: Option<ThreadLocal<RefCell<Clipboard>>> = None;
 
-#[derive(Resource)]
-pub(crate) struct ClipboardManagerImpl {
+pub(crate) struct ClipboardManagerImpl;
 
-}
-
-impl Default for ClipboardManagerImpl {
-    fn default() -> Self {
-
+impl ClipboardManagerImpl {
+    pub(crate) fn init() {
         unsafe {
             THREAD_LOCAL_CLIPBOARD = Some(ThreadLocal::new());
-        }
-
-        Self {
-
         }
     }
 }
 
 impl ClipboardManagerImpl {
     /// Sets clipboard contents.
-    pub(crate) fn set_contents(&mut self, contents: &str) {
+    pub(crate) fn set_contents(contents: &str) {
         let mut clipboard = Self::get_clipboard();
         if let Err(err) = clipboard.set_text(contents.to_owned()) {
             logging::error!("Failed to set clipboard contents: {:?}", err);

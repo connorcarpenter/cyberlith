@@ -2,12 +2,10 @@ use std::collections::HashMap;
 
 use bevy_ecs::{change_detection::ResMut, system::Resource};
 
-use crate::{ClipboardManagerImpl, error::TaskError, native::{poll_task, start_task, TaskJob}, task_key::TaskKey};
+use crate::{ClipboardManagerImpl, error::TaskError, poll_task, start_task, TaskJob, task_key::TaskKey};
 
 #[derive(Resource)]
 pub struct ClipboardManager {
-    pub(crate) inner: ClipboardManagerImpl,
-
     tasks: HashMap<u64, TaskJob>,
     results: HashMap<u64, Result<String, TaskError>>,
     current_index: u64,
@@ -15,9 +13,10 @@ pub struct ClipboardManager {
 
 impl Default for ClipboardManager {
     fn default() -> Self {
-        Self {
-            inner: ClipboardManagerImpl::default(),
 
+        ClipboardManagerImpl::init();
+
+        Self {
             tasks: HashMap::new(),
             results: HashMap::new(),
             current_index: 0,
@@ -28,7 +27,7 @@ impl Default for ClipboardManager {
 impl ClipboardManager {
     /// Sets clipboard contents.
     pub fn set_contents(&mut self, contents: &str) {
-        self.inner.set_contents(contents);
+        ClipboardManagerImpl::set_contents(contents);
     }
 
     /// Gets clipboard contents. Returns [`None`] if clipboard provider is unavailable or returns an error.
