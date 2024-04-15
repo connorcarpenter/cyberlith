@@ -4,6 +4,7 @@ use crossbeam_channel::{Receiver, Sender};
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use wasm_bindgen_futures::spawn_local;
 use web_sys::{window, ClipboardEvent, Document, EventTarget};
+use logging::info;
 
 use crate::ClipboardManager;
 
@@ -12,6 +13,7 @@ pub fn startup_setup_web_events(
     mut clipboard_manager: ResMut<ClipboardManager>,
     mut subscribed_events: NonSendMut<SubscribedEvents>,
 ) {
+    info!("setting up web clipboard events");
     let (tx, rx) = crossbeam_channel::unbounded();
     clipboard_manager.clipboard.event_receiver = Some(rx);
     setup_clipboard_copy(&mut subscribed_events, tx.clone());
@@ -79,27 +81,27 @@ pub struct SubscribedEvents {
     event_closures: Vec<EventClosure>,
 }
 
-// impl SubscribedEvents {
-//     /// Use this method to unsubscribe from all the clipboard events, this can be useful
-//     /// for gracefully destroying a Bevy instance in a page.
-//     pub fn unsubscribe_from_events(&mut self) {
-//         let events_to_unsubscribe = std::mem::take(&mut self.event_closures);
-//
-//         if !events_to_unsubscribe.is_empty() {
-//             for event in events_to_unsubscribe {
-//                 if let Err(err) = event.target.remove_event_listener_with_callback(
-//                     event.event_name.as_str(),
-//                     event.closure.as_ref().unchecked_ref(),
-//                 ) {
-//                     logging::error!(
-//                         "Failed to unsubscribe from event: {}",
-//                         string_from_js_value(&err)
-//                     );
-//                 }
-//             }
-//         }
-//     }
-// }
+impl SubscribedEvents {
+    /// Use this method to unsubscribe from all the clipboard events, this can be useful
+    /// for gracefully destroying a Bevy instance in a page.
+    pub fn unsubscribe_from_events(&mut self) {
+        let events_to_unsubscribe = std::mem::take(&mut self.event_closures);
+
+        if !events_to_unsubscribe.is_empty() {
+            for event in events_to_unsubscribe {
+                if let Err(err) = event.target.remove_event_listener_with_callback(
+                    event.event_name.as_str(),
+                    event.closure.as_ref().unchecked_ref(),
+                ) {
+                    logging::error!(
+                        "Failed to unsubscribe from event: {}",
+                        string_from_js_value(&err)
+                    );
+                }
+            }
+        }
+    }
+}
 
 struct EventClosure {
     #[allow(dead_code)]
@@ -121,6 +123,7 @@ fn setup_clipboard_copy(subscribed_events: &mut SubscribedEvents, tx: Sender<Web
     };
 
     let closure = Closure::<dyn FnMut(_)>::new(move |_event: ClipboardEvent| {
+        logging::info!("sending copy event over channel");
         if tx.send(WebClipboardEvent::Copy).is_err() {
             logging::error!("Failed to send a \"copy\" event: channel is disconnected");
         }
@@ -136,6 +139,7 @@ fn setup_clipboard_copy(subscribed_events: &mut SubscribedEvents, tx: Sender<Web
         drop(closure);
         return;
     };
+    logging::info!("adding copy event closure");
     subscribed_events.event_closures.push(EventClosure {
         target: <Document as std::convert::AsRef<EventTarget>>::as_ref(&document).clone(),
         event_name: "copy".to_owned(),
@@ -154,6 +158,7 @@ fn setup_clipboard_cut(subscribed_events: &mut SubscribedEvents, tx: Sender<WebC
     };
 
     let closure = Closure::<dyn FnMut(_)>::new(move |_event: ClipboardEvent| {
+        logging::info!("sending cut event over channel");
         if tx.send(WebClipboardEvent::Cut).is_err() {
             logging::error!("Failed to send a \"cut\" event: channel is disconnected");
         }
@@ -169,6 +174,7 @@ fn setup_clipboard_cut(subscribed_events: &mut SubscribedEvents, tx: Sender<WebC
         drop(closure);
         return;
     };
+    logging::info!("adding cut event closure");
     subscribed_events.event_closures.push(EventClosure {
         target: <Document as std::convert::AsRef<EventTarget>>::as_ref(&document).clone(),
         event_name: "cut".to_owned(),
@@ -193,6 +199,7 @@ fn setup_clipboard_paste(subscribed_events: &mut SubscribedEvents, tx: Sender<We
         };
         match clipboard_data.get_data("text/plain") {
             Ok(data) => {
+                logging::info!("sending paste event over channel");
                 if tx.send(WebClipboardEvent::Paste(data)).is_err() {
                     logging::error!("Failed to send the \"paste\" event: channel is disconnected");
                 }
@@ -216,6 +223,7 @@ fn setup_clipboard_paste(subscribed_events: &mut SubscribedEvents, tx: Sender<We
         drop(closure);
         return;
     };
+    logging::info!("adding paste event closure");
     subscribed_events.event_closures.push(EventClosure {
         target: <Document as std::convert::AsRef<EventTarget>>::as_ref(&document).clone(),
         event_name: "paste".to_owned(),
@@ -237,6 +245,7 @@ fn clipboard_copy(contents: String) {
             return;
         };
 
+        info!("writing to clipboard: {}", contents);
         let promise = clipboard.write_text(&contents);
         if let Err(err) = wasm_bindgen_futures::JsFuture::from(promise).await {
             logging::warn!(

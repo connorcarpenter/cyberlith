@@ -1,5 +1,6 @@
-# This maybe fixes our web_sys issues
-[build]
+
+# Using unstable APIs is required for writing to clipboard
+[target.wasm32-unknown-unknown]
 rustflags = ["--cfg=web_sys_unstable_apis"]
 
 # Add the contents of this file to `config.toml` to enable "fast build" configuration. Please read the notes below.

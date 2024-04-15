@@ -63,8 +63,7 @@ impl ClipboardManager {
 }
 
 fn handle_clipboard_events(mut clipboard_manager: ResMut<ClipboardManager>) {
-    let event = clipboard_manager.try_receive_clipboard_event();
-    if let Some(event) = event {
+    while let Some(event) = clipboard_manager.try_receive_clipboard_event() {
         match event {
             web_clipboard::WebClipboardEvent::Cut => {
                 info!("received Cut");
