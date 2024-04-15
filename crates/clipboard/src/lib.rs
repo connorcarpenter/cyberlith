@@ -10,10 +10,10 @@ extern crate cfg_if;
 cfg_if! {
     if #[cfg(target_arch = "wasm32")] {
         mod wasm;
-        pub(crate) use self::wasm::{ClipboardPluginImpl, ClipboardManagerImpl};
+        pub(crate) use self::wasm::{ClipboardManagerImpl};
     }
     else {
         mod native;
-        pub(crate) use self::native::{ClipboardPluginImpl, ClipboardManagerImpl};
+        pub(crate) use self::native::{ClipboardManagerImpl};
     }
 }

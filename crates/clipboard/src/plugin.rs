@@ -1,7 +1,7 @@
 
 use bevy_app::{App, Plugin};
 
-use crate::{ClipboardManager, ClipboardPluginImpl};
+use crate::{ClipboardManager};
 
 #[derive(Default)]
 pub struct ClipboardPlugin;
@@ -9,7 +9,6 @@ pub struct ClipboardPlugin;
 impl Plugin for ClipboardPlugin {
     fn build(&self, app: &mut App) {
         app
-            .init_resource::<ClipboardManager>()
-            .add_plugins(ClipboardPluginImpl);
+            .init_resource::<ClipboardManager>();
     }
 }
