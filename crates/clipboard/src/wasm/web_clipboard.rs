@@ -9,27 +9,27 @@ use logging::info;
 use crate::ClipboardManager;
 
 /// Startup system to initialize web clipboard events.
-pub fn startup_setup_web_events(
+pub(crate) fn startup_setup_web_events(
     mut clipboard_manager: ResMut<ClipboardManager>,
     mut subscribed_events: NonSendMut<SubscribedEvents>,
 ) {
     info!("setting up web clipboard events");
     let (tx, rx) = crossbeam_channel::unbounded();
-    clipboard_manager.clipboard.event_receiver = Some(rx);
+    clipboard_manager.inner.clipboard.event_receiver = Some(rx);
     setup_clipboard_copy(&mut subscribed_events, tx.clone());
     setup_clipboard_cut(&mut subscribed_events, tx.clone());
     setup_clipboard_paste(&mut subscribed_events, tx);
 }
 
 #[derive(Default)]
-pub struct WebClipboard {
+pub(crate) struct WebClipboard {
     event_receiver: Option<Receiver<WebClipboardEvent>>,
     contents: Option<String>,
 }
 
 /// Events sent by the `cut`/`copy`/`paste` listeners.
 #[derive(Debug)]
-pub enum WebClipboardEvent {
+pub(crate) enum WebClipboardEvent {
     /// Is sent whenever the `cut` event listener is called.
     Cut,
     /// Is sent whenever the `copy` event listener is called.
@@ -40,25 +40,25 @@ pub enum WebClipboardEvent {
 
 impl WebClipboard {
     /// Sets clipboard contents.
-    pub fn set_contents(&mut self, contents: &str) {
+    pub(crate) fn set_contents(&mut self, contents: &str) {
         self.set_contents_internal(contents);
         clipboard_copy(contents.to_owned());
     }
 
     /// Sets the internal buffer of clipboard contents.
     /// This buffer is used to remember the contents of the last `paste` event.
-    pub fn set_contents_internal(&mut self, contents: &str) {
+    pub(crate) fn set_contents_internal(&mut self, contents: &str) {
         self.contents = Some(contents.to_owned());
     }
 
     /// Gets clipboard contents. Returns [`None`] if the `copy`/`cut` operation have never been invoked yet,
     /// or the `paste` event has never been received yet.
-    pub fn get_contents(&mut self) -> Option<String> {
+    pub(crate) fn get_contents(&mut self) -> Option<String> {
         self.contents.clone()
     }
 
     /// Receives a clipboard event sent by the `copy`/`cut`/`paste` listeners.
-    pub fn try_receive_clipboard_event(&self) -> Option<WebClipboardEvent> {
+    pub(crate) fn try_receive_clipboard_event(&self) -> Option<WebClipboardEvent> {
         let Some(rx) = &self.event_receiver else {
             logging::error!("Web clipboard event receiver isn't initialized");
             return None;
@@ -77,14 +77,15 @@ impl WebClipboard {
 
 /// Stores the clipboard event listeners.
 #[derive(Default)]
-pub struct SubscribedEvents {
+pub(crate) struct SubscribedEvents {
     event_closures: Vec<EventClosure>,
 }
 
 impl SubscribedEvents {
     /// Use this method to unsubscribe from all the clipboard events, this can be useful
     /// for gracefully destroying a Bevy instance in a page.
-    pub fn unsubscribe_from_events(&mut self) {
+    #[allow(unused)]
+    pub(crate) fn unsubscribe_from_events(&mut self) {
         let events_to_unsubscribe = std::mem::take(&mut self.event_closures);
 
         if !events_to_unsubscribe.is_empty() {
