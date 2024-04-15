@@ -4,6 +4,11 @@ pub use manager::ClipboardManager;
 mod plugin;
 pub use plugin::ClipboardPlugin;
 
+mod task_key;
+pub use task_key::TaskKey;
+
+mod error;
+
 #[macro_use]
 extern crate cfg_if;
 

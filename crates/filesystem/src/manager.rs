@@ -98,6 +98,7 @@ impl FileSystemManager {
     }
 }
 
+// used as a system
 pub(crate) fn update(mut client: ResMut<FileSystemManager>) {
     let mut finished_tasks = Vec::new();
     for (key, task) in client.tasks_iter_mut() {

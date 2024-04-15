@@ -1,9 +1,9 @@
 use std::collections::HashSet;
 
-use bevy_ecs::{event::EventWriter, system::Resource};
-use logging::info;
+use bevy_ecs::{change_detection::{ResMut}, event::EventWriter, system::Resource};
 
-use clipboard::ClipboardManager;
+use logging::info;
+use clipboard::{ClipboardManager, TaskKey as ClipboardTaskKey};
 use instant::Instant;
 use math::Vec2;
 
@@ -39,6 +39,8 @@ pub struct Input {
     quick_clicks: u8,
     last_click_instant: Instant,
     last_click_button: MouseButton,
+
+    clipboard_task_keys: Vec<ClipboardTaskKey>,
 }
 
 impl Input {
@@ -64,6 +66,8 @@ impl Input {
             quick_clicks: 0,
             last_click_instant: Instant::now(),
             last_click_button: MouseButton::Left,
+
+            clipboard_task_keys: Vec::new(),
         }
     }
 
@@ -212,9 +216,8 @@ impl Input {
                                 continue;
                             }
                             Key::V => {
-                                if let Some(text) = clipboard.get_contents() {
-                                    event_writer.send(InputEvent::Paste(text));
-                                }
+                                let task_key = clipboard.get_contents();
+                                self.clipboard_task_keys.push(task_key);
                                 continue;
                             }
                             _ => {}
@@ -234,6 +237,33 @@ impl Input {
                 }
                 IncomingEvent::Text(c) => {
                     event_writer.send(InputEvent::Text(*c));
+                }
+            }
+        }
+    }
+
+    // clipboard stuff
+
+    // used as a system
+    pub(crate) fn process_clipboard_task_keys(
+        mut input: ResMut<Input>,
+        mut clipboard_manager: ResMut<ClipboardManager>,
+        mut event_writer: EventWriter<InputEvent>,
+    ) {
+        let clipboard_tasks = std::mem::take(&mut input.clipboard_task_keys);
+        for task_key in clipboard_tasks {
+            match clipboard_manager.get_result(&task_key) {
+                Some(Ok(contents)) => {
+                    event_writer.send(InputEvent::Paste(contents));
+                }
+                Some(Err(err)) => {
+                    panic!(
+                        "Error getting clipboard contents: {:?}",
+                        err.to_string()
+                    );
+                }
+                None => {
+                    input.clipboard_task_keys.push(task_key);
                 }
             }
         }

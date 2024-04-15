@@ -1,4 +1,4 @@
-use bevy_app::{App, Plugin};
+use bevy_app::{App, Plugin, Update};
 
 use crate::{gamepad::GamepadPlugin, Input, InputEvent};
 
@@ -13,6 +13,9 @@ impl Plugin for InputPlugin {
             // Resources
             .insert_resource(Input::new())
             // Events
-            .add_event::<InputEvent>();
+            .add_event::<InputEvent>()
+            // Systems
+            .add_systems(Update, Input::process_clipboard_task_keys)
+        ;
     }
 }
