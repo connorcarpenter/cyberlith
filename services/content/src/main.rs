@@ -17,11 +17,11 @@ pub fn main() {
 
     let mut server = Server::new(socket_addr);
 
-    server.serve_file_masked("", "launcher.html");
+    server.serve_file("launcher.html");
     server.serve_file("launcher.js");
     server.serve_file("launcher_bg.wasm");
 
-    server.serve_file_masked("game", "game.html");
+    server.serve_file("game.html");
     server.serve_file("game.js");
     server.serve_file("game_bg.wasm");
 

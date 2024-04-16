@@ -23,10 +23,10 @@ pub const AUTH_SERVER_RECV_ADDR: &str = "127.0.0.1";
 pub const CONTENT_SERVER_FILES_PATH: &str = "./files/";
 
 #[allow(dead_code)]
-pub const CONTENT_SERVER_PORT: u16 = 14196;
+pub const GATEWAY_PORT: u16 = 80;
 
 #[allow(dead_code)]
-pub const GATEWAY_PORT: u16 = 14197;
+pub const CONTENT_SERVER_PORT: u16 = 14197;
 
 #[allow(dead_code)]
 pub const REGION_SERVER_PORT: u16 = 14198;
