@@ -7,7 +7,6 @@ pub use plugin::KernelPlugin;
 mod kernel;
 pub use kernel::{Kernel, KernelApp};
 
-
 cfg_if::cfg_if! {
     if #[cfg(target_arch = "wasm32")] {
         mod wasm;
@@ -18,7 +17,3 @@ cfg_if::cfg_if! {
         pub use crate::native::ExitActionContainer;
     }
 }
-
-
-
-

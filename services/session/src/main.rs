@@ -31,7 +31,6 @@ use crate::{
 };
 
 fn main() {
-
     logging::initialize();
 
     let instance_secret = random::generate_random_string(16);

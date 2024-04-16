@@ -88,9 +88,7 @@ fn endpoint_2(
             // info!("reading file: {}", file_name);
 
             let file_path = format!("{}{}", CONTENT_SERVER_FILES_PATH, file_name);
-            let Ok(bytes) =
-                std::fs::read(&file_path)
-            else {
+            let Ok(bytes) = std::fs::read(&file_path) else {
                 warn!("file not found: {}", &file_path);
                 return Err(ResponseError::NotFound);
             };

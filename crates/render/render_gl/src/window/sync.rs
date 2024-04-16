@@ -1,15 +1,10 @@
-
 use bevy_ecs::system::{NonSend, ResMut};
 
 use render_api::{resources::Time, Window};
 
-use crate::window::{FrameInput};
+use crate::window::FrameInput;
 
-pub fn sync(
-    frame_input: NonSend<FrameInput>,
-    mut window: ResMut<Window>,
-    mut time: ResMut<Time>,
-) {
+pub fn sync(frame_input: NonSend<FrameInput>, mut window: ResMut<Window>, mut time: ResMut<Time>) {
     // update window res
     let mut update_window_resolution = false;
     if let Some(resolution) = window.get() {

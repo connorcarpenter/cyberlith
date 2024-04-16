@@ -1,6 +1,6 @@
 use bevy_app::App;
-use logging::{info};
 use cfg_if::cfg_if;
+use logging::info;
 use winit::{
     dpi,
     event::{
@@ -24,11 +24,14 @@ use winit::platform::run_return::EventLoopExtRunReturn;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::core::Context;
 
+use kernel::ExitActionContainer;
 #[cfg(target_arch = "wasm32")]
 use winit::platform::web::EventLoopExtWebSys;
-use kernel::ExitActionContainer;
 
-use crate::window::{render_loop_context::RenderLoopContext, FrameInput, FrameOutput, OutgoingEvent, WindowError, WindowedContext};
+use crate::window::{
+    render_loop_context::RenderLoopContext, FrameInput, FrameOutput, OutgoingEvent, WindowError,
+    WindowedContext,
+};
 
 static mut WINDOW_CONTAINER: Option<Window> = None;
 
@@ -76,7 +79,6 @@ impl Window {
 }
 
 impl Window {
-
     pub fn take_or_new(window_settings: WindowSettings) -> Window {
         unsafe {
             if WINDOW_CONTAINER.is_none() {
@@ -248,7 +250,6 @@ impl Window {
     /// Start the main render loop which calls the `callback` closure each frame.
     ///
     pub fn render_loop(mut self, mut app: App) -> Option<Self> {
-
         let mut rlc = RenderLoopContext::new();
 
         cfg_if! {
@@ -272,7 +273,8 @@ impl Window {
                     {
                         use wasm_bindgen::JsCast;
                         use winit::platform::web::WindowExtWebSys;
-                        window.canvas()
+                        window
+                            .canvas()
                             .remove_event_listener_with_callback(
                                 "contextmenu",
                                 closure.as_ref().unchecked_ref(),
@@ -309,7 +311,8 @@ impl Window {
 
                     let (physical_width, physical_height): (u32, u32) = window.inner_size().into();
                     let device_pixel_ratio = window.scale_factor();
-                    let (logical_width, logical_height): (u32, u32) = window.inner_size()
+                    let (logical_width, logical_height): (u32, u32) = window
+                        .inner_size()
                         .to_logical::<f64>(device_pixel_ratio)
                         .into();
                     let frame_input = FrameInput {
@@ -381,9 +384,11 @@ impl Window {
                                 }
 
                                 if state {
-                                    rlc.events.push(IncomingEvent::KeyPress(kind, rlc.modifiers));
+                                    rlc.events
+                                        .push(IncomingEvent::KeyPress(kind, rlc.modifiers));
                                 } else {
-                                    rlc.events.push(IncomingEvent::KeyRelease(kind, rlc.modifiers));
+                                    rlc.events
+                                        .push(IncomingEvent::KeyRelease(kind, rlc.modifiers));
                                 }
                             } else if (keycode == VirtualKeyCode::LWin
                                 || keycode == VirtualKeyCode::RWin)
@@ -486,7 +491,8 @@ impl Window {
                                     ));
                                     rlc.cursor_pos = None;
                                     rlc.finger_id = None;
-                                } else if rlc.secondary_finger_id
+                                } else if rlc
+                                    .secondary_finger_id
                                     .map(|id| id == touch.id)
                                     .unwrap_or(false)
                                 {
@@ -515,7 +521,8 @@ impl Window {
                                         ));
                                     }
                                     rlc.cursor_pos = Some(position);
-                                } else if rlc.secondary_finger_id
+                                } else if rlc
+                                    .secondary_finger_id
                                     .map(|id| id == touch.id)
                                     .unwrap_or(false)
                                 {
@@ -564,7 +571,6 @@ impl Window {
                 return Some(self);
             }
         }
-
     }
 
     ///

@@ -9,6 +9,4 @@ cfg_if! {
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen(start)]
-pub fn main() {
-
-}
+pub fn main() {}

@@ -15,7 +15,6 @@ impl Plugin for InputPlugin {
             // Events
             .add_event::<InputEvent>()
             // Systems
-            .add_systems(Update, Input::process_clipboard_task_keys)
-        ;
+            .add_systems(Update, Input::process_clipboard_task_keys);
     }
 }

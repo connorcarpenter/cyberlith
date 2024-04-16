@@ -5,8 +5,8 @@ use bevy_ecs::{
     system::{Commands, Query, SystemState},
     world::World,
 };
-use logging::{info, warn};
 use git2::{Repository, Signature};
+use logging::{info, warn};
 
 use naia_bevy_server::{BigMapKey, CommandsExt, RoomKey, Server, UserKey};
 

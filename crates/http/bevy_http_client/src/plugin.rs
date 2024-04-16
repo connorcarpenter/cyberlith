@@ -10,8 +10,7 @@ impl Plugin for HttpClientPlugin {
         if !app.is_plugin_added::<bevy_core::TaskPoolPlugin>() {
             app.add_plugins(bevy_core::TaskPoolPlugin::default());
         }
-        app
-            .init_resource::<HttpClient>()
+        app.init_resource::<HttpClient>()
             .add_systems(Update, client_update);
     }
 }

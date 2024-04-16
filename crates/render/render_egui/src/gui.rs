@@ -1,9 +1,9 @@
 use std::{cell::RefCell, ops::Deref};
 
 use bevy_ecs::system::Resource;
-use logging::info;
 use egui::PlatformOutput;
 use egui_gl::{gl, Painter};
+use logging::info;
 
 use input::{IncomingEvent, Modifiers};
 use render_api::components::Viewport;

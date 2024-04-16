@@ -5,13 +5,13 @@ use game_engine::{
         AnimationData, AssetHandle, AssetType, IconData, MeshData, ModelData, PaletteData,
         SceneData, SkeletonData, SkinData,
     },
+    logging::info,
     math::{Quat, Vec3},
     render::components::{RenderLayers, Transform, Visibility},
     world::{
         Alt1, Main, Position, WorldInsertAssetRefEvent, WorldInsertComponentEvent,
         WorldSpawnEntityEvent,
     },
-    logging::info,
 };
 
 use crate::systems::scene::{WalkAnimation, WalkerMarker};

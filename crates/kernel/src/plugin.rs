@@ -1,4 +1,4 @@
-use bevy_app::{Plugin, App};
+use bevy_app::{App, Plugin};
 
 use crate::AppExitAction;
 

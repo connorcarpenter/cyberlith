@@ -6,11 +6,11 @@ mod gpu_material_manager;
 mod gpu_mesh_manager;
 mod gpu_skin_manager;
 mod input;
+mod kernel;
 mod plugin;
 mod render;
 mod runner;
 mod sync;
-mod kernel;
 
 pub use gpu_material_manager::*;
 pub use gpu_mesh_manager::*;

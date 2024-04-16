@@ -1,9 +1,9 @@
 use bevy_app::{App, Plugin, Startup, Update};
 
 use game_engine::{
+    kernel::KernelApp,
     render::{resources::WindowSettings, Draw},
     NetworkedEnginePlugin,
-    kernel::{KernelApp},
 };
 
 use super::systems::{keyboard_input, network, scene};
@@ -11,7 +11,10 @@ use super::systems::{keyboard_input, network, scene};
 pub struct GameApp;
 
 impl KernelApp for GameApp {
-    fn init() -> Self where Self: Sized {
+    fn init() -> Self
+    where
+        Self: Sized,
+    {
         Self
     }
 }

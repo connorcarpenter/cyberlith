@@ -1,19 +1,16 @@
-use bevy_app::{Plugin, App as BevyApp};
+use bevy_app::{App as BevyApp, Plugin};
 
 use crate::ExitActionContainer;
 
 pub struct Kernel {
-    current_app: Option<Box<dyn KernelAppInner>>
+    current_app: Option<Box<dyn KernelAppInner>>,
 }
 
 impl Kernel {
     pub fn new() -> Self {
-
         logging::initialize();
 
-        Self {
-            current_app: None
-        }
+        Self { current_app: None }
     }
 
     pub fn load<A: KernelApp>(&mut self) {
@@ -48,16 +45,23 @@ impl Kernel {
 }
 
 pub trait KernelApp: Plugin {
-    fn init() -> Self where Self: Sized;
+    fn init() -> Self
+    where
+        Self: Sized;
 }
 
 trait KernelAppInner: KernelApp {
-    fn get_boxed() -> Box<dyn KernelAppInner> where Self: Sized;
+    fn get_boxed() -> Box<dyn KernelAppInner>
+    where
+        Self: Sized;
     fn run_until_quit(&self);
 }
 
 impl<P: KernelApp> KernelAppInner for P {
-    fn get_boxed() -> Box<dyn KernelAppInner> where Self: Sized {
+    fn get_boxed() -> Box<dyn KernelAppInner>
+    where
+        Self: Sized,
+    {
         Box::new(Self::init())
     }
 

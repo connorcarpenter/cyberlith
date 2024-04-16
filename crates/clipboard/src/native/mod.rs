@@ -19,6 +19,6 @@ pub(crate) fn poll_task(_task: &mut TaskJob) -> Option<Result<String, TaskError>
         Err(err) => {
             logging::error!("Failed to get clipboard contents: {:?}", err);
             return Some(Err(TaskError::IoError(err.to_string())));
-        },
+        }
     }
 }

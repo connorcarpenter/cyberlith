@@ -731,7 +731,9 @@ pub fn clear(gl: &gl::Context, screen_size_in_pixels: [u32; 2], clear_color: [f3
 impl Drop for Painter {
     fn drop(&mut self) {
         if !self.destroyed {
-            logging::warn!("You forgot to call destroy() on the egui gl painter. Resources will leak!");
+            logging::warn!(
+                "You forgot to call destroy() on the egui gl painter. Resources will leak!"
+            );
         }
     }
 }

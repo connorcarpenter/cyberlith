@@ -9,8 +9,8 @@ use bevy_ecs::{
     system::{Commands, Query, Res, ResMut, Resource, SystemState},
     world::{Mut, World},
 };
-use logging::info;
 use git2::{Cred, Repository, Tree};
+use logging::info;
 
 use asset_serde::json::AssetMeta;
 use naia_bevy_server::{BigMap, CommandsExt, ReplicationConfig, RoomKey, Server, UserKey};

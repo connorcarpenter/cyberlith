@@ -26,14 +26,18 @@ impl ClipboardManagerImpl {
 
     pub(crate) fn get_clipboard() -> RefMut<'static, Clipboard> {
         unsafe {
-            THREAD_LOCAL_CLIPBOARD.as_ref().unwrap().get_or(
-                || Clipboard::new()
-                    .map(RefCell::new)
-                    .map_err(|err| {
-                        logging::error!("Failed to initialize clipboard: {:?}", err);
-                    })
-                    .unwrap()
-            ).borrow_mut()
+            THREAD_LOCAL_CLIPBOARD
+                .as_ref()
+                .unwrap()
+                .get_or(|| {
+                    Clipboard::new()
+                        .map(RefCell::new)
+                        .map_err(|err| {
+                            logging::error!("Failed to initialize clipboard: {:?}", err);
+                        })
+                        .unwrap()
+                })
+                .borrow_mut()
         }
     }
 }

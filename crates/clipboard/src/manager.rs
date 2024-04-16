@@ -2,7 +2,9 @@ use std::collections::HashMap;
 
 use bevy_ecs::{change_detection::ResMut, system::Resource};
 
-use crate::{ClipboardManagerImpl, error::TaskError, poll_task, start_task, TaskJob, task_key::TaskKey};
+use crate::{
+    error::TaskError, poll_task, start_task, task_key::TaskKey, ClipboardManagerImpl, TaskJob,
+};
 
 #[derive(Resource)]
 pub struct ClipboardManager {
@@ -13,7 +15,6 @@ pub struct ClipboardManager {
 
 impl Default for ClipboardManager {
     fn default() -> Self {
-
         ClipboardManagerImpl::init();
 
         Self {
@@ -35,10 +36,7 @@ impl ClipboardManager {
         self.start_task()
     }
 
-    pub fn get_result(
-        &mut self,
-        key: &TaskKey,
-    ) -> Option<Result<String, TaskError>> {
+    pub fn get_result(&mut self, key: &TaskKey) -> Option<Result<String, TaskError>> {
         if let Some(result) = self.results.remove(&key.id) {
             match result {
                 Ok(result) => {
@@ -52,7 +50,6 @@ impl ClipboardManager {
     }
 
     fn start_task(&mut self) -> TaskKey {
-
         let job = start_task();
 
         let key = self.next_key();

@@ -1,4 +1,3 @@
-
 // TaskKey
 pub struct TaskKey {
     pub(crate) id: u64,
@@ -6,17 +5,13 @@ pub struct TaskKey {
 
 impl TaskKey {
     pub fn new(id: u64) -> Self {
-        Self {
-            id,
-        }
+        Self { id }
     }
 }
 
 impl Clone for TaskKey {
     fn clone(&self) -> Self {
-        Self {
-            id: self.id,
-        }
+        Self { id: self.id }
     }
 }
 

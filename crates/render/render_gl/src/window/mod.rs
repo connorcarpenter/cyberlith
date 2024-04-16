@@ -1,9 +1,9 @@
 mod error;
 mod frame_io;
+mod render_loop_context;
 mod sync;
 mod window;
 mod windowed_context;
-mod render_loop_context;
 
 pub use error::*;
 pub use frame_io::*;

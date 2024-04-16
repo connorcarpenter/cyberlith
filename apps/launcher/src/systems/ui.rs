@@ -7,18 +7,18 @@ use bevy_ecs::{
 
 use game_engine::{
     asset::{embedded_asset_event, AssetId, EmbeddedAssetEvent},
+    http::HttpClient,
     input::{GamepadRumbleIntensity, Input, RumbleManager},
+    logging::info,
     render::components::RenderLayers,
     ui::{UiHandle, UiManager},
-    http::HttpClient,
-    logging::info,
 };
 
 use crate::{
-    systems::backend::{backend_send_login_request, backend_send_register_request},
     resources::{
         Global, LoginButtonClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent,
-    }
+    },
+    systems::backend::{backend_send_login_request, backend_send_register_request},
 };
 
 pub fn ui_setup(
@@ -240,4 +240,3 @@ fn ui_login_handle_events(
         // ignore
     }
 }
-

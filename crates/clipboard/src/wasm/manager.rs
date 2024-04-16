@@ -1,7 +1,6 @@
-
+use logging::{info, warn};
 use wasm_bindgen_futures::spawn_local;
 use web_sys::window;
-use logging::{warn, info};
 
 use crate::wasm::string_from_js_value;
 

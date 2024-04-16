@@ -6,9 +6,9 @@ mod types;
 
 use std::{net::SocketAddr, thread};
 
-use logging::info;
 use config::{AUTH_SERVER_PORT, SELF_BINDING_ADDR};
 use http_server::{async_dup::Arc, smol::lock::RwLock, Server};
+use logging::info;
 
 use crate::state::State;
 

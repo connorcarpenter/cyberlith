@@ -1,6 +1,12 @@
-use bevy_ecs::{system::ResMut, event::EventWriter};
+use bevy_ecs::{event::EventWriter, system::ResMut};
 
-use game_engine::{logging::{info, warn}, kernel::AppExitAction, ui::UiManager, http::HttpClient, config::{GATEWAY_PORT, PUBLIC_IP_ADDR}};
+use game_engine::{
+    config::{GATEWAY_PORT, PUBLIC_IP_ADDR},
+    http::HttpClient,
+    kernel::AppExitAction,
+    logging::{info, warn},
+    ui::UiManager,
+};
 
 use gateway_http_proto::{UserLoginRequest, UserRegisterRequest};
 
@@ -12,8 +18,12 @@ pub(crate) fn backend_send_login_request(
     http_client: &mut HttpClient,
 ) {
     let login_ui_handle = global.ui_login_handle.unwrap();
-    let username = ui_manager.get_textbox_text(&login_ui_handle, "username_textbox").unwrap_or("".to_string());
-    let password = ui_manager.get_textbox_text(&login_ui_handle, "password_textbox").unwrap_or("".to_string());
+    let username = ui_manager
+        .get_textbox_text(&login_ui_handle, "username_textbox")
+        .unwrap_or("".to_string());
+    let password = ui_manager
+        .get_textbox_text(&login_ui_handle, "password_textbox")
+        .unwrap_or("".to_string());
 
     if global.user_login_response_key_opt.is_some() {
         warn!("already sending login request...");
@@ -24,7 +34,10 @@ pub(crate) fn backend_send_login_request(
     let request = UserLoginRequest::new(&username, &password);
     let key = http_client.send(PUBLIC_IP_ADDR, GATEWAY_PORT, request);
     global.user_login_response_key_opt = Some(key);
-    info!("sending login request... (username: {}, password: {}", username, password);
+    info!(
+        "sending login request... (username: {}, password: {}",
+        username, password
+    );
 }
 
 pub(crate) fn backend_send_register_request(
@@ -33,9 +46,15 @@ pub(crate) fn backend_send_register_request(
     http_client: &mut HttpClient,
 ) {
     let register_ui_handle = global.ui_register_handle.unwrap();
-    let username = ui_manager.get_textbox_text(&register_ui_handle, "username_textbox").unwrap_or("".to_string());
-    let email = ui_manager.get_textbox_text(&register_ui_handle, "email_textbox").unwrap_or("".to_string());
-    let password = ui_manager.get_textbox_text(&register_ui_handle, "password_textbox").unwrap_or("".to_string());
+    let username = ui_manager
+        .get_textbox_text(&register_ui_handle, "username_textbox")
+        .unwrap_or("".to_string());
+    let email = ui_manager
+        .get_textbox_text(&register_ui_handle, "email_textbox")
+        .unwrap_or("".to_string());
+    let password = ui_manager
+        .get_textbox_text(&register_ui_handle, "password_textbox")
+        .unwrap_or("".to_string());
 
     if global.user_register_response_key_opt.is_some() {
         warn!("already sending register request...");
@@ -46,7 +65,10 @@ pub(crate) fn backend_send_register_request(
     let request = UserRegisterRequest::new(&username, &email, &password);
     let key = http_client.send(PUBLIC_IP_ADDR, GATEWAY_PORT, request);
     global.user_register_response_key_opt = Some(key);
-    info!("sending register request... (username: {}, email: {}, password: {}", username, email, password);
+    info!(
+        "sending register request... (username: {}, email: {}, password: {}",
+        username, email, password
+    );
 }
 
 pub(crate) fn backend_process_responses(
@@ -87,10 +109,7 @@ fn user_login_response_process(
     }
 }
 
-fn user_register_response_process(
-    global: &mut Global,
-    http_client: &mut HttpClient,
-) {
+fn user_register_response_process(global: &mut Global, http_client: &mut HttpClient) {
     if global.user_register_response_key_opt.is_some() {
         let Some(key) = &global.user_register_response_key_opt else {
             return;

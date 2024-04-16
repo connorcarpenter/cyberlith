@@ -53,7 +53,15 @@ pub fn up() -> Result<(), CliError> {
         check_channel(&asset_rcvr, &mut asset_rdy)?;
         check_channel(&auth_rcvr, &mut auth_rdy)?;
 
-        if instance_rdy && content_rdy && gateway_rdy && region_rdy && session_rdy && world_rdy && asset_rdy && auth_rdy {
+        if instance_rdy
+            && content_rdy
+            && gateway_rdy
+            && region_rdy
+            && session_rdy
+            && world_rdy
+            && asset_rdy
+            && auth_rdy
+        {
             break;
         }
     }

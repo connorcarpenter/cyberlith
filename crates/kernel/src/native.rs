@@ -1,4 +1,3 @@
-
 static mut EXIT_ACTION_CONTAINER: Option<String> = None;
 pub struct ExitActionContainer;
 impl ExitActionContainer {

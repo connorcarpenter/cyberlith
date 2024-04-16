@@ -36,29 +36,11 @@ pub async fn server_build_content() -> Result<(), CliError> {
 }
 
 async fn clean_web_deploy_files(name: &str) -> Result<(), CliError> {
-    run_command(
-        name,
-        format!(
-            "rm {}.html",
-            name
-        ).as_str()
-    ).await?;
+    run_command(name, format!("rm {}.html", name).as_str()).await?;
 
-    run_command(
-        name,
-        format!(
-            "rm {}.js",
-            name
-        ).as_str()
-    ).await?;
+    run_command(name, format!("rm {}.js", name).as_str()).await?;
 
-    run_command(
-        name,
-        format!(
-            "rm {}_bg.wasm",
-            name
-        ).as_str()
-    ).await?;
+    run_command(name, format!("rm {}_bg.wasm", name).as_str()).await?;
 
     Ok(())
 }
@@ -75,8 +57,10 @@ async fn build_web_deploy_files(name: &str) -> Result<(), CliError> {
             --target wasm32-unknown-unknown \
             --lib",
             name
-        ).as_str()
-    ).await?;
+        )
+        .as_str(),
+    )
+    .await?;
 
     run_command(
         name,
@@ -87,33 +71,25 @@ async fn build_web_deploy_files(name: &str) -> Result<(), CliError> {
             --target web \
             --no-typescript target/wasm32-unknown-unknown/release/{}.wasm",
             name, name
-        ).as_str()
-    ).await?;
+        )
+        .as_str(),
+    )
+    .await?;
 
     // move files to main dir
-    run_command(
-        name,
-        format!(
-            "cp target/{}.js {}.js",
-            name, name
-        ).as_str()
-    ).await?;
+    run_command(name, format!("cp target/{}.js {}.js", name, name).as_str()).await?;
 
     run_command(
         name,
-        format!(
-            "cp target/{}_bg.wasm {}_bg.wasm",
-            name, name
-        ).as_str()
-    ).await?;
+        format!("cp target/{}_bg.wasm {}_bg.wasm", name, name).as_str(),
+    )
+    .await?;
 
     run_command(
         name,
-        format!(
-            "cp deployments/web/{}/{}.html {}.html",
-            name, name, name
-        ).as_str()
-    ).await?;
+        format!("cp deployments/web/{}/{}.html {}.html", name, name, name).as_str(),
+    )
+    .await?;
     Ok(())
 }
 

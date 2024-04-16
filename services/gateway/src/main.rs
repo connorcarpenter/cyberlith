@@ -2,9 +2,9 @@ mod endpoints;
 
 use std::{net::SocketAddr, thread};
 
-use logging::info;
 use config::{GATEWAY_PORT, SELF_BINDING_ADDR};
 use http_server::Server;
+use logging::info;
 
 pub fn main() {
     logging::initialize();

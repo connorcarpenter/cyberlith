@@ -1,9 +1,8 @@
+pub use log::{error, info, warn};
 
-pub use log::{info, warn, error};
-
-use tracing_subscriber::{prelude::*, registry::Registry, EnvFilter};
+use tracing::{Level, Subscriber};
 use tracing_log::LogTracer;
-use tracing::{Subscriber, Level};
+use tracing_subscriber::{prelude::*, registry::Registry, EnvFilter};
 
 pub fn initialize() {
     let log_plugin = LogPlugin::default();
@@ -37,7 +36,8 @@ pub fn initialize() {
     }
 
     let logger_already_set = LogTracer::init().is_err();
-    let subscriber_already_set = tracing::subscriber::set_global_default(finished_subscriber).is_err();
+    let subscriber_already_set =
+        tracing::subscriber::set_global_default(finished_subscriber).is_err();
 
     match (logger_already_set, subscriber_already_set) {
         (true, true) => tracing::error!(

@@ -8,8 +8,8 @@ cfg_if! {
 use logging::info;
 
 use game_app::GameApp;
+use kernel::Kernel;
 use launcher_app::LauncherApp;
-use kernel::{Kernel};
 
 fn main() {
     let mut kernel = Kernel::new();
@@ -20,18 +20,18 @@ fn main() {
             "exit" => {
                 info!("Exiting...");
                 break;
-            },
+            }
             "launcher" => {
                 info!("Loading LauncherApp...");
                 kernel.load::<LauncherApp>();
-            },
+            }
             "game" => {
                 info!("Loading GameApp...");
                 kernel.load::<GameApp>();
-            },
+            }
             _ => {
                 panic!("Unknown app: {}", app_result);
-            },
+            }
         }
     }
     info!("Done.");

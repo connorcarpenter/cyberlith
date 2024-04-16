@@ -1,4 +1,3 @@
-
 use futures::channel::oneshot::{Receiver, Sender};
 use logging::info;
 
@@ -9,7 +8,6 @@ pub fn redirect_to_url(url: &str) {
 static mut EXIT_ACTION_CONTAINER: Option<Sender<String>> = None;
 pub struct ExitActionContainer;
 impl ExitActionContainer {
-
     pub(crate) fn init() -> Receiver<String> {
         info!("initializing wasm exit action container");
 

@@ -1,5 +1,5 @@
 use bevy_app::AppExit;
-use bevy_ecs::{event::EventReader, change_detection::NonSendMut};
+use bevy_ecs::{change_detection::NonSendMut, event::EventReader};
 
 use kernel::{AppExitAction, ExitActionContainer};
 use logging::info;
@@ -17,7 +17,6 @@ pub(crate) fn app_exit(
     }
     // read exit action events
     if let Some(first_action) = exit_action_event_reader.read().next() {
-
         info!("system received exit action event: {:?}", first_action);
 
         frame_input.outgoing_events.push(OutgoingEvent::Exit);

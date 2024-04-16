@@ -1,4 +1,3 @@
-
 use bevy_app::{
     App, First, Last, Main, Plugin, PostUpdate, PreStartup, PreUpdate, RunFixedMainLoop,
     StateTransition, Update,
@@ -8,20 +7,12 @@ use bevy_ecs::schedule::{ExecutorKind, Schedule};
 use clipboard::ClipboardPlugin;
 use render_api::{Render, Window};
 
-use crate::{
-    input,
-    render::render,
-    runner::{runner_func},
-    sync::SyncPlugin,
-    window,
-    kernel,
-};
+use crate::{input, kernel, render::render, runner::runner_func, sync::SyncPlugin, window};
 
 pub struct RenderGlPlugin;
 
 impl Plugin for RenderGlPlugin {
     fn build(&self, app: &mut App) {
-
         if !app.is_plugin_added::<ClipboardPlugin>() {
             app.add_plugins(ClipboardPlugin);
         }

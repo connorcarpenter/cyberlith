@@ -15,9 +15,9 @@ cfg_if! {
 
 use std::{net::SocketAddr, thread, time::Duration};
 
-use logging::info;
-use http_server::{async_dup::Arc, smol::lock::RwLock, Server};
 use config::{ASSET_SERVER_PORT, SELF_BINDING_ADDR};
+use http_server::{async_dup::Arc, smol::lock::RwLock, Server};
+use logging::info;
 
 use crate::{asset_metadata_store::AssetMetadataStore, state::State};
 

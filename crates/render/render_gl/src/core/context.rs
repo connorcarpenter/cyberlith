@@ -3,8 +3,8 @@ use std::{
     sync::{Arc, RwLock},
 };
 
-use logging::info;
 use gl::HasContext;
+use logging::info;
 
 use render_api::components::Viewport;
 
@@ -324,7 +324,6 @@ impl Context {
     }
 
     pub fn unload_programs(&mut self) {
-
         // drop all programs
         let mut binding = self.programs.write();
         let program_muts: &mut HashMap<(String, String), Program> = binding.as_mut().unwrap();

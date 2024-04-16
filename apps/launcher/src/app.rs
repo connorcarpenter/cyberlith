@@ -1,17 +1,25 @@
 use bevy_app::{App, Plugin, Startup, Update};
 
 use game_engine::{
-    kernel::{KernelApp},
+    kernel::KernelApp,
     render::{resources::WindowSettings, Draw},
     EnginePlugin,
 };
 
-use crate::{systems::{backend, draw, resize, scene, ui}, resources::{Global, LoginButtonClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent}};
+use crate::{
+    resources::{
+        Global, LoginButtonClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent,
+    },
+    systems::{backend, draw, resize, scene, ui},
+};
 
 pub struct LauncherApp;
 
 impl KernelApp for LauncherApp {
-    fn init() -> Self where Self: Sized {
+    fn init() -> Self
+    where
+        Self: Sized,
+    {
         Self
     }
 }

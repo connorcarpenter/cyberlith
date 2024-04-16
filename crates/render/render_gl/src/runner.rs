@@ -1,4 +1,3 @@
-
 use bevy_app::App;
 
 use render_api::resources::WindowSettings;

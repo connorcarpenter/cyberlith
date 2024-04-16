@@ -1,4 +1,3 @@
-
 use bevy_ecs::event::Event;
 
 #[derive(Event, Debug)]

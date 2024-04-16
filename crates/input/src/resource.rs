@@ -1,10 +1,10 @@
 use std::collections::HashSet;
 
-use bevy_ecs::{change_detection::{ResMut}, event::EventWriter, system::Resource};
+use bevy_ecs::{change_detection::ResMut, event::EventWriter, system::Resource};
 
-use logging::info;
 use clipboard::{ClipboardManager, TaskKey as ClipboardTaskKey};
 use instant::Instant;
+use logging::info;
 use math::Vec2;
 
 use crate::{
@@ -257,10 +257,7 @@ impl Input {
                     event_writer.send(InputEvent::Paste(contents));
                 }
                 Some(Err(err)) => {
-                    panic!(
-                        "Error getting clipboard contents: {:?}",
-                        err.to_string()
-                    );
+                    panic!("Error getting clipboard contents: {:?}", err.to_string());
                 }
                 None => {
                     input.clipboard_task_keys.push(task_key);
