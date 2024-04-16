@@ -69,6 +69,15 @@ impl Server {
 
         info!("endpoint: {}", endpoint_path);
         let new_endpoint = endpoint_2::<TypeRequest, TypeResponse, Handler>(handler);
+        self.internal_insert_endpoint(endpoint_path, new_endpoint);
+    }
+
+    // better know what you're doing here
+    pub fn internal_insert_endpoint(
+        &mut self,
+        endpoint_path: String,
+        new_endpoint: Box<dyn Send + Sync + FnMut((SocketAddr, Request)) -> Pin<Box<dyn Send + Sync + Future<Output=Result<Response, ResponseError>>>>>
+    ) {
         self.endpoints.insert(endpoint_path, new_endpoint);
     }
 }

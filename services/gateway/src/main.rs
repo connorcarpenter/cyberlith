@@ -14,8 +14,12 @@ pub fn main() {
 
     let mut server = Server::new(socket_addr);
 
+    // -> region
+
     // game client logs into session server
     endpoints::region::session_connect(&mut server);
+
+    // -> auth
 
     // user registers for the first time
     endpoints::auth::user_register(&mut server);
@@ -37,6 +41,11 @@ pub fn main() {
 
     // user password reset
     endpoints::auth::user_password_reset(&mut server);
+
+    // -> content
+
+    // user password reset
+    server.serve_file("launcher.html");
 
     server.start();
 

@@ -3,10 +3,10 @@ mod server;
 use std::{net::SocketAddr, thread};
 
 use logging::info;
-
 use config::{CONTENT_SERVER_PORT, SELF_BINDING_ADDR};
+use http_server::Server;
 
-use crate::server::Server;
+use crate::server::FileServer;
 
 pub fn main() {
     logging::initialize();
