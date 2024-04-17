@@ -45,7 +45,7 @@ pub fn main() {
     // -> content
 
     // user password reset
-    server.serve_file("launcher.html");
+    //server.serve_file("launcher.html");
 
     server.start();
 
