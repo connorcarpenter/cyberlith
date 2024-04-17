@@ -26,7 +26,7 @@ impl RemoteFileServer for Server {
     fn serve_remote_file(&mut self, host_name: &str, url_path: &str, remote_name: &str, remote_addr: &str, remote_port: &str, file_name: &str) {
         let url_path = format!("GET /{}", url_path);
 
-        info!("will serve file at: {}", url_path);
+        info!("serving remote file @ {}", url_path);
 
         let remote_url = format!("http://{}:{}/{}", remote_addr, remote_port, file_name);
         let new_endpoint = endpoint_2(host_name, remote_name, &remote_url);

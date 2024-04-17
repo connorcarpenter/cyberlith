@@ -21,7 +21,7 @@ impl FileServer for Server {
     fn serve_file(&mut self, url_path: &str, file_path: &str, file_name: &str) {
         let url_path = format!("GET /{}", url_path);
 
-        info!("will serve file at: {}", url_path);
+        info!("serving file @ {}", url_path);
 
         let file_path = format!("{}/{}", file_path, file_name);
         let new_endpoint = endpoint_2(&file_path);
