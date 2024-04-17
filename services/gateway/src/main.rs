@@ -1,12 +1,9 @@
 mod endpoints;
 
-use std::{net::SocketAddr, thread};
-use std::path::PathBuf;
-use std::str::FromStr;
+use std::{str::FromStr, path::PathBuf, net::SocketAddr, thread};
 
 use config::{CONTENT_SERVER_PORT, CONTENT_SERVER_RECV_ADDR, GATEWAY_PORT, SELF_BINDING_ADDR};
-use http_server::{HttpsServer, RemoteFileServer, Server};
-use http_server::acme::Config;
+use http_server::{acme::Config, HttpsServer, RemoteFileServer, Server};
 use logging::info;
 
 pub fn main() {
@@ -83,16 +80,26 @@ pub fn main() {
 
     // start server
 
-    server.https_start(
-        Config::new(
-            false,
-            vec!["cyberlith.com".to_string()],
-            vec!["admin@cyberlith.com".to_string()],
-            Some(PathBuf::from_str("./acme_cache").unwrap())
-        )
-    );
+    start_server(server);
 
     thread::park();
 
     info!("Shutting down...");
+}
+
+#[cfg(all(feature = "prod", not(feature = "local")))]
+fn start_server(mut server: Server) {
+    server.https_start(
+        Config::new(
+            true,
+            vec!["cyberlith.com".to_string(), "www.cyberlith.com".to_string()],
+            vec!["admin@cyberlith.com".to_string()],
+            Some(PathBuf::from_str("./acme_cache").unwrap())
+        )
+    );
+}
+
+#[cfg(all(feature = "local", not(feature = "prod")))]
+fn start_server(mut server: Server) {
+    server.start();
 }
