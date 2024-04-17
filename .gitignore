@@ -23,6 +23,7 @@ node_modules
 /services/content/files
 /services/content/files/
 /services/content/files/*
+/services/gateway/acme_cache
 
 /apps/ui_editor/target
 /apps/ui_editor/assets

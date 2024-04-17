@@ -3,9 +3,8 @@ use std::{collections::BTreeMap, net::SocketAddr};
 use logging::{info, warn};
 use smol::{
     future::Future,
-    io::{AsyncReadExt, AsyncWriteExt, BufReader},
-    net::TcpStream,
-    stream::StreamExt,
+    io::{AsyncWrite, AsyncRead, AsyncReadExt, AsyncWriteExt, BufReader},
+    stream::{StreamExt},
 };
 
 use http_common::{Method, Request, Response, ResponseError};
@@ -15,9 +14,10 @@ use crate::ReadState;
 pub async fn serve_impl<
     MatchOutput: Future<Output = bool> + 'static,
     RespondOutput: Future<Output = Result<Response, ResponseError>> + 'static,
+    ResponseStream: Unpin + AsyncRead + AsyncWrite,
 >(
     incoming_address: SocketAddr,
-    mut response_stream: TcpStream,
+    mut response_stream: ResponseStream,
     match_func: impl Fn(String) -> MatchOutput,
     respond_func: impl Fn((SocketAddr, Request)) -> RespondOutput,
 ) {
@@ -29,8 +29,7 @@ pub async fn serve_impl<
 
     let mut read_state = ReadState::MatchingUrl;
 
-    let buf_reader = BufReader::new(response_stream.clone());
-
+    let buf_reader = BufReader::new(&mut response_stream);
     let mut bytes = buf_reader.bytes();
 
     let mut line: Vec<u8> = Vec::new();
@@ -164,13 +163,13 @@ pub async fn serve_impl<
                 .await
                 .expect("found an error while writing to a stream");
 
-            response_stream_flush(response_stream.clone()).await;
+            response_stream_flush(response_stream).await;
 
             // info!("response sent");
         }
         Err(e) => {
             warn!("error when responding: {:?}", e.to_string());
-            return send_404(response_stream.clone()).await;
+            return send_404(response_stream).await;
         }
     }
 }
@@ -182,12 +181,16 @@ Content-Length: 0
 Access-Control-Allow-Origin: *
 "#;
 
-async fn send_404(mut response_stream: TcpStream) {
+async fn send_404<
+    ResponseStream: Unpin + AsyncRead + AsyncWrite,
+>(mut response_stream: ResponseStream) {
     response_stream.write_all(RESPONSE_BAD).await.unwrap();
     response_stream_flush(response_stream).await;
 }
 
-async fn response_stream_flush(mut response_stream: TcpStream) {
+async fn response_stream_flush<
+    ResponseStream: Unpin + AsyncRead + AsyncWrite,
+>(mut response_stream: ResponseStream) {
     response_stream
         .flush()
         .await

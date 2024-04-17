@@ -1,3 +1,6 @@
+mod https_server;
+pub use https_server::HttpsServer;
+
 mod base_server;
 pub use base_server::Server;
 
@@ -18,6 +21,10 @@ pub mod async_dup {
 
 pub mod smol {
     pub use smol::*;
+}
+
+pub mod acme {
+    pub use acme::Config;
 }
 
 mod log_util;

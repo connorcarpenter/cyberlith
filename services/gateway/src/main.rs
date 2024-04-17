@@ -1,9 +1,12 @@
 mod endpoints;
 
 use std::{net::SocketAddr, thread};
+use std::path::PathBuf;
+use std::str::FromStr;
 
 use config::{CONTENT_SERVER_PORT, CONTENT_SERVER_RECV_ADDR, GATEWAY_PORT, SELF_BINDING_ADDR};
-use http_server::{RemoteFileServer, Server};
+use http_server::{HttpsServer, RemoteFileServer, Server};
+use http_server::acme::Config;
 use logging::info;
 
 pub fn main() {
@@ -80,7 +83,14 @@ pub fn main() {
 
     // start server
 
-    server.start();
+    server.https_start(
+        Config::new(
+            false,
+            vec!["cyberlith.com".to_string()],
+            vec!["admin@cyberlith.com".to_string()],
+            Some(PathBuf::from_str("./acme_cache").unwrap())
+        )
+    );
 
     thread::park();
 
