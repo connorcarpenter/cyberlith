@@ -1,5 +1,7 @@
-use crate::{AccountCache, CertCache};
+
 use async_trait::async_trait;
+
+use crate::cache::{AccountCache, CertCache};
 
 pub struct CompositeCache<C: CertCache + Send + Sync, A: AccountCache + Send + Sync> {
     pub cert_cache: C,

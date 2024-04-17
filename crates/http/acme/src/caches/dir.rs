@@ -1,19 +1,23 @@
-use crate::crypto::digest::{Context, SHA256};
-use crate::{AccountCache, CertCache};
+use std::io::ErrorKind;
+use std::path::Path;
+
 use async_trait::async_trait;
 use base64::prelude::*;
 use blocking::unblock;
-use std::io::ErrorKind;
-use std::path::Path;
+
+use crate::cache::{AccountCache, CertCache};
+use crate::crypto::digest::{Context, SHA256};
 
 pub struct DirCache<P: AsRef<Path> + Send + Sync> {
     inner: P,
 }
 
 impl<P: AsRef<Path> + Send + Sync> DirCache<P> {
+
     pub fn new(dir: P) -> Self {
         Self { inner: dir }
     }
+
     async fn read_if_exist(&self, file: impl AsRef<Path>) -> Result<Option<Vec<u8>>, std::io::Error> {
         let path = self.inner.as_ref().join(file);
         match unblock(move || std::fs::read(&path)).await {
@@ -24,6 +28,7 @@ impl<P: AsRef<Path> + Send + Sync> DirCache<P> {
             },
         }
     }
+
     async fn write(&self, file: impl AsRef<Path>, contents: impl AsRef<[u8]>) -> Result<(), std::io::Error> {
         let path = self.inner.as_ref().to_owned();
         unblock(move || std::fs::create_dir_all(&path)).await?;
@@ -31,6 +36,7 @@ impl<P: AsRef<Path> + Send + Sync> DirCache<P> {
         let contents = contents.as_ref().to_owned();
         unblock(move || std::fs::write(path, contents)).await
     }
+
     fn cached_account_file_name(contact: &[String], directory_url: impl AsRef<str>) -> String {
         let mut ctx = Context::new(&SHA256);
         for el in contact {
@@ -41,6 +47,7 @@ impl<P: AsRef<Path> + Send + Sync> DirCache<P> {
         let hash = BASE64_URL_SAFE_NO_PAD.encode(ctx.finish());
         format!("cached_account_{}", hash)
     }
+
     fn cached_cert_file_name(domains: &[String], directory_url: impl AsRef<str>) -> String {
         let mut ctx = Context::new(&SHA256);
         for domain in domains {

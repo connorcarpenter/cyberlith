@@ -1,10 +1,11 @@
-use crate::{AccountCache, CertCache};
+
 use async_trait::async_trait;
 use rcgen::{date_time_ymd, BasicConstraints, CertificateParams, DistinguishedName, DnType, IsCa, KeyUsagePurpose, PKCS_ECDSA_P256_SHA256};
 use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::sync::atomic::AtomicPtr;
 use std::sync::Arc;
+use crate::cache::{AccountCache, CertCache};
 
 /// Test cache, which generates certificates for ACME incompatible test environments.
 /// ```rust

@@ -1,5 +1,5 @@
 use crate::acceptor::{AcmeAccept, AcmeAcceptor};
-use crate::{crypto_provider, AcmeState};
+use crate::{crypto_provider};
 use core::fmt;
 use futures::stream::{FusedStream, FuturesUnordered};
 use futures::{AsyncRead, AsyncWrite, Stream};
@@ -11,6 +11,7 @@ use std::fmt::Debug;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll};
+use crate::state::AcmeState;
 
 pub struct Incoming<
     TCP: AsyncRead + AsyncWrite + Unpin,

@@ -1,14 +1,19 @@
-use crate::acme::ACME_TLS_ALPN_NAME;
-use crate::{crypto_provider, is_tls_alpn_challenge, ResolvesServerCertAcme};
+
+use std::io;
+use std::pin::Pin;
+use std::sync::Arc;
+use std::task::{Context, Poll};
+
 use core::fmt;
 use futures::prelude::*;
 use futures_rustls::rustls::server::Acceptor;
 use futures_rustls::rustls::ServerConfig;
 use futures_rustls::{Accept, LazyConfigAcceptor, StartHandshake};
-use std::io;
-use std::pin::Pin;
-use std::sync::Arc;
-use std::task::{Context, Poll};
+
+use crate::helpers::is_tls_alpn_challenge;
+use crate::acme::ACME_TLS_ALPN_NAME;
+use crate::{crypto_provider};
+use crate::resolver::ResolvesServerCertAcme;
 
 #[derive(Clone)]
 pub struct AcmeAcceptor {

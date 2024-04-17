@@ -5,8 +5,7 @@ use futures_rustls::rustls::{
 use std::collections::BTreeMap;
 use std::sync::Arc;
 use std::sync::Mutex;
-
-use crate::is_tls_alpn_challenge;
+use crate::helpers::is_tls_alpn_challenge;
 
 #[derive(Debug)]
 pub struct ResolvesServerCertAcme {

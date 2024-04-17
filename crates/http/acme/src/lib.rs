@@ -22,38 +22,7 @@
 //! The high-level API consists of a single stream [Incoming] of incoming TLS connection.
 //! Polling the next future of the stream takes care of acquisition and renewal of certificates, as
 //! well as accepting TLS connections, which are handed over to the caller on success.
-//!
-//! ```rust,no_run
-//! use futures::prelude::*;
-//! use rustls_acme::{AcmeConfig, caches::DirCache};
-//!
-//! #[macro_rules_attribute::apply(smol_macros::main!)]
-//! async fn main() {
-//!     simple_logger::init_with_level(log::Level::Info).unwrap();
-//!
-//!     let tcp_listener = smol::net::TcpListener::bind("[::]:443").await.unwrap();
-//!
-//!     let mut tls_incoming = AcmeConfig::new(["example.com"])
-//!         .contact_push("mailto:admin@example.com")
-//!         .cache(DirCache::new("./rustls_acme_cache"))
-//!         .incoming(tcp_listener.incoming(), Vec::new());
-//!
-//!     while let Some(tls) = tls_incoming.next().await {
-//!         let mut tls = tls.unwrap();
-//!         smol::spawn(async move {
-//!             tls.write_all(HELLO).await.unwrap();
-//!             tls.close().await.unwrap();
-//!         }).detach();
-//!     }
-//! }
-//!
-//! const HELLO: &'static [u8] = br#"HTTP/1.1 200 OK
-//! Content-Length: 11
-//! Content-Type: text/plain; charset=utf-8
-//!
-//! Hello Tls!"#;
-//! ```
-//!
+
 //! `examples/high_level.rs` implements a "Hello Tls!" server similar to the one above, which accepts
 //! domain, port and cache directory parameters.
 //!
@@ -105,12 +74,13 @@
 //!
 //! Thanks to [Josh Triplett](https://github.com/joshtriplett) for contributions and feedback.
 
-#![cfg_attr(doc_auto_cfg, feature(doc_auto_cfg))]
+mod high_level;
+pub use high_level::{Config};
 
 mod acceptor;
-pub mod acme;
+mod acme;
 mod cache;
-pub mod caches;
+mod caches;
 mod config;
 mod helpers;
 mod https_helper;
@@ -118,16 +88,6 @@ mod incoming;
 mod jose;
 mod resolver;
 mod state;
-
-pub use futures_rustls;
-
-pub use acceptor::*;
-pub use cache::*;
-pub use config::*;
-pub use helpers::*;
-pub use incoming::*;
-pub use resolver::*;
-pub use state::*;
 
 use ring as crypto;
 

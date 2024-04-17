@@ -1,7 +1,6 @@
 use crate::acme::{LETS_ENCRYPT_PRODUCTION_DIRECTORY, LETS_ENCRYPT_STAGING_DIRECTORY};
 use crate::caches::{BoxedErrCache, CompositeCache, NoCache};
-use crate::{crypto_provider, AccountCache, Cache, CertCache};
-use crate::{AcmeState, Incoming};
+use crate::{crypto_provider};
 use core::fmt;
 use futures::{AsyncRead, AsyncWrite, Stream};
 use futures_rustls::pki_types::TrustAnchor;
@@ -11,6 +10,9 @@ use std::convert::Infallible;
 use std::fmt::Debug;
 use std::sync::Arc;
 use webpki_roots::TLS_SERVER_ROOTS;
+use crate::cache::{AccountCache, Cache, CertCache};
+use crate::incoming::Incoming;
+use crate::state::AcmeState;
 
 /// Configuration for an ACME resolver.
 ///
