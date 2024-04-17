@@ -14,6 +14,8 @@ impl<C: CertCache + Send + Sync, A: AccountCache + Send + Sync> CompositeCache<C
             account_cache,
         }
     }
+
+    #[allow(unused)]
     pub fn into_inner(self) -> (C, A) {
         (self.cert_cache, self.account_cache)
     }

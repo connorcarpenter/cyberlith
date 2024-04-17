@@ -14,9 +14,7 @@ use core::fmt;
 use futures::{future::try_join_all, ready, AsyncRead, AsyncWrite, FutureExt, Stream};
 use futures_rustls::{
     pki_types::{CertificateDer as RustlsCertificate, PrivateKeyDer, PrivatePkcs8KeyDer},
-    rustls::crypto::CryptoProvider,
-    rustls::sign::CertifiedKey,
-    rustls::ServerConfig,
+    rustls::{ServerConfig, sign::CertifiedKey, crypto::CryptoProvider},
 };
 use rcgen::{CertificateParams, DistinguishedName, PKCS_ECDSA_P256_SHA256};
 use thiserror::Error;

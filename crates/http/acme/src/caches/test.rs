@@ -10,7 +10,7 @@ use std::sync::atomic::AtomicPtr;
 use std::sync::Arc;
 
 /// Test cache, which generates certificates for ACME incompatible test environments.
-/// ```rust
+///
 /// # use rustls_acme::{AcmeConfig};
 /// # use rustls_acme::caches::{DirCache, TestCache};
 /// # let test_environment = true;
@@ -19,7 +19,7 @@ use std::sync::Arc;
 /// if test_environment {
 ///     config = config.cache(TestCache::new());
 /// }
-/// ```
+///
 #[derive(Clone)]
 pub struct TestCache<EC: Debug = std::io::Error, EA: Debug = std::io::Error> {
     ca_cert: Arc<rcgen::Certificate>,
@@ -29,6 +29,8 @@ pub struct TestCache<EC: Debug = std::io::Error, EA: Debug = std::io::Error> {
 }
 
 impl<EC: Debug, EA: Debug> TestCache<EC, EA> {
+
+    #[allow(unused)]
     pub fn new() -> Self {
         let mut params = CertificateParams::default();
         let mut distinguished_name = DistinguishedName::new();
@@ -51,6 +53,8 @@ impl<EC: Debug, EA: Debug> TestCache<EC, EA> {
             _account_error: Default::default(),
         }
     }
+
+    #[allow(unused)]
     pub fn ca_pem(&self) -> &str {
         &self.ca_pem
     }

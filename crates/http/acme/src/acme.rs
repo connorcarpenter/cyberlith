@@ -44,6 +44,7 @@ impl Account {
         pkcs8.as_ref().to_vec()
     }
 
+    #[allow(unused)]
     pub async fn create<'a, S, I>(
         client_config: &Arc<ClientConfig>,
         directory: Directory,

@@ -12,6 +12,7 @@ pub(crate) async fn https(
     method: Method,
     body: Option<String>,
 ) -> Result<Response<String>, HttpsRequestError> {
+
     let request = Request::builder().method(method).uri(url.as_ref());
     let request = if let Some(body) = body {
         request
@@ -32,6 +33,7 @@ pub(crate) async fn https(
             body: response.into_body(),
         });
     }
+
     Ok(response)
 }
 

@@ -102,6 +102,7 @@ impl Jwk {
             y: BASE64_URL_SAFE_NO_PAD.encode(y),
         }
     }
+
     pub(crate) fn thumb_sha256_base64(&self) -> Result<String, JoseError> {
         let jwk_thumb = JwkThumb {
             crv: self.crv,

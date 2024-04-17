@@ -11,6 +11,8 @@ impl<T: Send + Sync> BoxedErrCache<T> {
     pub fn new(inner: T) -> Self {
         Self { inner }
     }
+
+    #[allow(unused)]
     pub fn into_inner(self) -> T {
         self.inner
     }
