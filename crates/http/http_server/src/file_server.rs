@@ -3,57 +3,55 @@ use std::{
     pin::Pin,
 };
 
-use logging::{info, warn};
 use smol::future::Future;
-use config::CONTENT_SERVER_FILES_PATH;
-use http_common::{Request, Response, ResponseError};
-use http_server::Server;
 
-pub(crate) trait FileServer {
-    fn serve_file(&mut self, file_name: &str);
-    fn serve_file_masked(&mut self, path: &str, file_name: &str);
+use logging::{info, warn};
+
+use http_common::{Request, Response, ResponseError};
+
+use crate::Server;
+
+pub trait FileServer {
+    fn serve_file(&mut self, path: &str, file_path: &str, file_name: &str);
 }
 
 impl FileServer for Server {
 
-    fn serve_file(&mut self, file_name: &str) {
-        self.serve_file_masked(file_name, file_name);
-    }
+    fn serve_file(&mut self, url_path: &str, file_path: &str, file_name: &str) {
+        let url_path = format!("GET /{}", url_path);
 
-    fn serve_file_masked(&mut self, path: &str, file_name: &str) {
-        let endpoint_path = format!("GET /{}", path);
+        info!("will serve file at: {}", url_path);
 
-        info!("will serve file at: {}", endpoint_path);
-        let new_endpoint = endpoint_2(file_name);
-        self.internal_insert_endpoint(endpoint_path, new_endpoint);
+        let file_path = format!("{}{}", file_path, file_name);
+        let new_endpoint = endpoint_2(&file_path);
+        self.internal_insert_endpoint(url_path, new_endpoint);
     }
 }
 
 fn endpoint_2(
-    file_name: &str,
+    file_path: &str,
 ) -> Box<
     dyn 'static
-        + Send
-        + Sync
-        + FnMut(
-            (SocketAddr, Request),
-        ) -> Pin<
-            Box<dyn 'static + Send + Sync + Future<Output = Result<Response, ResponseError>>>,
-        >,
+    + Send
+    + Sync
+    + FnMut(
+        (SocketAddr, Request),
+    ) -> Pin<
+        Box<dyn 'static + Send + Sync + Future<Output = Result<Response, ResponseError>>>,
+    >,
 > {
-    let file_name = file_name.to_string();
+    let file_path = file_path.to_string();
     Box::new(move |args: (SocketAddr, Request)| {
         let _addr = args.0;
         let _pure_request = args.1;
-        let file_name = file_name.clone();
+        let file_path = file_path.clone();
 
         // convert typed future to pure future
         let pure_future = async move {
             let mut response = Response::default();
 
-            // info!("reading file: {}", file_name);
+            // info!("reading file: {}", file_path);
 
-            let file_path = format!("{}{}", CONTENT_SERVER_FILES_PATH, file_name);
             let Ok(bytes) = std::fs::read(&file_path) else {
                 warn!("file not found: {}", &file_path);
                 return Err(ResponseError::NotFound);
@@ -64,7 +62,7 @@ fn endpoint_2(
             // info!("adding headers");
 
             // add Content-Type header
-            let content_type = match file_name.split('.').last().unwrap() {
+            let content_type = match file_path.split('.').last().unwrap() {
                 "html" => "text/html",
                 "js" => "application/javascript",
                 "wasm" => "application/wasm",

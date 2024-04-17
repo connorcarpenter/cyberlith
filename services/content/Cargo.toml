@@ -11,9 +11,6 @@ local = [ "config/local" ]
 prod = [ "config/prod" ]
 
 [dependencies]
-http_common = { path = "../../crates/http/http_common" }
 http_server = { path = "../../crates/http/http_server" }
 config = { path = "../../config", features = ["content"]}
 logging = { path = "../../crates/logging" }
-
-smol = { version = "1.3" }

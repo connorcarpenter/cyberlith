@@ -4,6 +4,9 @@ pub use base_server::Server;
 mod api_server;
 pub use api_server::ApiServer;
 
+mod file_server;
+pub use file_server::FileServer;
+
 pub use http_common::{Method, Request, Response};
 
 pub mod async_dup {
