@@ -1,15 +1,14 @@
 use std::{
     collections::BTreeMap,
-    net::{SocketAddr, TcpStream},
+    net::SocketAddr,
 };
 
-use async_dup::Arc;
 use logging::{info, warn};
 use smol::{
     future::Future,
     io::{AsyncReadExt, AsyncWriteExt, BufReader},
     stream::StreamExt,
-    Async,
+    net::TcpStream,
 };
 
 use http_common::{Method, Request, Response, ResponseError};
@@ -21,7 +20,7 @@ pub async fn serve_impl<
     RespondOutput: Future<Output = Result<Response, ResponseError>> + 'static,
 >(
     incoming_address: SocketAddr,
-    mut response_stream: Arc<Async<TcpStream>>,
+    mut response_stream: TcpStream,
     match_func: impl Fn(String) -> MatchOutput,
     respond_func: impl Fn((SocketAddr, Request)) -> RespondOutput,
 ) {
@@ -168,13 +167,13 @@ pub async fn serve_impl<
                 .await
                 .expect("found an error while writing to a stream");
 
-            response_stream_flush(response_stream).await;
+            response_stream_flush(response_stream.clone()).await;
 
             // info!("response sent");
         }
         Err(e) => {
             warn!("error when responding: {:?}", e.to_string());
-            return send_404(response_stream).await;
+            return send_404(response_stream.clone()).await;
         }
     }
 }
@@ -186,12 +185,12 @@ Content-Length: 0
 Access-Control-Allow-Origin: *
 "#;
 
-async fn send_404(mut response_stream: Arc<Async<TcpStream>>) {
+async fn send_404(mut response_stream: TcpStream) {
     response_stream.write_all(RESPONSE_BAD).await.unwrap();
     response_stream_flush(response_stream).await;
 }
 
-async fn response_stream_flush(mut response_stream: Arc<Async<TcpStream>>) {
+async fn response_stream_flush(mut response_stream: TcpStream) {
     response_stream
         .flush()
         .await

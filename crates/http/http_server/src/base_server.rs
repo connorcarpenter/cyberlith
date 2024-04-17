@@ -1,12 +1,12 @@
 use std::{
     collections::HashMap,
-    net::{SocketAddr, TcpListener, TcpStream},
+    net::SocketAddr,
     pin::Pin,
 };
 
 use async_dup::Arc;
 use logging::info;
-use smol::{future::Future, lock::RwLock, Async};
+use smol::{future::Future, lock::RwLock, net::{TcpListener, TcpStream}};
 
 use http_common::{Request, Response, ResponseError};
 
@@ -43,9 +43,8 @@ impl Server {
     }
 
     pub fn start(self) {
-        let self_ref = Arc::new(RwLock::new(self));
         executor::spawn(async move {
-            listen(self_ref).await;
+            listen(self).await;
         })
         .detach();
     }
@@ -65,18 +64,20 @@ impl Server {
 }
 
 /// Listens for incoming connections and serves them.
-async fn listen(server: Arc<RwLock<Server>>) {
-    let socket_addr = server.read().await.socket_addr;
-    let listener = Async::<TcpListener>::bind(socket_addr)
+async fn listen(server: Server) {
+
+    let socket_addr = server.socket_addr;
+
+    let listener = TcpListener::bind(socket_addr).await
         .expect("unable to bind a TCP Listener to the supplied socket address");
     info!(
         "HTTP Listening at http://{}/",
         listener
-            .get_ref()
             .local_addr()
             .expect("Listener does not have a local address"),
     );
 
+    let server = Arc::new(RwLock::new(server));
     loop {
         // Accept the next connection.
         let (response_stream, incoming_address) = listener
@@ -90,7 +91,7 @@ async fn listen(server: Arc<RwLock<Server>>) {
 
         // Spawn a background task serving this connection.
         executor::spawn(async move {
-            serve(self_clone, incoming_address, Arc::new(response_stream)).await;
+            serve(self_clone, incoming_address, response_stream).await;
         })
         .detach();
     }
@@ -100,7 +101,7 @@ async fn listen(server: Arc<RwLock<Server>>) {
 async fn serve(
     server: Arc<RwLock<Server>>,
     incoming_address: SocketAddr,
-    response_stream: Arc<Async<TcpStream>>,
+    response_stream: TcpStream,
 ) {
     let endpoint_key_ref: Arc<RwLock<Option<String>>> = Arc::new(RwLock::new(None));
 
