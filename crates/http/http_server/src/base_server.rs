@@ -11,6 +11,7 @@ use smol::{
 use http_common::{Request, Response, ResponseError};
 
 use http_server_shared::{executor, serve_impl};
+use crate::smol::stream::StreamExt;
 
 pub struct Server {
     socket_addr: SocketAddr,
@@ -86,12 +87,13 @@ async fn listen(server: Server) {
     );
 
     let server = Arc::new(RwLock::new(server));
-    loop {
-        // Accept the next connection.
-        let (response_stream, incoming_address) = listener
-            .accept()
-            .await
-            .expect("was not able to accept the incoming stream from the listener");
+    let mut incoming = listener.incoming();
+    while let Some(response_stream) = incoming.next().await {
+        let response_stream = response_stream
+            .expect("unable to get the response stream");
+        let incoming_address = response_stream
+            .peer_addr()
+            .expect("unable to get the peer address of the response stream");
 
         //info!("received request from {}", incoming_address);
 
@@ -103,6 +105,7 @@ async fn listen(server: Server) {
         })
         .detach();
     }
+    unreachable!()
 }
 
 /// Reads a request from the client and sends it a response.
