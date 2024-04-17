@@ -112,6 +112,7 @@ members = [
     "crates/http/http_client",
     "crates/http/http_common",
     "crates/http/http_client_shared",
+    "crates/http/acme",
     # UI
     "crates/ui/builder",
     "crates/ui/layout",
