@@ -10,16 +10,31 @@ use crate::{
 
 pub async fn instance_init(session: &Session) -> Result<(), CliError> {
     setup_docker(&session).await?;
+    setup_git(&session).await?;
+
+    Ok(())
+}
+
+async fn setup_git(session: &Session) -> Result<(), CliError> {
+
+    //info!("# update");
+    run_ssh_command(&session, "sudo apt update").await?;
+
+    //info!("# install docker packages");
+    run_ssh_command(&session, "sudo apt install git -y").await?;
+
+    info!("# test that git works");
+    run_ssh_command(&session, "git --version").await?;
 
     Ok(())
 }
 
 async fn setup_docker(session: &Session) -> Result<(), CliError> {
     //info!("# update");
-    run_ssh_command(&session, "sudo apt-get update").await?;
+    run_ssh_command(&session, "sudo apt update").await?;
 
     //info!("# install dependencies");
-    run_ssh_command(&session, "sudo apt-get install ca-certificates curl -y").await?;
+    run_ssh_command(&session, "sudo apt install ca-certificates curl -y").await?;
 
     //info!("# install keyring");
     run_ssh_command(&session, "sudo install -m 0755 -d /etc/apt/keyrings").await?;
@@ -34,10 +49,10 @@ async fn setup_docker(session: &Session) -> Result<(), CliError> {
     run_ssh_raw_command(&session, "echo \"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo \"$VERSION_CODENAME\") stable\" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null").await?;
 
     //info!("# update");
-    run_ssh_command(&session, "sudo apt-get update").await?;
+    run_ssh_command(&session, "sudo apt update").await?;
 
     //info!("# install docker packages");
-    run_ssh_command(&session, "sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y").await?;
+    run_ssh_command(&session, "sudo apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y").await?;
 
     //info!("# add user to docker group");
     loop {

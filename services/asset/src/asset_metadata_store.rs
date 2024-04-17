@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fs};
 
-use logging::info;
+use logging::{info, warn};
 
 use asset_id::{AssetId, AssetType, ETag};
 use asset_serde::json::ProcessedAssetMeta;
@@ -49,7 +49,16 @@ impl AssetMetadataStore {
             map: HashMap::new(),
         };
 
-        let entries = fs::read_dir(path).unwrap();
+        let entries = match fs::read_dir(path) {
+            Ok(entries) => entries,
+            Err(e) => {
+                warn!("Failed to read directory: {:?}, error: {:?}", path, e);
+                info!("creating directory: {:?}", path);
+                fs::create_dir_all(path).unwrap();
+                info!("created directory. reading new directory");
+                fs::read_dir(path).unwrap()
+            }
+        };
 
         for entry in entries {
             let Ok(entry) = entry else {
