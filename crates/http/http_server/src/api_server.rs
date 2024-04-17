@@ -7,6 +7,7 @@ use logging::info;
 
 use crate::Server;
 
+// serves API endpoint with typed requests & responses
 pub trait ApiServer {
     fn endpoint<
         TypeRequest: 'static + ApiRequest,

@@ -11,6 +11,7 @@ publish = false
 [dependencies]
 http_common = { path = "../http_common" }
 http_server_shared = { path = "../http_server_shared" }
+http_client_shared = { path = "../http_client_shared" }
 logging = { path = "../../logging" }
 
 naia-serde = { path = "../../../../naia/shared/serde" }

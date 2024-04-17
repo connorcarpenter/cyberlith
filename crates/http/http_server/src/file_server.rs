@@ -11,6 +11,7 @@ use http_common::{Request, Response, ResponseError};
 
 use crate::Server;
 
+// serves files from the file system
 pub trait FileServer {
     fn serve_file(&mut self, path: &str, file_path: &str, file_name: &str);
 }
@@ -22,7 +23,7 @@ impl FileServer for Server {
 
         info!("will serve file at: {}", url_path);
 
-        let file_path = format!("{}{}", file_path, file_name);
+        let file_path = format!("{}/{}", file_path, file_name);
         let new_endpoint = endpoint_2(&file_path);
         self.internal_insert_endpoint(url_path, new_endpoint);
     }
@@ -41,9 +42,7 @@ fn endpoint_2(
     >,
 > {
     let file_path = file_path.to_string();
-    Box::new(move |args: (SocketAddr, Request)| {
-        let _addr = args.0;
-        let _pure_request = args.1;
+    Box::new(move |_args: (SocketAddr, Request)| {
         let file_path = file_path.clone();
 
         // convert typed future to pure future

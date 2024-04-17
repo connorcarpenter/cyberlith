@@ -5,6 +5,9 @@ pub const SELF_BINDING_ADDR: &str = "0.0.0.0";
 pub const PUBLIC_IP_ADDR: &str = "cyberlith.com";
 
 #[allow(dead_code)]
+pub const CONTENT_SERVER_RECV_ADDR: &str = "content_server";
+
+#[allow(dead_code)]
 pub const REGION_SERVER_RECV_ADDR: &str = "region_server";
 
 #[allow(dead_code)]
@@ -20,7 +23,7 @@ pub const ASSET_SERVER_RECV_ADDR: &str = "asset_server";
 pub const AUTH_SERVER_RECV_ADDR: &str = "auth_server";
 
 #[allow(dead_code)]
-pub const CONTENT_SERVER_FILES_PATH: &str = "/usr/local/bin/files/";
+pub const CONTENT_SERVER_FILES_PATH: &str = "/usr/local/bin/files";
 
 #[allow(dead_code)]
 pub const GATEWAY_PORT: u16 = 443;

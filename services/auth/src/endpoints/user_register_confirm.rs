@@ -1,7 +1,7 @@
 use logging::{info, warn};
 
 use http_client::ResponseError;
-use http_server::{async_dup::Arc, http_log_util, smol::lock::RwLock, Server};
+use http_server::{async_dup::Arc, http_log_util, smol::lock::RwLock, Server, ApiServer};
 
 use auth_server_db::{AuthServerDbError, User, UserRole};
 use auth_server_http_proto::{UserRegisterConfirmRequest, UserRegisterConfirmResponse};

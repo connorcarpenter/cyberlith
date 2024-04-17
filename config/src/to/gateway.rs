@@ -9,3 +9,6 @@ pub use from::REGION_SERVER_RECV_ADDR;
 
 pub use from::AUTH_SERVER_PORT;
 pub use from::AUTH_SERVER_RECV_ADDR;
+
+pub use from::CONTENT_SERVER_RECV_ADDR;
+pub use from::CONTENT_SERVER_PORT;

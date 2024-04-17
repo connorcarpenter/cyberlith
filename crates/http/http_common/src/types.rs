@@ -1,5 +1,4 @@
-use std::collections::BTreeMap;
-use std::time::Duration;
+use std::{time::Duration, collections::BTreeMap};
 
 /// HTTP Method
 #[derive(Clone, Eq, PartialEq)]
