@@ -2,7 +2,7 @@ mod endpoints;
 
 use std::{net::SocketAddr, thread};
 
-use config::{GATEWAY_PORT, CONTENT_SERVER_RECV_ADDR, CONTENT_SERVER_PORT, SELF_BINDING_ADDR};
+use config::{CONTENT_SERVER_PORT, CONTENT_SERVER_RECV_ADDR, GATEWAY_PORT, SELF_BINDING_ADDR};
 use http_server::{RemoteFileServer, Server};
 use logging::info;
 
@@ -49,29 +49,32 @@ pub fn main() {
         let content_server = "content_server";
         let addr = CONTENT_SERVER_RECV_ADDR;
         let port = CONTENT_SERVER_PORT.to_string();
+        server.serve_remote_file(gateway, "", content_server, addr, &port, "launcher.html");
         server.serve_remote_file(
-            gateway, "",
-            content_server, addr, &port, "launcher.html"
+            gateway,
+            "launcher.js",
+            content_server,
+            addr,
+            &port,
+            "launcher.js",
         );
         server.serve_remote_file(
-            gateway, "launcher.js",
-            content_server, addr, &port, "launcher.js"
+            gateway,
+            "launcher_bg.wasm",
+            content_server,
+            addr,
+            &port,
+            "launcher_bg.wasm",
         );
+        server.serve_remote_file(gateway, "game", content_server, addr, &port, "game.html");
+        server.serve_remote_file(gateway, "game.js", content_server, addr, &port, "game.js");
         server.serve_remote_file(
-            gateway, "launcher_bg.wasm",
-            content_server, addr, &port, "launcher_bg.wasm"
-        );
-        server.serve_remote_file(
-            gateway, "game",
-            content_server, addr, &port, "game.html"
-        );
-        server.serve_remote_file(
-            gateway, "game.js",
-            content_server, addr, &port, "game.js"
-        );
-        server.serve_remote_file(
-            gateway, "game_bg.wasm",
-            content_server, addr, &port, "game_bg.wasm"
+            gateway,
+            "game_bg.wasm",
+            content_server,
+            addr,
+            &port,
+            "game_bg.wasm",
         );
     }
 

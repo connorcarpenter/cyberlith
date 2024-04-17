@@ -75,7 +75,7 @@
 //! Thanks to [Josh Triplett](https://github.com/joshtriplett) for contributions and feedback.
 
 mod high_level;
-pub use high_level::{Config};
+pub use high_level::Config;
 
 mod acceptor;
 mod acme;
@@ -95,7 +95,10 @@ use ring as crypto;
 
 pub(crate) fn any_ecdsa_type(
     der: &futures_rustls::pki_types::PrivateKeyDer,
-) -> Result<std::sync::Arc<dyn futures_rustls::rustls::sign::SigningKey>, futures_rustls::rustls::Error> {
+) -> Result<
+    std::sync::Arc<dyn futures_rustls::rustls::sign::SigningKey>,
+    futures_rustls::rustls::Error,
+> {
     return futures_rustls::rustls::crypto::ring::sign::any_ecdsa_type(&der);
 }
 

@@ -1,12 +1,12 @@
-use std::{
-    collections::HashMap,
-    net::SocketAddr,
-    pin::Pin,
-};
+use std::{collections::HashMap, net::SocketAddr, pin::Pin};
 
 use async_dup::Arc;
 use logging::info;
-use smol::{future::Future, lock::RwLock, net::{TcpListener, TcpStream}};
+use smol::{
+    future::Future,
+    lock::RwLock,
+    net::{TcpListener, TcpStream},
+};
 
 use http_common::{Request, Response, ResponseError};
 
@@ -57,7 +57,15 @@ impl Server {
     pub fn internal_insert_endpoint(
         &mut self,
         endpoint_path: String,
-        new_endpoint: Box<dyn Send + Sync + FnMut((SocketAddr, Request)) -> Pin<Box<dyn Send + Sync + Future<Output=Result<Response, ResponseError>>>>>
+        new_endpoint: Box<
+            dyn Send
+                + Sync
+                + FnMut(
+                    (SocketAddr, Request),
+                ) -> Pin<
+                    Box<dyn Send + Sync + Future<Output = Result<Response, ResponseError>>>,
+                >,
+        >,
     ) {
         self.endpoints.insert(endpoint_path, new_endpoint);
     }
@@ -65,10 +73,10 @@ impl Server {
 
 /// Listens for incoming connections and serves them.
 async fn listen(server: Server) {
-
     let socket_addr = server.socket_addr;
 
-    let listener = TcpListener::bind(socket_addr).await
+    let listener = TcpListener::bind(socket_addr)
+        .await
         .expect("unable to bind a TCP Listener to the supplied socket address");
     info!(
         "HTTP Listening at http://{}/",

@@ -1,7 +1,7 @@
 use logging::warn;
 
 use http_client::ResponseError;
-use http_server::{async_dup::Arc, http_log_util, smol::lock::RwLock, Server, ApiServer};
+use http_server::{async_dup::Arc, http_log_util, smol::lock::RwLock, ApiServer, Server};
 
 use auth_server_http_proto::{RefreshTokenGrantRequest, RefreshTokenGrantResponse};
 use config::GATEWAY_SECRET;

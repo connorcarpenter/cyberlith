@@ -1,18 +1,21 @@
-use crate::acme::{LETS_ENCRYPT_PRODUCTION_DIRECTORY, LETS_ENCRYPT_STAGING_DIRECTORY};
-use crate::caches::{BoxedErrCache, CompositeCache, NoCache};
-use crate::{crypto_provider};
+use std::{convert::Infallible, fmt::Debug, sync::Arc};
+
 use core::fmt;
 use futures::{AsyncRead, AsyncWrite, Stream};
-use futures_rustls::pki_types::TrustAnchor;
-use futures_rustls::rustls::crypto::CryptoProvider;
-use futures_rustls::rustls::{ClientConfig, RootCertStore};
-use std::convert::Infallible;
-use std::fmt::Debug;
-use std::sync::Arc;
+use futures_rustls::{
+    pki_types::TrustAnchor,
+    rustls::{crypto::CryptoProvider, ClientConfig, RootCertStore},
+};
 use webpki_roots::TLS_SERVER_ROOTS;
-use crate::cache::{AccountCache, Cache, CertCache};
-use crate::incoming::Incoming;
-use crate::state::AcmeState;
+
+use crate::{
+    acme::{LETS_ENCRYPT_PRODUCTION_DIRECTORY, LETS_ENCRYPT_STAGING_DIRECTORY},
+    cache::{AccountCache, Cache, CertCache},
+    caches::{BoxedErrCache, CompositeCache, NoCache},
+    crypto_provider,
+    incoming::Incoming,
+    state::AcmeState,
+};
 
 /// Configuration for an ACME resolver.
 ///
@@ -32,11 +35,9 @@ impl AcmeConfig<Infallible, Infallible> {
     /// error types will be `Infallible` since the cache cannot return an error. The methods to set
     /// a cache will change the error types to match those returned by the supplied cache.
     ///
-    /// ```rust
     /// # use rustls_acme::AcmeConfig;
     /// use rustls_acme::caches::DirCache;
     /// let config = AcmeConfig::new(["example.com"]).cache(DirCache::new("./rustls_acme_cache"));
-    /// ```
     ///
     /// Due to limited support for type parameter inference in Rust (see
     /// [RFC213](https://github.com/rust-lang/rfcs/blob/master/text/0213-defaulted-type-params.md)),
@@ -44,19 +45,21 @@ impl AcmeConfig<Infallible, Infallible> {
     /// An uncached instance of [AcmeConfig] with particular type parameters can be created using
     /// [NoCache].
     ///
-    /// ```rust
     /// # use rustls_acme::AcmeConfig;
     /// use rustls_acme::caches::NoCache;
     /// # type EC = std::io::Error;
     /// # type EA = EC;
     /// let config: AcmeConfig<EC, EA> = AcmeConfig::new(["example.com"]).cache(NoCache::new());
-    /// ```
+    ///
     pub fn new(domains: impl IntoIterator<Item = impl AsRef<str>>) -> Self {
         Self::new_with_provider(domains, crypto_provider().into())
     }
 
     /// Same as [AcmeConfig::new], with a specific [CryptoProvider].
-    pub fn new_with_provider(domains: impl IntoIterator<Item = impl AsRef<str>>, provider: Arc<CryptoProvider>) -> Self {
+    pub fn new_with_provider(
+        domains: impl IntoIterator<Item = impl AsRef<str>>,
+        provider: Arc<CryptoProvider>,
+    ) -> Self {
         let mut root_store = RootCertStore::empty();
         root_store.extend(TLS_SERVER_ROOTS.iter().map(|ta| {
             let ta = ta.to_owned();
@@ -73,7 +76,7 @@ impl AcmeConfig<Infallible, Infallible> {
                 .with_root_certificates(root_store)
                 .with_no_client_auth(),
         );
-        AcmeConfig {
+        Self {
             client_config,
             directory_url: LETS_ENCRYPT_STAGING_DIRECTORY.into(),
             domains: domains.into_iter().map(|s| s.as_ref().into()).collect(),
@@ -89,10 +92,12 @@ impl<EC: 'static + Debug, EA: 'static + Debug> AcmeConfig<EC, EA> {
         self.client_config = client_config;
         self
     }
+
     pub fn directory(mut self, directory_url: impl AsRef<str>) -> Self {
         self.directory_url = directory_url.as_ref().into();
         self
     }
+
     pub fn directory_lets_encrypt(mut self, production: bool) -> Self {
         self.directory_url = match production {
             true => LETS_ENCRYPT_PRODUCTION_DIRECTORY,
@@ -101,10 +106,12 @@ impl<EC: 'static + Debug, EA: 'static + Debug> AcmeConfig<EC, EA> {
         .into();
         self
     }
+
     pub fn domains(mut self, contact: impl IntoIterator<Item = impl AsRef<str>>) -> Self {
         self.domains = contact.into_iter().map(|s| s.as_ref().into()).collect();
         self
     }
+
     pub fn domains_push(mut self, contact: impl AsRef<str>) -> Self {
         self.domains.push(contact.as_ref().into());
         self
@@ -135,25 +142,38 @@ impl<EC: 'static + Debug, EA: 'static + Debug> AcmeConfig<EC, EA> {
             cache: Box::new(cache),
         }
     }
-    pub fn cache_compose<CC: 'static + CertCache, CA: 'static + AccountCache>(self, cert_cache: CC, account_cache: CA) -> AcmeConfig<CC::EC, CA::EA> {
+
+    pub fn cache_compose<CC: 'static + CertCache, CA: 'static + AccountCache>(
+        self,
+        cert_cache: CC,
+        account_cache: CA,
+    ) -> AcmeConfig<CC::EC, CA::EA> {
         self.cache(CompositeCache::new(cert_cache, account_cache))
     }
+
     pub fn cache_with_boxed_err<C: 'static + Cache>(self, cache: C) -> AcmeConfig<Box<dyn Debug>> {
         self.cache(BoxedErrCache::new(cache))
     }
+
     pub fn cache_option<C: 'static + Cache>(self, cache: Option<C>) -> AcmeConfig<C::EC, C::EA> {
         match cache {
             Some(cache) => self.cache(cache),
             None => self.cache(NoCache::<C::EC, C::EA>::new()),
         }
     }
+
     pub fn state(self) -> AcmeState<EC, EA> {
         AcmeState::new(self)
     }
+
     /// Turn a stream of TCP connections into a stream of TLS connections.
     ///
     /// Specify supported protocol names in `alpn_protocols`, most preferred first. If empty (`Vec::new()`), we don't do ALPN.
-    pub fn incoming<TCP: AsyncRead + AsyncWrite + Unpin, ETCP, ITCP: Stream<Item = Result<TCP, ETCP>> + Unpin>(
+    pub fn incoming<
+        TCP: AsyncRead + AsyncWrite + Unpin,
+        ETCP,
+        ITCP: Stream<Item = Result<TCP, ETCP>> + Unpin,
+    >(
         self,
         tcp_incoming: ITCP,
         alpn_protocols: Vec<Vec<u8>>,

@@ -6,5 +6,5 @@ mod test;
 
 pub use boxed::*;
 pub use composite::*;
-pub use no::*;
 pub use dir::*;
+pub use no::*;

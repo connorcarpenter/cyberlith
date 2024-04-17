@@ -1,4 +1,3 @@
-
 use std::{io::Error, path::PathBuf};
 
 use crate::{caches::DirCache, config::AcmeConfig};
@@ -19,8 +18,18 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn new(prod: bool, domains: Vec<String>, email: Vec<String>, cache: Option<PathBuf>) -> Self {
-        Self { domains, email, cache, prod }
+    pub fn new(
+        prod: bool,
+        domains: Vec<String>,
+        email: Vec<String>,
+        cache: Option<PathBuf>,
+    ) -> Self {
+        Self {
+            domains,
+            email,
+            cache,
+            prod,
+        }
     }
 
     pub fn to_acme_config(self) -> AcmeConfig<Error, Error> {

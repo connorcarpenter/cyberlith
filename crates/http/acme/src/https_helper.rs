@@ -1,11 +1,9 @@
+use std::{io, sync::Arc};
+
 use async_web_client::RequestSend;
 use futures::AsyncReadExt;
-use futures_rustls::pki_types::InvalidDnsNameError;
-use futures_rustls::rustls::ClientConfig;
-use http::header::CONTENT_TYPE;
-use http::{Method, Request, Response};
-use std::io;
-use std::sync::Arc;
+use futures_rustls::{pki_types::InvalidDnsNameError, rustls::ClientConfig};
+use http::{header::CONTENT_TYPE, Method, Request, Response};
 use thiserror::Error;
 
 pub(crate) async fn https(
@@ -16,7 +14,9 @@ pub(crate) async fn https(
 ) -> Result<Response<String>, HttpsRequestError> {
     let request = Request::builder().method(method).uri(url.as_ref());
     let request = if let Some(body) = body {
-        request.header(CONTENT_TYPE, "application/jose+json").body(body)
+        request
+            .header(CONTENT_TYPE, "application/jose+json")
+            .body(body)
     } else {
         request.body("".to_string())
     };

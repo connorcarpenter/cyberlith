@@ -1,11 +1,13 @@
-
+use crate::cache::{AccountCache, CertCache};
 use async_trait::async_trait;
-use rcgen::{date_time_ymd, BasicConstraints, CertificateParams, DistinguishedName, DnType, IsCa, KeyUsagePurpose, PKCS_ECDSA_P256_SHA256};
+use rcgen::{
+    date_time_ymd, BasicConstraints, CertificateParams, DistinguishedName, DnType, IsCa,
+    KeyUsagePurpose, PKCS_ECDSA_P256_SHA256,
+};
 use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::sync::atomic::AtomicPtr;
 use std::sync::Arc;
-use crate::cache::{AccountCache, CertCache};
 
 /// Test cache, which generates certificates for ACME incompatible test environments.
 /// ```rust
@@ -57,7 +59,11 @@ impl<EC: Debug, EA: Debug> TestCache<EC, EA> {
 #[async_trait]
 impl<EC: Debug, EA: Debug> CertCache for TestCache<EC, EA> {
     type EC = EC;
-    async fn load_cert(&self, domains: &[String], _directory_url: &str) -> Result<Option<Vec<u8>>, Self::EC> {
+    async fn load_cert(
+        &self,
+        domains: &[String],
+        _directory_url: &str,
+    ) -> Result<Option<Vec<u8>>, Self::EC> {
         let mut params = CertificateParams::new(domains);
         let mut distinguished_name = DistinguishedName::new();
         distinguished_name.push(DnType::CommonName, "Test Cert");
@@ -80,10 +86,22 @@ impl<EC: Debug, EA: Debug> CertCache for TestCache<EC, EA> {
             }
         };
 
-        let pem = [&cert.serialize_private_key_pem(), "\n", &cert_pem, "\n", &self.ca_pem].concat();
+        let pem = [
+            &cert.serialize_private_key_pem(),
+            "\n",
+            &cert_pem,
+            "\n",
+            &self.ca_pem,
+        ]
+        .concat();
         Ok(Some(pem.into_bytes()))
     }
-    async fn store_cert(&self, _domains: &[String], _directory_url: &str, _cert: &[u8]) -> Result<(), Self::EC> {
+    async fn store_cert(
+        &self,
+        _domains: &[String],
+        _directory_url: &str,
+        _cert: &[u8],
+    ) -> Result<(), Self::EC> {
         log::info!("test cache configured, could not store certificate");
         Ok(())
     }
@@ -92,11 +110,20 @@ impl<EC: Debug, EA: Debug> CertCache for TestCache<EC, EA> {
 #[async_trait]
 impl<EC: Debug, EA: Debug> AccountCache for TestCache<EC, EA> {
     type EA = EA;
-    async fn load_account(&self, _contact: &[String], _directory_url: &str) -> Result<Option<Vec<u8>>, Self::EA> {
+    async fn load_account(
+        &self,
+        _contact: &[String],
+        _directory_url: &str,
+    ) -> Result<Option<Vec<u8>>, Self::EA> {
         log::info!("test cache configured, could not load account");
         Ok(None)
     }
-    async fn store_account(&self, _contact: &[String], _directory_url: &str, _account: &[u8]) -> Result<(), Self::EA> {
+    async fn store_account(
+        &self,
+        _contact: &[String],
+        _directory_url: &str,
+        _account: &[u8],
+    ) -> Result<(), Self::EA> {
         log::info!("test cache configured, could not store account");
         Ok(())
     }

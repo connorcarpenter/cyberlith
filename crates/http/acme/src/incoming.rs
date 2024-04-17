@@ -1,17 +1,26 @@
-use crate::acceptor::{AcmeAccept, AcmeAcceptor};
-use crate::{crypto_provider};
+use std::{
+    fmt::Debug,
+    pin::Pin,
+    sync::Arc,
+    task::{Context, Poll},
+};
+
 use core::fmt;
-use futures::stream::{FusedStream, FuturesUnordered};
-use futures::{AsyncRead, AsyncWrite, Stream};
-use futures_rustls::rustls::crypto::CryptoProvider;
-use futures_rustls::rustls::ServerConfig;
-use futures_rustls::server::TlsStream;
-use futures_rustls::Accept;
-use std::fmt::Debug;
-use std::pin::Pin;
-use std::sync::Arc;
-use std::task::{Context, Poll};
-use crate::state::AcmeState;
+use futures::{
+    stream::{FusedStream, FuturesUnordered},
+    AsyncRead, AsyncWrite, Stream,
+};
+use futures_rustls::{
+    rustls::{crypto::CryptoProvider, ServerConfig},
+    server::TlsStream,
+    Accept,
+};
+
+use crate::{
+    acceptor::{AcmeAccept, AcmeAcceptor},
+    crypto_provider,
+    state::AcmeState,
+};
 
 pub struct Incoming<
     TCP: AsyncRead + AsyncWrite + Unpin,
@@ -28,29 +37,58 @@ pub struct Incoming<
     tls_accepting: FuturesUnordered<Accept<TCP>>,
 }
 
-impl<TCP: AsyncRead + AsyncWrite + Unpin, ETCP, ITCP: Stream<Item = Result<TCP, ETCP>> + Unpin, EC: Debug + 'static, EA: Debug + 'static> fmt::Debug
-    for Incoming<TCP, ETCP, ITCP, EC, EA>
+impl<
+        TCP: AsyncRead + AsyncWrite + Unpin,
+        ETCP,
+        ITCP: Stream<Item = Result<TCP, ETCP>> + Unpin,
+        EC: Debug + 'static,
+        EA: Debug + 'static,
+    > fmt::Debug for Incoming<TCP, ETCP, ITCP, EC, EA>
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Incoming")
             .field("state", &self.state)
             .field("acceptor", &self.acceptor)
-            .field("in_progress", &(self.acme_accepting.len() + self.tls_accepting.len()))
+            .field(
+                "in_progress",
+                &(self.acme_accepting.len() + self.tls_accepting.len()),
+            )
             .field("terminated", &self.is_terminated())
             .finish_non_exhaustive()
     }
 }
 
-impl<TCP: AsyncRead + AsyncWrite + Unpin, ETCP, ITCP: Stream<Item = Result<TCP, ETCP>> + Unpin, EC: Debug + 'static, EA: Debug + 'static> Unpin
-    for Incoming<TCP, ETCP, ITCP, EC, EA>
+impl<
+        TCP: AsyncRead + AsyncWrite + Unpin,
+        ETCP,
+        ITCP: Stream<Item = Result<TCP, ETCP>> + Unpin,
+        EC: Debug + 'static,
+        EA: Debug + 'static,
+    > Unpin for Incoming<TCP, ETCP, ITCP, EC, EA>
 {
 }
 
-impl<TCP: AsyncRead + AsyncWrite + Unpin, ETCP, ITCP: Stream<Item = Result<TCP, ETCP>> + Unpin, EC: Debug + 'static, EA: Debug + 'static>
-    Incoming<TCP, ETCP, ITCP, EC, EA>
+impl<
+        TCP: AsyncRead + AsyncWrite + Unpin,
+        ETCP,
+        ITCP: Stream<Item = Result<TCP, ETCP>> + Unpin,
+        EC: Debug + 'static,
+        EA: Debug + 'static,
+    > Incoming<TCP, ETCP, ITCP, EC, EA>
 {
-    pub fn new(tcp_incoming: ITCP, state: AcmeState<EC, EA>, acceptor: AcmeAcceptor, alpn_protocols: Vec<Vec<u8>>) -> Self {
-        Self::new_with_provider(tcp_incoming, state, acceptor, alpn_protocols, crypto_provider().into())
+    pub fn new(
+        tcp_incoming: ITCP,
+        state: AcmeState<EC, EA>,
+        acceptor: AcmeAcceptor,
+        alpn_protocols: Vec<Vec<u8>>,
+    ) -> Self {
+        Self::new_with_provider(
+            tcp_incoming,
+            state,
+            acceptor,
+            alpn_protocols,
+            crypto_provider().into(),
+        )
     }
 
     /// Same as [Incoming::new], with a specific [CryptoProvider].
@@ -66,7 +104,9 @@ impl<TCP: AsyncRead + AsyncWrite + Unpin, ETCP, ITCP: Stream<Item = Result<TCP, 
             .unwrap()
             .with_no_client_auth()
             .with_cert_resolver(state.resolver());
+
         config.alpn_protocols = alpn_protocols;
+
         Self {
             state,
             acceptor,
@@ -78,8 +118,13 @@ impl<TCP: AsyncRead + AsyncWrite + Unpin, ETCP, ITCP: Stream<Item = Result<TCP, 
     }
 }
 
-impl<TCP: AsyncRead + AsyncWrite + Unpin, ETCP, ITCP: Stream<Item = Result<TCP, ETCP>> + Unpin, EC: Debug + 'static, EA: Debug + 'static> Stream
-    for Incoming<TCP, ETCP, ITCP, EC, EA>
+impl<
+        TCP: AsyncRead + AsyncWrite + Unpin,
+        ETCP,
+        ITCP: Stream<Item = Result<TCP, ETCP>> + Unpin,
+        EC: Debug + 'static,
+        EA: Debug + 'static,
+    > Stream for Incoming<TCP, ETCP, ITCP, EC, EA>
 {
     type Item = Result<TlsStream<TCP>, ETCP>;
 
@@ -96,8 +141,11 @@ impl<TCP: AsyncRead + AsyncWrite + Unpin, ETCP, ITCP: Stream<Item = Result<TCP, 
                 Poll::Ready(None) => unreachable!(),
                 Poll::Pending => {}
             }
+
             match Pin::new(&mut self.acme_accepting).poll_next(cx) {
-                Poll::Ready(Some(Ok(Some(tls)))) => self.tls_accepting.push(tls.into_stream(self.rustls_config.clone())),
+                Poll::Ready(Some(Ok(Some(tls)))) => self
+                    .tls_accepting
+                    .push(tls.into_stream(self.rustls_config.clone())),
                 Poll::Ready(Some(Ok(None))) => {
                     log::info!("received TLS-ALPN-01 validation request");
                     continue;
@@ -108,6 +156,7 @@ impl<TCP: AsyncRead + AsyncWrite + Unpin, ETCP, ITCP: Stream<Item = Result<TCP, 
                 }
                 Poll::Ready(None) | Poll::Pending => {}
             }
+
             match Pin::new(&mut self.tls_accepting).poll_next(cx) {
                 Poll::Ready(Some(Ok(tls))) => return Poll::Ready(Some(Ok(tls))),
                 Poll::Ready(Some(Err(err))) => {
@@ -116,6 +165,7 @@ impl<TCP: AsyncRead + AsyncWrite + Unpin, ETCP, ITCP: Stream<Item = Result<TCP, 
                 }
                 Poll::Ready(None) | Poll::Pending => {}
             }
+
             let tcp_incoming = match &mut self.tcp_incoming {
                 Some(tcp_incoming) => tcp_incoming,
                 None => match self.is_terminated() {
@@ -123,6 +173,7 @@ impl<TCP: AsyncRead + AsyncWrite + Unpin, ETCP, ITCP: Stream<Item = Result<TCP, 
                     false => return Poll::Pending,
                 },
             };
+
             match Pin::new(tcp_incoming).poll_next(cx) {
                 Poll::Ready(Some(Ok(tcp))) => self.acme_accepting.push(self.acceptor.accept(tcp)),
                 Poll::Ready(Some(Err(err))) => return Poll::Ready(Some(Err(err))),
@@ -133,10 +184,17 @@ impl<TCP: AsyncRead + AsyncWrite + Unpin, ETCP, ITCP: Stream<Item = Result<TCP, 
     }
 }
 
-impl<TCP: AsyncRead + AsyncWrite + Unpin, ETCP, ITCP: Stream<Item = Result<TCP, ETCP>> + Unpin, EC: Debug + 'static, EA: Debug + 'static> FusedStream
-    for Incoming<TCP, ETCP, ITCP, EC, EA>
+impl<
+        TCP: AsyncRead + AsyncWrite + Unpin,
+        ETCP,
+        ITCP: Stream<Item = Result<TCP, ETCP>> + Unpin,
+        EC: Debug + 'static,
+        EA: Debug + 'static,
+    > FusedStream for Incoming<TCP, ETCP, ITCP, EC, EA>
 {
     fn is_terminated(&self) -> bool {
-        self.tcp_incoming.is_none() && self.acme_accepting.is_terminated() && self.tls_accepting.is_terminated()
+        self.tcp_incoming.is_none()
+            && self.acme_accepting.is_terminated()
+            && self.tls_accepting.is_terminated()
     }
 }

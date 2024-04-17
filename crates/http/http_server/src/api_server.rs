@@ -1,4 +1,4 @@
-use std::{pin::Pin, net::SocketAddr};
+use std::{net::SocketAddr, pin::Pin};
 
 use smol::future::Future;
 
@@ -47,13 +47,13 @@ fn endpoint_2<
     mut handler: Handler,
 ) -> Box<
     dyn 'static
-    + Send
-    + Sync
-    + FnMut(
-        (SocketAddr, Request),
-    ) -> Pin<
-        Box<dyn 'static + Send + Sync + Future<Output = Result<Response, ResponseError>>>,
-    >,
+        + Send
+        + Sync
+        + FnMut(
+            (SocketAddr, Request),
+        ) -> Pin<
+            Box<dyn 'static + Send + Sync + Future<Output = Result<Response, ResponseError>>>,
+        >,
 > {
     Box::new(move |args: (SocketAddr, Request)| {
         let addr = args.0;

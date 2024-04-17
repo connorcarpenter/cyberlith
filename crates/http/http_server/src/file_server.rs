@@ -1,7 +1,4 @@
-use std::{
-    net::SocketAddr,
-    pin::Pin,
-};
+use std::{net::SocketAddr, pin::Pin};
 
 use smol::future::Future;
 
@@ -17,7 +14,6 @@ pub trait FileServer {
 }
 
 impl FileServer for Server {
-
     fn serve_file(&mut self, url_path: &str, file_path: &str, file_name: &str) {
         let url_path = format!("GET /{}", url_path);
 
@@ -33,13 +29,13 @@ fn endpoint_2(
     file_path: &str,
 ) -> Box<
     dyn 'static
-    + Send
-    + Sync
-    + FnMut(
-        (SocketAddr, Request),
-    ) -> Pin<
-        Box<dyn 'static + Send + Sync + Future<Output = Result<Response, ResponseError>>>,
-    >,
+        + Send
+        + Sync
+        + FnMut(
+            (SocketAddr, Request),
+        ) -> Pin<
+            Box<dyn 'static + Send + Sync + Future<Output = Result<Response, ResponseError>>>,
+        >,
 > {
     let file_path = file_path.to_string();
     Box::new(move |_args: (SocketAddr, Request)| {

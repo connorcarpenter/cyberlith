@@ -1,10 +1,9 @@
-
+use crate::cache::{AccountCache, CertCache};
 use async_trait::async_trait;
 use std::convert::Infallible;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::sync::atomic::AtomicPtr;
-use crate::cache::{AccountCache, CertCache};
 
 /// No-op cache, which does nothing.
 /// ```rust
@@ -31,11 +30,20 @@ impl<EC: Debug, EA: Debug> NoCache<EC, EA> {
 #[async_trait]
 impl<EC: Debug, EA: Debug> CertCache for NoCache<EC, EA> {
     type EC = EC;
-    async fn load_cert(&self, _domains: &[String], _directory_url: &str) -> Result<Option<Vec<u8>>, Self::EC> {
+    async fn load_cert(
+        &self,
+        _domains: &[String],
+        _directory_url: &str,
+    ) -> Result<Option<Vec<u8>>, Self::EC> {
         log::info!("no cert cache configured, could not load certificate");
         Ok(None)
     }
-    async fn store_cert(&self, _domains: &[String], _directory_url: &str, _cert: &[u8]) -> Result<(), Self::EC> {
+    async fn store_cert(
+        &self,
+        _domains: &[String],
+        _directory_url: &str,
+        _cert: &[u8],
+    ) -> Result<(), Self::EC> {
         log::info!("no cert cache configured, could not store certificate");
         Ok(())
     }
@@ -44,11 +52,20 @@ impl<EC: Debug, EA: Debug> CertCache for NoCache<EC, EA> {
 #[async_trait]
 impl<EC: Debug, EA: Debug> AccountCache for NoCache<EC, EA> {
     type EA = EA;
-    async fn load_account(&self, _contact: &[String], _directory_url: &str) -> Result<Option<Vec<u8>>, Self::EA> {
+    async fn load_account(
+        &self,
+        _contact: &[String],
+        _directory_url: &str,
+    ) -> Result<Option<Vec<u8>>, Self::EA> {
         log::info!("no account cache configured, could not load account");
         Ok(None)
     }
-    async fn store_account(&self, _contact: &[String], _directory_url: &str, _account: &[u8]) -> Result<(), Self::EA> {
+    async fn store_account(
+        &self,
+        _contact: &[String],
+        _directory_url: &str,
+        _account: &[u8],
+    ) -> Result<(), Self::EA> {
         log::info!("no account cache configured, could not store account");
         Ok(())
     }

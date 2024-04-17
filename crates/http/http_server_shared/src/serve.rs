@@ -1,14 +1,11 @@
-use std::{
-    collections::BTreeMap,
-    net::SocketAddr,
-};
+use std::{collections::BTreeMap, net::SocketAddr};
 
 use logging::{info, warn};
 use smol::{
     future::Future,
     io::{AsyncReadExt, AsyncWriteExt, BufReader},
-    stream::StreamExt,
     net::TcpStream,
+    stream::StreamExt,
 };
 
 use http_common::{Method, Request, Response, ResponseError};

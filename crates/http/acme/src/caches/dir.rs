@@ -13,12 +13,14 @@ pub struct DirCache<P: AsRef<Path> + Send + Sync> {
 }
 
 impl<P: AsRef<Path> + Send + Sync> DirCache<P> {
-
     pub fn new(dir: P) -> Self {
         Self { inner: dir }
     }
 
-    async fn read_if_exist(&self, file: impl AsRef<Path>) -> Result<Option<Vec<u8>>, std::io::Error> {
+    async fn read_if_exist(
+        &self,
+        file: impl AsRef<Path>,
+    ) -> Result<Option<Vec<u8>>, std::io::Error> {
         let path = self.inner.as_ref().join(file);
         match unblock(move || std::fs::read(&path)).await {
             Ok(content) => Ok(Some(content)),
@@ -29,7 +31,11 @@ impl<P: AsRef<Path> + Send + Sync> DirCache<P> {
         }
     }
 
-    async fn write(&self, file: impl AsRef<Path>, contents: impl AsRef<[u8]>) -> Result<(), std::io::Error> {
+    async fn write(
+        &self,
+        file: impl AsRef<Path>,
+        contents: impl AsRef<[u8]>,
+    ) -> Result<(), std::io::Error> {
         let path = self.inner.as_ref().to_owned();
         unblock(move || std::fs::create_dir_all(&path)).await?;
         let path = self.inner.as_ref().join(file);
@@ -63,11 +69,20 @@ impl<P: AsRef<Path> + Send + Sync> DirCache<P> {
 #[async_trait]
 impl<P: AsRef<Path> + Send + Sync> CertCache for DirCache<P> {
     type EC = std::io::Error;
-    async fn load_cert(&self, domains: &[String], directory_url: &str) -> Result<Option<Vec<u8>>, Self::EC> {
+    async fn load_cert(
+        &self,
+        domains: &[String],
+        directory_url: &str,
+    ) -> Result<Option<Vec<u8>>, Self::EC> {
         let file_name = Self::cached_cert_file_name(&domains, directory_url);
         self.read_if_exist(file_name).await
     }
-    async fn store_cert(&self, domains: &[String], directory_url: &str, cert: &[u8]) -> Result<(), Self::EC> {
+    async fn store_cert(
+        &self,
+        domains: &[String],
+        directory_url: &str,
+        cert: &[u8],
+    ) -> Result<(), Self::EC> {
         let file_name = Self::cached_cert_file_name(&domains, directory_url);
         self.write(file_name, cert).await
     }
@@ -76,12 +91,21 @@ impl<P: AsRef<Path> + Send + Sync> CertCache for DirCache<P> {
 #[async_trait]
 impl<P: AsRef<Path> + Send + Sync> AccountCache for DirCache<P> {
     type EA = std::io::Error;
-    async fn load_account(&self, contact: &[String], directory_url: &str) -> Result<Option<Vec<u8>>, Self::EA> {
+    async fn load_account(
+        &self,
+        contact: &[String],
+        directory_url: &str,
+    ) -> Result<Option<Vec<u8>>, Self::EA> {
         let file_name = Self::cached_account_file_name(&contact, directory_url);
         self.read_if_exist(file_name).await
     }
 
-    async fn store_account(&self, contact: &[String], directory_url: &str, account: &[u8]) -> Result<(), Self::EA> {
+    async fn store_account(
+        &self,
+        contact: &[String],
+        directory_url: &str,
+        account: &[u8],
+    ) -> Result<(), Self::EA> {
         let file_name = Self::cached_account_file_name(&contact, directory_url);
         self.write(file_name, account).await
     }

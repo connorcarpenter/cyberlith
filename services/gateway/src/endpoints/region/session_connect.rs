@@ -1,7 +1,7 @@
 use logging::info;
 
 use http_client::{HttpClient, ResponseError};
-use http_server::{ApiServer, http_log_util, Server};
+use http_server::{http_log_util, ApiServer, Server};
 
 use config::{GATEWAY_SECRET, REGION_SERVER_PORT, REGION_SERVER_RECV_ADDR};
 use gateway_http_proto::{

@@ -6,11 +6,11 @@ pub fn send_req(
     request_name: &str,
 ) {
     logging::info!(
-            "{} -> {}: {} request",
-            self_service_sender_name,
-            othe_service_recver_name,
-            request_name
-        );
+        "{} -> {}: {} request",
+        self_service_sender_name,
+        othe_service_recver_name,
+        request_name
+    );
 }
 
 pub fn recv_req(
@@ -19,11 +19,11 @@ pub fn recv_req(
     response_name: &str,
 ) {
     logging::info!(
-            "{} <- {}: {} request",
-            self_service_recver_name,
-            othe_service_sender_name,
-            response_name
-        );
+        "{} <- {}: {} request",
+        self_service_recver_name,
+        othe_service_sender_name,
+        response_name
+    );
 }
 
 pub fn send_res(
@@ -32,11 +32,11 @@ pub fn send_res(
     request_name: &str,
 ) {
     logging::info!(
-            "{} -> {}: {} response",
-            self_service_sender_name,
-            othe_service_recver_name,
-            request_name
-        );
+        "{} -> {}: {} response",
+        self_service_sender_name,
+        othe_service_recver_name,
+        request_name
+    );
 }
 
 pub fn recv_res(
@@ -45,11 +45,11 @@ pub fn recv_res(
     response_name: &str,
 ) {
     logging::info!(
-            "{} <- {}: {} response",
-            self_service_recver_name,
-            othe_service_sender_name,
-            response_name
-        );
+        "{} <- {}: {} response",
+        self_service_recver_name,
+        othe_service_sender_name,
+        response_name
+    );
 }
 
 pub fn fail_recv_res<T>(

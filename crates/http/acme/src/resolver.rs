@@ -1,10 +1,13 @@
+use std::{
+    collections::BTreeMap,
+    sync::{Arc, Mutex},
+};
+
 use futures_rustls::rustls::{
     server::{ClientHello, ResolvesServerCert},
     sign::CertifiedKey,
 };
-use std::collections::BTreeMap;
-use std::sync::Arc;
-use std::sync::Mutex;
+
 use crate::helpers::is_tls_alpn_challenge;
 
 #[derive(Debug)]
@@ -27,9 +30,11 @@ impl ResolvesServerCertAcme {
             }),
         })
     }
+
     pub(crate) fn set_cert(&self, cert: Arc<CertifiedKey>) {
         self.inner.lock().unwrap().cert = Some(cert);
     }
+
     pub(crate) fn set_auth_key(&self, domain: String, cert: Arc<CertifiedKey>) {
         self.inner.lock().unwrap().auth_keys.insert(domain, cert);
     }

@@ -1,10 +1,7 @@
-use std::{
-    net::SocketAddr,
-    pin::Pin,
-};
+use std::{net::SocketAddr, pin::Pin};
 
-use smol::future::Future;
 use http_client_shared::fetch_async;
+use smol::future::Future;
 
 use logging::info;
 
@@ -16,14 +13,25 @@ use crate::{log_util, Server};
 pub trait RemoteFileServer {
     fn serve_remote_file(
         &mut self,
-        host_name: &str, url_path: &str,
-        remote_name: &str, remote_addr: &str, remote_port: &str, file_name: &str
+        host_name: &str,
+        url_path: &str,
+        remote_name: &str,
+        remote_addr: &str,
+        remote_port: &str,
+        file_name: &str,
     );
 }
 
 impl RemoteFileServer for Server {
-
-    fn serve_remote_file(&mut self, host_name: &str, url_path: &str, remote_name: &str, remote_addr: &str, remote_port: &str, file_name: &str) {
+    fn serve_remote_file(
+        &mut self,
+        host_name: &str,
+        url_path: &str,
+        remote_name: &str,
+        remote_addr: &str,
+        remote_port: &str,
+        file_name: &str,
+    ) {
         let url_path = format!("GET /{}", url_path);
 
         info!("serving remote file @ {}", url_path);
@@ -40,13 +48,13 @@ fn endpoint_2(
     remote_url: &str,
 ) -> Box<
     dyn 'static
-    + Send
-    + Sync
-    + FnMut(
-        (SocketAddr, Request),
-    ) -> Pin<
-        Box<dyn 'static + Send + Sync + Future<Output = Result<Response, ResponseError>>>,
-    >,
+        + Send
+        + Sync
+        + FnMut(
+            (SocketAddr, Request),
+        ) -> Pin<
+            Box<dyn 'static + Send + Sync + Future<Output = Result<Response, ResponseError>>>,
+        >,
 > {
     let host_name = host_name.to_string();
     let remote_name = remote_name.to_string();
@@ -74,9 +82,12 @@ fn endpoint_2(
             match remote_response_result {
                 Ok(remote_response) => {
                     response.body = remote_response.body;
-                },
+                }
                 Err(err) => {
-                    return Err(ResponseError::HttpError(format!("received error from remote server: {}", err.to_string())));
+                    return Err(ResponseError::HttpError(format!(
+                        "received error from remote server: {}",
+                        err.to_string()
+                    )));
                 }
             }
 

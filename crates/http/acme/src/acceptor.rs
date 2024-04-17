@@ -1,19 +1,21 @@
-
-use std::io;
-use std::pin::Pin;
-use std::sync::Arc;
-use std::task::{Context, Poll};
+use std::{
+    io,
+    pin::Pin,
+    sync::Arc,
+    task::{Context, Poll},
+};
 
 use core::fmt;
 use futures::prelude::*;
-use futures_rustls::rustls::server::Acceptor;
-use futures_rustls::rustls::ServerConfig;
-use futures_rustls::{Accept, LazyConfigAcceptor, StartHandshake};
+use futures_rustls::{
+    rustls::{server::Acceptor, ServerConfig},
+    Accept, LazyConfigAcceptor, StartHandshake,
+};
 
-use crate::helpers::is_tls_alpn_challenge;
-use crate::acme::ACME_TLS_ALPN_NAME;
-use crate::{crypto_provider};
-use crate::resolver::ResolvesServerCertAcme;
+use crate::{
+    acme::ACME_TLS_ALPN_NAME, crypto_provider, helpers::is_tls_alpn_challenge,
+    resolver::ResolvesServerCertAcme,
+};
 
 #[derive(Clone)]
 pub struct AcmeAcceptor {
@@ -21,7 +23,9 @@ pub struct AcmeAcceptor {
 }
 
 impl AcmeAcceptor {
-    #[deprecated(note = "please use high-level API via `AcmeState::incoming()` instead or refer to updated low-level API examples")]
+    #[deprecated(
+        note = "please use high-level API via `AcmeState::incoming()` instead or refer to updated low-level API examples"
+    )]
     pub(crate) fn new(resolver: Arc<ResolvesServerCertAcme>) -> Self {
         let mut config = ServerConfig::builder_with_provider(crypto_provider().into())
             .with_safe_default_protocol_versions()
@@ -29,8 +33,11 @@ impl AcmeAcceptor {
             .with_no_client_auth()
             .with_cert_resolver(resolver.clone());
         config.alpn_protocols.push(ACME_TLS_ALPN_NAME.to_vec());
-        Self { config: Arc::new(config) }
+        Self {
+            config: Arc::new(config),
+        }
     }
+
     pub fn accept<IO: AsyncRead + AsyncWrite + Unpin>(&self, io: IO) -> AcmeAccept<IO> {
         AcmeAccept::new(io, self.config.clone())
     }

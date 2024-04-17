@@ -1,23 +1,31 @@
 use std::sync::Arc;
 
-use crate::any_ecdsa_type;
-use crate::crypto::error::{KeyRejected, Unspecified};
-use crate::crypto::rand::SystemRandom;
-use crate::crypto::signature::{EcdsaKeyPair, EcdsaSigningAlgorithm, ECDSA_P256_SHA256_FIXED_SIGNING};
-use crate::https_helper::{https, HttpsRequestError};
-use crate::jose::{key_authorization_sha256, sign, JoseError};
 use base64::prelude::*;
-use futures_rustls::pki_types::{CertificateDer, PrivateKeyDer, PrivatePkcs8KeyDer};
-use futures_rustls::rustls::{sign::CertifiedKey, ClientConfig};
-use http::header::ToStrError;
-use http::{Method, Response};
+use futures_rustls::{
+    pki_types::{CertificateDer, PrivateKeyDer, PrivatePkcs8KeyDer},
+    rustls::{sign::CertifiedKey, ClientConfig},
+};
+use http::{header::ToStrError, Method, Response};
 use rcgen::{Certificate, CustomExtension, PKCS_ECDSA_P256_SHA256};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use thiserror::Error;
 
-pub const LETS_ENCRYPT_STAGING_DIRECTORY: &str = "https://acme-staging-v02.api.letsencrypt.org/directory";
-pub const LETS_ENCRYPT_PRODUCTION_DIRECTORY: &str = "https://acme-v02.api.letsencrypt.org/directory";
+use crate::{
+    any_ecdsa_type,
+    crypto::{
+        error::{KeyRejected, Unspecified},
+        rand::SystemRandom,
+        signature::{EcdsaKeyPair, EcdsaSigningAlgorithm, ECDSA_P256_SHA256_FIXED_SIGNING},
+    },
+    https_helper::{https, HttpsRequestError},
+    jose::{key_authorization_sha256, sign, JoseError},
+};
+
+pub const LETS_ENCRYPT_STAGING_DIRECTORY: &str =
+    "https://acme-staging-v02.api.letsencrypt.org/directory";
+pub const LETS_ENCRYPT_PRODUCTION_DIRECTORY: &str =
+    "https://acme-v02.api.letsencrypt.org/directory";
 pub const ACME_TLS_ALPN_NAME: &[u8] = b"acme-tls/1";
 
 #[derive(Debug)]
@@ -35,7 +43,12 @@ impl Account {
         let pkcs8 = EcdsaKeyPair::generate_pkcs8(ALG, &rng).unwrap();
         pkcs8.as_ref().to_vec()
     }
-    pub async fn create<'a, S, I>(client_config: &Arc<ClientConfig>, directory: Directory, contact: I) -> Result<Self, AcmeError>
+
+    pub async fn create<'a, S, I>(
+        client_config: &Arc<ClientConfig>,
+        directory: Directory,
+        contact: I,
+    ) -> Result<Self, AcmeError>
     where
         S: AsRef<str> + 'a,
         I: IntoIterator<Item = &'a S>,
@@ -43,6 +56,7 @@ impl Account {
         let key_pair = Self::generate_key_pair();
         Ok(Self::create_with_keypair(client_config, directory, contact, &key_pair).await?)
     }
+
     pub async fn create_with_keypair<'a, S, I>(
         client_config: &Arc<ClientConfig>,
         directory: Directory,
@@ -65,12 +79,34 @@ impl Account {
             "contact": contact,
         })
         .to_string();
-        let body = sign(&key_pair, None, directory.nonce(client_config).await?, &directory.new_account, &payload)?;
-        let response = https(client_config, &directory.new_account, Method::POST, Some(body)).await?;
+        let body = sign(
+            &key_pair,
+            None,
+            directory.nonce(client_config).await?,
+            &directory.new_account,
+            &payload,
+        )?;
+        let response = https(
+            client_config,
+            &directory.new_account,
+            Method::POST,
+            Some(body),
+        )
+        .await?;
         let kid = get_header(&response, "Location")?;
-        Ok(Account { key_pair, kid, directory })
+        Ok(Account {
+            key_pair,
+            kid,
+            directory,
+        })
     }
-    async fn request(&self, client_config: &Arc<ClientConfig>, url: impl AsRef<str>, payload: &str) -> Result<(Option<String>, String), AcmeError> {
+
+    async fn request(
+        &self,
+        client_config: &Arc<ClientConfig>,
+        url: impl AsRef<str>,
+        payload: &str,
+    ) -> Result<(Option<String>, String), AcmeError> {
         let body = sign(
             &self.key_pair,
             Some(&self.kid),
@@ -84,37 +120,78 @@ impl Account {
         log::debug!("response: {:?}", body);
         Ok((location, body))
     }
-    pub async fn new_order(&self, client_config: &Arc<ClientConfig>, domains: Vec<String>) -> Result<(String, Order), AcmeError> {
+
+    pub async fn new_order(
+        &self,
+        client_config: &Arc<ClientConfig>,
+        domains: Vec<String>,
+    ) -> Result<(String, Order), AcmeError> {
         let domains: Vec<Identifier> = domains.into_iter().map(|d| Identifier::Dns(d)).collect();
         let payload = format!("{{\"identifiers\":{}}}", serde_json::to_string(&domains)?);
-        let response = self.request(client_config, &self.directory.new_order, &payload).await?;
+        let response = self
+            .request(client_config, &self.directory.new_order, &payload)
+            .await?;
         let url = response.0.ok_or(AcmeError::MissingHeader("Location"))?;
         let order = serde_json::from_str(&response.1)?;
         Ok((url, order))
     }
-    pub async fn auth(&self, client_config: &Arc<ClientConfig>, url: impl AsRef<str>) -> Result<Auth, AcmeError> {
+
+    pub async fn auth(
+        &self,
+        client_config: &Arc<ClientConfig>,
+        url: impl AsRef<str>,
+    ) -> Result<Auth, AcmeError> {
         let payload = "".to_string();
         let response = self.request(client_config, url, &payload).await?;
         Ok(serde_json::from_str(&response.1)?)
     }
-    pub async fn challenge(&self, client_config: &Arc<ClientConfig>, url: impl AsRef<str>) -> Result<(), AcmeError> {
+
+    pub async fn challenge(
+        &self,
+        client_config: &Arc<ClientConfig>,
+        url: impl AsRef<str>,
+    ) -> Result<(), AcmeError> {
         self.request(client_config, &url, "{}").await?;
         Ok(())
     }
-    pub async fn order(&self, client_config: &Arc<ClientConfig>, url: impl AsRef<str>) -> Result<Order, AcmeError> {
+
+    pub async fn order(
+        &self,
+        client_config: &Arc<ClientConfig>,
+        url: impl AsRef<str>,
+    ) -> Result<Order, AcmeError> {
         let response = self.request(client_config, &url, "").await?;
         Ok(serde_json::from_str(&response.1)?)
     }
-    pub async fn finalize(&self, client_config: &Arc<ClientConfig>, url: impl AsRef<str>, csr: Vec<u8>) -> Result<Order, AcmeError> {
+
+    pub async fn finalize(
+        &self,
+        client_config: &Arc<ClientConfig>,
+        url: impl AsRef<str>,
+        csr: Vec<u8>,
+    ) -> Result<Order, AcmeError> {
         let payload = format!("{{\"csr\":\"{}\"}}", BASE64_URL_SAFE_NO_PAD.encode(csr));
         let response = self.request(client_config, &url, &payload).await?;
         Ok(serde_json::from_str(&response.1)?)
     }
-    pub async fn certificate(&self, client_config: &Arc<ClientConfig>, url: impl AsRef<str>) -> Result<String, AcmeError> {
+
+    pub async fn certificate(
+        &self,
+        client_config: &Arc<ClientConfig>,
+        url: impl AsRef<str>,
+    ) -> Result<String, AcmeError> {
         Ok(self.request(client_config, &url, "").await?.1)
     }
-    pub fn tls_alpn_01<'a>(&self, challenges: &'a Vec<Challenge>, domain: String) -> Result<(&'a Challenge, CertifiedKey), AcmeError> {
-        let challenge = challenges.iter().filter(|c| c.typ == ChallengeType::TlsAlpn01).next();
+
+    pub fn tls_alpn_01<'a>(
+        &self,
+        challenges: &'a Vec<Challenge>,
+        domain: String,
+    ) -> Result<(&'a Challenge, CertifiedKey), AcmeError> {
+        let challenge = challenges
+            .iter()
+            .filter(|c| c.typ == ChallengeType::TlsAlpn01)
+            .next();
         let challenge = match challenge {
             Some(challenge) => challenge,
             None => return Err(AcmeError::NoTlsAlpn01Challenge),
@@ -124,8 +201,12 @@ impl Account {
         params.alg = &PKCS_ECDSA_P256_SHA256;
         params.custom_extensions = vec![CustomExtension::new_acme_identifier(key_auth.as_ref())];
         let cert = Certificate::from_params(params)?;
-        let pk = any_ecdsa_type(&PrivateKeyDer::Pkcs8(PrivatePkcs8KeyDer::from(cert.serialize_private_key_der()))).unwrap();
-        let certified_key = CertifiedKey::new(vec![CertificateDer::from(cert.serialize_der()?)], pk);
+        let pk = any_ecdsa_type(&PrivateKeyDer::Pkcs8(PrivatePkcs8KeyDer::from(
+            cert.serialize_private_key_der(),
+        )))
+        .unwrap();
+        let certified_key =
+            CertifiedKey::new(vec![CertificateDer::from(cert.serialize_der()?)], pk);
         Ok((challenge, certified_key))
     }
 }
@@ -139,10 +220,16 @@ pub struct Directory {
 }
 
 impl Directory {
-    pub async fn discover(client_config: &Arc<ClientConfig>, url: impl AsRef<str>) -> Result<Self, AcmeError> {
-        let body = https(client_config, url, Method::GET, None).await?.into_body();
+    pub async fn discover(
+        client_config: &Arc<ClientConfig>,
+        url: impl AsRef<str>,
+    ) -> Result<Self, AcmeError> {
+        let body = https(client_config, url, Method::GET, None)
+            .await?
+            .into_body();
         Ok(serde_json::from_str(&body)?)
     }
+
     pub async fn nonce(&self, client_config: &Arc<ClientConfig>) -> Result<String, AcmeError> {
         let response = &https(client_config, &self.new_nonce.as_str(), Method::HEAD, None).await?;
         get_header(response, "replay-nonce")

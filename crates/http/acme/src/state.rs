@@ -1,15 +1,39 @@
-use std::{time::Duration, task::{Context, Poll}, sync::Arc, pin::Pin, fmt::Debug, future::Future, convert::Infallible};
+use std::{
+    convert::Infallible,
+    fmt::Debug,
+    future::Future,
+    pin::Pin,
+    sync::Arc,
+    task::{Context, Poll},
+    time::Duration,
+};
 
 use async_io::Timer;
 use chrono::{DateTime, TimeZone, Utc};
 use core::fmt;
-use futures::{ready, future::try_join_all, AsyncRead, AsyncWrite, Stream, FutureExt};
-use futures_rustls::{rustls::ServerConfig, rustls::sign::CertifiedKey, rustls::crypto::CryptoProvider, pki_types::{CertificateDer as RustlsCertificate, PrivateKeyDer, PrivatePkcs8KeyDer}};
+use futures::{future::try_join_all, ready, AsyncRead, AsyncWrite, FutureExt, Stream};
+use futures_rustls::{
+    pki_types::{CertificateDer as RustlsCertificate, PrivateKeyDer, PrivatePkcs8KeyDer},
+    rustls::crypto::CryptoProvider,
+    rustls::sign::CertifiedKey,
+    rustls::ServerConfig,
+};
 use rcgen::{CertificateParams, DistinguishedName, PKCS_ECDSA_P256_SHA256};
 use thiserror::Error;
 use x509_parser::parse_x509_certificate;
 
-use crate::{any_ecdsa_type, acceptor::AcmeAcceptor, resolver::ResolvesServerCertAcme, incoming::Incoming, config::AcmeConfig, acme::{Account, AcmeError, Auth, AuthStatus, Directory, Identifier, Order, OrderStatus, ACME_TLS_ALPN_NAME}};
+use crate::{
+    acceptor::AcmeAcceptor,
+    acme::{
+        Account, AcmeError, Auth, AuthStatus, Directory, Identifier, Order, OrderStatus,
+        ACME_TLS_ALPN_NAME,
+    },
+    any_ecdsa_type,
+    config::AcmeConfig,
+    crypto_provider,
+    incoming::Incoming,
+    resolver::ResolvesServerCertAcme,
+};
 
 pub struct AcmeState<EC: Debug = Infallible, EA: Debug = EC> {
     config: Arc<AcmeConfig<EC, EA>>,
@@ -26,7 +50,9 @@ pub struct AcmeState<EC: Debug = Infallible, EA: Debug = EC> {
 
 impl<EC: 'static + Debug, EA: 'static + Debug> fmt::Debug for AcmeState<EC, EA> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("AcmeState").field("config", &self.config).finish_non_exhaustive()
+        f.debug_struct("AcmeState")
+            .field("config", &self.config)
+            .finish_non_exhaustive()
     }
 }
 
@@ -87,7 +113,11 @@ pub enum CertParseError {
 }
 
 impl<EC: 'static + Debug, EA: 'static + Debug> AcmeState<EC, EA> {
-    pub fn incoming<TCP: AsyncRead + AsyncWrite + Unpin, ETCP, ITCP: Stream<Item = Result<TCP, ETCP>> + Unpin>(
+    pub fn incoming<
+        TCP: AsyncRead + AsyncWrite + Unpin,
+        ETCP,
+        ITCP: Stream<Item = Result<TCP, ETCP>> + Unpin,
+    >(
         self,
         tcp_incoming: ITCP,
         alpn_protocols: Vec<Vec<u8>>,
@@ -96,38 +126,52 @@ impl<EC: 'static + Debug, EA: 'static + Debug> AcmeState<EC, EA> {
         let acceptor = self.acceptor();
         Incoming::new(tcp_incoming, self, acceptor, alpn_protocols)
     }
-    #[deprecated(note = "please use high-level API via `AcmeState::incoming()` instead or refer to updated low-level API examples")]
+
+    #[deprecated(
+        note = "please use high-level API via `AcmeState::incoming()` instead or refer to updated low-level API examples"
+    )]
     #[allow(deprecated)]
     pub fn acceptor(&self) -> AcmeAcceptor {
         AcmeAcceptor::new(self.resolver())
     }
+
     pub fn resolver(&self) -> Arc<ResolvesServerCertAcme> {
         self.resolver.clone()
     }
+
     /// Creates a [rustls::ServerConfig] for tls-alpn-01 challenge connections. Use this if [crate::is_tls_alpn_challenge] returns `true`.
-    #[cfg(feature = "ring")]
     pub fn challenge_rustls_config(&self) -> Arc<ServerConfig> {
         self.challenge_rustls_config_with_provider(crypto_provider().into())
     }
+
     /// Same as [AcmeState::challenge_rustls_config], with a specific [CryptoProvider].
-    pub fn challenge_rustls_config_with_provider(&self, provider: Arc<CryptoProvider>) -> Arc<ServerConfig> {
+    pub fn challenge_rustls_config_with_provider(
+        &self,
+        provider: Arc<CryptoProvider>,
+    ) -> Arc<ServerConfig> {
         let mut rustls_config = ServerConfig::builder_with_provider(provider)
             .with_safe_default_protocol_versions()
             .unwrap()
             .with_no_client_auth()
             .with_cert_resolver(self.resolver());
-        rustls_config.alpn_protocols.push(ACME_TLS_ALPN_NAME.to_vec());
+        rustls_config
+            .alpn_protocols
+            .push(ACME_TLS_ALPN_NAME.to_vec());
         return Arc::new(rustls_config);
     }
+
     /// Creates a default [rustls::ServerConfig] for accepting regular tls connections. Use this if [crate::is_tls_alpn_challenge] returns `false`.
     /// If you need a [rustls::ServerConfig], which uses the certificates acquired by this [AcmeState],
     /// you may build your own using the output of [AcmeState::resolver].
-    #[cfg(feature = "ring")]
     pub fn default_rustls_config(&self) -> Arc<ServerConfig> {
         self.default_rustls_config_with_provider(crypto_provider().into())
     }
+
     /// Same as [AcmeState::default_rustls_config], with a specific [CryptoProvider].
-    pub fn default_rustls_config_with_provider(&self, provider: Arc<CryptoProvider>) -> Arc<ServerConfig> {
+    pub fn default_rustls_config_with_provider(
+        &self,
+        provider: Arc<CryptoProvider>,
+    ) -> Arc<ServerConfig> {
         let rustls_config = ServerConfig::builder_with_provider(provider)
             .with_safe_default_protocol_versions()
             .unwrap()
@@ -135,6 +179,7 @@ impl<EC: 'static + Debug, EA: 'static + Debug> AcmeState<EC, EA> {
             .with_cert_resolver(self.resolver());
         return Arc::new(rustls_config);
     }
+
     pub fn new(config: AcmeConfig<EC, EA>) -> Self {
         let config = Arc::new(config);
         Self {
@@ -144,37 +189,55 @@ impl<EC: 'static + Debug, EA: 'static + Debug> AcmeState<EC, EA> {
             early_action: None,
             load_cert: Some(Box::pin({
                 let config = config.clone();
-                async move { config.cache.load_cert(&config.domains, &config.directory_url).await }
+                async move {
+                    config
+                        .cache
+                        .load_cert(&config.domains, &config.directory_url)
+                        .await
+                }
             })),
             load_account: Some(Box::pin({
                 let config = config.clone();
-                async move { config.cache.load_account(&config.contact, &config.directory_url).await }
+                async move {
+                    config
+                        .cache
+                        .load_account(&config.contact, &config.directory_url)
+                        .await
+                }
             })),
             order: None,
             backoff_cnt: 0,
             wait: None,
         }
     }
+
     fn parse_cert(pem: &[u8]) -> Result<(CertifiedKey, [DateTime<Utc>; 2]), CertParseError> {
         let mut pems = pem::parse_many(&pem)?;
         if pems.len() < 2 {
             return Err(CertParseError::TooFewPem(pems.len()));
         }
-        let pk = match any_ecdsa_type(&PrivateKeyDer::Pkcs8(PrivatePkcs8KeyDer::from(pems.remove(0).contents()))) {
+        let pk = match any_ecdsa_type(&PrivateKeyDer::Pkcs8(PrivatePkcs8KeyDer::from(
+            pems.remove(0).contents(),
+        ))) {
             Ok(pk) => pk,
             Err(_) => return Err(CertParseError::InvalidPrivateKey),
         };
-        let cert_chain: Vec<RustlsCertificate> = pems.into_iter().map(|p| RustlsCertificate::from(p.into_contents())).collect();
+        let cert_chain: Vec<RustlsCertificate> = pems
+            .into_iter()
+            .map(|p| RustlsCertificate::from(p.into_contents()))
+            .collect();
         let validity = match parse_x509_certificate(&cert_chain[0]) {
             Ok((_, cert)) => {
                 let validity = cert.validity();
-                [validity.not_before, validity.not_after].map(|t| Utc.timestamp_opt(t.timestamp(), 0).earliest().unwrap())
+                [validity.not_before, validity.not_after]
+                    .map(|t| Utc.timestamp_opt(t.timestamp(), 0).earliest().unwrap())
             }
             Err(err) => return Err(CertParseError::X509(err)),
         };
         let cert = CertifiedKey::new(cert_chain, pk);
         Ok((cert, validity))
     }
+
     fn process_cert(&mut self, pem: Vec<u8>, cached: bool) -> Event<EC, EA> {
         let (cert, validity) = match (Self::parse_cert(&pem), cached) {
             (Ok(r), _) => r,
@@ -196,27 +259,47 @@ impl<EC: 'static + Debug, EA: 'static + Debug> AcmeState<EC, EA> {
         }
         let config = self.config.clone();
         self.early_action = Some(Box::pin(async move {
-            match config.cache.store_cert(&config.domains, &config.directory_url, &pem).await {
+            match config
+                .cache
+                .store_cert(&config.domains, &config.directory_url, &pem)
+                .await
+            {
                 Ok(()) => Ok(EventOk::CertCacheStore),
                 Err(err) => Err(EventError::CertCacheStore(err)),
             }
         }));
         Event::Ok(EventOk::DeployedNewCert)
     }
-    async fn order(config: Arc<AcmeConfig<EC, EA>>, resolver: Arc<ResolvesServerCertAcme>, key_pair: Vec<u8>) -> Result<Vec<u8>, OrderError> {
+
+    async fn order(
+        config: Arc<AcmeConfig<EC, EA>>,
+        resolver: Arc<ResolvesServerCertAcme>,
+        key_pair: Vec<u8>,
+    ) -> Result<Vec<u8>, OrderError> {
         let directory = Directory::discover(&config.client_config, &config.directory_url).await?;
-        let account = Account::create_with_keypair(&config.client_config, directory, &config.contact, &key_pair).await?;
+        let account = Account::create_with_keypair(
+            &config.client_config,
+            directory,
+            &config.contact,
+            &key_pair,
+        )
+        .await?;
 
         let mut params = CertificateParams::new(config.domains.clone());
         params.distinguished_name = DistinguishedName::new();
         params.alg = &PKCS_ECDSA_P256_SHA256;
         let cert = rcgen::Certificate::from_params(params)?;
 
-        let (order_url, mut order) = account.new_order(&config.client_config, config.domains.clone()).await?;
+        let (order_url, mut order) = account
+            .new_order(&config.client_config, config.domains.clone())
+            .await?;
         loop {
             match order.status {
                 OrderStatus::Pending => {
-                    let auth_futures = order.authorizations.iter().map(|url| Self::authorize(&config, &resolver, &account, url));
+                    let auth_futures = order
+                        .authorizations
+                        .iter()
+                        .map(|url| Self::authorize(&config, &resolver, &account, url));
                     try_join_all(auth_futures).await?;
                     log::info!("completed all authorizations");
                     order = account.order(&config.client_config, &order_url).await?;
@@ -237,14 +320,18 @@ impl<EC: 'static + Debug, EA: 'static + Debug> AcmeState<EC, EA> {
                 OrderStatus::Ready => {
                     log::info!("sending csr");
                     let csr = cert.serialize_request_der()?;
-                    order = account.finalize(&config.client_config, order.finalize, csr).await?
+                    order = account
+                        .finalize(&config.client_config, order.finalize, csr)
+                        .await?
                 }
                 OrderStatus::Valid { certificate } => {
                     log::info!("download certificate");
                     let pem = [
                         &cert.serialize_private_key_pem(),
                         "\n",
-                        &account.certificate(&config.client_config, certificate).await?,
+                        &account
+                            .certificate(&config.client_config, certificate)
+                            .await?,
                     ]
                     .concat();
                     return Ok(pem.into_bytes());
@@ -253,15 +340,24 @@ impl<EC: 'static + Debug, EA: 'static + Debug> AcmeState<EC, EA> {
             }
         }
     }
-    async fn authorize(config: &AcmeConfig<EC, EA>, resolver: &ResolvesServerCertAcme, account: &Account, url: &String) -> Result<(), OrderError> {
+
+    async fn authorize(
+        config: &AcmeConfig<EC, EA>,
+        resolver: &ResolvesServerCertAcme,
+        account: &Account,
+        url: &String,
+    ) -> Result<(), OrderError> {
         let auth = account.auth(&config.client_config, url).await?;
         let (domain, challenge_url) = match auth.status {
             AuthStatus::Pending => {
                 let Identifier::Dns(domain) = auth.identifier;
                 log::info!("trigger challenge for {}", &domain);
-                let (challenge, auth_key) = account.tls_alpn_01(&auth.challenges, domain.clone())?;
+                let (challenge, auth_key) =
+                    account.tls_alpn_01(&auth.challenges, domain.clone())?;
                 resolver.set_auth_key(domain.clone(), Arc::new(auth_key));
-                account.challenge(&config.client_config, &challenge.url).await?;
+                account
+                    .challenge(&config.client_config, &challenge.url)
+                    .await?;
                 (domain, challenge.url.clone())
             }
             AuthStatus::Valid => return Ok(()),
@@ -273,7 +369,9 @@ impl<EC: 'static + Debug, EA: 'static + Debug> AcmeState<EC, EA> {
             match auth.status {
                 AuthStatus::Pending => {
                     log::info!("authorization for {} still pending", &domain);
-                    account.challenge(&config.client_config, &challenge_url).await?
+                    account
+                        .challenge(&config.client_config, &challenge_url)
+                        .await?
                 }
                 AuthStatus::Valid => return Ok(()),
                 _ => return Err(OrderError::BadAuth(auth)),
@@ -281,6 +379,7 @@ impl<EC: 'static + Debug, EA: 'static + Debug> AcmeState<EC, EA> {
         }
         Err(OrderError::TooManyAttemptsAuth(domain))
     }
+
     fn poll_next_infinite(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Event<EC, EA>> {
         loop {
             // queued early action
@@ -348,7 +447,11 @@ impl<EC: 'static + Debug, EA: 'static + Debug> AcmeState<EC, EA> {
                     self.early_action = Some(Box::pin(async move {
                         match config
                             .cache
-                            .store_account(&config.contact, &config.directory_url, &account_key_clone)
+                            .store_account(
+                                &config.contact,
+                                &config.directory_url,
+                                &account_key_clone,
+                            )
                             .await
                         {
                             Ok(()) => Ok(EventOk::AccountCacheStore),
@@ -361,7 +464,11 @@ impl<EC: 'static + Debug, EA: 'static + Debug> AcmeState<EC, EA> {
             };
             let config = self.config.clone();
             let resolver = self.resolver.clone();
-            self.order = Some(Box::pin(Self::order(config.clone(), resolver.clone(), account_key)));
+            self.order = Some(Box::pin(Self::order(
+                config.clone(),
+                resolver.clone(),
+                account_key,
+            )));
         }
     }
 }

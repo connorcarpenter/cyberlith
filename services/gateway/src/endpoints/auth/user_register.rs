@@ -1,5 +1,5 @@
 use http_client::{HttpClient, ResponseError};
-use http_server::{ApiServer, http_log_util, Server};
+use http_server::{http_log_util, ApiServer, Server};
 
 use auth_server_http_proto::UserRegisterRequest as AuthUserRegisterRequest;
 use config::{AUTH_SERVER_PORT, AUTH_SERVER_RECV_ADDR, GATEWAY_SECRET};
