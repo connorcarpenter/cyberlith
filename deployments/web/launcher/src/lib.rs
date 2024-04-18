@@ -9,6 +9,8 @@ cfg_if! {
 use kernel::{redirect_to_url, Kernel};
 use launcher_app::LauncherApp;
 use logging::info;
+use config::{PUBLIC_PROTOCOL, PUBLIC_IP_ADDR, GATEWAY_PORT};
+
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen(start)]
@@ -28,8 +30,9 @@ pub async fn main() -> Result<(), JsValue> {
         }
         "game" => {
             println!("Loading GameApp...");
-            let domain_str = "http://127.0.0.1:14196"; // TODO: get this from config
-            redirect_to_url(&format!("{}/game", domain_str));
+            let domain_str = format!("{}://{}:{}", PUBLIC_PROTOCOL, PUBLIC_IP_ADDR, GATEWAY_PORT);
+            let url = format!("{}/game", domain_str);
+            redirect_to_url(&url);
         }
         _ => {
             panic!("Unknown AppExitAction: {}", app_result);

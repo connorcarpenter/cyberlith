@@ -2,6 +2,9 @@
 pub const SELF_BINDING_ADDR: &str = "0.0.0.0";
 
 #[allow(dead_code)]
+pub const PUBLIC_PROTOCOL: &str = "https";
+
+#[allow(dead_code)]
 pub const PUBLIC_IP_ADDR: &str = "cyberlith.com";
 
 #[allow(dead_code)]

@@ -10,6 +10,7 @@ use game_app::GameApp;
 use kernel::{redirect_to_url, Kernel};
 use logging::info;
 use wasm_bindgen::prelude::*;
+use config::{GATEWAY_PORT, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL};
 
 #[wasm_bindgen(start)]
 pub async fn main() -> Result<(), JsValue> {
@@ -28,8 +29,9 @@ pub async fn main() -> Result<(), JsValue> {
         }
         "launcher" => {
             println!("Loading LauncherApp...");
-            let domain_str = "http://127.0.0.1:14196"; // TODO: get this from config
-            redirect_to_url(&format!("{}/", domain_str)); // root goes to launcher
+            let domain_str = format!("{}://{}:{}", PUBLIC_PROTOCOL, PUBLIC_IP_ADDR, GATEWAY_PORT);
+            let url = format!("{}/", domain_str);
+            redirect_to_url(&url); // root goes to launcher
         }
         _ => {
             panic!("Unknown AppExitAction: {}", app_result);

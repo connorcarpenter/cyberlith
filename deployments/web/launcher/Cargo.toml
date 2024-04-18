@@ -12,8 +12,8 @@ path = "src/lib.rs"
 crate-type = ["cdylib", "rlib"]
 
 [features]
-local = [ "launcher_app/local" ]
-prod = [ "launcher_app/prod" ]
+local = [ "launcher_app/local", "config/local" ]
+prod = [ "launcher_app/prod", "config/prod" ]
 gl_renderer = [ "launcher_app/gl_renderer" ]
 wgpu_renderer = [ "launcher_app/wgpu_renderer" ]
 
@@ -21,6 +21,7 @@ wgpu_renderer = [ "launcher_app/wgpu_renderer" ]
 kernel = { path = "../../../crates/kernel" }
 logging = { path = "../../../crates/logging" }
 launcher_app = { path = "../../../apps/launcher" }
+config = { path = "../../../config", features = ["client"] }
 
 cfg-if = { version = "1.0" }
 

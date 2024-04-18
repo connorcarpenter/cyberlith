@@ -34,7 +34,11 @@ impl HttpClient {
         port: u16,
         req: Q,
     ) -> ResponseKey<Q::Response> {
-        let url = format!("http://{}:{}/{}", addr, port, Q::path());
+        let url = if port == 443 {
+            format!("https://{}/{}", addr, Q::path())
+        } else {
+            format!("http://{}:{}/{}", addr, port, Q::path())
+        };
         let http_request = Request::new(Q::method(), &url, req.to_bytes().to_vec());
         //info!("Sending request to: {:?}", url);
 

@@ -12,8 +12,8 @@ path = "src/lib.rs"
 crate-type = ["cdylib", "rlib"]
 
 [features]
-local = [ "game_app/local" ]
-prod = [ "game_app/prod" ]
+local = [ "game_app/local", "config/local" ]
+prod = [ "game_app/prod", "config/prod" ]
 gl_renderer = [ "game_app/gl_renderer" ]
 wgpu_renderer = [ "game_app/wgpu_renderer" ]
 
@@ -21,6 +21,7 @@ wgpu_renderer = [ "game_app/wgpu_renderer" ]
 kernel = { path = "../../../crates/kernel" }
 logging = { path = "../../../crates/logging" }
 game_app = { path = "../../../apps/game" }
+config = { path = "../../../config", features = ["client"] }
 
 cfg-if = { version = "1.0" }
 

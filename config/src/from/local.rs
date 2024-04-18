@@ -2,6 +2,9 @@
 pub const SELF_BINDING_ADDR: &str = "127.0.0.1";
 
 #[allow(dead_code)]
+pub const PUBLIC_PROTOCOL: &str = "http";
+
+#[allow(dead_code)]
 pub const PUBLIC_IP_ADDR: &str = "127.0.0.1";
 
 #[allow(dead_code)]

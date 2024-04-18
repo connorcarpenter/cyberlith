@@ -10,21 +10,6 @@ use crate::{
 
 pub async fn instance_init(session: &Session) -> Result<(), CliError> {
     setup_docker(&session).await?;
-    setup_git(&session).await?;
-
-    Ok(())
-}
-
-async fn setup_git(session: &Session) -> Result<(), CliError> {
-
-    //info!("# update");
-    run_ssh_command(&session, "sudo apt update").await?;
-
-    //info!("# install docker packages");
-    run_ssh_command(&session, "sudo apt install git -y").await?;
-
-    info!("# test that git works");
-    run_ssh_command(&session, "git --version").await?;
 
     Ok(())
 }
