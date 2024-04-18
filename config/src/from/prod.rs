@@ -47,7 +47,7 @@ pub const SESSION_SERVER_SIGNAL_PORT: u16 = 14200;
 pub const SESSION_SERVER_WEBRTC_PORT: u16 = 14201;
 
 #[allow(dead_code)]
-pub const PUBLIC_SESSION_SERVER_WEBRTC_PORT: u16 = GATEWAY_PORT;
+pub const PUBLIC_SESSION_SERVER_SIGNAL_PORT: u16 = GATEWAY_PORT;
 
 #[allow(dead_code)]
 pub const WORLD_SERVER_HTTP_PORT: u16 = 14202;
@@ -56,10 +56,10 @@ pub const WORLD_SERVER_HTTP_PORT: u16 = 14202;
 pub const WORLD_SERVER_SIGNAL_PORT: u16 = 14203;
 
 #[allow(dead_code)]
-pub const PUBLIC_WORLD_SERVER_SIGNAL_PORT: u16 = GATEWAY_PORT;
+pub const WORLD_SERVER_WEBRTC_PORT: u16 = 14204;
 
 #[allow(dead_code)]
-pub const WORLD_SERVER_WEBRTC_PORT: u16 = 14204;
+pub const PUBLIC_WORLD_SERVER_SIGNAL_PORT: u16 = GATEWAY_PORT;
 
 #[allow(dead_code)]
 pub const ASSET_SERVER_PORT: u16 = 14205;

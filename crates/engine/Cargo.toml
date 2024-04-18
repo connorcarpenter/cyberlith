@@ -8,8 +8,8 @@ publish = false
 
 [features]
 networked = [ "gateway_http_proto", "session_server_naia_proto", "world_server_naia_proto" ]
-local = [ "config/local" ]
-prod = [ "config/prod" ]
+local = [ "config/local", "session_server_naia_proto/local", "world_server_naia_proto/local" ]
+prod = [ "config/prod", "session_server_naia_proto/prod", "world_server_naia_proto/prod" ]
 gl_renderer = [ "render_gl" ]
 wgpu_renderer = [ ]
 

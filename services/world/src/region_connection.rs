@@ -4,7 +4,7 @@ use logging::{info, warn};
 use bevy_http_client::{HttpClient, ResponseError};
 use bevy_http_server::HttpServer;
 
-use config::{PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, REGION_SERVER_PORT, REGION_SERVER_RECV_ADDR, REGION_SERVER_SECRET, WORLD_SERVER_GLOBAL_SECRET, WORLD_SERVER_HTTP_PORT, WORLD_SERVER_RECV_ADDR, WORLD_SERVER_SIGNAL_PORT};
+use config::{PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, PUBLIC_WORLD_SERVER_SIGNAL_PORT, REGION_SERVER_PORT, REGION_SERVER_RECV_ADDR, REGION_SERVER_SECRET, WORLD_SERVER_GLOBAL_SECRET, WORLD_SERVER_HTTP_PORT, WORLD_SERVER_RECV_ADDR};
 use region_server_http_proto::WorldRegisterInstanceRequest;
 use world_server_http_proto::{HeartbeatRequest, HeartbeatResponse};
 
@@ -30,7 +30,7 @@ pub fn send_register_instance_request(
         global.instance_secret(),
         WORLD_SERVER_RECV_ADDR,
         WORLD_SERVER_HTTP_PORT,
-        format!("{}://{}:{}", PUBLIC_PROTOCOL, PUBLIC_IP_ADDR, WORLD_SERVER_SIGNAL_PORT).as_str(),
+        format!("{}://{}:{}", PUBLIC_PROTOCOL, PUBLIC_IP_ADDR, PUBLIC_WORLD_SERVER_SIGNAL_PORT).as_str(),
     );
     let key = http_client.send(REGION_SERVER_RECV_ADDR, REGION_SERVER_PORT, request);
 

@@ -20,7 +20,8 @@ gateway:443 GET	    /game_bg.wasm           -> content:14197    GET     /game_bg
 
 todo:
 
-gateway:80  GET	    *			            <- redirect to gateway:443
-
 gateway:443 POST    /session_rtc            -> session:14200    POST    /session_rtc
 gateway:443 POST    /world_rtc              -> world:14203      POST    /world_rtc
+
+gateway:80  GET	    *			            <- redirect to gateway:443
+

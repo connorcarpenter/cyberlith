@@ -7,7 +7,7 @@ use bevy_http_server::HttpServer;
 use config::{
     PUBLIC_IP_ADDR, REGION_SERVER_PORT, REGION_SERVER_RECV_ADDR, REGION_SERVER_SECRET,
     SESSION_SERVER_GLOBAL_SECRET, SESSION_SERVER_HTTP_PORT, SESSION_SERVER_RECV_ADDR,
-    SESSION_SERVER_SIGNAL_PORT, PUBLIC_PROTOCOL,
+    PUBLIC_PROTOCOL, PUBLIC_SESSION_SERVER_SIGNAL_PORT
 };
 use region_server_http_proto::SessionRegisterInstanceRequest;
 use session_server_http_proto::{HeartbeatRequest, HeartbeatResponse};
@@ -34,7 +34,7 @@ pub fn send_register_instance_request(
         global.instance_secret(),
         SESSION_SERVER_RECV_ADDR,
         SESSION_SERVER_HTTP_PORT,
-        format!("{}://{}:{}", PUBLIC_PROTOCOL, PUBLIC_IP_ADDR, SESSION_SERVER_SIGNAL_PORT).as_str(),
+        format!("{}://{}:{}", PUBLIC_PROTOCOL, PUBLIC_IP_ADDR, PUBLIC_SESSION_SERVER_SIGNAL_PORT).as_str(),
     );
     let key = http_client.send(REGION_SERVER_RECV_ADDR, REGION_SERVER_PORT, request);
 
