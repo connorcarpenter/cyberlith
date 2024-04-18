@@ -1,18 +1,13 @@
 use bevy_ecs::change_detection::ResMut;
-use logging::{info, warn};
 
+use logging::{info, warn};
 use bevy_http_client::{HttpClient, ResponseError};
 use bevy_http_server::HttpServer;
-
-use config::{
-    PUBLIC_IP_ADDR, REGION_SERVER_PORT, REGION_SERVER_RECV_ADDR, REGION_SERVER_SECRET,
-    SESSION_SERVER_GLOBAL_SECRET, SESSION_SERVER_HTTP_PORT, SESSION_SERVER_RECV_ADDR,
-    PUBLIC_PROTOCOL, PUBLIC_SESSION_SERVER_SIGNAL_PORT
-};
+use config::{REGION_SERVER_PORT, REGION_SERVER_RECV_ADDR, REGION_SERVER_SECRET, SESSION_SERVER_GLOBAL_SECRET, SESSION_SERVER_HTTP_PORT, SESSION_SERVER_RECV_ADDR};
 use region_server_http_proto::SessionRegisterInstanceRequest;
 use session_server_http_proto::{HeartbeatRequest, HeartbeatResponse};
 
-use crate::global::Global;
+use crate::{global::Global, naia::get_public_signal_url};
 
 pub fn send_register_instance_request(
     mut http_client: ResMut<HttpClient>,
@@ -34,7 +29,7 @@ pub fn send_register_instance_request(
         global.instance_secret(),
         SESSION_SERVER_RECV_ADDR,
         SESSION_SERVER_HTTP_PORT,
-        format!("{}://{}:{}", PUBLIC_PROTOCOL, PUBLIC_IP_ADDR, PUBLIC_SESSION_SERVER_SIGNAL_PORT).as_str(),
+        get_public_signal_url().as_str(),
     );
     let key = http_client.send(REGION_SERVER_RECV_ADDR, REGION_SERVER_PORT, request);
 

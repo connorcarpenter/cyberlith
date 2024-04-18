@@ -3,12 +3,11 @@ use bevy_ecs::change_detection::ResMut;
 use logging::{info, warn};
 use bevy_http_client::{HttpClient, ResponseError};
 use bevy_http_server::HttpServer;
-
-use config::{PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, PUBLIC_WORLD_SERVER_SIGNAL_PORT, REGION_SERVER_PORT, REGION_SERVER_RECV_ADDR, REGION_SERVER_SECRET, WORLD_SERVER_GLOBAL_SECRET, WORLD_SERVER_HTTP_PORT, WORLD_SERVER_RECV_ADDR};
+use config::{REGION_SERVER_PORT, REGION_SERVER_RECV_ADDR, REGION_SERVER_SECRET, WORLD_SERVER_GLOBAL_SECRET, WORLD_SERVER_HTTP_PORT, WORLD_SERVER_RECV_ADDR};
 use region_server_http_proto::WorldRegisterInstanceRequest;
 use world_server_http_proto::{HeartbeatRequest, HeartbeatResponse};
 
-use crate::global::Global;
+use crate::{naia::get_public_signal_url, global::Global};
 
 pub fn send_register_instance_request(
     mut http_client: ResMut<HttpClient>,
@@ -30,7 +29,7 @@ pub fn send_register_instance_request(
         global.instance_secret(),
         WORLD_SERVER_RECV_ADDR,
         WORLD_SERVER_HTTP_PORT,
-        format!("{}://{}:{}", PUBLIC_PROTOCOL, PUBLIC_IP_ADDR, PUBLIC_WORLD_SERVER_SIGNAL_PORT).as_str(),
+        get_public_signal_url().as_str(),
     );
     let key = http_client.send(REGION_SERVER_RECV_ADDR, REGION_SERVER_PORT, request);
 

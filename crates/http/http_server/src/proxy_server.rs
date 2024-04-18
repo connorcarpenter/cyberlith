@@ -1,19 +1,19 @@
 use std::{net::SocketAddr, pin::Pin};
 
-use http_client_shared::fetch_async;
 use smol::future::Future;
 
+use http_client_shared::fetch_async;
 use logging::info;
-
 use http_common::{Method, Request, Response, ResponseError};
 
 use crate::{log_util, Server};
 
-// serves files from a remote file server
-pub trait RemoteFileServer {
-    fn serve_remote_file(
+// serves a pass-through proxy
+pub trait ProxyServer {
+    fn serve_proxy(
         &mut self,
         host_name: &str,
+        method: Method,
         url_path: &str,
         remote_name: &str,
         remote_addr: &str,
@@ -22,22 +22,23 @@ pub trait RemoteFileServer {
     );
 }
 
-impl RemoteFileServer for Server {
-    fn serve_remote_file(
+impl ProxyServer for Server {
+    fn serve_proxy(
         &mut self,
         host_name: &str,
+        method: Method,
         url_path: &str,
         remote_name: &str,
         remote_addr: &str,
         remote_port: &str,
         file_name: &str,
     ) {
-        let url_path = format!("GET /{}", url_path);
+        let url_path = format!("{} /{}", method.as_str(), url_path);
 
-        info!("serving remote file @ {}", url_path);
+        info!("serving proxy @ {}", url_path);
 
         let remote_url = format!("http://{}:{}/{}", remote_addr, remote_port, file_name);
-        let new_endpoint = endpoint_2(host_name, remote_name, &remote_url);
+        let new_endpoint = endpoint_2(host_name, remote_name, method, &remote_url);
         self.internal_insert_endpoint(url_path, new_endpoint);
     }
 }
@@ -45,6 +46,7 @@ impl RemoteFileServer for Server {
 fn endpoint_2(
     host_name: &str,
     remote_name: &str,
+    method: Method,
     remote_url: &str,
 ) -> Box<
     dyn 'static
@@ -58,25 +60,32 @@ fn endpoint_2(
 > {
     let host_name = host_name.to_string();
     let remote_name = remote_name.to_string();
+    let method = method.clone();
     let remote_url = remote_url.to_string();
-    Box::new(move |_args: (SocketAddr, Request)| {
+    Box::new(move |args: (SocketAddr, Request)| {
+        let outer_req = args.1;
+        let outer_headers = outer_req.headers;
+        let outer_body = outer_req.body;
+
         let host_name = host_name.clone();
         let remote_name = remote_name.clone();
+        let method = method.clone();
         let remote_url = remote_url.clone();
 
         // convert typed future to pure future
         let pure_future = async move {
             let host_name = host_name.clone();
             let remote_name = remote_name.clone();
+            let logged_remote_url = format!("{} {}", method.as_str(), remote_url);
 
-            // info!("fetching remote file");
-            log_util::recv_req(&host_name, "client", &remote_url);
+            log_util::recv_req(&host_name, "client", &logged_remote_url);
 
-            let remote_req = Request::new(Method::Get, &remote_url, Vec::new());
+            let mut remote_req = Request::new(method, &remote_url, outer_body);
+            remote_req.headers = outer_headers;
 
-            log_util::send_req(&host_name, &remote_name, &remote_url);
+            log_util::send_req(&host_name, &remote_name, &logged_remote_url);
             let remote_response_result = fetch_async(remote_req).await;
-            log_util::recv_res(&host_name, &remote_name, &remote_url);
+            log_util::recv_res(&host_name, &remote_name, &logged_remote_url);
 
             let mut response = Response::default();
             match remote_response_result {
@@ -95,14 +104,17 @@ fn endpoint_2(
 
             // add Content-Type header
             let content_type = match remote_url.split('.').last().unwrap() {
-                "html" => "text/html",
-                "js" => "application/javascript",
-                "wasm" => "application/wasm",
-                _ => "text/plain",
+                "html" => Some("text/html"),
+                "js" => Some("application/javascript"),
+                "wasm" => Some("application/wasm"),
+                "txt" => Some("text/plain"),
+                _ => None,
             };
-            response
-                .headers
-                .insert("Content-Type".to_string(), content_type.to_string());
+            if let Some(content_type) = content_type {
+                response
+                    .headers
+                    .insert("Content-Type".to_string(), content_type.to_string());
+            }
 
             // add Content-Length header
             response.headers.insert(
@@ -110,7 +122,7 @@ fn endpoint_2(
                 response.body.len().to_string(),
             );
 
-            log_util::send_res(&host_name, "client", &remote_url);
+            log_util::send_res(&host_name, "client", &logged_remote_url);
 
             return Ok(response);
         };

@@ -1,9 +1,9 @@
 mod endpoints;
 
-use std::{str::FromStr, path::PathBuf, net::SocketAddr, thread};
+use std::{net::SocketAddr, thread};
 
-use config::{CONTENT_SERVER_PORT, CONTENT_SERVER_RECV_ADDR, GATEWAY_PORT, SELF_BINDING_ADDR};
-use http_server::{acme::Config, HttpsServer, RemoteFileServer, Server};
+use config::{CONTENT_SERVER_PORT, WORLD_SERVER_RECV_ADDR, WORLD_SERVER_SIGNAL_PORT, CONTENT_SERVER_RECV_ADDR, GATEWAY_PORT, SELF_BINDING_ADDR, SESSION_SERVER_RECV_ADDR, SESSION_SERVER_SIGNAL_PORT};
+use http_server::{Method, ProxyServer, Server};
 use logging::info;
 
 pub fn main() {
@@ -49,32 +49,91 @@ pub fn main() {
         let content_server = "content_server";
         let addr = CONTENT_SERVER_RECV_ADDR;
         let port = CONTENT_SERVER_PORT.to_string();
-        server.serve_remote_file(gateway, "", content_server, addr, &port, "launcher.html");
-        server.serve_remote_file(
+        server.serve_proxy(
             gateway,
+            Method::Get,
+            "",
+            content_server,
+            addr,
+            &port,
+            "launcher.html"
+        );
+        server.serve_proxy(
+            gateway,
+            Method::Get,
             "launcher.js",
             content_server,
             addr,
             &port,
             "launcher.js",
         );
-        server.serve_remote_file(
+        server.serve_proxy(
             gateway,
+            Method::Get,
             "launcher_bg.wasm",
             content_server,
             addr,
             &port,
             "launcher_bg.wasm",
         );
-        server.serve_remote_file(gateway, "game", content_server, addr, &port, "game.html");
-        server.serve_remote_file(gateway, "game.js", content_server, addr, &port, "game.js");
-        server.serve_remote_file(
+        server.serve_proxy(
             gateway,
+            Method::Get,
+            "game",
+            content_server,
+            addr,
+            &port,
+            "game.html"
+        );
+        server.serve_proxy(
+            gateway,
+            Method::Get,
+            "game.js",
+            content_server,
+            addr,
+            &port,
+            "game.js"
+        );
+        server.serve_proxy(
+            gateway,
+            Method::Get,
             "game_bg.wasm",
             content_server,
             addr,
             &port,
             "game_bg.wasm",
+        );
+    }
+
+    // -> session
+    {
+        let gateway = "gateway";
+        let addr = SESSION_SERVER_RECV_ADDR;
+        let port = SESSION_SERVER_SIGNAL_PORT.to_string();
+        server.serve_proxy(
+            gateway,
+            Method::Post,
+            "session_rtc",
+            "session_server",
+            addr,
+            &port,
+            "session_rtc"
+        );
+    }
+
+    // -> world
+    {
+        let gateway = "gateway";
+        let addr = WORLD_SERVER_RECV_ADDR;
+        let port = WORLD_SERVER_SIGNAL_PORT.to_string();
+        server.serve_proxy(
+            gateway,
+            Method::Post,
+            "world_rtc",
+            "world_server",
+            addr,
+            &port,
+            "world_rtc"
         );
     }
 
@@ -88,7 +147,12 @@ pub fn main() {
 }
 
 #[cfg(all(feature = "prod", not(feature = "local")))]
-fn start_server(mut server: Server) {
+fn start_server(server: Server) {
+
+    use std::{str::FromStr, path::PathBuf};
+
+    use http_server::{acme::Config, HttpsServer};
+
     server.https_start(
         Config::new(
             true,
@@ -100,6 +164,6 @@ fn start_server(mut server: Server) {
 }
 
 #[cfg(all(feature = "local", not(feature = "prod")))]
-fn start_server(mut server: Server) {
+fn start_server(server: Server) {
     server.start();
 }

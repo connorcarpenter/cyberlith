@@ -10,9 +10,17 @@ use naia_bevy_server::{
 
 use logging::{info, warn};
 use session_server_naia_proto::messages::Auth;
-use config::{PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SELF_BINDING_ADDR, SESSION_SERVER_SIGNAL_PORT, SESSION_SERVER_WEBRTC_PORT, PUBLIC_SESSION_SERVER_SIGNAL_PORT};
+use config::{GATEWAY_PORT, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SELF_BINDING_ADDR, SESSION_SERVER_SIGNAL_PORT, SESSION_SERVER_WEBRTC_PORT};
 
 use crate::{asset::asset_manager::AssetManager, global::Global};
+
+pub(crate) fn get_public_signal_url() -> String {
+    format!("{}://{}:{}", PUBLIC_PROTOCOL, PUBLIC_IP_ADDR, SESSION_SERVER_SIGNAL_PORT)
+}
+
+pub(crate) fn get_public_webrtc_url() -> String {
+    format!("{}://{}:{}", PUBLIC_PROTOCOL, PUBLIC_IP_ADDR, SESSION_SERVER_WEBRTC_PORT)
+}
 
 pub fn init(mut server: Server) {
     info!("Session Naia Server starting up");
@@ -29,7 +37,7 @@ pub fn init(mut server: Server) {
             SESSION_SERVER_WEBRTC_PORT,
         ),
         // The public WebRTC IP address to advertise
-        format!("{}://{}:{}", PUBLIC_PROTOCOL, PUBLIC_IP_ADDR, PUBLIC_SESSION_SERVER_SIGNAL_PORT).as_str(),
+        get_public_webrtc_url().as_str(),
     );
     let socket = webrtc::Socket::new(&server_addresses, server.socket_config());
     server.listen(socket);

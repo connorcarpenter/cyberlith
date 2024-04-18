@@ -10,8 +10,8 @@ pub use api_server::ApiServer;
 mod file_server;
 pub use file_server::FileServer;
 
-mod remote_file_server;
-pub use remote_file_server::RemoteFileServer;
+mod proxy_server;
+pub use proxy_server::ProxyServer;
 
 pub use http_common::{Method, Request, Response};
 
