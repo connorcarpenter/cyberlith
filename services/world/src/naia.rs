@@ -1,31 +1,25 @@
-use std::collections::HashMap;
-use std::{net::SocketAddr, time::Duration};
 
-use bevy_ecs::change_detection::Mut;
-use bevy_ecs::entity::Entity;
-use bevy_ecs::prelude::{Query, Resource, World};
-use bevy_ecs::system::SystemState;
+use std::{net::SocketAddr, time::Duration, collections::HashMap};
+
 use bevy_ecs::{
-    change_detection::ResMut,
+    entity::Entity,
+    prelude::{Query, Resource, World},
+    change_detection::{ResMut, Mut},
     event::EventReader,
-    system::{Commands, Res},
+    system::{Commands, Res, SystemState},
 };
-use logging::{info, warn};
 
-use bevy_http_client::HttpClient;
-use naia_bevy_server::events::TickEvent;
 use naia_bevy_server::{
-    events::{AuthEvents, ConnectEvent, DisconnectEvent, ErrorEvent},
+    events::{AuthEvents, TickEvent, ConnectEvent, DisconnectEvent, ErrorEvent},
     transport::webrtc,
     CommandsExt, Server, UserKey,
 };
 
-use config::{
-    PUBLIC_IP_ADDR, SELF_BINDING_ADDR, WORLD_SERVER_SIGNAL_PORT, WORLD_SERVER_WEBRTC_PORT,
-};
+use logging::{info, warn};
+use bevy_http_client::HttpClient;
+use config::{PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SELF_BINDING_ADDR, WORLD_SERVER_SIGNAL_PORT, WORLD_SERVER_WEBRTC_PORT, PUBLIC_WORLD_SERVER_WEBRTC_PORT};
 
-use world_server_naia_proto::components::{Alt1, AssetEntry, AssetRef};
-use world_server_naia_proto::{components::Main, messages::Auth};
+use world_server_naia_proto::{components::{Alt1, Main, AssetEntry, AssetRef}, messages::Auth};
 
 use crate::{
     asset_manager::{AssetCatalog, AssetCommandsExt, AssetManager},
@@ -42,7 +36,7 @@ pub fn init(mut commands: Commands, mut server: Server) {
         // IP Address to listen on for UDP WebRTC data channels
         SocketAddr::new(SELF_BINDING_ADDR.parse().unwrap(), WORLD_SERVER_WEBRTC_PORT),
         // The public WebRTC IP address to advertise
-        format!("http://{}:{}", PUBLIC_IP_ADDR, WORLD_SERVER_WEBRTC_PORT).as_str(),
+        format!("{}://{}:{}", PUBLIC_PROTOCOL, PUBLIC_IP_ADDR, PUBLIC_WORLD_SERVER_WEBRTC_PORT).as_str(),
     );
     let socket = webrtc::Socket::new(&server_addresses, server.socket_config());
     server.listen(socket);

@@ -7,6 +7,8 @@ edition = "2021"
 publish = false
 
 [features]
+local = []
+prod = []
 
 [dependencies]
 naia-bevy-shared = { path = "../../../../naia/adapters/bevy/shared" }

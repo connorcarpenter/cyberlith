@@ -22,5 +22,5 @@ todo:
 
 gateway:80  GET	    *			            <- redirect to gateway:443
 
-gateway:443 POST    /session_rtc            -> session:14200    POST    /rtc_session
-gateway:443 POST    /world_rtc              -> world:14203      POST    /rtc_session
+gateway:443 POST    /session_rtc            -> session:14200    POST    /session_rtc
+gateway:443 POST    /world_rtc              -> world:14203      POST    /world_rtc
