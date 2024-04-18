@@ -15,7 +15,7 @@ use config::{GATEWAY_PORT, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SELF_BINDING_ADDR, S
 use crate::{asset::asset_manager::AssetManager, global::Global};
 
 pub(crate) fn get_public_signal_url() -> String {
-    format!("{}://{}:{}", PUBLIC_PROTOCOL, PUBLIC_IP_ADDR, SESSION_SERVER_SIGNAL_PORT)
+    format!("{}://{}:{}", PUBLIC_PROTOCOL, PUBLIC_IP_ADDR, GATEWAY_PORT)
 }
 
 pub(crate) fn get_public_webrtc_url() -> String {
