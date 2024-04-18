@@ -15,7 +15,7 @@ cfg_if! {
 
 use std::{net::SocketAddr, thread, time::Duration};
 
-use config::{ASSET_SERVER_PORT, SELF_BINDING_ADDR};
+use config::{ASSET_SERVER_PORT, SELF_BINDING_ADDR, ASSET_SERVER_FILES_PATH};
 use http_server::{async_dup::Arc, smol::lock::RwLock, Server};
 use logging::info;
 
@@ -28,7 +28,7 @@ pub fn main() {
     local::setup();
 
     // setup state
-    let asset_metadata_store = AssetMetadataStore::new("assets");
+    let asset_metadata_store = AssetMetadataStore::new(ASSET_SERVER_FILES_PATH);
 
     let registration_resend_rate = Duration::from_secs(5);
     let region_server_disconnect_timeout = Duration::from_secs(16);

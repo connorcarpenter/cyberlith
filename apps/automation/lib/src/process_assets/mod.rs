@@ -10,9 +10,9 @@ use asset_serde::json::{Asset, AssetData, AssetMeta, ProcessedAssetMeta};
 
 use crate::CliError;
 
-pub fn process_assets(env: &str) -> Result<(), CliError> {
-    // pull all assets into memory, from "main" branch
-    let root = "target/repo";
+pub fn process_assets(target_path: &str, env: &str) -> Result<(), CliError> {
+    // pull all assets into memory, from "env" branch
+    let root = target_path;
     let repo = repo_init(root);
     let files = load_all_unprocessed_files(root, &repo);
 
@@ -544,9 +544,9 @@ fn write_new_file(index: &mut Index, file_path: &str, full_path: &str, bytes: Ve
         .expect("Failed to add file to index");
 
     if !file_exists {
-        // info!("added file to index: {}", file_path);
+        info!("added file to index: {}", file_path);
     } else {
-        // info!("updated file index: {}", file_path);
+        info!("updated file index: {}", file_path);
     }
 }
 

@@ -29,6 +29,9 @@ pub const AUTH_SERVER_RECV_ADDR: &str = "auth_server";
 pub const CONTENT_SERVER_FILES_PATH: &str = "/usr/local/bin/files";
 
 #[allow(dead_code)]
+pub const ASSET_SERVER_FILES_PATH: &str = "/usr/local/bin/assets";
+
+#[allow(dead_code)]
 pub const GATEWAY_PORT: u16 = 443;
 
 #[allow(dead_code)]

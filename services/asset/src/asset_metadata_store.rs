@@ -53,10 +53,7 @@ impl AssetMetadataStore {
             Ok(entries) => entries,
             Err(e) => {
                 warn!("Failed to read directory: {:?}, error: {:?}", path, e);
-                info!("creating directory: {:?}", path);
-                fs::create_dir_all(path).unwrap();
-                info!("created directory. reading new directory");
-                fs::read_dir(path).unwrap()
+                panic!("path: {:?} should be created in `main()` in `local` environment, and by automation scripts for `prod`", path)
             }
         };
 

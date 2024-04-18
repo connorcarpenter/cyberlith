@@ -42,7 +42,7 @@ fn main() {
         Some(("down", _sub_matches)) => automation_lib::down(),
         Some(("process_assets", sub_matches)) => {
             let env_val = sub_matches.get_one::<String>("env").unwrap();
-            automation_lib::process_assets(env_val)
+            automation_lib::process_assets("../../../target/assets_repo", env_val)
         }
         Some(("convert_ttf_to_icon", sub_matches)) => {
             let ttf_file_name_val = sub_matches.get_one::<String>("ttf").unwrap();

@@ -7,6 +7,7 @@ pub mod server_build;
 mod ssh_init;
 
 use std::{thread, time::Duration};
+use std::collections::HashSet;
 
 use logging::info;
 
@@ -17,6 +18,13 @@ use crate::{
 };
 
 pub fn up() -> Result<(), CliError> {
+
+    let config: HashSet<String> = vec!["instance", "content", "gateway", "region", "session", "world", "asset", "auth"].iter().map(|s| s.to_string()).collect();
+
+    if config.contains("instance") {
+
+    }
+    //let (instance_rdy &&)
     let instance_rcvr = thread_init_compat(instance_up::instance_up);
     let mut instance_rdy = false;
 

@@ -29,6 +29,9 @@ pub const AUTH_SERVER_RECV_ADDR: &str = "127.0.0.1";
 pub const CONTENT_SERVER_FILES_PATH: &str = "./files";
 
 #[allow(dead_code)]
+pub const ASSET_SERVER_FILES_PATH: &str = "./assets";
+
+#[allow(dead_code)]
 pub const GATEWAY_PORT: u16 = 14196;
 
 #[allow(dead_code)]

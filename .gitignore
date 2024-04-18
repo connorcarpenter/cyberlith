@@ -39,6 +39,6 @@ node_modules
 /apps/automation/cli/target
 /apps/automation/cli/target/
 /apps/automation/cli/target/*
-/apps/automation/cli/target/repo
-/apps/automation/cli/target/repo/
-/apps/automation/cli/target/repo/*
+/apps/automation/cli/target/assets_repo
+/apps/automation/cli/target/assets_repo/
+/apps/automation/cli/target/assets_repo/*

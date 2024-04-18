@@ -6,10 +6,10 @@ pub(crate) fn setup() {
     info!("Setting up local environment");
 
     // process assets
-    automation_lib::process_assets("local").unwrap();
+    automation_lib::process_assets("target/assets_repo", "local").unwrap();
 
-    // copy ./target/repo/* to ./assets/*
-    let source_dir = "./target/repo";
+    // copy ./target/assets_repo/* to ./assets/*
+    let source_dir = "./target/assets_repo";
     let destination_dir = "./assets";
 
     // Create and replace the destination directory
