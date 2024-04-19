@@ -1,9 +1,9 @@
-use async_dup::Arc;
 use acme::Config;
+use async_dup::Arc;
 use http_server_shared::executor;
 use logging::info;
 
-use crate::{Server, smol::lock::RwLock, smol::net::TcpListener, smol::stream::StreamExt};
+use crate::{smol::lock::RwLock, smol::net::TcpListener, smol::stream::StreamExt, Server};
 
 pub trait HttpsServer {
     fn https_start(self, config: Config);
@@ -14,7 +14,7 @@ impl HttpsServer for Server {
         executor::spawn(async move {
             https_listen(self, config).await;
         })
-            .detach();
+        .detach();
     }
 }
 
@@ -36,8 +36,7 @@ async fn https_listen(server: Server, config: Config) {
     let server = Arc::new(RwLock::new(server));
     let mut incoming = acme_config.incoming(listener.incoming(), Vec::new());
     while let Some(response_stream) = incoming.next().await {
-        let response_stream = response_stream
-            .expect("unable to get the response stream");
+        let response_stream = response_stream.expect("unable to get the response stream");
         let (inner_stream, _server_connection) = response_stream.get_ref();
         let incoming_address = inner_stream
             .peer_addr()
@@ -51,7 +50,7 @@ async fn https_listen(server: Server, config: Config) {
         executor::spawn(async move {
             Server::serve(self_clone, incoming_address, response_stream).await;
         })
-            .detach();
+        .detach();
     }
     unreachable!()
 }

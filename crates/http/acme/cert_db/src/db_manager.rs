@@ -1,8 +1,8 @@
 use db::{DatabaseWrapper, DbError};
 
 use crate::{
-    error::CertDbError,
     cert::{Cert, CertId, Certs},
+    error::CertDbError,
 };
 
 pub struct DatabaseManager {

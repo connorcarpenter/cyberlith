@@ -1,4 +1,4 @@
-use std::{thread, time::Duration, collections::HashSet};
+use std::{collections::HashSet, thread, time::Duration};
 
 use crossbeam_channel::TryRecvError;
 use logging::{info, warn};
@@ -7,7 +7,8 @@ use openssh::Session;
 use crate::{
     get_container_registry_creds, get_container_registry_url,
     utils::{
-        run_command, run_ssh_command, ssh_session_close, ssh_session_create, thread_init_compat_1arg
+        run_command, run_ssh_command, ssh_session_close, ssh_session_create,
+        thread_init_compat_1arg,
     },
     CliError,
 };
@@ -27,7 +28,6 @@ pub fn containers_up(config: HashSet<String>) -> Result<(), CliError> {
 }
 
 async fn containers_up_impl(config: HashSet<String>) -> Result<(), CliError> {
-
     let config = &config;
 
     // upload images to container registry
@@ -39,7 +39,9 @@ async fn containers_up_impl(config: HashSet<String>) -> Result<(), CliError> {
     return Ok(());
 }
 
-async fn ssh_into_server_to_pull_and_start_containers(config: &HashSet<String>) -> Result<(), CliError> {
+async fn ssh_into_server_to_pull_and_start_containers(
+    config: &HashSet<String>,
+) -> Result<(), CliError> {
     // ssh in
     let session = ssh_session_create().await?;
 
@@ -152,8 +154,20 @@ async fn containers_start(config: &HashSet<String>, session: &Session) -> Result
     container_create_and_start(config, session, "content", "-p 14197:14197/tcp").await?;
     container_create_and_start(config, session, "auth", "-p 14206:14206/tcp").await?;
     container_create_and_start(config, session, "region", "-p 14198:14198/tcp").await?;
-    container_create_and_start(config, session, "session", "-p 14200:14200/tcp -p 14201:14201/udp").await?;
-    container_create_and_start(config, session, "world", "-p 14203:14203/tcp -p 14204:14204/udp").await?;
+    container_create_and_start(
+        config,
+        session,
+        "session",
+        "-p 14200:14200/tcp -p 14201:14201/udp",
+    )
+    .await?;
+    container_create_and_start(
+        config,
+        session,
+        "world",
+        "-p 14203:14203/tcp -p 14204:14204/udp",
+    )
+    .await?;
     container_create_and_start(config, session, "asset", "-p 14205:14205/tcp").await?;
 
     Ok(())
@@ -166,7 +180,6 @@ async fn images_prune(session: &Session) -> Result<(), CliError> {
 }
 
 async fn containers_stop(config: &HashSet<String>, session: &Session) -> Result<(), CliError> {
-
     container_stop_and_remove(config, session, "redirector").await?;
     container_stop_and_remove(config, session, "gateway").await?;
     container_stop_and_remove(config, session, "content").await?;
@@ -212,8 +225,11 @@ pub async fn image_push(config: &HashSet<String>, image_name: &str) -> Result<()
     Ok(())
 }
 
-pub async fn image_pull(config: &HashSet<String>, session: &Session, image_name: &str) -> Result<(), CliError> {
-
+pub async fn image_pull(
+    config: &HashSet<String>,
+    session: &Session,
+    image_name: &str,
+) -> Result<(), CliError> {
     if !config.contains(image_name) {
         return Ok(()); // skip this image
     }
@@ -238,7 +254,6 @@ pub async fn container_create_and_start(
     app_name: &str,
     ports: &str,
 ) -> Result<(), CliError> {
-
     if !config.contains(app_name) {
         return Ok(()); // skip this container
     }
@@ -259,8 +274,11 @@ pub async fn container_create_and_start(
     Ok(())
 }
 
-pub async fn container_stop_and_remove(config: &HashSet<String>, session: &Session, app_name: &str) -> Result<(), CliError> {
-
+pub async fn container_stop_and_remove(
+    config: &HashSet<String>,
+    session: &Session,
+    app_name: &str,
+) -> Result<(), CliError> {
     if !config.contains(app_name) {
         return Ok(()); // skip this container
     }

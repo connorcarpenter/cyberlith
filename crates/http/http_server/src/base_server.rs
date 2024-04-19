@@ -2,11 +2,7 @@ use std::{collections::HashMap, net::SocketAddr, pin::Pin};
 
 use async_dup::Arc;
 use logging::info;
-use smol::{
-    future::Future,
-    lock::RwLock,
-    net::{TcpListener},
-};
+use smol::{future::Future, lock::RwLock, net::TcpListener};
 
 use http_common::{Request, Response, ResponseError};
 use http_server_shared::{executor, serve_impl};
@@ -90,8 +86,7 @@ impl Server {
         let server = Arc::new(RwLock::new(server));
         let mut incoming = listener.incoming();
         while let Some(response_stream) = incoming.next().await {
-            let response_stream = response_stream
-                .expect("unable to get the response stream");
+            let response_stream = response_stream.expect("unable to get the response stream");
             let incoming_address = response_stream
                 .peer_addr()
                 .expect("unable to get the peer address of the response stream");
@@ -104,15 +99,13 @@ impl Server {
             executor::spawn(async move {
                 Self::serve(self_clone, incoming_address, response_stream).await;
             })
-                .detach();
+            .detach();
         }
         unreachable!()
     }
 
     /// Reads a request from the client and sends it a response.
-    pub(crate) async fn serve<
-        ResponseStream: Unpin + AsyncRead + AsyncWrite,
-    >(
+    pub(crate) async fn serve<ResponseStream: Unpin + AsyncRead + AsyncWrite>(
         server: Arc<RwLock<Server>>,
         incoming_address: SocketAddr,
         response_stream: ResponseStream,
@@ -154,6 +147,6 @@ impl Server {
                 }
             },
         )
-            .await;
+        .await;
     }
 }

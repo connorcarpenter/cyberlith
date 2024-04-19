@@ -124,7 +124,7 @@ impl Response {
         Self {
             url: url.to_string(),
             ok: false,
-            status: 302,  // HTTP status code for redirection
+            status: 302, // HTTP status code for redirection
             status_text: "Found".to_string(),
             headers,
             body: Vec::new(),

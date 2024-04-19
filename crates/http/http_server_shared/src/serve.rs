@@ -2,12 +2,12 @@ use std::{collections::BTreeMap, net::SocketAddr};
 
 use smol::{
     future::Future,
-    io::{AsyncWrite, AsyncRead, AsyncReadExt, AsyncWriteExt, BufReader},
-    stream::{StreamExt},
+    io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt, BufReader},
+    stream::StreamExt,
 };
 
-use logging::{info, warn};
 use http_common::{Method, Request, Response, ResponseError};
+use logging::{info, warn};
 
 use crate::ReadState;
 
@@ -47,8 +47,8 @@ pub async fn serve_impl<
                 if byte == b'\r' {
                     continue;
                 } else if byte == b'\n' {
-                    let line_str =
-                        String::from_utf8(line.clone()).expect("unable to parse string from UTF-8 bytes");
+                    let line_str = String::from_utf8(line.clone())
+                        .expect("unable to parse string from UTF-8 bytes");
                     line.clear();
 
                     //info!("read: {}", str);
@@ -72,13 +72,19 @@ pub async fn serve_impl<
                 if byte == b'\r' {
                     continue;
                 } else if byte == b'\n' {
-                    let line_str =
-                        String::from_utf8(line.clone()).expect("unable to parse string from UTF-8 bytes");
+                    let line_str = String::from_utf8(line.clone())
+                        .expect("unable to parse string from UTF-8 bytes");
                     line.clear();
 
                     //info!("read: {}", str);
 
-                    if request_read_headers(&mut method, &mut content_length, &mut header_map, &mut read_state, &line_str) {
+                    if request_read_headers(
+                        &mut method,
+                        &mut content_length,
+                        &mut header_map,
+                        &mut read_state,
+                        &line_str,
+                    ) {
                         break;
                     } else {
                         continue;
@@ -113,10 +119,7 @@ pub async fn serve_impl<
 
     match respond_func((incoming_address, request)).await {
         Ok(response) => {
-            response_send(
-                response_stream,
-                response,
-            ).await;
+            response_send(response_stream, response).await;
         }
         Err(e) => {
             warn!("error when responding: {:?}", e.to_string());
@@ -124,7 +127,11 @@ pub async fn serve_impl<
     }
 }
 
-fn request_extract_url(method: &mut Option<Method>, uri: &mut Option<String>, line_str: &String) -> String {
+fn request_extract_url(
+    method: &mut Option<Method>,
+    uri: &mut Option<String>,
+    line_str: &String,
+) -> String {
     let parts = line_str.split(" ").collect::<Vec<&str>>();
     let key = format!("{} {}", parts[0], parts[1]);
     *method = Some(Method::from_str(parts[0]).unwrap());
@@ -137,7 +144,7 @@ fn request_read_headers(
     content_length: &mut Option<usize>,
     header_map: &mut BTreeMap<String, String>,
     read_state: &mut ReadState,
-    line_str: &String
+    line_str: &String,
 ) -> bool {
     if line_str.is_empty() {
         //info!("finished reading headers.");
@@ -173,8 +180,12 @@ fn request_read_headers(
     }
 }
 
-fn request_read_body(content_length: Option<usize>, body: &mut Vec<u8>, read_state: &mut ReadState, byte: u8) -> bool {
-
+fn request_read_body(
+    content_length: Option<usize>,
+    body: &mut Vec<u8>,
+    read_state: &mut ReadState,
+    byte: u8,
+) -> bool {
     //info!("read byte from body");
 
     if let Some(content_length) = content_length {
@@ -198,7 +209,7 @@ async fn cast_to_request(
     method: Option<Method>,
     uri: Option<String>,
     body: Vec<u8>,
-    header_map: BTreeMap<String, String>
+    header_map: BTreeMap<String, String>,
 ) -> Option<Request> {
     // cast to request //
     let Some(method) = method else {
@@ -216,7 +227,7 @@ async fn cast_to_request(
 
 async fn response_send<ResponseStream: Unpin + AsyncRead + AsyncWrite>(
     mut response_stream: ResponseStream,
-    mut response: Response
+    mut response: Response,
 ) {
     response
         .headers
@@ -241,9 +252,9 @@ Content-Length: 0
 Access-Control-Allow-Origin: *
 "#;
 
-async fn send_404<
-    ResponseStream: Unpin + AsyncRead + AsyncWrite,
->(mut response_stream: ResponseStream) {
+async fn send_404<ResponseStream: Unpin + AsyncRead + AsyncWrite>(
+    mut response_stream: ResponseStream,
+) {
     response_stream.write_all(RESPONSE_BAD).await.unwrap();
     response_stream_flush(response_stream).await;
 }
@@ -287,9 +298,9 @@ fn write_line(io: &mut dyn std::io::Write, len: &mut usize, buf: &[u8]) -> std::
     Ok(())
 }
 
-async fn response_stream_flush<
-    ResponseStream: Unpin + AsyncRead + AsyncWrite,
->(mut response_stream: ResponseStream) {
+async fn response_stream_flush<ResponseStream: Unpin + AsyncRead + AsyncWrite>(
+    mut response_stream: ResponseStream,
+) {
     response_stream
         .flush()
         .await

@@ -121,21 +121,21 @@ pub async fn server_build_asset() -> Result<(), CliError> {
         "asset_server",
         "cargo build --release --features prod --manifest-path services/asset/Cargo.toml",
     )
-        .await?;
+    .await?;
 
     // move asset_server executable to main dir
     run_command(
         "asset_server",
         "cp target/release/asset_server asset_server",
     )
-        .await?;
+    .await?;
 
     // docker build
     run_command(
         "asset_server",
         "docker build --file asset.dockerfile --progress=plain -t asset_image .",
     )
-        .await?;
+    .await?;
 
     // clean up server file
     run_command("asset_server", "rm asset_server").await?;

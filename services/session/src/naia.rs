@@ -8,9 +8,12 @@ use naia_bevy_server::{
     Server,
 };
 
+use config::{
+    GATEWAY_PORT, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SELF_BINDING_ADDR, SESSION_SERVER_SIGNAL_PORT,
+    SESSION_SERVER_WEBRTC_PORT,
+};
 use logging::{info, warn};
 use session_server_naia_proto::messages::Auth;
-use config::{GATEWAY_PORT, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SELF_BINDING_ADDR, SESSION_SERVER_SIGNAL_PORT, SESSION_SERVER_WEBRTC_PORT};
 
 use crate::{asset::asset_manager::AssetManager, global::Global};
 
@@ -19,7 +22,10 @@ pub(crate) fn get_public_signal_url() -> String {
 }
 
 pub(crate) fn get_public_webrtc_url() -> String {
-    format!("{}://{}:{}", PUBLIC_PROTOCOL, PUBLIC_IP_ADDR, SESSION_SERVER_WEBRTC_PORT)
+    format!(
+        "{}://{}:{}",
+        PUBLIC_PROTOCOL, PUBLIC_IP_ADDR, SESSION_SERVER_WEBRTC_PORT
+    )
 }
 
 pub fn init(mut server: Server) {

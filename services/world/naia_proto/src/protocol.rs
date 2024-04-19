@@ -8,7 +8,7 @@ use crate::{channels::ChannelsPlugin, components::ComponentsPlugin, messages::Me
 pub fn protocol() -> Protocol {
     let mut builder = Protocol::builder();
 
-        // Config
+    // Config
     builder
         .rtc_endpoint("world_rtc".to_string())
         .tick_interval(Duration::from_millis(40))

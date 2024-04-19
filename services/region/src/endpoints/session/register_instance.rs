@@ -3,7 +3,7 @@ use std::net::SocketAddr;
 use logging::{info, warn};
 
 use http_client::ResponseError;
-use http_server::{async_dup::Arc, smol::lock::RwLock, Server, ApiServer};
+use http_server::{async_dup::Arc, smol::lock::RwLock, ApiServer, Server};
 
 use config::SESSION_SERVER_GLOBAL_SECRET;
 use region_server_http_proto::{SessionRegisterInstanceRequest, SessionRegisterInstanceResponse};

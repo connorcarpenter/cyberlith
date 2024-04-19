@@ -42,11 +42,11 @@ impl Into<u64> for CertId {
     }
 }
 
-
 // cert type ... I know the name doesn't make sense!
 #[derive(Serialize, Deserialize, Clone, Copy, Eq, PartialEq)]
 pub enum CertType {
-    Cert, Account
+    Cert,
+    Account,
 }
 
 impl Display for CertType {

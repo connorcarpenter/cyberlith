@@ -1,9 +1,12 @@
 use bevy_ecs::change_detection::ResMut;
 
-use logging::{info, warn};
 use bevy_http_client::{HttpClient, ResponseError};
 use bevy_http_server::HttpServer;
-use config::{REGION_SERVER_PORT, REGION_SERVER_RECV_ADDR, REGION_SERVER_SECRET, SESSION_SERVER_GLOBAL_SECRET, SESSION_SERVER_HTTP_PORT, SESSION_SERVER_RECV_ADDR};
+use config::{
+    REGION_SERVER_PORT, REGION_SERVER_RECV_ADDR, REGION_SERVER_SECRET,
+    SESSION_SERVER_GLOBAL_SECRET, SESSION_SERVER_HTTP_PORT, SESSION_SERVER_RECV_ADDR,
+};
+use logging::{info, warn};
 use region_server_http_proto::SessionRegisterInstanceRequest;
 use session_server_http_proto::{HeartbeatRequest, HeartbeatResponse};
 

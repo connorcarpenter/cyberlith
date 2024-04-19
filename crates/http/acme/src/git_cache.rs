@@ -1,5 +1,8 @@
-
-use std::{sync::{Arc, RwLock}, io::ErrorKind, collections::HashMap};
+use std::{
+    collections::HashMap,
+    io::ErrorKind,
+    sync::{Arc, RwLock},
+};
 
 use async_trait::async_trait;
 use base64::prelude::*;
@@ -27,7 +30,6 @@ impl GitCache {
     }
 
     fn init_map(dbm: &DatabaseManager) -> HashMap<String, CertId> {
-
         let mut output = HashMap::new();
 
         for (cert_id, cert) in dbm.list_certs() {
@@ -51,11 +53,16 @@ impl GitCache {
                 return Ok(None);
             };
             Ok(Some(cert.bytes()))
-        }).await
-
+        })
+        .await
     }
 
-    async fn write(&self, key_str: String, cert_type: CertType, contents: impl AsRef<[u8]>) -> Result<(), std::io::Error> {
+    async fn write(
+        &self,
+        key_str: String,
+        cert_type: CertType,
+        contents: impl AsRef<[u8]>,
+    ) -> Result<(), std::io::Error> {
         let key_str_to_id_map = self.key_str_to_id_map.clone();
         let inner = self.inner.clone();
         let bytes = contents.as_ref().to_vec();
@@ -72,14 +79,17 @@ impl GitCache {
                 // cert is new
                 let mut inner = inner.write().unwrap();
                 let new_cert = Cert::new(key_str.clone(), cert_type, bytes.take().unwrap());
-                let cert_id = inner.create_cert(new_cert).map_err(|e| std::io::Error::new(ErrorKind::InvalidData, e))?;
+                let cert_id = inner
+                    .create_cert(new_cert)
+                    .map_err(|e| std::io::Error::new(ErrorKind::InvalidData, e))?;
 
                 let mut key_str_to_id_map = key_str_to_id_map.write().unwrap();
                 key_str_to_id_map.insert(key_str, cert_id);
 
                 Ok(())
             }
-        }).await
+        })
+        .await
     }
 
     fn cached_account_file_name(contact: &[String], directory_url: impl AsRef<str>) -> String {
@@ -108,11 +118,20 @@ impl GitCache {
 #[async_trait]
 impl CertCache for GitCache {
     type EC = std::io::Error;
-    async fn load_cert(&self, domains: &[String], directory_url: &str) -> Result<Option<Vec<u8>>, Self::EC> {
+    async fn load_cert(
+        &self,
+        domains: &[String],
+        directory_url: &str,
+    ) -> Result<Option<Vec<u8>>, Self::EC> {
         let file_name = Self::cached_cert_file_name(&domains, directory_url);
         self.read_if_exist(file_name).await
     }
-    async fn store_cert(&self, domains: &[String], directory_url: &str, cert: &[u8]) -> Result<(), Self::EC> {
+    async fn store_cert(
+        &self,
+        domains: &[String],
+        directory_url: &str,
+        cert: &[u8],
+    ) -> Result<(), Self::EC> {
         let file_name = Self::cached_cert_file_name(&domains, directory_url);
         self.write(file_name, CertType::Cert, cert).await
     }
@@ -121,12 +140,21 @@ impl CertCache for GitCache {
 #[async_trait]
 impl AccountCache for GitCache {
     type EA = std::io::Error;
-    async fn load_account(&self, contact: &[String], directory_url: &str) -> Result<Option<Vec<u8>>, Self::EA> {
+    async fn load_account(
+        &self,
+        contact: &[String],
+        directory_url: &str,
+    ) -> Result<Option<Vec<u8>>, Self::EA> {
         let file_name = Self::cached_account_file_name(&contact, directory_url);
         self.read_if_exist(file_name).await
     }
 
-    async fn store_account(&self, contact: &[String], directory_url: &str, account: &[u8]) -> Result<(), Self::EA> {
+    async fn store_account(
+        &self,
+        contact: &[String],
+        directory_url: &str,
+        account: &[u8],
+    ) -> Result<(), Self::EA> {
         let file_name = Self::cached_account_file_name(&contact, directory_url);
         self.write(file_name, CertType::Account, account).await
     }

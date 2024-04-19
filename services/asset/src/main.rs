@@ -15,7 +15,7 @@ cfg_if! {
 
 use std::{net::SocketAddr, thread, time::Duration};
 
-use config::{ASSET_SERVER_PORT, SELF_BINDING_ADDR, ASSET_SERVER_FILES_PATH};
+use config::{ASSET_SERVER_FILES_PATH, ASSET_SERVER_PORT, SELF_BINDING_ADDR};
 use http_server::{async_dup::Arc, smol::lock::RwLock, Server};
 use logging::info;
 

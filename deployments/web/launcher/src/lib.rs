@@ -6,10 +6,10 @@ cfg_if! {
     } else {}
 }
 
+use config::{GATEWAY_PORT, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL};
 use kernel::{redirect_to_url, Kernel};
 use launcher_app::LauncherApp;
 use logging::info;
-use config::{PUBLIC_PROTOCOL, PUBLIC_IP_ADDR, GATEWAY_PORT};
 
 use wasm_bindgen::prelude::*;
 

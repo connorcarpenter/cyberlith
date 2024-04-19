@@ -37,7 +37,10 @@ pub fn thread_init_compat<F: Future<Output = Result<(), CliError>> + Sized + Sen
     receiver
 }
 
-pub fn thread_init_compat_1arg<A: Send + 'static, F: Future<Output = Result<(), CliError>> + Sized + Send + 'static>(
+pub fn thread_init_compat_1arg<
+    A: Send + 'static,
+    F: Future<Output = Result<(), CliError>> + Sized + Send + 'static,
+>(
     a: A,
     x: fn(A) -> F,
 ) -> Receiver<Result<(), CliError>> {
@@ -47,7 +50,7 @@ pub fn thread_init_compat_1arg<A: Send + 'static, F: Future<Output = Result<(), 
         let result = x(a).await;
         sender.send(result).expect("failed to send result");
     }))
-        .detach();
+    .detach();
 
     receiver
 }

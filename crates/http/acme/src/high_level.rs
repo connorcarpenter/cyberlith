@@ -1,4 +1,4 @@
-use std::{io::Error};
+use std::io::Error;
 
 use rustls_acme::AcmeConfig;
 
@@ -17,11 +17,7 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn new(
-        prod: bool,
-        domains: Vec<String>,
-        email: Vec<String>,
-    ) -> Self {
+    pub fn new(prod: bool, domains: Vec<String>, email: Vec<String>) -> Self {
         Self {
             domains,
             email,

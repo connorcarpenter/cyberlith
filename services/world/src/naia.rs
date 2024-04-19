@@ -1,24 +1,29 @@
-
-use std::{net::SocketAddr, time::Duration, collections::HashMap};
+use std::{collections::HashMap, net::SocketAddr, time::Duration};
 
 use bevy_ecs::{
+    change_detection::{Mut, ResMut},
     entity::Entity,
-    prelude::{Query, Resource, World},
-    change_detection::{ResMut, Mut},
     event::EventReader,
+    prelude::{Query, Resource, World},
     system::{Commands, Res, SystemState},
 };
 
 use naia_bevy_server::{
-    events::{AuthEvents, TickEvent, ConnectEvent, DisconnectEvent, ErrorEvent},
+    events::{AuthEvents, ConnectEvent, DisconnectEvent, ErrorEvent, TickEvent},
     transport::webrtc,
     CommandsExt, Server, UserKey,
 };
 
-use logging::{info, warn};
 use bevy_http_client::HttpClient;
-use config::{GATEWAY_PORT, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SELF_BINDING_ADDR, WORLD_SERVER_SIGNAL_PORT, WORLD_SERVER_WEBRTC_PORT};
-use world_server_naia_proto::{components::{Alt1, Main, AssetEntry, AssetRef}, messages::Auth};
+use config::{
+    GATEWAY_PORT, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SELF_BINDING_ADDR, WORLD_SERVER_SIGNAL_PORT,
+    WORLD_SERVER_WEBRTC_PORT,
+};
+use logging::{info, warn};
+use world_server_naia_proto::{
+    components::{Alt1, AssetEntry, AssetRef, Main},
+    messages::Auth,
+};
 
 use crate::{
     asset_manager::{AssetCatalog, AssetCommandsExt, AssetManager},
@@ -30,7 +35,10 @@ pub(crate) fn get_public_signal_url() -> String {
 }
 
 pub(crate) fn get_public_webrtc_url() -> String {
-    format!("{}://{}:{}", PUBLIC_PROTOCOL, PUBLIC_IP_ADDR, WORLD_SERVER_WEBRTC_PORT)
+    format!(
+        "{}://{}:{}",
+        PUBLIC_PROTOCOL, PUBLIC_IP_ADDR, WORLD_SERVER_WEBRTC_PORT
+    )
 }
 
 pub fn init(mut commands: Commands, mut server: Server) {

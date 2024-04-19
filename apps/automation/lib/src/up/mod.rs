@@ -17,7 +17,6 @@ use crate::{
 };
 
 pub fn up() -> Result<(), CliError> {
-
     let config: HashSet<String> = vec![
         "instance",
         "network",
@@ -29,7 +28,10 @@ pub fn up() -> Result<(), CliError> {
         "session",
         "world",
         "asset",
-    ].iter().map(|s| s.to_string()).collect();
+    ]
+    .iter()
+    .map(|s| s.to_string())
+    .collect();
 
     let (mut instance_rdy, instance_rcvr) = if config.contains("instance") {
         (false, Some(thread_init_compat(instance_up::instance_up)))
@@ -38,7 +40,10 @@ pub fn up() -> Result<(), CliError> {
     };
 
     let (mut redirector_rdy, redirector_rcvr) = if config.contains("redirector") {
-        (false, Some(thread_init(server_build::server_build_redirector)))
+        (
+            false,
+            Some(thread_init(server_build::server_build_redirector)),
+        )
     } else {
         (true, None)
     };

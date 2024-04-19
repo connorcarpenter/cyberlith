@@ -11,7 +11,8 @@ pub fn main() {
     logging::initialize();
 
     info!("Redirector starting up...");
-    let socket_addr: SocketAddr = SocketAddr::new(SELF_BINDING_ADDR.parse().unwrap(), REDIRECTOR_PORT);
+    let socket_addr: SocketAddr =
+        SocketAddr::new(SELF_BINDING_ADDR.parse().unwrap(), REDIRECTOR_PORT);
 
     RedirectServer::start(socket_addr);
 

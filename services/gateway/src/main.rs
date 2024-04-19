@@ -2,7 +2,11 @@ mod endpoints;
 
 use std::{net::SocketAddr, thread};
 
-use config::{CONTENT_SERVER_PORT, WORLD_SERVER_RECV_ADDR, WORLD_SERVER_SIGNAL_PORT, CONTENT_SERVER_RECV_ADDR, GATEWAY_PORT, SELF_BINDING_ADDR, SESSION_SERVER_RECV_ADDR, SESSION_SERVER_SIGNAL_PORT};
+use config::{
+    CONTENT_SERVER_PORT, CONTENT_SERVER_RECV_ADDR, GATEWAY_PORT, SELF_BINDING_ADDR,
+    SESSION_SERVER_RECV_ADDR, SESSION_SERVER_SIGNAL_PORT, WORLD_SERVER_RECV_ADDR,
+    WORLD_SERVER_SIGNAL_PORT,
+};
 use http_server::{Method, ProxyServer, Server};
 use logging::info;
 
@@ -56,7 +60,7 @@ pub fn main() {
             content_server,
             addr,
             &port,
-            "launcher.html"
+            "launcher.html",
         );
         server.serve_proxy(
             gateway,
@@ -83,7 +87,7 @@ pub fn main() {
             content_server,
             addr,
             &port,
-            "game.html"
+            "game.html",
         );
         server.serve_proxy(
             gateway,
@@ -92,7 +96,7 @@ pub fn main() {
             content_server,
             addr,
             &port,
-            "game.js"
+            "game.js",
         );
         server.serve_proxy(
             gateway,
@@ -117,7 +121,7 @@ pub fn main() {
             "session_server",
             addr,
             &port,
-            "session_rtc"
+            "session_rtc",
         );
     }
 
@@ -133,7 +137,7 @@ pub fn main() {
             "world_server",
             addr,
             &port,
-            "world_rtc"
+            "world_rtc",
         );
     }
 
@@ -148,16 +152,17 @@ pub fn main() {
 
 #[cfg(all(feature = "prod", not(feature = "local")))]
 fn start_server(server: Server) {
-
     use http_server::{acme::Config, HttpsServer};
 
-    server.https_start(
-        Config::new(
-            true,
-            vec!["cyberlith.com".to_string(), "www.cyberlith.com".to_string(), "api.cyberlith.com".to_string()],
-            vec!["admin@cyberlith.com".to_string()],
-        )
-    );
+    server.https_start(Config::new(
+        true,
+        vec![
+            "cyberlith.com".to_string(),
+            "www.cyberlith.com".to_string(),
+            "api.cyberlith.com".to_string(),
+        ],
+        vec!["admin@cyberlith.com".to_string()],
+    ));
 }
 
 #[cfg(all(feature = "local", not(feature = "prod")))]

@@ -1,8 +1,8 @@
 use std::{collections::HashMap, fs};
 
-use logging::{info, warn};
 use asset_id::{AssetId, AssetType, ETag};
 use asset_serde::json::ProcessedAssetMeta;
+use logging::{info, warn};
 
 pub struct AssetMetadata {
     path: String,

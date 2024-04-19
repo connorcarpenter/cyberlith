@@ -7,7 +7,7 @@ pub use from::REGION_SERVER_PORT;
 pub use from::REGION_SERVER_RECV_ADDR;
 pub use from::REGION_SERVER_SECRET;
 
+pub use from::ASSET_SERVER_FILES_PATH;
 pub use from::ASSET_SERVER_GLOBAL_SECRET;
 pub use from::ASSET_SERVER_PORT;
 pub use from::ASSET_SERVER_RECV_ADDR;
-pub use from::ASSET_SERVER_FILES_PATH;

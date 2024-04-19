@@ -6,11 +6,11 @@ cfg_if! {
     } else {}
 }
 
+use config::{GATEWAY_PORT, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL};
 use game_app::GameApp;
 use kernel::{redirect_to_url, Kernel};
 use logging::info;
 use wasm_bindgen::prelude::*;
-use config::{GATEWAY_PORT, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL};
 
 #[wasm_bindgen(start)]
 pub async fn main() -> Result<(), JsValue> {

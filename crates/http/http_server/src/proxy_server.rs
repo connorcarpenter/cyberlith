@@ -3,8 +3,8 @@ use std::{net::SocketAddr, pin::Pin};
 use smol::future::Future;
 
 use http_client_shared::fetch_async;
-use logging::info;
 use http_common::{Method, Request, Response, ResponseError};
+use logging::info;
 
 use crate::{log_util, Server};
 

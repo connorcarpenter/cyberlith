@@ -1,4 +1,7 @@
-use std::{fmt::{Debug, Display, Formatter}, error::Error};
+use std::{
+    error::Error,
+    fmt::{Debug, Display, Formatter},
+};
 
 #[derive(Debug)]
 pub enum CertDbError {

@@ -1,7 +1,7 @@
 use logging::{info, warn};
 
 use http_client::{HttpClient, ResponseError};
-use http_server::{async_dup::Arc, smol::lock::RwLock, Server, ApiServer};
+use http_server::{async_dup::Arc, smol::lock::RwLock, ApiServer, Server};
 
 use config::REGION_SERVER_SECRET;
 use region_server_http_proto::{
