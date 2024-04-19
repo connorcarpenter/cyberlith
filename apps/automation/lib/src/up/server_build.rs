@@ -93,6 +93,10 @@ async fn build_web_deploy_files(name: &str) -> Result<(), CliError> {
     Ok(())
 }
 
+pub async fn server_build_redirector() -> Result<(), CliError> {
+    return server_build_common("redirector", "redirector").await;
+}
+
 pub async fn server_build_gateway() -> Result<(), CliError> {
     return server_build_common("gateway", "gateway").await;
 }

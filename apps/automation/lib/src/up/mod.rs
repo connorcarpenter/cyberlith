@@ -20,18 +20,31 @@ pub fn up() -> Result<(), CliError> {
 
     let config: HashSet<String> = vec![
         "instance",
-        "content",
+        "network",
+        "redirector",
         "gateway",
+        "content",
+        "auth",
         "region",
         "session",
         "world",
         "asset",
-        "auth",
-        "network"
     ].iter().map(|s| s.to_string()).collect();
 
     let (mut instance_rdy, instance_rcvr) = if config.contains("instance") {
         (false, Some(thread_init_compat(instance_up::instance_up)))
+    } else {
+        (true, None)
+    };
+
+    let (mut redirector_rdy, redirector_rcvr) = if config.contains("redirector") {
+        (false, Some(thread_init(server_build::server_build_redirector)))
+    } else {
+        (true, None)
+    };
+
+    let (mut gateway_rdy, gateway_rcvr) = if config.contains("gateway") {
+        (false, Some(thread_init(server_build::server_build_gateway)))
     } else {
         (true, None)
     };
@@ -42,8 +55,8 @@ pub fn up() -> Result<(), CliError> {
         (true, None)
     };
 
-    let (mut gateway_rdy, gateway_rcvr) = if config.contains("gateway") {
-        (false, Some(thread_init(server_build::server_build_gateway)))
+    let (mut auth_rdy, auth_rcvr) = if config.contains("auth") {
+        (false, Some(thread_init(server_build::server_build_auth)))
     } else {
         (true, None)
     };
@@ -72,23 +85,23 @@ pub fn up() -> Result<(), CliError> {
         (true, None)
     };
 
-    let (mut auth_rdy, auth_rcvr) = if config.contains("auth") {
-        (false, Some(thread_init(server_build::server_build_auth)))
-    } else {
-        (true, None)
-    };
-
     loop {
         thread::sleep(Duration::from_secs(5));
 
         if let Some(instance_rcvr) = &instance_rcvr {
             check_channel(instance_rcvr, &mut instance_rdy)?;
         }
-        if let Some(content_rcvr) = &content_rcvr {
-            check_channel(content_rcvr, &mut content_rdy)?;
+        if let Some(redirector_rcvr) = &redirector_rcvr {
+            check_channel(redirector_rcvr, &mut redirector_rdy)?;
         }
         if let Some(gateway_rcvr) = &gateway_rcvr {
             check_channel(gateway_rcvr, &mut gateway_rdy)?;
+        }
+        if let Some(content_rcvr) = &content_rcvr {
+            check_channel(content_rcvr, &mut content_rdy)?;
+        }
+        if let Some(auth_rcvr) = &auth_rcvr {
+            check_channel(auth_rcvr, &mut auth_rdy)?;
         }
         if let Some(region_rcvr) = &region_rcvr {
             check_channel(region_rcvr, &mut region_rdy)?;
@@ -102,18 +115,16 @@ pub fn up() -> Result<(), CliError> {
         if let Some(asset_rcvr) = &asset_rcvr {
             check_channel(asset_rcvr, &mut asset_rdy)?;
         }
-        if let Some(auth_rcvr) = &auth_rcvr {
-            check_channel(auth_rcvr, &mut auth_rdy)?;
-        }
 
         if instance_rdy
-            && content_rdy
+            && redirector_rdy
             && gateway_rdy
+            && content_rdy
+            && auth_rdy
             && region_rdy
             && session_rdy
             && world_rdy
             && asset_rdy
-            && auth_rdy
         {
             break;
         }

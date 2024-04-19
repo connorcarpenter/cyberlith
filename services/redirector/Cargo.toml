@@ -7,6 +7,10 @@ edition = "2021"
 publish = false
 
 [features]
+# even though this should always be the case (no reason for this on local)
+# keep it around because automation requires it and I don't want to write
+# a special case for this!
+prod = []
 
 [dependencies]
 http_server = { path = "../../crates/http/http_server" }

@@ -85,13 +85,14 @@ async fn images_push(config: &HashSet<String>) -> Result<(), CliError> {
     )
     .await?;
 
-    image_push(config, "content").await?;
+    image_push(config, "redirector").await?;
     image_push(config, "gateway").await?;
+    image_push(config, "content").await?;
+    image_push(config, "auth").await?;
     image_push(config, "region").await?;
     image_push(config, "session").await?;
     image_push(config, "world").await?;
     image_push(config, "asset").await?;
-    image_push(config, "auth").await?;
 
     Ok(())
 }
@@ -108,13 +109,14 @@ async fn images_pull(config: &HashSet<String>, session: &Session) -> Result<(), 
     )
     .await?;
 
-    image_pull(config, session, "content").await?;
+    image_pull(config, session, "redirector").await?;
     image_pull(config, session, "gateway").await?;
+    image_pull(config, session, "content").await?;
+    image_pull(config, session, "auth").await?;
     image_pull(config, session, "region").await?;
     image_pull(config, session, "session").await?;
     image_pull(config, session, "world").await?;
     image_pull(config, session, "asset").await?;
-    image_pull(config, session, "auth").await?;
 
     Ok(())
 }
@@ -145,13 +147,14 @@ async fn remove_network(session: &Session) -> Result<(), CliError> {
 }
 
 async fn containers_start(config: &HashSet<String>, session: &Session) -> Result<(), CliError> {
+    container_create_and_start(config, session, "redirector", "-p 80:80/tcp").await?;
     container_create_and_start(config, session, "gateway", "-p 443:443/tcp").await?;
     container_create_and_start(config, session, "content", "-p 14197:14197/tcp").await?;
+    container_create_and_start(config, session, "auth", "-p 14206:14206/tcp").await?;
     container_create_and_start(config, session, "region", "-p 14198:14198/tcp").await?;
     container_create_and_start(config, session, "session", "-p 14200:14200/tcp -p 14201:14201/udp").await?;
     container_create_and_start(config, session, "world", "-p 14203:14203/tcp -p 14204:14204/udp").await?;
     container_create_and_start(config, session, "asset", "-p 14205:14205/tcp").await?;
-    container_create_and_start(config, session, "auth", "-p 14206:14206/tcp").await?;
 
     Ok(())
 }
@@ -163,13 +166,15 @@ async fn images_prune(session: &Session) -> Result<(), CliError> {
 }
 
 async fn containers_stop(config: &HashSet<String>, session: &Session) -> Result<(), CliError> {
-    container_stop_and_remove(config, session, "content").await?;
+
+    container_stop_and_remove(config, session, "redirector").await?;
     container_stop_and_remove(config, session, "gateway").await?;
+    container_stop_and_remove(config, session, "content").await?;
+    container_stop_and_remove(config, session, "auth").await?;
     container_stop_and_remove(config, session, "region").await?;
     container_stop_and_remove(config, session, "session").await?;
     container_stop_and_remove(config, session, "world").await?;
     container_stop_and_remove(config, session, "asset").await?;
-    container_stop_and_remove(config, session, "auth").await?;
 
     Ok(())
 }
