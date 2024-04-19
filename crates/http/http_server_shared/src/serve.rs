@@ -43,29 +43,17 @@ pub async fn serve_impl<
         let byte = byte.expect("unable to read a byte from incoming stream");
 
         if read_state == ReadState::ReadingBody {
-            //info!("read byte from body");
-
-            if let Some(content_length) = content_length {
-                body.push(byte);
-
-                if body.len() >= content_length {
-                    read_state = ReadState::Finished;
-                    //info!("finished reading body");
-                    break;
-                }
-
-                continue;
-            } else {
-                warn!("request was missing Content-Length header");
-                read_state = ReadState::Error;
+            if request_read_body(content_length, &mut body, &mut read_state, byte) {
                 break;
+            } else {
+                continue;
             }
         }
 
         if byte == b'\r' {
             continue;
         } else if byte == b'\n' {
-            let str =
+            let line_str =
                 String::from_utf8(line.clone()).expect("unable to parse string from UTF-8 bytes");
             line.clear();
 
@@ -73,51 +61,23 @@ pub async fn serve_impl<
 
             match read_state {
                 ReadState::MatchingUrl => {
-                    let parts = str.split(" ").collect::<Vec<&str>>();
-                    let key = format!("{} {}", parts[0], parts[1]);
+                    let key = extract_url_parts(&mut method, &mut uri, &line_str);
 
-                    if match_func(key.clone()).await {
-                        // info!("incoming request matched url: {}", key);
-                        read_state = ReadState::ReadingHeaders;
-                        method = Some(Method::from_str(parts[0]).unwrap());
-                        uri = Some(parts[1].to_string());
-                    } else {
+                    if !match_func(key.clone()).await {
                         warn!("no endpoint found for {}", key);
                         read_state = ReadState::Error;
                         break;
                     }
+
+                    // info!("incoming request matched url: {}", key);
+                    read_state = ReadState::ReadingHeaders;
+                    continue;
                 }
                 ReadState::ReadingHeaders => {
-                    if str.is_empty() {
-                        //info!("finished reading headers.");
-
-                        read_state = ReadState::ReadingBody;
-
-                        if let Some(method) = method.clone() {
-                            if method == Method::Get {
-                                read_state = ReadState::Finished;
-                                // info!("GET req has no body to read. finished.");
-                                break;
-                            }
-                        }
-                        let Some(content_length) = content_length else {
-                            warn!("request was missing Content-Length header");
-                            read_state = ReadState::Error;
-                            break;
-                        };
-                        if content_length == 0 {
-                            read_state = ReadState::Finished;
-                            //info!("no body to read. finished.");
-                            break;
-                        } else {
-                            continue;
-                        }
+                    if request_read_headers(&mut method, &mut content_length, &mut header_map, &mut read_state, &line_str) {
+                        break;
                     } else {
-                        let parts = str.split(": ").collect::<Vec<&str>>();
-                        header_map.insert(parts[0].to_string(), parts[1].to_string());
-                        if parts[0].to_lowercase() == "content-length" {
-                            content_length = Some(parts[1].parse().unwrap());
-                        }
+                        continue;
                     }
                 }
                 _ => {
@@ -136,20 +96,112 @@ pub async fn serve_impl<
 
     // done reading //
 
-    // cast to request //
-    let Some(method) = method else {
-        warn!("unable to parse method");
+    let Some(request) = cast_to_request(method, uri, body, header_map).await else {
         return send_404(response_stream).await;
     };
-    let Some(uri) = uri else {
-        warn!("unable to parse uri");
-        return send_404(response_stream).await;
-    };
-    let mut request = Request::new(method, &uri, body);
-    request.headers = header_map;
 
     let response_result = respond_func((incoming_address, request)).await;
 
+    send_response_from_result(
+        response_stream,
+        response_result
+    ).await;
+}
+
+fn extract_url_parts(method: &mut Option<Method>, uri: &mut Option<String>, line_str: &String) -> String {
+    let parts = line_str.split(" ").collect::<Vec<&str>>();
+    let key = format!("{} {}", parts[0], parts[1]);
+    *method = Some(Method::from_str(parts[0]).unwrap());
+    *uri = Some(parts[1].to_string());
+    key
+}
+
+async fn cast_to_request(
+    method: Option<Method>,
+    uri: Option<String>,
+    body: Vec<u8>,
+    header_map: BTreeMap<String, String>
+) -> Option<Request> {
+    // cast to request //
+    let Some(method) = method else {
+        warn!("unable to parse method");
+        return None;
+    };
+    let Some(uri) = uri else {
+        warn!("unable to parse uri");
+        return None;
+    };
+    let mut request = Request::new(method, &uri, body);
+    request.headers = header_map;
+    Some(request)
+}
+
+fn request_read_headers(
+    method: &mut Option<Method>,
+    content_length: &mut Option<usize>,
+    header_map: &mut BTreeMap<String, String>,
+    read_state: &mut ReadState,
+    line_str: &String
+) -> bool {
+    if line_str.is_empty() {
+        //info!("finished reading headers.");
+
+        *read_state = ReadState::ReadingBody;
+
+        if let Some(method) = method.clone() {
+            if method == Method::Get {
+                *read_state = ReadState::Finished;
+                // info!("GET req has no body to read. finished.");
+                return true;
+            }
+        }
+        let Some(content_length) = content_length else {
+            warn!("request was missing Content-Length header");
+            *read_state = ReadState::Error;
+            return true;
+        };
+        if *content_length == 0 {
+            *read_state = ReadState::Finished;
+            //info!("no body to read. finished.");
+            return true;
+        } else {
+            return false;
+        }
+    } else {
+        let parts = line_str.split(": ").collect::<Vec<&str>>();
+        header_map.insert(parts[0].to_string(), parts[1].to_string());
+        if parts[0].to_lowercase() == "content-length" {
+            *content_length = Some(parts[1].parse().unwrap());
+        }
+        return false;
+    }
+}
+
+fn request_read_body(content_length: Option<usize>, body: &mut Vec<u8>, read_state: &mut ReadState, byte: u8) -> bool {
+
+    //info!("read byte from body");
+
+    if let Some(content_length) = content_length {
+        body.push(byte);
+
+        if body.len() >= content_length {
+            *read_state = ReadState::Finished;
+            //info!("finished reading body");
+            return true;
+        }
+
+        return false;
+    } else {
+        warn!("request was missing Content-Length header");
+        *read_state = ReadState::Error;
+        return true;
+    }
+}
+
+async fn send_response_from_result<ResponseStream: Unpin + AsyncRead + AsyncWrite>(
+    mut response_stream: ResponseStream,
+    response_result: Result<Response, ResponseError>
+) {
     match response_result {
         Ok(mut response) => {
             response
@@ -169,7 +221,6 @@ pub async fn serve_impl<
         }
         Err(e) => {
             warn!("error when responding: {:?}", e.to_string());
-            return send_404(response_stream).await;
         }
     }
 }

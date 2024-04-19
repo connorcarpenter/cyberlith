@@ -13,18 +13,11 @@ publish = false
 prod = []
 
 [dependencies]
-http_server = { path = "../../crates/http/http_server" }
 config = { path = "../../config", features = ["redirector", "prod"]}
 logging = { path = "../../crates/logging" }
-
-http_common = { path = "../../crates/http/http_common" }
 executor = { path = "../../crates/executor" }
-#http_server_shared = { path = "../http_server_shared" }
-#http_client_shared = { path = "../http_client_shared" }
-#logging = { path = "../../logging" }
-#acme = { path = "../acme" }
-#
-#naia-serde = { path = "../../../../naia/shared/serde" }
-#
+http_server = { path = "../../crates/http/http_server" }
+http_server_shared = { path = "../../crates/http/http_server_shared" }
+http_common = { path = "../../crates/http/http_common" }
+
 smol = { version = "1.3" }
-#async-dup = { version = "1.2.2" }
