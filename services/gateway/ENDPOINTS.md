@@ -1,6 +1,6 @@
 endpoints in gateway:
 
-finished:
+open to all:
 
 gateway:443	POST 	/session_connect 	    -> region:14198	    POST	/session/connect
 gateway:443	POST 	/user_register 		    -> auth:14206 		POST	/user_register
@@ -18,10 +18,17 @@ gateway:443 GET	    /game		            -> content:14197    GET     /game.html
 gateway:443 GET	    /game.js	            -> content:14197    GET     /game.js
 gateway:443 GET	    /game_bg.wasm           -> content:14197    GET     /game_bg.wasm
 
-todo:
-
 gateway:443 POST    /session_rtc            -> session:14200    POST    /session_rtc
 gateway:443 POST    /world_rtc              -> world:14203      POST    /world_rtc
 
 gateway:80  GET	    *			            <- redirect to gateway:443
+
+(todo) protect with a token!
+
+gateway:443	POST 	/session_connect
+gateway:443 GET	    /game		            
+gateway:443 GET	    /game.js	            
+gateway:443 GET	    /game_bg.wasm
+gateway:443 POST    /session_rtc
+gateway:443 POST    /world_rtc
 
