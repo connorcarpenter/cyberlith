@@ -1,0 +1,12 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Run All [linux] [local]" type="CompoundRunConfigurationType">
+    <toRun name="Run Asset Server" type="CargoCommandRunConfiguration" />
+    <toRun name="Run Auth Server" type="CargoCommandRunConfiguration" />
+    <toRun name="Run Gateway [local]" type="CargoCommandRunConfiguration" />
+    <toRun name="Run Region Server" type="CargoCommandRunConfiguration" />
+    <toRun name="Run Session Server" type="CargoCommandRunConfiguration" />
+    <toRun name="Run World Server" type="CargoCommandRunConfiguration" />
+    <toRun name="Standalone Native [RUN]" type="CargoCommandRunConfiguration" />
+    <method v="2" />
+  </configuration>
+</component>
