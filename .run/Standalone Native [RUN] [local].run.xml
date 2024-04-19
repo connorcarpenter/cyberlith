@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Standalone Native [RUN]" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
+  <configuration default="false" name="Standalone Native [RUN] [local]" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
     <option name="command" value="run --features &quot;gl_renderer, local&quot;" />
     <option name="workingDirectory" value="file://$PROJECT_DIR$/deployments/native" />
     <envs />
