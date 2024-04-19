@@ -20,10 +20,6 @@ async fn async_impl(
     state: Arc<RwLock<State>>,
     incoming_request: SessionConnectRequest,
 ) -> Result<SessionConnectResponse, ResponseError> {
-    if incoming_request.gateway_secret() != GATEWAY_SECRET {
-        warn!("invalid request secret");
-        return Err(ResponseError::Unauthenticated);
-    }
 
     info!("session_connect request received from gateway");
 

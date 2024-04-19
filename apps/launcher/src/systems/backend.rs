@@ -8,7 +8,7 @@ use game_engine::{
     ui::UiManager,
 };
 
-use gateway_http_proto::{UserLoginRequest, UserRegisterRequest};
+use auth_server_http_proto::{UserLoginRequest, UserRegisterRequest};
 
 use crate::resources::Global;
 

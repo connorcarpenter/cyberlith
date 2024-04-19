@@ -6,7 +6,7 @@ pub fn send_req(
     request_name: &str,
 ) {
     logging::info!(
-        "{} -> {}: {} request",
+        "{} -> {}: [{}] request",
         self_service_sender_name,
         othe_service_recver_name,
         request_name
@@ -19,7 +19,7 @@ pub fn recv_req(
     request_name: &str,
 ) {
     logging::info!(
-        "{} <- {}: {} request",
+        "{} <- {}: [{}] request",
         self_service_recver_name,
         othe_service_sender_name,
         request_name
@@ -32,7 +32,7 @@ pub fn send_res(
     response_name: &str,
 ) {
     logging::info!(
-        "{} -> {}: {} response",
+        "{} -> {}: [{}] response",
         self_service_sender_name,
         othe_service_recver_name,
         response_name
@@ -45,7 +45,7 @@ pub fn recv_res(
     response_name: &str,
 ) {
     logging::info!(
-        "{} <- {}: {} response",
+        "{} <- {}: [{}] response",
         self_service_recver_name,
         othe_service_sender_name,
         response_name
@@ -58,7 +58,7 @@ pub fn fail_recv_res<T>(
     response_name: &str,
 ) -> Result<T, ResponseError> {
     let error_msg = format!(
-        "{} <- {}: {} response FAIL!",
+        "{} <- {}: [{}] response FAIL!",
         self_service_recver_name, othe_service_sender_name, response_name
     );
     logging::warn!("{}", error_msg);

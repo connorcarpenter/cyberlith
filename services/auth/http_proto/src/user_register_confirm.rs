@@ -5,22 +5,14 @@ use http_common::{ApiRequest, ApiResponse, Method};
 // Request
 #[derive(Serde, PartialEq, Clone)]
 pub struct UserRegisterConfirmRequest {
-    gateway_secret: String,
-
     pub register_token: String,
 }
 
 impl UserRegisterConfirmRequest {
-    pub fn new(gateway_secret: &str, register_token: &str) -> Self {
+    pub fn new(register_token: &str) -> Self {
         Self {
-            gateway_secret: gateway_secret.to_string(),
-
             register_token: register_token.to_string(),
         }
-    }
-
-    pub fn gateway_secret(&self) -> &str {
-        &self.gateway_secret
     }
 }
 

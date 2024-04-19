@@ -20,7 +20,7 @@ use config::{GATEWAY_PORT, PUBLIC_IP_ADDR};
 use filesystem::FileSystemManager;
 use ui_runner::UiManager;
 
-use gateway_http_proto::{SessionConnectRequest, SessionConnectResponse};
+use region_server_http_proto::{SessionConnectRequest, SessionConnectResponse};
 use session_server_naia_proto::{
     channels::{PrimaryChannel, RequestChannel},
     messages::{Auth as SessionAuth, LoadAssetRequest, LoadAssetWithData, WorldConnectToken},

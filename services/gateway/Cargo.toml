@@ -16,6 +16,5 @@ http_client = { path = "../../crates/http/http_client" }
 config = { path = "../../config", features = ["gateway"]}
 logging = { path = "../../crates/logging" }
 
-gateway_http_proto = { path = "http_proto" }
 region_server_http_proto = { path = "../region/http_proto" }
 auth_server_http_proto = { path = "../auth/http_proto" }

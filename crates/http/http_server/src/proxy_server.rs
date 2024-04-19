@@ -3,7 +3,7 @@ use std::{net::SocketAddr, pin::Pin};
 use smol::future::Future;
 
 use http_client_shared::fetch_async;
-use http_common::{Method, Request, Response, ResponseError};
+use http_common::{ApiRequest, Method, Request, Response, ResponseError};
 use logging::info;
 
 use crate::{log_util, Server};
@@ -20,26 +20,53 @@ pub trait ProxyServer {
         remote_port: &str,
         file_name: &str,
     );
+    fn serve_api_proxy<TypeRequest: 'static + ApiRequest>(
+        &mut self,
+        host_name: &str,
+        remote_name: &str,
+        remote_addr: &str,
+        remote_port: &str,
+    );
 }
 
 impl ProxyServer for Server {
     fn serve_proxy(
         &mut self,
         host_name: &str,
-        method: Method,
-        url_path: &str,
+        incoming_method: Method,
+        incoming_path: &str,
         remote_name: &str,
         remote_addr: &str,
         remote_port: &str,
-        file_name: &str,
+        remote_path: &str,
     ) {
-        let url_path = format!("{} /{}", method.as_str(), url_path);
+        let url_path = format!("{} /{}", incoming_method.as_str(), incoming_path);
 
         info!("serving proxy @ {}", url_path);
 
-        let remote_url = format!("http://{}:{}/{}", remote_addr, remote_port, file_name);
-        let new_endpoint = endpoint_2(host_name, remote_name, method, &remote_url);
+        let remote_url = format!("http://{}:{}/{}", remote_addr, remote_port, remote_path);
+        let logged_remote_url = format!("{} host:{}/{}", incoming_method.as_str(), remote_port, remote_path);
+        let new_endpoint = endpoint_2(host_name, remote_name, incoming_method, &remote_url, &logged_remote_url);
         self.internal_insert_endpoint(url_path, new_endpoint);
+    }
+
+    fn serve_api_proxy<TypeRequest: 'static + ApiRequest>(
+        &mut self,
+        host_name: &str,
+        remote_name: &str,
+        remote_addr: &str,
+        remote_port: &str,
+    ) {
+        Self::serve_proxy(
+            self,
+            host_name,
+            TypeRequest::method(),
+            TypeRequest::path(),
+            remote_name,
+            remote_addr,
+            remote_port,
+            TypeRequest::path()
+        );
     }
 }
 
@@ -48,6 +75,7 @@ fn endpoint_2(
     remote_name: &str,
     method: Method,
     remote_url: &str,
+    logged_remote_url: &str,
 ) -> Box<
     dyn 'static
         + Send
@@ -62,8 +90,10 @@ fn endpoint_2(
     let remote_name = remote_name.to_string();
     let method = method.clone();
     let remote_url = remote_url.to_string();
+    let logged_remote_url = logged_remote_url.to_string();
     Box::new(move |args: (SocketAddr, Request)| {
         let outer_req = args.1;
+        let outer_url = outer_req.url;
         let outer_headers = outer_req.headers;
         let outer_body = outer_req.body;
 
@@ -71,14 +101,17 @@ fn endpoint_2(
         let remote_name = remote_name.clone();
         let method = method.clone();
         let remote_url = remote_url.clone();
+        let logged_remote_url = logged_remote_url.clone();
 
         // convert typed future to pure future
         let pure_future = async move {
             let host_name = host_name.clone();
             let remote_name = remote_name.clone();
-            let logged_remote_url = format!("{} {}", method.as_str(), remote_url);
+            let logged_remote_url = logged_remote_url.clone();
+            let logged_host_url = format!("{} {}", method.as_str(), outer_url);
 
-            log_util::recv_req(&host_name, "client", &logged_remote_url);
+            logging::info!("[");
+            log_util::recv_req(&host_name, "client", &logged_host_url);
 
             let mut remote_req = Request::new(method, &remote_url, outer_body);
             remote_req.headers = outer_headers;
@@ -122,7 +155,8 @@ fn endpoint_2(
                 response.body.len().to_string(),
             );
 
-            log_util::send_res(&host_name, "client", &logged_remote_url);
+            log_util::send_res(&host_name, "client", &logged_host_url);
+            logging::info!("]");
 
             return Ok(response);
         };

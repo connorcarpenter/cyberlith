@@ -5,8 +5,6 @@ use http_common::{ApiRequest, ApiResponse, Method};
 // Request
 #[derive(Serde, PartialEq, Clone)]
 pub struct UserLoginRequest {
-    gateway_secret: String,
-
     // username OR email
     pub handle: String,
 
@@ -15,17 +13,11 @@ pub struct UserLoginRequest {
 }
 
 impl UserLoginRequest {
-    pub fn new(gateway_secret: &str, handle: &str, password: &str) -> Self {
+    pub fn new(handle: &str, password: &str) -> Self {
         Self {
-            gateway_secret: gateway_secret.to_string(),
-
             handle: handle.to_string(),
             password: password.to_string(),
         }
-    }
-
-    pub fn gateway_secret(&self) -> &str {
-        &self.gateway_secret
     }
 }
 

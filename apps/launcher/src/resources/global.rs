@@ -2,7 +2,7 @@ use bevy_ecs::{entity::Entity, system::Resource};
 
 use game_engine::{http::ResponseKey, ui::UiHandle};
 
-use gateway_http_proto::{UserLoginResponse, UserRegisterResponse};
+use auth_server_http_proto::{UserLoginResponse, UserRegisterResponse};
 
 #[derive(Resource)]
 pub struct Global {

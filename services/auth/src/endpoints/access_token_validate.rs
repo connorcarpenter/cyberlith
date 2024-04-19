@@ -1,10 +1,8 @@
-use logging::warn;
 
 use http_client::ResponseError;
 use http_server::{async_dup::Arc, http_log_util, smol::lock::RwLock, ApiServer, Server};
 
 use auth_server_http_proto::{AccessTokenValidateRequest, AccessTokenValidateResponse};
-use config::GATEWAY_SECRET;
 
 use crate::{error::AuthServerError, state::State, types::AccessToken};
 
@@ -19,10 +17,6 @@ async fn async_impl(
     state: Arc<RwLock<State>>,
     incoming_request: AccessTokenValidateRequest,
 ) -> Result<AccessTokenValidateResponse, ResponseError> {
-    if incoming_request.gateway_secret() != GATEWAY_SECRET {
-        warn!("invalid request secret");
-        return Err(ResponseError::Unauthenticated);
-    }
 
     http_log_util::recv_req("auth_server", "gateway", "access_token_validate");
 

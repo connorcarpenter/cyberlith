@@ -1,14 +1,12 @@
-mod endpoints;
 
 use std::{net::SocketAddr, thread};
 
-use config::{
-    CONTENT_SERVER_PORT, CONTENT_SERVER_RECV_ADDR, GATEWAY_PORT, SELF_BINDING_ADDR,
-    SESSION_SERVER_RECV_ADDR, SESSION_SERVER_SIGNAL_PORT, WORLD_SERVER_RECV_ADDR,
-    WORLD_SERVER_SIGNAL_PORT,
-};
+use config::{AUTH_SERVER_PORT, AUTH_SERVER_RECV_ADDR, CONTENT_SERVER_PORT, CONTENT_SERVER_RECV_ADDR, GATEWAY_PORT, REGION_SERVER_PORT, REGION_SERVER_RECV_ADDR, SELF_BINDING_ADDR, SESSION_SERVER_RECV_ADDR, SESSION_SERVER_SIGNAL_PORT, WORLD_SERVER_RECV_ADDR, WORLD_SERVER_SIGNAL_PORT};
 use http_server::{Method, ProxyServer, Server};
 use logging::info;
+
+use region_server_http_proto::SessionConnectRequest;
+use auth_server_http_proto::{RefreshTokenGrantRequest, UserLoginRequest, UserNameForgotRequest, UserPasswordForgotRequest, UserPasswordResetRequest, UserRegisterConfirmRequest, UserRegisterRequest};
 
 pub fn main() {
     logging::initialize();
@@ -18,41 +16,86 @@ pub fn main() {
 
     let mut server = Server::new(socket_addr);
 
-    // -> region
+    let gateway = "gateway";
 
-    // game client logs into session server
-    endpoints::region::session_connect(&mut server);
+    // -> region
+    {
+        let auth_server = "region_server";
+        let addr = REGION_SERVER_RECV_ADDR;
+        let port = REGION_SERVER_PORT.to_string();
+
+        // session connect
+        server.serve_api_proxy::<SessionConnectRequest>(
+            gateway,
+            auth_server,
+            addr,
+            &port,
+        );
+    }
 
     // -> auth
+    {
+        let auth_server = "auth_server";
+        let addr = AUTH_SERVER_RECV_ADDR;
+        let port = AUTH_SERVER_PORT.to_string();
 
-    // user registers for the first time
-    endpoints::auth::user_register(&mut server);
-
-    // user confirms registration
-    endpoints::auth::user_register_confirm(&mut server);
-
-    // user login
-    endpoints::auth::user_login(&mut server);
-
-    // refresh token grant
-    endpoints::auth::refresh_token_grant(&mut server);
-
-    // user name forgot
-    endpoints::auth::user_name_forgot(&mut server);
-
-    // user password forgot
-    endpoints::auth::user_password_forgot(&mut server);
-
-    // user password reset
-    endpoints::auth::user_password_reset(&mut server);
+        // user login
+        server.serve_api_proxy::<UserLoginRequest>(
+            gateway,
+            auth_server,
+            addr,
+            &port,
+        );
+        // user register
+        server.serve_api_proxy::<UserRegisterRequest>(
+            gateway,
+            auth_server,
+            addr,
+            &port,
+        );
+        // user register confirm
+        server.serve_api_proxy::<UserRegisterConfirmRequest>(
+            gateway,
+            auth_server,
+            addr,
+            &port,
+        );
+        // refresh token grant
+        server.serve_api_proxy::<RefreshTokenGrantRequest>(
+            gateway,
+            auth_server,
+            addr,
+            &port,
+        );
+        // user name forgot
+        server.serve_api_proxy::<UserNameForgotRequest>(
+            gateway,
+            auth_server,
+            addr,
+            &port,
+        );
+        // user password forgot
+        server.serve_api_proxy::<UserPasswordForgotRequest>(
+            gateway,
+            auth_server,
+            addr,
+            &port,
+        );
+        // user password reset
+        server.serve_api_proxy::<UserPasswordResetRequest>(
+            gateway,
+            auth_server,
+            addr,
+            &port,
+        );
+    }
 
     // -> content
-
     {
-        let gateway = "gateway";
         let content_server = "content_server";
         let addr = CONTENT_SERVER_RECV_ADDR;
         let port = CONTENT_SERVER_PORT.to_string();
+
         server.serve_proxy(
             gateway,
             Method::Get,
@@ -111,9 +154,9 @@ pub fn main() {
 
     // -> session
     {
-        let gateway = "gateway";
         let addr = SESSION_SERVER_RECV_ADDR;
         let port = SESSION_SERVER_SIGNAL_PORT.to_string();
+
         server.serve_proxy(
             gateway,
             Method::Post,
@@ -127,9 +170,9 @@ pub fn main() {
 
     // -> world
     {
-        let gateway = "gateway";
         let addr = WORLD_SERVER_RECV_ADDR;
         let port = WORLD_SERVER_SIGNAL_PORT.to_string();
+
         server.serve_proxy(
             gateway,
             Method::Post,

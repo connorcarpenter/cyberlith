@@ -5,22 +5,14 @@ use http_common::{ApiRequest, ApiResponse, Method};
 // Request
 #[derive(Serde, PartialEq, Clone)]
 pub struct UserNameForgotRequest {
-    gateway_secret: String,
-
     pub email: String,
 }
 
 impl UserNameForgotRequest {
-    pub fn new(gateway_secret: &str, email: &str) -> Self {
+    pub fn new(email: &str) -> Self {
         Self {
-            gateway_secret: gateway_secret.to_string(),
-
             email: email.to_string(),
         }
-    }
-
-    pub fn gateway_secret(&self) -> &str {
-        &self.gateway_secret
     }
 }
 
