@@ -12,11 +12,9 @@ pub(crate) fn setup() {
     let source_dir = "./target/assets_repo";
     let destination_dir = "./assets";
 
-    // Create and replace the destination directory
+    // Delete the destination directory (will create it again later)
     info!("Deleting destination directory: {}", destination_dir);
-    let mut delete_command = Command::new("sudo")
-        .arg("-S")
-        .arg("rm")
+    let mut delete_command = Command::new("rm")
         .arg("-rf")
         .arg(destination_dir)
         .spawn()
@@ -31,6 +29,7 @@ pub(crate) fn setup() {
     }
 
     // Create new destination directory
+    info!("Creating destination directory: {}", destination_dir);
     Command::new("mkdir")
         .arg("-p")
         .arg(destination_dir)
@@ -38,6 +37,7 @@ pub(crate) fn setup() {
         .expect("Failed to create destination directory");
 
     // Execute shell command to copy files from source to destination
+    info!("Copying files from {:?} to {:?}", source_dir, destination_dir);
     Command::new("cp")
         .arg("-r")
         .arg(format!("{}/.", source_dir))
@@ -46,6 +46,7 @@ pub(crate) fn setup() {
         .expect("Failed to execute copy command");
 
     // Execute shell command to delete files from source
+    info!("Deleting files from {:?}", source_dir);
     Command::new("rm")
         .arg("-rf")
         .arg("./target")
