@@ -53,3 +53,10 @@ cfg_if! {
         pub use self::auth::*;
     }
 }
+
+cfg_if! {
+    if #[cfg(feature = "redirector")] {
+        mod redirector;
+        pub use self::redirector::*;
+    }
+}

@@ -113,3 +113,21 @@ impl Default for Response {
         }
     }
 }
+
+impl Response {
+    /// Constructs a new Response indicating a redirect to a specific URL.
+    pub fn redirect(url: &str) -> Self {
+        // Create headers for redirect
+        let mut headers = BTreeMap::new();
+        headers.insert("Location".to_string(), url.to_string());
+
+        Self {
+            url: url.to_string(),
+            ok: false,
+            status: 302,  // HTTP status code for redirection
+            status_text: "Found".to_string(),
+            headers,
+            body: Vec::new(),
+        }
+    }
+}

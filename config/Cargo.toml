@@ -17,6 +17,7 @@ world = []
 content = []
 asset = []
 auth = []
+redirector = []
 
 [dependencies]
 logging = { path = "../crates/logging" }

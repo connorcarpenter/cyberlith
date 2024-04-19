@@ -23,11 +23,13 @@ members = [
     "apps/game",
 
     ### Services ###
-    # Content Server
-    "services/content",
+    # Redirector Server
+    "services/redirector",
     # Gateway Server
     "services/gateway",
     "services/gateway/http_proto",
+    # Content Server
+    "services/content",
     # Auth Server
     "services/auth",
     "services/auth/http_proto",

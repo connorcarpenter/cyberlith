@@ -1,0 +1,14 @@
+[package]
+name = "redirector"
+version = "0.1.0"
+authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
+workspace = "../.."
+edition = "2021"
+publish = false
+
+[features]
+
+[dependencies]
+http_server = { path = "../../crates/http/http_server" }
+config = { path = "../../config", features = ["redirector", "prod"]}
+logging = { path = "../../crates/logging" }

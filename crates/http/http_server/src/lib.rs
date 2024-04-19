@@ -15,6 +15,9 @@ pub use proxy_server::ProxyServer;
 
 pub use http_common::{Method, Request, Response};
 
+mod redirect_server;
+pub use redirect_server::RedirectServer;
+
 pub mod async_dup {
     pub use async_dup::*;
 }
