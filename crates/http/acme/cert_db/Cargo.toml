@@ -1,0 +1,16 @@
+[package]
+name = "acme_cert_db"
+version = "0.1.0"
+authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
+workspace = "../../../.."
+edition = "2021"
+publish = false
+
+[features]
+
+[dependencies]
+db = { path = "../../../db" }
+
+serde = { version = "1.0.189", features = ["derive"] }
+serde_json = { version = "1.0.107" }
+chrono = { version = "0.4", features = ["serde"] }

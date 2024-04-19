@@ -1,6 +1,8 @@
-use std::{io::Error, path::PathBuf};
+use std::{io::Error};
 
-use crate::{caches::DirCache, config::AcmeConfig};
+use rustls_acme::AcmeConfig;
+
+use crate::git_cache::GitCache;
 
 pub struct Config {
     /// Domains
@@ -8,9 +10,6 @@ pub struct Config {
 
     /// Contact info
     email: Vec<String>,
-
-    /// Cache directory
-    cache: Option<PathBuf>,
 
     /// Use Let's Encrypt production environment
     /// (see https://letsencrypt.org/docs/staging-environment/)
@@ -22,12 +21,10 @@ impl Config {
         prod: bool,
         domains: Vec<String>,
         email: Vec<String>,
-        cache: Option<PathBuf>,
     ) -> Self {
         Self {
             domains,
             email,
-            cache,
             prod,
         }
     }
@@ -35,7 +32,7 @@ impl Config {
     pub fn to_acme_config(self) -> AcmeConfig<Error, Error> {
         AcmeConfig::new(self.domains)
             .contact(self.email.iter().map(|e| format!("mailto:{}", e)))
-            .cache_option(self.cache.clone().map(DirCache::new))
+            .cache_option(Some(GitCache::new()))
             .directory_lets_encrypt(self.prod)
     }
 }

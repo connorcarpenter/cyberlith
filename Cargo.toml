@@ -113,6 +113,7 @@ members = [
     "crates/http/http_common",
     "crates/http/http_client_shared",
     "crates/http/acme",
+    "crates/http/acme/cert_db",
     # UI
     "crates/ui/builder",
     "crates/ui/layout",

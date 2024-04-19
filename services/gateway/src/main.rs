@@ -149,16 +149,13 @@ pub fn main() {
 #[cfg(all(feature = "prod", not(feature = "local")))]
 fn start_server(server: Server) {
 
-    use std::{str::FromStr, path::PathBuf};
-
     use http_server::{acme::Config, HttpsServer};
 
     server.https_start(
         Config::new(
             true,
-            vec!["cyberlith.com".to_string(), "www.cyberlith.com".to_string()],
+            vec!["cyberlith.com".to_string(), "www.cyberlith.com".to_string(), "api.cyberlith.com".to_string()],
             vec!["admin@cyberlith.com".to_string()],
-            Some(PathBuf::from_str("./acme_cache").unwrap())
         )
     );
 }
