@@ -1,12 +1,12 @@
 use std::{collections::BTreeMap, net::SocketAddr};
 
-use logging::{info, warn};
 use smol::{
     future::Future,
     io::{AsyncWrite, AsyncRead, AsyncReadExt, AsyncWriteExt, BufReader},
     stream::{StreamExt},
 };
 
+use logging::{info, warn};
 use http_common::{Method, Request, Response, ResponseError};
 
 use crate::ReadState;
@@ -42,29 +42,21 @@ pub async fn serve_impl<
 
         let byte = byte.expect("unable to read a byte from incoming stream");
 
-        if read_state == ReadState::ReadingBody {
-            if request_read_body(content_length, &mut body, &mut read_state, byte) {
-                break;
-            } else {
-                continue;
-            }
-        }
+        match read_state {
+            ReadState::MatchingUrl => {
+                if byte == b'\r' {
+                    continue;
+                } else if byte == b'\n' {
+                    let line_str =
+                        String::from_utf8(line.clone()).expect("unable to parse string from UTF-8 bytes");
+                    line.clear();
 
-        if byte == b'\r' {
-            continue;
-        } else if byte == b'\n' {
-            let line_str =
-                String::from_utf8(line.clone()).expect("unable to parse string from UTF-8 bytes");
-            line.clear();
+                    //info!("read: {}", str);
 
-            //info!("read: {}", str);
+                    let uri_key = request_extract_url(&mut method, &mut uri, &line_str);
 
-            match read_state {
-                ReadState::MatchingUrl => {
-                    let key = extract_url_parts(&mut method, &mut uri, &line_str);
-
-                    if !match_func(key.clone()).await {
-                        warn!("no endpoint found for {}", key);
+                    if !match_func(uri_key.clone()).await {
+                        warn!("no endpoint found for {}", uri_key);
                         read_state = ReadState::Error;
                         break;
                     }
@@ -72,21 +64,40 @@ pub async fn serve_impl<
                     // info!("incoming request matched url: {}", key);
                     read_state = ReadState::ReadingHeaders;
                     continue;
+                } else {
+                    line.push(byte);
                 }
-                ReadState::ReadingHeaders => {
+            }
+            ReadState::ReadingHeaders => {
+                if byte == b'\r' {
+                    continue;
+                } else if byte == b'\n' {
+                    let line_str =
+                        String::from_utf8(line.clone()).expect("unable to parse string from UTF-8 bytes");
+                    line.clear();
+
+                    //info!("read: {}", str);
+
                     if request_read_headers(&mut method, &mut content_length, &mut header_map, &mut read_state, &line_str) {
                         break;
                     } else {
                         continue;
                     }
-                }
-                _ => {
-                    warn!("shouldn't be in this state");
-                    return;
+                } else {
+                    line.push(byte);
                 }
             }
-        } else {
-            line.push(byte);
+            ReadState::ReadingBody => {
+                if request_read_body(content_length, &mut body, &mut read_state, byte) {
+                    break;
+                } else {
+                    continue;
+                }
+            }
+            _ => {
+                warn!("shouldn't be in this state");
+                return;
+            }
         }
     }
 
@@ -100,40 +111,25 @@ pub async fn serve_impl<
         return send_404(response_stream).await;
     };
 
-    let response_result = respond_func((incoming_address, request)).await;
-
-    send_response_from_result(
-        response_stream,
-        response_result
-    ).await;
+    match respond_func((incoming_address, request)).await {
+        Ok(response) => {
+            response_send(
+                response_stream,
+                response,
+            ).await;
+        }
+        Err(e) => {
+            warn!("error when responding: {:?}", e.to_string());
+        }
+    }
 }
 
-fn extract_url_parts(method: &mut Option<Method>, uri: &mut Option<String>, line_str: &String) -> String {
+fn request_extract_url(method: &mut Option<Method>, uri: &mut Option<String>, line_str: &String) -> String {
     let parts = line_str.split(" ").collect::<Vec<&str>>();
     let key = format!("{} {}", parts[0], parts[1]);
     *method = Some(Method::from_str(parts[0]).unwrap());
     *uri = Some(parts[1].to_string());
     key
-}
-
-async fn cast_to_request(
-    method: Option<Method>,
-    uri: Option<String>,
-    body: Vec<u8>,
-    header_map: BTreeMap<String, String>
-) -> Option<Request> {
-    // cast to request //
-    let Some(method) = method else {
-        warn!("unable to parse method");
-        return None;
-    };
-    let Some(uri) = uri else {
-        warn!("unable to parse uri");
-        return None;
-    };
-    let mut request = Request::new(method, &uri, body);
-    request.headers = header_map;
-    Some(request)
 }
 
 fn request_read_headers(
@@ -198,31 +194,44 @@ fn request_read_body(content_length: Option<usize>, body: &mut Vec<u8>, read_sta
     }
 }
 
-async fn send_response_from_result<ResponseStream: Unpin + AsyncRead + AsyncWrite>(
+async fn cast_to_request(
+    method: Option<Method>,
+    uri: Option<String>,
+    body: Vec<u8>,
+    header_map: BTreeMap<String, String>
+) -> Option<Request> {
+    // cast to request //
+    let Some(method) = method else {
+        warn!("unable to parse method");
+        return None;
+    };
+    let Some(uri) = uri else {
+        warn!("unable to parse uri");
+        return None;
+    };
+    let mut request = Request::new(method, &uri, body);
+    request.headers = header_map;
+    Some(request)
+}
+
+async fn response_send<ResponseStream: Unpin + AsyncRead + AsyncWrite>(
     mut response_stream: ResponseStream,
-    response_result: Result<Response, ResponseError>
+    mut response: Response
 ) {
-    match response_result {
-        Ok(mut response) => {
-            response
-                .headers
-                .insert("Access-Control-Allow-Origin".to_string(), "*".to_string());
+    response
+        .headers
+        .insert("Access-Control-Allow-Origin".to_string(), "*".to_string());
 
-            let mut response_bytes = response_header_to_vec(&response);
-            response_bytes.extend_from_slice(&response.body);
-            response_stream
-                .write_all(&response_bytes)
-                .await
-                .expect("found an error while writing to a stream");
+    let mut response_bytes = response_header_to_vec(&response);
+    response_bytes.extend_from_slice(&response.body);
+    response_stream
+        .write_all(&response_bytes)
+        .await
+        .expect("found an error while writing to a stream");
 
-            response_stream_flush(response_stream).await;
+    response_stream_flush(response_stream).await;
 
-            // info!("response sent");
-        }
-        Err(e) => {
-            warn!("error when responding: {:?}", e.to_string());
-        }
-    }
+    // info!("response sent");
 }
 
 const RESPONSE_BAD: &[u8] = br#"
@@ -237,19 +246,6 @@ async fn send_404<
 >(mut response_stream: ResponseStream) {
     response_stream.write_all(RESPONSE_BAD).await.unwrap();
     response_stream_flush(response_stream).await;
-}
-
-async fn response_stream_flush<
-    ResponseStream: Unpin + AsyncRead + AsyncWrite,
->(mut response_stream: ResponseStream) {
-    response_stream
-        .flush()
-        .await
-        .expect("unable to flush the stream");
-    response_stream
-        .close()
-        .await
-        .expect("unable to close the stream");
 }
 
 fn response_header_to_vec(r: &Response) -> Vec<u8> {
@@ -289,4 +285,17 @@ fn write_line(io: &mut dyn std::io::Write, len: &mut usize, buf: &[u8]) -> std::
     io.write_all(buf)?;
     *len += buf.len();
     Ok(())
+}
+
+async fn response_stream_flush<
+    ResponseStream: Unpin + AsyncRead + AsyncWrite,
+>(mut response_stream: ResponseStream) {
+    response_stream
+        .flush()
+        .await
+        .expect("unable to flush the stream");
+    response_stream
+        .close()
+        .await
+        .expect("unable to close the stream");
 }
