@@ -37,6 +37,21 @@ pub fn thread_init_compat<F: Future<Output = Result<(), CliError>> + Sized + Sen
     receiver
 }
 
+pub fn thread_init_compat_1arg<A: Send + 'static, F: Future<Output = Result<(), CliError>> + Sized + Send + 'static>(
+    a: A,
+    x: fn(A) -> F,
+) -> Receiver<Result<(), CliError>> {
+    let (sender, receiver) = bounded(1);
+
+    executor::spawn(Compat::new(async move {
+        let result = x(a).await;
+        sender.send(result).expect("failed to send result");
+    }))
+        .detach();
+
+    receiver
+}
+
 pub async fn run_command(command_name: &str, command_str: &str) -> Result<(), CliError> {
     info!("({}) -> {}", command_name, command_str);
 

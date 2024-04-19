@@ -38,7 +38,6 @@ fn main() {
 
     let result = match matches.subcommand() {
         Some(("up", _sub_matches)) => automation_lib::up(),
-        Some(("up_content", _sub_matches)) => automation_lib::up_content(),
         Some(("down", _sub_matches)) => automation_lib::down(),
         Some(("process_assets", sub_matches)) => {
             let env_val = sub_matches.get_one::<String>("env").unwrap();

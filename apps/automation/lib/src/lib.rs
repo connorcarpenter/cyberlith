@@ -3,7 +3,6 @@ mod down;
 mod error;
 mod process_assets;
 mod up;
-mod up_content;
 mod utils;
 
 pub use convert_ttf_to_icon::*;
@@ -11,7 +10,6 @@ pub use down::*;
 pub use error::*;
 pub use process_assets::*;
 pub use up::*;
-pub use up_content::*;
 
 pub(crate) fn get_api_key() -> String {
     let api_key = include_str!("../../../../.vultr/api_key");

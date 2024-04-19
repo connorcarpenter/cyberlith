@@ -6,8 +6,7 @@ mod instance_wait;
 pub mod server_build;
 mod ssh_init;
 
-use std::{thread, time::Duration};
-use std::collections::HashSet;
+use std::{collections::HashSet, thread, time::Duration};
 
 use logging::info;
 
@@ -19,47 +18,93 @@ use crate::{
 
 pub fn up() -> Result<(), CliError> {
 
-    let config: HashSet<String> = vec!["instance", "content", "gateway", "region", "session", "world", "asset", "auth"].iter().map(|s| s.to_string()).collect();
+    let config: HashSet<String> = vec![
+        "instance",
+        "content",
+        "gateway",
+        "region",
+        "session",
+        "world",
+        "asset",
+        "auth",
+        "network"
+    ].iter().map(|s| s.to_string()).collect();
 
-    if config.contains("instance") {
+    let (mut instance_rdy, instance_rcvr) = if config.contains("instance") {
+        (false, Some(thread_init_compat(instance_up::instance_up)))
+    } else {
+        (true, None)
+    };
 
-    }
-    //let (instance_rdy &&)
-    let instance_rcvr = thread_init_compat(instance_up::instance_up);
-    let mut instance_rdy = false;
+    let (mut content_rdy, content_rcvr) = if config.contains("content") {
+        (false, Some(thread_init(server_build::server_build_content)))
+    } else {
+        (true, None)
+    };
 
-    let content_rcvr = thread_init(server_build::server_build_content);
-    let mut content_rdy = false;
+    let (mut gateway_rdy, gateway_rcvr) = if config.contains("gateway") {
+        (false, Some(thread_init(server_build::server_build_gateway)))
+    } else {
+        (true, None)
+    };
 
-    let gateway_rcvr = thread_init(server_build::server_build_gateway);
-    let mut gateway_rdy = false;
+    let (mut region_rdy, region_rcvr) = if config.contains("region") {
+        (false, Some(thread_init(server_build::server_build_region)))
+    } else {
+        (true, None)
+    };
 
-    let region_rcvr = thread_init(server_build::server_build_region);
-    let mut region_rdy = false;
+    let (mut session_rdy, session_rcvr) = if config.contains("session") {
+        (false, Some(thread_init(server_build::server_build_session)))
+    } else {
+        (true, None)
+    };
 
-    let session_rcvr = thread_init(server_build::server_build_session);
-    let mut session_rdy = false;
+    let (mut world_rdy, world_rcvr) = if config.contains("world") {
+        (false, Some(thread_init(server_build::server_build_world)))
+    } else {
+        (true, None)
+    };
 
-    let world_rcvr = thread_init(server_build::server_build_world);
-    let mut world_rdy = false;
+    let (mut asset_rdy, asset_rcvr) = if config.contains("asset") {
+        (false, Some(thread_init(server_build::server_build_asset)))
+    } else {
+        (true, None)
+    };
 
-    let asset_rcvr = thread_init(server_build::server_build_asset);
-    let mut asset_rdy = false;
-
-    let auth_rcvr = thread_init(server_build::server_build_auth);
-    let mut auth_rdy = false;
+    let (mut auth_rdy, auth_rcvr) = if config.contains("auth") {
+        (false, Some(thread_init(server_build::server_build_auth)))
+    } else {
+        (true, None)
+    };
 
     loop {
         thread::sleep(Duration::from_secs(5));
 
-        check_channel(&instance_rcvr, &mut instance_rdy)?;
-        check_channel(&content_rcvr, &mut content_rdy)?;
-        check_channel(&gateway_rcvr, &mut gateway_rdy)?;
-        check_channel(&region_rcvr, &mut region_rdy)?;
-        check_channel(&session_rcvr, &mut session_rdy)?;
-        check_channel(&world_rcvr, &mut world_rdy)?;
-        check_channel(&asset_rcvr, &mut asset_rdy)?;
-        check_channel(&auth_rcvr, &mut auth_rdy)?;
+        if let Some(instance_rcvr) = &instance_rcvr {
+            check_channel(instance_rcvr, &mut instance_rdy)?;
+        }
+        if let Some(content_rcvr) = &content_rcvr {
+            check_channel(content_rcvr, &mut content_rdy)?;
+        }
+        if let Some(gateway_rcvr) = &gateway_rcvr {
+            check_channel(gateway_rcvr, &mut gateway_rdy)?;
+        }
+        if let Some(region_rcvr) = &region_rcvr {
+            check_channel(region_rcvr, &mut region_rdy)?;
+        }
+        if let Some(session_rcvr) = &session_rcvr {
+            check_channel(session_rcvr, &mut session_rdy)?;
+        }
+        if let Some(world_rcvr) = &world_rcvr {
+            check_channel(world_rcvr, &mut world_rdy)?;
+        }
+        if let Some(asset_rcvr) = &asset_rcvr {
+            check_channel(asset_rcvr, &mut asset_rdy)?;
+        }
+        if let Some(auth_rcvr) = &auth_rcvr {
+            check_channel(auth_rcvr, &mut auth_rdy)?;
+        }
 
         if instance_rdy
             && content_rdy
@@ -74,7 +119,7 @@ pub fn up() -> Result<(), CliError> {
         }
     }
 
-    containers_up()?;
+    containers_up(config)?;
 
     info!("Done!");
     Ok(())
