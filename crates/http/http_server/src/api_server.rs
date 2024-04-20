@@ -12,7 +12,7 @@ pub trait ApiServer {
     fn endpoint<
         TypeRequest: 'static + ApiRequest,
         TypeResponse: 'static + Send + Sync + Future<Output = Result<TypeRequest::Response, ResponseError>>,
-        Handler: 'static + Send + Sync + FnMut((SocketAddr, TypeRequest)) -> TypeResponse,
+        Handler: 'static + Send + Sync + Fn((SocketAddr, TypeRequest)) -> TypeResponse,
     >(
         &mut self,
         handler: Handler,
@@ -23,7 +23,7 @@ impl ApiServer for Server {
     fn endpoint<
         TypeRequest: 'static + ApiRequest,
         TypeResponse: 'static + Send + Sync + Future<Output = Result<TypeRequest::Response, ResponseError>>,
-        Handler: 'static + Send + Sync + FnMut((SocketAddr, TypeRequest)) -> TypeResponse,
+        Handler: 'static + Send + Sync + Fn((SocketAddr, TypeRequest)) -> TypeResponse,
     >(
         &mut self,
         handler: Handler,
@@ -43,9 +43,9 @@ impl ApiServer for Server {
 fn get_endpoint_func<
     TypeRequest: 'static + ApiRequest,
     TypeResponse: 'static + Send + Sync + Future<Output = Result<TypeRequest::Response, ResponseError>>,
-    Handler: 'static + Send + Sync + FnMut((SocketAddr, TypeRequest)) -> TypeResponse,
+    Handler: 'static + Send + Sync + Fn((SocketAddr, TypeRequest)) -> TypeResponse,
 >(
-    mut handler: Handler,
+    handler: Handler,
 ) -> EndpointFunc {
     Box::new(move |args: (SocketAddr, Request)| {
         let addr = args.0;

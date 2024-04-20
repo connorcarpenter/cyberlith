@@ -10,7 +10,7 @@ use http_server_shared::{executor, MatchHostResult, serve_impl};
 pub(crate) type EndpointFunc = Box<
     dyn Send
     + Sync
-    + FnMut(
+    + Fn(
         (SocketAddr, Request),
     ) -> Pin<
         Box<dyn Send + Sync + Future<Output = Result<Response, ResponseError>>>,
@@ -145,8 +145,8 @@ impl Server {
             |endpoint_key, addr, request| {
                 let server_4 = server_2.clone();
                 async move {
-                    let mut server = server_4.write().await;
-                    let endpoint = server.endpoints.get_mut(&endpoint_key).unwrap();
+                    let server = server_4.read().await;
+                    let endpoint = server.endpoints.get(&endpoint_key).unwrap();
 
                     (endpoint.func)((addr, request)).await
                 }

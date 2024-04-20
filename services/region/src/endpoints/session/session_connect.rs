@@ -3,7 +3,7 @@ use logging::{info, warn};
 use http_client::{HttpClient, ResponseError};
 use http_server::{async_dup::Arc, smol::lock::RwLock, ApiServer, Server};
 
-use config::{GATEWAY_SECRET, REGION_SERVER_SECRET};
+use config::REGION_SERVER_SECRET;
 use region_server_http_proto::{SessionConnectRequest, SessionConnectResponse};
 use session_server_http_proto::IncomingUserRequest;
 
@@ -18,7 +18,7 @@ pub fn session_connect(server: &mut Server, state: Arc<RwLock<State>>) {
 
 async fn async_impl(
     state: Arc<RwLock<State>>,
-    incoming_request: SessionConnectRequest,
+    _incoming_request: SessionConnectRequest,
 ) -> Result<SessionConnectResponse, ResponseError> {
 
     info!("session_connect request received from gateway");

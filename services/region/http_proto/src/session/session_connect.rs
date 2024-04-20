@@ -4,18 +4,11 @@ use http_common::{ApiRequest, ApiResponse, Method};
 
 // Request
 #[derive(Serde, PartialEq, Clone)]
-pub struct SessionConnectRequest {
-    // TODO: shouldn't send username & password in plaintext here
-    pub username: String,
-    pub password: String,
-}
+pub struct SessionConnectRequest;
 
 impl SessionConnectRequest {
-    pub fn new(username: &str, password: &str) -> Self {
-        Self {
-            username: username.to_string(),
-            password: password.to_string(),
-        }
+    pub fn new() -> Self {
+        Self
     }
 }
 

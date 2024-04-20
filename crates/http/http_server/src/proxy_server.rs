@@ -87,7 +87,7 @@ fn get_endpoint_func(
     dyn 'static
         + Send
         + Sync
-        + FnMut(
+        + Fn(
             (SocketAddr, Request),
         ) -> Pin<
             Box<dyn 'static + Send + Sync + Future<Output = Result<Response, ResponseError>>>,
