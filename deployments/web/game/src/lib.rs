@@ -6,7 +6,7 @@ cfg_if! {
     } else {}
 }
 
-use config::{GATEWAY_PORT, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL};
+use config::{GATEWAY_PORT, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SUBDOMAIN_API, SUBDOMAIN_WWW};
 use game_app::GameApp;
 use kernel::{redirect_to_url, Kernel};
 use logging::info;
@@ -29,8 +29,11 @@ pub async fn main() -> Result<(), JsValue> {
         }
         "launcher" => {
             println!("Loading LauncherApp...");
-            let domain_str = format!("{}://{}:{}", PUBLIC_PROTOCOL, PUBLIC_IP_ADDR, GATEWAY_PORT);
-            let url = format!("{}/", domain_str);
+            let url = if SUBDOMAIN_WWW.is_empty() {
+                format!("{}://{}:{}/", PUBLIC_PROTOCOL, PUBLIC_IP_ADDR, GATEWAY_PORT)
+            } else {
+                format!("{}://{}.{}:{}/", PUBLIC_PROTOCOL, SUBDOMAIN_WWW, PUBLIC_IP_ADDR, GATEWAY_PORT)
+            };
             redirect_to_url(&url); // root goes to launcher
         }
         _ => {

@@ -16,7 +16,7 @@ use naia_bevy_client::{
 
 use asset_loader::{AssetManager, AssetMetadataStore};
 use bevy_http_client::{HttpClient, ResponseKey};
-use config::{GATEWAY_PORT, PUBLIC_IP_ADDR};
+use config::{GATEWAY_PORT, PUBLIC_IP_ADDR, SUBDOMAIN_API};
 use filesystem::FileSystemManager;
 use ui_runner::UiManager;
 
@@ -212,7 +212,12 @@ impl ConnectionManager {
             ConnectionState::Disconnected => {
                 info!("sending to gateway..");
                 let request = SessionConnectRequest::new("charlie", "12345");
-                let key = http_client.send(PUBLIC_IP_ADDR, GATEWAY_PORT, request);
+                let url = if SUBDOMAIN_API.is_empty() {
+                    PUBLIC_IP_ADDR.to_string()
+                } else {
+                    format!("{}.{}", SUBDOMAIN_API, PUBLIC_IP_ADDR)
+                };
+                let key = http_client.send(&url, GATEWAY_PORT, request);
                 self.connection_state = ConnectionState::SentToGateway(key);
             }
             ConnectionState::SentToGateway(key) => {
