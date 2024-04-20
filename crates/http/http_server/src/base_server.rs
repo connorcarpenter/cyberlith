@@ -5,7 +5,7 @@ use smol::{future::Future, stream::StreamExt, lock::RwLock, net::TcpListener, io
 
 use logging::info;
 use http_common::{Request, Response, ResponseError};
-use http_server_shared::{executor, serve_impl};
+use http_server_shared::{executor, MatchHostResult, serve_impl};
 
 pub(crate) type EndpointFunc = Box<
     dyn Send
@@ -19,13 +19,14 @@ pub(crate) type EndpointFunc = Box<
 
 pub(crate) struct Endpoint {
     func: EndpointFunc,
-    required_host: Option<String>,
+    // Option<(required_host, Option<redirect_url>)>
+    required_host: Option<(String, Option<String>)>,
 }
 
 impl Endpoint {
     pub(crate) fn new(
         endpoint_func: EndpointFunc,
-        required_host: Option<String>,
+        required_host: Option<(String, Option<String>)>,
     ) -> Self {
         Self {
             func: endpoint_func,
@@ -125,11 +126,19 @@ impl Server {
                 async move {
                     let server = server_3.read().await;
                     let endpoint = server.endpoints.get(&endpoint_key).unwrap();
-                    if let Some(required_host) = &endpoint.required_host {
-                        host.eq_ignore_ascii_case(required_host)
+                    if let Some((required_host, redirect_url_opt)) = &endpoint.required_host {
+                        if host.eq_ignore_ascii_case(required_host) {
+                            MatchHostResult::Match
+                        } else {
+                            if let Some(redirect_url) = redirect_url_opt {
+                                MatchHostResult::NoMatchRedirect(redirect_url.clone())
+                            } else {
+                                MatchHostResult::NoMatch
+                            }
+                        }
                     } else {
                         // if endpoint doesn't have a required host, then it's a match
-                        true
+                        MatchHostResult::Match
                     }
                 }
             },

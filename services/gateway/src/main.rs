@@ -1,7 +1,7 @@
 
 use std::{net::SocketAddr, thread};
 
-use config::{AUTH_SERVER_PORT, PUBLIC_IP_ADDR, AUTH_SERVER_RECV_ADDR, SUBDOMAIN_WWW, SUBDOMAIN_API, CONTENT_SERVER_PORT, CONTENT_SERVER_RECV_ADDR, GATEWAY_PORT, REGION_SERVER_PORT, REGION_SERVER_RECV_ADDR, SELF_BINDING_ADDR, SESSION_SERVER_RECV_ADDR, SESSION_SERVER_SIGNAL_PORT, WORLD_SERVER_RECV_ADDR, WORLD_SERVER_SIGNAL_PORT};
+use config::{AUTH_SERVER_PORT, PUBLIC_IP_ADDR, AUTH_SERVER_RECV_ADDR, SUBDOMAIN_WWW, SUBDOMAIN_API, CONTENT_SERVER_PORT, CONTENT_SERVER_RECV_ADDR, GATEWAY_PORT, REGION_SERVER_PORT, REGION_SERVER_RECV_ADDR, SELF_BINDING_ADDR, SESSION_SERVER_RECV_ADDR, SESSION_SERVER_SIGNAL_PORT, WORLD_SERVER_RECV_ADDR, WORLD_SERVER_SIGNAL_PORT, PUBLIC_PROTOCOL};
 use http_server::{Method, ProxyServer, Server};
 use logging::info;
 
@@ -22,13 +22,14 @@ pub fn main() {
     } else {
         Some(format!("{}.{}", SUBDOMAIN_API, PUBLIC_IP_ADDR))
     };
-    let required_host_api = required_host_api.as_ref().map(|s| s.as_str());
+    let required_host_api = required_host_api.as_ref().map(|s| (s.as_str(), None));
     let required_host_www = if SUBDOMAIN_WWW.is_empty() {
         None
     } else {
         Some(format!("{}.{}", SUBDOMAIN_WWW, PUBLIC_IP_ADDR))
     };
-    let required_host_www = required_host_www.as_ref().map(|s| s.as_str());
+    let rd = format!("{}://{}.{}", PUBLIC_PROTOCOL, SUBDOMAIN_WWW, PUBLIC_IP_ADDR);
+    let required_host_www = required_host_www.as_ref().map(|s| (s.as_str(), Some(rd.as_str())));
 
     // -> region
     {

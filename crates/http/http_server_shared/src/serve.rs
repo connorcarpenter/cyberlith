@@ -11,9 +11,17 @@ use logging::{info, warn};
 
 use crate::ReadState;
 
+pub enum MatchHostResult {
+    Match,
+    // includes redirect url
+    NoMatchRedirect(String),
+    // includes error message?
+    NoMatch,
+}
+
 pub async fn serve_impl<
     MatchUrlOutput: Future<Output = bool> + 'static,
-    MatchHostOutput: Future<Output = bool> + 'static,
+    MatchHostOutput: Future<Output = MatchHostResult> + 'static,
     ResponseOutput: Future<Output = Result<Response, ResponseError>> + 'static,
     ResponseStream: Unpin + AsyncRead + AsyncWrite,
 >(
@@ -118,8 +126,17 @@ pub async fn serve_impl<
         }
     }
 
-    if read_state != ReadState::Finished {
-        return send_404(response_stream).await;
+    match read_state {
+        ReadState::Finished => {
+            // success! continue,
+        },
+        ReadState::Redirecting(redirect_url) => {
+            let response = Response::redirect(&redirect_url);
+            return response_send(response_stream, response).await;
+        }
+        _ => {
+            return send_404(response_stream).await;
+        }
     }
 
     // done reading //
@@ -133,7 +150,7 @@ pub async fn serve_impl<
 
     match response_func(endpoint_key, incoming_address, request).await {
         Ok(response) => {
-            response_send(response_stream, response).await;
+            return response_send(response_stream, response).await;
         }
         Err(e) => {
             warn!("error when responding: {:?}", e.to_string());
@@ -154,7 +171,7 @@ fn request_extract_url(
 }
 
 async fn request_read_headers<
-    MatchHostOutput: Future<Output = bool> + 'static
+    MatchHostOutput: Future<Output = MatchHostResult> + 'static
 > (
     match_host_func: &impl Fn(String, String) -> MatchHostOutput,
     endpoint_key: &str,
@@ -202,11 +219,19 @@ async fn request_read_headers<
             "host" => {
                 // check if host is allowed
                 let host = parts[1].to_string();
-                let host_allowed = match_host_func(endpoint_key.to_string(), host).await;
-                if !host_allowed {
-                    warn!("host not allowed: {}", parts[1]);
-                    *read_state = ReadState::Error;
-                    return true;
+                let match_host_result = match_host_func(endpoint_key.to_string(), host).await;
+                match match_host_result {
+                    MatchHostResult::NoMatchRedirect(redirect_url) => {
+                        warn!("host not allowed: {}, redirecting to {}", parts[1], redirect_url);
+                        *read_state = ReadState::Redirecting(redirect_url);
+                        return true;
+                    }
+                    MatchHostResult::NoMatch => {
+                        warn!("host not allowed: {}", parts[1]);
+                        *read_state = ReadState::Error;
+                        return true;
+                    }
+                    MatchHostResult::Match => {}
                 }
             }
             "content-length" => {

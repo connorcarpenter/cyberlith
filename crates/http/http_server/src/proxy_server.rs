@@ -13,7 +13,7 @@ pub trait ProxyServer {
     fn serve_proxy(
         &mut self,
         host_name: &str,
-        incoming_host: Option<&str>,
+        incoming_host: Option<(&str, Option<&str>)>,
         method: Method,
         url_path: &str,
         remote_name: &str,
@@ -24,7 +24,7 @@ pub trait ProxyServer {
     fn serve_api_proxy<TypeRequest: 'static + ApiRequest>(
         &mut self,
         host_name: &str,
-        incoming_host: Option<&str>,
+        incoming_host: Option<(&str, Option<&str>)>,
         remote_name: &str,
         remote_addr: &str,
         remote_port: &str,
@@ -35,7 +35,7 @@ impl ProxyServer for Server {
     fn serve_proxy(
         &mut self,
         host_name: &str,
-        incoming_host: Option<&str>,
+        incoming_host: Option<(&str, Option<&str>)>,
         incoming_method: Method,
         incoming_path: &str,
         remote_name: &str,
@@ -50,7 +50,7 @@ impl ProxyServer for Server {
         let remote_url = format!("http://{}:{}/{}", remote_addr, remote_port, remote_path);
         let logged_remote_url = format!("{} host:{}/{}", incoming_method.as_str(), remote_port, remote_path);
         let endpoint_func = get_endpoint_func(host_name, remote_name, incoming_method, &remote_url, &logged_remote_url);
-        let incoming_host = incoming_host.map(|s| s.to_string());
+        let incoming_host = incoming_host.map(|(rq, rdopt)| (rq.to_string(), rdopt.map(|rd| rd.to_string())));
         let new_endpoint = Endpoint::new(endpoint_func, incoming_host);
         self.internal_insert_endpoint(url_path, new_endpoint);
     }
@@ -58,7 +58,7 @@ impl ProxyServer for Server {
     fn serve_api_proxy<TypeRequest: 'static + ApiRequest>(
         &mut self,
         host_name: &str,
-        incoming_host: Option<&str>,
+        incoming_host: Option<(&str, Option<&str>)>,
         remote_name: &str,
         remote_addr: &str,
         remote_port: &str,

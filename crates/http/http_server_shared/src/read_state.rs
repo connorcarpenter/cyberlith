@@ -5,4 +5,5 @@ pub enum ReadState {
     ReadingBody,
     Finished,
     Error,
+    Redirecting(String),
 }

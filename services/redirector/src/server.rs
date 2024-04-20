@@ -5,7 +5,7 @@ use smol::{net::TcpListener, stream::StreamExt};
 use config::{PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SUBDOMAIN_WWW};
 use http_common::{Request, Response, ResponseError};
 use http_server::http_log_util;
-use http_server_shared::serve_impl;
+use http_server_shared::{MatchHostResult, serve_impl};
 use logging::info;
 
 pub struct RedirectServer;
@@ -45,7 +45,7 @@ impl RedirectServer {
                     incoming_address,
                     response_stream,
                     |_| async move { true },
-                    |_, _| async move { true },
+                    |_, _| async move { MatchHostResult::Match },
                     |_, addr, req| RedirectServer::endpoint(addr, req),
                 )
                 .await;

@@ -15,7 +15,7 @@ use smol::{
 
 use bevy_http_shared::Protocol;
 use http_common::{Request, Response, ResponseError};
-use http_server_shared::{executor, serve_impl};
+use http_server_shared::{executor, MatchHostResult, serve_impl};
 
 struct KeyMaker {
     current_index: u64,
@@ -213,7 +213,7 @@ async fn serve(
         },
         |_, _| {
             async move {
-                true // no bevy server should be exposed to open internet?
+                MatchHostResult::Match // no bevy server should be exposed to open internet?
             }
         },
         |endpoint_key, req_addr, request| {
