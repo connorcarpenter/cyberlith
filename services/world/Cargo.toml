@@ -7,8 +7,8 @@ edition = "2021"
 publish = false
 
 [features]
-local = [ "config/local", "world_server_naia_proto/local" ]
-prod = [ "config/prod", "world_server_naia_proto/prod" ]
+local = [ "config/local", "world_server_naia_proto/local", "region_server_http_proto/local" ]
+prod = [ "config/prod", "world_server_naia_proto/prod", "region_server_http_proto/prod" ]
 
 [dependencies]
 naia-bevy-server = { path = "../../../naia/adapters/bevy/server", features = [ "transport_webrtc" ] }

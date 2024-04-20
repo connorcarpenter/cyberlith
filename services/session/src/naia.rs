@@ -50,8 +50,8 @@ pub fn auth_events(
 ) {
     for events in event_reader.read() {
         for (user_key, auth) in events.read::<Auth>() {
-            if global.take_login_token(&auth.token) {
-                info!("Accepted connection. Token: {}", auth.token);
+            if global.take_login_token(&auth.token()) {
+                info!("Accepted connection. Token: {}", auth.token());
 
                 // Accept incoming connection
                 server.accept_connection(&user_key);
@@ -59,7 +59,7 @@ pub fn auth_events(
                 // Reject incoming connection
                 server.reject_connection(&user_key);
 
-                warn!("Rejected connection. Token: {}", auth.token);
+                warn!("Rejected connection. Token: {}", auth.token());
             }
         }
     }

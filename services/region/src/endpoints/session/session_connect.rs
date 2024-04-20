@@ -1,7 +1,7 @@
 use logging::{info, warn};
 
 use http_client::{HttpClient, ResponseError};
-use http_server::{async_dup::Arc, smol::lock::RwLock, ApiServer, Server};
+use http_server::{async_dup::Arc, smol::lock::RwLock, ApiServer, Server, ApiRequest};
 
 use config::REGION_SERVER_SECRET;
 use region_server_http_proto::{SessionConnectRequest, SessionConnectResponse};
@@ -21,7 +21,8 @@ async fn async_impl(
     _incoming_request: SessionConnectRequest,
 ) -> Result<SessionConnectResponse, ResponseError> {
 
-    info!("session_connect request received from gateway");
+    let host_name = "region_server".to_string();
+    let remote_name = "session_server".to_string();
 
     let state = state.read().await;
     let Some(session_server) = state.get_available_session_server() else {
@@ -30,17 +31,24 @@ async fn async_impl(
             "no available session server".to_string(),
         ));
     };
-    let session_server_http_addr = session_server.http_addr();
-    let session_server_http_port = session_server.http_port();
+    let remote_addr = session_server.http_addr();
+    let remote_port = session_server.http_port();
+    let remote_method = IncomingUserRequest::method();
+    let remote_path = IncomingUserRequest::path();
 
-    info!("sending session_connect request to session server");
+    let logged_remote_url = format!("{} host:{}/{}", remote_method.as_str(), remote_port, remote_path);
+    http_server::http_log_util::send_req(
+        &host_name,
+        &remote_name,
+        &logged_remote_url
+    );
 
     let temp_token = random::generate_random_string(16);
 
     let request = IncomingUserRequest::new(REGION_SERVER_SECRET, &temp_token);
 
     let Ok(_outgoing_response) =
-        HttpClient::send(&session_server_http_addr, session_server_http_port, request).await
+        HttpClient::send(&remote_addr, remote_port, request).await
     else {
         warn!("Failed session_connect request to session server");
         return Err(ResponseError::InternalServerError(
@@ -48,9 +56,11 @@ async fn async_impl(
         ));
     };
 
-    info!("Received session_connect response from session server");
-
-    info!("Sending session_connect response to gateway");
+    http_server::http_log_util::recv_res(
+        &host_name,
+        &remote_name,
+        &logged_remote_url
+    );
 
     Ok(SessionConnectResponse::new(
         &temp_token,

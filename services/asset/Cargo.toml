@@ -7,8 +7,8 @@ edition = "2021"
 publish = false
 
 [features]
-local = [ "config/local", "automation_lib" ]
-prod = [ "config/prod" ]
+local = [ "config/local", "automation_lib", "region_server_http_proto/local" ]
+prod = [ "config/prod", "region_server_http_proto/prod" ]
 
 [dependencies]
 http_server = { path = "../../crates/http/http_server" }

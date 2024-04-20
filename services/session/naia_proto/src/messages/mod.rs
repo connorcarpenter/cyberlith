@@ -1,7 +1,7 @@
 use naia_bevy_shared::{Protocol, ProtocolPlugin};
 
 mod auth;
-pub use auth::Auth;
+pub use auth::{Auth, AuthInner};
 
 mod world_connect;
 pub use world_connect::WorldConnectToken;

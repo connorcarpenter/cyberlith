@@ -8,12 +8,12 @@ use bevy_ecs::{
 };
 
 use naia_bevy_client::{
-    events::{ConnectEvent, MessageEvents, RequestEvents},
+    events::{ConnectEvent, DisconnectEvent, RejectEvent, MessageEvents, RequestEvents},
     transport::webrtc::Socket as WebrtcSocket,
     Client, Timer,
 };
 
-use logging::info;
+use logging::{info, warn};
 use asset_loader::{AssetManager, AssetMetadataStore};
 use bevy_http_client::{HttpClient, ResponseKey};
 use config::{GATEWAY_PORT, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SUBDOMAIN_API};
@@ -35,8 +35,8 @@ type WorldClient<'a> = Client<'a, World>;
 
 #[derive(Clone, PartialEq)]
 pub enum ConnectionState {
-    SentToGateway,
-    ReceivedFromGateway,
+    Disconnected,
+    WaitingForSessionConnect,
     ConnectedToSession,
     ConnectedToWorld,
 }
@@ -47,13 +47,10 @@ pub struct ConnectionManager {
     send_timer: Timer,
 }
 
-#[derive(Event)]
-pub struct SessionConnectEvent;
-
 impl Default for ConnectionManager {
     fn default() -> Self {
         Self {
-            connection_state: ConnectionState::SentToGateway,
+            connection_state: ConnectionState::Disconnected,
             // TODO: split this out into config var?
             send_timer: Timer::new(Duration::from_millis(5000)),
         }
@@ -64,11 +61,10 @@ impl ConnectionManager {
     // used as a system
     pub fn handle_session_connect_events(
         client: SessionClient,
-        mut event_reader: EventReader<ConnectEvent<Session>>,
+        mut session_connect_event_reader: EventReader<ConnectEvent<Session>>,
         mut connection_manager: ResMut<ConnectionManager>,
-        mut event_writer: EventWriter<SessionConnectEvent>,
     ) {
-        for _ in event_reader.read() {
+        for _ in session_connect_event_reader.read() {
             let Ok(server_address) = client.server_address() else {
                 panic!("Shouldn't happen");
             };
@@ -77,14 +73,37 @@ impl ConnectionManager {
                 server_address
             );
 
-            let ConnectionState::ReceivedFromGateway = &connection_manager.connection_state
+            let ConnectionState::WaitingForSessionConnect = &connection_manager.connection_state
             else {
                 panic!("Shouldn't happen");
             };
 
             connection_manager.connection_state = ConnectionState::ConnectedToSession;
+        }
+    }
 
-            event_writer.send(SessionConnectEvent);
+    // used as a system
+    pub fn handle_session_disconnect_events(
+        mut session_disconnect_event_reader: EventReader<DisconnectEvent<Session>>,
+        mut connection_manager: ResMut<ConnectionManager>,
+    ) {
+        for _ in session_disconnect_event_reader.read() {
+
+            warn!("Client disconnected from session server");
+
+            connection_manager.connection_state = ConnectionState::Disconnected;
+        }
+    }
+
+    // used as a system
+    pub fn handle_session_reject_events(
+        mut session_reject_event_reader: EventReader<RejectEvent<Session>>,
+        mut connection_manager: ResMut<ConnectionManager>,
+    ) {
+        for _ in session_reject_event_reader.read() {
+            warn!("Client rejected from connecting to the session server");
+
+            connection_manager.connection_state = ConnectionState::Disconnected;
         }
     }
 
@@ -206,7 +225,7 @@ impl ConnectionManager {
         }
 
         match &self.connection_state {
-            ConnectionState::SentToGateway => {
+            ConnectionState::Disconnected => {
 
                 // from disconnected before
 
@@ -214,7 +233,7 @@ impl ConnectionManager {
                 // self.connection_state = ConnectionState::SentToGateway(key);
 
                 // previous below
-                self.connection_state = ConnectionState::ReceivedFromGateway;
+                self.connection_state = ConnectionState::WaitingForSessionConnect;
 
                 let url = if SUBDOMAIN_API.is_empty() {
                     format!("{}://{}:{}", PUBLIC_PROTOCOL, PUBLIC_IP_ADDR, GATEWAY_PORT)
@@ -235,9 +254,7 @@ impl ConnectionManager {
                 let socket = WebrtcSocket::new(&url, session_client.socket_config());
                 session_client.connect(socket);
             }
-            ConnectionState::ReceivedFromGateway => {
-                // waiting for connect event ..
-            }
+            ConnectionState::WaitingForSessionConnect => {}
             ConnectionState::ConnectedToSession => {}
             ConnectionState::ConnectedToWorld => {
                 info!("world : connected!");

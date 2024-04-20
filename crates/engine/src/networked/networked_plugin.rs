@@ -12,7 +12,7 @@ use super::{
     asset_cache_checker::AssetCacheChecker,
     asset_ref_processor::AssetRefProcessor,
     client_markers::{Session, World},
-    connection_manager::{ConnectionManager, SessionConnectEvent},
+    connection_manager::{ConnectionManager},
     world_events,
     world_events::{InsertAssetRefEvent, InsertComponentEvent},
 };
@@ -33,9 +33,10 @@ impl Plugin for NetworkedEnginePlugin {
             ))
             // connection manager stuff, maybe refactor out into a plugin?
             .init_resource::<ConnectionManager>()
-            .add_event::<SessionConnectEvent>()
             .add_systems(Update, ConnectionManager::handle_connection)
             .add_systems(Update, ConnectionManager::handle_session_connect_events)
+            .add_systems(Update, ConnectionManager::handle_session_disconnect_events)
+            .add_systems(Update, ConnectionManager::handle_session_reject_events)
             .add_systems(Update, ConnectionManager::handle_session_message_events)
             .add_systems(Update, ConnectionManager::handle_session_request_events)
             .add_systems(Update, ConnectionManager::handle_world_connect_events)

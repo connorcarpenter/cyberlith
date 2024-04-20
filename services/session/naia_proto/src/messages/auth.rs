@@ -1,14 +1,31 @@
-use naia_bevy_shared::Message;
+use naia_bevy_shared::{Message, Serde};
+
+#[derive(Serde, PartialEq, Clone)]
+pub struct AuthInner {
+    pub token: String,
+}
+
+impl AuthInner {
+    pub fn new(token: &str) -> Self {
+        Self {
+            token: token.to_string(),
+        }
+    }
+}
 
 #[derive(Message)]
 pub struct Auth {
-    pub token: String,
+    inner: AuthInner,
 }
 
 impl Auth {
     pub fn new(token: &str) -> Self {
         Self {
-            token: token.to_string(),
+            inner: AuthInner::new(token),
         }
+    }
+
+    pub fn token(&self) -> &str {
+        &self.inner.token
     }
 }
