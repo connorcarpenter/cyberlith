@@ -6,13 +6,14 @@ use http_client_shared::fetch_async;
 use http_common::{ApiRequest, Method, Request, Response, ResponseError};
 use logging::info;
 
-use crate::{log_util, Server};
+use crate::{log_util, Server, base_server::Endpoint};
 
 // serves a pass-through proxy
 pub trait ProxyServer {
     fn serve_proxy(
         &mut self,
         host_name: &str,
+        incoming_host: Option<&str>,
         method: Method,
         url_path: &str,
         remote_name: &str,
@@ -23,6 +24,7 @@ pub trait ProxyServer {
     fn serve_api_proxy<TypeRequest: 'static + ApiRequest>(
         &mut self,
         host_name: &str,
+        incoming_host: Option<&str>,
         remote_name: &str,
         remote_addr: &str,
         remote_port: &str,
@@ -33,6 +35,7 @@ impl ProxyServer for Server {
     fn serve_proxy(
         &mut self,
         host_name: &str,
+        incoming_host: Option<&str>,
         incoming_method: Method,
         incoming_path: &str,
         remote_name: &str,
@@ -46,13 +49,16 @@ impl ProxyServer for Server {
 
         let remote_url = format!("http://{}:{}/{}", remote_addr, remote_port, remote_path);
         let logged_remote_url = format!("{} host:{}/{}", incoming_method.as_str(), remote_port, remote_path);
-        let new_endpoint = endpoint_2(host_name, remote_name, incoming_method, &remote_url, &logged_remote_url);
+        let endpoint_func = get_endpoint_func(host_name, remote_name, incoming_method, &remote_url, &logged_remote_url);
+        let incoming_host = incoming_host.map(|s| s.to_string());
+        let new_endpoint = Endpoint::new(endpoint_func, incoming_host);
         self.internal_insert_endpoint(url_path, new_endpoint);
     }
 
     fn serve_api_proxy<TypeRequest: 'static + ApiRequest>(
         &mut self,
         host_name: &str,
+        incoming_host: Option<&str>,
         remote_name: &str,
         remote_addr: &str,
         remote_port: &str,
@@ -60,6 +66,7 @@ impl ProxyServer for Server {
         Self::serve_proxy(
             self,
             host_name,
+            incoming_host,
             TypeRequest::method(),
             TypeRequest::path(),
             remote_name,
@@ -70,7 +77,7 @@ impl ProxyServer for Server {
     }
 }
 
-fn endpoint_2(
+fn get_endpoint_func(
     host_name: &str,
     remote_name: &str,
     method: Method,

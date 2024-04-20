@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 
 use smol::{net::TcpListener, stream::StreamExt};
 
-use config::{PUBLIC_IP_ADDR, PUBLIC_PROTOCOL};
+use config::{PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SUBDOMAIN_WWW};
 use http_common::{Request, Response, ResponseError};
 use http_server::http_log_util;
 use http_server_shared::serve_impl;
@@ -45,7 +45,8 @@ impl RedirectServer {
                     incoming_address,
                     response_stream,
                     |_| async move { true },
-                    |(addr, req)| RedirectServer::endpoint(addr, req),
+                    |_, _| async move { true },
+                    |_, addr, req| RedirectServer::endpoint(addr, req),
                 )
                 .await;
             })
@@ -71,7 +72,7 @@ impl RedirectServer {
         );
 
         let response =
-            Response::redirect(format!("{}://{}", PUBLIC_PROTOCOL, PUBLIC_IP_ADDR).as_str());
+            Response::redirect(format!("{}://{}.{}", PUBLIC_PROTOCOL, SUBDOMAIN_WWW, PUBLIC_IP_ADDR).as_str());
 
         http_log_util::send_res(
             "redirector",

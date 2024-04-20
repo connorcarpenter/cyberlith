@@ -6,7 +6,7 @@ use logging::{info, warn};
 
 use http_common::{Request, Response, ResponseError};
 
-use crate::Server;
+use crate::{Server, base_server::Endpoint};
 
 // serves files from the file system
 pub trait FileServer {
@@ -20,12 +20,13 @@ impl FileServer for Server {
         info!("serving file @ {}", url_path);
 
         let file_path = format!("{}/{}", file_path, file_name);
-        let new_endpoint = endpoint_2(&file_path);
+        let endpoint_func = get_endpoint_func(&file_path);
+        let new_endpoint = Endpoint::new(endpoint_func, None);
         self.internal_insert_endpoint(url_path, new_endpoint);
     }
 }
 
-fn endpoint_2(
+fn get_endpoint_func(
     file_path: &str,
 ) -> Box<
     dyn 'static

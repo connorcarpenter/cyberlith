@@ -1,7 +1,7 @@
 
 use std::{net::SocketAddr, thread};
 
-use config::{AUTH_SERVER_PORT, AUTH_SERVER_RECV_ADDR, CONTENT_SERVER_PORT, CONTENT_SERVER_RECV_ADDR, GATEWAY_PORT, REGION_SERVER_PORT, REGION_SERVER_RECV_ADDR, SELF_BINDING_ADDR, SESSION_SERVER_RECV_ADDR, SESSION_SERVER_SIGNAL_PORT, WORLD_SERVER_RECV_ADDR, WORLD_SERVER_SIGNAL_PORT};
+use config::{AUTH_SERVER_PORT, PUBLIC_IP_ADDR, AUTH_SERVER_RECV_ADDR, SUBDOMAIN_WWW, SUBDOMAIN_API, CONTENT_SERVER_PORT, CONTENT_SERVER_RECV_ADDR, GATEWAY_PORT, REGION_SERVER_PORT, REGION_SERVER_RECV_ADDR, SELF_BINDING_ADDR, SESSION_SERVER_RECV_ADDR, SESSION_SERVER_SIGNAL_PORT, WORLD_SERVER_RECV_ADDR, WORLD_SERVER_SIGNAL_PORT};
 use http_server::{Method, ProxyServer, Server};
 use logging::info;
 
@@ -17,6 +17,18 @@ pub fn main() {
     let mut server = Server::new(socket_addr);
 
     let gateway = "gateway";
+    let required_host_api = if SUBDOMAIN_API.is_empty() {
+        None
+    } else {
+        Some(format!("{}.{}", SUBDOMAIN_API, PUBLIC_IP_ADDR))
+    };
+    let required_host_api = required_host_api.as_ref().map(|s| s.as_str());
+    let required_host_www = if SUBDOMAIN_WWW.is_empty() {
+        None
+    } else {
+        Some(format!("{}.{}", SUBDOMAIN_WWW, PUBLIC_IP_ADDR))
+    };
+    let required_host_www = required_host_www.as_ref().map(|s| s.as_str());
 
     // -> region
     {
@@ -27,6 +39,7 @@ pub fn main() {
         // session connect
         server.serve_api_proxy::<SessionConnectRequest>(
             gateway,
+            required_host_api,
             auth_server,
             addr,
             &port,
@@ -42,6 +55,7 @@ pub fn main() {
         // user login
         server.serve_api_proxy::<UserLoginRequest>(
             gateway,
+            required_host_api,
             auth_server,
             addr,
             &port,
@@ -49,6 +63,7 @@ pub fn main() {
         // user register
         server.serve_api_proxy::<UserRegisterRequest>(
             gateway,
+            required_host_api,
             auth_server,
             addr,
             &port,
@@ -56,6 +71,7 @@ pub fn main() {
         // user register confirm
         server.serve_api_proxy::<UserRegisterConfirmRequest>(
             gateway,
+            required_host_api,
             auth_server,
             addr,
             &port,
@@ -63,6 +79,7 @@ pub fn main() {
         // refresh token grant
         server.serve_api_proxy::<RefreshTokenGrantRequest>(
             gateway,
+            required_host_api,
             auth_server,
             addr,
             &port,
@@ -70,6 +87,7 @@ pub fn main() {
         // user name forgot
         server.serve_api_proxy::<UserNameForgotRequest>(
             gateway,
+            required_host_api,
             auth_server,
             addr,
             &port,
@@ -77,6 +95,7 @@ pub fn main() {
         // user password forgot
         server.serve_api_proxy::<UserPasswordForgotRequest>(
             gateway,
+            required_host_api,
             auth_server,
             addr,
             &port,
@@ -84,9 +103,46 @@ pub fn main() {
         // user password reset
         server.serve_api_proxy::<UserPasswordResetRequest>(
             gateway,
+            required_host_api,
             auth_server,
             addr,
             &port,
+        );
+    }
+
+    // -> session
+    {
+        let session_server = "session_server";
+        let addr = SESSION_SERVER_RECV_ADDR;
+        let port = SESSION_SERVER_SIGNAL_PORT.to_string();
+
+        server.serve_proxy(
+            gateway,
+            required_host_api,
+            Method::Post,
+            "session_rtc",
+            session_server,
+            addr,
+            &port,
+            "session_rtc",
+        );
+    }
+
+    // -> world
+    {
+        let world_server = "world_server";
+        let addr = WORLD_SERVER_RECV_ADDR;
+        let port = WORLD_SERVER_SIGNAL_PORT.to_string();
+
+        server.serve_proxy(
+            gateway,
+            required_host_api,
+            Method::Post,
+            "world_rtc",
+            world_server,
+            addr,
+            &port,
+            "world_rtc",
         );
     }
 
@@ -98,6 +154,7 @@ pub fn main() {
 
         server.serve_proxy(
             gateway,
+            required_host_www,
             Method::Get,
             "",
             content_server,
@@ -107,6 +164,7 @@ pub fn main() {
         );
         server.serve_proxy(
             gateway,
+            required_host_www,
             Method::Get,
             "launcher.js",
             content_server,
@@ -116,6 +174,7 @@ pub fn main() {
         );
         server.serve_proxy(
             gateway,
+            required_host_www,
             Method::Get,
             "launcher_bg.wasm",
             content_server,
@@ -125,6 +184,7 @@ pub fn main() {
         );
         server.serve_proxy(
             gateway,
+            required_host_www,
             Method::Get,
             "game",
             content_server,
@@ -134,6 +194,7 @@ pub fn main() {
         );
         server.serve_proxy(
             gateway,
+            required_host_www,
             Method::Get,
             "game.js",
             content_server,
@@ -143,44 +204,13 @@ pub fn main() {
         );
         server.serve_proxy(
             gateway,
+            required_host_www,
             Method::Get,
             "game_bg.wasm",
             content_server,
             addr,
             &port,
             "game_bg.wasm",
-        );
-    }
-
-    // -> session
-    {
-        let addr = SESSION_SERVER_RECV_ADDR;
-        let port = SESSION_SERVER_SIGNAL_PORT.to_string();
-
-        server.serve_proxy(
-            gateway,
-            Method::Post,
-            "session_rtc",
-            "session_server",
-            addr,
-            &port,
-            "session_rtc",
-        );
-    }
-
-    // -> world
-    {
-        let addr = WORLD_SERVER_RECV_ADDR;
-        let port = WORLD_SERVER_SIGNAL_PORT.to_string();
-
-        server.serve_proxy(
-            gateway,
-            Method::Post,
-            "world_rtc",
-            "world_server",
-            addr,
-            &port,
-            "world_rtc",
         );
     }
 

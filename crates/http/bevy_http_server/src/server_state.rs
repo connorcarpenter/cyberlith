@@ -191,43 +191,38 @@ async fn serve(
     response_senders: Arc<RwLock<HashMap<u64, Sender<Result<Response, ResponseError>>>>>,
     key_maker: Arc<RwLock<KeyMaker>>,
 ) {
-    let endpoint_key_ref: Arc<RwLock<Option<TypeId>>> = Arc::new(RwLock::new(None));
-
     let protocol_1 = protocol.clone();
     let keymaker_1 = key_maker.clone();
     let request_senders_1 = request_senders.clone();
     let response_senders_1 = response_senders.clone();
-
-    let endpoint_key_ref_1 = endpoint_key_ref.clone();
-    let endpoint_key_ref_2 = endpoint_key_ref.clone();
 
     serve_impl(
         incoming_addr,
         response_stream,
         |key| {
             let protocol_2 = protocol_1.clone();
-            let endpoint_key_ref_3 = endpoint_key_ref_1.clone();
             async move {
                 //info!("attempting to match url. endpoint key is: {}", key);
 
                 if protocol_2.has_endpoint_key(&key) {
-                    let request_id_temp = protocol_2.get_request_id(&key).unwrap();
-                    let mut endpoint_key = endpoint_key_ref_3.write().await;
-                    *endpoint_key = Some(request_id_temp);
                     true
                 } else {
                     false
                 }
             }
         },
-        |(req_addr, request)| {
-            let endpoint_key_ref_4 = endpoint_key_ref_2.clone();
+        |_, _| {
+            async move {
+                true // no bevy server should be exposed to open internet?
+            }
+        },
+        |endpoint_key, req_addr, request| {
+            let protocol_3 = protocol_1.clone();
+            let endpoint_key = protocol_3.get_request_id(&endpoint_key).unwrap();
             let keymaker_2 = keymaker_1.clone();
             let request_senders_2 = request_senders_1.clone();
             let response_senders_2 = response_senders_1.clone();
             async move {
-                let endpoint_key = endpoint_key_ref_4.read().await.as_ref().unwrap().clone();
-
                 let response_receiver = {
                     let mut key_maker = keymaker_2.write().await;
                     let response_key_id = key_maker.next_key_id();

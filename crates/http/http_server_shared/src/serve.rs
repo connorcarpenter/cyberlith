@@ -12,17 +12,20 @@ use logging::{info, warn};
 use crate::ReadState;
 
 pub async fn serve_impl<
-    MatchOutput: Future<Output = bool> + 'static,
-    RespondOutput: Future<Output = Result<Response, ResponseError>> + 'static,
+    MatchUrlOutput: Future<Output = bool> + 'static,
+    MatchHostOutput: Future<Output = bool> + 'static,
+    ResponseOutput: Future<Output = Result<Response, ResponseError>> + 'static,
     ResponseStream: Unpin + AsyncRead + AsyncWrite,
 >(
     incoming_address: SocketAddr,
     mut response_stream: ResponseStream,
-    match_func: impl Fn(String) -> MatchOutput,
-    respond_func: impl Fn((SocketAddr, Request)) -> RespondOutput,
+    match_url_func: impl Fn(String) -> MatchUrlOutput,
+    match_host_func: impl Fn(String, String) -> MatchHostOutput,
+    response_func: impl Fn(String, SocketAddr, Request) -> ResponseOutput,
 ) {
     let mut method: Option<Method> = None;
     let mut uri: Option<String> = None;
+    let mut endpoint_key: Option<String> = None;
     let mut content_length: Option<usize> = None;
     let mut body: Vec<u8> = Vec::new();
     let mut header_map = BTreeMap::<String, String>::new();
@@ -53,22 +56,28 @@ pub async fn serve_impl<
 
                     //info!("read: {}", str);
 
-                    let uri_key = request_extract_url(&mut method, &mut uri, &line_str);
+                    let url_key = request_extract_url(&mut method, &mut uri, &line_str);
 
-                    if !match_func(uri_key.clone()).await {
-                        warn!("no endpoint found for {}", uri_key);
+                    if !match_url_func(url_key.clone()).await {
+                        warn!("no endpoint found for {}", url_key);
                         read_state = ReadState::Error;
                         break;
                     }
 
                     // info!("incoming request matched url: {}", key);
                     read_state = ReadState::ReadingHeaders;
+                    endpoint_key = Some(url_key);
                     continue;
                 } else {
                     line.push(byte);
                 }
             }
             ReadState::ReadingHeaders => {
+                let Some(endpoint_key) = endpoint_key.as_ref() else {
+                    warn!("no endpoint key found");
+                    read_state = ReadState::Error;
+                    break;
+                };
                 if byte == b'\r' {
                     continue;
                 } else if byte == b'\n' {
@@ -79,12 +88,14 @@ pub async fn serve_impl<
                     //info!("read: {}", str);
 
                     if request_read_headers(
+                        &match_host_func,
+                        endpoint_key,
                         &mut method,
                         &mut content_length,
                         &mut header_map,
                         &mut read_state,
                         &line_str,
-                    ) {
+                    ).await {
                         break;
                     } else {
                         continue;
@@ -116,8 +127,11 @@ pub async fn serve_impl<
     let Some(request) = cast_to_request(method, uri, body, header_map).await else {
         return send_404(response_stream).await;
     };
+    let Some(endpoint_key) = endpoint_key else {
+        return send_404(response_stream).await;
+    };
 
-    match respond_func((incoming_address, request)).await {
+    match response_func(endpoint_key, incoming_address, request).await {
         Ok(response) => {
             response_send(response_stream, response).await;
         }
@@ -139,7 +153,11 @@ fn request_extract_url(
     key
 }
 
-fn request_read_headers(
+async fn request_read_headers<
+    MatchHostOutput: Future<Output = bool> + 'static
+> (
+    match_host_func: &impl Fn(String, String) -> MatchHostOutput,
+    endpoint_key: &str,
     method: &mut Option<Method>,
     content_length: &mut Option<usize>,
     header_map: &mut BTreeMap<String, String>,
@@ -151,6 +169,7 @@ fn request_read_headers(
 
         *read_state = ReadState::ReadingBody;
 
+        // check for GET request, if so, we're done
         if let Some(method) = method.clone() {
             if method == Method::Get {
                 *read_state = ReadState::Finished;
@@ -158,6 +177,8 @@ fn request_read_headers(
                 return true;
             }
         }
+
+        // check for content-length header for non-Get requests
         let Some(content_length) = content_length else {
             warn!("request was missing Content-Length header");
             *read_state = ReadState::Error;
@@ -172,10 +193,29 @@ fn request_read_headers(
         }
     } else {
         let parts = line_str.split(": ").collect::<Vec<&str>>();
+
+        // insert into header collection
         header_map.insert(parts[0].to_string(), parts[1].to_string());
-        if parts[0].to_lowercase() == "content-length" {
-            *content_length = Some(parts[1].parse().unwrap());
+
+        // check headers
+        match parts[0].to_lowercase().as_str() {
+            "host" => {
+                // check if host is allowed
+                let host = parts[1].to_string();
+                let host_allowed = match_host_func(endpoint_key.to_string(), host).await;
+                if !host_allowed {
+                    warn!("host not allowed: {}", parts[1]);
+                    *read_state = ReadState::Error;
+                    return true;
+                }
+            }
+            "content-length" => {
+                // capture content-length header
+                *content_length = Some(parts[1].parse().unwrap());
+            }
+            _ => {}
         }
+
         return false;
     }
 }

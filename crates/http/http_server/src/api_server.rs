@@ -1,11 +1,11 @@
-use std::{net::SocketAddr, pin::Pin};
+use std::net::SocketAddr;
 
 use smol::future::Future;
 
-use http_common::{ApiRequest, ApiResponse, Request, Response, ResponseError};
+use http_common::{ApiRequest, ApiResponse, Request, ResponseError};
 use logging::info;
 
-use crate::Server;
+use crate::{Server, base_server::{Endpoint, EndpointFunc}};
 
 // serves API endpoint with typed requests & responses
 pub trait ApiServer {
@@ -34,27 +34,19 @@ impl ApiServer for Server {
         let endpoint_path = format!("{} /{}", method.as_str(), path);
 
         info!("endpoint: {}", endpoint_path);
-        let new_endpoint = endpoint_2::<TypeRequest, TypeResponse, Handler>(handler);
+        let endpoint_func = get_endpoint_func::<TypeRequest, TypeResponse, Handler>(handler);
+        let new_endpoint = Endpoint::new(endpoint_func, None);
         self.internal_insert_endpoint(endpoint_path, new_endpoint);
     }
 }
 
-fn endpoint_2<
+fn get_endpoint_func<
     TypeRequest: 'static + ApiRequest,
     TypeResponse: 'static + Send + Sync + Future<Output = Result<TypeRequest::Response, ResponseError>>,
     Handler: 'static + Send + Sync + FnMut((SocketAddr, TypeRequest)) -> TypeResponse,
 >(
     mut handler: Handler,
-) -> Box<
-    dyn 'static
-        + Send
-        + Sync
-        + FnMut(
-            (SocketAddr, Request),
-        ) -> Pin<
-            Box<dyn 'static + Send + Sync + Future<Output = Result<Response, ResponseError>>>,
-        >,
-> {
+) -> EndpointFunc {
     Box::new(move |args: (SocketAddr, Request)| {
         let addr = args.0;
         let pure_request = args.1;

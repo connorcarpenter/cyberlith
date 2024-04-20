@@ -1,36 +1,42 @@
 use std::{collections::HashMap, net::SocketAddr, pin::Pin};
 
 use async_dup::Arc;
-use logging::info;
-use smol::{future::Future, lock::RwLock, net::TcpListener};
+use smol::{future::Future, stream::StreamExt, lock::RwLock, net::TcpListener, io::{AsyncRead, AsyncWrite}};
 
+use logging::info;
 use http_common::{Request, Response, ResponseError};
 use http_server_shared::{executor, serve_impl};
 
-use crate::smol::io::{AsyncRead, AsyncWrite};
+pub(crate) type EndpointFunc = Box<
+    dyn Send
+    + Sync
+    + FnMut(
+        (SocketAddr, Request),
+    ) -> Pin<
+        Box<dyn Send + Sync + Future<Output = Result<Response, ResponseError>>>,
+    >,
+>;
 
-use crate::smol::stream::StreamExt;
+pub(crate) struct Endpoint {
+    func: EndpointFunc,
+    required_host: Option<String>,
+}
+
+impl Endpoint {
+    pub(crate) fn new(
+        endpoint_func: EndpointFunc,
+        required_host: Option<String>,
+    ) -> Self {
+        Self {
+            func: endpoint_func,
+            required_host,
+        }
+    }
+}
 
 pub struct Server {
     pub(crate) socket_addr: SocketAddr,
-    endpoints: HashMap<
-        String,
-        Box<
-            dyn 'static
-                + Send
-                + Sync
-                + FnMut(
-                    (SocketAddr, Request),
-                ) -> Pin<
-                    Box<
-                        dyn 'static
-                            + Send
-                            + Sync
-                            + Future<Output = Result<Response, ResponseError>>,
-                    >,
-                >,
-        >,
-    >,
+    endpoints: HashMap<String, Endpoint>,
 }
 
 impl Server {
@@ -53,18 +59,10 @@ impl Server {
     }
 
     // better know what you're doing here
-    pub fn internal_insert_endpoint(
+    pub(crate) fn internal_insert_endpoint(
         &mut self,
         endpoint_path: String,
-        new_endpoint: Box<
-            dyn Send
-                + Sync
-                + FnMut(
-                    (SocketAddr, Request),
-                ) -> Pin<
-                    Box<dyn Send + Sync + Future<Output = Result<Response, ResponseError>>>,
-                >,
-        >,
+        new_endpoint: Endpoint,
     ) {
         self.endpoints.insert(endpoint_path, new_endpoint);
     }
@@ -110,40 +108,38 @@ impl Server {
         incoming_address: SocketAddr,
         response_stream: ResponseStream,
     ) {
-        let endpoint_key_ref: Arc<RwLock<Option<String>>> = Arc::new(RwLock::new(None));
-
         let server_1 = server.clone();
         let server_2 = server.clone();
-
-        let endpoint_key_ref_1 = endpoint_key_ref.clone();
-        let endpoint_key_ref_2 = endpoint_key_ref.clone();
 
         serve_impl(
             incoming_address,
             response_stream,
-            |key| {
+            |endpoint_key| {
                 let server_3 = server_1.clone();
-                let endpoint_key_ref_3 = endpoint_key_ref_1.clone();
+                async move {
+                    server_3.read().await.endpoints.contains_key(&endpoint_key)
+                }
+            },
+            |endpoint_key, host| {
+                let server_3 = server_1.clone();
                 async move {
                     let server = server_3.read().await;
-                    if server.endpoints.contains_key(&key) {
-                        let mut endpoint_key = endpoint_key_ref_3.write().await;
-                        *endpoint_key = Some(key);
-                        true
+                    let endpoint = server.endpoints.get(&endpoint_key).unwrap();
+                    if let Some(required_host) = &endpoint.required_host {
+                        host.eq_ignore_ascii_case(required_host)
                     } else {
-                        false
+                        // if endpoint doesn't have a required host, then it's a match
+                        true
                     }
                 }
             },
-            |(addr, request)| {
+            |endpoint_key, addr, request| {
                 let server_4 = server_2.clone();
-                let endpoint_key_ref_4 = endpoint_key_ref_2.clone();
                 async move {
-                    let endpoint_key = endpoint_key_ref_4.read().await.as_ref().unwrap().clone();
                     let mut server = server_4.write().await;
                     let endpoint = server.endpoints.get_mut(&endpoint_key).unwrap();
 
-                    endpoint((addr, request)).await
+                    (endpoint.func)((addr, request)).await
                 }
             },
         )
