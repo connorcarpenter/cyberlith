@@ -1,12 +1,14 @@
+mod session_connect;
 
 use std::{net::SocketAddr, thread};
 
-use config::{AUTH_SERVER_PORT, PUBLIC_IP_ADDR, AUTH_SERVER_RECV_ADDR, SUBDOMAIN_WWW, SUBDOMAIN_API, CONTENT_SERVER_PORT, CONTENT_SERVER_RECV_ADDR, GATEWAY_PORT, REGION_SERVER_PORT, REGION_SERVER_RECV_ADDR, SELF_BINDING_ADDR, SESSION_SERVER_RECV_ADDR, SESSION_SERVER_SIGNAL_PORT, WORLD_SERVER_RECV_ADDR, WORLD_SERVER_SIGNAL_PORT, PUBLIC_PROTOCOL};
-use http_server::{Method, ProxyServer, Server};
+use config::{AUTH_SERVER_PORT, PUBLIC_IP_ADDR, AUTH_SERVER_RECV_ADDR, SUBDOMAIN_WWW, SUBDOMAIN_API, CONTENT_SERVER_PORT, CONTENT_SERVER_RECV_ADDR, GATEWAY_PORT, SELF_BINDING_ADDR, WORLD_SERVER_RECV_ADDR, WORLD_SERVER_SIGNAL_PORT, PUBLIC_PROTOCOL};
+use http_server::{ApiServer, Method, ProxyServer, Server};
 use logging::info;
 
-use region_server_http_proto::SessionConnectRequest;
 use auth_server_http_proto::{RefreshTokenGrantRequest, UserLoginRequest, UserNameForgotRequest, UserPasswordForgotRequest, UserPasswordResetRequest, UserRegisterConfirmRequest, UserRegisterRequest};
+
+use crate::session_connect::session_rtc_endpoint_handler;
 
 pub fn main() {
     logging::initialize();
@@ -32,20 +34,20 @@ pub fn main() {
     let required_host_www = required_host_www.as_ref().map(|s| (s.as_str(), Some(rd.as_str())));
 
     // -> region
-    {
-        let auth_server = "region_server";
-        let addr = REGION_SERVER_RECV_ADDR;
-        let port = REGION_SERVER_PORT.to_string();
-
-        // session connect
-        server.serve_api_proxy::<SessionConnectRequest>(
-            gateway,
-            required_host_api,
-            auth_server,
-            addr,
-            &port,
-        );
-    }
+    // {
+    //     let auth_server = "region_server";
+    //     let addr = REGION_SERVER_RECV_ADDR;
+    //     let port = REGION_SERVER_PORT.to_string();
+    //
+    //     // session connect
+    //     server.serve_api_proxy::<SessionConnectRequest>(
+    //         gateway,
+    //         required_host_api,
+    //         auth_server,
+    //         addr,
+    //         &port,
+    //     );
+    // }
 
     // -> auth
     {
@@ -113,19 +115,12 @@ pub fn main() {
 
     // -> session
     {
-        let session_server = "session_server";
-        let addr = SESSION_SERVER_RECV_ADDR;
-        let port = SESSION_SERVER_SIGNAL_PORT.to_string();
-
-        server.serve_proxy(
+        server.serve_endpoint_raw(
             gateway,
             required_host_api,
             Method::Post,
             "session_rtc",
-            session_server,
-            addr,
-            &port,
-            "session_rtc",
+            session_rtc_endpoint_handler,
         );
     }
 

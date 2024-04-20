@@ -7,8 +7,8 @@ use auth_server_http_proto::{UserLoginRequest, UserLoginResponse};
 
 use crate::{types::RefreshToken, error::AuthServerError, state::State, types::AccessToken};
 
-pub fn user_login(server: &mut Server, state: Arc<RwLock<State>>) {
-    server.endpoint(move |(_addr, req)| {
+pub fn user_login(host_name: &str, server: &mut Server, state: Arc<RwLock<State>>) {
+    server.endpoint(host_name, None, move |(_addr, req)| {
         let state = state.clone();
         async move { async_impl(state, req).await }
     });
@@ -23,7 +23,7 @@ async fn async_impl(
     //     return Err(ResponseError::Unauthenticated);
     // }
 
-    http_log_util::recv_req("auth_server", "gateway", "user_login");
+    http_log_util::recv_req("auth_server", "user_login");
 
     let mut state = state.write().await;
     let response = match state.user_login(incoming_request) {
@@ -39,7 +39,7 @@ async fn async_impl(
         }
     };
 
-    http_log_util::send_res("auth_server", "gateway", "user_login");
+    http_log_util::send_res("auth_server", "user_login");
     return response;
 }
 

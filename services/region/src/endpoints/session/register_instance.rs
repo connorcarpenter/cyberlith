@@ -10,8 +10,8 @@ use region_server_http_proto::{SessionRegisterInstanceRequest, SessionRegisterIn
 
 use crate::{instances::SessionInstance, state::State};
 
-pub fn session_register_instance(server: &mut Server, state: Arc<RwLock<State>>) {
-    server.endpoint(move |(addr, req)| {
+pub fn session_register_instance(host_name: &str, server: &mut Server, state: Arc<RwLock<State>>) {
+    server.endpoint(host_name, None, move |(addr, req)| {
         let state = state.clone();
         async move { async_impl(addr, state, req).await }
     });
@@ -30,15 +30,14 @@ async fn async_impl(
     let instance_secret = incoming_request.instance_secret();
     let http_addr = incoming_request.http_addr();
     let http_port = incoming_request.http_port();
-    let public_webrtc_url = incoming_request.public_webrtc_url();
 
     info!(
-        "register instance request received from session server: (incoming: {:?}, instance secret: {:?}, http: {:?}, public_webrtc_url: {:?})",
-        incoming_addr, instance_secret, http_addr, public_webrtc_url
+        "register instance request received from session server: (incoming: {:?}, instance secret: {:?}, http: {:?})",
+        incoming_addr, instance_secret, http_addr
     );
 
     let server_instance =
-        SessionInstance::new(instance_secret, http_addr, http_port, public_webrtc_url);
+        SessionInstance::new(instance_secret, http_addr, http_port);
 
     let mut state = state.write().await;
     state.register_session_instance(server_instance);

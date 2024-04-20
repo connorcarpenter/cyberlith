@@ -10,17 +10,10 @@ use naia_bevy_server::{
 
 use config::{GATEWAY_PORT, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SELF_BINDING_ADDR, SESSION_SERVER_SIGNAL_PORT, SESSION_SERVER_WEBRTC_PORT, SUBDOMAIN_API};
 use logging::{info, warn};
+
 use session_server_naia_proto::messages::Auth;
 
 use crate::{asset::asset_manager::AssetManager, global::Global};
-
-pub(crate) fn get_public_signal_url() -> String {
-    if SUBDOMAIN_API.is_empty() {
-        format!("{}://{}:{}", PUBLIC_PROTOCOL, PUBLIC_IP_ADDR, GATEWAY_PORT)
-    } else {
-        format!("{}://{}.{}:{}", PUBLIC_PROTOCOL, SUBDOMAIN_API, PUBLIC_IP_ADDR, GATEWAY_PORT)
-    }
-}
 
 pub(crate) fn get_public_webrtc_url() -> String {
     format!(

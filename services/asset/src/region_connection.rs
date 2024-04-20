@@ -61,8 +61,8 @@ pub async fn process_region_server_disconnect(state: Arc<RwLock<State>>) {
     }
 }
 
-pub fn recv_heartbeat_request(server: &mut Server, state: Arc<RwLock<State>>) {
-    server.endpoint(move |(_addr, req)| {
+pub fn recv_heartbeat_request(host_name: &str, server: &mut Server, state: Arc<RwLock<State>>) {
+    server.endpoint(host_name, None, move |(_addr, req)| {
         let state = state.clone();
         async move { async_recv_heartbeat_request_impl(state, req).await }
     });

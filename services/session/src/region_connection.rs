@@ -7,10 +7,11 @@ use config::{
     SESSION_SERVER_GLOBAL_SECRET, SESSION_SERVER_HTTP_PORT, SESSION_SERVER_RECV_ADDR,
 };
 use logging::{info, warn};
+
 use region_server_http_proto::SessionRegisterInstanceRequest;
 use session_server_http_proto::{HeartbeatRequest, HeartbeatResponse};
 
-use crate::{global::Global, naia::get_public_signal_url};
+use crate::{global::Global};
 
 pub fn send_register_instance_request(
     mut http_client: ResMut<HttpClient>,
@@ -32,7 +33,6 @@ pub fn send_register_instance_request(
         global.instance_secret(),
         SESSION_SERVER_RECV_ADDR,
         SESSION_SERVER_HTTP_PORT,
-        get_public_signal_url().as_str(),
     );
     let key = http_client.send(REGION_SERVER_RECV_ADDR, REGION_SERVER_PORT, request);
 

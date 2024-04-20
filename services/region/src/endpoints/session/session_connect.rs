@@ -9,8 +9,8 @@ use session_server_http_proto::IncomingUserRequest;
 
 use crate::state::State;
 
-pub fn session_connect(server: &mut Server, state: Arc<RwLock<State>>) {
-    server.endpoint(move |(_addr, req)| {
+pub fn session_connect(host_name: &str, server: &mut Server, state: Arc<RwLock<State>>) {
+    server.endpoint(host_name, None, move |(_addr, req)| {
         let state = state.clone();
         async move { async_impl(state, req).await }
     });
@@ -32,7 +32,6 @@ async fn async_impl(
     };
     let session_server_http_addr = session_server.http_addr();
     let session_server_http_port = session_server.http_port();
-    let session_server_public_webrtc_url = session_server.public_webrtc_url();
 
     info!("sending session_connect request to session server");
 
@@ -54,7 +53,6 @@ async fn async_impl(
     info!("Sending session_connect response to gateway");
 
     Ok(SessionConnectResponse::new(
-        &session_server_public_webrtc_url,
         &temp_token,
     ))
 }

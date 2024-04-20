@@ -15,26 +15,22 @@ pub fn send_req(
 
 pub fn recv_req(
     self_service_recver_name: &str,
-    othe_service_sender_name: &str,
     request_name: &str,
 ) {
     logging::info!(
-        "{} <- {}: [{}] request",
+        "{} <- [{}] request",
         self_service_recver_name,
-        othe_service_sender_name,
         request_name
     );
 }
 
 pub fn send_res(
     self_service_sender_name: &str,
-    othe_service_recver_name: &str,
     response_name: &str,
 ) {
     logging::info!(
-        "{} -> {}: [{}] response",
+        "{} -> [{}] response",
         self_service_sender_name,
-        othe_service_recver_name,
         response_name
     );
 }

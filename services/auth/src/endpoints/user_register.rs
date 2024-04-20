@@ -7,8 +7,8 @@ use auth_server_http_proto::{UserRegisterRequest, UserRegisterResponse};
 
 use crate::{error::AuthServerError, state::State, types::TempRegistration};
 
-pub fn user_register(server: &mut Server, state: Arc<RwLock<State>>) {
-    server.endpoint(move |(_addr, req)| {
+pub fn user_register(host_name: &str, server: &mut Server, state: Arc<RwLock<State>>) {
+    server.endpoint(host_name, None, move |(_addr, req)| {
         let state = state.clone();
         async move { async_impl(state, req).await }
     });
@@ -19,7 +19,7 @@ async fn async_impl(
     incoming_request: UserRegisterRequest,
 ) -> Result<UserRegisterResponse, ResponseError> {
 
-    http_log_util::recv_req("auth_server", "gateway", "user_register");
+    http_log_util::recv_req("auth_server", "user_register");
 
     let mut state = state.write().await;
     let response = match state.user_register(incoming_request) {
@@ -38,7 +38,7 @@ async fn async_impl(
         }
     };
 
-    http_log_util::send_res("auth_server", "gateway", "user_register");
+    http_log_util::send_res("auth_server", "user_register");
     return response;
 }
 

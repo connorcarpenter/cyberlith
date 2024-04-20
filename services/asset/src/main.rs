@@ -46,9 +46,10 @@ pub fn main() {
         SocketAddr::new(SELF_BINDING_ADDR.parse().unwrap(), ASSET_SERVER_PORT);
 
     let mut server = Server::new(socket_addr);
+    let server_name = "asset_server";
 
-    region_connection::recv_heartbeat_request(&mut server, state.clone());
-    asset_endpoint::handle_asset_request(&mut server, state.clone());
+    region_connection::recv_heartbeat_request(server_name, &mut server, state.clone());
+    asset_endpoint::handle_asset_request(server_name, &mut server, state.clone());
 
     server.start();
 

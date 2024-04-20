@@ -118,7 +118,7 @@ fn get_endpoint_func(
             let logged_host_url = format!("{} {}", method.as_str(), outer_url);
 
             logging::info!("[");
-            log_util::recv_req(&host_name, "client", &logged_host_url);
+            log_util::recv_req(&host_name, &logged_host_url);
 
             let mut remote_req = Request::new(method, &remote_url, outer_body);
             remote_req.headers = outer_headers;
@@ -162,7 +162,7 @@ fn get_endpoint_func(
                 response.body.len().to_string(),
             );
 
-            log_util::send_res(&host_name, "client", &logged_host_url);
+            log_util::send_res(&host_name, &logged_host_url);
             logging::info!("]");
 
             return Ok(response);

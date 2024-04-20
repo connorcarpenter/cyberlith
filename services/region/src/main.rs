@@ -19,13 +19,14 @@ pub fn main() {
 
     let mut server = Server::new(socket_addr);
     let state = Arc::new(RwLock::new(State::new(Duration::from_secs(16))));
+    let server_name = "region_server";
 
-    endpoints::session_register_instance(&mut server, state.clone());
-    endpoints::world_register_instance(&mut server, state.clone());
-    endpoints::asset_register_instance(&mut server, state.clone());
+    endpoints::session_register_instance(server_name, &mut server, state.clone());
+    endpoints::world_register_instance(server_name, &mut server, state.clone());
+    endpoints::asset_register_instance(server_name, &mut server, state.clone());
 
-    endpoints::session_connect(&mut server, state.clone());
-    endpoints::world_connect(&mut server, state.clone());
+    endpoints::session_connect(server_name, &mut server, state.clone());
+    endpoints::world_connect(server_name, &mut server, state.clone());
 
     server.start();
 

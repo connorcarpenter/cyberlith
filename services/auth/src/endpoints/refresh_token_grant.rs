@@ -10,8 +10,8 @@ use crate::{
     types::{AccessToken, RefreshToken},
 };
 
-pub fn refresh_token_grant(server: &mut Server, state: Arc<RwLock<State>>) {
-    server.endpoint(move |(_addr, req)| {
+pub fn refresh_token_grant(host_name: &str, server: &mut Server, state: Arc<RwLock<State>>) {
+    server.endpoint(host_name, None, move |(_addr, req)| {
         let state = state.clone();
         async move { async_impl(state, req).await }
     });
@@ -22,7 +22,7 @@ async fn async_impl(
     incoming_request: RefreshTokenGrantRequest,
 ) -> Result<RefreshTokenGrantResponse, ResponseError> {
 
-    http_log_util::recv_req("auth_server", "gateway", "refresh_token_grant");
+    http_log_util::recv_req("auth_server", "refresh_token_grant");
 
     let mut state = state.write().await;
     let response = match state.refresh_token_grant(incoming_request) {
@@ -37,7 +37,7 @@ async fn async_impl(
         }
     };
 
-    http_log_util::send_res("auth_server", "gateway", "refresh_token_grant");
+    http_log_util::send_res("auth_server", "refresh_token_grant");
     return response;
 }
 

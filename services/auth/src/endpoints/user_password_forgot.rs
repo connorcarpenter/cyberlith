@@ -6,8 +6,8 @@ use auth_server_http_proto::{UserPasswordForgotRequest, UserPasswordForgotRespon
 
 use crate::{state::State, error::AuthServerError};
 
-pub fn user_password_forgot(server: &mut Server, state: Arc<RwLock<State>>) {
-    server.endpoint(move |(_addr, req)| {
+pub fn user_password_forgot(host_name: &str, server: &mut Server, state: Arc<RwLock<State>>) {
+    server.endpoint(host_name, None, move |(_addr, req)| {
         let state = state.clone();
         async move { async_impl(state, req).await }
     });
@@ -18,7 +18,7 @@ async fn async_impl(
     incoming_request: UserPasswordForgotRequest,
 ) -> Result<UserPasswordForgotResponse, ResponseError> {
 
-    http_log_util::recv_req("auth_server", "gateway", "user_password_forgot");
+    http_log_util::recv_req("auth_server", "user_password_forgot");
 
     let mut state = state.write().await;
     let response = match state.user_password_forgot(incoming_request) {
@@ -34,7 +34,7 @@ async fn async_impl(
         }
     };
 
-    http_log_util::send_res("auth_server", "gateway", "user_password_forgot");
+    http_log_util::send_res("auth_server", "user_password_forgot");
     return response;
 }
 

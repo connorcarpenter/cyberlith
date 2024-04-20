@@ -115,6 +115,19 @@ impl Default for Response {
 }
 
 impl Response {
+
+    /// Constructs a new Response indicating a successful request.
+    pub fn ok(url: &str) -> Self {
+        Self {
+            url: url.to_string(),
+            ok: true,
+            status: 200,
+            status_text: "OK".to_string(),
+            headers: BTreeMap::new(),
+            body: Vec::new(),
+        }
+    }
+
     /// Constructs a new Response indicating a redirect to a specific URL.
     pub fn redirect(url: &str) -> Self {
         // Create headers for redirect

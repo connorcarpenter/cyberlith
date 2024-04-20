@@ -1,12 +1,11 @@
 use std::time::Duration;
 
-use bevy_ecs::system::Res;
 use bevy_ecs::{
+    system::Res,
     change_detection::ResMut,
     event::{Event, EventReader, EventWriter},
     system::Resource,
 };
-use logging::info;
 
 use naia_bevy_client::{
     events::{ConnectEvent, MessageEvents, RequestEvents},
@@ -14,9 +13,10 @@ use naia_bevy_client::{
     Client, Timer,
 };
 
+use logging::info;
 use asset_loader::{AssetManager, AssetMetadataStore};
 use bevy_http_client::{HttpClient, ResponseKey};
-use config::{GATEWAY_PORT, PUBLIC_IP_ADDR, SUBDOMAIN_API};
+use config::{GATEWAY_PORT, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SUBDOMAIN_API};
 use filesystem::FileSystemManager;
 use ui_runner::UiManager;
 
@@ -27,9 +27,7 @@ use session_server_naia_proto::{
 };
 use world_server_naia_proto::messages::Auth as WorldAuth;
 
-use crate::asset_cache::{AssetCache, AssetLoadedEvent};
-use crate::networked::asset_cache_checker::AssetCacheChecker;
-
+use crate::{asset_cache::{AssetCache, AssetLoadedEvent}, networked::asset_cache_checker::AssetCacheChecker};
 use super::client_markers::{Session, World};
 
 type SessionClient<'a> = Client<'a, Session>;
@@ -37,9 +35,8 @@ type WorldClient<'a> = Client<'a, World>;
 
 #[derive(Clone, PartialEq)]
 pub enum ConnectionState {
-    Disconnected,
-    SentToGateway(ResponseKey<SessionConnectResponse>),
-    ReceivedFromGateway(SessionConnectResponse),
+    SentToGateway,
+    ReceivedFromGateway,
     ConnectedToSession,
     ConnectedToWorld,
 }
@@ -56,7 +53,7 @@ pub struct SessionConnectEvent;
 impl Default for ConnectionManager {
     fn default() -> Self {
         Self {
-            connection_state: ConnectionState::Disconnected,
+            connection_state: ConnectionState::SentToGateway,
             // TODO: split this out into config var?
             send_timer: Timer::new(Duration::from_millis(5000)),
         }
@@ -80,7 +77,7 @@ impl ConnectionManager {
                 server_address
             );
 
-            let ConnectionState::ReceivedFromGateway(_) = &connection_manager.connection_state
+            let ConnectionState::ReceivedFromGateway = &connection_manager.connection_state
             else {
                 panic!("Shouldn't happen");
             };
@@ -209,47 +206,36 @@ impl ConnectionManager {
         }
 
         match &self.connection_state {
-            ConnectionState::Disconnected => {
-                info!("sending to gateway..");
-                let request = SessionConnectRequest::new("charlie", "12345");
-                let url = if SUBDOMAIN_API.is_empty() {
-                    PUBLIC_IP_ADDR.to_string()
-                } else {
-                    format!("{}.{}", SUBDOMAIN_API, PUBLIC_IP_ADDR)
-                };
-                let key = http_client.send(&url, GATEWAY_PORT, request);
-                self.connection_state = ConnectionState::SentToGateway(key);
-            }
-            ConnectionState::SentToGateway(key) => {
-                if let Some(result) = http_client.recv(key) {
-                    match result {
-                        Ok(response) => {
-                            info!(
-                                "received from gateway: (webrtc url: {:?}, token: {:?})",
-                                response.session_server_public_webrtc_url, response.token
-                            );
-                            self.connection_state =
-                                ConnectionState::ReceivedFromGateway(response.clone());
+            ConnectionState::SentToGateway => {
 
-                            session_client.auth(SessionAuth::new(&response.token));
-                            info!(
-                                "connecting to session server: {}",
-                                response.session_server_public_webrtc_url
-                            );
-                            let socket = WebrtcSocket::new(
-                                &response.session_server_public_webrtc_url,
-                                session_client.socket_config(),
-                            );
-                            session_client.connect(socket);
-                        }
-                        Err(_) => {
-                            info!("resending to gateway..");
-                            self.connection_state = ConnectionState::Disconnected;
-                        }
-                    }
-                }
+                // from disconnected before
+
+                // let key = http_client.send(&url, GATEWAY_PORT, request);
+                // self.connection_state = ConnectionState::SentToGateway(key);
+
+                // previous below
+                self.connection_state = ConnectionState::ReceivedFromGateway;
+
+                let url = if SUBDOMAIN_API.is_empty() {
+                    format!("{}://{}:{}", PUBLIC_PROTOCOL, PUBLIC_IP_ADDR, GATEWAY_PORT)
+                } else {
+                    format!("{}://{}.{}:{}", PUBLIC_PROTOCOL, SUBDOMAIN_API, PUBLIC_IP_ADDR, GATEWAY_PORT)
+                };
+
+                // let url = if SUBDOMAIN_API.is_empty() {
+                //     PUBLIC_IP_ADDR.to_string()
+                // } else {
+                //     format!("{}.{}", SUBDOMAIN_API, PUBLIC_IP_ADDR)
+                // };
+
+                info!(
+                    "connecting to session server: {}",
+                    url
+                );
+                let socket = WebrtcSocket::new(&url, session_client.socket_config());
+                session_client.connect(socket);
             }
-            ConnectionState::ReceivedFromGateway(_response) => {
+            ConnectionState::ReceivedFromGateway => {
                 // waiting for connect event ..
             }
             ConnectionState::ConnectedToSession => {}

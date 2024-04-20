@@ -2,10 +2,10 @@ use std::net::SocketAddr;
 
 use smol::future::Future;
 
-use http_common::{ApiRequest, ApiResponse, Request, ResponseError};
+use http_common::{ApiRequest, ApiResponse, Method, Request, Response, ResponseError};
 use logging::info;
 
-use crate::{Server, base_server::{Endpoint, EndpointFunc}};
+use crate::{Server, base_server::{Endpoint, EndpointFunc}, log_util};
 
 // serves API endpoint with typed requests & responses
 pub trait ApiServer {
@@ -15,6 +15,20 @@ pub trait ApiServer {
         Handler: 'static + Send + Sync + Fn((SocketAddr, TypeRequest)) -> TypeResponse,
     >(
         &mut self,
+        host_name: &str,
+        incoming_host: Option<(&str, Option<&str>)>,
+        handler: Handler,
+    );
+
+    fn serve_endpoint_raw<
+        ResponseType: 'static + Send + Sync + Future<Output = Result<Response, ResponseError>>,
+        Handler: 'static + Send + Sync + Fn((SocketAddr, Request)) -> ResponseType,
+    >(
+        &mut self,
+        host_name: &str,
+        incoming_host: Option<(&str, Option<&str>)>,
+        incoming_method: Method,
+        incoming_path: &str,
         handler: Handler,
     );
 }
@@ -26,6 +40,8 @@ impl ApiServer for Server {
         Handler: 'static + Send + Sync + Fn((SocketAddr, TypeRequest)) -> TypeResponse,
     >(
         &mut self,
+        host_name: &str,
+        incoming_host: Option<(&str, Option<&str>)>,
         handler: Handler,
     ) {
         let method = TypeRequest::method();
@@ -34,8 +50,29 @@ impl ApiServer for Server {
         let endpoint_path = format!("{} /{}", method.as_str(), path);
 
         info!("endpoint: {}", endpoint_path);
-        let endpoint_func = get_endpoint_func::<TypeRequest, TypeResponse, Handler>(handler);
-        let new_endpoint = Endpoint::new(endpoint_func, None);
+        let endpoint_func = get_endpoint_func::<TypeRequest, TypeResponse, Handler>(host_name, handler);
+        let incoming_host = incoming_host.map(|(rq, rdopt)| (rq.to_string(), rdopt.map(|rd| rd.to_string())));
+        let new_endpoint = Endpoint::new(endpoint_func, incoming_host);
+        self.internal_insert_endpoint(endpoint_path, new_endpoint);
+    }
+
+    fn serve_endpoint_raw<
+        ResponseType: 'static + Send + Sync + Future<Output = Result<Response, ResponseError>>,
+        Handler: 'static + Send + Sync + Fn((SocketAddr, Request)) -> ResponseType,
+    >(
+        &mut self,
+        host_name: &str,
+        incoming_host: Option<(&str, Option<&str>)>,
+        incoming_method: Method,
+        incoming_path: &str,
+        handler: Handler,
+    ) {
+        let endpoint_path = format!("{} /{}", incoming_method.as_str(), incoming_path);
+
+        info!("endpoint: {}", endpoint_path);
+        let endpoint_func = get_endpoint_raw_func::<ResponseType, Handler>(host_name, handler);
+        let incoming_host = incoming_host.map(|(rq, rdopt)| (rq.to_string(), rdopt.map(|rd| rd.to_string())));
+        let new_endpoint = Endpoint::new(endpoint_func, incoming_host);
         self.internal_insert_endpoint(endpoint_path, new_endpoint);
     }
 }
@@ -45,11 +82,16 @@ fn get_endpoint_func<
     TypeResponse: 'static + Send + Sync + Future<Output = Result<TypeRequest::Response, ResponseError>>,
     Handler: 'static + Send + Sync + Fn((SocketAddr, TypeRequest)) -> TypeResponse,
 >(
+    host_name: &str,
     handler: Handler,
 ) -> EndpointFunc {
+    let host_name = host_name.to_string();
     Box::new(move |args: (SocketAddr, Request)| {
         let addr = args.0;
         let pure_request = args.1;
+        let host_name = host_name.clone();
+        let incoming_method = pure_request.method.clone();
+        let incoming_path = pure_request.url.clone();
 
         let Ok(typed_request) = TypeRequest::from_request(pure_request) else {
             // serde error!
@@ -62,7 +104,18 @@ fn get_endpoint_func<
 
         // convert typed future to pure future
         let pure_future = async move {
+
+            let host_name = host_name.clone();
+            let logged_host_url = format!("{} {}", incoming_method.as_str(), incoming_path);
+
+            logging::info!("[");
+            log_util::recv_req(&host_name, &logged_host_url);
+
             let typed_response = typed_future.await;
+
+            log_util::send_res(&host_name, &logged_host_url);
+            logging::info!("]");
+
             match typed_response {
                 Ok(typed_response) => {
                     let pure_response = typed_response.to_response();
@@ -70,6 +123,42 @@ fn get_endpoint_func<
                 }
                 Err(err) => Err(err),
             }
+        };
+
+        return Box::pin(pure_future);
+    })
+}
+
+fn get_endpoint_raw_func<
+    ResponseType: 'static + Send + Sync + Future<Output = Result<Response, ResponseError>>,
+    Handler: 'static + Send + Sync + Fn((SocketAddr, Request)) -> ResponseType,
+>(
+    host_name: &str,
+    handler: Handler,
+) -> EndpointFunc {
+    let host_name = host_name.to_string();
+    Box::new(move |args: (SocketAddr, Request)| {
+        let addr = args.0;
+        let pure_request = args.1;
+        let host_name = host_name.clone();
+        let incoming_method = pure_request.method.clone();
+        let incoming_path = pure_request.url.clone();
+
+        let handler_func = handler((addr, pure_request));
+
+        let pure_future = async move {
+            let host_name = host_name.clone();
+            let logged_host_url = format!("{} {}", incoming_method.as_str(), incoming_path);
+
+            logging::info!("[");
+            log_util::recv_req(&host_name, &logged_host_url);
+
+            let response_result = handler_func.await;
+
+            log_util::send_res(&host_name, &logged_host_url);
+            logging::info!("]");
+
+            response_result
         };
 
         return Box::pin(pure_future);

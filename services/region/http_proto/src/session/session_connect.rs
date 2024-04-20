@@ -15,14 +15,12 @@ impl SessionConnectRequest {
 // Response
 #[derive(Serde, PartialEq, Clone)]
 pub struct SessionConnectResponse {
-    pub session_server_public_webrtc_url: String,
     pub token: String,
 }
 
 impl SessionConnectResponse {
-    pub fn new(session_server_public_webrtc_url: &str, token: &str) -> Self {
+    pub fn new(token: &str) -> Self {
         Self {
-            session_server_public_webrtc_url: session_server_public_webrtc_url.to_string(),
             token: token.to_string(),
         }
     }

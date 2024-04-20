@@ -21,15 +21,16 @@ pub fn main() {
 
     let mut server = Server::new(socket_addr);
     let state = Arc::new(RwLock::new(State::new()));
+    let server_name = "auth_server";
 
-    endpoints::user_register(&mut server, state.clone());
-    endpoints::user_register_confirm(&mut server, state.clone());
-    endpoints::user_login(&mut server, state.clone());
-    endpoints::user_name_forgot(&mut server, state.clone());
-    endpoints::user_password_forgot(&mut server, state.clone());
-    endpoints::user_password_reset(&mut server, state.clone());
-    endpoints::access_token_validate(&mut server, state.clone());
-    endpoints::refresh_token_grant(&mut server, state.clone());
+    endpoints::user_register(server_name, &mut server, state.clone());
+    endpoints::user_register_confirm(server_name, &mut server, state.clone());
+    endpoints::user_login(server_name, &mut server, state.clone());
+    endpoints::user_name_forgot(server_name, &mut server, state.clone());
+    endpoints::user_password_forgot(server_name, &mut server, state.clone());
+    endpoints::user_password_reset(server_name, &mut server, state.clone());
+    endpoints::access_token_validate(server_name, &mut server, state.clone());
+    endpoints::refresh_token_grant(server_name, &mut server, state.clone());
 
     server.start();
 

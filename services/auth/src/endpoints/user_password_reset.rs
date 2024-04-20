@@ -6,8 +6,8 @@ use auth_server_http_proto::{UserPasswordResetRequest, UserPasswordResetResponse
 
 use crate::{error::AuthServerError, state::State, types::ResetPasswordToken};
 
-pub fn user_password_reset(server: &mut Server, state: Arc<RwLock<State>>) {
-    server.endpoint(move |(_addr, req)| {
+pub fn user_password_reset(host_name: &str, server: &mut Server, state: Arc<RwLock<State>>) {
+    server.endpoint(host_name, None, move |(_addr, req)| {
         let state = state.clone();
         async move { async_impl(state, req).await }
     });
@@ -18,7 +18,7 @@ async fn async_impl(
     incoming_request: UserPasswordResetRequest,
 ) -> Result<UserPasswordResetResponse, ResponseError> {
 
-    http_log_util::recv_req("auth_server", "gateway", "user_password_reset");
+    http_log_util::recv_req("auth_server", "user_password_reset");
 
     let mut state = state.write().await;
     let response = match state.user_password_reset(incoming_request) {
@@ -37,7 +37,7 @@ async fn async_impl(
         }
     };
 
-    http_log_util::send_res("auth_server", "gateway", "user_password_reset");
+    http_log_util::send_res("auth_server", "user_password_reset");
     return response;
 }
 
