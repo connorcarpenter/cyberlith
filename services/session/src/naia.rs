@@ -86,7 +86,7 @@ pub fn disconnect_events(
     mut asset_manager: ResMut<AssetManager>,
 ) {
     for DisconnectEvent(user_key, user) in event_reader.read() {
-        info!("Server disconnected from: {:?}", user.address);
+        info!("Server disconnected from: {:?}", user.address());
 
         // TODO: probably need to deregister user from global?
 

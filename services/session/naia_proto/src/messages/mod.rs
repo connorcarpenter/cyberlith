@@ -1,5 +1,8 @@
 use naia_bevy_shared::{Protocol, ProtocolPlugin};
 
+// exposing these for use in the gateway
+pub use naia_bevy_shared::{FakeEntityConverter, Message};
+
 mod auth;
 pub use auth::{Auth, AuthInner};
 

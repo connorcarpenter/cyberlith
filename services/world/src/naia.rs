@@ -151,7 +151,7 @@ pub fn disconnect_events(
     mut event_reader: EventReader<DisconnectEvent>,
 ) {
     for DisconnectEvent(user_key, user) in event_reader.read() {
-        info!("Server disconnected from: {:?}", user.address);
+        info!("Server disconnected from: {:?}", user.address());
 
         asset_manager.deregister_user(user_key);
     }

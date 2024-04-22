@@ -11,6 +11,12 @@ impl AuthInner {
             token: token.to_string(),
         }
     }
+
+    pub fn to_outer(&self) -> Auth {
+        Auth {
+            inner: self.clone(),
+        }
+    }
 }
 
 #[derive(Message)]

@@ -1,11 +1,14 @@
 use std::{net::SocketAddr};
 
+use naia_serde::{BitWriter, Serde};
+
 use config::{SESSION_SERVER_RECV_ADDR, REGION_SERVER_RECV_ADDR, REGION_SERVER_PORT, SESSION_SERVER_SIGNAL_PORT};
 use http_client::{HttpClient, ResponseError};
 use http_server::{Method, Request, Response};
 use logging::warn;
 
 use region_server_http_proto::SessionConnectRequest;
+use session_server_naia_proto::{messages::{Auth as SessionAuth, FakeEntityConverter, Message}, protocol};
 
 pub(crate) async fn session_rtc_endpoint_handler(
     args: (SocketAddr, Request),
@@ -62,9 +65,23 @@ pub(crate) async fn session_rtc_endpoint_handler(
             &logged_remote_url
         );
 
+        let session_auth_bytes = {
+            let session_auth = connect_response.session_auth.to_outer();
+
+            // TODO: this operation is VERY heavy! We should cache the result
+            let message_kinds = protocol().into().message_kinds;
+
+            let mut writer = BitWriter::new();
+            session_auth.write(&message_kinds, &mut writer, &mut FakeEntityConverter);
+            let bytes = writer.to_bytes();
+
+            // base64 encode
+            base64::encode(&bytes)
+        };
+
         let mut session_rtc_request = incoming_request.clone();
         session_rtc_request.url = format!("http://{}:{}/{}", remote_addr, remote_port, remote_path);
-        session_rtc_request.headers.insert("Authorization".to_string(), connect_response.session_auth.token);
+        session_rtc_request.headers.insert("Authorization".to_string(), session_auth_bytes);
         match http_client::raw::fetch_async(session_rtc_request).await {
             Ok(session_rtc_response) => {
                 http_server::http_log_util::recv_res(
@@ -72,7 +89,7 @@ pub(crate) async fn session_rtc_endpoint_handler(
                     session_server,
                     &logged_remote_url
                 );
-                Ok(session_rtc_response)
+                return Ok(session_rtc_response);
             }
             Err(err) => {
                 warn!("Failed session_rtc request to session server: {}", err.to_string());
