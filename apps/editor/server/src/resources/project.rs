@@ -5,12 +5,11 @@ use bevy_ecs::{
     system::{Commands, Query, SystemState},
     world::World,
 };
-use git2::{Repository, Signature};
-use logging::{info, warn};
 
 use naia_bevy_server::{BigMapKey, CommandsExt, RoomKey, Server, UserKey};
-
+use logging::{info, warn};
 use asset_id::AssetId;
+use git::Repository;
 
 use editor_proto::{
     components::{ChangelistEntry, ChangelistStatus, EntryKind, FileExtension, FileSystemEntry},
@@ -58,7 +57,6 @@ pub struct Project {
 
     repo: Mutex<Repository>,
     branch: String,
-    access_token: String,
     internal_path: String,
 }
 
@@ -67,7 +65,6 @@ impl Project {
         room_key: RoomKey,
         file_entries: HashMap<FileKey, FileEntryValue>,
         repo: Repository,
-        access_token: &str,
         internal_path: &str,
     ) -> Self {
         let working_file_tree = file_entries.clone();
@@ -80,7 +77,6 @@ impl Project {
             asset_id_map,
             changelist_entries: HashMap::new(),
             repo: Mutex::new(repo),
-            access_token: access_token.to_string(),
             branch: "main".to_string(),
             internal_path: internal_path.to_string(),
         }
@@ -750,47 +746,44 @@ impl Project {
     fn git_commit(&mut self, username: &str, email: &str, commit_message: &str) {
         let repo = self.repo.lock().unwrap();
 
-        // get index
-        let mut index = repo.index().expect("Failed to open index");
+        let branch_name = git::get_current_branch_name(&repo);
+        git::git_commit(&repo, &branch_name, username, email, commit_message);
 
-        // Get the updated tree
-        let tree_id = index.write_tree().expect("Failed to write tree");
-
-        // Get the current HEAD reference
-        let head_reference = repo.head().expect("Failed to get HEAD reference");
-
-        // Get the commit that HEAD points to
-        let parent_commit = head_reference
-            .peel_to_commit()
-            .expect("Failed to peel HEAD to commit");
-
-        // Prepare the commit details
-        let author = Signature::now(username, email).expect("Failed to create author signature");
-        let committer =
-            Signature::now(username, email).expect("Failed to create committer signature");
-
-        // Create the commit
-        repo.commit(
-            Some("HEAD"),
-            &author,
-            &committer,
-            commit_message,
-            &repo.find_tree(tree_id).expect("Failed to find tree"),
-            &[&parent_commit],
-        )
-        .expect("Failed to create commit");
+        //
+        // // get index
+        // let mut index = repo.index().expect("Failed to open index");
+        //
+        // // Get the updated tree
+        // let tree_id = index.write_tree().expect("Failed to write tree");
+        //
+        // // Get the current HEAD reference
+        // let head_reference = repo.head().expect("Failed to get HEAD reference");
+        //
+        // // Get the commit that HEAD points to
+        // let parent_commit = head_reference
+        //     .peel_to_commit()
+        //     .expect("Failed to peel HEAD to commit");
+        //
+        // // Prepare the commit details
+        // let author = Signature::now(username, email).expect("Failed to create author signature");
+        // let committer =
+        //     Signature::now(username, email).expect("Failed to create committer signature");
+        //
+        // // Create the commit
+        // repo.commit(
+        //     Some("HEAD"),
+        //     &author,
+        //     &committer,
+        //     commit_message,
+        //     &repo.find_tree(tree_id).expect("Failed to find tree"),
+        //     &[&parent_commit],
+        // )
+        // .expect("Failed to create commit");
     }
 
     fn git_push(&self) {
         let repo = self.repo.lock().unwrap();
-        let mut remote = repo
-            .find_remote("origin")
-            .expect("Failed to find remote 'origin'");
-        let mut options = git2::PushOptions::new();
-        options.remote_callbacks(GitManager::get_remote_callbacks(&self.access_token)); // Set up remote callbacks if needed
-        remote
-            .push(&[format!("refs/heads/{}", self.branch)], Some(&mut options))
-            .expect("Failed to push commit");
+        git::git_push(&repo, &self.branch);
     }
 
     fn cleanup_changelist_entry(&mut self, commands: &mut Commands, file_key: &FileKey) {

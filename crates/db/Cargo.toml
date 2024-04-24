@@ -9,4 +9,4 @@ logging = { path = "../logging" }
 
 serde = { version = "1.0.189", features = ["derive"] }
 serde_json = { version = "1.0.107" }
-git2 = { version = "0.17", features = ["zlib-ng-compat"] }
+git = { path = "../git" }

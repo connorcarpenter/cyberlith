@@ -114,7 +114,7 @@ pub async fn server_build_world() -> Result<(), CliError> {
 }
 
 pub async fn server_build_asset() -> Result<(), CliError> {
-    let _ = crate::process_assets("../../../target/assets_repo", "prod")?;
+    let _ = crate::process_assets("prod")?;
 
     // build asset_server
     run_command(

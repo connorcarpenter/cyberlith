@@ -2,7 +2,7 @@
 # Runtime
 FROM gcr.io/distroless/cc-debian12
 
-# content_server
+# content_server # this should be a mirror of asset.dockerfile...
 COPY content_server /usr/local/bin/server
 
 # launcher

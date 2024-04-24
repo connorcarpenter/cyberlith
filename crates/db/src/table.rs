@@ -4,13 +4,12 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use git2::Repository;
+use git::{repo_init, Repository};
 use logging::info;
 
-use crate::git_ops::update_file;
 use crate::{
     error::DbError,
-    git_ops::{create_new_file, pull_repo_get_all_files, repo_init, update_nextid},
+    git_ops::{create_new_file,update_file, pull_repo_get_all_files, update_nextid},
     DbRowValue, DbTableKey,
 };
 
@@ -22,7 +21,7 @@ pub trait Table: Send + Sync {
 
 // TableImpl
 pub struct TableImpl<K: DbTableKey> {
-    dir_name: String,
+    root_path: String,
     repo: Arc<Mutex<Repository>>,
 
     next_id: u64,
@@ -43,8 +42,8 @@ impl<K: DbTableKey> Table for TableImpl<K> {
 impl<K: DbTableKey> TableImpl<K> {
     pub fn init() -> Self {
         // lot to do here ..
-        let (dir_name, git_repo) = repo_init(K::repo_name());
-        let files = pull_repo_get_all_files(&dir_name, &git_repo);
+        let (root_path, git_repo) = repo_init(K::repo_name());
+        let files = pull_repo_get_all_files(&root_path, &git_repo);
 
         let mut next_id: u64 = 0;
         let mut store = HashMap::new();
@@ -70,7 +69,7 @@ impl<K: DbTableKey> TableImpl<K> {
         }
 
         Self {
-            dir_name,
+            root_path,
             repo: Arc::new(Mutex::new(git_repo)),
             next_id,
             next_key_has_changed: false,
@@ -92,7 +91,7 @@ impl<K: DbTableKey> TableImpl<K> {
         // upload to database
         {
             let repo = self.repo.lock().unwrap();
-            create_new_file::<K>(&self.dir_name, &repo, value);
+            create_new_file::<K>(&self.root_path, &repo, value);
         }
 
         // update nextkey
@@ -120,7 +119,7 @@ impl<K: DbTableKey> TableImpl<K> {
         {
             let item_ref = self.store.get(key).unwrap();
             let repo = self.repo.lock().unwrap();
-            update_file::<K>(&self.dir_name, &repo, item_ref);
+            update_file::<K>(&self.root_path, &repo, item_ref);
         }
     }
 
@@ -145,6 +144,6 @@ impl<K: DbTableKey> TableImpl<K> {
         self.next_key_has_changed = false;
 
         let repo = self.repo.lock().unwrap();
-        update_nextid(&self.dir_name, &repo, self.next_id);
+        update_nextid(&self.root_path, &repo, self.next_id);
     }
 }

@@ -3,21 +3,23 @@ mod convert_to_bits;
 use std::{fs, path::Path};
 
 use asset_id::{AssetId, ETag};
-use git::{branch_exists, ObjectType, create_branch, git_commit, git_pull, git_push, repo_init, Tree, Repository, switch_to_branch, write_new_file, read_file_bytes};
+use git::{branch_exists, ObjectType, create_branch, git_commit, git_pull, git_push, repo_init, Tree, Repository, switch_to_branch, write_file_bytes, read_file_bytes};
 use logging::info;
 
 use asset_serde::json::{Asset, AssetData, AssetMeta, ProcessedAssetMeta};
 
 use crate::CliError;
 
-pub fn process_assets(target_path: &str, env: &str) -> Result<(), CliError> {
+pub fn process_assets(env: &str) -> Result<(), CliError> {
+    let repo_name = "cyberlith_assets";
+    let target_path = "target/asset_repo";
+
     // pull all assets into memory, from "env" branch
-    let root = target_path;
-    let repo = repo_init(root);
-    let files = load_all_unprocessed_files(root, &repo);
+    let repo = repo_init(repo_name, target_path);
+    let files = load_all_unprocessed_files(&target_path, &repo);
 
     if branch_exists(&repo, env) {
-        update_processed_assets(env, root, repo, files);
+        update_processed_assets(env, &target_path, repo, files);
     } else {
         create_processed_assets(env, repo, files);
     }
@@ -40,12 +42,12 @@ fn create_processed_assets(
 
     // delete all files
     delete_all_files(&repo, &all_new_unprocessed_files);
-    git_commit(&repo, env, "deleting all unprocessed files");
+    git_commit(&repo, env,  "connorcarpenter", "connorcarpenter@gmail.com", "deleting all unprocessed files");
     git_push(&repo, env);
 
     // process each file
     write_all_new_files(&repo, &all_new_unprocessed_files);
-    git_commit(&repo, env, "processing all files");
+    git_commit(&repo, env, "connorcarpenter", "connorcarpenter@gmail.com", "processing all files");
     git_push(&repo, env);
 }
 
@@ -73,7 +75,7 @@ fn update_processed_assets(
 
     // process each file
     write_all_new_files(&repo, &new_modified_unprocessed_files);
-    git_commit(&repo, env, "processing all modified files");
+    git_commit(&repo, env, "connorcarpenter", "connorcarpenter@gmail.com", "processing all modified files");
     git_push(&repo, env);
 }
 
@@ -150,21 +152,21 @@ fn collect_unprocessed_files(
 
 fn collect_processed_meta_files(
     output: &mut Vec<ProcessedAssetMeta>,
-    root: &str,
+    root_path: &str,
     repo: &Repository,
     git_tree: &Tree,
-    path: &str,
+    file_path: &str,
 ) {
     for git_entry in git_tree.iter() {
         let name = git_entry.name().unwrap().to_string();
 
         match git_entry.kind() {
             Some(ObjectType::Tree) => {
-                let new_path = format!("{}{}", path, name);
+                let new_file_path = format!("{}{}", file_path, name);
 
                 let git_children = git_entry.to_object(repo).unwrap().peel_to_tree().unwrap();
 
-                collect_processed_meta_files(output, root, repo, &git_children, &new_path);
+                collect_processed_meta_files(output, root_path, repo, &git_children, &new_file_path);
             }
             Some(ObjectType::Blob) => {
                 let name_split = name.split(".");
@@ -173,7 +175,7 @@ fn collect_processed_meta_files(
                     continue;
                 }
 
-                let bytes = read_file_bytes(root, path, &name);
+                let bytes = read_file_bytes(root_path, file_path, &name);
 
                 let processed_meta = ProcessedAssetMeta::read(&bytes).unwrap();
 
@@ -259,7 +261,7 @@ fn write_all_new_files(repo: &Repository, unprocessed_files: &Vec<UnprocessedFil
         };
 
         // write new data file
-        write_new_file(&mut index, &file_path, &full_path, processed_asset_bytes);
+        write_file_bytes(&mut index, &file_path, &full_path, processed_asset_bytes, false, true);
 
         // process Asset Meta
         let meta_file_path = format!("{}.meta", file_path);
@@ -268,7 +270,7 @@ fn write_all_new_files(repo: &Repository, unprocessed_files: &Vec<UnprocessedFil
         let meta_bytes = processed_meta.write();
 
         // write new meta file
-        write_new_file(&mut index, &meta_file_path, &meta_full_path, meta_bytes);
+        write_file_bytes(&mut index, &meta_file_path, &meta_full_path, meta_bytes, false, true);
     }
 }
 

@@ -6,7 +6,7 @@ pub use error::FileIoError;
 use std::{fs, path::Path};
 
 use asset_id::ETag;
-use git::{branch_exists, ObjectType, create_branch, git_commit, git_pull, git_push, repo_init, Tree, Repository, switch_to_branch, write_new_file, read_file_bytes};
+use git::{branch_exists, ObjectType, create_branch, git_commit, git_pull, git_push, repo_init, Tree, Repository, switch_to_branch, write_file_bytes, read_file_bytes};
 use logging::info;
 
 use crate::CliError;
@@ -36,11 +36,12 @@ impl TargetEnv {
 pub fn process_content(
     // should be the directory of the entire cyberlith repo
     source_path: &str,
-    // where to clone the cyberlith_content repo
-    target_path: &str,
     // what environment are we in
     target_env: TargetEnv
 ) -> Result<(), CliError> {
+
+    let repo_name = "cyberlith_content";
+    let target_path = "target/cyberlith_content";
 
     // deployments
     let build_paths = [
@@ -112,13 +113,13 @@ pub fn process_content(
     let files = load_all_unprocessed_files(&file_paths);
 
     // create repo
-    let repo = repo_init(target_path);
+    let repo = repo_init(repo_name, target_path);
 
     // if the repo already exists, process files if they have changed
     // otherwise, process all files
     let target_env_str = target_env.to_string();
     if branch_exists(&repo, &target_env_str) {
-        update_processed_content(target_env, target_path, &repo, files);
+        update_processed_content(target_env, &target_path, &repo, files);
     } else {
         create_processed_content(target_env, &repo, files);
     }
@@ -167,12 +168,12 @@ fn create_processed_content(
 
     // delete all files
     delete_all_files(&repo, &all_new_unprocessed_files);
-    git_commit(repo, &env_str, "deleting all unprocessed files");
+    git_commit(repo, &env_str, "connorcarpenter", "connorcarpenter@gmail.com", "deleting all unprocessed files");
     git_push(repo, &env_str);
 
     // process each file
     process_and_write_all_files(repo, &all_new_unprocessed_files);
-    git_commit(repo, &env_str, "processing all files");
+    git_commit(repo, &env_str, "connorcarpenter", "connorcarpenter@gmail.com", "processing all files");
     git_push(repo, &env_str);
 }
 
@@ -203,7 +204,7 @@ fn update_processed_content(
 
     // process each file
     process_and_write_all_files(repo, &new_modified_unprocessed_files);
-    git_commit(repo, &env_str, "processing all modified files");
+    git_commit(repo, &env_str, "connorcarpenter", "connorcarpenter@gmail.com", "processing all modified files");
     git_push(repo, &env_str);
 }
 
@@ -233,33 +234,33 @@ fn load_all_unprocessed_files(file_paths: &Vec<String>) -> Vec<UnprocessedFile> 
     output
 }
 
-fn load_all_processed_meta_files(root: &str, repo: &Repository) -> Vec<ProcessedFileMeta> {
+fn load_all_processed_meta_files(root_path: &str, repo: &Repository) -> Vec<ProcessedFileMeta> {
     let mut output = Vec::new();
     let head = repo.head().unwrap();
     let tree = head.peel_to_tree().unwrap();
 
-    collect_processed_meta_files(&mut output, root, &repo, &tree, "");
+    collect_processed_meta_files(&mut output, root_path, &repo, &tree, "");
 
     output
 }
 
 fn collect_processed_meta_files(
     output: &mut Vec<ProcessedFileMeta>,
-    root: &str,
+    root_path: &str,
     repo: &Repository,
     git_tree: &Tree,
-    path: &str,
+    file_path: &str,
 ) {
     for git_entry in git_tree.iter() {
         let name = git_entry.name().unwrap().to_string();
 
         match git_entry.kind() {
             Some(ObjectType::Tree) => {
-                let new_path = format!("{}{}", path, name);
+                let new_path = format!("{}{}", file_path, name);
 
                 let git_children = git_entry.to_object(repo).unwrap().peel_to_tree().unwrap();
 
-                collect_processed_meta_files(output, root, repo, &git_children, &new_path);
+                collect_processed_meta_files(output, root_path, repo, &git_children, &new_path);
             }
             Some(ObjectType::Blob) => {
                 let name_split = name.split(".");
@@ -268,7 +269,7 @@ fn collect_processed_meta_files(
                     continue;
                 }
 
-                let bytes = read_file_bytes(root, path, &name);
+                let bytes = read_file_bytes(root_path, file_path, &name);
 
                 let processed_meta = ProcessedFileMeta::read(&bytes).unwrap();
 
@@ -329,7 +330,7 @@ fn process_and_write_all_files(repo: &Repository, unprocessed_files: &Vec<Unproc
         let processed_file_bytes = unprocessed_file.bytes.clone();
 
         // write new data file
-        write_new_file(&mut index, &file_path, &full_path, processed_file_bytes);
+        write_file_bytes(&mut index, &file_path, &full_path, processed_file_bytes, false, true);
 
         // process Asset Meta
         let meta_file_path = format!("{}.meta", file_path);
@@ -338,7 +339,7 @@ fn process_and_write_all_files(repo: &Repository, unprocessed_files: &Vec<Unproc
         let meta_bytes = processed_meta.write();
 
         // write new meta file
-        write_new_file(&mut index, &meta_file_path, &meta_full_path, meta_bytes);
+        write_file_bytes(&mut index, &meta_file_path, &meta_full_path, meta_bytes, false, true);
     }
 }
 

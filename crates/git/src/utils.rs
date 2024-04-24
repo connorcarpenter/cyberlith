@@ -4,32 +4,34 @@ use git2::{Cred, FetchOptions, Index, Oid, PushOptions, Repository, Signature};
 
 use logging::info;
 
-pub fn repo_init(root_dir: &str) -> Repository {
+// returns root path and repo
+pub fn repo_init(repo_name: &str, target_path: &str) -> Repository {
     // Create Working directory if it doesn't already exist
-    let path = Path::new(&root_dir);
-    let repo_url = include_str!("../../../.secrets/assets_repo_url");
+    let target_dir_path = Path::new(&target_path);
+    let repo_url_root = get_repo_url_root();
+    let repo_url = format!("{}{}.git", repo_url_root, repo_name);
     let fetch_options = get_fetch_options();
 
-    if path.exists() {
-        info!("repo exists, removing..");
-        fs::remove_dir_all(path).unwrap();
+    if target_dir_path.exists() {
+        info!("repo: `{}` exists, removing..", target_path);
+        fs::remove_dir_all(target_dir_path).unwrap();
     }
 
-    if path.exists() {
-        panic!("should have removed directory: {:?}", root_dir);
+    if target_dir_path.exists() {
+        panic!("should have removed directory but didn't!: {:?}", target_dir_path);
     }
 
     // Create new directory
-    fs::create_dir_all(path).unwrap();
+    fs::create_dir_all(target_dir_path).unwrap();
 
     // Put fetch options into builder
     let mut builder = git2::build::RepoBuilder::new();
     builder.fetch_options(fetch_options);
 
     // Clone repo
-    let repo = builder.clone(repo_url, path).unwrap();
+    let repo = builder.clone(&repo_url, target_dir_path).unwrap();
 
-    info!("initialized repo at: `{}`", root_dir);
+    info!("initialized repo at: `{}`", target_dir_path.to_str().unwrap());
 
     repo
 }
@@ -63,16 +65,47 @@ pub fn switch_to_branch(repo: &Repository, branch_name: &str) {
     info!("switched to {:?} branch!", branch_name);
 }
 
+pub fn get_current_branch_name(repo: &Repository) -> String {
+    let head = repo.head().unwrap();
+    if !head.is_branch() {
+        panic!("HEAD is detached");
+    }
+    let branch_name = head
+        .shorthand()
+        .expect("Failed to get current branch name")
+        .to_string();
+    branch_name
+}
+
 pub fn branch_exists(repo: &Repository, branch_name: &str) -> bool {
     let remote_branch = format!("refs/remotes/origin/{}", branch_name);
     repo.find_reference(&remote_branch).is_ok()
 }
 
-pub fn write_new_file(index: &mut Index, file_path: &str, full_path: &str, bytes: Vec<u8>) {
+pub fn write_file_bytes(
+    index: &mut Index,
+    file_path: &str,
+    full_path: &str,
+    bytes: Vec<u8>,
+    require_file_exist: bool,
+    overwrite_existing_file: bool,
+) {
     // if file exists, delete it
     let path = Path::new(full_path);
     let file_exists = path.exists();
+
+    if require_file_exist {
+        if !file_exists {
+            panic!("file does not exist: {}", full_path);
+        }
+    }
+
     if file_exists {
+
+        if !overwrite_existing_file {
+            panic!("file already exists: {}", full_path);
+        }
+
         match fs::remove_file(path) {
             Ok(_) => {
                 // info!("deleted file: {}", file_path);
@@ -101,9 +134,9 @@ pub fn write_new_file(index: &mut Index, file_path: &str, full_path: &str, bytes
     }
 }
 
-pub fn read_file_bytes(root: &str, path: &str, file: &str) -> Vec<u8> {
+pub fn read_file_bytes(root_path: &str, path: &str, file: &str) -> Vec<u8> {
     let file_path = format!("{}{}", path, file);
-    let full_path = format!("{}/{}", root, file_path);
+    let full_path = format!("{}/{}", root_path, file_path);
 
     // info!("Getting blob for file: {}", full_path);
 
@@ -120,7 +153,18 @@ pub fn read_file_bytes(root: &str, path: &str, file: &str) -> Vec<u8> {
     }
 }
 
-pub fn git_commit(repo: &Repository, branch_name: &str, commit_message: &str) -> Oid {
+pub fn git_commit(
+    repo: &Repository,
+    branch_name: &str,
+    username: &str,
+    email: &str,
+    commit_message: &str
+) -> Oid {
+
+    if get_current_branch_name(repo) != branch_name {
+        panic!("current branch is not the same as the branch you are trying to commit to");
+    }
+
     let tree_id = repo
         .index()
         .expect("Failed to open index")
@@ -135,9 +179,9 @@ pub fn git_commit(repo: &Repository, branch_name: &str, commit_message: &str) ->
 
     // Prepare the commit details
     // TODO: parameterize my name and email?
-    let author = Signature::now("connorcarpenter", "connorcarpenter@gmail.com")
+    let author = Signature::now(username, email)
         .expect("Failed to create author signature");
-    let committer = Signature::now("connorcarpenter", "connorcarpenter@gmail.com")
+    let committer = Signature::now(username, email)
         .expect("Failed to create committer signature");
 
     // Create the commit
@@ -220,6 +264,10 @@ pub fn git_push(repo: &Repository, branch_name: &str) {
         .expect("Failed to push commit");
 
     info!("pushed to remote {:?} branch!", branch_name);
+}
+
+fn get_repo_url_root() -> &'static str {
+    include_str!("../../../.secrets/db_repo_url_root")
 }
 
 fn get_remote_callbacks(access_token: &str) -> git2::RemoteCallbacks {

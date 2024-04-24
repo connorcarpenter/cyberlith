@@ -10,9 +10,9 @@ use std::time::Duration;
 use bevy_app::{App, ScheduleRunnerPlugin, Startup, Update};
 use bevy_ecs::{
     schedule::{apply_deferred, IntoSystemConfigs},
-    system::{Res, ResMut},
+    system::{Res},
 };
-use logging::{info, LogPlugin};
+use logging::{info};
 
 use naia_bevy_server::{Plugin as ServerPlugin, ReceiveEvents, ServerConfig};
 
@@ -38,6 +38,9 @@ use crate::{
 };
 
 fn main() {
+
+    logging::initialize();
+
     info!("Vortex Server starting up");
 
     let mut server_config = ServerConfig::default();
@@ -48,7 +51,6 @@ fn main() {
         // Plugins
         .add_plugins(ConfigPlugin)
         .add_plugins(ScheduleRunnerPlugin::run_loop(Duration::from_millis(5)))
-        .add_plugins(LogPlugin::default())
         .add_plugins(ServerPlugin::new(server_config, protocol()))
         // Resources
         .init_resource::<UserManager>()
@@ -132,8 +134,6 @@ fn main() {
         .run();
 }
 
-fn setup(config: Res<AppConfig>, mut git_manager: ResMut<GitManager>) {
+fn setup(config: Res<AppConfig>) {
     info!("Environment: {}", config.general.env_name);
-
-    git_manager.use_config(&config.git);
 }

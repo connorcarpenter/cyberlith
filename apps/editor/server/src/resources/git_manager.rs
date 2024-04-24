@@ -1,7 +1,5 @@
 use std::{
     collections::{HashMap, HashSet},
-    fs,
-    path::Path,
 };
 
 use bevy_ecs::{
@@ -9,9 +7,8 @@ use bevy_ecs::{
     system::{Commands, Query, Res, ResMut, Resource, SystemState},
     world::{Mut, World},
 };
-use git2::{Cred, Repository, Tree};
-use logging::info;
 
+use logging::info;
 use asset_serde::json::AssetMeta;
 use naia_bevy_server::{BigMap, CommandsExt, ReplicationConfig, RoomKey, Server, UserKey};
 
@@ -23,9 +20,9 @@ use editor_proto::{
     messages::ChangelistMessage,
     resources::FileKey,
 };
+use git::{ObjectType, repo_init, Repository, Tree};
 
 use crate::{
-    config::GitConfig,
     resources::{
         project::Project, project::ProjectKey, ContentEntityData, FileEntryValue, PaletteManager,
         RollbackResult, ShapeManager, SkinManager, UserManager,
@@ -34,7 +31,6 @@ use crate::{
 
 #[derive(Resource)]
 pub struct GitManager {
-    config: Option<GitConfig>,
     projects: BigMap<ProjectKey, Project>,
     // get project key from username, should only be used on initialization
     project_keys: HashMap<String, ProjectKey>,
@@ -46,7 +42,6 @@ pub struct GitManager {
 impl Default for GitManager {
     fn default() -> Self {
         Self {
-            config: None,
             projects: BigMap::new(),
             project_keys: HashMap::new(),
             content_entity_keys: HashMap::new(),
@@ -57,9 +52,6 @@ impl Default for GitManager {
 }
 
 impl GitManager {
-    pub fn use_config(&mut self, config: &GitConfig) {
-        self.config = Some(config.clone());
-    }
 
     pub fn has_project_key(&mut self, project_owner_name: &str) -> bool {
         self.project_keys.contains_key(project_owner_name)
@@ -494,61 +486,11 @@ impl GitManager {
         owner_name: &str,
     ) -> ProjectKey {
         // Create User's Working directory if it doesn't already exist
+        let repo_name = "cyberlith_assets";
         let root_dir = "target/users";
-        let full_path_str = format!("{}/{}", root_dir, owner_name);
-        let path = Path::new(&full_path_str);
-        let repo_url = self.config.as_ref().unwrap().repo_url.as_str();
-        let access_token = self.config.as_ref().unwrap().access_token.as_str();
+        let target_path_str = format!("{}/{}", root_dir, owner_name);
 
-        let mut fetch_options = git2::FetchOptions::new();
-        fetch_options.remote_callbacks(Self::get_remote_callbacks(access_token));
-
-        let repo = if !path.exists() {
-            // Create new directory
-            fs::create_dir_all(path).unwrap();
-
-            // Put fetch options into builder
-            let mut builder = git2::build::RepoBuilder::new();
-            builder.fetch_options(fetch_options);
-
-            // Clone repo
-            let repo = builder.clone(repo_url, path).unwrap();
-
-            info!("initialized repo at: `{}`", &full_path_str);
-
-            repo
-        } else {
-            info!("repo exists at: `{}`", &full_path_str);
-
-            // Open repo
-            let repo = Repository::open(path).unwrap();
-
-            {
-                let mut remote = repo.find_remote("origin").unwrap();
-                remote
-                    .fetch(&["main"], Some(&mut fetch_options), None)
-                    .unwrap();
-
-                let reference = repo.find_reference("FETCH_HEAD").unwrap();
-                let target = reference.peel_to_commit().unwrap();
-
-                // Set up a CheckoutBuilder to force the working directory to match the target
-                let mut checkout_builder = git2::build::CheckoutBuilder::new();
-                checkout_builder.force();
-
-                // Reset local changes
-                repo.reset(
-                    target.as_object(),
-                    git2::ResetType::Hard,
-                    Some(&mut checkout_builder),
-                )
-                .unwrap();
-
-                info!("pulled repo with new changes");
-            }
-
-            repo
-        };
+        let repo = repo_init(repo_name, &target_path_str);
 
         let mut file_entries = HashMap::new();
 
@@ -564,7 +506,7 @@ impl GitManager {
                 &tree,
                 "",
                 None,
-                &full_path_str,
+                &target_path_str,
             );
         }
 
@@ -575,8 +517,7 @@ impl GitManager {
             project_room_key,
             file_entries,
             repo,
-            access_token,
-            &full_path_str,
+            &target_path_str,
         );
 
         insert_entry_components_from_list(
@@ -591,15 +532,6 @@ impl GitManager {
             .insert(owner_name.to_string(), project_key);
 
         project_key
-    }
-
-    pub fn get_remote_callbacks(access_token: &str) -> git2::RemoteCallbacks {
-        let mut remote_callbacks = git2::RemoteCallbacks::new();
-        remote_callbacks.credentials(move |_url, _username_from_url, _allowed_types| {
-            Cred::userpass_plaintext("token", access_token)
-        });
-
-        remote_callbacks
     }
 
     pub fn commit_changelist_entry(
@@ -767,7 +699,7 @@ fn fill_file_entries_from_git(
         info!("Git -> Tree: processing Entry `{:?}`", name);
 
         match git_entry.kind() {
-            Some(git2::ObjectType::Tree) => {
+            Some(ObjectType::Tree) => {
                 let entry_kind = EntryKind::Directory;
                 let id = GitManager::spawn_file_tree_entity(commands, server);
 
@@ -792,7 +724,7 @@ fn fill_file_entries_from_git(
 
                 output.insert(file_key.clone());
             }
-            Some(git2::ObjectType::Blob) => {
+            Some(ObjectType::Blob) => {
                 let entry_kind = EntryKind::File;
                 let id = GitManager::spawn_file_tree_entity(commands, server);
 

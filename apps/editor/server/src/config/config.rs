@@ -11,18 +11,10 @@ pub struct GeneralConfig {
     pub env_name: String,
 }
 
-#[derive(Debug, Deserialize, Default, Clone)]
-#[allow(unused)]
-pub struct GitConfig {
-    pub repo_url: String,
-    pub access_token: String,
-}
-
 #[derive(Debug, Deserialize, Resource, Default)]
 #[allow(unused)]
 pub struct AppConfig {
     pub general: GeneralConfig,
-    pub git: GitConfig,
 }
 
 #[derive(Resource)]

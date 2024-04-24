@@ -1,6 +1,6 @@
 use std::process::Command;
-use automation_lib::TargetEnv;
 
+use automation_lib::TargetEnv;
 use logging::info;
 
 pub(crate) fn setup() {
@@ -8,7 +8,6 @@ pub(crate) fn setup() {
 
     automation_lib::process_content(
         "", // TODO: figure this out!
-        "target/content_repo",
         TargetEnv::Local,
     ).unwrap();
 
