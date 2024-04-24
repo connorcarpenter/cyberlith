@@ -52,7 +52,7 @@ pub fn create_new_file<K: DbTableKey>(dir_path: &str, repo: &Repository, file: K
     write_file_bytes(&mut index, &full_path, &file_name, file_contents, false, false);
 
     // commit, push, pull
-    git_commit(repo, branch_name, &commit_message);
+    git_commit(repo, branch_name, "connorcarpenter", "connorcarpenter@gmail.com", &commit_message);
     git_push(repo, branch_name);
     git_pull(repo, branch_name);
 }
@@ -80,7 +80,7 @@ pub fn update_file<K: DbTableKey>(dir_path: &str, repo: &Repository, file: &K::V
     write_file_bytes(&mut index, &full_path, &file_name, file_contents, true, true);
 
     // commit, push, pull
-    git_commit(repo, branch_name, &commit_message);
+    git_commit(repo, branch_name, "connorcarpenter", "connorcarpenter@gmail.com", &commit_message);
     git_push(repo, branch_name);
     git_pull(repo, branch_name);
 }
@@ -106,7 +106,7 @@ pub fn update_nextid(dir_path: &str, repo: &Repository, next_id: u64) {
     write_file_bytes(&mut index, &full_path, &file_name, file_contents, true, true);
 
     // commit, push, pull
-    git_commit(repo, branch_name, &commit_message);
+    git_commit(repo, branch_name, "connorcarpenter", "connorcarpenter@gmail.com", &commit_message);
     git_push(repo, branch_name);
     git_pull(repo, branch_name);
 }
