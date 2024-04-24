@@ -29,6 +29,9 @@ members = [
     "services/gateway",
     # Content Server
     "services/content",
+    # NeoContent Server
+    "services/neocontent",
+    "services/neocontent/http_proto",
     # Auth Server
     "services/auth",
     "services/auth/http_proto",

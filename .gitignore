@@ -17,13 +17,17 @@ node_modules
 /deployments/web/level_editor/assets
 
 /services/auth/target
+/services/gateway/acme_cache
+
 /services/asset/assets
 /services/asset/assets/
 /services/asset/assets/*
+/services/neocontent/files
+/services/neocontent/files/
+/services/neocontent/files/*
 /services/content/files
 /services/content/files/
 /services/content/files/*
-/services/gateway/acme_cache
 
 /apps/ui_editor/target
 /apps/ui_editor/assets
