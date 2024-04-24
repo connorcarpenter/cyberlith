@@ -132,7 +132,7 @@ fn build_deployments(
     // this is the directory the files should go into
     target_path: &str,
     deployments: &[&str]
-) -> Vec<(String, FileHash, FileHash)> {
+) -> Vec<(String, FileHash, FileHash, FileHash)> {
     info!("building deployments..");
     info!("source_path: {}", source_path);
     info!("target_path: {}", target_path);
@@ -206,7 +206,31 @@ fn build_deployments(
             get_file_hash(&js_bytes)
         };
 
-        output.push((deployment.to_string(), wasm_hash, js_hash));
+        // copy html file over
+        let result = run_command_blocking(
+            deployment,
+            format!(
+                "cp {}/deployments/web/{}/{}.html {}/{}.html",
+                source_path,
+                deployment,
+                deployment,
+                target_path,
+                deployment,
+            )
+                .as_str(),
+        );
+
+        // get hash of html file
+        let html_hash = {
+            let html_bytes = read_file_bytes(
+                target_path,
+                "",
+                format!("{}.html", deployment).as_str(),
+            );
+            get_file_hash(&html_bytes)
+        };
+
+        output.push((deployment.to_string(), wasm_hash, js_hash, html_hash));
     }
 
     output
