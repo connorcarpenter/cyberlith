@@ -5,33 +5,33 @@ use git2::{Cred, FetchOptions, Index, Oid, PushOptions, Repository, Signature};
 use logging::info;
 
 // returns root path and repo
-pub fn repo_init(repo_name: &str, target_path: &str) -> Repository {
+pub fn repo_init(repo_name: &str, output_path_str: &str) -> Repository {
     // Create Working directory if it doesn't already exist
-    let target_dir_path = Path::new(&target_path);
+    let output_dir_path = Path::new(&output_path_str);
     let repo_url_root = get_repo_url_root();
     let repo_url = format!("{}{}.git", repo_url_root, repo_name);
     let fetch_options = get_fetch_options();
 
-    if target_dir_path.exists() {
-        info!("repo: `{}` exists, removing..", target_path);
-        fs::remove_dir_all(target_dir_path).unwrap();
+    if output_dir_path.exists() {
+        info!("repo: `{}` exists, removing..", output_path_str);
+        fs::remove_dir_all(output_dir_path).unwrap();
     }
 
-    if target_dir_path.exists() {
-        panic!("should have removed directory but didn't!: {:?}", target_dir_path);
+    if output_dir_path.exists() {
+        panic!("should have removed directory but didn't!: {:?}", output_dir_path);
     }
 
     // Create new directory
-    fs::create_dir_all(target_dir_path).unwrap();
+    fs::create_dir_all(output_dir_path).unwrap();
 
     // Put fetch options into builder
     let mut builder = git2::build::RepoBuilder::new();
     builder.fetch_options(fetch_options);
 
     // Clone repo
-    let repo = builder.clone(&repo_url, target_dir_path).unwrap();
+    let repo = builder.clone(&repo_url, output_dir_path).unwrap();
 
-    info!("initialized repo at: `{}`", target_dir_path.to_str().unwrap());
+    info!("initialized repo at: `{}`", output_dir_path.to_str().unwrap());
 
     repo
 }

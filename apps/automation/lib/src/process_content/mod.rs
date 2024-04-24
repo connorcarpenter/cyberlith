@@ -33,98 +33,80 @@ impl TargetEnv {
     }
 }
 
+struct UnprocessedFile {
+    full_file_path: String,
+    file_name: String,
+    extension: String,
+    hash: FileHash,
+}
+
 // should build our deployments, process all files, and push to the content repo
 pub fn process_content(
     // should be the directory of the entire cyberlith repo
-    source_path: &str,
-    // should be the directory we do all the work in, added to source_path
-    target_path: &str,
-    // what environment are we in
+    project_path: &str,
+    // should be the directory we do all the work in, added to project_path
+    service_path: &str,
+    // what build environment are we in
     target_env: TargetEnv
 ) -> Result<(), CliError> {
 
-    let target_path = format!("{}/{}", source_path, target_path);
-
+    let repo_name = "cyberlith_content";
     let deployments = ["launcher", "game"];
 
-    // build web deployments
-    build_deployments(target_env, source_path, &target_path, &deployments);
+    let target_path = format!("{}/{}/target", project_path, service_path);
+    let output_path = format!("{}/{}", project_path, repo_name);
+    let target_env_str = target_env.to_string();
 
-    // if release mode, wasm-opt
+    // build web deployments
+    let mut files = build_deployments(target_env, project_path, &target_path, &deployments);
+
+    // create repo
+    let repo = repo_init(repo_name, &target_path);
+
+    // if the repo already exists, process files if they have changed
+    // otherwise, process all files
+    if branch_exists(&repo, &target_env_str) {
+        info!("branch {:?} exists, processing only modified files..", target_env_str);
+        git_pull(&repo, &target_env_str);
+        switch_to_branch(&repo, &target_env_str);
+
+        // get files from previously processed environment
+        let old_meta_files = load_all_processed_meta_files(&target_path, &repo);
+
+        // prune out unprocessed files that have not changed since last being processed
+        files = prune_unchanged_files(&old_meta_files, files);
+        if files.is_empty() {
+            info!("no files to process, exiting..");
+            return Ok(());
+        }
+    } else {
+        info!(
+            "branch {:?} doesn't exist, processing all files for the first time",
+            target_env_str
+        );
+
+        // create and switch to new branch
+        create_branch(&repo, &target_env_str);
+        switch_to_branch(&repo, &target_env_str);
+    }
+
+    // if release mode, wasm-opt on Wasm
     if target_env == TargetEnv::Prod {
-        wasm_opt_deployments(source_path, &target_path, &deployments);
+        wasm_opt_deployments(project_path, &target_path, &files);
     }
 
     // if release mode, minify/uglify JS
     if target_env == TargetEnv::Prod {
-        js_uglify(source_path, &target_path, &deployments);
+        js_uglify(project_path, &target_path, &files);
     }
 
     // brotlify all files
-    brotlify_deployments(source_path, &target_path, &deployments);
+    brotlify_deployments(project_path, &target_path, &files);
 
-    todo!();
-
-    let repo_name = "cyberlith_content";
-
-    // wasm
-    // let wasm_paths = [
-    //     ("launcher", "launcher_bg.wasm"),
-    //     ("game", "game_bg.wasm")
-    // ].map(
-    //     |(deployment, file_name)| format!(
-    //         "{}/deployments/web/{}/target/wasm32-unknown-unknown/{}/{}",
-    //         source_path,
-    //         deployment,
-    //         target_env.cargo_env(),
-    //         file_name,
-    //     ));
-    //
-    // // js
-    // let js_paths = [
-    //     "launcher",
-    //     "game"
-    // ].map(
-    //     |deployment| format!(
-    //         "{}/deployments/web/{}/target/wasm32-unknown-unknown/{}/{}.js",
-    //         source_path,
-    //         deployment,
-    //         target_env.cargo_env(),
-    //         deployment
-    //     ));
-    //
-    // // html
-    // let html_paths = [
-    //     "launcher",
-    //     "game"
-    // ].map(
-    //     |deployment| format!(
-    //         "{}/deployments/web/{}/{}.html",
-    //         source_path,
-    //         deployment,
-    //         deployment
-    //     ));
-
-
-    //
-    // let mut file_paths = wasm_paths.to_vec();
-    // file_paths.extend(js_paths);
-    // file_paths.extend(html_paths);
-    //
-    // // load all files into memory
-    // let files = load_all_unprocessed_files(&file_paths);
-    //
-    // // create repo
-    // let repo = repo_init(repo_name, target_path);
-    //
-    // // if the repo already exists, process files if they have changed
-    // // otherwise, process all files
-    // let target_env_str = target_env.to_string();
-    // if branch_exists(&repo, &target_env_str) {
-    //     update_processed_content(target_env, &target_path, &repo, files);
-    // } else {
-    //     create_processed_content(target_env, &repo, files);
-    // }
+    // process each file
+    write_processed_files_to_repo(&repo, &files);
+    git_commit(&repo, &target_env_str, "connorcarpenter", "connorcarpenter@gmail.com", "processing all modified content files");
+    git_push(&repo, &target_env_str);
 
     Ok(())
 }
@@ -136,7 +118,7 @@ fn build_deployments(
     // this is the directory the files should go into
     target_path: &str,
     deployments: &[&str]
-) -> Vec<(String, FileHash, FileHash, FileHash)> {
+) -> Vec<UnprocessedFile> {
     info!("building deployments..");
     info!("source_path: {}", source_path);
     info!("target_path: {}", target_path);
@@ -200,6 +182,28 @@ fn build_deployments(
             panic!("failed to wasm-bindgen deployment: {}", e);
         }
 
+        // rename 'deployment_bg.wasm' to 'deployment.wasm'
+        let result = run_command_blocking(
+            deployment,
+            format!(
+                "mv {}/{}_bg.wasm {}/{}.wasm",
+                target_path,
+                deployment,
+                target_path,
+                deployment,
+            )
+                .as_str(),
+        );
+        if let Err(e) = result {
+            panic!("failed to rename wasm file: {}", e);
+        }
+
+        output.push(UnprocessedFile {
+            full_file_path: format!("{}/{}.wasm", target_path, deployment),
+            extension: "wasm".to_string(),
+            hash: wasm_hash,
+        });
+
         // get hash of js file
         let js_hash = {
             let js_bytes = read_file_bytes(
@@ -209,6 +213,12 @@ fn build_deployments(
             );
             get_file_hash(&js_bytes)
         };
+
+        output.push(UnprocessedFile {
+            full_file_path: format!("{}/{}.js", target_path, deployment),
+            extension: "js".to_string(),
+            hash: js_hash,
+        });
 
         // copy html file over
         let result = run_command_blocking(
@@ -237,23 +247,11 @@ fn build_deployments(
             get_file_hash(&html_bytes)
         };
 
-        // rename 'deployment_bg.wasm' to 'deployment.wasm'
-        let result = run_command_blocking(
-            deployment,
-            format!(
-                "mv {}/{}_bg.wasm {}/{}.wasm",
-                target_path,
-                deployment,
-                target_path,
-                deployment,
-            )
-                .as_str(),
-        );
-        if let Err(e) = result {
-            panic!("failed to rename wasm file: {}", e);
-        }
-
-        output.push((deployment.to_string(), wasm_hash, js_hash, html_hash));
+        output.push(UnprocessedFile {
+            full_file_path: format!("{}/{}.html", target_path, deployment),
+            extension: "html".to_string(),
+            hash: html_hash,
+        });
     }
 
     output
@@ -422,78 +420,6 @@ fn brotlify_deployments(
     }
 }
 
-fn create_processed_content(
-    env: TargetEnv,
-    repo: &Repository,
-    all_new_unprocessed_files: Vec<UnprocessedFile>,
-) {
-    let env_str = env.to_string();
-    info!(
-        "branch {:?} doesn't exist, processing all files for the first time",
-        env
-    );
-    // create new branch
-    create_branch(repo, &env_str);
-    switch_to_branch(repo, &env_str);
-
-    // delete all files
-    delete_all_files(&repo, &all_new_unprocessed_files);
-    git_commit(repo, &env_str, "connorcarpenter", "connorcarpenter@gmail.com", "deleting all unprocessed files");
-    git_push(repo, &env_str);
-
-    // process each file
-    process_and_write_all_files(repo, &all_new_unprocessed_files);
-    git_commit(repo, &env_str, "connorcarpenter", "connorcarpenter@gmail.com", "processing all files");
-    git_push(repo, &env_str);
-}
-
-fn update_processed_content(
-    env: TargetEnv,
-    root: &str,
-    repo: &Repository,
-    all_unprocessed_files: Vec<UnprocessedFile>,
-) {
-    info!("branch {:?} exists, processing only modified files..", env);
-
-    let env_str = env.to_string();
-
-    // switch to "env" branch
-    git_pull(repo, &env_str);
-    switch_to_branch(repo, &env_str);
-
-    // get files from previously processed environment
-    let old_meta_files = load_all_processed_meta_files(root, repo);
-
-    // prune out unprocessed files that have not changed since last being processed
-    let new_modified_unprocessed_files =
-        prune_unchanged_files(&old_meta_files, all_unprocessed_files);
-    if new_modified_unprocessed_files.is_empty() {
-        info!("no files to process, exiting..");
-        return;
-    }
-
-    // process each file
-    process_and_write_all_files(repo, &new_modified_unprocessed_files);
-    git_commit(repo, &env_str, "connorcarpenter", "connorcarpenter@gmail.com", "processing all modified files");
-    git_push(repo, &env_str);
-}
-
-struct UnprocessedFile {
-    path: String,
-    name: String,
-    bytes: Vec<u8>,
-}
-
-impl UnprocessedFile {
-    pub fn new(path: &str, name: &str, bytes: Vec<u8>) -> Self {
-        Self {
-            path: path.to_string(),
-            name: name.to_string(),
-            bytes,
-        }
-    }
-}
-
 fn load_all_unprocessed_files(file_paths: &Vec<String>) -> Vec<UnprocessedFile> {
     let mut output = Vec::new();
 
@@ -578,7 +504,7 @@ fn delete_all_files(repo: &Repository, file_entries: &Vec<UnprocessedFile>) {
     }
 }
 
-fn process_and_write_all_files(repo: &Repository, unprocessed_files: &Vec<UnprocessedFile>) {
+fn write_processed_files_to_repo(repo: &Repository, unprocessed_files: &Vec<UnprocessedFile>) {
     // let ref_name = format!("refs/heads/{}", branch_name);
     let mut index = repo.index().expect("Failed to open index");
 
@@ -593,19 +519,12 @@ fn process_and_write_all_files(repo: &Repository, unprocessed_files: &Vec<Unproc
         let file_path = format!("{}{}.{}", unprocessed_file.path, file_name, true_file_ext);
         let full_path = format!("{}{}", repo.workdir().unwrap().to_str().unwrap(), file_path);
 
-        let hash = get_file_hash(&unprocessed_file.bytes);
-
-        // TODO!!!: do things with bytes of content here!
-        // wasm-opt, and brotli-fy
-        let processed_file_bytes = unprocessed_file.bytes.clone();
-
-        // write new data file
-        write_file_bytes(&mut index, &file_path, &full_path, processed_file_bytes, false, true);
+        // copy file over
 
         // process Asset Meta
         let meta_file_path = format!("{}.meta", file_path);
         let meta_full_path = format!("{}.meta", full_path);
-        let processed_meta = process_new_meta_file(&file_name, hash);
+        let processed_meta = process_new_meta_file(&file_name, unprocessed_file.hash);
         let meta_bytes = processed_meta.write();
 
         // write new meta file
@@ -639,27 +558,20 @@ fn prune_unchanged_files(
     let mut output = Vec::new();
 
     for unprocessed_file in all_unprocessed_files {
-        let prev_path = format!("{}/{}", unprocessed_file.path, unprocessed_file.name);
-
-        let mut file_name_split = unprocessed_file.name.split(".");
-        let file_name = file_name_split.next().unwrap();
-        let true_file_ext = file_name_split.next().unwrap();
-
-        let unprocessed_hash = get_file_hash(&unprocessed_file.bytes);
 
         let prev_meta = old_meta_files
             .iter()
-            .find(|meta| &meta.name() == file_name);
+            .find(|meta| meta.name().eq(&unprocessed_file.file_name));
 
         if let Some(meta) = prev_meta {
-            if unprocessed_hash == meta.hash() {
-                info!("file unchanged: {}", prev_path);
+            if unprocessed_file.hash == meta.hash() {
+                info!("file unchanged: {}", unprocessed_file.full_file_path);
                 continue;
             } else {
-                info!("file changed: {}", prev_path);
+                info!("file changed: {}", unprocessed_file.full_file_path);
             }
         } else {
-            info!("file new: {}", prev_path);
+            info!("file new: {}", unprocessed_file.full_file_path);
         }
 
         output.push(unprocessed_file);
