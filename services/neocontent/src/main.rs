@@ -5,7 +5,6 @@ mod file_endpoint;
 mod file_cache;
 mod file_metadata_store;
 mod state;
-mod error;
 
 cfg_if! {
     if #[cfg(feature = "local")] {
@@ -16,7 +15,7 @@ cfg_if! {
 use std::{net::SocketAddr, thread};
 
 use config::{CONTENT_SERVER_FILES_PATH, CONTENT_SERVER_PORT, SELF_BINDING_ADDR};
-use http_server::{async_dup::Arc, smol::lock::RwLock, Server, FileServer, Method, ApiServer};
+use http_server::{ApiServer, async_dup::Arc, FileServer, Method, Server, smol::lock::RwLock};
 use logging::info;
 
 use crate::{file_metadata_store::FileMetadataStore, state::State};

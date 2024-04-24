@@ -7,7 +7,7 @@ use naia_serde::SerdeInternal as Serde;
 use asset_id::ETag;
 use logging::{info, warn};
 
-use crate::error::FileIoError;
+use automation_lib::{FileIoError, ProcessedFileMeta};
 
 // FileType
 #[derive(Serde, Eq, PartialEq, Clone, Copy, Hash, Debug)]
@@ -136,46 +136,5 @@ impl FileMetadataStore {
 
     pub fn get(&self, name: &str) -> Option<&FileMetadata> {
         self.map.get(name)
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct ProcessedFileMeta {
-    name: String,
-    etag: String,
-    hash: Vec<u8>,
-}
-
-impl ProcessedFileMeta {
-    pub fn new(
-        name: String,
-        etag: ETag,
-        hash: Vec<u8>,
-    ) -> Self {
-        Self {
-            name,
-            etag: etag.as_string(),
-            hash,
-        }
-    }
-
-    pub fn name(&self) -> String {
-        self.name.clone()
-    }
-
-    pub fn hash(&self) -> &[u8] {
-        &self.hash
-    }
-
-    pub fn etag(&self) -> ETag {
-        ETag::from_str(&self.etag).unwrap()
-    }
-
-    pub fn write(&self) -> Vec<u8> {
-        serde_json::to_vec_pretty(self).unwrap()
-    }
-
-    pub fn read(bytes: &[u8]) -> Result<Self, FileIoError> {
-        serde_json::from_slice(bytes).map_err(|e| FileIoError::Message(e.to_string()))
     }
 }

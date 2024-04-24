@@ -29,3 +29,5 @@ blake3 = "1.5"
 
 # for "convert_ttf_to_icon"
 ttf2mesh = "0.2.1"
+serde = { version = "1.0.196", features = ["derive"] }
+serde_json = { version = "1.0.107" }

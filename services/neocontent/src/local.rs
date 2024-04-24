@@ -1,12 +1,16 @@
 use std::process::Command;
+use automation_lib::TargetEnv;
 
 use logging::info;
 
 pub(crate) fn setup() {
     info!("Setting up local environment");
 
-    // process content
-    automation_lib::process_content("target/content_repo", "local").unwrap();
+    automation_lib::process_content(
+        "", // TODO: figure this out!
+        "target/content_repo",
+        TargetEnv::Local,
+    ).unwrap();
 
     // copy ./target/content_repo/* to ./content/*
     let source_dir = "./target/content_repo";

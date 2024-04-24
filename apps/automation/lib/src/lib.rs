@@ -2,9 +2,11 @@ mod convert_ttf_to_icon;
 mod down;
 mod error;
 mod process_assets;
+mod process_content;
 mod up;
 mod utils;
 
+pub use process_content::*;
 pub use convert_ttf_to_icon::*;
 pub use down::*;
 pub use error::*;

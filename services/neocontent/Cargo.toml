@@ -7,14 +7,14 @@ edition = "2021"
 publish = false
 
 [features]
-local = [ "config/local", "automation_lib" ]
+local = [ "config/local" ]
 prod = [ "config/prod" ]
 
 [dependencies]
 http_server = { path = "../../crates/http/http_server" }
 http_client = { path = "../../crates/http/http_client" }
 config = { path = "../../config", features = ["content"] }
-automation_lib = { path = "../../apps/automation/lib", optional = true }
+automation_lib = { path = "../../apps/automation/lib" }
 asset_id = { path = "../../crates/asset/id" }
 logging = { path = "../../crates/logging" }
 naia-serde = { path = "../../../naia/shared/serde" }
