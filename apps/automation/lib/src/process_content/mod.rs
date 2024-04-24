@@ -3,14 +3,13 @@ pub use filetypes::ProcessedFileMeta;
 mod error;
 pub use error::FileIoError;
 
-use std::{fs, path::Path};
+use std::{fs, path::Path, time::Duration};
 
 use asset_id::ETag;
 use git::{branch_exists, ObjectType, create_branch, git_commit, git_pull, git_push, repo_init, Tree, Repository, switch_to_branch, write_file_bytes, read_file_bytes};
 use logging::info;
 
-use crate::CliError;
-use crate::utils::{run_command, run_command_blocking};
+use crate::{utils::{run_command, run_command_blocking}, CliError};
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum TargetEnv {
@@ -264,7 +263,7 @@ fn wasm_opt_deployments(
     target_path: &str,
     deployments: &[&str],
 ) {
-    info!("wasm-opt on deployments..");
+    info!("run wasm-opt on deployments..");
     info!("source_path: {}", source_path);
     info!("target_path: {}", target_path);
 
@@ -324,8 +323,53 @@ fn js_uglify(
     target_path: &str,
     deployments: &[&str],
 ) {
-    for deployments in deployments {
-        todo!()
+    info!("run UglifyJS on deployments..");
+    info!("source_path: {}", source_path);
+    info!("target_path: {}", target_path);
+
+    for deployment in deployments {
+        // uglify
+        let result = run_command_blocking(
+            deployment,
+            format!(
+                "/home/connor/.nvm/versions/node/v18.6.0/bin/node /home/connor/.nvm/versions/node/v18.6.0/bin/uglifyjs {}/{}.js -o {}/{}_min.js --mangle --compress --no-annotations",
+                target_path,
+                deployment,
+                target_path,
+                deployment,
+            )
+                .as_str(),
+        );
+        if let Err(e) = result {
+            panic!("failed to uglify js file: {}", e);
+        }
+
+        // delete non-minified js file
+        let result = run_command_blocking(
+            deployment,
+            format!(
+                "rm {}/{}.js",
+                target_path,
+                deployment,
+            )
+                .as_str(),
+        );
+        if let Err(e) = result {
+            panic!("failed to delete js file: {}", e);
+        }
+
+        // rename *_min.js to *.js
+        let result = run_command_blocking(
+            deployment,
+            format!(
+                "mv {}/{}_min.js {}/{}.js",
+                target_path,
+                deployment,
+                target_path,
+                deployment,
+            )
+                .as_str(),
+        );
     }
 }
 
