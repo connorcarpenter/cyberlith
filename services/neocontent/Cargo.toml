@@ -17,6 +17,7 @@ config = { path = "../../config", features = ["content"] }
 automation_lib = { path = "../../apps/automation/lib", optional = true }
 asset_id = { path = "../../crates/asset/id" }
 logging = { path = "../../crates/logging" }
+naia-serde = { path = "../../../naia/shared/serde" }
 
 cfg-if = { version = "1.0" }
 serde = { version = "1.0.189", features = ["derive"] }

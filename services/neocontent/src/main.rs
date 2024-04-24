@@ -1,8 +1,8 @@
 #[macro_use]
 extern crate cfg_if;
 
-mod asset_cache;
-mod asset_metadata_store;
+mod file_cache;
+mod file_metadata_store;
 mod state;
 mod error;
 
@@ -18,7 +18,7 @@ use config::{CONTENT_SERVER_FILES_PATH, CONTENT_SERVER_PORT, SELF_BINDING_ADDR};
 use http_server::{async_dup::Arc, smol::lock::RwLock, Server};
 use logging::info;
 
-use crate::{asset_metadata_store::AssetMetadataStore, state::State};
+use crate::{file_metadata_store::FileMetadataStore, state::State};
 
 pub fn main() {
     logging::initialize();
@@ -27,12 +27,12 @@ pub fn main() {
     local::setup();
 
     // setup state
-    let asset_metadata_store = AssetMetadataStore::new(CONTENT_SERVER_FILES_PATH);
+    let file_metadata_store = FileMetadataStore::new(CONTENT_SERVER_FILES_PATH);
 
     let cache_size_kb = 5000; // 5 MB
     let state = Arc::new(RwLock::new(State::new(
         cache_size_kb,
-        asset_metadata_store,
+        file_metadata_store,
     )));
 
     // setup listening http server

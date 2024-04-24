@@ -1,4 +1,4 @@
 #[derive(Debug)]
-pub enum AssetIoError {
+pub enum FileIoError {
     Message(String),
 }

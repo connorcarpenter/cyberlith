@@ -2,15 +2,15 @@ use std::collections::{HashMap, VecDeque};
 
 use logging::{info, warn};
 
-/// Stores asset data in RAM, but falls back to disk if over capacity
-pub struct AssetCache {
+/// Stores file data in RAM, but falls back to disk if over capacity
+pub struct FileCache {
     capacity_kb: u32,
     current_size_kb: u32,
     data_map: HashMap<String, Vec<u8>>,
     access_deque: VecDeque<String>,
 }
 
-impl AssetCache {
+impl FileCache {
     pub fn new(capacity_kb: u32) -> Self {
         Self {
             capacity_kb,

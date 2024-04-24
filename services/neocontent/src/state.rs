@@ -1,19 +1,19 @@
 
-use crate::{asset_cache::AssetCache, asset_metadata_store::AssetMetadataStore};
+use crate::{file_cache::FileCache, file_metadata_store::FileMetadataStore};
 
 pub struct State {
-    asset_metadata_store: AssetMetadataStore,
-    asset_cache: AssetCache,
+    file_metadata_store: FileMetadataStore,
+    file_cache: FileCache,
 }
 
 impl State {
     pub fn new(
-        asset_cache_size_kb: u32,
-        asset_metadata_store: AssetMetadataStore,
+        file_cache_size_kb: u32,
+        file_metadata_store: FileMetadataStore,
     ) -> Self {
         Self {
-            asset_metadata_store,
-            asset_cache: AssetCache::new(asset_cache_size_kb),
+            file_metadata_store,
+            file_cache: FileCache::new(file_cache_size_kb),
         }
     }
     //
