@@ -134,7 +134,7 @@ impl FileMetadataStore {
         );
     }
 
-    pub fn get(&self, name: &String) -> Option<&FileMetadata> {
+    pub fn get(&self, name: &str) -> Option<&FileMetadata> {
         self.map.get(name)
     }
 }

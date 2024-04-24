@@ -5,12 +5,12 @@ use logging::info;
 pub(crate) fn setup() {
     info!("Setting up local environment");
 
-    // process assets
-    automation_lib::process_assets("target/assets_repo", "local").unwrap();
+    // process content
+    automation_lib::process_content("target/content_repo", "local").unwrap();
 
-    // copy ./target/assets_repo/* to ./assets/*
-    let source_dir = "./target/assets_repo";
-    let destination_dir = "./assets";
+    // copy ./target/content_repo/* to ./content/*
+    let source_dir = "./target/content_repo";
+    let destination_dir = "./content";
 
     // Delete the destination directory (will create it again later)
     info!("Deleting destination directory: {}", destination_dir);

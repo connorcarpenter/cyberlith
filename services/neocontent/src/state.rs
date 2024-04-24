@@ -1,5 +1,6 @@
 
 use crate::{file_cache::FileCache, file_metadata_store::FileMetadataStore};
+use crate::file_metadata_store::FileMetadata;
 
 pub struct State {
     file_metadata_store: FileMetadataStore,
@@ -16,41 +17,12 @@ impl State {
             file_cache: FileCache::new(file_cache_size_kb),
         }
     }
-    //
-    // pub fn handle_asset_request(
-    //     &mut self,
-    //     request: AssetRequest,
-    // ) -> Result<AssetResponse, ResponseError> {
-    //     let req_asset_id = request.asset_id();
-    //     let req_etag_opt = request.etag_opt();
-    //
-    //     if let Some(metadata) = self.asset_metadata_store.get(&req_asset_id) {
-    //         let asset_etag = metadata.etag();
-    //         if let Some(req_etag) = req_etag_opt {
-    //             if asset_etag == req_etag {
-    //                 return Ok(AssetResponse::not_modified());
-    //             }
-    //         }
-    //
-    //         let path = metadata.path().to_string();
-    //         let Some(asset_data) = self.asset_cache.load(&path) else {
-    //             return Err(ResponseError::InternalServerError(format!(
-    //                 "Failed to load asset data for path: `{}`",
-    //                 path
-    //             )));
-    //         };
-    //
-    //         let asset_type = metadata.asset_type();
-    //
-    //         let dependencies = metadata.dependencies().clone();
-    //         return Ok(AssetResponse::modified(
-    //             asset_etag,
-    //             asset_type,
-    //             dependencies,
-    //             asset_data,
-    //         ));
-    //     } else {
-    //         return Err(ResponseError::NotFound);
-    //     }
-    // }
+
+    pub fn get_metadata(&self, file_name: &str) -> Option<&FileMetadata> {
+        self.file_metadata_store.get(file_name)
+    }
+
+    pub fn cache_load(&mut self, file_path: &str) -> Option<Vec<u8>> {
+        self.file_cache.load(file_path)
+    }
 }

@@ -1,6 +1,7 @@
 #[macro_use]
 extern crate cfg_if;
 
+mod file_endpoint;
 mod file_cache;
 mod file_metadata_store;
 mod state;
@@ -15,10 +16,11 @@ cfg_if! {
 use std::{net::SocketAddr, thread};
 
 use config::{CONTENT_SERVER_FILES_PATH, CONTENT_SERVER_PORT, SELF_BINDING_ADDR};
-use http_server::{async_dup::Arc, smol::lock::RwLock, Server};
+use http_server::{async_dup::Arc, smol::lock::RwLock, Server, FileServer, Method, ApiServer};
 use logging::info;
 
 use crate::{file_metadata_store::FileMetadataStore, state::State};
+use crate::file_endpoint::file_endpoint_handler;
 
 pub fn main() {
     logging::initialize();
@@ -41,9 +43,24 @@ pub fn main() {
         SocketAddr::new(SELF_BINDING_ADDR.parse().unwrap(), CONTENT_SERVER_PORT);
 
     let mut server = Server::new(socket_addr);
-    let server_name = "content_server";
+    let content_server = "content_server";
 
-    // asset_endpoint::handle_asset_request(server_name, &mut server, state.clone());
+    for file_name in ["launcher.html", "launcher.js", "launcher.wasm", "game.html", "game.js", "game.wasm"].iter() {
+        let state = state.clone();
+        server.serve_endpoint_raw(
+            content_server,
+            None,
+            Method::Get,
+            file_name,
+            move |(addr, incoming_req)| {
+                let state = state.clone();
+                let file_name = file_name.to_string();
+                async move {
+                    file_endpoint_handler(addr, incoming_req, state, file_name).await
+                }
+            },
+        );
+    }
 
     server.start();
 
