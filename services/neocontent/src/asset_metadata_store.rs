@@ -1,8 +1,11 @@
 use std::{collections::HashMap, fs};
 
+use serde::{Deserialize, Serialize};
+
 use asset_id::{AssetId, AssetType, ETag};
-use asset_serde::json::ProcessedAssetMeta;
 use logging::{info, warn};
+
+use crate::error::AssetIoError;
 
 pub struct AssetMetadata {
     path: String,
@@ -120,5 +123,60 @@ impl AssetMetadataStore {
 
     pub fn get(&self, asset_id: &AssetId) -> Option<&AssetMetadata> {
         self.map.get(asset_id)
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct ProcessedAssetMeta {
+    asset_id: String,
+    etag: String,
+    schema_version: u32,
+    dependencies: Vec<String>,
+    hash: Vec<u8>,
+}
+
+impl ProcessedAssetMeta {
+    pub fn new(
+        asset_id: AssetId,
+        etag: ETag,
+        schema_version: u32,
+        dependencies: Vec<AssetId>,
+        hash: Vec<u8>,
+    ) -> Self {
+        let dependencies = dependencies.into_iter().map(|id| id.as_string()).collect();
+        Self {
+            asset_id: asset_id.as_string(),
+            etag: etag.as_string(),
+            schema_version,
+            dependencies,
+            hash,
+        }
+    }
+
+    pub fn asset_id(&self) -> AssetId {
+        AssetId::from_str(&self.asset_id).unwrap()
+    }
+
+    pub fn hash(&self) -> &[u8] {
+        &self.hash
+    }
+
+    pub fn etag(&self) -> ETag {
+        ETag::from_str(&self.etag).unwrap()
+    }
+
+    pub fn dependencies(&self) -> Vec<AssetId> {
+        self.dependencies
+            .iter()
+            .map(|s| AssetId::from_str(s).unwrap())
+            .collect()
+    }
+
+    pub fn write(&self) -> Vec<u8> {
+        serde_json::to_vec_pretty(self).unwrap()
+    }
+
+    pub fn read(bytes: &[u8]) -> Result<Self, AssetIoError> {
+        serde_json::from_slice(bytes).map_err(|e| AssetIoError::Message(e.to_string()))
     }
 }
