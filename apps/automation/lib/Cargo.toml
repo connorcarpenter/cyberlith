@@ -15,6 +15,7 @@ asset_serde = { path = "../../../crates/asset/serde", features = ["write_bits", 
 crypto = { path = "../../../crates/crypto" }
 asset_id = {path = "../../../crates/asset/id" }
 logging = { path = "../../../crates/logging" }
+git = { path = "../../../crates/git" }
 
 openssh = { version = "0.10" }
 async-compat = { version = "0.2" }
@@ -24,7 +25,6 @@ async-dup = { version = "1.2.2" }
 crossbeam-channel = "0.5.7"
 futures-lite = { version = "1.11.3" }
 subprocess = "0.2.9"
-git2 = { version = "0.17" }
 blake3 = "1.5"
 
 # for "convert_ttf_to_icon"

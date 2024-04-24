@@ -15,6 +15,13 @@ pub(crate) fn setup() {
     // copy ./target/content_repo/* to ./content/*
     let source_dir = "./target/content_repo";
     let destination_dir = "./content";
+    copy_from_repo_to_target_dir(source_dir, destination_dir);
+
+    // finished
+    info!("Local environment setup complete!");
+}
+
+fn copy_from_repo_to_target_dir(source_dir: &str, destination_dir: &str) {
 
     // Delete the destination directory (will create it again later)
     info!("Deleting destination directory: {}", destination_dir);
@@ -56,7 +63,4 @@ pub(crate) fn setup() {
         .arg("./target")
         .status()
         .expect("Failed to execute delete command");
-
-    // finished
-    info!("Local environment setup complete!");
 }

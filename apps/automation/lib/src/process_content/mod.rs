@@ -3,10 +3,10 @@ pub use filetypes::ProcessedFileMeta;
 mod error;
 pub use error::FileIoError;
 
-use std::{fs, fs::File, io::Read, path::Path};
+use std::{fs, path::Path};
 
 use asset_id::ETag;
-use git2::{Cred, FetchOptions, Index, Oid, PushOptions, Repository, Signature, Tree};
+use git::{branch_exists, ObjectType, create_branch, git_commit, git_pull, git_push, repo_init, Tree, Repository, switch_to_branch, write_new_file, read_file_bytes};
 use logging::info;
 
 use crate::CliError;
@@ -42,6 +42,7 @@ pub fn process_content(
     target_env: TargetEnv
 ) -> Result<(), CliError> {
 
+    // deployments
     let build_paths = [
         "launcher",
         "game"
@@ -51,6 +52,8 @@ pub fn process_content(
             source_path,
             deployment
         ));
+
+    // wasm
     let wasm_paths = [
         ("launcher", "launcher_bg.wasm"),
         ("game", "game_bg.wasm")
@@ -62,6 +65,8 @@ pub fn process_content(
             target_env.cargo_env(),
             file_name,
         ));
+
+    // js
     let js_paths = [
         "launcher",
         "game"
@@ -73,6 +78,8 @@ pub fn process_content(
             target_env.cargo_env(),
             deployment
         ));
+
+    // html
     let html_paths = [
         "launcher",
         "game"
@@ -92,11 +99,16 @@ pub fn process_content(
         wasm_opt_deployments(&wasm_paths)
     }
 
+    // if release mode, minify/uglify JS
+    if target_env == TargetEnv::Prod {
+        js_uglify(&js_paths);
+    }
+
     let mut file_paths = wasm_paths.to_vec();
     file_paths.extend(js_paths);
     file_paths.extend(html_paths);
 
-    // load all files into memory (brotlifying afterwards)
+    // load all files into memory
     let files = load_all_unprocessed_files(&file_paths);
 
     // create repo
@@ -104,18 +116,25 @@ pub fn process_content(
 
     // if the repo already exists, process files if they have changed
     // otherwise, process all files
-    let target_env = target_env.to_string();
-    if branch_exists(&repo, &target_env) {
-        update_processed_content(&target_env, target_path, repo, files);
+    let target_env_str = target_env.to_string();
+    if branch_exists(&repo, &target_env_str) {
+        update_processed_content(target_env, target_path, &repo, files);
     } else {
-        create_processed_content(&target_env, repo, files);
+        create_processed_content(target_env, &repo, files);
     }
 
     Ok(())
 }
 
 fn build_deployments(build_paths: &[String]) {
+
     for build_path in build_paths {
+        // cargo build
+        // get hash of wasm file
+
+        // then wasm-bindgen
+        // get hash of js file
+
         todo!()
     }
 }
@@ -126,42 +145,53 @@ fn wasm_opt_deployments(wasm_files: &[String; 2]) {
     }
 }
 
+fn js_uglify(js_files: &[String; 2]) {
+    for js_file in js_files {
+        todo!()
+    }
+}
+
 fn create_processed_content(
-    env: &str,
-    repo: Repository,
+    env: TargetEnv,
+    repo: &Repository,
     all_new_unprocessed_files: Vec<UnprocessedFile>,
 ) {
+    let env_str = env.to_string();
     info!(
         "branch {:?} doesn't exist, processing all files for the first time",
         env
     );
     // create new branch
-    create_branch(&repo, env);
+    create_branch(repo, &env_str);
+    switch_to_branch(repo, &env_str);
 
     // delete all files
     delete_all_files(&repo, &all_new_unprocessed_files);
-    git_commit(&repo, env, "deleting all unprocessed files");
-    git_push(&repo, env);
+    git_commit(repo, &env_str, "deleting all unprocessed files");
+    git_push(repo, &env_str);
 
     // process each file
-    process_and_write_all_files(&repo, &all_new_unprocessed_files);
-    git_commit(&repo, env, "processing all files");
-    git_push(&repo, env);
+    process_and_write_all_files(repo, &all_new_unprocessed_files);
+    git_commit(repo, &env_str, "processing all files");
+    git_push(repo, &env_str);
 }
 
 fn update_processed_content(
-    env: &str,
+    env: TargetEnv,
     root: &str,
-    repo: Repository,
+    repo: &Repository,
     all_unprocessed_files: Vec<UnprocessedFile>,
 ) {
     info!("branch {:?} exists, processing only modified files..", env);
+
+    let env_str = env.to_string();
+
     // switch to "env" branch
-    git_pull(&repo, env);
-    switch_to_branch(&repo, env);
+    git_pull(repo, &env_str);
+    switch_to_branch(repo, &env_str);
 
     // get files from previously processed environment
-    let old_meta_files = load_all_processed_meta_files(root, &repo);
+    let old_meta_files = load_all_processed_meta_files(root, repo);
 
     // prune out unprocessed files that have not changed since last being processed
     let new_modified_unprocessed_files =
@@ -172,62 +202,9 @@ fn update_processed_content(
     }
 
     // process each file
-    process_and_write_all_files(&repo, &new_modified_unprocessed_files);
-    git_commit(&repo, env, "processing all modified files");
-    git_push(&repo, env);
-}
-
-fn get_remote_callbacks(access_token: &str) -> git2::RemoteCallbacks {
-    let mut remote_callbacks = git2::RemoteCallbacks::new();
-    remote_callbacks.credentials(move |_url, _username_from_url, _allowed_types| {
-        Cred::userpass_plaintext("token", access_token)
-    });
-
-    remote_callbacks
-}
-
-fn get_fetch_options() -> FetchOptions<'static> {
-    let access_token = include_str!("../../../../../.secrets/github_token");
-    let mut fetch_options = FetchOptions::new();
-    fetch_options.remote_callbacks(get_remote_callbacks(access_token));
-    fetch_options
-}
-
-fn get_push_options() -> PushOptions<'static> {
-    let access_token = include_str!("../../../../../.secrets/github_token");
-    let mut push_options = PushOptions::new();
-    push_options.remote_callbacks(get_remote_callbacks(access_token));
-    push_options
-}
-
-fn repo_init(root_dir: &str) -> Repository {
-    // Create Working directory if it doesn't already exist
-    let path = Path::new(&root_dir);
-    let repo_url = include_str!("../../../../../.secrets/assets_repo_url");
-    let fetch_options = get_fetch_options();
-
-    if path.exists() {
-        info!("repo exists, removing..");
-        fs::remove_dir_all(path).unwrap();
-    }
-
-    if path.exists() {
-        panic!("should have removed directory: {:?}", root_dir);
-    }
-
-    // Create new directory
-    fs::create_dir_all(path).unwrap();
-
-    // Put fetch options into builder
-    let mut builder = git2::build::RepoBuilder::new();
-    builder.fetch_options(fetch_options);
-
-    // Clone repo
-    let repo = builder.clone(repo_url, path).unwrap();
-
-    info!("initialized repo at: `{}`", root_dir);
-
-    repo
+    process_and_write_all_files(repo, &new_modified_unprocessed_files);
+    git_commit(repo, &env_str, "processing all modified files");
+    git_push(repo, &env_str);
 }
 
 struct UnprocessedFile {
@@ -277,21 +254,21 @@ fn collect_processed_meta_files(
         let name = git_entry.name().unwrap().to_string();
 
         match git_entry.kind() {
-            Some(git2::ObjectType::Tree) => {
+            Some(ObjectType::Tree) => {
                 let new_path = format!("{}{}", path, name);
 
                 let git_children = git_entry.to_object(repo).unwrap().peel_to_tree().unwrap();
 
                 collect_processed_meta_files(output, root, repo, &git_children, &new_path);
             }
-            Some(git2::ObjectType::Blob) => {
+            Some(ObjectType::Blob) => {
                 let name_split = name.split(".");
                 let extension = name_split.last().unwrap();
                 if extension != "meta" {
                     continue;
                 }
 
-                let bytes = get_file_contents(root, path, &name);
+                let bytes = read_file_bytes(root, path, &name);
 
                 let processed_meta = ProcessedFileMeta::read(&bytes).unwrap();
 
@@ -304,62 +281,6 @@ fn collect_processed_meta_files(
             }
         }
     }
-}
-
-fn get_file_contents(root: &str, path: &str, file: &str) -> Vec<u8> {
-    let file_path = format!("{}{}", path, file);
-    let full_path = format!("{}/{}", root, file_path);
-
-    // info!("Getting blob for file: {}", full_path);
-
-    let path = Path::new(full_path.as_str());
-    let mut file = match File::open(path) {
-        Ok(file) => file,
-        Err(err) => panic!("Failed to open file: {}", err),
-    };
-
-    let mut contents = Vec::new();
-    match file.read_to_end(&mut contents) {
-        Ok(_) => contents,
-        Err(err) => panic!("Failed to read file: {}", err),
-    }
-}
-
-fn branch_exists(repo: &Repository, branch_name: &str) -> bool {
-    let remote_branch = format!("refs/remotes/origin/{}", branch_name);
-    repo.find_reference(&remote_branch).is_ok()
-}
-
-fn create_branch(repo: &Repository, branch_name: &str) {
-    // finding current commit, then creating a new local branch there
-    let commit = repo.head().unwrap().peel_to_commit().unwrap();
-    let _branch = repo.branch(branch_name, &commit, true).unwrap();
-    let branch_ref = format!("refs/heads/{}", branch_name);
-
-    // Push the new branch to the remote, (linking it to the remote branch)
-    let mut remote = repo.find_remote("origin").unwrap();
-    let mut push_options = get_push_options();
-    remote
-        .push(
-            &[&format!("{}:{}", &branch_ref, &branch_ref)],
-            Some(&mut push_options),
-        )
-        .unwrap();
-
-    info!("Created remote branch: {:?}", branch_name);
-
-    // switch to branch
-    switch_to_branch(repo, branch_name);
-}
-
-fn switch_to_branch(repo: &Repository, branch_name: &str) {
-    let branch_ref = format!("refs/heads/{}", branch_name);
-    repo.set_head(&branch_ref).unwrap();
-
-    let mut checkout_builder = git2::build::CheckoutBuilder::new();
-    checkout_builder.force();
-    repo.checkout_head(Some(&mut checkout_builder)).unwrap();
-    info!("switched to {:?} branch!", branch_name);
 }
 
 fn delete_all_files(repo: &Repository, file_entries: &Vec<UnprocessedFile>) {
@@ -384,107 +305,6 @@ fn delete_all_files(repo: &Repository, file_entries: &Vec<UnprocessedFile>) {
             .expect("Failed to remove file from index");
         // info!("removed file from index: {}", file_path);
     }
-}
-
-fn git_commit(repo: &Repository, branch_name: &str, commit_message: &str) -> Oid {
-    let tree_id = repo
-        .index()
-        .expect("Failed to open index")
-        .write_tree()
-        .expect("Failed to write tree");
-
-    let parent_commit = repo
-        .head()
-        .expect("Failed to get HEAD reference")
-        .peel_to_commit()
-        .expect("Failed to peel HEAD to commit");
-
-    // Prepare the commit details
-    let author = Signature::now("connorcarpenter", "connorcarpenter@gmail.com")
-        .expect("Failed to create author signature");
-    let committer = Signature::now("connorcarpenter", "connorcarpenter@gmail.com")
-        .expect("Failed to create committer signature");
-
-    // Create the commit
-    let commit_id = repo
-        .commit(
-            Some("HEAD"),
-            &author,
-            &committer,
-            commit_message,
-            &repo.find_tree(tree_id).expect("Failed to find tree"),
-            &[&parent_commit],
-        )
-        .expect("Failed to create commit");
-
-    info!("committed to local {:?} branch!", branch_name);
-
-    commit_id
-}
-
-fn git_push(repo: &Repository, branch_name: &str) {
-    let mut remote = repo
-        .find_remote("origin")
-        .expect("Failed to find remote 'origin'");
-    let mut push_options = get_push_options();
-    let branch_ref = format!("refs/heads/{}", branch_name);
-    remote
-        .push(&[branch_ref], Some(&mut push_options))
-        .expect("Failed to push commit");
-
-    info!("pushed to remote {:?} branch!", branch_name);
-}
-
-fn git_pull(repo: &Repository, branch_name: &str) {
-    // Fetch changes from the remote
-    let mut remote = repo.find_remote("origin").unwrap();
-    let mut fetch_options = get_fetch_options();
-    remote
-        .fetch(&[branch_name], Some(&mut fetch_options), None)
-        .unwrap();
-
-    // Get the updated reference after fetch
-    let fetch_head = repo.find_reference("FETCH_HEAD").unwrap();
-    let fetch_commit = repo.reference_to_annotated_commit(&fetch_head).unwrap();
-    let fetch_commit_oid = fetch_commit.id();
-    let fetch_commit_object = repo.find_object(fetch_commit_oid, None).unwrap();
-
-    // Reset the local branch to the head of the remote branch
-    let mut checkout_builder = git2::build::CheckoutBuilder::new();
-    checkout_builder.force();
-
-    // Reset local changes
-    repo.reset(
-        &fetch_commit_object,
-        git2::ResetType::Hard,
-        Some(&mut checkout_builder),
-    )
-    .unwrap();
-
-    // Create a local reference pointing to the head of the local branch
-    let branch_ref = format!("refs/heads/{}", branch_name);
-    let branch_ref_target = fetch_commit_oid;
-    let branch_ref_target_id = repo
-        .refname_to_id(&branch_ref)
-        .unwrap_or_else(|_| branch_ref_target);
-    repo.reference(
-        &branch_ref,
-        branch_ref_target_id,
-        true,
-        "Updating local reference",
-    )
-    .unwrap();
-
-    // Push the new branch to the remote, (linking it to the remote branch)
-    let mut push_options = get_push_options();
-    remote
-        .push(
-            &[&format!("{}:{}", &branch_ref, &branch_ref)],
-            Some(&mut push_options),
-        )
-        .unwrap();
-
-    info!("pulled from {:?} branch!", branch_name);
 }
 
 fn process_and_write_all_files(repo: &Repository, unprocessed_files: &Vec<UnprocessedFile>) {
@@ -541,39 +361,6 @@ fn process_new_meta_file(
     )
 }
 
-fn write_new_file(index: &mut Index, file_path: &str, full_path: &str, bytes: Vec<u8>) {
-    // if file exists, delete it
-    let path = Path::new(full_path);
-    let file_exists = path.exists();
-    if file_exists {
-        match fs::remove_file(path) {
-            Ok(_) => {
-                // info!("deleted file: {}", file_path);
-            }
-            Err(err) => {
-                info!("failed to delete file: {}", err);
-            }
-        }
-    }
-
-    // write data file
-    match fs::write(full_path, &bytes) {
-        Ok(()) => {}
-        Err(err) => panic!("failed to write file: {}", err),
-    };
-
-    // add_path will also update the index
-    index
-        .add_path(Path::new(&file_path))
-        .expect("Failed to add file to index");
-
-    if !file_exists {
-        info!("added file to index: {}", file_path);
-    } else {
-        info!("updated file index: {}", file_path);
-    }
-}
-
 fn prune_unchanged_files(
     old_meta_files: &Vec<ProcessedFileMeta>,
     all_unprocessed_files: Vec<UnprocessedFile>,
@@ -609,100 +396,3 @@ fn prune_unchanged_files(
 
     output
 }
-
-// use std::{fs, fs::File, io::{Read, Write}, path::Path, collections::{HashSet, HashMap}};
-//
-// use git2::{Cred, PushOptions, Repository, Tree};
-// use logging::info;
-// use crypto::U32Token;
-//
-// use asset_serde::json::{Asset, AssetData, AssetMeta};
-//
-// use crate::{process_assets::convert, CliError};
-//
-// pub(crate) fn process_assets() -> Result<(), CliError> {
-//     info!("Processing assets: 'json'");
-//
-//
-//
-//     Ok(())
-// }
-//
-//
-//
-// fn push_to_branch(repo: &Repository, branch_name: &str) {
-//     let access_token = include_str!("../../../../../.secrets/github_token");
-//
-//     let mut push_options = PushOptions::new();
-//     push_options.remote_callbacks(get_remote_callbacks(access_token));
-//
-//     let mut remote = repo.find_remote("origin").unwrap();
-//     remote.push(&[&format!("refs/heads/{}:refs/heads/{}", branch_name, branch_name)], Some(&mut push_options)).unwrap();
-//
-//     info!("pushed to {:?} branch!", branch_name);
-// }
-//
-//
-
-//
-// // will create branch if necessary
-// fn switch_branches(repo: &Repository, branch_name: &str) {
-//
-//     let access_token = include_str!("../../../../../.secrets/github_token");
-//
-//     let mut fetch_options = git2::FetchOptions::new();
-//     fetch_options.remote_callbacks(get_remote_callbacks(access_token));
-//
-//     let mut remote = repo.find_remote("origin").unwrap();
-//     remote
-//         .fetch(&[branch_name, "main"], Some(&mut fetch_options), None)
-//         .unwrap();
-//
-//     let tracking_branch = format!("refs/remotes/origin/{}", branch_name);
-//     let branch_exists = repo.find_reference(&tracking_branch).is_ok();
-//     let local_branch_name = format!("refs/heads/{}", branch_name);
-//
-//     if branch_exists {
-//         // Remote branch exists, switch to it and pull
-//         info!("Remote branch: {:?} exists!", branch_name);
-//         let branch_reference = repo.find_reference(&tracking_branch).unwrap();
-//         let branch_commit = repo.find_commit(branch_reference.target().unwrap()).unwrap();
-//
-//         // Checkout the local branch
-//         let mut checkout_builder = git2::build::CheckoutBuilder::new();
-//         repo.checkout_tree(branch_commit.as_object(), Some(&mut checkout_builder)).unwrap();
-//         repo.set_head(&local_branch_name).unwrap();
-//
-//         // Pull changes from the remote branch
-//         remote.fetch(&[branch_name], Some(&mut fetch_options), None).unwrap();
-//     } else {
-//         // Remote branch doesn't exist, create and push it
-//         info!("remote branch {:?} doesn't exist, creating..", branch_name);
-//
-//         let branch_reference = repo.head().unwrap();
-//         let branch_commit = branch_reference.peel_to_commit().unwrap();
-//
-//         // Set up tracking to the remote branch
-//         repo.reference(
-//             &tracking_branch,
-//             branch_commit.id(),
-//             true,
-//             "Setting up tracking branch",
-//         ).unwrap();
-//
-//         // Push the new branch to the remote
-//         let mut push_options = PushOptions::new();
-//         push_options.remote_callbacks(get_remote_callbacks(access_token));
-//
-//         remote.push(&[&format!("refs/heads/{}:refs/heads/{}", branch_name, branch_name)], Some(&mut push_options)).unwrap();
-//
-//         info!("Created remote branch: {:?}", branch_name);
-//     }
-//
-//     info!("switched to {:?} branch!", branch_name);
-// }
-//
-// // commits
-
-//
-//
