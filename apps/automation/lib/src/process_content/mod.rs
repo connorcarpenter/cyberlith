@@ -60,6 +60,9 @@ pub fn process_content(
         js_uglify(source_path, &target_path, &deployments);
     }
 
+    // brotlify all files
+    brotlify_deployments(source_path, &target_path, &deployments);
+
     todo!();
 
     let repo_name = "cyberlith_content";
@@ -370,6 +373,52 @@ fn js_uglify(
             )
                 .as_str(),
         );
+    }
+}
+
+fn brotlify_deployments(
+    // this is the working directory of the 'cyberlith' repo
+    source_path: &str,
+    // this is the directory the files should go into
+    target_path: &str,
+    deployments: &[&str],
+) {
+    info!("run Brotli on deployments..");
+    info!("source_path: {}", source_path);
+    info!("target_path: {}", target_path);
+
+    for deployment in deployments {
+        for ext in ["js", "wasm", "html"] {
+            // brotlify
+            let result = run_command_blocking(
+                deployment,
+                format!(
+                    "brotli -9 {}/{}.{} -o {}/{}.{}.br",
+                    target_path,
+                    deployment,
+                    ext,
+                    target_path,
+                    deployment,
+                    ext,
+                )
+                    .as_str(),
+            );
+            if let Err(e) = result {
+                panic!("failed to brotlify file: {}", e);
+            }
+
+            // delete original file
+            let result = run_command_blocking(
+                deployment,
+                format!(
+                    "rm {}/{}.{}",
+                    target_path,
+                    deployment,
+                    ext,
+                )
+                    .as_str(),
+            );
+        }
     }
 }
 

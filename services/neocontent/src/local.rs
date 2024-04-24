@@ -9,7 +9,7 @@ pub(crate) fn setup() {
     automation_lib::process_content(
         "/home/connor/Work/cyberlith",
         "services/neocontent/target",
-        TargetEnv::Prod,
+        TargetEnv::Local,
     ).unwrap();
 
     // copy ./target/content_repo/* to ./content/*
