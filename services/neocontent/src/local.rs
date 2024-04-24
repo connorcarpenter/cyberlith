@@ -13,8 +13,8 @@ pub(crate) fn setup() {
     ).unwrap();
 
     // copy ./target/content_repo/* to ./content/*
-    let source_dir = "./target/content_repo";
-    let destination_dir = "./content";
+    let source_dir = "./target/cyberlith_content";
+    let destination_dir = "./files";
     copy_from_repo_to_target_dir(source_dir, destination_dir);
 
     // finished

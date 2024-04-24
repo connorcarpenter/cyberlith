@@ -34,10 +34,63 @@ impl TargetEnv {
 }
 
 struct UnprocessedFile {
-    full_file_path: String,
+    file_path: String,
     file_name: String,
-    extension: String,
+    extension: FileExtension,
     hash: FileHash,
+}
+
+impl UnprocessedFile {
+    pub fn new(file_path: &str, file_name: &str, extension: FileExtension, hash: FileHash) -> Self {
+        Self {
+            file_path: file_path.to_string(),
+            file_name: file_name.to_string(),
+            extension,
+            hash,
+        }
+    }
+
+    pub fn target_path(&self, target_path: &str) -> String {
+        format!("{}/{}", target_path, self.file_path)
+    }
+
+    pub fn file_name_w_ext(&self) -> String {
+        format!("{}.{}", self.file_name, self.extension.to_string())
+    }
+
+    pub fn relative_file_path(&self) -> String {
+        format!("{}{}", self.file_path, self.file_name_w_ext())
+    }
+
+    pub fn full_file_path(&self, target_path: &str) -> String {
+        format!("{}{}", self.target_path(target_path), self.file_name_w_ext())
+    }
+}
+
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
+enum FileExtension {
+    Wasm,
+    Js,
+    Html,
+}
+
+impl FileExtension {
+    pub fn to_string(&self) -> String {
+        match self {
+            FileExtension::Wasm => "wasm".to_string(),
+            FileExtension::Js => "js".to_string(),
+            FileExtension::Html => "html".to_string(),
+        }
+    }
+
+    pub fn from_string(ext: &str) -> Self {
+        match ext {
+            "wasm" => FileExtension::Wasm,
+            "js" => FileExtension::Js,
+            "html" => FileExtension::Html,
+            _ => panic!("unknown file extension: {}", ext),
+        }
+    }
 }
 
 // should build our deployments, process all files, and push to the content repo
@@ -54,21 +107,20 @@ pub fn process_content(
     let deployments = ["launcher", "game"];
 
     let target_path = format!("{}/{}/target", project_path, service_path);
-    let output_path = format!("{}/{}", project_path, repo_name);
+    let output_path = format!("{}/{}", target_path, repo_name);
     let target_env_str = target_env.to_string();
 
     // build web deployments
     let mut files = build_deployments(target_env, project_path, &target_path, &deployments);
 
     // create repo
-    let repo = repo_init(repo_name, &target_path);
+    let repo = repo_init(repo_name, &output_path);
 
     // if the repo already exists, process files if they have changed
     // otherwise, process all files
     if branch_exists(&repo, &target_env_str) {
         info!("branch {:?} exists, processing only modified files..", target_env_str);
         git_pull(&repo, &target_env_str);
-        switch_to_branch(&repo, &target_env_str);
 
         // get files from previously processed environment
         let old_meta_files = load_all_processed_meta_files(&target_path, &repo);
@@ -85,26 +137,30 @@ pub fn process_content(
             target_env_str
         );
 
-        // create and switch to new branch
+        // create new branch since it doesn't exist
         create_branch(&repo, &target_env_str);
-        switch_to_branch(&repo, &target_env_str);
     }
+
+    let files = files;
+    switch_to_branch(&repo, &target_env_str);
 
     // if release mode, wasm-opt on Wasm
     if target_env == TargetEnv::Prod {
-        wasm_opt_deployments(project_path, &target_path, &files);
+        wasm_opt_deployments(&files);
     }
 
     // if release mode, minify/uglify JS
     if target_env == TargetEnv::Prod {
-        js_uglify(project_path, &target_path, &files);
+        js_uglify(&files);
     }
 
     // brotlify all files
-    brotlify_deployments(project_path, &target_path, &files);
+    brotlify_deployments(&target_path, &files);
 
-    // process each file
-    write_processed_files_to_repo(&repo, &files);
+    // write each file and meta file
+    write_files_to_repo(&target_path, &repo, &files);
+
+    // commit and push
     git_commit(&repo, &target_env_str, "connorcarpenter", "connorcarpenter@gmail.com", "processing all modified content files");
     git_push(&repo, &target_env_str);
 
@@ -198,11 +254,13 @@ fn build_deployments(
             panic!("failed to rename wasm file: {}", e);
         }
 
-        output.push(UnprocessedFile {
-            full_file_path: format!("{}/{}.wasm", target_path, deployment),
-            extension: "wasm".to_string(),
-            hash: wasm_hash,
-        });
+        // add wasm file to output
+        output.push(UnprocessedFile::new(
+            "",
+            deployment,
+            FileExtension::Wasm,
+            wasm_hash,
+        ));
 
         // get hash of js file
         let js_hash = {
@@ -214,11 +272,13 @@ fn build_deployments(
             get_file_hash(&js_bytes)
         };
 
-        output.push(UnprocessedFile {
-            full_file_path: format!("{}/{}.js", target_path, deployment),
-            extension: "js".to_string(),
-            hash: js_hash,
-        });
+        // add js file to output
+        output.push(UnprocessedFile::new(
+            "",
+            deployment,
+            FileExtension::Js,
+            wasm_hash,
+        ));
 
         // copy html file over
         let result = run_command_blocking(
@@ -247,37 +307,30 @@ fn build_deployments(
             get_file_hash(&html_bytes)
         };
 
-        output.push(UnprocessedFile {
-            full_file_path: format!("{}/{}.html", target_path, deployment),
-            extension: "html".to_string(),
-            hash: html_hash,
-        });
+        output.push(UnprocessedFile::new("", deployment, FileExtension::Html, html_hash));
     }
 
     output
 }
 
 fn wasm_opt_deployments(
-    // this is the working directory of the 'cyberlith' repo
-    source_path: &str,
-    // this is the directory the files should go into
-    target_path: &str,
-    deployments: &[&str],
+    files: &Vec<UnprocessedFile>,
 ) {
     info!("run wasm-opt on deployments..");
-    info!("source_path: {}", source_path);
-    info!("target_path: {}", target_path);
 
-    for deployment in deployments {
+    for file in files {
+        if file.extension != FileExtension::Wasm {
+            continue;
+        }
         // run wasm-opt
         let result = run_command_blocking(
-            deployment,
+            &file.file_name,
             format!(
                 "wasm-opt -Os -o {}/{}_opt.wasm {}/{}.wasm",
-                target_path,
-                deployment,
-                target_path,
-                deployment,
+                file.file_path,
+                file.file_name,
+                file.file_path,
+                file.file_name,
             )
                 .as_str(),
         );
@@ -287,11 +340,11 @@ fn wasm_opt_deployments(
 
         // delete original wasm file
         let result = run_command_blocking(
-            deployment,
+            &file.file_name,
             format!(
                 "rm {}/{}.wasm",
-                target_path,
-                deployment,
+                file.file_path,
+                file.file_name,
             )
                 .as_str(),
         );
@@ -301,13 +354,13 @@ fn wasm_opt_deployments(
 
         // rename *_opt.wasm to *.wasm
         let result = run_command_blocking(
-            deployment,
+            &file.file_name,
             format!(
                 "mv {}/{}_opt.wasm {}/{}.wasm",
-                target_path,
-                deployment,
-                target_path,
-                deployment,
+                file.file_path,
+                file.file_name,
+                file.file_path,
+                file.file_name,
             )
                 .as_str(),
         );
@@ -318,26 +371,24 @@ fn wasm_opt_deployments(
 }
 
 fn js_uglify(
-    // this is the working directory of the 'cyberlith' repo
-    source_path: &str,
-    // this is the directory the files should go into
-    target_path: &str,
-    deployments: &[&str],
+    files: &Vec<UnprocessedFile>,
 ) {
     info!("run UglifyJS on deployments..");
-    info!("source_path: {}", source_path);
-    info!("target_path: {}", target_path);
 
-    for deployment in deployments {
+    for file in files {
+        if file.extension != FileExtension::Js {
+            continue;
+        }
+
         // uglify
         let result = run_command_blocking(
-            deployment,
+            &file.file_name,
             format!(
                 "/home/connor/.nvm/versions/node/v18.6.0/bin/node /home/connor/.nvm/versions/node/v18.6.0/bin/uglifyjs {}/{}.js -o {}/{}_min.js --mangle --compress --no-annotations",
-                target_path,
-                deployment,
-                target_path,
-                deployment,
+                file.file_path,
+                file.file_name,
+                file.file_path,
+                file.file_name,
             )
                 .as_str(),
         );
@@ -347,11 +398,11 @@ fn js_uglify(
 
         // delete non-minified js file
         let result = run_command_blocking(
-            deployment,
+            &file.file_name,
             format!(
                 "rm {}/{}.js",
-                target_path,
-                deployment,
+                file.file_path,
+                file.file_name,
             )
                 .as_str(),
         );
@@ -361,13 +412,13 @@ fn js_uglify(
 
         // rename *_min.js to *.js
         let result = run_command_blocking(
-            deployment,
+            &file.file_name,
             format!(
                 "mv {}/{}_min.js {}/{}.js",
-                target_path,
-                deployment,
-                target_path,
-                deployment,
+                file.file_path,
+                file.file_name,
+                file.file_path,
+                file.file_name,
             )
                 .as_str(),
         );
@@ -375,48 +426,57 @@ fn js_uglify(
 }
 
 fn brotlify_deployments(
-    // this is the working directory of the 'cyberlith' repo
-    source_path: &str,
-    // this is the directory the files should go into
     target_path: &str,
-    deployments: &[&str],
+    files: &Vec<UnprocessedFile>,
 ) {
-    info!("run Brotli on deployments..");
-    info!("source_path: {}", source_path);
-    info!("target_path: {}", target_path);
+    info!("run Brotli on all files..");
 
-    for deployment in deployments {
-        for ext in ["js", "wasm", "html"] {
-            // brotlify
-            let result = run_command_blocking(
-                deployment,
-                format!(
-                    "brotli -9 {}/{}.{} -o {}/{}.{}.br",
-                    target_path,
-                    deployment,
-                    ext,
-                    target_path,
-                    deployment,
-                    ext,
-                )
-                    .as_str(),
-            );
-            if let Err(e) = result {
-                panic!("failed to brotlify file: {}", e);
-            }
+    for file in files {
 
-            // delete original file
-            let result = run_command_blocking(
-                deployment,
-                format!(
-                    "rm {}/{}.{}",
-                    target_path,
-                    deployment,
-                    ext,
-                )
-                    .as_str(),
-            );
+        // brotlify
+        let result = run_command_blocking(
+            &file.file_name,
+            format!(
+                "brotli -9 {}{}.{} -o {}{}_br.{}",
+                file.target_path(target_path),
+                file.file_name,
+                file.extension.to_string(),
+                file.target_path(target_path),
+                file.file_name,
+                file.extension.to_string(),
+            )
+                .as_str(),
+        );
+        if let Err(e) = result {
+            panic!("failed to brotlify file: {}", e);
         }
+
+        // delete original file
+        let result = run_command_blocking(
+            &file.file_name,
+            format!(
+                "rm {}{}.{}",
+                file.target_path(target_path),
+                file.file_name,
+                file.extension.to_string(),
+            )
+                .as_str(),
+        );
+
+        // rename *_br.* to *.*
+        let result = run_command_blocking(
+            &file.file_name,
+            format!(
+                "mv {}{}_br.{} {}{}.{}",
+                file.target_path(target_path),
+                file.file_name,
+                file.extension.to_string(),
+                file.target_path(target_path),
+                file.file_name,
+                file.extension.to_string(),
+            )
+                .as_str(),
+        );
     }
 }
 
@@ -480,55 +540,59 @@ fn collect_processed_meta_files(
     }
 }
 
-fn delete_all_files(repo: &Repository, file_entries: &Vec<UnprocessedFile>) {
-    let mut index = repo.index().expect("Failed to open index");
-
-    for file_entry in file_entries {
-        let file_path = format!("{}{}", file_entry.path, file_entry.name);
-        let full_path = format!("{}{}", repo.workdir().unwrap().to_str().unwrap(), file_path);
-
-        let path = Path::new(full_path.as_str());
-        match fs::remove_file(path) {
-            Ok(_) => {
-                info!("deleted file: {}", full_path);
-            }
-            Err(err) => {
-                info!("failed to delete file: {}", err);
-            }
-        }
-
-        index
-            .remove_path(Path::new(&file_path))
-            .expect("Failed to remove file from index");
-        // info!("removed file from index: {}", file_path);
-    }
-}
-
-fn write_processed_files_to_repo(repo: &Repository, unprocessed_files: &Vec<UnprocessedFile>) {
+fn write_files_to_repo(
+    target_path: &str,
+    repo: &Repository,
+    files: &Vec<UnprocessedFile>
+) {
+    let repo_path = repo.workdir().unwrap().to_str().unwrap();
     // let ref_name = format!("refs/heads/{}", branch_name);
     let mut index = repo.index().expect("Failed to open index");
 
-    for unprocessed_file in unprocessed_files {
-        // let prev_path = format!("{}/{}", unprocessed_file.path, unprocessed_file.name);
-        // info!("processing file at path: {}", prev_path);
+    for file in files {
 
-        let mut file_name_split = unprocessed_file.name.split(".");
-        let file_name = file_name_split.next().unwrap();
-        let true_file_ext = file_name_split.next().unwrap();
+        // copy file over into repo
+        // if file exists, delete it
+        {
+            let repo_full_file_path_str = format!("{}{}", repo_path, file.relative_file_path());
+            let repo_full_file_path = Path::new(&repo_full_file_path_str);
+            let repo_file_exists = repo_full_file_path.exists();
+            let result = run_command_blocking(
+                &file.file_name,
+                format!(
+                    "mv {} {}",
+                    file.full_file_path(target_path),
+                    repo_full_file_path_str
+                )
+                    .as_str(),
+            );
+            if let Err(e) = result {
+                panic!("failed to copy file over: {}", e);
+            }
 
-        let file_path = format!("{}{}.{}", unprocessed_file.path, file_name, true_file_ext);
-        let full_path = format!("{}{}", repo.workdir().unwrap().to_str().unwrap(), file_path);
+            // add_path will also update the index
+            let index_path = file.relative_file_path();
+            index
+                .add_path(Path::new(&index_path))
+                .expect("Failed to add file to index");
 
-        // copy file over
+            if !repo_file_exists {
+                info!("added file to index: {}", index_path);
+            } else {
+                info!("updated file index: {}", index_path);
+            }
+        }
 
         // process Asset Meta
-        let meta_file_path = format!("{}.meta", file_path);
-        let meta_full_path = format!("{}.meta", full_path);
-        let processed_meta = process_new_meta_file(&file_name, unprocessed_file.hash);
-        let meta_bytes = processed_meta.write();
+        {
+            let meta_file_path = format!("{}.meta", file.relative_file_path());
+            let meta_full_target_path = format!("{}.meta", file.full_file_path(repo_path));
+            let processed_meta = process_new_meta_file(&file.file_name_w_ext(), file.hash);
+            let meta_bytes = processed_meta.write();
 
-        // write new meta file
-        write_file_bytes(&mut index, &meta_file_path, &meta_full_path, meta_bytes, false, true);
+            // write new meta file
+            write_file_bytes(&mut index, &meta_file_path, &meta_full_target_path, meta_bytes, false, true);
+        }
     }
 }
 
@@ -563,18 +627,19 @@ fn prune_unchanged_files(
             .iter()
             .find(|meta| meta.name().eq(&unprocessed_file.file_name));
 
-        if let Some(meta) = prev_meta {
-            if unprocessed_file.hash == meta.hash() {
-                info!("file unchanged: {}", unprocessed_file.full_file_path);
-                continue;
-            } else {
-                info!("file changed: {}", unprocessed_file.full_file_path);
-            }
-        } else {
-            info!("file new: {}", unprocessed_file.full_file_path);
+        let Some(meta) = prev_meta else {
+            info!("file new: {}", unprocessed_file.relative_file_path());
+            output.push(unprocessed_file);
+            continue;
+        };
+        if unprocessed_file.hash != meta.hash() {
+            info!("file changed: {}", unprocessed_file.relative_file_path());
+            output.push(unprocessed_file);
+            continue;
         }
 
-        output.push(unprocessed_file);
+        info!("file unchanged: {}", unprocessed_file.relative_file_path());
+        // do not add to output
     }
 
     output
