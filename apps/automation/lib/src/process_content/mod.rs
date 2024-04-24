@@ -51,6 +51,16 @@ pub fn process_content(
     // build web deployments
     build_deployments(target_env, source_path, &target_path, &deployments);
 
+    // if release mode, wasm-opt
+    if target_env == TargetEnv::Prod {
+        wasm_opt_deployments(source_path, &target_path, &deployments);
+    }
+
+    // if release mode, minify/uglify JS
+    if target_env == TargetEnv::Prod {
+        js_uglify(source_path, &target_path, &deployments);
+    }
+
     todo!();
 
     let repo_name = "cyberlith_content";
@@ -93,15 +103,7 @@ pub fn process_content(
     //         deployment
     //     ));
 
-    // // if release mode, wasm-opt
-    // if target_env == TargetEnv::Prod {
-    //     wasm_opt_deployments(&wasm_paths)
-    // }
-    //
-    // // if release mode, minify/uglify JS
-    // if target_env == TargetEnv::Prod {
-    //     js_uglify(&js_paths);
-    // }
+
     //
     // let mut file_paths = wasm_paths.to_vec();
     // file_paths.extend(js_paths);
@@ -255,14 +257,74 @@ fn build_deployments(
     output
 }
 
-fn wasm_opt_deployments(wasm_files: &[String; 2]) {
-    for wasm_file in wasm_files {
-        todo!()
+fn wasm_opt_deployments(
+    // this is the working directory of the 'cyberlith' repo
+    source_path: &str,
+    // this is the directory the files should go into
+    target_path: &str,
+    deployments: &[&str],
+) {
+    info!("wasm-opt on deployments..");
+    info!("source_path: {}", source_path);
+    info!("target_path: {}", target_path);
+
+    for deployment in deployments {
+        // run wasm-opt
+        let result = run_command_blocking(
+            deployment,
+            format!(
+                "wasm-opt -Os -o {}/{}_opt.wasm {}/{}.wasm",
+                target_path,
+                deployment,
+                target_path,
+                deployment,
+            )
+                .as_str(),
+        );
+        if let Err(e) = result {
+            panic!("failed to rename wasm file: {}", e);
+        }
+
+        // delete original wasm file
+        let result = run_command_blocking(
+            deployment,
+            format!(
+                "rm {}/{}.wasm",
+                target_path,
+                deployment,
+            )
+                .as_str(),
+        );
+        if let Err(e) = result {
+            panic!("failed to delete wasm file: {}", e);
+        }
+
+        // rename *_opt.wasm to *.wasm
+        let result = run_command_blocking(
+            deployment,
+            format!(
+                "mv {}/{}_opt.wasm {}/{}.wasm",
+                target_path,
+                deployment,
+                target_path,
+                deployment,
+            )
+                .as_str(),
+        );
+        if let Err(e) = result {
+            panic!("failed to rename wasm file: {}", e);
+        }
     }
 }
 
-fn js_uglify(js_files: &[String; 2]) {
-    for js_file in js_files {
+fn js_uglify(
+    // this is the working directory of the 'cyberlith' repo
+    source_path: &str,
+    // this is the directory the files should go into
+    target_path: &str,
+    deployments: &[&str],
+) {
+    for deployments in deployments {
         todo!()
     }
 }
