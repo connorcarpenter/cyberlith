@@ -18,8 +18,7 @@ use config::{CONTENT_SERVER_FILES_PATH, CONTENT_SERVER_PORT, SELF_BINDING_ADDR};
 use http_server::{ApiServer, async_dup::Arc, FileServer, Method, Server, smol::lock::RwLock};
 use logging::info;
 
-use crate::{file_metadata_store::FileMetadataStore, state::State};
-use crate::file_endpoint::file_endpoint_handler;
+use crate::{file_endpoint::file_endpoint_handler, file_metadata_store::FileMetadataStore, state::State};
 
 pub fn main() {
     logging::initialize();

@@ -138,7 +138,7 @@ pub fn read_file_bytes(root_path: &str, path: &str, file: &str) -> Vec<u8> {
     let file_path = format!("{}{}", path, file);
     let full_path = format!("{}/{}", root_path, file_path);
 
-    // info!("Getting blob for file: {}", full_path);
+    info!("reading file at: {}", full_path);
 
     let path = Path::new(full_path.as_str());
     let mut file = match File::open(path) {
@@ -148,7 +148,10 @@ pub fn read_file_bytes(root_path: &str, path: &str, file: &str) -> Vec<u8> {
 
     let mut contents = Vec::new();
     match file.read_to_end(&mut contents) {
-        Ok(_) => contents,
+        Ok(_) => {
+            info!("successfully read file: {}", full_path);
+            contents
+        },
         Err(err) => panic!("Failed to read file: {}", err),
     }
 }

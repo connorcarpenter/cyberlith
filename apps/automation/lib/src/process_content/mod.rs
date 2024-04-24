@@ -10,6 +10,7 @@ use git::{branch_exists, ObjectType, create_branch, git_commit, git_pull, git_pu
 use logging::info;
 
 use crate::CliError;
+use crate::utils::{run_command, run_command_blocking};
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum TargetEnv {
@@ -33,111 +34,182 @@ impl TargetEnv {
     }
 }
 
+// should build our deployments, process all files, and push to the content repo
 pub fn process_content(
     // should be the directory of the entire cyberlith repo
     source_path: &str,
+    // should be the directory we do all the work in, added to source_path
+    target_path: &str,
     // what environment are we in
     target_env: TargetEnv
 ) -> Result<(), CliError> {
 
-    let repo_name = "cyberlith_content";
-    let target_path = "target/cyberlith_content";
+    let target_path = format!("{}/{}", source_path, target_path);
 
-    // deployments
-    let build_paths = [
-        "launcher",
-        "game"
-    ].map(
-        |deployment| format!(
-            "{}/deployments/web/{}",
-            source_path,
-            deployment
-        ));
-
-    // wasm
-    let wasm_paths = [
-        ("launcher", "launcher_bg.wasm"),
-        ("game", "game_bg.wasm")
-    ].map(
-        |(deployment, file_name)| format!(
-            "{}/deployments/web/{}/target/wasm32-unknown-unknown/{}/{}",
-            source_path,
-            deployment,
-            target_env.cargo_env(),
-            file_name,
-        ));
-
-    // js
-    let js_paths = [
-        "launcher",
-        "game"
-    ].map(
-        |deployment| format!(
-            "{}/deployments/web/{}/target/wasm32-unknown-unknown/{}/{}.js",
-            source_path,
-            deployment,
-            target_env.cargo_env(),
-            deployment
-        ));
-
-    // html
-    let html_paths = [
-        "launcher",
-        "game"
-    ].map(
-        |deployment| format!(
-            "{}/deployments/web/{}/{}.html",
-            source_path,
-            deployment,
-            deployment
-        ));
+    let deployments = ["launcher", "game"];
 
     // build web deployments
-    build_deployments(&build_paths);
+    build_deployments(target_env, source_path, &target_path, &deployments);
 
-    // if release mode, wasm-opt
-    if target_env == TargetEnv::Prod {
-        wasm_opt_deployments(&wasm_paths)
-    }
+    todo!();
 
-    // if release mode, minify/uglify JS
-    if target_env == TargetEnv::Prod {
-        js_uglify(&js_paths);
-    }
+    let repo_name = "cyberlith_content";
 
-    let mut file_paths = wasm_paths.to_vec();
-    file_paths.extend(js_paths);
-    file_paths.extend(html_paths);
+    // wasm
+    // let wasm_paths = [
+    //     ("launcher", "launcher_bg.wasm"),
+    //     ("game", "game_bg.wasm")
+    // ].map(
+    //     |(deployment, file_name)| format!(
+    //         "{}/deployments/web/{}/target/wasm32-unknown-unknown/{}/{}",
+    //         source_path,
+    //         deployment,
+    //         target_env.cargo_env(),
+    //         file_name,
+    //     ));
+    //
+    // // js
+    // let js_paths = [
+    //     "launcher",
+    //     "game"
+    // ].map(
+    //     |deployment| format!(
+    //         "{}/deployments/web/{}/target/wasm32-unknown-unknown/{}/{}.js",
+    //         source_path,
+    //         deployment,
+    //         target_env.cargo_env(),
+    //         deployment
+    //     ));
+    //
+    // // html
+    // let html_paths = [
+    //     "launcher",
+    //     "game"
+    // ].map(
+    //     |deployment| format!(
+    //         "{}/deployments/web/{}/{}.html",
+    //         source_path,
+    //         deployment,
+    //         deployment
+    //     ));
 
-    // load all files into memory
-    let files = load_all_unprocessed_files(&file_paths);
-
-    // create repo
-    let repo = repo_init(repo_name, target_path);
-
-    // if the repo already exists, process files if they have changed
-    // otherwise, process all files
-    let target_env_str = target_env.to_string();
-    if branch_exists(&repo, &target_env_str) {
-        update_processed_content(target_env, &target_path, &repo, files);
-    } else {
-        create_processed_content(target_env, &repo, files);
-    }
+    // // if release mode, wasm-opt
+    // if target_env == TargetEnv::Prod {
+    //     wasm_opt_deployments(&wasm_paths)
+    // }
+    //
+    // // if release mode, minify/uglify JS
+    // if target_env == TargetEnv::Prod {
+    //     js_uglify(&js_paths);
+    // }
+    //
+    // let mut file_paths = wasm_paths.to_vec();
+    // file_paths.extend(js_paths);
+    // file_paths.extend(html_paths);
+    //
+    // // load all files into memory
+    // let files = load_all_unprocessed_files(&file_paths);
+    //
+    // // create repo
+    // let repo = repo_init(repo_name, target_path);
+    //
+    // // if the repo already exists, process files if they have changed
+    // // otherwise, process all files
+    // let target_env_str = target_env.to_string();
+    // if branch_exists(&repo, &target_env_str) {
+    //     update_processed_content(target_env, &target_path, &repo, files);
+    // } else {
+    //     create_processed_content(target_env, &repo, files);
+    // }
 
     Ok(())
 }
 
-fn build_deployments(build_paths: &[String]) {
+fn build_deployments(
+    target_env: TargetEnv,
+    // this is the working directory of the 'cyberlith' repo
+    source_path: &str,
+    // this is the directory the files should go into
+    target_path: &str,
+    deployments: &[&str]
+) -> Vec<(String, FileHash, FileHash)> {
+    info!("building deployments..");
+    info!("source_path: {}", source_path);
+    info!("target_path: {}", target_path);
+    info!("target env: {}", target_env.to_string());
 
-    for build_path in build_paths {
+    let mut output = Vec::new();
+
+    for deployment in deployments {
         // cargo build
+        let release_arg = if target_env == TargetEnv::Prod { "--release " } else { "" };
+        let result = run_command_blocking(
+            deployment,
+            format!(
+                "cargo build {}\
+                    --features gl_renderer,prod \
+                    --manifest-path {}/deployments/web/{}/Cargo.toml \
+                    --target wasm32-unknown-unknown \
+                    --target-dir {} \
+                    --lib",
+                release_arg,
+                source_path,
+                deployment,
+                target_path,
+            )
+                .as_str(),
+        );
+        if let Err(e) = result {
+            panic!("failed to build deployment: {}", e);
+        }
+
         // get hash of wasm file
+        let wasm_hash = {
+            let wasm_bytes = read_file_bytes(
+                target_path,
+                format!("wasm32-unknown-unknown/{}/", target_env.cargo_env()).as_str(),
+                format!("{}.wasm", deployment).as_str(),
+            );
+            get_file_hash(&wasm_bytes)
+        };
 
-        // then wasm-bindgen
+        // then wasm-bindgen the wasm file
+        let wasm_file_path = format!(
+            "{}/wasm32-unknown-unknown/{}/{}.wasm",
+            target_path,
+            target_env.cargo_env(),
+            deployment
+        );
+        let result = run_command_blocking(
+            deployment,
+            format!(
+                "wasm-bindgen \
+                    --out-dir {} \
+                    --out-name {} \
+                    --target web \
+                    --no-typescript {}",
+                target_path, deployment, wasm_file_path
+            )
+                .as_str(),
+        );
+        if let Err(e) = result {
+            panic!("failed to wasm-bindgen deployment: {}", e);
+        }
+
         // get hash of js file
+        let js_hash = {
+            let js_bytes = read_file_bytes(
+                target_path,
+                "",
+                format!("{}_bg.wasm", deployment).as_str(),
+            );
+            get_file_hash(&js_bytes)
+        };
 
-        todo!()
+        output.push((deployment.to_string(), wasm_hash, js_hash));
     }
+
+    output
 }
 
 fn wasm_opt_deployments(wasm_files: &[String; 2]) {

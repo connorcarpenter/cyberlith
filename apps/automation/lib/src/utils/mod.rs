@@ -67,30 +67,7 @@ pub async fn run_command(command_name: &str, command_str: &str) -> Result<(), Cl
     executor::spawn(async move {
         let command_name = command_name_clone;
 
-        let args = command_str
-            .split(" ")
-            .map(|thestr| thestr.to_string())
-            .collect::<Vec<String>>();
-
-        let result_to_send = {
-            let command = Exec::cmd(&args[0])
-                .args(&args[1..args.len()])
-                .stdout(Redirection::Pipe)
-                .cwd("/home/connor/Work/cyberlith");
-            match command.capture() {
-                Ok(capture) => {
-                    let out = capture.stdout_str();
-                    if out.len() > 0 {
-                        let lines = out.lines().map(String::from).collect::<Vec<String>>();
-                        for line in lines {
-                            info!("({}) <- {}", command_name, line);
-                        }
-                    }
-                    Ok(())
-                }
-                Err(err) => Err(CliError::Message(err.to_string())),
-            }
-        };
+        let result_to_send = run_command_blocking(&command_name, &command_str);
 
         sender
             .send(result_to_send)
@@ -112,6 +89,39 @@ pub async fn run_command(command_name: &str, command_str: &str) -> Result<(), Cl
             warn!("({}) error: {:?}", command_name, err);
             Err(CliError::Message(err.to_string()))
         }
+    }
+}
+
+pub fn run_command_blocking(command_name: &str, command_str: &str) -> Result<(), CliError> {
+    info!("({}) -> {}", command_name, command_str);
+
+    let command_name = command_name.to_string();
+    let command_name_clone = command_name.clone();
+    let command_str = command_str.to_string();
+
+    let command_name = command_name_clone;
+
+    let args = command_str
+        .split(" ")
+        .map(|thestr| thestr.to_string())
+        .collect::<Vec<String>>();
+
+    let command = Exec::cmd(&args[0])
+        .args(&args[1..args.len()])
+        .stdout(Redirection::Pipe)
+        .cwd("/home/connor/Work/cyberlith");
+    match command.capture() {
+        Ok(capture) => {
+            let out = capture.stdout_str();
+            if out.len() > 0 {
+                let lines = out.lines().map(String::from).collect::<Vec<String>>();
+                for line in lines {
+                    info!("({}) <- {}", command_name, line);
+                }
+            }
+            Ok(())
+        }
+        Err(err) => Err(CliError::Message(err.to_string())),
     }
 }
 

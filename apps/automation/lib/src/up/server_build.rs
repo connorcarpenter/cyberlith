@@ -35,16 +35,6 @@ pub async fn server_build_content() -> Result<(), CliError> {
     Ok(())
 }
 
-async fn clean_web_deploy_files(name: &str) -> Result<(), CliError> {
-    run_command(name, format!("rm {}.html", name).as_str()).await?;
-
-    run_command(name, format!("rm {}.js", name).as_str()).await?;
-
-    run_command(name, format!("rm {}_bg.wasm", name).as_str()).await?;
-
-    Ok(())
-}
-
 async fn build_web_deploy_files(name: &str) -> Result<(), CliError> {
     // build game
     run_command(
@@ -90,6 +80,16 @@ async fn build_web_deploy_files(name: &str) -> Result<(), CliError> {
         format!("cp deployments/web/{}/{}.html {}.html", name, name, name).as_str(),
     )
     .await?;
+    Ok(())
+}
+
+async fn clean_web_deploy_files(name: &str) -> Result<(), CliError> {
+    run_command(name, format!("rm {}.html", name).as_str()).await?;
+
+    run_command(name, format!("rm {}.js", name).as_str()).await?;
+
+    run_command(name, format!("rm {}_bg.wasm", name).as_str()).await?;
+
     Ok(())
 }
 
