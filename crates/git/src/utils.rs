@@ -153,6 +153,14 @@ pub fn read_file_bytes(root_path: &str, path: &str, file: &str) -> Vec<u8> {
     }
 }
 
+pub fn git_update_index(repo: &Repository) {
+    // get index
+    let mut index = repo.index().expect("Failed to open index");
+
+    // Get the updated tree
+    index.write_tree().expect("Failed to write tree");
+}
+
 pub fn git_commit(
     repo: &Repository,
     branch_name: &str,

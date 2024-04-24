@@ -747,38 +747,8 @@ impl Project {
         let repo = self.repo.lock().unwrap();
 
         let branch_name = git::get_current_branch_name(&repo);
+        git::git_update_index(&repo);
         git::git_commit(&repo, &branch_name, username, email, commit_message);
-
-        //
-        // // get index
-        // let mut index = repo.index().expect("Failed to open index");
-        //
-        // // Get the updated tree
-        // let tree_id = index.write_tree().expect("Failed to write tree");
-        //
-        // // Get the current HEAD reference
-        // let head_reference = repo.head().expect("Failed to get HEAD reference");
-        //
-        // // Get the commit that HEAD points to
-        // let parent_commit = head_reference
-        //     .peel_to_commit()
-        //     .expect("Failed to peel HEAD to commit");
-        //
-        // // Prepare the commit details
-        // let author = Signature::now(username, email).expect("Failed to create author signature");
-        // let committer =
-        //     Signature::now(username, email).expect("Failed to create committer signature");
-        //
-        // // Create the commit
-        // repo.commit(
-        //     Some("HEAD"),
-        //     &author,
-        //     &committer,
-        //     commit_message,
-        //     &repo.find_tree(tree_id).expect("Failed to find tree"),
-        //     &[&parent_commit],
-        // )
-        // .expect("Failed to create commit");
     }
 
     fn git_push(&self) {
