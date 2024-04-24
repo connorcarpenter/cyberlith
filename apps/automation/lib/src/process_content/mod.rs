@@ -201,7 +201,7 @@ fn build_deployments(
             let js_bytes = read_file_bytes(
                 target_path,
                 "",
-                format!("{}_bg.wasm", deployment).as_str(),
+                format!("{}.js", deployment).as_str(),
             );
             get_file_hash(&js_bytes)
         };
@@ -219,6 +219,9 @@ fn build_deployments(
             )
                 .as_str(),
         );
+        if let Err(e) = result {
+            panic!("failed to copy html file: {}", e);
+        }
 
         // get hash of html file
         let html_hash = {
@@ -229,6 +232,22 @@ fn build_deployments(
             );
             get_file_hash(&html_bytes)
         };
+
+        // rename 'deployment_bg.wasm' to 'deployment.wasm'
+        let result = run_command_blocking(
+            deployment,
+            format!(
+                "mv {}/{}_bg.wasm {}/{}.wasm",
+                target_path,
+                deployment,
+                target_path,
+                deployment,
+            )
+                .as_str(),
+        );
+        if let Err(e) = result {
+            panic!("failed to rename wasm file: {}", e);
+        }
 
         output.push((deployment.to_string(), wasm_hash, js_hash, html_hash));
     }
