@@ -146,12 +146,12 @@ pub fn process_content(
 
     // if release mode, wasm-opt on Wasm
     if target_env == TargetEnv::Prod {
-        wasm_opt_deployments(&files);
+        wasm_opt_deployments(&target_path, &files);
     }
 
     // if release mode, minify/uglify JS
     if target_env == TargetEnv::Prod {
-        js_uglify(&files);
+        js_uglify(&target_path, &files);
     }
 
     // brotlify all files
@@ -314,6 +314,7 @@ fn build_deployments(
 }
 
 fn wasm_opt_deployments(
+    target_path: &str,
     files: &Vec<UnprocessedFile>,
 ) {
     info!("run wasm-opt on deployments..");
@@ -326,10 +327,10 @@ fn wasm_opt_deployments(
         let result = run_command_blocking(
             &file.file_name,
             format!(
-                "wasm-opt -Os -o {}/{}_opt.wasm {}/{}.wasm",
-                file.file_path,
+                "wasm-opt -Os -o {}{}_opt.wasm {}{}.wasm",
+                file.target_path(target_path),
                 file.file_name,
-                file.file_path,
+                file.target_path(target_path),
                 file.file_name,
             )
                 .as_str(),
@@ -342,8 +343,8 @@ fn wasm_opt_deployments(
         let result = run_command_blocking(
             &file.file_name,
             format!(
-                "rm {}/{}.wasm",
-                file.file_path,
+                "rm {}{}.wasm",
+                file.target_path(target_path),
                 file.file_name,
             )
                 .as_str(),
@@ -356,10 +357,10 @@ fn wasm_opt_deployments(
         let result = run_command_blocking(
             &file.file_name,
             format!(
-                "mv {}/{}_opt.wasm {}/{}.wasm",
-                file.file_path,
+                "mv {}{}_opt.wasm {}/{}.wasm",
+                file.target_path(target_path),
                 file.file_name,
-                file.file_path,
+                file.target_path(target_path),
                 file.file_name,
             )
                 .as_str(),
@@ -371,6 +372,7 @@ fn wasm_opt_deployments(
 }
 
 fn js_uglify(
+    target_path: &str,
     files: &Vec<UnprocessedFile>,
 ) {
     info!("run UglifyJS on deployments..");
@@ -384,10 +386,10 @@ fn js_uglify(
         let result = run_command_blocking(
             &file.file_name,
             format!(
-                "/home/connor/.nvm/versions/node/v18.6.0/bin/node /home/connor/.nvm/versions/node/v18.6.0/bin/uglifyjs {}/{}.js -o {}/{}_min.js --mangle --compress --no-annotations",
-                file.file_path,
+                "/home/connor/.nvm/versions/node/v18.6.0/bin/node /home/connor/.nvm/versions/node/v18.6.0/bin/uglifyjs {}{}.js -o {}{}_min.js --mangle --compress --no-annotations",
+                file.target_path(target_path),
                 file.file_name,
-                file.file_path,
+                file.target_path(target_path),
                 file.file_name,
             )
                 .as_str(),
@@ -400,8 +402,8 @@ fn js_uglify(
         let result = run_command_blocking(
             &file.file_name,
             format!(
-                "rm {}/{}.js",
-                file.file_path,
+                "rm {}{}.js",
+                file.target_path(target_path),
                 file.file_name,
             )
                 .as_str(),
@@ -414,10 +416,10 @@ fn js_uglify(
         let result = run_command_blocking(
             &file.file_name,
             format!(
-                "mv {}/{}_min.js {}/{}.js",
-                file.file_path,
+                "mv {}{}_min.js {}{}.js",
+                file.target_path(target_path),
                 file.file_name,
-                file.file_path,
+                file.target_path(target_path),
                 file.file_name,
             )
                 .as_str(),

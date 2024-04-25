@@ -9,9 +9,15 @@ pub(crate) fn setup() {
     automation_lib::process_assets("local").unwrap();
 
     // copy ./target/assets_repo/* to ./assets/*
-    let source_dir = "./target/assets_repo";
+    let source_dir = "./target/cyberlith_assets";
     let destination_dir = "./assets";
+    copy_from_repo_to_target_dir(source_dir, destination_dir);
 
+    // finished
+    info!("Local environment setup complete!");
+}
+
+fn copy_from_repo_to_target_dir(source_dir: &str, destination_dir: &str) {
     // Delete the destination directory (will create it again later)
     info!("Deleting destination directory: {}", destination_dir);
     let mut delete_command = Command::new("rm")
@@ -53,6 +59,11 @@ pub(crate) fn setup() {
         .status()
         .expect("Failed to execute delete command");
 
-    // finished
-    info!("Local environment setup complete!");
+    // Execute shell command to delete .git directory from destination
+    info!("Deleting .git directory from {:?}", destination_dir);
+    Command::new("rm")
+        .arg("-rf")
+        .arg(format!("{}/.git", destination_dir))
+        .status()
+        .expect("Failed to execute delete command");
 }

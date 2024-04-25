@@ -12,10 +12,10 @@ use crate::CliError;
 
 pub fn process_assets(env: &str) -> Result<(), CliError> {
     let repo_name = "cyberlith_assets";
-    let target_path = "target/asset_repo";
+    let target_path = format!("target/{}", repo_name);
 
     // pull all assets into memory, from "env" branch
-    let repo = repo_init(repo_name, target_path);
+    let repo = repo_init(repo_name, &target_path);
     let files = load_all_unprocessed_files(&target_path, &repo);
 
     if branch_exists(&repo, env) {
