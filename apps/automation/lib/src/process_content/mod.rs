@@ -31,6 +31,13 @@ impl TargetEnv {
             TargetEnv::Prod => "release".to_string(),
         }
     }
+
+    pub fn feature_flag(&self) -> String {
+        match self {
+            TargetEnv::Local => "local".to_string(),
+            TargetEnv::Prod => "prod".to_string(),
+        }
+    }
 }
 
 struct UnprocessedFile {
@@ -185,16 +192,18 @@ fn build_deployments(
     for deployment in deployments {
         // cargo build
         let release_arg = if target_env == TargetEnv::Prod { "--release " } else { "" };
+        let feature_flag = target_env.feature_flag();
         let result = run_command_blocking(
             deployment,
             format!(
                 "cargo build {}\
-                    --features gl_renderer,prod \
+                    --features gl_renderer,{} \
                     --manifest-path {}/deployments/web/{}/Cargo.toml \
                     --target wasm32-unknown-unknown \
                     --target-dir {} \
                     --lib",
                 release_arg,
+                feature_flag,
                 source_path,
                 deployment,
                 target_path,
