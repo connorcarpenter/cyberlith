@@ -14,6 +14,7 @@ pub trait ProxyServer {
         &mut self,
         host_name: &str,
         incoming_host: Option<(&str, Option<&str>)>,
+        allow_origin_opt: Option<&str>,
         method: Method,
         url_path: &str,
         remote_name: &str,
@@ -25,6 +26,7 @@ pub trait ProxyServer {
         &mut self,
         host_name: &str,
         incoming_host: Option<(&str, Option<&str>)>,
+        allow_origin_opt: Option<&str>,
         remote_name: &str,
         remote_addr: &str,
         remote_port: &str,
@@ -36,6 +38,7 @@ impl ProxyServer for Server {
         &mut self,
         host_name: &str,
         incoming_host: Option<(&str, Option<&str>)>,
+        allow_origin_opt: Option<&str>,
         incoming_method: Method,
         incoming_path: &str,
         remote_name: &str,
@@ -49,7 +52,7 @@ impl ProxyServer for Server {
 
         let remote_url = format!("http://{}:{}/{}", remote_addr, remote_port, remote_path);
         let logged_remote_url = format!("{} host:{}/{}", incoming_method.as_str(), remote_port, remote_path);
-        let endpoint_func = get_endpoint_func(host_name, remote_name, incoming_method, &remote_url, &logged_remote_url);
+        let endpoint_func = get_endpoint_func(host_name, remote_name, allow_origin_opt, incoming_method, &remote_url, &logged_remote_url);
         let incoming_host = incoming_host.map(|(rq, rdopt)| (rq.to_string(), rdopt.map(|rd| rd.to_string())));
         let new_endpoint = Endpoint::new(endpoint_func, incoming_host);
         self.internal_insert_endpoint(url_path, new_endpoint);
@@ -59,6 +62,7 @@ impl ProxyServer for Server {
         &mut self,
         host_name: &str,
         incoming_host: Option<(&str, Option<&str>)>,
+        allow_origin_opt: Option<&str>,
         remote_name: &str,
         remote_addr: &str,
         remote_port: &str,
@@ -67,6 +71,7 @@ impl ProxyServer for Server {
             self,
             host_name,
             incoming_host,
+            allow_origin_opt,
             TypeRequest::method(),
             TypeRequest::path(),
             remote_name,
@@ -80,6 +85,7 @@ impl ProxyServer for Server {
 fn get_endpoint_func(
     host_name: &str,
     remote_name: &str,
+    allow_origin_opt: Option<&str>,
     method: Method,
     remote_url: &str,
     logged_remote_url: &str,
@@ -95,6 +101,7 @@ fn get_endpoint_func(
 > {
     let host_name = host_name.to_string();
     let remote_name = remote_name.to_string();
+    let allow_origin_opt = allow_origin_opt.map(|s| s.to_string());
     let method = method.clone();
     let remote_url = remote_url.to_string();
     let logged_remote_url = logged_remote_url.to_string();
@@ -106,6 +113,7 @@ fn get_endpoint_func(
 
         let host_name = host_name.clone();
         let remote_name = remote_name.clone();
+        let allow_origin_opt = allow_origin_opt.clone();
         let method = method.clone();
         let remote_url = remote_url.clone();
         let logged_remote_url = logged_remote_url.clone();
@@ -152,6 +160,14 @@ fn get_endpoint_func(
                         } else {
                             // info!("header not found: {}", header_name);
                         }
+                    }
+
+                    // access control allow origin
+                    if let Some(allow_origin) = allow_origin_opt {
+                        while response.headers.contains_key("access-control-allow-origin") {
+                            response.headers.remove("access-control-allow-origin");
+                        }
+                        response.headers.insert("access-control-allow-origin".to_string(), allow_origin);
                     }
                 }
                 Err(err) => {

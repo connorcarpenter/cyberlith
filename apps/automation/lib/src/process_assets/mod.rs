@@ -8,20 +8,29 @@ use logging::info;
 
 use asset_serde::json::{Asset, AssetData, AssetMeta, ProcessedAssetMeta};
 
-use crate::CliError;
+use crate::{CliError, TargetEnv};
 
-pub fn process_assets(env: &str) -> Result<(), CliError> {
+pub fn process_assets(
+    // should be the directory of the entire cyberlith repo
+    project_path: &str,
+    // should be the directory we do all the work in, added to project_path
+    service_path: &str,
+    // what build environment are we in
+    target_env: TargetEnv
+) -> Result<(), CliError> {
+
     let repo_name = "cyberlith_assets";
-    let target_path = format!("target/{}", repo_name);
+    let target_path = format!("{}/{}/target/{}", project_path, service_path, repo_name);
+    let target_env_str = target_env.to_string();
 
     // pull all assets into memory, from "env" branch
     let repo = repo_init(repo_name, &target_path);
     let files = load_all_unprocessed_files(&target_path, &repo);
 
-    if branch_exists(&repo, env) {
-        update_processed_assets(env, &target_path, repo, files);
+    if branch_exists(&repo, &target_env_str) {
+        update_processed_assets(&target_env_str, &target_path, repo, files);
     } else {
-        create_processed_assets(env, repo, files);
+        create_processed_assets(&target_env_str, repo, files);
     }
 
     Ok(())

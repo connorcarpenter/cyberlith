@@ -14,6 +14,6 @@ FROM gcr.io/distroless/cc-debian12
 COPY asset_server /usr/local/bin/server
 
 # copy over assets
-COPY target/assets_repo /usr/local/bin/assets
+COPY target/cyberlith_assets /usr/local/bin/assets
 
 CMD ["server"]

@@ -1,6 +1,6 @@
 use std::{net::SocketAddr};
 
-use naia_serde::{BitWriter, Serde};
+use naia_serde::BitWriter;
 
 use config::{SESSION_SERVER_RECV_ADDR, REGION_SERVER_RECV_ADDR, REGION_SERVER_PORT, SESSION_SERVER_SIGNAL_PORT};
 use http_client::{HttpClient, ResponseError};
@@ -8,7 +8,7 @@ use http_server::{Method, Request, Response};
 use logging::warn;
 
 use region_server_http_proto::SessionConnectRequest;
-use session_server_naia_proto::{messages::{Auth as SessionAuth, FakeEntityConverter, Message}, protocol};
+use session_server_naia_proto::{messages::{FakeEntityConverter, Message}, protocol};
 
 pub(crate) async fn session_rtc_endpoint_handler(
     args: (SocketAddr, Request),

@@ -27,6 +27,7 @@ pub trait ApiServer {
         &mut self,
         host_name: &str,
         incoming_host: Option<(&str, Option<&str>)>,
+        allow_origin_opt: Option<&str>,
         incoming_method: Method,
         incoming_path: &str,
         handler: Handler,
@@ -63,6 +64,7 @@ impl ApiServer for Server {
         &mut self,
         host_name: &str,
         incoming_host: Option<(&str, Option<&str>)>,
+        allow_origin_opt: Option<&str>,
         incoming_method: Method,
         incoming_path: &str,
         handler: Handler,
@@ -70,7 +72,7 @@ impl ApiServer for Server {
         let endpoint_path = format!("{} /{}", incoming_method.as_str(), incoming_path);
 
         info!("endpoint: {}", endpoint_path);
-        let endpoint_func = get_endpoint_raw_func::<ResponseType, Handler>(host_name, handler);
+        let endpoint_func = get_endpoint_raw_func::<ResponseType, Handler>(host_name, allow_origin_opt, handler);
         let incoming_host = incoming_host.map(|(rq, rdopt)| (rq.to_string(), rdopt.map(|rd| rd.to_string())));
         let new_endpoint = Endpoint::new(endpoint_func, incoming_host);
         self.internal_insert_endpoint(endpoint_path, new_endpoint);
@@ -134,13 +136,16 @@ fn get_endpoint_raw_func<
     Handler: 'static + Send + Sync + Fn((SocketAddr, Request)) -> ResponseType,
 >(
     host_name: &str,
+    allow_origin_opt: Option<&str>,
     handler: Handler,
 ) -> EndpointFunc {
     let host_name = host_name.to_string();
+    let allow_origin_opt = allow_origin_opt.map(|s| s.to_string());
     Box::new(move |args: (SocketAddr, Request)| {
         let addr = args.0;
         let pure_request = args.1;
         let host_name = host_name.clone();
+        let allow_origin_opt = allow_origin_opt.clone();
         let incoming_method = pure_request.method.clone();
         let incoming_path = pure_request.url.clone();
 
@@ -148,12 +153,21 @@ fn get_endpoint_raw_func<
 
         let pure_future = async move {
             let host_name = host_name.clone();
+            let allow_origin_opt = allow_origin_opt.clone();
             let logged_host_url = format!("{} {}", incoming_method.as_str(), incoming_path);
 
             logging::info!("[");
             log_util::recv_req(&host_name, &logged_host_url);
 
-            let response_result = handler_func.await;
+            let mut response_result = handler_func.await;
+            if let Ok(response) = response_result.as_mut() {
+                if let Some(allow_origin) = allow_origin_opt {
+                    while response.headers.contains_key("access-control-allow-origin") {
+                        response.headers.remove("access-control-allow-origin");
+                    }
+                    response.headers.insert("access-control-allow-origin".to_string(), allow_origin);
+                }
+            }
 
             log_util::send_res(&host_name, &logged_host_url);
             logging::info!("]");

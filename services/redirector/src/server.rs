@@ -70,8 +70,9 @@ impl RedirectServer {
             .as_str(),
         );
 
+        let original_url = request.url.clone();
         let response =
-            Response::redirect(format!("{}://{}.{}", PUBLIC_PROTOCOL, SUBDOMAIN_WWW, PUBLIC_IP_ADDR).as_str());
+            Response::redirect(&original_url, format!("{}://{}.{}", PUBLIC_PROTOCOL, SUBDOMAIN_WWW, PUBLIC_IP_ADDR).as_str());
 
         http_log_util::send_res(
             "redirector",

@@ -6,6 +6,7 @@ use logging::info;
 pub(crate) fn setup() {
     info!("Setting up local environment");
 
+    // process content
     automation_lib::process_content(
         "/home/connor/Work/cyberlith",
         "services/neocontent",

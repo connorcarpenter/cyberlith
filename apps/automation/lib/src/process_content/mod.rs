@@ -110,9 +110,9 @@ pub fn process_content(
     target_env: TargetEnv
 ) -> Result<(), CliError> {
 
-    let repo_name = "cyberlith_content";
     let deployments = ["launcher", "game"];
 
+    let repo_name = "cyberlith_content";
     let target_path = format!("{}/{}/target", project_path, service_path);
     let output_path = format!("{}/{}", target_path, repo_name);
     let target_env_str = target_env.to_string();

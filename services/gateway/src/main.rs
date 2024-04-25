@@ -33,6 +33,13 @@ pub fn main() {
     let rd = format!("{}://{}.{}", PUBLIC_PROTOCOL, SUBDOMAIN_WWW, PUBLIC_IP_ADDR);
     let required_host_www = required_host_www.as_ref().map(|s| (s.as_str(), Some(rd.as_str())));
 
+    let api_allow_origin = if SUBDOMAIN_API.is_empty() {
+        "*".to_string()
+    } else {
+        format!("{}://{}.{}", PUBLIC_PROTOCOL, SUBDOMAIN_WWW, PUBLIC_IP_ADDR)
+    };
+    let api_allow_origin = Some(api_allow_origin.as_str());
+
     // -> region
     // {
     //     let auth_server = "region_server";
@@ -59,6 +66,7 @@ pub fn main() {
         server.serve_api_proxy::<UserLoginRequest>(
             gateway,
             required_host_api,
+            api_allow_origin,
             auth_server,
             addr,
             &port,
@@ -67,6 +75,7 @@ pub fn main() {
         server.serve_api_proxy::<UserRegisterRequest>(
             gateway,
             required_host_api,
+            api_allow_origin,
             auth_server,
             addr,
             &port,
@@ -75,6 +84,7 @@ pub fn main() {
         server.serve_api_proxy::<UserRegisterConfirmRequest>(
             gateway,
             required_host_api,
+            api_allow_origin,
             auth_server,
             addr,
             &port,
@@ -83,6 +93,7 @@ pub fn main() {
         server.serve_api_proxy::<RefreshTokenGrantRequest>(
             gateway,
             required_host_api,
+            api_allow_origin,
             auth_server,
             addr,
             &port,
@@ -91,6 +102,7 @@ pub fn main() {
         server.serve_api_proxy::<UserNameForgotRequest>(
             gateway,
             required_host_api,
+            api_allow_origin,
             auth_server,
             addr,
             &port,
@@ -99,6 +111,7 @@ pub fn main() {
         server.serve_api_proxy::<UserPasswordForgotRequest>(
             gateway,
             required_host_api,
+            api_allow_origin,
             auth_server,
             addr,
             &port,
@@ -107,6 +120,7 @@ pub fn main() {
         server.serve_api_proxy::<UserPasswordResetRequest>(
             gateway,
             required_host_api,
+            api_allow_origin,
             auth_server,
             addr,
             &port,
@@ -118,6 +132,7 @@ pub fn main() {
         server.serve_endpoint_raw(
             gateway,
             required_host_api,
+            api_allow_origin,
             Method::Post,
             "session_rtc",
             session_rtc_endpoint_handler,
@@ -133,6 +148,7 @@ pub fn main() {
         server.serve_proxy(
             gateway,
             required_host_api,
+            api_allow_origin,
             Method::Post,
             "world_rtc",
             world_server,
@@ -151,6 +167,7 @@ pub fn main() {
         server.serve_proxy(
             gateway,
             required_host_www,
+            None,
             Method::Get,
             "",
             content_server,
@@ -161,6 +178,7 @@ pub fn main() {
         server.serve_proxy(
             gateway,
             required_host_www,
+            None,
             Method::Get,
             "launcher.js",
             content_server,
@@ -171,6 +189,7 @@ pub fn main() {
         server.serve_proxy(
             gateway,
             required_host_www,
+            None,
             Method::Get,
             "launcher_bg.wasm",
             content_server,
@@ -181,6 +200,7 @@ pub fn main() {
         server.serve_proxy(
             gateway,
             required_host_www,
+            None,
             Method::Get,
             "game",
             content_server,
@@ -191,6 +211,7 @@ pub fn main() {
         server.serve_proxy(
             gateway,
             required_host_www,
+            None,
             Method::Get,
             "game.js",
             content_server,
@@ -201,6 +222,7 @@ pub fn main() {
         server.serve_proxy(
             gateway,
             required_host_www,
+            None,
             Method::Get,
             "game_bg.wasm",
             content_server,

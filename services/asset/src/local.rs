@@ -1,4 +1,5 @@
 use std::process::Command;
+use automation_lib::TargetEnv;
 
 use logging::info;
 
@@ -6,7 +7,11 @@ pub(crate) fn setup() {
     info!("Setting up local environment");
 
     // process assets
-    automation_lib::process_assets("local").unwrap();
+    automation_lib::process_assets(
+        "/home/connor/Work/cyberlith",
+        "services/asset",
+        TargetEnv::Local,
+    ).unwrap();
 
     // copy ./target/assets_repo/* to ./assets/*
     let source_dir = "./target/cyberlith_assets";
@@ -18,6 +23,7 @@ pub(crate) fn setup() {
 }
 
 fn copy_from_repo_to_target_dir(source_dir: &str, destination_dir: &str) {
+
     // Delete the destination directory (will create it again later)
     info!("Deleting destination directory: {}", destination_dir);
     let mut delete_command = Command::new("rm")

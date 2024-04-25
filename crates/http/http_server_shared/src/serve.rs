@@ -293,12 +293,8 @@ async fn cast_to_request(
 
 async fn response_send<ResponseStream: Unpin + AsyncRead + AsyncWrite>(
     mut response_stream: ResponseStream,
-    mut response: Response,
+    response: Response,
 ) {
-    response
-        .headers
-        .insert("Access-Control-Allow-Origin".to_string(), "*".to_string());
-
     let mut response_bytes = response_header_to_vec(&response);
     response_bytes.extend_from_slice(&response.body);
     response_stream
@@ -315,7 +311,6 @@ const RESPONSE_BAD: &[u8] = br#"
 HTTP/1.1 404 NOT FOUND
 Content-Type: text/html
 Content-Length: 0
-Access-Control-Allow-Origin: *
 "#;
 
 async fn send_404<ResponseStream: Unpin + AsyncRead + AsyncWrite>(
