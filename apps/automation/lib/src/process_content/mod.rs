@@ -123,12 +123,12 @@ pub fn process_content(
         git_pull(&repo, &target_env_str);
 
         // get files from previously processed environment
-        let old_meta_files = load_all_processed_meta_files(&target_path, &repo);
+        let old_meta_files = load_all_processed_meta_files(&output_path, &repo);
 
         // prune out unprocessed files that have not changed since last being processed
         files = prune_unchanged_files(&old_meta_files, files);
         if files.is_empty() {
-            info!("no files to process, exiting..");
+            info!("no files to process, skipping processing");
             return Ok(());
         }
     } else {
@@ -625,7 +625,7 @@ fn prune_unchanged_files(
 
         let prev_meta = old_meta_files
             .iter()
-            .find(|meta| meta.name().eq(&unprocessed_file.file_name));
+            .find(|meta| meta.name().eq(&unprocessed_file.file_name_w_ext()));
 
         let Some(meta) = prev_meta else {
             info!("file new: {}", unprocessed_file.relative_file_path());

@@ -63,4 +63,12 @@ fn copy_from_repo_to_target_dir(source_dir: &str, destination_dir: &str) {
         .arg("./target")
         .status()
         .expect("Failed to execute delete command");
+
+    // Execute shell command to delete .git directory from destination
+    info!("Deleting .git directory from {:?}", destination_dir);
+    Command::new("rm")
+        .arg("-rf")
+        .arg(format!("{}/.git", destination_dir))
+        .status()
+        .expect("Failed to execute delete command");
 }
