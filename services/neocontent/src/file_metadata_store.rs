@@ -28,6 +28,7 @@ impl FileType {
     }
 }
 
+#[derive(Clone)]
 pub struct FileMetadata {
     path: String,
     file_type: FileType,

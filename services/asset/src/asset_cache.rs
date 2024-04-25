@@ -82,6 +82,6 @@ impl AssetCache {
 }
 
 fn bytes_to_kb(bytes: usize) -> u32 {
-    bytes as u32
-    // (bytes / 1024) as u32 // TODO: uncomment this, it's just for simulation!
+    // bytes as u32
+    (bytes / 1024) as u32
 }

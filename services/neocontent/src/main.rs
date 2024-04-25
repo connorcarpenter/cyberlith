@@ -43,7 +43,7 @@ pub fn main() {
     let mut server = Server::new(socket_addr);
     let content_server = "content_server";
 
-    for file_name in ["launcher.html", "launcher.js", "launcher.wasm", "game.html", "game.js", "game.wasm"].iter() {
+    for file_name in ["launcher.html", "launcher.js", "launcher_bg.wasm", "game.html", "game.js", "game_bg.wasm"].iter() {
         let state = state.clone();
         server.serve_endpoint_raw(
             content_server,

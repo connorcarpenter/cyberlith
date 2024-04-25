@@ -238,26 +238,10 @@ fn build_deployments(
             panic!("failed to wasm-bindgen deployment: {}", e);
         }
 
-        // rename 'deployment_bg.wasm' to 'deployment.wasm'
-        let result = run_command_blocking(
-            deployment,
-            format!(
-                "mv {}/{}_bg.wasm {}/{}.wasm",
-                target_path,
-                deployment,
-                target_path,
-                deployment,
-            )
-                .as_str(),
-        );
-        if let Err(e) = result {
-            panic!("failed to rename wasm file: {}", e);
-        }
-
         // add wasm file to output
         output.push(UnprocessedFile::new(
             "",
-            deployment,
+            format!("{}_bg", deployment).as_str(),
             FileExtension::Wasm,
             wasm_hash,
         ));
