@@ -56,7 +56,7 @@ pub fn thread_init_compat_1arg<
 }
 
 pub async fn run_command(command_name: &str, command_str: &str) -> Result<(), CliError> {
-    info!("({}) -> {}", command_name, command_str);
+    // info!("({}) -> {}", command_name, command_str);
 
     let command_name = command_name.to_string();
     let command_name_clone = command_name.clone();

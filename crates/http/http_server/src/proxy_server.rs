@@ -149,7 +149,7 @@ fn get_endpoint_func(
                     // }
 
                     // pass through headers
-                    for header_name in ["content-type", "content-length", "content-encoding", "etag", "cache-control"] {
+                    for header_name in ["content-type", "content-length", "content-encoding", "etag", "cache-control", "access-control-allow-headers"] {
                         if remote_response.headers.contains_key(header_name) {
                             // info!("adding header: {}", header_name);
                             let remote_header_value = remote_response.headers.get(header_name).unwrap();

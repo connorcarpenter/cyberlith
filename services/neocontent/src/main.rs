@@ -48,6 +48,7 @@ pub fn main() {
         server.serve_endpoint_raw(
             content_server,
             None,
+            None,
             Method::Get,
             file_name,
             move |(addr, incoming_req)| {

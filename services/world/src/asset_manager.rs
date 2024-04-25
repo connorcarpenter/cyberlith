@@ -109,7 +109,7 @@ impl AssetManager {
 
     pub fn deregister_user(&mut self, user_key: &UserKey) {
         let data = self.user_key_to_data_map.remove(user_key).unwrap();
-        let room_key = data.room_key;
+        let _room_key = data.room_key;
         // TODO: do we need to remove user from room?
     }
 

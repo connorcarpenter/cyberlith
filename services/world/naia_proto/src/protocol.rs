@@ -20,8 +20,12 @@ pub fn protocol() -> Protocol {
         // Components
         .add_plugin(ComponentsPlugin);
 
-    #[cfg(feature = "local")]
-    builder.link_condition(LinkConditionerConfig::good_condition());
+    cfg_if::cfg_if! {
+        if #[cfg(feature = "local")]{
+            builder.link_condition(LinkConditionerConfig::good_condition());
+        }
+        else {}
+    }
 
     // Build Protocol
     builder.build()

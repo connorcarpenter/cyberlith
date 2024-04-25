@@ -156,6 +156,18 @@ pub fn main() {
             &port,
             "world_rtc",
         );
+
+        server.serve_proxy(
+            gateway,
+            required_host_api,
+            api_allow_origin,
+            Method::Options,
+            "world_rtc",
+            world_server,
+            addr,
+            &port,
+            "world_rtc",
+        );
     }
 
     // -> content

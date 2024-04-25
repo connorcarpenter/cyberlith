@@ -59,8 +59,8 @@ impl Request {
     pub fn new(method: Method, url: &str, body: Vec<u8>) -> Self {
         let mut headers = BTreeMap::new();
 
-        if method == Method::Get && !body.is_empty() {
-            panic!("GET requests cannot have a body");
+        if (method == Method::Get || method == Method::Options) && !body.is_empty() {
+            panic!("GET/OPTIONS requests cannot have a body");
         } else {
             headers.insert("Content-Length".to_string(), body.len().to_string());
         }

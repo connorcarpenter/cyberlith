@@ -189,7 +189,7 @@ async fn request_read_headers<
 
         // check for GET request, if so, we're done
         if let Some(method) = method.clone() {
-            if method == Method::Get {
+            if method == Method::Get || method == Method::Options {
                 *read_state = ReadState::Finished;
                 // info!("GET req has no body to read. finished.");
                 return true;

@@ -18,8 +18,13 @@ pub fn protocol() -> Protocol {
         // Messages
         .add_plugin(MessagesPlugin);
 
-    #[cfg(feature = "local")]
-    builder.link_condition(LinkConditionerConfig::good_condition());
+    cfg_if::cfg_if! {
+        if #[cfg(feature = "local")]{
+            builder.link_condition(LinkConditionerConfig::good_condition());
+        }
+        else {}
+    }
+
 
     // Build Protocol
     builder.build()

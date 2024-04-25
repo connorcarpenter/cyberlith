@@ -3,13 +3,13 @@ pub use filetypes::ProcessedFileMeta;
 mod error;
 pub use error::FileIoError;
 
-use std::{fs, path::Path, time::Duration};
+use std::path::Path;
 
 use asset_id::ETag;
 use git::{branch_exists, ObjectType, create_branch, git_commit, git_pull, git_push, repo_init, Tree, Repository, switch_to_branch, write_file_bytes, read_file_bytes};
 use logging::info;
 
-use crate::{utils::{run_command, run_command_blocking}, CliError};
+use crate::{utils::{run_command_blocking}, CliError};
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum TargetEnv {
@@ -87,15 +87,6 @@ impl FileExtension {
             FileExtension::Wasm => "wasm".to_string(),
             FileExtension::Js => "js".to_string(),
             FileExtension::Html => "html".to_string(),
-        }
-    }
-
-    pub fn from_string(ext: &str) -> Self {
-        match ext {
-            "wasm" => FileExtension::Wasm,
-            "js" => FileExtension::Js,
-            "html" => FileExtension::Html,
-            _ => panic!("unknown file extension: {}", ext),
         }
     }
 }
@@ -270,7 +261,7 @@ fn build_deployments(
             "",
             deployment,
             FileExtension::Js,
-            wasm_hash,
+            js_hash,
         ));
 
         // copy html file over
@@ -417,6 +408,9 @@ fn js_uglify(
             )
                 .as_str(),
         );
+        if let Err(e) = result {
+            panic!("failed to rename js file: {}", e);
+        }
     }
 }
 
@@ -457,6 +451,9 @@ fn brotlify_deployments(
             )
                 .as_str(),
         );
+        if let Err(e) = result {
+            panic!("failed to delete file: {}", e);
+        }
 
         // rename *_br.* to *.*
         let result = run_command_blocking(
@@ -472,17 +469,10 @@ fn brotlify_deployments(
             )
                 .as_str(),
         );
+        if let Err(e) = result {
+            panic!("failed to rename file: {}", e);
+        }
     }
-}
-
-fn load_all_unprocessed_files(file_paths: &Vec<String>) -> Vec<UnprocessedFile> {
-    let mut output = Vec::new();
-
-    for file_path in file_paths {
-        todo!()
-    }
-
-    output
 }
 
 fn load_all_processed_meta_files(root_path: &str, repo: &Repository) -> Vec<ProcessedFileMeta> {
