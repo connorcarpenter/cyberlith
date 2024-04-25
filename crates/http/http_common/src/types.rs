@@ -109,7 +109,7 @@ impl Default for Response {
             status: 200,
             status_text: "".to_string(),
             headers: BTreeMap::new(),
-            body: vec![],
+            body: Vec::new(),
         }
     }
 }
@@ -117,30 +117,40 @@ impl Default for Response {
 impl Response {
 
     /// Constructs a new Response indicating a successful request.
-    pub fn ok(url: &str) -> Self {
+    pub fn ok(old_url: &str) -> Self {
         Self {
-            url: url.to_string(),
+            url: old_url.to_string(),
             ok: true,
             status: 200,
             status_text: "OK".to_string(),
-            headers: BTreeMap::new(),
-            body: Vec::new(),
+            ..Default::default()
         }
     }
 
     /// Constructs a new Response indicating a redirect to a specific URL.
-    pub fn redirect(url: &str) -> Self {
+    pub fn redirect(old_url: &str, new_url: &str) -> Self {
         // Create headers for redirect
         let mut headers = BTreeMap::new();
-        headers.insert("Location".to_string(), url.to_string());
+        headers.insert("Location".to_string(), new_url.to_string());
 
         Self {
-            url: url.to_string(),
+            url: old_url.to_string(),
             ok: false,
             status: 302, // HTTP status code for redirection
             status_text: "Found".to_string(),
             headers,
-            body: Vec::new(),
+            ..Default::default()
+        }
+    }
+
+    /// Constructs a new Response indicating a not modified response.
+    pub fn not_modified(old_url: &str) -> Self {
+        Self {
+            url: old_url.to_string(),
+            ok: false,
+            status: 304,
+            status_text: "Not Modified".to_string(),
+            ..Default::default()
         }
     }
 }

@@ -4,8 +4,8 @@ use logging::{info, warn};
 
 /// Stores file data in RAM, but falls back to disk if over capacity
 pub struct FileCache {
-    capacity_kb: u32,
-    current_size_kb: u32,
+    capacity_size_bytes: u32,
+    current_size_bytes: u32,
     data_map: HashMap<String, Vec<u8>>,
     access_deque: VecDeque<String>,
 }
@@ -13,8 +13,8 @@ pub struct FileCache {
 impl FileCache {
     pub fn new(capacity_kb: u32) -> Self {
         Self {
-            capacity_kb,
-            current_size_kb: 0,
+            capacity_size_bytes: kb_to_bytes(capacity_kb),
+            current_size_bytes: 0,
             data_map: HashMap::new(),
             access_deque: VecDeque::new(),
         }
@@ -37,17 +37,20 @@ impl FileCache {
             warn!("Failed to load file: `{}`", &path);
             return None;
         };
-        let byte_count = bytes.len();
-        let kb_count = bytes_to_kb(byte_count);
+        let byte_count = bytes.len() as u32;
+        // info!("{} : {} byte count", path, byte_count);
 
         self.data_map.insert(path.to_string(), bytes.clone());
-        self.current_size_kb += kb_count;
+        self.current_size_bytes += byte_count;
         self.access_deque.push_back(path.to_string());
 
-        info!("Cache miss. Loading `{}` (size: {:?} kb) ... Current cache size: {:?} kb, max: {:?} kb", path, kb_count, self.current_size_kb, self.capacity_kb);
+        let file_kb_count = bytes_to_kb(byte_count);
+        let current_kb_count = bytes_to_kb(self.current_size_bytes);
+        let capacity_kb_count = bytes_to_kb(self.capacity_size_bytes);
+        info!("Cache miss. Loading `{}` (size: {:?} kb) ... Current cache size: {:?} kb, max: {:?} kb", path, file_kb_count, current_kb_count, capacity_kb_count);
 
-        if self.current_size_kb > self.capacity_kb {
-            info!("Cache over capacity, unloading until under capacity... current: {:?} kb, max: {:?} kb", self.current_size_kb, self.capacity_kb);
+        if self.current_size_bytes > self.capacity_size_bytes {
+            info!("Cache over capacity, unloading until under capacity... current: {:?} kb, max: {:?} kb", current_kb_count, capacity_kb_count);
             self.unload_until_under_capacity();
         }
 
@@ -57,7 +60,7 @@ impl FileCache {
     fn unload_until_under_capacity(&mut self) {
         loop {
             self.unload_lru_file();
-            if self.current_size_kb <= self.capacity_kb {
+            if self.current_size_bytes <= self.capacity_size_bytes {
                 return;
             }
         }
@@ -69,18 +72,21 @@ impl FileCache {
         };
 
         let data = self.data_map.remove(&oldest_path).unwrap();
-        let byte_count = data.len();
-        let kb_count = bytes_to_kb(byte_count);
+        let byte_count = data.len() as u32;
 
-        self.current_size_kb -= kb_count;
+        self.current_size_bytes -= byte_count;
 
         info!(
             "Unloaded LRU file: {:?} (size: {:?})... current: {:?} kb, max: {:?} kb",
-            oldest_path, kb_count, self.current_size_kb, self.capacity_kb
+            oldest_path, bytes_to_kb(byte_count), bytes_to_kb(self.current_size_bytes), bytes_to_kb(self.capacity_size_bytes)
         );
     }
 }
 
-fn bytes_to_kb(bytes: usize) -> u32 {
-    (bytes / 1024) as u32
+fn bytes_to_kb(bytes: u32) -> u32 {
+    (bytes / 1024)
+}
+
+fn kb_to_bytes(kb: u32) -> u32 {
+    kb * 1024
 }

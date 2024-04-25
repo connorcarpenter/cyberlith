@@ -1,4 +1,4 @@
-use std::{process::Command, future::Future, path::Path};
+use std::{future::Future, path::Path};
 
 use async_compat::Compat;
 use crossbeam_channel::{bounded, Receiver, TryRecvError};

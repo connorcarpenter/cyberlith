@@ -131,7 +131,8 @@ pub async fn serve_impl<
             // success! continue,
         },
         ReadState::Redirecting(redirect_url) => {
-            let response = Response::redirect(&redirect_url);
+            let incoming_url = uri.unwrap();
+            let response = Response::redirect(&incoming_url, &redirect_url);
             return response_send(response_stream, response).await;
         }
         _ => {

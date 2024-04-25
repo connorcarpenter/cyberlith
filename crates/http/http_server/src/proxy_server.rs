@@ -130,7 +130,29 @@ fn get_endpoint_func(
             let mut response = Response::default();
             match remote_response_result {
                 Ok(remote_response) => {
+                    response.url = outer_url;
+                    response.ok = remote_response.ok;
+                    response.status = remote_response.status;
+                    response.status_text = remote_response.status_text;
                     response.body = remote_response.body;
+
+                    // for (header_name, _) in remote_response.headers.iter() {
+                    //     info!("incoming req has header: {}", header_name);
+                    // }
+
+                    // pass through headers
+                    for header_name in ["content-type", "content-length", "content-encoding", "etag", "cache-control"] {
+                        if remote_response.headers.contains_key(header_name) {
+                            // info!("adding header: {}", header_name);
+                            let remote_header_value = remote_response.headers.get(header_name).unwrap();
+                            response.headers.insert(
+                                header_name.to_string(),
+                                remote_header_value.clone(),
+                            );
+                        } else {
+                            // info!("header not found: {}", header_name);
+                        }
+                    }
                 }
                 Err(err) => {
                     return Err(ResponseError::HttpError(format!(
@@ -139,28 +161,6 @@ fn get_endpoint_func(
                     )));
                 }
             }
-
-            // info!("adding headers");
-
-            // add Content-Type header
-            let content_type = match remote_url.split('.').last().unwrap() {
-                "html" => Some("text/html"),
-                "js" => Some("application/javascript"),
-                "wasm" => Some("application/wasm"),
-                "txt" => Some("text/plain"),
-                _ => None,
-            };
-            if let Some(content_type) = content_type {
-                response
-                    .headers
-                    .insert("Content-Type".to_string(), content_type.to_string());
-            }
-
-            // add Content-Length header
-            response.headers.insert(
-                "Content-Length".to_string(),
-                response.body.len().to_string(),
-            );
 
             log_util::send_res(&host_name, &logged_host_url);
             logging::info!("]");

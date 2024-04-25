@@ -84,9 +84,10 @@ async fn handle_read(task: &ReadTask) -> Result<FsTaskResultEnum, TaskError> {
     let blob: Blob = file_js.try_into().expect("Failed to cast JsValue to File");
 
     let array_buffer_promise = blob.array_buffer();
-    let array_buffer_js = JsFuture::from(array_buffer_promise)
-        .await
-        .expect("Error getting array buffer");
+    let Ok(array_buffer_js) = JsFuture::from(array_buffer_promise)
+        .await else {
+        panic!("cannot read from filesystem");
+    };
     let array = Uint8Array::new(&array_buffer_js);
     let bytes = array.to_vec();
 

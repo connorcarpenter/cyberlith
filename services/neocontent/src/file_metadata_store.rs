@@ -1,13 +1,11 @@
 use std::{collections::HashMap, fs};
 
-use serde::{Deserialize, Serialize};
-
 use naia_serde::SerdeInternal as Serde;
 
 use asset_id::ETag;
 use logging::{info, warn};
 
-use automation_lib::{FileIoError, ProcessedFileMeta};
+use automation_lib::ProcessedFileMeta;
 
 // FileType
 #[derive(Serde, Eq, PartialEq, Clone, Copy, Hash, Debug)]
