@@ -6,3 +6,5 @@ workspace = "../.."
 
 [dependencies]
 logging = { path = "../logging" }
+
+naia-socket-shared = { path = "../../../naia/socket/shared", features = [ "wbindgen" ] }
