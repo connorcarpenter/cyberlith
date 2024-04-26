@@ -8,7 +8,10 @@ use naia_bevy_server::{
     Server,
 };
 
-use config::{PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SELF_BINDING_ADDR, SESSION_SERVER_SIGNAL_PORT, SESSION_SERVER_WEBRTC_PORT};
+use config::{
+    PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SELF_BINDING_ADDR, SESSION_SERVER_SIGNAL_PORT,
+    SESSION_SERVER_WEBRTC_PORT,
+};
 use logging::{info, warn};
 
 use session_server_naia_proto::messages::Auth;

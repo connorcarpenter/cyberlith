@@ -15,7 +15,7 @@ use smol::{
 
 use bevy_http_shared::Protocol;
 use http_common::{Request, Response, ResponseError};
-use http_server_shared::{executor, MatchHostResult, serve_impl};
+use http_server_shared::{executor, serve_impl, MatchHostResult};
 
 struct KeyMaker {
     current_index: u64,

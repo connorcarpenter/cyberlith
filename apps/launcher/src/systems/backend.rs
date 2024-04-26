@@ -1,7 +1,7 @@
 use bevy_ecs::{event::EventWriter, system::ResMut};
 
 use game_engine::{
-    config::{GATEWAY_PORT, SUBDOMAIN_API, PUBLIC_IP_ADDR},
+    config::{GATEWAY_PORT, PUBLIC_IP_ADDR, SUBDOMAIN_API},
     http::HttpClient,
     kernel::AppExitAction,
     logging::{info, warn},

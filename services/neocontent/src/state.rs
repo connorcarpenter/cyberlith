@@ -1,6 +1,5 @@
-
-use crate::{file_cache::FileCache, file_metadata_store::FileMetadataStore};
 use crate::file_metadata_store::FileMetadata;
+use crate::{file_cache::FileCache, file_metadata_store::FileMetadataStore};
 
 pub struct State {
     file_metadata_store: FileMetadataStore,
@@ -8,10 +7,7 @@ pub struct State {
 }
 
 impl State {
-    pub fn new(
-        file_cache_size_kb: u32,
-        file_metadata_store: FileMetadataStore,
-    ) -> Self {
+    pub fn new(file_cache_size_kb: u32, file_metadata_store: FileMetadataStore) -> Self {
         Self {
             file_metadata_store,
             file_cache: FileCache::new(file_cache_size_kb),

@@ -1,8 +1,8 @@
 #[macro_use]
 extern crate cfg_if;
 
-mod file_endpoint;
 mod file_cache;
+mod file_endpoint;
 mod file_metadata_store;
 mod state;
 
@@ -15,10 +15,12 @@ cfg_if! {
 use std::{net::SocketAddr, thread};
 
 use config::{CONTENT_SERVER_FILES_PATH, CONTENT_SERVER_PORT, SELF_BINDING_ADDR};
-use http_server::{ApiServer, async_dup::Arc, Method, Server, smol::lock::RwLock};
+use http_server::{async_dup::Arc, smol::lock::RwLock, ApiServer, Method, Server};
 use logging::info;
 
-use crate::{file_endpoint::file_endpoint_handler, file_metadata_store::FileMetadataStore, state::State};
+use crate::{
+    file_endpoint::file_endpoint_handler, file_metadata_store::FileMetadataStore, state::State,
+};
 
 pub fn main() {
     logging::initialize();
@@ -30,10 +32,7 @@ pub fn main() {
     let file_metadata_store = FileMetadataStore::new(CONTENT_SERVER_FILES_PATH);
 
     let cache_size_kb = 5000; // 5 MB
-    let state = Arc::new(RwLock::new(State::new(
-        cache_size_kb,
-        file_metadata_store,
-    )));
+    let state = Arc::new(RwLock::new(State::new(cache_size_kb, file_metadata_store)));
 
     // setup listening http server
     info!("Content Server starting up...");
@@ -43,7 +42,16 @@ pub fn main() {
     let mut server = Server::new(socket_addr);
     let content_server = "content_server";
 
-    for file_name in ["launcher.html", "launcher.js", "launcher_bg.wasm", "game.html", "game.js", "game_bg.wasm"].iter() {
+    for file_name in [
+        "launcher.html",
+        "launcher.js",
+        "launcher_bg.wasm",
+        "game.html",
+        "game.js",
+        "game_bg.wasm",
+    ]
+    .iter()
+    {
         let state = state.clone();
         server.serve_endpoint_raw(
             content_server,
@@ -54,9 +62,7 @@ pub fn main() {
             move |(addr, incoming_req)| {
                 let state = state.clone();
                 let file_name = file_name.to_string();
-                async move {
-                    file_endpoint_handler(addr, incoming_req, state, file_name).await
-                }
+                async move { file_endpoint_handler(addr, incoming_req, state, file_name).await }
             },
         );
     }

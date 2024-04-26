@@ -10,9 +10,9 @@ use std::time::Duration;
 use bevy_app::{App, ScheduleRunnerPlugin, Startup, Update};
 use bevy_ecs::{
     schedule::{apply_deferred, IntoSystemConfigs},
-    system::{Res},
+    system::Res,
 };
-use logging::{info};
+use logging::info;
 
 use naia_bevy_server::{Plugin as ServerPlugin, ReceiveEvents, ServerConfig};
 
@@ -38,7 +38,6 @@ use crate::{
 };
 
 fn main() {
-
     logging::initialize();
 
     info!("Vortex Server starting up");

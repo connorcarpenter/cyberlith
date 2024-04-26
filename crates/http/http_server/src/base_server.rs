@@ -1,20 +1,24 @@
 use std::{collections::HashMap, net::SocketAddr, pin::Pin};
 
 use async_dup::Arc;
-use smol::{future::Future, stream::StreamExt, lock::RwLock, net::TcpListener, io::{AsyncRead, AsyncWrite}};
+use smol::{
+    future::Future,
+    io::{AsyncRead, AsyncWrite},
+    lock::RwLock,
+    net::TcpListener,
+    stream::StreamExt,
+};
 
-use logging::info;
 use http_common::{Request, Response, ResponseError};
-use http_server_shared::{executor, MatchHostResult, serve_impl};
+use http_server_shared::{executor, serve_impl, MatchHostResult};
+use logging::info;
 
 pub(crate) type EndpointFunc = Box<
     dyn Send
-    + Sync
-    + Fn(
-        (SocketAddr, Request),
-    ) -> Pin<
-        Box<dyn Send + Sync + Future<Output = Result<Response, ResponseError>>>,
-    >,
+        + Sync
+        + Fn(
+            (SocketAddr, Request),
+        ) -> Pin<Box<dyn Send + Sync + Future<Output = Result<Response, ResponseError>>>>,
 >;
 
 pub(crate) struct Endpoint {
@@ -117,9 +121,7 @@ impl Server {
             response_stream,
             |endpoint_key| {
                 let server_3 = server_1.clone();
-                async move {
-                    server_3.read().await.endpoints.contains_key(&endpoint_key)
-                }
+                async move { server_3.read().await.endpoints.contains_key(&endpoint_key) }
             },
             |endpoint_key, host| {
                 let server_3 = server_1.clone();

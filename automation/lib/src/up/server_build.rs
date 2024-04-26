@@ -2,34 +2,29 @@ use logging::info;
 
 use crate::{utils::run_command, CliError, TargetEnv};
 
-
 pub async fn server_build_content() -> Result<(), CliError> {
-    let _ = crate::process_content(
-        "/home/connor/Work/cyberlith",
-        "",
-        TargetEnv::Prod
-    )?;
+    let _ = crate::process_content("/home/connor/Work/cyberlith", "", TargetEnv::Prod)?;
 
     // build content_server
     run_command(
         "content_server",
         "cargo build --release --features prod --manifest-path services/neocontent/Cargo.toml",
     )
-        .await?;
+    .await?;
 
     // move content_server executable to main dir
     run_command(
         "content_server",
         "cp target/release/neocontent_server neocontent_server",
     )
-        .await?;
+    .await?;
 
     // docker build
     run_command(
         "content_server",
         "docker build --file content.dockerfile --progress=plain -t content_image .",
     )
-        .await?;
+    .await?;
 
     // clean up server file
     run_command("content_server", "rm neocontent_server").await?;
@@ -41,32 +36,28 @@ pub async fn server_build_content() -> Result<(), CliError> {
 }
 
 pub async fn server_build_asset() -> Result<(), CliError> {
-    let _ = crate::process_assets(
-        "/home/connor/Work/cyberlith",
-        "",
-        TargetEnv::Prod
-    )?;
+    let _ = crate::process_assets("/home/connor/Work/cyberlith", "", TargetEnv::Prod)?;
 
     // build asset_server
     run_command(
         "asset_server",
         "cargo build --release --features prod --manifest-path services/asset/Cargo.toml",
     )
-        .await?;
+    .await?;
 
     // move asset_server executable to main dir
     run_command(
         "asset_server",
         "cp target/release/asset_server asset_server",
     )
-        .await?;
+    .await?;
 
     // docker build
     run_command(
         "asset_server",
         "docker build --file asset.dockerfile --progress=plain -t asset_image .",
     )
-        .await?;
+    .await?;
 
     // clean up server file
     run_command("asset_server", "rm asset_server").await?;

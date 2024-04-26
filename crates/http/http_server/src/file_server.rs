@@ -6,7 +6,7 @@ use logging::{info, warn};
 
 use http_common::{Request, Response, ResponseError};
 
-use crate::{Server, base_server::Endpoint};
+use crate::{base_server::Endpoint, Server};
 
 // serves files from the file system
 pub trait FileServer {
@@ -34,9 +34,8 @@ fn get_endpoint_func(
         + Sync
         + Fn(
             (SocketAddr, Request),
-        ) -> Pin<
-            Box<dyn 'static + Send + Sync + Future<Output = Result<Response, ResponseError>>>,
-        >,
+        )
+            -> Pin<Box<dyn 'static + Send + Sync + Future<Output = Result<Response, ResponseError>>>>,
 > {
     let file_path = file_path.to_string();
     Box::new(move |_args: (SocketAddr, Request)| {

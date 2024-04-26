@@ -1,10 +1,10 @@
-use logging::{info, warn};
 use http_client::ResponseError;
 use http_server::{async_dup::Arc, http_log_util, smol::lock::RwLock, ApiServer, Server};
+use logging::{info, warn};
 
 use auth_server_http_proto::{UserPasswordForgotRequest, UserPasswordForgotResponse};
 
-use crate::{state::State, error::AuthServerError};
+use crate::{error::AuthServerError, state::State};
 
 pub fn user_password_forgot(host_name: &str, server: &mut Server, state: Arc<RwLock<State>>) {
     server.endpoint(host_name, None, move |(_addr, req)| {
@@ -17,7 +17,6 @@ async fn async_impl(
     state: Arc<RwLock<State>>,
     incoming_request: UserPasswordForgotRequest,
 ) -> Result<UserPasswordForgotResponse, ResponseError> {
-
     http_log_util::recv_req("auth_server", "user_password_forgot");
 
     let mut state = state.write().await;

@@ -12,11 +12,7 @@ pub struct ProcessedFileMeta {
 }
 
 impl ProcessedFileMeta {
-    pub fn new(
-        name: &str,
-        etag: ETag,
-        hash: Vec<u8>,
-    ) -> Self {
+    pub fn new(name: &str, etag: ETag, hash: Vec<u8>) -> Self {
         Self {
             name: name.to_string(),
             etag: etag.as_string(),
@@ -44,4 +40,3 @@ impl ProcessedFileMeta {
         serde_json::from_slice(bytes).map_err(|e| FileIoError::Message(e.to_string()))
     }
 }
-

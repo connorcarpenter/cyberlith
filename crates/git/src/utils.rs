@@ -18,7 +18,10 @@ pub fn repo_init(repo_name: &str, output_path_str: &str) -> Repository {
     }
 
     if output_dir_path.exists() {
-        panic!("should have removed directory but didn't!: {:?}", output_dir_path);
+        panic!(
+            "should have removed directory but didn't!: {:?}",
+            output_dir_path
+        );
     }
 
     // Create new directory
@@ -31,7 +34,10 @@ pub fn repo_init(repo_name: &str, output_path_str: &str) -> Repository {
     // Clone repo
     let repo = builder.clone(&repo_url, output_dir_path).unwrap();
 
-    info!("initialized repo at: `{}`", output_dir_path.to_str().unwrap());
+    info!(
+        "initialized repo at: `{}`",
+        output_dir_path.to_str().unwrap()
+    );
 
     repo
 }
@@ -101,7 +107,6 @@ pub fn write_file_bytes(
     }
 
     if file_exists {
-
         if !overwrite_existing_file {
             panic!("file already exists: {}", full_path);
         }
@@ -151,7 +156,7 @@ pub fn read_file_bytes(root_path: &str, path: &str, file: &str) -> Vec<u8> {
         Ok(_) => {
             // info!("successfully read file: {}", full_path);
             contents
-        },
+        }
         Err(err) => panic!("Failed to read file: {}", err),
     }
 }
@@ -169,9 +174,8 @@ pub fn git_commit(
     branch_name: &str,
     username: &str,
     email: &str,
-    commit_message: &str
+    commit_message: &str,
 ) -> Oid {
-
     if get_current_branch_name(repo) != branch_name {
         panic!("current branch is not the same as the branch you are trying to commit to");
     }
@@ -190,10 +194,8 @@ pub fn git_commit(
 
     // Prepare the commit details
     // TODO: parameterize my name and email?
-    let author = Signature::now(username, email)
-        .expect("Failed to create author signature");
-    let committer = Signature::now(username, email)
-        .expect("Failed to create committer signature");
+    let author = Signature::now(username, email).expect("Failed to create author signature");
+    let committer = Signature::now(username, email).expect("Failed to create committer signature");
 
     // Create the commit
     let commit_id = repo
@@ -236,7 +238,7 @@ pub fn git_pull(repo: &Repository, branch_name: &str) {
         git2::ResetType::Hard,
         Some(&mut checkout_builder),
     )
-        .unwrap();
+    .unwrap();
 
     // Create a local reference pointing to the head of the local branch
     let branch_ref = format!("refs/heads/{}", branch_name);
@@ -250,7 +252,7 @@ pub fn git_pull(repo: &Repository, branch_name: &str) {
         true,
         "Updating local reference",
     )
-        .unwrap();
+    .unwrap();
 
     // Push the new branch to the remote, (linking it to the remote branch)
     let mut push_options = get_push_options();

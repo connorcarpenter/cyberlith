@@ -11,7 +11,7 @@ use logging::{info, warn};
 use region_server_http_proto::SessionRegisterInstanceRequest;
 use session_server_http_proto::{HeartbeatRequest, HeartbeatResponse};
 
-use crate::{global::Global};
+use crate::global::Global;
 
 pub fn send_register_instance_request(
     mut http_client: ResMut<HttpClient>,

@@ -6,7 +6,7 @@ use http_client_shared::fetch_async;
 use http_common::{ApiRequest, Method, Request, Response, ResponseError};
 use logging::info;
 
-use crate::{log_util, Server, base_server::Endpoint};
+use crate::{base_server::Endpoint, log_util, Server};
 
 // serves a pass-through proxy
 pub trait ProxyServer {
@@ -51,9 +51,22 @@ impl ProxyServer for Server {
         info!("serving proxy @ {}", url_path);
 
         let remote_url = format!("http://{}:{}/{}", remote_addr, remote_port, remote_path);
-        let logged_remote_url = format!("{} host:{}/{}", incoming_method.as_str(), remote_port, remote_path);
-        let endpoint_func = get_endpoint_func(host_name, remote_name, allow_origin_opt, incoming_method, &remote_url, &logged_remote_url);
-        let incoming_host = incoming_host.map(|(rq, rdopt)| (rq.to_string(), rdopt.map(|rd| rd.to_string())));
+        let logged_remote_url = format!(
+            "{} host:{}/{}",
+            incoming_method.as_str(),
+            remote_port,
+            remote_path
+        );
+        let endpoint_func = get_endpoint_func(
+            host_name,
+            remote_name,
+            allow_origin_opt,
+            incoming_method,
+            &remote_url,
+            &logged_remote_url,
+        );
+        let incoming_host =
+            incoming_host.map(|(rq, rdopt)| (rq.to_string(), rdopt.map(|rd| rd.to_string())));
         let new_endpoint = Endpoint::new(endpoint_func, incoming_host);
         self.internal_insert_endpoint(url_path, new_endpoint);
     }
@@ -77,7 +90,7 @@ impl ProxyServer for Server {
             remote_name,
             remote_addr,
             remote_port,
-            TypeRequest::path()
+            TypeRequest::path(),
         );
     }
 }
@@ -95,9 +108,8 @@ fn get_endpoint_func(
         + Sync
         + Fn(
             (SocketAddr, Request),
-        ) -> Pin<
-            Box<dyn 'static + Send + Sync + Future<Output = Result<Response, ResponseError>>>,
-        >,
+        )
+            -> Pin<Box<dyn 'static + Send + Sync + Future<Output = Result<Response, ResponseError>>>>,
 > {
     let host_name = host_name.to_string();
     let remote_name = remote_name.to_string();
@@ -149,14 +161,21 @@ fn get_endpoint_func(
                     // }
 
                     // pass through headers
-                    for header_name in ["content-type", "content-length", "content-encoding", "etag", "cache-control", "access-control-allow-headers"] {
+                    for header_name in [
+                        "content-type",
+                        "content-length",
+                        "content-encoding",
+                        "etag",
+                        "cache-control",
+                        "access-control-allow-headers",
+                    ] {
                         if remote_response.headers.contains_key(header_name) {
                             // info!("adding header: {}", header_name);
-                            let remote_header_value = remote_response.headers.get(header_name).unwrap();
-                            response.headers.insert(
-                                header_name.to_string(),
-                                remote_header_value.clone(),
-                            );
+                            let remote_header_value =
+                                remote_response.headers.get(header_name).unwrap();
+                            response
+                                .headers
+                                .insert(header_name.to_string(), remote_header_value.clone());
                         } else {
                             // info!("header not found: {}", header_name);
                         }
@@ -167,7 +186,9 @@ fn get_endpoint_func(
                         while response.headers.contains_key("access-control-allow-origin") {
                             response.headers.remove("access-control-allow-origin");
                         }
-                        response.headers.insert("access-control-allow-origin".to_string(), allow_origin);
+                        response
+                            .headers
+                            .insert("access-control-allow-origin".to_string(), allow_origin);
                     }
                 }
                 Err(err) => {

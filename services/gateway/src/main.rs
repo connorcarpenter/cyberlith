@@ -2,11 +2,18 @@ mod session_connect;
 
 use std::{net::SocketAddr, thread};
 
-use config::{AUTH_SERVER_PORT, PUBLIC_IP_ADDR, AUTH_SERVER_RECV_ADDR, SUBDOMAIN_WWW, SUBDOMAIN_API, CONTENT_SERVER_PORT, CONTENT_SERVER_RECV_ADDR, GATEWAY_PORT, SELF_BINDING_ADDR, WORLD_SERVER_RECV_ADDR, WORLD_SERVER_SIGNAL_PORT, PUBLIC_PROTOCOL};
+use config::{
+    AUTH_SERVER_PORT, AUTH_SERVER_RECV_ADDR, CONTENT_SERVER_PORT, CONTENT_SERVER_RECV_ADDR,
+    GATEWAY_PORT, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SELF_BINDING_ADDR, SUBDOMAIN_API, SUBDOMAIN_WWW,
+    WORLD_SERVER_RECV_ADDR, WORLD_SERVER_SIGNAL_PORT,
+};
 use http_server::{ApiServer, Method, ProxyServer, Server};
 use logging::info;
 
-use auth_server_http_proto::{RefreshTokenGrantRequest, UserLoginRequest, UserNameForgotRequest, UserPasswordForgotRequest, UserPasswordResetRequest, UserRegisterConfirmRequest, UserRegisterRequest};
+use auth_server_http_proto::{
+    RefreshTokenGrantRequest, UserLoginRequest, UserNameForgotRequest, UserPasswordForgotRequest,
+    UserPasswordResetRequest, UserRegisterConfirmRequest, UserRegisterRequest,
+};
 
 use crate::session_connect::session_rtc_endpoint_handler;
 
@@ -31,7 +38,9 @@ pub fn main() {
         Some(format!("{}.{}", SUBDOMAIN_WWW, PUBLIC_IP_ADDR))
     };
     let rd = format!("{}://{}.{}", PUBLIC_PROTOCOL, SUBDOMAIN_WWW, PUBLIC_IP_ADDR);
-    let required_host_www = required_host_www.as_ref().map(|s| (s.as_str(), Some(rd.as_str())));
+    let required_host_www = required_host_www
+        .as_ref()
+        .map(|s| (s.as_str(), Some(rd.as_str())));
 
     let api_allow_origin = if SUBDOMAIN_API.is_empty() {
         "*".to_string()

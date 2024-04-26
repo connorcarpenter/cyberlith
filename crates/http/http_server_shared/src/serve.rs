@@ -103,7 +103,9 @@ pub async fn serve_impl<
                         &mut header_map,
                         &mut read_state,
                         &line_str,
-                    ).await {
+                    )
+                    .await
+                    {
                         break;
                     } else {
                         continue;
@@ -129,7 +131,7 @@ pub async fn serve_impl<
     match read_state {
         ReadState::Finished => {
             // success! continue,
-        },
+        }
         ReadState::Redirecting(redirect_url) => {
             let incoming_url = uri.unwrap();
             let response = Response::redirect(&incoming_url, &redirect_url);
@@ -171,9 +173,7 @@ fn request_extract_url(
     key
 }
 
-async fn request_read_headers<
-    MatchHostOutput: Future<Output = MatchHostResult> + 'static
-> (
+async fn request_read_headers<MatchHostOutput: Future<Output = MatchHostResult> + 'static>(
     match_host_func: &impl Fn(String, String) -> MatchHostOutput,
     endpoint_key: &str,
     method: &mut Option<Method>,
@@ -223,7 +223,10 @@ async fn request_read_headers<
                 let match_host_result = match_host_func(endpoint_key.to_string(), host).await;
                 match match_host_result {
                     MatchHostResult::NoMatchRedirect(redirect_url) => {
-                        warn!("host not allowed: {}, redirecting to {}", parts[1], redirect_url);
+                        warn!(
+                            "host not allowed: {}, redirecting to {}",
+                            parts[1], redirect_url
+                        );
                         *read_state = ReadState::Redirecting(redirect_url);
                         return true;
                     }

@@ -1,11 +1,11 @@
 use auth_server_db::UserId;
-use logging::{info};
 use http_client::ResponseError;
 use http_server::{async_dup::Arc, http_log_util, smol::lock::RwLock, ApiServer, Server};
+use logging::info;
 
 use auth_server_http_proto::{UserLoginRequest, UserLoginResponse};
 
-use crate::{types::RefreshToken, error::AuthServerError, state::State, types::AccessToken};
+use crate::{error::AuthServerError, state::State, types::AccessToken, types::RefreshToken};
 
 pub fn user_login(host_name: &str, server: &mut Server, state: Arc<RwLock<State>>) {
     server.endpoint(host_name, None, move |(_addr, req)| {

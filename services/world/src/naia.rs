@@ -16,8 +16,8 @@ use naia_bevy_server::{
 
 use bevy_http_client::HttpClient;
 use config::{
-    GATEWAY_PORT, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SUBDOMAIN_API, SELF_BINDING_ADDR, WORLD_SERVER_SIGNAL_PORT,
-    WORLD_SERVER_WEBRTC_PORT,
+    GATEWAY_PORT, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SELF_BINDING_ADDR, SUBDOMAIN_API,
+    WORLD_SERVER_SIGNAL_PORT, WORLD_SERVER_WEBRTC_PORT,
 };
 use logging::{info, warn};
 use world_server_naia_proto::{
@@ -34,7 +34,10 @@ pub(crate) fn get_public_signal_url() -> String {
     if SUBDOMAIN_API.is_empty() {
         format!("{}://{}:{}", PUBLIC_PROTOCOL, PUBLIC_IP_ADDR, GATEWAY_PORT)
     } else {
-        format!("{}://{}.{}:{}", PUBLIC_PROTOCOL, SUBDOMAIN_API, PUBLIC_IP_ADDR, GATEWAY_PORT)
+        format!(
+            "{}://{}.{}:{}",
+            PUBLIC_PROTOCOL, SUBDOMAIN_API, PUBLIC_IP_ADDR, GATEWAY_PORT
+        )
     }
 }
 

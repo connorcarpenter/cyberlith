@@ -5,7 +5,10 @@ use smol::future::Future;
 use http_common::{ApiRequest, ApiResponse, Method, Request, Response, ResponseError};
 use logging::info;
 
-use crate::{Server, base_server::{Endpoint, EndpointFunc}, log_util};
+use crate::{
+    base_server::{Endpoint, EndpointFunc},
+    log_util, Server,
+};
 
 // serves API endpoint with typed requests & responses
 pub trait ApiServer {
@@ -51,8 +54,10 @@ impl ApiServer for Server {
         let endpoint_path = format!("{} /{}", method.as_str(), path);
 
         info!("endpoint: {}", endpoint_path);
-        let endpoint_func = get_endpoint_func::<TypeRequest, TypeResponse, Handler>(host_name, handler);
-        let incoming_host = incoming_host.map(|(rq, rdopt)| (rq.to_string(), rdopt.map(|rd| rd.to_string())));
+        let endpoint_func =
+            get_endpoint_func::<TypeRequest, TypeResponse, Handler>(host_name, handler);
+        let incoming_host =
+            incoming_host.map(|(rq, rdopt)| (rq.to_string(), rdopt.map(|rd| rd.to_string())));
         let new_endpoint = Endpoint::new(endpoint_func, incoming_host);
         self.internal_insert_endpoint(endpoint_path, new_endpoint);
     }
@@ -72,8 +77,10 @@ impl ApiServer for Server {
         let endpoint_path = format!("{} /{}", incoming_method.as_str(), incoming_path);
 
         info!("endpoint: {}", endpoint_path);
-        let endpoint_func = get_endpoint_raw_func::<ResponseType, Handler>(host_name, allow_origin_opt, handler);
-        let incoming_host = incoming_host.map(|(rq, rdopt)| (rq.to_string(), rdopt.map(|rd| rd.to_string())));
+        let endpoint_func =
+            get_endpoint_raw_func::<ResponseType, Handler>(host_name, allow_origin_opt, handler);
+        let incoming_host =
+            incoming_host.map(|(rq, rdopt)| (rq.to_string(), rdopt.map(|rd| rd.to_string())));
         let new_endpoint = Endpoint::new(endpoint_func, incoming_host);
         self.internal_insert_endpoint(endpoint_path, new_endpoint);
     }
@@ -106,7 +113,6 @@ fn get_endpoint_func<
 
         // convert typed future to pure future
         let pure_future = async move {
-
             let host_name = host_name.clone();
             let logged_host_url = format!("{} {}", incoming_method.as_str(), incoming_path);
 
@@ -165,7 +171,9 @@ fn get_endpoint_raw_func<
                     while response.headers.contains_key("access-control-allow-origin") {
                         response.headers.remove("access-control-allow-origin");
                     }
-                    response.headers.insert("access-control-allow-origin".to_string(), allow_origin);
+                    response
+                        .headers
+                        .insert("access-control-allow-origin".to_string(), allow_origin);
                 }
             }
 

@@ -1,11 +1,14 @@
-use std::{net::SocketAddr};
+use std::net::SocketAddr;
 
 use asset_id::ETag;
-use http_client::{ResponseError};
-use http_server::{async_dup::Arc, Request, smol::{lock::RwLock}, Response};
+use http_client::ResponseError;
+use http_server::{async_dup::Arc, smol::lock::RwLock, Request, Response};
 use logging::info;
 
-use crate::{state::State, file_metadata_store::{FileMetadata, FileType}};
+use crate::{
+    file_metadata_store::{FileMetadata, FileType},
+    state::State,
+};
 
 pub(crate) async fn file_endpoint_handler(
     _addr: SocketAddr,
@@ -13,7 +16,6 @@ pub(crate) async fn file_endpoint_handler(
     state: Arc<RwLock<State>>,
     file_name: String,
 ) -> Result<Response, ResponseError> {
-
     let metadata: FileMetadata = {
         let state_guard = state.read().await;
 
@@ -28,7 +30,10 @@ pub(crate) async fn file_endpoint_handler(
         let incoming_etag_str = incoming_request.headers.get("If-None-Match").unwrap();
         if let Ok(incoming_etag) = ETag::from_str(incoming_etag_str) {
             if incoming_etag == metadata.etag() {
-                info!("Incoming request matched ETag: {}, returning 304 Not Modified response", incoming_etag_str);
+                info!(
+                    "Incoming request matched ETag: {}, returning 304 Not Modified response",
+                    incoming_etag_str
+                );
 
                 let mut response = Response::not_modified(&incoming_request.url);
 
@@ -70,7 +75,9 @@ pub(crate) async fn file_endpoint_handler(
     // add Content-Encoding header
 
     // the content server files are ALWAY brotli-compressed!
-    response.headers.insert("Content-Encoding".to_string(), "br".to_string());
+    response
+        .headers
+        .insert("Content-Encoding".to_string(), "br".to_string());
 
     // add Content-Length header
 
@@ -94,8 +101,13 @@ fn add_caching_headers(metadata: FileMetadata, response: &mut Response) {
         .insert("Content-Type".to_string(), content_type.to_string());
 
     // add ETag header
-    response.headers.insert("ETag".to_string(), metadata.etag().to_string());
+    response
+        .headers
+        .insert("ETag".to_string(), metadata.etag().to_string());
 
     // add cache-control header
-    response.headers.insert("Cache-Control".to_string(), "public, no-cache, max-age=0".to_string());
+    response.headers.insert(
+        "Cache-Control".to_string(),
+        "public, no-cache, max-age=0".to_string(),
+    );
 }

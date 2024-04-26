@@ -12,7 +12,7 @@ use super::{
     asset_cache_checker::AssetCacheChecker,
     asset_ref_processor::AssetRefProcessor,
     client_markers::{Session, World},
-    connection_manager::{ConnectionManager},
+    connection_manager::ConnectionManager,
     world_events,
     world_events::{InsertAssetRefEvent, InsertComponentEvent},
 };

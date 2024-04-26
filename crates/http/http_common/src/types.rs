@@ -115,7 +115,6 @@ impl Default for Response {
 }
 
 impl Response {
-
     /// Constructs a new Response indicating a successful request.
     pub fn ok(old_url: &str) -> Self {
         Self {

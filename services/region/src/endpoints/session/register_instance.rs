@@ -36,8 +36,7 @@ async fn async_impl(
         incoming_addr, instance_secret, http_addr
     );
 
-    let server_instance =
-        SessionInstance::new(instance_secret, http_addr, http_port);
+    let server_instance = SessionInstance::new(instance_secret, http_addr, http_port);
 
     let mut state = state.write().await;
     state.register_session_instance(server_instance);

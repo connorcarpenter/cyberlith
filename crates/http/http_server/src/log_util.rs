@@ -13,21 +13,11 @@ pub fn send_req(
     );
 }
 
-pub fn recv_req(
-    self_service_recver_name: &str,
-    request_name: &str,
-) {
-    logging::info!(
-        "{} <- [{}] request",
-        self_service_recver_name,
-        request_name
-    );
+pub fn recv_req(self_service_recver_name: &str, request_name: &str) {
+    logging::info!("{} <- [{}] request", self_service_recver_name, request_name);
 }
 
-pub fn send_res(
-    self_service_sender_name: &str,
-    response_name: &str,
-) {
+pub fn send_res(self_service_sender_name: &str, response_name: &str) {
     logging::info!(
         "{} -> [{}] response",
         self_service_sender_name,

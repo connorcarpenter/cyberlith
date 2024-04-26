@@ -5,7 +5,7 @@ use smol::{net::TcpListener, stream::StreamExt};
 use config::{PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SUBDOMAIN_WWW};
 use http_common::{Request, Response, ResponseError};
 use http_server::http_log_util;
-use http_server_shared::{MatchHostResult, serve_impl};
+use http_server_shared::{serve_impl, MatchHostResult};
 use logging::info;
 
 pub struct RedirectServer;
@@ -71,8 +71,10 @@ impl RedirectServer {
         );
 
         let original_url = request.url.clone();
-        let response =
-            Response::redirect(&original_url, format!("{}://{}.{}", PUBLIC_PROTOCOL, SUBDOMAIN_WWW, PUBLIC_IP_ADDR).as_str());
+        let response = Response::redirect(
+            &original_url,
+            format!("{}://{}.{}", PUBLIC_PROTOCOL, SUBDOMAIN_WWW, PUBLIC_IP_ADDR).as_str(),
+        );
 
         http_log_util::send_res(
             "redirector",

@@ -12,7 +12,7 @@ use automation_lib::ProcessedFileMeta;
 pub enum FileType {
     Html,
     Js,
-    Wasm
+    Wasm,
 }
 
 impl FileType {
@@ -116,21 +116,13 @@ impl FileMetadataStore {
         output
     }
 
-    pub fn insert(
-        &mut self,
-        name: String,
-        file_type: FileType,
-        etag: ETag,
-        path: String,
-    ) {
+    pub fn insert(&mut self, name: String, file_type: FileType, etag: ETag, path: String) {
         // info!("Inserting asset into map: asset_id: {:?}, etag: {:?}, path: {:?}", asset_id, etag, path);
         if self.map.contains_key(&name) {
             panic!("asset already exists in map: {:?}", name);
         }
-        self.map.insert(
-            name,
-            FileMetadata::new(path, file_type, etag),
-        );
+        self.map
+            .insert(name, FileMetadata::new(path, file_type, etag));
     }
 
     pub fn get(&self, name: &str) -> Option<&FileMetadata> {

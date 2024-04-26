@@ -11,7 +11,8 @@ pub(crate) fn setup() {
         "/home/connor/Work/cyberlith",
         "services/neocontent",
         TargetEnv::Local,
-    ).unwrap();
+    )
+    .unwrap();
 
     // copy ./target/content_repo/* to ./content/*
     let source_dir = "./target/cyberlith_content";
@@ -23,7 +24,6 @@ pub(crate) fn setup() {
 }
 
 fn copy_from_repo_to_target_dir(source_dir: &str, destination_dir: &str) {
-
     // Delete the destination directory (will create it again later)
     info!("Deleting destination directory: {}", destination_dir);
     let mut delete_command = Command::new("rm")
@@ -49,7 +49,10 @@ fn copy_from_repo_to_target_dir(source_dir: &str, destination_dir: &str) {
         .expect("Failed to create destination directory");
 
     // Execute shell command to copy files from source to destination
-    info!("Copying files from {:?} to {:?}", source_dir, destination_dir);
+    info!(
+        "Copying files from {:?} to {:?}",
+        source_dir, destination_dir
+    );
     Command::new("cp")
         .arg("-r")
         .arg(format!("{}/.", source_dir))

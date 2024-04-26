@@ -25,7 +25,6 @@ pub fn protocol() -> Protocol {
         else {}
     }
 
-
     // Build Protocol
     builder.build()
 }

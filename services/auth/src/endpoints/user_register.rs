@@ -18,7 +18,6 @@ async fn async_impl(
     state: Arc<RwLock<State>>,
     incoming_request: UserRegisterRequest,
 ) -> Result<UserRegisterResponse, ResponseError> {
-
     http_log_util::recv_req("auth_server", "user_register");
 
     let mut state = state.write().await;

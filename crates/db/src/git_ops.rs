@@ -1,5 +1,6 @@
-
-use git::{git_commit, git_pull, git_push, write_file_bytes, Repository, Tree, read_file_bytes, ObjectType};
+use git::{
+    git_commit, git_pull, git_push, read_file_bytes, write_file_bytes, ObjectType, Repository, Tree,
+};
 use logging::info;
 
 use crate::{DbRowValue, DbTableKey};
@@ -17,7 +18,6 @@ impl GitFile {
         }
     }
 }
-
 
 pub fn pull_repo_get_all_files(root_path: &str, repo: &Repository) -> Vec<GitFile> {
     // pull all assets into memory, from "main" branch
@@ -49,16 +49,28 @@ pub fn create_new_file<K: DbTableKey>(dir_path: &str, repo: &Repository, file: K
     info!("full_path: {}", full_path);
 
     // write new file, add to index
-    write_file_bytes(&mut index, &full_path, &file_name, file_contents, false, false);
+    write_file_bytes(
+        &mut index,
+        &full_path,
+        &file_name,
+        file_contents,
+        false,
+        false,
+    );
 
     // commit, push, pull
-    git_commit(repo, branch_name, "connorcarpenter", "connorcarpenter@gmail.com", &commit_message);
+    git_commit(
+        repo,
+        branch_name,
+        "connorcarpenter",
+        "connorcarpenter@gmail.com",
+        &commit_message,
+    );
     git_push(repo, branch_name);
     git_pull(repo, branch_name);
 }
 
 pub fn update_file<K: DbTableKey>(dir_path: &str, repo: &Repository, file: &K::Value) {
-
     let branch_name = "main"; // TODO: parameterize?
 
     // get creds
@@ -77,16 +89,28 @@ pub fn update_file<K: DbTableKey>(dir_path: &str, repo: &Repository, file: &K::V
     info!("full_path: {}", full_path);
 
     // update & write file
-    write_file_bytes(&mut index, &full_path, &file_name, file_contents, true, true);
+    write_file_bytes(
+        &mut index,
+        &full_path,
+        &file_name,
+        file_contents,
+        true,
+        true,
+    );
 
     // commit, push, pull
-    git_commit(repo, branch_name, "connorcarpenter", "connorcarpenter@gmail.com", &commit_message);
+    git_commit(
+        repo,
+        branch_name,
+        "connorcarpenter",
+        "connorcarpenter@gmail.com",
+        &commit_message,
+    );
     git_push(repo, branch_name);
     git_pull(repo, branch_name);
 }
 
 pub fn update_nextid(dir_path: &str, repo: &Repository, next_id: u64) {
-
     let branch_name = "main"; // TODO: parameterize?
 
     // get creds
@@ -103,10 +127,23 @@ pub fn update_nextid(dir_path: &str, repo: &Repository, next_id: u64) {
     info!("full_path: {}", full_path);
 
     // update & write file
-    write_file_bytes(&mut index, &full_path, &file_name, file_contents, true, true);
+    write_file_bytes(
+        &mut index,
+        &full_path,
+        &file_name,
+        file_contents,
+        true,
+        true,
+    );
 
     // commit, push, pull
-    git_commit(repo, branch_name, "connorcarpenter", "connorcarpenter@gmail.com", &commit_message);
+    git_commit(
+        repo,
+        branch_name,
+        "connorcarpenter",
+        "connorcarpenter@gmail.com",
+        &commit_message,
+    );
     git_push(repo, branch_name);
     git_pull(repo, branch_name);
 }

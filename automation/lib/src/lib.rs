@@ -6,11 +6,11 @@ mod process_content;
 mod up;
 mod utils;
 
-pub use process_content::*;
 pub use convert_ttf_to_icon::*;
 pub use down::*;
 pub use error::*;
 pub use process_assets::*;
+pub use process_content::*;
 pub use up::*;
 
 pub(crate) fn get_api_key() -> String {

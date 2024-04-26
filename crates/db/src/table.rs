@@ -9,7 +9,7 @@ use logging::info;
 
 use crate::{
     error::DbError,
-    git_ops::{create_new_file,update_file, pull_repo_get_all_files, update_nextid},
+    git_ops::{create_new_file, pull_repo_get_all_files, update_file, update_nextid},
     DbRowValue, DbTableKey,
 };
 

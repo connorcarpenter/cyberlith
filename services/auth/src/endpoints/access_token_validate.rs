@@ -1,4 +1,3 @@
-
 use http_client::ResponseError;
 use http_server::{async_dup::Arc, http_log_util, smol::lock::RwLock, ApiServer, Server};
 
@@ -17,7 +16,6 @@ async fn async_impl(
     state: Arc<RwLock<State>>,
     incoming_request: AccessTokenValidateRequest,
 ) -> Result<AccessTokenValidateResponse, ResponseError> {
-
     http_log_util::recv_req("auth_server", "access_token_validate");
 
     let mut state = state.write().await;

@@ -1,4 +1,3 @@
-
 use http_client::ResponseError;
 use http_server::{async_dup::Arc, http_log_util, smol::lock::RwLock, ApiServer, Server};
 
@@ -21,7 +20,6 @@ async fn async_impl(
     state: Arc<RwLock<State>>,
     incoming_request: RefreshTokenGrantRequest,
 ) -> Result<RefreshTokenGrantResponse, ResponseError> {
-
     http_log_util::recv_req("auth_server", "refresh_token_grant");
 
     let mut state = state.write().await;

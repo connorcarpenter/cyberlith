@@ -6,10 +6,10 @@ use bevy_ecs::{
     world::World,
 };
 
-use naia_bevy_server::{BigMapKey, CommandsExt, RoomKey, Server, UserKey};
-use logging::{info, warn};
 use asset_id::AssetId;
 use git::Repository;
+use logging::{info, warn};
+use naia_bevy_server::{BigMapKey, CommandsExt, RoomKey, Server, UserKey};
 
 use editor_proto::{
     components::{ChangelistEntry, ChangelistStatus, EntryKind, FileExtension, FileSystemEntry},

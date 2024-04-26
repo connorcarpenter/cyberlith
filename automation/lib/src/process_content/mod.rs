@@ -6,10 +6,13 @@ pub use error::FileIoError;
 use std::path::Path;
 
 use asset_id::ETag;
-use git::{branch_exists, ObjectType, create_branch, git_commit, git_pull, git_push, repo_init, Tree, Repository, switch_to_branch, write_file_bytes, read_file_bytes};
+use git::{
+    branch_exists, create_branch, git_commit, git_pull, git_push, read_file_bytes, repo_init,
+    switch_to_branch, write_file_bytes, ObjectType, Repository, Tree,
+};
 use logging::info;
 
-use crate::{utils::{run_command_blocking}, CliError};
+use crate::{utils::run_command_blocking, CliError};
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum TargetEnv {
@@ -70,7 +73,11 @@ impl UnprocessedFile {
     }
 
     pub fn full_file_path(&self, target_path: &str) -> String {
-        format!("{}{}", self.target_path(target_path), self.file_name_w_ext())
+        format!(
+            "{}{}",
+            self.target_path(target_path),
+            self.file_name_w_ext()
+        )
     }
 }
 
@@ -98,9 +105,8 @@ pub fn process_content(
     // should be the directory we do all the work in, added to project_path
     service_path: &str,
     // what build environment are we in
-    target_env: TargetEnv
+    target_env: TargetEnv,
 ) -> Result<(), CliError> {
-
     let deployments = ["launcher", "game"];
 
     let repo_name = "cyberlith_content";
@@ -117,7 +123,10 @@ pub fn process_content(
     // if the repo already exists, process files if they have changed
     // otherwise, process all files
     if branch_exists(&repo, &target_env_str) {
-        info!("branch {:?} exists, processing only modified files..", target_env_str);
+        info!(
+            "branch {:?} exists, processing only modified files..",
+            target_env_str
+        );
         git_pull(&repo, &target_env_str);
 
         // get files from previously processed environment
@@ -159,7 +168,13 @@ pub fn process_content(
     write_files_to_repo(&target_path, &repo, &files);
 
     // commit and push
-    git_commit(&repo, &target_env_str, "connorcarpenter", "connorcarpenter@gmail.com", "processing all modified content files");
+    git_commit(
+        &repo,
+        &target_env_str,
+        "connorcarpenter",
+        "connorcarpenter@gmail.com",
+        "processing all modified content files",
+    );
     git_push(&repo, &target_env_str);
 
     Ok(())
@@ -171,7 +186,7 @@ fn build_deployments(
     source_path: &str,
     // this is the directory the files should go into
     target_path: &str,
-    deployments: &[&str]
+    deployments: &[&str],
 ) -> Vec<UnprocessedFile> {
     info!("building deployments..");
     info!("source_path: {}", source_path);
@@ -182,7 +197,11 @@ fn build_deployments(
 
     for deployment in deployments {
         // cargo build
-        let release_arg = if target_env == TargetEnv::Prod { "--release " } else { "" };
+        let release_arg = if target_env == TargetEnv::Prod {
+            "--release "
+        } else {
+            ""
+        };
         let feature_flag = target_env.feature_flag();
         let result = run_command_blocking(
             deployment,
@@ -193,13 +212,9 @@ fn build_deployments(
                     --target wasm32-unknown-unknown \
                     --target-dir {} \
                     --lib",
-                release_arg,
-                feature_flag,
-                source_path,
-                deployment,
-                target_path,
+                release_arg, feature_flag, source_path, deployment, target_path,
             )
-                .as_str(),
+            .as_str(),
         );
         if let Err(e) = result {
             panic!("failed to build deployment: {}", e);
@@ -232,7 +247,7 @@ fn build_deployments(
                     --no-typescript {}",
                 target_path, deployment, wasm_file_path
             )
-                .as_str(),
+            .as_str(),
         );
         if let Err(e) = result {
             panic!("failed to wasm-bindgen deployment: {}", e);
@@ -248,11 +263,7 @@ fn build_deployments(
 
         // get hash of js file
         let js_hash = {
-            let js_bytes = read_file_bytes(
-                target_path,
-                "",
-                format!("{}.js", deployment).as_str(),
-            );
+            let js_bytes = read_file_bytes(target_path, "", format!("{}.js", deployment).as_str());
             get_file_hash(&js_bytes)
         };
 
@@ -269,13 +280,9 @@ fn build_deployments(
             deployment,
             format!(
                 "cp {}/deployments/web/{}/{}.html {}/{}.html",
-                source_path,
-                deployment,
-                deployment,
-                target_path,
-                deployment,
+                source_path, deployment, deployment, target_path, deployment,
             )
-                .as_str(),
+            .as_str(),
         );
         if let Err(e) = result {
             panic!("failed to copy html file: {}", e);
@@ -283,24 +290,23 @@ fn build_deployments(
 
         // get hash of html file
         let html_hash = {
-            let html_bytes = read_file_bytes(
-                target_path,
-                "",
-                format!("{}.html", deployment).as_str(),
-            );
+            let html_bytes =
+                read_file_bytes(target_path, "", format!("{}.html", deployment).as_str());
             get_file_hash(&html_bytes)
         };
 
-        output.push(UnprocessedFile::new("", deployment, FileExtension::Html, html_hash));
+        output.push(UnprocessedFile::new(
+            "",
+            deployment,
+            FileExtension::Html,
+            html_hash,
+        ));
     }
 
     output
 }
 
-fn wasm_opt_deployments(
-    target_path: &str,
-    files: &Vec<UnprocessedFile>,
-) {
+fn wasm_opt_deployments(target_path: &str, files: &Vec<UnprocessedFile>) {
     info!("run wasm-opt on deployments..");
 
     for file in files {
@@ -317,7 +323,7 @@ fn wasm_opt_deployments(
                 file.target_path(target_path),
                 file.file_name,
             )
-                .as_str(),
+            .as_str(),
         );
         if let Err(e) = result {
             panic!("failed to rename wasm file: {}", e);
@@ -331,7 +337,7 @@ fn wasm_opt_deployments(
                 file.target_path(target_path),
                 file.file_name,
             )
-                .as_str(),
+            .as_str(),
         );
         if let Err(e) = result {
             panic!("failed to delete wasm file: {}", e);
@@ -347,7 +353,7 @@ fn wasm_opt_deployments(
                 file.target_path(target_path),
                 file.file_name,
             )
-                .as_str(),
+            .as_str(),
         );
         if let Err(e) = result {
             panic!("failed to rename wasm file: {}", e);
@@ -355,10 +361,7 @@ fn wasm_opt_deployments(
     }
 }
 
-fn js_uglify(
-    target_path: &str,
-    files: &Vec<UnprocessedFile>,
-) {
+fn js_uglify(target_path: &str, files: &Vec<UnprocessedFile>) {
     info!("run UglifyJS on deployments..");
 
     for file in files {
@@ -385,12 +388,7 @@ fn js_uglify(
         // delete non-minified js file
         let result = run_command_blocking(
             &file.file_name,
-            format!(
-                "rm {}{}.js",
-                file.target_path(target_path),
-                file.file_name,
-            )
-                .as_str(),
+            format!("rm {}{}.js", file.target_path(target_path), file.file_name,).as_str(),
         );
         if let Err(e) = result {
             panic!("failed to delete js file: {}", e);
@@ -406,7 +404,7 @@ fn js_uglify(
                 file.target_path(target_path),
                 file.file_name,
             )
-                .as_str(),
+            .as_str(),
         );
         if let Err(e) = result {
             panic!("failed to rename js file: {}", e);
@@ -414,14 +412,10 @@ fn js_uglify(
     }
 }
 
-fn brotlify_deployments(
-    target_path: &str,
-    files: &Vec<UnprocessedFile>,
-) {
+fn brotlify_deployments(target_path: &str, files: &Vec<UnprocessedFile>) {
     info!("run Brotli on all files..");
 
     for file in files {
-
         // brotlify
         let result = run_command_blocking(
             &file.file_name,
@@ -434,7 +428,7 @@ fn brotlify_deployments(
                 file.file_name,
                 file.extension.to_string(),
             )
-                .as_str(),
+            .as_str(),
         );
         if let Err(e) = result {
             panic!("failed to brotlify file: {}", e);
@@ -449,7 +443,7 @@ fn brotlify_deployments(
                 file.file_name,
                 file.extension.to_string(),
             )
-                .as_str(),
+            .as_str(),
         );
         if let Err(e) = result {
             panic!("failed to delete file: {}", e);
@@ -467,7 +461,7 @@ fn brotlify_deployments(
                 file.file_name,
                 file.extension.to_string(),
             )
-                .as_str(),
+            .as_str(),
         );
         if let Err(e) = result {
             panic!("failed to rename file: {}", e);
@@ -525,17 +519,12 @@ fn collect_processed_meta_files(
     }
 }
 
-fn write_files_to_repo(
-    target_path: &str,
-    repo: &Repository,
-    files: &Vec<UnprocessedFile>
-) {
+fn write_files_to_repo(target_path: &str, repo: &Repository, files: &Vec<UnprocessedFile>) {
     let repo_path = repo.workdir().unwrap().to_str().unwrap();
     // let ref_name = format!("refs/heads/{}", branch_name);
     let mut index = repo.index().expect("Failed to open index");
 
     for file in files {
-
         // copy file over into repo
         // if file exists, delete it
         {
@@ -549,7 +538,7 @@ fn write_files_to_repo(
                     file.full_file_path(target_path),
                     repo_full_file_path_str
                 )
-                    .as_str(),
+                .as_str(),
             );
             if let Err(e) = result {
                 panic!("failed to copy file over: {}", e);
@@ -576,7 +565,14 @@ fn write_files_to_repo(
             let meta_bytes = processed_meta.write();
 
             // write new meta file
-            write_file_bytes(&mut index, &meta_file_path, &meta_full_target_path, meta_bytes, false, true);
+            write_file_bytes(
+                &mut index,
+                &meta_file_path,
+                &meta_full_target_path,
+                meta_bytes,
+                false,
+                true,
+            );
         }
     }
 }
@@ -589,15 +585,8 @@ pub(crate) fn get_file_hash(bytes: &[u8]) -> FileHash {
     *hasher.finalize().as_bytes()
 }
 
-fn process_new_meta_file(
-    file_name: &str,
-    hash: FileHash,
-) -> ProcessedFileMeta {
-    ProcessedFileMeta::new(
-        file_name,
-        ETag::gen_random(),
-        hash.to_vec(),
-    )
+fn process_new_meta_file(file_name: &str, hash: FileHash) -> ProcessedFileMeta {
+    ProcessedFileMeta::new(file_name, ETag::gen_random(), hash.to_vec())
 }
 
 fn prune_unchanged_files(
@@ -607,7 +596,6 @@ fn prune_unchanged_files(
     let mut output = Vec::new();
 
     for unprocessed_file in all_unprocessed_files {
-
         let prev_meta = old_meta_files
             .iter()
             .find(|meta| meta.name().eq(&unprocessed_file.file_name_w_ext()));

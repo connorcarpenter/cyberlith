@@ -32,7 +32,10 @@ pub async fn main() -> Result<(), JsValue> {
             let url = if SUBDOMAIN_WWW.is_empty() {
                 format!("{}://{}:{}/", PUBLIC_PROTOCOL, PUBLIC_IP_ADDR, GATEWAY_PORT)
             } else {
-                format!("{}://{}.{}:{}/", PUBLIC_PROTOCOL, SUBDOMAIN_WWW, PUBLIC_IP_ADDR, GATEWAY_PORT)
+                format!(
+                    "{}://{}.{}:{}/",
+                    PUBLIC_PROTOCOL, SUBDOMAIN_WWW, PUBLIC_IP_ADDR, GATEWAY_PORT
+                )
             };
             redirect_to_url(&url); // root goes to launcher
         }

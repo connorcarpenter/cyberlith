@@ -3,7 +3,10 @@ mod convert_to_bits;
 use std::{fs, path::Path};
 
 use asset_id::{AssetId, ETag};
-use git::{branch_exists, ObjectType, create_branch, git_commit, git_pull, git_push, repo_init, Tree, Repository, switch_to_branch, write_file_bytes, read_file_bytes};
+use git::{
+    branch_exists, create_branch, git_commit, git_pull, git_push, read_file_bytes, repo_init,
+    switch_to_branch, write_file_bytes, ObjectType, Repository, Tree,
+};
 use logging::info;
 
 use asset_serde::json::{Asset, AssetData, AssetMeta, ProcessedAssetMeta};
@@ -16,9 +19,8 @@ pub fn process_assets(
     // should be the directory we do all the work in, added to project_path
     service_path: &str,
     // what build environment are we in
-    target_env: TargetEnv
+    target_env: TargetEnv,
 ) -> Result<(), CliError> {
-
     let repo_name = "cyberlith_assets";
     let target_path = format!("{}/{}/target/{}", project_path, service_path, repo_name);
     let target_env_str = target_env.to_string();
@@ -51,12 +53,24 @@ fn create_processed_assets(
 
     // delete all files
     delete_all_files(&repo, &all_new_unprocessed_files);
-    git_commit(&repo, env,  "connorcarpenter", "connorcarpenter@gmail.com", "deleting all unprocessed files");
+    git_commit(
+        &repo,
+        env,
+        "connorcarpenter",
+        "connorcarpenter@gmail.com",
+        "deleting all unprocessed files",
+    );
     git_push(&repo, env);
 
     // process each file
     write_all_new_files(&repo, &all_new_unprocessed_files);
-    git_commit(&repo, env, "connorcarpenter", "connorcarpenter@gmail.com", "processing all files");
+    git_commit(
+        &repo,
+        env,
+        "connorcarpenter",
+        "connorcarpenter@gmail.com",
+        "processing all files",
+    );
     git_push(&repo, env);
 }
 
@@ -84,7 +98,13 @@ fn update_processed_assets(
 
     // process each file
     write_all_new_files(&repo, &new_modified_unprocessed_files);
-    git_commit(&repo, env, "connorcarpenter", "connorcarpenter@gmail.com", "processing all modified files");
+    git_commit(
+        &repo,
+        env,
+        "connorcarpenter",
+        "connorcarpenter@gmail.com",
+        "processing all modified files",
+    );
     git_push(&repo, env);
 }
 
@@ -175,7 +195,13 @@ fn collect_processed_meta_files(
 
                 let git_children = git_entry.to_object(repo).unwrap().peel_to_tree().unwrap();
 
-                collect_processed_meta_files(output, root_path, repo, &git_children, &new_file_path);
+                collect_processed_meta_files(
+                    output,
+                    root_path,
+                    repo,
+                    &git_children,
+                    &new_file_path,
+                );
             }
             Some(ObjectType::Blob) => {
                 let name_split = name.split(".");
@@ -270,7 +296,14 @@ fn write_all_new_files(repo: &Repository, unprocessed_files: &Vec<UnprocessedFil
         };
 
         // write new data file
-        write_file_bytes(&mut index, &file_path, &full_path, processed_asset_bytes, false, true);
+        write_file_bytes(
+            &mut index,
+            &file_path,
+            &full_path,
+            processed_asset_bytes,
+            false,
+            true,
+        );
 
         // process Asset Meta
         let meta_file_path = format!("{}.meta", file_path);
@@ -279,7 +312,14 @@ fn write_all_new_files(repo: &Repository, unprocessed_files: &Vec<UnprocessedFil
         let meta_bytes = processed_meta.write();
 
         // write new meta file
-        write_file_bytes(&mut index, &meta_file_path, &meta_full_path, meta_bytes, false, true);
+        write_file_bytes(
+            &mut index,
+            &meta_file_path,
+            &meta_full_path,
+            meta_bytes,
+            false,
+            true,
+        );
     }
 }
 

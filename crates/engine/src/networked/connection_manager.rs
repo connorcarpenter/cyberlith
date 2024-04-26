@@ -1,22 +1,22 @@
 use std::time::Duration;
 
 use bevy_ecs::{
-    system::Res,
     change_detection::ResMut,
     event::{EventReader, EventWriter},
+    system::Res,
     system::Resource,
 };
 
 use naia_bevy_client::{
-    events::{ConnectEvent, DisconnectEvent, RejectEvent, MessageEvents, RequestEvents},
+    events::{ConnectEvent, DisconnectEvent, MessageEvents, RejectEvent, RequestEvents},
     transport::webrtc::Socket as WebrtcSocket,
     Client, Timer,
 };
 
-use logging::{info, warn};
 use asset_loader::{AssetManager, AssetMetadataStore};
 use config::{GATEWAY_PORT, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SUBDOMAIN_API};
 use filesystem::FileSystemManager;
+use logging::{info, warn};
 use ui_runner::UiManager;
 
 use session_server_naia_proto::{
@@ -25,8 +25,11 @@ use session_server_naia_proto::{
 };
 use world_server_naia_proto::messages::Auth as WorldAuth;
 
-use crate::{asset_cache::{AssetCache, AssetLoadedEvent}, networked::asset_cache_checker::AssetCacheChecker};
 use super::client_markers::{Session, World};
+use crate::{
+    asset_cache::{AssetCache, AssetLoadedEvent},
+    networked::asset_cache_checker::AssetCacheChecker,
+};
 
 type SessionClient<'a> = Client<'a, Session>;
 type WorldClient<'a> = Client<'a, World>;
@@ -86,7 +89,6 @@ impl ConnectionManager {
         mut connection_manager: ResMut<ConnectionManager>,
     ) {
         for _ in session_disconnect_event_reader.read() {
-
             warn!("Client disconnected from session server");
 
             connection_manager.connection_state = ConnectionState::Disconnected;
@@ -210,10 +212,7 @@ impl ConnectionManager {
         connection_manager.handle_connection_impl(&mut session_client);
     }
 
-    fn handle_connection_impl(
-        &mut self,
-        session_client: &mut SessionClient,
-    ) {
+    fn handle_connection_impl(&mut self, session_client: &mut SessionClient) {
         if self.send_timer.ringing() {
             self.send_timer.reset();
         } else {
@@ -222,7 +221,6 @@ impl ConnectionManager {
 
         match &self.connection_state {
             ConnectionState::Disconnected => {
-
                 // from disconnected before
 
                 // let key = http_client.send(&url, GATEWAY_PORT, request);
@@ -234,7 +232,10 @@ impl ConnectionManager {
                 let url = if SUBDOMAIN_API.is_empty() {
                     format!("{}://{}:{}", PUBLIC_PROTOCOL, PUBLIC_IP_ADDR, GATEWAY_PORT)
                 } else {
-                    format!("{}://{}.{}:{}", PUBLIC_PROTOCOL, SUBDOMAIN_API, PUBLIC_IP_ADDR, GATEWAY_PORT)
+                    format!(
+                        "{}://{}.{}:{}",
+                        PUBLIC_PROTOCOL, SUBDOMAIN_API, PUBLIC_IP_ADDR, GATEWAY_PORT
+                    )
                 };
 
                 // let url = if SUBDOMAIN_API.is_empty() {
@@ -243,10 +244,7 @@ impl ConnectionManager {
                 //     format!("{}.{}", SUBDOMAIN_API, PUBLIC_IP_ADDR)
                 // };
 
-                info!(
-                    "connecting to session server: {}",
-                    url
-                );
+                info!("connecting to session server: {}", url);
                 let socket = WebrtcSocket::new(&url, session_client.socket_config());
                 session_client.connect(socket);
             }

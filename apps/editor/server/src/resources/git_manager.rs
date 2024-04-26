@@ -1,6 +1,4 @@
-use std::{
-    collections::{HashMap, HashSet},
-};
+use std::collections::{HashMap, HashSet};
 
 use bevy_ecs::{
     entity::Entity,
@@ -8,8 +6,8 @@ use bevy_ecs::{
     world::{Mut, World},
 };
 
-use logging::info;
 use asset_serde::json::AssetMeta;
+use logging::info;
 use naia_bevy_server::{BigMap, CommandsExt, ReplicationConfig, RoomKey, Server, UserKey};
 
 use editor_proto::{
@@ -20,13 +18,11 @@ use editor_proto::{
     messages::ChangelistMessage,
     resources::FileKey,
 };
-use git::{ObjectType, repo_init, Repository, Tree};
+use git::{repo_init, ObjectType, Repository, Tree};
 
-use crate::{
-    resources::{
-        project::Project, project::ProjectKey, ContentEntityData, FileEntryValue, PaletteManager,
-        RollbackResult, ShapeManager, SkinManager, UserManager,
-    },
+use crate::resources::{
+    project::Project, project::ProjectKey, ContentEntityData, FileEntryValue, PaletteManager,
+    RollbackResult, ShapeManager, SkinManager, UserManager,
 };
 
 #[derive(Resource)]
@@ -52,7 +48,6 @@ impl Default for GitManager {
 }
 
 impl GitManager {
-
     pub fn has_project_key(&mut self, project_owner_name: &str) -> bool {
         self.project_keys.contains_key(project_owner_name)
     }
@@ -513,12 +508,7 @@ impl GitManager {
         // Create new room for user and all their owned entities
         let project_room_key = server.make_room().key();
 
-        let new_project = Project::new(
-            project_room_key,
-            file_entries,
-            repo,
-            &target_path_str,
-        );
+        let new_project = Project::new(project_room_key, file_entries, repo, &target_path_str);
 
         insert_entry_components_from_list(
             commands,

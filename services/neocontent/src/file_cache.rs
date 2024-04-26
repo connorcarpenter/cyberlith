@@ -78,7 +78,10 @@ impl FileCache {
 
         info!(
             "Unloaded LRU file: {:?} (size: {:?})... current: {:?} kb, max: {:?} kb",
-            oldest_path, bytes_to_kb(byte_count), bytes_to_kb(self.current_size_bytes), bytes_to_kb(self.capacity_size_bytes)
+            oldest_path,
+            bytes_to_kb(byte_count),
+            bytes_to_kb(self.current_size_bytes),
+            bytes_to_kb(self.capacity_size_bytes)
         );
     }
 }
