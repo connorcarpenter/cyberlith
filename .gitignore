@@ -7,14 +7,15 @@
 node_modules
 /target
 
-/deployments/native/target
-/deployments/native/assets
-/deployments/web/launcher/target
-/deployments/web/launcher/assets
-/deployments/web/game/target
-/deployments/web/game/assets
-/deployments/web/level_editor/target
-/deployments/web/level_editor/assets
+/apps/deployments/native/target
+/apps/deployments/native/assets
+/apps/deployments/native/assets/
+/apps/deployments/web/launcher/target
+/apps/deployments/web/launcher/assets
+/apps/deployments/web/game/target
+/apps/deployments/web/game/assets
+/apps/deployments/web/level_editor/target
+/apps/deployments/web/level_editor/assets
 
 /services/auth/target
 /services/gateway/acme_cache
