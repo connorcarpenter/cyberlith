@@ -18,16 +18,16 @@ use crate::{
 
 pub fn up() -> Result<(), CliError> {
     let config: HashSet<String> = vec![
-        // "instance",
-        // "network",
-        // "redirector",
+        "instance",
+        "network",
+        "redirector",
         "gateway",
-        // "content",
-        // "auth",
-        // "region",
-        // "session",
-        // "world",
-        // "asset",
+        "content",
+        "auth",
+        "region",
+        "session",
+        "world",
+        "asset",
     ]
     .iter()
     .map(|s| s.to_string())
