@@ -1,5 +1,6 @@
-use crate::file_metadata_store::FileMetadata;
-use crate::{file_cache::FileCache, file_metadata_store::FileMetadataStore};
+use filecache::FileCache;
+
+use crate::{file_metadata_store::{FileMetadataStore, FileMetadata}};
 
 pub struct State {
     file_metadata_store: FileMetadataStore,

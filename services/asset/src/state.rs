@@ -1,10 +1,11 @@
 use std::time::{Duration, Instant};
 
 use http_client::ResponseError;
+use filecache::FileCache;
 
 use asset_server_http_proto::{AssetRequest, AssetResponse};
 
-use crate::{asset_cache::AssetCache, asset_metadata_store::AssetMetadataStore};
+use crate::{asset_metadata_store::AssetMetadataStore};
 
 pub enum ConnectionState {
     Disconnected,
@@ -18,7 +19,7 @@ pub struct State {
     registration_resend_rate: Duration,
     region_server_disconnect_timeout: Duration,
     asset_metadata_store: AssetMetadataStore,
-    asset_cache: AssetCache,
+    asset_cache: FileCache,
 }
 
 impl State {
@@ -35,7 +36,7 @@ impl State {
             registration_resend_rate,
             region_server_disconnect_timeout,
             asset_metadata_store,
-            asset_cache: AssetCache::new(asset_cache_size_kb),
+            asset_cache: FileCache::new(asset_cache_size_kb),
         }
     }
 

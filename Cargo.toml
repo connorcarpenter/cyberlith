@@ -72,6 +72,7 @@ members = [
     # In-Memory Storage Types .. possibly useless
     "crates/storage",
     # Filecache
+    "crates/filecache",
     # Filesystem
     "crates/filesystem",
     # DB
@@ -84,6 +85,8 @@ members = [
     "crates/crypto",
     # Random
     "crates/random",
+    # TimeQueue
+    "crates/timequeue",
     # Time
     "crates/instant",
     # Physics

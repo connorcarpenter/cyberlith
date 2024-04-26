@@ -1,7 +1,6 @@
 #[macro_use]
 extern crate cfg_if;
 
-mod asset_cache;
 mod asset_endpoint;
 mod asset_metadata_store;
 mod region_connection;

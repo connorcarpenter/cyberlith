@@ -1,7 +1,6 @@
 #[macro_use]
 extern crate cfg_if;
 
-mod file_cache;
 mod file_endpoint;
 mod file_metadata_store;
 mod state;

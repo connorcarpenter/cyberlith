@@ -18,6 +18,7 @@ automation_lib = { path = "../../automation/lib" }
 asset_id = { path = "../../crates/asset/id" }
 logging = { path = "../../crates/logging" }
 naia-serde = { path = "../../../naia/shared/serde" }
+filecache = { path = "../../crates/filecache" }
 
 cfg-if = { version = "1.0" }
 serde = { version = "1.0.189", features = ["derive"] }

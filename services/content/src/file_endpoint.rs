@@ -37,7 +37,7 @@ pub(crate) async fn file_endpoint_handler(
 
                 let mut response = Response::not_modified(&incoming_request.url);
 
-                add_caching_headers(metadata, &mut response);
+                add_common_headers(metadata, &mut response);
 
                 response.headers.insert(
                     "Content-Length".to_string(),
@@ -62,15 +62,13 @@ pub(crate) async fn file_endpoint_handler(
         file_bytes
     };
 
-    let file_type = metadata.file_type();
-
     let mut response = Response::default();
 
     response.body = file_bytes;
 
     //// Headers
 
-    add_caching_headers(metadata, &mut response);
+    add_common_headers(metadata, &mut response);
 
     // add Content-Encoding header
 
@@ -89,7 +87,7 @@ pub(crate) async fn file_endpoint_handler(
     return Ok(response);
 }
 
-fn add_caching_headers(metadata: FileMetadata, response: &mut Response) {
+fn add_common_headers(metadata: FileMetadata, response: &mut Response) {
     // add Content-Type header
     let content_type = match metadata.file_type() {
         FileType::Html => "text/html",
