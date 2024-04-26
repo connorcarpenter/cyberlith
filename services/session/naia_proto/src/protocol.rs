@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use naia_bevy_shared::{LinkConditionerConfig, Protocol};
+use naia_bevy_shared::Protocol;
 
 use crate::{channels::ChannelsPlugin, messages::MessagesPlugin};
 
@@ -20,6 +20,8 @@ pub fn protocol() -> Protocol {
 
     cfg_if::cfg_if! {
         if #[cfg(feature = "local")]{
+            use naia_bevy_shared::LinkConditionerConfig;
+
             builder.link_condition(LinkConditionerConfig::good_condition());
         }
         else {}
