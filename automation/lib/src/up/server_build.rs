@@ -8,14 +8,14 @@ pub async fn server_build_content() -> Result<(), CliError> {
     // build content_server
     run_command(
         "content_server",
-        "cargo build --release --features prod --manifest-path services/neocontent/Cargo.toml",
+        "cargo build --release --features prod --manifest-path services/content/Cargo.toml",
     )
     .await?;
 
     // move content_server executable to main dir
     run_command(
         "content_server",
-        "cp target/release/neocontent_server neocontent_server",
+        "cp target/release/content_server content_server",
     )
     .await?;
 
@@ -27,7 +27,7 @@ pub async fn server_build_content() -> Result<(), CliError> {
     .await?;
 
     // clean up server file
-    run_command("content_server", "rm neocontent_server").await?;
+    run_command("content_server", "rm content_server").await?;
 
     // clean up content repo
     run_command("content_server", "rm -rf target/cyberlith_content").await?;
@@ -109,7 +109,7 @@ async fn build_web_deploy_files(name: &str) -> Result<(), CliError> {
             "cargo build \
             --release \
             --features gl_renderer,prod \
-            --manifest-path deployments/web/{}/Cargo.toml \
+            --manifest-path apps/deployments/web/{}/Cargo.toml \
             --target wasm32-unknown-unknown \
             --lib",
             name
@@ -143,7 +143,7 @@ async fn build_web_deploy_files(name: &str) -> Result<(), CliError> {
 
     run_command(
         name,
-        format!("cp deployments/web/{}/{}.html {}.html", name, name, name).as_str(),
+        format!("cp apps/deployments/web/{}/{}.html {}.html", name, name, name).as_str(),
     )
     .await?;
     Ok(())

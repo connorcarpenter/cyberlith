@@ -208,7 +208,7 @@ fn build_deployments(
             format!(
                 "cargo build {}\
                     --features gl_renderer,{} \
-                    --manifest-path {}/deployments/web/{}/Cargo.toml \
+                    --manifest-path {}/apps/deployments/web/{}/Cargo.toml \
                     --target wasm32-unknown-unknown \
                     --target-dir {} \
                     --lib",
@@ -279,7 +279,7 @@ fn build_deployments(
         let result = run_command_blocking(
             deployment,
             format!(
-                "cp {}/deployments/web/{}/{}.html {}/{}.html",
+                "cp {}/apps/deployments/web/{}/{}.html {}/{}.html",
                 source_path, deployment, deployment, target_path, deployment,
             )
             .as_str(),

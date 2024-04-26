@@ -1,5 +1,5 @@
 [package]
-name = "neocontent_server"
+name = "content_server"
 version = "0.1.0"
 authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
 workspace = "../.."

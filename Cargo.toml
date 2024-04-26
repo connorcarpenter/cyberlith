@@ -27,8 +27,8 @@ members = [
     "services/redirector",
     # Gateway Server
     "services/gateway",
-    # NeoContent Server
-    "services/neocontent",
+    # Content Server
+    "services/content",
     # Auth Server
     "services/auth",
     "services/auth/http_proto",

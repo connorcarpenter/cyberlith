@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Neocontent Server [DEPLOY wasm]" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
+  <configuration default="false" name="Content Server [DEPLOY wasm]" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
     <option name="command" value="run --features &quot;local&quot;" />
-    <option name="workingDirectory" value="file://$PROJECT_DIR$/services/neocontent" />
+    <option name="workingDirectory" value="file://$PROJECT_DIR$/services/content" />
     <envs />
     <option name="emulateTerminal" value="false" />
     <option name="channel" value="DEFAULT" />

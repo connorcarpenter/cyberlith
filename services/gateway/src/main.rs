@@ -1,4 +1,5 @@
 mod session_connect;
+mod redirect;
 
 use std::{net::SocketAddr, thread};
 
@@ -14,6 +15,7 @@ use auth_server_http_proto::{
     RefreshTokenGrantRequest, UserLoginRequest, UserNameForgotRequest, UserPasswordForgotRequest,
     UserPasswordResetRequest, UserRegisterConfirmRequest, UserRegisterRequest,
 };
+use crate::redirect::game_html_redirect_handler;
 
 use crate::session_connect::session_rtc_endpoint_handler;
 
@@ -228,6 +230,14 @@ pub fn main() {
             addr,
             &port,
             "game.html",
+        );
+        server.serve_endpoint_raw(
+            gateway,
+            required_host_www,
+            None,
+            Method::Get,
+            "game.html",
+            game_html_redirect_handler,
         );
         server.serve_proxy(
             gateway,

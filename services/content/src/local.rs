@@ -9,7 +9,7 @@ pub(crate) fn setup() {
     // process content
     automation_lib::process_content(
         "/home/connor/Work/cyberlith",
-        "services/neocontent",
+        "services/content",
         TargetEnv::Local,
     )
     .unwrap();

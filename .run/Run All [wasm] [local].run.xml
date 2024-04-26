@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Run All [wasm] [local]" type="CompoundRunConfigurationType">
-    <toRun name="Neocontent Server [DEPLOY wasm]" type="CargoCommandRunConfiguration" />
+    <toRun name="Content Server [DEPLOY wasm]" type="CargoCommandRunConfiguration" />
     <toRun name="Run Asset Server" type="CargoCommandRunConfiguration" />
     <toRun name="Run Auth Server" type="CargoCommandRunConfiguration" />
     <toRun name="Run Gateway [local]" type="CargoCommandRunConfiguration" />
