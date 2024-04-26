@@ -14,7 +14,7 @@ prod = [ "config/prod" ]
 http_server = { path = "../../crates/http/http_server" }
 http_client = { path = "../../crates/http/http_client" }
 config = { path = "../../config", features = ["content"] }
-automation_lib = { path = "../../apps/automation/lib" }
+automation_lib = { path = "../../automation/lib" }
 asset_id = { path = "../../crates/asset/id" }
 logging = { path = "../../crates/logging" }
 naia-serde = { path = "../../../naia/shared/serde" }

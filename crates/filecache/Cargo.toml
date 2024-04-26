@@ -1,9 +1,8 @@
 [package]
-name = "crypto"
+name = "filecache"
 version = "0.1.0"
 edition = "2021"
 workspace = "../.."
 
 [dependencies]
-#ring = { version = "0.17" }
-random = { path = "../random" }
+logging = { path = "../logging" }

@@ -1,9 +1,8 @@
-use logging::{info, warn};
-
+use logging::warn;
 use http_client::{HttpClient, ResponseError};
 use http_server::{async_dup::Arc, smol::lock::RwLock, ApiServer, Server, ApiRequest};
-
 use config::REGION_SERVER_SECRET;
+
 use region_server_http_proto::{SessionConnectRequest, SessionConnectResponse};
 use session_server_http_proto::IncomingUserRequest;
 

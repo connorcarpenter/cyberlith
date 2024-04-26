@@ -17,7 +17,7 @@ config = { path = "../../config", features = ["asset"] }
 asset_serde = { path = "../../crates/asset/serde", features = ["read_json"] }
 asset_id = { path = "../../crates/asset/id" }
 logging = { path = "../../crates/logging" }
-automation_lib = { path = "../../apps/automation/lib", optional = true }
+automation_lib = { path = "../../automation/lib", optional = true }
 
 asset_server_http_proto = { path = "http_proto" }
 region_server_http_proto = { path = "../region/http_proto" }

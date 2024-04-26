@@ -1,0 +1,14 @@
+[package]
+name = "automation_cli"
+version = "0.1.0"
+authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
+workspace = "../.."
+edition = "2021"
+publish = false
+
+[features]
+
+[dependencies]
+logging = { path = "../../crates/logging" }
+automation_lib = { path = "../lib" }
+clap = { version = "4.4" }

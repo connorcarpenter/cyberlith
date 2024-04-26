@@ -8,13 +8,13 @@ members = [
 
     ### Deployments ###
     # Standalone [Native]
-    "deployments/native",
+    "apps/deployments/native",
     # Launcher [Web]
-    "deployments/web/launcher",
+    "apps/deployments/web/launcher",
     # Game [Web]
-    "deployments/web/game",
+    "apps/deployments/web/game",
     # Level Editor [Web]
-    "deployments/web/level_editor",
+    "apps/deployments/web/level_editor",
 
     ### Apps ###
     # Launcher
@@ -27,8 +27,6 @@ members = [
     "services/redirector",
     # Gateway Server
     "services/gateway",
-    # Content Server
-    "services/content",
     # NeoContent Server
     "services/neocontent",
     # Auth Server
@@ -52,9 +50,9 @@ members = [
 
     ### Tools ###
     # Automation CLI / Library
-    "apps/automation/cli",
-    "apps/automation/lib",
-    "apps/automation/crates/vultr",
+    "automation/cli",
+    "automation/lib",
+    "automation/crates/vultr",
     # Asset Editor
     "apps/editor/client",
     "apps/editor/server/proto",
@@ -71,6 +69,9 @@ members = [
     "crates/math",
     # Input
     "crates/input",
+    # In-Memory Storage Types .. possibly useless
+    "crates/storage",
+    # Filecache
     # Filesystem
     "crates/filesystem",
     # DB
@@ -95,8 +96,6 @@ members = [
     "crates/email",
     # Multithreading / Executor
     "crates/executor",
-    # In-Memory Storage Types .. possibly useless
-    "crates/storage",
     # Rendering
     "crates/render/render_api",
     "crates/render/render_gl",

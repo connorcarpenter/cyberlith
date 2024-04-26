@@ -3,7 +3,7 @@ use std::time::Duration;
 use bevy_ecs::{
     system::Res,
     change_detection::ResMut,
-    event::{Event, EventReader, EventWriter},
+    event::{EventReader, EventWriter},
     system::Resource,
 };
 
@@ -15,15 +15,13 @@ use naia_bevy_client::{
 
 use logging::{info, warn};
 use asset_loader::{AssetManager, AssetMetadataStore};
-use bevy_http_client::{HttpClient, ResponseKey};
 use config::{GATEWAY_PORT, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SUBDOMAIN_API};
 use filesystem::FileSystemManager;
 use ui_runner::UiManager;
 
-use region_server_http_proto::{SessionConnectRequest, SessionConnectResponse};
 use session_server_naia_proto::{
     channels::{PrimaryChannel, RequestChannel},
-    messages::{Auth as SessionAuth, LoadAssetRequest, LoadAssetWithData, WorldConnectToken},
+    messages::{LoadAssetRequest, LoadAssetWithData, WorldConnectToken},
 };
 use world_server_naia_proto::messages::Auth as WorldAuth;
 
@@ -207,15 +205,13 @@ impl ConnectionManager {
     // used as a system
     pub fn handle_connection(
         mut connection_manager: ResMut<ConnectionManager>,
-        mut http_client: ResMut<HttpClient>,
         mut session_client: SessionClient,
     ) {
-        connection_manager.handle_connection_impl(&mut http_client, &mut session_client);
+        connection_manager.handle_connection_impl(&mut session_client);
     }
 
     fn handle_connection_impl(
         &mut self,
-        http_client: &mut HttpClient,
         session_client: &mut SessionClient,
     ) {
         if self.send_timer.ringing() {

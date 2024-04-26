@@ -1,0 +1,27 @@
+[package]
+name = "level_editor_web_deploy"
+version = "0.1.0"
+authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
+workspace = "../../../.."
+edition = "2021"
+publish = false
+
+[lib]
+name = "level_editor"
+path = "src/lib.rs"
+crate-type = ["cdylib", "rlib"]
+
+[features]
+local = [ ]
+prod = [ ]
+gl_renderer = [ ]
+wgpu_renderer = [ ]
+
+[dependencies]
+kernel = { path = "../../../../crates/kernel" }
+logging = { path = "../../../../crates/logging" }
+
+cfg-if = { version = "1.0" }
+
+wasm-bindgen = { version = "0.2", features = [ "serde-serialize" ] }
+wasm-bindgen-futures = { version = "0.4.40" }

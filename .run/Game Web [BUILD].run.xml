@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Game Web [BUILD]" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
     <option name="command" value="build --target &quot;wasm32-unknown-unknown&quot; --features &quot;gl_renderer,local&quot;" />
-    <option name="workingDirectory" value="file://$PROJECT_DIR$/deployments/web/game" />
+    <option name="workingDirectory" value="file://$PROJECT_DIR$/apps/deployments/web/game" />
     <envs />
     <option name="emulateTerminal" value="false" />
     <option name="channel" value="DEFAULT" />
