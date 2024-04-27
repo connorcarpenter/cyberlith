@@ -4,7 +4,7 @@ use http_client_shared::fetch_async;
 use http_common::{ApiRequest, Method, Request, Response, ResponseError};
 use logging::{info, warn};
 
-use crate::{log_util, Server, endpoint::{Endpoint, EndpointFunc}};
+use crate::{log_util, Server, endpoint::{EndpointRef, Endpoint, EndpointFunc}};
 
 // serves a pass-through proxy
 pub trait ProxyServer {
@@ -19,7 +19,7 @@ pub trait ProxyServer {
         remote_addr: &str,
         remote_port: &str,
         file_name: &str,
-    );
+    ) -> EndpointRef;
     fn serve_api_proxy<TypeRequest: 'static + ApiRequest>(
         &mut self,
         host_name: &str,
@@ -28,7 +28,7 @@ pub trait ProxyServer {
         remote_name: &str,
         remote_addr: &str,
         remote_port: &str,
-    );
+    ) -> EndpointRef;
 }
 
 impl ProxyServer for Server {
@@ -43,7 +43,7 @@ impl ProxyServer for Server {
         remote_addr: &str,
         remote_port: &str,
         remote_path: &str,
-    ) {
+    ) -> EndpointRef {
         let url_path = format!("{} /{}", incoming_method.as_str(), incoming_path);
 
         info!("serving proxy @ {}", url_path);
@@ -66,7 +66,8 @@ impl ProxyServer for Server {
         let incoming_host =
             incoming_host.map(|(rq, rdopt)| (rq.to_string(), rdopt.map(|rd| rd.to_string())));
         let new_endpoint = Endpoint::new(endpoint_func, incoming_host);
-        self.internal_insert_endpoint(url_path, new_endpoint);
+        self.internal_insert_endpoint(url_path.clone(), new_endpoint);
+        EndpointRef::new(self, url_path)
     }
 
     fn serve_api_proxy<TypeRequest: 'static + ApiRequest>(
@@ -77,7 +78,7 @@ impl ProxyServer for Server {
         remote_name: &str,
         remote_addr: &str,
         remote_port: &str,
-    ) {
+    ) -> EndpointRef {
         Self::serve_proxy(
             self,
             host_name,
@@ -89,7 +90,7 @@ impl ProxyServer for Server {
             remote_addr,
             remote_port,
             TypeRequest::path(),
-        );
+        )
     }
 }
 

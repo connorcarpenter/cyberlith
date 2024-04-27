@@ -64,6 +64,10 @@ impl Server {
         self.endpoints.insert(endpoint_path, new_endpoint);
     }
 
+    pub(crate) fn internal_endpoint_mut(&mut self, endpoint_path: &str) -> Option<&mut Endpoint> {
+        self.endpoints.get_mut(endpoint_path)
+    }
+
     /// Listens for incoming connections and serves them.
     async fn listen(server: Server) {
         let socket_addr = server.socket_addr;
@@ -141,15 +145,16 @@ impl Server {
                 async move {
                     let server = server_4.read().await;
 
+                    // handle global middleware
                     for middleware in server.middlewares.iter() {
                         if let Some(response_result) = (middleware.func)(addr, request.clone()).await {
                             return response_result;
                         }
                     }
 
+                    // handle request
                     let endpoint = server.endpoints.get(&endpoint_key).unwrap();
-
-                    (endpoint.func)(addr, request).await
+                    endpoint.handle_request(addr, request.clone()).await
                 }
             },
         )

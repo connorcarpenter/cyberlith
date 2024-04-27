@@ -1,6 +1,7 @@
 mod session_connect;
 mod redirect;
 mod rate_limiter;
+mod access_token_checker;
 
 use std::{net::SocketAddr, thread};
 use std::time::Duration;
@@ -17,6 +18,7 @@ use auth_server_http_proto::{
     RefreshTokenGrantRequest, UserLoginRequest, UserNameForgotRequest, UserPasswordForgotRequest,
     UserPasswordResetRequest, UserRegisterConfirmRequest, UserRegisterRequest,
 };
+use crate::access_token_checker::access_token_check;
 use crate::redirect::game_html_redirect_handler;
 
 use crate::session_connect::session_rtc_endpoint_handler;
@@ -140,7 +142,7 @@ pub fn main() {
             Method::Post,
             "session_rtc",
             session_rtc_endpoint_handler,
-        );
+        ).middleware(access_token_check);
     }
 
     // -> world
@@ -159,7 +161,7 @@ pub fn main() {
             addr,
             &port,
             "world_rtc",
-        );
+        ).middleware(access_token_check);
 
         server.serve_proxy(
             gateway,
@@ -171,7 +173,7 @@ pub fn main() {
             addr,
             &port,
             "world_rtc",
-        );
+        ).middleware(access_token_check);
     }
 
     // -> content
@@ -223,7 +225,7 @@ pub fn main() {
             addr,
             &port,
             "game.html",
-        );
+        ).middleware(access_token_check);
         server.endpoint_raw(
             gateway,
             required_host_www,
@@ -231,7 +233,7 @@ pub fn main() {
             Method::Get,
             "game.html",
             game_html_redirect_handler,
-        );
+        ).middleware(access_token_check);
         server.serve_proxy(
             gateway,
             required_host_www,
@@ -242,7 +244,7 @@ pub fn main() {
             addr,
             &port,
             "game.js",
-        );
+        ).middleware(access_token_check);
         server.serve_proxy(
             gateway,
             required_host_www,
@@ -253,7 +255,7 @@ pub fn main() {
             addr,
             &port,
             "game_bg.wasm",
-        );
+        ).middleware(access_token_check);
     }
 
     // prune expired rate limiter entries

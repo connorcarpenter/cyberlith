@@ -4,6 +4,8 @@ use smol::future::Future;
 
 use http_common::{Request, Response, ResponseError};
 
+use crate::{Server, middleware::{Middleware, MiddlewareFunc}};
+
 // Endpoint
 pub(crate) type EndpointFunc = Box<
     dyn Send
@@ -12,7 +14,10 @@ pub(crate) type EndpointFunc = Box<
 >;
 
 pub(crate) struct Endpoint {
-    pub(crate) func: EndpointFunc,
+    func: EndpointFunc,
+
+    middlewares: Vec<Middleware>,
+
     // Option<(required_host, Option<redirect_url>)>
     pub(crate) required_host: Option<(String, Option<String>)>,
 }
@@ -24,7 +29,53 @@ impl Endpoint {
     ) -> Self {
         Self {
             func,
+            middlewares: Vec::new(),
             required_host,
         }
+    }
+
+    pub(crate) async fn handle_request(
+        &self,
+        address: SocketAddr,
+        request: Request,
+    ) -> Result<Response, ResponseError> {
+
+        // handle endpoint middleware
+        for middleware in self.middlewares.iter() {
+            if let Some(response_result) = (middleware.func)(address, request.clone()).await {
+                return response_result;
+            }
+        }
+
+        (self.func)(address, request).await
+    }
+}
+
+pub struct EndpointRef<'a> {
+    server: &'a mut Server,
+    key: String,
+}
+
+impl<'a> EndpointRef<'a> {
+    pub fn new(server: &'a mut Server, key: String) -> Self {
+        Self {
+            server,
+            key,
+        }
+    }
+
+    pub fn middleware<
+        ResponseType: 'static + Send + Sync + Future<Output = Option<Result<Response, ResponseError>>>,
+        Handler: 'static + Send + Sync + Fn(SocketAddr, Request) -> ResponseType
+    >(
+        self,
+        handler: Handler,
+    ) -> Self {
+        let func: MiddlewareFunc = Box::new(move |addr, req| {
+            Box::pin(handler(addr, req))
+        });
+        let endpoint = self.server.internal_endpoint_mut(&self.key).unwrap();
+        endpoint.middlewares.push(Middleware::new(func));
+        self
     }
 }

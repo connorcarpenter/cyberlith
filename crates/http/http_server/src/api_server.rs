@@ -6,7 +6,7 @@ use http_common::{ApiRequest, ApiResponse, Method, Request, Response, ResponseEr
 use logging::info;
 
 use crate::{
-    endpoint::{EndpointFunc, Endpoint},
+    endpoint::{EndpointRef, EndpointFunc, Endpoint},
     log_util, Server,
 };
 
@@ -21,7 +21,7 @@ pub trait ApiServer {
         host_name: &str,
         incoming_host: Option<(&str, Option<&str>)>,
         handler: Handler,
-    );
+    ) -> EndpointRef;
 
     fn endpoint_raw<
         ResponseType: 'static + Send + Sync + Future<Output = Result<Response, ResponseError>>,
@@ -34,7 +34,7 @@ pub trait ApiServer {
         incoming_method: Method,
         incoming_path: &str,
         handler: Handler,
-    );
+    ) -> EndpointRef;
 }
 
 impl ApiServer for Server {
@@ -47,7 +47,7 @@ impl ApiServer for Server {
         host_name: &str,
         incoming_host: Option<(&str, Option<&str>)>,
         handler: Handler,
-    ) {
+    ) -> EndpointRef {
         let method = TypeRequest::method();
         let path = TypeRequest::path();
 
@@ -59,7 +59,8 @@ impl ApiServer for Server {
         let incoming_host =
             incoming_host.map(|(rq, rdopt)| (rq.to_string(), rdopt.map(|rd| rd.to_string())));
         let new_endpoint = Endpoint::new(endpoint_func, incoming_host);
-        self.internal_insert_endpoint(endpoint_path, new_endpoint);
+        self.internal_insert_endpoint(endpoint_path.clone(), new_endpoint);
+        EndpointRef::new(self, endpoint_path)
     }
 
     fn endpoint_raw<
@@ -73,7 +74,7 @@ impl ApiServer for Server {
         incoming_method: Method,
         incoming_path: &str,
         handler: Handler,
-    ) {
+    ) -> EndpointRef {
         let endpoint_path = format!("{} /{}", incoming_method.as_str(), incoming_path);
 
         info!("endpoint: {}", endpoint_path);
@@ -82,7 +83,8 @@ impl ApiServer for Server {
         let incoming_host =
             incoming_host.map(|(rq, rdopt)| (rq.to_string(), rdopt.map(|rd| rd.to_string())));
         let new_endpoint = Endpoint::new(endpoint_func, incoming_host);
-        self.internal_insert_endpoint(endpoint_path, new_endpoint);
+        self.internal_insert_endpoint(endpoint_path.clone(), new_endpoint);
+        EndpointRef::new(self, endpoint_path)
     }
 }
 

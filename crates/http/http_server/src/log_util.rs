@@ -12,12 +12,12 @@ pub fn send_req(
     );
 }
 
-pub fn recv_req(self_service_recver_name: &str, request_url: &str, request_name: &str) {
+pub fn recv_req(self_service_recver_name: &str, other_service_sender_name: &str, request_name: &str) {
     logging::info!(
         "{} <- [{}] <- {}",
         self_service_recver_name,
         request_name,
-        request_url
+        other_service_sender_name
     );
 }
 
