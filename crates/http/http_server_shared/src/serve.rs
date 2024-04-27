@@ -367,7 +367,6 @@ fn write_response_header(r: &Response, mut io: impl std::io::Write) -> std::io::
     let status = r.status;
     let code = status.to_string();
     let reason = r.status_text.as_str();
-    let headers = &r.headers;
 
     write_line(&mut io, &mut len, b"HTTP/1.1 ")?;
     write_line(&mut io, &mut len, code.as_bytes())?;
@@ -375,7 +374,7 @@ fn write_response_header(r: &Response, mut io: impl std::io::Write) -> std::io::
     write_line(&mut io, &mut len, reason.as_bytes())?;
     write_line(&mut io, &mut len, b"\r\n")?;
 
-    for (hn, hv) in headers {
+    for (hn, hv) in r.headers_iter() {
         write_line(&mut io, &mut len, hn.as_str().as_bytes())?;
         write_line(&mut io, &mut len, b": ")?;
         write_line(&mut io, &mut len, hv.as_bytes())?;

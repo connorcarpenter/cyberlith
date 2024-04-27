@@ -1,4 +1,5 @@
 use std::{collections::BTreeMap, time::Duration};
+use std::collections::btree_map::Iter;
 
 /// HTTP Method
 #[derive(Clone, Eq, PartialEq)]
@@ -95,7 +96,7 @@ pub struct Response {
     pub status_text: String,
 
     /// The returned headers. All header names are lower-case.
-    pub headers: BTreeMap<String, String>,
+    headers: BTreeMap<String, String>,
 
     /// The raw bytes of the response body.
     pub body: Vec<u8>,
@@ -115,6 +116,27 @@ impl Default for Response {
 }
 
 impl Response {
+
+    pub fn has_header(&self, name: &str) -> bool {
+        self.headers.contains_key(name.to_ascii_lowercase().as_str())
+    }
+
+    pub fn get_header(&self, name: &str) -> Option<&String> {
+        self.headers.get(name.to_ascii_lowercase().as_str())
+    }
+
+    pub fn set_header(&mut self, name: &str, value: &str) {
+        self.headers.insert(name.to_ascii_lowercase(), value.to_string());
+    }
+
+    pub fn remove_header(&mut self, name: &str) {
+        self.headers.remove(name.to_ascii_lowercase().as_str());
+    }
+
+    pub fn headers_iter(&self) -> Iter<'_, String, String> {
+        self.headers.iter()
+    }
+
     /// Constructs a new Response indicating a successful request. // 200
     pub fn ok(old_url: &str) -> Self {
         Self {

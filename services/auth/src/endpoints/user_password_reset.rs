@@ -6,7 +6,7 @@ use auth_server_http_proto::{UserPasswordResetRequest, UserPasswordResetResponse
 use crate::{error::AuthServerError, state::State, types::ResetPasswordToken};
 
 pub fn user_password_reset(host_name: &str, server: &mut Server, state: Arc<RwLock<State>>) {
-    server.endpoint(host_name, None, move |(_addr, req)| {
+    server.api_endpoint(host_name, None, move |(_addr, req)| {
         let state = state.clone();
         async move { async_impl(state, req).await }
     });

@@ -13,7 +13,7 @@ use world_server_http_proto::WorldConnectRequest as WorldWorldConnectRequest;
 use crate::state::State;
 
 pub fn world_connect(host_name: &str, server: &mut Server, state: Arc<RwLock<State>>) {
-    server.endpoint(host_name, None, move |(_addr, req)| {
+    server.api_endpoint(host_name, None, move |(_addr, req)| {
         let state = state.clone();
         async move { async_impl(state, req).await }
     });

@@ -39,9 +39,9 @@ pub(crate) async fn file_endpoint_handler(
 
                 add_common_headers(metadata, &mut response);
 
-                response.headers.insert(
-                    "Content-Length".to_string(),
-                    response.body.len().to_string(),
+                response.set_header(
+                    "Content-Length",
+                    response.body.len().to_string().as_str(),
                 );
 
                 return Ok(response);
@@ -73,15 +73,12 @@ pub(crate) async fn file_endpoint_handler(
     // add Content-Encoding header
 
     // the content server files are ALWAY brotli-compressed!
-    response
-        .headers
-        .insert("Content-Encoding".to_string(), "br".to_string());
+    response.set_header("Content-Encoding", "br");
 
     // add Content-Length header
-
-    response.headers.insert(
-        "Content-Length".to_string(),
-        response.body.len().to_string(),
+    response.set_header(
+        "Content-Length",
+        response.body.len().to_string().as_str(),
     );
 
     return Ok(response);
@@ -95,17 +92,14 @@ fn add_common_headers(metadata: FileMetadata, response: &mut Response) {
         FileType::Wasm => "application/wasm",
     };
     response
-        .headers
-        .insert("Content-Type".to_string(), content_type.to_string());
+        .set_header("Content-Type", content_type);
 
     // add ETag header
-    response
-        .headers
-        .insert("ETag".to_string(), metadata.etag().to_string());
+    response.set_header("ETag", metadata.etag().to_string().as_str());
 
     // add cache-control header
-    response.headers.insert(
-        "Cache-Control".to_string(),
-        "public, no-cache, max-age=0".to_string(),
+    response.set_header(
+        "Cache-Control",
+        "public, no-cache, max-age=0",
     );
 }

@@ -140,15 +140,6 @@ fn get_endpoint_func(
             let mut response = Response::default();
             match remote_response_result {
                 Ok(remote_response) => {
-                    response.url = outer_url;
-                    response.ok = remote_response.ok;
-                    response.status = remote_response.status;
-                    response.status_text = remote_response.status_text;
-                    response.body = remote_response.body;
-
-                    // for (header_name, _) in remote_response.headers.iter() {
-                    //     info!("incoming req has header: {}", header_name);
-                    // }
 
                     // pass through headers
                     for header_name in [
@@ -158,27 +149,31 @@ fn get_endpoint_func(
                         "etag",
                         "cache-control",
                         "access-control-allow-headers",
+                        "set-cookie",
                     ] {
-                        if remote_response.headers.contains_key(header_name) {
+                        if remote_response.has_header(header_name) {
                             // info!("adding header: {}", header_name);
                             let remote_header_value =
-                                remote_response.headers.get(header_name).unwrap();
-                            response
-                                .headers
-                                .insert(header_name.to_string(), remote_header_value.clone());
+                                remote_response.get_header(header_name).unwrap();
+                            response.set_header(header_name, remote_header_value);
                         } else {
                             // info!("header not found: {}", header_name);
                         }
                     }
 
+                    response.url = outer_url;
+                    response.ok = remote_response.ok;
+                    response.status = remote_response.status;
+                    response.status_text = remote_response.status_text;
+                    response.body = remote_response.body;
+
                     // access control allow origin
                     if let Some(allow_origin) = allow_origin_opt {
-                        while response.headers.contains_key("access-control-allow-origin") {
-                            response.headers.remove("access-control-allow-origin");
+                        while response.has_header("access-control-allow-origin") {
+                            response.remove_header("access-control-allow-origin");
                         }
                         response
-                            .headers
-                            .insert("access-control-allow-origin".to_string(), allow_origin);
+                            .set_header("access-control-allow-origin", &allow_origin);
                     }
                 }
                 Err(err) => {

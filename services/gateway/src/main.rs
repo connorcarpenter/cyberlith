@@ -18,10 +18,8 @@ use auth_server_http_proto::{
     RefreshTokenGrantRequest, UserLoginRequest, UserNameForgotRequest, UserPasswordForgotRequest,
     UserPasswordResetRequest, UserRegisterConfirmRequest, UserRegisterRequest,
 };
-use crate::access_token_checker::access_token_check;
-use crate::redirect::game_html_redirect_handler;
 
-use crate::session_connect::session_rtc_endpoint_handler;
+use crate::{redirect::game_html_redirect_handler, session_connect::session_rtc_endpoint_handler};
 
 pub fn main() {
     logging::initialize();
@@ -135,14 +133,14 @@ pub fn main() {
 
     // -> session
     {
-        server.endpoint_raw(
+        server.raw_endpoint(
             gateway,
             required_host_api,
             api_allow_origin,
             Method::Post,
             "session_rtc",
             session_rtc_endpoint_handler,
-        ).middleware(access_token_check);
+        ).middleware(access_token_checker::api_middleware);
     }
 
     // -> world
@@ -161,7 +159,7 @@ pub fn main() {
             addr,
             &port,
             "world_rtc",
-        ).middleware(access_token_check);
+        ).middleware(access_token_checker::api_middleware);
 
         server.serve_proxy(
             gateway,
@@ -173,7 +171,7 @@ pub fn main() {
             addr,
             &port,
             "world_rtc",
-        ).middleware(access_token_check);
+        ).middleware(access_token_checker::api_middleware);
     }
 
     // -> content
@@ -225,15 +223,15 @@ pub fn main() {
             addr,
             &port,
             "game.html",
-        ).middleware(access_token_check);
-        server.endpoint_raw(
+        ).middleware(access_token_checker::www_middleware);
+        server.raw_endpoint(
             gateway,
             required_host_www,
             None,
             Method::Get,
             "game.html",
             game_html_redirect_handler,
-        ).middleware(access_token_check);
+        ).middleware(access_token_checker::www_middleware);
         server.serve_proxy(
             gateway,
             required_host_www,
@@ -244,7 +242,7 @@ pub fn main() {
             addr,
             &port,
             "game.js",
-        ).middleware(access_token_check);
+        ).middleware(access_token_checker::www_middleware);
         server.serve_proxy(
             gateway,
             required_host_www,
@@ -255,7 +253,7 @@ pub fn main() {
             addr,
             &port,
             "game_bg.wasm",
-        ).middleware(access_token_check);
+        ).middleware(access_token_checker::www_middleware);
     }
 
     // prune expired rate limiter entries

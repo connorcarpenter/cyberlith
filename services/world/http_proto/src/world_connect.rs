@@ -47,6 +47,8 @@ impl IncomingUserResponse {
 impl ApiRequest for WorldConnectRequest {
     type Response = IncomingUserResponse;
 
+    fn name() -> &'static str { "WorldConnectRequest" }
+
     fn method() -> Method {
         Method::Post
     }
@@ -56,4 +58,6 @@ impl ApiRequest for WorldConnectRequest {
     }
 }
 
-impl ApiResponse for IncomingUserResponse {}
+impl ApiResponse for IncomingUserResponse {
+    fn name() -> &'static str { "IncomingUserResponse" }
+}

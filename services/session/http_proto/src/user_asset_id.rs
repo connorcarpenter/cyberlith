@@ -48,6 +48,8 @@ pub struct UserAssetIdResponse;
 impl ApiRequest for UserAssetIdRequest {
     type Response = UserAssetIdResponse;
 
+    fn name() -> &'static str { "UserAssetIdRequest" }
+
     fn method() -> Method {
         Method::Post
     }
@@ -57,4 +59,6 @@ impl ApiRequest for UserAssetIdRequest {
     }
 }
 
-impl ApiResponse for UserAssetIdResponse {}
+impl ApiResponse for UserAssetIdResponse {
+    fn name() -> &'static str { "UserAssetIdResponse" }
+}

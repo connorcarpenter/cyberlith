@@ -9,7 +9,7 @@ use auth_server_http_proto::{UserRegisterConfirmRequest, UserRegisterConfirmResp
 use crate::{error::AuthServerError, state::State, types::RegisterToken};
 
 pub fn user_register_confirm(host_name: &str, server: &mut Server, state: Arc<RwLock<State>>) {
-    server.endpoint(host_name, None, move |(_addr, req)| {
+    server.api_endpoint(host_name, None, move |(_addr, req)| {
         let state = state.clone();
         async move { async_impl(state, req).await }
     });

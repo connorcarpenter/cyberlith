@@ -6,17 +6,45 @@ use http_server::{ApiRequest, ApiResponse, Request, Response};
 
 use auth_server_http_proto::{AccessTokenValidateRequest, AccessTokenValidateResponse};
 
-pub(crate) async fn access_token_check(
-    _incoming_addr: SocketAddr,
+pub(crate) async fn api_middleware(
+    incoming_addr: SocketAddr,
     incoming_request: Request,
 ) -> Option<Result<Response, ResponseError>> {
 
+    let access_token: Option<String> = incoming_request.headers.get("authorization").map(|s| s.clone());
+    middleware_impl(incoming_addr, incoming_request, access_token).await
+}
+
+pub(crate) async fn www_middleware(
+    incoming_addr: SocketAddr,
+    incoming_request: Request,
+) -> Option<Result<Response, ResponseError>> {
+
+    // get access token from cookie on incoming_request
+    let access_token: Option<String> = if let Some(cookie) = incoming_request.headers.get("cookie") {
+        // parse 'access_token' out of cookie
+        cookie
+            .split(';')
+            .filter(|cookie| cookie.starts_with("access_token="))
+            .map(|cookie| cookie.trim_start_matches("access_token=").to_string())
+            .next()
+    } else {
+        None
+    };
+    middleware_impl(incoming_addr, incoming_request, access_token).await
+}
+
+async fn middleware_impl(
+    _incoming_addr: SocketAddr,
+    incoming_request: Request,
+    access_token_opt: Option<String>,
+) -> Option<Result<Response, ResponseError>> {
     let host_name = "gateway auth";
     let remote_name = "client";
 
     http_server::http_log_util::recv_req(host_name, remote_name, format!("{} {}", incoming_request.method.as_str(), &incoming_request.url).as_str());
-    let Some(access_token) = incoming_request.headers.get("authorization") else {
-        http_server::http_log_util::send_res(host_name, "unauthenticated (no authorization header found)");
+    let Some(access_token) = access_token_opt else {
+        http_server::http_log_util::send_res(host_name, "unauthenticated (no access_token found)");
         return Some(Err(ResponseError::Unauthenticated));
     };
 
@@ -27,7 +55,7 @@ pub(crate) async fn access_token_check(
 
     http_server::http_log_util::send_req(host_name, auth_server, AccessTokenValidateRequest::name());
 
-    let validate_request = AccessTokenValidateRequest::new(access_token);
+    let validate_request = AccessTokenValidateRequest::new(&access_token);
 
     match HttpClient::send(&remote_addr, remote_port, validate_request).await {
         Ok(_validate_response) => {

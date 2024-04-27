@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 
 use http_common::{Request, RequestOptions, Response, ResponseError};
 
@@ -37,11 +36,11 @@ pub fn fetch_blocking(
     let url = resp.get_url().to_owned();
     let status = resp.status();
     let status_text = resp.status_text().to_owned();
-    let mut headers = BTreeMap::new();
+    let mut headers = Vec::new();
     for key in &resp.headers_names() {
         if let Some(value) = resp.header(key) {
             // lowercase for easy lookup
-            headers.insert(key.to_ascii_lowercase(), value.to_owned());
+            headers.push((key.to_ascii_lowercase(), value.to_owned()));
         }
     }
 
@@ -52,14 +51,15 @@ pub fn fetch_blocking(
         .read_to_end(&mut body)
         .map_err(|err| ResponseError::NetworkError(err.to_string()))?;
 
-    let response = Response {
-        url,
-        ok,
-        status,
-        status_text,
-        body,
-        headers,
-    };
+    let mut response = Response::default();
+    response.url = url;
+    response.ok = ok;
+    response.status = status;
+    response.status_text = status_text;
+    response.body = body;
+    for (header_name, header_value) in headers {
+        response.set_header(&header_name, &header_value);
+    }
     Ok(response)
 }
 

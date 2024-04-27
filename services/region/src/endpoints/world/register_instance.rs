@@ -11,7 +11,7 @@ use region_server_http_proto::{WorldRegisterInstanceRequest, WorldRegisterInstan
 use crate::{instances::WorldInstance, state::State};
 
 pub fn world_register_instance(host_name: &str, server: &mut Server, state: Arc<RwLock<State>>) {
-    server.endpoint(host_name, None, move |(addr, req)| {
+    server.api_endpoint(host_name, None, move |(addr, req)| {
         let state = state.clone();
         async move { async_impl(addr, state, req).await }
     });

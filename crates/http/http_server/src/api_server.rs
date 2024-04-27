@@ -12,7 +12,7 @@ use crate::{
 
 // serves API endpoint with typed requests & responses
 pub trait ApiServer {
-    fn endpoint<
+    fn api_endpoint<
         TypeRequest: 'static + ApiRequest,
         TypeResponse: 'static + Send + Sync + Future<Output = Result<TypeRequest::Response, ResponseError>>,
         Handler: 'static + Send + Sync + Fn((SocketAddr, TypeRequest)) -> TypeResponse,
@@ -23,7 +23,7 @@ pub trait ApiServer {
         handler: Handler,
     ) -> EndpointRef;
 
-    fn endpoint_raw<
+    fn raw_endpoint<
         ResponseType: 'static + Send + Sync + Future<Output = Result<Response, ResponseError>>,
         Handler: 'static + Send + Sync + Fn((SocketAddr, Request)) -> ResponseType,
     >(
@@ -38,7 +38,7 @@ pub trait ApiServer {
 }
 
 impl ApiServer for Server {
-    fn endpoint<
+    fn api_endpoint<
         TypeRequest: 'static + ApiRequest,
         TypeResponse: 'static + Send + Sync + Future<Output = Result<TypeRequest::Response, ResponseError>>,
         Handler: 'static + Send + Sync + Fn((SocketAddr, TypeRequest)) -> TypeResponse,
@@ -63,7 +63,7 @@ impl ApiServer for Server {
         EndpointRef::new(self, endpoint_path)
     }
 
-    fn endpoint_raw<
+    fn raw_endpoint<
         ResponseType: 'static + Send + Sync + Future<Output = Result<Response, ResponseError>>,
         Handler: 'static + Send + Sync + Fn((SocketAddr, Request)) -> ResponseType,
     >(
@@ -178,12 +178,10 @@ fn get_endpoint_raw_func<
                 response_name = format!("{} {}", response.status, response.status_text);
 
                 if let Some(allow_origin) = allow_origin_opt {
-                    while response.headers.contains_key("access-control-allow-origin") {
-                        response.headers.remove("access-control-allow-origin");
+                    while response.has_header("access-control-allow-origin") {
+                        response.remove_header("access-control-allow-origin");
                     }
-                    response
-                        .headers
-                        .insert("access-control-allow-origin".to_string(), allow_origin);
+                    response.set_header("access-control-allow-origin", &allow_origin);
                 }
             }
 

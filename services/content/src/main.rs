@@ -52,7 +52,7 @@ pub fn main() {
     .iter()
     {
         let state = state.clone();
-        server.endpoint_raw(
+        server.raw_endpoint(
             content_server,
             None,
             None,

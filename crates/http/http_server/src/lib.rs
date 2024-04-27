@@ -7,9 +7,6 @@ pub use base_server::Server;
 mod api_server;
 pub use api_server::ApiServer;
 
-mod file_server;
-pub use file_server::FileServer;
-
 mod proxy_server;
 pub use proxy_server::ProxyServer;
 

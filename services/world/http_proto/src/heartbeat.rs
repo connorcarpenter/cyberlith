@@ -28,6 +28,8 @@ pub struct HeartbeatResponse;
 impl ApiRequest for HeartbeatRequest {
     type Response = HeartbeatResponse;
 
+    fn name() -> &'static str { "HeartbeatRequest" }
+
     fn method() -> Method {
         Method::Post
     }
@@ -37,4 +39,6 @@ impl ApiRequest for HeartbeatRequest {
     }
 }
 
-impl ApiResponse for HeartbeatResponse {}
+impl ApiResponse for HeartbeatResponse {
+    fn name() -> &'static str { "HeartbeatResponse" }
+}

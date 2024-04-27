@@ -30,6 +30,8 @@ pub struct IncomingUserResponse;
 impl ApiRequest for IncomingUserRequest {
     type Response = IncomingUserResponse;
 
+    fn name() -> &'static str { "IncomingUserRequest" }
+
     fn method() -> Method {
         Method::Post
     }
@@ -39,4 +41,6 @@ impl ApiRequest for IncomingUserRequest {
     }
 }
 
-impl ApiResponse for IncomingUserResponse {}
+impl ApiResponse for IncomingUserResponse {
+    fn name() -> &'static str { "IncomingUserResponse" }
+}

@@ -40,6 +40,8 @@ pub struct ConnectAssetServerResponse;
 impl ApiRequest for ConnectAssetServerRequest {
     type Response = ConnectAssetServerResponse;
 
+    fn name() -> &'static str { "ConnectAssetServerRequest" }
+
     fn method() -> Method {
         Method::Post
     }
@@ -49,4 +51,6 @@ impl ApiRequest for ConnectAssetServerRequest {
     }
 }
 
-impl ApiResponse for ConnectAssetServerResponse {}
+impl ApiResponse for ConnectAssetServerResponse {
+    fn name() -> &'static str { "ConnectAssetServerResponse" }
+}

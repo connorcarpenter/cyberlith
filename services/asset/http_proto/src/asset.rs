@@ -60,6 +60,8 @@ impl AssetResponse {
 impl ApiRequest for AssetRequest {
     type Response = AssetResponse;
 
+    fn name() -> &'static str { "AssetRequest" }
+
     fn method() -> Method {
         Method::Post
     }
@@ -69,4 +71,6 @@ impl ApiRequest for AssetRequest {
     }
 }
 
-impl ApiResponse for AssetResponse {}
+impl ApiResponse for AssetResponse {
+    fn name() -> &'static str { "AssetResponse" }
+}
