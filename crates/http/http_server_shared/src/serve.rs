@@ -319,7 +319,9 @@ async fn cast_to_request(
         return None;
     };
     let mut request = Request::new(method, uri, body);
-    request.headers = header_map;
+    for (hn, hv) in header_map {
+        request.set_header(&hn, &hv);
+    }
     Some(request)
 }
 

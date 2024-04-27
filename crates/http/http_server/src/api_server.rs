@@ -15,7 +15,7 @@ pub trait ApiServer {
     fn api_endpoint<
         TypeRequest: 'static + ApiRequest,
         TypeResponse: 'static + Send + Sync + Future<Output = Result<TypeRequest::Response, ResponseError>>,
-        Handler: 'static + Send + Sync + Fn((SocketAddr, TypeRequest)) -> TypeResponse,
+        Handler: 'static + Send + Sync + Fn(SocketAddr, TypeRequest) -> TypeResponse,
     >(
         &mut self,
         host_name: &str,
@@ -25,7 +25,7 @@ pub trait ApiServer {
 
     fn raw_endpoint<
         ResponseType: 'static + Send + Sync + Future<Output = Result<Response, ResponseError>>,
-        Handler: 'static + Send + Sync + Fn((SocketAddr, Request)) -> ResponseType,
+        Handler: 'static + Send + Sync + Fn(SocketAddr, Request) -> ResponseType,
     >(
         &mut self,
         host_name: &str,
@@ -41,7 +41,7 @@ impl ApiServer for Server {
     fn api_endpoint<
         TypeRequest: 'static + ApiRequest,
         TypeResponse: 'static + Send + Sync + Future<Output = Result<TypeRequest::Response, ResponseError>>,
-        Handler: 'static + Send + Sync + Fn((SocketAddr, TypeRequest)) -> TypeResponse,
+        Handler: 'static + Send + Sync + Fn(SocketAddr, TypeRequest) -> TypeResponse,
     >(
         &mut self,
         host_name: &str,
@@ -65,7 +65,7 @@ impl ApiServer for Server {
 
     fn raw_endpoint<
         ResponseType: 'static + Send + Sync + Future<Output = Result<Response, ResponseError>>,
-        Handler: 'static + Send + Sync + Fn((SocketAddr, Request)) -> ResponseType,
+        Handler: 'static + Send + Sync + Fn(SocketAddr, Request) -> ResponseType,
     >(
         &mut self,
         host_name: &str,
@@ -91,7 +91,7 @@ impl ApiServer for Server {
 fn get_endpoint_func<
     TypeRequest: 'static + ApiRequest,
     TypeResponse: 'static + Send + Sync + Future<Output = Result<TypeRequest::Response, ResponseError>>,
-    Handler: 'static + Send + Sync + Fn((SocketAddr, TypeRequest)) -> TypeResponse,
+    Handler: 'static + Send + Sync + Fn(SocketAddr, TypeRequest) -> TypeResponse,
 >(
     host_name: &str,
     handler: Handler,
@@ -109,7 +109,7 @@ fn get_endpoint_func<
 
         // success!
 
-        let typed_future = handler((addr, typed_request));
+        let typed_future = handler(addr, typed_request);
 
         // convert typed future to pure future
         let pure_future = async move {
@@ -147,7 +147,7 @@ fn get_endpoint_func<
 
 fn get_endpoint_raw_func<
     ResponseType: 'static + Send + Sync + Future<Output = Result<Response, ResponseError>>,
-    Handler: 'static + Send + Sync + Fn((SocketAddr, Request)) -> ResponseType,
+    Handler: 'static + Send + Sync + Fn(SocketAddr, Request) -> ResponseType,
 >(
     host_name: &str,
     allow_origin_opt: Option<&str>,
@@ -162,7 +162,7 @@ fn get_endpoint_raw_func<
         let incoming_path = pure_request.url.clone();
         let mut response_name = "error".to_string();
 
-        let handler_func = handler((addr, pure_request));
+        let handler_func = handler(addr, pure_request);
 
         let pure_future = async move {
             let host_name = host_name.clone();

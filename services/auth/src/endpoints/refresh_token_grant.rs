@@ -10,7 +10,7 @@ use crate::{
 };
 
 pub fn refresh_token_grant(host_name: &str, server: &mut Server, state: Arc<RwLock<State>>) {
-    server.api_endpoint(host_name, None, move |(_addr, req)| {
+    server.api_endpoint(host_name, None, move |_addr, req| {
         let state = state.clone();
         async move { async_impl(state, req).await }
     });

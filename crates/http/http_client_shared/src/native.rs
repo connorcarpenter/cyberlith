@@ -19,8 +19,8 @@ pub fn fetch_blocking(
         }
     }
 
-    for header in &request.headers {
-        req = req.set(header.0, header.1);
+    for (header_name, header_value) in request.headers_iter() {
+        req = req.set(header_name, header_value);
     }
 
     let resp = req.send_bytes(&request.body);

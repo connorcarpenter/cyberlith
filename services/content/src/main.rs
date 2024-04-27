@@ -58,7 +58,7 @@ pub fn main() {
             None,
             Method::Get,
             file_name,
-            move |(addr, incoming_req)| {
+            move |addr, incoming_req| {
                 let state = state.clone();
                 let file_name = file_name.to_string();
                 async move { file_endpoint_handler(addr, incoming_req, state, file_name).await }

@@ -16,10 +16,10 @@ use session_server_naia_proto::{
     protocol,
 };
 
-pub(crate) async fn session_rtc_endpoint_handler(
-    args: (SocketAddr, Request),
+pub(crate) async fn handler(
+    _addr: SocketAddr,
+    incoming_request: Request,
 ) -> Result<Response, ResponseError> {
-    let (_addr, incoming_request) = args;
 
     let host_name = "gateway";
 
@@ -85,9 +85,7 @@ pub(crate) async fn session_rtc_endpoint_handler(
 
         let mut session_rtc_request = incoming_request.clone();
         session_rtc_request.url = format!("http://{}:{}/{}", remote_addr, remote_port, remote_path);
-        session_rtc_request
-            .headers
-            .insert("Authorization".to_string(), session_auth_bytes);
+        session_rtc_request.set_header("Authorization", &session_auth_bytes);
         match http_client::raw::fetch_async(session_rtc_request).await {
             Ok(session_rtc_response) => {
                 http_server::http_log_util::recv_res(host_name, session_server, &logged_remote_url);

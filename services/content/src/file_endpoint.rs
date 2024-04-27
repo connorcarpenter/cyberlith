@@ -26,8 +26,8 @@ pub(crate) async fn file_endpoint_handler(
         metadata.clone()
     };
 
-    if incoming_request.headers.contains_key("If-None-Match") {
-        let incoming_etag_str = incoming_request.headers.get("If-None-Match").unwrap();
+    if incoming_request.has_header("If-None-Match") {
+        let incoming_etag_str = incoming_request.get_header("If-None-Match").unwrap();
         if let Ok(incoming_etag) = ETag::from_str(incoming_etag_str) {
             if incoming_etag == metadata.etag() {
                 info!(

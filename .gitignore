@@ -19,6 +19,7 @@ node_modules
 
 /services/auth/target
 /services/gateway/acme_cache
+/services/gateway/cyberlith_certs
 /services/asset/assets
 /services/asset/assets/
 /services/asset/assets/*
@@ -31,9 +32,6 @@ node_modules
 /services/content/target
 /services/content/target/
 /services/content/target/*
-/services/content/files
-/services/content/files/
-/services/content/files/*
 
 /apps/ui_editor/target
 /apps/ui_editor/assets

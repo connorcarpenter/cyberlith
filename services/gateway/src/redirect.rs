@@ -2,9 +2,9 @@ use std::net::SocketAddr;
 
 use http_server::{Request, ResponseError, Response};
 
-pub(crate) async fn game_html_redirect_handler(
-    args: (SocketAddr, Request),
+pub(crate) async fn handler(
+    _addr: SocketAddr,
+    incoming_request: Request,
 ) -> Result<Response, ResponseError> {
-    let (_addr, incoming_request) = args;
     return Ok(Response::redirect(&incoming_request.url, "/game"));
 }

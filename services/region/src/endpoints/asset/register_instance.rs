@@ -11,7 +11,7 @@ use region_server_http_proto::{AssetRegisterInstanceRequest, AssetRegisterInstan
 use crate::{instances::AssetInstance, state::State};
 
 pub fn asset_register_instance(host_name: &str, server: &mut Server, state: Arc<RwLock<State>>) {
-    server.api_endpoint(host_name, None, move |(addr, req)| {
+    server.api_endpoint(host_name, None, move |addr, req| {
         let state = state.clone();
         async move { async_impl(addr, state, req).await }
     });

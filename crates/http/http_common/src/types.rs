@@ -53,7 +53,7 @@ pub struct Request {
     pub body: Vec<u8>,
 
     /// ("Accept", "*/*"), …
-    pub headers: BTreeMap<String, String>,
+    headers: BTreeMap<String, String>,
 }
 
 impl Request {
@@ -72,6 +72,26 @@ impl Request {
             body,
             headers,
         }
+    }
+
+    pub fn has_header(&self, name: &str) -> bool {
+        self.headers.contains_key(name.to_ascii_lowercase().as_str())
+    }
+
+    pub fn get_header(&self, name: &str) -> Option<&String> {
+        self.headers.get(name.to_ascii_lowercase().as_str())
+    }
+
+    pub fn set_header(&mut self, name: &str, value: &str) {
+        self.headers.insert(name.to_ascii_lowercase(), value.to_string());
+    }
+
+    pub fn remove_header(&mut self, name: &str) {
+        self.headers.remove(name.to_ascii_lowercase().as_str());
+    }
+
+    pub fn headers_iter(&self) -> Iter<'_, String, String> {
+        self.headers.iter()
     }
 }
 

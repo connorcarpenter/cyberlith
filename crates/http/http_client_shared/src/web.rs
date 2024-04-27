@@ -62,8 +62,8 @@ pub(crate) async fn fetch_base(
 
     let js_request = web_sys::Request::new_with_str_and_init(&request.url, &opts)?;
 
-    for h in &request.headers {
-        js_request.headers().set(h.0, h.1)?;
+    for (name, value) in request.headers_iter() {
+        js_request.headers().set(name, value)?;
     }
 
     let window = web_sys::window().unwrap();
@@ -122,14 +122,19 @@ async fn fetch_jsvalue(
 
     let base = get_response_base(&response)?;
 
-    Ok(Response {
-        url: base.url,
-        ok: base.ok,
-        status: base.status,
-        status_text: base.status_text,
-        body,
-        headers: base.headers,
-    })
+    let mut outgoing_response = Response::default();
+
+    for (name, value) in base.headers {
+        outgoing_response.set_header(&name, &value);
+    }
+
+    outgoing_response.url = base.url;
+    outgoing_response.ok = base.ok;
+    outgoing_response.status = base.status;
+    outgoing_response.status_text = base.status_text;
+    outgoing_response.body = body;
+
+    Ok(outgoing_response)
 }
 
 /// Spawn an async task.

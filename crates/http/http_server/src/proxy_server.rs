@@ -109,8 +109,8 @@ fn get_endpoint_func(
     let remote_url = remote_url.to_string();
     let logged_remote_url = logged_remote_url.to_string();
     Box::new(move |_outer_addr: SocketAddr, outer_req: Request| {
+        let outer_headers: Vec<(String, String)> = outer_req.headers_iter().map(|(name, value)| (name.clone(), value.clone())).collect();
         let outer_url = outer_req.url;
-        let outer_headers = outer_req.headers;
         let outer_body = outer_req.body;
 
         let host_name = host_name.clone();
@@ -131,7 +131,9 @@ fn get_endpoint_func(
             log_util::recv_req(&host_name, &logged_host_url, "");
 
             let mut remote_req = Request::new(method, &remote_url, outer_body);
-            remote_req.headers = outer_headers;
+            for (header_name, header_value) in outer_headers.iter() {
+                remote_req.set_header(header_name, header_value);
+            }
 
             log_util::send_req(&host_name, &remote_name, &logged_remote_url);
             let remote_response_result = fetch_async(remote_req).await;

@@ -2,24 +2,22 @@ mod session_connect;
 mod redirect;
 mod rate_limiter;
 mod access_token_checker;
+mod user_login;
 
-use std::{net::SocketAddr, thread};
-use std::time::Duration;
+use std::{time::Duration, net::SocketAddr, thread};
 
 use config::{
     AUTH_SERVER_PORT, AUTH_SERVER_RECV_ADDR, CONTENT_SERVER_PORT, CONTENT_SERVER_RECV_ADDR,
     GATEWAY_PORT, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SELF_BINDING_ADDR, SUBDOMAIN_API, SUBDOMAIN_WWW,
     WORLD_SERVER_RECV_ADDR, WORLD_SERVER_SIGNAL_PORT,
 };
-use http_server::{ApiServer, Method, ProxyServer, Server, smol};
+use http_server::{ApiRequest, ApiServer, Method, ProxyServer, Server, smol};
 use logging::info;
 
 use auth_server_http_proto::{
     RefreshTokenGrantRequest, UserLoginRequest, UserNameForgotRequest, UserPasswordForgotRequest,
     UserPasswordResetRequest, UserRegisterConfirmRequest, UserRegisterRequest,
 };
-
-use crate::{redirect::game_html_redirect_handler, session_connect::session_rtc_endpoint_handler};
 
 pub fn main() {
     logging::initialize();
@@ -67,13 +65,21 @@ pub fn main() {
         let port = AUTH_SERVER_PORT.to_string();
 
         // user login
-        server.serve_api_proxy::<UserLoginRequest>(
+        // server.serve_api_proxy::<UserLoginRequest>(
+        //     gateway,
+        //     required_host_api,
+        //     api_allow_origin,
+        //     auth_server,
+        //     addr,
+        //     &port,
+        // );
+        server.raw_endpoint(
             gateway,
             required_host_api,
             api_allow_origin,
-            auth_server,
-            addr,
-            &port,
+            UserLoginRequest::method(),
+            UserLoginRequest::path(),
+            user_login::handler,
         );
         // user register
         server.serve_api_proxy::<UserRegisterRequest>(
@@ -139,7 +145,7 @@ pub fn main() {
             api_allow_origin,
             Method::Post,
             "session_rtc",
-            session_rtc_endpoint_handler,
+            session_connect::handler,
         ).middleware(access_token_checker::api_middleware);
     }
 
@@ -230,7 +236,7 @@ pub fn main() {
             None,
             Method::Get,
             "game.html",
-            game_html_redirect_handler,
+            redirect::handler,
         ).middleware(access_token_checker::www_middleware);
         server.serve_proxy(
             gateway,

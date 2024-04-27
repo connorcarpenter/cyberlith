@@ -11,7 +11,7 @@ pub(crate) async fn api_middleware(
     incoming_request: Request,
 ) -> Option<Result<Response, ResponseError>> {
 
-    let access_token: Option<String> = incoming_request.headers.get("authorization").map(|s| s.clone());
+    let access_token: Option<String> = incoming_request.get_header("authorization").map(|s| s.clone());
     middleware_impl(incoming_addr, incoming_request, access_token).await
 }
 
@@ -21,13 +21,14 @@ pub(crate) async fn www_middleware(
 ) -> Option<Result<Response, ResponseError>> {
 
     // get access token from cookie on incoming_request
-    let access_token: Option<String> = if let Some(cookie) = incoming_request.headers.get("cookie") {
+    let access_token: Option<String> = if let Some(cookie) = incoming_request.get_header("cookie") {
         // parse 'access_token' out of cookie
-        cookie
+        let token = cookie
             .split(';')
             .filter(|cookie| cookie.starts_with("access_token="))
             .map(|cookie| cookie.trim_start_matches("access_token=").to_string())
-            .next()
+            .next();
+        token
     } else {
         None
     };
@@ -39,7 +40,7 @@ async fn middleware_impl(
     incoming_request: Request,
     access_token_opt: Option<String>,
 ) -> Option<Result<Response, ResponseError>> {
-    let host_name = "gateway auth";
+    let host_name = "gateway_auth";
     let remote_name = "client";
 
     http_server::http_log_util::recv_req(host_name, remote_name, format!("{} {}", incoming_request.method.as_str(), &incoming_request.url).as_str());
