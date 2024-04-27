@@ -28,6 +28,9 @@ pub mod acme {
 }
 
 mod log_util;
+mod endpoint;
+mod middleware;
+
 pub mod http_log_util {
     pub use crate::log_util::*;
 }

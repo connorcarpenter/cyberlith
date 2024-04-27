@@ -1,12 +1,10 @@
-use std::{net::SocketAddr, pin::Pin};
-
-use smol::future::Future;
+use std::net::SocketAddr;
 
 use http_client_shared::fetch_async;
 use http_common::{ApiRequest, Method, Request, Response, ResponseError};
 use logging::{info, warn};
 
-use crate::{base_server::Endpoint, log_util, Server};
+use crate::{log_util, Server, endpoint::{Endpoint, EndpointFunc}};
 
 // serves a pass-through proxy
 pub trait ProxyServer {
@@ -102,23 +100,14 @@ fn get_endpoint_func(
     method: Method,
     remote_url: &str,
     logged_remote_url: &str,
-) -> Box<
-    dyn 'static
-        + Send
-        + Sync
-        + Fn(
-            (SocketAddr, Request),
-        )
-            -> Pin<Box<dyn 'static + Send + Sync + Future<Output = Result<Response, ResponseError>>>>,
-> {
+) -> EndpointFunc {
     let host_name = host_name.to_string();
     let remote_name = remote_name.to_string();
     let allow_origin_opt = allow_origin_opt.map(|s| s.to_string());
     let method = method.clone();
     let remote_url = remote_url.to_string();
     let logged_remote_url = logged_remote_url.to_string();
-    Box::new(move |args: (SocketAddr, Request)| {
-        let outer_req = args.1;
+    Box::new(move |_outer_addr: SocketAddr, outer_req: Request| {
         let outer_url = outer_req.url;
         let outer_headers = outer_req.headers;
         let outer_body = outer_req.body;

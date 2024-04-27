@@ -6,7 +6,7 @@ use http_common::{ApiRequest, ApiResponse, Method, Request, Response, ResponseEr
 use logging::info;
 
 use crate::{
-    base_server::{Endpoint, EndpointFunc},
+    endpoint::{EndpointFunc, Endpoint},
     log_util, Server,
 };
 
@@ -95,9 +95,7 @@ fn get_endpoint_func<
     handler: Handler,
 ) -> EndpointFunc {
     let host_name = host_name.to_string();
-    Box::new(move |args: (SocketAddr, Request)| {
-        let addr = args.0;
-        let pure_request = args.1;
+    Box::new(move |addr: SocketAddr, pure_request: Request| {
         let host_name = host_name.clone();
         let incoming_method = pure_request.method.clone();
         let incoming_path = pure_request.url.clone();
@@ -155,14 +153,12 @@ fn get_endpoint_raw_func<
 ) -> EndpointFunc {
     let host_name = host_name.to_string();
     let allow_origin_opt = allow_origin_opt.map(|s| s.to_string());
-    Box::new(move |args: (SocketAddr, Request)| {
-        let addr = args.0;
-        let pure_request = args.1;
+    Box::new(move |addr: SocketAddr, pure_request: Request| {
         let host_name = host_name.clone();
         let allow_origin_opt = allow_origin_opt.clone();
         let incoming_method = pure_request.method.clone();
         let incoming_path = pure_request.url.clone();
-        let mut response_name = "unknown".to_string();
+        let mut response_name = "error".to_string();
 
         let handler_func = handler((addr, pure_request));
 
@@ -176,7 +172,9 @@ fn get_endpoint_raw_func<
 
             let mut response_result = handler_func.await;
             if let Ok(response) = response_result.as_mut() {
+
                 response_name = format!("{} {}", response.status, response.status_text);
+
                 if let Some(allow_origin) = allow_origin_opt {
                     while response.headers.contains_key("access-control-allow-origin") {
                         response.headers.remove("access-control-allow-origin");
@@ -185,8 +183,6 @@ fn get_endpoint_raw_func<
                         .headers
                         .insert("access-control-allow-origin".to_string(), allow_origin);
                 }
-            } else {
-                response_name = "error".to_string();
             }
 
             log_util::send_res(&host_name, &response_name);

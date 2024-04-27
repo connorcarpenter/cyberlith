@@ -1,12 +1,11 @@
-use std::{net::SocketAddr, pin::Pin};
-
-use smol::future::Future;
+use std::net::SocketAddr;
 
 use logging::{info, warn};
 
 use http_common::{Request, Response, ResponseError};
+use crate::endpoint::{Endpoint, EndpointFunc};
 
-use crate::{base_server::Endpoint, Server};
+use crate::Server;
 
 // serves files from the file system
 pub trait FileServer {
@@ -28,17 +27,9 @@ impl FileServer for Server {
 
 fn get_endpoint_func(
     file_path: &str,
-) -> Box<
-    dyn 'static
-        + Send
-        + Sync
-        + Fn(
-            (SocketAddr, Request),
-        )
-            -> Pin<Box<dyn 'static + Send + Sync + Future<Output = Result<Response, ResponseError>>>>,
-> {
+) -> EndpointFunc {
     let file_path = file_path.to_string();
-    Box::new(move |_args: (SocketAddr, Request)| {
+    Box::new(move |_addr: SocketAddr, _pure_request: Request| {
         let file_path = file_path.clone();
 
         // convert typed future to pure future

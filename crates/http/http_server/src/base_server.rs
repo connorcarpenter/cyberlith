@@ -1,4 +1,4 @@
-use std::{collections::HashMap, net::SocketAddr, pin::Pin};
+use std::{collections::HashMap, net::SocketAddr};
 
 use async_dup::Arc;
 use smol::{
@@ -13,56 +13,7 @@ use http_common::{Request, Response, ResponseError};
 use http_server_shared::{executor, serve_impl, MatchHostResult};
 use logging::info;
 
-// Endpoint
-pub(crate) type EndpointFunc = Box<
-    dyn Send
-        + Sync
-        + Fn(
-        // TODO: get rid of these parenthesis...
-            (SocketAddr, Request),
-        ) -> Pin<Box<dyn Send + Sync + Future<Output = Result<Response, ResponseError>>>>,
->;
-
-pub(crate) struct Endpoint {
-    func: EndpointFunc,
-    // Option<(required_host, Option<redirect_url>)>
-    required_host: Option<(String, Option<String>)>,
-}
-
-impl Endpoint {
-    pub(crate) fn new(
-        func: EndpointFunc,
-        required_host: Option<(String, Option<String>)>,
-    ) -> Self {
-        Self {
-            func,
-            required_host,
-        }
-    }
-}
-
-// Middleware
-pub(crate) type MiddlewareFunc = Box<
-    dyn Send
-    + Sync
-    + Fn(
-        SocketAddr, Request,
-    ) -> Pin<Box<dyn Send + Sync + Future<Output = Option<Result<Response, ResponseError>>>>>,
->;
-
-pub struct Middleware {
-    func: MiddlewareFunc,
-}
-
-impl Middleware {
-    pub(crate) fn new(
-        func: MiddlewareFunc,
-    ) -> Self {
-        Self {
-            func,
-        }
-    }
-}
+use crate::{endpoint::Endpoint, middleware::{Middleware, MiddlewareFunc}};
 
 // Server
 pub struct Server {
@@ -198,7 +149,7 @@ impl Server {
 
                     let endpoint = server.endpoints.get(&endpoint_key).unwrap();
 
-                    (endpoint.func)((addr, request)).await
+                    (endpoint.func)(addr, request).await
                 }
             },
         )
