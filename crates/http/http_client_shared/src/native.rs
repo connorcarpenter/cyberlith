@@ -30,7 +30,7 @@ pub fn fetch_blocking(
         Ok(resp) => (true, resp),
         Err(ureq::Error::Status(_, resp)) => (false, resp), // Still read the body on e.g. 404
         Err(ureq::Error::Transport(error)) => {
-            return Err(ResponseError::HttpError(error.to_string()))
+            return Err(ResponseError::NetworkError(error.to_string()))
         }
     };
 
@@ -50,7 +50,7 @@ pub fn fetch_blocking(
     use std::io::Read;
     reader
         .read_to_end(&mut body)
-        .map_err(|err| ResponseError::HttpError(err.to_string()))?;
+        .map_err(|err| ResponseError::NetworkError(err.to_string()))?;
 
     let response = Response {
         url,
@@ -93,5 +93,5 @@ pub(crate) async fn fetch_async(
     rx.recv()
         .await
         .map_err(|err| err.to_string())
-        .map_err(|estr| ResponseError::HttpError(estr))?
+        .map_err(|estr| ResponseError::NetworkError(estr))?
 }

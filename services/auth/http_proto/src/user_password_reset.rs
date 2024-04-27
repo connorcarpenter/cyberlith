@@ -32,6 +32,10 @@ impl UserPasswordResetResponse {
 impl ApiRequest for UserPasswordResetRequest {
     type Response = UserPasswordResetResponse;
 
+    fn name() -> &'static str {
+        "UserPasswordResetRequest"
+    }
+
     fn method() -> Method {
         Method::Post
     }
@@ -41,4 +45,8 @@ impl ApiRequest for UserPasswordResetRequest {
     }
 }
 
-impl ApiResponse for UserPasswordResetResponse {}
+impl ApiResponse for UserPasswordResetResponse {
+    fn name() -> &'static str {
+        "UserPasswordResetResponse"
+    }
+}

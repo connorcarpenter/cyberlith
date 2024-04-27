@@ -57,6 +57,10 @@ impl SessionRegisterInstanceResponse {
 impl ApiRequest for SessionRegisterInstanceRequest {
     type Response = SessionRegisterInstanceResponse;
 
+    fn name() -> &'static str {
+        "SessionRegisterInstanceRequest"
+    }
+
     fn method() -> Method {
         Method::Post
     }
@@ -66,4 +70,8 @@ impl ApiRequest for SessionRegisterInstanceRequest {
     }
 }
 
-impl ApiResponse for SessionRegisterInstanceResponse {}
+impl ApiResponse for SessionRegisterInstanceResponse {
+    fn name() -> &'static str {
+        "SessionRegisterInstanceResponse"
+    }
+}

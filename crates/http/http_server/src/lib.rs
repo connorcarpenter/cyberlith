@@ -13,7 +13,7 @@ pub use file_server::FileServer;
 mod proxy_server;
 pub use proxy_server::ProxyServer;
 
-pub use http_common::{ApiRequest, ApiResponse, Method, Request, Response};
+pub use http_common::{ApiRequest, ApiResponse, Method, Request, Response, ResponseError};
 
 pub mod async_dup {
     pub use async_dup::*;

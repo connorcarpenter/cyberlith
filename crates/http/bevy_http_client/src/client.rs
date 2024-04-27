@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use bevy_ecs::{change_detection::ResMut, system::Resource};
 
 use http_common::{ApiRequest, ApiResponse, Request, RequestOptions, Response, ResponseError};
+use logging::warn;
 
 use crate::{
     backend::RequestTask,
@@ -78,10 +79,22 @@ impl HttpClient {
         if let Some(result) = self.results.remove(&key.id) {
             match result {
                 Ok(response) => {
-                    let Ok(api_response) = S::from_response(response) else {
-                        return Some(Err(ResponseError::SerdeError));
-                    };
-                    Some(Ok(api_response))
+                    match response.status {
+                        200 => {
+                            let Ok(api_response) = S::from_response(response) else {
+                                return Some(Err(ResponseError::SerdeError));
+                            };
+                            return Some(Ok(api_response));
+                        }
+                        401 => return Some(Err(ResponseError::Unauthenticated)),
+                        404 => return Some(Err(ResponseError::NotFound)),
+                        500 => return Some(Err(ResponseError::InternalServerError("unknown".to_string()))),
+                        status_code => {
+                            let msg = format!("unhandled status code: {}", status_code);
+                            warn!("{}", msg);
+                            return Some(Err(ResponseError::NetworkError(msg)));
+                        }
+                    }
                 }
                 Err(err) => Some(Err(err)),
             }

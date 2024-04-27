@@ -5,6 +5,8 @@ use crate::{Method, Request, Response, ResponseError};
 pub trait ApiRequest: Serde + 'static {
     type Response: ApiResponse;
 
+    fn name() -> &'static str;
+
     fn method() -> Method;
 
     fn path() -> &'static str;
@@ -36,6 +38,9 @@ pub trait ApiRequest: Serde + 'static {
 }
 
 pub trait ApiResponse: Serde {
+
+    fn name() -> &'static str;
+
     fn to_response(&self) -> Response {
         let mut bit_writer = FileBitWriter::new();
         self.ser(&mut bit_writer);

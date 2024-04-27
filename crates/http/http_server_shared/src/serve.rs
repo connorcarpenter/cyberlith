@@ -128,35 +128,68 @@ pub async fn serve_impl<
         }
     }
 
+    let Some(incoming_url) = uri else {
+        let response = Response::not_found("");
+        return response_send(response_stream, response).await;
+    };
+
     match read_state {
         ReadState::Finished => {
             // success! continue,
         }
         ReadState::Redirecting(redirect_url) => {
-            let incoming_url = uri.unwrap();
             let response = Response::redirect(&incoming_url, &redirect_url);
             return response_send(response_stream, response).await;
         }
         _ => {
-            return send_404(response_stream).await;
+            let response = Response::not_found(&incoming_url);
+            return response_send(response_stream, response).await;
         }
     }
 
     // done reading //
 
-    let Some(request) = cast_to_request(method, uri, body, header_map).await else {
-        return send_404(response_stream).await;
+    let Some(request) = cast_to_request(method, &incoming_url, body, header_map).await else {
+        let response = Response::not_found(&incoming_url);
+        return response_send(response_stream, response).await;
     };
     let Some(endpoint_key) = endpoint_key else {
-        return send_404(response_stream).await;
+        let response = Response::not_found(&incoming_url);
+        return response_send(response_stream, response).await;
     };
 
-    match response_func(endpoint_key, incoming_address, request).await {
+    match response_func(endpoint_key, incoming_address, request.clone()).await {
         Ok(response) => {
             return response_send(response_stream, response).await;
         }
         Err(e) => {
-            warn!("error when responding: {:?}", e.to_string());
+            let mut response = Response::default();
+            response.ok = false;
+            response.url = request.url.clone();
+
+            match e {
+                ResponseError::NetworkError(_err_str) => {
+                    response.status = 500;
+                    response.status_text = "Internal Server Error".to_string();
+                }
+                ResponseError::SerdeError => {
+                    response.status = 500;
+                    response.status_text = "Internal Server Error".to_string();
+                }
+                ResponseError::Unauthenticated => {
+                    response.status = 401;
+                    response.status_text = "Unauthorized".to_string();
+                }
+                ResponseError::NotFound => {
+                    response.status = 404;
+                    response.status_text = "Not Found".to_string();
+                }
+                ResponseError::InternalServerError(_err_str) => {
+                    response.status = 500;
+                    response.status_text = "Internal Server Error".to_string();
+                }
+            };
+            return response_send(response_stream, response).await;
         }
     }
 }
@@ -276,7 +309,7 @@ fn request_read_body(
 
 async fn cast_to_request(
     method: Option<Method>,
-    uri: Option<String>,
+    uri: &str,
     body: Vec<u8>,
     header_map: BTreeMap<String, String>,
 ) -> Option<Request> {
@@ -285,11 +318,7 @@ async fn cast_to_request(
         warn!("unable to parse method");
         return None;
     };
-    let Some(uri) = uri else {
-        warn!("unable to parse uri");
-        return None;
-    };
-    let mut request = Request::new(method, &uri, body);
+    let mut request = Request::new(method, uri, body);
     request.headers = header_map;
     Some(request)
 }
@@ -310,18 +339,20 @@ async fn response_send<ResponseStream: Unpin + AsyncRead + AsyncWrite>(
     // info!("response sent");
 }
 
-const RESPONSE_BAD: &[u8] = br#"
-HTTP/1.1 404 NOT FOUND
-Content-Type: text/html
-Content-Length: 0
-"#;
-
-async fn send_404<ResponseStream: Unpin + AsyncRead + AsyncWrite>(
-    mut response_stream: ResponseStream,
-) {
-    response_stream.write_all(RESPONSE_BAD).await.unwrap();
-    response_stream_flush(response_stream).await;
-}
+//
+// const RESPONSE_BAD: &[u8] = br#"
+// HTTP/1.1 404 NOT FOUND
+// Content-Type: text/html
+// Content-Length: 0
+// "#;
+//
+// async fn send_404<ResponseStream: Unpin + AsyncRead + AsyncWrite>(
+//     mut response_stream: ResponseStream,
+// ) {
+//     let response = Response::not_found()
+//     response_stream.write_all(RESPONSE_BAD).await.unwrap();
+//     response_stream_flush(response_stream).await;
+// }
 
 fn response_header_to_vec(r: &Response) -> Vec<u8> {
     let v = Vec::with_capacity(120);
@@ -335,7 +366,7 @@ fn write_response_header(r: &Response, mut io: impl std::io::Write) -> std::io::
 
     let status = r.status;
     let code = status.to_string();
-    let reason = "Unknown";
+    let reason = r.status_text.as_str();
     let headers = &r.headers;
 
     write_line(&mut io, &mut len, b"HTTP/1.1 ")?;
@@ -369,6 +400,7 @@ async fn response_stream_flush<ResponseStream: Unpin + AsyncRead + AsyncWrite>(
         .flush()
         .await
         .expect("unable to flush the stream");
+
     response_stream
         .close()
         .await

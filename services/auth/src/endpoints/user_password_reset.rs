@@ -1,5 +1,5 @@
 use http_client::ResponseError;
-use http_server::{async_dup::Arc, http_log_util, smol::lock::RwLock, ApiServer, Server};
+use http_server::{async_dup::Arc, http_log_util, smol::lock::RwLock, ApiServer, Server, ApiResponse, ApiRequest};
 
 use auth_server_http_proto::{UserPasswordResetRequest, UserPasswordResetResponse};
 
@@ -16,7 +16,7 @@ async fn async_impl(
     state: Arc<RwLock<State>>,
     incoming_request: UserPasswordResetRequest,
 ) -> Result<UserPasswordResetResponse, ResponseError> {
-    http_log_util::recv_req("auth_server", "user_password_reset");
+    http_log_util::recv_req("auth_server", &UserPasswordResetRequest::endpoint_key(), UserPasswordResetRequest::name());
 
     let mut state = state.write().await;
     let response = match state.user_password_reset(incoming_request) {
@@ -35,7 +35,7 @@ async fn async_impl(
         }
     };
 
-    http_log_util::send_res("auth_server", "user_password_reset");
+    http_log_util::send_res("auth_server", UserPasswordResetResponse::name());
     return response;
 }
 

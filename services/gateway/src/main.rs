@@ -1,14 +1,16 @@
 mod session_connect;
 mod redirect;
+mod rate_limiter;
 
 use std::{net::SocketAddr, thread};
+use std::time::Duration;
 
 use config::{
     AUTH_SERVER_PORT, AUTH_SERVER_RECV_ADDR, CONTENT_SERVER_PORT, CONTENT_SERVER_RECV_ADDR,
     GATEWAY_PORT, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SELF_BINDING_ADDR, SUBDOMAIN_API, SUBDOMAIN_WWW,
     WORLD_SERVER_RECV_ADDR, WORLD_SERVER_SIGNAL_PORT,
 };
-use http_server::{ApiServer, Method, ProxyServer, Server};
+use http_server::{ApiServer, Method, ProxyServer, Server, smol};
 use logging::info;
 
 use auth_server_http_proto::{
@@ -51,21 +53,12 @@ pub fn main() {
     };
     let api_allow_origin = Some(api_allow_origin.as_str());
 
-    // -> region
-    // {
-    //     let auth_server = "region_server";
-    //     let addr = REGION_SERVER_RECV_ADDR;
-    //     let port = REGION_SERVER_PORT.to_string();
-    //
-    //     // session connect
-    //     server.serve_api_proxy::<SessionConnectRequest>(
-    //         gateway,
-    //         required_host_api,
-    //         auth_server,
-    //         addr,
-    //         &port,
-    //     );
-    // }
+    // middleware
+
+    // -> rate limiter
+    let global_rate_limiter = rate_limiter::add_middleware(&mut server, 100, std::time::Duration::from_secs(8));
+
+    // routes
 
     // -> auth
     {
@@ -140,7 +133,7 @@ pub fn main() {
 
     // -> session
     {
-        server.serve_endpoint_raw(
+        server.endpoint_raw(
             gateway,
             required_host_api,
             api_allow_origin,
@@ -231,7 +224,7 @@ pub fn main() {
             &port,
             "game.html",
         );
-        server.serve_endpoint_raw(
+        server.endpoint_raw(
             gateway,
             required_host_www,
             None,
@@ -262,6 +255,16 @@ pub fn main() {
             "game_bg.wasm",
         );
     }
+
+    // prune expired rate limiter entries
+    Server::spawn(async move {
+        loop {
+            smol::Timer::after(Duration::from_secs(60 * 60)).await;
+
+            let mut global_rate_limiter = global_rate_limiter.write().await;
+            global_rate_limiter.prune().await;
+        }
+    });
 
     // start server
 

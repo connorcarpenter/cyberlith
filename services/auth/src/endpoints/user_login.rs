@@ -1,6 +1,6 @@
 use auth_server_db::UserId;
 use http_client::ResponseError;
-use http_server::{async_dup::Arc, http_log_util, smol::lock::RwLock, ApiServer, Server};
+use http_server::{async_dup::Arc, smol::lock::RwLock, ApiServer, Server};
 use logging::info;
 
 use auth_server_http_proto::{UserLoginRequest, UserLoginResponse};
@@ -18,12 +18,6 @@ async fn async_impl(
     state: Arc<RwLock<State>>,
     incoming_request: UserLoginRequest,
 ) -> Result<UserLoginResponse, ResponseError> {
-    // if incoming_request.gateway_secret() != GATEWAY_SECRET {
-    //     warn!("invalid request secret");
-    //     return Err(ResponseError::Unauthenticated);
-    // }
-
-    http_log_util::recv_req("auth_server", "user_login");
 
     let mut state = state.write().await;
     let response = match state.user_login(incoming_request) {
@@ -32,14 +26,12 @@ async fn async_impl(
             let access_token = access_token.to_string();
             Ok(UserLoginResponse::new(&refresh_token, &access_token))
         }
-        Err(AuthServerError::UsernameOrEmailNotFound) => Err(ResponseError::Unauthenticated),
-        Err(AuthServerError::PasswordIncorrect) => Err(ResponseError::Unauthenticated),
+        Err(AuthServerError::UsernameOrEmailNotFound) | Err(AuthServerError::PasswordIncorrect) => Err(ResponseError::Unauthenticated),
         Err(_) => {
             panic!("unhandled error for this endpoint");
         }
     };
 
-    http_log_util::send_res("auth_server", "user_login");
     return response;
 }
 

@@ -34,6 +34,8 @@ impl UserRegisterResponse {
 impl ApiRequest for UserRegisterRequest {
     type Response = UserRegisterResponse;
 
+    fn name() -> &'static str { "UserRegisterRequest" }
+
     fn method() -> Method {
         Method::Post
     }
@@ -43,4 +45,6 @@ impl ApiRequest for UserRegisterRequest {
     }
 }
 
-impl ApiResponse for UserRegisterResponse {}
+impl ApiResponse for UserRegisterResponse {
+    fn name() -> &'static str { "UserRegisterResponse" }
+}

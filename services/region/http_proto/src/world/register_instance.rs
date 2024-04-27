@@ -64,6 +64,10 @@ impl WorldRegisterInstanceResponse {
 impl ApiRequest for WorldRegisterInstanceRequest {
     type Response = WorldRegisterInstanceResponse;
 
+    fn name() -> &'static str {
+        "WorldRegisterInstanceRequest"
+    }
+
     fn method() -> Method {
         Method::Post
     }
@@ -73,4 +77,8 @@ impl ApiRequest for WorldRegisterInstanceRequest {
     }
 }
 
-impl ApiResponse for WorldRegisterInstanceResponse {}
+impl ApiResponse for WorldRegisterInstanceResponse {
+    fn name() -> &'static str {
+        "WorldRegisterInstanceResponse"
+    }
+}

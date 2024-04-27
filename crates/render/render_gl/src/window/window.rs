@@ -286,8 +286,9 @@ impl Window {
                     window.request_redraw();
                 }
                 WinitEvent::RedrawRequested(_) => {
-                    let duration = rlc.last_time.elapsed();
-                    rlc.last_time = instant::Instant::now();
+                    let now = instant::Instant::now();
+                    let duration = rlc.last_time.elapsed(&now);
+                    rlc.last_time = now;
                     let elapsed_time =
                         duration.as_secs() as f64 * 1000.0 + duration.subsec_nanos() as f64 * 1e-6;
                     rlc.accumulated_time += elapsed_time;

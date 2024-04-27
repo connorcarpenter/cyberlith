@@ -213,7 +213,8 @@ impl RunningRumbleEffects {
         gamepad_id: &GamepadId,
     ) -> Option<(Duration, GamepadRumbleIntensity)> {
         if let Some(rumbles) = self.rumbles.get(gamepad_id) {
-            let duration = rumbles.last_deadline.until();
+            let now = Instant::now();
+            let duration = rumbles.last_deadline.until(&now);
             let current_rumble = rumbles.current_rumble;
             if duration.as_millis() == 0 || current_rumble.is_none() {
                 return None;

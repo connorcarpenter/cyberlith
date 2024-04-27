@@ -34,6 +34,8 @@ impl RefreshTokenGrantResponse {
 impl ApiRequest for RefreshTokenGrantRequest {
     type Response = RefreshTokenGrantResponse;
 
+    fn name() -> &'static str { "RefreshTokenGrantRequest" }
+
     fn method() -> Method {
         Method::Post
     }
@@ -43,4 +45,6 @@ impl ApiRequest for RefreshTokenGrantRequest {
     }
 }
 
-impl ApiResponse for RefreshTokenGrantResponse {}
+impl ApiResponse for RefreshTokenGrantResponse {
+    fn name() -> &'static str { "RefreshTokenGrantResponse" }
+}

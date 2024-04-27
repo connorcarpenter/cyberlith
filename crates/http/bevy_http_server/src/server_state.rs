@@ -243,7 +243,7 @@ async fn serve(
 
                 let response_result = match response_receiver.recv().await {
                     Ok(response_result) => response_result,
-                    Err(_err) => Err(ResponseError::ChannelRecvError),
+                    Err(_err) => Err(ResponseError::NetworkError("error receiving response over internal channel")),
                 };
 
                 response_result

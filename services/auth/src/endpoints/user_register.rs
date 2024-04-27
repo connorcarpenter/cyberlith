@@ -1,7 +1,7 @@
 use logging::{info, warn};
 
 use http_client::ResponseError;
-use http_server::{async_dup::Arc, http_log_util, smol::lock::RwLock, ApiServer, Server};
+use http_server::{async_dup::Arc, http_log_util, smol::lock::RwLock, ApiServer, Server, ApiResponse, ApiRequest};
 
 use auth_server_http_proto::{UserRegisterRequest, UserRegisterResponse};
 
@@ -18,7 +18,7 @@ async fn async_impl(
     state: Arc<RwLock<State>>,
     incoming_request: UserRegisterRequest,
 ) -> Result<UserRegisterResponse, ResponseError> {
-    http_log_util::recv_req("auth_server", "user_register");
+    http_log_util::recv_req("auth_server", &UserRegisterRequest::endpoint_key(), UserRegisterRequest::name());
 
     let mut state = state.write().await;
     let response = match state.user_register(incoming_request) {
@@ -37,7 +37,7 @@ async fn async_impl(
         }
     };
 
-    http_log_util::send_res("auth_server", "user_register");
+    http_log_util::send_res("auth_server", UserRegisterResponse::name());
     return response;
 }
 

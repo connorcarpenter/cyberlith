@@ -180,7 +180,8 @@ impl UiInputState {
     }
 
     pub fn interact_timer_within_seconds(&self, secs: f32) -> bool {
-        self.interact_timer.elapsed().as_secs_f32() < secs
+        let now = Instant::now();
+        self.interact_timer.elapsed(&now).as_secs_f32() < secs
     }
 
     pub fn interact_timer_elapsed_seconds(&self, secs: f32) -> bool {

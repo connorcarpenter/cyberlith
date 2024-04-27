@@ -23,7 +23,7 @@ pub trait ApiServer {
         handler: Handler,
     );
 
-    fn serve_endpoint_raw<
+    fn endpoint_raw<
         ResponseType: 'static + Send + Sync + Future<Output = Result<Response, ResponseError>>,
         Handler: 'static + Send + Sync + Fn((SocketAddr, Request)) -> ResponseType,
     >(
@@ -62,7 +62,7 @@ impl ApiServer for Server {
         self.internal_insert_endpoint(endpoint_path, new_endpoint);
     }
 
-    fn serve_endpoint_raw<
+    fn endpoint_raw<
         ResponseType: 'static + Send + Sync + Future<Output = Result<Response, ResponseError>>,
         Handler: 'static + Send + Sync + Fn((SocketAddr, Request)) -> ResponseType,
     >(
@@ -117,20 +117,28 @@ fn get_endpoint_func<
             let logged_host_url = format!("{} {}", incoming_method.as_str(), incoming_path);
 
             logging::info!("[");
-            log_util::recv_req(&host_name, &logged_host_url);
+            log_util::recv_req(&host_name, &logged_host_url, TypeRequest::name());
 
             let typed_response = typed_future.await;
 
-            log_util::send_res(&host_name, &logged_host_url);
-            logging::info!("]");
+            let response_name;
 
-            match typed_response {
+            let outgoing_response = match typed_response {
                 Ok(typed_response) => {
+                    response_name = TypeRequest::Response::name().to_string();
                     let pure_response = typed_response.to_response();
                     Ok(pure_response)
                 }
-                Err(err) => Err(err),
-            }
+                Err(err) => {
+                    response_name = format!("Error: {}", err.to_string().as_str());
+                    Err(err)
+                },
+            };
+
+            log_util::send_res(&host_name, response_name.as_str());
+            logging::info!("]");
+
+            return outgoing_response;
         };
 
         return Box::pin(pure_future);
@@ -154,6 +162,7 @@ fn get_endpoint_raw_func<
         let allow_origin_opt = allow_origin_opt.clone();
         let incoming_method = pure_request.method.clone();
         let incoming_path = pure_request.url.clone();
+        let mut response_name = "unknown".to_string();
 
         let handler_func = handler((addr, pure_request));
 
@@ -163,10 +172,11 @@ fn get_endpoint_raw_func<
             let logged_host_url = format!("{} {}", incoming_method.as_str(), incoming_path);
 
             logging::info!("[");
-            log_util::recv_req(&host_name, &logged_host_url);
+            log_util::recv_req(&host_name, &logged_host_url, "");
 
             let mut response_result = handler_func.await;
             if let Ok(response) = response_result.as_mut() {
+                response_name = format!("{} {}", response.status, response.status_text);
                 if let Some(allow_origin) = allow_origin_opt {
                     while response.headers.contains_key("access-control-allow-origin") {
                         response.headers.remove("access-control-allow-origin");
@@ -175,9 +185,11 @@ fn get_endpoint_raw_func<
                         .headers
                         .insert("access-control-allow-origin".to_string(), allow_origin);
                 }
+            } else {
+                response_name = "error".to_string();
             }
 
-            log_util::send_res(&host_name, &logged_host_url);
+            log_util::send_res(&host_name, &response_name);
             logging::info!("]");
 
             response_result

@@ -30,6 +30,8 @@ impl AccessTokenValidateResponse {
 impl ApiRequest for AccessTokenValidateRequest {
     type Response = AccessTokenValidateResponse;
 
+    fn name() -> &'static str { "AccessTokenValidateRequest" }
+
     fn method() -> Method {
         Method::Post
     }
@@ -39,4 +41,6 @@ impl ApiRequest for AccessTokenValidateRequest {
     }
 }
 
-impl ApiResponse for AccessTokenValidateResponse {}
+impl ApiResponse for AccessTokenValidateResponse {
+    fn name() -> &'static str { "AccessTokenValidateResponse" }
+}

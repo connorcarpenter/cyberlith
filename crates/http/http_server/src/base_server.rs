@@ -13,10 +13,12 @@ use http_common::{Request, Response, ResponseError};
 use http_server_shared::{executor, serve_impl, MatchHostResult};
 use logging::info;
 
+// Endpoint
 pub(crate) type EndpointFunc = Box<
     dyn Send
         + Sync
         + Fn(
+        // TODO: get rid of these parenthesis...
             (SocketAddr, Request),
         ) -> Pin<Box<dyn Send + Sync + Future<Output = Result<Response, ResponseError>>>>,
 >;
@@ -29,26 +31,52 @@ pub(crate) struct Endpoint {
 
 impl Endpoint {
     pub(crate) fn new(
-        endpoint_func: EndpointFunc,
+        func: EndpointFunc,
         required_host: Option<(String, Option<String>)>,
     ) -> Self {
         Self {
-            func: endpoint_func,
+            func,
             required_host,
         }
     }
 }
 
+// Middleware
+pub(crate) type MiddlewareFunc = Box<
+    dyn Send
+    + Sync
+    + Fn(
+        SocketAddr, Request,
+    ) -> Pin<Box<dyn Send + Sync + Future<Output = Option<Result<Response, ResponseError>>>>>,
+>;
+
+pub struct Middleware {
+    func: MiddlewareFunc,
+}
+
+impl Middleware {
+    pub(crate) fn new(
+        func: MiddlewareFunc,
+    ) -> Self {
+        Self {
+            func,
+        }
+    }
+}
+
+// Server
 pub struct Server {
     pub(crate) socket_addr: SocketAddr,
     endpoints: HashMap<String, Endpoint>,
+    middlewares: Vec<Middleware>,
 }
 
 impl Server {
     pub fn new(socket_addr: SocketAddr) -> Self {
-        Server {
+        Self {
             socket_addr,
             endpoints: HashMap::new(),
+            middlewares: Vec::new(),
         }
     }
 
@@ -61,6 +89,19 @@ impl Server {
 
     pub fn spawn<T: Send + 'static>(future: impl Future<Output = T> + Send + 'static) {
         executor::spawn(future).detach();
+    }
+
+    pub fn middleware<
+        ResponseType: 'static + Send + Sync + Future<Output = Option<Result<Response, ResponseError>>>,
+        Handler: 'static + Send + Sync + Fn(SocketAddr, Request) -> ResponseType
+    >(
+        &mut self,
+        handler: Handler,
+    ) {
+        let func: MiddlewareFunc = Box::new(move |addr, req| {
+            Box::pin(handler(addr, req))
+        });
+        self.middlewares.push(Middleware::new(func));
     }
 
     // better know what you're doing here
@@ -148,6 +189,13 @@ impl Server {
                 let server_4 = server_2.clone();
                 async move {
                     let server = server_4.read().await;
+
+                    for middleware in server.middlewares.iter() {
+                        if let Some(response_result) = (middleware.func)(addr, request.clone()).await {
+                            return response_result;
+                        }
+                    }
+
                     let endpoint = server.endpoints.get(&endpoint_key).unwrap();
 
                     (endpoint.func)((addr, request)).await

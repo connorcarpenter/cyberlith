@@ -115,7 +115,7 @@ impl Default for Response {
 }
 
 impl Response {
-    /// Constructs a new Response indicating a successful request.
+    /// Constructs a new Response indicating a successful request. // 200
     pub fn ok(old_url: &str) -> Self {
         Self {
             url: old_url.to_string(),
@@ -126,7 +126,7 @@ impl Response {
         }
     }
 
-    /// Constructs a new Response indicating a redirect to a specific URL.
+    /// Constructs a new Response indicating a redirect to a specific URL. // 302
     pub fn redirect(old_url: &str, new_url: &str) -> Self {
         // Create headers for redirect
         let mut headers = BTreeMap::new();
@@ -142,13 +142,40 @@ impl Response {
         }
     }
 
-    /// Constructs a new Response indicating a not modified response.
+    /// Constructs a new Response indicating a not modified response. // 304
     pub fn not_modified(old_url: &str) -> Self {
         Self {
             url: old_url.to_string(),
             ok: false,
             status: 304,
             status_text: "Not Modified".to_string(),
+            ..Default::default()
+        }
+    }
+
+    /// Constructs a new Response indicating a not modified response. // 404
+    pub fn not_found(old_url: &str) -> Self {
+        Self {
+            url: old_url.to_string(),
+            ok: false,
+            status: 404,
+            status_text: "Not Found".to_string(),
+            ..Default::default()
+        }
+    }
+
+    /// Constructs a new Response indicating a too many requests response. // 429
+    pub fn too_many_requests(old_url: &str, retry_after_secs: usize) -> Self {
+        let mut headers = BTreeMap::new();
+
+        headers.insert("Retry-After".to_string(), retry_after_secs.to_string());
+
+        Self {
+            url: old_url.to_string(),
+            ok: false,
+            status: 429,
+            status_text: "Too Many Requests".to_string(),
+            headers,
             ..Default::default()
         }
     }

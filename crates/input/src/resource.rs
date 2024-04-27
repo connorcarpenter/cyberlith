@@ -124,6 +124,7 @@ impl Input {
         if !self.enabled {
             return;
         }
+        let now = Instant::now();
         for event in events {
             match event {
                 IncomingEvent::MousePress(button, position, modifiers) => {
@@ -132,7 +133,7 @@ impl Input {
                         self.pressed_mouse_buttons.insert(*button);
 
                         if self.last_click_button == *button
-                            && self.last_click_instant.elapsed().as_millis() < 400
+                            && self.last_click_instant.elapsed(&now).as_millis() < 400
                         {
                             // TODO: put doubleclick time in settings
                             self.quick_clicks += 1;

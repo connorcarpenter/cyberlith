@@ -17,7 +17,7 @@ pub async fn fetch_async(
     fetch_jsvalue(request, request_options_opt)
         .await
         .map_err(string_from_js_value)
-        .map_err(|estr| ResponseError::HttpError(estr))
+        .map_err(|estr| ResponseError::NetworkError(estr))
 }
 
 pub(crate) fn string_from_js_value(value: JsValue) -> String {

@@ -4,7 +4,7 @@ use smol::future::Future;
 
 use http_client_shared::fetch_async;
 use http_common::{ApiRequest, Method, Request, Response, ResponseError};
-use logging::info;
+use logging::{info, warn};
 
 use crate::{base_server::Endpoint, log_util, Server};
 
@@ -138,7 +138,7 @@ fn get_endpoint_func(
             let logged_host_url = format!("{} {}", method.as_str(), outer_url);
 
             logging::info!("[");
-            log_util::recv_req(&host_name, &logged_host_url);
+            log_util::recv_req(&host_name, &logged_host_url, "");
 
             let mut remote_req = Request::new(method, &remote_url, outer_body);
             remote_req.headers = outer_headers;
@@ -192,14 +192,40 @@ fn get_endpoint_func(
                     }
                 }
                 Err(err) => {
-                    return Err(ResponseError::HttpError(format!(
-                        "received error from remote server: {}",
-                        err.to_string()
-                    )));
+                    response.url = outer_url;
+                    response.ok = false;
+
+                    match err {
+                        ResponseError::NetworkError(err_str) => {
+                            warn!("error while sending request to: {} . {}", remote_url, err_str);
+                            response.status = 500;
+                            response.status_text = "Internal Server Error".to_string();
+                        }
+                        ResponseError::SerdeError => {
+                            warn!("error trying to deserialize response from: {}", remote_url);
+                            response.status = 500;
+                            response.status_text = "Internal Server Error".to_string();
+                        }
+                        ResponseError::Unauthenticated => {
+                            warn!("remote server returned [Unauthenticated], from {}", remote_url);
+                            response.status = 401;
+                            response.status_text = "Unauthorized".to_string();
+                        }
+                        ResponseError::NotFound => {
+                            warn!("remote server returned [NotFound], from {}", remote_url);
+                            response.status = 404;
+                            response.status_text = "Not Found".to_string();
+                        }
+                        ResponseError::InternalServerError(err_str) => {
+                            warn!("remote server returned [InternalServerError], from {} . {}. Sending [BadGateway] to client", remote_url, err_str);
+                            response.status = 502;
+                            response.status_text = "Bad Gateway".to_string();
+                        }
+                    }
                 }
             }
 
-            log_util::send_res(&host_name, &logged_host_url);
+            log_util::send_res(&host_name, format!("{} {}", response.status, response.status_text).as_str());
             logging::info!("]");
 
             return Ok(response);

@@ -46,6 +46,10 @@ impl AssetRegisterInstanceResponse {
 impl ApiRequest for AssetRegisterInstanceRequest {
     type Response = AssetRegisterInstanceResponse;
 
+    fn name() -> &'static str {
+        "AssetRegisterInstanceRequest"
+    }
+
     fn method() -> Method {
         Method::Post
     }
@@ -55,4 +59,8 @@ impl ApiRequest for AssetRegisterInstanceRequest {
     }
 }
 
-impl ApiResponse for AssetRegisterInstanceResponse {}
+impl ApiResponse for AssetRegisterInstanceResponse {
+    fn name() -> &'static str {
+        "AssetRegisterInstanceResponse"
+    }
+}

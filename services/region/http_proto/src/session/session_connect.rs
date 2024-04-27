@@ -32,6 +32,10 @@ impl SessionConnectResponse {
 impl ApiRequest for SessionConnectRequest {
     type Response = SessionConnectResponse;
 
+    fn name() -> &'static str {
+        "SessionConnectRequest"
+    }
+
     fn method() -> Method {
         Method::Post
     }
@@ -41,4 +45,8 @@ impl ApiRequest for SessionConnectRequest {
     }
 }
 
-impl ApiResponse for SessionConnectResponse {}
+impl ApiResponse for SessionConnectResponse {
+    fn name() -> &'static str {
+        "SessionConnectResponse"
+    }
+}
