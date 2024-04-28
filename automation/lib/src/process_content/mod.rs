@@ -16,6 +16,7 @@ use git::{
 use logging::info;
 
 use crate::{utils::run_command_blocking, CliError};
+use crate::utils::run_command;
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum TargetEnv {
@@ -310,7 +311,7 @@ async fn build_deployment_async_impl(
         ""
     };
     let feature_flag = target_env.feature_flag();
-    let result = run_command_blocking(
+    run_command(
         deployment,
         format!(
             "cargo build {}\
@@ -322,10 +323,7 @@ async fn build_deployment_async_impl(
             release_arg, feature_flag, source_path, deployment, target_path,
         )
             .as_str(),
-    );
-    if let Err(e) = result {
-        panic!("failed to build deployment: {}", e);
-    }
+    ).await?;
 
     // get hash of wasm file
     let wasm_hash = {
@@ -344,7 +342,7 @@ async fn build_deployment_async_impl(
         target_env.cargo_env(),
         deployment
     );
-    let result = run_command_blocking(
+    run_command(
         deployment,
         format!(
             "wasm-bindgen \
@@ -355,10 +353,7 @@ async fn build_deployment_async_impl(
             target_path, deployment, wasm_file_path
         )
             .as_str(),
-    );
-    if let Err(e) = result {
-        panic!("failed to wasm-bindgen deployment: {}", e);
-    }
+    ).await?;
 
     // add wasm file to output
     output.push(UnprocessedFile::new(
@@ -383,17 +378,14 @@ async fn build_deployment_async_impl(
     ));
 
     // copy html file over
-    let result = run_command_blocking(
+    run_command(
         deployment,
         format!(
             "cp {}/apps/deployments/web/{}/{}.html {}/{}.html",
             source_path, deployment, deployment, target_path, deployment,
         )
             .as_str(),
-    );
-    if let Err(e) = result {
-        panic!("failed to copy html file: {}", e);
-    }
+    ).await?;
 
     // get hash of html file
     let html_hash = {
