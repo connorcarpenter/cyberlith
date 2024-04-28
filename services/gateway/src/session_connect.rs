@@ -8,13 +8,15 @@ use config::{
 };
 use http_client::{HttpClient, ResponseError};
 use http_server::{Method, Request, Response};
-use logging::warn;
+use logging::{info, warn};
 
 use region_server_http_proto::SessionConnectRequest;
 use session_server_naia_proto::{
     messages::{FakeEntityConverter, Message},
     protocol,
 };
+
+use crate::access_token_checker::middleware_impl;
 
 pub(crate) async fn handler(
     _addr: SocketAddr,
@@ -102,4 +104,25 @@ pub(crate) async fn handler(
             }
         }
     }
+}
+
+pub(crate) async fn auth_middleware(
+    incoming_addr: SocketAddr,
+    incoming_request: Request,
+) -> Option<Result<Response, ResponseError>> {
+
+    let access_token: Option<String> = get_access_token_from_base64(&incoming_request);
+    if access_token.is_some() {
+        info!("found access_token in header: {}", access_token.as_ref().unwrap());
+    } else {
+        info!("no access_token found in header");
+    }
+    middleware_impl(incoming_addr, incoming_request, access_token).await
+}
+
+fn get_access_token_from_base64(incoming_request: &Request) -> Option<String> {
+    let auth_header = incoming_request.get_header("authorization").map(|s| s.clone())?;
+    let auth_header = base64::decode(&auth_header).ok()?;
+    let auth_header = String::from_utf8(auth_header).ok()?;
+    Some(auth_header)
 }

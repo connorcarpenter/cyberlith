@@ -67,7 +67,7 @@ pub fn main() {
         // user login
         server.raw_endpoint(
             gateway,
-            required_host_www,
+            required_host_www, // uses this to set the cookie appropriately
             api_allow_origin,
             UserLoginRequest::method(),
             UserLoginRequest::path(),
@@ -138,7 +138,7 @@ pub fn main() {
             Method::Post,
             "session_rtc",
             session_connect::handler,
-        ).middleware(access_token_checker::api_base64_middleware);
+        ).middleware(session_connect::auth_middleware);
 
         let session_server = "session_server";
         let addr = SESSION_SERVER_RECV_ADDR;
