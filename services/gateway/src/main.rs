@@ -9,7 +9,7 @@ use std::{time::Duration, net::SocketAddr, thread};
 use config::{
     AUTH_SERVER_PORT, AUTH_SERVER_RECV_ADDR, CONTENT_SERVER_PORT, CONTENT_SERVER_RECV_ADDR,
     GATEWAY_PORT, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SELF_BINDING_ADDR, SUBDOMAIN_API, SUBDOMAIN_WWW,
-    WORLD_SERVER_RECV_ADDR, WORLD_SERVER_SIGNAL_PORT,
+    WORLD_SERVER_RECV_ADDR, WORLD_SERVER_SIGNAL_PORT, SESSION_SERVER_RECV_ADDR, SESSION_SERVER_SIGNAL_PORT,
 };
 use http_server::{ApiRequest, ApiServer, Method, ProxyServer, Server, smol};
 use logging::info;
@@ -67,7 +67,7 @@ pub fn main() {
         // user login
         server.raw_endpoint(
             gateway,
-            required_host_api,
+            required_host_www,
             api_allow_origin,
             UserLoginRequest::method(),
             UserLoginRequest::path(),
@@ -139,6 +139,22 @@ pub fn main() {
             "session_rtc",
             session_connect::handler,
         ).middleware(access_token_checker::api_base64_middleware);
+
+        let session_server = "session_server";
+        let addr = SESSION_SERVER_RECV_ADDR;
+        let port = SESSION_SERVER_SIGNAL_PORT.to_string();
+
+        server.serve_proxy(
+            gateway,
+            required_host_api,
+            api_allow_origin,
+            Method::Options,
+            "session_rtc",
+            session_server,
+            addr,
+            &port,
+            "session_rtc",
+        );
     }
 
     // -> world
@@ -169,7 +185,7 @@ pub fn main() {
             addr,
             &port,
             "world_rtc",
-        ).middleware(access_token_checker::api_middleware);
+        );
     }
 
     // -> content

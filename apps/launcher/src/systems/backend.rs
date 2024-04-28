@@ -1,7 +1,7 @@
 use bevy_ecs::{event::EventWriter, system::ResMut};
 
 use game_engine::{
-    config::{GATEWAY_PORT, PUBLIC_IP_ADDR, SUBDOMAIN_API},
+    config::{GATEWAY_PORT, PUBLIC_IP_ADDR, SUBDOMAIN_API, SUBDOMAIN_WWW},
     http::HttpClient,
     kernel::AppExitAction,
     logging::{info, warn},
@@ -33,10 +33,10 @@ pub(crate) fn backend_send_login_request(
 
     // user login request send
     let request = UserLoginRequest::new(&username, &password);
-    let url = if SUBDOMAIN_API.is_empty() {
+    let url = if SUBDOMAIN_WWW.is_empty() {
         PUBLIC_IP_ADDR.to_string()
     } else {
-        format!("{}.{}", SUBDOMAIN_API, PUBLIC_IP_ADDR)
+        format!("{}.{}", SUBDOMAIN_WWW, PUBLIC_IP_ADDR)
     };
     let key = http_client.send(&url, GATEWAY_PORT, request);
     global.user_login_response_key_opt = Some(key);

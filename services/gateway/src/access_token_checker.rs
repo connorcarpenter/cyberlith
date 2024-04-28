@@ -7,17 +7,17 @@ use http_server::{ApiRequest, ApiResponse, Request, Response};
 use auth_server_http_proto::{AccessTokenValidateRequest, AccessTokenValidateResponse};
 use logging::info;
 
-pub(crate) async fn api_middleware(
-    incoming_addr: SocketAddr,
-    incoming_request: Request,
-) -> Option<Result<Response, ResponseError>> {
-
-    let access_token: Option<String> = incoming_request.get_header("authorization").map(|s| s.clone());
-    if access_token.is_some() {
-        info!("found access_token in header: {}", access_token.as_ref().unwrap());
-    }
-    middleware_impl(incoming_addr, incoming_request, access_token).await
-}
+// pub(crate) async fn api_middleware(
+//     incoming_addr: SocketAddr,
+//     incoming_request: Request,
+// ) -> Option<Result<Response, ResponseError>> {
+//
+//     let access_token: Option<String> = incoming_request.get_header("authorization").map(|s| s.clone());
+//     if access_token.is_some() {
+//         info!("found access_token in header: {}", access_token.as_ref().unwrap());
+//     }
+//     middleware_impl(incoming_addr, incoming_request, access_token).await
+// }
 
 pub(crate) async fn www_middleware(
     incoming_addr: SocketAddr,
@@ -39,6 +39,9 @@ pub(crate) async fn www_middleware(
     if access_token.is_some() {
         info!("found access_token in cookie: {}", access_token.as_ref().unwrap());
     }
+    else {
+        info!("no access_token found in cookie");
+    }
     middleware_impl(incoming_addr, incoming_request, access_token).await
 }
 
@@ -50,6 +53,8 @@ pub(crate) async fn api_base64_middleware(
     let access_token: Option<String> = get_access_token_from_base64(&incoming_request);
     if access_token.is_some() {
         info!("found access_token in header: {}", access_token.as_ref().unwrap());
+    } else {
+        info!("no access_token found in header");
     }
     middleware_impl(incoming_addr, incoming_request, access_token).await
 }
@@ -71,7 +76,7 @@ async fn middleware_impl(
 
     http_server::http_log_util::recv_req(host_name, remote_name, format!("{} {}", incoming_request.method.as_str(), &incoming_request.url).as_str());
     let Some(access_token) = access_token_opt else {
-        http_server::http_log_util::send_res(host_name, "unauthenticated (no access_token found)");
+        http_server::http_log_util::send_res(host_name, "unauthenticated");
         return Some(Err(ResponseError::Unauthenticated));
     };
 

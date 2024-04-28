@@ -13,8 +13,8 @@ use crate::{
     CliError,
 };
 
-pub fn containers_up(config: HashSet<String>) -> Result<(), CliError> {
-    let rcvr = thread_init_compat_1arg(config, containers_up_impl);
+pub fn containers_up(config: HashSet<String>, image_tag: String) -> Result<(), CliError> {
+    let rcvr = thread_init_compat_1arg((config, image_tag), containers_up_impl);
 
     loop {
         thread::sleep(Duration::from_secs(5));
@@ -27,20 +27,22 @@ pub fn containers_up(config: HashSet<String>) -> Result<(), CliError> {
     }
 }
 
-async fn containers_up_impl(config: HashSet<String>) -> Result<(), CliError> {
-    let config = &config;
+async fn containers_up_impl(args: (HashSet<String>, String)) -> Result<(), CliError> {
+    let config = &args.0;
+    let image_tag = &args.1;
 
     // upload images to container registry
-    images_push(config).await?;
+    images_push(config, image_tag).await?;
 
     // ssh into server
-    ssh_into_server_to_pull_and_start_containers(config).await?;
+    ssh_into_server_to_pull_and_start_containers(config, image_tag).await?;
 
     return Ok(());
 }
 
 async fn ssh_into_server_to_pull_and_start_containers(
     config: &HashSet<String>,
+    image_tag: &str,
 ) -> Result<(), CliError> {
     // ssh in
     let session = ssh_session_create().await?;
@@ -54,7 +56,7 @@ async fn ssh_into_server_to_pull_and_start_containers(
     }
 
     // pull images
-    images_pull(config, &session).await?;
+    images_pull(config, image_tag, &session).await?;
 
     if config.contains("network") {
         // create network
@@ -62,7 +64,7 @@ async fn ssh_into_server_to_pull_and_start_containers(
     }
 
     // start containers
-    containers_start(config, &session).await?;
+    containers_start(config, image_tag, &session).await?;
 
     // prune images
     images_prune(&session).await?;
@@ -75,7 +77,7 @@ async fn ssh_into_server_to_pull_and_start_containers(
     Ok(())
 }
 
-async fn images_push(config: &HashSet<String>) -> Result<(), CliError> {
+async fn images_push(config: &HashSet<String>, image_tag: &str) -> Result<(), CliError> {
     run_command(
         "containers",
         format!(
@@ -87,19 +89,21 @@ async fn images_push(config: &HashSet<String>) -> Result<(), CliError> {
     )
     .await?;
 
-    image_push(config, "redirector").await?;
-    image_push(config, "gateway").await?;
-    image_push(config, "content").await?;
-    image_push(config, "auth").await?;
-    image_push(config, "region").await?;
-    image_push(config, "session").await?;
-    image_push(config, "world").await?;
-    image_push(config, "asset").await?;
+    image_push(config, "redirector", image_tag).await?;
+    image_push(config, "gateway", image_tag).await?;
+    image_push(config, "content", image_tag).await?;
+    image_push(config, "auth", image_tag).await?;
+    image_push(config, "region", image_tag).await?;
+    image_push(config, "session", image_tag).await?;
+    image_push(config, "world", image_tag).await?;
+    image_push(config, "asset", image_tag).await?;
+
+    info!("images pushed to container registry");
 
     Ok(())
 }
 
-async fn images_pull(config: &HashSet<String>, session: &Session) -> Result<(), CliError> {
+async fn images_pull(config: &HashSet<String>, image_tag: &str, session: &Session) -> Result<(), CliError> {
     run_ssh_command(
         &session,
         format!(
@@ -111,14 +115,14 @@ async fn images_pull(config: &HashSet<String>, session: &Session) -> Result<(), 
     )
     .await?;
 
-    image_pull(config, session, "redirector").await?;
-    image_pull(config, session, "gateway").await?;
-    image_pull(config, session, "content").await?;
-    image_pull(config, session, "auth").await?;
-    image_pull(config, session, "region").await?;
-    image_pull(config, session, "session").await?;
-    image_pull(config, session, "world").await?;
-    image_pull(config, session, "asset").await?;
+    image_pull(config, session, "redirector", image_tag).await?;
+    image_pull(config, session, "gateway", image_tag).await?;
+    image_pull(config, session, "content", image_tag).await?;
+    image_pull(config, session, "auth", image_tag).await?;
+    image_pull(config, session, "region", image_tag).await?;
+    image_pull(config, session, "session", image_tag).await?;
+    image_pull(config, session, "world", image_tag).await?;
+    image_pull(config, session, "asset", image_tag).await?;
 
     Ok(())
 }
@@ -148,27 +152,27 @@ async fn remove_network(session: &Session) -> Result<(), CliError> {
     Ok(())
 }
 
-async fn containers_start(config: &HashSet<String>, session: &Session) -> Result<(), CliError> {
-    container_create_and_start(config, session, "redirector", "-p 80:80/tcp").await?;
-    container_create_and_start(config, session, "gateway", "-p 443:443/tcp").await?;
-    container_create_and_start(config, session, "content", "-p 14197:14197/tcp").await?;
-    container_create_and_start(config, session, "auth", "-p 14206:14206/tcp").await?;
-    container_create_and_start(config, session, "region", "-p 14198:14198/tcp").await?;
+async fn containers_start(config: &HashSet<String>, image_tag: &str, session: &Session) -> Result<(), CliError> {
+    container_create_and_start(config, session, "redirector", image_tag, "-p 80:80/tcp").await?;
+    container_create_and_start(config, session, "gateway", image_tag, "-p 443:443/tcp").await?;
+    container_create_and_start(config, session, "content", image_tag, "-p 14197:14197/tcp").await?;
+    container_create_and_start(config, session, "auth", image_tag, "-p 14206:14206/tcp").await?;
+    container_create_and_start(config, session, "region", image_tag, "-p 14198:14198/tcp").await?;
     container_create_and_start(
         config,
         session,
-        "session",
+        "session", image_tag,
         "-p 14200:14200/tcp -p 14201:14201/udp",
     )
     .await?;
     container_create_and_start(
         config,
         session,
-        "world",
+        "world", image_tag,
         "-p 14203:14203/tcp -p 14204:14204/udp",
     )
     .await?;
-    container_create_and_start(config, session, "asset", "-p 14205:14205/tcp").await?;
+    container_create_and_start(config, session, "asset", image_tag, "-p 14205:14205/tcp").await?;
 
     Ok(())
 }
@@ -192,17 +196,19 @@ async fn containers_stop(config: &HashSet<String>, session: &Session) -> Result<
     Ok(())
 }
 
-pub async fn image_push(config: &HashSet<String>, image_name: &str) -> Result<(), CliError> {
+pub async fn image_push(config: &HashSet<String>, image_name: &str, image_tag: &str) -> Result<(), CliError> {
     if !config.contains(image_name) {
         return Ok(()); // skip this image
     }
     run_command(
         "containers",
         format!(
-            "docker tag {}_image:latest {}/{}_image:latest",
+            "docker tag {}_image:{} {}/{}_image:{}",
             image_name,
+            image_tag,
             get_container_registry_url(),
-            image_name
+            image_name,
+            image_tag,
         )
         .as_str(),
     )
@@ -210,18 +216,19 @@ pub async fn image_push(config: &HashSet<String>, image_name: &str) -> Result<()
     run_command(
         "containers",
         format!(
-            "docker push {}/{}_image:latest",
+            "docker push {}/{}_image:{}",
             get_container_registry_url(),
-            image_name
+            image_name,
+            image_tag,
         )
         .as_str(),
     )
     .await?;
-    run_command(
-        "containers",
-        format!("docker rmi {}_image:latest", image_name).as_str(),
-    )
-    .await?;
+    // run_command(
+    //     "containers",
+    //     format!("docker rmi {}_image:latest", image_name).as_str(),
+    // )
+    // .await?;
     Ok(())
 }
 
@@ -229,6 +236,7 @@ pub async fn image_pull(
     config: &HashSet<String>,
     session: &Session,
     image_name: &str,
+    image_tag: &str,
 ) -> Result<(), CliError> {
     if !config.contains(image_name) {
         return Ok(()); // skip this image
@@ -237,9 +245,10 @@ pub async fn image_pull(
     run_ssh_command(
         session,
         format!(
-            "docker pull {}/{}_image:latest",
+            "docker pull {}/{}_image:{}",
             get_container_registry_url(),
-            image_name
+            image_name,
+            image_tag,
         )
         .as_str(),
     )
@@ -252,6 +261,7 @@ pub async fn container_create_and_start(
     config: &HashSet<String>,
     session: &Session,
     app_name: &str,
+    image_tag: &str,
     ports: &str,
 ) -> Result<(), CliError> {
     if !config.contains(app_name) {
@@ -261,11 +271,12 @@ pub async fn container_create_and_start(
     run_ssh_command(
         session,
         format!(
-            "docker run -d --name {}_server --network primary_network {} {}/{}_image",
+            "docker run -d --name {}_server --network primary_network {} {}/{}_image:{}",
             app_name,
             ports,
             get_container_registry_url(),
-            app_name
+            app_name,
+            image_tag,
         )
         .as_str(),
     )

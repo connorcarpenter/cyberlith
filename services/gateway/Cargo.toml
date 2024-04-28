@@ -24,3 +24,4 @@ auth_server_http_proto = { path = "../auth/http_proto" }
 session_server_naia_proto = { path = "../session/naia_proto" }
 
 base64 = { version = "0.13" }
+chrono = { version = "0.4" }

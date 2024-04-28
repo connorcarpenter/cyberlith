@@ -13,6 +13,7 @@ vultr = { path = "../crates/vultr" }
 executor = { path = "../../crates/executor" }
 asset_serde = { path = "../../crates/asset/serde", features = ["write_bits", "read_json", "write_json"] }
 crypto = { path = "../../crates/crypto" }
+random = { path = "../../crates/random" }
 asset_id = {path = "../../crates/asset/id" }
 logging = { path = "../../crates/logging" }
 git = { path = "../../crates/git" }

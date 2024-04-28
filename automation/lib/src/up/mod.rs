@@ -12,22 +12,25 @@ use logging::info;
 
 use crate::{
     up::containers_up::containers_up,
-    utils::{check_channel, thread_init, thread_init_compat},
+    utils::{thread_init_1arg, check_channel, thread_init_compat},
     CliError,
 };
 
 pub fn up() -> Result<(), CliError> {
+
+    let image_tag = random::generate_random_string(10);
+
     let config: HashSet<String> = vec![
-        "instance",
-        "network",
-        "redirector",
+        // "instance",
+        // "network",
+        // "redirector",
         "gateway",
-        "content",
-        "auth",
-        "region",
-        "session",
-        "world",
-        "asset",
+        // "content",
+        // "auth",
+        // "region",
+        // "session",
+        // "world",
+        // "asset",
     ]
     .iter()
     .map(|s| s.to_string())
@@ -42,50 +45,50 @@ pub fn up() -> Result<(), CliError> {
     let (mut redirector_rdy, redirector_rcvr) = if config.contains("redirector") {
         (
             false,
-            Some(thread_init(server_build::server_build_redirector)),
+            Some(thread_init_1arg(image_tag.clone(), server_build::server_build_redirector)),
         )
     } else {
         (true, None)
     };
 
     let (mut gateway_rdy, gateway_rcvr) = if config.contains("gateway") {
-        (false, Some(thread_init(server_build::server_build_gateway)))
+        (false, Some(thread_init_1arg(image_tag.clone(), server_build::server_build_gateway)))
     } else {
         (true, None)
     };
 
     let (mut content_rdy, content_rcvr) = if config.contains("content") {
-        (false, Some(thread_init(server_build::server_build_content)))
+        (false, Some(thread_init_1arg(image_tag.clone(), server_build::server_build_content)))
     } else {
         (true, None)
     };
 
     let (mut auth_rdy, auth_rcvr) = if config.contains("auth") {
-        (false, Some(thread_init(server_build::server_build_auth)))
+        (false, Some(thread_init_1arg(image_tag.clone(), server_build::server_build_auth)))
     } else {
         (true, None)
     };
 
     let (mut region_rdy, region_rcvr) = if config.contains("region") {
-        (false, Some(thread_init(server_build::server_build_region)))
+        (false, Some(thread_init_1arg(image_tag.clone(), server_build::server_build_region)))
     } else {
         (true, None)
     };
 
     let (mut session_rdy, session_rcvr) = if config.contains("session") {
-        (false, Some(thread_init(server_build::server_build_session)))
+        (false, Some(thread_init_1arg(image_tag.clone(), server_build::server_build_session)))
     } else {
         (true, None)
     };
 
     let (mut world_rdy, world_rcvr) = if config.contains("world") {
-        (false, Some(thread_init(server_build::server_build_world)))
+        (false, Some(thread_init_1arg(image_tag.clone(), server_build::server_build_world)))
     } else {
         (true, None)
     };
 
     let (mut asset_rdy, asset_rcvr) = if config.contains("asset") {
-        (false, Some(thread_init(server_build::server_build_asset)))
+        (false, Some(thread_init_1arg(image_tag.clone(), server_build::server_build_asset)))
     } else {
         (true, None)
     };
@@ -135,7 +138,7 @@ pub fn up() -> Result<(), CliError> {
         }
     }
 
-    containers_up(config)?;
+    containers_up(config, image_tag)?;
 
     info!("Done!");
     Ok(())

@@ -38,9 +38,21 @@ pub(crate) async fn handler(
             outgoing_response.url = incoming_request.url;
 
             // put access token into user cookie
-            outgoing_response.set_header("Set-Cookie", format!("access_token={}", auth_response.access_token).as_str());
+            let mut expire_time_utc = chrono::Utc::now();
+            let expire_duration_1_week = chrono::Duration::weeks(1);
+            expire_time_utc += expire_duration_1_week;
 
-            info!("sending in access token via cookie: {}", auth_response.access_token);
+            let set_cookie_value = format!(
+                "access_token={}; Secure; HttpOnly; SameSite=Lax; Domain=.cyberlith.com; Expires={}",
+                auth_response.access_token,
+                expire_time_utc,
+            );
+            outgoing_response.set_header(
+                "Set-Cookie",
+                &set_cookie_value,
+            );
+
+            info!("responding with Set-Cookie of value: {}", set_cookie_value);
 
             return Ok(outgoing_response);
         }
