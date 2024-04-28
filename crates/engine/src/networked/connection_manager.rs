@@ -21,7 +21,7 @@ use ui_runner::UiManager;
 
 use session_server_naia_proto::{
     channels::{PrimaryChannel, RequestChannel},
-    messages::{LoadAssetRequest, LoadAssetWithData, WorldConnectToken},
+    messages::{LoadAssetRequest, Auth as SessionAuth, LoadAssetWithData, WorldConnectToken},
 };
 use world_server_naia_proto::messages::Auth as WorldAuth;
 
@@ -294,7 +294,7 @@ impl ConnectionManager {
 
                 info!("connecting to session server: {}", url);
                 let socket = WebrtcSocket::new(&url, session_client.socket_config());
-                session_client.auth_bytes(access_token.as_bytes());
+                session_client.auth(SessionAuth::new(access_token));
                 session_client.connect(socket);
             }
             ConnectionState::WaitingForSessionConnect => {}

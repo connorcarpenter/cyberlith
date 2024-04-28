@@ -1,4 +1,3 @@
-use std::process::Command;
 
 use automation_lib::{copy_from_repo_to_target_dir, TargetEnv};
 

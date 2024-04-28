@@ -1,6 +1,7 @@
+use std::any::Any;
 use std::net::SocketAddr;
 
-use naia_serde::BitWriter;
+use naia_serde::{BitReader, BitWriter};
 
 use config::{
     REGION_SERVER_PORT, REGION_SERVER_RECV_ADDR, SESSION_SERVER_RECV_ADDR,
@@ -12,7 +13,7 @@ use logging::{info, warn};
 
 use region_server_http_proto::SessionConnectRequest;
 use session_server_naia_proto::{
-    messages::{FakeEntityConverter, Message},
+    messages::{FakeEntityConverter, Message, Auth as SessionAuth},
     protocol,
 };
 
@@ -122,7 +123,18 @@ pub(crate) async fn auth_middleware(
 
 fn get_access_token_from_base64(incoming_request: &Request) -> Option<String> {
     let auth_header = incoming_request.get_header("authorization").map(|s| s.clone())?;
-    let auth_header = base64::decode(&auth_header).ok()?;
-    let auth_header = String::from_utf8(auth_header).ok()?;
-    Some(auth_header)
+    let auth_bytes = base64::decode(&auth_header).ok()?;
+
+    // TODO: this operation is VERY heavy! We should cache the result
+    let message_kinds = protocol().into().message_kinds;
+    let mut bit_reader = BitReader::new(&auth_bytes);
+    let auth_message = message_kinds.read(&mut bit_reader, &FakeEntityConverter).ok()?;
+    let auth_message_any = auth_message.clone().to_boxed_any();
+    let auth_message: SessionAuth = Box::<dyn Any + 'static>::downcast::<SessionAuth>(auth_message_any)
+        .ok()
+        .map(|boxed_m| *boxed_m)
+        .unwrap();
+    let access_token = auth_message.token().to_string();
+
+    Some(access_token)
 }

@@ -9,6 +9,8 @@ use http_client::ResponseError;
 use http_server::{ApiRequest, ApiResponse, Request, Response};
 use logging::{info, warn};
 
+use crate::target_env::{get_env, TargetEnv};
+
 pub(crate) async fn handler(
     _incoming_addr: SocketAddr,
     incoming_request: Request,
@@ -38,14 +40,26 @@ pub(crate) async fn handler(
             outgoing_response.url = incoming_request.url;
 
             // put access token into user cookie
-            let mut expire_time_utc = chrono::Utc::now();
-            let expire_duration_1_week = chrono::Duration::weeks(1);
-            expire_time_utc += expire_duration_1_week;
+
+
+            let cookie_attributes = match get_env() {
+                TargetEnv::Local => "".to_string(),
+                TargetEnv::Prod => {
+                    let mut expire_time_utc = chrono::Utc::now();
+                    let expire_duration_1_week = chrono::Duration::weeks(1);
+                    expire_time_utc += expire_duration_1_week;
+
+                    format!(
+                        "; Secure; HttpOnly; SameSite=Lax; Domain=.cyberlith.com; Expires={}",
+                        expire_time_utc
+                    )
+                },
+            };
 
             let set_cookie_value = format!(
-                "access_token={}; Secure; HttpOnly; SameSite=Lax; Domain=.cyberlith.com; Expires={}",
+                "access_token={}{}",
                 auth_response.access_token,
-                expire_time_utc,
+                cookie_attributes,
             );
             outgoing_response.set_header(
                 "Set-Cookie",
