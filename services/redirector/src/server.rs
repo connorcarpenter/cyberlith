@@ -61,6 +61,7 @@ impl RedirectServer {
     ) -> Result<Response, ResponseError> {
         http_log_util::recv_req(
             "redirector",
+            "client",
             format!(
                 "[{}][{} {}]",
                 socket_addr,
