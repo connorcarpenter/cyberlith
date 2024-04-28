@@ -138,7 +138,7 @@ pub fn main() {
             Method::Post,
             "session_rtc",
             session_connect::handler,
-        ).middleware(access_token_checker::api_middleware);
+        ).middleware(access_token_checker::api_base64_middleware);
     }
 
     // -> world
@@ -157,7 +157,7 @@ pub fn main() {
             addr,
             &port,
             "world_rtc",
-        ).middleware(access_token_checker::api_middleware);
+        );
 
         server.serve_proxy(
             gateway,

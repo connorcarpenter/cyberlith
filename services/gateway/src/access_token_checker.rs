@@ -42,6 +42,25 @@ pub(crate) async fn www_middleware(
     middleware_impl(incoming_addr, incoming_request, access_token).await
 }
 
+pub(crate) async fn api_base64_middleware(
+    incoming_addr: SocketAddr,
+    incoming_request: Request,
+) -> Option<Result<Response, ResponseError>> {
+
+    let access_token: Option<String> = get_access_token_from_base64(&incoming_request);
+    if access_token.is_some() {
+        info!("found access_token in header: {}", access_token.as_ref().unwrap());
+    }
+    middleware_impl(incoming_addr, incoming_request, access_token).await
+}
+
+fn get_access_token_from_base64(incoming_request: &Request) -> Option<String> {
+    let auth_header = incoming_request.get_header("authorization").map(|s| s.clone())?;
+    let auth_header = base64::decode(&auth_header).ok()?;
+    let auth_header = String::from_utf8(auth_header).ok()?;
+    Some(auth_header)
+}
+
 async fn middleware_impl(
     _incoming_addr: SocketAddr,
     incoming_request: Request,
