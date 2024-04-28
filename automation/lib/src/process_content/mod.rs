@@ -1,9 +1,12 @@
 mod filetypes;
 pub use filetypes::ProcessedFileMeta;
+
 mod error;
 pub use error::FileIoError;
 
-use std::path::Path;
+use std::{time::Duration, thread, pin::Pin, path::Path, future::Future, collections::HashMap};
+
+use crossbeam_channel::{bounded, Receiver, TryRecvError};
 
 use asset_id::ETag;
 use git::{
@@ -188,122 +191,225 @@ fn build_deployments(
     target_path: &str,
     deployments: &[&str],
 ) -> Vec<UnprocessedFile> {
-    info!("building deployments..");
+    info!("building deployments.. {}", deployments.join(", "));
     info!("source_path: {}", source_path);
     info!("target_path: {}", target_path);
     info!("target env: {}", target_env.to_string());
 
+    let mut deployment_tasks = HashMap::new();
+    for deployment in deployments {
+        let task = thread_init_for_deployment(get_build_deployment_func(deployment, target_env, source_path, target_path));
+        deployment_tasks.insert(deployment.to_string(), (false, task));
+    }
+
+    let mut output_all = Vec::new();
+
+    loop {
+        thread::sleep(Duration::from_secs(5));
+
+        let mut all_ready = true;
+        for (deployment, (done, receiver)) in deployment_tasks.iter_mut() {
+            if !*done {
+                if let Some(mut output) = check_build_channel(receiver).expect("failed to check channel") {
+                    info!("deployment {} done", deployment);
+                    output_all.append(&mut output);
+                    *done = true;
+                }
+            }
+            if !*done {
+                all_ready = false;
+            }
+        }
+
+        if all_ready {
+            break;
+        }
+    }
+
+    output_all
+}
+
+fn check_build_channel(
+    rcvr: &Receiver<Result<Vec<UnprocessedFile>, CliError>>,
+) -> Result<Option<Vec<UnprocessedFile>>, CliError> {
+    match rcvr.try_recv() {
+        Ok(Ok(output)) => {
+            return Ok(Some(output));
+        },
+        Ok(Err(err)) => return Err(err),
+        Err(TryRecvError::Disconnected) => {
+            return Err(CliError::Message("channel disconnected".to_string()))
+        }
+        Err(TryRecvError::Empty) => {
+            return Ok(None)
+        }
+    }
+}
+
+fn thread_init_for_deployment(
+    x: Box<
+        dyn Send
+        + Sync
+        + Fn() -> Pin<Box<dyn Send + Sync + Future<Output = Result<Vec<UnprocessedFile>, CliError>>>>,
+    >,
+) -> Receiver<Result<Vec<UnprocessedFile>, CliError>> {
+    let (sender, receiver) = bounded(1);
+
+    executor::spawn(async move {
+        let result = x().await;
+        sender.send(result).expect("failed to send result");
+    })
+        .detach();
+
+    receiver
+}
+
+fn get_build_deployment_func(
+    deployment: &str,
+    target_env: TargetEnv,
+    // this is the working directory of the 'cyberlith' repo
+    source_path: &str,
+    // this is the directory the files should go into
+    target_path: &str
+) -> Box<
+    dyn Send
+    + Sync
+    + Fn() -> Pin<Box<dyn Send + Sync + Future<Output = Result<Vec<UnprocessedFile>, CliError>>>>,
+> {
+    let deployment = deployment.to_string();
+    let source_path = source_path.to_string();
+    let target_path = target_path.to_string();
+    let target_env = target_env.clone();
+    Box::new(move || {
+        let deployment = deployment.clone();
+        let source_path = source_path.to_string();
+        let target_path = target_path.to_string();
+        let target_env = target_env.clone();
+        Box::pin(async move { build_deployment_async_impl(deployment, target_env, source_path, target_path).await })
+    })
+}
+
+async fn build_deployment_async_impl(
+    deployment: String,
+    target_env: TargetEnv,
+    // this is the working directory of the 'cyberlith' repo
+    source_path: String,
+    // this is the directory the files should go into
+    target_path: String,
+) -> Result<Vec<UnprocessedFile>, CliError> {
+    let deployment = deployment.as_str();
+    let source_path = source_path.as_str();
+    let target_path = target_path.as_str();
+
     let mut output = Vec::new();
 
-    for deployment in deployments {
-        // cargo build
-        let release_arg = if target_env == TargetEnv::Prod {
-            "--release "
-        } else {
-            ""
-        };
-        let feature_flag = target_env.feature_flag();
-        let result = run_command_blocking(
-            deployment,
-            format!(
-                "cargo build {}\
+    // cargo build
+    let release_arg = if target_env == TargetEnv::Prod {
+        "--release "
+    } else {
+        ""
+    };
+    let feature_flag = target_env.feature_flag();
+    let result = run_command_blocking(
+        deployment,
+        format!(
+            "cargo build {}\
                     --features gl_renderer,{} \
                     --manifest-path {}/apps/deployments/web/{}/Cargo.toml \
                     --target wasm32-unknown-unknown \
                     --target-dir {} \
                     --lib",
-                release_arg, feature_flag, source_path, deployment, target_path,
-            )
+            release_arg, feature_flag, source_path, deployment, target_path,
+        )
             .as_str(),
-        );
-        if let Err(e) = result {
-            panic!("failed to build deployment: {}", e);
-        }
+    );
+    if let Err(e) = result {
+        panic!("failed to build deployment: {}", e);
+    }
 
-        // get hash of wasm file
-        let wasm_hash = {
-            let wasm_bytes = read_file_bytes(
-                target_path,
-                format!("wasm32-unknown-unknown/{}/", target_env.cargo_env()).as_str(),
-                format!("{}.wasm", deployment).as_str(),
-            );
-            get_file_hash(&wasm_bytes)
-        };
-
-        // then wasm-bindgen the wasm file
-        let wasm_file_path = format!(
-            "{}/wasm32-unknown-unknown/{}/{}.wasm",
+    // get hash of wasm file
+    let wasm_hash = {
+        let wasm_bytes = read_file_bytes(
             target_path,
-            target_env.cargo_env(),
-            deployment
+            format!("wasm32-unknown-unknown/{}/", target_env.cargo_env()).as_str(),
+            format!("{}.wasm", deployment).as_str(),
         );
-        let result = run_command_blocking(
-            deployment,
-            format!(
-                "wasm-bindgen \
+        get_file_hash(&wasm_bytes)
+    };
+
+    // then wasm-bindgen the wasm file
+    let wasm_file_path = format!(
+        "{}/wasm32-unknown-unknown/{}/{}.wasm",
+        target_path,
+        target_env.cargo_env(),
+        deployment
+    );
+    let result = run_command_blocking(
+        deployment,
+        format!(
+            "wasm-bindgen \
                     --out-dir {} \
                     --out-name {} \
                     --target web \
                     --no-typescript {}",
-                target_path, deployment, wasm_file_path
-            )
+            target_path, deployment, wasm_file_path
+        )
             .as_str(),
-        );
-        if let Err(e) = result {
-            panic!("failed to wasm-bindgen deployment: {}", e);
-        }
-
-        // add wasm file to output
-        output.push(UnprocessedFile::new(
-            "",
-            format!("{}_bg", deployment).as_str(),
-            FileExtension::Wasm,
-            wasm_hash,
-        ));
-
-        // get hash of js file
-        let js_hash = {
-            let js_bytes = read_file_bytes(target_path, "", format!("{}.js", deployment).as_str());
-            get_file_hash(&js_bytes)
-        };
-
-        // add js file to output
-        output.push(UnprocessedFile::new(
-            "",
-            deployment,
-            FileExtension::Js,
-            js_hash,
-        ));
-
-        // copy html file over
-        let result = run_command_blocking(
-            deployment,
-            format!(
-                "cp {}/apps/deployments/web/{}/{}.html {}/{}.html",
-                source_path, deployment, deployment, target_path, deployment,
-            )
-            .as_str(),
-        );
-        if let Err(e) = result {
-            panic!("failed to copy html file: {}", e);
-        }
-
-        // get hash of html file
-        let html_hash = {
-            let html_bytes =
-                read_file_bytes(target_path, "", format!("{}.html", deployment).as_str());
-            get_file_hash(&html_bytes)
-        };
-
-        output.push(UnprocessedFile::new(
-            "",
-            deployment,
-            FileExtension::Html,
-            html_hash,
-        ));
+    );
+    if let Err(e) = result {
+        panic!("failed to wasm-bindgen deployment: {}", e);
     }
 
-    output
+    // add wasm file to output
+    output.push(UnprocessedFile::new(
+        "",
+        format!("{}_bg", deployment).as_str(),
+        FileExtension::Wasm,
+        wasm_hash,
+    ));
+
+    // get hash of js file
+    let js_hash = {
+        let js_bytes = read_file_bytes(target_path, "", format!("{}.js", deployment).as_str());
+        get_file_hash(&js_bytes)
+    };
+
+    // add js file to output
+    output.push(UnprocessedFile::new(
+        "",
+        deployment,
+        FileExtension::Js,
+        js_hash,
+    ));
+
+    // copy html file over
+    let result = run_command_blocking(
+        deployment,
+        format!(
+            "cp {}/apps/deployments/web/{}/{}.html {}/{}.html",
+            source_path, deployment, deployment, target_path, deployment,
+        )
+            .as_str(),
+    );
+    if let Err(e) = result {
+        panic!("failed to copy html file: {}", e);
+    }
+
+    // get hash of html file
+    let html_hash = {
+        let html_bytes =
+            read_file_bytes(target_path, "", format!("{}.html", deployment).as_str());
+        get_file_hash(&html_bytes)
+    };
+
+    output.push(UnprocessedFile::new(
+        "",
+        deployment,
+        FileExtension::Html,
+        html_hash,
+    ));
+
+    Ok(output)
 }
 
 fn wasm_opt_deployments(target_path: &str, files: &Vec<UnprocessedFile>) {
