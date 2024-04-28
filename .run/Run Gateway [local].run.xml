@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Run Gateway [local]" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
-    <option name="command" value="run --features &quot;local&quot;" />
+    <option name="command" value="run --features &quot;local&quot; --target &quot;x86_64-unknown-linux-gnu&quot;" />
     <option name="workingDirectory" value="file://$PROJECT_DIR$/services/gateway" />
     <envs />
     <option name="emulateTerminal" value="false" />

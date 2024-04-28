@@ -482,7 +482,7 @@ impl GitManager {
     ) -> ProjectKey {
         // Create User's Working directory if it doesn't already exist
         let repo_name = "cyberlith_assets";
-        let root_dir = "target/users";
+        let root_dir = "users";
         let target_path_str = format!("{}/{}", root_dir, owner_name);
 
         let repo = repo_init(repo_name, &target_path_str);

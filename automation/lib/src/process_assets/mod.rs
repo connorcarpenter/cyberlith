@@ -16,21 +16,19 @@ use crate::{CliError, TargetEnv};
 pub fn process_assets(
     // should be the directory of the entire cyberlith repo
     project_path: &str,
-    // should be the directory we do all the work in, added to project_path
-    service_path: &str,
     // what build environment are we in
     target_env: TargetEnv,
 ) -> Result<(), CliError> {
     let repo_name = "cyberlith_assets";
-    let target_path = format!("{}/{}/target/{}", project_path, service_path, repo_name);
+    let output_path = format!("{}/target/{}", project_path, repo_name);
     let target_env_str = target_env.to_string();
 
     // pull all assets into memory, from "env" branch
-    let repo = repo_init(repo_name, &target_path);
-    let files = load_all_unprocessed_files(&target_path, &repo);
+    let repo = repo_init(repo_name, &output_path);
+    let files = load_all_unprocessed_files(&output_path, &repo);
 
     if branch_exists(&repo, &target_env_str) {
-        update_processed_assets(&target_env_str, &target_path, repo, files);
+        update_processed_assets(&target_env_str, &output_path, repo, files);
     } else {
         create_processed_assets(&target_env_str, repo, files);
     }
@@ -124,12 +122,12 @@ impl UnprocessedFile {
     }
 }
 
-fn load_all_unprocessed_files(root: &str, repo: &Repository) -> Vec<UnprocessedFile> {
+fn load_all_unprocessed_files(output_path: &str, repo: &Repository) -> Vec<UnprocessedFile> {
     let mut output = Vec::new();
     let head = repo.head().unwrap();
     let tree = head.peel_to_tree().unwrap();
 
-    collect_unprocessed_files(&mut output, root, &repo, &tree, "");
+    collect_unprocessed_files(&mut output, output_path, &repo, &tree, "");
 
     output
 }

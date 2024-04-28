@@ -7,48 +7,27 @@
 node_modules
 /target
 
-/apps/deployments/native/target
 /apps/deployments/native/assets
 /apps/deployments/native/assets/
 /apps/deployments/native/data
 /apps/deployments/native/data/
-/apps/deployments/web/launcher/target
 /apps/deployments/web/launcher/assets
-/apps/deployments/web/game/target
 /apps/deployments/web/game/assets
-/apps/deployments/web/level_editor/target
 /apps/deployments/web/level_editor/assets
 
-/services/auth/target
-/services/gateway/acme_cache
-/services/gateway/target/cyberlith_certs
+/services/auth/cyberlith_users
 /services/asset/assets
 /services/asset/assets/
 /services/asset/assets/*
-/services/asset/target
-/services/asset/target/
-/services/asset/target/*
 /services/content/files
 /services/content/files/
 /services/content/files/*
-/services/content/target
-/services/content/target/
-/services/content/target/*
 
-/apps/ui_editor/target
 /apps/ui_editor/assets
 /apps/ui_editor/output
 
-/apps/physics_tester/target
 /apps/physics_tester/assets
 /apps/physics_tester/output
 
 /apps/editor/client/target
-/apps/editor/server/target
-
-/automation/cli/target
-/automation/cli/target/
-/automation/cli/target/*
-/automation/cli/target/assets_repo
-/automation/cli/target/assets_repo/
-/automation/cli/target/assets_repo/*
+/apps/editor/server/users

@@ -17,7 +17,7 @@
     </method>
   </configuration>
   <configuration default="false" name="Run World Server" type="CargoCommandRunConfiguration" factoryName="Cargo Command" singleton="false">
-    <option name="command" value="run --features &quot;local&quot;" />
+    <option name="command" value="run --features &quot;local&quot; --target &quot;x86_64-unknown-linux-gnu&quot;" />
     <option name="workingDirectory" value="file://$PROJECT_DIR$/services/world" />
     <envs />
     <option name="emulateTerminal" value="false" />

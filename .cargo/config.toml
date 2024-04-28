@@ -9,9 +9,9 @@ rustflags = ["--cfg=web_sys_unstable_apis"]
 # If you are using rust stable, remove the "-Zshare-generics=y" below.
 
 # DO NOT USE THIS FOR RELEASE BUILDS!
-[target.x86_64-unknown-linux-gnu]
-linker = "clang"
-rustflags = ["-C", "link-arg=-fuse-ld=/usr/bin/mold"]
+#[target.x86_64-unknown-linux-gnu]
+#linker = "clang"
+#rustflags = ["-C", "link-arg=-fuse-ld=/usr/bin/mold"]
 
 # Optional: Uncommenting the following improves compile times, but reduces the amount of debug info to 'line number tables only'
 # In most cases the gains are negligible, but if you are on macos and have slow compile times you should see significant gains.

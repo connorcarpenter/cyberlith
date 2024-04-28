@@ -43,7 +43,7 @@ impl<K: DbTableKey> TableImpl<K> {
     pub fn init() -> Self {
         // lot to do here ..
         let repo_name = K::repo_name();
-        let root_path = format!("target/{}", repo_name);
+        let root_path = format!("{}", repo_name);
         let git_repo = repo_init(repo_name, &root_path);
         let files = pull_repo_get_all_files(&root_path, &git_repo);
 

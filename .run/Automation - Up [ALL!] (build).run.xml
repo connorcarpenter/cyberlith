@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Automation - Up [ALL!] (build)" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
-    <option name="command" value="build" />
+    <option name="command" value="build --target &quot;x86_64-unknown-linux-gnu&quot;" />
     <option name="workingDirectory" value="file://$PROJECT_DIR$/automation/cli" />
     <envs />
     <option name="emulateTerminal" value="false" />

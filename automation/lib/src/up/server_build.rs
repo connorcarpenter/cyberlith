@@ -3,12 +3,12 @@ use logging::info;
 use crate::{utils::run_command, CliError, TargetEnv};
 
 pub async fn server_build_content() -> Result<(), CliError> {
-    let _ = crate::process_content("/home/connor/Work/cyberlith", "", TargetEnv::Prod)?;
+    let _ = crate::process_content("/home/connor/Work/cyberlith", TargetEnv::Prod)?;
 
     // build content_server
     run_command(
         "content_server",
-        "cargo build --release --features prod --manifest-path services/content/Cargo.toml",
+        "cargo build --release --target x86_64-unknown-linux-gnu --features prod --manifest-path services/content/Cargo.toml",
     )
     .await?;
 
@@ -36,12 +36,12 @@ pub async fn server_build_content() -> Result<(), CliError> {
 }
 
 pub async fn server_build_asset() -> Result<(), CliError> {
-    let _ = crate::process_assets("/home/connor/Work/cyberlith", "", TargetEnv::Prod)?;
+    let _ = crate::process_assets("/home/connor/Work/cyberlith", TargetEnv::Prod)?;
 
     // build asset_server
     run_command(
         "asset_server",
-        "cargo build --release --features prod --manifest-path services/asset/Cargo.toml",
+        "cargo build --release --target x86_64-unknown-linux-gnu --features prod --manifest-path services/asset/Cargo.toml",
     )
     .await?;
 
@@ -96,7 +96,7 @@ async fn server_build_common(dir_name: &str, app_name: &str) -> Result<(), CliEr
     run_command(
         app_name,
         format!(
-            "cargo build --release --features prod --manifest-path services/{}/Cargo.toml",
+            "cargo build --release --target x86_64-unknown-linux-gnu --features prod --manifest-path services/{}/Cargo.toml",
             dir_name
         )
         .as_str(),
