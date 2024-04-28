@@ -21,16 +21,16 @@ pub fn up() -> Result<(), CliError> {
     let image_tag = random::generate_random_string(10);
 
     let config: HashSet<String> = vec![
-        // "instance",
-        // "network",
-        // "redirector",
+        "instance",
+        "network",
+        "redirector",
         "gateway",
-        // "content",
-        // "auth",
-        // "region",
-        // "session",
-        // "world",
-        // "asset",
+        "content",
+        "auth",
+        "region",
+        "session",
+        "world",
+        "asset",
     ]
     .iter()
     .map(|s| s.to_string())
