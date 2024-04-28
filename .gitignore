@@ -10,6 +10,8 @@ node_modules
 /apps/deployments/native/target
 /apps/deployments/native/assets
 /apps/deployments/native/assets/
+/apps/deployments/native/data
+/apps/deployments/native/data/
 /apps/deployments/web/launcher/target
 /apps/deployments/web/launcher/assets
 /apps/deployments/web/game/target
@@ -19,7 +21,7 @@ node_modules
 
 /services/auth/target
 /services/gateway/acme_cache
-/services/gateway/cyberlith_certs
+/services/gateway/target/cyberlith_certs
 /services/asset/assets
 /services/asset/assets/
 /services/asset/assets/*

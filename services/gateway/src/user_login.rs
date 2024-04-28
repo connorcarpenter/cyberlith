@@ -7,7 +7,7 @@ use config::{
 };
 use http_client::ResponseError;
 use http_server::{ApiRequest, ApiResponse, Request, Response};
-use logging::warn;
+use logging::{info, warn};
 
 pub(crate) async fn handler(
     _incoming_addr: SocketAddr,
@@ -39,6 +39,8 @@ pub(crate) async fn handler(
 
             // put access token into user cookie
             outgoing_response.set_header("Set-Cookie", format!("access_token={}", auth_response.access_token).as_str());
+
+            info!("sending in access token via cookie: {}", auth_response.access_token);
 
             return Ok(outgoing_response);
         }

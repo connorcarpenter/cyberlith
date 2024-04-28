@@ -63,7 +63,7 @@ async fn handle_read(task: &ReadTask) -> Result<FsTaskResultEnum, TaskError> {
     let dir_handle_promise = root.get_directory_handle(&folder_name);
     let dir_handle_js = JsFuture::from(dir_handle_promise)
         .await
-        .expect("Error getting directory handle");
+        .expect("Error getting directory handle 1");
     let dir_handle: FileSystemDirectoryHandle = dir_handle_js
         .try_into()
         .expect("Failed to cast JsValue to FileSystemDirectoryHandle");
@@ -109,7 +109,7 @@ async fn handle_write(task: &WriteTask) -> Result<FsTaskResultEnum, TaskError> {
     let dir_handle_promise = root.get_directory_handle(&folder_name);
     let dir_handle_js = JsFuture::from(dir_handle_promise)
         .await
-        .expect("Error getting directory handle");
+        .expect("Error getting directory handle 2");
     let dir_handle: FileSystemDirectoryHandle = dir_handle_js
         .try_into()
         .expect("Failed to cast JsValue to FileSystemDirectoryHandle");
@@ -175,7 +175,7 @@ async fn handle_read_dir(task: &ReadDirTask) -> Result<FsTaskResultEnum, TaskErr
     let dir_handle_js = match JsFuture::from(dir_handle_promise).await {
         Ok(dir_handle_js) => dir_handle_js,
         Err(e) => {
-            let error_string = format!("Error getting directory handle: {:?}", e);
+            let error_string = format!("Error getting directory handle 3: {:?}", e);
             // NOTE: need this error, in order to create new dir for later!
             return Err(TaskError::IoError(error_string));
         }

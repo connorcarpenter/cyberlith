@@ -15,7 +15,7 @@ use naia_bevy_client::{
 
 use asset_loader::{AssetManager, AssetMetadataStore};
 use config::{GATEWAY_PORT, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SUBDOMAIN_API};
-use filesystem::FileSystemManager;
+use filesystem::{FileSystemManager, ReadResult, TaskKey};
 use logging::{info, warn};
 use ui_runner::UiManager;
 
@@ -37,6 +37,8 @@ type WorldClient<'a> = Client<'a, World>;
 #[derive(Clone, PartialEq)]
 pub enum ConnectionState {
     Disconnected,
+    WaitingForAccessToken(TaskKey<ReadResult>),
+    SendingSessionConnect,
     WaitingForSessionConnect,
     ConnectedToSession,
     ConnectedToWorld,
@@ -46,6 +48,7 @@ pub enum ConnectionState {
 pub struct ConnectionManager {
     pub connection_state: ConnectionState,
     send_timer: Timer,
+    access_token: Option<String>,
 }
 
 impl Default for ConnectionManager {
@@ -54,6 +57,8 @@ impl Default for ConnectionManager {
             connection_state: ConnectionState::Disconnected,
             // TODO: split this out into config var?
             send_timer: Timer::new(Duration::from_millis(5000)),
+
+            access_token: None,
         }
     }
 }
@@ -91,7 +96,7 @@ impl ConnectionManager {
         for _ in session_disconnect_event_reader.read() {
             warn!("Client disconnected from session server");
 
-            connection_manager.connection_state = ConnectionState::Disconnected;
+            connection_manager.connection_state = ConnectionState::SendingSessionConnect;
         }
     }
 
@@ -103,7 +108,7 @@ impl ConnectionManager {
         for _ in session_reject_event_reader.read() {
             warn!("Client rejected from connecting to the session server");
 
-            connection_manager.connection_state = ConnectionState::Disconnected;
+            connection_manager.connection_state = ConnectionState::SendingSessionConnect;
         }
     }
 
@@ -208,11 +213,19 @@ impl ConnectionManager {
     pub fn handle_connection(
         mut connection_manager: ResMut<ConnectionManager>,
         mut session_client: SessionClient,
+        mut file_system_manager: ResMut<FileSystemManager>,
     ) {
-        connection_manager.handle_connection_impl(&mut session_client);
+        connection_manager.handle_connection_impl(
+            &mut session_client,
+            &mut file_system_manager
+        );
     }
 
-    fn handle_connection_impl(&mut self, session_client: &mut SessionClient) {
+    fn handle_connection_impl(
+        &mut self,
+        session_client: &mut SessionClient,
+        file_system_manager: &mut FileSystemManager,
+    ) {
         if self.send_timer.ringing() {
             self.send_timer.reset();
         } else {
@@ -221,10 +234,45 @@ impl ConnectionManager {
 
         match &self.connection_state {
             ConnectionState::Disconnected => {
-                // from disconnected before
 
-                // let key = http_client.send(&url, GATEWAY_PORT, request);
-                // self.connection_state = ConnectionState::SentToGateway(key);
+                let read_key = file_system_manager.read("data/access_token");
+                self.connection_state = ConnectionState::WaitingForAccessToken(read_key);
+            }
+            ConnectionState::WaitingForAccessToken(read_key) => {
+
+                if self.access_token.is_some() {
+                    self.connection_state = ConnectionState::SendingSessionConnect;
+                    return;
+                }
+
+                let Some(read_result) = file_system_manager.get_result(read_key) else {
+                    return;
+                };
+                match read_result {
+                    Ok(read) => {
+                        let bytes = read.bytes;
+                        let access_token = String::from_utf8(bytes).unwrap();
+                        info!("read access token: {}", access_token);
+                        self.access_token = Some(access_token);
+                    }
+                    Err(e) => {
+                        warn!("Failed to read access token. Error: {}", e.to_string());
+                        self.connection_state = ConnectionState::Disconnected;
+                        return;
+                    }
+                }
+
+                if self.access_token.is_some() {
+                    self.connection_state = ConnectionState::SendingSessionConnect;
+                    return;
+                }
+            }
+            ConnectionState::SendingSessionConnect => {
+
+                let Some(access_token) = &self.access_token else {
+                    self.connection_state = ConnectionState::Disconnected;
+                    return;
+                };
 
                 // previous below
                 self.connection_state = ConnectionState::WaitingForSessionConnect;
@@ -246,6 +294,7 @@ impl ConnectionManager {
 
                 info!("connecting to session server: {}", url);
                 let socket = WebrtcSocket::new(&url, session_client.socket_config());
+                session_client.auth_bytes(access_token.as_bytes());
                 session_client.connect(socket);
             }
             ConnectionState::WaitingForSessionConnect => {}

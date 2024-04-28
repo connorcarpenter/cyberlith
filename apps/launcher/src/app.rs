@@ -43,6 +43,7 @@ impl Plugin for LauncherApp {
             // ui systems
             .add_systems(Startup, ui::ui_setup)
             .add_systems(Update, ui::ui_handle_events)
+            .add_systems(Startup, backend::backend_init)
             .add_systems(Update, backend::backend_process_responses)
             // scene systems
             .add_systems(Startup, scene::scene_setup)

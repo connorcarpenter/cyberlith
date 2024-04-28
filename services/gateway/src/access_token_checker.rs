@@ -5,6 +5,7 @@ use http_client::{HttpClient, ResponseError};
 use http_server::{ApiRequest, ApiResponse, Request, Response};
 
 use auth_server_http_proto::{AccessTokenValidateRequest, AccessTokenValidateResponse};
+use logging::info;
 
 pub(crate) async fn api_middleware(
     incoming_addr: SocketAddr,
@@ -12,6 +13,9 @@ pub(crate) async fn api_middleware(
 ) -> Option<Result<Response, ResponseError>> {
 
     let access_token: Option<String> = incoming_request.get_header("authorization").map(|s| s.clone());
+    if access_token.is_some() {
+        info!("found access_token in header: {}", access_token.as_ref().unwrap());
+    }
     middleware_impl(incoming_addr, incoming_request, access_token).await
 }
 
@@ -32,6 +36,9 @@ pub(crate) async fn www_middleware(
     } else {
         None
     };
+    if access_token.is_some() {
+        info!("found access_token in cookie: {}", access_token.as_ref().unwrap());
+    }
     middleware_impl(incoming_addr, incoming_request, access_token).await
 }
 

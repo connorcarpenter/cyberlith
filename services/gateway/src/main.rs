@@ -65,14 +65,6 @@ pub fn main() {
         let port = AUTH_SERVER_PORT.to_string();
 
         // user login
-        // server.serve_api_proxy::<UserLoginRequest>(
-        //     gateway,
-        //     required_host_api,
-        //     api_allow_origin,
-        //     auth_server,
-        //     addr,
-        //     &port,
-        // );
         server.raw_endpoint(
             gateway,
             required_host_api,

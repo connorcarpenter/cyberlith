@@ -12,8 +12,12 @@ impl HttpClient {
         let http_res = http_client_shared::fetch_async(http_req).await;
         match http_res {
             Ok(http_res_0) => {
-                let api_res = Q::Response::from_response(http_res_0)?;
-                Ok(api_res)
+                if http_res_0.ok {
+                    let api_res = Q::Response::from_response(http_res_0)?;
+                    Ok(api_res)
+                } else {
+                    return Err(ResponseError::InternalServerError(http_res_0.status_text));
+                }
             }
             Err(err) => {
                 return Err(err);
@@ -32,8 +36,17 @@ impl HttpClient {
             http_client_shared::fetch_async_with_options(http_req, request_options).await;
         match http_res {
             Ok(http_res_0) => {
-                let api_res = Q::Response::from_response(http_res_0)?;
-                Ok(api_res)
+                if http_res_0.ok {
+                    let api_res = Q::Response::from_response(http_res_0)?;
+                    return Ok(api_res);
+                } else {
+                    match http_res_0.status {
+                        401 => return Err(ResponseError::Unauthenticated),
+                        404 => return Err(ResponseError::NotFound),
+                        500 => return Err(ResponseError::InternalServerError(http_res_0.status_text)),
+                        _ => return Err(ResponseError::InternalServerError(http_res_0.status_text)),
+                    }
+                }
             }
             Err(err) => {
                 return Err(err);
