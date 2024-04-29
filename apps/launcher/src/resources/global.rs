@@ -1,8 +1,29 @@
 use bevy_ecs::{entity::Entity, system::Resource};
 
-use game_engine::{file::{WriteResult, ReadDirResult, CreateDirResult, TaskKey}, http::ResponseKey, ui::UiHandle};
+use game_engine::{file::{WriteResult, ReadDirResult, CreateDirResult, ReadResult, TaskKey}, http::ResponseKey, ui::UiHandle};
 
 use auth_server_http_proto::{UserLoginResponse, UserRegisterResponse};
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(crate) enum DataState {
+    Init,
+    ReadDataDir(TaskKey<ReadDirResult>),
+    CreateDataDir(TaskKey<CreateDirResult>),
+    DataDirExists,
+    CheckForAccessToken(TaskKey<ReadResult>),
+    CheckForRefreshToken(TaskKey<ReadResult>),
+    Error,
+    Done
+}
+
+impl DataState {
+    pub fn has_data_dir(&self) -> bool {
+        match self {
+            Self::DataDirExists | Self::CheckForAccessToken(_) | Self::CheckForRefreshToken(_) | Self::Done => true,
+            _ => false,
+        }
+    }
+}
 
 #[derive(Resource)]
 pub struct Global {
@@ -13,9 +34,9 @@ pub struct Global {
     // pub user_password_forgot_response_key_opt: Option<ResponseKey<UserPasswordForgotResponse>>,
     // pub user_password_reset_response_key_opt: Option<ResponseKey<UserPasswordResetResponse>>,
 
-    pub has_data_dir: bool,
-    pub read_data_dir_key_opt: Option<TaskKey<ReadDirResult>>,
-    pub create_data_dir_key_opt: Option<TaskKey<CreateDirResult>>,
+    pub data_state: DataState,
+    pub cached_access_token: Option<String>,
+    pub cached_refresh_token: Option<String>,
 
     pub user_login_response_key_opt: Option<ResponseKey<UserLoginResponse>>,
     pub store_access_token_key_opt: Option<TaskKey<WriteResult>>,
@@ -32,13 +53,9 @@ impl Default for Global {
         Self {
             camera_3d: Entity::PLACEHOLDER,
 
-            // user_register_response_key_opt: None,
-            // user_register_confirm_response_key_opt: None,
-            // user_password_forgot_response_key_opt: None,
-            // user_password_reset_response_key_opt: None,
-            has_data_dir: false,
-            read_data_dir_key_opt: None,
-            create_data_dir_key_opt: None,
+            data_state: DataState::Init,
+            cached_access_token: None,
+            cached_refresh_token: None,
 
             user_login_response_key_opt: None,
             store_access_token_key_opt: None,

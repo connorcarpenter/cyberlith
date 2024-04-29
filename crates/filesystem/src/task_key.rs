@@ -3,6 +3,7 @@ use std::marker::PhantomData;
 use crate::tasks::traits::FsTaskResult;
 
 // TaskKey
+// Clone, Copy, PartialEq, Eq are defined below
 pub struct TaskKey<S: FsTaskResult> {
     pub(crate) id: u64,
     phantom_s: PhantomData<S>,

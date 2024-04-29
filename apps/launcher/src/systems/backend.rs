@@ -11,7 +11,7 @@ use game_engine::{
 use auth_server_http_proto::{UserLoginRequest, UserRegisterRequest};
 use game_engine::file::FileSystemManager;
 
-use crate::resources::Global;
+use crate::resources::{DataState, Global};
 
 pub(crate) fn backend_send_login_request(
     global: &mut Global,
@@ -82,68 +82,103 @@ pub(crate) fn backend_send_register_request(
     );
 }
 
-pub(crate) fn backend_init(
+pub(crate) fn backend_step(
     mut global: ResMut<Global>,
     mut file_system_manager: ResMut<FileSystemManager>,
-) {
-    let read_dir_key = file_system_manager.read_dir("data");
-    global.read_data_dir_key_opt = Some(read_dir_key);
-}
-
-pub(crate) fn backend_process_responses(
-    mut global: ResMut<Global>,
     mut http_client: ResMut<HttpClient>,
-    mut file_system_manager: ResMut<FileSystemManager>,
     mut app_exit_action_writer: EventWriter<AppExitAction>,
 ) {
-    write_data_folder(&mut global, &mut file_system_manager);
+    data_processing(&mut global, &mut file_system_manager);
     user_login_response_process(&mut global, &mut http_client, &mut file_system_manager, &mut app_exit_action_writer);
     user_register_response_process(&mut global, &mut http_client);
 }
 
-fn write_data_folder(
+fn data_processing(
     global: &mut Global,
     fs_manager: &mut FileSystemManager,
 ) {
-    if global.has_data_dir {
-        return;
-    }
-    if let Some(read_data_dir_key) = &global.read_data_dir_key_opt {
-        if let Some(result) = fs_manager.get_result(read_data_dir_key) {
-            global.read_data_dir_key_opt = None;
-            match result {
-                Ok(_response) => {
-                    info!("data folder exists");
-                    global.has_data_dir = true;
-                }
-                Err(err) => {
-                    warn!(
-                        "error reading data folder: {}",
-                        err.to_string()
-                    );
+    match global.data_state.clone() {
+        DataState::Init => {
+            global.data_state = DataState::ReadDataDir(fs_manager.read_dir("data"));
+        }
+        DataState::ReadDataDir(task_key) => {
+            if let Some(result) = fs_manager.get_result(&task_key) {
 
-                    let create_data_dir_key = fs_manager.create_dir("data");
-                    global.create_data_dir_key_opt = Some(create_data_dir_key)
+                match result {
+                    Ok(_response) => {
+                        global.data_state = DataState::DataDirExists;
+                    }
+                    Err(err) => {
+                        warn!(
+                            "error reading data folder: {}",
+                            err.to_string()
+                        );
+
+                        let create_data_dir_key = fs_manager.create_dir("data");
+                        global.data_state = DataState::CreateDataDir(create_data_dir_key)
+                    }
                 }
             }
         }
-    }
-    if let Some(create_data_dir_key) = &global.create_data_dir_key_opt {
-        if let Some(result) = fs_manager.get_result(create_data_dir_key) {
-            global.create_data_dir_key_opt = None;
-            match result {
-                Ok(_response) => {
-                    info!("created data folder");
-                    global.has_data_dir = true;
-                }
-                Err(err) => {
-                    warn!(
-                        "error creating data folder: {}",
-                        err.to_string()
-                    );
+        DataState::CreateDataDir(task_key) => {
+            if let Some(result) = fs_manager.get_result(&task_key) {
+                match result {
+                    Ok(_response) => {
+                        global.data_state = DataState::DataDirExists;
+                    }
+                    Err(err) => {
+                        warn!(
+                            "error creating data folder: {}",
+                            err.to_string()
+                        );
+                        global.data_state = DataState::Error;
+                    }
                 }
             }
         }
+        DataState::DataDirExists => {
+            let read_access_token_key = fs_manager.read("data/access_token");
+            global.data_state = DataState::CheckForAccessToken(read_access_token_key)
+        }
+        DataState::CheckForAccessToken(task_key) => {
+            if let Some(result) = fs_manager.get_result(&task_key) {
+                match result {
+                    Ok(response) => {
+                        let access_token = String::from_utf8(response.bytes).unwrap();
+                        global.cached_access_token = Some(access_token.clone());
+                        info!("found access_token: {}", access_token);
+                    }
+                    Err(err) => {
+                        warn!(
+                            "error reading access_token: {}",
+                            err.to_string()
+                        );
+                    }
+                }
+                let read_refresh_token_key = fs_manager.read("data/refresh_token");
+                global.data_state = DataState::CheckForRefreshToken(read_refresh_token_key)
+            }
+        }
+        DataState::CheckForRefreshToken(task_key) => {
+            if let Some(result) = fs_manager.get_result(&task_key) {
+                match result {
+                    Ok(response) => {
+                        let refresh_token = String::from_utf8(response.bytes).unwrap();
+                        global.cached_refresh_token = Some(refresh_token.clone());
+                        info!("found refresh_token: {}", refresh_token);
+                    }
+                    Err(err) => {
+                        warn!(
+                            "error reading refresh_token: {}",
+                            err.to_string()
+                        );
+                    }
+                }
+                global.data_state = DataState::Done;
+            }
+        }
+        DataState::Done => {}
+        DataState::Error => {}
     }
 }
 
@@ -165,7 +200,7 @@ fn user_login_response_process(
             Ok(response) => {
                 info!("client <- gateway: (UserLoginResponse - 200 OK)");
 
-                if global.has_data_dir {
+                if global.data_state.has_data_dir() {
                     let access_token_write_key = fs_manager.write("data/access_token", response.access_token.as_bytes());
                     info!("write access token: {}", response.access_token);
                     global.store_access_token_key_opt = Some(access_token_write_key);
