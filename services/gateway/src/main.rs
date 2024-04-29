@@ -16,10 +16,7 @@ use config::{
 use http_server::{smol::lock::RwLock, async_dup::Arc, ApiRequest, ApiServer, Method, ProxyServer, Server, smol};
 use logging::info;
 
-use auth_server_http_proto::{
-    RefreshTokenGrantRequest, UserLoginRequest, UserNameForgotRequest, UserPasswordForgotRequest,
-    UserPasswordResetRequest, UserRegisterConfirmRequest, UserRegisterRequest,
-};
+use auth_server_http_proto::{AccessTokenValidateRequest, RefreshTokenGrantRequest, UserLoginRequest, UserNameForgotRequest, UserPasswordForgotRequest, UserPasswordResetRequest, UserRegisterConfirmRequest, UserRegisterRequest};
 
 pub fn main() {
     logging::initialize();
@@ -86,6 +83,15 @@ pub fn main() {
         );
         // user register confirm
         server.serve_api_proxy::<UserRegisterConfirmRequest>(
+            gateway,
+            required_host_api,
+            api_allow_origin,
+            auth_server,
+            addr,
+            &port,
+        );
+        // access token validate
+        server.serve_api_proxy::<AccessTokenValidateRequest>(
             gateway,
             required_host_api,
             api_allow_origin,

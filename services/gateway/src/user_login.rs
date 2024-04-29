@@ -7,7 +7,7 @@ use config::{
 };
 use http_client::ResponseError;
 use http_server::{ApiRequest, ApiResponse, Request, Response};
-use logging::{info, warn};
+use logging::warn;
 
 use crate::target_env::{get_env, TargetEnv};
 

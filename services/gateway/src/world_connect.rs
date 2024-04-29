@@ -8,7 +8,7 @@ use config::{
 };
 use http_client::ResponseError;
 use http_server::{smol::lock::RwLock, async_dup::Arc, Method, Request, Response};
-use logging::{info, warn};
+use logging::warn;
 
 use world_server_naia_proto::{
     messages::{FakeEntityConverter, Message, Auth as WorldAuth},

@@ -8,7 +8,7 @@ use config::{
 };
 use http_client::{HttpClient, ResponseError};
 use http_server::{smol::lock::RwLock, async_dup::Arc, Method, Request, Response};
-use logging::{info, warn};
+use logging::warn;
 
 use region_server_http_proto::SessionConnectRequest;
 use session_server_naia_proto::{
