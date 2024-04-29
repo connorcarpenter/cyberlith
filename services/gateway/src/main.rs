@@ -13,7 +13,7 @@ use config::{
     GATEWAY_PORT, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SELF_BINDING_ADDR, SUBDOMAIN_API, SUBDOMAIN_WWW,
     WORLD_SERVER_RECV_ADDR, WORLD_SERVER_SIGNAL_PORT, SESSION_SERVER_RECV_ADDR, SESSION_SERVER_SIGNAL_PORT,
 };
-use http_server::{ApiRequest, ApiServer, Method, ProxyServer, Server, smol};
+use http_server::{smol::lock::RwLock, async_dup::Arc, ApiRequest, ApiServer, Method, ProxyServer, Server, smol};
 use logging::info;
 
 use auth_server_http_proto::{
@@ -133,14 +133,23 @@ pub fn main() {
 
     // -> session
     {
+        let session_protocol_1 = Arc::new(RwLock::new(session_server_naia_proto::protocol()));
+        let session_protocol_2 = session_protocol_1.clone();
+
         server.raw_endpoint(
             gateway,
             required_host_api,
             api_allow_origin,
             Method::Post,
             "session_rtc",
-            session_connect::handler,
-        ).middleware(session_connect::auth_middleware);
+            move |addr, req| {
+                let protocol = session_protocol_1.clone();
+                async move { session_connect::handler(protocol, addr, req).await }
+            },
+        ).middleware(move |addr, req| {
+            let protocol = session_protocol_2.clone();
+            async move { session_connect::auth_middleware(protocol, addr, req).await }
+        });
 
         let session_server = "session_server";
         let addr = SESSION_SERVER_RECV_ADDR;
@@ -161,14 +170,23 @@ pub fn main() {
 
     // -> world
     {
+        let world_protocol_1 = Arc::new(RwLock::new(world_server_naia_proto::protocol()));
+        let world_protocol_2 = world_protocol_1.clone();
+
         server.raw_endpoint(
             gateway,
             required_host_api,
             api_allow_origin,
             Method::Post,
             "world_rtc",
-            world_connect::handler,
-        ).middleware(world_connect::auth_middleware);
+            move |addr, req| {
+                let protocol = world_protocol_1.clone();
+                async move { world_connect::handler(protocol, addr, req).await }
+            },
+        ).middleware(move |addr, req| {
+            let protocol = world_protocol_2.clone();
+            async move { world_connect::auth_middleware(protocol, addr, req).await }
+        });
 
         let world_server = "world_server";
         let addr = WORLD_SERVER_RECV_ADDR;

@@ -1,5 +1,7 @@
 pub enum TargetEnv {
+    #[allow(dead_code)]
     Local,
+    #[allow(dead_code)]
     Prod,
 }
 

@@ -65,7 +65,7 @@ pub(crate) async fn handler(
                 &set_cookie_value,
             );
 
-            info!("responding with Set-Cookie of value: {}", set_cookie_value);
+            // info!("responding with Set-Cookie of value: {}", set_cookie_value);
 
             return Ok(outgoing_response);
         }

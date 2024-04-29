@@ -1,5 +1,4 @@
-use std::any::Any;
-use std::net::SocketAddr;
+use std::{net::SocketAddr, any::Any};
 
 use naia_serde::{BitReader, BitWriter};
 
@@ -8,19 +7,20 @@ use config::{
     SESSION_SERVER_SIGNAL_PORT,
 };
 use http_client::{HttpClient, ResponseError};
-use http_server::{Method, Request, Response};
+use http_server::{smol::lock::RwLock, async_dup::Arc, Method, Request, Response};
 use logging::{info, warn};
 
 use region_server_http_proto::SessionConnectRequest;
 use session_server_naia_proto::{
     messages::{FakeEntityConverter, Message, Auth as SessionAuth},
-    protocol,
+    Protocol,
 };
 
 use crate::access_token_checker::middleware_impl;
 
 pub(crate) async fn handler(
-    _addr: SocketAddr,
+    session_protocol: Arc<RwLock<Protocol>>,
+    _incoming_addr: SocketAddr,
     incoming_request: Request,
 ) -> Result<Response, ResponseError> {
 
@@ -75,11 +75,11 @@ pub(crate) async fn handler(
         let session_auth_bytes = {
             let session_auth = connect_response.session_auth.to_outer();
 
-            // TODO: this operation is VERY heavy! We should cache the result
-            let message_kinds = protocol().into().message_kinds;
+            let protocol = session_protocol.read().await;
+            let message_kinds = &protocol.inner().message_kinds;
 
             let mut writer = BitWriter::new();
-            session_auth.write(&message_kinds, &mut writer, &mut FakeEntityConverter);
+            session_auth.write(message_kinds, &mut writer, &mut FakeEntityConverter);
             let bytes = writer.to_bytes();
 
             // base64 encode
@@ -108,25 +108,27 @@ pub(crate) async fn handler(
 }
 
 pub(crate) async fn auth_middleware(
+    session_protocol: Arc<RwLock<Protocol>>,
     incoming_addr: SocketAddr,
     incoming_request: Request,
 ) -> Option<Result<Response, ResponseError>> {
 
-    let access_token: Option<String> = get_access_token_from_base64(&incoming_request);
+    let access_token: Option<String> = get_access_token_from_base64(session_protocol, &incoming_request).await;
     if access_token.is_some() {
-        info!("found access_token in header: {}", access_token.as_ref().unwrap());
+        // info!("found access_token in header: {}", access_token.as_ref().unwrap());
     } else {
-        info!("no access_token found in header");
+        warn!("no access_token found in header");
     }
     middleware_impl(incoming_addr, incoming_request, access_token).await
 }
 
-fn get_access_token_from_base64(incoming_request: &Request) -> Option<String> {
+async fn get_access_token_from_base64(session_protocol: Arc<RwLock<Protocol>>, incoming_request: &Request) -> Option<String> {
     let auth_header = incoming_request.get_header("authorization").map(|s| s.clone())?;
     let auth_bytes = base64::decode(&auth_header).ok()?;
 
-    // TODO: this operation is VERY heavy! We should cache the result
-    let message_kinds = protocol().into().message_kinds;
+    let protocol = session_protocol.read().await;
+    let message_kinds = &protocol.inner().message_kinds;
+
     let mut bit_reader = BitReader::new(&auth_bytes);
     let auth_message = message_kinds.read(&mut bit_reader, &FakeEntityConverter).ok()?;
     let auth_message_any = auth_message.clone().to_boxed_any();
