@@ -141,7 +141,7 @@ pub fn main() {
             required_host_api,
             api_allow_origin,
             Method::Post,
-            "session_rtc",
+            "session_connect",
             move |addr, req| {
                 let protocol = session_protocol_1.clone();
                 async move { session_connect::handler(protocol, addr, req).await }
@@ -160,11 +160,11 @@ pub fn main() {
             required_host_api,
             api_allow_origin,
             Method::Options,
-            "session_rtc",
+            "session_connect",
             session_server,
             addr,
             &port,
-            "session_rtc",
+            "session_connect",
         );
     }
 
@@ -178,7 +178,7 @@ pub fn main() {
             required_host_api,
             api_allow_origin,
             Method::Post,
-            "world_rtc",
+            "world_connect",
             move |addr, req| {
                 let protocol = world_protocol_1.clone();
                 async move { world_connect::handler(protocol, addr, req).await }
@@ -197,11 +197,11 @@ pub fn main() {
             required_host_api,
             api_allow_origin,
             Method::Options,
-            "world_rtc",
+            "world_connect",
             world_server,
             addr,
             &port,
-            "world_rtc",
+            "world_connect",
         );
     }
 

@@ -18,8 +18,8 @@ gateway:443 GET	    /game		            -> content:14197    GET     /game.html
 gateway:443 GET	    /game.js	            -> content:14197    GET     /game.js
 gateway:443 GET	    /game_bg.wasm           -> content:14197    GET     /game_bg.wasm
 
-gateway:443 POST    /session_rtc            -> session:14200    POST    /session_rtc
-gateway:443 POST    /world_rtc              -> world:14203      POST    /world_rtc
+gateway:443 POST    /session_connect            -> session:14200    POST    /session_connect
+gateway:443 POST    /world_connect              -> world:14203      POST    /world_connect
 
 gateway:80  GET	    *			            <- redirect to gateway:443
 
@@ -29,6 +29,6 @@ gateway:443	POST 	/session_connect
 gateway:443 GET	    /game		            
 gateway:443 GET	    /game.js	            
 gateway:443 GET	    /game_bg.wasm
-gateway:443 POST    /session_rtc
-gateway:443 POST    /world_rtc
+gateway:443 POST    /session_connect
+gateway:443 POST    /world_connect
 

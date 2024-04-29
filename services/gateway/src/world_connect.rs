@@ -29,7 +29,7 @@ pub(crate) async fn handler(
     let remote_addr = WORLD_SERVER_RECV_ADDR;
     let remote_port = WORLD_SERVER_SIGNAL_PORT.to_string();
     let remote_method = Method::Post;
-    let remote_path = "world_rtc";
+    let remote_path = "world_connect";
 
     let logged_remote_url = format!(
         "{} host:{}/{}",
@@ -56,17 +56,17 @@ pub(crate) async fn handler(
         base64::encode(&bytes)
     };
 
-    let mut world_rtc_request = incoming_request.clone();
-    world_rtc_request.url = format!("http://{}:{}/{}", remote_addr, remote_port, remote_path);
-    world_rtc_request.set_header("Authorization", &world_auth_bytes);
-    match http_client::raw::fetch_async(world_rtc_request).await {
-        Ok(world_rtc_response) => {
+    let mut world_connect_request = incoming_request.clone();
+    world_connect_request.url = format!("http://{}:{}/{}", remote_addr, remote_port, remote_path);
+    world_connect_request.set_header("Authorization", &world_auth_bytes);
+    match http_client::raw::fetch_async(world_connect_request).await {
+        Ok(world_connect_response) => {
             http_server::http_log_util::recv_res(host_name, world_server, &logged_remote_url);
-            return Ok(world_rtc_response);
+            return Ok(world_connect_response);
         }
         Err(err) => {
             warn!(
-                "Failed world_rtc request to world server: {}",
+                "Failed world_connect request to world server: {}",
                 err.to_string()
             );
             return Err(ResponseError::InternalServerError(
