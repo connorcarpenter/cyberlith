@@ -53,5 +53,5 @@ pub mod http {
 }
 pub use logging;
 pub mod file {
-    pub use filesystem::{FileSystemManager, TaskKey, WriteResult, ReadDirResult, CreateDirResult, ReadResult};
+    pub use filesystem::{FileSystemManager, TaskKey, WriteResult, ReadDirResult, CreateDirResult, ReadResult, DeleteResult};
 }

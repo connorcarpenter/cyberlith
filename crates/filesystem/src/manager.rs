@@ -2,19 +2,15 @@ use std::{collections::HashMap, path::PathBuf};
 
 use bevy_ecs::{change_detection::ResMut, system::Resource};
 
-use crate::{
-    backend::{poll_task, start_task, FsTaskJob},
-    error::TaskError,
-    tasks::{
-        create_dir::CreateDirTask,
-        read::{ReadResult, ReadTask},
-        read_dir::ReadDirTask,
-        task_enum::FsTaskResultEnum,
-        traits::{FsTask, FsTaskResult},
-        write::{WriteResult, WriteTask},
-    },
-    CreateDirResult, ReadDirResult, TaskKey,
-};
+use crate::{backend::{poll_task, start_task, FsTaskJob}, error::TaskError, tasks::{
+    create_dir::CreateDirTask,
+    read::{ReadResult, ReadTask},
+    read_dir::ReadDirTask,
+    task_enum::FsTaskResultEnum,
+    traits::{FsTask, FsTaskResult},
+    write::{WriteResult, WriteTask},
+}, CreateDirResult, ReadDirResult, TaskKey, DeleteResult};
+use crate::tasks::delete::DeleteTask;
 
 #[derive(Resource)]
 pub struct FileSystemManager {
@@ -56,6 +52,10 @@ impl FileSystemManager {
         bytes: C,
     ) -> TaskKey<WriteResult> {
         self.start_task(WriteTask::new(path, bytes))
+    }
+
+    pub fn delete<T: Into<PathBuf>>(&mut self, path: T) -> TaskKey<DeleteResult> {
+        self.start_task(DeleteTask::new(path))
     }
 
     pub fn read_dir<T: Into<PathBuf>>(&mut self, path: T) -> TaskKey<ReadDirResult> {

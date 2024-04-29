@@ -1,8 +1,8 @@
 use bevy_ecs::{entity::Entity, system::Resource};
 
-use game_engine::{file::{WriteResult, ReadDirResult, CreateDirResult, ReadResult, TaskKey}, http::ResponseKey, ui::UiHandle};
+use game_engine::{file::{WriteResult, DeleteResult, ReadDirResult, CreateDirResult, ReadResult, TaskKey}, http::ResponseKey, ui::UiHandle};
 
-use auth_server_http_proto::{UserLoginResponse, UserRegisterResponse};
+use auth_server_http_proto::{AccessTokenValidateResponse, RefreshTokenGrantResponse, UserLoginResponse, UserRegisterResponse};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub(crate) enum DataState {
@@ -11,16 +11,22 @@ pub(crate) enum DataState {
     CreateDataDir(TaskKey<CreateDirResult>),
     DataDirExists,
     CheckForAccessToken(TaskKey<ReadResult>),
+    ValidateAccessToken(ResponseKey<AccessTokenValidateResponse>),
+    DeleteLocalAccessToken(TaskKey<DeleteResult>),
+    FinishedAccessTokenValidation,
     CheckForRefreshToken(TaskKey<ReadResult>),
-    Error,
+    RefreshTokenGrantAccess(ResponseKey<RefreshTokenGrantResponse>),
+    StoreNewAccessToken(TaskKey<WriteResult>),
+    DeleteLocalRefreshToken(TaskKey<DeleteResult>),
+    CantCreateDataDir,
     Done
 }
 
 impl DataState {
     pub fn has_data_dir(&self) -> bool {
         match self {
-            Self::DataDirExists | Self::CheckForAccessToken(_) | Self::CheckForRefreshToken(_) | Self::Done => true,
-            _ => false,
+            Self::Init | Self::ReadDataDir(_) | Self::CreateDataDir(_) | Self::CantCreateDataDir => false,
+            _ => true,
         }
     }
 }
@@ -29,14 +35,7 @@ impl DataState {
 pub struct Global {
     pub camera_3d: Entity,
 
-    // pub user_register_response_key_opt: Option<ResponseKey<UserRegisterResponse>>,
-    // pub user_register_confirm_response_key_opt: Option<ResponseKey<UserRegisterConfirmResponse>>,
-    // pub user_password_forgot_response_key_opt: Option<ResponseKey<UserPasswordForgotResponse>>,
-    // pub user_password_reset_response_key_opt: Option<ResponseKey<UserPasswordResetResponse>>,
-
     pub data_state: DataState,
-    pub cached_access_token: Option<String>,
-    pub cached_refresh_token: Option<String>,
 
     pub user_login_response_key_opt: Option<ResponseKey<UserLoginResponse>>,
     pub store_access_token_key_opt: Option<TaskKey<WriteResult>>,
@@ -54,8 +53,6 @@ impl Default for Global {
             camera_3d: Entity::PLACEHOLDER,
 
             data_state: DataState::Init,
-            cached_access_token: None,
-            cached_refresh_token: None,
 
             user_login_response_key_opt: None,
             store_access_token_key_opt: None,

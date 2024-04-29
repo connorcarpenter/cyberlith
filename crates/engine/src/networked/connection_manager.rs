@@ -293,12 +293,6 @@ impl ConnectionManager {
                     )
                 };
 
-                // let url = if SUBDOMAIN_API.is_empty() {
-                //     PUBLIC_IP_ADDR.to_string()
-                // } else {
-                //     format!("{}.{}", SUBDOMAIN_API, PUBLIC_IP_ADDR)
-                // };
-
                 info!("connecting to session server: {}", url);
                 let socket = WebrtcSocket::new(&url, session_client.socket_config());
                 session_client.auth(SessionAuth::new(access_token));

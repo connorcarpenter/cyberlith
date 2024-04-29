@@ -5,16 +5,12 @@ use futures_lite::future;
 use async_channel::{Receiver, Sender};
 use logging::info;
 
-use crate::{
-    error::TaskError,
-    tasks::{
-        read::ReadResult,
-        read_dir::ReadDirEntry,
-        task_enum::{FsTaskEnum, FsTaskResultEnum},
-        write::WriteResult,
-    },
-    CreateDirResult, ReadDirResult,
-};
+use crate::{error::TaskError, tasks::{
+    read::ReadResult,
+    read_dir::ReadDirEntry,
+    task_enum::{FsTaskEnum, FsTaskResultEnum},
+    write::WriteResult,
+}, CreateDirResult, ReadDirResult, DeleteResult};
 
 pub(crate) struct FsTaskJob(pub(crate) Task<Result<FsTaskResultEnum, TaskError>>);
 
@@ -71,6 +67,10 @@ fn task_process_blocking(task_enum: &FsTaskEnum) -> Result<FsTaskResultEnum, Tas
         },
         FsTaskEnum::Write(task) => match std::fs::write(&task.path, &task.bytes) {
             Ok(()) => Ok(FsTaskResultEnum::Write(WriteResult::new())),
+            Err(e) => Err(TaskError::IoError(e.to_string())),
+        },
+        FsTaskEnum::Delete(task) => match std::fs::remove_file(&task.path) {
+            Ok(()) => Ok(FsTaskResultEnum::Delete(DeleteResult::new())),
             Err(e) => Err(TaskError::IoError(e.to_string())),
         },
         FsTaskEnum::ReadDir(task) => match std::fs::read_dir(&task.path) {

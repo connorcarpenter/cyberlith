@@ -1,17 +1,17 @@
 use bevy_ecs::{event::EventWriter, system::ResMut};
 
 use game_engine::{
-    config::{GATEWAY_PORT, PUBLIC_IP_ADDR, SUBDOMAIN_API, SUBDOMAIN_WWW},
+    config::GATEWAY_PORT,
     http::HttpClient,
     kernel::AppExitAction,
     logging::{info, warn},
     ui::UiManager,
+    file::FileSystemManager,
 };
 
-use auth_server_http_proto::{UserLoginRequest, UserRegisterRequest};
-use game_engine::file::FileSystemManager;
+use auth_server_http_proto::{AccessTokenValidateRequest, RefreshTokenGrantRequest, UserLoginRequest, UserRegisterRequest};
 
-use crate::resources::{DataState, Global};
+use crate::{utils::{get_api_url, get_www_url}, resources::{DataState, Global}};
 
 pub(crate) fn backend_send_login_request(
     global: &mut Global,
@@ -33,12 +33,7 @@ pub(crate) fn backend_send_login_request(
 
     // user login request send
     let request = UserLoginRequest::new(&username, &password);
-    let url = if SUBDOMAIN_WWW.is_empty() {
-        PUBLIC_IP_ADDR.to_string()
-    } else {
-        format!("{}.{}", SUBDOMAIN_WWW, PUBLIC_IP_ADDR)
-    };
-    let key = http_client.send(&url, GATEWAY_PORT, request);
+    let key = http_client.send(&get_www_url(), GATEWAY_PORT, request);
     global.user_login_response_key_opt = Some(key);
     info!(
         "sending login request... (username: {}, password: {}",
@@ -69,12 +64,7 @@ pub(crate) fn backend_send_register_request(
 
     // user register request send
     let request = UserRegisterRequest::new(&username, &email, &password);
-    let url = if SUBDOMAIN_API.is_empty() {
-        PUBLIC_IP_ADDR.to_string()
-    } else {
-        format!("{}.{}", SUBDOMAIN_API, PUBLIC_IP_ADDR)
-    };
-    let key = http_client.send(&url, GATEWAY_PORT, request);
+    let key = http_client.send(&get_api_url(), GATEWAY_PORT, request);
     global.user_register_response_key_opt = Some(key);
     info!(
         "sending register request... (username: {}, email: {}, password: {}",
@@ -84,18 +74,20 @@ pub(crate) fn backend_send_register_request(
 
 pub(crate) fn backend_step(
     mut global: ResMut<Global>,
-    mut file_system_manager: ResMut<FileSystemManager>,
+    mut fs_manager: ResMut<FileSystemManager>,
     mut http_client: ResMut<HttpClient>,
     mut app_exit_action_writer: EventWriter<AppExitAction>,
 ) {
-    data_processing(&mut global, &mut file_system_manager);
-    user_login_response_process(&mut global, &mut http_client, &mut file_system_manager, &mut app_exit_action_writer);
+    data_processing(&mut global, &mut fs_manager, &mut http_client, &mut app_exit_action_writer);
+    user_login_response_process(&mut global, &mut http_client, &mut fs_manager, &mut app_exit_action_writer);
     user_register_response_process(&mut global, &mut http_client);
 }
 
 fn data_processing(
     global: &mut Global,
     fs_manager: &mut FileSystemManager,
+    http_client: &mut HttpClient,
+    app_exit_action_writer: &mut EventWriter<AppExitAction>,
 ) {
     match global.data_state.clone() {
         DataState::Init => {
@@ -131,7 +123,7 @@ fn data_processing(
                             "error creating data folder: {}",
                             err.to_string()
                         );
-                        global.data_state = DataState::Error;
+                        global.data_state = DataState::CantCreateDataDir;
                     }
                 }
             }
@@ -145,31 +137,136 @@ fn data_processing(
                 match result {
                     Ok(response) => {
                         let access_token = String::from_utf8(response.bytes).unwrap();
-                        global.cached_access_token = Some(access_token.clone());
-                        info!("found access_token: {}", access_token);
+                        info!("found access_token in fs: {}", access_token);
+
+                        // validate access token via http
+                        let request = AccessTokenValidateRequest::new(&access_token);
+                        let response_key = http_client.send(&get_www_url(), GATEWAY_PORT, request);
+                        info!("sending access token validate request: {}", access_token);
+                        global.data_state = DataState::ValidateAccessToken(response_key);
                     }
                     Err(err) => {
                         warn!(
                             "error reading access_token: {}",
                             err.to_string()
                         );
+                        global.data_state = DataState::FinishedAccessTokenValidation;
                     }
                 }
-                let read_refresh_token_key = fs_manager.read("data/refresh_token");
-                global.data_state = DataState::CheckForRefreshToken(read_refresh_token_key)
             }
+        }
+        DataState::ValidateAccessToken(response_key) => {
+            if let Some(result) = http_client.recv(&response_key) {
+                match result {
+                    Ok(_response) => {
+                        info!("access token is valid, redirecting to game app...");
+                        redirect_to_game_app(app_exit_action_writer);
+                    }
+                    Err(err) => {
+                        warn!(
+                            "access token is invalid: {}",
+                            err.to_string()
+                        );
+                        // DELETE ACCESS TOKEN from FS
+                        let delete_access_token_key = fs_manager.delete("data/access_token");
+                        global.data_state = DataState::DeleteLocalAccessToken(delete_access_token_key);
+                    }
+                }
+            }
+        }
+        DataState::DeleteLocalAccessToken(task_key) => {
+            if let Some(result) = fs_manager.get_result(&task_key) {
+                match result {
+                    Ok(_response) => {
+                        info!("deleted access_token from fs");
+                    }
+                    Err(err) => {
+                        warn!(
+                            "error deleting access_token: {}",
+                            err.to_string()
+                        );
+                    }
+                }
+                global.data_state = DataState::FinishedAccessTokenValidation;
+            }
+        }
+        DataState::FinishedAccessTokenValidation => {
+            let read_refresh_token_key = fs_manager.read("data/refresh_token");
+            global.data_state = DataState::CheckForRefreshToken(read_refresh_token_key)
         }
         DataState::CheckForRefreshToken(task_key) => {
             if let Some(result) = fs_manager.get_result(&task_key) {
                 match result {
                     Ok(response) => {
                         let refresh_token = String::from_utf8(response.bytes).unwrap();
-                        global.cached_refresh_token = Some(refresh_token.clone());
-                        info!("found refresh_token: {}", refresh_token);
+                        info!("found refresh_token in fs: {}", refresh_token);
+
+                        // use refresh token to get new access token via http
+                        let request = RefreshTokenGrantRequest::new(&refresh_token);
+                        let response_key = http_client.send(&get_www_url(), GATEWAY_PORT, request);
+                        info!("sending refresh token grant request: {}", refresh_token);
+                        global.data_state = DataState::RefreshTokenGrantAccess(response_key);
                     }
                     Err(err) => {
                         warn!(
                             "error reading refresh_token: {}",
+                            err.to_string()
+                        );
+                        global.data_state = DataState::Done;
+                    }
+                }
+            }
+        }
+        DataState::RefreshTokenGrantAccess(response_key) => {
+            if let Some(result) = http_client.recv(&response_key) {
+                match result {
+                    Ok(response) => {
+
+                        let access_token = response.access_token;
+                        info!("refresh token granted new access token... {}", access_token);
+
+                        // store new access token in fs
+                        let store_access_token_key = fs_manager.write("data/access_token", access_token.as_bytes());
+                        global.data_state = DataState::StoreNewAccessToken(store_access_token_key);
+                    }
+                    Err(err) => {
+                        warn!(
+                            "access token is invalid: {}",
+                            err.to_string()
+                        );
+                        // DELETE REFRESH TOKEN from FS
+                        let delete_refresh_token_key = fs_manager.delete("data/refresh_token");
+                        global.data_state = DataState::DeleteLocalRefreshToken(delete_refresh_token_key);
+                    }
+                }
+            }
+        }
+        DataState::StoreNewAccessToken(task_key) => {
+            if let Some(result) = fs_manager.get_result(&task_key) {
+                match result {
+                    Ok(_response) => {
+                        info!("stored new access_token, redirecting to app");
+                        redirect_to_game_app(app_exit_action_writer);
+                    }
+                    Err(err) => {
+                        warn!(
+                            "error storing new access_token: {}",
+                            err.to_string()
+                        );
+                        global.data_state = DataState::Done;
+                    }
+                }
+            }
+        }
+        DataState::DeleteLocalRefreshToken(task_key) => {
+            if let Some(result) = fs_manager.get_result(&task_key) {
+                match result {
+                    Ok(_response) => {
+                        info!("deleted refresh_token from fs");
+                    }
+                    Err(err) => {
+                        warn!(
+                            "error deleting refresh_token: {}",
                             err.to_string()
                         );
                     }
@@ -178,7 +275,7 @@ fn data_processing(
             }
         }
         DataState::Done => {}
-        DataState::Error => {}
+        DataState::CantCreateDataDir => {}
     }
 }
 

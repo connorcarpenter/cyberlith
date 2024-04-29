@@ -3,11 +3,13 @@ use crate::tasks::{
     read::{ReadResult, ReadTask},
     read_dir::{ReadDirResult, ReadDirTask},
     write::{WriteResult, WriteTask},
+    delete::{DeleteResult, DeleteTask},
 };
 
 pub enum FsTaskEnum {
     Read(ReadTask),
     Write(WriteTask),
+    Delete(DeleteTask),
     ReadDir(ReadDirTask),
     CreateDir(CreateDirTask),
 }
@@ -15,6 +17,7 @@ pub enum FsTaskEnum {
 pub enum FsTaskResultEnum {
     Read(ReadResult),
     Write(WriteResult),
+    Delete(DeleteResult),
     ReadDir(ReadDirResult),
     CreateDir(CreateDirResult),
 }

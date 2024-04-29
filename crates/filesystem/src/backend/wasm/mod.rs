@@ -18,8 +18,9 @@ use crate::{
         read_dir::{ReadDirEntry, ReadDirTask},
         task_enum::{FsTaskEnum, FsTaskResultEnum},
         write::WriteTask,
+        delete::DeleteTask,
     },
-    CreateDirResult, ReadDirResult, ReadResult, WriteResult,
+    CreateDirResult, ReadDirResult, ReadResult, WriteResult, DeleteResult,
 };
 
 pub(crate) struct FsTaskJob(pub Receiver<Result<FsTaskResultEnum, TaskError>>);
@@ -50,6 +51,7 @@ pub async fn task_process_async(task_enum: &FsTaskEnum) -> Result<FsTaskResultEn
     match task_enum {
         FsTaskEnum::Read(task) => handle_read(task).await,
         FsTaskEnum::Write(task) => handle_write(task).await,
+        FsTaskEnum::Delete(task) => handle_delete(task).await,
         FsTaskEnum::ReadDir(task) => handle_read_dir(task).await,
         FsTaskEnum::CreateDir(task) => handle_create_dir(task).await,
     }
@@ -163,6 +165,38 @@ async fn handle_write(task: &WriteTask) -> Result<FsTaskResultEnum, TaskError> {
         .expect("Error closing file stream");
 
     Ok(FsTaskResultEnum::Write(output))
+}
+
+async fn handle_delete(task: &DeleteTask) -> Result<FsTaskResultEnum, TaskError> {
+    let output = DeleteResult::new();
+
+    let root = get_root().await;
+
+    let folder_name = task.path.parent().unwrap().to_str().unwrap();
+
+    let dir_handle_promise = root.get_directory_handle(&folder_name);
+    let dir_handle_js = JsFuture::from(dir_handle_promise)
+        .await
+        .expect("Error getting directory handle 2");
+    let dir_handle: FileSystemDirectoryHandle = dir_handle_js
+        .try_into()
+        .expect("Failed to cast JsValue to FileSystemDirectoryHandle");
+
+    let file_name = task.path.file_name().unwrap().to_str().unwrap();
+
+    // delete file
+    let file_handle_promise = dir_handle.remove_entry(file_name);
+
+    info!(
+        "attempting to delete file handle with name: {:?}",
+        file_name
+    );
+    JsFuture::from(file_handle_promise)
+        .await
+        .expect("Error creating file handle");
+    info!("file deleted");
+
+    Ok(FsTaskResultEnum::Delete(output))
 }
 
 async fn handle_read_dir(task: &ReadDirTask) -> Result<FsTaskResultEnum, TaskError> {
