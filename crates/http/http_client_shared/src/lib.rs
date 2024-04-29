@@ -1,6 +1,6 @@
 //! Minimal HTTP client for both native and WASM.
 
-use http_common::{Request, RequestOptions, Response};
+use http_common::{Request, RequestOptions, Response, ResponseError};
 
 /// Performs an HTTP request and calls the given callback when done.
 // pub fn fetch(request: Request, on_done: impl 'static + Send + FnOnce(Result<Response>)) {
@@ -12,7 +12,7 @@ use http_common::{Request, RequestOptions, Response};
 // }
 
 /// Performs an `async` HTTP request.
-pub async fn fetch_async(request: Request) -> Result<Response> {
+pub async fn fetch_async(request: Request) -> Result<Response, ResponseError> {
     #[cfg(not(target_arch = "wasm32"))]
     return native::fetch_async(request, None).await;
 
@@ -24,7 +24,7 @@ pub async fn fetch_async(request: Request) -> Result<Response> {
 pub async fn fetch_async_with_options(
     request: Request,
     request_options: RequestOptions,
-) -> Result<Response> {
+) -> Result<Response, ResponseError> {
     #[cfg(not(target_arch = "wasm32"))]
     return native::fetch_async(request, Some(request_options)).await;
 
@@ -33,7 +33,6 @@ pub async fn fetch_async_with_options(
 }
 
 mod types;
-pub use types::Result;
 
 #[cfg(not(target_arch = "wasm32"))]
 mod native;

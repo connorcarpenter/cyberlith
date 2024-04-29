@@ -163,32 +163,7 @@ pub async fn serve_impl<
             return response_send(response_stream, response).await;
         }
         Err(e) => {
-            let mut response = Response::default();
-            response.ok = false;
-            response.url = request.url.clone();
-
-            match e {
-                ResponseError::NetworkError(_err_str) => {
-                    response.status = 500;
-                    response.status_text = "Internal Server Error".to_string();
-                }
-                ResponseError::SerdeError => {
-                    response.status = 500;
-                    response.status_text = "Internal Server Error".to_string();
-                }
-                ResponseError::Unauthenticated => {
-                    response.status = 401;
-                    response.status_text = "Unauthorized".to_string();
-                }
-                ResponseError::NotFound => {
-                    response.status = 404;
-                    response.status_text = "Not Found".to_string();
-                }
-                ResponseError::InternalServerError(_err_str) => {
-                    response.status = 500;
-                    response.status_text = "Internal Server Error".to_string();
-                }
-            };
+            let response = e.to_response(&request.url);
             return response_send(response_stream, response).await;
         }
     }

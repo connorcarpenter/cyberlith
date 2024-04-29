@@ -1,3 +1,5 @@
+use crate::Response;
+
 pub enum RequestError {
     None,
     SerdeError,
@@ -25,6 +27,31 @@ impl ResponseError {
             ResponseError::Unauthenticated => "Unauthenticated".to_string(),
             ResponseError::InternalServerError(error) => format!("InternalServerError: {}", error),
             ResponseError::NotFound => "NotFound".to_string(),
+        }
+    }
+
+    pub fn to_response(&self, url: &str) -> Response {
+        let mut response = Response::default();
+        response.url = url.to_string();
+        response.ok = false;
+        response.status = match self {
+            ResponseError::Unauthenticated => 401,
+            ResponseError::NotFound => 404,
+            ResponseError::InternalServerError(_) => 500,
+            ResponseError::NetworkError(_) => 500,
+            ResponseError::SerdeError => 500,
+        };
+        response.status_text = self.to_string();
+        response
+    }
+
+    pub fn from_response(response: &Response) -> ResponseError {
+        match response.status {
+            200 => panic!("not an error"),
+            401 => ResponseError::Unauthenticated,
+            404 => ResponseError::NotFound,
+            500 => ResponseError::InternalServerError(response.status_text.clone()),
+            status_code => panic!("unexpected status code: {}", status_code),
         }
     }
 }

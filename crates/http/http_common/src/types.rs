@@ -1,5 +1,6 @@
 use std::{collections::BTreeMap, time::Duration};
 use std::collections::btree_map::Iter;
+use crate::ResponseError;
 
 /// HTTP Method
 #[derive(Clone, Eq, PartialEq)]
@@ -137,6 +138,7 @@ impl Default for Response {
 
 impl Response {
 
+    // headers
     pub fn has_header(&self, name: &str) -> bool {
         self.headers.contains_key(name.to_ascii_lowercase().as_str())
     }
@@ -155,6 +157,14 @@ impl Response {
 
     pub fn headers_iter(&self) -> Iter<'_, String, String> {
         self.headers.iter()
+    }
+
+    pub fn to_result(self) -> Result<Self, ResponseError> {
+        if self.ok {
+            Ok(self)
+        } else {
+            Err(ResponseError::from_response(&self))
+        }
     }
 
     /// Constructs a new Response indicating a successful request. // 200

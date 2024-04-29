@@ -13,7 +13,7 @@ use crate::types::PartialResponse;
 pub async fn fetch_async(
     request: &Request,
     request_options_opt: Option<RequestOptions>,
-) -> crate::Result<Response> {
+) -> Result<Response, ResponseError> {
     fetch_jsvalue(request, request_options_opt)
         .await
         .map_err(string_from_js_value)

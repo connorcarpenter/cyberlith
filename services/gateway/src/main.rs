@@ -2,7 +2,7 @@ mod session_connect;
 mod redirect;
 mod rate_limiter;
 mod access_token_checker;
-mod user_login;
+mod set_cookie;
 mod target_env;
 mod world_connect;
 
@@ -16,7 +16,7 @@ use config::{
 use http_server::{smol::lock::RwLock, async_dup::Arc, ApiServer, Method, ProxyServer, Server, smol};
 use logging::info;
 
-use auth_server_http_proto::{AccessTokenValidateRequest, RefreshTokenGrantRequest, UserLoginRequest, UserNameForgotRequest, UserPasswordForgotRequest, UserPasswordResetRequest, UserRegisterConfirmRequest, UserRegisterRequest};
+use auth_server_http_proto::{AccessTokenValidateRequest, RefreshTokenGrantRequest, RefreshTokenGrantResponse, UserLoginRequest, UserLoginResponse, UserNameForgotRequest, UserPasswordForgotRequest, UserPasswordResetRequest, UserRegisterConfirmRequest, UserRegisterRequest};
 
 pub fn main() {
     logging::initialize();
@@ -71,7 +71,25 @@ pub fn main() {
             auth_server,
             addr,
             &port,
-        ).response_middleware(user_login::response_set_cookie);
+        ).response_middleware(set_cookie::handler::<UserLoginResponse>);
+        // access token validate
+        server.serve_api_proxy::<AccessTokenValidateRequest>(
+            gateway,
+            required_host_www,
+            api_allow_origin,
+            auth_server,
+            addr,
+            &port,
+        );
+        // refresh token grant
+        server.serve_api_proxy::<RefreshTokenGrantRequest>(
+            gateway,
+            required_host_www,
+            api_allow_origin,
+            auth_server,
+            addr,
+            &port,
+        ).response_middleware(set_cookie::handler::<RefreshTokenGrantResponse>);
         // user register
         server.serve_api_proxy::<UserRegisterRequest>(
             gateway,
@@ -83,24 +101,6 @@ pub fn main() {
         );
         // user register confirm
         server.serve_api_proxy::<UserRegisterConfirmRequest>(
-            gateway,
-            required_host_api,
-            api_allow_origin,
-            auth_server,
-            addr,
-            &port,
-        );
-        // access token validate
-        server.serve_api_proxy::<AccessTokenValidateRequest>(
-            gateway,
-            required_host_api,
-            api_allow_origin,
-            auth_server,
-            addr,
-            &port,
-        );
-        // refresh token grant
-        server.serve_api_proxy::<RefreshTokenGrantRequest>(
             gateway,
             required_host_api,
             api_allow_origin,

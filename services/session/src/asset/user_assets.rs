@@ -179,6 +179,7 @@ impl UserAssets {
                         }
                         LoadAssetResponseValue::ClientLoadedNonModifiedAsset => {
                             // remove from processing, add to memory
+                            info!("client already has asset: {:?}", asset_id);
                             self.finish_asset_processing(server, asset_store, &asset_id);
                         }
                     }

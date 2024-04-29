@@ -1,16 +1,30 @@
-
-use auth_server_http_proto::UserLoginResponse;
-
+use auth_server_http_proto::{RefreshTokenGrantResponse, UserLoginResponse};
 use http_client::ResponseError;
 use http_server::{ApiResponse, Response};
 
 use crate::target_env::{get_env, TargetEnv};
 
-pub(crate) async fn response_set_cookie(
+pub(crate) trait SetCookieResponse: ApiResponse {
+    fn access_token(&self) -> &str;
+}
+
+impl SetCookieResponse for UserLoginResponse {
+    fn access_token(&self) -> &str {
+        &self.access_token
+    }
+}
+
+impl SetCookieResponse for RefreshTokenGrantResponse {
+    fn access_token(&self) -> &str {
+        &self.access_token
+    }
+}
+
+pub(crate) async fn handler<R: SetCookieResponse>(
     mut response: Response,
 ) -> Result<Response, ResponseError> {
 
-    let Ok(user_login_response) = UserLoginResponse::from_response(response.clone()) else {
+    let Ok(typed_response) = R::from_response(response.clone()) else {
         return Err(ResponseError::SerdeError);
     };
 
@@ -30,9 +44,10 @@ pub(crate) async fn response_set_cookie(
         },
     };
 
+    let access_token = typed_response.access_token();
     let set_cookie_value = format!(
         "access_token={}{}",
-        user_login_response.access_token,
+        access_token,
         cookie_attributes,
     );
     response.set_header(

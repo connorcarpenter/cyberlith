@@ -1,8 +1,8 @@
 use std::net::SocketAddr;
 
 use http_client_shared::fetch_async;
-use http_common::{ApiRequest, Method, Request, Response, ResponseError};
-use logging::{info, warn};
+use http_common::{ApiRequest, Method, Request, Response};
+use logging::{info};
 
 use crate::{log_util, Server, endpoint::{EndpointRef, Endpoint, EndpointFunc}};
 
@@ -179,36 +179,7 @@ fn get_endpoint_func(
                     }
                 }
                 Err(err) => {
-                    response.url = outer_url;
-                    response.ok = false;
-
-                    match err {
-                        ResponseError::NetworkError(err_str) => {
-                            warn!("error while sending request to: {} . {}", remote_url, err_str);
-                            response.status = 500;
-                            response.status_text = "Internal Server Error".to_string();
-                        }
-                        ResponseError::SerdeError => {
-                            warn!("error trying to deserialize response from: {}", remote_url);
-                            response.status = 500;
-                            response.status_text = "Internal Server Error".to_string();
-                        }
-                        ResponseError::Unauthenticated => {
-                            warn!("remote server returned [Unauthenticated], from {}", remote_url);
-                            response.status = 401;
-                            response.status_text = "Unauthorized".to_string();
-                        }
-                        ResponseError::NotFound => {
-                            warn!("remote server returned [NotFound], from {}", remote_url);
-                            response.status = 404;
-                            response.status_text = "Not Found".to_string();
-                        }
-                        ResponseError::InternalServerError(err_str) => {
-                            warn!("remote server returned [InternalServerError], from {} . {}. Sending [BadGateway] to client", remote_url, err_str);
-                            response.status = 502;
-                            response.status_text = "Bad Gateway".to_string();
-                        }
-                    }
+                    response = err.to_response(&outer_url);
                 }
             }
 

@@ -10,7 +10,7 @@ use async_channel::{Receiver, Sender};
 pub fn fetch_blocking(
     request: &Request,
     request_options_opt: Option<RequestOptions>,
-) -> crate::Result<Response> {
+) -> Result<Response, ResponseError> {
     let mut req = ureq::request(request.method.as_str(), &request.url);
 
     if let Some(request_options) = request_options_opt {
@@ -68,7 +68,7 @@ pub fn fetch_blocking(
 pub(crate) fn fetch(
     request: Request,
     request_options_opt: Option<RequestOptions>,
-    on_done: Box<dyn FnOnce(crate::Result<Response>) + Send>,
+    on_done: Box<dyn FnOnce(Result<Response, ResponseError>) + Send>,
 ) {
     std::thread::Builder::new()
         .name("ehttp".to_owned())
@@ -79,10 +79,10 @@ pub(crate) fn fetch(
 pub(crate) async fn fetch_async(
     request: Request,
     request_options_opt: Option<RequestOptions>,
-) -> crate::Result<Response> {
+) -> Result<Response, ResponseError> {
     let (tx, rx): (
-        Sender<crate::Result<Response>>,
-        Receiver<crate::Result<Response>>,
+        Sender<Result<Response, ResponseError>>,
+        Receiver<Result<Response, ResponseError>>,
     ) = async_channel::bounded(1);
 
     fetch(
