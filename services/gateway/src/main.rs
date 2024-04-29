@@ -13,7 +13,7 @@ use config::{
     GATEWAY_PORT, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SELF_BINDING_ADDR, SUBDOMAIN_API, SUBDOMAIN_WWW,
     WORLD_SERVER_RECV_ADDR, WORLD_SERVER_SIGNAL_PORT, SESSION_SERVER_RECV_ADDR, SESSION_SERVER_SIGNAL_PORT,
 };
-use http_server::{smol::lock::RwLock, async_dup::Arc, ApiRequest, ApiServer, Method, ProxyServer, Server, smol};
+use http_server::{smol::lock::RwLock, async_dup::Arc, ApiServer, Method, ProxyServer, Server, smol};
 use logging::info;
 
 use auth_server_http_proto::{AccessTokenValidateRequest, RefreshTokenGrantRequest, UserLoginRequest, UserNameForgotRequest, UserPasswordForgotRequest, UserPasswordResetRequest, UserRegisterConfirmRequest, UserRegisterRequest};
@@ -64,14 +64,14 @@ pub fn main() {
         let port = AUTH_SERVER_PORT.to_string();
 
         // user login
-        server.raw_endpoint(
+        server.serve_api_proxy::<UserLoginRequest>(
             gateway,
-            required_host_www, // uses this to set the cookie appropriately
+            required_host_www,
             api_allow_origin,
-            UserLoginRequest::method(),
-            UserLoginRequest::path(),
-            user_login::handler,
-        );
+            auth_server,
+            addr,
+            &port,
+        ).response_middleware(user_login::response_set_cookie);
         // user register
         server.serve_api_proxy::<UserRegisterRequest>(
             gateway,
@@ -152,7 +152,7 @@ pub fn main() {
                 let protocol = session_protocol_1.clone();
                 async move { session_connect::handler(protocol, addr, req).await }
             },
-        ).middleware(move |addr, req| {
+        ).request_middleware(move |addr, req| {
             let protocol = session_protocol_2.clone();
             async move { session_connect::auth_middleware(protocol, addr, req).await }
         });
@@ -179,6 +179,7 @@ pub fn main() {
         let world_protocol_1 = Arc::new(RwLock::new(world_server_naia_proto::protocol()));
         let world_protocol_2 = world_protocol_1.clone();
 
+        // TODO: possibly can refactor this to use 'server_proxy' with auth_middleware, just have auth_middleware adjust the auth header
         server.raw_endpoint(
             gateway,
             required_host_api,
@@ -189,7 +190,7 @@ pub fn main() {
                 let protocol = world_protocol_1.clone();
                 async move { world_connect::handler(protocol, addr, req).await }
             },
-        ).middleware(move |addr, req| {
+        ).request_middleware(move |addr, req| {
             let protocol = world_protocol_2.clone();
             async move { world_connect::auth_middleware(protocol, addr, req).await }
         });
@@ -260,7 +261,7 @@ pub fn main() {
             addr,
             &port,
             "game.html",
-        ).middleware(access_token_checker::www_middleware);
+        ).request_middleware(access_token_checker::www_middleware);
         server.raw_endpoint(
             gateway,
             required_host_www,
@@ -268,7 +269,7 @@ pub fn main() {
             Method::Get,
             "game.html",
             redirect::handler,
-        ).middleware(access_token_checker::www_middleware);
+        ).request_middleware(access_token_checker::www_middleware);
         server.serve_proxy(
             gateway,
             required_host_www,
@@ -279,7 +280,7 @@ pub fn main() {
             addr,
             &port,
             "game.js",
-        ).middleware(access_token_checker::www_middleware);
+        ).request_middleware(access_token_checker::www_middleware);
         server.serve_proxy(
             gateway,
             required_host_www,
@@ -290,7 +291,7 @@ pub fn main() {
             addr,
             &port,
             "game_bg.wasm",
-        ).middleware(access_token_checker::www_middleware);
+        ).request_middleware(access_token_checker::www_middleware);
     }
 
     // prune expired rate limiter entries

@@ -1,3 +1,5 @@
+mod endpoint;
+
 mod https_server;
 pub use https_server::HttpsServer;
 
@@ -9,6 +11,14 @@ pub use api_server::ApiServer;
 
 mod proxy_server;
 pub use proxy_server::ProxyServer;
+
+mod middleware;
+pub use middleware::RequestMiddlewareAction;
+
+mod log_util;
+pub mod http_log_util {
+    pub use crate::log_util::*;
+}
 
 pub use http_common::{ApiRequest, ApiResponse, Method, Request, Response, ResponseError};
 
@@ -22,12 +32,4 @@ pub mod smol {
 
 pub mod acme {
     pub use acme::Config;
-}
-
-mod log_util;
-mod endpoint;
-mod middleware;
-
-pub mod http_log_util {
-    pub use crate::log_util::*;
 }

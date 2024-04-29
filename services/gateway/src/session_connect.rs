@@ -7,7 +7,7 @@ use config::{
     SESSION_SERVER_SIGNAL_PORT,
 };
 use http_client::{HttpClient, ResponseError};
-use http_server::{smol::lock::RwLock, async_dup::Arc, Method, Request, Response};
+use http_server::{smol::lock::RwLock, async_dup::Arc, Method, Request, Response, RequestMiddlewareAction};
 use logging::warn;
 
 use region_server_http_proto::SessionConnectRequest;
@@ -111,7 +111,7 @@ pub(crate) async fn auth_middleware(
     session_protocol: Arc<RwLock<Protocol>>,
     incoming_addr: SocketAddr,
     incoming_request: Request,
-) -> Option<Result<Response, ResponseError>> {
+) -> RequestMiddlewareAction {
 
     let access_token: Option<String> = get_access_token_from_base64(session_protocol, &incoming_request).await;
     if access_token.is_some() {

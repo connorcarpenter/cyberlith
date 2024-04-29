@@ -13,13 +13,15 @@ use http_common::{Request, Response, ResponseError};
 use http_server_shared::{executor, serve_impl, MatchHostResult};
 use logging::info;
 
-use crate::{endpoint::Endpoint, middleware::{Middleware, MiddlewareFunc}};
+use crate::{endpoint::Endpoint, middleware::{RequestMiddlewareAction, RequestMiddleware, RequestMiddlewareFunc}};
+use crate::middleware::{ResponseMiddleware, ResponseMiddlewareFunc};
 
 // Server
 pub struct Server {
     pub(crate) socket_addr: SocketAddr,
     endpoints: HashMap<String, Endpoint>,
-    middlewares: Vec<Middleware>,
+    request_middlewares: Vec<RequestMiddleware>,
+    response_middlewares: Vec<ResponseMiddleware>,
 }
 
 impl Server {
@@ -27,7 +29,8 @@ impl Server {
         Self {
             socket_addr,
             endpoints: HashMap::new(),
-            middlewares: Vec::new(),
+            request_middlewares: Vec::new(),
+            response_middlewares: Vec::new(),
         }
     }
 
@@ -42,17 +45,30 @@ impl Server {
         executor::spawn(future).detach();
     }
 
-    pub fn middleware<
-        ResponseType: 'static + Send + Sync + Future<Output = Option<Result<Response, ResponseError>>>,
+    pub fn request_middleware<
+        ResponseType: 'static + Send + Sync + Future<Output = RequestMiddlewareAction>,
         Handler: 'static + Send + Sync + Fn(SocketAddr, Request) -> ResponseType
     >(
         &mut self,
         handler: Handler,
     ) {
-        let func: MiddlewareFunc = Box::new(move |addr, req| {
+        let func: RequestMiddlewareFunc = Box::new(move |addr, req| {
             Box::pin(handler(addr, req))
         });
-        self.middlewares.push(Middleware::new(func));
+        self.request_middlewares.push(RequestMiddleware::new(func));
+    }
+
+    pub fn response_middleware<
+        ResponseType: 'static + Send + Sync + Future<Output = Result<Response, ResponseError>>,
+        Handler: 'static + Send + Sync + Fn(Response) -> ResponseType
+    >(
+        &mut self,
+        handler: Handler,
+    ) {
+        let func: ResponseMiddlewareFunc = Box::new(move |response| {
+            Box::pin(handler(response))
+        });
+        self.response_middlewares.push(ResponseMiddleware::new(func));
     }
 
     // better know what you're doing here
@@ -140,21 +156,51 @@ impl Server {
                     }
                 }
             },
-            |endpoint_key, addr, request| {
+            |endpoint_key, address, request| {
                 let server_4 = server_2.clone();
                 async move {
                     let server = server_4.read().await;
 
-                    // handle global middleware
-                    for middleware in server.middlewares.iter() {
-                        if let Some(response_result) = (middleware.func)(addr, request.clone()).await {
-                            return response_result;
+                    let mut request = request.clone();
+
+                    // handle global request middleware
+                    for middleware in server.request_middlewares.iter() {
+                        match (middleware.func)(address, request.clone()).await {
+                            RequestMiddlewareAction::Continue(new_request) => {
+                               request = new_request;
+                            }
+                            RequestMiddlewareAction::Stop(response) => {
+                                return Ok(response);
+                            }
+                            RequestMiddlewareAction::Error(e) => {
+                                return Err(e);
+                            }
                         }
                     }
 
                     // handle request
                     let endpoint = server.endpoints.get(&endpoint_key).unwrap();
-                    endpoint.handle_request(addr, request.clone()).await
+                    let response_result = endpoint.handle_request(address, request).await;
+
+                    // handle global response middleware
+                    match response_result {
+                        Ok(mut response) => {
+                            for middleware in server.response_middlewares.iter() {
+                                match (middleware.func)(response.clone()).await {
+                                    Ok(new_response) => {
+                                        response = new_response;
+                                    }
+                                    Err(e) => {
+                                        return Err(e);
+                                    }
+                                }
+                            }
+                            return Ok(response);
+                        }
+                        Err(e) => {
+                            return Err(e);
+                        }
+                    }
                 }
             },
         )

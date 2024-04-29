@@ -7,7 +7,7 @@ use config::{
     WORLD_SERVER_SIGNAL_PORT,
 };
 use http_client::ResponseError;
-use http_server::{smol::lock::RwLock, async_dup::Arc, Method, Request, Response};
+use http_server::{smol::lock::RwLock, async_dup::Arc, Method, Request, Response, RequestMiddlewareAction};
 use logging::warn;
 
 use world_server_naia_proto::{
@@ -80,7 +80,7 @@ pub(crate) async fn auth_middleware(
     world_protocol: Arc<RwLock<Protocol>>,
     incoming_addr: SocketAddr,
     incoming_request: Request,
-) -> Option<Result<Response, ResponseError>> {
+) -> RequestMiddlewareAction {
 
     let access_token: Option<String> = get_world_auth_from_header(world_protocol, &incoming_request).await.map(|auth| auth.access_token).flatten();
     if access_token.is_some() {

@@ -1,7 +1,7 @@
 
 use std::{net::{IpAddr, SocketAddr}, time::Duration, collections::HashMap};
 
-use http_server::{async_dup::Arc, smol::lock::RwLock, Request, Response, ResponseError, Server};
+use http_server::{async_dup::Arc, smol::lock::RwLock, Request, Response, Server, RequestMiddlewareAction};
 use instant::Instant;
 use timequeue::TimeQueue;
 
@@ -105,7 +105,7 @@ pub fn add_middleware(server: &mut Server, req_max: usize, window_duration: Dura
     let global_limiter = Arc::new(RwLock::new(GlobalRateLimiter::new(req_max, window_duration)));
     let output = global_limiter.clone();
 
-    server.middleware(move |addr, req| {
+    server.request_middleware(move |addr, req| {
         let global_limiter = global_limiter.clone();
         async move { handler(global_limiter, addr, req).await }
     });
@@ -117,7 +117,7 @@ async fn handler(
     global_rate_limiter: Arc<RwLock<GlobalRateLimiter>>,
     incoming_addr: SocketAddr,
     incoming_request: Request,
-) -> Option<Result<Response, ResponseError>> {
+) -> RequestMiddlewareAction {
 
     let incoming_ip = incoming_addr.ip();
 
@@ -138,9 +138,9 @@ async fn handler(
     let peer_rate_limiter = peer_rate_limiter.unwrap();
     let mut peer_rate_limiter = peer_rate_limiter.write().await;
     match peer_rate_limiter.handle_request() {
-        Ok(()) => None,
+        Ok(()) => RequestMiddlewareAction::Continue(incoming_request),
         Err(retry_after_secs) => {
-            Some(Ok(Response::too_many_requests(&incoming_request.url, retry_after_secs)))
+            RequestMiddlewareAction::Stop(Response::too_many_requests(&incoming_request.url, retry_after_secs))
         }
     }
 }

@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 
 use config::{AUTH_SERVER_PORT, AUTH_SERVER_RECV_ADDR};
 use http_client::{HttpClient, ResponseError};
-use http_server::{ApiRequest, ApiResponse, Request, Response};
+use http_server::{ApiRequest, ApiResponse, Request, RequestMiddlewareAction};
 
 use auth_server_http_proto::{AccessTokenValidateRequest, AccessTokenValidateResponse};
 use logging::info;
@@ -22,7 +22,7 @@ use logging::info;
 pub(crate) async fn www_middleware(
     incoming_addr: SocketAddr,
     incoming_request: Request,
-) -> Option<Result<Response, ResponseError>> {
+) -> RequestMiddlewareAction {
 
     // get access token from cookie on incoming_request
     let access_token: Option<String> = if let Some(cookie) = incoming_request.get_header("cookie") {
@@ -49,14 +49,14 @@ pub(crate) async fn middleware_impl(
     _incoming_addr: SocketAddr,
     incoming_request: Request,
     access_token_opt: Option<String>,
-) -> Option<Result<Response, ResponseError>> {
+) -> RequestMiddlewareAction {
     let host_name = "gateway_auth";
     let remote_name = "client";
 
     http_server::http_log_util::recv_req(host_name, remote_name, format!("{} {}", incoming_request.method.as_str(), &incoming_request.url).as_str());
     let Some(access_token) = access_token_opt else {
         http_server::http_log_util::send_res(host_name, "unauthenticated");
-        return Some(Err(ResponseError::Unauthenticated));
+        return RequestMiddlewareAction::Error(ResponseError::Unauthenticated);
     };
 
     // call auth server to validate access token
@@ -71,19 +71,19 @@ pub(crate) async fn middleware_impl(
     match HttpClient::send(&remote_addr, remote_port, validate_request).await {
         Ok(_validate_response) => {
             http_server::http_log_util::recv_res(host_name, auth_server, &AccessTokenValidateResponse::name());
-            return None;
+            return RequestMiddlewareAction::Continue(incoming_request);
         },
         Err(e) => {
             match e {
                 ResponseError::Unauthenticated => {
                     http_server::http_log_util::recv_res(host_name, auth_server, "unauthenticated");
                     http_server::http_log_util::send_res(host_name, "unauthenticated (invalid access token)");
-                    return Some(Err(ResponseError::Unauthenticated));
+                    return RequestMiddlewareAction::Error(ResponseError::Unauthenticated);
                 }
                 e => {
                     http_server::http_log_util::recv_res(host_name, auth_server, "internal_server_error");
                     http_server::http_log_util::send_res(host_name, "internal_server_error");
-                    return Some(Err(ResponseError::InternalServerError(e.to_string())));
+                    return RequestMiddlewareAction::Error(ResponseError::InternalServerError(e.to_string()));
                 }
             }
         }
