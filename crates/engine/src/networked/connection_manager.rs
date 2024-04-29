@@ -68,7 +68,7 @@ impl ConnectionManager {
     pub fn handle_session_connect_events(
         client: SessionClient,
         mut session_connect_event_reader: EventReader<ConnectEvent<Session>>,
-        mut connection_manager: ResMut<ConnectionManager>,
+        mut connection_manager: ResMut<Self>,
     ) {
         for _ in session_connect_event_reader.read() {
             let Ok(server_address) = client.server_address() else {
@@ -91,7 +91,7 @@ impl ConnectionManager {
     // used as a system
     pub fn handle_session_disconnect_events(
         mut session_disconnect_event_reader: EventReader<DisconnectEvent<Session>>,
-        mut connection_manager: ResMut<ConnectionManager>,
+        mut connection_manager: ResMut<Self>,
     ) {
         for _ in session_disconnect_event_reader.read() {
             warn!("Client disconnected from session server");
@@ -103,7 +103,7 @@ impl ConnectionManager {
     // used as a system
     pub fn handle_session_reject_events(
         mut session_reject_event_reader: EventReader<RejectEvent<Session>>,
-        mut connection_manager: ResMut<ConnectionManager>,
+        mut connection_manager: ResMut<Self>,
     ) {
         for _ in session_reject_event_reader.read() {
             warn!("Client rejected from connecting to the session server");
@@ -116,7 +116,7 @@ impl ConnectionManager {
     pub fn handle_world_connect_events(
         client: WorldClient,
         mut event_reader: EventReader<ConnectEvent<World>>,
-        mut connection_manager: ResMut<ConnectionManager>,
+        mut connection_manager: ResMut<Self>,
     ) {
         for _ in event_reader.read() {
             let Ok(server_address) = client.server_address() else {
@@ -138,6 +138,7 @@ impl ConnectionManager {
     // used as a system
     pub fn handle_session_message_events(
         mut world_client: WorldClient,
+        mut connection_manager: ResMut<Self>,
         mut asset_cache: ResMut<AssetCache>,
         mut asset_manager: ResMut<AssetManager>,
         mut ui_manager: ResMut<UiManager>,
@@ -150,7 +151,13 @@ impl ConnectionManager {
             for token in events.read::<PrimaryChannel, WorldConnectToken>() {
                 info!("received World Connect Token from Session Server!");
 
-                world_client.auth(WorldAuth::new(&token.login_token));
+                let Some(access_token) = &connection_manager.access_token else {
+                    info!("no access token found, disconnecting");
+                    connection_manager.connection_state = ConnectionState::Disconnected;
+                    continue;
+                };
+
+                world_client.auth(WorldAuth::new(Some(access_token), &token.login_token));
                 info!(
                     "connecting to world server: {}",
                     token.world_server_public_webrtc_url
@@ -211,7 +218,7 @@ impl ConnectionManager {
 
     // used as a system
     pub fn handle_connection(
-        mut connection_manager: ResMut<ConnectionManager>,
+        mut connection_manager: ResMut<Self>,
         mut session_client: SessionClient,
         mut file_system_manager: ResMut<FileSystemManager>,
     ) {

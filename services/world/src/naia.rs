@@ -83,10 +83,10 @@ pub fn auth_events(
 ) {
     for events in event_reader.read() {
         for (user_key, auth) in events.read::<Auth>() {
-            if let Some(user_data) = global.take_login_token(&auth.token) {
+            if let Some(user_data) = global.take_login_token(&auth.login_token) {
                 info!(
                     "Accepted connection. User Id: {}, Token: {}",
-                    user_data.user_id, auth.token
+                    user_data.user_id, auth.login_token
                 );
 
                 global.add_user(&user_key, user_data);
@@ -94,10 +94,10 @@ pub fn auth_events(
                 // Accept incoming connection
                 server.accept_connection(&user_key);
             } else {
+                warn!("Rejected connection. Token: {}", auth.login_token);
+
                 // Reject incoming connection
                 server.reject_connection(&user_key);
-
-                warn!("Rejected connection. Token: {}", auth.token);
             }
         }
     }

@@ -4,6 +4,7 @@ mod rate_limiter;
 mod access_token_checker;
 mod user_login;
 mod target_env;
+mod world_connect;
 
 use std::{time::Duration, net::SocketAddr, thread};
 
@@ -160,21 +161,18 @@ pub fn main() {
 
     // -> world
     {
-        let world_server = "world_server";
-        let addr = WORLD_SERVER_RECV_ADDR;
-        let port = WORLD_SERVER_SIGNAL_PORT.to_string();
-
-        server.serve_proxy(
+        server.raw_endpoint(
             gateway,
             required_host_api,
             api_allow_origin,
             Method::Post,
             "world_rtc",
-            world_server,
-            addr,
-            &port,
-            "world_rtc",
-        );
+            world_connect::handler,
+        ).middleware(world_connect::auth_middleware);
+
+        let world_server = "world_server";
+        let addr = WORLD_SERVER_RECV_ADDR;
+        let port = WORLD_SERVER_SIGNAL_PORT.to_string();
 
         server.serve_proxy(
             gateway,

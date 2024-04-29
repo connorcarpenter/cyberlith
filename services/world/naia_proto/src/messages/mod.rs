@@ -1,5 +1,7 @@
 use naia_bevy_shared::{Protocol, ProtocolPlugin};
 
+pub use naia_bevy_shared::{FakeEntityConverter, Message};
+
 mod auth;
 pub use auth::Auth;
 

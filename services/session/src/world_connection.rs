@@ -43,6 +43,7 @@ pub fn recv_world_connect_response(
                     );
 
                     // send world connect token to user
+                    // info!("sending world connect token to user");
                     let token = WorldConnectToken::new(
                         &response.world_server_public_webrtc_url,
                         &response.login_token,

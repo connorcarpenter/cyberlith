@@ -92,6 +92,8 @@ impl FileMetadataStore {
 
             let processed_meta = ProcessedFileMeta::read(&bytes).unwrap();
 
+            // info!("meta file at {:?}, has ETag of: {:?}", file_path, processed_meta.etag());
+
             // strip ".meta" extension from file path
             let file_path_parent = file_path.parent().unwrap().to_str().unwrap();
             let file_name = file_path.file_stem().unwrap().to_str().unwrap();

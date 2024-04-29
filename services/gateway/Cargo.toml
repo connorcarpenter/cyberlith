@@ -7,8 +7,8 @@ edition = "2021"
 publish = false
 
 [features]
-local = [ "config/local", "region_server_http_proto/local", "session_server_naia_proto/local" ]
-prod = [ "config/prod", "region_server_http_proto/prod", "session_server_naia_proto/prod" ]
+local = [ "config/local", "region_server_http_proto/local", "session_server_naia_proto/local", "world_server_naia_proto/local" ]
+prod = [ "config/prod", "region_server_http_proto/prod", "session_server_naia_proto/prod", "world_server_naia_proto/prod" ]
 
 [dependencies]
 http_server = { path = "../../crates/http/http_server" }
@@ -22,6 +22,7 @@ instant = { path = "../../crates/instant" }
 region_server_http_proto = { path = "../region/http_proto" }
 auth_server_http_proto = { path = "../auth/http_proto" }
 session_server_naia_proto = { path = "../session/naia_proto" }
+world_server_naia_proto = { path = "../world/naia_proto" }
 
 base64 = { version = "0.13" }
 chrono = { version = "0.4" }

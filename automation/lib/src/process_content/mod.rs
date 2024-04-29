@@ -607,10 +607,12 @@ fn write_files_to_repo(repo: &Repository, files: &Vec<UnprocessedFile>) {
     let mut index = repo.index().expect("Failed to open index");
 
     for file in files {
+
+        let repo_full_file_path_str = format!("{}{}", repo_path, file.file_name_w_ext());
+
         // copy file over into repo
         // if file exists, delete it
         {
-            let repo_full_file_path_str = format!("{}{}", repo_path, file.file_name_w_ext());
             let repo_full_file_path = Path::new(&repo_full_file_path_str);
             let repo_file_exists = repo_full_file_path.exists();
             let result = run_command_blocking(
@@ -639,11 +641,12 @@ fn write_files_to_repo(repo: &Repository, files: &Vec<UnprocessedFile>) {
             }
         }
 
-        // process Asset Meta
+        // process Content Meta
         {
             let meta_file_path = format!("{}.meta", file.file_name_w_ext());
-            let meta_full_target_path = format!("{}.meta", file.full_file_path());
+            let meta_full_target_path = format!("{}.meta", repo_full_file_path_str);
             let processed_meta = process_new_meta_file(&file.file_name_w_ext(), file.hash);
+            // info!("for file: {}, new meta file etag: {}", file.file_name_w_ext(), processed_meta.etag().as_string());
             let meta_bytes = processed_meta.write();
 
             // write new meta file

@@ -41,7 +41,6 @@ pub(crate) async fn handler(
 
             // put access token into user cookie
 
-
             let cookie_attributes = match get_env() {
                 TargetEnv::Local => "".to_string(),
                 TargetEnv::Prod => {

@@ -119,11 +119,16 @@ pub fn write_file_bytes(
                 info!("failed to delete file: {}", err);
             }
         }
+        index
+            .remove_path(Path::new(&file_path))
+            .expect("Failed to remove file from index");
     }
 
     // write data file
     match fs::write(full_path, &bytes) {
-        Ok(()) => {}
+        Ok(()) => {
+            // info!("successfully wrote file: {}", file_path);
+        }
         Err(err) => panic!("failed to write file: {}", err),
     };
 
