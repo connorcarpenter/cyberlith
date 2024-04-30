@@ -1,3 +1,5 @@
+use chrono::{DateTime, Utc};
+
 use auth_server_http_proto::{RefreshTokenGrantResponse, UserLoginResponse};
 use http_client::ResponseError;
 use http_server::{ApiResponse, Response};
@@ -31,27 +33,20 @@ pub(crate) async fn handler<R: SetCookieResponse>(
             };
 
             // put access token into user cookie
+            let env = get_env();
+            let access_token = typed_response.access_token();
 
-            let cookie_attributes = match get_env() {
-                TargetEnv::Local => "".to_string(),
+            let expire_time_utc_opt = match env {
+                TargetEnv::Local => None,
                 TargetEnv::Prod => {
                     let mut expire_time_utc = chrono::Utc::now();
                     let expire_duration_1_week = chrono::Duration::weeks(1);
                     expire_time_utc += expire_duration_1_week;
-
-                    format!(
-                        "; Secure; HttpOnly; SameSite=Lax; Domain=.cyberlith.com; Expires={}",
-                        expire_time_utc
-                    )
-                },
+                    Some(expire_time_utc)
+                }
             };
 
-            let access_token = typed_response.access_token();
-            let set_cookie_value = format!(
-                "access_token={}{}",
-                access_token,
-                cookie_attributes,
-            );
+            let set_cookie_value = get_set_cookie_value(env, access_token, expire_time_utc_opt);
             response.set_header(
                 "Set-Cookie",
                 &set_cookie_value,
@@ -63,4 +58,25 @@ pub(crate) async fn handler<R: SetCookieResponse>(
             Err(e)
         }
     }
+}
+
+pub(crate) fn get_set_cookie_value(
+    target_env: TargetEnv,
+    access_token: &str,
+    expire_time_utc_opt: Option<DateTime<Utc>>
+) -> String {
+    let cookie_attributes = match target_env {
+        TargetEnv::Local => "".to_string(),
+        TargetEnv::Prod => "; Secure; HttpOnly; SameSite=Lax; Domain=.cyberlith.com".to_string(),
+    };
+    let expire_str = match expire_time_utc_opt {
+        Some(expire_time_utc) => format!("; Expires={}", expire_time_utc),
+        None => "".to_string(),
+    };
+    format!(
+        "access_token={}{}{}",
+        access_token,
+        cookie_attributes,
+        expire_str,
+    )
 }

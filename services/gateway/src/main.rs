@@ -261,7 +261,7 @@ pub fn main() {
             addr,
             &port,
             "game.html",
-        ).request_middleware(access_token_checker::www_middleware);
+        ).request_middleware(access_token_checker::www_middleware_redirect_home);
         server.raw_endpoint(
             gateway,
             required_host_www,
@@ -269,7 +269,7 @@ pub fn main() {
             Method::Get,
             "game.html",
             redirect::handler,
-        ).request_middleware(access_token_checker::www_middleware);
+        );
         server.serve_proxy(
             gateway,
             required_host_www,

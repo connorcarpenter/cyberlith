@@ -1,11 +1,15 @@
-use std::net::SocketAddr;
+use std::net::SocketAddr
+
+use chrono::TimeZone;
 
 use config::{AUTH_SERVER_PORT, AUTH_SERVER_RECV_ADDR};
 use http_client::{HttpClient, ResponseError};
-use http_server::{ApiRequest, ApiResponse, Request, RequestMiddlewareAction};
+use http_server::{ApiRequest, ApiResponse, Request, RequestMiddlewareAction, Response};
 
 use auth_server_http_proto::{AccessTokenValidateRequest, AccessTokenValidateResponse};
 use logging::info;
+
+use crate::{target_env::get_env, set_cookie::get_set_cookie_value};
 
 // pub(crate) async fn api_middleware(
 //     incoming_addr: SocketAddr,
@@ -45,6 +49,48 @@ pub(crate) async fn www_middleware(
     middleware_impl(incoming_addr, incoming_request, access_token).await
 }
 
+pub(crate) async fn www_middleware_redirect_home(
+    incoming_addr: SocketAddr,
+    incoming_request: Request,
+) -> RequestMiddlewareAction {
+    let url = incoming_request.url.clone();
+    match www_middleware(incoming_addr, incoming_request).await {
+        RequestMiddlewareAction::Continue(incoming_request) => {
+            // success
+            RequestMiddlewareAction::Continue(incoming_request)
+        },
+        RequestMiddlewareAction::Error(e) => match e {
+            ResponseError::Unauthenticated => {
+                // redirect to home page
+                let mut response = Response::redirect(&url, "/");
+                clear_cookie(&mut response);
+                RequestMiddlewareAction::Stop(response)
+            },
+            e => {
+                // internal server error
+                RequestMiddlewareAction::Error(e)
+            },
+        },
+        RequestMiddlewareAction::Stop(outgoing_response) => {
+            if outgoing_response.status == 401 {
+                // redirect to home page
+                let mut response = Response::redirect(&url, "/");
+                clear_cookie(&mut response);
+                RequestMiddlewareAction::Stop(response)
+            } else {
+                // return previous response
+                RequestMiddlewareAction::Stop(outgoing_response)
+            }
+        }
+    }
+}
+
+fn clear_cookie(response: &mut Response) {
+    let earliest_utc_time = chrono::Utc.timestamp_nanos(0);
+    let cookie_val = get_set_cookie_value(get_env(), "", Some(earliest_utc_time));
+    response.set_header("Set-Cookie", &cookie_val);
+}
+
 pub(crate) async fn middleware_impl(
     _incoming_addr: SocketAddr,
     incoming_request: Request,
@@ -55,9 +101,13 @@ pub(crate) async fn middleware_impl(
 
     http_server::http_log_util::recv_req(host_name, remote_name, format!("{} {}", incoming_request.method.as_str(), &incoming_request.url).as_str());
     let Some(access_token) = access_token_opt else {
-        http_server::http_log_util::send_res(host_name, "unauthenticated");
+        http_server::http_log_util::send_res(host_name, "unauthenticated (no access token)");
         return RequestMiddlewareAction::Error(ResponseError::Unauthenticated);
     };
+    if access_token.is_empty() {
+        http_server::http_log_util::send_res(host_name, "unauthenticated (empty access token)");
+        return RequestMiddlewareAction::Error(ResponseError::Unauthenticated);
+    }
 
     // call auth server to validate access token
     let auth_server = "auth_server";
