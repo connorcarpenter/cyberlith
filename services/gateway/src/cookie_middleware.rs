@@ -1,4 +1,4 @@
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, TimeZone, Utc};
 
 use auth_server_http_proto::{RefreshTokenGrantResponse, UserLoginResponse};
 use http_client::ResponseError;
@@ -22,7 +22,7 @@ impl SetCookieResponse for RefreshTokenGrantResponse {
     }
 }
 
-pub(crate) async fn handler<R: SetCookieResponse>(
+pub(crate) async fn set_cookie_on_200<R: SetCookieResponse>(
     response: Response,
 ) -> Result<Response, ResponseError> {
 
@@ -58,6 +58,22 @@ pub(crate) async fn handler<R: SetCookieResponse>(
             Err(e)
         }
     }
+}
+
+pub(crate) async fn handler_clear_cookie_on_401(
+    mut response: Response,
+) -> Result<Response, ResponseError> {
+    if response.status == 401 {
+        clear_cookie(&mut response);
+    }
+
+    Ok(response)
+}
+
+pub(crate) fn clear_cookie(response: &mut Response) {
+    let earliest_utc_time = chrono::Utc.timestamp_nanos(0);
+    let cookie_val = get_set_cookie_value(get_env(), "", Some(earliest_utc_time));
+    response.set_header("Set-Cookie", &cookie_val);
 }
 
 pub(crate) fn get_set_cookie_value(

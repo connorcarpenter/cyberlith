@@ -15,7 +15,7 @@ use world_server_naia_proto::{
     Protocol,
 };
 
-use crate::access_token_checker::middleware_impl;
+use crate::access_token_checker;
 
 pub(crate) async fn handler(
     world_protocol: Arc<RwLock<Protocol>>,
@@ -88,7 +88,7 @@ pub(crate) async fn auth_middleware(
     } else {
         warn!("no access_token found in header");
     }
-    middleware_impl(incoming_addr, incoming_request, access_token).await
+    access_token_checker::middleware_impl(incoming_addr, incoming_request, access_token).await
 }
 
 async fn get_world_auth_from_header(world_protocol: Arc<RwLock<Protocol>>, incoming_request: &Request) -> Option<WorldAuth> {

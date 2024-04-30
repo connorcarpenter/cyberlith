@@ -15,8 +15,7 @@ use session_server_naia_proto::{
     messages::{FakeEntityConverter, Message, Auth as SessionAuth},
     Protocol,
 };
-
-use crate::access_token_checker::middleware_impl;
+use crate::access_token_checker;
 
 pub(crate) async fn handler(
     session_protocol: Arc<RwLock<Protocol>>,
@@ -117,9 +116,9 @@ pub(crate) async fn auth_middleware(
     if access_token.is_some() {
         // info!("found access_token in header: {}", access_token.as_ref().unwrap());
     } else {
-        warn!("no access_token found in header");
+        // warn!("no access_token found in header");
     }
-    middleware_impl(incoming_addr, incoming_request, access_token).await
+    access_token_checker::middleware_impl(incoming_addr, incoming_request, access_token).await
 }
 
 async fn get_access_token_from_base64(session_protocol: Arc<RwLock<Protocol>>, incoming_request: &Request) -> Option<String> {

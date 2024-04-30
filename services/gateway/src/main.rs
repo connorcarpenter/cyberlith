@@ -2,7 +2,7 @@ mod session_connect;
 mod redirect;
 mod rate_limiter;
 mod access_token_checker;
-mod set_cookie;
+mod cookie_middleware;
 mod target_env;
 mod world_connect;
 
@@ -71,7 +71,7 @@ pub fn main() {
             auth_server,
             addr,
             &port,
-        ).response_middleware(set_cookie::handler::<UserLoginResponse>);
+        ).response_middleware(cookie_middleware::set_cookie_on_200::<UserLoginResponse>);
         // access token validate
         server.serve_api_proxy::<AccessTokenValidateRequest>(
             gateway,
@@ -80,7 +80,7 @@ pub fn main() {
             auth_server,
             addr,
             &port,
-        );
+        ).response_middleware(cookie_middleware::handler_clear_cookie_on_401);
         // refresh token grant
         server.serve_api_proxy::<RefreshTokenGrantRequest>(
             gateway,
@@ -89,7 +89,7 @@ pub fn main() {
             auth_server,
             addr,
             &port,
-        ).response_middleware(set_cookie::handler::<RefreshTokenGrantResponse>);
+        ).response_middleware(cookie_middleware::set_cookie_on_200::<RefreshTokenGrantResponse>);
         // user register
         server.serve_api_proxy::<UserRegisterRequest>(
             gateway,

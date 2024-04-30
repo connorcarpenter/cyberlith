@@ -1,6 +1,4 @@
-use std::net::SocketAddr
-
-use chrono::TimeZone;
+use std::net::SocketAddr;
 
 use config::{AUTH_SERVER_PORT, AUTH_SERVER_RECV_ADDR};
 use http_client::{HttpClient, ResponseError};
@@ -9,7 +7,7 @@ use http_server::{ApiRequest, ApiResponse, Request, RequestMiddlewareAction, Res
 use auth_server_http_proto::{AccessTokenValidateRequest, AccessTokenValidateResponse};
 use logging::info;
 
-use crate::{target_env::get_env, set_cookie::get_set_cookie_value};
+use crate::cookie_middleware::clear_cookie;
 
 // pub(crate) async fn api_middleware(
 //     incoming_addr: SocketAddr,
@@ -46,7 +44,21 @@ pub(crate) async fn www_middleware(
     else {
         info!("no access_token found in cookie");
     }
-    middleware_impl(incoming_addr, incoming_request, access_token).await
+    match middleware_impl(incoming_addr, incoming_request.clone(), access_token).await {
+        RequestMiddlewareAction::Continue(incoming_request) => {
+            // success
+            RequestMiddlewareAction::Continue(incoming_request)
+        },
+        RequestMiddlewareAction::Error(e) => {
+            let mut response = e.to_response(incoming_request.url.as_str());
+            clear_cookie(&mut response);
+            RequestMiddlewareAction::Stop(response)
+        },
+        RequestMiddlewareAction::Stop(mut response) => {
+            clear_cookie(&mut response);
+            RequestMiddlewareAction::Stop(response)
+        }
+    }
 }
 
 pub(crate) async fn www_middleware_redirect_home(
@@ -83,12 +95,6 @@ pub(crate) async fn www_middleware_redirect_home(
             }
         }
     }
-}
-
-fn clear_cookie(response: &mut Response) {
-    let earliest_utc_time = chrono::Utc.timestamp_nanos(0);
-    let cookie_val = get_set_cookie_value(get_env(), "", Some(earliest_utc_time));
-    response.set_header("Set-Cookie", &cookie_val);
 }
 
 pub(crate) async fn middleware_impl(
