@@ -2,6 +2,7 @@ use logging::{info, warn};
 
 use http_client::ResponseError;
 use http_server::{async_dup::Arc, http_log_util, smol::lock::RwLock, ApiServer, Server, ApiResponse, ApiRequest};
+use config::{GATEWAY_PORT, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SUBDOMAIN_WWW, TargetEnv};
 
 use auth_server_http_proto::{UserRegisterRequest, UserRegisterResponse};
 
@@ -61,10 +62,22 @@ impl State {
         let username = temp_reg.name.clone();
         let user_email: String = temp_reg.email.clone();
         let reg_token_str = reg_token.to_string();
-        let link_url = format!("register_token={}", reg_token_str); // TODO: replace with working URL from config
+
+        // on local, should be http://127.0.0.1:14196/?register_token={}
+        // on prod, should be https://www.cyberlith.com/?register_token={}
+        let url_path = match TargetEnv::get() {
+            TargetEnv::Local => {
+                format!("{}://{}:{}", PUBLIC_PROTOCOL, PUBLIC_IP_ADDR, GATEWAY_PORT)
+            }
+            TargetEnv::Prod => {
+                format!("{}://{}.{}:{}", PUBLIC_PROTOCOL, SUBDOMAIN_WWW, PUBLIC_IP_ADDR, GATEWAY_PORT)
+            }
+        };
+
+        let link_url = format!("{}/?register_token={}", url_path, reg_token_str); // TODO: replace with working URL from config
 
         info!(
-            "sending registration token to user's email: {:?}",
+            "sending register token to user's email: {:?}",
             &user_email
         );
 

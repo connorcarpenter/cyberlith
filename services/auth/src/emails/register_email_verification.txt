@@ -1,5 +1,5 @@
-Hello there {username},
+{username},
 
-In order to finalize your account creation, please go to the following link:
+please click the link to activate your account:
 
 {link}

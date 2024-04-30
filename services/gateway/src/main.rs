@@ -3,7 +3,6 @@ mod redirect;
 mod rate_limiter;
 mod access_token_checker;
 mod cookie_middleware;
-mod target_env;
 mod world_connect;
 
 use std::{time::Duration, net::SocketAddr, thread};

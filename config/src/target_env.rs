@@ -7,12 +7,16 @@ pub enum TargetEnv {
 
 cfg_if::cfg_if! {
     if #[cfg(feature = "local")] {
-        pub(crate) fn get_env() -> TargetEnv {
-            TargetEnv::Local
+        impl TargetEnv {
+            pub fn get() -> Self {
+                Self::Local
+            }
         }
     } else if #[cfg(feature = "prod")] {
-        pub(crate) fn get_env() -> TargetEnv {
-            TargetEnv::Prod
+        impl TargetEnv {
+            pub fn get() -> Self {
+                Self::Prod
+            }
         }
     }
 }

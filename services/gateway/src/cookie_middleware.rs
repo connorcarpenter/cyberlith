@@ -1,10 +1,9 @@
 use chrono::{DateTime, TimeZone, Utc};
 
 use auth_server_http_proto::{RefreshTokenGrantResponse, UserLoginResponse};
+use config::TargetEnv;
 use http_client::ResponseError;
 use http_server::{ApiResponse, Response};
-
-use crate::target_env::{get_env, TargetEnv};
 
 pub(crate) trait SetCookieResponse: ApiResponse {
     fn access_token(&self) -> &str;
@@ -33,7 +32,7 @@ pub(crate) async fn set_cookie_on_200<R: SetCookieResponse>(
             };
 
             // put access token into user cookie
-            let env = get_env();
+            let env = TargetEnv::get();
             let access_token = typed_response.access_token();
 
             let expire_time_utc_opt = match env {
@@ -72,7 +71,7 @@ pub(crate) async fn handler_clear_cookie_on_401(
 
 pub(crate) fn clear_cookie(response: &mut Response) {
     let earliest_utc_time = chrono::Utc.timestamp_nanos(0);
-    let cookie_val = get_set_cookie_value(get_env(), "", Some(earliest_utc_time));
+    let cookie_val = get_set_cookie_value(TargetEnv::get(), "", Some(earliest_utc_time));
     response.set_header("Set-Cookie", &cookie_val);
 }
 
