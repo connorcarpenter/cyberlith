@@ -277,11 +277,15 @@ pub(crate) fn layout(
         let child_cross_min = child.cross_min(store, layout_type);
         let child_cross_max = child.cross_max(store, layout_type);
 
-        if last != Some(index) {
+        let node_child_main_between = if last != Some(index) {
             if let Some((_, _)) = node_children.peek() {
-                child_margin_main_after.add_size_units(node_child_main_between);
+                Some(node_child_main_between)
+            } else {
+                None
             }
-        }
+        } else {
+            None
+        };
 
         // Compute fixed-size child cross_before.
         let computed_child_cross_before =
@@ -306,8 +310,7 @@ pub(crate) fn layout(
             child_margin_main_before.to_px(viewport_main, parent_main, parent_padding_main);
 
         // Compute fixed-size child main_after.
-        let computed_child_main_after =
-            child_margin_main_after.to_px(viewport_main, parent_main, parent_padding_main);
+        let computed_child_main_after = child_margin_main_after.to_px(viewport_main, parent_main, parent_padding_main) + node_child_main_between.map(|su| su.to_px(viewport_main, parent_main, parent_padding_main, 0.0)).unwrap_or(0.0);
 
         let computed_child_main;
 

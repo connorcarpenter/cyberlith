@@ -58,15 +58,6 @@ impl Default for MarginUnits {
 }
 
 impl MarginUnits {
-    pub fn add_size_units(&mut self, size_units: SizeUnits) {
-        match (self, size_units) {
-            (_, SizeUnits::Auto) => {}
-            (MarginUnits::Pixels(val), SizeUnits::Pixels(size)) => *val += size,
-            (MarginUnits::Percentage(val), SizeUnits::Percentage(size)) => *val += size,
-            (MarginUnits::Viewport(val), SizeUnits::Viewport(size)) => *val += size,
-            (_, _) => {}
-        }
-    }
 
     /// Returns the units converted to pixels or a provided default.
     pub fn to_px(&self, viewport_value: f32, parent_value: f32, parent_padding: f32) -> f32 {
