@@ -44,8 +44,6 @@ async fn async_impl(
 impl State {
     fn user_register(&mut self, request: UserRegisterRequest) -> Result<(), AuthServerError> {
         // TODO: validate data?
-        // TODO: hash password?
-        // TODO: expire registration token?
 
         if self.username_to_id_map.contains_key(&request.username) {
             return Err(AuthServerError::UsernameAlreadyExists);
@@ -56,7 +54,7 @@ impl State {
 
         let reg_token = self.create_new_register_token();
 
-        let temp_reg = TempRegistration::from(request);
+        let temp_reg = TempRegistration::from_req(request)?;
 
         let email_subject = "Cyberlith Email Verification"; // TODO: put into config
         let sending_email = "admin@cyberlith.com"; // TODO: put into config

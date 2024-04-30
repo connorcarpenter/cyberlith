@@ -7,3 +7,4 @@ workspace = "../.."
 [dependencies]
 #ring = { version = "0.17" }
 random = { path = "../random" }
+bcrypt = { version = "0.15" }

@@ -54,8 +54,8 @@ impl State {
         }
 
         info!(
-            "user_login: with handle {:?}, found user_id: {:?}",
-            handle, user_id
+            "user_login: with handle {:?}, found user_id: {:?} .. password: {:?}",
+            handle, user_id, password,
         );
 
         // check password

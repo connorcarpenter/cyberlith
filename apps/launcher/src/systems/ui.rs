@@ -177,6 +177,9 @@ fn ui_register_handle_events(
     }
     if login_clicked {
         info!("login button clicked!");
+
+        // TODO: validate!
+
         ui_manager.enable_ui(&global.ui_login_handle.unwrap());
         *should_rumble = true;
     }
@@ -188,6 +191,8 @@ fn ui_register_handle_events(
     }
     if submit_clicked {
         info!("submit button clicked!");
+
+        // TODO: validate!
 
         backend_send_register_request(global, ui_manager, http_client);
 

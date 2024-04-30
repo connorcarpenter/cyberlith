@@ -16,7 +16,6 @@ wgpu_renderer = [ "game_engine/wgpu_renderer" ]
 # Internal
 # goal is to have ONLY game_engine here!!!
 game_engine = { path = "../../crates/engine" }
-#naia-serde = { path = "../../../naia/shared/serde" }
 
 auth_server_http_proto = { path = "../../services/auth/http_proto" }
 

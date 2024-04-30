@@ -133,7 +133,7 @@ impl User {
     }
 
     pub fn check_password(&self, password: &str) -> bool {
-        self.password == *password
+        crypto::password_hasher::verify(password, &self.password)
     }
 
     pub fn set_password(&mut self, password: &str) {

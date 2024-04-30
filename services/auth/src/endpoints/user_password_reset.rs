@@ -1,5 +1,6 @@
 use http_client::ResponseError;
 use http_server::{async_dup::Arc, http_log_util, smol::lock::RwLock, ApiServer, Server, ApiResponse, ApiRequest};
+use logging::warn;
 
 use auth_server_http_proto::{UserPasswordResetRequest, UserPasswordResetResponse};
 
@@ -45,6 +46,10 @@ impl State {
         request: UserPasswordResetRequest,
     ) -> Result<(), AuthServerError> {
         let new_password = request.new_password;
+        let new_password = crypto::password_hasher::process(&new_password).map_err(|e| {
+            warn!("password_hasher::hash failed: {:?}", e);
+            AuthServerError::PasswordHashError
+        })?;
         let Some(reset_token) = ResetPasswordToken::from_str(&request.reset_password_token) else {
             return Err(AuthServerError::TokenSerdeError);
         };
