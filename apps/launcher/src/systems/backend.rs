@@ -76,11 +76,12 @@ pub(crate) fn backend_step(
     mut global: ResMut<Global>,
     mut fs_manager: ResMut<FileSystemManager>,
     mut http_client: ResMut<HttpClient>,
+    mut ui_manager: ResMut<UiManager>,
     mut app_exit_action_writer: EventWriter<AppExitAction>,
 ) {
     data_processing(&mut global, &mut fs_manager, &mut http_client, &mut app_exit_action_writer);
     user_login_response_process(&mut global, &mut http_client, &mut fs_manager, &mut app_exit_action_writer);
-    user_register_response_process(&mut global, &mut http_client);
+    user_register_response_process(&mut global, &mut http_client, &mut ui_manager);
 }
 
 fn data_processing(
@@ -373,11 +374,13 @@ fn redirect_to_game_app(app_exit_action_writer: &mut EventWriter<AppExitAction>)
     app_exit_action_writer.send(AppExitAction::go_to("game"));
 }
 
-fn user_register_response_process(global: &mut Global, http_client: &mut HttpClient) {
+fn user_register_response_process(
+    global: &mut Global,
+    http_client: &mut HttpClient,
+    ui_manager: &mut UiManager,
+) {
     if global.user_register_response_key_opt.is_some() {
-        let Some(key) = &global.user_register_response_key_opt else {
-            return;
-        };
+        let key = global.user_register_response_key_opt.as_ref().unwrap();
         let Some(result) = http_client.recv(key) else {
             return;
         };
@@ -393,5 +396,6 @@ fn user_register_response_process(global: &mut Global, http_client: &mut HttpCli
                 );
             }
         }
+        ui_manager.enable_ui(&global.ui_register_finish_handle.unwrap());
     }
 }

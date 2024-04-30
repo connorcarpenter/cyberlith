@@ -267,7 +267,7 @@ pub(crate) fn layout(
     while let Some((index, child)) = node_children.next() {
         // Get desired space and size.
         let child_margin_main_before = child.margin_main_before(store, layout_type);
-        let mut child_margin_main_after = child.margin_main_after(store, layout_type);
+        let child_margin_main_after = child.margin_main_after(store, layout_type);
 
         let child_margin_cross_before = child.margin_cross_before(store, layout_type);
         let child_cross = child.cross(store, layout_type);

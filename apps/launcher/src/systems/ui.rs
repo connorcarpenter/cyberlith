@@ -33,6 +33,7 @@ pub fn ui_setup(
     embedded_asset_events.send(embedded_asset_event!("../embedded/tpp7za")); // start ui
     embedded_asset_events.send(embedded_asset_event!("../embedded/3f5gej")); // login ui
     embedded_asset_events.send(embedded_asset_event!("../embedded/rckneg")); // register ui
+    embedded_asset_events.send(embedded_asset_event!("../embedded/fsfn5m")); // register finish ui
 
     // render_layer
     let layer = RenderLayers::layer(0);
@@ -58,6 +59,11 @@ pub fn ui_setup(
     global.ui_register_handle = Some(register_ui_handle);
     ui_manager.register_ui_event::<LoginButtonClickedEvent>(&register_ui_handle, "login_button");
     ui_manager.register_ui_event::<SubmitButtonClickedEvent>(&register_ui_handle, "submit_button");
+
+    // register_finish
+    let register_finish_ui_handle = UiHandle::new(AssetId::from_str("fsfn5m").unwrap());
+    global.ui_register_finish_handle = Some(register_finish_ui_handle);
+    ui_manager.register_ui_event::<SubmitButtonClickedEvent>(&register_finish_ui_handle, "submit_button");
 
     // other config
     ui_manager.enable_ui(&start_ui_handle);
@@ -102,6 +108,15 @@ pub fn ui_handle_events(
             &mut global,
             &mut ui_manager,
             &mut http_client,
+            &mut login_btn_rdr,
+            &mut register_btn_rdr,
+            &mut submit_btn_rdr,
+            &mut should_rumble,
+        );
+    } else if current_ui_handle == global.ui_register_finish_handle {
+        ui_register_finish_handle_events(
+            &mut global,
+            &mut ui_manager,
             &mut login_btn_rdr,
             &mut register_btn_rdr,
             &mut submit_btn_rdr,
@@ -200,6 +215,37 @@ fn ui_register_handle_events(
     }
 
     // drain others
+    for _ in register_btn_rdr.read() {
+        // ignore
+    }
+}
+
+fn ui_register_finish_handle_events(
+    global: &mut Global,
+    ui_manager: &mut UiManager,
+    login_btn_rdr: &mut EventReader<LoginButtonClickedEvent>,
+    register_btn_rdr: &mut EventReader<RegisterButtonClickedEvent>,
+    submit_btn_rdr: &mut EventReader<SubmitButtonClickedEvent>,
+    should_rumble: &mut bool,
+) {
+    // in Register Finish Ui
+
+    // Submit Button Click
+    let mut submit_clicked = false;
+    for _ in submit_btn_rdr.read() {
+        submit_clicked = true;
+    }
+    if submit_clicked {
+        info!("home button clicked!");
+        // go to start ui
+        ui_manager.enable_ui(&global.ui_start_handle.unwrap());
+        *should_rumble = true;
+    }
+
+    // drain others
+    for _ in login_btn_rdr.read() {
+        // ignore
+    }
     for _ in register_btn_rdr.read() {
         // ignore
     }

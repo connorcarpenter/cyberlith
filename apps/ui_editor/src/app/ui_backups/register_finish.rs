@@ -140,7 +140,7 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
 
                         // home button
                         c
-                            .add_button("home_button")
+                            .add_button("submit_button")
                             .set_style(home_button_style)
                             .contents(|c| {
                                 c

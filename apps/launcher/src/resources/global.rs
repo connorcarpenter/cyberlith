@@ -43,8 +43,9 @@ pub struct Global {
     pub user_register_response_key_opt: Option<ResponseKey<UserRegisterResponse>>,
 
     pub ui_start_handle: Option<UiHandle>,
-    pub ui_register_handle: Option<UiHandle>,
     pub ui_login_handle: Option<UiHandle>,
+    pub ui_register_handle: Option<UiHandle>,
+    pub ui_register_finish_handle: Option<UiHandle>,
 }
 
 impl Default for Global {
@@ -61,8 +62,9 @@ impl Default for Global {
             user_register_response_key_opt: None,
 
             ui_start_handle: None,
-            ui_register_handle: None,
             ui_login_handle: None,
+            ui_register_handle: None,
+            ui_register_finish_handle: None,
         }
     }
 }
