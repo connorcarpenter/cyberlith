@@ -8,16 +8,14 @@ use bevy_ecs::{
 use logging::info;
 
 use asset_serde::json::{Asset, AssetData, AssetMeta, UiConfigJson};
-use game_engine::render::components::RenderLayers;
 use game_engine::{
     asset::{
         embedded_asset_event, AssetId, AssetMetadataSerde, AssetType, ETag, EmbeddedAssetEvent,
     },
     input::{GamepadRumbleIntensity, Input, RumbleManager},
     render::{
-        base::Color,
         components::{
-            AmbientLight, Camera, CameraBundle, ClearOperation, OrthographicProjection, Projection,
+            RenderLayers, Camera, CameraBundle, ClearOperation, OrthographicProjection, Projection,
             RenderTarget,
         },
     },
@@ -30,13 +28,16 @@ use crate::app::{global::Global, ui_backups::*};
 
 fn ui_define() -> (String, AssetId, ETag, UiConfig) {
     // start
-    return start::ui_define();
+    //return start::ui_define();
 
     // login
     // return login::ui_define();
 
     // register
     // return register::ui_define();
+
+    // register_finish
+    return register_finish::ui_define();
 }
 
 #[derive(Event, Default)]
