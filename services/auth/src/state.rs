@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use auth_server_db::{DatabaseManager, UserId};
+use logging::info;
 
 use crate::{
     emails::EmailCatalog,
@@ -8,6 +9,7 @@ use crate::{
         AccessToken, RefreshToken, RegisterToken, ResetPasswordToken, TempRegistration, UserData,
     },
 };
+use crate::expire_manager::{ExpireEvent, ExpireManager};
 
 pub struct State {
     pub(crate) email_catalog: EmailCatalog,
@@ -21,6 +23,7 @@ pub struct State {
     access_tokens: HashMap<AccessToken, UserId>,
     refresh_tokens: HashMap<RefreshToken, UserId>,
     user_data: HashMap<UserId, UserData>,
+    expire_manager: ExpireManager,
 }
 
 impl State {
@@ -48,6 +51,7 @@ impl State {
             reset_password_tokens: HashMap::new(),
             access_tokens: HashMap::new(),
             refresh_tokens: HashMap::new(),
+            expire_manager: ExpireManager::new(),
         }
     }
 
@@ -66,6 +70,7 @@ impl State {
         temp_reg: TempRegistration,
     ) {
         self.register_tokens.insert(token, temp_reg);
+        self.expire_manager.insert_register_token(&token);
     }
 
     pub(crate) fn remove_register_token(
@@ -92,6 +97,7 @@ impl State {
         }
 
         self.refresh_tokens.insert(token, *user_id);
+        self.expire_manager.insert_refresh_token(&token);
 
         // insert into userdata
         self.user_data
@@ -109,6 +115,7 @@ impl State {
         }
 
         self.access_tokens.insert(token, *user_id);
+        self.expire_manager.insert_access_token(&token);
 
         // insert into userdata
         self.user_data
@@ -163,6 +170,7 @@ impl State {
         token: ResetPasswordToken,
     ) {
         self.reset_password_tokens.insert(token, user_id);
+        self.expire_manager.insert_reset_password_token(&token);
     }
 
     pub(crate) fn remove_reset_password_token(
@@ -176,5 +184,40 @@ impl State {
         self.database_manager.get_user_mut(&user_id, |user| {
             user.set_password(&new_password);
         });
+    }
+
+    pub(crate) fn clear_expired_tokens(&mut self) {
+        for event in self.expire_manager.clear_expired() {
+            match event {
+                ExpireEvent::AccessToken(token) => {
+                    info!("Access token expired: {:?}", token);
+                    let Some(user_id) = self.access_tokens.remove(&token) else {
+                        continue;
+                    };
+                    let Some(user) = self.user_data.get_mut(&user_id) else {
+                        continue;
+                    };
+                    user.current_access_token = None;
+                }
+                ExpireEvent::RefreshToken(token) => {
+                    info!("Refresh token expired: {:?}", token);
+                    let Some(user_id) = self.refresh_tokens.remove(&token) else {
+                        continue;
+                    };
+                    let Some(user) = self.user_data.get_mut(&user_id) else {
+                        continue;
+                    };
+                    user.current_refresh_token = None;
+                }
+                ExpireEvent::RegisterToken(token) => {
+                    info!("Register token expired: {:?}", token);
+                    self.register_tokens.remove(&token);
+                }
+                ExpireEvent::ResetPasswordToken(token) => {
+                    info!("Reset password token expired: {:?}", token);
+                    self.reset_password_tokens.remove(&token);
+                }
+            }
+        }
     }
 }

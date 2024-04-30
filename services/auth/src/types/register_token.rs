@@ -1,6 +1,6 @@
 use crypto::U32Token;
 
-#[derive(Eq, PartialEq, Hash, Clone, Copy)]
+#[derive(Eq, PartialEq, Hash, Clone, Debug, Copy)]
 pub struct RegisterToken {
     value: U32Token,
 }

@@ -1,6 +1,6 @@
 use crypto::U32Token;
 
-#[derive(Eq, PartialEq, Hash, Clone, Copy)]
+#[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
 pub struct ResetPasswordToken {
     value: U32Token,
 }

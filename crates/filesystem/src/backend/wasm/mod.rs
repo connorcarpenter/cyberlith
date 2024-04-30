@@ -74,7 +74,7 @@ async fn handle_read(task: &ReadTask) -> Result<FsTaskResultEnum, TaskError> {
     let file_handle_promise = dir_handle.get_file_handle(file_name);
     let file_handle_js = JsFuture::from(file_handle_promise)
         .await
-        .expect("Error getting file handle");
+        .map_err(|e| TaskError::IoError(format!("Error getting file handle: {:?}", e)))?;
     let file_handle: FileSystemFileHandle = file_handle_js
         .try_into()
         .expect("Failed to cast JsValue to FileSystemFileHandle");

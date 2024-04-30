@@ -1,6 +1,6 @@
 use crypto::U32Token;
 
-#[derive(Eq, PartialEq, Hash, Clone, Copy)]
+#[derive(Eq, PartialEq, Hash, Debug, Clone, Copy)]
 pub struct RefreshToken {
     value: U32Token,
 }
