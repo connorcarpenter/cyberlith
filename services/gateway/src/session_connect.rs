@@ -87,7 +87,7 @@ pub(crate) async fn handler(
 
         let mut session_connect_request = incoming_request.clone();
         session_connect_request.url = format!("http://{}:{}/{}", remote_addr, remote_port, remote_path);
-        session_connect_request.set_header("Authorization", &session_auth_bytes);
+        session_connect_request.insert_header("Authorization", &session_auth_bytes);
         match http_client::raw::fetch_async(session_connect_request).await {
             Ok(session_connect_response) => {
                 http_server::http_log_util::recv_res(host_name, session_server, &logged_remote_url);
@@ -122,7 +122,7 @@ pub(crate) async fn auth_middleware(
 }
 
 async fn get_access_token_from_base64(session_protocol: Arc<RwLock<Protocol>>, incoming_request: &Request) -> Option<String> {
-    let auth_header = incoming_request.get_header("authorization").map(|s| s.clone())?;
+    let auth_header = incoming_request.get_header_all("authorization").map(|s| s.clone())?;
     let auth_bytes = base64::decode(&auth_header).ok()?;
 
     let protocol = session_protocol.read().await;

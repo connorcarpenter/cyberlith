@@ -58,7 +58,7 @@ pub(crate) async fn handler(
 
     let mut world_connect_request = incoming_request.clone();
     world_connect_request.url = format!("http://{}:{}/{}", remote_addr, remote_port, remote_path);
-    world_connect_request.set_header("Authorization", &world_auth_bytes);
+    world_connect_request.insert_header("Authorization", &world_auth_bytes);
     match http_client::raw::fetch_async(world_connect_request).await {
         Ok(world_connect_response) => {
             http_server::http_log_util::recv_res(host_name, world_server, &logged_remote_url);
@@ -92,7 +92,7 @@ pub(crate) async fn auth_middleware(
 }
 
 async fn get_world_auth_from_header(world_protocol: Arc<RwLock<Protocol>>, incoming_request: &Request) -> Option<WorldAuth> {
-    let auth_header = incoming_request.get_header("authorization").map(|s| s.clone())?;
+    let auth_header = incoming_request.get_header_all("authorization").map(|s| s.clone())?;
     let auth_bytes = base64::decode(&auth_header).ok()?;
 
     let protocol = world_protocol.read().await;

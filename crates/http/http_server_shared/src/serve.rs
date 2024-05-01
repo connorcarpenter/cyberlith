@@ -302,7 +302,7 @@ async fn cast_to_request(
     };
     let mut request = Request::new(method, uri, body);
     for (hn, hv) in header_map {
-        request.set_header(&hn, &hv);
+        request.insert_header(&hn, &hv);
     }
     Some(request)
 }
@@ -358,11 +358,13 @@ fn write_response_header(r: &Response, mut io: impl std::io::Write) -> std::io::
     write_line(&mut io, &mut len, reason.as_bytes())?;
     write_line(&mut io, &mut len, b"\r\n")?;
 
-    for (hn, hv) in r.headers_iter() {
-        write_line(&mut io, &mut len, hn.as_str().as_bytes())?;
-        write_line(&mut io, &mut len, b": ")?;
-        write_line(&mut io, &mut len, hv.as_bytes())?;
-        write_line(&mut io, &mut len, b"\r\n")?;
+    for (hn, hvs) in r.headers_iter() {
+        for hv in hvs {
+            write_line(&mut io, &mut len, hn.as_str().as_bytes())?;
+            write_line(&mut io, &mut len, b": ")?;
+            write_line(&mut io, &mut len, hv.as_bytes())?;
+            write_line(&mut io, &mut len, b"\r\n")?;
+        }
     }
 
     write_line(&mut io, &mut len, b"\r\n")?;

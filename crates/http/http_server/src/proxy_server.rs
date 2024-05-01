@@ -109,7 +109,14 @@ fn get_endpoint_func(
     let remote_url = remote_url.to_string();
     let logged_remote_url = logged_remote_url.to_string();
     Box::new(move |_outer_addr: SocketAddr, outer_req: Request| {
-        let outer_headers: Vec<(String, String)> = outer_req.headers_iter().map(|(name, value)| (name.clone(), value.clone())).collect();
+        let mut outer_headers: Vec<(String, String)> = Vec::new();
+        for (header_name, header_values) in outer_req.headers_iter() {
+            for header_value in header_values {
+                outer_headers.push((header_name.clone(), header_value.clone()));
+            }
+        }
+        let outer_headers = outer_headers;
+
         let outer_url = outer_req.url;
         let outer_body = outer_req.body;
 
@@ -132,7 +139,7 @@ fn get_endpoint_func(
 
             let mut remote_req = Request::new(method, &remote_url, outer_body);
             for (header_name, header_value) in outer_headers.iter() {
-                remote_req.set_header(header_name, header_value);
+                remote_req.insert_header(header_name, header_value);
             }
 
             log_util::send_req(&host_name, &remote_name, &logged_remote_url);
@@ -156,7 +163,7 @@ fn get_endpoint_func(
                         if remote_response.has_header(header_name) {
                             // info!("adding header: {}", header_name);
                             let remote_header_value =
-                                remote_response.get_header(header_name).unwrap();
+                                remote_response.get_header_first(header_name).unwrap();
                             response.set_header(header_name, remote_header_value);
                         } else {
                             // info!("header not found: {}", header_name);
@@ -172,7 +179,7 @@ fn get_endpoint_func(
                     // access control allow origin
                     if let Some(allow_origin) = allow_origin_opt {
                         while response.has_header("access-control-allow-origin") {
-                            response.remove_header("access-control-allow-origin");
+                            response.remove_header_all("access-control-allow-origin");
                         }
                         response
                             .set_header("access-control-allow-origin", &allow_origin);

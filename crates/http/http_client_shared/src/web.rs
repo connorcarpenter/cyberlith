@@ -62,8 +62,10 @@ pub(crate) async fn fetch_base(
 
     let js_request = web_sys::Request::new_with_str_and_init(&request.url, &opts)?;
 
-    for (name, value) in request.headers_iter() {
-        js_request.headers().set(name, value)?;
+    for (name, values) in request.headers_iter() {
+        for value in values {
+            js_request.headers().set(name, value)?;
+        }
     }
 
     let window = web_sys::window().unwrap();

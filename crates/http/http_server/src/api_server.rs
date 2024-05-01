@@ -179,7 +179,7 @@ fn get_endpoint_raw_func<
 
                 if let Some(allow_origin) = allow_origin_opt {
                     while response.has_header("access-control-allow-origin") {
-                        response.remove_header("access-control-allow-origin");
+                        response.remove_header_all("access-control-allow-origin");
                     }
                     response.set_header("access-control-allow-origin", &allow_origin);
                 }
