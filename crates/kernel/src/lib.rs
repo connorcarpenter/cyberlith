@@ -1,3 +1,5 @@
+pub mod http;
+
 mod app_exit;
 pub use app_exit::AppExitAction;
 

@@ -2,7 +2,6 @@ use bevy_app::{App, Plugin, Startup, Update};
 use bevy_ecs::system::ResMut;
 
 use asset_loader::AssetPlugin;
-use bevy_http_client::HttpClientPlugin;
 use filesystem::FileSystemPlugin;
 use input::{Input, InputPlugin};
 use kernel::KernelPlugin;
@@ -30,7 +29,6 @@ impl Plugin for EnginePlugin {
             .add_plugins(AssetPlugin)
             .add_plugins(UiPlugin)
             .add_plugins(UiRenderPlugin)
-            .add_plugins(HttpClientPlugin)
             .add_plugins(FileSystemPlugin)
             .add_systems(Startup, engine_startup)
             // asset cache stuff, todo: maybe refactor out?

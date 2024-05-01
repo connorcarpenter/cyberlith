@@ -28,6 +28,24 @@ impl Default for HttpClient {
 }
 
 impl HttpClient {
+
+    // used as a system
+    pub fn update_system(mut client: ResMut<Self>) {
+        client.update();
+    }
+
+    pub fn update(&mut self) {
+        let mut finished_tasks = Vec::new();
+        for (key, task) in self.tasks_iter_mut() {
+            if let Some(result) = poll_task(task) {
+                finished_tasks.push((*key, result));
+            }
+        }
+        for (key, result) in finished_tasks {
+            self.accept_result(key, result);
+        }
+    }
+
     pub fn send<Q: ApiRequest>(
         &mut self,
         addr: &str,
@@ -109,17 +127,5 @@ impl HttpClient {
     pub(crate) fn accept_result(&mut self, key: u64, result: Result<Response, ResponseError>) {
         self.tasks.remove(&key);
         self.results.insert(key, result);
-    }
-}
-
-pub(crate) fn client_update(mut client: ResMut<HttpClient>) {
-    let mut finished_tasks = Vec::new();
-    for (key, task) in client.tasks_iter_mut() {
-        if let Some(result) = poll_task(task) {
-            finished_tasks.push((*key, result));
-        }
-    }
-    for (key, result) in finished_tasks {
-        client.accept_result(key, result);
     }
 }

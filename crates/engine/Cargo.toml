@@ -20,7 +20,6 @@ render_api = { path = "../render/render_api" }
 input = { path = "../input" }
 asset_loader = { path = "../asset/loader" }
 asset_render = { path = "../asset/render" }
-bevy_http_client = { path = "../http/bevy_http_client" }
 config = { path = "../../config", features = ["client"]}
 storage = { path = "../storage" }
 asset_id = { path = "../asset/id" }

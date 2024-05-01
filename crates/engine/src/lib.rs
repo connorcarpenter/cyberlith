@@ -49,6 +49,6 @@ pub mod random {
     pub use random::*;
 }
 pub mod http {
-    pub use bevy_http_client::*;
+    pub use kernel::http::*;
 }
 pub use logging;

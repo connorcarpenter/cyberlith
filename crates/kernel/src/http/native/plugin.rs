@@ -1,6 +1,6 @@
 use bevy_app::{App, Plugin, Update};
 
-use crate::client::HttpClient;
+use crate::http::HttpClient;
 
 #[derive(Default)]
 pub struct HttpClientPlugin;
