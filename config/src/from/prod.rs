@@ -5,10 +5,7 @@ pub const SELF_BINDING_ADDR: &str = "0.0.0.0";
 pub const PUBLIC_PROTOCOL: &str = "https";
 
 #[allow(dead_code)]
-pub const SUBDOMAIN_WWW: &str = "www"; // we don't check subdomains on local
-
-#[allow(dead_code)]
-pub const SUBDOMAIN_API: &str = "api"; // we don't check subdomains on local
+pub const SUBDOMAIN_WWW: &str = "www";
 
 #[allow(dead_code)]
 pub const PUBLIC_IP_ADDR: &str = "cyberlith.com";

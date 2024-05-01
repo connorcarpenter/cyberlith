@@ -8,9 +8,6 @@ pub const PUBLIC_PROTOCOL: &str = "http";
 pub const SUBDOMAIN_WWW: &str = ""; // we don't check subdomains on local
 
 #[allow(dead_code)]
-pub const SUBDOMAIN_API: &str = ""; // we don't check subdomains on local
-
-#[allow(dead_code)]
 pub const PUBLIC_IP_ADDR: &str = "127.0.0.1";
 
 #[allow(dead_code)]

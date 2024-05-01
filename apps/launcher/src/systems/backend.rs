@@ -10,7 +10,7 @@ use game_engine::{
 
 use gateway_http_proto::{UserLoginRequest, UserRegisterRequest};
 
-use crate::{utils::{get_api_url, get_www_url}, resources::Global};
+use crate::{utils::get_www_url, resources::Global};
 
 pub(crate) fn backend_send_login_request(
     global: &mut Global,
@@ -63,7 +63,7 @@ pub(crate) fn backend_send_register_request(
 
     // user register request send
     let request = UserRegisterRequest::new(&username, &email, &password);
-    let key = http_client.send(&get_api_url(), GATEWAY_PORT, request);
+    let key = http_client.send(&get_www_url(), GATEWAY_PORT, request);
     global.user_register_response_key_opt = Some(key);
     info!(
         "sending register request... (username: {}, email: {}, password: {}",

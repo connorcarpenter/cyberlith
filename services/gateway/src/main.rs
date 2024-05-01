@@ -11,7 +11,7 @@ use std::{time::Duration, net::SocketAddr, thread};
 
 use config::{
     AUTH_SERVER_PORT, AUTH_SERVER_RECV_ADDR, CONTENT_SERVER_PORT, CONTENT_SERVER_RECV_ADDR,
-    GATEWAY_PORT, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SELF_BINDING_ADDR, SUBDOMAIN_API, SUBDOMAIN_WWW,
+    GATEWAY_PORT, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SELF_BINDING_ADDR, SUBDOMAIN_WWW,
     WORLD_SERVER_RECV_ADDR, WORLD_SERVER_SIGNAL_PORT, SESSION_SERVER_RECV_ADDR, SESSION_SERVER_SIGNAL_PORT,
 };
 use http_server::{smol::lock::RwLock, async_dup::Arc, ApiServer, Method, ProxyServer, Server, smol};
@@ -28,12 +28,6 @@ pub fn main() {
     let mut server = Server::new(socket_addr);
 
     let gateway = "gateway";
-    let required_host_api = if SUBDOMAIN_API.is_empty() {
-        None
-    } else {
-        Some(format!("{}.{}", SUBDOMAIN_API, PUBLIC_IP_ADDR))
-    };
-    let required_host_api = required_host_api.as_ref().map(|s| (s.as_str(), None));
     let required_host_www = if SUBDOMAIN_WWW.is_empty() {
         None
     } else {
@@ -44,7 +38,7 @@ pub fn main() {
         .as_ref()
         .map(|s| (s.as_str(), Some(rd.as_str())));
 
-    let api_allow_origin = if SUBDOMAIN_API.is_empty() {
+    let api_allow_origin = if SUBDOMAIN_WWW.is_empty() {
         "*".to_string()
     } else {
         format!("{}://{}.{}", PUBLIC_PROTOCOL, SUBDOMAIN_WWW, PUBLIC_IP_ADDR)
@@ -94,7 +88,7 @@ pub fn main() {
         // user register
         server.serve_api_proxy::<UserRegisterRequest>(
             gateway,
-            required_host_api,
+            required_host_www,
             api_allow_origin,
             auth_server,
             addr,
@@ -103,7 +97,7 @@ pub fn main() {
         // user name forgot
         server.serve_api_proxy::<UserNameForgotRequest>(
             gateway,
-            required_host_api,
+            required_host_www,
             api_allow_origin,
             auth_server,
             addr,
@@ -112,7 +106,7 @@ pub fn main() {
         // user password forgot
         server.serve_api_proxy::<UserPasswordForgotRequest>(
             gateway,
-            required_host_api,
+            required_host_www,
             api_allow_origin,
             auth_server,
             addr,
@@ -121,7 +115,7 @@ pub fn main() {
         // user password reset
         server.serve_api_proxy::<UserPasswordResetRequest>(
             gateway,
-            required_host_api,
+            required_host_www,
             api_allow_origin,
             auth_server,
             addr,
@@ -136,7 +130,7 @@ pub fn main() {
 
         server.raw_endpoint(
             gateway,
-            required_host_api,
+            required_host_www,
             api_allow_origin,
             Method::Post,
             "session_connect",
@@ -155,7 +149,7 @@ pub fn main() {
 
         server.serve_proxy(
             gateway,
-            required_host_api,
+            required_host_www,
             api_allow_origin,
             Method::Options,
             "session_connect",
@@ -174,7 +168,7 @@ pub fn main() {
         // TODO: possibly can refactor this to use 'server_proxy' with auth_middleware, just have auth_middleware adjust the auth header
         server.raw_endpoint(
             gateway,
-            required_host_api,
+            required_host_www,
             api_allow_origin,
             Method::Post,
             "world_connect",
@@ -193,7 +187,7 @@ pub fn main() {
 
         server.serve_proxy(
             gateway,
-            required_host_api,
+            required_host_www,
             api_allow_origin,
             Method::Options,
             "world_connect",
@@ -314,7 +308,6 @@ fn start_server(server: Server) {
         vec![
             "cyberlith.com".to_string(),
             "www.cyberlith.com".to_string(),
-            "api.cyberlith.com".to_string(),
         ],
         vec!["admin@cyberlith.com".to_string()],
     ));
