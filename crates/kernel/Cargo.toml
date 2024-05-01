@@ -20,3 +20,4 @@ web-sys = { version = "0.3", features = [ "Window", "Location" ] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 http_common = { path = "../http/http_common" }
+chrono = { version = "0.4" }

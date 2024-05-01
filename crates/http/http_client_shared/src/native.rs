@@ -60,7 +60,7 @@ pub fn fetch_blocking(
     response.status_text = status_text;
     response.body = body;
     for (header_name, header_value) in headers {
-        response.set_header(&header_name, &header_value);
+        response.insert_header(&header_name, &header_value);
     }
     Ok(response)
 }

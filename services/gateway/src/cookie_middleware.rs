@@ -46,7 +46,7 @@ pub(crate) async fn set_cookie_on_200<R: SetCookieResponse>(
             };
 
             let set_cookie_value = get_set_cookie_value("access_token", &access_token.to_string(), expire_time_utc_opt);
-            response.set_header(
+            response.insert_header(
                 "Set-Cookie",
                 &set_cookie_value,
             );
@@ -72,7 +72,7 @@ pub(crate) async fn handler_clear_cookie_on_401(
 pub(crate) fn clear_cookie(response: &mut Response) {
     let earliest_utc_time = chrono::Utc.timestamp_nanos(0);
     let cookie_val = get_set_cookie_value("access_token", "", Some(earliest_utc_time));
-    response.set_header("Set-Cookie", &cookie_val);
+    response.insert_header("Set-Cookie", &cookie_val);
 }
 
 pub(crate) fn get_set_cookie_value(

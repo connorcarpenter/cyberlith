@@ -127,7 +127,7 @@ async fn fetch_jsvalue(
     let mut outgoing_response = Response::default();
 
     for (name, value) in base.headers {
-        outgoing_response.set_header(&name, &value);
+        outgoing_response.insert_header(&name, &value);
     }
 
     outgoing_response.url = base.url;

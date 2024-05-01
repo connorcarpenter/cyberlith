@@ -164,7 +164,7 @@ fn get_endpoint_func(
                             // info!("adding header: {}", header_name);
                             let remote_header_value =
                                 remote_response.get_header_first(header_name).unwrap();
-                            response.set_header(header_name, remote_header_value);
+                            response.insert_header(header_name, remote_header_value);
                         } else {
                             // info!("header not found: {}", header_name);
                         }
@@ -182,7 +182,7 @@ fn get_endpoint_func(
                             response.remove_header_all("access-control-allow-origin");
                         }
                         response
-                            .set_header("access-control-allow-origin", &allow_origin);
+                            .insert_header("access-control-allow-origin", &allow_origin);
                     }
                 }
                 Err(err) => {

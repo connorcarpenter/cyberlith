@@ -58,7 +58,7 @@ pub(crate) async fn handle(
                     }
                 };
                 let access_token_value = get_set_cookie_value("access_token", &access_token.to_string(), expire_time_utc_opt);
-                new_response.set_header(
+                new_response.insert_header(
                     "Set-Cookie",
                     &access_token_value,
                 );
@@ -75,7 +75,7 @@ pub(crate) async fn handle(
                     }
                 };
                 let refresh_token_value = get_set_cookie_value("refresh_token", &refresh_token.to_string(), expire_time_utc_opt);
-                new_response.set_header(
+                new_response.insert_header(
                     "Set-Cookie",
                     &refresh_token_value,
                 );

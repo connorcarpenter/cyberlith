@@ -51,7 +51,7 @@ impl Response {
         self.headers.get(name)
     }
 
-    pub fn set_header(&mut self, name: &str, value: &str) {
+    pub fn insert_header(&mut self, name: &str, value: &str) {
         self.headers.insert(name.to_string(), value.to_string());
     }
 

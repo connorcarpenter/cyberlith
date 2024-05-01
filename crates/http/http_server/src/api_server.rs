@@ -181,7 +181,7 @@ fn get_endpoint_raw_func<
                     while response.has_header("access-control-allow-origin") {
                         response.remove_header_all("access-control-allow-origin");
                     }
-                    response.set_header("access-control-allow-origin", &allow_origin);
+                    response.insert_header("access-control-allow-origin", &allow_origin);
                 }
             }
 
