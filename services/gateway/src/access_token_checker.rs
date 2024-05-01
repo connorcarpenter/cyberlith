@@ -27,7 +27,7 @@ pub(crate) async fn www_middleware(
 ) -> RequestMiddlewareAction {
 
     // get access token from cookie on incoming_request
-    let access_token: Option<String> = if let Some(cookie) = incoming_request.get_header_all("cookie") {
+    let access_token: Option<String> = if let Some(cookie) = incoming_request.get_header_first("cookie") {
         // parse 'access_token' out of cookie
         let token = cookie
             .split(';')

@@ -122,7 +122,7 @@ pub(crate) async fn auth_middleware(
 }
 
 async fn get_access_token_from_base64(session_protocol: Arc<RwLock<Protocol>>, incoming_request: &Request) -> Option<String> {
-    let auth_header = incoming_request.get_header_all("authorization").map(|s| s.clone())?;
+    let auth_header = incoming_request.get_header_first("authorization").map(|s| s.clone())?;
     let auth_bytes = base64::decode(&auth_header).ok()?;
 
     let protocol = session_protocol.read().await;

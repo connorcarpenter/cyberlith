@@ -3,7 +3,7 @@ use std::sync::{Arc, RwLock};
 use bevy_ecs::system::{ResMut, Resource};
 
 use bevy_http_client::{HttpClient as InnerHttpClient, ResponseError, ResponseKey};
-use http_common::{ApiRequest, ApiResponse, RequestOptions, Response};
+use http_common::{ApiRequest, ApiResponse, RequestOptions};
 
 use crate::http::native::cookie_store::CookieStore;
 
@@ -27,7 +27,7 @@ impl HttpClient {
         let cookie_store_clone = client.cookie_store.clone();
         InnerHttpClient::update(
             &mut client.inner,
-            move |response| {
+            |response| {
                 let mut cookie_store = cookie_store_clone.write().unwrap();
                 cookie_store.handle_response(response);
             }
@@ -40,7 +40,16 @@ impl HttpClient {
         port: u16,
         req: Q,
     ) -> ResponseKey<Q::Response> {
-        self.inner.send(addr, port, req)
+        let cookie_store_clone = self.cookie_store.clone();
+        self.inner.send(
+            addr,
+            port,
+            req,
+            |request| {
+                let cookie_store = cookie_store_clone.read().unwrap();
+                cookie_store.handle_request(request);
+            }
+        )
     }
 
     pub fn send_with_options<Q: ApiRequest>(
@@ -50,7 +59,17 @@ impl HttpClient {
         req: Q,
         req_options: RequestOptions,
     ) -> ResponseKey<Q::Response> {
-        self.inner.send_with_options(addr, port, req, req_options)
+        let cookie_store_clone = self.cookie_store.clone();
+        self.inner.send_with_options(
+            addr,
+            port,
+            req,
+            req_options,
+            |request| {
+                let cookie_store = cookie_store_clone.read().unwrap();
+                cookie_store.handle_request(request);
+            }
+        )
     }
 
     pub fn recv<S: ApiResponse>(

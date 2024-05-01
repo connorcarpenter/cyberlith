@@ -47,6 +47,10 @@ impl Response {
         self.headers.get(name)?.first()
     }
 
+    pub fn get_headers(&self, name: &str) -> Option<&Vec<String>> {
+        self.headers.get(name)
+    }
+
     pub fn set_header(&mut self, name: &str, value: &str) {
         self.headers.insert(name.to_string(), value.to_string());
     }

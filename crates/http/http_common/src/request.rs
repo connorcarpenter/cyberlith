@@ -40,8 +40,12 @@ impl Request {
         self.headers.has(name)
     }
 
-    pub fn get_header_all(&self, name: &str) -> Option<&String> {
+    pub fn get_header_first(&self, name: &str) -> Option<&String> {
         self.headers.get(name)?.first()
+    }
+
+    pub fn get_headers(&self, name: &str) -> Option<&Vec<String>> {
+        self.headers.get(name)
     }
 
     pub fn insert_header(&mut self, name: &str, value: &str) {
