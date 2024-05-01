@@ -1,3 +1,5 @@
+use crate::{GATEWAY_PORT, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL};
+
 pub enum TargetEnv {
     #[allow(dead_code)]
     Local,
@@ -18,5 +20,23 @@ cfg_if::cfg_if! {
                 Self::Prod
             }
         }
+    }
+}
+
+impl TargetEnv {
+    pub fn is_local() -> bool {
+        matches!(Self::get(), Self::Local)
+    }
+
+    pub fn is_prod() -> bool {
+        matches!(Self::get(), Self::Prod)
+    }
+
+    pub fn gateway_url() -> String {
+        format!("{}://{}:{}", PUBLIC_PROTOCOL, PUBLIC_IP_ADDR, GATEWAY_PORT)
+    }
+
+    pub fn url_w_o_port() -> String {
+        format!("{}://{}", PUBLIC_PROTOCOL, PUBLIC_IP_ADDR)
     }
 }

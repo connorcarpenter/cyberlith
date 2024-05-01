@@ -51,7 +51,30 @@ impl HttpClient {
         }
     }
 
-    pub fn send<Q: ApiRequest, F: Fn(&mut Request)>(
+    pub fn send<Q: ApiRequest>(
+        &mut self,
+        addr: &str,
+        port: u16,
+        req: Q,
+    ) -> ResponseKey<Q::Response> {
+        let url = if port == 443 {
+            format!("https://{}/{}", addr, Q::path())
+        } else {
+            format!("http://{}:{}/{}", addr, port, Q::path())
+        };
+        let http_request = Request::new(Q::method(), &url, req.to_bytes().to_vec());
+        //info!("Sending request to: {:?}", url);
+
+        let task = send_request(http_request, None);
+
+        let key = self.next_key();
+
+        self.tasks.insert(key.id, task);
+
+        key
+    }
+
+    pub fn send_with_middleware<Q: ApiRequest, F: Fn(&mut Request)>(
         &mut self,
         addr: &str,
         port: u16,
@@ -76,17 +99,15 @@ impl HttpClient {
         key
     }
 
-    pub fn send_with_options<Q: ApiRequest, F: Fn(&mut Request)>(
+    pub fn send_with_options<Q: ApiRequest>(
         &mut self,
         addr: &str,
         port: u16,
         req: Q,
         req_options: RequestOptions,
-        middleware_func: F,
     ) -> ResponseKey<Q::Response> {
         let url = format!("http://{}:{}/{}", addr, port, Q::path());
-        let mut http_request = Request::new(Q::method(), &url, req.to_bytes().to_vec());
-        middleware_func(&mut http_request);
+        let http_request = Request::new(Q::method(), &url, req.to_bytes().to_vec());
         //info!("Sending request to: {:?}", url);
 
         let task = send_request(http_request, Some(req_options));

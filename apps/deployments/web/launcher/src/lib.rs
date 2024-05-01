@@ -6,7 +6,7 @@ cfg_if! {
     } else {}
 }
 
-use config::{GATEWAY_PORT, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SUBDOMAIN_WWW};
+use config::TargetEnv;
 use kernel::{redirect_to_url, Kernel};
 use launcher_app::LauncherApp;
 use logging::info;
@@ -30,15 +30,7 @@ pub async fn main() -> Result<(), JsValue> {
         }
         "game" => {
             println!("Loading GameApp...");
-            let url = if SUBDOMAIN_WWW.is_empty() {
-                format!("{}://{}:{}", PUBLIC_PROTOCOL, PUBLIC_IP_ADDR, GATEWAY_PORT)
-            } else {
-                format!(
-                    "{}://{}.{}:{}",
-                    PUBLIC_PROTOCOL, SUBDOMAIN_WWW, PUBLIC_IP_ADDR, GATEWAY_PORT
-                )
-            };
-            let url = format!("{}/game", url);
+            let url = format!("{}/game", TargetEnv::gateway_url());
             redirect_to_url(&url);
         }
         _ => {

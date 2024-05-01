@@ -5,10 +5,7 @@ pub const SELF_BINDING_ADDR: &str = "0.0.0.0";
 pub const PUBLIC_PROTOCOL: &str = "https";
 
 #[allow(dead_code)]
-pub const SUBDOMAIN_WWW: &str = "www";
-
-#[allow(dead_code)]
-pub const PUBLIC_IP_ADDR: &str = "cyberlith.com";
+pub const PUBLIC_IP_ADDR: &str = "www.cyberlith.com";
 
 #[allow(dead_code)]
 pub const CONTENT_SERVER_RECV_ADDR: &str = "content_server";
@@ -69,15 +66,6 @@ pub const ASSET_SERVER_PORT: u16 = 14205;
 
 #[allow(dead_code)]
 pub const AUTH_SERVER_PORT: u16 = 14206;
-
-#[allow(dead_code)]
-pub const CLIENT_SECRET: &str = "35aSlQxlQ7RKY03JJMSf4xvbxZGhIaZOE";
-
-#[allow(dead_code)]
-pub const GATEWAY_SECRET: &str = "bvVKHPxlQ72VBQnSDAZqN0vxZS36Vq3c";
-
-#[allow(dead_code)]
-pub const AUTH_SERVER_SECRET: &str = "rQxvRSZmRSf4vbLVuSf4vbLVusAsAmRSf4";
 
 #[allow(dead_code)]
 pub const REGION_SERVER_SECRET: &str = "ArQZmRSf4xvbLVusVjrqGhIaZOExAeIq";

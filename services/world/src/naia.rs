@@ -16,7 +16,7 @@ use naia_bevy_server::{
 
 use bevy_http_client::HttpClient;
 use config::{
-    GATEWAY_PORT, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SELF_BINDING_ADDR, SUBDOMAIN_API,
+    PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SELF_BINDING_ADDR,
     WORLD_SERVER_SIGNAL_PORT, WORLD_SERVER_WEBRTC_PORT,
 };
 use logging::{info, warn};
@@ -30,24 +30,6 @@ use crate::{
     global::Global,
 };
 
-pub(crate) fn get_public_signal_url() -> String {
-    if SUBDOMAIN_API.is_empty() {
-        format!("{}://{}:{}", PUBLIC_PROTOCOL, PUBLIC_IP_ADDR, GATEWAY_PORT)
-    } else {
-        format!(
-            "{}://{}.{}:{}",
-            PUBLIC_PROTOCOL, SUBDOMAIN_API, PUBLIC_IP_ADDR, GATEWAY_PORT
-        )
-    }
-}
-
-pub(crate) fn get_public_webrtc_url() -> String {
-    format!(
-        "{}://{}:{}",
-        PUBLIC_PROTOCOL, PUBLIC_IP_ADDR, WORLD_SERVER_WEBRTC_PORT
-    )
-}
-
 pub fn init(mut commands: Commands, mut server: Server) {
     info!("World Naia Server starting up");
 
@@ -58,7 +40,10 @@ pub fn init(mut commands: Commands, mut server: Server) {
         // IP Address to listen on for UDP WebRTC data channels
         SocketAddr::new(SELF_BINDING_ADDR.parse().unwrap(), WORLD_SERVER_WEBRTC_PORT),
         // The public WebRTC IP address to advertise
-        get_public_webrtc_url().as_str(),
+        format!(
+            "{}://{}:{}",
+            PUBLIC_PROTOCOL, PUBLIC_IP_ADDR, WORLD_SERVER_WEBRTC_PORT
+        ).as_str(),
     );
     let socket = webrtc::Socket::new(&server_addresses, server.socket_config());
     server.listen(socket);

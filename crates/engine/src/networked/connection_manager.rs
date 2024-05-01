@@ -14,7 +14,7 @@ use naia_bevy_client::{
 };
 
 use asset_loader::{AssetManager, AssetMetadataStore};
-use config::{GATEWAY_PORT, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SUBDOMAIN_WWW};
+use config::TargetEnv;
 use filesystem::{FileSystemManager, ReadResult, TaskKey};
 use logging::{info, warn};
 use ui_runner::UiManager;
@@ -284,14 +284,7 @@ impl ConnectionManager {
                 // previous below
                 self.connection_state = ConnectionState::WaitingForSessionConnect;
 
-                let url = if SUBDOMAIN_WWW.is_empty() {
-                    format!("{}://{}:{}", PUBLIC_PROTOCOL, PUBLIC_IP_ADDR, GATEWAY_PORT)
-                } else {
-                    format!(
-                        "{}://{}.{}:{}",
-                        PUBLIC_PROTOCOL, SUBDOMAIN_WWW, PUBLIC_IP_ADDR, GATEWAY_PORT
-                    )
-                };
+                let url = TargetEnv::gateway_url();
 
                 info!("connecting to session server: {}", url);
                 let socket = WebrtcSocket::new(&url, session_client.socket_config());

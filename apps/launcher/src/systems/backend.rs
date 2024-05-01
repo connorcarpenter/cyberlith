@@ -1,7 +1,7 @@
 use bevy_ecs::{event::EventWriter, system::ResMut};
 
 use game_engine::{
-    config::GATEWAY_PORT,
+    config::{GATEWAY_PORT, TargetEnv},
     http::HttpClient,
     kernel::AppExitAction,
     logging::{info, warn},
@@ -10,7 +10,7 @@ use game_engine::{
 
 use gateway_http_proto::{UserLoginRequest, UserRegisterRequest};
 
-use crate::{utils::get_www_url, resources::Global};
+use crate::resources::Global;
 
 pub(crate) fn backend_send_login_request(
     global: &mut Global,
@@ -32,7 +32,7 @@ pub(crate) fn backend_send_login_request(
 
     // user login request send
     let request = UserLoginRequest::new(&username, &password);
-    let key = http_client.send(&get_www_url(), GATEWAY_PORT, request);
+    let key = http_client.send(&TargetEnv::url_w_o_port(), GATEWAY_PORT, request);
     global.user_login_response_key_opt = Some(key);
     info!(
         "sending login request... (username: {}, password: {}",
@@ -63,7 +63,7 @@ pub(crate) fn backend_send_register_request(
 
     // user register request send
     let request = UserRegisterRequest::new(&username, &email, &password);
-    let key = http_client.send(&get_www_url(), GATEWAY_PORT, request);
+    let key = http_client.send(&TargetEnv::url_w_o_port(), GATEWAY_PORT, request);
     global.user_register_response_key_opt = Some(key);
     info!(
         "sending register request... (username: {}, email: {}, password: {}",

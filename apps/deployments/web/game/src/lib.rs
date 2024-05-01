@@ -6,7 +6,7 @@ cfg_if! {
     } else {}
 }
 
-use config::{GATEWAY_PORT, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SUBDOMAIN_WWW};
+use config::TargetEnv;
 use game_app::GameApp;
 use kernel::{redirect_to_url, Kernel};
 use logging::info;
@@ -29,15 +29,7 @@ pub async fn main() -> Result<(), JsValue> {
         }
         "launcher" => {
             println!("Loading LauncherApp...");
-            let url = if SUBDOMAIN_WWW.is_empty() {
-                format!("{}://{}:{}/", PUBLIC_PROTOCOL, PUBLIC_IP_ADDR, GATEWAY_PORT)
-            } else {
-                format!(
-                    "{}://{}.{}:{}/",
-                    PUBLIC_PROTOCOL, SUBDOMAIN_WWW, PUBLIC_IP_ADDR, GATEWAY_PORT
-                )
-            };
-            redirect_to_url(&url); // root goes to launcher
+            redirect_to_url(&TargetEnv::gateway_url()); // root goes to launcher
         }
         _ => {
             panic!("Unknown AppExitAction: {}", app_result);

@@ -9,11 +9,7 @@ mod endpoints;
 
 use std::{time::Duration, net::SocketAddr, thread};
 
-use config::{
-    AUTH_SERVER_PORT, AUTH_SERVER_RECV_ADDR, CONTENT_SERVER_PORT, CONTENT_SERVER_RECV_ADDR,
-    GATEWAY_PORT, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SELF_BINDING_ADDR, SUBDOMAIN_WWW,
-    WORLD_SERVER_RECV_ADDR, WORLD_SERVER_SIGNAL_PORT, SESSION_SERVER_RECV_ADDR, SESSION_SERVER_SIGNAL_PORT,
-};
+use config::{AUTH_SERVER_PORT, AUTH_SERVER_RECV_ADDR, CONTENT_SERVER_PORT, CONTENT_SERVER_RECV_ADDR, GATEWAY_PORT, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SELF_BINDING_ADDR, WORLD_SERVER_RECV_ADDR, WORLD_SERVER_SIGNAL_PORT, SESSION_SERVER_RECV_ADDR, SESSION_SERVER_SIGNAL_PORT, TargetEnv};
 use http_server::{smol::lock::RwLock, async_dup::Arc, ApiServer, Method, ProxyServer, Server, smol};
 use logging::info;
 
@@ -28,20 +24,19 @@ pub fn main() {
     let mut server = Server::new(socket_addr);
 
     let gateway = "gateway";
-    let required_host_www = if SUBDOMAIN_WWW.is_empty() {
+    let required_host_www = if TargetEnv::is_local() {
         None
     } else {
-        Some(format!("{}.{}", SUBDOMAIN_WWW, PUBLIC_IP_ADDR))
+        Some((format!("{}", PUBLIC_IP_ADDR), format!("{}://{}", PUBLIC_PROTOCOL, PUBLIC_IP_ADDR)))
     };
-    let rd = format!("{}://{}.{}", PUBLIC_PROTOCOL, SUBDOMAIN_WWW, PUBLIC_IP_ADDR);
     let required_host_www = required_host_www
         .as_ref()
-        .map(|s| (s.as_str(), Some(rd.as_str())));
+        .map(|(s1, s2)| (s1.as_str(), Some(s2.as_str())));
 
-    let api_allow_origin = if SUBDOMAIN_WWW.is_empty() {
+    let api_allow_origin = if TargetEnv::is_local() {
         "*".to_string()
     } else {
-        format!("{}://{}.{}", PUBLIC_PROTOCOL, SUBDOMAIN_WWW, PUBLIC_IP_ADDR)
+        format!("{}://{}", PUBLIC_PROTOCOL, PUBLIC_IP_ADDR)
     };
     let api_allow_origin = Some(api_allow_origin.as_str());
 
