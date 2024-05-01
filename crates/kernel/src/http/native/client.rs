@@ -1,24 +1,37 @@
+use std::sync::{Arc, RwLock};
+
 use bevy_ecs::system::{ResMut, Resource};
 
 use bevy_http_client::{HttpClient as InnerHttpClient, ResponseError, ResponseKey};
-use http_common::{ApiRequest, ApiResponse, RequestOptions};
+use http_common::{ApiRequest, ApiResponse, RequestOptions, Response};
+
+use crate::http::native::cookie_store::CookieStore;
 
 #[derive(Resource)]
 pub struct HttpClient {
     inner: InnerHttpClient,
+    cookie_store: Arc<RwLock<CookieStore>>,
 }
 
 impl Default for HttpClient {
     fn default() -> Self {
         Self {
             inner: InnerHttpClient::default(),
+            cookie_store: Arc::new(RwLock::new(CookieStore::new())),
         }
     }
 }
 
 impl HttpClient {
     pub(crate) fn update_system(mut client: ResMut<Self>) {
-        InnerHttpClient::update(&mut client.inner);
+        let cookie_store_clone = client.cookie_store.clone();
+        InnerHttpClient::update(
+            &mut client.inner,
+            move |response| {
+                let mut cookie_store = cookie_store_clone.write().unwrap();
+                cookie_store.handle_response(response);
+            }
+        );
     }
 
     pub fn send<Q: ApiRequest>(

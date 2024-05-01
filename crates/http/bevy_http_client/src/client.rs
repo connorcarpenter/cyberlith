@@ -31,13 +31,18 @@ impl HttpClient {
 
     // used as a system
     pub fn update_system(mut client: ResMut<Self>) {
-        client.update();
+        client.update(|_| {});
     }
 
-    pub fn update(&mut self) {
+    pub fn update<F: FnMut(&Response)>(&mut self, mut middleware_func: F) {
         let mut finished_tasks = Vec::new();
         for (key, task) in self.tasks_iter_mut() {
             if let Some(result) = poll_task(task) {
+
+                if let Ok(response) = &result {
+                    middleware_func(response);
+                }
+
                 finished_tasks.push((*key, result));
             }
         }
