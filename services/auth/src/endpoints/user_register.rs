@@ -6,7 +6,8 @@ use config::{GATEWAY_PORT, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SUBDOMAIN_WWW, Targe
 
 use auth_server_http_proto::{UserRegisterRequest, UserRegisterResponse};
 
-use crate::{error::AuthServerError, state::State, types::TempRegistration};
+use crate::{error::AuthServerError, state::State};
+use crate::types::TempRegistration;
 
 pub fn user_register(host_name: &str, server: &mut Server, state: Arc<RwLock<State>>) {
     server.api_endpoint(host_name, None, move |_addr, req| {

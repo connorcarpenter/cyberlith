@@ -4,7 +4,7 @@ use logging::warn;
 
 use auth_server_http_proto::{UserPasswordResetRequest, UserPasswordResetResponse};
 
-use crate::{error::AuthServerError, state::State, types::ResetPasswordToken};
+use crate::{error::AuthServerError, state::State};
 
 pub fn user_password_reset(host_name: &str, server: &mut Server, state: Arc<RwLock<State>>) {
     server.api_endpoint(host_name, None, move |_addr, req| {
@@ -24,9 +24,6 @@ async fn async_impl(
         Ok(()) => Ok(UserPasswordResetResponse::new()),
         Err(AuthServerError::TokenNotFound) => {
             Err(ResponseError::InternalServerError("NotFound".to_string()))
-        }
-        Err(AuthServerError::TokenSerdeError) => {
-            Err(ResponseError::InternalServerError("SerdeError".to_string()))
         }
         Err(AuthServerError::EmailSendFailed(inner_message)) => Err(
             ResponseError::InternalServerError(format!("Email send failed: {}", inner_message)),
@@ -50,9 +47,7 @@ impl State {
             warn!("password_hasher::hash failed: {:?}", e);
             AuthServerError::PasswordHashError
         })?;
-        let Some(reset_token) = ResetPasswordToken::from_str(&request.reset_password_token) else {
-            return Err(AuthServerError::TokenSerdeError);
-        };
+        let reset_token = request.reset_password_token;
         let Some(user_id) = self.remove_reset_password_token(&reset_token) else {
             return Err(AuthServerError::TokenNotFound);
         };

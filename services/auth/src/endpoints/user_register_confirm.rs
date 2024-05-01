@@ -2,11 +2,11 @@ use logging::info;
 
 use http_client::ResponseError;
 use http_server::{async_dup::Arc, http_log_util, smol::lock::RwLock, ApiServer, Server, ApiResponse, ApiRequest};
-
 use auth_server_db::{AuthServerDbError, User, UserRole};
-use auth_server_http_proto::{UserRegisterConfirmRequest, UserRegisterConfirmResponse};
 
-use crate::{error::AuthServerError, state::State, types::RegisterToken};
+use auth_server_http_proto::{AccessToken, RefreshToken, UserRegisterConfirmRequest, UserRegisterConfirmResponse};
+
+use crate::{error::AuthServerError, state::State};
 
 pub fn user_register_confirm(host_name: &str, server: &mut Server, state: Arc<RwLock<State>>) {
     server.api_endpoint(host_name, None, move |_addr, req| {
@@ -22,11 +22,8 @@ async fn async_impl(
     http_log_util::recv_req("auth_server", &UserRegisterConfirmRequest::endpoint_key(), UserRegisterConfirmRequest::name());
 
     let mut state = state.write().await;
-    let response = match state.user_register_confirm(incoming_request) {
-        Ok(()) => Ok(UserRegisterConfirmResponse::new("faketoken")),
-        Err(AuthServerError::TokenSerdeError) => Err(ResponseError::InternalServerError(
-            "TokenSerdeError".to_string(),
-        )),
+    let response = match state.user_register_confirm(incoming_request).await {
+        Ok((refresh_token, access_token)) => Ok(UserRegisterConfirmResponse::new(access_token, refresh_token)),
         Err(AuthServerError::TokenNotFound) => Err(ResponseError::InternalServerError(
             "TokenNotFound".to_string(),
         )),
@@ -48,13 +45,11 @@ async fn async_impl(
 }
 
 impl State {
-    pub fn user_register_confirm(
+    pub async fn user_register_confirm(
         &mut self,
         request: UserRegisterConfirmRequest,
-    ) -> Result<(), AuthServerError> {
-        let Some(reg_token) = RegisterToken::from_str(&request.register_token) else {
-            return Err(AuthServerError::TokenSerdeError);
-        };
+    ) -> Result<(RefreshToken, AccessToken), AuthServerError> {
+        let reg_token = request.register_token;
         let Some(temp_reg) = self.remove_register_token(&reg_token) else {
             return Err(AuthServerError::TokenNotFound);
         };
@@ -100,9 +95,15 @@ impl State {
         }
         *id_opt = Some(new_user_id);
 
+        // add user data
+        self.init_user_data(&new_user_id);
+
+        // generate new access and refresh token for user
+        let (refresh_token, access_token) = self.user_new_login_gen_tokens(&new_user_id);
+
         let new_user_id: u64 = new_user_id.into();
         info!("new user created: {:?} - {:?}", new_user_id, temp_reg.name);
 
-        Ok(())
+        Ok((refresh_token, access_token))
     }
 }

@@ -2,16 +2,18 @@ use naia_serde::SerdeInternal as Serde;
 
 use http_common::{ApiRequest, ApiResponse, Method};
 
+use crate::{AccessToken, RefreshToken};
+
 // Request
 #[derive(Serde, PartialEq, Clone)]
 pub struct RefreshTokenGrantRequest {
-    pub refresh_token: String,
+    pub refresh_token: RefreshToken,
 }
 
 impl RefreshTokenGrantRequest {
-    pub fn new(refresh_token: &str) -> Self {
+    pub fn new(refresh_token: RefreshToken) -> Self {
         Self {
-            refresh_token: refresh_token.to_string(),
+            refresh_token,
         }
     }
 }
@@ -19,13 +21,13 @@ impl RefreshTokenGrantRequest {
 // Response
 #[derive(Serde, PartialEq, Clone)]
 pub struct RefreshTokenGrantResponse {
-    pub access_token: String,
+    pub access_token: AccessToken,
 }
 
 impl RefreshTokenGrantResponse {
-    pub fn new(access_token: &str) -> Self {
+    pub fn new(access_token: AccessToken) -> Self {
         Self {
-            access_token: access_token.to_string(),
+            access_token,
         }
     }
 }

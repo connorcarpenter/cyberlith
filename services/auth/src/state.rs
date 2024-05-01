@@ -1,15 +1,16 @@
 use std::collections::HashMap;
 
 use auth_server_db::{DatabaseManager, UserId};
+use auth_server_http_proto::{AccessToken, RefreshToken, RegisterToken, ResetPasswordToken};
 use logging::info;
 
 use crate::{
     emails::EmailCatalog,
     types::{
-        AccessToken, RefreshToken, RegisterToken, ResetPasswordToken, TempRegistration, UserData,
+        TempRegistration, UserData,
     },
+    expire_manager::{ExpireEvent, ExpireManager},
 };
-use crate::expire_manager::{ExpireEvent, ExpireManager};
 
 pub struct State {
     pub(crate) email_catalog: EmailCatalog,
@@ -88,6 +89,10 @@ impl State {
         let access_token = self.create_and_store_access_token(user_id);
         let refresh_token = self.create_and_store_refresh_token(user_id);
         (refresh_token, access_token)
+    }
+
+    pub(crate) fn init_user_data(&mut self, user_id: &UserId) {
+        self.user_data.insert(*user_id, UserData::new());
     }
 
     fn create_and_store_refresh_token(&mut self, user_id: &UserId) -> RefreshToken {

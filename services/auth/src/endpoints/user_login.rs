@@ -3,9 +3,9 @@ use http_client::ResponseError;
 use http_server::{async_dup::Arc, smol::lock::RwLock, ApiServer, Server};
 use logging::info;
 
-use auth_server_http_proto::{UserLoginRequest, UserLoginResponse};
+use auth_server_http_proto::{AccessToken, RefreshToken, UserLoginRequest, UserLoginResponse};
 
-use crate::{error::AuthServerError, state::State, types::AccessToken, types::RefreshToken};
+use crate::{error::AuthServerError, state::State};
 
 pub fn user_login(host_name: &str, server: &mut Server, state: Arc<RwLock<State>>) {
     server.api_endpoint(host_name, None, move |_addr, req| {
@@ -22,9 +22,7 @@ async fn async_impl(
     let mut state = state.write().await;
     let response = match state.user_login(incoming_request) {
         Ok((refresh_token, access_token)) => {
-            let refresh_token = refresh_token.to_string();
-            let access_token = access_token.to_string();
-            Ok(UserLoginResponse::new(&refresh_token, &access_token))
+            Ok(UserLoginResponse::new(refresh_token, access_token))
         }
         Err(AuthServerError::UsernameOrEmailNotFound) | Err(AuthServerError::PasswordIncorrect) => Err(ResponseError::Unauthenticated),
         Err(_) => {

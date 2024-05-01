@@ -2,17 +2,19 @@ use naia_serde::SerdeInternal as Serde;
 
 use http_common::{ApiRequest, ApiResponse, Method};
 
+use crate::ResetPasswordToken;
+
 // Request
 #[derive(Serde, PartialEq, Clone)]
 pub struct UserPasswordResetRequest {
-    pub reset_password_token: String,
+    pub reset_password_token: ResetPasswordToken,
     pub new_password: String,
 }
 
 impl UserPasswordResetRequest {
-    pub fn new(reset_password_token: &str, new_password: &str) -> Self {
+    pub fn new(reset_password_token: ResetPasswordToken, new_password: &str) -> Self {
         Self {
-            reset_password_token: reset_password_token.to_string(),
+            reset_password_token,
             new_password: new_password.to_string(),
         }
     }

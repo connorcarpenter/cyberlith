@@ -2,16 +2,18 @@ use naia_serde::SerdeInternal as Serde;
 
 use http_common::{ApiRequest, ApiResponse, Method};
 
+use crate::AccessToken;
+
 // Request
 #[derive(Serde, PartialEq, Clone)]
 pub struct AccessTokenValidateRequest {
-    pub access_token: String,
+    pub access_token: AccessToken,
 }
 
 impl AccessTokenValidateRequest {
-    pub fn new(access_token: &str) -> Self {
+    pub fn new(access_token: AccessToken) -> Self {
         Self {
-            access_token: access_token.to_string(),
+            access_token,
         }
     }
 }

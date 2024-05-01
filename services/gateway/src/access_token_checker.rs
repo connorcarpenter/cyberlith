@@ -4,7 +4,7 @@ use config::{AUTH_SERVER_PORT, AUTH_SERVER_RECV_ADDR};
 use http_client::{HttpClient, ResponseError};
 use http_server::{ApiRequest, ApiResponse, Request, RequestMiddlewareAction, Response};
 
-use auth_server_http_proto::{AccessTokenValidateRequest, AccessTokenValidateResponse};
+use auth_server_http_proto::{AccessToken, AccessTokenValidateRequest, AccessTokenValidateResponse};
 use logging::info;
 
 use crate::cookie_middleware::clear_cookie;
@@ -122,7 +122,10 @@ pub(crate) async fn middleware_impl(
 
     http_server::http_log_util::send_req(host_name, auth_server, AccessTokenValidateRequest::name());
 
-    let validate_request = AccessTokenValidateRequest::new(&access_token);
+    let Some(access_token) = AccessToken::from_str(&access_token) else {
+        return RequestMiddlewareAction::Error(ResponseError::Unauthenticated);
+    };
+    let validate_request = AccessTokenValidateRequest::new(access_token);
 
     match HttpClient::send(&remote_addr, remote_port, validate_request).await {
         Ok(_validate_response) => {

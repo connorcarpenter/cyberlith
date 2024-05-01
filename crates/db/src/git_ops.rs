@@ -51,8 +51,8 @@ pub fn create_new_file<K: DbTableKey>(dir_path: &str, repo: &Repository, file: K
     // write new file, add to index
     write_file_bytes(
         &mut index,
-        &full_path,
         &file_name,
+        &full_path,
         file_contents,
         false,
         false,
@@ -129,8 +129,8 @@ pub fn update_nextid(dir_path: &str, repo: &Repository, next_id: u64) {
     // update & write file
     write_file_bytes(
         &mut index,
-        &full_path,
         &file_name,
+        &full_path,
         file_contents,
         true,
         true,

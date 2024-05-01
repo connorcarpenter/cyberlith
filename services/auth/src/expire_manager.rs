@@ -3,7 +3,7 @@ use std::time::Duration;
 use timequeue::TimeQueue;
 use instant::Instant;
 
-use crate::types::{AccessToken, RefreshToken, RegisterToken, ResetPasswordToken};
+use auth_server_http_proto::{AccessToken, RefreshToken, RegisterToken, ResetPasswordToken};
 
 #[derive(Eq, PartialEq)]
 pub(crate) enum ExpireEvent {

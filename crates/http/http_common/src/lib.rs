@@ -6,3 +6,6 @@ pub use traits::*;
 
 mod error;
 pub use error::*;
+
+mod query_string;
+pub use query_string::*;

@@ -1,6 +1,7 @@
 use naia_serde::SerdeInternal as Serde;
 
 use http_common::{ApiRequest, ApiResponse, Method};
+use crate::{AccessToken, RefreshToken};
 
 // Request
 #[derive(Serde, PartialEq, Clone)]
@@ -24,15 +25,15 @@ impl UserLoginRequest {
 // Response
 #[derive(Serde, PartialEq, Clone)]
 pub struct UserLoginResponse {
-    pub refresh_token: String,
-    pub access_token: String,
+    pub refresh_token: RefreshToken,
+    pub access_token: AccessToken,
 }
 
 impl UserLoginResponse {
-    pub fn new(refresh_token: &str, access_token: &str) -> Self {
+    pub fn new(refresh_token: RefreshToken, access_token: AccessToken) -> Self {
         Self {
-            refresh_token: refresh_token.to_string(),
-            access_token: access_token.to_string(),
+            refresh_token,
+            access_token,
         }
     }
 }

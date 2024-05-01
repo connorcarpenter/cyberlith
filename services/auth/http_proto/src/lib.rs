@@ -15,3 +15,6 @@ pub use user_password_forgot::*;
 pub use user_password_reset::*;
 pub use user_register::*;
 pub use user_register_confirm::*;
+
+mod types;
+pub use types::{AccessToken, RefreshToken, RegisterToken, ResetPasswordToken};

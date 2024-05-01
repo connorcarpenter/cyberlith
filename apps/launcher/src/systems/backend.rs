@@ -9,7 +9,7 @@ use game_engine::{
     file::FileSystemManager,
 };
 
-use auth_server_http_proto::{AccessTokenValidateRequest, RefreshTokenGrantRequest, UserLoginRequest, UserRegisterRequest};
+use auth_server_http_proto::{AccessToken, AccessTokenValidateRequest, RefreshToken, RefreshTokenGrantRequest, UserLoginRequest, UserRegisterRequest};
 
 use crate::{utils::{get_api_url, get_www_url}, resources::{DataState, Global}};
 
@@ -137,13 +137,13 @@ fn data_processing(
             if let Some(result) = fs_manager.get_result(&task_key) {
                 match result {
                     Ok(response) => {
-                        let access_token = String::from_utf8(response.bytes).unwrap();
-                        info!("found access_token in fs: {}", access_token);
+                        let access_token = AccessToken::from_str(&String::from_utf8(response.bytes).unwrap()).unwrap();
+                        info!("found access_token in fs: {:?}", access_token);
 
                         // validate access token via http
-                        let request = AccessTokenValidateRequest::new(&access_token);
+                        let request = AccessTokenValidateRequest::new(access_token);
                         let response_key = http_client.send(&get_www_url(), GATEWAY_PORT, request);
-                        info!("sending access token validate request: {}", access_token);
+                        info!("sending access token validate request: {:?}", access_token);
                         global.data_state = DataState::ValidateAccessToken(response_key);
                     }
                     Err(err) => {
@@ -199,13 +199,13 @@ fn data_processing(
             if let Some(result) = fs_manager.get_result(&task_key) {
                 match result {
                     Ok(response) => {
-                        let refresh_token = String::from_utf8(response.bytes).unwrap();
-                        info!("found refresh_token in fs: {}", refresh_token);
+                        let refresh_token = RefreshToken::from_str(String::from_utf8(response.bytes).unwrap().as_str()).unwrap();
+                        info!("found refresh_token in fs: {:?}", refresh_token);
 
                         // use refresh token to get new access token via http
-                        let request = RefreshTokenGrantRequest::new(&refresh_token);
+                        let request = RefreshTokenGrantRequest::new(refresh_token);
                         let response_key = http_client.send(&get_www_url(), GATEWAY_PORT, request);
-                        info!("sending refresh token grant request: {}", refresh_token);
+                        info!("sending refresh token grant request: {:?}", refresh_token);
                         global.data_state = DataState::RefreshTokenGrantAccess(response_key);
                     }
                     Err(err) => {
@@ -223,8 +223,8 @@ fn data_processing(
                 match result {
                     Ok(response) => {
 
-                        let access_token = response.access_token;
-                        info!("refresh token granted new access token... {}", access_token);
+                        let access_token = response.access_token.to_string();
+                        info!("refresh token granted new access token... {:?}", access_token);
 
                         // store new access token in fs
                         let store_access_token_key = fs_manager.write("data/access_token", access_token.as_bytes());
@@ -299,11 +299,11 @@ fn user_login_response_process(
                 info!("client <- gateway: (UserLoginResponse - 200 OK)");
 
                 if global.data_state.has_data_dir() {
-                    let access_token_write_key = fs_manager.write("data/access_token", response.access_token.as_bytes());
-                    info!("write access token: {}", response.access_token);
+                    let access_token_write_key = fs_manager.write("data/access_token", response.access_token.to_string().as_bytes());
+                    info!("write access token: {:?}", response.access_token);
                     global.store_access_token_key_opt = Some(access_token_write_key);
 
-                    let refresh_token_write_key = fs_manager.write("data/refresh_token", response.refresh_token.as_bytes());
+                    let refresh_token_write_key = fs_manager.write("data/refresh_token", response.refresh_token.to_string().as_bytes());
                     global.store_refresh_token_key_opt = Some(refresh_token_write_key);
                 } else {
                     warn!("data folder does not exist, cannot store tokens locally");

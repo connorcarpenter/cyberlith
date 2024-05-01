@@ -1,22 +1,22 @@
 use chrono::{DateTime, TimeZone, Utc};
 
-use auth_server_http_proto::{RefreshTokenGrantResponse, UserLoginResponse};
+use auth_server_http_proto::{AccessToken, RefreshTokenGrantResponse, UserLoginResponse};
 use config::TargetEnv;
 use http_client::ResponseError;
 use http_server::{ApiResponse, Response};
 
 pub(crate) trait SetCookieResponse: ApiResponse {
-    fn access_token(&self) -> &str;
+    fn access_token(&self) -> &AccessToken;
 }
 
 impl SetCookieResponse for UserLoginResponse {
-    fn access_token(&self) -> &str {
+    fn access_token(&self) -> &AccessToken {
         &self.access_token
     }
 }
 
 impl SetCookieResponse for RefreshTokenGrantResponse {
-    fn access_token(&self) -> &str {
+    fn access_token(&self) -> &AccessToken {
         &self.access_token
     }
 }
@@ -45,7 +45,7 @@ pub(crate) async fn set_cookie_on_200<R: SetCookieResponse>(
                 }
             };
 
-            let set_cookie_value = get_set_cookie_value(env, access_token, expire_time_utc_opt);
+            let set_cookie_value = get_set_cookie_value("access_token", &access_token.to_string(), expire_time_utc_opt);
             response.set_header(
                 "Set-Cookie",
                 &set_cookie_value,
@@ -71,16 +71,16 @@ pub(crate) async fn handler_clear_cookie_on_401(
 
 pub(crate) fn clear_cookie(response: &mut Response) {
     let earliest_utc_time = chrono::Utc.timestamp_nanos(0);
-    let cookie_val = get_set_cookie_value(TargetEnv::get(), "", Some(earliest_utc_time));
+    let cookie_val = get_set_cookie_value("access_token", "", Some(earliest_utc_time));
     response.set_header("Set-Cookie", &cookie_val);
 }
 
 pub(crate) fn get_set_cookie_value(
-    target_env: TargetEnv,
-    access_token: &str,
+    cookie_name: &str,
+    cookie_value: &str,
     expire_time_utc_opt: Option<DateTime<Utc>>
 ) -> String {
-    let cookie_attributes = match target_env {
+    let cookie_attributes = match TargetEnv::get() {
         TargetEnv::Local => "".to_string(),
         TargetEnv::Prod => "; Secure; HttpOnly; SameSite=Lax; Domain=.cyberlith.com".to_string(),
     };
@@ -89,8 +89,9 @@ pub(crate) fn get_set_cookie_value(
         None => "".to_string(),
     };
     format!(
-        "access_token={}{}{}",
-        access_token,
+        "{}={}{}{}",
+        cookie_name,
+        cookie_value,
         cookie_attributes,
         expire_str,
     )

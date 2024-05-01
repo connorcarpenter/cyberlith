@@ -175,9 +175,16 @@ fn request_extract_url(
     line_str: &String,
 ) -> String {
     let parts = line_str.split(" ").collect::<Vec<&str>>();
-    let key = format!("{} {}", parts[0], parts[1]);
-    *method = Some(Method::from_str(parts[0]).unwrap());
-    *uri = Some(parts[1].to_string());
+    let method_str = parts[0];
+    let uri_str = parts[1];
+    let uri_parts = uri_str.split("?").collect::<Vec<&str>>();
+    let path_str = uri_parts[0];
+
+    let key = format!("{} {}", method_str, path_str);
+
+    *method = Some(Method::from_str(method_str).unwrap());
+    *uri = Some(uri_str.to_string());
+
     key
 }
 

@@ -4,6 +4,7 @@ mod rate_limiter;
 mod access_token_checker;
 mod cookie_middleware;
 mod world_connect;
+mod register_token;
 
 use std::{time::Duration, net::SocketAddr, thread};
 
@@ -15,7 +16,7 @@ use config::{
 use http_server::{smol::lock::RwLock, async_dup::Arc, ApiServer, Method, ProxyServer, Server, smol};
 use logging::info;
 
-use auth_server_http_proto::{AccessTokenValidateRequest, RefreshTokenGrantRequest, RefreshTokenGrantResponse, UserLoginRequest, UserLoginResponse, UserNameForgotRequest, UserPasswordForgotRequest, UserPasswordResetRequest, UserRegisterConfirmRequest, UserRegisterRequest};
+use auth_server_http_proto::{AccessTokenValidateRequest, RefreshTokenGrantRequest, RefreshTokenGrantResponse, UserLoginRequest, UserLoginResponse, UserNameForgotRequest, UserPasswordForgotRequest, UserPasswordResetRequest, UserRegisterRequest};
 
 pub fn main() {
     logging::initialize();
@@ -91,15 +92,6 @@ pub fn main() {
         ).response_middleware(cookie_middleware::set_cookie_on_200::<RefreshTokenGrantResponse>);
         // user register
         server.serve_api_proxy::<UserRegisterRequest>(
-            gateway,
-            required_host_api,
-            api_allow_origin,
-            auth_server,
-            addr,
-            &port,
-        );
-        // user register confirm
-        server.serve_api_proxy::<UserRegisterConfirmRequest>(
             gateway,
             required_host_api,
             api_allow_origin,
@@ -227,7 +219,7 @@ pub fn main() {
             addr,
             &port,
             "launcher.html",
-        );
+        ).request_middleware(register_token::handle);
         server.serve_proxy(
             gateway,
             required_host_www,
