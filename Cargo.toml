@@ -27,6 +27,7 @@ members = [
     "services/redirector",
     # Gateway Server
     "services/gateway",
+    "services/gateway/http_proto",
     # Content Server
     "services/content",
     # Auth Server

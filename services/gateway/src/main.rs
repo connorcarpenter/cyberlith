@@ -5,6 +5,7 @@ mod access_token_checker;
 mod cookie_middleware;
 mod world_connect;
 mod register_token;
+mod endpoints;
 
 use std::{time::Duration, net::SocketAddr, thread};
 

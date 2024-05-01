@@ -52,6 +52,3 @@ pub mod http {
     pub use bevy_http_client::*;
 }
 pub use logging;
-pub mod file {
-    pub use filesystem::{FileSystemManager, TaskKey, WriteResult, ReadDirResult, CreateDirResult, ReadResult, DeleteResult};
-}

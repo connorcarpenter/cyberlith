@@ -17,7 +17,7 @@ wgpu_renderer = [ "game_engine/wgpu_renderer" ]
 # goal is to have ONLY game_engine here!!!
 game_engine = { path = "../../crates/engine" }
 
-auth_server_http_proto = { path = "../../services/auth/http_proto" }
+gateway_http_proto = { path = "../../services/gateway/http_proto" }
 
 # External
 bevy_app = { version = "0.13", default-features=false }
