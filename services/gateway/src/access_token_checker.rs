@@ -124,13 +124,12 @@ pub(crate) async fn middleware_impl(
     let remote_addr = AUTH_SERVER_RECV_ADDR;
     let remote_port = AUTH_SERVER_PORT;
 
-    http_server::http_log_util::send_req(host_name, auth_server, AccessTokenValidateRequest::name());
-
     let Some(access_token) = AccessToken::from_str(&access_token) else {
         return RequestMiddlewareAction::Error(ResponseError::Unauthenticated);
     };
     let validate_request = AccessTokenValidateRequest::new(access_token);
 
+    http_server::http_log_util::send_req(host_name, auth_server, AccessTokenValidateRequest::name());
     match HttpClient::send(&remote_addr, remote_port, validate_request).await {
         Ok(_validate_response) => {
             http_server::http_log_util::recv_res(host_name, auth_server, &AccessTokenValidateResponse::name());

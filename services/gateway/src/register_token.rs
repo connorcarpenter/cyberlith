@@ -1,11 +1,12 @@
 use std::net::SocketAddr;
 
-use config::{AUTH_SERVER_PORT, AUTH_SERVER_RECV_ADDR, TargetEnv};
+use config::{AUTH_SERVER_PORT, AUTH_SERVER_RECV_ADDR};
 use http_client::{HttpClient};
 use http_server::{ApiRequest, ApiResponse, extract_query_string, clear_query_string, Request, RequestMiddlewareAction, Response};
 
 use auth_server_http_proto::{RegisterToken, UserRegisterConfirmRequest, UserRegisterConfirmResponse};
-use crate::cookie_middleware::get_set_cookie_value;
+
+use crate::cookie_middleware::response_set_cookies_tokens;
 
 pub(crate) async fn handle(
     _incoming_addr: SocketAddr,
@@ -42,44 +43,10 @@ pub(crate) async fn handle(
             let refresh_token = confirm_response.refresh_token;
 
             let mut new_response = Response::redirect(&incoming_request.url, "/game");
-            let now_utc = chrono::Utc::now();
 
             // put SetCookies in response
 
-            // access token
-            {
-                let expire_time_utc_opt = match TargetEnv::get() {
-                    TargetEnv::Local => None,
-                    TargetEnv::Prod => {
-                        let mut expire_time_utc = now_utc;
-                        let expire_duration_1_week = chrono::Duration::days(1);
-                        expire_time_utc += expire_duration_1_week;
-                        Some(expire_time_utc)
-                    }
-                };
-                let access_token_value = get_set_cookie_value("access_token", &access_token.to_string(), expire_time_utc_opt);
-                new_response.insert_header(
-                    "Set-Cookie",
-                    &access_token_value,
-                );
-            }
-            // refresh token
-            {
-                let expire_time_utc_opt = match TargetEnv::get() {
-                    TargetEnv::Local => None,
-                    TargetEnv::Prod => {
-                        let mut expire_time_utc = now_utc;
-                        let expire_duration_1_week = chrono::Duration::weeks(1);
-                        expire_time_utc += expire_duration_1_week;
-                        Some(expire_time_utc)
-                    }
-                };
-                let refresh_token_value = get_set_cookie_value("refresh_token", &refresh_token.to_string(), expire_time_utc_opt);
-                new_response.insert_header(
-                    "Set-Cookie",
-                    &refresh_token_value,
-                );
-            }
+            response_set_cookies_tokens(&mut new_response, &access_token, &refresh_token);
 
             return RequestMiddlewareAction::Stop(new_response);
         },

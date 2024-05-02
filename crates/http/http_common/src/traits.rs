@@ -1,4 +1,4 @@
-use naia_serde::{BitReader, FileBitWriter, Serde};
+use naia_serde::{BitReader, FileBitWriter, Serde, SerdeErr};
 
 use crate::{Method, Request, Response, ResponseError};
 
@@ -27,13 +27,10 @@ pub trait ApiRequest: Serde + 'static {
         Request::new(Self::method(), &url, bytes)
     }
 
-    fn from_request(request: Request) -> Result<Self, ()> {
+    fn from_request(request: Request) -> Result<Self, SerdeErr> {
         let bytes = request.body;
         let mut bit_reader = BitReader::new(&bytes);
-        match Self::de(&mut bit_reader) {
-            Ok(request) => Ok(request),
-            Err(_) => Err(()),
-        }
+        Self::de(&mut bit_reader)
     }
 }
 

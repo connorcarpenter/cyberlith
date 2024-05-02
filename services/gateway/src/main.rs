@@ -9,10 +9,11 @@ mod endpoints;
 use std::{time::Duration, net::SocketAddr, thread};
 
 use config::{AUTH_SERVER_PORT, AUTH_SERVER_RECV_ADDR, CONTENT_SERVER_PORT, CONTENT_SERVER_RECV_ADDR, GATEWAY_PORT, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SELF_BINDING_ADDR, WORLD_SERVER_RECV_ADDR, WORLD_SERVER_SIGNAL_PORT, SESSION_SERVER_RECV_ADDR, SESSION_SERVER_SIGNAL_PORT, TargetEnv};
-use http_server::{executor::smol::lock::RwLock, async_dup::Arc, ApiServer, Method, ProxyServer, Server, executor::smol};
+use http_server::{executor::smol::lock::RwLock, async_dup::Arc, ApiServer, Method, ProxyServer, Server, executor::smol, ApiRequest};
 use logging::info;
 
-use auth_server_http_proto::{AccessTokenValidateRequest, RefreshTokenGrantRequest, RefreshTokenGrantResponse, UserLoginRequest, UserLoginResponse, UserNameForgotRequest, UserPasswordForgotRequest, UserPasswordResetRequest, UserRegisterRequest};
+use gateway_http_proto::{UserLoginRequest as GatewayUserLoginRequest};
+use auth_server_http_proto::{UserNameForgotRequest, UserPasswordForgotRequest, UserRegisterRequest};
 
 pub fn main() {
     logging::initialize();
@@ -52,15 +53,23 @@ pub fn main() {
         let addr = AUTH_SERVER_RECV_ADDR;
         let port = AUTH_SERVER_PORT.to_string();
 
+        //&mut self,
+        //         host_name: &str,
+        //         incoming_host: Option<(&str, Option<&str>)>,
+        //         allow_origin_opt: Option<&str>,
+        //         incoming_method: Method,
+        //         incoming_path: &str,
+        //         handler: Handler,
+
         // user login
-        server.serve_api_proxy::<UserLoginRequest>(
+        server.raw_endpoint(
             gateway,
             required_host_www,
             api_allow_origin,
-            auth_server,
-            addr,
-            &port,
-        ).response_middleware(cookie_middleware::set_cookie_on_200::<UserLoginResponse>);
+            GatewayUserLoginRequest::method(),
+            GatewayUserLoginRequest::path(),
+            endpoints::user_login::handler
+        );
         // user register
         server.serve_api_proxy::<UserRegisterRequest>(
             gateway,
@@ -92,8 +101,7 @@ pub fn main() {
 
     // -> session
     {
-        let session_protocol_1 = Arc::new(RwLock::new(session_server_naia_proto::protocol()));
-        let session_protocol_2 = session_protocol_1.clone();
+        let session_protocol = Arc::new(RwLock::new(session_server_naia_proto::protocol()));
 
         server.raw_endpoint(
             gateway,
@@ -102,7 +110,7 @@ pub fn main() {
             Method::Post,
             "session_connect",
             move |addr, req| {
-                let protocol = session_protocol_1.clone();
+                let protocol = session_protocol.clone();
                 async move { session_connect::handler(protocol, addr, req).await }
             },
         ).request_middleware(access_token_checker::www_middleware);

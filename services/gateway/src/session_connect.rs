@@ -1,21 +1,20 @@
-use std::{net::SocketAddr, any::Any};
+use std::{net::SocketAddr};
 
-use naia_serde::{BitReader, BitWriter};
+use naia_serde::BitWriter;
 
 use config::{
     REGION_SERVER_PORT, REGION_SERVER_RECV_ADDR, SESSION_SERVER_RECV_ADDR,
     SESSION_SERVER_SIGNAL_PORT,
 };
 use http_client::{HttpClient, ResponseError};
-use http_server::{executor::smol::lock::RwLock, async_dup::Arc, Method, Request, Response, RequestMiddlewareAction};
+use http_server::{executor::smol::lock::RwLock, async_dup::Arc, Method, Request, Response};
 use logging::warn;
 
 use region_server_http_proto::SessionConnectRequest;
 use session_server_naia_proto::{
-    messages::{FakeEntityConverter, Message, Auth as SessionAuth},
+    messages::{FakeEntityConverter, Message},
     Protocol,
 };
-use crate::access_token_checker;
 
 pub(crate) async fn handler(
     session_protocol: Arc<RwLock<Protocol>>,
@@ -106,36 +105,36 @@ pub(crate) async fn handler(
     }
 }
 
-pub(crate) async fn auth_middleware(
-    session_protocol: Arc<RwLock<Protocol>>,
-    incoming_addr: SocketAddr,
-    incoming_request: Request,
-) -> RequestMiddlewareAction {
-
-    let access_token: Option<String> = get_access_token_from_base64(session_protocol, &incoming_request).await;
-    if access_token.is_some() {
-        // info!("found access_token in header: {}", access_token.as_ref().unwrap());
-    } else {
-        // warn!("no access_token found in header");
-    }
-    access_token_checker::middleware_impl(incoming_addr, incoming_request, access_token).await
-}
-
-async fn get_access_token_from_base64(session_protocol: Arc<RwLock<Protocol>>, incoming_request: &Request) -> Option<String> {
-    let auth_header = incoming_request.get_header_first("authorization").map(|s| s.clone())?;
-    let auth_bytes = base64::decode(&auth_header).ok()?;
-
-    let protocol = session_protocol.read().await;
-    let message_kinds = &protocol.inner().message_kinds;
-
-    let mut bit_reader = BitReader::new(&auth_bytes);
-    let auth_message = message_kinds.read(&mut bit_reader, &FakeEntityConverter).ok()?;
-    let auth_message_any = auth_message.clone().to_boxed_any();
-    let auth_message: SessionAuth = Box::<dyn Any + 'static>::downcast::<SessionAuth>(auth_message_any)
-        .ok()
-        .map(|boxed_m| *boxed_m)
-        .unwrap();
-    let access_token = auth_message.token().to_string();
-
-    Some(access_token)
-}
+// pub(crate) async fn auth_middleware(
+//     session_protocol: Arc<RwLock<Protocol>>,
+//     incoming_addr: SocketAddr,
+//     incoming_request: Request,
+// ) -> RequestMiddlewareAction {
+//
+//     let access_token: Option<String> = get_access_token_from_base64(session_protocol, &incoming_request).await;
+//     if access_token.is_some() {
+//         // info!("found access_token in header: {}", access_token.as_ref().unwrap());
+//     } else {
+//         // warn!("no access_token found in header");
+//     }
+//     access_token_checker::middleware_impl(incoming_addr, incoming_request, access_token).await
+// }
+//
+// async fn get_access_token_from_base64(session_protocol: Arc<RwLock<Protocol>>, incoming_request: &Request) -> Option<String> {
+//     let auth_header = incoming_request.get_header_first("authorization").map(|s| s.clone())?;
+//     let auth_bytes = base64::decode(&auth_header).ok()?;
+//
+//     let protocol = session_protocol.read().await;
+//     let message_kinds = &protocol.inner().message_kinds;
+//
+//     let mut bit_reader = BitReader::new(&auth_bytes);
+//     let auth_message = message_kinds.read(&mut bit_reader, &FakeEntityConverter).ok()?;
+//     let auth_message_any = auth_message.clone().to_boxed_any();
+//     let auth_message: SessionAuth = Box::<dyn Any + 'static>::downcast::<SessionAuth>(auth_message_any)
+//         .ok()
+//         .map(|boxed_m| *boxed_m)
+//         .unwrap();
+//     let access_token = auth_message.token().to_string();
+//
+//     Some(access_token)
+// }
