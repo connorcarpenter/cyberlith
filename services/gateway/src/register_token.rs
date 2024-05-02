@@ -13,16 +13,16 @@ pub(crate) async fn handle(
     mut incoming_request: Request,
 ) -> RequestMiddlewareAction {
     let Some(query_string_args) = extract_query_string(&incoming_request.url) else {
-        return RequestMiddlewareAction::Continue(incoming_request);
+        return RequestMiddlewareAction::Continue(incoming_request, None);
     };
     let Some(register_token) = query_string_args.get("register_token") else {
-        return RequestMiddlewareAction::Continue(incoming_request);
+        return RequestMiddlewareAction::Continue(incoming_request, None);
     };
     if register_token.is_empty() {
-        return RequestMiddlewareAction::Continue(incoming_request);
+        return RequestMiddlewareAction::Continue(incoming_request, None);
     }
     let Some(register_token) = RegisterToken::from_str(register_token) else {
-        return RequestMiddlewareAction::Continue(incoming_request);
+        return RequestMiddlewareAction::Continue(incoming_request, None);
     };
 
     // call auth server to with register token
@@ -52,7 +52,7 @@ pub(crate) async fn handle(
         },
         Err(_e) => {
             clear_query_string(&mut incoming_request.url);
-            return RequestMiddlewareAction::Continue(incoming_request);
+            return RequestMiddlewareAction::Continue(incoming_request, None);
         }
     }
 

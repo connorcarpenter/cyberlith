@@ -166,7 +166,10 @@ impl Server {
                     // handle global request middleware
                     for middleware in server.request_middlewares.iter() {
                         match (middleware.func)(address, request.clone()).await {
-                            RequestMiddlewareAction::Continue(new_request) => {
+                            RequestMiddlewareAction::Continue(new_request, sco) => {
+                                if sco.is_some() {
+                                    panic!("Set-Cookie not supported in global request middleware");
+                                }
                                request = new_request;
                             }
                             RequestMiddlewareAction::Stop(response) => {

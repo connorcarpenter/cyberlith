@@ -138,7 +138,7 @@ async fn handler(
     let peer_rate_limiter = peer_rate_limiter.unwrap();
     let mut peer_rate_limiter = peer_rate_limiter.write().await;
     match peer_rate_limiter.handle_request() {
-        Ok(()) => RequestMiddlewareAction::Continue(incoming_request),
+        Ok(()) => RequestMiddlewareAction::Continue(incoming_request, None),
         Err(retry_after_secs) => {
             RequestMiddlewareAction::Stop(Response::too_many_requests(&incoming_request.url, retry_after_secs))
         }

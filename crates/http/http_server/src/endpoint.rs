@@ -43,11 +43,16 @@ impl Endpoint {
         mut request: Request,
     ) -> Result<Response, ResponseError> {
 
+        let mut set_cookies = Vec::new();
+
         // handle endpoint request middleware
         for middleware in self.request_middlewares.iter() {
             match (middleware.func)(address, request.clone()).await {
-                RequestMiddlewareAction::Continue(new_request) => {
+                RequestMiddlewareAction::Continue(new_request, set_cookie_opt) => {
                     request = new_request;
+                    if let Some(set_cookie) = set_cookie_opt {
+                        set_cookies.push(set_cookie);
+                    }
                 },
                 RequestMiddlewareAction::Stop(response) => return Ok(response),
                 RequestMiddlewareAction::Error(err) => return Err(err),
@@ -66,6 +71,10 @@ impl Endpoint {
                             return Err(e);
                         }
                     }
+                }
+                // handle set_cookies
+                for cookie_val in set_cookies {
+                    response.insert_header("Set-Cookie", &cookie_val);
                 }
                 return Ok(response);
             }

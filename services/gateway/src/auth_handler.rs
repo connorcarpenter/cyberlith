@@ -18,14 +18,12 @@ pub(crate) async fn require_auth_tokens(
     match auth_impl(&incoming_addr, &incoming_request).await {
         AuthResult::Continue => {
             // success
-            RequestMiddlewareAction::Continue(incoming_request)
+            RequestMiddlewareAction::Continue(incoming_request, None)
         },
         AuthResult::ContinueAndNewAccessToken(access_token) => {
-            let mut incoming_request = incoming_request;
             const ONE_DAY_IN_SECONDS: u32 = 60 * 60 * 24;
             let access_token_value = get_set_cookie_value("access_token", &access_token.to_string(), ONE_DAY_IN_SECONDS);
-            incoming_request.insert_header("Set-Cookie", &access_token_value);
-            RequestMiddlewareAction::Continue(incoming_request)
+            RequestMiddlewareAction::Continue(incoming_request, Some(access_token_value))
         },
         AuthResult::Stop(clear_access_token, clear_refresh_token) => {
             let mut response = Response::unauthenticated(&incoming_request.url);
@@ -44,22 +42,20 @@ pub(crate) async fn require_auth_tokens_or_redirect_home(
     incoming_addr: SocketAddr,
     incoming_request: Request,
 ) -> RequestMiddlewareAction {
-    www_middleware_redirect(incoming_addr, incoming_request, "/").await
+    require_auth_tokens_or_redirect(incoming_addr, incoming_request, "/").await
 }
 
-async fn www_middleware_redirect(incoming_addr: SocketAddr, incoming_request: Request, new_url: &str) -> RequestMiddlewareAction {
+async fn require_auth_tokens_or_redirect(incoming_addr: SocketAddr, incoming_request: Request, new_url: &str) -> RequestMiddlewareAction {
     let url = incoming_request.url.clone();
     match auth_impl(&incoming_addr, &incoming_request).await {
         AuthResult::Continue => {
             // success
-            RequestMiddlewareAction::Continue(incoming_request)
+            RequestMiddlewareAction::Continue(incoming_request, None)
         },
         AuthResult::ContinueAndNewAccessToken(access_token) => {
-            let mut incoming_request = incoming_request;
             const ONE_DAY_IN_SECONDS: u32 = 60 * 60 * 24;
             let access_token_value = get_set_cookie_value("access_token", &access_token.to_string(), ONE_DAY_IN_SECONDS);
-            incoming_request.insert_header("Set-Cookie", &access_token_value);
-            RequestMiddlewareAction::Continue(incoming_request)
+            RequestMiddlewareAction::Continue(incoming_request, Some(access_token_value))
         },
         AuthResult::Stop(clear_access_token, clear_refresh_token) => {
             let mut response = Response::redirect(&url, new_url);
