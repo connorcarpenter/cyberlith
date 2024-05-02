@@ -251,6 +251,7 @@ pub fn tick_events(world: &mut World) {
 
         for ((user_key, entity), include) in scope_actions.iter() {
             // determine if entity has any AssetRef components
+            info!("Checking entity for AssetRefs: {:?}", entity);
 
             // AssetRef<Main>
             if let Ok(asset_ref) = asset_ref_main_q.get(*entity) {

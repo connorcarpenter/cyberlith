@@ -132,26 +132,32 @@ pub async fn serve_impl<
         }
     }
 
-    let incoming_url = uri.unwrap();
+
 
     match read_state {
         ReadState::Finished => {
             // success! continue,
         }
         ReadState::Redirecting(redirect_url) => {
+            let incoming_url = uri.unwrap();
             let response = Response::redirect(&incoming_url, &redirect_url);
             return response_send(response_stream, response).await;
         }
-        _ => {
+        ReadState::Error => {
+            let incoming_url = uri.unwrap_or("".to_string());
             let response = Response::not_found(&incoming_url);
             return response_send(response_stream, response).await;
+        }
+        leftover => {
+            panic!("unexpected unhandled state: {:?}", leftover);
         }
     }
 
     let method = method.unwrap();
+    let uri = uri.unwrap();
 
     // done reading //
-    let request = cast_to_request(method, &incoming_url, body, header_map).await;
+    let request = cast_to_request(method, &uri, body, header_map).await;
     let endpoint_key = endpoint_key.unwrap();
 
     match response_func(endpoint_key, incoming_address, request.clone()).await {

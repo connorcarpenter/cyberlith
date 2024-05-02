@@ -215,6 +215,10 @@ impl AssetManager {
                 room.add_entity(&asset_entry_entity);
                 self.notify_session_server_asset(global, http_client, &user_key, asset_id, true);
             } else {
+                info!(
+                    "removing asset entry for user: {:?}, asset: {:?}",
+                    user_key, asset_id
+                );
                 room.remove_entity(&asset_entry_entity);
                 self.notify_session_server_asset(global, http_client, &user_key, asset_id, false);
             }
