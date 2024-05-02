@@ -8,12 +8,11 @@ mod endpoints;
 
 use std::{time::Duration, net::SocketAddr, thread};
 
-use config::{AUTH_SERVER_PORT, AUTH_SERVER_RECV_ADDR, CONTENT_SERVER_PORT, CONTENT_SERVER_RECV_ADDR, GATEWAY_PORT, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SELF_BINDING_ADDR, WORLD_SERVER_RECV_ADDR, WORLD_SERVER_SIGNAL_PORT, SESSION_SERVER_RECV_ADDR, SESSION_SERVER_SIGNAL_PORT, TargetEnv};
+use config::{CONTENT_SERVER_PORT, CONTENT_SERVER_RECV_ADDR, GATEWAY_PORT, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SELF_BINDING_ADDR, WORLD_SERVER_RECV_ADDR, WORLD_SERVER_SIGNAL_PORT, SESSION_SERVER_RECV_ADDR, SESSION_SERVER_SIGNAL_PORT, TargetEnv};
 use http_server::{executor::smol::lock::RwLock, async_dup::Arc, ApiServer, Method, ProxyServer, Server, executor::smol, ApiRequest};
 use logging::info;
 
-use gateway_http_proto::{UserLoginRequest as GatewayUserLoginRequest};
-use auth_server_http_proto::{UserNameForgotRequest, UserPasswordForgotRequest, UserRegisterRequest};
+use gateway_http_proto::{UserLoginRequest as GatewayUserLoginRequest, UserRegisterRequest as GatewayUserRegisterRequest, UserNameForgotRequest as GatewayUserNameForgotRequest, UserPasswordForgotRequest as GatewayUserPasswordForgotRequest, UserPasswordResetRequest as GatewayUserPasswordResetRequest};
 
 pub fn main() {
     logging::initialize();
@@ -49,18 +48,6 @@ pub fn main() {
 
     // -> auth
     {
-        let auth_server = "auth_server";
-        let addr = AUTH_SERVER_RECV_ADDR;
-        let port = AUTH_SERVER_PORT.to_string();
-
-        //&mut self,
-        //         host_name: &str,
-        //         incoming_host: Option<(&str, Option<&str>)>,
-        //         allow_origin_opt: Option<&str>,
-        //         incoming_method: Method,
-        //         incoming_path: &str,
-        //         handler: Handler,
-
         // user login
         server.raw_endpoint(
             gateway,
@@ -71,31 +58,40 @@ pub fn main() {
             endpoints::user_login::handler
         );
         // user register
-        server.serve_api_proxy::<UserRegisterRequest>(
+        server.raw_endpoint(
             gateway,
             required_host_www,
             api_allow_origin,
-            auth_server,
-            addr,
-            &port,
+            GatewayUserRegisterRequest::method(),
+            GatewayUserRegisterRequest::path(),
+            endpoints::user_register::handler
         );
         // user name forgot
-        server.serve_api_proxy::<UserNameForgotRequest>(
+        server.raw_endpoint(
             gateway,
             required_host_www,
             api_allow_origin,
-            auth_server,
-            addr,
-            &port,
+            GatewayUserNameForgotRequest::method(),
+            GatewayUserNameForgotRequest::path(),
+            endpoints::user_name_forgot::handler
         );
         // user password forgot
-        server.serve_api_proxy::<UserPasswordForgotRequest>(
+        server.raw_endpoint(
             gateway,
             required_host_www,
             api_allow_origin,
-            auth_server,
-            addr,
-            &port,
+            GatewayUserPasswordForgotRequest::method(),
+            GatewayUserPasswordForgotRequest::path(),
+            endpoints::user_password_forgot::handler
+        );
+        // user password reset
+        server.raw_endpoint(
+            gateway,
+            required_host_www,
+            api_allow_origin,
+            GatewayUserPasswordResetRequest::method(),
+            GatewayUserPasswordResetRequest::path(),
+            endpoints::user_password_reset::handler
         );
     }
 

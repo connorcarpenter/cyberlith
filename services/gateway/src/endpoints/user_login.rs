@@ -5,7 +5,7 @@ use http_server::{ApiRequest, ApiResponse, Request, Response, ResponseError};
 use http_client::HttpClient;
 
 use auth_server_http_proto::UserLoginRequest;
-use gateway_http_proto::{UserLoginRequest as GatewayUserLoginRequest, UserLoginResponse as GatewayUserLoginResponse};
+use gateway_http_proto::{UserLoginRequest as GatewayUserLoginRequest, UserLoginResponse as GatewayUserLoginResponse, UserLoginResponse};
 
 use crate::cookie_middleware::response_set_cookies_tokens;
 
@@ -36,12 +36,14 @@ pub(crate) async fn handler(
     http_server::http_log_util::send_req(host_name, auth_server, UserLoginRequest::name());
     match HttpClient::send(&auth_addr, auth_port, auth_request).await {
         Ok(auth_response) => {
-            http_server::http_log_util::recv_res(host_name, auth_server, UserLoginRequest::name());
+            http_server::http_log_util::recv_res(host_name, auth_server, UserLoginResponse::name());
             let access_token = auth_response.access_token;
             let refresh_token = auth_response.refresh_token;
 
             let mut gateway_response = GatewayUserLoginResponse::new().to_response();
             response_set_cookies_tokens(&mut gateway_response, &access_token, &refresh_token);
+
+            http_server::http_log_util::send_res(host_name, GatewayUserLoginResponse::name());
             return Ok(gateway_response);
         },
         Err(e) => {
