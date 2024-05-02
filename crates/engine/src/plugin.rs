@@ -1,9 +1,11 @@
+use std::sync::{Arc, RwLock};
 use bevy_app::{App, Plugin, Startup, Update};
 use bevy_ecs::system::ResMut;
 
 use asset_loader::AssetPlugin;
 use filesystem::FileSystemPlugin;
 use input::{Input, InputPlugin};
+use kernel::http::CookieStore;
 use kernel::KernelPlugin;
 use render_api::RenderApiPlugin;
 use ui_render::UiRenderPlugin;
@@ -15,16 +17,27 @@ use crate::{
     renderer::RendererPlugin,
 };
 
-pub struct EnginePlugin;
+pub struct EnginePlugin {
+    cookie_store_opt: Option<Arc<RwLock<CookieStore>>>,
+}
+
+impl EnginePlugin {
+    pub fn new(cookie_store_opt: Option<Arc<RwLock<CookieStore>>>) -> Self {
+        Self { cookie_store_opt }
+    }
+}
 
 impl Plugin for EnginePlugin {
     fn build(&self, app: &mut App) {
+
+        let kernel_plugin = KernelPlugin::new(self.cookie_store_opt.clone());
+
         app
             // Add Render Plugins
             .add_plugins(RenderApiPlugin)
             .add_plugins(RendererPlugin)
             // Add misc crates Plugins
-            .add_plugins(KernelPlugin)
+            .add_plugins(kernel_plugin)
             .add_plugins(InputPlugin)
             .add_plugins(AssetPlugin)
             .add_plugins(UiPlugin)

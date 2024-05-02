@@ -15,9 +15,15 @@ pub struct HttpClient {
 
 impl Default for HttpClient {
     fn default() -> Self {
+        panic!("HttpClient::default() is not supported in native!")
+    }
+}
+
+impl HttpClient {
+    pub fn new(cookie_store: Arc<RwLock<CookieStore>>) -> Self {
         Self {
             inner: InnerHttpClient::default(),
-            cookie_store: Arc::new(RwLock::new(CookieStore::new())),
+            cookie_store,
         }
     }
 }

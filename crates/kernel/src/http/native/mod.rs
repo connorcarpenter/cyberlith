@@ -7,3 +7,4 @@ mod plugin;
 pub use plugin::*;
 
 mod cookie_store;
+pub use cookie_store::*;

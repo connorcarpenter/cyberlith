@@ -1,27 +1,36 @@
+use std::sync::{Arc, RwLock};
+
 use bevy_app::{App, Plugin, Startup, Update};
 
 use game_engine::{
     kernel::KernelApp,
     render::{resources::WindowSettings, Draw},
     NetworkedEnginePlugin,
+    http::CookieStore,
 };
 
 use super::systems::{keyboard_input, network, scene};
 
-pub struct GameApp;
+pub struct GameApp {
+    cookie_store_opt: Option<Arc<RwLock<CookieStore>>>,
+}
 
 impl KernelApp for GameApp {
-    fn init() -> Self
+    fn init(cookie_store_opt: Option<Arc<RwLock<CookieStore>>>) -> Self
     where
         Self: Sized,
     {
-        Self
+        Self {
+            cookie_store_opt,
+        }
     }
 }
 
 impl Plugin for GameApp {
     fn build(&self, app: &mut App) {
-        app.add_plugins(NetworkedEnginePlugin)
+        let networked_engine_plugin = NetworkedEnginePlugin::new(self.cookie_store_opt.clone());
+
+        app.add_plugins(networked_engine_plugin)
             // Add Window Settings Plugin
             .insert_resource(WindowSettings {
                 title: "Cyberlith".to_string(),

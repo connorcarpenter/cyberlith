@@ -1,3 +1,5 @@
+use std::sync::{Arc, RwLock};
+
 use bevy_app::{App, Plugin, Startup, Update};
 
 use game_engine::{
@@ -5,6 +7,7 @@ use game_engine::{
     render::{resources::WindowSettings, Draw},
     EnginePlugin,
 };
+use game_engine::http::CookieStore;
 
 use crate::{
     resources::{
@@ -13,20 +16,27 @@ use crate::{
     systems::{backend, draw, resize, scene, ui},
 };
 
-pub struct LauncherApp;
+pub struct LauncherApp {
+    cookie_store_opt: Option<Arc<RwLock<CookieStore>>>,
+}
 
 impl KernelApp for LauncherApp {
-    fn init() -> Self
+    fn init(cookie_store_opt: Option<Arc<RwLock<CookieStore>>>) -> Self
     where
         Self: Sized,
     {
-        Self
+        Self {
+            cookie_store_opt,
+        }
     }
 }
 
 impl Plugin for LauncherApp {
     fn build(&self, app: &mut App) {
-        app.add_plugins(EnginePlugin)
+
+        let engine_plugin = EnginePlugin::new(self.cookie_store_opt.clone());
+
+        app.add_plugins(engine_plugin)
             // Add Window Settings Plugin
             .insert_resource(WindowSettings {
                 title: "Cyberlith Launcher".to_string(),
