@@ -97,14 +97,16 @@ pub fn main() {
 
     // -> session
     {
-        let session_protocol = Arc::new(RwLock::new(session_server_naia_proto::protocol()));
+        let session_protocol = session_server_naia_proto::protocol();
+        let session_protocol_endpoint = session_protocol.get_rtc_endpoint();
+        let session_protocol = Arc::new(RwLock::new(session_protocol));
 
         server.raw_endpoint(
             gateway,
             required_host_www,
             api_allow_origin,
             Method::Post,
-            "session_connect",
+            &session_protocol_endpoint,
             move |addr, req| {
                 let protocol = session_protocol.clone();
                 async move { session_connect::handler(protocol, addr, req).await }
@@ -120,11 +122,11 @@ pub fn main() {
             required_host_www,
             api_allow_origin,
             Method::Options,
-            "session_connect",
+            &session_protocol_endpoint,
             session_server,
             addr,
             &port,
-            "session_connect",
+            &session_protocol_endpoint,
         );
     }
 
@@ -133,27 +135,31 @@ pub fn main() {
         let world_server = "world_server";
         let addr = WORLD_SERVER_RECV_ADDR;
         let port = WORLD_SERVER_SIGNAL_PORT.to_string();
+
+        let world_protocol_endpoint = world_server_naia_proto::protocol().get_rtc_endpoint();
+
         server.serve_proxy(
             gateway,
             required_host_www,
             api_allow_origin,
             Method::Post,
-            "world_connect",
+            &world_protocol_endpoint,
             world_server,
             addr,
             &port,
-            "world_connect",
+            &world_protocol_endpoint,
         ).request_middleware(access_token_checker::www_middleware);
+
         server.serve_proxy(
             gateway,
             required_host_www,
             api_allow_origin,
             Method::Options,
-            "world_connect",
+            &world_protocol_endpoint,
             world_server,
             addr,
             &port,
-            "world_connect",
+            &world_protocol_endpoint,
         );
     }
 

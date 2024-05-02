@@ -42,7 +42,7 @@ impl ApiRequest for UserLoginRequest {
     }
 
     fn path() -> &'static str {
-        "user_login"
+        "api/user_login"
     }
 }
 

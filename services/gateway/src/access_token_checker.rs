@@ -7,7 +7,7 @@ use http_server::{ApiRequest, ApiResponse, Request, RequestMiddlewareAction, Res
 use auth_server_http_proto::{AccessToken, AccessTokenValidateRequest, AccessTokenValidateResponse};
 use logging::info;
 
-use crate::cookie_middleware::clear_cookie;
+use crate::cookie_middleware::response_clear_access_token;
 
 // pub(crate) async fn api_middleware(
 //     incoming_addr: SocketAddr,
@@ -51,11 +51,11 @@ pub(crate) async fn www_middleware(
         },
         RequestMiddlewareAction::Error(e) => {
             let mut response = e.to_response(incoming_request.url.as_str());
-            clear_cookie(&mut response);
+            response_clear_access_token(&mut response);
             RequestMiddlewareAction::Stop(response)
         },
         RequestMiddlewareAction::Stop(mut response) => {
-            clear_cookie(&mut response);
+            response_clear_access_token(&mut response);
             RequestMiddlewareAction::Stop(response)
         }
     }
@@ -79,7 +79,7 @@ async fn www_middleware_redirect(incoming_addr: SocketAddr, incoming_request: Re
             ResponseError::Unauthenticated => {
                 // redirect to home page
                 let mut response = Response::redirect(&url, new_url);
-                clear_cookie(&mut response);
+                response_clear_access_token(&mut response);
                 RequestMiddlewareAction::Stop(response)
             },
             e => {
@@ -91,7 +91,7 @@ async fn www_middleware_redirect(incoming_addr: SocketAddr, incoming_request: Re
             if outgoing_response.status == 401 {
                 // redirect to home page
                 let mut response = Response::redirect(&url, new_url);
-                clear_cookie(&mut response);
+                response_clear_access_token(&mut response);
                 RequestMiddlewareAction::Stop(response)
             } else {
                 // return previous response

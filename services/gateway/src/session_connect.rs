@@ -7,7 +7,7 @@ use config::{
     SESSION_SERVER_SIGNAL_PORT,
 };
 use http_client::{HttpClient, ResponseError};
-use http_server::{executor::smol::lock::RwLock, async_dup::Arc, Method, Request, Response};
+use http_server::{executor::smol::lock::RwLock, async_dup::Arc, Method, Request, Response, ApiRequest};
 use logging::warn;
 
 use region_server_http_proto::SessionConnectRequest;
@@ -29,8 +29,8 @@ pub(crate) async fn handler(
         let region_server = "region_server";
         let remote_addr = REGION_SERVER_RECV_ADDR;
         let remote_port = REGION_SERVER_PORT;
-        let remote_method = Method::Post;
-        let remote_path = "session/connect";
+        let remote_method = SessionConnectRequest::method();
+        let remote_path = SessionConnectRequest::path();
 
         let logged_remote_url = format!(
             "{} host:{}/{}",
@@ -60,7 +60,9 @@ pub(crate) async fn handler(
         let remote_addr = SESSION_SERVER_RECV_ADDR;
         let remote_port = SESSION_SERVER_SIGNAL_PORT.to_string();
         let remote_method = Method::Post;
-        let remote_path = "session_connect";
+
+        let protocol = session_protocol.read().await;
+        let remote_path = &protocol.get_rtc_endpoint();
 
         let logged_remote_url = format!(
             "{} host:{}/{}",
@@ -73,7 +75,6 @@ pub(crate) async fn handler(
         let session_auth_bytes = {
             let session_auth = connect_response.session_auth.to_outer();
 
-            let protocol = session_protocol.read().await;
             let message_kinds = &protocol.inner().message_kinds;
 
             let mut writer = BitWriter::new();

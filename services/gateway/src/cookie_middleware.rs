@@ -1,6 +1,5 @@
-use chrono::{DateTime, TimeZone, Utc};
 
-use config::TargetEnv;
+use config::{PUBLIC_IP_ADDR, TargetEnv};
 use http_server::{ApiResponse, Response};
 
 use auth_server_http_proto::{AccessToken, RefreshToken};
@@ -62,20 +61,10 @@ pub(crate) fn response_set_cookies_tokens(
     access_token: &AccessToken,
     refresh_token: &RefreshToken
 ) {
-    let now_utc = chrono::Utc::now();
-
     // access token
     {
-        let expire_time_utc_opt = match TargetEnv::get() {
-            TargetEnv::Local => None,
-            TargetEnv::Prod => {
-                let mut expire_time_utc = now_utc;
-                let expire_duration_1_week = chrono::Duration::days(1);
-                expire_time_utc += expire_duration_1_week;
-                Some(expire_time_utc)
-            }
-        };
-        let access_token_value = get_set_cookie_value("access_token", &access_token.to_string(), expire_time_utc_opt);
+        const ONE_DAY_IN_SECONDS: u32 = 60 * 60 * 24;
+        let access_token_value = get_set_cookie_value("access_token", &access_token.to_string(), ONE_DAY_IN_SECONDS);
         response.insert_header(
             "Set-Cookie",
             &access_token_value,
@@ -84,16 +73,8 @@ pub(crate) fn response_set_cookies_tokens(
 
     // refresh token
     {
-        let expire_time_utc_opt = match TargetEnv::get() {
-            TargetEnv::Local => None,
-            TargetEnv::Prod => {
-                let mut expire_time_utc = now_utc;
-                let expire_duration_1_week = chrono::Duration::weeks(1);
-                expire_time_utc += expire_duration_1_week;
-                Some(expire_time_utc)
-            }
-        };
-        let refresh_token_value = get_set_cookie_value("refresh_token", &refresh_token.to_string(), expire_time_utc_opt);
+        const ONE_WEEK_IN_SECONDS: u32 = 60 * 60 * 24 * 7;
+        let refresh_token_value = get_set_cookie_value("refresh_token", &refresh_token.to_string(), ONE_WEEK_IN_SECONDS);
         response.insert_header(
             "Set-Cookie",
             &refresh_token_value,
@@ -101,30 +82,24 @@ pub(crate) fn response_set_cookies_tokens(
     }
 }
 
-pub(crate) fn clear_cookie(response: &mut Response) {
-    let earliest_utc_time = chrono::Utc.timestamp_nanos(0);
-    let cookie_val = get_set_cookie_value("access_token", "", Some(earliest_utc_time));
+pub(crate) fn response_clear_access_token(response: &mut Response) {
+    let cookie_val = get_set_cookie_value("access_token", "", 0);
     response.insert_header("Set-Cookie", &cookie_val);
 }
 
 pub(crate) fn get_set_cookie_value(
     cookie_name: &str,
     cookie_value: &str,
-    expire_time_utc_opt: Option<DateTime<Utc>>
+    max_age_secs: u32,
 ) -> String {
     let cookie_attributes = match TargetEnv::get() {
-        TargetEnv::Local => "".to_string(),
-        TargetEnv::Prod => "; Secure; HttpOnly; SameSite=Lax; Domain=.cyberlith.com".to_string(),
-    };
-    let expire_str = match expire_time_utc_opt {
-        Some(expire_time_utc) => format!("; Expires={}", expire_time_utc),
-        None => "".to_string(),
+        TargetEnv::Local => format!("; HttpOnly; SameSite=Lax; Path=/; Domain={}; Max-Age={}", PUBLIC_IP_ADDR, max_age_secs),
+        TargetEnv::Prod => format!("; Secure; HttpOnly; SameSite=Lax; Path=/; Domain={}; Max-Age={}", PUBLIC_IP_ADDR, max_age_secs),
     };
     format!(
-        "{}={}{}{}",
+        "{}={}{}",
         cookie_name,
         cookie_value,
         cookie_attributes,
-        expire_str,
     )
 }

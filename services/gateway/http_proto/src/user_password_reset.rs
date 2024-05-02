@@ -43,7 +43,7 @@ impl ApiRequest for UserPasswordResetRequest {
     }
 
     fn path() -> &'static str {
-        "user_password_reset"
+        "api/user_password_reset"
     }
 }
 

@@ -41,7 +41,7 @@ impl ApiRequest for UserRegisterRequest {
     }
 
     fn path() -> &'static str {
-        "user_register"
+        "api/user_register"
     }
 }
 

@@ -37,7 +37,7 @@ impl ApiRequest for UserNameForgotRequest {
     }
 
     fn path() -> &'static str {
-        "user_name_forgot"
+        "api/user_name_forgot"
     }
 }
 

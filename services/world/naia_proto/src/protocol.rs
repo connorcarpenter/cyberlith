@@ -10,7 +10,7 @@ pub fn protocol() -> Protocol {
 
     // Config
     builder
-        .rtc_endpoint("world_connect".to_string())
+        .rtc_endpoint("api/world_connect".to_string())
         .tick_interval(Duration::from_millis(40))
         .enable_client_authoritative_entities()
         // Channels
