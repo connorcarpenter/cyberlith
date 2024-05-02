@@ -15,13 +15,14 @@ use naia_bevy_client::{
 
 use asset_loader::{AssetManager, AssetMetadataStore};
 use config::TargetEnv;
-use filesystem::{FileSystemManager, ReadResult, TaskKey};
+use filesystem::FileSystemManager;
+use kernel::http::HttpClient;
 use logging::{info, warn};
 use ui_runner::UiManager;
 
 use session_server_naia_proto::{
     channels::{PrimaryChannel, RequestChannel},
-    messages::{LoadAssetRequest, Auth as SessionAuth, LoadAssetWithData, WorldConnectToken},
+    messages::{LoadAssetRequest, LoadAssetWithData, WorldConnectToken},
 };
 use world_server_naia_proto::messages::Auth as WorldAuth;
 
@@ -37,7 +38,6 @@ type WorldClient<'a> = Client<'a, World>;
 #[derive(Clone, PartialEq)]
 pub enum ConnectionState {
     Disconnected,
-    WaitingForAccessToken(TaskKey<ReadResult>),
     SendingSessionConnect,
     WaitingForSessionConnect,
     ConnectedToSession,
@@ -48,7 +48,6 @@ pub enum ConnectionState {
 pub struct ConnectionManager {
     pub connection_state: ConnectionState,
     send_timer: Timer,
-    access_token: Option<String>,
 }
 
 impl Default for ConnectionManager {
@@ -57,8 +56,6 @@ impl Default for ConnectionManager {
             connection_state: ConnectionState::Disconnected,
             // TODO: split this out into config var?
             send_timer: Timer::new(Duration::from_millis(5000)),
-
-            access_token: None,
         }
     }
 }
@@ -138,7 +135,7 @@ impl ConnectionManager {
     // used as a system
     pub fn handle_session_message_events(
         mut world_client: WorldClient,
-        mut connection_manager: ResMut<Self>,
+        http_client: Res<HttpClient>,
         mut asset_cache: ResMut<AssetCache>,
         mut asset_manager: ResMut<AssetManager>,
         mut ui_manager: ResMut<UiManager>,
@@ -151,19 +148,19 @@ impl ConnectionManager {
             for token in events.read::<PrimaryChannel, WorldConnectToken>() {
                 info!("received World Connect Token from Session Server!");
 
-                let Some(access_token) = &connection_manager.access_token else {
-                    info!("no access token found, disconnecting");
-                    connection_manager.connection_state = ConnectionState::Disconnected;
-                    continue;
-                };
-
-                world_client.auth(WorldAuth::new(Some(access_token), &token.login_token));
+                world_client.auth(WorldAuth::new(&token.login_token));
+                if let Some(cookies) = http_client.cookie_header_value() {
+                    let mut headers = Vec::new();
+                    headers.push(("Cookie".to_string(), cookies));
+                    world_client.auth_headers(headers);
+                }
+                let world_server_public_webrtc_url = TargetEnv::gateway_url();
                 info!(
                     "connecting to world server: {}",
-                    token.world_server_public_webrtc_url
+                    &world_server_public_webrtc_url
                 );
                 let socket = WebrtcSocket::new(
-                    &token.world_server_public_webrtc_url,
+                    &world_server_public_webrtc_url,
                     world_client.socket_config(),
                 );
                 world_client.connect(socket);
@@ -219,19 +216,19 @@ impl ConnectionManager {
     // used as a system
     pub fn handle_connection(
         mut connection_manager: ResMut<Self>,
+        http_client: Res<HttpClient>,
         mut session_client: SessionClient,
-        mut file_system_manager: ResMut<FileSystemManager>,
     ) {
         connection_manager.handle_connection_impl(
+            &http_client,
             &mut session_client,
-            &mut file_system_manager
         );
     }
 
     fn handle_connection_impl(
         &mut self,
+        http_client: &HttpClient,
         session_client: &mut SessionClient,
-        file_system_manager: &mut FileSystemManager,
     ) {
         if self.send_timer.ringing() {
             self.send_timer.reset();
@@ -241,45 +238,9 @@ impl ConnectionManager {
 
         match &self.connection_state {
             ConnectionState::Disconnected => {
-
-                let read_key = file_system_manager.read("data/access_token");
-                self.connection_state = ConnectionState::WaitingForAccessToken(read_key);
-            }
-            ConnectionState::WaitingForAccessToken(read_key) => {
-
-                if self.access_token.is_some() {
-                    self.connection_state = ConnectionState::SendingSessionConnect;
-                    return;
-                }
-
-                let Some(read_result) = file_system_manager.get_result(read_key) else {
-                    return;
-                };
-                match read_result {
-                    Ok(read) => {
-                        let bytes = read.bytes;
-                        let access_token = String::from_utf8(bytes).unwrap();
-                        info!("read access token: {}", access_token);
-                        self.access_token = Some(access_token);
-                    }
-                    Err(e) => {
-                        warn!("Failed to read access token. Error: {}", e.to_string());
-                        self.connection_state = ConnectionState::Disconnected;
-                        return;
-                    }
-                }
-
-                if self.access_token.is_some() {
-                    self.connection_state = ConnectionState::SendingSessionConnect;
-                    return;
-                }
+                self.connection_state = ConnectionState::SendingSessionConnect;
             }
             ConnectionState::SendingSessionConnect => {
-
-                let Some(access_token) = &self.access_token else {
-                    self.connection_state = ConnectionState::Disconnected;
-                    return;
-                };
 
                 // previous below
                 self.connection_state = ConnectionState::WaitingForSessionConnect;
@@ -288,7 +249,11 @@ impl ConnectionManager {
 
                 info!("connecting to session server: {}", url);
                 let socket = WebrtcSocket::new(&url, session_client.socket_config());
-                session_client.auth(SessionAuth::new(access_token));
+                if let Some(cookies) = http_client.cookie_header_value() {
+                    let mut headers = Vec::new();
+                    headers.push(("Cookie".to_string(), cookies));
+                    session_client.auth_headers(headers);
+                }
                 session_client.connect(socket);
             }
             ConnectionState::WaitingForSessionConnect => {}

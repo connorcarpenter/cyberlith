@@ -1,6 +1,6 @@
 use std::{collections::BTreeMap, net::SocketAddr};
 
-use smol::{
+use executor::smol::{
     future::Future,
     io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt, BufReader},
     stream::StreamExt,
@@ -64,7 +64,11 @@ pub async fn serve_impl<
 
                     //info!("read: {}", str);
 
-                    let url_key = request_extract_url(&mut method, &mut uri, &line_str);
+                    let Some((url_key, extracted_method, extracted_uri)) = request_extract_url(&line_str) else {
+                        warn!("unable to extract url parts for: {}", &line_str);
+                        read_state = ReadState::Error;
+                        break;
+                    };
 
                     if !match_url_func(url_key.clone()).await {
                         warn!("no endpoint found for {}", url_key);
@@ -72,20 +76,20 @@ pub async fn serve_impl<
                         break;
                     }
 
+                    method = Some(extracted_method);
+                    uri = Some(extracted_uri);
+                    endpoint_key = Some(url_key);
+
                     // info!("incoming request matched url: {}", key);
                     read_state = ReadState::ReadingHeaders;
-                    endpoint_key = Some(url_key);
+
                     continue;
                 } else {
                     line.push(byte);
                 }
             }
             ReadState::ReadingHeaders => {
-                let Some(endpoint_key) = endpoint_key.as_ref() else {
-                    warn!("no endpoint key found");
-                    read_state = ReadState::Error;
-                    break;
-                };
+                let endpoint_key = endpoint_key.as_ref().unwrap();
                 if byte == b'\r' {
                     continue;
                 } else if byte == b'\n' {
@@ -98,7 +102,7 @@ pub async fn serve_impl<
                     if request_read_headers(
                         &match_host_func,
                         endpoint_key,
-                        &mut method,
+                        method.as_ref().unwrap(),
                         &mut content_length,
                         &mut header_map,
                         &mut read_state,
@@ -128,10 +132,7 @@ pub async fn serve_impl<
         }
     }
 
-    let Some(incoming_url) = uri else {
-        let response = Response::not_found("");
-        return response_send(response_stream, response).await;
-    };
+    let incoming_url = uri.unwrap();
 
     match read_state {
         ReadState::Finished => {
@@ -147,19 +148,19 @@ pub async fn serve_impl<
         }
     }
 
-    // done reading //
+    let method = method.unwrap();
 
-    let Some(request) = cast_to_request(method, &incoming_url, body, header_map).await else {
-        let response = Response::not_found(&incoming_url);
-        return response_send(response_stream, response).await;
-    };
-    let Some(endpoint_key) = endpoint_key else {
-        let response = Response::not_found(&incoming_url);
-        return response_send(response_stream, response).await;
-    };
+    // done reading //
+    let request = cast_to_request(method, &incoming_url, body, header_map).await;
+    let endpoint_key = endpoint_key.unwrap();
 
     match response_func(endpoint_key, incoming_address, request.clone()).await {
-        Ok(response) => {
+        Ok(mut response) => {
+
+            if method == Method::Head {
+                response.body.clear();
+            }
+
             return response_send(response_stream, response).await;
         }
         Err(e) => {
@@ -170,28 +171,35 @@ pub async fn serve_impl<
 }
 
 fn request_extract_url(
-    method: &mut Option<Method>,
-    uri: &mut Option<String>,
     line_str: &String,
-) -> String {
+) -> Option<(String, Method, String)> {
     let parts = line_str.split(" ").collect::<Vec<&str>>();
+    if parts.len() < 2 {
+        return None;
+    }
     let method_str = parts[0];
     let uri_str = parts[1];
     let uri_parts = uri_str.split("?").collect::<Vec<&str>>();
     let path_str = uri_parts[0];
 
+    let Ok(parsed_method) = Method::from_str(method_str) else {
+        return None;
+    };
+    let method_str = if parsed_method == Method::Head {
+        Method::Get.as_str()
+    } else {
+        method_str
+    };
+
     let key = format!("{} {}", method_str, path_str);
 
-    *method = Some(Method::from_str(method_str).unwrap());
-    *uri = Some(uri_str.to_string());
-
-    key
+    Some((key, parsed_method, uri_str.to_string()))
 }
 
 async fn request_read_headers<MatchHostOutput: Future<Output = MatchHostResult> + 'static>(
     match_host_func: &impl Fn(String, String) -> MatchHostOutput,
     endpoint_key: &str,
-    method: &mut Option<Method>,
+    method: &Method,
     content_length: &mut Option<usize>,
     header_map: &mut BTreeMap<String, String>,
     read_state: &mut ReadState,
@@ -202,13 +210,10 @@ async fn request_read_headers<MatchHostOutput: Future<Output = MatchHostResult> 
 
         *read_state = ReadState::ReadingBody;
 
-        // check for GET request, if so, we're done
-        if let Some(method) = method.clone() {
-            if method == Method::Get || method == Method::Options {
-                *read_state = ReadState::Finished;
-                // info!("GET req has no body to read. finished.");
-                return true;
-            }
+        // check for bodyless request, if so, we're done
+        if !method.has_body() {
+            *read_state = ReadState::Finished;
+            return true;
         }
 
         // check for content-length header for non-Get requests
@@ -290,21 +295,17 @@ fn request_read_body(
 }
 
 async fn cast_to_request(
-    method: Option<Method>,
+    method: Method,
     uri: &str,
     body: Vec<u8>,
     header_map: BTreeMap<String, String>,
-) -> Option<Request> {
+) -> Request {
     // cast to request //
-    let Some(method) = method else {
-        warn!("unable to parse method");
-        return None;
-    };
     let mut request = Request::new(method, uri, body);
     for (hn, hv) in header_map {
         request.insert_header(&hn, &hv);
     }
-    Some(request)
+    request
 }
 
 async fn response_send<ResponseStream: Unpin + AsyncRead + AsyncWrite>(

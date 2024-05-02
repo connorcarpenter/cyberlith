@@ -7,7 +7,7 @@ use config::{
     SESSION_SERVER_SIGNAL_PORT,
 };
 use http_client::{HttpClient, ResponseError};
-use http_server::{smol::lock::RwLock, async_dup::Arc, Method, Request, Response, RequestMiddlewareAction};
+use http_server::{executor::smol::lock::RwLock, async_dup::Arc, Method, Request, Response, RequestMiddlewareAction};
 use logging::warn;
 
 use region_server_http_proto::SessionConnectRequest;

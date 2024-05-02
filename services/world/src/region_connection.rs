@@ -2,7 +2,7 @@ use bevy_ecs::change_detection::ResMut;
 
 use bevy_http_client::{HttpClient, ResponseError};
 use bevy_http_server::HttpServer;
-use config::{REGION_SERVER_PORT, REGION_SERVER_RECV_ADDR, REGION_SERVER_SECRET, TargetEnv, WORLD_SERVER_GLOBAL_SECRET, WORLD_SERVER_HTTP_PORT, WORLD_SERVER_RECV_ADDR};
+use config::{REGION_SERVER_PORT, REGION_SERVER_RECV_ADDR, REGION_SERVER_SECRET, WORLD_SERVER_GLOBAL_SECRET, WORLD_SERVER_HTTP_PORT, WORLD_SERVER_RECV_ADDR};
 use logging::{info, warn};
 use region_server_http_proto::WorldRegisterInstanceRequest;
 use world_server_http_proto::{HeartbeatRequest, HeartbeatResponse};
@@ -29,7 +29,6 @@ pub fn send_register_instance_request(
         global.instance_secret(),
         WORLD_SERVER_RECV_ADDR,
         WORLD_SERVER_HTTP_PORT,
-        &TargetEnv::gateway_url(),
     );
     let key = http_client.send(REGION_SERVER_RECV_ADDR, REGION_SERVER_PORT, request);
 

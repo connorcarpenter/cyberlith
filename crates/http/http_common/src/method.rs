@@ -1,6 +1,6 @@
 
 /// HTTP Method
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone, Eq, Copy, PartialEq)]
 pub enum Method {
     Get,
     Post,
@@ -34,6 +34,13 @@ impl Method {
             Self::Head => "HEAD",
             Self::Patch => "PATCH",
             Self::Options => "OPTIONS",
+        }
+    }
+
+    pub fn has_body(&self) -> bool {
+        match self {
+            Self::Post | Self::Put | Self::Patch => true,
+            _ => false,
         }
     }
 }

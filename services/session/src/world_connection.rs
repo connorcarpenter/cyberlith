@@ -33,7 +33,7 @@ pub fn recv_world_connect_response(
             global.remove_world_connect_response_key(&response_key);
             match result {
                 Ok(response) => {
-                    info!("received from regionserver: world_connect(public_webrtc_url: {:?}, token: {:?})", response.world_server_public_webrtc_url, response.login_token);
+                    info!("received from regionserver: world_connect(token: {:?})", response.login_token);
 
                     // store world instance secret with user key
                     global.add_worldfull_user(
@@ -45,7 +45,6 @@ pub fn recv_world_connect_response(
                     // send world connect token to user
                     // info!("sending world connect token to user");
                     let token = WorldConnectToken::new(
-                        &response.world_server_public_webrtc_url,
                         &response.login_token,
                     );
                     server.send_message::<PrimaryChannel, WorldConnectToken>(&user_key, &token);

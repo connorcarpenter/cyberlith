@@ -5,14 +5,14 @@ use std::{
 };
 
 use async_dup::Arc;
+
 use logging::info;
-use smol::{
+use executor::smol::{
     channel,
     channel::{Receiver, Sender},
     lock::RwLock,
     Async,
 };
-
 use bevy_http_shared::Protocol;
 use http_common::{Request, Response, ResponseError};
 use http_server_shared::{executor, serve_impl, MatchHostResult};

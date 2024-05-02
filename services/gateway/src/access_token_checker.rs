@@ -65,6 +65,10 @@ pub(crate) async fn www_middleware_redirect_home(
     incoming_addr: SocketAddr,
     incoming_request: Request,
 ) -> RequestMiddlewareAction {
+    www_middleware_redirect(incoming_addr, incoming_request, "/").await
+}
+
+async fn www_middleware_redirect(incoming_addr: SocketAddr, incoming_request: Request, new_url: &str) -> RequestMiddlewareAction {
     let url = incoming_request.url.clone();
     match www_middleware(incoming_addr, incoming_request).await {
         RequestMiddlewareAction::Continue(incoming_request) => {
@@ -74,7 +78,7 @@ pub(crate) async fn www_middleware_redirect_home(
         RequestMiddlewareAction::Error(e) => match e {
             ResponseError::Unauthenticated => {
                 // redirect to home page
-                let mut response = Response::redirect(&url, "/");
+                let mut response = Response::redirect(&url, new_url);
                 clear_cookie(&mut response);
                 RequestMiddlewareAction::Stop(response)
             },
@@ -86,7 +90,7 @@ pub(crate) async fn www_middleware_redirect_home(
         RequestMiddlewareAction::Stop(outgoing_response) => {
             if outgoing_response.status == 401 {
                 // redirect to home page
-                let mut response = Response::redirect(&url, "/");
+                let mut response = Response::redirect(&url, new_url);
                 clear_cookie(&mut response);
                 RequestMiddlewareAction::Stop(response)
             } else {

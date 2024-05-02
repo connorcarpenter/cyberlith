@@ -1,8 +1,8 @@
 use std::{collections::HashSet, thread, time::Duration};
 
-use crossbeam_channel::TryRecvError;
 use logging::{info, warn};
 use openssh::Session;
+use executor::smol::channel::TryRecvError;
 
 use crate::{
     get_container_registry_creds, get_container_registry_url,
@@ -21,7 +21,7 @@ pub fn containers_up(config: HashSet<String>, image_tag: String) -> Result<(), C
 
         match rcvr.try_recv() {
             Ok(result) => return result,
-            Err(TryRecvError::Disconnected) => warn!("containers receiver disconnected!"),
+            Err(TryRecvError::Closed) => warn!("containers receiver closed!"),
             _ => {}
         }
     }

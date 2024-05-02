@@ -9,6 +9,3 @@ pub use user_name_forgot::*;
 
 mod user_password_forgot;
 pub use user_password_forgot::*;
-
-mod user_password_reset;
-pub use user_password_reset::*;

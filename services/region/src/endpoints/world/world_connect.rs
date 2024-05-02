@@ -1,7 +1,7 @@
 use logging::{info, warn};
 
 use http_client::{HttpClient, ResponseError};
-use http_server::{async_dup::Arc, smol::lock::RwLock, ApiServer, Server};
+use http_server::{async_dup::Arc, executor::smol::lock::RwLock, ApiServer, Server};
 
 use config::REGION_SERVER_SECRET;
 use region_server_http_proto::{
@@ -52,7 +52,6 @@ async fn async_impl(
     let world_server_instance_secret = world_server.instance_secret();
     let world_server_http_addr = world_server.http_addr();
     let world_server_http_port = world_server.http_port();
-    let world_server_public_webrtc_url = world_server.public_webrtc_url();
 
     info!("sending world_connect request to world server");
 
@@ -87,7 +86,6 @@ async fn async_impl(
     Ok(RegionWorldConnectResponse::new(
         world_server_instance_secret,
         user_id,
-        world_server_public_webrtc_url,
         &temp_token,
     ))
 }

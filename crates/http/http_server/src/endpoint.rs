@@ -1,6 +1,6 @@
 use std::{net::SocketAddr, pin::Pin};
 
-use smol::future::Future;
+use http_server_shared::executor::smol::future::Future;
 
 use http_common::{Request, Response, ResponseError};
 
@@ -43,7 +43,7 @@ impl Endpoint {
         mut request: Request,
     ) -> Result<Response, ResponseError> {
 
-        // handle endpoint middleware
+        // handle endpoint request middleware
         for middleware in self.request_middlewares.iter() {
             match (middleware.func)(address, request.clone()).await {
                 RequestMiddlewareAction::Continue(new_request) => {
@@ -56,6 +56,7 @@ impl Endpoint {
 
         match (self.func)(address, request).await {
             Ok(mut response) => {
+                // handle endpoint response middleware
                 for middleware in self.response_middlewares.iter() {
                     match (middleware.func)(response.clone()).await {
                         Ok(new_response) => {

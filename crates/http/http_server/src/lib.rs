@@ -26,9 +26,7 @@ pub mod async_dup {
     pub use async_dup::*;
 }
 
-pub mod smol {
-    pub use smol::*;
-}
+pub use http_server_shared::executor;
 
 pub mod acme {
     pub use acme::Config;

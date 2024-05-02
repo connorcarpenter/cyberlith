@@ -1,7 +1,7 @@
 
 use std::{net::{IpAddr, SocketAddr}, time::Duration, collections::HashMap};
 
-use http_server::{async_dup::Arc, smol::lock::RwLock, Request, Response, Server, RequestMiddlewareAction};
+use http_server::{async_dup::Arc, executor::smol::lock::RwLock, Request, Response, Server, RequestMiddlewareAction};
 use instant::Instant;
 use timequeue::TimeQueue;
 

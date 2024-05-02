@@ -52,29 +52,41 @@ impl CookieStore {
     }
 
     pub(crate) fn handle_request(&self, request: &mut Request) {
+        info!("Handling request: {:?}", request.url);
+        if let Some(cookie_header_value) = self.cookie_header_value() {
+            info!("Adding cookie header to request: {}", cookie_header_value);
+            request.insert_header("Cookie", &cookie_header_value);
+        }
+    }
+
+    pub fn cookie_header_value(&self) -> Option<String> {
+        if self.cookies.is_empty() {
+            return None;
+        }
         let now = Utc::now();
-        if !self.cookies.is_empty() {
-            let cookie_header_value = self.cookies.iter()
-                .filter_map(|(name, (value, expires))| {
-                    if let Some(expires) = expires {
-                        if *expires > now {
-                            Some(format!("{}={}", name, value))
-                        } else {
-                            None
-                        }
-                    } else {
+        let cookie_header_value = self.cookies.iter()
+            .filter_map(|(name, (value, expires))| {
+                if let Some(expires) = expires {
+                    if *expires > now {
                         Some(format!("{}={}", name, value))
+                    } else {
+                        None
                     }
-                })
-                .collect::<Vec<_>>()
-                .join("; ");
-            if !cookie_header_value.is_empty() {
-                request.insert_header("Cookie", &cookie_header_value);
-            }
+                } else {
+                    Some(format!("{}={}", name, value))
+                }
+            })
+            .collect::<Vec<_>>()
+            .join("; ");
+        if cookie_header_value.is_empty() {
+            None
+        } else {
+            Some(cookie_header_value)
         }
     }
 
     pub(crate) fn handle_response(&mut self, response: &Response) {
+        info!("Handling response: {:?}", response.status);
         if let Some(set_cookie_headers) = response.get_headers("Set-Cookie") {
             let now = Utc::now();
             let mut new_cookies = HashMap::new();
@@ -86,6 +98,7 @@ impl CookieStore {
                 }
             }
             for (name, (value, expires)) in new_cookies {
+                info!("Adding cookie to store: name={}, value={}, expires={:?}", name, value, expires);
                 self.cookies.insert(name.clone(), (value.clone(), expires.clone()));
                 self.write_cookie_to_file(&name, &value, expires).unwrap();
             }

@@ -9,7 +9,7 @@ use std::{net::SocketAddr, thread};
 use std::time::Duration;
 
 use config::{AUTH_SERVER_PORT, SELF_BINDING_ADDR};
-use http_server::{async_dup::Arc, smol::lock::RwLock, Server, smol};
+use http_server::{async_dup::Arc, executor::smol::lock::RwLock, Server, executor::smol};
 use logging::info;
 
 use crate::state::State;

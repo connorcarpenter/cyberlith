@@ -6,7 +6,7 @@ pub use error::FileIoError;
 
 use std::{time::Duration, thread, pin::Pin, path::Path, future::Future, collections::HashMap};
 
-use crossbeam_channel::{bounded, Receiver, TryRecvError};
+use executor::smol::{channel::{bounded, Receiver, TryRecvError}};
 
 use asset_id::ETag;
 use git::{
@@ -228,8 +228,8 @@ fn check_build_channel(
             return Ok(Some(output));
         },
         Ok(Err(err)) => return Err(err),
-        Err(TryRecvError::Disconnected) => {
-            return Err(CliError::Message("channel disconnected".to_string()))
+        Err(TryRecvError::Closed) => {
+            return Err(CliError::Message("channel closed".to_string()))
         }
         Err(TryRecvError::Empty) => {
             return Ok(None)
@@ -248,7 +248,7 @@ fn thread_init_for_deployment(
 
     executor::spawn(async move {
         let result = x().await;
-        sender.send(result).expect("failed to send result");
+        sender.send(result).await.expect("failed to send result");
     })
         .detach();
 

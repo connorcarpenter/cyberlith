@@ -3,8 +3,7 @@ use std::{any::TypeId, collections::HashMap, net::SocketAddr};
 use bevy_ecs::system::Resource;
 
 use logging::warn;
-use smol::channel::{Receiver, Sender};
-
+use http_server_shared::executor::smol::channel::{Receiver, Sender};
 use bevy_http_shared::Protocol;
 use http_common::{ApiRequest, ApiResponse, Request, Response, ResponseError};
 

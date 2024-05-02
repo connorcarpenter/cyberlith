@@ -1,6 +1,6 @@
 use std::{net::SocketAddr, pin::Pin};
 
-use smol::future::Future;
+use http_server_shared::executor::smol::future::Future;
 
 use http_common::{Request, Response, ResponseError};
 

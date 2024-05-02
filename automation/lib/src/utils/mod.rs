@@ -1,10 +1,9 @@
 use std::{future::Future, process::Command,  path::Path};
 
 use async_compat::Compat;
-use crossbeam_channel::{bounded, Receiver, TryRecvError};
 use logging::{info, warn};
 use openssh::{KnownHosts, Session, SessionBuilder};
-use smol::channel::bounded as smol_bounded;
+use executor::smol::channel::{bounded, Receiver, TryRecvError};
 use subprocess::{Exec, Redirection};
 
 use crate::CliError;
@@ -16,7 +15,7 @@ pub fn thread_init_compat<F: Future<Output = Result<(), CliError>> + Sized + Sen
 
     executor::spawn(Compat::new(async move {
         let result = x().await;
-        sender.send(result).expect("failed to send result");
+        sender.send(result).await.expect("failed to send result");
     }))
     .detach();
 
@@ -34,7 +33,7 @@ pub fn thread_init_1arg<
 
     executor::spawn(async move {
         let result = x(a).await;
-        sender.send(result).expect("failed to send result");
+        sender.send(result).await.expect("failed to send result");
     })
         .detach();
 
@@ -52,7 +51,7 @@ pub fn thread_init_compat_1arg<
 
     executor::spawn(Compat::new(async move {
         let result = x(a).await;
-        sender.send(result).expect("failed to send result");
+        sender.send(result).await.expect("failed to send result");
     }))
     .detach();
 
@@ -66,7 +65,7 @@ pub async fn run_command(command_name: &str, command_str: &str) -> Result<(), Cl
     let command_name_clone = command_name.clone();
     let command_str = command_str.to_string();
 
-    let (sender, receiver) = smol_bounded(1);
+    let (sender, receiver) = bounded(1);
 
     executor::spawn(async move {
         let command_name = command_name_clone;
@@ -151,7 +150,7 @@ pub async fn ssh_session_create() -> Result<Session, CliError> {
             Err(err) => {
                 warn!("error connecting to instance: {:?}", err);
                 warn!("retrying after 5 seconds..");
-                smol::Timer::after(std::time::Duration::from_secs(5)).await;
+                executor::smol::Timer::after(std::time::Duration::from_secs(5)).await;
                 continue;
             }
         }
@@ -228,8 +227,8 @@ pub fn check_channel(
         match rcvr.try_recv() {
             Ok(Ok(())) => *rdy = true,
             Ok(Err(err)) => return Err(err),
-            Err(TryRecvError::Disconnected) => {
-                return Err(CliError::Message("channel disconnected".to_string()))
+            Err(TryRecvError::Closed) => {
+                return Err(CliError::Message("channel closed".to_string()))
             }
             _ => {}
         }

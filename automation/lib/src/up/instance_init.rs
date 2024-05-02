@@ -48,7 +48,7 @@ async fn setup_docker(session: &Session) -> Result<(), CliError> {
             Err(err) => {
                 warn!("error adding user to docker group: {:?}", err);
                 info!("retrying after 5 seconds..");
-                smol::Timer::after(Duration::from_secs(5)).await;
+                executor::smol::Timer::after(Duration::from_secs(5)).await;
             }
         }
     }

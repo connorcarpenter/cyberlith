@@ -1,6 +1,6 @@
 use config::REGION_SERVER_SECRET;
 use http_client::{HttpClient, ResponseError};
-use http_server::{async_dup::Arc, smol::lock::RwLock, ApiRequest, ApiServer, Server};
+use http_server::{async_dup::Arc, executor::smol::lock::RwLock, ApiRequest, ApiServer, Server};
 use logging::warn;
 
 use region_server_http_proto::{SessionConnectRequest, SessionConnectResponse};

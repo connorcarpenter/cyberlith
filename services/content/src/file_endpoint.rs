@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 
 use asset_id::ETag;
 use http_client::ResponseError;
-use http_server::{async_dup::Arc, smol::lock::RwLock, Request, Response};
+use http_server::{async_dup::Arc, executor::smol::lock::RwLock, Request, Response};
 use logging::info;
 
 use crate::{

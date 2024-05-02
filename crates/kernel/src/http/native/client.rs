@@ -26,9 +26,7 @@ impl HttpClient {
             cookie_store,
         }
     }
-}
 
-impl HttpClient {
     pub(crate) fn update_system(mut client: ResMut<Self>) {
         let cookie_store_clone = client.cookie_store.clone();
         InnerHttpClient::update(
@@ -63,5 +61,10 @@ impl HttpClient {
         key: &ResponseKey<S>,
     ) -> Option<Result<S, ResponseError>> {
         self.inner.recv(key)
+    }
+
+    pub fn cookie_header_value(&self) -> Option<String> {
+        let cookie_store = self.cookie_store.read().unwrap();
+        cookie_store.cookie_header_value()
     }
 }

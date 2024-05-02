@@ -1,6 +1,6 @@
 use std::net::SocketAddr;
 
-use smol::future::Future;
+use http_server_shared::executor::smol::future::Future;
 
 use http_common::{ApiRequest, ApiResponse, Method, Request, Response, ResponseError};
 use logging::info;

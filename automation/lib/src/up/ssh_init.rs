@@ -18,7 +18,7 @@ pub async fn ssh_init() -> Result<Session, CliError> {
                 warn!("error adding known host .. (expect a number of `getaddrinfo >>: Name or service not known` errors while instance is starting up)");
                 warn!("error: {:?}", err);
                 info!("retrying in 5 seconds..");
-                smol::Timer::after(Duration::from_secs(5)).await;
+                executor::smol::Timer::after(Duration::from_secs(5)).await;
                 continue;
             }
         }

@@ -1,14 +1,14 @@
 use std::{collections::HashMap, net::SocketAddr};
 
 use async_dup::Arc;
-use smol::{
+
+use executor::smol::{
     future::Future,
     io::{AsyncRead, AsyncWrite},
     lock::RwLock,
     net::TcpListener,
     stream::StreamExt,
 };
-
 use http_common::{Request, Response, ResponseError};
 use http_server_shared::{executor, serve_impl, MatchHostResult};
 use logging::info;

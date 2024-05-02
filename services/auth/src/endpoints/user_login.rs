@@ -1,6 +1,6 @@
 use auth_server_db::UserId;
 use http_client::ResponseError;
-use http_server::{async_dup::Arc, smol::lock::RwLock, ApiServer, Server};
+use http_server::{async_dup::Arc, executor::smol::lock::RwLock, ApiServer, Server};
 use logging::info;
 
 use auth_server_http_proto::{AccessToken, RefreshToken, UserLoginRequest, UserLoginResponse};

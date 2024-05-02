@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use bevy_ecs::{change_detection::ResMut, system::Resource};
+use bevy_ecs::{system::ResMut, system::Resource};
 
 use http_common::{ApiRequest, ApiResponse, Request, RequestOptions, Response, ResponseError};
 
@@ -49,6 +49,11 @@ impl HttpClient {
         for (key, result) in finished_tasks {
             self.accept_result(key, result);
         }
+    }
+
+    pub fn cookie_header_value(&self) -> Option<String> {
+        // no need to handle cookie values in wasm, which is the only time this would be called
+        None
     }
 
     pub fn send<Q: ApiRequest>(

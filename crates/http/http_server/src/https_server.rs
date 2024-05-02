@@ -1,9 +1,9 @@
 use acme::Config;
 use async_dup::Arc;
-use http_server_shared::executor;
+use http_server_shared::{executor, executor::smol::{net::TcpListener, lock::RwLock, stream::StreamExt}};
 use logging::info;
 
-use crate::{smol::lock::RwLock, smol::net::TcpListener, smol::stream::StreamExt, Server};
+use crate::Server;
 
 pub trait HttpsServer {
     fn https_start(self, config: Config);

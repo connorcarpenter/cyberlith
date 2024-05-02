@@ -32,6 +32,9 @@ pub const CONTENT_SERVER_FILES_PATH: &str = "./files";
 pub const ASSET_SERVER_FILES_PATH: &str = "./assets";
 
 #[allow(dead_code)]
+pub const REDIRECTOR_PORT: u16 = 14195;
+
+#[allow(dead_code)]
 pub const GATEWAY_PORT: u16 = 14196;
 
 #[allow(dead_code)]

@@ -56,6 +56,12 @@ impl Kernel {
 
                 ExitActionContainer::take()
             }
+
+            pub fn head_request(&self, url: &str) -> http_common::Response {
+
+                let cookie_store = self.cookie_store_opt.as_ref().unwrap().clone();
+                crate::http::head_request(cookie_store, url)
+            }
         }
     }
 

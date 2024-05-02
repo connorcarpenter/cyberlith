@@ -1,8 +1,8 @@
 use std::net::SocketAddr;
 
-use smol::{net::TcpListener, stream::StreamExt};
+use executor::smol::{net::TcpListener, stream::StreamExt};
 
-use config::{PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SUBDOMAIN_WWW};
+use config::{PUBLIC_IP_ADDR, PUBLIC_PROTOCOL};
 use http_common::{Request, Response, ResponseError};
 use http_server::http_log_util;
 use http_server_shared::{serve_impl, MatchHostResult};

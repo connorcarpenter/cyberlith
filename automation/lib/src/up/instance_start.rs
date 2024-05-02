@@ -116,7 +116,7 @@ pub async fn instance_start() -> Result<String, CliError> {
             Err(err) => {
                 info!("error creating instance: {:?}", err);
                 info!("retrying after 5 seconds..");
-                smol::Timer::after(std::time::Duration::from_secs(5)).await;
+                executor::smol::Timer::after(std::time::Duration::from_secs(5)).await;
                 continue;
             }
         }

@@ -25,6 +25,6 @@ pub async fn instance_wait(instance_id: &str) -> Result<(), CliError> {
             }
         }
 
-        smol::Timer::after(Duration::from_secs(5)).await;
+        executor::smol::Timer::after(Duration::from_secs(5)).await;
     }
 }

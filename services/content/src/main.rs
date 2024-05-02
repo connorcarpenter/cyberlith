@@ -14,7 +14,7 @@ cfg_if! {
 use std::{net::SocketAddr, thread};
 
 use config::{CONTENT_SERVER_FILES_PATH, CONTENT_SERVER_PORT, SELF_BINDING_ADDR};
-use http_server::{async_dup::Arc, smol::lock::RwLock, ApiServer, Method, Server};
+use http_server::{async_dup::Arc, executor::smol::lock::RwLock, ApiServer, Method, Server};
 use logging::info;
 
 use crate::{

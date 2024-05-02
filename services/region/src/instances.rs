@@ -1,6 +1,6 @@
 use std::time::Instant;
 
-use http_server::{async_dup::Arc, smol::lock::RwLock};
+use http_server::{async_dup::Arc, executor::smol::lock::RwLock};
 
 pub struct SessionInstance {
     instance_secret: String,
@@ -40,7 +40,6 @@ pub struct WorldInstance {
     instance_secret: String,
     http_addr: String,
     http_port: u16,
-    public_webrtc_url: String,
     last_heard: Arc<RwLock<Instant>>,
 }
 
@@ -49,13 +48,11 @@ impl WorldInstance {
         instance_secret: &str,
         http_addr: &str,
         http_port: u16,
-        public_webrtc_url: &str,
     ) -> Self {
         Self {
             instance_secret: instance_secret.to_string(),
             http_addr: http_addr.to_string(),
             http_port,
-            public_webrtc_url: public_webrtc_url.to_string(),
             last_heard: Arc::new(RwLock::new(Instant::now())),
         }
     }
@@ -70,10 +67,6 @@ impl WorldInstance {
 
     pub fn http_port(&self) -> u16 {
         self.http_port
-    }
-
-    pub fn public_webrtc_url(&self) -> &str {
-        &self.public_webrtc_url
     }
 
     pub fn last_heard(&self) -> Arc<RwLock<Instant>> {

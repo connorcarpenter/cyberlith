@@ -20,4 +20,5 @@ futures = { version = "0.3" }
 web-sys = { version = "0.3", features = [ "Window", "Location" ] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+http_client_shared = { path = "../http/http_client_shared" }
 chrono = { version = "0.4" }

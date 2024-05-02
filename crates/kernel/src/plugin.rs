@@ -18,6 +18,9 @@ impl Plugin for KernelPlugin {
     fn build(&self, app: &mut App) {
         cfg_if::cfg_if! {
             if #[cfg(target_arch = "wasm32")] {
+                if self.cookie_store_opt.is_some() {
+                    panic!("Kernel has cookie store set. This is not supported in wasm.");
+                }
                 let http_client_plugin = HttpClientPlugin::default();
                 app.add_plugins(http_client_plugin);
             } else {

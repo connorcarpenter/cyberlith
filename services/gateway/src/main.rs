@@ -3,14 +3,13 @@ mod redirect;
 mod rate_limiter;
 mod access_token_checker;
 mod cookie_middleware;
-mod world_connect;
 mod register_token;
 mod endpoints;
 
 use std::{time::Duration, net::SocketAddr, thread};
 
 use config::{AUTH_SERVER_PORT, AUTH_SERVER_RECV_ADDR, CONTENT_SERVER_PORT, CONTENT_SERVER_RECV_ADDR, GATEWAY_PORT, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SELF_BINDING_ADDR, WORLD_SERVER_RECV_ADDR, WORLD_SERVER_SIGNAL_PORT, SESSION_SERVER_RECV_ADDR, SESSION_SERVER_SIGNAL_PORT, TargetEnv};
-use http_server::{smol::lock::RwLock, async_dup::Arc, ApiServer, Method, ProxyServer, Server, smol};
+use http_server::{executor::smol::lock::RwLock, async_dup::Arc, ApiServer, Method, ProxyServer, Server, executor::smol};
 use logging::info;
 
 use auth_server_http_proto::{AccessTokenValidateRequest, RefreshTokenGrantRequest, RefreshTokenGrantResponse, UserLoginRequest, UserLoginResponse, UserNameForgotRequest, UserPasswordForgotRequest, UserPasswordResetRequest, UserRegisterRequest};
@@ -62,24 +61,6 @@ pub fn main() {
             addr,
             &port,
         ).response_middleware(cookie_middleware::set_cookie_on_200::<UserLoginResponse>);
-        // access token validate
-        server.serve_api_proxy::<AccessTokenValidateRequest>(
-            gateway,
-            required_host_www,
-            api_allow_origin,
-            auth_server,
-            addr,
-            &port,
-        ).response_middleware(cookie_middleware::handler_clear_cookie_on_401);
-        // refresh token grant
-        server.serve_api_proxy::<RefreshTokenGrantRequest>(
-            gateway,
-            required_host_www,
-            api_allow_origin,
-            auth_server,
-            addr,
-            &port,
-        ).response_middleware(cookie_middleware::set_cookie_on_200::<RefreshTokenGrantResponse>);
         // user register
         server.serve_api_proxy::<UserRegisterRequest>(
             gateway,
@@ -107,15 +88,6 @@ pub fn main() {
             addr,
             &port,
         );
-        // user password reset
-        server.serve_api_proxy::<UserPasswordResetRequest>(
-            gateway,
-            required_host_www,
-            api_allow_origin,
-            auth_server,
-            addr,
-            &port,
-        );
     }
 
     // -> session
@@ -133,10 +105,7 @@ pub fn main() {
                 let protocol = session_protocol_1.clone();
                 async move { session_connect::handler(protocol, addr, req).await }
             },
-        ).request_middleware(move |addr, req| {
-            let protocol = session_protocol_2.clone();
-            async move { session_connect::auth_middleware(protocol, addr, req).await }
-        });
+        ).request_middleware(access_token_checker::www_middleware);
 
         let session_server = "session_server";
         let addr = SESSION_SERVER_RECV_ADDR;
@@ -157,29 +126,20 @@ pub fn main() {
 
     // -> world
     {
-        let world_protocol_1 = Arc::new(RwLock::new(world_server_naia_proto::protocol()));
-        let world_protocol_2 = world_protocol_1.clone();
-
-        // TODO: possibly can refactor this to use 'server_proxy' with auth_middleware, just have auth_middleware adjust the auth header
-        server.raw_endpoint(
+        let world_server = "world_server";
+        let addr = WORLD_SERVER_RECV_ADDR;
+        let port = WORLD_SERVER_SIGNAL_PORT.to_string();
+        server.serve_proxy(
             gateway,
             required_host_www,
             api_allow_origin,
             Method::Post,
             "world_connect",
-            move |addr, req| {
-                let protocol = world_protocol_1.clone();
-                async move { world_connect::handler(protocol, addr, req).await }
-            },
-        ).request_middleware(move |addr, req| {
-            let protocol = world_protocol_2.clone();
-            async move { world_connect::auth_middleware(protocol, addr, req).await }
-        });
-
-        let world_server = "world_server";
-        let addr = WORLD_SERVER_RECV_ADDR;
-        let port = WORLD_SERVER_SIGNAL_PORT.to_string();
-
+            world_server,
+            addr,
+            &port,
+            "world_connect",
+        ).request_middleware(access_token_checker::www_middleware);
         server.serve_proxy(
             gateway,
             required_host_www,

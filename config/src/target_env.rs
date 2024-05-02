@@ -35,8 +35,4 @@ impl TargetEnv {
     pub fn gateway_url() -> String {
         format!("{}://{}:{}", PUBLIC_PROTOCOL, PUBLIC_IP_ADDR, GATEWAY_PORT)
     }
-
-    pub fn url_w_o_port() -> String {
-        format!("{}://{}", PUBLIC_PROTOCOL, PUBLIC_IP_ADDR)
-    }
 }

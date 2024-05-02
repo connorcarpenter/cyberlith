@@ -19,5 +19,3 @@ executor = { path = "../../crates/executor" }
 http_server = { path = "../../crates/http/http_server" }
 http_server_shared = { path = "../../crates/http/http_server_shared" }
 http_common = { path = "../../crates/http/http_common" }
-
-smol = { version = "1.3" }
