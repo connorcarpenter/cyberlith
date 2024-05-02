@@ -109,6 +109,17 @@ impl Response {
         }
     }
 
+    // Construct a new Response indicating a unauthenticated response. // 401
+    pub fn unauthenticated(old_url: &str) -> Self {
+        Self {
+            url: old_url.to_string(),
+            ok: false,
+            status: 401,
+            status_text: "Unauthorized".to_string(),
+            ..Default::default()
+        }
+    }
+
     /// Constructs a new Response indicating a not modified response. // 404
     pub fn not_found(old_url: &str) -> Self {
         Self {

@@ -1,7 +1,7 @@
 mod session_connect;
 mod redirect;
 mod rate_limiter;
-mod access_token_checker;
+mod auth_handler;
 mod cookie_middleware;
 mod register_token;
 mod endpoints;
@@ -111,7 +111,7 @@ pub fn main() {
                 let protocol = session_protocol.clone();
                 async move { session_connect::handler(protocol, addr, req).await }
             },
-        ).request_middleware(access_token_checker::www_middleware);
+        ).request_middleware(auth_handler::require_auth_tokens);
 
         let session_server = "session_server";
         let addr = SESSION_SERVER_RECV_ADDR;
@@ -148,7 +148,7 @@ pub fn main() {
             addr,
             &port,
             &world_protocol_endpoint,
-        ).request_middleware(access_token_checker::www_middleware);
+        ).request_middleware(auth_handler::require_auth_tokens);
 
         server.serve_proxy(
             gateway,
@@ -212,14 +212,14 @@ pub fn main() {
             addr,
             &port,
             "game.html",
-        ).request_middleware(access_token_checker::www_middleware_redirect_home);
+        ).request_middleware(auth_handler::require_auth_tokens_or_redirect_home);
         server.raw_endpoint(
             gateway,
             required_host_www,
             None,
             Method::Get,
             "game.html",
-            redirect::handler,
+            redirect::redirect_to_game,
         );
         server.serve_proxy(
             gateway,
@@ -231,7 +231,7 @@ pub fn main() {
             addr,
             &port,
             "game.js",
-        ).request_middleware(access_token_checker::www_middleware);
+        ).request_middleware(auth_handler::require_auth_tokens);
         server.serve_proxy(
             gateway,
             required_host_www,
@@ -242,7 +242,7 @@ pub fn main() {
             addr,
             &port,
             "game_bg.wasm",
-        ).request_middleware(access_token_checker::www_middleware);
+        ).request_middleware(auth_handler::require_auth_tokens);
     }
 
     // prune expired rate limiter entries

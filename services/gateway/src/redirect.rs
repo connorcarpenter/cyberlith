@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 
 use http_server::{Request, ResponseError, Response};
 
-pub(crate) async fn handler(
+pub(crate) async fn redirect_to_game(
     _addr: SocketAddr,
     incoming_request: Request,
 ) -> Result<Response, ResponseError> {
