@@ -522,6 +522,7 @@ impl Into<WidgetStyle> for WidgetStyleBits {
 impl Into<PanelStyle> for PanelStyleBits {
     fn into(self) -> PanelStyle {
         PanelStyle {
+            is_viewport: self.is_viewport,
             background_color: self.background_color.map(Into::into),
             background_alpha: self.background_alpha.map(bits_into_alpha),
             layout_type: self.layout_type.map(Into::into),

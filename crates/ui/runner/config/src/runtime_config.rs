@@ -562,6 +562,19 @@ impl NodeStore for UiRuntimeConfig {
     }
 
     // no default here .. None doesn't do anything, Some does
+    fn node_is_viewport(&self, id: &NodeId) -> bool {
+        if self.node_kind(id) != WidgetKind::Panel {
+            return false;
+        }
+
+        if let Some(panel_style) = self.panel_style(id) {
+            panel_style.is_viewport
+        } else {
+            false
+        }
+    }
+
+    // no default here .. None doesn't do anything, Some does
     fn node_is_solid(&self, id: &NodeId) -> Option<Solid> {
         if !self.node_kind(id).can_solid() {
             return None;

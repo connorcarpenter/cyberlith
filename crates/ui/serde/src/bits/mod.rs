@@ -80,6 +80,8 @@ pub(crate) struct UiStyleBits {
 
 #[derive(Serde, Clone, PartialEq)]
 pub(crate) struct PanelStyleBits {
+    is_viewport: bool,
+
     background_color: Option<ColorBits>,
     background_alpha: Option<UnsignedInteger<4>>,
 

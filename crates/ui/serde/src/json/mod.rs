@@ -78,6 +78,8 @@ pub(crate) struct UiStyleJson {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub(crate) struct PanelStyleJson {
+    is_viewport: bool,
+
     background_color: Option<ColorJson>,
     background_alpha: Option<f32>,
 

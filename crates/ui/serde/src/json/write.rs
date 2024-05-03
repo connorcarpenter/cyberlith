@@ -93,6 +93,8 @@ impl From<&WidgetStyle> for WidgetStyleJson {
 impl From<&PanelStyle> for PanelStyleJson {
     fn from(style: &PanelStyle) -> Self {
         Self {
+            is_viewport: style.is_viewport,
+
             background_color: style.background_color.map(From::from),
             background_alpha: style.background_alpha(),
 

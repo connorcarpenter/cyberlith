@@ -133,6 +133,11 @@ impl<'a> PanelStyleMut<'a> {
 
     // setters
 
+    pub fn set_as_viewport(&mut self) -> &mut Self {
+        self.get_panel_style_mut().is_viewport = true;
+        self
+    }
+
     pub fn set_parent_style(&mut self, style_id: StyleId) -> &mut Self {
         self.get_style_mut().parent_style = Some(style_id);
         self

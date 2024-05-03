@@ -17,7 +17,7 @@ pub(crate) fn compute_styles(styles: Vec<NodeStyle>) -> Vec<BaseNodeStyle> {
         let mut output_style = BaseNodeStyle::empty(widget_style);
 
         apply_parent_styles(&styles, style.parent_style, &mut output_style);
-        output_style.merge(&style.base);
+        output_style.merge(&style.base, false);
 
         output.push(output_style);
     }
@@ -37,6 +37,6 @@ fn apply_parent_styles(
         // recurse
         apply_parent_styles(styles, parent_style.parent_style, output_style);
 
-        output_style.merge(&parent_style.base);
+        output_style.merge(&parent_style.base, true);
     }
 }

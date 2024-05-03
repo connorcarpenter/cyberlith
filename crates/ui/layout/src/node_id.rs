@@ -154,6 +154,11 @@ impl NodeId {
     }
 
     // no default here .. None doesn't do anything, Some does
+    pub(crate) fn is_viewport(&self, store: &dyn NodeStore) -> bool {
+        store.node_is_viewport(self)
+    }
+
+    // no default here .. None doesn't do anything, Some does
     pub(crate) fn is_solid(&self, store: &dyn NodeStore) -> Option<Solid> {
         store.node_is_solid(self)
     }

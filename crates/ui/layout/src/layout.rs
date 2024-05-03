@@ -1,5 +1,7 @@
 use smallvec::SmallVec;
 
+use logging::{info, warn};
+
 use crate::{
     percentage_calc, LayoutCache, LayoutType, NodeId, NodeStore, PositionType, Size, SizeUnits,
     Solid, TextMeasurer, UiVisibilityStore,
@@ -108,6 +110,7 @@ pub(crate) fn layout(
 
     // The layout type of the node. Determines the main and cross axes of the children.
     let layout_type = node.layout_type(store);
+    let node_is_viewport = node.is_viewport(store);
 
     // The desired main-axis and cross-axis sizes of the node.
     let main = if node_is_root {
@@ -194,7 +197,12 @@ pub(crate) fn layout(
 
     // TODO: Figure out how to constrain content size on cross axis.
 
-    apply_solid_layout(node, store, &mut computed_main, &mut computed_cross);
+    apply_solid_layout(
+        node,
+        store,
+        &mut computed_main,
+        &mut computed_cross
+    );
     apply_text_layout(
         node,
         store,
@@ -211,6 +219,24 @@ pub(crate) fn layout(
             cross: computed_cross,
         };
     }
+
+    let viewport_size = if node_is_viewport {
+
+        if node_is_root {
+            warn!("root should not be a viewport");
+        }
+        info!("viewport size was: {:?}", viewport_size);
+        let output = match parent_layout_type { // TODO: should this be layout_type?
+            LayoutType::Row => (computed_main, computed_cross),
+            LayoutType::Column => (computed_cross, computed_main),
+        };
+        info!("viewport size is now: {:?}", output);
+        output
+    } else {
+        viewport_size
+    };
+    let viewport_main = viewport_size.main(parent_layout_type);
+    let viewport_cross = viewport_size.cross(parent_layout_type);
 
     // Determine the parent_main/cross size to pass to the children based on the layout type of the parent and the node.
     // i.e. if the parent layout type and the node layout type are different, swap the main and the cross axes.
@@ -829,7 +855,7 @@ pub(crate) fn layout(
         }
     }
 
-    //apply_solid_layout(node, store, &mut computed_main, &mut computed_cross);
+    // apply_solid_layout(node, store, &mut computed_main, &mut computed_cross);
 
     // Return the computed size, propagating it back up the tree.
     Size {

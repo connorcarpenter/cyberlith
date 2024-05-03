@@ -33,9 +33,9 @@ impl WidgetStyle {
         }
     }
 
-    pub fn merge(&mut self, other: &Self) {
+    pub fn merge(&mut self, other: &Self, inheriting: bool) {
         match (self, other) {
-            (Self::Panel(style), Self::Panel(other_style)) => style.merge(other_style),
+            (Self::Panel(style), Self::Panel(other_style)) => style.merge(other_style, inheriting),
             (Self::Text(style), Self::Text(other_style)) => style.merge(other_style),
             (Self::Button(style), Self::Button(other_style)) => style.merge(other_style),
             (Self::Textbox(style), Self::Textbox(other_style)) => style.merge(other_style),
@@ -110,8 +110,8 @@ pub struct BaseNodeStyle {
 }
 
 impl BaseNodeStyle {
-    pub fn merge(&mut self, other: &Self) {
-        self.widget_style.merge(&other.widget_style);
+    pub fn merge(&mut self, other: &Self, inheriting: bool) {
+        self.widget_style.merge(&other.widget_style, inheriting);
 
         self.position_type = other.position_type.or(self.position_type);
         self.width = other.width.or(self.width);

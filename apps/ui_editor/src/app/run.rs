@@ -9,6 +9,8 @@ use super::{draw, resize, ui};
 use crate::app::ui::SubmitButtonEvent;
 
 pub fn run() {
+    logging::initialize();
+
     let mut app = App::default();
 
     app.add_plugins(EnginePlugin::new(None))

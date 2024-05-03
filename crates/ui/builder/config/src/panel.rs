@@ -20,6 +20,8 @@ impl Panel {
 
 #[derive(Clone, Copy)]
 pub struct PanelStyle {
+    pub is_viewport: bool,
+
     pub background_color: Option<Color>,
     pub background_alpha: Option<f32>, // keep it private, need to validate
 
@@ -37,7 +39,13 @@ pub struct PanelStyle {
 }
 
 impl PanelStyle {
-    pub fn merge(&mut self, other: &Self) {
+    pub fn merge(&mut self, other: &Self, inheriting: bool) {
+
+        // is_viewport does not inherit, but it still needs to merge when serializing/deserializing
+        if !inheriting {
+            self.is_viewport = other.is_viewport;
+        }
+
         self.background_color = other.background_color.or(self.background_color);
         self.background_alpha = other.background_alpha.or(self.background_alpha);
         self.layout_type = other.layout_type.or(self.layout_type);
@@ -55,6 +63,8 @@ impl PanelStyle {
 impl PanelStyle {
     pub fn empty() -> Self {
         Self {
+            is_viewport: false,
+
             background_color: None,
             background_alpha: None,
 

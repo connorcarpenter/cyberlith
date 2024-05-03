@@ -23,6 +23,7 @@ pub trait NodeStore {
     fn node_row_between(&self, id: &NodeId) -> SizeUnits;
     fn node_col_between(&self, id: &NodeId) -> SizeUnits;
     fn node_is_solid(&self, id: &NodeId) -> Option<Solid>;
+    fn node_is_viewport(&self, id: &NodeId) -> bool;
     fn node_is_text(&self, id: &NodeId) -> bool;
     fn node_calculate_text_width(
         &self,

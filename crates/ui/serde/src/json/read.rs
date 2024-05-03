@@ -430,6 +430,7 @@ impl Into<WidgetStyle> for WidgetStyleJson {
 impl Into<PanelStyle> for PanelStyleJson {
     fn into(self) -> PanelStyle {
         PanelStyle {
+            is_viewport: self.is_viewport,
             background_color: self.background_color.map(Into::into),
             background_alpha: self.background_alpha,
             layout_type: self.layout_type.map(Into::into),
