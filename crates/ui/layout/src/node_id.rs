@@ -1,7 +1,7 @@
 use std::fmt::{Display, Formatter};
 
 use crate::{
-    layout::layout, Alignment, LayoutCache, LayoutType, MarginUnits, NodeStore, PositionType, Size,
+    layout::layout, Alignment, LayoutCache, LayoutType, MarginUnits, NodeStore, Size,
     SizeUnits, Solid, TextMeasurer, UiVisibilityStore,
 };
 
@@ -68,11 +68,6 @@ impl NodeId {
         store.node_layout_type(self)
     }
 
-    // all of these unwrap_or_default
-    pub(crate) fn position_type(&self, store: &dyn NodeStore) -> PositionType {
-        store.node_position_type(self)
-    }
-
     // all of these unwrap_or(SizeUnits::Percentage(100.0))
     pub(crate) fn width(&self, store: &dyn NodeStore) -> SizeUnits {
         store.node_width(self)
@@ -81,26 +76,6 @@ impl NodeId {
     // all of these unwrap_or(SizeUnits::Percentage(100.0))
     pub(crate) fn height(&self, store: &dyn NodeStore) -> SizeUnits {
         store.node_height(self)
-    }
-
-    // all of these unwrap_or(SizeUnits::Pixels(0.0))
-    pub(crate) fn width_min(&self, store: &dyn NodeStore) -> SizeUnits {
-        store.node_width_min(self)
-    }
-
-    // all of these unwrap_or(SizeUnits::Pixels(0.0))
-    pub(crate) fn height_min(&self, store: &dyn NodeStore) -> SizeUnits {
-        store.node_height_min(self)
-    }
-
-    // all of these unwrap_or(SizeUnits::Pixels(f32::MAX))
-    pub(crate) fn width_max(&self, store: &dyn NodeStore) -> SizeUnits {
-        store.node_width_max(self)
-    }
-
-    // all of these unwrap_or(SizeUnits::Pixels(f32::MAX))
-    pub(crate) fn height_max(&self, store: &dyn NodeStore) -> SizeUnits {
-        store.node_height_max(self)
     }
 
     // all of these unwrap_or_default
@@ -124,32 +99,32 @@ impl NodeId {
     }
 
     // all of these unwrap_or_default
-    pub(crate) fn padding_left(&self, store: &dyn NodeStore) -> SizeUnits {
+    pub(crate) fn padding_left(&self, store: &dyn NodeStore) -> MarginUnits {
         store.node_padding_left(self)
     }
 
     // all of these unwrap_or_default
-    pub(crate) fn padding_right(&self, store: &dyn NodeStore) -> SizeUnits {
+    pub(crate) fn padding_right(&self, store: &dyn NodeStore) -> MarginUnits {
         store.node_padding_right(self)
     }
 
     // all of these unwrap_or_default
-    pub(crate) fn padding_top(&self, store: &dyn NodeStore) -> SizeUnits {
+    pub(crate) fn padding_top(&self, store: &dyn NodeStore) -> MarginUnits {
         store.node_padding_top(self)
     }
 
     // all of these unwrap_or_default
-    pub(crate) fn padding_bottom(&self, store: &dyn NodeStore) -> SizeUnits {
+    pub(crate) fn padding_bottom(&self, store: &dyn NodeStore) -> MarginUnits {
         store.node_padding_bottom(self)
     }
 
     // all of these unwrap_or_default
-    pub(crate) fn row_between(&self, store: &dyn NodeStore) -> SizeUnits {
+    pub(crate) fn row_between(&self, store: &dyn NodeStore) -> MarginUnits {
         store.node_row_between(self)
     }
 
     // all of these unwrap_or_default
-    pub(crate) fn col_between(&self, store: &dyn NodeStore) -> SizeUnits {
+    pub(crate) fn col_between(&self, store: &dyn NodeStore) -> MarginUnits {
         store.node_col_between(self)
     }
 

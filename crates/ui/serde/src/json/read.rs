@@ -6,10 +6,10 @@ use ui_builder_config::{
     BaseNodeStyle, Button, ButtonStyle, NodeId, NodeStyle, Panel, PanelStyle, StyleId, Text,
     TextStyle, Textbox, TextboxStyle, UiConfig, Widget, WidgetKind, WidgetStyle,
 };
-use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
+use ui_layout::{Alignment, LayoutType, MarginUnits, SizeUnits, Solid};
 
 use super::{
-    AlignmentJson, ColorJson, LayoutTypeJson, MarginUnitsJson, PanelJson, PositionTypeJson,
+    AlignmentJson, ColorJson, LayoutTypeJson, MarginUnitsJson, PanelJson,
     SizeUnitsJson, SolidJson, UiConfigJson, UiNodeJson, UiStyleJson, WidgetJson, WidgetStyleJson,
 };
 use crate::json::{
@@ -328,15 +328,6 @@ fn set_textbox_navigation(
     }
 }
 
-impl Into<PositionType> for PositionTypeJson {
-    fn into(self) -> PositionType {
-        match self {
-            Self::Absolute => PositionType::Absolute,
-            Self::Relative => PositionType::Relative,
-        }
-    }
-}
-
 impl Into<SizeUnits> for SizeUnitsJson {
     fn into(self) -> SizeUnits {
         match self {
@@ -396,13 +387,8 @@ impl Into<NodeStyle> for UiStyleJson {
             parent_style: self.parent_style.map(|id| StyleId::new(id as u32)),
             base: BaseNodeStyle {
                 widget_style: self.widget_style.into(),
-                position_type: self.position_type.map(Into::into),
                 width: self.width.map(Into::into),
                 height: self.height.map(Into::into),
-                width_min: self.width_min.map(Into::into),
-                width_max: self.width_max.map(Into::into),
-                height_min: self.height_min.map(Into::into),
-                height_max: self.height_max.map(Into::into),
                 margin_left: self.margin_left.map(Into::into),
                 margin_right: self.margin_right.map(Into::into),
                 margin_top: self.margin_top.map(Into::into),

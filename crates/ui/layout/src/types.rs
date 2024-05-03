@@ -48,16 +48,6 @@ impl LayoutType {
     }
 }
 
-/// The position type determines whether a node will be positioned in-line with its siblings or out-of-line / independently of its siblings.
-#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
-pub enum PositionType {
-    /// Node is positioned relative to parent but ignores its siblings.
-    Absolute,
-    /// Node is positioned relative to parent and in-line with siblings.
-    #[default]
-    Relative,
-}
-
 /// Units which describe spacing and size.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum MarginUnits {

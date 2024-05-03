@@ -1,5 +1,5 @@
 use render_api::base::Color;
-use ui_layout::{Alignment, LayoutType, NodeId, SizeUnits};
+use ui_layout::{Alignment, LayoutType, MarginUnits, NodeId, SizeUnits};
 
 #[derive(Clone)]
 pub struct Panel {
@@ -27,13 +27,13 @@ pub struct PanelStyle {
 
     pub layout_type: Option<LayoutType>,
 
-    pub padding_left: Option<SizeUnits>,
-    pub padding_right: Option<SizeUnits>,
-    pub padding_top: Option<SizeUnits>,
-    pub padding_bottom: Option<SizeUnits>,
+    pub padding_left: Option<MarginUnits>,
+    pub padding_right: Option<MarginUnits>,
+    pub padding_top: Option<MarginUnits>,
+    pub padding_bottom: Option<MarginUnits>,
 
-    pub row_between: Option<SizeUnits>,
-    pub col_between: Option<SizeUnits>,
+    pub row_between: Option<MarginUnits>,
+    pub col_between: Option<MarginUnits>,
     pub children_halign: Option<Alignment>,
     pub children_valign: Option<Alignment>,
 }

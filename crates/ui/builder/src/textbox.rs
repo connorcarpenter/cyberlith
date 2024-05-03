@@ -2,7 +2,7 @@ use render_api::base::Color;
 use ui_builder_config::{
     NodeId, NodeStyle, StyleId, Textbox, TextboxStyle, UiConfig, UiNode, WidgetStyle,
 };
-use ui_layout::{Alignment, MarginUnits, PositionType, SizeUnits};
+use ui_layout::{Alignment, MarginUnits, SizeUnits};
 
 use crate::PanelMut;
 
@@ -139,16 +139,6 @@ impl<'a> TextboxStyleMut<'a> {
         self
     }
 
-    pub fn set_absolute(&mut self) -> &mut Self {
-        self.get_style_mut().base.position_type = Some(PositionType::Absolute);
-        self
-    }
-
-    pub fn set_relative(&mut self) -> &mut Self {
-        self.get_style_mut().base.position_type = Some(PositionType::Relative);
-        self
-    }
-
     pub fn set_self_halign(&mut self, align: Alignment) -> &mut Self {
         self.get_style_mut().base.self_halign = Some(align);
         self
@@ -217,128 +207,6 @@ impl<'a> TextboxStyleMut<'a> {
         self.set_size_units(
             SizeUnits::Viewport(width_vp),
             SizeUnits::Viewport(height_vp),
-        )
-    }
-
-    // set_width_min
-    fn set_width_min_units(&mut self, min_width: SizeUnits) -> &mut Self {
-        self.get_style_mut().base.width_min = Some(min_width);
-        self
-    }
-
-    pub fn set_width_min_auto(&mut self) -> &mut Self {
-        self.set_width_min_units(SizeUnits::Auto)
-    }
-
-    pub fn set_width_min_pc(&mut self, min_width_pc: f32) -> &mut Self {
-        self.set_width_min_units(SizeUnits::Percentage(min_width_pc))
-    }
-
-    pub fn set_width_min_vp(&mut self, min_width_vp: f32) -> &mut Self {
-        self.set_width_min_units(SizeUnits::Viewport(min_width_vp))
-    }
-
-    // set_height_min
-    fn set_height_min_units(&mut self, min_height: SizeUnits) -> &mut Self {
-        self.get_style_mut().base.height_min = Some(min_height);
-        self
-    }
-
-    pub fn set_height_min_auto(&mut self) -> &mut Self {
-        self.set_height_min_units(SizeUnits::Auto)
-    }
-
-    pub fn set_height_min_pc(&mut self, min_height_pc: f32) -> &mut Self {
-        self.set_height_min_units(SizeUnits::Percentage(min_height_pc))
-    }
-
-    pub fn set_height_min_vp(&mut self, min_height_vp: f32) -> &mut Self {
-        self.set_height_min_units(SizeUnits::Viewport(min_height_vp))
-    }
-
-    // set_size_min
-    fn set_size_min_units(&mut self, min_width: SizeUnits, min_height: SizeUnits) -> &mut Self {
-        self.set_width_min_units(min_width);
-        self.set_height_min_units(min_height);
-        self
-    }
-
-    pub fn set_size_min_auto(&mut self) -> &mut Self {
-        self.set_size_min_units(SizeUnits::Auto, SizeUnits::Auto)
-    }
-
-    pub fn set_size_min_pc(&mut self, min_width_pc: f32, min_height_pc: f32) -> &mut Self {
-        self.set_size_min_units(
-            SizeUnits::Percentage(min_width_pc),
-            SizeUnits::Percentage(min_height_pc),
-        )
-    }
-
-    pub fn set_size_min_vp(&mut self, min_width_vp: f32, min_height_vp: f32) -> &mut Self {
-        self.set_size_min_units(
-            SizeUnits::Viewport(min_width_vp),
-            SizeUnits::Viewport(min_height_vp),
-        )
-    }
-
-    // set_width_max
-    fn set_width_max_units(&mut self, max_width: SizeUnits) -> &mut Self {
-        self.get_style_mut().base.width_max = Some(max_width);
-        self
-    }
-
-    pub fn set_width_max_auto(&mut self) -> &mut Self {
-        self.set_width_max_units(SizeUnits::Auto)
-    }
-
-    pub fn set_width_max_pc(&mut self, max_width_pc: f32) -> &mut Self {
-        self.set_width_max_units(SizeUnits::Percentage(max_width_pc))
-    }
-
-    pub fn set_width_max_vp(&mut self, max_width_vp: f32) -> &mut Self {
-        self.set_width_max_units(SizeUnits::Viewport(max_width_vp))
-    }
-
-    // set_height_max
-    fn set_height_max_units(&mut self, max_height: SizeUnits) -> &mut Self {
-        self.get_style_mut().base.height_max = Some(max_height);
-        self
-    }
-
-    pub fn set_height_max_auto(&mut self) -> &mut Self {
-        self.set_height_max_units(SizeUnits::Auto)
-    }
-
-    pub fn set_height_max_pc(&mut self, max_height_pc: f32) -> &mut Self {
-        self.set_height_max_units(SizeUnits::Percentage(max_height_pc))
-    }
-
-    pub fn set_height_max_vp(&mut self, max_height_vp: f32) -> &mut Self {
-        self.set_height_max_units(SizeUnits::Viewport(max_height_vp))
-    }
-
-    // set_size_max
-    fn set_size_max_units(&mut self, max_width: SizeUnits, max_height: SizeUnits) -> &mut Self {
-        self.set_width_max_units(max_width);
-        self.set_height_max_units(max_height);
-        self
-    }
-
-    pub fn set_size_max_auto(&mut self) -> &mut Self {
-        self.set_size_max_units(SizeUnits::Auto, SizeUnits::Auto)
-    }
-
-    pub fn set_size_max_pc(&mut self, max_width_pc: f32, max_height_pc: f32) -> &mut Self {
-        self.set_size_max_units(
-            SizeUnits::Percentage(max_width_pc),
-            SizeUnits::Percentage(max_height_pc),
-        )
-    }
-
-    pub fn set_size_max_vp(&mut self, max_width_vp: f32, max_height_vp: f32) -> &mut Self {
-        self.set_size_max_units(
-            SizeUnits::Viewport(max_width_vp),
-            SizeUnits::Viewport(max_height_vp),
         )
     }
 

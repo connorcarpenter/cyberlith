@@ -10,11 +10,11 @@ use ui_builder_config::{
     BaseNodeStyle, Button, ButtonStyle, NodeId, NodeStyle, Panel, PanelStyle, StyleId, Text,
     TextStyle, Textbox, TextboxStyle, UiConfig, Widget, WidgetKind, WidgetStyle,
 };
-use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
+use ui_layout::{Alignment, LayoutType, MarginUnits, SizeUnits, Solid};
 
 use crate::bits::{
     AlignmentBits, ButtonBits, ButtonStyleBits, ColorBits, LayoutTypeBits, MarginUnitsBits,
-    PanelBits, PanelStyleBits, PositionTypeBits, SizeUnitsBits, SolidBits, TextStyleBits,
+    PanelBits, PanelStyleBits, SizeUnitsBits, SolidBits, TextStyleBits,
     TextboxBits, TextboxStyleBits, UiAction, UiActionType, UiNodeBits, UiStyleBits, WidgetBits,
     WidgetStyleBits,
 };
@@ -404,15 +404,6 @@ fn set_textbox_navigation(
     }
 }
 
-impl Into<PositionType> for PositionTypeBits {
-    fn into(self) -> PositionType {
-        match self {
-            Self::Absolute => PositionType::Absolute,
-            Self::Relative => PositionType::Relative,
-        }
-    }
-}
-
 impl Into<SizeUnits> for SizeUnitsBits {
     fn into(self) -> SizeUnits {
         match self {
@@ -441,7 +432,7 @@ impl Into<MarginUnits> for MarginUnitsBits {
             }
             Self::Viewport(val) => {
                 let val: u64 = val.to();
-                let val: f32 = val as f32;
+                let val: f32 = (val as f32) / 10.0;
                 MarginUnits::Viewport(val)
             }
         }
@@ -488,13 +479,8 @@ impl Into<NodeStyle> for UiStyleBits {
             parent_style: self.parent_style.map(|val| StyleId::new(val as u32)),
             base: BaseNodeStyle {
                 widget_style: self.widget_style.into(),
-                position_type: self.position_type.map(Into::into),
                 width: self.width.map(Into::into),
                 height: self.height.map(Into::into),
-                width_min: self.width_min.map(Into::into),
-                width_max: self.width_max.map(Into::into),
-                height_min: self.height_min.map(Into::into),
-                height_max: self.height_max.map(Into::into),
                 margin_left: self.margin_left.map(Into::into),
                 margin_right: self.margin_right.map(Into::into),
                 margin_top: self.margin_top.map(Into::into),

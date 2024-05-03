@@ -1,4 +1,4 @@
-use ui_layout::{Alignment, MarginUnits, PositionType, SizeUnits, Solid};
+use ui_layout::{Alignment, MarginUnits, SizeUnits, Solid};
 
 use crate::{panel::PanelStyle, text::TextStyle, ButtonStyle, TextboxStyle, WidgetKind};
 
@@ -88,14 +88,8 @@ impl NodeStyle {
 pub struct BaseNodeStyle {
     pub widget_style: WidgetStyle,
 
-    pub position_type: Option<PositionType>,
-
     pub width: Option<SizeUnits>,
     pub height: Option<SizeUnits>,
-    pub width_min: Option<SizeUnits>,
-    pub width_max: Option<SizeUnits>,
-    pub height_min: Option<SizeUnits>,
-    pub height_max: Option<SizeUnits>,
 
     pub margin_left: Option<MarginUnits>,
     pub margin_right: Option<MarginUnits>,
@@ -113,13 +107,8 @@ impl BaseNodeStyle {
     pub fn merge(&mut self, other: &Self, inheriting: bool) {
         self.widget_style.merge(&other.widget_style, inheriting);
 
-        self.position_type = other.position_type.or(self.position_type);
         self.width = other.width.or(self.width);
         self.height = other.height.or(self.height);
-        self.width_min = other.width_min.or(self.width_min);
-        self.width_max = other.width_max.or(self.width_max);
-        self.height_min = other.height_min.or(self.height_min);
-        self.height_max = other.height_max.or(self.height_max);
         self.margin_left = other.margin_left.or(self.margin_left);
         self.margin_right = other.margin_right.or(self.margin_right);
         self.margin_top = other.margin_top.or(self.margin_top);
@@ -135,14 +124,9 @@ impl BaseNodeStyle {
     pub fn empty(widget_style: WidgetStyle) -> Self {
         Self {
             widget_style,
-            position_type: None,
 
             width: None,
             height: None,
-            width_min: None,
-            width_max: None,
-            height_min: None,
-            height_max: None,
 
             margin_left: None,
             margin_right: None,

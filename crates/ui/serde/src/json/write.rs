@@ -6,11 +6,11 @@ use ui_builder_config::{
     Button, ButtonStyle, Navigation, NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle,
     Textbox, TextboxStyle, UiConfig, UiNode, Widget, WidgetStyle,
 };
-use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
+use ui_layout::{Alignment, LayoutType, MarginUnits, SizeUnits, Solid};
 
 use super::{
     AlignmentJson, ColorJson, LayoutTypeJson, MarginUnitsJson, PanelJson, PanelStyleJson,
-    PositionTypeJson, SizeUnitsJson, SolidJson, TextJson, TextStyleJson, UiConfigJson, UiNodeJson,
+    SizeUnitsJson, SolidJson, TextJson, TextStyleJson, UiConfigJson, UiNodeJson,
     UiStyleJson, WidgetJson, WidgetStyleJson,
 };
 use crate::json::{ButtonJson, ButtonStyleJson, NavigationJson, TextboxJson, TextboxStyleJson};
@@ -56,14 +56,8 @@ impl From<&NodeStyle> for UiStyleJson {
             parent_style: style.parent_style.map(|id| id.as_usize()),
             widget_style: From::from(&style.base.widget_style),
 
-            position_type: style.base.position_type.map(From::from),
-
             width: style.base.width.map(From::from),
             height: style.base.height.map(From::from),
-            width_min: style.base.width_min.map(From::from),
-            width_max: style.base.width_max.map(From::from),
-            height_min: style.base.height_min.map(From::from),
-            height_max: style.base.height_max.map(From::from),
 
             margin_left: style.base.margin_left.map(From::from),
             margin_right: style.base.margin_right.map(From::from),
@@ -140,15 +134,6 @@ impl From<&TextboxStyle> for TextboxStyleJson {
             hover_color: style.hover_color.map(From::from),
             active_color: style.active_color.map(From::from),
             select_color: style.select_color.map(From::from),
-        }
-    }
-}
-
-impl From<PositionType> for PositionTypeJson {
-    fn from(position_type: PositionType) -> Self {
-        match position_type {
-            PositionType::Absolute => Self::Absolute,
-            PositionType::Relative => Self::Relative,
         }
     }
 }

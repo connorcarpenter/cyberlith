@@ -7,11 +7,11 @@ use ui_builder_config::{
     Button, ButtonStyle, Navigation, NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle,
     Textbox, TextboxStyle, UiConfig, UiNode, Widget, WidgetStyle,
 };
-use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
+use ui_layout::{Alignment, LayoutType, MarginUnits, SizeUnits, Solid};
 
 use crate::bits::{
     AlignmentBits, ButtonBits, ButtonStyleBits, ColorBits, LayoutTypeBits, MarginUnitsBits,
-    NavigationBits, PanelBits, PanelStyleBits, PositionTypeBits, SizeUnitsBits, SolidBits,
+    NavigationBits, PanelBits, PanelStyleBits, SizeUnitsBits, SolidBits,
     TextBits, TextStyleBits, TextboxBits, TextboxStyleBits, UiAction, UiActionType, UiNodeBits,
     UiStyleBits, WidgetBits, WidgetStyleBits,
 };
@@ -135,14 +135,8 @@ impl From<&NodeStyle> for UiStyleBits {
             parent_style: style.parent_style.map(|val| val.as_usize() as u8),
             widget_style: From::from(&style.base.widget_style),
 
-            position_type: style.base.position_type.map(From::from),
-
             width: style.base.width.map(From::from),
             height: style.base.height.map(From::from),
-            width_min: style.base.width_min.map(From::from),
-            width_max: style.base.width_max.map(From::from),
-            height_min: style.base.height_min.map(From::from),
-            height_max: style.base.height_max.map(From::from),
 
             margin_left: style.base.margin_left.map(From::from),
             margin_right: style.base.margin_right.map(From::from),
@@ -219,15 +213,6 @@ impl From<&TextboxStyle> for TextboxStyleBits {
             hover_color: style.hover_color.map(From::from),
             active_color: style.active_color.map(From::from),
             select_color: style.select_color.map(From::from),
-        }
-    }
-}
-
-impl From<PositionType> for PositionTypeBits {
-    fn from(position_type: PositionType) -> Self {
-        match position_type {
-            PositionType::Absolute => Self::Absolute,
-            PositionType::Relative => Self::Relative,
         }
     }
 }
@@ -311,15 +296,15 @@ impl From<MarginUnits> for MarginUnitsBits {
                         val
                     );
                 }
-                if val.fract() != 0.0 {
+                if (val * 10.0).fract() != 0.0 {
                     panic!(
                         "SizeUnits::Viewport value must be a whole number, got: {}",
                         val
                     );
                 }
 
-                let val = val as u64;
-                let val = UnsignedInteger::<7>::new(val);
+                let val = (val * 10.0) as u64;
+                let val = UnsignedInteger::<10>::new(val);
 
                 Self::Viewport(val)
             }

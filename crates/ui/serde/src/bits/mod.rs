@@ -24,6 +24,7 @@ use naia_serde::{SerdeInternal as Serde, UnsignedInteger, UnsignedVariableIntege
 
 use asset_id::AssetId;
 use ui_builder_config::{NodeId, UiConfig, WidgetKind};
+use ui_layout::MarginUnits;
 
 // Actions
 #[derive(Clone)]
@@ -57,14 +58,8 @@ pub(crate) struct UiStyleBits {
     parent_style: Option<u8>, // TODO: is this a good value type for this? how many styles are we likely to have?
     widget_style: WidgetStyleBits,
 
-    position_type: Option<PositionTypeBits>,
-
     width: Option<SizeUnitsBits>,
     height: Option<SizeUnitsBits>,
-    width_min: Option<SizeUnitsBits>,
-    width_max: Option<SizeUnitsBits>,
-    height_min: Option<SizeUnitsBits>,
-    height_max: Option<SizeUnitsBits>,
 
     margin_left: Option<MarginUnitsBits>,
     margin_right: Option<MarginUnitsBits>,
@@ -87,13 +82,13 @@ pub(crate) struct PanelStyleBits {
 
     layout_type: Option<LayoutTypeBits>,
 
-    padding_left: Option<SizeUnitsBits>,
-    padding_right: Option<SizeUnitsBits>,
-    padding_top: Option<SizeUnitsBits>,
-    padding_bottom: Option<SizeUnitsBits>,
+    padding_left: Option<MarginUnitsBits>,
+    padding_right: Option<MarginUnitsBits>,
+    padding_top: Option<MarginUnitsBits>,
+    padding_bottom: Option<MarginUnitsBits>,
 
-    row_between: Option<SizeUnitsBits>,
-    col_between: Option<SizeUnitsBits>,
+    row_between: Option<MarginUnitsBits>,
+    col_between: Option<MarginUnitsBits>,
     children_halign: Option<AlignmentBits>,
     children_valign: Option<AlignmentBits>,
 }
@@ -129,12 +124,6 @@ pub(crate) enum WidgetStyleBits {
 }
 
 #[derive(Serde, Clone, PartialEq)]
-pub(crate) enum PositionTypeBits {
-    Absolute,
-    Relative,
-}
-
-#[derive(Serde, Clone, PartialEq)]
 pub(crate) enum SizeUnitsBits {
     Percent(UnsignedInteger<7>),
     Viewport(UnsignedInteger<10>),
@@ -144,7 +133,7 @@ pub(crate) enum SizeUnitsBits {
 #[derive(Serde, Clone, PartialEq)]
 pub(crate) enum MarginUnitsBits {
     Percent(UnsignedInteger<7>),        // TODO: is this a good value type for this?
-    Viewport(UnsignedInteger<7>),       // TODO: is this a good value type for this?
+    Viewport(UnsignedInteger<10>),       // TODO: is this a good value type for this?
 }
 
 #[derive(Serde, Clone, PartialEq)]

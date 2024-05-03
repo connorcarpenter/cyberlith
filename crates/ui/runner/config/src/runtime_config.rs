@@ -1,6 +1,5 @@
 use std::{collections::HashMap, slice::Iter};
 
-use crate::styles::compute_styles;
 use asset_id::AssetId;
 use render_api::base::Color;
 use ui_builder_config::{
@@ -8,10 +7,11 @@ use ui_builder_config::{
     TextboxStyle, UiConfig, UiNode, WidgetKind, WidgetStyle,
 };
 use ui_layout::{
-    Alignment, LayoutType, MarginUnits, NodeId, NodeStore, PositionType, SizeUnits, Solid,
+    Alignment, LayoutType, MarginUnits, NodeId, NodeStore, SizeUnits, Solid,
     TextMeasurer,
 };
 
+use crate::styles::compute_styles;
 use crate::text_measure_raw_size;
 
 pub struct UiRuntimeConfig {
@@ -292,19 +292,6 @@ impl NodeStore for UiRuntimeConfig {
         output
     }
 
-    // all of these unwrap_or_default
-    fn node_position_type(&self, id: &NodeId) -> PositionType {
-        let mut output = PositionType::default();
-
-        if let Some(node_style) = self.node_style(id) {
-            if let Some(layout_type) = node_style.position_type {
-                output = layout_type;
-            }
-        }
-
-        output
-    }
-
     // all of these unwrap_or(SizeUnits::Percentage(100.0))
     fn node_width(&self, id: &NodeId) -> SizeUnits {
         let mut output = SizeUnits::default();
@@ -333,74 +320,6 @@ impl NodeStore for UiRuntimeConfig {
         if let Some(node_style) = self.node_style(id) {
             if let Some(height) = node_style.height {
                 output = height;
-            }
-        }
-
-        output
-    }
-
-    // all of these unwrap_or(SizeUnits::Pixels(0.0))
-    fn node_width_min(&self, id: &NodeId) -> SizeUnits {
-        let mut output = SizeUnits::default();
-
-        if self.node_kind(id).is_text() {
-            return output;
-        }
-
-        if let Some(node_style) = self.node_style(id) {
-            if let Some(width_min) = node_style.width_min {
-                output = width_min;
-            }
-        }
-
-        output
-    }
-
-    // all of these unwrap_or(SizeUnits::Pixels(0.0))
-    fn node_height_min(&self, id: &NodeId) -> SizeUnits {
-        let mut output = SizeUnits::default();
-
-        if self.node_kind(id).is_text() {
-            return output;
-        }
-
-        if let Some(node_style) = self.node_style(id) {
-            if let Some(height_min) = node_style.height_min {
-                output = height_min;
-            }
-        }
-
-        output
-    }
-
-    // all of these unwrap_or(SizeUnits::Pixels(f32::MAX))
-    fn node_width_max(&self, id: &NodeId) -> SizeUnits {
-        let mut output = SizeUnits::default();
-
-        if self.node_kind(id).is_text() {
-            return output;
-        }
-
-        if let Some(node_style) = self.node_style(id) {
-            if let Some(width_max) = node_style.width_max {
-                output = width_max;
-            }
-        }
-
-        output
-    }
-
-    // all of these unwrap_or(SizeUnits::Pixels(f32::MAX))
-    fn node_height_max(&self, id: &NodeId) -> SizeUnits {
-        let mut output = SizeUnits::default();
-
-        if self.node_kind(id).is_text() {
-            return output;
-        }
-
-        if let Some(node_style) = self.node_style(id) {
-            if let Some(height_max) = node_style.height_max {
-                output = height_max;
             }
         }
 
@@ -460,8 +379,8 @@ impl NodeStore for UiRuntimeConfig {
     }
 
     // all of these unwrap_or_default
-    fn node_padding_left(&self, id: &NodeId) -> SizeUnits {
-        let mut output = SizeUnits::default();
+    fn node_padding_left(&self, id: &NodeId) -> MarginUnits {
+        let mut output = MarginUnits::default();
 
         if !self.node_kind(id).has_children() {
             return output;
@@ -477,8 +396,8 @@ impl NodeStore for UiRuntimeConfig {
     }
 
     // all of these unwrap_or_default
-    fn node_padding_right(&self, id: &NodeId) -> SizeUnits {
-        let mut output = SizeUnits::default();
+    fn node_padding_right(&self, id: &NodeId) -> MarginUnits {
+        let mut output = MarginUnits::default();
 
         if !self.node_kind(id).has_children() {
             return output;
@@ -494,8 +413,8 @@ impl NodeStore for UiRuntimeConfig {
     }
 
     // all of these unwrap_or_default
-    fn node_padding_top(&self, id: &NodeId) -> SizeUnits {
-        let mut output = SizeUnits::default();
+    fn node_padding_top(&self, id: &NodeId) -> MarginUnits {
+        let mut output = MarginUnits::default();
 
         if !self.node_kind(id).has_children() {
             return output;
@@ -511,8 +430,8 @@ impl NodeStore for UiRuntimeConfig {
     }
 
     // all of these unwrap_or_default
-    fn node_padding_bottom(&self, id: &NodeId) -> SizeUnits {
-        let mut output = SizeUnits::default();
+    fn node_padding_bottom(&self, id: &NodeId) -> MarginUnits {
+        let mut output = MarginUnits::default();
 
         if !self.node_kind(id).has_children() {
             return output;
@@ -528,8 +447,8 @@ impl NodeStore for UiRuntimeConfig {
     }
 
     // all of these unwrap_or_default
-    fn node_row_between(&self, id: &NodeId) -> SizeUnits {
-        let mut output = SizeUnits::default();
+    fn node_row_between(&self, id: &NodeId) -> MarginUnits {
+        let mut output = MarginUnits::default();
 
         if !self.node_kind(id).has_children() {
             return output;
@@ -545,8 +464,8 @@ impl NodeStore for UiRuntimeConfig {
     }
 
     // all of these unwrap_or_default
-    fn node_col_between(&self, id: &NodeId) -> SizeUnits {
-        let mut output = SizeUnits::default();
+    fn node_col_between(&self, id: &NodeId) -> MarginUnits {
+        let mut output = MarginUnits::default();
 
         if !self.node_kind(id).has_children() {
             return output;
