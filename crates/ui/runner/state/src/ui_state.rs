@@ -1,4 +1,4 @@
-use logging::warn;
+use logging::{info, warn};
 
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
@@ -281,7 +281,8 @@ impl UiState {
         text_measurer: &dyn TextMeasurer,
         viewport: &Viewport,
     ) {
-        //info!("recalculating layout. viewport_width: {:?}, viewport_height: {:?}", viewport.width, viewport.height);
+        info!("---");
+        info!("recalculating layout. viewport_width: {:?}, viewport_height: {:?}", viewport.width, viewport.height);
 
         let last_viewport_width: f32 = viewport.width as f32;
         let last_viewport_height: f32 = viewport.height as f32;
@@ -303,7 +304,9 @@ impl UiState {
             self,
             &UiRuntimeConfig::ROOT_NODE_ID,
             (0.0, 0.0, 10.0),
-        )
+        );
+
+        info!("---");
 
         // print_node(&Self::ROOT_PANEL_ID, &self.cache, &self.panels, true, false, "".to_string());
     }
@@ -371,6 +374,12 @@ fn finalize_rects(
 
             // update children
             let child_ids = panel_ref.children.clone();
+            if child_position.2 < 15.0 {
+                info!(
+                    "id: {:?}, child_position: {:?}, width: {:?}, height: {:?}",
+                    id, child_position, width, height
+                );
+            }
             for child_id in child_ids {
                 finalize_rects(ui_config, ui_state, &child_id, child_position);
             }

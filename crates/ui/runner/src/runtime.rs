@@ -78,7 +78,7 @@ impl UiRuntime {
             let Projection::Perspective(perspective) = &self.camera.projection else {
                 panic!("expected perspective projection");
             };
-            let distance = ((viewport.width.min(viewport.height) as f32) / 2.0)
+            let distance = ((viewport.height as f32) / 2.0)
                 / f32::tan(perspective.fov / 2.0);
             //let distance = 1000.0;
             let x = viewport.width as f32 * 0.5;

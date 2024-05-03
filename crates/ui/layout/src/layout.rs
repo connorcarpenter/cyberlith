@@ -4,9 +4,6 @@ use logging::{info, warn};
 
 use crate::{percentage_calc, LayoutCache, LayoutType, NodeId, NodeStore, Size, SizeUnits, Solid, TextMeasurer, UiVisibilityStore, MarginUnits};
 
-const DEFAULT_MIN: f32 = -f32::MAX;
-const DEFAULT_MAX: f32 = f32::MAX;
-
 /// Represents the type of a stretch item. Either space-before, size (main/cross), or space-after.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum ItemType {
@@ -79,8 +76,11 @@ pub(crate) fn layout(
 ) -> Size {
 
     if node_is_root {
+        info!("init_parent_cross: {:?}", init_parent_cross);
         init_parent_main = viewport_size.1;
         init_parent_cross = viewport_size.0;
+
+        info!("init_parent_cross: {:?}", init_parent_cross);
     }
 
     let init_parent_main = init_parent_main;
@@ -111,24 +111,15 @@ pub(crate) fn layout(
     } else {
         node.main(store, parent_layout_type)
     };
-    let cross = if node_is_root {
-        SizeUnits::Viewport(100.0)
-    } else {
-        node.cross(store, parent_layout_type)
-    };
-    let main_for_children = if node_is_root {
-        SizeUnits::Viewport(100.0)
-    } else {
-        node.main(store, layout_type)
-    };
-    let cross_for_children = if node_is_root {
-        SizeUnits::Viewport(100.0)
-    } else {
-        node.cross(store, layout_type)
-    };
+    if node_is_root {
+        info!("main = {:?}", main);
+        info!("viewport_size = {:?}, parent_layout_type = {:?}", viewport_size, parent_layout_type);
+    }
 
     let viewport_main = viewport_size.main(parent_layout_type);
-    let viewport_cross = viewport_size.cross(parent_layout_type);
+    if node_is_root {
+        info!("viewport_main = {}", viewport_main);
+    }
 
     // Compute main-axis size.
     let mut computed_main = match main {
@@ -137,6 +128,9 @@ pub(crate) fn layout(
         }
         SizeUnits::Viewport(val) => percentage_calc(val, viewport_main, 0.0).round(),
     };
+    if node_is_root {
+        info!("computed_main = {}, init_parent_cross = {}", computed_main, init_parent_cross);
+    }
 
     // Cross size is determined by the parent.
     let mut computed_cross = init_parent_cross;
@@ -159,12 +153,6 @@ pub(crate) fn layout(
     // TODO: Figure out how to constrain content size on cross axis.
 
     // Return early if there's no children to layout.
-    apply_solid_layout(
-        node,
-        store,
-        &mut computed_main,
-        &mut computed_cross
-    );
 
     if num_children == 0 {
         apply_text_layout(
@@ -201,11 +189,17 @@ pub(crate) fn layout(
 
     // Determine the parent_main/cross size to pass to the children based on the layout type of the parent and the node.
     // i.e. if the parent layout type and the node layout type are different, swap the main and the cross axes.
-    let (mut parent_main, mut parent_cross) = if parent_layout_type == layout_type {
+    if node_is_root {
+        info!("computed main = {}, computed_cross = {}", computed_main, computed_cross);
+    }
+    let (parent_main, parent_cross) = if parent_layout_type == layout_type {
         (computed_main, computed_cross)
     } else {
         (computed_cross, computed_main)
     };
+    if node_is_root {
+        info!("parent_main = {}", parent_main);
+    }
 
     // Sum of all space and size flex factors on the main-axis of the node.
     let mut main_flex_sum = 0.0;
@@ -273,11 +267,13 @@ pub(crate) fn layout(
             child_margin_cross_before.to_px(viewport_cross, parent_cross, parent_padding_cross);
 
         // Compute fixed-size child_cross.
+        let mut computed_child_main = parent_main;
         let mut computed_child_cross = child_cross.to_px(
             viewport_cross,
             parent_cross,
             parent_padding_cross,
         );
+        apply_solid_layout(child, store, &mut computed_child_main, &mut computed_child_cross);
 
         // Compute fixed-size child cross_after.
         let computed_child_cross_after =
@@ -290,8 +286,6 @@ pub(crate) fn layout(
         // Compute fixed-size child main_after.
         let computed_child_main_after = child_margin_main_after.to_px(viewport_main, parent_main, parent_padding_main) + node_child_main_between.map(|su| su.to_px(viewport_main, parent_main, parent_padding_main)).unwrap_or(0.0);
 
-        let computed_child_main;
-
         // Compute fixed-size child main.
         {
             let child_size = layout(
@@ -299,7 +293,7 @@ pub(crate) fn layout(
                 child,
                 layout_type,
                 viewport_size,
-                parent_main,
+                computed_child_main,
                 computed_child_cross,
                 cache,
                 store,
@@ -356,44 +350,30 @@ pub(crate) fn layout(
             cross_axis_stretch_nodes.push(StretchItem::new(Some(index), 1.0, ItemType::After));
         }
 
-        loop {
-            // If all stretch items are frozen, exit the loop.
-            if cross_axis_stretch_nodes.iter().all(|item| item.frozen) {
-                break;
-            }
+        // Compute free space in the cross axis.
+        let child_cross_free_space =
+            parent_cross - child.cross_before - child.cross - child.cross_after;
 
-            // Compute free space in the cross axis.
-            let child_cross_free_space =
-                parent_cross - child.cross_before - child.cross - child.cross_after;
+        for item in cross_axis_stretch_nodes
+            .iter_mut()
+        {
+            let actual_cross = (item.factor * child_cross_free_space / cross_flex_sum).round();
+            item.computed = actual_cross;
+        }
 
-            for item in cross_axis_stretch_nodes
-                .iter_mut()
-                .filter(|item| !item.frozen)
-            {
-                let actual_cross = (item.factor * child_cross_free_space / cross_flex_sum).round();
-                item.computed = actual_cross;
-            }
+        for item in cross_axis_stretch_nodes
+            .iter_mut()
+            .filter(|item| !item.frozen)
+        {
+            cross_flex_sum -= item.factor;
 
-            for item in cross_axis_stretch_nodes
-                .iter_mut()
-                .filter(|item| !item.frozen)
-            {
-                // Freeze over-stretched items.
-                item.frozen = true; // TODO: maybe this should be false
+            match item.item_type {
+                ItemType::Before => {
+                    child.cross_before += item.computed;
+                }
 
-                // If the item is frozen, adjust the used_space and sum of cross stretch factors.
-                if item.frozen {
-                    cross_flex_sum -= item.factor;
-
-                    match item.item_type {
-                        ItemType::Before => {
-                            child.cross_before += item.computed;
-                        }
-
-                        ItemType::After => {
-                            child.cross_after += item.computed;
-                        }
-                    }
+                ItemType::After => {
+                    child.cross_after += item.computed;
                 }
             }
         }
@@ -403,51 +383,48 @@ pub(crate) fn layout(
     }
 
     // Compute flexible space and size on the main axis for parent-directed children.
-    if !main_axis_stretch_nodes.is_empty() {
-        loop {
-            // If all stretch items are frozen, exit the loop.
-            if main_axis_stretch_nodes.iter().all(|item| item.frozen) {
-                break;
+    {
+        // Calculate free space on the main-axis.
+        let free_main_space = parent_main - children_main_sum;
+        if node_is_root {
+            info!("free_main_space = {}, parent_main = {}, children_main_sum = {}", free_main_space, parent_main, children_main_sum);
+        }
+
+        for item in main_axis_stretch_nodes
+            .iter_mut()
+        {
+            let actual_main = (item.factor * free_main_space / main_flex_sum).round();
+
+            item.computed = actual_main;
+        }
+
+        for item in main_axis_stretch_nodes
+            .iter_mut()
+        {
+            if node_is_root {
+                info!("calculating main_axis_stretch. main_flex_sum: {}, children_main_sum: {}", main_flex_sum, children_main_sum);
             }
 
-            // Calculate free space on the main-axis.
-            let free_main_space = parent_main - children_main_sum;
+            // adjust the used_space and sum of cross stretch factors.
+            main_flex_sum -= item.factor;
+            children_main_sum += item.computed;
 
-            for item in main_axis_stretch_nodes
-                .iter_mut()
-                .filter(|item| !item.frozen)
-            {
-                let actual_main = (item.factor * free_main_space / main_flex_sum).round();
+            if let Some(item_id) = item.index_opt {
+                let child = &mut children[item_id];
+                match item.item_type {
+                    ItemType::Before => {
+                        child.main_before += item.computed;
+                    }
 
-                item.computed = actual_main;
-            }
-
-            for item in main_axis_stretch_nodes
-                .iter_mut()
-                .filter(|item| !item.frozen)
-            {
-                // Freeze over-stretched items.
-                item.frozen = true; // TODO: maybe this should be false?
-
-                // If the item is frozen, adjust the used_space and sum of cross stretch factors.
-                if item.frozen {
-                    main_flex_sum -= item.factor;
-                    children_main_sum += item.computed;
-
-                    if let Some(item_id) = item.index_opt {
-                        let child = &mut children[item_id];
-                        match item.item_type {
-                            ItemType::Before => {
-                                child.main_before += item.computed;
-                            }
-
-                            ItemType::After => {
-                                child.main_after += item.computed;
-                            }
-                        }
+                    ItemType::After => {
+                        child.main_after += item.computed;
                     }
                 }
             }
+        }
+
+        if node_is_root {
+            info!("calculating main_axis_stretch. main_flex_sum: {}, children_main_sum: {}", main_flex_sum, children_main_sum);
         }
     }
 
@@ -455,6 +432,10 @@ pub(crate) fn layout(
     let mut main_pos = 0.0;
     for child in children.iter() {
         main_pos += child.main_before;
+
+        if node_is_root {
+            info!("child.main = {}, child.cross = {}", child.main, child.cross);
+        }
         cache.set_rect(
             child.node,
             layout_type,
@@ -463,6 +444,7 @@ pub(crate) fn layout(
             child.main,
             child.cross,
         );
+
         main_pos += child.main + child.main_after;
     }
 
@@ -472,8 +454,6 @@ pub(crate) fn layout(
             std::mem::swap(&mut children_main_sum, &mut children_cross_max)
         };
     }
-
-    apply_solid_layout(node, store, &mut computed_main, &mut computed_cross);
 
     // Return the computed size, propagating it back up the tree.
     Size {
@@ -541,23 +521,17 @@ trait ViewportExt {
 }
 
 impl ViewportExt for (f32, f32) {
-    fn main(&self, _layout_type: LayoutType) -> f32 {
-        // match layout_type {
-        //     LayoutType::Row => self.0,
-        //     LayoutType::Column => self.1,
-        // }
-
-        // viewport_min for both...
-        self.0.min(self.1)
+    fn main(&self, layout_type: LayoutType) -> f32 {
+        match layout_type {
+            LayoutType::Row => self.0,
+            LayoutType::Column => self.1,
+        }
     }
 
-    fn cross(&self, _layout_type: LayoutType) -> f32 {
-        // match layout_type {
-        //     LayoutType::Row => self.1,
-        //     LayoutType::Column => self.0,
-        // }
-
-        // viewport_min for both...
-        self.0.min(self.1)
+    fn cross(&self, layout_type: LayoutType) -> f32 {
+        match layout_type {
+            LayoutType::Row => self.1,
+            LayoutType::Column => self.0,
+        }
     }
 }

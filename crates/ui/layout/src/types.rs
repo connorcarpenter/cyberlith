@@ -165,43 +165,6 @@ impl SizeUnits {
         }
     }
 
-    pub fn to_px_clamped(
-        &self,
-        viewport_value: f32,
-        parent_value: f32,
-        parent_padding: f32,
-        min: SizeUnits,
-        max: SizeUnits,
-    ) -> f32 {
-        let min = min.to_px(viewport_value, parent_value, parent_padding);
-        let max = max.to_px(viewport_value, parent_value, parent_padding);
-
-        match self {
-            SizeUnits::Percentage(percentage) => {
-                percentage_calc(*percentage, parent_value, parent_padding)
-                    .min(max)
-                    .max(min)
-            }
-            SizeUnits::Viewport(percentage) => percentage_calc(*percentage, viewport_value, 0.0)
-                .min(max)
-                .max(min),
-        }
-    }
-
-    pub fn clamp(&self, min: SizeUnits, max: SizeUnits) -> Self {
-        match (self, min, max) {
-            (
-                SizeUnits::Percentage(val),
-                SizeUnits::Percentage(min),
-                SizeUnits::Percentage(max),
-            ) => SizeUnits::Percentage(val.min(max).max(min)),
-            (SizeUnits::Viewport(val), SizeUnits::Viewport(min), SizeUnits::Viewport(max)) => {
-                SizeUnits::Viewport(val.min(max).max(min))
-            }
-            _ => *self,
-        }
-    }
-
     /// Returns true if the value is a percentage.
     pub fn is_percentage(&self) -> bool {
         matches!(self, SizeUnits::Percentage(_))

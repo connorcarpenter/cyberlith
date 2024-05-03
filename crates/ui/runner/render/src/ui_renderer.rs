@@ -1,4 +1,4 @@
-use logging::warn;
+use logging::{info, warn};
 
 use asset_loader::{AssetHandle, AssetManager, IconData, UiTextMeasurer};
 use asset_render::AssetRender;
@@ -255,6 +255,9 @@ fn draw_ui_panel(
                 panic!("partial background_alpha not implemented yet!");
             }
             let box_handle = ui_state.globals.get_box_mesh_handle().unwrap();
+            // if *id == NodeId::new(1) {
+            //     info!("drawing panel: {:?}", transform);
+            // }
             render_frame.draw_mesh(Some(&RenderLayer::UI), box_handle, &mat_handle, &transform);
         }
     } else {
