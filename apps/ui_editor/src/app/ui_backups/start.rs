@@ -60,7 +60,7 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
             .set_solid_fit()
             .set_aspect_ratio(16.0, 4.)
             .set_padding_px(10.0, 10.0, 10.0, 10.0)
-            .set_margin_right_px(40.0);
+            .set_margin_right_vp(4.0);
     });
     let register_button_style = ui_config.create_button_style(|s| {
         s
@@ -74,7 +74,7 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
             .set_solid_fit()
             .set_aspect_ratio(16.0, 4.)
             .set_padding_px(10.0, 10.0, 10.0, 10.0)
-            .set_margin_left_px(40.0);
+            .set_margin_left_vp(4.0);
     });
 
     // nodes

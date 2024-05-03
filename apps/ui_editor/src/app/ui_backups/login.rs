@@ -64,14 +64,14 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
     let heading_text_style = ui_config.create_text_style(|s| {
         s.set_background_alpha(0.)
             .set_size_vp(7.0)
-            .set_margin_left_px(20.0)
+            .set_margin_left_vp(2.0)
             .set_self_halign(Alignment::Start);
     });
     let base_button_text_style = ui_config.create_text_style(|s| {
         s.set_size_vp(5.0)
             .set_self_halign(Alignment::Center)
             .set_self_valign(Alignment::Center)
-            .set_margin_px(10.0, 10.0, 10.0, 10.0);
+            .set_margin_vp(1.0, 1.0, 1.0, 1.0);
     });
     let base_button_style = ui_config.create_button_style(|s| {
         s.set_background_color(Color::DARK_GRAY)
@@ -82,19 +82,19 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
         s.set_parent_style(base_button_style)
             .set_height_pc(10.0)
             .set_self_halign(Alignment::Start)
-            .set_margin_left_px(40.);
+            .set_margin_left_vp(4.);
     });
     let register_button_style = ui_config.create_button_style(|s| {
         s.set_parent_style(base_button_style)
             .set_height_pc(100.)
             .set_self_halign(Alignment::End)
-            .set_margin_right_px(10.0);
+            .set_margin_right_vp(1.0);
     });
     let base_label_style = ui_config.create_text_style(|s| {
         s.set_background_alpha(0.)
             .set_size_vp(5.)
             .set_self_halign(Alignment::Start)
-            .set_margin_left_px(40.0);
+            .set_margin_left_vp(4.0);
     });
     let base_textbox_style = ui_config.create_textbox_style(|s| {
         s.set_background_color(Color::GRAY)
@@ -103,7 +103,7 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
             .set_selection_color(Color::DARK_BLUE)
             .set_size_pc(45., 10.)
             .set_self_halign(Alignment::Start)
-            .set_margin_left_px(40.0);
+            .set_margin_left_vp(4.0);
     });
 
     // nodes

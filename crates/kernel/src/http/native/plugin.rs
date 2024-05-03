@@ -5,7 +5,7 @@ use bevy_app::{App, Plugin, Update};
 use crate::http::{CookieStore, HttpClient};
 
 pub struct HttpClientPlugin {
-    cookie_store: Arc<RwLock<CookieStore>>,
+    cookie_store_opt: Option<Arc<RwLock<CookieStore>>>,
 }
 
 impl Default for HttpClientPlugin {
@@ -15,8 +15,8 @@ impl Default for HttpClientPlugin {
 }
 
 impl HttpClientPlugin {
-    pub fn new(cookie_store: Arc<RwLock<CookieStore>>) -> Self {
-        Self { cookie_store }
+    pub fn new(cookie_store_opt: Option<Arc<RwLock<CookieStore>>>) -> Self {
+        Self { cookie_store_opt }
     }
 }
 
@@ -25,7 +25,7 @@ impl Plugin for HttpClientPlugin {
         if !app.is_plugin_added::<bevy_core::TaskPoolPlugin>() {
             app.add_plugins(bevy_core::TaskPoolPlugin::default());
         }
-        app.insert_resource(HttpClient::new(self.cookie_store.clone()))
+        app.insert_resource(HttpClient::new(self.cookie_store_opt.clone()))
             .add_systems(Update, HttpClient::update_system);
     }
 }

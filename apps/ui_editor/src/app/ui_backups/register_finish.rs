@@ -71,7 +71,7 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
         s.set_size_vp(5.0)
             .set_self_halign(Alignment::Center)
             .set_self_valign(Alignment::Center)
-            .set_margin_px(10.0, 10.0, 10.0, 10.0);
+            .set_margin_vp(1.0, 1.0, 1.0, 1.0);
     });
     let base_button_style = ui_config.create_button_style(|s| {
         s.set_background_color(Color::DARK_GRAY)

@@ -144,7 +144,6 @@ pub(crate) enum SizeUnitsJson {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "lowercase")]
 pub(crate) enum MarginUnitsJson {
-    Pixels(f32),
     Percentage(f32),
     Viewport(f32),
 }

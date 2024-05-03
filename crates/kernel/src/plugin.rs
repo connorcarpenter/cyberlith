@@ -24,7 +24,7 @@ impl Plugin for KernelPlugin {
                 let http_client_plugin = HttpClientPlugin::default();
                 app.add_plugins(http_client_plugin);
             } else {
-                let http_client_plugin = HttpClientPlugin::new(self.cookie_store_opt.as_ref().unwrap().clone());
+                let http_client_plugin = HttpClientPlugin::new(self.cookie_store_opt.clone());
                 app.add_plugins(http_client_plugin);
             }
         }

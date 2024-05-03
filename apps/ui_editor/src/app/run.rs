@@ -11,7 +11,7 @@ use crate::app::ui::SubmitButtonEvent;
 pub fn run() {
     let mut app = App::default();
 
-    app.add_plugins(EnginePlugin)
+    app.add_plugins(EnginePlugin::new(None))
         // Add Window Settings Plugin
         .insert_resource(WindowSettings {
             title: "UI Editor".to_string(),

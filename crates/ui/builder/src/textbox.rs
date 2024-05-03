@@ -390,10 +390,6 @@ impl<'a> TextboxStyleMut<'a> {
         self
     }
 
-    pub fn set_margin_left_px(&mut self, left_px: f32) -> &mut Self {
-        self.set_margin_left_units(MarginUnits::Pixels(left_px))
-    }
-
     pub fn set_margin_left_pc(&mut self, left_pc: f32) -> &mut Self {
         self.set_margin_left_units(MarginUnits::Percentage(left_pc))
     }
@@ -406,10 +402,6 @@ impl<'a> TextboxStyleMut<'a> {
     fn set_margin_right_units(&mut self, right: MarginUnits) -> &mut Self {
         self.get_style_mut().base.margin_right = Some(right);
         self
-    }
-
-    pub fn set_margin_right_px(&mut self, right_px: f32) -> &mut Self {
-        self.set_margin_right_units(MarginUnits::Pixels(right_px))
     }
 
     pub fn set_margin_right_pc(&mut self, right_pc: f32) -> &mut Self {
@@ -426,10 +418,6 @@ impl<'a> TextboxStyleMut<'a> {
         self
     }
 
-    pub fn set_margin_top_px(&mut self, top_px: f32) -> &mut Self {
-        self.set_margin_top_units(MarginUnits::Pixels(top_px))
-    }
-
     pub fn set_margin_top_pc(&mut self, top_pc: f32) -> &mut Self {
         self.set_margin_top_units(MarginUnits::Percentage(top_pc))
     }
@@ -444,10 +432,6 @@ impl<'a> TextboxStyleMut<'a> {
         self
     }
 
-    pub fn set_margin_bottom_px(&mut self, bottom_px: f32) -> &mut Self {
-        self.set_margin_bottom_units(MarginUnits::Pixels(bottom_px))
-    }
-
     pub fn set_margin_bottom_pc(&mut self, bottom_pc: f32) -> &mut Self {
         self.set_margin_bottom_units(MarginUnits::Percentage(bottom_pc))
     }
@@ -457,13 +441,6 @@ impl<'a> TextboxStyleMut<'a> {
     }
 
     // set_margin
-
-    pub fn set_margin_px(&mut self, left: f32, right: f32, top: f32, bottom: f32) -> &mut Self {
-        self.set_margin_left_px(left)
-            .set_margin_right_px(right)
-            .set_margin_top_px(top)
-            .set_margin_bottom_px(bottom)
-    }
 
     pub fn set_margin_pc(&mut self, left: f32, right: f32, top: f32, bottom: f32) -> &mut Self {
         self.set_margin_left_pc(left)

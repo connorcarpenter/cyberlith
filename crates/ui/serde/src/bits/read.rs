@@ -439,11 +439,6 @@ impl Into<SizeUnits> for SizeUnitsBits {
 impl Into<MarginUnits> for MarginUnitsBits {
     fn into(self) -> MarginUnits {
         match self {
-            Self::Pixels(val) => {
-                let val: u64 = val.to();
-                let val: f32 = val as f32;
-                MarginUnits::Pixels(val)
-            }
             Self::Percent(val) => {
                 let val: u64 = val.to();
                 let val: f32 = val as f32;

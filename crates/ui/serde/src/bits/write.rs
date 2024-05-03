@@ -298,23 +298,6 @@ impl From<SizeUnits> for SizeUnitsBits {
 impl From<MarginUnits> for MarginUnitsBits {
     fn from(margin_units: MarginUnits) -> Self {
         match margin_units {
-            MarginUnits::Pixels(val) => {
-                // validate
-                if val.fract() != 0.0 {
-                    panic!(
-                        "SizeUnits::Pixels value must be a whole number, got: {}",
-                        val
-                    );
-                }
-                if val < 0.0 {
-                    panic!("SizeUnits::Pixels value must be positive, got: {}", val);
-                }
-
-                let val = val as u64;
-                let val = UnsignedVariableInteger::<7>::new(val);
-
-                Self::Pixels(val)
-            }
             MarginUnits::Percentage(val) => {
                 // validate
                 if val < 0.0 || val > 100.0 {

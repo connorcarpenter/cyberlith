@@ -1,3 +1,28 @@
+
+#[derive(Eq, PartialEq, Clone, Copy, Default)]
+pub enum Alignment {
+    Start,
+    #[default]
+    Center,
+    End,
+}
+
+impl Alignment {
+    pub(crate) fn has_start(&self) -> bool {
+        match self {
+            Alignment::Start | Alignment::Center => true,
+            _ => false,
+        }
+    }
+
+    pub(crate) fn has_end(&self) -> bool {
+        match self {
+            Alignment::End | Alignment::Center => true,
+            _ => false,
+        }
+    }
+}
+
 /// The layout type determines how the nodes will position its parent-directed children.
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LayoutType {
@@ -36,8 +61,7 @@ pub enum PositionType {
 /// Units which describe spacing and size.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum MarginUnits {
-    /// A number of logical pixels.
-    Pixels(f32),
+
     /// A percentage of the parent dimension.
     ///
     /// A percentage of the (parent's width - parent's padding - margin) when applied to left, right properties.
@@ -53,7 +77,7 @@ pub enum MarginUnits {
 
 impl Default for MarginUnits {
     fn default() -> Self {
-        MarginUnits::Pixels(0.0)
+        MarginUnits::Percentage(0.0)
     }
 }
 
@@ -62,7 +86,6 @@ impl MarginUnits {
     /// Returns the units converted to pixels or a provided default.
     pub fn to_px(&self, viewport_value: f32, parent_value: f32, parent_padding: f32) -> f32 {
         match self {
-            MarginUnits::Pixels(pixels) => *pixels,
             MarginUnits::Percentage(percentage) => {
                 percentage_calc(*percentage, parent_value, parent_padding)
             }
@@ -82,7 +105,6 @@ impl MarginUnits {
         let max = max.to_px(viewport_value, parent_value, parent_padding);
 
         match self {
-            MarginUnits::Pixels(pixels) => pixels.min(max).max(min),
             MarginUnits::Percentage(percentage) => {
                 percentage_calc(*percentage, parent_value, parent_padding)
                     .min(max)
@@ -96,9 +118,6 @@ impl MarginUnits {
 
     pub fn clamp(&self, min: MarginUnits, max: MarginUnits) -> Self {
         match (self, min, max) {
-            (MarginUnits::Pixels(val), MarginUnits::Pixels(min), MarginUnits::Pixels(max)) => {
-                MarginUnits::Pixels(val.min(max).max(min))
-            }
             (
                 MarginUnits::Percentage(val),
                 MarginUnits::Percentage(min),
@@ -111,11 +130,6 @@ impl MarginUnits {
             ) => MarginUnits::Viewport(val.min(max).max(min)),
             _ => *self,
         }
-    }
-
-    /// Returns true if the value is in pixels.
-    pub fn is_pixels(&self) -> bool {
-        matches!(self, MarginUnits::Pixels(_))
     }
 
     /// Returns true if the value is a percentage.

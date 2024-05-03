@@ -351,7 +351,6 @@ impl Into<SizeUnits> for SizeUnitsJson {
 impl Into<MarginUnits> for MarginUnitsJson {
     fn into(self) -> MarginUnits {
         match self {
-            Self::Pixels(pixels) => MarginUnits::Pixels(pixels),
             Self::Percentage(percentage) => MarginUnits::Percentage(percentage),
             Self::Viewport(viewport) => MarginUnits::Viewport(viewport),
         }

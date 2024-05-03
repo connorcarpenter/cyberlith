@@ -1,30 +1,6 @@
-use crate::{LayoutType, MarginUnits, NodeId, NodeStore, SizeUnits};
+use crate::{Alignment, LayoutType, MarginUnits, NodeId, NodeStore, SizeUnits};
 
-#[derive(Eq, PartialEq, Clone, Copy, Default)]
-pub enum Alignment {
-    Start,
-    #[default]
-    Center,
-    End,
-}
-
-impl Alignment {
-    pub(crate) fn has_start(&self) -> bool {
-        match self {
-            Alignment::Start | Alignment::Center => true,
-            _ => false,
-        }
-    }
-
-    pub(crate) fn has_end(&self) -> bool {
-        match self {
-            Alignment::End | Alignment::Center => true,
-            _ => false,
-        }
-    }
-}
-
-/// Helper trait used internally for converting layout properties into a direction-agnostic value.
+/// used for converting layout properties into a direction-agnostic value.
 impl NodeId {
     pub(crate) fn main(&self, store: &dyn NodeStore, parent_layout_type: LayoutType) -> SizeUnits {
         match parent_layout_type {

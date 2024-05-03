@@ -165,7 +165,6 @@ impl From<SizeUnits> for SizeUnitsJson {
 impl From<MarginUnits> for MarginUnitsJson {
     fn from(margin_units: MarginUnits) -> Self {
         match margin_units {
-            MarginUnits::Pixels(pixels) => Self::Pixels(pixels),
             MarginUnits::Percentage(percentage) => Self::Percentage(percentage),
             MarginUnits::Viewport(percentage) => Self::Viewport(percentage),
         }
