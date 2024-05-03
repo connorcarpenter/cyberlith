@@ -2,10 +2,7 @@ use smallvec::SmallVec;
 
 use logging::{info, warn};
 
-use crate::{
-    percentage_calc, LayoutCache, LayoutType, NodeId, NodeStore, PositionType, Size, SizeUnits,
-    Solid, TextMeasurer, UiVisibilityStore,
-};
+use crate::{percentage_calc, LayoutCache, LayoutType, NodeId, NodeStore, PositionType, Size, SizeUnits, Solid, TextMeasurer, UiVisibilityStore, MarginUnits};
 
 const DEFAULT_MIN: f32 = -f32::MAX;
 const DEFAULT_MAX: f32 = f32::MAX;
@@ -90,22 +87,18 @@ pub(crate) fn layout(
     let init_parent_cross = init_parent_cross;
 
     let parent_padding_main: f32 = match node.padding_main_before(store, parent_layout_type) {
-        SizeUnits::Percentage(val) => percentage_calc(val, init_parent_main, 0.0),
-        SizeUnits::Viewport(val) => percentage_calc(val, viewport_size.0, 0.0),
-        _ => 0.0,
+        MarginUnits::Percentage(val) => percentage_calc(val, init_parent_main, 0.0),
+        MarginUnits::Viewport(val) => percentage_calc(val, viewport_size.0, 0.0),
     } + match node.padding_main_after(store, parent_layout_type) {
-        SizeUnits::Percentage(val) => percentage_calc(val, init_parent_main, 0.0),
-        SizeUnits::Viewport(val) => percentage_calc(val, viewport_size.0, 0.0),
-        _ => 0.0,
+        MarginUnits::Percentage(val) => percentage_calc(val, init_parent_main, 0.0),
+        MarginUnits::Viewport(val) => percentage_calc(val, viewport_size.0, 0.0),
     };
     let parent_padding_cross: f32 = match node.padding_cross_before(store, parent_layout_type) {
-        SizeUnits::Percentage(val) => percentage_calc(val, init_parent_cross, 0.0),
-        SizeUnits::Viewport(val) => percentage_calc(val, viewport_size.1, 0.0),
-        _ => 0.0,
+        MarginUnits::Percentage(val) => percentage_calc(val, init_parent_cross, 0.0),
+        MarginUnits::Viewport(val) => percentage_calc(val, viewport_size.1, 0.0),
     } + match node.padding_cross_after(store, parent_layout_type) {
-        SizeUnits::Percentage(val) => percentage_calc(val, init_parent_cross, 0.0),
-        SizeUnits::Viewport(val) => percentage_calc(val, viewport_size.1, 0.0),
-        _ => 0.0,
+        MarginUnits::Percentage(val) => percentage_calc(val, init_parent_cross, 0.0),
+        MarginUnits::Viewport(val) => percentage_calc(val, viewport_size.1, 0.0),
     };
 
     // The layout type of the node. Determines the main and cross axes of the children.
@@ -225,12 +218,12 @@ pub(crate) fn layout(
         if node_is_root {
             warn!("root should not be a viewport");
         }
-        info!("viewport size was: {:?}", viewport_size);
+        // info!("viewport size was: {:?}", viewport_size);
         let output = match parent_layout_type { // TODO: should this be layout_type?
             LayoutType::Row => (computed_main, computed_cross),
             LayoutType::Column => (computed_cross, computed_main),
         };
-        info!("viewport size is now: {:?}", output);
+        // info!("viewport size is now: {:?}", output);
         output
     } else {
         viewport_size
@@ -334,7 +327,7 @@ pub(crate) fn layout(
             child_margin_main_before.to_px(viewport_main, parent_main, parent_padding_main);
 
         // Compute fixed-size child main_after.
-        let computed_child_main_after = child_margin_main_after.to_px(viewport_main, parent_main, parent_padding_main) + node_child_main_between.map(|su| su.to_px(viewport_main, parent_main, parent_padding_main, 0.0)).unwrap_or(0.0);
+        let computed_child_main_after = child_margin_main_after.to_px(viewport_main, parent_main, parent_padding_main) + node_child_main_between.map(|su| su.to_px(viewport_main, parent_main, parent_padding_main)).unwrap_or(0.0);
 
         let computed_child_main;
 

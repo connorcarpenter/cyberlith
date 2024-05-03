@@ -311,15 +311,15 @@ impl From<MarginUnits> for MarginUnitsBits {
                         val
                     );
                 }
-                if val.fract() != 0.0 {
+                if (val * 10.0).fract() != 0.0 {
                     panic!(
                         "SizeUnits::Viewport value must be a whole number, got: {}",
                         val
                     );
                 }
 
-                let val = val as u64;
-                let val = UnsignedInteger::<7>::new(val);
+                let val = (val * 10.0) as u64;
+                let val = UnsignedInteger::<10>::new(val);
 
                 Self::Viewport(val)
             }

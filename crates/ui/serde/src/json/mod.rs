@@ -85,13 +85,13 @@ pub(crate) struct PanelStyleJson {
 
     layout_type: Option<LayoutTypeJson>,
 
-    padding_left: Option<SizeUnitsJson>,
-    padding_right: Option<SizeUnitsJson>,
-    padding_top: Option<SizeUnitsJson>,
-    padding_bottom: Option<SizeUnitsJson>,
+    padding_left: Option<MarginUnitsJson>,
+    padding_right: Option<MarginUnitsJson>,
+    padding_top: Option<MarginUnitsJson>,
+    padding_bottom: Option<MarginUnitsJson>,
 
-    row_between: Option<SizeUnitsJson>,
-    col_between: Option<SizeUnitsJson>,
+    row_between: Option<MarginUnitsJson>,
+    col_between: Option<MarginUnitsJson>,
     children_halign: Option<AlignmentJson>,
     children_valign: Option<AlignmentJson>,
 }

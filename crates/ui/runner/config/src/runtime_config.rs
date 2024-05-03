@@ -460,8 +460,8 @@ impl NodeStore for UiRuntimeConfig {
     }
 
     // all of these unwrap_or_default
-    fn node_padding_left(&self, id: &NodeId) -> SizeUnits {
-        let mut output = SizeUnits::default();
+    fn node_padding_left(&self, id: &NodeId) -> MarginUnits {
+        let mut output = MarginUnits::default();
 
         if !self.node_kind(id).has_children() {
             return output;
@@ -477,8 +477,8 @@ impl NodeStore for UiRuntimeConfig {
     }
 
     // all of these unwrap_or_default
-    fn node_padding_right(&self, id: &NodeId) -> SizeUnits {
-        let mut output = SizeUnits::default();
+    fn node_padding_right(&self, id: &NodeId) -> MarginUnits {
+        let mut output = MarginUnits::default();
 
         if !self.node_kind(id).has_children() {
             return output;
@@ -494,8 +494,8 @@ impl NodeStore for UiRuntimeConfig {
     }
 
     // all of these unwrap_or_default
-    fn node_padding_top(&self, id: &NodeId) -> SizeUnits {
-        let mut output = SizeUnits::default();
+    fn node_padding_top(&self, id: &NodeId) -> MarginUnits {
+        let mut output = MarginUnits::default();
 
         if !self.node_kind(id).has_children() {
             return output;
@@ -511,8 +511,8 @@ impl NodeStore for UiRuntimeConfig {
     }
 
     // all of these unwrap_or_default
-    fn node_padding_bottom(&self, id: &NodeId) -> SizeUnits {
-        let mut output = SizeUnits::default();
+    fn node_padding_bottom(&self, id: &NodeId) -> MarginUnits {
+        let mut output = MarginUnits::default();
 
         if !self.node_kind(id).has_children() {
             return output;
@@ -528,8 +528,8 @@ impl NodeStore for UiRuntimeConfig {
     }
 
     // all of these unwrap_or_default
-    fn node_row_between(&self, id: &NodeId) -> SizeUnits {
-        let mut output = SizeUnits::default();
+    fn node_row_between(&self, id: &NodeId) -> MarginUnits {
+        let mut output = MarginUnits::default();
 
         if !self.node_kind(id).has_children() {
             return output;
@@ -545,8 +545,8 @@ impl NodeStore for UiRuntimeConfig {
     }
 
     // all of these unwrap_or_default
-    fn node_col_between(&self, id: &NodeId) -> SizeUnits {
-        let mut output = SizeUnits::default();
+    fn node_col_between(&self, id: &NodeId) -> MarginUnits {
+        let mut output = MarginUnits::default();
 
         if !self.node_kind(id).has_children() {
             return output;

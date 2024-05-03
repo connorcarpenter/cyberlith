@@ -16,12 +16,12 @@ pub trait NodeStore {
     fn node_margin_right(&self, id: &NodeId) -> MarginUnits;
     fn node_margin_top(&self, id: &NodeId) -> MarginUnits;
     fn node_margin_bottom(&self, id: &NodeId) -> MarginUnits;
-    fn node_padding_left(&self, id: &NodeId) -> SizeUnits;
-    fn node_padding_right(&self, id: &NodeId) -> SizeUnits;
-    fn node_padding_top(&self, id: &NodeId) -> SizeUnits;
-    fn node_padding_bottom(&self, id: &NodeId) -> SizeUnits;
-    fn node_row_between(&self, id: &NodeId) -> SizeUnits;
-    fn node_col_between(&self, id: &NodeId) -> SizeUnits;
+    fn node_padding_left(&self, id: &NodeId) -> MarginUnits;
+    fn node_padding_right(&self, id: &NodeId) -> MarginUnits;
+    fn node_padding_top(&self, id: &NodeId) -> MarginUnits;
+    fn node_padding_bottom(&self, id: &NodeId) -> MarginUnits;
+    fn node_row_between(&self, id: &NodeId) -> MarginUnits;
+    fn node_col_between(&self, id: &NodeId) -> MarginUnits;
     fn node_is_solid(&self, id: &NodeId) -> Option<Solid>;
     fn node_is_viewport(&self, id: &NodeId) -> bool;
     fn node_is_text(&self, id: &NodeId) -> bool;

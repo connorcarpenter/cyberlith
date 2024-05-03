@@ -87,13 +87,13 @@ pub(crate) struct PanelStyleBits {
 
     layout_type: Option<LayoutTypeBits>,
 
-    padding_left: Option<SizeUnitsBits>,
-    padding_right: Option<SizeUnitsBits>,
-    padding_top: Option<SizeUnitsBits>,
-    padding_bottom: Option<SizeUnitsBits>,
+    padding_left: Option<MarginUnitsBits>,
+    padding_right: Option<MarginUnitsBits>,
+    padding_top: Option<MarginUnitsBits>,
+    padding_bottom: Option<MarginUnitsBits>,
 
-    row_between: Option<SizeUnitsBits>,
-    col_between: Option<SizeUnitsBits>,
+    row_between: Option<MarginUnitsBits>,
+    col_between: Option<MarginUnitsBits>,
     children_halign: Option<AlignmentBits>,
     children_valign: Option<AlignmentBits>,
 }
@@ -144,7 +144,7 @@ pub(crate) enum SizeUnitsBits {
 #[derive(Serde, Clone, PartialEq)]
 pub(crate) enum MarginUnitsBits {
     Percent(UnsignedInteger<7>),        // TODO: is this a good value type for this?
-    Viewport(UnsignedInteger<7>),       // TODO: is this a good value type for this?
+    Viewport(UnsignedInteger<10>),       // TODO: is this a good value type for this?
 }
 
 #[derive(Serde, Clone, PartialEq)]

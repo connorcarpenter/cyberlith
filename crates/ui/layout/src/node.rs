@@ -113,7 +113,7 @@ impl NodeId {
         &self,
         store: &dyn NodeStore,
         parent_layout_type: LayoutType,
-    ) -> SizeUnits {
+    ) -> MarginUnits {
         parent_layout_type.select(
             store,
             |store| self.padding_left(store),
@@ -125,7 +125,7 @@ impl NodeId {
         &self,
         store: &dyn NodeStore,
         parent_layout_type: LayoutType,
-    ) -> SizeUnits {
+    ) -> MarginUnits {
         parent_layout_type.select(
             store,
             |store| self.padding_right(store),
@@ -137,7 +137,7 @@ impl NodeId {
         &self,
         store: &dyn NodeStore,
         parent_layout_type: LayoutType,
-    ) -> SizeUnits {
+    ) -> MarginUnits {
         parent_layout_type.select(
             store,
             |store| self.padding_top(store),
@@ -149,7 +149,7 @@ impl NodeId {
         &self,
         store: &dyn NodeStore,
         parent_layout_type: LayoutType,
-    ) -> SizeUnits {
+    ) -> MarginUnits {
         parent_layout_type.select(
             store,
             |store| self.padding_bottom(store),
@@ -161,7 +161,7 @@ impl NodeId {
         &self,
         store: &dyn NodeStore,
         parent_layout_type: LayoutType,
-    ) -> SizeUnits {
+    ) -> MarginUnits {
         parent_layout_type.select(
             store,
             |store| self.col_between(store),

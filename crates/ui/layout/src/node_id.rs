@@ -124,32 +124,32 @@ impl NodeId {
     }
 
     // all of these unwrap_or_default
-    pub(crate) fn padding_left(&self, store: &dyn NodeStore) -> SizeUnits {
+    pub(crate) fn padding_left(&self, store: &dyn NodeStore) -> MarginUnits {
         store.node_padding_left(self)
     }
 
     // all of these unwrap_or_default
-    pub(crate) fn padding_right(&self, store: &dyn NodeStore) -> SizeUnits {
+    pub(crate) fn padding_right(&self, store: &dyn NodeStore) -> MarginUnits {
         store.node_padding_right(self)
     }
 
     // all of these unwrap_or_default
-    pub(crate) fn padding_top(&self, store: &dyn NodeStore) -> SizeUnits {
+    pub(crate) fn padding_top(&self, store: &dyn NodeStore) -> MarginUnits {
         store.node_padding_top(self)
     }
 
     // all of these unwrap_or_default
-    pub(crate) fn padding_bottom(&self, store: &dyn NodeStore) -> SizeUnits {
+    pub(crate) fn padding_bottom(&self, store: &dyn NodeStore) -> MarginUnits {
         store.node_padding_bottom(self)
     }
 
     // all of these unwrap_or_default
-    pub(crate) fn row_between(&self, store: &dyn NodeStore) -> SizeUnits {
+    pub(crate) fn row_between(&self, store: &dyn NodeStore) -> MarginUnits {
         store.node_row_between(self)
     }
 
     // all of these unwrap_or_default
-    pub(crate) fn col_between(&self, store: &dyn NodeStore) -> SizeUnits {
+    pub(crate) fn col_between(&self, store: &dyn NodeStore) -> MarginUnits {
         store.node_col_between(self)
     }
 
