@@ -1,3 +1,5 @@
+use std::{time::Duration, thread};
+
 use cfg_if::cfg_if;
 use config::TargetEnv;
 cfg_if! {
@@ -6,7 +8,7 @@ cfg_if! {
     } else {}
 }
 
-use logging::info;
+use logging::{info, warn};
 use game_app::GameApp;
 use kernel::Kernel;
 use launcher_app::LauncherApp;
@@ -65,22 +67,25 @@ fn main() {
 
 fn handle_http(kernel: &Kernel, next_url_alias: UrlAlias) -> UrlAlias {
     let next_url = next_url_alias.to_url();
-    let response = kernel.head_request(&next_url);
-    match response.status {
-        200 => {
-            info!("Head request to {} succeeded.", next_url);
-            next_url_alias
-        }
-        302 => {
-            let location = response.get_header_first("location").unwrap();
-            info!("Head request to {} redirected to: {}", next_url, location);
-            match location.as_str() {
-                "/game" => UrlAlias::Game,
-                _ => UrlAlias::Launcher,
+    loop {
+        let response = kernel.head_request(&next_url);
+        match response.status {
+            200 => {
+                info!("Head request to {} succeeded.", next_url);
+                return next_url_alias;
             }
-        }
-        error => {
-            panic!("Head request to {} failed with status: {}", next_url, error);
+            302 => {
+                let location = response.get_header_first("location").unwrap();
+                info!("Head request to {} redirected to: {}", next_url, location);
+                return match location.as_str() {
+                    "/game" => UrlAlias::Game,
+                    _ => UrlAlias::Launcher,
+                };
+            }
+            error => {
+                warn!("Head request to {} failed with status: {} .. retrying", next_url, error);
+                thread::sleep(Duration::from_secs(2));
+            }
         }
     }
 }
