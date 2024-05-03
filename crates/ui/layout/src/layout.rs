@@ -923,23 +923,17 @@ trait ViewportExt {
 }
 
 impl ViewportExt for (f32, f32) {
-    fn main(&self, _layout_type: LayoutType) -> f32 {
-        // match layout_type {
-        //     LayoutType::Row => self.0,
-        //     LayoutType::Column => self.1,
-        // }
-
-        // viewport_min for both...
-        self.0.min(self.1)
+    fn main(&self, layout_type: LayoutType) -> f32 {
+        match layout_type {
+            LayoutType::Row => self.0,
+            LayoutType::Column => self.1,
+        }
     }
 
-    fn cross(&self, _layout_type: LayoutType) -> f32 {
-        // match layout_type {
-        //     LayoutType::Row => self.1,
-        //     LayoutType::Column => self.0,
-        // }
-
-        // viewport_min for both...
-        self.0.min(self.1)
+    fn cross(&self, layout_type: LayoutType) -> f32 {
+        match layout_type {
+            LayoutType::Row => self.1,
+            LayoutType::Column => self.0,
+        }
     }
 }
