@@ -199,10 +199,6 @@ impl<'a> PanelStyleMut<'a> {
         self
     }
 
-    pub fn set_width_auto(&mut self) -> &mut Self {
-        self.set_width_units(SizeUnits::Auto)
-    }
-
     pub fn set_width_pc(&mut self, width_pc: f32) -> &mut Self {
         self.set_width_units(SizeUnits::Percentage(width_pc))
     }
@@ -215,10 +211,6 @@ impl<'a> PanelStyleMut<'a> {
     fn set_height_units(&mut self, height: SizeUnits) -> &mut Self {
         self.get_style_mut().base.height = Some(height);
         self
-    }
-
-    pub fn set_height_auto(&mut self) -> &mut Self {
-        self.set_height_units(SizeUnits::Auto)
     }
 
     pub fn set_height_pc(&mut self, width_pc: f32) -> &mut Self {
@@ -234,10 +226,6 @@ impl<'a> PanelStyleMut<'a> {
         self.set_width_units(width);
         self.set_height_units(height);
         self
-    }
-
-    pub fn set_size_auto(&mut self) -> &mut Self {
-        self.set_size_units(SizeUnits::Auto, SizeUnits::Auto)
     }
 
     pub fn set_size_pc(&mut self, width_pc: f32, height_pc: f32) -> &mut Self {
@@ -260,10 +248,6 @@ impl<'a> PanelStyleMut<'a> {
         self
     }
 
-    pub fn set_width_min_auto(&mut self) -> &mut Self {
-        self.set_width_min_units(SizeUnits::Auto)
-    }
-
     pub fn set_width_min_pc(&mut self, min_width_pc: f32) -> &mut Self {
         self.set_width_min_units(SizeUnits::Percentage(min_width_pc))
     }
@@ -276,10 +260,6 @@ impl<'a> PanelStyleMut<'a> {
     fn set_height_min_units(&mut self, min_height: SizeUnits) -> &mut Self {
         self.get_style_mut().base.height_min = Some(min_height);
         self
-    }
-
-    pub fn set_height_min_auto(&mut self) -> &mut Self {
-        self.set_height_min_units(SizeUnits::Auto)
     }
 
     pub fn set_height_min_pc(&mut self, min_height_pc: f32) -> &mut Self {
@@ -295,10 +275,6 @@ impl<'a> PanelStyleMut<'a> {
         self.set_width_min_units(min_width);
         self.set_height_min_units(min_height);
         self
-    }
-
-    pub fn set_size_min_auto(&mut self) -> &mut Self {
-        self.set_size_min_units(SizeUnits::Auto, SizeUnits::Auto)
     }
 
     pub fn set_size_min_pc(&mut self, min_width_pc: f32, min_height_pc: f32) -> &mut Self {
@@ -321,10 +297,6 @@ impl<'a> PanelStyleMut<'a> {
         self
     }
 
-    pub fn set_width_max_auto(&mut self) -> &mut Self {
-        self.set_width_max_units(SizeUnits::Auto)
-    }
-
     pub fn set_width_max_pc(&mut self, max_width_pc: f32) -> &mut Self {
         self.set_width_max_units(SizeUnits::Percentage(max_width_pc))
     }
@@ -337,10 +309,6 @@ impl<'a> PanelStyleMut<'a> {
     fn set_height_max_units(&mut self, max_height: SizeUnits) -> &mut Self {
         self.get_style_mut().base.height_max = Some(max_height);
         self
-    }
-
-    pub fn set_height_max_auto(&mut self) -> &mut Self {
-        self.set_height_max_units(SizeUnits::Auto)
     }
 
     pub fn set_height_max_pc(&mut self, max_height_pc: f32) -> &mut Self {
@@ -356,10 +324,6 @@ impl<'a> PanelStyleMut<'a> {
         self.set_width_max_units(max_width);
         self.set_height_max_units(max_height);
         self
-    }
-
-    pub fn set_size_max_auto(&mut self) -> &mut Self {
-        self.set_size_max_units(SizeUnits::Auto, SizeUnits::Auto)
     }
 
     pub fn set_size_max_pc(&mut self, max_width_pc: f32, max_height_pc: f32) -> &mut Self {
@@ -454,10 +418,6 @@ impl<'a> PanelStyleMut<'a> {
         self
     }
 
-    pub fn set_padding_left_auto(&mut self) -> &mut Self {
-        self.set_padding_left_units(SizeUnits::Auto)
-    }
-
     pub fn set_padding_left_pc(&mut self, child_left_pc: f32) -> &mut Self {
         self.set_padding_left_units(SizeUnits::Percentage(child_left_pc))
     }
@@ -470,10 +430,6 @@ impl<'a> PanelStyleMut<'a> {
     fn set_padding_right_units(&mut self, child_right: SizeUnits) -> &mut Self {
         self.get_panel_style_mut().padding_right = Some(child_right);
         self
-    }
-
-    pub fn set_padding_right_auto(&mut self) -> &mut Self {
-        self.set_padding_right_units(SizeUnits::Auto)
     }
 
     pub fn set_padding_right_pc(&mut self, child_right_pc: f32) -> &mut Self {
@@ -490,10 +446,6 @@ impl<'a> PanelStyleMut<'a> {
         self
     }
 
-    pub fn set_padding_top_auto(&mut self) -> &mut Self {
-        self.set_padding_top_units(SizeUnits::Auto)
-    }
-
     pub fn set_padding_top_pc(&mut self, child_top_pc: f32) -> &mut Self {
         self.set_padding_top_units(SizeUnits::Percentage(child_top_pc))
     }
@@ -508,24 +460,12 @@ impl<'a> PanelStyleMut<'a> {
         self
     }
 
-    pub fn set_padding_bottom_auto(&mut self) -> &mut Self {
-        self.set_padding_bottom_units(SizeUnits::Auto)
-    }
-
     pub fn set_padding_bottom_pc(&mut self, child_bottom_pc: f32) -> &mut Self {
         self.set_padding_bottom_units(SizeUnits::Percentage(child_bottom_pc))
     }
 
     pub fn set_padding_bottom_vp(&mut self, child_bottom_vp: f32) -> &mut Self {
         self.set_padding_bottom_units(SizeUnits::Viewport(child_bottom_vp))
-    }
-
-    // set_padding
-    pub fn set_padding_auto(&mut self) -> &mut Self {
-        self.set_padding_left_auto()
-            .set_padding_right_auto()
-            .set_padding_top_auto()
-            .set_padding_bottom_auto()
     }
 
     pub fn set_padding_pc(&mut self, left: f32, right: f32, top: f32, bottom: f32) -> &mut Self {
@@ -548,10 +488,6 @@ impl<'a> PanelStyleMut<'a> {
         self
     }
 
-    pub fn set_row_between_auto(&mut self) -> &mut Self {
-        self.set_row_between_units(SizeUnits::Auto)
-    }
-
     pub fn set_row_between_pc(&mut self, row_between_pc: f32) -> &mut Self {
         self.set_row_between_units(SizeUnits::Percentage(row_between_pc))
     }
@@ -564,10 +500,6 @@ impl<'a> PanelStyleMut<'a> {
     fn set_col_between_units(&mut self, column_between: SizeUnits) -> &mut Self {
         self.get_panel_style_mut().col_between = Some(column_between);
         self
-    }
-
-    pub fn set_col_between_auto(&mut self) -> &mut Self {
-        self.set_col_between_units(SizeUnits::Auto)
     }
 
     pub fn set_col_between_pc(&mut self, column_between_pc: f32) -> &mut Self {

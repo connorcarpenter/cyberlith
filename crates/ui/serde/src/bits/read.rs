@@ -426,7 +426,6 @@ impl Into<SizeUnits> for SizeUnitsBits {
                 let val: f32 = (val as f32) / 10.0;
                 SizeUnits::Viewport(val)
             }
-            Self::Auto => SizeUnits::Auto,
         }
     }
 }

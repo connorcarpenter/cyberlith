@@ -165,10 +165,6 @@ impl<'a> TextboxStyleMut<'a> {
         self
     }
 
-    pub fn set_width_auto(&mut self) -> &mut Self {
-        self.set_width_units(SizeUnits::Auto)
-    }
-
     pub fn set_width_pc(&mut self, width_pc: f32) -> &mut Self {
         self.set_width_units(SizeUnits::Percentage(width_pc))
     }
@@ -181,10 +177,6 @@ impl<'a> TextboxStyleMut<'a> {
     fn set_height_units(&mut self, height: SizeUnits) -> &mut Self {
         self.get_style_mut().base.height = Some(height);
         self
-    }
-
-    pub fn set_height_auto(&mut self) -> &mut Self {
-        self.set_height_units(SizeUnits::Auto)
     }
 
     pub fn set_height_pc(&mut self, width_pc: f32) -> &mut Self {
@@ -200,10 +192,6 @@ impl<'a> TextboxStyleMut<'a> {
         self.set_width_units(width);
         self.set_height_units(height);
         self
-    }
-
-    pub fn set_size_auto(&mut self) -> &mut Self {
-        self.set_size_units(SizeUnits::Auto, SizeUnits::Auto)
     }
 
     pub fn set_size_pc(&mut self, width_pc: f32, height_pc: f32) -> &mut Self {
@@ -226,10 +214,6 @@ impl<'a> TextboxStyleMut<'a> {
         self
     }
 
-    pub fn set_width_min_auto(&mut self) -> &mut Self {
-        self.set_width_min_units(SizeUnits::Auto)
-    }
-
     pub fn set_width_min_pc(&mut self, min_width_pc: f32) -> &mut Self {
         self.set_width_min_units(SizeUnits::Percentage(min_width_pc))
     }
@@ -242,10 +226,6 @@ impl<'a> TextboxStyleMut<'a> {
     fn set_height_min_units(&mut self, min_height: SizeUnits) -> &mut Self {
         self.get_style_mut().base.height_min = Some(min_height);
         self
-    }
-
-    pub fn set_height_min_auto(&mut self) -> &mut Self {
-        self.set_height_min_units(SizeUnits::Auto)
     }
 
     pub fn set_height_min_pc(&mut self, min_height_pc: f32) -> &mut Self {
@@ -261,10 +241,6 @@ impl<'a> TextboxStyleMut<'a> {
         self.set_width_min_units(min_width);
         self.set_height_min_units(min_height);
         self
-    }
-
-    pub fn set_size_min_auto(&mut self) -> &mut Self {
-        self.set_size_min_units(SizeUnits::Auto, SizeUnits::Auto)
     }
 
     pub fn set_size_min_pc(&mut self, min_width_pc: f32, min_height_pc: f32) -> &mut Self {
@@ -287,10 +263,6 @@ impl<'a> TextboxStyleMut<'a> {
         self
     }
 
-    pub fn set_width_max_auto(&mut self) -> &mut Self {
-        self.set_width_max_units(SizeUnits::Auto)
-    }
-
     pub fn set_width_max_pc(&mut self, max_width_pc: f32) -> &mut Self {
         self.set_width_max_units(SizeUnits::Percentage(max_width_pc))
     }
@@ -303,10 +275,6 @@ impl<'a> TextboxStyleMut<'a> {
     fn set_height_max_units(&mut self, max_height: SizeUnits) -> &mut Self {
         self.get_style_mut().base.height_max = Some(max_height);
         self
-    }
-
-    pub fn set_height_max_auto(&mut self) -> &mut Self {
-        self.set_height_max_units(SizeUnits::Auto)
     }
 
     pub fn set_height_max_pc(&mut self, max_height_pc: f32) -> &mut Self {
@@ -322,10 +290,6 @@ impl<'a> TextboxStyleMut<'a> {
         self.set_width_max_units(max_width);
         self.set_height_max_units(max_height);
         self
-    }
-
-    pub fn set_size_max_auto(&mut self) -> &mut Self {
-        self.set_size_max_units(SizeUnits::Auto, SizeUnits::Auto)
     }
 
     pub fn set_size_max_pc(&mut self, max_width_pc: f32, max_height_pc: f32) -> &mut Self {

@@ -141,13 +141,11 @@ pub(crate) fn layout(
         viewport_main,
         init_parent_main,
         parent_padding_main,
-        DEFAULT_MIN,
     );
     let main_max = node.main_max(store, parent_layout_type).to_px(
         viewport_main,
         init_parent_main,
         parent_padding_main,
-        DEFAULT_MAX,
     );
 
     // TODO: Need parent_cross to compute this correctly
@@ -155,13 +153,11 @@ pub(crate) fn layout(
         viewport_cross,
         init_parent_cross,
         parent_padding_cross,
-        DEFAULT_MIN,
     );
     let cross_max = node.cross_max(store, parent_layout_type).to_px(
         viewport_cross,
         init_parent_cross,
         parent_padding_cross,
-        DEFAULT_MAX,
     );
 
     // Compute main-axis size.
@@ -170,7 +166,6 @@ pub(crate) fn layout(
             percentage_calc(val, init_parent_main, parent_padding_main).round()
         }
         SizeUnits::Viewport(val) => percentage_calc(val, viewport_main, 0.0).round(),
-        SizeUnits::Auto => 0.0,
     };
 
     // Cross size is determined by the parent.
@@ -320,7 +315,6 @@ pub(crate) fn layout(
             viewport_cross,
             parent_cross,
             parent_padding_cross,
-            0.0,
             child_cross_min,
             child_cross_max,
         );
@@ -334,7 +328,7 @@ pub(crate) fn layout(
             child_margin_main_before.to_px(viewport_main, parent_main, parent_padding_main);
 
         // Compute fixed-size child main_after.
-        let computed_child_main_after = child_margin_main_after.to_px(viewport_main, parent_main, parent_padding_main) + node_child_main_between.map(|su| su.to_px(viewport_main, parent_main, parent_padding_main, 0.0)).unwrap_or(0.0);
+        let computed_child_main_after = child_margin_main_after.to_px(viewport_main, parent_main, parent_padding_main) + node_child_main_between.map(|su| su.to_px(viewport_main, parent_main, parent_padding_main)).unwrap_or(0.0);
 
         let computed_child_main;
 
@@ -379,16 +373,10 @@ pub(crate) fn layout(
         main_axis_stretch_nodes.push(StretchItem::new(last, 1.0, ItemType::After));
     }
 
-    // Determine cross-size of auto node from children.
-    if num_relative_children != 0 && cross_for_children == SizeUnits::Auto {
-        parent_cross = children_cross_max.min(cross_max).max(cross_min);
-    }
-
     // Compute flexible space and size on the cross-axis for parent-directed children.
     for (index, child) in children
         .iter_mut()
         .filter(|child| child.node.position_type(store) == PositionType::Relative)
-        .filter(|child| !child.node.cross(store, layout_type).is_auto())
         .enumerate()
     {
         let child_align = child.node.self_align(store, layout_type);
@@ -455,14 +443,6 @@ pub(crate) fn layout(
             children_cross_max.max(child.cross_before + child.cross + child.cross_after);
     }
 
-    // Determine main-size of auto node from children.
-    if num_relative_children != 0 && main_for_children == SizeUnits::Auto {
-        parent_main = parent_main
-            .max(children_main_sum)
-            .min(main_max)
-            .max(main_min);
-    }
-
     // Compute flexible space and size on the main axis for parent-directed children.
     if !main_axis_stretch_nodes.is_empty() {
         loop {
@@ -512,82 +492,6 @@ pub(crate) fn layout(
         }
     }
 
-    // Compute stretch cross_before and stretch cross_after for auto cross children.
-    // TODO: I think this only needs to be done for relative-positioned children...
-    for (index, child) in children
-        .iter_mut()
-        .filter(|child| child.node.cross(store, layout_type).is_auto())
-        .enumerate()
-    {
-        let child_align = child.node.self_align(store, layout_type);
-
-        let mut cross_flex_sum = 0.0;
-
-        // Collect stretch cross items.
-        let mut cross_axis_stretch_nodes = SmallVec::<[StretchItem; 3]>::new();
-        if child_align.has_end() {
-            cross_flex_sum += 1.0;
-
-            cross_axis_stretch_nodes.push(StretchItem::new(Some(index), 1.0, ItemType::Before));
-        }
-
-        if child_align.has_start() {
-            cross_flex_sum += 1.0;
-
-            cross_axis_stretch_nodes.push(StretchItem::new(Some(index), 1.0, ItemType::After));
-        }
-
-        let child_position_type = child.node.position_type(store);
-
-        loop {
-            // If all stretch items are frozen, exit the loop.
-            if cross_axis_stretch_nodes.iter().all(|item| item.frozen) {
-                break;
-            }
-
-            // Compute free space in the cross axis.
-            let child_cross_free_space =
-                parent_cross - child.cross_before - child.cross - child.cross_after;
-
-            for item in cross_axis_stretch_nodes
-                .iter_mut()
-                .filter(|item| !item.frozen)
-            {
-                let actual_cross = (item.factor * child_cross_free_space / cross_flex_sum).round();
-
-                item.computed = actual_cross;
-            }
-
-            for item in cross_axis_stretch_nodes
-                .iter_mut()
-                .filter(|item| !item.frozen)
-            {
-                // Freeze over-stretched items.
-                item.frozen = true; // TODO: maybe this should be false
-
-                // If the item is frozen, adjust the used_space and sum of cross stretch factors.
-                if item.frozen {
-                    cross_flex_sum -= item.factor;
-
-                    match item.item_type {
-                        ItemType::Before => {
-                            child.cross_before += item.computed;
-                        }
-
-                        ItemType::After => {
-                            child.cross_after += item.computed;
-                        }
-                    }
-                }
-            }
-        }
-
-        if child_position_type == PositionType::Relative {
-            children_cross_max =
-                children_cross_max.max(child.cross_before + child.cross + child.cross_after);
-        }
-    }
-
     let node_children = node
         .children(store)
         .filter(|child| child.position_type(store) == PositionType::Absolute)
@@ -616,7 +520,6 @@ pub(crate) fn layout(
             viewport_cross,
             parent_cross,
             parent_padding_cross,
-            0.0,
             child_cross_min,
             child_cross_max,
         );
@@ -845,14 +748,6 @@ pub(crate) fn layout(
         if parent_layout_type != layout_type {
             std::mem::swap(&mut children_main_sum, &mut children_cross_max)
         };
-
-        if main == SizeUnits::Auto {
-            computed_main = children_main_sum.min(main_max).max(main_min);
-        }
-
-        if cross == SizeUnits::Auto {
-            computed_cross = children_cross_max.min(cross_max).max(cross_min);
-        }
     }
 
     // apply_solid_layout(node, store, &mut computed_main, &mut computed_cross);
