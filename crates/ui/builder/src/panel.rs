@@ -189,10 +189,6 @@ impl<'a> PanelStyleMut<'a> {
         self
     }
 
-    pub fn set_width_auto(&mut self) -> &mut Self {
-        self.set_width_units(SizeUnits::Auto)
-    }
-
     pub fn set_width_pc(&mut self, width_pc: f32) -> &mut Self {
         self.set_width_units(SizeUnits::Percentage(width_pc))
     }
@@ -205,10 +201,6 @@ impl<'a> PanelStyleMut<'a> {
     fn set_height_units(&mut self, height: SizeUnits) -> &mut Self {
         self.get_style_mut().base.height = Some(height);
         self
-    }
-
-    pub fn set_height_auto(&mut self) -> &mut Self {
-        self.set_height_units(SizeUnits::Auto)
     }
 
     pub fn set_height_pc(&mut self, width_pc: f32) -> &mut Self {
@@ -224,10 +216,6 @@ impl<'a> PanelStyleMut<'a> {
         self.set_width_units(width);
         self.set_height_units(height);
         self
-    }
-
-    pub fn set_size_auto(&mut self) -> &mut Self {
-        self.set_size_units(SizeUnits::Auto, SizeUnits::Auto)
     }
 
     pub fn set_size_pc(&mut self, width_pc: f32, height_pc: f32) -> &mut Self {

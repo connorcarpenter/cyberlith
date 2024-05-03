@@ -143,7 +143,6 @@ impl From<SizeUnits> for SizeUnitsJson {
         match size_units {
             SizeUnits::Percentage(percentage) => Self::Percentage(percentage),
             SizeUnits::Viewport(percentage) => Self::Viewport(percentage),
-            SizeUnits::Auto => Self::Auto,
         }
     }
 }

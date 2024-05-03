@@ -134,7 +134,7 @@ impl MarginUnits {
 }
 
 /// Units which describe spacing and size.
-#[derive(Default, Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum SizeUnits {
     /// A percentage of the parent dimension.
     ///
@@ -147,13 +147,6 @@ pub enum SizeUnits {
     /// A percentage of the viewport's width when applied to width properties.
     /// A percentage of the viewport's height when applied to height properties.
     Viewport(f32),
-
-    /// Automatically determine the value.
-    ///
-    /// When applied to size (width, height) Auto will either size to fit its children, or if there are no children
-    /// the node will be sized based on the [`content_size`](crate::Node::content_size) property of the node.
-    #[default]
-    Auto,
 }
 
 impl SizeUnits {
@@ -163,14 +156,12 @@ impl SizeUnits {
         viewport_value: f32,
         parent_value: f32,
         parent_padding: f32,
-        default: f32,
     ) -> f32 {
         match self {
             SizeUnits::Percentage(percentage) => {
                 percentage_calc(*percentage, parent_value, parent_padding)
             }
             SizeUnits::Viewport(percentage) => percentage_calc(*percentage, viewport_value, 0.0),
-            SizeUnits::Auto => default,
         }
     }
 
@@ -179,12 +170,11 @@ impl SizeUnits {
         viewport_value: f32,
         parent_value: f32,
         parent_padding: f32,
-        default: f32,
         min: SizeUnits,
         max: SizeUnits,
     ) -> f32 {
-        let min = min.to_px(viewport_value, parent_value, parent_padding, f32::MIN);
-        let max = max.to_px(viewport_value, parent_value, parent_padding, f32::MAX);
+        let min = min.to_px(viewport_value, parent_value, parent_padding);
+        let max = max.to_px(viewport_value, parent_value, parent_padding);
 
         match self {
             SizeUnits::Percentage(percentage) => {
@@ -195,7 +185,6 @@ impl SizeUnits {
             SizeUnits::Viewport(percentage) => percentage_calc(*percentage, viewport_value, 0.0)
                 .min(max)
                 .max(min),
-            SizeUnits::Auto => default.min(max).max(min),
         }
     }
 
@@ -221,11 +210,6 @@ impl SizeUnits {
     /// Returns true if the value is a viewport percentage.
     pub fn is_viewport(&self) -> bool {
         matches!(self, SizeUnits::Viewport(_))
-    }
-
-    /// Returns true if the value is auto.
-    pub fn is_auto(&self) -> bool {
-        self == &SizeUnits::Auto
     }
 }
 

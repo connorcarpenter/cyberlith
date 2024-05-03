@@ -127,7 +127,6 @@ pub(crate) enum WidgetStyleBits {
 pub(crate) enum SizeUnitsBits {
     Percent(UnsignedInteger<7>),
     Viewport(UnsignedInteger<10>),
-    Auto,
 }
 
 #[derive(Serde, Clone, PartialEq)]

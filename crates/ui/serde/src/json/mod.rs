@@ -126,7 +126,6 @@ pub(crate) enum WidgetStyleJson {
 pub(crate) enum SizeUnitsJson {
     Percentage(f32),
     Viewport(f32),
-    Auto,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

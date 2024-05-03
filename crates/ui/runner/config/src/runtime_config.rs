@@ -294,7 +294,7 @@ impl NodeStore for UiRuntimeConfig {
 
     // all of these unwrap_or(SizeUnits::Percentage(100.0))
     fn node_width(&self, id: &NodeId) -> SizeUnits {
-        let mut output = SizeUnits::default();
+        let mut output = SizeUnits::Percentage(100.0);
 
         if self.node_kind(id).is_text() {
             return output;
@@ -311,7 +311,7 @@ impl NodeStore for UiRuntimeConfig {
 
     // all of these unwrap_or(SizeUnits::Percentage(100.0))
     fn node_height(&self, id: &NodeId) -> SizeUnits {
-        let mut output = SizeUnits::Auto;
+        let mut output = SizeUnits::Percentage(100.0);
 
         if self.node_kind(id).is_text() {
             output = SizeUnits::Percentage(100.0);

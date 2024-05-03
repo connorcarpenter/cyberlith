@@ -260,7 +260,6 @@ impl From<SizeUnits> for SizeUnitsBits {
 
                 Self::Viewport(val)
             }
-            SizeUnits::Auto => Self::Auto,
         }
     }
 }

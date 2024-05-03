@@ -89,15 +89,17 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
             // .set_hover_color(Color::RED)
             // .set_down_color(Color::BLUE)
             .set_self_halign(Alignment::Start)
-            .set_margin_left_vp(4.);
+            .set_margin_left_vp(4.)
+            .set_size_vp(15., 5.);
     });
-    let register_button_style = ui_config.create_button_style(|s| {
+    let login_button_style = ui_config.create_button_style(|s| {
         s.set_parent_style(base_button_style)
             // .set_background_color(Color::DARK_GRAY)
             // .set_hover_color(Color::RED)
             // .set_down_color(Color::BLUE)
             .set_self_halign(Alignment::End)
-            .set_margin_right_vp(1.0);
+            .set_margin_right_vp(1.0)
+            .set_size_vp(15., 5.);
     });
     let base_label_style = ui_config.create_text_style(|s| {
         s.set_background_alpha(0.)
@@ -151,7 +153,7 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
                                 .contents(|c| {
                                     // login button
                                     c.add_button("login_button")
-                                        .set_style(register_button_style)
+                                        .set_style(login_button_style)
                                         .contents(|c| {
                                             c.add_text("login").set_style(base_button_text_style);
                                         })
