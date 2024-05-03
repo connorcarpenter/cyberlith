@@ -1,7 +1,8 @@
 
 use std::{collections::HashMap, fs, io, fs::File, io::{Read, Write}};
+use std::num::ParseIntError;
 
-use chrono::{DateTime, Utc, ParseError};
+use chrono::{DateTime, ParseError, Utc};
 
 use http_common::{Request, Response};
 use logging::{info, warn};
@@ -44,7 +45,7 @@ impl CookieStore {
             let mut file = File::open(entry.path())?;
             let mut cookie_value = String::new();
             file.read_to_string(&mut cookie_value)?;
-            if let Some((value, expires)) = parse_cookie_value(&cookie_value) {
+            if let Some((value, expires)) = parse_file_cookie_value(&cookie_value) {
                 self.cookies.insert(cookie_name.to_string(), (value, expires));
             }
         }
@@ -86,21 +87,40 @@ impl CookieStore {
     }
 
     pub(crate) fn handle_response(&mut self, response: &Response) {
-        info!("Handling response: {:?}", response.status);
+        // info!("handling Response: status: {:?}", response.status);
+
+        // for (name, values) in response.headers_iter() {
+        //     info!("Response Header: `{}` [", name);
+        //     for value in values {
+        //         info!("{}", value);
+        //     }
+        //     info!("]")
+        // }
+
         if let Some(set_cookie_headers) = response.get_headers("Set-Cookie") {
             let now = Utc::now();
             let mut new_cookies = HashMap::new();
+            let mut removed_cookies = Vec::new();
             for header_value in set_cookie_headers {
-                if let Some((name, value, expires)) = extract_cookie_from_header(header_value) {
-                    if expires.map_or(true, |exp| exp > now) {
-                        new_cookies.insert(name.clone(), (value.clone(), expires.clone()));
+                if let Some((name, value, max_age)) = extract_cookie_from_header(header_value) {
+                    if max_age.map_or(true, |exp| exp > 0) {
+                        new_cookies.insert(name.clone(), (value.clone(), max_age.clone()));
+                    } else {
+                        removed_cookies.push(name.clone());
                     }
                 }
             }
-            for (name, (value, expires)) in new_cookies {
-                info!("Adding cookie to store: name={}, value={}, expires={:?}", name, value, expires);
+            for (name, (value, max_age_opt)) in new_cookies {
+                // info!("Adding cookie to store: name={}, value={}, max-age={:?}", name, value, max_age_opt);
+                let expires = max_age_opt.map(|max_age| now + chrono::Duration::seconds(max_age as i64));
                 self.cookies.insert(name.clone(), (value.clone(), expires.clone()));
                 self.write_cookie_to_file(&name, &value, expires).unwrap();
+            }
+            for name in removed_cookies {
+                // info!("Removing cookie from store: name={}", name);
+                self.cookies.remove(&name);
+                let file_path = format!("{}/{}.cookie", &self.cookies_dir, name);
+                let _ = fs::remove_file(file_path);
             }
         }
     }
@@ -135,7 +155,7 @@ impl CookieStore {
     }
 }
 
-fn extract_cookie_from_header(header_value: &str) -> Option<(String, String, Option<DateTime<Utc>>)> {
+fn extract_cookie_from_header(header_value: &str) -> Option<(String, String, Option<u32>)> {
     let mut cookies: Vec<(&str, &str)> = header_value
         .split(';')
         .map(str::trim)
@@ -145,18 +165,18 @@ fn extract_cookie_from_header(header_value: &str) -> Option<(String, String, Opt
 
     if cookies.len() > 0 {
         let (name, value) = cookies.remove(0);
-        if name.to_lowercase() == "expires" {
+        if name.to_lowercase() == "max-age" {
             return None;
         }
         if value.is_empty() {
             return None;
         }
-        let expires = cookies
+        let max_age = cookies
             .iter()
-            .find(|&&(attr, _)| attr.trim().to_lowercase() == "expires")
-            .and_then(|&(_, val)| parse_cookie_expires(val).ok());
+            .find(|&&(attr, _)| attr.trim().to_lowercase() == "max-age")
+            .and_then(|&(_, val)| parse_cookie_max_age(val).ok());
 
-        Some((name.to_string(), value.to_string(), expires))
+        Some((name.to_string(), value.to_string(), max_age))
     } else {
         None
     }
@@ -166,14 +186,20 @@ fn parse_cookie_expires(value: &str) -> Result<DateTime<Utc>, ParseError> {
     let value = value.trim();
     info!("Parsing cookie expires: {}", value);
 
-    let output = DateTime::parse_from_rfc2822(value).map(|dt| dt.with_timezone(&Utc));
+    let output = DateTime::parse_from_rfc3339(value).map(|dt| dt.with_timezone(&Utc));
     if let Err(e) = &output {
         warn!("error: {:?}", e);
     }
     output
 }
 
-fn parse_cookie_value(value: &str) -> Option<(String, Option<DateTime<Utc>>)> {
+fn parse_cookie_max_age(value: &str) -> Result<u32, ParseIntError> {
+    let value = value.trim();
+    info!("Parsing cookie max-age: {}", value);
+    value.parse::<u32>()
+}
+
+fn parse_file_cookie_value(value: &str) -> Option<(String, Option<DateTime<Utc>>)> {
     let mut parts = value.split('\n');
     if let Some(cookie_value) = parts.next() {
         let expires = parts.next().and_then(|expires| parse_cookie_expires(expires).ok());
@@ -213,22 +239,24 @@ mod tests {
     }
 
     #[test]
-    fn test_extract_cookie_from_header_with_expires() {
-        let header = "test=value; Expires=Sun, 24 Apr 2022 11:34:32 GMT";
-        let (name, value, expires) = extract_cookie_from_header(header).unwrap();
+    fn test_extract_cookie_from_header_with_max_age() {
+        let header = "test=value; Max-Age=3600";
+        let (name, value, max_age) = extract_cookie_from_header(header).unwrap();
         assert_eq!(name, "test".to_string());
         assert_eq!(value, "value".to_string());
-        assert_eq!(expires.is_some(), true);
+        assert_eq!(max_age.is_some(), true);
+        assert_eq!(max_age.unwrap(), 3600);
     }
 
     #[test]
     fn test_extract_cookie_from_header_multiple_attributes() {
         logging::initialize();
-        let header = "test=value; Path=/; Expires=Sun, 24 Apr 2022 11:34:32 GMT; Secure";
-        let (name, value, expires) = extract_cookie_from_header(header).unwrap();
+        let header = "test=value; Secure; Path=/; Max-Age=3600";
+        let (name, value, max_age) = extract_cookie_from_header(header).unwrap();
         assert_eq!(name, "test".to_string());
         assert_eq!(value, "value".to_string());
-        assert_eq!(expires.is_some(), true);
+        assert_eq!(max_age.is_some(), true);
+        assert_eq!(max_age.unwrap(), 3600);
     }
 
     #[test]
@@ -239,7 +267,7 @@ mod tests {
     }
 
     #[test]
-    fn test_extract_cookie_from_header_missing_expires() {
+    fn test_extract_cookie_from_header_missing_max_age() {
         let header = "test=value; Path=/";
         let (name, value, expires) = extract_cookie_from_header(header).unwrap();
         assert_eq!(name, "test".to_string());
@@ -249,7 +277,7 @@ mod tests {
 
     #[test]
     fn test_extract_cookie_from_header_no_cookie() {
-        let header = "Expires=Sun, 24 Apr 2022 11:34:32 GMT";
+        let header = "Max-Age=3600";
         let result = extract_cookie_from_header(header);
         assert_eq!(result, None);
     }
@@ -280,7 +308,7 @@ mod tests {
         logging::initialize();
         cleanup_test_cookies_dir(); // Clean up test_cookies directory before running the test
         let mut response = Response::default();
-        response.insert_header("Set-Cookie", "test=value; Expires=Sun, 24 Apr 2026 11:34:32 GMT");
+        response.insert_header("Set-Cookie", "test=value; Max-Age=3600");
         let mut cookie_store = CookieStore::test();
         cookie_store.handle_response(&response);
         assert_eq!(cookie_store.cookies.len(), 1);
@@ -290,26 +318,56 @@ mod tests {
     }
 
     #[test]
+    fn test_handle_response_add_two_cookies() {
+        logging::initialize();
+        cleanup_test_cookies_dir(); // Clean up test_cookies directory before running the test
+        let mut response = Response::default();
+        response.insert_header("Set-Cookie", "test1=value1; Max-Age=3600");
+        response.insert_header("Set-Cookie", "test2=value2; Max-Age=3600");
+        let mut cookie_store = CookieStore::test();
+        cookie_store.handle_response(&response);
+        assert_eq!(cookie_store.cookies.len(), 2);
+        assert_eq!(cookie_store.cookies.contains_key("test1"), true);
+        let (value, _) = cookie_store.cookies.get("test1").unwrap();
+        assert_eq!(value, "value1");
+        assert_eq!(cookie_store.cookies.contains_key("test2"), true);
+        let (value, _) = cookie_store.cookies.get("test2").unwrap();
+        assert_eq!(value, "value2");
+    }
+
+    #[test]
     fn test_handle_response_ignore_expired_cookie() {
         logging::initialize();
         cleanup_test_cookies_dir(); // Clean up test_cookies directory before running the test
         let mut response = Response::default();
-        response.insert_header("Set-Cookie", "expired_cookie=value; Expires=Sat, 24 Apr 2021 11:34:32 GMT");
+        response.insert_header("Set-Cookie", "expired_cookie=value; Max-Age=0");
         let mut cookie_store = CookieStore::test();
         cookie_store.handle_response(&response);
         assert_eq!(cookie_store.cookies.len(), 0);
     }
 
     #[test]
-    fn test_handle_response_ignore_expired_cookie_with_existing_cookies() {
+    fn test_handle_response_remove_expired_cookie() {
         logging::initialize();
         cleanup_test_cookies_dir(); // Clean up test_cookies directory before running the test
         let mut response = Response::default();
-        response.insert_header("Set-Cookie", "expired_cookie=value; Expires=Sat, 24 Apr 2021 11:34:32 GMT");
+        response.insert_header("Set-Cookie", "expired_cookie=value; Max-Age=0");
         let mut cookie_store = CookieStore::test();
-        cookie_store.cookies.insert("existing_cookie".to_string(), ("existing_value".to_string(), None));
+        cookie_store.cookies.insert("expired_cookie".to_string(), ("existing_value".to_string(), None));
         cookie_store.handle_response(&response);
-        assert_eq!(cookie_store.cookies.len(), 1);
-        assert_eq!(cookie_store.cookies.contains_key("existing_cookie"), true);
+        assert_eq!(cookie_store.cookies.len(), 0);
+    }
+
+    #[test]
+    fn test_handle_response_remove_expired_cookie_with_max_age() {
+        logging::initialize();
+        cleanup_test_cookies_dir(); // Clean up test_cookies directory before running the test
+        let mut response = Response::default();
+        response.insert_header("Set-Cookie", "expired_cookie=value; Max-Age=0");
+        let mut cookie_store = CookieStore::test();
+        let expires = Utc::now() + chrono::Duration::seconds(3600);
+        cookie_store.cookies.insert("expired_cookie".to_string(), ("existing_value".to_string(), Some(expires)));
+        cookie_store.handle_response(&response);
+        assert_eq!(cookie_store.cookies.len(), 0);
     }
 }

@@ -2,7 +2,6 @@ mod session_connect;
 mod redirect;
 mod rate_limiter;
 mod auth_handler;
-mod cookie_middleware;
 mod register_token;
 mod endpoints;
 
@@ -179,7 +178,9 @@ pub fn main() {
             addr,
             &port,
             "launcher.html",
-        ).request_middleware(register_token::handle);
+        )
+            .request_middleware(register_token::handle)
+            .request_middleware(auth_handler::if_auth_tokens_redirect_game);
         server.serve_proxy(
             gateway,
             required_host_www,

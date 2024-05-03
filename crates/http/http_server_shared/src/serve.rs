@@ -367,6 +367,7 @@ fn write_response_header(r: &Response, mut io: impl std::io::Write) -> std::io::
 
     for (hn, hvs) in r.headers_iter() {
         for hv in hvs {
+            // info!("writing header: {}: {}", hn, hv);
             write_line(&mut io, &mut len, hn.as_str().as_bytes())?;
             write_line(&mut io, &mut len, b": ")?;
             write_line(&mut io, &mut len, hv.as_bytes())?;

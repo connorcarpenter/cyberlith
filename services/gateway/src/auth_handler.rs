@@ -1,13 +1,11 @@
 use std::net::SocketAddr;
 
-use config::{AUTH_SERVER_PORT, AUTH_SERVER_RECV_ADDR};
+use config::{AUTH_SERVER_PORT, AUTH_SERVER_RECV_ADDR, PUBLIC_IP_ADDR, TargetEnv};
 use http_client::{HttpClient};
 use http_server::{ApiRequest, ApiResponse, Request, RequestMiddlewareAction, Response};
 use logging::info;
 
 use auth_server_http_proto::{AccessToken, AccessTokenValidateRequest, AccessTokenValidateResponse, RefreshToken, RefreshTokenGrantRequest, RefreshTokenGrantResponse};
-
-use crate::cookie_middleware::get_set_cookie_value;
 
 pub(crate) async fn require_auth_tokens(
     incoming_addr: SocketAddr,
@@ -21,17 +19,24 @@ pub(crate) async fn require_auth_tokens(
             RequestMiddlewareAction::Continue(incoming_request, None)
         },
         AuthResult::ContinueAndNewAccessToken(access_token) => {
-            const ONE_DAY_IN_SECONDS: u32 = 60 * 60 * 24;
-            let access_token_value = get_set_cookie_value("access_token", &access_token.to_string(), ONE_DAY_IN_SECONDS);
-            RequestMiddlewareAction::Continue(incoming_request, Some(access_token_value))
+
+            let mut cookies = Vec::new();
+
+            let access_token_value = AccessToken::get_new_cookie_value(PUBLIC_IP_ADDR, TargetEnv::is_prod(), &access_token);
+
+            cookies.push(access_token_value);
+
+            RequestMiddlewareAction::Continue(incoming_request, Some(cookies))
         },
         AuthResult::Stop(clear_access_token, clear_refresh_token) => {
             let mut response = Response::unauthenticated(&incoming_request.url);
             if clear_access_token {
-                response.insert_header("Set-Cookie", &get_set_cookie_value("access_token", "", 0));
+                let access_token_value = AccessToken::get_expire_cookie_value(PUBLIC_IP_ADDR, TargetEnv::is_prod());
+                response.insert_header("Set-Cookie", &access_token_value);
             }
             if clear_refresh_token {
-                response.insert_header("Set-Cookie", &get_set_cookie_value("access_token", "", 0));
+                let refresh_token_value = RefreshToken::get_expire_cookie_value(PUBLIC_IP_ADDR, TargetEnv::is_prod());
+                response.insert_header("Set-Cookie", &refresh_token_value);
             }
             RequestMiddlewareAction::Stop(response)
         }
@@ -53,19 +58,68 @@ async fn require_auth_tokens_or_redirect(incoming_addr: SocketAddr, incoming_req
             RequestMiddlewareAction::Continue(incoming_request, None)
         },
         AuthResult::ContinueAndNewAccessToken(access_token) => {
-            const ONE_DAY_IN_SECONDS: u32 = 60 * 60 * 24;
-            let access_token_value = get_set_cookie_value("access_token", &access_token.to_string(), ONE_DAY_IN_SECONDS);
-            RequestMiddlewareAction::Continue(incoming_request, Some(access_token_value))
+
+            let mut cookies_set = Vec::new();
+
+            let access_token_value = AccessToken::get_new_cookie_value(PUBLIC_IP_ADDR, TargetEnv::is_prod(), &access_token);
+
+            cookies_set.push(access_token_value);
+
+            RequestMiddlewareAction::Continue(incoming_request, Some(cookies_set))
         },
         AuthResult::Stop(clear_access_token, clear_refresh_token) => {
             let mut response = Response::redirect(&url, new_url);
             if clear_access_token {
-                response.insert_header("Set-Cookie", &get_set_cookie_value("access_token", "", 0));
+                let access_token_value = AccessToken::get_expire_cookie_value(PUBLIC_IP_ADDR, TargetEnv::is_prod());
+                response.insert_header("Set-Cookie", &access_token_value);
             }
             if clear_refresh_token {
-                response.insert_header("Set-Cookie", &get_set_cookie_value("access_token", "", 0));
+                let refresh_token_value = RefreshToken::get_expire_cookie_value(PUBLIC_IP_ADDR, TargetEnv::is_prod());
+                response.insert_header("Set-Cookie", &refresh_token_value);
             }
             RequestMiddlewareAction::Stop(response)
+        }
+    }
+}
+
+pub(crate) async fn if_auth_tokens_redirect_game(
+    incoming_addr: SocketAddr,
+    incoming_request: Request,
+) -> RequestMiddlewareAction {
+    if_auth_tokens_redirect(incoming_addr, incoming_request, "/game").await
+}
+
+async fn if_auth_tokens_redirect(incoming_addr: SocketAddr, incoming_request: Request, new_url: &str) -> RequestMiddlewareAction {
+    let url = incoming_request.url.clone();
+    match auth_impl(&incoming_addr, &incoming_request).await {
+        AuthResult::Continue => {
+            // success
+            // info!("sending redirect to /game");
+            let response = Response::redirect(&url, new_url);
+            RequestMiddlewareAction::Stop(response)
+        },
+        AuthResult::ContinueAndNewAccessToken(access_token) => {
+            let mut response = Response::redirect(&url, new_url);
+
+            let access_token_value = AccessToken::get_new_cookie_value(PUBLIC_IP_ADDR, TargetEnv::is_prod(), &access_token);
+
+            response.insert_header("Set-Cookie", &access_token_value);
+
+            // info!("sending redirect with cookie to /game");
+            RequestMiddlewareAction::Stop(response)
+        },
+        AuthResult::Stop(clear_access_token, clear_refresh_token) => {
+            let mut set_cookies = Vec::new();
+            if clear_access_token {
+                let access_token_value = AccessToken::get_expire_cookie_value(PUBLIC_IP_ADDR, TargetEnv::is_prod());
+                set_cookies.push(access_token_value);
+            }
+            if clear_refresh_token {
+                let refresh_token_value = RefreshToken::get_expire_cookie_value(PUBLIC_IP_ADDR, TargetEnv::is_prod());
+                set_cookies.push(refresh_token_value);
+            }
+            // info!("continuing to /");
+            RequestMiddlewareAction::Continue(incoming_request, Some(set_cookies))
         }
     }
 }
@@ -133,9 +187,9 @@ fn extract_cookie_value(
 ) -> Option<String> {
     let cookie_match = format!("{}=", cookie_name);
     let value: Option<String> = if let Some(cookie) = incoming_request.get_header_first("cookie") {
-        // parse 'access_token' out of cookie
+        // parse 'name' out of cookie
         let token = cookie
-            .split(';')
+            .split("; ")
             .filter(|cookie| cookie.starts_with(&cookie_match))
             .map(|cookie| cookie.trim_start_matches(&cookie_match).to_string())
             .next();

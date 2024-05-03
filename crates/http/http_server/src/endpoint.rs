@@ -73,8 +73,10 @@ impl Endpoint {
                     }
                 }
                 // handle set_cookies
-                for cookie_val in set_cookies {
-                    response.insert_header("Set-Cookie", &cookie_val);
+                for cookie_vals in set_cookies {
+                    for cookie_val in cookie_vals {
+                        response.insert_header("Set-Cookie", &cookie_val);
+                    }
                 }
                 return Ok(response);
             }

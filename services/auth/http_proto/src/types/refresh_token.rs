@@ -1,6 +1,8 @@
 use naia_serde::{BitReader, BitWrite, Serde, SerdeErr};
 use crypto::U32Token;
 
+use crate::types::get_set_cookie_value;
+
 #[derive(Eq, PartialEq, Hash, Debug, Clone, Copy)]
 pub struct RefreshToken {
     value: U32Token,
@@ -25,6 +27,15 @@ impl RefreshToken {
 
     pub fn from_str(value: &str) -> Option<Self> {
         U32Token::from_str(value).map(|value| Self { value })
+    }
+
+    pub fn get_new_cookie_value(domain: &str, secure: bool, refresh_token: &str) -> String {
+        const ONE_WEEK_IN_SECONDS: u32 = 60 * 60 * 24 * 7;
+        get_set_cookie_value("refresh_token", &refresh_token.to_string(), domain, ONE_WEEK_IN_SECONDS, secure)
+    }
+
+    pub fn get_expire_cookie_value(domain: &str, secure: bool) -> String {
+        get_set_cookie_value("refresh_token", "", domain, 0, secure)
     }
 }
 

@@ -1,13 +1,12 @@
 use std::net::SocketAddr;
 
-use config::{AUTH_SERVER_PORT, AUTH_SERVER_RECV_ADDR};
+use config::{AUTH_SERVER_PORT, AUTH_SERVER_RECV_ADDR, PUBLIC_IP_ADDR, TargetEnv};
 use http_server::{ApiRequest, ApiResponse, Request, Response, ResponseError};
 use http_client::HttpClient;
 
-use auth_server_http_proto::UserLoginRequest;
+use auth_server_http_proto::{AccessToken, RefreshToken, UserLoginRequest};
 use gateway_http_proto::{UserLoginRequest as GatewayUserLoginRequest, UserLoginResponse as GatewayUserLoginResponse, UserLoginResponse};
-
-use crate::cookie_middleware::response_set_cookies_tokens;
+use logging::info;
 
 pub(crate) async fn handler(
     _incoming_addr: SocketAddr,
@@ -41,7 +40,16 @@ pub(crate) async fn handler(
             let refresh_token = auth_response.refresh_token;
 
             let mut gateway_response = GatewayUserLoginResponse::new().to_response();
-            response_set_cookies_tokens(&mut gateway_response, &access_token, &refresh_token);
+            let access_token_value = AccessToken::get_new_cookie_value(PUBLIC_IP_ADDR, TargetEnv::is_prod(), &access_token.to_string());
+            gateway_response.insert_header("Set-Cookie", &access_token_value);
+            let refresh_token_value = RefreshToken::get_new_cookie_value(PUBLIC_IP_ADDR, TargetEnv::is_prod(), &refresh_token.to_string());
+            gateway_response.insert_header("Set-Cookie", &refresh_token_value);
+            // info!("User Login Response");
+            // for (key, values) in gateway_response.headers_iter() {
+            //     for value in values {
+            //         info!("Header: {}: {:?}", key, value);
+            //     }
+            // }
 
             http_server::http_log_util::send_res(host_name, GatewayUserLoginResponse::name());
             return Ok(gateway_response);

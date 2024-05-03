@@ -3,6 +3,8 @@ use http_common::{Request, RequestOptions, Response, ResponseError};
 
 use async_channel::{Receiver, Sender};
 
+use log::info;
+
 /// Only available when compiling for native.
 ///
 /// NOTE: `Ok(…)` is returned on network error.
@@ -11,7 +13,9 @@ pub fn fetch_blocking(
     request: &Request,
     request_options_opt: Option<RequestOptions>,
 ) -> Result<Response, ResponseError> {
-    let mut req = ureq::request(request.method.as_str(), &request.url);
+    let builder = ureq::builder().redirects(0); // we handle redirects automatically
+    let agent = builder.build();
+    let mut req = agent.request(request.method.as_str(), &request.url);
 
     if let Some(request_options) = request_options_opt {
         if let Some(timeout_duration) = request_options.timeout_opt {
@@ -19,11 +23,15 @@ pub fn fetch_blocking(
         }
     }
 
-    for (header_name, header_values) in request.headers_iter() {
-        for header_value in header_values {
-            req = req.set(header_name, header_value);
-        }
-    }
+    // info!("Sending Request with Headers:");
+    // for (header_name, header_values) in request.headers_iter() {
+    //
+    //     for header_value in header_values {
+    //         info!("[{}:{}]", header_name, header_value);
+    //         req = req.set(header_name, header_value);
+    //     }
+    // }
+    // info!("---");
 
     let resp = req.send_bytes(&request.body);
 
@@ -40,7 +48,7 @@ pub fn fetch_blocking(
     let status_text = resp.status_text().to_owned();
     let mut headers = Vec::new();
     for key in &resp.headers_names() {
-        if let Some(value) = resp.header(key) {
+        for value in resp.all(key) {
             // lowercase for easy lookup
             headers.push((key.to_ascii_lowercase(), value.to_owned()));
         }

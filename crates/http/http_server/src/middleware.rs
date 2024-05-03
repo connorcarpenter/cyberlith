@@ -5,7 +5,7 @@ use http_server_shared::executor::smol::future::Future;
 use http_common::{Request, Response, ResponseError};
 
 pub enum RequestMiddlewareAction {
-    Continue(Request, Option<String>),
+    Continue(Request, Option<Vec<String>>),
     Stop(Response),
     Error(ResponseError),
 }

@@ -1,12 +1,10 @@
 use std::net::SocketAddr;
 
-use config::{AUTH_SERVER_PORT, AUTH_SERVER_RECV_ADDR};
+use config::{AUTH_SERVER_PORT, AUTH_SERVER_RECV_ADDR, PUBLIC_IP_ADDR, TargetEnv};
 use http_client::{HttpClient};
 use http_server::{ApiRequest, ApiResponse, extract_query_string, clear_query_string, Request, RequestMiddlewareAction, Response};
 
-use auth_server_http_proto::{RegisterToken, UserRegisterConfirmRequest, UserRegisterConfirmResponse};
-
-use crate::cookie_middleware::response_set_cookies_tokens;
+use auth_server_http_proto::{AccessToken, RefreshToken, RegisterToken, UserRegisterConfirmRequest, UserRegisterConfirmResponse};
 
 pub(crate) async fn handle(
     _incoming_addr: SocketAddr,
@@ -44,9 +42,13 @@ pub(crate) async fn handle(
 
             let mut new_response = Response::redirect(&incoming_request.url, "/game");
 
-            // put SetCookies in response
+            // set access token
+            let access_token_value = AccessToken::get_new_cookie_value(PUBLIC_IP_ADDR, TargetEnv::is_prod(), &access_token.to_string());
+            new_response.insert_header("Set-Cookie", &access_token_value);
 
-            response_set_cookies_tokens(&mut new_response, &access_token, &refresh_token);
+            // set refresh token
+            let refresh_token_value = RefreshToken::get_new_cookie_value(PUBLIC_IP_ADDR, TargetEnv::is_prod(), &refresh_token.to_string());
+            new_response.insert_header("Set-Cookie", &refresh_token_value);
 
             return RequestMiddlewareAction::Stop(new_response);
         },

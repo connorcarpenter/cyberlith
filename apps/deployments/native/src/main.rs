@@ -72,7 +72,12 @@ fn handle_http(kernel: &Kernel, next_url_alias: UrlAlias) -> UrlAlias {
             next_url_alias
         }
         302 => {
-            todo!()
+            let location = response.get_header_first("location").unwrap();
+            info!("Head request to {} redirected to: {}", next_url, location);
+            match location.as_str() {
+                "/game" => UrlAlias::Game,
+                _ => UrlAlias::Launcher,
+            }
         }
         error => {
             panic!("Head request to {} failed with status: {}", next_url, error);
