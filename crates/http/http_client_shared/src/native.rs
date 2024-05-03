@@ -3,7 +3,7 @@ use http_common::{Request, RequestOptions, Response, ResponseError};
 
 use async_channel::{Receiver, Sender};
 
-use log::info;
+// use log::info;
 
 /// Only available when compiling for native.
 ///

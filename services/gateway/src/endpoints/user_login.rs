@@ -3,10 +3,10 @@ use std::net::SocketAddr;
 use config::{AUTH_SERVER_PORT, AUTH_SERVER_RECV_ADDR, PUBLIC_IP_ADDR, TargetEnv};
 use http_server::{ApiRequest, ApiResponse, Request, Response, ResponseError};
 use http_client::HttpClient;
+// use logging::info;
 
 use auth_server_http_proto::{AccessToken, RefreshToken, UserLoginRequest};
 use gateway_http_proto::{UserLoginRequest as GatewayUserLoginRequest, UserLoginResponse as GatewayUserLoginResponse, UserLoginResponse};
-use logging::info;
 
 pub(crate) async fn handler(
     _incoming_addr: SocketAddr,
