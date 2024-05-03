@@ -36,6 +36,10 @@ impl Request {
         }
     }
 
+    pub fn set_header_store(&mut self, header_store: HeaderStore) {
+        self.headers = header_store;
+    }
+
     pub fn has_header(&self, name: &str) -> bool {
         self.headers.has(name)
     }

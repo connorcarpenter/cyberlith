@@ -14,6 +14,7 @@ mod request;
 pub use request::*;
 
 mod response;
-mod headers;
-
 pub use response::*;
+
+mod headers;
+pub use headers::HeaderStore;

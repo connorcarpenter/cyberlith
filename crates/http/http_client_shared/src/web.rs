@@ -3,6 +3,7 @@ use wasm_bindgen_futures::JsFuture;
 use web_sys::AbortController;
 
 use http_common::{Request, RequestOptions, Response, ResponseError};
+// use log::info;
 
 use crate::types::PartialResponse;
 
@@ -64,6 +65,7 @@ pub(crate) async fn fetch_base(
 
     for (name, values) in request.headers_iter() {
         for value in values {
+            // info!("Setting header: {}={}", name, value);
             js_request.headers().set(name, value)?;
         }
     }

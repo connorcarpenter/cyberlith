@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap, net::SocketAddr};
+use std::net::SocketAddr;
 
 use executor::smol::{
     future::Future,
@@ -6,7 +6,7 @@ use executor::smol::{
     stream::StreamExt,
 };
 
-use http_common::{Method, Request, Response, ResponseError};
+use http_common::{Method, Request, Response, ResponseError, HeaderStore};
 use logging::{info, warn};
 
 use crate::ReadState;
@@ -36,7 +36,7 @@ pub async fn serve_impl<
     let mut endpoint_key: Option<String> = None;
     let mut content_length: Option<usize> = None;
     let mut body: Vec<u8> = Vec::new();
-    let mut header_map = BTreeMap::<String, String>::new();
+    let mut header_map = HeaderStore::new();
 
     let mut read_state = ReadState::MatchingUrl;
 
@@ -157,7 +157,9 @@ pub async fn serve_impl<
     let uri = uri.unwrap();
 
     // done reading //
-    let request = cast_to_request(method, &uri, body, header_map).await;
+    let mut request = Request::new(method, &uri, body);
+    request.set_header_store(header_map);
+
     let endpoint_key = endpoint_key.unwrap();
 
     match response_func(endpoint_key, incoming_address, request.clone()).await {
@@ -207,7 +209,7 @@ async fn request_read_headers<MatchHostOutput: Future<Output = MatchHostResult> 
     endpoint_key: &str,
     method: &Method,
     content_length: &mut Option<usize>,
-    header_map: &mut BTreeMap<String, String>,
+    header_map: &mut HeaderStore,
     read_state: &mut ReadState,
     line_str: &String,
 ) -> bool {
@@ -239,6 +241,7 @@ async fn request_read_headers<MatchHostOutput: Future<Output = MatchHostResult> 
         let parts = line_str.split(": ").collect::<Vec<&str>>();
 
         // insert into header collection
+        // info!("inserting header: [{}:{}]", parts[0], parts[1]);
         header_map.insert(parts[0].to_string(), parts[1].to_string());
 
         // check headers
@@ -298,20 +301,6 @@ fn request_read_body(
         *read_state = ReadState::Error;
         return true;
     }
-}
-
-async fn cast_to_request(
-    method: Method,
-    uri: &str,
-    body: Vec<u8>,
-    header_map: BTreeMap<String, String>,
-) -> Request {
-    // cast to request //
-    let mut request = Request::new(method, uri, body);
-    for (hn, hv) in header_map {
-        request.insert_header(&hn, &hv);
-    }
-    request
 }
 
 async fn response_send<ResponseStream: Unpin + AsyncRead + AsyncWrite>(

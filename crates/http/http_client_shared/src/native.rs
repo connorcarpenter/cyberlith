@@ -2,7 +2,6 @@
 use http_common::{Request, RequestOptions, Response, ResponseError};
 
 use async_channel::{Receiver, Sender};
-
 // use log::info;
 
 /// Only available when compiling for native.
@@ -24,13 +23,12 @@ pub fn fetch_blocking(
     }
 
     // info!("Sending Request with Headers:");
-    // for (header_name, header_values) in request.headers_iter() {
-    //
-    //     for header_value in header_values {
-    //         info!("[{}:{}]", header_name, header_value);
-    //         req = req.set(header_name, header_value);
-    //     }
-    // }
+    for (header_name, header_values) in request.headers_iter() {
+        for header_value in header_values {
+            // info!("[{}:{}]", header_name, header_value);
+            req = req.set(header_name, header_value);
+        }
+    }
     // info!("---");
 
     let resp = req.send_bytes(&request.body);
