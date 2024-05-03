@@ -46,7 +46,7 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
             .set_size_pc(100., 84.)
             .set_vertical()
             .set_children_valign(Alignment::Start)
-            .set_row_between_px(5.0);
+            .set_row_between_vp(0.5);
     });
     let heading_container_style = ui_config.create_panel_style(|s| {
         s.set_background_alpha(0.)

@@ -71,31 +71,36 @@ pub(crate) fn layout(
     node: &NodeId,
     parent_layout_type: LayoutType,
     viewport_size: (f32, f32),
-    init_parent_main: f32,
-    init_parent_cross: f32,
+    mut init_parent_main: f32,
+    mut init_parent_cross: f32,
     cache: &mut LayoutCache,
     store: &dyn NodeStore,
     state_store: &UiVisibilityStore,
     text_measurer: &dyn TextMeasurer,
 ) -> Size {
+
+    if node_is_root {
+        init_parent_main = viewport_size.1;
+        init_parent_cross = viewport_size.0;
+    }
+
+    let init_parent_main = init_parent_main;
+    let init_parent_cross = init_parent_cross;
+
     let parent_padding_main: f32 = match node.padding_main_before(store, parent_layout_type) {
-        SizeUnits::Pixels(val) => val,
         SizeUnits::Percentage(val) => percentage_calc(val, init_parent_main, 0.0),
         SizeUnits::Viewport(val) => percentage_calc(val, viewport_size.0, 0.0),
         _ => 0.0,
     } + match node.padding_main_after(store, parent_layout_type) {
-        SizeUnits::Pixels(val) => val,
         SizeUnits::Percentage(val) => percentage_calc(val, init_parent_main, 0.0),
         SizeUnits::Viewport(val) => percentage_calc(val, viewport_size.0, 0.0),
         _ => 0.0,
     };
     let parent_padding_cross: f32 = match node.padding_cross_before(store, parent_layout_type) {
-        SizeUnits::Pixels(val) => val,
         SizeUnits::Percentage(val) => percentage_calc(val, init_parent_cross, 0.0),
         SizeUnits::Viewport(val) => percentage_calc(val, viewport_size.1, 0.0),
         _ => 0.0,
     } + match node.padding_cross_after(store, parent_layout_type) {
-        SizeUnits::Pixels(val) => val,
         SizeUnits::Percentage(val) => percentage_calc(val, init_parent_cross, 0.0),
         SizeUnits::Viewport(val) => percentage_calc(val, viewport_size.1, 0.0),
         _ => 0.0,
@@ -106,28 +111,22 @@ pub(crate) fn layout(
 
     // The desired main-axis and cross-axis sizes of the node.
     let main = if node_is_root {
-        SizeUnits::Pixels(viewport_size.1)
+        SizeUnits::Viewport(100.0)
     } else {
         node.main(store, parent_layout_type)
     };
     let cross = if node_is_root {
-        SizeUnits::Pixels(viewport_size.0)
+        SizeUnits::Viewport(100.0)
     } else {
         node.cross(store, parent_layout_type)
     };
     let main_for_children = if node_is_root {
-        match layout_type {
-            LayoutType::Row => SizeUnits::Pixels(viewport_size.0),
-            LayoutType::Column => SizeUnits::Pixels(viewport_size.1),
-        }
+        SizeUnits::Viewport(100.0)
     } else {
         node.main(store, layout_type)
     };
     let cross_for_children = if node_is_root {
-        match layout_type {
-            LayoutType::Row => SizeUnits::Pixels(viewport_size.1),
-            LayoutType::Column => SizeUnits::Pixels(viewport_size.0),
-        }
+        SizeUnits::Viewport(100.0)
     } else {
         node.cross(store, layout_type)
     };
@@ -164,7 +163,6 @@ pub(crate) fn layout(
 
     // Compute main-axis size.
     let mut computed_main = match main {
-        SizeUnits::Pixels(val) => val,
         SizeUnits::Percentage(val) => {
             percentage_calc(val, init_parent_main, parent_padding_main).round()
         }

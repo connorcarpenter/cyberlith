@@ -134,9 +134,8 @@ pub(crate) enum PositionTypeBits {
 
 #[derive(Serde, Clone, PartialEq)]
 pub(crate) enum SizeUnitsBits {
-    Pixels(UnsignedVariableInteger<7>),
     Percent(UnsignedInteger<7>),
-    Viewport(UnsignedInteger<7>),
+    Viewport(UnsignedInteger<10>),
     Auto,
 }
 

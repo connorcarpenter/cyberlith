@@ -146,8 +146,6 @@ impl MarginUnits {
 /// Units which describe spacing and size.
 #[derive(Default, Debug, Clone, Copy, PartialEq)]
 pub enum SizeUnits {
-    /// A number of logical pixels.
-    Pixels(f32),
     /// A percentage of the parent dimension.
     ///
     /// A percentage of the (parent's width - parent's padding - margin - border) when applied to width properties.
@@ -178,7 +176,6 @@ impl SizeUnits {
         default: f32,
     ) -> f32 {
         match self {
-            SizeUnits::Pixels(pixels) => *pixels,
             SizeUnits::Percentage(percentage) => {
                 percentage_calc(*percentage, parent_value, parent_padding)
             }
@@ -200,7 +197,6 @@ impl SizeUnits {
         let max = max.to_px(viewport_value, parent_value, parent_padding, f32::MAX);
 
         match self {
-            SizeUnits::Pixels(pixels) => pixels.min(max).max(min),
             SizeUnits::Percentage(percentage) => {
                 percentage_calc(*percentage, parent_value, parent_padding)
                     .min(max)
@@ -215,9 +211,6 @@ impl SizeUnits {
 
     pub fn clamp(&self, min: SizeUnits, max: SizeUnits) -> Self {
         match (self, min, max) {
-            (SizeUnits::Pixels(val), SizeUnits::Pixels(min), SizeUnits::Pixels(max)) => {
-                SizeUnits::Pixels(val.min(max).max(min))
-            }
             (
                 SizeUnits::Percentage(val),
                 SizeUnits::Percentage(min),
@@ -228,11 +221,6 @@ impl SizeUnits {
             }
             _ => *self,
         }
-    }
-
-    /// Returns true if the value is in pixels.
-    pub fn is_pixels(&self) -> bool {
-        matches!(self, SizeUnits::Pixels(_))
     }
 
     /// Returns true if the value is a percentage.

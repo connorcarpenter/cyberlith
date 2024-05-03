@@ -24,9 +24,9 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
         s
             //.set_background_color(Color::BLACK)
             .set_background_alpha(0.0)
-            .set_padding_px(10.0, 10.0, 10.0, 10.0)
+            .set_padding_vp(1.0, 1.0, 1.0, 1.0)
             .set_vertical()
-            .set_row_between_px(10.0);
+            .set_row_between_vp(1.0);
     });
     let container_style = ui_config.create_panel_style(|s| {
         s.set_background_alpha(0.0)
@@ -56,10 +56,10 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
             .set_down_color(Color::BLUE)
             .set_self_halign(Alignment::Center)
             .set_size_pc(50.0, 20.0)
-            .set_size_max_px(240.0, 90.0)
+            .set_size_max_vp(24.0, 9.0)
             .set_solid_fit()
             .set_aspect_ratio(16.0, 4.)
-            .set_padding_px(10.0, 10.0, 10.0, 10.0)
+            .set_padding_vp(1.0, 1.0, 1.0, 1.0)
             .set_margin_right_vp(4.0);
     });
     let register_button_style = ui_config.create_button_style(|s| {
@@ -70,10 +70,10 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
             .set_down_color(Color::BLUE)
             .set_self_halign(Alignment::Center)
             .set_size_pc(50.0, 20.0)
-            .set_size_max_px(240.0, 90.0)
+            .set_size_max_vp(24.0, 9.0)
             .set_solid_fit()
             .set_aspect_ratio(16.0, 4.)
-            .set_padding_px(10.0, 10.0, 10.0, 10.0)
+            .set_padding_vp(1.0, 1.0, 1.0, 1.0)
             .set_margin_left_vp(4.0);
     });
 

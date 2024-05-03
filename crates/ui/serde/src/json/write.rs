@@ -154,7 +154,6 @@ impl From<PositionType> for PositionTypeJson {
 impl From<SizeUnits> for SizeUnitsJson {
     fn from(size_units: SizeUnits) -> Self {
         match size_units {
-            SizeUnits::Pixels(pixels) => Self::Pixels(pixels),
             SizeUnits::Percentage(percentage) => Self::Percentage(percentage),
             SizeUnits::Viewport(percentage) => Self::Viewport(percentage),
             SizeUnits::Auto => Self::Auto,

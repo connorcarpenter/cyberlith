@@ -233,23 +233,6 @@ impl From<PositionType> for PositionTypeBits {
 impl From<SizeUnits> for SizeUnitsBits {
     fn from(size_units: SizeUnits) -> Self {
         match size_units {
-            SizeUnits::Pixels(val) => {
-                // validate
-                if val.fract() != 0.0 {
-                    panic!(
-                        "SizeUnits::Pixels value must be a whole number, got: {}",
-                        val
-                    );
-                }
-                if val < 0.0 {
-                    panic!("SizeUnits::Pixels value must be positive, got: {}", val);
-                }
-
-                let val = val as u64;
-                let val = UnsignedVariableInteger::<7>::new(val);
-
-                Self::Pixels(val)
-            }
             SizeUnits::Percentage(val) => {
                 // validate
                 if val < 0.0 || val > 100.0 {
@@ -278,15 +261,15 @@ impl From<SizeUnits> for SizeUnitsBits {
                         val
                     );
                 }
-                if val.fract() != 0.0 {
+                if (val * 10.0).fract() != 0.0 {
                     panic!(
-                        "SizeUnits::Viewport value must be a whole number, got: {}",
+                        "SizeUnits::Viewport value must have at most 1 decimal spot, got: {}",
                         val
                     );
                 }
 
-                let val = val as u64;
-                let val = UnsignedInteger::<7>::new(val);
+                let val = (val*10.0) as u64;
+                let val = UnsignedInteger::<10>::new(val);
 
                 Self::Viewport(val)
             }
