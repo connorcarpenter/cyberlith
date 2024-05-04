@@ -26,20 +26,20 @@ impl TextboxInputState {
         match event {
             UiInputEvent::LeftPressed(modifiers) => {
                 input_state.set_left_pressed(modifiers);
-                Self::handle_left(input_state, textbox_state, modifiers, &mut output);
+                Self::handle_left(input_state, textbox_state, modifiers, false, &mut output);
             }
             UiInputEvent::LeftHeld(modifiers) => {
-                Self::handle_left(input_state, textbox_state, modifiers, &mut output);
+                Self::handle_left(input_state, textbox_state, modifiers, true, &mut output);
             }
             UiInputEvent::LeftReleased => {
                 input_state.set_left_released();
             }
             UiInputEvent::RightPressed(modifiers) => {
                 input_state.set_right_pressed(modifiers);
-                Self::handle_right(input_state, textbox_state, modifiers, &mut output);
+                Self::handle_right(input_state, textbox_state, modifiers, false, &mut output);
             }
             UiInputEvent::RightHeld(modifiers) => {
-                Self::handle_right(input_state, textbox_state, modifiers, &mut output);
+                Self::handle_right(input_state, textbox_state, modifiers, true, &mut output);
             }
             UiInputEvent::RightReleased => {
                 input_state.set_right_released();
@@ -232,6 +232,7 @@ impl TextboxInputState {
         input_state: &mut UiInputState,
         textbox_state: &mut TextboxState,
         modifiers: Modifiers,
+        held: bool,
         output: &mut Option<Vec<UiGlobalEvent>>,
     ) {
         match (modifiers.shift, modifiers.ctrl) {
@@ -239,10 +240,15 @@ impl TextboxInputState {
                 if input_state.carat_index > 0 {
                     input_state.carat_index -= 1;
                 } else {
-                    if output.is_none() {
-                        *output = Some(Vec::new());
+                    if !held {
+                        // if we are at the beginning of the text, pass the event through to navigate out of textbox
+                        if output.is_none() {
+                            *output = Some(Vec::new());
+                        }
+                        output.as_mut().unwrap().push(UiGlobalEvent::PassThru);
+
+                        input_state.set_left_released();
                     }
-                    output.as_mut().unwrap().push(UiGlobalEvent::PassThru);
                 }
                 input_state.select_index = None;
             }
@@ -297,6 +303,7 @@ impl TextboxInputState {
         input_state: &mut UiInputState,
         textbox_state: &mut TextboxState,
         modifiers: Modifiers,
+        held: bool,
         output: &mut Option<Vec<UiGlobalEvent>>,
     ) {
         match (modifiers.shift, modifiers.ctrl) {
@@ -304,10 +311,15 @@ impl TextboxInputState {
                 if input_state.carat_index < textbox_state.text.len() {
                     input_state.carat_index += 1;
                 } else {
-                    if output.is_none() {
-                        *output = Some(Vec::new());
+                    if !held {
+                        // if we are at the end of the text, pass the event through to navigate out of textbox
+                        if output.is_none() {
+                            *output = Some(Vec::new());
+                        }
+                        output.as_mut().unwrap().push(UiGlobalEvent::PassThru);
+
+                        input_state.set_right_released();
                     }
-                    output.as_mut().unwrap().push(UiGlobalEvent::PassThru);
                 }
                 input_state.select_index = None;
             }
