@@ -371,7 +371,7 @@ impl TextboxInputState {
     pub fn recv_mouse_event(
         input_state: &mut UiInputState,
         text_measurer: &dyn TextMeasurer,
-        textbox_state: &mut TextboxState,
+        textbox_state: &TextboxState,
         node_x: f32,
         node_h: f32,
         mouse_position_opt: Option<Vec2>,
@@ -388,7 +388,7 @@ impl TextboxInputState {
                 }
 
                 input_state.carat_index = Self::get_closest_index(
-                    &textbox_state.text,
+                    &textbox_state,
                     text_measurer,
                     click_position.x,
                     node_x,
@@ -403,7 +403,7 @@ impl TextboxInputState {
             UiInputEvent::MouseDoubleClick(MouseButton::Left, click_position) => {
                 // double click
                 let click_index = Self::get_closest_index(
-                    &textbox_state.text,
+                    &textbox_state,
                     text_measurer,
                     click_position.x,
                     node_x,
@@ -441,7 +441,7 @@ impl TextboxInputState {
                             input_state.select_index = Some(input_state.carat_index);
                         }
                         input_state.carat_index = Self::get_closest_index(
-                            &textbox_state.text,
+                            &textbox_state,
                             text_measurer,
                             mouse_position.x,
                             node_x,
@@ -455,7 +455,7 @@ impl TextboxInputState {
                     } else {
                         if let Some(select_index) = input_state.select_index {
                             input_state.carat_index = Self::get_closest_index(
-                                &textbox_state.text,
+                                &textbox_state,
                                 text_measurer,
                                 mouse_position.x,
                                 node_x,
@@ -466,7 +466,7 @@ impl TextboxInputState {
                             }
                         } else {
                             let new_index = Self::get_closest_index(
-                                &textbox_state.text,
+                                &textbox_state,
                                 text_measurer,
                                 mouse_position.x,
                                 node_x,
@@ -485,12 +485,16 @@ impl TextboxInputState {
     }
 
     fn get_closest_index(
-        text: &str,
+        textbox_state: &TextboxState,
         text_measurer: &dyn TextMeasurer,
         click_x: f32,
         position_x: f32,
         height: f32,
     ) -> usize {
+        let text = &textbox_state.text;
+        let offset_index = textbox_state.offset_index;
+        let text = &text[offset_index..text.len()];
+
         let click_x = click_x - position_x;
 
         let mut closest_x: f32 = f32::MAX;
@@ -508,10 +512,10 @@ impl TextboxInputState {
                 closest_index = char_index;
             } else {
                 // dist is increasing ... we can break
-                return closest_index;
+                return closest_index + offset_index;
             }
         }
 
-        return closest_index;
+        return closest_index + offset_index;
     }
 }
