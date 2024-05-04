@@ -134,6 +134,7 @@ impl UiRenderer {
         mat_handle: &Handle<CpuMaterial>,
         transform: &Transform,
         text: &str,
+        offset_index: usize,
         select_index: usize,
         carat_index: usize,
     ) {
@@ -141,9 +142,12 @@ impl UiRenderer {
             return;
         };
         let text_measurer = UiTextMeasurer::new(icon_data);
-        let subimage_indices = text_get_subimage_indices(text);
+        let subimage_indices = text_get_subimage_indices(&text[offset_index..text.len()]);
         let (x_positions, text_height) = text_get_raw_rects(&text_measurer, &subimage_indices);
         let text_scale = transform.scale.y / text_height;
+
+        let carat_index = if offset_index > carat_index { 0 } else { carat_index - offset_index };
+        let select_index = if offset_index > select_index { 0 } else { select_index - offset_index };
 
         let pos_a = transform.translation.x + (x_positions[carat_index] * text_scale);
         let pos_b = transform.translation.x + (x_positions[select_index] * text_scale);
@@ -152,12 +156,14 @@ impl UiRenderer {
         } else {
             (pos_b, pos_a - pos_b)
         };
+        let x_scale = x_scale.min(transform.scale.x);
 
         let mut box_transform = transform.clone();
         box_transform.translation.x = x_pos;
         box_transform.scale.x = x_scale;
-        box_transform.translation.y += 8.0;
-        box_transform.scale.y -= 16.0;
+        let selection_height_offset = text_height * 0.02;
+        box_transform.translation.y += selection_height_offset;
+        box_transform.scale.y -= selection_height_offset * 2.0;
         render_frame.draw_mesh(
             Some(&RenderLayer::UI),
             mesh_handle,
@@ -423,6 +429,7 @@ fn draw_ui_textbox(
                     &mat_handle,
                     &text_transform,
                     &textbox_state.text,
+                    textbox_state.offset_index,
                     select_index,
                     ui_input_state.carat_index,
                 );
