@@ -227,6 +227,7 @@ pub(crate) struct ButtonJson {
 pub(crate) struct TextboxJson {
     id_str: String,
     navigation: NavigationJson,
+    is_password: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

@@ -6,6 +6,7 @@ use crate::Navigation;
 pub struct Textbox {
     pub id_str: String,
     pub navigation: Navigation,
+    pub is_password: bool,
 }
 
 impl Textbox {
@@ -13,6 +14,7 @@ impl Textbox {
         Self {
             id_str: id_str.to_string(),
             navigation: Navigation::new(),
+            is_password: false,
         }
     }
 }

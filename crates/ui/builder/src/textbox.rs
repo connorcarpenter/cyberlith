@@ -21,6 +21,12 @@ impl<'a> TextboxMut<'a> {
         self
     }
 
+    pub fn set_as_password(&mut self) -> &mut Self {
+        let node = self.ui_config.node_mut(&self.node_id).unwrap();
+        node.widget_textbox_mut().unwrap().is_password = true;
+        self
+    }
+
     pub fn set_style(&mut self, style_id: StyleId) -> &mut Self {
         let node = self.ui_config.node_mut(&self.node_id).unwrap();
         node.set_style_id(style_id);

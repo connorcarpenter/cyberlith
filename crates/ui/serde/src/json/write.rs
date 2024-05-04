@@ -274,6 +274,7 @@ impl From<&Textbox> for TextboxJson {
         Self {
             id_str: textbox.id_str.to_string(),
             navigation: From::from(&textbox.navigation),
+            is_password: textbox.is_password,
         }
     }
 }

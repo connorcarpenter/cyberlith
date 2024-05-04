@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use ui_runner_config::{NodeId, StyleId, WidgetKind};
+use ui_runner_config::{NodeId, StyleId, UiNode, WidgetKind};
 
 use crate::button::ButtonStyleState;
 use crate::panel::PanelStyleState;
@@ -23,8 +23,8 @@ impl UiStateStore {
     }
 
     // nodes
-    pub(crate) fn node_state_init(&mut self, widget_kind: &WidgetKind) {
-        let node_state = UiNodeState::from_node(widget_kind);
+    pub(crate) fn node_state_init(&mut self, ui_node: &UiNode) {
+        let node_state = UiNodeState::from_node(ui_node);
         self.insert_node(node_state);
     }
 

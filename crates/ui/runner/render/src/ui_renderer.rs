@@ -397,6 +397,13 @@ fn draw_ui_textbox(
         panic!("No text color handle found in globals");
     };
 
+    let password_masked_string = if textbox_state.password_mask { Some(textbox_state.get_masked_text()) } else { None };
+    let textbox_text = if password_masked_string.is_some() {
+        password_masked_string.as_ref().unwrap()
+    } else {
+        &textbox_state.text
+    };
+
     // draw text
     let mut text_transform = transform.clone();
     text_transform.translation.x += 8.0;
@@ -411,7 +418,7 @@ fn draw_ui_textbox(
             text_icon_handle,
             text_color_handle,
             &text_transform,
-            &textbox_state.text[textbox_state.offset_index..textbox_state.text.len()],
+            &textbox_text[textbox_state.offset_index..textbox_text.len()],
         );
     }
 
@@ -428,7 +435,7 @@ fn draw_ui_textbox(
                     ui_state.globals.get_box_mesh_handle().unwrap(),
                     &mat_handle,
                     &text_transform,
-                    &textbox_state.text,
+                    textbox_text,
                     textbox_state.offset_index,
                     select_index,
                     ui_input_state.carat_index,
@@ -446,7 +453,7 @@ fn draw_ui_textbox(
                 text_icon_handle,
                 text_color_handle,
                 &text_transform,
-                &textbox_state.text,
+                textbox_text,
                 textbox_state.offset_index,
                 ui_input_state.carat_index,
             );

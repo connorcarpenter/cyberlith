@@ -1,19 +1,28 @@
-use crate::NodeActiveState;
+
 use render_api::base::CpuMaterial;
 use storage::Handle;
+use ui_runner_config::Textbox;
+
+use crate::NodeActiveState;
 
 #[derive(Clone)]
 pub struct TextboxState {
     pub text: String,
     pub offset_index: usize,
+    pub password_mask: bool,
 }
 
 impl TextboxState {
-    pub fn new() -> Self {
+    pub fn new(textbox: &Textbox) -> Self {
         Self {
             text: String::new(),
             offset_index: 0,
+            password_mask: textbox.is_password,
         }
+    }
+
+    pub fn get_masked_text(&self) -> String {
+        "*".repeat(self.text.len())
     }
 }
 

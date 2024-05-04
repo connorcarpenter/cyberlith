@@ -221,6 +221,7 @@ pub(crate) struct ButtonBits {
 pub(crate) struct TextboxBits {
     id_str: String,
     navigation: NavigationBits,
+    is_password: bool,
 }
 
 #[derive(Serde, Clone, PartialEq)]

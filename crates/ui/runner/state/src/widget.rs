@@ -1,4 +1,4 @@
-use ui_runner_config::WidgetKind;
+use ui_runner_config::{WidgetKind, Widget};
 
 use crate::textbox::TextboxState;
 
@@ -10,9 +10,9 @@ pub enum WidgetState {
 }
 
 impl WidgetState {
-    pub(crate) fn from_widget(widget: &WidgetKind) -> Self {
+    pub(crate) fn from_widget(widget: &Widget) -> Self {
         match widget {
-            WidgetKind::Textbox => Self::Textbox(TextboxState::new()),
+            Widget::Textbox(textbox) => Self::Textbox(TextboxState::new(textbox)),
             _ => Self::None,
         }
     }

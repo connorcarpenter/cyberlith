@@ -440,6 +440,7 @@ impl TextboxBits {
         Self {
             id_str: textbox.id_str.clone(),
             navigation: NavigationBits::from_navigation(ui_config, &textbox.navigation),
+            is_password: textbox.is_password,
         }
     }
 }

@@ -227,9 +227,11 @@ fn convert_nodes_recurse_panel(
                 };
 
                 // creates a new textbox
-                let child_textbox_id = ui_config.create_node(Widget::Textbox(Textbox::new(
+                let mut textbox = Textbox::new(
                     child_textbox_serde.id_str.as_str(),
-                )));
+                );
+                textbox.is_password = child_textbox_serde.is_password;
+                let child_textbox_id = ui_config.create_node(Widget::Textbox(textbox));
                 let Widget::Panel(panel) = &mut ui_config.node_mut(panel_id).unwrap().widget else {
                     panic!("Expected panel widget");
                 };

@@ -194,6 +194,7 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
                     c.add_text("password:").set_style(base_label_style);
                     // text-edit
                     c.add_textbox("password_textbox")
+                        .set_as_password()
                         .set_style(base_textbox_style)
                         .navigation(|n| {
                             n.up_goes_to("email_textbox")
@@ -207,6 +208,7 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
                     c.add_text("confirm password:").set_style(base_label_style);
                     // text-edit
                     c.add_textbox("confirm_password_textbox")
+                        .set_as_password()
                         .set_style(base_textbox_style)
                         .navigation(|n| {
                             n.up_goes_to("password_textbox")
