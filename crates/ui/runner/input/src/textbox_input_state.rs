@@ -3,8 +3,8 @@ use unicode_segmentation::UnicodeSegmentation;
 use input::{Modifiers, MouseButton};
 use math::Vec2;
 
-use ui_runner_config::{text_get_raw_rects, text_get_subimage_indices, TextMeasurer};
-use ui_state::TextboxState;
+use ui_runner_config::{get_carat_offset_and_scale, NodeId, text_get_raw_rects, text_get_subimage_indices, TextMeasurer};
+use ui_state::{TextboxState, UiState};
 
 use crate::{UiGlobalEvent, UiInputEvent, UiInputState};
 
@@ -13,10 +13,15 @@ pub struct TextboxInputState;
 
 impl TextboxInputState {
     pub fn recv_keyboard_or_gamepad_event(
+        text_measurer: &dyn TextMeasurer,
         input_state: &mut UiInputState,
-        textbox_state: &mut TextboxState,
+        ui_state: &mut UiState,
+        textbox_id: &NodeId,
         event: UiInputEvent,
     ) -> Option<Vec<UiGlobalEvent>> {
+
+        let textbox_state = ui_state.textbox_mut(&textbox_id).unwrap();
+
         let mut output = None;
         match event {
             UiInputEvent::LeftPressed(modifiers) => {
@@ -191,6 +196,33 @@ impl TextboxInputState {
                 input_state.carat_index = textbox_state.text.len();
             }
             _ => panic!("Unhandled input event for textbox: {:?}", event),
+        }
+
+        if input_state.carat_index < textbox_state.offset_index {
+            textbox_state.offset_index = input_state.carat_index;
+        } else {
+
+            // move the text offset index if the carat is out of view
+            let (textbox_w, textbox_h, _, _, _) = ui_state.cache.bounds(&textbox_id).unwrap();
+            let textbox_w = textbox_w - 8.0; // padding
+            let textbox_state = ui_state.textbox_mut(&textbox_id).unwrap();
+
+            loop {
+                let (carat_offset, _) = get_carat_offset_and_scale(
+                    text_measurer,
+                    textbox_h,
+                    textbox_state.text.as_str(),
+                    textbox_state.offset_index,
+                    input_state.carat_index
+                );
+                let carat_offset = carat_offset + 8.0; // padding
+
+                if carat_offset > textbox_w {
+                    textbox_state.offset_index += 1;
+                } else {
+                    break;
+                }
+            }
         }
 
         output

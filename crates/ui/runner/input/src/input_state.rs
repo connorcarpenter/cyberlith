@@ -89,7 +89,6 @@ impl UiInputState {
             interact_timer: Instant::now(),
 
             carat_index: 0,
-            text_offset_index: 0,
             select_index: None,
             carat_held: false,
             left_pressed: None,

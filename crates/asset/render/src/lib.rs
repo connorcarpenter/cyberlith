@@ -314,6 +314,7 @@ impl AssetRenderer {
         let text_measurer = UiTextMeasurer::new(icon_data);
         let subimage_indices = text_get_subimage_indices(text);
         let (x_positions, text_height) = text_get_raw_rects(&text_measurer, &subimage_indices);
+        let max_width = transform.scale.x;
 
         let mut cursor = Transform::from_xyz(
             0.0,
@@ -327,9 +328,14 @@ impl AssetRenderer {
         for char_index in 0..subimage_indices.len() {
             let frame_x = x_positions[char_index] * cursor.scale.x;
             let next_frame_x = x_positions[char_index + 1] * cursor.scale.x;
-            let frame_index = subimage_indices[char_index];
+
+            if next_frame_x > max_width {
+                break;
+            }
 
             cursor.translation.x = transform.translation.x + (frame_x + next_frame_x) / 2.0;
+
+            let frame_index = subimage_indices[char_index];
 
             Self::draw_icon_with_material(
                 render_frame,

@@ -65,9 +65,19 @@ impl UiState {
 
     // nodes
 
+    pub(crate) fn node_ref(&self, id: &NodeId) -> Option<&UiNodeState> {
+        self.store.get_node(&id)
+    }
+
     pub(crate) fn node_mut(&mut self, id: &NodeId) -> Option<&mut UiNodeState> {
         self.queue_recalculate_layout();
         self.store.get_node_mut(&id)
+    }
+
+    pub fn textbox_ref(&self, id: &NodeId) -> Option<&TextboxState> {
+        let node_ref = self.node_ref(id)?;
+        let textbox_ref = node_ref.widget_textbox_ref()?;
+        Some(textbox_ref)
     }
 
     pub fn textbox_mut(&mut self, id: &NodeId) -> Option<&mut TextboxState> {

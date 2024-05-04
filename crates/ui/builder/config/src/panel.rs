@@ -1,5 +1,5 @@
 use render_api::base::Color;
-use ui_layout::{Alignment, LayoutType, MarginUnits, NodeId, SizeUnits};
+use ui_layout::{Alignment, LayoutType, MarginUnits, NodeId};
 
 #[derive(Clone)]
 pub struct Panel {

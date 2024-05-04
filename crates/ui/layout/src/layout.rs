@@ -1,6 +1,6 @@
 use smallvec::SmallVec;
 
-use logging::{info, warn};
+use logging::warn;
 
 use crate::{percentage_calc, LayoutCache, LayoutType, NodeId, NodeStore, PositionType, Size, SizeUnits, Solid, TextMeasurer, UiVisibilityStore, MarginUnits};
 

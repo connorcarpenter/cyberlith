@@ -90,6 +90,7 @@ impl UiRenderer {
         text_color_mat_handle: &Handle<CpuMaterial>,
         transform: &Transform,
         text: &str,
+        text_offset_index: usize,
         carat_index: usize,
     ) {
         let Some(icon_data) = asset_manager.get_store().icons.get(text_icon_handle) else {
@@ -97,7 +98,13 @@ impl UiRenderer {
         };
         let text_measurer = UiTextMeasurer::new(icon_data);
 
-        let (carat_offset_x, carat_scale) = get_carat_offset_and_scale(&text_measurer, transform.scale.y, text, carat_index);
+        let (carat_offset_x, carat_scale) = get_carat_offset_and_scale(
+            &text_measurer,
+            transform.scale.y,
+            text,
+            text_offset_index,
+            carat_index
+        );
 
         let mut carat_transform = Transform::from_xyz(
             transform.translation.x + carat_offset_x,
@@ -387,6 +394,7 @@ fn draw_ui_textbox(
     // draw text
     let mut text_transform = transform.clone();
     text_transform.translation.x += 8.0;
+    text_transform.scale.x -= 16.0;
 
     {
         text_transform.translation.z =
@@ -397,7 +405,7 @@ fn draw_ui_textbox(
             text_icon_handle,
             text_color_handle,
             &text_transform,
-            &textbox_state.text,
+            &textbox_state.text[textbox_state.offset_index..textbox_state.text.len()],
         );
     }
 
@@ -432,6 +440,7 @@ fn draw_ui_textbox(
                 text_color_handle,
                 &text_transform,
                 &textbox_state.text,
+                textbox_state.offset_index,
                 ui_input_state.carat_index,
             );
         }
