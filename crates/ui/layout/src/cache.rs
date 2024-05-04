@@ -15,6 +15,7 @@ impl LayoutCache {
         }
     }
 
+    // output is (width, height, x, y, z)
     pub fn bounds(&self, node: &NodeId) -> Option<(f32, f32, f32, f32, f32)> {
         self.rect
             .get(node)

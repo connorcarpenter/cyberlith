@@ -54,6 +54,16 @@ pub fn text_measure_raw_size(text_measurer: &dyn TextMeasurer, text: &str) -> (f
     )
 }
 
+pub fn get_carat_offset_and_scale(text_measurer: &dyn TextMeasurer, textbox_scale_y: f32, text: &str, carat_index: usize) -> (f32, f32) {
+    let subimage_indices = text_get_subimage_indices(text);
+    let (x_positions, text_height) = text_get_raw_rects(&text_measurer, &subimage_indices);
+
+    let cursor_scale = textbox_scale_y / text_height;
+    let carat_offset_x = x_positions[carat_index] * cursor_scale;
+
+    (carat_offset_x, cursor_scale)
+}
+
 pub fn point_is_inside(layout: (f32, f32, f32, f32), mouse_x: f32, mouse_y: f32) -> bool {
     let (width, height, posx, posy) = layout;
 
@@ -62,3 +72,5 @@ pub fn point_is_inside(layout: (f32, f32, f32, f32), mouse_x: f32, mouse_y: f32)
         && mouse_y >= posy
         && mouse_y <= posy + height + 1.0
 }
+
+

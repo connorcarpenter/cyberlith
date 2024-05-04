@@ -5,12 +5,14 @@ use storage::Handle;
 #[derive(Clone)]
 pub struct TextboxState {
     pub text: String,
+    pub offset_index: usize,
 }
 
 impl TextboxState {
     pub fn new() -> Self {
         Self {
             text: String::new(),
+            offset_index: 0,
         }
     }
 }

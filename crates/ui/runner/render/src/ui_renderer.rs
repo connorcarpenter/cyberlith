@@ -16,6 +16,7 @@ use ui_runner::{
     state::{NodeActiveState, UiState},
     Blinkiness, UiHandle, UiManager,
 };
+use ui_runner::config::get_carat_offset_and_scale;
 
 pub trait UiRender {
     fn draw_ui(&self, asset_manager: &AssetManager, render_frame: &mut RenderFrame);
@@ -95,21 +96,18 @@ impl UiRenderer {
             return;
         };
         let text_measurer = UiTextMeasurer::new(icon_data);
-        let subimage_indices = text_get_subimage_indices(text);
-        let (x_positions, text_height) = text_get_raw_rects(&text_measurer, &subimage_indices);
 
-        let mut cursor = Transform::from_xyz(
-            0.0,
+        let (carat_offset_x, carat_scale) = get_carat_offset_and_scale(&text_measurer, transform.scale.y, text, carat_index);
+
+        let mut carat_transform = Transform::from_xyz(
+            transform.translation.x + carat_offset_x,
             transform.translation.y + (transform.scale.y * 0.5),
             transform.translation.z,
         );
 
         // if we want to fill 200px, but raw_width is 100px, then scale_x would be 2.0
-        cursor.scale.y = transform.scale.y / text_height;
-        cursor.scale.x = cursor.scale.y;
-
-        cursor.translation.x =
-            transform.translation.x + (x_positions[carat_index] * cursor.scale.x);
+        carat_transform.scale.y = carat_scale;
+        carat_transform.scale.x = carat_scale;
 
         asset_manager.draw_icon_with_material(
             render_frame,
@@ -117,7 +115,7 @@ impl UiRenderer {
             text_icon_handle,
             text_color_mat_handle,
             (124 - 32) as usize, // pipe character '|'
-            &cursor,
+            &carat_transform,
         );
     }
 

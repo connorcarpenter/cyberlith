@@ -308,10 +308,11 @@ pub fn ui_receive_input(
                 | UiInputEvent::TextSelectAll => {
                     ui_input_state.reset_interact_timer();
 
-                    let textbox_state = ui_state.textbox_mut(&textbox_id).unwrap();
                     let output_events = TextboxInputState::recv_keyboard_or_gamepad_event(
+                        text_measurer,
                         ui_input_state,
-                        textbox_state,
+                        ui_state,
+                        &textbox_id,
                         input_event.clone(),
                     );
 
@@ -431,10 +432,11 @@ pub fn ui_receive_input(
                         }
                         WidgetKind::Textbox => {
                             ui_input_state.set_active_node(Some(hover_id));
-                            let textbox_state = ui_state.textbox_mut(&hover_id).unwrap();
                             TextboxInputState::recv_keyboard_or_gamepad_event(
+                                text_measurer,
                                 ui_input_state,
-                                textbox_state,
+                                ui_state,
+                                &hover_id,
                                 UiInputEvent::EndPressed(Modifiers::default()),
                             );
                         }
