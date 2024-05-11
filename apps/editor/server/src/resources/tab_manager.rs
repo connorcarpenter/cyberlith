@@ -5,7 +5,7 @@ use bevy_ecs::{
     system::{Commands, Query, ResMut, Resource, SystemState},
     world::{Mut, World},
 };
-use logging::info;
+use logging::{info, warn};
 
 use naia_bevy_server::{Server, UserKey};
 
@@ -214,19 +214,22 @@ impl TabManager {
                     if let Some(content_entities) = content_entities_opt {
                         let project = git_manager.project_mut(project_key).unwrap();
 
-                        let file_ext = project.file_extension(file_key).unwrap();
+                        if let Some(file_ext) = project.file_extension(file_key) {
 
-                        // handle despawns
-                        despawn_file_content_entities(
-                            world,
-                            project,
-                            &file_ext,
-                            file_key,
-                            content_entities,
-                        );
+                            // handle despawns
+                            despawn_file_content_entities(
+                                world,
+                                project,
+                                &file_ext,
+                                file_key,
+                                content_entities,
+                            );
 
-                        // deregister
-                        git_manager.deregister_content_entities(world, content_entities);
+                            // deregister
+                            git_manager.deregister_content_entities(world, content_entities);
+                        } else {
+                            warn!("did not despawn entities for closed tab, as that file has already been deleted?");
+                        }
                     }
                 }
             });

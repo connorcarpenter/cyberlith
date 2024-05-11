@@ -114,10 +114,10 @@ pub fn render_canvas(ui: &mut Ui, world: &mut World) {
                             camera_manager.recalculate_3d_view();
                             canvas.queue_resync_shapes_light();
 
-                            info!(
-                                "resized window to: (width: {:?}, height: {:?})",
-                                texture_width, texture_height
-                            );
+                            // info!(
+                            //     "resized window to: (width: {:?}, height: {:?})",
+                            //     texture_width, texture_height
+                            // );
                         }
 
                         ui_state.resized_window = false;
