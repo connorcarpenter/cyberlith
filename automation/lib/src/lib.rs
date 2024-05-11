@@ -5,6 +5,7 @@ mod process_assets;
 mod process_content;
 mod up;
 mod utils;
+mod types;
 
 pub use convert_ttf_to_icon::*;
 pub use down::*;
@@ -13,6 +14,7 @@ pub use process_assets::*;
 pub use process_content::*;
 pub use up::*;
 pub use utils::copy_from_repo_to_target_dir;
+pub use types::{OutputType, TargetEnv};
 
 pub(crate) fn get_api_key() -> String {
     let api_key = include_str!("../../../.vultr/api_key");

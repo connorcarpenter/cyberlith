@@ -2,7 +2,8 @@ mod convert_to_bits;
 
 use std::{fs, path::Path};
 
-use asset_id::{AssetId, ETag};
+use asset_id::{AssetId, AssetType, ETag};
+use asset_serde::bits::AssetMetadataSerde;
 use git::{
     branch_exists, create_branch, git_commit, git_pull, git_push, read_file_bytes, repo_init,
     switch_to_branch, write_file_bytes, ObjectType, Repository, Tree,
@@ -11,13 +12,15 @@ use logging::info;
 
 use asset_serde::json::{Asset, AssetData, AssetMeta, ProcessedAssetMeta};
 
-use crate::{CliError, TargetEnv};
+use crate::{CliError, types::{OutputType, TargetEnv}};
 
 pub fn process_assets(
     // should be the directory of the entire cyberlith repo
     project_path: &str,
     // what build environment are we in
     target_env: TargetEnv,
+    //
+    metadata_output_type: OutputType,
 ) -> Result<(), CliError> {
     let repo_name = "cyberlith_assets";
     let output_path = format!("{}/target/{}", project_path, repo_name);
@@ -28,63 +31,131 @@ pub fn process_assets(
     let files = load_all_unprocessed_files(&output_path, &repo);
 
     if branch_exists(&repo, &target_env_str) {
-        update_processed_assets(&target_env_str, &output_path, repo, files);
+        update_processed_assets(&target_env_str, &output_path, &repo, &files);
     } else {
-        create_processed_assets(&target_env_str, repo, files);
+        create_processed_assets(&target_env_str, &repo, &files);
+    }
+
+    if metadata_output_type == OutputType::Bits {
+        convert_metadata_to_bits(&target_env_str, &repo, &files)
     }
 
     Ok(())
 }
 
+fn convert_metadata_to_bits(env: &str, repo: &Repository, files: &Vec<UnprocessedFile>) {
+
+    info!("converting metadata to bits for env: {}", env);
+
+    let output_dir = format!("{}/output", env);
+
+    // make sure output directory exists
+    {
+        if fs::metadata(&output_dir).is_ok() {
+            // remove existing output directory
+            if let Err(err) = fs::remove_dir_all(&output_dir) {
+                panic!("failed to remove output directory: {}", err);
+            }
+        }
+
+        if let Err(err) = fs::create_dir(&output_dir) {
+            panic!("failed to create output directory: {}", err);
+        }
+    }
+
+    for unprocessed_file in files {
+
+        let mut file_name_split = unprocessed_file.name.split(".");
+        let file_name = file_name_split.next().unwrap();
+        let true_file_ext = file_name_split.next().unwrap();
+        let asset_type = AssetType::from_str(true_file_ext).unwrap();
+
+        let file_path = format!("{}{}.{}", unprocessed_file.path, file_name, true_file_ext);
+        let full_path = format!("{}{}", repo.workdir().unwrap().to_str().unwrap(), file_path);
+
+        // process Asset Meta (json)
+        let meta_full_path = format!("{}.meta", full_path);
+        let bytes = std::fs::read(&meta_full_path).unwrap();
+        let processed_meta = ProcessedAssetMeta::read(&bytes).unwrap();
+
+        // convert into bits-serde version
+        let asset_id = processed_meta.asset_id();
+        let processed_meta_bits = AssetMetadataSerde::new(processed_meta.etag(), asset_type);
+        let processed_meta_bits_bytes = processed_meta_bits.to_bytes();
+
+        // write new meta file
+        {
+            let output_path = format!("{}/{}.meta", output_dir, asset_id.to_string());
+
+            info!("converting: {} -> {}", &meta_full_path, output_path);
+
+            if let Err(err) = std::fs::write(output_path, &processed_meta_bits_bytes) {
+                panic!("failed to write bits meta file: {}", err);
+            }
+        }
+
+        // copy data file to output directory
+        {
+            let output_path = format!("{}/{}", output_dir, asset_id.to_string());
+
+            info!("copying: {} -> {}", &full_path, output_path);
+
+            if let Err(err) = fs::copy(&full_path, output_path) {
+                panic!("failed to copy data file: {}", err);
+            }
+        }
+    }
+}
+
 fn create_processed_assets(
     env: &str,
-    repo: Repository,
-    all_new_unprocessed_files: Vec<UnprocessedFile>,
+    repo: &Repository,
+    all_new_unprocessed_files: &Vec<UnprocessedFile>,
 ) {
     info!(
         "branch {:?} doesn't exist, processing all files for the first time",
         env
     );
     // create new branch
-    create_branch(&repo, env);
-    switch_to_branch(&repo, env);
+    create_branch(repo, env);
+    switch_to_branch(repo, env);
 
     // delete all files
-    delete_all_files(&repo, &all_new_unprocessed_files);
+    delete_all_files(repo, all_new_unprocessed_files);
     git_commit(
-        &repo,
+        repo,
         env,
         "connorcarpenter",
         "connorcarpenter@gmail.com",
         "deleting all unprocessed files",
     );
-    git_push(&repo, env);
+    git_push(repo, env);
 
     // process each file
-    write_all_new_files(&repo, &all_new_unprocessed_files);
+    write_all_new_files(repo, all_new_unprocessed_files);
     git_commit(
-        &repo,
+        repo,
         env,
         "connorcarpenter",
         "connorcarpenter@gmail.com",
         "processing all files",
     );
-    git_push(&repo, env);
+    git_push(repo, env);
 }
 
 fn update_processed_assets(
     env: &str,
     root: &str,
-    repo: Repository,
-    all_unprocessed_files: Vec<UnprocessedFile>,
+    repo: &Repository,
+    all_unprocessed_files: &Vec<UnprocessedFile>,
 ) {
     info!("branch {:?} exists, processing only modified files..", env);
     // switch to "env" branch
-    git_pull(&repo, env);
-    switch_to_branch(&repo, env);
+    git_pull(repo, env);
+    switch_to_branch(repo, env);
 
     // get files from previously processed environment
-    let old_meta_files = load_all_processed_meta_files(root, &repo);
+    let old_meta_files = load_all_processed_meta_files(root, repo);
 
     // prune out unprocessed files that have not changed since last being processed
     let new_modified_unprocessed_files =
@@ -95,17 +166,18 @@ fn update_processed_assets(
     }
 
     // process each file
-    write_all_new_files(&repo, &new_modified_unprocessed_files);
+    write_all_new_files(repo, &new_modified_unprocessed_files);
     git_commit(
-        &repo,
+        repo,
         env,
         "connorcarpenter",
         "connorcarpenter@gmail.com",
         "processing all modified files",
     );
-    git_push(&repo, env);
+    git_push(repo, env);
 }
 
+#[derive(Clone)]
 struct UnprocessedFile {
     path: String,
     name: String,
@@ -359,7 +431,7 @@ fn process_new_meta_file(
 
 fn prune_unchanged_files(
     old_meta_files: &Vec<ProcessedAssetMeta>,
-    all_unprocessed_files: Vec<UnprocessedFile>,
+    all_unprocessed_files: &Vec<UnprocessedFile>,
 ) -> Vec<UnprocessedFile> {
     let mut output = Vec::new();
 
@@ -400,7 +472,7 @@ fn prune_unchanged_files(
             info!("file new: {}", prev_path);
         }
 
-        output.push(unprocessed_file);
+        output.push(unprocessed_file.clone());
     }
 
     output

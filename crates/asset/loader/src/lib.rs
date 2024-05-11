@@ -19,3 +19,5 @@ pub use plugin::*;
 pub use processed_asset_store::*;
 pub use text_measurer::*;
 pub use types::*;
+
+pub use asset_serde::bits::AssetMetadataSerde;

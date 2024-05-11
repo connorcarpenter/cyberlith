@@ -1,5 +1,5 @@
 
-use automation_lib::{copy_from_repo_to_target_dir, TargetEnv};
+use automation_lib::{copy_from_repo_to_target_dir, OutputType, TargetEnv};
 
 use logging::info;
 
@@ -12,6 +12,7 @@ pub(crate) fn setup() {
     automation_lib::process_assets(
         project_path,
         TargetEnv::Local,
+        OutputType::Json,
     )
     .unwrap();
 

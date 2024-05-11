@@ -1,6 +1,6 @@
 use logging::info;
 
-use crate::{utils::run_command, CliError, TargetEnv};
+use crate::{utils::run_command, CliError, types::{TargetEnv, OutputType}};
 
 pub async fn server_build_content(image_tag: String) -> Result<(), CliError> {
     let _ = crate::process_content("/home/connor/Work/cyberlith", TargetEnv::Prod)?;
@@ -36,7 +36,7 @@ pub async fn server_build_content(image_tag: String) -> Result<(), CliError> {
 }
 
 pub async fn server_build_asset(image_tag: String) -> Result<(), CliError> {
-    let _ = crate::process_assets("/home/connor/Work/cyberlith", TargetEnv::Prod)?;
+    let _ = crate::process_assets("/home/connor/Work/cyberlith", TargetEnv::Prod, OutputType::Json)?;
 
     // build asset_server
     run_command(

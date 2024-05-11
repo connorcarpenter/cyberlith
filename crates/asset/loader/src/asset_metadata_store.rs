@@ -1,32 +1,13 @@
 use std::{collections::HashMap, path::PathBuf};
 
 use bevy_ecs::{change_detection::ResMut, system::Resource};
-use logging::{info, warn};
 
 use naia_serde::{BitReader, BitWriter, SerdeInternal as Serde};
 
+use logging::{info, warn};
 use asset_id::{AssetId, AssetType, ETag};
+use asset_serde::bits::AssetMetadataSerde;
 use filesystem::{CreateDirResult, FileSystemManager, ReadDirResult, ReadResult, TaskKey};
-
-#[derive(Serde, Eq, PartialEq, Clone)]
-pub struct AssetMetadataSerde {
-    pub etag: ETag,
-    pub asset_type: AssetType,
-}
-
-impl AssetMetadataSerde {
-    pub fn new(etag: ETag, asset_type: AssetType) -> Self {
-        Self { etag, asset_type }
-    }
-
-    pub fn to_bytes(&self) -> Vec<u8> {
-        let mut writer = BitWriter::new();
-
-        self.ser(&mut writer);
-
-        writer.to_bytes().to_vec()
-    }
-}
 
 pub struct AssetMetadata {
     path: String,

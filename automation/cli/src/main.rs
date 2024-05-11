@@ -1,6 +1,6 @@
 use clap::{Arg, Command};
 
-use automation_lib::{CliError, TargetEnv};
+use automation_lib::{CliError, OutputType, TargetEnv};
 use logging::warn;
 
 fn cli() -> Command {
@@ -21,6 +21,14 @@ fn cli() -> Command {
                         .long("env")
                         .required(true)
                         .value_parser(["local", "prod"]),
+                )
+                .arg(
+                    Arg::new("meta_output_type")
+                        .short('m')
+                        .long("meta_output_type")
+                        .required(false)
+                        .default_value("json")
+                        .value_parser(["bits", "json"]),
                 ),
         )
         .subcommand(
@@ -44,13 +52,21 @@ fn main() {
             automation_lib::convert_ttf_to_icon(ttf_file_name_val)
         }
         Some(("process_assets", sub_matches)) => {
+
+            let mo_val = sub_matches.get_one::<String>("meta_output_type").unwrap();
+            let mo_val = match mo_val.as_str() {
+                "json" => OutputType::Json,
+                "bits" => OutputType::Bits,
+                _ => OutputType::Json,
+            };
+
             let env_val = sub_matches.get_one::<String>("env").unwrap();
             match env_val.as_str() {
                 "local" => {
-                    automation_lib::process_assets(env_val, TargetEnv::Local)
+                    automation_lib::process_assets(env_val, TargetEnv::Local, mo_val)
                 }
                 "prod" => {
-                    automation_lib::process_assets(env_val, TargetEnv::Prod)
+                    automation_lib::process_assets(env_val, TargetEnv::Prod, mo_val)
                 }
                 _ => Err(CliError::Message("Invalid environment".to_string())),
             }

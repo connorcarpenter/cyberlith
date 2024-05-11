@@ -15,37 +15,7 @@ use git::{
 };
 use logging::info;
 
-use crate::{utils::run_command_blocking, CliError};
-use crate::utils::run_command;
-
-#[derive(PartialEq, Eq, Clone, Copy, Debug)]
-pub enum TargetEnv {
-    Local,
-    Prod,
-}
-
-impl TargetEnv {
-    pub fn to_string(&self) -> String {
-        match self {
-            TargetEnv::Local => "local".to_string(),
-            TargetEnv::Prod => "prod".to_string(),
-        }
-    }
-
-    pub fn cargo_env(&self) -> String {
-        match self {
-            TargetEnv::Local => "debug".to_string(),
-            TargetEnv::Prod => "release".to_string(),
-        }
-    }
-
-    pub fn feature_flag(&self) -> String {
-        match self {
-            TargetEnv::Local => "local".to_string(),
-            TargetEnv::Prod => "prod".to_string(),
-        }
-    }
-}
+use crate::{types::{FileExtension, TargetEnv}, utils::{run_command_blocking, run_command}, CliError};
 
 struct UnprocessedFile {
     target_path: String,
@@ -78,23 +48,6 @@ impl UnprocessedFile {
             self.target_path(),
             self.file_name_w_ext()
         )
-    }
-}
-
-#[derive(PartialEq, Eq, Clone, Copy, Debug)]
-enum FileExtension {
-    Wasm,
-    Js,
-    Html,
-}
-
-impl FileExtension {
-    pub fn to_string(&self) -> String {
-        match self {
-            FileExtension::Wasm => "wasm".to_string(),
-            FileExtension::Js => "js".to_string(),
-            FileExtension::Html => "html".to_string(),
-        }
     }
 }
 
