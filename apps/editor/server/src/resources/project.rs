@@ -161,21 +161,26 @@ impl Project {
         }
     }
 
-    pub(crate) fn dependency_file_keys(&self, file_key: &FileKey) -> Vec<FileKey> {
+    pub(crate) fn dependency_file_keys(&self, file_key: &FileKey) -> Option<Vec<FileKey>> {
+
+        let Some(file_entry_val) = self.working_file_entries.get(file_key) else {
+            return None;
+        };
+
+        let Some(dependencies) = file_entry_val.dependencies() else {
+            return None;
+        };
+
         let mut output = Vec::new();
 
-        // unwrap here doesn't work when file has been closed after being deleted...
-        let file_entry_val = self.working_file_entries.get(file_key).unwrap(); // here
+        for dependency_key in dependencies {
+            output.push(dependency_key.clone());
 
-        if let Some(dependencies) = file_entry_val.dependencies() {
-            for dependency_key in dependencies {
-                output.push(dependency_key.clone());
-
-                // perhaps we will need to recurse one day ..
-                // output.append(&mut self.dependency_file_keys(dependency_key));
-            }
+            // perhaps we will need to recurse one day ..
+            // output.append(&mut self.dependency_file_keys(dependency_key));
         }
-        output
+
+        Some(output)
     }
 
     pub(crate) fn user_join_filespace(

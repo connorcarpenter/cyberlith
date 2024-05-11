@@ -5,9 +5,10 @@ use bevy_app::{
 use bevy_ecs::schedule::{ExecutorKind, Schedule};
 
 use clipboard::ClipboardPlugin;
+use kernel::KernelPlugin;
 use render_api::{Render, Window};
 
-use crate::{input, kernel, render::render, runner::runner_func, sync::SyncPlugin, window};
+use crate::{input, exit_system, render::render, runner::runner_func, sync::SyncPlugin, window};
 
 pub struct RenderGlPlugin;
 
@@ -15,6 +16,9 @@ impl Plugin for RenderGlPlugin {
     fn build(&self, app: &mut App) {
         if !app.is_plugin_added::<ClipboardPlugin>() {
             app.add_plugins(ClipboardPlugin);
+        }
+        if !app.is_plugin_added::<KernelPlugin>() {
+            panic!("KernelPlugin required for RenderGlPlugin.");
         }
 
         app
@@ -30,7 +34,7 @@ impl Plugin for RenderGlPlugin {
             .add_systems(First, window::sync)
             .add_systems(PreUpdate, input::run)
             .add_systems(PostUpdate, input::update_cursor)
-            .add_systems(PostUpdate, kernel::app_exit)
+            .add_systems(PostUpdate, exit_system::app_exit)
             .add_systems(Render, render);
     }
 }

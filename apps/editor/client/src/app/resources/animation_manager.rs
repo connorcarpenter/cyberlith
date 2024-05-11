@@ -1527,8 +1527,9 @@ impl AnimationManager {
             return;
         }
 
-        let ms_elapsed = self.last_preview_instant.elapsed().as_millis() as f32;
-        self.last_preview_instant = Instant::now();
+        let now = Instant::now();
+        let ms_elapsed = self.last_preview_instant.elapsed(&now).as_millis() as f32;
+        self.last_preview_instant = now;
 
         let Some(preview_frame_count) = self.get_frame_count(current_file_entity) else {
             return;

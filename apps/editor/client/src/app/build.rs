@@ -1,18 +1,20 @@
 use bevy_app::App;
-use logging::LogPlugin;
 
 use input::InputPlugin;
 use render_api::RenderApiPlugin;
 use render_egui::EguiPlugin;
 use render_gl::RenderGlPlugin;
+use kernel::KernelPlugin;
 
 use crate::app::VortexPlugin;
 
 pub fn build() -> App {
+    logging::initialize();
+
     let mut app = App::default();
     app
-        // Bevy Plugins
-        .add_plugins(LogPlugin::default())
+        // Add Kernel, with no cookiestore
+        .add_plugins(KernelPlugin::new(None))
         // Add Render Plugins
         .add_plugins(RenderApiPlugin)
         .add_plugins(RenderGlPlugin)

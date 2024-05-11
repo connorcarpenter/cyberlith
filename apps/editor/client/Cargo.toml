@@ -25,6 +25,7 @@ render_egui = { path = "../../../crates/render/render_egui" }
 input = { path = "../../../crates/input" }
 storage = { path = "../../../crates/storage" }
 logging = { path = "../../../crates/logging" }
+kernel = { path = "../../../crates/kernel" }
 
 # External Crates
 naia-bevy-client = { path = "../../../../naia/adapters/bevy/client", features = ["transport_webrtc"] }

@@ -98,12 +98,13 @@ impl GitManager {
             // user join dependency filespaces
             // get the newly created/associated dependency keys after read above (in user_join_filespace())
             let project = self.projects.get_mut(project_key).unwrap();
-            let dependency_file_keys = project.dependency_file_keys(file_key);
-            if !dependency_file_keys.is_empty() {
-                file_has_dependencies = true;
-            }
-            for dependency_key in dependency_file_keys {
-                self.user_join_filespace(world, user_key, project_key, &dependency_key);
+            if let Some(dependency_file_keys) = project.dependency_file_keys(file_key) {
+                if !dependency_file_keys.is_empty() {
+                    file_has_dependencies = true;
+                }
+                for dependency_key in dependency_file_keys {
+                    self.user_join_filespace(world, user_key, project_key, &dependency_key);
+                }
             }
         }
 
@@ -283,13 +284,15 @@ impl GitManager {
     ) {
         // user leave filespace
         let project = self.projects.get_mut(project_key).unwrap();
-        let dependency_file_keys = project.dependency_file_keys(&file_key);
+        let dependency_file_keys_opt = project.dependency_file_keys(&file_key);
         let content_entities_opt = project.user_leave_filespace(server, user_key, file_key);
         output.push((*project_key, file_key.clone(), content_entities_opt));
 
         // user leave dependency filespaces
-        for dependency_key in dependency_file_keys {
-            self.user_leave_filespace(server, project_key, &dependency_key, user_key, output);
+        if let Some(dependency_file_keys) = dependency_file_keys_opt {
+            for dependency_key in dependency_file_keys {
+                self.user_leave_filespace(server, project_key, &dependency_key, user_key, output);
+            }
         }
     }
 

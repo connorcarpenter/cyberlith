@@ -149,7 +149,7 @@ impl Painter {
         logging::debug!("Shader header: {:?}.", shader_version_declaration);
 
         let supported_extensions = gl.supported_extensions();
-        logging::trace!("OpenGL extensions: {supported_extensions:?}");
+        logging::debug!("OpenGL extensions: {supported_extensions:?}");
         let srgb_textures = shader_version == ShaderVersion::Es300 // WebGL2 always support sRGB
             || supported_extensions.iter().any(|extension| {
                 // EXT_sRGB, GL_ARB_framebuffer_sRGB, GL_EXT_sRGB, GL_EXT_texture_sRGB_decode, …

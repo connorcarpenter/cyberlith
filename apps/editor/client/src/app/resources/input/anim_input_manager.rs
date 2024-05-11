@@ -221,9 +221,10 @@ impl AnimInputManager {
         if frame_index_hover.is_some() {
             let frame_index_hover = frame_index_hover.unwrap();
 
+            let now = Instant::now();
             let double_clicked = frame_index_hover == input_manager.last_frame_index_hover
-                && input_manager.last_left_click_instant.elapsed().as_millis() < 500;
-            input_manager.last_left_click_instant = Instant::now();
+                && input_manager.last_left_click_instant.elapsed(&now).as_millis() < 500;
+            input_manager.last_left_click_instant = now;
             input_manager.last_frame_index_hover = frame_index_hover;
 
             if frame_index_hover == 0 {
