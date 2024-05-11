@@ -8,7 +8,7 @@ use bevy_ecs::{
 };
 use logging::{info, warn};
 
-use naia_bevy_client::{Client, CommandsExt, Instant};
+use naia_bevy_client::{Client, CommandsExt};
 
 use input::{InputEvent, Key, MouseButton};
 use math::Vec2;
@@ -655,6 +655,14 @@ impl IconInputManager {
                         &mouse_position,
                     )
                 }
+                InputEvent::MouseDoubleClicked(click_type, mouse_position, _) => {
+                    Self::handle_mouse_doubleclick_framing(
+                        world,
+                        icon_manager,
+                        click_type,
+                        &mouse_position,
+                    )
+                }
                 InputEvent::MouseDragged(click_type, _mouse_position, delta, _) => {
                     Self::handle_mouse_drag_framing(world, icon_manager, click_type, delta)
                 }
@@ -735,12 +743,6 @@ impl IconInputManager {
         if frame_index_hover.is_some() {
             let frame_index_hover = frame_index_hover.unwrap();
 
-            let now = Instant::now();
-            let double_clicked = frame_index_hover == icon_manager.last_frame_index_hover
-                && icon_manager.last_left_click_instant.elapsed(&now).as_millis() < 500;
-            icon_manager.last_left_click_instant = now;
-            icon_manager.last_frame_index_hover = frame_index_hover;
-
             if frame_index_hover == 0 {
                 // clicked preview frame .. do nothing!
             } else {
@@ -758,10 +760,34 @@ impl IconInputManager {
                         );
                     });
                 }
+            }
+        }
+    }
 
-                if double_clicked {
-                    icon_manager.set_meshing();
-                }
+    fn handle_mouse_doubleclick_framing(
+        world: &mut World,
+        icon_manager: &mut IconManager,
+        click_type: MouseButton,
+        mouse_position: &Vec2,
+    ) {
+        if click_type != MouseButton::Left {
+            return;
+        }
+
+        // check if mouse position is outside of canvas
+        if !world
+            .get_resource::<Canvas>()
+            .unwrap()
+            .is_position_inside(*mouse_position)
+        {
+            return;
+        }
+
+        if let Some(frame_index_hover) = icon_manager.frame_index_hover() {
+            if frame_index_hover == 0 {
+                // clicked preview frame .. do nothing!
+            } else {
+                icon_manager.set_meshing();
             }
         }
     }

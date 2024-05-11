@@ -6,7 +6,7 @@ use bevy_ecs::{
 };
 use logging::warn;
 
-use naia_bevy_client::{Client, CommandsExt, Instant};
+use naia_bevy_client::{Client, CommandsExt};
 
 use input::{InputEvent, Key, MouseButton};
 use math::Vec2;
@@ -56,6 +56,13 @@ impl AnimInputManager {
                     Self::handle_mouse_click_framing(
                         world,
                         input_manager,
+                        click_type,
+                        &mouse_position,
+                    )
+                }
+                InputEvent::MouseDoubleClicked(click_type, mouse_position, _) => {
+                    Self::handle_mouse_doubleclick_framing(
+                        world,
                         click_type,
                         &mouse_position,
                     )
@@ -216,26 +223,11 @@ impl AnimInputManager {
         let animation_manager = world.get_resource::<AnimationManager>().unwrap();
 
         let current_frame_index = animation_manager.current_frame_index();
-        let frame_index_hover = animation_manager.frame_index_hover();
 
-        if frame_index_hover.is_some() {
-            let frame_index_hover = frame_index_hover.unwrap();
-
-            let now = Instant::now();
-            let double_clicked = frame_index_hover == input_manager.last_frame_index_hover
-                && input_manager.last_left_click_instant.elapsed(&now).as_millis() < 500;
-            input_manager.last_left_click_instant = now;
-            input_manager.last_frame_index_hover = frame_index_hover;
+        if let Some(frame_index_hover) = animation_manager.frame_index_hover() {
 
             if frame_index_hover == 0 {
-                // clicked preview frame
-                if double_clicked {
-                    let mut system_state: SystemState<(ResMut<Canvas>, ResMut<AnimationManager>)> =
-                        SystemState::new(world);
-                    let (mut canvas, mut animation_manager) = system_state.get_mut(world);
-                    animation_manager.set_posing(&mut canvas);
-                    animation_manager.set_preview_frame_selected();
-                }
+                // nothing
             } else {
                 if current_frame_index != frame_index_hover - 1 {
                     world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
@@ -251,13 +243,44 @@ impl AnimInputManager {
                         );
                     });
                 }
+            }
+        }
+    }
 
-                if double_clicked {
-                    let mut system_state: SystemState<(ResMut<Canvas>, ResMut<AnimationManager>)> =
-                        SystemState::new(world);
-                    let (mut canvas, mut animation_manager) = system_state.get_mut(world);
-                    animation_manager.set_posing(&mut canvas);
-                }
+    fn handle_mouse_doubleclick_framing(
+        world: &mut World,
+        click_type: MouseButton,
+        mouse_position: &Vec2,
+    ) {
+        if click_type != MouseButton::Left {
+            return;
+        }
+
+        // check if mouse position is outside of canvas
+        if !world
+            .get_resource::<Canvas>()
+            .unwrap()
+            .is_position_inside(*mouse_position)
+        {
+            return;
+        }
+
+        let animation_manager = world.get_resource::<AnimationManager>().unwrap();
+
+        if let Some(frame_index_hover) = animation_manager.frame_index_hover() {
+
+            if frame_index_hover == 0 {
+                // double-clicked preview frame
+                let mut system_state: SystemState<(ResMut<Canvas>, ResMut<AnimationManager>)> =
+                    SystemState::new(world);
+                let (mut canvas, mut animation_manager) = system_state.get_mut(world);
+                animation_manager.set_posing(&mut canvas);
+                animation_manager.set_preview_frame_selected();
+            } else {
+                let mut system_state: SystemState<(ResMut<Canvas>, ResMut<AnimationManager>)> =
+                    SystemState::new(world);
+                let (mut canvas, mut animation_manager) = system_state.get_mut(world);
+                animation_manager.set_posing(&mut canvas);
             }
         }
     }

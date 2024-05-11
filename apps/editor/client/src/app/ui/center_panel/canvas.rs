@@ -2,7 +2,6 @@ use bevy_ecs::{
     system::{Query, Res, ResMut, SystemState},
     world::World,
 };
-use logging::info;
 
 use input::Input;
 use math::Vec2;

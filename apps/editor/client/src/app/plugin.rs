@@ -200,7 +200,8 @@ impl Plugin for VortexPlugin {
             .add_systems(Update, canvas::update_palette)
             .add_systems(Update, canvas::process_faces)
             .add_systems(Update, canvas::update_selection_ui)
-            .add_systems(Update, canvas::input)
+            .add_systems(Startup, canvas::input_startup)
+            .add_systems(Update, canvas::input_update)
             .add_systems(Update, canvas::update_mouse_hover)
             .add_event::<ShapeColorResyncEvent>()
             // Draw

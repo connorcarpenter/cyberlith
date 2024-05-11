@@ -6,7 +6,7 @@ use bevy_ecs::{
 };
 use logging::{info, warn};
 
-use naia_bevy_client::{Client, CommandsExt, Instant};
+use naia_bevy_client::{Client, CommandsExt};
 
 use input::{InputEvent, Key, MouseButton};
 use math::{Vec2, Vec3};
@@ -65,10 +65,6 @@ pub struct InputManager {
     pub select_triangle_entity: Option<Entity>,
     pub select_line_entity: Option<Entity>,
 
-    //doubleclick
-    pub(crate) last_left_click_instant: Instant,
-    pub(crate) last_frame_index_hover: usize, //TODO: move this to AnimInputManager?
-
     vertex_dragging_enabled: bool,
 }
 
@@ -84,9 +80,6 @@ impl Default for InputManager {
             select_triangle_entity: None,
             select_line_entity: None,
             selected_shape: None,
-
-            last_left_click_instant: Instant::now(),
-            last_frame_index_hover: 0,
 
             vertex_dragging_enabled: true,
         }

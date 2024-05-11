@@ -78,10 +78,6 @@ pub struct IconManager {
     preview_elapsed_ms: f32,
     preview_frame_index: usize,
 
-    //doubleclick
-    pub(crate) last_left_click_instant: Instant,
-    pub(crate) last_frame_index_hover: usize, //TODO: move this to IconInputManager?
-
     // vertices
     vertices: HashMap<Entity, IconVertexData>,
 
@@ -138,9 +134,6 @@ impl Default for IconManager {
             last_preview_instant: Instant::now(),
             preview_elapsed_ms: 0.0,
             preview_frame_index: 0,
-
-            last_left_click_instant: Instant::now(),
-            last_frame_index_hover: 0,
 
             // vertices
             vertices: HashMap::new(),
