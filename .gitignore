@@ -7,6 +7,9 @@
 node_modules
 /target
 
+/automation/cli/prod
+/automation/cli/local
+
 /apps/deployments/native/assets
 /apps/deployments/native/assets/
 /apps/deployments/native/data

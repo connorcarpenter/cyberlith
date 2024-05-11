@@ -1,6 +1,6 @@
 use clap::{Arg, Command};
 
-use automation_lib::CliError;
+use automation_lib::{CliError, TargetEnv};
 use logging::warn;
 
 fn cli() -> Command {
@@ -20,7 +20,7 @@ fn cli() -> Command {
                         .short('e')
                         .long("env")
                         .required(true)
-                        .value_parser(["dev", "stage", "prod", "qwon"]),
+                        .value_parser(["local", "prod"]),
                 ),
         )
         .subcommand(
@@ -42,6 +42,19 @@ fn main() {
         Some(("convert_ttf_to_icon", sub_matches)) => {
             let ttf_file_name_val = sub_matches.get_one::<String>("ttf").unwrap();
             automation_lib::convert_ttf_to_icon(ttf_file_name_val)
+        }
+        Some(("process_assets", sub_matches)) => {
+            let env_val = sub_matches.get_one::<String>("env").unwrap();
+            match env_val.as_str() {
+                "local" => {
+                    automation_lib::process_assets(env_val, TargetEnv::Local)
+                }
+                "prod" => {
+                    automation_lib::process_assets(env_val, TargetEnv::Prod)
+                }
+                _ => Err(CliError::Message("Invalid environment".to_string())),
+            }
+
         }
         _ => Err(CliError::Message("Invalid subcommand".to_string())),
     };

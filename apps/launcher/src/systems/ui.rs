@@ -29,6 +29,7 @@ pub fn ui_setup(
     // TODO: use some kind of catalog here?
     embedded_asset_events.send(embedded_asset_event!("../embedded/8273wa")); // palette
     embedded_asset_events.send(embedded_asset_event!("../embedded/34mvvk")); // verdana icon
+    embedded_asset_events.send(embedded_asset_event!("../embedded/qbgz5j")); // password eye icon
 
     embedded_asset_events.send(embedded_asset_event!("../embedded/tpp7za")); // start ui
     embedded_asset_events.send(embedded_asset_event!("../embedded/3f5gej")); // login ui

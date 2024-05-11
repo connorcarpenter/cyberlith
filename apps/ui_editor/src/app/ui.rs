@@ -52,6 +52,7 @@ pub fn setup(
     // ui setup
     embedded_asset_events.send(embedded_asset_event!("embedded/8273wa")); // palette
     embedded_asset_events.send(embedded_asset_event!("embedded/34mvvk")); // verdana icon
+    embedded_asset_events.send(embedded_asset_event!("embedded/qbgz5j")); // password eye icon
 
     // create ui
     let (ui_name, ui_asset_id, ui_etag, ui) = ui_define();
