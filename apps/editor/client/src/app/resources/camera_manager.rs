@@ -42,7 +42,7 @@ impl Default for CameraManager {
 
 impl CameraManager {
     pub const MIN_SCALE: f32 = 1.0;
-    pub const MAX_SCALE: f32 = 8.0;
+    pub const MAX_SCALE: f32 = 16.0;
 
     pub fn camera_3d_entity(&self) -> Option<Entity> {
         self.camera_3d
