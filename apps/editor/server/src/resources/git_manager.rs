@@ -6,9 +6,11 @@ use bevy_ecs::{
     world::{Mut, World},
 };
 
+use naia_bevy_server::{BigMap, CommandsExt, ReplicationConfig, RoomKey, Server, UserKey};
+
 use asset_serde::json::AssetMeta;
 use logging::info;
-use naia_bevy_server::{BigMap, CommandsExt, ReplicationConfig, RoomKey, Server, UserKey};
+use git::{repo_init, ObjectType, Repository, Tree};
 
 use editor_proto::{
     components::{
@@ -18,7 +20,7 @@ use editor_proto::{
     messages::ChangelistMessage,
     resources::FileKey,
 };
-use git::{repo_init, ObjectType, Repository, Tree};
+
 
 use crate::resources::{
     project::Project, project::ProjectKey, ContentEntityData, FileEntryValue, PaletteManager,

@@ -534,7 +534,7 @@ impl Project {
                 if entry_value.children().is_some() {
                     todo!("cannot delete directories right now, please implement!");
                 }
-                info!("git delete file");
+                info!("git delete file: {}", path);
                 self.fs_delete_file(&path);
 
                 // sync to git repo
@@ -693,11 +693,12 @@ impl Project {
         (old_content_entities, new_content_entities)
     }
 
-    fn fs_update_index(&mut self, path: &str) {
+    fn fs_create_or_update_file(&mut self, key: &FileKey, path: &str) {
+        self.fs_write_file(key, path);
+
+        // Add the file to the repository (add path and update index)
         let path = format!("{}.json", path);
         let repo = self.repo.lock().unwrap();
-
-        // Add the file to the repository
         let mut index = repo.index().expect("Failed to open index");
         index
             .add_path(Path::new(&path))
@@ -705,13 +706,8 @@ impl Project {
         index.write().expect("Failed to write index");
     }
 
-    fn fs_create_or_update_file(&mut self, key: &FileKey, path: &str) {
-        self.fs_write_file(key, path);
-        self.fs_update_index(path);
-    }
-
     fn fs_delete_file(&mut self, file_path: &str) {
-        let repo = self.repo.lock().unwrap();
+        // let repo = self.repo.lock().unwrap();
 
         let full_path = format!("{}/{}.json", self.internal_path, file_path);
         info!("git deleting file at: `{}`", full_path);
@@ -720,9 +716,11 @@ impl Project {
         fs::remove_file(&full_path).expect("Failed to delete file");
 
         // Remove the file from the repository index
+        let path = format!("{}.json", file_path);
+        let repo = self.repo.lock().unwrap();
         let mut index = repo.index().expect("Failed to open index");
         index
-            .remove_path(Path::new(&file_path))
+            .remove_path(Path::new(&path))
             .expect("Failed to remove file from index");
         index.write().expect("Failed to write index");
     }
@@ -752,7 +750,6 @@ impl Project {
         let repo = self.repo.lock().unwrap();
 
         let branch_name = git::get_current_branch_name(&repo);
-        git::git_update_index(&repo);
         git::git_commit(&repo, &branch_name, username, email, commit_message);
     }
 

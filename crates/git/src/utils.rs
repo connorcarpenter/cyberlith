@@ -166,14 +166,6 @@ pub fn read_file_bytes(root_path: &str, path: &str, file: &str) -> Vec<u8> {
     }
 }
 
-pub fn git_update_index(repo: &Repository) {
-    // get index
-    let mut index = repo.index().expect("Failed to open index");
-
-    // Get the updated tree
-    index.write_tree().expect("Failed to write tree");
-}
-
 pub fn git_commit(
     repo: &Repository,
     branch_name: &str,
@@ -185,6 +177,7 @@ pub fn git_commit(
         panic!("current branch is not the same as the branch you are trying to commit to");
     }
 
+    // this is updating the index!
     let tree_id = repo
         .index()
         .expect("Failed to open index")
