@@ -3,7 +3,7 @@ use unicode_segmentation::UnicodeSegmentation;
 use input::{Modifiers, MouseButton};
 use math::Vec2;
 
-use ui_runner_config::{get_carat_offset_and_scale, NodeId, text_get_raw_rects, text_get_subimage_indices, TextMeasurer};
+use ui_runner_config::{get_carat_offset_and_scale, NodeId, text_get_raw_rects, text_get_subimage_indices, Textbox, TextMeasurer};
 use ui_state::{TextboxState, UiState};
 
 use crate::{UiGlobalEvent, UiInputEvent, UiInputState};
@@ -13,6 +13,7 @@ pub struct TextboxInputState;
 
 impl TextboxInputState {
     pub fn recv_keyboard_or_gamepad_event(
+        config: &Textbox,
         text_measurer: &dyn TextMeasurer,
         input_state: &mut UiInputState,
         ui_state: &mut UiState,
@@ -45,6 +46,13 @@ impl TextboxInputState {
                 input_state.set_right_released();
             }
             UiInputEvent::TextInsert(new_char) => {
+
+                if let Some(whitelist) = &config.char_whitelist {
+                    if !whitelist.includes_char(new_char) {
+                        return None;
+                    }
+                }
+
                 if let Some(select_index) = input_state.select_index {
                     // need to remove the selected text
                     let start = input_state.carat_index.min(select_index);
@@ -177,7 +185,15 @@ impl TextboxInputState {
                 }
             }
             UiInputEvent::TextPaste(text) => {
-                // TODO: validate pasted text? I did panic at some point here.
+
+                if let Some(whitelist) = &config.char_whitelist {
+                    if !whitelist.allows_text(&text) {
+                        return None;
+                    }
+                }
+
+                // TODO: validate pasted text here more? I did panic at some point here.
+
                 if let Some(select_index) = input_state.select_index {
                     let start = input_state.carat_index.min(select_index);
                     let end = input_state.carat_index.max(select_index);

@@ -2,17 +2,10 @@ use std::collections::HashMap;
 
 use render_api::base::Color;
 
-use ui_builder_config::{
-    Button, ButtonStyle, Navigation, NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle,
-    Textbox, TextboxStyle, UiConfig, UiNode, Widget, WidgetStyle,
-};
+use ui_builder_config::{Button, ButtonStyle, Navigation, NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Textbox, TextboxStyle, UiConfig, UiNode, Widget, WidgetStyle, TextboxCharWhitelist};
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 
-use super::{
-    AlignmentJson, ColorJson, LayoutTypeJson, MarginUnitsJson, PanelJson, PanelStyleJson,
-    PositionTypeJson, SizeUnitsJson, SolidJson, TextJson, TextStyleJson, UiConfigJson, UiNodeJson,
-    UiStyleJson, WidgetJson, WidgetStyleJson,
-};
+use super::{AlignmentJson, ColorJson, LayoutTypeJson, MarginUnitsJson, PanelJson, PanelStyleJson, PositionTypeJson, SizeUnitsJson, SolidJson, TextboxCharWhitelistJson, TextJson, TextStyleJson, UiConfigJson, UiNodeJson, UiStyleJson, WidgetJson, WidgetStyleJson};
 use crate::json::{ButtonJson, ButtonStyleJson, NavigationJson, TextboxJson, TextboxStyleJson};
 
 // conversion
@@ -277,6 +270,7 @@ impl From<&Textbox> for TextboxJson {
             id_str: textbox.id_str.to_string(),
             navigation: From::from(&textbox.navigation),
             is_password: textbox.is_password,
+            char_whitelist: textbox.char_whitelist.map(|v| From::from(&v)),
         }
     }
 }
@@ -289,6 +283,16 @@ impl From<&Navigation> for NavigationJson {
             left: navigation.left_goes_to.clone(),
             right: navigation.right_goes_to.clone(),
             tab: navigation.tab_goes_to.clone(),
+        }
+    }
+}
+
+impl From<&TextboxCharWhitelist> for TextboxCharWhitelistJson {
+    fn from(v: &TextboxCharWhitelist) -> Self {
+        match v {
+            TextboxCharWhitelist::Alphanumeric => Self::Alphanumeric,
+            TextboxCharWhitelist::Password => Self::Password,
+            TextboxCharWhitelist::Email => Self::Email,
         }
     }
 }

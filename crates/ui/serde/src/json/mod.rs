@@ -230,6 +230,7 @@ pub(crate) struct TextboxJson {
     id_str: String,
     navigation: NavigationJson,
     is_password: bool,
+    char_whitelist: Option<TextboxCharWhitelistJson>
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -239,4 +240,11 @@ pub(crate) struct NavigationJson {
     left: Option<String>,
     right: Option<String>,
     tab: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Copy, Debug)]
+pub(crate) enum TextboxCharWhitelistJson {
+    Alphanumeric,
+    Password,
+    Email,
 }

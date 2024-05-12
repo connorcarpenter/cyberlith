@@ -225,6 +225,7 @@ pub(crate) struct TextboxBits {
     id_str: String,
     navigation: NavigationBits,
     is_password: bool,
+    char_whitelist: Option<TextboxCharWhitelistBits>,
 }
 
 #[derive(Serde, Clone, PartialEq)]
@@ -234,4 +235,11 @@ pub(crate) struct NavigationBits {
     left: Option<UnsignedVariableInteger<4>>,
     right: Option<UnsignedVariableInteger<4>>,
     tab: Option<UnsignedVariableInteger<4>>,
+}
+
+#[derive(Serde, Clone, PartialEq, Copy)]
+pub(crate) enum TextboxCharWhitelistBits {
+    Alphanumeric,
+    Password,
+    Email,
 }

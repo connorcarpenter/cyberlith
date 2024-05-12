@@ -309,6 +309,7 @@ pub fn ui_receive_input(
                     ui_input_state.reset_interact_timer();
 
                     let output_events = TextboxInputState::recv_keyboard_or_gamepad_event(
+                        ui_config.get_node(&textbox_id).unwrap().widget_textbox_ref().unwrap(),
                         text_measurer,
                         ui_input_state,
                         ui_state,
@@ -433,6 +434,7 @@ pub fn ui_receive_input(
                         WidgetKind::Textbox => {
                             ui_input_state.set_active_node(Some(hover_id));
                             TextboxInputState::recv_keyboard_or_gamepad_event(
+                                ui_config.get_node(&hover_id).unwrap().widget_textbox_ref().unwrap(),
                                 text_measurer,
                                 ui_input_state,
                                 ui_state,

@@ -3,18 +3,10 @@ use std::collections::HashMap;
 use naia_serde::{FileBitWriter, SerdeInternal as Serde, UnsignedInteger, UnsignedVariableInteger};
 
 use render_api::base::Color;
-use ui_builder_config::{
-    Button, ButtonStyle, Navigation, NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle,
-    Textbox, TextboxStyle, UiConfig, UiNode, Widget, WidgetStyle,
-};
+use ui_builder_config::{Button, ButtonStyle, Navigation, NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Textbox, TextboxStyle, UiConfig, UiNode, Widget, WidgetStyle, TextboxCharWhitelist};
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 
-use crate::bits::{
-    AlignmentBits, ButtonBits, ButtonStyleBits, ColorBits, LayoutTypeBits, MarginUnitsBits,
-    NavigationBits, PanelBits, PanelStyleBits, PositionTypeBits, SizeUnitsBits, SolidBits,
-    TextBits, TextStyleBits, TextboxBits, TextboxStyleBits, UiAction, UiActionType, UiNodeBits,
-    UiStyleBits, WidgetBits, WidgetStyleBits,
-};
+use crate::bits::{AlignmentBits, ButtonBits, ButtonStyleBits, ColorBits, LayoutTypeBits, MarginUnitsBits, NavigationBits, PanelBits, PanelStyleBits, PositionTypeBits, SizeUnitsBits, SolidBits, TextBits, TextStyleBits, TextboxBits, TextboxStyleBits, UiAction, UiActionType, UiNodeBits, UiStyleBits, WidgetBits, WidgetStyleBits, TextboxCharWhitelistBits};
 
 pub fn write_bits(ui_config: &UiConfig) -> Vec<u8> {
     let actions = convert_ui_to_actions(ui_config);
@@ -449,6 +441,17 @@ impl TextboxBits {
             id_str: textbox.id_str.clone(),
             navigation: NavigationBits::from_navigation(ui_config, &textbox.navigation),
             is_password: textbox.is_password,
+            char_whitelist: textbox.char_whitelist.map(|v| TextboxCharWhitelistBits::from(v)),
+        }
+    }
+}
+
+impl From<TextboxCharWhitelist> for TextboxCharWhitelistBits {
+    fn from(value: TextboxCharWhitelist) -> Self {
+        match value {
+            TextboxCharWhitelist::Alphanumeric => Self::Alphanumeric,
+            TextboxCharWhitelist::Password => Self::Password,
+            TextboxCharWhitelist::Email => Self::Email,
         }
     }
 }

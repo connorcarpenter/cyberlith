@@ -16,7 +16,7 @@ pub use node::UiNode;
 pub use panel::{Panel, PanelStyle};
 pub use style::{BaseNodeStyle, NodeStyle, StyleId, WidgetStyle};
 pub use text::{Text, TextStyle};
-pub use textbox::{Textbox, TextboxStyle};
+pub use textbox::{Textbox, TextboxStyle, TextboxCharWhitelist};
 pub use widget::{Widget, WidgetKind};
 
 pub use ui_layout::NodeId;

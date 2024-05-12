@@ -2,16 +2,10 @@ use std::collections::HashMap;
 
 use asset_id::AssetId;
 use render_api::base::Color;
-use ui_builder_config::{
-    BaseNodeStyle, Button, ButtonStyle, NodeId, NodeStyle, Panel, PanelStyle, StyleId, Text,
-    TextStyle, Textbox, TextboxStyle, UiConfig, Widget, WidgetKind, WidgetStyle,
-};
+use ui_builder_config::{BaseNodeStyle, Button, ButtonStyle, NodeId, NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Textbox, TextboxStyle, UiConfig, Widget, WidgetKind, WidgetStyle, TextboxCharWhitelist};
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 
-use super::{
-    AlignmentJson, ColorJson, LayoutTypeJson, MarginUnitsJson, PanelJson, PositionTypeJson,
-    SizeUnitsJson, SolidJson, UiConfigJson, UiNodeJson, UiStyleJson, WidgetJson, WidgetStyleJson,
-};
+use super::{AlignmentJson, ColorJson, LayoutTypeJson, MarginUnitsJson, PanelJson, PositionTypeJson, SizeUnitsJson, SolidJson, TextboxCharWhitelistJson, UiConfigJson, UiNodeJson, UiStyleJson, WidgetJson, WidgetStyleJson};
 use crate::json::{
     ButtonJson, ButtonStyleJson, PanelStyleJson, TextStyleJson, TextboxJson, TextboxStyleJson,
 };
@@ -189,6 +183,7 @@ fn convert_nodes_recurse_panel(
                     child_textbox_serde.id_str.as_str(),
                 );
                 textbox.is_password = child_textbox_serde.is_password;
+                textbox.char_whitelist = child_textbox_serde.char_whitelist.map(|v| v.into());
                 let child_textbox_id = ui_config.create_node(Widget::Textbox(textbox));
                 let Widget::Panel(panel) = &mut ui_config.node_mut(panel_id).unwrap().widget else {
                     panic!("Expected panel widget");
@@ -480,6 +475,16 @@ impl Into<TextboxStyle> for TextboxStyleJson {
             hover_color: self.hover_color.map(Into::into),
             active_color: self.active_color.map(Into::into),
             select_color: self.select_color.map(Into::into),
+        }
+    }
+}
+
+impl Into<TextboxCharWhitelist> for TextboxCharWhitelistJson {
+    fn into(self) -> TextboxCharWhitelist {
+        match self {
+            Self::Alphanumeric => TextboxCharWhitelist::Alphanumeric,
+            Self::Password => TextboxCharWhitelist::Password,
+            Self::Email => TextboxCharWhitelist::Email,
         }
     }
 }
