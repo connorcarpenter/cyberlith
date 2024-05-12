@@ -1,6 +1,5 @@
 use std::{collections::HashMap, slice::Iter};
 
-use crate::styles::compute_styles;
 use asset_id::AssetId;
 use render_api::base::Color;
 use ui_builder_config::{
@@ -11,7 +10,9 @@ use ui_layout::{
     Alignment, LayoutType, MarginUnits, NodeId, NodeStore, PositionType, SizeUnits, Solid,
     TextMeasurer,
 };
+use ui_serde::SerdeErr;
 
+use crate::styles::compute_styles;
 use crate::text_measure_raw_size;
 
 pub struct UiRuntimeConfig {
@@ -29,9 +30,9 @@ impl UiRuntimeConfig {
     pub const ROOT_NODE_ID: NodeId = NodeId::new(0);
     pub const Z_STEP_RENDER: f32 = 2.0;
 
-    pub fn load_from_bytes(bytes: &[u8]) -> Self {
-        let config = ui_serde::bits::read_ui_bits(bytes);
-        Self::load_from_builder_config(config)
+    pub fn load_from_bytes(bytes: &[u8]) -> Result<Self, SerdeErr> {
+        let config = ui_serde::bits::read_ui_bits(bytes)?;
+        Ok(Self::load_from_builder_config(config))
     }
 
     pub fn load_from_builder_config(ui_config: UiConfig) -> Self {

@@ -19,9 +19,9 @@ use crate::bits::{
     WidgetStyleBits,
 };
 
-pub fn read_bits(data: &[u8]) -> UiConfig {
-    let actions = bytes_to_actions(data).unwrap();
-    convert_actions_to_ui_config(actions)
+pub fn read_bits(data: &[u8]) -> Result<UiConfig, SerdeErr> {
+    let actions = bytes_to_actions(data)?;
+    Ok(convert_actions_to_ui_config(actions))
 }
 
 fn convert_actions_to_ui_config(actions: Vec<UiAction>) -> UiConfig {
@@ -101,12 +101,12 @@ fn bytes_to_actions(data: &[u8]) -> Result<Vec<UiAction>, SerdeErr> {
             }
             UiActionType::TextIconAssetId => {
                 let val = u32::de(bit_reader)?;
-                let asset_id = AssetId::from_u32(val).unwrap();
+                let asset_id = AssetId::from_u32(val)?;
                 actions.push(UiAction::TextIconAssetId(asset_id));
             }
             UiActionType::EyeIconAssetId => {
                 let val = u32::de(bit_reader)?;
-                let asset_id = AssetId::from_u32(val).unwrap();
+                let asset_id = AssetId::from_u32(val)?;
                 actions.push(UiAction::EyeIconAssetId(asset_id));
             }
             UiActionType::DefaultButton => {

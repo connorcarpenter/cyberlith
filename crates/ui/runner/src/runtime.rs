@@ -1,14 +1,13 @@
 use asset_loader::{AssetHandle, IconData, TypedAssetId, UiDependencies, UiTextMeasurer};
 use input::CursorIcon;
 use math::{Vec2, Vec3};
-use render_api::components::{CameraBundle, ClearOperation, Projection, Transform};
 use render_api::{
     base::{CpuMaterial, CpuMesh},
-    components::Viewport,
+    components::{Viewport, CameraBundle, ClearOperation, Projection, Transform}
 };
 use storage::Storage;
 use ui_input::{UiGlobalEvent, UiInputEvent, UiInputState, UiNodeEvent};
-use ui_runner_config::{NodeId, UiRuntimeConfig};
+use ui_runner_config::{NodeId, SerdeErr, UiRuntimeConfig};
 use ui_state::UiState;
 
 use crate::handle::UiHandle;
@@ -27,9 +26,9 @@ impl UiRuntime {
             .generate_new_inputs(&self.config, next_inputs);
     }
 
-    pub(crate) fn load_from_bytes(bytes: &[u8]) -> Self {
-        let config = UiRuntimeConfig::load_from_bytes(bytes);
-        Self::load_from_config(config)
+    pub(crate) fn load_from_bytes(bytes: &[u8]) -> Result<Self, SerdeErr> {
+        let config = UiRuntimeConfig::load_from_bytes(bytes)?;
+        Ok(Self::load_from_config(config))
     }
 
     pub(crate) fn load_from_config(config: UiRuntimeConfig) -> Self {

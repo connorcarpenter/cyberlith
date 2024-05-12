@@ -28,16 +28,16 @@ use crate::app::{global::Global, ui_backups::*};
 
 fn ui_define() -> (String, AssetId, ETag, UiConfig) {
     // start
-    //return start::ui_define();
+    // return start::ui_define();
 
     // login
     // return login::ui_define();
 
     // register
-    return register::ui_define();
+    // return register::ui_define();
 
     // register_finish
-    // return register_finish::ui_define();
+    return register_finish::ui_define();
 }
 
 #[derive(Event, Default)]
@@ -151,6 +151,8 @@ fn write_to_file(name: &str, ui_asset_id: &AssetId, ui_etag: &ETag, ui: UiConfig
     }
 
     // bit-packed bytes -> ui
-    let ui = asset_serde::bits::read_ui_bits(&ui_bytes);
+    let Ok(ui) = asset_serde::bits::read_ui_bits(&ui_bytes) else {
+        panic!("failed to read ui bits for asset_id: {:?}", ui_asset_id);
+    };
     ui
 }

@@ -189,7 +189,9 @@ impl UiManager {
         let handle = UiHandle::new(*asset_id);
         if !self.ui_runtimes.contains_key(&handle) {
             let bytes = asset_data_store.get(asset_id).unwrap();
-            let runtime = UiRuntime::load_from_bytes(bytes);
+            let Ok(runtime) = UiRuntime::load_from_bytes(bytes) else {
+                panic!("failed to read UiRuntime from bytes at asset_id: {:?}", asset_id);
+            };
 
             self.ui_runtimes.insert(handle, runtime);
 

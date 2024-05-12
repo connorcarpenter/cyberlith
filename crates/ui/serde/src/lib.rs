@@ -3,6 +3,7 @@ use cfg_if::cfg_if;
 cfg_if! {
     if #[cfg(any(feature = "write_bits", feature = "read_bits"))] {
         pub mod bits;
+        pub use naia_serde::SerdeErr;
     } else {}
 }
 
