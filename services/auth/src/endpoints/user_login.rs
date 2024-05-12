@@ -1,7 +1,9 @@
+
 use auth_server_db::UserId;
 use http_client::ResponseError;
 use http_server::{async_dup::Arc, executor::smol::lock::RwLock, ApiServer, Server};
 use logging::info;
+use validation::CharacterWhitelist;
 
 use auth_server_http_proto::{AccessToken, RefreshToken, UserLoginRequest, UserLoginResponse};
 
@@ -25,6 +27,7 @@ async fn async_impl(
             Ok(UserLoginResponse::new(refresh_token, access_token))
         }
         Err(AuthServerError::UsernameOrEmailNotFound) | Err(AuthServerError::PasswordIncorrect) => Err(ResponseError::Unauthenticated),
+        Err(AuthServerError::PasswordInvalidCharacters) | Err(AuthServerError::UsernameOrEmailInvalidCharacters) => Err(ResponseError::BadRequest),
         Err(_) => {
             panic!("unhandled error for this endpoint");
         }
@@ -39,7 +42,18 @@ impl State {
         request: UserLoginRequest,
     ) -> Result<(RefreshToken, AccessToken), AuthServerError> {
         let handle = request.handle;
+
+        // validate handle
+        if !CharacterWhitelist::email_allows_text(&handle) {
+            return Err(AuthServerError::UsernameOrEmailInvalidCharacters);
+        }
+
         let password = request.password;
+
+        // validate password
+        if !CharacterWhitelist::password_allows_text(&password) {
+            return Err(AuthServerError::PasswordInvalidCharacters);
+        }
 
         // find user_id for given handle
         let user_id: UserId;

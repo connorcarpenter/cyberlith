@@ -8,5 +8,7 @@ pub(crate) enum AuthServerError {
     PasswordIncorrect,
     TokenNotFound,
     PasswordHashError,
+    UsernameOrEmailInvalidCharacters,
+    PasswordInvalidCharacters,
     Unknown(String),
 }

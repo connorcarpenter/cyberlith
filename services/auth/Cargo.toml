@@ -20,6 +20,7 @@ email = { path = "../../crates/email" }
 logging = { path = "../../crates/logging" }
 timequeue = { path = "../../crates/timequeue" }
 instant = { path = "../../crates/instant" }
+validation = { path = "../../crates/validation" }
 
 auth_server_http_proto = { path = "http_proto" }
 auth_server_db = { path = "db" }
