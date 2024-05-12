@@ -394,12 +394,12 @@ impl IconManager {
     }
 
     pub fn on_create_vertex(&mut self, frame_entity: Entity, vertex_entity: Entity) {
-        // info!("on_create_vertex: {:?} {:?}", entity, parent_opt);
+        // info!("on_create_vertex: frame_entity: {:?}, vertex_entity: {:?}", frame_entity, vertex_entity);
 
-        info!("inserting icon vert entity: `{:?}`", vertex_entity);
+        // info!("inserting icon vert entity: `{:?}`", vertex_entity);
 
         let Some(file_entity) = self.frames.get(&frame_entity) else {
-            panic!("frame entity not found");
+            panic!("frame entity not found: {:?}", frame_entity);
         };
 
         let Some(file_frame_data) = self.file_frame_data.get_mut(&file_entity) else {
@@ -496,6 +496,11 @@ impl IconManager {
         }
         let file_frame_data = self.file_frame_data.get_mut(file_entity).unwrap();
         file_frame_data.add_frame(*frame_entity, frame_index, frame_q_opt);
+
+        // info!(
+        //     "icon frame create event (File Entity: {:?}, Frame Entity: {:?}, Frame Index: {:?})",
+        //     file_entity, frame_entity, frame_index
+        // );
 
         self.frames.insert(*frame_entity, *file_entity);
     }

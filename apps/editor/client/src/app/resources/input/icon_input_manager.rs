@@ -97,6 +97,16 @@ impl IconInputManager {
                     }
                 }
                 InputEvent::KeyPressed(key, _) => match key {
+                    Key::ArrowUp | Key::ArrowDown | Key::ArrowLeft | Key::ArrowRight => {
+                        let dir = match key {
+                            Key::ArrowUp => CardinalDirection::North,
+                            Key::ArrowDown => CardinalDirection::South,
+                            Key::ArrowLeft => CardinalDirection::West,
+                            Key::ArrowRight => CardinalDirection::East,
+                            _ => panic!("Unexpected key: {:?}", key),
+                        };
+                        Self::handle_arrowkeys_meshing(world, icon_manager, dir);
+                    }
                     Key::S | Key::W => {
                         icon_manager.handle_keypress_camera_controls(key);
                     }
@@ -390,6 +400,76 @@ impl IconInputManager {
             }
             (_, _) => Self::handle_drag_empty_space(world, click_type, delta),
         }
+    }
+
+    fn handle_arrowkeys_meshing(
+        world: &mut World,
+        icon_manager: &mut IconManager,
+        dir: CardinalDirection,
+    ) {
+        if !world.get_resource::<TabManager>().unwrap().has_focus() {
+            return;
+        }
+
+        match icon_manager.selected_shape {
+            Some((vertex_entity, CanvasShape::Vertex)) => {
+                Self::handle_vertex_arrowkeys(world, icon_manager, &vertex_entity, dir)
+            }
+            _ => {}
+        }
+    }
+
+    pub(crate) fn handle_vertex_arrowkeys(
+        world: &mut World,
+        icon_manager: &mut IconManager,
+        vertex_entity: &Entity,
+        dir: CardinalDirection,
+    ) {
+        // move vertex
+
+        let mut system_state: SystemState<(
+            Commands,
+            Client<Main>,
+            ResMut<Canvas>,
+            Query<&mut IconVertex>,
+        )> = SystemState::new(world);
+        let (
+            mut commands,
+            client,
+            mut canvas,
+            mut vertex_q
+        ) = system_state.get_mut(world);
+
+        // check status
+        let auth_status = commands.entity(*vertex_entity).authority(&client).unwrap();
+        if !(auth_status.is_requested() || auth_status.is_granted()) {
+            // only continue to mutate if requested or granted authority over vertex
+            info!("No authority over vertex, skipping..");
+            return;
+        }
+
+        // set networked 3d vertex position
+        let mut vertex = vertex_q.get_mut(*vertex_entity).unwrap();
+
+        let vertex_position = vertex.as_vec2();
+        let mut new_vertex_position = vertex_position.clone();
+        match dir {
+            CardinalDirection::North => new_vertex_position.y -= 1.0,
+            CardinalDirection::South => new_vertex_position.y += 1.0,
+            CardinalDirection::East => new_vertex_position.x += 1.0,
+            CardinalDirection::West => new_vertex_position.x -= 1.0,
+        }
+
+        icon_manager.update_last_vertex_dragged(
+            *vertex_entity,
+            vertex_position,
+            new_vertex_position,
+        );
+
+        vertex.set_vec2(&new_vertex_position);
+
+        // redraw
+        canvas.queue_resync_shapes();
     }
 
     pub(crate) fn handle_vertex_drag(

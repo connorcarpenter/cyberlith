@@ -2571,7 +2571,9 @@ impl IconManager {
             if owned_by_file.file_entity != *file_entity {
                 continue;
             }
-            let vertex_frame_entity = vertex.frame_entity.get(&client).unwrap();
+            let Some(vertex_frame_entity) = vertex.frame_entity.get(&client) else {
+                continue; // vertex's frame entity is likely in the waitlist still?
+            };
             if vertex_frame_entity != *frame_entity {
                 continue;
             }
