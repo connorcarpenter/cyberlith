@@ -64,7 +64,8 @@ impl UiRenderer {
             &AmbientLight::new(1.0, Color::WHITE),
         );
 
-        let text_icon_handle = ui_runner.get_icon_handle();
+        let text_icon_handle = ui_runner.get_text_icon_handle();
+        let eye_icon_handle = ui_runner.get_eye_icon_handle();
 
         let carat_blink = blinkiness.enabled() || ui_input_state.interact_timer_within_seconds(1.0);
 
@@ -78,6 +79,7 @@ impl UiRenderer {
                 ui_state,
                 ui_input_state,
                 &text_icon_handle,
+                &eye_icon_handle,
                 &node_id,
             );
         }
@@ -181,6 +183,7 @@ fn draw_ui_node(
     ui_state: &UiState,
     ui_input_state: &UiInputState,
     text_icon_handle: &AssetHandle<IconData>,
+    eye_icon_handle: &AssetHandle<IconData>,
     id: &NodeId,
 ) {
     let Some((width, height, child_offset_x, child_offset_y, child_offset_z)) =
@@ -238,6 +241,7 @@ fn draw_ui_node(
                     ui_state,
                     ui_input_state,
                     text_icon_handle,
+                    eye_icon_handle,
                     id,
                     &transform,
                 );
@@ -366,6 +370,7 @@ fn draw_ui_textbox(
     ui_state: &UiState,
     ui_input_state: &UiInputState,
     text_icon_handle: &AssetHandle<IconData>,
+    eye_icon_handle: &AssetHandle<IconData>,
     id: &NodeId,
     transform: &Transform,
 ) {
@@ -456,6 +461,21 @@ fn draw_ui_textbox(
                 textbox_text,
                 textbox_state.offset_index,
                 ui_input_state.carat_index,
+            );
+        }
+
+        if textbox_state.password_mask {
+            let mut eye_transform = transform.clone();
+            eye_transform.translation.x += transform.scale.x - 16.0;
+            eye_transform.scale.x = 1.0;
+            eye_transform.scale.y = 1.0;
+            eye_transform.translation.z = transform.translation.z + (UiRuntimeConfig::Z_STEP_RENDER * 3.0);
+            asset_manager.draw_icon(
+                render_frame,
+                eye_icon_handle,
+                0,
+                &eye_transform,
+                Some(&RenderLayer::UI),
             );
         }
     }

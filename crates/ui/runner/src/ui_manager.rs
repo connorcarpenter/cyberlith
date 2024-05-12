@@ -350,7 +350,7 @@ impl UiManager {
                 warn!("ui data not loaded 1: {:?}", ui_handle.asset_id());
                 return;
             };
-            let icon_handle = ui_runtime.get_icon_handle();
+            let icon_handle = ui_runtime.get_text_icon_handle();
             self.recalculate_ui_layout(store, ui_handle, &icon_handle);
         }
     }
@@ -397,7 +397,7 @@ impl UiManager {
             warn!("ui data not loaded 1: {:?}", ui_handle.asset_id());
             return;
         };
-        let icon_handle = ui_runtime.get_icon_handle();
+        let icon_handle = ui_runtime.get_text_icon_handle();
         let Some(icon_data) = store.icons.get(&icon_handle) else {
             return;
         };

@@ -33,8 +33,9 @@ impl UiRuntime {
     }
 
     pub(crate) fn load_from_config(config: UiRuntimeConfig) -> Self {
-        let icon_asset_id = config.get_text_icon_asset_id();
-        let dependencies = UiDependencies::new(&icon_asset_id);
+        let text_icon_asset_id = config.get_text_icon_asset_id();
+        let eye_icon_asset_id = config.get_eye_icon_asset_id();
+        let dependencies = UiDependencies::new(&text_icon_asset_id, &eye_icon_asset_id);
         let input_state = UiInputState::new();
         let state = UiState::from_ui_config(&config);
 
@@ -128,8 +129,12 @@ impl UiRuntime {
         self.dependencies.finish_dependency(dependency_typed_id);
     }
 
-    pub fn get_icon_handle(&self) -> AssetHandle<IconData> {
-        self.dependencies.get_icon_handle()
+    pub fn get_text_icon_handle(&self) -> AssetHandle<IconData> {
+        self.dependencies.get_text_icon_handle()
+    }
+
+    pub fn get_eye_icon_handle(&self) -> AssetHandle<IconData> {
+        self.dependencies.get_eye_icon_handle()
     }
 
     // config

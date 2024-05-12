@@ -23,10 +23,12 @@ impl From<&UiConfig> for UiConfigJson {
 
         let text_color = From::from(ui_config.get_text_color());
         let text_icon_asset_id = ui_config.get_text_icon_asset_id().to_string();
+        let eye_icon_asset_id = ui_config.get_eye_icon_asset_id().to_string();
 
         let mut me = Self {
             text_color,
             text_icon_asset_id,
+            eye_icon_asset_id,
             first_input: ui_config.get_first_input().map(|id| id.as_usize()),
             styles: Vec::new(),
             nodes: Vec::new(),

@@ -31,6 +31,7 @@ use ui_builder_config::{UiConfig, WidgetKind};
 pub struct UiConfigJson {
     text_color: ColorJson,
     text_icon_asset_id: String,
+    eye_icon_asset_id: String,
     first_input: Option<usize>,
     styles: Vec<UiStyleJson>,
     nodes: Vec<UiNodeJson>,
@@ -43,6 +44,7 @@ impl UiConfigJson {
         let mut output = Vec::new();
 
         output.push(AssetId::from_str(&self.text_icon_asset_id).unwrap());
+        output.push(AssetId::from_str(&self.eye_icon_asset_id).unwrap());
 
         output
     }

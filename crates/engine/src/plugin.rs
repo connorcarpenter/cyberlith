@@ -33,11 +33,11 @@ impl Plugin for EnginePlugin {
         let kernel_plugin = KernelPlugin::new(self.cookie_store_opt.clone());
 
         app
+            .add_plugins(kernel_plugin)
             // Add Render Plugins
             .add_plugins(RenderApiPlugin)
             .add_plugins(RendererPlugin)
             // Add misc crates Plugins
-            .add_plugins(kernel_plugin)
             .add_plugins(InputPlugin)
             .add_plugins(AssetPlugin)
             .add_plugins(UiPlugin)

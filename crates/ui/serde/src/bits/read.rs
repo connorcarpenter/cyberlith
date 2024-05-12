@@ -40,6 +40,9 @@ fn convert_actions_to_ui_config(actions: Vec<UiAction>) -> UiConfig {
             UiAction::TextIconAssetId(asset_id) => {
                 ui_config.set_text_icon_asset_id(&asset_id);
             }
+            UiAction::EyeIconAssetId(asset_id) => {
+                ui_config.set_eye_icon_asset_id(&asset_id);
+            }
             UiAction::FirstInput(node_id_opt) => {
                 if let Some(node_id) = node_id_opt {
                     ui_config.set_first_input(node_id)
@@ -100,6 +103,11 @@ fn bytes_to_actions(data: &[u8]) -> Result<Vec<UiAction>, SerdeErr> {
                 let val = u32::de(bit_reader)?;
                 let asset_id = AssetId::from_u32(val).unwrap();
                 actions.push(UiAction::TextIconAssetId(asset_id));
+            }
+            UiActionType::EyeIconAssetId => {
+                let val = u32::de(bit_reader)?;
+                let asset_id = AssetId::from_u32(val).unwrap();
+                actions.push(UiAction::EyeIconAssetId(asset_id));
             }
             UiActionType::DefaultButton => {
                 let val = Option::<UnsignedVariableInteger<7>>::de(bit_reader)?;

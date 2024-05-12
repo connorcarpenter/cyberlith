@@ -21,6 +21,7 @@ pub struct UiRuntimeConfig {
     text_color: Color,
     first_input: NodeId,
     text_icon_asset_id: AssetId,
+    eye_icon_asset_id: AssetId,
     id_str_to_node_id_map: HashMap<String, NodeId>,
 }
 
@@ -34,8 +35,15 @@ impl UiRuntimeConfig {
     }
 
     pub fn load_from_builder_config(ui_config: UiConfig) -> Self {
-        let (styles, nodes, text_color, first_input, text_icon_asset_id, node_map) =
-            ui_config.decompose();
+        let (
+            styles,
+            nodes,
+            text_color,
+            first_input,
+            text_icon_asset_id,
+            eye_icon_asset_id,
+            node_map
+        ) = ui_config.decompose();
         let node_map = node_map
             .into_iter()
             .map(|(k, v)| (k.to_string(), v.into()))
@@ -50,6 +58,7 @@ impl UiRuntimeConfig {
             first_input,
             id_str_to_node_id_map: node_map,
             text_icon_asset_id,
+            eye_icon_asset_id,
         }
     }
 
@@ -63,6 +72,10 @@ impl UiRuntimeConfig {
 
     pub fn get_text_icon_asset_id(&self) -> AssetId {
         self.text_icon_asset_id
+    }
+
+    pub fn get_eye_icon_asset_id(&self) -> AssetId {
+        self.eye_icon_asset_id
     }
 
     pub fn get_node_id_by_id_str(&self, id_str: &str) -> Option<NodeId> {

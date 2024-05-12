@@ -32,6 +32,8 @@ pub(crate) enum UiAction {
     TextColor(ColorBits),
     // assetid
     TextIconAssetId(AssetId),
+    // assetid
+    EyeIconAssetId(AssetId),
     // default button
     FirstInput(Option<NodeId>),
     // style
@@ -44,6 +46,7 @@ pub(crate) enum UiAction {
 pub(crate) enum UiActionType {
     TextColor,
     TextIconAssetId,
+    EyeIconAssetId,
     DefaultButton,
     Style,
     Node,

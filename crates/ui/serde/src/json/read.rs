@@ -24,6 +24,7 @@ impl Into<UiConfig> for UiConfigJson {
         let UiConfigJson {
             text_color,
             text_icon_asset_id,
+            eye_icon_asset_id,
             first_input,
             styles,
             nodes,
@@ -35,6 +36,10 @@ impl Into<UiConfig> for UiConfigJson {
         // text icon
         let text_icon_asset_id = AssetId::from_str(&text_icon_asset_id).unwrap();
         ui_config.set_text_icon_asset_id(&text_icon_asset_id);
+
+        // eye icon
+        let eye_icon_asset_id = AssetId::from_str(&eye_icon_asset_id).unwrap();
+        ui_config.set_eye_icon_asset_id(&eye_icon_asset_id);
 
         // first input
         if let Some(first_input_id) = first_input {

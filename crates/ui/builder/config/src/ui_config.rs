@@ -19,6 +19,7 @@ pub struct UiConfig {
     text_color: Color,
     first_input: Option<NodeId>,
     text_icon_asset_id_opt: Option<AssetId>,
+    eye_icon_asset_id_opt: Option<AssetId>,
     id_str_to_node_id_map: HashMap<String, NodeId>,
 }
 
@@ -33,6 +34,7 @@ impl UiConfig {
             text_color: Color::BLACK,
             first_input: None,
             text_icon_asset_id_opt: None,
+            eye_icon_asset_id_opt: None,
             id_str_to_node_id_map: HashMap::new(),
         };
 
@@ -53,6 +55,7 @@ impl UiConfig {
         Color,
         NodeId,
         AssetId,
+        AssetId,
         HashMap<String, NodeId>,
     ) {
         (
@@ -61,6 +64,7 @@ impl UiConfig {
             self.text_color,
             self.first_input.unwrap(),
             self.text_icon_asset_id_opt.unwrap(),
+            self.eye_icon_asset_id_opt.unwrap(),
             self.id_str_to_node_id_map,
         )
     }
@@ -141,6 +145,15 @@ impl UiConfig {
 
     pub fn set_text_icon_asset_id(&mut self, text_icon_asset_id: &AssetId) -> &mut Self {
         self.text_icon_asset_id_opt = Some(text_icon_asset_id.clone());
+        self
+    }
+
+    pub fn get_eye_icon_asset_id(&self) -> AssetId {
+        *self.eye_icon_asset_id_opt.as_ref().unwrap()
+    }
+
+    pub fn set_eye_icon_asset_id(&mut self, eye_icon_asset_id: &AssetId) -> &mut Self {
+        self.eye_icon_asset_id_opt = Some(eye_icon_asset_id.clone());
         self
     }
 
