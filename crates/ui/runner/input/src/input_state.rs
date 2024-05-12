@@ -131,6 +131,10 @@ impl UiInputState {
         self.hovering_node = Some(*id);
     }
 
+    pub fn clear_hover(&mut self) {
+        self.hovering_node = None;
+    }
+
     pub fn get_active_state(&self, id: &NodeId) -> NodeActiveState {
         if let Some(select_id) = self.selected_node {
             if select_id == *id {
@@ -145,10 +149,6 @@ impl UiInputState {
         };
 
         return NodeActiveState::Normal;
-    }
-
-    pub fn clear_hover(&mut self) {
-        self.hovering_node = None;
     }
 
     pub fn get_active_node(&self) -> Option<NodeId> {

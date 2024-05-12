@@ -10,6 +10,7 @@ pub struct TextboxState {
     pub text: String,
     pub offset_index: usize,
     pub password_mask: bool,
+    pub eye_hover: bool,
 }
 
 impl TextboxState {
@@ -18,11 +19,31 @@ impl TextboxState {
             text: String::new(),
             offset_index: 0,
             password_mask: textbox.is_password,
+            eye_hover: false,
         }
     }
 
     pub fn get_masked_text(&self) -> String {
         "*".repeat(self.text.len())
+    }
+
+    pub fn receive_hover(&mut self, config: &Textbox, layout: (f32, f32, f32, f32), mouse_x: f32, mouse_y: f32) -> bool {
+        if !config.is_password {
+            return false;
+        }
+
+        let (width, height, posx, posy) = layout;
+
+        // compare to password eye rendering, should be the same
+        let eye_left_x = posx + width - (height * 0.5 * 1.2) - (height * 0.5);
+
+        if mouse_x >= eye_left_x && mouse_x <= posx + width && mouse_y >= posy && mouse_y <= posy + height {
+            self.eye_hover = true;
+            return true;
+        } else {
+            self.eye_hover = false;
+            return false;
+        }
     }
 }
 

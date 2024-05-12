@@ -464,22 +464,26 @@ fn draw_ui_textbox(
             );
         }
 
-        if textbox_state.password_mask {
+        let textbox = ui_config.get_node(id).unwrap().widget_textbox_ref().unwrap();
+        if textbox.is_password {
+
+            let currently_masked = textbox_state.password_mask;
 
             let mut eye_transform = transform.clone();
 
             let eye_size = transform.scale.y * 0.5;
             eye_transform.translation.x += transform.scale.x - (eye_size * 1.2);
             eye_transform.translation.y += eye_size;
+            eye_transform.translation.z = transform.translation.z + (UiRuntimeConfig::Z_STEP_RENDER * 3.0);
 
-            let eye_size = (transform.scale.y / 100.0) * 0.8;
+            let eye_size = (transform.scale.y / 100.0) * 0.8 * if textbox_state.eye_hover { 1.2 } else { 1.0 };
             eye_transform.scale.x = eye_size;
             eye_transform.scale.y = eye_size * 0.9;
-            eye_transform.translation.z = transform.translation.z + (UiRuntimeConfig::Z_STEP_RENDER * 3.0);
+
             asset_manager.draw_icon(
                 render_frame,
                 eye_icon_handle,
-                0,
+                if currently_masked { 1 } else { 0 },
                 &eye_transform,
                 Some(&RenderLayer::UI),
             );

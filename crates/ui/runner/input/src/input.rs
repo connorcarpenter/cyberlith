@@ -483,19 +483,37 @@ fn ui_update_hover(
         warn!("no node for id: {:?}", id);
         return;
     };
-    let check = match node.widget_kind() {
-        WidgetKind::Button => Some(CursorIcon::Hand),
-        WidgetKind::Textbox => Some(CursorIcon::Text),
-        _ => None,
-    };
-    if let Some(cursor_icon) = check {
-        if point_is_inside(
-            (width, height, child_offset_x, child_offset_y),
-            mouse_x,
-            mouse_y,
-        ) {
-            ui_input_state.receive_hover(id);
-            ui_input_state.set_cursor_icon(cursor_icon);
-        }
+    match node.widget_kind() {
+        WidgetKind::Button => {
+            if point_is_inside(
+                (width, height, child_offset_x, child_offset_y),
+                mouse_x,
+                mouse_y,
+            ) {
+                ui_input_state.set_cursor_icon(CursorIcon::Hand);
+                ui_input_state.receive_hover(id);
+            }
+        },
+        WidgetKind::Textbox => {
+
+            let textbox_config = node.widget_textbox_ref().unwrap();
+            let is_hovering_eye = ui_state.store.textbox_mut(id).unwrap().receive_hover(textbox_config, (width, height, child_offset_x, child_offset_y),
+                                                                  mouse_x,
+                                                                  mouse_y);
+
+            if point_is_inside(
+                (width, height, child_offset_x, child_offset_y),
+                mouse_x,
+                mouse_y,
+            ) {
+                ui_input_state.receive_hover(id);
+                if is_hovering_eye {
+                    ui_input_state.set_cursor_icon(CursorIcon::Hand);
+                } else {
+                    ui_input_state.set_cursor_icon(CursorIcon::Text);
+                }
+            }
+        },
+        _ => {}
     }
 }
