@@ -474,7 +474,7 @@ fn draw_ui_textbox(
 
             let eye_size = (transform.scale.y / 100.0) * 0.8;
             eye_transform.scale.x = eye_size;
-            eye_transform.scale.y = eye_size * 0.8;
+            eye_transform.scale.y = eye_size * 0.9;
             eye_transform.translation.z = transform.translation.z + (UiRuntimeConfig::Z_STEP_RENDER * 3.0);
             asset_manager.draw_icon(
                 render_frame,
