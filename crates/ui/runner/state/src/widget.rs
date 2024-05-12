@@ -1,4 +1,4 @@
-use ui_runner_config::{WidgetKind, Widget};
+use ui_runner_config::Widget;
 
 use crate::textbox::TextboxState;
 

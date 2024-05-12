@@ -371,6 +371,29 @@ impl TextboxInputState {
     pub fn recv_mouse_event(
         input_state: &mut UiInputState,
         text_measurer: &dyn TextMeasurer,
+        textbox_state: &mut TextboxState,
+        node_x: f32,
+        node_h: f32,
+        mouse_position_opt: Option<Vec2>,
+        mouse_event: UiInputEvent,
+    ) {
+        if textbox_state.eye_hover {
+            Self::recv_mouse_event_eye(textbox_state, mouse_event)
+        } else {
+            Self::recv_mouse_event_text(
+                input_state,
+                text_measurer,
+                textbox_state,
+                node_x,
+                node_h,
+                mouse_position_opt,
+                mouse_event);
+        }
+    }
+
+    fn recv_mouse_event_text(
+        input_state: &mut UiInputState,
+        text_measurer: &dyn TextMeasurer,
         textbox_state: &TextboxState,
         node_x: f32,
         node_h: f32,
@@ -479,6 +502,19 @@ impl TextboxInputState {
                         }
                     }
                 }
+            }
+            _ => {}
+        }
+    }
+
+    fn recv_mouse_event_eye(
+        textbox_state: &mut TextboxState,
+        mouse_event: UiInputEvent,
+    ) {
+        match mouse_event {
+            UiInputEvent::MouseSingleClick(MouseButton::Left, _click_position, _modifiers) => {
+                // toggle password mask
+                textbox_state.password_mask = !textbox_state.password_mask;
             }
             _ => {}
         }

@@ -2,7 +2,7 @@ use std::{collections::HashMap, path::PathBuf};
 
 use bevy_ecs::{change_detection::ResMut, system::Resource};
 
-use naia_serde::{BitReader, BitWriter, SerdeInternal as Serde};
+use naia_serde::{BitReader, SerdeInternal as Serde};
 
 use logging::{info, warn};
 use asset_id::{AssetId, AssetType, ETag};
