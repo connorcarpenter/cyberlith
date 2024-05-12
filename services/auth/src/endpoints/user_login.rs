@@ -27,7 +27,7 @@ async fn async_impl(
             Ok(UserLoginResponse::new(refresh_token, access_token))
         }
         Err(AuthServerError::UsernameOrEmailNotFound) | Err(AuthServerError::PasswordIncorrect) => Err(ResponseError::Unauthenticated),
-        Err(AuthServerError::PasswordInvalidCharacters) | Err(AuthServerError::UsernameOrEmailInvalidCharacters) => Err(ResponseError::BadRequest),
+        Err(AuthServerError::PasswordInvalidCharacters) | Err(AuthServerError::UsernameOrEmailInvalidCharacters) | Err(AuthServerError::UsernameInvalidCharacters) | Err(AuthServerError::EmailInvalidCharacters) => Err(ResponseError::BadRequest),
         Err(_) => {
             panic!("unhandled error for this endpoint");
         }

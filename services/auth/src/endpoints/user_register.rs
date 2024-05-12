@@ -5,6 +5,7 @@ use http_server::{async_dup::Arc, http_log_util, executor::smol::lock::RwLock, A
 use config::TargetEnv;
 
 use auth_server_http_proto::{UserRegisterRequest, UserRegisterResponse};
+use validation::CharacterWhitelist;
 
 use crate::{error::AuthServerError, types::TempRegistration, state::State};
 
@@ -44,7 +45,17 @@ async fn async_impl(
 
 impl State {
     fn user_register(&mut self, request: UserRegisterRequest) -> Result<(), AuthServerError> {
-        // TODO: validate data?
+
+        if !CharacterWhitelist::alphanumeric_allows_text(&request.username) {
+            return Err(AuthServerError::UsernameInvalidCharacters);
+        }
+        if !CharacterWhitelist::email_allows_text(&request.email) {
+            return Err(AuthServerError::EmailInvalidCharacters);
+        }
+        if !CharacterWhitelist::password_allows_text(&request.password) {
+            return Err(AuthServerError::PasswordInvalidCharacters);
+        }
+        // TODO: validate data more?
 
         if self.username_to_id_map.contains_key(&request.username) {
             return Err(AuthServerError::UsernameAlreadyExists);
