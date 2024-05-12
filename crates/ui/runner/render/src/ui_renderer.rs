@@ -465,10 +465,16 @@ fn draw_ui_textbox(
         }
 
         if textbox_state.password_mask {
+
             let mut eye_transform = transform.clone();
-            eye_transform.translation.x += transform.scale.x - 16.0;
-            eye_transform.scale.x = 1.0;
-            eye_transform.scale.y = 1.0;
+
+            let eye_size = transform.scale.y * 0.5;
+            eye_transform.translation.x += transform.scale.x - (eye_size * 1.2);
+            eye_transform.translation.y += eye_size;
+
+            let eye_size = (transform.scale.y / 100.0) * 0.8;
+            eye_transform.scale.x = eye_size;
+            eye_transform.scale.y = eye_size * 0.8;
             eye_transform.translation.z = transform.translation.z + (UiRuntimeConfig::Z_STEP_RENDER * 3.0);
             asset_manager.draw_icon(
                 render_frame,
