@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use asset_id::AssetId;
 use render_api::base::Color;
-use ui_builder_config::{BaseNodeStyle, Button, ButtonStyle, NodeId, NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Textbox, TextboxStyle, UiConfig, Widget, WidgetKind, WidgetStyle, TextboxCharWhitelist};
+use ui_builder_config::{BaseNodeStyle, Button, ButtonStyle, NodeId, NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Textbox, TextboxStyle, UiConfig, Widget, WidgetKind, WidgetStyle, CharacterWhitelist};
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 
 use super::{AlignmentJson, ColorJson, LayoutTypeJson, MarginUnitsJson, PanelJson, PositionTypeJson, SizeUnitsJson, SolidJson, TextboxCharWhitelistJson, UiConfigJson, UiNodeJson, UiStyleJson, WidgetJson, WidgetStyleJson};
@@ -479,12 +479,12 @@ impl Into<TextboxStyle> for TextboxStyleJson {
     }
 }
 
-impl Into<TextboxCharWhitelist> for TextboxCharWhitelistJson {
-    fn into(self) -> TextboxCharWhitelist {
+impl Into<CharacterWhitelist> for TextboxCharWhitelistJson {
+    fn into(self) -> CharacterWhitelist {
         match self {
-            Self::Alphanumeric => TextboxCharWhitelist::Alphanumeric,
-            Self::Password => TextboxCharWhitelist::Password,
-            Self::Email => TextboxCharWhitelist::Email,
+            Self::Alphanumeric => CharacterWhitelist::Alphanumeric,
+            Self::Password => CharacterWhitelist::Password,
+            Self::Email => CharacterWhitelist::Email,
         }
     }
 }

@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use naia_serde::{FileBitWriter, SerdeInternal as Serde, UnsignedInteger, UnsignedVariableInteger};
 
 use render_api::base::Color;
-use ui_builder_config::{Button, ButtonStyle, Navigation, NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Textbox, TextboxStyle, UiConfig, UiNode, Widget, WidgetStyle, TextboxCharWhitelist};
+use ui_builder_config::{Button, ButtonStyle, Navigation, NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Textbox, TextboxStyle, UiConfig, UiNode, Widget, WidgetStyle, CharacterWhitelist};
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 
 use crate::bits::{AlignmentBits, ButtonBits, ButtonStyleBits, ColorBits, LayoutTypeBits, MarginUnitsBits, NavigationBits, PanelBits, PanelStyleBits, PositionTypeBits, SizeUnitsBits, SolidBits, TextBits, TextStyleBits, TextboxBits, TextboxStyleBits, UiAction, UiActionType, UiNodeBits, UiStyleBits, WidgetBits, WidgetStyleBits, TextboxCharWhitelistBits};
@@ -446,12 +446,12 @@ impl TextboxBits {
     }
 }
 
-impl From<TextboxCharWhitelist> for TextboxCharWhitelistBits {
-    fn from(value: TextboxCharWhitelist) -> Self {
+impl From<CharacterWhitelist> for TextboxCharWhitelistBits {
+    fn from(value: CharacterWhitelist) -> Self {
         match value {
-            TextboxCharWhitelist::Alphanumeric => Self::Alphanumeric,
-            TextboxCharWhitelist::Password => Self::Password,
-            TextboxCharWhitelist::Email => Self::Email,
+            CharacterWhitelist::Alphanumeric => Self::Alphanumeric,
+            CharacterWhitelist::Password => Self::Password,
+            CharacterWhitelist::Email => Self::Email,
         }
     }
 }

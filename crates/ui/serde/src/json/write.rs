@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use render_api::base::Color;
 
-use ui_builder_config::{Button, ButtonStyle, Navigation, NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Textbox, TextboxStyle, UiConfig, UiNode, Widget, WidgetStyle, TextboxCharWhitelist};
+use ui_builder_config::{Button, ButtonStyle, Navigation, NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Textbox, TextboxStyle, UiConfig, UiNode, Widget, WidgetStyle, CharacterWhitelist};
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 
 use super::{AlignmentJson, ColorJson, LayoutTypeJson, MarginUnitsJson, PanelJson, PanelStyleJson, PositionTypeJson, SizeUnitsJson, SolidJson, TextboxCharWhitelistJson, TextJson, TextStyleJson, UiConfigJson, UiNodeJson, UiStyleJson, WidgetJson, WidgetStyleJson};
@@ -287,12 +287,12 @@ impl From<&Navigation> for NavigationJson {
     }
 }
 
-impl From<&TextboxCharWhitelist> for TextboxCharWhitelistJson {
-    fn from(v: &TextboxCharWhitelist) -> Self {
+impl From<&CharacterWhitelist> for TextboxCharWhitelistJson {
+    fn from(v: &CharacterWhitelist) -> Self {
         match v {
-            TextboxCharWhitelist::Alphanumeric => Self::Alphanumeric,
-            TextboxCharWhitelist::Password => Self::Password,
-            TextboxCharWhitelist::Email => Self::Email,
+            CharacterWhitelist::Alphanumeric => Self::Alphanumeric,
+            CharacterWhitelist::Password => Self::Password,
+            CharacterWhitelist::Email => Self::Email,
         }
     }
 }
