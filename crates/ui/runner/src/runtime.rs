@@ -66,8 +66,8 @@ impl UiRuntime {
         default_bundle
     }
 
-    pub(crate) fn update_state(&mut self) {
-        self.state.update();
+    pub(crate) fn update_state(&mut self, delta_ms: f32) {
+        self.state.update(delta_ms);
     }
 
     pub(crate) fn queue_recalculate_layout(&mut self) {

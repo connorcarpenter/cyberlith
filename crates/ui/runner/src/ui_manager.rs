@@ -69,9 +69,9 @@ impl Default for UiManager {
 }
 
 impl UiManager {
-    pub(crate) fn update_ui_state(&mut self) {
+    pub(crate) fn update_ui_state(&mut self, delta_ms: f32) {
         for (_, ui) in self.ui_runtimes.iter_mut() {
-            ui.update_state();
+            ui.update_state(delta_ms);
         }
     }
 

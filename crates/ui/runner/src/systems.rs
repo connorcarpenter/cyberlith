@@ -6,7 +6,7 @@ use bevy_ecs::{
 
 use asset_loader::AssetManager;
 use input::InputEvent;
-use render_api::components::{Camera, RenderLayer};
+use render_api::{resources::Time, components::{Camera, RenderLayer}};
 use ui_input::UiInputConverter;
 
 use crate::UiManager;
@@ -14,11 +14,12 @@ use crate::UiManager;
 pub fn ui_update(
     mut ui_manager: ResMut<UiManager>,
     asset_manager: Res<AssetManager>,
+    time: Res<Time>,
     mut input_events: EventReader<InputEvent>,
     // Cameras
     cameras_q: Query<(&Camera, Option<&RenderLayer>)>,
 ) {
-    ui_manager.update_ui_state();
+    ui_manager.update_ui_state(time.get_elapsed_ms());
 
     let Some(ui_handle) = ui_manager.active_ui() else {
         return;

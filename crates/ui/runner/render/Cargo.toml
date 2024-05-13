@@ -12,6 +12,7 @@ asset_render = { path = "../../../asset/render" }
 render_api = { path = "../../../render/render_api" }
 storage = { path = "../../../storage" }
 logging = { path = "../../../logging" }
+math = { path = "../../../math" }
 
 ui_runner = { path = ".." }
 

@@ -23,6 +23,7 @@ pub struct UiState {
     pub store: UiStateStore,
     pub visibility_store: UiVisibilityStore,
 
+    ms_since_startup: f32,
     recalc_layout: bool,
 }
 
@@ -35,6 +36,7 @@ impl UiState {
             visibility_store: UiVisibilityStore::new(),
 
             recalc_layout: false,
+            ms_since_startup: 0.0,
         };
 
         for node in ui_config.nodes_iter() {
@@ -49,19 +51,12 @@ impl UiState {
         me
     }
 
-    pub fn update(&mut self) {
-        // if self.breath_up {
-        //     self.breath += 0.5;
-        //     if self.breath > 20.0 {
-        //         self.breath = 0.0;
-        //         // self.breath_up = false;
-        //     }
-        // } else {
-        //     self.breath -= 0.5;
-        //     if self.breath < 0.5 {
-        //         self.breath_up = true;
-        //     }
-        // }
+    pub fn update(&mut self, delta_ms: f32) {
+        self.ms_since_startup += delta_ms;
+    }
+
+    pub fn time_since_startup(&self) -> f32 {
+        self.ms_since_startup
     }
 
     // nodes

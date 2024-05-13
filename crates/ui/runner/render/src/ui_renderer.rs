@@ -2,21 +2,20 @@ use logging::warn;
 
 use asset_loader::{AssetHandle, AssetManager, IconData, UiTextMeasurer};
 use asset_render::AssetRender;
-use render_api::base::Color;
-use render_api::components::AmbientLight;
+use math::{lerp, Vec2};
 use render_api::{
-    base::{CpuMaterial, CpuMesh},
-    components::{RenderLayer, Transform},
+    base::{CpuMaterial, Color, CpuMesh},
+    components::{RenderLayer, AmbientLight, Transform},
     resources::RenderFrame,
+    shapes::set_2d_line_transform,
 };
 use storage::Handle;
 use ui_runner::{
-    config::{text_get_raw_rects, text_get_subimage_indices, NodeId, UiRuntimeConfig, WidgetKind},
+    config::{get_carat_offset_and_scale, text_get_raw_rects, text_get_subimage_indices, NodeId, UiRuntimeConfig, WidgetKind},
     input::UiInputState,
     state::{NodeActiveState, UiState},
     Blinkiness, UiHandle, UiManager,
 };
-use ui_runner::config::get_carat_offset_and_scale;
 
 pub trait UiRender {
     fn draw_ui(&self, asset_manager: &AssetManager, render_frame: &mut RenderFrame);
@@ -525,11 +524,39 @@ fn draw_ui_spinner(
     if let Some(mat_handle) = spinner_style_state.spinner_color_handle() {
         let box_handle = ui_state.globals.get_box_mesh_handle().unwrap();
 
-        let mut transform = transform.clone();
-        transform.scale.x *= 0.6;
-        transform.scale.y *= 0.6;
+        let radius = (transform.scale.y / 2.0) - 2.0;
 
-        render_frame.draw_mesh(Some(&RenderLayer::UI), box_handle, &mat_handle, &transform);
+        let time = ui_state.time_since_startup() * 0.005;
+        let start_angle = time % std::f32::consts::TAU;
+        let angle_length = (270.0f32.to_radians() * (((time * 0.25).sin() + 1.0)*0.5)) + 30.0f32.to_radians();
+        let end_angle = start_angle + angle_length;
+        let center = Vec2::new(
+            transform.translation.x + (transform.scale.x * 0.5),
+            transform.translation.y + (transform.scale.y * 0.5)
+        );
+
+        let n_points: usize = (angle_length / 45.0f32.to_radians()).floor() as usize + 2;
+        let points: Vec<Vec2> = (0..n_points)
+            .map(|i| {
+                let angle = lerp(start_angle, end_angle, i as f32 / n_points as f32);
+                let (sin, cos) = angle.sin_cos();
+
+                center + radius * Vec2::new(cos, sin)
+            })
+            .collect();
+
+        // draw lines
+        for i in 0..points.len()-1 {
+            let start = points[i];
+            let end = points[i + 1];
+
+            let mut line_transform = Transform::default();
+            set_2d_line_transform(&mut line_transform, start, end, transform.translation.z + UiRuntimeConfig::Z_STEP_RENDER);
+            line_transform.scale.y = transform.scale.y * 0.05;
+
+            render_frame.draw_mesh(Some(&RenderLayer::UI), box_handle, &mat_handle, &line_transform);
+        }
+
     } else {
         warn!("no color handle for spinner"); // probably will need to do better debugging later
         return;
