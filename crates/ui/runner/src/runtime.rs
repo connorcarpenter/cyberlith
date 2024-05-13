@@ -1,5 +1,6 @@
 use asset_loader::{AssetHandle, IconData, TypedAssetId, UiDependencies, UiTextMeasurer};
 use input::CursorIcon;
+use logging::warn;
 use math::{Vec2, Vec3};
 use render_api::{
     base::{CpuMaterial, CpuMesh},
@@ -66,6 +67,10 @@ impl UiRuntime {
 
     pub(crate) fn update_state(&mut self) {
         self.state.update();
+    }
+
+    pub(crate) fn queue_recalculate_layout(&mut self) {
+        self.state.queue_recalculate_layout();
     }
 
     pub(crate) fn update_viewport(&mut self, viewport: &Viewport) {
@@ -170,6 +175,36 @@ impl UiRuntime {
 
         // get result from state
         self.state.get_textbox_text(&node_id)
+    }
+
+    pub(crate) fn set_textbox_text(&mut self, id_str: &str, val: &str) {
+        // get node_id from id_str
+        let Some(node_id) = self.get_node_id_by_id_str(id_str) else {
+            warn!("set_textbox_text: node_id not found for id_str: {}", id_str);
+            return;
+        };
+
+        // set text
+        self.state.set_textbox_text(&node_id, val);
+    }
+
+    pub(crate) fn get_text(&self, id_str: &str) -> Option<String> {
+        // get node_id from id_str
+        let node_id = self.get_node_id_by_id_str(id_str)?;
+
+        // get result from state
+        self.state.get_text(&node_id)
+    }
+
+    pub(crate) fn set_text(&mut self, id_str: &str, val: &str) {
+        // get node_id from id_str
+        let Some(node_id) = self.get_node_id_by_id_str(id_str) else {
+            warn!("set_text: node_id not found for id_str: {}", id_str);
+            return;
+        };
+
+        // set text
+        self.state.set_text(&node_id, val);
     }
 
     // input

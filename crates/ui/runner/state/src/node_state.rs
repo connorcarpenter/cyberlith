@@ -26,6 +26,13 @@ impl UiNodeState {
         }
     }
 
+    pub fn widget_text_mut(&mut self) -> Option<&mut TextState> {
+        match &mut self.widget {
+            WidgetState::Text(text) => Some(text),
+            _ => None,
+        }
+    }
+
     pub fn widget_textbox_ref(&self) -> Option<&TextboxState> {
         match &self.widget {
             WidgetState::Textbox(textbox) => Some(textbox),

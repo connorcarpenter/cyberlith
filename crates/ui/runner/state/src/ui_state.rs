@@ -92,6 +92,32 @@ impl UiState {
         Some(textbox.text.clone())
     }
 
+    pub fn set_textbox_text(&mut self, node_id: &NodeId, val: &str) {
+        let Some(node) = self.store.get_node_mut(node_id) else {
+            return;
+        };
+        let Some(textbox) = node.widget_textbox_mut() else {
+            return;
+        };
+        textbox.text = val.to_string();
+    }
+
+    pub fn get_text(&self, node_id: &NodeId) -> Option<String> {
+        let node = self.store.get_node(node_id)?;
+        let text = node.widget_text_ref()?;
+        Some(text.text.clone())
+    }
+
+    pub fn set_text(&mut self, node_id: &NodeId, val: &str) {
+        let Some(node) = self.store.get_node_mut(node_id) else {
+            return;
+        };
+        let Some(text) = node.widget_text_mut() else {
+            return;
+        };
+        text.text = val.to_string();
+    }
+
     // styles
 
     fn node_style_state(&self, config: &UiRuntimeConfig, id: &NodeId) -> Option<&StyleState> {

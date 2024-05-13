@@ -433,6 +433,31 @@ impl UiManager {
         };
         ui_runtime.get_textbox_text(id_str)
     }
+
+    pub fn set_textbox_text(&mut self, ui_handle: &UiHandle, id_str: &str, val: &str) {
+        if let Some(ui_runtime) = self.ui_runtimes.get_mut(ui_handle) {
+            ui_runtime.set_textbox_text(id_str, val)
+        } else {
+            warn!("ui data not loaded 2: {:?}", ui_handle.asset_id());
+        }
+    }
+
+    pub fn get_text(&self, ui_handle: &UiHandle, id_str: &str) -> Option<String> {
+        let Some(ui_runtime) = self.ui_runtimes.get(ui_handle) else {
+            warn!("ui data not loaded 3: {:?}", ui_handle.asset_id());
+            return None;
+        };
+        ui_runtime.get_text(id_str)
+    }
+
+    pub fn set_text(&mut self, ui_handle: &UiHandle, id_str: &str, val: &str) {
+        if let Some(ui_runtime) = self.ui_runtimes.get_mut(ui_handle) {
+            ui_runtime.set_text(id_str, val);
+            ui_runtime.queue_recalculate_layout();
+        } else {
+            warn!("ui data not loaded 4: {:?}", ui_handle.asset_id());
+        }
+    }
 }
 
 pub struct Blinkiness {
