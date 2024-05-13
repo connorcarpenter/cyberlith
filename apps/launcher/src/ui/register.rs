@@ -127,7 +127,7 @@ pub(crate) fn handle_events(
         }
 
         // send backend request
-        backend_send_register_request(global, http_client, &username, &email, &password);
+        backend_send_register_request(global, http_client, ui_manager, &username, &email, &password);
     }
 
     // drain others

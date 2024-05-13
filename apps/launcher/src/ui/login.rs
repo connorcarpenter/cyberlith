@@ -75,7 +75,7 @@ pub(crate) fn handle_events(
         }
 
         // send backend request
-        backend_send_login_request(global, http_client, &user_handle, &password);
+        backend_send_login_request(global, http_client, ui_manager, &user_handle, &password);
 
         *should_rumble = true;
     }

@@ -217,6 +217,16 @@ impl UiRuntime {
         self.state.set_text(&node_id, val);
     }
 
+    pub fn set_node_visible(&mut self, id_str: &str, val: bool) {
+        // get node_id from id_str
+        let Some(node_id) = self.get_node_id_by_id_str(id_str) else {
+            warn!("set_node_visible: node_id not found for id_str: {}", id_str);
+            return;
+        };
+
+        // set text
+        self.state.set_node_visible(&node_id, val);
+    }
     // input
 
     pub(crate) fn receive_input(

@@ -15,6 +15,7 @@ use crate::resources::Global;
 pub(crate) fn backend_send_login_request(
     global: &mut Global,
     http_client: &mut HttpClient,
+    ui_manager: &mut UiManager,
     user_handle: &str,
     password: &str,
 ) {
@@ -27,15 +28,21 @@ pub(crate) fn backend_send_login_request(
     let request = UserLoginRequest::new(user_handle, password);
     let key = http_client.send(PUBLIC_IP_ADDR, GATEWAY_PORT, request);
     global.user_login_response_key_opt = Some(key);
+
     info!(
         "sending login request... (userhandle: {}, password: {}",
         user_handle, password
     );
+
+    // enable spinner
+    let login_ui_handle = global.ui_login_handle.unwrap();
+    ui_manager.set_node_visible(&login_ui_handle, "spinner", true);
 }
 
 pub(crate) fn backend_send_register_request(
     global: &mut Global,
     http_client: &mut HttpClient,
+    ui_manager: &mut UiManager,
     username: &str,
     email: &str,
     password: &str,
@@ -54,6 +61,10 @@ pub(crate) fn backend_send_register_request(
         "sending register request... (username: {}, email: {}, password: {}",
         username, email, password
     );
+
+    // enable spinner
+    let register_ui_handle = global.ui_register_handle.unwrap();
+    ui_manager.set_node_visible(&register_ui_handle, "spinner", true);
 }
 
 pub(crate) fn backend_step(
@@ -80,6 +91,8 @@ fn user_login_response_process(
             return;
         };
         global.user_login_response_key_opt = None;
+
+        let login_ui_handle = global.ui_login_handle.unwrap();
         match result {
             Ok(_response) => {
                 info!("client <- gateway: (UserLoginResponse - 200 OK)");
@@ -92,9 +105,12 @@ fn user_login_response_process(
                     err.to_string()
                 );
 
-                let login_ui_handle = global.ui_login_handle.unwrap();
                 ui_manager.set_text(&login_ui_handle, "error_output_text", "Invalid credentials. Please try again.");
             }
+        }
+
+        if global.user_register_response_key_opt.is_none() {
+            ui_manager.set_node_visible(&login_ui_handle, "spinner", false);
         }
     }
 }
@@ -115,6 +131,8 @@ fn user_register_response_process(
             return;
         };
         global.user_register_response_key_opt = None;
+
+        let register_ui_handle = global.ui_register_handle.unwrap();
         match result {
             Ok(_response) => {
                 info!("client <- gateway: (UserRegisterResponse - 200 OK)");
@@ -125,9 +143,11 @@ fn user_register_response_process(
                     err.to_string()
                 );
 
-                let register_ui_handle = global.ui_register_handle.unwrap();
                 ui_manager.set_text(&register_ui_handle, "error_output_text", "Oops! Something went wrong on our end. Please try again later.");
             }
+        }
+        if global.user_login_response_key_opt.is_none() {
+            ui_manager.set_node_visible(&register_ui_handle, "spinner", false);
         }
         ui_manager.enable_ui(&global.ui_register_finish_handle.unwrap());
     }

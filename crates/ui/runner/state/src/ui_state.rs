@@ -114,6 +114,10 @@ impl UiState {
         text.text = val.to_string();
     }
 
+    pub fn set_node_visible(&mut self, node_id: &NodeId, val: bool) {
+        self.visibility_store.set_node_visibility(node_id, val);
+    }
+
     // styles
 
     fn node_style_state(&self, config: &UiRuntimeConfig, id: &NodeId) -> Option<&StyleState> {

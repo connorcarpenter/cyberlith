@@ -1,3 +1,4 @@
+use std::time::Duration;
 
 use auth_server_db::UserId;
 use http_client::ResponseError;

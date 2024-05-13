@@ -467,6 +467,15 @@ impl UiManager {
             warn!("ui data not loaded 4: {:?}", ui_handle.asset_id());
         }
     }
+
+    pub fn set_node_visible(&mut self, ui_handle: &UiHandle, id_str: &str, val: bool) {
+        if let Some(ui_runtime) = self.ui_runtimes.get_mut(ui_handle) {
+            ui_runtime.set_node_visible(id_str, val);
+            ui_runtime.queue_recalculate_layout();
+        } else {
+            warn!("ui data not loaded 5: {:?}", ui_handle.asset_id());
+        }
+    }
 }
 
 pub struct Blinkiness {
