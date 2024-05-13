@@ -1,27 +1,14 @@
-use std::time::Duration;
 
-use bevy_ecs::{
-    event::{EventReader, EventWriter},
-    system::{Res, ResMut},
-};
+use bevy_ecs::event::EventReader;
 
 use game_engine::{
-    asset::{embedded_asset_event, AssetId, EmbeddedAssetEvent},
-    http::HttpClient,
-    input::{GamepadRumbleIntensity, Input, RumbleManager},
     logging::info,
-    render::components::RenderLayers,
-    ui::{UiHandle, UiManager},
+    ui::UiManager,
 };
 
-use crate::{
-    resources::{
-        Global, LoginButtonClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent,
-    },
-    systems::backend::{backend_send_login_request, backend_send_register_request},
-};
+use crate::resources::{Global, LoginButtonClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent};
 
-pub(crate) fn ui_start_handle_events(
+pub(crate) fn handle_events(
     ui_manager: &mut UiManager,
     global: &Global,
     login_btn_rdr: &mut EventReader<LoginButtonClickedEvent>,

@@ -18,12 +18,9 @@ use game_engine::{
     ui::{UiHandle, UiManager},
 };
 
-use crate::{
-    resources::{
+use crate::resources::{
         Global, LoginButtonClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent,
-    },
-    ui::{login::ui_login_handle_events, start::ui_start_handle_events, register::ui_register_handle_events, register_finish::ui_register_finish_handle_events},
-};
+    };
 
 pub fn ui_setup(
     mut global: ResMut<Global>,
@@ -90,7 +87,7 @@ pub fn ui_handle_events(
     let mut should_rumble = false;
 
     if current_ui_handle == global.ui_start_handle {
-        ui_start_handle_events(
+        start::handle_events(
             &mut ui_manager,
             &global,
             &mut login_btn_rdr,
@@ -99,7 +96,7 @@ pub fn ui_handle_events(
             &mut should_rumble,
         );
     } else if current_ui_handle == global.ui_login_handle {
-        ui_login_handle_events(
+        login::handle_events(
             &mut global,
             &mut ui_manager,
             &mut http_client,
@@ -109,7 +106,7 @@ pub fn ui_handle_events(
             &mut should_rumble,
         );
     } else if current_ui_handle == global.ui_register_handle {
-        ui_register_handle_events(
+        register::handle_events(
             &mut global,
             &mut ui_manager,
             &mut http_client,
@@ -119,7 +116,7 @@ pub fn ui_handle_events(
             &mut should_rumble,
         );
     } else if current_ui_handle == global.ui_register_finish_handle {
-        ui_register_finish_handle_events(
+        register_finish::handle_events(
             &mut global,
             &mut ui_manager,
             &mut login_btn_rdr,
