@@ -74,6 +74,21 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
             .set_margin_left_vp(2.0)
             .set_self_halign(Alignment::Start);
     });
+    let button_container_style = ui_config.create_panel_style(|s| {
+        s.set_background_alpha(0.)
+            .set_margin_left_vp(4.)
+            .set_margin_top_vp(2.)
+            .set_self_halign(Alignment::Start)
+            .set_horizontal()
+            .set_children_halign(Alignment::Start);
+    });
+    let error_output_style = ui_config.create_text_style(|s| {
+        s.set_background_alpha(0.)
+            .set_size_vp(2.0)
+            .set_margin_left_vp(2.0)
+            .set_self_halign(Alignment::End)
+            .set_self_valign(Alignment::Center);
+    });
     let base_button_text_style = ui_config.create_text_style(|s| {
         s.set_size_vp(5.0)
             .set_self_halign(Alignment::Center)
@@ -87,9 +102,7 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
     });
     let submit_button_style = ui_config.create_button_style(|s| {
         s.set_parent_style(base_button_style)
-            .set_self_halign(Alignment::Start)
-            .set_margin_left_vp(4.)
-            .set_margin_top_vp(2.);
+            .set_self_halign(Alignment::Start);
     });
     let register_button_style = ui_config.create_button_style(|s| {
         s.set_parent_style(base_button_style)
@@ -220,17 +233,26 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
                                 .right_goes_to("login_button");
                         });
 
-                    // submit button
-                    c.add_button("submit_button")
-                        .set_style(submit_button_style)
+                    c.add_panel()
+                        .set_style(button_container_style)
                         .contents(|c| {
-                            c.add_text("submit").set_style(base_button_text_style);
-                        })
-                        .navigation(|n| {
-                            n.up_goes_to("confirm_password_textbox")
-                                .right_goes_to("login_button")
-                                .tab_goes_to("login_button");
+                            // submit button
+                            c.add_button("submit_button")
+                                .set_style(submit_button_style)
+                                .contents(|c| {
+                                    c.add_text("submit").set_style(base_button_text_style);
+                                })
+                                .navigation(|n| {
+                                    n.up_goes_to("confirm_password_textbox")
+                                        .right_goes_to("login_button")
+                                        .tab_goes_to("login_button");
+                                });
+
+                            // error output
+                            c.add_text("placeholder error output")
+                                .set_style(error_output_style);
                         });
+
                 });
             });
         });
