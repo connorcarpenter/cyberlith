@@ -17,9 +17,9 @@ pub enum ValidationType {
 }
 
 impl ValidationType {
-    const CHAR_WHITELIST_ALPHANUMERIC: &'static str = "abcdefghijklmnopqrstuvwxyz0123456789";
-    const CHAR_WHITELIST_PASSWORD: &'static str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!#$%^&*+-/=?_.{|}~";
-    const CHAR_WHITELIST_EMAIL: &'static str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!#$%^&*+-/=?_.{|}~@";
+    const CHAR_WHITELIST_ALPHANUMERIC: &'static str = "abcdefghijklmnopqrstuvwxyz0123456789.";
+    const CHAR_WHITELIST_PASSWORD: &'static str     = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789~!@#$%^&*-_=+{}|./?";
+    const CHAR_WHITELIST_EMAIL: &'static str        = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789~!@#$%^&*-_=+{}|./?";
 
     pub fn includes_char(&self, c: char) -> bool {
         match self {
@@ -30,6 +30,21 @@ impl ValidationType {
     }
 
     pub fn allows_text(&self, text: &str) -> bool {
-        text.chars().all(|c| self.includes_char(c))
+        match self {
+            Self::Username => {
+                if !text.chars().all(|c| self.includes_char(c)) {
+                    return false;
+                }
+                if text.starts_with('.') || text.ends_with('.') {
+                    return false;
+                }
+                if text.contains("..") {
+                    return false;
+                }
+                true
+            },
+            Self::Password => text.chars().all(|c| self.includes_char(c)),
+            Self::Email => text.chars().all(|c| self.includes_char(c)),
+        }
     }
 }
