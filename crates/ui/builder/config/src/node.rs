@@ -1,10 +1,9 @@
-use crate::{
-    panel::Panel, style::StyleId, widget::Widget, widget::WidgetKind, Button, Text, Textbox,
-};
+use crate::{panel::Panel, style::StyleId, widget::Widget, widget::WidgetKind, Button, Text, Textbox, Spinner};
 
 #[derive(Clone)]
 pub struct UiNode {
     style_id: Option<StyleId>,
+    pub init_visible: bool,
     pub widget: Widget,
 }
 
@@ -12,6 +11,7 @@ impl UiNode {
     pub(crate) fn new(widget: Widget) -> Self {
         Self {
             style_id: None,
+            init_visible: true,
             widget,
         }
     }
@@ -25,6 +25,10 @@ impl UiNode {
             panic!("Node already has a style_id");
         }
         self.style_id = Some(style_id);
+    }
+
+    pub fn set_visible(&mut self, visible: bool) {
+        self.init_visible = visible;
     }
 
     pub fn widget_kind(&self) -> WidgetKind {
@@ -76,6 +80,20 @@ impl UiNode {
     pub fn widget_textbox_mut(&mut self) -> Option<&mut Textbox> {
         match &mut self.widget {
             Widget::Textbox(textbox) => Some(textbox),
+            _ => None,
+        }
+    }
+
+    pub fn widget_spinner_ref(&self) -> Option<&Spinner> {
+        match &self.widget {
+            Widget::Spinner(spinner) => Some(spinner),
+            _ => None,
+        }
+    }
+
+    pub fn widget_spinner_mut(&mut self) -> Option<&mut Spinner> {
+        match &mut self.widget {
+            Widget::Spinner(spinner) => Some(spinner),
             _ => None,
         }
     }

@@ -222,6 +222,7 @@ impl UiNodeJson {
         let mut me = Self {
             style_id: None,
             widget: From::from(&node.widget),
+            init_visible: node.init_visible,
         };
 
         if let Some(style_id) = node.style_id() {

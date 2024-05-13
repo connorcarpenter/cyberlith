@@ -379,6 +379,7 @@ impl UiNodeBits {
         let mut me = Self {
             style_id: None,
             widget: WidgetBits::from_widget(ui_config, &node.widget),
+            init_visible: node.init_visible,
         };
 
         if let Some(style_id) = &node.style_id() {

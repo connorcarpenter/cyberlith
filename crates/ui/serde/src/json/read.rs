@@ -88,7 +88,7 @@ fn convert_nodes_recurse_panel(
 
         //info!("{} - child_node_serde: {:?}", child_index, child_node_serde);
 
-        match child_node_serde.widget_kind() {
+        let child_node_id = match child_node_serde.widget_kind() {
             WidgetKind::Panel => {
                 // creates a new panel
                 let child_panel_id = ui_config.create_node(Widget::Panel(Panel::new()));
@@ -115,6 +115,8 @@ fn convert_nodes_recurse_panel(
                     ui_config,
                     &child_panel_id,
                 );
+
+                child_panel_id
             }
             WidgetKind::Button => {
                 let WidgetJson::Button(child_button_serde) = &child_node_serde.widget else {
@@ -148,6 +150,8 @@ fn convert_nodes_recurse_panel(
                     ui_config,
                     &child_button_id,
                 );
+
+                child_button_id
             }
             WidgetKind::Text => {
                 let WidgetJson::Text(child_text_serde) = &child_node_serde.widget else {
@@ -169,6 +173,8 @@ fn convert_nodes_recurse_panel(
                     let child_node = ui_config.node_mut(&child_text_id).unwrap();
                     child_node.set_style_id(style_id);
                 }
+
+                child_text_id
             }
             WidgetKind::Textbox => {
                 let WidgetJson::Textbox(child_textbox_serde) = &child_node_serde.widget else {
@@ -194,6 +200,8 @@ fn convert_nodes_recurse_panel(
 
                 // add navigation
                 set_textbox_navigation(child_textbox_serde, ui_config, &child_textbox_id);
+
+                child_textbox_id
             }
             WidgetKind::Spinner => {
                 let WidgetJson::Spinner(child_spinner_serde) = &child_node_serde.widget else {
@@ -214,8 +222,13 @@ fn convert_nodes_recurse_panel(
                     let child_node = ui_config.node_mut(&child_spinner_id).unwrap();
                     child_node.set_style_id(style_id);
                 }
+
+                child_spinner_id
             }
-        }
+        };
+
+        let child_node = ui_config.node_mut(&child_node_id).unwrap();
+        child_node.set_visible(child_node_serde.init_visible);
     }
 }
 
@@ -258,7 +271,7 @@ fn convert_nodes_recurse_button(
 
         //info!("{} - child_node_serde: {:?}", child_index, child_node_serde);
 
-        match child_node_serde.widget_kind() {
+        let child_node_id = match child_node_serde.widget_kind() {
             WidgetKind::Panel => {
                 // creates a new panel
                 let child_panel_id = ui_config.create_node(Widget::Panel(Panel::new()));
@@ -286,6 +299,8 @@ fn convert_nodes_recurse_button(
                     ui_config,
                     &child_panel_id,
                 );
+
+                child_panel_id
             }
             WidgetKind::Text => {
                 let WidgetJson::Text(child_text_serde) = &child_node_serde.widget else {
@@ -308,11 +323,16 @@ fn convert_nodes_recurse_button(
                     let child_node = ui_config.node_mut(&child_text_id).unwrap();
                     child_node.set_style_id(style_id);
                 }
+
+                child_text_id
             }
             _ => {
                 panic!("Button can only contain Panel or Text");
             }
-        }
+        };
+
+        let child_node = ui_config.node_mut(&child_node_id).unwrap();
+        child_node.set_visible(child_node_serde.init_visible);
     }
 }
 

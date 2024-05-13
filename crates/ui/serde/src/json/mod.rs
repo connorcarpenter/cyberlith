@@ -196,6 +196,7 @@ pub(crate) struct ColorJson {
 pub(crate) struct UiNodeJson {
     style_id: Option<usize>,
     widget: WidgetJson,
+    init_visible: bool,
 }
 
 impl UiNodeJson {

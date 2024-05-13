@@ -41,7 +41,7 @@ impl UiState {
 
         for node in ui_config.nodes_iter() {
             me.store.node_state_init(node);
-            me.visibility_store.node_state_init();
+            me.visibility_store.node_state_init(node.init_visible);
         }
 
         for style in ui_config.styles_iter() {

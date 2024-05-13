@@ -83,6 +83,14 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
             .set_horizontal()
             .set_children_halign(Alignment::Start);
     });
+    let spinner_style = ui_config.create_spinner_style(|s| {
+        s.set_background_alpha(0.)
+            .set_size_vp(4.0, 4.0)
+            .set_margin_left_vp(2.0)
+            .set_self_halign(Alignment::End)
+            .set_self_valign(Alignment::Center)
+            .set_spinner_color(Color::WHITE);
+    });
     let error_output_style = ui_config.create_text_style(|s| {
         s.set_background_alpha(0.)
             .set_size_vp(2.0)
@@ -250,6 +258,9 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
                                         .right_goes_to("login_button")
                                         .tab_goes_to("login_button");
                                 });
+
+                            // spinner
+                            c.add_spinner("spinner").set_style(spinner_style).set_visible(false);
 
                             // error output
                             c.add_text_with_id("", "error_output_text")

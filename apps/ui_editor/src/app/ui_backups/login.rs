@@ -219,7 +219,7 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
                                 });
 
                             // spinner
-                            c.add_spinner("spinner").set_style(spinner_style);
+                            c.add_spinner("spinner").set_style(spinner_style).set_visible(false);
 
                             // error output
                             c.add_text_with_id("", "error_output_text")

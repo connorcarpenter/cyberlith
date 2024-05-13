@@ -189,6 +189,7 @@ pub(crate) struct ColorBits {
 pub(crate) struct UiNodeBits {
     style_id: Option<u8>, // TODO: is this a good value type for this? how many styles are we likely to have?
     widget: WidgetBits,
+    init_visible: bool,
 }
 
 impl UiNodeBits {
