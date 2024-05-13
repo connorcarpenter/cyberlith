@@ -45,28 +45,6 @@ impl TextboxInputState {
             UiInputEvent::RightReleased => {
                 input_state.set_right_released();
             }
-            UiInputEvent::TextInsert(new_char) => {
-
-                if let Some(whitelist) = &config.validation {
-                    if !whitelist.includes_char(new_char) {
-                        return None;
-                    }
-                }
-
-                if let Some(select_index) = input_state.select_index {
-                    // need to remove the selected text
-                    let start = input_state.carat_index.min(select_index);
-                    let end = input_state.carat_index.max(select_index);
-                    textbox_state
-                        .text
-                        .replace_range(start..end, new_char.to_string().as_str());
-                    input_state.carat_index = start + 1;
-                    input_state.select_index = None;
-                } else {
-                    textbox_state.text.insert(input_state.carat_index, new_char);
-                    input_state.carat_index += 1;
-                }
-            }
             UiInputEvent::BackspacePressed(modifiers) => {
                 if let Some(select_index) = input_state.select_index {
                     let start = input_state.carat_index.min(select_index);
@@ -152,6 +130,10 @@ impl TextboxInputState {
                     input_state.select_index = None;
                 }
             }
+            UiInputEvent::TextSelectAll => {
+                input_state.select_index = Some(0);
+                input_state.carat_index = textbox_state.text.len();
+            }
             UiInputEvent::TextCopy => {
                 if let Some(select_index) = input_state.select_index {
                     let start = input_state.carat_index.min(select_index);
@@ -184,10 +166,16 @@ impl TextboxInputState {
                     input_state.select_index = None;
                 }
             }
-            UiInputEvent::TextPaste(text) => {
+            UiInputEvent::TextPaste(mut text) => {
 
-                if let Some(whitelist) = &config.validation {
-                    if !whitelist.allows_text(&text) {
+                if let Some(validator) = &config.validation {
+                    let final_length = textbox_state.text.len() + text.len();
+                    if final_length > validator.max_length() {
+                        let chars_left = validator.max_length() - textbox_state.text.len();
+                        let text_slice = &text[0..chars_left];
+                        text = text_slice.to_string();
+                    }
+                    if !validator.allows_text(&text) {
                         return None;
                     }
                 }
@@ -207,9 +195,30 @@ impl TextboxInputState {
                     input_state.carat_index += text.len();
                 }
             }
-            UiInputEvent::TextSelectAll => {
-                input_state.select_index = Some(0);
-                input_state.carat_index = textbox_state.text.len();
+            UiInputEvent::CharacterInsert(new_char) => {
+
+                if let Some(validator) = &config.validation {
+                    if textbox_state.text.len() >= validator.max_length() {
+                        return None;
+                    }
+                    if !validator.includes_char(new_char) {
+                        return None;
+                    }
+                }
+
+                if let Some(select_index) = input_state.select_index {
+                    // need to remove the selected text
+                    let start = input_state.carat_index.min(select_index);
+                    let end = input_state.carat_index.max(select_index);
+                    textbox_state
+                        .text
+                        .replace_range(start..end, new_char.to_string().as_str());
+                    input_state.carat_index = start + 1;
+                    input_state.select_index = None;
+                } else {
+                    textbox_state.text.insert(input_state.carat_index, new_char);
+                    input_state.carat_index += 1;
+                }
             }
             _ => panic!("Unhandled input event for textbox: {:?}", event),
         }

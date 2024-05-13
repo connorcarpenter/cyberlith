@@ -93,7 +93,7 @@ impl UiInputConverter {
                     Key::ArrowRight => Some(UiInputEvent::RightReleased),
                     _ => None,
                 },
-                InputEvent::Text(c) => Some(UiInputEvent::TextInsert(c)),
+                InputEvent::Text(c) => Some(UiInputEvent::CharacterInsert(c)),
                 InputEvent::Paste(text) => Some(UiInputEvent::TextPaste(text.clone())),
                 InputEvent::Copy => Some(UiInputEvent::TextCopy),
                 InputEvent::Cut => Some(UiInputEvent::TextCut),
@@ -135,7 +135,7 @@ pub enum UiInputEvent {
     BackPressed,
     BackspacePressed(Modifiers),
     DeletePressed(Modifiers),
-    TextInsert(char),
+    CharacterInsert(char),
     HomePressed(Modifiers),
     EndPressed(Modifiers),
     TextCopy,
@@ -299,7 +299,7 @@ pub fn ui_receive_input(
                 | UiInputEvent::LeftReleased
                 | UiInputEvent::BackspacePressed(_)
                 | UiInputEvent::DeletePressed(_)
-                | UiInputEvent::TextInsert(_)
+                | UiInputEvent::CharacterInsert(_)
                 | UiInputEvent::HomePressed(_)
                 | UiInputEvent::EndPressed(_)
                 | UiInputEvent::TextPaste(_)

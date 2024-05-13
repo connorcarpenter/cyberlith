@@ -1,3 +1,4 @@
+use crate::{EmailValidation, PasswordValidation, UsernameValidation};
 
 pub trait Validator {
     fn min_length() -> usize;
@@ -45,6 +46,22 @@ impl ValidationType {
             },
             Self::Password => text.chars().all(|c| self.includes_char(c)),
             Self::Email => text.chars().all(|c| self.includes_char(c)),
+        }
+    }
+
+    pub fn max_length(&self) -> usize {
+        match self {
+            Self::Username => UsernameValidation::max_length(),
+            Self::Password => PasswordValidation::max_length(),
+            Self::Email => EmailValidation::max_length(),
+        }
+    }
+
+    pub fn min_length(&self) -> usize {
+        match self {
+            Self::Username => UsernameValidation::min_length(),
+            Self::Password => PasswordValidation::min_length(),
+            Self::Email => EmailValidation::min_length(),
         }
     }
 }
