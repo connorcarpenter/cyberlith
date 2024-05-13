@@ -25,6 +25,7 @@ use render_api::{
 use storage::Storage;
 use ui_input::{UiGlobalEvent, UiInputEvent, UiNodeEvent, UiNodeEventHandler};
 use ui_runner_config::{NodeId, UiRuntimeConfig};
+use crate::config::ValidationType;
 
 use crate::runtime::UiRuntime;
 
@@ -424,6 +425,14 @@ impl UiManager {
         if new_cursor_icon != self.last_cursor_icon {
             self.cursor_icon_change = Some(new_cursor_icon);
         }
+    }
+
+    pub fn get_textbox_validator(&self, ui_handle: &UiHandle, id_str: &str) -> Option<ValidationType> {
+        let Some(ui_runtime) = self.ui_runtimes.get(ui_handle) else {
+            warn!("ui data not loaded 1: {:?}", ui_handle.asset_id());
+            return None;
+        };
+        ui_runtime.get_textbox_validator(id_str)
     }
 
     pub fn get_textbox_text(&self, ui_handle: &UiHandle, id_str: &str) -> Option<String> {

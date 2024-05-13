@@ -14,47 +14,32 @@ use crate::resources::Global;
 
 pub(crate) fn backend_send_login_request(
     global: &mut Global,
-    ui_manager: &UiManager,
     http_client: &mut HttpClient,
+    user_handle: &str,
+    password: &str,
 ) {
-    let login_ui_handle = global.ui_login_handle.unwrap();
-    let username = ui_manager
-        .get_textbox_text(&login_ui_handle, "username_textbox")
-        .unwrap_or("".to_string());
-    let password = ui_manager
-        .get_textbox_text(&login_ui_handle, "password_textbox")
-        .unwrap_or("".to_string());
-
     if global.user_login_response_key_opt.is_some() {
         warn!("already sending login request...");
         return;
     }
 
     // user login request send
-    let request = UserLoginRequest::new(&username, &password);
+    let request = UserLoginRequest::new(user_handle, password);
     let key = http_client.send(PUBLIC_IP_ADDR, GATEWAY_PORT, request);
     global.user_login_response_key_opt = Some(key);
     info!(
-        "sending login request... (username: {}, password: {}",
-        username, password
+        "sending login request... (userhandle: {}, password: {}",
+        user_handle, password
     );
 }
 
 pub(crate) fn backend_send_register_request(
     global: &mut Global,
-    ui_manager: &UiManager,
     http_client: &mut HttpClient,
+    username: &str,
+    email: &str,
+    password: &str,
 ) {
-    let register_ui_handle = global.ui_register_handle.unwrap();
-    let username = ui_manager
-        .get_textbox_text(&register_ui_handle, "username_textbox")
-        .unwrap_or("".to_string());
-    let email = ui_manager
-        .get_textbox_text(&register_ui_handle, "email_textbox")
-        .unwrap_or("".to_string());
-    let password = ui_manager
-        .get_textbox_text(&register_ui_handle, "password_textbox")
-        .unwrap_or("".to_string());
 
     if global.user_register_response_key_opt.is_some() {
         warn!("already sending register request...");
@@ -77,13 +62,14 @@ pub(crate) fn backend_step(
     mut ui_manager: ResMut<UiManager>,
     mut app_exit_action_writer: EventWriter<AppExitAction>,
 ) {
-    user_login_response_process(&mut global, &mut http_client, &mut app_exit_action_writer);
+    user_login_response_process(&mut global, &mut http_client, &mut ui_manager, &mut app_exit_action_writer);
     user_register_response_process(&mut global, &mut http_client, &mut ui_manager);
 }
 
 fn user_login_response_process(
     global: &mut Global,
     http_client: &mut HttpClient,
+    ui_manager: &mut UiManager,
     app_exit_action_writer: &mut EventWriter<AppExitAction>,
 ) {
     if global.user_login_response_key_opt.is_some() {
@@ -105,6 +91,9 @@ fn user_login_response_process(
                     "client <- gateway: (UserLoginResponse - ERROR! {})",
                     err.to_string()
                 );
+
+                let login_ui_handle = global.ui_login_handle.unwrap();
+                ui_manager.set_text(&login_ui_handle, "error_output_text", "Invalid credentials. Please try again.");
             }
         }
     }
@@ -135,6 +124,9 @@ fn user_register_response_process(
                     "client <- gateway: (UserRegisterResponse - ERROR! {})",
                     err.to_string()
                 );
+
+                let register_ui_handle = global.ui_register_handle.unwrap();
+                ui_manager.set_text(&register_ui_handle, "error_output_text", "Oops! Something went wrong on our end. Please try again later.");
             }
         }
         ui_manager.enable_ui(&global.ui_register_finish_handle.unwrap());

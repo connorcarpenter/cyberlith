@@ -10,6 +10,7 @@ use storage::Storage;
 use ui_input::{UiGlobalEvent, UiInputEvent, UiInputState, UiNodeEvent};
 use ui_runner_config::{NodeId, SerdeErr, UiRuntimeConfig};
 use ui_state::UiState;
+use crate::config::ValidationType;
 
 use crate::handle::UiHandle;
 
@@ -167,6 +168,15 @@ impl UiRuntime {
             text_measurer,
             self.camera.camera.viewport.as_ref().unwrap(),
         );
+    }
+
+    pub(crate) fn get_textbox_validator(&self, id_str: &str) -> Option<ValidationType> {
+        // get node_id from id_str
+        let node_id = self.get_node_id_by_id_str(id_str)?;
+
+        // get result from config
+        let textbox = self.config.textbox_ref(&node_id)?;
+        textbox.validation.clone()
     }
 
     pub(crate) fn get_textbox_text(&self, id_str: &str) -> Option<String> {

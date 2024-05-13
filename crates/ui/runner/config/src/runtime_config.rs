@@ -2,10 +2,7 @@ use std::{collections::HashMap, slice::Iter};
 
 use asset_id::AssetId;
 use render_api::base::Color;
-use ui_builder_config::{
-    BaseNodeStyle, Button, ButtonStyle, Navigation, Panel, PanelStyle, StyleId, TextStyle,
-    TextboxStyle, UiConfig, UiNode, WidgetKind, WidgetStyle,
-};
+use ui_builder_config::{BaseNodeStyle, Button, ButtonStyle, Navigation, Panel, PanelStyle, StyleId, TextStyle, TextboxStyle, UiConfig, UiNode, WidgetKind, WidgetStyle, Textbox};
 use ui_layout::{Alignment, LayoutType, MarginUnits, NodeId, NodeStore, PositionType, SizeUnits, Solid, TextMeasurer};
 use ui_serde::SerdeErr;
 
@@ -102,6 +99,14 @@ impl UiRuntimeConfig {
         let node = self.get_node(id)?;
         if node.widget_kind() == WidgetKind::Button {
             return node.widget_button_ref();
+        }
+        None
+    }
+
+    pub fn textbox_ref(&self, id: &NodeId) -> Option<&Textbox> {
+        let node = self.get_node(id)?;
+        if node.widget_kind() == WidgetKind::Textbox {
+            return node.widget_textbox_ref();
         }
         None
     }

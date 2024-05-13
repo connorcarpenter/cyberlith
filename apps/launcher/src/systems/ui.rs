@@ -208,11 +208,87 @@ fn ui_register_handle_events(
     if submit_clicked {
         info!("submit button clicked!");
 
-        // TODO: validate!
-
-        backend_send_register_request(global, ui_manager, http_client);
-
+        // rumble
         *should_rumble = true;
+
+        // get data from textboxes
+        let register_ui_handle = global.ui_register_handle.unwrap();
+        let username = ui_manager
+            .get_textbox_text(&register_ui_handle, "username_textbox")
+            .unwrap_or("".to_string());
+        let email = ui_manager
+            .get_textbox_text(&register_ui_handle, "email_textbox")
+            .unwrap_or("".to_string());
+        let password = ui_manager
+            .get_textbox_text(&register_ui_handle, "password_textbox")
+            .unwrap_or("".to_string());
+        let confirm_password = ui_manager
+            .get_textbox_text(&register_ui_handle, "confirm_password_textbox")
+            .unwrap_or("".to_string());
+
+        // validate
+
+        // check that the passwords match
+        if !password.eq(&confirm_password) {
+            ui_manager.set_text(&register_ui_handle, "error_output_text", "Passwords do not match. Please try again.");
+            return;
+        }
+
+        // check that every field is not empty
+        if username.is_empty() {
+            ui_manager.set_text(&register_ui_handle, "error_output_text", "Please enter your username.");
+            return;
+        }
+        if email.is_empty() {
+            ui_manager.set_text(&register_ui_handle, "error_output_text", "Please enter your email address.");
+            return;
+        }
+        if password.is_empty() {
+            ui_manager.set_text(&register_ui_handle, "error_output_text", "Please enter your password.");
+            return;
+        }
+        if confirm_password.is_empty() {
+            ui_manager.set_text(&register_ui_handle, "error_output_text", "Please confirm your password.");
+            return;
+        }
+
+        // check that every field matches the necessary minimum length
+        {
+            let min_length = ui_manager.get_textbox_validator(&register_ui_handle, "username_textbox").unwrap().min_length();
+            if username.len() < min_length {
+                let error_text = format!(
+                    "Username must be at least {} characters long.",
+                    min_length,
+                );
+                ui_manager.set_text(&register_ui_handle, "error_output_text", &error_text);
+                return;
+            }
+        }
+        {
+            let min_length = ui_manager.get_textbox_validator(&register_ui_handle, "email_textbox").unwrap().min_length();
+            if email.len() < min_length {
+                let error_text = format!(
+                    "Email must be at least {} characters long.",
+                    min_length,
+                );
+                ui_manager.set_text(&register_ui_handle, "error_output_text", &error_text);
+                return;
+            }
+        }
+        {
+            let min_length = ui_manager.get_textbox_validator(&register_ui_handle, "password_textbox").unwrap().min_length();
+            if password.len() < min_length {
+                let error_text = format!(
+                    "Password must be at least {} characters long.",
+                    min_length,
+                );
+                ui_manager.set_text(&register_ui_handle, "error_output_text", &error_text);
+                return;
+            }
+        }
+
+        // send backend request
+        backend_send_register_request(global, http_client, &username, &email, &password);
     }
 
     // drain others
@@ -282,7 +358,38 @@ fn ui_login_handle_events(
     if submit_clicked {
         info!("submit button clicked!");
 
-        backend_send_login_request(global, ui_manager, http_client);
+        // get data from textboxes
+        let login_ui_handle = global.ui_login_handle.unwrap();
+        let user_handle = ui_manager
+            .get_textbox_text(&login_ui_handle, "username_textbox")
+            .unwrap_or("".to_string());
+        let password = ui_manager
+            .get_textbox_text(&login_ui_handle, "password_textbox")
+            .unwrap_or("".to_string());
+
+        // validate
+        // check that every field is not empty
+        if user_handle.is_empty() {
+            ui_manager.set_text(&login_ui_handle, "error_output_text", "Please enter your username.");
+            return;
+        }
+        if password.is_empty() {
+            ui_manager.set_text(&login_ui_handle, "error_output_text", "Please enter your password.");
+            return;
+        }
+
+        // check that every field matches the necessary minimum length
+        if user_handle.len() < ui_manager.get_textbox_validator(&login_ui_handle, "username_textbox").unwrap().min_length() {
+            ui_manager.set_text(&login_ui_handle, "error_output_text", "Username is invalid.");
+            return;
+        }
+        if password.len() < ui_manager.get_textbox_validator(&login_ui_handle, "password_textbox").unwrap().min_length() {
+            ui_manager.set_text(&login_ui_handle, "error_output_text", "Password is invalid.");
+            return;
+        }
+
+        // send backend request
+        backend_send_login_request(global, http_client, &user_handle, &password);
 
         *should_rumble = true;
     }
