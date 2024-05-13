@@ -2,8 +2,6 @@ use render_api::base::Color;
 use ui_builder_config::{NodeId, NodeStyle, StyleId, Textbox, TextboxStyle, UiConfig, UiNode, WidgetStyle, Validator};
 use ui_layout::{Alignment, MarginUnits, PositionType, SizeUnits};
 
-use crate::PanelMut;
-
 pub struct TextboxMut<'a> {
     ui_config: &'a mut UiConfig,
     node_id: NodeId,
@@ -43,9 +41,9 @@ impl<'a> TextboxMut<'a> {
         self
     }
 
-    pub fn to_panel_mut(&mut self) -> PanelMut {
-        PanelMut::new(self.ui_config, self.node_id)
-    }
+    // pub fn to_panel_mut(&mut self) -> PanelMut {
+    //     PanelMut::new(self.ui_config, self.node_id)
+    // }
 }
 
 pub struct TextboxNavigationMut<'a> {

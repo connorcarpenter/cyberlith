@@ -1,8 +1,6 @@
-use ui_builder_config::{
-    ButtonStyle, NodeStyle, PanelStyle, StyleId, TextStyle, TextboxStyle, UiConfig, WidgetStyle,
-};
+use ui_builder_config::{ButtonStyle, NodeStyle, PanelStyle, StyleId, TextStyle, TextboxStyle, UiConfig, WidgetStyle, SpinnerStyle};
 
-use crate::{ButtonStyleMut, PanelMut, PanelStyleMut, TextStyleMut, TextboxStyleMut};
+use crate::{ButtonStyleMut, PanelMut, PanelStyleMut, TextStyleMut, TextboxStyleMut, SpinnerStyleMut};
 
 pub trait UiConfigBuild {
     fn root_mut(&mut self) -> PanelMut;
@@ -11,6 +9,7 @@ pub trait UiConfigBuild {
     fn create_text_style<F: FnMut(&mut TextStyleMut)>(&mut self, func: F) -> StyleId;
     fn create_button_style<F: FnMut(&mut ButtonStyleMut)>(&mut self, func: F) -> StyleId;
     fn create_textbox_style<F: FnMut(&mut TextboxStyleMut)>(&mut self, func: F) -> StyleId;
+    fn create_spinner_style<F: FnMut(&mut SpinnerStyleMut)>(&mut self, func: F) -> StyleId;
 }
 
 impl UiConfigBuild for UiConfig {
@@ -49,6 +48,15 @@ impl UiConfigBuild for UiConfig {
         let new_style = NodeStyle::empty(WidgetStyle::Textbox(TextboxStyle::empty()));
         let new_style_id = self.insert_style(new_style);
         let mut style_mut = TextboxStyleMut::new(self, new_style_id);
+        func(&mut style_mut);
+
+        return new_style_id;
+    }
+
+    fn create_spinner_style<F: FnMut(&mut SpinnerStyleMut)>(&mut self, mut func: F) -> StyleId {
+        let new_style = NodeStyle::empty(WidgetStyle::Spinner(SpinnerStyle::empty()));
+        let new_style_id = self.insert_style(new_style);
+        let mut style_mut = SpinnerStyleMut::new(self, new_style_id);
         func(&mut style_mut);
 
         return new_style_id;

@@ -12,26 +12,26 @@ struct Constants {
     max_label_length: i32,
 }
 
-/// Store a boxed callback (i.e., `Box<Box<dyn FnMut(...)>>`) as a raw pointer, so that it can be
-/// referenced by the C API and later converted back into a `Box` and dropped.
-///
-/// We use a raw pointer here because `Box` aliasing rules are not fully defined, so we can'
-/// guarantee that it's not undefined behavior to keep a `Box` here while it's used as a raw
-/// pointer in the C API.
-struct DebugCallbackRawPtr {
-    callback: *mut std::os::raw::c_void,
-}
-
-impl Drop for DebugCallbackRawPtr {
-    fn drop(&mut self) {
-        unsafe {
-            // Convert callback back into `Box` and drop it.
-            let thin_ptr = Box::from_raw(self.callback as *mut DebugCallback);
-            let callback = *thin_ptr;
-            drop(callback);
-        }
-    }
-}
+// /// Store a boxed callback (i.e., `Box<Box<dyn FnMut(...)>>`) as a raw pointer, so that it can be
+// /// referenced by the C API and later converted back into a `Box` and dropped.
+// ///
+// /// We use a raw pointer here because `Box` aliasing rules are not fully defined, so we can'
+// /// guarantee that it's not undefined behavior to keep a `Box` here while it's used as a raw
+// /// pointer in the C API.
+// struct DebugCallbackRawPtr {
+//     callback: *mut std::os::raw::c_void,
+// }
+//
+// impl Drop for DebugCallbackRawPtr {
+//     fn drop(&mut self) {
+//         unsafe {
+//             // Convert callback back into `Box` and drop it.
+//             let thin_ptr = Box::from_raw(self.callback as *mut DebugCallback);
+//             let callback = *thin_ptr;
+//             drop(callback);
+//         }
+//     }
+// }
 
 pub struct Context {
     raw: native_gl::GlFns,

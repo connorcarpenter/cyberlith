@@ -6,10 +6,10 @@ use naia_serde::{
 
 use asset_id::AssetId;
 use render_api::base::Color;
-use ui_builder_config::{BaseNodeStyle, Button, ButtonStyle, NodeId, NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Textbox, TextboxStyle, UiConfig, Widget, WidgetKind, WidgetStyle, ValidationType};
+use ui_builder_config::{BaseNodeStyle, Button, ButtonStyle, NodeId, NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Textbox, TextboxStyle, UiConfig, Widget, WidgetKind, WidgetStyle, ValidationType, Spinner, SpinnerStyle};
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 
-use crate::bits::{AlignmentBits, ButtonBits, ButtonStyleBits, ColorBits, LayoutTypeBits, MarginUnitsBits, PanelBits, PanelStyleBits, PositionTypeBits, SizeUnitsBits, SolidBits, TextStyleBits, TextboxBits, TextboxStyleBits, UiAction, UiActionType, UiNodeBits, UiStyleBits, WidgetBits, WidgetStyleBits, ValidationBits};
+use crate::bits::{AlignmentBits, ButtonBits, ButtonStyleBits, ColorBits, LayoutTypeBits, MarginUnitsBits, PanelBits, PanelStyleBits, PositionTypeBits, SizeUnitsBits, SolidBits, TextStyleBits, TextboxBits, TextboxStyleBits, UiAction, UiActionType, UiNodeBits, UiStyleBits, WidgetBits, WidgetStyleBits, ValidationBits, SpinnerStyleBits};
 
 pub fn read_bits(data: &[u8]) -> Result<UiConfig, SerdeErr> {
     let actions = bytes_to_actions(data)?;
@@ -241,6 +241,27 @@ fn convert_nodes_recurse_panel(
 
                 // add navigation
                 set_textbox_navigation(nodes, child_textbox_serde, ui_config, &child_textbox_id);
+            }
+            WidgetKind::Spinner => {
+                let WidgetBits::Spinner(child_spinner_serde) = &child_node_serde.widget else {
+                    panic!("Expected spinner widget");
+                };
+
+                // creates a new textbox
+                let spinner = Spinner::new(child_spinner_serde.id_str.as_str());
+                let child_spinner_id = ui_config.create_node(Widget::Spinner(spinner));
+                let Widget::Panel(panel) = &mut ui_config.node_mut(panel_id).unwrap().widget else {
+                    panic!("Expected panel widget");
+                };
+                panel.add_child(child_spinner_id);
+
+                // add style
+                for style_index in &child_node_serde.style_id {
+                    let style_index = *style_index as usize;
+                    let style_id = *style_index_to_id.get(&style_index).unwrap();
+                    let child_node = ui_config.node_mut(&child_spinner_id).unwrap();
+                    child_node.set_style_id(style_id);
+                }
             }
         }
     }
@@ -521,6 +542,7 @@ impl Into<WidgetStyle> for WidgetStyleBits {
             WidgetStyleBits::Text(text_style) => WidgetStyle::Text(text_style.into()),
             WidgetStyleBits::Button(button_style) => WidgetStyle::Button(button_style.into()),
             WidgetStyleBits::Textbox(textbox_style) => WidgetStyle::Textbox(textbox_style.into()),
+            WidgetStyleBits::Spinner(spinner_style) => WidgetStyle::Spinner(spinner_style.into()),
         }
     }
 }
@@ -573,6 +595,16 @@ impl Into<TextboxStyle> for TextboxStyleBits {
             hover_color: self.hover_color.map(|val| val.into()),
             active_color: self.active_color.map(|val| val.into()),
             select_color: self.select_color.map(|val| val.into()),
+        }
+    }
+}
+
+impl Into<SpinnerStyle> for SpinnerStyleBits {
+    fn into(self) -> SpinnerStyle {
+        SpinnerStyle {
+            background_color: self.background_color.map(Into::into),
+            background_alpha: self.background_alpha.map(bits_into_alpha),
+            spinner_color: self.spinner_color.map(Into::into),
         }
     }
 }

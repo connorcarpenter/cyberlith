@@ -2,10 +2,10 @@ use std::collections::HashMap;
 
 use asset_id::AssetId;
 use render_api::base::Color;
-use ui_builder_config::{BaseNodeStyle, Button, ButtonStyle, NodeId, NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Textbox, TextboxStyle, UiConfig, Widget, WidgetKind, WidgetStyle, ValidationType};
+use ui_builder_config::{BaseNodeStyle, Button, ButtonStyle, NodeId, NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Textbox, TextboxStyle, UiConfig, Widget, WidgetKind, WidgetStyle, ValidationType, Spinner, SpinnerStyle};
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 
-use super::{AlignmentJson, ColorJson, LayoutTypeJson, MarginUnitsJson, PanelJson, PositionTypeJson, SizeUnitsJson, SolidJson, ValidationJson, UiConfigJson, UiNodeJson, UiStyleJson, WidgetJson, WidgetStyleJson};
+use super::{AlignmentJson, ColorJson, LayoutTypeJson, MarginUnitsJson, PanelJson, PositionTypeJson, SizeUnitsJson, SolidJson, ValidationJson, UiConfigJson, UiNodeJson, UiStyleJson, WidgetJson, WidgetStyleJson, SpinnerStyleJson};
 use crate::json::{
     ButtonJson, ButtonStyleJson, PanelStyleJson, TextStyleJson, TextboxJson, TextboxStyleJson,
 };
@@ -194,6 +194,26 @@ fn convert_nodes_recurse_panel(
 
                 // add navigation
                 set_textbox_navigation(child_textbox_serde, ui_config, &child_textbox_id);
+            }
+            WidgetKind::Spinner => {
+                let WidgetJson::Spinner(child_spinner_serde) = &child_node_serde.widget else {
+                    panic!("Expected spinner widget");
+                };
+
+                // creates a new spinner
+                let spinner = Spinner::new(&child_spinner_serde.id_str);
+                let child_spinner_id = ui_config.create_node(Widget::Spinner(spinner));
+                let Widget::Panel(panel) = &mut ui_config.node_mut(panel_id).unwrap().widget else {
+                    panic!("Expected panel widget");
+                };
+                panel.add_child(child_spinner_id);
+
+                // add style
+                if let Some(style_index) = &child_node_serde.style_id {
+                    let style_id = *style_index_to_id.get(style_index).unwrap();
+                    let child_node = ui_config.node_mut(&child_spinner_id).unwrap();
+                    child_node.set_style_id(style_id);
+                }
             }
         }
     }
@@ -421,6 +441,7 @@ impl Into<WidgetStyle> for WidgetStyleJson {
             Self::Text(text) => WidgetStyle::Text(text.into()),
             Self::Button(button) => WidgetStyle::Button(button.into()),
             Self::Textbox(textbox) => WidgetStyle::Textbox(textbox.into()),
+            Self::Spinner(spinner) => WidgetStyle::Spinner(spinner.into()),
         }
     }
 }
@@ -473,6 +494,16 @@ impl Into<TextboxStyle> for TextboxStyleJson {
             hover_color: self.hover_color.map(Into::into),
             active_color: self.active_color.map(Into::into),
             select_color: self.select_color.map(Into::into),
+        }
+    }
+}
+
+impl Into<SpinnerStyle> for SpinnerStyleJson {
+    fn into(self) -> SpinnerStyle {
+        SpinnerStyle {
+            background_color: self.background_color.map(Into::into),
+            background_alpha: self.background_alpha,
+            spinner_color: self.spinner_color.map(Into::into),
         }
     }
 }

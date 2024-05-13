@@ -2,7 +2,7 @@ use ui_runner_config::WidgetKind;
 
 use crate::{
     button::ButtonStyleState, panel::PanelStyleState, text::TextStyleState,
-    textbox::TextboxStyleState,
+    textbox::TextboxStyleState, spinner::SpinnerStyleState,
 };
 
 pub enum StyleState {
@@ -10,6 +10,7 @@ pub enum StyleState {
     Text(TextStyleState),
     Button(ButtonStyleState),
     Textbox(TextboxStyleState),
+    Spinner(SpinnerStyleState),
 }
 
 impl StyleState {
@@ -19,6 +20,7 @@ impl StyleState {
             WidgetKind::Text => Self::Text(TextStyleState::new()),
             WidgetKind::Button => Self::Button(ButtonStyleState::new()),
             WidgetKind::Textbox => Self::Textbox(TextboxStyleState::new()),
+            WidgetKind::Spinner => Self::Spinner(SpinnerStyleState::new()),
         }
     }
 }

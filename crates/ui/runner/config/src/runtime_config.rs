@@ -2,7 +2,7 @@ use std::{collections::HashMap, slice::Iter};
 
 use asset_id::AssetId;
 use render_api::base::Color;
-use ui_builder_config::{BaseNodeStyle, Button, ButtonStyle, Navigation, Panel, PanelStyle, StyleId, TextStyle, TextboxStyle, UiConfig, UiNode, WidgetKind, WidgetStyle, Textbox};
+use ui_builder_config::{BaseNodeStyle, Button, ButtonStyle, Navigation, Panel, PanelStyle, StyleId, TextStyle, TextboxStyle, UiConfig, UiNode, WidgetKind, WidgetStyle, Textbox, SpinnerStyle};
 use ui_layout::{Alignment, LayoutType, MarginUnits, NodeId, NodeStore, PositionType, SizeUnits, Solid, TextMeasurer};
 use ui_serde::SerdeErr;
 
@@ -166,12 +166,21 @@ impl UiRuntimeConfig {
         }
     }
 
+    pub fn spinner_style(&self, id: &NodeId) -> Option<&SpinnerStyle> {
+        let widget_style = self.widget_style(id)?;
+        match widget_style {
+            WidgetStyle::Spinner(spinner_style) => Some(spinner_style),
+            _ => None,
+        }
+    }
+
     pub fn node_background_color(&self, id: &NodeId) -> Option<&Color> {
         match self.widget_style(id)? {
             WidgetStyle::Text(text_style) => text_style.background_color.as_ref(),
             WidgetStyle::Button(button_style) => button_style.panel.background_color.as_ref(),
             WidgetStyle::Textbox(textbox_style) => textbox_style.background_color.as_ref(),
             WidgetStyle::Panel(panel_style) => panel_style.background_color.as_ref(),
+            WidgetStyle::Spinner(spinner_style) => spinner_style.background_color.as_ref(),
         }
     }
 
@@ -179,6 +188,13 @@ impl UiRuntimeConfig {
         match self.widget_style(id)? {
             WidgetStyle::Text(text_style) => text_style.text_color.as_ref(),
             WidgetStyle::Textbox(textbox_style) => textbox_style.text_color.as_ref(),
+            _ => None,
+        }
+    }
+
+    pub fn node_spinner_color(&self, id: &NodeId) -> Option<&Color> {
+        match self.widget_style(id)? {
+            WidgetStyle::Spinner(spinner_style) => spinner_style.spinner_color.as_ref(),
             _ => None,
         }
     }
@@ -216,6 +232,15 @@ impl UiRuntimeConfig {
                 let mut output = 1.0;
                 if let Some(textbox_style) = self.textbox_style(id) {
                     if let Some(alpha) = textbox_style.background_alpha {
+                        output = alpha;
+                    }
+                }
+                output
+            }
+            WidgetKind::Spinner => {
+                let mut output = 1.0;
+                if let Some(spinner_style) = self.spinner_style(id) {
+                    if let Some(alpha) = spinner_style.background_alpha {
                         output = alpha;
                     }
                 }

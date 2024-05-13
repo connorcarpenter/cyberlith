@@ -1,6 +1,6 @@
 use ui_layout::{Alignment, MarginUnits, PositionType, SizeUnits, Solid};
 
-use crate::{panel::PanelStyle, text::TextStyle, ButtonStyle, TextboxStyle, WidgetKind};
+use crate::{panel::PanelStyle, text::TextStyle, ButtonStyle, TextboxStyle, WidgetKind, SpinnerStyle};
 
 #[derive(Clone, Copy, PartialEq, PartialOrd, Ord, Eq, Hash, Debug, Default)]
 pub struct StyleId(u32);
@@ -21,6 +21,7 @@ pub enum WidgetStyle {
     Text(TextStyle),
     Button(ButtonStyle),
     Textbox(TextboxStyle),
+    Spinner(SpinnerStyle),
 }
 
 impl WidgetStyle {
@@ -30,6 +31,7 @@ impl WidgetStyle {
             Self::Text(_) => WidgetKind::Text,
             Self::Button(_) => WidgetKind::Button,
             Self::Textbox(_) => WidgetKind::Textbox,
+            Self::Spinner(_) => WidgetKind::Spinner,
         }
     }
 
@@ -39,6 +41,7 @@ impl WidgetStyle {
             (Self::Text(style), Self::Text(other_style)) => style.merge(other_style),
             (Self::Button(style), Self::Button(other_style)) => style.merge(other_style),
             (Self::Textbox(style), Self::Textbox(other_style)) => style.merge(other_style),
+            (Self::Spinner(style), Self::Spinner(other_style)) => style.merge(other_style),
             _ => panic!("Cannot merge different widget styles"),
         }
     }

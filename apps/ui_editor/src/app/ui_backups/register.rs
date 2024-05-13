@@ -252,7 +252,7 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
                                 });
 
                             // error output
-                            c.add_text_with_id("-", "error_output_text")
+                            c.add_text_with_id("", "error_output_text")
                                 .set_style(error_output_style);
                         });
 

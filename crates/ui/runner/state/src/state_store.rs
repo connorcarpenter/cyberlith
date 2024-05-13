@@ -11,6 +11,7 @@ use crate::{
     button::ButtonStyleState,
     panel::PanelStyleState
 };
+use crate::spinner::SpinnerStyleState;
 use crate::text::TextState;
 
 pub struct UiStateStore {
@@ -223,6 +224,39 @@ impl UiStateStore {
                     panic!("impossible");
                 };
                 return Some(textbox_style_state);
+            } else {
+                // default style state already initialized
+                return None;
+            }
+        }
+    }
+
+    pub(crate) fn create_spinner_style(
+        &mut self,
+        style_id: Option<StyleId>,
+    ) -> Option<&mut SpinnerStyleState> {
+        if let Some(style_id) = style_id {
+            let style_id = style_id.as_usize();
+            let Some(StyleState::Spinner(style)) = self.styles.get_mut(style_id) else {
+                panic!("Style not found");
+            };
+            if !style.needs_color_handle() {
+                // style state already has color handles
+                return None;
+            }
+            return Some(style);
+        } else {
+            if !self.default_styles.contains_key(&WidgetKind::Spinner) {
+                self.default_styles.insert(
+                    WidgetKind::Spinner,
+                    StyleState::Spinner(SpinnerStyleState::new()),
+                );
+                let spinner_style_state =
+                    self.default_styles.get_mut(&WidgetKind::Spinner).unwrap();
+                let StyleState::Spinner(spinner_style_state) = spinner_style_state else {
+                    panic!("impossible");
+                };
+                return Some(spinner_style_state);
             } else {
                 // default style state already initialized
                 return None;

@@ -37,12 +37,12 @@ impl FsTask for WriteTask {
         FsTaskEnum::Write(self)
     }
 
-    fn from_enum(task_enum: FsTaskEnum) -> Result<Self, ()> {
-        let FsTaskEnum::Write(task) = task_enum else {
-            return Err(());
-        };
-        Ok(task)
-    }
+    // fn from_enum(task_enum: FsTaskEnum) -> Result<Self, ()> {
+    //     let FsTaskEnum::Write(task) = task_enum else {
+    //         return Err(());
+    //     };
+    //     Ok(task)
+    // }
 }
 
 impl FsTaskResult for WriteResult {

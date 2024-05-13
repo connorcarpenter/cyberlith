@@ -10,6 +10,9 @@ pub use text::*;
 mod textbox;
 pub use textbox::*;
 
+mod spinner;
+pub use spinner::*;
+
 mod ui_config;
 pub use ui_config::*;
 

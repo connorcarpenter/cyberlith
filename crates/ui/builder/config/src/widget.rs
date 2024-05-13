@@ -1,4 +1,4 @@
-use crate::{Button, Panel, Text, Textbox};
+use crate::{Button, Panel, Spinner, Text, Textbox};
 
 #[derive(PartialEq, Eq, Clone, Copy, Hash)]
 pub enum WidgetKind {
@@ -6,6 +6,7 @@ pub enum WidgetKind {
     Text,
     Button,
     Textbox,
+    Spinner,
 }
 
 impl WidgetKind {
@@ -15,6 +16,7 @@ impl WidgetKind {
             WidgetKind::Text => false,
             WidgetKind::Button => true,
             WidgetKind::Textbox => false,
+            WidgetKind::Spinner => false,
         }
     }
 
@@ -24,6 +26,7 @@ impl WidgetKind {
             WidgetKind::Text => false,
             WidgetKind::Button => false,
             WidgetKind::Textbox => false,
+            WidgetKind::Spinner => false,
         }
     }
 
@@ -33,6 +36,7 @@ impl WidgetKind {
             WidgetKind::Text => true,
             WidgetKind::Button => false,
             WidgetKind::Textbox => false,
+            WidgetKind::Spinner => false,
         }
     }
 }
@@ -43,6 +47,7 @@ pub enum Widget {
     Text(Text),
     Button(Button),
     Textbox(Textbox),
+    Spinner(Spinner),
 }
 
 impl Widget {
@@ -52,6 +57,7 @@ impl Widget {
             Self::Text(_) => WidgetKind::Text,
             Self::Button(_) => WidgetKind::Button,
             Self::Textbox(_) => WidgetKind::Textbox,
+            Self::Spinner(_) => WidgetKind::Spinner,
         }
     }
 }

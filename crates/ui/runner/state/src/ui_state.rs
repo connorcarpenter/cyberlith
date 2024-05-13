@@ -15,6 +15,7 @@ use crate::{
     style_state::StyleState, text::TextStyleState, textbox::TextboxState,
     textbox::TextboxStyleState, UiNodeState,
 };
+use crate::spinner::SpinnerStyleState;
 
 pub struct UiState {
     pub globals: StateGlobals,
@@ -175,6 +176,18 @@ impl UiState {
         return Some(textbox_style_state);
     }
 
+    pub fn spinner_style_state(
+        &self,
+        config: &UiRuntimeConfig,
+        id: &NodeId,
+    ) -> Option<&SpinnerStyleState> {
+        let style_state = self.node_style_state(config, id)?;
+        let StyleState::Spinner(spinner_style_state) = style_state else {
+            return None;
+        };
+        return Some(spinner_style_state);
+    }
+
     pub fn load_cpu_data(
         &mut self,
         ui_config: &UiRuntimeConfig,
@@ -295,6 +308,25 @@ impl UiState {
                             .unwrap_or(Color::BLACK);
                         let select_color_handle = materials.add(select_color);
                         textbox_style_mut.set_select_color_handle(select_color_handle);
+                    }
+                }
+                WidgetKind::Spinner => {
+                    if let Some(spinner_style_mut) = self.store.create_spinner_style(style_id) {
+                        // background color
+                        let background_color = ui_config
+                            .node_background_color(&id)
+                            .copied()
+                            .unwrap_or(Color::BLACK);
+                        let background_color_handle = materials.add(background_color);
+                        spinner_style_mut.set_background_color_handle(background_color_handle);
+
+                        // spinner color
+                        let spinner_color = ui_config
+                            .node_spinner_color(&id)
+                            .copied()
+                            .unwrap_or(Color::WHITE);
+                        let spinner_color_handle = materials.add(spinner_color);
+                        spinner_style_mut.set_spinner_color_handle(spinner_color_handle);
                     }
                 }
             }

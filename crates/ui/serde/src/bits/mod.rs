@@ -123,11 +123,19 @@ pub(crate) struct TextboxStyleBits {
 }
 
 #[derive(Serde, Clone, PartialEq)]
+pub(crate) struct SpinnerStyleBits {
+    background_color: Option<ColorBits>,
+    background_alpha: Option<UnsignedInteger<4>>,
+    spinner_color: Option<ColorBits>,
+}
+
+#[derive(Serde, Clone, PartialEq)]
 pub(crate) enum WidgetStyleBits {
     Panel(PanelStyleBits),
     Text(TextStyleBits),
     Button(ButtonStyleBits),
     Textbox(TextboxStyleBits),
+    Spinner(SpinnerStyleBits),
 }
 
 #[derive(Serde, Clone, PartialEq)]
@@ -190,6 +198,7 @@ impl UiNodeBits {
             WidgetBits::Text(_) => WidgetKind::Text,
             WidgetBits::Button(_) => WidgetKind::Button,
             WidgetBits::Textbox(_) => WidgetKind::Textbox,
+            WidgetBits::Spinner(_) => WidgetKind::Spinner,
         }
     }
 }
@@ -200,6 +209,7 @@ pub(crate) enum WidgetBits {
     Text(TextBits),
     Button(ButtonBits),
     Textbox(TextboxBits),
+    Spinner(SpinnerBits),
 }
 
 #[derive(Serde, Clone, PartialEq)]
@@ -242,4 +252,9 @@ pub(crate) enum ValidationBits {
     Alphanumeric,
     Password,
     Email,
+}
+
+#[derive(Serde, Clone, PartialEq)]
+pub(crate) struct SpinnerBits {
+    id_str: String,
 }

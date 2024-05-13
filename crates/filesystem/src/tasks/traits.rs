@@ -7,9 +7,9 @@ pub trait FsTask {
     type Result: FsTaskResult;
 
     fn to_enum(self) -> FsTaskEnum;
-    fn from_enum(task_enum: FsTaskEnum) -> Result<Self, ()>
-    where
-        Self: Sized;
+    // fn from_enum(task_enum: FsTaskEnum) -> Result<Self, ()>
+    // where
+    //     Self: Sized;
 }
 
 pub trait FsTaskResult {

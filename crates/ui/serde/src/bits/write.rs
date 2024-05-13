@@ -3,10 +3,10 @@ use std::collections::HashMap;
 use naia_serde::{FileBitWriter, SerdeInternal as Serde, UnsignedInteger, UnsignedVariableInteger};
 
 use render_api::base::Color;
-use ui_builder_config::{Button, ButtonStyle, Navigation, NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Textbox, TextboxStyle, UiConfig, UiNode, Widget, WidgetStyle, ValidationType};
+use ui_builder_config::{Button, ButtonStyle, Navigation, NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Textbox, TextboxStyle, UiConfig, UiNode, Widget, WidgetStyle, ValidationType, SpinnerStyle, Spinner};
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 
-use crate::bits::{AlignmentBits, ButtonBits, ButtonStyleBits, ColorBits, LayoutTypeBits, MarginUnitsBits, NavigationBits, PanelBits, PanelStyleBits, PositionTypeBits, SizeUnitsBits, SolidBits, TextBits, TextStyleBits, TextboxBits, TextboxStyleBits, UiAction, UiActionType, UiNodeBits, UiStyleBits, WidgetBits, WidgetStyleBits, ValidationBits};
+use crate::bits::{AlignmentBits, ButtonBits, ButtonStyleBits, ColorBits, LayoutTypeBits, MarginUnitsBits, NavigationBits, PanelBits, PanelStyleBits, PositionTypeBits, SizeUnitsBits, SolidBits, TextBits, TextStyleBits, TextboxBits, TextboxStyleBits, UiAction, UiActionType, UiNodeBits, UiStyleBits, WidgetBits, WidgetStyleBits, ValidationBits, SpinnerStyleBits, SpinnerBits};
 
 pub fn write_bits(ui_config: &UiConfig) -> Vec<u8> {
     let actions = convert_ui_to_actions(ui_config);
@@ -157,6 +157,7 @@ impl From<&WidgetStyle> for WidgetStyleBits {
             WidgetStyle::Text(text) => Self::Text(From::from(text)),
             WidgetStyle::Button(button) => Self::Button(From::from(button)),
             WidgetStyle::Textbox(textbox) => Self::Textbox(From::from(textbox)),
+            WidgetStyle::Spinner(spinner) => Self::Spinner(From::from(spinner)),
         }
     }
 }
@@ -213,6 +214,16 @@ impl From<&TextboxStyle> for TextboxStyleBits {
             hover_color: style.hover_color.map(From::from),
             active_color: style.active_color.map(From::from),
             select_color: style.select_color.map(From::from),
+        }
+    }
+}
+
+impl From<&SpinnerStyle> for SpinnerStyleBits {
+    fn from(style: &SpinnerStyle) -> Self {
+        Self {
+            background_color: style.background_color.map(From::from),
+            background_alpha: style.background_alpha().map(bits_from_alpha),
+            spinner_color: style.spinner_color.map(From::from),
         }
     }
 }
@@ -385,9 +396,8 @@ impl WidgetBits {
             Widget::Panel(panel) => Self::Panel(From::from(panel)),
             Widget::Text(text) => Self::Text(From::from(text)),
             Widget::Button(button) => Self::Button(ButtonBits::from_button(ui_config, button)),
-            Widget::Textbox(textbox) => {
-                Self::Textbox(TextboxBits::from_textbox(ui_config, textbox))
-            }
+            Widget::Textbox(textbox) => Self::Textbox(TextboxBits::from_textbox(ui_config, textbox)),
+            Widget::Spinner(spinner) => Self::Spinner(From::from(spinner)),
         }
     }
 }
@@ -437,6 +447,14 @@ impl TextboxBits {
             navigation: NavigationBits::from_navigation(ui_config, &textbox.navigation),
             is_password: textbox.is_password,
             validation: textbox.validation.map(|v| ValidationBits::from(v)),
+        }
+    }
+}
+
+impl From<&Spinner> for SpinnerBits {
+    fn from(spinner: &Spinner) -> Self {
+        Self {
+            id_str: spinner.id_str.clone(),
         }
     }
 }

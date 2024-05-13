@@ -2,10 +2,10 @@ use std::collections::HashMap;
 
 use render_api::base::Color;
 
-use ui_builder_config::{Button, ButtonStyle, Navigation, NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Textbox, TextboxStyle, UiConfig, UiNode, Widget, WidgetStyle, ValidationType};
+use ui_builder_config::{Button, ButtonStyle, Navigation, NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Textbox, TextboxStyle, UiConfig, UiNode, Widget, WidgetStyle, ValidationType, Spinner, SpinnerStyle};
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 
-use super::{AlignmentJson, ColorJson, LayoutTypeJson, MarginUnitsJson, PanelJson, PanelStyleJson, PositionTypeJson, SizeUnitsJson, SolidJson, ValidationJson, TextJson, TextStyleJson, UiConfigJson, UiNodeJson, UiStyleJson, WidgetJson, WidgetStyleJson};
+use super::{AlignmentJson, ColorJson, LayoutTypeJson, MarginUnitsJson, PanelJson, PanelStyleJson, PositionTypeJson, SizeUnitsJson, SolidJson, ValidationJson, TextJson, TextStyleJson, UiConfigJson, UiNodeJson, UiStyleJson, WidgetJson, WidgetStyleJson, SpinnerJson, SpinnerStyleJson};
 use crate::json::{ButtonJson, ButtonStyleJson, NavigationJson, TextboxJson, TextboxStyleJson};
 
 // conversion
@@ -79,6 +79,7 @@ impl From<&WidgetStyle> for WidgetStyleJson {
             WidgetStyle::Text(text) => Self::Text(From::from(text)),
             WidgetStyle::Button(button) => Self::Button(From::from(button)),
             WidgetStyle::Textbox(textbox) => Self::Textbox(From::from(textbox)),
+            WidgetStyle::Spinner(spinner) => Self::Spinner(From::from(spinner)),
         }
     }
 }
@@ -136,6 +137,16 @@ impl From<&TextboxStyle> for TextboxStyleJson {
             hover_color: style.hover_color.map(From::from),
             active_color: style.active_color.map(From::from),
             select_color: style.select_color.map(From::from),
+        }
+    }
+}
+
+impl From<&SpinnerStyle> for SpinnerStyleJson {
+    fn from(style: &SpinnerStyle) -> Self {
+        Self {
+            background_color: style.background_color.map(From::from),
+            background_alpha: style.background_alpha(),
+            spinner_color: style.spinner_color.map(From::from),
         }
     }
 }
@@ -229,6 +240,7 @@ impl From<&Widget> for WidgetJson {
             Widget::Text(text) => Self::Text(From::from(text)),
             Widget::Button(button) => Self::Button(From::from(button)),
             Widget::Textbox(textbox) => Self::Textbox(From::from(textbox)),
+            Widget::Spinner(spinner) => Self::Spinner(From::from(spinner)),
         }
     }
 }
@@ -273,6 +285,14 @@ impl From<&Textbox> for TextboxJson {
             navigation: From::from(&textbox.navigation),
             is_password: textbox.is_password,
             validation: textbox.validation.map(|v| From::from(&v)),
+        }
+    }
+}
+
+impl From<&Spinner> for SpinnerJson {
+    fn from(spinner: &Spinner) -> Self {
+        Self {
+            id_str: spinner.id_str.to_string(),
         }
     }
 }

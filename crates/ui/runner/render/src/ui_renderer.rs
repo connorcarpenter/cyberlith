@@ -246,6 +246,15 @@ fn draw_ui_node(
                     &transform,
                 );
             }
+            WidgetKind::Spinner => {
+                draw_ui_spinner(
+                    render_frame,
+                    ui_config,
+                    ui_state,
+                    id,
+                    &transform,
+                );
+            }
         }
     }
 }
@@ -483,4 +492,46 @@ fn draw_ui_textbox(
             }
         }
     }
+}
+
+fn draw_ui_spinner(
+    //self was Spinner
+    render_frame: &mut RenderFrame,
+    ui_config: &UiRuntimeConfig,
+    ui_state: &UiState,
+    id: &NodeId,
+    transform: &Transform,
+) {
+    let Some(spinner_style_state) = ui_state.spinner_style_state(ui_config, id) else {
+        panic!("no spinner ref for node_id: {:?}", id);
+    };
+
+    // draw spinner background
+    if let Some(mat_handle) = spinner_style_state.background_color_handle() {
+        let background_alpha = ui_config.node_background_alpha(id);
+        if background_alpha > 0.0 {
+            if background_alpha != 1.0 {
+                panic!("partial background_alpha not implemented yet!");
+            }
+            let box_handle = ui_state.globals.get_box_mesh_handle().unwrap();
+            render_frame.draw_mesh(Some(&RenderLayer::UI), box_handle, &mat_handle, &transform);
+        }
+    } else {
+        warn!("no background color handle for spinner"); // probably will need to do better debugging later
+        return;
+    };
+
+    // draw spinner
+    if let Some(mat_handle) = spinner_style_state.spinner_color_handle() {
+        let box_handle = ui_state.globals.get_box_mesh_handle().unwrap();
+
+        let mut transform = transform.clone();
+        transform.scale.x *= 0.6;
+        transform.scale.y *= 0.6;
+
+        render_frame.draw_mesh(Some(&RenderLayer::UI), box_handle, &mat_handle, &transform);
+    } else {
+        warn!("no color handle for spinner"); // probably will need to do better debugging later
+        return;
+    };
 }

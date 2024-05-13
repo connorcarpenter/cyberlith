@@ -65,12 +65,12 @@ impl FsTask for ReadDirTask {
         FsTaskEnum::ReadDir(self)
     }
 
-    fn from_enum(task_enum: FsTaskEnum) -> Result<Self, ()> {
-        let FsTaskEnum::ReadDir(task) = task_enum else {
-            return Err(());
-        };
-        Ok(task)
-    }
+    // fn from_enum(task_enum: FsTaskEnum) -> Result<Self, ()> {
+    //     let FsTaskEnum::ReadDir(task) = task_enum else {
+    //         return Err(());
+    //     };
+    //     Ok(task)
+    // }
 }
 
 impl FsTaskResult for ReadDirResult {

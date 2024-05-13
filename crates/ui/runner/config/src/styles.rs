@@ -1,7 +1,4 @@
-use ui_builder_config::{
-    BaseNodeStyle, ButtonStyle, NodeStyle, PanelStyle, StyleId, TextStyle, TextboxStyle,
-    WidgetKind, WidgetStyle,
-};
+use ui_builder_config::{BaseNodeStyle, ButtonStyle, NodeStyle, PanelStyle, StyleId, TextStyle, TextboxStyle, WidgetKind, WidgetStyle, SpinnerStyle};
 
 pub(crate) fn compute_styles(styles: Vec<NodeStyle>) -> Vec<BaseNodeStyle> {
     let mut output = Vec::new();
@@ -13,6 +10,7 @@ pub(crate) fn compute_styles(styles: Vec<NodeStyle>) -> Vec<BaseNodeStyle> {
             WidgetKind::Button => WidgetStyle::Button(ButtonStyle::empty()),
             WidgetKind::Text => WidgetStyle::Text(TextStyle::empty()),
             WidgetKind::Textbox => WidgetStyle::Textbox(TextboxStyle::empty()),
+            WidgetKind::Spinner => WidgetStyle::Spinner(SpinnerStyle::empty()),
         };
         let mut output_style = BaseNodeStyle::empty(widget_style);
 

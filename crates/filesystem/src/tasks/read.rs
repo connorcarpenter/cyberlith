@@ -34,12 +34,12 @@ impl FsTask for ReadTask {
         FsTaskEnum::Read(self)
     }
 
-    fn from_enum(task_enum: FsTaskEnum) -> Result<Self, ()> {
-        let FsTaskEnum::Read(task) = task_enum else {
-            return Err(());
-        };
-        Ok(task)
-    }
+    // fn from_enum(task_enum: FsTaskEnum) -> Result<Self, ()> {
+    //     let FsTaskEnum::Read(task) = task_enum else {
+    //         return Err(());
+    //     };
+    //     Ok(task)
+    // }
 }
 
 impl FsTaskResult for ReadResult {

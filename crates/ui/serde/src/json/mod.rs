@@ -123,12 +123,20 @@ pub(crate) struct TextboxStyleJson {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+pub(crate) struct SpinnerStyleJson {
+    background_color: Option<ColorJson>,
+    background_alpha: Option<f32>,
+    spinner_color: Option<ColorJson>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "lowercase")]
 pub(crate) enum WidgetStyleJson {
     Panel(PanelStyleJson),
     Text(TextStyleJson),
     Button(ButtonStyleJson),
     Textbox(TextboxStyleJson),
+    Spinner(SpinnerStyleJson),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -197,6 +205,7 @@ impl UiNodeJson {
             WidgetJson::Text(_) => WidgetKind::Text,
             WidgetJson::Button(_) => WidgetKind::Button,
             WidgetJson::Textbox(_) => WidgetKind::Textbox,
+            WidgetJson::Spinner(_) => WidgetKind::Spinner,
         }
     }
 }
@@ -208,6 +217,7 @@ pub(crate) enum WidgetJson {
     Text(TextJson),
     Button(ButtonJson),
     Textbox(TextboxJson),
+    Spinner(SpinnerJson),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -234,6 +244,11 @@ pub(crate) struct TextboxJson {
     navigation: NavigationJson,
     is_password: bool,
     validation: Option<ValidationJson>
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub(crate) struct SpinnerJson {
+    id_str: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
