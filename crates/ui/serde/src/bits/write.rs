@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use naia_serde::{FileBitWriter, SerdeInternal as Serde, UnsignedInteger, UnsignedVariableInteger};
 
 use render_api::base::Color;
-use ui_builder_config::{Button, ButtonStyle, Navigation, NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Textbox, TextboxStyle, UiConfig, UiNode, Widget, WidgetStyle, CharacterWhitelist};
+use ui_builder_config::{Button, ButtonStyle, Navigation, NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Textbox, TextboxStyle, UiConfig, UiNode, Widget, WidgetStyle, ValidationType};
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 
 use crate::bits::{AlignmentBits, ButtonBits, ButtonStyleBits, ColorBits, LayoutTypeBits, MarginUnitsBits, NavigationBits, PanelBits, PanelStyleBits, PositionTypeBits, SizeUnitsBits, SolidBits, TextBits, TextStyleBits, TextboxBits, TextboxStyleBits, UiAction, UiActionType, UiNodeBits, UiStyleBits, WidgetBits, WidgetStyleBits, TextboxCharWhitelistBits};
@@ -441,17 +441,17 @@ impl TextboxBits {
             id_str: textbox.id_str.clone(),
             navigation: NavigationBits::from_navigation(ui_config, &textbox.navigation),
             is_password: textbox.is_password,
-            char_whitelist: textbox.char_whitelist.map(|v| TextboxCharWhitelistBits::from(v)),
+            char_whitelist: textbox.validation.map(|v| TextboxCharWhitelistBits::from(v)),
         }
     }
 }
 
-impl From<CharacterWhitelist> for TextboxCharWhitelistBits {
-    fn from(value: CharacterWhitelist) -> Self {
+impl From<ValidationType> for TextboxCharWhitelistBits {
+    fn from(value: ValidationType) -> Self {
         match value {
-            CharacterWhitelist::Alphanumeric => Self::Alphanumeric,
-            CharacterWhitelist::Password => Self::Password,
-            CharacterWhitelist::Email => Self::Email,
+            ValidationType::Username => Self::Alphanumeric,
+            ValidationType::Password => Self::Password,
+            ValidationType::Email => Self::Email,
         }
     }
 }

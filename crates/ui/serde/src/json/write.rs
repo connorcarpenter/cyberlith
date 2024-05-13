@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use render_api::base::Color;
 
-use ui_builder_config::{Button, ButtonStyle, Navigation, NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Textbox, TextboxStyle, UiConfig, UiNode, Widget, WidgetStyle, CharacterWhitelist};
+use ui_builder_config::{Button, ButtonStyle, Navigation, NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Textbox, TextboxStyle, UiConfig, UiNode, Widget, WidgetStyle, ValidationType};
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 
 use super::{AlignmentJson, ColorJson, LayoutTypeJson, MarginUnitsJson, PanelJson, PanelStyleJson, PositionTypeJson, SizeUnitsJson, SolidJson, TextboxCharWhitelistJson, TextJson, TextStyleJson, UiConfigJson, UiNodeJson, UiStyleJson, WidgetJson, WidgetStyleJson};
@@ -270,7 +270,7 @@ impl From<&Textbox> for TextboxJson {
             id_str: textbox.id_str.to_string(),
             navigation: From::from(&textbox.navigation),
             is_password: textbox.is_password,
-            char_whitelist: textbox.char_whitelist.map(|v| From::from(&v)),
+            char_whitelist: textbox.validation.map(|v| From::from(&v)),
         }
     }
 }
@@ -287,12 +287,12 @@ impl From<&Navigation> for NavigationJson {
     }
 }
 
-impl From<&CharacterWhitelist> for TextboxCharWhitelistJson {
-    fn from(v: &CharacterWhitelist) -> Self {
+impl From<&ValidationType> for TextboxCharWhitelistJson {
+    fn from(v: &ValidationType) -> Self {
         match v {
-            CharacterWhitelist::Alphanumeric => Self::Alphanumeric,
-            CharacterWhitelist::Password => Self::Password,
-            CharacterWhitelist::Email => Self::Email,
+            ValidationType::Username => Self::Alphanumeric,
+            ValidationType::Password => Self::Password,
+            ValidationType::Email => Self::Email,
         }
     }
 }

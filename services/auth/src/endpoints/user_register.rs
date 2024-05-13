@@ -5,7 +5,7 @@ use http_server::{async_dup::Arc, http_log_util, executor::smol::lock::RwLock, A
 use config::TargetEnv;
 
 use auth_server_http_proto::{UserRegisterRequest, UserRegisterResponse};
-use validation::CharacterWhitelist;
+use validation::{EmailValidation, PasswordValidation, UsernameValidation, Validator};
 
 use crate::{error::AuthServerError, types::TempRegistration, state::State};
 
@@ -46,27 +46,31 @@ async fn async_impl(
 impl State {
     fn user_register(&mut self, request: UserRegisterRequest) -> Result<(), AuthServerError> {
 
-        if !CharacterWhitelist::alphanumeric_allows_text(&request.username) {
+        let username = request.username.to_ascii_lowercase();
+        let email = request.email;
+        let password = request.password;
+
+        if !UsernameValidation::allows_text(&username) {
             return Err(AuthServerError::UsernameInvalidCharacters);
         }
-        if !CharacterWhitelist::email_allows_text(&request.email) {
+        if !EmailValidation::allows_text(&email) {
             return Err(AuthServerError::EmailInvalidCharacters);
         }
-        if !CharacterWhitelist::password_allows_text(&request.password) {
+        if !PasswordValidation::allows_text(&password) {
             return Err(AuthServerError::PasswordInvalidCharacters);
         }
         // TODO: validate data more?
 
-        if self.username_to_id_map.contains_key(&request.username) {
+        if self.username_to_id_map.contains_key(&password) {
             return Err(AuthServerError::UsernameAlreadyExists);
         }
-        if self.email_to_id_map.contains_key(&request.email) {
+        if self.email_to_id_map.contains_key(&email) {
             return Err(AuthServerError::EmailAlreadyExists);
         }
 
         let reg_token = self.create_new_register_token();
 
-        let temp_reg = TempRegistration::from_req(request)?;
+        let temp_reg = TempRegistration::new(&username, &email, &password)?;
 
         let email_subject = "Cyberlith Email Verification"; // TODO: put into config
         let sending_email = "admin@cyberlith.com"; // TODO: put into config

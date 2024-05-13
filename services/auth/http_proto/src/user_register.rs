@@ -13,7 +13,7 @@ pub struct UserRegisterRequest {
 impl UserRegisterRequest {
     pub fn new(username: &str, email: &str, password: &str) -> Self {
         Self {
-            username: username.to_string(),
+            username: username.to_ascii_lowercase().to_string(),
             email: email.to_string(),
             password: password.to_string(),
         }

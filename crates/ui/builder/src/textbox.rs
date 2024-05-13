@@ -1,5 +1,5 @@
 use render_api::base::Color;
-use ui_builder_config::{NodeId, NodeStyle, StyleId, Textbox, TextboxStyle, UiConfig, UiNode, WidgetStyle, CharacterWhitelist};
+use ui_builder_config::{NodeId, NodeStyle, StyleId, Textbox, TextboxStyle, UiConfig, UiNode, WidgetStyle, Validator};
 use ui_layout::{Alignment, MarginUnits, PositionType, SizeUnits};
 
 use crate::PanelMut;
@@ -25,9 +25,9 @@ impl<'a> TextboxMut<'a> {
         self
     }
 
-    pub fn set_character_whitelist(&mut self, whitelist: CharacterWhitelist) -> &mut Self {
+    pub fn validation<V: Validator>(&mut self) -> &mut Self {
         let node = self.ui_config.node_mut(&self.node_id).unwrap();
-        node.widget_textbox_mut().unwrap().char_whitelist = Some(whitelist);
+        node.widget_textbox_mut().unwrap().validation = Some(V::validation_type());
         self
     }
 

@@ -47,7 +47,7 @@ impl TextboxInputState {
             }
             UiInputEvent::TextInsert(new_char) => {
 
-                if let Some(whitelist) = &config.char_whitelist {
+                if let Some(whitelist) = &config.validation {
                     if !whitelist.includes_char(new_char) {
                         return None;
                     }
@@ -186,7 +186,7 @@ impl TextboxInputState {
             }
             UiInputEvent::TextPaste(text) => {
 
-                if let Some(whitelist) = &config.char_whitelist {
+                if let Some(whitelist) = &config.validation {
                     if !whitelist.allows_text(&text) {
                         return None;
                     }

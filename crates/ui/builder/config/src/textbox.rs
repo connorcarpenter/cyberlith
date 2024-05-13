@@ -1,5 +1,5 @@
 use render_api::base::Color;
-use validation::CharacterWhitelist;
+use validation::ValidationType;
 
 use crate::Navigation;
 
@@ -8,7 +8,7 @@ pub struct Textbox {
     pub id_str: String,
     pub navigation: Navigation,
     pub is_password: bool,
-    pub char_whitelist: Option<CharacterWhitelist>,
+    pub validation: Option<ValidationType>,
 }
 
 impl Textbox {
@@ -18,7 +18,7 @@ impl Textbox {
             id_str: id_str.to_string(),
             navigation: Navigation::new(),
             is_password: false,
-            char_whitelist: None,
+            validation: None,
         }
     }
 }

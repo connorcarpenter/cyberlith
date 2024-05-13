@@ -3,7 +3,7 @@ use auth_server_db::UserId;
 use http_client::ResponseError;
 use http_server::{async_dup::Arc, executor::smol::lock::RwLock, ApiServer, Server};
 use logging::info;
-use validation::CharacterWhitelist;
+use validation::{EmailValidation, PasswordValidation, UsernameValidation, Validator};
 
 use auth_server_http_proto::{AccessToken, RefreshToken, UserLoginRequest, UserLoginResponse};
 
@@ -27,7 +27,7 @@ async fn async_impl(
             Ok(UserLoginResponse::new(refresh_token, access_token))
         }
         Err(AuthServerError::UsernameOrEmailNotFound) | Err(AuthServerError::PasswordIncorrect) => Err(ResponseError::Unauthenticated),
-        Err(AuthServerError::PasswordInvalidCharacters) | Err(AuthServerError::UsernameOrEmailInvalidCharacters) | Err(AuthServerError::UsernameInvalidCharacters) | Err(AuthServerError::EmailInvalidCharacters) => Err(ResponseError::BadRequest),
+        Err(AuthServerError::PasswordInvalidCharacters) | Err(AuthServerError::UsernameInvalidCharacters) | Err(AuthServerError::EmailInvalidCharacters) => Err(ResponseError::BadRequest),
         Err(_) => {
             panic!("unhandled error for this endpoint");
         }
@@ -37,30 +37,46 @@ async fn async_impl(
 }
 
 impl State {
+
+    fn user_id_from_username_from_handle(&self, username: &str) -> Option<UserId> {
+        let username = username.to_ascii_lowercase();
+
+        if !UsernameValidation::allows_text(&username) {
+            return None;
+        }
+
+        let user_id_opt = self.username_to_id_map.get(&username)?;
+        *user_id_opt
+    }
+
+    fn user_id_from_email_from_handle(&self, email: &str) -> Option<UserId> {
+
+        if !EmailValidation::allows_text(&email) {
+            return None;
+        }
+
+        let user_id_opt = self.email_to_id_map.get(email)?;
+        *user_id_opt
+    }
+
     fn user_login(
         &mut self,
         request: UserLoginRequest,
     ) -> Result<(RefreshToken, AccessToken), AuthServerError> {
         let handle = request.handle;
-
-        // validate handle
-        if !CharacterWhitelist::email_allows_text(&handle) {
-            return Err(AuthServerError::UsernameOrEmailInvalidCharacters);
-        }
-
         let password = request.password;
 
         // validate password
-        if !CharacterWhitelist::password_allows_text(&password) {
+        if !PasswordValidation::allows_text(&password) {
             return Err(AuthServerError::PasswordInvalidCharacters);
         }
 
         // find user_id for given handle
         let user_id: UserId;
-        if let Some(Some(id)) = self.username_to_id_map.get(&handle) {
-            user_id = *id;
-        } else if let Some(Some(id)) = self.email_to_id_map.get(&handle) {
-            user_id = *id;
+        if let Some(id) = self.user_id_from_username_from_handle(&handle) {
+            user_id = id;
+        } else if let Some(id) = self.user_id_from_email_from_handle(&handle) {
+            user_id = id;
         } else {
             return Err(AuthServerError::UsernameOrEmailNotFound);
         }

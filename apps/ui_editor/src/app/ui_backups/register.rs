@@ -3,7 +3,7 @@ use game_engine::{
     render::base::Color,
 };
 use ui_builder::{Alignment, UiConfig, UiConfigBuild};
-use ui_runner_config::CharacterWhitelist;
+use ui_runner_config::{UsernameValidation, PasswordValidation, EmailValidation};
 
 #[allow(unused)]
 pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
@@ -171,7 +171,7 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
                     c.add_text("username:").set_style(base_label_style);
                     // text-edit
                     c.add_textbox("username_textbox")
-                        .set_character_whitelist(CharacterWhitelist::Alphanumeric)
+                        .validation::<UsernameValidation>()
                         .set_style(base_textbox_style)
                         .set_as_first_input()
                         .navigation(|n| {
@@ -186,7 +186,7 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
                     c.add_text("email address:").set_style(base_label_style);
                     // text-edit
                     c.add_textbox("email_textbox")
-                        .set_character_whitelist(CharacterWhitelist::Email)
+                        .validation::<EmailValidation>()
                         .set_style(base_textbox_style)
                         .navigation(|n| {
                             n.up_goes_to("username_textbox")
@@ -201,7 +201,7 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
                     // text-edit
                     c.add_textbox("password_textbox")
                         .set_as_password()
-                        .set_character_whitelist(CharacterWhitelist::Password)
+                        .validation::<PasswordValidation>()
                         .set_style(base_textbox_style)
                         .navigation(|n| {
                             n.up_goes_to("email_textbox")
@@ -216,7 +216,7 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
                     // text-edit
                     c.add_textbox("confirm_password_textbox")
                         .set_as_password()
-                        .set_character_whitelist(CharacterWhitelist::Password)
+                        .validation::<PasswordValidation>()
                         .set_style(base_textbox_style)
                         .navigation(|n| {
                             n.up_goes_to("password_textbox")

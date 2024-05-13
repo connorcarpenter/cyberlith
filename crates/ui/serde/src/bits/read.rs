@@ -6,7 +6,7 @@ use naia_serde::{
 
 use asset_id::AssetId;
 use render_api::base::Color;
-use ui_builder_config::{BaseNodeStyle, Button, ButtonStyle, NodeId, NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Textbox, TextboxStyle, UiConfig, Widget, WidgetKind, WidgetStyle, CharacterWhitelist};
+use ui_builder_config::{BaseNodeStyle, Button, ButtonStyle, NodeId, NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Textbox, TextboxStyle, UiConfig, Widget, WidgetKind, WidgetStyle, ValidationType};
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 
 use crate::bits::{AlignmentBits, ButtonBits, ButtonStyleBits, ColorBits, LayoutTypeBits, MarginUnitsBits, PanelBits, PanelStyleBits, PositionTypeBits, SizeUnitsBits, SolidBits, TextStyleBits, TextboxBits, TextboxStyleBits, UiAction, UiActionType, UiNodeBits, UiStyleBits, WidgetBits, WidgetStyleBits, TextboxCharWhitelistBits};
@@ -231,7 +231,7 @@ fn convert_nodes_recurse_panel(
                     child_textbox_serde.id_str.as_str(),
                 );
                 textbox.is_password = child_textbox_serde.is_password;
-                textbox.char_whitelist = child_textbox_serde.char_whitelist.map(|v| v.into());
+                textbox.validation = child_textbox_serde.char_whitelist.map(|v| v.into());
                 let child_textbox_id = ui_config.create_node(Widget::Textbox(textbox));
                 let Widget::Panel(panel) = &mut ui_config.node_mut(panel_id).unwrap().widget else {
                     panic!("Expected panel widget");
@@ -479,12 +479,12 @@ impl Into<LayoutType> for LayoutTypeBits {
     }
 }
 
-impl Into<CharacterWhitelist> for TextboxCharWhitelistBits {
-    fn into(self) -> CharacterWhitelist {
+impl Into<ValidationType> for TextboxCharWhitelistBits {
+    fn into(self) -> ValidationType {
         match self {
-            Self::Alphanumeric => CharacterWhitelist::Alphanumeric,
-            Self::Password => CharacterWhitelist::Password,
-            Self::Email => CharacterWhitelist::Email,
+            Self::Alphanumeric => ValidationType::Username,
+            Self::Password => ValidationType::Password,
+            Self::Email => ValidationType::Email,
         }
     }
 }
