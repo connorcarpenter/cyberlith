@@ -58,6 +58,11 @@ impl<'a> TextStyleMut<'a> {
         self
     }
 
+    pub fn set_text_color(&mut self, color: Color) -> &mut Self {
+        self.get_text_style_mut().text_color = Some(color);
+        self
+    }
+
     pub fn set_background_alpha(&mut self, alpha: f32) -> &mut Self {
         self.get_text_style_mut().set_background_alpha(alpha);
         self

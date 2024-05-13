@@ -27,6 +27,7 @@ impl Textbox {
 pub struct TextboxStyle {
     pub background_color: Option<Color>,
     pub background_alpha: Option<f32>,
+    pub text_color: Option<Color>,
 
     pub hover_color: Option<Color>,
     pub active_color: Option<Color>,
@@ -36,6 +37,7 @@ pub struct TextboxStyle {
 impl TextboxStyle {
     pub fn merge(&mut self, other: &Self) {
         self.background_color = other.background_color.or(self.background_color);
+        self.text_color = other.text_color.or(self.text_color);
         self.background_alpha = other.background_alpha.or(self.background_alpha);
         self.hover_color = other.hover_color.or(self.hover_color);
         self.active_color = other.active_color.or(self.active_color);
@@ -47,6 +49,7 @@ impl TextboxStyle {
     pub fn empty() -> Self {
         Self {
             background_color: None,
+            text_color: None,
             background_alpha: None,
             hover_color: None,
             active_color: None,
@@ -68,5 +71,13 @@ impl TextboxStyle {
         }
 
         self.background_alpha = Some(val);
+    }
+
+    pub fn text_color(&self) -> Option<Color> {
+        self.text_color
+    }
+
+    pub fn set_text_color(&mut self, val: Color) {
+        self.text_color = Some(val);
     }
 }

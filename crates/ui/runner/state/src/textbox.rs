@@ -50,6 +50,7 @@ impl TextboxState {
 #[derive(Clone)]
 pub struct TextboxStyleState {
     background_color_handle: Option<Handle<CpuMaterial>>,
+    text_color_handle: Option<Handle<CpuMaterial>>,
     hover_color_handle: Option<Handle<CpuMaterial>>,
     active_color_handle: Option<Handle<CpuMaterial>>,
     select_color_handle: Option<Handle<CpuMaterial>>,
@@ -59,6 +60,7 @@ impl TextboxStyleState {
     pub fn new() -> Self {
         Self {
             background_color_handle: None,
+            text_color_handle: None,
             hover_color_handle: None,
             active_color_handle: None,
             select_color_handle: None,
@@ -67,6 +69,7 @@ impl TextboxStyleState {
 
     pub fn needs_color_handle(&self) -> bool {
         self.background_color_handle.is_none()
+            || self.text_color_handle.is_none()
             || self.hover_color_handle.is_none()
             || self.active_color_handle.is_none()
             || self.select_color_handle.is_none()
@@ -82,6 +85,14 @@ impl TextboxStyleState {
 
     pub fn set_background_color_handle(&mut self, handle: Handle<CpuMaterial>) {
         self.background_color_handle = Some(handle);
+    }
+
+    pub fn text_color_handle(&self) -> Option<Handle<CpuMaterial>> {
+        self.text_color_handle
+    }
+
+    pub fn set_text_color_handle(&mut self, handle: Handle<CpuMaterial>) {
+        self.text_color_handle = Some(handle);
     }
 
     pub fn set_hover_color_handle(&mut self, handle: Handle<CpuMaterial>) {

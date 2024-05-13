@@ -16,10 +16,6 @@ pub fn write_bits(ui_config: &UiConfig) -> Vec<u8> {
 fn convert_ui_to_actions(ui_config: &UiConfig) -> Vec<UiAction> {
     let mut output = Vec::new();
 
-    // write text color
-    let text_color = ui_config.get_text_color();
-    output.push(UiAction::TextColor(ColorBits::from(text_color)));
-
     // write text icon AssetId
     let text_icon_asset_id = ui_config.get_text_icon_asset_id();
     output.push(UiAction::TextIconAssetId(text_icon_asset_id));
@@ -66,10 +62,6 @@ fn actions_to_bytes(actions: Vec<UiAction>) -> Vec<u8> {
 
     for action in actions {
         match action {
-            UiAction::TextColor(text_color) => {
-                UiActionType::TextColor.ser(&mut bit_writer);
-                text_color.ser(&mut bit_writer);
-            }
             UiAction::TextIconAssetId(asset_id) => {
                 UiActionType::TextIconAssetId.ser(&mut bit_writer);
                 asset_id.as_u32().ser(&mut bit_writer);
@@ -197,6 +189,7 @@ impl From<&TextStyle> for TextStyleBits {
         Self {
             background_color: style.background_color.map(From::from),
             background_alpha: style.background_alpha().map(bits_from_alpha),
+            text_color: style.text_color.map(From::from),
         }
     }
 }
@@ -216,6 +209,7 @@ impl From<&TextboxStyle> for TextboxStyleBits {
         Self {
             background_color: style.background_color.map(From::from),
             background_alpha: style.background_alpha().map(bits_from_alpha),
+            text_color: style.text_color.map(From::from),
             hover_color: style.hover_color.map(From::from),
             active_color: style.active_color.map(From::from),
             select_color: style.select_color.map(From::from),

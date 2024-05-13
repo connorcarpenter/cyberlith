@@ -28,8 +28,6 @@ use ui_builder_config::{NodeId, UiConfig, WidgetKind};
 // Actions
 #[derive(Clone)]
 pub(crate) enum UiAction {
-    // rgb
-    TextColor(ColorBits),
     // assetid
     TextIconAssetId(AssetId),
     // assetid
@@ -44,7 +42,6 @@ pub(crate) enum UiAction {
 
 #[derive(Serde, Clone, PartialEq)]
 pub(crate) enum UiActionType {
-    TextColor,
     TextIconAssetId,
     EyeIconAssetId,
     DefaultButton,
@@ -105,6 +102,7 @@ pub(crate) struct PanelStyleBits {
 pub(crate) struct TextStyleBits {
     background_color: Option<ColorBits>,
     background_alpha: Option<UnsignedInteger<4>>,
+    text_color: Option<ColorBits>,
 }
 
 #[derive(Serde, Clone, PartialEq)]
@@ -118,6 +116,7 @@ pub(crate) struct ButtonStyleBits {
 pub(crate) struct TextboxStyleBits {
     background_color: Option<ColorBits>,
     background_alpha: Option<UnsignedInteger<4>>,
+    text_color: Option<ColorBits>,
     hover_color: Option<ColorBits>,
     active_color: Option<ColorBits>,
     select_color: Option<ColorBits>,

@@ -317,18 +317,16 @@ fn draw_ui_text(
         return;
     };
 
-    let Some(text_color_handle) = ui_state.globals.get_text_color_handle() else {
-        panic!("No text color handle found in globals");
-    };
-
-    asset_manager.draw_text(
-        render_frame,
-        Some(&RenderLayer::UI),
-        text_icon_handle,
-        text_color_handle,
-        transform,
-        &text_ref.text,
-    );
+    if let Some(mat_handle) = text_style_state.text_color_handle() {
+        asset_manager.draw_text(
+            render_frame,
+            Some(&RenderLayer::UI),
+            text_icon_handle,
+            &mat_handle,
+            transform,
+            &text_ref.text,
+        );
+    }
 }
 
 fn draw_ui_button(
@@ -398,95 +396,92 @@ fn draw_ui_textbox(
     };
 
     // draw text
-    let Some(text_color_handle) = ui_state.globals.get_text_color_handle() else {
-        panic!("No text color handle found in globals");
-    };
+    if let Some(text_color_handle) = textbox_style_state.text_color_handle() {
+        let password_masked_string = if textbox_state.password_mask { Some(textbox_state.get_masked_text()) } else { None };
+        let textbox_text = if password_masked_string.is_some() {
+            password_masked_string.as_ref().unwrap()
+        } else {
+            &textbox_state.text
+        };
 
-    let password_masked_string = if textbox_state.password_mask { Some(textbox_state.get_masked_text()) } else { None };
-    let textbox_text = if password_masked_string.is_some() {
-        password_masked_string.as_ref().unwrap()
-    } else {
-        &textbox_state.text
-    };
+        // draw text
+        let mut text_transform = transform.clone();
+        text_transform.translation.x += 8.0;
+        text_transform.scale.x -= 16.0;
 
-    // draw text
-    let mut text_transform = transform.clone();
-    text_transform.translation.x += 8.0;
-    text_transform.scale.x -= 16.0;
+        {
+            text_transform.translation.z =
+                transform.translation.z + (UiRuntimeConfig::Z_STEP_RENDER * 2.0);
+            asset_manager.draw_text(
+                render_frame,
+                Some(&RenderLayer::UI),
+                text_icon_handle,
+                &text_color_handle,
+                &text_transform,
+                &textbox_text[textbox_state.offset_index..textbox_text.len()],
+            );
+        }
 
-    {
-        text_transform.translation.z =
-            transform.translation.z + (UiRuntimeConfig::Z_STEP_RENDER * 2.0);
-        asset_manager.draw_text(
-            render_frame,
-            Some(&RenderLayer::UI),
-            text_icon_handle,
-            text_color_handle,
-            &text_transform,
-            &textbox_text[textbox_state.offset_index..textbox_text.len()],
-        );
-    }
+        if active_state == NodeActiveState::Active {
+            // draw selection box if needed
+            if let Some(select_index) = ui_input_state.select_index {
+                if let Some(mat_handle) = textbox_style_state.select_color_handle() {
+                    text_transform.translation.z =
+                        transform.translation.z + (UiRuntimeConfig::Z_STEP_RENDER * 1.0);
+                    UiRenderer::draw_text_selection(
+                        render_frame,
+                        asset_manager,
+                        text_icon_handle,
+                        ui_state.globals.get_box_mesh_handle().unwrap(),
+                        &mat_handle,
+                        &text_transform,
+                        textbox_text,
+                        textbox_state.offset_index,
+                        select_index,
+                        ui_input_state.carat_index,
+                    );
+                }
+            }
 
-    if active_state == NodeActiveState::Active {
-        // draw selection box if needed
-        if let Some(select_index) = ui_input_state.select_index {
-            if let Some(mat_handle) = textbox_style_state.select_color_handle() {
+            // draw carat if needed
+            if carat_blink {
                 text_transform.translation.z =
-                    transform.translation.z + (UiRuntimeConfig::Z_STEP_RENDER * 1.0);
-                UiRenderer::draw_text_selection(
+                    transform.translation.z + (UiRuntimeConfig::Z_STEP_RENDER * 2.0);
+                UiRenderer::draw_text_carat(
                     render_frame,
                     asset_manager,
                     text_icon_handle,
-                    ui_state.globals.get_box_mesh_handle().unwrap(),
-                    &mat_handle,
+                    &text_color_handle,
                     &text_transform,
                     textbox_text,
                     textbox_state.offset_index,
-                    select_index,
                     ui_input_state.carat_index,
                 );
             }
-        }
 
-        // draw carat if needed
-        if carat_blink {
-            text_transform.translation.z =
-                transform.translation.z + (UiRuntimeConfig::Z_STEP_RENDER * 2.0);
-            UiRenderer::draw_text_carat(
-                render_frame,
-                asset_manager,
-                text_icon_handle,
-                text_color_handle,
-                &text_transform,
-                textbox_text,
-                textbox_state.offset_index,
-                ui_input_state.carat_index,
-            );
-        }
+            let textbox = ui_config.get_node(id).unwrap().widget_textbox_ref().unwrap();
+            if textbox.is_password {
+                let currently_masked = textbox_state.password_mask;
 
-        let textbox = ui_config.get_node(id).unwrap().widget_textbox_ref().unwrap();
-        if textbox.is_password {
+                let mut eye_transform = transform.clone();
 
-            let currently_masked = textbox_state.password_mask;
+                let eye_size = transform.scale.y * 0.5;
+                eye_transform.translation.x += transform.scale.x - (eye_size * 1.2);
+                eye_transform.translation.y += eye_size;
+                eye_transform.translation.z = transform.translation.z + (UiRuntimeConfig::Z_STEP_RENDER * 3.0);
 
-            let mut eye_transform = transform.clone();
+                let eye_size = (transform.scale.y / 100.0) * 0.8 * if textbox_state.eye_hover { 1.2 } else { 1.0 };
+                eye_transform.scale.x = eye_size;
+                eye_transform.scale.y = eye_size * 0.9;
 
-            let eye_size = transform.scale.y * 0.5;
-            eye_transform.translation.x += transform.scale.x - (eye_size * 1.2);
-            eye_transform.translation.y += eye_size;
-            eye_transform.translation.z = transform.translation.z + (UiRuntimeConfig::Z_STEP_RENDER * 3.0);
-
-            let eye_size = (transform.scale.y / 100.0) * 0.8 * if textbox_state.eye_hover { 1.2 } else { 1.0 };
-            eye_transform.scale.x = eye_size;
-            eye_transform.scale.y = eye_size * 0.9;
-
-            asset_manager.draw_icon(
-                render_frame,
-                eye_icon_handle,
-                if currently_masked { 1 } else { 0 },
-                &eye_transform,
-                Some(&RenderLayer::UI),
-            );
+                asset_manager.draw_icon(
+                    render_frame,
+                    eye_icon_handle,
+                    if currently_masked { 1 } else { 0 },
+                    &eye_transform,
+                    Some(&RenderLayer::UI),
+                );
+            }
         }
     }
 }

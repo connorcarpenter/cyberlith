@@ -93,7 +93,6 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
     ui_config
         .set_text_icon_asset_id(&text_icon_asset_id)
         .set_eye_icon_asset_id(&eye_icon_asset_id)
-        .set_text_color(Color::WHITE)
         .root_mut()
         .set_style(window_style)
         .contents(|c| {

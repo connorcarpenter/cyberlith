@@ -16,16 +16,12 @@ impl Into<UiConfig> for UiConfigJson {
 
         // ui_serde -> ui
         let UiConfigJson {
-            text_color,
             text_icon_asset_id,
             eye_icon_asset_id,
             first_input,
             styles,
             nodes,
         } = self;
-
-        // text color
-        ui_config.set_text_color(text_color.into());
 
         // text icon
         let text_icon_asset_id = AssetId::from_str(&text_icon_asset_id).unwrap();
@@ -453,6 +449,7 @@ impl Into<TextStyle> for TextStyleJson {
         TextStyle {
             background_color: self.background_color.map(Into::into),
             background_alpha: self.background_alpha,
+            text_color: self.text_color.map(Into::into),
         }
     }
 }
@@ -472,6 +469,7 @@ impl Into<TextboxStyle> for TextboxStyleJson {
         TextboxStyle {
             background_color: self.background_color.map(Into::into),
             background_alpha: self.background_alpha,
+            text_color: self.text_color.map(Into::into),
             hover_color: self.hover_color.map(Into::into),
             active_color: self.active_color.map(Into::into),
             select_color: self.select_color.map(Into::into),

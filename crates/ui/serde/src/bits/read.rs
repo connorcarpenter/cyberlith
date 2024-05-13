@@ -26,9 +26,6 @@ fn convert_actions_to_ui_config(actions: Vec<UiAction>) -> UiConfig {
 
     for action in actions {
         match action {
-            UiAction::TextColor(text_color) => {
-                ui_config.set_text_color(text_color.into());
-            }
             UiAction::TextIconAssetId(asset_id) => {
                 ui_config.set_text_icon_asset_id(&asset_id);
             }
@@ -87,10 +84,6 @@ fn bytes_to_actions(data: &[u8]) -> Result<Vec<UiAction>, SerdeErr> {
         let action_type = UiActionType::de(bit_reader)?;
 
         match action_type {
-            UiActionType::TextColor => {
-                let text_color = ColorBits::de(bit_reader)?;
-                actions.push(UiAction::TextColor(text_color));
-            }
             UiActionType::TextIconAssetId => {
                 let val = u32::de(bit_reader)?;
                 let asset_id = AssetId::from_u32(val)?;
@@ -556,6 +549,7 @@ impl Into<TextStyle> for TextStyleBits {
         TextStyle {
             background_color: self.background_color.map(Into::into),
             background_alpha: self.background_alpha.map(bits_into_alpha),
+            text_color: self.text_color.map(Into::into),
         }
     }
 }
@@ -575,6 +569,7 @@ impl Into<TextboxStyle> for TextboxStyleBits {
         TextboxStyle {
             background_color: self.background_color.map(Into::into),
             background_alpha: self.background_alpha.map(bits_into_alpha),
+            text_color: self.text_color.map(Into::into),
             hover_color: self.hover_color.map(|val| val.into()),
             active_color: self.active_color.map(|val| val.into()),
             select_color: self.select_color.map(|val| val.into()),

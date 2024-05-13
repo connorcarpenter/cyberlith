@@ -29,7 +29,6 @@ use ui_builder_config::{UiConfig, WidgetKind};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct UiConfigJson {
-    text_color: ColorJson,
     text_icon_asset_id: String,
     eye_icon_asset_id: String,
     first_input: Option<usize>,
@@ -102,6 +101,7 @@ pub(crate) struct PanelStyleJson {
 pub(crate) struct TextStyleJson {
     background_color: Option<ColorJson>,
     background_alpha: Option<f32>,
+    text_color: Option<ColorJson>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -115,6 +115,8 @@ pub(crate) struct ButtonStyleJson {
 pub(crate) struct TextboxStyleJson {
     background_color: Option<ColorJson>,
     background_alpha: Option<f32>,
+    text_color: Option<ColorJson>,
+
     hover_color: Option<ColorJson>,
     active_color: Option<ColorJson>,
     select_color: Option<ColorJson>,

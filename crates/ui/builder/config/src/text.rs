@@ -21,12 +21,14 @@ impl Text {
 pub struct TextStyle {
     pub background_color: Option<Color>,
     pub background_alpha: Option<f32>,
+    pub text_color: Option<Color>,
 }
 
 impl TextStyle {
     pub fn merge(&mut self, other: &Self) {
         self.background_color = other.background_color.or(self.background_color);
         self.background_alpha = other.background_alpha.or(self.background_alpha);
+        self.text_color = other.text_color.or(self.text_color);
     }
 }
 
@@ -35,6 +37,7 @@ impl TextStyle {
         Self {
             background_color: None,
             background_alpha: None,
+            text_color: None,
         }
     }
 
@@ -52,5 +55,13 @@ impl TextStyle {
         }
 
         self.background_alpha = Some(val);
+    }
+
+    pub fn text_color(&self) -> Option<Color> {
+        self.text_color
+    }
+
+    pub fn set_text_color(&mut self, val: Color) {
+        self.text_color = Some(val);
     }
 }

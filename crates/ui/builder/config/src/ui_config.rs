@@ -1,8 +1,6 @@
-use std::collections::HashMap;
-use std::slice::Iter;
+use std::{slice::Iter, collections::HashMap};
 
 use asset_id::AssetId;
-use render_api::base::Color;
 use ui_layout::NodeId;
 
 use crate::{
@@ -16,7 +14,6 @@ pub struct UiConfig {
     styles: Vec<NodeStyle>,
     nodes: Vec<UiNode>,
 
-    text_color: Color,
     first_input: Option<NodeId>,
     text_icon_asset_id_opt: Option<AssetId>,
     eye_icon_asset_id_opt: Option<AssetId>,
@@ -31,7 +28,6 @@ impl UiConfig {
             styles: Vec::new(),
             nodes: Vec::new(),
 
-            text_color: Color::BLACK,
             first_input: None,
             text_icon_asset_id_opt: None,
             eye_icon_asset_id_opt: None,
@@ -52,7 +48,6 @@ impl UiConfig {
     ) -> (
         Vec<NodeStyle>,
         Vec<UiNode>,
-        Color,
         NodeId,
         AssetId,
         AssetId,
@@ -61,7 +56,6 @@ impl UiConfig {
         (
             self.styles,
             self.nodes,
-            self.text_color,
             self.first_input.unwrap(),
             self.text_icon_asset_id_opt.unwrap(),
             self.eye_icon_asset_id_opt.unwrap(),
@@ -154,15 +148,6 @@ impl UiConfig {
 
     pub fn set_eye_icon_asset_id(&mut self, eye_icon_asset_id: &AssetId) -> &mut Self {
         self.eye_icon_asset_id_opt = Some(eye_icon_asset_id.clone());
-        self
-    }
-
-    pub fn get_text_color(&self) -> Color {
-        self.text_color
-    }
-
-    pub fn set_text_color(&mut self, text_color: Color) -> &mut Self {
-        self.text_color = text_color;
         self
     }
 

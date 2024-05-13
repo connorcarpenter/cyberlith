@@ -161,12 +161,6 @@ impl UiState {
             self.globals.box_mesh_handle_opt = Some(mesh_handle);
         }
 
-        // set text color handle
-        {
-            let mat_handle = materials.add(ui_config.get_text_color());
-            self.globals.text_color_handle_opt = Some(mat_handle);
-        }
-
         // set color handles
         for id in self.store.node_ids() {
             let node = ui_config.get_node(&id).unwrap();
@@ -193,6 +187,14 @@ impl UiState {
                             .unwrap_or(Color::BLACK);
                         let background_color_handle = materials.add(background_color);
                         text_style_mut.set_background_color_handle(background_color_handle);
+
+                        // text color
+                        let text_color = ui_config
+                            .node_text_color(&id)
+                            .copied()
+                            .unwrap_or(Color::WHITE);
+                        let text_color_handle = materials.add(text_color);
+                        text_style_mut.set_text_color_handle(text_color_handle);
                     }
                 }
                 WidgetKind::Button => {
@@ -233,6 +235,14 @@ impl UiState {
                             .unwrap_or(Color::BLACK);
                         let background_color_handle = materials.add(background_color);
                         textbox_style_mut.set_background_color_handle(background_color_handle);
+
+                        // text color
+                        let text_color = ui_config
+                            .node_text_color(&id)
+                            .copied()
+                            .unwrap_or(Color::WHITE);
+                        let text_color_handle = materials.add(text_color);
+                        textbox_style_mut.set_text_color_handle(text_color_handle);
 
                         // textbox-specific
                         let textbox_style = ui_config.textbox_style(&id);
@@ -321,19 +331,13 @@ impl UiState {
 
 pub struct StateGlobals {
     box_mesh_handle_opt: Option<Handle<CpuMesh>>,
-    text_color_handle_opt: Option<Handle<CpuMaterial>>,
 }
 
 impl StateGlobals {
     pub(crate) fn new() -> Self {
         Self {
             box_mesh_handle_opt: None,
-            text_color_handle_opt: None,
         }
-    }
-
-    pub fn get_text_color_handle(&self) -> Option<&Handle<CpuMaterial>> {
-        self.text_color_handle_opt.as_ref()
     }
 
     pub fn get_box_mesh_handle(&self) -> Option<&Handle<CpuMesh>> {

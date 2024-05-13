@@ -19,7 +19,6 @@ pub struct UiRuntimeConfig {
     styles: Vec<BaseNodeStyle>,
     nodes: Vec<UiNode>,
 
-    text_color: Color,
     first_input: NodeId,
     text_icon_asset_id: AssetId,
     eye_icon_asset_id: AssetId,
@@ -39,7 +38,6 @@ impl UiRuntimeConfig {
         let (
             styles,
             nodes,
-            text_color,
             first_input,
             text_icon_asset_id,
             eye_icon_asset_id,
@@ -55,16 +53,11 @@ impl UiRuntimeConfig {
         Self {
             styles,
             nodes,
-            text_color,
             first_input,
             id_str_to_node_id_map: node_map,
             text_icon_asset_id,
             eye_icon_asset_id,
         }
-    }
-
-    pub fn get_text_color(&self) -> Color {
-        self.text_color
     }
 
     pub fn get_first_input(&self) -> NodeId {
@@ -186,6 +179,14 @@ impl UiRuntimeConfig {
             WidgetStyle::Button(button_style) => button_style.panel.background_color.as_ref(),
             WidgetStyle::Textbox(textbox_style) => textbox_style.background_color.as_ref(),
             WidgetStyle::Panel(panel_style) => panel_style.background_color.as_ref(),
+        }
+    }
+
+    pub fn node_text_color(&self, id: &NodeId) -> Option<&Color> {
+        match self.widget_style(id)? {
+            WidgetStyle::Text(text_style) => text_style.text_color.as_ref(),
+            WidgetStyle::Textbox(textbox_style) => textbox_style.text_color.as_ref(),
+            _ => None,
         }
     }
 

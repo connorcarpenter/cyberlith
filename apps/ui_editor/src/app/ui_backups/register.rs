@@ -43,7 +43,7 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
             .set_children_valign(Alignment::Start);
     });
     let title_text_style = ui_config.create_text_style(|s| {
-        s.set_background_alpha(0.).set_size_pc(90.0);
+        s.set_background_alpha(0.).set_size_pc(90.0).set_text_color(Color::WHITE);
     });
     let body_container_style = ui_config.create_panel_style(|s| {
         s.set_background_alpha(0.)
@@ -72,7 +72,8 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
         s.set_background_alpha(0.)
             .set_size_vp(7.0)
             .set_margin_left_vp(2.0)
-            .set_self_halign(Alignment::Start);
+            .set_self_halign(Alignment::Start)
+            .set_text_color(Color::WHITE);
     });
     let button_container_style = ui_config.create_panel_style(|s| {
         s.set_background_alpha(0.)
@@ -87,13 +88,15 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
             .set_size_vp(2.0)
             .set_margin_left_vp(2.0)
             .set_self_halign(Alignment::End)
-            .set_self_valign(Alignment::Center);
+            .set_self_valign(Alignment::Center)
+            .set_text_color(Color::RED);
     });
     let base_button_text_style = ui_config.create_text_style(|s| {
         s.set_size_vp(5.0)
             .set_self_halign(Alignment::Center)
             .set_self_valign(Alignment::Center)
-            .set_margin_vp(1.0, 1.0, 1.0, 1.0);
+            .set_margin_vp(1.0, 1.0, 1.0, 1.0)
+            .set_text_color(Color::WHITE);
     });
     let base_button_style = ui_config.create_button_style(|s| {
         s.set_background_color(Color::DARK_GRAY)
@@ -113,7 +116,8 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
         s.set_background_alpha(0.)
             .set_size_vp(5.)
             .set_self_halign(Alignment::Start)
-            .set_margin_left_vp(4.0);
+            .set_margin_left_vp(4.0)
+            .set_text_color(Color::WHITE);
     });
     let base_textbox_style = ui_config.create_textbox_style(|s| {
         s.set_background_color(Color::GRAY)
@@ -129,7 +133,6 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
     ui_config
         .set_text_icon_asset_id(&text_icon_asset_id)
         .set_eye_icon_asset_id(&eye_icon_asset_id)
-        .set_text_color(Color::WHITE)
         .root_mut()
         .set_style(window_style)
         .contents(|c| {

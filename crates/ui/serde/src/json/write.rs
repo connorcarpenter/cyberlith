@@ -14,12 +14,10 @@ impl From<&UiConfig> for UiConfigJson {
     fn from(ui_config: &UiConfig) -> Self {
         let mut style_id_to_index = HashMap::new();
 
-        let text_color = From::from(ui_config.get_text_color());
         let text_icon_asset_id = ui_config.get_text_icon_asset_id().to_string();
         let eye_icon_asset_id = ui_config.get_eye_icon_asset_id().to_string();
 
         let mut me = Self {
-            text_color,
             text_icon_asset_id,
             eye_icon_asset_id,
             first_input: ui_config.get_first_input().map(|id| id.as_usize()),
@@ -113,6 +111,7 @@ impl From<&TextStyle> for TextStyleJson {
         Self {
             background_color: style.background_color.map(From::from),
             background_alpha: style.background_alpha(),
+            text_color: style.text_color.map(From::from),
         }
     }
 }
@@ -132,6 +131,8 @@ impl From<&TextboxStyle> for TextboxStyleJson {
         Self {
             background_color: style.background_color.map(From::from),
             background_alpha: style.background_alpha(),
+            text_color: style.text_color.map(From::from),
+
             hover_color: style.hover_color.map(From::from),
             active_color: style.active_color.map(From::from),
             select_color: style.select_color.map(From::from),
