@@ -87,17 +87,12 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
     });
     let submit_button_style = ui_config.create_button_style(|s| {
         s.set_parent_style(base_button_style)
-            // .set_background_color(Color::DARK_GRAY)
-            // .set_hover_color(Color::RED)
-            // .set_down_color(Color::BLUE)
             .set_self_halign(Alignment::Start)
-            .set_margin_left_vp(4.);
+            .set_margin_left_vp(4.)
+            .set_margin_top_vp(2.);
     });
     let register_button_style = ui_config.create_button_style(|s| {
         s.set_parent_style(base_button_style)
-            // .set_background_color(Color::DARK_GRAY)
-            // .set_hover_color(Color::RED)
-            // .set_down_color(Color::BLUE)
             .set_self_halign(Alignment::End)
             .set_margin_right_vp(1.0);
     });

@@ -85,7 +85,8 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
         s.set_parent_style(base_button_style)
             .set_height_pc(10.0)
             .set_self_halign(Alignment::Start)
-            .set_margin_left_vp(4.);
+            .set_margin_left_vp(4.)
+            .set_margin_top_vp(0.);
     });
     let register_button_style = ui_config.create_button_style(|s| {
         s.set_parent_style(base_button_style)
