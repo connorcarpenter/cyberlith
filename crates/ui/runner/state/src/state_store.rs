@@ -1,16 +1,29 @@
 use std::collections::HashMap;
+use ui_layout::NodeStateStore;
+
 use ui_runner_config::{NodeId, StyleId, UiNode, WidgetKind};
 
-use crate::button::ButtonStyleState;
-use crate::panel::PanelStyleState;
-use crate::text::TextStyleState;
-use crate::textbox::TextboxStyleState;
-use crate::{style_state::StyleState, textbox::TextboxState, UiNodeState};
+use crate::{
+    style_state::StyleState,
+    textbox::TextboxState, UiNodeState,
+    text::TextStyleState,
+    textbox::TextboxStyleState,
+    button::ButtonStyleState,
+    panel::PanelStyleState
+};
+use crate::text::TextState;
 
 pub struct UiStateStore {
     pub nodes: Vec<UiNodeState>,
     pub default_styles: HashMap<WidgetKind, StyleState>,
     pub styles: Vec<StyleState>,
+}
+
+impl NodeStateStore for UiStateStore {
+    fn node_text(&self, id: &NodeId) -> Option<&str> {
+        let text_str = self.get_node(id)?.widget_text_ref()?.text.as_str();
+        Some(text_str)
+    }
 }
 
 impl UiStateStore {
@@ -51,6 +64,10 @@ impl UiStateStore {
         }
 
         output
+    }
+
+    pub fn text_ref(&self, id: &NodeId) -> Option<&TextState> {
+        self.get_node(id)?.widget_text_ref()
     }
 
     pub fn textbox_ref(&self, id: &NodeId) -> Option<&TextboxState> {

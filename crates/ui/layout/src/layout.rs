@@ -3,6 +3,7 @@ use smallvec::SmallVec;
 use logging::warn;
 
 use crate::{percentage_calc, LayoutCache, LayoutType, NodeId, NodeStore, PositionType, Size, SizeUnits, Solid, TextMeasurer, UiVisibilityStore, MarginUnits};
+use crate::store::NodeStateStore;
 
 const DEFAULT_MIN: f32 = -f32::MAX;
 const DEFAULT_MAX: f32 = f32::MAX;
@@ -74,7 +75,8 @@ pub(crate) fn layout(
     mut init_parent_cross: f32,
     cache: &mut LayoutCache,
     store: &dyn NodeStore,
-    state_store: &UiVisibilityStore,
+    state_store: &dyn NodeStateStore,
+    visibility_store: &UiVisibilityStore,
     text_measurer: &dyn TextMeasurer,
 ) -> Size {
 
@@ -171,7 +173,7 @@ pub(crate) fn layout(
 
     let node_children = node
         .children(store)
-        .filter(|child| child.visible(state_store));
+        .filter(|child| child.visible(visibility_store));
 
     let node_children_align = node.children_align(store, layout_type);
 
@@ -182,7 +184,7 @@ pub(crate) fn layout(
     let num_relative_children = node
         .children(store)
         .filter(|child| child.position_type(store) == PositionType::Relative)
-        .filter(|child| child.visible(state_store))
+        .filter(|child| child.visible(visibility_store))
         .count();
 
     // Apply main-axis size constraints for pixels and percentage.
@@ -199,6 +201,7 @@ pub(crate) fn layout(
     apply_text_layout(
         node,
         store,
+        state_store,
         text_measurer,
         parent_layout_type,
         &mut computed_main,
@@ -260,7 +263,7 @@ pub(crate) fn layout(
     // Determine index of first and last relative child nodes.
     let mut iter = node
         .children(store)
-        .filter(|child| child.visible(state_store))
+        .filter(|child| child.visible(visibility_store))
         .filter(|child| child.position_type(store) == PositionType::Relative)
         .enumerate();
 
@@ -269,7 +272,7 @@ pub(crate) fn layout(
 
     let mut node_children = node
         .children(store)
-        .filter(|child| child.visible(state_store))
+        .filter(|child| child.visible(visibility_store))
         .filter(|child| child.position_type(store) == PositionType::Relative)
         .enumerate()
         .peekable();
@@ -343,6 +346,7 @@ pub(crate) fn layout(
                 cache,
                 store,
                 state_store,
+                visibility_store,
                 text_measurer,
             );
 
@@ -584,7 +588,7 @@ pub(crate) fn layout(
     let node_children = node
         .children(store)
         .filter(|child| child.position_type(store) == PositionType::Absolute)
-        .filter(|child| child.visible(state_store));
+        .filter(|child| child.visible(visibility_store));
 
     // Compute space and size of non-flexible self-directed children.
     for child in node_children {
@@ -640,6 +644,7 @@ pub(crate) fn layout(
                 cache,
                 store,
                 state_store,
+                visibility_store,
                 text_measurer,
             );
 
@@ -885,12 +890,16 @@ fn apply_solid_layout(node: &NodeId, store: &dyn NodeStore, main: &mut f32, cros
 fn apply_text_layout(
     node: &NodeId,
     store: &dyn NodeStore,
+    state_store: &dyn NodeStateStore,
     text_measurer: &dyn TextMeasurer,
     parent_layout_type: LayoutType,
     main: &mut f32,
     cross: &mut f32,
 ) {
     if node.is_text(store) {
+
+        let text = node.text(state_store).unwrap();
+
         let width: &mut f32;
         let height: &mut f32;
         match parent_layout_type {
@@ -905,7 +914,7 @@ fn apply_text_layout(
         }
 
         let height: f32 = *height;
-        let computed_width = node.calculate_text_width(store, text_measurer, height);
+        let computed_width = node.calculate_text_width(store, text_measurer, height, text);
         *width = computed_width;
     }
 }

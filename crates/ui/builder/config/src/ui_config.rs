@@ -82,6 +82,11 @@ impl UiConfig {
             Widget::Textbox(textbox) => {
                 id_str_opt = Some(textbox.id_str.clone());
             }
+            Widget::Text(text) => {
+                if let Some(id_str) = &text.id_str {
+                    id_str_opt = Some(id_str.clone());
+                }
+            }
             _ => {}
         }
 

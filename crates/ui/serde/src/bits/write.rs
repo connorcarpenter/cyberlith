@@ -6,7 +6,7 @@ use render_api::base::Color;
 use ui_builder_config::{Button, ButtonStyle, Navigation, NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Textbox, TextboxStyle, UiConfig, UiNode, Widget, WidgetStyle, ValidationType};
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 
-use crate::bits::{AlignmentBits, ButtonBits, ButtonStyleBits, ColorBits, LayoutTypeBits, MarginUnitsBits, NavigationBits, PanelBits, PanelStyleBits, PositionTypeBits, SizeUnitsBits, SolidBits, TextBits, TextStyleBits, TextboxBits, TextboxStyleBits, UiAction, UiActionType, UiNodeBits, UiStyleBits, WidgetBits, WidgetStyleBits, TextboxCharWhitelistBits};
+use crate::bits::{AlignmentBits, ButtonBits, ButtonStyleBits, ColorBits, LayoutTypeBits, MarginUnitsBits, NavigationBits, PanelBits, PanelStyleBits, PositionTypeBits, SizeUnitsBits, SolidBits, TextBits, TextStyleBits, TextboxBits, TextboxStyleBits, UiAction, UiActionType, UiNodeBits, UiStyleBits, WidgetBits, WidgetStyleBits, ValidationBits};
 
 pub fn write_bits(ui_config: &UiConfig) -> Vec<u8> {
     let actions = convert_ui_to_actions(ui_config);
@@ -412,7 +412,8 @@ impl From<&Panel> for PanelBits {
 impl From<&Text> for TextBits {
     fn from(text: &Text) -> Self {
         Self {
-            text: text.inner_text().to_string(),
+            id_str: text.id_str.clone(),
+            init_text: text.init_text.clone(),
         }
     }
 }
@@ -435,12 +436,12 @@ impl TextboxBits {
             id_str: textbox.id_str.clone(),
             navigation: NavigationBits::from_navigation(ui_config, &textbox.navigation),
             is_password: textbox.is_password,
-            char_whitelist: textbox.validation.map(|v| TextboxCharWhitelistBits::from(v)),
+            validation: textbox.validation.map(|v| ValidationBits::from(v)),
         }
     }
 }
 
-impl From<ValidationType> for TextboxCharWhitelistBits {
+impl From<ValidationType> for ValidationBits {
     fn from(value: ValidationType) -> Self {
         match value {
             ValidationType::Username => Self::Alphanumeric,

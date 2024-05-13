@@ -7,6 +7,6 @@ pub use utils::*;
 mod styles;
 
 // Re-export
-pub use ui_builder_config::{StyleId, UiNode, WidgetKind, Widget, Textbox, ValidationType, UsernameValidation, PasswordValidation, EmailValidation};
+pub use ui_builder_config::{StyleId, UiNode, WidgetKind, Widget, Text, Textbox, ValidationType, UsernameValidation, PasswordValidation, EmailValidation};
 pub use ui_layout::{LayoutCache, NodeId, TextMeasurer, UiVisibilityStore};
 pub use ui_serde::SerdeErr;

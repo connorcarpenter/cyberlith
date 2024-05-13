@@ -19,4 +19,4 @@ mod visibility_store;
 pub use visibility_store::*;
 
 mod store;
-pub use store::NodeStore;
+pub use store::{NodeStore, NodeStateStore};

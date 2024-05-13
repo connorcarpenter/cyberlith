@@ -75,8 +75,16 @@ impl<'a> ButtonContentsMut<'a> {
     }
 
     pub fn add_text<'b>(self: &'b mut ButtonContentsMut<'a>, text: &str) -> TextMut<'b> {
+        Self::add_text_impl(self, None, text)
+    }
+
+    pub fn add_text_with_id<'b>(self: &'b mut ButtonContentsMut<'a>, text: &str, id_str: &str) -> TextMut<'b> {
+        Self::add_text_impl(self, Some(id_str), text)
+    }
+
+    fn add_text_impl<'b>(self: &'b mut ButtonContentsMut<'a>, id_str: Option<&str>, text: &str) -> TextMut<'b> {
         // creates a new panel, returning a context for it
-        let new_id = self.ui_config.create_node(Widget::Text(Text::new(text)));
+        let new_id = self.ui_config.create_node(Widget::Text(Text::new(id_str, text)));
 
         // add new text widget to children
         self.get_button_mut().add_child(new_id);

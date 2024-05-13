@@ -209,7 +209,8 @@ pub(crate) struct PanelBits {
 
 #[derive(Serde, Clone, PartialEq)]
 pub(crate) struct TextBits {
-    text: String,
+    id_str: Option<String>,
+    init_text: String,
 }
 
 #[derive(Serde, Clone, PartialEq)]
@@ -224,7 +225,7 @@ pub(crate) struct TextboxBits {
     id_str: String,
     navigation: NavigationBits,
     is_password: bool,
-    char_whitelist: Option<TextboxCharWhitelistBits>,
+    validation: Option<ValidationBits>,
 }
 
 #[derive(Serde, Clone, PartialEq)]
@@ -237,7 +238,7 @@ pub(crate) struct NavigationBits {
 }
 
 #[derive(Serde, Clone, PartialEq, Copy)]
-pub(crate) enum TextboxCharWhitelistBits {
+pub(crate) enum ValidationBits {
     Alphanumeric,
     Password,
     Email,

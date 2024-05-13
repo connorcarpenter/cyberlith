@@ -1,5 +1,19 @@
 use render_api::base::CpuMaterial;
 use storage::Handle;
+use ui_runner_config::Text;
+
+#[derive(Clone)]
+pub struct TextState {
+    pub text: String,
+}
+
+impl TextState {
+    pub fn new(text: &Text) -> Self {
+        Self {
+            text: text.init_text.clone(),
+        }
+    }
+}
 
 #[derive(Clone)]
 pub struct TextStyleState {

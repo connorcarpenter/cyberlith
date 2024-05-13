@@ -4,6 +4,7 @@ use crate::{
     layout::layout, Alignment, LayoutCache, LayoutType, MarginUnits, NodeStore, PositionType, Size,
     SizeUnits, Solid, TextMeasurer, UiVisibilityStore,
 };
+use crate::store::NodeStateStore;
 
 #[derive(Clone, Copy, PartialEq, PartialOrd, Ord, Eq, Hash, Debug, Default)]
 pub struct NodeId(u32);
@@ -33,7 +34,8 @@ impl NodeId {
         &self,
         cache: &mut LayoutCache,
         store: &dyn NodeStore,
-        state_store: &UiVisibilityStore,
+        state_store: &dyn NodeStateStore,
+        visibility_store: &UiVisibilityStore,
         text_measurer: &dyn TextMeasurer,
         viewport_width: f32,
         viewport_height: f32,
@@ -49,6 +51,7 @@ impl NodeId {
             cache,
             store,
             state_store,
+            visibility_store,
             text_measurer,
         )
     }
@@ -167,13 +170,18 @@ impl NodeId {
         store.node_is_text(self)
     }
 
+    pub(crate) fn text<'a>(&self, state_store: &'a dyn NodeStateStore) -> Option<&'a str> {
+        state_store.node_text(self)
+    }
+
     pub(crate) fn calculate_text_width(
         &self,
         store: &dyn NodeStore,
         text_measurer: &dyn TextMeasurer,
         height: f32,
+        text: &str,
     ) -> f32 {
-        store.node_calculate_text_width(self, text_measurer, height)
+        store.node_calculate_text_width(text_measurer, height, text)
     }
 
     // panics if solid() is None but this isn't ..

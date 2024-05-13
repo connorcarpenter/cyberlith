@@ -288,9 +288,6 @@ fn draw_ui_text(
     id: &NodeId,
     transform: &Transform,
 ) {
-    let Some(text_ref) = ui_config.get_node(id).unwrap().widget_text_ref() else {
-        panic!("no text ref for node_id: {:?}", id);
-    };
     let Some(text_style_state) = ui_state.text_style_state(ui_config, id) else {
         panic!("no text style state ref for node_id: {:?}", id);
     };
@@ -318,14 +315,16 @@ fn draw_ui_text(
     };
 
     if let Some(mat_handle) = text_style_state.text_color_handle() {
-        asset_manager.draw_text(
-            render_frame,
-            Some(&RenderLayer::UI),
-            text_icon_handle,
-            &mat_handle,
-            transform,
-            &text_ref.text,
-        );
+        if let Some(text_ref) = ui_state.store.text_ref(id) {
+            asset_manager.draw_text(
+                render_frame,
+                Some(&RenderLayer::UI),
+                text_icon_handle,
+                &mat_handle,
+                transform,
+                &text_ref.text,
+            );
+        }
     }
 }
 

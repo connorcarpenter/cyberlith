@@ -9,7 +9,7 @@ use render_api::base::Color;
 use ui_builder_config::{BaseNodeStyle, Button, ButtonStyle, NodeId, NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Textbox, TextboxStyle, UiConfig, Widget, WidgetKind, WidgetStyle, ValidationType};
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 
-use crate::bits::{AlignmentBits, ButtonBits, ButtonStyleBits, ColorBits, LayoutTypeBits, MarginUnitsBits, PanelBits, PanelStyleBits, PositionTypeBits, SizeUnitsBits, SolidBits, TextStyleBits, TextboxBits, TextboxStyleBits, UiAction, UiActionType, UiNodeBits, UiStyleBits, WidgetBits, WidgetStyleBits, TextboxCharWhitelistBits};
+use crate::bits::{AlignmentBits, ButtonBits, ButtonStyleBits, ColorBits, LayoutTypeBits, MarginUnitsBits, PanelBits, PanelStyleBits, PositionTypeBits, SizeUnitsBits, SolidBits, TextStyleBits, TextboxBits, TextboxStyleBits, UiAction, UiActionType, UiNodeBits, UiStyleBits, WidgetBits, WidgetStyleBits, ValidationBits};
 
 pub fn read_bits(data: &[u8]) -> Result<UiConfig, SerdeErr> {
     let actions = bytes_to_actions(data)?;
@@ -159,27 +159,6 @@ fn convert_nodes_recurse_panel(
                     &child_panel_id,
                 );
             }
-            WidgetKind::Text => {
-                let WidgetBits::Text(child_text_serde) = &child_node_serde.widget else {
-                    panic!("Expected text widget");
-                };
-
-                // creates a new text
-                let child_text_id =
-                    ui_config.create_node(Widget::Text(Text::new(child_text_serde.text.as_str())));
-                let Widget::Panel(panel) = &mut ui_config.node_mut(panel_id).unwrap().widget else {
-                    panic!("Expected panel widget");
-                };
-                panel.add_child(child_text_id);
-
-                // add style
-                if let Some(style_index) = &child_node_serde.style_id {
-                    let style_index = *style_index as usize;
-                    let style_id = *style_index_to_id.get(&style_index).unwrap();
-                    let child_node = ui_config.node_mut(&child_text_id).unwrap();
-                    child_node.set_style_id(style_id);
-                }
-            }
             WidgetKind::Button => {
                 let WidgetBits::Button(child_button_serde) = &child_node_serde.widget else {
                     panic!("Expected button widget");
@@ -214,6 +193,27 @@ fn convert_nodes_recurse_panel(
                     &child_button_id,
                 );
             }
+            WidgetKind::Text => {
+                let WidgetBits::Text(child_text_serde) = &child_node_serde.widget else {
+                    panic!("Expected text widget");
+                };
+
+                // creates a new text
+                let text = Text::new(child_text_serde.id_str.as_ref().map(|v| v.as_str()), &child_text_serde.init_text);
+                let child_text_id = ui_config.create_node(Widget::Text(text));
+                let Widget::Panel(panel) = &mut ui_config.node_mut(panel_id).unwrap().widget else {
+                    panic!("Expected panel widget");
+                };
+                panel.add_child(child_text_id);
+
+                // add style
+                if let Some(style_index) = &child_node_serde.style_id {
+                    let style_index = *style_index as usize;
+                    let style_id = *style_index_to_id.get(&style_index).unwrap();
+                    let child_node = ui_config.node_mut(&child_text_id).unwrap();
+                    child_node.set_style_id(style_id);
+                }
+            }
             WidgetKind::Textbox => {
                 let WidgetBits::Textbox(child_textbox_serde) = &child_node_serde.widget else {
                     panic!("Expected textbox widget");
@@ -224,7 +224,7 @@ fn convert_nodes_recurse_panel(
                     child_textbox_serde.id_str.as_str(),
                 );
                 textbox.is_password = child_textbox_serde.is_password;
-                textbox.validation = child_textbox_serde.char_whitelist.map(|v| v.into());
+                textbox.validation = child_textbox_serde.validation.map(|v| v.into());
                 let child_textbox_id = ui_config.create_node(Widget::Textbox(textbox));
                 let Widget::Panel(panel) = &mut ui_config.node_mut(panel_id).unwrap().widget else {
                     panic!("Expected panel widget");
@@ -346,12 +346,12 @@ fn convert_nodes_recurse_button(
                 };
 
                 // creates a new text
-                let child_text_id =
-                    ui_config.create_node(Widget::Text(Text::new(child_text_serde.text.as_str())));
+                let text = Text::new(child_text_serde.id_str.as_ref().map(|s| s.as_str()), &child_text_serde.init_text);
+                let child_text_id = ui_config.create_node(Widget::Text(text));
                 let Widget::Button(button) = &mut ui_config.node_mut(button_id).unwrap().widget
-                else {
-                    panic!("Expected button widget");
-                };
+                    else {
+                        panic!("Expected button widget");
+                    };
                 button.add_child(child_text_id);
 
                 // add style
@@ -472,7 +472,7 @@ impl Into<LayoutType> for LayoutTypeBits {
     }
 }
 
-impl Into<ValidationType> for TextboxCharWhitelistBits {
+impl Into<ValidationType> for ValidationBits {
     fn into(self) -> ValidationType {
         match self {
             Self::Alphanumeric => ValidationType::Username,

@@ -3,17 +3,13 @@ use std::{collections::HashMap, slice::Iter};
 use asset_id::AssetId;
 use render_api::base::Color;
 use ui_builder_config::{
-    BaseNodeStyle, Button, ButtonStyle, Navigation, Panel, PanelStyle, StyleId, Text, TextStyle,
+    BaseNodeStyle, Button, ButtonStyle, Navigation, Panel, PanelStyle, StyleId, TextStyle,
     TextboxStyle, UiConfig, UiNode, WidgetKind, WidgetStyle,
 };
-use ui_layout::{
-    Alignment, LayoutType, MarginUnits, NodeId, NodeStore, PositionType, SizeUnits, Solid,
-    TextMeasurer,
-};
+use ui_layout::{Alignment, LayoutType, MarginUnits, NodeId, NodeStore, PositionType, SizeUnits, Solid, TextMeasurer};
 use ui_serde::SerdeErr;
 
-use crate::styles::compute_styles;
-use crate::text_measure_raw_size;
+use crate::{text_measure_raw_size, styles::compute_styles};
 
 pub struct UiRuntimeConfig {
     styles: Vec<BaseNodeStyle>,
@@ -106,14 +102,6 @@ impl UiRuntimeConfig {
         let node = self.get_node(id)?;
         if node.widget_kind() == WidgetKind::Button {
             return node.widget_button_ref();
-        }
-        None
-    }
-
-    pub(crate) fn text_ref(&self, id: &NodeId) -> Option<&Text> {
-        let node = self.get_node(id)?;
-        if node.widget_kind() == WidgetKind::Text {
-            return node.widget_text_ref();
         }
         None
     }
@@ -604,12 +592,10 @@ impl NodeStore for UiRuntimeConfig {
 
     fn node_calculate_text_width(
         &self,
-        id: &NodeId,
         text_measurer: &dyn TextMeasurer,
         height: f32,
+        text: &str,
     ) -> f32 {
-        let text_ref = self.text_ref(id).unwrap();
-        let text = text_ref.text.as_str();
         let (raw_width, raw_height) = text_measure_raw_size(text_measurer, text);
         let scale = height / raw_height;
         raw_width * scale

@@ -1,9 +1,10 @@
 use ui_runner_config::Widget;
 
-use crate::textbox::TextboxState;
+use crate::{textbox::TextboxState, text::TextState};
 
 #[derive(Clone)]
 pub enum WidgetState {
+    Text(TextState),
     Textbox(TextboxState),
     // more here later perhaps
     None,
@@ -13,6 +14,7 @@ impl WidgetState {
     pub(crate) fn from_widget(widget: &Widget) -> Self {
         match widget {
             Widget::Textbox(textbox) => Self::Textbox(TextboxState::new(textbox)),
+            Widget::Text(text) => Self::Text(TextState::new(text)),
             _ => Self::None,
         }
     }

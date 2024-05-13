@@ -5,7 +5,7 @@ use render_api::base::Color;
 use ui_builder_config::{Button, ButtonStyle, Navigation, NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Textbox, TextboxStyle, UiConfig, UiNode, Widget, WidgetStyle, ValidationType};
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 
-use super::{AlignmentJson, ColorJson, LayoutTypeJson, MarginUnitsJson, PanelJson, PanelStyleJson, PositionTypeJson, SizeUnitsJson, SolidJson, TextboxCharWhitelistJson, TextJson, TextStyleJson, UiConfigJson, UiNodeJson, UiStyleJson, WidgetJson, WidgetStyleJson};
+use super::{AlignmentJson, ColorJson, LayoutTypeJson, MarginUnitsJson, PanelJson, PanelStyleJson, PositionTypeJson, SizeUnitsJson, SolidJson, ValidationJson, TextJson, TextStyleJson, UiConfigJson, UiNodeJson, UiStyleJson, WidgetJson, WidgetStyleJson};
 use crate::json::{ButtonJson, ButtonStyleJson, NavigationJson, TextboxJson, TextboxStyleJson};
 
 // conversion
@@ -248,7 +248,8 @@ impl From<&Panel> for PanelJson {
 impl From<&Text> for TextJson {
     fn from(text: &Text) -> Self {
         Self {
-            text: text.inner_text().to_string(),
+            id_str: text.id_str.clone(),
+            init_text: text.init_text.clone(),
         }
     }
 }
@@ -271,7 +272,7 @@ impl From<&Textbox> for TextboxJson {
             id_str: textbox.id_str.to_string(),
             navigation: From::from(&textbox.navigation),
             is_password: textbox.is_password,
-            char_whitelist: textbox.validation.map(|v| From::from(&v)),
+            validation: textbox.validation.map(|v| From::from(&v)),
         }
     }
 }
@@ -288,7 +289,7 @@ impl From<&Navigation> for NavigationJson {
     }
 }
 
-impl From<&ValidationType> for TextboxCharWhitelistJson {
+impl From<&ValidationType> for ValidationJson {
     fn from(v: &ValidationType) -> Self {
         match v {
             ValidationType::Username => Self::Alphanumeric,

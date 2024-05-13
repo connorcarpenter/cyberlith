@@ -2,6 +2,10 @@ use crate::{
     Alignment, LayoutType, MarginUnits, NodeId, PositionType, SizeUnits, Solid, TextMeasurer,
 };
 
+pub trait NodeStateStore {
+    fn node_text(&self, id: &NodeId) -> Option<&str>;
+}
+
 pub trait NodeStore {
     fn node_children(&self, id: &NodeId) -> std::slice::Iter<NodeId>;
     fn node_layout_type(&self, id: &NodeId) -> LayoutType;
@@ -27,9 +31,9 @@ pub trait NodeStore {
     fn node_is_text(&self, id: &NodeId) -> bool;
     fn node_calculate_text_width(
         &self,
-        id: &NodeId,
         text_measurer: &dyn TextMeasurer,
         height: f32,
+        text: &str,
     ) -> f32;
     fn node_aspect_ratio(&self, id: &NodeId) -> Option<f32>;
     fn node_self_halign(&self, id: &NodeId) -> Alignment;

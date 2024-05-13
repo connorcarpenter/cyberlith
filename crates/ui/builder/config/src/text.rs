@@ -2,18 +2,16 @@ use render_api::base::Color;
 
 #[derive(Clone)]
 pub struct Text {
-    pub text: String,
+    pub id_str: Option<String>,
+    pub init_text: String,
 }
 
 impl Text {
-    pub fn new(text: &str) -> Self {
+    pub fn new(id_str: Option<&str>, init_text: &str) -> Self {
         Self {
-            text: text.to_string(),
+            id_str: id_str.map(|s| s.to_string()),
+            init_text: init_text.to_string(),
         }
-    }
-
-    pub fn inner_text(&self) -> &str {
-        &self.text
     }
 }
 

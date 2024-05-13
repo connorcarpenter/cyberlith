@@ -217,7 +217,8 @@ pub(crate) struct PanelJson {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub(crate) struct TextJson {
-    text: String,
+    id_str: Option<String>,
+    init_text: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -232,7 +233,7 @@ pub(crate) struct TextboxJson {
     id_str: String,
     navigation: NavigationJson,
     is_password: bool,
-    char_whitelist: Option<TextboxCharWhitelistJson>
+    validation: Option<ValidationJson>
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -245,7 +246,7 @@ pub(crate) struct NavigationJson {
 }
 
 #[derive(Serialize, Deserialize, Clone, Copy, Debug)]
-pub(crate) enum TextboxCharWhitelistJson {
+pub(crate) enum ValidationJson {
     Alphanumeric,
     Password,
     Email,

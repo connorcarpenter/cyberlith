@@ -307,12 +307,14 @@ impl UiState {
         let last_viewport_height: f32 = viewport.height as f32;
 
         let cache_mut = &mut self.cache;
+        let state_store_ref = &self.store;
         let visibility_store_ref = &self.visibility_store;
 
         // this calculates all the rects in cache_mut
         UiRuntimeConfig::ROOT_NODE_ID.layout(
             cache_mut,
             ui_config,
+            state_store_ref,
             visibility_store_ref,
             text_measurer,
             last_viewport_width,

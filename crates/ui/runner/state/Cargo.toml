@@ -12,6 +12,7 @@ instant = { path = "../../../instant" }
 math = { path = "../../../math" }
 logging = { path = "../../../logging" }
 ui_runner_config = { path = "../config" }
+ui_layout = { path = "../../layout" }
 
 bevy_app = { version = "0.13", default-features = false }
 bevy_ecs = { version = "0.13", default-features = false }
