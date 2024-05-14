@@ -9,7 +9,7 @@ use game_engine::{
 
 use crate::{
     resources::{
-        Global, LoginButtonClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent,
+        Global, LoginButtonClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent, TextboxClickedEvent
     },
     systems::backend::backend_send_register_request,
     ui::go_to_ui
@@ -22,6 +22,7 @@ pub(crate) fn handle_events(
     login_btn_rdr: &mut EventReader<LoginButtonClickedEvent>,
     register_btn_rdr: &mut EventReader<RegisterButtonClickedEvent>,
     submit_btn_rdr: &mut EventReader<SubmitButtonClickedEvent>,
+    textbox_click_rdr: &mut EventReader<TextboxClickedEvent>,
     should_rumble: &mut bool,
 ) {
     // in Register Ui
@@ -33,8 +34,6 @@ pub(crate) fn handle_events(
     }
     if login_clicked {
         info!("login button clicked!");
-
-        // TODO: validate!
 
         go_to_ui(ui_manager, global, &global.ui_login_handle.unwrap());
         *should_rumble = true;
@@ -48,11 +47,15 @@ pub(crate) fn handle_events(
     if submit_clicked {
         info!("submit button clicked!");
 
+        let register_ui_handle = global.ui_register_handle.unwrap();
+
         // rumble
         *should_rumble = true;
 
+        // clear error output
+        ui_manager.set_text(&register_ui_handle, "error_output_text", "");
+
         // get data from textboxes
-        let register_ui_handle = global.ui_register_handle.unwrap();
         let username = ui_manager
             .get_textbox_text(&register_ui_handle, "username_textbox")
             .unwrap_or("".to_string());
@@ -129,6 +132,18 @@ pub(crate) fn handle_events(
 
         // send backend request
         backend_send_register_request(global, http_client, ui_manager, &username, &email, &password);
+    }
+
+    // Textbox Click
+    let mut textbox_clicked = false;
+    for _ in textbox_click_rdr.read() {
+        textbox_clicked = true;
+    }
+    if textbox_clicked {
+        info!("textbox clicked!");
+
+        let register_ui_handle = global.ui_register_handle.unwrap();
+        ui_manager.set_text(&register_ui_handle, "error_output_text", "");
     }
 
     // drain others

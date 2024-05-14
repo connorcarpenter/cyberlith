@@ -8,3 +8,6 @@ pub struct RegisterButtonClickedEvent;
 
 #[derive(Event, Default)]
 pub struct SubmitButtonClickedEvent;
+
+#[derive(Event, Default)]
+pub struct TextboxClickedEvent;

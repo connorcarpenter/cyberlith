@@ -232,6 +232,7 @@ pub fn ui_receive_input(
                             }
                             WidgetKind::Textbox => {
                                 ui_input_state.set_active_node(Some(hover_node));
+                                ui_input_state.emit_node_event(&hover_node, UiNodeEvent::Clicked);
                                 ui_input_state.reset_interact_timer();
                                 let (_, node_height, node_x, _, _) =
                                     ui_state.cache.bounds(&hover_node).unwrap();

@@ -6,7 +6,7 @@ use game_engine::{
     ui::UiManager,
 };
 
-use crate::{ui::go_to_ui, resources::{Global, LoginButtonClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent}};
+use crate::{ui::go_to_ui, resources::{Global, TextboxClickedEvent, LoginButtonClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent}};
 
 pub(crate) fn handle_events(
     global: &mut Global,
@@ -14,6 +14,7 @@ pub(crate) fn handle_events(
     login_btn_rdr: &mut EventReader<LoginButtonClickedEvent>,
     register_btn_rdr: &mut EventReader<RegisterButtonClickedEvent>,
     submit_btn_rdr: &mut EventReader<SubmitButtonClickedEvent>,
+    textbox_click_rdr: &mut EventReader<TextboxClickedEvent>,
     should_rumble: &mut bool,
 ) {
     // in Register Finish Ui
@@ -35,6 +36,9 @@ pub(crate) fn handle_events(
         // ignore
     }
     for _ in register_btn_rdr.read() {
+        // ignore
+    }
+    for _ in textbox_click_rdr.read() {
         // ignore
     }
 }

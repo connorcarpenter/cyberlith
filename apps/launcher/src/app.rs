@@ -12,7 +12,7 @@ use game_engine::http::CookieStore;
 use crate::{
     ui::{ui_handle_events, ui_setup},
     resources::{
-        Global, LoginButtonClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent,
+        TextboxClickedEvent, Global, LoginButtonClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent,
     },
     systems::{backend, draw, resize, scene},
 };
@@ -51,6 +51,7 @@ impl Plugin for LauncherApp {
             .add_event::<LoginButtonClickedEvent>()
             .add_event::<RegisterButtonClickedEvent>()
             .add_event::<SubmitButtonClickedEvent>()
+            .add_event::<TextboxClickedEvent>()
             // ui systems
             .add_systems(Startup, ui_setup)
             .add_systems(Update, ui_handle_events)

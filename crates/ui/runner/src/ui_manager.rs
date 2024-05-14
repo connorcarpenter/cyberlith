@@ -251,7 +251,9 @@ impl UiManager {
                 for (id_str, handler) in queued_handlers {
                     let asset_id = handle.asset_id();
                     let ui_runtime = self.ui_runtimes.get(&handle).unwrap();
-                    let node_id = ui_runtime.get_node_id_by_id_str(&id_str).unwrap();
+                    let Some(node_id) = ui_runtime.get_node_id_by_id_str(&id_str) else {
+                        panic!("no node_id for id_str: {:?}", id_str);
+                    };
                     self.ui_node_event_handlers
                         .insert((asset_id, node_id), handler);
                 }

@@ -9,7 +9,7 @@ use game_engine::{
 
 use crate::{
     resources::{
-        Global, LoginButtonClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent,
+        Global, TextboxClickedEvent, LoginButtonClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent,
     },
     systems::backend::backend_send_login_request, ui::go_to_ui
 };
@@ -21,6 +21,7 @@ pub(crate) fn handle_events(
     login_btn_rdr: &mut EventReader<LoginButtonClickedEvent>,
     register_btn_rdr: &mut EventReader<RegisterButtonClickedEvent>,
     submit_btn_rdr: &mut EventReader<SubmitButtonClickedEvent>,
+    textbox_click_rdr: &mut EventReader<TextboxClickedEvent>,
     should_rumble: &mut bool,
 ) {
     // in Login Ui
@@ -44,8 +45,12 @@ pub(crate) fn handle_events(
     if submit_clicked {
         info!("submit button clicked!");
 
-        // get data from textboxes
         let login_ui_handle = global.ui_login_handle.unwrap();
+
+        // clear error output
+        ui_manager.set_text(&login_ui_handle, "error_output_text", "");
+
+        // get data from textboxes
         let user_handle = ui_manager
             .get_textbox_text(&login_ui_handle, "username_textbox")
             .unwrap_or("".to_string());
@@ -78,6 +83,18 @@ pub(crate) fn handle_events(
         backend_send_login_request(global, http_client, ui_manager, &user_handle, &password);
 
         *should_rumble = true;
+    }
+
+    // Textbox Click
+    let mut textbox_clicked = false;
+    for _ in textbox_click_rdr.read() {
+        textbox_clicked = true;
+    }
+    if textbox_clicked {
+        info!("textbox clicked!");
+
+        let login_ui_handle = global.ui_login_handle.unwrap();
+        ui_manager.set_text(&login_ui_handle, "error_output_text", "");
     }
 
     // drain others

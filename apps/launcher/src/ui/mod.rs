@@ -18,9 +18,7 @@ use game_engine::{
     ui::{UiHandle, UiManager},
 };
 
-use crate::resources::{
-        Global, LoginButtonClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent,
-    };
+use crate::resources::{Global, LoginButtonClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent, TextboxClickedEvent};
 
 pub fn ui_setup(
     mut global: ResMut<Global>,
@@ -55,12 +53,18 @@ pub fn ui_setup(
     global.ui_login_handle = Some(login_ui_handle);
     ui_manager.register_ui_event::<RegisterButtonClickedEvent>(&login_ui_handle, "register_button");
     ui_manager.register_ui_event::<SubmitButtonClickedEvent>(&login_ui_handle, "submit_button");
+    ui_manager.register_ui_event::<TextboxClickedEvent>(&login_ui_handle, "username_textbox");
+    ui_manager.register_ui_event::<TextboxClickedEvent>(&login_ui_handle, "password_textbox");
 
     // register
     let register_ui_handle = UiHandle::new(AssetId::from_str("rckneg").unwrap());
     global.ui_register_handle = Some(register_ui_handle);
     ui_manager.register_ui_event::<LoginButtonClickedEvent>(&register_ui_handle, "login_button");
     ui_manager.register_ui_event::<SubmitButtonClickedEvent>(&register_ui_handle, "submit_button");
+    ui_manager.register_ui_event::<TextboxClickedEvent>(&register_ui_handle, "username_textbox");
+    ui_manager.register_ui_event::<TextboxClickedEvent>(&register_ui_handle, "email_textbox");
+    ui_manager.register_ui_event::<TextboxClickedEvent>(&register_ui_handle, "password_textbox");
+    ui_manager.register_ui_event::<TextboxClickedEvent>(&register_ui_handle, "confirm_password_textbox");
 
     // register_finish
     let register_finish_ui_handle = UiHandle::new(AssetId::from_str("fsfn5m").unwrap());
@@ -81,6 +85,7 @@ pub fn ui_handle_events(
     mut login_btn_rdr: EventReader<LoginButtonClickedEvent>,
     mut register_btn_rdr: EventReader<RegisterButtonClickedEvent>,
     mut submit_btn_rdr: EventReader<SubmitButtonClickedEvent>,
+    mut textbox_click_rdr: EventReader<TextboxClickedEvent>,
 ) {
     let current_ui_handle = ui_manager.active_ui();
 
@@ -93,6 +98,7 @@ pub fn ui_handle_events(
             &mut login_btn_rdr,
             &mut register_btn_rdr,
             &mut submit_btn_rdr,
+            &mut textbox_click_rdr,
             &mut should_rumble,
         );
     } else if current_ui_handle == global.ui_login_handle {
@@ -103,6 +109,7 @@ pub fn ui_handle_events(
             &mut login_btn_rdr,
             &mut register_btn_rdr,
             &mut submit_btn_rdr,
+            &mut textbox_click_rdr,
             &mut should_rumble,
         );
     } else if current_ui_handle == global.ui_register_handle {
@@ -113,6 +120,7 @@ pub fn ui_handle_events(
             &mut login_btn_rdr,
             &mut register_btn_rdr,
             &mut submit_btn_rdr,
+            &mut textbox_click_rdr,
             &mut should_rumble,
         );
     } else if current_ui_handle == global.ui_register_finish_handle {
@@ -122,6 +130,7 @@ pub fn ui_handle_events(
             &mut login_btn_rdr,
             &mut register_btn_rdr,
             &mut submit_btn_rdr,
+            &mut textbox_click_rdr,
             &mut should_rumble,
         );
     }
