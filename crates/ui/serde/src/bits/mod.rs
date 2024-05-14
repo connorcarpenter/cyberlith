@@ -4,6 +4,8 @@ cfg_if! {
     if #[cfg(feature = "read_bits")] {
         mod read;
 
+        use naia_serde::SerdeErr;
+
         pub fn read_ui_bits(data: &[u8]) -> Result<UiConfig, SerdeErr> {
             read::read_bits(data)
         }
@@ -20,7 +22,7 @@ cfg_if! {
     } else {}
 }
 
-use naia_serde::{SerdeErr, SerdeInternal as Serde, UnsignedInteger, UnsignedVariableInteger};
+use naia_serde::{SerdeInternal as Serde, UnsignedInteger, UnsignedVariableInteger};
 
 use asset_id::AssetId;
 use ui_builder_config::{NodeId, UiConfig, WidgetKind};

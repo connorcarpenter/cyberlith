@@ -12,6 +12,7 @@ use crate::{
         Global, LoginButtonClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent,
     },
     systems::backend::backend_send_register_request,
+    ui::go_to_ui
 };
 
 pub(crate) fn handle_events(
@@ -35,7 +36,7 @@ pub(crate) fn handle_events(
 
         // TODO: validate!
 
-        ui_manager.enable_ui(&global.ui_login_handle.unwrap());
+        go_to_ui(ui_manager, global, &global.ui_login_handle.unwrap());
         *should_rumble = true;
     }
 

@@ -6,7 +6,7 @@ use game_engine::{
     ui::UiManager,
 };
 
-use crate::resources::{Global, LoginButtonClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent};
+use crate::{ui::go_to_ui, resources::{Global, LoginButtonClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent}};
 
 pub(crate) fn handle_events(
     ui_manager: &mut UiManager,
@@ -25,7 +25,7 @@ pub(crate) fn handle_events(
     }
     if login_clicked {
         info!("login button clicked!");
-        ui_manager.enable_ui(&global.ui_login_handle.unwrap());
+        go_to_ui(ui_manager, global, &global.ui_login_handle.unwrap());
         *should_rumble = true;
     }
 
@@ -36,7 +36,7 @@ pub(crate) fn handle_events(
     }
     if register_clicked {
         info!("register button clicked!");
-        ui_manager.enable_ui(&global.ui_register_handle.unwrap());
+        go_to_ui(ui_manager, global, &global.ui_register_handle.unwrap());
         *should_rumble = true;
     }
 

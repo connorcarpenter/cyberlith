@@ -68,7 +68,7 @@ pub fn ui_setup(
     ui_manager.register_ui_event::<SubmitButtonClickedEvent>(&register_finish_ui_handle, "submit_button");
 
     // other config
-    ui_manager.enable_ui(&start_ui_handle);
+    go_to_ui(&mut ui_manager, &global, &start_ui_handle);
 }
 
 pub fn ui_handle_events(
@@ -136,4 +136,59 @@ pub fn ui_handle_events(
             );
         }
     }
+}
+
+pub(crate) fn go_to_ui(
+    ui_manager: &mut UiManager,
+    global: &Global,
+    ui_handle: &UiHandle,
+) {
+    let current_ui_handle = ui_manager.active_ui();
+
+    // cleanup ui that we are disabling
+    if current_ui_handle == global.ui_start_handle {
+
+        // nothing to clean up
+
+    } else if current_ui_handle == global.ui_login_handle {
+
+        let ui_handle = global.ui_login_handle.unwrap();
+
+        // clear textboxes
+        ui_manager.set_text(&ui_handle, "username_textbox", "");
+        ui_manager.set_text(&ui_handle, "password_textbox", "");
+        ui_manager.set_textbox_password_eye_visible(&ui_handle, "password_textbox", false);
+
+        // clear error output
+        ui_manager.set_text(&ui_handle, "error_output_text", "");
+
+        // clear spinner
+        ui_manager.set_node_visible(&ui_handle, "spinner", false);
+
+    } else if current_ui_handle == global.ui_register_handle {
+
+        let ui_handle = global.ui_register_handle.unwrap();
+
+        // clear textboxes
+        ui_manager.set_text(&ui_handle, "username_textbox", "");
+        ui_manager.set_text(&ui_handle, "email_textbox", "");
+        ui_manager.set_text(&ui_handle, "password_textbox", "");
+        ui_manager.set_textbox_password_eye_visible(&ui_handle, "password_textbox", false);
+        ui_manager.set_text(&ui_handle, "confirm_password_textbox", "");
+        ui_manager.set_textbox_password_eye_visible(&ui_handle, "confirm_password_textbox", false);
+
+        // clear error output
+        ui_manager.set_text(&ui_handle, "error_output_text", "");
+
+        // clear spinner
+        ui_manager.set_node_visible(&ui_handle, "spinner", false);
+
+    } else if current_ui_handle == global.ui_register_finish_handle {
+
+        // nothing to clean up
+
+    }
+
+    // enable given ui
+    ui_manager.enable_ui(ui_handle);
 }

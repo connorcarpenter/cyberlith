@@ -13,9 +13,8 @@ use ui_runner_config::{
 use crate::{
     button::ButtonStyleState, panel::PanelStyleState, state_store::UiStateStore,
     style_state::StyleState, text::TextStyleState, textbox::TextboxState,
-    textbox::TextboxStyleState, UiNodeState,
+    textbox::TextboxStyleState, UiNodeState, spinner::SpinnerStyleState, widget::WidgetState
 };
-use crate::spinner::SpinnerStyleState;
 
 pub struct UiState {
     pub globals: StateGlobals,
@@ -106,12 +105,32 @@ impl UiState {
 
     pub fn set_text(&mut self, node_id: &NodeId, val: &str) {
         let Some(node) = self.store.get_node_mut(node_id) else {
+            warn!("set_text: node not found for node_id: {:?}", node_id);
             return;
         };
-        let Some(text) = node.widget_text_mut() else {
+        match &mut node.widget {
+            WidgetState::Text(text) => {
+                text.text = val.to_string();
+            }
+            WidgetState::Textbox(textbox) => {
+                textbox.text = val.to_string();
+            }
+            _ => {
+                warn!("set_text: node is not a text widget for node_id: {:?}", node_id);
+            }
+        }
+    }
+
+    pub fn set_textbox_password_eye_visible(&mut self, node_id: &NodeId, val: bool) {
+        let Some(node) = self.store.get_node_mut(node_id) else {
+            logging::warn!("set_textbox_password_eye_visible: node not found for node_id: {:?}", node_id);
             return;
         };
-        text.text = val.to_string();
+        let Some(textbox) = node.widget_textbox_mut() else {
+            return;
+        };
+        // password eye visible == password mask off
+        textbox.password_mask = !val;
     }
 
     pub fn set_node_visible(&mut self, node_id: &NodeId, val: bool) {

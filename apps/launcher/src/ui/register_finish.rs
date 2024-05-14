@@ -6,7 +6,7 @@ use game_engine::{
     ui::UiManager,
 };
 
-use crate::resources::{Global, LoginButtonClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent};
+use crate::{ui::go_to_ui, resources::{Global, LoginButtonClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent}};
 
 pub(crate) fn handle_events(
     global: &mut Global,
@@ -26,7 +26,7 @@ pub(crate) fn handle_events(
     if submit_clicked {
         info!("home button clicked!");
         // go to start ui
-        ui_manager.enable_ui(&global.ui_start_handle.unwrap());
+        go_to_ui(ui_manager, global, &global.ui_start_handle.unwrap());
         *should_rumble = true;
     }
 

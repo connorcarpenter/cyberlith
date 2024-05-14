@@ -36,10 +36,6 @@ impl UiRuntimeConfig {
             eye_icon_asset_id,
             node_map
         ) = ui_config.decompose();
-        let node_map = node_map
-            .into_iter()
-            .map(|(k, v)| (k.to_string(), v.into()))
-            .collect();
 
         let styles = compute_styles(styles);
 

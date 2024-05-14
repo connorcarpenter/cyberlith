@@ -188,7 +188,7 @@ fn draw_ui_node(
     let Some((width, height, child_offset_x, child_offset_y, child_offset_z)) =
         ui_state.cache.bounds(id)
     else {
-        warn!("no bounds for id 1: {:?}", id);
+        // warn!("no bounds for id 1: {:?}", id);
         return;
     };
 

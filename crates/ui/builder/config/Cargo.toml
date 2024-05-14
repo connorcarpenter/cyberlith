@@ -11,3 +11,4 @@ asset_id = { path = "../../../asset/id" }
 render_api = { path = "../../../render/render_api" }
 ui_layout = { path = "../../layout" }
 validation = { path = "../../../validation" }
+logging = { path = "../../../logging" }

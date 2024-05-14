@@ -1,7 +1,6 @@
 use ui_runner_config::UiNode;
 
-use crate::{textbox::TextboxState, widget::WidgetState};
-use crate::text::TextState;
+use crate::{text::TextState, textbox::TextboxState, widget::WidgetState};
 
 #[derive(Clone)]
 pub struct UiNodeState {

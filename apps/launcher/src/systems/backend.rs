@@ -10,7 +10,7 @@ use game_engine::{
 
 use gateway_http_proto::{UserLoginRequest, UserRegisterRequest};
 
-use crate::resources::Global;
+use crate::{resources::Global, ui::go_to_ui};
 
 pub(crate) fn backend_send_login_request(
     global: &mut Global,
@@ -109,9 +109,7 @@ fn user_login_response_process(
             }
         }
 
-        if global.user_register_response_key_opt.is_none() {
-            ui_manager.set_node_visible(&login_ui_handle, "spinner", false);
-        }
+        clear_spinners_if_needed(global, ui_manager);
     }
 }
 
@@ -146,9 +144,16 @@ fn user_register_response_process(
                 ui_manager.set_text(&register_ui_handle, "error_output_text", "Oops! Something went wrong on our end. Please try again later.");
             }
         }
-        if global.user_login_response_key_opt.is_none() {
-            ui_manager.set_node_visible(&register_ui_handle, "spinner", false);
-        }
-        ui_manager.enable_ui(&global.ui_register_finish_handle.unwrap());
+
+        clear_spinners_if_needed(global, ui_manager);
+
+        go_to_ui(ui_manager, global, &global.ui_register_finish_handle.unwrap());
+    }
+}
+
+fn clear_spinners_if_needed(global: &Global, ui_manager: &mut UiManager) {
+    if global.user_login_response_key_opt.is_none() & global.user_register_response_key_opt.is_none() {
+        ui_manager.set_node_visible(&global.ui_register_handle.unwrap(), "spinner", false);
+        ui_manager.set_node_visible(&global.ui_login_handle.unwrap(), "spinner", false);
     }
 }

@@ -1,6 +1,7 @@
 use std::{slice::Iter, collections::HashMap};
 
 use asset_id::AssetId;
+use logging::info;
 use ui_layout::NodeId;
 
 use crate::{
@@ -97,6 +98,7 @@ impl UiConfig {
         let node_id = self.insert_node(ui_node);
 
         if let Some(id_str) = id_str_opt {
+            info!("inserting id_str: {} for node_id: {:?}", id_str, node_id);
             self.id_str_to_node_id_map.insert(id_str, node_id);
         }
 

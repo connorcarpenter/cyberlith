@@ -11,7 +11,7 @@ use crate::{
     resources::{
         Global, LoginButtonClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent,
     },
-    systems::backend::backend_send_login_request,
+    systems::backend::backend_send_login_request, ui::go_to_ui
 };
 
 pub(crate) fn handle_events(
@@ -32,7 +32,7 @@ pub(crate) fn handle_events(
     }
     if register_clicked {
         info!("register button clicked!");
-        ui_manager.enable_ui(&global.ui_register_handle.unwrap());
+        go_to_ui(ui_manager, global, &global.ui_register_handle.unwrap());
         *should_rumble = true;
     }
 
