@@ -2,12 +2,14 @@
 use bevy_ecs::event::{EventReader, EventWriter};
 
 use game_engine::{
-    logging::info,
-    ui::{UiManager, UiHandle},
     asset::{AssetId, embedded_asset_event, EmbeddedAssetEvent},
+    ui::{UiManager, UiHandle},
+    logging::info,
 };
 
-use crate::{ui::{go_to_ui, UiKey}, resources::{Global, SubmitButtonClickedEvent}};
+use crate::{resources::{
+    Global, SubmitButtonClickedEvent,
+}, ui::{go_to_ui, UiKey}};
 
 pub(crate) fn setup(
     global: &mut Global,
@@ -15,9 +17,9 @@ pub(crate) fn setup(
     embedded_asset_events: &mut EventWriter<EmbeddedAssetEvent>,
     ui_key: UiKey,
 ) {
-    embedded_asset_events.send(embedded_asset_event!("../embedded/fsfn5m"));
+    embedded_asset_events.send(embedded_asset_event!("../embedded/bqgxb1"));
 
-    let ui_handle = UiHandle::new(AssetId::from_str("fsfn5m").unwrap());
+    let ui_handle = UiHandle::new(AssetId::from_str("bqgxb1").unwrap());
     global.insert_ui(ui_key, ui_handle);
     ui_manager.register_ui_event::<SubmitButtonClickedEvent>(&ui_handle, "submit_button");
 }

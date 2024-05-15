@@ -6,13 +6,13 @@ use game_engine::{
     kernel::KernelApp,
     render::{resources::WindowSettings, Draw},
     EnginePlugin,
+    http::CookieStore,
 };
-use game_engine::http::CookieStore;
 
 use crate::{
     ui::{ui_handle_events, ui_setup},
     resources::{
-        TextboxClickedEvent, Global, LoginButtonClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent,
+        BackButtonClickedEvent, TextboxClickedEvent, Global, LoginButtonClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent,
     },
     systems::{backend, draw, resize, scene},
 };
@@ -50,6 +50,7 @@ impl Plugin for LauncherApp {
             // events
             .add_event::<LoginButtonClickedEvent>()
             .add_event::<RegisterButtonClickedEvent>()
+            .add_event::<BackButtonClickedEvent>()
             .add_event::<SubmitButtonClickedEvent>()
             .add_event::<TextboxClickedEvent>()
             // ui systems

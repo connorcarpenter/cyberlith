@@ -7,6 +7,9 @@ pub struct LoginButtonClickedEvent;
 pub struct RegisterButtonClickedEvent;
 
 #[derive(Event, Default)]
+pub struct BackButtonClickedEvent;
+
+#[derive(Event, Default)]
 pub struct SubmitButtonClickedEvent;
 
 #[derive(Event, Default)]

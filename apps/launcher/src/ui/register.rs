@@ -1,26 +1,44 @@
 
-use bevy_ecs::event::EventReader;
+use bevy_ecs::event::{EventReader, EventWriter};
 
 use game_engine::{
     http::HttpClient,
     logging::info,
-    ui::UiManager,
+    ui::{UiManager, UiHandle},
+    asset::{AssetId, embedded_asset_event, EmbeddedAssetEvent},
 };
 
 use crate::{
     resources::{
-        Global, LoginButtonClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent, TextboxClickedEvent
+        Global, LoginButtonClickedEvent, SubmitButtonClickedEvent, TextboxClickedEvent
     },
     systems::backend::backend_send_register_request,
-    ui::go_to_ui
+    ui::{go_to_ui, UiKey}
 };
+
+pub(crate) fn setup(
+    global: &mut Global,
+    ui_manager: &mut UiManager,
+    embedded_asset_events: &mut EventWriter<EmbeddedAssetEvent>,
+    ui_key: UiKey,
+) {
+    embedded_asset_events.send(embedded_asset_event!("../embedded/rckneg"));
+
+    let ui_handle = UiHandle::new(AssetId::from_str("rckneg").unwrap());
+    global.insert_ui(ui_key, ui_handle);
+    ui_manager.register_ui_event::<LoginButtonClickedEvent>(&ui_handle, "login_button");
+    ui_manager.register_ui_event::<SubmitButtonClickedEvent>(&ui_handle, "submit_button");
+    ui_manager.register_ui_event::<TextboxClickedEvent>(&ui_handle, "username_textbox");
+    ui_manager.register_ui_event::<TextboxClickedEvent>(&ui_handle, "email_textbox");
+    ui_manager.register_ui_event::<TextboxClickedEvent>(&ui_handle, "password_textbox");
+    ui_manager.register_ui_event::<TextboxClickedEvent>(&ui_handle, "confirm_password_textbox");
+}
 
 pub(crate) fn handle_events(
     global: &mut Global,
     ui_manager: &mut UiManager,
     http_client: &mut HttpClient,
     login_btn_rdr: &mut EventReader<LoginButtonClickedEvent>,
-    register_btn_rdr: &mut EventReader<RegisterButtonClickedEvent>,
     submit_btn_rdr: &mut EventReader<SubmitButtonClickedEvent>,
     textbox_click_rdr: &mut EventReader<TextboxClickedEvent>,
     should_rumble: &mut bool,
@@ -35,7 +53,7 @@ pub(crate) fn handle_events(
     if login_clicked {
         info!("login button clicked!");
 
-        go_to_ui(ui_manager, global, &global.ui_login_handle.unwrap());
+        go_to_ui(ui_manager, global, &global.get_ui_handle(UiKey::Login));
         *should_rumble = true;
     }
 
@@ -47,7 +65,7 @@ pub(crate) fn handle_events(
     if submit_clicked {
         info!("submit button clicked!");
 
-        let register_ui_handle = global.ui_register_handle.unwrap();
+        let register_ui_handle = global.get_ui_handle(UiKey::Register);
 
         // rumble
         *should_rumble = true;
@@ -142,12 +160,27 @@ pub(crate) fn handle_events(
     if textbox_clicked {
         info!("textbox clicked!");
 
-        let register_ui_handle = global.ui_register_handle.unwrap();
+        let register_ui_handle = global.get_ui_handle(UiKey::Register);
         ui_manager.set_text(&register_ui_handle, "error_output_text", "");
     }
+}
 
-    // drain others
-    for _ in register_btn_rdr.read() {
-        // ignore
-    }
+pub fn reset_state(
+    ui_manager: &mut UiManager,
+    ui_handle: &UiHandle
+) {
+
+    // clear textboxes
+    ui_manager.set_text(&ui_handle, "username_textbox", "");
+    ui_manager.set_text(&ui_handle, "email_textbox", "");
+    ui_manager.set_text(&ui_handle, "password_textbox", "");
+    ui_manager.set_textbox_password_eye_visible(&ui_handle, "password_textbox", false);
+    ui_manager.set_text(&ui_handle, "confirm_password_textbox", "");
+    ui_manager.set_textbox_password_eye_visible(&ui_handle, "confirm_password_textbox", false);
+
+    // clear error output
+    ui_manager.set_text(&ui_handle, "error_output_text", "");
+
+    // clear spinner
+    ui_manager.set_node_visible(&ui_handle, "spinner", false);
 }

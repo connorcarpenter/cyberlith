@@ -10,7 +10,7 @@ use game_engine::{
 
 use gateway_http_proto::{UserLoginRequest, UserRegisterRequest};
 
-use crate::{resources::Global, ui::go_to_ui};
+use crate::{resources::Global, ui::{go_to_ui, UiKey}};
 
 pub(crate) fn backend_send_login_request(
     global: &mut Global,
@@ -35,7 +35,7 @@ pub(crate) fn backend_send_login_request(
     );
 
     // enable spinner
-    let login_ui_handle = global.ui_login_handle.unwrap();
+    let login_ui_handle = global.get_ui_handle(UiKey::Login);
     ui_manager.set_node_visible(&login_ui_handle, "spinner", true);
 }
 
@@ -63,7 +63,7 @@ pub(crate) fn backend_send_register_request(
     );
 
     // enable spinner
-    let register_ui_handle = global.ui_register_handle.unwrap();
+    let register_ui_handle = global.get_ui_handle(UiKey::Register);
     ui_manager.set_node_visible(&register_ui_handle, "spinner", true);
 }
 
@@ -92,7 +92,7 @@ fn user_login_response_process(
         };
         global.user_login_response_key_opt = None;
 
-        let login_ui_handle = global.ui_login_handle.unwrap();
+        let login_ui_handle = global.get_ui_handle(UiKey::Login);
         match result {
             Ok(_response) => {
                 info!("client <- gateway: (UserLoginResponse - 200 OK)");
@@ -130,7 +130,7 @@ fn user_register_response_process(
         };
         global.user_register_response_key_opt = None;
 
-        let register_ui_handle = global.ui_register_handle.unwrap();
+        let register_ui_handle = global.get_ui_handle(UiKey::Register);
         match result {
             Ok(_response) => {
                 info!("client <- gateway: (UserRegisterResponse - 200 OK)");
@@ -147,13 +147,13 @@ fn user_register_response_process(
 
         clear_spinners_if_needed(global, ui_manager);
 
-        go_to_ui(ui_manager, global, &global.ui_register_finish_handle.unwrap());
+        go_to_ui(ui_manager, global, &global.get_ui_handle(UiKey::RegisterFinish));
     }
 }
 
 fn clear_spinners_if_needed(global: &Global, ui_manager: &mut UiManager) {
     if global.user_login_response_key_opt.is_none() & global.user_register_response_key_opt.is_none() {
-        ui_manager.set_node_visible(&global.ui_register_handle.unwrap(), "spinner", false);
-        ui_manager.set_node_visible(&global.ui_login_handle.unwrap(), "spinner", false);
+        ui_manager.set_node_visible(&global.get_ui_handle(UiKey::Register), "spinner", false);
+        ui_manager.set_node_visible(&global.get_ui_handle(UiKey::Login), "spinner", false);
     }
 }

@@ -1,8 +1,12 @@
+use std::collections::HashMap;
+
 use bevy_ecs::{entity::Entity, system::Resource};
 
 use game_engine::{http::ResponseKey, ui::UiHandle};
 
 use gateway_http_proto::{UserLoginResponse, UserRegisterResponse};
+
+use crate::ui::UiKey;
 
 #[derive(Resource)]
 pub struct Global {
@@ -11,10 +15,8 @@ pub struct Global {
     pub user_login_response_key_opt: Option<ResponseKey<UserLoginResponse>>,
     pub user_register_response_key_opt: Option<ResponseKey<UserRegisterResponse>>,
 
-    pub ui_start_handle: Option<UiHandle>,
-    pub ui_login_handle: Option<UiHandle>,
-    pub ui_register_handle: Option<UiHandle>,
-    pub ui_register_finish_handle: Option<UiHandle>,
+    ui_key_to_handle: HashMap<UiKey, UiHandle>,
+    ui_handle_to_key: HashMap<UiHandle, UiKey>,
 }
 
 impl Default for Global {
@@ -26,10 +28,23 @@ impl Default for Global {
 
             user_register_response_key_opt: None,
 
-            ui_start_handle: None,
-            ui_login_handle: None,
-            ui_register_handle: None,
-            ui_register_finish_handle: None,
+            ui_key_to_handle: HashMap::new(),
+            ui_handle_to_key: HashMap::new(),
         }
+    }
+}
+
+impl Global {
+    pub fn insert_ui(&mut self, key: UiKey, handle: UiHandle) {
+        self.ui_key_to_handle.insert(key, handle);
+        self.ui_handle_to_key.insert(handle, key);
+    }
+
+    pub fn get_ui_handle(&self, key: UiKey) -> &UiHandle {
+        self.ui_key_to_handle.get(&key).unwrap()
+    }
+
+    pub fn get_ui_key(&self, handle: &UiHandle) -> &UiKey {
+        self.ui_handle_to_key.get(handle).unwrap()
     }
 }
