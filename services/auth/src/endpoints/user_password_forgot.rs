@@ -1,6 +1,7 @@
 use http_client::ResponseError;
 use http_server::{async_dup::Arc, http_log_util, executor::smol::lock::RwLock, ApiServer, Server, ApiResponse, ApiRequest};
 use logging::{info, warn};
+use config::TargetEnv;
 
 use auth_server_http_proto::{UserPasswordForgotRequest, UserPasswordForgotResponse};
 
@@ -55,7 +56,7 @@ impl State {
         let email_subject = "Cyberlith Password Reset"; // TODO: put into config
         let sending_email = "admin@cyberlith.com"; // TODO: put into config
         let reset_token_str = reset_token.to_string();
-        let link_url = format!("reset_password_token={}", reset_token_str); // TODO: replace with working URL from config
+        let link_url = format!("{}/?reset_password_token={}", TargetEnv::gateway_url(), reset_token_str); // TODO: replace with working URL from config
 
         info!(
             "sending reset password token to user's email: {:?}",

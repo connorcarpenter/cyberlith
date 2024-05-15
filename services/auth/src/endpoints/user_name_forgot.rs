@@ -3,6 +3,7 @@ use http_server::{async_dup::Arc, http_log_util, executor::smol::lock::RwLock, A
 use logging::{info, warn};
 
 use auth_server_http_proto::{UserNameForgotRequest, UserNameForgotResponse};
+use config::TargetEnv;
 
 use crate::{error::AuthServerError, state::State};
 
@@ -49,7 +50,7 @@ impl State {
 
         let email_subject = "Cyberlith Username Recovery"; // TODO: put into config
         let sending_email = "admin@cyberlith.com"; // TODO: put into config
-        let link_url = "https://cyberlith.com"; // TODO: put into config
+        let link_url = &TargetEnv::gateway_url(); // TODO: put into config
 
         info!(
             "sending forgotten username to user's email: {:?}",
