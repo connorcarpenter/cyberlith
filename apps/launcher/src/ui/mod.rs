@@ -22,7 +22,7 @@ use game_engine::{
     ui::{UiHandle, UiManager},
 };
 
-use crate::resources::{Global, LoginButtonClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent, TextboxClickedEvent};
+use crate::resources::{ForgotPasswordButtonClickedEvent, ForgotUsernameButtonClickedEvent, Global, LoginButtonClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent, TextboxClickedEvent};
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum UiKey {
@@ -73,6 +73,8 @@ pub fn ui_handle_events(
     mut login_btn_rdr: EventReader<LoginButtonClickedEvent>,
     mut register_btn_rdr: EventReader<RegisterButtonClickedEvent>,
     mut submit_btn_rdr: EventReader<SubmitButtonClickedEvent>,
+    mut forgot_username_btn_rdr: EventReader<ForgotUsernameButtonClickedEvent>,
+    mut forgot_password_btn_rdr: EventReader<ForgotPasswordButtonClickedEvent>,
     mut textbox_click_rdr: EventReader<TextboxClickedEvent>,
 ) {
     let Some(current_ui_handle) = ui_manager.active_ui() else {
@@ -98,6 +100,8 @@ pub fn ui_handle_events(
                 &mut http_client,
                 &mut register_btn_rdr,
                 &mut submit_btn_rdr,
+                &mut forgot_username_btn_rdr,
+                &mut forgot_password_btn_rdr,
                 &mut textbox_click_rdr,
                 &mut should_rumble,
             );
@@ -178,6 +182,8 @@ pub fn ui_handle_events(
     for _ in login_btn_rdr.read() {}
     for _ in register_btn_rdr.read() {}
     for _ in submit_btn_rdr.read() {}
+    for _ in forgot_username_btn_rdr.read() {}
+    for _ in forgot_password_btn_rdr.read() {}
     for _ in textbox_click_rdr.read() {}
 }
 

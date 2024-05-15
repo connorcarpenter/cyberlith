@@ -13,4 +13,10 @@ pub struct BackButtonClickedEvent;
 pub struct SubmitButtonClickedEvent;
 
 #[derive(Event, Default)]
+pub struct ForgotUsernameButtonClickedEvent;
+
+#[derive(Event, Default)]
+pub struct ForgotPasswordButtonClickedEvent;
+
+#[derive(Event, Default)]
 pub struct TextboxClickedEvent;

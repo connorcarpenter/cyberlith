@@ -10,7 +10,7 @@ use game_engine::{
 
 use crate::{
     resources::{
-        Global, TextboxClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent,
+        Global, TextboxClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent, ForgotPasswordButtonClickedEvent, ForgotUsernameButtonClickedEvent
     },
     systems::backend::backend_send_login_request, ui::{go_to_ui, UiKey}
 };
@@ -27,6 +27,8 @@ pub(crate) fn setup(
     global.insert_ui(ui_key, ui_handle);
     ui_manager.register_ui_event::<RegisterButtonClickedEvent>(&ui_handle, "register_button");
     ui_manager.register_ui_event::<SubmitButtonClickedEvent>(&ui_handle, "submit_button");
+    ui_manager.register_ui_event::<ForgotUsernameButtonClickedEvent>(&ui_handle, "forgot_username_button");
+    ui_manager.register_ui_event::<ForgotPasswordButtonClickedEvent>(&ui_handle, "forgot_password_button");
     ui_manager.register_ui_event::<TextboxClickedEvent>(&ui_handle, "username_textbox");
     ui_manager.register_ui_event::<TextboxClickedEvent>(&ui_handle, "password_textbox");
 }
@@ -37,6 +39,8 @@ pub(crate) fn handle_events(
     http_client: &mut HttpClient,
     register_btn_rdr: &mut EventReader<RegisterButtonClickedEvent>,
     submit_btn_rdr: &mut EventReader<SubmitButtonClickedEvent>,
+    forgot_username_btn_rdr: &mut EventReader<ForgotUsernameButtonClickedEvent>,
+    forgot_password_btn_rdr: &mut EventReader<ForgotPasswordButtonClickedEvent>,
     textbox_click_rdr: &mut EventReader<TextboxClickedEvent>,
     should_rumble: &mut bool,
 ) {
@@ -98,6 +102,28 @@ pub(crate) fn handle_events(
         // send backend request
         backend_send_login_request(global, http_client, ui_manager, &user_handle, &password);
 
+        *should_rumble = true;
+    }
+
+    // Forgot Username Button Click
+    let mut forgot_username_btn_clicked = false;
+    for _ in forgot_username_btn_rdr.read() {
+        forgot_username_btn_clicked = true;
+    }
+    if forgot_username_btn_clicked {
+        info!("forgot username button clicked!");
+        go_to_ui(ui_manager, global, &global.get_ui_handle(UiKey::ForgotUsername));
+        *should_rumble = true;
+    }
+
+    // Forgot Password Button Click
+    let mut forgot_password_btn_clicked = false;
+    for _ in forgot_password_btn_rdr.read() {
+        forgot_password_btn_clicked = true;
+    }
+    if forgot_password_btn_clicked {
+        info!("forgot password button clicked!");
+        go_to_ui(ui_manager, global, &global.get_ui_handle(UiKey::ForgotPassword));
         *should_rumble = true;
     }
 

@@ -12,7 +12,7 @@ use game_engine::{
 use crate::{
     ui::{ui_handle_events, ui_setup},
     resources::{
-        BackButtonClickedEvent, TextboxClickedEvent, Global, LoginButtonClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent,
+        BackButtonClickedEvent, TextboxClickedEvent, Global, LoginButtonClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent, ForgotPasswordButtonClickedEvent, ForgotUsernameButtonClickedEvent,
     },
     systems::{backend, draw, resize, scene},
 };
@@ -52,6 +52,8 @@ impl Plugin for LauncherApp {
             .add_event::<RegisterButtonClickedEvent>()
             .add_event::<BackButtonClickedEvent>()
             .add_event::<SubmitButtonClickedEvent>()
+            .add_event::<ForgotUsernameButtonClickedEvent>()
+            .add_event::<ForgotPasswordButtonClickedEvent>()
             .add_event::<TextboxClickedEvent>()
             // ui systems
             .add_systems(Startup, ui_setup)
