@@ -36,29 +36,16 @@ pub fn setup(
     mut ui_manager: ResMut<UiManager>,
 ) {
     let mut uis = Vec::new();
-    // start
-    uis.push(start::ui_define());
 
-    // login
-    uis.push(login::ui_define());
-
-    // register
-    uis.push(register::ui_define());
-
-    // register_finish
-    uis.push(register_finish::ui_define());
-
-    // forgot username
-    uis.push(forgot_username::ui_define());
-
-    // forgot username finish
-    uis.push(forgot_username_finish::ui_define());
-
-    // forgot password
-    uis.push(forgot_password::ui_define());
-
-    // forgot password finish
-    uis.push(forgot_password_finish::ui_define());
+    // uis.push(start::ui_define()); // start
+    // uis.push(login::ui_define()); // login
+    // uis.push(register::ui_define()); // register
+    // uis.push(register_finish::ui_define()); // register_finish
+    // uis.push(forgot_username::ui_define()); // forgot username
+    // uis.push(forgot_username_finish::ui_define()); // forgot username finish
+    // uis.push(forgot_password::ui_define()); // forgot password
+    // uis.push(forgot_password_finish::ui_define()); // forgot password finish
+    uis.push(reset_password::ui_define()); // reset password
 
     let mut ui_handles = Vec::new();
     for (ui_name, ui_asset_id, ui_etag, ui) in uis {
@@ -73,7 +60,7 @@ pub fn setup(
         ui_handles.push(ui_handle);
     }
 
-    let ui_handle = ui_handles[1];
+    let ui_handle = ui_handles[0];
     ui_manager.set_target_render_layer(RenderLayers::layer(0));
     ui_manager.enable_ui(&ui_handle);
 
