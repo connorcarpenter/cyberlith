@@ -42,11 +42,14 @@ fn ui_define() -> (String, AssetId, ETag, UiConfig) {
     // forgot username
     // return forgot_username::ui_define();
 
+    // forgot username finish
+    return forgot_username_finish::ui_define();
+
     // forgot password
     // return forgot_password::ui_define();
 
     // forgot password finish
-    return forgot_password_finish::ui_define();
+    // return forgot_password_finish::ui_define();
 }
 
 #[derive(Event, Default)]
