@@ -31,13 +31,19 @@ fn ui_define() -> (String, AssetId, ETag, UiConfig) {
     // return start::ui_define();
 
     // login
-    return login::ui_define();
+    // return login::ui_define();
 
     // register
     // return register::ui_define();
 
     // register_finish
     // return register_finish::ui_define();
+
+    // forgot username
+    // return forgot_username::ui_define();
+
+    // forgot password
+    return forgot_password::ui_define();
 }
 
 #[derive(Event, Default)]
