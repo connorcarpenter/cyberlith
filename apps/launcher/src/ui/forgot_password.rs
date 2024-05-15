@@ -57,7 +57,7 @@ pub(crate) fn handle_events(
     if submit_btn_clicked {
         info!("submit button clicked!");
 
-        let ui_handle = global.get_ui_handle(UiKey::ForgotUsername);
+        let ui_handle = global.get_ui_handle(UiKey::ForgotPassword);
 
         // rumble
         *should_rumble = true;
@@ -141,7 +141,7 @@ fn backend_send_request(
     info!("sending password forgot request... (email: {})", email);
 
     // enable spinner
-    let ui_handle = global.get_ui_handle(UiKey::ForgotUsername);
+    let ui_handle = global.get_ui_handle(UiKey::ForgotPassword);
     ui_manager.set_node_visible(&ui_handle, "spinner", true);
 }
 

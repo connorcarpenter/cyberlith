@@ -16,7 +16,7 @@ mod embedded_asset;
 mod renderer;
 
 pub mod kernel {
-    pub use kernel::{AppExitAction, KernelApp};
+    pub use kernel::{AppExitAction, KernelApp, get_querystring_param};
 }
 pub mod asset {
     pub use asset_id::{AssetId, AssetType, ETag};

@@ -91,8 +91,8 @@ pub fn update_file<K: DbTableKey>(dir_path: &str, repo: &Repository, file: &K::V
     // update & write file
     write_file_bytes(
         &mut index,
-        &full_path,
         &file_name,
+        &full_path,
         file_contents,
         true,
         true,

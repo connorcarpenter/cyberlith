@@ -12,10 +12,9 @@ pub use kernel::{Kernel, KernelApp};
 cfg_if::cfg_if! {
     if #[cfg(target_arch = "wasm32")] {
         mod wasm;
-        pub use crate::wasm::ExitActionContainer;
-        pub use wasm::redirect_to_url;
+        pub use wasm::{ExitActionContainer, redirect_to_url, get_querystring_param};
     } else {
         mod native;
-        pub use crate::native::ExitActionContainer;
+        pub use native::{ExitActionContainer, get_querystring_param};
     }
 }

@@ -10,3 +10,5 @@ pub use user_name_forgot::*;
 pub use user_password_forgot::*;
 pub use user_password_reset::*;
 pub use user_register::*;
+
+pub use auth_server_http_proto::ResetPasswordToken;

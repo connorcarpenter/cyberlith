@@ -1,4 +1,6 @@
 use futures::channel::oneshot::{Receiver, Sender};
+use web_sys::UrlSearchParams;
+
 use logging::info;
 
 pub fn redirect_to_url(url: &str) {
@@ -37,4 +39,21 @@ impl ExitActionContainer {
             sender.send(action).unwrap()
         }
     }
+}
+
+pub fn get_querystring_param(name: &str) -> Option<String> {
+    // Get the window object
+    let window = web_sys::window()?;
+
+    // Get the location object from the window
+    let location = window.location();
+
+    // Get the query string from the location (e.g., "?name=example")
+    let search = location.search().ok()?;
+
+    // Create a UrlSearchParams object from the query string
+    let params = UrlSearchParams::new_with_str(&search).ok()?;
+
+    // Get the value of a specific query parameter
+    params.get(name)
 }

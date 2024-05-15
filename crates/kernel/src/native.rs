@@ -21,3 +21,8 @@ impl ExitActionContainer {
         }
     }
 }
+
+
+pub fn get_querystring_param(_name: &str) -> Option<String> {
+    return None;
+}
