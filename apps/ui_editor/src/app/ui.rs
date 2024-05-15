@@ -26,32 +26,6 @@ use ui_runner_config::UiRuntimeConfig;
 
 use crate::app::{global::Global, ui_backups::*};
 
-fn ui_define() -> (String, AssetId, ETag, UiConfig) {
-    // start
-    // return start::ui_define();
-
-    // login
-    // return login::ui_define();
-
-    // register
-    // return register::ui_define();
-
-    // register_finish
-    // return register_finish::ui_define();
-
-    // forgot username
-    // return forgot_username::ui_define();
-
-    // forgot username finish
-    return forgot_username_finish::ui_define();
-
-    // forgot password
-    // return forgot_password::ui_define();
-
-    // forgot password finish
-    // return forgot_password_finish::ui_define();
-}
-
 #[derive(Event, Default)]
 pub struct SubmitButtonEvent;
 
@@ -61,24 +35,47 @@ pub fn setup(
     mut embedded_asset_events: EventWriter<EmbeddedAssetEvent>,
     mut ui_manager: ResMut<UiManager>,
 ) {
-    // ui setup
-    embedded_asset_events.send(embedded_asset_event!("embedded/8273wa")); // palette
-    embedded_asset_events.send(embedded_asset_event!("embedded/34mvvk")); // verdana icon
-    embedded_asset_events.send(embedded_asset_event!("embedded/qbgz5j")); // password eye icon
+    let mut uis = Vec::new();
+    // start
+    uis.push(start::ui_define());
 
-    // create ui
-    let (ui_name, ui_asset_id, ui_etag, ui) = ui_define();
+    // login
+    uis.push(login::ui_define());
 
-    // write JSON and bits files, metadata too
-    let ui = write_to_file(&ui_name, &ui_asset_id, &ui_etag, ui);
+    // register
+    uis.push(register::ui_define());
 
-    // load ui into asset manager
-    let ui_handle = ui_manager
-        .manual_load_ui_config(&ui_asset_id, UiRuntimeConfig::load_from_builder_config(ui));
+    // register_finish
+    uis.push(register_finish::ui_define());
 
+    // forgot username
+    uis.push(forgot_username::ui_define());
+
+    // forgot username finish
+    uis.push(forgot_username_finish::ui_define());
+
+    // forgot password
+    uis.push(forgot_password::ui_define());
+
+    // forgot password finish
+    uis.push(forgot_password_finish::ui_define());
+
+    let mut ui_handles = Vec::new();
+    for (ui_name, ui_asset_id, ui_etag, ui) in uis {
+
+        // write JSON and bits files, metadata too
+        let ui = write_to_file(&ui_name, &ui_asset_id, &ui_etag, ui);
+
+        // load ui into asset manager
+        let ui_handle = ui_manager
+            .manual_load_ui_config(&ui_asset_id, UiRuntimeConfig::load_from_builder_config(ui));
+
+        ui_handles.push(ui_handle);
+    }
+
+    let ui_handle = ui_handles[1];
     ui_manager.set_target_render_layer(RenderLayers::layer(0));
     ui_manager.enable_ui(&ui_handle);
-    // ui_manager.register_ui_event::<SubmitButtonEvent>(&ui_handle, "login_button");
 
     // scene setup now
     // ambient light
@@ -103,6 +100,11 @@ pub fn setup(
         .id();
 
     commands.insert_resource(Global::new(scene_camera_entity));
+
+    // ui setup
+    embedded_asset_events.send(embedded_asset_event!("embedded/8273wa")); // palette
+    embedded_asset_events.send(embedded_asset_event!("embedded/34mvvk")); // verdana icon
+    embedded_asset_events.send(embedded_asset_event!("embedded/qbgz5j")); // password eye icon
 }
 
 pub fn handle_events(
