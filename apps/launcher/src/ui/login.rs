@@ -3,17 +3,21 @@ use bevy_ecs::event::{EventReader, EventWriter};
 
 use game_engine::{
     http::HttpClient,
-    logging::info,
+    logging::{info, warn},
     ui::{UiManager, UiHandle},
     asset::{AssetId, embedded_asset_event, EmbeddedAssetEvent},
+    config::{GATEWAY_PORT, PUBLIC_IP_ADDR},
 };
+use game_engine::kernel::AppExitAction;
+use gateway_http_proto::UserLoginRequest;
 
 use crate::{
     resources::{
         Global, TextboxClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent, ForgotPasswordButtonClickedEvent, ForgotUsernameButtonClickedEvent
     },
-    systems::backend::backend_send_login_request, ui::{go_to_ui, UiKey}
+    ui::{go_to_ui, UiKey}
 };
+use crate::ui::{clear_spinners_if_needed, redirect_to_game_app};
 
 pub(crate) fn setup(
     global: &mut Global,
@@ -155,4 +159,67 @@ pub fn reset_state(
 
     // clear spinner
     ui_manager.set_node_visible(&ui_handle, "spinner", false);
+}
+
+fn backend_send_login_request(
+    global: &mut Global,
+    http_client: &mut HttpClient,
+    ui_manager: &mut UiManager,
+    user_handle: &str,
+    password: &str,
+) {
+    if global.user_login_response_key_opt.is_some() {
+        warn!("already sending login request...");
+        return;
+    }
+
+    // user login request send
+    let request = UserLoginRequest::new(user_handle, password);
+    let key = http_client.send(PUBLIC_IP_ADDR, GATEWAY_PORT, request);
+    global.user_login_response_key_opt = Some(key);
+
+    info!(
+        "sending login request... (userhandle: {}, password: {}",
+        user_handle, password
+    );
+
+    // enable spinner
+    let login_ui_handle = global.get_ui_handle(UiKey::Login);
+    ui_manager.set_node_visible(&login_ui_handle, "spinner", true);
+}
+
+pub(crate) fn process_requests(
+    global: &mut Global,
+    http_client: &mut HttpClient,
+    ui_manager: &mut UiManager,
+    app_exit_action_writer: &mut EventWriter<AppExitAction>,
+) {
+    if global.user_login_response_key_opt.is_some() {
+        let Some(key) = &global.user_login_response_key_opt else {
+            return;
+        };
+        let Some(result) = http_client.recv(key) else {
+            return;
+        };
+        global.user_login_response_key_opt = None;
+
+        let login_ui_handle = global.get_ui_handle(UiKey::Login);
+        match result {
+            Ok(_response) => {
+                info!("client <- gateway: (UserLoginResponse - 200 OK)");
+
+                redirect_to_game_app(app_exit_action_writer);
+            }
+            Err(err) => {
+                warn!(
+                    "client <- gateway: (UserLoginResponse - ERROR! {})",
+                    err.to_string()
+                );
+
+                ui_manager.set_text(&login_ui_handle, "error_output_text", "Invalid credentials. Please try again.");
+            }
+        }
+
+        clear_spinners_if_needed(global, ui_manager);
+    }
 }

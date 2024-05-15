@@ -10,11 +10,11 @@ use game_engine::{
 };
 
 use crate::{
-    ui::{ui_handle_events, ui_setup},
+    ui,
     resources::{
         BackButtonClickedEvent, TextboxClickedEvent, Global, LoginButtonClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent, ForgotPasswordButtonClickedEvent, ForgotUsernameButtonClickedEvent,
     },
-    systems::{backend, draw, resize, scene},
+    systems::{draw, resize, scene},
 };
 
 pub struct LauncherApp {
@@ -56,9 +56,9 @@ impl Plugin for LauncherApp {
             .add_event::<ForgotPasswordButtonClickedEvent>()
             .add_event::<TextboxClickedEvent>()
             // ui systems
-            .add_systems(Startup, ui_setup)
-            .add_systems(Update, ui_handle_events)
-            .add_systems(Update, backend::backend_step)
+            .add_systems(Startup, ui::setup)
+            .add_systems(Update, ui::handle_events)
+            .add_systems(Update, ui::process_requests)
             // scene systems
             .add_systems(Startup, scene::scene_setup)
             .add_systems(Update, scene::scene_step)

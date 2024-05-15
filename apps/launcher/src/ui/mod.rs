@@ -20,6 +20,8 @@ use game_engine::{
     input::{GamepadRumbleIntensity, Input, RumbleManager},
     render::components::RenderLayers,
     ui::{UiHandle, UiManager},
+    kernel::AppExitAction,
+    logging::info,
 };
 
 use crate::resources::{BackButtonClickedEvent, ForgotPasswordButtonClickedEvent, ForgotUsernameButtonClickedEvent, Global, LoginButtonClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent, TextboxClickedEvent};
@@ -36,7 +38,7 @@ pub enum UiKey {
     ForgotPasswordFinish,
 }
 
-pub fn ui_setup(
+pub(crate) fn setup(
     mut global: ResMut<Global>,
     mut ui_manager: ResMut<UiManager>,
     mut embedded_asset_events: EventWriter<EmbeddedAssetEvent>,
@@ -63,7 +65,7 @@ pub fn ui_setup(
     go_to_ui(&mut ui_manager, &global, global.get_ui_handle(UiKey::Start));
 }
 
-pub fn ui_handle_events(
+pub(crate) fn handle_events(
     mut global: ResMut<Global>,
     input: Res<Input>,
     mut ui_manager: ResMut<UiManager>,
@@ -222,4 +224,33 @@ pub(crate) fn go_to_ui(
 
     // enable given ui
     ui_manager.enable_ui(ui_handle);
+}
+
+pub(crate) fn process_requests(
+    mut global: ResMut<Global>,
+    mut http_client: ResMut<HttpClient>,
+    mut ui_manager: ResMut<UiManager>,
+    mut app_exit_action_writer: EventWriter<AppExitAction>,
+) {
+    login::process_requests(&mut global, &mut http_client, &mut ui_manager, &mut app_exit_action_writer);
+    register::process_requests(&mut global, &mut http_client, &mut ui_manager);
+}
+
+pub(crate) fn redirect_to_game_app(
+    app_exit_action_writer: &mut EventWriter<AppExitAction>
+) {
+    info!("redirecting to game app");
+    app_exit_action_writer.send(AppExitAction::go_to("game"));
+}
+
+pub(crate) fn clear_spinners_if_needed(
+    global: &Global,
+    ui_manager: &mut UiManager
+) {
+    if global.user_login_response_key_opt.is_none() && global.user_register_response_key_opt.is_none() {
+        ui_manager.set_node_visible(&global.get_ui_handle(UiKey::Register), "spinner", false);
+        ui_manager.set_node_visible(&global.get_ui_handle(UiKey::Login), "spinner", false);
+        ui_manager.set_node_visible(&global.get_ui_handle(UiKey::ForgotUsername), "spinner", false);
+        ui_manager.set_node_visible(&global.get_ui_handle(UiKey::ForgotPassword), "spinner", false);
+    }
 }

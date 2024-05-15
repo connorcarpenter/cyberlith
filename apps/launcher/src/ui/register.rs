@@ -3,18 +3,20 @@ use bevy_ecs::event::{EventReader, EventWriter};
 
 use game_engine::{
     http::HttpClient,
-    logging::info,
+    logging::{warn, info},
     ui::{UiManager, UiHandle},
     asset::{AssetId, embedded_asset_event, EmbeddedAssetEvent},
+    config::{GATEWAY_PORT, PUBLIC_IP_ADDR},
 };
+use gateway_http_proto::UserRegisterRequest;
 
 use crate::{
     resources::{
         Global, LoginButtonClickedEvent, SubmitButtonClickedEvent, TextboxClickedEvent
     },
-    systems::backend::backend_send_register_request,
     ui::{go_to_ui, UiKey}
 };
+use crate::ui::clear_spinners_if_needed;
 
 pub(crate) fn setup(
     global: &mut Global,
@@ -183,4 +185,65 @@ pub fn reset_state(
 
     // clear spinner
     ui_manager.set_node_visible(&ui_handle, "spinner", false);
+}
+
+fn backend_send_register_request(
+    global: &mut Global,
+    http_client: &mut HttpClient,
+    ui_manager: &mut UiManager,
+    username: &str,
+    email: &str,
+    password: &str,
+) {
+
+    if global.user_register_response_key_opt.is_some() {
+        warn!("already sending register request...");
+        return;
+    }
+
+    // user register request send
+    let request = UserRegisterRequest::new(&username, &email, &password);
+    let key = http_client.send(PUBLIC_IP_ADDR, GATEWAY_PORT, request);
+    global.user_register_response_key_opt = Some(key);
+    info!(
+        "sending register request... (username: {}, email: {}, password: {}",
+        username, email, password
+    );
+
+    // enable spinner
+    let register_ui_handle = global.get_ui_handle(UiKey::Register);
+    ui_manager.set_node_visible(&register_ui_handle, "spinner", true);
+}
+
+pub(crate) fn process_requests(
+    global: &mut Global,
+    http_client: &mut HttpClient,
+    ui_manager: &mut UiManager,
+) {
+    if global.user_register_response_key_opt.is_some() {
+        let key = global.user_register_response_key_opt.as_ref().unwrap();
+        let Some(result) = http_client.recv(key) else {
+            return;
+        };
+        global.user_register_response_key_opt = None;
+
+        let register_ui_handle = global.get_ui_handle(UiKey::Register);
+        match result {
+            Ok(_response) => {
+                info!("client <- gateway: (UserRegisterResponse - 200 OK)");
+            }
+            Err(err) => {
+                info!(
+                    "client <- gateway: (UserRegisterResponse - ERROR! {})",
+                    err.to_string()
+                );
+
+                ui_manager.set_text(&register_ui_handle, "error_output_text", "Oops! Something went wrong on our end. Please try again later.");
+            }
+        }
+
+        clear_spinners_if_needed(global, ui_manager);
+
+        go_to_ui(ui_manager, global, &global.get_ui_handle(UiKey::RegisterFinish));
+    }
 }
