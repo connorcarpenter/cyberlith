@@ -30,9 +30,7 @@ pub(crate) fn handle_events(
     submit_btn_rdr: &mut EventReader<SubmitButtonClickedEvent>,
     should_rumble: &mut bool,
 ) {
-    // in Register Finish Ui
-
-    // Submit Button Click
+    // Home Button Click
     let mut submit_clicked = false;
     for _ in submit_btn_rdr.read() {
         submit_clicked = true;

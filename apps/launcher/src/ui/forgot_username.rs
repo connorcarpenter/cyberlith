@@ -5,11 +5,12 @@ use game_engine::{
     asset::{AssetId, embedded_asset_event, EmbeddedAssetEvent},
     http::HttpClient,
     ui::{UiManager, UiHandle},
+    logging::info,
 };
 
 use crate::{resources::{
     Global, TextboxClickedEvent, LoginButtonClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent, BackButtonClickedEvent,
-}, ui::UiKey};
+}, ui::{UiKey, go_to_ui}};
 
 pub(crate) fn setup(
     global: &mut Global,
@@ -29,19 +30,45 @@ pub(crate) fn setup(
 pub(crate) fn handle_events(
     global: &mut Global,
     ui_manager: &mut UiManager,
-    http_client: &mut HttpClient,
-    login_btn_rdr: &mut EventReader<LoginButtonClickedEvent>,
-    register_btn_rdr: &mut EventReader<RegisterButtonClickedEvent>,
+    back_btn_rdr: &mut EventReader<BackButtonClickedEvent>,
     submit_btn_rdr: &mut EventReader<SubmitButtonClickedEvent>,
-    textbox_click_rdr: &mut EventReader<TextboxClickedEvent>,
     should_rumble: &mut bool,
 ) {
+    // Back Button Click
+    let mut back_btn_clicked = false;
+    for _ in back_btn_rdr.read() {
+        back_btn_clicked = true;
+    }
+    if back_btn_clicked {
+        info!("back button clicked!");
+        go_to_ui(ui_manager, global, &global.get_ui_handle(UiKey::Login));
+        *should_rumble = true;
+    }
 
+    // Submit Button Click
+    let mut submit_btn_clicked = false;
+    for _ in submit_btn_rdr.read() {
+        submit_btn_clicked = true;
+    }
+    if submit_btn_clicked {
+        info!("submit button clicked!");
+
+        // TODO: send request to backend
+
+        *should_rumble = true;
+    }
 }
 
 pub fn reset_state(
     ui_manager: &mut UiManager,
     ui_handle: &UiHandle
 ) {
+    // clear textboxes
+    ui_manager.set_text(&ui_handle, "email_textbox", "");
 
+    // clear error output
+    ui_manager.set_text(&ui_handle, "error_output_text", "");
+
+    // clear spinner
+    ui_manager.set_node_visible(&ui_handle, "spinner", false);
 }
