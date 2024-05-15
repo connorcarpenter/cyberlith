@@ -436,7 +436,7 @@ fn finalize_rects(
     };
 
     let Some((width, height, child_offset_x, child_offset_y, _)) = ui_state.cache.bounds(id) else {
-        warn!("no bounds for id 3: {:?}", id);
+        // warn!("no bounds for id 3: {:?}", id);
         return;
     };
 

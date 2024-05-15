@@ -20,7 +20,7 @@ pub struct UiRuntimeConfig {
 
 impl UiRuntimeConfig {
     pub const ROOT_NODE_ID: NodeId = NodeId::new(0);
-    pub const Z_STEP_RENDER: f32 = 2.0;
+    pub const Z_STEP_RENDER: f32 = 3.0;
 
     pub fn load_from_bytes(bytes: &[u8]) -> Result<Self, SerdeErr> {
         let config = ui_serde::bits::read_ui_bits(bytes)?;
