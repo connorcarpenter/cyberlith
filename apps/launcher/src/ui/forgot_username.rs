@@ -30,8 +30,10 @@ pub(crate) fn setup(
 pub(crate) fn handle_events(
     global: &mut Global,
     ui_manager: &mut UiManager,
+    http_client: &mut HttpClient,
     back_btn_rdr: &mut EventReader<BackButtonClickedEvent>,
     submit_btn_rdr: &mut EventReader<SubmitButtonClickedEvent>,
+    textbox_click_rdr: &mut EventReader<TextboxClickedEvent>,
     should_rumble: &mut bool,
 ) {
     // Back Button Click
@@ -56,6 +58,18 @@ pub(crate) fn handle_events(
         // TODO: send request to backend
 
         *should_rumble = true;
+    }
+
+    // Textbox Click
+    let mut textbox_clicked = false;
+    for _ in textbox_click_rdr.read() {
+        textbox_clicked = true;
+    }
+    if textbox_clicked {
+        info!("textbox clicked!");
+
+        let ui_handle = global.get_ui_handle(UiKey::ForgotUsername);
+        ui_manager.set_text(&ui_handle, "error_output_text", "");
     }
 }
 
