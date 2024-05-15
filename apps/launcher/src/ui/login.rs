@@ -104,7 +104,7 @@ pub(crate) fn handle_events(
         }
 
         // send backend request
-        backend_send_login_request(global, http_client, ui_manager, &user_handle, &password);
+        backend_send_request(global, http_client, ui_manager, &user_handle, &password);
 
         *should_rumble = true;
     }
@@ -161,7 +161,7 @@ pub fn reset_state(
     ui_manager.set_node_visible(&ui_handle, "spinner", false);
 }
 
-fn backend_send_login_request(
+fn backend_send_request(
     global: &mut Global,
     http_client: &mut HttpClient,
     ui_manager: &mut UiManager,

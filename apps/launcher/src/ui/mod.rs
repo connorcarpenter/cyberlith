@@ -234,6 +234,8 @@ pub(crate) fn process_requests(
 ) {
     login::process_requests(&mut global, &mut http_client, &mut ui_manager, &mut app_exit_action_writer);
     register::process_requests(&mut global, &mut http_client, &mut ui_manager);
+    forgot_password::process_requests(&mut global, &mut http_client, &mut ui_manager);
+    forgot_username::process_requests(&mut global, &mut http_client, &mut ui_manager);
 }
 
 pub(crate) fn redirect_to_game_app(

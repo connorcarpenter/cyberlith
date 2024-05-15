@@ -151,7 +151,7 @@ pub(crate) fn handle_events(
         }
 
         // send backend request
-        backend_send_register_request(global, http_client, ui_manager, &username, &email, &password);
+        backend_send_request(global, http_client, ui_manager, &username, &email, &password);
     }
 
     // Textbox Click
@@ -187,7 +187,7 @@ pub fn reset_state(
     ui_manager.set_node_visible(&ui_handle, "spinner", false);
 }
 
-fn backend_send_register_request(
+fn backend_send_request(
     global: &mut Global,
     http_client: &mut HttpClient,
     ui_manager: &mut UiManager,

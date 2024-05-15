@@ -56,8 +56,8 @@ pub(crate) fn handle_events(
 }
 
 pub fn reset_state(
-    ui_manager: &mut UiManager,
-    ui_handle: &UiHandle
+    _ui_manager: &mut UiManager,
+    _ui_handle: &UiHandle
 ) {
 
 }
