@@ -14,9 +14,9 @@ use game_engine::{
     storage::Handle,
 };
 
-use crate::systems::scene::WalkAnimation;
+use crate::systems::walker_scene::WalkAnimation;
 
-pub fn scene_draw(
+pub fn draw(
     asset_manager: Res<AssetManager>,
     mut render_frame: ResMut<RenderFrame>,
     // Cameras

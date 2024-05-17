@@ -9,7 +9,7 @@ use game_engine::{
     http::CookieStore,
 };
 
-use super::systems::{keyboard_input, network, scene, resize, draw};
+use super::systems::{keyboard_input, network, walker_scene, cube_scene, resize, draw};
 
 pub struct GameApp {
     cookie_store_opt: Option<Arc<RwLock<CookieStore>>>,
@@ -41,10 +41,12 @@ impl Plugin for GameApp {
             // other input
             .add_systems(Update, keyboard_input::process)
             // Scene Systems
-            .add_systems(Startup, scene::scene_setup)
-            .add_systems(Update, scene::scene_step)
+            //.add_systems(Startup, walker_scene::scene_setup)
+            .add_systems(Update, walker_scene::step)
+            .add_systems(Startup, cube_scene::setup)
+            .add_systems(Update, cube_scene::step)
             .add_systems(Update, resize::handle_viewport_resize)
-            .add_systems(Draw, draw::scene_draw)
+            .add_systems(Draw, draw::draw)
             // Network Systems
             .add_systems(Update, network::world_spawn_entity_events)
             .add_systems(Update, network::world_main_insert_position_events)

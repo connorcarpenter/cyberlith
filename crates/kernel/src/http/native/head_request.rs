@@ -20,7 +20,7 @@ pub(crate) fn head_request(
     let response = match fetch_blocking(&request, None) {
         Ok(response) => response,
         Err(e) => {
-            panic!("Unhandled on purpose. Error received: {:?}", e.to_string())
+            panic!("Unhandled on purpose. Make sure Gateway & Content Server are running! Error received: {:?}", e.to_string())
         }
     };
 

@@ -1,5 +1,6 @@
 pub mod keyboard_input;
 pub mod network;
-pub mod scene;
+pub mod walker_scene;
 pub mod resize;
 pub mod draw;
+pub mod cube_scene;

@@ -100,7 +100,7 @@ pub fn scene_setup(
         .insert(layer);
 }
 
-pub fn scene_step(
+pub fn step(
     time: Res<Time>,
     asset_manager: Res<AssetManager>,
     mut object_q: Query<(&mut Transform, &mut WalkAnimation), With<WalkerMarker>>,
