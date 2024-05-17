@@ -9,6 +9,9 @@ publish = false
 [features]
 
 [dependencies]
-naia-serde = { path = "../../../../naia/shared/serde" }
-bevy_http_shared = { path = "../../../crates/http/bevy_http_shared" }
 asset_id = { path = "../../../crates/asset/id" }
+auth_server_types = { path = "../../auth/types" }
+
+naia-serde = { path = "../../../../naia/shared/serde" }
+
+bevy_http_shared = { path = "../../../crates/http/bevy_http_shared" }

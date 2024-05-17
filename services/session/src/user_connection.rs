@@ -22,7 +22,7 @@ pub fn recv_login_request(mut global: ResMut<Global>, mut server: ResMut<HttpSer
             request.login_token
         );
 
-        global.add_login_token(&request.login_token);
+        global.add_login_token(&request.user_id, &request.login_token);
 
         info!("Sending login response to region server ..");
 

@@ -67,6 +67,7 @@ fn main() {
                 naia::connect_events,
                 naia::disconnect_events,
                 naia::error_events,
+                naia::message_events,
                 user_connection::recv_login_request,
                 region_connection::send_register_instance_request,
                 region_connection::recv_register_instance_response,

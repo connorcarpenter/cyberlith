@@ -1,4 +1,5 @@
 use naia_serde::SerdeInternal as Serde;
+use auth_server_types::UserId;
 
 use http_common::{ApiRequest, ApiResponse, Method};
 
@@ -19,12 +20,16 @@ impl AccessTokenValidateRequest {
 }
 
 // Response
-#[derive(Serde, PartialEq, Clone)]
-pub struct AccessTokenValidateResponse;
+#[derive(Serde, PartialEq, Clone, Copy)]
+pub struct AccessTokenValidateResponse {
+    pub user_id: UserId,
+}
 
 impl AccessTokenValidateResponse {
-    pub fn new() -> Self {
-        Self
+    pub fn new(user_id: UserId) -> Self {
+        Self {
+            user_id,
+        }
     }
 }
 

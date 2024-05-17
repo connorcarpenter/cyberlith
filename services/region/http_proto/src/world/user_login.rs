@@ -1,4 +1,5 @@
 use naia_serde::SerdeInternal as Serde;
+use auth_server_types::UserId;
 
 use http_common::{ApiRequest, ApiResponse, Method};
 
@@ -6,12 +7,14 @@ use http_common::{ApiRequest, ApiResponse, Method};
 #[derive(Serde, PartialEq, Clone)]
 pub struct WorldConnectRequest {
     pub session_server_instance_secret: String,
+    pub user_id: UserId,
 }
 
 impl WorldConnectRequest {
-    pub fn new(session_server_instance_secret: &str) -> Self {
+    pub fn new(session_server_instance_secret: &str, user_id: UserId) -> Self {
         Self {
             session_server_instance_secret: session_server_instance_secret.to_string(),
+            user_id,
         }
     }
 }
@@ -20,14 +23,14 @@ impl WorldConnectRequest {
 #[derive(Serde, PartialEq, Clone, Eq, Hash)]
 pub struct WorldConnectResponse {
     pub world_server_instance_secret: String,
-    pub world_server_user_id: u64,
+    pub world_server_user_id: UserId,
     pub login_token: String,
 }
 
 impl WorldConnectResponse {
     pub fn new(
         world_server_instance_secret: &str,
-        world_server_user_id: u64,
+        world_server_user_id: UserId,
         token: &str,
     ) -> Self {
         Self {

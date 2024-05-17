@@ -1,4 +1,5 @@
 use naia_serde::SerdeInternal as Serde;
+use auth_server_types::UserId;
 
 use bevy_http_shared::{ApiRequest, ApiResponse, Method};
 
@@ -6,12 +7,14 @@ use bevy_http_shared::{ApiRequest, ApiResponse, Method};
 #[derive(Serde, PartialEq, Clone)]
 pub struct IncomingUserRequest {
     region_secret: String,
+    pub user_id: UserId,
     pub login_token: String,
 }
 
 impl IncomingUserRequest {
-    pub fn new(region_secret: &str, login_token: &str) -> Self {
+    pub fn new(region_secret: &str, user_id: UserId, login_token: &str) -> Self {
         Self {
+            user_id,
             region_secret: region_secret.to_string(),
             login_token: login_token.to_string(),
         }

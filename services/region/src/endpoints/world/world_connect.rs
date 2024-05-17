@@ -56,15 +56,17 @@ async fn async_impl(
     info!("sending world_connect request to world server");
 
     let temp_token = random::generate_random_string(16);
+    let user_id = incoming_request.user_id;
 
     let world_server_request = WorldWorldConnectRequest::new(
         REGION_SERVER_SECRET,
         session_server_addr,
         session_server_port,
+        user_id,
         &temp_token,
     );
 
-    let Ok(world_server_response) = HttpClient::send(
+    let Ok(_world_server_response) = HttpClient::send(
         world_server_http_addr,
         world_server_http_port,
         world_server_request,
@@ -78,8 +80,6 @@ async fn async_impl(
     };
 
     info!("Received incoming user response from world server");
-
-    let user_id = world_server_response.user_id;
 
     info!("Sending user login response to session server");
 

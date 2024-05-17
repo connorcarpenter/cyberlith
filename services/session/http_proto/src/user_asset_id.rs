@@ -3,18 +3,19 @@ use naia_serde::SerdeInternal as Serde;
 use bevy_http_shared::{ApiRequest, ApiResponse, Method};
 
 use asset_id::AssetId;
+use auth_server_types::UserId;
 
 // Request
 #[derive(Serde, PartialEq, Clone)]
 pub struct UserAssetIdRequest {
     world_instance_secret: String,
-    user_id: u64,
+    user_id: UserId,
     asset_id: AssetId,
     added: bool,
 }
 
 impl UserAssetIdRequest {
-    pub fn new(world_instance_secret: &str, user_id: u64, asset_id: AssetId, added: bool) -> Self {
+    pub fn new(world_instance_secret: &str, user_id: UserId, asset_id: AssetId, added: bool) -> Self {
         Self {
             world_instance_secret: world_instance_secret.to_string(),
             user_id,
@@ -27,7 +28,7 @@ impl UserAssetIdRequest {
         &self.world_instance_secret
     }
 
-    pub fn user_id(&self) -> u64 {
+    pub fn user_id(&self) -> UserId {
         self.user_id
     }
 

@@ -19,6 +19,7 @@ crypto = { path = "../../crates/crypto" }
 asset_id = { path = "../../crates/asset/id" }
 random = { path = "../../crates/random" }
 logging = { path = "../../crates/logging" }
+auth_server_types = { path = "../auth/types" }
 
 world_server_naia_proto = { path = "naia_proto" }
 world_server_http_proto = { path = "http_proto" }

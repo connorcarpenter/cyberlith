@@ -17,7 +17,7 @@ pub fn session_connect(host_name: &str, server: &mut Server, state: Arc<RwLock<S
 
 async fn async_impl(
     state: Arc<RwLock<State>>,
-    _incoming_request: SessionConnectRequest,
+    incoming_request: SessionConnectRequest,
 ) -> Result<SessionConnectResponse, ResponseError> {
     let host_name = "region_server".to_string();
     let remote_name = "session_server".to_string();
@@ -44,7 +44,7 @@ async fn async_impl(
 
     let temp_token = random::generate_random_string(16);
 
-    let request = IncomingUserRequest::new(REGION_SERVER_SECRET, &temp_token);
+    let request = IncomingUserRequest::new(REGION_SERVER_SECRET, incoming_request.user_id, &temp_token);
 
     let Ok(_outgoing_response) = HttpClient::send(&remote_addr, remote_port, request).await else {
         warn!("Failed session_connect request to session server");

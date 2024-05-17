@@ -22,14 +22,15 @@ pub fn recv_login_request(mut global: ResMut<Global>, mut server: ResMut<HttpSer
             request.login_token
         );
 
-        let new_user_id = global.add_login_token(
+        global.add_login_token(
             &request.session_server_addr,
             request.session_server_port,
+            request.user_id,
             &request.login_token,
         );
 
         info!("Sending login response to region server ..");
 
-        server.respond(response_key, Ok(IncomingUserResponse::new(new_user_id)));
+        server.respond(response_key, Ok(IncomingUserResponse::new()));
     }
 }

@@ -6,6 +6,7 @@ use std::{
 use bevy_ecs::system::Resource;
 
 use naia_bevy_server::{RoomKey, UserKey};
+use auth_server_types::UserId;
 
 use bevy_http_client::ResponseKey as ClientResponseKey;
 
@@ -17,13 +18,13 @@ pub enum ConnectionState {
 }
 
 pub struct UserData {
-    pub user_id: u64,
+    pub user_id: UserId,
     pub session_server_addr: String,
     pub session_server_port: u16,
 }
 
 impl UserData {
-    fn new(user_id: u64, session_server_addr: &str, session_server_port: u16) -> Self {
+    fn new(user_id: UserId, session_server_addr: &str, session_server_port: u16) -> Self {
         Self {
             user_id,
             session_server_addr: session_server_addr.to_string(),
@@ -41,7 +42,6 @@ pub struct Global {
     register_instance_response_key: Option<ClientResponseKey<WorldRegisterInstanceResponse>>,
     registration_resend_rate: Duration,
     region_server_disconnect_timeout: Duration,
-    next_user_id: u64,
     login_tokens: HashMap<String, UserData>,
     users: HashMap<UserKey, UserData>,
     main_room_key: RoomKey,
@@ -62,7 +62,6 @@ impl Global {
             register_instance_response_key: None,
             registration_resend_rate,
             region_server_disconnect_timeout,
-            next_user_id: 0,
             login_tokens: HashMap::new(),
             users: HashMap::new(),
             main_room_key,
@@ -134,18 +133,13 @@ impl Global {
         &mut self,
         session_server_addr: &str,
         session_server_port: u16,
+        user_id: UserId,
         token: &str,
-    ) -> u64 {
-        let user_id = self.next_user_id;
-        self.next_user_id = self.next_user_id.wrapping_add(1);
-        if self.next_user_id == 0 {
-            panic!("user_id overflow");
-        }
+    ) {
         self.login_tokens.insert(
             token.to_string(),
             UserData::new(user_id, session_server_addr, session_server_port),
         );
-        user_id
     }
 
     pub fn take_login_token(&mut self, token: &str) -> Option<UserData> {
@@ -156,7 +150,7 @@ impl Global {
         self.users.insert(user_key.clone(), user_data);
     }
 
-    pub fn get_user_id(&self, user_key: &UserKey) -> Option<u64> {
+    pub fn get_user_id(&self, user_key: &UserKey) -> Option<UserId> {
         let user_data = self.users.get(user_key)?;
         Some(user_data.user_id)
     }

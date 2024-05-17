@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
-use auth_server_db::{DatabaseManager, UserId};
+use auth_server_db::DatabaseManager;
+use auth_server_types::UserId;
 use auth_server_http_proto::{AccessToken, RefreshToken, RegisterToken, ResetPasswordToken};
 use logging::info;
 
@@ -35,9 +36,9 @@ impl State {
         let mut user_data_map = HashMap::new();
 
         for (id, user) in database_manager.list_users() {
-            username_to_id_map.insert(user.username().to_string(), Some(*id));
-            email_to_id_map.insert(user.email().to_string(), Some(*id));
-            user_data_map.insert(*id, UserData::new());
+            username_to_id_map.insert(user.username().to_string(), Some(id));
+            email_to_id_map.insert(user.email().to_string(), Some(id));
+            user_data_map.insert(id, UserData::new());
         }
 
         Self {
@@ -135,8 +136,8 @@ impl State {
         self.refresh_tokens.contains_key(refresh_token)
     }
 
-    pub(crate) fn has_access_token(&self, access_token: &AccessToken) -> bool {
-        self.access_tokens.contains_key(access_token)
+    pub(crate) fn get_access_token(&self, access_token: &AccessToken) -> Option<&UserId> {
+        self.access_tokens.get(access_token)
     }
 
     pub(crate) fn get_user_id_by_refresh_token(

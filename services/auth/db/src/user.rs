@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
+use auth_server_types::UserId;
 
 use db::{DbRowKey, DbRowValue, DbTableKey};
 
@@ -7,7 +8,7 @@ use db::{DbRowKey, DbRowValue, DbTableKey};
 pub struct Users;
 
 impl DbTableKey for Users {
-    type Key = UserId;
+    type Key = DbUserId;
     type Value = User;
 
     fn repo_name() -> &'static str {
@@ -17,27 +18,39 @@ impl DbTableKey for Users {
 
 // user id
 #[derive(Serialize, Deserialize, Clone, Copy, Hash, Eq, PartialEq, Ord, PartialOrd, Debug)]
-pub struct UserId {
+pub struct DbUserId {
     id: u64,
 }
 
-impl DbRowKey for UserId {}
+impl DbRowKey for DbUserId {}
 
-impl UserId {
+impl DbUserId {
     pub fn new(id: u64) -> Self {
         Self { id }
     }
 }
 
-impl From<u64> for UserId {
+impl From<u64> for DbUserId {
     fn from(id: u64) -> Self {
         Self { id }
     }
 }
 
-impl Into<u64> for UserId {
+impl Into<u64> for DbUserId {
     fn into(self) -> u64 {
         self.id
+    }
+}
+
+impl From<UserId> for DbUserId {
+    fn from(user_id: UserId) -> Self {
+        Self { id: user_id.into() }
+    }
+}
+
+impl Into<UserId> for DbUserId {
+    fn into(self) -> UserId {
+        UserId::new(self.id)
     }
 }
 
@@ -75,7 +88,7 @@ pub struct User {
 impl User {}
 
 impl DbRowValue for User {
-    type Key = UserId;
+    type Key = DbUserId;
 
     fn get_key(&self) -> <Self as DbRowValue>::Key {
         <Self as DbRowValue>::Key::from(self.id.unwrap())

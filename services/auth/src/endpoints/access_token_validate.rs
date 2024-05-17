@@ -1,3 +1,4 @@
+use auth_server_types::UserId;
 use http_client::ResponseError;
 use http_server::{async_dup::Arc, http_log_util, executor::smol::lock::RwLock, ApiServer, Server, ApiResponse, ApiRequest};
 
@@ -20,7 +21,7 @@ async fn async_impl(
 
     let mut state = state.write().await;
     let response = match state.access_token_validate(incoming_request) {
-        Ok(_) => Ok(AccessTokenValidateResponse::new()),
+        Ok(user_id) => {Ok(AccessTokenValidateResponse::new(user_id))},
         Err(AuthServerError::TokenNotFound) => Err(ResponseError::Unauthenticated),
         Err(_) => {
             panic!("unhandled error for this endpoint");
@@ -35,13 +36,12 @@ impl State {
     fn access_token_validate(
         &mut self,
         request: AccessTokenValidateRequest,
-    ) -> Result<(), AuthServerError> {
+    ) -> Result<UserId, AuthServerError> {
         let access_token = request.access_token;
 
-        if !self.has_access_token(&access_token) {
+        let Some(user_id) = self.get_access_token(&access_token)  else {
             return Err(AuthServerError::TokenNotFound);
-        }
-
-        return Ok(());
+        };
+        return Ok(user_id.clone());
     }
 }

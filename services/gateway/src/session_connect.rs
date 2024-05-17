@@ -1,6 +1,7 @@
 use std::{net::SocketAddr};
 
 use naia_serde::BitWriter;
+use auth_server_types::UserId;
 
 use config::{
     REGION_SERVER_PORT, REGION_SERVER_RECV_ADDR, SESSION_SERVER_RECV_ADDR,
@@ -40,8 +41,16 @@ pub(crate) async fn handler(
         );
         http_server::http_log_util::send_req(host_name, region_server, &logged_remote_url);
 
+        // pull user_id out of incoming_request
+        let user_id: UserId = {
+            let user_id = incoming_request.get_header_first("user_id").unwrap();
+            let user_id: u64 = user_id.parse::<u64>().unwrap();
+            let user_id = UserId::new(user_id);
+            user_id
+        };
+
         let Ok(connect_response) =
-            HttpClient::send(&remote_addr, remote_port, SessionConnectRequest).await
+            HttpClient::send(&remote_addr, remote_port, SessionConnectRequest::new(user_id)).await
         else {
             warn!("Failed session_connect request to region server");
             return Err(ResponseError::InternalServerError(

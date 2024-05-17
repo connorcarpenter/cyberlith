@@ -1,3 +1,4 @@
+use auth_server_types::UserId;
 use http_client::ResponseError;
 use http_server::{async_dup::Arc, http_log_util, executor::smol::lock::RwLock, ApiServer, Server, ApiResponse, ApiRequest};
 
@@ -23,7 +24,7 @@ async fn async_impl(
 
     let mut state = state.write().await;
     let response = match state.refresh_token_grant(incoming_request) {
-        Ok(access_token) => Ok(RefreshTokenGrantResponse::new(access_token)),
+        Ok((user_id, access_token)) => Ok(RefreshTokenGrantResponse::new(user_id, access_token)),
         Err(AuthServerError::TokenNotFound) => Err(ResponseError::Unauthenticated),
         Err(_) => {
             panic!("unhandled error for this endpoint");
@@ -38,7 +39,7 @@ impl State {
     fn refresh_token_grant(
         &mut self,
         request: RefreshTokenGrantRequest,
-    ) -> Result<AccessToken, AuthServerError> {
+    ) -> Result<(UserId, AccessToken), AuthServerError> {
         let refresh_token = request.refresh_token;
 
         if !self.has_refresh_token(&refresh_token) {
@@ -50,6 +51,6 @@ impl State {
 
         let access_token = self.create_and_store_access_token(&user_id);
 
-        return Ok(access_token);
+        return Ok((user_id, access_token));
     }
 }

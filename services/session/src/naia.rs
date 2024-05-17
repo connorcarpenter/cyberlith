@@ -7,14 +7,16 @@ use naia_bevy_server::{
     transport::webrtc,
     Server,
 };
+use naia_bevy_server::events::MessageEvents;
 
 use config::{
     PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SELF_BINDING_ADDR, SESSION_SERVER_SIGNAL_PORT,
     SESSION_SERVER_WEBRTC_PORT,
 };
 use logging::{info, warn};
+use session_server_naia_proto::channels::ClientActionsChannel;
 
-use session_server_naia_proto::messages::Auth;
+use session_server_naia_proto::messages::{Auth, WorldConnectRequest};
 
 use crate::{asset::asset_manager::AssetManager, global::Global};
 
@@ -49,8 +51,11 @@ pub fn auth_events(
 ) {
     for events in event_reader.read() {
         for (user_key, auth) in events.read::<Auth>() {
-            if global.take_login_token(&auth.token()) {
+            if let Some(user_data) = global.take_login_token(&auth.token()) {
                 info!("Accepted connection. Token: {}", auth.token());
+
+                // add to users
+                global.add_user(user_key, user_data);
 
                 // Accept incoming connection
                 server.accept_connection(&user_key);
@@ -67,7 +72,6 @@ pub fn auth_events(
 pub fn connect_events(
     server: Server,
     mut event_reader: EventReader<ConnectEvent>,
-    mut global: ResMut<Global>,
     mut asset_manager: ResMut<AssetManager>,
 ) {
     for ConnectEvent(user_key) in event_reader.read() {
@@ -75,7 +79,6 @@ pub fn connect_events(
 
         info!("Server connected to: {}", address);
 
-        global.init_worldless_user(user_key);
         asset_manager.register_user(user_key);
     }
 }
@@ -96,5 +99,20 @@ pub fn disconnect_events(
 pub fn error_events(mut event_reader: EventReader<ErrorEvent>) {
     for ErrorEvent(error) in event_reader.read() {
         info!("Server Error: {:?}", error);
+    }
+}
+
+pub fn message_events(
+    mut global: ResMut<Global>,
+    mut event_reader: EventReader<MessageEvents>,
+) {
+    for events in event_reader.read() {
+        for (user_key, _req) in events.read::<ClientActionsChannel, WorldConnectRequest>() {
+            if let Some(user_data) = global.get_user_data_mut(&user_key) {
+                user_data.make_ready_for_world_connect();
+            } else {
+                warn!("User not found: {:?}", user_key);
+            }
+        }
     }
 }

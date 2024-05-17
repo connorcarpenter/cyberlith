@@ -1,5 +1,5 @@
 
-use auth_server_db::UserId;
+use auth_server_types::UserId;
 use http_client::ResponseError;
 use http_server::{async_dup::Arc, executor::smol::lock::RwLock, ApiServer, Server};
 use logging::info;

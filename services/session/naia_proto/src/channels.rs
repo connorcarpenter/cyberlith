@@ -8,6 +8,9 @@ pub struct PrimaryChannel;
 #[derive(Channel)]
 pub struct RequestChannel;
 
+#[derive(Channel)]
+pub struct ClientActionsChannel;
+
 // Plugin
 pub struct ChannelsPlugin;
 
@@ -21,6 +24,11 @@ impl ProtocolPlugin for ChannelsPlugin {
             .add_channel::<RequestChannel>(
                 ChannelDirection::Bidirectional,
                 ChannelMode::UnorderedReliable(ReliableSettings::default()),
-            );
+            )
+            .add_channel::<ClientActionsChannel>(
+                ChannelDirection::ClientToServer,
+                ChannelMode::OrderedReliable(ReliableSettings::default()),
+            )
+        ;
     }
 }

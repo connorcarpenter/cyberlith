@@ -1,4 +1,5 @@
 use naia_serde::SerdeInternal as Serde;
+use auth_server_types::UserId;
 
 use bevy_http_shared::{ApiRequest, ApiResponse, Method};
 
@@ -8,6 +9,7 @@ pub struct WorldConnectRequest {
     region_secret: String,
     pub session_server_addr: String,
     pub session_server_port: u16,
+    pub user_id: UserId,
     pub login_token: String,
 }
 
@@ -16,12 +18,14 @@ impl WorldConnectRequest {
         region_secret: &str,
         session_server_addr: &str,
         session_server_port: u16,
+        user_id: UserId,
         login_token: &str,
     ) -> Self {
         Self {
             region_secret: region_secret.to_string(),
             session_server_addr: session_server_addr.to_string(),
             session_server_port,
+            user_id,
             login_token: login_token.to_string(),
         }
     }
@@ -33,13 +37,11 @@ impl WorldConnectRequest {
 
 // Response
 #[derive(Serde, PartialEq, Clone)]
-pub struct IncomingUserResponse {
-    pub user_id: u64,
-}
+pub struct IncomingUserResponse;
 
 impl IncomingUserResponse {
-    pub fn new(user_id: u64) -> Self {
-        Self { user_id }
+    pub fn new() -> Self {
+        Self
     }
 }
 

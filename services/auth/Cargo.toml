@@ -24,3 +24,4 @@ validation = { path = "../../crates/validation" }
 
 auth_server_http_proto = { path = "http_proto" }
 auth_server_db = { path = "db" }
+auth_server_types = { path = "types" }

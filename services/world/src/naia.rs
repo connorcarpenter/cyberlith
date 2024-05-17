@@ -70,7 +70,7 @@ pub fn auth_events(
         for (user_key, auth) in events.read::<Auth>() {
             if let Some(user_data) = global.take_login_token(&auth.login_token) {
                 info!(
-                    "Accepted connection. User Id: {}, Token: {}",
+                    "Accepted connection. User Id: {:?}, Token: {}",
                     user_data.user_id, auth.login_token
                 );
 

@@ -3,6 +3,7 @@ use logging::info;
 use http_client::ResponseError;
 use http_server::{async_dup::Arc, http_log_util, executor::smol::lock::RwLock, ApiServer, Server, ApiResponse, ApiRequest};
 use auth_server_db::{AuthServerDbError, User, UserRole};
+use auth_server_types::UserId;
 
 use auth_server_http_proto::{AccessToken, RefreshToken, UserRegisterConfirmRequest, UserRegisterConfirmResponse};
 
@@ -60,14 +61,15 @@ impl State {
             &temp_reg.password,
             UserRole::Free,
         );
-        let new_user_id = self
+        let new_user_id: u64 = self
             .database_manager
             .create_user(new_user)
             .map_err(|err| match err {
                 AuthServerDbError::InsertedDuplicateUserId => {
                     AuthServerError::InsertedDuplicateUserId
                 }
-            })?;
+            })?.into();
+        let new_user_id = UserId::new(new_user_id);
 
         // add to username -> id map
         let Some(id_opt) = self.username_to_id_map.get_mut(&temp_reg.name) else {
@@ -101,7 +103,6 @@ impl State {
         // generate new access and refresh token for user
         let (refresh_token, access_token) = self.user_new_login_gen_tokens(&new_user_id);
 
-        let new_user_id: u64 = new_user_id.into();
         info!("new user created: {:?} - {:?}", new_user_id, temp_reg.name);
 
         Ok((refresh_token, access_token))

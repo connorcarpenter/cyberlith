@@ -34,6 +34,7 @@ members = [
     "services/auth",
     "services/auth/http_proto",
     "services/auth/db",
+    "services/auth/types",
     # Region Server
     "services/region",
     "services/region/http_proto",

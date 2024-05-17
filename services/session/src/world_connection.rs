@@ -15,9 +15,9 @@ use config::{REGION_SERVER_PORT, REGION_SERVER_RECV_ADDR};
 use crate::{asset::asset_manager::AssetManager, global::Global};
 
 pub fn send_world_connect_request(mut http_client: ResMut<HttpClient>, mut global: ResMut<Global>) {
-    let worldless_users = global.take_worldless_users();
-    for user_key in worldless_users {
-        let request = WorldConnectRequest::new(global.instance_secret());
+    let worldless_users = global.get_users_ready_to_connect_to_world();
+    for (user_key, user_id) in worldless_users {
+        let request = WorldConnectRequest::new(global.instance_secret(), user_id);
         let key = http_client.send(REGION_SERVER_RECV_ADDR, REGION_SERVER_PORT, request);
         global.add_world_connect_response_key(&user_key, key);
     }
@@ -36,7 +36,7 @@ pub fn recv_world_connect_response(
                     info!("received from regionserver: world_connect(token: {:?})", response.login_token);
 
                     // store world instance secret with user key
-                    global.add_worldfull_user(
+                    global.user_set_world_connected(
                         &user_key,
                         &response.world_server_instance_secret,
                         response.world_server_user_id,
@@ -51,7 +51,6 @@ pub fn recv_world_connect_response(
                 }
                 Err(_) => {
                     warn!("error receiving message from region server..");
-                    global.add_worldless_user(&user_key);
                 }
             }
         }
@@ -84,7 +83,7 @@ pub fn recv_added_asset_id_request(
         );
 
         let user_key = global
-            .get_user_key_from_world_instance(world_instance_secret, user_id)
+            .get_user_key_from_world_instance(world_instance_secret, &user_id)
             .unwrap();
 
         if let Some((asset_server_addr, asset_server_port)) = global.get_asset_server_url() {

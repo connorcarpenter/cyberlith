@@ -1,4 +1,5 @@
 use naia_serde::SerdeInternal as Serde;
+use auth_server_types::UserId;
 
 use http_common::{ApiRequest, ApiResponse, Method};
 
@@ -6,11 +7,15 @@ use session_server_naia_proto::messages::AuthInner as SessionAuth;
 
 // Request
 #[derive(Serde, PartialEq, Clone)]
-pub struct SessionConnectRequest;
+pub struct SessionConnectRequest {
+    pub user_id: UserId,
+}
 
 impl SessionConnectRequest {
-    pub fn new() -> Self {
-        Self
+    pub fn new(user_id: UserId) -> Self {
+        Self {
+            user_id,
+        }
     }
 }
 

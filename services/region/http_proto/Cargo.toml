@@ -11,6 +11,7 @@ local = ["session_server_naia_proto/local"]
 prod = ["session_server_naia_proto/prod"]
 
 [dependencies]
+auth_server_types = { path = "../../auth/types" }
 naia-serde = { path = "../../../../naia/shared/serde" }
 http_common = { path = "../../../crates/http/http_common" }
 session_server_naia_proto = { path = "../../session/naia_proto" }

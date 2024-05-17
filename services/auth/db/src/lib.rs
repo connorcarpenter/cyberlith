@@ -6,7 +6,7 @@ mod db_manager;
 pub use db_manager::DatabaseManager;
 
 mod user;
-pub use user::{User, UserId, UserRole};
+pub use user::{User, UserRole};
 
 mod error;
 pub use error::AuthServerDbError;

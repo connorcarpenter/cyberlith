@@ -1,4 +1,5 @@
 use naia_serde::SerdeInternal as Serde;
+use auth_server_types::UserId;
 
 use http_common::{ApiRequest, ApiResponse, Method};
 
@@ -21,12 +22,14 @@ impl RefreshTokenGrantRequest {
 // Response
 #[derive(Serde, PartialEq, Clone)]
 pub struct RefreshTokenGrantResponse {
+    pub user_id: UserId,
     pub access_token: AccessToken,
 }
 
 impl RefreshTokenGrantResponse {
-    pub fn new(access_token: AccessToken) -> Self {
+    pub fn new(user_id: UserId, access_token: AccessToken) -> Self {
         Self {
+            user_id,
             access_token,
         }
     }
