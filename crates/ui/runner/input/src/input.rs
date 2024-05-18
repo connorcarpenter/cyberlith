@@ -199,6 +199,19 @@ fn ui_receive_hover_recurse(
             mouse_position.y,
         );
     }
+
+    if let Some((_, node_id, WidgetKind::UiContainer)) = ui_manager
+        .ui_input_state()
+        .get_hover()
+        .map(|(asset_id, node_id)| {
+            let ui_config = ui_manager.ui_config(&asset_id).unwrap();
+            let widget_kind = ui_config.get_node(&node_id).unwrap().widget_kind();
+            (asset_id, node_id, widget_kind)
+        }) {
+        if let Some(child_ui_id) = ui_manager.ui_state(ui_asset_id).get_ui_container_asset_id_opt(&node_id) {
+            ui_receive_hover_recurse(ui_manager, mouse_position, &child_ui_id);
+        }
+    }
 }
 
 pub fn ui_receive_input(
@@ -513,13 +526,14 @@ fn ui_update_hover(
         warn!("no node for id: {:?}", node_id);
         return;
     };
+    let is_point_inside = point_is_inside(
+        (width, height, child_offset_x, child_offset_y),
+        mouse_x,
+        mouse_y,
+    );
     match node.widget_kind() {
         WidgetKind::Button => {
-            if point_is_inside(
-                (width, height, child_offset_x, child_offset_y),
-                mouse_x,
-                mouse_y,
-            ) {
+            if is_point_inside {
                 ui_manager.ui_input_state_mut().set_cursor_icon(CursorIcon::Hand);
                 ui_manager.ui_input_state_mut().receive_hover(ui_asset_id, node_id);
             }
@@ -535,11 +549,7 @@ fn ui_update_hover(
                     mouse_y
                 );
 
-            if point_is_inside(
-                (width, height, child_offset_x, child_offset_y),
-                mouse_x,
-                mouse_y,
-            ) {
+            if is_point_inside {
                 ui_manager.ui_input_state_mut().receive_hover(ui_asset_id, node_id);
                 if is_hovering_eye {
                     ui_manager.ui_input_state_mut().set_cursor_icon(CursorIcon::Hand);
@@ -548,6 +558,11 @@ fn ui_update_hover(
                 }
             }
         },
+        WidgetKind::UiContainer => {
+            if is_point_inside {
+                ui_manager.ui_input_state_mut().receive_hover(ui_asset_id, node_id);
+            }
+        }
         _ => {}
     }
 }

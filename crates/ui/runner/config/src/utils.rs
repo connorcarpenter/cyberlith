@@ -68,7 +68,8 @@ pub fn get_carat_offset_and_scale(
     let (x_positions, text_height) = text_get_raw_rects(text_measurer, &subimage_indices);
 
     let cursor_scale = textbox_scale_y / text_height;
-    let carat_offset_x = x_positions[carat_index - text_offset_index] * cursor_scale;
+    let carat_offset_index = (carat_index - text_offset_index).min(x_positions.len() - 1);
+    let carat_offset_x = x_positions[carat_offset_index] * cursor_scale;
 
     (carat_offset_x, cursor_scale)
 }
