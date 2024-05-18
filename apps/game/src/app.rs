@@ -1,6 +1,7 @@
 use std::sync::{Arc, RwLock};
 
 use bevy_app::{App, Plugin, Startup, Update};
+use bevy_ecs::{prelude::in_state, schedule::IntoSystemConfigs};
 
 use game_engine::{
     kernel::KernelApp,
@@ -9,6 +10,7 @@ use game_engine::{
     http::CookieStore,
 };
 
+use crate::states::AppState;
 use super::systems::{keyboard_input, network, walker_scene, init_spinner, cube_scene, resize, draw};
 
 pub struct GameApp {
@@ -38,16 +40,20 @@ impl Plugin for GameApp {
                 max_size: None,
                 ..Default::default()
             })
+            // states
+            .insert_state(AppState::Loading)
             // other input
             .add_systems(Update, keyboard_input::process)
-            // Scene Systems
-            //.add_systems(Startup, walker_scene::scene_setup)
-            .add_systems(Draw, init_spinner::draw)
-            .add_systems(Update, walker_scene::step)
+            // scene systems
             .add_systems(Startup, cube_scene::setup)
             .add_systems(Update, cube_scene::step)
+            .add_systems(Update, walker_scene::step)
+            // resize window listener
             .add_systems(Update, resize::handle_viewport_resize)
+            // general drawing
             .add_systems(Draw, draw::draw)
+            // drawing loading spinner
+            .add_systems(Draw, init_spinner::draw.run_if(in_state(AppState::Loading)))
             // Network Systems
             .add_systems(Update, network::world_spawn_entity_events)
             .add_systems(Update, network::world_main_insert_position_events)
