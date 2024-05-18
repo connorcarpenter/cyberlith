@@ -2,6 +2,7 @@ use std::default::Default;
 
 use bevy_ecs::system::Resource;
 
+use math::{lerp, Vec2};
 use storage::Handle;
 
 use crate::{
@@ -11,6 +12,7 @@ use crate::{
         Transform, TypedLight, Viewport,
     },
     resources::render_pass::RenderPass,
+    shapes::set_2d_line_transform
 };
 
 #[derive(Resource)]
@@ -101,6 +103,47 @@ impl RenderFrame {
     ) {
         let contents = self.get_render_pass_mut(render_layer_opt);
         contents.lights.push(TypedLight::Ambient(*light));
+    }
+
+    pub fn draw_spinner(
+        &mut self,
+        render_layer_opt: Option<&RenderLayer>,
+        mat_handle: &Handle<CpuMaterial>,
+        mesh_handle: &Handle<CpuMesh>,
+        transform: &Transform,
+        time: f32,
+    ) {
+        let radius = (transform.scale.y / 2.0) - 2.0;
+
+        let start_angle = time % std::f32::consts::TAU;
+        let angle_length = (270.0f32.to_radians() * (((time * 0.25).sin() + 1.0) * 0.5)) + 30.0f32.to_radians();
+        let end_angle = start_angle + angle_length;
+        let center = Vec2::new(
+            transform.translation.x + (transform.scale.x * 0.5),
+            transform.translation.y + (transform.scale.y * 0.5)
+        );
+
+        let n_points: usize = (angle_length / 45.0f32.to_radians()).floor() as usize + 2;
+        let points: Vec<Vec2> = (0..n_points)
+            .map(|i| {
+                let angle = lerp(start_angle, end_angle, i as f32 / n_points as f32);
+                let (sin, cos) = angle.sin_cos();
+
+                center + radius * Vec2::new(cos, sin)
+            })
+            .collect();
+
+        // draw lines
+        for i in 0..points.len() - 1 {
+            let start = points[i];
+            let end = points[i + 1];
+
+            let mut line_transform = Transform::default();
+            set_2d_line_transform(&mut line_transform, start, end, transform.translation.z);
+            line_transform.scale.y = transform.scale.y * 0.05;
+
+            self.draw_mesh(render_layer_opt, mesh_handle, &mat_handle, &line_transform);
+        }
     }
 
     pub fn draw_mesh(
