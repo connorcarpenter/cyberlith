@@ -37,15 +37,17 @@ pub fn setup(
 ) {
     let mut uis = Vec::new();
 
-    // uis.push(start::ui_define()); // start
-    // uis.push(login::ui_define()); // login
-    // uis.push(register::ui_define()); // register
-    // uis.push(register_finish::ui_define()); // register_finish
-    // uis.push(forgot_username::ui_define()); // forgot username
-    // uis.push(forgot_username_finish::ui_define()); // forgot username finish
-    // uis.push(forgot_password::ui_define()); // forgot password
-    // uis.push(forgot_password_finish::ui_define()); // forgot password finish
-    uis.push(reset_password::ui_define()); // reset password
+    // uis.push(launcher::start::ui_define()); // start
+    // uis.push(launcher::login::ui_define()); // login
+    // uis.push(launcher::register::ui_define()); // register
+    // uis.push(launcher::register_finish::ui_define()); // register_finish
+    // uis.push(launcher::forgot_username::ui_define()); // forgot username
+    // uis.push(launcher::forgot_username_finish::ui_define()); // forgot username finish
+    // uis.push(launcher::forgot_password::ui_define()); // forgot password
+    // uis.push(launcher::forgot_password_finish::ui_define()); // forgot password finish
+    // uis.push(launcher::reset_password::ui_define()); // reset password
+
+    uis.push(game::main_menu::ui_define()); // game main menu
 
     let mut ui_handles = Vec::new();
     for (ui_name, ui_asset_id, ui_etag, ui) in uis {

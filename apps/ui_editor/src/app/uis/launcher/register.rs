@@ -9,7 +9,7 @@ use ui_runner_config::{UsernameValidation, PasswordValidation, EmailValidation};
 pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
     // config
     let ui_name = "register";
-    let ui_asset_id_str = "rckneg"; //AssetId::get_random().as_string(); // keep this around to generate new AssetIds if needed!
+    let ui_asset_id_str = "rckneg"; //AssetId::gen_random().as_string(); // keep this around to generate new AssetIds if needed!
     let text_icon_asset_id_str = "34mvvk"; // this probably shouldn't change, it's the text font
     let eye_icon_asset_id_str = "qbgz5j"; // this probably shouldn't change, it's the password eye
     let ui_etag = ETag::gen_random();

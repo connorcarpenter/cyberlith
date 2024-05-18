@@ -8,7 +8,7 @@ use ui_builder::{Alignment, UiConfig, UiConfigBuild};
 pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
     // config
     let ui_name = "start";
-    let ui_asset_id_str = "tpp7za"; // AssetId::get_random(); // keep this around to generate new AssetIds if needed!
+    let ui_asset_id_str = "tpp7za"; // AssetId::gen_random().as_string(); // keep this around to generate new AssetIds if needed!
     let text_icon_asset_id_str = "34mvvk"; // this probably shouldn't change, it's the text font
     let eye_icon_asset_id_str = "qbgz5j"; // this probably shouldn't change, it's the password eye
     let ui_etag = ETag::gen_random();
