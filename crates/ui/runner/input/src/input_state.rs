@@ -1,3 +1,4 @@
+use asset_id::AssetId;
 use input::{CursorIcon, Modifiers};
 use instant::Instant;
 use math::Vec2;
@@ -9,7 +10,7 @@ use crate::{input::ui_receive_input, UiGlobalEvent, UiInputEvent, UiNodeEvent};
 
 pub struct UiInputState {
     global_events: Vec<UiGlobalEvent>,
-    node_events: Vec<(NodeId, UiNodeEvent)>,
+    node_events: Vec<(AssetId, NodeId, UiNodeEvent)>,
 
     hovering_node: Option<NodeId>,
     selected_node: Option<NodeId>,
@@ -99,6 +100,7 @@ impl UiInputState {
     // events
     pub fn receive_input(
         &mut self,
+        ui_asset_id: &AssetId,
         ui_config: &UiRuntimeConfig,
         ui_state: &mut UiState,
         text_measurer: &dyn TextMeasurer,
@@ -106,6 +108,7 @@ impl UiInputState {
         events: Vec<UiInputEvent>,
     ) {
         ui_receive_input(
+            ui_asset_id,
             ui_config,
             ui_state,
             self,
@@ -167,11 +170,11 @@ impl UiInputState {
         std::mem::take(&mut self.global_events)
     }
 
-    pub fn emit_node_event(&mut self, id: &NodeId, event: UiNodeEvent) {
-        self.node_events.push((*id, event));
+    pub fn emit_node_event(&mut self, asset_id: &AssetId, node_id: &NodeId, event: UiNodeEvent) {
+        self.node_events.push((*asset_id, *node_id, event));
     }
 
-    pub fn take_node_events(&mut self) -> Vec<(NodeId, UiNodeEvent)> {
+    pub fn take_node_events(&mut self) -> Vec<(AssetId, NodeId, UiNodeEvent)> {
         std::mem::take(&mut self.node_events)
     }
 

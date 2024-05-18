@@ -1,8 +1,7 @@
+use asset_id::AssetId;
 use logging::warn;
-
 use input::{CursorIcon, GamepadButtonType, InputEvent, Key, Modifiers, MouseButton};
 use math::Vec2;
-
 use ui_runner_config::{point_is_inside, NodeId, TextMeasurer, UiRuntimeConfig, WidgetKind};
 use ui_state::UiState;
 
@@ -172,6 +171,7 @@ impl UiInputEvent {
 }
 
 pub fn ui_receive_input(
+    ui_asset_id: &AssetId,
     ui_config: &UiRuntimeConfig,
     ui_state: &mut UiState,
     ui_input_state: &mut UiInputState,
@@ -228,11 +228,11 @@ pub fn ui_receive_input(
                         match kind {
                             WidgetKind::Button => {
                                 ui_input_state.set_active_node(Some(hover_node));
-                                ui_input_state.emit_node_event(&hover_node, UiNodeEvent::Clicked);
+                                ui_input_state.emit_node_event(ui_asset_id, &hover_node, UiNodeEvent::Clicked);
                             }
                             WidgetKind::Textbox => {
                                 ui_input_state.set_active_node(Some(hover_node));
-                                ui_input_state.emit_node_event(&hover_node, UiNodeEvent::Clicked);
+                                ui_input_state.emit_node_event(ui_asset_id, &hover_node, UiNodeEvent::Clicked);
                                 ui_input_state.reset_interact_timer();
                                 let (_, node_height, node_x, _, _) =
                                     ui_state.cache.bounds(&hover_node).unwrap();
@@ -430,7 +430,7 @@ pub fn ui_receive_input(
                     match widget_kind {
                         WidgetKind::Button => {
                             ui_input_state.set_active_node(Some(hover_id));
-                            ui_input_state.emit_node_event(&hover_id, UiNodeEvent::Clicked);
+                            ui_input_state.emit_node_event(ui_asset_id, &hover_id, UiNodeEvent::Clicked);
                         }
                         WidgetKind::Textbox => {
                             ui_input_state.set_active_node(Some(hover_id));

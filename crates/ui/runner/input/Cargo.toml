@@ -9,6 +9,7 @@ input = { path = "../../../input" }
 math = { path = "../../../math" }
 instant = { path = "../../../instant" }
 logging = { path = "../../../logging" }
+asset_id = { path = "../../../asset/id" }
 ui_state = { path = "../state" }
 ui_runner_config = { path = "../config" }
 

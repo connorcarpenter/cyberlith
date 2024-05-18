@@ -8,7 +8,7 @@ use render_api::{
     resources::RenderFrame,
 };
 use storage::Handle;
-use ui_runner::{config::{get_carat_offset_and_scale, text_get_raw_rects, text_get_subimage_indices, NodeId, UiRuntimeConfig, WidgetKind}, input::UiInputState, state::{NodeActiveState, UiState}, Blinkiness, UiHandle, UiManager, UiRuntime};
+use ui_runner::{config::{get_carat_offset_and_scale, text_get_raw_rects, text_get_subimage_indices, NodeId, UiRuntimeConfig, WidgetKind}, state::{NodeActiveState, UiState}, Blinkiness, UiHandle, UiManager, UiRuntime};
 
 pub trait UiRender {
     fn draw_ui(&self, asset_manager: &AssetManager, render_frame: &mut RenderFrame);
@@ -43,7 +43,7 @@ impl UiRenderer {
             return;
         };
 
-        let (_, ui_input_state, ui, _, camera_bundle) = ui_runner.inner_refs();
+        let (_, ui, _, camera_bundle) = ui_runner.inner_refs();
 
         render_frame.draw_camera(
             Some(&RenderLayer::UI),
@@ -59,7 +59,7 @@ impl UiRenderer {
         let text_icon_handle = ui_runner.get_text_icon_handle();
         let eye_icon_handle = ui_runner.get_eye_icon_handle();
 
-        let carat_blink = blinkiness.enabled() || ui_input_state.interact_timer_within_seconds(1.0);
+        let carat_blink = blinkiness.enabled() || ui_manager.interact_timer_within_seconds(1.0);
 
         for node_id in 0..ui.nodes_len() {
             let node_id = NodeId::from_usize(node_id);
@@ -176,7 +176,7 @@ fn draw_ui_node(
     eye_icon_handle: &AssetHandle<IconData>,
     id: &NodeId,
 ) {
-    let (ui_state, ui_input_state, ui_config, _, _) = ui_runner.inner_refs();
+    let (ui_state, ui_config, _, _) = ui_runner.inner_refs();
 
     let Some((width, height, child_offset_x, child_offset_y, child_offset_z)) =
         ui_state.cache.bounds(id)
@@ -221,7 +221,6 @@ fn draw_ui_node(
                     render_frame,
                     ui_config,
                     ui_state,
-                    ui_input_state,
                     id,
                     &transform,
                 );
@@ -234,7 +233,6 @@ fn draw_ui_node(
                     carat_blink,
                     ui_config,
                     ui_state,
-                    ui_input_state,
                     text_icon_handle,
                     eye_icon_handle,
                     id,
@@ -352,7 +350,6 @@ fn draw_ui_button(
     render_frame: &mut RenderFrame,
     ui_config: &UiRuntimeConfig,
     ui_state: &UiState,
-    ui_input_state: &UiInputState,
     id: &NodeId,
     transform: &Transform,
 ) {
@@ -361,7 +358,7 @@ fn draw_ui_button(
     };
 
     // draw button
-    let active_state = ui_input_state.get_active_state(id);
+    let active_state = ui_manager.input_get_active_state(id);
     if let Some(mat_handle) = button_style_state.current_color_handle(active_state) {
         let background_alpha = ui_config.node_background_alpha(id);
         if background_alpha > 0.0 {
@@ -384,7 +381,6 @@ fn draw_ui_textbox(
     carat_blink: bool,
     ui_config: &UiRuntimeConfig,
     ui_state: &UiState,
-    ui_input_state: &UiInputState,
     text_icon_handle: &AssetHandle<IconData>,
     eye_icon_handle: &AssetHandle<IconData>,
     id: &NodeId,
@@ -398,7 +394,7 @@ fn draw_ui_textbox(
     };
 
     // draw textbox
-    let active_state = ui_input_state.get_active_state(id);
+    let active_state = ui_manager.input_get_active_state(id);
     if let Some(mat_handle) = textbox_style_state.current_color_handle(active_state) {
         let background_alpha = ui_config.node_background_alpha(id);
         if background_alpha > 0.0 {
@@ -442,7 +438,7 @@ fn draw_ui_textbox(
 
         if active_state == NodeActiveState::Active {
             // draw selection box if needed
-            if let Some(select_index) = ui_input_state.select_index {
+            if let Some(select_index) = ui_manager.input_get_select_index() {
                 if let Some(mat_handle) = textbox_style_state.select_color_handle() {
                     text_transform.translation.z =
                         transform.translation.z + (UiRuntimeConfig::Z_STEP_RENDER * 1.0);
@@ -456,7 +452,7 @@ fn draw_ui_textbox(
                         textbox_text,
                         textbox_state.offset_index,
                         select_index,
-                        ui_input_state.carat_index,
+                        ui_manager.input_get_carat_index(),
                     );
                 }
             }
@@ -473,7 +469,7 @@ fn draw_ui_textbox(
                     &text_transform,
                     textbox_text,
                     textbox_state.offset_index,
-                    ui_input_state.carat_index,
+                    ui_manager.input_get_carat_index(),
                 );
             }
 
@@ -565,7 +561,7 @@ fn draw_ui_container(
         return;
     };
 
-    let (_, _, ui, _, _) = ui_runner.inner_refs();
+    let (_, ui, _, _) = ui_runner.inner_refs();
 
     for node_id in 0..ui.nodes_len() {
         let node_id = NodeId::from_usize(node_id);

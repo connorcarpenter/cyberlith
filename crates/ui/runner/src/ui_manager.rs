@@ -6,9 +6,8 @@ use bevy_ecs::{
     prelude::World,
     system::Resource,
 };
-use logging::warn;
 
-use crate::handle::UiHandle;
+use logging::warn;
 use asset_id::AssetId;
 use asset_loader::{
     AssetHandle, AssetManager, IconData, ProcessedAssetStore, TypedAssetId, UiTextMeasurer,
@@ -16,20 +15,18 @@ use asset_loader::{
 use clipboard::ClipboardManager;
 use input::{CursorIcon, Input};
 use math::Vec2;
-use render_api::components::RenderLayer;
 use render_api::{
     base::{CpuMaterial, CpuMesh},
-    components::Camera,
+    components::{Camera, RenderLayer},
     resources::Time,
 };
 use render_api::shapes::UnitSquare;
 use storage::{Handle, Storage};
-use ui_input::{UiGlobalEvent, UiInputEvent, UiNodeEvent, UiNodeEventHandler};
+use ui_input::{UiGlobalEvent, UiInputEvent, UiInputState, UiNodeEvent, UiNodeEventHandler};
 use ui_runner_config::{NodeId, UiRuntimeConfig};
+use ui_state::NodeActiveState;
 
-use crate::config::ValidationType;
-use crate::runtime::UiRuntime;
-use crate::state_globals::StateGlobals;
+use crate::{state_globals::StateGlobals, runtime::UiRuntime, config::ValidationType, handle::UiHandle};
 
 #[derive(Resource)]
 pub struct UiManager {
@@ -50,6 +47,7 @@ pub struct UiManager {
     pub blinkiness: Blinkiness,
 
     globals: StateGlobals,
+    input_state: UiInputState,
 }
 
 impl Default for UiManager {
@@ -70,6 +68,7 @@ impl Default for UiManager {
             blinkiness: Blinkiness::new(),
 
             globals: StateGlobals::new(),
+            input_state: UiInputState::new(),
         }
     }
 }
@@ -426,7 +425,7 @@ impl UiManager {
             warn!("ui data not loaded 1: {:?}", ui_handle.asset_id());
             return;
         };
-        ui_runtime.generate_new_inputs(next_inputs);
+        ui_runtime.generate_new_inputs(&mut self.input_state, next_inputs);
     }
 
     pub fn update_ui_input(
@@ -446,23 +445,19 @@ impl UiManager {
             return;
         };
         let text_measurer = UiTextMeasurer::new(icon_data);
-        ui_runtime.receive_input(&text_measurer, mouse_position, ui_input_events);
+        ui_runtime.receive_input(ui_handle, &text_measurer, mouse_position, &mut self.input_state, ui_input_events);
 
         // get any global events
-        let mut global_events: Vec<UiGlobalEvent> = ui_runtime.take_global_events();
+        let mut global_events: Vec<UiGlobalEvent> = self.take_global_events();
         self.ui_global_events.append(&mut global_events);
 
         // get any node events
-        let mut events: Vec<(AssetId, NodeId, UiNodeEvent)> = ui_runtime
-            .take_node_events()
-            .iter()
-            .map(|(node_id, event)| (ui_handle.asset_id(), *node_id, event.clone()))
-            .collect();
+        let mut events = self.take_node_events();
 
         self.ui_node_events.append(&mut events);
 
         // get cursor icon change
-        let new_cursor_icon = ui_runtime.get_cursor_icon();
+        let new_cursor_icon = self.get_cursor_icon();
         if new_cursor_icon != self.last_cursor_icon {
             self.cursor_icon_change = Some(new_cursor_icon);
         }
@@ -547,6 +542,34 @@ impl UiManager {
 
     pub fn get_box_mesh_handle(&self) -> Option<&Handle<CpuMesh>> {
         self.globals.get_box_mesh_handle()
+    }
+
+    pub(crate) fn take_global_events(&mut self) -> Vec<UiGlobalEvent> {
+        self.input_state.take_global_events()
+    }
+
+    pub(crate) fn take_node_events(&mut self) -> Vec<(AssetId, NodeId, UiNodeEvent)> {
+        self.input_state.take_node_events()
+    }
+
+    pub(crate) fn get_cursor_icon(&self) -> CursorIcon {
+        self.input_state.get_cursor_icon()
+    }
+
+    pub fn interact_timer_within_seconds(&self, secs: f32) -> bool {
+        self.input_state.interact_timer_within_seconds(secs)
+    }
+
+    pub fn input_get_active_state(&self, id: &NodeId) -> NodeActiveState {
+        self.input_state.get_active_state(id)
+    }
+
+    pub fn input_get_select_index(&self) -> Option<usize> {
+        self.input_state.select_index
+    }
+
+    pub fn input_get_carat_index(&self) -> usize {
+        self.input_state.carat_index
     }
 }
 
