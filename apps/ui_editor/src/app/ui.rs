@@ -24,7 +24,7 @@ use game_engine::{
 use ui_builder::UiConfig;
 use ui_runner_config::UiRuntimeConfig;
 
-use crate::app::{global::Global, ui_backups::*};
+use crate::app::{global::Global, uis::*};
 
 #[derive(Event, Default)]
 pub struct SubmitButtonEvent;
