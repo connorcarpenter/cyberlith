@@ -11,6 +11,7 @@ pub(crate) fn compute_styles(styles: Vec<NodeStyle>) -> Vec<BaseNodeStyle> {
             WidgetKind::Text => WidgetStyle::Text(TextStyle::empty()),
             WidgetKind::Textbox => WidgetStyle::Textbox(TextboxStyle::empty()),
             WidgetKind::Spinner => WidgetStyle::Spinner(SpinnerStyle::empty()),
+            WidgetKind::UiContainer => WidgetStyle::UiContainer,
         };
         let mut output_style = BaseNodeStyle::empty(widget_style);
 

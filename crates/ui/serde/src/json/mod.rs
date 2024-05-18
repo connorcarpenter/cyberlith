@@ -137,6 +137,7 @@ pub(crate) enum WidgetStyleJson {
     Button(ButtonStyleJson),
     Textbox(TextboxStyleJson),
     Spinner(SpinnerStyleJson),
+    UiContainer,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -207,6 +208,7 @@ impl UiNodeJson {
             WidgetJson::Button(_) => WidgetKind::Button,
             WidgetJson::Textbox(_) => WidgetKind::Textbox,
             WidgetJson::Spinner(_) => WidgetKind::Spinner,
+            WidgetJson::UiContainer(_) => WidgetKind::UiContainer,
         }
     }
 }
@@ -219,6 +221,7 @@ pub(crate) enum WidgetJson {
     Button(ButtonJson),
     Textbox(TextboxJson),
     Spinner(SpinnerJson),
+    UiContainer(UiContainerJson),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -249,6 +252,11 @@ pub(crate) struct TextboxJson {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub(crate) struct SpinnerJson {
+    id_str: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub(crate) struct UiContainerJson {
     id_str: String,
 }
 

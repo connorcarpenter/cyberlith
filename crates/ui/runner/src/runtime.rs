@@ -100,7 +100,7 @@ impl UiRuntime {
         }
     }
 
-    pub fn decompose_to_refs(
+    pub fn inner_refs(
         &self,
     ) -> (
         &UiState,

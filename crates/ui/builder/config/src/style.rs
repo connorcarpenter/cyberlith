@@ -22,6 +22,7 @@ pub enum WidgetStyle {
     Button(ButtonStyle),
     Textbox(TextboxStyle),
     Spinner(SpinnerStyle),
+    UiContainer,
 }
 
 impl WidgetStyle {
@@ -32,6 +33,7 @@ impl WidgetStyle {
             Self::Button(_) => WidgetKind::Button,
             Self::Textbox(_) => WidgetKind::Textbox,
             Self::Spinner(_) => WidgetKind::Spinner,
+            Self::UiContainer => WidgetKind::UiContainer,
         }
     }
 
@@ -42,6 +44,7 @@ impl WidgetStyle {
             (Self::Button(style), Self::Button(other_style)) => style.merge(other_style),
             (Self::Textbox(style), Self::Textbox(other_style)) => style.merge(other_style),
             (Self::Spinner(style), Self::Spinner(other_style)) => style.merge(other_style),
+            (Self::UiContainer, Self::UiContainer) => {}
             _ => panic!("Cannot merge different widget styles"),
         }
     }

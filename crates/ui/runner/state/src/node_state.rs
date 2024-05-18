@@ -1,6 +1,6 @@
 use ui_runner_config::UiNode;
 
-use crate::{text::TextState, textbox::TextboxState, widget::WidgetState};
+use crate::{text::TextState, textbox::TextboxState, UiContainerState, widget::WidgetState};
 
 #[derive(Clone)]
 pub struct UiNodeState {
@@ -42,6 +42,20 @@ impl UiNodeState {
     pub fn widget_textbox_mut(&mut self) -> Option<&mut TextboxState> {
         match &mut self.widget {
             WidgetState::Textbox(textbox) => Some(textbox),
+            _ => None,
+        }
+    }
+
+    pub fn widget_ui_container_ref(&self) -> Option<&UiContainerState> {
+        match &self.widget {
+            WidgetState::UiContainer(ui_container) => Some(ui_container),
+            _ => None,
+        }
+    }
+
+    pub fn widget_ui_container_mut(&mut self) -> Option<&mut UiContainerState> {
+        match &mut self.widget {
+            WidgetState::UiContainer(ui_container) => Some(ui_container),
             _ => None,
         }
     }

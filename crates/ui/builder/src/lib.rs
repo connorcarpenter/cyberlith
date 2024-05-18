@@ -13,6 +13,9 @@ pub use textbox::*;
 mod spinner;
 pub use spinner::*;
 
+mod ui_container;
+pub use ui_container::*;
+
 mod ui_config;
 pub use ui_config::*;
 

@@ -73,6 +73,11 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
             .set_height_vp(5.0);
     });
 
+    let center_container_style = ui_config.create_ui_container_style(|s| {
+        s
+            .set_width_pc(100.0)
+            .set_height_vp(95.0);
+    });
     let right_bottom_bar_style = ui_config.create_panel_style(|s| {
         s
             .set_background_color(Color::DARK_GRAY)
@@ -182,6 +187,11 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
                         .contents(|c| {
                             c.add_text("c y b e r l i t h").set_style(title_text_style);
                         });
+
+                    // main
+                    c
+                        .add_ui_container("center_container")
+                        .set_style(center_container_style);
             });
 
             // right bar

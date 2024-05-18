@@ -1,8 +1,8 @@
 use render_api::base::Color;
-use ui_builder_config::{Button, NodeId, NodeStyle, Panel, PanelStyle, Spinner, StyleId, Text, Textbox, UiConfig, UiNode, Widget, WidgetStyle};
+use ui_builder_config::{Button, NodeId, NodeStyle, Panel, PanelStyle, Spinner, StyleId, Text, Textbox, UiConfig, UiContainer, UiNode, Widget, WidgetStyle};
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 
-use crate::{ButtonMut, TextMut, TextboxMut, SpinnerMut};
+use crate::{ButtonMut, TextMut, TextboxMut, SpinnerMut, UiContainerMut};
 
 pub struct PanelMut<'a> {
     ui_config: &'a mut UiConfig,
@@ -123,6 +123,21 @@ impl<'a> PanelContentsMut<'a> {
         self.get_panel_mut().add_child(new_id);
 
         SpinnerMut::<'b>::new(self.ui_config, new_id)
+    }
+
+    pub fn add_ui_container<'b>(
+        self: &'b mut PanelContentsMut<'a>,
+        id_str: &str,
+    ) -> UiContainerMut<'b> {
+        // creates a new ui container, returning a context for it
+        let new_id = self
+            .ui_config
+            .create_node(Widget::UiContainer(UiContainer::new(id_str)));
+
+        // add new panel to children
+        self.get_panel_mut().add_child(new_id);
+
+        UiContainerMut::<'b>::new(self.ui_config, new_id)
     }
 }
 

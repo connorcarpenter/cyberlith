@@ -4,12 +4,14 @@ pub use validation::{ValidationType, UsernameValidation, PasswordValidation, Ema
 mod node;
 mod style;
 mod ui_config;
+
 mod widget;
 mod text;
 mod textbox;
 mod spinner;
 mod panel;
 mod button;
+mod ui_container;
 
 // just for engine
 pub use ui_config::UiConfig;
@@ -24,4 +26,5 @@ pub use textbox::{Textbox, TextboxStyle};
 pub use spinner::{Spinner, SpinnerStyle};
 pub use panel::{Panel, PanelStyle};
 pub use button::{Button, ButtonStyle, Navigation};
+pub use ui_container::UiContainer;
 

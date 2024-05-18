@@ -11,6 +11,7 @@ pub enum StyleState {
     Button(ButtonStyleState),
     Textbox(TextboxStyleState),
     Spinner(SpinnerStyleState),
+    UiContainer,
 }
 
 impl StyleState {
@@ -21,6 +22,7 @@ impl StyleState {
             WidgetKind::Button => Self::Button(ButtonStyleState::new()),
             WidgetKind::Textbox => Self::Textbox(TextboxStyleState::new()),
             WidgetKind::Spinner => Self::Spinner(SpinnerStyleState::new()),
+            WidgetKind::UiContainer => Self::UiContainer,
         }
     }
 }

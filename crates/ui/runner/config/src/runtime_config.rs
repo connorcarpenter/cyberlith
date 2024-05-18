@@ -177,6 +177,7 @@ impl UiRuntimeConfig {
             WidgetStyle::Textbox(textbox_style) => textbox_style.background_color.as_ref(),
             WidgetStyle::Panel(panel_style) => panel_style.background_color.as_ref(),
             WidgetStyle::Spinner(spinner_style) => spinner_style.background_color.as_ref(),
+            WidgetStyle::UiContainer => None,
         }
     }
 
@@ -242,6 +243,7 @@ impl UiRuntimeConfig {
                 }
                 output
             }
+            WidgetKind::UiContainer => 1.0,
         }
     }
 

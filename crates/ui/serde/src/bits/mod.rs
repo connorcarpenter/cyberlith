@@ -138,6 +138,7 @@ pub(crate) enum WidgetStyleBits {
     Button(ButtonStyleBits),
     Textbox(TextboxStyleBits),
     Spinner(SpinnerStyleBits),
+    UiContainer,
 }
 
 #[derive(Serde, Clone, PartialEq)]
@@ -202,6 +203,7 @@ impl UiNodeBits {
             WidgetBits::Button(_) => WidgetKind::Button,
             WidgetBits::Textbox(_) => WidgetKind::Textbox,
             WidgetBits::Spinner(_) => WidgetKind::Spinner,
+            WidgetBits::UiContainer(_) => WidgetKind::UiContainer,
         }
     }
 }
@@ -213,6 +215,7 @@ pub(crate) enum WidgetBits {
     Button(ButtonBits),
     Textbox(TextboxBits),
     Spinner(SpinnerBits),
+    UiContainer(UiContainerBits),
 }
 
 #[derive(Serde, Clone, PartialEq)]
@@ -259,5 +262,10 @@ pub(crate) enum ValidationBits {
 
 #[derive(Serde, Clone, PartialEq)]
 pub(crate) struct SpinnerBits {
+    id_str: String,
+}
+
+#[derive(Serde, Clone, PartialEq)]
+pub(crate) struct UiContainerBits {
     id_str: String,
 }

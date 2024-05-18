@@ -2,10 +2,10 @@ use std::collections::HashMap;
 
 use render_api::base::Color;
 
-use ui_builder_config::{Button, ButtonStyle, Navigation, NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Textbox, TextboxStyle, UiConfig, UiNode, Widget, WidgetStyle, ValidationType, Spinner, SpinnerStyle};
+use ui_builder_config::{Button, ButtonStyle, Navigation, NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Textbox, TextboxStyle, UiConfig, UiNode, Widget, WidgetStyle, ValidationType, Spinner, SpinnerStyle, UiContainer};
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 
-use super::{AlignmentJson, ColorJson, LayoutTypeJson, MarginUnitsJson, PanelJson, PanelStyleJson, PositionTypeJson, SizeUnitsJson, SolidJson, ValidationJson, TextJson, TextStyleJson, UiConfigJson, UiNodeJson, UiStyleJson, WidgetJson, WidgetStyleJson, SpinnerJson, SpinnerStyleJson};
+use super::{AlignmentJson, ColorJson, LayoutTypeJson, MarginUnitsJson, PanelJson, PanelStyleJson, PositionTypeJson, SizeUnitsJson, SolidJson, ValidationJson, TextJson, TextStyleJson, UiConfigJson, UiNodeJson, UiStyleJson, WidgetJson, WidgetStyleJson, SpinnerJson, SpinnerStyleJson, UiContainerJson};
 use crate::json::{ButtonJson, ButtonStyleJson, NavigationJson, TextboxJson, TextboxStyleJson};
 
 // conversion
@@ -80,6 +80,7 @@ impl From<&WidgetStyle> for WidgetStyleJson {
             WidgetStyle::Button(button) => Self::Button(From::from(button)),
             WidgetStyle::Textbox(textbox) => Self::Textbox(From::from(textbox)),
             WidgetStyle::Spinner(spinner) => Self::Spinner(From::from(spinner)),
+            WidgetStyle::UiContainer => Self::UiContainer,
         }
     }
 }
@@ -242,6 +243,7 @@ impl From<&Widget> for WidgetJson {
             Widget::Button(button) => Self::Button(From::from(button)),
             Widget::Textbox(textbox) => Self::Textbox(From::from(textbox)),
             Widget::Spinner(spinner) => Self::Spinner(From::from(spinner)),
+            Widget::UiContainer(ui_container) => Self::UiContainer(From::from(ui_container)),
         }
     }
 }
@@ -294,6 +296,14 @@ impl From<&Spinner> for SpinnerJson {
     fn from(spinner: &Spinner) -> Self {
         Self {
             id_str: spinner.id_str.to_string(),
+        }
+    }
+}
+
+impl From<&UiContainer> for UiContainerJson {
+    fn from(ui_container: &UiContainer) -> Self {
+        Self {
+            id_str: ui_container.id_str.clone(),
         }
     }
 }

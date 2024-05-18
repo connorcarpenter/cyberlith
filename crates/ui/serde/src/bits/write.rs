@@ -3,10 +3,10 @@ use std::collections::HashMap;
 use naia_serde::{FileBitWriter, SerdeInternal as Serde, UnsignedInteger, UnsignedVariableInteger};
 
 use render_api::base::Color;
-use ui_builder_config::{Button, ButtonStyle, Navigation, NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Textbox, TextboxStyle, UiConfig, UiNode, Widget, WidgetStyle, ValidationType, SpinnerStyle, Spinner};
+use ui_builder_config::{Button, ButtonStyle, Navigation, NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Textbox, TextboxStyle, UiConfig, UiNode, Widget, WidgetStyle, ValidationType, SpinnerStyle, Spinner, UiContainer};
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 
-use crate::bits::{AlignmentBits, ButtonBits, ButtonStyleBits, ColorBits, LayoutTypeBits, MarginUnitsBits, NavigationBits, PanelBits, PanelStyleBits, PositionTypeBits, SizeUnitsBits, SolidBits, TextBits, TextStyleBits, TextboxBits, TextboxStyleBits, UiAction, UiActionType, UiNodeBits, UiStyleBits, WidgetBits, WidgetStyleBits, ValidationBits, SpinnerStyleBits, SpinnerBits};
+use crate::bits::{AlignmentBits, ButtonBits, ButtonStyleBits, ColorBits, LayoutTypeBits, MarginUnitsBits, NavigationBits, PanelBits, PanelStyleBits, PositionTypeBits, SizeUnitsBits, SolidBits, TextBits, TextStyleBits, TextboxBits, TextboxStyleBits, UiAction, UiActionType, UiNodeBits, UiStyleBits, WidgetBits, WidgetStyleBits, ValidationBits, SpinnerStyleBits, SpinnerBits, UiContainerBits};
 
 pub fn write_bits(ui_config: &UiConfig) -> Vec<u8> {
     let actions = convert_ui_to_actions(ui_config);
@@ -158,6 +158,7 @@ impl From<&WidgetStyle> for WidgetStyleBits {
             WidgetStyle::Button(button) => Self::Button(From::from(button)),
             WidgetStyle::Textbox(textbox) => Self::Textbox(From::from(textbox)),
             WidgetStyle::Spinner(spinner) => Self::Spinner(From::from(spinner)),
+            WidgetStyle::UiContainer => Self::UiContainer,
         }
     }
 }
@@ -399,6 +400,7 @@ impl WidgetBits {
             Widget::Button(button) => Self::Button(ButtonBits::from_button(ui_config, button)),
             Widget::Textbox(textbox) => Self::Textbox(TextboxBits::from_textbox(ui_config, textbox)),
             Widget::Spinner(spinner) => Self::Spinner(From::from(spinner)),
+            Widget::UiContainer(ui_container) => Self::UiContainer(From::from(ui_container)),
         }
     }
 }
@@ -456,6 +458,14 @@ impl From<&Spinner> for SpinnerBits {
     fn from(spinner: &Spinner) -> Self {
         Self {
             id_str: spinner.id_str.clone(),
+        }
+    }
+}
+
+impl From<&UiContainer> for UiContainerBits {
+    fn from(ui_container: &UiContainer) -> Self {
+        Self {
+            id_str: ui_container.id_str.clone(),
         }
     }
 }

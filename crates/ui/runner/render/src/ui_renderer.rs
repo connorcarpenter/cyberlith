@@ -8,12 +8,7 @@ use render_api::{
     resources::RenderFrame,
 };
 use storage::Handle;
-use ui_runner::{
-    config::{get_carat_offset_and_scale, text_get_raw_rects, text_get_subimage_indices, NodeId, UiRuntimeConfig, WidgetKind},
-    input::UiInputState,
-    state::{NodeActiveState, UiState},
-    Blinkiness, UiHandle, UiManager,
-};
+use ui_runner::{config::{get_carat_offset_and_scale, text_get_raw_rects, text_get_subimage_indices, NodeId, UiRuntimeConfig, WidgetKind}, input::UiInputState, state::{NodeActiveState, UiState}, Blinkiness, UiHandle, UiManager, UiRuntime};
 
 pub trait UiRender {
     fn draw_ui(&self, asset_manager: &AssetManager, render_frame: &mut RenderFrame);
@@ -48,7 +43,7 @@ impl UiRenderer {
             return;
         };
 
-        let (ui_state, ui_input_state, ui, _, camera_bundle) = ui_runner.decompose_to_refs();
+        let (_, ui_input_state, ui, _, camera_bundle) = ui_runner.inner_refs();
 
         render_frame.draw_camera(
             Some(&RenderLayer::UI),
@@ -70,11 +65,10 @@ impl UiRenderer {
             let node_id = NodeId::from_usize(node_id);
             draw_ui_node(
                 render_frame,
+                ui_manager,
                 asset_manager,
+                ui_runner,
                 carat_blink,
-                ui,
-                ui_state,
-                ui_input_state,
                 &text_icon_handle,
                 &eye_icon_handle,
                 &node_id,
@@ -174,15 +168,16 @@ impl UiRenderer {
 
 fn draw_ui_node(
     render_frame: &mut RenderFrame,
+    ui_manager: &UiManager,
     asset_manager: &AssetManager,
+    ui_runner: &UiRuntime,
     carat_blink: bool,
-    ui_config: &UiRuntimeConfig,
-    ui_state: &UiState,
-    ui_input_state: &UiInputState,
     text_icon_handle: &AssetHandle<IconData>,
     eye_icon_handle: &AssetHandle<IconData>,
     id: &NodeId,
 ) {
+    let (ui_state, ui_input_state, ui_config, _, _) = ui_runner.inner_refs();
+
     let Some((width, height, child_offset_x, child_offset_y, child_offset_z)) =
         ui_state.cache.bounds(id)
     else {
@@ -251,6 +246,20 @@ fn draw_ui_node(
                     id,
                     &transform,
                 );
+            }
+            WidgetKind::UiContainer => {
+                if let Some(ui_asset_id) = ui_state.get_ui_container_asset_id_opt(id) {
+                    let ui_handle = UiHandle::new(ui_asset_id);
+                    draw_ui_container(
+                        render_frame,
+                        ui_manager,
+                        asset_manager,
+                        carat_blink,
+                        text_icon_handle,
+                        eye_icon_handle,
+                        &ui_handle,
+                    );
+                }
             }
         }
     }
@@ -536,4 +545,35 @@ fn draw_ui_spinner(
         warn!("no color handle for spinner"); // probably will need to do better debugging later
         return;
     };
+}
+
+fn draw_ui_container(
+    render_frame: &mut RenderFrame,
+    ui_manager: &UiManager,
+    asset_manager: &AssetManager,
+    carat_blink: bool,
+    text_icon_handle: &AssetHandle<IconData>,
+    eye_icon_handle: &AssetHandle<IconData>,
+    ui_handle: &UiHandle,
+) {
+    let Some(ui_runner) = ui_manager.ui_runtimes.get(ui_handle) else {
+        warn!("ui data not loaded 2: {:?}", ui_handle.asset_id());
+        return;
+    };
+
+    let (_, _, ui, _, _) = ui_runner.inner_refs();
+
+    for node_id in 0..ui.nodes_len() {
+        let node_id = NodeId::from_usize(node_id);
+        draw_ui_node(
+            render_frame,
+            ui_manager,
+            asset_manager,
+            ui_runner,
+            carat_blink,
+            &text_icon_handle,
+            &eye_icon_handle,
+            &node_id,
+        );
+    }
 }

@@ -1,3 +1,4 @@
+use asset_id::AssetId;
 use logging::warn;
 
 use render_api::{
@@ -135,6 +136,39 @@ impl UiState {
 
     pub fn set_node_visible(&mut self, node_id: &NodeId, val: bool) {
         self.visibility_store.set_node_visibility(node_id, val);
+    }
+
+    pub fn get_ui_container_asset_id_opt(&self, node_id: &NodeId) -> Option<AssetId> {
+        let Some(node) = self.store.get_node(node_id) else {
+            logging::warn!("get_ui_container_asset_id_opt: node not found for node_id: {:?}", node_id);
+            return None;
+        };
+        let Some(ui_container) = node.widget_ui_container_ref() else {
+            return None;
+        };
+        ui_container.ui_handle_opt
+    }
+
+    pub fn set_ui_container_asset_id(&mut self, node_id: &NodeId, asset_id: &AssetId) {
+        let Some(node) = self.store.get_node_mut(node_id) else {
+            logging::warn!("set_ui_container_asset_id: node not found for node_id: {:?}", node_id);
+            return;
+        };
+        let Some(ui_container) = node.widget_ui_container_mut() else {
+            return;
+        };
+        ui_container.ui_handle_opt = Some(asset_id.clone());
+    }
+
+    pub fn clear_ui_container(&mut self, node_id: &NodeId) {
+        let Some(node) = self.store.get_node_mut(node_id) else {
+            logging::warn!("clear_ui_container: node not found for node_id: {:?}", node_id);
+            return;
+        };
+        let Some(ui_container) = node.widget_ui_container_mut() else {
+            return;
+        };
+        ui_container.ui_handle_opt = None;
     }
 
     // styles
@@ -347,6 +381,7 @@ impl UiState {
                         spinner_style_mut.set_spinner_color_handle(spinner_color_handle);
                     }
                 }
+                WidgetKind::UiContainer => {}
             }
         }
     }
