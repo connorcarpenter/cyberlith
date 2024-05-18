@@ -1,12 +1,10 @@
 use asset_id::AssetId;
 use logging::warn;
-
 use render_api::{
-    base::{Color, CpuMaterial, CpuMesh},
-    components::{Viewport, Transform},
-    shapes::UnitSquare,
+    base::{Color, CpuMaterial},
+    components::Viewport,
 };
-use storage::{Handle, Storage};
+use storage::Storage;
 use ui_runner_config::{
     LayoutCache, NodeId, TextMeasurer, UiRuntimeConfig, UiVisibilityStore, WidgetKind,
 };
@@ -18,7 +16,6 @@ use crate::{
 };
 
 pub struct UiState {
-    pub globals: StateGlobals,
     pub cache: LayoutCache,
     pub store: UiStateStore,
     pub visibility_store: UiVisibilityStore,
@@ -30,7 +27,6 @@ pub struct UiState {
 impl UiState {
     pub fn from_ui_config(ui_config: &UiRuntimeConfig) -> Self {
         let mut me = Self {
-            globals: StateGlobals::new(),
             cache: LayoutCache::new(),
             store: UiStateStore::new(),
             visibility_store: UiVisibilityStore::new(),
@@ -243,15 +239,8 @@ impl UiState {
     pub fn load_cpu_data(
         &mut self,
         ui_config: &UiRuntimeConfig,
-        meshes: &mut Storage<CpuMesh>,
         materials: &mut Storage<CpuMaterial>,
     ) {
-        // set box mesh handle
-        {
-            let mesh_handle = meshes.add(UnitSquare);
-            self.globals.box_mesh_handle_opt = Some(mesh_handle);
-        }
-
         // set color handles
         for id in self.store.node_ids() {
             let node = ui_config.get_node(&id).unwrap();
@@ -446,22 +435,6 @@ impl UiState {
         // print_node(&Self::ROOT_PANEL_ID, &self.cache, &self.panels, true, false, "".to_string());
 
         children
-    }
-}
-
-pub struct StateGlobals {
-    box_mesh_handle_opt: Option<Handle<CpuMesh>>,
-}
-
-impl StateGlobals {
-    pub(crate) fn new() -> Self {
-        Self {
-            box_mesh_handle_opt: None,
-        }
-    }
-
-    pub fn get_box_mesh_handle(&self) -> Option<&Handle<CpuMesh>> {
-        self.box_mesh_handle_opt.as_ref()
     }
 }
 

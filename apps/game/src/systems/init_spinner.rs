@@ -1,8 +1,5 @@
 
-use bevy_ecs::{
-    component::Component,
-    system::{Local, Query, Res, ResMut},
-};
+use bevy_ecs::system::{Local, Query, Res, ResMut};
 
 use game_engine::{
     math::Vec3,

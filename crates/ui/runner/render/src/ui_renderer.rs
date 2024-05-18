@@ -201,10 +201,11 @@ fn draw_ui_node(
     if node_visible {
         match node.widget_kind() {
             WidgetKind::Panel => {
-                draw_ui_panel(render_frame, ui_config, ui_state, id, &transform);
+                draw_ui_panel(ui_manager, render_frame, ui_config, ui_state, id, &transform);
             }
             WidgetKind::Text => {
                 draw_ui_text(
+                    ui_manager,
                     render_frame,
                     asset_manager,
                     ui_config,
@@ -216,6 +217,7 @@ fn draw_ui_node(
             }
             WidgetKind::Button => {
                 draw_ui_button(
+                    ui_manager,
                     render_frame,
                     ui_config,
                     ui_state,
@@ -226,6 +228,7 @@ fn draw_ui_node(
             }
             WidgetKind::Textbox => {
                 draw_ui_textbox(
+                    ui_manager,
                     render_frame,
                     asset_manager,
                     carat_blink,
@@ -240,6 +243,7 @@ fn draw_ui_node(
             }
             WidgetKind::Spinner => {
                 draw_ui_spinner(
+                    ui_manager,
                     render_frame,
                     ui_config,
                     ui_state,
@@ -266,7 +270,7 @@ fn draw_ui_node(
 }
 
 fn draw_ui_panel(
-    //self was Panel
+    ui_manager: &UiManager,
     render_frame: &mut RenderFrame,
     ui_config: &UiRuntimeConfig,
     ui_state: &UiState,
@@ -284,7 +288,7 @@ fn draw_ui_panel(
             if background_alpha != 1.0 {
                 panic!("partial background_alpha not implemented yet!");
             }
-            let box_handle = ui_state.globals.get_box_mesh_handle().unwrap();
+            let box_handle = ui_manager.get_box_mesh_handle().unwrap();
             render_frame.draw_mesh(Some(&RenderLayer::UI), box_handle, &mat_handle, &transform);
         }
     } else {
@@ -294,7 +298,7 @@ fn draw_ui_panel(
 }
 
 fn draw_ui_text(
-    //&self, // self was text widget
+    ui_manager: &UiManager,
     render_frame: &mut RenderFrame,
     asset_manager: &AssetManager,
     ui_config: &UiRuntimeConfig,
@@ -314,7 +318,7 @@ fn draw_ui_text(
             if background_alpha != 1.0 {
                 panic!("partial background_alpha not implemented yet!");
             }
-            let box_handle = ui_state.globals.get_box_mesh_handle().unwrap();
+            let box_handle = ui_manager.get_box_mesh_handle().unwrap();
             let mut new_transform = transform.clone();
             new_transform.translation.z += UiRuntimeConfig::Z_STEP_RENDER;
             render_frame.draw_mesh(
@@ -344,7 +348,7 @@ fn draw_ui_text(
 }
 
 fn draw_ui_button(
-    //self was Button
+    ui_manager: &UiManager,
     render_frame: &mut RenderFrame,
     ui_config: &UiRuntimeConfig,
     ui_state: &UiState,
@@ -364,7 +368,7 @@ fn draw_ui_button(
             if background_alpha != 1.0 {
                 panic!("partial background_alpha not implemented yet!");
             }
-            let box_handle = ui_state.globals.get_box_mesh_handle().unwrap();
+            let box_handle = ui_manager.get_box_mesh_handle().unwrap();
             render_frame.draw_mesh(Some(&RenderLayer::UI), box_handle, &mat_handle, &transform);
         }
     } else {
@@ -374,7 +378,7 @@ fn draw_ui_button(
 }
 
 fn draw_ui_textbox(
-    //self was Textbox
+    ui_manager: &UiManager,
     render_frame: &mut RenderFrame,
     asset_manager: &AssetManager,
     carat_blink: bool,
@@ -401,7 +405,7 @@ fn draw_ui_textbox(
             if background_alpha != 1.0 {
                 panic!("partial background_alpha not implemented yet!");
             }
-            let box_handle = ui_state.globals.get_box_mesh_handle().unwrap();
+            let box_handle = ui_manager.get_box_mesh_handle().unwrap();
             render_frame.draw_mesh(Some(&RenderLayer::UI), box_handle, &mat_handle, &transform);
         }
     } else {
@@ -446,7 +450,7 @@ fn draw_ui_textbox(
                         render_frame,
                         asset_manager,
                         text_icon_handle,
-                        ui_state.globals.get_box_mesh_handle().unwrap(),
+                        ui_manager.get_box_mesh_handle().unwrap(),
                         &mat_handle,
                         &text_transform,
                         textbox_text,
@@ -501,7 +505,7 @@ fn draw_ui_textbox(
 }
 
 fn draw_ui_spinner(
-    //self was Spinner
+    ui_manager: &UiManager,
     render_frame: &mut RenderFrame,
     ui_config: &UiRuntimeConfig,
     ui_state: &UiState,
@@ -519,7 +523,7 @@ fn draw_ui_spinner(
             if background_alpha != 1.0 {
                 panic!("partial background_alpha not implemented yet!");
             }
-            let box_handle = ui_state.globals.get_box_mesh_handle().unwrap();
+            let box_handle = ui_manager.get_box_mesh_handle().unwrap();
             render_frame.draw_mesh(Some(&RenderLayer::UI), box_handle, &mat_handle, &transform);
         }
     } else {
@@ -529,7 +533,7 @@ fn draw_ui_spinner(
 
     // draw spinner
     if let Some(mat_handle) = spinner_style_state.spinner_color_handle() {
-        let box_handle = ui_state.globals.get_box_mesh_handle().unwrap();
+        let box_handle = ui_manager.get_box_mesh_handle().unwrap();
         let mut transform = transform.clone();
         transform.translation.z += UiRuntimeConfig::Z_STEP_RENDER;
 

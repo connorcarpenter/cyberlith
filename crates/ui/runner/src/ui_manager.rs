@@ -22,12 +22,14 @@ use render_api::{
     components::Camera,
     resources::Time,
 };
-use storage::Storage;
+use render_api::shapes::UnitSquare;
+use storage::{Handle, Storage};
 use ui_input::{UiGlobalEvent, UiInputEvent, UiNodeEvent, UiNodeEventHandler};
 use ui_runner_config::{NodeId, UiRuntimeConfig};
-use crate::config::ValidationType;
 
+use crate::config::ValidationType;
 use crate::runtime::UiRuntime;
+use crate::state_globals::StateGlobals;
 
 #[derive(Resource)]
 pub struct UiManager {
@@ -46,6 +48,8 @@ pub struct UiManager {
     cursor_icon_change: Option<CursorIcon>,
     last_cursor_icon: CursorIcon,
     pub blinkiness: Blinkiness,
+
+    globals: StateGlobals,
 }
 
 impl Default for UiManager {
@@ -64,6 +68,8 @@ impl Default for UiManager {
             cursor_icon_change: None,
             last_cursor_icon: CursorIcon::Default,
             blinkiness: Blinkiness::new(),
+
+            globals: StateGlobals::new(),
         }
     }
 }
@@ -76,12 +82,20 @@ impl UiManager {
     }
 
     // used as a system
-    pub(crate) fn sync_assets(
+    pub(crate) fn startup(
         mut ui_manager: ResMut<Self>,
         mut meshes: ResMut<Storage<CpuMesh>>,
+    ) {
+        let mesh_handle = meshes.add(UnitSquare);
+        ui_manager.globals.set_box_mesh_handle(mesh_handle);
+    }
+
+    // used as a system
+    pub(crate) fn sync_assets(
+        mut ui_manager: ResMut<Self>,
         mut materials: ResMut<Storage<CpuMaterial>>,
     ) {
-        ui_manager.sync_uis(&mut meshes, &mut materials);
+        ui_manager.sync_uis(&mut materials);
     }
 
     // used as a system
@@ -228,7 +242,6 @@ impl UiManager {
 
     pub fn sync_uis(
         &mut self,
-        meshes: &mut Storage<CpuMesh>,
         materials: &mut Storage<CpuMaterial>,
     ) {
         if self.queued_uis.is_empty() {
@@ -239,7 +252,7 @@ impl UiManager {
 
         for ui_handle in &ui_handles {
             let ui = self.ui_runtimes.get_mut(ui_handle).unwrap();
-            ui.load_cpu_data(meshes, materials);
+            ui.load_cpu_data(materials);
         }
 
         self.handle_new_uis(ui_handles);
@@ -530,6 +543,10 @@ impl UiManager {
         } else {
             warn!("ui data not loaded 8: {:?}", ui_handle.asset_id());
         }
+    }
+
+    pub fn get_box_mesh_handle(&self) -> Option<&Handle<CpuMesh>> {
+        self.globals.get_box_mesh_handle()
     }
 }
 

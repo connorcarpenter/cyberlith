@@ -1,4 +1,4 @@
-use bevy_app::{App, Plugin, PostUpdate, PreUpdate, Update};
+use bevy_app::{App, Plugin, PostUpdate, PreUpdate, Startup, Update};
 
 use clipboard::ClipboardPlugin;
 
@@ -17,6 +17,7 @@ impl Plugin for UiPlugin {
             // UiManager
             .init_resource::<UiManager>()
             // systems
+            .add_systems(Startup, UiManager::startup)
             .add_systems(PreUpdate, UiManager::prepare_cursor_change)
             .add_systems(Update, systems::ui_update)
             .add_systems(PostUpdate, UiManager::process_cursor_change)

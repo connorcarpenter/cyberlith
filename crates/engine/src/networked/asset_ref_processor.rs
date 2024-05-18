@@ -1,26 +1,24 @@
 use std::{any::TypeId, collections::HashMap};
 
 use bevy_ecs::{
-    change_detection::{Mut, ResMut},
+    change_detection::Mut,
     entity::Entity,
     event::{EventReader, Events},
     prelude::{Query, Resource},
     system::SystemState,
     world::World,
 };
-use naia_bevy_client::events::InsertComponentEvents;
+
 use logging::info;
-
-use world_server_naia_proto::components::{Alt1, AssetEntry, AssetRef, Main};
-
 use asset_id::AssetId;
 use asset_loader::{AssetMetadataStore, TypedAssetId};
+
+use world_server_naia_proto::components::{Alt1, AssetEntry, AssetRef, Main};
 
 use crate::{
     asset_cache::{AssetCache, AssetLoadedEvent},
     world::WorldClient,
 };
-
 use super::world_events::InsertAssetRefEvent;
 
 type AssetProcessorId = TypeId;

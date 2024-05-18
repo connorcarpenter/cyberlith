@@ -3,15 +3,15 @@ use input::CursorIcon;
 use logging::warn;
 use math::{Vec2, Vec3};
 use render_api::{
-    base::{CpuMaterial, CpuMesh},
+    base::CpuMaterial,
     components::{Viewport, CameraBundle, ClearOperation, Projection, Transform}
 };
 use storage::Storage;
 use ui_input::{UiGlobalEvent, UiInputEvent, UiInputState, UiNodeEvent};
 use ui_runner_config::{NodeId, SerdeErr, UiRuntimeConfig};
 use ui_state::UiState;
-use crate::config::ValidationType;
 
+use crate::config::ValidationType;
 use crate::handle::UiHandle;
 
 pub struct UiRuntime {
@@ -152,10 +152,9 @@ impl UiRuntime {
 
     pub(crate) fn load_cpu_data(
         &mut self,
-        meshes: &mut Storage<CpuMesh>,
         materials: &mut Storage<CpuMaterial>,
     ) {
-        self.state.load_cpu_data(&self.config, meshes, materials);
+        self.state.load_cpu_data(&self.config, materials);
     }
 
     pub(crate) fn needs_to_recalculate_layout(&self) -> bool {
