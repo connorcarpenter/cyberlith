@@ -42,8 +42,6 @@ impl Plugin for GameApp {
             })
             // states
             .insert_state(AppState::Loading)
-            // other input
-            .add_systems(Update, keyboard_input::process)
             // scene systems
             .add_systems(Startup, cube_scene::setup)
             .add_systems(Update, cube_scene::step)
