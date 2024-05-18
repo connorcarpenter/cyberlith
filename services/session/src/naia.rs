@@ -1,6 +1,7 @@
 use std::net::SocketAddr;
 
 use bevy_ecs::{change_detection::ResMut, event::EventReader};
+use bevy_ecs::system::Res;
 
 use naia_bevy_server::{
     events::{AuthEvents, ConnectEvent, DisconnectEvent, ErrorEvent},
@@ -8,17 +9,21 @@ use naia_bevy_server::{
     Server,
 };
 use naia_bevy_server::events::MessageEvents;
+use asset_id::AssetId;
+use bevy_http_client::HttpClient;
+use bevy_http_server::HttpServer;
 
 use config::{
     PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SELF_BINDING_ADDR, SESSION_SERVER_SIGNAL_PORT,
     SESSION_SERVER_WEBRTC_PORT,
 };
 use logging::{info, warn};
-use session_server_naia_proto::channels::ClientActionsChannel;
 
+use session_server_naia_proto::channels::ClientActionsChannel;
 use session_server_naia_proto::messages::{Auth, WorldConnectRequest};
 
 use crate::{asset::asset_manager::AssetManager, global::Global};
+use crate::asset::AssetCatalog;
 
 pub fn init(mut server: Server) {
     info!("Session Naia Server starting up");
@@ -70,9 +75,11 @@ pub fn auth_events(
 }
 
 pub fn connect_events(
-    server: Server,
+    mut server: Server,
     mut event_reader: EventReader<ConnectEvent>,
     mut asset_manager: ResMut<AssetManager>,
+    global: Res<Global>,
+    mut http_client: ResMut<HttpClient>,
 ) {
     for ConnectEvent(user_key) in event_reader.read() {
         let address = server.user(user_key).address();
@@ -80,6 +87,9 @@ pub fn connect_events(
         info!("Server connected to: {}", address);
 
         asset_manager.register_user(user_key);
+
+        let asset_id = AssetCatalog::game_main_menu_ui();
+        asset_manager.load_user_asset(&mut server, &mut http_client, global.get_asset_server_url(), *user_key, &asset_id);
     }
 }
 

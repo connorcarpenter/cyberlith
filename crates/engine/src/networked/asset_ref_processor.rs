@@ -8,6 +8,7 @@ use bevy_ecs::{
     system::SystemState,
     world::World,
 };
+use naia_bevy_client::events::InsertComponentEvents;
 use logging::info;
 
 use world_server_naia_proto::components::{Alt1, AssetEntry, AssetRef, Main};
@@ -23,6 +24,11 @@ use crate::{
 use super::world_events::InsertAssetRefEvent;
 
 type AssetProcessorId = TypeId;
+
+#[derive(Resource)]
+struct CachedAssetLoadedEventsState {
+    event_state: SystemState<EventReader<'static, 'static, AssetLoadedEvent>>,
+}
 
 /// Stores asset data in RAM
 #[derive(Resource)]
@@ -85,15 +91,33 @@ impl AssetRefProcessor {
     }
 
     // used as a system
+    pub fn init_asset_loaded_events(world: &mut World) {
+        let initial_state: SystemState<EventReader<AssetLoadedEvent>> =
+            SystemState::new(world);
+        world.insert_resource(CachedAssetLoadedEventsState {
+            event_state: initial_state,
+        });
+    }
+
+    // used as a system
     pub fn handle_asset_loaded_events(world: &mut World) {
-        let mut system_state: SystemState<(
-            EventReader<AssetLoadedEvent>,
-            ResMut<AssetRefProcessor>,
-        )> = SystemState::new(world);
-        let (mut reader, mut asset_ref_processer) = system_state.get_mut(world);
+
+        let mut incoming_events = Vec::new();
+        world.resource_scope(
+            |world, mut events_reader_state: Mut<CachedAssetLoadedEventsState>| {
+                let mut events_reader = events_reader_state.event_state.get_mut(world);
+
+                for event in events_reader.read() {
+                    let events_clone: AssetLoadedEvent = event.clone();
+                    incoming_events.push(events_clone);
+                }
+            },
+        );
+
+        let mut asset_ref_processer = world.get_resource_mut::<AssetRefProcessor>().unwrap();
 
         let mut list_of_events = Vec::new();
-        for event in reader.read() {
+        for event in incoming_events {
             info!(
                 "received Asset Loaded Event! (asset_id: {:?}, asset_type: {:?})",
                 event.asset_id, event.asset_type

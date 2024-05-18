@@ -1,4 +1,6 @@
 use bevy_ecs::{event::EventReader, system::Commands};
+use bevy_ecs::schedule::{NextState, State};
+use bevy_ecs::system::{Res, ResMut};
 
 use game_engine::{
     asset::{
@@ -13,6 +15,10 @@ use game_engine::{
         WorldSpawnEntityEvent,
     },
 };
+use game_engine::asset::AssetLoadedEvent;
+use game_engine::ui::{UiHandle, UiManager};
+use crate::resources::AssetCatalog;
+use crate::states::AppState;
 
 use crate::systems::walker_scene::{WalkAnimation, WalkerMarker};
 
@@ -135,6 +141,34 @@ pub fn world_alt1_insert_asset_ref_events(
             commands.entity(entity).insert(walk_anim);
         } else {
             panic!("unexpected asset type");
+        }
+    }
+}
+
+pub fn session_load_asset_events(
+    state: Res<State<AppState>>,
+    mut next_state: ResMut<NextState<AppState>>,
+    mut ui_manager: ResMut<UiManager>,
+    mut event_reader: EventReader<AssetLoadedEvent>,
+) {
+    for event in event_reader.read() {
+        let asset_id = event.asset_id;
+        let asset_type = event.asset_type;
+        info!(
+            "received Asset Loaded Event! (asset_id: {:?})",
+            asset_id
+        );
+        if asset_type == AssetType::Ui {
+            if asset_id == AssetCatalog::game_main_menu_ui() {
+                info!("received game_main_menu_ui");
+                if AppState::Loading == *state.get() {
+                    next_state.set(AppState::MainMenu);
+
+                    let layer = RenderLayers::layer(0);
+                    ui_manager.set_target_render_layer(layer);
+                    ui_manager.enable_ui(&UiHandle::new(asset_id));
+                }
+            }
         }
     }
 }

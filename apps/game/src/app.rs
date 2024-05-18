@@ -58,6 +58,7 @@ impl Plugin for GameApp {
             .add_systems(Update, network::world_spawn_entity_events)
             .add_systems(Update, network::world_main_insert_position_events)
             .add_systems(Update, network::world_main_insert_asset_ref_events)
-            .add_systems(Update, network::world_alt1_insert_asset_ref_events);
+            .add_systems(Update, network::world_alt1_insert_asset_ref_events)
+            .add_systems(Update, network::session_load_asset_events);
     }
 }

@@ -26,6 +26,7 @@ pub mod asset {
         SkinData,
     };
     pub use asset_render::AssetRender;
+    pub use crate::asset_cache::AssetLoadedEvent;
 }
 pub mod input {
     pub use input::*;

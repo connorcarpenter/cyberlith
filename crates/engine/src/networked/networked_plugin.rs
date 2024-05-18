@@ -56,6 +56,7 @@ impl Plugin for NetworkedEnginePlugin {
             .add_systems(Update, ConnectionManager::handle_world_connect_events)
             // asset ref processing stuff
             .init_resource::<AssetRefProcessor>()
+            .add_systems(Startup, AssetRefProcessor::init_asset_loaded_events)
             .add_systems(Update, AssetRefProcessor::handle_asset_loaded_events)
             .init_resource::<AssetCacheChecker>()
             .add_systems(Update, AssetCacheChecker::handle_load_asset_tasks)

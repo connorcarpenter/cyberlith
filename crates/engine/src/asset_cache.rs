@@ -11,6 +11,7 @@ use naia_serde::{BitWriter, Serde};
 use asset_id::{AssetId, AssetType, ETag};
 use asset_loader::{AssetManager, AssetMetadataSerde, AssetMetadataStore};
 use filesystem::{FileSystemManager, TaskKey, WriteResult};
+use logging::info;
 use ui_runner::UiManager;
 
 /// Stores asset data in RAM
@@ -112,6 +113,7 @@ impl AssetCache {
         self.data_store.insert(*asset_id, asset_data);
 
         if asset_type == &AssetType::Ui {
+            info!("loading ui asset into memory: {:?}", asset_id);
             ui_manager.load(asset_manager, &self.data_store, asset_id);
         } else {
             asset_manager.load(&self.data_store, asset_id, asset_type);
@@ -129,7 +131,7 @@ impl AssetCache {
     }
 }
 
-#[derive(Event)]
+#[derive(Event, Clone)]
 pub struct AssetLoadedEvent {
     pub asset_id: AssetId,
     pub asset_type: AssetType,

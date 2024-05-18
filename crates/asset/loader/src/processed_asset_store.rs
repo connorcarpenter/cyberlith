@@ -134,7 +134,9 @@ impl ProcessedAssetStore {
             AssetType::Icon => {
                 let handle = AssetHandle::<IconData>::new(*asset_id);
                 if !self.icons.has(&handle) {
-                    let bytes = asset_data_store.get(asset_id).unwrap();
+                    let Some(bytes) = asset_data_store.get(asset_id) else {
+                        panic!("missing icon data for asset id: {:?}", asset_id);
+                    };
                     let icon_data = IconData::from_bytes(bytes);
                     self.icons.insert(handle, icon_data);
                     self.queued_icons.push(handle);
