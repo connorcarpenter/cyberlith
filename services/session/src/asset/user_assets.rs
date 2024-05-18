@@ -39,31 +39,7 @@ impl UserAssets {
         }
     }
 
-    pub fn handle_user_asset_request(
-        &mut self,
-        server: &mut Server,
-        http_client: &mut HttpClient,
-        asset_server_addr: &str,
-        asset_server_port: u16,
-        asset_store: &AssetStore,
-        asset_id: &AssetId,
-        added: bool,
-    ) {
-        if added {
-            self.handle_user_asset_added(
-                server,
-                http_client,
-                asset_server_addr,
-                asset_server_port,
-                asset_store,
-                asset_id,
-            );
-        } else {
-            self.handle_user_asset_removed(asset_id);
-        }
-    }
-
-    fn handle_user_asset_added(
+    pub fn load_user_asset(
         &mut self,
         server: &mut Server,
         http_client: &mut HttpClient,
@@ -115,7 +91,7 @@ impl UserAssets {
         }
     }
 
-    fn handle_user_asset_removed(&mut self, _asset_id: &AssetId) {
+    pub fn unload_user_asset(&mut self, _asset_id: &AssetId) {
         todo!()
     }
 
@@ -262,7 +238,7 @@ impl UserAssets {
 
                 if !self.assets_processing.contains_key(dependency) {
                     // add task to process dependency if it doesn't exist
-                    self.handle_user_asset_added(
+                    self.load_user_asset(
                         server,
                         http_client,
                         asset_server_addr,

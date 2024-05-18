@@ -40,7 +40,7 @@ impl AssetManager {
         self.users.remove(user_key);
     }
 
-    pub fn queue_user_asset_request(&mut self, user_key: UserKey, asset_id: &AssetId, added: bool) {
+    fn queue_user_asset_request(&mut self, user_key: UserKey, asset_id: &AssetId, added: bool) {
         self.queued_user_asset_requests
             .push((user_key, asset_id.clone(), added));
     }
@@ -58,38 +58,68 @@ impl AssetManager {
     ) {
         for (user_key, asset_id, added) in std::mem::take(&mut self.queued_user_asset_requests) {
             info!("processing queued user asset request..");
-            self.handle_user_asset_request(
-                naia_server,
-                http_client,
-                asset_server_addr,
-                asset_server_port,
-                user_key,
-                &asset_id,
-                added,
-            );
+            if added {
+                self.load_user_asset(
+                    naia_server,
+                    http_client,
+                    Some((asset_server_addr.to_string(), asset_server_port)),
+                    user_key,
+                    &asset_id,
+                );
+            } else {
+                self.unload_user_asset(
+                    Some((asset_server_addr.to_string(), asset_server_port)),
+                    user_key,
+                    &asset_id,
+                );
+            }
         }
     }
 
-    pub fn handle_user_asset_request(
+    pub fn load_user_asset(
         &mut self,
         server: &mut Server,
         http_client: &mut HttpClient,
-        asset_server_addr: &str,
-        asset_server_port: u16,
+        asset_server_ip_opt: Option<(String, u16)>,
         user_key: UserKey,
         asset_id: &AssetId,
-        added: bool,
     ) {
-        if let Some(user_assets) = self.users.get_mut(&user_key) {
-            user_assets.handle_user_asset_request(
-                server,
-                http_client,
-                asset_server_addr,
-                asset_server_port,
-                &self.asset_store,
-                asset_id,
-                added,
-            );
+        if let Some((asset_server_addr, asset_server_port)) = asset_server_ip_opt {
+            if let Some(user_assets) = self.users.get_mut(&user_key) {
+                user_assets.load_user_asset(
+                    server,
+                    http_client,
+                    &asset_server_addr,
+                    asset_server_port,
+                    &self.asset_store,
+                    asset_id,
+                );
+            } else {
+                panic!("UserAssets not found for user_key: {:?}", user_key);
+            }
+        } else {
+            info!("Asset Server not available, queuing request ..");
+            self.queue_user_asset_request(user_key, asset_id, true);
+        }
+    }
+
+    pub fn unload_user_asset(
+        &mut self,
+        asset_server_ip_opt: Option<(String, u16)>,
+        user_key: UserKey,
+        asset_id: &AssetId,
+    ) {
+        if let Some((_asset_server_addr, _asset_server_port)) = asset_server_ip_opt {
+            if let Some(user_assets) = self.users.get_mut(&user_key) {
+                user_assets.unload_user_asset(
+                    asset_id,
+                );
+            } else {
+                panic!("UserAssets not found for user_key: {:?}", user_key);
+            }
+        } else {
+            info!("Asset Server not available, queuing request ..");
+            self.queue_user_asset_request(user_key, asset_id, false);
         }
     }
 

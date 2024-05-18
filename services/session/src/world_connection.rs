@@ -86,21 +86,22 @@ pub fn recv_added_asset_id_request(
             .get_user_key_from_world_instance(world_instance_secret, &user_id)
             .unwrap();
 
-        if let Some((asset_server_addr, asset_server_port)) = global.get_asset_server_url() {
-            asset_manager.handle_user_asset_request(
+        if added {
+            asset_manager.load_user_asset(
                 &mut naia_server,
                 &mut http_client,
-                &asset_server_addr,
-                asset_server_port,
+                global.get_asset_server_url(),
                 user_key,
                 asset_id,
-                added,
             );
         } else {
-            // queue for later
-            info!("Asset Server not available, queuing request ..");
-            asset_manager.queue_user_asset_request(user_key, asset_id, added);
+            asset_manager.unload_user_asset(
+                global.get_asset_server_url(),
+                user_key,
+                asset_id,
+            );
         }
+
 
         //info!("UserAsset Response sent to world server ..");
 
