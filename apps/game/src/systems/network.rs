@@ -168,6 +168,11 @@ pub fn session_load_asset_events(
                     ui_manager.set_target_render_layer(layer);
                     ui_manager.enable_ui(&UiHandle::new(asset_id));
                 }
+            } else if asset_id == AssetCatalog::game_host_match_ui() {
+                info!("received game_host_match_ui");
+                let parent_handle = UiHandle::new(AssetCatalog::game_main_menu_ui());
+                let child_handle = UiHandle::new(asset_id);
+                ui_manager.set_ui_container_contents(&parent_handle, "center_container", &child_handle);
             }
         }
     }

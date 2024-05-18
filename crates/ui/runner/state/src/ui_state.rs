@@ -3,7 +3,7 @@ use logging::warn;
 
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
-    components::Viewport,
+    components::{Viewport, Transform},
     shapes::UnitSquare,
 };
 use storage::{Handle, Storage};
@@ -401,9 +401,10 @@ impl UiState {
         ui_config: &UiRuntimeConfig,
         text_measurer: &dyn TextMeasurer,
         viewport: &Viewport,
-    ) {
+        z: f32,
+    ) -> Vec<(AssetId, Viewport, f32)> {
         self.recalc_layout = false;
-        self.recalculate_layout_impl(ui_config, text_measurer, viewport);
+        self.recalculate_layout_impl(ui_config, text_measurer, viewport, z)
     }
 
     fn recalculate_layout_impl(
@@ -411,7 +412,8 @@ impl UiState {
         ui_config: &UiRuntimeConfig,
         text_measurer: &dyn TextMeasurer,
         viewport: &Viewport,
-    ) {
+        z: f32,
+    ) -> Vec<(AssetId, Viewport, f32)> {
         //info!("recalculating layout. viewport_width: {:?}, viewport_height: {:?}", viewport.width, viewport.height);
 
         let last_viewport_width: f32 = viewport.width as f32;
@@ -431,14 +433,19 @@ impl UiState {
             last_viewport_width,
             last_viewport_height,
         );
+
+        let mut children = Vec::new();
         finalize_rects(
             ui_config,
             self,
+            &mut children,
             &UiRuntimeConfig::ROOT_NODE_ID,
-            (0.0, 0.0, 10.0),
-        )
+            (viewport.x as f32, viewport.y as f32, z),
+        );
 
         // print_node(&Self::ROOT_PANEL_ID, &self.cache, &self.panels, true, false, "".to_string());
+
+        children
     }
 }
 
@@ -462,6 +469,7 @@ impl StateGlobals {
 fn finalize_rects(
     ui_config: &UiRuntimeConfig,
     ui_state: &mut UiState,
+    child_uis_output: &mut Vec<(AssetId, Viewport, f32)>,
     id: &NodeId,
     parent_position: (f32, f32, f32),
 ) {
@@ -499,7 +507,7 @@ fn finalize_rects(
             // update children
             let child_ids = panel_ref.children.clone();
             for child_id in child_ids {
-                finalize_rects(ui_config, ui_state, &child_id, child_position);
+                finalize_rects(ui_config, ui_state, child_uis_output, &child_id, child_position);
             }
         }
         WidgetKind::Button => {
@@ -511,7 +519,25 @@ fn finalize_rects(
             // update children
             let child_ids = panel_ref.children.clone();
             for child_id in child_ids {
-                finalize_rects(ui_config, ui_state, &child_id, child_position);
+                finalize_rects(ui_config, ui_state, child_uis_output, &child_id, child_position);
+            }
+        }
+        WidgetKind::UiContainer => {
+            if let Some(asset_id) = ui_state.get_ui_container_asset_id_opt(id) {
+
+                let mut viewport = Viewport::default();
+                viewport.x = child_position.0 as i32;
+                viewport.y = child_position.1 as i32;
+                viewport.width = width as u32;
+                viewport.height = height as u32;
+
+                let z = child_position.2;
+
+                child_uis_output.push((
+                    asset_id,
+                    viewport,
+                    z,
+                ));
             }
         }
         _ => {}

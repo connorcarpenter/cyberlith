@@ -371,11 +371,37 @@ impl UiManager {
         };
         let text_measurer = UiTextMeasurer::new(icon_data);
 
-        let Some(ui_runtime) = self.ui_runtimes.get_mut(ui_handle) else {
-            return;
+        self.recalculate_ui_layout_impl(&text_measurer, ui_handle, 10.0);
+    }
+
+    fn recalculate_ui_layout_impl(
+        &mut self,
+        text_measurer: &UiTextMeasurer,
+        ui_handle: &UiHandle,
+        z: f32,
+    ) {
+        let children = {
+            let Some(ui_runtime) = self.ui_runtimes.get_mut(ui_handle) else {
+                return;
+            };
+
+            ui_runtime.recalculate_layout(text_measurer, z)
         };
 
-        ui_runtime.recalculate_layout(&text_measurer);
+        for (child_ui_handle, child_viewport, child_viewport_z) in children {
+            let Some(child_ui_runtime) = self.ui_runtimes.get_mut(&child_ui_handle) else {
+                warn!("child ui data not loaded 1: {:?}", child_ui_handle.asset_id());
+                continue;
+            };
+
+            child_ui_runtime.update_viewport(&child_viewport);
+
+            let needs_to_recalc = child_ui_runtime.needs_to_recalculate_layout();
+
+            if needs_to_recalc {
+                self.recalculate_ui_layout_impl(text_measurer, &child_ui_handle, child_viewport_z);
+            }
+        }
     }
 
     pub fn generate_new_inputs(
@@ -485,6 +511,24 @@ impl UiManager {
             ui_runtime.queue_recalculate_layout();
         } else {
             warn!("ui data not loaded 6: {:?}", ui_handle.asset_id());
+        }
+    }
+
+    pub fn set_ui_container_contents(&mut self, ui_handle: &UiHandle, id_str: &str, child_ui_handle: &UiHandle) {
+        if let Some(ui_runtime) = self.ui_runtimes.get_mut(ui_handle) {
+            ui_runtime.set_ui_container_contents(id_str, child_ui_handle);
+            ui_runtime.queue_recalculate_layout();
+        } else {
+            warn!("ui data not loaded 7: {:?}", ui_handle.asset_id());
+        }
+    }
+
+    pub fn clear_ui_container_contents(&mut self, ui_handle: &UiHandle, id_str: &str) {
+        if let Some(ui_runtime) = self.ui_runtimes.get_mut(ui_handle) {
+            ui_runtime.clear_ui_container_contents(id_str);
+            ui_runtime.queue_recalculate_layout();
+        } else {
+            warn!("ui data not loaded 8: {:?}", ui_handle.asset_id());
         }
     }
 }

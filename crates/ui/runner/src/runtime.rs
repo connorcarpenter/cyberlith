@@ -162,12 +162,15 @@ impl UiRuntime {
         self.state.needs_to_recalculate_layout()
     }
 
-    pub(crate) fn recalculate_layout(&mut self, text_measurer: &UiTextMeasurer) {
+    pub(crate) fn recalculate_layout(&mut self, text_measurer: &UiTextMeasurer, z: f32) -> Vec<(UiHandle, Viewport, f32)> {
         self.state.recalculate_layout(
             &self.config,
             text_measurer,
             self.camera.camera.viewport.as_ref().unwrap(),
-        );
+            z,
+        ).iter().map(|(asset_id, viewport, z)| {
+            (UiHandle::new(*asset_id), *viewport, *z)
+        }).collect()
     }
 
     pub(crate) fn get_textbox_validator(&self, id_str: &str) -> Option<ValidationType> {
@@ -238,6 +241,29 @@ impl UiRuntime {
         // set text
         self.state.set_node_visible(&node_id, val);
     }
+
+    pub fn set_ui_container_contents(&mut self, id_str: &str, child_handle: &UiHandle) {
+        // get node_id from id_str
+        let Some(node_id) = self.get_node_id_by_id_str(id_str) else {
+            warn!("set_ui_container_contents: node_id not found for id_str: {}", id_str);
+            return;
+        };
+
+        // set ui handle
+        self.state.set_ui_container_asset_id(&node_id, &child_handle.asset_id());
+    }
+
+    pub fn clear_ui_container_contents(&mut self, id_str: &str) {
+        // get node_id from id_str
+        let Some(node_id) = self.get_node_id_by_id_str(id_str) else {
+            warn!("clear_ui_container_contents: node_id not found for id_str: {}", id_str);
+            return;
+        };
+
+        // set ui handle
+        self.state.clear_ui_container(&node_id);
+    }
+
     // input
 
     pub(crate) fn receive_input(

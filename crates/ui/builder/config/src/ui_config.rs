@@ -91,6 +91,9 @@ impl UiConfig {
             Widget::Spinner(spinner) => {
                 id_str_opt = Some(spinner.id_str.clone());
             }
+            Widget::UiContainer(ui_container) => {
+                id_str_opt = Some(ui_container.id_str.clone());
+            }
             _ => {}
         }
 

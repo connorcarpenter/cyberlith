@@ -88,8 +88,8 @@ pub fn connect_events(
 
         asset_manager.register_user(user_key);
 
-        let asset_id = AssetCatalog::game_main_menu_ui();
-        asset_manager.load_user_asset(&mut server, &mut http_client, global.get_asset_server_url(), *user_key, &asset_id);
+        asset_manager.load_user_asset(&mut server, &mut http_client, global.get_asset_server_url(), *user_key, &AssetCatalog::game_main_menu_ui());
+        asset_manager.load_user_asset(&mut server, &mut http_client, global.get_asset_server_url(), *user_key, &AssetCatalog::game_host_match_ui());
     }
 }
 
