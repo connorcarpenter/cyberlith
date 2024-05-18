@@ -8,7 +8,7 @@ use render_api::{
     resources::RenderFrame,
 };
 use storage::Handle;
-use ui_runner::{config::{get_carat_offset_and_scale, text_get_raw_rects, text_get_subimage_indices, NodeId, UiRuntimeConfig, WidgetKind}, state::{NodeActiveState, UiState}, Blinkiness, UiHandle, UiManager, UiRuntime};
+use ui_runner::{input::UiManagerTrait, config::{get_carat_offset_and_scale, text_get_raw_rects, text_get_subimage_indices, NodeId, UiRuntimeConfig, WidgetKind}, state::{NodeActiveState, UiState}, Blinkiness, UiHandle, UiManager};
 
 pub trait UiRender {
     fn draw_ui(&self, asset_manager: &AssetManager, render_frame: &mut RenderFrame);
@@ -67,10 +67,10 @@ impl UiRenderer {
                 render_frame,
                 ui_manager,
                 asset_manager,
-                ui_runner,
                 carat_blink,
                 &text_icon_handle,
                 &eye_icon_handle,
+                ui_handle,
                 &node_id,
             );
         }
@@ -170,27 +170,32 @@ fn draw_ui_node(
     render_frame: &mut RenderFrame,
     ui_manager: &UiManager,
     asset_manager: &AssetManager,
-    ui_runner: &UiRuntime,
     carat_blink: bool,
     text_icon_handle: &AssetHandle<IconData>,
     eye_icon_handle: &AssetHandle<IconData>,
-    id: &NodeId,
+    ui_id: &UiHandle,
+    node_id: &NodeId,
 ) {
-    let (ui_state, ui_config, _, _) = ui_runner.inner_refs();
+    let Some(ui_runner) = ui_manager.ui_runtimes.get(ui_id) else {
+        warn!("ui data not loaded 1: {:?}", ui_id.asset_id());
+        return;
+    };
+    let ui_state = ui_runner.ui_state_ref();
+    let ui_config = ui_runner.ui_config_ref();
 
     let Some((width, height, child_offset_x, child_offset_y, child_offset_z)) =
-        ui_state.cache.bounds(id)
+        ui_state.cache.bounds(node_id)
     else {
         // warn!("no bounds for id 1: {:?}", id);
         return;
     };
 
-    let Some(node) = ui_config.get_node(&id) else {
-        warn!("no node for id 1: {:?}", id);
+    let Some(node) = ui_config.get_node(&node_id) else {
+        warn!("no node for id 1: {:?}", node_id);
         return;
     };
-    let Some(node_visible) = ui_state.visibility_store.get_node_visibility(&id) else {
-        warn!("no node for id 2: {:?}", id);
+    let Some(node_visible) = ui_state.visibility_store.get_node_visibility(&node_id) else {
+        warn!("no node for id 2: {:?}", node_id);
         return;
     };
 
@@ -201,7 +206,14 @@ fn draw_ui_node(
     if node_visible {
         match node.widget_kind() {
             WidgetKind::Panel => {
-                draw_ui_panel(ui_manager, render_frame, ui_config, ui_state, id, &transform);
+                draw_ui_panel(
+                    ui_manager,
+                    render_frame,
+                    ui_config,
+                    ui_state,
+                    node_id,
+                    &transform
+                );
             }
             WidgetKind::Text => {
                 draw_ui_text(
@@ -211,7 +223,7 @@ fn draw_ui_node(
                     ui_config,
                     ui_state,
                     text_icon_handle,
-                    id,
+                    node_id,
                     &transform,
                 );
             }
@@ -219,9 +231,8 @@ fn draw_ui_node(
                 draw_ui_button(
                     ui_manager,
                     render_frame,
-                    ui_config,
-                    ui_state,
-                    id,
+                    ui_id,
+                    node_id,
                     &transform,
                 );
             }
@@ -231,11 +242,10 @@ fn draw_ui_node(
                     render_frame,
                     asset_manager,
                     carat_blink,
-                    ui_config,
-                    ui_state,
                     text_icon_handle,
                     eye_icon_handle,
-                    id,
+                    ui_id,
+                    node_id,
                     &transform,
                 );
             }
@@ -245,12 +255,12 @@ fn draw_ui_node(
                     render_frame,
                     ui_config,
                     ui_state,
-                    id,
+                    node_id,
                     &transform,
                 );
             }
             WidgetKind::UiContainer => {
-                if let Some(ui_asset_id) = ui_state.get_ui_container_asset_id_opt(id) {
+                if let Some(ui_asset_id) = ui_state.get_ui_container_asset_id_opt(node_id) {
                     let ui_handle = UiHandle::new(ui_asset_id);
                     draw_ui_container(
                         render_frame,
@@ -348,19 +358,21 @@ fn draw_ui_text(
 fn draw_ui_button(
     ui_manager: &UiManager,
     render_frame: &mut RenderFrame,
-    ui_config: &UiRuntimeConfig,
-    ui_state: &UiState,
-    id: &NodeId,
+    ui_id: &UiHandle,
+    node_id: &NodeId,
     transform: &Transform,
 ) {
-    let Some(button_style_state) = ui_state.button_style_state(ui_config, id) else {
-        panic!("no button style state ref for node_id: {:?}", id);
+    let ui_state = ui_manager.ui_state(&ui_id.asset_id());
+    let ui_config = ui_manager.ui_config(&ui_id.asset_id()).unwrap();
+
+    let Some(button_style_state) = ui_state.button_style_state(ui_config, node_id) else {
+        panic!("no button style state ref for node_id: {:?}", node_id);
     };
 
     // draw button
-    let active_state = ui_manager.input_get_active_state(id);
+    let active_state = ui_manager.input_get_active_state(ui_id, node_id);
     if let Some(mat_handle) = button_style_state.current_color_handle(active_state) {
-        let background_alpha = ui_config.node_background_alpha(id);
+        let background_alpha = ui_config.node_background_alpha(node_id);
         if background_alpha > 0.0 {
             if background_alpha != 1.0 {
                 panic!("partial background_alpha not implemented yet!");
@@ -379,24 +391,29 @@ fn draw_ui_textbox(
     render_frame: &mut RenderFrame,
     asset_manager: &AssetManager,
     carat_blink: bool,
-    ui_config: &UiRuntimeConfig,
-    ui_state: &UiState,
     text_icon_handle: &AssetHandle<IconData>,
     eye_icon_handle: &AssetHandle<IconData>,
-    id: &NodeId,
+    ui_id: &UiHandle,
+    node_id: &NodeId,
     transform: &Transform,
 ) {
-    let Some(textbox_state) = ui_state.store.textbox_ref(id) else {
-        panic!("no textbox state for node_id: {:?}", id);
+    let Some(ui_runtime) = ui_manager.ui_runtimes.get(ui_id) else {
+        return;
     };
-    let Some(textbox_style_state) = ui_state.textbox_style_state(ui_config, id) else {
-        panic!("no textbox style state for node_id: {:?}", id);
+    let ui_state = ui_runtime.ui_state_ref();
+    let ui_config = ui_runtime.ui_config_ref();
+
+    let Some(textbox_state) = ui_state.store.textbox_ref(node_id) else {
+        panic!("no textbox state for node_id: {:?}", node_id);
+    };
+    let Some(textbox_style_state) = ui_state.textbox_style_state(ui_config, node_id) else {
+        panic!("no textbox style state for node_id: {:?}", node_id);
     };
 
     // draw textbox
-    let active_state = ui_manager.input_get_active_state(id);
+    let active_state = ui_manager.input_get_active_state(ui_id, node_id);
     if let Some(mat_handle) = textbox_style_state.current_color_handle(active_state) {
-        let background_alpha = ui_config.node_background_alpha(id);
+        let background_alpha = ui_config.node_background_alpha(node_id);
         if background_alpha > 0.0 {
             if background_alpha != 1.0 {
                 panic!("partial background_alpha not implemented yet!");
@@ -473,7 +490,7 @@ fn draw_ui_textbox(
                 );
             }
 
-            let textbox = ui_config.get_node(id).unwrap().widget_textbox_ref().unwrap();
+            let textbox = ui_config.get_node(node_id).unwrap().widget_textbox_ref().unwrap();
             if textbox.is_password {
                 let currently_masked = textbox_state.password_mask;
 
@@ -561,18 +578,18 @@ fn draw_ui_container(
         return;
     };
 
-    let (_, ui, _, _) = ui_runner.inner_refs();
+    let ui_config = ui_runner.ui_config_ref();
 
-    for node_id in 0..ui.nodes_len() {
+    for node_id in 0..ui_config.nodes_len() {
         let node_id = NodeId::from_usize(node_id);
         draw_ui_node(
             render_frame,
             ui_manager,
             asset_manager,
-            ui_runner,
             carat_blink,
             &text_icon_handle,
             &eye_icon_handle,
+            ui_handle,
             &node_id,
         );
     }

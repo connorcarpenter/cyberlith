@@ -1,19 +1,17 @@
 use asset_id::AssetId;
 use input::{CursorIcon, Modifiers};
 use instant::Instant;
-use math::Vec2;
+use ui_runner_config::{NodeId, UiRuntimeConfig, WidgetKind};
+use ui_state::NodeActiveState;
 
-use ui_runner_config::{NodeId, TextMeasurer, UiRuntimeConfig, WidgetKind};
-use ui_state::{NodeActiveState, UiState};
-
-use crate::{input::ui_receive_input, UiGlobalEvent, UiInputEvent, UiNodeEvent};
+use crate::{UiGlobalEvent, UiInputEvent, UiNodeEvent};
 
 pub struct UiInputState {
     global_events: Vec<UiGlobalEvent>,
     node_events: Vec<(AssetId, NodeId, UiNodeEvent)>,
 
-    hovering_node: Option<NodeId>,
-    selected_node: Option<NodeId>,
+    hovering_node: Option<(AssetId, NodeId)>,
+    selected_node: Option<(AssetId, NodeId)>,
     cursor_icon: CursorIcon,
 
     // for textbox
@@ -29,11 +27,9 @@ impl UiInputState {
     pub fn generate_new_inputs(
         &mut self,
         ui_config: &UiRuntimeConfig,
+        node_id: &NodeId,
         next_inputs: &mut Vec<UiInputEvent>,
     ) {
-        let Some(node_id) = self.get_active_node() else {
-            return;
-        };
         if WidgetKind::Textbox != ui_config.get_node(&node_id).unwrap().widget_kind() {
             return;
         }
@@ -98,25 +94,6 @@ impl UiInputState {
     }
 
     // events
-    pub fn receive_input(
-        &mut self,
-        ui_asset_id: &AssetId,
-        ui_config: &UiRuntimeConfig,
-        ui_state: &mut UiState,
-        text_measurer: &dyn TextMeasurer,
-        mouse_position: Option<Vec2>,
-        events: Vec<UiInputEvent>,
-    ) {
-        ui_receive_input(
-            ui_asset_id,
-            ui_config,
-            ui_state,
-            self,
-            text_measurer,
-            mouse_position,
-            events,
-        );
-    }
 
     pub fn get_cursor_icon(&self) -> CursorIcon {
         self.cursor_icon
@@ -126,27 +103,27 @@ impl UiInputState {
         self.cursor_icon = cursor_icon;
     }
 
-    pub fn get_hover(&self) -> Option<NodeId> {
+    pub fn get_hover(&self) -> Option<(AssetId, NodeId)> {
         self.hovering_node
     }
 
-    pub fn receive_hover(&mut self, id: &NodeId) {
-        self.hovering_node = Some(*id);
+    pub fn receive_hover(&mut self, asset_id: &AssetId, node_id: &NodeId) {
+        self.hovering_node = Some((*asset_id, *node_id));
     }
 
     pub fn clear_hover(&mut self) {
         self.hovering_node = None;
     }
 
-    pub fn get_active_state(&self, id: &NodeId) -> NodeActiveState {
-        if let Some(select_id) = self.selected_node {
-            if select_id == *id {
+    pub fn get_active_state(&self, asset_id: &AssetId, node_id: &NodeId) -> NodeActiveState {
+        if let Some((selected_asset_id, selected_node_id)) = self.selected_node {
+            if selected_asset_id == *asset_id && selected_node_id == *node_id {
                 return NodeActiveState::Active;
             }
         }
 
-        if let Some(hover_id) = self.hovering_node {
-            if hover_id == *id {
+        if let Some((hover_asset_id, hover_node_id)) = self.hovering_node {
+            if hover_asset_id == *asset_id && hover_node_id == *node_id {
                 return NodeActiveState::Hover;
             }
         };
@@ -154,11 +131,11 @@ impl UiInputState {
         return NodeActiveState::Normal;
     }
 
-    pub fn get_active_node(&self) -> Option<NodeId> {
+    pub fn get_active_node(&self) -> Option<(AssetId, NodeId)> {
         self.selected_node
     }
 
-    pub fn set_active_node(&mut self, id_opt: Option<NodeId>) {
+    pub fn set_active_node(&mut self, id_opt: Option<(AssetId, NodeId)>) {
         self.selected_node = id_opt;
     }
 

@@ -22,9 +22,9 @@ use render_api::{
 };
 use render_api::shapes::UnitSquare;
 use storage::{Handle, Storage};
-use ui_input::{UiGlobalEvent, UiInputEvent, UiInputState, UiNodeEvent, UiNodeEventHandler};
+use ui_input::{ui_receive_input, UiGlobalEvent, UiInputEvent, UiInputState, UiManagerTrait, UiNodeEvent, UiNodeEventHandler};
 use ui_runner_config::{NodeId, UiRuntimeConfig};
-use ui_state::NodeActiveState;
+use ui_state::{NodeActiveState, UiState};
 
 use crate::{state_globals::StateGlobals, runtime::UiRuntime, config::ValidationType, handle::UiHandle};
 
@@ -69,6 +69,48 @@ impl Default for UiManager {
 
             globals: StateGlobals::new(),
             input_state: UiInputState::new(),
+        }
+    }
+}
+
+impl UiManagerTrait for UiManager {
+    fn ui_input_state(&self) -> &UiInputState {
+        &self.input_state
+    }
+
+    fn ui_input_state_mut(&mut self) -> &mut UiInputState {
+        &mut self.input_state
+    }
+
+    fn ui_state(&self, asset_id: &AssetId) -> &UiState {
+        let ui_handle = UiHandle::new(*asset_id);
+        self.ui_runtimes.get(&ui_handle).unwrap().ui_state_ref()
+    }
+
+    fn ui_state_mut(&mut self, asset_id: &AssetId) -> &mut UiState {
+        let ui_handle = UiHandle::new(*asset_id);
+        self.ui_runtimes.get_mut(&ui_handle).unwrap().ui_state_mut()
+    }
+
+    fn root_ui_asset_id(&self) -> AssetId {
+        self.active_ui.unwrap().asset_id()
+    }
+
+    fn nodes_len(&self, asset_id: &AssetId) -> usize {
+        let ui_handle = UiHandle::new(*asset_id);
+        self.ui_runtimes.get(&ui_handle).unwrap().ui_config_ref().nodes_len()
+    }
+
+    fn ui_config(&self, asset_id: &AssetId) -> Option<&UiRuntimeConfig> {
+        let ui_handle = UiHandle::new(*asset_id);
+        self.ui_runtimes.get(&ui_handle).map(|r| r.ui_config_ref())
+    }
+
+    fn textbox_receive_hover(&mut self, asset_id: &AssetId, node_id: &NodeId, bounds: (f32, f32, f32, f32), mouse_x: f32, mouse_y: f32) -> bool {
+        if let Some(ui_runtime) = self.ui_runtimes.get_mut(&UiHandle::new(*asset_id)) {
+            ui_runtime.textbox_receive_hover(node_id, bounds, mouse_x, mouse_y)
+        } else {
+            false
         }
     }
 }
@@ -347,14 +389,16 @@ impl UiManager {
         &mut self,
         asset_manager: &AssetManager,
         target_camera: &Camera,
-        ui_handle: &UiHandle,
     ) {
         let store = asset_manager.get_store();
         let Some(viewport) = target_camera.viewport else {
             return;
         };
-        let Some(ui_runtime) = self.ui_runtimes.get_mut(ui_handle) else {
-            warn!("ui data not loaded 1: {:?}", ui_handle.asset_id());
+        let Some(active_ui_handle) = self.active_ui else {
+            return;
+        };
+        let Some(ui_runtime) = self.ui_runtimes.get_mut(&active_ui_handle) else {
+            warn!("ui data not loaded 1: {:?}", active_ui_handle.asset_id());
             return;
         };
 
@@ -363,12 +407,12 @@ impl UiManager {
         let needs_to_recalc = ui_runtime.needs_to_recalculate_layout();
 
         if needs_to_recalc {
-            let Some(ui_runtime) = self.ui_runtimes.get(ui_handle) else {
-                warn!("ui data not loaded 1: {:?}", ui_handle.asset_id());
+            let Some(ui_runtime) = self.ui_runtimes.get(&active_ui_handle) else {
+                warn!("ui data not loaded 1: {:?}", active_ui_handle.asset_id());
                 return;
             };
             let icon_handle = ui_runtime.get_text_icon_handle();
-            self.recalculate_ui_layout(store, ui_handle, &icon_handle);
+            self.recalculate_ui_layout(store, &active_ui_handle, &icon_handle);
         }
     }
 
@@ -418,26 +462,30 @@ impl UiManager {
 
     pub fn generate_new_inputs(
         &mut self,
-        ui_handle: &UiHandle,
         next_inputs: &mut Vec<UiInputEvent>,
     ) {
-        let Some(ui_runtime) = self.ui_runtimes.get_mut(ui_handle) else {
-            warn!("ui data not loaded 1: {:?}", ui_handle.asset_id());
+        let Some((asset_id, node_id)) = self.input_state.get_active_node() else {
             return;
         };
-        ui_runtime.generate_new_inputs(&mut self.input_state, next_inputs);
+        let ui_handle = UiHandle::new(asset_id);
+        let Some(ui_runtime) = self.ui_runtimes.get(&ui_handle) else {
+            warn!("ui data not loaded 1: {:?}", asset_id);
+            return;
+        };
+        let (_, config, _, _) = ui_runtime.inner_refs();
+        self.input_state.generate_new_inputs(config, &node_id, next_inputs);
     }
 
     pub fn update_ui_input(
         &mut self,
         asset_manager: &AssetManager,
-        ui_handle: &UiHandle,
         mouse_position: Option<Vec2>,
         ui_input_events: Vec<UiInputEvent>,
     ) {
         let store = asset_manager.get_store();
-        let Some(ui_runtime) = self.ui_runtimes.get_mut(ui_handle) else {
-            warn!("ui data not loaded 1: {:?}", ui_handle.asset_id());
+        let root_handle = self.active_ui().unwrap();
+        let Some(ui_runtime) = self.ui_runtimes.get_mut(&root_handle) else {
+            warn!("ui data not loaded 1: {:?}", root_handle.asset_id());
             return;
         };
         let icon_handle = ui_runtime.get_text_icon_handle();
@@ -445,7 +493,7 @@ impl UiManager {
             return;
         };
         let text_measurer = UiTextMeasurer::new(icon_data);
-        ui_runtime.receive_input(ui_handle, &text_measurer, mouse_position, &mut self.input_state, ui_input_events);
+        self.receive_input(&text_measurer, mouse_position, ui_input_events);
 
         // get any global events
         let mut global_events: Vec<UiGlobalEvent> = self.take_global_events();
@@ -461,6 +509,20 @@ impl UiManager {
         if new_cursor_icon != self.last_cursor_icon {
             self.cursor_icon_change = Some(new_cursor_icon);
         }
+    }
+
+    fn receive_input(
+        &mut self,
+        text_measurer: &UiTextMeasurer,
+        mouse_position: Option<Vec2>,
+        input_events: Vec<UiInputEvent>
+    ) {
+        ui_receive_input(
+            self,
+            text_measurer,
+            mouse_position,
+            input_events
+        );
     }
 
     pub fn get_textbox_validator(&self, ui_handle: &UiHandle, id_str: &str) -> Option<ValidationType> {
@@ -560,8 +622,8 @@ impl UiManager {
         self.input_state.interact_timer_within_seconds(secs)
     }
 
-    pub fn input_get_active_state(&self, id: &NodeId) -> NodeActiveState {
-        self.input_state.get_active_state(id)
+    pub fn input_get_active_state(&self, ui_id: &UiHandle, node_id: &NodeId) -> NodeActiveState {
+        self.input_state.get_active_state(&ui_id.asset_id(), node_id)
     }
 
     pub fn input_get_select_index(&self) -> Option<usize> {

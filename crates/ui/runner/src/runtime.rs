@@ -1,12 +1,11 @@
 use asset_loader::{AssetHandle, IconData, TypedAssetId, UiDependencies, UiTextMeasurer};
 use logging::warn;
-use math::{Vec2, Vec3};
+use math::Vec3;
 use render_api::{
     base::CpuMaterial,
     components::{Viewport, CameraBundle, ClearOperation, Projection, Transform}
 };
 use storage::Storage;
-use ui_input::{UiInputEvent, UiInputState};
 use ui_runner_config::{NodeId, SerdeErr, UiRuntimeConfig};
 use ui_state::UiState;
 
@@ -20,9 +19,18 @@ pub struct UiRuntime {
 }
 
 impl UiRuntime {
-    pub(crate) fn generate_new_inputs(&mut self, input_state: &mut UiInputState, next_inputs: &mut Vec<UiInputEvent>) {
-        input_state.generate_new_inputs(&self.config, next_inputs);
+    pub(crate) fn textbox_receive_hover(&mut self, node_id: &NodeId, bounds: (f32, f32, f32, f32), mouse_x: f32, mouse_y: f32) -> bool {
+        let textbox_config = self.config.textbox_ref(node_id).unwrap();
+        self
+            .state
+            .store
+            .textbox_mut(node_id)
+            .unwrap()
+            .receive_hover(textbox_config, bounds, mouse_x, mouse_y)
     }
+}
+
+impl UiRuntime {
 
     pub(crate) fn load_from_bytes(bytes: &[u8]) -> Result<Self, SerdeErr> {
         let config = UiRuntimeConfig::load_from_bytes(bytes)?;
@@ -255,23 +263,15 @@ impl UiRuntime {
         self.state.clear_ui_container(&node_id);
     }
 
-    // input
+    pub fn ui_state_ref(&self) -> &UiState {
+        &self.state
+    }
 
-    pub(crate) fn receive_input(
-        &mut self,
-        ui_handle: &UiHandle,
-        text_measurer: &UiTextMeasurer,
-        mouse_position: Option<Vec2>,
-        input_state: &mut UiInputState,
-        input_events: Vec<UiInputEvent>,
-    ) {
-        input_state.receive_input(
-            &ui_handle.asset_id(),
-            &self.config,
-            &mut self.state,
-            text_measurer,
-            mouse_position,
-            input_events,
-        );
+    pub fn ui_state_mut(&mut self) -> &mut UiState {
+        &mut self.state
+    }
+
+    pub fn ui_config_ref(&self) -> &UiRuntimeConfig {
+        &self.config
     }
 }
