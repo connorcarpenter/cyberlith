@@ -92,6 +92,10 @@ pub async fn server_build_auth(image_tag: String) -> Result<(), CliError> {
     return server_build_common("auth", "auth_server", &image_tag).await;
 }
 
+pub async fn server_build_social(image_tag: String) -> Result<(), CliError> {
+    return server_build_common("social", "social_server", &image_tag).await;
+}
+
 async fn server_build_common(dir_name: &str, app_name: &str, image_tag: &str) -> Result<(), CliError> {
     run_command(
         app_name,
@@ -102,11 +106,13 @@ async fn server_build_common(dir_name: &str, app_name: &str, image_tag: &str) ->
         .as_str(),
     )
     .await?;
+
     run_command(
         app_name,
         format!("cp target/x86_64-unknown-linux-gnu/release/{} {}", app_name, app_name).as_str(),
     )
     .await?;
+
     run_command(
         app_name,
         format!(
@@ -116,6 +122,7 @@ async fn server_build_common(dir_name: &str, app_name: &str, image_tag: &str) ->
         .as_str(),
     )
     .await?;
+
     run_command(app_name, format!("rm {}", app_name).as_str()).await?;
 
     info!("server_build_common({}) done!", dir_name);

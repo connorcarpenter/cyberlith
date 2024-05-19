@@ -97,6 +97,7 @@ async fn images_push(config: &HashSet<String>, image_tag: &str) -> Result<(), Cl
     image_push(config, "session", image_tag).await?;
     image_push(config, "world", image_tag).await?;
     image_push(config, "asset", image_tag).await?;
+    image_push(config, "social", image_tag).await?;
 
     info!("images pushed to container registry");
 
@@ -123,6 +124,7 @@ async fn images_pull(config: &HashSet<String>, image_tag: &str, session: &Sessio
     image_pull(config, session, "session", image_tag).await?;
     image_pull(config, session, "world", image_tag).await?;
     image_pull(config, session, "asset", image_tag).await?;
+    image_pull(config, session, "social", image_tag).await?;
 
     Ok(())
 }
@@ -173,6 +175,7 @@ async fn containers_start(config: &HashSet<String>, image_tag: &str, session: &S
     )
     .await?;
     container_create_and_start(config, session, "asset", image_tag, "-p 14205:14205/tcp").await?;
+    container_create_and_start(config, session, "social", image_tag, "-p 14207:14207/tcp").await?;
 
     Ok(())
 }
@@ -192,6 +195,7 @@ async fn containers_stop(config: &HashSet<String>, session: &Session) -> Result<
     container_stop_and_remove(config, session, "session").await?;
     container_stop_and_remove(config, session, "world").await?;
     container_stop_and_remove(config, session, "asset").await?;
+    container_stop_and_remove(config, session, "social").await?;
 
     Ok(())
 }

@@ -31,6 +31,7 @@ pub fn up() -> Result<(), CliError> {
         "session",
         "world",
         "asset",
+        "social",
     ]
     .iter()
     .map(|s| s.to_string())
@@ -93,6 +94,12 @@ pub fn up() -> Result<(), CliError> {
         (true, None)
     };
 
+    let (mut social_rdy, social_rcvr) = if config.contains("social") {
+        (false, Some(thread_init_1arg(image_tag.clone(), server_build::server_build_social)))
+    } else {
+        (true, None)
+    };
+
     loop {
         thread::sleep(Duration::from_secs(5));
 
@@ -123,6 +130,9 @@ pub fn up() -> Result<(), CliError> {
         if let Some(asset_rcvr) = &asset_rcvr {
             check_channel(asset_rcvr, &mut asset_rdy)?;
         }
+        if let Some(social_rcvr) = &social_rcvr {
+            check_channel(social_rcvr, &mut social_rdy)?;
+        }
 
         if instance_rdy
             && redirector_rdy
@@ -133,6 +143,7 @@ pub fn up() -> Result<(), CliError> {
             && session_rdy
             && world_rdy
             && asset_rdy
+            && social_rdy
         {
             break;
         }

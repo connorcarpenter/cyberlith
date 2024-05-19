@@ -3,14 +3,12 @@ mod convert_to_bits;
 use std::{fs, path::Path};
 
 use asset_id::{AssetId, AssetType, ETag};
-use asset_serde::bits::AssetMetadataSerde;
+use asset_serde::{bits::AssetMetadataSerde, json::{Asset, AssetData, AssetMeta, ProcessedAssetMeta}};
 use git::{
     branch_exists, create_branch, git_commit, git_pull, git_push, read_file_bytes, repo_init,
     switch_to_branch, write_file_bytes, ObjectType, Repository, Tree,
 };
 use logging::info;
-
-use asset_serde::json::{Asset, AssetData, AssetMeta, ProcessedAssetMeta};
 
 use crate::{CliError, types::{OutputType, TargetEnv}};
 
