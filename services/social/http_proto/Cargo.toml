@@ -9,5 +9,7 @@ publish = false
 [features]
 
 [dependencies]
+auth_server_types = { path = "../../auth/types" }
 naia-serde = { path = "../../../../naia/shared/serde" }
 http_common = { path = "../../../crates/http/http_common" }
+social_server_types = { path = "../types" }

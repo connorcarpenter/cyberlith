@@ -52,6 +52,7 @@ members = [
     # Social Server
     "services/social",
     "services/social/http_proto",
+    "services/social/types",
 
     ### Tools ###
     # Automation CLI / Library
