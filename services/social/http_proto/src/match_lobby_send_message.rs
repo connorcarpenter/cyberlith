@@ -1,13 +1,11 @@
 use naia_serde::SerdeInternal as Serde;
 use auth_server_types::UserId;
 use http_common::{ApiRequest, ApiResponse, Method};
-use social_server_types::MatchLobbyId;
 
 // Request
 #[derive(Serde, PartialEq, Clone)]
 pub struct MatchLobbySendMessageRequest {
     session_secret: String,
-    match_lobby_id: MatchLobbyId,
     user_id: UserId,
     message: String,
 }
@@ -15,13 +13,11 @@ pub struct MatchLobbySendMessageRequest {
 impl MatchLobbySendMessageRequest {
     pub fn new(
         session_secret: &str,
-        match_lobby_id: MatchLobbyId,
         user_id: UserId,
         message: String
     ) -> Self {
         Self {
             session_secret: session_secret.to_string(),
-            match_lobby_id,
             user_id,
             message,
         }
@@ -30,8 +26,6 @@ impl MatchLobbySendMessageRequest {
     pub fn session_secret(&self) -> &str {
         &self.session_secret
     }
-
-    pub fn match_lobby_id(&self) -> MatchLobbyId { self.match_lobby_id }
 
     pub fn user_id(&self) -> UserId { self.user_id }
 

@@ -11,6 +11,8 @@ local = [ "config/local", "region_server_http_proto/local" ]
 prod = [ "config/prod", "region_server_http_proto/prod" ]
 
 [dependencies]
+auth_server_types = { path = "../auth/types" }
+social_server_types = { path = "types" }
 http_server = { path = "../../crates/http/http_server" }
 http_client = { path = "../../crates/http/http_client" }
 config = { path = "../../config", features = ["social"] }

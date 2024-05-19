@@ -41,6 +41,11 @@ pub fn main() {
     users::recv_user_connected_request(server_name, &mut server, state.clone());
     users::recv_user_disconnected_request(server_name, &mut server, state.clone());
 
+    match_lobbies::recv_match_lobby_create_request(server_name, &mut server, state.clone());
+    match_lobbies::recv_match_lobby_join_request(server_name, &mut server, state.clone());
+    match_lobbies::recv_match_lobby_leave_request(server_name, &mut server, state.clone());
+    match_lobbies::recv_match_lobby_send_message_request(server_name, &mut server, state.clone());
+
     server.start();
 
     // send registration
