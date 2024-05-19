@@ -16,10 +16,10 @@ use crate::state::State;
 pub async fn send_register_instance_request(state: Arc<RwLock<State>>) {
     let mut state = state.write().await;
 
-    if state.connected() {
+    if state.region_server.connected() {
         return;
     }
-    if !state.time_to_resend_registration() {
+    if !state.region_server.time_to_resend_registration() {
         return;
     }
 
@@ -35,7 +35,7 @@ pub async fn send_register_instance_request(state: Arc<RwLock<State>>) {
                 "from {:?}:{} - social server registration success",
                 REGION_SERVER_RECV_ADDR, REGION_SERVER_PORT
             );
-            state.set_connected();
+            state.region_server.set_connected();
         }
         Err(err) => {
             warn!(
@@ -47,16 +47,16 @@ pub async fn send_register_instance_request(state: Arc<RwLock<State>>) {
         }
     }
 
-    state.sent_to_region_server();
+    state.region_server.sent_to_region_server();
 }
 
 pub async fn process_region_server_disconnect(state: Arc<RwLock<State>>) {
     let mut state = state.write().await;
 
-    if state.connected() {
-        if state.time_to_disconnect() {
+    if state.region_server.connected() {
+        if state.region_server.time_to_disconnect() {
             info!("disconnecting from region server");
-            state.set_disconnected();
+            state.region_server.set_disconnected();
         }
     }
 }
@@ -74,6 +74,6 @@ async fn async_recv_heartbeat_request_impl(
 ) -> Result<HeartbeatResponse, ResponseError> {
     info!("Heartbeat request received from region server, sending response");
     let mut state = state.write().await;
-    state.heard_from_region_server();
+    state.region_server.heard_from_region_server();
     Ok(HeartbeatResponse)
 }

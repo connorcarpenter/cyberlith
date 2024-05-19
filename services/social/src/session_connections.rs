@@ -33,7 +33,7 @@ async fn async_recv_connect_session_server_request_impl(
     let mut state = state.write().await;
 
     // setting last heard
-    state.heard_from_region_server();
+    state.region_server.heard_from_region_server();
 
     // store session server details
     state.add_session_server(request.http_addr(), request.http_port());
@@ -68,7 +68,7 @@ async fn async_recv_disconnect_session_server_request_impl(
     let mut state = state.write().await;
 
     // setting last heard
-    state.heard_from_region_server();
+    state.region_server.heard_from_region_server();
 
     // erase session server details
     state.remove_session_server(request.http_addr(), request.http_port());

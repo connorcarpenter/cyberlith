@@ -2,6 +2,9 @@
 mod region_connection;
 mod session_connections;
 mod state;
+mod region_server_state;
+mod match_lobbies;
+mod users;
 
 use std::{net::SocketAddr, thread, time::Duration};
 
@@ -34,6 +37,9 @@ pub fn main() {
 
     session_connections::recv_connect_session_server_request(server_name, &mut server, state.clone());
     session_connections::recv_disconnect_session_server_request(server_name, &mut server, state.clone());
+
+    users::recv_user_connected_request(server_name, &mut server, state.clone());
+    users::recv_user_disconnected_request(server_name, &mut server, state.clone());
 
     server.start();
 
