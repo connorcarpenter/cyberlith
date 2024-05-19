@@ -1,6 +1,6 @@
 use std::net::SocketAddr;
 
-use bevy_ecs::{change_detection::ResMut, event::EventReader, system::Res};
+use bevy_ecs::{change_detection::ResMut, event::EventReader};
 
 use naia_bevy_server::{
     events::{AuthEvents, ConnectEvent, DisconnectEvent, ErrorEvent, MessageEvents},
@@ -21,7 +21,7 @@ use session_server_naia_proto::messages::{Auth, WorldConnectRequest};
 
 use crate::{
     asset::{asset_manager::AssetManager, AssetCatalog},
-    global::Global,
+    user_manager::UserManager,
 };
 
 pub fn init(mut server: Server) {
@@ -50,17 +50,17 @@ pub fn init(mut server: Server) {
 }
 
 pub fn auth_events(
-    mut global: ResMut<Global>,
+    mut user_manager: ResMut<UserManager>,
     mut server: Server,
     mut event_reader: EventReader<AuthEvents>,
 ) {
     for events in event_reader.read() {
         for (user_key, auth) in events.read::<Auth>() {
-            if let Some(user_data) = global.take_login_token(&auth.token()) {
+            if let Some(user_data) = user_manager.take_login_token(&auth.token()) {
                 info!("Accepted connection. Token: {}", auth.token());
 
                 // add to users
-                global.add_user(user_key, user_data);
+                user_manager.add_user(user_key, user_data);
 
                 // Accept incoming connection
                 server.accept_connection(&user_key);
@@ -78,7 +78,6 @@ pub fn connect_events(
     mut server: Server,
     mut event_reader: EventReader<ConnectEvent>,
     mut asset_manager: ResMut<AssetManager>,
-    global: Res<Global>,
     mut http_client: ResMut<HttpClient>,
 ) {
     for ConnectEvent(user_key) in event_reader.read() {
@@ -89,17 +88,18 @@ pub fn connect_events(
         asset_manager.register_user(user_key);
 
         // load "default" assets
+        let asset_server_url = asset_manager.get_asset_server_url();
         asset_manager.load_user_asset(
             &mut server,
             &mut http_client,
-            global.get_asset_server_url(),
+            &asset_server_url,
             *user_key,
             &AssetCatalog::game_main_menu_ui(),
         );
         asset_manager.load_user_asset(
             &mut server,
             &mut http_client,
-            global.get_asset_server_url(),
+            &asset_server_url,
             *user_key,
             &AssetCatalog::game_host_match_ui(),
         );
@@ -125,10 +125,10 @@ pub fn error_events(mut event_reader: EventReader<ErrorEvent>) {
     }
 }
 
-pub fn message_events(mut global: ResMut<Global>, mut event_reader: EventReader<MessageEvents>) {
+pub fn message_events(mut user_manager: ResMut<UserManager>, mut event_reader: EventReader<MessageEvents>) {
     for events in event_reader.read() {
         for (user_key, _req) in events.read::<ClientActionsChannel, WorldConnectRequest>() {
-            if let Some(user_data) = global.get_user_data_mut(&user_key) {
+            if let Some(user_data) = user_manager.get_user_data_mut(&user_key) {
                 user_data.make_ready_for_world_connect();
             } else {
                 warn!("User not found: {:?}", user_key);

@@ -1,11 +1,8 @@
 mod asset;
-mod global;
-mod http_server;
+mod user_manager;
 mod naia;
-mod social_connection;
-mod user_connection;
-mod world_connection;
-mod region;
+mod http;
+mod session_instance;
 
 //
 
@@ -27,8 +24,8 @@ use session_server_naia_proto::protocol as naia_protocol;
 //
 
 use crate::{
-    asset::{asset_connection, asset_manager, asset_manager::AssetManager},
-    global::Global, region::RegionConnection
+    asset::{asset_manager, asset_manager::AssetManager}, session_instance::SessionInstance,
+    user_manager::UserManager, http::{world, world::WorldConnections, social::SocialConnection, region, region::RegionConnection},
 };
 
 fn main() {
@@ -50,18 +47,18 @@ fn main() {
         .add_plugins(HttpServerPlugin::new(http_protocol()))
         .add_plugins(HttpClientPlugin)
         // Resource
-        .insert_resource(Global::new(
-            &instance_secret,
-            world_connect_resend_rate,
-        ))
+        .insert_resource(UserManager::new())
         .insert_resource(RegionConnection::new(
             registration_resend_rate,
             region_server_disconnect_timeout
         ))
+        .insert_resource(SocialConnection::new())
+        .insert_resource(WorldConnections::new(world_connect_resend_rate))
         .insert_resource(AssetManager::new())
+        .insert_resource(SessionInstance::new(&instance_secret))
         // Startup System
         .add_systems(Startup, naia::init)
-        .add_systems(Startup, http_server::init)
+        .add_systems(Startup, http::start_server)
         // Receive Server Events
         .add_systems(
             Update,
@@ -72,22 +69,20 @@ fn main() {
                 naia::error_events,
                 naia::message_events,
 
-                user_connection::recv_login_request,
-
                 region::processes::send_register_instance_request,
+                region::processes::send_world_connect_requests,
                 region::processes::process_region_server_disconnect,
+
                 region::endpoints::recv_register_instance_response,
                 region::endpoints::recv_heartbeat_request,
+                region::endpoints::recv_login_request,
+                region::endpoints::recv_world_connect_response,
+                region::endpoints::recv_connect_social_server_request,
+                region::endpoints::recv_disconnect_social_server_request,
+                region::endpoints::recv_connect_asset_server_request,
+                region::endpoints::recv_disconnect_asset_server_request,
 
-                asset_connection::recv_connect_asset_server_request,
-                asset_connection::recv_disconnect_asset_server_request,
-
-                social_connection::recv_connect_social_server_request,
-                social_connection::recv_disconnect_social_server_request,
-
-                world_connection::send_world_connect_request,
-                world_connection::recv_world_connect_response,
-                world_connection::recv_added_asset_id_request,
+                world::endpoints::recv_added_asset_id_request,
 
                 asset_manager::update,
             )

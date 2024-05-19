@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use bevy_ecs::{
     prelude::Resource,
-    system::{Res, ResMut},
+    system::ResMut,
 };
 use logging::info;
 
@@ -11,16 +11,14 @@ use naia_bevy_server::{Server, UserKey};
 use asset_id::AssetId;
 use bevy_http_client::HttpClient;
 
-use crate::{
-    asset::{asset_store::AssetStore, user_assets::UserAssets},
-    global::Global,
-};
+use crate::asset::{asset_store::AssetStore, user_assets::UserAssets};
 
 #[derive(Resource)]
 pub struct AssetManager {
     users: HashMap<UserKey, UserAssets>,
     asset_store: AssetStore,
     queued_user_asset_requests: Vec<(UserKey, AssetId, bool)>,
+    asset_server_opt: Option<(String, u16)>,
 }
 
 impl AssetManager {
@@ -29,7 +27,24 @@ impl AssetManager {
             users: HashMap::new(),
             asset_store: AssetStore::new(),
             queued_user_asset_requests: Vec::new(),
+            asset_server_opt: None,
         }
+    }
+
+    // Asset Server
+
+    pub fn set_asset_server(&mut self, addr: &str, port: u16) {
+        self.asset_server_opt = Some((addr.to_string(), port));
+    }
+
+    pub fn clear_asset_server(&mut self) {
+        self.asset_server_opt = None;
+    }
+
+    pub fn get_asset_server_url(&self) -> Option<(String, u16)> {
+        self.asset_server_opt
+            .as_ref()
+            .map(|(addr, port)| (addr.clone(), *port))
     }
 
     pub fn register_user(&mut self, user_key: &UserKey) {
@@ -62,13 +77,13 @@ impl AssetManager {
                 self.load_user_asset(
                     naia_server,
                     http_client,
-                    Some((asset_server_addr.to_string(), asset_server_port)),
+                    &Some((asset_server_addr.to_string(), asset_server_port)),
                     user_key,
                     &asset_id,
                 );
             } else {
                 self.unload_user_asset(
-                    Some((asset_server_addr.to_string(), asset_server_port)),
+                    &Some((asset_server_addr.to_string(), asset_server_port)),
                     user_key,
                     &asset_id,
                 );
@@ -80,7 +95,7 @@ impl AssetManager {
         &mut self,
         server: &mut Server,
         http_client: &mut HttpClient,
-        asset_server_ip_opt: Option<(String, u16)>,
+        asset_server_ip_opt: &Option<(String, u16)>,
         user_key: UserKey,
         asset_id: &AssetId,
     ) {
@@ -89,8 +104,8 @@ impl AssetManager {
                 user_assets.load_user_asset(
                     server,
                     http_client,
-                    &asset_server_addr,
-                    asset_server_port,
+                    asset_server_addr,
+                    *asset_server_port,
                     &self.asset_store,
                     asset_id,
                 );
@@ -105,7 +120,7 @@ impl AssetManager {
 
     pub fn unload_user_asset(
         &mut self,
-        asset_server_ip_opt: Option<(String, u16)>,
+        asset_server_ip_opt: &Option<(String, u16)>,
         user_key: UserKey,
         asset_id: &AssetId,
     ) {
@@ -144,9 +159,8 @@ pub fn update(
     mut asset_manager: ResMut<AssetManager>,
     mut server: Server,
     mut http_client: ResMut<HttpClient>,
-    global: Res<Global>,
 ) {
-    if let Some((asset_server_addr, asset_server_port)) = global.get_asset_server_url() {
+    if let Some((asset_server_addr, asset_server_port)) = asset_manager.get_asset_server_url() {
         asset_manager.process_in_flight_requests(
             &mut server,
             &mut http_client,

@@ -1,7 +1,5 @@
 use std::collections::HashSet;
 
-use logging::info;
-
 use naia_bevy_server::{ResponseReceiveKey, Server, UserKey};
 
 use asset_server_http_proto::{AssetRequest, AssetResponse, AssetResponseValue};
@@ -10,6 +8,7 @@ use session_server_naia_proto::{
     messages::{LoadAssetRequest, LoadAssetResponse, LoadAssetResponseValue},
 };
 
+use logging::info;
 use asset_id::{AssetId, AssetType, ETag};
 use bevy_http_client::{HttpClient, ResponseKey};
 

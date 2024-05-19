@@ -7,12 +7,12 @@ use config::{
 };
 use logging::info;
 
-use region_server_http_proto::SessionRegisterInstanceRequest;
+use region_server_http_proto::{SessionRegisterInstanceRequest, WorldConnectRequest};
 
-use crate::{global::Global, region::RegionConnection};
+use crate::{session_instance::SessionInstance, user_manager::UserManager, http::{region::RegionConnection, world::WorldConnections}};
 
 pub fn send_register_instance_request(
-    global: Res<Global>,
+    session_instance: Res<SessionInstance>,
     mut region: ResMut<RegionConnection>,
     mut http_client: ResMut<HttpClient>,
 ) {
@@ -29,7 +29,7 @@ pub fn send_register_instance_request(
     //info!("Sending request to register instance with region server ..");
     let request = SessionRegisterInstanceRequest::new(
         SESSION_SERVER_GLOBAL_SECRET,
-        global.instance_secret(),
+        session_instance.instance_secret(),
         SESSION_SERVER_RECV_ADDR,
         SESSION_SERVER_HTTP_PORT,
     );
@@ -47,5 +47,19 @@ pub fn process_region_server_disconnect(
             info!("disconnecting from region server");
             region.set_disconnected();
         }
+    }
+}
+
+pub fn send_world_connect_requests(
+    session_instance: Res<SessionInstance>,
+    mut http_client: ResMut<HttpClient>,
+    mut user_manager: ResMut<UserManager>,
+    mut world_connections: ResMut<WorldConnections>,
+) {
+    let worldless_users = user_manager.get_users_ready_to_connect_to_world(world_connections.world_connect_resend_rate());
+    for (user_key, user_id) in worldless_users {
+        let request = WorldConnectRequest::new(session_instance.instance_secret(), user_id);
+        let key = http_client.send(REGION_SERVER_RECV_ADDR, REGION_SERVER_PORT, request);
+        world_connections.add_world_connect_response_key(&user_key, key);
     }
 }

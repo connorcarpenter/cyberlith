@@ -1,5 +1,6 @@
-use asset_id::{AssetId, AssetType, ETag};
 use std::collections::{HashMap, HashSet};
+
+use asset_id::{AssetId, AssetType, ETag};
 
 struct AssetData {
     asset_type: AssetType,
