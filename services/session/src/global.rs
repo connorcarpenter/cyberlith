@@ -10,12 +10,7 @@ use naia_bevy_server::UserKey;
 use auth_server_types::UserId;
 use bevy_http_client::ResponseKey as ClientResponseKey;
 
-use region_server_http_proto::{SessionRegisterInstanceResponse, WorldConnectResponse};
-
-pub enum ConnectionState {
-    Disconnected,
-    Connected,
-}
+use region_server_http_proto::WorldConnectResponse;
 
 pub(crate) struct UserData {
     user_id: UserId,
@@ -80,13 +75,6 @@ impl WorldInstanceData {
 pub struct Global {
     instance_secret: String,
 
-    region_server_connection_state: ConnectionState,
-    region_server_last_sent: Instant,
-    region_server_last_heard: Instant,
-    region_server_disconnect_timeout: Duration,
-    registration_resend_rate: Duration,
-    register_instance_response_key: Option<ClientResponseKey<SessionRegisterInstanceResponse>>,
-
     world_connect_response_keys: HashMap<ClientResponseKey<WorldConnectResponse>, UserKey>,
     world_connect_resend_rate: Duration,
 
@@ -100,19 +88,11 @@ pub struct Global {
 impl Global {
     pub fn new(
         instance_secret: &str,
-        registration_resend_rate: Duration,
-        region_server_disconnect_timeout: Duration,
         world_connect_resend_rate: Duration,
     ) -> Self {
         Self {
             instance_secret: instance_secret.to_string(),
-            region_server_connection_state: ConnectionState::Disconnected,
-            region_server_last_sent: Instant::now(),
-            region_server_last_heard: Instant::now(),
-            register_instance_response_key: None,
             world_connect_response_keys: HashMap::new(),
-            registration_resend_rate,
-            region_server_disconnect_timeout,
             world_connect_resend_rate,
             login_tokens: HashMap::new(),
             users: HashMap::new(),
@@ -124,63 +104,6 @@ impl Global {
 
     pub fn instance_secret(&self) -> &str {
         &self.instance_secret
-    }
-
-    // Region Server stuff
-    pub fn register_instance_response_key(
-        &self,
-    ) -> Option<&ClientResponseKey<SessionRegisterInstanceResponse>> {
-        self.register_instance_response_key.as_ref()
-    }
-
-    pub fn set_register_instance_response_key(
-        &mut self,
-        response_key: ClientResponseKey<SessionRegisterInstanceResponse>,
-    ) {
-        self.register_instance_response_key = Some(response_key);
-    }
-
-    pub fn clear_register_instance_response_key(&mut self) {
-        self.register_instance_response_key = None;
-    }
-
-    pub fn waiting_for_registration_response(&self) -> bool {
-        self.register_instance_response_key.is_some()
-    }
-
-    pub fn time_to_resend_registration(&self) -> bool {
-        let time_since_last_sent = self.region_server_last_sent.elapsed();
-        time_since_last_sent >= self.registration_resend_rate
-    }
-
-    pub fn time_to_disconnect(&self) -> bool {
-        let time_since_last_heard = self.region_server_last_heard.elapsed();
-        time_since_last_heard >= self.region_server_disconnect_timeout
-    }
-
-    pub fn heard_from_region_server(&mut self) {
-        self.region_server_last_heard = Instant::now();
-    }
-
-    pub fn sent_to_region_server(&mut self) {
-        self.region_server_last_sent = Instant::now();
-    }
-
-    pub fn connected(&self) -> bool {
-        match self.region_server_connection_state {
-            ConnectionState::Connected => true,
-            ConnectionState::Disconnected => false,
-        }
-    }
-
-    pub fn set_connected(&mut self) {
-        self.region_server_connection_state = ConnectionState::Connected;
-        self.heard_from_region_server();
-    }
-
-    pub fn set_disconnected(&mut self) {
-        self.region_server_connection_state = ConnectionState::Disconnected;
-        self.clear_asset_server();
     }
 
     // World Keys

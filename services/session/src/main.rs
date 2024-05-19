@@ -1,3 +1,12 @@
+mod asset;
+mod global;
+mod http_server;
+mod naia;
+mod social_connection;
+mod user_connection;
+mod world_connection;
+mod region;
+
 //
 
 use std::time::Duration;
@@ -17,18 +26,9 @@ use session_server_naia_proto::protocol as naia_protocol;
 
 //
 
-mod asset;
-mod global;
-mod http_server;
-mod naia;
-mod region_connection;
-mod social_connection;
-mod user_connection;
-mod world_connection;
-
 use crate::{
     asset::{asset_connection, asset_manager, asset_manager::AssetManager},
-    global::Global,
+    global::Global, region::RegionConnection
 };
 
 fn main() {
@@ -52,9 +52,11 @@ fn main() {
         // Resource
         .insert_resource(Global::new(
             &instance_secret,
-            registration_resend_rate,
-            region_server_disconnect_timeout,
             world_connect_resend_rate,
+        ))
+        .insert_resource(RegionConnection::new(
+            registration_resend_rate,
+            region_server_disconnect_timeout
         ))
         .insert_resource(AssetManager::new())
         // Startup System
@@ -69,18 +71,24 @@ fn main() {
                 naia::disconnect_events,
                 naia::error_events,
                 naia::message_events,
+
                 user_connection::recv_login_request,
-                region_connection::send_register_instance_request,
-                region_connection::recv_register_instance_response,
-                region_connection::recv_heartbeat_request,
-                region_connection::process_region_server_disconnect,
+
+                region::processes::send_register_instance_request,
+                region::processes::process_region_server_disconnect,
+                region::endpoints::recv_register_instance_response,
+                region::endpoints::recv_heartbeat_request,
+
                 asset_connection::recv_connect_asset_server_request,
                 asset_connection::recv_disconnect_asset_server_request,
+
                 social_connection::recv_connect_social_server_request,
                 social_connection::recv_disconnect_social_server_request,
+
                 world_connection::send_world_connect_request,
                 world_connection::recv_world_connect_response,
                 world_connection::recv_added_asset_id_request,
+
                 asset_manager::update,
             )
                 .in_set(ReceiveEvents),

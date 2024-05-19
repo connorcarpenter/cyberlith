@@ -10,10 +10,11 @@ use session_server_http_proto::{
     DisconnectAssetServerResponse,
 };
 
-use crate::global::Global;
+use crate::{global::Global, region::RegionConnection};
 
 pub fn recv_connect_asset_server_request(
     mut global: ResMut<Global>,
+    mut region: ResMut<RegionConnection>,
     mut server: ResMut<HttpServer>,
 ) {
     while let Some((_addr, request, response_key)) = server.receive::<ConnectAssetServerRequest>() {
@@ -26,7 +27,7 @@ pub fn recv_connect_asset_server_request(
         info!("Connect Asset Server request received from region server");
 
         // setting last heard
-        global.heard_from_region_server();
+        region.heard_from_region_server();
 
         // store asset server details
         global.set_asset_server(request.http_addr(), request.http_port());
@@ -39,6 +40,7 @@ pub fn recv_connect_asset_server_request(
 
 pub fn recv_disconnect_asset_server_request(
     mut global: ResMut<Global>,
+    mut region: ResMut<RegionConnection>,
     mut server: ResMut<HttpServer>,
 ) {
     while let Some((_addr, request, response_key)) =
@@ -53,7 +55,7 @@ pub fn recv_disconnect_asset_server_request(
         info!("Disconnect Asset Server request received from region server");
 
         // setting last heard
-        global.heard_from_region_server();
+        region.heard_from_region_server();
 
         // erase asset server details
         global.clear_asset_server();

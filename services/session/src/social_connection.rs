@@ -11,10 +11,11 @@ use session_server_http_proto::{
     DisconnectSocialServerResponse,
 };
 
-use crate::global::Global;
+use crate::{global::Global, region::RegionConnection};
 
 pub fn recv_connect_social_server_request(
     mut global: ResMut<Global>,
+    mut region: ResMut<RegionConnection>,
     mut server: ResMut<HttpServer>,
 ) {
     while let Some((_addr, request, response_key)) = server.receive::<ConnectSocialServerRequest>()
@@ -28,7 +29,7 @@ pub fn recv_connect_social_server_request(
         info!("Connect Social Server request received from region server");
 
         // setting last heard
-        global.heard_from_region_server();
+        region.heard_from_region_server();
 
         // store social server details
         global.set_social_server(request.http_addr(), request.http_port());
@@ -41,6 +42,7 @@ pub fn recv_connect_social_server_request(
 
 pub fn recv_disconnect_social_server_request(
     mut global: ResMut<Global>,
+    mut region: ResMut<RegionConnection>,
     mut server: ResMut<HttpServer>,
 ) {
     while let Some((_addr, request, response_key)) =
@@ -55,7 +57,7 @@ pub fn recv_disconnect_social_server_request(
         info!("Disconnect Social Server request received from region server");
 
         // setting last heard
-        global.heard_from_region_server();
+        region.heard_from_region_server();
 
         // erase social server details
         global.clear_social_server();
