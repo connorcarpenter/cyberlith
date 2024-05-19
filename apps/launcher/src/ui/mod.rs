@@ -1,12 +1,12 @@
-mod login;
-mod register;
-mod start;
-mod register_finish;
-mod forgot_username;
-mod forgot_username_finish;
 mod forgot_password;
 mod forgot_password_finish;
+mod forgot_username;
+mod forgot_username_finish;
+mod login;
+mod register;
+mod register_finish;
 mod reset_password;
+mod start;
 
 use std::time::Duration;
 
@@ -19,14 +19,18 @@ use game_engine::{
     asset::{embedded_asset_event, EmbeddedAssetEvent},
     http::HttpClient,
     input::{GamepadRumbleIntensity, Input, RumbleManager},
+    kernel::{get_querystring_param, AppExitAction},
+    logging::{info, warn},
     render::components::RenderLayers,
     ui::{UiHandle, UiManager},
-    kernel::{AppExitAction, get_querystring_param},
-    logging::{info, warn},
 };
 use gateway_http_proto::ResetPasswordToken;
 
-use crate::resources::{BackButtonClickedEvent, ForgotPasswordButtonClickedEvent, ForgotUsernameButtonClickedEvent, Global, LoginButtonClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent, TextboxClickedEvent};
+use crate::resources::{
+    BackButtonClickedEvent, ForgotPasswordButtonClickedEvent, ForgotUsernameButtonClickedEvent,
+    Global, LoginButtonClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent,
+    TextboxClickedEvent,
+};
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum UiKey {
@@ -51,15 +55,60 @@ pub(crate) fn setup(
     embedded_asset_events.send(embedded_asset_event!("../embedded/34mvvk")); // verdana icon
     embedded_asset_events.send(embedded_asset_event!("../embedded/qbgz5j")); // password eye icon
 
-    start::setup(&mut global, &mut ui_manager, &mut embedded_asset_events, UiKey::Start);
-    login::setup(&mut global, &mut ui_manager, &mut embedded_asset_events, UiKey::Login);
-    register::setup(&mut global, &mut ui_manager, &mut embedded_asset_events, UiKey::Register);
-    register_finish::setup(&mut global, &mut ui_manager, &mut embedded_asset_events, UiKey::RegisterFinish);
-    forgot_username::setup(&mut global, &mut ui_manager, &mut embedded_asset_events, UiKey::ForgotUsername);
-    forgot_username_finish::setup(&mut global, &mut ui_manager, &mut embedded_asset_events, UiKey::ForgotUsernameFinish);
-    forgot_password::setup(&mut global, &mut ui_manager, &mut embedded_asset_events, UiKey::ForgotPassword);
-    forgot_password_finish::setup(&mut global, &mut ui_manager, &mut embedded_asset_events, UiKey::ForgotPasswordFinish);
-    reset_password::setup(&mut global, &mut ui_manager, &mut embedded_asset_events, UiKey::ResetPassword);
+    start::setup(
+        &mut global,
+        &mut ui_manager,
+        &mut embedded_asset_events,
+        UiKey::Start,
+    );
+    login::setup(
+        &mut global,
+        &mut ui_manager,
+        &mut embedded_asset_events,
+        UiKey::Login,
+    );
+    register::setup(
+        &mut global,
+        &mut ui_manager,
+        &mut embedded_asset_events,
+        UiKey::Register,
+    );
+    register_finish::setup(
+        &mut global,
+        &mut ui_manager,
+        &mut embedded_asset_events,
+        UiKey::RegisterFinish,
+    );
+    forgot_username::setup(
+        &mut global,
+        &mut ui_manager,
+        &mut embedded_asset_events,
+        UiKey::ForgotUsername,
+    );
+    forgot_username_finish::setup(
+        &mut global,
+        &mut ui_manager,
+        &mut embedded_asset_events,
+        UiKey::ForgotUsernameFinish,
+    );
+    forgot_password::setup(
+        &mut global,
+        &mut ui_manager,
+        &mut embedded_asset_events,
+        UiKey::ForgotPassword,
+    );
+    forgot_password_finish::setup(
+        &mut global,
+        &mut ui_manager,
+        &mut embedded_asset_events,
+        UiKey::ForgotPasswordFinish,
+    );
+    reset_password::setup(
+        &mut global,
+        &mut ui_manager,
+        &mut embedded_asset_events,
+        UiKey::ResetPassword,
+    );
 
     // render_layer
     let layer = RenderLayers::layer(0);
@@ -70,7 +119,11 @@ pub(crate) fn setup(
         info!("reset password token found in url: {}", token);
         if let Some(token) = ResetPasswordToken::from_str(&token) {
             global.reset_password_token = Some(token);
-            go_to_ui(&mut ui_manager, &global, global.get_ui_handle(UiKey::ResetPassword));
+            go_to_ui(
+                &mut ui_manager,
+                &global,
+                global.get_ui_handle(UiKey::ResetPassword),
+            );
             return;
         } else {
             warn!("invalid reset password token: {}", token);
@@ -216,11 +269,7 @@ pub(crate) fn handle_events(
     for _ in textbox_click_rdr.read() {}
 }
 
-pub(crate) fn go_to_ui(
-    ui_manager: &mut UiManager,
-    global: &Global,
-    ui_handle: &UiHandle,
-) {
+pub(crate) fn go_to_ui(ui_manager: &mut UiManager, global: &Global, ui_handle: &UiHandle) {
     if let Some(current_ui_handle) = ui_manager.active_ui() {
         match global.get_ui_key(&current_ui_handle) {
             UiKey::Start => {
@@ -263,29 +312,43 @@ pub(crate) fn process_requests(
     mut ui_manager: ResMut<UiManager>,
     mut app_exit_action_writer: EventWriter<AppExitAction>,
 ) {
-    login::process_requests(&mut global, &mut http_client, &mut ui_manager, &mut app_exit_action_writer);
+    login::process_requests(
+        &mut global,
+        &mut http_client,
+        &mut ui_manager,
+        &mut app_exit_action_writer,
+    );
     register::process_requests(&mut global, &mut http_client, &mut ui_manager);
     forgot_password::process_requests(&mut global, &mut http_client, &mut ui_manager);
     forgot_username::process_requests(&mut global, &mut http_client, &mut ui_manager);
     reset_password::process_requests(&mut global, &mut http_client, &mut ui_manager);
 }
 
-pub(crate) fn redirect_to_game_app(
-    app_exit_action_writer: &mut EventWriter<AppExitAction>
-) {
+pub(crate) fn redirect_to_game_app(app_exit_action_writer: &mut EventWriter<AppExitAction>) {
     info!("redirecting to game app");
     app_exit_action_writer.send(AppExitAction::go_to("game"));
 }
 
-pub(crate) fn clear_spinners_if_needed(
-    global: &Global,
-    ui_manager: &mut UiManager
-) {
-    if global.user_login_response_key_opt.is_none() && global.user_register_response_key_opt.is_none() {
+pub(crate) fn clear_spinners_if_needed(global: &Global, ui_manager: &mut UiManager) {
+    if global.user_login_response_key_opt.is_none()
+        && global.user_register_response_key_opt.is_none()
+    {
         ui_manager.set_node_visible(&global.get_ui_handle(UiKey::Register), "spinner", false);
         ui_manager.set_node_visible(&global.get_ui_handle(UiKey::Login), "spinner", false);
-        ui_manager.set_node_visible(&global.get_ui_handle(UiKey::ForgotUsername), "spinner", false);
-        ui_manager.set_node_visible(&global.get_ui_handle(UiKey::ForgotPassword), "spinner", false);
-        ui_manager.set_node_visible(&global.get_ui_handle(UiKey::ResetPassword), "spinner", false);
+        ui_manager.set_node_visible(
+            &global.get_ui_handle(UiKey::ForgotUsername),
+            "spinner",
+            false,
+        );
+        ui_manager.set_node_visible(
+            &global.get_ui_handle(UiKey::ForgotPassword),
+            "spinner",
+            false,
+        );
+        ui_manager.set_node_visible(
+            &global.get_ui_handle(UiKey::ResetPassword),
+            "spinner",
+            false,
+        );
     }
 }

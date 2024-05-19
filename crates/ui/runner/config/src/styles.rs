@@ -1,4 +1,7 @@
-use ui_builder_config::{BaseNodeStyle, ButtonStyle, NodeStyle, PanelStyle, StyleId, TextStyle, TextboxStyle, WidgetKind, WidgetStyle, SpinnerStyle};
+use ui_builder_config::{
+    BaseNodeStyle, ButtonStyle, NodeStyle, PanelStyle, SpinnerStyle, StyleId, TextStyle,
+    TextboxStyle, WidgetKind, WidgetStyle,
+};
 
 pub(crate) fn compute_styles(styles: Vec<NodeStyle>) -> Vec<BaseNodeStyle> {
     let mut output = Vec::new();

@@ -8,8 +8,8 @@ mod runtime;
 pub use runtime::UiRuntime;
 
 mod handle;
-mod systems;
 mod state_globals;
+mod systems;
 
 pub use handle::UiHandle;
 

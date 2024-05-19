@@ -1,6 +1,6 @@
-use naia_serde::SerdeInternal as Serde;
 use auth_server_types::UserId;
 use http_common::{ApiRequest, ApiResponse, Method};
+use naia_serde::SerdeInternal as Serde;
 
 // Request
 #[derive(Serde, PartialEq, Clone)]
@@ -11,11 +11,7 @@ pub struct MatchLobbySendMessageRequest {
 }
 
 impl MatchLobbySendMessageRequest {
-    pub fn new(
-        session_secret: &str,
-        user_id: UserId,
-        message: String
-    ) -> Self {
+    pub fn new(session_secret: &str, user_id: UserId, message: String) -> Self {
         Self {
             session_secret: session_secret.to_string(),
             user_id,
@@ -27,9 +23,13 @@ impl MatchLobbySendMessageRequest {
         &self.session_secret
     }
 
-    pub fn user_id(&self) -> UserId { self.user_id }
+    pub fn user_id(&self) -> UserId {
+        self.user_id
+    }
 
-    pub fn message(&self) -> &str { &self.message }
+    pub fn message(&self) -> &str {
+        &self.message
+    }
 }
 
 // Response
@@ -40,7 +40,9 @@ pub struct MatchLobbySendMessageResponse;
 impl ApiRequest for MatchLobbySendMessageRequest {
     type Response = MatchLobbySendMessageResponse;
 
-    fn name() -> &'static str { "MatchLobbySendMessageRequest" }
+    fn name() -> &'static str {
+        "MatchLobbySendMessageRequest"
+    }
 
     fn method() -> Method {
         Method::Post
@@ -52,5 +54,7 @@ impl ApiRequest for MatchLobbySendMessageRequest {
 }
 
 impl ApiResponse for MatchLobbySendMessageResponse {
-    fn name() -> &'static str { "MatchLobbySendMessageResponse" }
+    fn name() -> &'static str {
+        "MatchLobbySendMessageResponse"
+    }
 }

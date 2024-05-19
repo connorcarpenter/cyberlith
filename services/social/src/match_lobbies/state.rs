@@ -1,15 +1,11 @@
 use auth_server_types::UserId;
 use social_server_types::MatchLobbyId;
 
-pub struct MatchLobbiesState {
-
-}
+pub struct MatchLobbiesState {}
 
 impl MatchLobbiesState {
     pub fn new() -> Self {
-        Self {
-
-        }
+        Self {}
     }
 
     pub fn create(&mut self, match_name: &str, creator_user_id: UserId) -> MatchLobbyId {

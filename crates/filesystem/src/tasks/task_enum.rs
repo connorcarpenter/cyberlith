@@ -1,9 +1,9 @@
 use crate::tasks::{
     create_dir::{CreateDirResult, CreateDirTask},
+    delete::{DeleteResult, DeleteTask},
     read::{ReadResult, ReadTask},
     read_dir::{ReadDirResult, ReadDirTask},
     write::{WriteResult, WriteTask},
-    delete::{DeleteResult, DeleteTask},
 };
 
 pub enum FsTaskEnum {

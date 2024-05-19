@@ -6,7 +6,7 @@ use http_common::{ApiRequest, ApiResponse, Method, Request, Response, ResponseEr
 use logging::info;
 
 use crate::{
-    endpoint::{EndpointRef, EndpointFunc, Endpoint},
+    endpoint::{Endpoint, EndpointFunc, EndpointRef},
     log_util, Server,
 };
 
@@ -132,7 +132,7 @@ fn get_endpoint_func<
                 Err(err) => {
                     response_name = format!("Error: {}", err.to_string().as_str());
                     Err(err)
-                },
+                }
             };
 
             log_util::send_res(&host_name, response_name.as_str());
@@ -174,7 +174,6 @@ fn get_endpoint_raw_func<
 
             let mut response_result = handler_func.await;
             if let Ok(response) = response_result.as_mut() {
-
                 response_name = format!("{} {}", response.status, response.status_text);
 
                 if let Some(allow_origin) = allow_origin_opt {

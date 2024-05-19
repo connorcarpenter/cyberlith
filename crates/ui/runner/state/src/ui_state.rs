@@ -10,9 +10,9 @@ use ui_runner_config::{
 };
 
 use crate::{
-    button::ButtonStyleState, panel::PanelStyleState, state_store::UiStateStore,
-    style_state::StyleState, text::TextStyleState, textbox::TextboxState,
-    textbox::TextboxStyleState, UiNodeState, spinner::SpinnerStyleState, widget::WidgetState
+    button::ButtonStyleState, panel::PanelStyleState, spinner::SpinnerStyleState,
+    state_store::UiStateStore, style_state::StyleState, text::TextStyleState,
+    textbox::TextboxState, textbox::TextboxStyleState, widget::WidgetState, UiNodeState,
 };
 
 pub struct UiState {
@@ -113,14 +113,20 @@ impl UiState {
                 textbox.text = val.to_string();
             }
             _ => {
-                warn!("set_text: node is not a text widget for node_id: {:?}", node_id);
+                warn!(
+                    "set_text: node is not a text widget for node_id: {:?}",
+                    node_id
+                );
             }
         }
     }
 
     pub fn set_textbox_password_eye_visible(&mut self, node_id: &NodeId, val: bool) {
         let Some(node) = self.store.get_node_mut(node_id) else {
-            logging::warn!("set_textbox_password_eye_visible: node not found for node_id: {:?}", node_id);
+            logging::warn!(
+                "set_textbox_password_eye_visible: node not found for node_id: {:?}",
+                node_id
+            );
             return;
         };
         let Some(textbox) = node.widget_textbox_mut() else {
@@ -136,7 +142,10 @@ impl UiState {
 
     pub fn get_ui_container_asset_id_opt(&self, node_id: &NodeId) -> Option<AssetId> {
         let Some(node) = self.store.get_node(node_id) else {
-            logging::warn!("get_ui_container_asset_id_opt: node not found for node_id: {:?}", node_id);
+            logging::warn!(
+                "get_ui_container_asset_id_opt: node not found for node_id: {:?}",
+                node_id
+            );
             return None;
         };
         let Some(ui_container) = node.widget_ui_container_ref() else {
@@ -147,7 +156,10 @@ impl UiState {
 
     pub fn set_ui_container_asset_id(&mut self, node_id: &NodeId, asset_id: &AssetId) {
         let Some(node) = self.store.get_node_mut(node_id) else {
-            logging::warn!("set_ui_container_asset_id: node not found for node_id: {:?}", node_id);
+            logging::warn!(
+                "set_ui_container_asset_id: node not found for node_id: {:?}",
+                node_id
+            );
             return;
         };
         let Some(ui_container) = node.widget_ui_container_mut() else {
@@ -158,7 +170,10 @@ impl UiState {
 
     pub fn clear_ui_container(&mut self, node_id: &NodeId) {
         let Some(node) = self.store.get_node_mut(node_id) else {
-            logging::warn!("clear_ui_container: node not found for node_id: {:?}", node_id);
+            logging::warn!(
+                "clear_ui_container: node not found for node_id: {:?}",
+                node_id
+            );
             return;
         };
         let Some(ui_container) = node.widget_ui_container_mut() else {
@@ -480,7 +495,13 @@ fn finalize_rects(
             // update children
             let child_ids = panel_ref.children.clone();
             for child_id in child_ids {
-                finalize_rects(ui_config, ui_state, child_uis_output, &child_id, child_position);
+                finalize_rects(
+                    ui_config,
+                    ui_state,
+                    child_uis_output,
+                    &child_id,
+                    child_position,
+                );
             }
         }
         WidgetKind::Button => {
@@ -492,12 +513,17 @@ fn finalize_rects(
             // update children
             let child_ids = panel_ref.children.clone();
             for child_id in child_ids {
-                finalize_rects(ui_config, ui_state, child_uis_output, &child_id, child_position);
+                finalize_rects(
+                    ui_config,
+                    ui_state,
+                    child_uis_output,
+                    &child_id,
+                    child_position,
+                );
             }
         }
         WidgetKind::UiContainer => {
             if let Some(asset_id) = ui_state.get_ui_container_asset_id_opt(id) {
-
                 let mut viewport = Viewport::default();
                 viewport.x = child_position.0 as i32;
                 viewport.y = child_position.1 as i32;
@@ -506,11 +532,7 @@ fn finalize_rects(
 
                 let z = child_position.2;
 
-                child_uis_output.push((
-                    asset_id,
-                    viewport,
-                    z,
-                ));
+                child_uis_output.push((asset_id, viewport, z));
             }
         }
         _ => {}

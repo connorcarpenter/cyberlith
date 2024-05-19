@@ -1,4 +1,3 @@
-
 // TargetEnv
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum TargetEnv {
@@ -32,7 +31,8 @@ impl TargetEnv {
 // Output Type
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum OutputType {
-    Bits, Json,
+    Bits,
+    Json,
 }
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]

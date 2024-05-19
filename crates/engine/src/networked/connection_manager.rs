@@ -21,7 +21,7 @@ use logging::{info, warn};
 use ui_runner::UiManager;
 
 use session_server_naia_proto::{
-    channels::{PrimaryChannel, AssetRequestsChannel},
+    channels::{AssetRequestsChannel, PrimaryChannel},
     messages::{LoadAssetRequest, LoadAssetWithData, WorldConnectToken},
 };
 use world_server_naia_proto::messages::Auth as WorldAuth;
@@ -201,7 +201,9 @@ impl ConnectionManager {
         mut event_reader: EventReader<RequestEvents<Session>>,
     ) {
         for events in event_reader.read() {
-            for (response_send_key, request) in events.read::<AssetRequestsChannel, LoadAssetRequest>() {
+            for (response_send_key, request) in
+                events.read::<AssetRequestsChannel, LoadAssetRequest>()
+            {
                 asset_cache_checker.handle_load_asset_request(
                     &asset_cache,
                     &mut file_system_manager,
@@ -219,10 +221,7 @@ impl ConnectionManager {
         http_client: Res<HttpClient>,
         mut session_client: SessionClient,
     ) {
-        connection_manager.handle_connection_impl(
-            &http_client,
-            &mut session_client,
-        );
+        connection_manager.handle_connection_impl(&http_client, &mut session_client);
     }
 
     fn handle_connection_impl(
@@ -241,7 +240,6 @@ impl ConnectionManager {
                 self.connection_state = ConnectionState::SendingSessionConnect;
             }
             ConnectionState::SendingSessionConnect => {
-
                 // previous below
                 self.connection_state = ConnectionState::WaitingForSessionConnect;
 

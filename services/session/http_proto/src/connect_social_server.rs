@@ -40,7 +40,9 @@ pub struct ConnectSocialServerResponse;
 impl ApiRequest for ConnectSocialServerRequest {
     type Response = ConnectSocialServerResponse;
 
-    fn name() -> &'static str { "ConnectSocialServerRequest" }
+    fn name() -> &'static str {
+        "ConnectSocialServerRequest"
+    }
 
     fn method() -> Method {
         Method::Post
@@ -52,5 +54,7 @@ impl ApiRequest for ConnectSocialServerRequest {
 }
 
 impl ApiResponse for ConnectSocialServerResponse {
-    fn name() -> &'static str { "ConnectSocialServerResponse" }
+    fn name() -> &'static str {
+        "ConnectSocialServerResponse"
+    }
 }

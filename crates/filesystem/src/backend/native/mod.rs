@@ -5,12 +5,16 @@ use futures_lite::future;
 use async_channel::{Receiver, Sender};
 use logging::info;
 
-use crate::{error::TaskError, tasks::{
-    read::ReadResult,
-    read_dir::ReadDirEntry,
-    task_enum::{FsTaskEnum, FsTaskResultEnum},
-    write::WriteResult,
-}, CreateDirResult, ReadDirResult, DeleteResult};
+use crate::{
+    error::TaskError,
+    tasks::{
+        read::ReadResult,
+        read_dir::ReadDirEntry,
+        task_enum::{FsTaskEnum, FsTaskResultEnum},
+        write::WriteResult,
+    },
+    CreateDirResult, DeleteResult, ReadDirResult,
+};
 
 pub(crate) struct FsTaskJob(pub(crate) Task<Result<FsTaskResultEnum, TaskError>>);
 

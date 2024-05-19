@@ -30,7 +30,9 @@ impl UserNameForgotResponse {
 impl ApiRequest for UserNameForgotRequest {
     type Response = UserNameForgotResponse;
 
-    fn name() -> &'static str { "UserNameForgotRequest" }
+    fn name() -> &'static str {
+        "UserNameForgotRequest"
+    }
 
     fn method() -> Method {
         Method::Post
@@ -42,5 +44,7 @@ impl ApiRequest for UserNameForgotRequest {
 }
 
 impl ApiResponse for UserNameForgotResponse {
-    fn name() -> &'static str { "UserNameForgotResponse" }
+    fn name() -> &'static str {
+        "UserNameForgotResponse"
+    }
 }

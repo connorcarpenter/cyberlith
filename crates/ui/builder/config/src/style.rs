@@ -1,6 +1,8 @@
 use ui_layout::{Alignment, MarginUnits, PositionType, SizeUnits, Solid};
 
-use crate::{panel::PanelStyle, text::TextStyle, ButtonStyle, TextboxStyle, WidgetKind, SpinnerStyle};
+use crate::{
+    panel::PanelStyle, text::TextStyle, ButtonStyle, SpinnerStyle, TextboxStyle, WidgetKind,
+};
 
 #[derive(Clone, Copy, PartialEq, PartialOrd, Ord, Eq, Hash, Debug, Default)]
 pub struct StyleId(u32);

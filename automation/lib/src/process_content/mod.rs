@@ -4,9 +4,9 @@ pub use filetypes::ProcessedFileMeta;
 mod error;
 pub use error::FileIoError;
 
-use std::{time::Duration, thread, pin::Pin, path::Path, future::Future, collections::HashMap};
+use std::{collections::HashMap, future::Future, path::Path, pin::Pin, thread, time::Duration};
 
-use executor::smol::{channel::{bounded, Receiver, TryRecvError}};
+use executor::smol::channel::{bounded, Receiver, TryRecvError};
 
 use asset_id::ETag;
 use git::{
@@ -15,7 +15,11 @@ use git::{
 };
 use logging::info;
 
-use crate::{types::{FileExtension, TargetEnv}, utils::{run_command_blocking, run_command}, CliError};
+use crate::{
+    types::{FileExtension, TargetEnv},
+    utils::{run_command, run_command_blocking},
+    CliError,
+};
 
 struct UnprocessedFile {
     target_path: String,
@@ -25,7 +29,12 @@ struct UnprocessedFile {
 }
 
 impl UnprocessedFile {
-    pub fn new(target_path: &str, file_name: &str, extension: FileExtension, hash: FileHash) -> Self {
+    pub fn new(
+        target_path: &str,
+        file_name: &str,
+        extension: FileExtension,
+        hash: FileHash,
+    ) -> Self {
         Self {
             target_path: target_path.to_string(),
             file_name: file_name.to_string(),
@@ -43,11 +52,7 @@ impl UnprocessedFile {
     }
 
     pub fn full_file_path(&self) -> String {
-        format!(
-            "{}/{}",
-            self.target_path(),
-            self.file_name_w_ext()
-        )
+        format!("{}/{}", self.target_path(), self.file_name_w_ext())
     }
 }
 
@@ -142,7 +147,11 @@ fn build_deployments(
 
     let mut deployment_tasks = HashMap::new();
     for deployment in deployments {
-        let task = thread_init_for_deployment(get_build_deployment_func(deployment, target_env, source_path));
+        let task = thread_init_for_deployment(get_build_deployment_func(
+            deployment,
+            target_env,
+            source_path,
+        ));
         deployment_tasks.insert(deployment.to_string(), (false, task));
     }
 
@@ -154,7 +163,9 @@ fn build_deployments(
         let mut all_ready = true;
         for (deployment, (done, receiver)) in deployment_tasks.iter_mut() {
             if !*done {
-                if let Some(mut output) = check_build_channel(receiver).expect("failed to check channel") {
+                if let Some(mut output) =
+                    check_build_channel(receiver).expect("failed to check channel")
+                {
                     info!("deployment {} done", deployment);
                     output_all.append(&mut output);
                     *done = true;
@@ -179,22 +190,20 @@ fn check_build_channel(
     match rcvr.try_recv() {
         Ok(Ok(output)) => {
             return Ok(Some(output));
-        },
+        }
         Ok(Err(err)) => return Err(err),
-        Err(TryRecvError::Closed) => {
-            return Err(CliError::Message("channel closed".to_string()))
-        }
-        Err(TryRecvError::Empty) => {
-            return Ok(None)
-        }
+        Err(TryRecvError::Closed) => return Err(CliError::Message("channel closed".to_string())),
+        Err(TryRecvError::Empty) => return Ok(None),
     }
 }
 
 fn thread_init_for_deployment(
     x: Box<
         dyn Send
-        + Sync
-        + Fn() -> Pin<Box<dyn Send + Sync + Future<Output = Result<Vec<UnprocessedFile>, CliError>>>>,
+            + Sync
+            + Fn() -> Pin<
+                Box<dyn Send + Sync + Future<Output = Result<Vec<UnprocessedFile>, CliError>>>,
+            >,
     >,
 ) -> Receiver<Result<Vec<UnprocessedFile>, CliError>> {
     let (sender, receiver) = bounded(1);
@@ -203,7 +212,7 @@ fn thread_init_for_deployment(
         let result = x().await;
         sender.send(result).await.expect("failed to send result");
     })
-        .detach();
+    .detach();
 
     receiver
 }
@@ -215,8 +224,8 @@ fn get_build_deployment_func(
     source_path: &str,
 ) -> Box<
     dyn Send
-    + Sync
-    + Fn() -> Pin<Box<dyn Send + Sync + Future<Output = Result<Vec<UnprocessedFile>, CliError>>>>,
+        + Sync
+        + Fn() -> Pin<Box<dyn Send + Sync + Future<Output = Result<Vec<UnprocessedFile>, CliError>>>>,
 > {
     let deployment = deployment.to_string();
     let source_path = source_path.to_string();
@@ -225,7 +234,9 @@ fn get_build_deployment_func(
         let deployment = deployment.clone();
         let source_path = source_path.to_string();
         let target_env = target_env.clone();
-        Box::pin(async move { build_deployment_async_impl(deployment, target_env, source_path).await })
+        Box::pin(
+            async move { build_deployment_async_impl(deployment, target_env, source_path).await },
+        )
     })
 }
 
@@ -259,8 +270,9 @@ async fn build_deployment_async_impl(
                     --lib",
             release_arg, feature_flag, source_path, deployment, target_path,
         )
-            .as_str(),
-    ).await?;
+        .as_str(),
+    )
+    .await?;
 
     // get hash of wasm file
     let wasm_hash = {
@@ -289,8 +301,9 @@ async fn build_deployment_async_impl(
                     --no-typescript {}",
             target_path, deployment, wasm_file_path
         )
-            .as_str(),
-    ).await?;
+        .as_str(),
+    )
+    .await?;
 
     // add wasm file to output
     output.push(UnprocessedFile::new(
@@ -321,13 +334,13 @@ async fn build_deployment_async_impl(
             "cp {}/apps/deployments/web/{}/{}.html {}/{}.html",
             source_path, deployment, deployment, target_path, deployment,
         )
-            .as_str(),
-    ).await?;
+        .as_str(),
+    )
+    .await?;
 
     // get hash of html file
     let html_hash = {
-        let html_bytes =
-            read_file_bytes(&target_path, "", format!("{}.html", deployment).as_str());
+        let html_bytes = read_file_bytes(&target_path, "", format!("{}.html", deployment).as_str());
         get_file_hash(&html_bytes)
     };
 
@@ -367,12 +380,7 @@ fn wasm_opt_deployments(files: &Vec<UnprocessedFile>) {
         // delete original wasm file
         let result = run_command_blocking(
             &file.file_name,
-            format!(
-                "rm {}/{}.wasm",
-                file.target_path(),
-                file.file_name,
-            )
-            .as_str(),
+            format!("rm {}/{}.wasm", file.target_path(), file.file_name,).as_str(),
         );
         if let Err(e) = result {
             panic!("failed to delete wasm file: {}", e);
@@ -560,7 +568,6 @@ fn write_files_to_repo(repo: &Repository, files: &Vec<UnprocessedFile>) {
     let mut index = repo.index().expect("Failed to open index");
 
     for file in files {
-
         let repo_full_file_path_str = format!("{}{}", repo_path, file.file_name_w_ext());
 
         // copy file over into repo
@@ -570,12 +577,7 @@ fn write_files_to_repo(repo: &Repository, files: &Vec<UnprocessedFile>) {
             let repo_file_exists = repo_full_file_path.exists();
             let result = run_command_blocking(
                 &file.file_name,
-                format!(
-                    "mv {} {}",
-                    file.full_file_path(),
-                    repo_full_file_path_str
-                )
-                .as_str(),
+                format!("mv {} {}", file.full_file_path(), repo_full_file_path_str).as_str(),
             );
             if let Err(e) = result {
                 panic!("failed to copy file over: {}", e);

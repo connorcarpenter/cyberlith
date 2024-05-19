@@ -1,11 +1,11 @@
 use std::time::{Duration, Instant};
 
-use http_client::ResponseError;
 use filecache::FileCache;
+use http_client::ResponseError;
 
 use asset_server_http_proto::{AssetRequest, AssetResponse};
 
-use crate::{asset_metadata_store::AssetMetadataStore};
+use crate::asset_metadata_store::AssetMetadataStore;
 
 pub enum ConnectionState {
     Disconnected,

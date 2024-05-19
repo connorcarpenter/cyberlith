@@ -3,14 +3,20 @@ use std::{
     time::{Duration, Instant},
 };
 
-use logging::{info, warn};
+use config::REGION_SERVER_SECRET;
 use http_client::{HttpClient, RequestOptions};
 use http_server::Server;
-use config::REGION_SERVER_SECRET;
+use logging::{info, warn};
 
-use social_server_http_proto::{ConnectSessionServerRequest, DisconnectSessionServerRequest, HeartbeatRequest as SocialHeartbeatRequest};
 use asset_server_http_proto::HeartbeatRequest as AssetHeartbeatRequest;
-use session_server_http_proto::{ConnectAssetServerRequest, ConnectSocialServerRequest, DisconnectAssetServerRequest, DisconnectSocialServerRequest, HeartbeatRequest as SessionHeartbeatRequest};
+use session_server_http_proto::{
+    ConnectAssetServerRequest, ConnectSocialServerRequest, DisconnectAssetServerRequest,
+    DisconnectSocialServerRequest, HeartbeatRequest as SessionHeartbeatRequest,
+};
+use social_server_http_proto::{
+    ConnectSessionServerRequest, DisconnectSessionServerRequest,
+    HeartbeatRequest as SocialHeartbeatRequest,
+};
 use world_server_http_proto::HeartbeatRequest as WorldHeartbeatRequest;
 
 use crate::instances::{AssetInstance, SessionInstance, SocialInstance, WorldInstance};
@@ -63,8 +69,11 @@ impl State {
         self.socialless_session_instances.remove(&key);
     }
 
-    pub async fn deregister_session_instance_sendreqs(&mut self, session_http_addr: &str, session_http_port: u16) {
-
+    pub async fn deregister_session_instance_sendreqs(
+        &mut self,
+        session_http_addr: &str,
+        session_http_port: u16,
+    ) {
         // send disconnect social server message to session instance
         let Some(social_instance) = &self.social_instance else {
             return;
@@ -76,8 +85,13 @@ impl State {
         let session_http_addr = session_http_addr.to_string();
 
         Server::spawn(async move {
-            let request = DisconnectSessionServerRequest::new(REGION_SERVER_SECRET, &session_http_addr, session_http_port);
-            let response = HttpClient::send(&social_instance_addr, social_instance_port, request).await;
+            let request = DisconnectSessionServerRequest::new(
+                REGION_SERVER_SECRET,
+                &session_http_addr,
+                session_http_port,
+            );
+            let response =
+                HttpClient::send(&social_instance_addr, social_instance_port, request).await;
             match response {
                 Ok(_) => {
                     info!(
@@ -464,7 +478,9 @@ impl State {
                     &social_server_addr_1,
                     social_server_port,
                 );
-                let response = HttpClient::send(&session_instance_addr_1, session_instance_port, request).await;
+                let response =
+                    HttpClient::send(&session_instance_addr_1, session_instance_port, request)
+                        .await;
                 match response {
                     Ok(_) => {
                         info!(
@@ -492,7 +508,8 @@ impl State {
                     &session_instance_addr_2,
                     session_instance_port,
                 );
-                let response = HttpClient::send(&social_server_addr_2, social_server_port, request).await;
+                let response =
+                    HttpClient::send(&social_server_addr_2, social_server_port, request).await;
                 match response {
                     Ok(_) => {
                         info!(
@@ -538,7 +555,8 @@ impl State {
                     addr_ip, addr_port
                 );
                 self.deregister_session_instance(&addr_ip, addr_port);
-                self.deregister_session_instance_sendreqs(&addr_ip, addr_port).await;
+                self.deregister_session_instance_sendreqs(&addr_ip, addr_port)
+                    .await;
             }
         }
 

@@ -14,13 +14,13 @@ use crate::{
     error::TaskError,
     tasks::{
         create_dir::CreateDirTask,
+        delete::DeleteTask,
         read::ReadTask,
         read_dir::{ReadDirEntry, ReadDirTask},
         task_enum::{FsTaskEnum, FsTaskResultEnum},
         write::WriteTask,
-        delete::DeleteTask,
     },
-    CreateDirResult, ReadDirResult, ReadResult, WriteResult, DeleteResult,
+    CreateDirResult, DeleteResult, ReadDirResult, ReadResult, WriteResult,
 };
 
 pub(crate) struct FsTaskJob(pub Receiver<Result<FsTaskResultEnum, TaskError>>);

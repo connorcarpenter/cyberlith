@@ -7,7 +7,7 @@ use bevy_http_client::HttpClient;
 use logging::info;
 
 use session_server_naia_proto::{
-    channels::{PrimaryChannel, AssetRequestsChannel},
+    channels::AssetRequestsChannel,
     messages::{LoadAssetResponseValue, LoadAssetWithData},
 };
 
@@ -147,7 +147,8 @@ impl UserAssets {
                             let message = LoadAssetWithData::new(
                                 asset_id, asset_type, asset_etag, asset_data,
                             );
-                            server.send_message::<AssetRequestsChannel, _>(&self.user_key, &message);
+                            server
+                                .send_message::<AssetRequestsChannel, _>(&self.user_key, &message);
 
                             // remove from processing, add to memory
                             self.finish_asset_processing(server, asset_store, &asset_id);

@@ -1,4 +1,3 @@
-
 use std::{
     collections::HashMap,
     time::{Duration, Instant},
@@ -26,7 +25,6 @@ pub(crate) struct UserData {
 
     // LATER this may be used to send meaningful data about a user back to the given world server instance..
     world_instance_secret: Option<String>,
-
 }
 
 impl UserData {
@@ -271,7 +269,8 @@ impl Global {
     // Client login
 
     pub fn add_login_token(&mut self, user_id: &UserId, token: &str) {
-        self.login_tokens.insert(token.to_string(), UserData::new(*user_id));
+        self.login_tokens
+            .insert(token.to_string(), UserData::new(*user_id));
     }
 
     pub fn take_login_token(&mut self, token: &str) -> Option<UserData> {

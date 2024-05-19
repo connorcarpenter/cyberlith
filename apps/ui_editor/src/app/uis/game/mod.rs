@@ -1,2 +1,2 @@
-pub mod main_menu;
 pub mod host_match;
+pub mod main_menu;

@@ -1,4 +1,3 @@
-
 #[derive(Clone)]
 pub struct UiContainer {
     pub id_str: String,

@@ -35,7 +35,9 @@ impl UserLoginResponse {
 impl ApiRequest for UserLoginRequest {
     type Response = UserLoginResponse;
 
-    fn name() -> &'static str { "UserLoginRequest" }
+    fn name() -> &'static str {
+        "UserLoginRequest"
+    }
 
     fn method() -> Method {
         Method::Post
@@ -47,5 +49,7 @@ impl ApiRequest for UserLoginRequest {
 }
 
 impl ApiResponse for UserLoginResponse {
-    fn name() -> &'static str { "UserLoginResponse" }
+    fn name() -> &'static str {
+        "UserLoginResponse"
+    }
 }

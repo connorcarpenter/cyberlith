@@ -1,6 +1,6 @@
-use naia_serde::SerdeInternal as Serde;
 use auth_server_types::UserId;
 use http_common::{ApiRequest, ApiResponse, Method};
+use naia_serde::SerdeInternal as Serde;
 
 // Request
 #[derive(Serde, PartialEq, Clone)]
@@ -21,7 +21,9 @@ impl UserDisconnectedRequest {
         &self.session_secret
     }
 
-    pub fn user_id(&self) -> UserId { self.user_id }
+    pub fn user_id(&self) -> UserId {
+        self.user_id
+    }
 }
 
 // Response
@@ -32,7 +34,9 @@ pub struct UserDisconnectedResponse;
 impl ApiRequest for UserDisconnectedRequest {
     type Response = UserDisconnectedResponse;
 
-    fn name() -> &'static str { "UserDisconnectedRequest" }
+    fn name() -> &'static str {
+        "UserDisconnectedRequest"
+    }
 
     fn method() -> Method {
         Method::Post
@@ -44,5 +48,7 @@ impl ApiRequest for UserDisconnectedRequest {
 }
 
 impl ApiResponse for UserDisconnectedResponse {
-    fn name() -> &'static str { "UserDisconnectedResponse" }
+    fn name() -> &'static str {
+        "UserDisconnectedResponse"
+    }
 }

@@ -1,5 +1,7 @@
 use render_api::base::Color;
-use ui_builder_config::{NodeId, NodeStyle, StyleId, Textbox, TextboxStyle, UiConfig, UiNode, WidgetStyle, Validator};
+use ui_builder_config::{
+    NodeId, NodeStyle, StyleId, Textbox, TextboxStyle, UiConfig, UiNode, Validator, WidgetStyle,
+};
 use ui_layout::{Alignment, MarginUnits, PositionType, SizeUnits};
 
 pub struct TextboxMut<'a> {

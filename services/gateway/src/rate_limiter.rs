@@ -1,7 +1,13 @@
+use std::{
+    collections::HashMap,
+    net::{IpAddr, SocketAddr},
+    time::Duration,
+};
 
-use std::{net::{IpAddr, SocketAddr}, time::Duration, collections::HashMap};
-
-use http_server::{async_dup::Arc, executor::smol::lock::RwLock, Request, Response, Server, RequestMiddlewareAction};
+use http_server::{
+    async_dup::Arc, executor::smol::lock::RwLock, Request, RequestMiddlewareAction, Response,
+    Server,
+};
 use instant::Instant;
 use timequeue::TimeQueue;
 
@@ -29,7 +35,10 @@ impl GlobalRateLimiter {
     }
 
     fn create_peer(&mut self, ip_addr: &IpAddr) -> Arc<RwLock<PeerRateLimiter>> {
-        let peer_rate_limiter = Arc::new(RwLock::new(PeerRateLimiter::new(self.req_max, self.window_duration)));
+        let peer_rate_limiter = Arc::new(RwLock::new(PeerRateLimiter::new(
+            self.req_max,
+            self.window_duration,
+        )));
         self.ip_map.insert(*ip_addr, peer_rate_limiter.clone());
         peer_rate_limiter
     }
@@ -100,9 +109,15 @@ impl PeerRateLimiter {
     }
 }
 
-pub fn add_middleware(server: &mut Server, req_max: usize, window_duration: Duration) -> Arc<RwLock<GlobalRateLimiter>> {
-
-    let global_limiter = Arc::new(RwLock::new(GlobalRateLimiter::new(req_max, window_duration)));
+pub fn add_middleware(
+    server: &mut Server,
+    req_max: usize,
+    window_duration: Duration,
+) -> Arc<RwLock<GlobalRateLimiter>> {
+    let global_limiter = Arc::new(RwLock::new(GlobalRateLimiter::new(
+        req_max,
+        window_duration,
+    )));
     let output = global_limiter.clone();
 
     server.request_middleware(move |addr, req| {
@@ -118,7 +133,6 @@ async fn handler(
     incoming_addr: SocketAddr,
     incoming_request: Request,
 ) -> RequestMiddlewareAction {
-
     let incoming_ip = incoming_addr.ip();
 
     let mut peer_rate_limiter = None;
@@ -139,8 +153,9 @@ async fn handler(
     let mut peer_rate_limiter = peer_rate_limiter.write().await;
     match peer_rate_limiter.handle_request() {
         Ok(()) => RequestMiddlewareAction::Continue(incoming_request, None),
-        Err(retry_after_secs) => {
-            RequestMiddlewareAction::Stop(Response::too_many_requests(&incoming_request.url, retry_after_secs))
-        }
+        Err(retry_after_secs) => RequestMiddlewareAction::Stop(Response::too_many_requests(
+            &incoming_request.url,
+            retry_after_secs,
+        )),
     }
 }

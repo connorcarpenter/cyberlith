@@ -1,6 +1,6 @@
-use naia_serde::SerdeInternal as Serde;
 use auth_server_types::UserId;
 use http_common::{ApiRequest, ApiResponse, Method};
+use naia_serde::SerdeInternal as Serde;
 use social_server_types::MatchLobbyId;
 
 // Request
@@ -24,9 +24,13 @@ impl MatchLobbyJoinRequest {
         &self.session_secret
     }
 
-    pub fn match_lobby_id(&self) -> MatchLobbyId { self.match_lobby_id }
+    pub fn match_lobby_id(&self) -> MatchLobbyId {
+        self.match_lobby_id
+    }
 
-    pub fn user_id(&self) -> UserId { self.user_id }
+    pub fn user_id(&self) -> UserId {
+        self.user_id
+    }
 }
 
 // Response
@@ -37,7 +41,9 @@ pub struct MatchLobbyJoinResponse;
 impl ApiRequest for MatchLobbyJoinRequest {
     type Response = MatchLobbyJoinResponse;
 
-    fn name() -> &'static str { "MatchLobbyJoinRequest" }
+    fn name() -> &'static str {
+        "MatchLobbyJoinRequest"
+    }
 
     fn method() -> Method {
         Method::Post
@@ -49,5 +55,7 @@ impl ApiRequest for MatchLobbyJoinRequest {
 }
 
 impl ApiResponse for MatchLobbyJoinResponse {
-    fn name() -> &'static str { "MatchLobbyJoinResponse" }
+    fn name() -> &'static str {
+        "MatchLobbyJoinResponse"
+    }
 }

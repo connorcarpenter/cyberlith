@@ -1,4 +1,7 @@
-use crate::{panel::Panel, style::StyleId, widget::Widget, widget::WidgetKind, Button, Text, Textbox, Spinner};
+use crate::{
+    panel::Panel, style::StyleId, widget::Widget, widget::WidgetKind, Button, Spinner, Text,
+    Textbox,
+};
 
 #[derive(Clone)]
 pub struct UiNode {

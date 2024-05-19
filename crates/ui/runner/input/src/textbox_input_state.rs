@@ -3,10 +3,12 @@ use unicode_segmentation::UnicodeSegmentation;
 use asset_id::AssetId;
 use input::{Modifiers, MouseButton};
 use math::Vec2;
-use ui_runner_config::{get_carat_offset_and_scale, NodeId, text_get_raw_rects, text_get_subimage_indices, TextMeasurer};
+use ui_runner_config::{
+    get_carat_offset_and_scale, text_get_raw_rects, text_get_subimage_indices, NodeId, TextMeasurer,
+};
 use ui_state::TextboxState;
 
-use crate::{UiGlobalEvent, UiInputEvent, input::UiManagerTrait};
+use crate::{input::UiManagerTrait, UiGlobalEvent, UiInputEvent};
 
 #[derive(Clone)]
 pub struct TextboxInputState;
@@ -19,9 +21,17 @@ impl TextboxInputState {
         textbox_id: &NodeId,
         event: UiInputEvent,
     ) -> Option<Vec<UiGlobalEvent>> {
-
-        let config = ui_manager.ui_config(ui_asset_id).unwrap().textbox_ref(textbox_id).unwrap();
-        let text_len = ui_manager.ui_state(ui_asset_id).textbox_ref(&textbox_id).unwrap().text.len();
+        let config = ui_manager
+            .ui_config(ui_asset_id)
+            .unwrap()
+            .textbox_ref(textbox_id)
+            .unwrap();
+        let text_len = ui_manager
+            .ui_state(ui_asset_id)
+            .textbox_ref(&textbox_id)
+            .unwrap()
+            .text
+            .len();
         let carat_index = ui_manager.ui_input_state().carat_index;
         let select_index = ui_manager.ui_input_state().select_index;
 
@@ -29,20 +39,48 @@ impl TextboxInputState {
         match event {
             UiInputEvent::LeftPressed(modifiers) => {
                 ui_manager.ui_input_state_mut().set_left_pressed(modifiers);
-                Self::handle_left(ui_manager, ui_asset_id, textbox_id, modifiers, false, &mut output);
+                Self::handle_left(
+                    ui_manager,
+                    ui_asset_id,
+                    textbox_id,
+                    modifiers,
+                    false,
+                    &mut output,
+                );
             }
             UiInputEvent::LeftHeld(modifiers) => {
-                Self::handle_left(ui_manager, ui_asset_id, textbox_id, modifiers, true, &mut output);
+                Self::handle_left(
+                    ui_manager,
+                    ui_asset_id,
+                    textbox_id,
+                    modifiers,
+                    true,
+                    &mut output,
+                );
             }
             UiInputEvent::LeftReleased => {
                 ui_manager.ui_input_state_mut().set_left_released();
             }
             UiInputEvent::RightPressed(modifiers) => {
                 ui_manager.ui_input_state_mut().set_right_pressed(modifiers);
-                Self::handle_right(ui_manager, ui_asset_id, textbox_id, modifiers, false, &mut output);
+                Self::handle_right(
+                    ui_manager,
+                    ui_asset_id,
+                    textbox_id,
+                    modifiers,
+                    false,
+                    &mut output,
+                );
             }
             UiInputEvent::RightHeld(modifiers) => {
-                Self::handle_right(ui_manager, ui_asset_id, textbox_id, modifiers, true, &mut output);
+                Self::handle_right(
+                    ui_manager,
+                    ui_asset_id,
+                    textbox_id,
+                    modifiers,
+                    true,
+                    &mut output,
+                );
             }
             UiInputEvent::RightReleased => {
                 ui_manager.ui_input_state_mut().set_right_released();
@@ -51,25 +89,43 @@ impl TextboxInputState {
                 if let Some(select_index) = select_index {
                     let start = carat_index.min(select_index);
                     let end = carat_index.max(select_index);
-                    ui_manager.ui_state_mut(ui_asset_id).textbox_mut(&textbox_id).unwrap().text.drain(start..end);
+                    ui_manager
+                        .ui_state_mut(ui_asset_id)
+                        .textbox_mut(&textbox_id)
+                        .unwrap()
+                        .text
+                        .drain(start..end);
                     ui_manager.ui_input_state_mut().carat_index = start;
                     ui_manager.ui_input_state_mut().select_index = None;
                 } else {
                     if modifiers.ctrl {
                         if carat_index > 0 {
-                            let target_index = ui_manager.ui_state(ui_asset_id).textbox_ref(&textbox_id).unwrap().text
+                            let target_index = ui_manager
+                                .ui_state(ui_asset_id)
+                                .textbox_ref(&textbox_id)
+                                .unwrap()
+                                .text
                                 .unicode_word_indices()
                                 .rev()
                                 .map(|(i, _)| i)
                                 .find(|&i| i < carat_index)
                                 .unwrap_or(0);
-                            ui_manager.ui_state_mut(ui_asset_id).textbox_mut(&textbox_id).unwrap().text
+                            ui_manager
+                                .ui_state_mut(ui_asset_id)
+                                .textbox_mut(&textbox_id)
+                                .unwrap()
+                                .text
                                 .drain(target_index..carat_index);
                             ui_manager.ui_input_state_mut().carat_index = target_index;
                         }
                     } else {
                         if carat_index > 0 {
-                            ui_manager.ui_state_mut(ui_asset_id).textbox_mut(&textbox_id).unwrap().text.remove(carat_index - 1);
+                            ui_manager
+                                .ui_state_mut(ui_asset_id)
+                                .textbox_mut(&textbox_id)
+                                .unwrap()
+                                .text
+                                .remove(carat_index - 1);
                             ui_manager.ui_input_state_mut().carat_index -= 1;
                         }
                     }
@@ -79,23 +135,41 @@ impl TextboxInputState {
                 if let Some(select_index) = select_index {
                     let start = carat_index.min(select_index);
                     let end = carat_index.max(select_index);
-                    ui_manager.ui_state_mut(ui_asset_id).textbox_mut(&textbox_id).unwrap().text.drain(start..end);
+                    ui_manager
+                        .ui_state_mut(ui_asset_id)
+                        .textbox_mut(&textbox_id)
+                        .unwrap()
+                        .text
+                        .drain(start..end);
                     ui_manager.ui_input_state_mut().carat_index = start;
                     ui_manager.ui_input_state_mut().select_index = None;
                 } else {
                     if modifiers.ctrl {
                         if carat_index < text_len {
-                            let target_index = ui_manager.ui_state(ui_asset_id).textbox_ref(&textbox_id).unwrap().text
+                            let target_index = ui_manager
+                                .ui_state(ui_asset_id)
+                                .textbox_ref(&textbox_id)
+                                .unwrap()
+                                .text
                                 .unicode_word_indices()
                                 .map(|(i, word)| i + word.len())
                                 .find(|&i| i > carat_index)
                                 .unwrap_or(text_len);
-                            ui_manager.ui_state_mut(ui_asset_id).textbox_mut(&textbox_id).unwrap().text
+                            ui_manager
+                                .ui_state_mut(ui_asset_id)
+                                .textbox_mut(&textbox_id)
+                                .unwrap()
+                                .text
                                 .drain(carat_index..target_index);
                         }
                     } else {
                         if carat_index < text_len {
-                            ui_manager.ui_state_mut(ui_asset_id).textbox_mut(&textbox_id).unwrap().text.remove(carat_index);
+                            ui_manager
+                                .ui_state_mut(ui_asset_id)
+                                .textbox_mut(&textbox_id)
+                                .unwrap()
+                                .text
+                                .remove(carat_index);
                         }
                     }
                 }
@@ -117,7 +191,8 @@ impl TextboxInputState {
             UiInputEvent::EndPressed(modifiers) => {
                 if modifiers.shift {
                     if select_index.is_none() {
-                        ui_manager.ui_input_state_mut().select_index = Some(ui_manager.ui_input_state().carat_index);
+                        ui_manager.ui_input_state_mut().select_index =
+                            Some(ui_manager.ui_input_state().carat_index);
                     }
                     ui_manager.ui_input_state_mut().carat_index = text_len;
                     if carat_index == select_index.unwrap() {
@@ -136,7 +211,12 @@ impl TextboxInputState {
                 if let Some(select_index) = select_index {
                     let start = carat_index.min(select_index);
                     let end = carat_index.max(select_index);
-                    let copied_text = ui_manager.ui_state(ui_asset_id).textbox_ref(&textbox_id).unwrap().text[start..end].to_string();
+                    let copied_text = ui_manager
+                        .ui_state(ui_asset_id)
+                        .textbox_ref(&textbox_id)
+                        .unwrap()
+                        .text[start..end]
+                        .to_string();
                     if output.is_none() {
                         output = Some(Vec::new());
                     }
@@ -150,7 +230,12 @@ impl TextboxInputState {
                 if let Some(select_index) = select_index {
                     let start = carat_index.min(select_index);
                     let end = carat_index.max(select_index);
-                    let copied_text = ui_manager.ui_state(ui_asset_id).textbox_ref(&textbox_id).unwrap().text[start..end].to_string();
+                    let copied_text = ui_manager
+                        .ui_state(ui_asset_id)
+                        .textbox_ref(&textbox_id)
+                        .unwrap()
+                        .text[start..end]
+                        .to_string();
                     if output.is_none() {
                         output = Some(Vec::new());
                     }
@@ -159,13 +244,17 @@ impl TextboxInputState {
                         .unwrap()
                         .push(UiGlobalEvent::Copied(copied_text));
 
-                    ui_manager.ui_state_mut(ui_asset_id).textbox_mut(&textbox_id).unwrap().text.drain(start..end);
+                    ui_manager
+                        .ui_state_mut(ui_asset_id)
+                        .textbox_mut(&textbox_id)
+                        .unwrap()
+                        .text
+                        .drain(start..end);
                     ui_manager.ui_input_state_mut().carat_index = start;
                     ui_manager.ui_input_state_mut().select_index = None;
                 }
             }
             UiInputEvent::TextPaste(mut text) => {
-
                 if let Some(validator) = &config.validation {
                     let final_length = text_len + text.len();
                     if final_length > validator.max_length() {
@@ -183,17 +272,25 @@ impl TextboxInputState {
                 if let Some(select_index) = select_index {
                     let start = carat_index.min(select_index);
                     let end = carat_index.max(select_index);
-                    ui_manager.ui_state_mut(ui_asset_id).textbox_mut(&textbox_id).unwrap().text.replace_range(start..end, &text);
+                    ui_manager
+                        .ui_state_mut(ui_asset_id)
+                        .textbox_mut(&textbox_id)
+                        .unwrap()
+                        .text
+                        .replace_range(start..end, &text);
                     ui_manager.ui_input_state_mut().carat_index = start + text.len();
                     ui_manager.ui_input_state_mut().select_index = None;
                 } else {
-                    ui_manager.ui_state_mut(ui_asset_id).textbox_mut(&textbox_id).unwrap().text
+                    ui_manager
+                        .ui_state_mut(ui_asset_id)
+                        .textbox_mut(&textbox_id)
+                        .unwrap()
+                        .text
                         .insert_str(carat_index, &text);
                     ui_manager.ui_input_state_mut().carat_index += text.len();
                 }
             }
             UiInputEvent::CharacterInsert(new_char) => {
-
                 if let Some(validator) = &config.validation {
                     if text_len >= validator.max_length() {
                         return None;
@@ -207,38 +304,73 @@ impl TextboxInputState {
                     // need to remove the selected text
                     let start = carat_index.min(select_index);
                     let end = carat_index.max(select_index);
-                    ui_manager.ui_state_mut(ui_asset_id).textbox_mut(&textbox_id).unwrap().text
+                    ui_manager
+                        .ui_state_mut(ui_asset_id)
+                        .textbox_mut(&textbox_id)
+                        .unwrap()
+                        .text
                         .replace_range(start..end, new_char.to_string().as_str());
                     ui_manager.ui_input_state_mut().carat_index = start + 1;
                     ui_manager.ui_input_state_mut().select_index = None;
                 } else {
-                    ui_manager.ui_state_mut(ui_asset_id).textbox_mut(&textbox_id).unwrap().text.insert(carat_index, new_char);
+                    ui_manager
+                        .ui_state_mut(ui_asset_id)
+                        .textbox_mut(&textbox_id)
+                        .unwrap()
+                        .text
+                        .insert(carat_index, new_char);
                     ui_manager.ui_input_state_mut().carat_index += 1;
                 }
             }
             _ => panic!("Unhandled input event for textbox: {:?}", event),
         }
 
-        if carat_index < ui_manager.ui_state(ui_asset_id).textbox_ref(&textbox_id).unwrap().offset_index {
-            ui_manager.ui_state_mut(ui_asset_id).textbox_mut(&textbox_id).unwrap().offset_index = carat_index;
+        if carat_index
+            < ui_manager
+                .ui_state(ui_asset_id)
+                .textbox_ref(&textbox_id)
+                .unwrap()
+                .offset_index
+        {
+            ui_manager
+                .ui_state_mut(ui_asset_id)
+                .textbox_mut(&textbox_id)
+                .unwrap()
+                .offset_index = carat_index;
         } else {
-
             // move the text offset index if the carat is out of view
-            let (textbox_w, textbox_h, _, _, _) = ui_manager.ui_state(ui_asset_id).cache.bounds(&textbox_id).unwrap();
+            let (textbox_w, textbox_h, _, _, _) = ui_manager
+                .ui_state(ui_asset_id)
+                .cache
+                .bounds(&textbox_id)
+                .unwrap();
             let textbox_w = textbox_w - 8.0; // padding
 
             loop {
                 let (carat_offset, _) = get_carat_offset_and_scale(
                     text_measurer,
                     textbox_h,
-                    ui_manager.ui_state(ui_asset_id).textbox_ref(&textbox_id).unwrap().text.as_str(),
-                    ui_manager.ui_state(ui_asset_id).textbox_ref(&textbox_id).unwrap().offset_index,
-                    carat_index
+                    ui_manager
+                        .ui_state(ui_asset_id)
+                        .textbox_ref(&textbox_id)
+                        .unwrap()
+                        .text
+                        .as_str(),
+                    ui_manager
+                        .ui_state(ui_asset_id)
+                        .textbox_ref(&textbox_id)
+                        .unwrap()
+                        .offset_index,
+                    carat_index,
                 );
                 let carat_offset = carat_offset + 8.0; // padding
 
                 if carat_offset > textbox_w {
-                    ui_manager.ui_state_mut(ui_asset_id).textbox_mut(&textbox_id).unwrap().offset_index += 1;
+                    ui_manager
+                        .ui_state_mut(ui_asset_id)
+                        .textbox_mut(&textbox_id)
+                        .unwrap()
+                        .offset_index += 1;
                 } else {
                     break;
                 }
@@ -290,7 +422,10 @@ impl TextboxInputState {
             }
             (false, true) => {
                 if carat_index > 0 {
-                    ui_manager.ui_input_state_mut().carat_index = ui_manager.ui_state_mut(ui_asset_id).textbox_mut(&textbox_id).unwrap()
+                    ui_manager.ui_input_state_mut().carat_index = ui_manager
+                        .ui_state_mut(ui_asset_id)
+                        .textbox_mut(&textbox_id)
+                        .unwrap()
                         .text
                         .unicode_word_indices()
                         .rev()
@@ -307,7 +442,10 @@ impl TextboxInputState {
                         ui_manager.ui_input_state_mut().select_index = Some(carat_index);
                     }
 
-                    ui_manager.ui_input_state_mut().carat_index = ui_manager.ui_state_mut(ui_asset_id).textbox_mut(&textbox_id).unwrap()
+                    ui_manager.ui_input_state_mut().carat_index = ui_manager
+                        .ui_state_mut(ui_asset_id)
+                        .textbox_mut(&textbox_id)
+                        .unwrap()
                         .text
                         .unicode_word_indices()
                         .rev()
@@ -331,7 +469,12 @@ impl TextboxInputState {
         held: bool,
         output: &mut Option<Vec<UiGlobalEvent>>,
     ) {
-        let text_len = ui_manager.ui_state(ui_asset_id).textbox_ref(&textbox_id).unwrap().text.len();
+        let text_len = ui_manager
+            .ui_state(ui_asset_id)
+            .textbox_ref(&textbox_id)
+            .unwrap()
+            .text
+            .len();
 
         match (modifiers.shift, modifiers.ctrl) {
             (false, false) => {
@@ -354,17 +497,24 @@ impl TextboxInputState {
                 if ui_manager.ui_input_state().carat_index < text_len {
                     if ui_manager.ui_input_state().select_index.is_none() {
                         // if there is no current selection, set it to the current carat index
-                        ui_manager.ui_input_state_mut().select_index = Some(ui_manager.ui_input_state().carat_index);
+                        ui_manager.ui_input_state_mut().select_index =
+                            Some(ui_manager.ui_input_state().carat_index);
                     }
                     ui_manager.ui_input_state_mut().carat_index += 1;
-                    if ui_manager.ui_input_state().carat_index == ui_manager.ui_input_state().select_index.unwrap() {
+                    if ui_manager.ui_input_state().carat_index
+                        == ui_manager.ui_input_state().select_index.unwrap()
+                    {
                         ui_manager.ui_input_state_mut().select_index = None;
                     }
                 }
             }
             (false, true) => {
                 if ui_manager.ui_input_state().carat_index < text_len {
-                    ui_manager.ui_input_state_mut().carat_index = ui_manager.ui_state(ui_asset_id).textbox_ref(&textbox_id).unwrap().text
+                    ui_manager.ui_input_state_mut().carat_index = ui_manager
+                        .ui_state(ui_asset_id)
+                        .textbox_ref(&textbox_id)
+                        .unwrap()
+                        .text
                         .unicode_word_indices()
                         .map(|(i, word)| i + word.len())
                         .find(|&i| i > ui_manager.ui_input_state().carat_index)
@@ -376,16 +526,23 @@ impl TextboxInputState {
                 if ui_manager.ui_input_state().carat_index < text_len {
                     if ui_manager.ui_input_state().select_index.is_none() {
                         // if there is no current selection, set it to the current carat index
-                        ui_manager.ui_input_state_mut().select_index = Some(ui_manager.ui_input_state().carat_index);
+                        ui_manager.ui_input_state_mut().select_index =
+                            Some(ui_manager.ui_input_state().carat_index);
                     }
 
-                    ui_manager.ui_input_state_mut().carat_index = ui_manager.ui_state(ui_asset_id).textbox_ref(&textbox_id).unwrap().text
+                    ui_manager.ui_input_state_mut().carat_index = ui_manager
+                        .ui_state(ui_asset_id)
+                        .textbox_ref(&textbox_id)
+                        .unwrap()
+                        .text
                         .unicode_word_indices()
                         .map(|(i, word)| i + word.len())
                         .find(|&i| i > ui_manager.ui_input_state().carat_index)
                         .unwrap_or(text_len);
 
-                    if ui_manager.ui_input_state().carat_index == ui_manager.ui_input_state().select_index.unwrap() {
+                    if ui_manager.ui_input_state().carat_index
+                        == ui_manager.ui_input_state().select_index.unwrap()
+                    {
                         ui_manager.ui_input_state_mut().select_index = None;
                     }
                 }
@@ -403,8 +560,11 @@ impl TextboxInputState {
         hover_node_id: &NodeId,
         mouse_event: UiInputEvent,
     ) {
-        let textbox_state =
-            ui_manager.ui_state_mut(hover_asset_id).store.textbox_mut(&hover_node_id).unwrap();
+        let textbox_state = ui_manager
+            .ui_state_mut(hover_asset_id)
+            .store
+            .textbox_mut(&hover_node_id)
+            .unwrap();
         if textbox_state.eye_hover {
             Self::recv_mouse_event_eye(textbox_state, mouse_event)
         } else {
@@ -431,7 +591,13 @@ impl TextboxInputState {
         hover_node_id: &NodeId,
         mouse_event: UiInputEvent,
     ) {
-        let text_len = ui_manager.ui_state(hover_asset_id).store.textbox_ref(&hover_node_id).unwrap().text.len();
+        let text_len = ui_manager
+            .ui_state(hover_asset_id)
+            .store
+            .textbox_ref(&hover_node_id)
+            .unwrap()
+            .text
+            .len();
         let carat_index = ui_manager.ui_input_state().carat_index;
         let select_index = ui_manager.ui_input_state().select_index;
 
@@ -446,7 +612,11 @@ impl TextboxInputState {
                 }
 
                 ui_manager.ui_input_state_mut().carat_index = Self::get_closest_index(
-                    &ui_manager.ui_state(hover_asset_id).store.textbox_ref(&hover_node_id).unwrap(),
+                    &ui_manager
+                        .ui_state(hover_asset_id)
+                        .store
+                        .textbox_ref(&hover_node_id)
+                        .unwrap(),
                     text_measurer,
                     click_position.x,
                     node_x,
@@ -461,7 +631,11 @@ impl TextboxInputState {
             UiInputEvent::MouseDoubleClick(MouseButton::Left, click_position) => {
                 // double click
                 let click_index = Self::get_closest_index(
-                    &ui_manager.ui_state(hover_asset_id).store.textbox_ref(&hover_node_id).unwrap(),
+                    &ui_manager
+                        .ui_state(hover_asset_id)
+                        .store
+                        .textbox_ref(&hover_node_id)
+                        .unwrap(),
                     text_measurer,
                     click_position.x,
                     node_x,
@@ -469,14 +643,22 @@ impl TextboxInputState {
                 );
 
                 // select word
-                let word_start = ui_manager.ui_state(hover_asset_id).store.textbox_ref(&hover_node_id).unwrap()
+                let word_start = ui_manager
+                    .ui_state(hover_asset_id)
+                    .store
+                    .textbox_ref(&hover_node_id)
+                    .unwrap()
                     .text
                     .unicode_word_indices()
                     .rev()
                     .map(|(i, _)| i)
                     .find(|&i| i < click_index)
                     .unwrap_or(0);
-                let word_end = ui_manager.ui_state(hover_asset_id).store.textbox_ref(&hover_node_id).unwrap()
+                let word_end = ui_manager
+                    .ui_state(hover_asset_id)
+                    .store
+                    .textbox_ref(&hover_node_id)
+                    .unwrap()
                     .text
                     .unicode_word_indices()
                     .map(|(i, word)| i + word.len())
@@ -499,7 +681,11 @@ impl TextboxInputState {
                             ui_manager.ui_input_state_mut().select_index = Some(carat_index);
                         }
                         ui_manager.ui_input_state_mut().carat_index = Self::get_closest_index(
-                            &ui_manager.ui_state(hover_asset_id).store.textbox_ref(&hover_node_id).unwrap(),
+                            &ui_manager
+                                .ui_state(hover_asset_id)
+                                .store
+                                .textbox_ref(&hover_node_id)
+                                .unwrap(),
                             text_measurer,
                             mouse_position.x,
                             node_x,
@@ -513,7 +699,11 @@ impl TextboxInputState {
                     } else {
                         if let Some(select_index) = select_index {
                             ui_manager.ui_input_state_mut().carat_index = Self::get_closest_index(
-                                &ui_manager.ui_state(hover_asset_id).store.textbox_ref(&hover_node_id).unwrap(),
+                                &ui_manager
+                                    .ui_state(hover_asset_id)
+                                    .store
+                                    .textbox_ref(&hover_node_id)
+                                    .unwrap(),
                                 text_measurer,
                                 mouse_position.x,
                                 node_x,
@@ -524,7 +714,11 @@ impl TextboxInputState {
                             }
                         } else {
                             let new_index = Self::get_closest_index(
-                                &ui_manager.ui_state(hover_asset_id).store.textbox_ref(&hover_node_id).unwrap(),
+                                &ui_manager
+                                    .ui_state(hover_asset_id)
+                                    .store
+                                    .textbox_ref(&hover_node_id)
+                                    .unwrap(),
                                 text_measurer,
                                 mouse_position.x,
                                 node_x,
@@ -542,10 +736,7 @@ impl TextboxInputState {
         }
     }
 
-    fn recv_mouse_event_eye(
-        textbox_state: &mut TextboxState,
-        mouse_event: UiInputEvent,
-    ) {
+    fn recv_mouse_event_eye(textbox_state: &mut TextboxState, mouse_event: UiInputEvent) {
         match mouse_event {
             UiInputEvent::MouseSingleClick(MouseButton::Left, _click_position, _modifiers) => {
                 // toggle password mask

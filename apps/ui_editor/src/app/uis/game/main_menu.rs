@@ -30,24 +30,21 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
     });
 
     let left_bar_style = ui_config.create_panel_style(|s| {
-        s
-            .set_background_alpha(0.0)
+        s.set_background_alpha(0.0)
             .set_vertical()
             .set_children_valign(Alignment::Start)
             .set_width_pc(15.0)
             .set_height_pc(100.0);
     });
     let right_bar_style = ui_config.create_panel_style(|s| {
-        s
-            .set_background_alpha(0.0)
+        s.set_background_alpha(0.0)
             .set_vertical()
             .set_children_valign(Alignment::Start)
             .set_width_pc(10.0)
             .set_height_pc(100.0);
     });
     let center_style = ui_config.create_panel_style(|s| {
-        s
-            .set_background_alpha(0.0)
+        s.set_background_alpha(0.0)
             .set_vertical()
             .set_children_valign(Alignment::Start)
             .set_width_pc(75.0)
@@ -55,32 +52,26 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
     });
 
     let left_top_bar_style = ui_config.create_panel_style(|s| {
-        s
-            .set_background_color(Color::DARK_GRAY)
+        s.set_background_color(Color::DARK_GRAY)
             .set_width_pc(100.0)
             .set_height_vp(5.0);
     });
     let right_top_bar_style = ui_config.create_panel_style(|s| {
-        s
-            .set_background_color(Color::DARK_GRAY)
+        s.set_background_color(Color::DARK_GRAY)
             .set_width_pc(100.0)
             .set_height_vp(5.0);
     });
     let center_top_bar_style = ui_config.create_panel_style(|s| {
-        s
-            .set_background_color(Color::DARK_GRAY)
+        s.set_background_color(Color::DARK_GRAY)
             .set_width_pc(100.0)
             .set_height_vp(5.0);
     });
 
     let center_container_style = ui_config.create_ui_container_style(|s| {
-        s
-            .set_width_pc(100.0)
-            .set_height_vp(95.0);
+        s.set_width_pc(100.0).set_height_vp(95.0);
     });
     let right_bottom_bar_style = ui_config.create_panel_style(|s| {
-        s
-            .set_background_color(Color::DARK_GRAY)
+        s.set_background_color(Color::DARK_GRAY)
             .set_width_pc(100.0)
             .set_height_vp(95.0);
     });
@@ -120,103 +111,74 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
         .set_style(window_style)
         .contents(|c| {
             // left bar
-            c
-                .add_panel()
-                .set_style(left_bar_style)
-                .contents(|c| {
-                    // top-most
-                    c
-                        .add_panel()
-                        .set_style(left_top_bar_style)
-                        .contents(|c| {
+            c.add_panel().set_style(left_bar_style).contents(|c| {
+                // top-most
+                c.add_panel().set_style(left_top_bar_style).contents(|c| {});
 
-                        });
+                // buttons
 
-                    // buttons
+                // host match
+                c.add_button("host_match_button")
+                    .set_style(side_button_style)
+                    .contents(|c| {
+                        c.add_text("host match").set_style(base_button_text_style);
+                    });
 
-                    // host match
-                    c
-                        .add_button("host_match_button")
-                        .set_style(side_button_style)
-                        .contents(|c| {
-                            c.add_text("host match").set_style(base_button_text_style);
-                        });
+                // join match
+                c.add_button("join_match_button")
+                    .set_style(side_button_style)
+                    .contents(|c| {
+                        c.add_text("join match").set_style(base_button_text_style);
+                    });
 
-                    // join match
-                    c
-                        .add_button("join_match_button")
-                        .set_style(side_button_style)
-                        .contents(|c| {
-                            c.add_text("join match").set_style(base_button_text_style);
-                        });
+                // chat
+                c.add_button("chat_button")
+                    .set_style(side_button_style)
+                    .contents(|c| {
+                        c.add_text("chat").set_style(base_button_text_style);
+                    });
 
-                    // chat
-                    c
-                        .add_button("chat_button")
-                        .set_style(side_button_style)
-                        .contents(|c| {
-                            c.add_text("chat").set_style(base_button_text_style);
-                        });
+                // devlog
+                c.add_button("devlog_button")
+                    .set_style(side_button_style)
+                    .contents(|c| {
+                        c.add_text("devlog").set_style(base_button_text_style);
+                    });
 
-                    // devlog
-                    c
-                        .add_button("devlog_button")
-                        .set_style(side_button_style)
-                        .contents(|c| {
-                            c.add_text("devlog").set_style(base_button_text_style);
-                        });
-
-                    // settings
-                    c
-                        .add_button("settings_button")
-                        .set_style(side_button_style)
-                        .contents(|c| {
-                            c.add_text("settings").set_style(base_button_text_style);
-                        });
+                // settings
+                c.add_button("settings_button")
+                    .set_style(side_button_style)
+                    .contents(|c| {
+                        c.add_text("settings").set_style(base_button_text_style);
+                    });
             });
 
             // center
-            c
-                .add_panel()
-                .set_style(center_style)
-                .contents(|c| {
-                    // top-most
-                    c
-                        .add_panel()
-                        .set_style(center_top_bar_style)
-                        .contents(|c| {
-                            c.add_text("c y b e r l i t h").set_style(title_text_style);
-                        });
+            c.add_panel().set_style(center_style).contents(|c| {
+                // top-most
+                c.add_panel().set_style(center_top_bar_style).contents(|c| {
+                    c.add_text("c y b e r l i t h").set_style(title_text_style);
+                });
 
-                    // main
-                    c
-                        .add_ui_container("center_container")
-                        .set_style(center_container_style);
+                // main
+                c.add_ui_container("center_container")
+                    .set_style(center_container_style);
             });
 
             // right bar
-            c
-                .add_panel()
-                .set_style(right_bar_style)
-                .contents(|c| {
-                    // top-most
-                    c
-                        .add_panel()
-                        .set_style(right_top_bar_style)
+            c.add_panel().set_style(right_bar_style).contents(|c| {
+                // top-most
+                c.add_panel().set_style(right_top_bar_style).contents(|c| {
+                    c.add_button("top_right_button")
+                        .set_as_first_input()
+                        .set_style(top_right_x_button_style)
                         .contents(|c| {
-                            c
-                                .add_button("top_right_button")
-                                .set_as_first_input()
-                                .set_style(top_right_x_button_style)
-                                .contents(|c| {
-                                    c.add_text("x").set_style(base_button_text_style);
-                                });
+                            c.add_text("x").set_style(base_button_text_style);
                         });
+                });
 
-                    // main
-                    c
-                        .add_panel()
-                        .set_style(right_bottom_bar_style);
+                // main
+                c.add_panel().set_style(right_bottom_bar_style);
             });
         });
 

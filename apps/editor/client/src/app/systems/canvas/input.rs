@@ -1,8 +1,8 @@
 use bevy_ecs::{
     event::EventReader,
+    prelude::Resource,
     system::SystemState,
     world::{Mut, World},
-    prelude::Resource
 };
 
 use editor_proto::components::FileExtension;
@@ -27,7 +27,6 @@ pub fn input_startup(world: &mut World) {
 }
 
 pub fn input_update(world: &mut World) {
-
     let mut quit = false;
     world.resource_scope(|_world, canvas: Mut<Canvas>| {
         if !canvas.is_visible() {
@@ -41,12 +40,14 @@ pub fn input_update(world: &mut World) {
     }
 
     let mut input_events = Vec::new();
-    world.resource_scope(|world, mut input_reader_state: Mut<CachedInputEventsState>| {
-        let mut input_reader = input_reader_state.event_state.get_mut(world);
-        for event in input_reader.read() {
-            input_events.push(event.clone());
-        }
-    });
+    world.resource_scope(
+        |world, mut input_reader_state: Mut<CachedInputEventsState>| {
+            let mut input_reader = input_reader_state.event_state.get_mut(world);
+            for event in input_reader.read() {
+                input_events.push(event.clone());
+            }
+        },
+    );
 
     world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
         input_manager.update_input(input_events, world);

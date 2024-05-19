@@ -11,9 +11,7 @@ pub struct DeleteTask {
 
 impl DeleteTask {
     pub fn new<T: Into<PathBuf>>(path: T) -> Self {
-        Self {
-            path: path.into(),
-        }
+        Self { path: path.into() }
     }
 }
 

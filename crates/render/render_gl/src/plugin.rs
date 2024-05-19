@@ -8,7 +8,7 @@ use clipboard::ClipboardPlugin;
 use kernel::KernelPlugin;
 use render_api::{Render, Window};
 
-use crate::{input, exit_system, render::render, runner::runner_func, sync::SyncPlugin, window};
+use crate::{exit_system, input, render::render, runner::runner_func, sync::SyncPlugin, window};
 
 pub struct RenderGlPlugin;
 

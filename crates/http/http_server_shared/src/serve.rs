@@ -6,7 +6,7 @@ use executor::smol::{
     stream::StreamExt,
 };
 
-use http_common::{Method, Request, Response, ResponseError, HeaderStore};
+use http_common::{HeaderStore, Method, Request, Response, ResponseError};
 use logging::{info, warn};
 
 use crate::ReadState;
@@ -64,7 +64,9 @@ pub async fn serve_impl<
 
                     //info!("read: {}", str);
 
-                    let Some((url_key, extracted_method, extracted_uri)) = request_extract_url(&line_str) else {
+                    let Some((url_key, extracted_method, extracted_uri)) =
+                        request_extract_url(&line_str)
+                    else {
                         warn!("unable to extract url parts for: {}", &line_str);
                         read_state = ReadState::Error;
                         break;
@@ -132,8 +134,6 @@ pub async fn serve_impl<
         }
     }
 
-
-
     match read_state {
         ReadState::Finished => {
             // success! continue,
@@ -164,7 +164,6 @@ pub async fn serve_impl<
 
     match response_func(endpoint_key, incoming_address, request.clone()).await {
         Ok(mut response) => {
-
             if method == Method::Head {
                 response.body.clear();
             }
@@ -178,9 +177,7 @@ pub async fn serve_impl<
     }
 }
 
-fn request_extract_url(
-    line_str: &String,
-) -> Option<(String, Method, String)> {
+fn request_extract_url(line_str: &String) -> Option<(String, Method, String)> {
     let parts = line_str.split(" ").collect::<Vec<&str>>();
     if parts.len() < 2 {
         return None;

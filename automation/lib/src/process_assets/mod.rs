@@ -3,14 +3,20 @@ mod convert_to_bits;
 use std::{fs, path::Path};
 
 use asset_id::{AssetId, AssetType, ETag};
-use asset_serde::{bits::AssetMetadataSerde, json::{Asset, AssetData, AssetMeta, ProcessedAssetMeta}};
+use asset_serde::{
+    bits::AssetMetadataSerde,
+    json::{Asset, AssetData, AssetMeta, ProcessedAssetMeta},
+};
 use git::{
     branch_exists, create_branch, git_commit, git_pull, git_push, read_file_bytes, repo_init,
     switch_to_branch, write_file_bytes, ObjectType, Repository, Tree,
 };
 use logging::info;
 
-use crate::{CliError, types::{OutputType, TargetEnv}};
+use crate::{
+    types::{OutputType, TargetEnv},
+    CliError,
+};
 
 pub fn process_assets(
     // should be the directory of the entire cyberlith repo
@@ -42,7 +48,6 @@ pub fn process_assets(
 }
 
 fn convert_metadata_to_bits(env: &str, repo: &Repository, files: &Vec<UnprocessedFile>) {
-
     info!("converting metadata to bits for env: {}", env);
 
     let output_dir = format!("{}/output", env);
@@ -62,7 +67,6 @@ fn convert_metadata_to_bits(env: &str, repo: &Repository, files: &Vec<Unprocesse
     }
 
     for unprocessed_file in files {
-
         let mut file_name_split = unprocessed_file.name.split(".");
         let file_name = file_name_split.next().unwrap();
         let true_file_ext = file_name_split.next().unwrap();

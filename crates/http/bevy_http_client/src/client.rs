@@ -28,7 +28,6 @@ impl Default for HttpClient {
 }
 
 impl HttpClient {
-
     // used as a system
     pub fn update_system(mut client: ResMut<Self>) {
         client.update(|_| {});
@@ -38,7 +37,6 @@ impl HttpClient {
         let mut finished_tasks = Vec::new();
         for (key, task) in self.tasks_iter_mut() {
             if let Some(result) = poll_task(task) {
-
                 if let Ok(response) = &result {
                     middleware_func(response);
                 }
@@ -130,18 +128,16 @@ impl HttpClient {
     ) -> Option<Result<S, ResponseError>> {
         if let Some(result) = self.results.remove(&key.id) {
             match result {
-                Ok(response) => {
-                    match response.to_result() {
-                        Ok(response) => {
-                            if let Ok(response) = S::from_response(response) {
-                                return Some(Ok(response));
-                            } else {
-                                return Some(Err(ResponseError::SerdeError));
-                            }
-                        },
-                        Err(err) => Some(Err(err)),
+                Ok(response) => match response.to_result() {
+                    Ok(response) => {
+                        if let Ok(response) = S::from_response(response) {
+                            return Some(Ok(response));
+                        } else {
+                            return Some(Err(ResponseError::SerdeError));
+                        }
                     }
-                }
+                    Err(err) => Some(Err(err)),
+                },
                 Err(err) => Some(Err(err)),
             }
         } else {

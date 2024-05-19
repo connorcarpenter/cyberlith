@@ -35,7 +35,6 @@ pub trait ApiRequest: Serde + 'static {
 }
 
 pub trait ApiResponse: Serde {
-
     fn name() -> &'static str;
 
     fn to_response(&self) -> Response {

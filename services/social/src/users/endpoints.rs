@@ -1,10 +1,12 @@
-use std::net::SocketAddr;
 use config::{REGION_SERVER_SECRET, SESSION_SERVER_GLOBAL_SECRET};
 use http_client::ResponseError;
 use http_server::{async_dup::Arc, executor::smol::lock::RwLock, ApiServer, Server};
 use logging::warn;
+use std::net::SocketAddr;
 
-use social_server_http_proto::{UserConnectedRequest, UserConnectedResponse, UserDisconnectedRequest, UserDisconnectedResponse};
+use social_server_http_proto::{
+    UserConnectedRequest, UserConnectedResponse, UserDisconnectedRequest, UserDisconnectedResponse,
+};
 
 use crate::state::State;
 

@@ -6,10 +6,19 @@ use naia_serde::{
 
 use asset_id::AssetId;
 use render_api::base::Color;
-use ui_builder_config::{BaseNodeStyle, Button, ButtonStyle, NodeId, NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Textbox, TextboxStyle, UiConfig, Widget, WidgetKind, WidgetStyle, ValidationType, Spinner, SpinnerStyle, UiContainer};
+use ui_builder_config::{
+    BaseNodeStyle, Button, ButtonStyle, NodeId, NodeStyle, Panel, PanelStyle, Spinner,
+    SpinnerStyle, StyleId, Text, TextStyle, Textbox, TextboxStyle, UiConfig, UiContainer,
+    ValidationType, Widget, WidgetKind, WidgetStyle,
+};
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 
-use crate::bits::{AlignmentBits, ButtonBits, ButtonStyleBits, ColorBits, LayoutTypeBits, MarginUnitsBits, PanelBits, PanelStyleBits, PositionTypeBits, SizeUnitsBits, SolidBits, TextStyleBits, TextboxBits, TextboxStyleBits, UiAction, UiActionType, UiNodeBits, UiStyleBits, WidgetBits, WidgetStyleBits, ValidationBits, SpinnerStyleBits};
+use crate::bits::{
+    AlignmentBits, ButtonBits, ButtonStyleBits, ColorBits, LayoutTypeBits, MarginUnitsBits,
+    PanelBits, PanelStyleBits, PositionTypeBits, SizeUnitsBits, SolidBits, SpinnerStyleBits,
+    TextStyleBits, TextboxBits, TextboxStyleBits, UiAction, UiActionType, UiNodeBits, UiStyleBits,
+    ValidationBits, WidgetBits, WidgetStyleBits,
+};
 
 pub fn read_bits(data: &[u8]) -> Result<UiConfig, SerdeErr> {
     let actions = bytes_to_actions(data)?;
@@ -203,7 +212,10 @@ fn convert_nodes_recurse_panel(
                 };
 
                 // creates a new text
-                let text = Text::new(child_widget_serde.id_str.as_ref().map(|v| v.as_str()), &child_widget_serde.init_text);
+                let text = Text::new(
+                    child_widget_serde.id_str.as_ref().map(|v| v.as_str()),
+                    &child_widget_serde.init_text,
+                );
                 let child_node_id = ui_config.create_node(Widget::Text(text));
                 let Widget::Panel(panel) = &mut ui_config.node_mut(panel_id).unwrap().widget else {
                     panic!("Expected panel widget");
@@ -226,9 +238,7 @@ fn convert_nodes_recurse_panel(
                 };
 
                 // creates a new textbox
-                let mut textbox = Textbox::new(
-                    child_widget_serde.id_str.as_str(),
-                );
+                let mut textbox = Textbox::new(child_widget_serde.id_str.as_str());
                 textbox.is_password = child_widget_serde.is_password;
                 textbox.validation = child_widget_serde.validation.map(|v| v.into());
                 let child_node_id = ui_config.create_node(Widget::Textbox(textbox));
@@ -405,12 +415,15 @@ fn convert_nodes_recurse_button(
                 };
 
                 // creates a new text
-                let text = Text::new(child_text_serde.id_str.as_ref().map(|s| s.as_str()), &child_text_serde.init_text);
+                let text = Text::new(
+                    child_text_serde.id_str.as_ref().map(|s| s.as_str()),
+                    &child_text_serde.init_text,
+                );
                 let child_text_id = ui_config.create_node(Widget::Text(text));
                 let Widget::Button(button) = &mut ui_config.node_mut(button_id).unwrap().widget
-                    else {
-                        panic!("Expected button widget");
-                    };
+                else {
+                    panic!("Expected button widget");
+                };
                 button.add_child(child_text_id);
 
                 // add style

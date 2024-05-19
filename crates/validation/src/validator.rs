@@ -6,7 +6,9 @@ pub trait Validator {
     fn validation_type() -> ValidationType;
 
     fn allows_text(text: &str) -> bool {
-        text.len() >= Self::min_length() && text.len() <= Self::max_length() && Self::validation_type().allows_text(text)
+        text.len() >= Self::min_length()
+            && text.len() <= Self::max_length()
+            && Self::validation_type().allows_text(text)
     }
 }
 
@@ -19,8 +21,10 @@ pub enum ValidationType {
 
 impl ValidationType {
     const CHAR_WHITELIST_ALPHANUMERIC: &'static str = "abcdefghijklmnopqrstuvwxyz0123456789.";
-    const CHAR_WHITELIST_PASSWORD: &'static str     = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789~!@#$%^&*-_=+{}|./?";
-    const CHAR_WHITELIST_EMAIL: &'static str        = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789~!@#$%^&*-_=+{}|./?";
+    const CHAR_WHITELIST_PASSWORD: &'static str =
+        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789~!@#$%^&*-_=+{}|./?";
+    const CHAR_WHITELIST_EMAIL: &'static str =
+        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789~!@#$%^&*-_=+{}|./?";
 
     pub fn includes_char(&self, c: char) -> bool {
         match self {
@@ -43,7 +47,7 @@ impl ValidationType {
                     return false;
                 }
                 true
-            },
+            }
             Self::Password => text.chars().all(|c| self.includes_char(c)),
             Self::Email => text.chars().all(|c| self.includes_char(c)),
         }

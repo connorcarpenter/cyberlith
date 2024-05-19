@@ -9,7 +9,10 @@ pub fn extract_query_string(url: &str) -> Option<HashMap<String, String>> {
         for query_pair in query_pairs {
             let pair_parts = query_pair.split('=').collect::<Vec<&str>>();
             if pair_parts.len() == 2 {
-                query_map.insert(pair_parts[0].to_ascii_lowercase().to_string(), pair_parts[1].to_ascii_lowercase().to_string());
+                query_map.insert(
+                    pair_parts[0].to_ascii_lowercase().to_string(),
+                    pair_parts[1].to_ascii_lowercase().to_string(),
+                );
             }
         }
         Some(query_map)

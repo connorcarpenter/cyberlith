@@ -1,4 +1,4 @@
-use bcrypt::{DEFAULT_COST, hash, verify as bverify};
+use bcrypt::{hash, verify as bverify, DEFAULT_COST};
 
 pub fn process(password: &str) -> Result<String, ()> {
     match hash(password, DEFAULT_COST) {

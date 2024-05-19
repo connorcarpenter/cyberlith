@@ -1,4 +1,3 @@
-
 use auth_server_http_proto::{AccessToken, RefreshToken};
 
 // this is session-temporary data about each user, should be mostly just tokens?

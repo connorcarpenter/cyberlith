@@ -1,6 +1,6 @@
 use std::net::SocketAddr;
 
-use http_server::{Request, ResponseError, Response};
+use http_server::{Request, Response, ResponseError};
 
 pub(crate) async fn redirect_to_game(
     _addr: SocketAddr,

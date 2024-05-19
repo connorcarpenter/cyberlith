@@ -13,8 +13,11 @@ use http_common::{Request, Response, ResponseError};
 use http_server_shared::{executor, serve_impl, MatchHostResult};
 use logging::info;
 
-use crate::{endpoint::Endpoint, middleware::{RequestMiddlewareAction, RequestMiddleware, RequestMiddlewareFunc}};
 use crate::middleware::{ResponseMiddleware, ResponseMiddlewareFunc};
+use crate::{
+    endpoint::Endpoint,
+    middleware::{RequestMiddleware, RequestMiddlewareAction, RequestMiddlewareFunc},
+};
 
 // Server
 pub struct Server {
@@ -47,28 +50,25 @@ impl Server {
 
     pub fn request_middleware<
         ResponseType: 'static + Send + Sync + Future<Output = RequestMiddlewareAction>,
-        Handler: 'static + Send + Sync + Fn(SocketAddr, Request) -> ResponseType
+        Handler: 'static + Send + Sync + Fn(SocketAddr, Request) -> ResponseType,
     >(
         &mut self,
         handler: Handler,
     ) {
-        let func: RequestMiddlewareFunc = Box::new(move |addr, req| {
-            Box::pin(handler(addr, req))
-        });
+        let func: RequestMiddlewareFunc = Box::new(move |addr, req| Box::pin(handler(addr, req)));
         self.request_middlewares.push(RequestMiddleware::new(func));
     }
 
     pub fn response_middleware<
         ResponseType: 'static + Send + Sync + Future<Output = Result<Response, ResponseError>>,
-        Handler: 'static + Send + Sync + Fn(Response) -> ResponseType
+        Handler: 'static + Send + Sync + Fn(Response) -> ResponseType,
     >(
         &mut self,
         handler: Handler,
     ) {
-        let func: ResponseMiddlewareFunc = Box::new(move |response| {
-            Box::pin(handler(response))
-        });
-        self.response_middlewares.push(ResponseMiddleware::new(func));
+        let func: ResponseMiddlewareFunc = Box::new(move |response| Box::pin(handler(response)));
+        self.response_middlewares
+            .push(ResponseMiddleware::new(func));
     }
 
     // better know what you're doing here
@@ -170,7 +170,7 @@ impl Server {
                                 if sco.is_some() {
                                     panic!("Set-Cookie not supported in global request middleware");
                                 }
-                               request = new_request;
+                                request = new_request;
                             }
                             RequestMiddlewareAction::Stop(response) => {
                                 return Ok(response);

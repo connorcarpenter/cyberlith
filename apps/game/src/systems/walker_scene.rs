@@ -11,8 +11,8 @@ use game_engine::{
         base::{Color, CpuMaterial, CpuMesh},
         components::{
             AmbientLight, Camera, CameraBundle, ClearOperation, DirectionalLight,
-            OrthographicProjection, Projection, RenderLayers,
-            RenderObjectBundle, RenderTarget, Transform,
+            OrthographicProjection, Projection, RenderLayers, RenderObjectBundle, RenderTarget,
+            Transform,
         },
         resources::Time,
         shapes,

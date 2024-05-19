@@ -1,14 +1,14 @@
 use std::{thread, time::Duration};
 
-use logging::{info, warn};
-use http_client::{HttpClient};
+use http_client::HttpClient;
 use http_server::{async_dup::Arc, executor::smol::lock::RwLock, Server};
+use logging::{info, warn};
 
 use region_server_http_proto::SocialRegisterInstanceRequest;
 
 use config::{
-    SOCIAL_SERVER_GLOBAL_SECRET, SOCIAL_SERVER_PORT, SOCIAL_SERVER_RECV_ADDR, REGION_SERVER_PORT,
-    REGION_SERVER_RECV_ADDR,
+    REGION_SERVER_PORT, REGION_SERVER_RECV_ADDR, SOCIAL_SERVER_GLOBAL_SECRET, SOCIAL_SERVER_PORT,
+    SOCIAL_SERVER_RECV_ADDR,
 };
 
 use crate::state::State;

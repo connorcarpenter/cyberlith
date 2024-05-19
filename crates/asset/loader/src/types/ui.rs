@@ -14,14 +14,14 @@ impl Default for UiDependencies {
 }
 
 impl UiDependencies {
-    pub fn new(
-        text_icon_asset_id: &AssetId,
-        eye_icon_asset_id: &AssetId,
-    ) -> Self {
+    pub fn new(text_icon_asset_id: &AssetId, eye_icon_asset_id: &AssetId) -> Self {
         let text_icon = AssetDependency::AssetId(*text_icon_asset_id);
         let eye_icon = AssetDependency::AssetId(*eye_icon_asset_id);
 
-        Self { text_icon, eye_icon }
+        Self {
+            text_icon,
+            eye_icon,
+        }
     }
 
     pub fn load_dependencies(
@@ -46,19 +46,17 @@ impl UiDependencies {
 
     pub fn finish_dependency(&mut self, dependency_typed_id: TypedAssetId) {
         match dependency_typed_id {
-            TypedAssetId::Icon(id) => {
-                match id.as_string().as_str() {
-                    "34mvvk" => {
-                        self.text_icon = AssetDependency::AssetHandle(AssetHandle::<IconData>::new(id));
-                    }
-                    "qbgz5j" => {
-                        self.eye_icon = AssetDependency::AssetHandle(AssetHandle::<IconData>::new(id));
-                    }
-                    _ => {
-                        panic!("unexpected icon id");
-                    }
+            TypedAssetId::Icon(id) => match id.as_string().as_str() {
+                "34mvvk" => {
+                    self.text_icon = AssetDependency::AssetHandle(AssetHandle::<IconData>::new(id));
                 }
-            }
+                "qbgz5j" => {
+                    self.eye_icon = AssetDependency::AssetHandle(AssetHandle::<IconData>::new(id));
+                }
+                _ => {
+                    panic!("unexpected icon id");
+                }
+            },
             _ => {
                 panic!("unexpected type of handle");
             }

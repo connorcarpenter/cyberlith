@@ -3,13 +3,13 @@ use logging::warn;
 use math::Vec3;
 use render_api::{
     base::CpuMaterial,
-    components::{Viewport, CameraBundle, ClearOperation, Projection, Transform}
+    components::{CameraBundle, ClearOperation, Projection, Transform, Viewport},
 };
 use storage::Storage;
 use ui_runner_config::{NodeId, SerdeErr, UiRuntimeConfig};
 use ui_state::UiState;
 
-use crate::{handle::UiHandle, config::ValidationType};
+use crate::{config::ValidationType, handle::UiHandle};
 
 pub struct UiRuntime {
     state: UiState,
@@ -19,10 +19,15 @@ pub struct UiRuntime {
 }
 
 impl UiRuntime {
-    pub(crate) fn textbox_receive_hover(&mut self, node_id: &NodeId, bounds: (f32, f32, f32, f32), mouse_x: f32, mouse_y: f32) -> bool {
+    pub(crate) fn textbox_receive_hover(
+        &mut self,
+        node_id: &NodeId,
+        bounds: (f32, f32, f32, f32),
+        mouse_x: f32,
+        mouse_y: f32,
+    ) -> bool {
         let textbox_config = self.config.textbox_ref(node_id).unwrap();
-        self
-            .state
+        self.state
             .store
             .textbox_mut(node_id)
             .unwrap()
@@ -31,7 +36,6 @@ impl UiRuntime {
 }
 
 impl UiRuntime {
-
     pub(crate) fn load_from_bytes(bytes: &[u8]) -> Result<Self, SerdeErr> {
         let config = UiRuntimeConfig::load_from_bytes(bytes)?;
         Ok(Self::load_from_config(config))
@@ -86,8 +90,7 @@ impl UiRuntime {
             let Projection::Perspective(perspective) = &self.camera.projection else {
                 panic!("expected perspective projection");
             };
-            let distance = ((viewport.height as f32) / 2.0)
-                / f32::tan(perspective.fov / 2.0);
+            let distance = ((viewport.height as f32) / 2.0) / f32::tan(perspective.fov / 2.0);
             //let distance = 1000.0;
             let x = viewport.width as f32 * 0.5;
             let y = viewport.height as f32 * 0.5;
@@ -102,20 +105,8 @@ impl UiRuntime {
         }
     }
 
-    pub fn inner_refs(
-        &self,
-    ) -> (
-        &UiState,
-        &UiRuntimeConfig,
-        &UiDependencies,
-        &CameraBundle,
-    ) {
-        (
-            &self.state,
-            &self.config,
-            &self.dependencies,
-            &self.camera,
-        )
+    pub fn inner_refs(&self) -> (&UiState, &UiRuntimeConfig, &UiDependencies, &CameraBundle) {
+        (&self.state, &self.config, &self.dependencies, &self.camera)
     }
 
     // dependencies
@@ -150,10 +141,7 @@ impl UiRuntime {
 
     // state
 
-    pub(crate) fn load_cpu_data(
-        &mut self,
-        materials: &mut Storage<CpuMaterial>,
-    ) {
+    pub(crate) fn load_cpu_data(&mut self, materials: &mut Storage<CpuMaterial>) {
         self.state.load_cpu_data(&self.config, materials);
     }
 
@@ -161,15 +149,21 @@ impl UiRuntime {
         self.state.needs_to_recalculate_layout()
     }
 
-    pub(crate) fn recalculate_layout(&mut self, text_measurer: &UiTextMeasurer, z: f32) -> Vec<(UiHandle, Viewport, f32)> {
-        self.state.recalculate_layout(
-            &self.config,
-            text_measurer,
-            self.camera.camera.viewport.as_ref().unwrap(),
-            z,
-        ).iter().map(|(asset_id, viewport, z)| {
-            (UiHandle::new(*asset_id), *viewport, *z)
-        }).collect()
+    pub(crate) fn recalculate_layout(
+        &mut self,
+        text_measurer: &UiTextMeasurer,
+        z: f32,
+    ) -> Vec<(UiHandle, Viewport, f32)> {
+        self.state
+            .recalculate_layout(
+                &self.config,
+                text_measurer,
+                self.camera.camera.viewport.as_ref().unwrap(),
+                z,
+            )
+            .iter()
+            .map(|(asset_id, viewport, z)| (UiHandle::new(*asset_id), *viewport, *z))
+            .collect()
     }
 
     pub(crate) fn get_textbox_validator(&self, id_str: &str) -> Option<ValidationType> {
@@ -222,7 +216,10 @@ impl UiRuntime {
     pub(crate) fn set_textbox_password_eye_visible(&mut self, id_str: &str, val: bool) {
         // get node_id from id_str
         let Some(node_id) = self.get_node_id_by_id_str(id_str) else {
-            warn!("set_textbox_password_eye_visible: node_id not found for id_str: {}", id_str);
+            warn!(
+                "set_textbox_password_eye_visible: node_id not found for id_str: {}",
+                id_str
+            );
             return;
         };
 
@@ -244,18 +241,25 @@ impl UiRuntime {
     pub fn set_ui_container_contents(&mut self, id_str: &str, child_handle: &UiHandle) {
         // get node_id from id_str
         let Some(node_id) = self.get_node_id_by_id_str(id_str) else {
-            warn!("set_ui_container_contents: node_id not found for id_str: {}", id_str);
+            warn!(
+                "set_ui_container_contents: node_id not found for id_str: {}",
+                id_str
+            );
             return;
         };
 
         // set ui handle
-        self.state.set_ui_container_asset_id(&node_id, &child_handle.asset_id());
+        self.state
+            .set_ui_container_asset_id(&node_id, &child_handle.asset_id());
     }
 
     pub fn clear_ui_container_contents(&mut self, id_str: &str) {
         // get node_id from id_str
         let Some(node_id) = self.get_node_id_by_id_str(id_str) else {
-            warn!("clear_ui_container_contents: node_id not found for id_str: {}", id_str);
+            warn!(
+                "clear_ui_container_contents: node_id not found for id_str: {}",
+                id_str
+            );
             return;
         };
 

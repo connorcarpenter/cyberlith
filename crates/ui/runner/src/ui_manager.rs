@@ -7,26 +7,31 @@ use bevy_ecs::{
     system::Resource,
 };
 
-use logging::warn;
 use asset_id::AssetId;
 use asset_loader::{
     AssetHandle, AssetManager, IconData, ProcessedAssetStore, TypedAssetId, UiTextMeasurer,
 };
 use clipboard::ClipboardManager;
 use input::{CursorIcon, Input};
+use logging::warn;
 use math::Vec2;
+use render_api::shapes::UnitSquare;
 use render_api::{
     base::{CpuMaterial, CpuMesh},
     components::{Camera, RenderLayer},
     resources::Time,
 };
-use render_api::shapes::UnitSquare;
 use storage::{Handle, Storage};
-use ui_input::{ui_receive_input, UiGlobalEvent, UiInputEvent, UiInputState, UiManagerTrait, UiNodeEvent, UiNodeEventHandler};
+use ui_input::{
+    ui_receive_input, UiGlobalEvent, UiInputEvent, UiInputState, UiManagerTrait, UiNodeEvent,
+    UiNodeEventHandler,
+};
 use ui_runner_config::{NodeId, UiRuntimeConfig};
 use ui_state::{NodeActiveState, UiState};
 
-use crate::{state_globals::StateGlobals, runtime::UiRuntime, config::ValidationType, handle::UiHandle};
+use crate::{
+    config::ValidationType, handle::UiHandle, runtime::UiRuntime, state_globals::StateGlobals,
+};
 
 #[derive(Resource)]
 pub struct UiManager {
@@ -98,7 +103,11 @@ impl UiManagerTrait for UiManager {
 
     fn nodes_len(&self, asset_id: &AssetId) -> usize {
         let ui_handle = UiHandle::new(*asset_id);
-        self.ui_runtimes.get(&ui_handle).unwrap().ui_config_ref().nodes_len()
+        self.ui_runtimes
+            .get(&ui_handle)
+            .unwrap()
+            .ui_config_ref()
+            .nodes_len()
     }
 
     fn ui_config(&self, asset_id: &AssetId) -> Option<&UiRuntimeConfig> {
@@ -106,7 +115,14 @@ impl UiManagerTrait for UiManager {
         self.ui_runtimes.get(&ui_handle).map(|r| r.ui_config_ref())
     }
 
-    fn textbox_receive_hover(&mut self, asset_id: &AssetId, node_id: &NodeId, bounds: (f32, f32, f32, f32), mouse_x: f32, mouse_y: f32) -> bool {
+    fn textbox_receive_hover(
+        &mut self,
+        asset_id: &AssetId,
+        node_id: &NodeId,
+        bounds: (f32, f32, f32, f32),
+        mouse_x: f32,
+        mouse_y: f32,
+    ) -> bool {
         if let Some(ui_runtime) = self.ui_runtimes.get_mut(&UiHandle::new(*asset_id)) {
             ui_runtime.textbox_receive_hover(node_id, bounds, mouse_x, mouse_y)
         } else {
@@ -123,10 +139,7 @@ impl UiManager {
     }
 
     // used as a system
-    pub(crate) fn startup(
-        mut ui_manager: ResMut<Self>,
-        mut meshes: ResMut<Storage<CpuMesh>>,
-    ) {
+    pub(crate) fn startup(mut ui_manager: ResMut<Self>, mut meshes: ResMut<Storage<CpuMesh>>) {
         let mesh_handle = meshes.add(UnitSquare);
         ui_manager.globals.set_box_mesh_handle(mesh_handle);
     }
@@ -246,7 +259,10 @@ impl UiManager {
         if !self.ui_runtimes.contains_key(&handle) {
             let bytes = asset_data_store.get(asset_id).unwrap();
             let Ok(runtime) = UiRuntime::load_from_bytes(bytes) else {
-                panic!("failed to read UiRuntime from bytes at asset_id: {:?}", asset_id);
+                panic!(
+                    "failed to read UiRuntime from bytes at asset_id: {:?}",
+                    asset_id
+                );
             };
 
             self.ui_runtimes.insert(handle, runtime);
@@ -281,10 +297,7 @@ impl UiManager {
         principal_data.finish_dependency(dependency_typed_id);
     }
 
-    pub fn sync_uis(
-        &mut self,
-        materials: &mut Storage<CpuMaterial>,
-    ) {
+    pub fn sync_uis(&mut self, materials: &mut Storage<CpuMaterial>) {
         if self.queued_uis.is_empty() {
             return;
         }
@@ -385,11 +398,7 @@ impl UiManager {
         }
     }
 
-    pub fn update_ui_viewport(
-        &mut self,
-        asset_manager: &AssetManager,
-        target_camera: &Camera,
-    ) {
+    pub fn update_ui_viewport(&mut self, asset_manager: &AssetManager, target_camera: &Camera) {
         let store = asset_manager.get_store();
         let Some(viewport) = target_camera.viewport else {
             return;
@@ -446,7 +455,10 @@ impl UiManager {
 
         for (child_ui_handle, child_viewport, child_viewport_z) in children {
             let Some(child_ui_runtime) = self.ui_runtimes.get_mut(&child_ui_handle) else {
-                warn!("child ui data not loaded 1: {:?}", child_ui_handle.asset_id());
+                warn!(
+                    "child ui data not loaded 1: {:?}",
+                    child_ui_handle.asset_id()
+                );
                 continue;
             };
 
@@ -460,10 +472,7 @@ impl UiManager {
         }
     }
 
-    pub fn generate_new_inputs(
-        &mut self,
-        next_inputs: &mut Vec<UiInputEvent>,
-    ) {
+    pub fn generate_new_inputs(&mut self, next_inputs: &mut Vec<UiInputEvent>) {
         let Some((asset_id, node_id)) = self.input_state.get_active_node() else {
             return;
         };
@@ -473,7 +482,8 @@ impl UiManager {
             return;
         };
         let (_, config, _, _) = ui_runtime.inner_refs();
-        self.input_state.generate_new_inputs(config, &node_id, next_inputs);
+        self.input_state
+            .generate_new_inputs(config, &node_id, next_inputs);
     }
 
     pub fn update_ui_input(
@@ -515,17 +525,16 @@ impl UiManager {
         &mut self,
         text_measurer: &UiTextMeasurer,
         mouse_position: Option<Vec2>,
-        input_events: Vec<UiInputEvent>
+        input_events: Vec<UiInputEvent>,
     ) {
-        ui_receive_input(
-            self,
-            text_measurer,
-            mouse_position,
-            input_events
-        );
+        ui_receive_input(self, text_measurer, mouse_position, input_events);
     }
 
-    pub fn get_textbox_validator(&self, ui_handle: &UiHandle, id_str: &str) -> Option<ValidationType> {
+    pub fn get_textbox_validator(
+        &self,
+        ui_handle: &UiHandle,
+        id_str: &str,
+    ) -> Option<ValidationType> {
         let Some(ui_runtime) = self.ui_runtimes.get(ui_handle) else {
             warn!("ui data not loaded 1: {:?}", ui_handle.asset_id());
             return None;
@@ -566,7 +575,12 @@ impl UiManager {
         }
     }
 
-    pub fn set_textbox_password_eye_visible(&mut self, ui_handle: &UiHandle, id_str: &str, val: bool) {
+    pub fn set_textbox_password_eye_visible(
+        &mut self,
+        ui_handle: &UiHandle,
+        id_str: &str,
+        val: bool,
+    ) {
         if let Some(ui_runtime) = self.ui_runtimes.get_mut(ui_handle) {
             ui_runtime.set_textbox_password_eye_visible(id_str, val);
             ui_runtime.queue_recalculate_layout();
@@ -584,7 +598,12 @@ impl UiManager {
         }
     }
 
-    pub fn set_ui_container_contents(&mut self, ui_handle: &UiHandle, id_str: &str, child_ui_handle: &UiHandle) {
+    pub fn set_ui_container_contents(
+        &mut self,
+        ui_handle: &UiHandle,
+        id_str: &str,
+        child_ui_handle: &UiHandle,
+    ) {
         if let Some(ui_runtime) = self.ui_runtimes.get_mut(ui_handle) {
             ui_runtime.set_ui_container_contents(id_str, child_ui_handle);
             ui_runtime.queue_recalculate_layout();
@@ -623,7 +642,8 @@ impl UiManager {
     }
 
     pub fn input_get_active_state(&self, ui_id: &UiHandle, node_id: &NodeId) -> NodeActiveState {
-        self.input_state.get_active_state(&ui_id.asset_id(), node_id)
+        self.input_state
+            .get_active_state(&ui_id.asset_id(), node_id)
     }
 
     pub fn input_get_select_index(&self) -> Option<usize> {

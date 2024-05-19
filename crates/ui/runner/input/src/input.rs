@@ -1,6 +1,6 @@
 use asset_id::AssetId;
-use logging::warn;
 use input::{CursorIcon, GamepadButtonType, InputEvent, Key, Modifiers, MouseButton};
+use logging::warn;
 use math::Vec2;
 use ui_runner_config::{point_is_inside, NodeId, TextMeasurer, UiRuntimeConfig, WidgetKind};
 use ui_state::UiState;
@@ -178,7 +178,14 @@ pub trait UiManagerTrait {
     fn root_ui_asset_id(&self) -> AssetId;
     fn nodes_len(&self, asset_id: &AssetId) -> usize;
     fn ui_config(&self, asset_id: &AssetId) -> Option<&UiRuntimeConfig>;
-    fn textbox_receive_hover(&mut self, asset_id: &AssetId, node_id: &NodeId, bounds: (f32, f32, f32, f32), mouse_x: f32, mouse_y: f32) -> bool;
+    fn textbox_receive_hover(
+        &mut self,
+        asset_id: &AssetId,
+        node_id: &NodeId,
+        bounds: (f32, f32, f32, f32),
+        mouse_x: f32,
+        mouse_y: f32,
+    ) -> bool;
 }
 
 fn ui_receive_hover_recurse(
@@ -186,7 +193,9 @@ fn ui_receive_hover_recurse(
     mouse_position: Vec2,
     ui_asset_id: &AssetId,
 ) {
-    ui_manager.ui_input_state_mut().set_cursor_icon(CursorIcon::Default);
+    ui_manager
+        .ui_input_state_mut()
+        .set_cursor_icon(CursorIcon::Default);
     ui_manager.ui_input_state_mut().clear_hover();
 
     for node_id in 0..ui_manager.nodes_len(ui_asset_id) {
@@ -207,8 +216,12 @@ fn ui_receive_hover_recurse(
             let ui_config = ui_manager.ui_config(&asset_id).unwrap();
             let widget_kind = ui_config.get_node(&node_id).unwrap().widget_kind();
             (asset_id, node_id, widget_kind)
-        }) {
-        if let Some(child_ui_id) = ui_manager.ui_state(ui_asset_id).get_ui_container_asset_id_opt(&node_id) {
+        })
+    {
+        if let Some(child_ui_id) = ui_manager
+            .ui_state(ui_asset_id)
+            .get_ui_container_asset_id_opt(&node_id)
+        {
             ui_receive_hover_recurse(ui_manager, mouse_position, &child_ui_id);
         }
     }
@@ -238,20 +251,24 @@ pub fn ui_receive_input(
                 }
 
                 // add widget kind
-                mouse_hover_node = ui_manager.ui_input_state()
-                    .get_hover()
-                    .map(|(asset_id, node_id)| {
-                        let ui_config = ui_manager.ui_config(&asset_id).unwrap();
-                        let widget_kind = ui_config.get_node(&node_id).unwrap().widget_kind();
-                        (asset_id, node_id, widget_kind)
-                    });
-                mouse_active_node = ui_manager.ui_input_state()
-                    .get_active_node()
-                    .map(|(asset_id, node_id)| {
-                        let ui_config = ui_manager.ui_config(&asset_id).unwrap();
-                        let widget_kind = ui_config.get_node(&node_id).unwrap().widget_kind();
-                        (asset_id, node_id, widget_kind)
-                    });
+                mouse_hover_node =
+                    ui_manager
+                        .ui_input_state()
+                        .get_hover()
+                        .map(|(asset_id, node_id)| {
+                            let ui_config = ui_manager.ui_config(&asset_id).unwrap();
+                            let widget_kind = ui_config.get_node(&node_id).unwrap().widget_kind();
+                            (asset_id, node_id, widget_kind)
+                        });
+                mouse_active_node =
+                    ui_manager
+                        .ui_input_state()
+                        .get_active_node()
+                        .map(|(asset_id, node_id)| {
+                            let ui_config = ui_manager.ui_config(&asset_id).unwrap();
+                            let widget_kind = ui_config.get_node(&node_id).unwrap().widget_kind();
+                            (asset_id, node_id, widget_kind)
+                        });
             }
 
             match event {
@@ -266,15 +283,30 @@ pub fn ui_receive_input(
                     if let Some((hover_asset_id, hover_node_id, kind)) = mouse_hover_node {
                         match kind {
                             WidgetKind::Button => {
-                                ui_manager.ui_input_state_mut().set_active_node(Some((hover_asset_id, hover_node_id)));
-                                ui_manager.ui_input_state_mut().emit_node_event(&hover_asset_id, &hover_node_id, UiNodeEvent::Clicked);
+                                ui_manager
+                                    .ui_input_state_mut()
+                                    .set_active_node(Some((hover_asset_id, hover_node_id)));
+                                ui_manager.ui_input_state_mut().emit_node_event(
+                                    &hover_asset_id,
+                                    &hover_node_id,
+                                    UiNodeEvent::Clicked,
+                                );
                             }
                             WidgetKind::Textbox => {
-                                ui_manager.ui_input_state_mut().set_active_node(Some((hover_asset_id, hover_node_id)));
-                                ui_manager.ui_input_state_mut().emit_node_event(&hover_asset_id, &hover_node_id, UiNodeEvent::Clicked);
+                                ui_manager
+                                    .ui_input_state_mut()
+                                    .set_active_node(Some((hover_asset_id, hover_node_id)));
+                                ui_manager.ui_input_state_mut().emit_node_event(
+                                    &hover_asset_id,
+                                    &hover_node_id,
+                                    UiNodeEvent::Clicked,
+                                );
                                 ui_manager.ui_input_state_mut().reset_interact_timer();
-                                let (_, node_height, node_x, _, _) =
-                                    ui_manager.ui_state_mut(&hover_asset_id).cache.bounds(&hover_node_id).unwrap();
+                                let (_, node_height, node_x, _, _) = ui_manager
+                                    .ui_state_mut(&hover_asset_id)
+                                    .cache
+                                    .bounds(&hover_node_id)
+                                    .unwrap();
                                 TextboxInputState::recv_mouse_event(
                                     ui_manager,
                                     text_measurer,
@@ -291,10 +323,15 @@ pub fn ui_receive_input(
                     }
                 }
                 UiInputEvent::MouseButtonDrag(MouseButton::Left, _) => {
-                    if let Some((hover_asset_id, hover_node_id, WidgetKind::Textbox)) = mouse_hover_node {
+                    if let Some((hover_asset_id, hover_node_id, WidgetKind::Textbox)) =
+                        mouse_hover_node
+                    {
                         ui_manager.ui_input_state_mut().reset_interact_timer();
-                        let (_, node_height, node_x, _, _) =
-                            ui_manager.ui_state_mut(&hover_asset_id).cache.bounds(&hover_node_id).unwrap();
+                        let (_, node_height, node_x, _, _) = ui_manager
+                            .ui_state_mut(&hover_asset_id)
+                            .cache
+                            .bounds(&hover_node_id)
+                            .unwrap();
                         TextboxInputState::recv_mouse_event(
                             ui_manager,
                             text_measurer,
@@ -320,13 +357,15 @@ pub fn ui_receive_input(
     }
 
     let mut hover_node = ui_manager.ui_input_state().get_hover();
-    let mut active_node = ui_manager.ui_input_state()
-        .get_active_node()
-        .map(|(active_asset_id, active_node_id)| {
-            let ui_config = ui_manager.ui_config(&active_asset_id).unwrap();
-            let widget_kind = ui_config.get_node(&active_node_id).unwrap().widget_kind();
-            (active_asset_id, active_node_id, widget_kind)
-        });
+    let mut active_node =
+        ui_manager
+            .ui_input_state()
+            .get_active_node()
+            .map(|(active_asset_id, active_node_id)| {
+                let ui_config = ui_manager.ui_config(&active_asset_id).unwrap();
+                let widget_kind = ui_config.get_node(&active_node_id).unwrap().widget_kind();
+                (active_asset_id, active_node_id, widget_kind)
+            });
     let mut events = kb_or_gp_events;
 
     // textbox events
@@ -363,7 +402,9 @@ pub fn ui_receive_input(
                         for output_event in output_events {
                             match &output_event {
                                 UiGlobalEvent::Copied(_) => {
-                                    ui_manager.ui_input_state_mut().emit_global_event(output_event);
+                                    ui_manager
+                                        .ui_input_state_mut()
+                                        .emit_global_event(output_event);
                                 }
                                 UiGlobalEvent::PassThru => {
                                     next_events.push(input_event.clone());
@@ -390,7 +431,9 @@ pub fn ui_receive_input(
             | UiInputEvent::TabPressed => {
                 // navigation ...
                 if let Some((active_ui_id, active_node_id, WidgetKind::Textbox)) = active_node {
-                    ui_manager.ui_input_state_mut().receive_hover(&active_ui_id, &active_node_id);
+                    ui_manager
+                        .ui_input_state_mut()
+                        .receive_hover(&active_ui_id, &active_node_id);
                     hover_node = Some((active_ui_id, active_node_id));
                     ui_manager.ui_input_state_mut().set_active_node(None);
                     active_node = None;
@@ -399,8 +442,13 @@ pub fn ui_receive_input(
                 // hover default ui element if none is hovered (coming from mouse mode)
                 if hover_node.is_none() {
                     let root_ui_node = ui_manager.root_ui_asset_id();
-                    let first_input_id = ui_manager.ui_config(&root_ui_node).unwrap().get_first_input();
-                    ui_manager.ui_input_state_mut().receive_hover(&root_ui_node, &first_input_id);
+                    let first_input_id = ui_manager
+                        .ui_config(&root_ui_node)
+                        .unwrap()
+                        .get_first_input();
+                    ui_manager
+                        .ui_input_state_mut()
+                        .receive_hover(&root_ui_node, &first_input_id);
                     hover_node = Some((root_ui_node, first_input_id));
                     continue;
                 }
@@ -408,14 +456,31 @@ pub fn ui_receive_input(
                 // handle navigation
                 let (hover_ui_inside, hover_node_inside) = hover_node.unwrap();
                 if let Some(next_id) = match event {
-                    UiInputEvent::UpPressed => ui_manager.ui_config(&hover_ui_inside).unwrap().nav_get_up_id(&hover_node_inside),
-                    UiInputEvent::DownPressed => ui_manager.ui_config(&hover_ui_inside).unwrap().nav_get_down_id(&hover_node_inside),
-                    UiInputEvent::LeftPressed(_) => ui_manager.ui_config(&hover_ui_inside).unwrap().nav_get_left_id(&hover_node_inside),
-                    UiInputEvent::RightPressed(_) => ui_manager.ui_config(&hover_ui_inside).unwrap().nav_get_right_id(&hover_node_inside),
-                    UiInputEvent::TabPressed => ui_manager.ui_config(&hover_ui_inside).unwrap().nav_get_tab_id(&hover_node_inside),
+                    UiInputEvent::UpPressed => ui_manager
+                        .ui_config(&hover_ui_inside)
+                        .unwrap()
+                        .nav_get_up_id(&hover_node_inside),
+                    UiInputEvent::DownPressed => ui_manager
+                        .ui_config(&hover_ui_inside)
+                        .unwrap()
+                        .nav_get_down_id(&hover_node_inside),
+                    UiInputEvent::LeftPressed(_) => ui_manager
+                        .ui_config(&hover_ui_inside)
+                        .unwrap()
+                        .nav_get_left_id(&hover_node_inside),
+                    UiInputEvent::RightPressed(_) => ui_manager
+                        .ui_config(&hover_ui_inside)
+                        .unwrap()
+                        .nav_get_right_id(&hover_node_inside),
+                    UiInputEvent::TabPressed => ui_manager
+                        .ui_config(&hover_ui_inside)
+                        .unwrap()
+                        .nav_get_tab_id(&hover_node_inside),
                     _ => None,
                 } {
-                    ui_manager.ui_input_state_mut().receive_hover(&hover_ui_inside, &next_id);
+                    ui_manager
+                        .ui_input_state_mut()
+                        .receive_hover(&hover_ui_inside, &next_id);
                     hover_node = Some((hover_ui_inside, next_id));
                 }
             }
@@ -425,7 +490,9 @@ pub fn ui_receive_input(
                     ui_manager.ui_input_state_mut().set_active_node(None);
                     active_node = None;
                     // hover textbox
-                    ui_manager.ui_input_state_mut().receive_hover(&asset_id, &node_id);
+                    ui_manager
+                        .ui_input_state_mut()
+                        .receive_hover(&asset_id, &node_id);
                     hover_node = Some((asset_id, node_id));
                 } else {
                     // de-hover
@@ -437,11 +504,23 @@ pub fn ui_receive_input(
             }
             UiInputEvent::SelectPressed => {
                 if let Some((active_ui_id, active_node_id, WidgetKind::Textbox)) = active_node {
-                    if let Some(next_id) = ui_manager.ui_config(&active_ui_id).unwrap().nav_get_tab_id(&active_node_id) {
-                        match ui_manager.ui_config(&active_ui_id).unwrap().get_node(&next_id).unwrap().widget_kind() {
+                    if let Some(next_id) = ui_manager
+                        .ui_config(&active_ui_id)
+                        .unwrap()
+                        .nav_get_tab_id(&active_node_id)
+                    {
+                        match ui_manager
+                            .ui_config(&active_ui_id)
+                            .unwrap()
+                            .get_node(&next_id)
+                            .unwrap()
+                            .widget_kind()
+                        {
                             WidgetKind::Textbox => {
                                 // make next textbox active
-                                ui_manager.ui_input_state_mut().set_active_node(Some((active_ui_id, next_id)));
+                                ui_manager
+                                    .ui_input_state_mut()
+                                    .set_active_node(Some((active_ui_id, next_id)));
                                 active_node = None;
                                 // clear hover
                                 ui_manager.ui_input_state_mut().clear_hover();
@@ -452,7 +531,9 @@ pub fn ui_receive_input(
                                 ui_manager.ui_input_state_mut().set_active_node(None);
                                 active_node = None;
                                 // hover button
-                                ui_manager.ui_input_state_mut().receive_hover(&active_ui_id, &next_id);
+                                ui_manager
+                                    .ui_input_state_mut()
+                                    .receive_hover(&active_ui_id, &next_id);
                                 hover_node = Some((active_ui_id, next_id));
                             }
                             _ => panic!("no navigation for other types"),
@@ -462,20 +543,35 @@ pub fn ui_receive_input(
                         ui_manager.ui_input_state_mut().set_active_node(None);
                         active_node = None;
                         // hover textbox
-                        ui_manager.ui_input_state_mut().receive_hover(&active_ui_id, &active_node_id);
+                        ui_manager
+                            .ui_input_state_mut()
+                            .receive_hover(&active_ui_id, &active_node_id);
                         hover_node = Some((active_ui_id, active_node_id));
                     }
                 }
                 // if hover node is already hovering, can handle select pressed
                 else if let Some((hover_ui_id, hover_node_id)) = hover_node {
-                    let widget_kind = ui_manager.ui_config(&hover_ui_id).unwrap().get_node(&hover_node_id).unwrap().widget_kind();
+                    let widget_kind = ui_manager
+                        .ui_config(&hover_ui_id)
+                        .unwrap()
+                        .get_node(&hover_node_id)
+                        .unwrap()
+                        .widget_kind();
                     match widget_kind {
                         WidgetKind::Button => {
-                            ui_manager.ui_input_state_mut().set_active_node(Some((hover_ui_id, hover_node_id)));
-                            ui_manager.ui_input_state_mut().emit_node_event(&hover_ui_id, &hover_node_id, UiNodeEvent::Clicked);
+                            ui_manager
+                                .ui_input_state_mut()
+                                .set_active_node(Some((hover_ui_id, hover_node_id)));
+                            ui_manager.ui_input_state_mut().emit_node_event(
+                                &hover_ui_id,
+                                &hover_node_id,
+                                UiNodeEvent::Clicked,
+                            );
                         }
                         WidgetKind::Textbox => {
-                            ui_manager.ui_input_state_mut().set_active_node(Some((hover_ui_id, hover_node_id)));
+                            ui_manager
+                                .ui_input_state_mut()
+                                .set_active_node(Some((hover_ui_id, hover_node_id)));
                             TextboxInputState::recv_keyboard_or_gamepad_event(
                                 ui_manager,
                                 text_measurer,
@@ -489,8 +585,16 @@ pub fn ui_receive_input(
                 }
             }
             UiInputEvent::SelectReleased => {
-                if let Some((active_asset_id, active_node_id)) = ui_manager.ui_input_state().get_active_node() {
-                    match ui_manager.ui_config(&active_asset_id).unwrap().get_node(&active_node_id).unwrap().widget_kind() {
+                if let Some((active_asset_id, active_node_id)) =
+                    ui_manager.ui_input_state().get_active_node()
+                {
+                    match ui_manager
+                        .ui_config(&active_asset_id)
+                        .unwrap()
+                        .get_node(&active_node_id)
+                        .unwrap()
+                        .widget_kind()
+                    {
                         WidgetKind::Button => {
                             ui_manager.ui_input_state_mut().set_active_node(None);
                         }
@@ -510,19 +614,29 @@ fn ui_update_hover(
     mouse_x: f32,
     mouse_y: f32,
 ) {
-    let Some(visible) = ui_manager.ui_state(ui_asset_id).visibility_store.get_node_visibility(node_id) else {
+    let Some(visible) = ui_manager
+        .ui_state(ui_asset_id)
+        .visibility_store
+        .get_node_visibility(node_id)
+    else {
         warn!("no node for id: {:?}", node_id);
         return;
     };
     if !visible {
         return;
     }
-    let Some((width, height, child_offset_x, child_offset_y, _)) = ui_manager.ui_state(ui_asset_id).cache.bounds(node_id) else {
+    let Some((width, height, child_offset_x, child_offset_y, _)) =
+        ui_manager.ui_state(ui_asset_id).cache.bounds(node_id)
+    else {
         warn!("no bounds for id 2: {:?}", node_id);
         return;
     };
 
-    let Some(node) = ui_manager.ui_config(ui_asset_id).unwrap().get_node(&node_id) else {
+    let Some(node) = ui_manager
+        .ui_config(ui_asset_id)
+        .unwrap()
+        .get_node(&node_id)
+    else {
         warn!("no node for id: {:?}", node_id);
         return;
     };
@@ -534,33 +648,43 @@ fn ui_update_hover(
     match node.widget_kind() {
         WidgetKind::Button => {
             if is_point_inside {
-                ui_manager.ui_input_state_mut().set_cursor_icon(CursorIcon::Hand);
-                ui_manager.ui_input_state_mut().receive_hover(ui_asset_id, node_id);
+                ui_manager
+                    .ui_input_state_mut()
+                    .set_cursor_icon(CursorIcon::Hand);
+                ui_manager
+                    .ui_input_state_mut()
+                    .receive_hover(ui_asset_id, node_id);
             }
-        },
+        }
         WidgetKind::Textbox => {
-
-            let is_hovering_eye = ui_manager
-                .textbox_receive_hover(
-                    ui_asset_id,
-                    node_id,
-                    (width, height, child_offset_x, child_offset_y),
-                    mouse_x,
-                    mouse_y
-                );
+            let is_hovering_eye = ui_manager.textbox_receive_hover(
+                ui_asset_id,
+                node_id,
+                (width, height, child_offset_x, child_offset_y),
+                mouse_x,
+                mouse_y,
+            );
 
             if is_point_inside {
-                ui_manager.ui_input_state_mut().receive_hover(ui_asset_id, node_id);
+                ui_manager
+                    .ui_input_state_mut()
+                    .receive_hover(ui_asset_id, node_id);
                 if is_hovering_eye {
-                    ui_manager.ui_input_state_mut().set_cursor_icon(CursorIcon::Hand);
+                    ui_manager
+                        .ui_input_state_mut()
+                        .set_cursor_icon(CursorIcon::Hand);
                 } else {
-                    ui_manager.ui_input_state_mut().set_cursor_icon(CursorIcon::Text);
+                    ui_manager
+                        .ui_input_state_mut()
+                        .set_cursor_icon(CursorIcon::Text);
                 }
             }
-        },
+        }
         WidgetKind::UiContainer => {
             if is_point_inside {
-                ui_manager.ui_input_state_mut().receive_hover(ui_asset_id, node_id);
+                ui_manager
+                    .ui_input_state_mut()
+                    .receive_hover(ui_asset_id, node_id);
             }
         }
         _ => {}

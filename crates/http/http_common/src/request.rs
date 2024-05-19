@@ -1,6 +1,6 @@
-use std::{time::Duration};
+use std::time::Duration;
 
-use crate::{Method, headers::HeaderStore};
+use crate::{headers::HeaderStore, Method};
 
 /// A simple HTTP request.
 #[derive(Clone)]

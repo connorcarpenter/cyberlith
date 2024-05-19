@@ -433,12 +433,7 @@ impl IconInputManager {
             ResMut<Canvas>,
             Query<&mut IconVertex>,
         )> = SystemState::new(world);
-        let (
-            mut commands,
-            client,
-            mut canvas,
-            mut vertex_q
-        ) = system_state.get_mut(world);
+        let (mut commands, client, mut canvas, mut vertex_q) = system_state.get_mut(world);
 
         // check status
         let auth_status = commands.entity(*vertex_entity).authority(&client).unwrap();

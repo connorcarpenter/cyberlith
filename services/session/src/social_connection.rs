@@ -3,8 +3,8 @@ use bevy_ecs::system::ResMut;
 use bevy_http_client::ResponseError;
 use bevy_http_server::HttpServer;
 
-use logging::{info, warn};
 use config::REGION_SERVER_SECRET;
+use logging::{info, warn};
 
 use session_server_http_proto::{
     ConnectSocialServerRequest, ConnectSocialServerResponse, DisconnectSocialServerRequest,
@@ -17,7 +17,8 @@ pub fn recv_connect_social_server_request(
     mut global: ResMut<Global>,
     mut server: ResMut<HttpServer>,
 ) {
-    while let Some((_addr, request, response_key)) = server.receive::<ConnectSocialServerRequest>() {
+    while let Some((_addr, request, response_key)) = server.receive::<ConnectSocialServerRequest>()
+    {
         if request.region_secret() != REGION_SERVER_SECRET {
             warn!("invalid request secret");
             server.respond(response_key, Err(ResponseError::Unauthenticated));

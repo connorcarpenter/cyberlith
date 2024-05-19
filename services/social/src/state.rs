@@ -1,8 +1,9 @@
-
-
 use std::time::Duration;
 
-use crate::{global_chat::GlobalChatState, users::UsersState, region::RegionServerState, match_lobbies::MatchLobbiesState, session_servers::SessionServersState};
+use crate::{
+    global_chat::GlobalChatState, match_lobbies::MatchLobbiesState, region::RegionServerState,
+    session_servers::SessionServersState, users::UsersState,
+};
 
 pub struct State {
     pub region_server: RegionServerState,
@@ -18,7 +19,10 @@ impl State {
         region_server_disconnect_timeout: Duration,
     ) -> Self {
         Self {
-            region_server: RegionServerState::new(registration_resend_rate, region_server_disconnect_timeout),
+            region_server: RegionServerState::new(
+                registration_resend_rate,
+                region_server_disconnect_timeout,
+            ),
             session_servers: SessionServersState::new(),
             match_lobbies: MatchLobbiesState::new(),
             users: UsersState::new(),

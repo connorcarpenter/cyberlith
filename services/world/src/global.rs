@@ -5,8 +5,8 @@ use std::{
 
 use bevy_ecs::system::Resource;
 
-use naia_bevy_server::{RoomKey, UserKey};
 use auth_server_types::UserId;
+use naia_bevy_server::{RoomKey, UserKey};
 
 use bevy_http_client::ResponseKey as ClientResponseKey;
 

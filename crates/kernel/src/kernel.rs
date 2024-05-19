@@ -2,7 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use bevy_app::{App as BevyApp, Plugin};
 
-use crate::{ExitActionContainer, http::CookieStore};
+use crate::{http::CookieStore, ExitActionContainer};
 
 pub struct Kernel {
     current_app: Option<Box<dyn KernelAppInner>>,
@@ -10,7 +10,6 @@ pub struct Kernel {
 }
 
 impl Kernel {
-
     cfg_if::cfg_if! {
         if #[cfg(target_arch = "wasm32")] {
 

@@ -1,6 +1,6 @@
-use naia_serde::SerdeInternal as Serde;
 use auth_server_types::UserId;
 use http_common::{ApiRequest, ApiResponse, Method};
+use naia_serde::SerdeInternal as Serde;
 use social_server_types::MatchLobbyId;
 
 // Request
@@ -24,9 +24,13 @@ impl MatchLobbyCreateRequest {
         &self.session_secret
     }
 
-    pub fn creator_user_id(&self) -> UserId { self.creator_user_id }
+    pub fn creator_user_id(&self) -> UserId {
+        self.creator_user_id
+    }
 
-    pub fn match_name(&self) -> &str { &self.match_name }
+    pub fn match_name(&self) -> &str {
+        &self.match_name
+    }
 }
 
 // Response
@@ -37,19 +41,21 @@ pub struct MatchLobbyCreateResponse {
 
 impl MatchLobbyCreateResponse {
     pub fn new(match_lobby_id: MatchLobbyId) -> Self {
-        Self {
-            match_lobby_id,
-        }
+        Self { match_lobby_id }
     }
 
-    pub fn match_lobby_id(&self) -> MatchLobbyId { self.match_lobby_id }
+    pub fn match_lobby_id(&self) -> MatchLobbyId {
+        self.match_lobby_id
+    }
 }
 
 // Traits
 impl ApiRequest for MatchLobbyCreateRequest {
     type Response = MatchLobbyCreateResponse;
 
-    fn name() -> &'static str { "MatchLobbyCreateRequest" }
+    fn name() -> &'static str {
+        "MatchLobbyCreateRequest"
+    }
 
     fn method() -> Method {
         Method::Post
@@ -61,5 +67,7 @@ impl ApiRequest for MatchLobbyCreateRequest {
 }
 
 impl ApiResponse for MatchLobbyCreateResponse {
-    fn name() -> &'static str { "MatchLobbyCreateResponse" }
+    fn name() -> &'static str {
+        "MatchLobbyCreateResponse"
+    }
 }

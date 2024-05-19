@@ -32,7 +32,13 @@ impl AccessToken {
 
     pub fn get_new_cookie_value(domain: &str, secure: bool, access_token: &str) -> String {
         const ONE_DAY_IN_SECONDS: u32 = 60 * 60 * 24;
-        get_set_cookie_value("access_token", &access_token.to_string(), domain, ONE_DAY_IN_SECONDS, secure)
+        get_set_cookie_value(
+            "access_token",
+            &access_token.to_string(),
+            domain,
+            ONE_DAY_IN_SECONDS,
+            secure,
+        )
     }
 
     pub fn get_expire_cookie_value(domain: &str, secure: bool) -> String {
@@ -49,9 +55,7 @@ impl Serde for AccessToken {
         let Some(value) = U32Token::from_u32(u32::de(reader)?) else {
             return Err(SerdeErr);
         };
-        Ok(Self {
-            value,
-        })
+        Ok(Self { value })
     }
 
     fn bit_length(&self) -> u32 {

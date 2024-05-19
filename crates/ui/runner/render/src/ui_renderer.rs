@@ -3,12 +3,20 @@ use logging::warn;
 use asset_loader::{AssetHandle, AssetManager, IconData, UiTextMeasurer};
 use asset_render::AssetRender;
 use render_api::{
-    base::{CpuMaterial, Color, CpuMesh},
-    components::{RenderLayer, AmbientLight, Transform},
+    base::{Color, CpuMaterial, CpuMesh},
+    components::{AmbientLight, RenderLayer, Transform},
     resources::RenderFrame,
 };
 use storage::Handle;
-use ui_runner::{input::UiManagerTrait, config::{get_carat_offset_and_scale, text_get_raw_rects, text_get_subimage_indices, NodeId, UiRuntimeConfig, WidgetKind}, state::{NodeActiveState, UiState}, Blinkiness, UiHandle, UiManager};
+use ui_runner::{
+    config::{
+        get_carat_offset_and_scale, text_get_raw_rects, text_get_subimage_indices, NodeId,
+        UiRuntimeConfig, WidgetKind,
+    },
+    input::UiManagerTrait,
+    state::{NodeActiveState, UiState},
+    Blinkiness, UiHandle, UiManager,
+};
 
 pub trait UiRender {
     fn draw_ui(&self, asset_manager: &AssetManager, render_frame: &mut RenderFrame);
@@ -96,7 +104,7 @@ impl UiRenderer {
             transform.scale.y,
             text,
             text_offset_index,
-            carat_index
+            carat_index,
         );
 
         let mut carat_transform = Transform::from_xyz(
@@ -139,8 +147,16 @@ impl UiRenderer {
         let (x_positions, text_height) = text_get_raw_rects(&text_measurer, &subimage_indices);
         let text_scale = transform.scale.y / text_height;
 
-        let carat_index = if offset_index > carat_index { 0 } else { carat_index - offset_index };
-        let select_index = if offset_index > select_index { 0 } else { select_index - offset_index };
+        let carat_index = if offset_index > carat_index {
+            0
+        } else {
+            carat_index - offset_index
+        };
+        let select_index = if offset_index > select_index {
+            0
+        } else {
+            select_index - offset_index
+        };
 
         let pos_a = transform.translation.x + (x_positions[carat_index] * text_scale);
         let pos_b = transform.translation.x + (x_positions[select_index] * text_scale);
@@ -212,7 +228,7 @@ fn draw_ui_node(
                     ui_config,
                     ui_state,
                     node_id,
-                    &transform
+                    &transform,
                 );
             }
             WidgetKind::Text => {
@@ -228,13 +244,7 @@ fn draw_ui_node(
                 );
             }
             WidgetKind::Button => {
-                draw_ui_button(
-                    ui_manager,
-                    render_frame,
-                    ui_id,
-                    node_id,
-                    &transform,
-                );
+                draw_ui_button(ui_manager, render_frame, ui_id, node_id, &transform);
             }
             WidgetKind::Textbox => {
                 draw_ui_textbox(
@@ -428,7 +438,11 @@ fn draw_ui_textbox(
 
     // draw text
     if let Some(text_color_handle) = textbox_style_state.text_color_handle() {
-        let password_masked_string = if textbox_state.password_mask { Some(textbox_state.get_masked_text()) } else { None };
+        let password_masked_string = if textbox_state.password_mask {
+            Some(textbox_state.get_masked_text())
+        } else {
+            None
+        };
         let textbox_text = if password_masked_string.is_some() {
             password_masked_string.as_ref().unwrap()
         } else {
@@ -490,7 +504,11 @@ fn draw_ui_textbox(
                 );
             }
 
-            let textbox = ui_config.get_node(node_id).unwrap().widget_textbox_ref().unwrap();
+            let textbox = ui_config
+                .get_node(node_id)
+                .unwrap()
+                .widget_textbox_ref()
+                .unwrap();
             if textbox.is_password {
                 let currently_masked = textbox_state.password_mask;
 
@@ -499,9 +517,12 @@ fn draw_ui_textbox(
                 let eye_size = transform.scale.y * 0.5;
                 eye_transform.translation.x += transform.scale.x - (eye_size * 1.2);
                 eye_transform.translation.y += eye_size;
-                eye_transform.translation.z = transform.translation.z + (UiRuntimeConfig::Z_STEP_RENDER * 3.0);
+                eye_transform.translation.z =
+                    transform.translation.z + (UiRuntimeConfig::Z_STEP_RENDER * 3.0);
 
-                let eye_size = (transform.scale.y / 100.0) * 0.8 * if textbox_state.eye_hover { 1.2 } else { 1.0 };
+                let eye_size = (transform.scale.y / 100.0)
+                    * 0.8
+                    * if textbox_state.eye_hover { 1.2 } else { 1.0 };
                 eye_transform.scale.x = eye_size;
                 eye_transform.scale.y = eye_size * 0.9;
 
@@ -557,7 +578,6 @@ fn draw_ui_spinner(
             &transform,
             ui_state.time_since_startup() * 0.005,
         );
-
     } else {
         warn!("no color handle for spinner"); // probably will need to do better debugging later
         return;

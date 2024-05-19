@@ -1,6 +1,11 @@
-
-use std::{collections::HashMap, fs, io, fs::File, io::{Read, Write}};
 use std::num::ParseIntError;
+use std::{
+    collections::HashMap,
+    fs,
+    fs::File,
+    io,
+    io::{Read, Write},
+};
 
 use chrono::{DateTime, ParseError, Utc};
 
@@ -13,7 +18,6 @@ pub struct CookieStore {
 }
 
 impl CookieStore {
-
     pub(crate) fn new() -> Self {
         Self::new_impl("cookies")
     }
@@ -46,7 +50,8 @@ impl CookieStore {
             let mut cookie_value = String::new();
             file.read_to_string(&mut cookie_value)?;
             if let Some((value, expires)) = parse_file_cookie_value(&cookie_value) {
-                self.cookies.insert(cookie_name.to_string(), (value, expires));
+                self.cookies
+                    .insert(cookie_name.to_string(), (value, expires));
             }
         }
         Ok(())
@@ -65,7 +70,9 @@ impl CookieStore {
             return None;
         }
         let now = Utc::now();
-        let cookie_header_value = self.cookies.iter()
+        let cookie_header_value = self
+            .cookies
+            .iter()
             .filter_map(|(name, (value, expires))| {
                 if let Some(expires) = expires {
                     if *expires > now {
@@ -112,8 +119,10 @@ impl CookieStore {
             }
             for (name, (value, max_age_opt)) in new_cookies {
                 // info!("Adding cookie to store: name={}, value={}, max-age={:?}", name, value, max_age_opt);
-                let expires = max_age_opt.map(|max_age| now + chrono::Duration::seconds(max_age as i64));
-                self.cookies.insert(name.clone(), (value.clone(), expires.clone()));
+                let expires =
+                    max_age_opt.map(|max_age| now + chrono::Duration::seconds(max_age as i64));
+                self.cookies
+                    .insert(name.clone(), (value.clone(), expires.clone()));
                 self.write_cookie_to_file(&name, &value, expires).unwrap();
             }
             for name in removed_cookies {
@@ -125,8 +134,16 @@ impl CookieStore {
         }
     }
 
-    fn write_cookie_to_file(&self, name: &str, value: &str, expires: Option<DateTime<Utc>>) -> io::Result<()> {
-        info!("Writing cookie to file: name={}, value={}, expires={:?}", name, value, expires);
+    fn write_cookie_to_file(
+        &self,
+        name: &str,
+        value: &str,
+        expires: Option<DateTime<Utc>>,
+    ) -> io::Result<()> {
+        info!(
+            "Writing cookie to file: name={}, value={}, expires={:?}",
+            name, value, expires
+        );
         let file_path = format!("{}/{}.cookie", &self.cookies_dir, name);
         let mut file = File::create(file_path)?;
         file.write_all(value.as_bytes())?;
@@ -202,7 +219,9 @@ fn parse_cookie_max_age(value: &str) -> Result<u32, ParseIntError> {
 fn parse_file_cookie_value(value: &str) -> Option<(String, Option<DateTime<Utc>>)> {
     let mut parts = value.split('\n');
     if let Some(cookie_value) = parts.next() {
-        let expires = parts.next().and_then(|expires| parse_cookie_expires(expires).ok());
+        let expires = parts
+            .next()
+            .and_then(|expires| parse_cookie_expires(expires).ok());
         Some((cookie_value.to_string(), expires))
     } else {
         None
@@ -213,8 +232,8 @@ fn parse_file_cookie_value(value: &str) -> Option<(String, Option<DateTime<Utc>>
 mod tests {
     use super::*;
 
-    use std::fs;
     use http_common::Method;
+    use std::fs;
 
     const TEST_COOKIES_DIR: &str = "cookies_test";
 
@@ -235,7 +254,10 @@ mod tests {
     fn test_extract_cookie_from_header_single_cookie() {
         let header = "test=value";
         let result = extract_cookie_from_header(header);
-        assert_eq!(result, Some(("test".to_string(), "value".to_string(), None)));
+        assert_eq!(
+            result,
+            Some(("test".to_string(), "value".to_string(), None))
+        );
     }
 
     #[test]
@@ -298,9 +320,14 @@ mod tests {
         cleanup_test_cookies_dir(); // Clean up test_cookies directory before running the test
         let mut request = Request::new(Method::Get, "", Vec::new());
         let mut cookie_store = CookieStore::test();
-        cookie_store.cookies.insert("test".to_string(), ("value".to_string(), None));
+        cookie_store
+            .cookies
+            .insert("test".to_string(), ("value".to_string(), None));
         cookie_store.handle_request(&mut request);
-        assert_eq!(request.get_headers("Cookie"), Some(&vec!["test=value".to_string()]));
+        assert_eq!(
+            request.get_headers("Cookie"),
+            Some(&vec!["test=value".to_string()])
+        );
     }
 
     #[test]
@@ -353,7 +380,10 @@ mod tests {
         let mut response = Response::default();
         response.insert_header("Set-Cookie", "expired_cookie=value; Max-Age=0");
         let mut cookie_store = CookieStore::test();
-        cookie_store.cookies.insert("expired_cookie".to_string(), ("existing_value".to_string(), None));
+        cookie_store.cookies.insert(
+            "expired_cookie".to_string(),
+            ("existing_value".to_string(), None),
+        );
         cookie_store.handle_response(&response);
         assert_eq!(cookie_store.cookies.len(), 0);
     }
@@ -366,7 +396,10 @@ mod tests {
         response.insert_header("Set-Cookie", "expired_cookie=value; Max-Age=0");
         let mut cookie_store = CookieStore::test();
         let expires = Utc::now() + chrono::Duration::seconds(3600);
-        cookie_store.cookies.insert("expired_cookie".to_string(), ("existing_value".to_string(), Some(expires)));
+        cookie_store.cookies.insert(
+            "expired_cookie".to_string(),
+            ("existing_value".to_string(), Some(expires)),
+        );
         cookie_store.handle_response(&response);
         assert_eq!(cookie_store.cookies.len(), 0);
     }

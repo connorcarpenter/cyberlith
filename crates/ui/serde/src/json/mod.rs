@@ -247,7 +247,7 @@ pub(crate) struct TextboxJson {
     id_str: String,
     navigation: NavigationJson,
     is_password: bool,
-    validation: Option<ValidationJson>
+    validation: Option<ValidationJson>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

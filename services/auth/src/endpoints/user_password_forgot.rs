@@ -1,7 +1,10 @@
-use http_client::ResponseError;
-use http_server::{async_dup::Arc, http_log_util, executor::smol::lock::RwLock, ApiServer, Server, ApiResponse, ApiRequest};
-use logging::{info, warn};
 use config::TargetEnv;
+use http_client::ResponseError;
+use http_server::{
+    async_dup::Arc, executor::smol::lock::RwLock, http_log_util, ApiRequest, ApiResponse,
+    ApiServer, Server,
+};
+use logging::{info, warn};
 
 use auth_server_http_proto::{UserPasswordForgotRequest, UserPasswordForgotResponse};
 
@@ -18,7 +21,11 @@ async fn async_impl(
     state: Arc<RwLock<State>>,
     incoming_request: UserPasswordForgotRequest,
 ) -> Result<UserPasswordForgotResponse, ResponseError> {
-    http_log_util::recv_req("auth_server", &UserPasswordForgotRequest::endpoint_key(), UserPasswordForgotRequest::name());
+    http_log_util::recv_req(
+        "auth_server",
+        &UserPasswordForgotRequest::endpoint_key(),
+        UserPasswordForgotRequest::name(),
+    );
 
     let mut state = state.write().await;
     let response = match state.user_password_forgot(incoming_request) {
@@ -56,7 +63,11 @@ impl State {
         let email_subject = "Cyberlith Password Reset"; // TODO: put into config
         let sending_email = "admin@cyberlith.com"; // TODO: put into config
         let reset_token_str = reset_token.to_string();
-        let link_url = format!("{}/?reset_password_token={}", TargetEnv::gateway_url(), reset_token_str); // TODO: replace with working URL from config
+        let link_url = format!(
+            "{}/?reset_password_token={}",
+            TargetEnv::gateway_url(),
+            reset_token_str
+        ); // TODO: replace with working URL from config
 
         info!(
             "sending reset password token to user's email: {:?}",

@@ -1,11 +1,16 @@
 use logging::info;
 
-use http_client::ResponseError;
-use http_server::{async_dup::Arc, http_log_util, executor::smol::lock::RwLock, ApiServer, Server, ApiResponse, ApiRequest};
 use auth_server_db::{AuthServerDbError, User, UserRole};
 use auth_server_types::UserId;
+use http_client::ResponseError;
+use http_server::{
+    async_dup::Arc, executor::smol::lock::RwLock, http_log_util, ApiRequest, ApiResponse,
+    ApiServer, Server,
+};
 
-use auth_server_http_proto::{AccessToken, RefreshToken, UserRegisterConfirmRequest, UserRegisterConfirmResponse};
+use auth_server_http_proto::{
+    AccessToken, RefreshToken, UserRegisterConfirmRequest, UserRegisterConfirmResponse,
+};
 
 use crate::{error::AuthServerError, state::State};
 
@@ -20,11 +25,18 @@ async fn async_impl(
     state: Arc<RwLock<State>>,
     incoming_request: UserRegisterConfirmRequest,
 ) -> Result<UserRegisterConfirmResponse, ResponseError> {
-    http_log_util::recv_req("auth_server", &UserRegisterConfirmRequest::endpoint_key(), UserRegisterConfirmRequest::name());
+    http_log_util::recv_req(
+        "auth_server",
+        &UserRegisterConfirmRequest::endpoint_key(),
+        UserRegisterConfirmRequest::name(),
+    );
 
     let mut state = state.write().await;
     let response = match state.user_register_confirm(incoming_request).await {
-        Ok((refresh_token, access_token)) => Ok(UserRegisterConfirmResponse::new(access_token, refresh_token)),
+        Ok((refresh_token, access_token)) => Ok(UserRegisterConfirmResponse::new(
+            access_token,
+            refresh_token,
+        )),
         Err(AuthServerError::TokenNotFound) => Err(ResponseError::InternalServerError(
             "TokenNotFound".to_string(),
         )),
@@ -68,7 +80,8 @@ impl State {
                 AuthServerDbError::InsertedDuplicateUserId => {
                     AuthServerError::InsertedDuplicateUserId
                 }
-            })?.into();
+            })?
+            .into();
         let new_user_id = UserId::new(new_user_id);
 
         // add to username -> id map

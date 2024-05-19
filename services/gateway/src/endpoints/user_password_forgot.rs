@@ -1,11 +1,14 @@
 use std::net::SocketAddr;
 
 use config::{AUTH_SERVER_PORT, AUTH_SERVER_RECV_ADDR};
-use http_server::{ApiRequest, ApiResponse, Request, Response, ResponseError};
 use http_client::HttpClient;
+use http_server::{ApiRequest, ApiResponse, Request, Response, ResponseError};
 
 use auth_server_http_proto::{UserPasswordForgotRequest, UserPasswordForgotResponse};
-use gateway_http_proto::{UserPasswordForgotRequest as GatewayUserPasswordForgotRequest, UserPasswordForgotResponse as GatewayUserPasswordForgotResponse};
+use gateway_http_proto::{
+    UserPasswordForgotRequest as GatewayUserPasswordForgotRequest,
+    UserPasswordForgotResponse as GatewayUserPasswordForgotResponse,
+};
 
 pub(crate) async fn handler(
     _incoming_addr: SocketAddr,
@@ -13,7 +16,16 @@ pub(crate) async fn handler(
 ) -> Result<Response, ResponseError> {
     let host_name = "gateway";
     let remote_name = "client";
-    http_server::http_log_util::recv_req(host_name, remote_name, format!("{} {}", incoming_request.method.as_str(), &incoming_request.url).as_str());
+    http_server::http_log_util::recv_req(
+        host_name,
+        remote_name,
+        format!(
+            "{} {}",
+            incoming_request.method.as_str(),
+            &incoming_request.url
+        )
+        .as_str(),
+    );
 
     // parse out request
     let gateway_request = match GatewayUserPasswordForgotRequest::from_request(incoming_request) {
@@ -34,11 +46,18 @@ pub(crate) async fn handler(
     http_server::http_log_util::send_req(host_name, auth_server, UserPasswordForgotRequest::name());
     match HttpClient::send(&auth_addr, auth_port, auth_request).await {
         Ok(_auth_response) => {
-            http_server::http_log_util::recv_res(host_name, auth_server, UserPasswordForgotResponse::name());
+            http_server::http_log_util::recv_res(
+                host_name,
+                auth_server,
+                UserPasswordForgotResponse::name(),
+            );
 
-            http_server::http_log_util::send_res(host_name, GatewayUserPasswordForgotResponse::name());
+            http_server::http_log_util::send_res(
+                host_name,
+                GatewayUserPasswordForgotResponse::name(),
+            );
             return Ok(GatewayUserPasswordForgotResponse::new().to_response());
-        },
+        }
         Err(e) => {
             http_server::http_log_util::recv_res(host_name, auth_server, "internal_server_error");
             http_server::http_log_util::send_res(host_name, "internal_server_error");

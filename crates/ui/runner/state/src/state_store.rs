@@ -3,16 +3,12 @@ use ui_layout::NodeStateStore;
 
 use ui_runner_config::{NodeId, StyleId, UiNode, WidgetKind};
 
-use crate::{
-    style_state::StyleState,
-    textbox::TextboxState, UiNodeState,
-    text::TextStyleState,
-    textbox::TextboxStyleState,
-    button::ButtonStyleState,
-    panel::PanelStyleState
-};
 use crate::spinner::SpinnerStyleState;
 use crate::text::TextState;
+use crate::{
+    button::ButtonStyleState, panel::PanelStyleState, style_state::StyleState,
+    text::TextStyleState, textbox::TextboxState, textbox::TextboxStyleState, UiNodeState,
+};
 
 pub struct UiStateStore {
     pub nodes: Vec<UiNodeState>,

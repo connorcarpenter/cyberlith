@@ -1,6 +1,10 @@
 use logging::info;
 
-use crate::{utils::run_command, CliError, types::{TargetEnv, OutputType}};
+use crate::{
+    types::{OutputType, TargetEnv},
+    utils::run_command,
+    CliError,
+};
 
 pub async fn server_build_content(image_tag: String) -> Result<(), CliError> {
     let _ = crate::process_content("/home/connor/Work/cyberlith", TargetEnv::Prod)?;
@@ -22,7 +26,11 @@ pub async fn server_build_content(image_tag: String) -> Result<(), CliError> {
     // docker build
     run_command(
         "content_server",
-        format!("docker build --file content.dockerfile --progress=plain -t content_image:{} .", image_tag).as_str(),
+        format!(
+            "docker build --file content.dockerfile --progress=plain -t content_image:{} .",
+            image_tag
+        )
+        .as_str(),
     )
     .await?;
 
@@ -36,7 +44,11 @@ pub async fn server_build_content(image_tag: String) -> Result<(), CliError> {
 }
 
 pub async fn server_build_asset(image_tag: String) -> Result<(), CliError> {
-    let _ = crate::process_assets("/home/connor/Work/cyberlith", TargetEnv::Prod, OutputType::Json)?;
+    let _ = crate::process_assets(
+        "/home/connor/Work/cyberlith",
+        TargetEnv::Prod,
+        OutputType::Json,
+    )?;
 
     // build asset_server
     run_command(
@@ -55,7 +67,11 @@ pub async fn server_build_asset(image_tag: String) -> Result<(), CliError> {
     // docker build
     run_command(
         "asset_server",
-        format!("docker build --file asset.dockerfile --progress=plain -t asset_image:{} .", image_tag).as_str(),
+        format!(
+            "docker build --file asset.dockerfile --progress=plain -t asset_image:{} .",
+            image_tag
+        )
+        .as_str(),
     )
     .await?;
 
@@ -96,7 +112,11 @@ pub async fn server_build_social(image_tag: String) -> Result<(), CliError> {
     return server_build_common("social", "social_server", &image_tag).await;
 }
 
-async fn server_build_common(dir_name: &str, app_name: &str, image_tag: &str) -> Result<(), CliError> {
+async fn server_build_common(
+    dir_name: &str,
+    app_name: &str,
+    image_tag: &str,
+) -> Result<(), CliError> {
     run_command(
         app_name,
         format!(
@@ -109,7 +129,11 @@ async fn server_build_common(dir_name: &str, app_name: &str, image_tag: &str) ->
 
     run_command(
         app_name,
-        format!("cp target/x86_64-unknown-linux-gnu/release/{} {}", app_name, app_name).as_str(),
+        format!(
+            "cp target/x86_64-unknown-linux-gnu/release/{} {}",
+            app_name, app_name
+        )
+        .as_str(),
     )
     .await?;
 

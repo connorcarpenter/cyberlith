@@ -10,8 +10,8 @@ use game_engine::{
         base::{Color, CpuMaterial, CpuMesh},
         components::{
             AmbientLight, Camera, CameraBundle, ClearOperation, DirectionalLight,
-            Projection, RenderLayers,
-            RenderObjectBundle, RenderTarget, Transform, PerspectiveProjection,
+            PerspectiveProjection, Projection, RenderLayers, RenderObjectBundle, RenderTarget,
+            Transform,
         },
         resources::Time,
         shapes,

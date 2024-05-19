@@ -1,5 +1,5 @@
-use naia_serde::SerdeInternal as Serde;
 use auth_server_types::UserId;
+use naia_serde::SerdeInternal as Serde;
 
 use bevy_http_shared::{ApiRequest, ApiResponse, Method};
 
@@ -41,7 +41,9 @@ pub struct SocialPatchUsersResponse;
 impl ApiRequest for SocialPatchUsersRequest {
     type Response = SocialPatchUsersResponse;
 
-    fn name() -> &'static str { "SocialPatchUsersRequest" }
+    fn name() -> &'static str {
+        "SocialPatchUsersRequest"
+    }
 
     fn method() -> Method {
         Method::Post
@@ -53,5 +55,7 @@ impl ApiRequest for SocialPatchUsersRequest {
 }
 
 impl ApiResponse for SocialPatchUsersResponse {
-    fn name() -> &'static str { "SocialPatchUsersResponse" }
+    fn name() -> &'static str {
+        "SocialPatchUsersResponse"
+    }
 }

@@ -1,4 +1,3 @@
-
 #[derive(Eq, PartialEq, Clone, Copy, Default)]
 pub enum Alignment {
     Start,
@@ -61,7 +60,6 @@ pub enum PositionType {
 /// Units which describe spacing and size.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum MarginUnits {
-
     /// A percentage of the parent dimension.
     ///
     /// A percentage of the (parent's width - parent's padding - margin) when applied to left, right properties.
@@ -82,7 +80,6 @@ impl Default for MarginUnits {
 }
 
 impl MarginUnits {
-
     /// Returns the units converted to pixels or a provided default.
     pub fn to_px(&self, viewport_value: f32, parent_value: f32, parent_padding: f32) -> f32 {
         match self {

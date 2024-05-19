@@ -1,5 +1,5 @@
-use std::collections::hash_map::Iter;
 use crate::{headers::HeaderStore, ResponseError};
+use std::collections::hash_map::Iter;
 
 /// Response from a completed HTTP request.
 #[derive(Clone)]
@@ -37,7 +37,6 @@ impl Default for Response {
 }
 
 impl Response {
-
     // headers
     pub fn has_header(&self, name: &str) -> bool {
         self.headers.has(name)

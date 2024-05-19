@@ -59,7 +59,7 @@ pub fn get_carat_offset_and_scale(
     textbox_scale_y: f32,
     text: &str,
     text_offset_index: usize,
-    carat_index: usize
+    carat_index: usize,
 ) -> (f32, f32) {
     if text_offset_index > carat_index {
         return (0.0, 0.0);
@@ -82,5 +82,3 @@ pub fn point_is_inside(layout: (f32, f32, f32, f32), mouse_x: f32, mouse_y: f32)
         && mouse_y >= posy
         && mouse_y <= posy + height + 1.0
 }
-
-

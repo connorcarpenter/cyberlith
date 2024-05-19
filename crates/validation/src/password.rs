@@ -3,7 +3,6 @@ use crate::{ValidationType, Validator};
 pub struct PasswordValidation;
 
 impl Validator for PasswordValidation {
-
     fn min_length() -> usize {
         8
     }

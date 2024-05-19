@@ -1,20 +1,17 @@
-
 use bevy_ecs::event::{EventReader, EventWriter};
 
 use game_engine::{
-    http::HttpClient,
-    logging::{warn, info},
-    ui::{UiManager, UiHandle},
-    asset::{AssetId, embedded_asset_event, EmbeddedAssetEvent},
+    asset::{embedded_asset_event, AssetId, EmbeddedAssetEvent},
     config::{GATEWAY_PORT, PUBLIC_IP_ADDR},
+    http::HttpClient,
+    logging::{info, warn},
+    ui::{UiHandle, UiManager},
 };
 use gateway_http_proto::UserPasswordResetRequest;
 
 use crate::{
-    resources::{
-        Global, SubmitButtonClickedEvent, TextboxClickedEvent
-    },
-    ui::{go_to_ui, clear_spinners_if_needed, UiKey}
+    resources::{Global, SubmitButtonClickedEvent, TextboxClickedEvent},
+    ui::{clear_spinners_if_needed, go_to_ui, UiKey},
 };
 
 pub(crate) fn setup(
@@ -68,28 +65,41 @@ pub(crate) fn handle_events(
 
         // check that the passwords match
         if !password.eq(&confirm_password) {
-            ui_manager.set_text(&ui_handle, "error_output_text", "Passwords do not match. Please try again.");
+            ui_manager.set_text(
+                &ui_handle,
+                "error_output_text",
+                "Passwords do not match. Please try again.",
+            );
             return;
         }
 
         // check that every field is not empty
         if password.is_empty() {
-            ui_manager.set_text(&ui_handle, "error_output_text", "Please enter your password.");
+            ui_manager.set_text(
+                &ui_handle,
+                "error_output_text",
+                "Please enter your password.",
+            );
             return;
         }
         if confirm_password.is_empty() {
-            ui_manager.set_text(&ui_handle, "error_output_text", "Please confirm your password.");
+            ui_manager.set_text(
+                &ui_handle,
+                "error_output_text",
+                "Please confirm your password.",
+            );
             return;
         }
 
         // check that every field matches the necessary minimum length
         {
-            let min_length = ui_manager.get_textbox_validator(&ui_handle, "password_textbox").unwrap().min_length();
+            let min_length = ui_manager
+                .get_textbox_validator(&ui_handle, "password_textbox")
+                .unwrap()
+                .min_length();
             if password.len() < min_length {
-                let error_text = format!(
-                    "Password must be at least {} characters long.",
-                    min_length,
-                );
+                let error_text =
+                    format!("Password must be at least {} characters long.", min_length,);
                 ui_manager.set_text(&ui_handle, "error_output_text", &error_text);
                 return;
             }
@@ -112,11 +122,7 @@ pub(crate) fn handle_events(
     }
 }
 
-pub fn reset_state(
-    ui_manager: &mut UiManager,
-    ui_handle: &UiHandle
-) {
-
+pub fn reset_state(ui_manager: &mut UiManager, ui_handle: &UiHandle) {
     // clear textboxes
     ui_manager.set_text(&ui_handle, "password_textbox", "");
     ui_manager.set_textbox_password_eye_visible(&ui_handle, "password_textbox", false);
@@ -136,7 +142,6 @@ fn backend_send_request(
     ui_manager: &mut UiManager,
     password: &str,
 ) {
-
     if global.user_password_reset_response_key_opt.is_some() {
         warn!("already sending user password reset request...");
         return;
@@ -164,7 +169,10 @@ pub(crate) fn process_requests(
     ui_manager: &mut UiManager,
 ) {
     if global.user_password_reset_response_key_opt.is_some() {
-        let key = global.user_password_reset_response_key_opt.as_ref().unwrap();
+        let key = global
+            .user_password_reset_response_key_opt
+            .as_ref()
+            .unwrap();
         let Some(result) = http_client.recv(key) else {
             return;
         };
@@ -181,7 +189,11 @@ pub(crate) fn process_requests(
                     err.to_string()
                 );
 
-                ui_manager.set_text(&ui_handle, "error_output_text", "Oops! Something went wrong on our end. Please try again later.");
+                ui_manager.set_text(
+                    &ui_handle,
+                    "error_output_text",
+                    "Oops! Something went wrong on our end. Please try again later.",
+                );
             }
         }
 

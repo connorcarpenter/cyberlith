@@ -1,10 +1,9 @@
-
-mod state;
+mod global_chat;
 mod match_lobbies;
-mod users;
 mod region;
 mod session_servers;
-mod global_chat;
+mod state;
+mod users;
 
 use std::{net::SocketAddr, thread, time::Duration};
 
@@ -36,7 +35,11 @@ pub fn main() {
     region::recv_heartbeat_request(server_name, &mut server, state.clone());
 
     session_servers::recv_connect_session_server_request(server_name, &mut server, state.clone());
-    session_servers::recv_disconnect_session_server_request(server_name, &mut server, state.clone());
+    session_servers::recv_disconnect_session_server_request(
+        server_name,
+        &mut server,
+        state.clone(),
+    );
 
     users::recv_user_connected_request(server_name, &mut server, state.clone());
     users::recv_user_disconnected_request(server_name, &mut server, state.clone());

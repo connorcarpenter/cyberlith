@@ -5,9 +5,8 @@ use game_engine::{
     render::{
         base::{CpuMaterial, CpuMesh},
         components::{
-            AmbientLight, Camera, DirectionalLight,
-            PointLight, Projection, RenderLayer,
-            Transform, Visibility,
+            AmbientLight, Camera, DirectionalLight, PointLight, Projection, RenderLayer, Transform,
+            Visibility,
         },
         resources::RenderFrame,
     },

@@ -20,7 +20,10 @@ pub mod http_log_util {
     pub use crate::log_util::*;
 }
 
-pub use http_common::{ApiRequest, ApiResponse, Method, Request, Response, ResponseError, clear_query_string, extract_query_string};
+pub use http_common::{
+    clear_query_string, extract_query_string, ApiRequest, ApiResponse, Method, Request, Response,
+    ResponseError,
+};
 
 pub mod async_dup {
     pub use async_dup::*;

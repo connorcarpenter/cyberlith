@@ -2,11 +2,17 @@ use std::{collections::HashMap, slice::Iter};
 
 use asset_id::AssetId;
 use render_api::base::Color;
-use ui_builder_config::{BaseNodeStyle, Button, ButtonStyle, Navigation, Panel, PanelStyle, StyleId, TextStyle, TextboxStyle, UiConfig, UiNode, WidgetKind, WidgetStyle, Textbox, SpinnerStyle};
-use ui_layout::{Alignment, LayoutType, MarginUnits, NodeId, NodeStore, PositionType, SizeUnits, Solid, TextMeasurer};
+use ui_builder_config::{
+    BaseNodeStyle, Button, ButtonStyle, Navigation, Panel, PanelStyle, SpinnerStyle, StyleId,
+    TextStyle, Textbox, TextboxStyle, UiConfig, UiNode, WidgetKind, WidgetStyle,
+};
+use ui_layout::{
+    Alignment, LayoutType, MarginUnits, NodeId, NodeStore, PositionType, SizeUnits, Solid,
+    TextMeasurer,
+};
 use ui_serde::SerdeErr;
 
-use crate::{text_measure_raw_size, styles::compute_styles};
+use crate::{styles::compute_styles, text_measure_raw_size};
 
 pub struct UiRuntimeConfig {
     styles: Vec<BaseNodeStyle>,
@@ -28,14 +34,8 @@ impl UiRuntimeConfig {
     }
 
     pub fn load_from_builder_config(ui_config: UiConfig) -> Self {
-        let (
-            styles,
-            nodes,
-            first_input,
-            text_icon_asset_id,
-            eye_icon_asset_id,
-            node_map
-        ) = ui_config.decompose();
+        let (styles, nodes, first_input, text_icon_asset_id, eye_icon_asset_id, node_map) =
+            ui_config.decompose();
 
         let styles = compute_styles(styles);
 

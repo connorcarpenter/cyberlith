@@ -3,7 +3,6 @@ use crate::{ValidationType, Validator};
 pub struct UsernameValidation;
 
 impl Validator for UsernameValidation {
-
     fn min_length() -> usize {
         5
     }

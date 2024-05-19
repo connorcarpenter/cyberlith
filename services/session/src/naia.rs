@@ -1,9 +1,9 @@
 use std::net::SocketAddr;
 
-use bevy_ecs::{system::Res, change_detection::ResMut, event::EventReader};
+use bevy_ecs::{change_detection::ResMut, event::EventReader, system::Res};
 
 use naia_bevy_server::{
-    events::{AuthEvents, MessageEvents, ConnectEvent, DisconnectEvent, ErrorEvent},
+    events::{AuthEvents, ConnectEvent, DisconnectEvent, ErrorEvent, MessageEvents},
     transport::webrtc,
     Server,
 };
@@ -19,7 +19,10 @@ use logging::{info, warn};
 use session_server_naia_proto::channels::ClientActionsChannel;
 use session_server_naia_proto::messages::{Auth, WorldConnectRequest};
 
-use crate::{asset::{AssetCatalog, asset_manager::AssetManager}, global::Global};
+use crate::{
+    asset::{asset_manager::AssetManager, AssetCatalog},
+    global::Global,
+};
 
 pub fn init(mut server: Server) {
     info!("Session Naia Server starting up");
@@ -39,7 +42,8 @@ pub fn init(mut server: Server) {
         format!(
             "{}://{}:{}",
             PUBLIC_PROTOCOL, PUBLIC_IP_ADDR, SESSION_SERVER_WEBRTC_PORT
-        ).as_str(),
+        )
+        .as_str(),
     );
     let socket = webrtc::Socket::new(&server_addresses, server.socket_config());
     server.listen(socket);
@@ -85,8 +89,20 @@ pub fn connect_events(
         asset_manager.register_user(user_key);
 
         // load "default" assets
-        asset_manager.load_user_asset(&mut server, &mut http_client, global.get_asset_server_url(), *user_key, &AssetCatalog::game_main_menu_ui());
-        asset_manager.load_user_asset(&mut server, &mut http_client, global.get_asset_server_url(), *user_key, &AssetCatalog::game_host_match_ui());
+        asset_manager.load_user_asset(
+            &mut server,
+            &mut http_client,
+            global.get_asset_server_url(),
+            *user_key,
+            &AssetCatalog::game_main_menu_ui(),
+        );
+        asset_manager.load_user_asset(
+            &mut server,
+            &mut http_client,
+            global.get_asset_server_url(),
+            *user_key,
+            &AssetCatalog::game_host_match_ui(),
+        );
     }
 }
 
@@ -109,10 +125,7 @@ pub fn error_events(mut event_reader: EventReader<ErrorEvent>) {
     }
 }
 
-pub fn message_events(
-    mut global: ResMut<Global>,
-    mut event_reader: EventReader<MessageEvents>,
-) {
+pub fn message_events(mut global: ResMut<Global>, mut event_reader: EventReader<MessageEvents>) {
     for events in event_reader.read() {
         for (user_key, _req) in events.read::<ClientActionsChannel, WorldConnectRequest>() {
             if let Some(user_data) = global.get_user_data_mut(&user_key) {

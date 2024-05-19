@@ -4,7 +4,10 @@ use bevy_ecs::{entity::Entity, system::Resource};
 
 use game_engine::{http::ResponseKey, ui::UiHandle};
 
-use gateway_http_proto::{UserLoginResponse, ResetPasswordToken, UserNameForgotResponse, UserPasswordForgotResponse, UserPasswordResetResponse, UserRegisterResponse};
+use gateway_http_proto::{
+    ResetPasswordToken, UserLoginResponse, UserNameForgotResponse, UserPasswordForgotResponse,
+    UserPasswordResetResponse, UserRegisterResponse,
+};
 
 use crate::ui::UiKey;
 
@@ -21,7 +24,7 @@ pub struct Global {
     ui_key_to_handle: HashMap<UiKey, UiHandle>,
     ui_handle_to_key: HashMap<UiHandle, UiKey>,
 
-    pub reset_password_token: Option<ResetPasswordToken>
+    pub reset_password_token: Option<ResetPasswordToken>,
 }
 
 impl Default for Global {

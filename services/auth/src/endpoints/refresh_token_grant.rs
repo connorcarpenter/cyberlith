@@ -1,13 +1,13 @@
 use auth_server_types::UserId;
 use http_client::ResponseError;
-use http_server::{async_dup::Arc, http_log_util, executor::smol::lock::RwLock, ApiServer, Server, ApiResponse, ApiRequest};
+use http_server::{
+    async_dup::Arc, executor::smol::lock::RwLock, http_log_util, ApiRequest, ApiResponse,
+    ApiServer, Server,
+};
 
 use auth_server_http_proto::{AccessToken, RefreshTokenGrantRequest, RefreshTokenGrantResponse};
 
-use crate::{
-    error::AuthServerError,
-    state::State,
-};
+use crate::{error::AuthServerError, state::State};
 
 pub fn refresh_token_grant(host_name: &str, server: &mut Server, state: Arc<RwLock<State>>) {
     server.api_endpoint(host_name, None, move |_addr, req| {
@@ -20,7 +20,11 @@ async fn async_impl(
     state: Arc<RwLock<State>>,
     incoming_request: RefreshTokenGrantRequest,
 ) -> Result<RefreshTokenGrantResponse, ResponseError> {
-    http_log_util::recv_req("auth_server", &RefreshTokenGrantRequest::endpoint_key(), RefreshTokenGrantRequest::name());
+    http_log_util::recv_req(
+        "auth_server",
+        &RefreshTokenGrantRequest::endpoint_key(),
+        RefreshTokenGrantRequest::name(),
+    );
 
     let mut state = state.write().await;
     let response = match state.refresh_token_grant(incoming_request) {

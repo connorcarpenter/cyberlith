@@ -1,6 +1,6 @@
+use auth_server_types::UserId;
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
-use auth_server_types::UserId;
 
 use db::{DbRowKey, DbRowValue, DbTableKey};
 

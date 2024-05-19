@@ -1,4 +1,3 @@
-
 use auth_server_types::UserId;
 use http_client::ResponseError;
 use http_server::{async_dup::Arc, executor::smol::lock::RwLock, ApiServer, Server};
@@ -20,14 +19,17 @@ async fn async_impl(
     state: Arc<RwLock<State>>,
     incoming_request: UserLoginRequest,
 ) -> Result<UserLoginResponse, ResponseError> {
-
     let mut state = state.write().await;
     let response = match state.user_login(incoming_request) {
         Ok((refresh_token, access_token)) => {
             Ok(UserLoginResponse::new(refresh_token, access_token))
         }
-        Err(AuthServerError::UsernameOrEmailNotFound) | Err(AuthServerError::PasswordIncorrect) => Err(ResponseError::Unauthenticated),
-        Err(AuthServerError::PasswordInvalidCharacters) | Err(AuthServerError::UsernameInvalidCharacters) | Err(AuthServerError::EmailInvalidCharacters) => Err(ResponseError::BadRequest),
+        Err(AuthServerError::UsernameOrEmailNotFound) | Err(AuthServerError::PasswordIncorrect) => {
+            Err(ResponseError::Unauthenticated)
+        }
+        Err(AuthServerError::PasswordInvalidCharacters)
+        | Err(AuthServerError::UsernameInvalidCharacters)
+        | Err(AuthServerError::EmailInvalidCharacters) => Err(ResponseError::BadRequest),
         Err(_) => {
             panic!("unhandled error for this endpoint");
         }
@@ -37,7 +39,6 @@ async fn async_impl(
 }
 
 impl State {
-
     fn user_id_from_username_from_handle(&self, username: &str) -> Option<UserId> {
         let username = username.to_ascii_lowercase();
 
@@ -50,7 +51,6 @@ impl State {
     }
 
     fn user_id_from_email_from_handle(&self, email: &str) -> Option<UserId> {
-
         if !EmailValidation::allows_text(&email) {
             return None;
         }

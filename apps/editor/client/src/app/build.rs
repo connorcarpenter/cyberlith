@@ -1,10 +1,10 @@
 use bevy_app::App;
 
 use input::InputPlugin;
+use kernel::KernelPlugin;
 use render_api::RenderApiPlugin;
 use render_egui::EguiPlugin;
 use render_gl::RenderGlPlugin;
-use kernel::KernelPlugin;
 
 use crate::app::VortexPlugin;
 

@@ -3,7 +3,7 @@ use game_engine::{
     render::base::Color,
 };
 use ui_builder::{Alignment, UiConfig, UiConfigBuild};
-use ui_runner_config::{UsernameValidation, PasswordValidation, EmailValidation};
+use ui_runner_config::{EmailValidation, PasswordValidation, UsernameValidation};
 
 #[allow(unused)]
 pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
@@ -43,7 +43,9 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
             .set_children_valign(Alignment::Start);
     });
     let title_text_style = ui_config.create_text_style(|s| {
-        s.set_background_alpha(0.).set_size_pc(90.0).set_text_color(Color::WHITE);
+        s.set_background_alpha(0.)
+            .set_size_pc(90.0)
+            .set_text_color(Color::WHITE);
     });
     let body_container_style = ui_config.create_panel_style(|s| {
         s.set_background_alpha(0.)
@@ -260,13 +262,14 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
                                 });
 
                             // spinner
-                            c.add_spinner("spinner").set_style(spinner_style).set_visible(false);
+                            c.add_spinner("spinner")
+                                .set_style(spinner_style)
+                                .set_visible(false);
 
                             // error output
                             c.add_text_with_id("", "error_output_text")
                                 .set_style(error_output_style);
                         });
-
                 });
             });
         });

@@ -1,4 +1,3 @@
-
 use logging::warn;
 
 use crate::error::AuthServerError;

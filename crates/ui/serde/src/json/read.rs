@@ -2,10 +2,18 @@ use std::collections::HashMap;
 
 use asset_id::AssetId;
 use render_api::base::Color;
-use ui_builder_config::{BaseNodeStyle, Button, ButtonStyle, NodeId, NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Textbox, TextboxStyle, UiConfig, Widget, WidgetKind, WidgetStyle, ValidationType, Spinner, SpinnerStyle, UiContainer};
+use ui_builder_config::{
+    BaseNodeStyle, Button, ButtonStyle, NodeId, NodeStyle, Panel, PanelStyle, Spinner,
+    SpinnerStyle, StyleId, Text, TextStyle, Textbox, TextboxStyle, UiConfig, UiContainer,
+    ValidationType, Widget, WidgetKind, WidgetStyle,
+};
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 
-use super::{AlignmentJson, ColorJson, LayoutTypeJson, MarginUnitsJson, PanelJson, PositionTypeJson, SizeUnitsJson, SolidJson, ValidationJson, UiConfigJson, UiNodeJson, UiStyleJson, WidgetJson, WidgetStyleJson, SpinnerStyleJson};
+use super::{
+    AlignmentJson, ColorJson, LayoutTypeJson, MarginUnitsJson, PanelJson, PositionTypeJson,
+    SizeUnitsJson, SolidJson, SpinnerStyleJson, UiConfigJson, UiNodeJson, UiStyleJson,
+    ValidationJson, WidgetJson, WidgetStyleJson,
+};
 use crate::json::{
     ButtonJson, ButtonStyleJson, PanelStyleJson, TextStyleJson, TextboxJson, TextboxStyleJson,
 };
@@ -159,7 +167,10 @@ fn convert_nodes_recurse_panel(
                 };
 
                 // creates a new text
-                let text = Text::new(child_widget_serde.id_str.as_ref().map(|s| s.as_str()), child_widget_serde.init_text.as_str());
+                let text = Text::new(
+                    child_widget_serde.id_str.as_ref().map(|s| s.as_str()),
+                    child_widget_serde.init_text.as_str(),
+                );
                 let child_node_id = ui_config.create_node(Widget::Text(text));
                 let Widget::Panel(panel) = &mut ui_config.node_mut(panel_id).unwrap().widget else {
                     panic!("Expected panel widget");
@@ -329,9 +340,11 @@ fn convert_nodes_recurse_button(
                 };
 
                 // creates a new text
-                let text = Text::new(child_text_serde.id_str.as_ref().map(|s| s.as_str()), child_text_serde.init_text.as_str());
-                let child_text_id =
-                    ui_config.create_node(Widget::Text(text));
+                let text = Text::new(
+                    child_text_serde.id_str.as_ref().map(|s| s.as_str()),
+                    child_text_serde.init_text.as_str(),
+                );
+                let child_text_id = ui_config.create_node(Widget::Text(text));
                 let Widget::Button(button) = &mut ui_config.node_mut(button_id).unwrap().widget
                 else {
                     panic!("Expected button widget");

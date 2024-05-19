@@ -1,9 +1,9 @@
 use std::net::SocketAddr;
 
-use logging::{info, warn};
+use config::SOCIAL_SERVER_GLOBAL_SECRET;
 use http_client::ResponseError;
 use http_server::{async_dup::Arc, executor::smol::lock::RwLock, ApiServer, Server};
-use config::SOCIAL_SERVER_GLOBAL_SECRET;
+use logging::{info, warn};
 
 use region_server_http_proto::{SocialRegisterInstanceRequest, SocialRegisterInstanceResponse};
 

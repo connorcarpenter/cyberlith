@@ -1,8 +1,11 @@
 use render_api::base::Color;
-use ui_builder_config::{Button, NodeId, NodeStyle, Panel, PanelStyle, Spinner, StyleId, Text, Textbox, UiConfig, UiContainer, UiNode, Widget, WidgetStyle};
+use ui_builder_config::{
+    Button, NodeId, NodeStyle, Panel, PanelStyle, Spinner, StyleId, Text, Textbox, UiConfig,
+    UiContainer, UiNode, Widget, WidgetStyle,
+};
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 
-use crate::{ButtonMut, TextMut, TextboxMut, SpinnerMut, UiContainerMut};
+use crate::{ButtonMut, SpinnerMut, TextMut, TextboxMut, UiContainerMut};
 
 pub struct PanelMut<'a> {
     ui_config: &'a mut UiConfig,
@@ -66,13 +69,23 @@ impl<'a> PanelContentsMut<'a> {
         Self::add_text_impl(self, text, None)
     }
 
-    pub fn add_text_with_id<'b>(self: &'b mut PanelContentsMut<'a>, text: &str, id_str_opt: &str) -> TextMut<'b> {
+    pub fn add_text_with_id<'b>(
+        self: &'b mut PanelContentsMut<'a>,
+        text: &str,
+        id_str_opt: &str,
+    ) -> TextMut<'b> {
         Self::add_text_impl(self, text, Some(id_str_opt))
     }
 
-    fn add_text_impl<'b>(self: &'b mut PanelContentsMut<'a>, text: &str, id_str_opt: Option<&str>) -> TextMut<'b> {
+    fn add_text_impl<'b>(
+        self: &'b mut PanelContentsMut<'a>,
+        text: &str,
+        id_str_opt: Option<&str>,
+    ) -> TextMut<'b> {
         // creates a new panel, returning a context for it
-        let new_id = self.ui_config.create_node(Widget::Text(Text::new(id_str_opt, text)));
+        let new_id = self
+            .ui_config
+            .create_node(Widget::Text(Text::new(id_str_opt, text)));
 
         // add new panel to children
         self.get_panel_mut().add_child(new_id);
@@ -110,10 +123,7 @@ impl<'a> PanelContentsMut<'a> {
         TextboxMut::<'b>::new(self.ui_config, new_id)
     }
 
-    pub fn add_spinner<'b>(
-        self: &'b mut PanelContentsMut<'a>,
-        id_str_opt: &str,
-    ) -> SpinnerMut<'b> {
+    pub fn add_spinner<'b>(self: &'b mut PanelContentsMut<'a>, id_str_opt: &str) -> SpinnerMut<'b> {
         // creates a new spinner, returning a context for it
         let new_id = self
             .ui_config

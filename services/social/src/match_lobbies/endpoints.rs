@@ -1,10 +1,14 @@
-use std::net::SocketAddr;
 use config::SESSION_SERVER_GLOBAL_SECRET;
 use http_client::ResponseError;
 use http_server::{async_dup::Arc, executor::smol::lock::RwLock, ApiServer, Server};
 use logging::warn;
+use std::net::SocketAddr;
 
-use social_server_http_proto::{MatchLobbyCreateRequest, MatchLobbyCreateResponse, MatchLobbyJoinRequest, MatchLobbyJoinResponse, MatchLobbyLeaveRequest, MatchLobbyLeaveResponse, MatchLobbySendMessageRequest, MatchLobbySendMessageResponse};
+use social_server_http_proto::{
+    MatchLobbyCreateRequest, MatchLobbyCreateResponse, MatchLobbyJoinRequest,
+    MatchLobbyJoinResponse, MatchLobbyLeaveRequest, MatchLobbyLeaveResponse,
+    MatchLobbySendMessageRequest, MatchLobbySendMessageResponse,
+};
 
 use crate::state::State;
 
@@ -31,7 +35,9 @@ async fn async_recv_match_lobby_create_request_impl(
 
     let mut state = state.write().await;
 
-    let new_match_lobby_id = state.match_lobbies.create(request.match_name(), request.creator_user_id());
+    let new_match_lobby_id = state
+        .match_lobbies
+        .create(request.match_name(), request.creator_user_id());
 
     // responding
     return Ok(MatchLobbyCreateResponse::new(new_match_lobby_id));
@@ -60,7 +66,9 @@ async fn async_recv_match_lobby_join_request_impl(
 
     let mut state = state.write().await;
 
-    state.match_lobbies.join(request.match_lobby_id(), request.user_id());
+    state
+        .match_lobbies
+        .join(request.match_lobby_id(), request.user_id());
 
     // responding
     return Ok(MatchLobbyJoinResponse);
@@ -118,7 +126,9 @@ async fn async_recv_match_lobby_send_message_request_impl(
 
     let mut state = state.write().await;
 
-    state.match_lobbies.send_message(request.user_id(), request.message());
+    state
+        .match_lobbies
+        .send_message(request.user_id(), request.message());
 
     // responding
     return Ok(MatchLobbySendMessageResponse);

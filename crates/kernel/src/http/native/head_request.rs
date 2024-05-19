@@ -1,15 +1,11 @@
-use std::sync::{Arc, RwLock};
 use http_client_shared::fetch_blocking;
+use std::sync::{Arc, RwLock};
 
 use http_common::{Method, Request, Response};
 
 use crate::http::CookieStore;
 
-pub(crate) fn head_request(
-    cookie_store: Arc<RwLock<CookieStore>>,
-    url: &str
-) -> Response {
-
+pub(crate) fn head_request(cookie_store: Arc<RwLock<CookieStore>>, url: &str) -> Response {
     let mut request = Request::new(Method::Head, url, Vec::new());
 
     {

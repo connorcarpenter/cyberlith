@@ -1,18 +1,18 @@
-
 use bevy_ecs::event::{EventReader, EventWriter};
 
 use game_engine::{
-    asset::{AssetId, embedded_asset_event, EmbeddedAssetEvent},
-    http::HttpClient,
-    ui::{UiManager, UiHandle},
-    logging::{info, warn},
+    asset::{embedded_asset_event, AssetId, EmbeddedAssetEvent},
     config::{GATEWAY_PORT, PUBLIC_IP_ADDR},
+    http::HttpClient,
+    logging::{info, warn},
+    ui::{UiHandle, UiManager},
 };
 use gateway_http_proto::UserNameForgotRequest;
 
-use crate::{resources::{
-    Global, TextboxClickedEvent, SubmitButtonClickedEvent, BackButtonClickedEvent,
-}, ui::{UiKey, clear_spinners_if_needed, go_to_ui}};
+use crate::{
+    resources::{BackButtonClickedEvent, Global, SubmitButtonClickedEvent, TextboxClickedEvent},
+    ui::{clear_spinners_if_needed, go_to_ui, UiKey},
+};
 
 pub(crate) fn setup(
     global: &mut Global,
@@ -74,18 +74,22 @@ pub(crate) fn handle_events(
 
         // check that every field is not empty
         if email.is_empty() {
-            ui_manager.set_text(&ui_handle, "error_output_text", "Please enter your email address.");
+            ui_manager.set_text(
+                &ui_handle,
+                "error_output_text",
+                "Please enter your email address.",
+            );
             return;
         }
 
         // check that every field matches the necessary minimum length
         {
-            let min_length = ui_manager.get_textbox_validator(&ui_handle, "email_textbox").unwrap().min_length();
+            let min_length = ui_manager
+                .get_textbox_validator(&ui_handle, "email_textbox")
+                .unwrap()
+                .min_length();
             if email.len() < min_length {
-                let error_text = format!(
-                    "Email must be at least {} characters long.",
-                    min_length,
-                );
+                let error_text = format!("Email must be at least {} characters long.", min_length,);
                 ui_manager.set_text(&ui_handle, "error_output_text", &error_text);
                 return;
             }
@@ -108,10 +112,7 @@ pub(crate) fn handle_events(
     }
 }
 
-pub fn reset_state(
-    ui_manager: &mut UiManager,
-    ui_handle: &UiHandle
-) {
+pub fn reset_state(ui_manager: &mut UiManager, ui_handle: &UiHandle) {
     // clear textboxes
     ui_manager.set_text(&ui_handle, "email_textbox", "");
 
@@ -128,7 +129,6 @@ fn backend_send_request(
     ui_manager: &mut UiManager,
     email: &str,
 ) {
-
     if global.user_name_forgot_response_key_opt.is_some() {
         warn!("already sending username forgot request...");
         return;
@@ -168,12 +168,20 @@ pub(crate) fn process_requests(
                     err.to_string()
                 );
 
-                ui_manager.set_text(&ui_handle, "error_output_text", "Oops! Something went wrong on our end. Please try again later.");
+                ui_manager.set_text(
+                    &ui_handle,
+                    "error_output_text",
+                    "Oops! Something went wrong on our end. Please try again later.",
+                );
             }
         }
 
         clear_spinners_if_needed(global, ui_manager);
 
-        go_to_ui(ui_manager, global, &global.get_ui_handle(UiKey::ForgotUsernameFinish));
+        go_to_ui(
+            ui_manager,
+            global,
+            &global.get_ui_handle(UiKey::ForgotUsernameFinish),
+        );
     }
 }

@@ -16,5 +16,8 @@ pub(crate) fn get_set_cookie_value(
     secure: bool,
 ) -> String {
     let secure = if secure { "; Secure" } else { "" };
-    format!("{}={}{}; HttpOnly; SameSite=Lax; Path=/; Domain={}; Max-Age={}", cookie_name, cookie_value, secure, domain, max_age_secs)
+    format!(
+        "{}={}{}; HttpOnly; SameSite=Lax; Path=/; Domain={}; Max-Age={}",
+        cookie_name, cookie_value, secure, domain, max_age_secs
+    )
 }

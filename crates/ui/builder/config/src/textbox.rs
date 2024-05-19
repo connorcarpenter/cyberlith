@@ -12,7 +12,6 @@ pub struct Textbox {
 }
 
 impl Textbox {
-
     pub fn new(id_str: &str) -> Self {
         Self {
             id_str: id_str.to_string(),

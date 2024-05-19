@@ -3,10 +3,20 @@ use std::collections::HashMap;
 use naia_serde::{FileBitWriter, SerdeInternal as Serde, UnsignedInteger, UnsignedVariableInteger};
 
 use render_api::base::Color;
-use ui_builder_config::{Button, ButtonStyle, Navigation, NodeStyle, Panel, PanelStyle, StyleId, Text, TextStyle, Textbox, TextboxStyle, UiConfig, UiNode, Widget, WidgetStyle, ValidationType, SpinnerStyle, Spinner, UiContainer};
+use ui_builder_config::{
+    Button, ButtonStyle, Navigation, NodeStyle, Panel, PanelStyle, Spinner, SpinnerStyle, StyleId,
+    Text, TextStyle, Textbox, TextboxStyle, UiConfig, UiContainer, UiNode, ValidationType, Widget,
+    WidgetStyle,
+};
 use ui_layout::{Alignment, LayoutType, MarginUnits, PositionType, SizeUnits, Solid};
 
-use crate::bits::{AlignmentBits, ButtonBits, ButtonStyleBits, ColorBits, LayoutTypeBits, MarginUnitsBits, NavigationBits, PanelBits, PanelStyleBits, PositionTypeBits, SizeUnitsBits, SolidBits, TextBits, TextStyleBits, TextboxBits, TextboxStyleBits, UiAction, UiActionType, UiNodeBits, UiStyleBits, WidgetBits, WidgetStyleBits, ValidationBits, SpinnerStyleBits, SpinnerBits, UiContainerBits};
+use crate::bits::{
+    AlignmentBits, ButtonBits, ButtonStyleBits, ColorBits, LayoutTypeBits, MarginUnitsBits,
+    NavigationBits, PanelBits, PanelStyleBits, PositionTypeBits, SizeUnitsBits, SolidBits,
+    SpinnerBits, SpinnerStyleBits, TextBits, TextStyleBits, TextboxBits, TextboxStyleBits,
+    UiAction, UiActionType, UiContainerBits, UiNodeBits, UiStyleBits, ValidationBits, WidgetBits,
+    WidgetStyleBits,
+};
 
 pub fn write_bits(ui_config: &UiConfig) -> Vec<u8> {
     let actions = convert_ui_to_actions(ui_config);
@@ -167,7 +177,7 @@ impl From<&PanelStyle> for PanelStyleBits {
     fn from(style: &PanelStyle) -> Self {
         Self {
             is_viewport: style.is_viewport,
-            
+
             background_color: style.background_color.map(From::from),
             background_alpha: style.background_alpha().map(bits_from_alpha),
 
@@ -276,7 +286,7 @@ impl From<SizeUnits> for SizeUnitsBits {
                     );
                 }
 
-                let val = (val*10.0) as u64;
+                let val = (val * 10.0) as u64;
                 let val = UnsignedInteger::<10>::new(val);
 
                 Self::Viewport(val)
@@ -398,7 +408,9 @@ impl WidgetBits {
             Widget::Panel(panel) => Self::Panel(From::from(panel)),
             Widget::Text(text) => Self::Text(From::from(text)),
             Widget::Button(button) => Self::Button(ButtonBits::from_button(ui_config, button)),
-            Widget::Textbox(textbox) => Self::Textbox(TextboxBits::from_textbox(ui_config, textbox)),
+            Widget::Textbox(textbox) => {
+                Self::Textbox(TextboxBits::from_textbox(ui_config, textbox))
+            }
             Widget::Spinner(spinner) => Self::Spinner(From::from(spinner)),
             Widget::UiContainer(ui_container) => Self::UiContainer(From::from(ui_container)),
         }

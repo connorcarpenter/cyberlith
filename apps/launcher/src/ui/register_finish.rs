@@ -1,13 +1,15 @@
-
 use bevy_ecs::event::{EventReader, EventWriter};
 
 use game_engine::{
+    asset::{embedded_asset_event, AssetId, EmbeddedAssetEvent},
     logging::info,
-    ui::{UiManager, UiHandle},
-    asset::{AssetId, embedded_asset_event, EmbeddedAssetEvent},
+    ui::{UiHandle, UiManager},
 };
 
-use crate::{ui::{go_to_ui, UiKey}, resources::{Global, SubmitButtonClickedEvent}};
+use crate::{
+    resources::{Global, SubmitButtonClickedEvent},
+    ui::{go_to_ui, UiKey},
+};
 
 pub(crate) fn setup(
     global: &mut Global,
@@ -43,9 +45,4 @@ pub(crate) fn handle_events(
     }
 }
 
-pub fn reset_state(
-    _ui_manager: &mut UiManager,
-    _ui_handle: &UiHandle
-) {
-
-}
+pub fn reset_state(_ui_manager: &mut UiManager, _ui_handle: &UiHandle) {}

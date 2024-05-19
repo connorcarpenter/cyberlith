@@ -40,7 +40,9 @@ pub struct DisconnectSessionServerResponse;
 impl ApiRequest for DisconnectSessionServerRequest {
     type Response = DisconnectSessionServerResponse;
 
-    fn name() -> &'static str { "DisconnectSessionServerRequest" }
+    fn name() -> &'static str {
+        "DisconnectSessionServerRequest"
+    }
 
     fn method() -> Method {
         Method::Post
@@ -52,5 +54,7 @@ impl ApiRequest for DisconnectSessionServerRequest {
 }
 
 impl ApiResponse for DisconnectSessionServerResponse {
-    fn name() -> &'static str { "DisconnectSessionServerResponse" }
+    fn name() -> &'static str {
+        "DisconnectSessionServerResponse"
+    }
 }

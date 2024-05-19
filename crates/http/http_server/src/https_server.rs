@@ -1,6 +1,9 @@
 use acme::Config;
 use async_dup::Arc;
-use http_server_shared::{executor, executor::smol::{net::TcpListener, lock::RwLock, stream::StreamExt}};
+use http_server_shared::{
+    executor,
+    executor::smol::{lock::RwLock, net::TcpListener, stream::StreamExt},
+};
 use logging::info;
 
 use crate::Server;

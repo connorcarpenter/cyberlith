@@ -1,16 +1,14 @@
 use std::collections::HashMap;
 
 use auth_server_db::DatabaseManager;
-use auth_server_types::UserId;
 use auth_server_http_proto::{AccessToken, RefreshToken, RegisterToken, ResetPasswordToken};
+use auth_server_types::UserId;
 use logging::info;
 
 use crate::{
     emails::EmailCatalog,
-    types::{
-        TempRegistration, UserData,
-    },
     expire_manager::{ExpireEvent, ExpireManager},
+    types::{TempRegistration, UserData},
 };
 
 pub struct State {

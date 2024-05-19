@@ -1,5 +1,5 @@
-use naia_serde::{BitReader, BitWrite, Serde, SerdeErr};
 use crypto::U32Token;
+use naia_serde::{BitReader, BitWrite, Serde, SerdeErr};
 
 #[derive(Eq, PartialEq, Hash, Clone, Debug, Copy)]
 pub struct RegisterToken {
@@ -37,9 +37,7 @@ impl Serde for RegisterToken {
         let Some(value) = U32Token::from_u32(u32::de(reader)?) else {
             return Err(SerdeErr);
         };
-        Ok(Self {
-            value,
-        })
+        Ok(Self { value })
     }
 
     fn bit_length(&self) -> u32 {

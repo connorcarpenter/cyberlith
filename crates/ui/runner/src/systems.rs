@@ -6,7 +6,10 @@ use bevy_ecs::{
 
 use asset_loader::AssetManager;
 use input::InputEvent;
-use render_api::{resources::Time, components::{Camera, RenderLayer}};
+use render_api::{
+    components::{Camera, RenderLayer},
+    resources::Time,
+};
 use ui_input::UiInputConverter;
 
 use crate::UiManager;
@@ -47,9 +50,5 @@ pub fn ui_update(
         mouse_position_ctnr = mouse_position;
         ui_input_events_ctnr.append(&mut ui_input_events);
     }
-    ui_manager.update_ui_input(
-        &asset_manager,
-        mouse_position_ctnr,
-        ui_input_events_ctnr,
-    );
+    ui_manager.update_ui_input(&asset_manager, mouse_position_ctnr, ui_input_events_ctnr);
 }

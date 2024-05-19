@@ -2,15 +2,20 @@ use std::{collections::HashMap, path::PathBuf};
 
 use bevy_ecs::{change_detection::ResMut, system::Resource};
 
-use crate::{backend::{poll_task, start_task, FsTaskJob}, error::TaskError, tasks::{
-    create_dir::CreateDirTask,
-    read::{ReadResult, ReadTask},
-    read_dir::ReadDirTask,
-    task_enum::FsTaskResultEnum,
-    traits::{FsTask, FsTaskResult},
-    write::{WriteResult, WriteTask},
-}, CreateDirResult, ReadDirResult, TaskKey, DeleteResult};
 use crate::tasks::delete::DeleteTask;
+use crate::{
+    backend::{poll_task, start_task, FsTaskJob},
+    error::TaskError,
+    tasks::{
+        create_dir::CreateDirTask,
+        read::{ReadResult, ReadTask},
+        read_dir::ReadDirTask,
+        task_enum::FsTaskResultEnum,
+        traits::{FsTask, FsTaskResult},
+        write::{WriteResult, WriteTask},
+    },
+    CreateDirResult, DeleteResult, ReadDirResult, TaskKey,
+};
 
 #[derive(Resource)]
 pub struct FileSystemManager {

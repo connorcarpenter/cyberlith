@@ -1,5 +1,5 @@
-use naia_serde::SerdeInternal as Serde;
 use auth_server_types::UserId;
+use naia_serde::SerdeInternal as Serde;
 
 use bevy_http_shared::{ApiRequest, ApiResponse, Method};
 use social_server_types::MatchLobbyId;
@@ -13,7 +13,11 @@ pub struct SocialPatchMatchLobbyUsersRequest {
 }
 
 impl SocialPatchMatchLobbyUsersRequest {
-    pub fn new(social_secret: &str, added_users: Vec<(MatchLobbyId, Vec<UserId>)>, removed_users: Vec<(MatchLobbyId, Vec<UserId>)>) -> Self {
+    pub fn new(
+        social_secret: &str,
+        added_users: Vec<(MatchLobbyId, Vec<UserId>)>,
+        removed_users: Vec<(MatchLobbyId, Vec<UserId>)>,
+    ) -> Self {
         Self {
             social_secret: social_secret.to_string(),
             added_users,
@@ -42,7 +46,9 @@ pub struct SocialPatchMatchLobbyUsersResponse;
 impl ApiRequest for SocialPatchMatchLobbyUsersRequest {
     type Response = SocialPatchMatchLobbyUsersResponse;
 
-    fn name() -> &'static str { "SocialPatchMatchLobbyUsersRequest" }
+    fn name() -> &'static str {
+        "SocialPatchMatchLobbyUsersRequest"
+    }
 
     fn method() -> Method {
         Method::Post
@@ -54,5 +60,7 @@ impl ApiRequest for SocialPatchMatchLobbyUsersRequest {
 }
 
 impl ApiResponse for SocialPatchMatchLobbyUsersResponse {
-    fn name() -> &'static str { "SocialPatchMatchLobbyUsersResponse" }
+    fn name() -> &'static str {
+        "SocialPatchMatchLobbyUsersResponse"
+    }
 }

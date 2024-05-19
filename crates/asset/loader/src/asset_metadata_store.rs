@@ -4,10 +4,10 @@ use bevy_ecs::{change_detection::ResMut, system::Resource};
 
 use naia_serde::{BitReader, SerdeInternal as Serde};
 
-use logging::{info, warn};
 use asset_id::{AssetId, AssetType, ETag};
 use asset_serde::bits::AssetMetadataSerde;
 use filesystem::{CreateDirResult, FileSystemManager, ReadDirResult, ReadResult, TaskKey};
+use logging::{info, warn};
 
 pub struct AssetMetadata {
     path: String,

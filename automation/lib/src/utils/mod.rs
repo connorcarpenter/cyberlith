@@ -1,9 +1,9 @@
-use std::{future::Future, process::Command,  path::Path};
+use std::{future::Future, path::Path, process::Command};
 
 use async_compat::Compat;
+use executor::smol::channel::{bounded, Receiver, TryRecvError};
 use logging::{info, warn};
 use openssh::{KnownHosts, Session, SessionBuilder};
-use executor::smol::channel::{bounded, Receiver, TryRecvError};
 use subprocess::{Exec, Redirection};
 
 use crate::CliError;
@@ -35,7 +35,7 @@ pub fn thread_init_1arg<
         let result = x(a).await;
         sender.send(result).await.expect("failed to send result");
     })
-        .detach();
+    .detach();
 
     receiver
 }

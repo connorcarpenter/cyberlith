@@ -1,4 +1,3 @@
-
 use render_api::base::CpuMaterial;
 use storage::Handle;
 use ui_runner_config::Textbox;
@@ -27,7 +26,13 @@ impl TextboxState {
         "*".repeat(self.text.len())
     }
 
-    pub fn receive_hover(&mut self, config: &Textbox, layout: (f32, f32, f32, f32), mouse_x: f32, mouse_y: f32) -> bool {
+    pub fn receive_hover(
+        &mut self,
+        config: &Textbox,
+        layout: (f32, f32, f32, f32),
+        mouse_x: f32,
+        mouse_y: f32,
+    ) -> bool {
         if !config.is_password {
             return false;
         }
@@ -37,7 +42,11 @@ impl TextboxState {
         // compare to password eye rendering, should be the same
         let eye_left_x = posx + width - (height * 0.5 * 1.2) - (height * 0.5);
 
-        if mouse_x >= eye_left_x && mouse_x <= posx + width && mouse_y >= posy && mouse_y <= posy + height {
+        if mouse_x >= eye_left_x
+            && mouse_x <= posx + width
+            && mouse_y >= posy
+            && mouse_y <= posy + height
+        {
             self.eye_hover = true;
             return true;
         } else {

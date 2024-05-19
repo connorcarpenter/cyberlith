@@ -1,10 +1,12 @@
-
-use logging::{info, warn};
+use config::REGION_SERVER_SECRET;
 use http_client::ResponseError;
 use http_server::{async_dup::Arc, executor::smol::lock::RwLock, ApiServer, Server};
-use config::REGION_SERVER_SECRET;
+use logging::{info, warn};
 
-use social_server_http_proto::{ConnectSessionServerRequest, ConnectSessionServerResponse, DisconnectSessionServerRequest, DisconnectSessionServerResponse};
+use social_server_http_proto::{
+    ConnectSessionServerRequest, ConnectSessionServerResponse, DisconnectSessionServerRequest,
+    DisconnectSessionServerResponse,
+};
 
 use crate::state::State;
 
@@ -36,7 +38,9 @@ async fn async_recv_connect_session_server_request_impl(
     state.region_server.heard_from_region_server();
 
     // store session server details
-    state.session_servers.add(request.http_addr(), request.http_port());
+    state
+        .session_servers
+        .add(request.http_addr(), request.http_port());
 
     // responding
     // info!("Sending connect social server response to region server ..");
@@ -71,7 +75,9 @@ async fn async_recv_disconnect_session_server_request_impl(
     state.region_server.heard_from_region_server();
 
     // erase session server details
-    state.session_servers.remove(request.http_addr(), request.http_port());
+    state
+        .session_servers
+        .remove(request.http_addr(), request.http_port());
 
     // responding
     // info!("Sending connect session server response to region server ..");

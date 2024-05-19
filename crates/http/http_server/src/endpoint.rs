@@ -4,14 +4,20 @@ use http_server_shared::executor::smol::future::Future;
 
 use http_common::{Request, Response, ResponseError};
 
-use crate::{Server, middleware::{RequestMiddleware, RequestMiddlewareFunc}};
 use crate::middleware::{RequestMiddlewareAction, ResponseMiddleware, ResponseMiddlewareFunc};
+use crate::{
+    middleware::{RequestMiddleware, RequestMiddlewareFunc},
+    Server,
+};
 
 // Endpoint
 pub(crate) type EndpointFunc = Box<
     dyn Send
-    + Sync
-    + Fn(SocketAddr, Request) -> Pin<Box<dyn Send + Sync + Future<Output = Result<Response, ResponseError>>>>,
+        + Sync
+        + Fn(
+            SocketAddr,
+            Request,
+        ) -> Pin<Box<dyn Send + Sync + Future<Output = Result<Response, ResponseError>>>>,
 >;
 
 pub(crate) struct Endpoint {
@@ -25,10 +31,7 @@ pub(crate) struct Endpoint {
 }
 
 impl Endpoint {
-    pub(crate) fn new(
-        func: EndpointFunc,
-        required_host: Option<(String, Option<String>)>,
-    ) -> Self {
+    pub(crate) fn new(func: EndpointFunc, required_host: Option<(String, Option<String>)>) -> Self {
         Self {
             func,
             request_middlewares: Vec::new(),
@@ -42,7 +45,6 @@ impl Endpoint {
         address: SocketAddr,
         mut request: Request,
     ) -> Result<Response, ResponseError> {
-
         let mut set_cookies = Vec::new();
 
         // handle endpoint request middleware
@@ -53,7 +55,7 @@ impl Endpoint {
                     if let Some(set_cookie) = set_cookie_opt {
                         set_cookies.push(set_cookie);
                     }
-                },
+                }
                 RequestMiddlewareAction::Stop(response) => return Ok(response),
                 RequestMiddlewareAction::Error(err) => return Err(err),
             }
@@ -66,7 +68,7 @@ impl Endpoint {
                     match (middleware.func)(response.clone()).await {
                         Ok(new_response) => {
                             response = new_response;
-                        },
+                        }
                         Err(e) => {
                             return Err(e);
                         }
@@ -94,39 +96,36 @@ pub struct EndpointRef<'a> {
 
 impl<'a> EndpointRef<'a> {
     pub fn new(server: &'a mut Server, key: String) -> Self {
-        Self {
-            server,
-            key,
-        }
+        Self { server, key }
     }
 
     pub fn request_middleware<
         ResponseType: 'static + Send + Sync + Future<Output = RequestMiddlewareAction>,
-        Handler: 'static + Send + Sync + Fn(SocketAddr, Request) -> ResponseType
+        Handler: 'static + Send + Sync + Fn(SocketAddr, Request) -> ResponseType,
     >(
         self,
         handler: Handler,
     ) -> Self {
-        let func: RequestMiddlewareFunc = Box::new(move |addr, req| {
-            Box::pin(handler(addr, req))
-        });
+        let func: RequestMiddlewareFunc = Box::new(move |addr, req| Box::pin(handler(addr, req)));
         let endpoint = self.server.internal_endpoint_mut(&self.key).unwrap();
-        endpoint.request_middlewares.push(RequestMiddleware::new(func));
+        endpoint
+            .request_middlewares
+            .push(RequestMiddleware::new(func));
         self
     }
 
     pub fn response_middleware<
         ResponseType: 'static + Send + Sync + Future<Output = Result<Response, ResponseError>>,
-        Handler: 'static + Send + Sync + Fn(Response) -> ResponseType
+        Handler: 'static + Send + Sync + Fn(Response) -> ResponseType,
     >(
         self,
         handler: Handler,
     ) -> Self {
-        let func: ResponseMiddlewareFunc = Box::new(move |response| {
-            Box::pin(handler(response))
-        });
+        let func: ResponseMiddlewareFunc = Box::new(move |response| Box::pin(handler(response)));
         let endpoint = self.server.internal_endpoint_mut(&self.key).unwrap();
-        endpoint.response_middlewares.push(ResponseMiddleware::new(func));
+        endpoint
+            .response_middlewares
+            .push(ResponseMiddleware::new(func));
         self
     }
 }

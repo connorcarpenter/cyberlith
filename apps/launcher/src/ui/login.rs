@@ -1,23 +1,23 @@
-
 use bevy_ecs::event::{EventReader, EventWriter};
 
+use game_engine::kernel::AppExitAction;
 use game_engine::{
+    asset::{embedded_asset_event, AssetId, EmbeddedAssetEvent},
+    config::{GATEWAY_PORT, PUBLIC_IP_ADDR},
     http::HttpClient,
     logging::{info, warn},
-    ui::{UiManager, UiHandle},
-    asset::{AssetId, embedded_asset_event, EmbeddedAssetEvent},
-    config::{GATEWAY_PORT, PUBLIC_IP_ADDR},
+    ui::{UiHandle, UiManager},
 };
-use game_engine::kernel::AppExitAction;
 use gateway_http_proto::UserLoginRequest;
 
+use crate::ui::{clear_spinners_if_needed, redirect_to_game_app};
 use crate::{
     resources::{
-        Global, TextboxClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent, ForgotPasswordButtonClickedEvent, ForgotUsernameButtonClickedEvent
+        ForgotPasswordButtonClickedEvent, ForgotUsernameButtonClickedEvent, Global,
+        RegisterButtonClickedEvent, SubmitButtonClickedEvent, TextboxClickedEvent,
     },
-    ui::{go_to_ui, UiKey}
+    ui::{go_to_ui, UiKey},
 };
-use crate::ui::{clear_spinners_if_needed, redirect_to_game_app};
 
 pub(crate) fn setup(
     global: &mut Global,
@@ -31,8 +31,14 @@ pub(crate) fn setup(
     global.insert_ui(ui_key, ui_handle);
     ui_manager.register_ui_event::<RegisterButtonClickedEvent>(&ui_handle, "register_button");
     ui_manager.register_ui_event::<SubmitButtonClickedEvent>(&ui_handle, "submit_button");
-    ui_manager.register_ui_event::<ForgotUsernameButtonClickedEvent>(&ui_handle, "forgot_username_button");
-    ui_manager.register_ui_event::<ForgotPasswordButtonClickedEvent>(&ui_handle, "forgot_password_button");
+    ui_manager.register_ui_event::<ForgotUsernameButtonClickedEvent>(
+        &ui_handle,
+        "forgot_username_button",
+    );
+    ui_manager.register_ui_event::<ForgotPasswordButtonClickedEvent>(
+        &ui_handle,
+        "forgot_password_button",
+    );
     ui_manager.register_ui_event::<TextboxClickedEvent>(&ui_handle, "username_textbox");
     ui_manager.register_ui_event::<TextboxClickedEvent>(&ui_handle, "password_textbox");
 }
@@ -85,21 +91,47 @@ pub(crate) fn handle_events(
         // validate
         // check that every field is not empty
         if user_handle.is_empty() {
-            ui_manager.set_text(&login_ui_handle, "error_output_text", "Please enter your username.");
+            ui_manager.set_text(
+                &login_ui_handle,
+                "error_output_text",
+                "Please enter your username.",
+            );
             return;
         }
         if password.is_empty() {
-            ui_manager.set_text(&login_ui_handle, "error_output_text", "Please enter your password.");
+            ui_manager.set_text(
+                &login_ui_handle,
+                "error_output_text",
+                "Please enter your password.",
+            );
             return;
         }
 
         // check that every field matches the necessary minimum length
-        if user_handle.len() < ui_manager.get_textbox_validator(&login_ui_handle, "username_textbox").unwrap().min_length() {
-            ui_manager.set_text(&login_ui_handle, "error_output_text", "Username is invalid.");
+        if user_handle.len()
+            < ui_manager
+                .get_textbox_validator(&login_ui_handle, "username_textbox")
+                .unwrap()
+                .min_length()
+        {
+            ui_manager.set_text(
+                &login_ui_handle,
+                "error_output_text",
+                "Username is invalid.",
+            );
             return;
         }
-        if password.len() < ui_manager.get_textbox_validator(&login_ui_handle, "password_textbox").unwrap().min_length() {
-            ui_manager.set_text(&login_ui_handle, "error_output_text", "Password is invalid.");
+        if password.len()
+            < ui_manager
+                .get_textbox_validator(&login_ui_handle, "password_textbox")
+                .unwrap()
+                .min_length()
+        {
+            ui_manager.set_text(
+                &login_ui_handle,
+                "error_output_text",
+                "Password is invalid.",
+            );
             return;
         }
 
@@ -116,7 +148,11 @@ pub(crate) fn handle_events(
     }
     if forgot_username_btn_clicked {
         info!("forgot username button clicked!");
-        go_to_ui(ui_manager, global, &global.get_ui_handle(UiKey::ForgotUsername));
+        go_to_ui(
+            ui_manager,
+            global,
+            &global.get_ui_handle(UiKey::ForgotUsername),
+        );
         *should_rumble = true;
     }
 
@@ -127,7 +163,11 @@ pub(crate) fn handle_events(
     }
     if forgot_password_btn_clicked {
         info!("forgot password button clicked!");
-        go_to_ui(ui_manager, global, &global.get_ui_handle(UiKey::ForgotPassword));
+        go_to_ui(
+            ui_manager,
+            global,
+            &global.get_ui_handle(UiKey::ForgotPassword),
+        );
         *should_rumble = true;
     }
 
@@ -144,11 +184,7 @@ pub(crate) fn handle_events(
     }
 }
 
-pub fn reset_state(
-    ui_manager: &mut UiManager,
-    ui_handle: &UiHandle
-) {
-
+pub fn reset_state(ui_manager: &mut UiManager, ui_handle: &UiHandle) {
     // clear textboxes
     ui_manager.set_text(&ui_handle, "username_textbox", "");
     ui_manager.set_text(&ui_handle, "password_textbox", "");
@@ -216,7 +252,11 @@ pub(crate) fn process_requests(
                     err.to_string()
                 );
 
-                ui_manager.set_text(&login_ui_handle, "error_output_text", "Invalid credentials. Please try again.");
+                ui_manager.set_text(
+                    &login_ui_handle,
+                    "error_output_text",
+                    "Invalid credentials. Please try again.",
+                );
             }
         }
 

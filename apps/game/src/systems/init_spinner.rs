@@ -1,4 +1,3 @@
-
 use bevy_ecs::system::{Local, Query, Res, ResMut};
 
 use game_engine::{
@@ -6,10 +5,10 @@ use game_engine::{
     render::{
         base::{Color, CpuMaterial, CpuMesh},
         components::{
-            AmbientLight, Camera, CameraBundle, ClearOperation,
-            Projection, Transform, RenderLayer, Viewport,
+            AmbientLight, Camera, CameraBundle, ClearOperation, Projection, RenderLayer, Transform,
+            Viewport,
         },
-        resources::{Time, RenderFrame},
+        resources::{RenderFrame, Time},
         shapes::UnitSquare,
     },
     storage::Storage,
@@ -43,14 +42,15 @@ pub fn draw(
     let Projection::Perspective(perspective) = &camera_bundle.projection else {
         panic!("expected perspective projection");
     };
-    let distance = ((target_viewport.height as f32) / 2.0)
-        / f32::tan(perspective.fov / 2.0);
+    let distance = ((target_viewport.height as f32) / 2.0) / f32::tan(perspective.fov / 2.0);
     let x = target_viewport.width as f32 * 0.5;
     let y = target_viewport.height as f32 * 0.5;
     camera_bundle.transform.translation.x = x;
     camera_bundle.transform.translation.y = y;
     camera_bundle.transform.translation.z = distance;
-    camera_bundle.transform.look_at(Vec3::new(x, y, 0.0), Vec3::NEG_Y);
+    camera_bundle
+        .transform
+        .look_at(Vec3::new(x, y, 0.0), Vec3::NEG_Y);
 
     render_frame.draw_camera(
         Some(&RenderLayer::UI),
@@ -71,5 +71,11 @@ pub fn draw(
     spinner_transform.scale.y = y * 0.618;
     spinner_transform.translation.x = x - (spinner_transform.scale.x * 0.5);
     spinner_transform.translation.y = y - (spinner_transform.scale.y * 0.5);
-    render_frame.draw_spinner(Some(&RenderLayer::UI), &mat_handle, &mesh_handle, &spinner_transform, *total_time_ms * 0.005);
+    render_frame.draw_spinner(
+        Some(&RenderLayer::UI),
+        &mat_handle,
+        &mesh_handle,
+        &spinner_transform,
+        *total_time_ms * 0.005,
+    );
 }

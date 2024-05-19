@@ -1,4 +1,3 @@
-
 use automation_lib::{copy_from_repo_to_target_dir, OutputType, TargetEnv};
 
 use logging::info;
@@ -9,12 +8,7 @@ pub(crate) fn setup() {
     let project_path = "/home/connor/Work/cyberlith";
 
     // process assets
-    automation_lib::process_assets(
-        project_path,
-        TargetEnv::Local,
-        OutputType::Json,
-    )
-    .unwrap();
+    automation_lib::process_assets(project_path, TargetEnv::Local, OutputType::Json).unwrap();
 
     // copy ./target/assets_repo/* to ./assets/*
     let source_dir = format!("{}/target/cyberlith_assets", project_path);

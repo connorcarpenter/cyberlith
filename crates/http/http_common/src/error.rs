@@ -12,9 +12,9 @@ pub enum ResponseError {
     SerdeError,
 
     // client errors, from server
-    BadRequest, // 400 response
+    BadRequest,      // 400 response
     Unauthenticated, // 401 response
-    NotFound, // 404 response
+    NotFound,        // 404 response
 
     // server errors, from server
     InternalServerError(String), // 500 response

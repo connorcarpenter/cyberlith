@@ -1,7 +1,11 @@
-use bevy_ecs::{event::EventReader, system::Commands};
 use bevy_ecs::schedule::{NextState, State};
 use bevy_ecs::system::{Res, ResMut};
+use bevy_ecs::{event::EventReader, system::Commands};
 
+use crate::resources::AssetCatalog;
+use crate::states::AppState;
+use game_engine::asset::AssetLoadedEvent;
+use game_engine::ui::{UiHandle, UiManager};
 use game_engine::{
     asset::{
         AnimationData, AssetHandle, AssetType, IconData, MeshData, ModelData, PaletteData,
@@ -15,10 +19,6 @@ use game_engine::{
         WorldSpawnEntityEvent,
     },
 };
-use game_engine::asset::AssetLoadedEvent;
-use game_engine::ui::{UiHandle, UiManager};
-use crate::resources::AssetCatalog;
-use crate::states::AppState;
 
 use crate::systems::walker_scene::{WalkAnimation, WalkerMarker};
 
@@ -154,10 +154,7 @@ pub fn session_load_asset_events(
     for event in event_reader.read() {
         let asset_id = event.asset_id;
         let asset_type = event.asset_type;
-        info!(
-            "received Asset Loaded Event! (asset_id: {:?})",
-            asset_id
-        );
+        info!("received Asset Loaded Event! (asset_id: {:?})", asset_id);
         if asset_type == AssetType::Ui {
             if asset_id == AssetCatalog::game_main_menu_ui() {
                 info!("received game_main_menu_ui");
@@ -172,7 +169,11 @@ pub fn session_load_asset_events(
                 info!("received game_host_match_ui");
                 let parent_handle = UiHandle::new(AssetCatalog::game_main_menu_ui());
                 let child_handle = UiHandle::new(asset_id);
-                ui_manager.set_ui_container_contents(&parent_handle, "center_container", &child_handle);
+                ui_manager.set_ui_container_contents(
+                    &parent_handle,
+                    "center_container",
+                    &child_handle,
+                );
             }
         }
     }

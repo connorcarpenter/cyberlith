@@ -22,7 +22,8 @@ impl HttpClient {
         request_options: RequestOptions,
     ) -> Result<Q::Response, ResponseError> {
         let http_req = api_req.to_request(addr, port);
-        let http_res = http_client_shared::fetch_async_with_options(http_req, request_options).await?;
+        let http_res =
+            http_client_shared::fetch_async_with_options(http_req, request_options).await?;
         let http_res = http_res.to_result()?;
         let http_res = Q::Response::from_response(http_res)?;
         return Ok(http_res);

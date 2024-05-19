@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 
 use config::SESSION_SERVER_GLOBAL_SECRET;
 use http_client::ResponseError;
-use http_server::{ApiServer, Server, async_dup::Arc, executor::smol::lock::RwLock};
+use http_server::{async_dup::Arc, executor::smol::lock::RwLock, ApiServer, Server};
 use logging::warn;
 
 use social_server_http_proto::{GlobalChatSendMessageRequest, GlobalChatSendMessageResponse};
@@ -32,7 +32,9 @@ async fn async_recv_global_chat_send_message_request_impl(
 
     let mut state = state.write().await;
 
-    state.global_chat.send_message(request.user_id(), request.message());
+    state
+        .global_chat
+        .send_message(request.user_id(), request.message());
 
     // responding
     return Ok(GlobalChatSendMessageResponse);

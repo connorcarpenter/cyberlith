@@ -16,8 +16,8 @@ use naia_bevy_server::{
 
 use bevy_http_client::HttpClient;
 use config::{
-    PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SELF_BINDING_ADDR,
-    WORLD_SERVER_SIGNAL_PORT, WORLD_SERVER_WEBRTC_PORT,
+    PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SELF_BINDING_ADDR, WORLD_SERVER_SIGNAL_PORT,
+    WORLD_SERVER_WEBRTC_PORT,
 };
 use logging::{info, warn};
 use world_server_naia_proto::{
@@ -43,7 +43,8 @@ pub fn init(mut commands: Commands, mut server: Server) {
         format!(
             "{}://{}:{}",
             PUBLIC_PROTOCOL, PUBLIC_IP_ADDR, WORLD_SERVER_WEBRTC_PORT
-        ).as_str(),
+        )
+        .as_str(),
     );
     let socket = webrtc::Socket::new(&server_addresses, server.socket_config());
     server.listen(socket);

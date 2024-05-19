@@ -2,9 +2,12 @@ use std::net::SocketAddr;
 
 use http_client_shared::fetch_async;
 use http_common::{ApiRequest, Method, Request, Response};
-use logging::{info};
+use logging::info;
 
-use crate::{log_util, Server, endpoint::{EndpointRef, Endpoint, EndpointFunc}};
+use crate::{
+    endpoint::{Endpoint, EndpointFunc, EndpointRef},
+    log_util, Server,
+};
 
 // serves a pass-through proxy
 pub trait ProxyServer {
@@ -149,7 +152,6 @@ fn get_endpoint_func(
             let mut response = Response::default();
             match remote_response_result {
                 Ok(remote_response) => {
-
                     // pass through headers
                     for header_name in [
                         "content-type",
@@ -181,8 +183,7 @@ fn get_endpoint_func(
                         while response.has_header("access-control-allow-origin") {
                             response.remove_header_all("access-control-allow-origin");
                         }
-                        response
-                            .insert_header("access-control-allow-origin", &allow_origin);
+                        response.insert_header("access-control-allow-origin", &allow_origin);
                     }
                 }
                 Err(err) => {
@@ -190,7 +191,10 @@ fn get_endpoint_func(
                 }
             }
 
-            log_util::send_res(&host_name, format!("{} {}", response.status, response.status_text).as_str());
+            log_util::send_res(
+                &host_name,
+                format!("{} {}", response.status, response.status_text).as_str(),
+            );
             logging::info!("]");
 
             return Ok(response);

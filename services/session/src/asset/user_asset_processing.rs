@@ -119,7 +119,11 @@ impl AssetServerRequestState {
                     }
                     Err(e) => {
                         let asset_id = self.request.asset_id();
-                        panic!("error receiving asset response for [asset {:?}] error: {:?}", asset_id, e.to_string());
+                        panic!(
+                            "error receiving asset response for [asset {:?}] error: {:?}",
+                            asset_id,
+                            e.to_string()
+                        );
                     }
                 }
             } else {

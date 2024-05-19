@@ -15,7 +15,12 @@ pub struct UserAssetIdRequest {
 }
 
 impl UserAssetIdRequest {
-    pub fn new(world_instance_secret: &str, user_id: UserId, asset_id: AssetId, added: bool) -> Self {
+    pub fn new(
+        world_instance_secret: &str,
+        user_id: UserId,
+        asset_id: AssetId,
+        added: bool,
+    ) -> Self {
         Self {
             world_instance_secret: world_instance_secret.to_string(),
             user_id,
@@ -49,7 +54,9 @@ pub struct UserAssetIdResponse;
 impl ApiRequest for UserAssetIdRequest {
     type Response = UserAssetIdResponse;
 
-    fn name() -> &'static str { "UserAssetIdRequest" }
+    fn name() -> &'static str {
+        "UserAssetIdRequest"
+    }
 
     fn method() -> Method {
         Method::Post
@@ -61,5 +68,7 @@ impl ApiRequest for UserAssetIdRequest {
 }
 
 impl ApiResponse for UserAssetIdResponse {
-    fn name() -> &'static str { "UserAssetIdResponse" }
+    fn name() -> &'static str {
+        "UserAssetIdResponse"
+    }
 }

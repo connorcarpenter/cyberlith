@@ -44,11 +44,7 @@ pub struct WorldInstance {
 }
 
 impl WorldInstance {
-    pub fn new(
-        instance_secret: &str,
-        http_addr: &str,
-        http_port: u16,
-    ) -> Self {
+    pub fn new(instance_secret: &str, http_addr: &str, http_port: u16) -> Self {
         Self {
             instance_secret: instance_secret.to_string(),
             http_addr: http_addr.to_string(),

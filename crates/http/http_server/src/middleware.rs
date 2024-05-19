@@ -13,8 +13,11 @@ pub enum RequestMiddlewareAction {
 // Request Middleware
 pub(crate) type RequestMiddlewareFunc = Box<
     dyn Send
-    + Sync
-    + Fn(SocketAddr, Request) -> Pin<Box<dyn Send + Sync + Future<Output = RequestMiddlewareAction>>>,
+        + Sync
+        + Fn(
+            SocketAddr,
+            Request,
+        ) -> Pin<Box<dyn Send + Sync + Future<Output = RequestMiddlewareAction>>>,
 >;
 
 pub struct RequestMiddleware {
@@ -22,20 +25,16 @@ pub struct RequestMiddleware {
 }
 
 impl RequestMiddleware {
-    pub(crate) fn new(
-        func: RequestMiddlewareFunc,
-    ) -> Self {
-        Self {
-            func,
-        }
+    pub(crate) fn new(func: RequestMiddlewareFunc) -> Self {
+        Self { func }
     }
 }
 
 // Response Middleware
 pub(crate) type ResponseMiddlewareFunc = Box<
     dyn Send
-    + Sync
-    + Fn(Response) -> Pin<Box<dyn Send + Sync + Future<Output = Result<Response, ResponseError>>>>,
+        + Sync
+        + Fn(Response) -> Pin<Box<dyn Send + Sync + Future<Output = Result<Response, ResponseError>>>>,
 >;
 
 pub struct ResponseMiddleware {
@@ -43,11 +42,7 @@ pub struct ResponseMiddleware {
 }
 
 impl ResponseMiddleware {
-    pub(crate) fn new(
-        func: ResponseMiddlewareFunc,
-    ) -> Self {
-        Self {
-            func,
-        }
+    pub(crate) fn new(func: ResponseMiddlewareFunc) -> Self {
+        Self { func }
     }
 }

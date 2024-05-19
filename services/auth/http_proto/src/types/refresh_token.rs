@@ -1,5 +1,5 @@
-use naia_serde::{BitReader, BitWrite, Serde, SerdeErr};
 use crypto::U32Token;
+use naia_serde::{BitReader, BitWrite, Serde, SerdeErr};
 
 use crate::types::get_set_cookie_value;
 
@@ -31,7 +31,13 @@ impl RefreshToken {
 
     pub fn get_new_cookie_value(domain: &str, secure: bool, refresh_token: &str) -> String {
         const ONE_WEEK_IN_SECONDS: u32 = 60 * 60 * 24 * 7;
-        get_set_cookie_value("refresh_token", &refresh_token.to_string(), domain, ONE_WEEK_IN_SECONDS, secure)
+        get_set_cookie_value(
+            "refresh_token",
+            &refresh_token.to_string(),
+            domain,
+            ONE_WEEK_IN_SECONDS,
+            secure,
+        )
     }
 
     pub fn get_expire_cookie_value(domain: &str, secure: bool) -> String {
@@ -48,9 +54,7 @@ impl Serde for RefreshToken {
         let Some(value) = U32Token::from_u32(u32::de(reader)?) else {
             return Err(SerdeErr);
         };
-        Ok(Self {
-            value,
-        })
+        Ok(Self { value })
     }
 
     fn bit_length(&self) -> u32 {

@@ -1,17 +1,30 @@
-mod session_connect;
-mod redirect;
-mod rate_limiter;
 mod auth_handler;
-mod register_token;
 mod endpoints;
+mod rate_limiter;
+mod redirect;
+mod register_token;
+mod session_connect;
 
-use std::{time::Duration, net::SocketAddr, thread};
+use std::{net::SocketAddr, thread, time::Duration};
 
-use config::{CONTENT_SERVER_PORT, CONTENT_SERVER_RECV_ADDR, GATEWAY_PORT, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SELF_BINDING_ADDR, WORLD_SERVER_RECV_ADDR, WORLD_SERVER_SIGNAL_PORT, SESSION_SERVER_RECV_ADDR, SESSION_SERVER_SIGNAL_PORT, TargetEnv};
-use http_server::{executor::smol::lock::RwLock, async_dup::Arc, ApiServer, Method, ProxyServer, Server, executor::smol, ApiRequest};
+use config::{
+    TargetEnv, CONTENT_SERVER_PORT, CONTENT_SERVER_RECV_ADDR, GATEWAY_PORT, PUBLIC_IP_ADDR,
+    PUBLIC_PROTOCOL, SELF_BINDING_ADDR, SESSION_SERVER_RECV_ADDR, SESSION_SERVER_SIGNAL_PORT,
+    WORLD_SERVER_RECV_ADDR, WORLD_SERVER_SIGNAL_PORT,
+};
+use http_server::{
+    async_dup::Arc, executor::smol, executor::smol::lock::RwLock, ApiRequest, ApiServer, Method,
+    ProxyServer, Server,
+};
 use logging::info;
 
-use gateway_http_proto::{UserLoginRequest as GatewayUserLoginRequest, UserRegisterRequest as GatewayUserRegisterRequest, UserNameForgotRequest as GatewayUserNameForgotRequest, UserPasswordForgotRequest as GatewayUserPasswordForgotRequest, UserPasswordResetRequest as GatewayUserPasswordResetRequest};
+use gateway_http_proto::{
+    UserLoginRequest as GatewayUserLoginRequest,
+    UserNameForgotRequest as GatewayUserNameForgotRequest,
+    UserPasswordForgotRequest as GatewayUserPasswordForgotRequest,
+    UserPasswordResetRequest as GatewayUserPasswordResetRequest,
+    UserRegisterRequest as GatewayUserRegisterRequest,
+};
 
 pub fn main() {
     logging::initialize();
@@ -25,7 +38,10 @@ pub fn main() {
     let required_host_www = if TargetEnv::is_local() {
         None
     } else {
-        Some((format!("{}", PUBLIC_IP_ADDR), format!("{}://{}", PUBLIC_PROTOCOL, PUBLIC_IP_ADDR)))
+        Some((
+            format!("{}", PUBLIC_IP_ADDR),
+            format!("{}://{}", PUBLIC_PROTOCOL, PUBLIC_IP_ADDR),
+        ))
     };
     let required_host_www = required_host_www
         .as_ref()
@@ -41,7 +57,8 @@ pub fn main() {
     // middleware
 
     // -> rate limiter
-    let global_rate_limiter = rate_limiter::add_middleware(&mut server, 100, std::time::Duration::from_secs(8));
+    let global_rate_limiter =
+        rate_limiter::add_middleware(&mut server, 100, std::time::Duration::from_secs(8));
 
     // routes
 
@@ -54,7 +71,7 @@ pub fn main() {
             api_allow_origin,
             GatewayUserLoginRequest::method(),
             GatewayUserLoginRequest::path(),
-            endpoints::user_login::handler
+            endpoints::user_login::handler,
         );
         // user register
         server.raw_endpoint(
@@ -63,7 +80,7 @@ pub fn main() {
             api_allow_origin,
             GatewayUserRegisterRequest::method(),
             GatewayUserRegisterRequest::path(),
-            endpoints::user_register::handler
+            endpoints::user_register::handler,
         );
         // user name forgot
         server.raw_endpoint(
@@ -72,7 +89,7 @@ pub fn main() {
             api_allow_origin,
             GatewayUserNameForgotRequest::method(),
             GatewayUserNameForgotRequest::path(),
-            endpoints::user_name_forgot::handler
+            endpoints::user_name_forgot::handler,
         );
         // user password forgot
         server.raw_endpoint(
@@ -81,7 +98,7 @@ pub fn main() {
             api_allow_origin,
             GatewayUserPasswordForgotRequest::method(),
             GatewayUserPasswordForgotRequest::path(),
-            endpoints::user_password_forgot::handler
+            endpoints::user_password_forgot::handler,
         );
         // user password reset
         server.raw_endpoint(
@@ -90,7 +107,7 @@ pub fn main() {
             api_allow_origin,
             GatewayUserPasswordResetRequest::method(),
             GatewayUserPasswordResetRequest::path(),
-            endpoints::user_password_reset::handler
+            endpoints::user_password_reset::handler,
         );
     }
 
@@ -100,17 +117,19 @@ pub fn main() {
         let session_protocol_endpoint = session_protocol.get_rtc_endpoint();
         let session_protocol = Arc::new(RwLock::new(session_protocol));
 
-        server.raw_endpoint(
-            gateway,
-            required_host_www,
-            api_allow_origin,
-            Method::Post,
-            &session_protocol_endpoint,
-            move |addr, req| {
-                let protocol = session_protocol.clone();
-                async move { session_connect::handler(protocol, addr, req).await }
-            },
-        ).request_middleware(auth_handler::require_auth_tokens);
+        server
+            .raw_endpoint(
+                gateway,
+                required_host_www,
+                api_allow_origin,
+                Method::Post,
+                &session_protocol_endpoint,
+                move |addr, req| {
+                    let protocol = session_protocol.clone();
+                    async move { session_connect::handler(protocol, addr, req).await }
+                },
+            )
+            .request_middleware(auth_handler::require_auth_tokens);
 
         let session_server = "session_server";
         let addr = SESSION_SERVER_RECV_ADDR;
@@ -137,17 +156,19 @@ pub fn main() {
 
         let world_protocol_endpoint = world_server_naia_proto::protocol().get_rtc_endpoint();
 
-        server.serve_proxy(
-            gateway,
-            required_host_www,
-            api_allow_origin,
-            Method::Post,
-            &world_protocol_endpoint,
-            world_server,
-            addr,
-            &port,
-            &world_protocol_endpoint,
-        ).request_middleware(auth_handler::require_auth_tokens);
+        server
+            .serve_proxy(
+                gateway,
+                required_host_www,
+                api_allow_origin,
+                Method::Post,
+                &world_protocol_endpoint,
+                world_server,
+                addr,
+                &port,
+                &world_protocol_endpoint,
+            )
+            .request_middleware(auth_handler::require_auth_tokens);
 
         server.serve_proxy(
             gateway,
@@ -168,17 +189,18 @@ pub fn main() {
         let addr = CONTENT_SERVER_RECV_ADDR;
         let port = CONTENT_SERVER_PORT.to_string();
 
-        server.serve_proxy(
-            gateway,
-            required_host_www,
-            None,
-            Method::Get,
-            "",
-            content_server,
-            addr,
-            &port,
-            "launcher.html",
-        )
+        server
+            .serve_proxy(
+                gateway,
+                required_host_www,
+                None,
+                Method::Get,
+                "",
+                content_server,
+                addr,
+                &port,
+                "launcher.html",
+            )
             .request_middleware(register_token::handle)
             .request_middleware(auth_handler::if_auth_tokens_redirect_game);
         server.serve_proxy(
@@ -203,17 +225,19 @@ pub fn main() {
             &port,
             "launcher_bg.wasm",
         );
-        server.serve_proxy(
-            gateway,
-            required_host_www,
-            None,
-            Method::Get,
-            "game",
-            content_server,
-            addr,
-            &port,
-            "game.html",
-        ).request_middleware(auth_handler::require_auth_tokens_or_redirect_home);
+        server
+            .serve_proxy(
+                gateway,
+                required_host_www,
+                None,
+                Method::Get,
+                "game",
+                content_server,
+                addr,
+                &port,
+                "game.html",
+            )
+            .request_middleware(auth_handler::require_auth_tokens_or_redirect_home);
         server.raw_endpoint(
             gateway,
             required_host_www,
@@ -222,28 +246,32 @@ pub fn main() {
             "game.html",
             redirect::redirect_to_game,
         );
-        server.serve_proxy(
-            gateway,
-            required_host_www,
-            None,
-            Method::Get,
-            "game.js",
-            content_server,
-            addr,
-            &port,
-            "game.js",
-        ).request_middleware(auth_handler::require_auth_tokens);
-        server.serve_proxy(
-            gateway,
-            required_host_www,
-            None,
-            Method::Get,
-            "game_bg.wasm",
-            content_server,
-            addr,
-            &port,
-            "game_bg.wasm",
-        ).request_middleware(auth_handler::require_auth_tokens);
+        server
+            .serve_proxy(
+                gateway,
+                required_host_www,
+                None,
+                Method::Get,
+                "game.js",
+                content_server,
+                addr,
+                &port,
+                "game.js",
+            )
+            .request_middleware(auth_handler::require_auth_tokens);
+        server
+            .serve_proxy(
+                gateway,
+                required_host_www,
+                None,
+                Method::Get,
+                "game_bg.wasm",
+                content_server,
+                addr,
+                &port,
+                "game_bg.wasm",
+            )
+            .request_middleware(auth_handler::require_auth_tokens);
     }
 
     // prune expired rate limiter entries
@@ -271,10 +299,7 @@ fn start_server(server: Server) {
 
     server.https_start(Config::new(
         true,
-        vec![
-            "cyberlith.com".to_string(),
-            "www.cyberlith.com".to_string(),
-        ],
+        vec!["cyberlith.com".to_string(), "www.cyberlith.com".to_string()],
         vec!["admin@cyberlith.com".to_string()],
     ));
 }

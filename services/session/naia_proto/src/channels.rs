@@ -28,7 +28,6 @@ impl ProtocolPlugin for ChannelsPlugin {
             .add_channel::<ClientActionsChannel>(
                 ChannelDirection::ClientToServer,
                 ChannelMode::OrderedReliable(ReliableSettings::default()),
-            )
-        ;
+            );
     }
 }

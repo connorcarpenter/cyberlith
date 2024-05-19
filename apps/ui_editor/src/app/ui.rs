@@ -6,21 +6,19 @@ use bevy_ecs::{
     system::{Res, ResMut},
 };
 
-use logging::info;
 use asset_serde::json::{Asset, AssetData, AssetMeta, UiConfigJson};
 use game_engine::{
     asset::{
         embedded_asset_event, AssetId, AssetMetadataSerde, AssetType, ETag, EmbeddedAssetEvent,
     },
     input::{GamepadRumbleIntensity, Input, RumbleManager},
-    render::{
-        components::{
-            RenderLayers, Camera, CameraBundle, ClearOperation, OrthographicProjection, Projection,
-            RenderTarget,
-        },
+    render::components::{
+        Camera, CameraBundle, ClearOperation, OrthographicProjection, Projection, RenderLayers,
+        RenderTarget,
     },
     ui::UiManager,
 };
+use logging::info;
 use ui_builder::UiConfig;
 use ui_runner_config::UiRuntimeConfig;
 
@@ -52,7 +50,6 @@ pub fn setup(
 
     let mut ui_handles = Vec::new();
     for (ui_name, ui_asset_id, ui_etag, ui) in uis {
-
         // write JSON and bits files, metadata too
         let ui = write_to_file(&ui_name, &ui_asset_id, &ui_etag, ui);
 

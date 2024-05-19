@@ -3,18 +3,20 @@ use std::sync::{Arc, RwLock};
 use bevy_app::{App, Plugin, Startup, Update};
 
 use game_engine::{
+    http::CookieStore,
     kernel::KernelApp,
     render::{resources::WindowSettings, Draw},
     EnginePlugin,
-    http::CookieStore,
 };
 
 use crate::{
-    ui,
     resources::{
-        BackButtonClickedEvent, TextboxClickedEvent, Global, LoginButtonClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent, ForgotPasswordButtonClickedEvent, ForgotUsernameButtonClickedEvent,
+        BackButtonClickedEvent, ForgotPasswordButtonClickedEvent, ForgotUsernameButtonClickedEvent,
+        Global, LoginButtonClickedEvent, RegisterButtonClickedEvent, SubmitButtonClickedEvent,
+        TextboxClickedEvent,
     },
     systems::{draw, resize, scene},
+    ui,
 };
 
 pub struct LauncherApp {
@@ -26,15 +28,12 @@ impl KernelApp for LauncherApp {
     where
         Self: Sized,
     {
-        Self {
-            cookie_store_opt,
-        }
+        Self { cookie_store_opt }
     }
 }
 
 impl Plugin for LauncherApp {
     fn build(&self, app: &mut App) {
-
         let engine_plugin = EnginePlugin::new(self.cookie_store_opt.clone());
 
         app.add_plugins(engine_plugin)

@@ -41,7 +41,9 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
             .set_children_valign(Alignment::Start);
     });
     let title_text_style = ui_config.create_text_style(|s| {
-        s.set_background_alpha(0.).set_size_pc(90.0).set_text_color(Color::WHITE);
+        s.set_background_alpha(0.)
+            .set_size_pc(90.0)
+            .set_text_color(Color::WHITE);
     });
     let body_container_style = ui_config.create_panel_style(|s| {
         s.set_background_alpha(0.)
@@ -65,7 +67,8 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
         s.set_background_alpha(0.)
             .set_size_vp(7.0)
             .set_margin_left_vp(2.0)
-            .set_self_halign(Alignment::Start).set_text_color(Color::WHITE);
+            .set_self_halign(Alignment::Start)
+            .set_text_color(Color::WHITE);
     });
     let submit_container_style = ui_config.create_panel_style(|s| {
         s.set_background_alpha(0.)
@@ -88,13 +91,15 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
             .set_size_vp(2.0)
             .set_margin_left_vp(2.0)
             .set_self_halign(Alignment::End)
-            .set_self_valign(Alignment::Center).set_text_color(Color::RED);
+            .set_self_valign(Alignment::Center)
+            .set_text_color(Color::RED);
     });
     let base_button_text_style = ui_config.create_text_style(|s| {
         s.set_size_vp(5.0)
             .set_self_halign(Alignment::Center)
             .set_self_valign(Alignment::Center)
-            .set_margin_vp(1.0, 1.0, 1.0, 1.0).set_text_color(Color::WHITE);
+            .set_margin_vp(1.0, 1.0, 1.0, 1.0)
+            .set_text_color(Color::WHITE);
     });
     let base_button_style = ui_config.create_button_style(|s| {
         s.set_background_color(Color::DARK_GRAY)
@@ -111,7 +116,8 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
             .set_margin_right_vp(1.0);
     });
     let forgot_username_button_style = ui_config.create_button_style(|s| {
-        s.set_parent_style(base_button_style).set_margin_right_vp(1.7);
+        s.set_parent_style(base_button_style)
+            .set_margin_right_vp(1.7);
     });
     let forgot_button_text_style = ui_config.create_text_style(|s| {
         s.set_size_vp(3.5)
@@ -127,13 +133,15 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
         s.set_background_alpha(0.)
             .set_size_vp(5.)
             .set_self_halign(Alignment::Start)
-            .set_margin_left_vp(4.0).set_text_color(Color::WHITE);
+            .set_margin_left_vp(4.0)
+            .set_text_color(Color::WHITE);
     });
     let desc_label_style = ui_config.create_text_style(|s| {
         s.set_background_alpha(0.)
             .set_size_vp(3.5)
             .set_self_halign(Alignment::Start)
-            .set_margin_left_vp(4.0).set_text_color(Color::WHITE);
+            .set_margin_left_vp(4.0)
+            .set_text_color(Color::WHITE);
     });
     let base_textbox_style = ui_config.create_textbox_style(|s| {
         s.set_background_color(Color::GRAY)
@@ -194,14 +202,17 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
 
                 // body container
                 c.add_panel().set_style(body_container_style).contents(|c| {
-
                     // heading container left
                     c.add_panel()
                         .set_style(left_body_container_style)
                         .contents(|c| {
-                            c.add_text("forgot your username?").set_style(heading_text_style);
+                            c.add_text("forgot your username?")
+                                .set_style(heading_text_style);
 
-                            c.add_text("enter your email address below and we'll send you your username").set_style(desc_label_style);
+                            c.add_text(
+                                "enter your email address below and we'll send you your username",
+                            )
+                            .set_style(desc_label_style);
                             c.add_text("").set_style(desc_label_style);
 
                             // email input
@@ -235,7 +246,9 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
                                         });
 
                                     // spinner
-                                    c.add_spinner("spinner").set_style(spinner_style).set_visible(false);
+                                    c.add_spinner("spinner")
+                                        .set_style(spinner_style)
+                                        .set_visible(false);
 
                                     // error output
                                     c.add_text_with_id("", "error_output_text")

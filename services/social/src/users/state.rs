@@ -1,12 +1,7 @@
-
-pub struct UsersState {
-
-}
+pub struct UsersState {}
 
 impl UsersState {
     pub fn new() -> Self {
-        Self {
-
-        }
+        Self {}
     }
 }

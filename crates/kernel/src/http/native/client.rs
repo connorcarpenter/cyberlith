@@ -29,13 +29,10 @@ impl HttpClient {
 
     pub(crate) fn update_system(mut client: ResMut<Self>) {
         if let Some(cookie_store_clone) = client.cookie_store_opt.clone() {
-            InnerHttpClient::update(
-                &mut client.inner,
-                |response| {
-                    let mut cookie_store = cookie_store_clone.write().unwrap();
-                    cookie_store.handle_response(response);
-                }
-            )
+            InnerHttpClient::update(&mut client.inner, |response| {
+                let mut cookie_store = cookie_store_clone.write().unwrap();
+                cookie_store.handle_response(response);
+            })
         } else {
             InnerHttpClient::update(&mut client.inner, |_| {})
         }
@@ -48,15 +45,10 @@ impl HttpClient {
         req: Q,
     ) -> ResponseKey<Q::Response> {
         if let Some(cookie_store_clone) = self.cookie_store_opt.clone() {
-            self.inner.send_with_middleware(
-                addr,
-                port,
-                req,
-                |request| {
-                    let cookie_store = cookie_store_clone.read().unwrap();
-                    cookie_store.handle_request(request);
-                }
-            )
+            self.inner.send_with_middleware(addr, port, req, |request| {
+                let cookie_store = cookie_store_clone.read().unwrap();
+                cookie_store.handle_request(request);
+            })
         } else {
             self.inner.send(addr, port, req)
         }

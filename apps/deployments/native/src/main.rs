@@ -1,4 +1,4 @@
-use std::{time::Duration, thread};
+use std::{thread, time::Duration};
 
 use cfg_if::cfg_if;
 use config::TargetEnv;
@@ -8,10 +8,10 @@ cfg_if! {
     } else {}
 }
 
-use logging::{info, warn};
 use game_app::GameApp;
 use kernel::Kernel;
 use launcher_app::LauncherApp;
+use logging::{info, warn};
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 enum UrlAlias {
@@ -83,7 +83,10 @@ fn handle_http(kernel: &Kernel, next_url_alias: UrlAlias) -> UrlAlias {
                 };
             }
             error => {
-                warn!("Head request to {} failed with status: {} .. retrying", next_url, error);
+                warn!(
+                    "Head request to {} failed with status: {} .. retrying",
+                    next_url, error
+                );
                 thread::sleep(Duration::from_secs(2));
             }
         }

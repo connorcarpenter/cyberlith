@@ -1,6 +1,6 @@
 use ui_runner_config::Widget;
 
-use crate::{textbox::TextboxState, text::TextState, UiContainerState};
+use crate::{text::TextState, textbox::TextboxState, UiContainerState};
 
 #[derive(Clone)]
 pub enum WidgetState {

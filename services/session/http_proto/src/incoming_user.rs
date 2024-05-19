@@ -1,5 +1,5 @@
-use naia_serde::SerdeInternal as Serde;
 use auth_server_types::UserId;
+use naia_serde::SerdeInternal as Serde;
 
 use bevy_http_shared::{ApiRequest, ApiResponse, Method};
 
@@ -33,7 +33,9 @@ pub struct IncomingUserResponse;
 impl ApiRequest for IncomingUserRequest {
     type Response = IncomingUserResponse;
 
-    fn name() -> &'static str { "IncomingUserRequest" }
+    fn name() -> &'static str {
+        "IncomingUserRequest"
+    }
 
     fn method() -> Method {
         Method::Post
@@ -45,5 +47,7 @@ impl ApiRequest for IncomingUserRequest {
 }
 
 impl ApiResponse for IncomingUserResponse {
-    fn name() -> &'static str { "IncomingUserResponse" }
+    fn name() -> &'static str {
+        "IncomingUserResponse"
+    }
 }

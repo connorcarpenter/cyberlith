@@ -16,7 +16,7 @@ pub struct RegionServerState {
 impl RegionServerState {
     pub fn new(
         registration_resend_rate: Duration,
-        region_server_disconnect_timeout: Duration
+        region_server_disconnect_timeout: Duration,
     ) -> Self {
         Self {
             region_server_connection_state: ConnectionState::Disconnected,

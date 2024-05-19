@@ -1,22 +1,19 @@
-
 use bevy_ecs::event::{EventReader, EventWriter};
 
 use game_engine::{
-    http::HttpClient,
-    logging::{warn, info},
-    ui::{UiManager, UiHandle},
-    asset::{AssetId, embedded_asset_event, EmbeddedAssetEvent},
+    asset::{embedded_asset_event, AssetId, EmbeddedAssetEvent},
     config::{GATEWAY_PORT, PUBLIC_IP_ADDR},
+    http::HttpClient,
+    logging::{info, warn},
+    ui::{UiHandle, UiManager},
 };
 use gateway_http_proto::UserRegisterRequest;
 
-use crate::{
-    resources::{
-        Global, LoginButtonClickedEvent, SubmitButtonClickedEvent, TextboxClickedEvent
-    },
-    ui::{go_to_ui, UiKey}
-};
 use crate::ui::clear_spinners_if_needed;
+use crate::{
+    resources::{Global, LoginButtonClickedEvent, SubmitButtonClickedEvent, TextboxClickedEvent},
+    ui::{go_to_ui, UiKey},
+};
 
 pub(crate) fn setup(
     global: &mut Global,
@@ -93,65 +90,94 @@ pub(crate) fn handle_events(
 
         // check that the passwords match
         if !password.eq(&confirm_password) {
-            ui_manager.set_text(&register_ui_handle, "error_output_text", "Passwords do not match. Please try again.");
+            ui_manager.set_text(
+                &register_ui_handle,
+                "error_output_text",
+                "Passwords do not match. Please try again.",
+            );
             return;
         }
 
         // check that every field is not empty
         if username.is_empty() {
-            ui_manager.set_text(&register_ui_handle, "error_output_text", "Please enter your username.");
+            ui_manager.set_text(
+                &register_ui_handle,
+                "error_output_text",
+                "Please enter your username.",
+            );
             return;
         }
         if email.is_empty() {
-            ui_manager.set_text(&register_ui_handle, "error_output_text", "Please enter your email address.");
+            ui_manager.set_text(
+                &register_ui_handle,
+                "error_output_text",
+                "Please enter your email address.",
+            );
             return;
         }
         if password.is_empty() {
-            ui_manager.set_text(&register_ui_handle, "error_output_text", "Please enter your password.");
+            ui_manager.set_text(
+                &register_ui_handle,
+                "error_output_text",
+                "Please enter your password.",
+            );
             return;
         }
         if confirm_password.is_empty() {
-            ui_manager.set_text(&register_ui_handle, "error_output_text", "Please confirm your password.");
+            ui_manager.set_text(
+                &register_ui_handle,
+                "error_output_text",
+                "Please confirm your password.",
+            );
             return;
         }
 
         // check that every field matches the necessary minimum length
         {
-            let min_length = ui_manager.get_textbox_validator(&register_ui_handle, "username_textbox").unwrap().min_length();
+            let min_length = ui_manager
+                .get_textbox_validator(&register_ui_handle, "username_textbox")
+                .unwrap()
+                .min_length();
             if username.len() < min_length {
-                let error_text = format!(
-                    "Username must be at least {} characters long.",
-                    min_length,
-                );
+                let error_text =
+                    format!("Username must be at least {} characters long.", min_length,);
                 ui_manager.set_text(&register_ui_handle, "error_output_text", &error_text);
                 return;
             }
         }
         {
-            let min_length = ui_manager.get_textbox_validator(&register_ui_handle, "email_textbox").unwrap().min_length();
+            let min_length = ui_manager
+                .get_textbox_validator(&register_ui_handle, "email_textbox")
+                .unwrap()
+                .min_length();
             if email.len() < min_length {
-                let error_text = format!(
-                    "Email must be at least {} characters long.",
-                    min_length,
-                );
+                let error_text = format!("Email must be at least {} characters long.", min_length,);
                 ui_manager.set_text(&register_ui_handle, "error_output_text", &error_text);
                 return;
             }
         }
         {
-            let min_length = ui_manager.get_textbox_validator(&register_ui_handle, "password_textbox").unwrap().min_length();
+            let min_length = ui_manager
+                .get_textbox_validator(&register_ui_handle, "password_textbox")
+                .unwrap()
+                .min_length();
             if password.len() < min_length {
-                let error_text = format!(
-                    "Password must be at least {} characters long.",
-                    min_length,
-                );
+                let error_text =
+                    format!("Password must be at least {} characters long.", min_length,);
                 ui_manager.set_text(&register_ui_handle, "error_output_text", &error_text);
                 return;
             }
         }
 
         // send backend request
-        backend_send_request(global, http_client, ui_manager, &username, &email, &password);
+        backend_send_request(
+            global,
+            http_client,
+            ui_manager,
+            &username,
+            &email,
+            &password,
+        );
     }
 
     // Textbox Click
@@ -167,11 +193,7 @@ pub(crate) fn handle_events(
     }
 }
 
-pub fn reset_state(
-    ui_manager: &mut UiManager,
-    ui_handle: &UiHandle
-) {
-
+pub fn reset_state(ui_manager: &mut UiManager, ui_handle: &UiHandle) {
     // clear textboxes
     ui_manager.set_text(&ui_handle, "username_textbox", "");
     ui_manager.set_text(&ui_handle, "email_textbox", "");
@@ -195,7 +217,6 @@ fn backend_send_request(
     email: &str,
     password: &str,
 ) {
-
     if global.user_register_response_key_opt.is_some() {
         warn!("already sending register request...");
         return;
@@ -238,12 +259,20 @@ pub(crate) fn process_requests(
                     err.to_string()
                 );
 
-                ui_manager.set_text(&register_ui_handle, "error_output_text", "Oops! Something went wrong on our end. Please try again later.");
+                ui_manager.set_text(
+                    &register_ui_handle,
+                    "error_output_text",
+                    "Oops! Something went wrong on our end. Please try again later.",
+                );
             }
         }
 
         clear_spinners_if_needed(global, ui_manager);
 
-        go_to_ui(ui_manager, global, &global.get_ui_handle(UiKey::RegisterFinish));
+        go_to_ui(
+            ui_manager,
+            global,
+            &global.get_ui_handle(UiKey::RegisterFinish),
+        );
     }
 }

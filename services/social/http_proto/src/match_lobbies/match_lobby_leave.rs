@@ -1,6 +1,6 @@
-use naia_serde::SerdeInternal as Serde;
 use auth_server_types::UserId;
 use http_common::{ApiRequest, ApiResponse, Method};
+use naia_serde::SerdeInternal as Serde;
 
 // Request
 #[derive(Serde, PartialEq, Clone)]
@@ -21,7 +21,9 @@ impl MatchLobbyLeaveRequest {
         &self.session_secret
     }
 
-    pub fn user_id(&self) -> UserId { self.user_id }
+    pub fn user_id(&self) -> UserId {
+        self.user_id
+    }
 }
 
 // Response
@@ -32,7 +34,9 @@ pub struct MatchLobbyLeaveResponse;
 impl ApiRequest for MatchLobbyLeaveRequest {
     type Response = MatchLobbyLeaveResponse;
 
-    fn name() -> &'static str { "MatchLobbyLeaveRequest" }
+    fn name() -> &'static str {
+        "MatchLobbyLeaveRequest"
+    }
 
     fn method() -> Method {
         Method::Post
@@ -44,5 +48,7 @@ impl ApiRequest for MatchLobbyLeaveRequest {
 }
 
 impl ApiResponse for MatchLobbyLeaveResponse {
-    fn name() -> &'static str { "MatchLobbyLeaveResponse" }
+    fn name() -> &'static str {
+        "MatchLobbyLeaveResponse"
+    }
 }

@@ -4,14 +4,16 @@ use bevy_app::{App, Plugin, Startup, Update};
 use bevy_ecs::{prelude::in_state, schedule::IntoSystemConfigs};
 
 use game_engine::{
+    http::CookieStore,
     kernel::KernelApp,
     render::{resources::WindowSettings, Draw},
     NetworkedEnginePlugin,
-    http::CookieStore,
 };
 
+use super::systems::{
+    cube_scene, draw, init_spinner, keyboard_input, network, resize, walker_scene,
+};
 use crate::states::AppState;
-use super::systems::{keyboard_input, network, walker_scene, init_spinner, cube_scene, resize, draw};
 
 pub struct GameApp {
     cookie_store_opt: Option<Arc<RwLock<CookieStore>>>,
@@ -22,9 +24,7 @@ impl KernelApp for GameApp {
     where
         Self: Sized,
     {
-        Self {
-            cookie_store_opt,
-        }
+        Self { cookie_store_opt }
     }
 }
 

@@ -2,7 +2,7 @@ use naia_serde::SerdeInternal as Serde;
 
 use http_common::{ApiRequest, ApiResponse, Method};
 
-use crate::{AccessToken, RegisterToken, RefreshToken};
+use crate::{AccessToken, RefreshToken, RegisterToken};
 
 // Request
 #[derive(Serde, PartialEq, Clone)]
@@ -12,9 +12,7 @@ pub struct UserRegisterConfirmRequest {
 
 impl UserRegisterConfirmRequest {
     pub fn new(register_token: RegisterToken) -> Self {
-        Self {
-            register_token,
-        }
+        Self { register_token }
     }
 }
 
@@ -38,7 +36,9 @@ impl UserRegisterConfirmResponse {
 impl ApiRequest for UserRegisterConfirmRequest {
     type Response = UserRegisterConfirmResponse;
 
-    fn name() -> &'static str { "UserRegisterConfirmRequest" }
+    fn name() -> &'static str {
+        "UserRegisterConfirmRequest"
+    }
 
     fn method() -> Method {
         Method::Post
@@ -50,5 +50,7 @@ impl ApiRequest for UserRegisterConfirmRequest {
 }
 
 impl ApiResponse for UserRegisterConfirmResponse {
-    fn name() -> &'static str { "UserRegisterConfirmResponse" }
+    fn name() -> &'static str {
+        "UserRegisterConfirmResponse"
+    }
 }

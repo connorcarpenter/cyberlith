@@ -6,16 +6,16 @@ use std::{
 
 use async_dup::Arc;
 
-use logging::info;
+use bevy_http_shared::Protocol;
 use executor::smol::{
     channel,
     channel::{Receiver, Sender},
     lock::RwLock,
     Async,
 };
-use bevy_http_shared::Protocol;
 use http_common::{Request, Response, ResponseError};
 use http_server_shared::{executor, serve_impl, MatchHostResult};
+use logging::info;
 
 struct KeyMaker {
     current_index: u64,
@@ -243,7 +243,9 @@ async fn serve(
 
                 let response_result = match response_receiver.recv().await {
                     Ok(response_result) => response_result,
-                    Err(_err) => Err(ResponseError::NetworkError("error receiving response over internal channel".to_string())),
+                    Err(_err) => Err(ResponseError::NetworkError(
+                        "error receiving response over internal channel".to_string(),
+                    )),
                 };
 
                 response_result

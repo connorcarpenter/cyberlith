@@ -111,9 +111,7 @@ impl AssetManager {
     ) {
         if let Some((_asset_server_addr, _asset_server_port)) = asset_server_ip_opt {
             if let Some(user_assets) = self.users.get_mut(&user_key) {
-                user_assets.unload_user_asset(
-                    asset_id,
-                );
+                user_assets.unload_user_asset(asset_id);
             } else {
                 panic!("UserAssets not found for user_key: {:?}", user_key);
             }

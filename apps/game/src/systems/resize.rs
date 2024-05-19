@@ -1,6 +1,9 @@
 use bevy_ecs::{change_detection::ResMut, prelude::Query};
 
-use game_engine::render::{components::{Camera, Viewport}, Window};
+use game_engine::render::{
+    components::{Camera, Viewport},
+    Window,
+};
 
 pub fn handle_viewport_resize(mut window: ResMut<Window>, mut cameras_q: Query<&mut Camera>) {
     // sync camera viewport to window

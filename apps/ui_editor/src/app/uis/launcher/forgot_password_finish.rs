@@ -23,14 +23,12 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
 
     // styles
     let window_style = ui_config.create_panel_style(|s| {
-        s
-            .set_background_alpha(0.)
+        s.set_background_alpha(0.)
             .set_vertical()
             .set_children_halign(Alignment::Center);
     });
     let main_container_style = ui_config.create_panel_style(|s| {
-        s
-            .set_background_alpha(0.)
+        s.set_background_alpha(0.)
             .set_background_color(Color::DARK_GRAY)
             .set_size_pc(100., 100.)
             .set_solid_fit()
@@ -38,8 +36,7 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
             .set_self_halign(Alignment::Center);
     });
     let title_container_style = ui_config.create_panel_style(|s| {
-        s
-            .set_background_alpha(0.)
+        s.set_background_alpha(0.)
             // .set_background_color(Color::BLUE)
             .set_size_pc(100., 16.)
             .set_vertical()
@@ -49,8 +46,7 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
         s.set_background_alpha(0.).set_size_pc(90.0);
     });
     let body_container_style = ui_config.create_panel_style(|s| {
-        s
-            .set_background_alpha(0.)
+        s.set_background_alpha(0.)
             // .set_background_color(Color::RED)
             .set_size_pc(100., 84.)
             .set_vertical()
@@ -58,8 +54,7 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
             .set_row_between_vp(1.0);
     });
     let heading_text_line_container_style = ui_config.create_panel_style(|s| {
-        s
-            .set_background_alpha(0.)
+        s.set_background_alpha(0.)
             // .set_background_color(Color::YELLOW)
             .set_width_pc(50.0)
             .set_height_vp(6.0);
@@ -106,59 +101,46 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
                     });
 
                 // body container
-                c
-                    .add_panel()
-                    .set_style(body_container_style)
-                    .contents(|c| {
-                        // line 1
-                        c
-                            .add_panel()
-                            .set_style(heading_text_line_container_style)
-                            .contents(|c| {
-                                c
-                                    .add_text("if the email you entered")
-                                    .set_style(heading_text_style);
-                            });
+                c.add_panel().set_style(body_container_style).contents(|c| {
+                    // line 1
+                    c.add_panel()
+                        .set_style(heading_text_line_container_style)
+                        .contents(|c| {
+                            c.add_text("if the email you entered")
+                                .set_style(heading_text_style);
+                        });
 
-                        // line 2
-                        c
-                            .add_panel()
-                            .set_style(heading_text_line_container_style)
-                            .contents(|c| {
-                                c
-                                    .add_text("is associated with a valid account,")
-                                    .set_style(heading_text_style);
-                            });
+                    // line 2
+                    c.add_panel()
+                        .set_style(heading_text_line_container_style)
+                        .contents(|c| {
+                            c.add_text("is associated with a valid account,")
+                                .set_style(heading_text_style);
+                        });
 
-                        // line 3
-                        c
-                            .add_panel()
-                            .set_style(heading_text_line_container_style)
-                            .contents(|c| {
-                                c
-                                    .add_text("we'll send you an email with instructions")
-                                    .set_style(heading_text_style);
-                            });
+                    // line 3
+                    c.add_panel()
+                        .set_style(heading_text_line_container_style)
+                        .contents(|c| {
+                            c.add_text("we'll send you an email with instructions")
+                                .set_style(heading_text_style);
+                        });
 
-                        // line 4
-                        c
-                            .add_panel()
-                            .set_style(heading_text_line_container_style)
-                            .contents(|c| {
-                                c
-                                    .add_text("to reset your password.")
-                                    .set_style(heading_text_style);
-                            });
+                    // line 4
+                    c.add_panel()
+                        .set_style(heading_text_line_container_style)
+                        .contents(|c| {
+                            c.add_text("to reset your password.")
+                                .set_style(heading_text_style);
+                        });
 
-                        // home button
-                        c
-                            .add_button("submit_button")
-                            .set_style(home_button_style)
-                            .contents(|c| {
-                                c
-                                    .add_text("home").set_style(base_button_text_style);
-                            })
-                            .set_as_first_input();
+                    // home button
+                    c.add_button("submit_button")
+                        .set_style(home_button_style)
+                        .contents(|c| {
+                            c.add_text("home").set_style(base_button_text_style);
+                        })
+                        .set_as_first_input();
                 });
             });
         });

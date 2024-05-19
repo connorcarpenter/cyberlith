@@ -1,14 +1,16 @@
-use std::{net::SocketAddr};
+use std::net::SocketAddr;
 
-use naia_serde::BitWriter;
 use auth_server_types::UserId;
+use naia_serde::BitWriter;
 
 use config::{
     REGION_SERVER_PORT, REGION_SERVER_RECV_ADDR, SESSION_SERVER_RECV_ADDR,
     SESSION_SERVER_SIGNAL_PORT,
 };
 use http_client::{HttpClient, ResponseError};
-use http_server::{executor::smol::lock::RwLock, async_dup::Arc, Method, Request, Response, ApiRequest};
+use http_server::{
+    async_dup::Arc, executor::smol::lock::RwLock, ApiRequest, Method, Request, Response,
+};
 use logging::warn;
 
 use region_server_http_proto::SessionConnectRequest;
@@ -22,7 +24,6 @@ pub(crate) async fn handler(
     _incoming_addr: SocketAddr,
     incoming_request: Request,
 ) -> Result<Response, ResponseError> {
-
     let host_name = "gateway";
 
     // call to region server with login request
@@ -49,8 +50,12 @@ pub(crate) async fn handler(
             user_id
         };
 
-        let Ok(connect_response) =
-            HttpClient::send(&remote_addr, remote_port, SessionConnectRequest::new(user_id)).await
+        let Ok(connect_response) = HttpClient::send(
+            &remote_addr,
+            remote_port,
+            SessionConnectRequest::new(user_id),
+        )
+        .await
         else {
             warn!("Failed session_connect request to region server");
             return Err(ResponseError::InternalServerError(
@@ -95,7 +100,8 @@ pub(crate) async fn handler(
         };
 
         let mut session_connect_request = incoming_request.clone();
-        session_connect_request.url = format!("http://{}:{}/{}", remote_addr, remote_port, remote_path);
+        session_connect_request.url =
+            format!("http://{}:{}/{}", remote_addr, remote_port, remote_path);
         session_connect_request.insert_header("Authorization", &session_auth_bytes);
         match http_client::raw::fetch_async(session_connect_request).await {
             Ok(session_connect_response) => {

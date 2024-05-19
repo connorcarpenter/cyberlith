@@ -16,9 +16,10 @@ mod embedded_asset;
 mod renderer;
 
 pub mod kernel {
-    pub use kernel::{AppExitAction, KernelApp, get_querystring_param};
+    pub use kernel::{get_querystring_param, AppExitAction, KernelApp};
 }
 pub mod asset {
+    pub use crate::asset_cache::AssetLoadedEvent;
     pub use asset_id::{AssetId, AssetType, ETag};
     pub use asset_loader::{
         embedded_asset_event, AnimationData, AssetHandle, AssetManager, AssetMetadataSerde,
@@ -26,7 +27,6 @@ pub mod asset {
         SkinData,
     };
     pub use asset_render::AssetRender;
-    pub use crate::asset_cache::AssetLoadedEvent;
 }
 pub mod input {
     pub use input::*;

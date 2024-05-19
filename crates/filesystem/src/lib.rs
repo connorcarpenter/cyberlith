@@ -13,5 +13,6 @@ pub use manager::FileSystemManager;
 pub use plugin::FileSystemPlugin;
 pub use task_key::TaskKey;
 pub use tasks::{
-    create_dir::CreateDirResult, read::ReadResult, read_dir::ReadDirResult, write::WriteResult, delete::DeleteResult,
+    create_dir::CreateDirResult, delete::DeleteResult, read::ReadResult, read_dir::ReadDirResult,
+    write::WriteResult,
 };

@@ -1,6 +1,6 @@
-use std::sync::{Arc, RwLock};
 use bevy_app::{App, Plugin, Startup, Update};
 use bevy_ecs::system::ResMut;
+use std::sync::{Arc, RwLock};
 
 use asset_loader::AssetPlugin;
 use filesystem::FileSystemPlugin;
@@ -29,11 +29,9 @@ impl EnginePlugin {
 
 impl Plugin for EnginePlugin {
     fn build(&self, app: &mut App) {
-
         let kernel_plugin = KernelPlugin::new(self.cookie_store_opt.clone());
 
-        app
-            .add_plugins(kernel_plugin)
+        app.add_plugins(kernel_plugin)
             // Add Render Plugins
             .add_plugins(RenderApiPlugin)
             .add_plugins(RendererPlugin)

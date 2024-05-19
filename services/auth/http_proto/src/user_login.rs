@@ -1,7 +1,7 @@
 use naia_serde::SerdeInternal as Serde;
 
-use http_common::{ApiRequest, ApiResponse, Method};
 use crate::{AccessToken, RefreshToken};
+use http_common::{ApiRequest, ApiResponse, Method};
 
 // Request
 #[derive(Serde, PartialEq, Clone)]
@@ -42,7 +42,9 @@ impl UserLoginResponse {
 impl ApiRequest for UserLoginRequest {
     type Response = UserLoginResponse;
 
-    fn name() -> &'static str { "UserLoginRequest" }
+    fn name() -> &'static str {
+        "UserLoginRequest"
+    }
 
     fn method() -> Method {
         Method::Post
@@ -54,5 +56,7 @@ impl ApiRequest for UserLoginRequest {
 }
 
 impl ApiResponse for UserLoginResponse {
-    fn name() -> &'static str { "UserLoginResponse" }
+    fn name() -> &'static str {
+        "UserLoginResponse"
+    }
 }

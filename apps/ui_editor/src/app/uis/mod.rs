@@ -1,2 +1,2 @@
-pub mod launcher;
 pub mod game;
+pub mod launcher;

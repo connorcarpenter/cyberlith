@@ -1,7 +1,6 @@
-
-use logging::{info};
-use http_client::{ResponseError};
+use http_client::ResponseError;
 use http_server::{async_dup::Arc, executor::smol::lock::RwLock, ApiServer, Server};
+use logging::info;
 
 use social_server_http_proto::{HeartbeatRequest, HeartbeatResponse};
 

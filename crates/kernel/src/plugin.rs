@@ -2,7 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use bevy_app::{App, Plugin};
 
-use crate::{http::CookieStore, AppExitAction, http::HttpClientPlugin};
+use crate::{http::CookieStore, http::HttpClientPlugin, AppExitAction};
 
 pub struct KernelPlugin {
     cookie_store_opt: Option<Arc<RwLock<CookieStore>>>,

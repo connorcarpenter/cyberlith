@@ -1,4 +1,4 @@
-pub use log::{error, info, warn, debug};
+pub use log::{debug, error, info, warn};
 
 use tracing::{Level, Subscriber};
 use tracing_log::LogTracer;

@@ -2,8 +2,8 @@ use std::sync::{Arc, RwLock};
 
 use bevy_app::{App, Plugin, Startup, Update};
 
-use naia_bevy_client::{ClientConfig as NaiaClientConfig, Plugin as NaiaClientPlugin};
 use kernel::http::CookieStore;
+use naia_bevy_client::{ClientConfig as NaiaClientConfig, Plugin as NaiaClientPlugin};
 
 use session_server_naia_proto::protocol as session_server_naia_protocol;
 use world_server_naia_proto::{
@@ -33,7 +33,6 @@ impl NetworkedEnginePlugin {
 
 impl Plugin for NetworkedEnginePlugin {
     fn build(&self, app: &mut App) {
-
         let engine_plugin = EnginePlugin::new(self.cookie_store_opt.clone());
 
         app.add_plugins(engine_plugin)

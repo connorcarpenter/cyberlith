@@ -162,7 +162,6 @@ impl Project {
     }
 
     pub(crate) fn dependency_file_keys(&self, file_key: &FileKey) -> Option<Vec<FileKey>> {
-
         let Some(file_entry_val) = self.working_file_entries.get(file_key) else {
             return None;
         };

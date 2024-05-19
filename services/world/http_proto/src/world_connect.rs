@@ -1,5 +1,5 @@
-use naia_serde::SerdeInternal as Serde;
 use auth_server_types::UserId;
+use naia_serde::SerdeInternal as Serde;
 
 use bevy_http_shared::{ApiRequest, ApiResponse, Method};
 
@@ -49,7 +49,9 @@ impl IncomingUserResponse {
 impl ApiRequest for WorldConnectRequest {
     type Response = IncomingUserResponse;
 
-    fn name() -> &'static str { "WorldConnectRequest" }
+    fn name() -> &'static str {
+        "WorldConnectRequest"
+    }
 
     fn method() -> Method {
         Method::Post
@@ -61,5 +63,7 @@ impl ApiRequest for WorldConnectRequest {
 }
 
 impl ApiResponse for IncomingUserResponse {
-    fn name() -> &'static str { "IncomingUserResponse" }
+    fn name() -> &'static str {
+        "IncomingUserResponse"
+    }
 }

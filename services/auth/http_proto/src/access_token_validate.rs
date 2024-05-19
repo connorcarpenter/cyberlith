@@ -1,5 +1,5 @@
-use naia_serde::SerdeInternal as Serde;
 use auth_server_types::UserId;
+use naia_serde::SerdeInternal as Serde;
 
 use http_common::{ApiRequest, ApiResponse, Method};
 
@@ -13,9 +13,7 @@ pub struct AccessTokenValidateRequest {
 
 impl AccessTokenValidateRequest {
     pub fn new(access_token: AccessToken) -> Self {
-        Self {
-            access_token,
-        }
+        Self { access_token }
     }
 }
 
@@ -27,9 +25,7 @@ pub struct AccessTokenValidateResponse {
 
 impl AccessTokenValidateResponse {
     pub fn new(user_id: UserId) -> Self {
-        Self {
-            user_id,
-        }
+        Self { user_id }
     }
 }
 
@@ -37,7 +33,9 @@ impl AccessTokenValidateResponse {
 impl ApiRequest for AccessTokenValidateRequest {
     type Response = AccessTokenValidateResponse;
 
-    fn name() -> &'static str { "AccessTokenValidateRequest" }
+    fn name() -> &'static str {
+        "AccessTokenValidateRequest"
+    }
 
     fn method() -> Method {
         Method::Post
@@ -49,5 +47,7 @@ impl ApiRequest for AccessTokenValidateRequest {
 }
 
 impl ApiResponse for AccessTokenValidateResponse {
-    fn name() -> &'static str { "AccessTokenValidateResponse" }
+    fn name() -> &'static str {
+        "AccessTokenValidateResponse"
+    }
 }

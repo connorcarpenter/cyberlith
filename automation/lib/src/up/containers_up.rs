@@ -1,8 +1,8 @@
 use std::{collections::HashSet, thread, time::Duration};
 
+use executor::smol::channel::TryRecvError;
 use logging::{info, warn};
 use openssh::Session;
-use executor::smol::channel::TryRecvError;
 
 use crate::{
     get_container_registry_creds, get_container_registry_url,
@@ -104,7 +104,11 @@ async fn images_push(config: &HashSet<String>, image_tag: &str) -> Result<(), Cl
     Ok(())
 }
 
-async fn images_pull(config: &HashSet<String>, image_tag: &str, session: &Session) -> Result<(), CliError> {
+async fn images_pull(
+    config: &HashSet<String>,
+    image_tag: &str,
+    session: &Session,
+) -> Result<(), CliError> {
     run_ssh_command(
         &session,
         format!(
@@ -154,7 +158,11 @@ async fn remove_network(session: &Session) -> Result<(), CliError> {
     Ok(())
 }
 
-async fn containers_start(config: &HashSet<String>, image_tag: &str, session: &Session) -> Result<(), CliError> {
+async fn containers_start(
+    config: &HashSet<String>,
+    image_tag: &str,
+    session: &Session,
+) -> Result<(), CliError> {
     container_create_and_start(config, session, "redirector", image_tag, "-p 80:80/tcp").await?;
     container_create_and_start(config, session, "gateway", image_tag, "-p 443:443/tcp").await?;
     container_create_and_start(config, session, "content", image_tag, "-p 14197:14197/tcp").await?;
@@ -163,14 +171,16 @@ async fn containers_start(config: &HashSet<String>, image_tag: &str, session: &S
     container_create_and_start(
         config,
         session,
-        "session", image_tag,
+        "session",
+        image_tag,
         "-p 14200:14200/tcp -p 14201:14201/udp",
     )
     .await?;
     container_create_and_start(
         config,
         session,
-        "world", image_tag,
+        "world",
+        image_tag,
         "-p 14203:14203/tcp -p 14204:14204/udp",
     )
     .await?;
@@ -200,7 +210,11 @@ async fn containers_stop(config: &HashSet<String>, session: &Session) -> Result<
     Ok(())
 }
 
-pub async fn image_push(config: &HashSet<String>, image_name: &str, image_tag: &str) -> Result<(), CliError> {
+pub async fn image_push(
+    config: &HashSet<String>,
+    image_name: &str,
+    image_tag: &str,
+) -> Result<(), CliError> {
     if !config.contains(image_name) {
         return Ok(()); // skip this image
     }

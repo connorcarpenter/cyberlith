@@ -108,8 +108,7 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
             c.add_panel()
                 .set_style(heading_container_style)
                 .contents(|c| {
-                    c.add_text("host a match")
-                        .set_style(heading_text_style);
+                    c.add_text("host a match").set_style(heading_text_style);
                 });
 
             // name input
@@ -120,9 +119,7 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
                 .set_as_first_input()
                 .set_style(base_textbox_style)
                 .navigation(|n| {
-                    n
-                        .down_goes_to("submit_button")
-                        .tab_goes_to("submit_button");
+                    n.down_goes_to("submit_button").tab_goes_to("submit_button");
                 });
 
             c.add_panel()
@@ -135,12 +132,13 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
                             c.add_text("submit").set_style(base_button_text_style);
                         })
                         .navigation(|n| {
-                            n.up_goes_to("name_textbox")
-                                .tab_goes_to("name_textbox");
+                            n.up_goes_to("name_textbox").tab_goes_to("name_textbox");
                         });
 
                     // spinner
-                    c.add_spinner("spinner").set_style(spinner_style).set_visible(false);
+                    c.add_spinner("spinner")
+                        .set_style(spinner_style)
+                        .set_visible(false);
 
                     // error output
                     c.add_text_with_id("", "error_output_text")

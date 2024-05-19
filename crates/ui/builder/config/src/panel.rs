@@ -40,7 +40,6 @@ pub struct PanelStyle {
 
 impl PanelStyle {
     pub fn merge(&mut self, other: &Self, inheriting: bool) {
-
         // is_viewport does not inherit, but it still needs to merge when serializing/deserializing
         if !inheriting {
             self.is_viewport = other.is_viewport;

@@ -33,7 +33,10 @@ pub fn recv_world_connect_response(
             global.remove_world_connect_response_key(&response_key);
             match result {
                 Ok(response) => {
-                    info!("received from regionserver: world_connect(token: {:?})", response.login_token);
+                    info!(
+                        "received from regionserver: world_connect(token: {:?})",
+                        response.login_token
+                    );
 
                     // store world instance secret with user key
                     global.user_set_world_connected(
@@ -44,9 +47,7 @@ pub fn recv_world_connect_response(
 
                     // send world connect token to user
                     // info!("sending world connect token to user");
-                    let token = WorldConnectToken::new(
-                        &response.login_token,
-                    );
+                    let token = WorldConnectToken::new(&response.login_token);
                     server.send_message::<PrimaryChannel, WorldConnectToken>(&user_key, &token);
                 }
                 Err(_) => {
@@ -95,13 +96,8 @@ pub fn recv_added_asset_id_request(
                 asset_id,
             );
         } else {
-            asset_manager.unload_user_asset(
-                global.get_asset_server_url(),
-                user_key,
-                asset_id,
-            );
+            asset_manager.unload_user_asset(global.get_asset_server_url(), user_key, asset_id);
         }
-
 
         //info!("UserAsset Response sent to world server ..");
 

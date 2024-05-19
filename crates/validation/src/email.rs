@@ -3,7 +3,6 @@ use crate::{ValidationType, Validator};
 pub struct EmailValidation;
 
 impl Validator for EmailValidation {
-
     fn min_length() -> usize {
         3
     }

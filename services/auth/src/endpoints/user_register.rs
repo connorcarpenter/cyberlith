@@ -1,13 +1,16 @@
 use logging::{info, warn};
 
-use http_client::ResponseError;
-use http_server::{async_dup::Arc, http_log_util, executor::smol::lock::RwLock, ApiServer, Server, ApiResponse, ApiRequest};
 use config::TargetEnv;
+use http_client::ResponseError;
+use http_server::{
+    async_dup::Arc, executor::smol::lock::RwLock, http_log_util, ApiRequest, ApiResponse,
+    ApiServer, Server,
+};
 
 use auth_server_http_proto::{UserRegisterRequest, UserRegisterResponse};
 use validation::{EmailValidation, PasswordValidation, UsernameValidation, Validator};
 
-use crate::{error::AuthServerError, types::TempRegistration, state::State};
+use crate::{error::AuthServerError, state::State, types::TempRegistration};
 
 pub fn user_register(host_name: &str, server: &mut Server, state: Arc<RwLock<State>>) {
     server.api_endpoint(host_name, None, move |_addr, req| {
@@ -20,7 +23,11 @@ async fn async_impl(
     state: Arc<RwLock<State>>,
     incoming_request: UserRegisterRequest,
 ) -> Result<UserRegisterResponse, ResponseError> {
-    http_log_util::recv_req("auth_server", &UserRegisterRequest::endpoint_key(), UserRegisterRequest::name());
+    http_log_util::recv_req(
+        "auth_server",
+        &UserRegisterRequest::endpoint_key(),
+        UserRegisterRequest::name(),
+    );
 
     let mut state = state.write().await;
     let response = match state.user_register(incoming_request) {
@@ -45,7 +52,6 @@ async fn async_impl(
 
 impl State {
     fn user_register(&mut self, request: UserRegisterRequest) -> Result<(), AuthServerError> {
-
         let username = request.username.to_ascii_lowercase();
         let email = request.email;
         let password = request.password;
@@ -80,12 +86,13 @@ impl State {
 
         // on local, should be http://127.0.0.1:14196/?register_token={}
         // on prod, should be https://www.cyberlith.com/?register_token={}
-        let link_url = format!("{}/?register_token={}", TargetEnv::gateway_url(), reg_token_str); // TODO: replace with working URL from config
+        let link_url = format!(
+            "{}/?register_token={}",
+            TargetEnv::gateway_url(),
+            reg_token_str
+        ); // TODO: replace with working URL from config
 
-        info!(
-            "sending register token to user's email: {:?}",
-            &user_email
-        );
+        info!("sending register token to user's email: {:?}", &user_email);
 
         let text_msg = self
             .email_catalog

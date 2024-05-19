@@ -9,8 +9,6 @@ pub struct MatchLobbyJoin {
 
 impl MatchLobbyJoin {
     pub fn new(match_id: MatchLobbyId) -> Self {
-        Self {
-            match_id,
-        }
+        Self { match_id }
     }
 }

@@ -2,8 +2,11 @@ use smallvec::SmallVec;
 
 use logging::warn;
 
-use crate::{percentage_calc, LayoutCache, LayoutType, NodeId, NodeStore, PositionType, Size, SizeUnits, Solid, TextMeasurer, UiVisibilityStore, MarginUnits};
 use crate::store::NodeStateStore;
+use crate::{
+    percentage_calc, LayoutCache, LayoutType, MarginUnits, NodeId, NodeStore, PositionType, Size,
+    SizeUnits, Solid, TextMeasurer, UiVisibilityStore,
+};
 
 const DEFAULT_MIN: f32 = -f32::MAX;
 const DEFAULT_MAX: f32 = f32::MAX;
@@ -79,7 +82,6 @@ pub(crate) fn layout(
     visibility_store: &UiVisibilityStore,
     text_measurer: &dyn TextMeasurer,
 ) -> Size {
-
     if node_is_root {
         init_parent_main = viewport_size.1;
         init_parent_cross = viewport_size.0;
@@ -192,12 +194,7 @@ pub(crate) fn layout(
 
     // TODO: Figure out how to constrain content size on cross axis.
 
-    apply_solid_layout(
-        node,
-        store,
-        &mut computed_main,
-        &mut computed_cross
-    );
+    apply_solid_layout(node, store, &mut computed_main, &mut computed_cross);
     apply_text_layout(
         node,
         store,
@@ -217,12 +214,12 @@ pub(crate) fn layout(
     }
 
     let viewport_size = if node_is_viewport {
-
         if node_is_root {
             warn!("root should not be a viewport");
         }
         // info!("viewport size was: {:?}", viewport_size);
-        let output = match parent_layout_type { // TODO: should this be layout_type?
+        let output = match parent_layout_type {
+            // TODO: should this be layout_type?
             LayoutType::Row => (computed_main, computed_cross),
             LayoutType::Column => (computed_cross, computed_main),
         };
@@ -330,7 +327,11 @@ pub(crate) fn layout(
             child_margin_main_before.to_px(viewport_main, parent_main, parent_padding_main);
 
         // Compute fixed-size child main_after.
-        let computed_child_main_after = child_margin_main_after.to_px(viewport_main, parent_main, parent_padding_main) + node_child_main_between.map(|su| su.to_px(viewport_main, parent_main, parent_padding_main)).unwrap_or(0.0);
+        let computed_child_main_after =
+            child_margin_main_after.to_px(viewport_main, parent_main, parent_padding_main)
+                + node_child_main_between
+                    .map(|su| su.to_px(viewport_main, parent_main, parent_padding_main))
+                    .unwrap_or(0.0);
 
         let computed_child_main;
 
@@ -897,7 +898,6 @@ fn apply_text_layout(
     cross: &mut f32,
 ) {
     if node.is_text(store) {
-
         let text = node.text(state_store).unwrap();
 
         let width: &mut f32;

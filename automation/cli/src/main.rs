@@ -52,7 +52,6 @@ fn main() {
             automation_lib::convert_ttf_to_icon(ttf_file_name_val)
         }
         Some(("process_assets", sub_matches)) => {
-
             let mo_val = sub_matches.get_one::<String>("meta_output_type").unwrap();
             let mo_val = match mo_val.as_str() {
                 "json" => OutputType::Json,
@@ -62,15 +61,10 @@ fn main() {
 
             let env_val = sub_matches.get_one::<String>("env").unwrap();
             match env_val.as_str() {
-                "local" => {
-                    automation_lib::process_assets(env_val, TargetEnv::Local, mo_val)
-                }
-                "prod" => {
-                    automation_lib::process_assets(env_val, TargetEnv::Prod, mo_val)
-                }
+                "local" => automation_lib::process_assets(env_val, TargetEnv::Local, mo_val),
+                "prod" => automation_lib::process_assets(env_val, TargetEnv::Prod, mo_val),
                 _ => Err(CliError::Message("Invalid environment".to_string())),
             }
-
         }
         _ => Err(CliError::Message("Invalid subcommand".to_string())),
     };

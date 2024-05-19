@@ -1,15 +1,15 @@
 mod emails;
 mod endpoints;
 mod error;
+mod expire_manager;
 mod state;
 mod types;
-mod expire_manager;
 
-use std::{net::SocketAddr, thread};
 use std::time::Duration;
+use std::{net::SocketAddr, thread};
 
 use config::{AUTH_SERVER_PORT, SELF_BINDING_ADDR};
-use http_server::{async_dup::Arc, executor::smol::lock::RwLock, Server, executor::smol};
+use http_server::{async_dup::Arc, executor::smol, executor::smol::lock::RwLock, Server};
 use logging::info;
 
 use crate::state::State;

@@ -39,10 +39,7 @@ pub(crate) async fn file_endpoint_handler(
 
                 add_common_headers(metadata, &mut response);
 
-                response.insert_header(
-                    "Content-Length",
-                    response.body.len().to_string().as_str(),
-                );
+                response.insert_header("Content-Length", response.body.len().to_string().as_str());
 
                 return Ok(response);
             }
@@ -76,10 +73,7 @@ pub(crate) async fn file_endpoint_handler(
     response.insert_header("Content-Encoding", "br");
 
     // add Content-Length header
-    response.insert_header(
-        "Content-Length",
-        response.body.len().to_string().as_str(),
-    );
+    response.insert_header("Content-Length", response.body.len().to_string().as_str());
 
     return Ok(response);
 }
@@ -91,15 +85,11 @@ fn add_common_headers(metadata: FileMetadata, response: &mut Response) {
         FileType::Js => "application/javascript",
         FileType::Wasm => "application/wasm",
     };
-    response
-        .insert_header("Content-Type", content_type);
+    response.insert_header("Content-Type", content_type);
 
     // add ETag header
     response.insert_header("ETag", metadata.etag().to_string().as_str());
 
     // add cache-control header
-    response.insert_header(
-        "Cache-Control",
-        "public, no-cache, max-age=0",
-    );
+    response.insert_header("Cache-Control", "public, no-cache, max-age=0");
 }

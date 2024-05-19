@@ -40,7 +40,9 @@ pub struct ConnectSessionServerResponse;
 impl ApiRequest for ConnectSessionServerRequest {
     type Response = ConnectSessionServerResponse;
 
-    fn name() -> &'static str { "ConnectSessionServerRequest" }
+    fn name() -> &'static str {
+        "ConnectSessionServerRequest"
+    }
 
     fn method() -> Method {
         Method::Post
@@ -52,5 +54,7 @@ impl ApiRequest for ConnectSessionServerRequest {
 }
 
 impl ApiResponse for ConnectSessionServerResponse {
-    fn name() -> &'static str { "ConnectSessionServerResponse" }
+    fn name() -> &'static str {
+        "ConnectSessionServerResponse"
+    }
 }

@@ -1,8 +1,8 @@
 use ui_runner_config::WidgetKind;
 
 use crate::{
-    button::ButtonStyleState, panel::PanelStyleState, text::TextStyleState,
-    textbox::TextboxStyleState, spinner::SpinnerStyleState,
+    button::ButtonStyleState, panel::PanelStyleState, spinner::SpinnerStyleState,
+    text::TextStyleState, textbox::TextboxStyleState,
 };
 
 pub enum StyleState {

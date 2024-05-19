@@ -1,19 +1,21 @@
-
 use bevy_ecs::event::{EventReader, EventWriter};
 
 use game_engine::{
+    asset::{embedded_asset_event, AssetId, EmbeddedAssetEvent},
     logging::info,
-    ui::{UiManager, UiHandle},
-    asset::{AssetId, embedded_asset_event, EmbeddedAssetEvent},
+    ui::{UiHandle, UiManager},
 };
 
-use crate::{ui::{go_to_ui, UiKey}, resources::{Global, LoginButtonClickedEvent, RegisterButtonClickedEvent}};
+use crate::{
+    resources::{Global, LoginButtonClickedEvent, RegisterButtonClickedEvent},
+    ui::{go_to_ui, UiKey},
+};
 
 pub(crate) fn setup(
     global: &mut Global,
     ui_manager: &mut UiManager,
     embedded_asset_events: &mut EventWriter<EmbeddedAssetEvent>,
-    ui_key: UiKey
+    ui_key: UiKey,
 ) {
     embedded_asset_events.send(embedded_asset_event!("../embedded/tpp7za"));
 
@@ -55,9 +57,4 @@ pub(crate) fn handle_events(
     }
 }
 
-pub fn reset_state(
-    _ui_manager: &mut UiManager,
-    _ui_handle: &UiHandle
-) {
-
-}
+pub fn reset_state(_ui_manager: &mut UiManager, _ui_handle: &UiHandle) {}

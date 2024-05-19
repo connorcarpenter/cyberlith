@@ -9,17 +9,17 @@ use bevy_ecs::{
     world::World,
 };
 
-use logging::info;
 use asset_id::AssetId;
 use asset_loader::{AssetMetadataStore, TypedAssetId};
+use logging::info;
 
 use world_server_naia_proto::components::{Alt1, AssetEntry, AssetRef, Main};
 
+use super::world_events::InsertAssetRefEvent;
 use crate::{
     asset_cache::{AssetCache, AssetLoadedEvent},
     world::WorldClient,
 };
-use super::world_events::InsertAssetRefEvent;
 
 type AssetProcessorId = TypeId;
 
@@ -90,8 +90,7 @@ impl AssetRefProcessor {
 
     // used as a system
     pub fn init_asset_loaded_events(world: &mut World) {
-        let initial_state: SystemState<EventReader<AssetLoadedEvent>> =
-            SystemState::new(world);
+        let initial_state: SystemState<EventReader<AssetLoadedEvent>> = SystemState::new(world);
         world.insert_resource(CachedAssetLoadedEventsState {
             event_state: initial_state,
         });
@@ -99,7 +98,6 @@ impl AssetRefProcessor {
 
     // used as a system
     pub fn handle_asset_loaded_events(world: &mut World) {
-
         let mut incoming_events = Vec::new();
         world.resource_scope(
             |world, mut events_reader_state: Mut<CachedAssetLoadedEventsState>| {

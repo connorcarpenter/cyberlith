@@ -1,4 +1,3 @@
-
 /// HTTP Method
 #[derive(Clone, Eq, Copy, PartialEq)]
 pub enum Method {

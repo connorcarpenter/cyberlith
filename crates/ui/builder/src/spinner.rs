@@ -1,5 +1,5 @@
 use render_api::base::Color;
-use ui_builder_config::{NodeId, NodeStyle, StyleId, SpinnerStyle, UiConfig, WidgetStyle};
+use ui_builder_config::{NodeId, NodeStyle, SpinnerStyle, StyleId, UiConfig, WidgetStyle};
 use ui_layout::{Alignment, MarginUnits, PositionType, SizeUnits};
 
 pub struct SpinnerMut<'a> {

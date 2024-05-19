@@ -1,4 +1,4 @@
-use std::{slice::Iter, collections::HashMap};
+use std::{collections::HashMap, slice::Iter};
 
 use asset_id::AssetId;
 use logging::info;

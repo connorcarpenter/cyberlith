@@ -12,7 +12,7 @@ use crate::{
         Transform, TypedLight, Viewport,
     },
     resources::render_pass::RenderPass,
-    shapes::set_2d_line_transform
+    shapes::set_2d_line_transform,
 };
 
 #[derive(Resource)]
@@ -116,11 +116,12 @@ impl RenderFrame {
         let radius = (transform.scale.y / 2.0) - 2.0;
 
         let start_angle = time % std::f32::consts::TAU;
-        let angle_length = (270.0f32.to_radians() * (((time * 0.25).sin() + 1.0) * 0.5)) + 30.0f32.to_radians();
+        let angle_length =
+            (270.0f32.to_radians() * (((time * 0.25).sin() + 1.0) * 0.5)) + 30.0f32.to_radians();
         let end_angle = start_angle + angle_length;
         let center = Vec2::new(
             transform.translation.x + (transform.scale.x * 0.5),
-            transform.translation.y + (transform.scale.y * 0.5)
+            transform.translation.y + (transform.scale.y * 0.5),
         );
 
         let n_points: usize = (angle_length / 45.0f32.to_radians()).floor() as usize + 2;

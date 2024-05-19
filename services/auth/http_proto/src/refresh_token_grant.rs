@@ -1,5 +1,5 @@
-use naia_serde::SerdeInternal as Serde;
 use auth_server_types::UserId;
+use naia_serde::SerdeInternal as Serde;
 
 use http_common::{ApiRequest, ApiResponse, Method};
 
@@ -13,9 +13,7 @@ pub struct RefreshTokenGrantRequest {
 
 impl RefreshTokenGrantRequest {
     pub fn new(refresh_token: RefreshToken) -> Self {
-        Self {
-            refresh_token,
-        }
+        Self { refresh_token }
     }
 }
 
@@ -39,7 +37,9 @@ impl RefreshTokenGrantResponse {
 impl ApiRequest for RefreshTokenGrantRequest {
     type Response = RefreshTokenGrantResponse;
 
-    fn name() -> &'static str { "RefreshTokenGrantRequest" }
+    fn name() -> &'static str {
+        "RefreshTokenGrantRequest"
+    }
 
     fn method() -> Method {
         Method::Post
@@ -51,5 +51,7 @@ impl ApiRequest for RefreshTokenGrantRequest {
 }
 
 impl ApiResponse for RefreshTokenGrantResponse {
-    fn name() -> &'static str { "RefreshTokenGrantResponse" }
+    fn name() -> &'static str {
+        "RefreshTokenGrantResponse"
+    }
 }

@@ -3,7 +3,7 @@ use db::{DatabaseWrapper, DbError};
 
 use crate::{
     error::AuthServerDbError,
-    user::{User, DbUserId, Users},
+    user::{DbUserId, User, Users},
 };
 
 pub struct DatabaseManager {
@@ -49,6 +49,11 @@ impl DatabaseManager {
 
     // user list
     pub fn list_users(&self) -> Vec<(UserId, &User)> {
-        self.wrapper.table::<Users>().list().into_iter().map(|(k, v)| ((*k).into(), v)).collect()
+        self.wrapper
+            .table::<Users>()
+            .list()
+            .into_iter()
+            .map(|(k, v)| ((*k).into(), v))
+            .collect()
     }
 }

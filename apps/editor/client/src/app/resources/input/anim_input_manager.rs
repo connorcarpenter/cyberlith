@@ -61,11 +61,7 @@ impl AnimInputManager {
                     )
                 }
                 InputEvent::MouseDoubleClicked(click_type, mouse_position, _) => {
-                    Self::handle_mouse_doubleclick_framing(
-                        world,
-                        click_type,
-                        &mouse_position,
-                    )
+                    Self::handle_mouse_doubleclick_framing(world, click_type, &mouse_position)
                 }
                 InputEvent::MouseDragged(click_type, _mouse_position, delta, _) => {
                     Self::handle_mouse_drag_framing(world, click_type, delta)
@@ -225,7 +221,6 @@ impl AnimInputManager {
         let current_frame_index = animation_manager.current_frame_index();
 
         if let Some(frame_index_hover) = animation_manager.frame_index_hover() {
-
             if frame_index_hover == 0 {
                 // nothing
             } else {
@@ -268,7 +263,6 @@ impl AnimInputManager {
         let animation_manager = world.get_resource::<AnimationManager>().unwrap();
 
         if let Some(frame_index_hover) = animation_manager.frame_index_hover() {
-
             if frame_index_hover == 0 {
                 // double-clicked preview frame
                 let mut system_state: SystemState<(ResMut<Canvas>, ResMut<AnimationManager>)> =
