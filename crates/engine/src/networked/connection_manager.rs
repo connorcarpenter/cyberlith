@@ -21,7 +21,7 @@ use logging::{info, warn};
 use ui_runner::UiManager;
 
 use session_server_naia_proto::{
-    channels::{PrimaryChannel, RequestChannel},
+    channels::{PrimaryChannel, AssetRequestsChannel},
     messages::{LoadAssetRequest, LoadAssetWithData, WorldConnectToken},
 };
 use world_server_naia_proto::messages::Auth as WorldAuth;
@@ -165,7 +165,7 @@ impl ConnectionManager {
                 );
                 world_client.connect(socket);
             }
-            for asset_message in events.read::<PrimaryChannel, LoadAssetWithData>() {
+            for asset_message in events.read::<AssetRequestsChannel, LoadAssetWithData>() {
                 info!(
                     "received Asset Data Message from Session Server! (id: {:?}, etag: {:?})",
                     asset_message.asset_id, asset_message.asset_etag
@@ -201,7 +201,7 @@ impl ConnectionManager {
         mut event_reader: EventReader<RequestEvents<Session>>,
     ) {
         for events in event_reader.read() {
-            for (response_send_key, request) in events.read::<RequestChannel, LoadAssetRequest>() {
+            for (response_send_key, request) in events.read::<AssetRequestsChannel, LoadAssetRequest>() {
                 asset_cache_checker.handle_load_asset_request(
                     &asset_cache,
                     &mut file_system_manager,

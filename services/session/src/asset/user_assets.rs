@@ -1,16 +1,15 @@
 use std::collections::{HashMap, HashSet};
 
-use logging::info;
-
 use naia_bevy_server::{Server, UserKey};
-
-use session_server_naia_proto::{
-    channels::PrimaryChannel,
-    messages::{LoadAssetResponseValue, LoadAssetWithData},
-};
 
 use asset_id::{AssetId, ETag};
 use bevy_http_client::HttpClient;
+use logging::info;
+
+use session_server_naia_proto::{
+    channels::{PrimaryChannel, AssetRequestsChannel},
+    messages::{LoadAssetResponseValue, LoadAssetWithData},
+};
 
 use crate::asset::{
     asset_store::AssetStore,
@@ -148,7 +147,7 @@ impl UserAssets {
                             let message = LoadAssetWithData::new(
                                 asset_id, asset_type, asset_etag, asset_data,
                             );
-                            server.send_message::<PrimaryChannel, _>(&self.user_key, &message);
+                            server.send_message::<AssetRequestsChannel, _>(&self.user_key, &message);
 
                             // remove from processing, add to memory
                             self.finish_asset_processing(server, asset_store, &asset_id);

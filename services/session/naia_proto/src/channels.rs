@@ -6,7 +6,7 @@ use naia_bevy_shared::{
 pub struct PrimaryChannel;
 
 #[derive(Channel)]
-pub struct RequestChannel;
+pub struct AssetRequestsChannel;
 
 #[derive(Channel)]
 pub struct ClientActionsChannel;
@@ -21,7 +21,7 @@ impl ProtocolPlugin for ChannelsPlugin {
                 ChannelDirection::ServerToClient,
                 ChannelMode::UnorderedReliable(ReliableSettings::default()),
             )
-            .add_channel::<RequestChannel>(
+            .add_channel::<AssetRequestsChannel>(
                 ChannelDirection::Bidirectional,
                 ChannelMode::UnorderedReliable(ReliableSettings::default()),
             )

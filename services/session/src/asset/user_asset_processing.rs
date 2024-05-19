@@ -6,7 +6,7 @@ use naia_bevy_server::{ResponseReceiveKey, Server, UserKey};
 
 use asset_server_http_proto::{AssetRequest, AssetResponse, AssetResponseValue};
 use session_server_naia_proto::{
-    channels::RequestChannel,
+    channels::AssetRequestsChannel,
     messages::{LoadAssetRequest, LoadAssetResponse, LoadAssetResponseValue},
 };
 
@@ -48,7 +48,7 @@ impl UserAssetProcessingState {
         );
         let request = LoadAssetRequest::new(asset_id, asset_etag);
         let response_key = server
-            .send_request::<RequestChannel, _>(user_key, &request)
+            .send_request::<AssetRequestsChannel, _>(user_key, &request)
             .unwrap();
 
         Self::ClientLoadAssetRequestInFlight(ClientLoadAssetRequestState::new(response_key))
