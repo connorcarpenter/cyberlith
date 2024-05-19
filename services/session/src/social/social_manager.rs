@@ -2,11 +2,11 @@
 use bevy_ecs::system::Resource;
 
 #[derive(Resource)]
-pub struct SocialConnection {
+pub struct SocialManager {
     social_server_opt: Option<(String, u16)>,
 }
 
-impl SocialConnection {
+impl SocialManager {
     pub fn new() -> Self {
         Self {
             social_server_opt: None,

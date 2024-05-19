@@ -8,10 +8,10 @@ use bevy_http_server::HttpServer;
 
 use session_server_http_proto::{UserAssetIdRequest, UserAssetIdResponse};
 
-use crate::{http::world::WorldConnections, asset::asset_manager::AssetManager};
+use crate::{world::WorldManager, asset::asset_manager::AssetManager};
 
 pub fn recv_added_asset_id_request(
-    world_connections: Res<WorldConnections>,
+    world_connections: Res<WorldManager>,
     mut http_server: ResMut<HttpServer>,
     mut naia_server: Server,
     mut http_client: ResMut<HttpClient>,

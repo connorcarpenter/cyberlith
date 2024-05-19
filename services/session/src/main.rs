@@ -1,8 +1,11 @@
 mod asset;
 mod user_manager;
 mod naia;
-mod http;
+mod http_server;
 mod session_instance;
+mod region;
+pub mod social;
+pub mod world;
 
 //
 
@@ -20,12 +23,14 @@ use bevy_http_server::HttpServerPlugin;
 
 use session_server_http_proto::protocol as http_protocol;
 use session_server_naia_proto::protocol as naia_protocol;
+use social::SocialManager;
 
 //
 
 use crate::{
-    asset::{asset_manager, asset_manager::AssetManager}, session_instance::SessionInstance,
-    user_manager::UserManager, http::{world, world::WorldConnections, social::SocialConnection, region, region::RegionConnection},
+    asset::{asset_manager, asset_manager::AssetManager}, world::WorldManager,
+    region::RegionManager, session_instance::SessionInstance,
+    user_manager::UserManager,
 };
 
 fn main() {
@@ -48,17 +53,17 @@ fn main() {
         .add_plugins(HttpClientPlugin)
         // Resource
         .insert_resource(UserManager::new())
-        .insert_resource(RegionConnection::new(
+        .insert_resource(RegionManager::new(
             registration_resend_rate,
             region_server_disconnect_timeout
         ))
-        .insert_resource(SocialConnection::new())
-        .insert_resource(WorldConnections::new(world_connect_resend_rate))
+        .insert_resource(SocialManager::new())
+        .insert_resource(WorldManager::new(world_connect_resend_rate))
         .insert_resource(AssetManager::new())
         .insert_resource(SessionInstance::new(&instance_secret))
         // Startup System
         .add_systems(Startup, naia::init)
-        .add_systems(Startup, http::start_server)
+        .add_systems(Startup, http_server::start)
         // Receive Server Events
         .add_systems(
             Update,
@@ -73,16 +78,16 @@ fn main() {
                 region::processes::send_world_connect_requests,
                 region::processes::process_region_server_disconnect,
 
-                region::endpoints::recv_register_instance_response,
-                region::endpoints::recv_heartbeat_request,
-                region::endpoints::recv_login_request,
-                region::endpoints::recv_world_connect_response,
-                region::endpoints::recv_connect_social_server_request,
-                region::endpoints::recv_disconnect_social_server_request,
-                region::endpoints::recv_connect_asset_server_request,
-                region::endpoints::recv_disconnect_asset_server_request,
+                region::http_endpoints::recv_register_instance_response,
+                region::http_endpoints::recv_heartbeat_request,
+                region::http_endpoints::recv_login_request,
+                region::http_endpoints::recv_world_connect_response,
+                region::http_endpoints::recv_connect_social_server_request,
+                region::http_endpoints::recv_disconnect_social_server_request,
+                region::http_endpoints::recv_connect_asset_server_request,
+                region::http_endpoints::recv_disconnect_asset_server_request,
 
-                world::endpoints::recv_added_asset_id_request,
+                world::http_endpoints::recv_added_asset_id_request,
 
                 asset_manager::update,
             )

@@ -12,7 +12,7 @@ pub enum ConnectionState {
 }
 
 #[derive(Resource)]
-pub struct RegionConnection {
+pub struct RegionManager {
     region_server_connection_state: ConnectionState,
     region_server_last_sent: Instant,
     region_server_last_heard: Instant,
@@ -21,7 +21,7 @@ pub struct RegionConnection {
     register_instance_response_key: Option<ClientResponseKey<SessionRegisterInstanceResponse>>,
 }
 
-impl RegionConnection {
+impl RegionManager {
     pub fn new(
         registration_resend_rate: Duration,
         region_server_disconnect_timeout: Duration,

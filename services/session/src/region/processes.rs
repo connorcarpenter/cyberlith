@@ -9,11 +9,11 @@ use logging::info;
 
 use region_server_http_proto::{SessionRegisterInstanceRequest, WorldConnectRequest};
 
-use crate::{session_instance::SessionInstance, user_manager::UserManager, http::{region::RegionConnection, world::WorldConnections}};
+use crate::{session_instance::SessionInstance, user_manager::UserManager, world::WorldManager, region::RegionManager};
 
 pub fn send_register_instance_request(
     session_instance: Res<SessionInstance>,
-    mut region: ResMut<RegionConnection>,
+    mut region: ResMut<RegionManager>,
     mut http_client: ResMut<HttpClient>,
 ) {
     if region.connected() {
@@ -40,7 +40,7 @@ pub fn send_register_instance_request(
 }
 
 pub fn process_region_server_disconnect(
-    mut region: ResMut<RegionConnection>,
+    mut region: ResMut<RegionManager>,
 ) {
     if region.connected() {
         if region.time_to_disconnect() {
@@ -54,7 +54,7 @@ pub fn send_world_connect_requests(
     session_instance: Res<SessionInstance>,
     mut http_client: ResMut<HttpClient>,
     mut user_manager: ResMut<UserManager>,
-    mut world_connections: ResMut<WorldConnections>,
+    mut world_connections: ResMut<WorldManager>,
 ) {
     let worldless_users = user_manager.get_users_ready_to_connect_to_world(world_connections.world_connect_resend_rate());
     for (user_key, user_id) in worldless_users {

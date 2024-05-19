@@ -12,30 +12,14 @@ use bevy_http_client::ResponseKey as ClientResponseKey;
 
 use region_server_http_proto::WorldConnectResponse;
 
-struct WorldInstanceData {
-    user_id_to_key_map: HashMap<UserId, UserKey>,
-}
-
-impl WorldInstanceData {
-    pub fn new() -> Self {
-        Self {
-            user_id_to_key_map: HashMap::new(),
-        }
-    }
-
-    pub(crate) fn add_user(&mut self, user_key: UserKey, user_id: UserId) {
-        self.user_id_to_key_map.insert(user_id, user_key);
-    }
-}
-
 #[derive(Resource)]
-pub struct WorldConnections {
+pub struct WorldManager {
     world_connect_response_keys: HashMap<ClientResponseKey<WorldConnectResponse>, UserKey>,
     world_connect_resend_rate: Duration,
     world_instances: HashMap<String, WorldInstanceData>,
 }
 
-impl WorldConnections {
+impl WorldManager {
     pub fn new(
         world_connect_resend_rate: Duration,
     ) -> Self {
@@ -103,5 +87,21 @@ impl WorldConnections {
         }
         let world_instance = self.world_instances.get_mut(world_instance_secret).unwrap();
         world_instance.add_user(*user_key, user_id);
+    }
+}
+
+struct WorldInstanceData {
+    user_id_to_key_map: HashMap<UserId, UserKey>,
+}
+
+impl WorldInstanceData {
+    pub fn new() -> Self {
+        Self {
+            user_id_to_key_map: HashMap::new(),
+        }
+    }
+
+    pub(crate) fn add_user(&mut self, user_key: UserKey, user_id: UserId) {
+        self.user_id_to_key_map.insert(user_id, user_key);
     }
 }

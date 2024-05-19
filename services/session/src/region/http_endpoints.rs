@@ -8,15 +8,13 @@ use config::REGION_SERVER_SECRET;
 use logging::{info, warn};
 
 use session_server_http_proto::{ConnectAssetServerRequest, ConnectAssetServerResponse, ConnectSocialServerRequest, ConnectSocialServerResponse, DisconnectAssetServerRequest, DisconnectAssetServerResponse, DisconnectSocialServerRequest, DisconnectSocialServerResponse, HeartbeatRequest, HeartbeatResponse, IncomingUserRequest, IncomingUserResponse};
-use session_server_naia_proto::{messages::WorldConnectToken, channels::PrimaryChannel};
+use session_server_naia_proto::{channels::PrimaryChannel, messages::WorldConnectToken};
 
-use crate::{http::{region::RegionConnection, social::SocialConnection}, user_manager::UserManager};
-use crate::asset::asset_manager::AssetManager;
-use crate::http::world::WorldConnections;
+use crate::{social::SocialManager, world::WorldManager, asset::asset_manager::AssetManager, region::RegionManager, user_manager::UserManager};
 
 pub fn recv_register_instance_response(
     mut http_client: ResMut<HttpClient>,
-    mut region: ResMut<RegionConnection>,
+    mut region: ResMut<RegionManager>,
 ) {
     if let Some(response_key) = region.register_instance_response_key() {
         if let Some(result) = http_client.recv(response_key) {
@@ -35,7 +33,7 @@ pub fn recv_register_instance_response(
 }
 
 pub fn recv_heartbeat_request(
-    mut region: ResMut<RegionConnection>,
+    mut region: ResMut<RegionManager>,
     mut server: ResMut<HttpServer>
 ) {
     while let Some((_addr, request, response_key)) = server.receive::<HeartbeatRequest>() {
@@ -81,7 +79,7 @@ pub fn recv_world_connect_response(
     mut server: Server,
     mut http_client: ResMut<HttpClient>,
     mut user_manager: ResMut<UserManager>,
-    mut world_connections: ResMut<WorldConnections>,
+    mut world_connections: ResMut<WorldManager>,
 ) {
     for (response_key, user_key) in world_connections.world_connect_response_keys() {
         if let Some(result) = http_client.recv(&response_key) {
@@ -119,7 +117,7 @@ pub fn recv_world_connect_response(
 
 pub fn recv_connect_asset_server_request(
     mut asset_manager: ResMut<AssetManager>,
-    mut region: ResMut<RegionConnection>,
+    mut region: ResMut<RegionManager>,
     mut server: ResMut<HttpServer>,
 ) {
     while let Some((_addr, request, response_key)) = server.receive::<ConnectAssetServerRequest>() {
@@ -145,7 +143,7 @@ pub fn recv_connect_asset_server_request(
 
 pub fn recv_disconnect_asset_server_request(
     mut asset_manager: ResMut<AssetManager>,
-    mut region: ResMut<RegionConnection>,
+    mut region: ResMut<RegionManager>,
     mut server: ResMut<HttpServer>,
 ) {
     while let Some((_addr, request, response_key)) =
@@ -172,8 +170,8 @@ pub fn recv_disconnect_asset_server_request(
 }
 
 pub fn recv_connect_social_server_request(
-    mut social: ResMut<SocialConnection>,
-    mut region: ResMut<RegionConnection>,
+    mut social: ResMut<SocialManager>,
+    mut region: ResMut<RegionManager>,
     mut server: ResMut<HttpServer>,
 ) {
     while let Some((_addr, request, response_key)) = server.receive::<ConnectSocialServerRequest>()
@@ -199,8 +197,8 @@ pub fn recv_connect_social_server_request(
 }
 
 pub fn recv_disconnect_social_server_request(
-    mut social: ResMut<SocialConnection>,
-    mut region: ResMut<RegionConnection>,
+    mut social: ResMut<SocialManager>,
+    mut region: ResMut<RegionManager>,
     mut server: ResMut<HttpServer>,
 ) {
     while let Some((_addr, request, response_key)) =
