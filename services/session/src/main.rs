@@ -24,6 +24,7 @@ mod naia;
 mod region_connection;
 mod user_connection;
 mod world_connection;
+mod social_connection;
 
 use crate::{
     asset::{asset_connection, asset_manager, asset_manager::AssetManager},
@@ -78,6 +79,9 @@ fn main() {
 
                 asset_connection::recv_connect_asset_server_request,
                 asset_connection::recv_disconnect_asset_server_request,
+
+                social_connection::recv_connect_social_server_request,
+                social_connection::recv_disconnect_social_server_request,
 
                 world_connection::send_world_connect_request,
                 world_connection::recv_world_connect_response,

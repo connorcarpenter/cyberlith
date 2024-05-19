@@ -1,5 +1,6 @@
 
 mod region_connection;
+mod session_connections;
 mod state;
 
 use std::{net::SocketAddr, thread, time::Duration};
@@ -30,6 +31,9 @@ pub fn main() {
     let server_name = "social_server";
 
     region_connection::recv_heartbeat_request(server_name, &mut server, state.clone());
+
+    session_connections::recv_connect_session_server_request(server_name, &mut server, state.clone());
+    session_connections::recv_disconnect_session_server_request(server_name, &mut server, state.clone());
 
     server.start();
 

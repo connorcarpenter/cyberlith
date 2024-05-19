@@ -8,7 +8,7 @@ use http_client::{HttpClient, RequestOptions};
 use http_server::Server;
 use config::REGION_SERVER_SECRET;
 
-use social_server_http_proto::HeartbeatRequest as SocialHeartbeatRequest;
+use social_server_http_proto::{ConnectSessionServerRequest, DisconnectSessionServerRequest, HeartbeatRequest as SocialHeartbeatRequest};
 use asset_server_http_proto::HeartbeatRequest as AssetHeartbeatRequest;
 use session_server_http_proto::{ConnectAssetServerRequest, ConnectSocialServerRequest, DisconnectAssetServerRequest, DisconnectSocialServerRequest, HeartbeatRequest as SessionHeartbeatRequest};
 use world_server_http_proto::HeartbeatRequest as WorldHeartbeatRequest;
@@ -61,6 +61,42 @@ impl State {
         self.session_instances.remove(&key);
         self.assetless_session_instances.remove(&key);
         self.socialless_session_instances.remove(&key);
+    }
+
+    pub async fn deregister_session_instance_sendreqs(&mut self, session_http_addr: &str, session_http_port: u16) {
+
+        // send disconnect social server message to session instance
+        let Some(social_instance) = &self.social_instance else {
+            return;
+        };
+        let social_instance_addr = social_instance.http_addr().to_string();
+        let social_instance_port = social_instance.http_port();
+        let social_last_heard = social_instance.last_heard();
+
+        let session_http_addr = session_http_addr.to_string();
+
+        Server::spawn(async move {
+            let request = DisconnectSessionServerRequest::new(REGION_SERVER_SECRET, &session_http_addr, session_http_port);
+            let response = HttpClient::send(&social_instance_addr, social_instance_port, request).await;
+            match response {
+                Ok(_) => {
+                    info!(
+                        "from {:?}:{} - social server disconnect session server success",
+                        social_instance_addr, social_instance_port
+                    );
+                    let mut last_heard = social_last_heard.write().await;
+                    *last_heard = Instant::now();
+                }
+                Err(err) => {
+                    warn!(
+                        "from {:?}:{} - social server disconnect session server failure: {}",
+                        social_instance_addr,
+                        social_instance_port,
+                        err.to_string()
+                    );
+                }
+            }
+        });
     }
 
     pub async fn deregister_asset_instance(&mut self) {
@@ -405,39 +441,72 @@ impl State {
         }
 
         for key in self.socialless_session_instances.iter() {
-            let instance = self.session_instances.get(key).unwrap();
-            let instance_addr = instance.http_addr().to_string();
-            let instance_port = instance.http_port();
-            let last_heard = instance.last_heard();
-            let social_server_addr = self
+            let session_instance = self.session_instances.get(key).unwrap();
+            let session_instance_addr_1 = session_instance.http_addr().to_string();
+            let session_instance_addr_2 = session_instance_addr_1.clone();
+            let session_instance_port = session_instance.http_port();
+            let session_last_heard = session_instance.last_heard();
+
+            let social_server_addr_1 = self
                 .social_instance
                 .as_ref()
                 .unwrap()
                 .http_addr()
                 .to_string();
+            let social_server_addr_2 = social_server_addr_1.clone();
             let social_server_port = self.social_instance.as_ref().unwrap().http_port();
+            let social_last_heard = self.social_instance.as_ref().unwrap().last_heard();
 
+            // session server receives connection to social server
             Server::spawn(async move {
                 let request = ConnectSocialServerRequest::new(
                     REGION_SERVER_SECRET,
-                    &social_server_addr,
+                    &social_server_addr_1,
                     social_server_port,
                 );
-                let response = HttpClient::send(&instance_addr, instance_port, request).await;
+                let response = HttpClient::send(&session_instance_addr_1, session_instance_port, request).await;
                 match response {
                     Ok(_) => {
                         info!(
-                            "from {:?}:{} - session connect social server success",
-                            instance_addr, instance_port
+                            "from {:?}:{} - session server connect social server success",
+                            session_instance_addr_1, session_instance_port
                         );
-                        let mut last_heard = last_heard.write().await;
+                        let mut last_heard = session_last_heard.write().await;
                         *last_heard = Instant::now();
                     }
                     Err(err) => {
                         warn!(
-                            "from {:?}:{} - session connect social server failure: {}",
-                            instance_addr,
-                            instance_port,
+                            "from {:?}:{} - session server connect social server failure: {}",
+                            session_instance_addr_1,
+                            session_instance_port,
+                            err.to_string()
+                        );
+                    }
+                }
+            });
+
+            // social server receives connection to session server
+            Server::spawn(async move {
+                let request = ConnectSessionServerRequest::new(
+                    REGION_SERVER_SECRET,
+                    &session_instance_addr_2,
+                    session_instance_port,
+                );
+                let response = HttpClient::send(&social_server_addr_2, social_server_port, request).await;
+                match response {
+                    Ok(_) => {
+                        info!(
+                            "from {:?}:{} - social server connect session server success",
+                            social_server_addr_2, social_server_port
+                        );
+                        let mut last_heard = social_last_heard.write().await;
+                        *last_heard = Instant::now();
+                    }
+                    Err(err) => {
+                        warn!(
+                            "from {:?}:{} - social server connect session server failure: {}",
+                            social_server_addr_2,
+                            social_server_port,
                             err.to_string()
                         );
                     }
@@ -453,6 +522,7 @@ impl State {
 
         let timeout = self.disconnect_timeout;
 
+        // disconnect session instances
         {
             let mut disconnected_instances = Vec::new();
             for (addr, instance) in self.session_instances.iter() {
@@ -468,9 +538,11 @@ impl State {
                     addr_ip, addr_port
                 );
                 self.deregister_session_instance(&addr_ip, addr_port);
+                self.deregister_session_instance_sendreqs(&addr_ip, addr_port).await;
             }
         }
 
+        // disconnect world instances
         {
             let mut disconnected_instances = Vec::new();
             for (addr, instance) in self.world_instances.iter() {
@@ -486,6 +558,7 @@ impl State {
             }
         }
 
+        // disconnect asset instance
         {
             if let Some(instance) = &self.asset_instance {
                 let last_heard = *instance.last_heard().read().await;
@@ -497,6 +570,7 @@ impl State {
             }
         }
 
+        // disconnect asset instance
         {
             if let Some(instance) = &self.social_instance {
                 let last_heard = *instance.last_heard().read().await;

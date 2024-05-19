@@ -1,10 +1,10 @@
-use social_server_http_proto::{HeartbeatRequest, HeartbeatResponse};
-use logging::{info, warn};
 
+use logging::{info, warn};
 use http_client::{HttpClient, ResponseError};
 use http_server::{async_dup::Arc, executor::smol::lock::RwLock, ApiServer, Server};
 
 use region_server_http_proto::SocialRegisterInstanceRequest;
+use social_server_http_proto::{HeartbeatRequest, HeartbeatResponse};
 
 use config::{
     SOCIAL_SERVER_GLOBAL_SECRET, SOCIAL_SERVER_PORT, SOCIAL_SERVER_RECV_ADDR, REGION_SERVER_PORT,

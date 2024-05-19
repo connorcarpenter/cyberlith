@@ -1,4 +1,5 @@
-use std::time::{Duration, Instant};
+use std::{collections::HashSet, time::{Duration, Instant}};
+use std::collections::hash_set::Iter;
 
 pub enum ConnectionState {
     Disconnected,
@@ -11,6 +12,8 @@ pub struct State {
     region_server_last_heard: Instant,
     registration_resend_rate: Duration,
     region_server_disconnect_timeout: Duration,
+
+    session_servers: HashSet<(String, u16)>,
 }
 
 impl State {
@@ -24,6 +27,8 @@ impl State {
             region_server_last_heard: Instant::now(),
             registration_resend_rate,
             region_server_disconnect_timeout,
+
+            session_servers: HashSet::new(),
         }
     }
 
@@ -59,5 +64,19 @@ impl State {
 
     pub fn set_disconnected(&mut self) {
         self.region_server_connection_state = ConnectionState::Disconnected;
+    }
+
+    // Session Servers Server
+
+    pub fn add_session_server(&mut self, addr: &str, port: u16) {
+        self.session_servers.insert((addr.to_string(), port));
+    }
+
+    pub fn remove_session_server(&mut self, addr: &str, port: u16) {
+        self.session_servers.remove(&(addr.to_string(), port));
+    }
+
+    pub fn session_servers(&self) -> Iter<'_, (String, u16)> {
+        self.session_servers.iter()
     }
 }

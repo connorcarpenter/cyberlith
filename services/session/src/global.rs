@@ -81,18 +81,22 @@ impl WorldInstanceData {
 #[derive(Resource)]
 pub struct Global {
     instance_secret: String,
+
     region_server_connection_state: ConnectionState,
     region_server_last_sent: Instant,
     region_server_last_heard: Instant,
-    register_instance_response_key: Option<ClientResponseKey<SessionRegisterInstanceResponse>>,
-    world_connect_response_keys: HashMap<ClientResponseKey<WorldConnectResponse>, UserKey>,
-    registration_resend_rate: Duration,
     region_server_disconnect_timeout: Duration,
+    registration_resend_rate: Duration,
+    register_instance_response_key: Option<ClientResponseKey<SessionRegisterInstanceResponse>>,
+
+    world_connect_response_keys: HashMap<ClientResponseKey<WorldConnectResponse>, UserKey>,
     world_connect_resend_rate: Duration,
+
     login_tokens: HashMap<String, UserData>,
     users: HashMap<UserKey, UserData>,
     world_instances: HashMap<String, WorldInstanceData>,
     asset_server_opt: Option<(String, u16)>,
+    social_server_opt: Option<(String, u16)>,
 }
 
 impl Global {
@@ -116,6 +120,7 @@ impl Global {
             users: HashMap::new(),
             world_instances: HashMap::new(),
             asset_server_opt: None,
+            social_server_opt: None,
         }
     }
 
@@ -297,6 +302,22 @@ impl Global {
 
     pub fn get_asset_server_url(&self) -> Option<(String, u16)> {
         self.asset_server_opt
+            .as_ref()
+            .map(|(addr, port)| (addr.clone(), *port))
+    }
+
+    // Social Server
+
+    pub fn set_social_server(&mut self, addr: &str, port: u16) {
+        self.social_server_opt = Some((addr.to_string(), port));
+    }
+
+    pub fn clear_social_server(&mut self) {
+        self.social_server_opt = None;
+    }
+
+    pub fn get_social_server_url(&self) -> Option<(String, u16)> {
+        self.social_server_opt
             .as_ref()
             .map(|(addr, port)| (addr.clone(), *port))
     }

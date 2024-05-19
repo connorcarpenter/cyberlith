@@ -1,17 +1,14 @@
 use std::net::SocketAddr;
 
-use bevy_ecs::{change_detection::ResMut, event::EventReader};
-use bevy_ecs::system::Res;
+use bevy_ecs::{system::Res, change_detection::ResMut, event::EventReader};
 
 use naia_bevy_server::{
-    events::{AuthEvents, ConnectEvent, DisconnectEvent, ErrorEvent},
+    events::{AuthEvents, MessageEvents, ConnectEvent, DisconnectEvent, ErrorEvent},
     transport::webrtc,
     Server,
 };
-use naia_bevy_server::events::MessageEvents;
-use asset_id::AssetId;
+
 use bevy_http_client::HttpClient;
-use bevy_http_server::HttpServer;
 
 use config::{
     PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SELF_BINDING_ADDR, SESSION_SERVER_SIGNAL_PORT,
@@ -22,8 +19,7 @@ use logging::{info, warn};
 use session_server_naia_proto::channels::ClientActionsChannel;
 use session_server_naia_proto::messages::{Auth, WorldConnectRequest};
 
-use crate::{asset::asset_manager::AssetManager, global::Global};
-use crate::asset::AssetCatalog;
+use crate::{asset::{AssetCatalog, asset_manager::AssetManager}, global::Global};
 
 pub fn init(mut server: Server) {
     info!("Session Naia Server starting up");
@@ -88,6 +84,7 @@ pub fn connect_events(
 
         asset_manager.register_user(user_key);
 
+        // load "default" assets
         asset_manager.load_user_asset(&mut server, &mut http_client, global.get_asset_server_url(), *user_key, &AssetCatalog::game_main_menu_ui());
         asset_manager.load_user_asset(&mut server, &mut http_client, global.get_asset_server_url(), *user_key, &AssetCatalog::game_host_match_ui());
     }
