@@ -48,6 +48,13 @@ cfg_if! {
 }
 
 cfg_if! {
+    if #[cfg(feature = "social")] {
+        mod social;
+        pub use self::social::*;
+    }
+}
+
+cfg_if! {
     if #[cfg(feature = "auth")] {
         mod auth;
         pub use self::auth::*;

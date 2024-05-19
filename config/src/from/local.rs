@@ -23,6 +23,9 @@ pub const WORLD_SERVER_RECV_ADDR: &str = "127.0.0.1";
 pub const ASSET_SERVER_RECV_ADDR: &str = "127.0.0.1";
 
 #[allow(dead_code)]
+pub const SOCIAL_SERVER_RECV_ADDR: &str = "127.0.0.1";
+
+#[allow(dead_code)]
 pub const AUTH_SERVER_RECV_ADDR: &str = "127.0.0.1";
 
 #[allow(dead_code)]
@@ -68,6 +71,9 @@ pub const ASSET_SERVER_PORT: u16 = 14205;
 pub const AUTH_SERVER_PORT: u16 = 14206;
 
 #[allow(dead_code)]
+pub const SOCIAL_SERVER_PORT: u16 = 14207;
+
+#[allow(dead_code)]
 pub const REGION_SERVER_SECRET: &str = "ArQZmRSf4xvbLVusVjrqGhIaZOExAeIq";
 
 #[allow(dead_code)]
@@ -78,3 +84,6 @@ pub const WORLD_SERVER_GLOBAL_SECRET: &str = "VKHusVjrGh035aSlQ7236bvVxlQ70alOW"
 
 #[allow(dead_code)]
 pub const ASSET_SERVER_GLOBAL_SECRET: &str = "QvsVjrGh035V70aVKHuaSbxlllQ7236OW";
+
+#[allow(dead_code)]
+pub const SOCIAL_SERVER_GLOBAL_SECRET: &str = "sVjrSbaVKHuaSbxlGh03QvsVjrSbxl";

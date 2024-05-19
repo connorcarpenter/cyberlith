@@ -49,6 +49,9 @@ members = [
     # Asset Server
     "services/asset",
     "services/asset/http_proto",
+    # Social Server
+    "services/social",
+    "services/social/http_proto",
 
     ### Tools ###
     # Automation CLI / Library

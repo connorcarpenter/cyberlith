@@ -22,3 +22,4 @@ region_server_http_proto = { path = "http_proto" }
 session_server_http_proto = { path = "../session/http_proto" }
 world_server_http_proto = { path = "../world/http_proto" }
 asset_server_http_proto = { path = "../asset/http_proto" }
+social_server_http_proto = { path = "../social/http_proto" }

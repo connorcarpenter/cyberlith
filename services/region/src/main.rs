@@ -24,6 +24,7 @@ pub fn main() {
     endpoints::session_register_instance(server_name, &mut server, state.clone());
     endpoints::world_register_instance(server_name, &mut server, state.clone());
     endpoints::asset_register_instance(server_name, &mut server, state.clone());
+    endpoints::social_register_instance(server_name, &mut server, state.clone());
 
     endpoints::session_connect(server_name, &mut server, state.clone());
     endpoints::world_connect(server_name, &mut server, state.clone());
@@ -44,6 +45,15 @@ pub fn main() {
         loop {
             let mut state = state_clone.write().await;
             state.sync_asset_session_instances().await;
+            thread::sleep(Duration::from_secs(5));
+        }
+    });
+
+    let state_clone = state.clone();
+    Server::spawn(async move {
+        loop {
+            let mut state = state_clone.write().await;
+            state.sync_social_session_instances().await;
             thread::sleep(Duration::from_secs(5));
         }
     });

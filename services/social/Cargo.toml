@@ -1,0 +1,23 @@
+[package]
+name = "social_server"
+version = "0.1.0"
+authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
+workspace = "../.."
+edition = "2021"
+publish = false
+
+[features]
+local = [ "config/local", "region_server_http_proto/local" ]
+prod = [ "config/prod", "region_server_http_proto/prod" ]
+
+[dependencies]
+http_server = { path = "../../crates/http/http_server" }
+http_client = { path = "../../crates/http/http_client" }
+config = { path = "../../config", features = ["social"] }
+logging = { path = "../../crates/logging" }
+
+social_server_http_proto = { path = "http_proto" }
+region_server_http_proto = { path = "../region/http_proto" }
+
+cfg-if = { version = "1.0" }
+
