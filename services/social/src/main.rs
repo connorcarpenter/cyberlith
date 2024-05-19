@@ -4,6 +4,7 @@ mod match_lobbies;
 mod users;
 mod region;
 mod session_servers;
+mod global_chat;
 
 use std::{net::SocketAddr, thread, time::Duration};
 
@@ -44,6 +45,8 @@ pub fn main() {
     match_lobbies::recv_match_lobby_join_request(server_name, &mut server, state.clone());
     match_lobbies::recv_match_lobby_leave_request(server_name, &mut server, state.clone());
     match_lobbies::recv_match_lobby_send_message_request(server_name, &mut server, state.clone());
+
+    global_chat::recv_global_chat_send_message_request(server_name, &mut server, state.clone());
 
     server.start();
 

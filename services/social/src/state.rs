@@ -2,13 +2,14 @@
 
 use std::time::Duration;
 
-use crate::{users::UsersState, region::RegionServerState, match_lobbies::MatchLobbiesState, session_servers::SessionServersState};
+use crate::{global_chat::GlobalChatState, users::UsersState, region::RegionServerState, match_lobbies::MatchLobbiesState, session_servers::SessionServersState};
 
 pub struct State {
     pub region_server: RegionServerState,
     pub session_servers: SessionServersState,
     pub match_lobbies: MatchLobbiesState,
     pub users: UsersState,
+    pub global_chat: GlobalChatState,
 }
 
 impl State {
@@ -21,6 +22,7 @@ impl State {
             session_servers: SessionServersState::new(),
             match_lobbies: MatchLobbiesState::new(),
             users: UsersState::new(),
+            global_chat: GlobalChatState::new(),
         }
     }
 }
