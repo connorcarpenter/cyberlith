@@ -1,35 +1,22 @@
 mod asset;
-mod user_manager;
-mod naia;
-mod http_server;
 mod session_instance;
 mod region;
 mod social;
 mod world;
+mod user;
+mod http;
 
 //
 
 use std::time::Duration;
 
-use bevy_app::{App, ScheduleRunnerPlugin, Startup, Update};
-use bevy_ecs::schedule::IntoSystemConfigs;
-
-use naia_bevy_server::{
-    Plugin as NaiaServerPlugin, ReceiveEvents, ServerConfig as NaiaServerConfig,
-};
-
-use bevy_http_client::HttpClientPlugin;
-use bevy_http_server::HttpServerPlugin;
-
-use session_server_http_proto::protocol as http_protocol;
-use session_server_naia_proto::protocol as naia_protocol;
+use bevy_app::{App, ScheduleRunnerPlugin};
 
 //
 
-use crate::{region::RegionPlugin, social::SocialPlugin, world::WorldPlugin,
-    asset::AssetPlugin,
-    session_instance::SessionInstance,
-    user_manager::UserManager,
+use crate::{asset::AssetPlugin, region::RegionPlugin, session_instance::SessionInstance,
+            social::SocialPlugin,
+            world::WorldPlugin, user::UserPlugin, http::HttpPlugin
 };
 
 fn main() {
@@ -44,34 +31,14 @@ fn main() {
     App::default()
         // Plugins
         .add_plugins(ScheduleRunnerPlugin::run_loop(Duration::from_millis(5)))
-        .add_plugins(NaiaServerPlugin::new(
-            NaiaServerConfig::default(),
-            naia_protocol(),
-        ))
-        .add_plugins(HttpServerPlugin::new(http_protocol()))
-        .add_plugins(HttpClientPlugin)
+        .add_plugins(HttpPlugin::new())
         .add_plugins(RegionPlugin::new(registration_resend_rate, region_server_disconnect_timeout))
         .add_plugins(SocialPlugin::new())
         .add_plugins(WorldPlugin::new(world_connect_resend_rate))
         .add_plugins(AssetPlugin::new())
-        // Resource
-        .insert_resource(UserManager::new())
+        .add_plugins(UserPlugin::new())
+        // Resources
         .insert_resource(SessionInstance::new(&instance_secret))
-        // Startup System
-        .add_systems(Startup, naia::init)
-        .add_systems(Startup, http_server::start)
-        // Receive Server Events
-        .add_systems(
-            Update,
-            (
-                naia::auth_events,
-                naia::connect_events,
-                naia::disconnect_events,
-                naia::error_events,
-                naia::message_events,
-            )
-                .in_set(ReceiveEvents),
-        )
         // Run App
         .run();
 }

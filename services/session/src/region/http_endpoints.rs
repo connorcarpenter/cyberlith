@@ -10,7 +10,8 @@ use logging::{info, warn};
 use session_server_http_proto::{ConnectAssetServerRequest, ConnectAssetServerResponse, ConnectSocialServerRequest, ConnectSocialServerResponse, DisconnectAssetServerRequest, DisconnectAssetServerResponse, DisconnectSocialServerRequest, DisconnectSocialServerResponse, HeartbeatRequest, HeartbeatResponse, IncomingUserRequest, IncomingUserResponse};
 use session_server_naia_proto::{channels::PrimaryChannel, messages::WorldConnectToken};
 
-use crate::{social::SocialManager, world::WorldManager, asset::asset_manager::AssetManager, region::RegionManager, user_manager::UserManager};
+use crate::{asset::asset_manager::AssetManager, region::RegionManager, social::SocialManager, world::WorldManager};
+use crate::user::UserManager;
 
 pub fn recv_register_instance_response(
     mut http_client: ResMut<HttpClient>,

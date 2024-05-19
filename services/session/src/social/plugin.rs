@@ -1,7 +1,7 @@
 
 use bevy_app::{App, Plugin};
 
-use super::{social_manager::SocialManager, http_endpoints};
+use super::social_manager::SocialManager;
 
 pub struct SocialPlugin {
 

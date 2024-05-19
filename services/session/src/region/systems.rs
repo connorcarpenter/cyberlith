@@ -1,4 +1,4 @@
-use bevy_ecs::{system::Res, change_detection::ResMut};
+use bevy_ecs::{change_detection::ResMut, system::Res};
 
 use bevy_http_client::HttpClient;
 use config::{
@@ -9,7 +9,8 @@ use logging::info;
 
 use region_server_http_proto::{SessionRegisterInstanceRequest, WorldConnectRequest};
 
-use crate::{session_instance::SessionInstance, user_manager::UserManager, world::WorldManager, region::RegionManager};
+use crate::{region::RegionManager, session_instance::SessionInstance, world::WorldManager};
+use crate::user::UserManager;
 
 pub fn send_register_instance_request(
     session_instance: Res<SessionInstance>,

@@ -4,8 +4,8 @@ use bevy_ecs::{change_detection::ResMut, event::EventReader};
 
 use naia_bevy_server::{
     events::{AuthEvents, ConnectEvent, DisconnectEvent, ErrorEvent, MessageEvents},
-    transport::webrtc,
     Server,
+    transport::webrtc,
 };
 
 use bevy_http_client::HttpClient;
@@ -19,10 +19,8 @@ use logging::{info, warn};
 use session_server_naia_proto::channels::ClientActionsChannel;
 use session_server_naia_proto::messages::{Auth, WorldConnectRequest};
 
-use crate::{
-    asset::{asset_manager::AssetManager, AssetCatalog},
-    user_manager::UserManager,
-};
+use crate::asset::{asset_manager::AssetManager, AssetCatalog};
+use crate::user::UserManager;
 
 pub fn init(mut server: Server) {
     info!("Session Naia Server starting up");
