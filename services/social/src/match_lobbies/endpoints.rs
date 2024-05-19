@@ -31,7 +31,7 @@ async fn async_recv_match_lobby_create_request_impl(
 
     let mut state = state.write().await;
 
-    let new_match_lobby_id = state.match_lobby_create(request.match_name(), request.creator_user_id());
+    let new_match_lobby_id = state.match_lobbies.create(request.match_name(), request.creator_user_id());
 
     // responding
     return Ok(MatchLobbyCreateResponse::new(new_match_lobby_id));
@@ -60,7 +60,7 @@ async fn async_recv_match_lobby_join_request_impl(
 
     let mut state = state.write().await;
 
-    state.match_lobby_join(request.match_lobby_id(), request.user_id());
+    state.match_lobbies.join(request.match_lobby_id(), request.user_id());
 
     // responding
     return Ok(MatchLobbyJoinResponse);
@@ -89,7 +89,7 @@ async fn async_recv_match_lobby_leave_request_impl(
 
     let mut state = state.write().await;
 
-    state.match_lobby_leave(request.user_id());
+    state.match_lobbies.leave(request.user_id());
 
     // responding
     return Ok(MatchLobbyLeaveResponse);
@@ -118,7 +118,7 @@ async fn async_recv_match_lobby_send_message_request_impl(
 
     let mut state = state.write().await;
 
-    state.match_lobby_send_message(request.user_id(), request.message());
+    state.match_lobbies.send_message(request.user_id(), request.message());
 
     // responding
     return Ok(MatchLobbySendMessageResponse);

@@ -36,7 +36,7 @@ async fn async_recv_connect_session_server_request_impl(
     state.region_server.heard_from_region_server();
 
     // store session server details
-    state.add_session_server(request.http_addr(), request.http_port());
+    state.session_servers.add(request.http_addr(), request.http_port());
 
     // responding
     // info!("Sending connect social server response to region server ..");
@@ -71,7 +71,7 @@ async fn async_recv_disconnect_session_server_request_impl(
     state.region_server.heard_from_region_server();
 
     // erase session server details
-    state.remove_session_server(request.http_addr(), request.http_port());
+    state.session_servers.remove(request.http_addr(), request.http_port());
 
     // responding
     // info!("Sending connect session server response to region server ..");

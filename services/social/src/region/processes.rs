@@ -1,10 +1,10 @@
+use std::{thread, time::Duration};
 
 use logging::{info, warn};
-use http_client::{HttpClient, ResponseError};
-use http_server::{async_dup::Arc, executor::smol::lock::RwLock, ApiServer, Server};
+use http_client::{HttpClient};
+use http_server::{async_dup::Arc, executor::smol::lock::RwLock, Server};
 
 use region_server_http_proto::SocialRegisterInstanceRequest;
-use social_server_http_proto::{HeartbeatRequest, HeartbeatResponse};
 
 use config::{
     SOCIAL_SERVER_GLOBAL_SECRET, SOCIAL_SERVER_PORT, SOCIAL_SERVER_RECV_ADDR, REGION_SERVER_PORT,
@@ -13,7 +13,29 @@ use config::{
 
 use crate::state::State;
 
-pub async fn send_register_instance_request(state: Arc<RwLock<State>>) {
+pub fn start_processes(state: Arc<RwLock<State>>) {
+    // send registration
+    let state_clone = state.clone();
+    Server::spawn(async move {
+        loop {
+            let state_clone_2 = state_clone.clone();
+            send_register_instance_request(state_clone_2).await;
+            thread::sleep(Duration::from_secs(5));
+        }
+    });
+
+    // handle disconnection
+    let state_clone = state.clone();
+    Server::spawn(async move {
+        loop {
+            let state_clone_2 = state_clone.clone();
+            process_region_server_disconnect(state_clone_2).await;
+            thread::sleep(Duration::from_secs(5));
+        }
+    });
+}
+
+async fn send_register_instance_request(state: Arc<RwLock<State>>) {
     let state = &mut state.write().await.region_server;
 
     if state.connected() {
@@ -50,7 +72,7 @@ pub async fn send_register_instance_request(state: Arc<RwLock<State>>) {
     state.sent_to_region_server();
 }
 
-pub async fn process_region_server_disconnect(state: Arc<RwLock<State>>) {
+async fn process_region_server_disconnect(state: Arc<RwLock<State>>) {
     let state = &mut state.write().await.region_server;
 
     if state.connected() {
@@ -59,23 +81,4 @@ pub async fn process_region_server_disconnect(state: Arc<RwLock<State>>) {
             state.set_disconnected();
         }
     }
-}
-
-pub fn recv_heartbeat_request(host_name: &str, server: &mut Server, state: Arc<RwLock<State>>) {
-    server.api_endpoint(host_name, None, move |_addr, req| {
-        let state = state.clone();
-        async move { async_recv_heartbeat_request_impl(state, req).await }
-    });
-}
-
-async fn async_recv_heartbeat_request_impl(
-    state: Arc<RwLock<State>>,
-    _: HeartbeatRequest,
-) -> Result<HeartbeatResponse, ResponseError> {
-    info!("Heartbeat request received from region server, sending response");
-    let state = &mut state.write().await.region_server;
-
-    state.heard_from_region_server();
-
-    Ok(HeartbeatResponse)
 }
