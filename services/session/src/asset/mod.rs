@@ -7,3 +7,6 @@ mod user_assets;
 
 mod asset_catalog;
 pub use asset_catalog::*;
+
+mod plugin;
+pub use plugin::*;
