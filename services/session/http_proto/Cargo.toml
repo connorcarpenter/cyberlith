@@ -11,6 +11,7 @@ publish = false
 [dependencies]
 asset_id = { path = "../../../crates/asset/id" }
 auth_server_types = { path = "../../auth/types" }
+social_server_types = { path = "../../social/types" }
 
 naia-serde = { path = "../../../../naia/shared/serde" }
 
