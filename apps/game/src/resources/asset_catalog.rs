@@ -10,4 +10,8 @@ impl AssetCatalog {
     pub fn game_host_match_ui() -> AssetId {
         AssetId::from_str("htytzu").unwrap()
     }
+
+    pub fn game_global_chat_ui() -> AssetId {
+        AssetId::from_str("ngffab").unwrap()
+    }
 }

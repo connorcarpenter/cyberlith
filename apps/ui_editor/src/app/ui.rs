@@ -45,8 +45,9 @@ pub fn setup(
     // uis.push(launcher::forgot_password_finish::ui_define()); // forgot password finish
     // uis.push(launcher::reset_password::ui_define()); // reset password
 
-    uis.push(game::main_menu::ui_define()); // game main menu
-    uis.push(game::host_match::ui_define()); // game host match
+    // uis.push(game::main_menu::ui_define()); // game main menu
+    // uis.push(game::host_match::ui_define()); // game host match
+    uis.push(game::global_chat::ui_define()); // game global chat
 
     let mut ui_handles = Vec::new();
     for (ui_name, ui_asset_id, ui_etag, ui) in uis {
