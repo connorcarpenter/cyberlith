@@ -598,6 +598,15 @@ impl UiManager {
         }
     }
 
+    pub fn get_ui_container_contents(
+        &self,
+        ui_handle: &UiHandle,
+        id_str: &str,
+    ) -> Option<UiHandle> {
+        let ui_runtime = self.ui_runtimes.get(ui_handle)?;
+        ui_runtime.get_ui_container_contents(id_str)
+    }
+
     pub fn set_ui_container_contents(
         &mut self,
         ui_handle: &UiHandle,

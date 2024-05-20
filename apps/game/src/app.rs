@@ -11,9 +11,9 @@ use game_engine::{
 };
 
 use super::systems::{
-    cube_scene, draw, init_spinner, keyboard_input, network, resize, walker_scene,
+    cube_scene, draw, init_spinner, network, resize, walker_scene,
 };
-use crate::states::AppState;
+use crate::{states::AppState, ui, ui::UiCatalog};
 
 pub struct GameApp {
     cookie_store_opt: Option<Arc<RwLock<CookieStore>>>,
@@ -40,6 +40,7 @@ impl Plugin for GameApp {
                 max_size: None,
                 ..Default::default()
             })
+            .insert_resource(UiCatalog::new())
             // states
             .insert_state(AppState::Loading)
             // scene systems
@@ -57,6 +58,9 @@ impl Plugin for GameApp {
             .add_systems(Update, network::world_main_insert_position_events)
             .add_systems(Update, network::world_main_insert_asset_ref_events)
             .add_systems(Update, network::world_alt1_insert_asset_ref_events)
-            .add_systems(Update, network::session_load_asset_events);
+            .add_systems(Update, network::session_load_asset_events)
+            // Ui
+            .add_systems(Update, ui::handle_events)
+        ;
     }
 }

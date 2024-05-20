@@ -238,6 +238,20 @@ impl UiRuntime {
         self.state.set_node_visible(&node_id, val);
     }
 
+    pub fn get_ui_container_contents(&self, id_str: &str) -> Option<UiHandle> {
+        // get node_id from id_str
+        let Some(node_id) = self.get_node_id_by_id_str(id_str) else {
+            warn!(
+                "get_ui_container_contents: node_id not found for id_str: {}",
+                id_str
+            );
+            return None;
+        };
+
+        // get ui handle
+        self.state.get_ui_container_asset_id_opt(&node_id).map(UiHandle::new)
+    }
+
     pub fn set_ui_container_contents(&mut self, id_str: &str, child_handle: &UiHandle) {
         // get node_id from id_str
         let Some(node_id) = self.get_node_id_by_id_str(id_str) else {
