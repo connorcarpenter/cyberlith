@@ -8,9 +8,8 @@ use game_engine::{
 
 use crate::{
     states::AppState,
-    ui::{UiCatalog, UiKey, events::{DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent, JoinMatchButtonClickedEvent, SettingsButtonClickedEvent}},
+    ui::{go_to_sub_ui, UiCatalog, UiKey, events::{DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent, JoinMatchButtonClickedEvent, SettingsButtonClickedEvent}},
 };
-use crate::ui::go_to_sub_ui;
 
 pub(crate) fn on_load(
     current_state: AppState,
@@ -28,7 +27,7 @@ pub(crate) fn on_load(
     ui_manager.set_target_render_layer(layer);
 
     let ui_key = UiKey::MainMenu;
-    let ui_handle = UiHandle::new(UiCatalog::game_main_menu_ui());
+    let ui_handle = ui_catalog.get_ui_handle(ui_key);
 
     ui_catalog.set_loaded(ui_key);
 
@@ -39,6 +38,10 @@ pub(crate) fn on_load(
     ui_manager.register_ui_event::<SettingsButtonClickedEvent>(&ui_handle, "settings_button");
 
     ui_manager.enable_ui(&ui_handle);
+
+    if ui_catalog.get_is_loaded(UiKey::GlobalChat) {
+        go_to_sub_ui(ui_manager, ui_catalog, UiKey::GlobalChat);
+    }
 }
 
 pub(crate) fn handle_events(

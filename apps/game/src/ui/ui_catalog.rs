@@ -14,11 +14,6 @@ pub struct UiCatalog {
 }
 
 impl UiCatalog {
-    pub fn game_main_menu_ui() -> AssetId { AssetId::from_str("kmqkp9").unwrap() }
-
-    pub fn game_host_match_ui() -> AssetId { AssetId::from_str("htytzu").unwrap() }
-
-    pub fn game_global_chat_ui() -> AssetId { AssetId::from_str("ngffab").unwrap() }
 
     pub fn new() -> Self {
         let mut me = Self {
@@ -26,9 +21,9 @@ impl UiCatalog {
             ui_handle_to_key: HashMap::new(),
         };
 
-        me.insert_ui(UiKey::MainMenu, UiHandle::new(Self::game_main_menu_ui()));
-        me.insert_ui(UiKey::HostMatch, UiHandle::new(Self::game_host_match_ui()));
-        me.insert_ui(UiKey::GlobalChat, UiHandle::new(Self::game_global_chat_ui()));
+        me.insert_ui(UiKey::MainMenu, UiHandle::new(AssetId::from_str("kmqkp9").unwrap()));
+        me.insert_ui(UiKey::HostMatch, UiHandle::new(AssetId::from_str("htytzu").unwrap()));
+        me.insert_ui(UiKey::GlobalChat, UiHandle::new(AssetId::from_str("ngffab").unwrap()));
 
         me
     }

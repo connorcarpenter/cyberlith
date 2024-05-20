@@ -12,10 +12,9 @@ pub(crate) fn on_load(
     ui_manager: &mut UiManager,
 ) {
     let ui_key = UiKey::HostMatch;
-    let ui_handle = UiHandle::new(UiCatalog::game_host_match_ui());
+    let ui_handle = ui_catalog.get_ui_handle(ui_key);
 
     ui_catalog.set_loaded(ui_key);
-
     ui_manager.register_ui_event::<SubmitButtonClickedEvent>(&ui_handle, "submit_button");
 }
 

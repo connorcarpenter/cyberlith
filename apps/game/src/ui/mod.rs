@@ -59,6 +59,7 @@ pub(crate) fn on_ui_load(
         ),
         UiKey::GlobalChat => global_chat::on_load(
             ui_catalog,
+            ui_manager,
         ),
         _ => {
             unimplemented!("ui not implemented");
