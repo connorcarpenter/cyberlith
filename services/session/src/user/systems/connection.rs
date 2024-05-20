@@ -1,51 +1,19 @@
-use std::net::SocketAddr;
 
 use bevy_ecs::{change_detection::ResMut, event::EventReader};
 
 use naia_bevy_server::{
-    events::{AuthEvents, ConnectEvent, DisconnectEvent, ErrorEvent, MessageEvents},
+    events::{AuthEvents, ConnectEvent, DisconnectEvent},
     Server,
-    transport::webrtc,
 };
 
 use bevy_http_client::HttpClient;
 
-use config::{
-    PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SELF_BINDING_ADDR, SESSION_SERVER_SIGNAL_PORT,
-    SESSION_SERVER_WEBRTC_PORT,
-};
 use logging::{info, warn};
 
-use session_server_naia_proto::channels::ClientActionsChannel;
-use session_server_naia_proto::messages::{Auth, WorldConnectRequest};
+use session_server_naia_proto::messages::Auth;
 
 use crate::asset::{asset_manager::AssetManager, AssetCatalog};
 use crate::user::UserManager;
-
-pub fn init(mut server: Server) {
-    info!("Session Naia Server starting up");
-
-    let server_addresses = webrtc::ServerAddrs::new(
-        // IP Address to listen on for WebRTC signaling
-        SocketAddr::new(
-            SELF_BINDING_ADDR.parse().unwrap(),
-            SESSION_SERVER_SIGNAL_PORT,
-        ),
-        // IP Address to listen on for UDP WebRTC data channels
-        SocketAddr::new(
-            SELF_BINDING_ADDR.parse().unwrap(),
-            SESSION_SERVER_WEBRTC_PORT,
-        ),
-        // The public WebRTC IP address to advertise
-        format!(
-            "{}://{}:{}",
-            PUBLIC_PROTOCOL, PUBLIC_IP_ADDR, SESSION_SERVER_WEBRTC_PORT
-        )
-        .as_str(),
-    );
-    let socket = webrtc::Socket::new(&server_addresses, server.socket_config());
-    server.listen(socket);
-}
 
 pub fn auth_events(
     mut user_manager: ResMut<UserManager>,
@@ -114,23 +82,5 @@ pub fn disconnect_events(
         // TODO: probably need to deregister user from global?
 
         asset_manager.deregister_user(user_key);
-    }
-}
-
-pub fn error_events(mut event_reader: EventReader<ErrorEvent>) {
-    for ErrorEvent(error) in event_reader.read() {
-        info!("Server Error: {:?}", error);
-    }
-}
-
-pub fn message_events(mut user_manager: ResMut<UserManager>, mut event_reader: EventReader<MessageEvents>) {
-    for events in event_reader.read() {
-        for (user_key, _req) in events.read::<ClientActionsChannel, WorldConnectRequest>() {
-            if let Some(user_data) = user_manager.get_user_data_mut(&user_key) {
-                user_data.make_ready_for_world_connect();
-            } else {
-                warn!("User not found: {:?}", user_key);
-            }
-        }
     }
 }

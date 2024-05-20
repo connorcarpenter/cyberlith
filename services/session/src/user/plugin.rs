@@ -7,9 +7,8 @@ use naia_bevy_server::{
 };
 
 use session_server_naia_proto::protocol as naia_protocol;
-use crate::user::naia;
 
-use super::user_manager::UserManager;
+use super::{user_manager::UserManager, systems};
 
 pub struct UserPlugin {
 
@@ -33,15 +32,15 @@ impl Plugin for UserPlugin {
                 naia_protocol(),
             ))
             .insert_resource(UserManager::new())
-            .add_systems(Startup, naia::init)
+            .add_systems(Startup, systems::startup::server)
             .add_systems(
                 Update,
                 (
-                    naia::auth_events,
-                    naia::connect_events,
-                    naia::disconnect_events,
-                    naia::error_events,
-                    naia::message_events,
+                    systems::auth_events,
+                    systems::connect_events,
+                    systems::disconnect_events,
+                    systems::error_events,
+                    systems::message_events,
                 )
                 .in_set(ReceiveEvents),
             );
