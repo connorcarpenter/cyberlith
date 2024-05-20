@@ -15,5 +15,6 @@ naia-bevy-shared = { path = "../../../../naia/adapters/bevy/shared" }
 asset_id = { path = "../../../crates/asset/id" }
 logging = { path = "../../../crates/logging" }
 social_server_types = { path = "../../social/types" }
+auth_server_types = { path = "../../auth/types" }
 
 cfg-if = { version = "1.0" }

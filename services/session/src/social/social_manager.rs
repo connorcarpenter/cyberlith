@@ -1,16 +1,18 @@
 use bevy_ecs::{system::{Resource, Res}, change_detection::ResMut};
 
-use auth_server_types::UserId;
+use naia_bevy_server::{Server, UserKey};
+
 use bevy_http_client::{HttpClient, ResponseKey};
 use logging::{info, warn};
 
+use session_server_naia_proto::{channels::PrimaryChannel, messages::GlobalChatRecvMessage};
 use social_server_http_proto::{GlobalChatSendMessageRequest, GlobalChatSendMessageResponse};
 
-use crate::session_instance::SessionInstance;
+use crate::{user::UserManager, session_instance::SessionInstance};
 
 enum QueuedRequest {
     // user id, message
-    GlobalChatSendMessage(UserId, String),
+    GlobalChatSendMessage(UserKey, String),
 }
 
 enum InFlightRequest {
@@ -51,22 +53,26 @@ impl SocialManager {
 
     // used as a system
     pub fn update(
-        mut social_manager: ResMut<Self>,
+        mut naia_server: Server,
         mut http_client: ResMut<HttpClient>,
+        mut social_manager: ResMut<Self>,
         session_instance: Res<SessionInstance>,
+        user_manager: Res<UserManager>,
     ) {
         social_manager.process_in_flight_requests(
             &mut http_client,
         );
         social_manager.process_queued_requests(
-            &mut http_client, &session_instance,
+            &mut naia_server, &mut http_client, &session_instance, &user_manager,
         );
     }
 
     pub fn process_queued_requests(
         &mut self,
+        naia_server: &mut Server,
         http_client: &mut HttpClient,
         session_instance: &SessionInstance,
+        user_manager: &UserManager,
     ) {
         if self.queued_requests.is_empty() {
             // no queued assets
@@ -80,8 +86,15 @@ impl SocialManager {
         let queued_requests = std::mem::take(&mut self.queued_requests);
         for request in queued_requests {
             match request {
-                QueuedRequest::GlobalChatSendMessage(user_id, message) => {
-                    self.send_global_chat_message(http_client, session_instance, user_id, &message);
+                QueuedRequest::GlobalChatSendMessage(user_key, message) => {
+                    self.send_global_chat_message(
+                        naia_server,
+                        http_client,
+                        user_manager,
+                        session_instance,
+                        &user_key,
+                        &message
+                    );
                 }
             }
         }
@@ -125,25 +138,43 @@ impl SocialManager {
 
     pub fn send_global_chat_message(
         &mut self,
+        naia_server: &mut Server,
         http_client: &mut HttpClient,
+        user_manager: &UserManager,
         session_instance: &SessionInstance,
-        user_id: UserId,
+        sending_user_key: &UserKey,
         message: &str,
     ) {
+        let Some(user_data) = user_manager.get_user_data(sending_user_key) else {
+            warn!("User not found: {:?}", sending_user_key);
+            return;
+        };
+        let sending_user_id = user_data.user_id;
+
         let Some((social_server_addr, social_server_port)) = self.get_social_server_url() else {
             warn!("received global chat message but no social server is available!");
 
-            let qr = QueuedRequest::GlobalChatSendMessage(user_id, message.to_string());
+            let qr = QueuedRequest::GlobalChatSendMessage(*sending_user_key, message.to_string());
             self.queued_requests.push(qr);
 
             return;
         };
 
-        info!("sending global chat send message request to social server - [userid {:?}]:(`{:?}`)", user_id, message);
-        let request = GlobalChatSendMessageRequest::new(session_instance.instance_secret(), user_id, message);
+        info!("sending global chat send message request to social server - [userid {:?}]:(`{:?}`)", sending_user_id, message);
+        let request = GlobalChatSendMessageRequest::new(session_instance.instance_secret(), sending_user_id, message);
         let response_key = http_client.send(&social_server_addr, social_server_port, request);
 
         let ifr = InFlightRequest::GlobalChatSendMessage(response_key);
         self.in_flight_requests.push(ifr);
+
+        // send messages to all other connected users
+        for user_key in &naia_server.user_keys() {
+            if user_key == sending_user_key {
+                continue;
+            }
+
+            let message_to_user = GlobalChatRecvMessage::new(sending_user_id, message);
+            naia_server.send_message::<PrimaryChannel, _>(&user_key, &message_to_user);
+        }
     }
 }
