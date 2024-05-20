@@ -6,14 +6,21 @@ use http_common::{ApiRequest, ApiResponse, Method};
 #[derive(Serde, PartialEq, Clone)]
 pub struct ConnectSessionServerRequest {
     region_secret: String,
+    session_secret: String,
     http_addr: String,
     http_port: u16,
 }
 
 impl ConnectSessionServerRequest {
-    pub fn new(region_secret: &str, http_addr: &str, http_port: u16) -> Self {
+    pub fn new(
+        region_secret: &str,
+        session_secret: &str,
+        http_addr: &str,
+        http_port: u16
+    ) -> Self {
         Self {
             region_secret: region_secret.to_string(),
+            session_secret: session_secret.to_string(),
             http_addr: http_addr.to_string(),
             http_port,
         }
@@ -21,6 +28,10 @@ impl ConnectSessionServerRequest {
 
     pub fn region_secret(&self) -> &str {
         &self.region_secret
+    }
+
+    pub fn session_secret(&self) -> &str {
+        &self.session_secret
     }
 
     pub fn http_addr(&self) -> &str {

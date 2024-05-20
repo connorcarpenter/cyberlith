@@ -38,8 +38,7 @@ pub fn message_events(
             };
             let user_id = user_data.user_id;
 
-            let session_secret = session_instance.instance_secret();
-            social_manager.send_global_chat_message(&mut http_client, session_secret, user_id, &req.message);
+            social_manager.send_global_chat_message(&mut http_client, &session_instance, user_id, &req.message);
         }
     }
 }

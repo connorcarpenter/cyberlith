@@ -5,20 +5,20 @@ use naia_serde::SerdeInternal as Serde;
 // Request
 #[derive(Serde, PartialEq, Clone)]
 pub struct UserDisconnectedRequest {
-    session_secret: String,
+    session_instance_secret: String,
     user_id: UserId,
 }
 
 impl UserDisconnectedRequest {
-    pub fn new(session_secret: &str, user_id: UserId) -> Self {
+    pub fn new(session_instance_secret: &str, user_id: UserId) -> Self {
         Self {
-            session_secret: session_secret.to_string(),
+            session_instance_secret: session_instance_secret.to_string(),
             user_id,
         }
     }
 
-    pub fn session_secret(&self) -> &str {
-        &self.session_secret
+    pub fn session_instance_secret(&self) -> &str {
+        &self.session_instance_secret
     }
 
     pub fn user_id(&self) -> UserId {

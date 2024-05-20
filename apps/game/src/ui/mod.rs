@@ -17,13 +17,11 @@ use bevy_ecs::{
 
 use game_engine::{
     input::{GamepadRumbleIntensity, Input, RumbleManager},
-    ui::UiManager,
+    ui::{UiManager, UiHandle},
     asset::AssetId,
-    logging::info,
 };
-use game_engine::ui::UiHandle;
 
-use crate::{states::AppState, ui, ui::events::{DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent, JoinMatchButtonClickedEvent, SettingsButtonClickedEvent, SubmitButtonClickedEvent}};
+use crate::{states::AppState, ui::events::{DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent, JoinMatchButtonClickedEvent, SettingsButtonClickedEvent, SubmitButtonClickedEvent}};
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum UiKey {

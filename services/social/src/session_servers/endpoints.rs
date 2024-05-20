@@ -40,7 +40,7 @@ async fn async_recv_connect_session_server_request_impl(
     // store session server details
     state
         .session_servers
-        .add_instance(request.http_addr(), request.http_port());
+        .add_instance(request.session_secret(), request.http_addr(), request.http_port());
 
     // responding
     // info!("Sending connect social server response to region server ..");
@@ -77,7 +77,7 @@ async fn async_recv_disconnect_session_server_request_impl(
     // erase session server details
     state
         .session_servers
-        .remove_instance(request.http_addr(), request.http_port());
+        .remove_instance(request.session_secret());
 
     // responding
     // info!("Sending connect session server response to region server ..");

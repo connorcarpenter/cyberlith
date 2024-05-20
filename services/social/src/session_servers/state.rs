@@ -1,6 +1,4 @@
-use std::{collections::{HashMap}, net::SocketAddr};
-
-use logging::{info, warn};
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct SessionServerId {
@@ -13,17 +11,31 @@ impl SessionServerId {
     }
 }
 
+struct SessionInstance {
+    addr: String,
+    port: u16,
+}
+
+impl SessionInstance {
+    pub fn new(addr: &str, port: u16) -> Self {
+        Self {
+            addr: addr.to_string(),
+            port,
+        }
+    }
+}
+
 pub struct SessionServersState {
     next_session_server_id: u64,
-    addr_to_session_server_id: HashMap<(String, u16), SessionServerId>,
-    instances: HashMap<SessionServerId, (String, u16)>,
+    secret_to_session_server_id: HashMap<String, SessionServerId>,
+    instances: HashMap<SessionServerId, SessionInstance>,
 }
 
 impl SessionServersState {
     pub fn new() -> Self {
         Self {
             next_session_server_id: 0,
-            addr_to_session_server_id: HashMap::new(),
+            secret_to_session_server_id: HashMap::new(),
             instances: HashMap::new(),
         }
     }
@@ -34,32 +46,18 @@ impl SessionServersState {
         session_id
     }
 
-    pub fn add_instance(&mut self, addr: &str, port: u16) {
-        let key = (addr.to_string(), port);
+    pub fn add_instance(&mut self, instance_secret: &str, addr: &str, port: u16) {
         let id = self.next_session_id();
-        self.instances.insert(id, key.clone());
-        self.addr_to_session_server_id.insert(key, id);
+        self.instances.insert(id, SessionInstance::new(addr, port));
+        self.secret_to_session_server_id.insert(instance_secret.to_string(), id);
     }
 
-    pub fn remove_instance(&mut self, addr: &str, port: u16) {
-        let key = (addr.to_string(), port);
-        let id = self.addr_to_session_server_id.remove(&key).unwrap();
+    pub fn remove_instance(&mut self, session_secret: &str) {
+        let id = self.secret_to_session_server_id.remove(session_secret).unwrap();
         self.instances.remove(&id);
     }
 
-    pub fn iter(&self) -> std::collections::hash_map::Iter<'_, SessionServerId, (String, u16)> {
-        self.instances.iter()
-    }
-
-    pub fn get_session_server_id(&self, socket_addr: &SocketAddr) -> Option<SessionServerId> {
-
-        info!("get_session_server_id: socket_addr: {:?}", socket_addr);
-        info!("map: {:?}", self.addr_to_session_server_id);
-
-        warn!("MUST IMPLEMENT! HOW DO WE CONVERT THIS??");
-
-        return None;
-
-        //self.addr_to_session_server_id.get(&(addr.to_string(), port)).copied()
+    pub fn get_session_server_id(&self, session_instance_secret: &str) -> Option<SessionServerId> {
+        self.secret_to_session_server_id.get(session_instance_secret).copied()
     }
 }

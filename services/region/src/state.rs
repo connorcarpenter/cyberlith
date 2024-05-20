@@ -71,24 +71,24 @@ impl State {
 
     pub async fn deregister_session_instance_sendreqs(
         &mut self,
-        session_http_addr: &str,
-        session_http_port: u16,
+        session_instance_secret: &str,
     ) {
         // send disconnect social server message to session instance
         let Some(social_instance) = &self.social_instance else {
             return;
         };
+
+        let session_instance_secret = session_instance_secret.to_string();
+
         let social_instance_addr = social_instance.http_addr().to_string();
         let social_instance_port = social_instance.http_port();
-        let social_last_heard = social_instance.last_heard();
 
-        let session_http_addr = session_http_addr.to_string();
+        let social_last_heard = social_instance.last_heard();
 
         Server::spawn(async move {
             let request = DisconnectSessionServerRequest::new(
                 REGION_SERVER_SECRET,
-                &session_http_addr,
-                session_http_port,
+                &session_instance_secret,
             );
             let response =
                 HttpClient::send(&social_instance_addr, social_instance_port, request).await;
@@ -455,10 +455,16 @@ impl State {
         }
 
         for key in self.socialless_session_instances.iter() {
+
             let session_instance = self.session_instances.get(key).unwrap();
+
+            let session_instance_secret = session_instance.instance_secret().to_string();
+
             let session_instance_addr_1 = session_instance.http_addr().to_string();
             let session_instance_addr_2 = session_instance_addr_1.clone();
+
             let session_instance_port = session_instance.http_port();
+
             let session_last_heard = session_instance.last_heard();
 
             let social_server_addr_1 = self
@@ -505,6 +511,7 @@ impl State {
             Server::spawn(async move {
                 let request = ConnectSessionServerRequest::new(
                     REGION_SERVER_SECRET,
+                    &session_instance_secret,
                     &session_instance_addr_2,
                     session_instance_port,
                 );
@@ -543,20 +550,20 @@ impl State {
         {
             let mut disconnected_instances = Vec::new();
             for (addr, instance) in self.session_instances.iter() {
+                let session_instance_secret = instance.instance_secret().to_string();
                 let last_heard = *instance.last_heard().read().await;
                 let elapsed = now.duration_since(last_heard);
                 if elapsed.as_secs() > timeout.as_secs() {
-                    disconnected_instances.push(addr.clone());
+                    disconnected_instances.push((session_instance_secret, addr.clone()));
                 }
             }
-            for (addr_ip, addr_port) in disconnected_instances {
+            for (session_instance_secret, (addr, port)) in disconnected_instances {
                 info!(
                     "session instance {:?}:{:?} disconnected",
-                    addr_ip, addr_port
+                    addr, port
                 );
-                self.deregister_session_instance(&addr_ip, addr_port);
-                self.deregister_session_instance_sendreqs(&addr_ip, addr_port)
-                    .await;
+                self.deregister_session_instance(&addr, port);
+                self.deregister_session_instance_sendreqs(&session_instance_secret).await;
             }
         }
 

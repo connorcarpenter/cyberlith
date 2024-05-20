@@ -1,4 +1,4 @@
-use bevy_ecs::{system::Resource, change_detection::ResMut};
+use bevy_ecs::{system::{Resource, Res}, change_detection::ResMut};
 
 use auth_server_types::UserId;
 use bevy_http_client::{HttpClient, ResponseKey};
@@ -6,9 +6,11 @@ use logging::{info, warn};
 
 use social_server_http_proto::{GlobalChatSendMessageRequest, GlobalChatSendMessageResponse};
 
+use crate::session_instance::SessionInstance;
+
 enum QueuedRequest {
-    // session secret, user id, message
-    GlobalChatSendMessage(String, UserId, String),
+    // user id, message
+    GlobalChatSendMessage(UserId, String),
 }
 
 enum InFlightRequest {
@@ -51,18 +53,20 @@ impl SocialManager {
     pub fn update(
         mut social_manager: ResMut<Self>,
         mut http_client: ResMut<HttpClient>,
+        session_instance: Res<SessionInstance>,
     ) {
         social_manager.process_in_flight_requests(
             &mut http_client,
         );
         social_manager.process_queued_requests(
-            &mut http_client,
+            &mut http_client, &session_instance,
         );
     }
 
     pub fn process_queued_requests(
         &mut self,
         http_client: &mut HttpClient,
+        session_instance: &SessionInstance,
     ) {
         if self.queued_requests.is_empty() {
             // no queued assets
@@ -76,8 +80,8 @@ impl SocialManager {
         let queued_requests = std::mem::take(&mut self.queued_requests);
         for request in queued_requests {
             match request {
-                QueuedRequest::GlobalChatSendMessage(session_secret, user_id, message) => {
-                    self.send_global_chat_message(http_client, &session_secret, user_id, &message);
+                QueuedRequest::GlobalChatSendMessage(user_id, message) => {
+                    self.send_global_chat_message(http_client, session_instance, user_id, &message);
                 }
             }
         }
@@ -122,21 +126,21 @@ impl SocialManager {
     pub fn send_global_chat_message(
         &mut self,
         http_client: &mut HttpClient,
-        session_secret: &str,
+        session_instance: &SessionInstance,
         user_id: UserId,
         message: &str,
     ) {
         let Some((social_server_addr, social_server_port)) = self.get_social_server_url() else {
             warn!("received global chat message but no social server is available!");
 
-            let qr = QueuedRequest::GlobalChatSendMessage(session_secret.to_string(), user_id, message.to_string());
+            let qr = QueuedRequest::GlobalChatSendMessage(user_id, message.to_string());
             self.queued_requests.push(qr);
 
             return;
         };
 
         info!("sending global chat send message request to social server - [userid {:?}]:(`{:?}`)", user_id, message);
-        let request = GlobalChatSendMessageRequest::new(session_secret, user_id, message);
+        let request = GlobalChatSendMessageRequest::new(session_instance.instance_secret(), user_id, message);
         let response_key = http_client.send(&social_server_addr, social_server_port, request);
 
         let ifr = InFlightRequest::GlobalChatSendMessage(response_key);
