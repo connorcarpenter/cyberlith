@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use naia_bevy_shared::Protocol;
 
-use crate::{channels::ChannelsPlugin, messages::MessagesPlugin};
+use crate::{components::ComponentsPlugin, channels::ChannelsPlugin, messages::MessagesPlugin};
 
 // Protocol Build
 pub fn protocol() -> Protocol {
@@ -16,7 +16,9 @@ pub fn protocol() -> Protocol {
         // Channels
         .add_plugin(ChannelsPlugin)
         // Messages
-        .add_plugin(MessagesPlugin);
+        .add_plugin(MessagesPlugin)
+        // Components
+        .add_plugin(ComponentsPlugin);
 
     cfg_if::cfg_if! {
         if #[cfg(feature = "local")]{

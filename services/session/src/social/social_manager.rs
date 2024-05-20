@@ -1,11 +1,14 @@
-use bevy_ecs::{system::{Resource, Res}, change_detection::ResMut};
+use std::collections::VecDeque;
 
-use naia_bevy_server::{Server, UserKey};
+use bevy_ecs::{entity::Entity, system::{Commands, Resource, Res}, change_detection::ResMut};
+
+use naia_bevy_server::{CommandsExt, RoomKey, Server, UserKey};
+use auth_server_types::UserId;
 
 use bevy_http_client::{HttpClient, ResponseKey};
 use logging::{info, warn};
 
-use session_server_naia_proto::{channels::PrimaryChannel, messages::GlobalChatRecvMessage};
+use session_server_naia_proto::components::GlobalChatMessage;
 use social_server_http_proto::{GlobalChatSendMessageRequest, GlobalChatSendMessageResponse};
 
 use crate::{user::UserManager, session_instance::SessionInstance};
@@ -24,6 +27,10 @@ pub struct SocialManager {
     social_server_opt: Option<(String, u16)>,
     queued_requests: Vec<QueuedRequest>,
     in_flight_requests: Vec<InFlightRequest>,
+
+    global_chat_room_key: Option<RoomKey>,
+    global_chat_log: VecDeque<Entity>,
+    next_timestamp: u16,
 }
 
 impl SocialManager {
@@ -32,6 +39,10 @@ impl SocialManager {
             social_server_opt: None,
             in_flight_requests: Vec::new(),
             queued_requests: Vec::new(),
+
+            global_chat_room_key: None,
+            global_chat_log: VecDeque::new(),
+            next_timestamp: 0,
         }
     }
 
@@ -52,7 +63,17 @@ impl SocialManager {
     }
 
     // used as a system
+    pub fn startup(
+        mut naia_server: Server,
+        mut social_manager: ResMut<Self>,
+    ) {
+        let global_chat_room_key = naia_server.make_room().key();
+        social_manager.global_chat_room_key = Some(global_chat_room_key);
+    }
+
+    // used as a system
     pub fn update(
+        mut commands: Commands,
         mut naia_server: Server,
         mut http_client: ResMut<HttpClient>,
         mut social_manager: ResMut<Self>,
@@ -63,12 +84,19 @@ impl SocialManager {
             &mut http_client,
         );
         social_manager.process_queued_requests(
-            &mut naia_server, &mut http_client, &session_instance, &user_manager,
+            &mut commands, &mut naia_server, &mut http_client, &session_instance, &user_manager,
         );
+    }
+
+    //
+
+    pub fn get_global_chat_room_key(&self) -> RoomKey {
+        self.global_chat_room_key.unwrap()
     }
 
     pub fn process_queued_requests(
         &mut self,
+        commands: &mut Commands,
         naia_server: &mut Server,
         http_client: &mut HttpClient,
         session_instance: &SessionInstance,
@@ -88,6 +116,7 @@ impl SocialManager {
             match request {
                 QueuedRequest::GlobalChatSendMessage(user_key, message) => {
                     self.send_global_chat_message(
+                        commands,
                         naia_server,
                         http_client,
                         user_manager,
@@ -138,6 +167,7 @@ impl SocialManager {
 
     pub fn send_global_chat_message(
         &mut self,
+        commands: &mut Commands,
         naia_server: &mut Server,
         http_client: &mut HttpClient,
         user_manager: &UserManager,
@@ -167,14 +197,39 @@ impl SocialManager {
         let ifr = InFlightRequest::GlobalChatSendMessage(response_key);
         self.in_flight_requests.push(ifr);
 
-        // send messages to all other connected users
-        for user_key in &naia_server.user_keys() {
-            if user_key == sending_user_key {
-                continue;
-            }
+        // log the message
+        self.log_global_chat_message(commands, naia_server, sending_user_id, message);
+    }
 
-            let message_to_user = GlobalChatRecvMessage::new(sending_user_id, message);
-            naia_server.send_message::<PrimaryChannel, _>(&user_key, &message_to_user);
+    fn log_global_chat_message(
+        &mut self,
+        commands: &mut Commands,
+        naia_server: &mut Server,
+        sending_user_id: UserId,
+        message: &str,
+    ) {
+        // convert to entity + component
+        let timestamp = self.get_next_timestamp();
+        let global_chat_message_id = commands
+            .spawn_empty()
+            .enable_replication(naia_server)
+            .insert(GlobalChatMessage::new(timestamp, sending_user_id, message))
+            .id();
+
+        naia_server.room_mut(&self.get_global_chat_room_key()).add_entity(&global_chat_message_id);
+
+        // add to local log
+        self.global_chat_log.push_back(global_chat_message_id);
+
+        // remove oldest messages if we have too many
+        if self.global_chat_log.len() > 100 {
+            let entity_to_delete = self.global_chat_log.pop_front().unwrap();
+            commands.entity(entity_to_delete).despawn();
         }
+    }
+    fn get_next_timestamp(&mut self) -> u16 {
+        let next_timestamp = self.next_timestamp;
+        self.next_timestamp = self.next_timestamp.wrapping_add(1);
+        next_timestamp
     }
 }

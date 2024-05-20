@@ -1,5 +1,6 @@
 
 use bevy_ecs::{change_detection::ResMut, event::EventReader};
+use bevy_ecs::system::Res;
 
 use naia_bevy_server::{
     events::{AuthEvents, ConnectEvent, DisconnectEvent},
@@ -12,8 +13,8 @@ use logging::{info, warn};
 
 use session_server_naia_proto::messages::Auth;
 
-use crate::asset::{asset_manager::AssetManager, AssetCatalog};
-use crate::user::UserManager;
+use crate::{asset::{asset_manager::AssetManager, AssetCatalog}, user::UserManager};
+use crate::social::SocialManager;
 
 pub fn auth_events(
     mut user_manager: ResMut<UserManager>,
@@ -42,14 +43,22 @@ pub fn auth_events(
 
 pub fn connect_events(
     mut server: Server,
-    mut event_reader: EventReader<ConnectEvent>,
-    mut asset_manager: ResMut<AssetManager>,
     mut http_client: ResMut<HttpClient>,
+    social_manager: Res<SocialManager>,
+    mut asset_manager: ResMut<AssetManager>,
+
+    mut event_reader: EventReader<ConnectEvent>,
 ) {
     for ConnectEvent(user_key) in event_reader.read() {
         let address = server.user(user_key).address();
 
         info!("Server connected to: {}", address);
+
+        // add to global chat room
+        let global_chat_room_key = social_manager.get_global_chat_room_key();
+        server.room_mut(&global_chat_room_key).add_user(user_key);
+
+        // Assets
 
         asset_manager.register_user(user_key);
 
