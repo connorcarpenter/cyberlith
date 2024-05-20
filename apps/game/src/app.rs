@@ -13,7 +13,7 @@ use game_engine::{
 use super::systems::{
     cube_scene, draw, init_spinner, network, resize, walker_scene,
 };
-use crate::{states::AppState, ui, ui::UiCatalog};
+use crate::{states::AppState, ui, ui::{UiCatalog, events::{DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent, JoinMatchButtonClickedEvent, SettingsButtonClickedEvent, SubmitButtonClickedEvent}}};
 
 pub struct GameApp {
     cookie_store_opt: Option<Arc<RwLock<CookieStore>>>,
@@ -61,6 +61,12 @@ impl Plugin for GameApp {
             .add_systems(Update, network::session_load_asset_events)
             // Ui
             .add_systems(Update, ui::handle_events)
+            .add_event::<HostMatchButtonClickedEvent>()
+            .add_event::<JoinMatchButtonClickedEvent>()
+            .add_event::<GlobalChatButtonClickedEvent>()
+            .add_event::<DevlogButtonClickedEvent>()
+            .add_event::<SettingsButtonClickedEvent>()
+            .add_event::<SubmitButtonClickedEvent>()
         ;
     }
 }
