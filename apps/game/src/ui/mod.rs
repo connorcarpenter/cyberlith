@@ -3,23 +3,27 @@ pub mod events;
 mod ui_catalog;
 pub use ui_catalog::UiCatalog;
 
-pub(crate) mod main_menu;
-pub(crate) mod host_match;
-pub(crate) mod global_chat;
+mod main_menu;
+mod host_match;
+mod global_chat;
 
 use std::time::Duration;
 
 use bevy_ecs::{
     event::EventReader,
     system::{Res, ResMut},
+    prelude::NextState
 };
 
 use game_engine::{
     input::{GamepadRumbleIntensity, Input, RumbleManager},
-    ui::{UiHandle, UiManager},
+    ui::UiManager,
+    asset::AssetId,
+    logging::info,
 };
+use game_engine::ui::UiHandle;
 
-use crate::ui::events::{DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent, JoinMatchButtonClickedEvent, SettingsButtonClickedEvent, SubmitButtonClickedEvent};
+use crate::{states::AppState, ui, ui::events::{DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent, JoinMatchButtonClickedEvent, SettingsButtonClickedEvent, SubmitButtonClickedEvent}};
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum UiKey {
@@ -31,10 +35,43 @@ pub enum UiKey {
     Settings,
 }
 
+pub(crate) fn on_ui_load(
+    state: AppState,
+    next_state: &mut NextState<AppState>,
+    ui_manager: &mut UiManager,
+    ui_catalog: &mut UiCatalog,
+    asset_id: AssetId
+) {
+    let ui_handle = UiHandle::new(asset_id);
+    if !ui_catalog.has_ui_key(&ui_handle) {
+        panic!("ui is not registered in catalog");
+    }
+    let ui_key = ui_catalog.get_ui_key(&ui_handle);
+
+    match ui_key {
+        UiKey::MainMenu => main_menu::on_load(
+            state,
+            next_state,
+            ui_catalog,
+            ui_manager,
+        ),
+        UiKey::HostMatch => host_match::on_load(
+            ui_catalog,
+            ui_manager,
+        ),
+        UiKey::GlobalChat => global_chat::on_load(
+            ui_catalog,
+        ),
+        _ => {
+            unimplemented!("ui not implemented");
+        }
+    }
+}
+
 pub(crate) fn handle_events(
     ui_catalog: Res<UiCatalog>,
     input: Res<Input>,
-    ui_manager: Res<UiManager>,
+    mut ui_manager: ResMut<UiManager>,
     mut rumble_manager: ResMut<RumbleManager>,
 
     mut host_match_btn_rdr: EventReader<HostMatchButtonClickedEvent>,
@@ -47,13 +84,15 @@ pub(crate) fn handle_events(
     let Some(active_ui_handle) = ui_manager.active_ui() else {
         return;
     };
-    if ui_catalog.get_ui_key(&active_ui_handle) != &UiKey::MainMenu {
+    if ui_catalog.get_ui_key(&active_ui_handle) != UiKey::MainMenu {
         panic!("unexpected ui");
     }
 
     let mut should_rumble = false;
 
     main_menu::handle_events(
+        &mut ui_manager,
+        &ui_catalog,
         &mut host_match_btn_rdr,
         &mut join_match_btn_rdr,
         &mut global_chat_btn_rdr,
@@ -99,13 +138,17 @@ pub(crate) fn handle_events(
 pub(crate) fn go_to_sub_ui(
     ui_manager: &mut UiManager,
     ui_catalog: &UiCatalog,
-    ui_handle: &UiHandle
+    ui_key: UiKey,
 ) {
     let Some(active_ui_handle) = ui_manager.active_ui() else {
         return;
     };
-    if ui_catalog.get_ui_key(&active_ui_handle) != &UiKey::MainMenu {
+    if ui_catalog.get_ui_key(&active_ui_handle) != UiKey::MainMenu {
         panic!("invalid sub-ui");
+    }
+    let next_ui_handle = ui_catalog.get_ui_handle(ui_key);
+    if !ui_catalog.get_is_loaded(ui_key) {
+        panic!("ui not loaded");
     }
     if let Some(current_ui_handle) = ui_manager.get_ui_container_contents(&active_ui_handle, "center_container") {
         match ui_catalog.get_ui_key(&current_ui_handle) {
@@ -113,11 +156,14 @@ pub(crate) fn go_to_sub_ui(
             UiKey::HostMatch => {
                 host_match::reset_state(ui_manager, &current_ui_handle);
             }
+            UiKey::GlobalChat => {
+                global_chat::reset_state(ui_manager, &current_ui_handle);
+            }
             _ => {
                 unimplemented!("ui not implemented");
             }
         }
     }
 
-    ui_manager.set_ui_container_contents(&active_ui_handle, "center_container", ui_handle);
+    ui_manager.set_ui_container_contents(&active_ui_handle, "center_container", &next_ui_handle);
 }

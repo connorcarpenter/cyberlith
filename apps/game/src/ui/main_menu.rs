@@ -10,6 +10,7 @@ use crate::{
     states::AppState,
     ui::{UiCatalog, UiKey, events::{DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent, JoinMatchButtonClickedEvent, SettingsButtonClickedEvent}},
 };
+use crate::ui::go_to_sub_ui;
 
 pub(crate) fn on_load(
     current_state: AppState,
@@ -29,7 +30,7 @@ pub(crate) fn on_load(
     let ui_key = UiKey::MainMenu;
     let ui_handle = UiHandle::new(UiCatalog::game_main_menu_ui());
 
-    ui_catalog.insert_ui(ui_key, ui_handle);
+    ui_catalog.set_loaded(ui_key);
 
     ui_manager.register_ui_event::<HostMatchButtonClickedEvent>(&ui_handle, "host_match_button");
     ui_manager.register_ui_event::<JoinMatchButtonClickedEvent>(&ui_handle, "join_match_button");
@@ -41,6 +42,8 @@ pub(crate) fn on_load(
 }
 
 pub(crate) fn handle_events(
+    ui_manager: &mut UiManager,
+    ui_catalog: &UiCatalog,
     host_match_btn_rdr: &mut EventReader<HostMatchButtonClickedEvent>,
     join_match_btn_rdr: &mut EventReader<JoinMatchButtonClickedEvent>,
     global_chat_btn_rdr: &mut EventReader<GlobalChatButtonClickedEvent>,
@@ -55,6 +58,9 @@ pub(crate) fn handle_events(
     }
     if host_match_clicked {
         info!("host match button clicked!");
+
+        go_to_sub_ui(ui_manager, ui_catalog, UiKey::HostMatch);
+
         *should_rumble = true;
     }
 
@@ -75,6 +81,9 @@ pub(crate) fn handle_events(
     }
     if global_chat_clicked {
         info!("global chat button clicked!");
+
+        go_to_sub_ui(ui_manager, ui_catalog, UiKey::GlobalChat);
+
         *should_rumble = true;
     }
 

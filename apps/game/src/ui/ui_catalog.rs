@@ -8,7 +8,8 @@ use crate::ui::UiKey;
 
 #[derive(Resource)]
 pub struct UiCatalog {
-    ui_key_to_handle: HashMap<UiKey, UiHandle>,
+    // key, (handle, loaded)
+    uis: HashMap<UiKey, (UiHandle, bool)>,
     ui_handle_to_key: HashMap<UiHandle, UiKey>,
 }
 
@@ -20,22 +21,41 @@ impl UiCatalog {
     pub fn game_global_chat_ui() -> AssetId { AssetId::from_str("ngffab").unwrap() }
 
     pub fn new() -> Self {
-        Self {
-            ui_key_to_handle: HashMap::new(),
+        let mut me = Self {
+            uis: HashMap::new(),
             ui_handle_to_key: HashMap::new(),
-        }
+        };
+
+        me.insert_ui(UiKey::MainMenu, UiHandle::new(Self::game_main_menu_ui()));
+        me.insert_ui(UiKey::HostMatch, UiHandle::new(Self::game_host_match_ui()));
+        me.insert_ui(UiKey::GlobalChat, UiHandle::new(Self::game_global_chat_ui()));
+
+        me
     }
 
-    pub fn insert_ui(&mut self, key: UiKey, handle: UiHandle) {
-        self.ui_key_to_handle.insert(key, handle);
+    fn insert_ui(&mut self, key: UiKey, handle: UiHandle) {
+        self.uis.insert(key, (handle, false));
         self.ui_handle_to_key.insert(handle, key);
     }
 
-    pub fn get_ui_handle(&self, key: UiKey) -> &UiHandle {
-        self.ui_key_to_handle.get(&key).unwrap()
+    pub fn get_is_loaded(&self, key: UiKey) -> bool {
+        self.uis.get(&key).unwrap().1
     }
 
-    pub fn get_ui_key(&self, handle: &UiHandle) -> &UiKey {
-        self.ui_handle_to_key.get(handle).unwrap()
+    pub fn set_loaded(&mut self, key: UiKey) {
+        let entry = self.uis.get_mut(&key).unwrap();
+        entry.1 = true;
+    }
+
+    pub fn get_ui_handle(&self, key: UiKey) -> UiHandle {
+        self.uis.get(&key).unwrap().0
+    }
+
+    pub fn has_ui_key(&self, handle: &UiHandle) -> bool {
+        self.ui_handle_to_key.contains_key(handle)
+    }
+
+    pub fn get_ui_key(&self, handle: &UiHandle) -> UiKey {
+        *self.ui_handle_to_key.get(handle).unwrap()
     }
 }

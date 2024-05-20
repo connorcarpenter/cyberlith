@@ -9,7 +9,7 @@ pub(crate) fn on_load(
     let ui_key = UiKey::GlobalChat;
     let ui_handle = UiHandle::new(UiCatalog::game_global_chat_ui());
 
-    ui_catalog.insert_ui(ui_key, ui_handle);
+    ui_catalog.set_loaded(ui_key);
 }
 
 pub(crate) fn handle_events(

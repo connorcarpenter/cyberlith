@@ -14,7 +14,7 @@ pub(crate) fn on_load(
     let ui_key = UiKey::HostMatch;
     let ui_handle = UiHandle::new(UiCatalog::game_host_match_ui());
 
-    ui_catalog.insert_ui(ui_key, ui_handle);
+    ui_catalog.set_loaded(ui_key);
 
     ui_manager.register_ui_event::<SubmitButtonClickedEvent>(&ui_handle, "submit_button");
 }

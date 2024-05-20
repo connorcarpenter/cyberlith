@@ -3,7 +3,7 @@ use bevy_ecs::system::{Res, ResMut};
 use bevy_ecs::{event::EventReader, system::Commands};
 
 
-use game_engine::asset::AssetLoadedEvent;
+use game_engine::asset::{AssetLoadedEvent};
 use game_engine::ui::{UiManager};
 use game_engine::{
     asset::{
@@ -21,8 +21,7 @@ use game_engine::{
 
 use crate::states::AppState;
 use crate::systems::walker_scene::{WalkAnimation, WalkerMarker};
-use crate::ui;
-use crate::ui::{UiCatalog};
+use crate::ui::{on_ui_load, UiCatalog};
 
 pub fn world_spawn_entity_events(mut event_reader: EventReader<WorldSpawnEntityEvent>) {
     for event in event_reader.read() {
@@ -159,27 +158,8 @@ pub fn session_load_asset_events(
         let asset_type = event.asset_type;
         info!("received Asset Loaded Event! (asset_id: {:?})", asset_id);
         if asset_type == AssetType::Ui {
-            if asset_id == UiCatalog::game_main_menu_ui() {
-                info!("received game_main_menu_ui");
-
-                ui::main_menu::on_load(
-                    *state.get(),
-                    &mut next_state,
-                    &mut ui_catalog,
-                    &mut ui_manager,
-                );
-            } else if asset_id == UiCatalog::game_host_match_ui() {
-                info!("received game_host_match_ui");
-                ui::host_match::on_load(
-                    &mut ui_catalog,
-                    &mut ui_manager,
-                );
-            }  else if asset_id == UiCatalog::game_global_chat_ui() {
-                info!("received game_global_chat_ui");
-                ui::global_chat::on_load(
-                    &mut ui_catalog,
-                );
-            }
+            let state = *state.get();
+            on_ui_load(state, &mut next_state, &mut ui_manager, &mut ui_catalog, asset_id);
         }
     }
 }
