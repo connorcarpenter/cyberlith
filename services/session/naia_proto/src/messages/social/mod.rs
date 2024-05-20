@@ -7,12 +7,12 @@ mod match_lobby_join;
 mod match_lobby_leave;
 mod match_lobby_send_message;
 
-use global_chat_send_message::GlobalChatSendMessage;
-use match_lobby_create::MatchLobbyCreate;
-use match_lobby_game_start::MatchLobbyGameStart;
-use match_lobby_join::MatchLobbyJoin;
-use match_lobby_leave::MatchLobbyLeave;
-use match_lobby_send_message::MatchLobbySendMessage;
+pub use global_chat_send_message::GlobalChatSendMessage;
+pub use match_lobby_create::MatchLobbyCreate;
+pub use match_lobby_game_start::MatchLobbyGameStart;
+pub use match_lobby_join::MatchLobbyJoin;
+pub use match_lobby_leave::MatchLobbyLeave;
+pub use match_lobby_send_message::MatchLobbySendMessage;
 
 // Plugin
 pub struct SocialMessagesPlugin;

@@ -40,32 +40,18 @@ pub fn recv_added_asset_id_request(
             .unwrap();
 
         if added {
-            let asset_server_url = asset_manager.get_asset_server_url();
             asset_manager.load_user_asset(
                 &mut naia_server,
                 &mut http_client,
-                &asset_server_url,
                 user_key,
                 asset_id,
             );
         } else {
-            let asset_server_url = asset_manager.get_asset_server_url();
-            asset_manager.unload_user_asset(&asset_server_url, user_key, asset_id);
+            asset_manager.unload_user_asset(user_key, asset_id);
         }
 
         //info!("UserAsset Response sent to world server ..");
 
         http_server.respond(response_key, Ok(UserAssetIdResponse));
-    }
-
-    if asset_manager.has_queued_user_asset_requests() {
-        if let Some((asset_server_addr, asset_server_port)) = asset_manager.get_asset_server_url() {
-            asset_manager.process_queued_user_asset_requests(
-                &mut naia_server,
-                &mut http_client,
-                &asset_server_addr,
-                asset_server_port,
-            );
-        }
     }
 }

@@ -56,15 +56,15 @@ impl UserManager {
             if !user_data.ready_for_world_connect() {
                 continue;
             }
-            if let Some(last_sent) = user_data.last_sent {
+            if let Some(last_sent) = user_data.world_connect_last_sent_to_region {
                 let time_since_last_sent = now.duration_since(last_sent);
                 if time_since_last_sent >= *world_connect_resend_rate {
                     worldless_users.push((*user_key, user_data.user_id));
-                    user_data.last_sent = Some(now);
+                    user_data.world_connect_last_sent_to_region = Some(now);
                 }
             } else {
                 worldless_users.push((*user_key, user_data.user_id));
-                user_data.last_sent = Some(now);
+                user_data.world_connect_last_sent_to_region = Some(now);
             }
         }
         worldless_users
@@ -83,7 +83,7 @@ impl UserManager {
 pub(crate) struct UserData {
     pub(crate) user_id: UserId,
 
-    pub(crate) last_sent: Option<Instant>,
+    pub(crate) world_connect_last_sent_to_region: Option<Instant>,
     ready_for_world_connect: bool,
 
     // LATER this may be used to send meaningful data about a user back to the given world server instance..
@@ -95,7 +95,7 @@ impl UserData {
         Self {
             user_id,
 
-            last_sent: None,
+            world_connect_last_sent_to_region: None,
             ready_for_world_connect: false,
 
             world_instance_secret: None, // tells us whether user is connected

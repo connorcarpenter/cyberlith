@@ -68,22 +68,27 @@ impl AssetManager {
         &mut self,
         naia_server: &mut Server,
         http_client: &mut HttpClient,
-        asset_server_addr: &str,
-        asset_server_port: u16,
     ) {
+        if !self.has_queued_user_asset_requests() {
+            // no queued assets
+            return;
+        }
+        if self.get_asset_server_url().is_none() {
+            // it's okay to wait until the asset server is available
+            return;
+        };
+
         for (user_key, asset_id, added) in std::mem::take(&mut self.queued_user_asset_requests) {
             info!("processing queued user asset request..");
             if added {
                 self.load_user_asset(
                     naia_server,
                     http_client,
-                    &Some((asset_server_addr.to_string(), asset_server_port)),
                     user_key,
                     &asset_id,
                 );
             } else {
                 self.unload_user_asset(
-                    &Some((asset_server_addr.to_string(), asset_server_port)),
                     user_key,
                     &asset_id,
                 );
@@ -95,17 +100,16 @@ impl AssetManager {
         &mut self,
         server: &mut Server,
         http_client: &mut HttpClient,
-        asset_server_ip_opt: &Option<(String, u16)>,
         user_key: UserKey,
         asset_id: &AssetId,
     ) {
-        if let Some((asset_server_addr, asset_server_port)) = asset_server_ip_opt {
+        if let Some((asset_server_addr, asset_server_port)) = self.get_asset_server_url() {
             if let Some(user_assets) = self.users.get_mut(&user_key) {
                 user_assets.load_user_asset(
                     server,
                     http_client,
-                    asset_server_addr,
-                    *asset_server_port,
+                    &asset_server_addr,
+                    asset_server_port,
                     &self.asset_store,
                     asset_id,
                 );
@@ -120,11 +124,10 @@ impl AssetManager {
 
     pub fn unload_user_asset(
         &mut self,
-        asset_server_ip_opt: &Option<(String, u16)>,
         user_key: UserKey,
         asset_id: &AssetId,
     ) {
-        if let Some((_asset_server_addr, _asset_server_port)) = asset_server_ip_opt {
+        if let Some((_asset_server_addr, _asset_server_port)) = self.get_asset_server_url() {
             if let Some(user_assets) = self.users.get_mut(&user_key) {
                 user_assets.unload_user_asset(asset_id);
             } else {
@@ -140,14 +143,17 @@ impl AssetManager {
         &mut self,
         server: &mut Server,
         http_client: &mut HttpClient,
-        asset_server_addr: &str,
-        asset_server_port: u16,
     ) {
+        let Some((asset_server_addr, asset_server_port)) = self.get_asset_server_url() else {
+            // it's okay to wait until the asset server is available
+            return;
+        };
+
         for user_assets in self.users.values_mut() {
             user_assets.process_in_flight_requests(
                 server,
                 http_client,
-                asset_server_addr,
+                &asset_server_addr,
                 asset_server_port,
                 &mut self.asset_store,
             );
@@ -160,14 +166,12 @@ pub fn update(
     mut server: Server,
     mut http_client: ResMut<HttpClient>,
 ) {
-    if let Some((asset_server_addr, asset_server_port)) = asset_manager.get_asset_server_url() {
-        asset_manager.process_in_flight_requests(
-            &mut server,
-            &mut http_client,
-            &asset_server_addr,
-            asset_server_port,
-        );
-    } else {
-        // it's okay to wait until the asset server is available
-    }
+    asset_manager.process_in_flight_requests(
+        &mut server,
+        &mut http_client,
+    );
+    asset_manager.process_queued_user_asset_requests(
+        &mut server,
+        &mut http_client,
+    );
 }
