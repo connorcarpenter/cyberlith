@@ -16,9 +16,10 @@ use bevy_ecs::{
 };
 
 use game_engine::{
-    input::{GamepadRumbleIntensity, Input, RumbleManager},
+    input::{InputEvent, GamepadRumbleIntensity, Input, RumbleManager},
     ui::{UiManager, UiHandle},
     asset::AssetId,
+    session::SessionClient,
 };
 
 use crate::{states::AppState, ui::events::{DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent, JoinMatchButtonClickedEvent, SettingsButtonClickedEvent, SubmitButtonClickedEvent}};
@@ -72,7 +73,9 @@ pub(crate) fn handle_events(
     input: Res<Input>,
     mut ui_manager: ResMut<UiManager>,
     mut rumble_manager: ResMut<RumbleManager>,
+    mut session_client: SessionClient,
 
+    mut input_events: EventReader<InputEvent>,
     mut host_match_btn_rdr: EventReader<HostMatchButtonClickedEvent>,
     mut join_match_btn_rdr: EventReader<JoinMatchButtonClickedEvent>,
     mut global_chat_btn_rdr: EventReader<GlobalChatButtonClickedEvent>,
@@ -103,12 +106,17 @@ pub(crate) fn handle_events(
     if let Some(current_ui_handle) = ui_manager.get_ui_container_contents(&active_ui_handle, "center_container") {
         match ui_catalog.get_ui_key(&current_ui_handle) {
             UiKey::MainMenu => panic!("invalid sub-ui"),
-            UiKey::HostMatch => {
-                host_match::handle_events(&mut submit_btn_rdr, &mut should_rumble);
-            }
-            UiKey::GlobalChat => {
-                global_chat::handle_events(&mut should_rumble);
-            }
+            UiKey::HostMatch => host_match::handle_events(
+                &mut submit_btn_rdr,
+                &mut should_rumble
+            ),
+            UiKey::GlobalChat => global_chat::handle_events(
+                &mut ui_manager,
+                &ui_catalog,
+                &mut session_client,
+                &mut input_events,
+                &mut should_rumble,
+            ),
             _ => {
                 unimplemented!("ui not implemented");
             }

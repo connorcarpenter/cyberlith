@@ -1,12 +1,7 @@
-use bevy_ecs::schedule::{NextState, State};
-use bevy_ecs::system::{Res, ResMut};
-use bevy_ecs::{event::EventReader, system::Commands};
+use bevy_ecs::{event::EventReader, system::{Res, Commands, ResMut}, schedule::{NextState, State}};
 
-
-use game_engine::asset::{AssetLoadedEvent};
-use game_engine::ui::{UiManager};
 use game_engine::{
-    asset::{
+    asset::{AssetLoadedEvent,
         AnimationData, AssetHandle, AssetType, IconData, MeshData, ModelData, PaletteData,
         SceneData, SkeletonData, SkinData,
     },
@@ -17,11 +12,10 @@ use game_engine::{
         Alt1, Main, Position, WorldInsertAssetRefEvent, WorldInsertComponentEvent,
         WorldSpawnEntityEvent,
     },
+    ui::UiManager,
 };
 
-use crate::states::AppState;
-use crate::systems::walker_scene::{WalkAnimation, WalkerMarker};
-use crate::ui::{on_ui_load, UiCatalog};
+use crate::{ui::{on_ui_load, UiCatalog}, states::AppState, systems::walker_scene::{WalkAnimation, WalkerMarker}};
 
 pub fn world_spawn_entity_events(mut event_reader: EventReader<WorldSpawnEntityEvent>) {
     for event in event_reader.read() {

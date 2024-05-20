@@ -23,7 +23,7 @@ impl ProtocolPlugin for ChannelsPlugin {
             )
             .add_channel::<AssetRequestsChannel>(
                 ChannelDirection::Bidirectional,
-                ChannelMode::UnorderedReliable(ReliableSettings::default()),
+                ChannelMode::OrderedReliable(ReliableSettings::default()),
             )
             .add_channel::<ClientActionsChannel>(
                 ChannelDirection::ClientToServer,

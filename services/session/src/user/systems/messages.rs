@@ -1,6 +1,5 @@
 
-use bevy_ecs::{change_detection::ResMut, event::EventReader};
-use bevy_ecs::system::Res;
+use bevy_ecs::{system::Res, change_detection::ResMut, event::EventReader};
 
 use naia_bevy_server::events::MessageEvents;
 use bevy_http_client::HttpClient;
@@ -9,8 +8,7 @@ use logging::warn;
 
 use session_server_naia_proto::{channels::ClientActionsChannel, messages::{GlobalChatSendMessage, WorldConnectRequest}};
 
-use crate::{user::UserManager, social::SocialManager};
-use crate::session_instance::SessionInstance;
+use crate::{session_instance::SessionInstance, user::UserManager, social::SocialManager};
 
 pub fn message_events(
     mut http_client: ResMut<HttpClient>,

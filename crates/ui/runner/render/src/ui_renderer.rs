@@ -380,7 +380,7 @@ fn draw_ui_button(
     };
 
     // draw button
-    let active_state = ui_manager.input_get_active_state(ui_id, node_id);
+    let active_state = ui_manager.get_node_active_state(ui_id, node_id);
     if let Some(mat_handle) = button_style_state.current_color_handle(active_state) {
         let background_alpha = ui_config.node_background_alpha(node_id);
         if background_alpha > 0.0 {
@@ -421,7 +421,7 @@ fn draw_ui_textbox(
     };
 
     // draw textbox
-    let active_state = ui_manager.input_get_active_state(ui_id, node_id);
+    let active_state = ui_manager.get_node_active_state(ui_id, node_id);
     if let Some(mat_handle) = textbox_style_state.current_color_handle(active_state) {
         let background_alpha = ui_config.node_background_alpha(node_id);
         if background_alpha > 0.0 {

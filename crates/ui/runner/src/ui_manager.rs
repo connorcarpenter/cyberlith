@@ -558,6 +558,17 @@ impl UiManager {
         }
     }
 
+    pub fn get_node_active_state(&self, ui_id: &UiHandle, node_id: &NodeId) -> NodeActiveState {
+        self.input_state
+            .get_active_state(&ui_id.asset_id(), node_id)
+    }
+
+    pub fn get_node_active_state_from_id(&self, ui_id: &UiHandle, id_str: &str) -> Option<NodeActiveState> {
+        let ui_runtime = self.ui_runtimes.get(ui_id)?;
+        let node_id = ui_runtime.get_node_id_by_id_str(id_str)?;
+        return Some(self.get_node_active_state(ui_id, &node_id));
+    }
+
     pub fn get_text(&self, ui_handle: &UiHandle, id_str: &str) -> Option<String> {
         let Some(ui_runtime) = self.ui_runtimes.get(ui_handle) else {
             warn!("ui data not loaded 3: {:?}", ui_handle.asset_id());
@@ -648,11 +659,6 @@ impl UiManager {
 
     pub fn interact_timer_within_seconds(&self, secs: f32) -> bool {
         self.input_state.interact_timer_within_seconds(secs)
-    }
-
-    pub fn input_get_active_state(&self, ui_id: &UiHandle, node_id: &NodeId) -> NodeActiveState {
-        self.input_state
-            .get_active_state(&ui_id.asset_id(), node_id)
     }
 
     pub fn input_get_select_index(&self) -> Option<usize> {

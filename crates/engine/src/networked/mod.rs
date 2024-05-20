@@ -21,15 +21,14 @@ pub mod world {
 }
 
 pub mod session {
+
     use naia_bevy_client::Client;
 
     use super::client_markers::Session;
 
     pub type SessionClient<'w> = Client<'w, Session>;
 
-    pub use session_server_naia_proto::{
-        channels::ClientActionsChannel, messages::WorldConnectRequest,
-    };
+    pub use session_server_naia_proto::{channels, messages};
 }
 
 pub use networked_plugin::NetworkedEnginePlugin;
