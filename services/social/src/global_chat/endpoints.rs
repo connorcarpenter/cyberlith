@@ -31,10 +31,14 @@ async fn async_recv_global_chat_send_message_request_impl(
     }
 
     let mut state = state.write().await;
+    let Some(session_server_id) = state.session_servers.get_session_server_id(&incoming_addr) else {
+        warn!("session server not found for incoming address: {:?}", incoming_addr);
+        return Err(ResponseError::Unauthenticated);
+    };
 
     state
         .global_chat
-        .send_message(request.user_id(), request.message());
+        .send_message(session_server_id, request.user_id(), request.message());
 
     // responding
     return Ok(GlobalChatSendMessageResponse);
