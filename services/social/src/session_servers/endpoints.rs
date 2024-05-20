@@ -1,3 +1,4 @@
+use auth_server_types::UserId;
 use config::REGION_SERVER_SECRET;
 use http_client::ResponseError;
 use http_server::{async_dup::Arc, executor::smol::lock::RwLock, ApiServer, Server};
@@ -37,10 +38,18 @@ async fn async_recv_connect_session_server_request_impl(
     // setting last heard
     state.region_server.heard_from_region_server();
 
+    // get full chat log
+    let messages: Vec<(UserId, String)> = state.global_chat.get_full_log().iter().map(|m| m.clone()).collect();
+
     // store session server details
     state
         .session_servers
-        .add_instance(request.session_secret(), request.http_addr(), request.http_port());
+        .init_instance(
+            request.session_secret(),
+            request.http_addr(),
+            request.http_port(),
+            messages,
+        ).await;
 
     // responding
     // info!("Sending connect social server response to region server ..");

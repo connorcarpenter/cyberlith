@@ -54,6 +54,7 @@ pub fn main() {
     server.start();
 
     region::start_processes(state.clone());
+    session_servers::start_processes(state.clone());
 
     thread::park();
 

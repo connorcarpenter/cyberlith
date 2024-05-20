@@ -233,7 +233,14 @@ impl SocialManager {
         next_timestamp
     }
 
-    pub(crate) fn patch_global_chat_messages(&mut self, new_messages: &Vec<(UserId, String)>) {
-        // TODO: implement
+    pub(crate) fn patch_global_chat_messages(
+        &mut self,
+        commands: &mut Commands,
+        naia_server: &mut Server,
+        new_messages: &Vec<(UserId, String)>
+    ) {
+        for (user_id, message) in new_messages {
+            self.log_global_chat_message(commands, naia_server, *user_id, message);
+        }
     }
 }

@@ -7,6 +7,7 @@ use crate::session_servers::SessionServerId;
 pub struct GlobalChatState {
     chat_log: VecDeque<(UserId, String)>,
 
+    // the session server id here is the SENDER not the RECEIVER
     outgoing_patches: HashMap<SessionServerId, Vec<(UserId, String)>>,
 }
 
