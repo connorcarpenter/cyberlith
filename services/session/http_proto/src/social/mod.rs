@@ -1,11 +1,11 @@
-mod social_patch_global_chat_messages;
-mod social_patch_match_lobbies;
-mod social_patch_match_lobby_messages;
-mod social_patch_match_lobby_users;
-mod social_patch_users;
+mod patch_global_chat_messages;
+mod patch_match_lobbies;
+mod patch_match_lobby_messages;
+mod patch_match_lobby_users;
+mod patch_users;
 
-pub use social_patch_global_chat_messages::*;
-pub use social_patch_match_lobbies::*;
-pub use social_patch_match_lobby_messages::*;
-pub use social_patch_match_lobby_users::*;
-pub use social_patch_users::*;
+pub use patch_global_chat_messages::*;
+pub use patch_match_lobbies::*;
+pub use patch_match_lobby_messages::*;
+pub use patch_match_lobby_users::*;
+pub use patch_users::*;

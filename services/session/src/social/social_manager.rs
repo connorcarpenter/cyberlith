@@ -232,4 +232,8 @@ impl SocialManager {
         self.next_timestamp = self.next_timestamp.wrapping_add(1);
         next_timestamp
     }
+
+    pub(crate) fn patch_global_chat_messages(&mut self, new_messages: &Vec<(UserId, String)>) {
+        // TODO: implement
+    }
 }
