@@ -1,7 +1,7 @@
-use bevy_ecs::{event::EventReader, system::{Res, Commands, ResMut}, schedule::{NextState, State}};
+use bevy_ecs::{event::EventReader, system::Commands};
 
 use game_engine::{
-    asset::{AssetLoadedEvent,
+    asset::{
         AnimationData, AssetHandle, AssetType, IconData, MeshData, ModelData, PaletteData,
         SceneData, SkeletonData, SkinData,
     },
@@ -11,11 +11,10 @@ use game_engine::{
     world::{
         Alt1, Main, Position, WorldInsertAssetRefEvent, WorldInsertComponentEvent,
         WorldSpawnEntityEvent,
-    },
-    ui::UiManager,
+    }
 };
 
-use crate::{ui::{on_ui_load, UiCatalog}, states::AppState, systems::walker_scene::{WalkAnimation, WalkerMarker}};
+use crate::{systems::walker_scene::{WalkAnimation, WalkerMarker}};
 
 pub fn world_spawn_entity_events(mut event_reader: EventReader<WorldSpawnEntityEvent>) {
     for event in event_reader.read() {
@@ -136,24 +135,6 @@ pub fn world_alt1_insert_asset_ref_events(
             commands.entity(entity).insert(walk_anim);
         } else {
             panic!("unexpected asset type");
-        }
-    }
-}
-
-pub fn session_load_asset_events(
-    state: Res<State<AppState>>,
-    mut next_state: ResMut<NextState<AppState>>,
-    mut ui_manager: ResMut<UiManager>,
-    mut ui_catalog: ResMut<UiCatalog>,
-    mut event_reader: EventReader<AssetLoadedEvent>,
-) {
-    for event in event_reader.read() {
-        let asset_id = event.asset_id;
-        let asset_type = event.asset_type;
-        info!("received Asset Loaded Event! (asset_id: {:?})", asset_id);
-        if asset_type == AssetType::Ui {
-            let state = *state.get();
-            on_ui_load(state, &mut next_state, &mut ui_manager, &mut ui_catalog, asset_id);
         }
     }
 }
