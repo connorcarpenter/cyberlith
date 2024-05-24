@@ -1,7 +1,7 @@
 
 use bevy_ecs::{system::{Res, Commands}, change_detection::ResMut, event::EventReader};
 
-use naia_bevy_server::{events::MessageEvents, Server};
+use naia_bevy_server::{events::{MessageEvents, TickEvent}, Server};
 
 use bevy_http_client::HttpClient;
 

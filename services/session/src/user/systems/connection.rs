@@ -88,7 +88,7 @@ pub fn disconnect_events(
     for DisconnectEvent(user_key, user) in event_reader.read() {
         info!("Server disconnected from: {:?}", user.address());
 
-        // TODO: probably need to deregister user from global?
+        // TODO: probably need to deregister user from global too?
 
         asset_manager.deregister_user(user_key);
     }

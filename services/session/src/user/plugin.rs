@@ -41,6 +41,7 @@ impl Plugin for UserPlugin {
                     systems::disconnect_events,
                     systems::error_events,
                     systems::message_events,
+                    systems::scope_checks,
                 )
                 .in_set(ReceiveEvents),
             );

@@ -1,26 +1,40 @@
 use bevy_ecs::{
     change_detection::{Mut, ResMut},
     entity::Entity,
-    event::{Event},
+    event::{EventReader, Event},
     prelude::{Query, World as BevyWorld},
     system::{Res, SystemState},
 };
 
-use naia_bevy_client::{events::InsertComponentEvents};
-
-use world_server_naia_proto::components::{Alt1, AssetEntry, AssetRef, Main, Position};
+use naia_bevy_client::{events::{DespawnEntityEvent, InsertComponentEvents, SpawnEntityEvent}};
 
 use asset_id::{AssetId, AssetType};
 use asset_loader::AssetMetadataStore;
 use logging::info;
 
+use world_server_naia_proto::components::{Alt1, AssetEntry, AssetRef, Main, Position};
+
 use super::{
     asset_ref_processor::{AssetProcessor, AssetRefProcessor},
     client_markers::World,
 };
-use crate::{asset_cache::AssetCache, world::WorldClient, networked::insert_component_event::{insert_component_event, insert_component_events, InsertComponentEvent}};
+use crate::{asset_cache::AssetCache, world::WorldClient, networked::{client_markers::Session, insert_component_event::{insert_component_event, insert_component_events, InsertComponentEvent}}};
 
 pub type WorldInsertComponentEvent<C> = InsertComponentEvent<World, C>;
+
+// used as a system
+pub fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent<World>>) {
+    for _event in event_reader.read() {
+        info!("spawned entity");
+    }
+}
+
+// used as a system
+pub fn despawn_entity_events(mut event_reader: EventReader<DespawnEntityEvent<World>>) {
+    for _event in event_reader.read() {
+        info!("despawned entity");
+    }
+}
 
 #[derive(Event)]
 pub struct InsertAssetRefEvent<T> {

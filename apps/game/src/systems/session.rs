@@ -1,4 +1,4 @@
-use bevy_ecs::{event::EventReader, system::{Res, ResMut}, schedule::{NextState, State}};
+use bevy_ecs::{event::EventReader, system::{Query, Res, ResMut}, schedule::{NextState, State}};
 
 use game_engine::{
     asset::{
@@ -30,9 +30,14 @@ pub fn session_load_asset_events(
 }
 
 pub fn recv_inserted_global_chat_component(
-    mut event_reader: EventReader<SessionInsertComponentEvent<GlobalChatMessage>>
+    mut event_reader: EventReader<SessionInsertComponentEvent<GlobalChatMessage>>,
+    chat_q: Query<&GlobalChatMessage>,
 ) {
     for event in event_reader.read() {
         info!("received Inserted GlobalChatMessage from Session Server! (entity: {:?})", event.entity);
+
+        if let Ok(chat) = chat_q.get(event.entity) {
+            info!("chat: {:?}", *chat.message);
+        }
     }
 }

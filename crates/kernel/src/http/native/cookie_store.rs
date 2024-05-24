@@ -123,7 +123,10 @@ impl CookieStore {
                     max_age_opt.map(|max_age| now + chrono::Duration::seconds(max_age as i64));
                 self.cookies
                     .insert(name.clone(), (value.clone(), expires.clone()));
-                self.write_cookie_to_file(&name, &value, expires).unwrap();
+                let result = self.write_cookie_to_file(&name, &value, expires);
+                if let Err(e) = result {
+                    warn!("Failed to write cookie to file: {:?}", e);
+                }
             }
             for name in removed_cookies {
                 // info!("Removing cookie from store: name={}", name);
