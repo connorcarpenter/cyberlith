@@ -87,6 +87,11 @@ impl SessionServersState {
         self.instances.remove(&id);
     }
 
+    pub fn clear(&mut self) {
+        self.secret_to_session_server_id.clear();
+        self.instances.clear();
+    }
+
     pub fn get_session_server_id(&self, session_instance_secret: &str) -> Option<SessionServerId> {
         self.secret_to_session_server_id.get(session_instance_secret).copied()
     }

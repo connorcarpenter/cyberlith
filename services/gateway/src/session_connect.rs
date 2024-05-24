@@ -24,11 +24,11 @@ pub(crate) async fn handler(
     _incoming_addr: SocketAddr,
     incoming_request: Request,
 ) -> Result<Response, ResponseError> {
-    let host_name = "gateway";
+    let host = "gateway";
 
     // call to region server with login request
     let connect_response = {
-        let region_server = "region_server";
+        let remote = "region";
         let remote_addr = REGION_SERVER_RECV_ADDR;
         let remote_port = REGION_SERVER_PORT;
         let remote_method = SessionConnectRequest::method();
@@ -40,7 +40,7 @@ pub(crate) async fn handler(
             remote_port,
             remote_path
         );
-        http_server::http_log_util::send_req(host_name, region_server, &logged_remote_url);
+        http_server::log_util::send_req(host, remote, &logged_remote_url);
 
         // pull user_id out of incoming_request
         let user_id: UserId = {
@@ -63,7 +63,7 @@ pub(crate) async fn handler(
             ));
         };
 
-        http_server::http_log_util::recv_res(host_name, region_server, &logged_remote_url);
+        http_server::log_util::recv_res(host, remote, &logged_remote_url);
 
         connect_response
     };
@@ -84,7 +84,7 @@ pub(crate) async fn handler(
             remote_port,
             remote_path
         );
-        http_server::http_log_util::send_req(host_name, session_server, &logged_remote_url);
+        http_server::log_util::send_req(host, session_server, &logged_remote_url);
 
         let session_auth_bytes = {
             let session_auth = connect_response.session_auth.to_outer();
@@ -105,7 +105,7 @@ pub(crate) async fn handler(
         session_connect_request.insert_header("Authorization", &session_auth_bytes);
         match http_client::raw::fetch_async(session_connect_request).await {
             Ok(session_connect_response) => {
-                http_server::http_log_util::recv_res(host_name, session_server, &logged_remote_url);
+                http_server::log_util::recv_res(host, session_server, &logged_remote_url);
                 return Ok(session_connect_response);
             }
             Err(err) => {

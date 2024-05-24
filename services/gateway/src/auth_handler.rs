@@ -183,7 +183,7 @@ async fn auth_impl(_incoming_addr: &SocketAddr, incoming_request: &Request) -> A
     let access_token_opt = extract_cookie_value(&incoming_request, "access_token");
     let refresh_token_opt = extract_cookie_value(&incoming_request, "refresh_token");
 
-    http_server::http_log_util::recv_req(
+    http_server::log_util::recv_req(
         host_name,
         remote_name,
         format!(
@@ -199,14 +199,14 @@ async fn auth_impl(_incoming_addr: &SocketAddr, incoming_request: &Request) -> A
             if let Some(access_token) = AccessToken::from_str(&access_token) {
                 let validate_request = AccessTokenValidateRequest::new(access_token);
 
-                http_server::http_log_util::send_req(
+                http_server::log_util::send_req(
                     host_name,
                     auth_server,
                     AccessTokenValidateRequest::name(),
                 );
                 let validate_result =
                     HttpClient::send(&auth_addr, auth_port, validate_request).await;
-                http_server::http_log_util::recv_res(
+                http_server::log_util::recv_res(
                     host_name,
                     auth_server,
                     AccessTokenValidateResponse::name(),
@@ -224,13 +224,13 @@ async fn auth_impl(_incoming_addr: &SocketAddr, incoming_request: &Request) -> A
             if let Some(refresh_token) = RefreshToken::from_str(&refresh_token) {
                 let grant_request = RefreshTokenGrantRequest::new(refresh_token);
 
-                http_server::http_log_util::send_req(
+                http_server::log_util::send_req(
                     host_name,
                     auth_server,
                     RefreshTokenGrantRequest::name(),
                 );
                 let grant_result = HttpClient::send(&auth_addr, auth_port, grant_request).await;
-                http_server::http_log_util::recv_res(
+                http_server::log_util::recv_res(
                     host_name,
                     auth_server,
                     RefreshTokenGrantResponse::name(),

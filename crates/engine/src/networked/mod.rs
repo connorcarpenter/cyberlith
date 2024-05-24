@@ -4,6 +4,8 @@ mod client_markers;
 mod connection_manager;
 mod networked_plugin;
 mod world_events;
+mod session_events;
+mod insert_component_event;
 
 pub mod world {
     use naia_bevy_client::{events::SpawnEntityEvent, Client};
@@ -12,23 +14,26 @@ pub mod world {
 
     pub type WorldClient<'w> = Client<'w, World>;
     pub type WorldSpawnEntityEvent = SpawnEntityEvent<World>;
-    pub use super::world_events::{
-        InsertAssetRefEvent as WorldInsertAssetRefEvent,
-        InsertComponentEvent as WorldInsertComponentEvent,
-    };
+    pub type WorldDespawnEntityEvent = naia_bevy_client::events::DespawnEntityEvent<World>;
 
-    pub use world_server_naia_proto::components::{Alt1, Main, Position};
+    pub use super::world_events::{WorldInsertComponentEvent, InsertAssetRefEvent as WorldInsertAssetRefEvent};
+
+    pub use world_server_naia_proto::{components, channels, messages};
 }
 
 pub mod session {
 
-    use naia_bevy_client::Client;
+    use naia_bevy_client::{events::SpawnEntityEvent, Client};
 
     use super::client_markers::Session;
 
     pub type SessionClient<'w> = Client<'w, Session>;
+    pub type SessionSpawnEntityEvent = SpawnEntityEvent<Session>;
+    pub type SessionDespawnEntityEvent = naia_bevy_client::events::DespawnEntityEvent<Session>;
 
-    pub use session_server_naia_proto::{channels, messages};
+    pub use super::session_events::SessionInsertComponentEvent;
+
+    pub use session_server_naia_proto::{channels, messages, components};
 }
 
 pub use networked_plugin::NetworkedEnginePlugin;

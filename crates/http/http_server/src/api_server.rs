@@ -2,12 +2,11 @@ use std::net::SocketAddr;
 
 use http_server_shared::executor::smol::future::Future;
 
-use http_common::{ApiRequest, ApiResponse, Method, Request, Response, ResponseError};
+use http_common::{ApiRequest, ApiResponse, log_util, Method, Request, Response, ResponseError};
 use logging::info;
 
 use crate::{
-    endpoint::{Endpoint, EndpointFunc, EndpointRef},
-    log_util, Server,
+    endpoint::{Endpoint, EndpointFunc, EndpointRef}, Server,
 };
 
 // serves API endpoint with typed requests & responses
@@ -116,7 +115,7 @@ fn get_endpoint_func<
             let host_name = host_name.clone();
             let logged_host_url = format!("{} {}", incoming_method.as_str(), incoming_path);
 
-            logging::info!("[");
+            // logging::info!("[");
             log_util::recv_req(&host_name, &logged_host_url, TypeRequest::name());
 
             let typed_response = typed_future.await;
@@ -136,7 +135,7 @@ fn get_endpoint_func<
             };
 
             log_util::send_res(&host_name, response_name.as_str());
-            logging::info!("]");
+            // logging::info!("]");
 
             return outgoing_response;
         };
@@ -169,7 +168,7 @@ fn get_endpoint_raw_func<
             let allow_origin_opt = allow_origin_opt.clone();
             let logged_host_url = format!("{} {}", incoming_method.as_str(), incoming_path);
 
-            logging::info!("[");
+            // logging::info!("[");
             log_util::recv_req(&host_name, &logged_host_url, "");
 
             let mut response_result = handler_func.await;
@@ -185,7 +184,7 @@ fn get_endpoint_raw_func<
             }
 
             log_util::send_res(&host_name, &response_name);
-            logging::info!("]");
+            // logging::info!("]");
 
             response_result
         };

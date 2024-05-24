@@ -3,7 +3,7 @@ use logging::{info, warn};
 use config::TargetEnv;
 use http_client::ResponseError;
 use http_server::{
-    async_dup::Arc, executor::smol::lock::RwLock, http_log_util, ApiRequest, ApiResponse,
+    async_dup::Arc, executor::smol::lock::RwLock, log_util, ApiRequest, ApiResponse,
     ApiServer, Server,
 };
 
@@ -23,7 +23,7 @@ async fn async_impl(
     state: Arc<RwLock<State>>,
     incoming_request: UserRegisterRequest,
 ) -> Result<UserRegisterResponse, ResponseError> {
-    http_log_util::recv_req(
+    log_util::recv_req(
         "auth_server",
         &UserRegisterRequest::endpoint_key(),
         UserRegisterRequest::name(),
@@ -46,7 +46,7 @@ async fn async_impl(
         }
     };
 
-    http_log_util::send_res("auth_server", UserRegisterResponse::name());
+    log_util::send_res("auth_server", UserRegisterResponse::name());
     return response;
 }
 

@@ -1,10 +1,10 @@
 use std::{thread, time::Duration};
 
 use http_client::HttpClient;
-use http_server::{async_dup::Arc, executor::smol::lock::RwLock, Server};
+use http_server::{ApiRequest, ApiResponse, async_dup::Arc, executor::smol::lock::RwLock, Server};
 use logging::{info, warn};
 
-use region_server_http_proto::SocialRegisterInstanceRequest;
+use region_server_http_proto::{SocialRegisterInstanceRequest, SocialRegisterInstanceResponse};
 
 use config::{
     REGION_SERVER_PORT, REGION_SERVER_RECV_ADDR, SOCIAL_SERVER_GLOBAL_SECRET, SOCIAL_SERVER_PORT,
@@ -50,13 +50,19 @@ async fn send_register_instance_request(state: Arc<RwLock<State>>) {
         SOCIAL_SERVER_RECV_ADDR,
         SOCIAL_SERVER_PORT,
     );
+
+    let host = "social";
+    let remote = "region";
+    http_server::log_util::send_req(host, remote, SocialRegisterInstanceRequest::name());
     let response = HttpClient::send(REGION_SERVER_RECV_ADDR, REGION_SERVER_PORT, request).await;
+    http_server::log_util::recv_res(host, remote, SocialRegisterInstanceResponse::name());
+
     match response {
         Ok(_) => {
-            info!(
-                "from {:?}:{} - social server registration success",
-                REGION_SERVER_RECV_ADDR, REGION_SERVER_PORT
-            );
+            // info!(
+            //     "from {:?}:{} - social server registration success",
+            //     REGION_SERVER_RECV_ADDR, REGION_SERVER_PORT
+            // );
             state.set_connected();
         }
         Err(err) => {
@@ -73,12 +79,15 @@ async fn send_register_instance_request(state: Arc<RwLock<State>>) {
 }
 
 async fn process_region_server_disconnect(state: Arc<RwLock<State>>) {
-    let state = &mut state.write().await.region_server;
+    let state = &mut state.write().await;
 
-    if state.connected() {
-        if state.time_to_disconnect() {
+    if state.region_server.connected() {
+        if state.region_server.time_to_disconnect() {
             info!("disconnecting from region server");
-            state.set_disconnected();
+            state.region_server.set_disconnected();
+
+            // disconnect from session servers
+            state.session_servers.clear();
         }
     }
 }

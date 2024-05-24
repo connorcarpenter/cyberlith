@@ -15,10 +15,7 @@ pub use proxy_server::ProxyServer;
 mod middleware;
 pub use middleware::RequestMiddlewareAction;
 
-mod log_util;
-pub mod http_log_util {
-    pub use crate::log_util::*;
-}
+pub use http_common::log_util;
 
 pub use http_common::{
     clear_query_string, extract_query_string, ApiRequest, ApiResponse, Method, Request, Response,

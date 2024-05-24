@@ -9,7 +9,7 @@ use game_engine::{
     math::{Quat, Vec3},
     render::components::{RenderLayers, Transform, Visibility},
     world::{
-        Alt1, Main, Position, WorldInsertAssetRefEvent, WorldInsertComponentEvent,
+        components::{Alt1, Main, Position}, WorldInsertAssetRefEvent, WorldInsertComponentEvent,
         WorldSpawnEntityEvent,
     }
 };
@@ -30,7 +30,7 @@ pub fn world_main_insert_position_events(
 ) {
     for event in event_reader.read() {
         info!(
-            "received Insert Position from World Server! (entity: {:?})",
+            "received Inserted Component: `Position` from World Server! (entity: {:?})",
             event.entity
         );
     }

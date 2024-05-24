@@ -31,7 +31,7 @@ async fn async_recv_connect_session_server_request_impl(
         return Err(ResponseError::Unauthenticated);
     }
 
-    info!("Connect Session Server request received from region server");
+    // info!("Connect Session Server request received from region server");
 
     let mut state = state.write().await;
 
@@ -76,19 +76,22 @@ async fn async_recv_disconnect_session_server_request_impl(
         return Err(ResponseError::Unauthenticated);
     }
 
-    info!("Disconnect Session Server request received from region server");
-
     let mut state = state.write().await;
 
     // setting last heard
     state.region_server.heard_from_region_server();
 
     // erase session server details
+    if state.session_servers.get_session_server_id(request.session_secret()).is_none() {
+        // all good, already disconnected
+        warn!("session server already disconnected");
+        return Ok(DisconnectSessionServerResponse);
+    }
+    info!("Session Server: {:?}, removed", request.session_secret());
     state
         .session_servers
         .remove_instance(request.session_secret());
 
     // responding
-    // info!("Sending connect session server response to region server ..");
     return Ok(DisconnectSessionServerResponse);
 }

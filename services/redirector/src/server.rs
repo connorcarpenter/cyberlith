@@ -4,7 +4,7 @@ use executor::smol::{net::TcpListener, stream::StreamExt};
 
 use config::{PUBLIC_IP_ADDR, PUBLIC_PROTOCOL};
 use http_common::{Request, Response, ResponseError};
-use http_server::http_log_util;
+use http_server::log_util;
 use http_server_shared::{serve_impl, MatchHostResult};
 use logging::info;
 
@@ -59,7 +59,7 @@ impl RedirectServer {
         socket_addr: SocketAddr,
         request: Request,
     ) -> Result<Response, ResponseError> {
-        http_log_util::recv_req(
+        log_util::recv_req(
             "redirector",
             "client",
             format!(
@@ -77,7 +77,7 @@ impl RedirectServer {
             format!("{}://{}", PUBLIC_PROTOCOL, PUBLIC_IP_ADDR).as_str(),
         );
 
-        http_log_util::send_res(
+        log_util::send_res(
             "redirector",
             format!("redirect to {}", response.url).as_str(),
         );

@@ -1,6 +1,5 @@
 
-use bevy_ecs::{change_detection::ResMut, event::EventReader};
-use bevy_ecs::system::Res;
+use bevy_ecs::{system::Res, change_detection::ResMut, event::EventReader};
 
 use naia_bevy_server::{
     events::{AuthEvents, ConnectEvent, DisconnectEvent},
@@ -13,9 +12,7 @@ use logging::{info, warn};
 
 use session_server_naia_proto::messages::Auth;
 
-use crate::{asset::{asset_manager::AssetManager, AssetCatalog}, user::UserManager};
-use crate::social::SocialManager;
-
+use crate::{social::SocialManager, asset::{asset_manager::AssetManager, AssetCatalog}, user::UserManager};
 pub fn auth_events(
     mut user_manager: ResMut<UserManager>,
     mut server: Server,

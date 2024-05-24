@@ -1,6 +1,6 @@
+
 use http_client::ResponseError;
 use http_server::{async_dup::Arc, executor::smol::lock::RwLock, ApiServer, Server};
-use logging::info;
 
 use social_server_http_proto::{HeartbeatRequest, HeartbeatResponse};
 
@@ -17,7 +17,7 @@ async fn async_recv_heartbeat_request_impl(
     state: Arc<RwLock<State>>,
     _: HeartbeatRequest,
 ) -> Result<HeartbeatResponse, ResponseError> {
-    info!("Heartbeat request received from region server, sending response");
+    // info!("Heartbeat request received from region server, sending response");
     let state = &mut state.write().await.region_server;
 
     state.heard_from_region_server();

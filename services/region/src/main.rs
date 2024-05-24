@@ -1,6 +1,10 @@
 mod endpoints;
-mod instances;
 mod state;
+mod session_instance;
+mod world_instance;
+mod asset_instance;
+mod social_instance;
+mod requests;
 
 use std::{net::SocketAddr, thread, time::Duration};
 
@@ -18,16 +22,16 @@ pub fn main() {
         SocketAddr::new(SELF_BINDING_ADDR.parse().unwrap(), REGION_SERVER_PORT);
 
     let mut server = Server::new(socket_addr);
-    let state = Arc::new(RwLock::new(State::new(Duration::from_secs(16))));
-    let server_name = "region_server";
+    let state = Arc::new(RwLock::new(State::new(Duration::from_secs(60))));
+    let host = "region";
 
-    endpoints::session_register_instance(server_name, &mut server, state.clone());
-    endpoints::world_register_instance(server_name, &mut server, state.clone());
-    endpoints::asset_register_instance(server_name, &mut server, state.clone());
-    endpoints::social_register_instance(server_name, &mut server, state.clone());
+    endpoints::session_register_instance(host, &mut server, state.clone());
+    endpoints::world_register_instance(host, &mut server, state.clone());
+    endpoints::asset_register_instance(host, &mut server, state.clone());
+    endpoints::social_register_instance(host, &mut server, state.clone());
 
-    endpoints::session_connect(server_name, &mut server, state.clone());
-    endpoints::world_connect(server_name, &mut server, state.clone());
+    endpoints::session_connect(host, &mut server, state.clone());
+    endpoints::world_connect(host, &mut server, state.clone());
 
     server.start();
 

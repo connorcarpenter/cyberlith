@@ -4,7 +4,7 @@ use auth_server_db::{AuthServerDbError, User, UserRole};
 use auth_server_types::UserId;
 use http_client::ResponseError;
 use http_server::{
-    async_dup::Arc, executor::smol::lock::RwLock, http_log_util, ApiRequest, ApiResponse,
+    async_dup::Arc, executor::smol::lock::RwLock, log_util, ApiRequest, ApiResponse,
     ApiServer, Server,
 };
 
@@ -25,7 +25,7 @@ async fn async_impl(
     state: Arc<RwLock<State>>,
     incoming_request: UserRegisterConfirmRequest,
 ) -> Result<UserRegisterConfirmResponse, ResponseError> {
-    http_log_util::recv_req(
+    log_util::recv_req(
         "auth_server",
         &UserRegisterConfirmRequest::endpoint_key(),
         UserRegisterConfirmRequest::name(),
@@ -52,7 +52,7 @@ async fn async_impl(
         }
     };
 
-    http_log_util::send_res("auth_server", UserRegisterConfirmResponse::name());
+    log_util::send_res("auth_server", UserRegisterConfirmResponse::name());
 
     response
 }

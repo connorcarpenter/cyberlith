@@ -19,8 +19,6 @@ async fn async_impl(
     state: Arc<RwLock<State>>,
     incoming_request: SessionConnectRequest,
 ) -> Result<SessionConnectResponse, ResponseError> {
-    let host_name = "region_server".to_string();
-    let remote_name = "session_server".to_string();
 
     let state = state.read().await;
     let Some(session_server) = state.get_available_session_server() else {
@@ -34,27 +32,28 @@ async fn async_impl(
     let remote_method = IncomingUserRequest::method();
     let remote_path = IncomingUserRequest::path();
 
+    let temp_token = random::generate_random_string(16);
+    let request =
+        IncomingUserRequest::new(REGION_SERVER_SECRET, incoming_request.user_id, &temp_token);
+
+    let host = "region";
+    let remote = "session";
     let logged_remote_url = format!(
         "{} host:{}/{}",
         remote_method.as_str(),
         remote_port,
         remote_path
     );
-    http_server::http_log_util::send_req(&host_name, &remote_name, &logged_remote_url);
+    http_server::log_util::send_req(&host, &remote, &logged_remote_url);
+    let result = HttpClient::send(&remote_addr, remote_port, request).await;
+    http_server::log_util::recv_res(&host, &remote, &logged_remote_url);
 
-    let temp_token = random::generate_random_string(16);
-
-    let request =
-        IncomingUserRequest::new(REGION_SERVER_SECRET, incoming_request.user_id, &temp_token);
-
-    let Ok(_outgoing_response) = HttpClient::send(&remote_addr, remote_port, request).await else {
+    let Ok(_outgoing_response) = result else {
         warn!("Failed session_connect request to session server");
         return Err(ResponseError::InternalServerError(
             "failed session_connect to session server".to_string(),
         ));
     };
-
-    http_server::http_log_util::recv_res(&host_name, &remote_name, &logged_remote_url);
 
     Ok(SessionConnectResponse::new(&temp_token))
 }

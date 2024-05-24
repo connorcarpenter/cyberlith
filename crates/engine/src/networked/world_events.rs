@@ -1,39 +1,26 @@
 use bevy_ecs::{
     change_detection::{Mut, ResMut},
     entity::Entity,
-    event::{Event, EventReader, EventWriter},
-    prelude::{Query, Resource, World as BevyWorld},
+    event::{Event},
+    prelude::{Query, World as BevyWorld},
     system::{Res, SystemState},
 };
-use logging::info;
 
-use naia_bevy_client::{events::InsertComponentEvents, Replicate};
+use naia_bevy_client::{events::InsertComponentEvents};
 
 use world_server_naia_proto::components::{Alt1, AssetEntry, AssetRef, Main, Position};
 
 use asset_id::{AssetId, AssetType};
 use asset_loader::AssetMetadataStore;
+use logging::info;
 
 use super::{
     asset_ref_processor::{AssetProcessor, AssetRefProcessor},
     client_markers::World,
 };
-use crate::{asset_cache::AssetCache, world::WorldClient};
+use crate::{asset_cache::AssetCache, world::WorldClient, networked::insert_component_event::{insert_component_event, insert_component_events, InsertComponentEvent}};
 
-#[derive(Event)]
-pub struct InsertComponentEvent<T: Replicate> {
-    pub entity: Entity,
-    phantom_t: std::marker::PhantomData<T>,
-}
-
-impl<T: Replicate> InsertComponentEvent<T> {
-    pub fn new(entity: Entity) -> Self {
-        Self {
-            entity,
-            phantom_t: std::marker::PhantomData,
-        }
-    }
-}
+pub type WorldInsertComponentEvent<C> = InsertComponentEvent<World, C>;
 
 #[derive(Event)]
 pub struct InsertAssetRefEvent<T> {
@@ -55,54 +42,23 @@ impl<T> InsertAssetRefEvent<T> {
     }
 }
 
-#[derive(Resource)]
-struct CachedInsertComponentEventsState {
-    event_state: SystemState<EventReader<'static, 'static, InsertComponentEvents<World>>>,
-}
-
-pub fn insert_component_event_startup(world: &mut BevyWorld) {
-    let initial_state: SystemState<EventReader<InsertComponentEvents<World>>> =
-        SystemState::new(world);
-    world.insert_resource(CachedInsertComponentEventsState {
-        event_state: initial_state,
-    });
-}
-
-pub fn insert_component_events(world: &mut BevyWorld) {
-    let mut events_collection: Vec<InsertComponentEvents<World>> = Vec::new();
-
-    world.resource_scope(
-        |world, mut events_reader_state: Mut<CachedInsertComponentEventsState>| {
-            let mut events_reader = events_reader_state.event_state.get_mut(world);
-
-            for events in events_reader.read() {
-                let events_clone: InsertComponentEvents<World> = events.clone();
-                events_collection.push(events_clone);
-            }
-        },
-    );
+// used as a system
+pub fn world_insert_component_events(world: &mut BevyWorld) {
+    let events_collection = insert_component_events::<World>(world);
 
     for events in events_collection {
+
+        info!("received world events: [");
+
         // asset events
         insert_asset_entry_event(world, &events);
         insert_asset_ref_event::<Main>(world, &events);
         insert_asset_ref_event::<Alt1>(world, &events);
 
         // other events
-        insert_component_event::<Position>(world, &events);
-    }
-}
+        insert_component_event::<World, Position>(world, &events);
 
-fn insert_component_event<T: Replicate>(
-    world: &mut BevyWorld,
-    events: &InsertComponentEvents<World>,
-) {
-    let mut system_state: SystemState<EventWriter<InsertComponentEvent<T>>> =
-        SystemState::new(world);
-    let mut event_writer = system_state.get_mut(world);
-
-    for entity in events.read::<T>() {
-        event_writer.send(InsertComponentEvent::<T>::new(entity));
+        info!("]");
     }
 }
 

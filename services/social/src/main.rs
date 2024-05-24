@@ -30,26 +30,26 @@ pub fn main() {
         SocketAddr::new(SELF_BINDING_ADDR.parse().unwrap(), SOCIAL_SERVER_PORT);
 
     let mut server = Server::new(socket_addr);
-    let server_name = "social_server";
+    let host = "social";
 
-    region::recv_heartbeat_request(server_name, &mut server, state.clone());
+    region::recv_heartbeat_request(host, &mut server, state.clone());
 
-    session_servers::recv_connect_session_server_request(server_name, &mut server, state.clone());
+    session_servers::recv_connect_session_server_request(host, &mut server, state.clone());
     session_servers::recv_disconnect_session_server_request(
-        server_name,
+        host,
         &mut server,
         state.clone(),
     );
 
-    users::recv_user_connected_request(server_name, &mut server, state.clone());
-    users::recv_user_disconnected_request(server_name, &mut server, state.clone());
+    users::recv_user_connected_request(host, &mut server, state.clone());
+    users::recv_user_disconnected_request(host, &mut server, state.clone());
 
-    match_lobbies::recv_match_lobby_create_request(server_name, &mut server, state.clone());
-    match_lobbies::recv_match_lobby_join_request(server_name, &mut server, state.clone());
-    match_lobbies::recv_match_lobby_leave_request(server_name, &mut server, state.clone());
-    match_lobbies::recv_match_lobby_send_message_request(server_name, &mut server, state.clone());
+    match_lobbies::recv_match_lobby_create_request(host, &mut server, state.clone());
+    match_lobbies::recv_match_lobby_join_request(host, &mut server, state.clone());
+    match_lobbies::recv_match_lobby_leave_request(host, &mut server, state.clone());
+    match_lobbies::recv_match_lobby_send_message_request(host, &mut server, state.clone());
 
-    global_chat::recv_global_chat_send_message_request(server_name, &mut server, state.clone());
+    global_chat::recv_global_chat_send_message_request(host, &mut server, state.clone());
 
     server.start();
 

@@ -208,6 +208,7 @@ impl SocialManager {
         sending_user_id: UserId,
         message: &str,
     ) {
+        info!("logging global chat message - [userid {:?}]:(`{:?}`)", sending_user_id, message);
         // convert to entity + component
         let timestamp = self.get_next_timestamp();
         let global_chat_message_id = commands
@@ -227,6 +228,7 @@ impl SocialManager {
             commands.entity(entity_to_delete).despawn();
         }
     }
+
     fn get_next_timestamp(&mut self) -> u16 {
         let next_timestamp = self.next_timestamp;
         self.next_timestamp = self.next_timestamp.wrapping_add(1);

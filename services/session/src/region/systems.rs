@@ -1,6 +1,6 @@
 use bevy_ecs::{change_detection::ResMut, system::Res};
 
-use bevy_http_client::HttpClient;
+use bevy_http_client::{log_util, HttpClient, ApiRequest};
 use config::{
     REGION_SERVER_PORT, REGION_SERVER_RECV_ADDR,
     SESSION_SERVER_GLOBAL_SECRET, SESSION_SERVER_HTTP_PORT, SESSION_SERVER_RECV_ADDR,
@@ -9,8 +9,9 @@ use logging::info;
 
 use region_server_http_proto::{SessionRegisterInstanceRequest, WorldConnectRequest};
 
-use crate::{region::RegionManager, session_instance::SessionInstance, world::WorldManager};
-use crate::user::UserManager;
+use crate::{user::UserManager, region::RegionManager, session_instance::SessionInstance, world::WorldManager};
+use crate::asset::asset_manager::AssetManager;
+use crate::social::SocialManager;
 
 pub fn send_register_instance_request(
     session_instance: Res<SessionInstance>,
@@ -34,6 +35,10 @@ pub fn send_register_instance_request(
         SESSION_SERVER_RECV_ADDR,
         SESSION_SERVER_HTTP_PORT,
     );
+
+    let host = "session";
+    let remote = "region";
+    log_util::send_req(host, remote, SessionRegisterInstanceRequest::name());
     let key = http_client.send(REGION_SERVER_RECV_ADDR, REGION_SERVER_PORT, request);
 
     region.set_register_instance_response_key(key);
@@ -42,11 +47,21 @@ pub fn send_register_instance_request(
 
 pub fn process_region_server_disconnect(
     mut region: ResMut<RegionManager>,
+    mut asset: ResMut<AssetManager>,
+    mut social: ResMut<SocialManager>,
 ) {
     if region.connected() {
         if region.time_to_disconnect() {
             info!("disconnecting from region server");
             region.set_disconnected();
+
+            // disconnect from asset server
+            asset.clear_asset_server();
+
+            // disconnect from social server
+            social.clear_social_server();
+
+            // TODO: disconnect from world servers
         }
     }
 }
@@ -60,6 +75,10 @@ pub fn send_world_connect_requests(
     let worldless_users = user_manager.get_users_ready_to_connect_to_world(world_connections.world_connect_resend_rate());
     for (user_key, user_id) in worldless_users {
         let request = WorldConnectRequest::new(session_instance.instance_secret(), user_id);
+
+        let host = "session";
+        let remote = "region";
+        log_util::send_req(host, remote, WorldConnectRequest::name());
         let key = http_client.send(REGION_SERVER_RECV_ADDR, REGION_SERVER_PORT, request);
         world_connections.add_world_connect_response_key(&user_key, key);
     }

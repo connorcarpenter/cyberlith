@@ -16,7 +16,7 @@ pub(crate) async fn handler(
 ) -> Result<Response, ResponseError> {
     let host_name = "gateway";
     let remote_name = "client";
-    http_server::http_log_util::recv_req(
+    http_server::log_util::recv_req(
         host_name,
         remote_name,
         format!(
@@ -31,7 +31,7 @@ pub(crate) async fn handler(
     let gateway_request = match GatewayUserRegisterRequest::from_request(incoming_request) {
         Ok(r) => r,
         Err(e) => {
-            http_server::http_log_util::send_res(host_name, e.to_string().as_str());
+            http_server::log_util::send_res(host_name, e.to_string().as_str());
             return Err(ResponseError::SerdeError);
         }
     };
@@ -47,21 +47,21 @@ pub(crate) async fn handler(
         &gateway_request.password,
     );
 
-    http_server::http_log_util::send_req(host_name, auth_server, UserRegisterRequest::name());
+    http_server::log_util::send_req(host_name, auth_server, UserRegisterRequest::name());
     match HttpClient::send(&auth_addr, auth_port, auth_request).await {
         Ok(_auth_response) => {
-            http_server::http_log_util::recv_res(
+            http_server::log_util::recv_res(
                 host_name,
                 auth_server,
                 UserRegisterResponse::name(),
             );
 
-            http_server::http_log_util::send_res(host_name, GatewayUserRegisterResponse::name());
+            http_server::log_util::send_res(host_name, GatewayUserRegisterResponse::name());
             return Ok(GatewayUserRegisterResponse::new().to_response());
         }
         Err(e) => {
-            http_server::http_log_util::recv_res(host_name, auth_server, "internal_server_error");
-            http_server::http_log_util::send_res(host_name, "internal_server_error");
+            http_server::log_util::recv_res(host_name, auth_server, "internal_server_error");
+            http_server::log_util::send_res(host_name, "internal_server_error");
             return Err(ResponseError::InternalServerError(e.to_string()));
         }
     }

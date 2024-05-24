@@ -1,12 +1,12 @@
 use std::net::SocketAddr;
 
 use http_client_shared::fetch_async;
-use http_common::{ApiRequest, Method, Request, Response};
+use http_common::{ApiRequest, log_util, Method, Request, Response};
 use logging::info;
 
 use crate::{
     endpoint::{Endpoint, EndpointFunc, EndpointRef},
-    log_util, Server,
+    Server,
 };
 
 // serves a pass-through proxy
@@ -137,7 +137,7 @@ fn get_endpoint_func(
             let logged_remote_url = logged_remote_url.clone();
             let logged_host_url = format!("{} {}", method.as_str(), outer_url);
 
-            logging::info!("[");
+            // logging::info!("[");
             log_util::recv_req(&host_name, &logged_host_url, "");
 
             let mut remote_req = Request::new(method, &remote_url, outer_body);
@@ -195,7 +195,7 @@ fn get_endpoint_func(
                 &host_name,
                 format!("{} {}", response.status, response.status_text).as_str(),
             );
-            logging::info!("]");
+            // logging::info!("]");
 
             return Ok(response);
         };

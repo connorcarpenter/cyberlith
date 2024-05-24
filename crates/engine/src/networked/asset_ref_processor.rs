@@ -15,10 +15,10 @@ use logging::info;
 
 use world_server_naia_proto::components::{Alt1, AssetEntry, AssetRef, Main};
 
-use super::world_events::InsertAssetRefEvent;
 use crate::{
     asset_cache::{AssetCache, AssetLoadedEvent},
     world::WorldClient,
+    networked::world_events::InsertAssetRefEvent,
 };
 
 type AssetProcessorId = TypeId;

@@ -5,21 +5,14 @@ use bevy_app::{App, Plugin, Startup, Update};
 use kernel::http::CookieStore;
 use naia_bevy_client::{ClientConfig as NaiaClientConfig, Plugin as NaiaClientPlugin};
 
-use session_server_naia_proto::protocol as session_server_naia_protocol;
+use session_server_naia_proto::{protocol as session_server_naia_protocol, components::GlobalChatMessage};
 use world_server_naia_proto::{
     components::{Alt1, Main, Position},
     protocol as world_server_naia_protocol,
 };
 
-use super::{
-    asset_cache_checker::AssetCacheChecker,
-    asset_ref_processor::AssetRefProcessor,
-    client_markers::{Session, World},
-    connection_manager::ConnectionManager,
-    world_events,
-    world_events::{InsertAssetRefEvent, InsertComponentEvent},
-};
-use crate::EnginePlugin;
+use super::{asset_cache_checker::AssetCacheChecker, asset_ref_processor::AssetRefProcessor, client_markers::{Session, World}, connection_manager::ConnectionManager, insert_component_event, session_events, world_events, world_events::{InsertAssetRefEvent}};
+use crate::{EnginePlugin, networked::{session_events::SessionInsertComponentEvent, world_events::WorldInsertComponentEvent}};
 
 pub struct NetworkedEnginePlugin {
     cookie_store_opt: Option<Arc<RwLock<CookieStore>>>,
@@ -60,10 +53,15 @@ impl Plugin for NetworkedEnginePlugin {
             .init_resource::<AssetCacheChecker>()
             .add_systems(Update, AssetCacheChecker::handle_load_asset_tasks)
             // world component insert stuff
-            .add_event::<InsertComponentEvent<Position>>()
+
+            .add_systems(Startup, insert_component_event::insert_component_events_startup::<World>)
+            .add_systems(Update, world_events::world_insert_component_events)
+            .add_event::<WorldInsertComponentEvent<Position>>()
             .add_event::<InsertAssetRefEvent<Main>>()
             .add_event::<InsertAssetRefEvent<Alt1>>()
-            .add_systems(Startup, world_events::insert_component_event_startup)
-            .add_systems(Update, world_events::insert_component_events);
+
+            .add_systems(Startup, insert_component_event::insert_component_events_startup::<Session>)
+            .add_systems(Update, session_events::session_insert_component_events)
+            .add_event::<SessionInsertComponentEvent<GlobalChatMessage>>();
     }
 }

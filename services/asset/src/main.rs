@@ -30,7 +30,7 @@ pub fn main() {
     let asset_metadata_store = AssetMetadataStore::new(ASSET_SERVER_FILES_PATH);
 
     let registration_resend_rate = Duration::from_secs(5);
-    let region_server_disconnect_timeout = Duration::from_secs(16);
+    let region_server_disconnect_timeout = Duration::from_secs(60);
     let cache_size_kb = 5000; // 5 MB
     let state = Arc::new(RwLock::new(State::new(
         registration_resend_rate,
@@ -45,10 +45,10 @@ pub fn main() {
         SocketAddr::new(SELF_BINDING_ADDR.parse().unwrap(), ASSET_SERVER_PORT);
 
     let mut server = Server::new(socket_addr);
-    let server_name = "asset_server";
+    let host = "asset";
 
-    region_connection::recv_heartbeat_request(server_name, &mut server, state.clone());
-    asset_endpoint::handle_asset_request(server_name, &mut server, state.clone());
+    region_connection::recv_heartbeat_request(host, &mut server, state.clone());
+    asset_endpoint::handle_asset_request(host, &mut server, state.clone());
 
     server.start();
 

@@ -8,7 +8,7 @@ use http_server::{async_dup::Arc, executor::smol::lock::RwLock, ApiServer, Serve
 use config::WORLD_SERVER_GLOBAL_SECRET;
 use region_server_http_proto::{WorldRegisterInstanceRequest, WorldRegisterInstanceResponse};
 
-use crate::{instances::WorldInstance, state::State};
+use crate::{state::State};
 
 pub fn world_register_instance(host_name: &str, server: &mut Server, state: Arc<RwLock<State>>) {
     server.api_endpoint(host_name, None, move |addr, req| {
@@ -31,17 +31,15 @@ async fn async_impl(
     let http_addr = incoming_request.http_addr();
     let http_port = incoming_request.http_port();
 
-    info!(
-        "register instance request received from world server: (incoming: {:?}, http: {:?})",
-        incoming_addr, http_addr,
-    );
-
-    let server_instance = WorldInstance::new(instance_secret, http_addr, http_port);
+    // info!(
+    //     "register instance request received from world server: (incoming: {:?}, http: {:?})",
+    //     incoming_addr, http_addr,
+    // );
 
     let mut state = state.write().await;
-    state.register_world_instance(server_instance);
+    state.register_world_instance(instance_secret, http_addr, http_port).await;
 
-    info!("Sending register instance response to world server");
+    // info!("Sending register instance response to world server");
 
     Ok(WorldRegisterInstanceResponse)
 }

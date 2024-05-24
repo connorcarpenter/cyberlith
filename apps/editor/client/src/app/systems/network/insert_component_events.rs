@@ -6,10 +6,10 @@ use bevy_ecs::{
     system::{Commands, Query, ResMut, Resource, SystemState},
     world::{Mut, World},
 };
-use logging::{info, warn};
 
 use naia_bevy_client::{events::InsertComponentEvents, Client, Replicate};
 
+use logging::{info, warn};
 use render_api::base::{CpuMaterial, CpuMesh};
 use storage::Storage;
 

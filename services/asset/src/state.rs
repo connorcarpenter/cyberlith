@@ -1,23 +1,14 @@
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use filecache::FileCache;
 use http_client::ResponseError;
 
 use asset_server_http_proto::{AssetRequest, AssetResponse};
 
-use crate::asset_metadata_store::AssetMetadataStore;
-
-pub enum ConnectionState {
-    Disconnected,
-    Connected,
-}
+use crate::{region_connection::RegionServerState, asset_metadata_store::AssetMetadataStore};
 
 pub struct State {
-    region_server_connection_state: ConnectionState,
-    region_server_last_sent: Instant,
-    region_server_last_heard: Instant,
-    registration_resend_rate: Duration,
-    region_server_disconnect_timeout: Duration,
+    pub region_server: RegionServerState,
     asset_metadata_store: AssetMetadataStore,
     asset_cache: FileCache,
 }
@@ -30,48 +21,13 @@ impl State {
         asset_metadata_store: AssetMetadataStore,
     ) -> Self {
         Self {
-            region_server_connection_state: ConnectionState::Disconnected,
-            region_server_last_sent: Instant::now(),
-            region_server_last_heard: Instant::now(),
-            registration_resend_rate,
-            region_server_disconnect_timeout,
+            region_server: RegionServerState::new(
+                registration_resend_rate,
+                region_server_disconnect_timeout,
+            ),
             asset_metadata_store,
             asset_cache: FileCache::new(asset_cache_size_kb),
         }
-    }
-
-    pub fn time_to_resend_registration(&self) -> bool {
-        let time_since_last_sent = self.region_server_last_sent.elapsed();
-        time_since_last_sent >= self.registration_resend_rate
-    }
-
-    pub fn time_to_disconnect(&self) -> bool {
-        let time_since_last_heard = self.region_server_last_heard.elapsed();
-        time_since_last_heard >= self.region_server_disconnect_timeout
-    }
-
-    pub fn heard_from_region_server(&mut self) {
-        self.region_server_last_heard = Instant::now();
-    }
-
-    pub fn sent_to_region_server(&mut self) {
-        self.region_server_last_sent = Instant::now();
-    }
-
-    pub fn connected(&self) -> bool {
-        match self.region_server_connection_state {
-            ConnectionState::Connected => true,
-            ConnectionState::Disconnected => false,
-        }
-    }
-
-    pub fn set_connected(&mut self) {
-        self.region_server_connection_state = ConnectionState::Connected;
-        self.heard_from_region_server();
-    }
-
-    pub fn set_disconnected(&mut self) {
-        self.region_server_connection_state = ConnectionState::Disconnected;
     }
 
     pub fn handle_asset_request(

@@ -35,7 +35,7 @@ pub(crate) async fn handle(
     let remote_addr = AUTH_SERVER_RECV_ADDR;
     let remote_port = AUTH_SERVER_PORT;
 
-    http_server::http_log_util::send_req(
+    http_server::log_util::send_req(
         host_name,
         auth_server,
         UserRegisterConfirmRequest::name(),
@@ -45,7 +45,7 @@ pub(crate) async fn handle(
 
     match HttpClient::send(&remote_addr, remote_port, confirm_request).await {
         Ok(confirm_response) => {
-            http_server::http_log_util::recv_res(
+            http_server::log_util::recv_res(
                 host_name,
                 auth_server,
                 &UserRegisterConfirmResponse::name(),
