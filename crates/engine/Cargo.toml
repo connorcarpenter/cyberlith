@@ -32,6 +32,7 @@ random = { path = "../random" }
 kernel = { path = "../kernel" }
 logging = { path = "../logging" }
 auth_server_types = { path = "../../services/auth/types" }
+social_server_types = { path = "../../services/social/types" }
 
 # Networked Dependencies
 auth_server_http_proto = { path = "../../services/auth/http_proto", optional = true }

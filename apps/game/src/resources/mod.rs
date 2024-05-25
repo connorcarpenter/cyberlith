@@ -1,1 +1,1 @@
-pub mod global;
+pub mod global_chat_messages;

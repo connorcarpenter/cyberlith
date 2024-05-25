@@ -9,7 +9,7 @@ use game_engine::{
     session::{SessionInsertComponentEvent, components::GlobalChatMessage},
 };
 
-use crate::{ui::{on_ui_load, UiCatalog}, states::AppState};
+use crate::{ui::{on_ui_load, UiCatalog}, states::AppState, resources::global_chat_messages::GlobalChatMessages};
 
 pub fn session_load_asset_events(
     state: Res<State<AppState>>,
@@ -30,6 +30,7 @@ pub fn session_load_asset_events(
 }
 
 pub fn recv_inserted_global_chat_component(
+    mut global_chat_messages: ResMut<GlobalChatMessages>,
     mut event_reader: EventReader<SessionInsertComponentEvent<GlobalChatMessage>>,
     chat_q: Query<&GlobalChatMessage>,
 ) {
@@ -38,11 +39,12 @@ pub fn recv_inserted_global_chat_component(
 
         if let Ok(chat) = chat_q.get(event.entity) {
 
-            let user_id: u64 = (*chat.user_id).into();
-            let timestamp = &*chat.timestamp;
+            let chat_id = *chat.id;
+            let user_id = *chat.user_id;
+            let timestamp = *chat.timestamp;
             let message = &*chat.message;
 
-            info!("incoming chat: [user_id({:?}) | {:?} | {:?}]", user_id, timestamp, message);
+            global_chat_messages.add_message(chat_id, timestamp, user_id, message);
         }
     }
 }

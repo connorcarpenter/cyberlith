@@ -1,3 +1,4 @@
+
 use bevy_ecs::{
     change_detection::Mut,
     entity::Entity,
@@ -7,7 +8,6 @@ use bevy_ecs::{
 };
 
 use naia_bevy_client::{events::InsertComponentEvents, Replicate};
-use logging::info;
 
 #[derive(Event)]
 pub struct InsertComponentEvent<T, C: Replicate> {

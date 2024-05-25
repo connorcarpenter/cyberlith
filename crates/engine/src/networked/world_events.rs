@@ -18,7 +18,7 @@ use super::{
     asset_ref_processor::{AssetProcessor, AssetRefProcessor},
     client_markers::World,
 };
-use crate::{asset_cache::AssetCache, world::WorldClient, networked::{client_markers::Session, insert_component_event::{insert_component_event, insert_component_events, InsertComponentEvent}}};
+use crate::{asset_cache::AssetCache, world::WorldClient, networked::{insert_component_event::{insert_component_event, insert_component_events, InsertComponentEvent}}};
 
 pub type WorldInsertComponentEvent<C> = InsertComponentEvent<World, C>;
 

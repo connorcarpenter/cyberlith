@@ -2,8 +2,6 @@ use bevy_ecs::{prelude::World as BevyWorld, event::EventReader};
 
 use naia_bevy_client::events::{DespawnEntityEvent, SpawnEntityEvent};
 
-use logging::info;
-
 use session_server_naia_proto::components::{GlobalChatMessage};
 
 use crate::networked::{insert_component_event::{InsertComponentEvent, insert_component_event, insert_component_events}, client_markers::Session};
