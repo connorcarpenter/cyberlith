@@ -74,11 +74,8 @@ pub fn recv_login_request(mut user_manager: ResMut<UserManager>, mut server: Res
 
         let host = "session";
         let remote = "region";
-        log_util::recv_req(host, remote, IncomingUserRequest::name());
-        info!(
-            "Login(token: {})",
-            request.login_token
-        );
+        let request_str = format!("{} (token: {})", IncomingUserRequest::name(), request.login_token);
+        log_util::recv_req(host, remote, &request_str);
 
         user_manager.add_login_token(&request.user_id, &request.login_token);
 

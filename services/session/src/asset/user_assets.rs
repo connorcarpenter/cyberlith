@@ -147,6 +147,11 @@ impl UserAssets {
                             let message = LoadAssetWithData::new(
                                 asset_id, asset_type, asset_etag, asset_data,
                             );
+
+                            let host = "session";
+                            let remote = "client";
+                            let request_str = format!("LoadAssetWithData ({:?})", asset_id);
+                            bevy_http_client::log_util::send_req(host, remote, &request_str);
                             server
                                 .send_message::<AssetRequestsChannel, _>(&self.user_key, &message);
 
@@ -155,7 +160,7 @@ impl UserAssets {
                         }
                         LoadAssetResponseValue::ClientLoadedNonModifiedAsset => {
                             // remove from processing, add to memory
-                            info!("client already has asset: {:?}", asset_id);
+                            // info!("client already has asset: {:?}", asset_id);
                             self.finish_asset_processing(server, asset_store, &asset_id);
                         }
                     }
@@ -170,7 +175,7 @@ impl UserAssets {
         asset_store: &AssetStore,
         asset_id: &AssetId,
     ) {
-        info!("finished processing asset: {:?}", asset_id);
+        // info!("finished processing asset: {:?}", asset_id);
 
         self.assets_processing.remove(asset_id);
         self.assets_in_memory.insert(*asset_id);
@@ -184,10 +189,11 @@ impl UserAssets {
         // handle dependency waitlist
         if let Some(waiting_asset_ids) = self.dependency_waitlist.remove(asset_id) {
             for waiting_asset_id in waiting_asset_ids {
-                info!(
-                    "asset: {:?} has finished loading, notifying waiting asset: {:?}",
-                    asset_id, waiting_asset_id
-                );
+
+                // info!(
+                //     "asset: {:?} has finished loading, notifying waiting asset: {:?}",
+                //     asset_id, waiting_asset_id
+                // );
 
                 let waiting_asset_state =
                     self.assets_processing.get_mut(&waiting_asset_id).unwrap();
@@ -195,10 +201,10 @@ impl UserAssets {
 
                 // if waiting asset has no more dependencies, move it to next state
                 if waiting_asset_finished {
-                    info!(
-                        "all dependencies for asset: {:?} have been loaded, sending to client",
-                        waiting_asset_id
-                    );
+                    // info!(
+                    //     "all dependencies for asset: {:?} have been loaded, sending to client",
+                    //     waiting_asset_id
+                    // );
 
                     // move to next state
                     let waiting_asset_etag = asset_store.get_etag(&waiting_asset_id).unwrap();

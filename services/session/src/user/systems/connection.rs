@@ -7,12 +7,12 @@ use naia_bevy_server::{
 };
 
 use bevy_http_client::HttpClient;
-
 use logging::{info, warn};
 
 use session_server_naia_proto::messages::Auth;
 
 use crate::{social::SocialManager, asset::{asset_manager::AssetManager, AssetCatalog}, user::UserManager};
+
 pub fn auth_events(
     mut user_manager: ResMut<UserManager>,
     mut server: Server,
