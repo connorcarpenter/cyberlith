@@ -1,12 +1,12 @@
 use std::collections::BTreeMap;
 
-use bevy_ecs::system::Resource;
+use bevy_ecs::{system::Resource, entity::Entity};
 
-use game_engine::{logging::info, auth::UserId, social::{Timestamp, GlobalChatMessageId}};
+use game_engine::{social::{GlobalChatMessageId}};
 
 #[derive(Resource)]
 pub struct GlobalChatMessages {
-    global_chats: BTreeMap<GlobalChatMessageId, (Timestamp, UserId, String)>,
+    global_chats: BTreeMap<GlobalChatMessageId, Entity>,
 }
 
 impl Default for GlobalChatMessages {
@@ -18,9 +18,10 @@ impl Default for GlobalChatMessages {
 }
 
 impl GlobalChatMessages {
-    pub fn add_message(&mut self, message_id: GlobalChatMessageId, timestamp: Timestamp, user_id: UserId, message: &str) {
-        info!("added global message: [user_id({:?}) | {:?} | {:?}]", user_id, timestamp, message);
-        self.global_chats.insert(message_id, (timestamp, user_id, message.to_string()));
+
+    pub fn add_message(&mut self, message_id: GlobalChatMessageId, message_entity: Entity) {
+
+        self.global_chats.insert(message_id, message_entity);
 
         if self.global_chats.len() > 100 {
             self.global_chats.pop_first();

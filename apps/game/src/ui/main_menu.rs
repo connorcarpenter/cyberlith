@@ -39,6 +39,7 @@ pub(crate) fn on_load(
 
     ui_manager.enable_ui(&ui_handle);
 
+    // set sub-ui to GlobalChat at beginning
     if ui_catalog.get_is_loaded(UiKey::GlobalChat) {
         go_to_sub_ui(ui_manager, ui_catalog, UiKey::GlobalChat);
     }

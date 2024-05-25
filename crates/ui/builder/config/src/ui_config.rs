@@ -49,7 +49,7 @@ impl UiConfig {
     ) -> (
         Vec<NodeStyle>,
         Vec<UiNode>,
-        NodeId,
+        Option<NodeId>,
         AssetId,
         AssetId,
         HashMap<String, NodeId>,
@@ -57,7 +57,7 @@ impl UiConfig {
         (
             self.styles,
             self.nodes,
-            self.first_input.unwrap(),
+            self.first_input,
             self.text_icon_asset_id_opt.unwrap(),
             self.eye_icon_asset_id_opt.unwrap(),
             self.id_str_to_node_id_map,

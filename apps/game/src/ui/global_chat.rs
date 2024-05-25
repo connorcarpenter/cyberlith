@@ -12,6 +12,7 @@ pub(crate) fn on_load(
 
     ui_catalog.set_loaded(ui_key);
 
+    // set sub-ui to GlobalChat at beginning
     if let Some(active_ui_handle) = ui_manager.active_ui() {
         if ui_catalog.get_ui_key(&active_ui_handle) == UiKey::MainMenu {
             go_to_sub_ui(ui_manager, ui_catalog, UiKey::GlobalChat);

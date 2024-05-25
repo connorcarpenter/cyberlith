@@ -18,7 +18,7 @@ pub struct UiRuntimeConfig {
     styles: Vec<BaseNodeStyle>,
     nodes: Vec<UiNode>,
 
-    first_input: NodeId,
+    first_input_opt: Option<NodeId>,
     text_icon_asset_id: AssetId,
     eye_icon_asset_id: AssetId,
     id_str_to_node_id_map: HashMap<String, NodeId>,
@@ -34,7 +34,7 @@ impl UiRuntimeConfig {
     }
 
     pub fn load_from_builder_config(ui_config: UiConfig) -> Self {
-        let (styles, nodes, first_input, text_icon_asset_id, eye_icon_asset_id, node_map) =
+        let (styles, nodes, first_input_opt, text_icon_asset_id, eye_icon_asset_id, node_map) =
             ui_config.decompose();
 
         let styles = compute_styles(styles);
@@ -42,15 +42,15 @@ impl UiRuntimeConfig {
         Self {
             styles,
             nodes,
-            first_input,
+            first_input_opt,
             id_str_to_node_id_map: node_map,
             text_icon_asset_id,
             eye_icon_asset_id,
         }
     }
 
-    pub fn get_first_input(&self) -> NodeId {
-        self.first_input
+    pub fn get_first_input(&self) -> Option<NodeId> {
+        self.first_input_opt
     }
 
     pub fn get_text_icon_asset_id(&self) -> AssetId {

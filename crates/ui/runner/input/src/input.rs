@@ -442,14 +442,16 @@ pub fn ui_receive_input(
                 // hover default ui element if none is hovered (coming from mouse mode)
                 if hover_node.is_none() {
                     let root_ui_node = ui_manager.root_ui_asset_id();
-                    let first_input_id = ui_manager
+                    if let Some(first_input_id) = ui_manager
                         .ui_config(&root_ui_node)
                         .unwrap()
-                        .get_first_input();
-                    ui_manager
-                        .ui_input_state_mut()
-                        .receive_hover(&root_ui_node, &first_input_id);
-                    hover_node = Some((root_ui_node, first_input_id));
+                        .get_first_input()
+                    {
+                        ui_manager
+                            .ui_input_state_mut()
+                            .receive_hover(&root_ui_node, &first_input_id);
+                        hover_node = Some((root_ui_node, first_input_id));
+                    }
                     continue;
                 }
 

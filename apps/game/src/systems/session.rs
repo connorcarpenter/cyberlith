@@ -43,8 +43,9 @@ pub fn recv_inserted_global_chat_component(
             let user_id = *chat.user_id;
             let timestamp = *chat.timestamp;
             let message = &*chat.message;
+            info!("incoming global message: [ user_id({:?}) | {:?} | {:?} | {:?} ]", user_id, timestamp, event.entity, message);
 
-            global_chat_messages.add_message(chat_id, timestamp, user_id, message);
+            global_chat_messages.add_message(chat_id, event.entity);
         }
     }
 }
