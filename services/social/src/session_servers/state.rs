@@ -5,6 +5,7 @@ use config::SOCIAL_SERVER_GLOBAL_SECRET;
 use http_client::HttpClient;
 use logging::{info, warn};
 use session_server_http_proto::SocialPatchGlobalChatMessagesRequest;
+use social_server_types::{GlobalChatMessageId, Timestamp};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct SessionServerId {
@@ -57,7 +58,7 @@ impl SessionServersState {
         instance_secret: &str,
         recv_addr: &str,
         recv_port: u16,
-        global_chat_full_log: Vec<(UserId, String)>,
+        global_chat_full_log: Vec<(GlobalChatMessageId, Timestamp, UserId, String)>,
     ) {
         let id = self.next_session_id();
         self.instances.insert(id, SessionInstance::new(recv_addr, recv_port));

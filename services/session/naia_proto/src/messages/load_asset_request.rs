@@ -19,6 +19,10 @@ impl LoadAssetRequest {
             etag: *etag,
         }
     }
+
+    pub fn name() -> &'static str {
+        "LoadAssetRequest"
+    }
 }
 
 #[derive(Serde, Clone, Copy, Eq, PartialEq, Hash, Debug)]
@@ -35,6 +39,11 @@ pub struct LoadAssetResponse {
 impl Response for LoadAssetResponse {}
 
 impl LoadAssetResponse {
+
+    pub fn name() -> &'static str {
+        "LoadAssetResponse"
+    }
+
     pub fn has_old_or_no_asset() -> Self {
         Self {
             value: LoadAssetResponseValue::ClientHasOldOrNoAsset,

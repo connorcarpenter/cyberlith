@@ -30,10 +30,14 @@ async fn async_recv_global_chat_send_message_request_impl(
         return Err(ResponseError::Unauthenticated);
     };
 
-    state
+    let (msg_id, timestamp) = state
         .global_chat
         .send_message(session_server_id, request.user_id(), request.message());
 
     // responding
-    return Ok(GlobalChatSendMessageResponse);
+    let response = GlobalChatSendMessageResponse::new(
+        msg_id,
+        timestamp,
+    );
+    return Ok(response);
 }

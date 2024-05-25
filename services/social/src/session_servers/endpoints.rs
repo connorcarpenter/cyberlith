@@ -8,6 +8,7 @@ use social_server_http_proto::{
     ConnectSessionServerRequest, ConnectSessionServerResponse, DisconnectSessionServerRequest,
     DisconnectSessionServerResponse,
 };
+use social_server_types::{GlobalChatMessageId, Timestamp};
 
 use crate::state::State;
 
@@ -39,7 +40,7 @@ async fn async_recv_connect_session_server_request_impl(
     state.region_server.heard_from_region_server();
 
     // get full chat log
-    let messages: Vec<(UserId, String)> = state.global_chat.get_full_log().iter().map(|m| m.clone()).collect();
+    let messages: Vec<(GlobalChatMessageId, Timestamp, UserId, String)> = state.global_chat.get_full_log().iter().map(|m| m.clone()).collect();
 
     // store session server details
     state

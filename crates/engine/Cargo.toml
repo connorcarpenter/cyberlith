@@ -31,6 +31,7 @@ ui_input = { path = "../ui/runner/input" }
 random = { path = "../random" }
 kernel = { path = "../kernel" }
 logging = { path = "../logging" }
+auth_server_types = { path = "../../services/auth/types" }
 
 # Networked Dependencies
 auth_server_http_proto = { path = "../../services/auth/http_proto", optional = true }

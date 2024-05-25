@@ -34,10 +34,15 @@ pub fn recv_inserted_global_chat_component(
     chat_q: Query<&GlobalChatMessage>,
 ) {
     for event in event_reader.read() {
-        info!("received Inserted GlobalChatMessage from Session Server! (entity: {:?})", event.entity);
+        // info!("received Inserted GlobalChatMessage from Session Server! (entity: {:?})", event.entity);
 
         if let Ok(chat) = chat_q.get(event.entity) {
-            info!("chat: {:?}", *chat.message);
+
+            let user_id: u64 = (*chat.user_id).into();
+            let timestamp = &*chat.timestamp;
+            let message = &*chat.message;
+
+            info!("incoming chat: [user_id({:?}) | {:?} | {:?}]", user_id, timestamp, message);
         }
     }
 }

@@ -1,7 +1,7 @@
 
-use bevy_ecs::{system::{Res, Commands}, change_detection::ResMut, event::EventReader};
+use bevy_ecs::{system::{Res}, change_detection::ResMut, event::EventReader};
 
-use naia_bevy_server::{events::{MessageEvents, TickEvent}, Server};
+use naia_bevy_server::{events::{MessageEvents}};
 
 use bevy_http_client::HttpClient;
 
@@ -12,8 +12,6 @@ use session_server_naia_proto::{channels::ClientActionsChannel, messages::{Globa
 use crate::{session_instance::SessionInstance, user::UserManager, social::SocialManager};
 
 pub fn message_events(
-    mut commands: Commands,
-    mut naia_server: Server,
     mut http_client: ResMut<HttpClient>,
     mut user_manager: ResMut<UserManager>,
     mut social_manager: ResMut<SocialManager>,
@@ -34,8 +32,6 @@ pub fn message_events(
         // Global Chat Send Message
         for (user_key, req) in events.read::<ClientActionsChannel, GlobalChatSendMessage>() {
             social_manager.send_global_chat_message(
-                &mut commands,
-                &mut naia_server,
                 &mut http_client,
                 &user_manager,
                 &session_instance,

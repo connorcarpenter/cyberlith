@@ -34,7 +34,7 @@ pub struct CachedInsertComponentEventsState<T: Send + Sync + 'static> {
 pub fn insert_component_events_startup<T: Send + Sync + 'static>(world: &mut BevyWorld) {
     let initial_state: SystemState<EventReader<InsertComponentEvents<T>>> =
         SystemState::new(world);
-    info!("insert_component_events_startup()");
+    // info!("insert_component_events_startup()");
     world.insert_resource(CachedInsertComponentEventsState {
         event_state: initial_state,
     });
@@ -52,7 +52,7 @@ pub fn insert_component_events<T: Clone + Send + Sync + 'static>(world: &mut Bev
 
             for events in events_reader.read() {
                 let events_clone: InsertComponentEvents<T> = Clone::clone(events);
-                info!("insert_component_events() events");
+                // info!("insert_component_events() events");
                 events_collection.push(events_clone);
             }
         },
@@ -70,7 +70,7 @@ pub fn insert_component_event<T: Send + Sync + 'static, C: Replicate>(
     let mut event_writer = system_state.get_mut(world);
 
     for entity in events.read::<C>() {
-        info!("in insert_component_event()");
+        // info!("in insert_component_event()");
         event_writer.send(InsertComponentEvent::<T, C>::new(entity));
     }
 }

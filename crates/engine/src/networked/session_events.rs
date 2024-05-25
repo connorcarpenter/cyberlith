@@ -13,14 +13,14 @@ pub type SessionInsertComponentEvent<C> = InsertComponentEvent<Session, C>;
 // used as a system
 pub fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent<Session>>) {
     for _event in event_reader.read() {
-        info!("spawned entity");
+        // info!("spawned entity");
     }
 }
 
 // used as a system
 pub fn despawn_entity_events(mut event_reader: EventReader<DespawnEntityEvent<Session>>) {
     for _event in event_reader.read() {
-        info!("despawned entity");
+        // info!("despawned entity");
     }
 }
 
@@ -30,11 +30,11 @@ pub fn session_insert_component_events(world: &mut BevyWorld) {
 
     for events in events_collection {
 
-        info!("received session events: [");
+        // info!("received session events: [");
 
         // other events
         insert_component_event::<Session, GlobalChatMessage>(world, &events);
 
-        info!("]");
+        // info!("]");
     }
 }

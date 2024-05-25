@@ -3,12 +3,13 @@ use std::collections::VecDeque;
 use bevy_ecs::{entity::Entity, system::{Commands, Resource, Res}, change_detection::ResMut};
 
 use naia_bevy_server::{CommandsExt, RoomKey, Server, UserKey};
+
 use auth_server_types::UserId;
+use bevy_http_client::{ApiRequest, ApiResponse, HttpClient, ResponseKey};
+use logging::warn;
+use social_server_types::{GlobalChatMessageId, Timestamp};
 
-use bevy_http_client::{HttpClient, ResponseKey};
-use logging::{info, warn};
-
-use session_server_naia_proto::components::GlobalChatMessage;
+use session_server_naia_proto::components::{GlobalChatMessage};
 use social_server_http_proto::{GlobalChatSendMessageRequest, GlobalChatSendMessageResponse};
 
 use crate::{user::UserManager, session_instance::SessionInstance};
@@ -19,7 +20,8 @@ enum QueuedRequest {
 }
 
 enum InFlightRequest {
-    GlobalChatSendMessage(ResponseKey<GlobalChatSendMessageResponse>),
+    // sending user id, message, response key
+    GlobalChatSendMessage(UserId, String, ResponseKey<GlobalChatSendMessageResponse>),
 }
 
 #[derive(Resource)]
@@ -30,7 +32,6 @@ pub struct SocialManager {
 
     global_chat_room_key: Option<RoomKey>,
     global_chat_log: VecDeque<Entity>,
-    next_timestamp: u16,
 }
 
 impl SocialManager {
@@ -42,7 +43,6 @@ impl SocialManager {
 
             global_chat_room_key: None,
             global_chat_log: VecDeque::new(),
-            next_timestamp: 0,
         }
     }
 
@@ -81,10 +81,9 @@ impl SocialManager {
         user_manager: Res<UserManager>,
     ) {
         social_manager.process_in_flight_requests(
-            &mut http_client,
+            &mut commands, &mut naia_server, &mut http_client,
         );
-        social_manager.process_queued_requests(
-            &mut commands, &mut naia_server, &mut http_client, &session_instance, &user_manager,
+        social_manager.process_queued_requests(&mut http_client, &session_instance, &user_manager,
         );
     }
 
@@ -96,8 +95,6 @@ impl SocialManager {
 
     pub fn process_queued_requests(
         &mut self,
-        commands: &mut Commands,
-        naia_server: &mut Server,
         http_client: &mut HttpClient,
         session_instance: &SessionInstance,
         user_manager: &UserManager,
@@ -116,8 +113,6 @@ impl SocialManager {
             match request {
                 QueuedRequest::GlobalChatSendMessage(user_key, message) => {
                     self.send_global_chat_message(
-                        commands,
-                        naia_server,
                         http_client,
                         user_manager,
                         session_instance,
@@ -131,6 +126,8 @@ impl SocialManager {
 
     pub fn process_in_flight_requests(
         &mut self,
+        commands: &mut Commands,
+        naia_server: &mut Server,
         http_client: &mut HttpClient,
     ) {
         if self.in_flight_requests.is_empty() {
@@ -142,12 +139,21 @@ impl SocialManager {
         let in_flight_requests = std::mem::take(&mut self.in_flight_requests);
 
         for req in in_flight_requests {
-            match req {
-                InFlightRequest::GlobalChatSendMessage(response_key) => {
+            match &req {
+                InFlightRequest::GlobalChatSendMessage(sending_user_id, message, response_key) => {
                     if let Some(response_result) = http_client.recv(&response_key) {
+                        let host = "session";
+                        let remote = "social";
+                        bevy_http_client::log_util::recv_res(host, remote, GlobalChatSendMessageResponse::name());
+
                         match response_result {
-                            Ok(_response) => {
-                                info!("received global chat send message response from social server");
+                            Ok(response) => {
+                                // info!("received global chat send message response from social server");
+                                let global_chat_id = response.global_chat_message_id;
+                                let timestamp = response.timestamp;
+
+                                // log the message
+                                self.log_global_chat_message(commands, naia_server, &global_chat_id, &timestamp, sending_user_id, message);
                             }
                             Err(e) => {
                                 warn!("error receiving global chat send message response from social server: {:?}", e.to_string());
@@ -167,8 +173,6 @@ impl SocialManager {
 
     pub fn send_global_chat_message(
         &mut self,
-        commands: &mut Commands,
-        naia_server: &mut Server,
         http_client: &mut HttpClient,
         user_manager: &UserManager,
         session_instance: &SessionInstance,
@@ -190,31 +194,33 @@ impl SocialManager {
             return;
         };
 
-        info!("sending global chat send message request to social server - [userid {:?}]:(`{:?}`)", sending_user_id, message);
+        // info!("sending global chat send message request to social server - [userid {:?}]:(`{:?}`)", sending_user_id, message);
         let request = GlobalChatSendMessageRequest::new(session_instance.instance_secret(), sending_user_id, message);
+
+        let host = "session";
+        let remote = "social";
+        bevy_http_client::log_util::send_req(host, remote, GlobalChatSendMessageRequest::name());
         let response_key = http_client.send(&social_server_addr, social_server_port, request);
 
-        let ifr = InFlightRequest::GlobalChatSendMessage(response_key);
+        let ifr = InFlightRequest::GlobalChatSendMessage(sending_user_id, message.to_string(), response_key);
         self.in_flight_requests.push(ifr);
-
-        // log the message
-        self.log_global_chat_message(commands, naia_server, sending_user_id, message);
     }
 
     fn log_global_chat_message(
         &mut self,
         commands: &mut Commands,
         naia_server: &mut Server,
-        sending_user_id: UserId,
+        global_chat_id: &GlobalChatMessageId,
+        timestamp: &Timestamp,
+        sending_user_id: &UserId,
         message: &str,
     ) {
-        info!("logging global chat message - [userid {:?}]:(`{:?}`)", sending_user_id, message);
+        // info!("logging global chat message - [userid {:?}]:(`{:?}`)", sending_user_id, message);
         // convert to entity + component
-        let timestamp = self.get_next_timestamp();
         let global_chat_message_id = commands
             .spawn_empty()
             .enable_replication(naia_server)
-            .insert(GlobalChatMessage::new(timestamp, sending_user_id, message))
+            .insert(GlobalChatMessage::new(*global_chat_id, *timestamp, *sending_user_id, message))
             .id();
 
         naia_server.room_mut(&self.get_global_chat_room_key()).add_entity(&global_chat_message_id);
@@ -229,20 +235,14 @@ impl SocialManager {
         }
     }
 
-    fn get_next_timestamp(&mut self) -> u16 {
-        let next_timestamp = self.next_timestamp;
-        self.next_timestamp = self.next_timestamp.wrapping_add(1);
-        next_timestamp
-    }
-
     pub(crate) fn patch_global_chat_messages(
         &mut self,
         commands: &mut Commands,
         naia_server: &mut Server,
-        new_messages: &Vec<(UserId, String)>
+        new_messages: &Vec<(GlobalChatMessageId, Timestamp, UserId, String)>
     ) {
-        for (user_id, message) in new_messages {
-            self.log_global_chat_message(commands, naia_server, *user_id, message);
+        for (msg_id, timestamp, user_id, message) in new_messages {
+            self.log_global_chat_message(commands, naia_server, msg_id, timestamp, user_id, message);
         }
     }
 }

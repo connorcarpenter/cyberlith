@@ -25,14 +25,14 @@ pub type WorldInsertComponentEvent<C> = InsertComponentEvent<World, C>;
 // used as a system
 pub fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent<World>>) {
     for _event in event_reader.read() {
-        info!("spawned entity");
+        // info!("spawned entity");
     }
 }
 
 // used as a system
 pub fn despawn_entity_events(mut event_reader: EventReader<DespawnEntityEvent<World>>) {
     for _event in event_reader.read() {
-        info!("despawned entity");
+        // info!("despawned entity");
     }
 }
 

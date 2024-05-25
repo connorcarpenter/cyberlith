@@ -2,15 +2,15 @@ use std::collections::HashSet;
 
 use naia_bevy_server::{ResponseReceiveKey, Server, UserKey};
 
+use logging::info;
+use asset_id::{AssetId, AssetType, ETag};
+use bevy_http_client::{ApiRequest, ApiResponse, HttpClient, ResponseKey};
+
 use asset_server_http_proto::{AssetRequest, AssetResponse, AssetResponseValue};
 use session_server_naia_proto::{
     channels::AssetRequestsChannel,
     messages::{LoadAssetRequest, LoadAssetResponse, LoadAssetResponseValue},
 };
-
-use logging::info;
-use asset_id::{AssetId, AssetType, ETag};
-use bevy_http_client::{HttpClient, ResponseKey};
 
 // UserAssetProcessingState
 pub enum UserAssetProcessingState {
@@ -27,8 +27,13 @@ impl UserAssetProcessingState {
         asset_id: &AssetId,
         asset_etag_opt: Option<ETag>,
     ) -> Self {
-        info!("sending asset request to asset server: {:?}", asset_id);
+        // info!("sending asset request to asset server: {:?}", asset_id);
         let request = AssetRequest::new(*asset_id, asset_etag_opt);
+
+        let host = "session";
+        let remote = "asset";
+        let request_str = format!("{} ({:?})", AssetRequest::name(), asset_id);
+        bevy_http_client::log_util::send_req(host, remote, &request_str);
         let response_key = http_client.send(asset_server_addr, asset_server_port, request.clone());
 
         Self::AssetServerRequestInFlight(AssetServerRequestState::new(request, response_key))
@@ -41,11 +46,15 @@ impl UserAssetProcessingState {
         asset_etag: &ETag,
     ) -> Self {
         // send client "load asset" request
-        info!(
-            "sending load_asset request to client: (asset: {:?}, etag: {:?})",
-            asset_id, asset_etag
-        );
+        // info!(
+        //     "sending load_asset request to client: (asset: {:?}, etag: {:?})",
+        //     asset_id, asset_etag
+        // );
         let request = LoadAssetRequest::new(asset_id, asset_etag);
+
+        let host = "session";
+        let remote = "client";
+        bevy_http_client::log_util::send_req(host, remote, LoadAssetRequest::name());
         let response_key = server
             .send_request::<AssetRequestsChannel, _>(user_key, &request)
             .unwrap();
@@ -143,7 +152,12 @@ impl AssetServerRequestState {
 
         match &asset_server_res.value {
             AssetResponseValue::Modified(new_etag, asset_type, dependencies, data) => {
-                info!("received from assetserver: asset_response(asset: {:?}, new etag: {:?}), storing data.", asset_id, new_etag);
+                // info!("received from assetserver: asset_response(asset: {:?}, new etag: {:?}), storing data.", asset_id, new_etag);
+
+                let host = "session";
+                let remote = "asset";
+                let response_str = format!("{} (modified, {:?}, {:?})", AssetResponse::name(), asset_id, new_etag);
+                bevy_http_client::log_util::recv_res(host, remote, &response_str);
 
                 // process dependencies
                 let mut dependency_set = HashSet::new();
@@ -159,6 +173,11 @@ impl AssetServerRequestState {
             }
             AssetResponseValue::NotModified => {
                 info!("received from assetserver: asset_response(asset: {:?}, with data not modified).", asset_id);
+
+                let host = "session";
+                let remote = "asset";
+                let response_str = format!("{:?}[data not modified, asset_id: {:?}]", AssetResponse::name(), asset_id);
+                bevy_http_client::log_util::recv_res(host, remote, &response_str);
 
                 return Some(UserAssetProcessingStateTransition::asset_server_response(
                     old_etag_opt.unwrap(),
@@ -186,7 +205,12 @@ impl ClientLoadAssetRequestState {
     pub fn process(&mut self, server: &mut Server) -> Option<UserAssetProcessingStateTransition> {
         if let Some(key) = self.response_key.as_ref() {
             if let Some((_user_key, response)) = server.receive_response(key) {
-                info!("received 'load_asset' response from client");
+                let host = "session";
+                let remote = "client";
+                bevy_http_client::log_util::recv_res(host, remote, LoadAssetResponse::name());
+
+                // info!("received 'load_asset' response from client");
+
                 self.response_key = None;
                 self.response = Some(response);
             } else {

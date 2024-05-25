@@ -53,3 +53,6 @@ pub mod http {
     pub use kernel::http::*;
 }
 pub use logging;
+pub mod auth {
+    pub use auth_server_types::*;
+}

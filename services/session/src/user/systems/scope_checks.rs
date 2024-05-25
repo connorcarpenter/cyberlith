@@ -9,7 +9,7 @@ pub fn scope_checks(
 ) {
     let mut has_ticked = false;
 
-    for TickEvent(server_tick) in tick_reader.read() {
+    for TickEvent(_server_tick) in tick_reader.read() {
         has_ticked = true;
     }
 
