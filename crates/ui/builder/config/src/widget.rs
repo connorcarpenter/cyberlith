@@ -66,4 +66,29 @@ impl Widget {
             Self::UiContainer(_) => WidgetKind::UiContainer,
         }
     }
+
+    pub fn id_str_opt(&self) -> Option<String> {
+        let mut id_str_opt = None;
+        match &self {
+            Widget::Button(button) => {
+                id_str_opt = Some(button.id_str.clone());
+            }
+            Widget::Textbox(textbox) => {
+                id_str_opt = Some(textbox.id_str.clone());
+            }
+            Widget::Text(text) => {
+                if let Some(id_str) = &text.id_str {
+                    id_str_opt = Some(id_str.clone());
+                }
+            }
+            Widget::Spinner(spinner) => {
+                id_str_opt = Some(spinner.id_str.clone());
+            }
+            Widget::UiContainer(ui_container) => {
+                id_str_opt = Some(ui_container.id_str.clone());
+            }
+            _ => {}
+        }
+        id_str_opt
+    }
 }

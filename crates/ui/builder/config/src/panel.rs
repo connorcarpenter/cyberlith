@@ -16,6 +16,10 @@ impl Panel {
     pub fn add_child(&mut self, child_id: NodeId) {
         self.children.push(child_id);
     }
+
+    pub fn remove_all_children(&mut self) {
+        self.children.clear();
+    }
 }
 
 #[derive(Clone, Copy)]

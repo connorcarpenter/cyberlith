@@ -78,6 +78,18 @@ pub fn connect_events(
             *user_key,
             &AssetCatalog::game_global_chat_ui(),
         );
+        asset_manager.load_user_asset(
+            &mut server,
+            &mut http_client,
+            *user_key,
+            &AssetCatalog::game_global_chat_list(),
+        );
+        asset_manager.load_user_asset(
+            &mut server,
+            &mut http_client,
+            *user_key,
+            &AssetCatalog::game_global_chat_list_item(),
+        );
     }
 }
 

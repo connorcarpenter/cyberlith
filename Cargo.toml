@@ -137,6 +137,7 @@ members = [
     "crates/ui/runner/input",
     "crates/ui/runner/config",
     "crates/ui/serde",
+    "crates/ui/extensions",
 ]
 # any crates with conflicting dependencies / feature flags cannot be put here
 default-members = []

@@ -11,7 +11,7 @@ pub struct UiNode {
 }
 
 impl UiNode {
-    pub(crate) fn new(widget: Widget) -> Self {
+    pub fn new(widget: Widget) -> Self {
         Self {
             style_id: None,
             init_visible: true,
@@ -28,6 +28,10 @@ impl UiNode {
             panic!("Node already has a style_id");
         }
         self.style_id = Some(style_id);
+    }
+
+    pub fn clear_style_id(&mut self) {
+        self.style_id = None;
     }
 
     pub fn set_visible(&mut self, visible: bool) {

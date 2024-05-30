@@ -6,7 +6,7 @@ use naia_serde::{SerdeInternal as Serde, UnsignedInteger};
 
 #[derive(Serde, PartialEq, Clone, Eq, Copy, Hash, Debug)]
 pub struct GlobalChatMessageId {
-    id: UnsignedInteger<9>, // TODO: there should only ever be ... 100 message in chat at a time? in that case, u8 would be enough
+    id: UnsignedInteger<9>, // TODO: there should only ever be ... 100 message in chat at a time? in that case, u9 would be definitely be enough
 }
 
 impl GlobalChatMessageId {

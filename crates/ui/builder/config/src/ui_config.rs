@@ -75,27 +75,7 @@ impl UiConfig {
     }
 
     pub fn create_node(&mut self, widget: Widget) -> NodeId {
-        let mut id_str_opt = None;
-        match &widget {
-            Widget::Button(button) => {
-                id_str_opt = Some(button.id_str.clone());
-            }
-            Widget::Textbox(textbox) => {
-                id_str_opt = Some(textbox.id_str.clone());
-            }
-            Widget::Text(text) => {
-                if let Some(id_str) = &text.id_str {
-                    id_str_opt = Some(id_str.clone());
-                }
-            }
-            Widget::Spinner(spinner) => {
-                id_str_opt = Some(spinner.id_str.clone());
-            }
-            Widget::UiContainer(ui_container) => {
-                id_str_opt = Some(ui_container.id_str.clone());
-            }
-            _ => {}
-        }
+        let id_str_opt = widget.id_str_opt();
 
         let ui_node = UiNode::new(widget);
         let node_id = self.insert_node(ui_node);

@@ -28,6 +28,7 @@ ui_state = { path = "../ui/runner/state" }
 ui_render = { path = "../ui/runner/render" }
 ui_runner = { path = "../ui/runner" }
 ui_input = { path = "../ui/runner/input" }
+ui_extensions = { path = "../ui/extensions" }
 random = { path = "../random" }
 kernel = { path = "../kernel" }
 logging = { path = "../logging" }

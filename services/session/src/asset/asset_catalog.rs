@@ -14,4 +14,12 @@ impl AssetCatalog {
     pub fn game_global_chat_ui() -> AssetId {
         AssetId::from_str("ngffab").unwrap()
     }
+
+    pub fn game_global_chat_list() -> AssetId {
+        AssetId::from_str("ws8m4d").unwrap()
+    }
+
+    pub fn game_global_chat_list_item() -> AssetId {
+        AssetId::from_str("ddbxab").unwrap()
+    }
 }

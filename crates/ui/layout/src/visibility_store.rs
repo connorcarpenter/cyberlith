@@ -17,6 +17,10 @@ impl UiVisibilityStore {
         self.nodes.push(node_init_visible);
     }
 
+    pub fn remove_nodes_after(&mut self, node: &NodeId) {
+        self.nodes.truncate(node.as_usize() + 1);
+    }
+
     pub fn get_node_visibility(&self, id: &NodeId) -> Option<bool> {
         self.nodes.get(id.as_usize()).copied()
     }

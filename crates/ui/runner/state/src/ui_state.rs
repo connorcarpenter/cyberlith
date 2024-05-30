@@ -1,13 +1,11 @@
 use asset_id::AssetId;
-use logging::warn;
+use logging::{info, warn};
 use render_api::{
     base::{Color, CpuMaterial},
     components::Viewport,
 };
 use storage::Storage;
-use ui_runner_config::{
-    LayoutCache, NodeId, TextMeasurer, UiRuntimeConfig, UiVisibilityStore, WidgetKind,
-};
+use ui_runner_config::{LayoutCache, NodeId, TextMeasurer, UiNode, UiRuntimeConfig, UiVisibilityStore, WidgetKind};
 
 use crate::{
     button::ButtonStyleState, panel::PanelStyleState, spinner::SpinnerStyleState,
@@ -36,15 +34,28 @@ impl UiState {
         };
 
         for node in ui_config.nodes_iter() {
-            me.store.node_state_init(node);
-            me.visibility_store.node_state_init(node.init_visible);
+            me.node_state_init(&node);
         }
 
         for style in ui_config.styles_iter() {
-            me.store.style_state_init(&style.widget_style.kind());
+            me.style_state_init(&style.widget_style.kind())
         }
 
         me
+    }
+
+    pub fn node_state_init(&mut self, node: &UiNode) {
+        self.store.node_state_init(node);
+        self.visibility_store.node_state_init(node.init_visible);
+    }
+
+    pub fn remove_nodes_after(&mut self, node: &NodeId) {
+        self.store.remove_nodes_after(node);
+        self.visibility_store.remove_nodes_after(node);
+    }
+
+    pub fn style_state_init(&mut self, widget_kind: &WidgetKind) {
+        self.store.style_state_init(widget_kind);
     }
 
     pub fn update(&mut self, delta_ms: f32) {
@@ -165,6 +176,7 @@ impl UiState {
         let Some(ui_container) = node.widget_ui_container_mut() else {
             return;
         };
+        info!("set_ui_container_asset_id for node {:?} -> asset_id: {:?}", node_id, asset_id);
         ui_container.ui_handle_opt = Some(asset_id.clone());
     }
 

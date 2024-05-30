@@ -5,7 +5,6 @@ pub use ui_catalog::UiCatalog;
 
 mod main_menu;
 mod host_match;
-mod global_chat;
 
 use std::time::Duration;
 
@@ -14,6 +13,7 @@ use bevy_ecs::{
     system::{Res, ResMut},
     prelude::NextState
 };
+use bevy_ecs::system::Query;
 
 use game_engine::{
     input::{InputEvent, GamepadRumbleIntensity, Input, RumbleManager},
@@ -21,8 +21,9 @@ use game_engine::{
     asset::AssetId,
     session::SessionClient,
 };
+use game_engine::session::components::GlobalChatMessage;
 
-use crate::{states::AppState, ui::events::{DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent, JoinMatchButtonClickedEvent, SettingsButtonClickedEvent, SubmitButtonClickedEvent}};
+use crate::{resources::global_chat::GlobalChat, states::AppState, ui::events::{DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent, JoinMatchButtonClickedEvent, SettingsButtonClickedEvent, SubmitButtonClickedEvent}};
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum UiKey {
@@ -30,6 +31,8 @@ pub enum UiKey {
     HostMatch,
     JoinMatch,
     GlobalChat,
+    GlobalChatList,
+    GlobalChatListItem,
     Devlog,
     Settings,
 }
@@ -39,6 +42,8 @@ pub(crate) fn on_ui_load(
     next_state: &mut NextState<AppState>,
     ui_manager: &mut UiManager,
     ui_catalog: &mut UiCatalog,
+    global_chat_messages: &mut GlobalChat,
+    message_q: &Query<&GlobalChatMessage>,
     asset_id: AssetId
 ) {
     let ui_handle = UiHandle::new(asset_id);
@@ -58,9 +63,23 @@ pub(crate) fn on_ui_load(
             ui_catalog,
             ui_manager,
         ),
-        UiKey::GlobalChat => global_chat::on_load(
+        UiKey::GlobalChat => GlobalChat::on_load_container_ui(
             ui_catalog,
             ui_manager,
+            &message_q,
+            global_chat_messages,
+        ),
+        UiKey::GlobalChatList=> GlobalChat::on_load_list_ui(
+            ui_catalog,
+            ui_manager,
+            &message_q,
+            global_chat_messages,
+        ),
+        UiKey::GlobalChatListItem => GlobalChat::on_load_list_item_ui(
+            ui_catalog,
+            ui_manager,
+            &message_q,
+            global_chat_messages,
         ),
         _ => {
             unimplemented!("ui not implemented");
@@ -110,7 +129,7 @@ pub(crate) fn handle_events(
                 &mut submit_btn_rdr,
                 &mut should_rumble
             ),
-            UiKey::GlobalChat => global_chat::handle_events(
+            UiKey::GlobalChat => GlobalChat::handle_events(
                 &mut ui_manager,
                 &ui_catalog,
                 &mut session_client,
@@ -145,7 +164,7 @@ pub(crate) fn handle_events(
 pub(crate) fn go_to_sub_ui(
     ui_manager: &mut UiManager,
     ui_catalog: &UiCatalog,
-    ui_key: UiKey,
+    sub_ui_key: UiKey,
 ) {
     let Some(active_ui_handle) = ui_manager.active_ui() else {
         return;
@@ -153,24 +172,20 @@ pub(crate) fn go_to_sub_ui(
     if ui_catalog.get_ui_key(&active_ui_handle) != UiKey::MainMenu {
         panic!("invalid sub-ui");
     }
-    let next_ui_handle = ui_catalog.get_ui_handle(ui_key);
-    if !ui_catalog.get_is_loaded(ui_key) {
+    let sub_ui_handle = ui_catalog.get_ui_handle(sub_ui_key);
+    if !ui_catalog.get_is_loaded(sub_ui_key) {
         panic!("ui not loaded");
     }
     if let Some(current_ui_handle) = ui_manager.get_ui_container_contents(&active_ui_handle, "center_container") {
         match ui_catalog.get_ui_key(&current_ui_handle) {
             UiKey::MainMenu => panic!("invalid sub-ui"),
-            UiKey::HostMatch => {
-                host_match::reset_state(ui_manager, &current_ui_handle);
-            }
-            UiKey::GlobalChat => {
-                global_chat::reset_state(ui_manager, &current_ui_handle);
-            }
+            UiKey::HostMatch => host_match::reset_state(ui_manager, &current_ui_handle),
+            UiKey::GlobalChat => GlobalChat::reset_state(ui_manager, &current_ui_handle),
             _ => {
                 unimplemented!("ui not implemented");
             }
         }
     }
 
-    ui_manager.set_ui_container_contents(&active_ui_handle, "center_container", &next_ui_handle);
+    ui_manager.set_ui_container_contents(&active_ui_handle, "center_container", &sub_ui_handle);
 }

@@ -2,10 +2,7 @@ use std::{collections::HashMap, slice::Iter};
 
 use asset_id::AssetId;
 use render_api::base::Color;
-use ui_builder_config::{
-    BaseNodeStyle, Button, ButtonStyle, Navigation, Panel, PanelStyle, SpinnerStyle, StyleId,
-    TextStyle, Textbox, TextboxStyle, UiConfig, UiNode, WidgetKind, WidgetStyle,
-};
+use ui_builder_config::{BaseNodeStyle, Button, ButtonStyle, Navigation, Panel, PanelStyle, SpinnerStyle, StyleId, TextStyle, Textbox, TextboxStyle, UiConfig, UiNode, WidgetKind, WidgetStyle};
 use ui_layout::{
     Alignment, LayoutType, MarginUnits, NodeId, NodeStore, PositionType, SizeUnits, Solid,
     TextMeasurer,
@@ -71,6 +68,10 @@ impl UiRuntimeConfig {
         self.nodes.get(id.as_usize())
     }
 
+    pub fn get_node_mut(&mut self, id: &NodeId) -> Option<&mut UiNode> {
+        self.nodes.get_mut(id.as_usize())
+    }
+
     pub(crate) fn node_kind(&self, id: &NodeId) -> WidgetKind {
         self.get_node(id).unwrap().widget_kind()
     }
@@ -83,10 +84,28 @@ impl UiRuntimeConfig {
         self.nodes.iter()
     }
 
+    pub fn add_node(&mut self, node: UiNode) -> NodeId {
+        let id = NodeId::from_usize(self.nodes.len());
+        self.nodes.push(node);
+        id
+    }
+
+    pub fn remove_nodes_after(&mut self, node: &NodeId) {
+        self.nodes.truncate(node.as_usize() + 1);
+    }
+
     pub fn panel_ref(&self, id: &NodeId) -> Option<&Panel> {
         let node = self.get_node(id)?;
         if node.widget_kind() == WidgetKind::Panel {
             return node.widget_panel_ref();
+        }
+        None
+    }
+
+    pub fn panel_mut(&mut self, id: &NodeId) -> Option<&mut Panel> {
+        let node = self.get_node_mut(id)?;
+        if node.widget_kind() == WidgetKind::Panel {
+            return node.widget_panel_mut();
         }
         None
     }
@@ -115,6 +134,12 @@ impl UiRuntimeConfig {
 
     fn get_style(&self, style_id: &StyleId) -> Option<&BaseNodeStyle> {
         self.styles.get(style_id.as_usize())
+    }
+
+    pub fn create_style(&mut self, style: BaseNodeStyle) -> StyleId {
+        let id = StyleId::new(self.styles.len() as u32);
+        self.styles.push(style);
+        id
     }
 
     fn node_style(&self, id: &NodeId) -> Option<&BaseNodeStyle> {

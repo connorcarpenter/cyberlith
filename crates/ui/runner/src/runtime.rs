@@ -6,33 +6,17 @@ use render_api::{
     components::{CameraBundle, ClearOperation, Projection, Transform, Viewport},
 };
 use storage::Storage;
-use ui_runner_config::{NodeId, SerdeErr, UiRuntimeConfig};
+use ui_runner_config::{NodeId, SerdeErr, UiRuntimeConfig, BaseNodeStyle, StyleId};
 use ui_state::UiState;
 
 use crate::{config::ValidationType, handle::UiHandle};
+use crate::config::UiNode;
 
 pub struct UiRuntime {
     state: UiState,
     config: UiRuntimeConfig,
     dependencies: UiDependencies,
     camera: CameraBundle,
-}
-
-impl UiRuntime {
-    pub(crate) fn textbox_receive_hover(
-        &mut self,
-        node_id: &NodeId,
-        bounds: (f32, f32, f32, f32),
-        mouse_x: f32,
-        mouse_y: f32,
-    ) -> bool {
-        let textbox_config = self.config.textbox_ref(node_id).unwrap();
-        self.state
-            .store
-            .textbox_mut(node_id)
-            .unwrap()
-            .receive_hover(textbox_config, bounds, mouse_x, mouse_y)
-    }
 }
 
 impl UiRuntime {
@@ -166,6 +150,21 @@ impl UiRuntime {
             .collect()
     }
 
+    pub fn add_style(&mut self, base_node_style: BaseNodeStyle) -> StyleId {
+        self.state.style_state_init(&base_node_style.widget_style.kind());
+        self.config.create_style(base_node_style)
+    }
+
+    pub fn add_node(&mut self, node: UiNode) -> NodeId {
+        self.state.node_state_init(&node);
+        self.config.add_node(node)
+    }
+
+    pub fn remove_nodes_after(&mut self, node_id: &NodeId) {
+        self.state.remove_nodes_after(node_id);
+        self.config.remove_nodes_after(node_id);
+    }
+
     pub(crate) fn get_textbox_validator(&self, id_str: &str) -> Option<ValidationType> {
         // get node_id from id_str
         let node_id = self.get_node_id_by_id_str(id_str)?;
@@ -194,7 +193,7 @@ impl UiRuntime {
         self.state.set_textbox_text(&node_id, val);
     }
 
-    pub(crate) fn get_text(&self, id_str: &str) -> Option<String> {
+    pub(crate) fn get_text_by_id_str(&self, id_str: &str) -> Option<String> {
         // get node_id from id_str
         let node_id = self.get_node_id_by_id_str(id_str)?;
 
@@ -202,7 +201,11 @@ impl UiRuntime {
         self.state.get_text(&node_id)
     }
 
-    pub(crate) fn set_text(&mut self, id_str: &str, val: &str) {
+    pub fn set_text(&mut self, node_id: &NodeId, val: &str) {
+        self.state.set_text(node_id, val);
+    }
+
+    pub(crate) fn set_text_from_id_str(&mut self, id_str: &str, val: &str) {
         // get node_id from id_str
         let Some(node_id) = self.get_node_id_by_id_str(id_str) else {
             warn!("set_text: node_id not found for id_str: {}", id_str);
@@ -211,6 +214,21 @@ impl UiRuntime {
 
         // set text
         self.state.set_text(&node_id, val);
+    }
+
+    pub(crate) fn textbox_receive_hover(
+        &mut self,
+        node_id: &NodeId,
+        bounds: (f32, f32, f32, f32),
+        mouse_x: f32,
+        mouse_y: f32,
+    ) -> bool {
+        let textbox_config = self.config.textbox_ref(node_id).unwrap();
+        self.state
+            .store
+            .textbox_mut(node_id)
+            .unwrap()
+            .receive_hover(textbox_config, bounds, mouse_x, mouse_y)
     }
 
     pub(crate) fn set_textbox_password_eye_visible(&mut self, id_str: &str, val: bool) {
@@ -291,5 +309,9 @@ impl UiRuntime {
 
     pub fn ui_config_ref(&self) -> &UiRuntimeConfig {
         &self.config
+    }
+
+    pub fn ui_config_mut(&mut self) -> &mut UiRuntimeConfig {
+        &mut self.config
     }
 }

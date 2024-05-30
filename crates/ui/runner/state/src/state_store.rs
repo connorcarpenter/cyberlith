@@ -38,6 +38,10 @@ impl UiStateStore {
         self.insert_node(node_state);
     }
 
+    pub fn remove_nodes_after(&mut self, node: &NodeId) {
+        self.nodes.truncate(node.as_usize() + 1);
+    }
+
     fn insert_node(&mut self, node: UiNodeState) {
         if self.nodes.len() >= 255 {
             panic!("1 UI can only hold up to 255 nodes, too many nodes!");

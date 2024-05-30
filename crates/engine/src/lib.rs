@@ -45,6 +45,10 @@ pub mod storage {
 }
 pub mod ui {
     pub use ui_runner::{UiHandle, UiManager, state::NodeActiveState};
+
+    pub mod extensions {
+        pub use ui_extensions::*;
+    }
 }
 pub mod random {
     pub use random::*;

@@ -1,0 +1,14 @@
+[package]
+name = "ui_extensions"
+version = "0.1.0"
+edition = "2021"
+workspace = "../../.."
+
+[features]
+
+[dependencies]
+logging = { path = "../../logging" }
+
+ui_runner = { path = "../runner" }
+
+cfg-if = { version = "1.0" }

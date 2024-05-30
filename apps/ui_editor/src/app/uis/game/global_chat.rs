@@ -8,7 +8,7 @@ use ui_builder::{Alignment, UiConfig, UiConfigBuild};
 pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
     // config
     let ui_name = "global_chat";
-    let ui_asset_id_str = "ngffab"; //AssetId::gen_random().as_string(); // keep this around to generate new AssetIds if needed!
+    let ui_asset_id_str = "ngffab"; //AssetId::get_random().as_string(); // keep this around to generate new AssetIds if needed!
     let text_icon_asset_id_str = "34mvvk"; // this probably shouldn't change, it's the text font
     let eye_icon_asset_id_str = "qbgz5j"; // this probably shouldn't change, it's the password eye
     let ui_etag = ETag::gen_random();
@@ -28,8 +28,8 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
             .set_children_valign(Alignment::Start);
     });
     let chat_wall_style = ui_config.create_panel_style(|s| {
-        s.set_background_alpha(1.)
-            .set_background_color(Color::DARK_BLUE)
+        s.set_background_alpha(0.)
+            //.set_background_color(Color::DARK_BLUE)
             .set_width_pc(100.0)
             .set_height_pc(95.0);
     });
@@ -49,7 +49,7 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
         .set_style(window_style)
         .contents(|c| {
             // chat wall
-            c.add_panel()
+            c.add_ui_container("chat_wall")
                 .set_style(chat_wall_style);
 
             // message input

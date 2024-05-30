@@ -9,13 +9,15 @@ use game_engine::{
     session::{SessionInsertComponentEvent, components::GlobalChatMessage},
 };
 
-use crate::{ui::{on_ui_load, UiCatalog}, states::AppState, resources::global_chat_messages::GlobalChatMessages};
+use crate::{ui::{on_ui_load, UiCatalog}, states::AppState, resources::global_chat::GlobalChat};
 
 pub fn session_load_asset_events(
     state: Res<State<AppState>>,
     mut next_state: ResMut<NextState<AppState>>,
     mut ui_manager: ResMut<UiManager>,
     mut ui_catalog: ResMut<UiCatalog>,
+    mut global_chat_messages: ResMut<GlobalChat>,
+    message_q: Query<&GlobalChatMessage>,
     mut event_reader: EventReader<AssetLoadedEvent>,
 ) {
     for event in event_reader.read() {
@@ -24,13 +26,14 @@ pub fn session_load_asset_events(
         info!("received Asset Loaded Event! (asset_id: {:?})", asset_id);
         if asset_type == AssetType::Ui {
             let state = *state.get();
-            on_ui_load(state, &mut next_state, &mut ui_manager, &mut ui_catalog, asset_id);
+            on_ui_load(state, &mut next_state, &mut ui_manager, &mut ui_catalog, &mut global_chat_messages, &message_q, asset_id);
         }
     }
 }
 
 pub fn recv_inserted_global_chat_component(
-    mut global_chat_messages: ResMut<GlobalChatMessages>,
+    mut ui_manager: ResMut<UiManager>,
+    mut global_chat_messages: ResMut<GlobalChat>,
     mut event_reader: EventReader<SessionInsertComponentEvent<GlobalChatMessage>>,
     chat_q: Query<&GlobalChatMessage>,
 ) {
@@ -45,7 +48,7 @@ pub fn recv_inserted_global_chat_component(
             let message = &*chat.message;
             info!("incoming global message: [ user_id({:?}) | {:?} | {:?} | {:?} ]", user_id, timestamp, event.entity, message);
 
-            global_chat_messages.add_message(chat_id, event.entity);
+            global_chat_messages.add_message(&mut ui_manager, &chat_q, chat_id, event.entity);
         }
     }
 }

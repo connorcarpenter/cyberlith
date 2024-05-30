@@ -195,7 +195,35 @@ impl UiManager {
         asset_data_store: &HashMap<AssetId, Vec<u8>>,
         asset_id: &AssetId,
     ) {
-        self.load_impl(asset_manager.get_store_mut(), asset_data_store, asset_id);
+        let store = asset_manager.get_store_mut();
+        let mut dependencies: Vec<(TypedAssetId, TypedAssetId)> = Vec::new();
+
+        let handle = UiHandle::new(*asset_id);
+        if !self.ui_runtimes.contains_key(&handle) {
+            let bytes = asset_data_store.get(asset_id).unwrap();
+            let Ok(runtime) = UiRuntime::load_from_bytes(bytes) else {
+                panic!(
+                    "failed to read UiRuntime from bytes at asset_id: {:?}",
+                    asset_id
+                );
+            };
+
+            self.ui_runtimes.insert(handle, runtime);
+
+            let runtime = self.ui_runtimes.get(&handle).unwrap();
+            runtime.load_dependencies(handle, &mut dependencies);
+
+            self.queued_uis.push(handle);
+        }
+
+        if !dependencies.is_empty() {
+            for (principal_handle, dependency_handle) in dependencies {
+                let dependency_id = dependency_handle.get_id();
+                let dependency_type = dependency_handle.get_type();
+                store.load(asset_data_store, &dependency_id, &dependency_type);
+                self.finish_dependency_impl(principal_handle, dependency_handle);
+            }
+        }
     }
 
     pub fn manual_load_ui_config(
@@ -245,42 +273,6 @@ impl UiManager {
     // this is the RenderLayer that RenderLayer::UI seeks to mirror
     pub fn set_target_render_layer(&mut self, render_layer: RenderLayer) {
         self.target_render_layer = Some(render_layer);
-    }
-
-    fn load_impl(
-        &mut self,
-        store: &mut ProcessedAssetStore,
-        asset_data_store: &HashMap<AssetId, Vec<u8>>,
-        asset_id: &AssetId,
-    ) {
-        let mut dependencies: Vec<(TypedAssetId, TypedAssetId)> = Vec::new();
-
-        let handle = UiHandle::new(*asset_id);
-        if !self.ui_runtimes.contains_key(&handle) {
-            let bytes = asset_data_store.get(asset_id).unwrap();
-            let Ok(runtime) = UiRuntime::load_from_bytes(bytes) else {
-                panic!(
-                    "failed to read UiRuntime from bytes at asset_id: {:?}",
-                    asset_id
-                );
-            };
-
-            self.ui_runtimes.insert(handle, runtime);
-
-            let runtime = self.ui_runtimes.get(&handle).unwrap();
-            runtime.load_dependencies(handle, &mut dependencies);
-
-            self.queued_uis.push(handle);
-        }
-
-        if !dependencies.is_empty() {
-            for (principal_handle, dependency_handle) in dependencies {
-                let dependency_id = dependency_handle.get_id();
-                let dependency_type = dependency_handle.get_type();
-                store.load(asset_data_store, &dependency_id, &dependency_type);
-                self.finish_dependency_impl(principal_handle, dependency_handle);
-            }
-        }
     }
 
     fn finish_dependency_impl(
@@ -373,6 +365,13 @@ impl UiManager {
 
     pub fn set_last_cursor_icon(&mut self, cursor_icon: CursorIcon) {
         self.last_cursor_icon = cursor_icon;
+    }
+
+    pub fn ui_has_node_with_id_str(&self, ui_handle: &UiHandle, id_str: &str) -> bool {
+        let Some(ui_runtime) = self.ui_runtimes.get(ui_handle) else {
+            return false;
+        };
+        ui_runtime.get_node_id_by_id_str(id_str).is_some()
     }
 
     pub fn register_ui_event<T: Event + Default>(&mut self, ui_handle: &UiHandle, id_str: &str) {
@@ -574,12 +573,12 @@ impl UiManager {
             warn!("ui data not loaded 3: {:?}", ui_handle.asset_id());
             return None;
         };
-        ui_runtime.get_text(id_str)
+        ui_runtime.get_text_by_id_str(id_str)
     }
 
     pub fn set_text(&mut self, ui_handle: &UiHandle, id_str: &str, val: &str) {
         if let Some(ui_runtime) = self.ui_runtimes.get_mut(ui_handle) {
-            ui_runtime.set_text(id_str, val);
+            ui_runtime.set_text_from_id_str(id_str, val);
             ui_runtime.queue_recalculate_layout();
         } else {
             warn!("ui data not loaded 4: {:?}", ui_handle.asset_id());

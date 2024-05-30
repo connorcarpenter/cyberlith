@@ -47,7 +47,8 @@ pub fn setup(
 
     // uis.push(game::main_menu::ui_define()); // game main menu
     // uis.push(game::host_match::ui_define()); // game host match
-    // uis.push(game::global_chat::ui_define()); // game global chat
+    //uis.push(game::global_chat::ui_define()); // game global chat
+    //uis.push(game::global_chat_list::ui_define()); // game global chat list
     uis.push(game::global_chat_list_item::ui_define()); // game global chat list item
 
     let mut ui_handles = Vec::new();
