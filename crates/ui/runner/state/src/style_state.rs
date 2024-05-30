@@ -5,6 +5,7 @@ use crate::{
     text::TextStyleState, textbox::TextboxStyleState,
 };
 
+#[derive(Clone)]
 pub enum StyleState {
     Panel(PanelStyleState),
     Text(TextStyleState),

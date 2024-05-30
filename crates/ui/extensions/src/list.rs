@@ -100,17 +100,20 @@ impl ListUiExt {
         ui_manager.set_ui_container_contents(container_ui_handle, container_id_str, list_ui_handle);
 
         // make stylemap from item ui to list ui
-        let item_ui_config = ui_manager.ui_runtimes.get(item_ui_handle).unwrap().ui_config_ref();
+        let item_ui_runtime = ui_manager.ui_runtimes.get(item_ui_handle).unwrap();
+        let item_ui_config = item_ui_runtime.ui_config_ref();
+        let item_ui_state = item_ui_runtime.ui_state_ref();
 
         let mut item_styles = Vec::new();
         for (item_style_id, item_style) in item_ui_config.styles_iter().enumerate() {
-            item_styles.push((StyleId::new(item_style_id as u32), *item_style));
+            let item_style_state = item_ui_state.store.styles[item_style_id].clone();
+            item_styles.push((StyleId::new(item_style_id as u32), *item_style, item_style_state));
         }
 
         let list_ui_runtime = ui_manager.ui_runtimes.get_mut(list_ui_handle).unwrap();
-        for (item_style_id, item_style) in item_styles {
+        for (item_style_id, item_style, item_style_state) in item_styles {
 
-            let list_style_id = list_ui_runtime.add_style(item_style);
+            let list_style_id = list_ui_runtime.add_style(item_style, item_style_state);
 
             self.stylemap_item_to_list.insert(item_style_id, list_style_id);
         }

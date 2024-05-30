@@ -58,6 +58,10 @@ impl UiState {
         self.store.style_state_init(widget_kind);
     }
 
+    pub fn style_state_add(&mut self, style: StyleState) {
+        self.store.style_state_add(style);
+    }
+
     pub fn update(&mut self, delta_ms: f32) {
         self.ms_since_startup += delta_ms;
     }

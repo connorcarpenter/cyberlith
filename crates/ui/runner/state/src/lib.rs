@@ -13,6 +13,7 @@ mod ui_container;
 
 // just for engine
 pub use ui_state::UiState;
+pub use style_state::StyleState;
 
 // just for ui_io
 pub use button::NodeActiveState;

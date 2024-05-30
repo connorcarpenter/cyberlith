@@ -7,7 +7,7 @@ use render_api::{
 };
 use storage::Storage;
 use ui_runner_config::{NodeId, SerdeErr, UiRuntimeConfig, BaseNodeStyle, StyleId};
-use ui_state::UiState;
+use ui_state::{StyleState, UiState};
 
 use crate::{config::ValidationType, handle::UiHandle};
 use crate::config::UiNode;
@@ -150,8 +150,8 @@ impl UiRuntime {
             .collect()
     }
 
-    pub fn add_style(&mut self, base_node_style: BaseNodeStyle) -> StyleId {
-        self.state.style_state_init(&base_node_style.widget_style.kind());
+    pub fn add_style(&mut self, base_node_style: BaseNodeStyle, style_state: StyleState) -> StyleId {
+        self.state.style_state_add(style_state);
         self.config.create_style(base_node_style)
     }
 

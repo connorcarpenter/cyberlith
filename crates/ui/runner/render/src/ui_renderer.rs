@@ -300,19 +300,19 @@ fn draw_ui_panel(
     };
 
     // draw panel
-    if let Some(mat_handle) = panel_style_state.background_color_handle() {
-        let background_alpha = ui_config.node_background_alpha(id);
-        if background_alpha > 0.0 {
+    let background_alpha = ui_config.node_background_alpha(id);
+    if background_alpha > 0.0 {
+        if let Some(mat_handle) = panel_style_state.background_color_handle() {
             if background_alpha != 1.0 {
                 panic!("partial background_alpha not implemented yet!");
             }
             let box_handle = ui_manager.get_box_mesh_handle().unwrap();
             render_frame.draw_mesh(Some(&RenderLayer::UI), box_handle, &mat_handle, &transform);
-        }
-    } else {
-        warn!("no color handle for panel"); // probably will need to do better debugging later
-        return;
-    };
+        } else {
+            warn!("no color handle for panel"); // probably will need to do better debugging later
+            return;
+        };
+    }
 }
 
 fn draw_ui_text(
@@ -330,38 +330,44 @@ fn draw_ui_text(
     };
 
     // draw background
-    if let Some(mat_handle) = text_style_state.background_color_handle() {
-        let background_alpha = ui_config.node_background_alpha(id);
-        if background_alpha > 0.0 {
+    let background_alpha = ui_config.node_background_alpha(id);
+    if background_alpha > 0.0 {
+        if let Some(mat_handle) = text_style_state.background_color_handle() {
             if background_alpha != 1.0 {
                 panic!("partial background_alpha not implemented yet!");
             }
             let box_handle = ui_manager.get_box_mesh_handle().unwrap();
-            let mut new_transform = transform.clone();
-            new_transform.translation.z += UiRuntimeConfig::Z_STEP_RENDER;
             render_frame.draw_mesh(
                 Some(&RenderLayer::UI),
                 box_handle,
                 &mat_handle,
-                &new_transform,
+                &transform,
             );
-        }
-    } else {
-        warn!("no background color handle for text"); // probably will need to do better debugging later
-        return;
-    };
+        } else {
+            warn!("no background color handle for text"); // probably will need to do better debugging later
+            return;
+        };
+    }
 
     if let Some(mat_handle) = text_style_state.text_color_handle() {
         if let Some(text_ref) = ui_state.store.text_ref(id) {
+            let mut transform = transform.clone();
+            transform.translation.z += UiRuntimeConfig::Z_STEP_RENDER;
             asset_manager.draw_text(
                 render_frame,
                 Some(&RenderLayer::UI),
                 text_icon_handle,
                 &mat_handle,
-                transform,
+                &transform,
                 &text_ref.text,
             );
+        } else {
+            warn!("no text ref for text node_id: {:?}", id);
+            return;
         }
+    } else {
+        warn!("no color handle for text"); // probably will need to do better debugging later
+        return;
     }
 }
 
