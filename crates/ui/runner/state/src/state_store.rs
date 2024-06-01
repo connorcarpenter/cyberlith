@@ -14,6 +14,7 @@ pub struct UiStateStore {
     pub nodes: Vec<UiNodeState>,
     pub default_styles: HashMap<WidgetKind, StyleState>,
     pub styles: Vec<StyleState>,
+    pub nodes_needing_cpu_data: Vec<NodeId>,
 }
 
 impl NodeStateStore for UiStateStore {
@@ -29,6 +30,7 @@ impl UiStateStore {
             nodes: Vec::new(),
             default_styles: HashMap::new(),
             styles: Vec::new(),
+            nodes_needing_cpu_data: Vec::new(),
         }
     }
 
@@ -46,6 +48,8 @@ impl UiStateStore {
         if self.nodes.len() >= 255 {
             panic!("1 UI can only hold up to 255 nodes, too many nodes!");
         }
+
+        self.nodes_needing_cpu_data.push(NodeId::new(self.nodes.len() as u32));
         self.nodes.push(node);
     }
 
@@ -55,16 +59,6 @@ impl UiStateStore {
 
     pub(crate) fn get_node_mut(&mut self, id: &NodeId) -> Option<&mut UiNodeState> {
         self.nodes.get_mut(id.as_usize())
-    }
-
-    pub(crate) fn node_ids(&self) -> Vec<NodeId> {
-        let mut output = Vec::new();
-
-        for i in 0..self.nodes.len() {
-            output.push(NodeId::new(i as u32));
-        }
-
-        output
     }
 
     pub fn text_ref(&self, id: &NodeId) -> Option<&TextState> {

@@ -102,18 +102,16 @@ impl ListUiExt {
         // make stylemap from item ui to list ui
         let item_ui_runtime = ui_manager.ui_runtimes.get(item_ui_handle).unwrap();
         let item_ui_config = item_ui_runtime.ui_config_ref();
-        let item_ui_state = item_ui_runtime.ui_state_ref();
 
         let mut item_styles = Vec::new();
         for (item_style_id, item_style) in item_ui_config.styles_iter().enumerate() {
-            let item_style_state = item_ui_state.store.styles[item_style_id].clone();
-            item_styles.push((StyleId::new(item_style_id as u32), *item_style, item_style_state));
+            item_styles.push((StyleId::new(item_style_id as u32), *item_style));
         }
 
         let list_ui_runtime = ui_manager.ui_runtimes.get_mut(list_ui_handle).unwrap();
-        for (item_style_id, item_style, item_style_state) in item_styles {
+        for (item_style_id, item_style) in item_styles {
 
-            let list_style_id = list_ui_runtime.add_style(item_style, item_style_state);
+            let list_style_id = list_ui_runtime.add_style(item_style);
 
             self.stylemap_item_to_list.insert(item_style_id, list_style_id);
         }
@@ -161,12 +159,13 @@ impl ListUiExt {
 
             for (node_id, node) in item_ui_config.nodes_iter().enumerate().map(|(i, n)| (NodeId::new(i as u32), n)) {
                 let mut new_node = node.clone();
-                if let Some(new_node_style_id) = new_node.style_id() {
+                if let Some(old_node_style_id) = new_node.style_id() {
 
-                    let new_node_style_id = self.stylemap_item_to_list.get(&new_node_style_id).unwrap();
+                    let new_node_style_id = self.stylemap_item_to_list.get(&old_node_style_id).unwrap();
 
                     new_node.clear_style_id();
                     new_node.set_style_id(*new_node_style_id);
+                    info!("Mapped style from item ui to list ui: {:?} -> {:?}", old_node_style_id, new_node_style_id);
                 }
                 item_nodes.push((node_id, new_node));
             }
@@ -177,7 +176,7 @@ impl ListUiExt {
             let list_ui_handle = self.list_ui.as_ref().unwrap();
             let list_ui_runtime_mut = ui_manager.ui_runtimes.get_mut(list_ui_handle).unwrap();
 
-            let mut data_collection_iter = collection.into_iter();
+            let data_collection_iter = collection.into_iter();
             for (data_key, data_val) in data_collection_iter {
                 let mut id_str_map = HashMap::new();
                 let mut old_new_id_map = HashMap::new();
@@ -201,8 +200,10 @@ impl ListUiExt {
                     let Some(panel_mut) = list_ui_runtime_mut.ui_config_mut().panel_mut(new_node_id) else {
                         continue;
                     };
+                    // TODO: make this work for button type!
                     for child_id in panel_mut.children.iter_mut() {
                         if let Some(new_child_id) = old_new_id_map.get(child_id) {
+                            info!("Updating child id from {:?} to {:?}", child_id, new_child_id);
                             *child_id = *new_child_id;
                         }
                     }
@@ -213,5 +214,8 @@ impl ListUiExt {
                 self.items_id_str_to_node_id_map.push(id_str_map);
             }
         }
+
+        // queue ui for sync
+        ui_manager.queue_ui_for_sync(self.list_ui.as_ref().unwrap());
     }
 }

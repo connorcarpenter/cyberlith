@@ -136,7 +136,7 @@ impl UiRuntimeConfig {
         self.styles.get(style_id.as_usize())
     }
 
-    pub fn create_style(&mut self, style: BaseNodeStyle) -> StyleId {
+    pub fn add_style(&mut self, style: BaseNodeStyle) -> StyleId {
         let id = StyleId::new(self.styles.len() as u32);
         self.styles.push(style);
         id

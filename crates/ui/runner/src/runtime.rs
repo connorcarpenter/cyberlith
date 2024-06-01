@@ -150,12 +150,14 @@ impl UiRuntime {
             .collect()
     }
 
-    pub fn add_style(&mut self, base_node_style: BaseNodeStyle, style_state: StyleState) -> StyleId {
-        self.state.style_state_add(style_state);
-        self.config.create_style(base_node_style)
+    pub fn add_style(&mut self, base_node_style: BaseNodeStyle) -> StyleId {
+        self.queue_recalculate_layout();
+        self.state.style_state_init(&base_node_style.widget_style.kind());
+        self.config.add_style(base_node_style)
     }
 
     pub fn add_node(&mut self, node: UiNode) -> NodeId {
+        self.queue_recalculate_layout();
         self.state.node_state_init(&node);
         self.config.add_node(node)
     }

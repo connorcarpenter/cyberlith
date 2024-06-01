@@ -85,7 +85,7 @@ impl Window {
                 info!("creating new window");
                 return Self::new(window_settings).unwrap();
             }
-            info!("using old window");
+            info!("using existing window");
             return WINDOW_CONTAINER.take().unwrap();
         }
     }

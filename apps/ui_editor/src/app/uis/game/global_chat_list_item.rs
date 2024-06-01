@@ -23,9 +23,14 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
 
     // styles
     let container_style = ui_config.create_panel_style(|s| {
-        s.set_background_alpha(0.)
+        s.set_background_alpha(1.)
+            .set_background_color(Color::DARK_GRAY)
             .set_horizontal()
-            .set_children_valign(Alignment::Start);
+            .set_height_vp(4.0)
+            .set_self_halign(Alignment::Start)
+            .set_self_valign(Alignment::Start)
+            .set_children_valign(Alignment::Start)
+            .set_children_halign(Alignment::Start);
     });
     let user_name_style = ui_config.create_text_style(|s| {
         s.set_background_alpha(0.)
@@ -41,6 +46,7 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
     });
     let message_style = ui_config.create_text_style(|s| {
         s.set_background_alpha(0.)
+            // .set_background_color(Color::GREEN)
             .set_size_vp(3.0)
             .set_margin_left_vp(2.0)
             .set_text_color(Color::WHITE);

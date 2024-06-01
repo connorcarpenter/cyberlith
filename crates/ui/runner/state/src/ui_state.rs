@@ -58,10 +58,6 @@ impl UiState {
         self.store.style_state_init(widget_kind);
     }
 
-    pub fn style_state_add(&mut self, style: StyleState) {
-        self.store.style_state_add(style);
-    }
-
     pub fn update(&mut self, delta_ms: f32) {
         self.ms_since_startup += delta_ms;
     }
@@ -273,7 +269,7 @@ impl UiState {
         materials: &mut Storage<CpuMaterial>,
     ) {
         // set color handles
-        for id in self.store.node_ids() {
+        for id in std::mem::take(&mut self.store.nodes_needing_cpu_data) {
             let node = ui_config.get_node(&id).unwrap();
             let widget_kind = node.widget_kind();
             let style_id = node.style_id();

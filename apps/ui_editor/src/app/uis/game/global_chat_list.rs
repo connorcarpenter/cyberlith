@@ -24,7 +24,10 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
     let container_style = ui_config.create_panel_style(|s| {
         s.set_background_alpha(0.)
             .set_vertical()
-            .set_children_valign(Alignment::End);
+            .set_children_valign(Alignment::End)
+            .set_children_halign(Alignment::Start)
+            .set_width_pc(100.0)
+            .set_height_pc(100.0);
     });
 
     // nodes

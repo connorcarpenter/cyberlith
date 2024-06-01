@@ -213,7 +213,7 @@ impl UiManager {
             let runtime = self.ui_runtimes.get(&handle).unwrap();
             runtime.load_dependencies(handle, &mut dependencies);
 
-            self.queued_uis.push(handle);
+            self.queue_ui_for_sync(&handle);
         }
 
         if !dependencies.is_empty() {
@@ -241,7 +241,7 @@ impl UiManager {
             let runtime = self.ui_runtimes.get(&handle).unwrap();
             runtime.load_dependencies(handle, &mut dependencies);
 
-            self.queued_uis.push(handle);
+            self.queue_ui_for_sync(&handle);
         }
 
         if !dependencies.is_empty() {
@@ -287,6 +287,10 @@ impl UiManager {
         let principal_handle = UiHandle::new(principal_id);
         let principal_data = self.ui_runtimes.get_mut(&principal_handle).unwrap();
         principal_data.finish_dependency(dependency_typed_id);
+    }
+
+    pub fn queue_ui_for_sync(&mut self, handle: &UiHandle) {
+        self.queued_uis.push(*handle);
     }
 
     pub fn sync_uis(&mut self, materials: &mut Storage<CpuMaterial>) {
