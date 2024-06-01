@@ -190,8 +190,12 @@ impl ListUiExt {
                         id_str_map.insert(id_str.to_string(), new_node_id);
                     }
 
-                    let list_ui_config_root_panel = list_ui_runtime_mut.ui_config_mut().panel_mut(&UiRuntimeConfig::ROOT_NODE_ID).unwrap();
-                    list_ui_config_root_panel.add_child(new_node_id);
+                    // only root node should be added as a child of the root panel
+                    if old_node_id == &NodeId::new(0) {
+                        let list_ui_config_root_panel = list_ui_runtime_mut.ui_config_mut().panel_mut(&UiRuntimeConfig::ROOT_NODE_ID).unwrap();
+                        list_ui_config_root_panel.add_child(new_node_id);
+                    }
+
                     // info!("Added new node to list ui: {:?}. Total len is: {}", new_node_id, list_ui_config_root_panel.children.len());
                 }
 
