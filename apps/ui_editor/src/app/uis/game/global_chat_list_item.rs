@@ -23,8 +23,8 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
 
     // styles
     let container_style = ui_config.create_panel_style(|s| {
-        s.set_background_alpha(1.)
-            .set_background_color(Color::DARK_GRAY)
+        s.set_background_alpha(0.)
+            // .set_background_color(Color::DARK_GRAY)
             .set_horizontal()
             .set_height_vp(4.0)
             .set_self_halign(Alignment::Start)

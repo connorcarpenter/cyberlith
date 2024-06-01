@@ -64,6 +64,7 @@ pub fn setup(
     }
 
     ui_manager.set_target_render_layer(RenderLayers::layer(0));
+    ui_manager.enable_ui(&ui_handles[0]);
 
     // scene setup now
     // ambient light
