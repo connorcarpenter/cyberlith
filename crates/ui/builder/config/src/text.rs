@@ -1,6 +1,6 @@
 use render_api::base::Color;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Text {
     pub id_str: Option<String>,
     pub init_text: String,
@@ -15,7 +15,7 @@ impl Text {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct TextStyle {
     pub background_color: Option<Color>,
     pub background_alpha: Option<f32>,

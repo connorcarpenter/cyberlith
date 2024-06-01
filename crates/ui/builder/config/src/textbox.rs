@@ -3,7 +3,7 @@ use validation::ValidationType;
 
 use crate::Navigation;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Textbox {
     pub id_str: String,
     pub navigation: Navigation,
@@ -22,7 +22,7 @@ impl Textbox {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct TextboxStyle {
     pub background_color: Option<Color>,
     pub background_alpha: Option<f32>,

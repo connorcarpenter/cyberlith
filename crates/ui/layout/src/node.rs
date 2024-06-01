@@ -194,7 +194,7 @@ impl NodeId {
     }
 }
 
-#[derive(Clone, Copy, Eq, PartialEq)]
+#[derive(Clone, Copy, Eq, PartialEq, Debug)]
 pub enum Solid {
     Fit,  // maximum axis uses aspect ratio
     Fill, // minimum axis uses aspect ratio

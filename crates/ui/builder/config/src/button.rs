@@ -3,7 +3,7 @@ use ui_layout::NodeId;
 
 use crate::{Panel, PanelStyle};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Button {
     pub panel: Panel,
     pub id_str: String,
@@ -24,7 +24,7 @@ impl Button {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Navigation {
     pub left_goes_to: Option<String>,
     pub right_goes_to: Option<String>,
@@ -45,7 +45,7 @@ impl Navigation {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct ButtonStyle {
     pub panel: PanelStyle,
 

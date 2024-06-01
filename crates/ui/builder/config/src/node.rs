@@ -3,7 +3,7 @@ use crate::{
     Textbox,
 };
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct UiNode {
     style_id: Option<StyleId>,
     pub init_visible: bool,

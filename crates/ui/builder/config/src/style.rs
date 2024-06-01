@@ -17,7 +17,7 @@ impl StyleId {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum WidgetStyle {
     Panel(PanelStyle),
     Text(TextStyle),
@@ -92,7 +92,7 @@ impl NodeStyle {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct BaseNodeStyle {
     pub widget_style: WidgetStyle,
 

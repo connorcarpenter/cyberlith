@@ -1,6 +1,6 @@
 use render_api::base::Color;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Spinner {
     pub id_str: String,
 }
@@ -13,7 +13,7 @@ impl Spinner {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct SpinnerStyle {
     pub background_color: Option<Color>,
     pub background_alpha: Option<f32>,

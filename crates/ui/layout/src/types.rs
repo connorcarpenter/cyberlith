@@ -1,4 +1,4 @@
-#[derive(Eq, PartialEq, Clone, Copy, Default)]
+#[derive(Eq, PartialEq, Clone, Copy, Default, Debug)]
 pub enum Alignment {
     Start,
     #[default]

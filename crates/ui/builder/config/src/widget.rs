@@ -45,7 +45,7 @@ impl WidgetKind {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Widget {
     Panel(Panel),
     Text(Text),

@@ -13,7 +13,7 @@ use asset_loader::{
 };
 use clipboard::ClipboardManager;
 use input::{CursorIcon, Input};
-use logging::warn;
+use logging::{info, warn};
 use math::Vec2;
 use render_api::shapes::UnitSquare;
 use render_api::{
@@ -26,11 +26,11 @@ use ui_input::{
     ui_receive_input, UiGlobalEvent, UiInputEvent, UiInputState, UiManagerTrait, UiNodeEvent,
     UiNodeEventHandler,
 };
-use ui_runner_config::{NodeId, UiRuntimeConfig};
+use ui_runner_config::{NodeId, UiRuntimeConfig, NodeStore};
 use ui_state::{NodeActiveState, UiState};
 
 use crate::{
-    config::ValidationType, handle::UiHandle, runtime::UiRuntime, state_globals::StateGlobals,
+    config::{WidgetKind, ValidationType}, handle::UiHandle, runtime::UiRuntime, state_globals::StateGlobals,
 };
 
 #[derive(Resource)]
@@ -53,6 +53,27 @@ pub struct UiManager {
 
     globals: StateGlobals,
     input_state: UiInputState,
+}
+
+impl UiManager {
+    pub fn print_node_tree(&self, handle: &UiHandle) {
+        self.print_node(&handle, &NodeId::new(0));
+    }
+
+    fn print_node(&self, handle: &UiHandle, node_id: &NodeId) {
+        let config = self.ui_runtimes.get(handle).unwrap().ui_config_ref();
+        let ui_node = config.get_node(node_id).unwrap();
+        info!("{:?} - {:?}", node_id, ui_node);
+
+        for child_id in config.node_children(node_id) {
+            self.print_node(handle, child_id);
+        }
+
+        if ui_node.widget_kind() == WidgetKind::UiContainer {
+            let child_ui_handle = self.ui_runtimes.get(handle).unwrap().get_ui_container_contents(node_id).unwrap();
+            self.print_node(&child_ui_handle, &NodeId::new(0));
+        }
+    }
 }
 
 impl Default for UiManager {
@@ -618,7 +639,7 @@ impl UiManager {
         id_str: &str,
     ) -> Option<UiHandle> {
         let ui_runtime = self.ui_runtimes.get(ui_handle)?;
-        ui_runtime.get_ui_container_contents(id_str)
+        ui_runtime.get_ui_container_contents_by_id_str(id_str)
     }
 
     pub fn set_ui_container_contents(

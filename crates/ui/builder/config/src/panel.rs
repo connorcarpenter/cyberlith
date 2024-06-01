@@ -1,7 +1,7 @@
 use render_api::base::Color;
 use ui_layout::{Alignment, LayoutType, MarginUnits, NodeId};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Panel {
     pub children: Vec<NodeId>,
 }
@@ -22,7 +22,7 @@ impl Panel {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct PanelStyle {
     pub is_viewport: bool,
 
