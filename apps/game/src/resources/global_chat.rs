@@ -1,10 +1,8 @@
 use std::collections::BTreeMap;
 
-use bevy_ecs::{system::Resource, event::EventReader, entity::Entity};
-use bevy_ecs::system::Query;
+use bevy_ecs::{system::{Resource, Query}, event::EventReader, entity::Entity};
 
-use game_engine::{ui::{NodeActiveState, UiManager}, session::{channels, messages, SessionClient}, logging::info, input::{InputEvent, Key}, social::GlobalChatMessageId, ui::{extensions::ListUiExt, UiHandle}};
-use game_engine::session::components::GlobalChatMessage;
+use game_engine::{ui::{NodeActiveState, UiManager}, session::{channels, messages, SessionClient, components::GlobalChatMessage}, logging::info, input::{InputEvent, Key}, social::GlobalChatMessageId, ui::{extensions::ListUiExt, UiHandle}};
 
 use crate::ui::{go_to_sub_ui, UiCatalog, UiKey};
 
