@@ -4,7 +4,6 @@ use naia_serde::{
     BitReader, SerdeErr, SerdeInternal as Serde, UnsignedInteger, UnsignedVariableInteger,
 };
 
-use asset_id::AssetId;
 use render_api::base::Color;
 use ui_builder_config::{
     BaseNodeStyle, Button, ButtonStyle, NodeId, NodeStyle, Panel, PanelStyle, Spinner,
@@ -35,12 +34,6 @@ fn convert_actions_to_ui_config(actions: Vec<UiAction>) -> UiConfig {
 
     for action in actions {
         match action {
-            UiAction::TextIconAssetId(asset_id) => {
-                ui_config.set_text_icon_asset_id(&asset_id);
-            }
-            UiAction::EyeIconAssetId(asset_id) => {
-                ui_config.set_eye_icon_asset_id(&asset_id);
-            }
             UiAction::FirstInput(node_id_opt) => {
                 if let Some(node_id) = node_id_opt {
                     ui_config.set_first_input(node_id)
@@ -93,16 +86,6 @@ fn bytes_to_actions(data: &[u8]) -> Result<Vec<UiAction>, SerdeErr> {
         let action_type = UiActionType::de(bit_reader)?;
 
         match action_type {
-            UiActionType::TextIconAssetId => {
-                let val = u32::de(bit_reader)?;
-                let asset_id = AssetId::from_u32(val)?;
-                actions.push(UiAction::TextIconAssetId(asset_id));
-            }
-            UiActionType::EyeIconAssetId => {
-                let val = u32::de(bit_reader)?;
-                let asset_id = AssetId::from_u32(val)?;
-                actions.push(UiAction::EyeIconAssetId(asset_id));
-            }
             UiActionType::DefaultButton => {
                 let val = Option::<UnsignedVariableInteger<7>>::de(bit_reader)?;
                 let val: Option<u64> = val.map(|v| v.to());

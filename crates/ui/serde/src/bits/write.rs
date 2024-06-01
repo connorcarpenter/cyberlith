@@ -26,14 +26,6 @@ pub fn write_bits(ui_config: &UiConfig) -> Vec<u8> {
 fn convert_ui_to_actions(ui_config: &UiConfig) -> Vec<UiAction> {
     let mut output = Vec::new();
 
-    // write text icon AssetId
-    let text_icon_asset_id = ui_config.get_text_icon_asset_id();
-    output.push(UiAction::TextIconAssetId(text_icon_asset_id));
-
-    // write eye icon AssetId
-    let eye_icon_asset_id = ui_config.get_eye_icon_asset_id();
-    output.push(UiAction::EyeIconAssetId(eye_icon_asset_id));
-
     // write first input
     let first_input_id = ui_config.get_first_input();
     output.push(UiAction::FirstInput(first_input_id));
@@ -72,14 +64,6 @@ fn actions_to_bytes(actions: Vec<UiAction>) -> Vec<u8> {
 
     for action in actions {
         match action {
-            UiAction::TextIconAssetId(asset_id) => {
-                UiActionType::TextIconAssetId.ser(&mut bit_writer);
-                asset_id.as_u32().ser(&mut bit_writer);
-            }
-            UiAction::EyeIconAssetId(asset_id) => {
-                UiActionType::EyeIconAssetId.ser(&mut bit_writer);
-                asset_id.as_u32().ser(&mut bit_writer);
-            }
             UiAction::FirstInput(button_id_opt) => {
                 UiActionType::DefaultButton.ser(&mut bit_writer);
                 let val_opt = button_id_opt.map(|id| {

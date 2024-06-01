@@ -279,6 +279,22 @@ impl UiManager {
         self.target_render_layer = Some(render_layer);
     }
 
+    pub fn get_text_icon_handle(&self) -> Option<&AssetHandle<IconData>> {
+        self.globals.get_text_icon_handle()
+    }
+
+    pub fn set_text_icon_handle(&mut self, asset_id: AssetId) {
+        self.globals.set_text_icon_handle(asset_id);
+    }
+
+    pub fn get_eye_icon_handle(&self) -> Option<&AssetHandle<IconData>> {
+        self.globals.get_eye_icon_handle()
+    }
+
+    pub fn set_eye_icon_handle(&mut self, asset_id: AssetId) {
+        self.globals.set_eye_icon_handle(asset_id);
+    }
+
     fn finish_dependency_impl(
         &mut self,
         principal_typed_id: TypedAssetId,
@@ -434,12 +450,7 @@ impl UiManager {
         let needs_to_recalc = self.needs_to_recalculate_layout();
 
         if needs_to_recalc {
-            let Some(ui_runtime) = self.ui_runtimes.get(&active_ui_handle) else {
-                warn!("ui data not loaded 1: {:?}", active_ui_handle.asset_id());
-                return;
-            };
-            let icon_handle = ui_runtime.get_text_icon_handle();
-            self.recalculate_ui_layout(store, &active_ui_handle, &icon_handle);
+            self.recalculate_ui_layout(store, &active_ui_handle);
         }
     }
 
@@ -447,12 +458,14 @@ impl UiManager {
         &mut self,
         store: &ProcessedAssetStore,
         ui_handle: &UiHandle,
-        icon_handle: &AssetHandle<IconData>,
     ) {
-        let Some(icon_data) = store.icons.get(&icon_handle) else {
+        let Some(text_icon_handle) = self.get_text_icon_handle() else {
             return;
         };
-        let text_measurer = UiTextMeasurer::new(icon_data);
+        let Some(text_icon_data) = store.icons.get(&text_icon_handle) else {
+            return;
+        };
+        let text_measurer = UiTextMeasurer::new(text_icon_data);
 
         self.recalculate_ui_layout_impl(&text_measurer, ui_handle, 10.0);
     }
@@ -508,16 +521,13 @@ impl UiManager {
         ui_input_events: Vec<UiInputEvent>,
     ) {
         let store = asset_manager.get_store();
-        let root_handle = self.active_ui().unwrap();
-        let Some(ui_runtime) = self.ui_runtimes.get_mut(&root_handle) else {
-            warn!("ui data not loaded 1: {:?}", root_handle.asset_id());
+        let Some(text_icon_handle) = self.get_text_icon_handle() else {
             return;
         };
-        let icon_handle = ui_runtime.get_text_icon_handle();
-        let Some(icon_data) = store.icons.get(&icon_handle) else {
+        let Some(text_icon_data) = store.icons.get(&text_icon_handle) else {
             return;
         };
-        let text_measurer = UiTextMeasurer::new(icon_data);
+        let text_measurer = UiTextMeasurer::new(text_icon_data);
         self.receive_input(&text_measurer, mouse_position, ui_input_events);
 
         // get any global events

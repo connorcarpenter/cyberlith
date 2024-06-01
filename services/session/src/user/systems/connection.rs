@@ -1,17 +1,14 @@
 
 use bevy_ecs::{system::Res, change_detection::ResMut, event::EventReader};
 
-use naia_bevy_server::{
-    events::{AuthEvents, ConnectEvent, DisconnectEvent},
-    Server,
-};
+use naia_bevy_server::{events::{AuthEvents, ConnectEvent, DisconnectEvent}, Server, UserKey};
 
 use bevy_http_client::HttpClient;
 use logging::{info, warn};
 
 use session_server_naia_proto::messages::Auth;
 
-use crate::{social::SocialManager, asset::{asset_manager::AssetManager, AssetCatalog}, user::UserManager};
+use crate::{social::SocialManager, asset::{user_load_default_assets, asset_manager::AssetManager, AssetCatalog}, user::UserManager};
 
 pub fn auth_events(
     mut user_manager: ResMut<UserManager>,
@@ -60,36 +57,7 @@ pub fn connect_events(
         asset_manager.register_user(user_key);
 
         // load "default" assets
-        asset_manager.load_user_asset(
-            &mut server,
-            &mut http_client,
-            *user_key,
-            &AssetCatalog::game_main_menu_ui(),
-        );
-        asset_manager.load_user_asset(
-            &mut server,
-            &mut http_client,
-            *user_key,
-            &AssetCatalog::game_host_match_ui(),
-        );
-        asset_manager.load_user_asset(
-            &mut server,
-            &mut http_client,
-            *user_key,
-            &AssetCatalog::game_global_chat_ui(),
-        );
-        asset_manager.load_user_asset(
-            &mut server,
-            &mut http_client,
-            *user_key,
-            &AssetCatalog::game_global_chat_list(),
-        );
-        asset_manager.load_user_asset(
-            &mut server,
-            &mut http_client,
-            *user_key,
-            &AssetCatalog::game_global_chat_list_item(),
-        );
+        user_load_default_assets(&mut server, &mut http_client, &mut asset_manager, user_key);
     }
 }
 

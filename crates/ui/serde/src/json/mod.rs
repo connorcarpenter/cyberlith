@@ -29,8 +29,6 @@ use ui_builder_config::{UiConfig, WidgetKind};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct UiConfigJson {
-    text_icon_asset_id: String,
-    eye_icon_asset_id: String,
     first_input: Option<usize>,
     styles: Vec<UiStyleJson>,
     nodes: Vec<UiNodeJson>,
@@ -40,12 +38,7 @@ impl UiConfigJson {
     pub const CURRENT_SCHEMA_VERSION: u32 = 0;
 
     pub fn dependencies(&self) -> Vec<AssetId> {
-        let mut output = Vec::new();
-
-        output.push(AssetId::from_str(&self.text_icon_asset_id).unwrap());
-        output.push(AssetId::from_str(&self.eye_icon_asset_id).unwrap());
-
-        output
+        Vec::new()
     }
 }
 

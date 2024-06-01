@@ -1,6 +1,5 @@
 use std::{collections::HashMap, slice::Iter};
 
-use asset_id::AssetId;
 use render_api::base::Color;
 use ui_builder_config::{BaseNodeStyle, Button, ButtonStyle, Navigation, Panel, PanelStyle, SpinnerStyle, StyleId, TextStyle, Textbox, TextboxStyle, UiConfig, UiNode, WidgetKind, WidgetStyle};
 use ui_layout::{
@@ -16,8 +15,6 @@ pub struct UiRuntimeConfig {
     nodes: Vec<UiNode>,
 
     first_input_opt: Option<NodeId>,
-    text_icon_asset_id: AssetId,
-    eye_icon_asset_id: AssetId,
     id_str_to_node_id_map: HashMap<String, NodeId>,
 }
 
@@ -31,7 +28,7 @@ impl UiRuntimeConfig {
     }
 
     pub fn load_from_builder_config(ui_config: UiConfig) -> Self {
-        let (styles, nodes, first_input_opt, text_icon_asset_id, eye_icon_asset_id, node_map) =
+        let (styles, nodes, first_input_opt, node_map) =
             ui_config.decompose();
 
         let styles = compute_styles(styles);
@@ -41,21 +38,11 @@ impl UiRuntimeConfig {
             nodes,
             first_input_opt,
             id_str_to_node_id_map: node_map,
-            text_icon_asset_id,
-            eye_icon_asset_id,
         }
     }
 
     pub fn get_first_input(&self) -> Option<NodeId> {
         self.first_input_opt
-    }
-
-    pub fn get_text_icon_asset_id(&self) -> AssetId {
-        self.text_icon_asset_id
-    }
-
-    pub fn get_eye_icon_asset_id(&self) -> AssetId {
-        self.eye_icon_asset_id
     }
 
     pub fn get_node_id_by_id_str(&self, id_str: &str) -> Option<NodeId> {

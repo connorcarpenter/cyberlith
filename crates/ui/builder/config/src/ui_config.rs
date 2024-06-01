@@ -1,6 +1,5 @@
 use std::{collections::HashMap, slice::Iter};
 
-use asset_id::AssetId;
 use logging::info;
 use ui_layout::NodeId;
 
@@ -16,8 +15,6 @@ pub struct UiConfig {
     nodes: Vec<UiNode>,
 
     first_input: Option<NodeId>,
-    text_icon_asset_id_opt: Option<AssetId>,
-    eye_icon_asset_id_opt: Option<AssetId>,
     id_str_to_node_id_map: HashMap<String, NodeId>,
 }
 
@@ -30,8 +27,6 @@ impl UiConfig {
             nodes: Vec::new(),
 
             first_input: None,
-            text_icon_asset_id_opt: None,
-            eye_icon_asset_id_opt: None,
             id_str_to_node_id_map: HashMap::new(),
         };
 
@@ -50,16 +45,12 @@ impl UiConfig {
         Vec<NodeStyle>,
         Vec<UiNode>,
         Option<NodeId>,
-        AssetId,
-        AssetId,
         HashMap<String, NodeId>,
     ) {
         (
             self.styles,
             self.nodes,
             self.first_input,
-            self.text_icon_asset_id_opt.unwrap(),
-            self.eye_icon_asset_id_opt.unwrap(),
             self.id_str_to_node_id_map,
         )
     }
@@ -124,24 +115,6 @@ impl UiConfig {
 
     pub fn set_first_input(&mut self, id: NodeId) {
         self.first_input = Some(id);
-    }
-
-    pub fn get_text_icon_asset_id(&self) -> AssetId {
-        *self.text_icon_asset_id_opt.as_ref().unwrap()
-    }
-
-    pub fn set_text_icon_asset_id(&mut self, text_icon_asset_id: &AssetId) -> &mut Self {
-        self.text_icon_asset_id_opt = Some(text_icon_asset_id.clone());
-        self
-    }
-
-    pub fn get_eye_icon_asset_id(&self) -> AssetId {
-        *self.eye_icon_asset_id_opt.as_ref().unwrap()
-    }
-
-    pub fn set_eye_icon_asset_id(&mut self, eye_icon_asset_id: &AssetId) -> &mut Self {
-        self.eye_icon_asset_id_opt = Some(eye_icon_asset_id.clone());
-        self
     }
 
     pub fn get_node_id_by_id_str(&self, id_str: &str) -> Option<NodeId> {

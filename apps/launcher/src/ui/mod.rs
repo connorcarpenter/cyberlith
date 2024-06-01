@@ -16,7 +16,7 @@ use bevy_ecs::{
 };
 
 use game_engine::{
-    asset::{embedded_asset_event, EmbeddedAssetEvent},
+    asset::{embedded_asset_event, AssetId, EmbeddedAssetEvent},
     http::HttpClient,
     input::{GamepadRumbleIntensity, Input, RumbleManager},
     kernel::{get_querystring_param, AppExitAction},
@@ -54,6 +54,13 @@ pub(crate) fn setup(
     embedded_asset_events.send(embedded_asset_event!("../embedded/8273wa")); // palette
     embedded_asset_events.send(embedded_asset_event!("../embedded/34mvvk")); // verdana icon
     embedded_asset_events.send(embedded_asset_event!("../embedded/qbgz5j")); // password eye icon
+
+    // eye and font icon handles
+    let font_icon_asset_id = AssetId::from_str("34mvvk").unwrap();
+    ui_manager.set_text_icon_handle(font_icon_asset_id);
+
+    let password_eye_icon_asset_id = AssetId::from_str("qbgz5j").unwrap();
+    ui_manager.set_eye_icon_handle(password_eye_icon_asset_id);
 
     start::setup(
         &mut global,

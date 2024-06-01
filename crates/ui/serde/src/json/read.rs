@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use asset_id::AssetId;
 use render_api::base::Color;
 use ui_builder_config::{
     BaseNodeStyle, Button, ButtonStyle, NodeId, NodeStyle, Panel, PanelStyle, Spinner,
@@ -24,20 +23,10 @@ impl Into<UiConfig> for UiConfigJson {
 
         // ui_serde -> ui
         let UiConfigJson {
-            text_icon_asset_id,
-            eye_icon_asset_id,
             first_input,
             styles,
             nodes,
         } = self;
-
-        // text icon
-        let text_icon_asset_id = AssetId::from_str(&text_icon_asset_id).unwrap();
-        ui_config.set_text_icon_asset_id(&text_icon_asset_id);
-
-        // eye icon
-        let eye_icon_asset_id = AssetId::from_str(&eye_icon_asset_id).unwrap();
-        ui_config.set_eye_icon_asset_id(&eye_icon_asset_id);
 
         // first input
         if let Some(first_input_id) = first_input {

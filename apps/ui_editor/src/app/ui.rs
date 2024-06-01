@@ -46,7 +46,7 @@ pub fn setup(
     // uis.push(launcher::reset_password::ui_define()); // reset password
 
     uis.push(game::main_menu::ui_define()); // game main menu
-    // uis.push(game::host_match::ui_define()); // game host match
+    uis.push(game::host_match::ui_define()); // game host match
     uis.push(game::global_chat::ui_define()); // game global chat
     uis.push(game::global_chat_list::ui_define()); // game global chat list
     uis.push(game::global_chat_list_item::ui_define()); // game global chat list item
@@ -66,7 +66,7 @@ pub fn setup(
     ui_manager.set_target_render_layer(RenderLayers::layer(0));
     ui_manager.enable_ui(&ui_handles[0]);
 
-    setup_global_chat_test_case(&mut ui_manager, &ui_handles);
+    // setup_global_chat_test_case(&mut ui_manager, &ui_handles);
 
     // scene setup now
     // ambient light
@@ -96,6 +96,10 @@ pub fn setup(
     embedded_asset_events.send(embedded_asset_event!("embedded/8273wa")); // palette
     embedded_asset_events.send(embedded_asset_event!("embedded/34mvvk")); // verdana icon
     embedded_asset_events.send(embedded_asset_event!("embedded/qbgz5j")); // password eye icon
+
+    // font & password eye icon setup
+    ui_manager.set_text_icon_handle(AssetId::from_str("34mvvk").unwrap());
+    ui_manager.set_eye_icon_handle(AssetId::from_str("qbgz5j").unwrap());
 }
 
 fn setup_global_chat_test_case(ui_manager: &mut UiManager, ui_handles: &Vec<UiHandle>) {
@@ -132,7 +136,7 @@ fn setup_global_chat_test_case(ui_manager: &mut UiManager, ui_handles: &Vec<UiHa
     list_ui_ext.sync_with_collection(
         ui_manager,
         &global_chats,
-        |ui_runtime, id_str_to_node_map, message_id, message_text| {
+        |ui_runtime, id_str_to_node_map, _message_id, message_text| {
             let item_node_id = id_str_to_node_map.get("message").unwrap();
             ui_runtime.set_text(item_node_id, message_text);
         },

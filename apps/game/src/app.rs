@@ -8,7 +8,7 @@ use game_engine::{http::CookieStore, kernel::KernelApp, render::{resources::Wind
 use super::systems::{
     cube_scene, draw, init_spinner, world, resize, walker_scene, session,
 };
-use crate::{resources::global_chat::GlobalChat, states::AppState, ui, ui::{UiCatalog, events::{DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent, JoinMatchButtonClickedEvent, SettingsButtonClickedEvent, SubmitButtonClickedEvent}}};
+use crate::{resources::{global_chat::GlobalChat, AssetCatalog}, states::AppState, ui, ui::{UiCatalog, events::{DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent, JoinMatchButtonClickedEvent, SettingsButtonClickedEvent, SubmitButtonClickedEvent}}};
 
 pub struct GameApp {
     cookie_store_opt: Option<Arc<RwLock<CookieStore>>>,
@@ -37,6 +37,7 @@ impl Plugin for GameApp {
             })
             .init_resource::<GlobalChat>()
             .insert_resource(UiCatalog::new())
+            .insert_resource(AssetCatalog::new())
             // states
             .insert_state(AppState::Loading)
             // scene systems

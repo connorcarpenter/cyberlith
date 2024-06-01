@@ -24,16 +24,11 @@ cfg_if! {
 
 use naia_serde::{SerdeInternal as Serde, UnsignedInteger, UnsignedVariableInteger};
 
-use asset_id::AssetId;
 use ui_builder_config::{NodeId, UiConfig, WidgetKind};
 
 // Actions
 #[derive(Clone)]
 pub(crate) enum UiAction {
-    // assetid
-    TextIconAssetId(AssetId),
-    // assetid
-    EyeIconAssetId(AssetId),
     // default button
     FirstInput(Option<NodeId>),
     // style
@@ -44,8 +39,6 @@ pub(crate) enum UiAction {
 
 #[derive(Serde, Clone, PartialEq)]
 pub(crate) enum UiActionType {
-    TextIconAssetId,
-    EyeIconAssetId,
     DefaultButton,
     Style,
     Node,

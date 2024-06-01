@@ -64,8 +64,14 @@ impl UiRenderer {
             &AmbientLight::new(1.0, Color::WHITE),
         );
 
-        let text_icon_handle = ui_runner.get_text_icon_handle();
-        let eye_icon_handle = ui_runner.get_eye_icon_handle();
+        let Some(text_icon_handle) = ui_manager.get_text_icon_handle() else {
+            warn!("no text icon handle");
+            return;
+        };
+        let Some(eye_icon_handle) = ui_manager.get_eye_icon_handle() else {
+            warn!("no eye icon handle");
+            return;
+        };
 
         let carat_blink = blinkiness.enabled() || ui_manager.interact_timer_within_seconds(1.0);
 

@@ -54,8 +54,6 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
 
     // nodes
     ui_config
-        .set_text_icon_asset_id(&text_icon_asset_id)
-        .set_eye_icon_asset_id(&eye_icon_asset_id)
         .root_mut()
         .set_style(container_style)
         .contents(|c| {

@@ -1,4 +1,4 @@
-use asset_loader::{AssetHandle, IconData, TypedAssetId, UiDependencies, UiTextMeasurer};
+use asset_loader::{TypedAssetId, UiDependencies, UiTextMeasurer};
 use logging::warn;
 use math::Vec3;
 use render_api::{
@@ -25,9 +25,7 @@ impl UiRuntime {
     }
 
     pub(crate) fn load_from_config(config: UiRuntimeConfig) -> Self {
-        let text_icon_asset_id = config.get_text_icon_asset_id();
-        let eye_icon_asset_id = config.get_eye_icon_asset_id();
-        let dependencies = UiDependencies::new(&text_icon_asset_id, &eye_icon_asset_id);
+        let dependencies = UiDependencies::new();
         let state = UiState::from_ui_config(&config);
 
         Self {
@@ -105,14 +103,6 @@ impl UiRuntime {
 
     pub(crate) fn finish_dependency(&mut self, dependency_typed_id: TypedAssetId) {
         self.dependencies.finish_dependency(dependency_typed_id);
-    }
-
-    pub fn get_text_icon_handle(&self) -> AssetHandle<IconData> {
-        self.dependencies.get_text_icon_handle()
-    }
-
-    pub fn get_eye_icon_handle(&self) -> AssetHandle<IconData> {
-        self.dependencies.get_eye_icon_handle()
     }
 
     // config

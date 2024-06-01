@@ -23,12 +23,7 @@ impl From<&UiConfig> for UiConfigJson {
     fn from(ui_config: &UiConfig) -> Self {
         let mut style_id_to_index = HashMap::new();
 
-        let text_icon_asset_id = ui_config.get_text_icon_asset_id().to_string();
-        let eye_icon_asset_id = ui_config.get_eye_icon_asset_id().to_string();
-
         let mut me = Self {
-            text_icon_asset_id,
-            eye_icon_asset_id,
             first_input: ui_config.get_first_input().map(|id| id.as_usize()),
             styles: Vec::new(),
             nodes: Vec::new(),
