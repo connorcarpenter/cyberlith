@@ -164,12 +164,18 @@ impl GlobalChat {
             &self.global_chats,
             |ui_runtime, id_str_to_node_map, _message_id, message_entity| {
                 let message = message_q.get(*message_entity).unwrap();
+
+                let message_user_id: u64 = (*message.user_id).into();
+                let message_user_id_node_id = id_str_to_node_map.get("user_name").unwrap();
+                ui_runtime.set_text(message_user_id_node_id, message_user_id.to_string().as_str());
+
+                let message_timestamp = message.timestamp.to_string();
+                let message_timestamp_node_id = id_str_to_node_map.get("timestamp").unwrap();
+                ui_runtime.set_text(message_timestamp_node_id, message_timestamp.as_str());
+
                 let message_text = message.message.as_str();
-
-                let item_node_id = id_str_to_node_map.get("message").unwrap();
-                ui_runtime.set_text(item_node_id, message_text);
-
-                info!("Synced message: {:?}", message_text);
+                let message_text_node_id = id_str_to_node_map.get("message").unwrap();
+                ui_runtime.set_text(message_text_node_id, message_text);
             },
         );
     }
@@ -192,7 +198,7 @@ impl GlobalChat {
             ""
         );
 
-        info!("Sending message: {:?}", textbox_text);
+        // info!("Sending message: {:?}", textbox_text);
 
         let message = messages::GlobalChatSendMessage::new(&textbox_text);
         session_server.send_message::<channels::ClientActionsChannel, _>(&message);

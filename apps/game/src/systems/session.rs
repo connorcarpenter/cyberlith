@@ -43,10 +43,11 @@ pub fn recv_inserted_global_chat_component(
         if let Ok(chat) = chat_q.get(event.entity) {
 
             let chat_id = *chat.id;
-            let user_id = *chat.user_id;
-            let timestamp = *chat.timestamp;
-            let message = &*chat.message;
-            info!("incoming global message: [ user_id({:?}) | {:?} | {:?} | {:?} ]", user_id, timestamp, event.entity, message);
+
+            // let user_id = *chat.user_id;
+            // let timestamp = *chat.timestamp;
+            // let message = &*chat.message;
+            // info!("incoming global message: [ user_id({:?}) | {:?} | {:?} | {:?} ]", user_id, timestamp, event.entity, message);
 
             global_chat_messages.add_message(&mut ui_manager, &chat_q, chat_id, event.entity);
         }

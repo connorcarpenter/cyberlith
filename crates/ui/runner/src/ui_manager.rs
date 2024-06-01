@@ -53,27 +53,8 @@ pub struct UiManager {
 
     globals: StateGlobals,
     input_state: UiInputState,
-}
 
-impl UiManager {
-    pub fn print_node_tree(&self, handle: &UiHandle) {
-        self.print_node(&handle, &NodeId::new(0));
-    }
-
-    fn print_node(&self, handle: &UiHandle, node_id: &NodeId) {
-        let config = self.ui_runtimes.get(handle).unwrap().ui_config_ref();
-        let ui_node = config.get_node(node_id).unwrap();
-        info!("{:?} - {:?}", node_id, ui_node);
-
-        for child_id in config.node_children(node_id) {
-            self.print_node(handle, child_id);
-        }
-
-        if ui_node.widget_kind() == WidgetKind::UiContainer {
-            let child_ui_handle = self.ui_runtimes.get(handle).unwrap().get_ui_container_contents(node_id).unwrap();
-            self.print_node(&child_ui_handle, &NodeId::new(0));
-        }
-    }
+    recalc_layout: bool,
 }
 
 impl Default for UiManager {
@@ -95,6 +76,8 @@ impl Default for UiManager {
 
             globals: StateGlobals::new(),
             input_state: UiInputState::new(),
+
+            recalc_layout: false,
         }
     }
 }
@@ -422,6 +405,14 @@ impl UiManager {
         }
     }
 
+    pub fn queue_recalculate_layout(&mut self) {
+        self.recalc_layout = true;
+    }
+
+    pub fn needs_to_recalculate_layout(&self) -> bool {
+        self.recalc_layout
+    }
+
     pub fn update_ui_viewport(&mut self, asset_manager: &AssetManager, target_camera: &Camera) {
         let store = asset_manager.get_store();
         let Some(viewport) = target_camera.viewport else {
@@ -435,9 +426,12 @@ impl UiManager {
             return;
         };
 
-        ui_runtime.update_viewport(&viewport);
+        if ui_runtime.update_viewport(&viewport) {
+            // viewport did change
+            self.queue_recalculate_layout();
+        }
 
-        let needs_to_recalc = ui_runtime.needs_to_recalculate_layout();
+        let needs_to_recalc = self.needs_to_recalculate_layout();
 
         if needs_to_recalc {
             let Some(ui_runtime) = self.ui_runtimes.get(&active_ui_handle) else {
@@ -474,6 +468,7 @@ impl UiManager {
                 return;
             };
 
+            self.recalc_layout = false;
             ui_runtime.recalculate_layout(text_measurer, z)
         };
 
@@ -488,11 +483,7 @@ impl UiManager {
 
             child_ui_runtime.update_viewport(&child_viewport);
 
-            let needs_to_recalc = child_ui_runtime.needs_to_recalculate_layout();
-
-            if needs_to_recalc {
-                self.recalculate_ui_layout_impl(text_measurer, &child_ui_handle, child_viewport_z);
-            }
+            self.recalculate_ui_layout_impl(text_measurer, &child_ui_handle, child_viewport_z);
         }
     }
 
@@ -604,7 +595,7 @@ impl UiManager {
     pub fn set_text(&mut self, ui_handle: &UiHandle, id_str: &str, val: &str) {
         if let Some(ui_runtime) = self.ui_runtimes.get_mut(ui_handle) {
             ui_runtime.set_text_from_id_str(id_str, val);
-            ui_runtime.queue_recalculate_layout();
+            self.queue_recalculate_layout();
         } else {
             warn!("ui data not loaded 4: {:?}", ui_handle.asset_id());
         }
@@ -618,7 +609,7 @@ impl UiManager {
     ) {
         if let Some(ui_runtime) = self.ui_runtimes.get_mut(ui_handle) {
             ui_runtime.set_textbox_password_eye_visible(id_str, val);
-            ui_runtime.queue_recalculate_layout();
+            self.queue_recalculate_layout();
         } else {
             warn!("ui data not loaded 5: {:?}", ui_handle.asset_id());
         }
@@ -627,7 +618,7 @@ impl UiManager {
     pub fn set_node_visible(&mut self, ui_handle: &UiHandle, id_str: &str, val: bool) {
         if let Some(ui_runtime) = self.ui_runtimes.get_mut(ui_handle) {
             ui_runtime.set_node_visible(id_str, val);
-            ui_runtime.queue_recalculate_layout();
+            self.queue_recalculate_layout();
         } else {
             warn!("ui data not loaded 6: {:?}", ui_handle.asset_id());
         }
@@ -650,7 +641,7 @@ impl UiManager {
     ) {
         if let Some(ui_runtime) = self.ui_runtimes.get_mut(ui_handle) {
             ui_runtime.set_ui_container_contents(id_str, child_ui_handle);
-            ui_runtime.queue_recalculate_layout();
+            self.queue_recalculate_layout();
         } else {
             warn!("ui data not loaded 7: {:?}", ui_handle.asset_id());
         }
@@ -659,7 +650,7 @@ impl UiManager {
     pub fn clear_ui_container_contents(&mut self, ui_handle: &UiHandle, id_str: &str) {
         if let Some(ui_runtime) = self.ui_runtimes.get_mut(ui_handle) {
             ui_runtime.clear_ui_container_contents(id_str);
-            ui_runtime.queue_recalculate_layout();
+            self.queue_recalculate_layout();
         } else {
             warn!("ui data not loaded 8: {:?}", ui_handle.asset_id());
         }
@@ -691,6 +682,25 @@ impl UiManager {
 
     pub fn input_get_carat_index(&self) -> usize {
         self.input_state.carat_index
+    }
+
+    pub fn print_node_tree(&self, handle: &UiHandle) {
+        self.print_node(&handle, &NodeId::new(0));
+    }
+
+    fn print_node(&self, handle: &UiHandle, node_id: &NodeId) {
+        let config = self.ui_runtimes.get(handle).unwrap().ui_config_ref();
+        let ui_node = config.get_node(node_id).unwrap();
+        info!("{:?} - {:?}", node_id, ui_node);
+
+        for child_id in config.node_children(node_id) {
+            self.print_node(handle, child_id);
+        }
+
+        if ui_node.widget_kind() == WidgetKind::UiContainer {
+            let child_ui_handle = self.ui_runtimes.get(handle).unwrap().get_ui_container_contents(node_id).unwrap();
+            self.print_node(&child_ui_handle, &NodeId::new(0));
+        }
     }
 }
 

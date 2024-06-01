@@ -116,6 +116,8 @@ impl ListUiExt {
             self.stylemap_item_to_list.insert(item_style_id, list_style_id);
         }
 
+        // queue ui layout for recalculation
+        ui_manager.queue_recalculate_layout();
 
         // mark setup as ran
         self.setup_ran = true;
@@ -165,7 +167,7 @@ impl ListUiExt {
 
                     new_node.clear_style_id();
                     new_node.set_style_id(*new_node_style_id);
-                    info!("Mapped style from item ui to list ui: {:?} -> {:?}", old_node_style_id, new_node_style_id);
+                    // info!("Mapped style from item ui to list ui: {:?} -> {:?}", old_node_style_id, new_node_style_id);
                 }
                 item_nodes.push((node_id, new_node));
             }
@@ -207,7 +209,7 @@ impl ListUiExt {
                     // TODO: make this work for button type!
                     for child_id in panel_mut.children.iter_mut() {
                         if let Some(new_child_id) = old_new_id_map.get(child_id) {
-                            info!("Updating child id from {:?} to {:?}", child_id, new_child_id);
+                            // info!("Updating child id from {:?} to {:?}", child_id, new_child_id);
                             *child_id = *new_child_id;
                         }
                     }
@@ -220,6 +222,7 @@ impl ListUiExt {
         }
 
         // queue ui for sync
+        ui_manager.queue_recalculate_layout();
         ui_manager.queue_ui_for_sync(self.list_ui.as_ref().unwrap());
     }
 }

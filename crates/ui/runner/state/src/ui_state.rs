@@ -19,7 +19,6 @@ pub struct UiState {
     pub visibility_store: UiVisibilityStore,
 
     ms_since_startup: f32,
-    recalc_layout: bool,
 }
 
 impl UiState {
@@ -29,7 +28,6 @@ impl UiState {
             store: UiStateStore::new(),
             visibility_store: UiVisibilityStore::new(),
 
-            recalc_layout: false,
             ms_since_startup: 0.0,
         };
 
@@ -73,7 +71,6 @@ impl UiState {
     }
 
     pub(crate) fn node_mut(&mut self, id: &NodeId) -> Option<&mut UiNodeState> {
-        self.queue_recalculate_layout();
         self.store.get_node_mut(&id)
     }
 
@@ -404,26 +401,7 @@ impl UiState {
 
     // layout
 
-    pub fn queue_recalculate_layout(&mut self) {
-        self.recalc_layout = true;
-    }
-
-    pub fn needs_to_recalculate_layout(&self) -> bool {
-        self.recalc_layout
-    }
-
     pub fn recalculate_layout(
-        &mut self,
-        ui_config: &UiRuntimeConfig,
-        text_measurer: &dyn TextMeasurer,
-        viewport: &Viewport,
-        z: f32,
-    ) -> Vec<(AssetId, Viewport, f32)> {
-        self.recalc_layout = false;
-        self.recalculate_layout_impl(ui_config, text_measurer, viewport, z)
-    }
-
-    fn recalculate_layout_impl(
         &mut self,
         ui_config: &UiRuntimeConfig,
         text_measurer: &dyn TextMeasurer,

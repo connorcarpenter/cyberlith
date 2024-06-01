@@ -59,11 +59,8 @@ impl UiRuntime {
         self.state.update(delta_ms);
     }
 
-    pub(crate) fn queue_recalculate_layout(&mut self) {
-        self.state.queue_recalculate_layout();
-    }
-
-    pub(crate) fn update_viewport(&mut self, viewport: &Viewport) {
+    // returns true if viewport was updated
+    pub(crate) fn update_viewport(&mut self, viewport: &Viewport) -> bool {
         // update ui camera
         if viewport != self.camera.camera.viewport.as_ref().unwrap() {
             // info!("ui viewport updated: {:?}", viewport);
@@ -84,8 +81,10 @@ impl UiRuntime {
                 .transform
                 .look_at(Vec3::new(x, y, 0.0), Vec3::NEG_Y);
 
-            self.state.queue_recalculate_layout();
+            return true;
         }
+
+        return false;
     }
 
     pub fn inner_refs(&self) -> (&UiState, &UiRuntimeConfig, &UiDependencies, &CameraBundle) {
@@ -128,10 +127,6 @@ impl UiRuntime {
         self.state.load_cpu_data(&self.config, materials);
     }
 
-    pub(crate) fn needs_to_recalculate_layout(&self) -> bool {
-        self.state.needs_to_recalculate_layout()
-    }
-
     pub(crate) fn recalculate_layout(
         &mut self,
         text_measurer: &UiTextMeasurer,
@@ -150,13 +145,11 @@ impl UiRuntime {
     }
 
     pub fn add_style(&mut self, base_node_style: BaseNodeStyle) -> StyleId {
-        self.queue_recalculate_layout();
         self.state.style_state_init(&base_node_style.widget_style.kind());
         self.config.add_style(base_node_style)
     }
 
     pub fn add_node(&mut self, node: UiNode) -> NodeId {
-        self.queue_recalculate_layout();
         self.state.node_state_init(&node);
         self.config.add_node(node)
     }
