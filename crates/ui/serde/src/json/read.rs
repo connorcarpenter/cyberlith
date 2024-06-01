@@ -412,6 +412,7 @@ impl Into<PositionType> for PositionTypeJson {
 impl Into<SizeUnits> for SizeUnitsJson {
     fn into(self) -> SizeUnits {
         match self {
+            Self::Pixels(pixels) => SizeUnits::Pixels(pixels),
             Self::Percentage(percentage) => SizeUnits::Percentage(percentage),
             Self::Viewport(viewport) => SizeUnits::Viewport(viewport),
             Self::Auto => SizeUnits::Auto,

@@ -34,20 +34,20 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
     });
     let user_name_style = ui_config.create_text_style(|s| {
         s.set_background_alpha(0.)
-            .set_size_vp(4.0)
+            .set_size_px(30.0)
             .set_margin_left_vp(2.0)
             .set_text_color(Color::WHITE);
     });
     let timestamp_style = ui_config.create_text_style(|s| {
         s.set_background_alpha(0.)
-            .set_size_vp(2.0)
+            .set_size_px(18.0)
             .set_margin_left_vp(2.0)
             .set_text_color(Color::GRAY);
     });
     let message_style = ui_config.create_text_style(|s| {
         s.set_background_alpha(0.)
             // .set_background_color(Color::GREEN)
-            .set_size_vp(3.0)
+            .set_size_px(24.0)
             .set_margin_left_vp(2.0)
             .set_text_color(Color::WHITE);
     });

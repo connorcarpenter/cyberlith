@@ -112,6 +112,11 @@ impl<'a> TextStyleMut<'a> {
         self
     }
 
+    pub fn set_size_px(&mut self, height_px: f32) -> &mut Self {
+        self.set_size_units(SizeUnits::Pixels(height_px));
+        self
+    }
+
     pub fn set_size_pc(&mut self, height_pc: f32) -> &mut Self {
         self.set_size_units(SizeUnits::Percentage(height_pc));
         self
@@ -128,6 +133,11 @@ impl<'a> TextStyleMut<'a> {
         self
     }
 
+    pub fn set_size_min_px(&mut self, height_px: f32) -> &mut Self {
+        self.set_size_min_units(SizeUnits::Pixels(height_px));
+        self
+    }
+
     pub fn set_size_min_pc(&mut self, height_pc: f32) -> &mut Self {
         self.set_size_min_units(SizeUnits::Percentage(height_pc));
         self
@@ -141,6 +151,11 @@ impl<'a> TextStyleMut<'a> {
     // set size max
     fn set_size_max_units(&mut self, height: SizeUnits) -> &mut Self {
         self.set_height_max_units(height);
+        self
+    }
+
+    pub fn set_size_max_px(&mut self, height_px: f32) -> &mut Self {
+        self.set_size_max_units(SizeUnits::Pixels(height_px));
         self
     }
 

@@ -150,6 +150,7 @@ pub(crate) enum PositionTypeJson {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "lowercase")]
 pub(crate) enum SizeUnitsJson {
+    Pixels(f32),
     Percentage(f32),
     Viewport(f32),
     Auto,

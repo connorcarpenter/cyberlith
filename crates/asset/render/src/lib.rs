@@ -290,7 +290,12 @@ impl AssetRenderer {
             warn!("icon data not loaded 2: {:?}", icon_handle.asset_id());
             return;
         };
-        render_frame.draw_mesh(render_layer_opt, &cpu_mesh_handle, mat_handle, transform);
+        render_frame.draw_mesh(
+            render_layer_opt,
+            &cpu_mesh_handle,
+            mat_handle,
+            transform
+        );
     }
 
     pub(crate) fn draw_text(

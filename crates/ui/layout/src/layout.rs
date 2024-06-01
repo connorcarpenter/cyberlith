@@ -163,6 +163,7 @@ pub(crate) fn layout(
 
     // Compute main-axis size.
     let mut computed_main = match main {
+        SizeUnits::Pixels(val) => val,
         SizeUnits::Percentage(val) => {
             percentage_calc(val, init_parent_main, parent_padding_main).round()
         }

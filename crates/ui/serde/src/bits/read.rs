@@ -489,6 +489,11 @@ impl Into<PositionType> for PositionTypeBits {
 impl Into<SizeUnits> for SizeUnitsBits {
     fn into(self) -> SizeUnits {
         match self {
+            Self::Pixels(val) => {
+                let val: u64 = val.to();
+                let val: f32 = val as f32;
+                SizeUnits::Pixels(val)
+            }
             Self::Percent(val) => {
                 let val: u64 = val.to();
                 let val: f32 = val as f32;

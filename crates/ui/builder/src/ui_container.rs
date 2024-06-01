@@ -72,6 +72,10 @@ impl<'a> UiContainerStyleMut<'a> {
         self.set_width_units(SizeUnits::Auto)
     }
 
+    pub fn set_width_px(&mut self, width_px: f32) -> &mut Self {
+        self.set_width_units(SizeUnits::Pixels(width_px))
+    }
+
     pub fn set_width_pc(&mut self, width_pc: f32) -> &mut Self {
         self.set_width_units(SizeUnits::Percentage(width_pc))
     }
@@ -88,6 +92,10 @@ impl<'a> UiContainerStyleMut<'a> {
 
     pub fn set_height_auto(&mut self) -> &mut Self {
         self.set_height_units(SizeUnits::Auto)
+    }
+
+    pub fn set_height_px(&mut self, width_px: f32) -> &mut Self {
+        self.set_height_units(SizeUnits::Pixels(width_px))
     }
 
     pub fn set_height_pc(&mut self, width_pc: f32) -> &mut Self {
@@ -107,6 +115,10 @@ impl<'a> UiContainerStyleMut<'a> {
 
     pub fn set_size_auto(&mut self) -> &mut Self {
         self.set_size_units(SizeUnits::Auto, SizeUnits::Auto)
+    }
+
+    pub fn set_size_px(&mut self, width_px: f32, height_px: f32) -> &mut Self {
+        self.set_size_units(SizeUnits::Pixels(width_px), SizeUnits::Pixels(height_px))
     }
 
     pub fn set_size_pc(&mut self, width_pc: f32, height_pc: f32) -> &mut Self {
@@ -133,6 +145,10 @@ impl<'a> UiContainerStyleMut<'a> {
         self.set_width_min_units(SizeUnits::Auto)
     }
 
+    pub fn set_width_min_px(&mut self, min_width_px: f32) -> &mut Self {
+        self.set_width_min_units(SizeUnits::Pixels(min_width_px))
+    }
+
     pub fn set_width_min_pc(&mut self, min_width_pc: f32) -> &mut Self {
         self.set_width_min_units(SizeUnits::Percentage(min_width_pc))
     }
@@ -149,6 +165,10 @@ impl<'a> UiContainerStyleMut<'a> {
 
     pub fn set_height_min_auto(&mut self) -> &mut Self {
         self.set_height_min_units(SizeUnits::Auto)
+    }
+
+    pub fn set_height_min_px(&mut self, min_height_px: f32) -> &mut Self {
+        self.set_height_min_units(SizeUnits::Pixels(min_height_px))
     }
 
     pub fn set_height_min_pc(&mut self, min_height_pc: f32) -> &mut Self {
@@ -168,6 +188,13 @@ impl<'a> UiContainerStyleMut<'a> {
 
     pub fn set_size_min_auto(&mut self) -> &mut Self {
         self.set_size_min_units(SizeUnits::Auto, SizeUnits::Auto)
+    }
+
+    pub fn set_size_min_px(&mut self, min_width_px: f32, min_height_px: f32) -> &mut Self {
+        self.set_size_min_units(
+            SizeUnits::Pixels(min_width_px),
+            SizeUnits::Pixels(min_height_px),
+        )
     }
 
     pub fn set_size_min_pc(&mut self, min_width_pc: f32, min_height_pc: f32) -> &mut Self {
@@ -194,6 +221,10 @@ impl<'a> UiContainerStyleMut<'a> {
         self.set_width_max_units(SizeUnits::Auto)
     }
 
+    pub fn set_width_max_px(&mut self, max_width_px: f32) -> &mut Self {
+        self.set_width_max_units(SizeUnits::Pixels(max_width_px))
+    }
+
     pub fn set_width_max_pc(&mut self, max_width_pc: f32) -> &mut Self {
         self.set_width_max_units(SizeUnits::Percentage(max_width_pc))
     }
@@ -210,6 +241,10 @@ impl<'a> UiContainerStyleMut<'a> {
 
     pub fn set_height_max_auto(&mut self) -> &mut Self {
         self.set_height_max_units(SizeUnits::Auto)
+    }
+
+    pub fn set_height_max_px(&mut self, max_height_px: f32) -> &mut Self {
+        self.set_height_max_units(SizeUnits::Pixels(max_height_px))
     }
 
     pub fn set_height_max_pc(&mut self, max_height_pc: f32) -> &mut Self {
@@ -229,6 +264,13 @@ impl<'a> UiContainerStyleMut<'a> {
 
     pub fn set_size_max_auto(&mut self) -> &mut Self {
         self.set_size_max_units(SizeUnits::Auto, SizeUnits::Auto)
+    }
+
+    pub fn set_size_max_px(&mut self, max_width_px: f32, max_height_px: f32) -> &mut Self {
+        self.set_size_max_units(
+            SizeUnits::Pixels(max_width_px),
+            SizeUnits::Pixels(max_height_px),
+        )
     }
 
     pub fn set_size_max_pc(&mut self, max_width_pc: f32, max_height_pc: f32) -> &mut Self {
