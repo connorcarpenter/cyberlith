@@ -188,8 +188,8 @@ impl ListUiExt {
 
                     old_new_id_map.insert(*old_node_id, new_node_id);
 
-                    if let Some(id_str) = item_node.widget.id_str_opt() {
-                        id_str_map.insert(id_str.to_string(), new_node_id);
+                    if let Some(id_str) = item_node.id_str_opt() {
+                        id_str_map.insert(id_str, new_node_id);
                     }
 
                     // only root node should be added as a child of the root panel

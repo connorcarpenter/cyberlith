@@ -6,15 +6,13 @@ use crate::{Panel, PanelStyle};
 #[derive(Clone, Debug)]
 pub struct Button {
     pub panel: Panel,
-    pub id_str: String,
     pub navigation: Navigation,
 }
 
 impl Button {
-    pub fn new(id_str: &str) -> Self {
+    pub fn new() -> Self {
         Self {
             panel: Panel::new(),
-            id_str: id_str.to_string(),
             navigation: Navigation::new(),
         }
     }

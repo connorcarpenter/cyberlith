@@ -187,6 +187,7 @@ pub(crate) struct UiNodeBits {
     style_id: Option<u8>, // TODO: is this a good value type for this? how many styles are we likely to have?
     widget: WidgetBits,
     init_visible: bool,
+    id_str: Option<String>,
 }
 
 impl UiNodeBits {
@@ -219,20 +220,17 @@ pub(crate) struct PanelBits {
 
 #[derive(Serde, Clone, PartialEq)]
 pub(crate) struct TextBits {
-    id_str: Option<String>,
     init_text: String,
 }
 
 #[derive(Serde, Clone, PartialEq)]
 pub(crate) struct ButtonBits {
     panel: PanelBits,
-    id_str: String,
     navigation: NavigationBits,
 }
 
 #[derive(Serde, Clone, PartialEq)]
 pub(crate) struct TextboxBits {
-    id_str: String,
     navigation: NavigationBits,
     is_password: bool,
     validation: Option<ValidationBits>,
@@ -255,11 +253,7 @@ pub(crate) enum ValidationBits {
 }
 
 #[derive(Serde, Clone, PartialEq)]
-pub(crate) struct SpinnerBits {
-    id_str: String,
-}
+pub(crate) struct SpinnerBits {}
 
 #[derive(Serde, Clone, PartialEq)]
-pub(crate) struct UiContainerBits {
-    id_str: String,
-}
+pub(crate) struct UiContainerBits {}

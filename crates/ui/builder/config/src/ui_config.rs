@@ -31,7 +31,7 @@ impl UiConfig {
         };
 
         // Root Node
-        let root_panel_id = me.create_node(Widget::Panel(Panel::new()));
+        let root_panel_id = me.create_node(None, Widget::Panel(Panel::new()));
         if root_panel_id != Self::ROOT_NODE_ID {
             panic!("root panel id is not 0");
         }
@@ -65,15 +65,14 @@ impl UiConfig {
         self.nodes.iter()
     }
 
-    pub fn create_node(&mut self, widget: Widget) -> NodeId {
-        let id_str_opt = widget.id_str_opt();
+    pub fn create_node(&mut self, id_str_opt: Option<&str>, widget: Widget) -> NodeId {
 
-        let ui_node = UiNode::new(widget);
+        let ui_node = UiNode::new(id_str_opt, widget);
         let node_id = self.insert_node(ui_node);
 
         if let Some(id_str) = id_str_opt {
             info!("inserting id_str: {} for node_id: {:?}", id_str, node_id);
-            self.id_str_to_node_id_map.insert(id_str, node_id);
+            self.id_str_to_node_id_map.insert(id_str.to_string(), node_id);
         }
 
         node_id

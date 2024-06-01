@@ -8,14 +8,16 @@ pub struct UiNode {
     style_id: Option<StyleId>,
     pub init_visible: bool,
     pub widget: Widget,
+    pub id_str: Option<String>,
 }
 
 impl UiNode {
-    pub fn new(widget: Widget) -> Self {
+    pub fn new(id_str_opt: Option<&str>, widget: Widget) -> Self {
         Self {
             style_id: None,
             init_visible: true,
             widget,
+            id_str: id_str_opt.map(|s| s.to_string()),
         }
     }
 
@@ -36,6 +38,10 @@ impl UiNode {
 
     pub fn set_visible(&mut self, visible: bool) {
         self.init_visible = visible;
+    }
+
+    pub fn id_str_opt(&self) -> Option<String> {
+        self.id_str.clone()
     }
 
     pub fn widget_kind(&self) -> WidgetKind {

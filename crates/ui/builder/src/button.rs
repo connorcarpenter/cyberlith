@@ -65,10 +65,24 @@ impl<'a> ButtonContentsMut<'a> {
     }
 
     pub fn add_panel<'b>(self: &'b mut ButtonContentsMut<'a>) -> PanelMut<'b> {
-        // creates a new panel, returning a context for it
-        let new_id = self.ui_config.create_node(Widget::Panel(Panel::new()));
+        Self::add_panel_impl(self, None)
+    }
 
-        // add new panel to children
+    pub fn add_panel_with_id<'b>(
+        self: &'b mut ButtonContentsMut<'a>,
+        id_str: &str,
+    ) -> PanelMut<'b> {
+        Self::add_panel_impl(self, Some(id_str))
+    }
+
+    fn add_panel_impl<'b>(
+        self: &'b mut ButtonContentsMut<'a>,
+        id_str: Option<&str>,
+    ) -> PanelMut<'b> {
+        let new_id = self
+            .ui_config
+            .create_node(id_str, Widget::Panel(Panel::new()));
+
         self.get_button_mut().add_child(new_id);
 
         PanelMut::<'b>::new(self.ui_config, new_id)
@@ -94,7 +108,7 @@ impl<'a> ButtonContentsMut<'a> {
         // creates a new panel, returning a context for it
         let new_id = self
             .ui_config
-            .create_node(Widget::Text(Text::new(id_str, text)));
+            .create_node(id_str, Widget::Text(Text::new(text)));
 
         // add new text widget to children
         self.get_button_mut().add_child(new_id);

@@ -192,6 +192,7 @@ pub(crate) struct UiNodeJson {
     style_id: Option<usize>,
     widget: WidgetJson,
     init_visible: bool,
+    id_str: Option<String>,
 }
 
 impl UiNodeJson {
@@ -225,34 +226,27 @@ pub(crate) struct PanelJson {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub(crate) struct TextJson {
-    id_str: Option<String>,
     init_text: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub(crate) struct ButtonJson {
     panel: PanelJson,
-    id_str: String,
     navigation: NavigationJson,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub(crate) struct TextboxJson {
-    id_str: String,
     navigation: NavigationJson,
     is_password: bool,
     validation: Option<ValidationJson>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub(crate) struct SpinnerJson {
-    id_str: String,
-}
+pub(crate) struct SpinnerJson {}
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub(crate) struct UiContainerJson {
-    id_str: String,
-}
+pub(crate) struct UiContainerJson {}
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub(crate) struct NavigationJson {

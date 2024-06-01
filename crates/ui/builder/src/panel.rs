@@ -56,10 +56,24 @@ impl<'a> PanelContentsMut<'a> {
     }
 
     pub fn add_panel<'b>(self: &'b mut PanelContentsMut<'a>) -> PanelMut<'b> {
-        // creates a new panel, returning a context for it
-        let new_id = self.ui_config.create_node(Widget::Panel(Panel::new()));
+        Self::add_panel_impl(self, None)
+    }
 
-        // add new panel to children
+    pub fn add_panel_with_id<'b>(
+        self: &'b mut PanelContentsMut<'a>,
+        id_str_opt: &str,
+    ) -> PanelMut<'b> {
+        Self::add_panel_impl(self, Some(id_str_opt))
+    }
+
+    fn add_panel_impl<'b>(
+        self: &'b mut PanelContentsMut<'a>,
+        id_str_opt: Option<&str>,
+    ) -> PanelMut<'b> {
+        let new_id = self
+            .ui_config
+            .create_node(id_str_opt, Widget::Panel(Panel::new()));
+
         self.get_panel_mut().add_child(new_id);
 
         PanelMut::<'b>::new(self.ui_config, new_id)
@@ -85,7 +99,7 @@ impl<'a> PanelContentsMut<'a> {
         // creates a new panel, returning a context for it
         let new_id = self
             .ui_config
-            .create_node(Widget::Text(Text::new(id_str_opt, text)));
+            .create_node(id_str_opt, Widget::Text(Text::new(text)));
 
         // add new panel to children
         self.get_panel_mut().add_child(new_id);
@@ -100,7 +114,7 @@ impl<'a> PanelContentsMut<'a> {
         // creates a new button, returning a context for it
         let new_id = self
             .ui_config
-            .create_node(Widget::Button(Button::new(button_id_str)));
+            .create_node(Some(button_id_str), Widget::Button(Button::new()));
 
         // add new panel to children
         self.get_panel_mut().add_child(new_id);
@@ -115,7 +129,7 @@ impl<'a> PanelContentsMut<'a> {
         // creates a new textbox, returning a context for it
         let new_id = self
             .ui_config
-            .create_node(Widget::Textbox(Textbox::new(textbox_id_str)));
+            .create_node(Some(textbox_id_str), Widget::Textbox(Textbox::new()));
 
         // add new panel to children
         self.get_panel_mut().add_child(new_id);
@@ -123,11 +137,11 @@ impl<'a> PanelContentsMut<'a> {
         TextboxMut::<'b>::new(self.ui_config, new_id)
     }
 
-    pub fn add_spinner<'b>(self: &'b mut PanelContentsMut<'a>, id_str_opt: &str) -> SpinnerMut<'b> {
+    pub fn add_spinner<'b>(self: &'b mut PanelContentsMut<'a>, id_str: &str) -> SpinnerMut<'b> {
         // creates a new spinner, returning a context for it
         let new_id = self
             .ui_config
-            .create_node(Widget::Spinner(Spinner::new(id_str_opt)));
+            .create_node(Some(id_str), Widget::Spinner(Spinner::new()));
 
         // add to parent's children
         self.get_panel_mut().add_child(new_id);
@@ -142,7 +156,7 @@ impl<'a> PanelContentsMut<'a> {
         // creates a new ui container, returning a context for it
         let new_id = self
             .ui_config
-            .create_node(Widget::UiContainer(UiContainer::new(id_str)));
+            .create_node(Some(id_str), Widget::UiContainer(UiContainer::new()));
 
         // add new panel to children
         self.get_panel_mut().add_child(new_id);

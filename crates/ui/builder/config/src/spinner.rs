@@ -1,15 +1,11 @@
 use render_api::base::Color;
 
 #[derive(Clone, Debug)]
-pub struct Spinner {
-    pub id_str: String,
-}
+pub struct Spinner {}
 
 impl Spinner {
-    pub fn new(id_str: &str) -> Self {
-        Self {
-            id_str: id_str.to_string(),
-        }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 

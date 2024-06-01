@@ -69,9 +69,9 @@ fn convert_actions_to_ui_config(actions: Vec<UiAction>) -> UiConfig {
     convert_nodes_recurse_panel(
         &style_index_to_id,
         &nodes,
-        panel_serde,
         &mut ui_config,
         &UiConfig::ROOT_NODE_ID,
+        panel_serde,
     );
 
     ui_config
@@ -112,11 +112,11 @@ fn bytes_to_actions(data: &[u8]) -> Result<Vec<UiAction>, SerdeErr> {
 fn convert_nodes_recurse_panel(
     style_index_to_id: &HashMap<usize, StyleId>,
     nodes: &Vec<UiNodeBits>,
-    panel_serde: &PanelBits,
     ui_config: &mut UiConfig,
-    panel_id: &NodeId,
+    parent_panel_id: &NodeId,
+    parent_panel_serde: &PanelBits,
 ) {
-    for child_index in &panel_serde.children {
+    for child_index in &parent_panel_serde.children {
         let child_index = *child_index as usize;
         let child_node_serde = &nodes[child_index];
 
@@ -124,18 +124,18 @@ fn convert_nodes_recurse_panel(
 
         let child_node_id = match child_node_serde.widget_kind() {
             WidgetKind::Panel => {
-                // creates a new panel
-                let child_node_id = ui_config.create_node(Widget::Panel(Panel::new()));
-                let Widget::Panel(panel) = &mut ui_config.node_mut(panel_id).unwrap().widget else {
+                let child = Panel::new();
+                let child_id = ui_config.create_node(child_node_serde.id_str.as_ref().map(|v| v.as_str()), Widget::Panel(child));
+                let Widget::Panel(parent_panel) = &mut ui_config.node_mut(parent_panel_id).unwrap().widget else {
                     panic!("Expected panel widget");
                 };
-                panel.add_child(child_node_id);
+                parent_panel.add_child(child_id);
 
                 // add style
                 if let Some(style_index) = &child_node_serde.style_id {
                     let style_index = *style_index as usize;
                     let style_id = *style_index_to_id.get(&style_index).unwrap();
-                    let child_node = ui_config.node_mut(&child_node_id).unwrap();
+                    let child_node = ui_config.node_mut(&child_id).unwrap();
                     child_node.set_style_id(style_id);
                 }
 
@@ -146,148 +146,128 @@ fn convert_nodes_recurse_panel(
                 convert_nodes_recurse_panel(
                     style_index_to_id,
                     nodes,
-                    child_widget_serde,
                     ui_config,
-                    &child_node_id,
+                    &child_id,
+                    child_widget_serde,
                 );
 
-                child_node_id
+                child_id
             }
             WidgetKind::Button => {
                 let WidgetBits::Button(child_widget_serde) = &child_node_serde.widget else {
                     panic!("Expected button widget");
                 };
-
-                // creates a new button
-                let child_node_id = ui_config.create_node(Widget::Button(Button::new(
-                    child_widget_serde.id_str.as_str(),
-                )));
-                let Widget::Panel(panel) = &mut ui_config.node_mut(panel_id).unwrap().widget else {
+                let child_id = ui_config.create_node(child_node_serde.id_str.as_ref().map(|v| v.as_str()), Widget::Button(Button::new()));
+                let Widget::Panel(parent_panel) = &mut ui_config.node_mut(parent_panel_id).unwrap().widget else {
                     panic!("Expected panel widget");
                 };
-                panel.add_child(child_node_id);
+                parent_panel.add_child(child_id);
 
                 // add style
                 if let Some(style_index) = &child_node_serde.style_id {
                     let style_index = *style_index as usize;
                     let style_id = *style_index_to_id.get(&style_index).unwrap();
-                    let child_node = ui_config.node_mut(&child_node_id).unwrap();
+                    let child_node = ui_config.node_mut(&child_id).unwrap();
                     child_node.set_style_id(style_id);
                 }
 
                 // add navigation
-                set_button_navigation(nodes, child_widget_serde, ui_config, &child_node_id);
+                set_button_navigation(nodes, child_widget_serde, ui_config, &child_id);
 
                 // recurse
                 convert_nodes_recurse_button(
                     style_index_to_id,
                     nodes,
-                    child_widget_serde,
                     ui_config,
-                    &child_node_id,
+                    &child_id,
+                    child_widget_serde,
                 );
 
-                child_node_id
+                child_id
             }
             WidgetKind::Text => {
+
                 let WidgetBits::Text(child_widget_serde) = &child_node_serde.widget else {
                     panic!("Expected text widget");
                 };
-
-                // creates a new text
-                let text = Text::new(
-                    child_widget_serde.id_str.as_ref().map(|v| v.as_str()),
-                    &child_widget_serde.init_text,
-                );
-                let child_node_id = ui_config.create_node(Widget::Text(text));
-                let Widget::Panel(panel) = &mut ui_config.node_mut(panel_id).unwrap().widget else {
+                let child = Text::new(&child_widget_serde.init_text);
+                let child_id = ui_config.create_node(child_node_serde.id_str.as_ref().map(|v| v.as_str()), Widget::Text(child));
+                let Widget::Panel(parent_panel) = &mut ui_config.node_mut(parent_panel_id).unwrap().widget else {
                     panic!("Expected panel widget");
                 };
-                panel.add_child(child_node_id);
+                parent_panel.add_child(child_id);
 
                 // add style
                 if let Some(style_index) = &child_node_serde.style_id {
                     let style_index = *style_index as usize;
                     let style_id = *style_index_to_id.get(&style_index).unwrap();
-                    let child_node = ui_config.node_mut(&child_node_id).unwrap();
+                    let child_node = ui_config.node_mut(&child_id).unwrap();
                     child_node.set_style_id(style_id);
                 }
 
-                child_node_id
+                child_id
             }
             WidgetKind::Textbox => {
                 let WidgetBits::Textbox(child_widget_serde) = &child_node_serde.widget else {
                     panic!("Expected textbox widget");
                 };
-
-                // creates a new textbox
-                let mut textbox = Textbox::new(child_widget_serde.id_str.as_str());
-                textbox.is_password = child_widget_serde.is_password;
-                textbox.validation = child_widget_serde.validation.map(|v| v.into());
-                let child_node_id = ui_config.create_node(Widget::Textbox(textbox));
-                let Widget::Panel(panel) = &mut ui_config.node_mut(panel_id).unwrap().widget else {
+                let mut child = Textbox::new();
+                child.is_password = child_widget_serde.is_password;
+                child.validation = child_widget_serde.validation.map(|v| v.into());
+                let child_id = ui_config.create_node(child_node_serde.id_str.as_ref().map(|v| v.as_str()), Widget::Textbox(child));
+                let Widget::Panel(parent_panel) = &mut ui_config.node_mut(parent_panel_id).unwrap().widget else {
                     panic!("Expected panel widget");
                 };
-                panel.add_child(child_node_id);
+                parent_panel.add_child(child_id);
 
                 // add style
                 for style_index in &child_node_serde.style_id {
                     let style_index = *style_index as usize;
                     let style_id = *style_index_to_id.get(&style_index).unwrap();
-                    let child_node = ui_config.node_mut(&child_node_id).unwrap();
+                    let child_node = ui_config.node_mut(&child_id).unwrap();
                     child_node.set_style_id(style_id);
                 }
 
                 // add navigation
-                set_textbox_navigation(nodes, child_widget_serde, ui_config, &child_node_id);
+                set_textbox_navigation(nodes, child_widget_serde, ui_config, &child_id);
 
-                child_node_id
+                child_id
             }
             WidgetKind::Spinner => {
-                let WidgetBits::Spinner(child_widget_serde) = &child_node_serde.widget else {
-                    panic!("Expected spinner widget");
-                };
-
-                // creates a new spinner
-                let spinner = Spinner::new(child_widget_serde.id_str.as_str());
-                let child_node_id = ui_config.create_node(Widget::Spinner(spinner));
-                let Widget::Panel(panel) = &mut ui_config.node_mut(panel_id).unwrap().widget else {
+                let child = Spinner::new();
+                let child_id = ui_config.create_node(child_node_serde.id_str.as_ref().map(|v| v.as_str()), Widget::Spinner(child));
+                let Widget::Panel(parent_panel) = &mut ui_config.node_mut(parent_panel_id).unwrap().widget else {
                     panic!("Expected panel widget");
                 };
-                panel.add_child(child_node_id);
+                parent_panel.add_child(child_id);
 
                 // add style
                 for style_index in &child_node_serde.style_id {
                     let style_index = *style_index as usize;
                     let style_id = *style_index_to_id.get(&style_index).unwrap();
-                    let child_node = ui_config.node_mut(&child_node_id).unwrap();
+                    let child_node = ui_config.node_mut(&child_id).unwrap();
                     child_node.set_style_id(style_id);
                 }
 
-                child_node_id
+                child_id
             }
             WidgetKind::UiContainer => {
-                let WidgetBits::UiContainer(child_widget_serde) = &child_node_serde.widget else {
-                    panic!("Expected spinner widget");
-                };
-
-                // creates a new uicontainer
-                let ui_container = UiContainer::new(child_widget_serde.id_str.as_str());
-                let child_node_id = ui_config.create_node(Widget::UiContainer(ui_container));
-                let Widget::Panel(panel) = &mut ui_config.node_mut(panel_id).unwrap().widget else {
+                let child = UiContainer::new();
+                let child_id = ui_config.create_node(child_node_serde.id_str.as_ref().map(|v| v.as_str()), Widget::UiContainer(child));
+                let Widget::Panel(parent_panel) = &mut ui_config.node_mut(parent_panel_id).unwrap().widget else {
                     panic!("Expected panel widget");
                 };
-                panel.add_child(child_node_id);
+                parent_panel.add_child(child_id);
 
                 // add style
                 for style_index in &child_node_serde.style_id {
                     let style_index = *style_index as usize;
                     let style_id = *style_index_to_id.get(&style_index).unwrap();
-                    let child_node = ui_config.node_mut(&child_node_id).unwrap();
+                    let child_node = ui_config.node_mut(&child_id).unwrap();
                     child_node.set_style_id(style_id);
                 }
 
-                child_node_id
+                child_id
             }
         };
 
@@ -296,24 +276,14 @@ fn convert_nodes_recurse_panel(
     }
 }
 
-fn get_nav_thang<'a>(
+fn get_nav_id_str<'a>(
     nodes: &'a Vec<UiNodeBits>,
     input_int: Option<&UnsignedVariableInteger<4>>,
 ) -> Option<&'a str> {
     let input_int = input_int?;
     let nav_index = input_int.to::<u32>() as usize;
     let nav_node_serde = &nodes[nav_index];
-    match &nav_node_serde.widget {
-        WidgetBits::Button(button_serde) => {
-            let nav_str = button_serde.id_str.as_str();
-            Some(nav_str)
-        }
-        WidgetBits::Textbox(textbox_serde) => {
-            let nav_str = textbox_serde.id_str.as_str();
-            Some(nav_str)
-        }
-        _ => None,
-    }
+    nav_node_serde.id_str.as_ref().map(|v| v.as_str())
 }
 
 fn set_button_navigation(
@@ -330,19 +300,19 @@ fn set_button_navigation(
     };
     let nav = &mut button.navigation;
 
-    if let Some(nav_str) = get_nav_thang(nodes, button_nav_serde.up.as_ref()) {
+    if let Some(nav_str) = get_nav_id_str(nodes, button_nav_serde.up.as_ref()) {
         nav.up_goes_to = Some(nav_str.to_string());
     }
-    if let Some(nav_str) = get_nav_thang(nodes, button_nav_serde.down.as_ref()) {
+    if let Some(nav_str) = get_nav_id_str(nodes, button_nav_serde.down.as_ref()) {
         nav.down_goes_to = Some(nav_str.to_string());
     }
-    if let Some(nav_str) = get_nav_thang(nodes, button_nav_serde.left.as_ref()) {
+    if let Some(nav_str) = get_nav_id_str(nodes, button_nav_serde.left.as_ref()) {
         nav.left_goes_to = Some(nav_str.to_string());
     }
-    if let Some(nav_str) = get_nav_thang(nodes, button_nav_serde.right.as_ref()) {
+    if let Some(nav_str) = get_nav_id_str(nodes, button_nav_serde.right.as_ref()) {
         nav.right_goes_to = Some(nav_str.to_string());
     }
-    if let Some(nav_str) = get_nav_thang(nodes, button_nav_serde.tab.as_ref()) {
+    if let Some(nav_str) = get_nav_id_str(nodes, button_nav_serde.tab.as_ref()) {
         nav.tab_goes_to = Some(nav_str.to_string());
     }
 }
@@ -350,11 +320,11 @@ fn set_button_navigation(
 fn convert_nodes_recurse_button(
     style_index_to_id: &HashMap<usize, StyleId>,
     nodes: &Vec<UiNodeBits>,
-    button_serde: &ButtonBits,
     ui_config: &mut UiConfig,
-    button_id: &NodeId,
+    parent_button_id: &NodeId,
+    parent_button_serde: &ButtonBits,
 ) {
-    for child_index in &button_serde.panel.children {
+    for child_index in &parent_button_serde.panel.children {
         let child_index = *child_index as usize;
         let child_node_serde = &nodes[child_index];
 
@@ -362,19 +332,19 @@ fn convert_nodes_recurse_button(
 
         let child_node_id = match child_node_serde.widget_kind() {
             WidgetKind::Panel => {
-                // creates a new panel
-                let child_panel_id = ui_config.create_node(Widget::Panel(Panel::new()));
-                let Widget::Button(button) = &mut ui_config.node_mut(button_id).unwrap().widget
+                let child = Panel::new();
+                let child_id = ui_config.create_node(child_node_serde.id_str.as_ref().map(|v| v.as_str()), Widget::Panel(child));
+                let Widget::Button(parent_button) = &mut ui_config.node_mut(parent_button_id).unwrap().widget
                 else {
                     panic!("Expected button widget");
                 };
-                button.add_child(child_panel_id);
+                parent_button.add_child(child_id);
 
                 // add style
                 if let Some(style_index) = &child_node_serde.style_id {
                     let style_index = *style_index as usize;
                     let style_id = *style_index_to_id.get(&style_index).unwrap();
-                    let child_node = ui_config.node_mut(&child_panel_id).unwrap();
+                    let child_node = ui_config.node_mut(&child_id).unwrap();
                     child_node.set_style_id(style_id);
                 }
                 let WidgetBits::Panel(child_panel_serde) = &child_node_serde.widget else {
@@ -385,39 +355,34 @@ fn convert_nodes_recurse_button(
                 convert_nodes_recurse_panel(
                     style_index_to_id,
                     nodes,
-                    child_panel_serde,
                     ui_config,
-                    &child_panel_id,
+                    &child_id,
+                    child_panel_serde,
                 );
 
-                child_panel_id
+                child_id
             }
             WidgetKind::Text => {
                 let WidgetBits::Text(child_text_serde) = &child_node_serde.widget else {
                     panic!("Expected text widget");
                 };
-
-                // creates a new text
-                let text = Text::new(
-                    child_text_serde.id_str.as_ref().map(|s| s.as_str()),
-                    &child_text_serde.init_text,
-                );
-                let child_text_id = ui_config.create_node(Widget::Text(text));
-                let Widget::Button(button) = &mut ui_config.node_mut(button_id).unwrap().widget
+                let child = Text::new(&child_text_serde.init_text);
+                let child_id = ui_config.create_node(child_node_serde.id_str.as_ref().map(|s| s.as_str()), Widget::Text(child));
+                let Widget::Button(parent_button) = &mut ui_config.node_mut(parent_button_id).unwrap().widget
                 else {
                     panic!("Expected button widget");
                 };
-                button.add_child(child_text_id);
+                parent_button.add_child(child_id);
 
                 // add style
                 if let Some(style_index) = &child_node_serde.style_id {
                     let style_index = *style_index as usize;
                     let style_id = *style_index_to_id.get(&style_index).unwrap();
-                    let child_node = ui_config.node_mut(&child_text_id).unwrap();
+                    let child_node = ui_config.node_mut(&child_id).unwrap();
                     child_node.set_style_id(style_id);
                 }
 
-                child_text_id
+                child_id
             }
             _ => {
                 panic!("Button can only contain Panel or Text");
@@ -443,19 +408,19 @@ fn set_textbox_navigation(
     };
     let nav = &mut textbox.navigation;
 
-    if let Some(nav_str) = get_nav_thang(nodes, textbox_nav_serde.up.as_ref()) {
+    if let Some(nav_str) = get_nav_id_str(nodes, textbox_nav_serde.up.as_ref()) {
         nav.up_goes_to = Some(nav_str.to_string());
     }
-    if let Some(nav_str) = get_nav_thang(nodes, textbox_nav_serde.down.as_ref()) {
+    if let Some(nav_str) = get_nav_id_str(nodes, textbox_nav_serde.down.as_ref()) {
         nav.down_goes_to = Some(nav_str.to_string());
     }
-    if let Some(nav_str) = get_nav_thang(nodes, textbox_nav_serde.left.as_ref()) {
+    if let Some(nav_str) = get_nav_id_str(nodes, textbox_nav_serde.left.as_ref()) {
         nav.left_goes_to = Some(nav_str.to_string());
     }
-    if let Some(nav_str) = get_nav_thang(nodes, textbox_nav_serde.right.as_ref()) {
+    if let Some(nav_str) = get_nav_id_str(nodes, textbox_nav_serde.right.as_ref()) {
         nav.right_goes_to = Some(nav_str.to_string());
     }
-    if let Some(nav_str) = get_nav_thang(nodes, textbox_nav_serde.tab.as_ref()) {
+    if let Some(nav_str) = get_nav_id_str(nodes, textbox_nav_serde.tab.as_ref()) {
         nav.tab_goes_to = Some(nav_str.to_string());
     }
 }

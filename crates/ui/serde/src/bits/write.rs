@@ -392,6 +392,7 @@ impl UiNodeBits {
             style_id: None,
             widget: WidgetBits::from_widget(ui_config, &node.widget),
             init_visible: node.init_visible,
+            id_str: node.id_str_opt(),
         };
 
         if let Some(style_id) = &node.style_id() {
@@ -438,7 +439,6 @@ impl From<&Panel> for PanelBits {
 impl From<&Text> for TextBits {
     fn from(text: &Text) -> Self {
         Self {
-            id_str: text.id_str.clone(),
             init_text: text.init_text.clone(),
         }
     }
@@ -450,7 +450,6 @@ impl ButtonBits {
         let nav_bits = NavigationBits::from_navigation(ui_config, &button.navigation);
         Self {
             panel: panel_bits,
-            id_str: button.id_str.clone(),
             navigation: nav_bits,
         }
     }
@@ -459,7 +458,6 @@ impl ButtonBits {
 impl TextboxBits {
     fn from_textbox(ui_config: &UiConfig, textbox: &Textbox) -> Self {
         Self {
-            id_str: textbox.id_str.clone(),
             navigation: NavigationBits::from_navigation(ui_config, &textbox.navigation),
             is_password: textbox.is_password,
             validation: textbox.validation.map(|v| ValidationBits::from(v)),
@@ -468,18 +466,14 @@ impl TextboxBits {
 }
 
 impl From<&Spinner> for SpinnerBits {
-    fn from(spinner: &Spinner) -> Self {
-        Self {
-            id_str: spinner.id_str.clone(),
-        }
+    fn from(_spinner: &Spinner) -> Self {
+        Self {}
     }
 }
 
 impl From<&UiContainer> for UiContainerBits {
-    fn from(ui_container: &UiContainer) -> Self {
-        Self {
-            id_str: ui_container.id_str.clone(),
-        }
+    fn from(_ui_container: &UiContainer) -> Self {
+        Self {}
     }
 }
 

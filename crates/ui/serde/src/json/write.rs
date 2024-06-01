@@ -229,6 +229,7 @@ impl UiNodeJson {
             style_id: None,
             widget: From::from(&node.widget),
             init_visible: node.init_visible,
+            id_str: node.id_str_opt(),
         };
 
         if let Some(style_id) = node.style_id() {
@@ -268,7 +269,6 @@ impl From<&Panel> for PanelJson {
 impl From<&Text> for TextJson {
     fn from(text: &Text) -> Self {
         Self {
-            id_str: text.id_str.clone(),
             init_text: text.init_text.clone(),
         }
     }
@@ -280,7 +280,6 @@ impl From<&Button> for ButtonJson {
 
         Self {
             panel: panel_json,
-            id_str: button.id_str.to_string(),
             navigation: From::from(&button.navigation),
         }
     }
@@ -289,7 +288,6 @@ impl From<&Button> for ButtonJson {
 impl From<&Textbox> for TextboxJson {
     fn from(textbox: &Textbox) -> Self {
         Self {
-            id_str: textbox.id_str.to_string(),
             navigation: From::from(&textbox.navigation),
             is_password: textbox.is_password,
             validation: textbox.validation.map(|v| From::from(&v)),
@@ -298,18 +296,14 @@ impl From<&Textbox> for TextboxJson {
 }
 
 impl From<&Spinner> for SpinnerJson {
-    fn from(spinner: &Spinner) -> Self {
-        Self {
-            id_str: spinner.id_str.to_string(),
-        }
+    fn from(_spinner: &Spinner) -> Self {
+        Self {}
     }
 }
 
 impl From<&UiContainer> for UiContainerJson {
-    fn from(ui_container: &UiContainer) -> Self {
-        Self {
-            id_str: ui_container.id_str.clone(),
-        }
+    fn from(_ui_container: &UiContainer) -> Self {
+        Self {}
     }
 }
 
