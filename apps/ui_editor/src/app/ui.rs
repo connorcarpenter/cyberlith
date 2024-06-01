@@ -1,10 +1,9 @@
-use std::{time::Duration, collections::BTreeMap};
+use std::time::Duration;
 
 use bevy_ecs::{
     event::{Event, EventReader, EventWriter},
     prelude::Commands,
     system::{Res, ResMut},
-    entity::Entity,
 };
 
 use asset_serde::json::{Asset, AssetData, AssetMeta, UiConfigJson};
@@ -17,11 +16,11 @@ use game_engine::{
         Camera, CameraBundle, ClearOperation, OrthographicProjection, Projection, RenderLayers,
         RenderTarget,
     },
-    ui::{UiManager, UiHandle, extensions::ListUiExt},
+    ui::UiManager,
 };
 use logging::info;
 use ui_builder::UiConfig;
-use ui_runner_config::{NodeId, UiRuntimeConfig};
+use ui_runner_config::UiRuntimeConfig;
 
 use crate::app::{global::Global, uis::*};
 
@@ -52,8 +51,6 @@ pub fn setup(
     uis.push(game::global_chat_list::ui_define()); // game global chat list
     uis.push(game::global_chat_list_item::ui_define()); // game global chat list item
 
-    uis.push(game::global_chat_2::ui_define()); // game global chat 2 list item
-
     let mut ui_handles = Vec::new();
     for (ui_name, ui_asset_id, ui_etag, ui) in uis {
         // write JSON and bits files, metadata too
@@ -67,9 +64,6 @@ pub fn setup(
     }
 
     ui_manager.set_target_render_layer(RenderLayers::layer(0));
-
-    setup_global_chat_test_case(&mut ui_manager, &ui_handles); // broken
-    // setup_global_chat_test_case_2(&mut ui_manager, &ui_handles); // working
 
     // scene setup now
     // ambient light
@@ -99,104 +93,6 @@ pub fn setup(
     embedded_asset_events.send(embedded_asset_event!("embedded/8273wa")); // palette
     embedded_asset_events.send(embedded_asset_event!("embedded/34mvvk")); // verdana icon
     embedded_asset_events.send(embedded_asset_event!("embedded/qbgz5j")); // password eye icon
-}
-
-fn setup_global_chat_test_case(ui_manager: &mut UiManager, ui_handles: &Vec<UiHandle>) {
-
-    // main menu ui
-    // let main_menu_ui_handle = ui_handles[0];
-
-    // global chat sub-ui
-    let global_chat_ui_handle = ui_handles[0];
-
-    // global chat list ui
-    let global_chat_list_ui_handle = ui_handles[1];
-
-    // global chat list item ui
-    let global_chat_list_item_ui_handle = ui_handles[2];
-
-    // setup sub ui
-    // ui_manager.set_ui_container_contents(&main_menu_ui_handle, "center_container", &global_chat_ui_handle);
-
-    // initial ui
-    ui_manager.enable_ui(&global_chat_ui_handle);
-
-    // setup global chat list
-    let mut list_ui_ext = ListUiExt::new();
-    list_ui_ext.set_container_ui(ui_manager, &global_chat_ui_handle, "chat_wall");
-    list_ui_ext.set_list_ui(ui_manager, &global_chat_list_ui_handle);
-    list_ui_ext.set_item_ui(ui_manager, &global_chat_list_item_ui_handle);
-
-    // setup collection
-    let mut global_chats = BTreeMap::<u32, String>::new();
-    global_chats.insert(1, "hello world".to_string());
-    global_chats.insert(2, "this is a test".to_string());
-    global_chats.insert(3, "this is a test also".to_string());
-    global_chats.insert(4, "okay".to_string());
-    global_chats.insert(5, "goodbye".to_string());
-
-    // setup collection
-    list_ui_ext.sync_with_collection(
-        ui_manager,
-        &global_chats,
-        |ui_runtime, id_str_to_node_map, message_id, message_text| {
-            let item_node_id = id_str_to_node_map.get("message").unwrap();
-            ui_runtime.set_text(item_node_id, message_text);
-        },
-    );
-
-    // debug
-    print_test_case_1(ui_manager, ui_handles);
-}
-
-fn print_test_case_1(ui_manager: &mut UiManager, ui_handles: &Vec<UiHandle>) {
-    // global chat sub-ui
-    let global_chat_ui_handle = ui_handles[0];
-
-    // global chat list ui
-    let global_chat_list_ui_handle = ui_handles[1];
-
-    // global chat list item ui
-    let global_chat_list_item_ui_handle = ui_handles[2];
-
-    // print styles
-    let mut style_id = 0;
-    let ui_config = ui_manager.ui_runtimes.get(&global_chat_ui_handle).unwrap().ui_config_ref();
-    for style in ui_config.styles_iter() {
-        info!("style_id: {:?}, style: {:?}", style_id, style);
-        style_id += 1;
-    }
-    let ui_config = ui_manager.ui_runtimes.get(&global_chat_list_ui_handle).unwrap().ui_config_ref();
-    for style in ui_config.styles_iter() {
-        info!("style_id: {:?}, style: {:?}", style_id, style);
-        style_id += 1;
-    }
-
-    // print node tree
-    ui_manager.print_node_tree(&global_chat_ui_handle);
-}
-
-fn setup_global_chat_test_case_2(ui_manager: &mut UiManager, ui_handles: &Vec<UiHandle>) {
-
-    // global chat test sub-ui
-    let global_chat_test_ui_handle = ui_handles[3];
-
-    // initial ui
-    ui_manager.enable_ui(&global_chat_test_ui_handle);
-
-    print_test_case_2(ui_manager, &global_chat_test_ui_handle);
-}
-
-fn print_test_case_2(ui_manager: &mut UiManager, global_chat_test_ui_handle: &UiHandle) {
-
-    // print styles
-    let ui_config = ui_manager.ui_runtimes.get(global_chat_test_ui_handle).unwrap().ui_config_ref();
-    for (style_id, style) in ui_config.styles_iter().enumerate() {
-        info!("style_id: {:?}, style: {:?}", style_id, style);
-    }
-
-    // print node tree
-    ui_manager.print_node_tree(&global_chat_test_ui_handle);
 }
 
 pub fn handle_events(

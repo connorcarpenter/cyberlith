@@ -162,7 +162,7 @@ impl GlobalChat {
         self.list_ui_ext.sync_with_collection(
             ui_manager,
             &self.global_chats,
-            |ui_runtime, id_str_to_node_map, message_id, message_entity| {
+            |ui_runtime, id_str_to_node_map, _message_id, message_entity| {
                 let message = message_q.get(*message_entity).unwrap();
                 let message_text = message.message.as_str();
 

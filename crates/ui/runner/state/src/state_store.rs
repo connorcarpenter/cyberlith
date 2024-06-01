@@ -93,10 +93,6 @@ impl UiStateStore {
         self.insert_style(style_state);
     }
 
-    pub(crate) fn style_state_add(&mut self, style_state: StyleState) {
-        self.insert_style(style_state);
-    }
-
     fn insert_style(&mut self, style: StyleState) {
         if self.styles.len() >= 255 {
             panic!("1 UI can only hold up to 255 styles, too many styles!");
