@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{time::Duration, collections::BTreeMap};
 
 use bevy_ecs::{
     event::{Event, EventReader, EventWriter},
@@ -16,7 +16,7 @@ use game_engine::{
         Camera, CameraBundle, ClearOperation, OrthographicProjection, Projection, RenderLayers,
         RenderTarget,
     },
-    ui::UiManager,
+    ui::{UiManager, UiHandle, extensions::ListUiExt},
 };
 use logging::info;
 use ui_builder::UiConfig;
@@ -45,7 +45,7 @@ pub fn setup(
     // uis.push(launcher::forgot_password_finish::ui_define()); // forgot password finish
     // uis.push(launcher::reset_password::ui_define()); // reset password
 
-    // uis.push(game::main_menu::ui_define()); // game main menu
+    uis.push(game::main_menu::ui_define()); // game main menu
     // uis.push(game::host_match::ui_define()); // game host match
     uis.push(game::global_chat::ui_define()); // game global chat
     uis.push(game::global_chat_list::ui_define()); // game global chat list
@@ -65,6 +65,8 @@ pub fn setup(
 
     ui_manager.set_target_render_layer(RenderLayers::layer(0));
     ui_manager.enable_ui(&ui_handles[0]);
+
+    setup_global_chat_test_case(&mut ui_manager, &ui_handles);
 
     // scene setup now
     // ambient light
@@ -94,6 +96,47 @@ pub fn setup(
     embedded_asset_events.send(embedded_asset_event!("embedded/8273wa")); // palette
     embedded_asset_events.send(embedded_asset_event!("embedded/34mvvk")); // verdana icon
     embedded_asset_events.send(embedded_asset_event!("embedded/qbgz5j")); // password eye icon
+}
+
+fn setup_global_chat_test_case(ui_manager: &mut UiManager, ui_handles: &Vec<UiHandle>) {
+    // main menu ui
+    let main_menu_ui_handle = ui_handles[0];
+
+    // global chat sub-ui
+    let global_chat_ui_handle = ui_handles[1];
+
+    // global chat list ui
+    let global_chat_list_ui_handle = ui_handles[2];
+
+    // global chat list item ui
+    let global_chat_list_item_ui_handle = ui_handles[3];
+
+    // setup sub ui
+    ui_manager.set_ui_container_contents(&main_menu_ui_handle, "center_container", &global_chat_ui_handle);
+
+    // setup global chat list
+    let mut list_ui_ext = ListUiExt::new();
+    list_ui_ext.set_container_ui(ui_manager, &global_chat_ui_handle, "chat_wall");
+    list_ui_ext.set_list_ui(ui_manager, &global_chat_list_ui_handle);
+    list_ui_ext.set_item_ui(ui_manager, &global_chat_list_item_ui_handle);
+
+    // setup collection
+    let mut global_chats = BTreeMap::<u32, String>::new();
+    global_chats.insert(1, "hello world".to_string());
+    global_chats.insert(2, "this is a test".to_string());
+    global_chats.insert(3, "this is a test also".to_string());
+    global_chats.insert(4, "okay".to_string());
+    global_chats.insert(5, "goodbye".to_string());
+
+    // setup collection
+    list_ui_ext.sync_with_collection(
+        ui_manager,
+        &global_chats,
+        |ui_runtime, id_str_to_node_map, message_id, message_text| {
+            let item_node_id = id_str_to_node_map.get("message").unwrap();
+            ui_runtime.set_text(item_node_id, message_text);
+        },
+    );
 }
 
 pub fn handle_events(
