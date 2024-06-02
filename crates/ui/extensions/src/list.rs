@@ -123,28 +123,6 @@ impl ListUiExt {
             panel_mut.remove_all_children();
         }
 
-        // // get list of item nodes from item ui
-        // // TODO: preload this data
-        // let item_root_node = {
-        //
-        //     let item_ui_runtime = ui_manager.ui_runtimes.get(item_ui_handle).unwrap();
-        //     let item_ui_config = item_ui_runtime.ui_config_ref();
-        //     item_ui_config.get_node(&UiRuntimeConfig::ROOT_NODE_ID).unwrap()
-        //
-        //     // for (node_id, node) in item_ui_config.nodes_iter() {
-        //     //     let mut new_node = node.clone();
-        //     //     if let Some(old_node_style_id) = new_node.style_id() {
-        //     //
-        //     //         let new_node_style_id = self.stylemap_item_to_list.get(&old_node_style_id).unwrap();
-        //     //
-        //     //         new_node.clear_style_id();
-        //     //         new_node.set_style_id(*new_node_style_id);
-        //     //         // info!("Mapped style from item ui to list ui: {:?} -> {:?}", old_node_style_id, new_node_style_id);
-        //     //     }
-        //     //     item_nodes.push((node_id, new_node));
-        //     // }
-        // };
-
         // add new node children to list ui
         {
             let (container_ui_handle, container_ui_str) = self.container_ui.as_ref().unwrap();
@@ -158,23 +136,6 @@ impl ListUiExt {
                 let mut id_str_map = HashMap::new();
 
                 ui_manager.add_copied_node(&self.stylemap_item_to_list, &mut id_str_map, &container_ui_handle, &container_id, &item_ui_handle, &NodeId::new(0));
-
-                    // info!("Added new node to list ui: {:?}. Total len is: {}", new_node_id, list_ui_config_root_panel.children.len());
-                //
-                //
-                // // update children of panels
-                // for (_, new_node_id) in &old_new_id_map {
-                //     let Some(panel_mut) = container_ui_runtime_mut.ui_config_mut().panel_mut(new_node_id) else {
-                //         continue;
-                //     };
-                //     // TODO: make this work for button type!
-                //     for child_id in panel_mut.children.iter_mut() {
-                //         if let Some(new_child_id) = old_new_id_map.get(child_id) {
-                //             // info!("Updating child id from {:?} to {:?}", child_id, new_child_id);
-                //             *child_id = *new_child_id;
-                //         }
-                //     }
-                // }
 
                 let container_ui_runtime_mut = ui_manager.ui_runtimes.get_mut(&container_ui_handle).unwrap();
                 process_item_fn(container_ui_runtime_mut, &id_str_map, data_key, data_val);

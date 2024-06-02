@@ -108,11 +108,8 @@ fn setup_global_chat_test_case(ui_manager: &mut UiManager, ui_handles: &Vec<UiHa
     // global chat sub-ui
     let global_chat_ui_handle = ui_handles[1];
 
-    // global chat list ui
-    let global_chat_list_ui_handle = ui_handles[2];
-
     // global chat list item ui
-    let global_chat_list_item_ui_handle = ui_handles[3];
+    let global_chat_list_item_ui_handle = ui_handles[2];
 
     // setup sub ui
     ui_manager.set_ui_container_contents(&main_menu_ui_handle, "center_container", &global_chat_ui_handle);

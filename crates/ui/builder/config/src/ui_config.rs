@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{btree_map::Iter, BTreeMap, HashMap};
 
 use logging::info;
 use ui_layout::NodeId;
@@ -12,7 +12,7 @@ use crate::{
 
 pub struct UiConfig {
     styles: Vec<NodeStyle>,
-    nodes: HashMap<NodeId, UiNode>, // Connor
+    nodes: BTreeMap<NodeId, UiNode>,
 
     next_node_id: NodeId,
     first_input: Option<NodeId>,
@@ -25,7 +25,7 @@ impl UiConfig {
     pub fn new() -> Self {
         let mut me = Self {
             styles: Vec::new(),
-            nodes: HashMap::new(),
+            nodes: BTreeMap::new(),
 
             next_node_id: NodeId::new(0),
             first_input: None,
@@ -52,7 +52,7 @@ impl UiConfig {
         self,
     ) -> (
         Vec<NodeStyle>,
-        HashMap<NodeId, UiNode>,
+        BTreeMap<NodeId, UiNode>,
         Option<NodeId>,
         HashMap<String, NodeId>,
     ) {
@@ -70,7 +70,7 @@ impl UiConfig {
         self.nodes.get_mut(id)
     }
 
-    pub fn nodes_iter(&self) -> std::collections::hash_map::Iter<'_, NodeId, UiNode> {
+    pub fn nodes_iter(&self) -> Iter<'_, NodeId, UiNode> {
         self.nodes.iter()
     }
 

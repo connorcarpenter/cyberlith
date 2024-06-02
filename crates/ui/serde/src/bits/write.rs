@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use naia_serde::{FileBitWriter, SerdeInternal as Serde, UnsignedInteger, UnsignedVariableInteger};
+use logging::info;
 
 use render_api::base::Color;
 use ui_builder_config::{
@@ -48,8 +49,8 @@ fn convert_ui_to_actions(ui_config: &UiConfig) -> Vec<UiAction> {
     }
 
     // write nodes
-    // Connor
     for (_id, node) in ui_config.nodes_iter() {
+        info!("writing node: {:?}", node);
         output.push(UiAction::Node(UiNodeBits::from_node(
             ui_config,
             &style_id_to_index,

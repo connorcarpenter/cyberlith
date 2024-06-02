@@ -182,7 +182,7 @@ pub(crate) struct ColorBits {
 
 // Node
 
-#[derive(Serde, Clone, PartialEq)]
+#[derive(Serde, Clone, PartialEq, Debug)]
 pub(crate) struct UiNodeBits {
     style_id: Option<u8>, // TODO: is this a good value type for this? how many styles are we likely to have?
     widget: WidgetBits,
@@ -203,7 +203,7 @@ impl UiNodeBits {
     }
 }
 
-#[derive(Serde, Clone, PartialEq)]
+#[derive(Serde, Clone, PartialEq, Debug)]
 pub(crate) enum WidgetBits {
     Panel(PanelBits),
     Text(TextBits),
@@ -213,30 +213,30 @@ pub(crate) enum WidgetBits {
     UiContainer(UiContainerBits),
 }
 
-#[derive(Serde, Clone, PartialEq)]
+#[derive(Serde, Clone, PartialEq, Debug)]
 pub(crate) struct PanelBits {
     children: Vec<u8>, // TODO: is this a good value type for this? how many nodes are each likely to have?
 }
 
-#[derive(Serde, Clone, PartialEq)]
+#[derive(Serde, Clone, PartialEq, Debug)]
 pub(crate) struct TextBits {
     init_text: String,
 }
 
-#[derive(Serde, Clone, PartialEq)]
+#[derive(Serde, Clone, PartialEq, Debug)]
 pub(crate) struct ButtonBits {
     panel: PanelBits,
     navigation: NavigationBits,
 }
 
-#[derive(Serde, Clone, PartialEq)]
+#[derive(Serde, Clone, PartialEq, Debug)]
 pub(crate) struct TextboxBits {
     navigation: NavigationBits,
     is_password: bool,
     validation: Option<ValidationBits>,
 }
 
-#[derive(Serde, Clone, PartialEq)]
+#[derive(Serde, Clone, PartialEq, Debug)]
 pub(crate) struct NavigationBits {
     up: Option<UnsignedVariableInteger<4>>,
     down: Option<UnsignedVariableInteger<4>>,
@@ -245,15 +245,15 @@ pub(crate) struct NavigationBits {
     tab: Option<UnsignedVariableInteger<4>>,
 }
 
-#[derive(Serde, Clone, PartialEq, Copy)]
+#[derive(Serde, Clone, PartialEq, Copy, Debug)]
 pub(crate) enum ValidationBits {
     Alphanumeric,
     Password,
     Email,
 }
 
-#[derive(Serde, Clone, PartialEq)]
+#[derive(Serde, Clone, PartialEq, Debug)]
 pub(crate) struct SpinnerBits {}
 
-#[derive(Serde, Clone, PartialEq)]
+#[derive(Serde, Clone, PartialEq, Debug)]
 pub(crate) struct UiContainerBits {}

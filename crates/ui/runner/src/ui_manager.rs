@@ -15,8 +15,8 @@ use clipboard::ClipboardManager;
 use input::{CursorIcon, Input};
 use logging::{info, warn};
 use math::Vec2;
-use render_api::shapes::UnitSquare;
 use render_api::{
+    shapes::UnitSquare,
     base::{CpuMaterial, CpuMesh},
     components::{Camera, RenderLayer},
     resources::Time,
@@ -30,7 +30,7 @@ use ui_runner_config::{NodeId, UiRuntimeConfig, NodeStore};
 use ui_state::{NodeActiveState, UiState};
 
 use crate::{
-    config::{StyleId, WidgetKind, ValidationType}, handle::UiHandle, runtime::UiRuntime, state_globals::StateGlobals,
+    config::{StyleId, UiNode, WidgetKind, ValidationType}, handle::UiHandle, runtime::UiRuntime, state_globals::StateGlobals,
 };
 
 #[derive(Resource)]
@@ -65,30 +65,50 @@ impl UiManager {
         stylemap_item_to_list: &HashMap<StyleId, StyleId>,
         id_str_map: &mut HashMap<String, NodeId>,
         dest_ui: &UiHandle,
-        dest_id: &NodeId,
+        dest_parent_id: &NodeId,
         src_ui: &UiHandle,
         src_id: &NodeId
     ) {
+        info!("[{:?} . {:?}] -> [{:?} . {:?}]", src_ui, src_id, dest_ui, dest_parent_id);
+
         let mut src_node = self.ui_runtimes.get(src_ui).unwrap().ui_config_ref().get_node(src_id).unwrap().clone();
         if let Some(old_style_id) = src_node.style_id() {
             let new_style_id = stylemap_item_to_list.get(&old_style_id).unwrap();
+            src_node.clear_style_id();
             src_node.set_style_id(*new_style_id);
         }
+        let old_children_ids_opt: Option<Vec<NodeId>> = if src_node.widget_kind().has_children() {
+            let output = Some(src_node.widget.children().unwrap().copied().collect());
+            src_node.widget.clear_children();
+            info!("[{:?} . {:?}] . old children: {:?}", src_ui, src_id, output);
+            output
+        } else {
+            None
+        };
 
         let dest_runtime = self.ui_runtimes.get_mut(dest_ui).unwrap();
-        let Some(mut dest_panel_mut) = dest_runtime.panel_mut(dest_id) else {
-            panic!("dest_id is not a panel");
+        let Some(mut dest_parent_panel_mut) = dest_runtime.panel_mut(dest_parent_id) else {
+            panic!("dest_parent_id is not a panel");
         };
-        let new_node_id = dest_panel_mut.add_node(&src_node);
+
+        let new_node_id = dest_parent_panel_mut.add_node(&src_node);
+
         if let Some(id_str) = src_node.id_str_opt().as_ref() {
             id_str_map.insert(id_str.clone(), new_node_id);
         }
 
         // copy children
-        if src_node.widget_kind().has_children() {
-            let src_node_children: Vec<NodeId> = src_node.widget.children().unwrap().copied().collect();
-            for src_node_child_id in src_node_children {
-                self.add_copied_node(stylemap_item_to_list, id_str_map, dest_ui, &new_node_id, src_ui, &src_node_child_id);
+        if let Some(old_children_ids) = old_children_ids_opt {
+
+            for old_child_id in &old_children_ids {
+                self.add_copied_node(stylemap_item_to_list, id_str_map, dest_ui, &new_node_id, src_ui, old_child_id);
+            }
+
+            if let Some(panel_mut) = self.ui_runtimes.get_mut(dest_ui).unwrap().ui_config_mut().panel_mut(&new_node_id) {
+                info!("({:?}) . new children: {:?}", new_node_id, panel_mut.children);
+            } else {
+                // it's a button! TODO: handle this case
+                warn!("dest_id is not a panel");
             }
         }
     }
@@ -142,13 +162,13 @@ impl UiManagerTrait for UiManager {
         self.active_ui.unwrap().asset_id()
     }
 
-    fn nodes_len(&self, asset_id: &AssetId) -> usize {
+    fn nodes_iter(&self, asset_id: &AssetId) -> std::collections::btree_map::Iter<'_, NodeId, UiNode> {
         let ui_handle = UiHandle::new(*asset_id);
         self.ui_runtimes
             .get(&ui_handle)
             .unwrap()
             .ui_config_ref()
-            .nodes_len()
+            .nodes_iter()
     }
 
     fn ui_config(&self, asset_id: &AssetId) -> Option<&UiRuntimeConfig> {

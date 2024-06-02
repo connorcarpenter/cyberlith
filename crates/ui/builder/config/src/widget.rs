@@ -78,4 +78,12 @@ impl Widget {
             _ => None,
         }
     }
+
+    pub fn clear_children(&mut self) {
+        match self {
+            Self::Panel(panel) => panel.children.clear(),
+            Self::Button(button) => button.panel.children.clear(),
+            _ => (),
+        }
+    }
 }

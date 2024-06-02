@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::NodeId;
 
 pub struct UiVisibilityStore {
-    pub nodes: HashMap<NodeId, bool>,  // Connor
+    pub nodes: HashMap<NodeId, bool>,
 }
 
 impl UiVisibilityStore {

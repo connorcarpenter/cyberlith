@@ -9,10 +9,10 @@ use crate::{
 };
 
 pub struct UiStateStore {
-    pub nodes: HashMap<NodeId, UiNodeState>,  // Connor
+    pub nodes: HashMap<NodeId, UiNodeState>,
     pub default_styles: HashMap<WidgetKind, StyleState>,
     pub styles: Vec<StyleState>,
-    pub nodes_needing_cpu_data: HashSet<NodeId>,  // Connor
+    pub nodes_needing_cpu_data: HashSet<NodeId>,
 }
 
 impl NodeStateStore for UiStateStore {

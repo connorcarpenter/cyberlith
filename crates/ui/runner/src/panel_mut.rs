@@ -1,3 +1,5 @@
+
+use logging::info;
 use ui_runner_config::{NodeId, UiNode};
 
 use crate::UiRuntime;
@@ -35,6 +37,8 @@ impl<'a> PanelMut<'a> {
                 panel_mut.remove_all_children();
             }
         }
+
+        info!("deleting node: {:?}", node_id);
 
         self.runtime.ui_config_mut().delete_node(&node_id);
         self.runtime.ui_state_mut().delete_node(&node_id);

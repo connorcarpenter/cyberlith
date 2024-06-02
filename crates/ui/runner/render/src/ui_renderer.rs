@@ -75,8 +75,8 @@ impl UiRenderer {
 
         let carat_blink = blinkiness.enabled() || ui_manager.interact_timer_within_seconds(1.0);
 
-        for node_id in 0..ui.nodes_len() {
-            let node_id = NodeId::from_usize(node_id);
+        let node_ids: Vec<NodeId> = ui.nodes_iter().map(|(node_id, _)| *node_id).collect();
+        for node_id in node_ids {
             draw_ui_node(
                 render_frame,
                 ui_manager,
@@ -612,8 +612,8 @@ fn draw_ui_container(
 
     let ui_config = ui_runner.ui_config_ref();
 
-    for node_id in 0..ui_config.nodes_len() {
-        let node_id = NodeId::from_usize(node_id);
+    let node_ids: Vec<NodeId> = ui_config.nodes_iter().map(|(node_id, _)| *node_id).collect();
+    for node_id in node_ids {
         draw_ui_node(
             render_frame,
             ui_manager,

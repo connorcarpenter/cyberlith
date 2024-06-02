@@ -31,7 +31,6 @@ impl UiState {
             ms_since_startup: 0.0,
         };
 
-        // Connor
         for (id, node) in ui_config.nodes_iter() {
             me.add_node(id, &node);
         }

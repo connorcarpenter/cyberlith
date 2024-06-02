@@ -1,4 +1,4 @@
-use std::{collections::HashMap, slice::Iter};
+use std::{collections::{BTreeMap, HashMap}, slice::Iter};
 
 use render_api::base::Color;
 use ui_builder_config::{BaseNodeStyle, Button, ButtonStyle, Navigation, Panel, PanelStyle, SpinnerStyle, StyleId, TextStyle, Textbox, TextboxStyle, UiConfig, UiNode, WidgetKind, WidgetStyle};
@@ -12,7 +12,7 @@ use crate::{styles::compute_styles, text_measure_raw_size};
 
 pub struct UiRuntimeConfig {
     styles: Vec<BaseNodeStyle>,
-    nodes: HashMap<NodeId, UiNode>, // Connor
+    nodes: BTreeMap<NodeId, UiNode>,
 
     next_node_id: NodeId,
     first_input_opt: Option<NodeId>,
@@ -84,11 +84,7 @@ impl UiRuntimeConfig {
         self.get_node(id).unwrap().widget_kind()
     }
 
-    pub fn nodes_len(&self) -> usize {
-        self.nodes.len()
-    }
-
-    pub fn nodes_iter(&self) -> std::collections::hash_map::Iter<'_, NodeId, UiNode> {
+    pub fn nodes_iter(&self) -> std::collections::btree_map::Iter<'_, NodeId, UiNode> {
         self.nodes.iter()
     }
 

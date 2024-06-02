@@ -28,10 +28,11 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
             .set_children_valign(Alignment::Start);
     });
     let chat_wall_style = ui_config.create_panel_style(|s| {
-        s.set_background_alpha(1.)
-            .set_background_color(Color::DARK_BLUE)
+        s.set_background_alpha(0.)
             .set_width_pc(100.0)
-            .set_height_pc(95.0);
+            .set_height_pc(95.0)
+            .set_vertical()
+            .set_children_valign(Alignment::End);
     });
     let base_textbox_style = ui_config.create_textbox_style(|s| {
         s.set_background_color(Color::GRAY)
