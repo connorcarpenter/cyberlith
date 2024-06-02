@@ -11,6 +11,9 @@ mod handle;
 mod state_globals;
 mod systems;
 
+mod panel_mut;
+pub use panel_mut::PanelMut;
+
 pub use handle::UiHandle;
 
 pub mod config {

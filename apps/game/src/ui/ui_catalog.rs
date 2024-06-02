@@ -24,7 +24,6 @@ impl UiCatalog {
         me.insert_ui(UiKey::MainMenu, UiHandle::new(AssetId::from_str("kmqkp9").unwrap()));
         me.insert_ui(UiKey::HostMatch, UiHandle::new(AssetId::from_str("htytzu").unwrap()));
         me.insert_ui(UiKey::GlobalChat, UiHandle::new(AssetId::from_str("ngffab").unwrap()));
-        me.insert_ui(UiKey::GlobalChatList, UiHandle::new(AssetId::from_str("ws8m4d").unwrap()));
         me.insert_ui(UiKey::GlobalChatListItem, UiHandle::new(AssetId::from_str("ddbxab").unwrap()));
 
         me

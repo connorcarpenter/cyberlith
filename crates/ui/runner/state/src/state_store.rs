@@ -1,20 +1,18 @@
-use std::collections::HashMap;
-use ui_layout::NodeStateStore;
+use std::collections::{HashMap, HashSet};
 
+use ui_layout::NodeStateStore;
 use ui_runner_config::{NodeId, StyleId, UiNode, WidgetKind};
 
-use crate::spinner::SpinnerStyleState;
-use crate::text::TextState;
 use crate::{
-    button::ButtonStyleState, panel::PanelStyleState, style_state::StyleState,
-    text::TextStyleState, textbox::TextboxState, textbox::TextboxStyleState, UiNodeState,
+    button::ButtonStyleState, panel::PanelStyleState, style_state::StyleState, spinner::SpinnerStyleState,
+    text::{TextStyleState, TextState}, textbox::TextboxState, textbox::TextboxStyleState, UiNodeState,
 };
 
 pub struct UiStateStore {
-    pub nodes: Vec<UiNodeState>,
+    pub nodes: HashMap<NodeId, UiNodeState>,  // Connor
     pub default_styles: HashMap<WidgetKind, StyleState>,
     pub styles: Vec<StyleState>,
-    pub nodes_needing_cpu_data: Vec<NodeId>,
+    pub nodes_needing_cpu_data: HashSet<NodeId>,  // Connor
 }
 
 impl NodeStateStore for UiStateStore {
@@ -27,38 +25,38 @@ impl NodeStateStore for UiStateStore {
 impl UiStateStore {
     pub(crate) fn new() -> Self {
         Self {
-            nodes: Vec::new(),
+            nodes: HashMap::new(),
             default_styles: HashMap::new(),
             styles: Vec::new(),
-            nodes_needing_cpu_data: Vec::new(),
+            nodes_needing_cpu_data: HashSet::new(),
         }
     }
 
     // nodes
-    pub(crate) fn node_state_init(&mut self, ui_node: &UiNode) {
+    pub(crate) fn add_node(&mut self, id: &NodeId, ui_node: &UiNode) {
         let node_state = UiNodeState::from_node(ui_node);
-        self.insert_node(node_state);
+        self.insert_node(*id, node_state);
     }
 
-    pub fn remove_nodes_after(&mut self, node: &NodeId) {
-        self.nodes.truncate(node.as_usize() + 1);
-    }
-
-    fn insert_node(&mut self, node: UiNodeState) {
+    fn insert_node(&mut self, id: NodeId, node: UiNodeState) {
         if self.nodes.len() >= 255 {
             panic!("1 UI can only hold up to 255 nodes, too many nodes!");
         }
 
-        self.nodes_needing_cpu_data.push(NodeId::new(self.nodes.len() as u32));
-        self.nodes.push(node);
+        self.nodes_needing_cpu_data.insert(id);
+        self.nodes.insert(id, node);
+    }
+
+    pub(crate) fn delete_node(&mut self, node_id: &NodeId) {
+        self.nodes.remove(node_id);
     }
 
     pub fn get_node(&self, id: &NodeId) -> Option<&UiNodeState> {
-        self.nodes.get(id.as_usize())
+        self.nodes.get(id)
     }
 
     pub(crate) fn get_node_mut(&mut self, id: &NodeId) -> Option<&mut UiNodeState> {
-        self.nodes.get_mut(id.as_usize())
+        self.nodes.get_mut(id)
     }
 
     pub fn text_ref(&self, id: &NodeId) -> Option<&TextState> {

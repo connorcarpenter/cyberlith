@@ -47,7 +47,7 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
         .set_style(window_style)
         .contents(|c| {
             // chat wall
-            c.add_ui_container("chat_wall")
+            c.add_panel_with_id("chat_wall")
                 .set_style(chat_wall_style);
 
             // message input

@@ -1,4 +1,4 @@
-use std::{collections::HashMap, slice::Iter};
+use std::collections::HashMap;
 
 use logging::info;
 use ui_layout::NodeId;
@@ -12,8 +12,9 @@ use crate::{
 
 pub struct UiConfig {
     styles: Vec<NodeStyle>,
-    nodes: Vec<UiNode>,
+    nodes: HashMap<NodeId, UiNode>, // Connor
 
+    next_node_id: NodeId,
     first_input: Option<NodeId>,
     id_str_to_node_id_map: HashMap<String, NodeId>,
 }
@@ -24,8 +25,9 @@ impl UiConfig {
     pub fn new() -> Self {
         let mut me = Self {
             styles: Vec::new(),
-            nodes: Vec::new(),
+            nodes: HashMap::new(),
 
+            next_node_id: NodeId::new(0),
             first_input: None,
             id_str_to_node_id_map: HashMap::new(),
         };
@@ -39,11 +41,18 @@ impl UiConfig {
         me
     }
 
+    pub fn next_node_id(&mut self) -> NodeId {
+        let id = self.next_node_id;
+        let id_u32 = id.as_usize() as u32;
+        self.next_node_id = NodeId::new(id_u32 + 1);
+        id
+    }
+
     pub fn decompose(
         self,
     ) -> (
         Vec<NodeStyle>,
-        Vec<UiNode>,
+        HashMap<NodeId, UiNode>,
         Option<NodeId>,
         HashMap<String, NodeId>,
     ) {
@@ -58,17 +67,18 @@ impl UiConfig {
     // nodes
 
     pub fn node_mut(&mut self, id: &NodeId) -> Option<&mut UiNode> {
-        self.nodes.get_mut(id.as_usize())
+        self.nodes.get_mut(id)
     }
 
-    pub fn nodes_iter(&self) -> Iter<'_, UiNode> {
+    pub fn nodes_iter(&self) -> std::collections::hash_map::Iter<'_, NodeId, UiNode> {
         self.nodes.iter()
     }
 
     pub fn create_node(&mut self, id_str_opt: Option<&str>, widget: Widget) -> NodeId {
 
+        let node_id = self.next_node_id();
         let ui_node = UiNode::new(id_str_opt, widget);
-        let node_id = self.insert_node(ui_node);
+        self.insert_node(&node_id, ui_node);
 
         if let Some(id_str) = id_str_opt {
             info!("inserting id_str: {} for node_id: {:?}", id_str, node_id);
@@ -78,13 +88,11 @@ impl UiConfig {
         node_id
     }
 
-    fn insert_node(&mut self, node: UiNode) -> NodeId {
+    fn insert_node(&mut self, id: &NodeId, node: UiNode) {
         if self.nodes.len() >= 255 {
             panic!("1 UI can only hold up to 255 nodes, too many nodes!");
         }
-        let index = self.nodes.len();
-        self.nodes.push(node);
-        NodeId::new(index as u32)
+        self.nodes.insert(*id, node);
     }
 
     // styles
@@ -93,7 +101,7 @@ impl UiConfig {
         self.styles.get_mut(id.as_usize())
     }
 
-    pub fn styles_iter(&self) -> Iter<'_, NodeStyle> {
+    pub fn styles_iter(&self) -> std::slice::Iter<'_, NodeStyle> {
         self.styles.iter()
     }
 

@@ -20,10 +20,6 @@ impl AssetCatalog {
         AssetId::from_str("ngffab").unwrap()
     }
 
-    pub fn game_global_chat_list() -> AssetId {
-        AssetId::from_str("ws8m4d").unwrap()
-    }
-
     pub fn game_global_chat_list_item() -> AssetId {
         AssetId::from_str("ddbxab").unwrap()
     }
@@ -49,7 +45,6 @@ pub(crate) fn user_load_default_assets(
         AssetCatalog::game_main_menu_ui(),
         AssetCatalog::game_host_match_ui(),
         AssetCatalog::game_global_chat_ui(),
-        AssetCatalog::game_global_chat_list(),
         AssetCatalog::game_global_chat_list_item()
     ]
         .iter()

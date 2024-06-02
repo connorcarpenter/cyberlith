@@ -1,33 +1,37 @@
+use std::collections::HashMap;
+
 use crate::NodeId;
 
 pub struct UiVisibilityStore {
-    pub nodes: Vec<bool>,
+    pub nodes: HashMap<NodeId, bool>,  // Connor
 }
 
 impl UiVisibilityStore {
     pub fn new() -> Self {
-        Self { nodes: Vec::new() }
+        Self { nodes: HashMap::new() }
     }
 
     // nodes
-    pub fn node_state_init(&mut self, node_init_visible: bool) {
+    pub fn add_node(&mut self, id: &NodeId, node_init_visible: bool) {
         if self.nodes.len() >= 255 {
             panic!("1 UI can only hold up to 255 nodes, too many nodes!");
         }
-        self.nodes.push(node_init_visible);
+        self.nodes.insert(*id, node_init_visible);
     }
 
-    pub fn remove_nodes_after(&mut self, node: &NodeId) {
-        self.nodes.truncate(node.as_usize() + 1);
+    pub fn delete_node(&mut self, id: &NodeId) {
+        self.nodes.remove(id);
     }
 
     pub fn get_node_visibility(&self, id: &NodeId) -> Option<bool> {
-        self.nodes.get(id.as_usize()).copied()
+        self.nodes.get(id).copied()
     }
 
     pub fn set_node_visibility(&mut self, id: &NodeId, visible: bool) {
-        if let Some(node) = self.nodes.get_mut(id.as_usize()) {
+        if let Some(node) = self.nodes.get_mut(id) {
             *node = visible;
+        } else {
+            panic!("node not found for id: {:?}", id);
         }
     }
 }

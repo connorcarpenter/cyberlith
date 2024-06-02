@@ -31,8 +31,9 @@ impl UiState {
             ms_since_startup: 0.0,
         };
 
-        for node in ui_config.nodes_iter() {
-            me.node_state_init(&node);
+        // Connor
+        for (id, node) in ui_config.nodes_iter() {
+            me.add_node(id, &node);
         }
 
         for style in ui_config.styles_iter() {
@@ -42,14 +43,14 @@ impl UiState {
         me
     }
 
-    pub fn node_state_init(&mut self, node: &UiNode) {
-        self.store.node_state_init(node);
-        self.visibility_store.node_state_init(node.init_visible);
+    pub fn add_node(&mut self, id: &NodeId, node: &UiNode) {
+        self.store.add_node(id, node);
+        self.visibility_store.add_node(id, node.init_visible);
     }
 
-    pub fn remove_nodes_after(&mut self, node: &NodeId) {
-        self.store.remove_nodes_after(node);
-        self.visibility_store.remove_nodes_after(node);
+    pub fn delete_node(&mut self, node: &NodeId) {
+        self.store.delete_node(node);
+        self.visibility_store.delete_node(node);
     }
 
     pub fn style_state_init(&mut self, widget_kind: &WidgetKind) {

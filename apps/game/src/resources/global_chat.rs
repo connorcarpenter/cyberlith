@@ -78,20 +78,6 @@ impl GlobalChat {
         global_chat_messages.set_list_ui_container(ui_manager, message_q, &ui_handle, container_id_str);
     }
 
-    pub(crate) fn on_load_list_ui(
-        ui_catalog: &mut UiCatalog,
-        ui_manager: &mut UiManager,
-        message_q: &Query<&GlobalChatMessage>,
-        global_chat_messages: &mut GlobalChat,
-    ) {
-        let ui_key = UiKey::GlobalChatList;
-        let ui_handle = ui_catalog.get_ui_handle(ui_key);
-
-        ui_catalog.set_loaded(ui_key);
-
-        global_chat_messages.set_list_ui(ui_manager, message_q, &ui_handle);
-    }
-
     pub(crate) fn on_load_list_item_ui(
         ui_catalog: &mut UiCatalog,
         ui_manager: &mut UiManager,
@@ -114,16 +100,6 @@ impl GlobalChat {
         id_str: &str
     ) {
         self.list_ui_ext.set_container_ui(ui_manager, ui_handle, id_str);
-        self.sync_with_collection(ui_manager, message_q);
-    }
-
-    pub(crate) fn set_list_ui(
-        &mut self,
-        ui_manager: &mut UiManager,
-        message_q: &Query<&GlobalChatMessage>,
-        ui_handle: &UiHandle
-    ) {
-        self.list_ui_ext.set_list_ui(ui_manager, ui_handle);
         self.sync_with_collection(ui_manager, message_q);
     }
 

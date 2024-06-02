@@ -31,7 +31,6 @@ pub enum UiKey {
     HostMatch,
     JoinMatch,
     GlobalChat,
-    GlobalChatList,
     GlobalChatListItem,
     Devlog,
     Settings,
@@ -64,12 +63,6 @@ pub(crate) fn on_ui_load(
             ui_manager,
         ),
         UiKey::GlobalChat => GlobalChat::on_load_container_ui(
-            ui_catalog,
-            ui_manager,
-            &message_q,
-            global_chat_messages,
-        ),
-        UiKey::GlobalChatList=> GlobalChat::on_load_list_ui(
             ui_catalog,
             ui_manager,
             &message_q,

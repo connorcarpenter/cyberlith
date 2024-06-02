@@ -35,20 +35,19 @@ pub fn setup(
 ) {
     let mut uis = Vec::new();
 
-    uis.push(launcher::start::ui_define()); // start
-    uis.push(launcher::login::ui_define()); // login
-    uis.push(launcher::register::ui_define()); // register
-    uis.push(launcher::register_finish::ui_define()); // register_finish
-    uis.push(launcher::forgot_username::ui_define()); // forgot username
-    uis.push(launcher::forgot_username_finish::ui_define()); // forgot username finish
-    uis.push(launcher::forgot_password::ui_define()); // forgot password
-    uis.push(launcher::forgot_password_finish::ui_define()); // forgot password finish
-    uis.push(launcher::reset_password::ui_define()); // reset password
+    // uis.push(launcher::start::ui_define()); // start
+    // uis.push(launcher::login::ui_define()); // login
+    // uis.push(launcher::register::ui_define()); // register
+    // uis.push(launcher::register_finish::ui_define()); // register_finish
+    // uis.push(launcher::forgot_username::ui_define()); // forgot username
+    // uis.push(launcher::forgot_username_finish::ui_define()); // forgot username finish
+    // uis.push(launcher::forgot_password::ui_define()); // forgot password
+    // uis.push(launcher::forgot_password_finish::ui_define()); // forgot password finish
+    // uis.push(launcher::reset_password::ui_define()); // reset password
 
     // uis.push(game::main_menu::ui_define()); // game main menu
     // uis.push(game::host_match::ui_define()); // game host match
-    // uis.push(game::global_chat::ui_define()); // game global chat
-    // uis.push(game::global_chat_list::ui_define()); // game global chat list
+    uis.push(game::global_chat::ui_define()); // game global chat
     // uis.push(game::global_chat_list_item::ui_define()); // game global chat list item
 
     let mut ui_handles = Vec::new();
@@ -121,7 +120,6 @@ fn setup_global_chat_test_case(ui_manager: &mut UiManager, ui_handles: &Vec<UiHa
     // setup global chat list
     let mut list_ui_ext = ListUiExt::new();
     list_ui_ext.set_container_ui(ui_manager, &global_chat_ui_handle, "chat_wall");
-    list_ui_ext.set_list_ui(ui_manager, &global_chat_list_ui_handle);
     list_ui_ext.set_item_ui(ui_manager, &global_chat_list_item_ui_handle);
 
     // setup collection

@@ -64,7 +64,7 @@ fn convert_actions_to_ui_config(actions: Vec<UiAction>) -> UiConfig {
         root_mut.set_style_id(style_id);
     }
     let WidgetBits::Panel(panel_serde) = &root_node_serde.widget else {
-        panic!("Expected panel widget");
+        panic!("Expected panel widget. Instead got: {:?}", root_node_serde.widget.print_name());
     };
     convert_nodes_recurse_panel(
         &style_index_to_id,

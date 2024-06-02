@@ -9,7 +9,7 @@ use storage::Storage;
 use ui_runner_config::{NodeId, SerdeErr, UiRuntimeConfig, BaseNodeStyle, StyleId};
 use ui_state::UiState;
 
-use crate::{config::{ValidationType, UiNode}, handle::UiHandle};
+use crate::{config::{WidgetKind, ValidationType}, handle::UiHandle, PanelMut};
 
 pub struct UiRuntime {
     state: UiState,
@@ -89,6 +89,14 @@ impl UiRuntime {
         (&self.state, &self.config, &self.dependencies, &self.camera)
     }
 
+    pub fn panel_mut(&mut self, id: &NodeId) -> Option<PanelMut> {
+        let node = self.config.get_node(id)?;
+        if node.widget_kind() == WidgetKind::Panel {
+            return Some(PanelMut::new(self, *id));
+        }
+        None
+    }
+
     // dependencies
 
     pub(crate) fn load_dependencies(
@@ -107,7 +115,7 @@ impl UiRuntime {
 
     // config
 
-    pub(crate) fn get_node_id_by_id_str(&self, id_str: &str) -> Option<NodeId> {
+    pub fn get_node_id_by_id_str(&self, id_str: &str) -> Option<NodeId> {
         self.config.get_node_id_by_id_str(id_str)
     }
 
@@ -137,16 +145,6 @@ impl UiRuntime {
     pub fn add_style(&mut self, base_node_style: BaseNodeStyle) -> StyleId {
         self.state.style_state_init(&base_node_style.widget_style.kind());
         self.config.add_style(base_node_style)
-    }
-
-    pub fn add_node(&mut self, node: UiNode) -> NodeId {
-        self.state.node_state_init(&node);
-        self.config.add_node(node)
-    }
-
-    pub fn remove_nodes_after(&mut self, node_id: &NodeId) {
-        self.state.remove_nodes_after(node_id);
-        self.config.remove_nodes_after(node_id);
     }
 
     pub(crate) fn get_textbox_validator(&self, id_str: &str) -> Option<ValidationType> {

@@ -12,8 +12,9 @@ use crate::{styles::compute_styles, text_measure_raw_size};
 
 pub struct UiRuntimeConfig {
     styles: Vec<BaseNodeStyle>,
-    nodes: Vec<UiNode>,
+    nodes: HashMap<NodeId, UiNode>, // Connor
 
+    next_node_id: NodeId,
     first_input_opt: Option<NodeId>,
     id_str_to_node_id_map: HashMap<String, NodeId>,
 }
@@ -33,12 +34,31 @@ impl UiRuntimeConfig {
 
         let styles = compute_styles(styles);
 
-        Self {
+        let mut me = Self {
             styles,
             nodes,
+
+            next_node_id: NodeId::new(0),
             first_input_opt,
             id_str_to_node_id_map: node_map,
+        };
+
+        loop {
+            if me.nodes.contains_key(&me.next_node_id) {
+                me.get_incremented_next_node_id();
+            } else {
+                break;
+            }
         }
+
+        me
+    }
+
+    pub fn get_incremented_next_node_id(&mut self) -> NodeId {
+        let id = self.next_node_id;
+        let id_u32 = id.as_usize() as u32;
+        self.next_node_id = NodeId::new(id_u32 + 1);
+        id
     }
 
     pub fn get_first_input(&self) -> Option<NodeId> {
@@ -52,11 +72,12 @@ impl UiRuntimeConfig {
     // nodes
 
     pub fn get_node(&self, id: &NodeId) -> Option<&UiNode> {
-        self.nodes.get(id.as_usize())
+        self.nodes.get(id)
     }
 
+    // hopefully this is only used by PanelMut?
     pub fn get_node_mut(&mut self, id: &NodeId) -> Option<&mut UiNode> {
-        self.nodes.get_mut(id.as_usize())
+        self.nodes.get_mut(id)
     }
 
     pub(crate) fn node_kind(&self, id: &NodeId) -> WidgetKind {
@@ -67,18 +88,18 @@ impl UiRuntimeConfig {
         self.nodes.len()
     }
 
-    pub fn nodes_iter(&self) -> Iter<'_, UiNode> {
+    pub fn nodes_iter(&self) -> std::collections::hash_map::Iter<'_, NodeId, UiNode> {
         self.nodes.iter()
     }
 
     pub fn add_node(&mut self, node: UiNode) -> NodeId {
-        let id = NodeId::from_usize(self.nodes.len());
-        self.nodes.push(node);
+        let id = self.get_incremented_next_node_id();
+        self.nodes.insert(id, node);
         id
     }
 
-    pub fn remove_nodes_after(&mut self, node: &NodeId) {
-        self.nodes.truncate(node.as_usize() + 1);
+    pub fn delete_node(&mut self, id: &NodeId) {
+        self.nodes.remove(id);
     }
 
     pub fn panel_ref(&self, id: &NodeId) -> Option<&Panel> {
@@ -89,6 +110,7 @@ impl UiRuntimeConfig {
         None
     }
 
+    // hopefully this is only used by PanelMut?
     pub fn panel_mut(&mut self, id: &NodeId) -> Option<&mut Panel> {
         let node = self.get_node_mut(id)?;
         if node.widget_kind() == WidgetKind::Panel {

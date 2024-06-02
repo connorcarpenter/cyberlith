@@ -30,7 +30,7 @@ use ui_runner_config::{NodeId, UiRuntimeConfig, NodeStore};
 use ui_state::{NodeActiveState, UiState};
 
 use crate::{
-    config::{WidgetKind, ValidationType}, handle::UiHandle, runtime::UiRuntime, state_globals::StateGlobals,
+    config::{StyleId, WidgetKind, ValidationType}, handle::UiHandle, runtime::UiRuntime, state_globals::StateGlobals,
 };
 
 #[derive(Resource)]
@@ -55,6 +55,43 @@ pub struct UiManager {
     input_state: UiInputState,
 
     recalc_layout: bool,
+}
+
+impl UiManager {
+
+    // from src to dest, copies entire hierarchy of nodes, recursively
+    pub fn add_copied_node(
+        &mut self,
+        stylemap_item_to_list: &HashMap<StyleId, StyleId>,
+        id_str_map: &mut HashMap<String, NodeId>,
+        dest_ui: &UiHandle,
+        dest_id: &NodeId,
+        src_ui: &UiHandle,
+        src_id: &NodeId
+    ) {
+        let mut src_node = self.ui_runtimes.get(src_ui).unwrap().ui_config_ref().get_node(src_id).unwrap().clone();
+        if let Some(old_style_id) = src_node.style_id() {
+            let new_style_id = stylemap_item_to_list.get(&old_style_id).unwrap();
+            src_node.set_style_id(*new_style_id);
+        }
+
+        let dest_runtime = self.ui_runtimes.get_mut(dest_ui).unwrap();
+        let Some(mut dest_panel_mut) = dest_runtime.panel_mut(dest_id) else {
+            panic!("dest_id is not a panel");
+        };
+        let new_node_id = dest_panel_mut.add_node(&src_node);
+        if let Some(id_str) = src_node.id_str_opt().as_ref() {
+            id_str_map.insert(id_str.clone(), new_node_id);
+        }
+
+        // copy children
+        if src_node.widget_kind().has_children() {
+            let src_node_children: Vec<NodeId> = src_node.widget.children().unwrap().copied().collect();
+            for src_node_child_id in src_node_children {
+                self.add_copied_node(stylemap_item_to_list, id_str_map, dest_ui, &new_node_id, src_ui, &src_node_child_id);
+            }
+        }
+    }
 }
 
 impl Default for UiManager {

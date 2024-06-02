@@ -48,7 +48,8 @@ fn convert_ui_to_actions(ui_config: &UiConfig) -> Vec<UiAction> {
     }
 
     // write nodes
-    for node in ui_config.nodes_iter() {
+    // Connor
+    for (_id, node) in ui_config.nodes_iter() {
         output.push(UiAction::Node(UiNodeBits::from_node(
             ui_config,
             &style_id_to_index,

@@ -1,3 +1,7 @@
+use std::slice::Iter;
+
+use ui_layout::NodeId;
+
 use crate::{Button, Panel, Spinner, Text, Textbox, UiContainer};
 
 #[derive(PartialEq, Eq, Clone, Copy, Hash)]
@@ -64,6 +68,14 @@ impl Widget {
             Self::Textbox(_) => WidgetKind::Textbox,
             Self::Spinner(_) => WidgetKind::Spinner,
             Self::UiContainer(_) => WidgetKind::UiContainer,
+        }
+    }
+
+    pub fn children(&self) -> Option<Iter<NodeId>> {
+        match self {
+            Self::Panel(panel) => Some(panel.children.iter()),
+            Self::Button(button) => Some(button.panel.children.iter()),
+            _ => None,
         }
     }
 }
