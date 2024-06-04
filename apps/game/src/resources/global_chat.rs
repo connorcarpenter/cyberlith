@@ -10,6 +10,7 @@ use crate::ui::{go_to_sub_ui, UiCatalog, UiKey};
 pub struct GlobalChat {
     global_chats: BTreeMap<GlobalChatMessageId, Entity>,
     list_ui_ext: ListUiExt,
+    list_item_ui: Option<UiHandle>,
 }
 
 impl Default for GlobalChat {
@@ -17,6 +18,7 @@ impl Default for GlobalChat {
         Self {
             global_chats: BTreeMap::new(),
             list_ui_ext: ListUiExt::new(),
+            list_item_ui: None,
         }
     }
 }
@@ -109,7 +111,7 @@ impl GlobalChat {
         message_q: &Query<&GlobalChatMessage>,
         ui_handle: &UiHandle
     ) {
-        self.list_ui_ext.set_item_ui(ui_manager, ui_handle);
+        self.list_item_ui = Some(ui_handle.clone());
         self.sync_with_collection(ui_manager, message_q);
     }
 
@@ -135,23 +137,29 @@ impl GlobalChat {
         ui_manager: &mut UiManager,
         message_q: &Query<&GlobalChatMessage>,
     ) {
+        if self.list_item_ui.is_none() {
+            return;
+        }
+
         self.list_ui_ext.sync_with_collection(
             ui_manager,
             &self.global_chats,
-            |ui_runtime, id_str_to_node_map, _message_id, message_entity| {
+            |item_ctx, _message_id, message_entity| {
                 let message = message_q.get(*message_entity).unwrap();
 
+                item_ctx.add_copied_node(&self.list_item_ui.unwrap());
+
                 let message_user_id: u64 = (*message.user_id).into();
-                let message_user_id_node_id = id_str_to_node_map.get("user_name").unwrap();
-                ui_runtime.set_text(message_user_id_node_id, message_user_id.to_string().as_str());
+                let message_user_id_node_id = item_ctx.get_node_id_by_str("user_name").unwrap();
+                item_ctx.set_text(&message_user_id_node_id, message_user_id.to_string().as_str());
 
                 let message_timestamp = message.timestamp.to_string();
-                let message_timestamp_node_id = id_str_to_node_map.get("timestamp").unwrap();
-                ui_runtime.set_text(message_timestamp_node_id, message_timestamp.as_str());
+                let message_timestamp_node_id = item_ctx.get_node_id_by_str("timestamp").unwrap();
+                item_ctx.set_text(&message_timestamp_node_id, message_timestamp.as_str());
 
                 let message_text = message.message.as_str();
-                let message_text_node_id = id_str_to_node_map.get("message").unwrap();
-                ui_runtime.set_text(message_text_node_id, message_text);
+                let message_text_node_id = item_ctx.get_node_id_by_str("message").unwrap();
+                item_ctx.set_text(&message_text_node_id, message_text);
             },
         );
     }
