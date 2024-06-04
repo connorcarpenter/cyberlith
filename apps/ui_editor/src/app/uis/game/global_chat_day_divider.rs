@@ -2,7 +2,7 @@ use game_engine::{
     asset::{AssetId, ETag},
     render::base::Color,
 };
-use ui_builder::{Alignment, UiConfig, UiConfigBuild};
+use ui_builder::{UiConfig, UiConfigBuild};
 
 #[allow(unused)]
 pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
@@ -22,16 +22,24 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
         s.set_background_alpha(0.)
             // .set_background_color(Color::DARK_GRAY)
             .set_horizontal()
-            .set_height_vp(4.0);
+            .set_height_vp(4.0)
+            .set_width_pc(97.0);
     });
     let divider_style = ui_config.create_panel_style(|s| {
         s.set_background_alpha(1.)
             .set_background_color(Color::DARK_GRAY)
-            .set_height_px(3.0);
+            .set_height_px(1.0)
+            .set_width_pc(45.0);
+    });
+    let timestamp_container_style = ui_config.create_panel_style(|s| {
+        s.set_background_alpha(0.)
+            // .set_background_color(Color::DARK_BLUE)
+            .set_height_pc(100.0)
+            .set_width_pc(10.0);
     });
     let timestamp_style = ui_config.create_text_style(|s| {
         s.set_background_alpha(0.)
-            .set_size_px(18.0)
+            .set_size_px(20.0)
             .set_text_color(Color::GRAY);
     });
 
@@ -44,9 +52,13 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
             c.add_panel()
                 .set_style(divider_style);
 
-            // timestamp
-            c.add_text_with_id("4/2/3141", "timestamp")
-                .set_style(timestamp_style);
+            c.add_panel()
+                .set_style(timestamp_container_style)
+                .contents(|c| {
+                    // // timestamp
+                    c.add_text_with_id("4/2/3141", "timestamp")
+                        .set_style(timestamp_style);
+                });
 
             c.add_panel()
                 .set_style(divider_style);

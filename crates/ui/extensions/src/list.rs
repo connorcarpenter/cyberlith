@@ -1,20 +1,15 @@
 use std::collections::HashMap;
 
-use logging::info;
-use ui_runner::{UiHandle, UiManager, config::{NodeId, UiRuntimeConfig, StyleId}, UiRuntime};
+use ui_runner::{UiHandle, UiManager, config::{NodeId, UiRuntimeConfig, StyleId}};
 
 pub struct ListUiExt {
     container_ui: Option<(UiHandle, String)>,
-    copied_styles_old_to_new: HashMap<(UiHandle, StyleId), StyleId>,
-    items_id_str_to_node_id_map: Vec<HashMap<String, NodeId>>,
 }
 
 impl ListUiExt {
     pub fn new() -> Self {
         Self {
             container_ui: None,
-            copied_styles_old_to_new: HashMap::new(),
-            items_id_str_to_node_id_map: Vec::new(),
         }
     }
 
@@ -53,9 +48,6 @@ impl ListUiExt {
             return;
         }
 
-        // remove node id map
-        self.items_id_str_to_node_id_map = Vec::new();
-
         // remove all node children from list ui
         {
             let (container_ui_handle, container_id_str) = self.container_ui.as_ref().unwrap();
@@ -76,11 +68,9 @@ impl ListUiExt {
             for (data_key, data_val) in data_collection_iter {
                 let mut id_str_map = HashMap::new();
 
-                let mut item_mut = ListUiExtItem::new(ui_manager, self, &mut id_str_map, &container_ui_handle, &container_id);
+                let mut item_mut = ListUiExtItem::new(ui_manager, &mut id_str_map, &container_ui_handle, &container_id);
 
                 process_item_fn(&mut item_mut, data_key, data_val);
-
-                self.items_id_str_to_node_id_map.push(id_str_map);
             }
         }
 
@@ -92,7 +82,6 @@ impl ListUiExt {
 
 pub struct ListUiExtItem<'a> {
     ui_manager: &'a mut UiManager,
-    list_ext: &'a mut ListUiExt,
     id_str_to_node_map: &'a mut HashMap<String, NodeId>,
     container_ui_handle: &'a UiHandle,
     container_id: &'a NodeId,
@@ -101,14 +90,12 @@ pub struct ListUiExtItem<'a> {
 impl<'a> ListUiExtItem<'a> {
     pub fn new(
         ui_manager: &'a mut UiManager,
-        list_ext: &'a mut ListUiExt,
         id_str_to_node_map: &'a mut HashMap<String, NodeId>,
         container_ui_handle: &'a UiHandle,
         container_id: &'a NodeId,
     ) -> Self {
         Self {
             ui_manager,
-            list_ext,
             id_str_to_node_map,
             container_ui_handle,
             container_id,

@@ -1,4 +1,4 @@
-use std::{collections::{BTreeMap, HashSet, HashMap}, slice::Iter};
+use std::{collections::{BTreeMap, HashMap}, slice::Iter};
 
 use asset_id::AssetId;
 use render_api::base::Color;

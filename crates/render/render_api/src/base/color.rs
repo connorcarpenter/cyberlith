@@ -45,11 +45,11 @@ impl Color {
     /// Opaque black
     pub const BLACK: Color = Color::new(0, 0, 0);
     /// Opaque dark gray
-    pub const LIGHT_GRAY: Color = Color::new(64, 64, 64);
+    pub const LIGHT_GRAY: Color = Color::new(96, 96, 96);
     /// Opaque gray
     pub const GRAY: Color = Color::new(40, 40, 40);
     /// Opaque light gray
-    pub const DARK_GRAY: Color = Color::new(16, 16, 16);
+    pub const DARK_GRAY: Color = Color::new(8, 8, 8);
     /// Opqaue yellow
     pub const YELLOW: Color = Color::new(255, 255, 0);
     /// Opaque pink

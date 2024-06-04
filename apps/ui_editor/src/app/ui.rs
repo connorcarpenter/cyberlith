@@ -129,12 +129,12 @@ fn setup_global_chat_test_case(ui_manager: &mut UiManager, ui_handles: &Vec<UiHa
     list_ui_ext.set_container_ui(ui_manager, &global_chat_ui_handle, "chat_wall");
 
     // setup collection
-    let mut global_chats = BTreeMap::<u32, (String, u8, u8, String)>::new();
-    global_chats.insert(1, ("tom".to_string(), 3, 1, "hi".to_string()));
-    global_chats.insert(2, ("tom".to_string(), 3, 1, "hello".to_string()));
-    global_chats.insert(3, ("ben".to_string(), 3, 2, "woah".to_string()));
-    global_chats.insert(4, ("c lark".to_string(), 3, 2, "jeesh".to_string()));
-    global_chats.insert(5, ("c lark".to_string(), 3, 3, "mmkay".to_string()));
+    let mut global_chats = BTreeMap::<u32, (String, u8, u8, u8, u8, String)>::new();
+    global_chats.insert(1, ("tom".to_string(), 3, 1, 11, 31, "hi".to_string()));
+    global_chats.insert(2, ("tom".to_string(), 3, 1, 11, 33, "hello".to_string()));
+    global_chats.insert(3, ("ben".to_string(), 3, 2, 4, 2, "woah".to_string()));
+    global_chats.insert(4, ("c lark".to_string(), 3, 2, 4, 56, "jeesh".to_string()));
+    global_chats.insert(5, ("c lark".to_string(), 3, 3, 9, 18, "mmkay".to_string()));
 
     let mut last_date: Option<(u8, u8)> = None;
     let mut last_username: Option<String> = None;
@@ -143,9 +143,10 @@ fn setup_global_chat_test_case(ui_manager: &mut UiManager, ui_handles: &Vec<UiHa
     list_ui_ext.sync_with_collection(
         ui_manager,
         &global_chats,
-        |item_ctx, _message_id, (username, month, day, message)| {
+        |item_ctx, _message_id, (username, month, day, hour, minute, message)| {
 
             let message_date = (*month, *day);
+            let message_time = (*hour, *minute);
 
             // add day divider if necessary
             if last_date.is_none() || last_date.unwrap() != message_date {
@@ -156,10 +157,12 @@ fn setup_global_chat_test_case(ui_manager: &mut UiManager, ui_handles: &Vec<UiHa
             last_date = Some(message_date);
 
             // add username if necessary
-            if last_username.is_none() || !last_username.as_ref().unwrap().eq(username) {
-                add_username_and_message_item(item_ctx, &username_and_message_ui_handle, username, message_date, message);
+            if last_username.is_none() {
+                add_username_and_message_item(item_ctx, &username_and_message_ui_handle, username, message_time, message);
+            } else  if !last_username.as_ref().unwrap().eq(username) {
+                add_message_item(item_ctx, &message_ui_handle, " "); // blank space
+                add_username_and_message_item(item_ctx, &username_and_message_ui_handle, username, message_time, message);
             } else {
-
                 // just add message
                 add_message_item(item_ctx, &message_ui_handle, message);
             }
@@ -178,14 +181,14 @@ fn add_day_divider_item(item_ctx: &mut ListUiExtItem, ui: &UiHandle, date: (u8, 
     item_ctx.set_text(&divider_text_node_id, divider_date_str.as_str());
 }
 
-fn add_username_and_message_item(item_ctx: &mut ListUiExtItem, ui: &UiHandle, username: &str, date: (u8, u8), message_text: &str) {
+fn add_username_and_message_item(item_ctx: &mut ListUiExtItem, ui: &UiHandle, username: &str, time: (u8, u8), message_text: &str) {
 
     item_ctx.add_copied_node(ui);
 
     let message_user_id_node_id = item_ctx.get_node_id_by_str("user_name").unwrap();
     item_ctx.set_text(&message_user_id_node_id, username);
 
-    let divider_date_str = format!("{}/{}", date.0, date.1);
+    let divider_date_str = format!("{}:{}", time.0, time.1);
     let message_timestamp_node_id = item_ctx.get_node_id_by_str("timestamp").unwrap();
     item_ctx.set_text(&message_timestamp_node_id, divider_date_str.as_str());
 
