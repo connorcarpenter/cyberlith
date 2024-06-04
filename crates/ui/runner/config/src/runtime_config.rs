@@ -1,5 +1,6 @@
-use std::{collections::{BTreeMap, HashMap}, slice::Iter};
+use std::{collections::{BTreeMap, HashSet, HashMap}, slice::Iter};
 
+use asset_id::AssetId;
 use render_api::base::Color;
 use ui_builder_config::{BaseNodeStyle, Button, ButtonStyle, Navigation, Panel, PanelStyle, SpinnerStyle, StyleId, TextStyle, Textbox, TextboxStyle, UiConfig, UiNode, WidgetKind, WidgetStyle};
 use ui_layout::{
@@ -17,6 +18,7 @@ pub struct UiRuntimeConfig {
     next_node_id: NodeId,
     first_input_opt: Option<NodeId>,
     id_str_to_node_id_map: HashMap<String, NodeId>,
+    copied_styles: HashSet<AssetId>,
 }
 
 impl UiRuntimeConfig {
@@ -41,6 +43,7 @@ impl UiRuntimeConfig {
             next_node_id: NodeId::new(0),
             first_input_opt,
             id_str_to_node_id_map: node_map,
+            copied_styles: HashSet::new(),
         };
 
         loop {
@@ -52,6 +55,14 @@ impl UiRuntimeConfig {
         }
 
         me
+    }
+
+    pub fn has_copied_style(&self, ui_asset_id: &AssetId) -> bool {
+        self.copied_styles.contains(ui_asset_id)
+    }
+
+    pub fn add_copied_style(&mut self, ui_asset_id: &AssetId) -> bool {
+        self.copied_styles.insert(*ui_asset_id)
     }
 
     pub fn get_incremented_next_node_id(&mut self) -> NodeId {

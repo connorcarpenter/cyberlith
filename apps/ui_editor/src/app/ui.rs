@@ -45,10 +45,10 @@ pub fn setup(
     // uis.push(launcher::forgot_password_finish::ui_define()); // forgot password finish
     // uis.push(launcher::reset_password::ui_define()); // reset password
 
-    // uis.push(game::main_menu::ui_define()); // game main menu
+    uis.push(game::main_menu::ui_define()); // game main menu
     // uis.push(game::host_match::ui_define()); // game host match
     uis.push(game::global_chat::ui_define()); // game global chat
-    // uis.push(game::global_chat_list_item::ui_define()); // game global chat list item
+    uis.push(game::global_chat_list_item::ui_define()); // game global chat list item
 
     let mut ui_handles = Vec::new();
     for (ui_name, ui_asset_id, ui_etag, ui) in uis {
@@ -65,7 +65,7 @@ pub fn setup(
     ui_manager.set_target_render_layer(RenderLayers::layer(0));
     ui_manager.enable_ui(&ui_handles[0]);
 
-    // setup_global_chat_test_case(&mut ui_manager, &ui_handles);
+    setup_global_chat_test_case(&mut ui_manager, &ui_handles);
 
     // scene setup now
     // ambient light
@@ -117,7 +117,6 @@ fn setup_global_chat_test_case(ui_manager: &mut UiManager, ui_handles: &Vec<UiHa
     // setup global chat list
     let mut list_ui_ext = ListUiExt::new();
     list_ui_ext.set_container_ui(ui_manager, &global_chat_ui_handle, "chat_wall");
-    list_ui_ext.set_item_ui(ui_manager, &global_chat_list_item_ui_handle);
 
     // setup collection
     let mut global_chats = BTreeMap::<u32, String>::new();
@@ -131,9 +130,12 @@ fn setup_global_chat_test_case(ui_manager: &mut UiManager, ui_handles: &Vec<UiHa
     list_ui_ext.sync_with_collection(
         ui_manager,
         &global_chats,
-        |ui_runtime, id_str_to_node_map, _message_id, message_text| {
-            let item_node_id = id_str_to_node_map.get("message").unwrap();
-            ui_runtime.set_text(item_node_id, message_text);
+        |item_ctx, _message_id, message_text| {
+
+            item_ctx.add_copied_node(&global_chat_list_item_ui_handle);
+
+            let item_node_id = item_ctx.get_node_id_by_str("message").unwrap();
+            item_ctx.set_text(&item_node_id, message_text);
         },
     );
 }

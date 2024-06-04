@@ -1,11 +1,9 @@
 use std::collections::HashMap;
 
-use logging::info;
-use ui_runner::{UiHandle, UiManager, UiRuntime, config::{NodeId, StyleId}};
+use ui_runner::{UiHandle, UiManager, config::{NodeId, UiRuntimeConfig, StyleId}};
 
 pub struct ListUiExt {
     container_ui: Option<(UiHandle, String)>,
-    item_ui: Option<UiHandle>,
     setup_ran: bool,
     stylemap_item_to_list: HashMap<StyleId, StyleId>,
     items_id_str_to_node_id_map: Vec<HashMap<String, NodeId>>,
@@ -15,7 +13,6 @@ impl ListUiExt {
     pub fn new() -> Self {
         Self {
             container_ui: None,
-            item_ui: None,
             setup_ran: false,
             stylemap_item_to_list: HashMap::new(),
             items_id_str_to_node_id_map: Vec::new(),
@@ -35,21 +32,8 @@ impl ListUiExt {
         }
     }
 
-    pub fn set_item_ui(&mut self, ui_manager: &mut UiManager,ui_handle: &UiHandle) {
-        if self.item_ui.is_some() {
-            panic!("item ui already set!");
-        }
-        self.item_ui = Some(*ui_handle);
-
-        if !self.setup_ran {
-            if self.all_uis_loaded() {
-                self.setup_list(ui_manager);
-            }
-        }
-    }
-
     fn all_uis_loaded(&self) -> bool {
-        self.container_ui.is_some() && self.item_ui.is_some()
+        self.container_ui.is_some()
     }
 
     fn setup_list(&mut self, ui_manager: &mut UiManager) {
@@ -63,16 +47,22 @@ impl ListUiExt {
             panic!("container ui does not have node with id_str: {}", container_id_str);
         }
 
-        // validate item ui
-        let item_ui_handle = self.item_ui.as_ref().unwrap();
-        if !ui_manager.ui_runtimes.contains_key(item_ui_handle) {
-            panic!("item ui not loaded yet!");
+        // queue ui layout for recalculation
+        ui_manager.queue_recalculate_layout();
+
+        // mark setup as ran
+        self.setup_ran = true;
+    }
+
+    fn add_copied_style(&mut self, ui_manager: &mut UiManager, container_ui_handle: &UiHandle, copied_ui_handle: &UiHandle) {
+
+        let container_ui_runtime = ui_manager.ui_runtimes.get(container_ui_handle).unwrap();
+        if container_ui_runtime.has_copied_style(copied_ui_handle) {
+            return;
         }
 
-        info!("Setting up list ui extension: container_ui={:?}, item_ui={:?}", container_ui_handle, item_ui_handle);
-
         // make stylemap from item ui to list ui
-        let item_ui_runtime = ui_manager.ui_runtimes.get(item_ui_handle).unwrap();
+        let item_ui_runtime = ui_manager.ui_runtimes.get(copied_ui_handle).unwrap();
         let item_ui_config = item_ui_runtime.ui_config_ref();
 
         let mut item_styles = Vec::new();
@@ -81,18 +71,13 @@ impl ListUiExt {
         }
 
         let container_ui_runtime = ui_manager.ui_runtimes.get_mut(container_ui_handle).unwrap();
-        for (item_style_id, item_style) in item_styles {
+        container_ui_runtime.add_copied_style(copied_ui_handle);
 
+        for (item_style_id, item_style) in item_styles {
             let list_style_id = container_ui_runtime.add_style(item_style);
 
             self.stylemap_item_to_list.insert(item_style_id, list_style_id);
         }
-
-        // queue ui layout for recalculation
-        ui_manager.queue_recalculate_layout();
-
-        // mark setup as ran
-        self.setup_ran = true;
     }
 
     pub fn sync_with_collection<
@@ -100,7 +85,7 @@ impl ListUiExt {
         K: 'a,
         V: 'a,
         C: IntoIterator<Item = (&'a K, &'a V)>,
-        F: FnMut(&mut UiRuntime, &HashMap<String, NodeId>, &'a K, &'a V)
+        F: FnMut(&mut ListUiExtItem, &'a K, &'a V)
     > (
         &mut self,
         ui_manager: &mut UiManager,
@@ -127,7 +112,6 @@ impl ListUiExt {
         {
             let (container_ui_handle, container_ui_str) = self.container_ui.as_ref().unwrap();
             let container_ui_handle = *container_ui_handle;
-            let item_ui_handle = *(self.item_ui.as_ref().unwrap());
             let container_ui_runtime = ui_manager.ui_runtimes.get(&container_ui_handle).unwrap();
             let container_id = container_ui_runtime.get_node_id_by_id_str(container_ui_str).unwrap();
 
@@ -135,10 +119,9 @@ impl ListUiExt {
             for (data_key, data_val) in data_collection_iter {
                 let mut id_str_map = HashMap::new();
 
-                ui_manager.add_copied_node(&self.stylemap_item_to_list, &mut id_str_map, &container_ui_handle, &container_id, &item_ui_handle, &NodeId::new(0));
+                let mut item_mut = ListUiExtItem::new(ui_manager, self, &mut id_str_map, &container_ui_handle, &container_id);
 
-                let container_ui_runtime_mut = ui_manager.ui_runtimes.get_mut(&container_ui_handle).unwrap();
-                process_item_fn(container_ui_runtime_mut, &id_str_map, data_key, data_val);
+                process_item_fn(&mut item_mut, data_key, data_val);
 
                 self.items_id_str_to_node_id_map.push(id_str_map);
             }
@@ -147,5 +130,59 @@ impl ListUiExt {
         // queue ui for sync
         ui_manager.queue_recalculate_layout();
         ui_manager.queue_ui_for_sync(self.container_ui.as_ref().map(|(handle, _id_str)| handle).unwrap());
+    }
+}
+
+pub struct ListUiExtItem<'a> {
+    ui_manager: &'a mut UiManager,
+    list_ext: &'a mut ListUiExt,
+    id_str_to_node_map: &'a mut HashMap<String, NodeId>,
+    container_ui_handle: &'a UiHandle,
+    container_id: &'a NodeId,
+}
+
+impl<'a> ListUiExtItem<'a> {
+    pub fn new(
+        ui_manager: &'a mut UiManager,
+        list_ext: &'a mut ListUiExt,
+        id_str_to_node_map: &'a mut HashMap<String, NodeId>,
+        container_ui_handle: &'a UiHandle,
+        container_id: &'a NodeId,
+    ) -> Self {
+        Self {
+            ui_manager,
+            list_ext,
+            id_str_to_node_map,
+            container_ui_handle,
+            container_id,
+        }
+    }
+
+    pub fn add_copied_node(&mut self, item_ui_handle: &UiHandle) {
+
+        // add styles if needed
+        let container_ui_runtime = self.ui_manager.ui_runtimes.get(self.container_ui_handle).unwrap();
+        if !container_ui_runtime.has_copied_style(item_ui_handle) {
+            self.list_ext.add_copied_style(self.ui_manager, self.container_ui_handle, item_ui_handle);
+        }
+
+        // add node
+        self.ui_manager.add_copied_node(
+            &self.list_ext.stylemap_item_to_list,
+            self.id_str_to_node_map,
+            self.container_ui_handle,
+            self.container_id,
+            item_ui_handle,
+            &UiRuntimeConfig::ROOT_NODE_ID,
+        );
+    }
+
+    pub fn get_node_id_by_str(&self, id_str: &str) -> Option<NodeId> {
+        self.id_str_to_node_map.get(id_str).copied()
+    }
+
+    pub fn set_text(&mut self, node_id: &NodeId, text_str: &str) {
+        let container_ui_runtime = self.ui_manager.ui_runtimes.get_mut(self.container_ui_handle).unwrap();
+        container_ui_runtime.set_text(node_id, text_str);
     }
 }

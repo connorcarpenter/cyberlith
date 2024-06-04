@@ -119,6 +119,14 @@ impl UiRuntime {
         self.config.get_node_id_by_id_str(id_str)
     }
 
+    pub fn has_copied_style(&self, ui_handle: &UiHandle) -> bool {
+        self.config.has_copied_style(&ui_handle.asset_id())
+    }
+
+    pub fn add_copied_style(&mut self, ui_handle: &UiHandle) -> bool {
+        self.config.add_copied_style(&ui_handle.asset_id())
+    }
+
     // state
 
     pub(crate) fn load_cpu_data(&mut self, materials: &mut Storage<CpuMaterial>) {
