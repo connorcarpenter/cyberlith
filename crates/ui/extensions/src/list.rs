@@ -4,7 +4,6 @@ use ui_runner::{UiHandle, UiManager, config::{NodeId, UiRuntimeConfig, StyleId}}
 
 pub struct ListUiExt {
     container_ui: Option<(UiHandle, String)>,
-    setup_ran: bool,
     stylemap_item_to_list: HashMap<StyleId, StyleId>,
     items_id_str_to_node_id_map: Vec<HashMap<String, NodeId>>,
 }
@@ -13,7 +12,6 @@ impl ListUiExt {
     pub fn new() -> Self {
         Self {
             container_ui: None,
-            setup_ran: false,
             stylemap_item_to_list: HashMap::new(),
             items_id_str_to_node_id_map: Vec::new(),
         }
@@ -24,19 +22,6 @@ impl ListUiExt {
             panic!("container ui already set!");
         }
         self.container_ui = Some((*ui_handle, id_str.to_string()));
-
-        if !self.setup_ran {
-            if self.all_uis_loaded() {
-                self.setup_list(ui_manager);
-            }
-        }
-    }
-
-    fn all_uis_loaded(&self) -> bool {
-        self.container_ui.is_some()
-    }
-
-    fn setup_list(&mut self, ui_manager: &mut UiManager) {
 
         // validate container ui
         let (container_ui_handle, container_id_str) = self.container_ui.as_ref().unwrap();
@@ -49,9 +34,6 @@ impl ListUiExt {
 
         // queue ui layout for recalculation
         ui_manager.queue_recalculate_layout();
-
-        // mark setup as ran
-        self.setup_ran = true;
     }
 
     fn add_copied_style(&mut self, ui_manager: &mut UiManager, container_ui_handle: &UiHandle, copied_ui_handle: &UiHandle) {
@@ -92,7 +74,7 @@ impl ListUiExt {
         collection: C,
         mut process_item_fn: F,
     ) {
-        if !self.setup_ran {
+        if self.container_ui.is_none() {
             return;
         }
 
