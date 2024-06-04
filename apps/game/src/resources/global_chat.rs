@@ -152,13 +152,14 @@ impl GlobalChat {
         ui_manager: &mut UiManager,
         message_q: &Query<&GlobalChatMessage>,
     ) {
-        if self.message_item_ui.is_none() {
+        if self.message_item_ui.is_none() || self.day_divider_item_ui.is_none() || self.username_and_message_item_ui.is_none() {
             return;
         }
 
         let day_divider_ui_handle = self.day_divider_item_ui.as_ref().unwrap();
         let username_and_message_ui_handle = self.username_and_message_item_ui.as_ref().unwrap();
         let message_ui_handle = self.message_item_ui.as_ref().unwrap();
+
         let mut last_date: Option<(u8, u8, u16)> = None;
         let mut last_user_id: Option<UserId> = None;
 
@@ -180,12 +181,14 @@ impl GlobalChat {
                 last_date = Some(message_date);
 
                 // add username if necessary
-                if last_user_id.is_none() || last_user_id.unwrap() != message_user_id {
+                if last_user_id.is_none() {
+                    Self::add_username_and_message_item(item_ctx, username_and_message_ui_handle, message);
+                } else if last_user_id.unwrap() != message_user_id {
+                    Self::add_message_item(item_ctx, message_ui_handle, " "); // blank space
                     Self::add_username_and_message_item(item_ctx, username_and_message_ui_handle, message);
                 } else {
-
                     // just add message
-                    Self::add_message_item(item_ctx, message_ui_handle, message);
+                    Self::add_message_item(item_ctx, message_ui_handle, message.message.as_str());
                 }
 
                 last_user_id = Some(message_user_id);
@@ -198,7 +201,7 @@ impl GlobalChat {
         item_ctx.add_copied_node(ui);
 
         let divider_date_str = message.timestamp.date_string();
-        let divider_text_node_id = item_ctx.get_node_id_by_str("time").unwrap();
+        let divider_text_node_id = item_ctx.get_node_id_by_str("timestamp").unwrap();
         item_ctx.set_text(&divider_text_node_id, divider_date_str.as_str());
     }
 
@@ -219,11 +222,10 @@ impl GlobalChat {
         item_ctx.set_text(&message_text_node_id, message_text);
     }
 
-    fn add_message_item(item_ctx: &mut ListUiExtItem, ui: &UiHandle, message: &GlobalChatMessage) {
+    fn add_message_item(item_ctx: &mut ListUiExtItem, ui: &UiHandle, message_text: &str) {
 
         item_ctx.add_copied_node(ui);
 
-        let message_text = message.message.as_str();
         let message_text_node_id = item_ctx.get_node_id_by_str("message").unwrap();
         item_ctx.set_text(&message_text_node_id, message_text);
     }

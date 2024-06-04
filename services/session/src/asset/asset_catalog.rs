@@ -20,8 +20,16 @@ impl AssetCatalog {
         AssetId::from_str("ngffab").unwrap()
     }
 
-    pub fn game_global_chat_list_item() -> AssetId {
+    pub fn game_global_chat_day_divider_item_ui() -> AssetId {
+        AssetId::from_str("3wnz6n").unwrap()
+    }
+
+    pub fn game_global_chat_username_and_message_item_ui() -> AssetId {
         AssetId::from_str("ddbxab").unwrap()
+    }
+
+    pub fn game_global_chat_message_item_ui() -> AssetId {
+        AssetId::from_str("cxc6zk").unwrap()
     }
 
     pub fn text_icon() -> AssetId {
@@ -45,7 +53,9 @@ pub(crate) fn user_load_default_assets(
         AssetCatalog::game_main_menu_ui(),
         AssetCatalog::game_host_match_ui(),
         AssetCatalog::game_global_chat_ui(),
-        AssetCatalog::game_global_chat_list_item()
+        AssetCatalog::game_global_chat_day_divider_item_ui(),
+        AssetCatalog::game_global_chat_username_and_message_item_ui(),
+        AssetCatalog::game_global_chat_message_item_ui()
     ]
         .iter()
     {

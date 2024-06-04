@@ -268,7 +268,9 @@ impl UiState {
     ) {
         // set color handles
         for id in std::mem::take(&mut self.store.nodes_needing_cpu_data) {
-            let node = ui_config.get_node(&id).unwrap();
+            let Some(node) = ui_config.get_node(&id) else {
+                panic!("error in load_cpu_data! in ui: {:?}, no node for id: {:?}!", ui_handle, id);
+            };
             let widget_kind = node.widget_kind();
             let style_id = node.style_id();
 
