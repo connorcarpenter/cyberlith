@@ -40,7 +40,7 @@ impl ListUiExt {
 
         let container_ui_runtime = ui_manager.ui_runtimes.get(container_ui_handle).unwrap();
         if container_ui_runtime.has_copied_style(copied_ui_handle) {
-            return;
+            panic!("Ui already has copied style from other Ui! Be sure to check this before adding a copied node.");
         }
 
         // make stylemap from item ui to list ui
