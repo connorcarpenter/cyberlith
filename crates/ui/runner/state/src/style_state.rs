@@ -26,4 +26,15 @@ impl StyleState {
             WidgetKind::UiContainer => Self::UiContainer,
         }
     }
+
+    pub fn widget_kind(&self) -> WidgetKind {
+        match self {
+            Self::Panel(_) => WidgetKind::Panel,
+            Self::Text(_) => WidgetKind::Text,
+            Self::Button(_) => WidgetKind::Button,
+            Self::Textbox(_) => WidgetKind::Textbox,
+            Self::Spinner(_) => WidgetKind::Spinner,
+            Self::UiContainer => WidgetKind::UiContainer,
+        }
+    }
 }

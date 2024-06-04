@@ -1,10 +1,11 @@
 use std::collections::HashMap;
 
-use ui_runner::{UiHandle, UiManager, config::{NodeId, UiRuntimeConfig, StyleId}};
+use logging::info;
+use ui_runner::{UiHandle, UiManager, config::{NodeId, UiRuntimeConfig, StyleId}, UiRuntime};
 
 pub struct ListUiExt {
     container_ui: Option<(UiHandle, String)>,
-    stylemap_item_to_list: HashMap<StyleId, StyleId>,
+    copied_styles_old_to_new: HashMap<(UiHandle, StyleId), StyleId>,
     items_id_str_to_node_id_map: Vec<HashMap<String, NodeId>>,
 }
 
@@ -12,7 +13,7 @@ impl ListUiExt {
     pub fn new() -> Self {
         Self {
             container_ui: None,
-            stylemap_item_to_list: HashMap::new(),
+            copied_styles_old_to_new: HashMap::new(),
             items_id_str_to_node_id_map: Vec::new(),
         }
     }
@@ -34,32 +35,6 @@ impl ListUiExt {
 
         // queue ui layout for recalculation
         ui_manager.queue_recalculate_layout();
-    }
-
-    fn add_copied_style(&mut self, ui_manager: &mut UiManager, container_ui_handle: &UiHandle, copied_ui_handle: &UiHandle) {
-
-        let container_ui_runtime = ui_manager.ui_runtimes.get(container_ui_handle).unwrap();
-        if container_ui_runtime.has_copied_style(copied_ui_handle) {
-            panic!("Ui already has copied style from other Ui! Be sure to check this before adding a copied node.");
-        }
-
-        // make stylemap from item ui to list ui
-        let item_ui_runtime = ui_manager.ui_runtimes.get(copied_ui_handle).unwrap();
-        let item_ui_config = item_ui_runtime.ui_config_ref();
-
-        let mut item_styles = Vec::new();
-        for (item_style_id, item_style) in item_ui_config.styles_iter().enumerate() {
-            item_styles.push((StyleId::new(item_style_id as u32), *item_style));
-        }
-
-        let container_ui_runtime = ui_manager.ui_runtimes.get_mut(container_ui_handle).unwrap();
-        container_ui_runtime.add_copied_style(copied_ui_handle);
-
-        for (item_style_id, item_style) in item_styles {
-            let list_style_id = container_ui_runtime.add_style(item_style);
-
-            self.stylemap_item_to_list.insert(item_style_id, list_style_id);
-        }
     }
 
     pub fn sync_with_collection<
@@ -143,14 +118,27 @@ impl<'a> ListUiExtItem<'a> {
     pub fn add_copied_node(&mut self, item_ui_handle: &UiHandle) {
 
         // add styles if needed
-        let container_ui_runtime = self.ui_manager.ui_runtimes.get(self.container_ui_handle).unwrap();
-        if !container_ui_runtime.has_copied_style(item_ui_handle) {
-            self.list_ext.add_copied_style(self.ui_manager, self.container_ui_handle, item_ui_handle);
+        {
+            let container_ui_runtime = self.ui_manager.ui_runtimes.get(self.container_ui_handle).unwrap();
+            if !container_ui_runtime.has_copied_style(item_ui_handle) {
+                // make stylemap from item ui to list ui
+                let item_ui_config = self.ui_manager.ui_runtimes.get(item_ui_handle).unwrap().ui_config_ref();
+
+                let mut item_styles = Vec::new();
+                for (item_style_id, item_style) in item_ui_config.styles_iter().enumerate() {
+                    item_styles.push((StyleId::new(item_style_id as u32), *item_style));
+                }
+
+                let container_ui_runtime = self.ui_manager.ui_runtimes.get_mut(self.container_ui_handle).unwrap();
+
+                for (old_style_id, item_style) in item_styles {
+                    container_ui_runtime.add_copied_style(item_ui_handle, old_style_id, item_style);
+                }
+            }
         }
 
         // add node
         self.ui_manager.add_copied_node(
-            &self.list_ext.stylemap_item_to_list,
             self.id_str_to_node_map,
             self.container_ui_handle,
             self.container_id,

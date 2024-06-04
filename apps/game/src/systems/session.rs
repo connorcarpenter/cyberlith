@@ -56,7 +56,7 @@ pub fn recv_inserted_global_chat_component(
             // let message = &*chat.message;
             // info!("incoming global message: [ user_id({:?}) | {:?} | {:?} | {:?} ]", user_id, timestamp, event.entity, message);
 
-            global_chat_messages.add_message(&mut ui_manager, &chat_q, chat_id, event.entity);
+            global_chat_messages.recv_message(&mut ui_manager, &chat_q, chat_id, event.entity);
         }
     }
 }

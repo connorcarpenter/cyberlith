@@ -8,15 +8,11 @@ use ui_builder::{Alignment, UiConfig, UiConfigBuild};
 pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
     // config
     let ui_name = "global_chat";
-    let ui_asset_id_str = "ngffab"; //AssetId::get_random().as_string(); // keep this around to generate new AssetIds if needed!
-    let text_icon_asset_id_str = "34mvvk"; // this probably shouldn't change, it's the text font
-    let eye_icon_asset_id_str = "qbgz5j"; // this probably shouldn't change, it's the password eye
+    let ui_asset_id_str = "ngffab"; //AssetId::gen_random().as_string(); // keep this around to generate new AssetIds if needed!
     let ui_etag = ETag::gen_random();
 
     // asset ids ..
     let ui_asset_id = AssetId::from_str(&ui_asset_id_str).unwrap();
-    let text_icon_asset_id = AssetId::from_str(text_icon_asset_id_str).unwrap();
-    let eye_icon_asset_id = AssetId::from_str(eye_icon_asset_id_str).unwrap();
 
     // Create UI !
     let mut ui_config = UiConfig::new();

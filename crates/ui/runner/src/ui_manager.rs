@@ -62,25 +62,25 @@ impl UiManager {
     // from src to dest, copies entire hierarchy of nodes, recursively
     pub fn add_copied_node(
         &mut self,
-        stylemap_item_to_list: &HashMap<StyleId, StyleId>,
         id_str_map: &mut HashMap<String, NodeId>,
         dest_ui: &UiHandle,
         dest_parent_id: &NodeId,
         src_ui: &UiHandle,
         src_id: &NodeId
     ) {
-        info!("[{:?} . {:?}] -> [{:?} . {:?}]", src_ui, src_id, dest_ui, dest_parent_id);
+        // info!("[{:?} . {:?}] -> [{:?} . {:?}]", src_ui, src_id, dest_ui, dest_parent_id);
 
-        let mut src_node = self.ui_runtimes.get(src_ui).unwrap().ui_config_ref().get_node(src_id).unwrap().clone();
-        if let Some(old_style_id) = src_node.style_id() {
-            let new_style_id = stylemap_item_to_list.get(&old_style_id).unwrap();
-            src_node.clear_style_id();
-            src_node.set_style_id(*new_style_id);
+        let mut new_copied_node = self.ui_runtimes.get(src_ui).unwrap().ui_config_ref().get_node(src_id).unwrap().clone();
+        if let Some(old_style_id) = new_copied_node.style_id() {
+            let new_style_id = self.ui_runtimes.get(dest_ui).unwrap().translate_copied_style(src_ui, old_style_id).unwrap();
+            new_copied_node.clear_style_id();
+            new_copied_node.set_style_id(new_style_id);
+            info!("[{:?} . {:?}] added style: [{:?} . {:?}]", src_ui, src_id, dest_ui, new_style_id);
         }
-        let old_children_ids_opt: Option<Vec<NodeId>> = if src_node.widget_kind().has_children() {
-            let output = Some(src_node.widget.children().unwrap().copied().collect());
-            src_node.widget.clear_children();
-            info!("[{:?} . {:?}] . old children: {:?}", src_ui, src_id, output);
+        let old_children_ids_opt: Option<Vec<NodeId>> = if new_copied_node.widget_kind().has_children() {
+            let output = Some(new_copied_node.widget.children().unwrap().copied().collect());
+            new_copied_node.widget.clear_children();
+            info!("[{:?} . {:?}] had old children: {:?}", src_ui, src_id, output);
             output
         } else {
             None
@@ -91,9 +91,11 @@ impl UiManager {
             panic!("dest_parent_id is not a panel");
         };
 
-        let new_node_id = dest_parent_panel_mut.add_node(&src_node);
+        let new_node_id = dest_parent_panel_mut.add_node(&new_copied_node);
 
-        if let Some(id_str) = src_node.id_str_opt().as_ref() {
+        info!("[ui: {:?} . id: {:?}] -> [ui: {:?}, id: {:?}]", src_ui, src_id, dest_ui, new_node_id);
+
+        if let Some(id_str) = new_copied_node.id_str_opt().as_ref() {
             id_str_map.insert(id_str.clone(), new_node_id);
         }
 
@@ -101,11 +103,11 @@ impl UiManager {
         if let Some(old_children_ids) = old_children_ids_opt {
 
             for old_child_id in &old_children_ids {
-                self.add_copied_node(stylemap_item_to_list, id_str_map, dest_ui, &new_node_id, src_ui, old_child_id);
+                self.add_copied_node(id_str_map, dest_ui, &new_node_id, src_ui, old_child_id);
             }
 
             if let Some(panel_mut) = self.ui_runtimes.get_mut(dest_ui).unwrap().ui_config_mut().panel_mut(&new_node_id) {
-                info!("({:?}) . new children: {:?}", new_node_id, panel_mut.children);
+                info!("[ui: {:?}, id: {:?}] has new children: {:?}", dest_ui, new_node_id, panel_mut.children);
             } else {
                 // it's a button! TODO: handle this case
                 warn!("dest_id is not a panel");
@@ -296,7 +298,7 @@ impl UiManager {
 
         let handle = UiHandle::new(*asset_id);
         if !self.ui_runtimes.contains_key(&handle) {
-            let runtime = UiRuntime::load_from_config(ui_config);
+            let runtime = UiRuntime::load_from_config(asset_id, ui_config);
             self.ui_runtimes.insert(handle, runtime);
 
             let runtime = self.ui_runtimes.get(&handle).unwrap();
@@ -379,7 +381,7 @@ impl UiManager {
 
         for ui_handle in &ui_handles {
             let ui = self.ui_runtimes.get_mut(ui_handle).unwrap();
-            ui.load_cpu_data(materials);
+            ui.load_cpu_data(ui_handle, materials);
         }
 
         self.handle_new_uis(ui_handles);

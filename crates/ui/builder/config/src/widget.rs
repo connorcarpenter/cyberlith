@@ -4,7 +4,7 @@ use ui_layout::NodeId;
 
 use crate::{Button, Panel, Spinner, Text, Textbox, UiContainer};
 
-#[derive(PartialEq, Eq, Clone, Copy, Hash)]
+#[derive(PartialEq, Eq, Clone, Copy, Hash, Debug)]
 pub enum WidgetKind {
     Panel,
     Text,

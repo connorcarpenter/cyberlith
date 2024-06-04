@@ -1,5 +1,7 @@
 use std::collections::{HashMap, HashSet};
+use asset_id::AssetId;
 
+use logging::info;
 use ui_layout::NodeStateStore;
 use ui_runner_config::{NodeId, StyleId, UiNode, WidgetKind};
 
@@ -9,6 +11,7 @@ use crate::{
 };
 
 pub struct UiStateStore {
+    asset_id: AssetId,
     pub nodes: HashMap<NodeId, UiNodeState>,
     pub default_styles: HashMap<WidgetKind, StyleState>,
     pub styles: Vec<StyleState>,
@@ -23,8 +26,9 @@ impl NodeStateStore for UiStateStore {
 }
 
 impl UiStateStore {
-    pub(crate) fn new() -> Self {
+    pub(crate) fn new(asset_id: &AssetId) -> Self {
         Self {
+            asset_id: *asset_id,
             nodes: HashMap::new(),
             default_styles: HashMap::new(),
             styles: Vec::new(),
@@ -92,6 +96,7 @@ impl UiStateStore {
     }
 
     fn insert_style(&mut self, style: StyleState) {
+        info!("state_store {:?} : inserting style: {:?}", self.asset_id, self.styles.len());
         if self.styles.len() >= 255 {
             panic!("1 UI can only hold up to 255 styles, too many styles!");
         }
@@ -104,14 +109,21 @@ impl UiStateStore {
     ) -> Option<&mut PanelStyleState> {
         if let Some(style_id) = style_id {
             let style_id = style_id.as_usize();
-            let Some(StyleState::Panel(style)) = self.styles.get_mut(style_id) else {
-                panic!("Style not found");
-            };
-            if !style.needs_color_handle() {
-                // style state already has color handles
+
+            if let Some(style_state) = self.styles.get_mut(style_id) {
+                if let StyleState::Panel(panel_style_state) = style_state {
+                    if !panel_style_state.needs_color_handle() {
+                        // style state already has color handles
+                        return None;
+                    }
+                    return Some(panel_style_state);
+                } else {
+                    let kind = style_state.widget_kind();
+                    panic!("{:?} : PanelStyle not found for StyleId: {:?} .. found: {:?}", self.asset_id, style_id, kind);
+                }
+            } else {
                 return None;
             }
-            return Some(style);
         } else {
             if !self.default_styles.contains_key(&WidgetKind::Panel) {
                 self.default_styles
@@ -252,6 +264,35 @@ impl UiStateStore {
             } else {
                 // default style state already initialized
                 return None;
+            }
+        }
+    }
+
+    pub(crate) fn create_ui_container_style(
+        &mut self,
+        style_id: Option<StyleId>,
+    ) {
+        if let Some(style_id) = style_id {
+            let style_id = style_id.as_usize();
+            let Some(StyleState::UiContainer) = self.styles.get_mut(style_id) else {
+                panic!("Style not found");
+            };
+            return;
+        } else {
+            if !self.default_styles.contains_key(&WidgetKind::UiContainer) {
+                self.default_styles.insert(
+                    WidgetKind::UiContainer,
+                    StyleState::UiContainer,
+                );
+                let default_style_state =
+                    self.default_styles.get_mut(&WidgetKind::UiContainer).unwrap();
+                let StyleState::UiContainer = default_style_state else {
+                    panic!("impossible");
+                };
+                return;
+            } else {
+                // default style state already initialized
+                return;
             }
         }
     }

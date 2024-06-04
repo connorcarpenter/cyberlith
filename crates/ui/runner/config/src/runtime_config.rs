@@ -18,7 +18,7 @@ pub struct UiRuntimeConfig {
     next_node_id: NodeId,
     first_input_opt: Option<NodeId>,
     id_str_to_node_id_map: HashMap<String, NodeId>,
-    copied_styles: HashSet<AssetId>,
+    copied_styles: HashMap<AssetId, HashMap<StyleId, StyleId>>,
 }
 
 impl UiRuntimeConfig {
@@ -43,7 +43,7 @@ impl UiRuntimeConfig {
             next_node_id: NodeId::new(0),
             first_input_opt,
             id_str_to_node_id_map: node_map,
-            copied_styles: HashSet::new(),
+            copied_styles: HashMap::new(),
         };
 
         loop {
@@ -58,11 +58,20 @@ impl UiRuntimeConfig {
     }
 
     pub fn has_copied_style(&self, ui_asset_id: &AssetId) -> bool {
-        self.copied_styles.contains(ui_asset_id)
+        self.copied_styles.contains_key(ui_asset_id)
     }
 
-    pub fn add_copied_style(&mut self, ui_asset_id: &AssetId) -> bool {
-        self.copied_styles.insert(*ui_asset_id)
+    pub fn add_copied_style(&mut self, ui_asset_id: &AssetId, old_style_id: StyleId, new_style_id: StyleId) {
+        if !self.copied_styles.contains_key(ui_asset_id) {
+            self.copied_styles.insert(*ui_asset_id, HashMap::new());
+        }
+        let style_map_old_to_new = self.copied_styles.get_mut(ui_asset_id).unwrap();
+        style_map_old_to_new.insert(old_style_id, new_style_id);
+    }
+
+    pub fn translate_copied_style(&self, ui_asset_id: &AssetId, old_style_id: StyleId) -> Option<StyleId> {
+        let style_map_old_to_new = self.copied_styles.get(ui_asset_id)?;
+        style_map_old_to_new.get(&old_style_id).copied()
     }
 
     pub fn get_incremented_next_node_id(&mut self) -> NodeId {

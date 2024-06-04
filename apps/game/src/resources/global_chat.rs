@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use bevy_ecs::{system::{Resource, Query}, event::EventReader, entity::Entity};
 
-use game_engine::{ui::{NodeActiveState, UiManager}, session::{channels, messages, SessionClient, components::GlobalChatMessage}, input::{InputEvent, Key}, social::GlobalChatMessageId, ui::{extensions::ListUiExt, UiHandle}};
+use game_engine::{auth::UserId, ui::{NodeActiveState, UiManager}, session::{channels, messages, SessionClient, components::GlobalChatMessage}, input::{InputEvent, Key}, social::GlobalChatMessageId, ui::{extensions::{ListUiExt, ListUiExtItem}, UiHandle}};
 
 use crate::ui::{go_to_sub_ui, UiCatalog, UiKey};
 
@@ -10,7 +10,9 @@ use crate::ui::{go_to_sub_ui, UiCatalog, UiKey};
 pub struct GlobalChat {
     global_chats: BTreeMap<GlobalChatMessageId, Entity>,
     list_ui_ext: ListUiExt,
-    list_item_ui: Option<UiHandle>,
+    message_item_ui: Option<UiHandle>,
+    username_and_message_item_ui: Option<UiHandle>,
+    day_divider_item_ui: Option<UiHandle>,
 }
 
 impl Default for GlobalChat {
@@ -18,7 +20,9 @@ impl Default for GlobalChat {
         Self {
             global_chats: BTreeMap::new(),
             list_ui_ext: ListUiExt::new(),
-            list_item_ui: None,
+            message_item_ui: None,
+            username_and_message_item_ui: None,
+            day_divider_item_ui: None,
         }
     }
 }
@@ -77,45 +81,56 @@ impl GlobalChat {
         // setup list extension
         let container_id_str = "chat_wall";
 
-        global_chat_messages.set_list_ui_container(ui_manager, message_q, &ui_handle, container_id_str);
+        global_chat_messages.list_ui_ext.set_container_ui(ui_manager, &ui_handle, container_id_str);
+        global_chat_messages.sync_with_collection(ui_manager, message_q);
     }
 
-    pub(crate) fn on_load_list_item_ui(
+    pub(crate) fn on_load_day_divider_item_ui(
         ui_catalog: &mut UiCatalog,
         ui_manager: &mut UiManager,
         message_q: &Query<&GlobalChatMessage>,
         global_chat_messages: &mut GlobalChat,
     ) {
-        let item_ui_key = UiKey::GlobalChatListItem;
+        let item_ui_key = UiKey::GlobalChatDayDivider;
         let item_ui_handle = ui_catalog.get_ui_handle(item_ui_key);
 
         ui_catalog.set_loaded(item_ui_key);
 
-        global_chat_messages.set_list_item_ui(ui_manager, message_q, &item_ui_handle);
+        global_chat_messages.day_divider_item_ui = Some(item_ui_handle.clone());
+        global_chat_messages.sync_with_collection(ui_manager, message_q);
     }
 
-    pub(crate) fn set_list_ui_container(
-        &mut self,
+    pub(crate) fn on_load_username_and_message_item_ui(
+        ui_catalog: &mut UiCatalog,
         ui_manager: &mut UiManager,
         message_q: &Query<&GlobalChatMessage>,
-        ui_handle: &UiHandle,
-        id_str: &str
+        global_chat_messages: &mut GlobalChat,
     ) {
-        self.list_ui_ext.set_container_ui(ui_manager, ui_handle, id_str);
-        self.sync_with_collection(ui_manager, message_q);
+        let item_ui_key = UiKey::GlobalChatUsernameAndMessage;
+        let item_ui_handle = ui_catalog.get_ui_handle(item_ui_key);
+
+        ui_catalog.set_loaded(item_ui_key);
+
+        global_chat_messages.username_and_message_item_ui = Some(item_ui_handle.clone());
+        global_chat_messages.sync_with_collection(ui_manager, message_q);
     }
 
-    pub(crate) fn set_list_item_ui(
-        &mut self,
+    pub(crate) fn on_load_message_item_ui(
+        ui_catalog: &mut UiCatalog,
         ui_manager: &mut UiManager,
         message_q: &Query<&GlobalChatMessage>,
-        ui_handle: &UiHandle
+        global_chat_messages: &mut GlobalChat,
     ) {
-        self.list_item_ui = Some(ui_handle.clone());
-        self.sync_with_collection(ui_manager, message_q);
+        let item_ui_key = UiKey::GlobalChatMessage;
+        let item_ui_handle = ui_catalog.get_ui_handle(item_ui_key);
+
+        ui_catalog.set_loaded(item_ui_key);
+
+        global_chat_messages.message_item_ui = Some(item_ui_handle.clone());
+        global_chat_messages.sync_with_collection(ui_manager, message_q);
     }
 
-    pub fn add_message(
+    pub fn recv_message(
         &mut self,
         ui_manager: &mut UiManager,
         message_q: &Query<&GlobalChatMessage>,
@@ -137,9 +152,15 @@ impl GlobalChat {
         ui_manager: &mut UiManager,
         message_q: &Query<&GlobalChatMessage>,
     ) {
-        if self.list_item_ui.is_none() {
+        if self.message_item_ui.is_none() {
             return;
         }
+
+        let day_divider_ui_handle = self.day_divider_item_ui.as_ref().unwrap();
+        let username_and_message_ui_handle = self.username_and_message_item_ui.as_ref().unwrap();
+        let message_ui_handle = self.message_item_ui.as_ref().unwrap();
+        let mut last_date: Option<(u8, u8, u16)> = None;
+        let mut last_user_id: Option<UserId> = None;
 
         self.list_ui_ext.sync_with_collection(
             ui_manager,
@@ -147,21 +168,64 @@ impl GlobalChat {
             |item_ctx, _message_id, message_entity| {
                 let message = message_q.get(*message_entity).unwrap();
 
-                item_ctx.add_copied_node(&self.list_item_ui.unwrap());
+                let message_date = message.timestamp.date();
+                let message_user_id = *message.user_id;
 
-                let message_user_id: u64 = (*message.user_id).into();
-                let message_user_id_node_id = item_ctx.get_node_id_by_str("user_name").unwrap();
-                item_ctx.set_text(&message_user_id_node_id, message_user_id.to_string().as_str());
+                // add day divider if necessary
+                if last_date.is_none() || last_date.unwrap() != message_date {
+                    Self::add_day_divider_item(item_ctx, day_divider_ui_handle, message);
+                    last_user_id = None;
+                }
 
-                let message_timestamp = message.timestamp.to_string();
-                let message_timestamp_node_id = item_ctx.get_node_id_by_str("timestamp").unwrap();
-                item_ctx.set_text(&message_timestamp_node_id, message_timestamp.as_str());
+                last_date = Some(message_date);
 
-                let message_text = message.message.as_str();
-                let message_text_node_id = item_ctx.get_node_id_by_str("message").unwrap();
-                item_ctx.set_text(&message_text_node_id, message_text);
+                // add username if necessary
+                if last_user_id.is_none() || last_user_id.unwrap() != message_user_id {
+                    Self::add_username_and_message_item(item_ctx, username_and_message_ui_handle, message);
+                } else {
+
+                    // just add message
+                    Self::add_message_item(item_ctx, message_ui_handle, message);
+                }
+
+                last_user_id = Some(message_user_id);
             },
         );
+    }
+
+    fn add_day_divider_item(item_ctx: &mut ListUiExtItem, ui: &UiHandle, message: &GlobalChatMessage) {
+
+        item_ctx.add_copied_node(ui);
+
+        let divider_date_str = message.timestamp.date_string();
+        let divider_text_node_id = item_ctx.get_node_id_by_str("time").unwrap();
+        item_ctx.set_text(&divider_text_node_id, divider_date_str.as_str());
+    }
+
+    fn add_username_and_message_item(item_ctx: &mut ListUiExtItem, ui: &UiHandle, message: &GlobalChatMessage) {
+
+        item_ctx.add_copied_node(ui);
+
+        let message_user_id: u64 = (*message.user_id).into();
+        let message_user_id_node_id = item_ctx.get_node_id_by_str("user_name").unwrap();
+        item_ctx.set_text(&message_user_id_node_id, message_user_id.to_string().as_str());
+
+        let message_timestamp = message.timestamp.time_string();
+        let message_timestamp_node_id = item_ctx.get_node_id_by_str("timestamp").unwrap();
+        item_ctx.set_text(&message_timestamp_node_id, message_timestamp.as_str());
+
+        let message_text = message.message.as_str();
+        let message_text_node_id = item_ctx.get_node_id_by_str("message").unwrap();
+        item_ctx.set_text(&message_text_node_id, message_text);
+    }
+
+    fn add_message_item(item_ctx: &mut ListUiExtItem, ui: &UiHandle, message: &GlobalChatMessage) {
+
+        item_ctx.add_copied_node(ui);
+
+        let message_text = message.message.as_str();
+        let message_text_node_id = item_ctx.get_node_id_by_str("message").unwrap();
+        item_ctx.set_text(&message_text_node_id, message_text);
     }
 
     fn send_message(

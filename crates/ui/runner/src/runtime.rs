@@ -1,5 +1,6 @@
+use asset_id::AssetId;
 use asset_loader::{TypedAssetId, UiDependencies, UiTextMeasurer};
-use logging::warn;
+use logging::{info, warn};
 use math::Vec3;
 use render_api::{
     base::CpuMaterial,
@@ -21,12 +22,12 @@ pub struct UiRuntime {
 impl UiRuntime {
     pub(crate) fn load_from_bytes(bytes: &[u8]) -> Result<Self, SerdeErr> {
         let config = UiRuntimeConfig::load_from_bytes(bytes)?;
-        Ok(Self::load_from_config(config))
+        Ok(Self::load_from_config(&AssetId::from_u32(0).unwrap(), config))
     }
 
-    pub(crate) fn load_from_config(config: UiRuntimeConfig) -> Self {
+    pub(crate) fn load_from_config(asset_id: &AssetId, config: UiRuntimeConfig) -> Self {
         let dependencies = UiDependencies::new();
-        let state = UiState::from_ui_config(&config);
+        let state = UiState::from_ui_config(asset_id, &config);
 
         Self {
             state,
@@ -123,14 +124,25 @@ impl UiRuntime {
         self.config.has_copied_style(&ui_handle.asset_id())
     }
 
-    pub fn add_copied_style(&mut self, ui_handle: &UiHandle) -> bool {
-        self.config.add_copied_style(&ui_handle.asset_id())
+    pub fn add_copied_style(&mut self, ui_handle: &UiHandle, old_style_id: StyleId, item_style: BaseNodeStyle) {
+
+        let kind = item_style.widget_style.kind();
+
+        let new_style_id = self.add_style(item_style);
+
+        self.config.add_copied_style(&ui_handle.asset_id(), old_style_id, new_style_id);
+
+        info!("added copied (kind: {:?}) style: (ui: {:?}, styleid: {:?}) -> (styleid: {:?})", kind, ui_handle, old_style_id, new_style_id);
+    }
+
+    pub(crate) fn translate_copied_style(&self, old_ui: &UiHandle, old_style_id: StyleId) -> Option<StyleId> {
+        self.config.translate_copied_style(&old_ui.asset_id(), old_style_id)
     }
 
     // state
 
-    pub(crate) fn load_cpu_data(&mut self, materials: &mut Storage<CpuMaterial>) {
-        self.state.load_cpu_data(&self.config, materials);
+    pub(crate) fn load_cpu_data(&mut self, ui_handle: &UiHandle, materials: &mut Storage<CpuMaterial>) {
+        self.state.load_cpu_data(&ui_handle.asset_id(), &self.config, materials);
     }
 
     pub(crate) fn recalculate_layout(

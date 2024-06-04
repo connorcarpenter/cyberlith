@@ -24,25 +24,70 @@ impl Timestamp {
         }
     }
 
-    pub fn to_string(&self) -> String {
+    pub fn date(&self) -> (u8, u8, u16) {
+        (self.day(), self.month(), self.year())
+    }
 
+    pub fn datetime_string(&self) -> String {
+
+        let date_string = self.date_string();
+        let time_string = self.time_string();
+
+        format!(
+            "{} {}",
+            date_string,
+            time_string,
+        )
+    }
+
+    pub fn date_string(&self) -> String {
+        format!(
+            "{:02}/{:02}/{:02}",
+            self.month(),
+            self.day(),
+            self.year(),
+        )
+    }
+
+    pub fn time_string(&self) -> String {
         let am_pm_string = if self.pm { "PM" } else { "AM" };
 
         format!(
-            "{:02}/{:02}/{:02} {:02}:{:02} {}",
-            self.month.to::<u8>(),
-            self.day.to::<u8>(),
-            self.year.to::<u16>() + 2024,
-            self.hour.to::<u8>(),
-            self.minute.to::<u8>(),
+            "{:02}:{:02} {}",
+            self.hour(),
+            self.minute(),
             am_pm_string,
         )
+    }
+
+    pub fn pm(&self) -> bool {
+        self.pm
+    }
+
+    pub fn minute(&self) -> u8 {
+        self.hour.to::<u8>()
+    }
+
+    pub fn hour(&self) -> u8 {
+        self.hour.to::<u8>()
+    }
+
+    pub fn day(&self) -> u8 {
+        self.day.to::<u8>()
+    }
+
+    pub fn month(&self) -> u8 {
+        self.month.to::<u8>()
+    }
+
+    pub fn year(&self) -> u16 {
+        self.year.to::<u16>() + 2024
     }
 }
 
 impl Debug for Timestamp {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.to_string())
+        write!(f, "{}", self.datetime_string())
     }
 }
 

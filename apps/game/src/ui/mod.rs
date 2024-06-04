@@ -31,7 +31,9 @@ pub enum UiKey {
     HostMatch,
     JoinMatch,
     GlobalChat,
-    GlobalChatListItem,
+    GlobalChatDayDivider,
+    GlobalChatUsernameAndMessage,
+    GlobalChatMessage,
     Devlog,
     Settings,
 }
@@ -68,7 +70,19 @@ pub(crate) fn on_ui_load(
             &message_q,
             global_chat_messages,
         ),
-        UiKey::GlobalChatListItem => GlobalChat::on_load_list_item_ui(
+        UiKey::GlobalChatDayDivider => GlobalChat::on_load_day_divider_item_ui(
+            ui_catalog,
+            ui_manager,
+            &message_q,
+            global_chat_messages,
+        ),
+        UiKey::GlobalChatUsernameAndMessage => GlobalChat::on_load_username_and_message_item_ui(
+            ui_catalog,
+            ui_manager,
+            &message_q,
+            global_chat_messages,
+        ),
+        UiKey::GlobalChatMessage => GlobalChat::on_load_message_item_ui(
             ui_catalog,
             ui_manager,
             &message_q,

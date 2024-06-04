@@ -22,10 +22,10 @@ pub struct UiState {
 }
 
 impl UiState {
-    pub fn from_ui_config(ui_config: &UiRuntimeConfig) -> Self {
+    pub fn from_ui_config(asset_id: &AssetId, ui_config: &UiRuntimeConfig) -> Self {
         let mut me = Self {
             cache: LayoutCache::new(),
-            store: UiStateStore::new(),
+            store: UiStateStore::new(asset_id),
             visibility_store: UiVisibilityStore::new(),
 
             ms_since_startup: 0.0,
@@ -262,6 +262,7 @@ impl UiState {
 
     pub fn load_cpu_data(
         &mut self,
+        ui_handle: &AssetId,
         ui_config: &UiRuntimeConfig,
         materials: &mut Storage<CpuMaterial>,
     ) {
@@ -270,6 +271,8 @@ impl UiState {
             let node = ui_config.get_node(&id).unwrap();
             let widget_kind = node.widget_kind();
             let style_id = node.style_id();
+
+            info!("(ui: {:?}) load_cpu_data: nodeid: {:?}, widget_kind: {:?}, style_id: {:?}", ui_handle, id, widget_kind, style_id);
 
             match widget_kind {
                 WidgetKind::Panel => {
@@ -280,6 +283,8 @@ impl UiState {
                             .unwrap_or(Color::BLACK);
                         let background_color_handle = materials.add(background_color);
                         panel_style_mut.set_background_color_handle(background_color_handle);
+                    } else {
+                        warn!("do not need to load cpu data for style: {:?}", style_id);
                     }
                 }
                 WidgetKind::Text => {
@@ -299,35 +304,40 @@ impl UiState {
                             .unwrap_or(Color::WHITE);
                         let text_color_handle = materials.add(text_color);
                         text_style_mut.set_text_color_handle(text_color_handle);
+                    } else {
+                        warn!("do not need to load cpu data for style: {:?}", style_id);
                     }
                 }
                 WidgetKind::Button => {
                     if let Some(button_style_mut) = self.store.create_button_style(style_id) {
-                        // background color
-                        let background_color = ui_config
-                            .node_background_color(&id)
-                            .copied()
-                            .unwrap_or(Color::BLACK);
-                        let background_color_handle = materials.add(background_color);
-                        button_style_mut.set_background_color_handle(background_color_handle);
 
-                        // button-specific
-                        let button_style = ui_config.button_style(&id);
-                        // hover color
-                        let hover_color = button_style
-                            .map(|style| style.hover_color)
-                            .flatten()
-                            .unwrap_or(Color::BLACK);
-                        let hover_color_handle = materials.add(hover_color);
-                        button_style_mut.set_hover_color_handle(hover_color_handle);
+                    // background color
+                    let background_color = ui_config
+                        .node_background_color(&id)
+                        .copied()
+                        .unwrap_or(Color::BLACK);
+                    let background_color_handle = materials.add(background_color);
+                    button_style_mut.set_background_color_handle(background_color_handle);
 
-                        // down color
-                        let down_color = button_style
-                            .map(|style| style.down_color)
-                            .flatten()
-                            .unwrap_or(Color::BLACK);
-                        let down_color_handle = materials.add(down_color);
-                        button_style_mut.set_down_color_handle(down_color_handle);
+                    // button-specific
+                    let button_style = ui_config.button_style(&id);
+                    // hover color
+                    let hover_color = button_style
+                        .map(|style| style.hover_color)
+                        .flatten()
+                        .unwrap_or(Color::BLACK);
+                    let hover_color_handle = materials.add(hover_color);
+                    button_style_mut.set_hover_color_handle(hover_color_handle);
+
+                    // down color
+                    let down_color = button_style
+                        .map(|style| style.down_color)
+                        .flatten()
+                        .unwrap_or(Color::BLACK);
+                    let down_color_handle = materials.add(down_color);
+                    button_style_mut.set_down_color_handle(down_color_handle);
+                    } else {
+                        warn!("do not need to load cpu data for style: {:?}", style_id);
                     }
                 }
                 WidgetKind::Textbox => {
@@ -373,6 +383,8 @@ impl UiState {
                             .unwrap_or(Color::BLACK);
                         let select_color_handle = materials.add(select_color);
                         textbox_style_mut.set_select_color_handle(select_color_handle);
+                    } else {
+                        warn!("do not need to load cpu data for style: {:?}", style_id);
                     }
                 }
                 WidgetKind::Spinner => {
@@ -392,9 +404,13 @@ impl UiState {
                             .unwrap_or(Color::WHITE);
                         let spinner_color_handle = materials.add(spinner_color);
                         spinner_style_mut.set_spinner_color_handle(spinner_color_handle);
+                    } else {
+                        warn!("do not need to load cpu data for style: {:?}", style_id);
                     }
                 }
-                WidgetKind::UiContainer => {}
+                WidgetKind::UiContainer => {
+                    self.store.create_ui_container_style(style_id)
+                }
             }
         }
     }
