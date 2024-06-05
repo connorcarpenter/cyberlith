@@ -9,7 +9,7 @@ use crate::ui::{go_to_sub_ui, UiCatalog, UiKey};
 #[derive(Resource)]
 pub struct GlobalChat {
     global_chats: BTreeMap<GlobalChatMessageId, Entity>,
-    list_ui_ext: ListUiExt,
+    list_ui_ext: ListUiExt<GlobalChatMessageId>,
     message_item_ui: Option<UiHandle>,
     username_and_message_item_ui: Option<UiHandle>,
     day_divider_item_ui: Option<UiHandle>,
@@ -166,7 +166,7 @@ impl GlobalChat {
         self.list_ui_ext.sync_with_collection(
             ui_manager,
             &self.global_chats,
-            |item_ctx, _message_id, message_entity| {
+            |item_ctx, _message_id, message_entity, create_ui| {
                 let message = message_q.get(*message_entity).unwrap();
 
                 let message_date = message.timestamp.date();
@@ -174,7 +174,9 @@ impl GlobalChat {
 
                 // add day divider if necessary
                 if last_date.is_none() || last_date.unwrap() != message_date {
-                    Self::add_day_divider_item(item_ctx, day_divider_ui_handle, message);
+                    if create_ui {
+                        Self::add_day_divider_item(item_ctx, day_divider_ui_handle, message);
+                    }
                     last_user_id = None;
                 }
 
@@ -182,13 +184,19 @@ impl GlobalChat {
 
                 // add username if necessary
                 if last_user_id.is_none() {
-                    Self::add_username_and_message_item(item_ctx, username_and_message_ui_handle, message);
+                    if create_ui {
+                        Self::add_username_and_message_item(item_ctx, username_and_message_ui_handle, message);
+                    }
                 } else if last_user_id.unwrap() != message_user_id {
-                    Self::add_message_item(item_ctx, message_ui_handle, " "); // blank space
-                    Self::add_username_and_message_item(item_ctx, username_and_message_ui_handle, message);
+                    if create_ui {
+                        Self::add_message_item(item_ctx, message_ui_handle, " "); // blank space
+                        Self::add_username_and_message_item(item_ctx, username_and_message_ui_handle, message);
+                    }
                 } else {
                     // just add message
-                    Self::add_message_item(item_ctx, message_ui_handle, message.message.as_str());
+                    if create_ui {
+                        Self::add_message_item(item_ctx, message_ui_handle, message.message.as_str());
+                    }
                 }
 
                 last_user_id = Some(message_user_id);
@@ -196,7 +204,7 @@ impl GlobalChat {
         );
     }
 
-    fn add_day_divider_item(item_ctx: &mut ListUiExtItem, ui: &UiHandle, message: &GlobalChatMessage) {
+    fn add_day_divider_item(item_ctx: &mut ListUiExtItem<GlobalChatMessageId>, ui: &UiHandle, message: &GlobalChatMessage) {
 
         item_ctx.add_copied_node(ui);
 
@@ -205,7 +213,7 @@ impl GlobalChat {
         item_ctx.set_text(&divider_text_node_id, divider_date_str.as_str());
     }
 
-    fn add_username_and_message_item(item_ctx: &mut ListUiExtItem, ui: &UiHandle, message: &GlobalChatMessage) {
+    fn add_username_and_message_item(item_ctx: &mut ListUiExtItem<GlobalChatMessageId>, ui: &UiHandle, message: &GlobalChatMessage) {
 
         item_ctx.add_copied_node(ui);
 
@@ -222,7 +230,7 @@ impl GlobalChat {
         item_ctx.set_text(&message_text_node_id, message_text);
     }
 
-    fn add_message_item(item_ctx: &mut ListUiExtItem, ui: &UiHandle, message_text: &str) {
+    fn add_message_item(item_ctx: &mut ListUiExtItem<GlobalChatMessageId>, ui: &UiHandle, message_text: &str) {
 
         item_ctx.add_copied_node(ui);
 

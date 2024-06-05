@@ -17,6 +17,7 @@ use game_engine::{
         RenderTarget,
     },
     ui::{UiManager, UiHandle, extensions::{ListUiExt, ListUiExtItem}},
+    social::GlobalChatMessageId,
 };
 use logging::info;
 use ui_builder::UiConfig;
@@ -143,14 +144,16 @@ fn setup_global_chat_test_case(ui_manager: &mut UiManager, ui_handles: &Vec<UiHa
     list_ui_ext.sync_with_collection(
         ui_manager,
         &global_chats,
-        |item_ctx, _message_id, (username, month, day, hour, minute, message)| {
+        |item_ctx, _message_id, (username, month, day, hour, minute, message), create_item| {
 
             let message_date = (*month, *day);
             let message_time = (*hour, *minute);
 
             // add day divider if necessary
             if last_date.is_none() || last_date.unwrap() != message_date {
-                add_day_divider_item(item_ctx, &day_divider_ui_handle, message_date);
+                if create_item {
+                    add_day_divider_item(item_ctx, &day_divider_ui_handle, message_date);
+                }
                 last_username = None;
             }
 
@@ -158,13 +161,19 @@ fn setup_global_chat_test_case(ui_manager: &mut UiManager, ui_handles: &Vec<UiHa
 
             // add username if necessary
             if last_username.is_none() {
-                add_username_and_message_item(item_ctx, &username_and_message_ui_handle, username, message_time, message);
+                if create_item {
+                    add_username_and_message_item(item_ctx, &username_and_message_ui_handle, username, message_time, message);
+                }
             } else  if !last_username.as_ref().unwrap().eq(username) {
-                add_message_item(item_ctx, &message_ui_handle, " "); // blank space
-                add_username_and_message_item(item_ctx, &username_and_message_ui_handle, username, message_time, message);
+                if create_item {
+                    add_message_item(item_ctx, &message_ui_handle, " "); // blank space
+                    add_username_and_message_item(item_ctx, &username_and_message_ui_handle, username, message_time, message);
+                }
             } else {
-                // just add message
-                add_message_item(item_ctx, &message_ui_handle, message);
+                if create_item {
+                    // just add message
+                    add_message_item(item_ctx, &message_ui_handle, message);
+                }
             }
 
             last_username = Some(username.clone());
@@ -172,7 +181,7 @@ fn setup_global_chat_test_case(ui_manager: &mut UiManager, ui_handles: &Vec<UiHa
     );
 }
 
-fn add_day_divider_item(item_ctx: &mut ListUiExtItem, ui: &UiHandle, date: (u8, u8)) {
+fn add_day_divider_item(item_ctx: &mut ListUiExtItem<u32>, ui: &UiHandle, date: (u8, u8)) {
 
     item_ctx.add_copied_node(ui);
 
@@ -181,7 +190,7 @@ fn add_day_divider_item(item_ctx: &mut ListUiExtItem, ui: &UiHandle, date: (u8, 
     item_ctx.set_text(&divider_text_node_id, divider_date_str.as_str());
 }
 
-fn add_username_and_message_item(item_ctx: &mut ListUiExtItem, ui: &UiHandle, username: &str, time: (u8, u8), message_text: &str) {
+fn add_username_and_message_item(item_ctx: &mut ListUiExtItem<u32>, ui: &UiHandle, username: &str, time: (u8, u8), message_text: &str) {
 
     item_ctx.add_copied_node(ui);
 
@@ -196,7 +205,7 @@ fn add_username_and_message_item(item_ctx: &mut ListUiExtItem, ui: &UiHandle, us
     item_ctx.set_text(&message_text_node_id, message_text);
 }
 
-fn add_message_item(item_ctx: &mut ListUiExtItem, ui: &UiHandle, message_text: &str) {
+fn add_message_item(item_ctx: &mut ListUiExtItem<u32>, ui: &UiHandle, message_text: &str) {
 
     item_ctx.add_copied_node(ui);
 

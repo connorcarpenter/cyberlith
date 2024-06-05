@@ -1,15 +1,17 @@
-use std::collections::HashMap;
+use std::{hash::Hash, collections::{HashMap, HashSet}};
 
 use ui_runner::{UiHandle, UiManager, config::{NodeId, UiRuntimeConfig, StyleId}};
 
-pub struct ListUiExt {
+pub struct ListUiExt<K: Hash + Eq + Copy + Clone + PartialEq> {
     container_ui: Option<(UiHandle, String)>,
+    loaded_items: HashMap<K, HashSet<NodeId>>,
 }
 
-impl ListUiExt {
+impl<K: Hash + Eq + Copy + Clone + PartialEq> ListUiExt<K> {
     pub fn new() -> Self {
         Self {
             container_ui: None,
+            loaded_items: HashMap::new(),
         }
     }
 
@@ -34,45 +36,53 @@ impl ListUiExt {
 
     pub fn sync_with_collection<
         'a,
-        K: 'a,
+        Q: 'a + Into<K> + Copy,
         V: 'a,
-        C: IntoIterator<Item = (&'a K, &'a V)>,
-        F: FnMut(&mut ListUiExtItem, &'a K, &'a V)
+        C: IntoIterator<Item = (&'a Q, &'a V)>,
+        FM: FnMut(&mut ListUiExtItem<K>, K, &'a V, bool),
     > (
         &mut self,
         ui_manager: &mut UiManager,
         collection: C,
-        mut process_item_fn: F,
+        mut item_fn: FM,
     ) {
         if self.container_ui.is_none() {
             return;
         }
 
-        // remove all node children from list ui
-        {
-            let (container_ui_handle, container_id_str) = self.container_ui.as_ref().unwrap();
-            let container_ui_runtime = ui_manager.ui_runtimes.get_mut(container_ui_handle).unwrap();
-            let container_id = container_ui_runtime.get_node_id_by_id_str(container_id_str).unwrap();
-            let mut panel_mut = container_ui_runtime.panel_mut(&container_id).unwrap();
-            panel_mut.remove_all_children();
-        }
+        // // remove all node children from list ui
+        // {
+        //     let (container_ui_handle, container_id_str) = self.container_ui.as_ref().unwrap();
+        //     let container_ui_runtime = ui_manager.ui_runtimes.get_mut(container_ui_handle).unwrap();
+        //     let container_id = container_ui_runtime.get_node_id_by_id_str(container_id_str).unwrap();
+        //     let mut panel_mut = container_ui_runtime.panel_mut(&container_id).unwrap();
+        //     panel_mut.remove_all_children();
+        // }
 
         // add new node children to list ui
         {
             let (container_ui_handle, container_ui_str) = self.container_ui.as_ref().unwrap();
             let container_ui_handle = *container_ui_handle;
-            let container_ui_runtime = ui_manager.ui_runtimes.get(&container_ui_handle).unwrap();
+            let container_ui_runtime = ui_manager.ui_runtimes.get_mut(&container_ui_handle).unwrap();
             let container_id = container_ui_runtime.get_node_id_by_id_str(container_ui_str).unwrap();
 
             let data_collection_iter = collection.into_iter();
             for (data_key, data_val) in data_collection_iter {
-                let mut id_str_map = HashMap::new();
+                let data_key = (*data_key).into();
 
-                let mut item_mut = ListUiExtItem::new(ui_manager, &mut id_str_map, &container_ui_handle, &container_id);
+                if self.loaded_items.contains_key(&data_key) {
+                    let mut item_mut = ListUiExtItem::new(data_key, self, ui_manager, &container_ui_handle, &container_id);
 
-                process_item_fn(&mut item_mut, data_key, data_val);
+                    item_fn(&mut item_mut, data_key, data_val, false);
+                } else {
+                    let mut item_mut = ListUiExtItem::new(data_key, self, ui_manager, &container_ui_handle, &container_id);
+
+                    item_fn(&mut item_mut, data_key, data_val, true);
+                }
             }
         }
+
+        // TODO: handle deletion of items
 
         // queue ui for sync
         ui_manager.queue_recalculate_layout();
@@ -80,23 +90,28 @@ impl ListUiExt {
     }
 }
 
-pub struct ListUiExtItem<'a> {
+pub struct ListUiExtItem<'a, K: Hash + Eq + Copy + Clone + PartialEq> {
+    item_key: K,
+    list_ui_ext: &'a mut ListUiExt<K>,
     ui_manager: &'a mut UiManager,
-    id_str_to_node_map: &'a mut HashMap<String, NodeId>,
+    id_str_to_node_map: HashMap<String, NodeId>,
     container_ui_handle: &'a UiHandle,
     container_id: &'a NodeId,
 }
 
-impl<'a> ListUiExtItem<'a> {
+impl<'a, K: Hash + Eq + Copy + Clone + PartialEq> ListUiExtItem<'a, K> {
     pub fn new(
+        item_key: K,
+        list_ui_ext: &'a mut ListUiExt<K>,
         ui_manager: &'a mut UiManager,
-        id_str_to_node_map: &'a mut HashMap<String, NodeId>,
         container_ui_handle: &'a UiHandle,
         container_id: &'a NodeId,
     ) -> Self {
         Self {
+            item_key,
+            list_ui_ext,
             ui_manager,
-            id_str_to_node_map,
+            id_str_to_node_map: HashMap::new(),
             container_ui_handle,
             container_id,
         }
@@ -125,13 +140,15 @@ impl<'a> ListUiExtItem<'a> {
         }
 
         // add node
-        self.ui_manager.add_copied_node(
-            self.id_str_to_node_map,
+        let new_node_id = self.ui_manager.add_copied_node(
+            &mut self.id_str_to_node_map,
             self.container_ui_handle,
             self.container_id,
             item_ui_handle,
             &UiRuntimeConfig::ROOT_NODE_ID,
         );
+
+        self.list_ui_ext.loaded_items.entry(self.item_key).or_insert_with(HashSet::new).insert(new_node_id);
     }
 
     pub fn get_node_id_by_str(&self, id_str: &str) -> Option<NodeId> {

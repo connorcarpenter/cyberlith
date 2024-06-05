@@ -67,7 +67,7 @@ impl UiManager {
         dest_parent_id: &NodeId,
         src_ui: &UiHandle,
         src_id: &NodeId
-    ) {
+    ) -> NodeId {
         // info!("[{:?} . {:?}] -> [{:?} . {:?}]", src_ui, src_id, dest_ui, dest_parent_id);
 
         let mut new_copied_node = self.ui_runtimes.get(src_ui).unwrap().ui_config_ref().get_node(src_id).unwrap().clone();
@@ -113,6 +113,8 @@ impl UiManager {
                 warn!("dest_id is not a panel");
             }
         }
+
+        new_node_id
     }
 }
 

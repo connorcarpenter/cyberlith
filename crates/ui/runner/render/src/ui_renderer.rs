@@ -458,7 +458,7 @@ fn draw_ui_textbox(
         let textbox_text = if password_masked_string.is_some() {
             password_masked_string.as_ref().unwrap()
         } else {
-            &textbox_state.text
+            textbox_state.text.as_str()
         };
 
         // draw text

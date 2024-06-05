@@ -1,3 +1,7 @@
+use std::str::FromStr;
+
+use ascii::AsciiString;
+
 use asset_id::AssetId;
 use logging::{info, warn};
 use render_api::{
@@ -89,7 +93,7 @@ impl UiState {
     pub fn get_textbox_text(&self, node_id: &NodeId) -> Option<String> {
         let node = self.store.get_node(node_id)?;
         let textbox = node.widget_textbox_ref()?;
-        Some(textbox.text.clone())
+        Some(textbox.text.to_string())
     }
 
     pub fn set_textbox_text(&mut self, node_id: &NodeId, val: &str) {
@@ -99,7 +103,7 @@ impl UiState {
         let Some(textbox) = node.widget_textbox_mut() else {
             return;
         };
-        textbox.text = val.to_string();
+        textbox.text = AsciiString::from_str(val).unwrap();
     }
 
     pub fn get_text(&self, node_id: &NodeId) -> Option<String> {
@@ -118,7 +122,7 @@ impl UiState {
                 text.text = val.to_string();
             }
             WidgetState::Textbox(textbox) => {
-                textbox.text = val.to_string();
+                textbox.text = AsciiString::from_str(val).unwrap();
             }
             _ => {
                 warn!(

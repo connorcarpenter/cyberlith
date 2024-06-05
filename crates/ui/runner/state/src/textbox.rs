@@ -1,3 +1,5 @@
+use ascii::AsciiString;
+
 use render_api::base::CpuMaterial;
 use storage::Handle;
 use ui_runner_config::Textbox;
@@ -6,7 +8,7 @@ use crate::NodeActiveState;
 
 #[derive(Clone)]
 pub struct TextboxState {
-    pub text: String,
+    pub text: AsciiString,
     pub offset_index: usize,
     pub password_mask: bool,
     pub eye_hover: bool,
@@ -15,7 +17,7 @@ pub struct TextboxState {
 impl TextboxState {
     pub fn new(textbox: &Textbox) -> Self {
         Self {
-            text: String::new(),
+            text: AsciiString::new(),
             offset_index: 0,
             password_mask: textbox.is_password,
             eye_hover: false,
