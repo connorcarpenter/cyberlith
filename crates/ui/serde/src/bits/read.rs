@@ -3,7 +3,6 @@ use std::collections::HashMap;
 use naia_serde::{
     BitReader, SerdeErr, SerdeInternal as Serde, UnsignedInteger, UnsignedVariableInteger,
 };
-use logging::info;
 
 use render_api::base::Color;
 use ui_builder_config::{
@@ -47,7 +46,7 @@ fn convert_actions_to_ui_config(actions: Vec<UiAction>) -> UiConfig {
                 style_count += 1;
             }
             UiAction::Node(node) => {
-                info!("added node: {:?}", node);
+                // info!("added node: {:?}", node);
                 nodes.push(node);
             }
         }

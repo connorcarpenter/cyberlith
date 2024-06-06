@@ -17,7 +17,6 @@ use game_engine::{
         RenderTarget,
     },
     ui::{UiManager, UiHandle, extensions::{ListUiExt, ListUiExtItem}},
-    social::GlobalChatMessageId,
 };
 use logging::info;
 use ui_builder::UiConfig;
@@ -129,13 +128,8 @@ fn setup_global_chat_test_case(ui_manager: &mut UiManager, ui_handles: &Vec<UiHa
     let mut list_ui_ext = ListUiExt::new();
     list_ui_ext.set_container_ui(ui_manager, &global_chat_ui_handle, "chat_wall");
 
-    // setup collection
-    let mut global_chats = BTreeMap::<u32, (String, u8, u8, u8, u8, String)>::new();
-    global_chats.insert(1, ("tom".to_string(), 3, 1, 11, 31, "hi".to_string()));
-    global_chats.insert(2, ("tom".to_string(), 3, 1, 11, 33, "hello".to_string()));
-    global_chats.insert(3, ("ben".to_string(), 3, 2, 4, 2, "woah".to_string()));
-    global_chats.insert(4, ("c lark".to_string(), 3, 2, 4, 56, "jeesh".to_string()));
-    global_chats.insert(5, ("c lark".to_string(), 3, 3, 9, 18, "mmkay".to_string()));
+    // setup chats
+    let global_chats = setup_global_chats();
 
     let mut last_date: Option<(u8, u8)> = None;
     let mut last_username: Option<String> = None;
@@ -179,6 +173,64 @@ fn setup_global_chat_test_case(ui_manager: &mut UiManager, ui_handles: &Vec<UiHa
             last_username = Some(username.clone());
         },
     );
+}
+
+fn setup_global_chats() -> BTreeMap<u32, (String, u8, u8, u8, u8, String)> {
+    let mut users = Vec::new();
+    users.push("tom"); users.push("ben"); users.push("andrew"); users.push("joe");
+    users.push("jane"); users.push("sarah"); users.push("jim"); users.push("bob");
+
+    let mut messages = Vec::new();
+    messages.push("hello"); messages.push("woah"); messages.push("jeesh");
+    messages.push("mmkay"); messages.push("huh"); messages.push("what");
+    messages.push("ok"); messages.push("sure"); messages.push("nope");
+    messages.push("yep"); messages.push("maybe"); messages.push("never");
+    messages.push("always"); messages.push("sometimes"); messages.push("often");
+    messages.push("rarely"); messages.push("blah"); messages.push("meh");
+
+    let mut global_chats = BTreeMap::<u32, (String, u8, u8, u8, u8, String)>::new();
+
+    let mut current_time = (3, 1, 11, 30);
+    let mut current_user_index = 0;
+
+    for _i in 0..32 {
+        if random::gen_range_u32(0, 5) < 1 {
+            current_user_index = random::gen_range_u32(0, users.len() as u32) as usize;
+        }
+        let message_index = random::gen_range_u32(0, messages.len() as u32) as usize;
+        setup_global_chat(&mut global_chats, &mut current_time, users[current_user_index], messages[message_index]);
+    }
+
+    global_chats
+}
+
+fn setup_global_chat(
+    global_chats: &mut BTreeMap<u32, (String, u8, u8, u8, u8, String)>,
+    current_time: &mut (u32, u32, u32, u32),
+    username: &str,
+    message: &str,
+) {
+    let (month, day, hour, minute) = current_time;
+
+    global_chats.insert(
+        global_chats.len() as u32,
+        (username.to_string(), *month as u8, *day as u8, *hour as u8, *minute as u8, message.to_string())
+    );
+
+    let add_minutes = random::gen_range_u32(1, 300); // 1 minutes to 1/2 day
+    *minute += add_minutes;
+    while *minute >= 60 {
+        *minute -= 60;
+        *hour += 1;
+    }
+    while *hour >= 24 {
+        *hour -= 24;
+        *day += 1;
+    }
+    while *day >= 31 {
+        *day -= 31;
+        *month += 1;
+    }
 }
 
 fn add_day_divider_item(item_ctx: &mut ListUiExtItem<u32>, ui: &UiHandle, date: (u8, u8)) {

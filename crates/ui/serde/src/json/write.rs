@@ -39,8 +39,7 @@ impl From<&UiConfig> for UiConfigJson {
 
         // nodes
         for (_id, node) in ui_config.nodes_iter() {
-            me.nodes
-                .push(UiNodeJson::from_node(&style_id_to_index, node));
+            me.nodes.push(UiNodeJson::from_node(&style_id_to_index, node));
         }
 
         me
