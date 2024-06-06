@@ -66,8 +66,11 @@ impl<K: Hash + Eq + Copy + Clone + PartialEq> ListUiExt<K> {
             let container_ui_runtime = ui_manager.ui_runtimes.get_mut(&container_ui_handle).unwrap();
             let container_id = container_ui_runtime.get_node_id_by_id_str(container_ui_str).unwrap();
 
+            let mut item_index = 0;
+
             let data_collection_iter = collection.into_iter();
             for (data_key, data_val) in data_collection_iter {
+                item_index += 1;
                 let data_key = (*data_key).into();
 
                 if self.loaded_items.contains_key(&data_key) {

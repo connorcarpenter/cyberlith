@@ -6,7 +6,6 @@ use bevy_ecs::{
     system::{Res, ResMut},
 };
 
-use asset_serde::json::{Asset, AssetData, AssetMeta, UiConfigJson};
 use game_engine::{
     asset::{
         embedded_asset_event, AssetId, AssetMetadataSerde, AssetType, ETag, EmbeddedAssetEvent,
@@ -16,8 +15,10 @@ use game_engine::{
         Camera, CameraBundle, ClearOperation, OrthographicProjection, Projection, RenderLayers,
         RenderTarget,
     },
-    ui::{UiManager, UiHandle, extensions::{ListUiExt, ListUiExtItem}},
+    ui::UiManager,
 };
+
+use asset_serde::json::{Asset, AssetData, AssetMeta, UiConfigJson};
 use logging::info;
 use ui_builder::UiConfig;
 use ui_runner_config::UiRuntimeConfig;
@@ -31,6 +32,7 @@ pub struct SubmitButtonEvent;
 pub fn setup(
     mut commands: Commands,
     mut embedded_asset_events: EventWriter<EmbeddedAssetEvent>,
+    mut global: ResMut<Global>,
     mut ui_manager: ResMut<UiManager>,
 ) {
     let mut uis = Vec::new();
@@ -54,7 +56,6 @@ pub fn setup(
     uis.push(game::global_chat_username_and_message::ui_define()); // game global chat username and message
     uis.push(game::global_chat_message::ui_define()); // game global chat message
 
-    let mut ui_handles = Vec::new();
     for (ui_name, ui_asset_id, ui_etag, ui) in uis {
         // write JSON and bits files, metadata too
         let ui = write_to_file(&ui_name, &ui_asset_id, &ui_etag, ui);
@@ -63,13 +64,13 @@ pub fn setup(
         let ui_handle = ui_manager
             .manual_load_ui_config(&ui_asset_id, UiRuntimeConfig::load_from_builder_config(ui));
 
-        ui_handles.push(ui_handle);
+        global.ui_handles.push(ui_handle);
     }
 
     ui_manager.set_target_render_layer(RenderLayers::layer(0));
-    ui_manager.enable_ui(&ui_handles[0]);
+    ui_manager.enable_ui(&global.ui_handles[0]);
 
-    setup_global_chat_test_case(&mut ui_manager, &ui_handles);
+    setup_global_chat_test_case(&mut global, &mut ui_manager);
 
     // scene setup now
     // ambient light
@@ -105,74 +106,26 @@ pub fn setup(
     ui_manager.set_eye_icon_handle(AssetId::from_str("qbgz5j").unwrap());
 }
 
-fn setup_global_chat_test_case(ui_manager: &mut UiManager, ui_handles: &Vec<UiHandle>) {
+fn setup_global_chat_test_case(
+    global: &mut Global,
+    ui_manager: &mut UiManager,
+) {
     // main menu ui
-    let main_menu_ui_handle = ui_handles[0];
+    let main_menu_ui_handle = global.ui_handles[0];
 
     // global chat sub-ui
-    let global_chat_ui_handle = ui_handles[1];
-
-    // day divider ui
-    let day_divider_ui_handle = ui_handles[2];
-
-    // username and message ui
-    let username_and_message_ui_handle = ui_handles[3];
-
-    // username and message ui
-    let message_ui_handle = ui_handles[4];
+    let global_chat_ui_handle = global.ui_handles[1];
 
     // setup sub ui
     ui_manager.set_ui_container_contents(&main_menu_ui_handle, "center_container", &global_chat_ui_handle);
 
     // setup global chat list
-    let mut list_ui_ext = ListUiExt::new();
-    list_ui_ext.set_container_ui(ui_manager, &global_chat_ui_handle, "chat_wall");
+    global.list_ui_ext.set_container_ui(ui_manager, &global_chat_ui_handle, "chat_wall");
 
     // setup chats
-    let global_chats = setup_global_chats();
+    global.global_chats = setup_global_chats();
 
-    let mut last_date: Option<(u8, u8)> = None;
-    let mut last_username: Option<String> = None;
-
-    // setup collection
-    list_ui_ext.sync_with_collection(
-        ui_manager,
-        &global_chats,
-        |item_ctx, _message_id, (username, month, day, hour, minute, message), create_item| {
-
-            let message_date = (*month, *day);
-            let message_time = (*hour, *minute);
-
-            // add day divider if necessary
-            if last_date.is_none() || last_date.unwrap() != message_date {
-                if create_item {
-                    add_day_divider_item(item_ctx, &day_divider_ui_handle, message_date);
-                }
-                last_username = None;
-            }
-
-            last_date = Some(message_date);
-
-            // add username if necessary
-            if last_username.is_none() {
-                if create_item {
-                    add_username_and_message_item(item_ctx, &username_and_message_ui_handle, username, message_time, message);
-                }
-            } else  if !last_username.as_ref().unwrap().eq(username) {
-                if create_item {
-                    add_message_item(item_ctx, &message_ui_handle, " "); // blank space
-                    add_username_and_message_item(item_ctx, &username_and_message_ui_handle, username, message_time, message);
-                }
-            } else {
-                if create_item {
-                    // just add message
-                    add_message_item(item_ctx, &message_ui_handle, message);
-                }
-            }
-
-            last_username = Some(username.clone());
-        },
-    );
+    global.sync_chat_collections(ui_manager);
 }
 
 fn setup_global_chats() -> BTreeMap<u32, (String, u8, u8, u8, u8, String)> {
@@ -231,38 +184,6 @@ fn setup_global_chat(
         *day -= 31;
         *month += 1;
     }
-}
-
-fn add_day_divider_item(item_ctx: &mut ListUiExtItem<u32>, ui: &UiHandle, date: (u8, u8)) {
-
-    item_ctx.add_copied_node(ui);
-
-    let divider_date_str = format!("{}/{}", date.0, date.1);
-    let divider_text_node_id = item_ctx.get_node_id_by_str("timestamp").unwrap();
-    item_ctx.set_text(&divider_text_node_id, divider_date_str.as_str());
-}
-
-fn add_username_and_message_item(item_ctx: &mut ListUiExtItem<u32>, ui: &UiHandle, username: &str, time: (u8, u8), message_text: &str) {
-
-    item_ctx.add_copied_node(ui);
-
-    let message_user_id_node_id = item_ctx.get_node_id_by_str("user_name").unwrap();
-    item_ctx.set_text(&message_user_id_node_id, username);
-
-    let divider_date_str = format!("{}:{}", time.0, time.1);
-    let message_timestamp_node_id = item_ctx.get_node_id_by_str("timestamp").unwrap();
-    item_ctx.set_text(&message_timestamp_node_id, divider_date_str.as_str());
-
-    let message_text_node_id = item_ctx.get_node_id_by_str("message").unwrap();
-    item_ctx.set_text(&message_text_node_id, message_text);
-}
-
-fn add_message_item(item_ctx: &mut ListUiExtItem<u32>, ui: &UiHandle, message_text: &str) {
-
-    item_ctx.add_copied_node(ui);
-
-    let message_text_node_id = item_ctx.get_node_id_by_str("message").unwrap();
-    item_ctx.set_text(&message_text_node_id, message_text);
 }
 
 pub fn handle_events(
