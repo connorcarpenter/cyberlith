@@ -32,9 +32,29 @@ pub struct SubmitButtonEvent;
 pub fn setup(
     mut commands: Commands,
     mut embedded_asset_events: EventWriter<EmbeddedAssetEvent>,
-    mut global: ResMut<Global>,
     mut ui_manager: ResMut<UiManager>,
 ) {
+    // camera
+    let scene_camera_entity = commands
+        .spawn(CameraBundle {
+            camera: Camera {
+                viewport: None,
+                clear_operation: ClearOperation::from_rgba(0.0, 0.0, 0.0, 1.0),
+                target: RenderTarget::Screen,
+                ..Default::default()
+            },
+            projection: Projection::Orthographic(OrthographicProjection {
+                near: 0.0,
+                far: 2000.0,
+            }),
+            ..Default::default()
+        })
+        .insert(RenderLayers::layer(0))
+        .id();
+
+    let mut global = Global::new(scene_camera_entity);
+
+    // ui setup
     let mut uis = Vec::new();
 
     // uis.push(launcher::start::ui_define()); // start
@@ -75,26 +95,6 @@ pub fn setup(
     // scene setup now
     // ambient light
     // commands.spawn(AmbientLight::new(1.0, Color::WHITE)).insert(RenderLayers::layer(0));
-    //
-    // // camera
-    let scene_camera_entity = commands
-        .spawn(CameraBundle {
-            camera: Camera {
-                viewport: None,
-                clear_operation: ClearOperation::from_rgba(0.0, 0.0, 0.0, 1.0),
-                target: RenderTarget::Screen,
-                ..Default::default()
-            },
-            projection: Projection::Orthographic(OrthographicProjection {
-                near: 0.0,
-                far: 2000.0,
-            }),
-            ..Default::default()
-        })
-        .insert(RenderLayers::layer(0))
-        .id();
-
-    commands.insert_resource(Global::new(scene_camera_entity));
 
     // ui setup
     embedded_asset_events.send(embedded_asset_event!("embedded/8273wa")); // palette
@@ -104,6 +104,8 @@ pub fn setup(
     // font & password eye icon setup
     ui_manager.set_text_icon_handle(AssetId::from_str("34mvvk").unwrap());
     ui_manager.set_eye_icon_handle(AssetId::from_str("qbgz5j").unwrap());
+
+    commands.insert_resource(global);
 }
 
 fn setup_global_chat_test_case(

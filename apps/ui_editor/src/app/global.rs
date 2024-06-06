@@ -3,6 +3,7 @@ use std::collections::BTreeMap;
 use bevy_ecs::{entity::Entity, system::Resource};
 
 use game_engine::ui::{UiHandle, extensions::{ListUiExt, ListUiExtItem}, UiManager};
+use logging::info;
 
 #[derive(Resource)]
 pub struct Global {
@@ -20,6 +21,14 @@ impl Global {
             global_chats: BTreeMap::new(),
             ui_handles: Vec::new(),
         }
+    }
+
+    pub fn scroll_up(&mut self) {
+        info!("scrolling up");
+    }
+
+    pub fn scroll_down(&mut self) {
+        info!("scrolling down");
     }
 
     pub fn sync_chat_collections(

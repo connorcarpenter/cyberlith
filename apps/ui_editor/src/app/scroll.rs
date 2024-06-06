@@ -1,19 +1,21 @@
 
-use bevy_ecs::event::EventReader;
+use bevy_ecs::{system::ResMut, event::EventReader};
 
 use game_engine::input::{InputEvent, Key};
-use logging::info;
+
+use crate::app::global::Global;
 
 pub fn scroll_events(
+    mut global: ResMut<Global>,
     mut input_events: EventReader<InputEvent>,
 ) {
     for event in input_events.read() {
         match event {
             InputEvent::KeyPressed(Key::I, _) => {
-                info!("Scroll Up");
+                global.scroll_up();
             }
             InputEvent::KeyPressed(Key::K, _) => {
-                info!("Scroll Down");
+                global.scroll_down();
             }
             _ => {}
         }
