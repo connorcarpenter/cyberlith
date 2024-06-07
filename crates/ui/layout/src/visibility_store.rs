@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use logging::warn;
 
 use crate::NodeId;
 
@@ -14,7 +15,7 @@ impl UiVisibilityStore {
     // nodes
     pub fn add_node(&mut self, id: &NodeId, node_init_visible: bool) {
         if self.nodes.len() >= 255 {
-            panic!("1 UI can only hold up to 255 nodes, too many nodes!");
+            warn!("1 UI can only hold up to 255 nodes, too many nodes!");
         }
         self.nodes.insert(*id, node_init_visible);
     }

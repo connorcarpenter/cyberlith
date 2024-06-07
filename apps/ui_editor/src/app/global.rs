@@ -17,18 +17,24 @@ impl Global {
     pub fn new(scene_camera_entity: Entity) -> Self {
         Self {
             scene_camera_entity,
-            list_ui_ext: ListUiExt::new(),
+            list_ui_ext: ListUiExt::new(false),
             global_chats: BTreeMap::new(),
             ui_handles: Vec::new(),
         }
     }
 
-    pub fn scroll_up(&mut self) {
-        info!("scrolling up");
+    pub fn scroll_up(&mut self, ui_manager: &mut UiManager) {
+
+        self.list_ui_ext.scroll_up();
+
+        self.sync_chat_collections(ui_manager);
     }
 
-    pub fn scroll_down(&mut self) {
-        info!("scrolling down");
+    pub fn scroll_down(&mut self, ui_manager: &mut UiManager) {
+
+        self.list_ui_ext.scroll_down();
+
+        self.sync_chat_collections(ui_manager);
     }
 
     pub fn sync_chat_collections(
@@ -46,26 +52,29 @@ impl Global {
         // setup collection
         self.list_ui_ext.sync_with_collection(
             ui_manager,
-            &self.global_chats,
-            |item_ctx,
-             _message_id,
-             (
-                 username,
-                 month,
-                 day,
-                 hour,
-                 minute,
-                 message
-             ),
-             create_item| {
+            self.global_chats.iter(),
+            self.global_chats.len(),
+            |
+                item_ctx,
+                _message_id,
+                (
+                    username,
+                    month,
+                    day,
+                    hour,
+                    minute,
+                    message
+                )
+            | {
+                info!("syncing chat message: {} {} {} {} {} {}", username, month, day, hour, minute, message);
+
                 let message_date = (*month, *day);
                 let message_time = (*hour, *minute);
 
                 // add day divider if necessary
                 if last_date.is_none() || last_date.unwrap() != message_date {
-                    if create_item {
-                        add_day_divider_item(item_ctx, &day_divider_ui_handle, message_date);
-                    }
+                    add_day_divider_item(item_ctx, &day_divider_ui_handle, message_date);
+
                     last_username = None;
                 }
 
@@ -73,19 +82,13 @@ impl Global {
 
                 // add username if necessary
                 if last_username.is_none() {
-                    if create_item {
-                        add_username_and_message_item(item_ctx, &username_and_message_ui_handle, username, message_time, message);
-                    }
+                    add_username_and_message_item(item_ctx, &username_and_message_ui_handle, username, message_time, message);
                 } else if !last_username.as_ref().unwrap().eq(username) {
-                    if create_item {
-                        add_message_item(item_ctx, &message_ui_handle, " "); // blank space
-                        add_username_and_message_item(item_ctx, &username_and_message_ui_handle, username, message_time, message);
-                    }
+                    add_message_item(item_ctx, &message_ui_handle, " "); // blank space
+                    add_username_and_message_item(item_ctx, &username_and_message_ui_handle, username, message_time, message);
                 } else {
-                    if create_item {
-                        // just add message
-                        add_message_item(item_ctx, &message_ui_handle, message);
-                    }
+                    // just add message
+                    add_message_item(item_ctx, &message_ui_handle, message);
                 }
 
                 last_username = Some(username.clone());
@@ -99,29 +102,22 @@ fn add_day_divider_item(item_ctx: &mut ListUiExtItem<u32>, ui: &UiHandle, date: 
     item_ctx.add_copied_node(ui);
 
     let divider_date_str = format!("{}/{}", date.0, date.1);
-    let divider_text_node_id = item_ctx.get_node_id_by_str("timestamp").unwrap();
-    item_ctx.set_text(&divider_text_node_id, divider_date_str.as_str());
+    item_ctx.set_text_by_str("timestamp", divider_date_str.as_str());
 }
 
 fn add_username_and_message_item(item_ctx: &mut ListUiExtItem<u32>, ui: &UiHandle, username: &str, time: (u8, u8), message_text: &str) {
 
     item_ctx.add_copied_node(ui);
 
-    let message_user_id_node_id = item_ctx.get_node_id_by_str("user_name").unwrap();
-    item_ctx.set_text(&message_user_id_node_id, username);
+    item_ctx.set_text_by_str("user_name", username);
 
     let divider_date_str = format!("{}:{}", time.0, time.1);
-    let message_timestamp_node_id = item_ctx.get_node_id_by_str("timestamp").unwrap();
-    item_ctx.set_text(&message_timestamp_node_id, divider_date_str.as_str());
+    item_ctx.set_text_by_str("timestamp", divider_date_str.as_str());
 
-    let message_text_node_id = item_ctx.get_node_id_by_str("message").unwrap();
-    item_ctx.set_text(&message_text_node_id, message_text);
+    item_ctx.set_text_by_str("message", message_text);
 }
 
 fn add_message_item(item_ctx: &mut ListUiExtItem<u32>, ui: &UiHandle, message_text: &str) {
-
     item_ctx.add_copied_node(ui);
-
-    let message_text_node_id = item_ctx.get_node_id_by_str("message").unwrap();
-    item_ctx.set_text(&message_text_node_id, message_text);
+    item_ctx.set_text_by_str("message", message_text);
 }

@@ -139,6 +139,20 @@ impl UiRuntime {
         self.config.translate_copied_style(&old_ui.asset_id(), old_style_id)
     }
 
+    pub fn delete_node_recurse(&mut self, node_id: &NodeId) {
+        info!("deleting node: {:?}", node_id);
+
+        // recurse
+        {
+            if let Some(mut panel_mut) = self.panel_mut(node_id) {
+                panel_mut.remove_all_children();
+            }
+        }
+
+        self.ui_config_mut().delete_node(node_id);
+        self.ui_state_mut().delete_node(node_id);
+    }
+
     // state
 
     pub(crate) fn load_cpu_data(&mut self, ui_handle: &UiHandle, materials: &mut Storage<CpuMaterial>) {

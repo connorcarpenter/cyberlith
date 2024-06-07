@@ -148,7 +148,7 @@ fn setup_global_chats() -> BTreeMap<u32, (String, u8, u8, u8, u8, String)> {
     let mut current_time = (3, 1, 11, 30);
     let mut current_user_index = 0;
 
-    for _i in 0..32 {
+    for _i in 0..64 {
         if random::gen_range_u32(0, 5) < 1 {
             current_user_index = random::gen_range_u32(0, users.len() as u32) as usize;
         }
@@ -165,11 +165,14 @@ fn setup_global_chat(
     username: &str,
     message: &str,
 ) {
+    let id = global_chats.len() as u32;
+    let message = format!("{:?} {:?}", id, message);
+
     let (month, day, hour, minute) = current_time;
 
     global_chats.insert(
         global_chats.len() as u32,
-        (username.to_string(), *month as u8, *day as u8, *hour as u8, *minute as u8, message.to_string())
+        (username.to_string(), *month as u8, *day as u8, *hour as u8, *minute as u8, message)
     );
 
     let add_minutes = random::gen_range_u32(1, 300); // 1 minutes to 1/2 day

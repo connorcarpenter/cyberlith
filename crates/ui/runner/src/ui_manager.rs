@@ -57,67 +57,6 @@ pub struct UiManager {
     recalc_layout: bool,
 }
 
-impl UiManager {
-
-    // from src to dest, copies entire hierarchy of nodes, recursively
-    pub fn add_copied_node(
-        &mut self,
-        id_str_map: &mut HashMap<String, NodeId>,
-        dest_ui: &UiHandle,
-        dest_parent_id: &NodeId,
-        src_ui: &UiHandle,
-        src_id: &NodeId
-    ) -> NodeId {
-        // info!("[{:?} . {:?}] -> [{:?} . {:?}]", src_ui, src_id, dest_ui, dest_parent_id);
-
-        let mut new_copied_node = self.ui_runtimes.get(src_ui).unwrap().ui_config_ref().get_node(src_id).unwrap().clone();
-        if let Some(old_style_id) = new_copied_node.style_id() {
-            let new_style_id = self.ui_runtimes.get(dest_ui).unwrap().translate_copied_style(src_ui, old_style_id).unwrap();
-            new_copied_node.clear_style_id();
-            new_copied_node.set_style_id(new_style_id);
-            info!("[{:?} . {:?}] added style: [{:?} . {:?}]", src_ui, src_id, dest_ui, new_style_id);
-        }
-        let old_children_ids_opt: Option<Vec<NodeId>> = if new_copied_node.widget_kind().has_children() {
-            let output = Some(new_copied_node.widget.children().unwrap().copied().collect());
-            new_copied_node.widget.clear_children();
-            info!("[{:?} . {:?}] had old children: {:?}", src_ui, src_id, output);
-            output
-        } else {
-            None
-        };
-
-        let dest_runtime = self.ui_runtimes.get_mut(dest_ui).unwrap();
-        let Some(mut dest_parent_panel_mut) = dest_runtime.panel_mut(dest_parent_id) else {
-            panic!("dest_parent_id is not a panel");
-        };
-
-        let new_node_id = dest_parent_panel_mut.add_node(&new_copied_node);
-
-        info!("[ui: {:?} . id: {:?}] -> [ui: {:?}, id: {:?}]", src_ui, src_id, dest_ui, new_node_id);
-
-        if let Some(id_str) = new_copied_node.id_str_opt().as_ref() {
-            id_str_map.insert(id_str.clone(), new_node_id);
-        }
-
-        // copy children
-        if let Some(old_children_ids) = old_children_ids_opt {
-
-            for old_child_id in &old_children_ids {
-                self.add_copied_node(id_str_map, dest_ui, &new_node_id, src_ui, old_child_id);
-            }
-
-            if let Some(panel_mut) = self.ui_runtimes.get_mut(dest_ui).unwrap().ui_config_mut().panel_mut(&new_node_id) {
-                info!("[ui: {:?}, id: {:?}] has new children: {:?}", dest_ui, new_node_id, panel_mut.children);
-            } else {
-                // it's a button! TODO: handle this case
-                warn!("dest_id is not a panel");
-            }
-        }
-
-        new_node_id
-    }
-}
-
 impl Default for UiManager {
     fn default() -> Self {
         Self {
@@ -772,6 +711,77 @@ impl UiManager {
             let child_ui_handle = self.ui_runtimes.get(handle).unwrap().get_ui_container_contents(node_id).unwrap();
             self.print_node(&child_ui_handle, &NodeId::new(0));
         }
+    }
+
+    pub fn add_copied_node(
+        &mut self,
+        id_str_map: &mut HashMap<String, NodeId>,
+        dest_ui: &UiHandle,
+        dest_parent_id: &NodeId,
+        src_ui: &UiHandle,
+        src_id: &NodeId
+    ) -> NodeId {
+        let index = self.ui_runtimes.get(dest_ui).unwrap().ui_config_ref().get_node(dest_parent_id).unwrap().widget_panel_ref().unwrap().children.len();
+        self.insert_copied_node(index, id_str_map, dest_ui, dest_parent_id, src_ui, src_id)
+    }
+
+    // from src to dest, copies entire hierarchy of nodes, recursively
+    pub fn insert_copied_node(
+        &mut self,
+        index: usize,
+        id_str_map: &mut HashMap<String, NodeId>,
+        dest_ui: &UiHandle,
+        dest_parent_id: &NodeId,
+        src_ui: &UiHandle,
+        src_id: &NodeId
+    ) -> NodeId {
+        // info!("[{:?} . {:?}] -> [{:?} . {:?}]", src_ui, src_id, dest_ui, dest_parent_id);
+
+        let mut new_copied_node = self.ui_runtimes.get(src_ui).unwrap().ui_config_ref().get_node(src_id).unwrap().clone();
+        if let Some(old_style_id) = new_copied_node.style_id() {
+            let new_style_id = self.ui_runtimes.get(dest_ui).unwrap().translate_copied_style(src_ui, old_style_id).unwrap();
+            new_copied_node.clear_style_id();
+            new_copied_node.set_style_id(new_style_id);
+            info!("[{:?} . {:?}] added style: [{:?} . {:?}]", src_ui, src_id, dest_ui, new_style_id);
+        }
+        let old_children_ids_opt: Option<Vec<NodeId>> = if new_copied_node.widget_kind().has_children() {
+            let output = Some(new_copied_node.widget.children().unwrap().copied().collect());
+            new_copied_node.widget.clear_children();
+            info!("[{:?} . {:?}] had old children: {:?}", src_ui, src_id, output);
+            output
+        } else {
+            None
+        };
+
+        let dest_runtime = self.ui_runtimes.get_mut(dest_ui).unwrap();
+        let Some(mut dest_parent_panel_mut) = dest_runtime.panel_mut(dest_parent_id) else {
+            panic!("dest_parent_id is not a panel");
+        };
+
+        let new_node_id = dest_parent_panel_mut.insert_node(index, &new_copied_node);
+
+        info!("[ui: {:?} . id: {:?}] -> [ui: {:?}, id: {:?}]", src_ui, src_id, dest_ui, new_node_id);
+
+        if let Some(id_str) = new_copied_node.id_str_opt().as_ref() {
+            id_str_map.insert(id_str.clone(), new_node_id);
+        }
+
+        // copy children
+        if let Some(old_children_ids) = old_children_ids_opt {
+
+            for old_child_id in &old_children_ids {
+                self.add_copied_node(id_str_map, dest_ui, &new_node_id, src_ui, old_child_id);
+            }
+
+            if let Some(panel_mut) = self.ui_runtimes.get_mut(dest_ui).unwrap().ui_config_mut().panel_mut(&new_node_id) {
+                info!("[ui: {:?}, id: {:?}] has new children: {:?}", dest_ui, new_node_id, panel_mut.children);
+            } else {
+                // it's a button! TODO: handle this case
+                warn!("dest_id is not a panel");
+            }
+        }
+
+        new_node_id
     }
 }
 

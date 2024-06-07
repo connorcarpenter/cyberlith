@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use asset_id::AssetId;
 
-use logging::info;
+use logging::{info, warn};
 use ui_layout::NodeStateStore;
 use ui_runner_config::{NodeId, StyleId, UiNode, WidgetKind};
 
@@ -44,7 +44,7 @@ impl UiStateStore {
 
     fn insert_node(&mut self, id: NodeId, node: UiNodeState) {
         if self.nodes.len() >= 255 {
-            panic!("1 UI can only hold up to 255 nodes, too many nodes!");
+            warn!("1 UI can only hold up to 255 nodes, too many nodes!");
         }
 
         self.nodes_needing_cpu_data.insert(id);

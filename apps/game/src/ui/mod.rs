@@ -100,6 +100,8 @@ pub(crate) fn handle_events(
     mut ui_manager: ResMut<UiManager>,
     mut rumble_manager: ResMut<RumbleManager>,
     mut session_client: SessionClient,
+    mut global_chat: ResMut<GlobalChat>,
+    message_q: Query<&GlobalChatMessage>,
 
     mut input_events: EventReader<InputEvent>,
     mut host_match_btn_rdr: EventReader<HostMatchButtonClickedEvent>,
@@ -137,10 +139,12 @@ pub(crate) fn handle_events(
                 &mut should_rumble
             ),
             UiKey::GlobalChat => GlobalChat::handle_events(
+                &mut global_chat,
                 &mut ui_manager,
                 &ui_catalog,
                 &mut session_client,
                 &mut input_events,
+                &message_q,
                 &mut should_rumble,
             ),
             _ => {
