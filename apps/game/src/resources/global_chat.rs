@@ -39,27 +39,35 @@ impl GlobalChat {
         _should_rumble: &mut bool,
     ) {
         let ui_handle = ui_catalog.get_ui_handle(UiKey::GlobalChat);
-        let Some(NodeActiveState::Active) = ui_manager.get_node_active_state_from_id(&ui_handle, "message_textbox") else {
-            return;
-        };
 
         for event in input_events.read() {
             match event {
+                // TODO this probably doesn't belong here! this is where it is required to be selecting the textbox!!!
                 InputEvent::KeyPressed(Key::I, _) => {
-                    global_chat.list_ui_ext.scroll_up();
-                    global_chat.sync_with_collection(ui_manager, message_q);
+                    if let Some(NodeActiveState::Active) = ui_manager.get_node_active_state_from_id(&ui_handle, "message_textbox") {
+                        // do nothing, typing
+                    } else {
+                        global_chat.list_ui_ext.scroll_up();
+                        global_chat.sync_with_collection(ui_manager, message_q);
+                    }
                 }
                 InputEvent::KeyPressed(Key::J, _) => {
-                    global_chat.list_ui_ext.scroll_down();
-                    global_chat.sync_with_collection(ui_manager, message_q);
+                    if let Some(NodeActiveState::Active) = ui_manager.get_node_active_state_from_id(&ui_handle, "message_textbox") {
+                        // do nothing, typing
+                    } else {
+                        global_chat.list_ui_ext.scroll_down();
+                        global_chat.sync_with_collection(ui_manager, message_q);
+                    }
                 }
                 InputEvent::KeyPressed(Key::Enter, modifiers) => {
-                    if modifiers.shift {
-                        // later, add multi-line newline
-                    } else {
-                        // send message
-                        GlobalChat::send_message(ui_manager, &ui_handle, session_server)
-                    }
+                    if let Some(NodeActiveState::Active) = ui_manager.get_node_active_state_from_id(&ui_handle, "message_textbox") {
+                        if modifiers.shift {
+                            // later, add multi-line newline
+                        } else {
+                            // send message
+                            GlobalChat::send_message(ui_manager, &ui_handle, session_server)
+                        }
+                    };
                 }
                 _ => {}
             }
