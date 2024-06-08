@@ -22,6 +22,7 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
         s.set_background_alpha(0.)
             // .set_background_color(Color::RED)
             .set_vertical()
+            .set_height_px(48.0) // root of item ui must have concrete height, sum of below
             .set_self_halign(Alignment::Start)
             .set_margin_left_vp(2.0);
     });

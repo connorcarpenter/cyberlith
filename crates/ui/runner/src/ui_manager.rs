@@ -9,7 +9,7 @@ use bevy_ecs::{
 
 use asset_id::AssetId;
 use asset_loader::{
-    AssetHandle, AssetManager, IconData, ProcessedAssetStore, TypedAssetId, UiTextMeasurer,
+    AssetHandle, AssetManager, IconData, TypedAssetId, UiTextMeasurer,
 };
 use clipboard::ClipboardManager;
 use input::{CursorIcon, Input};
@@ -313,6 +313,8 @@ impl UiManager {
         self.queued_uis.push(*handle);
     }
 
+    // loads cpu data for all queued uis
+    // adds any queued ui node event handlers
     pub fn sync_uis(&mut self, materials: &mut Storage<CpuMaterial>) {
         if self.queued_uis.is_empty() {
             return;
@@ -429,8 +431,7 @@ impl UiManager {
         self.recalc_layout
     }
 
-    pub fn update_ui_viewport(&mut self, asset_manager: &AssetManager, target_camera: &Camera) {
-        let store = asset_manager.get_store();
+    pub fn update_ui_viewport(&mut self, target_camera: &Camera) {
         let Some(viewport) = target_camera.viewport else {
             return;
         };
@@ -446,25 +447,31 @@ impl UiManager {
             // viewport did change
             self.queue_recalculate_layout();
         }
+    }
 
+    pub fn recalculate_ui_layout_if_needed(&mut self, asset_manager: &AssetManager) {
+        let store = asset_manager.get_store();
+        let Some(active_ui_handle) = self.active_ui else {
+            return;
+        };
         let needs_to_recalc = self.needs_to_recalculate_layout();
 
         if needs_to_recalc {
-            self.recalculate_ui_layout(store, &active_ui_handle);
+            let Some(text_icon_handle) = self.get_text_icon_handle() else {
+                return;
+            };
+            let Some(text_icon_data) = store.icons.get(&text_icon_handle) else {
+                return;
+            };
+            self.recalculate_ui_layout(text_icon_data, &active_ui_handle);
         }
     }
 
     fn recalculate_ui_layout(
         &mut self,
-        store: &ProcessedAssetStore,
+        text_icon_data: &IconData,
         ui_handle: &UiHandle,
     ) {
-        let Some(text_icon_handle) = self.get_text_icon_handle() else {
-            return;
-        };
-        let Some(text_icon_data) = store.icons.get(&text_icon_handle) else {
-            return;
-        };
         let text_measurer = UiTextMeasurer::new(text_icon_data);
 
         self.recalculate_ui_layout_impl(&text_measurer, ui_handle, 10.0);
@@ -742,12 +749,12 @@ impl UiManager {
             let new_style_id = self.ui_runtimes.get(dest_ui).unwrap().translate_copied_style(src_ui, old_style_id).unwrap();
             new_copied_node.clear_style_id();
             new_copied_node.set_style_id(new_style_id);
-            info!("[{:?} . {:?}] added style: [{:?} . {:?}]", src_ui, src_id, dest_ui, new_style_id);
+            // info!("[{:?} . {:?}] added style: [{:?} . {:?}]", src_ui, src_id, dest_ui, new_style_id);
         }
         let old_children_ids_opt: Option<Vec<NodeId>> = if new_copied_node.widget_kind().has_children() {
             let output = Some(new_copied_node.widget.children().unwrap().copied().collect());
             new_copied_node.widget.clear_children();
-            info!("[{:?} . {:?}] had old children: {:?}", src_ui, src_id, output);
+            // info!("[{:?} . {:?}] had old children: {:?}", src_ui, src_id, output);
             output
         } else {
             None
@@ -774,7 +781,7 @@ impl UiManager {
             }
 
             if let Some(panel_mut) = self.ui_runtimes.get_mut(dest_ui).unwrap().ui_config_mut().panel_mut(&new_node_id) {
-                info!("[ui: {:?}, id: {:?}] has new children: {:?}", dest_ui, new_node_id, panel_mut.children);
+                // info!("[ui: {:?}, id: {:?}] has new children: {:?}", dest_ui, new_node_id, panel_mut.children);
             } else {
                 // it's a button! TODO: handle this case
                 warn!("dest_id is not a panel");

@@ -2,8 +2,7 @@ use std::collections::BTreeMap;
 
 use bevy_ecs::{entity::Entity, system::Resource};
 
-use game_engine::ui::{UiHandle, extensions::{ListUiExt, ListUiExtItem}, UiManager};
-use logging::info;
+use game_engine::{asset::AssetManager, ui::{UiHandle, extensions::{ListUiExt, ListUiExtItem}, UiManager}};
 
 #[derive(Resource)]
 pub struct Global {
@@ -23,75 +22,87 @@ impl Global {
         }
     }
 
-    pub fn scroll_up(&mut self, ui_manager: &mut UiManager) {
+    pub fn scroll_up(&mut self, ui_manager: &mut UiManager, asset_manager: &AssetManager) {
 
         self.list_ui_ext.scroll_up();
 
-        self.sync_chat_collections(ui_manager);
+        self.sync_chat_collections(ui_manager, asset_manager);
     }
 
-    pub fn scroll_down(&mut self, ui_manager: &mut UiManager) {
+    pub fn scroll_down(&mut self, ui_manager: &mut UiManager, asset_manager: &AssetManager) {
 
         self.list_ui_ext.scroll_down();
 
-        self.sync_chat_collections(ui_manager);
+        self.sync_chat_collections(ui_manager, asset_manager);
     }
 
     pub fn sync_chat_collections(
         &mut self,
         ui_manager: &mut UiManager,
+        asset_manager: &AssetManager,
     ) {
         // day divider ui
         let day_divider_ui_handle = self.ui_handles[2];
         let username_and_message_ui_handle = self.ui_handles[3];
         let message_ui_handle = self.ui_handles[4];
 
-        let mut last_date: Option<(u8, u8)> = None;
-        let mut last_username: Option<String> = None;
-
         // setup collection
         self.list_ui_ext.sync_with_collection(
             ui_manager,
+            asset_manager,
             self.global_chats.iter(),
             self.global_chats.len(),
             |
                 item_ctx,
-                _message_id,
-                (
+                message_id,
+                prev_message_id_opt
+            | {
+                // info!("syncing chat message: {} {} {} {} {} {}", username, month, day, hour, minute, message);
+                let (
                     username,
                     month,
                     day,
                     hour,
                     minute,
                     message
-                )
-            | {
-                info!("syncing chat message: {} {} {} {} {} {}", username, month, day, hour, minute, message);
+                ) = self.global_chats.get(&message_id).unwrap();
+
+                let (prev_date, prev_username) = match prev_message_id_opt {
+                    Some(prev_message_id) => {
+                        let (
+                            prev_username,
+                            prev_month,
+                            prev_day,
+                            _,
+                            _,
+                            _
+                        ) = self.global_chats.get(&prev_message_id).unwrap();
+                        (Some((*prev_month, *prev_day)), Some(prev_username.clone()))
+                    },
+                    None => (None, None),
+                };
 
                 let message_date = (*month, *day);
                 let message_time = (*hour, *minute);
+                let mut added_divider = false;
 
                 // add day divider if necessary
-                if last_date.is_none() || last_date.unwrap() != message_date {
+                if prev_date.is_none() || prev_date.unwrap() != message_date {
                     add_day_divider_item(item_ctx, &day_divider_ui_handle, message_date);
 
-                    last_username = None;
+                    added_divider = true;
                 }
 
-                last_date = Some(message_date);
-
                 // add username if necessary
-                if last_username.is_none() {
+                if prev_username.is_none() || added_divider {
                     add_username_and_message_item(item_ctx, &username_and_message_ui_handle, username, message_time, message);
-                } else if !last_username.as_ref().unwrap().eq(username) {
+                } else if !prev_username.as_ref().unwrap().eq(username) {
                     add_message_item(item_ctx, &message_ui_handle, " "); // blank space
                     add_username_and_message_item(item_ctx, &username_and_message_ui_handle, username, message_time, message);
                 } else {
                     // just add message
                     add_message_item(item_ctx, &message_ui_handle, message);
                 }
-
-                last_username = Some(username.clone());
             },
         );
     }

@@ -19,6 +19,7 @@ use game_engine::{
 };
 
 use asset_serde::json::{Asset, AssetData, AssetMeta, UiConfigJson};
+use game_engine::asset::AssetManager;
 use logging::info;
 use ui_builder::UiConfig;
 use ui_runner_config::UiRuntimeConfig;
@@ -33,6 +34,7 @@ pub fn setup(
     mut commands: Commands,
     mut embedded_asset_events: EventWriter<EmbeddedAssetEvent>,
     mut ui_manager: ResMut<UiManager>,
+    asset_manager: Res<AssetManager>,
 ) {
     // camera
     let scene_camera_entity = commands
@@ -90,7 +92,7 @@ pub fn setup(
     ui_manager.set_target_render_layer(RenderLayers::layer(0));
     ui_manager.enable_ui(&global.ui_handles[0]);
 
-    setup_global_chat_test_case(&mut global, &mut ui_manager);
+    setup_global_chat_test_case(&mut global, &mut ui_manager, &asset_manager);
 
     // scene setup now
     // ambient light
@@ -111,6 +113,7 @@ pub fn setup(
 fn setup_global_chat_test_case(
     global: &mut Global,
     ui_manager: &mut UiManager,
+    asset_manager: &AssetManager,
 ) {
     // main menu ui
     let main_menu_ui_handle = global.ui_handles[0];
@@ -127,7 +130,7 @@ fn setup_global_chat_test_case(
     // setup chats
     global.global_chats = setup_global_chats();
 
-    global.sync_chat_collections(ui_manager);
+    global.sync_chat_collections(ui_manager, asset_manager);
 }
 
 fn setup_global_chats() -> BTreeMap<u32, (String, u8, u8, u8, u8, String)> {

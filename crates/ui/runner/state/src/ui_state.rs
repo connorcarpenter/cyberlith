@@ -278,7 +278,7 @@ impl UiState {
             let widget_kind = node.widget_kind();
             let style_id = node.style_id();
 
-            info!("(ui: {:?}) load_cpu_data: nodeid: {:?}, widget_kind: {:?}, style_id: {:?}", ui_handle, id, widget_kind, style_id);
+            // info!("(ui: {:?}) load_cpu_data: nodeid: {:?}, widget_kind: {:?}, style_id: {:?}", ui_handle, id, widget_kind, style_id);
 
             match widget_kind {
                 WidgetKind::Panel => {
@@ -290,7 +290,7 @@ impl UiState {
                         let background_color_handle = materials.add(background_color);
                         panel_style_mut.set_background_color_handle(background_color_handle);
                     } else {
-                        warn!("do not need to load cpu data for style: {:?}", style_id);
+                        // warn!("do not need to load cpu data for style: {:?}", style_id);
                     }
                 }
                 WidgetKind::Text => {
@@ -311,7 +311,7 @@ impl UiState {
                         let text_color_handle = materials.add(text_color);
                         text_style_mut.set_text_color_handle(text_color_handle);
                     } else {
-                        warn!("do not need to load cpu data for style: {:?}", style_id);
+                        // warn!("do not need to load cpu data for style: {:?}", style_id);
                     }
                 }
                 WidgetKind::Button => {
@@ -343,7 +343,7 @@ impl UiState {
                     let down_color_handle = materials.add(down_color);
                     button_style_mut.set_down_color_handle(down_color_handle);
                     } else {
-                        warn!("do not need to load cpu data for style: {:?}", style_id);
+                        // warn!("do not need to load cpu data for style: {:?}", style_id);
                     }
                 }
                 WidgetKind::Textbox => {
@@ -390,7 +390,7 @@ impl UiState {
                         let select_color_handle = materials.add(select_color);
                         textbox_style_mut.set_select_color_handle(select_color_handle);
                     } else {
-                        warn!("do not need to load cpu data for style: {:?}", style_id);
+                        // warn!("do not need to load cpu data for style: {:?}", style_id);
                     }
                 }
                 WidgetKind::Spinner => {
@@ -411,7 +411,7 @@ impl UiState {
                         let spinner_color_handle = materials.add(spinner_color);
                         spinner_style_mut.set_spinner_color_handle(spinner_color_handle);
                     } else {
-                        warn!("do not need to load cpu data for style: {:?}", style_id);
+                        // warn!("do not need to load cpu data for style: {:?}", style_id);
                     }
                 }
                 WidgetKind::UiContainer => {

@@ -21,6 +21,7 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
     let container_style = ui_config.create_panel_style(|s| {
         s.set_background_alpha(0.)
             // .set_background_color(Color::GREEN)
+            .set_height_px(24.0)
             .set_horizontal()
             .set_self_halign(Alignment::Start)
             .set_margin_left_vp(2.0);
@@ -28,7 +29,7 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
     let message_style = ui_config.create_text_style(|s| {
         s.set_background_alpha(0.)
             // .set_background_color(Color::GREEN)
-            .set_size_px(24.0)
+            .set_size_pc(100.0)
             .set_text_color(Color::LIGHT_GRAY)
             .set_self_halign(Alignment::Start);
     });

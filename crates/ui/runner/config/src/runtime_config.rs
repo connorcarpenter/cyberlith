@@ -157,7 +157,7 @@ impl UiRuntimeConfig {
         self.styles.iter()
     }
 
-    fn get_style(&self, style_id: &StyleId) -> Option<&BaseNodeStyle> {
+    pub fn get_style(&self, style_id: &StyleId) -> Option<&BaseNodeStyle> {
         self.styles.get(style_id.as_usize())
     }
 

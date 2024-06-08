@@ -1,4 +1,4 @@
-use bevy_ecs::system::{Query, ResMut};
+use bevy_ecs::system::{Query, Res, ResMut};
 
 use game_engine::{
     math::Vec3,
@@ -8,6 +8,7 @@ use game_engine::{
     },
     ui::UiManager,
 };
+use game_engine::asset::AssetManager;
 
 use crate::app::global::Global;
 
@@ -15,6 +16,7 @@ pub fn handle_viewport_resize(
     mut global: ResMut<Global>,
     mut window: ResMut<Window>,
     mut ui_manager: ResMut<UiManager>,
+    asset_manager: Res<AssetManager>,
     mut cameras_q: Query<(&mut Camera, &mut Transform)>,
 ) {
     // sync camera viewport to window
@@ -61,5 +63,5 @@ pub fn handle_viewport_resize(
         Vec3::NEG_Y,
     );
 
-    global.sync_chat_collections(&mut ui_manager);
+    global.sync_chat_collections(&mut ui_manager, &asset_manager);
 }

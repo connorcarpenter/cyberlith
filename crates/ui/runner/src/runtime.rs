@@ -335,4 +335,9 @@ impl UiRuntime {
     pub fn ui_config_mut(&mut self) -> &mut UiRuntimeConfig {
         &mut self.config
     }
+
+    pub fn get_node_dimensions(&self, node_id: &NodeId) -> Option<(f32, f32)> {
+        let (width, height, _x, _y, _z) = self.state.cache.bounds(node_id)?;
+        Some((width, height))
+    }
 }

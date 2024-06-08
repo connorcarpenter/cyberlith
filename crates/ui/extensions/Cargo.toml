@@ -10,5 +10,6 @@ workspace = "../../.."
 logging = { path = "../../logging" }
 
 ui_runner = { path = "../runner" }
+asset_loader = { path = "../../asset/loader" }
 
 cfg-if = { version = "1.0" }

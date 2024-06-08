@@ -32,7 +32,8 @@ pub fn ui_update(
     // find camera, update viewport
     for (target_camera, target_render_layer_opt) in cameras_q.iter() {
         if target_render_layer_opt == ui_render_layer_opt.as_ref() {
-            ui_manager.update_ui_viewport(&asset_manager, target_camera);
+            ui_manager.update_ui_viewport(target_camera);
+            ui_manager.recalculate_ui_layout_if_needed(&asset_manager);
         }
     }
 

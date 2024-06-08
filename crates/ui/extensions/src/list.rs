@@ -1,8 +1,11 @@
 use std::{hash::Hash, collections::{HashMap, HashSet}};
+use std::iter::{Peekable, Rev};
+
+use asset_loader::AssetManager;
 
 use logging::info;
 
-use ui_runner::{UiHandle, UiManager, config::{NodeId, UiRuntimeConfig, StyleId}};
+use ui_runner::{UiHandle, UiManager, config::{NodeId, NodeStore, UiRuntimeConfig, Alignment, StyleId}};
 
 pub struct LoadedItem {
     node_ids: HashSet<NodeId>,
@@ -41,6 +44,40 @@ impl LoadedItem {
 
     pub fn deconstruct(self) -> (HashSet<NodeId>, HashMap<String, NodeId>) {
         (self.node_ids, self.id_str_to_node_map)
+    }
+}
+
+trait PeekableIterator {
+    type Item;
+    fn peek(&mut self) -> Option<&Self::Item>;
+    fn next(&mut self) -> Option<Self::Item>;
+}
+
+struct PeekableIteratorImpl<I: Iterator>(Peekable<I>);
+
+impl<I: Iterator> PeekableIterator for PeekableIteratorImpl<I> {
+    type Item = I::Item;
+
+    fn peek(&mut self) -> Option<&Self::Item> {
+        self.0.peek()
+    }
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.next()
+    }
+}
+
+struct RevPeekableIteratorImpl<I: DoubleEndedIterator>(Peekable<Rev<I>>);
+
+impl<I: DoubleEndedIterator> PeekableIterator for RevPeekableIteratorImpl<I> {
+    type Item = I::Item;
+
+    fn peek(&mut self) -> Option<&Self::Item> {
+        self.0.peek()
+    }
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.next()
     }
 }
 
@@ -86,7 +123,6 @@ impl<K: Hash + Eq + Copy + Clone + PartialEq> ListUiExt<K> {
 
     pub fn scroll_up(&mut self) {
         if self.visible_item_min_index > 0 {
-            info!("scroll_up");
             self.visible_item_min_index -= 1;
             self.visible_item_max_index -= 1;
         }
@@ -94,7 +130,6 @@ impl<K: Hash + Eq + Copy + Clone + PartialEq> ListUiExt<K> {
 
     pub fn scroll_down(&mut self) {
         if self.visible_item_max_index < self.item_count - 1 {
-            info!("scroll_down");
             self.visible_item_min_index += 1;
             self.visible_item_max_index += 1;
         }
@@ -104,56 +139,120 @@ impl<K: Hash + Eq + Copy + Clone + PartialEq> ListUiExt<K> {
         'a,
         Q: 'a + Into<K> + Copy,
         V: 'a,
-        C: Iterator<Item = (&'a Q, &'a V)>,
-        FM: FnMut(&mut ListUiExtItem<K>, K, &'a V),
+        C: DoubleEndedIterator<Item = (&'a Q, &'a V)>,
+        FM: FnMut(&mut ListUiExtItem<K>, K, Option<K>),
     > (
         &mut self,
         ui_manager: &mut UiManager,
-        collection: C,
+        asset_manager: &AssetManager,
+        mut collection: C,
         item_count: usize,
         mut item_fn: FM,
     ) {
         if self.container_ui.is_none() {
             return;
         }
-        self.item_count = item_count;
 
-        // // remove all node children from list ui
-        // {
-        //     let (container_ui_handle, container_id_str) = self.container_ui.as_ref().unwrap();
-        //     let container_ui_runtime = ui_manager.ui_runtimes.get_mut(container_ui_handle).unwrap();
-        //     let container_id = container_ui_runtime.get_node_id_by_id_str(container_id_str).unwrap();
-        //     let mut panel_mut = container_ui_runtime.panel_mut(&container_id).unwrap();
-        //     panel_mut.remove_all_children();
-        // }
+        // recalculate all nodes so that we can get the correct parent container dimensions
+        ui_manager.queue_recalculate_layout();
+        ui_manager.recalculate_ui_layout_if_needed(asset_manager);
+
+        let (container_ui_handle, container_ui_str) = self.container_ui.as_ref().unwrap();
+        let container_ui_handle = *container_ui_handle;
+        let container_ui_runtime = ui_manager.ui_runtimes.get_mut(&container_ui_handle).unwrap();
+        let container_id = container_ui_runtime.get_node_id_by_id_str(container_ui_str).unwrap();
+        let Some((_parent_width, parent_height)) = container_ui_runtime.get_node_dimensions(&container_id) else {
+            return;
+        };
+        let parent_children_valign = container_ui_runtime.ui_config_ref().node_children_valign(&container_id);
+        let parent_children_node_count = container_ui_runtime.ui_config_ref().panel_ref(&container_id).unwrap().children.len();
+
+        if self.item_count == 0 {
+            // first time sync
+            self.visible_item_max_index = item_count - 1;
+        }
+        self.item_count = item_count;
 
         // add new node children to list ui
         {
-            let (container_ui_handle, container_ui_str) = self.container_ui.as_ref().unwrap();
-            let container_ui_handle = *container_ui_handle;
-            let container_ui_runtime = ui_manager.ui_runtimes.get_mut(&container_ui_handle).unwrap();
-            let container_id = container_ui_runtime.get_node_id_by_id_str(container_ui_str).unwrap();
+            // what to do here to get the correct item index range??
 
-            let mut item_index = 0;
-            let mut item_visible_index = 0;
+            let mut item_index;
+            let mut current_child_index;
+            let mut boxed_iterator: Box<dyn PeekableIterator<Item=(&'a Q, &'a V)>>;
+            let mut used_space = 0.0;
+            let iterator_incrementing: bool;
 
-            for (data_key, data_val) in collection {
+            if parent_children_valign == Alignment::End {
+                item_index = item_count - 1;
+                current_child_index = parent_children_node_count;
+                boxed_iterator = Box::new(RevPeekableIteratorImpl(collection.rev().peekable()));
+                iterator_incrementing = false;
+            } else {
+                item_index = 0;
+                current_child_index = 0;
+                boxed_iterator = Box::new(PeekableIteratorImpl(collection.peekable()));
+                iterator_incrementing = true;
+            }
+
+            // info!("item_index: {:?}", item_index);
+
+            loop {
+
+                let Some((data_key, _)) = boxed_iterator.next() else {
+                    break;
+                };
+                let next_data_key_opt = boxed_iterator.peek().map(|(data_key, _)| (**data_key).into());
+
+                // info!("item_index: {:?}", item_index);
 
                 let data_key = (*data_key).into();
 
-                if self.index_is_in_range(item_index) {
-                    let mut item_mut = ListUiExtItem::new(item_visible_index, data_key, self, ui_manager, &container_ui_handle, &container_id);
+                if !iterator_incrementing {
+                    let loaded_nodes = if let Some(item) = self.loaded_items.get(&data_key) { item.nodes_len() } else { 0 };
+                    current_child_index -= loaded_nodes;
+                }
 
-                    item_fn(&mut item_mut, data_key, data_val);
+                if used_space < parent_height && self.try_to_add_item(item_index, iterator_incrementing) {
+                    let mut item_mut = ListUiExtItem::new(
+                        current_child_index,
+                        &mut used_space,
+                        data_key,
+                        self,
+                        ui_manager,
+                        &container_ui_handle,
+                        &container_id
+                    );
 
-                    item_mut.finished();
+                    item_fn(&mut item_mut, data_key, next_data_key_opt);
 
-                    let loaded_nodes = self.loaded_items.get(&data_key).unwrap().nodes_len();
-                    item_visible_index += loaded_nodes;
+                    item_mut.finished(parent_height);
+
+                    // info!("used_space: {:?} / parent_space: {:?}", used_space, parent_height);
+
+                    if used_space > parent_height {
+                        // info!("done iterating visible items");
+                        if iterator_incrementing {
+                            // set visible item max index to current item index
+                            self.visible_item_max_index = item_index - 1;
+                        } else {
+                            // set visible item min index to current item index
+                            self.visible_item_min_index = item_index + 1;
+                        }
+                        self.visible_item_range = self.visible_item_max_index - self.visible_item_min_index + 1;
+                        // info!("visible_item_min_index: {:?}, visible_item_max_index: {:?}, visible_item_range: {:?}", self.visible_item_min_index, self.visible_item_max_index, self.visible_item_range);
+                    } else {
+                        if iterator_incrementing {
+                            let loaded_nodes = self.loaded_items.get(&data_key).unwrap().nodes_len();
+                            current_child_index += loaded_nodes;
+                        }
+                    }
                 } else {
+                    // remove any nodes not visible
                     if self.loaded_items.contains_key(&data_key) {
                         let container_ui_runtime = ui_manager.ui_runtimes.get_mut(&container_ui_handle).unwrap();
                         let (item_nodes, _) = self.loaded_items.remove(&data_key).unwrap().deconstruct();
+
                         for item_node in item_nodes {
                             // remove from main panel
                             container_ui_runtime.panel_mut(&container_id).unwrap().remove_node(&item_node);
@@ -164,11 +263,17 @@ impl<K: Hash + Eq + Copy + Clone + PartialEq> ListUiExt<K> {
                     }
                 }
 
-                item_index += 1;
+                if iterator_incrementing {
+                    item_index += 1;
+                } else {
+                    if item_index > 0 {
+                        item_index -= 1;
+                    } else {
+                        break;
+                    }
+                }
             }
         }
-
-        // TODO: handle deletion of items
 
         // queue ui for sync
         ui_manager.queue_recalculate_layout();
@@ -191,8 +296,12 @@ impl<K: Hash + Eq + Copy + Clone + PartialEq> ListUiExt<K> {
         return loaded_item.actions_are_equal(new_actions);
     }
 
-    fn index_is_in_range(&self, item_index: usize) -> bool {
-        item_index >= self.visible_item_min_index && item_index <= self.visible_item_max_index
+    fn try_to_add_item(&self, item_index: usize, iterator_incrementing: bool) -> bool {
+        if iterator_incrementing {
+            return item_index >= self.visible_item_min_index;
+        } else {
+            return item_index <= self.visible_item_max_index;
+        }
     }
 }
 
@@ -204,6 +313,7 @@ enum ListItemAction {
 
 pub struct ListUiExtItem<'a, K: Hash + Eq + Copy + Clone + PartialEq> {
     item_visible_index: usize,
+    used_space: &'a mut f32,
     item_key: K,
     list_ui_ext: &'a mut ListUiExt<K>,
     ui_manager: &'a mut UiManager,
@@ -215,6 +325,7 @@ pub struct ListUiExtItem<'a, K: Hash + Eq + Copy + Clone + PartialEq> {
 impl<'a, K: Hash + Eq + Copy + Clone + PartialEq> ListUiExtItem<'a, K> {
     pub fn new(
         item_visible_index: usize,
+        used_space: &'a mut f32,
         item_key: K,
         list_ui_ext: &'a mut ListUiExt<K>,
         ui_manager: &'a mut UiManager,
@@ -223,6 +334,7 @@ impl<'a, K: Hash + Eq + Copy + Clone + PartialEq> ListUiExtItem<'a, K> {
     ) -> Self {
         Self {
             item_visible_index,
+            used_space,
             item_key,
             list_ui_ext,
             ui_manager,
@@ -242,7 +354,7 @@ impl<'a, K: Hash + Eq + Copy + Clone + PartialEq> ListUiExtItem<'a, K> {
 
     fn add_copied_node_impl(&mut self, item_ui_handle: &UiHandle) {
 
-        info!("add_copied_node: {:?}", item_ui_handle);
+        // info!("add_copied_node: {:?}", item_ui_handle);
 
         // add styles if needed
         {
@@ -288,38 +400,75 @@ impl<'a, K: Hash + Eq + Copy + Clone + PartialEq> ListUiExtItem<'a, K> {
         container_ui_runtime.set_text(node_id, text_str);
     }
 
-    pub fn finished(mut self) {
+    pub fn finished(mut self, parent_height: f32) {
 
-        if self.list_ui_ext.actions_are_equal(self.item_key, &self.actions) {
-            return;
+        let should_add: bool;
+        let actions_are_equal: bool;
+
+        // should we add a new item? check against used space and parent height
+        let item_height = self.get_item_height(parent_height);
+        *self.used_space += item_height;
+        if *self.used_space > parent_height {
+            should_add = false;
+        } else {
+            should_add = true;
         }
 
-        if let Some(loaded_item) = self.list_ui_ext.loaded_items.remove(&self.item_key) {
-            let container_ui_runtime = self.ui_manager.ui_runtimes.get_mut(self.container_ui_handle).unwrap();
-            let (item_nodes, _) = loaded_item.deconstruct();
-            for item_node in item_nodes {
-                // remove from main panel
-                container_ui_runtime.panel_mut(self.container_id).unwrap().remove_node(&item_node);
+        // check if actions are equal
+        actions_are_equal = self.list_ui_ext.actions_are_equal(self.item_key, &self.actions);
 
-                // delete
-                container_ui_runtime.delete_node_recurse(&item_node);
+        if !should_add || !actions_are_equal {
+            // remove old nodes
+            if let Some(loaded_item) = self.list_ui_ext.loaded_items.remove(&self.item_key) {
+                let container_ui_runtime = self.ui_manager.ui_runtimes.get_mut(self.container_ui_handle).unwrap();
+                let (item_nodes, _) = loaded_item.deconstruct();
+                for item_node in item_nodes {
+                    // remove from main panel
+                    container_ui_runtime.panel_mut(self.container_id).unwrap().remove_node(&item_node);
+
+                    // delete
+                    container_ui_runtime.delete_node_recurse(&item_node);
+                }
             }
         }
 
-        let new_actions = std::mem::take(&mut self.actions);
+        if should_add && !actions_are_equal {
+            // add new nodes
+            let new_actions = std::mem::take(&mut self.actions);
 
-        self.list_ui_ext.loaded_items.insert(self.item_key, LoadedItem::new(new_actions.clone()));
+            self.list_ui_ext.loaded_items.insert(self.item_key, LoadedItem::new(new_actions.clone()));
 
-        // execute actions
-        for action in new_actions {
+            // execute actions
+            for action in new_actions {
+                match action {
+                    ListItemAction::AddCopiedNode(ui_handle) => {
+                        self.add_copied_node_impl(&ui_handle);
+                    }
+                    ListItemAction::SetTextByStr(id_str, text) => {
+                        self.set_text_by_str_impl(&id_str, &text);
+                    }
+                }
+            }
+        }
+    }
+
+    fn get_item_height(&self, parent_height: f32) -> f32 {
+        let mut item_height = 0.0;
+        for action in &self.actions {
             match action {
                 ListItemAction::AddCopiedNode(ui_handle) => {
-                    self.add_copied_node_impl(&ui_handle);
+                    let item_ui_runtime = self.ui_manager.ui_runtimes.get(ui_handle).unwrap();
+                    let item_ui_config = item_ui_runtime.ui_config_ref();
+                    let item_node_height_su = item_ui_config.node_height(&UiRuntimeConfig::ROOT_NODE_ID);
+                    if item_node_height_su.is_auto() {
+                        panic!("item node height cannot be auto");
+                    }
+                    let item_node_height = item_node_height_su.to_px(parent_height, parent_height, 0.0, 0.0);
+                    item_height += item_node_height;
                 }
-                ListItemAction::SetTextByStr(id_str, text) => {
-                    self.set_text_by_str_impl(&id_str, &text);
-                }
+                _ => {}
             }
         }
+        item_height
     }
 }
