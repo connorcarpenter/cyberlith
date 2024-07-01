@@ -780,12 +780,12 @@ impl UiManager {
                 self.add_copied_node(id_str_map, dest_ui, &new_node_id, src_ui, old_child_id);
             }
 
-            if let Some(panel_mut) = self.ui_runtimes.get_mut(dest_ui).unwrap().ui_config_mut().panel_mut(&new_node_id) {
-                // info!("[ui: {:?}, id: {:?}] has new children: {:?}", dest_ui, new_node_id, panel_mut.children);
-            } else {
-                // it's a button! TODO: handle this case
-                warn!("dest_id is not a panel");
-            }
+            // if let Some(panel_mut) = self.ui_runtimes.get_mut(dest_ui).unwrap().ui_config_mut().panel_mut(&new_node_id) {
+            //     // info!("[ui: {:?}, id: {:?}] has new children: {:?}", dest_ui, new_node_id, panel_mut.children);
+            // } else {
+            //     // it's a button! TODO: handle this case
+            //     warn!("dest_id is not a panel");
+            // }
         }
 
         new_node_id

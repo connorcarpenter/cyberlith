@@ -2,7 +2,7 @@ use bevy_ecs::{event::EventReader, system::{Query, Res, ResMut}, schedule::{Next
 
 use game_engine::{
     asset::{
-        AssetLoadedEvent, AssetType
+        AssetLoadedEvent, AssetType, AssetManager
     },
     logging::info,
     ui::UiManager,
@@ -16,6 +16,7 @@ pub fn session_load_asset_events(
     mut next_state: ResMut<NextState<AppState>>,
     mut ui_manager: ResMut<UiManager>,
     mut ui_catalog: ResMut<UiCatalog>,
+    asset_manager: Res<AssetManager>,
     mut asset_catalog: ResMut<AssetCatalog>,
     mut global_chat_messages: ResMut<GlobalChat>,
     message_q: Query<&GlobalChatMessage>,
@@ -28,7 +29,16 @@ pub fn session_load_asset_events(
             AssetType::Ui => {
                 info!("received Asset Loaded Ui Event! (asset_id: {:?})", asset_id);
                 let state = *state.get();
-                on_ui_load(state, &mut next_state, &mut ui_manager, &mut ui_catalog, &mut global_chat_messages, &message_q, asset_id);
+                on_ui_load(
+                    state,
+                    &mut next_state,
+                    &mut ui_manager,
+                    &mut ui_catalog,
+                    &asset_manager,
+                    &mut global_chat_messages,
+                    &message_q,
+                    asset_id
+                );
             }
             _ => {
                 info!("received Asset Loaded Icon Event! (asset_id: {:?})", asset_id);
@@ -40,6 +50,7 @@ pub fn session_load_asset_events(
 
 pub fn recv_inserted_global_chat_component(
     mut ui_manager: ResMut<UiManager>,
+    asset_manager: Res<AssetManager>,
     mut global_chat_messages: ResMut<GlobalChat>,
     mut event_reader: EventReader<SessionInsertComponentEvent<GlobalChatMessage>>,
     chat_q: Query<&GlobalChatMessage>,
@@ -56,7 +67,7 @@ pub fn recv_inserted_global_chat_component(
             // let message = &*chat.message;
             // info!("incoming global message: [ user_id({:?}) | {:?} | {:?} | {:?} ]", user_id, timestamp, event.entity, message);
 
-            global_chat_messages.recv_message(&mut ui_manager, &chat_q, chat_id, event.entity);
+            global_chat_messages.recv_message(&mut ui_manager, &asset_manager, &chat_q, chat_id, event.entity);
         }
     }
 }

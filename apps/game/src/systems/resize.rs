@@ -1,11 +1,21 @@
-use bevy_ecs::{change_detection::ResMut, prelude::Query};
+use bevy_ecs::{system::Res, change_detection::ResMut, prelude::Query};
 
-use game_engine::render::{
+use game_engine::{render::{
     components::{Camera, Viewport},
     Window,
-};
+}, ui::UiManager, asset::AssetManager};
+use game_engine::session::components::GlobalChatMessage;
 
-pub fn handle_viewport_resize(mut window: ResMut<Window>, mut cameras_q: Query<&mut Camera>) {
+use crate::resources::global_chat::GlobalChat;
+
+pub fn handle_viewport_resize(
+    mut window: ResMut<Window>,
+    mut global_chat: ResMut<GlobalChat>,
+    mut ui_manager: ResMut<UiManager>,
+    asset_manager: Res<AssetManager>,
+    mut cameras_q: Query<&mut Camera>,
+    message_q: Query<&GlobalChatMessage>,
+) {
     // sync camera viewport to window
     if !window.did_change() {
         return;
@@ -28,6 +38,8 @@ pub fn handle_viewport_resize(mut window: ResMut<Window>, mut cameras_q: Query<&
             camera.viewport = Some(new_viewport);
 
             //info!("resize window detected. new viewport: (x: {:?}, y: {:?}, width: {:?}, height: {:?})", new_viewport.x, new_viewport.y, new_viewport.width, new_viewport.height);
+
+            global_chat.sync_with_collection(&mut ui_manager, &asset_manager, &message_q);
         }
     }
 }

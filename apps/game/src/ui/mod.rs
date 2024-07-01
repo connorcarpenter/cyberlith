@@ -21,6 +21,7 @@ use game_engine::{
     asset::AssetId,
     session::SessionClient,
 };
+use game_engine::asset::AssetManager;
 use game_engine::session::components::GlobalChatMessage;
 
 use crate::{resources::global_chat::GlobalChat, states::AppState, ui::events::{DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent, JoinMatchButtonClickedEvent, SettingsButtonClickedEvent, SubmitButtonClickedEvent}};
@@ -43,6 +44,7 @@ pub(crate) fn on_ui_load(
     next_state: &mut NextState<AppState>,
     ui_manager: &mut UiManager,
     ui_catalog: &mut UiCatalog,
+    asset_manager: &AssetManager,
     global_chat_messages: &mut GlobalChat,
     message_q: &Query<&GlobalChatMessage>,
     asset_id: AssetId
@@ -67,24 +69,28 @@ pub(crate) fn on_ui_load(
         UiKey::GlobalChat => GlobalChat::on_load_container_ui(
             ui_catalog,
             ui_manager,
+            asset_manager,
             &message_q,
             global_chat_messages,
         ),
         UiKey::GlobalChatDayDivider => GlobalChat::on_load_day_divider_item_ui(
             ui_catalog,
             ui_manager,
+            asset_manager,
             &message_q,
             global_chat_messages,
         ),
         UiKey::GlobalChatUsernameAndMessage => GlobalChat::on_load_username_and_message_item_ui(
             ui_catalog,
             ui_manager,
+            asset_manager,
             &message_q,
             global_chat_messages,
         ),
         UiKey::GlobalChatMessage => GlobalChat::on_load_message_item_ui(
             ui_catalog,
             ui_manager,
+            asset_manager,
             &message_q,
             global_chat_messages,
         ),
@@ -98,6 +104,7 @@ pub(crate) fn handle_events(
     ui_catalog: Res<UiCatalog>,
     input: Res<Input>,
     mut ui_manager: ResMut<UiManager>,
+    asset_manager: Res<AssetManager>,
     mut rumble_manager: ResMut<RumbleManager>,
     mut session_client: SessionClient,
     mut global_chat: ResMut<GlobalChat>,
@@ -142,6 +149,7 @@ pub(crate) fn handle_events(
                 &mut global_chat,
                 &mut ui_manager,
                 &ui_catalog,
+                &asset_manager,
                 &mut session_client,
                 &mut input_events,
                 &message_q,

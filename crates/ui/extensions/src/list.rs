@@ -1,9 +1,6 @@
-use std::{hash::Hash, collections::{HashMap, HashSet}};
-use std::iter::{Peekable, Rev};
+use std::{iter::{Peekable, Rev}, hash::Hash, collections::{HashMap, HashSet}};
 
 use asset_loader::AssetManager;
-
-use logging::info;
 
 use ui_runner::{UiHandle, UiManager, config::{NodeId, NodeStore, UiRuntimeConfig, Alignment, StyleId}};
 
@@ -145,7 +142,7 @@ impl<K: Hash + Eq + Copy + Clone + PartialEq> ListUiExt<K> {
         &mut self,
         ui_manager: &mut UiManager,
         asset_manager: &AssetManager,
-        mut collection: C,
+        collection: C,
         item_count: usize,
         mut item_fn: FM,
     ) {

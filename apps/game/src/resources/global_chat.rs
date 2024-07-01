@@ -2,7 +2,8 @@ use std::collections::BTreeMap;
 
 use bevy_ecs::{system::{Resource, Query}, event::EventReader, entity::Entity};
 
-use game_engine::{auth::UserId, ui::{NodeActiveState, UiManager}, session::{channels, messages, SessionClient, components::GlobalChatMessage}, input::{InputEvent, Key}, social::GlobalChatMessageId, ui::{extensions::{ListUiExt, ListUiExtItem}, UiHandle}};
+use game_engine::{asset::AssetManager, ui::{NodeActiveState, UiManager}, session::{channels, messages, SessionClient, components::GlobalChatMessage}, input::{InputEvent, Key}, social::GlobalChatMessageId, ui::{extensions::{ListUiExt, ListUiExtItem}, UiHandle}};
+use game_engine::logging::info;
 
 use crate::ui::{go_to_sub_ui, UiCatalog, UiKey};
 
@@ -33,6 +34,7 @@ impl GlobalChat {
         global_chat: &mut GlobalChat,
         ui_manager: &mut UiManager,
         ui_catalog: &UiCatalog,
+        asset_manager: &AssetManager,
         session_server: &mut SessionClient,
         input_events: &mut EventReader<InputEvent>,
         message_q: &Query<&GlobalChatMessage>,
@@ -44,19 +46,25 @@ impl GlobalChat {
             match event {
                 // TODO this probably doesn't belong here! this is where it is required to be selecting the textbox!!!
                 InputEvent::KeyPressed(Key::I, _) => {
+                    info!("I Key Pressed");
                     if let Some(NodeActiveState::Active) = ui_manager.get_node_active_state_from_id(&ui_handle, "message_textbox") {
                         // do nothing, typing
+                        info!("Node Is Active");
                     } else {
+                        info!("Scrolling Up");
                         global_chat.list_ui_ext.scroll_up();
-                        global_chat.sync_with_collection(ui_manager, message_q);
+                        global_chat.sync_with_collection(ui_manager, asset_manager, message_q);
                     }
                 }
                 InputEvent::KeyPressed(Key::J, _) => {
+                    info!("J Key Pressed");
                     if let Some(NodeActiveState::Active) = ui_manager.get_node_active_state_from_id(&ui_handle, "message_textbox") {
                         // do nothing, typing
+                        info!("Node Is Active");
                     } else {
+                        info!("Scrolling Down");
                         global_chat.list_ui_ext.scroll_down();
-                        global_chat.sync_with_collection(ui_manager, message_q);
+                        global_chat.sync_with_collection(ui_manager, asset_manager, message_q);
                     }
                 }
                 InputEvent::KeyPressed(Key::Enter, modifiers) => {
@@ -81,6 +89,7 @@ impl GlobalChat {
     pub(crate) fn on_load_container_ui(
         ui_catalog: &mut UiCatalog,
         ui_manager: &mut UiManager,
+        asset_manager: &AssetManager,
         message_q: &Query<&GlobalChatMessage>,
         global_chat_messages: &mut GlobalChat,
     ) {
@@ -100,12 +109,13 @@ impl GlobalChat {
         let container_id_str = "chat_wall";
 
         global_chat_messages.list_ui_ext.set_container_ui(ui_manager, &ui_handle, container_id_str);
-        global_chat_messages.sync_with_collection(ui_manager, message_q);
+        global_chat_messages.sync_with_collection(ui_manager, asset_manager, message_q);
     }
 
     pub(crate) fn on_load_day_divider_item_ui(
         ui_catalog: &mut UiCatalog,
         ui_manager: &mut UiManager,
+        asset_manager: &AssetManager,
         message_q: &Query<&GlobalChatMessage>,
         global_chat_messages: &mut GlobalChat,
     ) {
@@ -115,12 +125,13 @@ impl GlobalChat {
         ui_catalog.set_loaded(item_ui_key);
 
         global_chat_messages.day_divider_item_ui = Some(item_ui_handle.clone());
-        global_chat_messages.sync_with_collection(ui_manager, message_q);
+        global_chat_messages.sync_with_collection(ui_manager, asset_manager, message_q);
     }
 
     pub(crate) fn on_load_username_and_message_item_ui(
         ui_catalog: &mut UiCatalog,
         ui_manager: &mut UiManager,
+        asset_manager: &AssetManager,
         message_q: &Query<&GlobalChatMessage>,
         global_chat_messages: &mut GlobalChat,
     ) {
@@ -130,12 +141,13 @@ impl GlobalChat {
         ui_catalog.set_loaded(item_ui_key);
 
         global_chat_messages.username_and_message_item_ui = Some(item_ui_handle.clone());
-        global_chat_messages.sync_with_collection(ui_manager, message_q);
+        global_chat_messages.sync_with_collection(ui_manager, asset_manager, message_q);
     }
 
     pub(crate) fn on_load_message_item_ui(
         ui_catalog: &mut UiCatalog,
         ui_manager: &mut UiManager,
+        asset_manager: &AssetManager,
         message_q: &Query<&GlobalChatMessage>,
         global_chat_messages: &mut GlobalChat,
     ) {
@@ -145,12 +157,13 @@ impl GlobalChat {
         ui_catalog.set_loaded(item_ui_key);
 
         global_chat_messages.message_item_ui = Some(item_ui_handle.clone());
-        global_chat_messages.sync_with_collection(ui_manager, message_q);
+        global_chat_messages.sync_with_collection(ui_manager, asset_manager, message_q);
     }
 
     pub fn recv_message(
         &mut self,
         ui_manager: &mut UiManager,
+        asset_manager: &AssetManager,
         message_q: &Query<&GlobalChatMessage>,
         message_id: GlobalChatMessageId,
         message_entity: Entity
@@ -162,12 +175,13 @@ impl GlobalChat {
             self.global_chats.pop_first();
         }
 
-        self.sync_with_collection(ui_manager, message_q);
+        self.sync_with_collection(ui_manager, asset_manager, message_q);
     }
 
-    fn sync_with_collection(
+    pub fn sync_with_collection(
         &mut self,
         ui_manager: &mut UiManager,
+        asset_manager: &AssetManager,
         message_q: &Query<&GlobalChatMessage>,
     ) {
         if self.message_item_ui.is_none() || self.day_divider_item_ui.is_none() || self.username_and_message_item_ui.is_none() {
@@ -178,39 +192,50 @@ impl GlobalChat {
         let username_and_message_ui_handle = self.username_and_message_item_ui.as_ref().unwrap();
         let message_ui_handle = self.message_item_ui.as_ref().unwrap();
 
-        let mut last_date: Option<(u8, u8, u16)> = None;
-        let mut last_user_id: Option<UserId> = None;
-
         self.list_ui_ext.sync_with_collection(
             ui_manager,
+            asset_manager,
             self.global_chats.iter(),
             self.global_chats.len(),
-            |item_ctx, _message_id, message_entity| {
-                let message = message_q.get(*message_entity).unwrap();
-
-                let message_date = message.timestamp.date();
+            |
+                item_ctx,
+                message_id,
+                prev_message_id_opt
+            | {
+                let message_entity = *(self.global_chats.get(&message_id).unwrap());
+                let message = message_q.get(message_entity).unwrap();
+                let message_timestamp = (*message.timestamp).clone();
                 let message_user_id = *message.user_id;
 
-                // add day divider if necessary
-                if last_date.is_none() || last_date.unwrap() != message_date {
-                        Self::add_day_divider_item(item_ctx, day_divider_ui_handle, message);
-                    last_user_id = None;
-                }
+                let (prev_timestamp_opt, prev_user_id_opt) = match prev_message_id_opt {
+                    Some(prev_message_id) => {
+                        let prev_message_entity = *(self.global_chats.get(&prev_message_id).unwrap());
+                        let prev_message = message_q.get(prev_message_entity).unwrap();
+                        let prev_timestamp = (*prev_message.timestamp).clone();
+                        let prev_message_user_id = *prev_message.user_id;
+                        (Some(prev_timestamp), Some(prev_message_user_id))
+                    },
+                    None => (None, None),
+                };
 
-                last_date = Some(message_date);
+                let mut added_divider = false;
+
+                // add day divider if necessary
+                if prev_timestamp_opt.is_none() || prev_timestamp_opt.unwrap() != message_timestamp {
+                    Self::add_day_divider_item(item_ctx, day_divider_ui_handle, message);
+                    added_divider = true;
+                }
 
                 // add username if necessary
-                if last_user_id.is_none() {
-                        Self::add_username_and_message_item(item_ctx, username_and_message_ui_handle, message);
-                } else if last_user_id.unwrap() != message_user_id {
-                        Self::add_message_item(item_ctx, message_ui_handle, " "); // blank space
-                        Self::add_username_and_message_item(item_ctx, username_and_message_ui_handle, message);
+                if prev_user_id_opt.is_none() || added_divider {
+                    Self::add_username_and_message_item(item_ctx, username_and_message_ui_handle, message);
+                } else if prev_user_id_opt.unwrap() != message_user_id {
+                    Self::add_message_item(item_ctx, message_ui_handle, " "); // blank space
+                    Self::add_username_and_message_item(item_ctx, username_and_message_ui_handle, message);
                 } else {
                     // just add message
-                        Self::add_message_item(item_ctx, message_ui_handle, message.message.as_str());
+                    Self::add_message_item(item_ctx, message_ui_handle, message.message.as_str());
                 }
-
-                last_user_id = Some(message_user_id);
             },
         );
     }
