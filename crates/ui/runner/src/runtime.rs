@@ -7,10 +7,14 @@ use render_api::{
     components::{CameraBundle, ClearOperation, Projection, Transform, Viewport},
 };
 use storage::Storage;
-use ui_runner_config::{NodeId, SerdeErr, UiRuntimeConfig, BaseNodeStyle, StyleId};
+use ui_runner_config::{BaseNodeStyle, NodeId, SerdeErr, StyleId, UiRuntimeConfig};
 use ui_state::UiState;
 
-use crate::{config::{WidgetKind, ValidationType}, handle::UiHandle, PanelMut};
+use crate::{
+    config::{ValidationType, WidgetKind},
+    handle::UiHandle,
+    PanelMut,
+};
 
 pub struct UiRuntime {
     state: UiState,
@@ -22,7 +26,10 @@ pub struct UiRuntime {
 impl UiRuntime {
     pub(crate) fn load_from_bytes(bytes: &[u8]) -> Result<Self, SerdeErr> {
         let config = UiRuntimeConfig::load_from_bytes(bytes)?;
-        Ok(Self::load_from_config(&AssetId::from_u32(0).unwrap(), config))
+        Ok(Self::load_from_config(
+            &AssetId::from_u32(0).unwrap(),
+            config,
+        ))
     }
 
     pub(crate) fn load_from_config(asset_id: &AssetId, config: UiRuntimeConfig) -> Self {
@@ -124,19 +131,32 @@ impl UiRuntime {
         self.config.has_copied_style(&ui_handle.asset_id())
     }
 
-    pub fn add_copied_style(&mut self, ui_handle: &UiHandle, old_style_id: StyleId, item_style: BaseNodeStyle) {
-
+    pub fn add_copied_style(
+        &mut self,
+        ui_handle: &UiHandle,
+        old_style_id: StyleId,
+        item_style: BaseNodeStyle,
+    ) {
         let kind = item_style.widget_style.kind();
 
         let new_style_id = self.add_style(item_style);
 
-        self.config.add_copied_style(&ui_handle.asset_id(), old_style_id, new_style_id);
+        self.config
+            .add_copied_style(&ui_handle.asset_id(), old_style_id, new_style_id);
 
-        info!("added copied (kind: {:?}) style: (ui: {:?}, styleid: {:?}) -> (styleid: {:?})", kind, ui_handle, old_style_id, new_style_id);
+        info!(
+            "added copied (kind: {:?}) style: (ui: {:?}, styleid: {:?}) -> (styleid: {:?})",
+            kind, ui_handle, old_style_id, new_style_id
+        );
     }
 
-    pub(crate) fn translate_copied_style(&self, old_ui: &UiHandle, old_style_id: StyleId) -> Option<StyleId> {
-        self.config.translate_copied_style(&old_ui.asset_id(), old_style_id)
+    pub(crate) fn translate_copied_style(
+        &self,
+        old_ui: &UiHandle,
+        old_style_id: StyleId,
+    ) -> Option<StyleId> {
+        self.config
+            .translate_copied_style(&old_ui.asset_id(), old_style_id)
     }
 
     pub fn delete_node_recurse(&mut self, node_id: &NodeId) {
@@ -155,8 +175,13 @@ impl UiRuntime {
 
     // state
 
-    pub(crate) fn load_cpu_data(&mut self, ui_handle: &UiHandle, materials: &mut Storage<CpuMaterial>) {
-        self.state.load_cpu_data(&ui_handle.asset_id(), &self.config, materials);
+    pub(crate) fn load_cpu_data(
+        &mut self,
+        ui_handle: &UiHandle,
+        materials: &mut Storage<CpuMaterial>,
+    ) {
+        self.state
+            .load_cpu_data(&ui_handle.asset_id(), &self.config, materials);
     }
 
     pub(crate) fn recalculate_layout(
@@ -177,7 +202,8 @@ impl UiRuntime {
     }
 
     pub fn add_style(&mut self, base_node_style: BaseNodeStyle) -> StyleId {
-        self.state.style_state_init(&base_node_style.widget_style.kind());
+        self.state
+            .style_state_init(&base_node_style.widget_style.kind());
         self.config.add_style(base_node_style)
     }
 
@@ -274,7 +300,9 @@ impl UiRuntime {
 
     pub fn get_ui_container_contents(&self, id: &NodeId) -> Option<UiHandle> {
         // get ui handle
-        self.state.get_ui_container_asset_id_opt(id).map(UiHandle::new)
+        self.state
+            .get_ui_container_asset_id_opt(id)
+            .map(UiHandle::new)
     }
 
     pub fn get_ui_container_contents_by_id_str(&self, id_str: &str) -> Option<UiHandle> {

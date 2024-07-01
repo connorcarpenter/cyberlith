@@ -1,4 +1,7 @@
-use std::{time::{Duration, Instant}, collections::HashMap};
+use std::{
+    collections::HashMap,
+    time::{Duration, Instant},
+};
 
 use bevy_ecs::system::Resource;
 
@@ -45,7 +48,10 @@ impl UserManager {
 
     // World Connection
 
-    pub fn get_users_ready_to_connect_to_world(&mut self, world_connect_resend_rate: &Duration) -> Vec<(UserKey, UserId)> {
+    pub fn get_users_ready_to_connect_to_world(
+        &mut self,
+        world_connect_resend_rate: &Duration,
+    ) -> Vec<(UserKey, UserId)> {
         let now = Instant::now();
 
         let mut worldless_users = Vec::new();
@@ -70,11 +76,7 @@ impl UserManager {
         worldless_users
     }
 
-    pub fn user_set_world_connected(
-        &mut self,
-        user_key: &UserKey,
-        world_instance_secret: &str,
-    ) {
+    pub fn user_set_world_connected(&mut self, user_key: &UserKey, world_instance_secret: &str) {
         let user_data = self.users.get_mut(user_key).unwrap();
         user_data.set_world_connected(world_instance_secret);
     }

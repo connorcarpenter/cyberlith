@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use naia_bevy_shared::Protocol;
 
-use crate::{components::ComponentsPlugin, channels::ChannelsPlugin, messages::MessagesPlugin};
+use crate::{channels::ChannelsPlugin, components::ComponentsPlugin, messages::MessagesPlugin};
 
 // Protocol Build
 pub fn protocol() -> Protocol {

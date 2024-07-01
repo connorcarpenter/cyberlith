@@ -77,37 +77,34 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
 
     // nodes
 
-    ui_config
-        .root_mut()
-        .set_style(window_style)
-        .contents(|c| {
-            // title container
-            c.add_panel().set_style(container_style).contents(|c| {
-                c.add_text("c y b e r l i t h").set_style(text_style);
+    ui_config.root_mut().set_style(window_style).contents(|c| {
+        // title container
+        c.add_panel().set_style(container_style).contents(|c| {
+            c.add_text("c y b e r l i t h").set_style(text_style);
+        });
+
+        // login button
+        c.add_button("login_button")
+            .set_as_first_input()
+            .set_style(login_button_style)
+            .contents(|c| {
+                c.add_text("login").set_style(text_style);
+            })
+            .navigation(|n| {
+                n.down_goes_to("register_button")
+                    .right_goes_to("register_button");
             });
 
-            // login button
-            c.add_button("login_button")
-                .set_as_first_input()
-                .set_style(login_button_style)
-                .contents(|c| {
-                    c.add_text("login").set_style(text_style);
-                })
-                .navigation(|n| {
-                    n.down_goes_to("register_button")
-                        .right_goes_to("register_button");
-                });
-
-            // register button
-            c.add_button("register_button")
-                .set_style(register_button_style)
-                .contents(|c| {
-                    c.add_text("register").set_style(text_style);
-                })
-                .navigation(|n| {
-                    n.up_goes_to("login_button").left_goes_to("login_button");
-                });
-        });
+        // register button
+        c.add_button("register_button")
+            .set_style(register_button_style)
+            .contents(|c| {
+                c.add_text("register").set_style(text_style);
+            })
+            .navigation(|n| {
+                n.up_goes_to("login_button").left_goes_to("login_button");
+            });
+    });
 
     (ui_name.to_string(), ui_asset_id, ui_etag, ui_config)
 }

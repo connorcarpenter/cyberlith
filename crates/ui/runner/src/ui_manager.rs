@@ -8,29 +8,30 @@ use bevy_ecs::{
 };
 
 use asset_id::AssetId;
-use asset_loader::{
-    AssetHandle, AssetManager, IconData, TypedAssetId, UiTextMeasurer,
-};
+use asset_loader::{AssetHandle, AssetManager, IconData, TypedAssetId, UiTextMeasurer};
 use clipboard::ClipboardManager;
 use input::{CursorIcon, Input};
 use logging::{info, warn};
 use math::Vec2;
 use render_api::{
-    shapes::UnitSquare,
     base::{CpuMaterial, CpuMesh},
     components::{Camera, RenderLayer},
     resources::Time,
+    shapes::UnitSquare,
 };
 use storage::{Handle, Storage};
 use ui_input::{
     ui_receive_input, UiGlobalEvent, UiInputEvent, UiInputState, UiManagerTrait, UiNodeEvent,
     UiNodeEventHandler,
 };
-use ui_runner_config::{NodeId, UiRuntimeConfig, NodeStore};
+use ui_runner_config::{NodeId, NodeStore, UiRuntimeConfig};
 use ui_state::{NodeActiveState, UiState};
 
 use crate::{
-    config::{UiNode, WidgetKind, ValidationType}, handle::UiHandle, runtime::UiRuntime, state_globals::StateGlobals,
+    config::{UiNode, ValidationType, WidgetKind},
+    handle::UiHandle,
+    runtime::UiRuntime,
+    state_globals::StateGlobals,
 };
 
 #[derive(Resource)]
@@ -105,7 +106,10 @@ impl UiManagerTrait for UiManager {
         self.active_ui.unwrap().asset_id()
     }
 
-    fn nodes_iter(&self, asset_id: &AssetId) -> std::collections::btree_map::Iter<'_, NodeId, UiNode> {
+    fn nodes_iter(
+        &self,
+        asset_id: &AssetId,
+    ) -> std::collections::btree_map::Iter<'_, NodeId, UiNode> {
         let ui_handle = UiHandle::new(*asset_id);
         self.ui_runtimes
             .get(&ui_handle)
@@ -467,11 +471,7 @@ impl UiManager {
         }
     }
 
-    fn recalculate_ui_layout(
-        &mut self,
-        text_icon_data: &IconData,
-        ui_handle: &UiHandle,
-    ) {
+    fn recalculate_ui_layout(&mut self, text_icon_data: &IconData, ui_handle: &UiHandle) {
         let text_measurer = UiTextMeasurer::new(text_icon_data);
 
         self.recalculate_ui_layout_impl(&text_measurer, ui_handle, 10.0);
@@ -595,7 +595,11 @@ impl UiManager {
             .get_active_state(&ui_id.asset_id(), node_id)
     }
 
-    pub fn get_node_active_state_from_id(&self, ui_id: &UiHandle, id_str: &str) -> Option<NodeActiveState> {
+    pub fn get_node_active_state_from_id(
+        &self,
+        ui_id: &UiHandle,
+        id_str: &str,
+    ) -> Option<NodeActiveState> {
         let ui_runtime = self.ui_runtimes.get(ui_id)?;
         let node_id = ui_runtime.get_node_id_by_id_str(id_str)?;
         return Some(self.get_node_active_state(ui_id, &node_id));
@@ -715,7 +719,12 @@ impl UiManager {
         }
 
         if ui_node.widget_kind() == WidgetKind::UiContainer {
-            let child_ui_handle = self.ui_runtimes.get(handle).unwrap().get_ui_container_contents(node_id).unwrap();
+            let child_ui_handle = self
+                .ui_runtimes
+                .get(handle)
+                .unwrap()
+                .get_ui_container_contents(node_id)
+                .unwrap();
             self.print_node(&child_ui_handle, &NodeId::new(0));
         }
     }
@@ -726,9 +735,19 @@ impl UiManager {
         dest_ui: &UiHandle,
         dest_parent_id: &NodeId,
         src_ui: &UiHandle,
-        src_id: &NodeId
+        src_id: &NodeId,
     ) -> NodeId {
-        let index = self.ui_runtimes.get(dest_ui).unwrap().ui_config_ref().get_node(dest_parent_id).unwrap().widget_panel_ref().unwrap().children.len();
+        let index = self
+            .ui_runtimes
+            .get(dest_ui)
+            .unwrap()
+            .ui_config_ref()
+            .get_node(dest_parent_id)
+            .unwrap()
+            .widget_panel_ref()
+            .unwrap()
+            .children
+            .len();
         self.insert_copied_node(index, id_str_map, dest_ui, dest_parent_id, src_ui, src_id)
     }
 
@@ -740,25 +759,45 @@ impl UiManager {
         dest_ui: &UiHandle,
         dest_parent_id: &NodeId,
         src_ui: &UiHandle,
-        src_id: &NodeId
+        src_id: &NodeId,
     ) -> NodeId {
         // info!("[{:?} . {:?}] -> [{:?} . {:?}]", src_ui, src_id, dest_ui, dest_parent_id);
 
-        let mut new_copied_node = self.ui_runtimes.get(src_ui).unwrap().ui_config_ref().get_node(src_id).unwrap().clone();
+        let mut new_copied_node = self
+            .ui_runtimes
+            .get(src_ui)
+            .unwrap()
+            .ui_config_ref()
+            .get_node(src_id)
+            .unwrap()
+            .clone();
         if let Some(old_style_id) = new_copied_node.style_id() {
-            let new_style_id = self.ui_runtimes.get(dest_ui).unwrap().translate_copied_style(src_ui, old_style_id).unwrap();
+            let new_style_id = self
+                .ui_runtimes
+                .get(dest_ui)
+                .unwrap()
+                .translate_copied_style(src_ui, old_style_id)
+                .unwrap();
             new_copied_node.clear_style_id();
             new_copied_node.set_style_id(new_style_id);
             // info!("[{:?} . {:?}] added style: [{:?} . {:?}]", src_ui, src_id, dest_ui, new_style_id);
         }
-        let old_children_ids_opt: Option<Vec<NodeId>> = if new_copied_node.widget_kind().has_children() {
-            let output = Some(new_copied_node.widget.children().unwrap().copied().collect());
-            new_copied_node.widget.clear_children();
-            // info!("[{:?} . {:?}] had old children: {:?}", src_ui, src_id, output);
-            output
-        } else {
-            None
-        };
+        let old_children_ids_opt: Option<Vec<NodeId>> =
+            if new_copied_node.widget_kind().has_children() {
+                let output = Some(
+                    new_copied_node
+                        .widget
+                        .children()
+                        .unwrap()
+                        .copied()
+                        .collect(),
+                );
+                new_copied_node.widget.clear_children();
+                // info!("[{:?} . {:?}] had old children: {:?}", src_ui, src_id, output);
+                output
+            } else {
+                None
+            };
 
         let dest_runtime = self.ui_runtimes.get_mut(dest_ui).unwrap();
         let Some(mut dest_parent_panel_mut) = dest_runtime.panel_mut(dest_parent_id) else {
@@ -767,7 +806,10 @@ impl UiManager {
 
         let new_node_id = dest_parent_panel_mut.insert_node(index, &new_copied_node);
 
-        info!("[ui: {:?} . id: {:?}] -> [ui: {:?}, id: {:?}]", src_ui, src_id, dest_ui, new_node_id);
+        info!(
+            "[ui: {:?} . id: {:?}] -> [ui: {:?}, id: {:?}]",
+            src_ui, src_id, dest_ui, new_node_id
+        );
 
         if let Some(id_str) = new_copied_node.id_str_opt().as_ref() {
             id_str_map.insert(id_str.clone(), new_node_id);
@@ -775,7 +817,6 @@ impl UiManager {
 
         // copy children
         if let Some(old_children_ids) = old_children_ids_opt {
-
             for old_child_id in &old_children_ids {
                 self.add_copied_node(id_str_map, dest_ui, &new_node_id, src_ui, old_child_id);
             }

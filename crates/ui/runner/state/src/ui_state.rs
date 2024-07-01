@@ -9,7 +9,9 @@ use render_api::{
     components::Viewport,
 };
 use storage::Storage;
-use ui_runner_config::{LayoutCache, NodeId, TextMeasurer, UiNode, UiRuntimeConfig, UiVisibilityStore, WidgetKind};
+use ui_runner_config::{
+    LayoutCache, NodeId, TextMeasurer, UiNode, UiRuntimeConfig, UiVisibilityStore, WidgetKind,
+};
 
 use crate::{
     button::ButtonStyleState, panel::PanelStyleState, spinner::SpinnerStyleState,
@@ -177,7 +179,10 @@ impl UiState {
         let Some(ui_container) = node.widget_ui_container_mut() else {
             return;
         };
-        info!("set_ui_container_asset_id for node {:?} -> asset_id: {:?}", node_id, asset_id);
+        info!(
+            "set_ui_container_asset_id for node {:?} -> asset_id: {:?}",
+            node_id, asset_id
+        );
         ui_container.ui_handle_opt = Some(asset_id.clone());
     }
 
@@ -273,7 +278,10 @@ impl UiState {
         // set color handles
         for id in std::mem::take(&mut self.store.nodes_needing_cpu_data) {
             let Some(node) = ui_config.get_node(&id) else {
-                panic!("error in load_cpu_data! in ui: {:?}, no node for id: {:?}!", ui_handle, id);
+                panic!(
+                    "error in load_cpu_data! in ui: {:?}, no node for id: {:?}!",
+                    ui_handle, id
+                );
             };
             let widget_kind = node.widget_kind();
             let style_id = node.style_id();
@@ -316,32 +324,31 @@ impl UiState {
                 }
                 WidgetKind::Button => {
                     if let Some(button_style_mut) = self.store.create_button_style(style_id) {
+                        // background color
+                        let background_color = ui_config
+                            .node_background_color(&id)
+                            .copied()
+                            .unwrap_or(Color::BLACK);
+                        let background_color_handle = materials.add(background_color);
+                        button_style_mut.set_background_color_handle(background_color_handle);
 
-                    // background color
-                    let background_color = ui_config
-                        .node_background_color(&id)
-                        .copied()
-                        .unwrap_or(Color::BLACK);
-                    let background_color_handle = materials.add(background_color);
-                    button_style_mut.set_background_color_handle(background_color_handle);
+                        // button-specific
+                        let button_style = ui_config.button_style(&id);
+                        // hover color
+                        let hover_color = button_style
+                            .map(|style| style.hover_color)
+                            .flatten()
+                            .unwrap_or(Color::BLACK);
+                        let hover_color_handle = materials.add(hover_color);
+                        button_style_mut.set_hover_color_handle(hover_color_handle);
 
-                    // button-specific
-                    let button_style = ui_config.button_style(&id);
-                    // hover color
-                    let hover_color = button_style
-                        .map(|style| style.hover_color)
-                        .flatten()
-                        .unwrap_or(Color::BLACK);
-                    let hover_color_handle = materials.add(hover_color);
-                    button_style_mut.set_hover_color_handle(hover_color_handle);
-
-                    // down color
-                    let down_color = button_style
-                        .map(|style| style.down_color)
-                        .flatten()
-                        .unwrap_or(Color::BLACK);
-                    let down_color_handle = materials.add(down_color);
-                    button_style_mut.set_down_color_handle(down_color_handle);
+                        // down color
+                        let down_color = button_style
+                            .map(|style| style.down_color)
+                            .flatten()
+                            .unwrap_or(Color::BLACK);
+                        let down_color_handle = materials.add(down_color);
+                        button_style_mut.set_down_color_handle(down_color_handle);
                     } else {
                         // warn!("do not need to load cpu data for style: {:?}", style_id);
                     }
@@ -414,9 +421,7 @@ impl UiState {
                         // warn!("do not need to load cpu data for style: {:?}", style_id);
                     }
                 }
-                WidgetKind::UiContainer => {
-                    self.store.create_ui_container_style(style_id)
-                }
+                WidgetKind::UiContainer => self.store.create_ui_container_style(style_id),
             }
         }
     }

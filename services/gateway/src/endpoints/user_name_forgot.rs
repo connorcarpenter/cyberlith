@@ -46,11 +46,7 @@ pub(crate) async fn handler(
     http_server::log_util::send_req(host_name, auth_server, UserNameForgotRequest::name());
     match HttpClient::send(&auth_addr, auth_port, auth_request).await {
         Ok(_auth_response) => {
-            http_server::log_util::recv_res(
-                host_name,
-                auth_server,
-                UserNameForgotResponse::name(),
-            );
+            http_server::log_util::recv_res(host_name, auth_server, UserNameForgotResponse::name());
 
             http_server::log_util::send_res(host_name, GatewayUserNameForgotResponse::name());
             return Ok(GatewayUserNameForgotResponse::new().to_response());

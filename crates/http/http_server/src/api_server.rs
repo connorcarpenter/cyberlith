@@ -2,11 +2,12 @@ use std::net::SocketAddr;
 
 use http_server_shared::executor::smol::future::Future;
 
-use http_common::{ApiRequest, ApiResponse, log_util, Method, Request, Response, ResponseError};
+use http_common::{log_util, ApiRequest, ApiResponse, Method, Request, Response, ResponseError};
 use logging::info;
 
 use crate::{
-    endpoint::{Endpoint, EndpointFunc, EndpointRef}, Server,
+    endpoint::{Endpoint, EndpointFunc, EndpointRef},
+    Server,
 };
 
 // serves API endpoint with typed requests & responses

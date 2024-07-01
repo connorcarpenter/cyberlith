@@ -1,9 +1,6 @@
 use std::collections::HashMap;
 
-use bevy_ecs::{
-    prelude::Resource,
-    system::ResMut,
-};
+use bevy_ecs::{prelude::Resource, system::ResMut};
 use logging::info;
 
 use naia_bevy_server::{Server, UserKey};
@@ -81,17 +78,9 @@ impl AssetManager {
         for (user_key, asset_id, added) in std::mem::take(&mut self.queued_user_asset_requests) {
             info!("processing queued user asset request..");
             if added {
-                self.load_user_asset(
-                    naia_server,
-                    http_client,
-                    user_key,
-                    &asset_id,
-                );
+                self.load_user_asset(naia_server, http_client, user_key, &asset_id);
             } else {
-                self.unload_user_asset(
-                    user_key,
-                    &asset_id,
-                );
+                self.unload_user_asset(user_key, &asset_id);
             }
         }
     }
@@ -122,11 +111,7 @@ impl AssetManager {
         }
     }
 
-    pub fn unload_user_asset(
-        &mut self,
-        user_key: UserKey,
-        asset_id: &AssetId,
-    ) {
+    pub fn unload_user_asset(&mut self, user_key: UserKey, asset_id: &AssetId) {
         if let Some((_asset_server_addr, _asset_server_port)) = self.get_asset_server_url() {
             if let Some(user_assets) = self.users.get_mut(&user_key) {
                 user_assets.unload_user_asset(asset_id);
@@ -166,12 +151,6 @@ pub fn update(
     mut server: Server,
     mut http_client: ResMut<HttpClient>,
 ) {
-    asset_manager.process_in_flight_requests(
-        &mut server,
-        &mut http_client,
-    );
-    asset_manager.process_queued_user_asset_requests(
-        &mut server,
-        &mut http_client,
-    );
+    asset_manager.process_in_flight_requests(&mut server, &mut http_client);
+    asset_manager.process_queued_user_asset_requests(&mut server, &mut http_client);
 }

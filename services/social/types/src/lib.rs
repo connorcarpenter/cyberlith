@@ -6,5 +6,3 @@ pub use global_chat_message_id::*;
 
 mod timestamp;
 pub use timestamp::*;
-
-

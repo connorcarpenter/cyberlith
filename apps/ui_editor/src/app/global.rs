@@ -2,7 +2,13 @@ use std::collections::BTreeMap;
 
 use bevy_ecs::{entity::Entity, system::Resource};
 
-use game_engine::{asset::AssetManager, ui::{UiHandle, extensions::{ListUiExt, ListUiExtItem}, UiManager}};
+use game_engine::{
+    asset::AssetManager,
+    ui::{
+        extensions::{ListUiExt, ListUiExtItem},
+        UiHandle, UiManager,
+    },
+};
 
 #[derive(Resource)]
 pub struct Global {
@@ -23,14 +29,12 @@ impl Global {
     }
 
     pub fn scroll_up(&mut self, ui_manager: &mut UiManager, asset_manager: &AssetManager) {
-
         self.list_ui_ext.scroll_up();
 
         self.sync_chat_collections(ui_manager, asset_manager);
     }
 
     pub fn scroll_down(&mut self, ui_manager: &mut UiManager, asset_manager: &AssetManager) {
-
         self.list_ui_ext.scroll_down();
 
         self.sync_chat_collections(ui_manager, asset_manager);
@@ -52,33 +56,17 @@ impl Global {
             asset_manager,
             self.global_chats.iter(),
             self.global_chats.len(),
-            |
-                item_ctx,
-                message_id,
-                prev_message_id_opt
-            | {
+            |item_ctx, message_id, prev_message_id_opt| {
                 // info!("syncing chat message: {} {} {} {} {} {}", username, month, day, hour, minute, message);
-                let (
-                    username,
-                    month,
-                    day,
-                    hour,
-                    minute,
-                    message
-                ) = self.global_chats.get(&message_id).unwrap();
+                let (username, month, day, hour, minute, message) =
+                    self.global_chats.get(&message_id).unwrap();
 
                 let (prev_date, prev_username) = match prev_message_id_opt {
                     Some(prev_message_id) => {
-                        let (
-                            prev_username,
-                            prev_month,
-                            prev_day,
-                            _,
-                            _,
-                            _
-                        ) = self.global_chats.get(&prev_message_id).unwrap();
+                        let (prev_username, prev_month, prev_day, _, _, _) =
+                            self.global_chats.get(&prev_message_id).unwrap();
                         (Some((*prev_month, *prev_day)), Some(prev_username.clone()))
-                    },
+                    }
                     None => (None, None),
                 };
 
@@ -95,10 +83,22 @@ impl Global {
 
                 // add username if necessary
                 if prev_username.is_none() || added_divider {
-                    add_username_and_message_item(item_ctx, &username_and_message_ui_handle, username, message_time, message);
+                    add_username_and_message_item(
+                        item_ctx,
+                        &username_and_message_ui_handle,
+                        username,
+                        message_time,
+                        message,
+                    );
                 } else if !prev_username.as_ref().unwrap().eq(username) {
                     add_message_item(item_ctx, &message_ui_handle, " "); // blank space
-                    add_username_and_message_item(item_ctx, &username_and_message_ui_handle, username, message_time, message);
+                    add_username_and_message_item(
+                        item_ctx,
+                        &username_and_message_ui_handle,
+                        username,
+                        message_time,
+                        message,
+                    );
                 } else {
                     // just add message
                     add_message_item(item_ctx, &message_ui_handle, message);
@@ -109,15 +109,19 @@ impl Global {
 }
 
 fn add_day_divider_item(item_ctx: &mut ListUiExtItem<u32>, ui: &UiHandle, date: (u8, u8)) {
-
     item_ctx.add_copied_node(ui);
 
     let divider_date_str = format!("{}/{}", date.0, date.1);
     item_ctx.set_text_by_str("timestamp", divider_date_str.as_str());
 }
 
-fn add_username_and_message_item(item_ctx: &mut ListUiExtItem<u32>, ui: &UiHandle, username: &str, time: (u8, u8), message_text: &str) {
-
+fn add_username_and_message_item(
+    item_ctx: &mut ListUiExtItem<u32>,
+    ui: &UiHandle,
+    username: &str,
+    time: (u8, u8),
+    message_text: &str,
+) {
     item_ctx.add_copied_node(ui);
 
     item_ctx.set_text_by_str("user_name", username);

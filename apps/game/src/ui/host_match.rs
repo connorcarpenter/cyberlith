@@ -1,16 +1,13 @@
-use bevy_ecs::event::{EventReader};
+use bevy_ecs::event::EventReader;
 
 use game_engine::{
     logging::info,
     ui::{UiHandle, UiManager},
 };
 
-use crate::ui::{UiCatalog, UiKey, events::SubmitButtonClickedEvent};
+use crate::ui::{events::SubmitButtonClickedEvent, UiCatalog, UiKey};
 
-pub(crate) fn on_load(
-    ui_catalog: &mut UiCatalog,
-    ui_manager: &mut UiManager,
-) {
+pub(crate) fn on_load(ui_catalog: &mut UiCatalog, ui_manager: &mut UiManager) {
     let ui_key = UiKey::HostMatch;
     let ui_handle = ui_catalog.get_ui_handle(ui_key);
 

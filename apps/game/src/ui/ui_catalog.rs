@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use bevy_ecs::system::Resource;
 
-use game_engine::{ui::UiHandle, asset::AssetId};
+use game_engine::{asset::AssetId, ui::UiHandle};
 
 use crate::ui::UiKey;
 
@@ -14,19 +14,36 @@ pub struct UiCatalog {
 }
 
 impl UiCatalog {
-
     pub fn new() -> Self {
         let mut me = Self {
             uis: HashMap::new(),
             ui_handle_to_key: HashMap::new(),
         };
 
-        me.insert_ui(UiKey::MainMenu, UiHandle::new(AssetId::from_str("kmqkp9").unwrap()));
-        me.insert_ui(UiKey::HostMatch, UiHandle::new(AssetId::from_str("htytzu").unwrap()));
-        me.insert_ui(UiKey::GlobalChat, UiHandle::new(AssetId::from_str("ngffab").unwrap()));
-        me.insert_ui(UiKey::GlobalChatDayDivider, UiHandle::new(AssetId::from_str("3wnz6n").unwrap()));
-        me.insert_ui(UiKey::GlobalChatUsernameAndMessage, UiHandle::new(AssetId::from_str("ddbxab").unwrap()));
-        me.insert_ui(UiKey::GlobalChatMessage, UiHandle::new(AssetId::from_str("cxc6zk").unwrap()));
+        me.insert_ui(
+            UiKey::MainMenu,
+            UiHandle::new(AssetId::from_str("kmqkp9").unwrap()),
+        );
+        me.insert_ui(
+            UiKey::HostMatch,
+            UiHandle::new(AssetId::from_str("htytzu").unwrap()),
+        );
+        me.insert_ui(
+            UiKey::GlobalChat,
+            UiHandle::new(AssetId::from_str("ngffab").unwrap()),
+        );
+        me.insert_ui(
+            UiKey::GlobalChatDayDivider,
+            UiHandle::new(AssetId::from_str("3wnz6n").unwrap()),
+        );
+        me.insert_ui(
+            UiKey::GlobalChatUsernameAndMessage,
+            UiHandle::new(AssetId::from_str("ddbxab").unwrap()),
+        );
+        me.insert_ui(
+            UiKey::GlobalChatMessage,
+            UiHandle::new(AssetId::from_str("cxc6zk").unwrap()),
+        );
 
         me
     }

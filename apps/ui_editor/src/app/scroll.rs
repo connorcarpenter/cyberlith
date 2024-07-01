@@ -1,7 +1,13 @@
+use bevy_ecs::{
+    event::EventReader,
+    system::{Res, ResMut},
+};
 
-use bevy_ecs::{system::{ResMut, Res}, event::EventReader};
-
-use game_engine::{asset::AssetManager, ui::UiManager, input::{InputEvent, Key}};
+use game_engine::{
+    asset::AssetManager,
+    input::{InputEvent, Key},
+    ui::UiManager,
+};
 
 use crate::app::global::Global;
 

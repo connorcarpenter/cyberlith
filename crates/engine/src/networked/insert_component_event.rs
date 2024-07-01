@@ -1,4 +1,3 @@
-
 use bevy_ecs::{
     change_detection::Mut,
     entity::Entity,
@@ -32,8 +31,7 @@ pub struct CachedInsertComponentEventsState<T: Send + Sync + 'static> {
 }
 
 pub fn insert_component_events_startup<T: Send + Sync + 'static>(world: &mut BevyWorld) {
-    let initial_state: SystemState<EventReader<InsertComponentEvents<T>>> =
-        SystemState::new(world);
+    let initial_state: SystemState<EventReader<InsertComponentEvents<T>>> = SystemState::new(world);
     // info!("insert_component_events_startup()");
     world.insert_resource(CachedInsertComponentEventsState {
         event_state: initial_state,
@@ -41,13 +39,13 @@ pub fn insert_component_events_startup<T: Send + Sync + 'static>(world: &mut Bev
 }
 
 // this is not a system! It should be wrapped!
-pub fn insert_component_events<T: Clone + Send + Sync + 'static>(world: &mut BevyWorld) -> Vec<InsertComponentEvents<T>> {
-
+pub fn insert_component_events<T: Clone + Send + Sync + 'static>(
+    world: &mut BevyWorld,
+) -> Vec<InsertComponentEvents<T>> {
     let mut events_collection: Vec<InsertComponentEvents<T>> = Vec::new();
 
     world.resource_scope(
         |world, mut events_reader_state: Mut<CachedInsertComponentEventsState<T>>| {
-
             let mut events_reader = events_reader_state.event_state.get_mut(world);
 
             for events in events_reader.read() {

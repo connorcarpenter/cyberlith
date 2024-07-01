@@ -29,35 +29,20 @@ impl Timestamp {
     }
 
     pub fn datetime_string(&self) -> String {
-
         let date_string = self.date_string();
         let time_string = self.time_string();
 
-        format!(
-            "{} {}",
-            date_string,
-            time_string,
-        )
+        format!("{} {}", date_string, time_string,)
     }
 
     pub fn date_string(&self) -> String {
-        format!(
-            "{:02}/{:02}/{:02}",
-            self.month(),
-            self.day(),
-            self.year(),
-        )
+        format!("{:02}/{:02}/{:02}", self.month(), self.day(), self.year(),)
     }
 
     pub fn time_string(&self) -> String {
         let am_pm_string = if self.pm { "PM" } else { "AM" };
 
-        format!(
-            "{:02}:{:02} {}",
-            self.hour(),
-            self.minute(),
-            am_pm_string,
-        )
+        format!("{:02}:{:02} {}", self.hour(), self.minute(), am_pm_string,)
     }
 
     pub fn pm(&self) -> bool {

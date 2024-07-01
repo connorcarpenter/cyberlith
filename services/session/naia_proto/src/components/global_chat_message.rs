@@ -1,4 +1,3 @@
-
 use bevy_ecs::prelude::Component;
 
 use naia_bevy_shared::{Property, Replicate};
@@ -15,7 +14,12 @@ pub struct GlobalChatMessage {
 }
 
 impl GlobalChatMessage {
-    pub fn new(id: GlobalChatMessageId, timestamp: Timestamp, user_id: UserId, message: &str) -> Self {
+    pub fn new(
+        id: GlobalChatMessageId,
+        timestamp: Timestamp,
+        user_id: UserId,
+        message: &str,
+    ) -> Self {
         Self::new_complete(id, timestamp, user_id, message.to_string())
     }
 }

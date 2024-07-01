@@ -1,4 +1,3 @@
-
 use config::REGION_SERVER_SECRET;
 use http_client::ResponseError;
 use http_server::{async_dup::Arc, executor::smol::lock::RwLock, ApiServer, Server};
@@ -56,12 +55,12 @@ async fn async_recv_user_disconnected_request_impl(
     state: Arc<RwLock<State>>,
     request: UserDisconnectedRequest,
 ) -> Result<UserDisconnectedResponse, ResponseError> {
-
     let mut state = state.write().await;
 
-    let Some(session_server_id) = state.session_servers.get_session_server_id(
-        &request.session_instance_secret()
-    ) else {
+    let Some(session_server_id) = state
+        .session_servers
+        .get_session_server_id(&request.session_instance_secret())
+    else {
         warn!("invalid request instance secret");
         return Err(ResponseError::Unauthenticated);
     };

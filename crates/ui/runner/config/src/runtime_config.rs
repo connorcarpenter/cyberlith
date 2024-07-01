@@ -1,8 +1,14 @@
-use std::{collections::{BTreeMap, HashMap}, slice::Iter};
+use std::{
+    collections::{BTreeMap, HashMap},
+    slice::Iter,
+};
 
 use asset_id::AssetId;
 use render_api::base::Color;
-use ui_builder_config::{BaseNodeStyle, Button, ButtonStyle, Navigation, Panel, PanelStyle, SpinnerStyle, StyleId, TextStyle, Textbox, TextboxStyle, UiConfig, UiNode, WidgetKind, WidgetStyle};
+use ui_builder_config::{
+    BaseNodeStyle, Button, ButtonStyle, Navigation, Panel, PanelStyle, SpinnerStyle, StyleId,
+    TextStyle, Textbox, TextboxStyle, UiConfig, UiNode, WidgetKind, WidgetStyle,
+};
 use ui_layout::{
     Alignment, LayoutType, MarginUnits, NodeId, NodeStore, PositionType, SizeUnits, Solid,
     TextMeasurer,
@@ -31,8 +37,7 @@ impl UiRuntimeConfig {
     }
 
     pub fn load_from_builder_config(ui_config: UiConfig) -> Self {
-        let (styles, nodes, first_input_opt, node_map) =
-            ui_config.decompose();
+        let (styles, nodes, first_input_opt, node_map) = ui_config.decompose();
 
         let styles = compute_styles(styles);
 
@@ -61,7 +66,12 @@ impl UiRuntimeConfig {
         self.copied_styles.contains_key(ui_asset_id)
     }
 
-    pub fn add_copied_style(&mut self, ui_asset_id: &AssetId, old_style_id: StyleId, new_style_id: StyleId) {
+    pub fn add_copied_style(
+        &mut self,
+        ui_asset_id: &AssetId,
+        old_style_id: StyleId,
+        new_style_id: StyleId,
+    ) {
         if !self.copied_styles.contains_key(ui_asset_id) {
             self.copied_styles.insert(*ui_asset_id, HashMap::new());
         }
@@ -69,7 +79,11 @@ impl UiRuntimeConfig {
         style_map_old_to_new.insert(old_style_id, new_style_id);
     }
 
-    pub fn translate_copied_style(&self, ui_asset_id: &AssetId, old_style_id: StyleId) -> Option<StyleId> {
+    pub fn translate_copied_style(
+        &self,
+        ui_asset_id: &AssetId,
+        old_style_id: StyleId,
+    ) -> Option<StyleId> {
         let style_map_old_to_new = self.copied_styles.get(ui_asset_id)?;
         style_map_old_to_new.get(&old_style_id).copied()
     }

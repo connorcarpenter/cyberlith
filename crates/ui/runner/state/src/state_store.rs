@@ -1,13 +1,19 @@
-use std::collections::{HashMap, HashSet};
 use asset_id::AssetId;
+use std::collections::{HashMap, HashSet};
 
 use logging::{info, warn};
 use ui_layout::NodeStateStore;
 use ui_runner_config::{NodeId, StyleId, UiNode, WidgetKind};
 
 use crate::{
-    button::ButtonStyleState, panel::PanelStyleState, style_state::StyleState, spinner::SpinnerStyleState,
-    text::{TextStyleState, TextState}, textbox::TextboxState, textbox::TextboxStyleState, UiNodeState,
+    button::ButtonStyleState,
+    panel::PanelStyleState,
+    spinner::SpinnerStyleState,
+    style_state::StyleState,
+    text::{TextState, TextStyleState},
+    textbox::TextboxState,
+    textbox::TextboxStyleState,
+    UiNodeState,
 };
 
 pub struct UiStateStore {
@@ -96,7 +102,11 @@ impl UiStateStore {
     }
 
     fn insert_style(&mut self, style: StyleState) {
-        info!("state_store {:?} : inserting style: {:?}", self.asset_id, self.styles.len());
+        info!(
+            "state_store {:?} : inserting style: {:?}",
+            self.asset_id,
+            self.styles.len()
+        );
         if self.styles.len() >= 255 {
             panic!("1 UI can only hold up to 255 styles, too many styles!");
         }
@@ -119,7 +129,10 @@ impl UiStateStore {
                     return Some(panel_style_state);
                 } else {
                     let kind = style_state.widget_kind();
-                    panic!("{:?} : PanelStyle not found for StyleId: {:?} .. found: {:?}", self.asset_id, style_id, kind);
+                    panic!(
+                        "{:?} : PanelStyle not found for StyleId: {:?} .. found: {:?}",
+                        self.asset_id, style_id, kind
+                    );
                 }
             } else {
                 return None;
@@ -268,10 +281,7 @@ impl UiStateStore {
         }
     }
 
-    pub(crate) fn create_ui_container_style(
-        &mut self,
-        style_id: Option<StyleId>,
-    ) {
+    pub(crate) fn create_ui_container_style(&mut self, style_id: Option<StyleId>) {
         if let Some(style_id) = style_id {
             let style_id = style_id.as_usize();
             let Some(StyleState::UiContainer) = self.styles.get_mut(style_id) else {
@@ -280,12 +290,12 @@ impl UiStateStore {
             return;
         } else {
             if !self.default_styles.contains_key(&WidgetKind::UiContainer) {
-                self.default_styles.insert(
-                    WidgetKind::UiContainer,
-                    StyleState::UiContainer,
-                );
-                let default_style_state =
-                    self.default_styles.get_mut(&WidgetKind::UiContainer).unwrap();
+                self.default_styles
+                    .insert(WidgetKind::UiContainer, StyleState::UiContainer);
+                let default_style_state = self
+                    .default_styles
+                    .get_mut(&WidgetKind::UiContainer)
+                    .unwrap();
                 let StyleState::UiContainer = default_style_state else {
                     panic!("impossible");
                 };

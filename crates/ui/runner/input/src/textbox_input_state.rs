@@ -92,30 +92,40 @@ impl TextboxInputState {
                 if let Some(select_index) = select_index {
                     let start = carat_index.min(select_index);
                     let end = carat_index.max(select_index);
-                    ascii_string_drain(&mut ui_manager
-                        .ui_state_mut(ui_asset_id)
-                        .textbox_mut(&textbox_id)
-                        .unwrap()
-                        .text, start, end);
+                    ascii_string_drain(
+                        &mut ui_manager
+                            .ui_state_mut(ui_asset_id)
+                            .textbox_mut(&textbox_id)
+                            .unwrap()
+                            .text,
+                        start,
+                        end,
+                    );
                     ui_manager.ui_input_state_mut().carat_index = start;
                     ui_manager.ui_input_state_mut().select_index = None;
                 } else {
                     if modifiers.ctrl {
                         if carat_index > 0 {
-                            let target_index = unicode_word_indices(&ui_manager
-                                .ui_state(ui_asset_id)
-                                .textbox_ref(&textbox_id)
-                                .unwrap()
-                                .text)
-                                .rev()
-                                .map(|(i, _)| i)
-                                .find(|&i| i < carat_index)
-                                .unwrap_or(0);
-                            ascii_string_drain(&mut ui_manager
-                                .ui_state_mut(ui_asset_id)
-                                .textbox_mut(&textbox_id)
-                                .unwrap()
-                                .text, target_index, carat_index);
+                            let target_index = unicode_word_indices(
+                                &ui_manager
+                                    .ui_state(ui_asset_id)
+                                    .textbox_ref(&textbox_id)
+                                    .unwrap()
+                                    .text,
+                            )
+                            .rev()
+                            .map(|(i, _)| i)
+                            .find(|&i| i < carat_index)
+                            .unwrap_or(0);
+                            ascii_string_drain(
+                                &mut ui_manager
+                                    .ui_state_mut(ui_asset_id)
+                                    .textbox_mut(&textbox_id)
+                                    .unwrap()
+                                    .text,
+                                target_index,
+                                carat_index,
+                            );
                             ui_manager.ui_input_state_mut().carat_index = target_index;
                         }
                     } else {
@@ -135,29 +145,39 @@ impl TextboxInputState {
                 if let Some(select_index) = select_index {
                     let start = carat_index.min(select_index);
                     let end = carat_index.max(select_index);
-                    ascii_string_drain(&mut ui_manager
-                        .ui_state_mut(ui_asset_id)
-                        .textbox_mut(&textbox_id)
-                        .unwrap()
-                        .text, start, end);
+                    ascii_string_drain(
+                        &mut ui_manager
+                            .ui_state_mut(ui_asset_id)
+                            .textbox_mut(&textbox_id)
+                            .unwrap()
+                            .text,
+                        start,
+                        end,
+                    );
                     ui_manager.ui_input_state_mut().carat_index = start;
                     ui_manager.ui_input_state_mut().select_index = None;
                 } else {
                     if modifiers.ctrl {
                         if carat_index < text_len {
-                            let target_index = unicode_word_indices(&ui_manager
-                                .ui_state(ui_asset_id)
-                                .textbox_ref(&textbox_id)
-                                .unwrap()
-                                .text)
-                                .map(|(i, word)| i + word.len())
-                                .find(|&i| i > carat_index)
-                                .unwrap_or(text_len);
-                            ascii_string_drain(&mut ui_manager
-                                .ui_state_mut(ui_asset_id)
-                                .textbox_mut(&textbox_id)
-                                .unwrap()
-                                .text, carat_index, target_index);
+                            let target_index = unicode_word_indices(
+                                &ui_manager
+                                    .ui_state(ui_asset_id)
+                                    .textbox_ref(&textbox_id)
+                                    .unwrap()
+                                    .text,
+                            )
+                            .map(|(i, word)| i + word.len())
+                            .find(|&i| i > carat_index)
+                            .unwrap_or(text_len);
+                            ascii_string_drain(
+                                &mut ui_manager
+                                    .ui_state_mut(ui_asset_id)
+                                    .textbox_mut(&textbox_id)
+                                    .unwrap()
+                                    .text,
+                                carat_index,
+                                target_index,
+                            );
                         }
                     } else {
                         if carat_index < text_len {
@@ -241,11 +261,15 @@ impl TextboxInputState {
                         .unwrap()
                         .push(UiGlobalEvent::Copied(copied_text));
 
-                    ascii_string_drain(&mut ui_manager
-                        .ui_state_mut(ui_asset_id)
-                        .textbox_mut(&textbox_id)
-                        .unwrap()
-                        .text, start, end);
+                    ascii_string_drain(
+                        &mut ui_manager
+                            .ui_state_mut(ui_asset_id)
+                            .textbox_mut(&textbox_id)
+                            .unwrap()
+                            .text,
+                        start,
+                        end,
+                    );
                     ui_manager.ui_input_state_mut().carat_index = start;
                     ui_manager.ui_input_state_mut().select_index = None;
                 }
@@ -269,11 +293,16 @@ impl TextboxInputState {
                 if let Some(select_index) = select_index {
                     let start = carat_index.min(select_index);
                     let end = carat_index.max(select_index);
-                    ascii_string_replace_range(&mut ui_manager
-                        .ui_state_mut(ui_asset_id)
-                        .textbox_mut(&textbox_id)
-                        .unwrap()
-                        .text, start, end, &text);
+                    ascii_string_replace_range(
+                        &mut ui_manager
+                            .ui_state_mut(ui_asset_id)
+                            .textbox_mut(&textbox_id)
+                            .unwrap()
+                            .text,
+                        start,
+                        end,
+                        &text,
+                    );
                     ui_manager.ui_input_state_mut().carat_index = start + text.len();
                     ui_manager.ui_input_state_mut().select_index = None;
                 } else {
@@ -301,12 +330,18 @@ impl TextboxInputState {
                     // need to remove the selected text
                     let start = carat_index.min(select_index);
                     let end = carat_index.max(select_index);
-                    let replace_text = AsciiString::from_str(new_char.to_string().as_str()).unwrap();
-                    ascii_string_replace_range(&mut ui_manager
-                        .ui_state_mut(ui_asset_id)
-                        .textbox_mut(&textbox_id)
-                        .unwrap()
-                        .text, start, end, &replace_text);
+                    let replace_text =
+                        AsciiString::from_str(new_char.to_string().as_str()).unwrap();
+                    ascii_string_replace_range(
+                        &mut ui_manager
+                            .ui_state_mut(ui_asset_id)
+                            .textbox_mut(&textbox_id)
+                            .unwrap()
+                            .text,
+                        start,
+                        end,
+                        &replace_text,
+                    );
                     ui_manager.ui_input_state_mut().carat_index = start + 1;
                     ui_manager.ui_input_state_mut().select_index = None;
                 } else {
@@ -419,15 +454,17 @@ impl TextboxInputState {
             }
             (false, true) => {
                 if carat_index > 0 {
-                    let new_carat_index = unicode_word_indices(&ui_manager
-                        .ui_state_mut(ui_asset_id)
-                        .textbox_mut(&textbox_id)
-                        .unwrap()
-                        .text)
-                        .rev()
-                        .map(|(i, _)| i)
-                        .find(|&i| i < carat_index)
-                        .unwrap_or(0);
+                    let new_carat_index = unicode_word_indices(
+                        &ui_manager
+                            .ui_state_mut(ui_asset_id)
+                            .textbox_mut(&textbox_id)
+                            .unwrap()
+                            .text,
+                    )
+                    .rev()
+                    .map(|(i, _)| i)
+                    .find(|&i| i < carat_index)
+                    .unwrap_or(0);
                     ui_manager.ui_input_state_mut().carat_index = new_carat_index;
                 }
                 ui_manager.ui_input_state_mut().select_index = None;
@@ -439,15 +476,17 @@ impl TextboxInputState {
                         ui_manager.ui_input_state_mut().select_index = Some(carat_index);
                     }
 
-                    let new_carat_index = unicode_word_indices(&ui_manager
-                        .ui_state_mut(ui_asset_id)
-                        .textbox_mut(&textbox_id)
-                        .unwrap()
-                        .text)
-                        .rev()
-                        .map(|(i, _)| i)
-                        .find(|&i| i < carat_index)
-                        .unwrap_or(0);
+                    let new_carat_index = unicode_word_indices(
+                        &ui_manager
+                            .ui_state_mut(ui_asset_id)
+                            .textbox_mut(&textbox_id)
+                            .unwrap()
+                            .text,
+                    )
+                    .rev()
+                    .map(|(i, _)| i)
+                    .find(|&i| i < carat_index)
+                    .unwrap_or(0);
                     ui_manager.ui_input_state_mut().carat_index = new_carat_index;
 
                     if carat_index == select_index.unwrap() {
@@ -507,14 +546,16 @@ impl TextboxInputState {
             }
             (false, true) => {
                 if ui_manager.ui_input_state().carat_index < text_len {
-                    let new_carat_index = unicode_word_indices(&ui_manager
-                        .ui_state(ui_asset_id)
-                        .textbox_ref(&textbox_id)
-                        .unwrap()
-                        .text)
-                        .map(|(i, word)| i + word.len())
-                        .find(|&i| i > ui_manager.ui_input_state().carat_index)
-                        .unwrap_or(text_len);
+                    let new_carat_index = unicode_word_indices(
+                        &ui_manager
+                            .ui_state(ui_asset_id)
+                            .textbox_ref(&textbox_id)
+                            .unwrap()
+                            .text,
+                    )
+                    .map(|(i, word)| i + word.len())
+                    .find(|&i| i > ui_manager.ui_input_state().carat_index)
+                    .unwrap_or(text_len);
                     ui_manager.ui_input_state_mut().carat_index = new_carat_index;
                 }
                 ui_manager.ui_input_state_mut().select_index = None;
@@ -527,14 +568,16 @@ impl TextboxInputState {
                             Some(ui_manager.ui_input_state().carat_index);
                     }
 
-                    let new_carat_index = unicode_word_indices(&ui_manager
-                        .ui_state(ui_asset_id)
-                        .textbox_ref(&textbox_id)
-                        .unwrap()
-                        .text)
-                        .map(|(i, word)| i + word.len())
-                        .find(|&i| i > ui_manager.ui_input_state().carat_index)
-                        .unwrap_or(text_len);
+                    let new_carat_index = unicode_word_indices(
+                        &ui_manager
+                            .ui_state(ui_asset_id)
+                            .textbox_ref(&textbox_id)
+                            .unwrap()
+                            .text,
+                    )
+                    .map(|(i, word)| i + word.len())
+                    .find(|&i| i > ui_manager.ui_input_state().carat_index)
+                    .unwrap_or(text_len);
                     ui_manager.ui_input_state_mut().carat_index = new_carat_index;
 
                     if ui_manager.ui_input_state().carat_index
@@ -640,25 +683,29 @@ impl TextboxInputState {
                 );
 
                 // select word
-                let word_start = unicode_word_indices(&ui_manager
-                    .ui_state(hover_asset_id)
-                    .store
-                    .textbox_ref(&hover_node_id)
-                    .unwrap()
-                    .text)
-                    .rev()
-                    .map(|(i, _)| i)
-                    .find(|&i| i < click_index)
-                    .unwrap_or(0);
-                let word_end = unicode_word_indices(&ui_manager
-                    .ui_state(hover_asset_id)
-                    .store
-                    .textbox_ref(&hover_node_id)
-                    .unwrap()
-                    .text)
-                    .map(|(i, word)| i + word.len())
-                    .find(|&i| i > click_index)
-                    .unwrap_or(text_len);
+                let word_start = unicode_word_indices(
+                    &ui_manager
+                        .ui_state(hover_asset_id)
+                        .store
+                        .textbox_ref(&hover_node_id)
+                        .unwrap()
+                        .text,
+                )
+                .rev()
+                .map(|(i, _)| i)
+                .find(|&i| i < click_index)
+                .unwrap_or(0);
+                let word_end = unicode_word_indices(
+                    &ui_manager
+                        .ui_state(hover_asset_id)
+                        .store
+                        .textbox_ref(&hover_node_id)
+                        .unwrap()
+                        .text,
+                )
+                .map(|(i, word)| i + word.len())
+                .find(|&i| i > click_index)
+                .unwrap_or(text_len);
 
                 ui_manager.ui_input_state_mut().select_index = Some(word_start);
                 ui_manager.ui_input_state_mut().carat_index = word_end;
@@ -788,7 +835,12 @@ fn ascii_string_drain(text: &mut AsciiString, start: usize, end: usize) {
     *text = AsciiString::from(chars);
 }
 
-fn ascii_string_replace_range(text: &mut AsciiString, start: usize, end: usize, new_text: &AsciiString) {
+fn ascii_string_replace_range(
+    text: &mut AsciiString,
+    start: usize,
+    end: usize,
+    new_text: &AsciiString,
+) {
     // Convert AsciiString to Vec<AsciiChar>
     let mut chars: Vec<AsciiChar> = text.chars().collect();
 

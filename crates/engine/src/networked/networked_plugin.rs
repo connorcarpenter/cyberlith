@@ -2,18 +2,36 @@ use std::sync::{Arc, RwLock};
 
 use bevy_app::{App, Plugin, Startup, Update};
 
-use naia_bevy_client::{events::DespawnEntityEvent, ClientConfig as NaiaClientConfig, Plugin as NaiaClientPlugin};
+use naia_bevy_client::{
+    events::DespawnEntityEvent, ClientConfig as NaiaClientConfig, Plugin as NaiaClientPlugin,
+};
 
 use kernel::http::CookieStore;
 
-use session_server_naia_proto::{protocol as session_server_naia_protocol, components::GlobalChatMessage};
+use session_server_naia_proto::{
+    components::GlobalChatMessage, protocol as session_server_naia_protocol,
+};
 use world_server_naia_proto::{
     components::{Alt1, Main, Position},
     protocol as world_server_naia_protocol,
 };
 
-use super::{asset_cache_checker::AssetCacheChecker, asset_ref_processor::AssetRefProcessor, client_markers::{Session, World}, connection_manager::ConnectionManager, insert_component_event, session_events, world_events, world_events::{InsertAssetRefEvent}};
-use crate::{world::{WorldDespawnEntityEvent, WorldSpawnEntityEvent}, session::{SessionDespawnEntityEvent, SessionSpawnEntityEvent}, EnginePlugin, networked::{session_events::SessionInsertComponentEvent, world_events::WorldInsertComponentEvent}};
+use super::{
+    asset_cache_checker::AssetCacheChecker,
+    asset_ref_processor::AssetRefProcessor,
+    client_markers::{Session, World},
+    connection_manager::ConnectionManager,
+    insert_component_event, session_events, world_events,
+    world_events::InsertAssetRefEvent,
+};
+use crate::{
+    networked::{
+        session_events::SessionInsertComponentEvent, world_events::WorldInsertComponentEvent,
+    },
+    session::{SessionDespawnEntityEvent, SessionSpawnEntityEvent},
+    world::{WorldDespawnEntityEvent, WorldSpawnEntityEvent},
+    EnginePlugin,
+};
 
 pub struct NetworkedEnginePlugin {
     cookie_store_opt: Option<Arc<RwLock<CookieStore>>>,
@@ -54,8 +72,10 @@ impl Plugin for NetworkedEnginePlugin {
             .init_resource::<AssetCacheChecker>()
             .add_systems(Update, AssetCacheChecker::handle_load_asset_tasks)
             // world component insert stuff
-
-            .add_systems(Startup, insert_component_event::insert_component_events_startup::<World>)
+            .add_systems(
+                Startup,
+                insert_component_event::insert_component_events_startup::<World>,
+            )
             .add_systems(Update, world_events::spawn_entity_events)
             .add_systems(Update, world_events::despawn_entity_events)
             .add_systems(Update, world_events::world_insert_component_events)
@@ -64,16 +84,16 @@ impl Plugin for NetworkedEnginePlugin {
             .add_event::<WorldInsertComponentEvent<Position>>()
             .add_event::<InsertAssetRefEvent<Main>>()
             .add_event::<InsertAssetRefEvent<Alt1>>()
-
-            .add_systems(Startup, insert_component_event::insert_component_events_startup::<Session>)
+            .add_systems(
+                Startup,
+                insert_component_event::insert_component_events_startup::<Session>,
+            )
             .add_systems(Update, session_events::spawn_entity_events)
             .add_systems(Update, session_events::despawn_entity_events)
             .add_systems(Update, session_events::session_insert_component_events)
             .add_event::<SessionSpawnEntityEvent>()
             .add_event::<SessionDespawnEntityEvent>()
-
             .add_event::<DespawnEntityEvent<World>>()
-
             .add_event::<SessionInsertComponentEvent<GlobalChatMessage>>();
     }
 }

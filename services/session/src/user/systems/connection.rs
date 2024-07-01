@@ -1,14 +1,20 @@
+use bevy_ecs::{change_detection::ResMut, event::EventReader, system::Res};
 
-use bevy_ecs::{system::Res, change_detection::ResMut, event::EventReader};
-
-use naia_bevy_server::{events::{AuthEvents, ConnectEvent, DisconnectEvent}, Server};
+use naia_bevy_server::{
+    events::{AuthEvents, ConnectEvent, DisconnectEvent},
+    Server,
+};
 
 use bevy_http_client::HttpClient;
 use logging::{info, warn};
 
 use session_server_naia_proto::messages::Auth;
 
-use crate::{social::SocialManager, asset::{user_load_default_assets, asset_manager::AssetManager}, user::UserManager};
+use crate::{
+    asset::{asset_manager::AssetManager, user_load_default_assets},
+    social::SocialManager,
+    user::UserManager,
+};
 
 pub fn auth_events(
     mut user_manager: ResMut<UserManager>,

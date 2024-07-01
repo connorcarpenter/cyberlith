@@ -181,89 +181,86 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
     });
 
     // nodes
-    ui_config
-        .root_mut()
-        .set_style(window_style)
-        .contents(|c| {
-            // main container
-            c.add_panel().set_style(main_container_style).contents(|c| {
-                // title container
+    ui_config.root_mut().set_style(window_style).contents(|c| {
+        // main container
+        c.add_panel().set_style(main_container_style).contents(|c| {
+            // title container
+            c.add_panel()
+                .set_style(title_container_style)
+                .contents(|c| {
+                    c.add_text("c y b e r l i t h").set_style(title_text_style);
+                });
+
+            // body container
+            c.add_panel().set_style(body_container_style).contents(|c| {
+                // heading container left
                 c.add_panel()
-                    .set_style(title_container_style)
+                    .set_style(left_body_container_style)
                     .contents(|c| {
-                        c.add_text("c y b e r l i t h").set_style(title_text_style);
+                        c.add_text("forgot your username?")
+                            .set_style(heading_text_style);
+
+                        c.add_text(
+                            "enter your email address below and we'll send you your username",
+                        )
+                        .set_style(desc_label_style);
+                        c.add_text("").set_style(desc_label_style);
+
+                        // email input
+                        // text
+                        c.add_text("email address:").set_style(base_label_style);
+                        // text-edit
+                        c.add_textbox("email_textbox")
+                            .validation::<EmailValidation>()
+                            .set_style(base_textbox_style)
+                            .set_as_first_input()
+                            .navigation(|n| {
+                                n.up_goes_to("back_button")
+                                    .down_goes_to("submit_button")
+                                    .tab_goes_to("submit_button")
+                                    .right_goes_to("back_button");
+                            });
+
+                        c.add_panel()
+                            .set_style(submit_container_style)
+                            .contents(|c| {
+                                // submit button
+                                c.add_button("submit_button")
+                                    .set_style(submit_button_style)
+                                    .contents(|c| {
+                                        c.add_text("submit").set_style(base_button_text_style);
+                                    })
+                                    .navigation(|n| {
+                                        n.up_goes_to("email_textbox")
+                                            .right_goes_to("back_button")
+                                            .tab_goes_to("back_button");
+                                    });
+
+                                // spinner
+                                c.add_spinner("spinner")
+                                    .set_style(spinner_style)
+                                    .set_visible(false);
+
+                                // error output
+                                c.add_text_with_id("", "error_output_text")
+                                    .set_style(error_output_style);
+                            });
                     });
 
-                // body container
-                c.add_panel().set_style(body_container_style).contents(|c| {
-                    // heading container left
-                    c.add_panel()
-                        .set_style(left_body_container_style)
-                        .contents(|c| {
-                            c.add_text("forgot your username?")
-                                .set_style(heading_text_style);
-
-                            c.add_text(
-                                "enter your email address below and we'll send you your username",
-                            )
-                            .set_style(desc_label_style);
-                            c.add_text("").set_style(desc_label_style);
-
-                            // email input
-                            // text
-                            c.add_text("email address:").set_style(base_label_style);
-                            // text-edit
-                            c.add_textbox("email_textbox")
-                                .validation::<EmailValidation>()
-                                .set_style(base_textbox_style)
-                                .set_as_first_input()
-                                .navigation(|n| {
-                                    n.up_goes_to("back_button")
-                                        .down_goes_to("submit_button")
-                                        .tab_goes_to("submit_button")
-                                        .right_goes_to("back_button");
-                                });
-
-                            c.add_panel()
-                                .set_style(submit_container_style)
-                                .contents(|c| {
-                                    // submit button
-                                    c.add_button("submit_button")
-                                        .set_style(submit_button_style)
-                                        .contents(|c| {
-                                            c.add_text("submit").set_style(base_button_text_style);
-                                        })
-                                        .navigation(|n| {
-                                            n.up_goes_to("email_textbox")
-                                                .right_goes_to("back_button")
-                                                .tab_goes_to("back_button");
-                                        });
-
-                                    // spinner
-                                    c.add_spinner("spinner")
-                                        .set_style(spinner_style)
-                                        .set_visible(false);
-
-                                    // error output
-                                    c.add_text_with_id("", "error_output_text")
-                                        .set_style(error_output_style);
-                                });
-                        });
-
-                    // heading container right
-                    c.add_panel()
-                        .set_style(right_body_container_style)
-                        .contents(|c| {
-                            // back button
-                            c.add_button("back_button")
-                                .set_style(back_button_style)
-                                .contents(|c| {
-                                    c.add_text("back").set_style(base_button_text_style);
-                                });
-                        });
-                });
+                // heading container right
+                c.add_panel()
+                    .set_style(right_body_container_style)
+                    .contents(|c| {
+                        // back button
+                        c.add_button("back_button")
+                            .set_style(back_button_style)
+                            .contents(|c| {
+                                c.add_text("back").set_style(base_button_text_style);
+                            });
+                    });
             });
         });
+    });
 
     (ui_name.to_string(), ui_asset_id, ui_etag, ui_config)
 }

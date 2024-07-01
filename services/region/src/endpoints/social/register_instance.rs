@@ -7,7 +7,7 @@ use logging::{info, warn};
 
 use region_server_http_proto::{SocialRegisterInstanceRequest, SocialRegisterInstanceResponse};
 
-use crate::{state::State};
+use crate::state::State;
 
 pub fn social_register_instance(host_name: &str, server: &mut Server, state: Arc<RwLock<State>>) {
     server.api_endpoint(host_name, None, move |addr, req| {

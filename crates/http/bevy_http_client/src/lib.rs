@@ -10,4 +10,4 @@ pub use client::HttpClient;
 pub use key::ResponseKey;
 pub use plugin::HttpClientPlugin;
 
-pub use http_common::{ResponseError, log_util, ApiResponse, ApiRequest};
+pub use http_common::{log_util, ApiRequest, ApiResponse, ResponseError};

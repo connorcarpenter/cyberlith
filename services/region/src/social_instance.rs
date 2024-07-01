@@ -38,7 +38,8 @@ impl SocialInstance {
     }
 
     pub fn insert_connected_session_server(&mut self, instance_secret: &str) {
-        self.connected_session_servers.insert(instance_secret.to_string());
+        self.connected_session_servers
+            .insert(instance_secret.to_string());
     }
 
     pub fn remove_connected_session_server(&mut self, instance_secret: &str) {

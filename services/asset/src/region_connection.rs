@@ -1,11 +1,13 @@
 use std::time::{Duration, Instant};
 
-use logging::{info, warn};
 use http_client::{HttpClient, ResponseError};
-use http_server::{async_dup::Arc, executor::smol::lock::RwLock, ApiServer, Server, ApiRequest, ApiResponse};
+use http_server::{
+    async_dup::Arc, executor::smol::lock::RwLock, ApiRequest, ApiResponse, ApiServer, Server,
+};
+use logging::{info, warn};
 
-use region_server_http_proto::{AssetRegisterInstanceRequest, AssetRegisterInstanceResponse};
 use asset_server_http_proto::{HeartbeatRequest, HeartbeatResponse};
+use region_server_http_proto::{AssetRegisterInstanceRequest, AssetRegisterInstanceResponse};
 
 use config::{
     ASSET_SERVER_GLOBAL_SECRET, ASSET_SERVER_PORT, ASSET_SERVER_RECV_ADDR, REGION_SERVER_PORT,
@@ -30,7 +32,7 @@ pub struct RegionServerState {
 impl RegionServerState {
     pub fn new(
         registration_resend_rate: Duration,
-        region_server_disconnect_timeout: Duration
+        region_server_disconnect_timeout: Duration,
     ) -> Self {
         Self {
             region_server_connection_state: ConnectionState::Disconnected,

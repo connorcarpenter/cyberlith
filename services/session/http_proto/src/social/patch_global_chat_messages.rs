@@ -12,7 +12,10 @@ pub struct SocialPatchGlobalChatMessagesRequest {
 }
 
 impl SocialPatchGlobalChatMessagesRequest {
-    pub fn new(social_secret: &str, new_messages: Vec<(GlobalChatMessageId, Timestamp, UserId, String)>) -> Self {
+    pub fn new(
+        social_secret: &str,
+        new_messages: Vec<(GlobalChatMessageId, Timestamp, UserId, String)>,
+    ) -> Self {
         Self {
             social_secret: social_secret.to_string(),
             new_messages,

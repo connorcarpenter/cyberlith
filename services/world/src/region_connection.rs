@@ -2,7 +2,9 @@ use std::time::{Duration, Instant};
 
 use bevy_ecs::change_detection::ResMut;
 
-use bevy_http_client::{ApiRequest, ApiResponse, HttpClient, ResponseError, ResponseKey as ClientResponseKey};
+use bevy_http_client::{
+    ApiRequest, ApiResponse, HttpClient, ResponseError, ResponseKey as ClientResponseKey,
+};
 use bevy_http_server::HttpServer;
 use config::{
     REGION_SERVER_PORT, REGION_SERVER_RECV_ADDR, REGION_SERVER_SECRET, WORLD_SERVER_GLOBAL_SECRET,
@@ -13,7 +15,7 @@ use logging::{info, warn};
 use region_server_http_proto::{WorldRegisterInstanceRequest, WorldRegisterInstanceResponse};
 use world_server_http_proto::{HeartbeatRequest, HeartbeatResponse};
 
-use crate::global::{Global};
+use crate::global::Global;
 
 pub enum ConnectionState {
     Disconnected,
@@ -32,7 +34,7 @@ pub struct RegionServerState {
 impl RegionServerState {
     pub fn new(
         registration_resend_rate: Duration,
-        region_server_disconnect_timeout: Duration
+        region_server_disconnect_timeout: Duration,
     ) -> Self {
         Self {
             region_server_connection_state: ConnectionState::Disconnected,
@@ -133,10 +135,13 @@ pub fn recv_register_instance_response(
 ) {
     if let Some(response_key) = global.region_server.register_instance_response_key() {
         if let Some(result) = http_client.recv(response_key) {
-
             let host = "world";
             let remote = "region";
-            bevy_http_client::log_util::recv_res(host, remote, WorldRegisterInstanceResponse::name());
+            bevy_http_client::log_util::recv_res(
+                host,
+                remote,
+                WorldRegisterInstanceResponse::name(),
+            );
 
             match result {
                 Ok(_response) => {
@@ -154,7 +159,6 @@ pub fn recv_register_instance_response(
 
 pub fn recv_heartbeat_request(mut global: ResMut<Global>, mut server: ResMut<HttpServer>) {
     while let Some((_addr, request, response_key)) = server.receive::<HeartbeatRequest>() {
-
         if request.region_secret() != REGION_SERVER_SECRET {
             warn!("invalid request secret");
             server.respond(response_key, Err(ResponseError::Unauthenticated));
@@ -177,9 +181,7 @@ pub fn recv_heartbeat_request(mut global: ResMut<Global>, mut server: ResMut<Htt
     }
 }
 
-pub fn process_region_server_disconnect(
-    mut global: ResMut<Global>
-) {
+pub fn process_region_server_disconnect(mut global: ResMut<Global>) {
     if global.region_server.connected() {
         if global.region_server.time_to_disconnect() {
             info!("disconnecting from region server");

@@ -35,11 +35,7 @@ pub(crate) async fn handle(
     let remote_addr = AUTH_SERVER_RECV_ADDR;
     let remote_port = AUTH_SERVER_PORT;
 
-    http_server::log_util::send_req(
-        host_name,
-        auth_server,
-        UserRegisterConfirmRequest::name(),
-    );
+    http_server::log_util::send_req(host_name, auth_server, UserRegisterConfirmRequest::name());
 
     let confirm_request = UserRegisterConfirmRequest::new(register_token);
 

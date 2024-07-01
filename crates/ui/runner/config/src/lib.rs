@@ -9,7 +9,7 @@ mod styles;
 // Re-export
 pub use ui_builder_config::{
     BaseNodeStyle, EmailValidation, PasswordValidation, StyleId, Text, Textbox, UiContainer,
-    UiNode, UsernameValidation, ValidationType, Widget, WidgetKind
+    UiNode, UsernameValidation, ValidationType, Widget, WidgetKind,
 };
-pub use ui_layout::{LayoutCache, NodeId, NodeStore, TextMeasurer, UiVisibilityStore, Alignment};
+pub use ui_layout::{Alignment, LayoutCache, NodeId, NodeStore, TextMeasurer, UiVisibilityStore};
 pub use ui_serde::SerdeErr;

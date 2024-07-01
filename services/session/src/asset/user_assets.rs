@@ -189,7 +189,6 @@ impl UserAssets {
         // handle dependency waitlist
         if let Some(waiting_asset_ids) = self.dependency_waitlist.remove(asset_id) {
             for waiting_asset_id in waiting_asset_ids {
-
                 // info!(
                 //     "asset: {:?} has finished loading, notifying waiting asset: {:?}",
                 //     asset_id, waiting_asset_id

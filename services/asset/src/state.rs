@@ -5,7 +5,7 @@ use http_client::ResponseError;
 
 use asset_server_http_proto::{AssetRequest, AssetResponse};
 
-use crate::{region_connection::RegionServerState, asset_metadata_store::AssetMetadataStore};
+use crate::{asset_metadata_store::AssetMetadataStore, region_connection::RegionServerState};
 
 pub struct State {
     pub region_server: RegionServerState,

@@ -52,10 +52,7 @@ pub(crate) async fn handler(
                 UserPasswordForgotResponse::name(),
             );
 
-            http_server::log_util::send_res(
-                host_name,
-                GatewayUserPasswordForgotResponse::name(),
-            );
+            http_server::log_util::send_res(host_name, GatewayUserPasswordForgotResponse::name());
             return Ok(GatewayUserPasswordForgotResponse::new().to_response());
         }
         Err(e) => {

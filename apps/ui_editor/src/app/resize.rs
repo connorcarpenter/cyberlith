@@ -1,5 +1,6 @@
 use bevy_ecs::system::{Query, Res, ResMut};
 
+use game_engine::asset::AssetManager;
 use game_engine::{
     math::Vec3,
     render::{
@@ -8,7 +9,6 @@ use game_engine::{
     },
     ui::UiManager,
 };
-use game_engine::asset::AssetManager;
 
 use crate::app::global::Global;
 

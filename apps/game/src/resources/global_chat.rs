@@ -1,9 +1,23 @@
 use std::collections::BTreeMap;
 
-use bevy_ecs::{system::{Resource, Query}, event::EventReader, entity::Entity};
+use bevy_ecs::{
+    entity::Entity,
+    event::EventReader,
+    system::{Query, Resource},
+};
 
-use game_engine::{asset::AssetManager, ui::{NodeActiveState, UiManager}, session::{channels, messages, SessionClient, components::GlobalChatMessage}, input::{InputEvent, Key}, social::GlobalChatMessageId, ui::{extensions::{ListUiExt, ListUiExtItem}, UiHandle}};
 use game_engine::logging::info;
+use game_engine::{
+    asset::AssetManager,
+    input::{InputEvent, Key},
+    session::{channels, components::GlobalChatMessage, messages, SessionClient},
+    social::GlobalChatMessageId,
+    ui::{
+        extensions::{ListUiExt, ListUiExtItem},
+        UiHandle,
+    },
+    ui::{NodeActiveState, UiManager},
+};
 
 use crate::ui::{go_to_sub_ui, UiCatalog, UiKey};
 
@@ -29,7 +43,6 @@ impl Default for GlobalChat {
 }
 
 impl GlobalChat {
-
     pub(crate) fn handle_events(
         global_chat: &mut GlobalChat,
         ui_manager: &mut UiManager,
@@ -47,7 +60,9 @@ impl GlobalChat {
                 // TODO this probably doesn't belong here! this is where it is required to be selecting the textbox!!!
                 InputEvent::KeyPressed(Key::I, _) => {
                     info!("I Key Pressed");
-                    if let Some(NodeActiveState::Active) = ui_manager.get_node_active_state_from_id(&ui_handle, "message_textbox") {
+                    if let Some(NodeActiveState::Active) =
+                        ui_manager.get_node_active_state_from_id(&ui_handle, "message_textbox")
+                    {
                         // do nothing, typing
                         info!("Node Is Active");
                     } else {
@@ -58,7 +73,9 @@ impl GlobalChat {
                 }
                 InputEvent::KeyPressed(Key::J, _) => {
                     info!("J Key Pressed");
-                    if let Some(NodeActiveState::Active) = ui_manager.get_node_active_state_from_id(&ui_handle, "message_textbox") {
+                    if let Some(NodeActiveState::Active) =
+                        ui_manager.get_node_active_state_from_id(&ui_handle, "message_textbox")
+                    {
                         // do nothing, typing
                         info!("Node Is Active");
                     } else {
@@ -68,7 +85,9 @@ impl GlobalChat {
                     }
                 }
                 InputEvent::KeyPressed(Key::Enter, modifiers) => {
-                    if let Some(NodeActiveState::Active) = ui_manager.get_node_active_state_from_id(&ui_handle, "message_textbox") {
+                    if let Some(NodeActiveState::Active) =
+                        ui_manager.get_node_active_state_from_id(&ui_handle, "message_textbox")
+                    {
                         if modifiers.shift {
                             // later, add multi-line newline
                         } else {
@@ -108,7 +127,9 @@ impl GlobalChat {
         // setup list extension
         let container_id_str = "chat_wall";
 
-        global_chat_messages.list_ui_ext.set_container_ui(ui_manager, &ui_handle, container_id_str);
+        global_chat_messages
+            .list_ui_ext
+            .set_container_ui(ui_manager, &ui_handle, container_id_str);
         global_chat_messages.sync_with_collection(ui_manager, asset_manager, message_q);
     }
 
@@ -166,9 +187,8 @@ impl GlobalChat {
         asset_manager: &AssetManager,
         message_q: &Query<&GlobalChatMessage>,
         message_id: GlobalChatMessageId,
-        message_entity: Entity
+        message_entity: Entity,
     ) {
-
         self.global_chats.insert(message_id, message_entity);
 
         if self.global_chats.len() > 100 {
@@ -184,7 +204,10 @@ impl GlobalChat {
         asset_manager: &AssetManager,
         message_q: &Query<&GlobalChatMessage>,
     ) {
-        if self.message_item_ui.is_none() || self.day_divider_item_ui.is_none() || self.username_and_message_item_ui.is_none() {
+        if self.message_item_ui.is_none()
+            || self.day_divider_item_ui.is_none()
+            || self.username_and_message_item_ui.is_none()
+        {
             return;
         }
 
@@ -197,11 +220,7 @@ impl GlobalChat {
             asset_manager,
             self.global_chats.iter(),
             self.global_chats.len(),
-            |
-                item_ctx,
-                message_id,
-                prev_message_id_opt
-            | {
+            |item_ctx, message_id, prev_message_id_opt| {
                 let message_entity = *(self.global_chats.get(&message_id).unwrap());
                 let message = message_q.get(message_entity).unwrap();
                 let message_timestamp = (*message.timestamp).clone();
@@ -209,29 +228,39 @@ impl GlobalChat {
 
                 let (prev_timestamp_opt, prev_user_id_opt) = match prev_message_id_opt {
                     Some(prev_message_id) => {
-                        let prev_message_entity = *(self.global_chats.get(&prev_message_id).unwrap());
+                        let prev_message_entity =
+                            *(self.global_chats.get(&prev_message_id).unwrap());
                         let prev_message = message_q.get(prev_message_entity).unwrap();
                         let prev_timestamp = (*prev_message.timestamp).clone();
                         let prev_message_user_id = *prev_message.user_id;
                         (Some(prev_timestamp), Some(prev_message_user_id))
-                    },
+                    }
                     None => (None, None),
                 };
 
                 let mut added_divider = false;
 
                 // add day divider if necessary
-                if prev_timestamp_opt.is_none() || prev_timestamp_opt.unwrap() != message_timestamp {
+                if prev_timestamp_opt.is_none() || prev_timestamp_opt.unwrap() != message_timestamp
+                {
                     Self::add_day_divider_item(item_ctx, day_divider_ui_handle, message);
                     added_divider = true;
                 }
 
                 // add username if necessary
                 if prev_user_id_opt.is_none() || added_divider {
-                    Self::add_username_and_message_item(item_ctx, username_and_message_ui_handle, message);
+                    Self::add_username_and_message_item(
+                        item_ctx,
+                        username_and_message_ui_handle,
+                        message,
+                    );
                 } else if prev_user_id_opt.unwrap() != message_user_id {
                     Self::add_message_item(item_ctx, message_ui_handle, " "); // blank space
-                    Self::add_username_and_message_item(item_ctx, username_and_message_ui_handle, message);
+                    Self::add_username_and_message_item(
+                        item_ctx,
+                        username_and_message_ui_handle,
+                        message,
+                    );
                 } else {
                     // just add message
                     Self::add_message_item(item_ctx, message_ui_handle, message.message.as_str());
@@ -240,16 +269,22 @@ impl GlobalChat {
         );
     }
 
-    fn add_day_divider_item(item_ctx: &mut ListUiExtItem<GlobalChatMessageId>, ui: &UiHandle, message: &GlobalChatMessage) {
-
+    fn add_day_divider_item(
+        item_ctx: &mut ListUiExtItem<GlobalChatMessageId>,
+        ui: &UiHandle,
+        message: &GlobalChatMessage,
+    ) {
         item_ctx.add_copied_node(ui);
 
         let divider_date_str = message.timestamp.date_string();
         item_ctx.set_text_by_str("timestamp", divider_date_str.as_str());
     }
 
-    fn add_username_and_message_item(item_ctx: &mut ListUiExtItem<GlobalChatMessageId>, ui: &UiHandle, message: &GlobalChatMessage) {
-
+    fn add_username_and_message_item(
+        item_ctx: &mut ListUiExtItem<GlobalChatMessageId>,
+        ui: &UiHandle,
+        message: &GlobalChatMessage,
+    ) {
         item_ctx.add_copied_node(ui);
 
         let message_user_id: u64 = (*message.user_id).into();
@@ -262,8 +297,11 @@ impl GlobalChat {
         item_ctx.set_text_by_str("message", message_text);
     }
 
-    fn add_message_item(item_ctx: &mut ListUiExtItem<GlobalChatMessageId>, ui: &UiHandle, message_text: &str) {
-
+    fn add_message_item(
+        item_ctx: &mut ListUiExtItem<GlobalChatMessageId>,
+        ui: &UiHandle,
+        message_text: &str,
+    ) {
         item_ctx.add_copied_node(ui);
 
         item_ctx.set_text_by_str("message", message_text);
@@ -274,18 +312,11 @@ impl GlobalChat {
         ui_handle: &UiHandle,
         session_server: &mut SessionClient,
     ) {
-        let Some(textbox_text) = ui_manager.get_textbox_text(
-            ui_handle,
-            "message_textbox"
-        ) else {
+        let Some(textbox_text) = ui_manager.get_textbox_text(ui_handle, "message_textbox") else {
             return;
         };
 
-        ui_manager.set_textbox_text(
-            ui_handle,
-            "message_textbox",
-            ""
-        );
+        ui_manager.set_textbox_text(ui_handle, "message_textbox", "");
 
         // info!("Sending message: {:?}", textbox_text);
 

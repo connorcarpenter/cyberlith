@@ -1,4 +1,3 @@
-
 use bevy_ecs::system::Resource;
 
 #[derive(Resource)]
@@ -7,9 +6,7 @@ pub struct SessionInstance {
 }
 
 impl SessionInstance {
-    pub fn new(
-        instance_secret: &str,
-    ) -> Self {
+    pub fn new(instance_secret: &str) -> Self {
         Self {
             instance_secret: instance_secret.to_string(),
         }

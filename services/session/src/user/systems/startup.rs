@@ -2,7 +2,10 @@ use std::net::SocketAddr;
 
 use naia_bevy_server::{transport::webrtc, Server};
 
-use config::{PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SELF_BINDING_ADDR, SESSION_SERVER_SIGNAL_PORT, SESSION_SERVER_WEBRTC_PORT};
+use config::{
+    PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SELF_BINDING_ADDR, SESSION_SERVER_SIGNAL_PORT,
+    SESSION_SERVER_WEBRTC_PORT,
+};
 use logging::info;
 
 pub fn server(mut server: Server) {
@@ -24,7 +27,7 @@ pub fn server(mut server: Server) {
             "{}://{}:{}",
             PUBLIC_PROTOCOL, PUBLIC_IP_ADDR, SESSION_SERVER_WEBRTC_PORT
         )
-            .as_str(),
+        .as_str(),
     );
     let socket = webrtc::Socket::new(&server_addresses, server.socket_config());
     server.listen(socket);

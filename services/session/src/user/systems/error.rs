@@ -1,4 +1,3 @@
-
 use bevy_ecs::event::EventReader;
 
 use naia_bevy_server::events::ErrorEvent;

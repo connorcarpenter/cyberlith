@@ -18,7 +18,6 @@ pub struct AssetCatalog {
 }
 
 impl AssetCatalog {
-
     pub fn new() -> Self {
         let mut me = Self {
             assets: HashMap::new(),
@@ -26,7 +25,10 @@ impl AssetCatalog {
         };
 
         me.insert_asset(AssetKey::FontIcon, AssetId::from_str("34mvvk").unwrap());
-        me.insert_asset(AssetKey::PasswordEyeIcon, AssetId::from_str("qbgz5j").unwrap());
+        me.insert_asset(
+            AssetKey::PasswordEyeIcon,
+            AssetId::from_str("qbgz5j").unwrap(),
+        );
 
         me
     }
@@ -61,7 +63,7 @@ impl AssetCatalog {
 pub(crate) fn on_asset_load(
     ui_manager: &mut UiManager,
     asset_catalog: &mut AssetCatalog,
-    asset_id: AssetId
+    asset_id: AssetId,
 ) {
     if !asset_catalog.has_asset_key(&asset_id) {
         return;
@@ -73,10 +75,10 @@ pub(crate) fn on_asset_load(
     match asset_key {
         AssetKey::FontIcon => {
             ui_manager.set_text_icon_handle(asset_id);
-        },
+        }
         AssetKey::PasswordEyeIcon => {
             ui_manager.set_eye_icon_handle(asset_id);
-        },
+        }
         // _ => {
         //     unimplemented!("asset load not implemented");
         // }

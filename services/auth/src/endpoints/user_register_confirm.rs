@@ -4,8 +4,8 @@ use auth_server_db::{AuthServerDbError, User, UserRole};
 use auth_server_types::UserId;
 use http_client::ResponseError;
 use http_server::{
-    async_dup::Arc, executor::smol::lock::RwLock, log_util, ApiRequest, ApiResponse,
-    ApiServer, Server,
+    async_dup::Arc, executor::smol::lock::RwLock, log_util, ApiRequest, ApiResponse, ApiServer,
+    Server,
 };
 
 use auth_server_http_proto::{

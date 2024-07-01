@@ -174,125 +174,122 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
     });
 
     // nodes
-    ui_config
-        .root_mut()
-        .set_style(window_style)
-        .contents(|c| {
-            // main container
-            c.add_panel().set_style(main_container_style).contents(|c| {
-                // title container
+    ui_config.root_mut().set_style(window_style).contents(|c| {
+        // main container
+        c.add_panel().set_style(main_container_style).contents(|c| {
+            // title container
+            c.add_panel()
+                .set_style(title_container_style)
+                .contents(|c| {
+                    c.add_text("c y b e r l i t h").set_style(title_text_style);
+                });
+
+            // body container
+            c.add_panel().set_style(body_container_style).contents(|c| {
+                // heading container left
                 c.add_panel()
-                    .set_style(title_container_style)
+                    .set_style(left_body_container_style)
                     .contents(|c| {
-                        c.add_text("c y b e r l i t h").set_style(title_text_style);
+                        c.add_text("please log in").set_style(heading_text_style);
+                        // username input
+                        // text
+                        c.add_text("username:").set_style(base_label_style);
+                        // text-edit
+                        c.add_textbox("username_textbox")
+                            .validation::<EmailValidation>()
+                            .set_style(base_textbox_style)
+                            .set_as_first_input()
+                            .navigation(|n| {
+                                n.up_goes_to("register_button")
+                                    .down_goes_to("password_textbox")
+                                    .tab_goes_to("password_textbox")
+                                    .right_goes_to("register_button");
+                            });
+
+                        // password input
+                        // text
+                        c.add_text("password:").set_style(base_label_style);
+                        // text-edit
+                        c.add_textbox("password_textbox")
+                            .validation::<PasswordValidation>()
+                            .set_as_password()
+                            .set_style(base_textbox_style)
+                            .navigation(|n| {
+                                n.up_goes_to("username_textbox")
+                                    .down_goes_to("submit_button")
+                                    .tab_goes_to("submit_button")
+                                    .right_goes_to("register_button");
+                            });
+
+                        c.add_panel()
+                            .set_style(submit_container_style)
+                            .contents(|c| {
+                                // submit button
+                                c.add_button("submit_button")
+                                    .set_style(submit_button_style)
+                                    .contents(|c| {
+                                        c.add_text("submit").set_style(base_button_text_style);
+                                    })
+                                    .navigation(|n| {
+                                        n.up_goes_to("password_textbox")
+                                            .right_goes_to("register_button")
+                                            .tab_goes_to("register_button");
+                                    });
+
+                                // spinner
+                                c.add_spinner("spinner")
+                                    .set_style(spinner_style)
+                                    .set_visible(false);
+
+                                // error output
+                                c.add_text_with_id("", "error_output_text")
+                                    .set_style(error_output_style);
+                            });
                     });
 
-                // body container
-                c.add_panel().set_style(body_container_style).contents(|c| {
-                    // heading container left
-                    c.add_panel()
-                        .set_style(left_body_container_style)
-                        .contents(|c| {
-                            c.add_text("please log in").set_style(heading_text_style);
-                            // username input
-                            // text
-                            c.add_text("username:").set_style(base_label_style);
-                            // text-edit
-                            c.add_textbox("username_textbox")
-                                .validation::<EmailValidation>()
-                                .set_style(base_textbox_style)
-                                .set_as_first_input()
-                                .navigation(|n| {
-                                    n.up_goes_to("register_button")
-                                        .down_goes_to("password_textbox")
-                                        .tab_goes_to("password_textbox")
-                                        .right_goes_to("register_button");
-                                });
+                // heading container right
+                c.add_panel()
+                    .set_style(right_body_container_style)
+                    .contents(|c| {
+                        // register button
+                        c.add_button("register_button")
+                            .set_style(register_button_style)
+                            .contents(|c| {
+                                c.add_text("register").set_style(base_button_text_style);
+                            });
 
-                            // password input
-                            // text
-                            c.add_text("password:").set_style(base_label_style);
-                            // text-edit
-                            c.add_textbox("password_textbox")
-                                .validation::<PasswordValidation>()
-                                .set_as_password()
-                                .set_style(base_textbox_style)
-                                .navigation(|n| {
-                                    n.up_goes_to("username_textbox")
-                                        .down_goes_to("submit_button")
-                                        .tab_goes_to("submit_button")
-                                        .right_goes_to("register_button");
-                                });
-
-                            c.add_panel()
-                                .set_style(submit_container_style)
-                                .contents(|c| {
-                                    // submit button
-                                    c.add_button("submit_button")
-                                        .set_style(submit_button_style)
-                                        .contents(|c| {
-                                            c.add_text("submit").set_style(base_button_text_style);
-                                        })
-                                        .navigation(|n| {
-                                            n.up_goes_to("password_textbox")
-                                                .right_goes_to("register_button")
-                                                .tab_goes_to("register_button");
-                                        });
-
-                                    // spinner
-                                    c.add_spinner("spinner")
-                                        .set_style(spinner_style)
-                                        .set_visible(false);
-
-                                    // error output
-                                    c.add_text_with_id("", "error_output_text")
-                                        .set_style(error_output_style);
-                                });
-                        });
-
-                    // heading container right
-                    c.add_panel()
-                        .set_style(right_body_container_style)
-                        .contents(|c| {
-                            // register button
-                            c.add_button("register_button")
-                                .set_style(register_button_style)
-                                .contents(|c| {
-                                    c.add_text("register").set_style(base_button_text_style);
-                                });
-
-                            // forgot container
-                            c.add_panel()
-                                .set_style(forgot_container_style)
-                                .contents(|c| {
-                                    c.add_panel()
-                                        .set_style(forgot_username_container_style)
-                                        .contents(|c| {
-                                            c.add_text("forgot your ").set_style(forgot_text_style);
-                                            c.add_button("forgot_username_button")
-                                                .set_style(forgot_username_button_style)
-                                                .contents(|c| {
-                                                    c.add_text("username")
-                                                        .set_style(forgot_button_text_style);
-                                                });
-                                        });
-                                    c.add_panel()
-                                        .set_style(forgot_password_container_style)
-                                        .contents(|c| {
-                                            c.add_text("or ").set_style(forgot_text_style);
-                                            c.add_button("forgot_password_button")
-                                                .set_style(forgot_password_button_style)
-                                                .contents(|c| {
-                                                    c.add_text("password")
-                                                        .set_style(forgot_button_text_style);
-                                                });
-                                            c.add_text(" ?").set_style(forgot_text_style);
-                                        });
-                                });
-                        });
-                });
+                        // forgot container
+                        c.add_panel()
+                            .set_style(forgot_container_style)
+                            .contents(|c| {
+                                c.add_panel()
+                                    .set_style(forgot_username_container_style)
+                                    .contents(|c| {
+                                        c.add_text("forgot your ").set_style(forgot_text_style);
+                                        c.add_button("forgot_username_button")
+                                            .set_style(forgot_username_button_style)
+                                            .contents(|c| {
+                                                c.add_text("username")
+                                                    .set_style(forgot_button_text_style);
+                                            });
+                                    });
+                                c.add_panel()
+                                    .set_style(forgot_password_container_style)
+                                    .contents(|c| {
+                                        c.add_text("or ").set_style(forgot_text_style);
+                                        c.add_button("forgot_password_button")
+                                            .set_style(forgot_password_button_style)
+                                            .contents(|c| {
+                                                c.add_text("password")
+                                                    .set_style(forgot_button_text_style);
+                                            });
+                                        c.add_text(" ?").set_style(forgot_text_style);
+                                    });
+                            });
+                    });
             });
         });
+    });
 
     (ui_name.to_string(), ui_asset_id, ui_etag, ui_config)
 }

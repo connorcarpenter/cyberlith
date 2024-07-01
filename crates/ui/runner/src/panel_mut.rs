@@ -1,4 +1,3 @@
-
 use ui_runner_config::{NodeId, UiNode};
 
 use crate::UiRuntime;
@@ -16,18 +15,30 @@ impl<'a> PanelMut<'a> {
     pub fn insert_node(&mut self, index: usize, node: &UiNode) -> NodeId {
         let new_node_id = self.runtime.ui_config_mut().add_node(node.clone());
         self.runtime.ui_state_mut().add_node(&new_node_id, &node);
-        let parent_panel_mut = self.runtime.ui_config_mut().panel_mut(&self.node_id).unwrap();
+        let parent_panel_mut = self
+            .runtime
+            .ui_config_mut()
+            .panel_mut(&self.node_id)
+            .unwrap();
         parent_panel_mut.children.insert(index, new_node_id);
         new_node_id
     }
 
     pub fn remove_node(&mut self, node_id: &NodeId) {
-        let parent_panel_mut = self.runtime.ui_config_mut().panel_mut(&self.node_id).unwrap();
+        let parent_panel_mut = self
+            .runtime
+            .ui_config_mut()
+            .panel_mut(&self.node_id)
+            .unwrap();
         parent_panel_mut.children.retain(|id| id != node_id);
     }
 
     pub fn remove_all_children(&mut self) {
-        let panel_mut = self.runtime.ui_config_mut().panel_mut(&self.node_id).unwrap();
+        let panel_mut = self
+            .runtime
+            .ui_config_mut()
+            .panel_mut(&self.node_id)
+            .unwrap();
         let child_ids = std::mem::take(&mut panel_mut.children);
         for child_id in child_ids {
             self.runtime.delete_node_recurse(&child_id);

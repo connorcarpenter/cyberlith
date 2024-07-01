@@ -1,15 +1,21 @@
-use bevy_ecs::{event::EventReader, system::{Query, Res, ResMut}, schedule::{NextState, State}};
-
-use game_engine::{
-    asset::{
-        AssetLoadedEvent, AssetType, AssetManager
-    },
-    logging::info,
-    ui::UiManager,
-    session::{SessionInsertComponentEvent, components::GlobalChatMessage},
+use bevy_ecs::{
+    event::EventReader,
+    schedule::{NextState, State},
+    system::{Query, Res, ResMut},
 };
 
-use crate::{ui::{on_ui_load, UiCatalog}, states::AppState, resources::{AssetCatalog, on_asset_load, global_chat::GlobalChat}};
+use game_engine::{
+    asset::{AssetLoadedEvent, AssetManager, AssetType},
+    logging::info,
+    session::{components::GlobalChatMessage, SessionInsertComponentEvent},
+    ui::UiManager,
+};
+
+use crate::{
+    resources::{global_chat::GlobalChat, on_asset_load, AssetCatalog},
+    states::AppState,
+    ui::{on_ui_load, UiCatalog},
+};
 
 pub fn session_load_asset_events(
     state: Res<State<AppState>>,
@@ -37,11 +43,14 @@ pub fn session_load_asset_events(
                     &asset_manager,
                     &mut global_chat_messages,
                     &message_q,
-                    asset_id
+                    asset_id,
                 );
             }
             _ => {
-                info!("received Asset Loaded Icon Event! (asset_id: {:?})", asset_id);
+                info!(
+                    "received Asset Loaded Icon Event! (asset_id: {:?})",
+                    asset_id
+                );
                 on_asset_load(&mut ui_manager, &mut asset_catalog, asset_id);
             }
         }
@@ -59,7 +68,6 @@ pub fn recv_inserted_global_chat_component(
         // info!("received Inserted GlobalChatMessage from Session Server! (entity: {:?})", event.entity);
 
         if let Ok(chat) = chat_q.get(event.entity) {
-
             let chat_id = *chat.id;
 
             // let user_id = *chat.user_id;
@@ -67,7 +75,13 @@ pub fn recv_inserted_global_chat_component(
             // let message = &*chat.message;
             // info!("incoming global message: [ user_id({:?}) | {:?} | {:?} | {:?} ]", user_id, timestamp, event.entity, message);
 
-            global_chat_messages.recv_message(&mut ui_manager, &asset_manager, &chat_q, chat_id, event.entity);
+            global_chat_messages.recv_message(
+                &mut ui_manager,
+                &asset_manager,
+                &chat_q,
+                chat_id,
+                event.entity,
+            );
         }
     }
 }

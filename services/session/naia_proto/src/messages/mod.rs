@@ -19,7 +19,10 @@ mod load_asset_with_data;
 pub use load_asset_with_data::LoadAssetWithData;
 
 mod social;
-pub use social::{GlobalChatSendMessage, MatchLobbyCreate, MatchLobbyGameStart, MatchLobbyJoin, MatchLobbyLeave, MatchLobbySendMessage};
+pub use social::{
+    GlobalChatSendMessage, MatchLobbyCreate, MatchLobbyGameStart, MatchLobbyJoin, MatchLobbyLeave,
+    MatchLobbySendMessage,
+};
 
 // Plugin
 pub struct MessagesPlugin;

@@ -94,51 +94,48 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
     });
 
     // nodes
-    ui_config
-        .root_mut()
-        .set_style(window_style)
-        .contents(|c| {
-            // heading container
-            c.add_panel()
-                .set_style(heading_container_style)
-                .contents(|c| {
-                    c.add_text("host a match").set_style(heading_text_style);
-                });
+    ui_config.root_mut().set_style(window_style).contents(|c| {
+        // heading container
+        c.add_panel()
+            .set_style(heading_container_style)
+            .contents(|c| {
+                c.add_text("host a match").set_style(heading_text_style);
+            });
 
-            // name input
-            // text
-            c.add_text("match name:").set_style(base_label_style);
-            // text-edit
-            c.add_textbox("name_textbox")
-                .set_as_first_input()
-                .set_style(base_textbox_style)
-                .navigation(|n| {
-                    n.down_goes_to("submit_button").tab_goes_to("submit_button");
-                });
+        // name input
+        // text
+        c.add_text("match name:").set_style(base_label_style);
+        // text-edit
+        c.add_textbox("name_textbox")
+            .set_as_first_input()
+            .set_style(base_textbox_style)
+            .navigation(|n| {
+                n.down_goes_to("submit_button").tab_goes_to("submit_button");
+            });
 
-            c.add_panel()
-                .set_style(button_container_style)
-                .contents(|c| {
-                    // submit button
-                    c.add_button("submit_button")
-                        .set_style(submit_button_style)
-                        .contents(|c| {
-                            c.add_text("submit").set_style(base_button_text_style);
-                        })
-                        .navigation(|n| {
-                            n.up_goes_to("name_textbox").tab_goes_to("name_textbox");
-                        });
+        c.add_panel()
+            .set_style(button_container_style)
+            .contents(|c| {
+                // submit button
+                c.add_button("submit_button")
+                    .set_style(submit_button_style)
+                    .contents(|c| {
+                        c.add_text("submit").set_style(base_button_text_style);
+                    })
+                    .navigation(|n| {
+                        n.up_goes_to("name_textbox").tab_goes_to("name_textbox");
+                    });
 
-                    // spinner
-                    c.add_spinner("spinner")
-                        .set_style(spinner_style)
-                        .set_visible(false);
+                // spinner
+                c.add_spinner("spinner")
+                    .set_style(spinner_style)
+                    .set_visible(false);
 
-                    // error output
-                    c.add_text_with_id("", "error_output_text")
-                        .set_style(error_output_style);
-                });
-        });
+                // error output
+                c.add_text_with_id("", "error_output_text")
+                    .set_style(error_output_style);
+            });
+    });
 
     (ui_name.to_string(), ui_asset_id, ui_etag, ui_config)
 }

@@ -5,16 +5,31 @@ use http_client::{HttpClient, RequestOptions};
 use http_server::{ApiRequest, ApiResponse, Server};
 use logging::{info, warn};
 
-use session_server_http_proto::{ConnectAssetServerRequest, ConnectAssetServerResponse, ConnectSocialServerRequest, ConnectSocialServerResponse, DisconnectAssetServerRequest, DisconnectAssetServerResponse, DisconnectSocialServerRequest, DisconnectSocialServerResponse, HeartbeatRequest as SessionHeartbeatRequest, HeartbeatResponse as SessionHeartbeatResponse};
-use social_server_http_proto::{ConnectSessionServerRequest, ConnectSessionServerResponse, DisconnectSessionServerRequest, DisconnectSessionServerResponse, HeartbeatRequest as SocialHeartbeatRequest, HeartbeatResponse as SocialHeartbeatResponse};
-use world_server_http_proto::{HeartbeatRequest as WorldHeartbeatRequest, HeartbeatResponse as WorldHeartbeatResponse};
-use asset_server_http_proto::{HeartbeatRequest as AssetHeartbeatRequest, HeartbeatResponse as AssetHeartbeatResponse};
+use asset_server_http_proto::{
+    HeartbeatRequest as AssetHeartbeatRequest, HeartbeatResponse as AssetHeartbeatResponse,
+};
+use session_server_http_proto::{
+    ConnectAssetServerRequest, ConnectAssetServerResponse, ConnectSocialServerRequest,
+    ConnectSocialServerResponse, DisconnectAssetServerRequest, DisconnectAssetServerResponse,
+    DisconnectSocialServerRequest, DisconnectSocialServerResponse,
+    HeartbeatRequest as SessionHeartbeatRequest, HeartbeatResponse as SessionHeartbeatResponse,
+};
+use social_server_http_proto::{
+    ConnectSessionServerRequest, ConnectSessionServerResponse, DisconnectSessionServerRequest,
+    DisconnectSessionServerResponse, HeartbeatRequest as SocialHeartbeatRequest,
+    HeartbeatResponse as SocialHeartbeatResponse,
+};
+use world_server_http_proto::{
+    HeartbeatRequest as WorldHeartbeatRequest, HeartbeatResponse as WorldHeartbeatResponse,
+};
 
-use crate::{world_instance::WorldInstance, asset_instance::AssetInstance, session_instance::SessionInstance, social_instance::SocialInstance};
+use crate::{
+    asset_instance::AssetInstance, session_instance::SessionInstance,
+    social_instance::SocialInstance, world_instance::WorldInstance,
+};
 
 // Heartbeats
 pub(crate) async fn send_session_heartbeat_request(session_instance: &SessionInstance) {
-
     let session_addr = session_instance.http_addr().to_string();
     let session_port = session_instance.http_port();
     let session_last_heard = session_instance.last_heard();
@@ -24,15 +39,14 @@ pub(crate) async fn send_session_heartbeat_request(session_instance: &SessionIns
         let options = RequestOptions {
             timeout_opt: Some(Duration::from_secs(1)),
         };
-        
+
         let host_name = "region";
         let remote_name = "session";
         http_server::log_util::send_req(host_name, remote_name, SessionHeartbeatRequest::name());
         let response =
-            HttpClient::send_with_options(&session_addr, session_port, request, options)
-                .await;
+            HttpClient::send_with_options(&session_addr, session_port, request, options).await;
         http_server::log_util::recv_res(host_name, remote_name, SessionHeartbeatResponse::name());
-        
+
         match response {
             Ok(_) => {
                 let mut last_heard = session_last_heard.write().await;
@@ -51,7 +65,6 @@ pub(crate) async fn send_session_heartbeat_request(session_instance: &SessionIns
 }
 
 pub(crate) async fn send_world_heartbeat_request(world_instance: &WorldInstance) {
-
     let world_addr = world_instance.http_addr().to_string();
     let world_port = world_instance.http_port();
     let world_last_heard = world_instance.last_heard().clone();
@@ -61,15 +74,14 @@ pub(crate) async fn send_world_heartbeat_request(world_instance: &WorldInstance)
         let options = RequestOptions {
             timeout_opt: Some(Duration::from_secs(1)),
         };
-        
+
         let host = "region";
         let remote = "world";
         http_server::log_util::send_req(host, remote, WorldHeartbeatRequest::name());
         let response =
-            HttpClient::send_with_options(&world_addr, world_port, request, options)
-                .await;
+            HttpClient::send_with_options(&world_addr, world_port, request, options).await;
         http_server::log_util::recv_res(host, remote, WorldHeartbeatResponse::name());
-        
+
         match response {
             Ok(_) => {
                 // info!(
@@ -101,15 +113,14 @@ pub(crate) async fn send_asset_heartbeat_request(asset_instance: &AssetInstance)
         let options = RequestOptions {
             timeout_opt: Some(Duration::from_secs(1)),
         };
-        
+
         let host = "region";
         let remote = "asset";
         http_server::log_util::send_req(host, remote, AssetHeartbeatRequest::name());
         let response =
-            HttpClient::send_with_options(&asset_addr, asset_port, request, options)
-                .await;
+            HttpClient::send_with_options(&asset_addr, asset_port, request, options).await;
         http_server::log_util::recv_res(host, remote, AssetHeartbeatResponse::name());
-        
+
         match response {
             Ok(_) => {
                 // info!(
@@ -146,8 +157,7 @@ pub(crate) async fn send_social_heartbeat_request(social_instance: &SocialInstan
         let remote = "social";
         http_server::log_util::send_req(host, remote, SocialHeartbeatRequest::name());
         let response =
-            HttpClient::send_with_options(&social_addr, social_port, request, options)
-                .await;
+            HttpClient::send_with_options(&social_addr, social_port, request, options).await;
         http_server::log_util::recv_res(host, remote, SocialHeartbeatResponse::name());
 
         match response {
@@ -186,16 +196,13 @@ pub(crate) async fn send_disconnect_session_server_message_to_social_instance(
     let social_last_heard = social_instance.last_heard();
 
     Server::spawn(async move {
-        let request = DisconnectSessionServerRequest::new(
-            REGION_SERVER_SECRET,
-            &session_instance_secret,
-        );
+        let request =
+            DisconnectSessionServerRequest::new(REGION_SERVER_SECRET, &session_instance_secret);
 
         let host = "region";
         let remote = "social";
         http_server::log_util::send_req(host, remote, DisconnectSessionServerRequest::name());
-        let response =
-            HttpClient::send(&social_addr, social_port, request).await;
+        let response = HttpClient::send(&social_addr, social_port, request).await;
         http_server::log_util::recv_res(host, remote, DisconnectSessionServerResponse::name());
 
         match response {
@@ -268,37 +275,23 @@ pub(crate) async fn send_disconnect_social_server_message_to_session_instance(
 
 pub(crate) async fn send_connect_asset_server_req_to_session_server(
     asset_instance: &AssetInstance,
-    session_instance: &SessionInstance
+    session_instance: &SessionInstance,
 ) {
     let session_addr = session_instance.http_addr().to_string();
     let session_port = session_instance.http_port();
     let session_last_heard = session_instance.last_heard();
 
-    let asset_addr = asset_instance
-        .http_addr()
-        .to_string();
+    let asset_addr = asset_instance.http_addr().to_string();
     let asset_port = asset_instance.http_port();
 
     Server::spawn(async move {
-        let request = ConnectAssetServerRequest::new(
-            REGION_SERVER_SECRET,
-            &asset_addr,
-            asset_port,
-        );
+        let request = ConnectAssetServerRequest::new(REGION_SERVER_SECRET, &asset_addr, asset_port);
 
         let host = "region";
         let remote = "session";
-        http_server::log_util::send_req(
-            host,
-            remote,
-            ConnectAssetServerRequest::name(),
-        );
+        http_server::log_util::send_req(host, remote, ConnectAssetServerRequest::name());
         let response = HttpClient::send(&session_addr, session_port, request).await;
-        http_server::log_util::recv_res(
-            host,
-            remote,
-            ConnectAssetServerResponse::name(),
-        );
+        http_server::log_util::recv_res(host, remote, ConnectAssetServerResponse::name());
 
         match response {
             Ok(_) => {
@@ -321,17 +314,17 @@ pub(crate) async fn send_connect_asset_server_req_to_session_server(
     });
 }
 
-pub(crate) async fn send_connect_social_server_req_to_session_server(social_instance: &SocialInstance, session_instance: &SessionInstance) {
-
+pub(crate) async fn send_connect_social_server_req_to_session_server(
+    social_instance: &SocialInstance,
+    session_instance: &SessionInstance,
+) {
     let session_instance_addr_1 = session_instance.http_addr().to_string();
 
     let session_instance_port = session_instance.http_port();
 
     let session_last_heard = session_instance.last_heard();
 
-    let social_server_addr_1 = social_instance
-        .http_addr()
-        .to_string();
+    let social_server_addr_1 = social_instance.http_addr().to_string();
     let social_server_port = social_instance.http_port();
 
     // session server receives connection to social server
@@ -344,19 +337,10 @@ pub(crate) async fn send_connect_social_server_req_to_session_server(social_inst
 
         let host = "region";
         let remote = "session";
-        http_server::log_util::send_req(
-            host,
-            remote,
-            ConnectSocialServerRequest::name(),
-        );
+        http_server::log_util::send_req(host, remote, ConnectSocialServerRequest::name());
         let response =
-            HttpClient::send(&session_instance_addr_1, session_instance_port, request)
-                .await;
-        http_server::log_util::recv_res(
-            host,
-            remote,
-            ConnectSocialServerResponse::name(),
-        );
+            HttpClient::send(&session_instance_addr_1, session_instance_port, request).await;
+        http_server::log_util::recv_res(host, remote, ConnectSocialServerResponse::name());
 
         match response {
             Ok(_) => {
@@ -379,15 +363,15 @@ pub(crate) async fn send_connect_social_server_req_to_session_server(social_inst
     });
 }
 
-pub(crate) async fn send_connect_session_server_req_to_social_server(session_instance: &SessionInstance, social_instance: &SocialInstance) {
-
+pub(crate) async fn send_connect_session_server_req_to_social_server(
+    session_instance: &SessionInstance,
+    social_instance: &SocialInstance,
+) {
     let session_addr = session_instance.http_addr().to_string();
     let session_port = session_instance.http_port();
     let session_secret = session_instance.instance_secret().to_string();
 
-    let social_addr = social_instance
-        .http_addr()
-        .to_string();
+    let social_addr = social_instance.http_addr().to_string();
     let social_port = social_instance.http_port();
     let social_last_heard = social_instance.last_heard();
 
@@ -407,9 +391,7 @@ pub(crate) async fn send_connect_session_server_req_to_social_server(session_ins
             remote_name,
             ConnectSessionServerRequest::name(),
         );
-        let response =
-            HttpClient::send(&social_addr, social_port, request)
-                .await;
+        let response = HttpClient::send(&social_addr, social_port, request).await;
         http_server::log_util::recv_res(
             host_name,
             remote_name,
@@ -437,7 +419,9 @@ pub(crate) async fn send_connect_session_server_req_to_social_server(session_ins
     });
 }
 
-pub(crate) async fn send_disconnect_asset_instance_to_session_instance(session_instance: &mut SessionInstance) {
+pub(crate) async fn send_disconnect_asset_instance_to_session_instance(
+    session_instance: &mut SessionInstance,
+) {
     // send disconnect asset server message to session instance
 
     let session_addr = session_instance.http_addr().to_string();
@@ -449,17 +433,9 @@ pub(crate) async fn send_disconnect_asset_instance_to_session_instance(session_i
 
         let host = "region";
         let remote = "session";
-        http_server::log_util::send_req(
-            host,
-            remote,
-            DisconnectAssetServerRequest::name(),
-        );
+        http_server::log_util::send_req(host, remote, DisconnectAssetServerRequest::name());
         let response = HttpClient::send(&session_addr, session_port, request).await;
-        http_server::log_util::recv_res(
-            host,
-            remote,
-            DisconnectAssetServerResponse::name(),
-        );
+        http_server::log_util::recv_res(host, remote, DisconnectAssetServerResponse::name());
 
         match response {
             Ok(_) => {

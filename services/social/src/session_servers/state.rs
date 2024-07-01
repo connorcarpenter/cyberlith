@@ -61,11 +61,16 @@ impl SessionServersState {
         global_chat_full_log: Vec<(GlobalChatMessageId, Timestamp, UserId, String)>,
     ) {
         let id = self.next_session_id();
-        self.instances.insert(id, SessionInstance::new(recv_addr, recv_port));
-        self.secret_to_session_server_id.insert(instance_secret.to_string(), id);
+        self.instances
+            .insert(id, SessionInstance::new(recv_addr, recv_port));
+        self.secret_to_session_server_id
+            .insert(instance_secret.to_string(), id);
 
         // update with full state
-        let request = SocialPatchGlobalChatMessagesRequest::new(SOCIAL_SERVER_GLOBAL_SECRET, global_chat_full_log);
+        let request = SocialPatchGlobalChatMessagesRequest::new(
+            SOCIAL_SERVER_GLOBAL_SECRET,
+            global_chat_full_log,
+        );
         let response = HttpClient::send(recv_addr, recv_port, request).await;
         match response {
             Ok(_) => {
@@ -77,14 +82,19 @@ impl SessionServersState {
             Err(e) => {
                 warn!(
                     "from {:?}:{} - global chat init messages send failed: {:?}",
-                    recv_addr, recv_port, e.to_string()
+                    recv_addr,
+                    recv_port,
+                    e.to_string()
                 );
             }
         }
     }
 
     pub fn remove_instance(&mut self, session_secret: &str) {
-        let id = self.secret_to_session_server_id.remove(session_secret).unwrap();
+        let id = self
+            .secret_to_session_server_id
+            .remove(session_secret)
+            .unwrap();
         self.instances.remove(&id);
     }
 
@@ -94,7 +104,9 @@ impl SessionServersState {
     }
 
     pub fn get_session_server_id(&self, session_instance_secret: &str) -> Option<SessionServerId> {
-        self.secret_to_session_server_id.get(session_instance_secret).copied()
+        self.secret_to_session_server_id
+            .get(session_instance_secret)
+            .copied()
     }
 
     pub fn all_session_ids(&self) -> Vec<SessionServerId> {
@@ -102,6 +114,8 @@ impl SessionServersState {
     }
 
     pub fn get_recv_addr(&self, session_server_id: SessionServerId) -> Option<(&str, u16)> {
-        self.instances.get(&session_server_id).map(|instance| (instance.addr.as_str(), instance.port))
+        self.instances
+            .get(&session_server_id)
+            .map(|instance| (instance.addr.as_str(), instance.port))
     }
 }

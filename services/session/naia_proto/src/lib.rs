@@ -15,8 +15,8 @@ cfg_if! {
 pub use naia_bevy_shared::Protocol;
 
 pub mod channels;
-pub mod messages;
 pub mod components;
+pub mod messages;
 
 mod protocol;
 pub use protocol::protocol;

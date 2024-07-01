@@ -1,12 +1,12 @@
 use bevy_ecs::{
     change_detection::{Mut, ResMut},
     entity::Entity,
-    event::{EventReader, Event},
+    event::{Event, EventReader},
     prelude::{Query, World as BevyWorld},
     system::{Res, SystemState},
 };
 
-use naia_bevy_client::{events::{DespawnEntityEvent, InsertComponentEvents, SpawnEntityEvent}};
+use naia_bevy_client::events::{DespawnEntityEvent, InsertComponentEvents, SpawnEntityEvent};
 
 use asset_id::{AssetId, AssetType};
 use asset_loader::AssetMetadataStore;
@@ -18,7 +18,13 @@ use super::{
     asset_ref_processor::{AssetProcessor, AssetRefProcessor},
     client_markers::World,
 };
-use crate::{asset_cache::AssetCache, world::WorldClient, networked::{insert_component_event::{insert_component_event, insert_component_events, InsertComponentEvent}}};
+use crate::{
+    asset_cache::AssetCache,
+    networked::insert_component_event::{
+        insert_component_event, insert_component_events, InsertComponentEvent,
+    },
+    world::WorldClient,
+};
 
 pub type WorldInsertComponentEvent<C> = InsertComponentEvent<World, C>;
 
@@ -61,7 +67,6 @@ pub fn world_insert_component_events(world: &mut BevyWorld) {
     let events_collection = insert_component_events::<World>(world);
 
     for events in events_collection {
-
         info!("received world events: [");
 
         // asset events

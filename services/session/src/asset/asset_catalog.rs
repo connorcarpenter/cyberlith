@@ -55,9 +55,9 @@ pub(crate) fn user_load_default_assets(
         AssetCatalog::game_global_chat_ui(),
         AssetCatalog::game_global_chat_day_divider_item_ui(),
         AssetCatalog::game_global_chat_username_and_message_item_ui(),
-        AssetCatalog::game_global_chat_message_item_ui()
+        AssetCatalog::game_global_chat_message_item_ui(),
     ]
-        .iter()
+    .iter()
     {
         asset_manager.load_user_asset(server, http_client, *user_key, asset_id);
     }

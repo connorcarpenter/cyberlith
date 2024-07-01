@@ -19,7 +19,6 @@ async fn async_impl(
     state: Arc<RwLock<State>>,
     incoming_request: SessionConnectRequest,
 ) -> Result<SessionConnectResponse, ResponseError> {
-
     let state = state.read().await;
     let Some(session_server) = state.get_available_session_server() else {
         warn!("no available session server");

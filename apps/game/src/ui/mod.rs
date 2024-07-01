@@ -3,28 +3,35 @@ pub mod events;
 mod ui_catalog;
 pub use ui_catalog::UiCatalog;
 
-mod main_menu;
 mod host_match;
+mod main_menu;
 
 use std::time::Duration;
 
+use bevy_ecs::system::Query;
 use bevy_ecs::{
     event::EventReader,
+    prelude::NextState,
     system::{Res, ResMut},
-    prelude::NextState
 };
-use bevy_ecs::system::Query;
 
-use game_engine::{
-    input::{InputEvent, GamepadRumbleIntensity, Input, RumbleManager},
-    ui::{UiManager, UiHandle},
-    asset::AssetId,
-    session::SessionClient,
-};
 use game_engine::asset::AssetManager;
 use game_engine::session::components::GlobalChatMessage;
+use game_engine::{
+    asset::AssetId,
+    input::{GamepadRumbleIntensity, Input, InputEvent, RumbleManager},
+    session::SessionClient,
+    ui::{UiHandle, UiManager},
+};
 
-use crate::{resources::global_chat::GlobalChat, states::AppState, ui::events::{DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent, JoinMatchButtonClickedEvent, SettingsButtonClickedEvent, SubmitButtonClickedEvent}};
+use crate::{
+    resources::global_chat::GlobalChat,
+    states::AppState,
+    ui::events::{
+        DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent,
+        JoinMatchButtonClickedEvent, SettingsButtonClickedEvent, SubmitButtonClickedEvent,
+    },
+};
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum UiKey {
@@ -47,7 +54,7 @@ pub(crate) fn on_ui_load(
     asset_manager: &AssetManager,
     global_chat_messages: &mut GlobalChat,
     message_q: &Query<&GlobalChatMessage>,
-    asset_id: AssetId
+    asset_id: AssetId,
 ) {
     let ui_handle = UiHandle::new(asset_id);
     if !ui_catalog.has_ui_key(&ui_handle) {
@@ -56,16 +63,8 @@ pub(crate) fn on_ui_load(
     let ui_key = ui_catalog.get_ui_key(&ui_handle);
 
     match ui_key {
-        UiKey::MainMenu => main_menu::on_load(
-            state,
-            next_state,
-            ui_catalog,
-            ui_manager,
-        ),
-        UiKey::HostMatch => host_match::on_load(
-            ui_catalog,
-            ui_manager,
-        ),
+        UiKey::MainMenu => main_menu::on_load(state, next_state, ui_catalog, ui_manager),
+        UiKey::HostMatch => host_match::on_load(ui_catalog, ui_manager),
         UiKey::GlobalChat => GlobalChat::on_load_container_ui(
             ui_catalog,
             ui_manager,
@@ -138,13 +137,12 @@ pub(crate) fn handle_events(
         &mut should_rumble,
     );
 
-    if let Some(current_ui_handle) = ui_manager.get_ui_container_contents(&active_ui_handle, "center_container") {
+    if let Some(current_ui_handle) =
+        ui_manager.get_ui_container_contents(&active_ui_handle, "center_container")
+    {
         match ui_catalog.get_ui_key(&current_ui_handle) {
             UiKey::MainMenu => panic!("invalid sub-ui"),
-            UiKey::HostMatch => host_match::handle_events(
-                &mut submit_btn_rdr,
-                &mut should_rumble
-            ),
+            UiKey::HostMatch => host_match::handle_events(&mut submit_btn_rdr, &mut should_rumble),
             UiKey::GlobalChat => GlobalChat::handle_events(
                 &mut global_chat,
                 &mut ui_manager,
@@ -180,11 +178,7 @@ pub(crate) fn handle_events(
     for _ in settings_btn_rdr.read() {}
 }
 
-pub(crate) fn go_to_sub_ui(
-    ui_manager: &mut UiManager,
-    ui_catalog: &UiCatalog,
-    sub_ui_key: UiKey,
-) {
+pub(crate) fn go_to_sub_ui(ui_manager: &mut UiManager, ui_catalog: &UiCatalog, sub_ui_key: UiKey) {
     let Some(active_ui_handle) = ui_manager.active_ui() else {
         return;
     };
@@ -195,7 +189,9 @@ pub(crate) fn go_to_sub_ui(
     if !ui_catalog.get_is_loaded(sub_ui_key) {
         panic!("ui not loaded");
     }
-    if let Some(current_ui_handle) = ui_manager.get_ui_container_contents(&active_ui_handle, "center_container") {
+    if let Some(current_ui_handle) =
+        ui_manager.get_ui_container_contents(&active_ui_handle, "center_container")
+    {
         match ui_catalog.get_ui_key(&current_ui_handle) {
             UiKey::MainMenu => panic!("invalid sub-ui"),
             UiKey::HostMatch => host_match::reset_state(ui_manager, &current_ui_handle),

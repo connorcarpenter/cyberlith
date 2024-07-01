@@ -48,9 +48,7 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
         .root_mut()
         .set_style(container_style)
         .contents(|c| {
-
-            c.add_panel()
-                .set_style(divider_style);
+            c.add_panel().set_style(divider_style);
 
             c.add_panel()
                 .set_style(timestamp_container_style)
@@ -60,8 +58,7 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
                         .set_style(timestamp_style);
                 });
 
-            c.add_panel()
-                .set_style(divider_style);
+            c.add_panel().set_style(divider_style);
         });
 
     (ui_name.to_string(), ui_asset_id, ui_etag, ui_config)

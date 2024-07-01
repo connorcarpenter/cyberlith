@@ -81,11 +81,7 @@ pub(crate) async fn handler(
                 return Err(ResponseError::Unauthenticated);
             }
             e => {
-                http_server::log_util::recv_res(
-                    host_name,
-                    auth_server,
-                    "internal_server_error",
-                );
+                http_server::log_util::recv_res(host_name, auth_server, "internal_server_error");
                 http_server::log_util::send_res(host_name, "internal_server_error");
                 return Err(ResponseError::InternalServerError(e.to_string()));
             }

@@ -1,14 +1,20 @@
-use bevy_ecs::{schedule::NextState, event::{EventReader}};
+use bevy_ecs::{event::EventReader, schedule::NextState};
 
 use game_engine::{
     logging::info,
-    ui::{UiHandle, UiManager},
     render::components::RenderLayers,
+    ui::{UiHandle, UiManager},
 };
 
 use crate::{
     states::AppState,
-    ui::{go_to_sub_ui, UiCatalog, UiKey, events::{DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent, JoinMatchButtonClickedEvent, SettingsButtonClickedEvent}},
+    ui::{
+        events::{
+            DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent,
+            JoinMatchButtonClickedEvent, SettingsButtonClickedEvent,
+        },
+        go_to_sub_ui, UiCatalog, UiKey,
+    },
 };
 
 pub(crate) fn on_load(

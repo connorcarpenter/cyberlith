@@ -2,16 +2,24 @@ use bevy_ecs::change_detection::ResMut;
 
 use naia_bevy_server::Server;
 
-use bevy_http_client::{log_util, HttpClient, ResponseError, ApiResponse, ApiRequest};
+use bevy_http_client::{log_util, ApiRequest, ApiResponse, HttpClient, ResponseError};
 use bevy_http_server::HttpServer;
 use config::REGION_SERVER_SECRET;
 use logging::{info, warn};
 
 use region_server_http_proto::{SessionRegisterInstanceResponse, WorldConnectResponse};
-use session_server_http_proto::{ConnectAssetServerRequest, ConnectAssetServerResponse, ConnectSocialServerRequest, ConnectSocialServerResponse, DisconnectAssetServerRequest, DisconnectAssetServerResponse, DisconnectSocialServerRequest, DisconnectSocialServerResponse, HeartbeatRequest, HeartbeatResponse, IncomingUserRequest, IncomingUserResponse};
+use session_server_http_proto::{
+    ConnectAssetServerRequest, ConnectAssetServerResponse, ConnectSocialServerRequest,
+    ConnectSocialServerResponse, DisconnectAssetServerRequest, DisconnectAssetServerResponse,
+    DisconnectSocialServerRequest, DisconnectSocialServerResponse, HeartbeatRequest,
+    HeartbeatResponse, IncomingUserRequest, IncomingUserResponse,
+};
 use session_server_naia_proto::{channels::PrimaryChannel, messages::WorldConnectToken};
 
-use crate::{user::UserManager, asset::asset_manager::AssetManager, region::RegionManager, social::SocialManager, world::WorldManager};
+use crate::{
+    asset::asset_manager::AssetManager, region::RegionManager, social::SocialManager,
+    user::UserManager, world::WorldManager,
+};
 
 pub fn recv_register_instance_response(
     mut http_client: ResMut<HttpClient>,
@@ -19,7 +27,6 @@ pub fn recv_register_instance_response(
 ) {
     if let Some(response_key) = region.register_instance_response_key() {
         if let Some(result) = http_client.recv(response_key) {
-
             let host = "session";
             let remote = "region";
             log_util::recv_res(host, remote, SessionRegisterInstanceResponse::name());
@@ -37,10 +44,7 @@ pub fn recv_register_instance_response(
     }
 }
 
-pub fn recv_heartbeat_request(
-    mut region: ResMut<RegionManager>,
-    mut server: ResMut<HttpServer>
-) {
+pub fn recv_heartbeat_request(mut region: ResMut<RegionManager>, mut server: ResMut<HttpServer>) {
     while let Some((_addr, request, response_key)) = server.receive::<HeartbeatRequest>() {
         if request.region_secret() != REGION_SERVER_SECRET {
             warn!("invalid request secret");
@@ -74,7 +78,11 @@ pub fn recv_login_request(mut user_manager: ResMut<UserManager>, mut server: Res
 
         let host = "session";
         let remote = "region";
-        let request_str = format!("{} (token: {})", IncomingUserRequest::name(), request.login_token);
+        let request_str = format!(
+            "{} (token: {})",
+            IncomingUserRequest::name(),
+            request.login_token
+        );
         log_util::recv_req(host, remote, &request_str);
 
         user_manager.add_login_token(&request.user_id, &request.login_token);
@@ -92,7 +100,6 @@ pub fn recv_world_connect_response(
 ) {
     for (response_key, user_key) in world_connections.world_connect_response_keys() {
         if let Some(result) = http_client.recv(&response_key) {
-
             let host = "session";
             let remote = "region";
             log_util::recv_res(host, remote, WorldConnectResponse::name());
@@ -100,10 +107,7 @@ pub fn recv_world_connect_response(
             world_connections.remove_world_connect_response_key(&response_key);
             match result {
                 Ok(response) => {
-                    info!(
-                        "(login_token: {:?})",
-                        response.login_token
-                    );
+                    info!("(login_token: {:?})", response.login_token);
 
                     // store world instance secret with user key
                     user_manager.user_set_world_connected(
@@ -135,7 +139,6 @@ pub fn recv_connect_asset_server_request(
     mut server: ResMut<HttpServer>,
 ) {
     while let Some((_addr, request, response_key)) = server.receive::<ConnectAssetServerRequest>() {
-
         if request.region_secret() != REGION_SERVER_SECRET {
             warn!("invalid request secret");
             server.respond(response_key, Err(ResponseError::Unauthenticated));

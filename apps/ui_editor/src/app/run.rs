@@ -6,7 +6,7 @@ use game_engine::{
 };
 
 use super::{draw, resize, ui};
-use crate::app::{ui::SubmitButtonEvent, scroll::scroll_events};
+use crate::app::{scroll::scroll_events, ui::SubmitButtonEvent};
 
 pub fn run() {
     logging::initialize();

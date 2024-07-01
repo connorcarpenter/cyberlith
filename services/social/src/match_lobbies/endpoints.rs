@@ -1,4 +1,3 @@
-
 use http_client::ResponseError;
 use http_server::{async_dup::Arc, executor::smol::lock::RwLock, ApiServer, Server};
 use logging::warn;
@@ -26,19 +25,21 @@ async fn async_recv_match_lobby_create_request_impl(
     state: Arc<RwLock<State>>,
     request: MatchLobbyCreateRequest,
 ) -> Result<MatchLobbyCreateResponse, ResponseError> {
-
     let mut state = state.write().await;
 
-    let Some(session_server_id) = state.session_servers.get_session_server_id(
-        &request.session_instance_secret()
-    ) else {
+    let Some(session_server_id) = state
+        .session_servers
+        .get_session_server_id(&request.session_instance_secret())
+    else {
         warn!("invalid request instance secret");
         return Err(ResponseError::Unauthenticated);
     };
 
-    let new_match_lobby_id = state
-        .match_lobbies
-        .create(session_server_id, request.match_name(), request.creator_user_id());
+    let new_match_lobby_id = state.match_lobbies.create(
+        session_server_id,
+        request.match_name(),
+        request.creator_user_id(),
+    );
 
     // responding
     return Ok(MatchLobbyCreateResponse::new(new_match_lobby_id));
@@ -59,19 +60,21 @@ async fn async_recv_match_lobby_join_request_impl(
     state: Arc<RwLock<State>>,
     request: MatchLobbyJoinRequest,
 ) -> Result<MatchLobbyJoinResponse, ResponseError> {
-
     let mut state = state.write().await;
 
-    let Some(session_server_id) = state.session_servers.get_session_server_id(
-        &request.session_instance_secret()
-    ) else {
+    let Some(session_server_id) = state
+        .session_servers
+        .get_session_server_id(&request.session_instance_secret())
+    else {
         warn!("invalid request instance secret");
         return Err(ResponseError::Unauthenticated);
     };
 
-    state
-        .match_lobbies
-        .join(session_server_id, request.match_lobby_id(), request.user_id());
+    state.match_lobbies.join(
+        session_server_id,
+        request.match_lobby_id(),
+        request.user_id(),
+    );
 
     // responding
     return Ok(MatchLobbyJoinResponse);
@@ -92,17 +95,19 @@ async fn async_recv_match_lobby_leave_request_impl(
     state: Arc<RwLock<State>>,
     request: MatchLobbyLeaveRequest,
 ) -> Result<MatchLobbyLeaveResponse, ResponseError> {
-
     let mut state = state.write().await;
 
-    let Some(session_server_id) = state.session_servers.get_session_server_id(
-        &request.session_instance_secret()
-    ) else {
+    let Some(session_server_id) = state
+        .session_servers
+        .get_session_server_id(&request.session_instance_secret())
+    else {
         warn!("invalid request instance secret");
         return Err(ResponseError::Unauthenticated);
     };
 
-    state.match_lobbies.leave(session_server_id, request.user_id());
+    state
+        .match_lobbies
+        .leave(session_server_id, request.user_id());
 
     // responding
     return Ok(MatchLobbyLeaveResponse);
@@ -123,12 +128,12 @@ async fn async_recv_match_lobby_send_message_request_impl(
     state: Arc<RwLock<State>>,
     request: MatchLobbySendMessageRequest,
 ) -> Result<MatchLobbySendMessageResponse, ResponseError> {
-
     let mut state = state.write().await;
 
-    let Some(session_server_id) = state.session_servers.get_session_server_id(
-        &request.session_instance_secret()
-    ) else {
+    let Some(session_server_id) = state
+        .session_servers
+        .get_session_server_id(&request.session_instance_secret())
+    else {
         warn!("invalid request instance secret");
         return Err(ResponseError::Unauthenticated);
     };

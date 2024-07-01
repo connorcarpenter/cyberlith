@@ -343,12 +343,7 @@ fn draw_ui_text(
                 panic!("partial background_alpha not implemented yet!");
             }
             let box_handle = ui_manager.get_box_mesh_handle().unwrap();
-            render_frame.draw_mesh(
-                Some(&RenderLayer::UI),
-                box_handle,
-                &mat_handle,
-                &transform,
-            );
+            render_frame.draw_mesh(Some(&RenderLayer::UI), box_handle, &mat_handle, &transform);
         } else {
             warn!("no background color handle for text"); // probably will need to do better debugging later
             return;
@@ -612,7 +607,10 @@ fn draw_ui_container(
 
     let ui_config = ui_runner.ui_config_ref();
 
-    let node_ids: Vec<NodeId> = ui_config.nodes_iter().map(|(node_id, _)| *node_id).collect();
+    let node_ids: Vec<NodeId> = ui_config
+        .nodes_iter()
+        .map(|(node_id, _)| *node_id)
+        .collect();
     for node_id in node_ids {
         draw_ui_node(
             render_frame,

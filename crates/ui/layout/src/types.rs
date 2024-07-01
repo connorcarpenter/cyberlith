@@ -217,11 +217,9 @@ impl SizeUnits {
                 SizeUnits::Pixels(val.min(max).max(min))
             }
             // percentage
-            (
-                Self::Percentage(val),
-                Self::Percentage(min),
-                Self::Percentage(max),
-            ) => Self::Percentage(val.min(max).max(min)),
+            (Self::Percentage(val), Self::Percentage(min), Self::Percentage(max)) => {
+                Self::Percentage(val.min(max).max(min))
+            }
             // viewport
             (Self::Viewport(val), Self::Viewport(min), Self::Viewport(max)) => {
                 Self::Viewport(val.min(max).max(min))

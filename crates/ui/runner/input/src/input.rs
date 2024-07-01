@@ -2,7 +2,9 @@ use asset_id::AssetId;
 use input::{CursorIcon, GamepadButtonType, InputEvent, Key, Modifiers, MouseButton};
 use logging::warn;
 use math::Vec2;
-use ui_runner_config::{point_is_inside, NodeId, TextMeasurer, UiRuntimeConfig, WidgetKind, UiNode};
+use ui_runner_config::{
+    point_is_inside, NodeId, TextMeasurer, UiNode, UiRuntimeConfig, WidgetKind,
+};
 use ui_state::UiState;
 
 use crate::{
@@ -176,7 +178,10 @@ pub trait UiManagerTrait {
     fn ui_state(&self, asset_id: &AssetId) -> &UiState;
     fn ui_state_mut(&mut self, asset_id: &AssetId) -> &mut UiState;
     fn root_ui_asset_id(&self) -> AssetId;
-    fn nodes_iter(&self, asset_id: &AssetId) -> std::collections::btree_map::Iter<'_, NodeId, UiNode>;
+    fn nodes_iter(
+        &self,
+        asset_id: &AssetId,
+    ) -> std::collections::btree_map::Iter<'_, NodeId, UiNode>;
     fn ui_config(&self, asset_id: &AssetId) -> Option<&UiRuntimeConfig>;
     fn textbox_receive_hover(
         &mut self,
@@ -198,7 +203,10 @@ fn ui_receive_hover_recurse(
         .set_cursor_icon(CursorIcon::Default);
     ui_manager.ui_input_state_mut().clear_hover();
 
-    let node_ids: Vec<NodeId> = ui_manager.nodes_iter(ui_asset_id).map(|(node_id, _)| *node_id).collect();
+    let node_ids: Vec<NodeId> = ui_manager
+        .nodes_iter(ui_asset_id)
+        .map(|(node_id, _)| *node_id)
+        .collect();
     for node_id in node_ids {
         ui_update_hover(
             ui_manager,

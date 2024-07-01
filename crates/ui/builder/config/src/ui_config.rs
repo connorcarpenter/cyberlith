@@ -75,14 +75,14 @@ impl UiConfig {
     }
 
     pub fn create_node(&mut self, id_str_opt: Option<&str>, widget: Widget) -> NodeId {
-
         let node_id = self.next_node_id();
         let ui_node = UiNode::new(id_str_opt, widget);
         self.insert_node(&node_id, ui_node);
 
         if let Some(id_str) = id_str_opt {
             info!("inserting id_str: {} for node_id: {:?}", id_str, node_id);
-            self.id_str_to_node_id_map.insert(id_str.to_string(), node_id);
+            self.id_str_to_node_id_map
+                .insert(id_str.to_string(), node_id);
         }
 
         node_id

@@ -2,9 +2,9 @@ use std::collections::HashSet;
 
 use naia_bevy_server::{ResponseReceiveKey, Server, UserKey};
 
-use logging::info;
 use asset_id::{AssetId, AssetType, ETag};
 use bevy_http_client::{ApiRequest, ApiResponse, HttpClient, ResponseKey};
+use logging::info;
 
 use asset_server_http_proto::{AssetRequest, AssetResponse, AssetResponseValue};
 use session_server_naia_proto::{
@@ -156,7 +156,12 @@ impl AssetServerRequestState {
 
                 let host = "session";
                 let remote = "asset";
-                let response_str = format!("{} (modified, {:?}, {:?})", AssetResponse::name(), asset_id, new_etag);
+                let response_str = format!(
+                    "{} (modified, {:?}, {:?})",
+                    AssetResponse::name(),
+                    asset_id,
+                    new_etag
+                );
                 bevy_http_client::log_util::recv_res(host, remote, &response_str);
 
                 // process dependencies
@@ -176,7 +181,11 @@ impl AssetServerRequestState {
 
                 let host = "session";
                 let remote = "asset";
-                let response_str = format!("{:?}[data not modified, asset_id: {:?}]", AssetResponse::name(), asset_id);
+                let response_str = format!(
+                    "{:?}[data not modified, asset_id: {:?}]",
+                    AssetResponse::name(),
+                    asset_id
+                );
                 bevy_http_client::log_util::recv_res(host, remote, &response_str);
 
                 return Some(UserAssetProcessingStateTransition::asset_server_response(

@@ -1,10 +1,14 @@
-use bevy_ecs::{system::Res, change_detection::ResMut, prelude::Query};
+use bevy_ecs::{change_detection::ResMut, prelude::Query, system::Res};
 
-use game_engine::{render::{
-    components::{Camera, Viewport},
-    Window,
-}, ui::UiManager, asset::AssetManager};
 use game_engine::session::components::GlobalChatMessage;
+use game_engine::{
+    asset::AssetManager,
+    render::{
+        components::{Camera, Viewport},
+        Window,
+    },
+    ui::UiManager,
+};
 
 use crate::resources::global_chat::GlobalChat;
 

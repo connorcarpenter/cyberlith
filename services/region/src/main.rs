@@ -1,10 +1,10 @@
-mod endpoints;
-mod state;
-mod session_instance;
-mod world_instance;
 mod asset_instance;
-mod social_instance;
+mod endpoints;
 mod requests;
+mod session_instance;
+mod social_instance;
+mod state;
+mod world_instance;
 
 use std::{net::SocketAddr, thread, time::Duration};
 

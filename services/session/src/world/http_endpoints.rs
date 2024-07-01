@@ -1,14 +1,14 @@
-use bevy_ecs::{system::Res, change_detection::ResMut};
+use bevy_ecs::{change_detection::ResMut, system::Res};
 
 use naia_bevy_server::Server;
 
-use logging::{info, warn};
 use bevy_http_client::{HttpClient, ResponseError};
 use bevy_http_server::HttpServer;
+use logging::{info, warn};
 
 use session_server_http_proto::{UserAssetIdRequest, UserAssetIdResponse};
 
-use crate::{world::WorldManager, asset::asset_manager::AssetManager};
+use crate::{asset::asset_manager::AssetManager, world::WorldManager};
 
 pub fn recv_added_asset_id_request(
     world_connections: Res<WorldManager>,
@@ -40,12 +40,7 @@ pub fn recv_added_asset_id_request(
             .unwrap();
 
         if added {
-            asset_manager.load_user_asset(
-                &mut naia_server,
-                &mut http_client,
-                user_key,
-                asset_id,
-            );
+            asset_manager.load_user_asset(&mut naia_server, &mut http_client, user_key, asset_id);
         } else {
             asset_manager.unload_user_asset(user_key, asset_id);
         }

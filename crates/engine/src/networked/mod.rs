@@ -2,10 +2,10 @@ mod asset_cache_checker;
 mod asset_ref_processor;
 mod client_markers;
 mod connection_manager;
-mod networked_plugin;
-mod world_events;
-mod session_events;
 mod insert_component_event;
+mod networked_plugin;
+mod session_events;
+mod world_events;
 
 pub mod world {
     use naia_bevy_client::{events::SpawnEntityEvent, Client};
@@ -16,9 +16,11 @@ pub mod world {
     pub type WorldSpawnEntityEvent = SpawnEntityEvent<World>;
     pub type WorldDespawnEntityEvent = naia_bevy_client::events::DespawnEntityEvent<World>;
 
-    pub use super::world_events::{WorldInsertComponentEvent, InsertAssetRefEvent as WorldInsertAssetRefEvent};
+    pub use super::world_events::{
+        InsertAssetRefEvent as WorldInsertAssetRefEvent, WorldInsertComponentEvent,
+    };
 
-    pub use world_server_naia_proto::{components, channels, messages};
+    pub use world_server_naia_proto::{channels, components, messages};
 }
 
 pub mod session {
@@ -33,7 +35,7 @@ pub mod session {
 
     pub use super::session_events::SessionInsertComponentEvent;
 
-    pub use session_server_naia_proto::{channels, messages, components};
+    pub use session_server_naia_proto::{channels, components, messages};
 }
 
 pub use networked_plugin::NetworkedEnginePlugin;

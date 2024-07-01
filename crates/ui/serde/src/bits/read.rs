@@ -127,8 +127,13 @@ fn convert_nodes_recurse_panel(
         let child_node_id = match child_node_serde.widget_kind() {
             WidgetKind::Panel => {
                 let child = Panel::new();
-                let child_id = ui_config.create_node(child_node_serde.id_str.as_ref().map(|v| v.as_str()), Widget::Panel(child));
-                let Widget::Panel(parent_panel) = &mut ui_config.node_mut(parent_panel_id).unwrap().widget else {
+                let child_id = ui_config.create_node(
+                    child_node_serde.id_str.as_ref().map(|v| v.as_str()),
+                    Widget::Panel(child),
+                );
+                let Widget::Panel(parent_panel) =
+                    &mut ui_config.node_mut(parent_panel_id).unwrap().widget
+                else {
                     panic!("Expected panel widget");
                 };
                 parent_panel.add_child(child_id);
@@ -159,8 +164,13 @@ fn convert_nodes_recurse_panel(
                 let WidgetBits::Button(child_widget_serde) = &child_node_serde.widget else {
                     panic!("Expected button widget");
                 };
-                let child_id = ui_config.create_node(child_node_serde.id_str.as_ref().map(|v| v.as_str()), Widget::Button(Button::new()));
-                let Widget::Panel(parent_panel) = &mut ui_config.node_mut(parent_panel_id).unwrap().widget else {
+                let child_id = ui_config.create_node(
+                    child_node_serde.id_str.as_ref().map(|v| v.as_str()),
+                    Widget::Button(Button::new()),
+                );
+                let Widget::Panel(parent_panel) =
+                    &mut ui_config.node_mut(parent_panel_id).unwrap().widget
+                else {
                     panic!("Expected panel widget");
                 };
                 parent_panel.add_child(child_id);
@@ -188,13 +198,17 @@ fn convert_nodes_recurse_panel(
                 child_id
             }
             WidgetKind::Text => {
-
                 let WidgetBits::Text(child_widget_serde) = &child_node_serde.widget else {
                     panic!("Expected text widget");
                 };
                 let child = Text::new(&child_widget_serde.init_text);
-                let child_id = ui_config.create_node(child_node_serde.id_str.as_ref().map(|v| v.as_str()), Widget::Text(child));
-                let Widget::Panel(parent_panel) = &mut ui_config.node_mut(parent_panel_id).unwrap().widget else {
+                let child_id = ui_config.create_node(
+                    child_node_serde.id_str.as_ref().map(|v| v.as_str()),
+                    Widget::Text(child),
+                );
+                let Widget::Panel(parent_panel) =
+                    &mut ui_config.node_mut(parent_panel_id).unwrap().widget
+                else {
                     panic!("Expected panel widget");
                 };
                 parent_panel.add_child(child_id);
@@ -216,8 +230,13 @@ fn convert_nodes_recurse_panel(
                 let mut child = Textbox::new();
                 child.is_password = child_widget_serde.is_password;
                 child.validation = child_widget_serde.validation.map(|v| v.into());
-                let child_id = ui_config.create_node(child_node_serde.id_str.as_ref().map(|v| v.as_str()), Widget::Textbox(child));
-                let Widget::Panel(parent_panel) = &mut ui_config.node_mut(parent_panel_id).unwrap().widget else {
+                let child_id = ui_config.create_node(
+                    child_node_serde.id_str.as_ref().map(|v| v.as_str()),
+                    Widget::Textbox(child),
+                );
+                let Widget::Panel(parent_panel) =
+                    &mut ui_config.node_mut(parent_panel_id).unwrap().widget
+                else {
                     panic!("Expected panel widget");
                 };
                 parent_panel.add_child(child_id);
@@ -237,8 +256,13 @@ fn convert_nodes_recurse_panel(
             }
             WidgetKind::Spinner => {
                 let child = Spinner::new();
-                let child_id = ui_config.create_node(child_node_serde.id_str.as_ref().map(|v| v.as_str()), Widget::Spinner(child));
-                let Widget::Panel(parent_panel) = &mut ui_config.node_mut(parent_panel_id).unwrap().widget else {
+                let child_id = ui_config.create_node(
+                    child_node_serde.id_str.as_ref().map(|v| v.as_str()),
+                    Widget::Spinner(child),
+                );
+                let Widget::Panel(parent_panel) =
+                    &mut ui_config.node_mut(parent_panel_id).unwrap().widget
+                else {
                     panic!("Expected panel widget");
                 };
                 parent_panel.add_child(child_id);
@@ -255,8 +279,13 @@ fn convert_nodes_recurse_panel(
             }
             WidgetKind::UiContainer => {
                 let child = UiContainer::new();
-                let child_id = ui_config.create_node(child_node_serde.id_str.as_ref().map(|v| v.as_str()), Widget::UiContainer(child));
-                let Widget::Panel(parent_panel) = &mut ui_config.node_mut(parent_panel_id).unwrap().widget else {
+                let child_id = ui_config.create_node(
+                    child_node_serde.id_str.as_ref().map(|v| v.as_str()),
+                    Widget::UiContainer(child),
+                );
+                let Widget::Panel(parent_panel) =
+                    &mut ui_config.node_mut(parent_panel_id).unwrap().widget
+                else {
                     panic!("Expected panel widget");
                 };
                 parent_panel.add_child(child_id);
@@ -335,8 +364,12 @@ fn convert_nodes_recurse_button(
         let child_node_id = match child_node_serde.widget_kind() {
             WidgetKind::Panel => {
                 let child = Panel::new();
-                let child_id = ui_config.create_node(child_node_serde.id_str.as_ref().map(|v| v.as_str()), Widget::Panel(child));
-                let Widget::Button(parent_button) = &mut ui_config.node_mut(parent_button_id).unwrap().widget
+                let child_id = ui_config.create_node(
+                    child_node_serde.id_str.as_ref().map(|v| v.as_str()),
+                    Widget::Panel(child),
+                );
+                let Widget::Button(parent_button) =
+                    &mut ui_config.node_mut(parent_button_id).unwrap().widget
                 else {
                     panic!("Expected button widget");
                 };
@@ -369,8 +402,12 @@ fn convert_nodes_recurse_button(
                     panic!("Expected text widget");
                 };
                 let child = Text::new(&child_text_serde.init_text);
-                let child_id = ui_config.create_node(child_node_serde.id_str.as_ref().map(|s| s.as_str()), Widget::Text(child));
-                let Widget::Button(parent_button) = &mut ui_config.node_mut(parent_button_id).unwrap().widget
+                let child_id = ui_config.create_node(
+                    child_node_serde.id_str.as_ref().map(|s| s.as_str()),
+                    Widget::Text(child),
+                );
+                let Widget::Button(parent_button) =
+                    &mut ui_config.node_mut(parent_button_id).unwrap().widget
                 else {
                     panic!("Expected button widget");
                 };

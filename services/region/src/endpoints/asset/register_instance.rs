@@ -8,7 +8,7 @@ use http_server::{async_dup::Arc, executor::smol::lock::RwLock, ApiServer, Serve
 use config::ASSET_SERVER_GLOBAL_SECRET;
 use region_server_http_proto::{AssetRegisterInstanceRequest, AssetRegisterInstanceResponse};
 
-use crate::{state::State};
+use crate::state::State;
 
 pub fn asset_register_instance(host_name: &str, server: &mut Server, state: Arc<RwLock<State>>) {
     server.api_endpoint(host_name, None, move |addr, req| {

@@ -14,13 +14,18 @@ impl MatchLobbiesState {
         &mut self,
         session_instance_id: SessionServerId,
         match_name: &str,
-        creator_user_id: UserId
+        creator_user_id: UserId,
     ) -> MatchLobbyId {
         // TODO
         MatchLobbyId::new(0)
     }
 
-    pub fn join(&mut self, session_server_id: SessionServerId, match_lobby_id: MatchLobbyId, joining_user_id: UserId) {
+    pub fn join(
+        &mut self,
+        session_server_id: SessionServerId,
+        match_lobby_id: MatchLobbyId,
+        joining_user_id: UserId,
+    ) {
         // TODO
     }
 
@@ -28,7 +33,12 @@ impl MatchLobbiesState {
         // TODO
     }
 
-    pub fn send_message(&mut self, session_server_id: SessionServerId, user_id: UserId, message: &str) {
+    pub fn send_message(
+        &mut self,
+        session_server_id: SessionServerId,
+        user_id: UserId,
+        message: &str,
+    ) {
         // TODO
     }
 }

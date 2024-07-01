@@ -35,11 +35,7 @@ pub fn main() {
     region::recv_heartbeat_request(host, &mut server, state.clone());
 
     session_servers::recv_connect_session_server_request(host, &mut server, state.clone());
-    session_servers::recv_disconnect_session_server_request(
-        host,
-        &mut server,
-        state.clone(),
-    );
+    session_servers::recv_disconnect_session_server_request(host, &mut server, state.clone());
 
     users::recv_user_connected_request(host, &mut server, state.clone());
     users::recv_user_disconnected_request(host, &mut server, state.clone());

@@ -17,8 +17,8 @@ use world_server_naia_proto::components::{Alt1, AssetEntry, AssetRef, Main};
 
 use crate::{
     asset_cache::{AssetCache, AssetLoadedEvent},
-    world::WorldClient,
     networked::world_events::InsertAssetRefEvent,
+    world::WorldClient,
 };
 
 type AssetProcessorId = TypeId;

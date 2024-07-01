@@ -1,4 +1,4 @@
-use std::{time::Duration, collections::BTreeMap};
+use std::{collections::BTreeMap, time::Duration};
 
 use bevy_ecs::{
     event::{Event, EventReader, EventWriter},
@@ -122,10 +122,16 @@ fn setup_global_chat_test_case(
     let global_chat_ui_handle = global.ui_handles[1];
 
     // setup sub ui
-    ui_manager.set_ui_container_contents(&main_menu_ui_handle, "center_container", &global_chat_ui_handle);
+    ui_manager.set_ui_container_contents(
+        &main_menu_ui_handle,
+        "center_container",
+        &global_chat_ui_handle,
+    );
 
     // setup global chat list
-    global.list_ui_ext.set_container_ui(ui_manager, &global_chat_ui_handle, "chat_wall");
+    global
+        .list_ui_ext
+        .set_container_ui(ui_manager, &global_chat_ui_handle, "chat_wall");
 
     // setup chats
     global.global_chats = setup_global_chats();
@@ -135,16 +141,34 @@ fn setup_global_chat_test_case(
 
 fn setup_global_chats() -> BTreeMap<u32, (String, u8, u8, u8, u8, String)> {
     let mut users = Vec::new();
-    users.push("tom"); users.push("ben"); users.push("andrew"); users.push("joe");
-    users.push("jane"); users.push("sarah"); users.push("jim"); users.push("bob");
+    users.push("tom");
+    users.push("ben");
+    users.push("andrew");
+    users.push("joe");
+    users.push("jane");
+    users.push("sarah");
+    users.push("jim");
+    users.push("bob");
 
     let mut messages = Vec::new();
-    messages.push("hello"); messages.push("woah"); messages.push("jeesh");
-    messages.push("mmkay"); messages.push("huh"); messages.push("what");
-    messages.push("ok"); messages.push("sure"); messages.push("nope");
-    messages.push("yep"); messages.push("maybe"); messages.push("never");
-    messages.push("always"); messages.push("sometimes"); messages.push("often");
-    messages.push("rarely"); messages.push("blah"); messages.push("meh");
+    messages.push("hello");
+    messages.push("woah");
+    messages.push("jeesh");
+    messages.push("mmkay");
+    messages.push("huh");
+    messages.push("what");
+    messages.push("ok");
+    messages.push("sure");
+    messages.push("nope");
+    messages.push("yep");
+    messages.push("maybe");
+    messages.push("never");
+    messages.push("always");
+    messages.push("sometimes");
+    messages.push("often");
+    messages.push("rarely");
+    messages.push("blah");
+    messages.push("meh");
 
     let mut global_chats = BTreeMap::<u32, (String, u8, u8, u8, u8, String)>::new();
 
@@ -156,7 +180,12 @@ fn setup_global_chats() -> BTreeMap<u32, (String, u8, u8, u8, u8, String)> {
             current_user_index = random::gen_range_u32(0, users.len() as u32) as usize;
         }
         let message_index = random::gen_range_u32(0, messages.len() as u32) as usize;
-        setup_global_chat(&mut global_chats, &mut current_time, users[current_user_index], messages[message_index]);
+        setup_global_chat(
+            &mut global_chats,
+            &mut current_time,
+            users[current_user_index],
+            messages[message_index],
+        );
     }
 
     global_chats
@@ -175,7 +204,14 @@ fn setup_global_chat(
 
     global_chats.insert(
         global_chats.len() as u32,
-        (username.to_string(), *month as u8, *day as u8, *hour as u8, *minute as u8, message)
+        (
+            username.to_string(),
+            *month as u8,
+            *day as u8,
+            *hour as u8,
+            *minute as u8,
+            message,
+        ),
     );
 
     let add_minutes = random::gen_range_u32(1, 300); // 1 minutes to 1/2 day

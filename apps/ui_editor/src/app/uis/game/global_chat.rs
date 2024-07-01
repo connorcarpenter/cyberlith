@@ -39,20 +39,16 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
     });
 
     // nodes
-    ui_config
-        .root_mut()
-        .set_style(window_style)
-        .contents(|c| {
-            // chat wall
-            c.add_panel_with_id("chat_wall")
-                .set_style(chat_wall_style);
+    ui_config.root_mut().set_style(window_style).contents(|c| {
+        // chat wall
+        c.add_panel_with_id("chat_wall").set_style(chat_wall_style);
 
-            // message input
-            // text-edit
-            c.add_textbox("message_textbox")
-                .set_as_first_input()
-                .set_style(base_textbox_style);
-        });
+        // message input
+        // text-edit
+        c.add_textbox("message_textbox")
+            .set_as_first_input()
+            .set_style(base_textbox_style);
+    });
 
     (ui_name.to_string(), ui_asset_id, ui_etag, ui_config)
 }

@@ -12,12 +12,7 @@ pub struct ConnectSessionServerRequest {
 }
 
 impl ConnectSessionServerRequest {
-    pub fn new(
-        region_secret: &str,
-        session_secret: &str,
-        http_addr: &str,
-        http_port: u16
-    ) -> Self {
+    pub fn new(region_secret: &str, session_secret: &str, http_addr: &str, http_port: u16) -> Self {
         Self {
             region_secret: region_secret.to_string(),
             session_secret: session_secret.to_string(),

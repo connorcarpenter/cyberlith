@@ -10,7 +10,8 @@ pub struct GlobalChatState {
     next_global_chat_id: GlobalChatMessageId,
 
     // the session server id here is the SENDER not the RECEIVER
-    outgoing_patches: HashMap<SessionServerId, Vec<(GlobalChatMessageId, Timestamp, UserId, String)>>,
+    outgoing_patches:
+        HashMap<SessionServerId, Vec<(GlobalChatMessageId, Timestamp, UserId, String)>>,
 }
 
 impl GlobalChatState {
@@ -27,9 +28,8 @@ impl GlobalChatState {
         &mut self,
         sending_session_server_id: SessionServerId,
         user_id: UserId,
-        message: &str
+        message: &str,
     ) -> (GlobalChatMessageId, Timestamp) {
-
         // get next global chat id
         let next_global_chat_id = self.next_global_chat_id;
         self.next_global_chat_id = self.next_global_chat_id.next();
@@ -38,16 +38,24 @@ impl GlobalChatState {
         let timestamp = Timestamp::now();
 
         // add to global log
-        self.chat_log.push_back((next_global_chat_id, timestamp, user_id, message.to_string()));
+        self.chat_log
+            .push_back((next_global_chat_id, timestamp, user_id, message.to_string()));
         if self.chat_log.len() > 100 {
             self.chat_log.pop_front();
         }
 
         // add to outgoing patches
-        if !self.outgoing_patches.contains_key(&sending_session_server_id) {
-            self.outgoing_patches.insert(sending_session_server_id, Vec::new());
+        if !self
+            .outgoing_patches
+            .contains_key(&sending_session_server_id)
+        {
+            self.outgoing_patches
+                .insert(sending_session_server_id, Vec::new());
         }
-        let session_server_patches = self.outgoing_patches.get_mut(&sending_session_server_id).unwrap();
+        let session_server_patches = self
+            .outgoing_patches
+            .get_mut(&sending_session_server_id)
+            .unwrap();
         session_server_patches.push((next_global_chat_id, timestamp, user_id, message.to_string()));
 
         (next_global_chat_id, timestamp)
@@ -57,7 +65,9 @@ impl GlobalChatState {
         &self.chat_log
     }
 
-    pub fn take_patches(&mut self) -> HashMap<SessionServerId, Vec<(GlobalChatMessageId, Timestamp, UserId, String)>> {
+    pub fn take_patches(
+        &mut self,
+    ) -> HashMap<SessionServerId, Vec<(GlobalChatMessageId, Timestamp, UserId, String)>> {
         std::mem::take(&mut self.outgoing_patches)
     }
 }

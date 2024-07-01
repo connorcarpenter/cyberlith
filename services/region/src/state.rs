@@ -5,7 +5,23 @@ use std::{
 
 use logging::info;
 
-use crate::{requests::{send_connect_asset_server_req_to_session_server, send_connect_session_server_req_to_social_server, send_connect_social_server_req_to_session_server, send_disconnect_asset_instance_to_session_instance, send_social_heartbeat_request}, world_instance::WorldInstance, social_instance::SocialInstance, session_instance::SessionInstance, asset_instance::AssetInstance, requests::{send_asset_heartbeat_request, send_disconnect_session_server_message_to_social_instance, send_disconnect_social_server_message_to_session_instance, send_session_heartbeat_request, send_world_heartbeat_request}};
+use crate::{
+    asset_instance::AssetInstance,
+    requests::{
+        send_asset_heartbeat_request, send_disconnect_session_server_message_to_social_instance,
+        send_disconnect_social_server_message_to_session_instance, send_session_heartbeat_request,
+        send_world_heartbeat_request,
+    },
+    requests::{
+        send_connect_asset_server_req_to_session_server,
+        send_connect_session_server_req_to_social_server,
+        send_connect_social_server_req_to_session_server,
+        send_disconnect_asset_instance_to_session_instance, send_social_heartbeat_request,
+    },
+    session_instance::SessionInstance,
+    social_instance::SocialInstance,
+    world_instance::WorldInstance,
+};
 
 pub struct State {
     disconnect_timeout: Duration,
@@ -28,8 +44,12 @@ impl State {
         }
     }
 
-    pub async fn register_session_instance(&mut self, instance_secret: &str, http_addr: &str, http_port: u16) {
-
+    pub async fn register_session_instance(
+        &mut self,
+        instance_secret: &str,
+        http_addr: &str,
+        http_port: u16,
+    ) {
         let session_instance = SessionInstance::new(instance_secret, http_addr, http_port);
 
         let key = session_instance.key();
@@ -43,8 +63,12 @@ impl State {
         self.session_instances.insert(key.clone(), session_instance);
     }
 
-    pub async fn register_world_instance(&mut self, instance_secret: &str, http_addr: &str, http_port: u16) {
-
+    pub async fn register_world_instance(
+        &mut self,
+        instance_secret: &str,
+        http_addr: &str,
+        http_port: u16,
+    ) {
         let world_instance = WorldInstance::new(instance_secret, http_addr, http_port);
 
         let key = world_instance.key();
@@ -79,7 +103,6 @@ impl State {
     }
 
     pub async fn register_social_instance(&mut self, social_addr: &str, social_port: u16) {
-
         if let Some(old_social_instance) = self.social_instance.as_ref() {
             if old_social_instance.http_addr() == social_addr
                 && old_social_instance.http_port() == social_port
@@ -90,7 +113,6 @@ impl State {
                     old_social_instance.http_port()
                 );
                 self.deregister_social_instance().await;
-
             } else {
                 panic!("shouldn't have more than one social instance");
             }
@@ -109,7 +131,11 @@ impl State {
             let session_instance_secret = old_session_instance.instance_secret();
             if social_instance.has_connected_session_server(session_instance_secret) {
                 // tell social server to disconnect old session server instance
-                send_disconnect_session_server_message_to_social_instance(&session_instance_secret, social_instance).await;
+                send_disconnect_session_server_message_to_social_instance(
+                    &session_instance_secret,
+                    social_instance,
+                )
+                .await;
                 social_instance.remove_connected_session_server(session_instance_secret);
             }
         }
@@ -130,7 +156,6 @@ impl State {
 
         for (_, session_instance) in self.session_instances.iter_mut() {
             if session_instance.has_asset_server() {
-
                 send_disconnect_asset_instance_to_session_instance(session_instance).await;
 
                 session_instance.clear_asset_server();
@@ -144,7 +169,6 @@ impl State {
         // tell session servers to disconnect social server instance
         for (_, session_instance) in &mut self.session_instances {
             if session_instance.has_social_server() {
-
                 send_disconnect_social_server_message_to_session_instance(&session_instance).await;
 
                 session_instance.clear_social_server();
@@ -200,19 +224,18 @@ impl State {
         };
 
         for (_, session_instance) in self.session_instances.iter_mut() {
-
             if session_instance.has_asset_server() {
                 continue;
             }
 
-            send_connect_asset_server_req_to_session_server(&asset_instance, session_instance).await;
+            send_connect_asset_server_req_to_session_server(&asset_instance, session_instance)
+                .await;
 
             session_instance.set_has_asset_server();
         }
     }
 
     pub async fn sync_social_session_instances(&mut self) {
-
         let Some(social_instance) = self.social_instance.as_mut() else {
             return;
         };
@@ -223,12 +246,14 @@ impl State {
             }
 
             // session server receives connection to social server
-            send_connect_social_server_req_to_session_server(&social_instance, session_instance).await;
+            send_connect_social_server_req_to_session_server(&social_instance, session_instance)
+                .await;
 
             session_instance.set_has_social_server();
 
             // social server receives connection to session server
-            send_connect_session_server_req_to_social_server(&session_instance, social_instance).await;
+            send_connect_session_server_req_to_social_server(&session_instance, social_instance)
+                .await;
 
             social_instance.insert_connected_session_server(session_instance.instance_secret());
         }
@@ -250,10 +275,7 @@ impl State {
                 }
             }
             for (addr, port) in disconnected_instances {
-                info!(
-                    "session instance {:?}:{:?} disconnected",
-                    addr, port
-                );
+                info!("session instance {:?}:{:?} disconnected", addr, port);
                 self.deregister_session_instance(&addr, port).await;
             }
         }
@@ -269,7 +291,10 @@ impl State {
                 }
             }
             for (http_addr, http_port) in disconnected_instances {
-                info!("world instance {:?}:{:?} disconnected", http_addr, http_port);
+                info!(
+                    "world instance {:?}:{:?} disconnected",
+                    http_addr, http_port
+                );
                 self.deregister_world_instance(&http_addr, http_port).await;
             }
         }

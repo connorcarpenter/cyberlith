@@ -39,7 +39,6 @@ pub struct LoadAssetResponse {
 impl Response for LoadAssetResponse {}
 
 impl LoadAssetResponse {
-
     pub fn name() -> &'static str {
         "LoadAssetResponse"
     }

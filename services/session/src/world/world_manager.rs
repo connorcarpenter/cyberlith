@@ -1,7 +1,4 @@
-use std::{
-    collections::HashMap,
-    time::Duration,
-};
+use std::{collections::HashMap, time::Duration};
 
 use bevy_ecs::system::Resource;
 
@@ -20,9 +17,7 @@ pub struct WorldManager {
 }
 
 impl WorldManager {
-    pub fn new(
-        world_connect_resend_rate: Duration,
-    ) -> Self {
+    pub fn new(world_connect_resend_rate: Duration) -> Self {
         Self {
             world_connect_response_keys: HashMap::new(),
             world_connect_resend_rate,

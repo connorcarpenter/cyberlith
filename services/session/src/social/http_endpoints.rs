@@ -1,4 +1,4 @@
-use bevy_ecs::{system::Commands, change_detection::ResMut};
+use bevy_ecs::{change_detection::ResMut, system::Commands};
 
 use naia_bevy_server::Server;
 
@@ -7,7 +7,9 @@ use bevy_http_server::HttpServer;
 use config::SOCIAL_SERVER_GLOBAL_SECRET;
 use logging::warn;
 
-use session_server_http_proto::{SocialPatchGlobalChatMessagesRequest, SocialPatchGlobalChatMessagesResponse};
+use session_server_http_proto::{
+    SocialPatchGlobalChatMessagesRequest, SocialPatchGlobalChatMessagesResponse,
+};
 
 use crate::social::SocialManager;
 
@@ -17,7 +19,9 @@ pub fn recv_patch_global_chat_messages_request(
     mut http_server: ResMut<HttpServer>,
     mut naia_server: Server,
 ) {
-    while let Some((_addr, request, response_key)) = http_server.receive::<SocialPatchGlobalChatMessagesRequest>() {
+    while let Some((_addr, request, response_key)) =
+        http_server.receive::<SocialPatchGlobalChatMessagesRequest>()
+    {
         if request.social_secret() != SOCIAL_SERVER_GLOBAL_SECRET {
             warn!("invalid request secret");
             http_server.respond(response_key, Err(ResponseError::Unauthenticated));
@@ -27,7 +31,7 @@ pub fn recv_patch_global_chat_messages_request(
         social_manager.patch_global_chat_messages(
             &mut commands,
             &mut naia_server,
-            request.new_messages()
+            request.new_messages(),
         );
 
         // responding

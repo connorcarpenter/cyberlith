@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use logging::warn;
+use std::collections::HashMap;
 
 use crate::NodeId;
 
@@ -9,7 +9,9 @@ pub struct UiVisibilityStore {
 
 impl UiVisibilityStore {
     pub fn new() -> Self {
-        Self { nodes: HashMap::new() }
+        Self {
+            nodes: HashMap::new(),
+        }
     }
 
     // nodes

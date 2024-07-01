@@ -81,63 +81,60 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
     });
 
     // nodes
-    ui_config
-        .root_mut()
-        .set_style(window_style)
-        .contents(|c| {
-            // main container
-            c.add_panel().set_style(main_container_style).contents(|c| {
-                // title container
+    ui_config.root_mut().set_style(window_style).contents(|c| {
+        // main container
+        c.add_panel().set_style(main_container_style).contents(|c| {
+            // title container
+            c.add_panel()
+                .set_style(title_container_style)
+                .contents(|c| {
+                    c.add_text("c y b e r l i t h").set_style(title_text_style);
+                });
+
+            // body container
+            c.add_panel().set_style(body_container_style).contents(|c| {
+                // line 1
                 c.add_panel()
-                    .set_style(title_container_style)
+                    .set_style(heading_text_line_container_style)
                     .contents(|c| {
-                        c.add_text("c y b e r l i t h").set_style(title_text_style);
+                        c.add_text("if the email you entered")
+                            .set_style(heading_text_style);
                     });
 
-                // body container
-                c.add_panel().set_style(body_container_style).contents(|c| {
-                    // line 1
-                    c.add_panel()
-                        .set_style(heading_text_line_container_style)
-                        .contents(|c| {
-                            c.add_text("if the email you entered")
-                                .set_style(heading_text_style);
-                        });
+                // line 2
+                c.add_panel()
+                    .set_style(heading_text_line_container_style)
+                    .contents(|c| {
+                        c.add_text("is associated with a valid account,")
+                            .set_style(heading_text_style);
+                    });
 
-                    // line 2
-                    c.add_panel()
-                        .set_style(heading_text_line_container_style)
-                        .contents(|c| {
-                            c.add_text("is associated with a valid account,")
-                                .set_style(heading_text_style);
-                        });
+                // line 3
+                c.add_panel()
+                    .set_style(heading_text_line_container_style)
+                    .contents(|c| {
+                        c.add_text("we'll send you an email with instructions")
+                            .set_style(heading_text_style);
+                    });
 
-                    // line 3
-                    c.add_panel()
-                        .set_style(heading_text_line_container_style)
-                        .contents(|c| {
-                            c.add_text("we'll send you an email with instructions")
-                                .set_style(heading_text_style);
-                        });
+                // line 4
+                c.add_panel()
+                    .set_style(heading_text_line_container_style)
+                    .contents(|c| {
+                        c.add_text("to reset your password.")
+                            .set_style(heading_text_style);
+                    });
 
-                    // line 4
-                    c.add_panel()
-                        .set_style(heading_text_line_container_style)
-                        .contents(|c| {
-                            c.add_text("to reset your password.")
-                                .set_style(heading_text_style);
-                        });
-
-                    // home button
-                    c.add_button("submit_button")
-                        .set_style(home_button_style)
-                        .contents(|c| {
-                            c.add_text("home").set_style(base_button_text_style);
-                        })
-                        .set_as_first_input();
-                });
+                // home button
+                c.add_button("submit_button")
+                    .set_style(home_button_style)
+                    .contents(|c| {
+                        c.add_text("home").set_style(base_button_text_style);
+                    })
+                    .set_as_first_input();
             });
         });
+    });
 
     (ui_name.to_string(), ui_asset_id, ui_etag, ui_config)
 }

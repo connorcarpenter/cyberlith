@@ -40,7 +40,12 @@ async fn async_recv_connect_session_server_request_impl(
     state.region_server.heard_from_region_server();
 
     // get full chat log
-    let messages: Vec<(GlobalChatMessageId, Timestamp, UserId, String)> = state.global_chat.get_full_log().iter().map(|m| m.clone()).collect();
+    let messages: Vec<(GlobalChatMessageId, Timestamp, UserId, String)> = state
+        .global_chat
+        .get_full_log()
+        .iter()
+        .map(|m| m.clone())
+        .collect();
 
     // store session server details
     state
@@ -50,7 +55,8 @@ async fn async_recv_connect_session_server_request_impl(
             request.http_addr(),
             request.http_port(),
             messages,
-        ).await;
+        )
+        .await;
 
     // responding
     // info!("Sending connect social server response to region server ..");
@@ -83,7 +89,11 @@ async fn async_recv_disconnect_session_server_request_impl(
     state.region_server.heard_from_region_server();
 
     // erase session server details
-    if state.session_servers.get_session_server_id(request.session_secret()).is_none() {
+    if state
+        .session_servers
+        .get_session_server_id(request.session_secret())
+        .is_none()
+    {
         // all good, already disconnected
         warn!("session server already disconnected");
         return Ok(DisconnectSessionServerResponse);

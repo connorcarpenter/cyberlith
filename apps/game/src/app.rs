@@ -3,12 +3,26 @@ use std::sync::{Arc, RwLock};
 use bevy_app::{App, Plugin, Startup, Update};
 use bevy_ecs::{prelude::in_state, schedule::IntoSystemConfigs};
 
-use game_engine::{http::CookieStore, kernel::KernelApp, render::{resources::WindowSettings, Draw}, NetworkedEnginePlugin};
-
-use super::systems::{
-    cube_scene, draw, init_spinner, world, resize, walker_scene, session,
+use game_engine::{
+    http::CookieStore,
+    kernel::KernelApp,
+    render::{resources::WindowSettings, Draw},
+    NetworkedEnginePlugin,
 };
-use crate::{resources::{global_chat::GlobalChat, AssetCatalog}, states::AppState, ui, ui::{UiCatalog, events::{DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent, JoinMatchButtonClickedEvent, SettingsButtonClickedEvent, SubmitButtonClickedEvent}}};
+
+use super::systems::{cube_scene, draw, init_spinner, resize, session, walker_scene, world};
+use crate::{
+    resources::{global_chat::GlobalChat, AssetCatalog},
+    states::AppState,
+    ui,
+    ui::{
+        events::{
+            DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent,
+            JoinMatchButtonClickedEvent, SettingsButtonClickedEvent, SubmitButtonClickedEvent,
+        },
+        UiCatalog,
+    },
+};
 
 pub struct GameApp {
     cookie_store_opt: Option<Arc<RwLock<CookieStore>>>,
@@ -64,7 +78,6 @@ impl Plugin for GameApp {
             .add_event::<GlobalChatButtonClickedEvent>()
             .add_event::<DevlogButtonClickedEvent>()
             .add_event::<SettingsButtonClickedEvent>()
-            .add_event::<SubmitButtonClickedEvent>()
-        ;
+            .add_event::<SubmitButtonClickedEvent>();
     }
 }

@@ -50,11 +50,7 @@ pub(crate) async fn handler(
     http_server::log_util::send_req(host_name, auth_server, UserRegisterRequest::name());
     match HttpClient::send(&auth_addr, auth_port, auth_request).await {
         Ok(_auth_response) => {
-            http_server::log_util::recv_res(
-                host_name,
-                auth_server,
-                UserRegisterResponse::name(),
-            );
+            http_server::log_util::recv_res(host_name, auth_server, UserRegisterResponse::name());
 
             http_server::log_util::send_res(host_name, GatewayUserRegisterResponse::name());
             return Ok(GatewayUserRegisterResponse::new().to_response());

@@ -1,7 +1,7 @@
 use std::net::SocketAddr;
 
 use http_client_shared::fetch_async;
-use http_common::{ApiRequest, log_util, Method, Request, Response};
+use http_common::{log_util, ApiRequest, Method, Request, Response};
 use logging::info;
 
 use crate::{
