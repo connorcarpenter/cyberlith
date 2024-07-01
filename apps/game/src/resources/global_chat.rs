@@ -6,17 +6,16 @@ use bevy_ecs::{
     system::{Query, Resource},
 };
 
-use game_engine::logging::info;
 use game_engine::{
     asset::AssetManager,
     input::{InputEvent, Key},
+    logging::info,
     session::{channels, components::GlobalChatMessage, messages, SessionClient},
     social::GlobalChatMessageId,
     ui::{
         extensions::{ListUiExt, ListUiExtItem},
-        UiHandle,
+        NodeActiveState, UiHandle, UiManager,
     },
-    ui::{NodeActiveState, UiManager},
 };
 
 use crate::ui::{go_to_sub_ui, UiCatalog, UiKey};

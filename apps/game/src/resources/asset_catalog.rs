@@ -78,9 +78,8 @@ pub(crate) fn on_asset_load(
         }
         AssetKey::PasswordEyeIcon => {
             ui_manager.set_eye_icon_handle(asset_id);
-        }
-        // _ => {
-        //     unimplemented!("asset load not implemented");
-        // }
+        } // _ => {
+          //     unimplemented!("asset load not implemented");
+          // }
     }
 }
