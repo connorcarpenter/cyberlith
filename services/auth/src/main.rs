@@ -25,6 +25,8 @@ pub fn main() {
     let state = Arc::new(RwLock::new(State::new()));
     let server_name = "auth_server";
 
+    endpoints::user_get(server_name, &mut server, state.clone());
+
     endpoints::user_login(server_name, &mut server, state.clone());
     endpoints::user_register(server_name, &mut server, state.clone());
     endpoints::user_register_confirm(server_name, &mut server, state.clone());

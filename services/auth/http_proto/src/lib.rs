@@ -6,6 +6,7 @@ mod user_password_forgot;
 mod user_password_reset;
 mod user_register;
 mod user_register_confirm;
+mod user_get;
 
 pub use access_token_validate::*;
 pub use refresh_token_grant::*;
@@ -15,6 +16,7 @@ pub use user_password_forgot::*;
 pub use user_password_reset::*;
 pub use user_register::*;
 pub use user_register_confirm::*;
+pub use user_get::*;
 
 mod types;
 pub use types::{AccessToken, RefreshToken, RegisterToken, ResetPasswordToken};

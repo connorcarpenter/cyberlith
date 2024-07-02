@@ -22,7 +22,7 @@ pub struct State {
     reset_password_tokens: HashMap<ResetPasswordToken, UserId>,
     access_tokens: HashMap<AccessToken, UserId>,
     refresh_tokens: HashMap<RefreshToken, UserId>,
-    user_data: HashMap<UserId, UserData>,
+    pub(crate) user_data: HashMap<UserId, UserData>,
     expire_manager: ExpireManager,
 }
 
@@ -36,7 +36,7 @@ impl State {
         for (id, user) in database_manager.list_users() {
             username_to_id_map.insert(user.username().to_string(), Some(id));
             email_to_id_map.insert(user.email().to_string(), Some(id));
-            user_data_map.insert(id, UserData::new(user.username().to_string()));
+            user_data_map.insert(id, UserData::new());
         }
 
         Self {
@@ -90,8 +90,8 @@ impl State {
         (refresh_token, access_token)
     }
 
-    pub(crate) fn init_user_data(&mut self, user_id: &UserId, username: &str) {
-        self.user_data.insert(*user_id, UserData::new(username.to_string()));
+    pub(crate) fn init_user_data(&mut self, user_id: &UserId) {
+        self.user_data.insert(*user_id, UserData::new());
     }
 
     fn create_and_store_refresh_token(&mut self, user_id: &UserId) -> RefreshToken {
@@ -112,8 +112,8 @@ impl State {
         token
     }
 
-    pub(crate) fn get_user_name(&self, user_id: &UserId) -> Option<&String> {
-        self.user_data.get(user_id).map(|data| &data.user_name)
+    pub(crate) fn get_user_name(&self, user_id: &UserId) -> Option<&str> {
+        self.database_manager.get_user(user_id).map(|data| data.username())
     }
 
     pub(crate) fn create_and_store_access_token(&mut self, user_id: &UserId) -> AccessToken {

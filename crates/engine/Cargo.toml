@@ -7,7 +7,7 @@ edition = "2021"
 publish = false
 
 [features]
-networked = [ "auth_server_http_proto", "region_server_http_proto", "session_server_naia_proto", "world_server_naia_proto" ]
+networked = [ "session_server_naia_proto", "world_server_naia_proto" ]
 local = [ "config/local", "session_server_naia_proto/local", "world_server_naia_proto/local" ]
 prod = [ "config/prod", "session_server_naia_proto/prod", "world_server_naia_proto/prod" ]
 gl_renderer = [ "render_gl" ]
@@ -32,12 +32,9 @@ ui_extensions = { path = "../ui/extensions" }
 random = { path = "../random" }
 kernel = { path = "../kernel" }
 logging = { path = "../logging" }
-auth_server_types = { path = "../../services/auth/types" }
 social_server_types = { path = "../../services/social/types" }
 
 # Networked Dependencies
-auth_server_http_proto = { path = "../../services/auth/http_proto", optional = true }
-region_server_http_proto = { path = "../../services/region/http_proto", optional = true }
 session_server_naia_proto = { path = "../../services/session/naia_proto", optional = true }
 world_server_naia_proto = { path = "../../services/world/naia_proto", optional = true }
 

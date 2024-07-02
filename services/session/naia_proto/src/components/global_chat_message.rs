@@ -1,6 +1,6 @@
-use bevy_ecs::{prelude::Component, entity::Entity};
+use bevy_ecs::{prelude::Component};
 
-use naia_bevy_shared::{EntityAndGlobalEntityConverter, EntityProperty, Property, Replicate};
+use naia_bevy_shared::{EntityProperty, Property, Replicate};
 
 use social_server_types::{GlobalChatMessageId, Timestamp};
 
@@ -14,14 +14,10 @@ pub struct GlobalChatMessage {
 
 impl GlobalChatMessage {
     pub fn new(
-        converter: &dyn EntityAndGlobalEntityConverter<Entity>,
         id: GlobalChatMessageId,
         timestamp: Timestamp,
-        user_entity: Entity,
         message: &str,
     ) -> Self {
-        let mut me = Self::new_complete(id, timestamp, message.to_string());
-        me.user_entity.set(converter, &user_entity);
-        me
+        Self::new_complete(id, timestamp, message.to_string())
     }
 }

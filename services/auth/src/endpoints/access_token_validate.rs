@@ -50,6 +50,6 @@ impl State {
             return Err(AuthServerError::TokenNotFound);
         };
         let user_name = self.get_user_name(&user_id).unwrap();
-        return Ok((user_id.clone(), user_name.clone()));
+        return Ok((user_id.clone(), user_name.to_string()));
     }
 }

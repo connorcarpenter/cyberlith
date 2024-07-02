@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use db::{DbRowKey, DbRowValue, DbTableKey};
 
-use auth_server_types::UserId;
+use auth_server_types::{UserId, UserRole as NonDbUserRole};
 
 // users table key
 pub struct Users;
@@ -72,6 +72,17 @@ impl Display for UserRole {
             UserRole::Staff => write!(f, "Staff"),
             UserRole::Paid => write!(f, "Paid"),
             UserRole::Free => write!(f, "Free"),
+        }
+    }
+}
+
+impl Into<NonDbUserRole> for UserRole {
+    fn into(self) -> NonDbUserRole {
+        match self {
+            UserRole::Admin => NonDbUserRole::Admin,
+            UserRole::Staff => NonDbUserRole::Staff,
+            UserRole::Paid => NonDbUserRole::Paid,
+            UserRole::Free => NonDbUserRole::Free,
         }
     }
 }
@@ -153,5 +164,9 @@ impl User {
 
     pub fn set_password(&mut self, password: &str) {
         self.password = password.to_string();
+    }
+
+    pub fn role(&self) -> UserRole {
+        self.role
     }
 }

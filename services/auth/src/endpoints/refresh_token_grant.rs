@@ -53,7 +53,7 @@ impl State {
         let user_id = self.get_user_id_by_refresh_token(&refresh_token).unwrap();
         let user_id = *user_id;
 
-        let user_name = self.get_user_name(&user_id).unwrap().clone();
+        let user_name = self.get_user_name(&user_id).unwrap().to_string();
         let access_token = self.create_and_store_access_token(&user_id);
 
         return Ok((user_id, user_name, access_token));

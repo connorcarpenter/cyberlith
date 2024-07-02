@@ -113,7 +113,7 @@ impl State {
         *id_opt = Some(new_user_id);
 
         // add user data
-        self.init_user_data(&new_user_id, &new_user_name);
+        self.init_user_data(&new_user_id);
 
         // generate new access and refresh token for user
         let (refresh_token, access_token) = self.user_new_login_gen_tokens(&new_user_id);

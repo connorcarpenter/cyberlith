@@ -21,3 +21,6 @@ pub use access_token_validate::*;
 
 mod refresh_token_grant;
 pub use refresh_token_grant::*;
+
+mod user_get;
+pub use user_get::*;

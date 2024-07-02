@@ -1,4 +1,4 @@
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 
 use bevy_ecs::{
     change_detection::ResMut,
@@ -12,6 +12,7 @@ use bevy_http_client::{ApiRequest, ApiResponse, HttpClient, ResponseKey};
 use logging::{info, warn};
 
 use auth_server_types::UserId;
+use auth_server_http_proto::{UserGetRequest, UserGetResponse};
 
 use session_server_http_proto::SocialUserPatch;
 use session_server_naia_proto::components::GlobalChatMessage;
@@ -24,6 +25,8 @@ use crate::{session_instance::SessionInstance, user::UserManager};
 enum QueuedRequest {
     // user_id
     UserSendDisconnect(UserId),
+    //
+    UserNameRequest(UserId),
     // user id, message
     GlobalChatSendMessage(UserKey, String),
 }
@@ -31,6 +34,8 @@ enum QueuedRequest {
 enum InFlightRequest {
     // user id
     UserSendDisconnect(UserId, ResponseKey<UserDisconnectedResponse>),
+    //
+    UserNameRequest(UserId, ResponseKey<UserGetResponse>),
     // sending user id, message, response key
     GlobalChatSendMessage(UserId, String, ResponseKey<GlobalChatSendMessageResponse>),
 }
@@ -41,6 +46,7 @@ pub struct SocialManager {
     queued_requests: Vec<QueuedRequest>,
     in_flight_requests: Vec<InFlightRequest>,
 
+    userless_chat_messages: HashMap<UserId, Vec<(Entity, GlobalChatMessage)>>,
     global_chat_room_key: Option<RoomKey>,
     global_chat_log: VecDeque<Entity>,
 }
@@ -52,6 +58,7 @@ impl SocialManager {
             in_flight_requests: Vec::new(),
             queued_requests: Vec::new(),
 
+            userless_chat_messages: HashMap::new(),
             global_chat_room_key: None,
             global_chat_log: VecDeque::new(),
         }
@@ -132,6 +139,9 @@ impl SocialManager {
                 }
                 QueuedRequest::UserSendDisconnect(user_id) => {
                     self.send_user_disconnect_req(http_client, session_instance, &user_id);
+                }
+                QueuedRequest::UserNameRequest(user_id) => {
+                    self.send_user_name_req(http_client, &user_id);
                 }
             }
         }
@@ -215,6 +225,30 @@ impl SocialManager {
                         continuing_requests.push(req);
                     }
                 }
+                InFlightRequest::UserNameRequest(user_id, response_key) => {
+                    if let Some(response_result) = http_client.recv(&response_key) {
+                        let host = "session";
+                        let remote = "auth";
+                        bevy_http_client::log_util::recv_res(
+                            host,
+                            remote,
+                            UserGetResponse::name(),
+                        );
+
+                        match response_result {
+                            Ok(response) => {
+                                info!("received user get response from social server");
+
+                                todo!("what to do here?");
+                            }
+                            Err(e) => {
+                                warn!("error receiving user get response from social server: {:?}", e.to_string());
+                            }
+                        }
+                    } else {
+                        continuing_requests.push(req);
+                    }
+                }
             }
         }
 
@@ -255,6 +289,37 @@ impl SocialManager {
                 }
             }
         }
+    }
+
+    pub fn send_user_name_req(
+        &mut self,
+        http_client: &mut HttpClient,
+        user_id: &UserId,
+    ) {
+        let Some((auth_server_addr, auth_server_port)) = self.get_social_server_url() else {
+            warn!("user disconnected but no auth server is available!");
+
+            let qr = QueuedRequest::UserNameRequest(*user_id);
+            self.queued_requests.push(qr);
+
+            return;
+        };
+
+        // info!("sending user disconnect request to social server - [userid {:?}]", user_id);
+        let request = UserGetRequest::new(
+            *user_id,
+        );
+
+        let host = "session";
+        let remote = "auth";
+        bevy_http_client::log_util::send_req(host, remote, UserGetRequest::name());
+        let response_key = http_client.send(&auth_server_addr, auth_server_port, request);
+
+        let ifr = InFlightRequest::UserNameRequest(
+            *user_id,
+            response_key,
+        );
+        self.in_flight_requests.push(ifr);
     }
 
     pub fn send_user_disconnect_req(
@@ -344,33 +409,47 @@ impl SocialManager {
         sending_user_id: &UserId,
         message: &str,
     ) {
-        let Some(user_entity) = user_manager.get_user_entity(sending_user_id) else {
-            panic!("User not found: {:?}", sending_user_id);
-        };
-        let global_chat_message = GlobalChatMessage::new(
-            naia_server,
-            *global_chat_id,
-            *timestamp,
-            user_entity,
-            message,
-        );
-        let global_chat_message_id = commands
+        // spawn message entity
+        let global_chat_message_entity = commands
             .spawn_empty()
             .enable_replication(naia_server)
-            .insert(global_chat_message)
             .id();
+        let mut global_chat_message = GlobalChatMessage::new(
+            *global_chat_id,
+            *timestamp,
+            message,
+        );
 
+        // add to global chat room
         naia_server
             .room_mut(&self.get_global_chat_room_key())
-            .add_entity(&global_chat_message_id);
+            .add_entity(&global_chat_message_entity);
 
         // add to local log
-        self.global_chat_log.push_back(global_chat_message_id);
+        self.global_chat_log.push_back(global_chat_message_entity);
 
         // remove oldest messages if we have too many
         if self.global_chat_log.len() > 100 {
             let entity_to_delete = self.global_chat_log.pop_front().unwrap();
             commands.entity(entity_to_delete).despawn();
+        }
+
+        if let Some(user_entity) = user_manager.get_user_entity(sending_user_id) {
+            global_chat_message.user_entity.set(naia_server, &user_entity);
+            commands
+                .entity(global_chat_message_entity)
+                .insert(global_chat_message);
+        } else {
+            if self.userless_chat_messages.contains_key(sending_user_id) {
+                // already an inflight request to get username from userid
+            } else {
+                // TODO: send request to get username from userid
+            }
+
+            self.userless_chat_messages
+                .entry(*sending_user_id)
+                .or_insert(Vec::new())
+                .push((global_chat_message_entity, global_chat_message));
         }
     }
 
