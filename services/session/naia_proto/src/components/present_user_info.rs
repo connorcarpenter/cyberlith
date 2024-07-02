@@ -5,12 +5,12 @@ use naia_bevy_shared::{Property, Replicate};
 use auth_server_types::UserId;
 
 #[derive(Component, Replicate)]
-pub struct UserInfo {
+pub struct PresentUserInfo {
     pub id: Property<UserId>,
     pub name: Property<String>,
 }
 
-impl UserInfo {
+impl PresentUserInfo {
     pub fn new(
         id: UserId,
         name: &str,

@@ -14,6 +14,7 @@ use crate::{
     asset::{asset_manager::AssetManager, user_load_default_assets},
     social::SocialManager,
     user::UserManager,
+    session_instance::SessionInstance,
 };
 
 pub fn auth_events(
@@ -27,7 +28,7 @@ pub fn auth_events(
                 info!("Accepted connection. Token: {}", auth.token());
 
                 // add to users
-                user_manager.add_user(user_key, user_data);
+                user_manager.add_connected_user(user_key, user_data);
 
                 // Accept incoming connection
                 server.accept_connection(&user_key);
@@ -68,14 +69,29 @@ pub fn connect_events(
 }
 
 pub fn disconnect_events(
-    mut event_reader: EventReader<DisconnectEvent>,
+    mut http_client: ResMut<HttpClient>,
+    mut user_manager: ResMut<UserManager>,
+    mut social_manager: ResMut<SocialManager>,
     mut asset_manager: ResMut<AssetManager>,
+    session_instance: Res<SessionInstance>,
+    mut event_reader: EventReader<DisconnectEvent>,
 ) {
     for DisconnectEvent(user_key, user) in event_reader.read() {
         info!("Server disconnected from: {:?}", user.address());
 
         // TODO: probably need to deregister user from global too?
 
+        // remove from user manager
+        let user_data = user_manager.remove_connected_user(user_key).unwrap();
+
+        // remove from asset manager
         asset_manager.deregister_user(user_key);
+
+        // send user disconnect to social server
+        social_manager.send_user_disconnect_req(
+            &mut http_client,
+            &session_instance,
+            &user_data.user_id,
+        );
     }
 }

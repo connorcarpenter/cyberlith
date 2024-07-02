@@ -12,14 +12,14 @@ use auth_server_types::UserId;
 #[derive(Resource)]
 pub struct UserManager {
     login_tokens: HashMap<String, UserData>,
-    users: HashMap<UserKey, UserData>,
+    connected_users: HashMap<UserKey, UserData>,
 }
 
 impl UserManager {
     pub fn new() -> Self {
         Self {
             login_tokens: HashMap::new(),
-            users: HashMap::new(),
+            connected_users: HashMap::new(),
         }
     }
 
@@ -34,16 +34,20 @@ impl UserManager {
         self.login_tokens.remove(token)
     }
 
-    pub fn add_user(&mut self, user_key: UserKey, user_data: UserData) {
-        self.users.insert(user_key, user_data);
+    pub fn add_connected_user(&mut self, user_key: UserKey, user_data: UserData) {
+        self.connected_users.insert(user_key, user_data);
+    }
+
+    pub fn remove_connected_user(&mut self, user_key: &UserKey) -> Option<UserData> {
+        self.connected_users.remove(user_key)
     }
 
     pub fn get_user_data(&self, user_key: &UserKey) -> Option<&UserData> {
-        self.users.get(user_key)
+        self.connected_users.get(user_key)
     }
 
     pub fn get_user_data_mut(&mut self, user_key: &UserKey) -> Option<&mut UserData> {
-        self.users.get_mut(user_key)
+        self.connected_users.get_mut(user_key)
     }
 
     // World Connection
@@ -55,7 +59,7 @@ impl UserManager {
         let now = Instant::now();
 
         let mut worldless_users = Vec::new();
-        for (user_key, user_data) in self.users.iter_mut() {
+        for (user_key, user_data) in self.connected_users.iter_mut() {
             if user_data.is_world_connected() {
                 continue;
             }
@@ -77,7 +81,7 @@ impl UserManager {
     }
 
     pub fn user_set_world_connected(&mut self, user_key: &UserKey, world_instance_secret: &str) {
-        let user_data = self.users.get_mut(user_key).unwrap();
+        let user_data = self.connected_users.get_mut(user_key).unwrap();
         user_data.set_world_connected(world_instance_secret);
     }
 }

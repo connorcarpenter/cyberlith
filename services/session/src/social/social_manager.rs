@@ -1,4 +1,4 @@
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 
 use bevy_ecs::{
     change_detection::ResMut,
@@ -8,23 +8,29 @@ use bevy_ecs::{
 
 use naia_bevy_server::{CommandsExt, RoomKey, Server, UserKey};
 
-use auth_server_types::UserId;
 use bevy_http_client::{ApiRequest, ApiResponse, HttpClient, ResponseKey};
 use logging::{info, warn};
-use session_server_http_proto::SocialUserPatch;
-use social_server_types::{GlobalChatMessageId, Timestamp};
 
-use session_server_naia_proto::components::GlobalChatMessage;
-use social_server_http_proto::{GlobalChatSendMessageRequest, GlobalChatSendMessageResponse};
+use auth_server_types::UserId;
+
+use session_server_http_proto::SocialUserPatch;
+use session_server_naia_proto::components::{GlobalChatMessage, PresentUserInfo};
+
+use social_server_http_proto::{GlobalChatSendMessageRequest, GlobalChatSendMessageResponse, UserDisconnectedRequest, UserDisconnectedResponse};
+use social_server_types::{GlobalChatMessageId, Timestamp};
 
 use crate::{session_instance::SessionInstance, user::UserManager};
 
 enum QueuedRequest {
+    // user_id
+    UserSendDisconnect(UserId),
     // user id, message
     GlobalChatSendMessage(UserKey, String),
 }
 
 enum InFlightRequest {
+    // user id
+    UserSendDisconnect(UserId, ResponseKey<UserDisconnectedResponse>),
     // sending user id, message, response key
     GlobalChatSendMessage(UserId, String, ResponseKey<GlobalChatSendMessageResponse>),
 }
@@ -34,6 +40,9 @@ pub struct SocialManager {
     social_server_opt: Option<(String, u16)>,
     queued_requests: Vec<QueuedRequest>,
     in_flight_requests: Vec<InFlightRequest>,
+
+    // id, name
+    present_users: HashMap<UserId, Entity>,
 
     global_chat_room_key: Option<RoomKey>,
     global_chat_log: VecDeque<Entity>,
@@ -45,6 +54,8 @@ impl SocialManager {
             social_server_opt: None,
             in_flight_requests: Vec::new(),
             queued_requests: Vec::new(),
+
+            present_users: HashMap::new(),
 
             global_chat_room_key: None,
             global_chat_log: VecDeque::new(),
@@ -123,6 +134,9 @@ impl SocialManager {
                         &message,
                     );
                 }
+                QueuedRequest::UserSendDisconnect(user_id) => {
+                    self.send_user_disconnect_req(http_client, session_instance, &user_id);
+                }
             }
         }
     }
@@ -177,10 +191,134 @@ impl SocialManager {
                         continuing_requests.push(req);
                     }
                 }
+                InFlightRequest::UserSendDisconnect(user_id, response_key) => {
+                    if let Some(response_result) = http_client.recv(&response_key) {
+                        let host = "session";
+                        let remote = "social";
+                        bevy_http_client::log_util::recv_res(
+                            host,
+                            remote,
+                            UserDisconnectedResponse::name(),
+                        );
+
+                        match response_result {
+                            Ok(_response) => {
+                                info!("received user disconnect response from social server");
+
+                                self.remove_present_user(
+                                    commands,
+                                    user_id,
+                                );
+                            }
+                            Err(e) => {
+                                warn!("error receiving user disconnect response from social server: {:?}", e.to_string());
+                            }
+                        }
+                    } else {
+                        continuing_requests.push(req);
+                    }
+                }
             }
         }
 
         self.in_flight_requests = continuing_requests;
+    }
+
+    // Users
+
+    pub(crate) fn patch_users(
+        &mut self,
+        commands: &mut Commands,
+        naia_server: &mut Server,
+        user_patches: &Vec<SocialUserPatch>,
+    ) {
+        for user_patch in user_patches {
+            match user_patch {
+                SocialUserPatch::Add(user_id, user_name) => {
+                    info!("adding user - [userid {:?}]:(`{:?}`)", user_id, user_name);
+
+                    self.add_present_user(commands, naia_server, user_id, user_name);
+                }
+                SocialUserPatch::Remove(user_id) => {
+                    info!("removing user - [userid {:?}]", user_id);
+
+                    self.remove_present_user(commands, user_id);
+                }
+            }
+        }
+    }
+
+    fn add_present_user(
+        &mut self,
+        commands: &mut Commands,
+        naia_server: &mut Server,
+        user_id: &UserId,
+        user_name: &str,
+    ) {
+        // info!("adding present user - [userid {:?}]:(`{:?}`)", user_id, user_name);
+        // convert to entity + component
+        let present_user_id = commands
+            .spawn_empty()
+            .enable_replication(naia_server)
+            .insert(PresentUserInfo::new(
+                *user_id,
+                user_name,
+            ))
+            .id();
+
+        naia_server
+            .room_mut(&self.get_global_chat_room_key())
+            .add_entity(&present_user_id);
+
+        // add to local log
+        self.present_users.insert(*user_id, present_user_id);
+    }
+
+    fn remove_present_user(
+        &mut self,
+        commands: &mut Commands,
+        user_id: &UserId,
+    ) {
+        let present_user_id = self.present_users.remove(user_id).unwrap();
+
+        // info!("removing present user - [userid {:?}]", user_id);
+        // convert to entity + component
+        commands
+            .entity(present_user_id)
+            .despawn();
+    }
+
+    pub fn send_user_disconnect_req(
+        &mut self,
+        http_client: &mut HttpClient,
+        session_instance: &SessionInstance,
+        user_id: &UserId,
+    ) {
+        let Some((social_server_addr, social_server_port)) = self.get_social_server_url() else {
+            warn!("user disconnected but no social server is available!");
+
+            let qr = QueuedRequest::UserSendDisconnect(*user_id);
+            self.queued_requests.push(qr);
+
+            return;
+        };
+
+        // info!("sending user disconnect request to social server - [userid {:?}]", user_id);
+        let request = UserDisconnectedRequest::new(
+            session_instance.instance_secret(),
+            *user_id,
+        );
+
+        let host = "session";
+        let remote = "social";
+        bevy_http_client::log_util::send_req(host, remote, UserDisconnectedRequest::name());
+        let response_key = http_client.send(&social_server_addr, social_server_port, request);
+
+        let ifr = InFlightRequest::UserSendDisconnect(
+            *user_id,
+            response_key,
+        );
+        self.in_flight_requests.push(ifr);
     }
 
     // Global Chat
@@ -264,24 +402,6 @@ impl SocialManager {
         }
     }
 
-    pub(crate) fn patch_users(
-        &mut self,
-        commands: &mut Commands,
-        naia_server: &mut Server,
-        user_patches: &Vec<SocialUserPatch>,
-    ) {
-        for user_patch in user_patches {
-            match user_patch {
-                SocialUserPatch::Add(user_id, user_name) => {
-                    info!("adding user - [userid {:?}]:(`{:?}`)", user_id, user_name);
-                }
-                SocialUserPatch::Remove(user_id) => {
-                    info!("removing user - [userid {:?}]", user_id);
-                }
-            }
-        }
-    }
-
     pub(crate) fn patch_global_chat_messages(
         &mut self,
         commands: &mut Commands,
@@ -289,6 +409,8 @@ impl SocialManager {
         new_messages: &Vec<(GlobalChatMessageId, Timestamp, UserId, String)>,
     ) {
         for (msg_id, timestamp, user_id, message) in new_messages {
+
+            // log the message
             self.log_global_chat_message(
                 commands,
                 naia_server,

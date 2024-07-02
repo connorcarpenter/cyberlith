@@ -12,7 +12,7 @@ use game_engine::{
 
 use super::systems::{cube_scene, draw, init_spinner, resize, session, walker_scene, world};
 use crate::{
-    resources::{global_chat::GlobalChat, AssetCatalog},
+    resources::{global_chat::GlobalChat, AssetCatalog, user_presence::UserPresence},
     states::AppState,
     ui,
     ui::{
@@ -50,6 +50,7 @@ impl Plugin for GameApp {
                 ..Default::default()
             })
             .init_resource::<GlobalChat>()
+            .init_resource::<UserPresence>()
             .insert_resource(UiCatalog::new())
             .insert_resource(AssetCatalog::new())
             // states
@@ -71,8 +72,10 @@ impl Plugin for GameApp {
             .add_systems(Update, world::world_alt1_insert_asset_ref_events)
             .add_systems(Update, session::session_load_asset_events)
             .add_systems(Update, session::recv_inserted_global_chat_component)
+            .add_systems(Update, session::recv_inserted_present_user_component)
             // Ui
             .add_systems(Update, ui::handle_events)
+            .add_systems(Update, ui::handle_global_chat_events)
             .add_event::<HostMatchButtonClickedEvent>()
             .add_event::<JoinMatchButtonClickedEvent>()
             .add_event::<GlobalChatButtonClickedEvent>()

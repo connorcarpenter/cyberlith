@@ -9,8 +9,8 @@ use bevy_ecs::{
 use game_engine::{
     asset::AssetManager,
     input::{InputEvent, Key},
-    logging::info,
-    session::{channels, components::GlobalChatMessage, messages, SessionClient},
+    logging::{info, warn},
+    session::{channels, components::{GlobalChatMessage, PresentUserInfo}, messages, SessionClient},
     social::GlobalChatMessageId,
     ui::{
         extensions::{ListUiExt, ListUiExtItem},
@@ -18,7 +18,7 @@ use game_engine::{
     },
 };
 
-use crate::ui::{go_to_sub_ui, UiCatalog, UiKey};
+use crate::{ui::{go_to_sub_ui, UiCatalog, UiKey}, resources::user_presence::UserPresence};
 
 #[derive(Resource)]
 pub struct GlobalChat {
@@ -47,8 +47,10 @@ impl GlobalChat {
         ui_manager: &mut UiManager,
         ui_catalog: &UiCatalog,
         asset_manager: &AssetManager,
+        user_presence: &UserPresence,
         session_server: &mut SessionClient,
         input_events: &mut EventReader<InputEvent>,
+        user_q: &Query<&PresentUserInfo>,
         message_q: &Query<&GlobalChatMessage>,
         _should_rumble: &mut bool,
     ) {
@@ -67,7 +69,7 @@ impl GlobalChat {
                     } else {
                         info!("Scrolling Up");
                         global_chat.list_ui_ext.scroll_up();
-                        global_chat.sync_with_collection(ui_manager, asset_manager, message_q);
+                        global_chat.sync_with_collection(ui_manager, asset_manager, user_presence, user_q, message_q);
                     }
                 }
                 InputEvent::KeyPressed(Key::J, _) => {
@@ -80,7 +82,7 @@ impl GlobalChat {
                     } else {
                         info!("Scrolling Down");
                         global_chat.list_ui_ext.scroll_down();
-                        global_chat.sync_with_collection(ui_manager, asset_manager, message_q);
+                        global_chat.sync_with_collection(ui_manager, asset_manager, user_presence, user_q, message_q);
                     }
                 }
                 InputEvent::KeyPressed(Key::Enter, modifiers) => {
@@ -108,6 +110,8 @@ impl GlobalChat {
         ui_catalog: &mut UiCatalog,
         ui_manager: &mut UiManager,
         asset_manager: &AssetManager,
+        user_presence: &UserPresence,
+        user_q: &Query<&PresentUserInfo>,
         message_q: &Query<&GlobalChatMessage>,
         global_chat_messages: &mut GlobalChat,
     ) {
@@ -129,13 +133,15 @@ impl GlobalChat {
         global_chat_messages
             .list_ui_ext
             .set_container_ui(ui_manager, &ui_handle, container_id_str);
-        global_chat_messages.sync_with_collection(ui_manager, asset_manager, message_q);
+        global_chat_messages.sync_with_collection(ui_manager, asset_manager, user_presence, user_q, message_q);
     }
 
     pub(crate) fn on_load_day_divider_item_ui(
         ui_catalog: &mut UiCatalog,
         ui_manager: &mut UiManager,
         asset_manager: &AssetManager,
+        user_presence: &UserPresence,
+        user_q: &Query<&PresentUserInfo>,
         message_q: &Query<&GlobalChatMessage>,
         global_chat_messages: &mut GlobalChat,
     ) {
@@ -145,13 +151,15 @@ impl GlobalChat {
         ui_catalog.set_loaded(item_ui_key);
 
         global_chat_messages.day_divider_item_ui = Some(item_ui_handle.clone());
-        global_chat_messages.sync_with_collection(ui_manager, asset_manager, message_q);
+        global_chat_messages.sync_with_collection(ui_manager, asset_manager, user_presence, user_q, message_q);
     }
 
     pub(crate) fn on_load_username_and_message_item_ui(
         ui_catalog: &mut UiCatalog,
         ui_manager: &mut UiManager,
         asset_manager: &AssetManager,
+        user_presence: &UserPresence,
+        user_q: &Query<&PresentUserInfo>,
         message_q: &Query<&GlobalChatMessage>,
         global_chat_messages: &mut GlobalChat,
     ) {
@@ -161,13 +169,15 @@ impl GlobalChat {
         ui_catalog.set_loaded(item_ui_key);
 
         global_chat_messages.username_and_message_item_ui = Some(item_ui_handle.clone());
-        global_chat_messages.sync_with_collection(ui_manager, asset_manager, message_q);
+        global_chat_messages.sync_with_collection(ui_manager, asset_manager, user_presence, user_q, message_q);
     }
 
     pub(crate) fn on_load_message_item_ui(
         ui_catalog: &mut UiCatalog,
         ui_manager: &mut UiManager,
         asset_manager: &AssetManager,
+        user_presence: &UserPresence,
+        user_q: &Query<&PresentUserInfo>,
         message_q: &Query<&GlobalChatMessage>,
         global_chat_messages: &mut GlobalChat,
     ) {
@@ -177,13 +187,15 @@ impl GlobalChat {
         ui_catalog.set_loaded(item_ui_key);
 
         global_chat_messages.message_item_ui = Some(item_ui_handle.clone());
-        global_chat_messages.sync_with_collection(ui_manager, asset_manager, message_q);
+        global_chat_messages.sync_with_collection(ui_manager, asset_manager, user_presence, user_q, message_q);
     }
 
     pub fn recv_message(
         &mut self,
         ui_manager: &mut UiManager,
         asset_manager: &AssetManager,
+        user_presence: &UserPresence,
+        user_q: &Query<&PresentUserInfo>,
         message_q: &Query<&GlobalChatMessage>,
         message_id: GlobalChatMessageId,
         message_entity: Entity,
@@ -194,13 +206,15 @@ impl GlobalChat {
             self.global_chats.pop_first();
         }
 
-        self.sync_with_collection(ui_manager, asset_manager, message_q);
+        self.sync_with_collection(ui_manager, asset_manager, user_presence, user_q, message_q);
     }
 
     pub fn sync_with_collection(
         &mut self,
         ui_manager: &mut UiManager,
         asset_manager: &AssetManager,
+        user_presence: &UserPresence,
+        user_q: &Query<&PresentUserInfo>,
         message_q: &Query<&GlobalChatMessage>,
     ) {
         if self.message_item_ui.is_none()
@@ -249,6 +263,8 @@ impl GlobalChat {
                 // add username if necessary
                 if prev_user_id_opt.is_none() || added_divider {
                     Self::add_username_and_message_item(
+                        user_presence,
+                        user_q,
                         item_ctx,
                         username_and_message_ui_handle,
                         message,
@@ -256,6 +272,8 @@ impl GlobalChat {
                 } else if prev_user_id_opt.unwrap() != message_user_id {
                     Self::add_message_item(item_ctx, message_ui_handle, " "); // blank space
                     Self::add_username_and_message_item(
+                        user_presence,
+                        user_q,
                         item_ctx,
                         username_and_message_ui_handle,
                         message,
@@ -280,14 +298,22 @@ impl GlobalChat {
     }
 
     fn add_username_and_message_item(
+        user_presence: &UserPresence,
+        user_q: &Query<&PresentUserInfo>,
         item_ctx: &mut ListUiExtItem<GlobalChatMessageId>,
         ui: &UiHandle,
         message: &GlobalChatMessage,
     ) {
+        let Some(user_info_entity) = user_presence.get_user_info_entity(&message.user_id) else {
+            warn!("User info not found for user_id: {:?}", *message.user_id);
+            return;
+        };
+        let present_user_info = user_q.get(user_info_entity).unwrap();
+        let message_user_name = present_user_info.name.as_str();
+
         item_ctx.add_copied_node(ui);
 
-        let message_user_id: u64 = (*message.user_id).into();
-        item_ctx.set_text_by_str("user_name", message_user_id.to_string().as_str());
+        item_ctx.set_text_by_str("user_name", message_user_name);
 
         let message_timestamp = message.timestamp.time_string();
         item_ctx.set_text_by_str("timestamp", message_timestamp.as_str());

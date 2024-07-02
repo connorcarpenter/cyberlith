@@ -2,7 +2,7 @@ use bevy_ecs::{event::EventReader, prelude::World as BevyWorld};
 
 use naia_bevy_client::events::{DespawnEntityEvent, SpawnEntityEvent};
 
-use session_server_naia_proto::components::GlobalChatMessage;
+use session_server_naia_proto::components::{GlobalChatMessage, PresentUserInfo};
 
 use crate::networked::{
     client_markers::Session,
@@ -36,6 +36,7 @@ pub fn session_insert_component_events(world: &mut BevyWorld) {
 
         // other events
         insert_component_event::<Session, GlobalChatMessage>(world, &events);
+        insert_component_event::<Session, PresentUserInfo>(world, &events);
 
         // info!("]");
     }
