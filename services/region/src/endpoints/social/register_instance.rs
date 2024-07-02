@@ -3,7 +3,7 @@ use std::net::SocketAddr;
 use config::SOCIAL_SERVER_GLOBAL_SECRET;
 use http_client::ResponseError;
 use http_server::{async_dup::Arc, executor::smol::lock::RwLock, ApiServer, Server};
-use logging::{info, warn};
+use logging::warn;
 
 use region_server_http_proto::{SocialRegisterInstanceRequest, SocialRegisterInstanceResponse};
 
@@ -17,7 +17,7 @@ pub fn social_register_instance(host_name: &str, server: &mut Server, state: Arc
 }
 
 async fn async_impl(
-    incoming_addr: SocketAddr,
+    _incoming_addr: SocketAddr,
     state: Arc<RwLock<State>>,
     incoming_request: SocialRegisterInstanceRequest,
 ) -> Result<SocialRegisterInstanceResponse, ResponseError> {

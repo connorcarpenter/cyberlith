@@ -20,6 +20,10 @@ async fn async_impl(
     state: Arc<RwLock<State>>,
     incoming_request: SessionConnectRequest,
 ) -> Result<SessionConnectResponse, ResponseError> {
+
+    let user_id = incoming_request.user_id;
+    let user_name = incoming_request.user_name;
+
     let state = state.read().await;
 
     // send user connection request to social server
@@ -35,7 +39,7 @@ async fn async_impl(
         let request_method = UserConnectedRequest::method();
         let request_path = UserConnectedRequest::path();
 
-        let request = UserConnectedRequest::new(REGION_SERVER_SECRET, incoming_request.user_id, incoming_request.user_name);
+        let request = UserConnectedRequest::new(REGION_SERVER_SECRET, user_id, user_name.clone());
 
         let host = "region";
         let remote = "social";
@@ -72,7 +76,7 @@ async fn async_impl(
 
         let temp_token = random::generate_random_string(16);
         let request =
-            IncomingUserRequest::new(REGION_SERVER_SECRET, incoming_request.user_id, &temp_token);
+            IncomingUserRequest::new(REGION_SERVER_SECRET, user_id, user_name.clone(), &temp_token);
 
         let host = "region";
         let remote = "session";

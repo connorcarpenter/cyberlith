@@ -3,7 +3,7 @@ use std::time::{Duration, Instant};
 use config::REGION_SERVER_SECRET;
 use http_client::{HttpClient, RequestOptions};
 use http_server::{ApiRequest, ApiResponse, Server};
-use logging::{info, warn};
+use logging::warn;
 
 use asset_server_http_proto::{
     HeartbeatRequest as AssetHeartbeatRequest, HeartbeatResponse as AssetHeartbeatResponse,

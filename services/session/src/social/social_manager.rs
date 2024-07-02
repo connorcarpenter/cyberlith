@@ -1,4 +1,4 @@
-use std::collections::{HashMap, VecDeque};
+use std::collections::VecDeque;
 
 use bevy_ecs::{
     change_detection::ResMut,
@@ -14,7 +14,7 @@ use logging::{info, warn};
 use auth_server_types::UserId;
 
 use session_server_http_proto::SocialUserPatch;
-use session_server_naia_proto::components::{GlobalChatMessage, PresentUserInfo};
+use session_server_naia_proto::components::GlobalChatMessage;
 
 use social_server_http_proto::{GlobalChatSendMessageRequest, GlobalChatSendMessageResponse, UserDisconnectedRequest, UserDisconnectedResponse};
 use social_server_types::{GlobalChatMessageId, Timestamp};
@@ -41,9 +41,6 @@ pub struct SocialManager {
     queued_requests: Vec<QueuedRequest>,
     in_flight_requests: Vec<InFlightRequest>,
 
-    // id, name
-    present_users: HashMap<UserId, Entity>,
-
     global_chat_room_key: Option<RoomKey>,
     global_chat_log: VecDeque<Entity>,
 }
@@ -54,8 +51,6 @@ impl SocialManager {
             social_server_opt: None,
             in_flight_requests: Vec::new(),
             queued_requests: Vec::new(),
-
-            present_users: HashMap::new(),
 
             global_chat_room_key: None,
             global_chat_log: VecDeque::new(),
@@ -91,12 +86,13 @@ impl SocialManager {
         mut http_client: ResMut<HttpClient>,
         mut social_manager: ResMut<Self>,
         session_instance: Res<SessionInstance>,
-        user_manager: Res<UserManager>,
+        mut user_manager: ResMut<UserManager>,
     ) {
         social_manager.process_in_flight_requests(
             &mut commands,
             &mut naia_server,
             &mut http_client,
+            &mut user_manager,
         );
         social_manager.process_queued_requests(&mut http_client, &session_instance, &user_manager);
     }
@@ -146,6 +142,7 @@ impl SocialManager {
         commands: &mut Commands,
         naia_server: &mut Server,
         http_client: &mut HttpClient,
+        user_manager: &mut UserManager,
     ) {
         if self.in_flight_requests.is_empty() {
             // no in-flight requests
@@ -177,6 +174,7 @@ impl SocialManager {
                                 self.log_global_chat_message(
                                     commands,
                                     naia_server,
+                                    user_manager,
                                     &global_chat_id,
                                     &timestamp,
                                     sending_user_id,
@@ -205,8 +203,7 @@ impl SocialManager {
                             Ok(_response) => {
                                 info!("received user disconnect response from social server");
 
-                                self.remove_present_user(
-                                    commands,
+                                user_manager.user_set_offline(
                                     user_id,
                                 );
                             }
@@ -230,6 +227,7 @@ impl SocialManager {
         &mut self,
         commands: &mut Commands,
         naia_server: &mut Server,
+        user_manager: &mut UserManager,
         user_patches: &Vec<SocialUserPatch>,
     ) {
         for user_patch in user_patches {
@@ -237,55 +235,26 @@ impl SocialManager {
                 SocialUserPatch::Add(user_id, user_name) => {
                     info!("adding user - [userid {:?}]:(`{:?}`)", user_id, user_name);
 
-                    self.add_present_user(commands, naia_server, user_id, user_name);
+                    if user_manager.has_user_data(user_id) {
+                        // warn!("user already exists - [userid {:?}]", user_id);
+                        continue;
+                    }
+
+                    user_manager.add_user_data(
+                        commands,
+                        naia_server,
+                        &self.get_global_chat_room_key(),
+                        user_id,
+                        user_name
+                    );
                 }
                 SocialUserPatch::Remove(user_id) => {
                     info!("removing user - [userid {:?}]", user_id);
 
-                    self.remove_present_user(commands, user_id);
+                    user_manager.user_set_offline(user_id);
                 }
             }
         }
-    }
-
-    fn add_present_user(
-        &mut self,
-        commands: &mut Commands,
-        naia_server: &mut Server,
-        user_id: &UserId,
-        user_name: &str,
-    ) {
-        // info!("adding present user - [userid {:?}]:(`{:?}`)", user_id, user_name);
-        // convert to entity + component
-        let present_user_id = commands
-            .spawn_empty()
-            .enable_replication(naia_server)
-            .insert(PresentUserInfo::new(
-                *user_id,
-                user_name,
-            ))
-            .id();
-
-        naia_server
-            .room_mut(&self.get_global_chat_room_key())
-            .add_entity(&present_user_id);
-
-        // add to local log
-        self.present_users.insert(*user_id, present_user_id);
-    }
-
-    fn remove_present_user(
-        &mut self,
-        commands: &mut Commands,
-        user_id: &UserId,
-    ) {
-        let present_user_id = self.present_users.remove(user_id).unwrap();
-
-        // info!("removing present user - [userid {:?}]", user_id);
-        // convert to entity + component
-        commands
-            .entity(present_user_id)
-            .despawn();
     }
 
     pub fn send_user_disconnect_req(
@@ -331,11 +300,10 @@ impl SocialManager {
         sending_user_key: &UserKey,
         message: &str,
     ) {
-        let Some(user_data) = user_manager.get_user_data(sending_user_key) else {
+        let Some(sending_user_id) = user_manager.user_key_to_id(sending_user_key) else {
             warn!("User not found: {:?}", sending_user_key);
             return;
         };
-        let sending_user_id = user_data.user_id;
 
         let Some((social_server_addr, social_server_port)) = self.get_social_server_url() else {
             warn!("received global chat message but no social server is available!");
@@ -370,22 +338,26 @@ impl SocialManager {
         &mut self,
         commands: &mut Commands,
         naia_server: &mut Server,
+        user_manager: &UserManager,
         global_chat_id: &GlobalChatMessageId,
         timestamp: &Timestamp,
         sending_user_id: &UserId,
         message: &str,
     ) {
-        // info!("logging global chat message - [userid {:?}]:(`{:?}`)", sending_user_id, message);
-        // convert to entity + component
+        let Some(user_entity) = user_manager.get_user_entity(sending_user_id) else {
+            panic!("User not found: {:?}", sending_user_id);
+        };
+        let global_chat_message = GlobalChatMessage::new(
+            naia_server,
+            *global_chat_id,
+            *timestamp,
+            user_entity,
+            message,
+        );
         let global_chat_message_id = commands
             .spawn_empty()
             .enable_replication(naia_server)
-            .insert(GlobalChatMessage::new(
-                *global_chat_id,
-                *timestamp,
-                *sending_user_id,
-                message,
-            ))
+            .insert(global_chat_message)
             .id();
 
         naia_server
@@ -406,6 +378,7 @@ impl SocialManager {
         &mut self,
         commands: &mut Commands,
         naia_server: &mut Server,
+        user_manager: &UserManager,
         new_messages: &Vec<(GlobalChatMessageId, Timestamp, UserId, String)>,
     ) {
         for (msg_id, timestamp, user_id, message) in new_messages {
@@ -414,6 +387,7 @@ impl SocialManager {
             self.log_global_chat_message(
                 commands,
                 naia_server,
+                user_manager,
                 msg_id,
                 timestamp,
                 user_id,

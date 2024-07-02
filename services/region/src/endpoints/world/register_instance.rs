@@ -1,6 +1,6 @@
 use std::net::SocketAddr;
 
-use logging::{info, warn};
+use logging::warn;
 
 use http_client::ResponseError;
 use http_server::{async_dup::Arc, executor::smol::lock::RwLock, ApiServer, Server};
@@ -18,7 +18,7 @@ pub fn world_register_instance(host_name: &str, server: &mut Server, state: Arc<
 }
 
 async fn async_impl(
-    incoming_addr: SocketAddr,
+    _incoming_addr: SocketAddr,
     state: Arc<RwLock<State>>,
     incoming_request: WorldRegisterInstanceRequest,
 ) -> Result<WorldRegisterInstanceResponse, ResponseError> {

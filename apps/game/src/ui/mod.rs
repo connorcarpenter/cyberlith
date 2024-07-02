@@ -17,12 +17,12 @@ use bevy_ecs::{
 use game_engine::{
     asset::{AssetId, AssetManager},
     input::{GamepadRumbleIntensity, Input, InputEvent, RumbleManager},
-    session::{SessionClient, components::{GlobalChatMessage, PresentUserInfo}},
+    session::{SessionClient, components::{GlobalChatMessage, PublicUserInfo}},
     ui::{UiHandle, UiManager},
 };
 
 use crate::{
-    resources::{global_chat::GlobalChat, user_presence::UserPresence},
+    resources::{global_chat::GlobalChat, user_manager::UserManager},
     states::AppState,
     ui::events::{
         DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent,
@@ -46,12 +46,12 @@ pub enum UiKey {
 pub(crate) fn on_ui_load(
     state: AppState,
     next_state: &mut NextState<AppState>,
+    session_client: &SessionClient,
     ui_manager: &mut UiManager,
     ui_catalog: &mut UiCatalog,
     asset_manager: &AssetManager,
-    user_presence: &UserPresence,
     global_chat_messages: &mut GlobalChat,
-    user_q: &Query<&PresentUserInfo>,
+    user_q: &Query<&PublicUserInfo>,
     message_q: &Query<&GlobalChatMessage>,
     asset_id: AssetId,
 ) {
@@ -65,37 +65,37 @@ pub(crate) fn on_ui_load(
         UiKey::MainMenu => main_menu::on_load(state, next_state, ui_catalog, ui_manager),
         UiKey::HostMatch => host_match::on_load(ui_catalog, ui_manager),
         UiKey::GlobalChat => GlobalChat::on_load_container_ui(
+            session_client,
             ui_catalog,
             ui_manager,
             asset_manager,
-            user_presence,
             &user_q,
             &message_q,
             global_chat_messages,
         ),
         UiKey::GlobalChatDayDivider => GlobalChat::on_load_day_divider_item_ui(
+            session_client,
             ui_catalog,
             ui_manager,
             asset_manager,
-            user_presence,
             &user_q,
             &message_q,
             global_chat_messages,
         ),
         UiKey::GlobalChatUsernameAndMessage => GlobalChat::on_load_username_and_message_item_ui(
+            session_client,
             ui_catalog,
             ui_manager,
             asset_manager,
-            user_presence,
             &user_q,
             &message_q,
             global_chat_messages,
         ),
         UiKey::GlobalChatMessage => GlobalChat::on_load_message_item_ui(
+            session_client,
             ui_catalog,
             ui_manager,
             asset_manager,
-            user_presence,
             &user_q,
             &message_q,
             global_chat_messages,
@@ -181,11 +181,8 @@ pub(crate) fn handle_global_chat_events(
     mut rumble_manager: ResMut<RumbleManager>,
     mut session_client: SessionClient,
     mut global_chat: ResMut<GlobalChat>,
-    user_presence: Res<UserPresence>,
-
-    user_q: Query<&PresentUserInfo>,
+    user_q: Query<&PublicUserInfo>,
     message_q: Query<&GlobalChatMessage>,
-
     mut input_events: EventReader<InputEvent>,
 ) {
     let Some(active_ui_handle) = ui_manager.active_ui() else {
@@ -206,7 +203,6 @@ pub(crate) fn handle_global_chat_events(
                 &mut ui_manager,
                 &ui_catalog,
                 &asset_manager,
-                &user_presence,
                 &mut session_client,
                 &mut input_events,
                 &user_q,

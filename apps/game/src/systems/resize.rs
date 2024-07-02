@@ -7,19 +7,19 @@ use game_engine::{
         Window,
     },
     ui::UiManager,
-    session::components::{GlobalChatMessage, PresentUserInfo},
+    session::{components::{GlobalChatMessage, PublicUserInfo}, SessionClient},
 };
 
-use crate::resources::{user_presence::UserPresence, global_chat::GlobalChat};
+use crate::resources::global_chat::GlobalChat;
 
 pub fn handle_viewport_resize(
     mut window: ResMut<Window>,
+    session_client: SessionClient,
     mut global_chat: ResMut<GlobalChat>,
     mut ui_manager: ResMut<UiManager>,
     asset_manager: Res<AssetManager>,
-    user_presence: Res<UserPresence>,
     mut cameras_q: Query<&mut Camera>,
-    user_q: Query<&PresentUserInfo>,
+    user_q: Query<&PublicUserInfo>,
     message_q: Query<&GlobalChatMessage>,
 ) {
     // sync camera viewport to window
@@ -45,7 +45,7 @@ pub fn handle_viewport_resize(
 
             //info!("resize window detected. new viewport: (x: {:?}, y: {:?}, width: {:?}, height: {:?})", new_viewport.x, new_viewport.y, new_viewport.width, new_viewport.height);
 
-            global_chat.sync_with_collection(&mut ui_manager, &asset_manager, &user_presence, &user_q, &message_q);
+            global_chat.sync_with_collection(&session_client, &mut ui_manager, &asset_manager, &user_q, &message_q);
         }
     }
 }

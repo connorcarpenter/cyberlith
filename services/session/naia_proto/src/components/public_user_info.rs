@@ -2,19 +2,15 @@ use bevy_ecs::prelude::Component;
 
 use naia_bevy_shared::{Property, Replicate};
 
-use auth_server_types::UserId;
-
 #[derive(Component, Replicate)]
-pub struct PresentUserInfo {
-    pub id: Property<UserId>,
+pub struct PublicUserInfo {
     pub name: Property<String>,
 }
 
-impl PresentUserInfo {
+impl PublicUserInfo {
     pub fn new(
-        id: UserId,
         name: &str,
     ) -> Self {
-        Self::new_complete(id, name.to_string())
+        Self::new_complete(name.to_string())
     }
 }

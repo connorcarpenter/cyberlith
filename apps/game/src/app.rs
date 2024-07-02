@@ -12,7 +12,7 @@ use game_engine::{
 
 use super::systems::{cube_scene, draw, init_spinner, resize, session, walker_scene, world};
 use crate::{
-    resources::{global_chat::GlobalChat, AssetCatalog, user_presence::UserPresence},
+    resources::{global_chat::GlobalChat, AssetCatalog, user_manager::UserManager},
     states::AppState,
     ui,
     ui::{
@@ -50,7 +50,7 @@ impl Plugin for GameApp {
                 ..Default::default()
             })
             .init_resource::<GlobalChat>()
-            .init_resource::<UserPresence>()
+            .init_resource::<UserManager>()
             .insert_resource(UiCatalog::new())
             .insert_resource(AssetCatalog::new())
             // states

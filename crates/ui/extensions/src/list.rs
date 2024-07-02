@@ -141,6 +141,9 @@ impl<K: Hash + Eq + Copy + Clone + PartialEq> ListUiExt<K> {
     }
 
     pub fn scroll_down(&mut self) {
+        if self.item_count == 0 {
+            return;
+        }
         if self.visible_item_max_index < self.item_count - 1 {
             self.visible_item_min_index += 1;
             self.visible_item_max_index += 1;

@@ -23,9 +23,7 @@ pub fn message_events(
     for events in event_reader.read() {
         // World Connect Request
         for (user_key, _req) in events.read::<ClientActionsChannel, WorldConnectRequest>() {
-            if let Some(user_data) = user_manager.get_user_data_mut(&user_key) {
-                user_data.make_ready_for_world_connect();
-            } else {
+            if user_manager.make_ready_for_world_connect(&user_key).is_err() {
                 warn!("User not found: {:?}", user_key);
             }
         }

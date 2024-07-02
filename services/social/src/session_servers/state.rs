@@ -69,32 +69,8 @@ impl SessionServersState {
 
         // update with full state
 
-        // sync global chat
-        {
-            let request = SocialPatchGlobalChatMessagesRequest::new(
-                SOCIAL_SERVER_GLOBAL_SECRET,
-                global_chat_full_log,
-            );
-            let response = HttpClient::send(recv_addr, recv_port, request).await;
-            match response {
-                Ok(_) => {
-                    info!(
-                    "from {:?}:{} - global chat init messages sent",
-                    recv_addr, recv_port
-                );
-                }
-                Err(e) => {
-                    warn!(
-                    "from {:?}:{} - global chat init messages send failed: {:?}",
-                    recv_addr,
-                    recv_port,
-                    e.to_string()
-                );
-                }
-            }
-        }
 
-        // sync user presence
+        // sync users
         {
             let user_patches = present_users
                 .iter()
@@ -115,6 +91,31 @@ impl SessionServersState {
                 Err(e) => {
                     warn!(
                     "from {:?}:{} - present users init req send failed: {:?}",
+                    recv_addr,
+                    recv_port,
+                    e.to_string()
+                );
+                }
+            }
+        }
+
+        // sync global chat
+        {
+            let request = SocialPatchGlobalChatMessagesRequest::new(
+                SOCIAL_SERVER_GLOBAL_SECRET,
+                global_chat_full_log,
+            );
+            let response = HttpClient::send(recv_addr, recv_port, request).await;
+            match response {
+                Ok(_) => {
+                    info!(
+                    "from {:?}:{} - global chat init messages sent",
+                    recv_addr, recv_port
+                );
+                }
+                Err(e) => {
+                    warn!(
+                    "from {:?}:{} - global chat init messages send failed: {:?}",
                     recv_addr,
                     recv_port,
                     e.to_string()

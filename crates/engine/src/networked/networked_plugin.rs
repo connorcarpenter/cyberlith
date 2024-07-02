@@ -9,7 +9,7 @@ use naia_bevy_client::{
 use kernel::http::CookieStore;
 
 use session_server_naia_proto::{
-    components::{GlobalChatMessage, PresentUserInfo}, protocol as session_server_naia_protocol,
+    components::{GlobalChatMessage, PublicUserInfo}, protocol as session_server_naia_protocol,
 };
 use world_server_naia_proto::{
     components::{Alt1, Main, Position},
@@ -95,6 +95,6 @@ impl Plugin for NetworkedEnginePlugin {
             .add_event::<SessionDespawnEntityEvent>()
             .add_event::<DespawnEntityEvent<World>>()
             .add_event::<SessionInsertComponentEvent<GlobalChatMessage>>()
-            .add_event::<SessionInsertComponentEvent<PresentUserInfo>>();
+            .add_event::<SessionInsertComponentEvent<PublicUserInfo>>();
     }
 }

@@ -1,0 +1,72 @@
+use std::time::Instant;
+
+use bevy_ecs::entity::Entity;
+
+use naia_bevy_server::UserKey;
+
+pub(crate) struct UserData {
+    user_key: Option<UserKey>,
+    public_entity: Entity,
+    is_online: bool,
+
+    world_connect_last_sent_to_region: Option<Instant>,
+    ready_for_world_connect: bool,
+
+    // LATER this may be used to send meaningful data about a user back to the given world server instance..
+    world_instance_secret: Option<String>,
+}
+
+impl UserData {
+    pub fn new(public_entity: Entity) -> Self {
+        Self {
+            user_key: None,
+            public_entity,
+            is_online: true,
+
+            world_connect_last_sent_to_region: None,
+            ready_for_world_connect: false,
+
+            world_instance_secret: None, // tells us whether user is connected
+        }
+    }
+
+    pub fn ready_for_world_connect(&self) -> bool {
+        self.ready_for_world_connect
+    }
+
+    pub fn make_ready_for_world_connect(&mut self) {
+        self.ready_for_world_connect = true;
+    }
+
+    pub fn world_connect_last_sent_to_region(&self) -> Option<Instant> {
+        self.world_connect_last_sent_to_region
+    }
+
+    pub fn set_world_connect_last_sent_to_region(&mut self, instant: Instant) {
+        self.world_connect_last_sent_to_region = Some(instant);
+    }
+
+    pub fn is_world_connected(&self) -> bool {
+        self.world_instance_secret.is_some()
+    }
+
+    pub fn set_world_connected(&mut self, world_instance_secret: &str) {
+        self.world_instance_secret = Some(world_instance_secret.to_string());
+    }
+
+    pub fn user_entity(&self) -> Entity {
+        self.public_entity
+    }
+
+    pub fn add_user_key(&mut self, user_key: &UserKey) {
+        self.user_key = Some(*user_key);
+    }
+
+    pub fn remove_user_key(&mut self) {
+        self.user_key = None;
+    }
+
+    pub fn set_offline(&mut self) {
+        self.is_online = false;
+    }
+}

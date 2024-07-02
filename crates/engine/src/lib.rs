@@ -57,9 +57,9 @@ pub mod http {
     pub use kernel::http::*;
 }
 pub use logging;
-pub mod auth {
-    pub use auth_server_types::*;
-}
+// pub mod auth {
+//     pub use auth_server_types::*;
+// }
 pub mod social {
     pub use social_server_types::*;
 }
