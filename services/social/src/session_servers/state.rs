@@ -4,7 +4,7 @@ use auth_server_types::UserId;
 use config::SOCIAL_SERVER_GLOBAL_SECRET;
 use http_client::HttpClient;
 use logging::{info, warn};
-use session_server_http_proto::SocialPatchGlobalChatMessagesRequest;
+use session_server_http_proto::{SocialPatchGlobalChatMessagesRequest, SocialPatchUsersRequest, SocialUserPatch};
 use social_server_types::{GlobalChatMessageId, Timestamp};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -58,6 +58,7 @@ impl SessionServersState {
         instance_secret: &str,
         recv_addr: &str,
         recv_port: u16,
+        present_users: Vec<(UserId, String)>,
         global_chat_full_log: Vec<(GlobalChatMessageId, Timestamp, UserId, String)>,
     ) {
         let id = self.next_session_id();
@@ -67,25 +68,58 @@ impl SessionServersState {
             .insert(instance_secret.to_string(), id);
 
         // update with full state
-        let request = SocialPatchGlobalChatMessagesRequest::new(
-            SOCIAL_SERVER_GLOBAL_SECRET,
-            global_chat_full_log,
-        );
-        let response = HttpClient::send(recv_addr, recv_port, request).await;
-        match response {
-            Ok(_) => {
-                info!(
+
+        // sync global chat
+        {
+            let request = SocialPatchGlobalChatMessagesRequest::new(
+                SOCIAL_SERVER_GLOBAL_SECRET,
+                global_chat_full_log,
+            );
+            let response = HttpClient::send(recv_addr, recv_port, request).await;
+            match response {
+                Ok(_) => {
+                    info!(
                     "from {:?}:{} - global chat init messages sent",
                     recv_addr, recv_port
                 );
-            }
-            Err(e) => {
-                warn!(
+                }
+                Err(e) => {
+                    warn!(
                     "from {:?}:{} - global chat init messages send failed: {:?}",
                     recv_addr,
                     recv_port,
                     e.to_string()
                 );
+                }
+            }
+        }
+
+        // sync user presence
+        {
+            let user_patches = present_users
+                .iter()
+                .map(|(user_id, user_name)| SocialUserPatch::Add(*user_id, user_name.clone()))
+                .collect();
+            let request = SocialPatchUsersRequest::new(
+                SOCIAL_SERVER_GLOBAL_SECRET,
+                user_patches,
+            );
+            let response = HttpClient::send(recv_addr, recv_port, request).await;
+            match response {
+                Ok(_) => {
+                    info!(
+                    "from {:?}:{} - present users init req sent",
+                    recv_addr, recv_port
+                );
+                }
+                Err(e) => {
+                    warn!(
+                    "from {:?}:{} - present users init req send failed: {:?}",
+                    recv_addr,
+                    recv_port,
+                    e.to_string()
+                );
+                }
             }
         }
     }

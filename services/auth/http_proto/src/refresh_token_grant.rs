@@ -21,13 +21,15 @@ impl RefreshTokenGrantRequest {
 #[derive(Serde, PartialEq, Clone)]
 pub struct RefreshTokenGrantResponse {
     pub user_id: UserId,
+    pub user_name: String,
     pub access_token: AccessToken,
 }
 
 impl RefreshTokenGrantResponse {
-    pub fn new(user_id: UserId, access_token: AccessToken) -> Self {
+    pub fn new(user_id: UserId, user_name: String, access_token: AccessToken) -> Self {
         Self {
             user_id,
+            user_name,
             access_token,
         }
     }

@@ -16,6 +16,9 @@ pub(crate) async fn handle(
     _incoming_addr: SocketAddr,
     mut incoming_request: Request,
 ) -> RequestMiddlewareAction {
+
+    // send register token to auth server
+
     let Some(query_string_args) = extract_query_string(&incoming_request.url) else {
         return RequestMiddlewareAction::Continue(incoming_request, None);
     };
@@ -75,6 +78,4 @@ pub(crate) async fn handle(
             return RequestMiddlewareAction::Continue(incoming_request, None);
         }
     }
-
-    // send register token to auth server
 }

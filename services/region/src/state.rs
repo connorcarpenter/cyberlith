@@ -176,6 +176,10 @@ impl State {
         }
     }
 
+    pub fn get_social_server(&self) -> Option<&SocialInstance> {
+        self.social_instance.as_ref()
+    }
+
     pub fn get_available_session_server(&self) -> Option<&SessionInstance> {
         // TODO: load balance
         self.session_instances.values().next()

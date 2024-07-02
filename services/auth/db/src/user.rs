@@ -1,8 +1,10 @@
-use auth_server_types::UserId;
-use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 
+use serde::{Deserialize, Serialize};
+
 use db::{DbRowKey, DbRowValue, DbTableKey};
+
+use auth_server_types::UserId;
 
 // users table key
 pub struct Users;

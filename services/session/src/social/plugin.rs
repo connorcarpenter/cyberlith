@@ -23,6 +23,7 @@ impl Plugin for SocialPlugin {
                 (
                     SocialManager::update,
                     http_endpoints::recv_patch_global_chat_messages_request,
+                    http_endpoints::recv_patch_users_request,
                 )
                     .in_set(ReceiveEvents),
             );

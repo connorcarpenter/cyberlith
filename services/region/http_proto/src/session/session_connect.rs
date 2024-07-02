@@ -9,11 +9,12 @@ use session_server_naia_proto::messages::AuthInner as SessionAuth;
 #[derive(Serde, PartialEq, Clone)]
 pub struct SessionConnectRequest {
     pub user_id: UserId,
+    pub user_name: String,
 }
 
 impl SessionConnectRequest {
-    pub fn new(user_id: UserId) -> Self {
-        Self { user_id }
+    pub fn new(user_id: UserId, user_name: String) -> Self {
+        Self { user_id, user_name }
     }
 }
 

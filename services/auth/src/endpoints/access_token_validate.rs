@@ -28,7 +28,7 @@ async fn async_impl(
 
     let mut state = state.write().await;
     let response = match state.access_token_validate(incoming_request) {
-        Ok(user_id) => Ok(AccessTokenValidateResponse::new(user_id)),
+        Ok((user_id, user_name)) => Ok(AccessTokenValidateResponse::new(user_id, user_name)),
         Err(AuthServerError::TokenNotFound) => Err(ResponseError::Unauthenticated),
         Err(_) => {
             panic!("unhandled error for this endpoint");
@@ -43,12 +43,13 @@ impl State {
     fn access_token_validate(
         &mut self,
         request: AccessTokenValidateRequest,
-    ) -> Result<UserId, AuthServerError> {
+    ) -> Result<(UserId, String), AuthServerError> {
         let access_token = request.access_token;
 
         let Some(user_id) = self.get_access_token(&access_token) else {
             return Err(AuthServerError::TokenNotFound);
         };
-        return Ok(user_id.clone());
+        let user_name = self.get_user_name(&user_id).unwrap();
+        return Ok((user_id.clone(), user_name.clone()));
     }
 }

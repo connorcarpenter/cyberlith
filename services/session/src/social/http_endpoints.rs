@@ -5,11 +5,9 @@ use naia_bevy_server::Server;
 use bevy_http_client::ResponseError;
 use bevy_http_server::HttpServer;
 use config::SOCIAL_SERVER_GLOBAL_SECRET;
-use logging::warn;
+use logging::{info, warn};
 
-use session_server_http_proto::{
-    SocialPatchGlobalChatMessagesRequest, SocialPatchGlobalChatMessagesResponse,
-};
+use session_server_http_proto::{SocialPatchGlobalChatMessagesRequest, SocialPatchGlobalChatMessagesResponse, SocialPatchUsersRequest, SocialPatchUsersResponse};
 
 use crate::social::SocialManager;
 
@@ -28,6 +26,8 @@ pub fn recv_patch_global_chat_messages_request(
             continue;
         }
 
+        info!("received patch global chat messages request");
+
         social_manager.patch_global_chat_messages(
             &mut commands,
             &mut naia_server,
@@ -36,5 +36,33 @@ pub fn recv_patch_global_chat_messages_request(
 
         // responding
         http_server.respond(response_key, Ok(SocialPatchGlobalChatMessagesResponse));
+    }
+}
+
+pub fn recv_patch_users_request(
+    mut commands: Commands,
+    mut social_manager: ResMut<SocialManager>,
+    mut http_server: ResMut<HttpServer>,
+    mut naia_server: Server,
+) {
+    while let Some((_addr, request, response_key)) =
+        http_server.receive::<SocialPatchUsersRequest>()
+    {
+        if request.social_secret() != SOCIAL_SERVER_GLOBAL_SECRET {
+            warn!("invalid request secret");
+            http_server.respond(response_key, Err(ResponseError::Unauthenticated));
+            continue;
+        }
+
+        info!("received patch users request");
+
+        social_manager.patch_users(
+            &mut commands,
+            &mut naia_server,
+            request.user_patches(),
+        );
+
+        // responding
+        http_server.respond(response_key, Ok(SocialPatchUsersResponse));
     }
 }

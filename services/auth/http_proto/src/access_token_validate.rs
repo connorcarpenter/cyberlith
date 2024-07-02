@@ -18,14 +18,15 @@ impl AccessTokenValidateRequest {
 }
 
 // Response
-#[derive(Serde, PartialEq, Clone, Copy)]
+#[derive(Serde, PartialEq, Clone)]
 pub struct AccessTokenValidateResponse {
     pub user_id: UserId,
+    pub user_name: String,
 }
 
 impl AccessTokenValidateResponse {
-    pub fn new(user_id: UserId) -> Self {
-        Self { user_id }
+    pub fn new(user_id: UserId, user_name: String) -> Self {
+        Self { user_id, user_name }
     }
 }
 

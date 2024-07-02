@@ -1,4 +1,3 @@
-use auth_server_types::UserId;
 use std::net::SocketAddr;
 
 use config::{TargetEnv, AUTH_SERVER_PORT, AUTH_SERVER_RECV_ADDR, PUBLIC_IP_ADDR};
@@ -10,6 +9,7 @@ use auth_server_http_proto::{
     AccessToken, AccessTokenValidateRequest, AccessTokenValidateResponse, RefreshToken,
     RefreshTokenGrantRequest, RefreshTokenGrantResponse,
 };
+use auth_server_types::UserId;
 
 pub(crate) async fn require_auth_tokens(
     incoming_addr: SocketAddr,
@@ -17,15 +17,16 @@ pub(crate) async fn require_auth_tokens(
 ) -> RequestMiddlewareAction {
     // get access token from cookie on incoming_request
     match auth_impl(&incoming_addr, &incoming_request).await {
-        AuthResult::Continue(user_id) => {
+        AuthResult::Continue(user_id, user_name) => {
             // success
             let mut continuing_request = incoming_request;
             let user_id: u64 = user_id.into();
             continuing_request.insert_header("user_id", &user_id.to_string());
+            continuing_request.insert_header("user_name", &user_name);
 
             RequestMiddlewareAction::Continue(continuing_request, None)
         }
-        AuthResult::ContinueAndNewAccessToken(user_id, access_token) => {
+        AuthResult::ContinueAndNewAccessToken(user_id, user_name, access_token) => {
             let mut cookies = Vec::new();
 
             let access_token_value = AccessToken::get_new_cookie_value(
@@ -39,6 +40,7 @@ pub(crate) async fn require_auth_tokens(
             let mut continuing_request = incoming_request;
             let user_id: u64 = user_id.into();
             continuing_request.insert_header("user_id", &user_id.to_string());
+            continuing_request.insert_header("user_name", &user_name);
 
             RequestMiddlewareAction::Continue(continuing_request, Some(cookies))
         }
@@ -73,16 +75,17 @@ async fn require_auth_tokens_or_redirect(
 ) -> RequestMiddlewareAction {
     let url = incoming_request.url.clone();
     match auth_impl(&incoming_addr, &incoming_request).await {
-        AuthResult::Continue(user_id) => {
+        AuthResult::Continue(user_id, user_name) => {
             // success
 
             let mut continuing_request = incoming_request;
             let user_id: u64 = user_id.into();
             continuing_request.insert_header("user_id", &user_id.to_string());
+            continuing_request.insert_header("user_name", &user_name);
 
             RequestMiddlewareAction::Continue(continuing_request, None)
         }
-        AuthResult::ContinueAndNewAccessToken(user_id, access_token) => {
+        AuthResult::ContinueAndNewAccessToken(user_id, user_name, access_token) => {
             let mut cookies_set = Vec::new();
             let access_token_value = AccessToken::get_new_cookie_value(
                 PUBLIC_IP_ADDR,
@@ -94,6 +97,7 @@ async fn require_auth_tokens_or_redirect(
             let mut continuing_request = incoming_request;
             let user_id: u64 = user_id.into();
             continuing_request.insert_header("user_id", &user_id.to_string());
+            continuing_request.insert_header("user_name", &user_name);
 
             RequestMiddlewareAction::Continue(continuing_request, Some(cookies_set))
         }
@@ -128,13 +132,13 @@ async fn if_auth_tokens_redirect(
 ) -> RequestMiddlewareAction {
     let url = incoming_request.url.clone();
     match auth_impl(&incoming_addr, &incoming_request).await {
-        AuthResult::Continue(_user_id) => {
+        AuthResult::Continue(_user_id, _user_name) => {
             // success
             // info!("sending redirect to /game");
             let response = Response::redirect(&url, new_url);
             RequestMiddlewareAction::Stop(response)
         }
-        AuthResult::ContinueAndNewAccessToken(_user_id, access_token) => {
+        AuthResult::ContinueAndNewAccessToken(_user_id, _user_name, access_token) => {
             let mut response = Response::redirect(&url, new_url);
 
             let access_token_value = AccessToken::get_new_cookie_value(
@@ -167,8 +171,10 @@ async fn if_auth_tokens_redirect(
 }
 
 enum AuthResult {
-    Continue(UserId),
-    ContinueAndNewAccessToken(UserId, String),
+    // user id, user name
+    Continue(UserId, String),
+    // user id, user name, access token
+    ContinueAndNewAccessToken(UserId, String, String),
     // clear access token?, clear refresh token?
     Stop(bool, bool),
 }
@@ -213,7 +219,7 @@ async fn auth_impl(_incoming_addr: &SocketAddr, incoming_request: &Request) -> A
                 );
 
                 if let Ok(validate_response) = validate_result {
-                    return AuthResult::Continue(validate_response.user_id);
+                    return AuthResult::Continue(validate_response.user_id, validate_response.user_name);
                 }
             }
         }
@@ -239,6 +245,7 @@ async fn auth_impl(_incoming_addr: &SocketAddr, incoming_request: &Request) -> A
                 if let Ok(grant_response) = grant_result {
                     return AuthResult::ContinueAndNewAccessToken(
                         grant_response.user_id,
+                        grant_response.user_name,
                         grant_response.access_token.to_string(),
                     );
                 }

@@ -10,7 +10,8 @@ use naia_bevy_server::{CommandsExt, RoomKey, Server, UserKey};
 
 use auth_server_types::UserId;
 use bevy_http_client::{ApiRequest, ApiResponse, HttpClient, ResponseKey};
-use logging::warn;
+use logging::{info, warn};
+use session_server_http_proto::SocialUserPatch;
 use social_server_types::{GlobalChatMessageId, Timestamp};
 
 use session_server_naia_proto::components::GlobalChatMessage;
@@ -260,6 +261,24 @@ impl SocialManager {
         if self.global_chat_log.len() > 100 {
             let entity_to_delete = self.global_chat_log.pop_front().unwrap();
             commands.entity(entity_to_delete).despawn();
+        }
+    }
+
+    pub(crate) fn patch_users(
+        &mut self,
+        commands: &mut Commands,
+        naia_server: &mut Server,
+        user_patches: &Vec<SocialUserPatch>,
+    ) {
+        for user_patch in user_patches {
+            match user_patch {
+                SocialUserPatch::Add(user_id, user_name) => {
+                    info!("adding user - [userid {:?}]:(`{:?}`)", user_id, user_name);
+                }
+                SocialUserPatch::Remove(user_id) => {
+                    info!("removing user - [userid {:?}]", user_id);
+                }
+            }
         }
     }
 

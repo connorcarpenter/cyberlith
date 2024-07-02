@@ -3,20 +3,25 @@ use naia_serde::SerdeInternal as Serde;
 
 use bevy_http_shared::{ApiRequest, ApiResponse, Method};
 
+#[derive(Serde, PartialEq, Clone)]
+pub enum SocialUserPatch {
+    // id, name
+    Add(UserId, String),
+    Remove(UserId),
+}
+
 // Request
 #[derive(Serde, PartialEq, Clone)]
 pub struct SocialPatchUsersRequest {
     social_secret: String,
-    added_users: Vec<UserId>,
-    removed_users: Vec<UserId>,
+    patches: Vec<SocialUserPatch>,
 }
 
 impl SocialPatchUsersRequest {
-    pub fn new(social_secret: &str, added_users: Vec<UserId>, removed_users: Vec<UserId>) -> Self {
+    pub fn new(social_secret: &str, patches: Vec<SocialUserPatch>) -> Self {
         Self {
             social_secret: social_secret.to_string(),
-            added_users,
-            removed_users,
+            patches
         }
     }
 
@@ -24,12 +29,8 @@ impl SocialPatchUsersRequest {
         &self.social_secret
     }
 
-    pub fn added_users(&self) -> &Vec<UserId> {
-        &self.added_users
-    }
-
-    pub fn removed_users(&self) -> &Vec<UserId> {
-        &self.removed_users
+    pub fn user_patches(&self) -> &Vec<SocialUserPatch> {
+        &self.patches
     }
 }
 

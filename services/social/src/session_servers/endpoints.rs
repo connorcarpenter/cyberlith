@@ -39,6 +39,14 @@ async fn async_recv_connect_session_server_request_impl(
     // setting last heard
     state.region_server.heard_from_region_server();
 
+    // get present users
+    let present_users: Vec<(UserId, String)> = state
+        .users
+        .get_present_users()
+        .iter()
+        .map(|u| u.clone())
+        .collect();
+
     // get full chat log
     let messages: Vec<(GlobalChatMessageId, Timestamp, UserId, String)> = state
         .global_chat
@@ -54,6 +62,7 @@ async fn async_recv_connect_session_server_request_impl(
             request.session_secret(),
             request.http_addr(),
             request.http_port(),
+            present_users,
             messages,
         )
         .await;

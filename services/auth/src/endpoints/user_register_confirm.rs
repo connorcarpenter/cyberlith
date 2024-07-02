@@ -1,7 +1,5 @@
 use logging::info;
 
-use auth_server_db::{AuthServerDbError, User, UserRole};
-use auth_server_types::UserId;
 use http_client::ResponseError;
 use http_server::{
     async_dup::Arc, executor::smol::lock::RwLock, log_util, ApiRequest, ApiResponse, ApiServer,
@@ -11,6 +9,8 @@ use http_server::{
 use auth_server_http_proto::{
     AccessToken, RefreshToken, UserRegisterConfirmRequest, UserRegisterConfirmResponse,
 };
+use auth_server_db::{AuthServerDbError, User, UserRole};
+use auth_server_types::UserId;
 
 use crate::{error::AuthServerError, state::State};
 
@@ -67,8 +67,10 @@ impl State {
             return Err(AuthServerError::TokenNotFound);
         };
 
+        let new_user_name = temp_reg.name.clone();
+
         let new_user = User::new(
-            &temp_reg.name,
+            &new_user_name,
             &temp_reg.email,
             &temp_reg.password,
             UserRole::Free,
@@ -85,7 +87,7 @@ impl State {
         let new_user_id = UserId::new(new_user_id);
 
         // add to username -> id map
-        let Some(id_opt) = self.username_to_id_map.get_mut(&temp_reg.name) else {
+        let Some(id_opt) = self.username_to_id_map.get_mut(&new_user_name) else {
             return Err(AuthServerError::Unknown(
                 "username not found AFTER register confirm".to_string(),
             ));
@@ -111,12 +113,12 @@ impl State {
         *id_opt = Some(new_user_id);
 
         // add user data
-        self.init_user_data(&new_user_id);
+        self.init_user_data(&new_user_id, &new_user_name);
 
         // generate new access and refresh token for user
         let (refresh_token, access_token) = self.user_new_login_gen_tokens(&new_user_id);
 
-        info!("new user created: {:?} - {:?}", new_user_id, temp_reg.name);
+        info!("new user created: {:?} - {:?}", new_user_id, new_user_name);
 
         Ok((refresh_token, access_token))
     }
