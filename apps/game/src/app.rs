@@ -72,7 +72,7 @@ impl Plugin for GameApp {
             .add_systems(Update, world::world_alt1_insert_asset_ref_events)
             .add_systems(Update, session::session_load_asset_events)
             .add_systems(Update, session::recv_inserted_global_chat_component)
-            .add_systems(Update, session::recv_inserted_present_user_component)
+            .add_systems(Update, session::recv_inserted_public_user_info_component)
             // Ui
             .add_systems(Update, ui::handle_events)
             .add_systems(Update, ui::handle_global_chat_events)

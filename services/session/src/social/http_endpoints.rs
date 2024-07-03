@@ -1,8 +1,8 @@
-use bevy_ecs::{change_detection::ResMut, system::{Commands, Res}};
+use bevy_ecs::{change_detection::ResMut, system::Commands};
 
 use naia_bevy_server::Server;
 
-use bevy_http_client::ResponseError;
+use bevy_http_client::{HttpClient, ResponseError};
 use bevy_http_server::HttpServer;
 use config::SOCIAL_SERVER_GLOBAL_SECRET;
 use logging::{info, warn};
@@ -15,7 +15,8 @@ pub fn recv_patch_global_chat_messages_request(
     mut commands: Commands,
     mut social_manager: ResMut<SocialManager>,
     mut http_server: ResMut<HttpServer>,
-    user_manager: Res<UserManager>,
+    mut http_client: ResMut<HttpClient>,
+    mut user_manager: ResMut<UserManager>,
     mut naia_server: Server,
 ) {
     while let Some((_addr, request, response_key)) =
@@ -32,7 +33,8 @@ pub fn recv_patch_global_chat_messages_request(
         social_manager.patch_global_chat_messages(
             &mut commands,
             &mut naia_server,
-            &user_manager,
+            &mut http_client,
+            &mut user_manager,
             request.new_messages(),
         );
 
@@ -45,6 +47,7 @@ pub fn recv_patch_users_request(
     mut commands: Commands,
     mut social_manager: ResMut<SocialManager>,
     mut http_server: ResMut<HttpServer>,
+    mut http_client: ResMut<HttpClient>,
     mut user_manager: ResMut<UserManager>,
     mut naia_server: Server,
 ) {
@@ -62,6 +65,7 @@ pub fn recv_patch_users_request(
         social_manager.patch_users(
             &mut commands,
             &mut naia_server,
+            &mut http_client,
             &mut user_manager,
             request.user_patches(),
         );

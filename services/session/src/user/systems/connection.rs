@@ -22,6 +22,7 @@ pub fn auth_events(
     mut commands: Commands,
     mut user_manager: ResMut<UserManager>,
     social_manager: Res<SocialManager>,
+    mut http_client: ResMut<HttpClient>,
     mut server: Server,
     mut event_reader: EventReader<AuthEvents>,
 ) {
@@ -36,6 +37,7 @@ pub fn auth_events(
                 user_manager.add_connected_user(
                     &mut commands,
                     &mut server,
+                    &mut http_client,
                     &global_chat_room_key,
                     user_key,
                     user_id,

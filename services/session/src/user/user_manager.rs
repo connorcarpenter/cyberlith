@@ -1,13 +1,20 @@
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     time::{Duration, Instant},
 };
 
-use bevy_ecs::{system::Resource, prelude::Commands, entity::Entity};
+use bevy_ecs::{change_detection::ResMut, system::Resource, prelude::Commands, entity::Entity};
 
 use naia_bevy_server::{CommandsExt, RoomKey, Server, UserKey};
 
+use bevy_http_client::{ApiRequest, ApiResponse, HttpClient, ResponseKey};
+use config::{AUTH_SERVER_PORT, AUTH_SERVER_RECV_ADDR};
+use logging::{info, warn};
+
+use auth_server_http_proto::{UserGetRequest, UserGetResponse};
 use auth_server_types::UserId;
+
+use session_server_naia_proto::components::PublicUserInfo;
 
 use crate::user::user_data::UserData;
 
@@ -16,6 +23,7 @@ pub struct UserManager {
     login_tokens: HashMap<String, UserId>,
     user_key_to_id: HashMap<UserKey, UserId>,
     user_data: HashMap<UserId, UserData>,
+    nameless_users: HashSet<UserId>,
 }
 
 impl UserManager {
@@ -24,7 +32,17 @@ impl UserManager {
             login_tokens: HashMap::new(),
             user_key_to_id: HashMap::new(),
             user_data: HashMap::new(),
+            nameless_users: HashSet::new(),
         }
+    }
+
+    // used as a system
+    pub fn update(
+        mut commands: Commands,
+        mut http_client: ResMut<HttpClient>,
+        mut user_manager: ResMut<Self>,
+    ) {
+        user_manager.process_in_flight_requests(&mut commands, &mut http_client);
     }
 
     // Client login
@@ -41,6 +59,7 @@ impl UserManager {
         &mut self,
         commands: &mut Commands,
         naia_server: &mut Server,
+        http_client: &mut HttpClient,
         global_chat_room_key: &RoomKey,
         user_key: UserKey,
         user_id: UserId,
@@ -55,6 +74,7 @@ impl UserManager {
         self.add_user_data(
             commands,
             naia_server,
+            http_client,
             global_chat_room_key,
             &user_id,
         );
@@ -134,43 +154,35 @@ impl UserManager {
         self.user_data.get(user_id).map(|data| data.user_entity())
     }
 
-    fn add_user_public_entity(
+    pub(crate) fn add_user_data(
         &mut self,
         commands: &mut Commands,
         naia_server: &mut Server,
+        http_client: &mut HttpClient,
         global_chat_room_key: &RoomKey,
-    ) -> Entity {
+        user_id: &UserId,
+    ) {
+        if self.user_data.contains_key(user_id) {
+            panic!("user data already exists - [userid {:?}]", user_id);
+        }
+
         // info!("adding present user - [userid {:?}]:(`{:?}`)", user_id, user_name);
         // convert to entity + component
-        let user_entity = commands
+        let user_public_entity = commands
             .spawn_empty()
             .enable_replication(naia_server)
             .id();
 
         naia_server
             .room_mut(global_chat_room_key)
-            .add_entity(&user_entity);
+            .add_entity(&user_public_entity);
 
-        todo!("get username from authserver, then add PublicUserInfo component to user_entity");
+        let user_info_response_key = self.send_user_info_request(http_client, user_id);
 
-        user_entity
-    }
-
-    pub(crate) fn add_user_data(
-        &mut self,
-        commands: &mut Commands,
-        naia_server: &mut Server,
-        global_chat_room_key: &RoomKey,
-        user_id: &UserId,
-    ) {
-        let user_public_entity = self.add_user_public_entity(
-            commands,
-            naia_server,
-            global_chat_room_key,
-        );
-
-        let user_data = UserData::new(user_public_entity);
+        let user_data = UserData::new(user_public_entity, user_info_response_key);
         self.user_data.insert(*user_id, user_data);
+
+        self.nameless_users.insert(*user_id);
     }
 
     pub(crate) fn user_set_offline(
@@ -179,5 +191,70 @@ impl UserManager {
     ) {
         let user_data = self.user_data.get_mut(user_id).unwrap();
         user_data.set_offline();
+    }
+
+    pub fn process_in_flight_requests(
+        &mut self,
+        commands: &mut Commands,
+        http_client: &mut HttpClient,
+    ) {
+        if self.nameless_users.is_empty() {
+            // no in-flight requests
+            return;
+        }
+
+        let mut received_responses = Vec::new();
+        for nameless_user_id in self.nameless_users.iter() {
+            let nameless_user_id = *nameless_user_id;
+            let user_data = self.user_data.get_mut(&nameless_user_id).unwrap();
+            let response_key = user_data.user_info_response_key().unwrap();
+            if let Some(response_result) = http_client.recv(&response_key) {
+                let host = "session";
+                let remote = "auth";
+                bevy_http_client::log_util::recv_res(
+                    host,
+                    remote,
+                    UserGetResponse::name(),
+                );
+
+                match response_result {
+                    Ok(response) => {
+                        info!("received user get response from auth server");
+                        received_responses.push((nameless_user_id, response));
+                    }
+                    Err(e) => {
+                        warn!("error receiving user get response from social server: {:?}", e.to_string());
+                    }
+                }
+            }
+        }
+
+        for (user_id, received_response) in received_responses {
+            self.nameless_users.remove(&user_id);
+
+            let user_data = self.user_data.get_mut(&user_id).unwrap();
+            user_data.received_info_response();
+
+            let user_entity = user_data.user_entity();
+            let user_name = received_response.name;
+            commands.entity(user_entity).insert(PublicUserInfo::new(&user_name));
+        }
+    }
+
+    pub fn send_user_info_request(
+        &mut self,
+        http_client: &mut HttpClient,
+        user_id: &UserId,
+    ) -> ResponseKey<UserGetResponse> {
+        let request = UserGetRequest::new(
+            *user_id,
+        );
+
+        let host = "session";
+        let remote = "auth";
+        bevy_http_client::log_util::send_req(host, remote, UserGetRequest::name());
+        let response_key = http_client.send(AUTH_SERVER_RECV_ADDR, AUTH_SERVER_PORT, request);
+
+        response_key
     }
 }

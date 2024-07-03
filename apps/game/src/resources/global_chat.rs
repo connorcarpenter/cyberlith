@@ -307,12 +307,18 @@ impl GlobalChat {
             warn!("User info not found for Message: {:?}", *message.id);
             return;
         };
-        let public_user_info = user_q.get(user_info_entity).unwrap();
-        let message_user_name = public_user_info.name.as_str();
+
+        let message_user_name = {
+            if let Some(public_user_info) = user_q.get(user_info_entity) {
+                public_user_info.name.as_str().to_string()
+            } else {
+                "?".to_string()
+            }
+        };
 
         item_ctx.add_copied_node(ui);
 
-        item_ctx.set_text_by_str("user_name", message_user_name);
+        item_ctx.set_text_by_str("user_name", message_user_name.as_str());
 
         let message_timestamp = message.timestamp.time_string();
         item_ctx.set_text_by_str("timestamp", message_timestamp.as_str());

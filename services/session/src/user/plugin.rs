@@ -28,6 +28,8 @@ impl Plugin for UserPlugin {
         .add_systems(
             Update,
             (
+                UserManager::update,
+
                 systems::auth_events,
                 systems::connect_events,
                 systems::disconnect_events,

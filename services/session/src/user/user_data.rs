@@ -4,6 +4,10 @@ use bevy_ecs::entity::Entity;
 
 use naia_bevy_server::UserKey;
 
+use bevy_http_client::ResponseKey;
+
+use auth_server_http_proto::UserGetResponse;
+
 pub(crate) struct UserData {
     user_key: Option<UserKey>,
     public_entity: Entity,
@@ -14,10 +18,12 @@ pub(crate) struct UserData {
 
     // LATER this may be used to send meaningful data about a user back to the given world server instance..
     world_instance_secret: Option<String>,
+
+    user_info_response_key: Option<ResponseKey<UserGetResponse>>,
 }
 
 impl UserData {
-    pub fn new(public_entity: Entity) -> Self {
+    pub fn new(public_entity: Entity, user_info_response_key: ResponseKey<UserGetResponse>) -> Self {
         Self {
             user_key: None,
             public_entity,
@@ -27,7 +33,17 @@ impl UserData {
             ready_for_world_connect: false,
 
             world_instance_secret: None, // tells us whether user is connected
+
+            user_info_response_key: Some(user_info_response_key),
         }
+    }
+
+    pub fn user_info_response_key(&self) -> Option<ResponseKey<UserGetResponse>> {
+        self.user_info_response_key
+    }
+
+    pub(crate) fn received_info_response(&mut self) {
+        self.user_info_response_key = None;
     }
 
     pub fn ready_for_world_connect(&self) -> bool {

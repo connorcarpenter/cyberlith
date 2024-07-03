@@ -95,17 +95,16 @@ pub fn recv_inserted_global_chat_component(
     }
 }
 
-pub fn recv_inserted_present_user_component(
+pub fn recv_inserted_public_user_info_component(
     mut event_reader: EventReader<SessionInsertComponentEvent<PublicUserInfo>>,
     users_q: Query<&PublicUserInfo>,
 ) {
     for event in event_reader.read() {
         info!("received Inserted PublicUserInfo from Session Server! (entity: {:?})", event.entity);
 
-        if let Ok(user_info) = users_q.get(event.entity) {
-            let user_name = &*user_info.name;
+        let user_info = users_q.get(event.entity).unwrap();
+        let user_name = &*user_info.name;
 
-            info!("incoming user: [ entity({:?}), name({:?}) ]", event.entity, user_name);
-        }
+        info!("incoming user: [ entity({:?}), name({:?}) ]", event.entity, user_name);
     }
 }
