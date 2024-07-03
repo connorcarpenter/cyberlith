@@ -20,10 +20,10 @@ pub fn scroll_events(
     for event in input_events.read() {
         match event {
             InputEvent::KeyPressed(Key::I, _) => {
-                global.scroll_up(&mut ui_manager, &asset_manager);
+                global.global_chat_scroll_up(&mut ui_manager, &asset_manager);
             }
             InputEvent::KeyPressed(Key::K, _) => {
-                global.scroll_down(&mut ui_manager, &asset_manager);
+                global.global_chat_scroll_down(&mut ui_manager, &asset_manager);
             }
             _ => {}
         }

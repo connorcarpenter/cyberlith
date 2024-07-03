@@ -8,7 +8,7 @@ use bevy_ecs::{
 
 use game_engine::{
     asset::{
-        embedded_asset_event, AssetId, AssetMetadataSerde, AssetType, ETag, EmbeddedAssetEvent,
+        AssetManager, embedded_asset_event, AssetId, AssetMetadataSerde, AssetType, ETag, EmbeddedAssetEvent,
     },
     input::{GamepadRumbleIntensity, Input, RumbleManager},
     render::components::{
@@ -19,7 +19,6 @@ use game_engine::{
 };
 
 use asset_serde::json::{Asset, AssetData, AssetMeta, UiConfigJson};
-use game_engine::asset::AssetManager;
 use logging::info;
 use ui_builder::UiConfig;
 use ui_runner_config::UiRuntimeConfig;
@@ -77,6 +76,7 @@ pub fn setup(
     uis.push(game::global_chat_day_divider::ui_define()); // game global chat day divider
     uis.push(game::global_chat_username_and_message::ui_define()); // game global chat username and message
     uis.push(game::global_chat_message::ui_define()); // game global chat message
+    uis.push(game::user_list_item::ui_define()); // game user list item
 
     for (ui_name, ui_asset_id, ui_etag, ui) in uis {
         // write JSON and bits files, metadata too
@@ -130,13 +130,23 @@ fn setup_global_chat_test_case(
 
     // setup global chat list
     global
-        .list_ui_ext
+        .global_chat_list_ui_ext
         .set_container_ui(ui_manager, &global_chat_ui_handle, "chat_wall");
 
     // setup chats
     global.global_chats = setup_global_chats();
 
     global.sync_chat_collections(ui_manager, asset_manager);
+
+    // setup user list
+    global
+        .user_list_ui_ext
+        .set_container_ui(ui_manager, &main_menu_ui_handle, "user_list");
+
+    // setup users
+    global.users = setup_users();
+
+    global.sync_user_collections(ui_manager, asset_manager);
 }
 
 fn setup_global_chats() -> BTreeMap<u32, (String, u8, u8, u8, u8, String)> {
@@ -189,6 +199,26 @@ fn setup_global_chats() -> BTreeMap<u32, (String, u8, u8, u8, u8, String)> {
     }
 
     global_chats
+}
+
+fn setup_users() -> BTreeMap<u32, String> {
+    let mut users = Vec::new();
+    users.push("tom");
+    users.push("ben");
+    users.push("andrew");
+    users.push("joe");
+    users.push("jane");
+    users.push("sarah");
+    users.push("jim");
+    users.push("bob");
+
+    let mut user_map = BTreeMap::<u32, String>::new();
+
+    for user in users {
+        user_map.insert(user_map.len() as u32, user.to_string());
+    }
+
+    user_map
 }
 
 fn setup_global_chat(

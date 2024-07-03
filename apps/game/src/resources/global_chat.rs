@@ -126,13 +126,15 @@ impl GlobalChat {
             }
         }
 
-        // setup list extension
-        let container_id_str = "chat_wall";
+        // setup global chat list extension
+        {
+            let container_id_str = "chat_wall";
 
-        global_chat_messages
-            .list_ui_ext
-            .set_container_ui(ui_manager, &ui_handle, container_id_str);
-        global_chat_messages.sync_with_collection(session_client, ui_manager, asset_manager, user_q, message_q);
+            global_chat_messages
+                .list_ui_ext
+                .set_container_ui(ui_manager, &ui_handle, container_id_str);
+            global_chat_messages.sync_with_collection(session_client, ui_manager, asset_manager, user_q, message_q);
+        }
     }
 
     pub(crate) fn on_load_day_divider_item_ui(
@@ -309,7 +311,7 @@ impl GlobalChat {
         };
 
         let message_user_name = {
-            if let Some(public_user_info) = user_q.get(user_info_entity) {
+            if let Ok(public_user_info) = user_q.get(user_info_entity) {
                 public_user_info.name.as_str().to_string()
             } else {
                 "?".to_string()

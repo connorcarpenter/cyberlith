@@ -7,13 +7,12 @@ use bevy_ecs::{
 use game_engine::{
     asset::{AssetLoadedEvent, AssetManager, AssetType},
     logging::info,
-    session::{components::{GlobalChatMessage, PublicUserInfo}, SessionInsertComponentEvent},
+    session::{SessionClient, components::{GlobalChatMessage, PublicUserInfo}, SessionInsertComponentEvent},
     ui::UiManager,
 };
-use game_engine::session::SessionClient;
 
 use crate::{
-    resources::{global_chat::GlobalChat, on_asset_load, AssetCatalog},
+    resources::{user_manager::UserManager, global_chat::GlobalChat, on_asset_load, AssetCatalog},
     states::AppState,
     ui::{on_ui_load, UiCatalog},
 };
@@ -25,6 +24,7 @@ pub fn session_load_asset_events(
     mut ui_manager: ResMut<UiManager>,
     mut ui_catalog: ResMut<UiCatalog>,
     asset_manager: Res<AssetManager>,
+    mut user_manager: ResMut<UserManager>,
     mut asset_catalog: ResMut<AssetCatalog>,
     mut global_chat_messages: ResMut<GlobalChat>,
     user_q: Query<&PublicUserInfo>,
@@ -45,6 +45,7 @@ pub fn session_load_asset_events(
                     &mut ui_manager,
                     &mut ui_catalog,
                     &asset_manager,
+                    &mut user_manager,
                     &mut global_chat_messages,
                     &user_q,
                     &message_q,
@@ -74,37 +75,46 @@ pub fn recv_inserted_global_chat_component(
     for event in event_reader.read() {
         // info!("received Inserted GlobalChatMessage from Session Server! (entity: {:?})", event.entity);
 
-        if let Ok(chat) = chat_q.get(event.entity) {
-            let chat_id = *chat.id;
+        let chat = chat_q.get(event.entity).unwrap();
+        let chat_id = *chat.id;
 
-            // let user_id = *chat.user_id;
-            // let timestamp = *chat.timestamp;
-            // let message = &*chat.message;
-            // info!("incoming global message: [ user_id({:?}) | {:?} | {:?} | {:?} ]", user_id, timestamp, event.entity, message);
+        // let user_id = *chat.user_id;
+        // let timestamp = *chat.timestamp;
+        // let message = &*chat.message;
+        // info!("incoming global message: [ user_id({:?}) | {:?} | {:?} | {:?} ]", user_id, timestamp, event.entity, message);
 
-            global_chat_messages.recv_message(
-                &session_client,
-                &mut ui_manager,
-                &asset_manager,
-                &user_q,
-                &chat_q,
-                chat_id,
-                event.entity,
-            );
-        }
+        global_chat_messages.recv_message(
+            &session_client,
+            &mut ui_manager,
+            &asset_manager,
+            &user_q,
+            &chat_q,
+            chat_id,
+            event.entity,
+        );
     }
 }
 
 pub fn recv_inserted_public_user_info_component(
+    mut ui_manager: ResMut<UiManager>,
+    asset_manager: Res<AssetManager>,
+    mut user_manager: ResMut<UserManager>,
     mut event_reader: EventReader<SessionInsertComponentEvent<PublicUserInfo>>,
     users_q: Query<&PublicUserInfo>,
 ) {
     for event in event_reader.read() {
         info!("received Inserted PublicUserInfo from Session Server! (entity: {:?})", event.entity);
 
-        let user_info = users_q.get(event.entity).unwrap();
-        let user_name = &*user_info.name;
+        // let user_info = users_q.get(event.entity).unwrap();
+        // let user_name = &*user_info.name;
+        //
+        // info!("incoming user: [ entity({:?}), name({:?}) ]", event.entity, user_name);
 
-        info!("incoming user: [ entity({:?}), name({:?}) ]", event.entity, user_name);
+        user_manager.recv_user(
+            &mut ui_manager,
+            &asset_manager,
+            &users_q,
+            event.entity,
+        );
     }
 }

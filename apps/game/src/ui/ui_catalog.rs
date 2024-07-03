@@ -44,6 +44,10 @@ impl UiCatalog {
             UiKey::GlobalChatMessage,
             UiHandle::new(AssetId::from_str("cxc6zk").unwrap()),
         );
+        me.insert_ui(
+            UiKey::UserListItem,
+            UiHandle::new(AssetId::from_str("8ywqfp").unwrap()),
+        );
 
         me
     }

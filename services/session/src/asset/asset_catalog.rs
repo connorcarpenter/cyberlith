@@ -32,6 +32,10 @@ impl AssetCatalog {
         AssetId::from_str("cxc6zk").unwrap()
     }
 
+    pub fn game_user_list_item_ui() -> AssetId {
+        AssetId::from_str("8ywqfp").unwrap()
+    }
+
     pub fn text_icon() -> AssetId {
         AssetId::from_str("34mvvk").unwrap()
     }
@@ -56,6 +60,7 @@ pub(crate) fn user_load_default_assets(
         AssetCatalog::game_global_chat_day_divider_item_ui(),
         AssetCatalog::game_global_chat_username_and_message_item_ui(),
         AssetCatalog::game_global_chat_message_item_ui(),
+        AssetCatalog::game_user_list_item_ui(),
     ]
     .iter()
     {

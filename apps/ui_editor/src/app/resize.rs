@@ -64,4 +64,5 @@ pub fn handle_viewport_resize(
     );
 
     global.sync_chat_collections(&mut ui_manager, &asset_manager);
+    global.sync_user_collections(&mut ui_manager, &asset_manager);
 }

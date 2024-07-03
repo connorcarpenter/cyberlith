@@ -16,12 +16,14 @@ use crate::{
         go_to_sub_ui, UiCatalog, UiKey,
     },
 };
+use crate::resources::user_manager::UserManager;
 
 pub(crate) fn on_load(
     current_state: AppState,
     next_state: &mut NextState<AppState>,
     ui_catalog: &mut UiCatalog,
     ui_manager: &mut UiManager,
+    user_manager: &mut UserManager,
 ) {
     if AppState::Loading != current_state {
         panic!("unexpected state");
@@ -49,6 +51,9 @@ pub(crate) fn on_load(
     if ui_catalog.get_is_loaded(UiKey::GlobalChat) {
         go_to_sub_ui(ui_manager, ui_catalog, UiKey::GlobalChat);
     }
+
+    // setup user list
+    user_manager.recv_main_menu_ui(ui_manager, &ui_handle);
 }
 
 pub(crate) fn handle_events(

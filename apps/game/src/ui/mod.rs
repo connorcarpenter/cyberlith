@@ -39,6 +39,7 @@ pub enum UiKey {
     GlobalChatDayDivider,
     GlobalChatUsernameAndMessage,
     GlobalChatMessage,
+    UserListItem,
     Devlog,
     Settings,
 }
@@ -50,6 +51,7 @@ pub(crate) fn on_ui_load(
     ui_manager: &mut UiManager,
     ui_catalog: &mut UiCatalog,
     asset_manager: &AssetManager,
+    user_manager: &mut UserManager,
     global_chat_messages: &mut GlobalChat,
     user_q: &Query<&PublicUserInfo>,
     message_q: &Query<&GlobalChatMessage>,
@@ -62,7 +64,7 @@ pub(crate) fn on_ui_load(
     let ui_key = ui_catalog.get_ui_key(&ui_handle);
 
     match ui_key {
-        UiKey::MainMenu => main_menu::on_load(state, next_state, ui_catalog, ui_manager),
+        UiKey::MainMenu => main_menu::on_load(state, next_state, ui_catalog, ui_manager, user_manager),
         UiKey::HostMatch => host_match::on_load(ui_catalog, ui_manager),
         UiKey::GlobalChat => GlobalChat::on_load_container_ui(
             session_client,
@@ -99,6 +101,12 @@ pub(crate) fn on_ui_load(
             &user_q,
             &message_q,
             global_chat_messages,
+        ),
+        UiKey::UserListItem => user_manager.on_load_user_list_item_ui(
+            ui_catalog,
+            ui_manager,
+            asset_manager,
+            &user_q,
         ),
         _ => {
             unimplemented!("ui not implemented");

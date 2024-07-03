@@ -13,31 +13,51 @@ use game_engine::{
 #[derive(Resource)]
 pub struct Global {
     pub scene_camera_entity: Entity,
-    pub list_ui_ext: ListUiExt<u32>,
-    pub global_chats: BTreeMap<u32, (String, u8, u8, u8, u8, String)>,
     pub ui_handles: Vec<UiHandle>,
+
+    pub global_chat_list_ui_ext: ListUiExt<u32>,
+    pub global_chats: BTreeMap<u32, (String, u8, u8, u8, u8, String)>,
+
+    pub user_list_ui_ext: ListUiExt<u32>,
+    pub users: BTreeMap<u32, String>,
 }
 
 impl Global {
     pub fn new(scene_camera_entity: Entity) -> Self {
         Self {
             scene_camera_entity,
-            list_ui_ext: ListUiExt::new(false),
-            global_chats: BTreeMap::new(),
             ui_handles: Vec::new(),
+
+            global_chat_list_ui_ext: ListUiExt::new(false),
+            global_chats: BTreeMap::new(),
+
+            user_list_ui_ext: ListUiExt::new(true),
+            users: BTreeMap::new(),
         }
     }
 
-    pub fn scroll_up(&mut self, ui_manager: &mut UiManager, asset_manager: &AssetManager) {
-        self.list_ui_ext.scroll_up();
+    pub fn global_chat_scroll_up(&mut self, ui_manager: &mut UiManager, asset_manager: &AssetManager) {
+        self.global_chat_list_ui_ext.scroll_up();
 
         self.sync_chat_collections(ui_manager, asset_manager);
     }
 
-    pub fn scroll_down(&mut self, ui_manager: &mut UiManager, asset_manager: &AssetManager) {
-        self.list_ui_ext.scroll_down();
+    pub fn global_chat_scroll_down(&mut self, ui_manager: &mut UiManager, asset_manager: &AssetManager) {
+        self.global_chat_list_ui_ext.scroll_down();
 
         self.sync_chat_collections(ui_manager, asset_manager);
+    }
+
+    pub fn user_list_scroll_up(&mut self, ui_manager: &mut UiManager, asset_manager: &AssetManager) {
+        self.user_list_ui_ext.scroll_up();
+
+        self.sync_user_collections(ui_manager, asset_manager);
+    }
+
+    pub fn user_list_scroll_down(&mut self, ui_manager: &mut UiManager, asset_manager: &AssetManager) {
+        self.user_list_ui_ext.scroll_down();
+
+        self.sync_user_collections(ui_manager, asset_manager);
     }
 
     pub fn sync_chat_collections(
@@ -51,7 +71,7 @@ impl Global {
         let message_ui_handle = self.ui_handles[4];
 
         // setup collection
-        self.list_ui_ext.sync_with_collection(
+        self.global_chat_list_ui_ext.sync_with_collection(
             ui_manager,
             asset_manager,
             self.global_chats.iter(),
@@ -106,6 +126,27 @@ impl Global {
             },
         );
     }
+
+    pub fn sync_user_collections(
+        &mut self,
+        ui_manager: &mut UiManager,
+        asset_manager: &AssetManager,
+    ) {
+        let user_ui_handle = self.ui_handles[5];
+
+        // setup collection
+        self.user_list_ui_ext.sync_with_collection(
+            ui_manager,
+            asset_manager,
+            self.users.iter(),
+            self.users.len(),
+            |item_ctx, user_id, _| {
+
+                let username = self.users.get(&user_id).unwrap();
+                add_user_item(item_ctx, &user_ui_handle, username);
+            },
+        );
+    }
 }
 
 fn add_day_divider_item(item_ctx: &mut ListUiExtItem<u32>, ui: &UiHandle, date: (u8, u8)) {
@@ -135,4 +176,9 @@ fn add_username_and_message_item(
 fn add_message_item(item_ctx: &mut ListUiExtItem<u32>, ui: &UiHandle, message_text: &str) {
     item_ctx.add_copied_node(ui);
     item_ctx.set_text_by_str("message", message_text);
+}
+
+fn add_user_item(item_ctx: &mut ListUiExtItem<u32>, ui: &UiHandle, username: &str) {
+    item_ctx.add_copied_node(ui);
+    item_ctx.set_text_by_str("username", username);
 }

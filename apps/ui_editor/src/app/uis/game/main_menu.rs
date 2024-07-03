@@ -69,7 +69,8 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
     let right_bottom_bar_style = ui_config.create_panel_style(|s| {
         s.set_background_color(Color::DARK_GRAY)
             .set_width_pc(100.0)
-            .set_height_vp(95.0);
+            .set_height_vp(95.0)
+            .set_children_valign(Alignment::Start);
     });
 
     let title_text_style = ui_config.create_text_style(|s| {
@@ -169,7 +170,7 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
             });
 
             // main
-            c.add_panel().set_style(right_bottom_bar_style);
+            c.add_panel_with_id("user_list").set_style(right_bottom_bar_style);
         });
     });
 
