@@ -88,7 +88,7 @@ pub fn recv_login_request(
         );
         log_util::recv_req(host, remote, &request_str);
 
-        user_manager.add_login_token(&request.user_id, &request.user_name, &request.login_token);
+        user_manager.add_login_token(&request.user_id, &request.login_token);
 
         log_util::send_res(host, IncomingUserResponse::name());
         server.respond(response_key, Ok(IncomingUserResponse));

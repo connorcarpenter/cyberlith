@@ -5,8 +5,7 @@ use bevy_http_shared::{ApiRequest, ApiResponse, Method};
 
 #[derive(Serde, PartialEq, Clone)]
 pub enum SocialUserPatch {
-    // id, name
-    Add(UserId, String),
+    Add(UserId),
     Remove(UserId),
 }
 

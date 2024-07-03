@@ -225,7 +225,7 @@ impl SocialManager {
                         continuing_requests.push(req);
                     }
                 }
-                InFlightRequest::UserNameRequest(user_id, response_key) => {
+                InFlightRequest::UserNameRequest(_user_id, response_key) => {
                     if let Some(response_result) = http_client.recv(&response_key) {
                         let host = "session";
                         let remote = "auth";
@@ -266,8 +266,8 @@ impl SocialManager {
     ) {
         for user_patch in user_patches {
             match user_patch {
-                SocialUserPatch::Add(user_id, user_name) => {
-                    info!("adding user - [userid {:?}]:(`{:?}`)", user_id, user_name);
+                SocialUserPatch::Add(user_id) => {
+                    info!("adding user - [userid {:?}]", user_id);
 
                     if user_manager.has_user_data(user_id) {
                         // warn!("user already exists - [userid {:?}]", user_id);
@@ -279,7 +279,6 @@ impl SocialManager {
                         naia_server,
                         &self.get_global_chat_room_key(),
                         user_id,
-                        user_name
                     );
                 }
                 SocialUserPatch::Remove(user_id) => {
@@ -444,6 +443,7 @@ impl SocialManager {
                 // already an inflight request to get username from userid
             } else {
                 // TODO: send request to get username from userid
+                todo!();
             }
 
             self.userless_chat_messages

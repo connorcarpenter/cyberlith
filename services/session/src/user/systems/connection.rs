@@ -27,7 +27,7 @@ pub fn auth_events(
 ) {
     for events in event_reader.read() {
         for (user_key, auth) in events.read::<Auth>() {
-            if let Some((user_id, user_name)) = user_manager.take_login_token(&auth.token()) {
+            if let Some(user_id) = user_manager.take_login_token(&auth.token()) {
                 info!("Accepted connection. Token: {}", auth.token());
 
                 let global_chat_room_key = social_manager.get_global_chat_room_key();
@@ -39,7 +39,6 @@ pub fn auth_events(
                     &global_chat_room_key,
                     user_key,
                     user_id,
-                    user_name
                 );
 
                 // Accept incoming connection

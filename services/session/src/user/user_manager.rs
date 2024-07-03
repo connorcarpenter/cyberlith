@@ -8,13 +8,12 @@ use bevy_ecs::{system::Resource, prelude::Commands, entity::Entity};
 use naia_bevy_server::{CommandsExt, RoomKey, Server, UserKey};
 
 use auth_server_types::UserId;
-use session_server_naia_proto::components::PublicUserInfo;
 
 use crate::user::user_data::UserData;
 
 #[derive(Resource)]
 pub struct UserManager {
-    login_tokens: HashMap<String, (UserId, String)>,
+    login_tokens: HashMap<String, UserId>,
     user_key_to_id: HashMap<UserKey, UserId>,
     user_data: HashMap<UserId, UserData>,
 }
@@ -30,11 +29,11 @@ impl UserManager {
 
     // Client login
 
-    pub fn add_login_token(&mut self, user_id: &UserId, user_name: &str, token: &str) {
-        self.login_tokens.insert(token.to_string(), (user_id.clone(), user_name.to_string()));
+    pub fn add_login_token(&mut self, user_id: &UserId, token: &str) {
+        self.login_tokens.insert(token.to_string(), user_id.clone());
     }
 
-    pub fn take_login_token(&mut self, token: &str) -> Option<(UserId, String)> {
+    pub fn take_login_token(&mut self, token: &str) -> Option<UserId> {
         self.login_tokens.remove(token)
     }
 
@@ -45,7 +44,6 @@ impl UserManager {
         global_chat_room_key: &RoomKey,
         user_key: UserKey,
         user_id: UserId,
-        user_name: String
     ) {
         self.user_key_to_id.insert(user_key, user_id);
 
@@ -59,7 +57,6 @@ impl UserManager {
             naia_server,
             global_chat_room_key,
             &user_id,
-            &user_name
         );
 
         let user_data = self.user_data.get_mut(&user_id).unwrap();
@@ -142,21 +139,19 @@ impl UserManager {
         commands: &mut Commands,
         naia_server: &mut Server,
         global_chat_room_key: &RoomKey,
-        user_name: &str
     ) -> Entity {
         // info!("adding present user - [userid {:?}]:(`{:?}`)", user_id, user_name);
         // convert to entity + component
         let user_entity = commands
             .spawn_empty()
             .enable_replication(naia_server)
-            .insert(PublicUserInfo::new(
-                user_name,
-            ))
             .id();
 
         naia_server
             .room_mut(global_chat_room_key)
             .add_entity(&user_entity);
+
+        todo!("get username from authserver, then add PublicUserInfo component to user_entity");
 
         user_entity
     }
@@ -167,13 +162,11 @@ impl UserManager {
         naia_server: &mut Server,
         global_chat_room_key: &RoomKey,
         user_id: &UserId,
-        user_name: &str,
     ) {
         let user_public_entity = self.add_user_public_entity(
             commands,
             naia_server,
             global_chat_room_key,
-            user_name,
         );
 
         let user_data = UserData::new(user_public_entity);

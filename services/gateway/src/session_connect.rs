@@ -49,15 +49,11 @@ pub(crate) async fn handler(
             let user_id = UserId::new(user_id);
             user_id
         };
-        let user_name: String = {
-            let user_name = incoming_request.get_header_first("user_name").unwrap();
-            user_name.clone()
-        };
 
         let Ok(connect_response) = HttpClient::send(
             &remote_addr,
             remote_port,
-            SessionConnectRequest::new(user_id, user_name),
+            SessionConnectRequest::new(user_id),
         )
         .await
         else {

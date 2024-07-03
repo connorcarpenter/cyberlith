@@ -22,7 +22,6 @@ async fn async_impl(
 ) -> Result<SessionConnectResponse, ResponseError> {
 
     let user_id = incoming_request.user_id;
-    let user_name = incoming_request.user_name;
 
     let state = state.read().await;
 
@@ -39,7 +38,7 @@ async fn async_impl(
         let request_method = UserConnectedRequest::method();
         let request_path = UserConnectedRequest::path();
 
-        let request = UserConnectedRequest::new(REGION_SERVER_SECRET, user_id, user_name.clone());
+        let request = UserConnectedRequest::new(REGION_SERVER_SECRET, user_id);
 
         let host = "region";
         let remote = "social";
@@ -76,7 +75,7 @@ async fn async_impl(
 
         let temp_token = random::generate_random_string(16);
         let request =
-            IncomingUserRequest::new(REGION_SERVER_SECRET, user_id, user_name.clone(), &temp_token);
+            IncomingUserRequest::new(REGION_SERVER_SECRET, user_id, &temp_token);
 
         let host = "region";
         let remote = "session";

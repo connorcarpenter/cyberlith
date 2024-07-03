@@ -76,9 +76,9 @@ async fn handle_user_patches(state: &mut State) {
 
     for user_patch in user_patches {
         match user_patch {
-            UserPatch::Add(user_id, user_name) => {
+            UserPatch::Add(user_id) => {
                 for receiving_session_server_id in &session_server_ids {
-                    let social_user_patch = SocialUserPatch::Add(user_id, user_name.clone());
+                    let social_user_patch = SocialUserPatch::Add(user_id);
                     queued_social_user_patches
                         .entry(*receiving_session_server_id)
                         .or_insert(Vec::new())

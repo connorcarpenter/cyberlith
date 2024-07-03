@@ -8,16 +8,14 @@ use bevy_http_shared::{ApiRequest, ApiResponse, Method};
 pub struct IncomingUserRequest {
     region_secret: String,
     pub user_id: UserId,
-    pub user_name: String,
     pub login_token: String,
 }
 
 impl IncomingUserRequest {
-    pub fn new(region_secret: &str, user_id: UserId, user_name: String, login_token: &str) -> Self {
+    pub fn new(region_secret: &str, user_id: UserId, login_token: &str) -> Self {
         Self {
             region_secret: region_secret.to_string(),
             user_id,
-            user_name,
             login_token: login_token.to_string(),
         }
     }

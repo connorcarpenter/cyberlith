@@ -58,7 +58,7 @@ impl SessionServersState {
         instance_secret: &str,
         recv_addr: &str,
         recv_port: u16,
-        present_users: Vec<(UserId, String)>,
+        present_users: Vec<UserId>,
         global_chat_full_log: Vec<(GlobalChatMessageId, Timestamp, UserId, String)>,
     ) {
         let id = self.next_session_id();
@@ -74,7 +74,7 @@ impl SessionServersState {
         {
             let user_patches = present_users
                 .iter()
-                .map(|(user_id, user_name)| SocialUserPatch::Add(*user_id, user_name.clone()))
+                .map(|user_id| SocialUserPatch::Add(*user_id))
                 .collect();
             let request = SocialPatchUsersRequest::new(
                 SOCIAL_SERVER_GLOBAL_SECRET,

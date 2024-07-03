@@ -39,11 +39,10 @@ async fn async_recv_user_connected_request_impl(
 
     {
         let user_id_u64: u64 = request.user_id().into();
-        let user_name = request.user_name();
-        info!("User connected: {} - {:?}", user_id_u64, user_name);
+        info!("User connected: {}", user_id_u64);
     }
 
-    state.users.connect_user(&request.user_id(), request.user_name());
+    state.users.connect_user(&request.user_id());
 
     // responding
     return Ok(UserConnectedResponse);

@@ -112,10 +112,6 @@ impl State {
         token
     }
 
-    pub(crate) fn get_user_name(&self, user_id: &UserId) -> Option<&str> {
-        self.database_manager.get_user(user_id).map(|data| data.username())
-    }
-
     pub(crate) fn create_and_store_access_token(&mut self, user_id: &UserId) -> AccessToken {
         let mut token = AccessToken::gen_random();
         while self.access_tokens.contains_key(&token) {
