@@ -10,9 +10,13 @@ use crate::networked::{
     insert_component_event::{
         insert_component_event, insert_component_events, InsertComponentEvent,
     },
+    update_component_event::{
+        update_component_event, update_component_events, UpdateComponentEvent,
+    },
 };
 
 pub type SessionInsertComponentEvent<C> = InsertComponentEvent<Session, C>;
+pub type SessionUpdateComponentEvent<C> = UpdateComponentEvent<Session, C>;
 pub type SessionRemoveComponentEvent<C> = RemoveComponentEvent<Session, C>;
 
 // used as a system
@@ -41,6 +45,18 @@ pub fn session_insert_component_events(world: &mut BevyWorld) {
         insert_component_event::<Session, PublicUserInfo>(world, &events);
 
         // info!("]");
+    }
+}
+
+// used as a system
+pub fn session_update_component_events(world: &mut BevyWorld) {
+    let events_collection = update_component_events::<Session>(world);
+
+    for events in events_collection {
+
+        // other events
+        update_component_event::<Session, GlobalChatMessage>(world, &events);
+        update_component_event::<Session, PublicUserInfo>(world, &events);
     }
 }
 

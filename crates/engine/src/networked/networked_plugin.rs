@@ -16,7 +16,7 @@ use world_server_naia_proto::{
     protocol as world_server_naia_protocol,
 };
 
-use super::{asset_cache_checker::AssetCacheChecker, asset_ref_processor::AssetRefProcessor, client_markers::{Session, World}, connection_manager::ConnectionManager, insert_component_event, remove_component_event, session_events, world_events, world_events::InsertAssetRefEvent};
+use super::{asset_cache_checker::AssetCacheChecker, asset_ref_processor::AssetRefProcessor, client_markers::{Session, World}, connection_manager::ConnectionManager, insert_component_event, remove_component_event, update_component_event, session_events, world_events, world_events::InsertAssetRefEvent};
 use crate::{
     networked::{
         session_events::SessionInsertComponentEvent, world_events::WorldInsertComponentEvent,
@@ -71,11 +71,16 @@ impl Plugin for NetworkedEnginePlugin {
             )
             .add_systems(
                 Startup,
+                update_component_event::update_component_events_startup::<Session>,
+            )
+            .add_systems(
+                Startup,
                 remove_component_event::remove_component_events_startup::<Session>,
             )
             .add_systems(Update, session_events::spawn_entity_events)
             .add_systems(Update, session_events::despawn_entity_events)
             .add_systems(Update, session_events::session_insert_component_events)
+            .add_systems(Update, session_events::session_update_component_events)
             .add_systems(Update, session_events::session_remove_component_events)
             .add_event::<SessionSpawnEntityEvent>()
             .add_event::<SessionDespawnEntityEvent>()
@@ -88,11 +93,16 @@ impl Plugin for NetworkedEnginePlugin {
             )
             .add_systems(
                 Startup,
+                update_component_event::update_component_events_startup::<World>,
+            )
+            .add_systems(
+                Startup,
                 remove_component_event::remove_component_events_startup::<World>,
             )
             .add_systems(Update, world_events::spawn_entity_events)
             .add_systems(Update, world_events::despawn_entity_events)
             .add_systems(Update, world_events::world_insert_component_events)
+            .add_systems(Update, world_events::world_update_component_events)
             .add_systems(Update, world_events::world_remove_component_events)
             .add_event::<WorldSpawnEntityEvent>()
             .add_event::<WorldDespawnEntityEvent>()

@@ -3,6 +3,7 @@ mod asset_ref_processor;
 mod client_markers;
 mod connection_manager;
 mod insert_component_event;
+mod update_component_event;
 mod remove_component_event;
 mod networked_plugin;
 mod session_events;
@@ -18,7 +19,7 @@ pub mod world {
     pub type WorldDespawnEntityEvent = naia_bevy_client::events::DespawnEntityEvent<World>;
 
     pub use super::world_events::{
-        InsertAssetRefEvent as WorldInsertAssetRefEvent, WorldInsertComponentEvent, WorldRemoveComponentEvent
+        InsertAssetRefEvent as WorldInsertAssetRefEvent, WorldInsertComponentEvent, WorldUpdateComponentEvent, WorldRemoveComponentEvent
     };
 
     pub use world_server_naia_proto::{channels, components, messages};
@@ -34,7 +35,7 @@ pub mod session {
     pub type SessionSpawnEntityEvent = SpawnEntityEvent<Session>;
     pub type SessionDespawnEntityEvent = naia_bevy_client::events::DespawnEntityEvent<Session>;
 
-    pub use super::session_events::{SessionInsertComponentEvent, SessionRemoveComponentEvent};
+    pub use super::session_events::{SessionInsertComponentEvent, SessionUpdateComponentEvent, SessionRemoveComponentEvent};
 
     pub use session_server_naia_proto::{channels, components, messages};
 }
