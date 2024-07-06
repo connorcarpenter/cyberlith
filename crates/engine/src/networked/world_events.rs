@@ -20,13 +20,14 @@ use super::{
 };
 use crate::{
     asset_cache::AssetCache,
-    networked::insert_component_event::{
+    networked::{insert_component_event::{
         insert_component_event, insert_component_events, InsertComponentEvent,
-    },
+    }, remove_component_event::{remove_component_event, remove_component_events, RemoveComponentEvent}},
     world::WorldClient,
 };
 
 pub type WorldInsertComponentEvent<C> = InsertComponentEvent<World, C>;
+pub type WorldRemoveComponentEvent<C> = RemoveComponentEvent<World, C>;
 
 // used as a system
 pub fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent<World>>) {
@@ -76,6 +77,20 @@ pub fn world_insert_component_events(world: &mut BevyWorld) {
 
         // other events
         insert_component_event::<World, Position>(world, &events);
+
+        info!("]");
+    }
+}
+
+// used as a system
+pub fn world_remove_component_events(world: &mut BevyWorld) {
+    let events_collection = remove_component_events::<World>(world);
+
+    for events in events_collection {
+        info!("received world events: [");
+
+        // other events
+        remove_component_event::<World, Position>(world, &events);
 
         info!("]");
     }

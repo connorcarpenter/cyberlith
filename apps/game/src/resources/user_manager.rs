@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 
 use bevy_ecs::{prelude::Query, system::{Resource}, entity::Entity};
 
@@ -10,6 +10,7 @@ use crate::ui::{UiCatalog, UiKey};
 pub struct UserManager {
     next_id: u32,
     users: BTreeMap<u32, Entity>,
+    entity_to_user_id_map: HashMap<Entity, u32>,
     list_ui_ext: ListUiExt<u32>,
     item_ui: Option<UiHandle>,
 }
@@ -19,6 +20,7 @@ impl Default for UserManager {
         Self {
             next_id: 0,
             users: BTreeMap::new(),
+            entity_to_user_id_map: HashMap::new(),
             list_ui_ext: ListUiExt::new(true),
             item_ui: None,
         }
@@ -48,7 +50,7 @@ impl UserManager {
         self.list_ui_ext.set_container_ui(ui_manager, main_menu_ui_handle, "user_list");
     }
 
-    pub fn recv_user(
+    pub fn insert_user(
         &mut self,
         ui_manager: &mut UiManager,
         asset_manager: &AssetManager,
@@ -58,6 +60,20 @@ impl UserManager {
         let user_id = self.next_id;
         self.next_id = self.next_id.wrapping_add(1);
         self.users.insert(user_id, user_entity);
+        self.entity_to_user_id_map.insert(user_entity, user_id);
+
+        self.sync_with_collection(ui_manager, asset_manager, user_q);
+    }
+
+    pub fn delete_user(
+        &mut self,
+        ui_manager: &mut UiManager,
+        asset_manager: &AssetManager,
+        user_q: &Query<&PublicUserInfo>,
+        user_entity: &Entity,
+    ) {
+        let user_id = self.entity_to_user_id_map.remove(user_entity).unwrap();
+        self.users.remove(&user_id);
 
         self.sync_with_collection(ui_manager, asset_manager, user_q);
     }

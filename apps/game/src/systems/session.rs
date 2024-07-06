@@ -7,7 +7,7 @@ use bevy_ecs::{
 use game_engine::{
     asset::{AssetLoadedEvent, AssetManager, AssetType},
     logging::info,
-    session::{SessionClient, components::{GlobalChatMessage, PublicUserInfo}, SessionInsertComponentEvent},
+    session::{SessionClient, SessionRemoveComponentEvent, components::{GlobalChatMessage, PublicUserInfo}, SessionInsertComponentEvent},
     ui::UiManager,
 };
 
@@ -110,11 +110,30 @@ pub fn recv_inserted_public_user_info_component(
         //
         // info!("incoming user: [ entity({:?}), name({:?}) ]", event.entity, user_name);
 
-        user_manager.recv_user(
+        user_manager.insert_user(
             &mut ui_manager,
             &asset_manager,
             &users_q,
             event.entity,
+        );
+    }
+}
+
+pub fn recv_removed_public_user_info_component(
+    mut ui_manager: ResMut<UiManager>,
+    asset_manager: Res<AssetManager>,
+    mut user_manager: ResMut<UserManager>,
+    mut event_reader: EventReader<SessionRemoveComponentEvent<PublicUserInfo>>,
+    users_q: Query<&PublicUserInfo>,
+) {
+    for event in event_reader.read() {
+        info!("received Removed PublicUserInfo from Session Server! (entity: {:?})", event.entity);
+
+        user_manager.delete_user(
+            &mut ui_manager,
+            &asset_manager,
+            &users_q,
+            &event.entity,
         );
     }
 }

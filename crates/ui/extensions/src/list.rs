@@ -198,7 +198,11 @@ impl<K: Hash + Eq + Copy + Clone + PartialEq> ListUiExt<K> {
 
         if self.item_count == 0 {
             // first time sync
-            self.visible_item_max_index = item_count - 1;
+            if item_count == 0 {
+                self.visible_item_max_index = 0;
+            } else {
+                self.visible_item_max_index = item_count - 1;
+            }
         }
         self.item_count = item_count;
 
@@ -213,7 +217,11 @@ impl<K: Hash + Eq + Copy + Clone + PartialEq> ListUiExt<K> {
             let iterator_incrementing: bool;
 
             if parent_children_valign == Alignment::End {
-                item_index = item_count - 1;
+                if item_count == 0 {
+                    item_index = 0;
+                } else {
+                    item_index = item_count - 1;
+                }
                 current_child_index = parent_children_node_count;
                 boxed_iterator = Box::new(RevPeekableIteratorImpl(collection.rev().peekable()));
                 iterator_incrementing = false;
