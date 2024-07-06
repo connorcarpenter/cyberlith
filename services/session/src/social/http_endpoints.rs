@@ -1,4 +1,4 @@
-use bevy_ecs::{change_detection::ResMut, system::Commands};
+use bevy_ecs::{prelude::Query, change_detection::ResMut, system::Commands};
 
 use naia_bevy_server::Server;
 
@@ -8,6 +8,7 @@ use config::SOCIAL_SERVER_GLOBAL_SECRET;
 use logging::{info, warn};
 
 use session_server_http_proto::{SocialPatchGlobalChatMessagesRequest, SocialPatchGlobalChatMessagesResponse, SocialPatchUsersRequest, SocialPatchUsersResponse};
+use session_server_naia_proto::components::PublicUserInfo;
 
 use crate::{social::SocialManager, user::UserManager};
 
@@ -50,6 +51,7 @@ pub fn recv_patch_users_request(
     mut http_client: ResMut<HttpClient>,
     mut user_manager: ResMut<UserManager>,
     mut naia_server: Server,
+    mut users_q: Query<&mut PublicUserInfo>,
 ) {
     while let Some((_addr, request, response_key)) =
         http_server.receive::<SocialPatchUsersRequest>()
@@ -67,6 +69,7 @@ pub fn recv_patch_users_request(
             &mut naia_server,
             &mut http_client,
             &mut user_manager,
+            &mut users_q,
             request.user_patches(),
         );
 

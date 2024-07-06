@@ -3,7 +3,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use bevy_ecs::{change_detection::ResMut, system::Resource, prelude::Commands, entity::Entity};
+use bevy_ecs::{change_detection::ResMut, system::Resource, prelude::{Commands, Query}, entity::Entity};
 
 use naia_bevy_server::{CommandsExt, RoomKey, Server, UserKey};
 
@@ -16,14 +16,14 @@ use auth_server_types::UserId;
 
 use session_server_naia_proto::components::PublicUserInfo;
 
-use crate::user::user_data::UserData;
+use crate::user::private_user_info::PrivateUserInfo;
 
 #[derive(Resource)]
 pub struct UserManager {
     login_tokens: HashMap<String, UserId>,
     user_key_to_id: HashMap<UserKey, UserId>,
-    user_data: HashMap<UserId, UserData>,
-    nameless_users: HashSet<UserId>,
+    user_data: HashMap<UserId, PrivateUserInfo>,
+    inflight_user_info_requests: HashSet<UserId>,
 }
 
 impl UserManager {
@@ -32,7 +32,7 @@ impl UserManager {
             login_tokens: HashMap::new(),
             user_key_to_id: HashMap::new(),
             user_data: HashMap::new(),
-            nameless_users: HashSet::new(),
+            inflight_user_info_requests: HashSet::new(),
         }
     }
 
@@ -178,19 +178,49 @@ impl UserManager {
             .add_entity(&user_public_entity);
 
         let user_info_response_key = self.send_user_info_request(http_client, user_id);
+        self.inflight_user_info_requests.insert(*user_id);
 
-        let user_data = UserData::new(user_public_entity, user_info_response_key);
+        let user_data = PrivateUserInfo::new(user_public_entity, user_info_response_key);
         self.user_data.insert(*user_id, user_data);
+    }
 
-        self.nameless_users.insert(*user_id);
+    pub(crate) fn user_set_online(
+        &mut self,
+        user_id: &UserId,
+        users_q: &mut Query<&mut PublicUserInfo>,
+    ) {
+        self.user_set_online_status(user_id, users_q, true);
     }
 
     pub(crate) fn user_set_offline(
         &mut self,
         user_id: &UserId,
+        users_q: &mut Query<&mut PublicUserInfo>,
     ) {
-        let user_data = self.user_data.get_mut(user_id).unwrap();
-        user_data.set_offline();
+        self.user_set_online_status(user_id, users_q, false);
+    }
+
+    fn user_set_online_status(
+        &mut self,
+        user_id: &UserId,
+        users_q: &mut Query<&mut PublicUserInfo>,
+        online: bool,
+    ) {
+        let user_data = self.user_data.get(user_id).unwrap();
+        if user_data.user_info_response_key().is_some() {
+            // user info req is in flight
+            let user_data = self.user_data.get_mut(user_id).unwrap();
+            if online {
+                user_data.set_online();
+            } else {
+                user_data.set_offline();
+            }
+        } else {
+            // user info req has been received
+            let user_entity = user_data.user_entity();
+            let mut user_info = users_q.get_mut(user_entity).unwrap();
+            *user_info.online = online;
+        }
     }
 
     pub fn process_in_flight_requests(
@@ -198,13 +228,13 @@ impl UserManager {
         commands: &mut Commands,
         http_client: &mut HttpClient,
     ) {
-        if self.nameless_users.is_empty() {
+        if self.inflight_user_info_requests.is_empty() {
             // no in-flight requests
             return;
         }
 
         let mut received_responses = Vec::new();
-        for nameless_user_id in self.nameless_users.iter() {
+        for nameless_user_id in self.inflight_user_info_requests.iter() {
             let nameless_user_id = *nameless_user_id;
             let user_data = self.user_data.get_mut(&nameless_user_id).unwrap();
             let response_key = user_data.user_info_response_key().unwrap();
@@ -230,14 +260,20 @@ impl UserManager {
         }
 
         for (user_id, received_response) in received_responses {
-            self.nameless_users.remove(&user_id);
+            self.inflight_user_info_requests.remove(&user_id);
 
             let user_data = self.user_data.get_mut(&user_id).unwrap();
-            user_data.received_info_response();
+            let user_is_online = {
+                if let Some(online) = user_data.receive_info_response() {
+                    online
+                } else {
+                    false
+                }
+            };
 
             let user_entity = user_data.user_entity();
             let user_name = received_response.name;
-            commands.entity(user_entity).insert(PublicUserInfo::new(&user_name));
+            commands.entity(user_entity).insert(PublicUserInfo::new(&user_name, user_is_online));
         }
     }
 

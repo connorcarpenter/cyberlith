@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 use bevy_ecs::{
     change_detection::ResMut,
     entity::Entity,
-    system::{Commands, Res, Resource},
+    system::{Commands, Query, Res, Resource},
 };
 
 use naia_bevy_server::{CommandsExt, RoomKey, Server, UserKey};
@@ -14,7 +14,7 @@ use logging::{info, warn};
 use auth_server_types::UserId;
 
 use session_server_http_proto::SocialUserPatch;
-use session_server_naia_proto::components::GlobalChatMessage;
+use session_server_naia_proto::components::{GlobalChatMessage, PublicUserInfo};
 
 use social_server_http_proto::{GlobalChatSendMessageRequest, GlobalChatSendMessageResponse, UserDisconnectedRequest, UserDisconnectedResponse};
 use social_server_types::{GlobalChatMessageId, Timestamp};
@@ -87,12 +87,14 @@ impl SocialManager {
         mut social_manager: ResMut<Self>,
         session_instance: Res<SessionInstance>,
         mut user_manager: ResMut<UserManager>,
+        mut users_q: Query<&mut PublicUserInfo>,
     ) {
         social_manager.process_in_flight_requests(
             &mut commands,
             &mut naia_server,
             &mut http_client,
             &mut user_manager,
+            &mut users_q,
         );
         social_manager.process_queued_requests(&mut http_client, &session_instance, &user_manager);
     }
@@ -143,6 +145,7 @@ impl SocialManager {
         naia_server: &mut Server,
         http_client: &mut HttpClient,
         user_manager: &mut UserManager,
+        users_q: &mut Query<&mut PublicUserInfo>,
     ) {
         if self.in_flight_requests.is_empty() {
             // no in-flight requests
@@ -206,6 +209,7 @@ impl SocialManager {
 
                                 user_manager.user_set_offline(
                                     user_id,
+                                    users_q,
                                 );
                             }
                             Err(e) => {
@@ -230,6 +234,7 @@ impl SocialManager {
         naia_server: &mut Server,
         http_client: &mut HttpClient,
         user_manager: &mut UserManager,
+        users_q: &mut Query<&mut PublicUserInfo>,
         user_patches: &Vec<SocialUserPatch>,
     ) {
         for user_patch in user_patches {
@@ -237,23 +242,22 @@ impl SocialManager {
                 SocialUserPatch::Add(user_id) => {
                     info!("adding user - [userid {:?}]", user_id);
 
-                    if user_manager.has_user_data(user_id) {
-                        // warn!("user already exists - [userid {:?}]", user_id);
-                        continue;
+                    if !user_manager.has_user_data(user_id) {
+                        user_manager.add_user_data(
+                            commands,
+                            naia_server,
+                            http_client,
+                            &self.get_global_chat_room_key(),
+                            user_id,
+                        );
                     }
 
-                    user_manager.add_user_data(
-                        commands,
-                        naia_server,
-                        http_client,
-                        &self.get_global_chat_room_key(),
-                        user_id,
-                    );
+                    user_manager.user_set_online(user_id, users_q);
                 }
                 SocialUserPatch::Remove(user_id) => {
                     info!("removing user - [userid {:?}]", user_id);
 
-                    user_manager.user_set_offline(user_id);
+                    user_manager.user_set_offline(user_id, users_q);
                 }
             }
         }

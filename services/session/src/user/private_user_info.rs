@@ -8,10 +8,9 @@ use bevy_http_client::ResponseKey;
 
 use auth_server_http_proto::UserGetResponse;
 
-pub(crate) struct UserData {
+pub(crate) struct PrivateUserInfo {
     user_key: Option<UserKey>,
     public_entity: Entity,
-    is_online: bool,
 
     world_connect_last_sent_to_region: Option<Instant>,
     ready_for_world_connect: bool,
@@ -20,14 +19,17 @@ pub(crate) struct UserData {
     world_instance_secret: Option<String>,
 
     user_info_response_key: Option<ResponseKey<UserGetResponse>>,
+    make_online_after_info: Option<bool>,
 }
 
-impl UserData {
-    pub fn new(public_entity: Entity, user_info_response_key: ResponseKey<UserGetResponse>) -> Self {
+impl PrivateUserInfo {
+    pub fn new(
+        public_entity: Entity,
+        user_info_response_key: ResponseKey<UserGetResponse>
+    ) -> Self {
         Self {
             user_key: None,
             public_entity,
-            is_online: true,
 
             world_connect_last_sent_to_region: None,
             ready_for_world_connect: false,
@@ -35,15 +37,28 @@ impl UserData {
             world_instance_secret: None, // tells us whether user is connected
 
             user_info_response_key: Some(user_info_response_key),
+            make_online_after_info: None,
         }
+    }
+
+    pub(crate) fn set_online(&mut self) {
+        self.make_online_after_info = Some(true);
+    }
+
+    pub(crate) fn set_offline(&mut self) {
+        self.make_online_after_info = Some(false);
     }
 
     pub fn user_info_response_key(&self) -> Option<ResponseKey<UserGetResponse>> {
         self.user_info_response_key
     }
 
-    pub(crate) fn received_info_response(&mut self) {
+    pub(crate) fn receive_info_response(&mut self) -> Option<bool> {
         self.user_info_response_key = None;
+
+        let output = self.make_online_after_info;
+        self.make_online_after_info = None;
+        output
     }
 
     pub fn ready_for_world_connect(&self) -> bool {
@@ -80,9 +95,5 @@ impl UserData {
 
     pub fn remove_user_key(&mut self) {
         self.user_key = None;
-    }
-
-    pub fn set_offline(&mut self) {
-        self.is_online = false;
     }
 }
