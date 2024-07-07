@@ -9,7 +9,7 @@ use crate::{
     networked::{
         client_markers::Session,
         component_events::{
-            insert_component_event, component_events_startup, insert_component_events, InsertComponentEvent, remove_component_event, remove_component_events, RemoveComponentEvent, update_component_event, update_component_events, UpdateComponentEvent,
+            component_events_startup, get_component_events, InsertComponentEvent, RemoveComponentEvent, UpdateComponentEvent,
         }
     },
     session::{
@@ -56,33 +56,8 @@ fn despawn_entity_events(mut event_reader: EventReader<DespawnEntityEvent<Sessio
 // used as a system
 pub fn component_events_update(world: &mut BevyWorld) {
 
-    // insert
-
-    let events_collection = insert_component_events::<Session>(world);
-
-    for events in events_collection {
-
-        insert_component_event::<Session, GlobalChatMessage>(world, &events);
-        insert_component_event::<Session, PublicUserInfo>(world, &events);
-    }
-
-    // update
-
-    let events_collection = update_component_events::<Session>(world);
-
-    for events in events_collection {
-
-        update_component_event::<Session, GlobalChatMessage>(world, &events);
-        update_component_event::<Session, PublicUserInfo>(world, &events);
-    }
-
-    // remove
-
-    let events_collection = remove_component_events::<Session>(world);
-
-    for events in events_collection {
-
-        remove_component_event::<Session, GlobalChatMessage>(world, &events);
-        remove_component_event::<Session, PublicUserInfo>(world, &events);
+    for events in get_component_events::<Session>(world) {
+        events.process::<GlobalChatMessage>(world);
+        events.process::<PublicUserInfo>(world);
     }
 }

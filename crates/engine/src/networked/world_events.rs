@@ -15,14 +15,14 @@ use logging::info;
 
 use world_server_naia_proto::components::{Alt1, AssetEntry, AssetRef, Main, Position};
 
-use super::{asset_ref_processor::{AssetProcessor, AssetRefProcessor}, client_markers::World, component_events, world_events};
+use super::{asset_ref_processor::{AssetProcessor, AssetRefProcessor}, client_markers::World};
 use crate::{
     asset_cache::AssetCache,
     networked::{
         component_events::{
-            insert_component_event, insert_component_events, InsertComponentEvent,
-            update_component_event, update_component_events, UpdateComponentEvent,
-            remove_component_event, remove_component_events, RemoveComponentEvent,
+            get_component_events, InsertComponentEvent,
+            UpdateComponentEvent, component_events_startup,
+            RemoveComponentEvent,
         },
     },
     world::{WorldDespawnEntityEvent, WorldSpawnEntityEvent, WorldClient},
@@ -43,11 +43,8 @@ impl Plugin for WorldEventsPlugin {
             .add_systems(Update, despawn_entity_events)
             .add_event::<WorldDespawnEntityEvent>()
 
-            .add_systems(
-                Startup,
-                component_events::component_events_startup::<World>,
-            )
-            .add_systems(Update, world_events::component_events)
+            .add_systems(Startup, component_events_startup::<World>)
+            .add_systems(Update, component_events_update)
             .add_event::<WorldInsertComponentEvent<Position>>()
 
             .add_event::<InsertAssetRefEvent<Main>>()
@@ -90,48 +87,22 @@ impl<T> InsertAssetRefEvent<T> {
 }
 
 // used as a system
-pub fn component_events(world: &mut BevyWorld) {
+pub fn component_events_update(world: &mut BevyWorld) {
 
     // insert & asset events
 
-    let events_collection = insert_component_events::<World>(world);
-
-    for events in events_collection {
+    for events in get_component_events::<World>(world) {
         info!("received world events: [");
 
-        // asset events
-        insert_asset_entry_event(world, &events);
-        insert_asset_ref_event::<Main>(world, &events);
-        insert_asset_ref_event::<Alt1>(world, &events);
+        if events.is_insert() {
+            // asset events
+            insert_asset_entry_event(world, events.as_insert());
+            insert_asset_ref_event::<Main>(world, events.as_insert());
+            insert_asset_ref_event::<Alt1>(world, events.as_insert());
+        }
 
-        // other events
-        insert_component_event::<World, Position>(world, &events);
-
-        info!("]");
-    }
-
-    // update
-
-    let events_collection = update_component_events::<World>(world);
-
-    for events in events_collection {
-        info!("received world events: [");
-
-        // other events
-        update_component_event::<World, Position>(world, &events);
-
-        info!("]");
-    }
-
-    // remove
-
-    let events_collection = remove_component_events::<World>(world);
-
-    for events in events_collection {
-        info!("received world events: [");
-
-        // other events
-        remove_component_event::<World, Position>(world, &events);
+        // component events
+        events.process::<Position>(world);
 
         info!("]");
     }

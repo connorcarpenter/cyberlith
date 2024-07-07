@@ -8,16 +8,46 @@ use bevy_ecs::{
 
 use naia_bevy_client::{events::{RemoveComponentEvents, UpdateComponentEvents, InsertComponentEvents}, Replicate, Tick};
 
-// Insert Component Events
+// ComponentEvent
+pub(crate) enum ComponentEvents<T> {
+    Insert(InsertComponentEvents<T>),
+    Update(UpdateComponentEvents<T>),
+    Remove(RemoveComponentEvents<T>),
+}
+
+impl<T: Send + Sync + 'static> ComponentEvents<T> {
+
+    pub(crate) fn is_insert(&self) -> bool {
+        match self {
+            Self::Insert(_) => true,
+            _ => false,
+        }
+    }
+
+    pub(crate) fn as_insert(&self) -> &InsertComponentEvents<T> {
+        match self {
+            Self::Insert(events) => events,
+            _ => panic!("ComponentEvents is not Insert"),
+        }
+    }
+
+    pub(crate) fn process<C: Replicate>(&self, world: &mut BevyWorld) {
+        match self {
+            Self::Insert(events) => insert_component_event::<T, C>(world, &events),
+            Self::Update(events) => update_component_event::<T, C>(world, &events),
+            Self::Remove(events) => remove_component_event::<T, C>(world, &events),
+        }
+    }
+}
 
 #[derive(Event)]
-pub struct InsertComponentEvent<T, C: Replicate> {
+pub struct InsertComponentEvent<T: Send + Sync + 'static, C: Replicate> {
     pub entity: Entity,
     phantom_t: std::marker::PhantomData<T>,
     phantom_c: std::marker::PhantomData<C>,
 }
 
-impl<T, C: Replicate> InsertComponentEvent<T, C> {
+impl<T: Send + Sync + 'static, C: Replicate> InsertComponentEvent<T, C> {
     pub fn new(entity: Entity) -> Self {
         Self {
             entity,
@@ -27,11 +57,60 @@ impl<T, C: Replicate> InsertComponentEvent<T, C> {
     }
 }
 
+#[derive(Event)]
+pub struct UpdateComponentEvent<T: Send + Sync + 'static, C: Replicate> {
+    pub tick: Tick,
+    pub entity: Entity,
+    phantom_t: std::marker::PhantomData<T>,
+    phantom_c: std::marker::PhantomData<C>,
+}
+
+impl<T: Send + Sync + 'static, C: Replicate> UpdateComponentEvent<T, C> {
+    pub fn new(tick: Tick, entity: Entity) -> Self {
+        Self {
+            tick,
+            entity,
+            phantom_t: std::marker::PhantomData,
+            phantom_c: std::marker::PhantomData,
+        }
+    }
+}
+
+#[derive(Event)]
+pub struct RemoveComponentEvent<T: Send + Sync + 'static, C: Replicate> {
+    pub entity: Entity,
+    phantom_t: std::marker::PhantomData<T>,
+    pub component: C,
+}
+
+impl<T: Send + Sync + 'static, C: Replicate> RemoveComponentEvent<T, C> {
+    pub fn new(entity: Entity, component: C) -> Self {
+        Self {
+            entity,
+            phantom_t: std::marker::PhantomData,
+            component,
+        }
+    }
+}
+
+// Startup State
+
 #[derive(Resource)]
 pub struct CachedInsertComponentEventsState<T: Send + Sync + 'static> {
     event_state: SystemState<EventReader<'static, 'static, InsertComponentEvents<T>>>,
 }
 
+#[derive(Resource)]
+pub struct CachedUpdateComponentEventsState<T: Send + Sync + 'static> {
+    event_state: SystemState<EventReader<'static, 'static, UpdateComponentEvents<T>>>,
+}
+
+#[derive(Resource)]
+pub struct CachedRemoveComponentEventsState<T: Send + Sync + 'static> {
+    event_state: SystemState<EventReader<'static, 'static, RemoveComponentEvents<T>>>,
+}
+
+// this is a system
 pub fn component_events_startup<T: Send + Sync + 'static> (
     world: &mut BevyWorld,
 ) {
@@ -52,10 +131,12 @@ pub fn component_events_startup<T: Send + Sync + 'static> (
 }
 
 // this is not a system! It should be wrapped!
-pub fn insert_component_events<T: Clone + Send + Sync + 'static>(
+pub fn get_component_events<T: Clone + Send + Sync + 'static>(
     world: &mut BevyWorld,
-) -> Vec<InsertComponentEvents<T>> {
-    let mut events_collection: Vec<InsertComponentEvents<T>> = Vec::new();
+) -> Vec<ComponentEvents<T>> {
+    let mut events_collection: Vec<ComponentEvents<T>> = Vec::new();
+
+    // Insert
 
     world.resource_scope(
         |world, mut events_reader_state: Mut<CachedInsertComponentEventsState<T>>| {
@@ -64,7 +145,34 @@ pub fn insert_component_events<T: Clone + Send + Sync + 'static>(
             for events in events_reader.read() {
                 let events_clone: InsertComponentEvents<T> = Clone::clone(events);
                 // info!("insert_component_events() events");
-                events_collection.push(events_clone);
+                events_collection.push(ComponentEvents::Insert(events_clone));
+            }
+        },
+    );
+
+    // Update
+
+    world.resource_scope(
+        |world, mut events_reader_state: Mut<CachedUpdateComponentEventsState<T>>| {
+            let mut events_reader = events_reader_state.event_state.get_mut(world);
+
+            for events in events_reader.read() {
+                let events_clone: UpdateComponentEvents<T> = Clone::clone(events);
+
+                events_collection.push(ComponentEvents::Update(events_clone));
+            }
+        },
+    );
+
+    // Remove
+
+    world.resource_scope(
+        |world, mut events_reader_state: Mut<CachedRemoveComponentEventsState<T>>| {
+            let mut events_reader = events_reader_state.event_state.get_mut(world);
+
+            for events in events_reader.read() {
+                let events_clone: RemoveComponentEvents<T> = Clone::clone(events);
+                events_collection.push(ComponentEvents::Remove(events_clone));
             }
         },
     );
@@ -72,7 +180,7 @@ pub fn insert_component_events<T: Clone + Send + Sync + 'static>(
     events_collection
 }
 
-pub fn insert_component_event<T: Send + Sync + 'static, C: Replicate>(
+fn insert_component_event<T: Send + Sync + 'static, C: Replicate>(
     world: &mut BevyWorld,
     events: &InsertComponentEvents<T>,
 ) {
@@ -85,54 +193,7 @@ pub fn insert_component_event<T: Send + Sync + 'static, C: Replicate>(
     }
 }
 
-// Update Component Events
-
-#[derive(Event)]
-pub struct UpdateComponentEvent<T, C: Replicate> {
-    pub tick: Tick,
-    pub entity: Entity,
-    phantom_t: std::marker::PhantomData<T>,
-    phantom_c: std::marker::PhantomData<C>,
-}
-
-impl<T, C: Replicate> UpdateComponentEvent<T, C> {
-    pub fn new(tick: Tick, entity: Entity) -> Self {
-        Self {
-            tick,
-            entity,
-            phantom_t: std::marker::PhantomData,
-            phantom_c: std::marker::PhantomData,
-        }
-    }
-}
-
-#[derive(Resource)]
-pub struct CachedUpdateComponentEventsState<T: Send + Sync + 'static> {
-    event_state: SystemState<EventReader<'static, 'static, UpdateComponentEvents<T>>>,
-}
-
-// this is not a system! It should be wrapped!
-pub fn update_component_events<T: Clone + Send + Sync + 'static>(
-    world: &mut BevyWorld,
-) -> Vec<UpdateComponentEvents<T>> {
-    let mut events_collection: Vec<UpdateComponentEvents<T>> = Vec::new();
-
-    world.resource_scope(
-        |world, mut events_reader_state: Mut<CachedUpdateComponentEventsState<T>>| {
-            let mut events_reader = events_reader_state.event_state.get_mut(world);
-
-            for events in events_reader.read() {
-                let events_clone: UpdateComponentEvents<T> = Clone::clone(events);
-
-                events_collection.push(events_clone);
-            }
-        },
-    );
-
-    events_collection
-}
-
-pub fn update_component_event<T: Send + Sync + 'static, C: Replicate>(
+fn update_component_event<T: Send + Sync + 'static, C: Replicate>(
     world: &mut BevyWorld,
     events: &UpdateComponentEvents<T>,
 ) {
@@ -145,51 +206,7 @@ pub fn update_component_event<T: Send + Sync + 'static, C: Replicate>(
     }
 }
 
-// Remove Component Events
-
-#[derive(Event)]
-pub struct RemoveComponentEvent<T, C: Replicate> {
-    pub entity: Entity,
-    phantom_t: std::marker::PhantomData<T>,
-    pub component: C,
-}
-
-impl<T, C: Replicate> RemoveComponentEvent<T, C> {
-    pub fn new(entity: Entity, component: C) -> Self {
-        Self {
-            entity,
-            phantom_t: std::marker::PhantomData,
-            component,
-        }
-    }
-}
-
-#[derive(Resource)]
-pub struct CachedRemoveComponentEventsState<T: Send + Sync + 'static> {
-    event_state: SystemState<EventReader<'static, 'static, RemoveComponentEvents<T>>>,
-}
-
-// this is not a system! It should be wrapped!
-pub fn remove_component_events<T: Clone + Send + Sync + 'static>(
-    world: &mut BevyWorld,
-) -> Vec<RemoveComponentEvents<T>> {
-    let mut events_collection: Vec<RemoveComponentEvents<T>> = Vec::new();
-
-    world.resource_scope(
-        |world, mut events_reader_state: Mut<CachedRemoveComponentEventsState<T>>| {
-            let mut events_reader = events_reader_state.event_state.get_mut(world);
-
-            for events in events_reader.read() {
-                let events_clone: RemoveComponentEvents<T> = Clone::clone(events);
-                events_collection.push(events_clone);
-            }
-        },
-    );
-
-    events_collection
-}
-
-pub fn remove_component_event<T: Send + Sync + 'static, C: Replicate>(
+fn remove_component_event<T: Send + Sync + 'static, C: Replicate>(
     world: &mut BevyWorld,
     events: &RemoveComponentEvents<T>,
 ) {
