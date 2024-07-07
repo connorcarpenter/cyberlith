@@ -42,7 +42,7 @@ async fn async_recv_connect_session_server_request_impl(
     // get present users
     let present_users: Vec<UserId> = state
         .users
-        .get_present_users()
+        .get_online_users()
         .iter()
         .map(|u| u.clone())
         .collect();

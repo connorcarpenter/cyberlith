@@ -25,6 +25,10 @@ impl UsersState {
         }
     }
 
+    pub fn is_user_online(&self, user_id: &UserId) -> bool {
+        self.users.contains(user_id)
+    }
+
     pub fn connect_user(&mut self, user_id: &UserId) {
         self.users.insert(*user_id);
 
@@ -37,7 +41,7 @@ impl UsersState {
         self.outgoing_patches.push(UserPatch::Remove(sending_session_server_id, user_id));
     }
 
-    pub fn get_present_users(&self) -> Vec<UserId> {
+    pub fn get_online_users(&self) -> Vec<UserId> {
         self.users.iter().map(|id| *id).collect()
     }
 

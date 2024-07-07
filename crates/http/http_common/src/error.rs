@@ -15,6 +15,7 @@ pub enum ResponseError {
     BadRequest,      // 400 response
     Unauthenticated, // 401 response
     NotFound,        // 404 response
+    Conflict,        // 409 response
 
     // server errors, from server
     InternalServerError(String), // 500 response
@@ -28,6 +29,7 @@ impl ResponseError {
             ResponseError::BadRequest => "BadRequest".to_string(),
             ResponseError::Unauthenticated => "Unauthenticated".to_string(),
             ResponseError::NotFound => "NotFound".to_string(),
+            ResponseError::Conflict => "Conflict".to_string(),
             ResponseError::InternalServerError(error) => format!("InternalServerError: {}", error),
         }
     }
@@ -40,6 +42,7 @@ impl ResponseError {
             ResponseError::BadRequest => 400,
             ResponseError::Unauthenticated => 401,
             ResponseError::NotFound => 404,
+            ResponseError::Conflict => 409,
             ResponseError::InternalServerError(_) => 500,
             ResponseError::NetworkError(_) => 500,
             ResponseError::SerdeError => 500,
@@ -54,6 +57,7 @@ impl ResponseError {
             400 => ResponseError::BadRequest,
             401 => ResponseError::Unauthenticated,
             404 => ResponseError::NotFound,
+            409 => ResponseError::Conflict,
             500 => ResponseError::InternalServerError(response.status_text.clone()),
             status_code => panic!("unexpected status code: {}", status_code),
         }

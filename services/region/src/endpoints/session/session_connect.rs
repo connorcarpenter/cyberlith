@@ -52,12 +52,17 @@ async fn async_impl(
         let response_result = HttpClient::send(&social_addr, social_port, request).await;
         http_server::log_util::recv_res(&host, &remote, &logged_remote_url);
 
-        let Ok(_response) = response_result else {
-            warn!("Failed session_connect request to social server");
+        let Ok(response) = response_result else {
+            warn!("Failed session_connect request to social server, because of internal server error");
             return Err(ResponseError::InternalServerError(
                 "failed session_connect to social server".to_string(),
             ));
         };
+
+        if !response.successful() {
+            warn!("Failed session_connect request to social server, because of pre-existing session");
+            return Err(ResponseError::Conflict);
+        }
     }
 
     // send user connection request to session server

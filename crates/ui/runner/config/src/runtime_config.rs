@@ -4,7 +4,6 @@ use std::{
 };
 
 use asset_id::AssetId;
-use logging::info;
 use render_api::base::Color;
 use ui_builder_config::{
     BaseNodeStyle, Button, ButtonStyle, Navigation, Panel, PanelStyle, SpinnerStyle, StyleId,

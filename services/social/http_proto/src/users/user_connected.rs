@@ -28,7 +28,23 @@ impl UserConnectedRequest {
 
 // Response
 #[derive(Serde, PartialEq, Clone)]
-pub struct UserConnectedResponse;
+pub struct UserConnectedResponse {
+    already_connected: bool,
+}
+
+impl UserConnectedResponse {
+    pub fn success() -> Self {
+        Self { already_connected: false }
+    }
+
+    pub fn already_connected() -> Self {
+        Self { already_connected: true }
+    }
+
+    pub fn successful(&self) -> bool {
+        !self.already_connected
+    }
+}
 
 // Traits
 impl ApiRequest for UserConnectedRequest {
