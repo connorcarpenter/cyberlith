@@ -1,10 +1,10 @@
 use bevy_app::{App, Plugin, Startup, Update};
 use bevy_ecs::{event::EventReader, prelude::World as BevyWorld};
-
-use logging::warn;
+use bevy_ecs::event::EventWriter;
+use logging::{info, warn};
 
 use naia_bevy_client::NaiaClientError;
-
+use kernel::AppExitAction;
 use session_server_naia_proto::components::{GlobalChatMessage, PublicUserInfo};
 
 use crate::{
@@ -81,6 +81,7 @@ pub fn component_events_update(world: &mut BevyWorld) {
 // used as a system
 fn error_events(
     mut event_reader: EventReader<SessionErrorEvent>,
+    mut app_exit_action_writer: EventWriter<AppExitAction>,
 ) {
     for event in event_reader.read() {
         let error = &event.err;
@@ -90,6 +91,9 @@ fn error_events(
                     409 => {
                         // conflict, represents attempted simultaneous connection
                         warn!("SessionErrorEvent::IdError(CONFLICT!)");
+
+                        // redirect to launcher
+                        redirect_to_launcher_app(&mut app_exit_action_writer)
                     }
                     _ => {
                         warn!("SessionErrorEvent::IdError, with unhandled status code: {:?}", status_code);
@@ -101,4 +105,9 @@ fn error_events(
             }
         }
     }
+}
+
+fn redirect_to_launcher_app(app_exit_action_writer: &mut EventWriter<AppExitAction>) {
+    info!("redirecting to launcher app");
+    app_exit_action_writer.send(AppExitAction::go_to("launcher"));
 }

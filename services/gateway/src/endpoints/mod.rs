@@ -3,3 +3,5 @@ pub mod user_name_forgot;
 pub mod user_password_forgot;
 pub mod user_password_reset;
 pub mod user_register;
+pub mod redirect;
+pub mod session_connect;

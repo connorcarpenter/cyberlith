@@ -1,19 +1,18 @@
 mod auth_handler;
 mod endpoints;
 mod rate_limiter;
-mod redirect;
 mod register_token;
-mod session_connect;
 
 use std::{net::SocketAddr, thread, time::Duration};
 
 use config::{
-    TargetEnv, CONTENT_SERVER_PORT, CONTENT_SERVER_RECV_ADDR, GATEWAY_PORT, PUBLIC_IP_ADDR,
-    PUBLIC_PROTOCOL, SELF_BINDING_ADDR, SESSION_SERVER_RECV_ADDR, SESSION_SERVER_SIGNAL_PORT,
+    CONTENT_SERVER_PORT, CONTENT_SERVER_RECV_ADDR, GATEWAY_PORT, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL,
+    SELF_BINDING_ADDR, SESSION_SERVER_RECV_ADDR, SESSION_SERVER_SIGNAL_PORT, TargetEnv,
     WORLD_SERVER_RECV_ADDR, WORLD_SERVER_SIGNAL_PORT,
 };
+use endpoints::{redirect, session_connect};
 use http_server::{
-    async_dup::Arc, executor::smol, executor::smol::lock::RwLock, ApiRequest, ApiServer, Method,
+    ApiRequest, ApiServer, async_dup::Arc, executor::smol, executor::smol::lock::RwLock, Method,
     ProxyServer, Server,
 };
 use logging::info;
