@@ -23,11 +23,26 @@ impl UserLoginRequest {
 
 // Response
 #[derive(Serde, PartialEq, Clone)]
-pub struct UserLoginResponse;
+pub struct UserLoginResponse {
+    simultaneous_login_detected: bool,
+}
 
 impl UserLoginResponse {
-    pub fn new() -> Self {
-        Self
+
+    pub fn success() -> Self {
+        Self {
+            simultaneous_login_detected: false,
+        }
+    }
+
+    pub fn simultaneous_login_detected() -> Self {
+        Self {
+            simultaneous_login_detected: true,
+        }
+    }
+
+    pub fn is_simultaneous_login_detected(&self) -> bool {
+        self.simultaneous_login_detected
     }
 }
 

@@ -21,8 +21,8 @@ async fn async_impl(
 ) -> Result<UserLoginResponse, ResponseError> {
     let mut state = state.write().await;
     let response = match state.user_login(incoming_request) {
-        Ok((refresh_token, access_token)) => {
-            Ok(UserLoginResponse::new(refresh_token, access_token))
+        Ok((refresh_token, access_token, user_id)) => {
+            Ok(UserLoginResponse::new(refresh_token, access_token, user_id))
         }
         Err(AuthServerError::UsernameOrEmailNotFound) | Err(AuthServerError::PasswordIncorrect) => {
             Err(ResponseError::Unauthenticated)
@@ -62,7 +62,7 @@ impl State {
     fn user_login(
         &mut self,
         request: UserLoginRequest,
-    ) -> Result<(RefreshToken, AccessToken), AuthServerError> {
+    ) -> Result<(RefreshToken, AccessToken, UserId), AuthServerError> {
         let handle = request.handle;
         let password = request.password;
 
@@ -94,6 +94,6 @@ impl State {
 
         // create and store new access token
         let (refresh_token, access_token) = self.user_new_login_gen_tokens(&user_id);
-        Ok((refresh_token, access_token))
+        Ok((refresh_token, access_token, user_id))
     }
 }
