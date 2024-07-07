@@ -3,26 +3,21 @@ use std::sync::{Arc, RwLock};
 use bevy_app::{App, Plugin, Startup, Update};
 
 use naia_bevy_client::{
-    events::DespawnEntityEvent, ClientConfig as NaiaClientConfig, Plugin as NaiaClientPlugin,
+    ClientConfig as NaiaClientConfig, Plugin as NaiaClientPlugin,
 };
 
 use kernel::http::CookieStore;
 
 use session_server_naia_proto::{
-    components::{GlobalChatMessage, PublicUserInfo}, protocol as session_server_naia_protocol,
+    protocol as session_server_naia_protocol,
 };
 use world_server_naia_proto::{
-    components::{Alt1, Main, Position},
     protocol as world_server_naia_protocol,
 };
 
-use super::{asset_cache_checker::AssetCacheChecker, asset_ref_processor::AssetRefProcessor, client_markers::{Session, World}, connection_manager::ConnectionManager, insert_component_event, remove_component_event, update_component_event, session_events, world_events, world_events::InsertAssetRefEvent};
+use super::{asset_cache_checker::AssetCacheChecker, asset_ref_processor::AssetRefProcessor, client_markers::{Session, World}, connection_manager::ConnectionManager};
 use crate::{
-    networked::{
-        session_events::SessionInsertComponentEvent, world_events::WorldInsertComponentEvent,
-    },
-    session::{SessionDespawnEntityEvent, SessionSpawnEntityEvent},
-    world::{WorldDespawnEntityEvent, WorldSpawnEntityEvent},
+    networked::{session_events::SessionEventsPlugin, world_events::WorldEventsPlugin},
     EnginePlugin,
 };
 
@@ -40,7 +35,9 @@ impl Plugin for NetworkedEnginePlugin {
     fn build(&self, app: &mut App) {
         let engine_plugin = EnginePlugin::new(self.cookie_store_opt.clone());
 
-        app.add_plugins(engine_plugin)
+        app
+            .add_plugins(engine_plugin)
+
             .add_plugins(NaiaClientPlugin::<Session>::new(
                 NaiaClientConfig::default(),
                 session_server_naia_protocol(),
@@ -49,6 +46,7 @@ impl Plugin for NetworkedEnginePlugin {
                 NaiaClientConfig::default(),
                 world_server_naia_protocol(),
             ))
+
             // connection manager stuff, maybe refactor out into a plugin?
             .init_resource::<ConnectionManager>()
             .add_systems(Update, ConnectionManager::handle_connection)
@@ -58,57 +56,15 @@ impl Plugin for NetworkedEnginePlugin {
             .add_systems(Update, ConnectionManager::handle_session_message_events)
             .add_systems(Update, ConnectionManager::handle_session_request_events)
             .add_systems(Update, ConnectionManager::handle_world_connect_events)
+
             // asset ref processing stuff
             .init_resource::<AssetRefProcessor>()
             .add_systems(Startup, AssetRefProcessor::init_asset_loaded_events)
             .add_systems(Update, AssetRefProcessor::handle_asset_loaded_events)
             .init_resource::<AssetCacheChecker>()
             .add_systems(Update, AssetCacheChecker::handle_load_asset_tasks)
-            // session component insert stuff
-            .add_systems(
-                Startup,
-                insert_component_event::insert_component_events_startup::<Session>,
-            )
-            .add_systems(
-                Startup,
-                update_component_event::update_component_events_startup::<Session>,
-            )
-            .add_systems(
-                Startup,
-                remove_component_event::remove_component_events_startup::<Session>,
-            )
-            .add_systems(Update, session_events::spawn_entity_events)
-            .add_systems(Update, session_events::despawn_entity_events)
-            .add_systems(Update, session_events::session_insert_component_events)
-            .add_systems(Update, session_events::session_update_component_events)
-            .add_systems(Update, session_events::session_remove_component_events)
-            .add_event::<SessionSpawnEntityEvent>()
-            .add_event::<SessionDespawnEntityEvent>()
-            .add_event::<SessionInsertComponentEvent<GlobalChatMessage>>()
-            .add_event::<SessionInsertComponentEvent<PublicUserInfo>>()
-            // world component insert stuff
-            .add_systems(
-                Startup,
-                insert_component_event::insert_component_events_startup::<World>,
-            )
-            .add_systems(
-                Startup,
-                update_component_event::update_component_events_startup::<World>,
-            )
-            .add_systems(
-                Startup,
-                remove_component_event::remove_component_events_startup::<World>,
-            )
-            .add_systems(Update, world_events::spawn_entity_events)
-            .add_systems(Update, world_events::despawn_entity_events)
-            .add_systems(Update, world_events::world_insert_component_events)
-            .add_systems(Update, world_events::world_update_component_events)
-            .add_systems(Update, world_events::world_remove_component_events)
-            .add_event::<WorldSpawnEntityEvent>()
-            .add_event::<WorldDespawnEntityEvent>()
-            .add_event::<WorldInsertComponentEvent<Position>>()
-            .add_event::<InsertAssetRefEvent<Main>>()
-            .add_event::<InsertAssetRefEvent<Alt1>>()
-            .add_event::<DespawnEntityEvent<World>>();
+
+            .add_plugins(SessionEventsPlugin)
+            .add_plugins(WorldEventsPlugin);
     }
 }

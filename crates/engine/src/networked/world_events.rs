@@ -1,3 +1,4 @@
+use bevy_app::{App, Plugin, Startup, Update};
 use bevy_ecs::{
     change_detection::{Mut, ResMut},
     entity::Entity,
@@ -14,39 +15,55 @@ use logging::info;
 
 use world_server_naia_proto::components::{Alt1, AssetEntry, AssetRef, Main, Position};
 
-use super::{
-    asset_ref_processor::{AssetProcessor, AssetRefProcessor},
-    client_markers::World,
-};
+use super::{asset_ref_processor::{AssetProcessor, AssetRefProcessor}, client_markers::World, component_events, world_events};
 use crate::{
     asset_cache::AssetCache,
     networked::{
-        insert_component_event::{
+        component_events::{
             insert_component_event, insert_component_events, InsertComponentEvent,
-        },
-        update_component_event::{
             update_component_event, update_component_events, UpdateComponentEvent,
-        },
-        remove_component_event::{
             remove_component_event, remove_component_events, RemoveComponentEvent,
-        }
+        },
     },
-    world::WorldClient,
+    world::{WorldDespawnEntityEvent, WorldSpawnEntityEvent, WorldClient},
 };
 
 pub type WorldInsertComponentEvent<C> = InsertComponentEvent<World, C>;
 pub type WorldUpdateComponentEvent<C> = UpdateComponentEvent<World, C>;
 pub type WorldRemoveComponentEvent<C> = RemoveComponentEvent<World, C>;
 
+pub struct WorldEventsPlugin;
+
+impl Plugin for WorldEventsPlugin {
+    fn build(&self, app: &mut App) {
+        app
+            .add_systems(Update, spawn_entity_events)
+            .add_event::<WorldSpawnEntityEvent>()
+
+            .add_systems(Update, despawn_entity_events)
+            .add_event::<WorldDespawnEntityEvent>()
+
+            .add_systems(
+                Startup,
+                component_events::component_events_startup::<World>,
+            )
+            .add_systems(Update, world_events::component_events)
+            .add_event::<WorldInsertComponentEvent<Position>>()
+
+            .add_event::<InsertAssetRefEvent<Main>>()
+            .add_event::<InsertAssetRefEvent<Alt1>>();
+    }
+}
+
 // used as a system
-pub fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent<World>>) {
+fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent<World>>) {
     for _event in event_reader.read() {
         // info!("spawned entity");
     }
 }
 
 // used as a system
-pub fn despawn_entity_events(mut event_reader: EventReader<DespawnEntityEvent<World>>) {
+fn despawn_entity_events(mut event_reader: EventReader<DespawnEntityEvent<World>>) {
     for _event in event_reader.read() {
         // info!("despawned entity");
     }
@@ -73,7 +90,10 @@ impl<T> InsertAssetRefEvent<T> {
 }
 
 // used as a system
-pub fn world_insert_component_events(world: &mut BevyWorld) {
+pub fn component_events(world: &mut BevyWorld) {
+
+    // insert & asset events
+
     let events_collection = insert_component_events::<World>(world);
 
     for events in events_collection {
@@ -89,10 +109,9 @@ pub fn world_insert_component_events(world: &mut BevyWorld) {
 
         info!("]");
     }
-}
 
-// used as a system
-pub fn world_update_component_events(world: &mut BevyWorld) {
+    // update
+
     let events_collection = update_component_events::<World>(world);
 
     for events in events_collection {
@@ -103,10 +122,9 @@ pub fn world_update_component_events(world: &mut BevyWorld) {
 
         info!("]");
     }
-}
 
-// used as a system
-pub fn world_remove_component_events(world: &mut BevyWorld) {
+    // remove
+
     let events_collection = remove_component_events::<World>(world);
 
     for events in events_collection {
