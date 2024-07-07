@@ -26,7 +26,7 @@ impl UiConfigBuild for UiConfig {
     }
 
     fn create_panel_style<F: FnMut(&mut PanelStyleMut)>(&mut self, mut func: F) -> StyleId {
-        let new_style = NodeStyle::empty(WidgetStyle::Panel(PanelStyle::empty()));
+        let new_style = NodeStyle::empty(None, WidgetStyle::Panel(PanelStyle::empty()));
         let new_style_id = self.insert_style(new_style);
         let mut style_mut = PanelStyleMut::new(self, new_style_id);
         func(&mut style_mut);
@@ -35,7 +35,7 @@ impl UiConfigBuild for UiConfig {
     }
 
     fn create_button_style<F: FnMut(&mut ButtonStyleMut)>(&mut self, mut func: F) -> StyleId {
-        let new_style = NodeStyle::empty(WidgetStyle::Button(ButtonStyle::empty()));
+        let new_style = NodeStyle::empty(None, WidgetStyle::Button(ButtonStyle::empty()));
         let new_style_id = self.insert_style(new_style);
         let mut style_mut = ButtonStyleMut::new(self, new_style_id);
         func(&mut style_mut);
@@ -44,7 +44,7 @@ impl UiConfigBuild for UiConfig {
     }
 
     fn create_text_style<F: FnMut(&mut TextStyleMut)>(&mut self, mut func: F) -> StyleId {
-        let new_style = NodeStyle::empty(WidgetStyle::Text(TextStyle::empty()));
+        let new_style = NodeStyle::empty(None, WidgetStyle::Text(TextStyle::empty()));
         let new_style_id = self.insert_style(new_style);
         let mut style_mut = TextStyleMut::new(self, new_style_id);
         func(&mut style_mut);
@@ -53,7 +53,7 @@ impl UiConfigBuild for UiConfig {
     }
 
     fn create_textbox_style<F: FnMut(&mut TextboxStyleMut)>(&mut self, mut func: F) -> StyleId {
-        let new_style = NodeStyle::empty(WidgetStyle::Textbox(TextboxStyle::empty()));
+        let new_style = NodeStyle::empty(None, WidgetStyle::Textbox(TextboxStyle::empty()));
         let new_style_id = self.insert_style(new_style);
         let mut style_mut = TextboxStyleMut::new(self, new_style_id);
         func(&mut style_mut);
@@ -62,7 +62,7 @@ impl UiConfigBuild for UiConfig {
     }
 
     fn create_spinner_style<F: FnMut(&mut SpinnerStyleMut)>(&mut self, mut func: F) -> StyleId {
-        let new_style = NodeStyle::empty(WidgetStyle::Spinner(SpinnerStyle::empty()));
+        let new_style = NodeStyle::empty(None, WidgetStyle::Spinner(SpinnerStyle::empty()));
         let new_style_id = self.insert_style(new_style);
         let mut style_mut = SpinnerStyleMut::new(self, new_style_id);
         func(&mut style_mut);
@@ -74,7 +74,7 @@ impl UiConfigBuild for UiConfig {
         &mut self,
         mut func: F,
     ) -> StyleId {
-        let new_style = NodeStyle::empty(WidgetStyle::UiContainer);
+        let new_style = NodeStyle::empty(None, WidgetStyle::UiContainer);
         let new_style_id = self.insert_style(new_style);
         let mut style_mut = UiContainerStyleMut::new(self, new_style_id);
         func(&mut style_mut);

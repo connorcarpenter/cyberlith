@@ -295,7 +295,7 @@ impl GlobalChat {
         item_ctx.add_copied_node(ui);
 
         let divider_date_str = message.timestamp.date_string();
-        item_ctx.set_text_by_str("timestamp", divider_date_str.as_str());
+        item_ctx.set_text_by_id("timestamp", divider_date_str.as_str());
     }
 
     fn add_username_and_message_item(
@@ -320,13 +320,13 @@ impl GlobalChat {
 
         item_ctx.add_copied_node(ui);
 
-        item_ctx.set_text_by_str("user_name", message_user_name.as_str());
+        item_ctx.set_text_by_id("user_name", message_user_name.as_str());
 
         let message_timestamp = message.timestamp.time_string();
-        item_ctx.set_text_by_str("timestamp", message_timestamp.as_str());
+        item_ctx.set_text_by_id("timestamp", message_timestamp.as_str());
 
         let message_text = message.message.as_str();
-        item_ctx.set_text_by_str("message", message_text);
+        item_ctx.set_text_by_id("message", message_text);
     }
 
     fn add_message_item(
@@ -336,7 +336,7 @@ impl GlobalChat {
     ) {
         item_ctx.add_copied_node(ui);
 
-        item_ctx.set_text_by_str("message", message_text);
+        item_ctx.set_text_by_id("message", message_text);
     }
 
     fn send_message(

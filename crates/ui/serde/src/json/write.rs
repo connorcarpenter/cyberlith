@@ -51,6 +51,8 @@ impl From<&NodeStyle> for UiStyleJson {
     fn from(style: &NodeStyle) -> Self {
         Self {
             parent_style: style.parent_style.map(|id| id.as_usize()),
+            id_str: style.id_str.clone(),
+
             widget_style: From::from(&style.base.widget_style),
 
             position_type: style.base.position_type.map(From::from),

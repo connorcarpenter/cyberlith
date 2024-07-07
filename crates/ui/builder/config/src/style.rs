@@ -52,17 +52,19 @@ impl WidgetStyle {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct NodeStyle {
     pub parent_style: Option<StyleId>,
     pub base: BaseNodeStyle,
+    pub id_str: Option<String>,
 }
 
 impl NodeStyle {
-    pub fn empty(widget_style: WidgetStyle) -> Self {
+    pub fn empty(id_str_opt: Option<&str>, widget_style: WidgetStyle) -> Self {
         Self {
             parent_style: None,
             base: BaseNodeStyle::empty(widget_style),
+            id_str: id_str_opt.map(|s| s.to_string()),
         }
     }
 

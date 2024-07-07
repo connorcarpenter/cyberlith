@@ -18,7 +18,7 @@ pub struct LoadedItem {
 }
 
 impl LoadedItem {
-    pub fn new(old_actions: Vec<ListItemAction>) -> Self {
+    fn new(old_actions: Vec<ListItemAction>) -> Self {
         Self {
             node_ids: HashSet::new(),
             id_str_to_node_map: HashMap::new(),
@@ -34,7 +34,7 @@ impl LoadedItem {
         self.node_ids.len()
     }
 
-    pub(crate) fn actions_are_equal(&self, new_actions: &Vec<ListItemAction>) -> bool {
+    fn actions_are_equal(&self, new_actions: &Vec<ListItemAction>) -> bool {
         if self.old_actions.len() != new_actions.len() {
             return false;
         }
@@ -352,7 +352,7 @@ impl<K: Hash + Eq + Copy + Clone + PartialEq> ListUiExt<K> {
             .and_then(|loaded_item| loaded_item.id_str_to_node_map.get(node_str))
     }
 
-    pub(crate) fn actions_are_equal(&self, item_key: K, new_actions: &Vec<ListItemAction>) -> bool {
+    fn actions_are_equal(&self, item_key: K, new_actions: &Vec<ListItemAction>) -> bool {
         let Some(loaded_item) = self.loaded_items.get(&item_key) else {
             return false;
         };
@@ -371,7 +371,8 @@ impl<K: Hash + Eq + Copy + Clone + PartialEq> ListUiExt<K> {
 #[derive(Eq, PartialEq, Clone)]
 enum ListItemAction {
     AddCopiedNode(UiHandle),
-    SetTextByStr(String, String),
+    SetTextById(String, String),
+    SetStyleById(String, String),
 }
 
 pub struct ListUiExtItem<'a, K: Hash + Eq + Copy + Clone + PartialEq> {
@@ -412,10 +413,17 @@ impl<'a, K: Hash + Eq + Copy + Clone + PartialEq> ListUiExtItem<'a, K> {
             .push(ListItemAction::AddCopiedNode(*item_ui_handle));
     }
 
-    pub fn set_text_by_str(&mut self, id_str: &str, text_str: &str) {
-        self.actions.push(ListItemAction::SetTextByStr(
+    pub fn set_text_by_id(&mut self, id_str: &str, text_str: &str) {
+        self.actions.push(ListItemAction::SetTextById(
             id_str.to_string(),
             text_str.to_string(),
+        ));
+    }
+
+    pub fn set_style_by_id(&mut self, node_id_str: &str, style_id_str: &str) {
+        self.actions.push(ListItemAction::SetStyleById(
+            node_id_str.to_string(),
+            style_id_str.to_string(),
         ));
     }
 
@@ -475,7 +483,7 @@ impl<'a, K: Hash + Eq + Copy + Clone + PartialEq> ListUiExtItem<'a, K> {
         loaded_item.add_node(new_node_id);
     }
 
-    fn set_text_by_str_impl(&mut self, id_str: &str, text_str: &str) {
+    fn set_text_by_id_impl(&mut self, id_str: &str, text_str: &str) {
         let node_id = self
             .list_ui_ext
             .get_node_id_by_str(self.item_key, id_str)
@@ -487,6 +495,23 @@ impl<'a, K: Hash + Eq + Copy + Clone + PartialEq> ListUiExtItem<'a, K> {
             .get_mut(self.container_ui_handle)
             .unwrap();
         container_ui_runtime.set_text(node_id, text_str);
+    }
+
+    fn set_style_by_id_impl(&mut self, item_id_str: &str, style_id_str: &str) {
+        let node_id = self
+            .list_ui_ext
+            .get_node_id_by_str(self.item_key, item_id_str)
+            .unwrap();
+
+        let container_ui_runtime = self
+            .ui_manager
+            .ui_runtimes
+            .get_mut(self.container_ui_handle)
+            .unwrap();
+        let style_id = container_ui_runtime
+            .get_style_id_by_str(style_id_str)
+            .unwrap();
+        container_ui_runtime.set_style_id(node_id, &style_id);
     }
 
     pub fn finished(mut self, parent_height: f32) {
@@ -540,12 +565,9 @@ impl<'a, K: Hash + Eq + Copy + Clone + PartialEq> ListUiExtItem<'a, K> {
             // execute actions
             for action in new_actions {
                 match action {
-                    ListItemAction::AddCopiedNode(ui_handle) => {
-                        self.add_copied_node_impl(&ui_handle);
-                    }
-                    ListItemAction::SetTextByStr(id_str, text) => {
-                        self.set_text_by_str_impl(&id_str, &text);
-                    }
+                    ListItemAction::AddCopiedNode(ui_handle) => self.add_copied_node_impl(&ui_handle),
+                    ListItemAction::SetTextById(id_str, text) => self.set_text_by_id_impl(&id_str, &text),
+                    ListItemAction::SetStyleById(node_id_str, style_id_str) => self.set_style_by_id_impl(&node_id_str, &style_id_str),
                 }
             }
         }

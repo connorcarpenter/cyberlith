@@ -50,6 +50,8 @@ pub(crate) enum UiActionType {
 #[derive(Serde, Clone, PartialEq)]
 pub(crate) struct UiStyleBits {
     parent_style: Option<u8>, // TODO: is this a good value type for this? how many styles are we likely to have?
+    id_str: Option<String>,
+
     widget_style: WidgetStyleBits,
 
     position_type: Option<PositionTypeBits>,

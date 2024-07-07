@@ -190,6 +190,11 @@ impl<'a> ButtonStyleMut<'a> {
 
     // setters
 
+    pub fn set_id(&mut self, id_str: &str) -> &mut Self {
+        self.get_style_mut().id_str = Some(id_str.to_string());
+        self
+    }
+
     pub fn set_parent_style(&mut self, style_id: StyleId) -> &mut Self {
         self.get_style_mut().parent_style = Some(style_id);
         self

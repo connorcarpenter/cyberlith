@@ -120,6 +120,8 @@ impl From<&NodeStyle> for UiStyleBits {
 
         Self {
             parent_style: style.parent_style.map(|val| val.as_usize() as u8),
+            id_str: style.id_str.clone(),
+
             widget_style: From::from(&style.base.widget_style),
 
             position_type: style.base.position_type.map(From::from),

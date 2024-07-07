@@ -24,6 +24,7 @@ pub struct UiRuntimeConfig {
     next_node_id: NodeId,
     first_input_opt: Option<NodeId>,
     id_str_to_node_id_map: HashMap<String, NodeId>,
+    id_str_to_style_id_map: HashMap<String, StyleId>,
     copied_styles: HashMap<AssetId, HashMap<StyleId, StyleId>>,
 }
 
@@ -37,7 +38,13 @@ impl UiRuntimeConfig {
     }
 
     pub fn load_from_builder_config(ui_config: UiConfig) -> Self {
-        let (styles, nodes, first_input_opt, node_map) = ui_config.decompose();
+        let (
+            styles,
+            nodes,
+            first_input_opt,
+            node_map,
+            style_map,
+        ) = ui_config.decompose();
 
         let styles = compute_styles(styles);
 
@@ -48,6 +55,7 @@ impl UiRuntimeConfig {
             next_node_id: NodeId::new(0),
             first_input_opt,
             id_str_to_node_id_map: node_map,
+            id_str_to_style_id_map: style_map,
             copied_styles: HashMap::new(),
         };
 
@@ -101,6 +109,10 @@ impl UiRuntimeConfig {
 
     pub fn get_node_id_by_id_str(&self, id_str: &str) -> Option<NodeId> {
         self.id_str_to_node_id_map.get(id_str).cloned()
+    }
+
+    pub fn get_style_id_by_id_str(&self, id_str: &str) -> Option<StyleId> {
+        self.id_str_to_style_id_map.get(id_str).cloned()
     }
 
     // nodes
@@ -179,6 +191,13 @@ impl UiRuntimeConfig {
         let id = StyleId::new(self.styles.len() as u32);
         self.styles.push(style);
         id
+    }
+
+    pub fn set_style(&mut self, node_id: &NodeId, style_id: &StyleId) {
+        if let Some(node) = self.get_node_mut(node_id) {
+            node.clear_style_id();
+            node.set_style_id(style_id.clone());
+        }
     }
 
     fn node_style(&self, id: &NodeId) -> Option<&BaseNodeStyle> {

@@ -192,6 +192,11 @@ impl<'a> PanelStyleMut<'a> {
 
     // setters
 
+    pub fn set_id(&mut self, id_str: &str) -> &mut Self {
+        self.get_style_mut().id_str = Some(id_str.to_string());
+        self
+    }
+
     pub fn set_as_viewport(&mut self) -> &mut Self {
         self.get_panel_style_mut().is_viewport = true;
         self

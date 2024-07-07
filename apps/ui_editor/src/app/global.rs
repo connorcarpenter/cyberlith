@@ -153,7 +153,7 @@ fn add_day_divider_item(item_ctx: &mut ListUiExtItem<u32>, ui: &UiHandle, date: 
     item_ctx.add_copied_node(ui);
 
     let divider_date_str = format!("{}/{}", date.0, date.1);
-    item_ctx.set_text_by_str("timestamp", divider_date_str.as_str());
+    item_ctx.set_text_by_id("timestamp", divider_date_str.as_str());
 }
 
 fn add_username_and_message_item(
@@ -165,20 +165,20 @@ fn add_username_and_message_item(
 ) {
     item_ctx.add_copied_node(ui);
 
-    item_ctx.set_text_by_str("user_name", username);
+    item_ctx.set_text_by_id("user_name", username);
 
     let divider_date_str = format!("{}:{}", time.0, time.1);
-    item_ctx.set_text_by_str("timestamp", divider_date_str.as_str());
+    item_ctx.set_text_by_id("timestamp", divider_date_str.as_str());
 
-    item_ctx.set_text_by_str("message", message_text);
+    item_ctx.set_text_by_id("message", message_text);
 }
 
 fn add_message_item(item_ctx: &mut ListUiExtItem<u32>, ui: &UiHandle, message_text: &str) {
     item_ctx.add_copied_node(ui);
-    item_ctx.set_text_by_str("message", message_text);
+    item_ctx.set_text_by_id("message", message_text);
 }
 
 fn add_user_item(item_ctx: &mut ListUiExtItem<u32>, ui: &UiHandle, username: &str) {
     item_ctx.add_copied_node(ui);
-    item_ctx.set_text_by_str("username", username);
+    item_ctx.set_text_by_id("username", username);
 }

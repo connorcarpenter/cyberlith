@@ -561,6 +561,7 @@ impl Into<NodeStyle> for UiStyleBits {
     fn into(self) -> NodeStyle {
         NodeStyle {
             parent_style: self.parent_style.map(|val| StyleId::new(val as u32)),
+            id_str: self.id_str,
             base: BaseNodeStyle {
                 widget_style: self.widget_style.into(),
                 position_type: self.position_type.map(Into::into),

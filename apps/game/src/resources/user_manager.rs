@@ -100,14 +100,20 @@ impl UserManager {
                 let user_entity = *user_entity;
                 if let Ok(public_user_info) = user_q.get(user_entity) {
                     let username = public_user_info.name.as_str();
-                    add_user_item(item_ctx, item_ui_handle, username);
+                    let online = *public_user_info.online;
+                    add_user_item(item_ctx, item_ui_handle, username, online);
                 }
             },
         );
     }
 }
 
-fn add_user_item(item_ctx: &mut ListUiExtItem<u32>, ui: &UiHandle, username: &str) {
+fn add_user_item(item_ctx: &mut ListUiExtItem<u32>, ui: &UiHandle, username: &str, online: bool) {
     item_ctx.add_copied_node(ui);
-    item_ctx.set_text_by_str("username", username);
+    item_ctx.set_text_by_id("username", username);
+    if online {
+        item_ctx.set_style_by_id("username", "online");
+    } else {
+        item_ctx.set_style_by_id("username", "offline");
+    }
 }

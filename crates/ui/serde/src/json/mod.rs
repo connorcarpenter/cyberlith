@@ -47,6 +47,8 @@ impl UiConfigJson {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub(crate) struct UiStyleJson {
     parent_style: Option<usize>,
+    id_str: Option<String>,
+
     widget_style: WidgetStyleJson,
 
     position_type: Option<PositionTypeJson>,

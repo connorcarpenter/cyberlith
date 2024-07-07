@@ -470,6 +470,7 @@ impl Into<NodeStyle> for UiStyleJson {
     fn into(self) -> NodeStyle {
         NodeStyle {
             parent_style: self.parent_style.map(|id| StyleId::new(id as u32)),
+            id_str: self.id_str.clone(),
             base: BaseNodeStyle {
                 widget_style: self.widget_style.into(),
                 position_type: self.position_type.map(Into::into),

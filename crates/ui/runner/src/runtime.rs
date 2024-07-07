@@ -123,8 +123,12 @@ impl UiRuntime {
 
     // config
 
-    pub fn get_node_id_by_id_str(&self, id_str: &str) -> Option<NodeId> {
-        self.config.get_node_id_by_id_str(id_str)
+    pub fn get_node_id_by_id_str(&self, node_id_str: &str) -> Option<NodeId> {
+        self.config.get_node_id_by_id_str(node_id_str)
+    }
+
+    pub fn get_style_id_by_str(&self, style_id_str: &str) -> Option<StyleId> {
+        self.config.get_style_id_by_id_str(style_id_str)
     }
 
     pub fn has_copied_style(&self, ui_handle: &UiHandle) -> bool {
@@ -205,6 +209,10 @@ impl UiRuntime {
         self.state
             .style_state_init(&base_node_style.widget_style.kind());
         self.config.add_style(base_node_style)
+    }
+
+    pub fn set_style_id(&mut self, node_id: &NodeId, style_id: &StyleId) {
+        self.config.set_style(node_id, style_id);
     }
 
     pub(crate) fn get_textbox_validator(&self, id_str: &str) -> Option<ValidationType> {
