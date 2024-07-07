@@ -39,6 +39,7 @@ pub fn main() {
 
     users::recv_user_connected_request(host, &mut server, state.clone());
     users::recv_user_disconnected_request(host, &mut server, state.clone());
+    users::recv_user_is_online_request(host, &mut server, state.clone());
 
     match_lobbies::recv_match_lobby_create_request(host, &mut server, state.clone());
     match_lobbies::recv_match_lobby_join_request(host, &mut server, state.clone());

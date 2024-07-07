@@ -1,4 +1,5 @@
 mod auth_handler;
+mod demultiply_handler;
 mod endpoints;
 mod rate_limiter;
 mod register_token;
@@ -201,7 +202,7 @@ pub fn main() {
                 "launcher.html",
             )
             .request_middleware(register_token::handle)
-            .request_middleware(auth_handler::if_auth_tokens_redirect_game);
+            .request_middleware(auth_handler::if_auth_tokens_and_offline_redirect_game);
         server.serve_proxy(
             gateway,
             required_host_www,
@@ -224,6 +225,7 @@ pub fn main() {
             &port,
             "launcher_bg.wasm",
         );
+        // used when hitting "/game"
         server
             .serve_proxy(
                 gateway,
@@ -236,7 +238,9 @@ pub fn main() {
                 &port,
                 "game.html",
             )
-            .request_middleware(auth_handler::require_auth_tokens_or_redirect_home);
+            .request_middleware(auth_handler::require_auth_tokens_or_redirect_home)
+            .request_middleware(demultiply_handler::require_offline_or_redirect_home);
+        // used when hitting "/game.html"
         server.raw_endpoint(
             gateway,
             required_host_www,

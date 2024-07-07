@@ -11,6 +11,8 @@ use auth_server_http_proto::{
 };
 use auth_server_types::UserId;
 
+use crate::demultiply_handler::{get_user_online_status_impl, UserPresenceResult};
+
 pub(crate) async fn require_auth_tokens(
     incoming_addr: SocketAddr,
     incoming_request: Request,
@@ -114,27 +116,30 @@ async fn require_auth_tokens_or_redirect(
     }
 }
 
-pub(crate) async fn if_auth_tokens_redirect_game(
+pub(crate) async fn if_auth_tokens_and_offline_redirect_game(
     incoming_addr: SocketAddr,
     incoming_request: Request,
 ) -> RequestMiddlewareAction {
-    if_auth_tokens_redirect(incoming_addr, incoming_request, "/game").await
+    if_auth_tokens_and_offline_redirect(incoming_addr, incoming_request, "/game").await
 }
 
-async fn if_auth_tokens_redirect(
+async fn if_auth_tokens_and_offline_redirect(
     incoming_addr: SocketAddr,
     incoming_request: Request,
     new_url: &str,
 ) -> RequestMiddlewareAction {
     let url = incoming_request.url.clone();
-    match auth_impl(&incoming_addr, &incoming_request).await {
-        AuthResult::Continue(_user_id) => {
+
+    let (user_id, auth_result) = match auth_impl(&incoming_addr, &incoming_request).await {
+        AuthResult::Continue(user_id) => {
             // success
+
             // info!("sending redirect to /game");
             let response = Response::redirect(&url, new_url);
-            RequestMiddlewareAction::Stop(response)
+            (user_id, RequestMiddlewareAction::Stop(response))
         }
-        AuthResult::ContinueAndNewAccessToken(_user_id, access_token) => {
+        AuthResult::ContinueAndNewAccessToken(user_id, access_token) => {
+
             let mut response = Response::redirect(&url, new_url);
 
             let access_token_value = AccessToken::get_new_cookie_value(
@@ -146,7 +151,7 @@ async fn if_auth_tokens_redirect(
             response.insert_header("Set-Cookie", &access_token_value);
 
             // info!("sending redirect with cookie to /game");
-            RequestMiddlewareAction::Stop(response)
+            (user_id, RequestMiddlewareAction::Stop(response))
         }
         AuthResult::Stop(clear_access_token, clear_refresh_token) => {
             let mut set_cookies = Vec::new();
@@ -161,7 +166,15 @@ async fn if_auth_tokens_redirect(
                 set_cookies.push(refresh_token_value);
             }
             // info!("continuing to /");
-            RequestMiddlewareAction::Continue(incoming_request, Some(set_cookies))
+            return RequestMiddlewareAction::Continue(incoming_request, Some(set_cookies));
+        }
+    };
+
+    // check for offline
+    match get_user_online_status_impl(user_id).await {
+        UserPresenceResult::UserIsOffline => return auth_result,
+        _ => {
+            return RequestMiddlewareAction::Continue(incoming_request, None);
         }
     }
 }

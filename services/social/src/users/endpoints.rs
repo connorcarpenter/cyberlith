@@ -4,9 +4,7 @@ use http_client::ResponseError;
 use http_server::{async_dup::Arc, executor::smol::lock::RwLock, ApiServer, Server};
 use logging::warn;
 
-use social_server_http_proto::{
-    UserConnectedRequest, UserConnectedResponse, UserDisconnectedRequest, UserDisconnectedResponse,
-};
+use social_server_http_proto::{UserConnectedRequest, UserConnectedResponse, UserDisconnectedRequest, UserDisconnectedResponse, UserIsOnlineRequest, UserIsOnlineResponse};
 
 use crate::state::State;
 
@@ -81,4 +79,35 @@ async fn async_recv_user_disconnected_request_impl(
 
     // responding
     return Ok(UserDisconnectedResponse);
+}
+
+// User Is Online
+
+pub fn recv_user_is_online_request(
+    host_name: &str,
+    server: &mut Server,
+    state: Arc<RwLock<State>>,
+) {
+    server.api_endpoint(host_name, None, move |_addr, req| {
+        let state = state.clone();
+        async move { async_recv_user_is_online_request_impl(state, req).await }
+    });
+}
+
+async fn async_recv_user_is_online_request_impl(
+    state: Arc<RwLock<State>>,
+    request: UserIsOnlineRequest,
+) -> Result<UserIsOnlineResponse, ResponseError> {
+
+    let mut state = state.write().await;
+
+    // setting last heard
+    state.region_server.heard_from_region_server();
+
+    if state.users.is_user_online(&request.user_id()) {
+
+        return Ok(UserIsOnlineResponse::online());
+    } else {
+        return Ok(UserIsOnlineResponse::offline());
+    }
 }
