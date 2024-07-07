@@ -1,7 +1,9 @@
 use bevy_app::{App, Plugin, Startup, Update};
 use bevy_ecs::{event::EventReader, prelude::World as BevyWorld};
 
-use naia_bevy_client::events::{DespawnEntityEvent, SpawnEntityEvent};
+use logging::warn;
+
+use naia_bevy_client::NaiaClientError;
 
 use session_server_naia_proto::components::{GlobalChatMessage, PublicUserInfo};
 
@@ -10,10 +12,11 @@ use crate::{
         client_markers::Session,
         component_events::{
             component_events_startup, get_component_events, InsertComponentEvent, RemoveComponentEvent, UpdateComponentEvent,
-        }
+        },
+        connection_manager::ConnectionManager
     },
     session::{
-        SessionDespawnEntityEvent, SessionSpawnEntityEvent
+        SessionDespawnEntityEvent, SessionSpawnEntityEvent, SessionErrorEvent,
     }
 };
 
@@ -26,6 +29,13 @@ pub struct SessionEventsPlugin;
 impl Plugin for SessionEventsPlugin {
     fn build(&self, app: &mut App) {
         app
+            .add_systems(Update, ConnectionManager::handle_session_connect_events)
+            .add_systems(Update, ConnectionManager::handle_session_disconnect_events)
+            .add_systems(Update, ConnectionManager::handle_session_reject_events)
+            .add_systems(Update, ConnectionManager::handle_session_message_events)
+            .add_systems(Update, ConnectionManager::handle_session_request_events)
+            .add_systems(Update, error_events)
+
             .add_systems(Update, spawn_entity_events)
             .add_event::<SessionSpawnEntityEvent>()
 
@@ -46,14 +56,14 @@ impl Plugin for SessionEventsPlugin {
 }
 
 // used as a system
-fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent<Session>>) {
+fn spawn_entity_events(mut event_reader: EventReader<SessionSpawnEntityEvent>) {
     for _event in event_reader.read() {
         // info!("spawned entity");
     }
 }
 
 // used as a system
-fn despawn_entity_events(mut event_reader: EventReader<DespawnEntityEvent<Session>>) {
+fn despawn_entity_events(mut event_reader: EventReader<SessionDespawnEntityEvent>) {
     for _event in event_reader.read() {
         // info!("despawned entity");
     }
@@ -65,5 +75,30 @@ pub fn component_events_update(world: &mut BevyWorld) {
     for events in get_component_events::<Session>(world) {
         events.process::<GlobalChatMessage>(world);
         events.process::<PublicUserInfo>(world);
+    }
+}
+
+// used as a system
+fn error_events(
+    mut event_reader: EventReader<SessionErrorEvent>,
+) {
+    for event in event_reader.read() {
+        let error = &event.err;
+        match error {
+            NaiaClientError::IdError(status_code) => {
+                match status_code {
+                    409 => {
+                        // conflict, represents attempted simultaneous connection
+                        warn!("SessionErrorEvent::IdError(CONFLICT!)");
+                    }
+                    _ => {
+                        warn!("SessionErrorEvent::IdError, with unhandled status code: {:?}", status_code);
+                    }
+                }
+            }
+            error => {
+                warn!("SessionErrorEvent: {:?}", error);
+            }
+        }
     }
 }

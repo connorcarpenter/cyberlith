@@ -15,6 +15,7 @@ pub mod world {
     pub type WorldClient<'w> = Client<'w, World>;
     pub type WorldSpawnEntityEvent = SpawnEntityEvent<World>;
     pub type WorldDespawnEntityEvent = naia_bevy_client::events::DespawnEntityEvent<World>;
+    pub type WorldErrorEvent = naia_bevy_client::events::ErrorEvent<World>;
 
     pub use super::world_events::{
         InsertAssetRefEvent as WorldInsertAssetRefEvent, WorldInsertComponentEvent, WorldUpdateComponentEvent, WorldRemoveComponentEvent
@@ -32,6 +33,7 @@ pub mod session {
     pub type SessionClient<'w> = Client<'w, Session>;
     pub type SessionSpawnEntityEvent = SpawnEntityEvent<Session>;
     pub type SessionDespawnEntityEvent = naia_bevy_client::events::DespawnEntityEvent<Session>;
+    pub type SessionErrorEvent = naia_bevy_client::events::ErrorEvent<Session>;
 
     pub use super::session_events::{SessionInsertComponentEvent, SessionUpdateComponentEvent, SessionRemoveComponentEvent};
 

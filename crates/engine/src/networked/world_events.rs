@@ -19,6 +19,7 @@ use super::{asset_ref_processor::{AssetProcessor, AssetRefProcessor}, client_mar
 use crate::{
     asset_cache::AssetCache,
     networked::{
+        connection_manager::ConnectionManager,
         component_events::{
             get_component_events, InsertComponentEvent,
             UpdateComponentEvent, component_events_startup,
@@ -37,6 +38,8 @@ pub struct WorldEventsPlugin;
 impl Plugin for WorldEventsPlugin {
     fn build(&self, app: &mut App) {
         app
+            .add_systems(Update, ConnectionManager::handle_world_connect_events)
+
             .add_systems(Update, spawn_entity_events)
             .add_event::<WorldSpawnEntityEvent>()
 

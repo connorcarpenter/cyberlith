@@ -50,22 +50,22 @@ pub(crate) async fn handler(
             user_id
         };
 
-        let Ok(connect_response) = HttpClient::send(
+        match HttpClient::send(
             &remote_addr,
             remote_port,
             SessionConnectRequest::new(user_id),
         )
-        .await
-        else {
-            warn!("Failed session_connect request to region server");
-            return Err(ResponseError::InternalServerError(
-                "failed session_connect to region server".to_string(),
-            ));
-        };
+        .await {
+            Ok(connect_response) => {
+                http_server::log_util::recv_res(host, remote, &logged_remote_url);
 
-        http_server::log_util::recv_res(host, remote, &logged_remote_url);
-
-        connect_response
+                connect_response
+            }
+            Err(err) => {
+                warn!("Failed session_connect request to region server");
+                return Err(err);
+            }
+        }
     };
 
     // forward original request to session server

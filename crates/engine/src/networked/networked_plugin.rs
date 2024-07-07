@@ -50,12 +50,6 @@ impl Plugin for NetworkedEnginePlugin {
             // connection manager stuff, maybe refactor out into a plugin?
             .init_resource::<ConnectionManager>()
             .add_systems(Update, ConnectionManager::handle_connection)
-            .add_systems(Update, ConnectionManager::handle_session_connect_events)
-            .add_systems(Update, ConnectionManager::handle_session_disconnect_events)
-            .add_systems(Update, ConnectionManager::handle_session_reject_events)
-            .add_systems(Update, ConnectionManager::handle_session_message_events)
-            .add_systems(Update, ConnectionManager::handle_session_request_events)
-            .add_systems(Update, ConnectionManager::handle_world_connect_events)
 
             // asset ref processing stuff
             .init_resource::<AssetRefProcessor>()
