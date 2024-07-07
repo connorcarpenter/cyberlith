@@ -17,7 +17,6 @@ pub struct UiConfig {
     next_node_id: NodeId,
     first_input: Option<NodeId>,
     id_str_to_node_id_map: HashMap<String, NodeId>,
-    id_str_to_style_id_map: HashMap<String, StyleId>,
 }
 
 impl UiConfig {
@@ -31,7 +30,6 @@ impl UiConfig {
             next_node_id: NodeId::new(0),
             first_input: None,
             id_str_to_node_id_map: HashMap::new(),
-            id_str_to_style_id_map: HashMap::new(),
         };
 
         // Root Node
@@ -57,14 +55,12 @@ impl UiConfig {
         BTreeMap<NodeId, UiNode>,
         Option<NodeId>,
         HashMap<String, NodeId>,
-        HashMap<String, StyleId>,
     ) {
         (
             self.styles,
             self.nodes,
             self.first_input,
             self.id_str_to_node_id_map,
-            self.id_str_to_style_id_map,
         )
     }
 
@@ -130,9 +126,5 @@ impl UiConfig {
 
     pub fn get_node_id_by_id_str(&self, id_str: &str) -> Option<NodeId> {
         self.id_str_to_node_id_map.get(id_str).cloned()
-    }
-
-    pub fn get_style_id_by_id_str(&self, id_str: &str) -> Option<StyleId> {
-        self.id_str_to_style_id_map.get(id_str).cloned()
     }
 }

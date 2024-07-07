@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use asset_id::AssetId;
 use asset_loader::{TypedAssetId, UiDependencies, UiTextMeasurer};
 use logging::{info, warn};
@@ -138,6 +140,7 @@ impl UiRuntime {
     pub fn add_copied_style(
         &mut self,
         ui_handle: &UiHandle,
+        id_str_style_map: &HashMap<StyleId, String>,
         old_style_id: StyleId,
         item_style: BaseNodeStyle,
     ) {
@@ -146,7 +149,7 @@ impl UiRuntime {
         let new_style_id = self.add_style(item_style);
 
         self.config
-            .add_copied_style(&ui_handle.asset_id(), old_style_id, new_style_id);
+            .add_copied_style(&ui_handle.asset_id(), id_str_style_map, old_style_id, new_style_id);
 
         info!(
             "added copied (kind: {:?}) style: (ui: {:?}, styleid: {:?}) -> (styleid: {:?})",

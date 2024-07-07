@@ -65,6 +65,15 @@ impl UserManager {
         self.sync_with_collection(ui_manager, asset_manager, user_q);
     }
 
+    pub fn update_user(
+        &mut self,
+        ui_manager: &mut UiManager,
+        asset_manager: &AssetManager,
+        user_q: &Query<&PublicUserInfo>,
+    ) {
+        self.sync_with_collection(ui_manager, asset_manager, user_q);
+    }
+
     pub fn delete_user(
         &mut self,
         ui_manager: &mut UiManager,

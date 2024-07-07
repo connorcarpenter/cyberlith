@@ -4,6 +4,7 @@ use std::{
 };
 
 use asset_id::AssetId;
+use logging::info;
 use render_api::base::Color;
 use ui_builder_config::{
     BaseNodeStyle, Button, ButtonStyle, Navigation, Panel, PanelStyle, SpinnerStyle, StyleId,
@@ -43,8 +44,16 @@ impl UiRuntimeConfig {
             nodes,
             first_input_opt,
             node_map,
-            style_map,
         ) = ui_config.decompose();
+
+        let mut style_id_map = HashMap::new();
+        for (style_id, style) in styles.iter().enumerate() {
+            let style_id: StyleId = StyleId::new(style_id as u32);
+            if let Some(id_str) = &style.id_str {
+                // info!("processing style id_str: {}", id_str);
+                style_id_map.insert(id_str.clone(), style_id);
+            }
+        }
 
         let styles = compute_styles(styles);
 
@@ -55,7 +64,7 @@ impl UiRuntimeConfig {
             next_node_id: NodeId::new(0),
             first_input_opt,
             id_str_to_node_id_map: node_map,
-            id_str_to_style_id_map: style_map,
+            id_str_to_style_id_map: style_id_map,
             copied_styles: HashMap::new(),
         };
 
@@ -77,6 +86,7 @@ impl UiRuntimeConfig {
     pub fn add_copied_style(
         &mut self,
         ui_asset_id: &AssetId,
+        id_str_style_map: &HashMap<StyleId, String>,
         old_style_id: StyleId,
         new_style_id: StyleId,
     ) {
@@ -85,6 +95,10 @@ impl UiRuntimeConfig {
         }
         let style_map_old_to_new = self.copied_styles.get_mut(ui_asset_id).unwrap();
         style_map_old_to_new.insert(old_style_id, new_style_id);
+
+        if let Some(id_str) = id_str_style_map.get(&old_style_id) {
+            self.id_str_to_style_id_map.insert(id_str.clone(), new_style_id);
+        }
     }
 
     pub fn translate_copied_style(
@@ -113,6 +127,10 @@ impl UiRuntimeConfig {
 
     pub fn get_style_id_by_id_str(&self, id_str: &str) -> Option<StyleId> {
         self.id_str_to_style_id_map.get(id_str).cloned()
+    }
+
+    pub fn get_id_str_to_style_id_map_ref(&self) -> &HashMap<String, StyleId> {
+        &self.id_str_to_style_id_map
     }
 
     // nodes

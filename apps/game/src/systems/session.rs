@@ -7,7 +7,7 @@ use bevy_ecs::{
 use game_engine::{
     asset::{AssetLoadedEvent, AssetManager, AssetType},
     logging::info,
-    session::{SessionClient, SessionRemoveComponentEvent, components::{GlobalChatMessage, PublicUserInfo}, SessionInsertComponentEvent},
+    session::{SessionClient, SessionUpdateComponentEvent, SessionRemoveComponentEvent, components::{GlobalChatMessage, PublicUserInfo}, SessionInsertComponentEvent},
     ui::UiManager,
 };
 
@@ -115,6 +115,24 @@ pub fn recv_inserted_public_user_info_component(
             &asset_manager,
             &users_q,
             event.entity,
+        );
+    }
+}
+
+pub fn recv_updated_public_user_info_component(
+    mut ui_manager: ResMut<UiManager>,
+    asset_manager: Res<AssetManager>,
+    mut user_manager: ResMut<UserManager>,
+    mut event_reader: EventReader<SessionUpdateComponentEvent<PublicUserInfo>>,
+    users_q: Query<&PublicUserInfo>,
+) {
+    for event in event_reader.read() {
+        info!("received Updated PublicUserInfo from Session Server! (entity: {:?})", event.entity);
+
+        user_manager.update_user(
+            &mut ui_manager,
+            &asset_manager,
+            &users_q,
         );
     }
 }

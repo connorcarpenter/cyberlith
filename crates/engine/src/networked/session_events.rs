@@ -34,8 +34,14 @@ impl Plugin for SessionEventsPlugin {
 
             .add_systems(Startup, component_events_startup::<Session>)
             .add_systems(Update, component_events_update)
+
             .add_event::<SessionInsertComponentEvent<GlobalChatMessage>>()
-            .add_event::<SessionInsertComponentEvent<PublicUserInfo>>();
+            .add_event::<SessionUpdateComponentEvent<GlobalChatMessage>>()
+            .add_event::<SessionRemoveComponentEvent<GlobalChatMessage>>()
+
+            .add_event::<SessionInsertComponentEvent<PublicUserInfo>>()
+            .add_event::<SessionUpdateComponentEvent<PublicUserInfo>>()
+            .add_event::<SessionRemoveComponentEvent<PublicUserInfo>>();
     }
 }
 

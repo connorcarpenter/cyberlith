@@ -47,7 +47,7 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
         .contents(|c| {
             // username
             c.add_text_with_id("?", "username")
-                .set_style(username_style_online);
+                .set_style(username_style_offline);
         });
 
     (ui_name.to_string(), ui_asset_id, ui_etag, ui_config)

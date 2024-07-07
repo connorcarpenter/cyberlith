@@ -451,6 +451,11 @@ impl<'a, K: Hash + Eq + Copy + Clone + PartialEq> ListUiExtItem<'a, K> {
                     item_styles.push((StyleId::new(item_style_id as u32), *item_style));
                 }
 
+                let mut item_style_id_str_map = HashMap::new();
+                for (id_str, style_id) in item_ui_config.get_id_str_to_style_id_map_ref().iter() {
+                    item_style_id_str_map.insert(*style_id, id_str.clone());
+                }
+
                 let container_ui_runtime = self
                     .ui_manager
                     .ui_runtimes
@@ -458,7 +463,7 @@ impl<'a, K: Hash + Eq + Copy + Clone + PartialEq> ListUiExtItem<'a, K> {
                     .unwrap();
 
                 for (old_style_id, item_style) in item_styles {
-                    container_ui_runtime.add_copied_style(item_ui_handle, old_style_id, item_style);
+                    container_ui_runtime.add_copied_style(item_ui_handle, &item_style_id_str_map, old_style_id, item_style);
                 }
             }
         }
@@ -509,7 +514,8 @@ impl<'a, K: Hash + Eq + Copy + Clone + PartialEq> ListUiExtItem<'a, K> {
             .get_mut(self.container_ui_handle)
             .unwrap();
         let style_id = container_ui_runtime
-            .get_style_id_by_str(style_id_str)
+            .ui_config_ref()
+            .get_style_id_by_id_str(style_id_str)
             .unwrap();
         container_ui_runtime.set_style_id(node_id, &style_id);
     }
