@@ -17,3 +17,17 @@ pub struct SettingsButtonClickedEvent;
 
 #[derive(Event, Default)]
 pub struct SubmitButtonClickedEvent;
+
+#[derive(Event, Default)]
+pub struct ResyncGlobalChatEvent {
+    maintain_scroll: bool,
+}
+
+impl ResyncGlobalChatEvent {
+    pub fn new(maintain_scroll: bool) -> Self {
+        Self { maintain_scroll }
+    }
+    pub fn maintain_scroll(&self) -> bool {
+        self.maintain_scroll
+    }
+}

@@ -18,7 +18,7 @@ use crate::{
     ui::{
         events::{
             DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent,
-            JoinMatchButtonClickedEvent, SettingsButtonClickedEvent, SubmitButtonClickedEvent,
+            JoinMatchButtonClickedEvent, SettingsButtonClickedEvent, SubmitButtonClickedEvent, ResyncGlobalChatEvent,
         },
         UiCatalog,
     },
@@ -78,6 +78,7 @@ impl Plugin for GameApp {
             // Ui
             .add_systems(Update, ui::handle_events)
             .add_systems(Update, ui::handle_global_chat_events)
+            .add_event::<ResyncGlobalChatEvent>()
             .add_event::<HostMatchButtonClickedEvent>()
             .add_event::<JoinMatchButtonClickedEvent>()
             .add_event::<GlobalChatButtonClickedEvent>()

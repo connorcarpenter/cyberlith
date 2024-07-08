@@ -1,5 +1,5 @@
 use bevy_ecs::{
-    event::EventReader,
+    event::{EventReader, EventWriter},
     schedule::{NextState, State},
     system::{Query, Res, ResMut},
 };
@@ -7,29 +7,28 @@ use bevy_ecs::{
 use game_engine::{
     asset::{AssetLoadedEvent, AssetManager, AssetType},
     logging::info,
-    session::{SessionClient, SessionUpdateComponentEvent, SessionRemoveComponentEvent, components::{GlobalChatMessage, PublicUserInfo}, SessionInsertComponentEvent},
+    session::{SessionUpdateComponentEvent, SessionRemoveComponentEvent, components::{GlobalChatMessage, PublicUserInfo}, SessionInsertComponentEvent},
     ui::UiManager,
 };
 
 use crate::{
     resources::{user_manager::UserManager, global_chat::GlobalChat, on_asset_load, AssetCatalog},
     states::AppState,
-    ui::{on_ui_load, UiCatalog},
+    ui::{on_ui_load, UiCatalog, events::ResyncGlobalChatEvent},
 };
 
 pub fn session_load_asset_events(
     state: Res<State<AppState>>,
     mut next_state: ResMut<NextState<AppState>>,
-    session_client: SessionClient,
     mut ui_manager: ResMut<UiManager>,
     mut ui_catalog: ResMut<UiCatalog>,
     asset_manager: Res<AssetManager>,
     mut user_manager: ResMut<UserManager>,
     mut asset_catalog: ResMut<AssetCatalog>,
     mut global_chat_messages: ResMut<GlobalChat>,
-    user_q: Query<&PublicUserInfo>,
-    message_q: Query<&GlobalChatMessage>,
     mut event_reader: EventReader<AssetLoadedEvent>,
+    mut resync_global_chat_events: EventWriter<ResyncGlobalChatEvent>,
+    user_q: Query<&PublicUserInfo>,
 ) {
     for event in event_reader.read() {
         let asset_id = event.asset_id;
@@ -41,35 +40,27 @@ pub fn session_load_asset_events(
                 on_ui_load(
                     state,
                     &mut next_state,
-                    &session_client,
                     &mut ui_manager,
                     &mut ui_catalog,
                     &asset_manager,
                     &mut user_manager,
                     &mut global_chat_messages,
                     &user_q,
-                    &message_q,
+                    &mut resync_global_chat_events,
                     asset_id,
                 );
             }
             _ => {
-                info!(
-                    "received Asset Loaded Icon Event! (asset_id: {:?})",
-                    asset_id
-                );
-                on_asset_load(&mut ui_manager, &mut asset_catalog, asset_id);
+                on_asset_load(&mut ui_manager, &mut asset_catalog, &mut resync_global_chat_events, asset_id);
             }
         }
     }
 }
 
 pub fn recv_inserted_global_chat_component(
-    session_client: SessionClient,
-    mut ui_manager: ResMut<UiManager>,
-    asset_manager: Res<AssetManager>,
     mut global_chat_messages: ResMut<GlobalChat>,
+    mut resync_global_chat_events: EventWriter<ResyncGlobalChatEvent>,
     mut event_reader: EventReader<SessionInsertComponentEvent<GlobalChatMessage>>,
-    user_q: Query<&PublicUserInfo>,
     chat_q: Query<&GlobalChatMessage>,
 ) {
     for event in event_reader.read() {
@@ -83,11 +74,7 @@ pub fn recv_inserted_global_chat_component(
         info!("incoming global message: [ {:?} | {:?} | {:?} ]", timestamp, event.entity, message);
 
         global_chat_messages.recv_message(
-            &session_client,
-            &mut ui_manager,
-            &asset_manager,
-            &user_q,
-            &chat_q,
+            &mut resync_global_chat_events,
             chat_id,
             event.entity,
         );

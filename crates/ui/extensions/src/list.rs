@@ -185,7 +185,7 @@ impl<K: Hash + Eq + Copy + Clone + PartialEq> ListUiExt<K> {
         //     self.visible_item_range,
         // );
         self.visible_item_max_index = self.item_count - 1;
-        self.visible_item_min_index = self.visible_item_max_index - self.visible_item_range + 1;
+        self.visible_item_min_index = (self.visible_item_max_index + 1) - self.visible_item_range;
         // info!(
         //     "after: vis_item_min: {:?}, vis_item_max: {:?}",
         //     self.visible_item_min_index,

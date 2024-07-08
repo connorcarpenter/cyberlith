@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use bevy_ecs::{
     entity::Entity,
-    event::EventReader,
+    event::{EventReader, EventWriter},
     system::{Query, Resource},
 };
 
@@ -18,7 +18,7 @@ use game_engine::{
     },
 };
 
-use crate::ui::{go_to_sub_ui, UiCatalog, UiKey};
+use crate::ui::{go_to_sub_ui, UiCatalog, UiKey, events::ResyncGlobalChatEvent};
 
 #[derive(Resource)]
 pub struct GlobalChat {
@@ -43,17 +43,29 @@ impl Default for GlobalChat {
 
 impl GlobalChat {
     pub(crate) fn handle_events(
-        global_chat: &mut GlobalChat,
+        &mut self,
         ui_manager: &mut UiManager,
         ui_catalog: &UiCatalog,
         asset_manager: &AssetManager,
         session_server: &mut SessionClient,
         input_events: &mut EventReader<InputEvent>,
+        resync_global_chat_events: &mut EventReader<ResyncGlobalChatEvent>,
         user_q: &Query<&PublicUserInfo>,
         message_q: &Query<&GlobalChatMessage>,
         _should_rumble: &mut bool,
     ) {
         let ui_handle = ui_catalog.get_ui_handle(UiKey::GlobalChat);
+
+        let mut should_resync = None;
+        for resync_event in resync_global_chat_events.read() {
+            if resync_event.maintain_scroll() {
+                if should_resync.is_none() {
+                    should_resync = Some(true);
+                }
+            } else {
+                should_resync = Some(false);
+            }
+        }
 
         for event in input_events.read() {
             match event {
@@ -67,8 +79,8 @@ impl GlobalChat {
                         info!("Node Is Active");
                     } else {
                         info!("Scrolling Up");
-                        global_chat.list_ui_ext.scroll_up();
-                        global_chat.sync_with_collection(session_server, ui_manager, asset_manager, user_q, message_q);
+                        self.list_ui_ext.scroll_up();
+                        should_resync = Some(false);
                     }
                 }
                 InputEvent::KeyPressed(Key::J, _) => {
@@ -80,8 +92,8 @@ impl GlobalChat {
                         info!("Node Is Active");
                     } else {
                         info!("Scrolling Down");
-                        global_chat.list_ui_ext.scroll_down();
-                        global_chat.sync_with_collection(session_server, ui_manager, asset_manager, user_q, message_q);
+                        self.list_ui_ext.scroll_down();
+                        should_resync = Some(false);
                     }
                 }
                 InputEvent::KeyPressed(Key::Enter, modifiers) => {
@@ -92,11 +104,22 @@ impl GlobalChat {
                             // later, add multi-line newline
                         } else {
                             // send message
-                            GlobalChat::send_message(ui_manager, &ui_handle, session_server)
+                            Self::send_message(ui_manager, &ui_handle, session_server)
                         }
                     };
                 }
                 _ => {}
+            }
+        }
+
+        if let Some(maintain_scroll) = should_resync {
+            let is_bottom_visible = self.list_ui_ext.is_bottom_visible();
+
+            self.sync_with_collection(session_server, ui_manager, asset_manager, user_q, message_q);
+
+            if is_bottom_visible && maintain_scroll {
+                self.list_ui_ext.scroll_to_bottom();
+                self.sync_with_collection(session_server, ui_manager, asset_manager, user_q, message_q);
             }
         }
     }
@@ -106,13 +129,10 @@ impl GlobalChat {
     }
 
     pub(crate) fn on_load_container_ui(
-        session_client: &SessionClient,
+        global_chat_messages: &mut Self,
         ui_catalog: &mut UiCatalog,
         ui_manager: &mut UiManager,
-        asset_manager: &AssetManager,
-        user_q: &Query<&PublicUserInfo>,
-        message_q: &Query<&GlobalChatMessage>,
-        global_chat_messages: &mut GlobalChat,
+        resync_global_chat_events: &mut EventWriter<ResyncGlobalChatEvent>,
     ) {
         let ui_key = UiKey::GlobalChat;
         let ui_handle = ui_catalog.get_ui_handle(ui_key);
@@ -133,18 +153,14 @@ impl GlobalChat {
             global_chat_messages
                 .list_ui_ext
                 .set_container_ui(ui_manager, &ui_handle, container_id_str);
-            global_chat_messages.sync_with_collection(session_client, ui_manager, asset_manager, user_q, message_q);
+            resync_global_chat_events.send(ResyncGlobalChatEvent::new(true));
         }
     }
 
     pub(crate) fn on_load_day_divider_item_ui(
-        session_client: &SessionClient,
+        global_chat_messages: &mut Self,
         ui_catalog: &mut UiCatalog,
-        ui_manager: &mut UiManager,
-        asset_manager: &AssetManager,
-        user_q: &Query<&PublicUserInfo>,
-        message_q: &Query<&GlobalChatMessage>,
-        global_chat_messages: &mut GlobalChat,
+        resync_global_chat_events: &mut EventWriter<ResyncGlobalChatEvent>,
     ) {
         let item_ui_key = UiKey::GlobalChatDayDivider;
         let item_ui_handle = ui_catalog.get_ui_handle(item_ui_key);
@@ -152,17 +168,13 @@ impl GlobalChat {
         ui_catalog.set_loaded(item_ui_key);
 
         global_chat_messages.day_divider_item_ui = Some(item_ui_handle.clone());
-        global_chat_messages.sync_with_collection(session_client, ui_manager, asset_manager, user_q, message_q);
+        resync_global_chat_events.send(ResyncGlobalChatEvent::new(true));
     }
 
     pub(crate) fn on_load_username_and_message_item_ui(
-        session_client: &SessionClient,
+        global_chat_messages: &mut Self,
         ui_catalog: &mut UiCatalog,
-        ui_manager: &mut UiManager,
-        asset_manager: &AssetManager,
-        user_q: &Query<&PublicUserInfo>,
-        message_q: &Query<&GlobalChatMessage>,
-        global_chat_messages: &mut GlobalChat,
+        resync_global_chat_events: &mut EventWriter<ResyncGlobalChatEvent>,
     ) {
         let item_ui_key = UiKey::GlobalChatUsernameAndMessage;
         let item_ui_handle = ui_catalog.get_ui_handle(item_ui_key);
@@ -170,17 +182,13 @@ impl GlobalChat {
         ui_catalog.set_loaded(item_ui_key);
 
         global_chat_messages.username_and_message_item_ui = Some(item_ui_handle.clone());
-        global_chat_messages.sync_with_collection(session_client, ui_manager, asset_manager, user_q, message_q);
+        resync_global_chat_events.send(ResyncGlobalChatEvent::new(true));
     }
 
     pub(crate) fn on_load_message_item_ui(
-        session_client: &SessionClient,
+        global_chat_messages: &mut Self,
         ui_catalog: &mut UiCatalog,
-        ui_manager: &mut UiManager,
-        asset_manager: &AssetManager,
-        user_q: &Query<&PublicUserInfo>,
-        message_q: &Query<&GlobalChatMessage>,
-        global_chat_messages: &mut GlobalChat,
+        resync_global_chat_events: &mut EventWriter<ResyncGlobalChatEvent>,
     ) {
         let item_ui_key = UiKey::GlobalChatMessage;
         let item_ui_handle = ui_catalog.get_ui_handle(item_ui_key);
@@ -188,16 +196,12 @@ impl GlobalChat {
         ui_catalog.set_loaded(item_ui_key);
 
         global_chat_messages.message_item_ui = Some(item_ui_handle.clone());
-        global_chat_messages.sync_with_collection(session_client, ui_manager, asset_manager, user_q, message_q);
+        resync_global_chat_events.send(ResyncGlobalChatEvent::new(true));
     }
 
     pub fn recv_message(
         &mut self,
-        session_client: &SessionClient,
-        ui_manager: &mut UiManager,
-        asset_manager: &AssetManager,
-        user_q: &Query<&PublicUserInfo>,
-        message_q: &Query<&GlobalChatMessage>,
+        resync_global_chat_events: &mut EventWriter<ResyncGlobalChatEvent>,
         message_id: GlobalChatMessageId,
         message_entity: Entity,
     ) {
@@ -207,19 +211,7 @@ impl GlobalChat {
             self.global_chats.pop_first();
         }
 
-        // check if bottom of list is visible BEFORE sync with new data ...
-        let is_bottom_visible = self.list_ui_ext.is_bottom_visible();
-
-        // sync with new data
-        self.sync_with_collection(session_client, ui_manager, asset_manager, user_q, message_q);
-
-        if is_bottom_visible {
-
-            self.list_ui_ext.scroll_to_bottom();
-
-            // sync again, after scroll
-            self.sync_with_collection(session_client, ui_manager, asset_manager, user_q, message_q);
-        }
+        resync_global_chat_events.send(ResyncGlobalChatEvent::new(true));
     }
 
     pub fn sync_with_collection(

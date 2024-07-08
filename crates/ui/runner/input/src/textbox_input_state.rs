@@ -345,6 +345,12 @@ impl TextboxInputState {
                     ui_manager.ui_input_state_mut().carat_index = start + 1;
                     ui_manager.ui_input_state_mut().select_index = None;
                 } else {
+                    let text = &mut ui_manager
+                        .ui_state_mut(ui_asset_id)
+                        .textbox_mut(&textbox_id)
+                        .unwrap()
+                        .text;
+                    let carat_index = carat_index.min(text.len());
                     ui_manager
                         .ui_state_mut(ui_asset_id)
                         .textbox_mut(&textbox_id)
@@ -850,7 +856,7 @@ fn ascii_string_replace_range(
     new_text: &AsciiString,
 ) {
     // Make sure that `start` and `end` is a valid range for the text
-    let valid = start <= end && end <= text.len();
+    let valid = start <= end && end < text.len();
 
     if !valid {
         return;
@@ -860,7 +866,7 @@ fn ascii_string_replace_range(
     let mut chars: Vec<AsciiChar> = text.chars().collect();
 
     // Replace the specified range
-    chars.splice(start..=end, new_text.chars());
+    chars.splice(start..end, new_text.chars());
 
     // Convert back to AsciiString
     *text = AsciiString::from(chars);

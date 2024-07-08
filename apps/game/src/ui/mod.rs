@@ -9,7 +9,7 @@ mod main_menu;
 use std::time::Duration;
 
 use bevy_ecs::{
-    event::EventReader,
+    event::{EventReader, EventWriter},
     prelude::NextState,
     system::{Res, Query, ResMut},
 };
@@ -26,7 +26,7 @@ use crate::{
     states::AppState,
     ui::events::{
         DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent,
-        JoinMatchButtonClickedEvent, SettingsButtonClickedEvent, SubmitButtonClickedEvent,
+        JoinMatchButtonClickedEvent, SettingsButtonClickedEvent, SubmitButtonClickedEvent, ResyncGlobalChatEvent,
     },
 };
 
@@ -47,14 +47,13 @@ pub enum UiKey {
 pub(crate) fn on_ui_load(
     state: AppState,
     next_state: &mut NextState<AppState>,
-    session_client: &SessionClient,
     ui_manager: &mut UiManager,
     ui_catalog: &mut UiCatalog,
     asset_manager: &AssetManager,
     user_manager: &mut UserManager,
     global_chat_messages: &mut GlobalChat,
     user_q: &Query<&PublicUserInfo>,
-    message_q: &Query<&GlobalChatMessage>,
+    resync_global_chat_events: &mut EventWriter<ResyncGlobalChatEvent>,
     asset_id: AssetId,
 ) {
     let ui_handle = UiHandle::new(asset_id);
@@ -67,40 +66,25 @@ pub(crate) fn on_ui_load(
         UiKey::MainMenu => main_menu::on_load(state, next_state, ui_catalog, ui_manager, user_manager),
         UiKey::HostMatch => host_match::on_load(ui_catalog, ui_manager),
         UiKey::GlobalChat => GlobalChat::on_load_container_ui(
-            session_client,
+            global_chat_messages,
             ui_catalog,
             ui_manager,
-            asset_manager,
-            &user_q,
-            &message_q,
-            global_chat_messages,
+            resync_global_chat_events,
         ),
         UiKey::GlobalChatDayDivider => GlobalChat::on_load_day_divider_item_ui(
-            session_client,
-            ui_catalog,
-            ui_manager,
-            asset_manager,
-            &user_q,
-            &message_q,
             global_chat_messages,
+            ui_catalog,
+            resync_global_chat_events,
         ),
         UiKey::GlobalChatUsernameAndMessage => GlobalChat::on_load_username_and_message_item_ui(
-            session_client,
-            ui_catalog,
-            ui_manager,
-            asset_manager,
-            &user_q,
-            &message_q,
             global_chat_messages,
+            ui_catalog,
+            resync_global_chat_events,
         ),
         UiKey::GlobalChatMessage => GlobalChat::on_load_message_item_ui(
-            session_client,
-            ui_catalog,
-            ui_manager,
-            asset_manager,
-            &user_q,
-            &message_q,
             global_chat_messages,
+            ui_catalog,
+            resync_global_chat_events,
         ),
         UiKey::UserListItem => user_manager.on_load_user_list_item_ui(
             ui_catalog,
@@ -192,6 +176,7 @@ pub(crate) fn handle_global_chat_events(
     user_q: Query<&PublicUserInfo>,
     message_q: Query<&GlobalChatMessage>,
     mut input_events: EventReader<InputEvent>,
+    mut resync_global_chat_events: EventReader<ResyncGlobalChatEvent>,
 ) {
     let Some(active_ui_handle) = ui_manager.active_ui() else {
         return;
@@ -206,13 +191,13 @@ pub(crate) fn handle_global_chat_events(
         ui_manager.get_ui_container_contents(&active_ui_handle, "center_container")
     {
         if UiKey::GlobalChat == ui_catalog.get_ui_key(&current_ui_handle) {
-            GlobalChat::handle_events(
-                &mut global_chat,
+            global_chat.handle_events(
                 &mut ui_manager,
                 &ui_catalog,
                 &asset_manager,
                 &mut session_client,
                 &mut input_events,
+                &mut resync_global_chat_events,
                 &user_q,
                 &message_q,
                 &mut should_rumble,

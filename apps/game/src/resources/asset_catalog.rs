@@ -1,8 +1,10 @@
 use std::collections::HashMap;
 
-use bevy_ecs::system::Resource;
+use bevy_ecs::{system::Resource, event::EventWriter};
 
-use game_engine::{asset::AssetId, ui::UiManager};
+use game_engine::{logging::info, asset::AssetId, ui::UiManager};
+
+use crate::ui::events::ResyncGlobalChatEvent;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum AssetKey {
@@ -63,11 +65,17 @@ impl AssetCatalog {
 pub(crate) fn on_asset_load(
     ui_manager: &mut UiManager,
     asset_catalog: &mut AssetCatalog,
+    resync_global_chat_events: &mut EventWriter<ResyncGlobalChatEvent>,
     asset_id: AssetId,
 ) {
     if !asset_catalog.has_asset_key(&asset_id) {
         return;
     }
+
+    info!(
+        "received Asset Loaded Icon Event! (asset_id: {:?})",
+        asset_id
+    );
 
     let asset_key = asset_catalog.get_asset_key(&asset_id);
     asset_catalog.set_loaded(asset_key);
@@ -75,6 +83,7 @@ pub(crate) fn on_asset_load(
     match asset_key {
         AssetKey::FontIcon => {
             ui_manager.set_text_icon_handle(asset_id);
+            resync_global_chat_events.send(ResyncGlobalChatEvent::new(true));
         }
         AssetKey::PasswordEyeIcon => {
             ui_manager.set_eye_icon_handle(asset_id);
