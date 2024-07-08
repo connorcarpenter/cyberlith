@@ -101,8 +101,8 @@ impl<K: Hash + Eq + Copy + Clone + PartialEq> ListUiExt<K> {
             loaded_items: HashMap::new(),
             item_count: 0,
             visible_item_min_index: 0,
-            visible_item_max_index: 19,
-            visible_item_range: 20,
+            visible_item_max_index: 0,
+            visible_item_range: 0,
         }
     }
 
@@ -148,6 +148,49 @@ impl<K: Hash + Eq + Copy + Clone + PartialEq> ListUiExt<K> {
             self.visible_item_min_index += 1;
             self.visible_item_max_index += 1;
         }
+    }
+
+    pub fn is_top_visible(&self) -> bool {
+        self.visible_item_min_index == 0
+    }
+
+    pub fn is_bottom_visible(&self) -> bool {
+        if self.item_count == 0 {
+            return true;
+        }
+        self.visible_item_max_index == self.item_count - 1
+    }
+
+    pub fn scroll_to_top(&mut self) {
+        // info!(
+        //     "scroll_to_bottom() - item_count: {:?}, vis_item_min: {:?}, vis_item_max: {:?}, vis_item_rng: {:?}",
+        //     self.item_count,
+        //     self.visible_item_min_index,
+        //     self.visible_item_max_index,
+        //     self.visible_item_range,
+        // );
+        self.visible_item_min_index = 0;
+        self.visible_item_max_index = self.visible_item_min_index + self.visible_item_range - 1;
+    }
+
+    pub fn scroll_to_bottom(&mut self) {
+        if self.item_count == 0 {
+            return;
+        }
+        // info!(
+        //     "scroll_to_bottom() - item_count: {:?}, vis_item_min: {:?}, vis_item_max: {:?}, vis_item_rng: {:?}",
+        //     self.item_count,
+        //     self.visible_item_min_index,
+        //     self.visible_item_max_index,
+        //     self.visible_item_range,
+        // );
+        self.visible_item_max_index = self.item_count - 1;
+        self.visible_item_min_index = self.visible_item_max_index - self.visible_item_range + 1;
+        // info!(
+        //     "after: vis_item_min: {:?}, vis_item_max: {:?}",
+        //     self.visible_item_min_index,
+        //     self.visible_item_max_index
+        // );
     }
 
     pub fn sync_with_collection<
@@ -275,23 +318,23 @@ impl<K: Hash + Eq + Copy + Clone + PartialEq> ListUiExt<K> {
                     // info!("used_space: {:?} / parent_space: {:?}", used_space, parent_height);
 
                     if used_space > parent_height {
-                        // info!("done iterating visible items");
-                        if iterator_incrementing {
-                            // set visible item max index to current item index
-                            self.visible_item_max_index = item_index - 1;
-                        } else {
-                            // set visible item min index to current item index
-                            self.visible_item_min_index = item_index + 1;
-                        }
-                        self.visible_item_range =
-                            self.visible_item_max_index - self.visible_item_min_index + 1;
-                        // info!("visible_item_min_index: {:?}, visible_item_max_index: {:?}, visible_item_range: {:?}", self.visible_item_min_index, self.visible_item_max_index, self.visible_item_range);
+
                     } else {
                         if iterator_incrementing {
                             let loaded_nodes =
                                 self.loaded_items.get(&data_key).unwrap().nodes_len();
                             current_child_index += loaded_nodes;
                         }
+
+                        if iterator_incrementing {
+                            // set visible item max index to current item index
+                            self.visible_item_max_index = item_index;
+                        } else {
+                            // set visible item min index to current item index
+                            self.visible_item_min_index = item_index;
+                        }
+                        self.visible_item_range =
+                            self.visible_item_max_index - self.visible_item_min_index + 1;
                     }
                 } else {
                     // remove any nodes not visible

@@ -78,10 +78,9 @@ pub fn recv_inserted_global_chat_component(
         let chat = chat_q.get(event.entity).unwrap();
         let chat_id = *chat.id;
 
-        // let user_id = *chat.user_id;
-        // let timestamp = *chat.timestamp;
-        // let message = &*chat.message;
-        // info!("incoming global message: [ user_id({:?}) | {:?} | {:?} | {:?} ]", user_id, timestamp, event.entity, message);
+        let timestamp = *chat.timestamp;
+        let message = &*chat.message;
+        info!("incoming global message: [ {:?} | {:?} | {:?} ]", timestamp, event.entity, message);
 
         global_chat_messages.recv_message(
             &session_client,

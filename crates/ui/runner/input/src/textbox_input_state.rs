@@ -825,6 +825,14 @@ impl TextboxInputState {
 }
 
 fn ascii_string_drain(text: &mut AsciiString, start: usize, end: usize) {
+
+    // Make sure that `start` and `end` is a valid range for the text
+    let valid = start <= end && end <= text.len();
+
+    if !valid {
+        return;
+    }
+
     // Convert AsciiString to Vec<AsciiChar>
     let mut chars: Vec<AsciiChar> = text.chars().collect();
 

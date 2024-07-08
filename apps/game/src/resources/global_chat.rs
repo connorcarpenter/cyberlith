@@ -207,7 +207,19 @@ impl GlobalChat {
             self.global_chats.pop_first();
         }
 
+        // check if bottom of list is visible BEFORE sync with new data ...
+        let is_bottom_visible = self.list_ui_ext.is_bottom_visible();
+
+        // sync with new data
         self.sync_with_collection(session_client, ui_manager, asset_manager, user_q, message_q);
+
+        if is_bottom_visible {
+
+            self.list_ui_ext.scroll_to_bottom();
+
+            // sync again, after scroll
+            self.sync_with_collection(session_client, ui_manager, asset_manager, user_q, message_q);
+        }
     }
 
     pub fn sync_with_collection(
