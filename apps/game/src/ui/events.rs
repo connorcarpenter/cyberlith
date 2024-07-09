@@ -31,3 +31,6 @@ impl ResyncGlobalChatEvent {
         self.maintain_scroll
     }
 }
+
+#[derive(Event, Default)]
+pub struct ResyncMatchLobbiesEvent;

@@ -129,7 +129,7 @@ impl GlobalChat {
     }
 
     pub(crate) fn on_load_container_ui(
-        global_chat_messages: &mut Self,
+        &mut self,
         ui_catalog: &mut UiCatalog,
         ui_manager: &mut UiManager,
         resync_global_chat_events: &mut EventWriter<ResyncGlobalChatEvent>,
@@ -150,7 +150,7 @@ impl GlobalChat {
         {
             let container_id_str = "chat_wall";
 
-            global_chat_messages
+            self
                 .list_ui_ext
                 .set_container_ui(ui_manager, &ui_handle, container_id_str);
             resync_global_chat_events.send(ResyncGlobalChatEvent::new(true));
@@ -158,7 +158,7 @@ impl GlobalChat {
     }
 
     pub(crate) fn on_load_day_divider_item_ui(
-        global_chat_messages: &mut Self,
+        &mut self,
         ui_catalog: &mut UiCatalog,
         resync_global_chat_events: &mut EventWriter<ResyncGlobalChatEvent>,
     ) {
@@ -167,12 +167,12 @@ impl GlobalChat {
 
         ui_catalog.set_loaded(item_ui_key);
 
-        global_chat_messages.day_divider_item_ui = Some(item_ui_handle.clone());
+        self.day_divider_item_ui = Some(item_ui_handle.clone());
         resync_global_chat_events.send(ResyncGlobalChatEvent::new(true));
     }
 
     pub(crate) fn on_load_username_and_message_item_ui(
-        global_chat_messages: &mut Self,
+        &mut self,
         ui_catalog: &mut UiCatalog,
         resync_global_chat_events: &mut EventWriter<ResyncGlobalChatEvent>,
     ) {
@@ -181,12 +181,12 @@ impl GlobalChat {
 
         ui_catalog.set_loaded(item_ui_key);
 
-        global_chat_messages.username_and_message_item_ui = Some(item_ui_handle.clone());
+        self.username_and_message_item_ui = Some(item_ui_handle.clone());
         resync_global_chat_events.send(ResyncGlobalChatEvent::new(true));
     }
 
     pub(crate) fn on_load_message_item_ui(
-        global_chat_messages: &mut Self,
+        &mut self,
         ui_catalog: &mut UiCatalog,
         resync_global_chat_events: &mut EventWriter<ResyncGlobalChatEvent>,
     ) {
@@ -195,7 +195,7 @@ impl GlobalChat {
 
         ui_catalog.set_loaded(item_ui_key);
 
-        global_chat_messages.message_item_ui = Some(item_ui_handle.clone());
+        self.message_item_ui = Some(item_ui_handle.clone());
         resync_global_chat_events.send(ResyncGlobalChatEvent::new(true));
     }
 

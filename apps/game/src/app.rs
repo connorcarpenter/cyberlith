@@ -18,7 +18,7 @@ use crate::{
     ui::{
         events::{
             DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent,
-            JoinMatchButtonClickedEvent, SettingsButtonClickedEvent, SubmitButtonClickedEvent, ResyncGlobalChatEvent,
+            JoinMatchButtonClickedEvent, SettingsButtonClickedEvent, SubmitButtonClickedEvent, ResyncGlobalChatEvent, ResyncMatchLobbiesEvent,
         },
         UiCatalog,
     },
@@ -71,14 +71,19 @@ impl Plugin for GameApp {
             .add_systems(Update, world::world_main_insert_asset_ref_events)
             .add_systems(Update, world::world_alt1_insert_asset_ref_events)
             .add_systems(Update, session::session_load_asset_events)
-            .add_systems(Update, session::recv_inserted_global_chat_component)
+
             .add_systems(Update, session::recv_inserted_public_user_info_component)
             .add_systems(Update, session::recv_updated_public_user_info_component)
             .add_systems(Update, session::recv_removed_public_user_info_component)
+            .add_systems(Update, session::recv_inserted_global_chat_component)
+            .add_systems(Update, session::recv_inserted_match_lobby_component)
+            .add_systems(Update, session::recv_removed_match_lobby_component)
             // Ui
             .add_systems(Update, ui::handle_events)
             .add_systems(Update, ui::handle_global_chat_events)
+            .add_systems(Update, ui::handle_match_lobbies_events)
             .add_event::<ResyncGlobalChatEvent>()
+            .add_event::<ResyncMatchLobbiesEvent>()
             .add_event::<HostMatchButtonClickedEvent>()
             .add_event::<JoinMatchButtonClickedEvent>()
             .add_event::<GlobalChatButtonClickedEvent>()

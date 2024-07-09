@@ -1,4 +1,5 @@
 pub mod global_chat;
+pub mod match_lobbies;
 pub mod user_manager;
 
 mod asset_catalog;

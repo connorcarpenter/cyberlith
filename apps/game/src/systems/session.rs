@@ -7,14 +7,14 @@ use bevy_ecs::{
 use game_engine::{
     asset::{AssetLoadedEvent, AssetManager, AssetType},
     logging::info,
-    session::{SessionUpdateComponentEvent, SessionRemoveComponentEvent, components::{GlobalChatMessage, PublicUserInfo}, SessionInsertComponentEvent},
+    session::{SessionUpdateComponentEvent, SessionRemoveComponentEvent, components::{MatchLobby, GlobalChatMessage, PublicUserInfo}, SessionInsertComponentEvent},
     ui::UiManager,
 };
 
 use crate::{
-    resources::{user_manager::UserManager, global_chat::GlobalChat, on_asset_load, AssetCatalog},
+    resources::{match_lobbies::MatchLobbies, user_manager::UserManager, global_chat::GlobalChat, on_asset_load, AssetCatalog},
     states::AppState,
-    ui::{on_ui_load, UiCatalog, events::ResyncGlobalChatEvent},
+    ui::{on_ui_load, UiCatalog, events::{ResyncGlobalChatEvent, ResyncMatchLobbiesEvent}},
 };
 
 pub fn session_load_asset_events(
@@ -26,8 +26,10 @@ pub fn session_load_asset_events(
     mut user_manager: ResMut<UserManager>,
     mut asset_catalog: ResMut<AssetCatalog>,
     mut global_chat_messages: ResMut<GlobalChat>,
+    mut match_lobbies: ResMut<MatchLobbies>,
     mut event_reader: EventReader<AssetLoadedEvent>,
     mut resync_global_chat_events: EventWriter<ResyncGlobalChatEvent>,
+    mut resync_match_lobbies_events: EventWriter<ResyncMatchLobbiesEvent>,
     user_q: Query<&PublicUserInfo>,
 ) {
     for event in event_reader.read() {
@@ -45,8 +47,10 @@ pub fn session_load_asset_events(
                     &asset_manager,
                     &mut user_manager,
                     &mut global_chat_messages,
+                    &mut match_lobbies,
                     &user_q,
                     &mut resync_global_chat_events,
+                    &mut resync_match_lobbies_events,
                     asset_id,
                 );
             }
@@ -54,30 +58,6 @@ pub fn session_load_asset_events(
                 on_asset_load(&mut ui_manager, &mut asset_catalog, &mut resync_global_chat_events, asset_id);
             }
         }
-    }
-}
-
-pub fn recv_inserted_global_chat_component(
-    mut global_chat_messages: ResMut<GlobalChat>,
-    mut resync_global_chat_events: EventWriter<ResyncGlobalChatEvent>,
-    mut event_reader: EventReader<SessionInsertComponentEvent<GlobalChatMessage>>,
-    chat_q: Query<&GlobalChatMessage>,
-) {
-    for event in event_reader.read() {
-        // info!("received Inserted GlobalChatMessage from Session Server! (entity: {:?})", event.entity);
-
-        let chat = chat_q.get(event.entity).unwrap();
-        let chat_id = *chat.id;
-
-        let timestamp = *chat.timestamp;
-        let message = &*chat.message;
-        info!("incoming global message: [ {:?} | {:?} | {:?} ]", timestamp, event.entity, message);
-
-        global_chat_messages.recv_message(
-            &mut resync_global_chat_events,
-            chat_id,
-            event.entity,
-        );
     }
 }
 
@@ -138,6 +118,68 @@ pub fn recv_removed_public_user_info_component(
             &asset_manager,
             &users_q,
             &event.entity,
+        );
+    }
+}
+
+pub fn recv_inserted_global_chat_component(
+    mut global_chat_messages: ResMut<GlobalChat>,
+    mut resync_global_chat_events: EventWriter<ResyncGlobalChatEvent>,
+    mut event_reader: EventReader<SessionInsertComponentEvent<GlobalChatMessage>>,
+    chat_q: Query<&GlobalChatMessage>,
+) {
+    for event in event_reader.read() {
+        // info!("received Inserted GlobalChatMessage from Session Server! (entity: {:?})", event.entity);
+
+        let chat = chat_q.get(event.entity).unwrap();
+        let chat_id = *chat.id;
+
+        let timestamp = *chat.timestamp;
+        let message = &*chat.message;
+        info!("incoming global message: [ {:?} | {:?} | {:?} ]", timestamp, event.entity, message);
+
+        global_chat_messages.recv_message(
+            &mut resync_global_chat_events,
+            chat_id,
+            event.entity,
+        );
+    }
+}
+
+pub fn recv_inserted_match_lobby_component(
+    mut match_lobbies: ResMut<MatchLobbies>,
+    mut resync_match_lobby_events: EventWriter<ResyncMatchLobbiesEvent>,
+    mut event_reader: EventReader<SessionInsertComponentEvent<MatchLobby>>,
+    lobby_q: Query<&MatchLobby>,
+) {
+    for event in event_reader.read() {
+        // info!("received Inserted MatchLobby from Session Server! (entity: {:?})", event.entity);
+
+        let lobby = lobby_q.get(event.entity).unwrap();
+        let lobby_id = *lobby.id;
+
+        let lobby_name = &*lobby.name;
+        info!("incoming match lobby: [ {:?} | {:?} ]", event.entity, lobby_name);
+
+        match_lobbies.recv_lobby(
+            &mut resync_match_lobby_events,
+            lobby_id,
+            event.entity,
+        );
+    }
+}
+
+pub fn recv_removed_match_lobby_component(
+    mut match_lobbies: ResMut<MatchLobbies>,
+    mut event_reader: EventReader<SessionRemoveComponentEvent<MatchLobby>>,
+    mut resync_match_lobby_events: EventWriter<ResyncMatchLobbiesEvent>,
+) {
+    for event in event_reader.read() {
+        info!("received Removed MatchLobby from Session Server! (entity: {:?})", event.entity);
+
+        match_lobbies.remove_lobby(
+            &mut resync_match_lobby_events,
+            *event.component.id,
         );
     }
 }
