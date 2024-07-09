@@ -4,7 +4,7 @@ use bevy_ecs::{
     system::{Commands, Query, Res, Resource},
 };
 
-use naia_bevy_server::{RoomKey, Server};
+use naia_bevy_server::{Server};
 
 use bevy_http_client::{HttpClient};
 
@@ -52,6 +52,7 @@ impl SocialManager {
     pub fn startup(mut naia_server: Server, mut social_manager: ResMut<Self>) {
         social_manager.global_chat_manager.startup(&mut naia_server);
         social_manager.match_lobby_manager.startup(&mut naia_server);
+        social_manager.user_presence_manager.startup(&mut naia_server);
     }
 
     // used as a system
@@ -65,18 +66,9 @@ impl SocialManager {
         mut users_q: Query<&mut PublicUserInfo>,
     ) {
         let social_server_url = social_manager.get_social_server_url();
-        social_manager.global_chat_manager.update(&mut commands, &mut naia_server, &mut http_client, &social_server_url, &session_instance, &mut user_manager);
+        let user_presence_room_key = social_manager.user_presence_manager.room_key();
+        social_manager.global_chat_manager.update(&mut commands, &mut naia_server, &mut http_client, &social_server_url, &session_instance, &mut user_manager, &user_presence_room_key);
         social_manager.match_lobby_manager.update();
         social_manager.user_presence_manager.update(&mut http_client, &social_server_url, &session_instance, &mut user_manager, &mut users_q);
-    }
-
-    //
-
-    pub fn get_global_chat_room_key(&self) -> RoomKey {
-        self.global_chat_manager.get_global_chat_room_key()
-    }
-
-    pub fn get_match_lobbies_room_key(&self) -> RoomKey {
-        self.match_lobby_manager.get_match_lobbies_room_key()
     }
 }

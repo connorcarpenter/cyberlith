@@ -56,12 +56,13 @@ impl GlobalChatManager {
         social_server_url: &Option<(String, u16)>,
         session_instance: &SessionInstance,
         user_manager: &mut UserManager,
+        user_presence_room_key: &RoomKey,
     ) {
-        self.process_in_flight_requests(commands, naia_server, http_client, user_manager);
+        self.process_in_flight_requests(commands, naia_server, http_client, user_manager, user_presence_room_key);
         self.process_queued_requests(http_client, social_server_url, session_instance, user_manager);
     }
 
-    pub(crate) fn get_global_chat_room_key(&self) -> RoomKey {
+    pub(crate) fn room_key(&self) -> RoomKey {
         self.global_chat_room_key.unwrap()
     }
 
@@ -100,6 +101,7 @@ impl GlobalChatManager {
         naia_server: &mut Server,
         http_client: &mut HttpClient,
         user_manager: &mut UserManager,
+        user_presence_room_key: &RoomKey,
     ) {
         if self.in_flight_requests.is_empty() {
             // no in-flight requests
@@ -134,6 +136,7 @@ impl GlobalChatManager {
                             naia_server,
                             http_client,
                             user_manager,
+                            user_presence_room_key,
                             &global_chat_id,
                             &timestamp,
                             sending_user_id,
@@ -191,12 +194,13 @@ impl GlobalChatManager {
         return;
     }
 
-    pub(crate) fn log_global_chat_message(
+    fn log_global_chat_message(
         &mut self,
         commands: &mut Commands,
         naia_server: &mut Server,
         http_client: &mut HttpClient,
         user_manager: &mut UserManager,
+        user_presence_room_key: &RoomKey,
         global_chat_id: &GlobalChatMessageId,
         timestamp: &Timestamp,
         sending_user_id: &UserId,
@@ -214,8 +218,9 @@ impl GlobalChatManager {
         );
 
         // add to global chat room
+        let global_chat_room_key = self.room_key();
         naia_server
-            .room_mut(&self.get_global_chat_room_key())
+            .room_mut(&global_chat_room_key)
             .add_entity(&global_chat_message_entity);
 
         // add to local log
@@ -231,7 +236,7 @@ impl GlobalChatManager {
             if let Some(user_entity) = user_manager.get_user_entity(sending_user_id) {
                 user_entity
             } else {
-                user_manager.add_user_data(commands, naia_server, http_client, &self.get_global_chat_room_key(), sending_user_id);
+                user_manager.add_user_data(commands, naia_server, http_client, user_presence_room_key, sending_user_id);
 
                 let user_entity = user_manager.get_user_entity(sending_user_id).unwrap();
                 user_entity
@@ -250,6 +255,7 @@ impl GlobalChatManager {
         naia_server: &mut Server,
         http_client: &mut HttpClient,
         user_manager: &mut UserManager,
+        user_presence_room_key: &RoomKey,
         new_messages: &Vec<(GlobalChatMessageId, Timestamp, UserId, String)>,
     ) {
         for (msg_id, timestamp, user_id, message) in new_messages {
@@ -260,6 +266,7 @@ impl GlobalChatManager {
                 naia_server,
                 http_client,
                 user_manager,
+                user_presence_room_key,
                 msg_id,
                 timestamp,
                 user_id,

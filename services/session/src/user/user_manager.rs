@@ -60,7 +60,7 @@ impl UserManager {
         commands: &mut Commands,
         naia_server: &mut Server,
         http_client: &mut HttpClient,
-        global_chat_room_key: &RoomKey,
+        user_presence_room_key: &RoomKey,
         user_key: UserKey,
         user_id: UserId,
     ) {
@@ -75,7 +75,7 @@ impl UserManager {
             commands,
             naia_server,
             http_client,
-            global_chat_room_key,
+            user_presence_room_key,
             &user_id,
         );
 
@@ -159,7 +159,7 @@ impl UserManager {
         commands: &mut Commands,
         naia_server: &mut Server,
         http_client: &mut HttpClient,
-        global_chat_room_key: &RoomKey,
+        user_presence_room_key: &RoomKey,
         user_id: &UserId,
     ) {
         if self.user_data.contains_key(user_id) {
@@ -174,7 +174,7 @@ impl UserManager {
             .id();
 
         naia_server
-            .room_mut(global_chat_room_key)
+            .room_mut(user_presence_room_key)
             .add_entity(&user_public_entity);
 
         let user_info_response_key = self.send_user_info_request(http_client, user_id);

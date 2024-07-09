@@ -31,14 +31,14 @@ pub fn auth_events(
             if let Some(user_id) = user_manager.take_login_token(&auth.token()) {
                 info!("Accepted connection. Token: {}", auth.token());
 
-                let global_chat_room_key = social_manager.get_global_chat_room_key();
+                let user_presence_room_key = social_manager.user_presence_manager.room_key();
 
                 // add to users
                 user_manager.add_connected_user(
                     &mut commands,
                     &mut server,
                     &mut http_client,
-                    &global_chat_room_key,
+                    &user_presence_room_key,
                     user_key,
                     user_id,
                 );
@@ -68,9 +68,17 @@ pub fn connect_events(
 
         info!("Server connected to: {}", address);
 
+        // add to user presence room
+        let user_presence_room_key = social_manager.user_presence_manager.room_key();
+        server.room_mut(&user_presence_room_key).add_user(user_key);
+
         // add to global chat room
-        let global_chat_room_key = social_manager.get_global_chat_room_key();
+        let global_chat_room_key = social_manager.global_chat_manager.room_key();
         server.room_mut(&global_chat_room_key).add_user(user_key);
+
+        // add to match lobbies room
+        let match_lobbies_room_key = social_manager.match_lobby_manager.room_key();
+        server.room_mut(&match_lobbies_room_key).add_user(user_key);
 
         // Assets
 
