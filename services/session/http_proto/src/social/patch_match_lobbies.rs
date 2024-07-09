@@ -1,7 +1,8 @@
-use auth_server_types::UserId;
+
 use naia_serde::SerdeInternal as Serde;
 
 use bevy_http_shared::{ApiRequest, ApiResponse, Method};
+use auth_server_types::UserId;
 use social_server_types::MatchLobbyId;
 
 // Request

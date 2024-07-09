@@ -100,9 +100,12 @@ pub fn disconnect_events(
         // remove from asset manager
         asset_manager.deregister_user(user_key);
 
+        let social_server_url = social_manager.get_social_server_url();
+
         // send user disconnect to social server
-        social_manager.send_user_disconnect_req(
+        social_manager.user_presence_manager.send_user_disconnect_req(
             &mut http_client,
+            social_server_url.as_ref(),
             &session_instance,
             &user_id,
         );

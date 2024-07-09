@@ -28,11 +28,14 @@ pub fn message_events(
             }
         }
 
+        let social_server_url = social_manager.get_social_server_url();
+
         // Global Chat Send Message
         for (user_key, req) in events.read::<ClientActionsChannel, GlobalChatSendMessage>() {
-            social_manager.send_global_chat_message(
+            social_manager.global_chat_manager.send_global_chat_message(
                 &mut http_client,
                 &user_manager,
+                social_server_url.as_ref(),
                 &session_instance,
                 &user_key,
                 &req.message,
