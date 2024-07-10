@@ -1,4 +1,4 @@
-use bevy_tasks::AsyncComputeTaskPool;
+use executor::AsyncComputeTaskPool;
 use crossbeam_channel::{bounded, Receiver};
 
 use http_common::{Request, RequestOptions, Response, ResponseError};

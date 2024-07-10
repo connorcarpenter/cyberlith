@@ -1,4 +1,4 @@
-use bevy_tasks::{AsyncComputeTaskPool, Task};
+use executor::{AsyncComputeTaskPool, Task};
 use futures_lite::future;
 
 use http_common::{Request, RequestOptions, Response, ResponseError};

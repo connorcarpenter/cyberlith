@@ -10,6 +10,8 @@ mod spawn;
 pub use spawn::spawn;
 
 mod task;
+pub use task::Task;
+
 mod task_pool;
 
 use std::num::NonZeroUsize;

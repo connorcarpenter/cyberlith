@@ -46,12 +46,16 @@ pub async fn serve_impl<
     let mut line: Vec<u8> = Vec::new();
 
     loop {
+        // info!("reading byte...");
+
         let Some(byte) = bytes.next().await else {
             info!("no more bytes!");
             break;
         };
 
         let byte = byte.expect("unable to read a byte from incoming stream");
+
+        // info!("read byte: {}", byte);
 
         match read_state {
             ReadState::MatchingUrl => {
@@ -62,7 +66,7 @@ pub async fn serve_impl<
                         .expect("unable to parse string from UTF-8 bytes");
                     line.clear();
 
-                    //info!("read: {}", str);
+                    info!("read: {}", &line_str);
 
                     let Some((url_key, extracted_method, extracted_uri)) =
                         request_extract_url(&line_str)
@@ -78,11 +82,12 @@ pub async fn serve_impl<
                         break;
                     }
 
+                    info!("incoming request matched url: {}", &url_key);
+
                     method = Some(extracted_method);
                     uri = Some(extracted_uri);
                     endpoint_key = Some(url_key);
 
-                    // info!("incoming request matched url: {}", key);
                     read_state = ReadState::ReadingHeaders;
 
                     continue;
@@ -99,7 +104,7 @@ pub async fn serve_impl<
                         .expect("unable to parse string from UTF-8 bytes");
                     line.clear();
 
-                    //info!("read: {}", str);
+                    info!("reading headers: {}", &line_str);
 
                     if request_read_headers(
                         &match_host_func,
@@ -211,7 +216,7 @@ async fn request_read_headers<MatchHostOutput: Future<Output = MatchHostResult> 
     line_str: &String,
 ) -> bool {
     if line_str.is_empty() {
-        //info!("finished reading headers.");
+        info!("finished reading headers.");
 
         *read_state = ReadState::ReadingBody;
 
@@ -229,7 +234,7 @@ async fn request_read_headers<MatchHostOutput: Future<Output = MatchHostResult> 
         };
         if *content_length == 0 {
             *read_state = ReadState::Finished;
-            //info!("no body to read. finished.");
+            info!("no body to read. finished.");
             return true;
         } else {
             return false;
@@ -281,14 +286,14 @@ fn request_read_body(
     read_state: &mut ReadState,
     byte: u8,
 ) -> bool {
-    //info!("read byte from body");
+    // info!("read byte from body");
 
     if let Some(content_length) = content_length {
         body.push(byte);
 
         if body.len() >= content_length {
             *read_state = ReadState::Finished;
-            //info!("finished reading body");
+            info!("finished reading body");
             return true;
         }
 
@@ -316,20 +321,6 @@ async fn response_send<ResponseStream: Unpin + AsyncRead + AsyncWrite>(
     // info!("response sent");
 }
 
-//
-// const RESPONSE_BAD: &[u8] = br#"
-// HTTP/1.1 404 NOT FOUND
-// Content-Type: text/html
-// Content-Length: 0
-// "#;
-//
-// async fn send_404<ResponseStream: Unpin + AsyncRead + AsyncWrite>(
-//     mut response_stream: ResponseStream,
-// ) {
-//     let response = Response::not_found()
-//     response_stream.write_all(RESPONSE_BAD).await.unwrap();
-//     response_stream_flush(response_stream).await;
-// }
 
 fn response_header_to_vec(r: &Response) -> Vec<u8> {
     let v = Vec::with_capacity(120);

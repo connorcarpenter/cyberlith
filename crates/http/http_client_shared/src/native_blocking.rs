@@ -1,8 +1,5 @@
 use http_common::{Request, RequestOptions, Response, ResponseError};
 
-use async_channel::{Receiver, Sender};
-// use log::info;
-
 /// Only available when compiling for native.
 ///
 /// NOTE: `Ok(…)` is returned on network error.
@@ -68,37 +65,4 @@ pub fn fetch_blocking(
         response.insert_header(&header_name, &header_value);
     }
     Ok(response)
-}
-
-// ----------------------------------------------------------------------------
-
-pub(crate) fn fetch(
-    request: Request,
-    request_options_opt: Option<RequestOptions>,
-    on_done: Box<dyn FnOnce(Result<Response, ResponseError>) + Send>,
-) {
-    std::thread::Builder::new()
-        .name("ehttp".to_owned())
-        .spawn(move || on_done(fetch_blocking(&request, request_options_opt)))
-        .expect("Failed to spawn ehttp thread");
-}
-
-pub(crate) async fn fetch_async(
-    request: Request,
-    request_options_opt: Option<RequestOptions>,
-) -> Result<Response, ResponseError> {
-    let (tx, rx): (
-        Sender<Result<Response, ResponseError>>,
-        Receiver<Result<Response, ResponseError>>,
-    ) = async_channel::bounded(1);
-
-    fetch(
-        request,
-        request_options_opt,
-        Box::new(move |received| tx.send_blocking(received).unwrap()),
-    );
-    rx.recv()
-        .await
-        .map_err(|err| err.to_string())
-        .map_err(|estr| ResponseError::NetworkError(estr))?
 }

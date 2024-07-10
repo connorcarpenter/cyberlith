@@ -1,6 +1,6 @@
 mod manager;
 
-use bevy_tasks::AsyncComputeTaskPool;
+use executor::AsyncComputeTaskPool;
 
 pub(crate) use manager::ClipboardManagerImpl;
 

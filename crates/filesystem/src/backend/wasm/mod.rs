@@ -1,4 +1,4 @@
-use bevy_tasks::AsyncComputeTaskPool;
+use executor::AsyncComputeTaskPool;
 
 use crossbeam_channel::{bounded, Receiver};
 use js_sys::{Array, AsyncIterator, Function, Promise, Uint8Array};

@@ -1,20 +1,16 @@
 //! Minimal HTTP client for both native and WASM.
 
+mod types;
+
 use http_common::{Request, RequestOptions, Response, ResponseError};
 
-/// Performs an HTTP request and calls the given callback when done.
-// pub fn fetch(request: Request, on_done: impl 'static + Send + FnOnce(Result<Response>)) {
-//     #[cfg(not(target_arch = "wasm32"))]
-//     native::fetch(request, Box::new(on_done));
-//
-//     #[cfg(target_arch = "wasm32")]
-//     web::fetch(request, Box::new(on_done));
-// }
+#[cfg(not(target_arch = "wasm32"))]
+mod native_async;
 
 /// Performs an `async` HTTP request.
 pub async fn fetch_async(request: Request) -> Result<Response, ResponseError> {
     #[cfg(not(target_arch = "wasm32"))]
-    return native::fetch_async(request, None).await;
+    return native_async::fetch_async(request, None).await;
 
     #[cfg(target_arch = "wasm32")]
     return web::fetch_async(&request, None).await;
@@ -26,18 +22,16 @@ pub async fn fetch_async_with_options(
     request_options: RequestOptions,
 ) -> Result<Response, ResponseError> {
     #[cfg(not(target_arch = "wasm32"))]
-    return native::fetch_async(request, Some(request_options)).await;
+    return native_async::fetch_async(request, Some(request_options)).await;
 
     #[cfg(target_arch = "wasm32")]
     return web::fetch_async(&request, Some(request_options)).await;
 }
 
-mod types;
-
 #[cfg(not(target_arch = "wasm32"))]
-mod native;
+mod native_blocking;
 #[cfg(not(target_arch = "wasm32"))]
-pub use native::fetch_blocking;
+pub use native_blocking::fetch_blocking;
 
 #[cfg(target_arch = "wasm32")]
 mod web;
@@ -45,16 +39,6 @@ mod web;
 pub use web::spawn_future;
 
 /// Helper for constructing [`Request::headers`].
-/// ```
-/// use http_common::Request;
-/// let request = Request {
-///     headers: http_client_shared::headers(&[
-///         ("Accept", "*/*"),
-///         ("Content-Type", "text/plain; charset=utf-8"),
-///     ]),
-///     ..Request::get("https://www.example.com")
-/// };
-/// ```
 pub fn headers(headers: &[(&str, &str)]) -> std::collections::BTreeMap<String, String> {
     headers
         .iter()

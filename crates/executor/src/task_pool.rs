@@ -4,7 +4,6 @@ use std::{
     thread::{self, JoinHandle},
 };
 
-use futures_lite::FutureExt;
 use async_io::block_on;
 
 use crate::task::Task;
@@ -58,9 +57,9 @@ pub struct TaskPool {
 }
 
 impl TaskPool {
-    thread_local! {
-        static LOCAL_EXECUTOR: async_executor::LocalExecutor<'static> = const { async_executor::LocalExecutor::new() };
-    }
+    // thread_local! {
+    //     static LOCAL_EXECUTOR: async_executor::LocalExecutor<'static> = const { async_executor::LocalExecutor::new() };
+    // }
 
     /// Create a `TaskPool` with the default configuration.
     pub fn new() -> Self {
@@ -88,23 +87,16 @@ impl TaskPool {
 
                 thread_builder
                     .spawn(move || {
-                        TaskPool::LOCAL_EXECUTOR.with(|local_executor| {
-                            loop {
-                                let res = std::panic::catch_unwind(|| {
-                                    let tick_forever = async move {
-                                        loop {
-                                            local_executor.tick().await;
-                                        }
-                                    };
-                                    block_on(ex.run(tick_forever.or(shutdown_rx.recv())))
-                                });
-                                if let Ok(value) = res {
-                                    // Use unwrap_err because we expect a Closed error
-                                    value.unwrap_err();
-                                    break;
-                                }
+                        loop {
+                            let res = std::panic::catch_unwind(|| {
+                                block_on(ex.run(shutdown_rx.recv()))
+                            });
+                            if let Ok(value) = res {
+                                // Use unwrap_err because we expect a Closed error
+                                value.unwrap_err();
+                                break;
                             }
-                        });
+                        }
                     })
                     .expect("Failed to spawn thread.")
             })
