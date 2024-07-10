@@ -1,24 +1,27 @@
-pub use smol;
 
-use std::{future::Future, panic::catch_unwind, thread};
+pub mod smol {
+    pub use futures_lite::{future, io, stream};
+    pub use async_lock as lock;
+    pub use async_net as net;
+    pub use async_io::{block_on, Timer};
+}
 
-use once_cell::sync::Lazy;
-use smol::{block_on, future, Executor, Task};
+mod spawn;
+pub use spawn::spawn;
 
-/// Spawns a future onto a global executor.
-pub fn spawn<T: Send + 'static>(future: impl Future<Output = T> + Send + 'static) -> Task<T> {
-    static GLOBAL: Lazy<Executor<'_>> = Lazy::new(|| {
-        for n in 1..=16 {
-            thread::Builder::new()
-                .name(format!("http_server_{}", n))
-                .spawn(|| loop {
-                    catch_unwind(|| block_on(GLOBAL.run(future::pending::<()>()))).ok();
-                })
-                .expect("cannot spawn executor thread");
-        }
+mod task;
+mod task_pool;
 
-        Executor::new()
-    });
+use std::num::NonZeroUsize;
 
-    GLOBAL.spawn(future)
+/// Gets the logical CPU core count available to the current process.
+///
+/// This is identical to [`std::thread::available_parallelism`], except
+/// it will return a default value of 1 if it internally errors out.
+///
+/// This will always return at least 1.
+pub(crate) fn available_parallelism() -> usize {
+    std::thread::available_parallelism()
+        .map(NonZeroUsize::get)
+        .unwrap_or(1)
 }
