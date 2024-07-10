@@ -37,7 +37,7 @@ pub(crate) async fn send_session_heartbeat_request(session_instance: &SessionIns
     Server::spawn(async move {
         let request = SessionHeartbeatRequest::new(REGION_SERVER_SECRET);
         let options = RequestOptions {
-            timeout_opt: Some(Duration::from_secs(1)),
+            timeout_opt: Some(Duration::from_secs(15)),
         };
 
         let host_name = "region";
@@ -72,7 +72,7 @@ pub(crate) async fn send_world_heartbeat_request(world_instance: &WorldInstance)
     Server::spawn(async move {
         let request = WorldHeartbeatRequest::new(REGION_SERVER_SECRET);
         let options = RequestOptions {
-            timeout_opt: Some(Duration::from_secs(1)),
+            timeout_opt: Some(Duration::from_secs(15)),
         };
 
         let host = "region";
@@ -111,7 +111,7 @@ pub(crate) async fn send_asset_heartbeat_request(asset_instance: &AssetInstance)
     Server::spawn(async move {
         let request = AssetHeartbeatRequest::new(REGION_SERVER_SECRET);
         let options = RequestOptions {
-            timeout_opt: Some(Duration::from_secs(1)),
+            timeout_opt: Some(Duration::from_secs(15)),
         };
 
         let host = "region";
@@ -150,7 +150,7 @@ pub(crate) async fn send_social_heartbeat_request(social_instance: &SocialInstan
     Server::spawn(async move {
         let request = SocialHeartbeatRequest::new(REGION_SERVER_SECRET);
         let options = RequestOptions {
-            timeout_opt: Some(Duration::from_secs(1)),
+            timeout_opt: Some(Duration::from_secs(15)),
         };
 
         let host = "region";
