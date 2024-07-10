@@ -1,7 +1,7 @@
-use std::{thread, time::Duration};
+use std::time::Duration;
 
 use http_client::HttpClient;
-use http_server::{async_dup::Arc, executor::smol::lock::RwLock, ApiRequest, ApiResponse, Server};
+use http_server::{async_dup::Arc, executor::smol::{lock::RwLock, Timer}, ApiRequest, ApiResponse, Server};
 use logging::{info, warn};
 
 use region_server_http_proto::{SocialRegisterInstanceRequest, SocialRegisterInstanceResponse};
@@ -20,7 +20,7 @@ pub fn start_processes(state: Arc<RwLock<State>>) {
         loop {
             let state_clone_2 = state_clone.clone();
             send_register_instance_request(state_clone_2).await;
-            thread::sleep(Duration::from_secs(5));
+            Timer::after(Duration::from_secs(5)).await;
         }
     });
 
@@ -30,7 +30,7 @@ pub fn start_processes(state: Arc<RwLock<State>>) {
         loop {
             let state_clone_2 = state_clone.clone();
             process_region_server_disconnect(state_clone_2).await;
-            thread::sleep(Duration::from_secs(5));
+            Timer::after(Duration::from_secs(5)).await;
         }
     });
 }

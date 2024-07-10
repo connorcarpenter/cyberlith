@@ -4,8 +4,8 @@ use auth_server_types::UserId;
 use config::SOCIAL_SERVER_GLOBAL_SECRET;
 use http_client::HttpClient;
 use logging::{info, warn};
-use session_server_http_proto::{SocialPatchGlobalChatMessagesRequest, SocialPatchUsersRequest, SocialUserPatch};
-use social_server_types::{GlobalChatMessageId, Timestamp};
+use session_server_http_proto::{SocialLobbyPatch, SocialPatchGlobalChatMessagesRequest, SocialPatchMatchLobbiesRequest, SocialPatchUsersRequest, SocialUserPatch};
+use social_server_types::{GlobalChatMessageId, MatchLobbyId, Timestamp};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct SessionServerId {
@@ -60,6 +60,7 @@ impl SessionServersState {
         recv_port: u16,
         present_users: Vec<UserId>,
         global_chat_full_log: Vec<(GlobalChatMessageId, Timestamp, UserId, String)>,
+        match_lobbies: Vec<(MatchLobbyId, UserId, String)>,
     ) {
         let id = self.next_session_id();
         self.instances
@@ -116,6 +117,40 @@ impl SessionServersState {
                 Err(e) => {
                     warn!(
                     "from {:?}:{} - global chat init messages send failed: {:?}",
+                    recv_addr,
+                    recv_port,
+                    e.to_string()
+                );
+                }
+            }
+        }
+
+        // sync match lobbies
+        {
+            let match_lobbies = match_lobbies
+                .iter()
+                .map(|(
+                          lobby_id,
+                          user_id,
+                          match_name
+                      )| SocialLobbyPatch::Create(*lobby_id, match_name.clone(), *user_id,
+                ))
+                .collect();
+            let request = SocialPatchMatchLobbiesRequest::new(
+                SOCIAL_SERVER_GLOBAL_SECRET,
+                match_lobbies,
+            );
+            let response = HttpClient::send(recv_addr, recv_port, request).await;
+            match response {
+                Ok(_) => {
+                    info!(
+                    "from {:?}:{} - match lobbies init req sent",
+                    recv_addr, recv_port
+                );
+                }
+                Err(e) => {
+                    warn!(
+                    "from {:?}:{} - match lobbies init req send failed: {:?}",
                     recv_addr,
                     recv_port,
                     e.to_string()

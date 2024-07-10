@@ -9,7 +9,7 @@ mod world_instance;
 use std::{net::SocketAddr, thread, time::Duration};
 
 use config::{REGION_SERVER_PORT, SELF_BINDING_ADDR};
-use http_server::{async_dup::Arc, executor::smol::lock::RwLock, Server};
+use http_server::{async_dup::Arc, executor::smol::{Timer, lock::RwLock}, Server};
 use logging::info;
 
 use crate::state::State;
@@ -40,7 +40,7 @@ pub fn main() {
         loop {
             let mut state = state_clone.write().await;
             state.send_heartbeats().await;
-            thread::sleep(Duration::from_secs(5));
+            Timer::after(Duration::from_secs(5)).await;
         }
     });
 
@@ -49,7 +49,7 @@ pub fn main() {
         loop {
             let mut state = state_clone.write().await;
             state.sync_asset_session_instances().await;
-            thread::sleep(Duration::from_secs(5));
+            Timer::after(Duration::from_secs(5)).await;
         }
     });
 
@@ -58,7 +58,7 @@ pub fn main() {
         loop {
             let mut state = state_clone.write().await;
             state.sync_social_session_instances().await;
-            thread::sleep(Duration::from_secs(5));
+            Timer::after(Duration::from_secs(5)).await;
         }
     });
 

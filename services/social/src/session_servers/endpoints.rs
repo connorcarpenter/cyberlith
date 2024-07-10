@@ -8,7 +8,7 @@ use social_server_http_proto::{
     ConnectSessionServerRequest, ConnectSessionServerResponse, DisconnectSessionServerRequest,
     DisconnectSessionServerResponse,
 };
-use social_server_types::{GlobalChatMessageId, Timestamp};
+use social_server_types::{GlobalChatMessageId, MatchLobbyId, Timestamp};
 
 use crate::state::State;
 
@@ -55,6 +55,14 @@ async fn async_recv_connect_session_server_request_impl(
         .map(|m| m.clone())
         .collect();
 
+    // get match lobbies
+    let match_lobbies: Vec<(MatchLobbyId, UserId, String)> = state
+        .match_lobbies
+        .get_lobbies()
+        .iter()
+        .map(|(id, (uid, name))| (*id, *uid, name.clone()))
+        .collect();
+
     // store session server details
     state
         .session_servers
@@ -64,6 +72,7 @@ async fn async_recv_connect_session_server_request_impl(
             request.http_port(),
             present_users,
             messages,
+            match_lobbies,
         )
         .await;
 
