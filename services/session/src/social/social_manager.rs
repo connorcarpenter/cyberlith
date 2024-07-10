@@ -67,8 +67,8 @@ impl SocialManager {
     ) {
         let social_server_url = social_manager.get_social_server_url();
         let user_presence_room_key = social_manager.user_presence_manager.room_key();
-        social_manager.global_chat_manager.update(&mut commands, &mut naia_server, &mut http_client, &social_server_url, &session_instance, &mut user_manager, &user_presence_room_key);
-        social_manager.match_lobby_manager.update();
-        social_manager.user_presence_manager.update(&mut http_client, &social_server_url, &session_instance, &mut user_manager, &mut users_q);
+        social_manager.global_chat_manager.update(&mut commands, &mut naia_server, &mut http_client, &mut user_manager, &social_server_url, &session_instance, &user_presence_room_key);
+        social_manager.match_lobby_manager.update(&mut commands, &mut naia_server, &mut http_client, &mut user_manager, &social_server_url, &session_instance, &user_presence_room_key);
+        social_manager.user_presence_manager.update(&mut http_client, &mut user_manager, &social_server_url, &session_instance, &mut users_q);
     }
 }

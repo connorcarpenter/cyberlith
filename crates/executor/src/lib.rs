@@ -5,10 +5,10 @@ use std::{future::Future, panic::catch_unwind, thread};
 use once_cell::sync::Lazy;
 use smol::{block_on, future, Executor, Task};
 
-/// TODO: make description
+/// Spawns a future onto a global executor.
 pub fn spawn<T: Send + 'static>(future: impl Future<Output = T> + Send + 'static) -> Task<T> {
     static GLOBAL: Lazy<Executor<'_>> = Lazy::new(|| {
-        for n in 1..=8 {
+        for n in 1..=16 {
             thread::Builder::new()
                 .name(format!("http_server_{}", n))
                 .spawn(|| loop {

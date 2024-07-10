@@ -27,10 +27,10 @@ pub fn session_load_asset_events(
     mut asset_catalog: ResMut<AssetCatalog>,
     mut global_chat_messages: ResMut<GlobalChat>,
     mut match_lobbies: ResMut<MatchLobbies>,
+    user_q: Query<&PublicUserInfo>,
     mut event_reader: EventReader<AssetLoadedEvent>,
     mut resync_global_chat_events: EventWriter<ResyncGlobalChatEvent>,
     mut resync_match_lobbies_events: EventWriter<ResyncMatchLobbiesEvent>,
-    user_q: Query<&PublicUserInfo>,
 ) {
     for event in event_reader.read() {
         let asset_id = event.asset_id;

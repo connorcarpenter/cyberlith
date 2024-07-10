@@ -83,10 +83,10 @@ impl MatchLobbies {
         ui_manager: &mut UiManager,
         asset_manager: &AssetManager,
         session_server: &mut SessionClient,
-        input_events: &mut EventReader<InputEvent>,
-        resync_match_lobbies_events: &mut EventReader<ResyncMatchLobbiesEvent>,
         user_q: &Query<&PublicUserInfo>,
         lobby_q: &Query<&MatchLobby>,
+        input_events: &mut EventReader<InputEvent>,
+        resync_match_lobbies_events: &mut EventReader<ResyncMatchLobbiesEvent>,
         _should_rumble: &mut bool,
     ) {
         let mut should_resync = false;
@@ -154,10 +154,9 @@ impl MatchLobbies {
 
         ui_catalog.set_loaded(ui_key);
 
-        // setup global chat list extension
+        // setup lobby list extension
         {
-            let container_id_str = "chat_wall";
-
+            let container_id_str = "lobby_list";
 
             self.list_ui_ext
                 .set_container_ui(ui_manager, &ui_handle, container_id_str);
@@ -170,7 +169,7 @@ impl MatchLobbies {
         ui_catalog: &mut UiCatalog,
         resync_match_lobbies_events: &mut EventWriter<ResyncMatchLobbiesEvent>,
     ) {
-        let item_ui_key = UiKey::GlobalChatMessage;
+        let item_ui_key = UiKey::JoinMatchLobbyItem;
         let item_ui_handle = ui_catalog.get_ui_handle(item_ui_key);
 
         ui_catalog.set_loaded(item_ui_key);

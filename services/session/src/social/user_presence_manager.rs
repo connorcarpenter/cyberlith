@@ -45,9 +45,9 @@ impl UserPresenceManager {
     pub(crate) fn update(
         &mut self,
         http_client: &mut HttpClient,
+        user_manager: &mut UserManager,
         social_server_url: &Option<(String, u16)>,
         session_instance: &SessionInstance,
-        user_manager: &mut UserManager,
         users_q: &mut Query<&mut PublicUserInfo>,
     ) {
         self.process_in_flight_requests(http_client, user_manager, users_q);

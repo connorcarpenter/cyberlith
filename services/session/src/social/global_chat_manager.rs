@@ -53,9 +53,9 @@ impl GlobalChatManager {
         commands: &mut Commands,
         naia_server: &mut Server,
         http_client: &mut HttpClient,
+        user_manager: &mut UserManager,
         social_server_url: &Option<(String, u16)>,
         session_instance: &SessionInstance,
-        user_manager: &mut UserManager,
         user_presence_room_key: &RoomKey,
     ) {
         self.process_in_flight_requests(commands, naia_server, http_client, user_manager, user_presence_room_key);

@@ -5,25 +5,27 @@ use bevy_http_shared::{ApiRequest, ApiResponse, Method};
 use auth_server_types::UserId;
 use social_server_types::MatchLobbyId;
 
+#[derive(Serde, PartialEq, Clone)]
+pub enum SocialLobbyPatch {
+    Create(MatchLobbyId, String, UserId),
+    Delete(MatchLobbyId),
+}
+
 // Request
 #[derive(Serde, PartialEq, Clone)]
 pub struct SocialPatchMatchLobbiesRequest {
     social_secret: String,
-    // match lobby id, match name, creator user id
-    added_match_lobbies: Vec<(MatchLobbyId, String, UserId)>,
-    removed_match_lobbies: Vec<MatchLobbyId>,
+    patches: Vec<SocialLobbyPatch>,
 }
 
 impl SocialPatchMatchLobbiesRequest {
     pub fn new(
         social_secret: &str,
-        added_match_lobbies: Vec<(MatchLobbyId, String, UserId)>,
-        removed_match_lobbies: Vec<MatchLobbyId>,
+        lobby_patches: Vec<SocialLobbyPatch>
     ) -> Self {
         Self {
             social_secret: social_secret.to_string(),
-            added_match_lobbies,
-            removed_match_lobbies,
+            patches: lobby_patches,
         }
     }
 
@@ -31,12 +33,8 @@ impl SocialPatchMatchLobbiesRequest {
         &self.social_secret
     }
 
-    pub fn added_match_lobbies(&self) -> &Vec<(MatchLobbyId, String, UserId)> {
-        &self.added_match_lobbies
-    }
-
-    pub fn removed_match_lobbies(&self) -> &Vec<MatchLobbyId> {
-        &self.removed_match_lobbies
+    pub fn patches(&self) -> &Vec<SocialLobbyPatch> {
+        &self.patches
     }
 }
 

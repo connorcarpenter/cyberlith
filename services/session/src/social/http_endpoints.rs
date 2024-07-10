@@ -106,8 +106,7 @@ pub fn recv_patch_match_lobby_request(
             &mut http_client,
             &mut user_manager,
             &user_presence_room_key,
-            request.added_match_lobbies(),
-            request.removed_match_lobbies(),
+            request.patches(),
         );
 
         // responding

@@ -37,7 +37,7 @@ pub enum UiKey {
     HostMatch,
 
     JoinMatch,
-    JoinMatchLobby,
+    JoinMatchLobbyItem,
 
     GlobalChat,
     GlobalChatDayDivider,
@@ -94,7 +94,7 @@ pub(crate) fn on_ui_load(
             ui_manager,
             resync_match_lobbies_events,
         ),
-        UiKey::JoinMatchLobby => match_lobbies.on_load_lobby_item_ui(
+        UiKey::JoinMatchLobbyItem => match_lobbies.on_load_lobby_item_ui(
             ui_catalog,
             resync_match_lobbies_events,
         ),
@@ -282,10 +282,10 @@ pub(crate) fn handle_match_lobbies_events(
                     &mut ui_manager,
                     &asset_manager,
                     &mut session_client,
-                    &mut input_events,
-                    &mut resync_match_lobbies_events,
                     &user_q,
                     &lobby_q,
+                    &mut input_events,
+                    &mut resync_match_lobbies_events,
                     &mut should_rumble,
                 );
             }

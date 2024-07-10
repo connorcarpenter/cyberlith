@@ -10,9 +10,9 @@ use game_engine::{
     NetworkedEnginePlugin,
 };
 
-use super::systems::{cube_scene, draw, init_spinner, resize, session, walker_scene, world};
 use crate::{
-    resources::{global_chat::GlobalChat, AssetCatalog, user_manager::UserManager},
+    systems::{cube_scene, draw, init_spinner, resize, session, walker_scene, world},
+    resources::{match_lobbies::MatchLobbies, global_chat::GlobalChat, AssetCatalog, user_manager::UserManager},
     states::AppState,
     ui,
     ui::{
@@ -49,8 +49,9 @@ impl Plugin for GameApp {
                 max_size: None,
                 ..Default::default()
             })
-            .init_resource::<GlobalChat>()
             .init_resource::<UserManager>()
+            .init_resource::<GlobalChat>()
+            .init_resource::<MatchLobbies>()
             .insert_resource(UiCatalog::new())
             .insert_resource(AssetCatalog::new())
             // states

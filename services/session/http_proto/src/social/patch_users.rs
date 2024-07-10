@@ -1,7 +1,9 @@
-use auth_server_types::UserId;
+
 use naia_serde::SerdeInternal as Serde;
 
 use bevy_http_shared::{ApiRequest, ApiResponse, Method};
+
+use auth_server_types::UserId;
 
 #[derive(Serde, PartialEq, Clone)]
 pub enum SocialUserPatch {
