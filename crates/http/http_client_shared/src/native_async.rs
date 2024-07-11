@@ -1,8 +1,7 @@
 
-use async_net::TcpStream;
 use url::Url;
-use futures_lite::io::{AsyncWriteExt, AsyncReadExt};
-use async_channel::{Sender, Receiver};
+use executor::smol::{channel, channel::{Receiver, Sender}, net::TcpStream, io::{AsyncWriteExt, AsyncReadExt}};
+
 use http_common::{Request, RequestOptions, Response, ResponseError};
 
 pub(crate) async fn fetch_async(
@@ -13,7 +12,7 @@ pub(crate) async fn fetch_async(
     let (sender, receiver): (
         Sender<Result<Response, ResponseError>>,
         Receiver<Result<Response, ResponseError>>,
-    ) = async_channel::bounded(1);
+    ) = channel::bounded(1);
 
     executor::spawn(async move {
         let result = fetch_async_inner(request).await;
@@ -82,19 +81,19 @@ async fn read_response(
     let mut buffer = Vec::new();
     tcp_stream.read_to_end(&mut buffer).await.map_err(|e| ResponseError::NetworkError(e.to_string()))?;
 
-    let response_str = String::from_utf8(buffer).map_err(|e| ResponseError::NetworkError(e.to_string()))?;
-
     // Parse the response string into a Response object (this would depend on how your Response is structured)
-    let response = parse_response(request_url, &response_str)?;
+    let response = parse_response(request_url, &buffer)?;
 
     Ok(response)
 }
 
-fn parse_response(request_url: &str, response_str: &str) -> Result<Response, ResponseError> {
-    let (status_line, headers_str, body_str) = split_response(response_str)?;
+fn parse_response(request_url: &str, response_bytes: &[u8]) -> Result<Response, ResponseError> {
+    let response_str = String::from_utf8_lossy(response_bytes);
+
+    let (status_line, headers_str, body_start_index) = split_response(&response_str)?;
     let (status_code, status_text) = parse_status_line(status_line)?;
     let headers = parse_headers(headers_str)?;
-    let body = parse_body(body_str);
+    let body = response_bytes[body_start_index..].to_vec();
 
     let ok = status_code >= 200 && status_code < 300;
 
@@ -111,14 +110,14 @@ fn parse_response(request_url: &str, response_str: &str) -> Result<Response, Res
     Ok(response)
 }
 
-fn split_response(response_str: &str) -> Result<(&str, &str, &str), ResponseError> {
+fn split_response(response_str: &str) -> Result<(&str, &str, usize), ResponseError> {
     let mut parts = response_str.splitn(3, "\r\n\r\n");
     let status_and_headers = parts.next().ok_or(ResponseError::NetworkError("Missing status and headers".to_string()))?;
-    let body = parts.next().unwrap_or(""); // If there's no body, it's an empty string
     let mut status_and_headers_parts = status_and_headers.splitn(2, "\r\n");
     let status_line = status_and_headers_parts.next().ok_or(ResponseError::NetworkError("Missing status line".to_string()))?;
     let headers = status_and_headers_parts.next().unwrap_or(""); // If there are no headers, it's an empty string
-    Ok((status_line, headers, body))
+    let body_start_index = response_str.find("\r\n\r\n").map(|idx| idx + 4).unwrap_or(response_str.len());
+    Ok((status_line, headers, body_start_index))
 }
 
 fn parse_status_line(status_line: &str) -> Result<(u16, String), ResponseError> {
@@ -139,8 +138,4 @@ fn parse_headers(headers: &str) -> Result<Vec<(String, String)>, ResponseError> 
         header_store.push((key, value));
     }
     Ok(header_store)
-}
-
-fn parse_body(body: &str) -> Vec<u8> {
-    body.as_bytes().to_vec()
 }

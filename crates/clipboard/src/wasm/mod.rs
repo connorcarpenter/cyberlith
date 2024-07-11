@@ -1,7 +1,5 @@
 mod manager;
 
-use executor::AsyncComputeTaskPool;
-
 pub(crate) use manager::ClipboardManagerImpl;
 
 ////
@@ -17,11 +15,9 @@ use crate::error::TaskError;
 pub(crate) struct TaskJob(pub Receiver<Result<String, TaskError>>);
 
 pub(crate) fn start_task() -> TaskJob {
-    let thread_pool = AsyncComputeTaskPool::get();
 
     let (tx, task) = bounded(1);
-    thread_pool
-        .spawn(async move {
+    executor::spawn(async move {
             let result = task_process_async().await;
             tx.send(result).ok();
         })

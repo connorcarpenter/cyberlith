@@ -5,7 +5,7 @@ use logging::{info, warn};
 
 use naia_bevy_client::NaiaClientError;
 use kernel::AppExitAction;
-use session_server_naia_proto::components::{GlobalChatMessage, PublicUserInfo};
+use session_server_naia_proto::components::{GlobalChatMessage, MatchLobby, PublicUserInfo};
 
 use crate::{
     networked::{
@@ -45,13 +45,18 @@ impl Plugin for SessionEventsPlugin {
             .add_systems(Startup, component_events_startup::<Session>)
             .add_systems(Update, component_events_update)
 
+            // TODO: make helper method for these..
             .add_event::<SessionInsertComponentEvent<GlobalChatMessage>>()
             .add_event::<SessionUpdateComponentEvent<GlobalChatMessage>>()
             .add_event::<SessionRemoveComponentEvent<GlobalChatMessage>>()
 
             .add_event::<SessionInsertComponentEvent<PublicUserInfo>>()
             .add_event::<SessionUpdateComponentEvent<PublicUserInfo>>()
-            .add_event::<SessionRemoveComponentEvent<PublicUserInfo>>();
+            .add_event::<SessionRemoveComponentEvent<PublicUserInfo>>()
+
+            .add_event::<SessionInsertComponentEvent<MatchLobby>>()
+            .add_event::<SessionUpdateComponentEvent<MatchLobby>>()
+            .add_event::<SessionRemoveComponentEvent<MatchLobby>>();
     }
 }
 

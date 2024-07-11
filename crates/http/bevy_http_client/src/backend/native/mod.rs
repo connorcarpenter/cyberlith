@@ -1,5 +1,4 @@
-use executor::{AsyncComputeTaskPool, Task};
-use futures_lite::future;
+use executor::{self, smol::future, Task};
 
 use http_common::{Request, RequestOptions, Response, ResponseError};
 
@@ -9,14 +8,13 @@ pub(crate) fn send_request(
     request: Request,
     request_options_opt: Option<RequestOptions>,
 ) -> RequestTask {
-    let thread_pool = AsyncComputeTaskPool::get();
 
     let task = if let Some(request_options) = request_options_opt {
-        thread_pool.spawn(async {
+        executor::spawn(async {
             http_client_shared::fetch_async_with_options(request, request_options).await
         })
     } else {
-        thread_pool.spawn(async { http_client_shared::fetch_async(request).await })
+        executor::spawn(async { http_client_shared::fetch_async(request).await })
     };
 
     RequestTask(task)

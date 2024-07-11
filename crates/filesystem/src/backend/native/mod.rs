@@ -1,8 +1,4 @@
-use executor::{AsyncComputeTaskPool, Task};
-
-use futures_lite::future;
-
-use async_channel::{Receiver, Sender};
+use executor::{self, smol::{channel, channel::{Receiver, Sender}, future}, Task};
 use logging::info;
 
 use crate::{
@@ -19,9 +15,8 @@ use crate::{
 pub(crate) struct FsTaskJob(pub(crate) Task<Result<FsTaskResultEnum, TaskError>>);
 
 pub(crate) fn start_task(task_enum: FsTaskEnum) -> FsTaskJob {
-    let thread_pool = AsyncComputeTaskPool::get();
 
-    let task = thread_pool.spawn(async { crate::backend::task_process_async(task_enum).await });
+    let task = executor::spawn(async { crate::backend::task_process_async(task_enum).await });
 
     FsTaskJob(task)
 }
@@ -42,7 +37,7 @@ pub(crate) async fn task_process_async(
     let (tx, rx): (
         Sender<Result<FsTaskResultEnum, TaskError>>,
         Receiver<Result<FsTaskResultEnum, TaskError>>,
-    ) = async_channel::bounded(1);
+    ) = channel::bounded(1);
 
     task_process(
         task_enum,

@@ -66,7 +66,7 @@ pub async fn serve_impl<
                         .expect("unable to parse string from UTF-8 bytes");
                     line.clear();
 
-                    info!("read: {}", &line_str);
+                    // info!("read: {}", &line_str);
 
                     let Some((url_key, extracted_method, extracted_uri)) =
                         request_extract_url(&line_str)
@@ -82,7 +82,7 @@ pub async fn serve_impl<
                         break;
                     }
 
-                    info!("incoming request matched url: {}", &url_key);
+                    // info!("incoming request matched url: {}", &url_key);
 
                     method = Some(extracted_method);
                     uri = Some(extracted_uri);
@@ -104,7 +104,7 @@ pub async fn serve_impl<
                         .expect("unable to parse string from UTF-8 bytes");
                     line.clear();
 
-                    info!("reading headers: {}", &line_str);
+                    // info!("reading headers: {}", &line_str);
 
                     if request_read_headers(
                         &match_host_func,
@@ -216,7 +216,7 @@ async fn request_read_headers<MatchHostOutput: Future<Output = MatchHostResult> 
     line_str: &String,
 ) -> bool {
     if line_str.is_empty() {
-        info!("finished reading headers.");
+        // info!("finished reading headers.");
 
         *read_state = ReadState::ReadingBody;
 
@@ -293,7 +293,7 @@ fn request_read_body(
 
         if body.len() >= content_length {
             *read_state = ReadState::Finished;
-            info!("finished reading body");
+            // info!("finished reading body");
             return true;
         }
 

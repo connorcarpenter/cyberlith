@@ -2,11 +2,12 @@ use std::{
     future::Future,
     sync::Arc,
     thread::{self, JoinHandle},
+    num::NonZeroUsize,
 };
 
 use async_io::block_on;
 
-use crate::task::Task;
+use crate::Task;
 
 /// Used to create a [`TaskPool`]
 #[derive(Default)]
@@ -71,7 +72,7 @@ impl TaskPool {
 
         let executor = Arc::new(async_executor::Executor::new());
 
-        let num_threads = crate::available_parallelism();
+        let num_threads = available_parallelism();
 
         let threads = (0..num_threads)
             .map(|i| {
@@ -114,9 +115,6 @@ impl TaskPool {
     /// "detached", allowing the task to continue running even if dropped. In
     /// any case, the pool will execute the task even without polling by the
     /// end-user.
-    ///
-    /// If the provided future is non-`Send`, [`TaskPool::spawn_local`] should
-    /// be used instead.
     pub fn spawn<T>(&self, future: impl Future<Output = T> + Send + 'static) -> Task<T>
     where
         T: Send + 'static,
@@ -143,4 +141,16 @@ impl Drop for TaskPool {
             }
         }
     }
+}
+
+/// Gets the logical CPU core count available to the current process.
+///
+/// This is identical to [`std::thread::available_parallelism`], except
+/// it will return a default value of 1 if it internally errors out.
+///
+/// This will always return at least 1.
+fn available_parallelism() -> usize {
+    std::thread::available_parallelism()
+        .map(NonZeroUsize::get)
+        .unwrap_or(1)
 }

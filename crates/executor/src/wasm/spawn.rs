@@ -1,14 +1,12 @@
 
-use std::{
-    future::Future,
-};
+use std::future::Future;
 
 use once_cell::sync::Lazy;
 
-use crate::{task::Task, task_pool::{TaskPool, TaskPoolBuilder}};
+use crate::wasm::{task_pool::{TaskPool, Task, TaskPoolBuilder}};
 
-pub fn spawn<T: Send + 'static>(
-    future: impl Future<Output = T> + Send + 'static
+pub fn spawn<T: 'static>(
+    future: impl Future<Output = T> + 'static
 ) -> Task<T> {
     static GLOBAL: Lazy<TaskPool> = Lazy::new(|| {
         let task_pool = TaskPoolBuilder::new()

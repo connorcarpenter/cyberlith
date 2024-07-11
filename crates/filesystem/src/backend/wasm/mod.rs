@@ -1,4 +1,3 @@
-use executor::AsyncComputeTaskPool;
 
 use crossbeam_channel::{bounded, Receiver};
 use js_sys::{Array, AsyncIterator, Function, Promise, Uint8Array};
@@ -26,11 +25,9 @@ use crate::{
 pub(crate) struct FsTaskJob(pub Receiver<Result<FsTaskResultEnum, TaskError>>);
 
 pub(crate) fn start_task(task_enum: FsTaskEnum) -> FsTaskJob {
-    let thread_pool = AsyncComputeTaskPool::get();
 
     let (tx, task) = bounded(1);
-    thread_pool
-        .spawn(async move {
+    executor::spawn(async move {
             let result = crate::backend::task_process_async(task_enum).await;
             tx.send(result).ok();
         })
