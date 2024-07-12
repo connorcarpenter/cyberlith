@@ -15,6 +15,7 @@ impl Kernel {
 
             pub fn new() -> Self {
                 logging::initialize();
+                executor::setup(1, 1);
 
                 Self {
                     current_app: None,
@@ -39,6 +40,7 @@ impl Kernel {
         } else {
             pub fn new() -> Self {
                 logging::initialize();
+                executor::setup(1, 1);
 
                 Self {
                     current_app: None,

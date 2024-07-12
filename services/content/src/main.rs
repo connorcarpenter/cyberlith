@@ -13,8 +13,8 @@ cfg_if! {
 
 use std::{net::SocketAddr, thread};
 
-use config::{CONTENT_SERVER_FILES_PATH, CONTENT_SERVER_PORT, SELF_BINDING_ADDR};
-use http_server::{async_dup::Arc, executor::smol::lock::RwLock, ApiServer, Method, Server};
+use config::{CONTENT_SERVER_CPU_PRIORITY, CONTENT_SERVER_FILES_PATH, CONTENT_SERVER_PORT, SELF_BINDING_ADDR, TOTAL_CPU_PRIORITY};
+use http_server::{async_dup::Arc, executor::smol::lock::RwLock, ApiServer, Method, Server, executor};
 use logging::info;
 
 use crate::{
@@ -23,6 +23,7 @@ use crate::{
 
 pub fn main() {
     logging::initialize();
+    executor::setup(CONTENT_SERVER_CPU_PRIORITY, TOTAL_CPU_PRIORITY);
 
     #[cfg(feature = "local")]
     local::setup();

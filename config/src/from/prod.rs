@@ -23,7 +23,7 @@ pub const WORLD_SERVER_RECV_ADDR: &str = "world_server";
 pub const ASSET_SERVER_RECV_ADDR: &str = "asset_server";
 
 #[allow(dead_code)]
-pub const ASSET_SERVER_RECV_ADDR: &str = "social_server";
+pub const SOCIAL_SERVER_RECV_ADDR: &str = "social_server";
 
 #[allow(dead_code)]
 pub const AUTH_SERVER_RECV_ADDR: &str = "auth_server";
@@ -71,7 +71,7 @@ pub const ASSET_SERVER_PORT: u16 = 14205;
 pub const AUTH_SERVER_PORT: u16 = 14206;
 
 #[allow(dead_code)]
-pub const ASSET_SERVER_PORT: u16 = 14207;
+pub const SOCIAL_SERVER_PORT: u16 = 14207;
 
 #[allow(dead_code)]
 pub const REGION_SERVER_SECRET: &str = "ArQZmRSf4xvbLVusVjrqGhIaZOExAeIq";
@@ -87,3 +87,20 @@ pub const ASSET_SERVER_GLOBAL_SECRET: &str = "QvsVjrGh035V70aVKHuaSbxlllQ7236OW"
 
 #[allow(dead_code)]
 pub const SOCIAL_SERVER_GLOBAL_SECRET: &str = "sVjrSbaVKHuaSbxlGh03QvsVjrSbxl";
+
+// cpu priorities
+pub use crate::from::cpu_priority::{
+    ASSET_SERVER_CPU_PRIORITY, AUTH_SERVER_CPU_PRIORITY, CONTENT_SERVER_CPU_PRIORITY,
+    GATEWAY_SERVER_CPU_PRIORITY, REGION_SERVER_CPU_PRIORITY, SESSION_SERVER_CPU_PRIORITY,
+    SOCIAL_SERVER_CPU_PRIORITY, WORLD_SERVER_CPU_PRIORITY, REDIRECTOR_SERVER_CPU_PRIORITY,
+};
+
+#[allow(dead_code)]
+pub const TOTAL_CPU_PRIORITY: usize = REGION_SERVER_CPU_PRIORITY +
+    AUTH_SERVER_CPU_PRIORITY +
+    CONTENT_SERVER_CPU_PRIORITY +
+    GATEWAY_SERVER_CPU_PRIORITY +
+    ASSET_SERVER_CPU_PRIORITY +
+    SOCIAL_SERVER_CPU_PRIORITY +
+    SESSION_SERVER_CPU_PRIORITY +
+    WORLD_SERVER_CPU_PRIORITY + REDIRECTOR_SERVER_CPU_PRIORITY;

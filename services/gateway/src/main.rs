@@ -6,16 +6,9 @@ mod register_token;
 
 use std::{net::SocketAddr, thread, time::Duration};
 
-use config::{
-    CONTENT_SERVER_PORT, CONTENT_SERVER_RECV_ADDR, GATEWAY_PORT, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL,
-    SELF_BINDING_ADDR, SESSION_SERVER_RECV_ADDR, SESSION_SERVER_SIGNAL_PORT, TargetEnv,
-    WORLD_SERVER_RECV_ADDR, WORLD_SERVER_SIGNAL_PORT,
-};
+use config::{CONTENT_SERVER_PORT, CONTENT_SERVER_RECV_ADDR, GATEWAY_PORT, GATEWAY_SERVER_CPU_PRIORITY, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SELF_BINDING_ADDR, SESSION_SERVER_RECV_ADDR, SESSION_SERVER_SIGNAL_PORT, TargetEnv, TOTAL_CPU_PRIORITY, WORLD_SERVER_RECV_ADDR, WORLD_SERVER_SIGNAL_PORT};
 use endpoints::{redirect, session_connect};
-use http_server::{
-    ApiRequest, ApiServer, async_dup::Arc, executor::smol, executor::smol::lock::RwLock, Method,
-    ProxyServer, Server,
-};
+use http_server::{ApiRequest, ApiServer, async_dup::Arc, executor, executor::smol, executor::smol::lock::RwLock, Method, ProxyServer, Server};
 use logging::info;
 
 use gateway_http_proto::{
@@ -28,6 +21,7 @@ use gateway_http_proto::{
 
 pub fn main() {
     logging::initialize();
+    executor::setup(GATEWAY_SERVER_CPU_PRIORITY, TOTAL_CPU_PRIORITY);
 
     info!("Gateway starting up...");
     let socket_addr: SocketAddr = SocketAddr::new(SELF_BINDING_ADDR.parse().unwrap(), GATEWAY_PORT);

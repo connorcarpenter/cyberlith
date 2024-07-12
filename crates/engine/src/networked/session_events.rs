@@ -71,6 +71,7 @@ pub fn component_events_update(world: &mut BevyWorld) {
     for events in get_component_events::<Session>(world) {
         events.process::<GlobalChatMessage>(world);
         events.process::<PublicUserInfo>(world);
+        events.process::<MatchLobby>(world);
     }
 }
 

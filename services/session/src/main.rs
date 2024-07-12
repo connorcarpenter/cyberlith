@@ -11,7 +11,8 @@ mod world;
 use std::time::Duration;
 
 use bevy_app::{App, ScheduleRunnerPlugin};
-
+use bevy_http_server::executor;
+use config::{TOTAL_CPU_PRIORITY, SESSION_SERVER_CPU_PRIORITY};
 //
 
 use crate::{
@@ -21,10 +22,11 @@ use crate::{
 
 fn main() {
     logging::initialize();
+    executor::setup(SESSION_SERVER_CPU_PRIORITY, TOTAL_CPU_PRIORITY);
 
     let instance_secret = random::generate_random_string(16);
     let registration_resend_rate = Duration::from_secs(5);
-    let region_server_disconnect_timeout = Duration::from_secs(16);
+    let region_server_disconnect_timeout = Duration::from_secs(61);
     let world_connect_resend_rate = Duration::from_secs(5);
 
     // Build App

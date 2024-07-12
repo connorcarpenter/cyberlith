@@ -7,18 +7,19 @@ mod users;
 
 use std::{net::SocketAddr, thread, time::Duration};
 
-use config::{SELF_BINDING_ADDR, SOCIAL_SERVER_PORT};
-use http_server::{async_dup::Arc, executor::smol::lock::RwLock, Server};
+use config::{SELF_BINDING_ADDR, SOCIAL_SERVER_CPU_PRIORITY, SOCIAL_SERVER_PORT, TOTAL_CPU_PRIORITY};
+use http_server::{async_dup::Arc, executor, executor::smol::lock::RwLock, Server};
 use logging::info;
 
 use crate::state::State;
 
 pub fn main() {
     logging::initialize();
+    executor::setup(SOCIAL_SERVER_CPU_PRIORITY, TOTAL_CPU_PRIORITY);
 
     // setup state
     let registration_resend_rate = Duration::from_secs(5);
-    let region_server_disconnect_timeout = Duration::from_secs(16);
+    let region_server_disconnect_timeout = Duration::from_secs(61);
     let state = Arc::new(RwLock::new(State::new(
         registration_resend_rate,
         region_server_disconnect_timeout,

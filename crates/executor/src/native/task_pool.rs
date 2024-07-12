@@ -16,12 +16,30 @@ pub struct TaskPoolBuilder {
     /// Allows customizing the name of the threads - helpful for debugging. If set, threads will
     /// be named `<thread_name> (<thread_index>)`, i.e. `"MyThreadPool (2)"`.
     thread_name: Option<String>,
+
+    /// The priority of this service in relation to the others on the same host
+    priority: Option<usize>,
+
+    /// The total priority of all services on the same host
+    total_priority: Option<usize>,
 }
 
 impl TaskPoolBuilder {
     /// Creates a new [`TaskPoolBuilder`] instance
     pub fn new() -> Self {
         Self::default()
+    }
+
+    /// Sets the priority of this service in relation to the others on the same host
+    pub fn set_priority(mut self, priority: usize) -> Self {
+        self.priority = Some(priority);
+        self
+    }
+
+    /// Sets the total priority of all services on the same host
+    pub fn set_total_priority(mut self, total_priority: usize) -> Self {
+        self.total_priority = Some(total_priority);
+        self
     }
 
     /// Override the name of the threads created for the pool. If set, threads will
@@ -68,11 +86,21 @@ impl TaskPool {
     }
 
     fn new_internal(builder: TaskPoolBuilder) -> Self {
+
+        let Some(priority) = builder.priority else {
+            panic!("Priority must be set")
+        };
+        let Some(total_priority) = builder.total_priority else {
+            panic!("Total priority must be set")
+        };
+
         let (shutdown_tx, shutdown_rx) = async_channel::unbounded::<()>();
 
         let executor = Arc::new(async_executor::Executor::new());
 
-        let num_threads = available_parallelism();
+        let available_cores = available_parallelism();
+        let num_threads = ((priority as f64 / total_priority as f64) * available_cores as f64).ceil() as usize;
+        let num_threads = num_threads.max(2);
 
         let threads = (0..num_threads)
             .map(|i| {

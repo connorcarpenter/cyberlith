@@ -14,14 +14,15 @@ cfg_if! {
 
 use std::{net::SocketAddr, thread, time::Duration};
 
-use config::{ASSET_SERVER_FILES_PATH, ASSET_SERVER_PORT, SELF_BINDING_ADDR};
-use http_server::{async_dup::Arc, executor::smol::{lock::RwLock, Timer}, Server};
+use config::{ASSET_SERVER_CPU_PRIORITY, ASSET_SERVER_FILES_PATH, ASSET_SERVER_PORT, SELF_BINDING_ADDR, TOTAL_CPU_PRIORITY};
+use http_server::{async_dup::Arc, executor, executor::smol::{lock::RwLock, Timer}, Server};
 use logging::info;
 
 use crate::{asset_metadata_store::AssetMetadataStore, state::State};
 
 pub fn main() {
     logging::initialize();
+    executor::setup(ASSET_SERVER_CPU_PRIORITY, TOTAL_CPU_PRIORITY);
 
     #[cfg(feature = "local")]
     local::setup();
@@ -30,7 +31,7 @@ pub fn main() {
     let asset_metadata_store = AssetMetadataStore::new(ASSET_SERVER_FILES_PATH);
 
     let registration_resend_rate = Duration::from_secs(5);
-    let region_server_disconnect_timeout = Duration::from_secs(60);
+    let region_server_disconnect_timeout = Duration::from_secs(61);
     let cache_size_kb = 5000; // 5 MB
     let state = Arc::new(RwLock::new(State::new(
         registration_resend_rate,

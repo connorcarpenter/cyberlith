@@ -1,3 +1,5 @@
+mod cpu_priority;
+
 cfg_if! {
     if #[cfg(feature = "local")] {
         mod local;

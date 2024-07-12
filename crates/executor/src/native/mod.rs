@@ -1,5 +1,5 @@
 mod spawn;
-pub use spawn::spawn;
+pub use spawn::{spawn, setup};
 
 mod task;
 pub use task::Task;

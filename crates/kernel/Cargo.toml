@@ -8,6 +8,7 @@ workspace = "../.."
 logging = { path = "../logging" }
 bevy_http_client = { path = "../http/bevy_http_client" }
 http_common = { path = "../http/http_common" }
+executor = { path = "../executor" }
 
 bevy_app = { version = "0.13", default-features=false }
 bevy_ecs = { version = "0.13", default-features=false }

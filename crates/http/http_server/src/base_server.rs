@@ -13,10 +13,9 @@ use http_common::{Request, Response, ResponseError};
 use http_server_shared::{executor, serve_impl, MatchHostResult};
 use logging::info;
 
-use crate::middleware::{ResponseMiddleware, ResponseMiddlewareFunc};
 use crate::{
     endpoint::Endpoint,
-    middleware::{RequestMiddleware, RequestMiddlewareAction, RequestMiddlewareFunc},
+    middleware::{RequestMiddleware, RequestMiddlewareAction, ResponseMiddleware, ResponseMiddlewareFunc, RequestMiddlewareFunc},
 };
 
 // Server

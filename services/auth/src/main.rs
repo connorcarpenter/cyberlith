@@ -8,14 +8,15 @@ mod types;
 use std::time::Duration;
 use std::{net::SocketAddr, thread};
 
-use config::{AUTH_SERVER_PORT, SELF_BINDING_ADDR};
-use http_server::{async_dup::Arc, executor::smol, executor::smol::lock::RwLock, Server};
+use config::{AUTH_SERVER_CPU_PRIORITY, AUTH_SERVER_PORT, SELF_BINDING_ADDR, TOTAL_CPU_PRIORITY};
+use http_server::{async_dup::Arc, executor, executor::smol, executor::smol::lock::RwLock, Server};
 use logging::info;
 
 use crate::state::State;
 
 pub fn main() {
     logging::initialize();
+    executor::setup(AUTH_SERVER_CPU_PRIORITY, TOTAL_CPU_PRIORITY);
 
     info!("Auth Server starting up...");
     let socket_addr: SocketAddr =

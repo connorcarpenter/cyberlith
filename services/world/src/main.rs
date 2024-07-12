@@ -15,8 +15,8 @@ use naia_bevy_server::{
 };
 
 use bevy_http_client::HttpClientPlugin;
-use bevy_http_server::HttpServerPlugin;
-
+use bevy_http_server::{executor, HttpServerPlugin};
+use config::{TOTAL_CPU_PRIORITY, WORLD_SERVER_CPU_PRIORITY};
 use world_server_http_proto::protocol as http_protocol;
 use world_server_naia_proto::protocol as naia_protocol;
 
@@ -24,6 +24,8 @@ use crate::asset_manager::AssetManager;
 
 fn main() {
     logging::initialize();
+    executor::setup(WORLD_SERVER_CPU_PRIORITY, TOTAL_CPU_PRIORITY);
+
     // Build App
     App::default()
         // Plugins

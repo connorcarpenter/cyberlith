@@ -8,21 +8,22 @@ mod world_instance;
 
 use std::{net::SocketAddr, thread, time::Duration};
 
-use config::{REGION_SERVER_PORT, SELF_BINDING_ADDR};
-use http_server::{async_dup::Arc, executor::smol::{Timer, lock::RwLock}, Server};
+use config::{REGION_SERVER_PORT, SELF_BINDING_ADDR, REGION_SERVER_CPU_PRIORITY, TOTAL_CPU_PRIORITY};
+use http_server::{async_dup::Arc, executor, executor::smol::{Timer, lock::RwLock}, Server};
 use logging::info;
 
 use crate::state::State;
 
 pub fn main() {
     logging::initialize();
+    executor::setup(REGION_SERVER_CPU_PRIORITY, TOTAL_CPU_PRIORITY);
 
     info!("Region Server starting up...");
     let socket_addr: SocketAddr =
         SocketAddr::new(SELF_BINDING_ADDR.parse().unwrap(), REGION_SERVER_PORT);
 
     let mut server = Server::new(socket_addr);
-    let state = Arc::new(RwLock::new(State::new(Duration::from_secs(60))));
+    let state = Arc::new(RwLock::new(State::new(Duration::from_secs(61))));
     let host = "region";
 
     endpoints::session_register_instance(host, &mut server, state.clone());
