@@ -10,12 +10,13 @@ use game_engine::{
     ui::UiManager,
 };
 
-use crate::app::{examples::{GlobalChatState, UserListState}, global::Global};
+use crate::app::{examples::{MatchLobbyListState, GlobalChatState, UserListState}, global::Global};
 
 pub fn handle_viewport_resize(
     global: Res<Global>,
     mut global_chat_state: ResMut<GlobalChatState>,
     mut user_list_state: ResMut<UserListState>,
+    mut match_lobby_state: ResMut<MatchLobbyListState>,
     mut window: ResMut<Window>,
     mut ui_manager: ResMut<UiManager>,
     asset_manager: Res<AssetManager>,
@@ -67,4 +68,5 @@ pub fn handle_viewport_resize(
 
     global_chat_state.sync_chat_collections(&mut ui_manager, &asset_manager);
     user_list_state.sync_user_collections(&mut ui_manager, &asset_manager);
+    match_lobby_state.sync_lobbies_collections(&mut ui_manager, &asset_manager);
 }

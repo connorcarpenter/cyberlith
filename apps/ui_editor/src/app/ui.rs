@@ -20,7 +20,7 @@ use game_engine::{
 
 use logging::info;
 
-use crate::app::{global::Global, uis::*, examples::{setup_user_list_test_case, setup_global_chat_test_case}};
+use crate::app::{global::Global, uis::*, examples::{setup_user_list_test_case, setup_match_lobby_test_case, setup_global_chat_test_case}};
 
 #[derive(Event, Default)]
 pub struct SubmitButtonEvent;
@@ -79,6 +79,15 @@ pub fn setup(
         &main_menu_ui_handle,
     );
     commands.insert_resource(global_chat_state);
+
+    // match lobby list
+    let match_lobby_state = setup_match_lobby_test_case(
+        &mut global,
+        &mut ui_manager,
+        &asset_manager,
+        &main_menu_ui_handle,
+    );
+    commands.insert_resource(match_lobby_state);
 
     // user list
     let user_list_state = setup_user_list_test_case(
