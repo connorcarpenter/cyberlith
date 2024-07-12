@@ -14,7 +14,7 @@ use game_engine::{
 use crate::{
     resources::{match_lobbies::MatchLobbies, user_manager::UserManager, global_chat::GlobalChat, on_asset_load, AssetCatalog},
     states::AppState,
-    ui::{on_ui_load, UiCatalog, events::{ResyncGlobalChatEvent, ResyncMatchLobbiesEvent}},
+    ui::{on_ui_load, UiCatalog, events::{ResyncPublicUserInfoEvent, ResyncGlobalChatEvent, ResyncMatchLobbiesEvent}},
 };
 
 pub fn session_load_asset_events(
@@ -22,13 +22,12 @@ pub fn session_load_asset_events(
     mut next_state: ResMut<NextState<AppState>>,
     mut ui_manager: ResMut<UiManager>,
     mut ui_catalog: ResMut<UiCatalog>,
-    asset_manager: Res<AssetManager>,
     mut user_manager: ResMut<UserManager>,
     mut asset_catalog: ResMut<AssetCatalog>,
     mut global_chat_messages: ResMut<GlobalChat>,
     mut match_lobbies: ResMut<MatchLobbies>,
-    user_q: Query<&PublicUserInfo>,
     mut event_reader: EventReader<AssetLoadedEvent>,
+    mut resync_public_user_info_events: EventWriter<ResyncPublicUserInfoEvent>,
     mut resync_global_chat_events: EventWriter<ResyncGlobalChatEvent>,
     mut resync_match_lobbies_events: EventWriter<ResyncMatchLobbiesEvent>,
 ) {
@@ -44,31 +43,35 @@ pub fn session_load_asset_events(
                     &mut next_state,
                     &mut ui_manager,
                     &mut ui_catalog,
-                    &asset_manager,
                     &mut user_manager,
                     &mut global_chat_messages,
                     &mut match_lobbies,
-                    &user_q,
+                    &mut resync_public_user_info_events,
                     &mut resync_global_chat_events,
                     &mut resync_match_lobbies_events,
                     asset_id,
                 );
             }
             _ => {
-                on_asset_load(&mut ui_manager, &mut asset_catalog, &mut resync_global_chat_events, asset_id);
+                on_asset_load(
+                    &mut ui_manager,
+                    &mut asset_catalog,
+                    &mut resync_public_user_info_events,
+                    &mut resync_global_chat_events,
+                    &mut resync_match_lobbies_events,
+                    asset_id
+                );
             }
         }
     }
 }
 
 pub fn recv_inserted_public_user_info_component(
-    mut ui_manager: ResMut<UiManager>,
-    asset_manager: Res<AssetManager>,
     mut user_manager: ResMut<UserManager>,
-    mut event_reader: EventReader<SessionInsertComponentEvent<PublicUserInfo>>,
-    users_q: Query<&PublicUserInfo>,
+    mut insert_user_info_event_reader: EventReader<SessionInsertComponentEvent<PublicUserInfo>>,
+    mut resync_event_writer: EventWriter<ResyncPublicUserInfoEvent>,
 ) {
-    for event in event_reader.read() {
+    for event in insert_user_info_event_reader.read() {
         info!("received Inserted PublicUserInfo from Session Server! (entity: {:?})", event.entity);
 
         // let user_info = users_q.get(event.entity).unwrap();
@@ -77,46 +80,33 @@ pub fn recv_inserted_public_user_info_component(
         // info!("incoming user: [ entity({:?}), name({:?}) ]", event.entity, user_name);
 
         user_manager.insert_user(
-            &mut ui_manager,
-            &asset_manager,
-            &users_q,
+            &mut resync_event_writer,
             event.entity,
         );
     }
 }
 
 pub fn recv_updated_public_user_info_component(
-    mut ui_manager: ResMut<UiManager>,
-    asset_manager: Res<AssetManager>,
-    mut user_manager: ResMut<UserManager>,
     mut event_reader: EventReader<SessionUpdateComponentEvent<PublicUserInfo>>,
-    users_q: Query<&PublicUserInfo>,
+    mut resync_event_writer: EventWriter<ResyncPublicUserInfoEvent>,
 ) {
     for event in event_reader.read() {
         info!("received Updated PublicUserInfo from Session Server! (entity: {:?})", event.entity);
 
-        user_manager.update_user(
-            &mut ui_manager,
-            &asset_manager,
-            &users_q,
-        );
+        resync_event_writer.send(ResyncPublicUserInfoEvent);
     }
 }
 
 pub fn recv_removed_public_user_info_component(
-    mut ui_manager: ResMut<UiManager>,
-    asset_manager: Res<AssetManager>,
     mut user_manager: ResMut<UserManager>,
+    mut resync_event_writer: EventWriter<ResyncPublicUserInfoEvent>,
     mut event_reader: EventReader<SessionRemoveComponentEvent<PublicUserInfo>>,
-    users_q: Query<&PublicUserInfo>,
 ) {
     for event in event_reader.read() {
         info!("received Removed PublicUserInfo from Session Server! (entity: {:?})", event.entity);
 
         user_manager.delete_user(
-            &mut ui_manager,
-            &asset_manager,
-            &users_q,
+            &mut resync_event_writer,
             &event.entity,
         );
     }

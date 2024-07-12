@@ -25,7 +25,7 @@ use crate::{
     states::AppState,
     ui::events::{
         DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent, ResyncMatchLobbiesEvent,
-        JoinMatchButtonClickedEvent, SettingsButtonClickedEvent, SubmitButtonClickedEvent, ResyncGlobalChatEvent,
+        JoinMatchButtonClickedEvent, SettingsButtonClickedEvent, SubmitButtonClickedEvent, ResyncGlobalChatEvent, ResyncPublicUserInfoEvent,
     },
 };
 
@@ -54,11 +54,10 @@ pub(crate) fn on_ui_load(
     next_state: &mut NextState<AppState>,
     ui_manager: &mut UiManager,
     ui_catalog: &mut UiCatalog,
-    asset_manager: &AssetManager,
     user_manager: &mut UserManager,
     global_chat_messages: &mut GlobalChat,
     match_lobbies: &mut MatchLobbies,
-    user_q: &Query<&PublicUserInfo>,
+    resync_public_user_info_events: &mut EventWriter<ResyncPublicUserInfoEvent>,
     resync_global_chat_events: &mut EventWriter<ResyncGlobalChatEvent>,
     resync_match_lobbies_events: &mut EventWriter<ResyncMatchLobbiesEvent>,
     asset_id: AssetId,
@@ -79,9 +78,7 @@ pub(crate) fn on_ui_load(
         ),
         UiKey::UserListItem => user_manager.on_load_user_list_item_ui(
             ui_catalog,
-            ui_manager,
-            asset_manager,
-            &user_q,
+            resync_public_user_info_events,
         ),
 
         UiKey::HostMatch => match_lobbies.on_load_host_match_ui(
@@ -186,6 +183,22 @@ pub(crate) fn handle_events(
     for _ in global_chat_btn_rdr.read() {}
     for _ in devlog_btn_rdr.read() {}
     for _ in settings_btn_rdr.read() {}
+}
+
+pub(crate) fn handle_public_user_info_events(
+    mut user_manager: ResMut<UserManager>,
+    mut ui_manager: ResMut<UiManager>,
+    asset_manager: Res<AssetManager>,
+    user_q: Query<&PublicUserInfo>,
+    mut resync_public_user_info_events: EventReader<ResyncPublicUserInfoEvent>,
+) {
+    let mut resync = false;
+    for _ in resync_public_user_info_events.read() {
+        resync = true;
+    }
+    if resync {
+        user_manager.sync_with_collection(&mut ui_manager, &asset_manager, &user_q);
+    }
 }
 
 pub(crate) fn handle_global_chat_events(

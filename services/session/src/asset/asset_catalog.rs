@@ -16,6 +16,14 @@ impl AssetCatalog {
         AssetId::from_str("htytzu").unwrap()
     }
 
+    pub fn game_join_match_ui() -> AssetId {
+        AssetId::from_str("qqxe6s").unwrap()
+    }
+
+    pub fn game_join_match_lobby_list_item_ui() -> AssetId {
+        AssetId::from_str("pup52m").unwrap()
+    }
+
     pub fn game_global_chat_ui() -> AssetId {
         AssetId::from_str("ngffab").unwrap()
     }
@@ -56,6 +64,8 @@ pub(crate) fn user_load_default_assets(
         AssetCatalog::password_eye_icon(),
         AssetCatalog::game_main_menu_ui(),
         AssetCatalog::game_host_match_ui(),
+        AssetCatalog::game_join_match_ui(),
+        AssetCatalog::game_join_match_lobby_list_item_ui(),
         AssetCatalog::game_global_chat_ui(),
         AssetCatalog::game_global_chat_day_divider_item_ui(),
         AssetCatalog::game_global_chat_username_and_message_item_ui(),

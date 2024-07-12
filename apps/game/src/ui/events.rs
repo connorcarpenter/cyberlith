@@ -19,6 +19,9 @@ pub struct SettingsButtonClickedEvent;
 pub struct SubmitButtonClickedEvent;
 
 #[derive(Event, Default)]
+pub struct ResyncPublicUserInfoEvent;
+
+#[derive(Event, Default)]
 pub struct ResyncGlobalChatEvent {
     maintain_scroll: bool,
 }

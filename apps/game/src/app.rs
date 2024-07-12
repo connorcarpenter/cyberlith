@@ -17,7 +17,7 @@ use crate::{
     ui,
     ui::{
         events::{
-            DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent,
+            DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent, ResyncPublicUserInfoEvent,
             JoinMatchButtonClickedEvent, SettingsButtonClickedEvent, SubmitButtonClickedEvent, ResyncGlobalChatEvent, ResyncMatchLobbiesEvent,
         },
         UiCatalog,
@@ -81,8 +81,10 @@ impl Plugin for GameApp {
             .add_systems(Update, session::recv_removed_match_lobby_component)
             // Ui
             .add_systems(Update, ui::handle_events)
+            .add_systems(Update, ui::handle_public_user_info_events)
             .add_systems(Update, ui::handle_global_chat_events)
             .add_systems(Update, ui::handle_match_lobbies_events)
+            .add_event::<ResyncPublicUserInfoEvent>()
             .add_event::<ResyncGlobalChatEvent>()
             .add_event::<ResyncMatchLobbiesEvent>()
             .add_event::<HostMatchButtonClickedEvent>()

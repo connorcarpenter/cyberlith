@@ -29,6 +29,14 @@ impl UiCatalog {
             UiHandle::new(AssetId::from_str("htytzu").unwrap()),
         );
         me.insert_ui(
+            UiKey::JoinMatch,
+            UiHandle::new(AssetId::from_str("qqxe6s").unwrap()),
+        );
+        me.insert_ui(
+            UiKey::JoinMatchLobbyItem,
+            UiHandle::new(AssetId::from_str("pup52m").unwrap()),
+        );
+        me.insert_ui(
             UiKey::GlobalChat,
             UiHandle::new(AssetId::from_str("ngffab").unwrap()),
         );

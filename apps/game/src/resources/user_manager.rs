@@ -1,10 +1,10 @@
 use std::collections::{BTreeMap, HashMap};
 
-use bevy_ecs::{prelude::Query, system::{Resource}, entity::Entity};
+use bevy_ecs::{prelude::Query, system::Resource, entity::Entity, event::EventWriter};
 
 use game_engine::{ui::{UiHandle, extensions::{ListUiExt, ListUiExtItem}, UiManager}, asset::AssetManager, session::components::PublicUserInfo};
 
-use crate::ui::{UiCatalog, UiKey};
+use crate::ui::{UiCatalog, UiKey, events::ResyncPublicUserInfoEvent};
 
 #[derive(Resource)]
 pub struct UserManager {
@@ -32,9 +32,7 @@ impl UserManager {
     pub(crate) fn on_load_user_list_item_ui(
         &mut self,
         ui_catalog: &mut UiCatalog,
-        ui_manager: &mut UiManager,
-        asset_manager: &AssetManager,
-        user_q: &Query<&PublicUserInfo>,
+        resync_public_user_info_events: &mut EventWriter<ResyncPublicUserInfoEvent>,
     ) {
         let item_ui_key = UiKey::UserListItem;
         let item_ui_handle = ui_catalog.get_ui_handle(item_ui_key);
@@ -43,7 +41,7 @@ impl UserManager {
 
         self.item_ui = Some(item_ui_handle.clone());
 
-        self.sync_with_collection(ui_manager, asset_manager, user_q);
+        resync_public_user_info_events.send(ResyncPublicUserInfoEvent);
     }
 
     pub(crate) fn recv_main_menu_ui(&mut self, ui_manager: &mut UiManager, main_menu_ui_handle: &UiHandle) {
@@ -52,9 +50,7 @@ impl UserManager {
 
     pub fn insert_user(
         &mut self,
-        ui_manager: &mut UiManager,
-        asset_manager: &AssetManager,
-        user_q: &Query<&PublicUserInfo>,
+        resync_events: &mut EventWriter<ResyncPublicUserInfoEvent>,
         user_entity: Entity,
     ) {
         let user_id = self.next_id;
@@ -62,29 +58,18 @@ impl UserManager {
         self.users.insert(user_id, user_entity);
         self.entity_to_user_id_map.insert(user_entity, user_id);
 
-        self.sync_with_collection(ui_manager, asset_manager, user_q);
-    }
-
-    pub fn update_user(
-        &mut self,
-        ui_manager: &mut UiManager,
-        asset_manager: &AssetManager,
-        user_q: &Query<&PublicUserInfo>,
-    ) {
-        self.sync_with_collection(ui_manager, asset_manager, user_q);
+        resync_events.send(ResyncPublicUserInfoEvent);
     }
 
     pub fn delete_user(
         &mut self,
-        ui_manager: &mut UiManager,
-        asset_manager: &AssetManager,
-        user_q: &Query<&PublicUserInfo>,
+        resync_events: &mut EventWriter<ResyncPublicUserInfoEvent>,
         user_entity: &Entity,
     ) {
         let user_id = self.entity_to_user_id_map.remove(user_entity).unwrap();
         self.users.remove(&user_id);
 
-        self.sync_with_collection(ui_manager, asset_manager, user_q);
+        resync_events.send(ResyncPublicUserInfoEvent);
     }
 
     pub fn sync_with_collection(

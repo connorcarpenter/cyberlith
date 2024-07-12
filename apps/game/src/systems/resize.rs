@@ -1,25 +1,20 @@
-use bevy_ecs::{event::EventWriter, change_detection::ResMut, prelude::Query, system::Res};
+use bevy_ecs::{event::EventWriter, change_detection::ResMut, prelude::Query};
 
 use game_engine::{
-    asset::AssetManager,
     render::{
         components::{Camera, Viewport},
         Window,
     },
-    ui::UiManager,
-    session::components::PublicUserInfo,
 };
 
-use crate::{resources::user_manager::UserManager, ui::events::ResyncGlobalChatEvent};
+use crate::{ui::events::{ResyncMatchLobbiesEvent, ResyncGlobalChatEvent, ResyncPublicUserInfoEvent}};
 
 pub fn handle_viewport_resize(
     mut window: ResMut<Window>,
-    mut user_manager: ResMut<UserManager>,
-    mut ui_manager: ResMut<UiManager>,
-    asset_manager: Res<AssetManager>,
+    mut resync_public_user_info_events: EventWriter<ResyncPublicUserInfoEvent>,
     mut resync_global_chat_events: EventWriter<ResyncGlobalChatEvent>,
+    mut resync_match_lobbies_event: EventWriter<ResyncMatchLobbiesEvent>,
     mut cameras_q: Query<&mut Camera>,
-    user_q: Query<&PublicUserInfo>,
 ) {
     // sync camera viewport to window
     if !window.did_change() {
@@ -44,8 +39,9 @@ pub fn handle_viewport_resize(
 
             //info!("resize window detected. new viewport: (x: {:?}, y: {:?}, width: {:?}, height: {:?})", new_viewport.x, new_viewport.y, new_viewport.width, new_viewport.height);
 
-            user_manager.sync_with_collection(&mut ui_manager, &asset_manager, &user_q);
+            resync_public_user_info_events.send(ResyncPublicUserInfoEvent);
             resync_global_chat_events.send(ResyncGlobalChatEvent::new(true));
+            resync_match_lobbies_event.send(ResyncMatchLobbiesEvent);
         }
     }
 }

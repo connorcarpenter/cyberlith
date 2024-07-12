@@ -7,16 +7,16 @@ use game_engine::{
 };
 
 use crate::{
+    resources::user_manager::UserManager,
     states::AppState,
     ui::{
         events::{
             DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent,
-            JoinMatchButtonClickedEvent, SettingsButtonClickedEvent,
+            JoinMatchButtonClickedEvent, SettingsButtonClickedEvent, ResyncPublicUserInfoEvent,
         },
         go_to_sub_ui, UiCatalog, UiKey,
     },
 };
-use crate::resources::user_manager::UserManager;
 
 pub(crate) fn on_load(
     current_state: AppState,
@@ -86,6 +86,9 @@ pub(crate) fn handle_events(
     }
     if join_match_clicked {
         info!("join match button clicked!");
+
+        go_to_sub_ui(ui_manager, ui_catalog, UiKey::JoinMatch);
+
         *should_rumble = true;
     }
 

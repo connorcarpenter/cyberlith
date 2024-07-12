@@ -238,7 +238,7 @@ impl MatchLobbies {
     ) {
         item_ctx.add_copied_node(ui);
 
-        item_ctx.set_text_by_id("lobby_name", lobby_name);
-        item_ctx.set_text_by_id("owner_name", owner_name);
+        item_ctx.set_text_by_id("match_name", lobby_name);
+        item_ctx.set_text_by_id("username", owner_name);
     }
 }
