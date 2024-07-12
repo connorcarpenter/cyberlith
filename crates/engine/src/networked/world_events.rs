@@ -15,15 +15,15 @@ use logging::info;
 
 use world_server_naia_proto::components::{Alt1, AssetEntry, AssetRef, Main, Position};
 
-use super::{asset_ref_processor::{AssetProcessor, AssetRefProcessor}, client_markers::World};
 use crate::{
     asset_cache::AssetCache,
     networked::{
+        asset_ref_processor::{AssetProcessor, AssetRefProcessor}, client_markers::World,
         connection_manager::ConnectionManager,
         component_events::{
             get_component_events, InsertComponentEvent,
             UpdateComponentEvent, component_events_startup,
-            RemoveComponentEvent,
+            RemoveComponentEvent, AppRegisterComponentEvents,
         },
     },
     world::{WorldDespawnEntityEvent, WorldSpawnEntityEvent, WorldClient},
@@ -48,8 +48,11 @@ impl Plugin for WorldEventsPlugin {
 
             .add_systems(Startup, component_events_startup::<World>)
             .add_systems(Update, component_events_update)
-            .add_event::<WorldInsertComponentEvent<Position>>()
 
+            // component events
+            .add_component_events::<World, Position>()
+
+            // asset events
             .add_event::<InsertAssetRefEvent<Main>>()
             .add_event::<InsertAssetRefEvent<Alt1>>();
     }

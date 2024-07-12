@@ -1,9 +1,9 @@
 use bevy_app::{App, Plugin, Startup, Update};
-use bevy_ecs::{event::EventReader, prelude::World as BevyWorld};
-use bevy_ecs::event::EventWriter;
-use logging::{info, warn};
+use bevy_ecs::{event::{EventReader, EventWriter}, prelude::World as BevyWorld};
 
 use naia_bevy_client::NaiaClientError;
+
+use logging::{info, warn};
 use kernel::AppExitAction;
 use session_server_naia_proto::components::{GlobalChatMessage, MatchLobby, PublicUserInfo};
 
@@ -11,7 +11,7 @@ use crate::{
     networked::{
         client_markers::Session,
         component_events::{
-            component_events_startup, get_component_events, InsertComponentEvent, RemoveComponentEvent, UpdateComponentEvent,
+            component_events_startup, get_component_events, InsertComponentEvent, RemoveComponentEvent, UpdateComponentEvent, AppRegisterComponentEvents,
         },
         connection_manager::ConnectionManager
     },
@@ -45,18 +45,9 @@ impl Plugin for SessionEventsPlugin {
             .add_systems(Startup, component_events_startup::<Session>)
             .add_systems(Update, component_events_update)
 
-            // TODO: make helper method for these..
-            .add_event::<SessionInsertComponentEvent<GlobalChatMessage>>()
-            .add_event::<SessionUpdateComponentEvent<GlobalChatMessage>>()
-            .add_event::<SessionRemoveComponentEvent<GlobalChatMessage>>()
-
-            .add_event::<SessionInsertComponentEvent<PublicUserInfo>>()
-            .add_event::<SessionUpdateComponentEvent<PublicUserInfo>>()
-            .add_event::<SessionRemoveComponentEvent<PublicUserInfo>>()
-
-            .add_event::<SessionInsertComponentEvent<MatchLobby>>()
-            .add_event::<SessionUpdateComponentEvent<MatchLobby>>()
-            .add_event::<SessionRemoveComponentEvent<MatchLobby>>();
+            .add_component_events::<Session, GlobalChatMessage>()
+            .add_component_events::<Session, PublicUserInfo>()
+            .add_component_events::<Session, MatchLobby>();
     }
 }
 

@@ -1,3 +1,4 @@
+use bevy_app::App;
 use bevy_ecs::{
     change_detection::Mut,
     entity::Entity,
@@ -90,6 +91,20 @@ impl<T: Send + Sync + 'static, C: Replicate> RemoveComponentEvent<T, C> {
             phantom_t: std::marker::PhantomData,
             component,
         }
+    }
+}
+
+// App Extension Methods
+pub trait AppRegisterComponentEvents {
+    fn add_component_events<T: Send + Sync + 'static, C: Replicate>(&mut self) -> &mut Self;
+}
+
+impl AppRegisterComponentEvents for App {
+    fn add_component_events<T: Send + Sync + 'static, C: Replicate>(&mut self) -> &mut Self {
+        self.add_event::<InsertComponentEvent<T, C>>()
+            .add_event::<UpdateComponentEvent<T, C>>()
+            .add_event::<RemoveComponentEvent<T, C>>();
+        self
     }
 }
 
