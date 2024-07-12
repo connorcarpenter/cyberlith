@@ -68,26 +68,25 @@ pub fn setup(
 
     // global.load_ui(&mut ui_manager, game::host_match::ui_define()); // game host match
 
-    let global_chat_ui_handle = global.load_ui(&mut ui_manager, game::global_chat::ui_define()); // game global chat
-    let day_divider_ui_handle = global.load_ui(&mut ui_manager, game::global_chat_day_divider::ui_define()); // game global chat day divider
-    let username_and_message_ui_handle = global.load_ui(&mut ui_manager, game::global_chat_username_and_message::ui_define()); // game global chat username and message
-    let message_ui_handle = global.load_ui(&mut ui_manager, game::global_chat_message::ui_define()); // game global chat message
-    let user_list_item_ui_handle = global.load_ui(&mut ui_manager, game::user_list_item::ui_define()); // game user list item
-
     ui_manager.set_target_render_layer(RenderLayers::layer(0));
     ui_manager.enable_ui(&main_menu_ui_handle);
 
+    // global chat
     let global_chat_state = setup_global_chat_test_case(
-        &mut ui_manager, &asset_manager,
+        &mut global,
+        &mut ui_manager,
+        &asset_manager,
         &main_menu_ui_handle,
-        &global_chat_ui_handle,
-        &day_divider_ui_handle,
-        &username_and_message_ui_handle,
-        &message_ui_handle,
     );
     commands.insert_resource(global_chat_state);
 
-    let user_list_state = setup_user_list_test_case(&mut ui_manager, &asset_manager, &main_menu_ui_handle, &user_list_item_ui_handle);
+    // user list
+    let user_list_state = setup_user_list_test_case(
+        &mut global,
+        &mut ui_manager,
+        &asset_manager,
+        &main_menu_ui_handle,
+    );
     commands.insert_resource(user_list_state);
 
     // ui setup

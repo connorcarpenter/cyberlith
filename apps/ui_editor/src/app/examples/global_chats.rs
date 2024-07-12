@@ -4,6 +4,8 @@ use game_engine::{ui::{UiManager, UiHandle, extensions::{ListUiExt, ListUiExtIte
 
 use bevy_ecs::{system::Resource};
 
+use crate::app::{uis::game, global::Global};
+
 #[derive(Resource)]
 pub struct GlobalChatState {
     pub global_chat_list_ui_ext: ListUiExt<u32>,
@@ -135,16 +137,18 @@ fn add_message_item(item_ctx: &mut ListUiExtItem<u32>, ui: &UiHandle, message_te
 }
 
 pub(crate) fn setup_global_chat_test_case(
+    global: &mut Global,
     ui_manager: &mut UiManager,
     asset_manager: &AssetManager,
     main_menu_ui_handle: &UiHandle,
-    global_chat_ui_handle: &UiHandle,
-    day_divider_ui_handle: &UiHandle,
-    username_and_message_ui_handle: &UiHandle,
-    message_ui_handle: &UiHandle,
 ) -> GlobalChatState {
 
-    let mut global_chat_state = GlobalChatState::new(day_divider_ui_handle, username_and_message_ui_handle, message_ui_handle);
+    let global_chat_ui_handle = global.load_ui(ui_manager, game::global_chat::ui_define()); // game global chat
+    let day_divider_ui_handle = global.load_ui(ui_manager, game::global_chat_day_divider::ui_define()); // game global chat day divider
+    let username_and_message_ui_handle = global.load_ui(ui_manager, game::global_chat_username_and_message::ui_define()); // game global chat username and message
+    let message_ui_handle = global.load_ui(ui_manager, game::global_chat_message::ui_define()); // game global chat message
+
+    let mut global_chat_state = GlobalChatState::new(&day_divider_ui_handle, &username_and_message_ui_handle, &message_ui_handle);
 
     // setup sub ui
     ui_manager.set_ui_container_contents(

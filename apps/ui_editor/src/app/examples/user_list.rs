@@ -4,6 +4,8 @@ use bevy_ecs::prelude::Resource;
 
 use game_engine::{ui::{UiManager, UiHandle, extensions::{ListUiExt, ListUiExtItem}}, asset::AssetManager};
 
+use crate::app::{uis::game, global::Global};
+
 #[derive(Resource)]
 pub struct UserListState {
     pub user_list_ui_ext: ListUiExt<u32>,
@@ -58,12 +60,15 @@ fn add_user_item(item_ctx: &mut ListUiExtItem<u32>, ui: &UiHandle, username: &st
 }
 
 pub(crate) fn setup_user_list_test_case(
+    global: &mut Global,
     ui_manager: &mut UiManager,
     asset_manager: &AssetManager,
     main_menu_ui_handle: &UiHandle,
-    user_list_item_ui_handle: &UiHandle,
 ) -> UserListState {
-    let mut user_list_state = UserListState::new(user_list_item_ui_handle);
+
+    let user_list_item_ui_handle = global.load_ui(ui_manager, game::user_list_item::ui_define()); // game user list item
+
+    let mut user_list_state = UserListState::new(&user_list_item_ui_handle);
 
     // setup user list
     user_list_state
