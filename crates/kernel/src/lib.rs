@@ -9,6 +9,8 @@ pub use plugin::KernelPlugin;
 mod kernel;
 pub use kernel::{Kernel, KernelApp};
 
+pub use executor;
+
 cfg_if::cfg_if! {
     if #[cfg(target_arch = "wasm32")] {
         mod wasm;

@@ -2,7 +2,7 @@ use bevy_app::{App, Startup, Update};
 
 use game_engine::{
     render::{resources::WindowSettings, Draw},
-    EnginePlugin,
+    EnginePlugin, kernel::executor,
 };
 
 use super::{draw, resize, ui};
@@ -10,6 +10,7 @@ use crate::app::{scroll::scroll_events, ui::SubmitButtonEvent};
 
 pub fn run() {
     logging::initialize();
+    executor::setup(1, 1);
 
     let mut app = App::default();
 

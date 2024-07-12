@@ -153,7 +153,6 @@ pub fn recv_inserted_match_lobby_component(
     lobby_q: Query<&MatchLobby>,
 ) {
     for event in event_reader.read() {
-        // info!("received Inserted MatchLobby from Session Server! (entity: {:?})", event.entity);
 
         let lobby = lobby_q.get(event.entity).unwrap();
         let lobby_id = *lobby.id;
