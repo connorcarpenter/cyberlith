@@ -11,8 +11,8 @@ mod handle;
 mod state_globals;
 mod systems;
 
-mod panel_mut;
-pub use panel_mut::PanelMut;
+mod parent_mut;
+pub use parent_mut::ParentMut;
 
 pub use handle::UiHandle;
 

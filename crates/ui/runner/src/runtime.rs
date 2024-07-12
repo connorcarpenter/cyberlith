@@ -15,7 +15,7 @@ use ui_state::UiState;
 use crate::{
     config::{ValidationType, WidgetKind},
     handle::UiHandle,
-    PanelMut,
+    ParentMut,
 };
 
 pub struct UiRuntime {
@@ -99,10 +99,10 @@ impl UiRuntime {
         (&self.state, &self.config, &self.dependencies, &self.camera)
     }
 
-    pub fn panel_mut(&mut self, id: &NodeId) -> Option<PanelMut> {
+    pub fn parent_mut(&mut self, id: &NodeId) -> Option<ParentMut> {
         let node = self.config.get_node(id)?;
-        if node.widget_kind() == WidgetKind::Panel {
-            return Some(PanelMut::new(self, *id));
+        if node.widget_kind().has_children() {
+            return Some(ParentMut::new(self, *id));
         }
         None
     }
@@ -171,7 +171,7 @@ impl UiRuntime {
 
         // recurse
         {
-            if let Some(mut panel_mut) = self.panel_mut(node_id) {
+            if let Some(mut panel_mut) = self.parent_mut(node_id) {
                 panel_mut.remove_all_children();
             }
         }

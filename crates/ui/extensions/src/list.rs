@@ -349,7 +349,7 @@ impl<K: Hash + Eq + Copy + Clone + PartialEq> ListUiExt<K> {
                         for item_node in item_nodes {
                             // remove from main panel
                             container_ui_runtime
-                                .panel_mut(&container_id)
+                                .parent_mut(&container_id)
                                 .unwrap()
                                 .remove_node(&item_node);
 
@@ -593,7 +593,7 @@ impl<'a, K: Hash + Eq + Copy + Clone + PartialEq> ListUiExtItem<'a, K> {
                 for item_node in item_nodes {
                     // remove from main panel
                     container_ui_runtime
-                        .panel_mut(self.container_id)
+                        .parent_mut(self.container_id)
                         .unwrap()
                         .remove_node(&item_node);
 

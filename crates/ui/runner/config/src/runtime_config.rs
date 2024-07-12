@@ -169,13 +169,18 @@ impl UiRuntimeConfig {
         None
     }
 
-    // hopefully this is only used by PanelMut?
-    pub fn panel_mut(&mut self, id: &NodeId) -> Option<&mut Panel> {
+    // hopefully this is only used by ParentMut?
+    pub fn parent_mut(&mut self, id: &NodeId) -> Option<&mut Panel> {
         let node = self.get_node_mut(id)?;
-        if node.widget_kind() == WidgetKind::Panel {
-            return node.widget_panel_mut();
+        match node.widget_kind() {
+            WidgetKind::Panel => return node.widget_panel_mut(),
+            WidgetKind::Button => {
+                let button_ref = node.widget_button_mut().unwrap();
+                return Some(&mut button_ref.panel);
+
+            }
+            _ => None,
         }
-        None
     }
 
     pub fn button_ref(&self, id: &NodeId) -> Option<&Button> {

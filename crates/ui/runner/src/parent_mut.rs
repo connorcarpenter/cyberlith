@@ -2,12 +2,12 @@ use ui_runner_config::{NodeId, UiNode};
 
 use crate::UiRuntime;
 
-pub struct PanelMut<'a> {
+pub struct ParentMut<'a> {
     runtime: &'a mut UiRuntime,
     node_id: NodeId,
 }
 
-impl<'a> PanelMut<'a> {
+impl<'a> ParentMut<'a> {
     pub fn new(runtime: &'a mut UiRuntime, node_id: NodeId) -> Self {
         Self { runtime, node_id }
     }
@@ -18,7 +18,7 @@ impl<'a> PanelMut<'a> {
         let parent_panel_mut = self
             .runtime
             .ui_config_mut()
-            .panel_mut(&self.node_id)
+            .parent_mut(&self.node_id)
             .unwrap();
         parent_panel_mut.children.insert(index, new_node_id);
         new_node_id
@@ -28,7 +28,7 @@ impl<'a> PanelMut<'a> {
         let parent_panel_mut = self
             .runtime
             .ui_config_mut()
-            .panel_mut(&self.node_id)
+            .parent_mut(&self.node_id)
             .unwrap();
         parent_panel_mut.children.retain(|id| id != node_id);
     }
@@ -37,7 +37,7 @@ impl<'a> PanelMut<'a> {
         let panel_mut = self
             .runtime
             .ui_config_mut()
-            .panel_mut(&self.node_id)
+            .parent_mut(&self.node_id)
             .unwrap();
         let child_ids = std::mem::take(&mut panel_mut.children);
         for child_id in child_ids {

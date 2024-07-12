@@ -20,17 +20,25 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
     // styles
     let container_style = ui_config.create_panel_style(|s| {
         s.set_background_alpha(0.)
-            // .set_background_color(Color::GREEN)
+            .set_background_color(Color::YELLOW)
             .set_height_px(24.0)
+            .set_width_pc(100.0);
+    });
+    let button_style = ui_config.create_button_style(|s| {
+        s.set_background_alpha(1.)
+            .set_background_color(Color::DARK_BLUE)
+            .set_down_color(Color::RED)
+            .set_hover_color(Color::BLUE)
+            .set_size_pc(100.0, 100.0)
             .set_horizontal()
-            .set_self_halign(Alignment::Start)
-            .set_margin_left_vp(2.0)
-            .set_col_between_vp(2.0);
+            .set_col_between_vp(2.0)
+            .set_children_halign(Alignment::Start);
     });
     let match_name_style = ui_config.create_text_style(|s| {
         s.set_background_alpha(0.)
             // .set_background_color(Color::YELLOW)
             .set_size_pc(100.0)
+            .set_margin_left_pc(2.0)
             .set_text_color(Color::LIGHT_GRAY)
             .set_self_halign(Alignment::Start);
     });
@@ -47,12 +55,14 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
         .root_mut()
         .set_style(container_style)
         .contents(|c| {
-            // match name
-            c.add_text_with_id("my super cool match", "match_name")
-                .set_style(match_name_style);
-            // username
-            c.add_text_with_id("coolname", "username")
-                .set_style(username_style);
+            c.add_button("lobby_button").set_style(button_style).contents(|c| {
+                // match name
+                c.add_text_with_id("my super cool match", "match_name")
+                    .set_style(match_name_style);
+                // username
+                c.add_text_with_id("coolname", "username")
+                    .set_style(username_style);
+            });
         });
 
     (ui_name.to_string(), ui_asset_id, ui_etag, ui_config)

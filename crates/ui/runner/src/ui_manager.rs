@@ -28,7 +28,7 @@ use ui_runner_config::{NodeId, NodeStore, UiRuntimeConfig};
 use ui_state::{NodeActiveState, UiState};
 
 use crate::{
-    config::{UiNode, ValidationType, WidgetKind},
+    config::{UiNode, Widget, ValidationType, WidgetKind},
     handle::UiHandle,
     runtime::UiRuntime,
     state_globals::StateGlobals,
@@ -737,17 +737,24 @@ impl UiManager {
         src_ui: &UiHandle,
         src_id: &NodeId,
     ) -> NodeId {
-        let index = self
+        let node = self
             .ui_runtimes
             .get(dest_ui)
             .unwrap()
             .ui_config_ref()
             .get_node(dest_parent_id)
-            .unwrap()
-            .widget_panel_ref()
-            .unwrap()
-            .children
-            .len();
+            .unwrap();
+        let index = match &node.widget {
+            Widget::Panel(panel_ref) => {
+                panel_ref.children.len()
+            }
+            Widget::Button(button_ref) => {
+                button_ref.panel.children.len()
+            }
+            _ => {
+                panic!("dest_parent_id is not a panel or a button");
+            }
+        };
         self.insert_copied_node(index, id_str_map, dest_ui, dest_parent_id, src_ui, src_id)
     }
 
@@ -800,11 +807,12 @@ impl UiManager {
             };
 
         let dest_runtime = self.ui_runtimes.get_mut(dest_ui).unwrap();
-        let Some(mut dest_parent_panel_mut) = dest_runtime.panel_mut(dest_parent_id) else {
-            panic!("dest_parent_id is not a panel");
+
+        let Some(mut dest_parent_mut) = dest_runtime.parent_mut(dest_parent_id) else {
+            panic!("dest_parent_id is not a parent");
         };
 
-        let new_node_id = dest_parent_panel_mut.insert_node(index, &new_copied_node);
+        let new_node_id = dest_parent_mut.insert_node(index, &new_copied_node);
 
         info!(
             "[ui: {:?} . id: {:?}] -> [ui: {:?}, id: {:?}]",
