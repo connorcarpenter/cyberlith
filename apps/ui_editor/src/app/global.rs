@@ -1,25 +1,19 @@
-use std::collections::BTreeMap;
 
 use bevy_ecs::{entity::Entity, system::Resource};
 
+use asset_serde::{bits::AssetMetadataSerde, json::{Asset, AssetData, AssetMeta, UiConfigJson}};
+
 use game_engine::{
-    asset::AssetManager,
-    ui::{
-        extensions::{ListUiExt, ListUiExtItem},
-        UiHandle, UiManager,
-    },
+    asset::{AssetId, AssetType, ETag},
+    ui::{UiHandle, UiManager},
 };
+use ui_builder::UiConfig;
+use ui_runner_config::UiRuntimeConfig;
 
 #[derive(Resource)]
 pub struct Global {
     pub scene_camera_entity: Entity,
     pub ui_handles: Vec<UiHandle>,
-
-    pub global_chat_list_ui_ext: ListUiExt<u32>,
-    pub global_chats: BTreeMap<u32, (String, u8, u8, u8, u8, String)>,
-
-    pub user_list_ui_ext: ListUiExt<u32>,
-    pub users: BTreeMap<u32, String>,
 }
 
 impl Global {
@@ -27,158 +21,68 @@ impl Global {
         Self {
             scene_camera_entity,
             ui_handles: Vec::new(),
-
-            global_chat_list_ui_ext: ListUiExt::new(false),
-            global_chats: BTreeMap::new(),
-
-            user_list_ui_ext: ListUiExt::new(true),
-            users: BTreeMap::new(),
         }
     }
 
-    pub fn global_chat_scroll_up(&mut self, ui_manager: &mut UiManager, asset_manager: &AssetManager) {
-        self.global_chat_list_ui_ext.scroll_up();
+    pub(crate) fn load_ui(&mut self, ui_manager: &mut UiManager, ui_define: (String, AssetId, ETag, UiConfig)) -> UiHandle {
+        let (ui_name, ui_asset_id, ui_etag, ui) = ui_define;
 
-        self.sync_chat_collections(ui_manager, asset_manager);
-    }
+        // write JSON and bits files, metadata too
+        let ui = write_to_file(&ui_name, &ui_asset_id, &ui_etag, ui);
 
-    pub fn global_chat_scroll_down(&mut self, ui_manager: &mut UiManager, asset_manager: &AssetManager) {
-        self.global_chat_list_ui_ext.scroll_down();
+        // load ui into asset manager
+        let ui_handle = ui_manager
+            .manual_load_ui_config(&ui_asset_id, UiRuntimeConfig::load_from_builder_config(ui));
 
-        self.sync_chat_collections(ui_manager, asset_manager);
-    }
+        self.ui_handles.push(ui_handle.clone());
 
-    pub fn user_list_scroll_up(&mut self, ui_manager: &mut UiManager, asset_manager: &AssetManager) {
-        self.user_list_ui_ext.scroll_up();
-
-        self.sync_user_collections(ui_manager, asset_manager);
-    }
-
-    pub fn user_list_scroll_down(&mut self, ui_manager: &mut UiManager, asset_manager: &AssetManager) {
-        self.user_list_ui_ext.scroll_down();
-
-        self.sync_user_collections(ui_manager, asset_manager);
-    }
-
-    pub fn sync_chat_collections(
-        &mut self,
-        ui_manager: &mut UiManager,
-        asset_manager: &AssetManager,
-    ) {
-        // day divider ui
-        let day_divider_ui_handle = self.ui_handles[2];
-        let username_and_message_ui_handle = self.ui_handles[3];
-        let message_ui_handle = self.ui_handles[4];
-
-        // setup collection
-        self.global_chat_list_ui_ext.sync_with_collection(
-            ui_manager,
-            asset_manager,
-            self.global_chats.iter(),
-            self.global_chats.len(),
-            |item_ctx, message_id, prev_message_id_opt| {
-                // info!("syncing chat message: {} {} {} {} {} {}", username, month, day, hour, minute, message);
-                let (username, month, day, hour, minute, message) =
-                    self.global_chats.get(&message_id).unwrap();
-
-                let (prev_date, prev_username) = match prev_message_id_opt {
-                    Some(prev_message_id) => {
-                        let (prev_username, prev_month, prev_day, _, _, _) =
-                            self.global_chats.get(&prev_message_id).unwrap();
-                        (Some((*prev_month, *prev_day)), Some(prev_username.clone()))
-                    }
-                    None => (None, None),
-                };
-
-                let message_date = (*month, *day);
-                let message_time = (*hour, *minute);
-                let mut added_divider = false;
-
-                // add day divider if necessary
-                if prev_date.is_none() || prev_date.unwrap() != message_date {
-                    add_day_divider_item(item_ctx, &day_divider_ui_handle, message_date);
-
-                    added_divider = true;
-                }
-
-                // add username if necessary
-                if prev_username.is_none() || added_divider {
-                    add_username_and_message_item(
-                        item_ctx,
-                        &username_and_message_ui_handle,
-                        username,
-                        message_time,
-                        message,
-                    );
-                } else if !prev_username.as_ref().unwrap().eq(username) {
-                    add_message_item(item_ctx, &message_ui_handle, " "); // blank space
-                    add_username_and_message_item(
-                        item_ctx,
-                        &username_and_message_ui_handle,
-                        username,
-                        message_time,
-                        message,
-                    );
-                } else {
-                    // just add message
-                    add_message_item(item_ctx, &message_ui_handle, message);
-                }
-            },
-        );
-    }
-
-    pub fn sync_user_collections(
-        &mut self,
-        ui_manager: &mut UiManager,
-        asset_manager: &AssetManager,
-    ) {
-        let user_ui_handle = self.ui_handles[5];
-
-        // setup collection
-        self.user_list_ui_ext.sync_with_collection(
-            ui_manager,
-            asset_manager,
-            self.users.iter(),
-            self.users.len(),
-            |item_ctx, user_id, _| {
-
-                let username = self.users.get(&user_id).unwrap();
-                add_user_item(item_ctx, &user_ui_handle, username);
-            },
-        );
+        ui_handle
     }
 }
 
-fn add_day_divider_item(item_ctx: &mut ListUiExtItem<u32>, ui: &UiHandle, date: (u8, u8)) {
-    item_ctx.add_copied_node(ui);
+fn write_to_file(name: &str, ui_asset_id: &AssetId, ui_etag: &ETag, ui: UiConfig) -> UiConfig {
+    let ui_asset_id_str = ui_asset_id.to_string();
 
-    let divider_date_str = format!("{}/{}", date.0, date.1);
-    item_ctx.set_text_by_id("timestamp", divider_date_str.as_str());
-}
+    // ui -> JSON bytes
+    let ui_bytes = {
+        let ui_json = UiConfigJson::from(&ui);
+        let new_meta = AssetMeta::new(&ui_asset_id, UiConfigJson::CURRENT_SCHEMA_VERSION);
+        let asset = Asset::new(new_meta, AssetData::Ui(ui_json));
+        let ui_bytes = serde_json::to_vec_pretty(&asset).unwrap();
+        // info!("json byte count: {:?}", ui_bytes.len());
+        ui_bytes
+    };
 
-fn add_username_and_message_item(
-    item_ctx: &mut ListUiExtItem<u32>,
-    ui: &UiHandle,
-    username: &str,
-    time: (u8, u8),
-    message_text: &str,
-) {
-    item_ctx.add_copied_node(ui);
+    // write JSON bytes to file
+    std::fs::write(format!("output/{}.ui.json", name), &ui_bytes).unwrap();
 
-    item_ctx.set_text_by_id("user_name", username);
+    // JSON bytes -> ui
+    let ui = {
+        let asset: Asset = serde_json::from_slice(&ui_bytes).unwrap();
+        let (_, data) = asset.deconstruct();
+        let AssetData::Ui(ui_json) = data else {
+            panic!("expected UiData");
+        };
+        ui_json.into()
+    };
 
-    let divider_date_str = format!("{}:{}", time.0, time.1);
-    item_ctx.set_text_by_id("timestamp", divider_date_str.as_str());
+    // ui -> bit-packed bytes
+    let ui_bytes = asset_serde::bits::write_ui_bits(&ui);
+    // info!("bits byte count: {:?}", ui_bytes.len());
 
-    item_ctx.set_text_by_id("message", message_text);
-}
+    // write bit-packed data to file
+    std::fs::write(format!("output/{}", ui_asset_id_str), &ui_bytes).unwrap();
 
-fn add_message_item(item_ctx: &mut ListUiExtItem<u32>, ui: &UiHandle, message_text: &str) {
-    item_ctx.add_copied_node(ui);
-    item_ctx.set_text_by_id("message", message_text);
-}
+    // write metadata to file
+    {
+        let ui_metadata = AssetMetadataSerde::new(*ui_etag, AssetType::Ui);
+        let metadata_bytes = ui_metadata.to_bytes();
+        std::fs::write(format!("output/{}.meta", ui_asset_id_str), &metadata_bytes).unwrap();
+    }
 
-fn add_user_item(item_ctx: &mut ListUiExtItem<u32>, ui: &UiHandle, username: &str) {
-    item_ctx.add_copied_node(ui);
-    item_ctx.set_text_by_id("username", username);
+    // bit-packed bytes -> ui
+    let Ok(ui) = asset_serde::bits::read_ui_bits(&ui_bytes) else {
+        panic!("failed to read ui bits for asset_id: {:?}", ui_asset_id);
+    };
+    ui
 }

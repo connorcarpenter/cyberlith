@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap, time::Duration};
+use std::time::Duration;
 
 use bevy_ecs::{
     event::{Event, EventReader, EventWriter},
@@ -8,7 +8,7 @@ use bevy_ecs::{
 
 use game_engine::{
     asset::{
-        AssetManager, embedded_asset_event, AssetId, AssetMetadataSerde, AssetType, ETag, EmbeddedAssetEvent,
+        AssetId, AssetManager, embedded_asset_event, EmbeddedAssetEvent,
     },
     input::{GamepadRumbleIntensity, Input, RumbleManager},
     render::components::{
@@ -18,12 +18,9 @@ use game_engine::{
     ui::UiManager,
 };
 
-use asset_serde::json::{Asset, AssetData, AssetMeta, UiConfigJson};
 use logging::info;
-use ui_builder::UiConfig;
-use ui_runner_config::UiRuntimeConfig;
 
-use crate::app::{global::Global, uis::*, global_chats::setup_global_chat_test_case};
+use crate::app::{global::Global, uis::*, examples::{setup_user_list_test_case, setup_global_chat_test_case}};
 
 #[derive(Event, Default)]
 pub struct SubmitButtonEvent;
@@ -56,47 +53,42 @@ pub fn setup(
     let mut global = Global::new(scene_camera_entity);
 
     // ui setup
-    let mut uis = Vec::new();
 
-    // uis.push(launcher::start::ui_define()); // start
-    // uis.push(launcher::login::ui_define()); // login
-    // uis.push(launcher::register::ui_define()); // register
-    // uis.push(launcher::register_finish::ui_define()); // register_finish
-    // uis.push(launcher::forgot_username::ui_define()); // forgot username
-    // uis.push(launcher::forgot_username_finish::ui_define()); // forgot username finish
-    // uis.push(launcher::forgot_password::ui_define()); // forgot password
-    // uis.push(launcher::forgot_password_finish::ui_define()); // forgot password finish
-    // uis.push(launcher::reset_password::ui_define()); // reset password
+    // global.load_ui(ui_manager, launcher::start::ui_define()); // start
+    // global.load_ui(ui_manager, launcher::login::ui_define()); // login
+    // global.load_ui(ui_manager, launcher::register::ui_define()); // register
+    // global.load_ui(ui_manager, launcher::register_finish::ui_define()); // register_finish
+    // global.load_ui(ui_manager, launcher::forgot_username::ui_define()); // forgot username
+    // global.load_ui(ui_manager, launcher::forgot_username_finish::ui_define()); // forgot username finish
+    // global.load_ui(ui_manager, launcher::forgot_password::ui_define()); // forgot password
+    // global.load_ui(ui_manager, launcher::forgot_password_finish::ui_define()); // forgot password finish
+    // global.load_ui(ui_manager, launcher::reset_password::ui_define()); // reset password
 
-    uis.push(game::main_menu::ui_define()); // game main menu
+    let main_menu_ui_handle = global.load_ui(&mut ui_manager, game::main_menu::ui_define()); // game main menu
 
-    // uis.push(game::host_match::ui_define()); // game host match
+    // global.load_ui(&mut ui_manager, game::host_match::ui_define()); // game host match
 
-    uis.push(game::global_chat::ui_define()); // game global chat
-    uis.push(game::global_chat_day_divider::ui_define()); // game global chat day divider
-    uis.push(game::global_chat_username_and_message::ui_define()); // game global chat username and message
-    uis.push(game::global_chat_message::ui_define()); // game global chat message
-    uis.push(game::user_list_item::ui_define()); // game user list item
-
-    for (ui_name, ui_asset_id, ui_etag, ui) in uis {
-        // write JSON and bits files, metadata too
-        let ui = write_to_file(&ui_name, &ui_asset_id, &ui_etag, ui);
-
-        // load ui into asset manager
-        let ui_handle = ui_manager
-            .manual_load_ui_config(&ui_asset_id, UiRuntimeConfig::load_from_builder_config(ui));
-
-        global.ui_handles.push(ui_handle);
-    }
+    let global_chat_ui_handle = global.load_ui(&mut ui_manager, game::global_chat::ui_define()); // game global chat
+    let day_divider_ui_handle = global.load_ui(&mut ui_manager, game::global_chat_day_divider::ui_define()); // game global chat day divider
+    let username_and_message_ui_handle = global.load_ui(&mut ui_manager, game::global_chat_username_and_message::ui_define()); // game global chat username and message
+    let message_ui_handle = global.load_ui(&mut ui_manager, game::global_chat_message::ui_define()); // game global chat message
+    let user_list_item_ui_handle = global.load_ui(&mut ui_manager, game::user_list_item::ui_define()); // game user list item
 
     ui_manager.set_target_render_layer(RenderLayers::layer(0));
-    ui_manager.enable_ui(&global.ui_handles[0]);
+    ui_manager.enable_ui(&main_menu_ui_handle);
 
-    setup_global_chat_test_case(&mut global, &mut ui_manager, &asset_manager);
+    let global_chat_state = setup_global_chat_test_case(
+        &mut ui_manager, &asset_manager,
+        &main_menu_ui_handle,
+        &global_chat_ui_handle,
+        &day_divider_ui_handle,
+        &username_and_message_ui_handle,
+        &message_ui_handle,
+    );
+    commands.insert_resource(global_chat_state);
 
-    // scene setup now
-    // ambient light
-    // commands.spawn(AmbientLight::new(1.0, Color::WHITE)).insert(RenderLayers::layer(0));
+    let user_list_state = setup_user_list_test_case(&mut ui_manager, &asset_manager, &main_menu_ui_handle, &user_list_item_ui_handle);
+    commands.insert_resource(user_list_state);
 
     // ui setup
     embedded_asset_events.send(embedded_asset_event!("embedded/8273wa")); // palette
@@ -125,51 +117,4 @@ pub fn handle_events(
             );
         }
     }
-}
-
-fn write_to_file(name: &str, ui_asset_id: &AssetId, ui_etag: &ETag, ui: UiConfig) -> UiConfig {
-    let ui_asset_id_str = ui_asset_id.to_string();
-
-    // ui -> JSON bytes
-    let ui_bytes = {
-        let ui_json = UiConfigJson::from(&ui);
-        let new_meta = AssetMeta::new(&ui_asset_id, UiConfigJson::CURRENT_SCHEMA_VERSION);
-        let asset = Asset::new(new_meta, AssetData::Ui(ui_json));
-        let ui_bytes = serde_json::to_vec_pretty(&asset).unwrap();
-        // info!("json byte count: {:?}", ui_bytes.len());
-        ui_bytes
-    };
-
-    // write JSON bytes to file
-    std::fs::write(format!("output/{}.ui.json", name), &ui_bytes).unwrap();
-
-    // JSON bytes -> ui
-    let ui = {
-        let asset: Asset = serde_json::from_slice(&ui_bytes).unwrap();
-        let (_, data) = asset.deconstruct();
-        let AssetData::Ui(ui_json) = data else {
-            panic!("expected UiData");
-        };
-        ui_json.into()
-    };
-
-    // ui -> bit-packed bytes
-    let ui_bytes = asset_serde::bits::write_ui_bits(&ui);
-    // info!("bits byte count: {:?}", ui_bytes.len());
-
-    // write bit-packed data to file
-    std::fs::write(format!("output/{}", ui_asset_id_str), &ui_bytes).unwrap();
-
-    // write metadata to file
-    {
-        let ui_metadata = AssetMetadataSerde::new(*ui_etag, AssetType::Ui);
-        let metadata_bytes = ui_metadata.to_bytes();
-        std::fs::write(format!("output/{}.meta", ui_asset_id_str), &metadata_bytes).unwrap();
-    }
-
-    // bit-packed bytes -> ui
-    let Ok(ui) = asset_serde::bits::read_ui_bits(&ui_bytes) else {
-        panic!("failed to read ui bits for asset_id: {:?}", ui_asset_id);
-    };
-    ui
 }

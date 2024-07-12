@@ -1,19 +1,21 @@
 use std::collections::BTreeMap;
 
-use game_engine::{ui::UiManager, asset::AssetManager};
+use game_engine::{ui::{UiManager, UiHandle}, asset::AssetManager};
 
-use crate::app::global::Global;
+use crate::app::examples::GlobalChatState;
+
 
 pub(crate) fn setup_global_chat_test_case(
-    global: &mut Global,
     ui_manager: &mut UiManager,
     asset_manager: &AssetManager,
-) {
-    // main menu ui
-    let main_menu_ui_handle = global.ui_handles[0];
+    main_menu_ui_handle: &UiHandle,
+    global_chat_ui_handle: &UiHandle,
+    day_divider_ui_handle: &UiHandle,
+    username_and_message_ui_handle: &UiHandle,
+    message_ui_handle: &UiHandle,
+) -> GlobalChatState {
 
-    // global chat sub-ui
-    let global_chat_ui_handle = global.ui_handles[1];
+    let mut global_chat_state = GlobalChatState::new(day_divider_ui_handle, username_and_message_ui_handle, message_ui_handle);
 
     // setup sub ui
     ui_manager.set_ui_container_contents(
@@ -23,44 +25,16 @@ pub(crate) fn setup_global_chat_test_case(
     );
 
     // setup global chat list
-    global
+    global_chat_state
         .global_chat_list_ui_ext
         .set_container_ui(ui_manager, &global_chat_ui_handle, "chat_wall");
 
     // setup chats
-    global.global_chats = setup_global_chats();
+    global_chat_state.global_chats = setup_global_chats();
 
-    global.sync_chat_collections(ui_manager, asset_manager);
+    global_chat_state.sync_chat_collections(ui_manager, asset_manager);
 
-    // setup user list
-    global
-        .user_list_ui_ext
-        .set_container_ui(ui_manager, &main_menu_ui_handle, "user_list");
-
-    // setup users
-    global.users = setup_users();
-
-    global.sync_user_collections(ui_manager, asset_manager);
-}
-
-fn setup_users() -> BTreeMap<u32, String> {
-    let mut users = Vec::new();
-    users.push("tom");
-    users.push("ben");
-    users.push("andrew");
-    users.push("joe");
-    users.push("jane");
-    users.push("sarah");
-    users.push("jim");
-    users.push("bob");
-
-    let mut user_map = BTreeMap::<u32, String>::new();
-
-    for user in users {
-        user_map.insert(user_map.len() as u32, user.to_string());
-    }
-
-    user_map
+    global_chat_state
 }
 
 fn setup_global_chats() -> BTreeMap<u32, (String, u8, u8, u8, u8, String)> {

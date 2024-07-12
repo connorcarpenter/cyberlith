@@ -1,7 +1,7 @@
 use bevy_ecs::system::{Query, Res, ResMut};
 
-use game_engine::asset::AssetManager;
 use game_engine::{
+    asset::AssetManager,
     math::Vec3,
     render::{
         components::{Camera, Transform, Viewport},
@@ -10,10 +10,12 @@ use game_engine::{
     ui::UiManager,
 };
 
-use crate::app::global::Global;
+use crate::app::{examples::{GlobalChatState, UserListState}, global::Global};
 
 pub fn handle_viewport_resize(
-    mut global: ResMut<Global>,
+    global: Res<Global>,
+    mut global_chat_state: ResMut<GlobalChatState>,
+    mut user_list_state: ResMut<UserListState>,
     mut window: ResMut<Window>,
     mut ui_manager: ResMut<UiManager>,
     asset_manager: Res<AssetManager>,
@@ -63,6 +65,6 @@ pub fn handle_viewport_resize(
         Vec3::NEG_Y,
     );
 
-    global.sync_chat_collections(&mut ui_manager, &asset_manager);
-    global.sync_user_collections(&mut ui_manager, &asset_manager);
+    global_chat_state.sync_chat_collections(&mut ui_manager, &asset_manager);
+    user_list_state.sync_user_collections(&mut ui_manager, &asset_manager);
 }
