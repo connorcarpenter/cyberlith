@@ -12,10 +12,10 @@ use game_engine::{
     logging::info,
     session::{
         channels,
-        components::{LobbyPublic, UserPublic},
+        components::{LobbyLocal, UserPublic},
         messages, SessionClient,
     },
-    social::MatchLobbyId,
+    social::LobbyId,
     ui::{
         extensions::{ListUiExt, ListUiExtItem},
         UiHandle, UiManager,
@@ -28,23 +28,30 @@ use crate::ui::{
 };
 
 #[derive(Resource)]
-pub struct MatchLobbies {
-    match_lobbies: BTreeMap<MatchLobbyId, Entity>,
-    list_ui_ext: ListUiExt<MatchLobbyId>,
+pub struct LobbyManager {
+    current_lobby: Option<LobbyId>,
+    lobby_entities: BTreeMap<LobbyId, Entity>,
+    list_ui_ext: ListUiExt<LobbyId>,
     lobby_item_ui: Option<UiHandle>,
 }
 
-impl Default for MatchLobbies {
+impl Default for LobbyManager {
     fn default() -> Self {
         Self {
-            match_lobbies: BTreeMap::new(),
+            current_lobby: None,
+            lobby_entities: BTreeMap::new(),
             list_ui_ext: ListUiExt::new(true),
             lobby_item_ui: None,
         }
     }
 }
 
-impl MatchLobbies {
+impl LobbyManager {
+
+    pub(crate) fn get_current_lobby_id(&self) -> Option<LobbyId> {
+        self.current_lobby
+    }
+
     pub(crate) fn handle_host_match_events(
         &mut self,
         ui_manager: &mut UiManager,
@@ -90,7 +97,7 @@ impl MatchLobbies {
         asset_manager: &AssetManager,
         session_server: &mut SessionClient,
         user_q: &Query<&UserPublic>,
-        lobby_q: &Query<&LobbyPublic>,
+        lobby_q: &Query<&LobbyLocal>,
         input_events: &mut EventReader<InputEvent>,
         resync_match_lobbies_events: &mut EventReader<ResyncMatchLobbiesEvent>,
         _should_rumble: &mut bool,
@@ -187,10 +194,10 @@ impl MatchLobbies {
     pub fn recv_lobby(
         &mut self,
         resync_match_lobbies_events: &mut EventWriter<ResyncMatchLobbiesEvent>,
-        lobby_id: MatchLobbyId,
+        lobby_id: LobbyId,
         lobby_entity: Entity,
     ) {
-        self.match_lobbies.insert(lobby_id, lobby_entity);
+        self.lobby_entities.insert(lobby_id, lobby_entity);
 
         resync_match_lobbies_events.send(ResyncMatchLobbiesEvent);
     }
@@ -198,9 +205,9 @@ impl MatchLobbies {
     pub fn remove_lobby(
         &mut self,
         resync_match_lobbies_events: &mut EventWriter<ResyncMatchLobbiesEvent>,
-        lobby_id: MatchLobbyId,
+        lobby_id: LobbyId,
     ) {
-        self.match_lobbies.remove(&lobby_id);
+        self.lobby_entities.remove(&lobby_id);
 
         resync_match_lobbies_events.send(ResyncMatchLobbiesEvent);
     }
@@ -211,7 +218,7 @@ impl MatchLobbies {
         ui_manager: &mut UiManager,
         asset_manager: &AssetManager,
         user_q: &Query<&UserPublic>,
-        lobby_q: &Query<&LobbyPublic>,
+        lobby_q: &Query<&LobbyLocal>,
     ) {
         if self.lobby_item_ui.is_none() {
             return;
@@ -222,13 +229,13 @@ impl MatchLobbies {
         self.list_ui_ext.sync_with_collection(
             ui_manager,
             asset_manager,
-            self.match_lobbies.iter(),
-            self.match_lobbies.len(),
+            self.lobby_entities.iter(),
+            self.lobby_entities.len(),
             |item_ctx, lobby_id, _| {
-                let lobby_entity = *(self.match_lobbies.get(&lobby_id).unwrap());
+                let lobby_entity = *(self.lobby_entities.get(&lobby_id).unwrap());
                 let lobby = lobby_q.get(lobby_entity).unwrap();
 
-                let lobby_owner_entity = lobby.user_entity.get(session_client).unwrap();
+                let lobby_owner_entity = lobby.owner_user_entity.get(session_client).unwrap();
                 let owner_info = user_q.get(lobby_owner_entity).unwrap();
 
                 Self::add_lobby_item(
@@ -242,7 +249,7 @@ impl MatchLobbies {
     }
 
     fn add_lobby_item(
-        item_ctx: &mut ListUiExtItem<MatchLobbyId>,
+        item_ctx: &mut ListUiExtItem<LobbyId>,
         ui: &UiHandle,
         lobby_name: &str,
         owner_name: &str,

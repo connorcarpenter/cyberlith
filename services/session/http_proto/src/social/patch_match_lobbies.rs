@@ -2,12 +2,12 @@ use naia_serde::SerdeInternal as Serde;
 
 use auth_server_types::UserId;
 use bevy_http_shared::{ApiRequest, ApiResponse, Method};
-use social_server_types::MatchLobbyId;
+use social_server_types::LobbyId;
 
 #[derive(Serde, PartialEq, Clone)]
 pub enum SocialLobbyPatch {
-    Create(MatchLobbyId, String, UserId),
-    Delete(MatchLobbyId),
+    Create(LobbyId, String, UserId),
+    Delete(LobbyId),
 }
 
 // Request

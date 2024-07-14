@@ -5,7 +5,7 @@ use bevy_ecs::{event::EventWriter, system::Resource};
 use game_engine::{asset::AssetId, logging::info, ui::UiManager};
 
 use crate::ui::events::{
-    ResyncGlobalChatEvent, ResyncMatchLobbiesEvent, ResyncPublicUserInfoEvent,
+    ResyncLobbyGlobalEvent, ResyncMatchLobbiesEvent, ResyncPublicUserInfoEvent,
 };
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
@@ -68,7 +68,7 @@ pub(crate) fn on_asset_load(
     ui_manager: &mut UiManager,
     asset_catalog: &mut AssetCatalog,
     resync_user_public_info_events: &mut EventWriter<ResyncPublicUserInfoEvent>,
-    resync_global_chat_events: &mut EventWriter<ResyncGlobalChatEvent>,
+    resync_global_chat_events: &mut EventWriter<ResyncLobbyGlobalEvent>,
     resync_match_lobbies_events: &mut EventWriter<ResyncMatchLobbiesEvent>,
     asset_id: AssetId,
 ) {
@@ -88,7 +88,7 @@ pub(crate) fn on_asset_load(
         AssetKey::FontIcon => {
             ui_manager.set_text_icon_handle(asset_id);
             resync_user_public_info_events.send(ResyncPublicUserInfoEvent);
-            resync_global_chat_events.send(ResyncGlobalChatEvent::new(true));
+            resync_global_chat_events.send(ResyncLobbyGlobalEvent::new(true));
             resync_match_lobbies_events.send(ResyncMatchLobbiesEvent);
         }
         AssetKey::PasswordEyeIcon => {

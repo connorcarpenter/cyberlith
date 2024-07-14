@@ -12,7 +12,7 @@ use crate::{
     ui::{
         events::{
             DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent,
-            JoinMatchButtonClickedEvent, ResyncPublicUserInfoEvent, SettingsButtonClickedEvent,
+            JoinMatchButtonClickedEvent, SettingsButtonClickedEvent,
         },
         go_to_sub_ui, UiCatalog, UiKey,
     },

@@ -17,18 +17,18 @@ use game_engine::{
     asset::{AssetId, AssetManager},
     input::{GamepadRumbleIntensity, Input, InputEvent, RumbleManager},
     session::{
-        components::{LobbyPublic, MessagePublic, UserPublic},
+        components::{LobbyLocal, MessagePublic, UserPublic},
         SessionClient,
     },
     ui::{UiHandle, UiManager},
 };
 
 use crate::{
-    resources::{global_chat::GlobalChat, match_lobbies::MatchLobbies, user_manager::UserManager},
+    resources::{message_manager::MessageManager, lobby_manager::LobbyManager, user_manager::UserManager},
     states::AppState,
     ui::events::{
         DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent,
-        JoinMatchButtonClickedEvent, ResyncGlobalChatEvent, ResyncMatchLobbiesEvent,
+        JoinMatchButtonClickedEvent, ResyncLobbyGlobalEvent, ResyncMatchLobbiesEvent,
         ResyncPublicUserInfoEvent, SettingsButtonClickedEvent, SubmitButtonClickedEvent,
     },
 };
@@ -59,10 +59,10 @@ pub(crate) fn on_ui_load(
     ui_manager: &mut UiManager,
     ui_catalog: &mut UiCatalog,
     user_manager: &mut UserManager,
-    global_chat_messages: &mut GlobalChat,
-    match_lobbies: &mut MatchLobbies,
+    global_chat_messages: &mut MessageManager,
+    match_lobbies: &mut LobbyManager,
     resync_user_public_info_events: &mut EventWriter<ResyncPublicUserInfoEvent>,
-    resync_global_chat_events: &mut EventWriter<ResyncGlobalChatEvent>,
+    resync_global_chat_events: &mut EventWriter<ResyncLobbyGlobalEvent>,
     resync_match_lobbies_events: &mut EventWriter<ResyncMatchLobbiesEvent>,
     asset_id: AssetId,
 ) {
@@ -197,11 +197,12 @@ pub(crate) fn handle_global_chat_events(
     asset_manager: Res<AssetManager>,
     mut rumble_manager: ResMut<RumbleManager>,
     mut session_client: SessionClient,
-    mut global_chat: ResMut<GlobalChat>,
+    lobby_manager: Res<LobbyManager>,
+    mut message_manager: ResMut<MessageManager>,
     user_q: Query<&UserPublic>,
     message_q: Query<&MessagePublic>,
     mut input_events: EventReader<InputEvent>,
-    mut resync_global_chat_events: EventReader<ResyncGlobalChatEvent>,
+    mut resync_global_chat_events: EventReader<ResyncLobbyGlobalEvent>,
 ) {
     let Some(active_ui_handle) = ui_manager.active_ui() else {
         return;
@@ -216,10 +217,11 @@ pub(crate) fn handle_global_chat_events(
         ui_manager.get_ui_container_contents(&active_ui_handle, "center_container")
     {
         if UiKey::GlobalChat == ui_catalog.get_ui_key(&current_ui_handle) {
-            global_chat.handle_events(
+            message_manager.handle_events(
                 &mut ui_manager,
                 &ui_catalog,
                 &asset_manager,
+                &lobby_manager,
                 &mut session_client,
                 &mut input_events,
                 &mut resync_global_chat_events,
@@ -249,9 +251,9 @@ pub(crate) fn handle_match_lobbies_events(
     asset_manager: Res<AssetManager>,
     mut rumble_manager: ResMut<RumbleManager>,
     mut session_client: SessionClient,
-    mut match_lobbies: ResMut<MatchLobbies>,
+    mut lobby_manager: ResMut<LobbyManager>,
     user_q: Query<&UserPublic>,
-    lobby_q: Query<&LobbyPublic>,
+    lobby_q: Query<&LobbyLocal>,
     mut submit_btn_rdr: EventReader<SubmitButtonClickedEvent>,
     mut input_events: EventReader<InputEvent>,
     mut resync_match_lobbies_events: EventReader<ResyncMatchLobbiesEvent>,
@@ -271,7 +273,7 @@ pub(crate) fn handle_match_lobbies_events(
         let ui_key = ui_catalog.get_ui_key(&current_ui_handle);
         match ui_key {
             UiKey::HostMatch => {
-                match_lobbies.handle_host_match_events(
+                lobby_manager.handle_host_match_events(
                     &mut ui_manager,
                     &ui_catalog,
                     &mut session_client,
@@ -280,7 +282,7 @@ pub(crate) fn handle_match_lobbies_events(
                 );
             }
             UiKey::JoinMatch => {
-                match_lobbies.handle_join_match_events(
+                lobby_manager.handle_join_match_events(
                     &mut ui_manager,
                     &asset_manager,
                     &mut session_client,
@@ -326,12 +328,12 @@ pub(crate) fn go_to_sub_ui(ui_manager: &mut UiManager, ui_catalog: &UiCatalog, s
         match ui_catalog.get_ui_key(&current_ui_handle) {
             UiKey::MainMenu => panic!("invalid sub-ui"),
             UiKey::HostMatch => {
-                MatchLobbies::reset_host_match_state(ui_manager, &current_ui_handle)
+                LobbyManager::reset_host_match_state(ui_manager, &current_ui_handle)
             }
             UiKey::JoinMatch => {
-                MatchLobbies::reset_join_match_state(ui_manager, &current_ui_handle)
+                LobbyManager::reset_join_match_state(ui_manager, &current_ui_handle)
             }
-            UiKey::GlobalChat => GlobalChat::reset_state(ui_manager, &current_ui_handle),
+            UiKey::GlobalChat => MessageManager::reset_state(ui_manager, &current_ui_handle),
             _ => {
                 unimplemented!("ui not implemented");
             }

@@ -22,11 +22,11 @@ pub struct SubmitButtonClickedEvent;
 pub struct ResyncPublicUserInfoEvent;
 
 #[derive(Event, Default)]
-pub struct ResyncGlobalChatEvent {
+pub struct ResyncLobbyGlobalEvent {
     maintain_scroll: bool,
 }
 
-impl ResyncGlobalChatEvent {
+impl ResyncLobbyGlobalEvent {
     pub fn new(maintain_scroll: bool) -> Self {
         Self { maintain_scroll }
     }

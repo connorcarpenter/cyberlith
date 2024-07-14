@@ -1,18 +1,18 @@
 use auth_server_types::UserId;
 use http_common::{ApiRequest, ApiResponse, Method};
 use naia_serde::SerdeInternal as Serde;
-use social_server_types::MatchLobbyId;
+use social_server_types::LobbyId;
 
 // Request
 #[derive(Serde, PartialEq, Clone)]
 pub struct MatchLobbyJoinRequest {
     session_instance_secret: String,
-    match_lobby_id: MatchLobbyId,
+    match_lobby_id: LobbyId,
     user_id: UserId,
 }
 
 impl MatchLobbyJoinRequest {
-    pub fn new(session_secret: &str, match_lobby_id: MatchLobbyId, user_id: UserId) -> Self {
+    pub fn new(session_secret: &str, match_lobby_id: LobbyId, user_id: UserId) -> Self {
         Self {
             session_instance_secret: session_secret.to_string(),
             match_lobby_id,
@@ -24,7 +24,7 @@ impl MatchLobbyJoinRequest {
         &self.session_instance_secret
     }
 
-    pub fn match_lobby_id(&self) -> MatchLobbyId {
+    pub fn match_lobby_id(&self) -> LobbyId {
         self.match_lobby_id
     }
 

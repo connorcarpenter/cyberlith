@@ -2,19 +2,19 @@ use std::collections::HashMap;
 
 use auth_server_types::UserId;
 
-use social_server_types::MatchLobbyId;
+use social_server_types::LobbyId;
 
 use crate::session_servers::SessionServerId;
 
 pub(crate) enum LobbyPatch {
-    Create(MatchLobbyId, UserId, String),
-    Delete(MatchLobbyId),
+    Create(LobbyId, UserId, String),
+    Delete(LobbyId),
 }
 
 pub struct MatchLobbiesState {
     // lobby id, user_id, match_name
-    lobbies: HashMap<MatchLobbyId, (UserId, String)>,
-    next_lobby_id: MatchLobbyId,
+    lobbies: HashMap<LobbyId, (UserId, String)>,
+    next_lobby_id: LobbyId,
 
     // the session server id here is the SENDER not the RECEIVER
     outgoing_patches: HashMap<SessionServerId, Vec<LobbyPatch>>,
@@ -24,7 +24,7 @@ impl MatchLobbiesState {
     pub fn new() -> Self {
         Self {
             lobbies: HashMap::new(),
-            next_lobby_id: MatchLobbyId::new(0),
+            next_lobby_id: LobbyId::new(0),
 
             outgoing_patches: HashMap::new(),
         }
@@ -35,7 +35,7 @@ impl MatchLobbiesState {
         session_instance_id: SessionServerId,
         match_name: &str,
         creator_user_id: UserId,
-    ) -> MatchLobbyId {
+    ) -> LobbyId {
         let new_lobby_id = self.next_lobby_id;
         self.next_lobby_id = self.next_lobby_id.next();
 
@@ -59,7 +59,7 @@ impl MatchLobbiesState {
     pub fn join(
         &mut self,
         session_server_id: SessionServerId,
-        match_lobby_id: MatchLobbyId,
+        match_lobby_id: LobbyId,
         joining_user_id: UserId,
     ) {
         // TODO
@@ -78,7 +78,7 @@ impl MatchLobbiesState {
         // TODO
     }
 
-    pub fn get_lobbies(&self) -> &HashMap<MatchLobbyId, (UserId, String)> {
+    pub fn get_lobbies(&self) -> &HashMap<LobbyId, (UserId, String)> {
         &self.lobbies
     }
 

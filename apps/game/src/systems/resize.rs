@@ -6,13 +6,13 @@ use game_engine::render::{
 };
 
 use crate::ui::events::{
-    ResyncGlobalChatEvent, ResyncMatchLobbiesEvent, ResyncPublicUserInfoEvent,
+    ResyncLobbyGlobalEvent, ResyncMatchLobbiesEvent, ResyncPublicUserInfoEvent,
 };
 
 pub fn handle_viewport_resize(
     mut window: ResMut<Window>,
     mut resync_user_public_info_events: EventWriter<ResyncPublicUserInfoEvent>,
-    mut resync_global_chat_events: EventWriter<ResyncGlobalChatEvent>,
+    mut resync_global_chat_events: EventWriter<ResyncLobbyGlobalEvent>,
     mut resync_match_lobbies_event: EventWriter<ResyncMatchLobbiesEvent>,
     mut cameras_q: Query<&mut Camera>,
 ) {
@@ -40,7 +40,7 @@ pub fn handle_viewport_resize(
             //info!("resize window detected. new viewport: (x: {:?}, y: {:?}, width: {:?}, height: {:?})", new_viewport.x, new_viewport.y, new_viewport.width, new_viewport.height);
 
             resync_user_public_info_events.send(ResyncPublicUserInfoEvent);
-            resync_global_chat_events.send(ResyncGlobalChatEvent::new(true));
+            resync_global_chat_events.send(ResyncLobbyGlobalEvent::new(true));
             resync_match_lobbies_event.send(ResyncMatchLobbiesEvent);
         }
     }

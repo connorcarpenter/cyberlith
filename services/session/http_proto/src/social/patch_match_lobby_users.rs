@@ -2,21 +2,21 @@ use auth_server_types::UserId;
 use naia_serde::SerdeInternal as Serde;
 
 use bevy_http_shared::{ApiRequest, ApiResponse, Method};
-use social_server_types::MatchLobbyId;
+use social_server_types::LobbyId;
 
 // Request
 #[derive(Serde, PartialEq, Clone)]
 pub struct SocialPatchMatchLobbyUsersRequest {
     social_secret: String,
-    added_users: Vec<(MatchLobbyId, Vec<UserId>)>,
-    removed_users: Vec<(MatchLobbyId, Vec<UserId>)>,
+    added_users: Vec<(LobbyId, Vec<UserId>)>,
+    removed_users: Vec<(LobbyId, Vec<UserId>)>,
 }
 
 impl SocialPatchMatchLobbyUsersRequest {
     pub fn new(
         social_secret: &str,
-        added_users: Vec<(MatchLobbyId, Vec<UserId>)>,
-        removed_users: Vec<(MatchLobbyId, Vec<UserId>)>,
+        added_users: Vec<(LobbyId, Vec<UserId>)>,
+        removed_users: Vec<(LobbyId, Vec<UserId>)>,
     ) -> Self {
         Self {
             social_secret: social_secret.to_string(),
@@ -29,11 +29,11 @@ impl SocialPatchMatchLobbyUsersRequest {
         &self.social_secret
     }
 
-    pub fn added_users(&self) -> &Vec<(MatchLobbyId, Vec<UserId>)> {
+    pub fn added_users(&self) -> &Vec<(LobbyId, Vec<UserId>)> {
         &self.added_users
     }
 
-    pub fn removed_users(&self) -> &Vec<(MatchLobbyId, Vec<UserId>)> {
+    pub fn removed_users(&self) -> &Vec<(LobbyId, Vec<UserId>)> {
         &self.removed_users
     }
 }

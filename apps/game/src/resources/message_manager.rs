@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 
 use bevy_ecs::{
     entity::Entity,
@@ -15,28 +15,29 @@ use game_engine::{
         components::{MessagePublic, UserPublic},
         messages, SessionClient,
     },
-    social::MessageId,
+    social::{MessageId, LobbyId},
     ui::{
         extensions::{ListUiExt, ListUiExtItem},
         NodeActiveState, UiHandle, UiManager,
     },
 };
-
-use crate::ui::{events::ResyncGlobalChatEvent, go_to_sub_ui, UiCatalog, UiKey};
+use crate::resources::lobby_manager::LobbyManager;
+use crate::ui::{events::ResyncLobbyGlobalEvent, go_to_sub_ui, UiCatalog, UiKey};
 
 #[derive(Resource)]
-pub struct GlobalChat {
-    global_chats: BTreeMap<MessageId, Entity>,
+pub struct MessageManager {
+
+    messages: HashMap<Option<LobbyId>, BTreeMap<MessageId, Entity>>,
     list_ui_ext: ListUiExt<MessageId>,
     message_item_ui: Option<UiHandle>,
     username_and_message_item_ui: Option<UiHandle>,
     day_divider_item_ui: Option<UiHandle>,
 }
 
-impl Default for GlobalChat {
+impl Default for MessageManager {
     fn default() -> Self {
         Self {
-            global_chats: BTreeMap::new(),
+            messages: HashMap::new(),
             list_ui_ext: ListUiExt::new(false),
             message_item_ui: None,
             username_and_message_item_ui: None,
@@ -45,15 +46,16 @@ impl Default for GlobalChat {
     }
 }
 
-impl GlobalChat {
+impl MessageManager {
     pub(crate) fn handle_events(
         &mut self,
         ui_manager: &mut UiManager,
         ui_catalog: &UiCatalog,
         asset_manager: &AssetManager,
+        lobby_manager: &LobbyManager,
         session_server: &mut SessionClient,
         input_events: &mut EventReader<InputEvent>,
-        resync_global_chat_events: &mut EventReader<ResyncGlobalChatEvent>,
+        resync_global_chat_events: &mut EventReader<ResyncLobbyGlobalEvent>,
         user_q: &Query<&UserPublic>,
         message_q: &Query<&MessagePublic>,
         _should_rumble: &mut bool,
@@ -119,7 +121,7 @@ impl GlobalChat {
         if let Some(maintain_scroll) = should_resync {
             let is_bottom_visible = self.list_ui_ext.is_bottom_visible();
 
-            self.sync_with_collection(session_server, ui_manager, asset_manager, user_q, message_q);
+            self.sync_with_collection(session_server, ui_manager, asset_manager, lobby_manager, user_q, message_q);
 
             if is_bottom_visible && maintain_scroll {
                 self.list_ui_ext.scroll_to_bottom();
@@ -127,6 +129,7 @@ impl GlobalChat {
                     session_server,
                     ui_manager,
                     asset_manager,
+                    lobby_manager,
                     user_q,
                     message_q,
                 );
@@ -142,7 +145,7 @@ impl GlobalChat {
         &mut self,
         ui_catalog: &mut UiCatalog,
         ui_manager: &mut UiManager,
-        resync_global_chat_events: &mut EventWriter<ResyncGlobalChatEvent>,
+        resync_global_chat_events: &mut EventWriter<ResyncLobbyGlobalEvent>,
     ) {
         let ui_key = UiKey::GlobalChat;
         let ui_handle = ui_catalog.get_ui_handle(ui_key);
@@ -162,14 +165,14 @@ impl GlobalChat {
 
             self.list_ui_ext
                 .set_container_ui(ui_manager, &ui_handle, container_id_str);
-            resync_global_chat_events.send(ResyncGlobalChatEvent::new(true));
+            resync_global_chat_events.send(ResyncLobbyGlobalEvent::new(true));
         }
     }
 
     pub(crate) fn on_load_day_divider_item_ui(
         &mut self,
         ui_catalog: &mut UiCatalog,
-        resync_global_chat_events: &mut EventWriter<ResyncGlobalChatEvent>,
+        resync_global_chat_events: &mut EventWriter<ResyncLobbyGlobalEvent>,
     ) {
         let item_ui_key = UiKey::GlobalChatDayDivider;
         let item_ui_handle = ui_catalog.get_ui_handle(item_ui_key);
@@ -177,13 +180,13 @@ impl GlobalChat {
         ui_catalog.set_loaded(item_ui_key);
 
         self.day_divider_item_ui = Some(item_ui_handle.clone());
-        resync_global_chat_events.send(ResyncGlobalChatEvent::new(true));
+        resync_global_chat_events.send(ResyncLobbyGlobalEvent::new(true));
     }
 
     pub(crate) fn on_load_username_and_message_item_ui(
         &mut self,
         ui_catalog: &mut UiCatalog,
-        resync_global_chat_events: &mut EventWriter<ResyncGlobalChatEvent>,
+        resync_global_chat_events: &mut EventWriter<ResyncLobbyGlobalEvent>,
     ) {
         let item_ui_key = UiKey::GlobalChatUsernameAndMessage;
         let item_ui_handle = ui_catalog.get_ui_handle(item_ui_key);
@@ -191,13 +194,13 @@ impl GlobalChat {
         ui_catalog.set_loaded(item_ui_key);
 
         self.username_and_message_item_ui = Some(item_ui_handle.clone());
-        resync_global_chat_events.send(ResyncGlobalChatEvent::new(true));
+        resync_global_chat_events.send(ResyncLobbyGlobalEvent::new(true));
     }
 
     pub(crate) fn on_load_message_item_ui(
         &mut self,
         ui_catalog: &mut UiCatalog,
-        resync_global_chat_events: &mut EventWriter<ResyncGlobalChatEvent>,
+        resync_global_chat_events: &mut EventWriter<ResyncLobbyGlobalEvent>,
     ) {
         let item_ui_key = UiKey::GlobalChatMessage;
         let item_ui_handle = ui_catalog.get_ui_handle(item_ui_key);
@@ -205,22 +208,27 @@ impl GlobalChat {
         ui_catalog.set_loaded(item_ui_key);
 
         self.message_item_ui = Some(item_ui_handle.clone());
-        resync_global_chat_events.send(ResyncGlobalChatEvent::new(true));
+        resync_global_chat_events.send(ResyncLobbyGlobalEvent::new(true));
     }
 
     pub fn recv_message(
         &mut self,
-        resync_global_chat_events: &mut EventWriter<ResyncGlobalChatEvent>,
+        lobby_id_opt: &Option<LobbyId>,
+        resync_lobby_global_events: &mut EventWriter<ResyncLobbyGlobalEvent>,
         message_id: MessageId,
         message_entity: Entity,
     ) {
-        self.global_chats.insert(message_id, message_entity);
+        if !self.messages.contains_key(lobby_id_opt) {
+            self.messages.insert(lobby_id_opt.clone(), BTreeMap::new());
+        }
+        let lobby_messages = self.messages.get_mut(lobby_id_opt).unwrap();
+        lobby_messages.insert(message_id, message_entity);
 
-        if self.global_chats.len() > 100 {
-            self.global_chats.pop_first();
+        if lobby_messages.len() > 100 {
+            lobby_messages.pop_first();
         }
 
-        resync_global_chat_events.send(ResyncGlobalChatEvent::new(true));
+        resync_lobby_global_events.send(ResyncLobbyGlobalEvent::new(true));
     }
 
     pub fn sync_with_collection(
@@ -228,6 +236,7 @@ impl GlobalChat {
         session_client: &SessionClient,
         ui_manager: &mut UiManager,
         asset_manager: &AssetManager,
+        lobby_manager: &LobbyManager,
         user_q: &Query<&UserPublic>,
         message_q: &Query<&MessagePublic>,
     ) {
@@ -242,13 +251,16 @@ impl GlobalChat {
         let username_and_message_ui_handle = self.username_and_message_item_ui.as_ref().unwrap();
         let message_ui_handle = self.message_item_ui.as_ref().unwrap();
 
+        let lobby_id_opt = lobby_manager.get_current_lobby_id();
+        let messages = self.messages.get_mut(&lobby_id_opt).unwrap();
+
         self.list_ui_ext.sync_with_collection(
             ui_manager,
             asset_manager,
-            self.global_chats.iter(),
-            self.global_chats.len(),
+            messages.iter(),
+            messages.len(),
             |item_ctx, message_id, prev_message_id_opt| {
-                let message_entity = *(self.global_chats.get(&message_id).unwrap());
+                let message_entity = *(messages.get(&message_id).unwrap());
                 let message = message_q.get(message_entity).unwrap();
                 let message_timestamp = (*message.timestamp).clone();
                 let message_user_entity = message.owner_user_entity.get(session_client).unwrap();
@@ -256,7 +268,7 @@ impl GlobalChat {
                 let (prev_timestamp_opt, prev_message_user_entity) = match prev_message_id_opt {
                     Some(prev_message_id) => {
                         let prev_message_entity =
-                            *(self.global_chats.get(&prev_message_id).unwrap());
+                            *(messages.get(&prev_message_id).unwrap());
                         let prev_message = message_q.get(prev_message_entity).unwrap();
                         let prev_timestamp = (*prev_message.timestamp).clone();
                         let prev_message_user_entity =

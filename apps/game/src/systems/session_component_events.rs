@@ -4,27 +4,33 @@ use bevy_ecs::{
     event::{EventReader, EventWriter},
     prelude::Query,
 };
-
+use bevy_ecs::system::Res;
 use game_engine::{
     logging::info,
     session::{
-        components::{LobbyPublic, MessagePublic, UserPublic},
+        components::{LobbyLocal, MessagePublic, UserPublic},
         SessionInsertComponentEvent, SessionRemoveComponentEvent, SessionUpdateComponentEvent,
     },
 };
 
 use crate::{
-    resources::{global_chat::GlobalChat, match_lobbies::MatchLobbies, user_manager::UserManager},
-    ui::events::{ResyncGlobalChatEvent, ResyncMatchLobbiesEvent, ResyncPublicUserInfoEvent},
+    resources::{message_manager::MessageManager, lobby_manager::LobbyManager, user_manager::UserManager},
+    ui::events::{ResyncLobbyGlobalEvent, ResyncMatchLobbiesEvent, ResyncPublicUserInfoEvent},
 };
 
 pub struct SessionComponentEventsPlugin;
 
 impl Plugin for SessionComponentEventsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, recv_inserted_message_public_component)
+        app
+            // messages
+            .add_systems(Update, recv_inserted_message_public_component)
+
+            // lobbies
             .add_systems(Update, recv_inserted_lobby_public_component)
             .add_systems(Update, recv_removed_lobby_public_component)
+
+            // users
             .add_systems(Update, recv_inserted_user_public_info_component)
             .add_systems(Update, recv_updated_user_public_info_component)
             .add_systems(Update, recv_removed_user_public_component);
@@ -81,33 +87,35 @@ pub fn recv_removed_user_public_component(
 }
 
 pub fn recv_inserted_message_public_component(
-    mut global_chat_messages: ResMut<GlobalChat>,
-    mut resync_global_chat_events: EventWriter<ResyncGlobalChatEvent>,
-    mut event_reader: EventReader<SessionInsertComponentEvent<MessagePublic>>,
-    chat_q: Query<&MessagePublic>,
+    lobby_manager: Res<LobbyManager>,
+    mut message_manager: ResMut<MessageManager>,
+    mut resync_global_chat_events: EventWriter<ResyncLobbyGlobalEvent>,
+    mut message_event_reader: EventReader<SessionInsertComponentEvent<MessagePublic>>,
+    message_q: Query<&MessagePublic>,
 ) {
-    for event in event_reader.read() {
+    for event in message_event_reader.read() {
         // info!("received Inserted GlobalChatMessage from Session Server! (entity: {:?})", event.entity);
 
-        let chat = chat_q.get(event.entity).unwrap();
-        let chat_id = *chat.id;
+        let message = message_q.get(event.entity).unwrap();
+        let message_id = *message.id;
 
-        let timestamp = *chat.timestamp;
-        let message = &*chat.message;
+        let timestamp = *message.timestamp;
+        let message = &*message.message;
         info!(
             "incoming global message: [ {:?} | {:?} | {:?} ]",
             timestamp, event.entity, message
         );
 
-        global_chat_messages.recv_message(&mut resync_global_chat_events, chat_id, event.entity);
+        let lobby_id_opt = lobby_manager.get_current_lobby_id();
+        message_manager.recv_message(&lobby_id_opt, &mut resync_global_chat_events, message_id, event.entity);
     }
 }
 
 pub fn recv_inserted_lobby_public_component(
-    mut match_lobbies: ResMut<MatchLobbies>,
+    mut lobby_manager: ResMut<LobbyManager>,
     mut resync_match_lobby_events: EventWriter<ResyncMatchLobbiesEvent>,
-    lobby_q: Query<&LobbyPublic>,
-    mut insert_lobby_event_reader: EventReader<SessionInsertComponentEvent<LobbyPublic>>,
+    lobby_q: Query<&LobbyLocal>,
+    mut insert_lobby_event_reader: EventReader<SessionInsertComponentEvent<LobbyLocal>>,
 ) {
     for event in insert_lobby_event_reader.read() {
         let lobby = lobby_q.get(event.entity).unwrap();
@@ -119,14 +127,14 @@ pub fn recv_inserted_lobby_public_component(
             event.entity, lobby_name
         );
 
-        match_lobbies.recv_lobby(&mut resync_match_lobby_events, lobby_id, event.entity);
+        lobby_manager.recv_lobby(&mut resync_match_lobby_events, lobby_id, event.entity);
     }
 }
 
 pub fn recv_removed_lobby_public_component(
-    mut match_lobbies: ResMut<MatchLobbies>,
+    mut lobby_manager: ResMut<LobbyManager>,
     mut resync_match_lobby_events: EventWriter<ResyncMatchLobbiesEvent>,
-    mut remove_lobby_event_reader: EventReader<SessionRemoveComponentEvent<LobbyPublic>>,
+    mut remove_lobby_event_reader: EventReader<SessionRemoveComponentEvent<LobbyLocal>>,
 ) {
     for event in remove_lobby_event_reader.read() {
         info!(
@@ -134,6 +142,6 @@ pub fn recv_removed_lobby_public_component(
             event.entity
         );
 
-        match_lobbies.remove_lobby(&mut resync_match_lobby_events, *event.component.id);
+        lobby_manager.remove_lobby(&mut resync_match_lobby_events, *event.component.id);
     }
 }

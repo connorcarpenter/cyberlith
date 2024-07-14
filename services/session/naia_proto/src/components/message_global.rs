@@ -1,11 +1,11 @@
 use bevy_ecs::prelude::Component;
 
-use naia_bevy_shared::{Replicate};
+use naia_bevy_shared::Replicate;
 
 #[derive(Component, Replicate)]
-pub struct LobbyPublic;
+pub struct MessageGlobal;
 
-impl LobbyPublic {
+impl MessageGlobal {
     pub fn new() -> Self {
         Self::new_complete()
     }

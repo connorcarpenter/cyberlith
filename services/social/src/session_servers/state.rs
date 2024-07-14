@@ -8,7 +8,7 @@ use session_server_http_proto::{
     SocialLobbyPatch, SocialPatchGlobalChatMessagesRequest, SocialPatchMatchLobbiesRequest,
     SocialPatchUsersRequest, SocialUserPatch,
 };
-use social_server_types::{MatchLobbyId, MessageId, Timestamp};
+use social_server_types::{LobbyId, MessageId, Timestamp};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct SessionServerId {
@@ -63,7 +63,7 @@ impl SessionServersState {
         recv_port: u16,
         present_users: Vec<UserId>,
         global_chat_full_log: Vec<(MessageId, Timestamp, UserId, String)>,
-        match_lobbies: Vec<(MatchLobbyId, UserId, String)>,
+        match_lobbies: Vec<(LobbyId, UserId, String)>,
     ) {
         let id = self.next_session_id();
         self.instances

@@ -9,7 +9,6 @@ pub struct MessagePublic {
     pub id: Property<MessageId>,
     pub timestamp: Property<Timestamp>,
     pub owner_user_entity: EntityProperty,
-    pub owner_lobby_entity: EntityProperty,
     pub message: Property<String>,
 }
 

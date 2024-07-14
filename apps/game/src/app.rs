@@ -12,7 +12,7 @@ use game_engine::{
 
 use crate::{
     resources::{
-        global_chat::GlobalChat, match_lobbies::MatchLobbies, user_manager::UserManager,
+        message_manager::MessageManager, lobby_manager::LobbyManager, user_manager::UserManager,
         AssetCatalog,
     },
     states::AppState,
@@ -21,7 +21,7 @@ use crate::{
     ui::{
         events::{
             DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent,
-            JoinMatchButtonClickedEvent, ResyncGlobalChatEvent, ResyncMatchLobbiesEvent,
+            JoinMatchButtonClickedEvent, ResyncLobbyGlobalEvent, ResyncMatchLobbiesEvent,
             ResyncPublicUserInfoEvent, SettingsButtonClickedEvent, SubmitButtonClickedEvent,
         },
         UiCatalog,
@@ -54,8 +54,8 @@ impl Plugin for GameApp {
                 ..Default::default()
             })
             .init_resource::<UserManager>()
-            .init_resource::<GlobalChat>()
-            .init_resource::<MatchLobbies>()
+            .init_resource::<MessageManager>()
+            .init_resource::<LobbyManager>()
             .insert_resource(UiCatalog::new())
             .insert_resource(AssetCatalog::new())
             // states
@@ -86,7 +86,7 @@ impl Plugin for GameApp {
             .add_systems(Update, ui::handle_global_chat_events)
             .add_systems(Update, ui::handle_match_lobbies_events)
             .add_event::<ResyncPublicUserInfoEvent>()
-            .add_event::<ResyncGlobalChatEvent>()
+            .add_event::<ResyncLobbyGlobalEvent>()
             .add_event::<ResyncMatchLobbiesEvent>()
             .add_event::<HostMatchButtonClickedEvent>()
             .add_event::<JoinMatchButtonClickedEvent>()

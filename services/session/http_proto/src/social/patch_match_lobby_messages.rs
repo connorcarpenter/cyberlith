@@ -2,19 +2,19 @@ use auth_server_types::UserId;
 use naia_serde::SerdeInternal as Serde;
 
 use bevy_http_shared::{ApiRequest, ApiResponse, Method};
-use social_server_types::MatchLobbyId;
+use social_server_types::LobbyId;
 
 // Request
 #[derive(Serde, PartialEq, Clone)]
 pub struct SocialPatchMatchLobbyMessagesRequest {
     social_secret: String,
-    new_messages: Vec<(MatchLobbyId, Vec<(UserId, String)>)>,
+    new_messages: Vec<(LobbyId, Vec<(UserId, String)>)>,
 }
 
 impl SocialPatchMatchLobbyMessagesRequest {
     pub fn new(
         social_secret: &str,
-        new_messages: Vec<(MatchLobbyId, Vec<(UserId, String)>)>,
+        new_messages: Vec<(LobbyId, Vec<(UserId, String)>)>,
     ) -> Self {
         Self {
             social_secret: social_secret.to_string(),
@@ -26,7 +26,7 @@ impl SocialPatchMatchLobbyMessagesRequest {
         &self.social_secret
     }
 
-    pub fn new_messages(&self) -> &Vec<(MatchLobbyId, Vec<(UserId, String)>)> {
+    pub fn new_messages(&self) -> &Vec<(LobbyId, Vec<(UserId, String)>)> {
         &self.new_messages
     }
 }

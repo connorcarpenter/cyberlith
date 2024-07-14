@@ -8,7 +8,7 @@ use naia_bevy_client::NaiaClientError;
 
 use kernel::AppExitAction;
 use logging::{info, warn};
-use session_server_naia_proto::components::{LobbyPublic, MessagePublic, UserPublic};
+use session_server_naia_proto::components::{LobbyLocal, MessagePublic, UserPublic};
 
 use crate::{
     networked::{
@@ -44,7 +44,7 @@ impl Plugin for SessionEventsPlugin {
             .add_systems(Update, component_events_update)
             .add_component_events::<Session, MessagePublic>()
             .add_component_events::<Session, UserPublic>()
-            .add_component_events::<Session, LobbyPublic>();
+            .add_component_events::<Session, LobbyLocal>();
     }
 }
 
@@ -67,7 +67,7 @@ pub fn component_events_update(world: &mut BevyWorld) {
     for events in get_component_events::<Session>(world) {
         events.process::<MessagePublic>(world);
         events.process::<UserPublic>(world);
-        events.process::<LobbyPublic>(world);
+        events.process::<LobbyLocal>(world);
     }
 }
 

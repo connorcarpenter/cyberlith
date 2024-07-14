@@ -5,11 +5,11 @@ use naia_bevy_shared::sequence_greater_than;
 use naia_serde::{SerdeInternal as Serde, UnsignedInteger};
 
 #[derive(Serde, PartialEq, Clone, Eq, Copy, Hash, Debug)]
-pub struct MatchLobbyId {
+pub struct LobbyId {
     id: UnsignedInteger<14>, // TODO: I can't imagine more than 10000 lobbies at a time ... not a bad cap
 }
 
-impl MatchLobbyId {
+impl LobbyId {
     pub fn new(id: u16) -> Self {
         Self {
             id: UnsignedInteger::new(id),
@@ -27,7 +27,7 @@ impl MatchLobbyId {
     }
 }
 
-impl PartialOrd for MatchLobbyId {
+impl PartialOrd for LobbyId {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         if self.id == other.id {
             return Some(std::cmp::Ordering::Equal);
@@ -43,7 +43,7 @@ impl PartialOrd for MatchLobbyId {
     }
 }
 
-impl Ord for MatchLobbyId {
+impl Ord for LobbyId {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         if self.id == other.id {
             return std::cmp::Ordering::Equal;
