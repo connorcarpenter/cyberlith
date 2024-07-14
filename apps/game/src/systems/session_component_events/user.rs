@@ -1,16 +1,24 @@
 use bevy_app::{App, Plugin, Update};
-use bevy_ecs::{event::{EventReader, EventWriter}, change_detection::ResMut};
+use bevy_ecs::{
+    change_detection::ResMut,
+    event::{EventReader, EventWriter},
+};
 
-use game_engine::{logging::info, session::{components::User, SessionInsertComponentEvent, SessionRemoveComponentEvent, SessionUpdateComponentEvent}};
+use game_engine::{
+    logging::info,
+    session::{
+        components::User, SessionInsertComponentEvent, SessionRemoveComponentEvent,
+        SessionUpdateComponentEvent,
+    },
+};
 
-use crate::{ui::events::ResyncUserUiEvent, resources::user_manager::UserManager};
+use crate::{resources::user_manager::UserManager, ui::events::ResyncUserUiEvent};
 
 pub struct UserComponentEventsPlugin;
 
 impl Plugin for UserComponentEventsPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .add_systems(Update, recv_inserted_user_component)
+        app.add_systems(Update, recv_inserted_user_component)
             .add_systems(Update, recv_updated_user_component)
             .add_systems(Update, recv_removed_user_component);
     }

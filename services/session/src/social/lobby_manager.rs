@@ -283,7 +283,9 @@ impl LobbyManager {
             }
         };
 
-        match_lobby.owner_user_entity.set(naia_server, &owner_user_entity);
+        match_lobby
+            .owner_user_entity
+            .set(naia_server, &owner_user_entity);
         commands.entity(match_lobby_entity).insert(match_lobby);
     }
 

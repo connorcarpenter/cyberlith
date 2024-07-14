@@ -14,8 +14,7 @@ pub struct SessionComponentEventsPlugin;
 
 impl Plugin for SessionComponentEventsPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .add_plugins(ChatMessageComponentEventsPlugin)
+        app.add_plugins(ChatMessageComponentEventsPlugin)
             .add_plugins(LobbyComponentEventsPlugin)
             .add_plugins(UserComponentEventsPlugin);
     }

@@ -47,7 +47,6 @@ impl Default for LobbyManager {
 }
 
 impl LobbyManager {
-
     pub(crate) fn get_current_lobby_id(&self) -> Option<LobbyId> {
         self.current_lobby
     }

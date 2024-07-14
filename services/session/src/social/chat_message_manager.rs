@@ -228,7 +228,8 @@ impl ChatMessageManager {
             .add_entity(&global_chat_message_entity);
 
         // add to local log
-        self.chat_message_global_entities.push_back(global_chat_message_entity);
+        self.chat_message_global_entities
+            .push_back(global_chat_message_entity);
 
         // remove oldest messages if we have too many
         if self.chat_message_global_entities.len() > 100 {

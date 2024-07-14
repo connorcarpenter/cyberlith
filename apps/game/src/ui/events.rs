@@ -18,15 +18,17 @@ pub struct SettingsButtonClickedEvent;
 #[derive(Event, Default)]
 pub struct SubmitButtonClickedEvent;
 
+// UI events
+
 #[derive(Event, Default)]
 pub struct ResyncUserUiEvent;
 
 #[derive(Event, Default)]
-pub struct ResyncLobbyGlobalEvent {
+pub struct ResyncChatMessageUiEvent {
     maintain_scroll: bool,
 }
 
-impl ResyncLobbyGlobalEvent {
+impl ResyncChatMessageUiEvent {
     pub fn new(maintain_scroll: bool) -> Self {
         Self { maintain_scroll }
     }

@@ -15,18 +15,20 @@ use game_engine::{
         components::{ChatMessage, User},
         messages, SessionClient,
     },
-    social::{MessageId, LobbyId},
+    social::{LobbyId, MessageId},
     ui::{
         extensions::{ListUiExt, ListUiExtItem},
         NodeActiveState, UiHandle, UiManager,
     },
 };
 
-use crate::{ui::{events::ResyncLobbyGlobalEvent, go_to_sub_ui, UiCatalog, UiKey}, resources::lobby_manager::LobbyManager};
+use crate::{
+    resources::lobby_manager::LobbyManager,
+    ui::{events::ResyncChatMessageUiEvent, go_to_sub_ui, UiCatalog, UiKey},
+};
 
 #[derive(Resource)]
 pub struct ChatMessageManager {
-
     messages: HashMap<Option<LobbyId>, BTreeMap<MessageId, Entity>>,
 
     list_ui_ext: ListUiExt<MessageId>,
@@ -37,7 +39,6 @@ pub struct ChatMessageManager {
 
 impl Default for ChatMessageManager {
     fn default() -> Self {
-
         let mut messages = HashMap::new();
         messages.insert(None, BTreeMap::new());
 
@@ -58,17 +59,17 @@ impl ChatMessageManager {
         ui_catalog: &UiCatalog,
         asset_manager: &AssetManager,
         lobby_manager: &LobbyManager,
-        session_server: &mut SessionClient,
+        session_client: &mut SessionClient,
         input_events: &mut EventReader<InputEvent>,
-        resync_global_chat_events: &mut EventReader<ResyncLobbyGlobalEvent>,
+        resync_chat_message_ui_events: &mut EventReader<ResyncChatMessageUiEvent>,
         user_q: &Query<&User>,
-        message_q: &Query<&ChatMessage>,
+        chat_message_q: &Query<&ChatMessage>,
         _should_rumble: &mut bool,
     ) {
         let ui_handle = ui_catalog.get_ui_handle(UiKey::GlobalChat);
 
         let mut should_resync = None;
-        for resync_event in resync_global_chat_events.read() {
+        for resync_event in resync_chat_message_ui_events.read() {
             if resync_event.maintain_scroll() {
                 if should_resync.is_none() {
                     should_resync = Some(true);
@@ -115,7 +116,7 @@ impl ChatMessageManager {
                             // later, add multi-line newline
                         } else {
                             // send message
-                            Self::send_message(ui_manager, &ui_handle, session_server)
+                            Self::send_message(ui_manager, &ui_handle, session_client)
                         }
                     };
                 }
@@ -126,17 +127,24 @@ impl ChatMessageManager {
         if let Some(maintain_scroll) = should_resync {
             let is_bottom_visible = self.list_ui_ext.is_bottom_visible();
 
-            self.sync_with_collection(session_server, ui_manager, asset_manager, lobby_manager, user_q, message_q);
+            self.sync_with_collection(
+                session_client,
+                ui_manager,
+                asset_manager,
+                lobby_manager,
+                user_q,
+                chat_message_q,
+            );
 
             if is_bottom_visible && maintain_scroll {
                 self.list_ui_ext.scroll_to_bottom();
                 self.sync_with_collection(
-                    session_server,
+                    session_client,
                     ui_manager,
                     asset_manager,
                     lobby_manager,
                     user_q,
-                    message_q,
+                    chat_message_q,
                 );
             }
         }
@@ -150,7 +158,7 @@ impl ChatMessageManager {
         &mut self,
         ui_catalog: &mut UiCatalog,
         ui_manager: &mut UiManager,
-        resync_global_chat_events: &mut EventWriter<ResyncLobbyGlobalEvent>,
+        resync_chat_message_ui_events: &mut EventWriter<ResyncChatMessageUiEvent>,
     ) {
         let ui_key = UiKey::GlobalChat;
         let ui_handle = ui_catalog.get_ui_handle(ui_key);
@@ -170,14 +178,14 @@ impl ChatMessageManager {
 
             self.list_ui_ext
                 .set_container_ui(ui_manager, &ui_handle, container_id_str);
-            resync_global_chat_events.send(ResyncLobbyGlobalEvent::new(true));
+            resync_chat_message_ui_events.send(ResyncChatMessageUiEvent::new(true));
         }
     }
 
     pub(crate) fn on_load_day_divider_item_ui(
         &mut self,
         ui_catalog: &mut UiCatalog,
-        resync_global_chat_events: &mut EventWriter<ResyncLobbyGlobalEvent>,
+        resync_chat_message_ui_events: &mut EventWriter<ResyncChatMessageUiEvent>,
     ) {
         let item_ui_key = UiKey::GlobalChatDayDivider;
         let item_ui_handle = ui_catalog.get_ui_handle(item_ui_key);
@@ -185,13 +193,13 @@ impl ChatMessageManager {
         ui_catalog.set_loaded(item_ui_key);
 
         self.day_divider_item_ui = Some(item_ui_handle.clone());
-        resync_global_chat_events.send(ResyncLobbyGlobalEvent::new(true));
+        resync_chat_message_ui_events.send(ResyncChatMessageUiEvent::new(true));
     }
 
     pub(crate) fn on_load_username_and_message_item_ui(
         &mut self,
         ui_catalog: &mut UiCatalog,
-        resync_global_chat_events: &mut EventWriter<ResyncLobbyGlobalEvent>,
+        resync_global_chat_events: &mut EventWriter<ResyncChatMessageUiEvent>,
     ) {
         let item_ui_key = UiKey::GlobalChatUsernameAndMessage;
         let item_ui_handle = ui_catalog.get_ui_handle(item_ui_key);
@@ -199,13 +207,13 @@ impl ChatMessageManager {
         ui_catalog.set_loaded(item_ui_key);
 
         self.username_and_message_item_ui = Some(item_ui_handle.clone());
-        resync_global_chat_events.send(ResyncLobbyGlobalEvent::new(true));
+        resync_global_chat_events.send(ResyncChatMessageUiEvent::new(true));
     }
 
     pub(crate) fn on_load_message_item_ui(
         &mut self,
         ui_catalog: &mut UiCatalog,
-        resync_global_chat_events: &mut EventWriter<ResyncLobbyGlobalEvent>,
+        resync_global_chat_events: &mut EventWriter<ResyncChatMessageUiEvent>,
     ) {
         let item_ui_key = UiKey::GlobalChatMessage;
         let item_ui_handle = ui_catalog.get_ui_handle(item_ui_key);
@@ -213,13 +221,13 @@ impl ChatMessageManager {
         ui_catalog.set_loaded(item_ui_key);
 
         self.message_item_ui = Some(item_ui_handle.clone());
-        resync_global_chat_events.send(ResyncLobbyGlobalEvent::new(true));
+        resync_global_chat_events.send(ResyncChatMessageUiEvent::new(true));
     }
 
     pub fn recv_message(
         &mut self,
         lobby_id_opt: &Option<LobbyId>,
-        resync_lobby_global_events: &mut EventWriter<ResyncLobbyGlobalEvent>,
+        resync_lobby_global_events: &mut EventWriter<ResyncChatMessageUiEvent>,
         message_id: MessageId,
         message_entity: Entity,
     ) {
@@ -233,7 +241,7 @@ impl ChatMessageManager {
             lobby_messages.pop_first();
         }
 
-        resync_lobby_global_events.send(ResyncLobbyGlobalEvent::new(true));
+        resync_lobby_global_events.send(ResyncChatMessageUiEvent::new(true));
     }
 
     pub fn sync_with_collection(
@@ -272,8 +280,7 @@ impl ChatMessageManager {
 
                 let (prev_timestamp_opt, prev_message_user_entity) = match prev_message_id_opt {
                     Some(prev_message_id) => {
-                        let prev_message_entity =
-                            *(messages.get(&prev_message_id).unwrap());
+                        let prev_message_entity = *(messages.get(&prev_message_id).unwrap());
                         let prev_message = message_q.get(prev_message_entity).unwrap();
                         let prev_timestamp = (*prev_message.timestamp).clone();
                         let prev_message_user_entity =

@@ -1,4 +1,4 @@
 mod task_pool;
 
 mod spawn;
-pub use spawn::{spawn, setup};
+pub use spawn::{setup, spawn};

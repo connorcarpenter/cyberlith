@@ -56,7 +56,9 @@ impl SocialManager {
 
     // used as a system
     pub fn startup(mut naia_server: Server, mut social_manager: ResMut<Self>) {
-        social_manager.chat_message_manager.startup(&mut naia_server);
+        social_manager
+            .chat_message_manager
+            .startup(&mut naia_server);
         social_manager.lobby_manager.startup(&mut naia_server);
         social_manager
             .user_presence_manager

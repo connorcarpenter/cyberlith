@@ -17,18 +17,21 @@ use game_engine::{
     asset::{AssetId, AssetManager},
     input::{GamepadRumbleIntensity, Input, InputEvent, RumbleManager},
     session::{
-        components::{Lobby, ChatMessage, User},
+        components::{ChatMessage, Lobby, User},
         SessionClient,
     },
     ui::{UiHandle, UiManager},
 };
 
 use crate::{
-    resources::{chat_message_manager::ChatMessageManager, lobby_manager::LobbyManager, user_manager::UserManager},
+    resources::{
+        chat_message_manager::ChatMessageManager, lobby_manager::LobbyManager,
+        user_manager::UserManager,
+    },
     states::AppState,
     ui::events::{
         DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent,
-        JoinMatchButtonClickedEvent, ResyncLobbyGlobalEvent, ResyncLobbyUiEvent,
+        JoinMatchButtonClickedEvent, ResyncChatMessageUiEvent, ResyncLobbyUiEvent,
         ResyncUserUiEvent, SettingsButtonClickedEvent, SubmitButtonClickedEvent,
     },
 };
@@ -62,7 +65,7 @@ pub(crate) fn on_ui_load(
     global_chat_messages: &mut ChatMessageManager,
     match_lobbies: &mut LobbyManager,
     resync_user_public_info_events: &mut EventWriter<ResyncUserUiEvent>,
-    resync_global_chat_events: &mut EventWriter<ResyncLobbyGlobalEvent>,
+    resync_global_chat_events: &mut EventWriter<ResyncChatMessageUiEvent>,
     resync_match_lobbies_events: &mut EventWriter<ResyncLobbyUiEvent>,
     asset_id: AssetId,
 ) {
@@ -202,7 +205,7 @@ pub(crate) fn handle_global_chat_events(
     user_q: Query<&User>,
     message_q: Query<&ChatMessage>,
     mut input_events: EventReader<InputEvent>,
-    mut resync_global_chat_events: EventReader<ResyncLobbyGlobalEvent>,
+    mut resync_global_chat_events: EventReader<ResyncChatMessageUiEvent>,
 ) {
     let Some(active_ui_handle) = ui_manager.active_ui() else {
         return;

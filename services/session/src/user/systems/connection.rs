@@ -1,5 +1,4 @@
-
-use bevy_ecs::{change_detection::ResMut, system::Commands, event::EventReader, system::Res};
+use bevy_ecs::{change_detection::ResMut, event::EventReader, system::Commands, system::Res};
 
 use naia_bevy_server::{
     events::{AuthEvents, ConnectEvent, DisconnectEvent},

@@ -186,19 +186,11 @@ impl UserManager {
         self.user_data.insert(*user_id, user_data);
     }
 
-    pub(crate) fn user_set_online(
-        &mut self,
-        user_id: &UserId,
-        users_q: &mut Query<&mut User>,
-    ) {
+    pub(crate) fn user_set_online(&mut self, user_id: &UserId, users_q: &mut Query<&mut User>) {
         self.user_set_online_status(user_id, users_q, true);
     }
 
-    pub(crate) fn user_set_offline(
-        &mut self,
-        user_id: &UserId,
-        users_q: &mut Query<&mut User>,
-    ) {
+    pub(crate) fn user_set_offline(&mut self, user_id: &UserId, users_q: &mut Query<&mut User>) {
         self.user_set_online_status(user_id, users_q, false);
     }
 

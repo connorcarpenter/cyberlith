@@ -1,16 +1,22 @@
 use bevy_app::{App, Plugin, Update};
-use bevy_ecs::{prelude::Query, event::{EventReader, EventWriter}, change_detection::ResMut};
+use bevy_ecs::{
+    change_detection::ResMut,
+    event::{EventReader, EventWriter},
+    prelude::Query,
+};
 
-use game_engine::{logging::info, session::{SessionInsertComponentEvent, SessionRemoveComponentEvent, components::Lobby}};
+use game_engine::{
+    logging::info,
+    session::{components::Lobby, SessionInsertComponentEvent, SessionRemoveComponentEvent},
+};
 
-use crate::{ui::events::ResyncLobbyUiEvent, resources::lobby_manager::LobbyManager};
+use crate::{resources::lobby_manager::LobbyManager, ui::events::ResyncLobbyUiEvent};
 
 pub struct LobbyComponentEventsPlugin;
 
 impl Plugin for LobbyComponentEventsPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .add_systems(Update, recv_inserted_lobby_component)
+        app.add_systems(Update, recv_inserted_lobby_component)
             .add_systems(Update, recv_removed_lobby_component);
     }
 }
@@ -26,10 +32,7 @@ fn recv_inserted_lobby_component(
         let lobby_id = *lobby.id;
 
         let lobby_name = &*lobby.name;
-        info!(
-            "incoming lobby: [ {:?} | {:?} ]",
-            event.entity, lobby_name
-        );
+        info!("incoming lobby: [ {:?} | {:?} ]", event.entity, lobby_name);
 
         lobby_manager.recv_lobby(lobby_id, event.entity, &mut resync_lobby_ui_events);
     }

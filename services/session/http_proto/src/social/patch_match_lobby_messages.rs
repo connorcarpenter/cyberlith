@@ -12,10 +12,7 @@ pub struct SocialPatchMatchLobbyMessagesRequest {
 }
 
 impl SocialPatchMatchLobbyMessagesRequest {
-    pub fn new(
-        social_secret: &str,
-        new_messages: Vec<(LobbyId, Vec<(UserId, String)>)>,
-    ) -> Self {
+    pub fn new(social_secret: &str, new_messages: Vec<(LobbyId, Vec<(UserId, String)>)>) -> Self {
         Self {
             social_secret: social_secret.to_string(),
             new_messages,

@@ -35,14 +35,16 @@ pub fn message_events(
 
         // Global Chat Send Message
         for (user_key, req) in events.read::<ClientActionsChannel, GlobalChatSendMessage>() {
-            social_manager.chat_message_manager.send_global_chat_message(
-                &mut http_client,
-                &user_manager,
-                social_server_url.as_ref(),
-                &session_instance,
-                &user_key,
-                &req.message,
-            );
+            social_manager
+                .chat_message_manager
+                .send_global_chat_message(
+                    &mut http_client,
+                    &user_manager,
+                    social_server_url.as_ref(),
+                    &session_instance,
+                    &user_key,
+                    &req.message,
+                );
         }
 
         // Create Match Lobby

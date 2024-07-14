@@ -12,16 +12,19 @@ use game_engine::{
 
 use crate::{
     resources::{
-        chat_message_manager::ChatMessageManager, lobby_manager::LobbyManager, user_manager::UserManager,
-        AssetCatalog,
+        chat_message_manager::ChatMessageManager, lobby_manager::LobbyManager,
+        user_manager::UserManager, AssetCatalog,
     },
     states::AppState,
-    systems::{session_component_events::SessionComponentEventsPlugin, asset_events, cube_scene, draw, initial_spinner, resize, walker_scene, world},
+    systems::{
+        asset_events, cube_scene, draw, initial_spinner, resize,
+        session_component_events::SessionComponentEventsPlugin, walker_scene, world,
+    },
     ui,
     ui::{
         events::{
             DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent,
-            JoinMatchButtonClickedEvent, ResyncLobbyGlobalEvent, ResyncLobbyUiEvent,
+            JoinMatchButtonClickedEvent, ResyncChatMessageUiEvent, ResyncLobbyUiEvent,
             ResyncUserUiEvent, SettingsButtonClickedEvent, SubmitButtonClickedEvent,
         },
         UiCatalog,
@@ -86,7 +89,7 @@ impl Plugin for GameApp {
             .add_systems(Update, ui::handle_global_chat_events)
             .add_systems(Update, ui::handle_match_lobbies_events)
             .add_event::<ResyncUserUiEvent>()
-            .add_event::<ResyncLobbyGlobalEvent>()
+            .add_event::<ResyncChatMessageUiEvent>()
             .add_event::<ResyncLobbyUiEvent>()
             .add_event::<HostMatchButtonClickedEvent>()
             .add_event::<JoinMatchButtonClickedEvent>()

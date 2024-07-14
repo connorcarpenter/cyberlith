@@ -8,7 +8,7 @@ use naia_bevy_client::NaiaClientError;
 
 use kernel::AppExitAction;
 use logging::{info, warn};
-use session_server_naia_proto::components::{Lobby, ChatMessage, User};
+use session_server_naia_proto::components::{ChatMessage, Lobby, User};
 
 use crate::{
     networked::{

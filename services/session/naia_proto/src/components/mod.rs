@@ -5,9 +5,9 @@ mod chat_message_local;
 mod lobby;
 
 mod user;
-mod user_self;
 mod user_lobby_owner;
 mod user_lobby_peer;
+mod user_self;
 
 pub use chat_message::ChatMessage;
 pub use chat_message_global::ChatMessageGlobal;
@@ -15,9 +15,9 @@ pub use chat_message_local::ChatMessageLocal;
 
 pub use lobby::Lobby;
 
+pub use user::User;
 pub use user_lobby_owner::UserLobbyOwner;
 pub use user_lobby_peer::UserLobbyPeer;
-pub use user::User;
 pub use user_self::UserSelf;
 
 use naia_bevy_shared::{Protocol, ProtocolPlugin};
@@ -31,9 +31,7 @@ impl ProtocolPlugin for ComponentsPlugin {
             .add_component::<ChatMessage>()
             .add_component::<ChatMessageGlobal>()
             .add_component::<ChatMessageLocal>()
-
             .add_component::<Lobby>()
-
             .add_component::<User>()
             .add_component::<UserSelf>()
             .add_component::<UserLobbyPeer>()
