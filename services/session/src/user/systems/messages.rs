@@ -21,10 +21,12 @@ pub fn message_events(
     mut event_reader: EventReader<MessageEvents>,
 ) {
     for events in event_reader.read() {
-
         // World Connect Request
         for (user_key, _req) in events.read::<ClientActionsChannel, WorldConnectRequest>() {
-            if user_manager.make_ready_for_world_connect(&user_key).is_err() {
+            if user_manager
+                .make_ready_for_world_connect(&user_key)
+                .is_err()
+            {
                 warn!("User not found: {:?}", user_key);
             }
         }

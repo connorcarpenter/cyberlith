@@ -1,7 +1,9 @@
-
 use std::future::Future;
 
-use crate::native::{task_pool::{TaskPool, TaskPoolBuilder}, task::Task};
+use crate::native::{
+    task::Task,
+    task_pool::{TaskPool, TaskPoolBuilder},
+};
 
 static mut THREAD_POOL: Option<TaskPool> = None;
 
@@ -17,9 +19,7 @@ pub fn setup(priority: usize, total_priority: usize) {
     }
 }
 
-pub fn spawn<T: Send + 'static>(
-    future: impl Future<Output = T> + Send + 'static
-) -> Task<T> {
+pub fn spawn<T: Send + 'static>(future: impl Future<Output = T> + Send + 'static) -> Task<T> {
     unsafe {
         let Some(thread_pool) = THREAD_POOL.as_ref() else {
             panic!("Thread pool not initialized");

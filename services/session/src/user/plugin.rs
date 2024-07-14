@@ -29,7 +29,6 @@ impl Plugin for UserPlugin {
             Update,
             (
                 UserManager::update,
-
                 systems::auth_events,
                 systems::connect_events,
                 systems::disconnect_events,

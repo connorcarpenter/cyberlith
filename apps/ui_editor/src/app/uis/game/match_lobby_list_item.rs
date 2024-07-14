@@ -55,14 +55,16 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
         .root_mut()
         .set_style(container_style)
         .contents(|c| {
-            c.add_button("lobby_button").set_style(button_style).contents(|c| {
-                // match name
-                c.add_text_with_id("my super cool match", "match_name")
-                    .set_style(match_name_style);
-                // username
-                c.add_text_with_id("coolname", "username")
-                    .set_style(username_style);
-            });
+            c.add_button("lobby_button")
+                .set_style(button_style)
+                .contents(|c| {
+                    // match name
+                    c.add_text_with_id("my super cool match", "match_name")
+                        .set_style(match_name_style);
+                    // username
+                    c.add_text_with_id("coolname", "username")
+                        .set_style(username_style);
+                });
         });
 
     (ui_name.to_string(), ui_asset_id, ui_etag, ui_config)

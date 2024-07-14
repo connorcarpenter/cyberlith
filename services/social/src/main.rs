@@ -7,7 +7,9 @@ mod users;
 
 use std::{net::SocketAddr, thread, time::Duration};
 
-use config::{SELF_BINDING_ADDR, SOCIAL_SERVER_CPU_PRIORITY, SOCIAL_SERVER_PORT, TOTAL_CPU_PRIORITY};
+use config::{
+    SELF_BINDING_ADDR, SOCIAL_SERVER_CPU_PRIORITY, SOCIAL_SERVER_PORT, TOTAL_CPU_PRIORITY,
+};
 use http_server::{async_dup::Arc, executor, executor::smol::lock::RwLock, Server};
 use logging::info;
 

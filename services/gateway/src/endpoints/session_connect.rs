@@ -55,7 +55,8 @@ pub(crate) async fn handler(
             remote_port,
             SessionConnectRequest::new(user_id),
         )
-        .await {
+        .await
+        {
             Ok(connect_response) => {
                 http_server::log_util::recv_res(host, remote, &logged_remote_url);
 

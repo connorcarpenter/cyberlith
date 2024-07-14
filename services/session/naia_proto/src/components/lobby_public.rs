@@ -1,8 +1,8 @@
-use bevy_ecs::{prelude::Component};
+use bevy_ecs::prelude::Component;
 
 use naia_bevy_shared::{EntityProperty, Property, Replicate};
 
-use social_server_types::{MatchLobbyId};
+use social_server_types::MatchLobbyId;
 
 #[derive(Component, Replicate)]
 pub struct LobbyPublic {
@@ -12,10 +12,7 @@ pub struct LobbyPublic {
 }
 
 impl LobbyPublic {
-    pub fn new(
-        id: MatchLobbyId,
-        name: &str,
-    ) -> Self {
+    pub fn new(id: MatchLobbyId, name: &str) -> Self {
         Self::new_complete(id, name.to_string())
     }
 }

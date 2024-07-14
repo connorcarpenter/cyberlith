@@ -7,14 +7,23 @@ use bevy_ecs::{
 use game_engine::{
     asset::{AssetLoadedEvent, AssetManager, AssetType},
     logging::info,
-    session::{SessionUpdateComponentEvent, SessionRemoveComponentEvent, components::{LobbyPublic, MessagePublic, UserPublic}, SessionInsertComponentEvent},
+    session::{
+        components::{LobbyPublic, MessagePublic, UserPublic},
+        SessionInsertComponentEvent, SessionRemoveComponentEvent, SessionUpdateComponentEvent,
+    },
     ui::UiManager,
 };
 
 use crate::{
-    resources::{match_lobbies::MatchLobbies, user_manager::UserManager, global_chat::GlobalChat, on_asset_load, AssetCatalog},
+    resources::{
+        global_chat::GlobalChat, match_lobbies::MatchLobbies, on_asset_load,
+        user_manager::UserManager, AssetCatalog,
+    },
     states::AppState,
-    ui::{on_ui_load, UiCatalog, events::{ResyncPublicUserInfoEvent, ResyncGlobalChatEvent, ResyncMatchLobbiesEvent}},
+    ui::{
+        events::{ResyncGlobalChatEvent, ResyncMatchLobbiesEvent, ResyncPublicUserInfoEvent},
+        on_ui_load, UiCatalog,
+    },
 };
 
 pub fn session_load_asset_events(
@@ -59,7 +68,7 @@ pub fn session_load_asset_events(
                     &mut resync_user_public_info_events,
                     &mut resync_global_chat_events,
                     &mut resync_match_lobbies_events,
-                    asset_id
+                    asset_id,
                 );
             }
         }

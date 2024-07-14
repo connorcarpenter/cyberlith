@@ -13,8 +13,13 @@ cfg_if! {
 
 use std::{net::SocketAddr, thread};
 
-use config::{CONTENT_SERVER_CPU_PRIORITY, CONTENT_SERVER_FILES_PATH, CONTENT_SERVER_PORT, SELF_BINDING_ADDR, TOTAL_CPU_PRIORITY};
-use http_server::{async_dup::Arc, executor::smol::lock::RwLock, ApiServer, Method, Server, executor};
+use config::{
+    CONTENT_SERVER_CPU_PRIORITY, CONTENT_SERVER_FILES_PATH, CONTENT_SERVER_PORT, SELF_BINDING_ADDR,
+    TOTAL_CPU_PRIORITY,
+};
+use http_server::{
+    async_dup::Arc, executor, executor::smol::lock::RwLock, ApiServer, Method, Server,
+};
 use logging::info;
 
 use crate::{

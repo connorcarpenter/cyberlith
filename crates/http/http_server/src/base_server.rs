@@ -15,7 +15,10 @@ use logging::info;
 
 use crate::{
     endpoint::Endpoint,
-    middleware::{RequestMiddleware, RequestMiddlewareAction, ResponseMiddleware, ResponseMiddlewareFunc, RequestMiddlewareFunc},
+    middleware::{
+        RequestMiddleware, RequestMiddlewareAction, RequestMiddlewareFunc, ResponseMiddleware,
+        ResponseMiddlewareFunc,
+    },
 };
 
 // Server

@@ -12,7 +12,7 @@ use std::time::Duration;
 
 use bevy_app::{App, ScheduleRunnerPlugin};
 use bevy_http_server::executor;
-use config::{TOTAL_CPU_PRIORITY, SESSION_SERVER_CPU_PRIORITY};
+use config::{SESSION_SERVER_CPU_PRIORITY, TOTAL_CPU_PRIORITY};
 //
 
 use crate::{

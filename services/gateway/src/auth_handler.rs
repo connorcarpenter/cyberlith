@@ -139,7 +139,6 @@ async fn if_auth_tokens_and_offline_redirect(
             (user_id, RequestMiddlewareAction::Stop(response))
         }
         AuthResult::ContinueAndNewAccessToken(user_id, access_token) => {
-
             let mut response = Response::redirect(&url, new_url);
 
             let access_token_value = AccessToken::get_new_cookie_value(

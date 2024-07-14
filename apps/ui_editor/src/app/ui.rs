@@ -7,9 +7,7 @@ use bevy_ecs::{
 };
 
 use game_engine::{
-    asset::{
-        AssetId, AssetManager, embedded_asset_event, EmbeddedAssetEvent,
-    },
+    asset::{embedded_asset_event, AssetId, AssetManager, EmbeddedAssetEvent},
     input::{GamepadRumbleIntensity, Input, RumbleManager},
     render::components::{
         Camera, CameraBundle, ClearOperation, OrthographicProjection, Projection, RenderLayers,
@@ -20,7 +18,13 @@ use game_engine::{
 
 use logging::info;
 
-use crate::app::{global::Global, uis::*, examples::{setup_user_list_test_case, setup_match_lobby_test_case, setup_global_chat_test_case}};
+use crate::app::{
+    examples::{
+        setup_global_chat_test_case, setup_match_lobby_test_case, setup_user_list_test_case,
+    },
+    global::Global,
+    uis::*,
+};
 
 #[derive(Event, Default)]
 pub struct SubmitButtonEvent;

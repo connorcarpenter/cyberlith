@@ -1,8 +1,8 @@
 use std::{
     future::Future,
+    num::NonZeroUsize,
     sync::Arc,
     thread::{self, JoinHandle},
-    num::NonZeroUsize,
 };
 
 use async_io::block_on;
@@ -86,7 +86,6 @@ impl TaskPool {
     }
 
     fn new_internal(builder: TaskPoolBuilder) -> Self {
-
         let Some(priority) = builder.priority else {
             panic!("Priority must be set")
         };
@@ -99,7 +98,8 @@ impl TaskPool {
         let executor = Arc::new(async_executor::Executor::new());
 
         let available_cores = available_parallelism();
-        let num_threads = ((priority as f64 / total_priority as f64) * available_cores as f64).ceil() as usize;
+        let num_threads =
+            ((priority as f64 / total_priority as f64) * available_cores as f64).ceil() as usize;
         let num_threads = num_threads.max(2);
 
         let threads = (0..num_threads)
@@ -117,9 +117,8 @@ impl TaskPool {
                 thread_builder
                     .spawn(move || {
                         loop {
-                            let res = std::panic::catch_unwind(|| {
-                                block_on(ex.run(shutdown_rx.recv()))
-                            });
+                            let res =
+                                std::panic::catch_unwind(|| block_on(ex.run(shutdown_rx.recv())));
                             if let Ok(value) = res {
                                 // Use unwrap_err because we expect a Closed error
                                 value.unwrap_err();

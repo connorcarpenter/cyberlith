@@ -6,10 +6,10 @@ use http_server::{
     Server,
 };
 
+use auth_server_db::{AuthServerDbError, User, UserRole};
 use auth_server_http_proto::{
     AccessToken, RefreshToken, UserRegisterConfirmRequest, UserRegisterConfirmResponse,
 };
-use auth_server_db::{AuthServerDbError, User, UserRole};
 use auth_server_types::UserId;
 
 use crate::{error::AuthServerError, state::State};

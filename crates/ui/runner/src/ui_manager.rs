@@ -28,7 +28,7 @@ use ui_runner_config::{NodeId, NodeStore, UiRuntimeConfig};
 use ui_state::{NodeActiveState, UiState};
 
 use crate::{
-    config::{UiNode, Widget, ValidationType, WidgetKind},
+    config::{UiNode, ValidationType, Widget, WidgetKind},
     handle::UiHandle,
     runtime::UiRuntime,
     state_globals::StateGlobals,
@@ -745,12 +745,8 @@ impl UiManager {
             .get_node(dest_parent_id)
             .unwrap();
         let index = match &node.widget {
-            Widget::Panel(panel_ref) => {
-                panel_ref.children.len()
-            }
-            Widget::Button(button_ref) => {
-                button_ref.panel.children.len()
-            }
+            Widget::Panel(panel_ref) => panel_ref.children.len(),
+            Widget::Button(button_ref) => button_ref.panel.children.len(),
             _ => {
                 panic!("dest_parent_id is not a panel or a button");
             }

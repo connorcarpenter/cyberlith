@@ -8,7 +8,7 @@ use social_server_http_proto::{
     ConnectSessionServerRequest, ConnectSessionServerResponse, DisconnectSessionServerRequest,
     DisconnectSessionServerResponse,
 };
-use social_server_types::{MessageId, MatchLobbyId, Timestamp};
+use social_server_types::{MatchLobbyId, MessageId, Timestamp};
 
 use crate::state::State;
 

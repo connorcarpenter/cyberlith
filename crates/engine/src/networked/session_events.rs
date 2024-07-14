@@ -1,23 +1,25 @@
 use bevy_app::{App, Plugin, Startup, Update};
-use bevy_ecs::{event::{EventReader, EventWriter}, prelude::World as BevyWorld};
+use bevy_ecs::{
+    event::{EventReader, EventWriter},
+    prelude::World as BevyWorld,
+};
 
 use naia_bevy_client::NaiaClientError;
 
-use logging::{info, warn};
 use kernel::AppExitAction;
-use session_server_naia_proto::components::{MessagePublic, LobbyPublic, UserPublic};
+use logging::{info, warn};
+use session_server_naia_proto::components::{LobbyPublic, MessagePublic, UserPublic};
 
 use crate::{
     networked::{
         client_markers::Session,
         component_events::{
-            component_events_startup, get_component_events, InsertComponentEvent, RemoveComponentEvent, UpdateComponentEvent, AppRegisterComponentEvents,
+            component_events_startup, get_component_events, AppRegisterComponentEvents,
+            InsertComponentEvent, RemoveComponentEvent, UpdateComponentEvent,
         },
-        connection_manager::ConnectionManager
+        connection_manager::ConnectionManager,
     },
-    session::{
-        SessionDespawnEntityEvent, SessionSpawnEntityEvent, SessionErrorEvent,
-    }
+    session::{SessionDespawnEntityEvent, SessionErrorEvent, SessionSpawnEntityEvent},
 };
 
 pub type SessionInsertComponentEvent<C> = InsertComponentEvent<Session, C>;
@@ -28,23 +30,18 @@ pub struct SessionEventsPlugin;
 
 impl Plugin for SessionEventsPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .add_systems(Update, ConnectionManager::handle_session_connect_events)
+        app.add_systems(Update, ConnectionManager::handle_session_connect_events)
             .add_systems(Update, ConnectionManager::handle_session_disconnect_events)
             .add_systems(Update, ConnectionManager::handle_session_reject_events)
             .add_systems(Update, ConnectionManager::handle_session_message_events)
             .add_systems(Update, ConnectionManager::handle_session_request_events)
             .add_systems(Update, error_events)
-
             .add_systems(Update, spawn_entity_events)
             .add_event::<SessionSpawnEntityEvent>()
-
             .add_systems(Update, despawn_entity_events)
             .add_event::<SessionDespawnEntityEvent>()
-
             .add_systems(Startup, component_events_startup::<Session>)
             .add_systems(Update, component_events_update)
-
             .add_component_events::<Session, MessagePublic>()
             .add_component_events::<Session, UserPublic>()
             .add_component_events::<Session, LobbyPublic>();
@@ -67,7 +64,6 @@ fn despawn_entity_events(mut event_reader: EventReader<SessionDespawnEntityEvent
 
 // used as a system
 pub fn component_events_update(world: &mut BevyWorld) {
-
     for events in get_component_events::<Session>(world) {
         events.process::<MessagePublic>(world);
         events.process::<UserPublic>(world);
@@ -93,7 +89,10 @@ fn error_events(
                         redirect_to_launcher_app(&mut app_exit_action_writer)
                     }
                     _ => {
-                        warn!("SessionErrorEvent::IdError, with unhandled status code: {:?}", status_code);
+                        warn!(
+                            "SessionErrorEvent::IdError, with unhandled status code: {:?}",
+                            status_code
+                        );
                     }
                 }
             }

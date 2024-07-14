@@ -3,7 +3,12 @@ use std::{
     time::{Duration, Instant},
 };
 
-use bevy_ecs::{change_detection::ResMut, system::Resource, prelude::{Commands, Query}, entity::Entity};
+use bevy_ecs::{
+    change_detection::ResMut,
+    entity::Entity,
+    prelude::{Commands, Query},
+    system::Resource,
+};
 
 use naia_bevy_server::{CommandsExt, RoomKey, Server, UserKey};
 
@@ -168,10 +173,7 @@ impl UserManager {
 
         // info!("adding present user - [userid {:?}]:(`{:?}`)", user_id, user_name);
         // convert to entity + component
-        let user_public_entity = commands
-            .spawn_empty()
-            .enable_replication(naia_server)
-            .id();
+        let user_public_entity = commands.spawn_empty().enable_replication(naia_server).id();
 
         naia_server
             .room_mut(user_presence_room_key)
@@ -241,11 +243,7 @@ impl UserManager {
             if let Some(response_result) = http_client.recv(&response_key) {
                 let host = "session";
                 let remote = "auth";
-                bevy_http_client::log_util::recv_res(
-                    host,
-                    remote,
-                    UserGetResponse::name(),
-                );
+                bevy_http_client::log_util::recv_res(host, remote, UserGetResponse::name());
 
                 match response_result {
                     Ok(response) => {
@@ -253,7 +251,10 @@ impl UserManager {
                         received_responses.push((nameless_user_id, response));
                     }
                     Err(e) => {
-                        warn!("error receiving user get response from social server: {:?}", e.to_string());
+                        warn!(
+                            "error receiving user get response from social server: {:?}",
+                            e.to_string()
+                        );
                     }
                 }
             }
@@ -273,7 +274,9 @@ impl UserManager {
 
             let user_entity = user_data.user_entity();
             let user_name = received_response.name;
-            commands.entity(user_entity).insert(UserPublic::new(&user_name, user_is_online));
+            commands
+                .entity(user_entity)
+                .insert(UserPublic::new(&user_name, user_is_online));
         }
     }
 
@@ -282,9 +285,7 @@ impl UserManager {
         http_client: &mut HttpClient,
         user_id: &UserId,
     ) -> ResponseKey<UserGetResponse> {
-        let request = UserGetRequest::new(
-            *user_id,
-        );
+        let request = UserGetRequest::new(*user_id);
 
         let host = "session";
         let remote = "auth";

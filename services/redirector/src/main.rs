@@ -2,7 +2,9 @@ mod server;
 
 use std::{net::SocketAddr, thread};
 
-use config::{REDIRECTOR_SERVER_CPU_PRIORITY, REDIRECTOR_PORT, SELF_BINDING_ADDR, TOTAL_CPU_PRIORITY};
+use config::{
+    REDIRECTOR_PORT, REDIRECTOR_SERVER_CPU_PRIORITY, SELF_BINDING_ADDR, TOTAL_CPU_PRIORITY,
+};
 use logging::info;
 
 use crate::server::RedirectServer;

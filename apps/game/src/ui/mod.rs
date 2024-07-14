@@ -10,22 +10,26 @@ use std::time::Duration;
 use bevy_ecs::{
     event::{EventReader, EventWriter},
     prelude::NextState,
-    system::{Res, Query, ResMut},
+    system::{Query, Res, ResMut},
 };
 
 use game_engine::{
     asset::{AssetId, AssetManager},
     input::{GamepadRumbleIntensity, Input, InputEvent, RumbleManager},
-    session::{SessionClient, components::{LobbyPublic, MessagePublic, UserPublic}},
+    session::{
+        components::{LobbyPublic, MessagePublic, UserPublic},
+        SessionClient,
+    },
     ui::{UiHandle, UiManager},
 };
 
 use crate::{
-    resources::{match_lobbies::MatchLobbies, global_chat::GlobalChat, user_manager::UserManager},
+    resources::{global_chat::GlobalChat, match_lobbies::MatchLobbies, user_manager::UserManager},
     states::AppState,
     ui::events::{
-        DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent, ResyncMatchLobbiesEvent,
-        JoinMatchButtonClickedEvent, SettingsButtonClickedEvent, SubmitButtonClickedEvent, ResyncGlobalChatEvent, ResyncPublicUserInfoEvent,
+        DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent,
+        JoinMatchButtonClickedEvent, ResyncGlobalChatEvent, ResyncMatchLobbiesEvent,
+        ResyncPublicUserInfoEvent, SettingsButtonClickedEvent, SubmitButtonClickedEvent,
     },
 };
 
@@ -69,50 +73,35 @@ pub(crate) fn on_ui_load(
     let ui_key = ui_catalog.get_ui_key(&ui_handle);
 
     match ui_key {
-        UiKey::MainMenu => main_menu::on_load(
-            state,
-            next_state,
-            ui_catalog,
-            ui_manager,
-            user_manager
-        ),
-        UiKey::UserListItem => user_manager.on_load_user_list_item_ui(
-            ui_catalog,
-            resync_user_public_info_events,
-        ),
+        UiKey::MainMenu => {
+            main_menu::on_load(state, next_state, ui_catalog, ui_manager, user_manager)
+        }
+        UiKey::UserListItem => {
+            user_manager.on_load_user_list_item_ui(ui_catalog, resync_user_public_info_events)
+        }
 
-        UiKey::HostMatch => match_lobbies.on_load_host_match_ui(
-            ui_catalog,
-            ui_manager
-        ),
+        UiKey::HostMatch => match_lobbies.on_load_host_match_ui(ui_catalog, ui_manager),
 
-        UiKey::JoinMatch => match_lobbies.on_load_lobby_list_ui(
-            ui_catalog,
-            ui_manager,
-            resync_match_lobbies_events,
-        ),
-        UiKey::JoinMatchLobbyItem => match_lobbies.on_load_lobby_item_ui(
-            ui_catalog,
-            resync_match_lobbies_events,
-        ),
+        UiKey::JoinMatch => {
+            match_lobbies.on_load_lobby_list_ui(ui_catalog, ui_manager, resync_match_lobbies_events)
+        }
+        UiKey::JoinMatchLobbyItem => {
+            match_lobbies.on_load_lobby_item_ui(ui_catalog, resync_match_lobbies_events)
+        }
 
         UiKey::GlobalChat => global_chat_messages.on_load_container_ui(
             ui_catalog,
             ui_manager,
             resync_global_chat_events,
         ),
-        UiKey::GlobalChatDayDivider => global_chat_messages.on_load_day_divider_item_ui(
-            ui_catalog,
-            resync_global_chat_events,
-        ),
-        UiKey::GlobalChatUsernameAndMessage => global_chat_messages.on_load_username_and_message_item_ui(
-            ui_catalog,
-            resync_global_chat_events,
-        ),
-        UiKey::GlobalChatMessage => global_chat_messages.on_load_message_item_ui(
-            ui_catalog,
-            resync_global_chat_events,
-        ),
+        UiKey::GlobalChatDayDivider => {
+            global_chat_messages.on_load_day_divider_item_ui(ui_catalog, resync_global_chat_events)
+        }
+        UiKey::GlobalChatUsernameAndMessage => global_chat_messages
+            .on_load_username_and_message_item_ui(ui_catalog, resync_global_chat_events),
+        UiKey::GlobalChatMessage => {
+            global_chat_messages.on_load_message_item_ui(ui_catalog, resync_global_chat_events)
+        }
 
         _ => {
             unimplemented!("ui not implemented");
@@ -159,7 +148,7 @@ pub(crate) fn handle_events(
             UiKey::MainMenu => panic!("invalid sub-ui"),
             UiKey::HostMatch | UiKey::JoinMatch | UiKey::GlobalChat => {
                 // handling these in another method
-            },
+            }
             _ => {
                 unimplemented!("ui not implemented");
             }
@@ -287,7 +276,7 @@ pub(crate) fn handle_match_lobbies_events(
                     &ui_catalog,
                     &mut session_client,
                     &mut submit_btn_rdr,
-                    &mut should_rumble
+                    &mut should_rumble,
                 );
             }
             UiKey::JoinMatch => {
@@ -336,8 +325,12 @@ pub(crate) fn go_to_sub_ui(ui_manager: &mut UiManager, ui_catalog: &UiCatalog, s
     {
         match ui_catalog.get_ui_key(&current_ui_handle) {
             UiKey::MainMenu => panic!("invalid sub-ui"),
-            UiKey::HostMatch => MatchLobbies::reset_host_match_state(ui_manager, &current_ui_handle),
-            UiKey::JoinMatch => MatchLobbies::reset_join_match_state(ui_manager, &current_ui_handle),
+            UiKey::HostMatch => {
+                MatchLobbies::reset_host_match_state(ui_manager, &current_ui_handle)
+            }
+            UiKey::JoinMatch => {
+                MatchLobbies::reset_join_match_state(ui_manager, &current_ui_handle)
+            }
             UiKey::GlobalChat => GlobalChat::reset_state(ui_manager, &current_ui_handle),
             _ => {
                 unimplemented!("ui not implemented");

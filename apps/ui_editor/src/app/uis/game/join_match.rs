@@ -1,6 +1,4 @@
-use game_engine::{
-    asset::{AssetId, ETag},
-};
+use game_engine::asset::{AssetId, ETag};
 
 use ui_builder::{Alignment, UiConfig, UiConfigBuild};
 
@@ -36,7 +34,8 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
     // nodes
     ui_config.root_mut().set_style(window_style).contents(|c| {
         // match lobby list
-        c.add_panel_with_id("lobby_list").set_style(match_lobby_list_style);
+        c.add_panel_with_id("lobby_list")
+            .set_style(match_lobby_list_style);
     });
 
     (ui_name.to_string(), ui_asset_id, ui_etag, ui_config)

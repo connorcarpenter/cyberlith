@@ -1,4 +1,3 @@
-
 use crossbeam_channel::{bounded, Receiver};
 use js_sys::{Array, AsyncIterator, Function, Promise, Uint8Array};
 use logging::info;
@@ -25,13 +24,12 @@ use crate::{
 pub(crate) struct FsTaskJob(pub Receiver<Result<FsTaskResultEnum, TaskError>>);
 
 pub(crate) fn start_task(task_enum: FsTaskEnum) -> FsTaskJob {
-
     let (tx, task) = bounded(1);
     executor::spawn(async move {
-            let result = crate::backend::task_process_async(task_enum).await;
-            tx.send(result).ok();
-        })
-        .detach();
+        let result = crate::backend::task_process_async(task_enum).await;
+        tx.send(result).ok();
+    })
+    .detach();
 
     FsTaskJob(task)
 }

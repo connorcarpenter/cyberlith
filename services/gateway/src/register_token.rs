@@ -16,7 +16,6 @@ pub(crate) async fn handle(
     _incoming_addr: SocketAddr,
     mut incoming_request: Request,
 ) -> RequestMiddlewareAction {
-
     // send register token to auth server
 
     let Some(query_string_args) = extract_query_string(&incoming_request.url) else {

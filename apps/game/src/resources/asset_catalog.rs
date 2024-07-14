@@ -1,10 +1,12 @@
 use std::collections::HashMap;
 
-use bevy_ecs::{system::Resource, event::EventWriter};
+use bevy_ecs::{event::EventWriter, system::Resource};
 
-use game_engine::{logging::info, asset::AssetId, ui::UiManager};
+use game_engine::{asset::AssetId, logging::info, ui::UiManager};
 
-use crate::ui::events::{ResyncGlobalChatEvent, ResyncMatchLobbiesEvent, ResyncPublicUserInfoEvent};
+use crate::ui::events::{
+    ResyncGlobalChatEvent, ResyncMatchLobbiesEvent, ResyncPublicUserInfoEvent,
+};
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum AssetKey {

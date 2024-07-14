@@ -6,9 +6,17 @@ mod register_token;
 
 use std::{net::SocketAddr, thread, time::Duration};
 
-use config::{CONTENT_SERVER_PORT, CONTENT_SERVER_RECV_ADDR, GATEWAY_PORT, GATEWAY_SERVER_CPU_PRIORITY, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SELF_BINDING_ADDR, SESSION_SERVER_RECV_ADDR, SESSION_SERVER_SIGNAL_PORT, TargetEnv, TOTAL_CPU_PRIORITY, WORLD_SERVER_RECV_ADDR, WORLD_SERVER_SIGNAL_PORT};
+use config::{
+    TargetEnv, CONTENT_SERVER_PORT, CONTENT_SERVER_RECV_ADDR, GATEWAY_PORT,
+    GATEWAY_SERVER_CPU_PRIORITY, PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SELF_BINDING_ADDR,
+    SESSION_SERVER_RECV_ADDR, SESSION_SERVER_SIGNAL_PORT, TOTAL_CPU_PRIORITY,
+    WORLD_SERVER_RECV_ADDR, WORLD_SERVER_SIGNAL_PORT,
+};
 use endpoints::{redirect, session_connect};
-use http_server::{ApiRequest, ApiServer, async_dup::Arc, executor, executor::smol, executor::smol::lock::RwLock, Method, ProxyServer, Server};
+use http_server::{
+    async_dup::Arc, executor, executor::smol, executor::smol::lock::RwLock, ApiRequest, ApiServer,
+    Method, ProxyServer, Server,
+};
 use logging::info;
 
 use gateway_http_proto::{

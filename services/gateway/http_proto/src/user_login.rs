@@ -28,7 +28,6 @@ pub struct UserLoginResponse {
 }
 
 impl UserLoginResponse {
-
     pub fn success() -> Self {
         Self {
             simultaneous_login_detected: false,

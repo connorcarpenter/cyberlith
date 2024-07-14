@@ -1,4 +1,3 @@
-
 use naia_serde::SerdeInternal as Serde;
 
 use bevy_http_shared::{ApiRequest, ApiResponse, Method};
@@ -22,7 +21,7 @@ impl SocialPatchUsersRequest {
     pub fn new(social_secret: &str, patches: Vec<SocialUserPatch>) -> Self {
         Self {
             social_secret: social_secret.to_string(),
-            patches
+            patches,
         }
     }
 

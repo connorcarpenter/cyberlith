@@ -9,10 +9,7 @@ pub struct UserPublic {
 }
 
 impl UserPublic {
-    pub fn new(
-        name: &str,
-        online: bool,
-    ) -> Self {
+    pub fn new(name: &str, online: bool) -> Self {
         Self::new_complete(name.to_string(), online)
     }
 }

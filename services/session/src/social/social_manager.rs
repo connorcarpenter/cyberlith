@@ -1,16 +1,22 @@
-
 use bevy_ecs::{
     change_detection::ResMut,
     system::{Commands, Query, Res, Resource},
 };
 
-use naia_bevy_server::{Server};
+use naia_bevy_server::Server;
 
-use bevy_http_client::{HttpClient};
+use bevy_http_client::HttpClient;
 
-use session_server_naia_proto::components::{UserPublic};
+use session_server_naia_proto::components::UserPublic;
 
-use crate::{session_instance::SessionInstance, user::UserManager, social::{user_presence_manager::{UserPresenceManager}, match_lobby_manager::MatchLobbyManager, global_chat_manager::{GlobalChatManager}}};
+use crate::{
+    session_instance::SessionInstance,
+    social::{
+        global_chat_manager::GlobalChatManager, match_lobby_manager::MatchLobbyManager,
+        user_presence_manager::UserPresenceManager,
+    },
+    user::UserManager,
+};
 
 #[derive(Resource)]
 pub struct SocialManager {
@@ -52,7 +58,9 @@ impl SocialManager {
     pub fn startup(mut naia_server: Server, mut social_manager: ResMut<Self>) {
         social_manager.global_chat_manager.startup(&mut naia_server);
         social_manager.match_lobby_manager.startup(&mut naia_server);
-        social_manager.user_presence_manager.startup(&mut naia_server);
+        social_manager
+            .user_presence_manager
+            .startup(&mut naia_server);
     }
 
     // used as a system
@@ -67,8 +75,30 @@ impl SocialManager {
     ) {
         let social_server_url = social_manager.get_social_server_url();
         let user_presence_room_key = social_manager.user_presence_manager.room_key();
-        social_manager.global_chat_manager.update(&mut commands, &mut naia_server, &mut http_client, &mut user_manager, &social_server_url, &session_instance, &user_presence_room_key);
-        social_manager.match_lobby_manager.update(&mut commands, &mut naia_server, &mut http_client, &mut user_manager, &social_server_url, &session_instance, &user_presence_room_key);
-        social_manager.user_presence_manager.update(&mut http_client, &mut user_manager, &social_server_url, &session_instance, &mut users_q);
+        social_manager.global_chat_manager.update(
+            &mut commands,
+            &mut naia_server,
+            &mut http_client,
+            &mut user_manager,
+            &social_server_url,
+            &session_instance,
+            &user_presence_room_key,
+        );
+        social_manager.match_lobby_manager.update(
+            &mut commands,
+            &mut naia_server,
+            &mut http_client,
+            &mut user_manager,
+            &social_server_url,
+            &session_instance,
+            &user_presence_room_key,
+        );
+        social_manager.user_presence_manager.update(
+            &mut http_client,
+            &mut user_manager,
+            &social_server_url,
+            &session_instance,
+            &mut users_q,
+        );
     }
 }

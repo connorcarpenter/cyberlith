@@ -38,12 +38,7 @@ impl UiRuntimeConfig {
     }
 
     pub fn load_from_builder_config(ui_config: UiConfig) -> Self {
-        let (
-            styles,
-            nodes,
-            first_input_opt,
-            node_map,
-        ) = ui_config.decompose();
+        let (styles, nodes, first_input_opt, node_map) = ui_config.decompose();
 
         let mut style_id_map = HashMap::new();
         for (style_id, style) in styles.iter().enumerate() {
@@ -96,7 +91,8 @@ impl UiRuntimeConfig {
         style_map_old_to_new.insert(old_style_id, new_style_id);
 
         if let Some(id_str) = id_str_style_map.get(&old_style_id) {
-            self.id_str_to_style_id_map.insert(id_str.clone(), new_style_id);
+            self.id_str_to_style_id_map
+                .insert(id_str.clone(), new_style_id);
         }
     }
 
@@ -177,7 +173,6 @@ impl UiRuntimeConfig {
             WidgetKind::Button => {
                 let button_ref = node.widget_button_mut().unwrap();
                 return Some(&mut button_ref.panel);
-
             }
             _ => None,
         }

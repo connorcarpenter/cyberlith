@@ -15,5 +15,5 @@ pub use from::WORLD_SERVER_RECV_ADDR;
 pub use from::WORLD_SERVER_SIGNAL_PORT;
 pub use from::WORLD_SERVER_WEBRTC_PORT;
 
-pub use from::WORLD_SERVER_CPU_PRIORITY;
 pub use from::TOTAL_CPU_PRIORITY;
+pub use from::WORLD_SERVER_CPU_PRIORITY;

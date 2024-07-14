@@ -3,12 +3,15 @@ use std::net::SocketAddr;
 use config::{TargetEnv, AUTH_SERVER_PORT, AUTH_SERVER_RECV_ADDR, PUBLIC_IP_ADDR};
 use http_client::HttpClient;
 use http_server::{ApiRequest, ApiResponse, Request, Response, ResponseError};
-// use logging::info;
 
-use auth_server_http_proto::{AccessToken, RefreshToken, UserLoginRequest as AuthUserLoginRequest, UserLoginResponse as AuthUserLoginResponse};
+use auth_server_http_proto::{
+    AccessToken, RefreshToken, UserLoginRequest as AuthUserLoginRequest,
+    UserLoginResponse as AuthUserLoginResponse,
+};
 use gateway_http_proto::{
     UserLoginRequest as GatewayUserLoginRequest, UserLoginResponse as GatewayUserLoginResponse,
 };
+
 use crate::demultiply_handler::{get_user_online_status_impl, UserPresenceResult};
 
 pub(crate) async fn handler(
@@ -42,41 +45,55 @@ pub(crate) async fn handler(
     let auth_addr = AUTH_SERVER_RECV_ADDR;
     let auth_port = AUTH_SERVER_PORT;
 
-    let auth_request = AuthUserLoginRequest::new(&gateway_request.handle, &gateway_request.password);
+    let auth_request =
+        AuthUserLoginRequest::new(&gateway_request.handle, &gateway_request.password);
 
     http_server::log_util::send_req(host_name, auth_server, AuthUserLoginRequest::name());
-    let (access_token, refresh_token, user_id) = match HttpClient::send(&auth_addr, auth_port, auth_request).await {
-        Ok(auth_response) => {
-            http_server::log_util::recv_res(host_name, auth_server, AuthUserLoginResponse::name());
-            let access_token = auth_response.access_token;
-            let refresh_token = auth_response.refresh_token;
-            let user_id = auth_response.user_id;
+    let (access_token, refresh_token, user_id) =
+        match HttpClient::send(&auth_addr, auth_port, auth_request).await {
+            Ok(auth_response) => {
+                http_server::log_util::recv_res(
+                    host_name,
+                    auth_server,
+                    AuthUserLoginResponse::name(),
+                );
+                let access_token = auth_response.access_token;
+                let refresh_token = auth_response.refresh_token;
+                let user_id = auth_response.user_id;
 
-            (access_token, refresh_token, user_id)
-        }
-        Err(e) => match e {
-            ResponseError::Unauthenticated => {
-                http_server::log_util::recv_res(host_name, auth_server, "unauthenticated");
-                http_server::log_util::send_res(host_name, "unauthenticated");
-                return Err(ResponseError::Unauthenticated);
+                (access_token, refresh_token, user_id)
             }
-            e => {
-                http_server::log_util::recv_res(host_name, auth_server, "internal_server_error");
-                http_server::log_util::send_res(host_name, "internal_server_error");
-                return Err(ResponseError::InternalServerError(e.to_string()));
-            }
-        },
-    };
+            Err(e) => match e {
+                ResponseError::Unauthenticated => {
+                    http_server::log_util::recv_res(host_name, auth_server, "unauthenticated");
+                    http_server::log_util::send_res(host_name, "unauthenticated");
+                    return Err(ResponseError::Unauthenticated);
+                }
+                e => {
+                    http_server::log_util::recv_res(
+                        host_name,
+                        auth_server,
+                        "internal_server_error",
+                    );
+                    http_server::log_util::send_res(host_name, "internal_server_error");
+                    return Err(ResponseError::InternalServerError(e.to_string()));
+                }
+            },
+        };
 
     let gateway_response = {
         // check for simultaneous login
         let presence_result = get_user_online_status_impl(user_id).await;
         match presence_result {
-            UserPresenceResult::UserIsOnline => GatewayUserLoginResponse::simultaneous_login_detected(),
+            UserPresenceResult::UserIsOnline => {
+                GatewayUserLoginResponse::simultaneous_login_detected()
+            }
             UserPresenceResult::UserIsOffline => GatewayUserLoginResponse::success(),
             UserPresenceResult::ServerError => {
                 http_server::log_util::send_res(host_name, "internal_server_error");
-                return Err(ResponseError::InternalServerError("social server error".to_string()));
+                return Err(ResponseError::InternalServerError(
+                    "social server error".to_string(),
+                ));
             }
             _ => {
                 panic!("should be impossible");

@@ -2,9 +2,15 @@ use std::collections::BTreeMap;
 
 use bevy_ecs::prelude::Resource;
 
-use game_engine::{ui::{UiManager, UiHandle, extensions::{ListUiExt, ListUiExtItem}}, asset::AssetManager};
+use game_engine::{
+    asset::AssetManager,
+    ui::{
+        extensions::{ListUiExt, ListUiExtItem},
+        UiHandle, UiManager,
+    },
+};
 
-use crate::app::{uis::game, global::Global};
+use crate::app::{global::Global, uis::game};
 
 #[derive(Resource)]
 pub struct UserListState {
@@ -22,13 +28,21 @@ impl UserListState {
         }
     }
 
-    pub fn user_list_scroll_up(&mut self, ui_manager: &mut UiManager, asset_manager: &AssetManager) {
+    pub fn user_list_scroll_up(
+        &mut self,
+        ui_manager: &mut UiManager,
+        asset_manager: &AssetManager,
+    ) {
         self.user_list_ui_ext.scroll_up();
 
         self.sync_user_collections(ui_manager, asset_manager);
     }
 
-    pub fn user_list_scroll_down(&mut self, ui_manager: &mut UiManager, asset_manager: &AssetManager) {
+    pub fn user_list_scroll_down(
+        &mut self,
+        ui_manager: &mut UiManager,
+        asset_manager: &AssetManager,
+    ) {
         self.user_list_ui_ext.scroll_down();
 
         self.sync_user_collections(ui_manager, asset_manager);
@@ -46,7 +60,6 @@ impl UserListState {
             self.users.iter(),
             self.users.len(),
             |item_ctx, user_id, _| {
-
                 let username = self.users.get(&user_id).unwrap();
                 add_user_item(item_ctx, &self.user_ui_handle, username);
             },
@@ -65,7 +78,6 @@ pub(crate) fn setup_user_list_test_case(
     asset_manager: &AssetManager,
     main_menu_ui_handle: &UiHandle,
 ) -> UserListState {
-
     let user_list_item_ui_handle = global.load_ui(ui_manager, game::user_list_item::ui_define()); // game user list item
 
     let mut user_list_state = UserListState::new(&user_list_item_ui_handle);

@@ -16,7 +16,7 @@ mod embedded_asset;
 mod renderer;
 
 pub mod kernel {
-    pub use kernel::{get_querystring_param, AppExitAction, KernelApp, executor};
+    pub use kernel::{executor, get_querystring_param, AppExitAction, KernelApp};
 }
 pub mod asset {
     pub use crate::asset_cache::AssetLoadedEvent;

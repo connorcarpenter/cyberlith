@@ -14,8 +14,16 @@ cfg_if! {
 
 use std::{net::SocketAddr, thread, time::Duration};
 
-use config::{ASSET_SERVER_CPU_PRIORITY, ASSET_SERVER_FILES_PATH, ASSET_SERVER_PORT, SELF_BINDING_ADDR, TOTAL_CPU_PRIORITY};
-use http_server::{async_dup::Arc, executor, executor::smol::{lock::RwLock, Timer}, Server};
+use config::{
+    ASSET_SERVER_CPU_PRIORITY, ASSET_SERVER_FILES_PATH, ASSET_SERVER_PORT, SELF_BINDING_ADDR,
+    TOTAL_CPU_PRIORITY,
+};
+use http_server::{
+    async_dup::Arc,
+    executor,
+    executor::smol::{lock::RwLock, Timer},
+    Server,
+};
 use logging::info;
 
 use crate::{asset_metadata_store::AssetMetadataStore, state::State};

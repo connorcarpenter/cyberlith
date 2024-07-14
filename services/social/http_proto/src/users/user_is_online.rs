@@ -10,9 +10,7 @@ pub struct UserIsOnlineRequest {
 
 impl UserIsOnlineRequest {
     pub fn new(user_id: UserId) -> Self {
-        Self {
-            user_id,
-        }
+        Self { user_id }
     }
 
     pub fn user_id(&self) -> UserId {

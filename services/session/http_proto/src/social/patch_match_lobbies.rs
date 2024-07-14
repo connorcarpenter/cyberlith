@@ -1,8 +1,7 @@
-
 use naia_serde::SerdeInternal as Serde;
 
-use bevy_http_shared::{ApiRequest, ApiResponse, Method};
 use auth_server_types::UserId;
+use bevy_http_shared::{ApiRequest, ApiResponse, Method};
 use social_server_types::MatchLobbyId;
 
 #[derive(Serde, PartialEq, Clone)]
@@ -19,10 +18,7 @@ pub struct SocialPatchMatchLobbiesRequest {
 }
 
 impl SocialPatchMatchLobbiesRequest {
-    pub fn new(
-        social_secret: &str,
-        lobby_patches: Vec<SocialLobbyPatch>
-    ) -> Self {
+    pub fn new(social_secret: &str, lobby_patches: Vec<SocialLobbyPatch>) -> Self {
         Self {
             social_secret: social_secret.to_string(),
             patches: lobby_patches,

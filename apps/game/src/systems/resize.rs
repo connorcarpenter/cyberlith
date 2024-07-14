@@ -1,13 +1,13 @@
-use bevy_ecs::{event::EventWriter, change_detection::ResMut, prelude::Query};
+use bevy_ecs::{change_detection::ResMut, event::EventWriter, prelude::Query};
 
-use game_engine::{
-    render::{
-        components::{Camera, Viewport},
-        Window,
-    },
+use game_engine::render::{
+    components::{Camera, Viewport},
+    Window,
 };
 
-use crate::{ui::events::{ResyncMatchLobbiesEvent, ResyncGlobalChatEvent, ResyncPublicUserInfoEvent}};
+use crate::ui::events::{
+    ResyncGlobalChatEvent, ResyncMatchLobbiesEvent, ResyncPublicUserInfoEvent,
+};
 
 pub fn handle_viewport_resize(
     mut window: ResMut<Window>,

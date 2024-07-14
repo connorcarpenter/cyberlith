@@ -68,10 +68,7 @@ pub fn recv_heartbeat_request(mut region: ResMut<RegionManager>, mut server: Res
     }
 }
 
-pub fn recv_login_request(
-    mut user_manager: ResMut<UserManager>,
-    mut server: ResMut<HttpServer>
-) {
+pub fn recv_login_request(mut user_manager: ResMut<UserManager>, mut server: ResMut<HttpServer>) {
     while let Some((_addr, request, response_key)) = server.receive::<IncomingUserRequest>() {
         if request.region_secret() != REGION_SERVER_SECRET {
             warn!("invalid request secret");

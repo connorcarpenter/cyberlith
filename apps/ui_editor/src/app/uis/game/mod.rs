@@ -4,6 +4,6 @@ pub mod global_chat_message;
 pub mod global_chat_username_and_message;
 pub mod host_match;
 pub mod join_match;
-pub mod match_lobby_list_item;
 pub mod main_menu;
+pub mod match_lobby_list_item;
 pub mod user_list_item;

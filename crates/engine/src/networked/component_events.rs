@@ -7,7 +7,10 @@ use bevy_ecs::{
     system::SystemState,
 };
 
-use naia_bevy_client::{events::{RemoveComponentEvents, UpdateComponentEvents, InsertComponentEvents}, Replicate, Tick};
+use naia_bevy_client::{
+    events::{InsertComponentEvents, RemoveComponentEvents, UpdateComponentEvents},
+    Replicate, Tick,
+};
 
 // ComponentEvent
 pub(crate) enum ComponentEvents<T> {
@@ -17,7 +20,6 @@ pub(crate) enum ComponentEvents<T> {
 }
 
 impl<T: Send + Sync + 'static> ComponentEvents<T> {
-
     pub(crate) fn is_insert(&self) -> bool {
         match self {
             Self::Insert(_) => true,
@@ -126,20 +128,21 @@ pub struct CachedRemoveComponentEventsState<T: Send + Sync + 'static> {
 }
 
 // this is a system
-pub fn component_events_startup<T: Send + Sync + 'static> (
-    world: &mut BevyWorld,
-) {
-    let insert_event_state: SystemState<EventReader<InsertComponentEvents<T>>> = SystemState::new(world);
+pub fn component_events_startup<T: Send + Sync + 'static>(world: &mut BevyWorld) {
+    let insert_event_state: SystemState<EventReader<InsertComponentEvents<T>>> =
+        SystemState::new(world);
     world.insert_resource(CachedInsertComponentEventsState {
         event_state: insert_event_state,
     });
 
-    let update_event_state: SystemState<EventReader<UpdateComponentEvents<T>>> = SystemState::new(world);
+    let update_event_state: SystemState<EventReader<UpdateComponentEvents<T>>> =
+        SystemState::new(world);
     world.insert_resource(CachedUpdateComponentEventsState {
         event_state: update_event_state,
     });
 
-    let remove_event_state: SystemState<EventReader<RemoveComponentEvents<T>>> = SystemState::new(world);
+    let remove_event_state: SystemState<EventReader<RemoveComponentEvents<T>>> =
+        SystemState::new(world);
     world.insert_resource(CachedRemoveComponentEventsState {
         event_state: remove_event_state,
     });

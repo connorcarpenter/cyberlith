@@ -1,4 +1,4 @@
-use bevy_ecs::{prelude::Component};
+use bevy_ecs::prelude::Component;
 
 use naia_bevy_shared::{EntityProperty, Property, Replicate};
 
@@ -14,11 +14,7 @@ pub struct MessagePublic {
 }
 
 impl MessagePublic {
-    pub fn new(
-        id: MessageId,
-        timestamp: Timestamp,
-        message: &str,
-    ) -> Self {
+    pub fn new(id: MessageId, timestamp: Timestamp, message: &str) -> Self {
         Self::new_complete(id, timestamp, message.to_string())
     }
 }

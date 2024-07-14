@@ -1,9 +1,6 @@
 use std::collections::HashMap;
 
-use bevy_ecs::{
-    entity::Entity,
-    system::Commands,
-};
+use bevy_ecs::{entity::Entity, system::Commands};
 
 use naia_bevy_server::{CommandsExt, RoomKey, Server, UserKey};
 
@@ -14,16 +11,15 @@ use auth_server_types::UserId;
 use session_server_http_proto::SocialLobbyPatch;
 use session_server_naia_proto::components::LobbyPublic;
 
-use social_server_http_proto::{MatchLobbyCreateResponse, MatchLobbyCreateRequest};
+use social_server_http_proto::{MatchLobbyCreateRequest, MatchLobbyCreateResponse};
 use social_server_types::MatchLobbyId;
 
-use crate::{user::UserManager, session_instance::SessionInstance};
+use crate::{session_instance::SessionInstance, user::UserManager};
 
 struct MatchCreateReqQueued(UserKey, String);
 struct MatchCreateReqInFlight(UserId, String, ResponseKey<MatchLobbyCreateResponse>);
 
 pub struct MatchLobbyManager {
-
     queued_requests: Vec<MatchCreateReqQueued>,
     in_flight_requests: Vec<MatchCreateReqInFlight>,
 
@@ -34,7 +30,6 @@ pub struct MatchLobbyManager {
 impl MatchLobbyManager {
     pub fn new() -> Self {
         Self {
-
             queued_requests: Vec::new(),
             in_flight_requests: Vec::new(),
 
@@ -123,7 +118,6 @@ impl MatchLobbyManager {
         let in_flight_requests = std::mem::take(&mut self.in_flight_requests);
 
         for req in in_flight_requests {
-
             let MatchCreateReqInFlight(owner_user_id, match_name, response_key) = &req;
 
             if let Some(response_result) = http_client.recv(response_key) {
@@ -152,7 +146,10 @@ impl MatchLobbyManager {
                         );
                     }
                     Err(e) => {
-                        warn!("error receiving create match lobby response from social server: {:?}", e.to_string());
+                        warn!(
+                            "error receiving create match lobby response from social server: {:?}",
+                            e.to_string()
+                        );
                     }
                 }
             } else {
@@ -180,7 +177,10 @@ impl MatchLobbyManager {
         let Some((social_server_addr, social_server_port)) = social_server_url else {
             warn!("received create match lobby request but no social server is available!");
 
-            self.queued_requests.push(MatchCreateReqQueued(*owner_user_key, match_name.to_string()));
+            self.queued_requests.push(MatchCreateReqQueued(
+                *owner_user_key,
+                match_name.to_string(),
+            ));
 
             return;
         };
@@ -197,7 +197,11 @@ impl MatchLobbyManager {
         bevy_http_client::log_util::send_req(host, remote, MatchLobbyCreateRequest::name());
         let response_key = http_client.send(social_server_addr, *social_server_port, request);
 
-        self.in_flight_requests.push(MatchCreateReqInFlight(owner_user_id, match_name.to_string(), response_key));
+        self.in_flight_requests.push(MatchCreateReqInFlight(
+            owner_user_id,
+            match_name.to_string(),
+            response_key,
+        ));
 
         return;
     }
@@ -214,9 +218,21 @@ impl MatchLobbyManager {
         for patch in patches {
             match patch {
                 SocialLobbyPatch::Create(lobby_id, match_name, owner_id) => {
-                    info!("adding match lobby - [lobbyid {:?}]:(`{:?}`), [ownerid {:?}]", lobby_id, match_name, owner_id);
+                    info!(
+                        "adding match lobby - [lobbyid {:?}]:(`{:?}`), [ownerid {:?}]",
+                        lobby_id, match_name, owner_id
+                    );
 
-                    self.add_match_lobby(commands, naia_server, http_client, user_manager, user_presence_room_key, lobby_id, match_name, owner_id);
+                    self.add_match_lobby(
+                        commands,
+                        naia_server,
+                        http_client,
+                        user_manager,
+                        user_presence_room_key,
+                        lobby_id,
+                        match_name,
+                        owner_id,
+                    );
                 }
                 SocialLobbyPatch::Delete(lobby_id) => {
                     info!("removing match lobby - [lobbyid {:?}]", lobby_id);
@@ -236,17 +252,11 @@ impl MatchLobbyManager {
         user_presence_room_key: &RoomKey,
         lobby_id: &MatchLobbyId,
         lobby_name: &str,
-        owner_user_id: &UserId
+        owner_user_id: &UserId,
     ) {
         // spawn lobby entity
-        let match_lobby_entity = commands
-            .spawn_empty()
-            .enable_replication(naia_server)
-            .id();
-        let mut match_lobby = LobbyPublic::new(
-            *lobby_id,
-            lobby_name,
-        );
+        let match_lobby_entity = commands.spawn_empty().enable_replication(naia_server).id();
+        let mut match_lobby = LobbyPublic::new(*lobby_id, lobby_name);
 
         // add to lobbies room
         naia_server
@@ -260,7 +270,13 @@ impl MatchLobbyManager {
             if let Some(user_entity) = user_manager.get_user_entity(owner_user_id) {
                 user_entity
             } else {
-                user_manager.add_user_data(commands, naia_server, http_client, user_presence_room_key, owner_user_id);
+                user_manager.add_user_data(
+                    commands,
+                    naia_server,
+                    http_client,
+                    user_presence_room_key,
+                    owner_user_id,
+                );
 
                 let user_entity = user_manager.get_user_entity(owner_user_id).unwrap();
                 user_entity
@@ -268,20 +284,17 @@ impl MatchLobbyManager {
         };
 
         match_lobby.user_entity.set(naia_server, &owner_user_entity);
-        commands
-            .entity(match_lobby_entity)
-            .insert(match_lobby);
+        commands.entity(match_lobby_entity).insert(match_lobby);
     }
 
-    fn remove_match_lobby(
-        &mut self,
-        commands: &mut Commands,
-        lobby_id: &MatchLobbyId
-    ) {
+    fn remove_match_lobby(&mut self, commands: &mut Commands, lobby_id: &MatchLobbyId) {
         if let Some(removed_entity) = self.match_lobbies.remove(lobby_id) {
             commands.entity(removed_entity).despawn();
         } else {
-            warn!("attempted to remove non-existent match lobby - [lobbyid {:?}]", lobby_id);
+            warn!(
+                "attempted to remove non-existent match lobby - [lobbyid {:?}]",
+                lobby_id
+            );
         }
     }
 }

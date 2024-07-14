@@ -1,8 +1,8 @@
-use std::collections::{HashMap};
+use std::collections::HashMap;
 
 use auth_server_types::UserId;
 
-use social_server_types::{MatchLobbyId};
+use social_server_types::MatchLobbyId;
 
 use crate::session_servers::SessionServerId;
 
@@ -43,12 +43,10 @@ impl MatchLobbiesState {
             .insert(new_lobby_id, (creator_user_id, match_name.to_string()));
 
         if !self.outgoing_patches.contains_key(&session_instance_id) {
-            self.outgoing_patches.insert(session_instance_id, Vec::new());
+            self.outgoing_patches
+                .insert(session_instance_id, Vec::new());
         }
-        let session_server_patches = self
-            .outgoing_patches
-            .get_mut(&session_instance_id)
-            .unwrap();
+        let session_server_patches = self.outgoing_patches.get_mut(&session_instance_id).unwrap();
         session_server_patches.push(LobbyPatch::Create(
             new_lobby_id,
             creator_user_id,
@@ -67,10 +65,7 @@ impl MatchLobbiesState {
         // TODO
     }
 
-    pub fn leave(
-        &mut self, session_server_id: SessionServerId,
-        leaving_user_id: UserId
-    ) {
+    pub fn leave(&mut self, session_server_id: SessionServerId, leaving_user_id: UserId) {
         // TODO
     }
 
@@ -87,9 +82,7 @@ impl MatchLobbiesState {
         &self.lobbies
     }
 
-    pub fn take_patches(
-        &mut self,
-    ) -> HashMap<SessionServerId, Vec<LobbyPatch>> {
+    pub fn take_patches(&mut self) -> HashMap<SessionServerId, Vec<LobbyPatch>> {
         std::mem::take(&mut self.outgoing_patches)
     }
 }

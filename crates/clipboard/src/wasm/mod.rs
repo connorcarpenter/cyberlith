@@ -15,13 +15,12 @@ use crate::error::TaskError;
 pub(crate) struct TaskJob(pub Receiver<Result<String, TaskError>>);
 
 pub(crate) fn start_task() -> TaskJob {
-
     let (tx, task) = bounded(1);
     executor::spawn(async move {
-            let result = task_process_async().await;
-            tx.send(result).ok();
-        })
-        .detach();
+        let result = task_process_async().await;
+        tx.send(result).ok();
+    })
+    .detach();
 
     TaskJob(task)
 }

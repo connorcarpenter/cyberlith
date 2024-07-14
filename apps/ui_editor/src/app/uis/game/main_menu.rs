@@ -170,7 +170,8 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
             });
 
             // main
-            c.add_panel_with_id("user_list").set_style(right_bottom_bar_style);
+            c.add_panel_with_id("user_list")
+                .set_style(right_bottom_bar_style);
         });
     });
 

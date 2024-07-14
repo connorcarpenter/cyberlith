@@ -321,7 +321,6 @@ async fn response_send<ResponseStream: Unpin + AsyncRead + AsyncWrite>(
     // info!("response sent");
 }
 
-
 fn response_header_to_vec(r: &Response) -> Vec<u8> {
     let v = Vec::with_capacity(120);
     let mut c = std::io::Cursor::new(v);

@@ -25,7 +25,7 @@ pub(crate) struct PrivateUserInfo {
 impl PrivateUserInfo {
     pub fn new(
         public_entity: Entity,
-        user_info_response_key: ResponseKey<UserGetResponse>
+        user_info_response_key: ResponseKey<UserGetResponse>,
     ) -> Self {
         Self {
             user_key: None,

@@ -1,7 +1,9 @@
-
 use bevy_ecs::{entity::Entity, system::Resource};
 
-use asset_serde::{bits::AssetMetadataSerde, json::{Asset, AssetData, AssetMeta, UiConfigJson}};
+use asset_serde::{
+    bits::AssetMetadataSerde,
+    json::{Asset, AssetData, AssetMeta, UiConfigJson},
+};
 
 use game_engine::{
     asset::{AssetId, AssetType, ETag},
@@ -24,7 +26,11 @@ impl Global {
         }
     }
 
-    pub(crate) fn load_ui(&mut self, ui_manager: &mut UiManager, ui_define: (String, AssetId, ETag, UiConfig)) -> UiHandle {
+    pub(crate) fn load_ui(
+        &mut self,
+        ui_manager: &mut UiManager,
+        ui_define: (String, AssetId, ETag, UiConfig),
+    ) -> UiHandle {
         let (ui_name, ui_asset_id, ui_etag, ui) = ui_define;
 
         // write JSON and bits files, metadata too

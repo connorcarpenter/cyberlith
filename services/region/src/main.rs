@@ -8,8 +8,15 @@ mod world_instance;
 
 use std::{net::SocketAddr, thread, time::Duration};
 
-use config::{REGION_SERVER_PORT, SELF_BINDING_ADDR, REGION_SERVER_CPU_PRIORITY, TOTAL_CPU_PRIORITY};
-use http_server::{async_dup::Arc, executor, executor::smol::{Timer, lock::RwLock}, Server};
+use config::{
+    REGION_SERVER_CPU_PRIORITY, REGION_SERVER_PORT, SELF_BINDING_ADDR, TOTAL_CPU_PRIORITY,
+};
+use http_server::{
+    async_dup::Arc,
+    executor,
+    executor::smol::{lock::RwLock, Timer},
+    Server,
+};
 use logging::info;
 
 use crate::state::State;

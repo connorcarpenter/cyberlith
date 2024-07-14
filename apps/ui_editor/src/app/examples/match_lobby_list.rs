@@ -1,10 +1,16 @@
 use std::collections::BTreeMap;
 
-use game_engine::{ui::{UiManager, UiHandle, extensions::{ListUiExt, ListUiExtItem}}, asset::AssetManager};
+use game_engine::{
+    asset::AssetManager,
+    ui::{
+        extensions::{ListUiExt, ListUiExtItem},
+        UiHandle, UiManager,
+    },
+};
 
-use bevy_ecs::{system::Resource};
+use bevy_ecs::system::Resource;
 
-use crate::app::{uis::game, global::Global};
+use crate::app::{global::Global, uis::game};
 
 #[derive(Resource)]
 pub struct MatchLobbyListState {
@@ -17,9 +23,7 @@ pub struct MatchLobbyListState {
 }
 
 impl MatchLobbyListState {
-    pub fn new(
-        item_ui_handle: &UiHandle,
-    ) -> Self {
+    pub fn new(item_ui_handle: &UiHandle) -> Self {
         Self {
             match_lobbies_list_ui_ext: ListUiExt::new(false),
             match_lobbies: BTreeMap::new(),
@@ -28,13 +32,21 @@ impl MatchLobbyListState {
         }
     }
 
-    pub fn match_lobbies_scroll_up(&mut self, ui_manager: &mut UiManager, asset_manager: &AssetManager) {
+    pub fn match_lobbies_scroll_up(
+        &mut self,
+        ui_manager: &mut UiManager,
+        asset_manager: &AssetManager,
+    ) {
         self.match_lobbies_list_ui_ext.scroll_up();
 
         self.sync_lobbies_collections(ui_manager, asset_manager);
     }
 
-    pub fn match_lobbies_scroll_down(&mut self, ui_manager: &mut UiManager, asset_manager: &AssetManager) {
+    pub fn match_lobbies_scroll_down(
+        &mut self,
+        ui_manager: &mut UiManager,
+        asset_manager: &AssetManager,
+    ) {
         self.match_lobbies_list_ui_ext.scroll_down();
 
         self.sync_lobbies_collections(ui_manager, asset_manager);
@@ -52,17 +64,26 @@ impl MatchLobbyListState {
             self.match_lobbies.iter(),
             self.match_lobbies.len(),
             |item_ctx, lobby_id, _| {
-
                 let (username, lobbyname) = self.match_lobbies.get(&lobby_id).unwrap();
 
                 // just add message
-                add_lobby_item(item_ctx, &self.match_lobby_list_item_ui_handle, username, lobbyname);
+                add_lobby_item(
+                    item_ctx,
+                    &self.match_lobby_list_item_ui_handle,
+                    username,
+                    lobbyname,
+                );
             },
         );
     }
 }
 
-fn add_lobby_item(item_ctx: &mut ListUiExtItem<u32>, ui: &UiHandle, username: &str, lobby_name: &str) {
+fn add_lobby_item(
+    item_ctx: &mut ListUiExtItem<u32>,
+    ui: &UiHandle,
+    username: &str,
+    lobby_name: &str,
+) {
     item_ctx.add_copied_node(ui);
     item_ctx.set_text_by_id("username", username);
     item_ctx.set_text_by_id("match_name", lobby_name);
@@ -74,9 +95,9 @@ pub(crate) fn setup_match_lobby_test_case(
     asset_manager: &AssetManager,
     main_menu_ui_handle: &UiHandle,
 ) -> MatchLobbyListState {
-
     let join_match_ui_handle = global.load_ui(ui_manager, game::join_match::ui_define()); // game match lobby list
-    let match_lobby_list_item_ui_handle = global.load_ui(ui_manager, game::match_lobby_list_item::ui_define()); // game match lobby list item
+    let match_lobby_list_item_ui_handle =
+        global.load_ui(ui_manager, game::match_lobby_list_item::ui_define()); // game match lobby list item
 
     let mut match_lobby_state = MatchLobbyListState::new(&match_lobby_list_item_ui_handle);
 
@@ -119,7 +140,6 @@ fn setup_match_lobbies() -> BTreeMap<u32, (String, String)> {
     matchnames.push("snipin all day!!!");
     matchnames.push("no camping");
 
-
     let mut match_lobbies = BTreeMap::<u32, (String, String)>::new();
 
     let mut current_user_index = 0;
@@ -149,9 +169,6 @@ fn setup_global_chat(
 
     match_lobbies.insert(
         match_lobbies.len() as u32,
-        (
-            username.to_string(),
-            matchname_str,
-        ),
+        (username.to_string(), matchname_str),
     );
 }

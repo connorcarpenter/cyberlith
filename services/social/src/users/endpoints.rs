@@ -1,10 +1,12 @@
-
 use config::REGION_SERVER_SECRET;
 use http_client::ResponseError;
 use http_server::{async_dup::Arc, executor::smol::lock::RwLock, ApiServer, Server};
 use logging::warn;
 
-use social_server_http_proto::{UserConnectedRequest, UserConnectedResponse, UserDisconnectedRequest, UserDisconnectedResponse, UserIsOnlineRequest, UserIsOnlineResponse};
+use social_server_http_proto::{
+    UserConnectedRequest, UserConnectedResponse, UserDisconnectedRequest, UserDisconnectedResponse,
+    UserIsOnlineRequest, UserIsOnlineResponse,
+};
 
 use crate::state::State;
 
@@ -36,7 +38,6 @@ async fn async_recv_user_connected_request_impl(
     state.region_server.heard_from_region_server();
 
     if state.users.is_user_online(&request.user_id()) {
-
         return Ok(UserConnectedResponse::already_connected());
     }
 
@@ -98,14 +99,12 @@ async fn async_recv_user_is_online_request_impl(
     state: Arc<RwLock<State>>,
     request: UserIsOnlineRequest,
 ) -> Result<UserIsOnlineResponse, ResponseError> {
-
     let mut state = state.write().await;
 
     // setting last heard
     state.region_server.heard_from_region_server();
 
     if state.users.is_user_online(&request.user_id()) {
-
         return Ok(UserIsOnlineResponse::online());
     } else {
         return Ok(UserIsOnlineResponse::offline());

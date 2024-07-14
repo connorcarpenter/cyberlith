@@ -7,4 +7,3 @@ pub enum UserRole {
     Paid,
     Free,
 }
-

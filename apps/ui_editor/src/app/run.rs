@@ -1,8 +1,9 @@
 use bevy_app::{App, Startup, Update};
 
 use game_engine::{
+    kernel::executor,
     render::{resources::WindowSettings, Draw},
-    EnginePlugin, kernel::executor,
+    EnginePlugin,
 };
 
 use super::{draw, resize, ui};

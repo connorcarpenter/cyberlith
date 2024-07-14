@@ -318,7 +318,6 @@ impl<K: Hash + Eq + Copy + Clone + PartialEq> ListUiExt<K> {
                     // info!("used_space: {:?} / parent_space: {:?}", used_space, parent_height);
 
                     if used_space > parent_height {
-
                     } else {
                         if iterator_incrementing {
                             let loaded_nodes =
@@ -506,7 +505,12 @@ impl<'a, K: Hash + Eq + Copy + Clone + PartialEq> ListUiExtItem<'a, K> {
                     .unwrap();
 
                 for (old_style_id, item_style) in item_styles {
-                    container_ui_runtime.add_copied_style(item_ui_handle, &item_style_id_str_map, old_style_id, item_style);
+                    container_ui_runtime.add_copied_style(
+                        item_ui_handle,
+                        &item_style_id_str_map,
+                        old_style_id,
+                        item_style,
+                    );
                 }
             }
         }
@@ -614,9 +618,15 @@ impl<'a, K: Hash + Eq + Copy + Clone + PartialEq> ListUiExtItem<'a, K> {
             // execute actions
             for action in new_actions {
                 match action {
-                    ListItemAction::AddCopiedNode(ui_handle) => self.add_copied_node_impl(&ui_handle),
-                    ListItemAction::SetTextById(id_str, text) => self.set_text_by_id_impl(&id_str, &text),
-                    ListItemAction::SetStyleById(node_id_str, style_id_str) => self.set_style_by_id_impl(&node_id_str, &style_id_str),
+                    ListItemAction::AddCopiedNode(ui_handle) => {
+                        self.add_copied_node_impl(&ui_handle)
+                    }
+                    ListItemAction::SetTextById(id_str, text) => {
+                        self.set_text_by_id_impl(&id_str, &text)
+                    }
+                    ListItemAction::SetStyleById(node_id_str, style_id_str) => {
+                        self.set_style_by_id_impl(&node_id_str, &style_id_str)
+                    }
                 }
             }
         }

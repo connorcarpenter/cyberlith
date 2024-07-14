@@ -1,4 +1,4 @@
-use bevy_ecs::{prelude::Component};
+use bevy_ecs::prelude::Component;
 
 use naia_bevy_shared::Replicate;
 

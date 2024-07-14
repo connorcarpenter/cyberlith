@@ -18,15 +18,15 @@ use world_server_naia_proto::components::{Alt1, AssetEntry, AssetRef, Main, Posi
 use crate::{
     asset_cache::AssetCache,
     networked::{
-        asset_ref_processor::{AssetProcessor, AssetRefProcessor}, client_markers::World,
-        connection_manager::ConnectionManager,
+        asset_ref_processor::{AssetProcessor, AssetRefProcessor},
+        client_markers::World,
         component_events::{
-            get_component_events, InsertComponentEvent,
-            UpdateComponentEvent, component_events_startup,
-            RemoveComponentEvent, AppRegisterComponentEvents,
+            component_events_startup, get_component_events, AppRegisterComponentEvents,
+            InsertComponentEvent, RemoveComponentEvent, UpdateComponentEvent,
         },
+        connection_manager::ConnectionManager,
     },
-    world::{WorldDespawnEntityEvent, WorldSpawnEntityEvent, WorldClient},
+    world::{WorldClient, WorldDespawnEntityEvent, WorldSpawnEntityEvent},
 };
 
 pub type WorldInsertComponentEvent<C> = InsertComponentEvent<World, C>;
@@ -37,21 +37,15 @@ pub struct WorldEventsPlugin;
 
 impl Plugin for WorldEventsPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .add_systems(Update, ConnectionManager::handle_world_connect_events)
-
+        app.add_systems(Update, ConnectionManager::handle_world_connect_events)
             .add_systems(Update, spawn_entity_events)
             .add_event::<WorldSpawnEntityEvent>()
-
             .add_systems(Update, despawn_entity_events)
             .add_event::<WorldDespawnEntityEvent>()
-
             .add_systems(Startup, component_events_startup::<World>)
             .add_systems(Update, component_events_update)
-
             // component events
             .add_component_events::<World, Position>()
-
             // asset events
             .add_event::<InsertAssetRefEvent<Main>>()
             .add_event::<InsertAssetRefEvent<Alt1>>();
@@ -94,7 +88,6 @@ impl<T> InsertAssetRefEvent<T> {
 
 // used as a system
 pub fn component_events_update(world: &mut BevyWorld) {
-
     // insert & asset events
 
     for events in get_component_events::<World>(world) {

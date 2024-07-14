@@ -10,8 +10,7 @@ pub struct GlobalChatState {
     next_global_chat_id: MessageId,
 
     // the session server id here is the SENDER not the RECEIVER
-    outgoing_patches:
-        HashMap<SessionServerId, Vec<(MessageId, Timestamp, UserId, String)>>,
+    outgoing_patches: HashMap<SessionServerId, Vec<(MessageId, Timestamp, UserId, String)>>,
 }
 
 impl GlobalChatState {

@@ -10,7 +10,10 @@ use game_engine::{
     ui::UiManager,
 };
 
-use crate::app::{examples::{MatchLobbyListState, GlobalChatState, UserListState}, global::Global};
+use crate::app::{
+    examples::{GlobalChatState, MatchLobbyListState, UserListState},
+    global::Global,
+};
 
 pub fn handle_viewport_resize(
     global: Res<Global>,

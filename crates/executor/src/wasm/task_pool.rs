@@ -1,4 +1,3 @@
-
 use std::{future::Future, marker::PhantomData};
 
 /// Used to create a [`TaskPool`].
@@ -29,7 +28,6 @@ impl TaskPoolBuilder {
 pub struct Task<T>(PhantomData<T>);
 
 impl<T> Task<T> {
-
     pub fn new() -> Self {
         Self(PhantomData)
     }
@@ -44,7 +42,6 @@ impl<T> Task<T> {
 pub struct TaskPool {}
 
 impl TaskPool {
-
     #[allow(unused_variables)]
     fn new_internal() -> Self {
         Self {}

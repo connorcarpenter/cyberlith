@@ -20,8 +20,8 @@ pub use from::SESSION_SERVER_SIGNAL_PORT;
 pub use from::WORLD_SERVER_RECV_ADDR;
 pub use from::WORLD_SERVER_SIGNAL_PORT;
 
-pub use from::SOCIAL_SERVER_RECV_ADDR;
 pub use from::SOCIAL_SERVER_PORT;
+pub use from::SOCIAL_SERVER_RECV_ADDR;
 
 pub use from::GATEWAY_SERVER_CPU_PRIORITY;
 pub use from::TOTAL_CPU_PRIORITY;

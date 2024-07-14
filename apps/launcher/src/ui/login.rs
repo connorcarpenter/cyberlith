@@ -242,9 +242,10 @@ pub(crate) fn process_requests(
         let login_ui_handle = global.get_ui_handle(UiKey::Login);
         match result {
             Ok(response) => {
-
                 if response.is_simultaneous_login_detected() {
-                    info!("client <- gateway: (UserLoginResponse - 200 OK, but simultaneous login)");
+                    info!(
+                        "client <- gateway: (UserLoginResponse - 200 OK, but simultaneous login)"
+                    );
                     ui_manager.set_text(
                         &login_ui_handle,
                         "error_output_text",
@@ -254,7 +255,6 @@ pub(crate) fn process_requests(
                     info!("client <- gateway: (UserLoginResponse - 200 OK)");
                     redirect_to_game_app(app_exit_action_writer);
                 }
-
             }
             Err(err) => {
                 warn!(

@@ -8,7 +8,6 @@ pub(crate) fn send_request(
     request: Request,
     request_options_opt: Option<RequestOptions>,
 ) -> RequestTask {
-
     let task = if let Some(request_options) = request_options_opt {
         executor::spawn(async {
             http_client_shared::fetch_async_with_options(request, request_options).await

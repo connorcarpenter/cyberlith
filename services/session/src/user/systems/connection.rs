@@ -1,5 +1,5 @@
-use bevy_ecs::{change_detection::ResMut, event::EventReader, system::Res};
-use bevy_ecs::system::Commands;
+
+use bevy_ecs::{change_detection::ResMut, system::Commands, event::EventReader, system::Res};
 
 use naia_bevy_server::{
     events::{AuthEvents, ConnectEvent, DisconnectEvent},
@@ -13,9 +13,9 @@ use session_server_naia_proto::messages::Auth;
 
 use crate::{
     asset::{asset_manager::AssetManager, user_load_default_assets},
+    session_instance::SessionInstance,
     social::SocialManager,
     user::UserManager,
-    session_instance::SessionInstance,
 };
 
 pub fn auth_events(
@@ -111,11 +111,13 @@ pub fn disconnect_events(
         let social_server_url = social_manager.get_social_server_url();
 
         // send user disconnect to social server
-        social_manager.user_presence_manager.send_user_disconnect_req(
-            &mut http_client,
-            social_server_url.as_ref(),
-            &session_instance,
-            &user_id,
-        );
+        social_manager
+            .user_presence_manager
+            .send_user_disconnect_req(
+                &mut http_client,
+                social_server_url.as_ref(),
+                &session_instance,
+                &user_id,
+            );
     }
 }

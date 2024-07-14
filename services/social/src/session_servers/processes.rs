@@ -1,17 +1,25 @@
 use std::{collections::HashMap, time::Duration};
 
 use http_client::HttpClient;
-use http_server::{async_dup::Arc, executor::smol::{lock::RwLock, Timer}, Server};
+use http_server::{
+    async_dup::Arc,
+    executor::smol::{lock::RwLock, Timer},
+    Server,
+};
 use logging::{info, warn};
 
-use session_server_http_proto::{SocialLobbyPatch, SocialPatchGlobalChatMessagesRequest, SocialPatchMatchLobbiesRequest, SocialPatchUsersRequest, SocialUserPatch};
+use session_server_http_proto::{
+    SocialLobbyPatch, SocialPatchGlobalChatMessagesRequest, SocialPatchMatchLobbiesRequest,
+    SocialPatchUsersRequest, SocialUserPatch,
+};
 
 use config::SOCIAL_SERVER_GLOBAL_SECRET;
 
-use crate::{match_lobbies::LobbyPatch, users::UserPatch, state::State, session_servers::SessionServerId};
+use crate::{
+    match_lobbies::LobbyPatch, session_servers::SessionServerId, state::State, users::UserPatch,
+};
 
 pub fn start_processes(state: Arc<RwLock<State>>) {
-
     let state_clone_1 = state.clone();
 
     // patches
@@ -28,7 +36,8 @@ pub fn start_processes(state: Arc<RwLock<State>>) {
 
 async fn handle_user_patches(state: &mut State) {
     let user_patches = state.users.take_patches();
-    let mut queued_social_user_patches: HashMap<SessionServerId, Vec<SocialUserPatch>> = HashMap::new();
+    let mut queued_social_user_patches: HashMap<SessionServerId, Vec<SocialUserPatch>> =
+        HashMap::new();
     let session_server_ids = state.session_servers.all_session_ids();
 
     for user_patch in user_patches {
@@ -68,10 +77,7 @@ async fn handle_user_patches(state: &mut State) {
         let response = HttpClient::send(recv_addr, recv_port, request).await;
         match response {
             Ok(_) => {
-                info!(
-                    "from {:?}:{} - user patches sent",
-                    recv_addr, recv_port
-                );
+                info!("from {:?}:{} - user patches sent", recv_addr, recv_port);
             }
             Err(e) => {
                 warn!(
@@ -136,17 +142,21 @@ async fn handle_match_lobby_patches(state: &mut State) {
                 .get_recv_addr(receiving_session_server_id)
                 .unwrap();
 
-            let patches = patches.iter().map(|patch| {
-                match patch {
-                    LobbyPatch::Create(lobby_id, creator_user_id, match_name) => SocialLobbyPatch::Create(lobby_id.clone(), match_name.clone(), creator_user_id.clone()),
+            let patches = patches
+                .iter()
+                .map(|patch| match patch {
+                    LobbyPatch::Create(lobby_id, creator_user_id, match_name) => {
+                        SocialLobbyPatch::Create(
+                            lobby_id.clone(),
+                            match_name.clone(),
+                            creator_user_id.clone(),
+                        )
+                    }
                     LobbyPatch::Delete(lobby_id) => SocialLobbyPatch::Delete(lobby_id.clone()),
-                }
-            }).collect();
+                })
+                .collect();
 
-            let request = SocialPatchMatchLobbiesRequest::new(
-                SOCIAL_SERVER_GLOBAL_SECRET,
-                patches,
-            );
+            let request = SocialPatchMatchLobbiesRequest::new(SOCIAL_SERVER_GLOBAL_SECRET, patches);
             let response = HttpClient::send(recv_addr, recv_port, request).await;
             match response {
                 Ok(_) => {

@@ -34,11 +34,15 @@ pub struct UserConnectedResponse {
 
 impl UserConnectedResponse {
     pub fn success() -> Self {
-        Self { already_connected: false }
+        Self {
+            already_connected: false,
+        }
     }
 
     pub fn already_connected() -> Self {
-        Self { already_connected: true }
+        Self {
+            already_connected: true,
+        }
     }
 
     pub fn successful(&self) -> bool {

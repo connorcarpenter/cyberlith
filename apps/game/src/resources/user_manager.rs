@@ -1,10 +1,17 @@
 use std::collections::{BTreeMap, HashMap};
 
-use bevy_ecs::{prelude::Query, system::Resource, entity::Entity, event::EventWriter};
+use bevy_ecs::{entity::Entity, event::EventWriter, prelude::Query, system::Resource};
 
-use game_engine::{ui::{UiHandle, extensions::{ListUiExt, ListUiExtItem}, UiManager}, asset::AssetManager, session::components::UserPublic};
+use game_engine::{
+    asset::AssetManager,
+    session::components::UserPublic,
+    ui::{
+        extensions::{ListUiExt, ListUiExtItem},
+        UiHandle, UiManager,
+    },
+};
 
-use crate::ui::{UiCatalog, UiKey, events::ResyncPublicUserInfoEvent};
+use crate::ui::{events::ResyncPublicUserInfoEvent, UiCatalog, UiKey};
 
 #[derive(Resource)]
 pub struct UserManager {
@@ -28,7 +35,6 @@ impl Default for UserManager {
 }
 
 impl UserManager {
-
     pub(crate) fn on_load_user_list_item_ui(
         &mut self,
         ui_catalog: &mut UiCatalog,
@@ -44,8 +50,13 @@ impl UserManager {
         resync_user_public_info_events.send(ResyncPublicUserInfoEvent);
     }
 
-    pub(crate) fn recv_main_menu_ui(&mut self, ui_manager: &mut UiManager, main_menu_ui_handle: &UiHandle) {
-        self.list_ui_ext.set_container_ui(ui_manager, main_menu_ui_handle, "user_list");
+    pub(crate) fn recv_main_menu_ui(
+        &mut self,
+        ui_manager: &mut UiManager,
+        main_menu_ui_handle: &UiHandle,
+    ) {
+        self.list_ui_ext
+            .set_container_ui(ui_manager, main_menu_ui_handle, "user_list");
     }
 
     pub fn insert_user(

@@ -10,7 +10,11 @@ use game_engine::{
     asset::AssetManager,
     input::{InputEvent, Key},
     logging::{info, warn},
-    session::{channels, components::{MessagePublic, UserPublic}, messages, SessionClient},
+    session::{
+        channels,
+        components::{MessagePublic, UserPublic},
+        messages, SessionClient,
+    },
     social::MessageId,
     ui::{
         extensions::{ListUiExt, ListUiExtItem},
@@ -18,7 +22,7 @@ use game_engine::{
     },
 };
 
-use crate::ui::{go_to_sub_ui, UiCatalog, UiKey, events::ResyncGlobalChatEvent};
+use crate::ui::{events::ResyncGlobalChatEvent, go_to_sub_ui, UiCatalog, UiKey};
 
 #[derive(Resource)]
 pub struct GlobalChat {
@@ -119,7 +123,13 @@ impl GlobalChat {
 
             if is_bottom_visible && maintain_scroll {
                 self.list_ui_ext.scroll_to_bottom();
-                self.sync_with_collection(session_server, ui_manager, asset_manager, user_q, message_q);
+                self.sync_with_collection(
+                    session_server,
+                    ui_manager,
+                    asset_manager,
+                    user_q,
+                    message_q,
+                );
             }
         }
     }
@@ -150,8 +160,7 @@ impl GlobalChat {
         {
             let container_id_str = "chat_wall";
 
-            self
-                .list_ui_ext
+            self.list_ui_ext
                 .set_container_ui(ui_manager, &ui_handle, container_id_str);
             resync_global_chat_events.send(ResyncGlobalChatEvent::new(true));
         }
@@ -250,7 +259,8 @@ impl GlobalChat {
                             *(self.global_chats.get(&prev_message_id).unwrap());
                         let prev_message = message_q.get(prev_message_entity).unwrap();
                         let prev_timestamp = (*prev_message.timestamp).clone();
-                        let prev_message_user_entity = prev_message.owner_user_entity.get(session_client).unwrap();
+                        let prev_message_user_entity =
+                            prev_message.owner_user_entity.get(session_client).unwrap();
                         (Some(prev_timestamp), Some(prev_message_user_entity))
                     }
                     None => (None, None),

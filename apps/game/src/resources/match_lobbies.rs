@@ -9,16 +9,23 @@ use bevy_ecs::{
 use game_engine::{
     asset::AssetManager,
     input::{InputEvent, Key},
-    logging::{info},
-    session::{channels, components::{LobbyPublic, UserPublic}, messages, SessionClient},
-    social::{MatchLobbyId},
+    logging::info,
+    session::{
+        channels,
+        components::{LobbyPublic, UserPublic},
+        messages, SessionClient,
+    },
+    social::MatchLobbyId,
     ui::{
         extensions::{ListUiExt, ListUiExtItem},
         UiHandle, UiManager,
     },
 };
 
-use crate::ui::{UiCatalog, UiKey, events::{ResyncMatchLobbiesEvent, SubmitButtonClickedEvent}};
+use crate::ui::{
+    events::{ResyncMatchLobbiesEvent, SubmitButtonClickedEvent},
+    UiCatalog, UiKey,
+};
 
 #[derive(Resource)]
 pub struct MatchLobbies {
@@ -38,7 +45,6 @@ impl Default for MatchLobbies {
 }
 
 impl MatchLobbies {
-
     pub(crate) fn handle_host_match_events(
         &mut self,
         ui_manager: &mut UiManager,
@@ -134,7 +140,7 @@ impl MatchLobbies {
     pub fn on_load_host_match_ui(
         &mut self,
         ui_catalog: &mut UiCatalog,
-        ui_manager: &mut UiManager
+        ui_manager: &mut UiManager,
     ) {
         let ui_key = UiKey::HostMatch;
         let ui_handle = ui_catalog.get_ui_handle(ui_key);
@@ -225,7 +231,12 @@ impl MatchLobbies {
                 let lobby_owner_entity = lobby.user_entity.get(session_client).unwrap();
                 let owner_info = user_q.get(lobby_owner_entity).unwrap();
 
-                Self::add_lobby_item(item_ctx, lobby_ui_handle, lobby.name.as_str(), owner_info.name.as_str());
+                Self::add_lobby_item(
+                    item_ctx,
+                    lobby_ui_handle,
+                    lobby.name.as_str(),
+                    owner_info.name.as_str(),
+                );
             },
         );
     }

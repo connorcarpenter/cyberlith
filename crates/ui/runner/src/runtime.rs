@@ -148,8 +148,12 @@ impl UiRuntime {
 
         let new_style_id = self.add_style(item_style);
 
-        self.config
-            .add_copied_style(&ui_handle.asset_id(), id_str_style_map, old_style_id, new_style_id);
+        self.config.add_copied_style(
+            &ui_handle.asset_id(),
+            id_str_style_map,
+            old_style_id,
+            new_style_id,
+        );
 
         info!(
             "added copied (kind: {:?}) style: (ui: {:?}, styleid: {:?}) -> (styleid: {:?})",

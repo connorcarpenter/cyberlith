@@ -10,7 +10,6 @@ pub(crate) enum UserPatch {
 }
 
 pub struct UsersState {
-
     users: HashSet<UserId>,
 
     // the session server id here is the SENDER not the RECEIVER
@@ -38,16 +37,15 @@ impl UsersState {
     pub fn disconnect_user(&mut self, sending_session_server_id: SessionServerId, user_id: UserId) {
         self.users.remove(&user_id);
 
-        self.outgoing_patches.push(UserPatch::Remove(sending_session_server_id, user_id));
+        self.outgoing_patches
+            .push(UserPatch::Remove(sending_session_server_id, user_id));
     }
 
     pub fn get_online_users(&self) -> Vec<UserId> {
         self.users.iter().map(|id| *id).collect()
     }
 
-    pub fn take_patches(
-        &mut self,
-    ) -> Vec<UserPatch> {
+    pub fn take_patches(&mut self) -> Vec<UserPatch> {
         std::mem::take(&mut self.outgoing_patches)
     }
 }

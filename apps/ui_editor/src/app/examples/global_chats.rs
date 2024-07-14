@@ -1,10 +1,16 @@
 use std::collections::BTreeMap;
 
-use game_engine::{ui::{UiManager, UiHandle, extensions::{ListUiExt, ListUiExtItem}}, asset::AssetManager};
+use game_engine::{
+    asset::AssetManager,
+    ui::{
+        extensions::{ListUiExt, ListUiExtItem},
+        UiHandle, UiManager,
+    },
+};
 
-use bevy_ecs::{system::Resource};
+use bevy_ecs::system::Resource;
 
-use crate::app::{uis::game, global::Global};
+use crate::app::{global::Global, uis::game};
 
 #[derive(Resource)]
 pub struct GlobalChatState {
@@ -32,13 +38,21 @@ impl GlobalChatState {
         }
     }
 
-    pub fn global_chat_scroll_up(&mut self, ui_manager: &mut UiManager, asset_manager: &AssetManager) {
+    pub fn global_chat_scroll_up(
+        &mut self,
+        ui_manager: &mut UiManager,
+        asset_manager: &AssetManager,
+    ) {
         self.global_chat_list_ui_ext.scroll_up();
 
         self.sync_chat_collections(ui_manager, asset_manager);
     }
 
-    pub fn global_chat_scroll_down(&mut self, ui_manager: &mut UiManager, asset_manager: &AssetManager) {
+    pub fn global_chat_scroll_down(
+        &mut self,
+        ui_manager: &mut UiManager,
+        asset_manager: &AssetManager,
+    ) {
         self.global_chat_list_ui_ext.scroll_down();
 
         self.sync_chat_collections(ui_manager, asset_manager);
@@ -142,13 +156,20 @@ pub(crate) fn setup_global_chat_test_case(
     asset_manager: &AssetManager,
     main_menu_ui_handle: &UiHandle,
 ) -> GlobalChatState {
-
     let global_chat_ui_handle = global.load_ui(ui_manager, game::global_chat::ui_define()); // game global chat
-    let day_divider_ui_handle = global.load_ui(ui_manager, game::global_chat_day_divider::ui_define()); // game global chat day divider
-    let username_and_message_ui_handle = global.load_ui(ui_manager, game::global_chat_username_and_message::ui_define()); // game global chat username and message
+    let day_divider_ui_handle =
+        global.load_ui(ui_manager, game::global_chat_day_divider::ui_define()); // game global chat day divider
+    let username_and_message_ui_handle = global.load_ui(
+        ui_manager,
+        game::global_chat_username_and_message::ui_define(),
+    ); // game global chat username and message
     let message_ui_handle = global.load_ui(ui_manager, game::global_chat_message::ui_define()); // game global chat message
 
-    let mut global_chat_state = GlobalChatState::new(&day_divider_ui_handle, &username_and_message_ui_handle, &message_ui_handle);
+    let mut global_chat_state = GlobalChatState::new(
+        &day_divider_ui_handle,
+        &username_and_message_ui_handle,
+        &message_ui_handle,
+    );
 
     // setup sub ui
     ui_manager.set_ui_container_contents(
@@ -158,9 +179,11 @@ pub(crate) fn setup_global_chat_test_case(
     );
 
     // setup global chat list
-    global_chat_state
-        .global_chat_list_ui_ext
-        .set_container_ui(ui_manager, &global_chat_ui_handle, "chat_wall");
+    global_chat_state.global_chat_list_ui_ext.set_container_ui(
+        ui_manager,
+        &global_chat_ui_handle,
+        "chat_wall",
+    );
 
     // setup chats
     global_chat_state.global_chats = setup_global_chats();

@@ -11,19 +11,22 @@ use game_engine::{
 };
 
 use crate::{
-    systems::{cube_scene, draw, initial_spinner, resize, asset_events, walker_scene, world},
-    resources::{match_lobbies::MatchLobbies, global_chat::GlobalChat, AssetCatalog, user_manager::UserManager},
+    resources::{
+        global_chat::GlobalChat, match_lobbies::MatchLobbies, user_manager::UserManager,
+        AssetCatalog,
+    },
     states::AppState,
+    systems::{session_component_events::SessionComponentEventsPlugin, asset_events, cube_scene, draw, initial_spinner, resize, walker_scene, world},
     ui,
     ui::{
         events::{
-            DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent, ResyncPublicUserInfoEvent,
-            JoinMatchButtonClickedEvent, SettingsButtonClickedEvent, SubmitButtonClickedEvent, ResyncGlobalChatEvent, ResyncMatchLobbiesEvent,
+            DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent,
+            JoinMatchButtonClickedEvent, ResyncGlobalChatEvent, ResyncMatchLobbiesEvent,
+            ResyncPublicUserInfoEvent, SettingsButtonClickedEvent, SubmitButtonClickedEvent,
         },
         UiCatalog,
     },
 };
-use crate::systems::session_component_events::SessionComponentEventsPlugin;
 
 pub struct GameApp {
     cookie_store_opt: Option<Arc<RwLock<CookieStore>>>,
@@ -66,21 +69,22 @@ impl Plugin for GameApp {
             // general drawing
             .add_systems(Draw, draw::draw)
             // drawing loading spinner
-            .add_systems(Draw, initial_spinner::draw.run_if(in_state(AppState::Loading)))
+            .add_systems(
+                Draw,
+                initial_spinner::draw.run_if(in_state(AppState::Loading)),
+            )
             // Network Systems
             .add_systems(Update, world::world_spawn_entity_events)
             .add_systems(Update, world::world_main_insert_position_events)
             .add_systems(Update, world::world_main_insert_asset_ref_events)
             .add_systems(Update, world::world_alt1_insert_asset_ref_events)
             .add_systems(Update, asset_events::session_load_asset_events)
-
             .add_plugins(SessionComponentEventsPlugin)
             // Ui
             .add_systems(Update, ui::handle_events)
             .add_systems(Update, ui::handle_user_public_info_events)
             .add_systems(Update, ui::handle_global_chat_events)
             .add_systems(Update, ui::handle_match_lobbies_events)
-
             .add_event::<ResyncPublicUserInfoEvent>()
             .add_event::<ResyncGlobalChatEvent>()
             .add_event::<ResyncMatchLobbiesEvent>()

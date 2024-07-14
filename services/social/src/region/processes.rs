@@ -1,7 +1,11 @@
 use std::time::Duration;
 
 use http_client::HttpClient;
-use http_server::{async_dup::Arc, executor::smol::{lock::RwLock, Timer}, ApiRequest, ApiResponse, Server};
+use http_server::{
+    async_dup::Arc,
+    executor::smol::{lock::RwLock, Timer},
+    ApiRequest, ApiResponse, Server,
+};
 use logging::{info, warn};
 
 use region_server_http_proto::{SocialRegisterInstanceRequest, SocialRegisterInstanceResponse};

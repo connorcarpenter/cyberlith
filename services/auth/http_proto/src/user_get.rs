@@ -12,9 +12,7 @@ pub struct UserGetRequest {
 
 impl UserGetRequest {
     pub fn new(user_id: UserId) -> Self {
-        Self {
-            user_id,
-        }
+        Self { user_id }
     }
 }
 
@@ -28,9 +26,7 @@ pub struct UserGetResponse {
 
 impl UserGetResponse {
     pub fn new(name: String, email: String, role: UserRole) -> Self {
-        Self {
-            name, email, role,
-        }
+        Self { name, email, role }
     }
 }
 

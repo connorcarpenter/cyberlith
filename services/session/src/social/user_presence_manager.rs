@@ -1,7 +1,4 @@
-
-use bevy_ecs::{
-    system::{Commands, Query},
-};
+use bevy_ecs::system::{Commands, Query};
 
 use naia_bevy_server::{RoomKey, Server};
 
@@ -11,7 +8,7 @@ use logging::{info, warn};
 use auth_server_types::UserId;
 
 use session_server_http_proto::SocialUserPatch;
-use session_server_naia_proto::components::{UserPublic};
+use session_server_naia_proto::components::UserPublic;
 
 use social_server_http_proto::{UserDisconnectedRequest, UserDisconnectedResponse};
 
@@ -104,27 +101,25 @@ impl UserPresenceManager {
         let Some((social_server_addr, social_server_port)) = social_server_url else {
             warn!("user disconnected but no social server is available!");
 
-            self.queued_requests.push(UserSendDisconnectQueued(*user_id));
+            self.queued_requests
+                .push(UserSendDisconnectQueued(*user_id));
 
             return;
         };
 
         // info!("sending user disconnect request to social server - [userid {:?}]", user_id);
-        let request = UserDisconnectedRequest::new(
-            session_instance.instance_secret(),
-            *user_id,
-        );
+        let request = UserDisconnectedRequest::new(session_instance.instance_secret(), *user_id);
 
         let host = "session";
         let remote = "social";
         bevy_http_client::log_util::send_req(host, remote, UserDisconnectedRequest::name());
         let response_key = http_client.send(social_server_addr, *social_server_port, request);
 
-        self.in_flight_requests.push(UserSendDisconnectInFlight(*user_id, response_key));
+        self.in_flight_requests
+            .push(UserSendDisconnectInFlight(*user_id, response_key));
 
         return;
     }
-
 
     pub fn process_queued_requests(
         &mut self,
@@ -148,7 +143,7 @@ impl UserPresenceManager {
                 http_client,
                 social_server_url.as_ref(),
                 session_instance,
-                &user_id
+                &user_id,
             );
         }
     }
@@ -183,13 +178,13 @@ impl UserPresenceManager {
                     Ok(_response) => {
                         info!("received user disconnect response from social server");
 
-                        user_manager.user_set_offline(
-                            user_id,
-                            users_q,
-                        );
+                        user_manager.user_set_offline(user_id, users_q);
                     }
                     Err(e) => {
-                        warn!("error receiving user disconnect response from social server: {:?}", e.to_string());
+                        warn!(
+                            "error receiving user disconnect response from social server: {:?}",
+                            e.to_string()
+                        );
                     }
                 }
             } else {

@@ -1,4 +1,12 @@
-use executor::{self, smol::{channel, channel::{Receiver, Sender}, future}, Task};
+use executor::{
+    self,
+    smol::{
+        channel,
+        channel::{Receiver, Sender},
+        future,
+    },
+    Task,
+};
 use logging::info;
 
 use crate::{
@@ -15,7 +23,6 @@ use crate::{
 pub(crate) struct FsTaskJob(pub(crate) Task<Result<FsTaskResultEnum, TaskError>>);
 
 pub(crate) fn start_task(task_enum: FsTaskEnum) -> FsTaskJob {
-
     let task = executor::spawn(async { crate::backend::task_process_async(task_enum).await });
 
     FsTaskJob(task)

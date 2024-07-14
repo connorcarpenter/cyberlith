@@ -40,8 +40,10 @@ pub(crate) enum UserPresenceResult {
     InvalidUserIdHeader,
 }
 
-async fn get_user_online_status(_incoming_addr: &SocketAddr, incoming_request: &Request) -> UserPresenceResult {
-
+async fn get_user_online_status(
+    _incoming_addr: &SocketAddr,
+    incoming_request: &Request,
+) -> UserPresenceResult {
     let user_id = match incoming_request.get_header_first("user_id") {
         Some(user_id) => user_id,
         None => return UserPresenceResult::NoUserIdHeader,
@@ -62,18 +64,9 @@ pub(crate) async fn get_user_online_status_impl(user_id: UserId) -> UserPresence
 
     let request = UserIsOnlineRequest::new(user_id);
 
-    http_server::log_util::send_req(
-        host_name,
-        social_server,
-        UserIsOnlineRequest::name(),
-    );
-    let response_result =
-        HttpClient::send(social_addr, social_port, request).await;
-    http_server::log_util::recv_res(
-        host_name,
-        social_server,
-        UserIsOnlineResponse::name(),
-    );
+    http_server::log_util::send_req(host_name, social_server, UserIsOnlineRequest::name());
+    let response_result = HttpClient::send(social_addr, social_port, request).await;
+    http_server::log_util::recv_res(host_name, social_server, UserIsOnlineResponse::name());
 
     if let Ok(response) = response_result {
         if response.is_online() {

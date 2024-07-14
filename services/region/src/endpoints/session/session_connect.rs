@@ -20,7 +20,6 @@ async fn async_impl(
     state: Arc<RwLock<State>>,
     incoming_request: SessionConnectRequest,
 ) -> Result<SessionConnectResponse, ResponseError> {
-
     let user_id = incoming_request.user_id;
 
     let state = state.read().await;
@@ -53,14 +52,18 @@ async fn async_impl(
         http_server::log_util::recv_res(&host, &remote, &logged_remote_url);
 
         let Ok(response) = response_result else {
-            warn!("Failed session_connect request to social server, because of internal server error");
+            warn!(
+                "Failed session_connect request to social server, because of internal server error"
+            );
             return Err(ResponseError::InternalServerError(
                 "failed session_connect to social server".to_string(),
             ));
         };
 
         if !response.successful() {
-            warn!("Failed session_connect request to social server, because of pre-existing session");
+            warn!(
+                "Failed session_connect request to social server, because of pre-existing session"
+            );
             return Err(ResponseError::Conflict);
         }
     }
@@ -79,8 +82,7 @@ async fn async_impl(
         let request_path = IncomingUserRequest::path();
 
         let temp_token = random::generate_random_string(16);
-        let request =
-            IncomingUserRequest::new(REGION_SERVER_SECRET, user_id, &temp_token);
+        let request = IncomingUserRequest::new(REGION_SERVER_SECRET, user_id, &temp_token);
 
         let host = "region";
         let remote = "session";

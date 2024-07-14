@@ -1,10 +1,9 @@
-
 use http_client::ResponseError;
 use http_server::{async_dup::Arc, executor::smol::lock::RwLock, ApiServer, Server};
 use logging::info;
 
-use auth_server_types::UserRole;
 use auth_server_http_proto::{UserGetRequest, UserGetResponse};
+use auth_server_types::UserRole;
 
 use crate::{error::AuthServerError, state::State};
 
@@ -21,9 +20,7 @@ async fn async_impl(
 ) -> Result<UserGetResponse, ResponseError> {
     let mut state = state.write().await;
     let response = match state.user_get(incoming_request) {
-        Ok((name, email, role)) => {
-            Ok(UserGetResponse::new(name, email, role))
-        }
+        Ok((name, email, role)) => Ok(UserGetResponse::new(name, email, role)),
         Err(_) => {
             panic!("unhandled error for this endpoint");
         }
@@ -33,7 +30,6 @@ async fn async_impl(
 }
 
 impl State {
-
     fn user_get(
         &mut self,
         request: UserGetRequest,
