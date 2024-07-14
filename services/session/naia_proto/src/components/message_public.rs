@@ -2,19 +2,20 @@ use bevy_ecs::{prelude::Component};
 
 use naia_bevy_shared::{EntityProperty, Property, Replicate};
 
-use social_server_types::{GlobalChatMessageId, Timestamp};
+use social_server_types::{MessageId, Timestamp};
 
 #[derive(Component, Replicate)]
-pub struct GlobalChatMessage {
-    pub id: Property<GlobalChatMessageId>,
+pub struct MessagePublic {
+    pub id: Property<MessageId>,
     pub timestamp: Property<Timestamp>,
-    pub user_entity: EntityProperty,
+    pub owner_user_entity: EntityProperty,
+    pub owner_lobby_entity: EntityProperty,
     pub message: Property<String>,
 }
 
-impl GlobalChatMessage {
+impl MessagePublic {
     pub fn new(
-        id: GlobalChatMessageId,
+        id: MessageId,
         timestamp: Timestamp,
         message: &str,
     ) -> Self {

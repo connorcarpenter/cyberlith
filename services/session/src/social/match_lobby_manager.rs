@@ -12,7 +12,7 @@ use logging::{info, warn};
 
 use auth_server_types::UserId;
 use session_server_http_proto::SocialLobbyPatch;
-use session_server_naia_proto::components::MatchLobby;
+use session_server_naia_proto::components::LobbyPublic;
 
 use social_server_http_proto::{MatchLobbyCreateResponse, MatchLobbyCreateRequest};
 use social_server_types::MatchLobbyId;
@@ -243,7 +243,7 @@ impl MatchLobbyManager {
             .spawn_empty()
             .enable_replication(naia_server)
             .id();
-        let mut match_lobby = MatchLobby::new(
+        let mut match_lobby = LobbyPublic::new(
             *lobby_id,
             lobby_name,
         );

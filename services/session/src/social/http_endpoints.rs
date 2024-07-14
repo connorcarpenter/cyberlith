@@ -8,7 +8,7 @@ use config::SOCIAL_SERVER_GLOBAL_SECRET;
 use logging::{info, warn};
 
 use session_server_http_proto::{SocialPatchGlobalChatMessagesRequest, SocialPatchGlobalChatMessagesResponse, SocialPatchMatchLobbiesRequest, SocialPatchMatchLobbiesResponse, SocialPatchUsersRequest, SocialPatchUsersResponse};
-use session_server_naia_proto::components::PublicUserInfo;
+use session_server_naia_proto::components::UserPublic;
 
 use crate::{social::SocialManager, user::UserManager};
 
@@ -19,7 +19,7 @@ pub fn recv_patch_users_request(
     mut http_client: ResMut<HttpClient>,
     mut user_manager: ResMut<UserManager>,
     mut naia_server: Server,
-    mut users_q: Query<&mut PublicUserInfo>,
+    mut users_q: Query<&mut UserPublic>,
 ) {
     while let Some((_addr, request, response_key)) =
         http_server.receive::<SocialPatchUsersRequest>()

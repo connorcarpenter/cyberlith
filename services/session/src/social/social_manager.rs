@@ -8,7 +8,7 @@ use naia_bevy_server::{Server};
 
 use bevy_http_client::{HttpClient};
 
-use session_server_naia_proto::components::{PublicUserInfo};
+use session_server_naia_proto::components::{UserPublic};
 
 use crate::{session_instance::SessionInstance, user::UserManager, social::{user_presence_manager::{UserPresenceManager}, match_lobby_manager::MatchLobbyManager, global_chat_manager::{GlobalChatManager}}};
 
@@ -63,7 +63,7 @@ impl SocialManager {
         mut http_client: ResMut<HttpClient>,
         session_instance: Res<SessionInstance>,
         mut user_manager: ResMut<UserManager>,
-        mut users_q: Query<&mut PublicUserInfo>,
+        mut users_q: Query<&mut UserPublic>,
     ) {
         let social_server_url = social_manager.get_social_server_url();
         let user_presence_room_key = social_manager.user_presence_manager.room_key();

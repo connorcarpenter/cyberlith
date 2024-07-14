@@ -12,10 +12,10 @@ use logging::{warn};
 
 use auth_server_types::UserId;
 
-use session_server_naia_proto::components::{GlobalChatMessage};
+use session_server_naia_proto::components::{MessagePublic};
 
 use social_server_http_proto::{GlobalChatSendMessageRequest, GlobalChatSendMessageResponse};
-use social_server_types::{GlobalChatMessageId, Timestamp};
+use social_server_types::{MessageId, Timestamp};
 
 use crate::{session_instance::SessionInstance, user::UserManager};
 
@@ -201,7 +201,7 @@ impl GlobalChatManager {
         http_client: &mut HttpClient,
         user_manager: &mut UserManager,
         user_presence_room_key: &RoomKey,
-        global_chat_id: &GlobalChatMessageId,
+        global_chat_id: &MessageId,
         timestamp: &Timestamp,
         sending_user_id: &UserId,
         message: &str,
@@ -211,7 +211,7 @@ impl GlobalChatManager {
             .spawn_empty()
             .enable_replication(naia_server)
             .id();
-        let mut global_chat_message = GlobalChatMessage::new(
+        let mut global_chat_message = MessagePublic::new(
             *global_chat_id,
             *timestamp,
             message,
@@ -243,7 +243,7 @@ impl GlobalChatManager {
             }
         };
 
-        global_chat_message.user_entity.set(naia_server, &user_entity);
+        global_chat_message.owner_user_entity.set(naia_server, &user_entity);
         commands
             .entity(global_chat_message_entity)
             .insert(global_chat_message);
@@ -256,7 +256,7 @@ impl GlobalChatManager {
         http_client: &mut HttpClient,
         user_manager: &mut UserManager,
         user_presence_room_key: &RoomKey,
-        new_messages: &Vec<(GlobalChatMessageId, Timestamp, UserId, String)>,
+        new_messages: &Vec<(MessageId, Timestamp, UserId, String)>,
     ) {
         for (msg_id, timestamp, user_id, message) in new_messages {
 

@@ -2,7 +2,7 @@ use std::collections::{BTreeMap, HashMap};
 
 use bevy_ecs::{prelude::Query, system::Resource, entity::Entity, event::EventWriter};
 
-use game_engine::{ui::{UiHandle, extensions::{ListUiExt, ListUiExtItem}, UiManager}, asset::AssetManager, session::components::PublicUserInfo};
+use game_engine::{ui::{UiHandle, extensions::{ListUiExt, ListUiExtItem}, UiManager}, asset::AssetManager, session::components::UserPublic};
 
 use crate::ui::{UiCatalog, UiKey, events::ResyncPublicUserInfoEvent};
 
@@ -32,7 +32,7 @@ impl UserManager {
     pub(crate) fn on_load_user_list_item_ui(
         &mut self,
         ui_catalog: &mut UiCatalog,
-        resync_public_user_info_events: &mut EventWriter<ResyncPublicUserInfoEvent>,
+        resync_user_public_info_events: &mut EventWriter<ResyncPublicUserInfoEvent>,
     ) {
         let item_ui_key = UiKey::UserListItem;
         let item_ui_handle = ui_catalog.get_ui_handle(item_ui_key);
@@ -41,7 +41,7 @@ impl UserManager {
 
         self.item_ui = Some(item_ui_handle.clone());
 
-        resync_public_user_info_events.send(ResyncPublicUserInfoEvent);
+        resync_user_public_info_events.send(ResyncPublicUserInfoEvent);
     }
 
     pub(crate) fn recv_main_menu_ui(&mut self, ui_manager: &mut UiManager, main_menu_ui_handle: &UiHandle) {
@@ -76,7 +76,7 @@ impl UserManager {
         &mut self,
         ui_manager: &mut UiManager,
         asset_manager: &AssetManager,
-        user_q: &Query<&PublicUserInfo>,
+        user_q: &Query<&UserPublic>,
     ) {
         if self.item_ui.is_none() {
             return;
@@ -92,9 +92,9 @@ impl UserManager {
             |item_ctx, user_id, _| {
                 let user_entity = self.users.get(&user_id).unwrap();
                 let user_entity = *user_entity;
-                if let Ok(public_user_info) = user_q.get(user_entity) {
-                    let username = public_user_info.name.as_str();
-                    let online = *public_user_info.online;
+                if let Ok(user_public_info) = user_q.get(user_entity) {
+                    let username = user_public_info.name.as_str();
+                    let online = *user_public_info.online;
                     add_user_item(item_ctx, item_ui_handle, username, online);
                 }
             },

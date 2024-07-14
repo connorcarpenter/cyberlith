@@ -6,3 +6,4 @@ pub use app::GameApp;
 
 mod states;
 mod ui;
+mod components;

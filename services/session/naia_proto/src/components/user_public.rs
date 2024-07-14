@@ -3,12 +3,12 @@ use bevy_ecs::prelude::Component;
 use naia_bevy_shared::{Property, Replicate};
 
 #[derive(Component, Replicate)]
-pub struct PublicUserInfo {
+pub struct UserPublic {
     pub name: Property<String>,
     pub online: Property<bool>,
 }
 
-impl PublicUserInfo {
+impl UserPublic {
     pub fn new(
         name: &str,
         online: bool,

@@ -11,7 +11,7 @@ use game_engine::{
 };
 
 use crate::{
-    systems::{cube_scene, draw, init_spinner, resize, session, walker_scene, world},
+    systems::{cube_scene, draw, initial_spinner, resize, asset_events, walker_scene, world},
     resources::{match_lobbies::MatchLobbies, global_chat::GlobalChat, AssetCatalog, user_manager::UserManager},
     states::AppState,
     ui,
@@ -23,6 +23,7 @@ use crate::{
         UiCatalog,
     },
 };
+use crate::systems::session_component_events::SessionComponentEventsPlugin;
 
 pub struct GameApp {
     cookie_store_opt: Option<Arc<RwLock<CookieStore>>>,
@@ -65,25 +66,21 @@ impl Plugin for GameApp {
             // general drawing
             .add_systems(Draw, draw::draw)
             // drawing loading spinner
-            .add_systems(Draw, init_spinner::draw.run_if(in_state(AppState::Loading)))
+            .add_systems(Draw, initial_spinner::draw.run_if(in_state(AppState::Loading)))
             // Network Systems
             .add_systems(Update, world::world_spawn_entity_events)
             .add_systems(Update, world::world_main_insert_position_events)
             .add_systems(Update, world::world_main_insert_asset_ref_events)
             .add_systems(Update, world::world_alt1_insert_asset_ref_events)
-            .add_systems(Update, session::session_load_asset_events)
+            .add_systems(Update, asset_events::session_load_asset_events)
 
-            .add_systems(Update, session::recv_inserted_public_user_info_component)
-            .add_systems(Update, session::recv_updated_public_user_info_component)
-            .add_systems(Update, session::recv_removed_public_user_info_component)
-            .add_systems(Update, session::recv_inserted_global_chat_component)
-            .add_systems(Update, session::recv_inserted_match_lobby_component)
-            .add_systems(Update, session::recv_removed_match_lobby_component)
+            .add_plugins(SessionComponentEventsPlugin)
             // Ui
             .add_systems(Update, ui::handle_events)
-            .add_systems(Update, ui::handle_public_user_info_events)
+            .add_systems(Update, ui::handle_user_public_info_events)
             .add_systems(Update, ui::handle_global_chat_events)
             .add_systems(Update, ui::handle_match_lobbies_events)
+
             .add_event::<ResyncPublicUserInfoEvent>()
             .add_event::<ResyncGlobalChatEvent>()
             .add_event::<ResyncMatchLobbiesEvent>()

@@ -8,7 +8,7 @@ use social_server_http_proto::{
     ConnectSessionServerRequest, ConnectSessionServerResponse, DisconnectSessionServerRequest,
     DisconnectSessionServerResponse,
 };
-use social_server_types::{GlobalChatMessageId, MatchLobbyId, Timestamp};
+use social_server_types::{MessageId, MatchLobbyId, Timestamp};
 
 use crate::state::State;
 
@@ -48,7 +48,7 @@ async fn async_recv_connect_session_server_request_impl(
         .collect();
 
     // get full chat log
-    let messages: Vec<(GlobalChatMessageId, Timestamp, UserId, String)> = state
+    let messages: Vec<(MessageId, Timestamp, UserId, String)> = state
         .global_chat
         .get_full_log()
         .iter()

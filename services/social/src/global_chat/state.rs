@@ -1,24 +1,24 @@
 use std::collections::{HashMap, VecDeque};
 
 use auth_server_types::UserId;
-use social_server_types::{GlobalChatMessageId, Timestamp};
+use social_server_types::{MessageId, Timestamp};
 
 use crate::session_servers::SessionServerId;
 
 pub struct GlobalChatState {
-    chat_log: VecDeque<(GlobalChatMessageId, Timestamp, UserId, String)>,
-    next_global_chat_id: GlobalChatMessageId,
+    chat_log: VecDeque<(MessageId, Timestamp, UserId, String)>,
+    next_global_chat_id: MessageId,
 
     // the session server id here is the SENDER not the RECEIVER
     outgoing_patches:
-        HashMap<SessionServerId, Vec<(GlobalChatMessageId, Timestamp, UserId, String)>>,
+        HashMap<SessionServerId, Vec<(MessageId, Timestamp, UserId, String)>>,
 }
 
 impl GlobalChatState {
     pub fn new() -> Self {
         Self {
             chat_log: VecDeque::new(),
-            next_global_chat_id: GlobalChatMessageId::new(0),
+            next_global_chat_id: MessageId::new(0),
 
             outgoing_patches: HashMap::new(),
         }
@@ -29,7 +29,7 @@ impl GlobalChatState {
         sending_session_server_id: SessionServerId,
         user_id: UserId,
         message: &str,
-    ) -> (GlobalChatMessageId, Timestamp) {
+    ) -> (MessageId, Timestamp) {
         // get next global chat id
         let next_global_chat_id = self.next_global_chat_id;
         self.next_global_chat_id = self.next_global_chat_id.next();
@@ -61,13 +61,13 @@ impl GlobalChatState {
         (next_global_chat_id, timestamp)
     }
 
-    pub fn get_full_log(&self) -> &VecDeque<(GlobalChatMessageId, Timestamp, UserId, String)> {
+    pub fn get_full_log(&self) -> &VecDeque<(MessageId, Timestamp, UserId, String)> {
         &self.chat_log
     }
 
     pub fn take_patches(
         &mut self,
-    ) -> HashMap<SessionServerId, Vec<(GlobalChatMessageId, Timestamp, UserId, String)>> {
+    ) -> HashMap<SessionServerId, Vec<(MessageId, Timestamp, UserId, String)>> {
         std::mem::take(&mut self.outgoing_patches)
     }
 }

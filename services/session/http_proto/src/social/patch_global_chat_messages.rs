@@ -2,19 +2,19 @@ use auth_server_types::UserId;
 use naia_serde::SerdeInternal as Serde;
 
 use bevy_http_shared::{ApiRequest, ApiResponse, Method};
-use social_server_types::{GlobalChatMessageId, Timestamp};
+use social_server_types::{MessageId, Timestamp};
 
 // Request
 #[derive(Serde, PartialEq, Clone)]
 pub struct SocialPatchGlobalChatMessagesRequest {
     social_secret: String,
-    new_messages: Vec<(GlobalChatMessageId, Timestamp, UserId, String)>,
+    new_messages: Vec<(MessageId, Timestamp, UserId, String)>,
 }
 
 impl SocialPatchGlobalChatMessagesRequest {
     pub fn new(
         social_secret: &str,
-        new_messages: Vec<(GlobalChatMessageId, Timestamp, UserId, String)>,
+        new_messages: Vec<(MessageId, Timestamp, UserId, String)>,
     ) -> Self {
         Self {
             social_secret: social_secret.to_string(),
@@ -26,7 +26,7 @@ impl SocialPatchGlobalChatMessagesRequest {
         &self.social_secret
     }
 
-    pub fn new_messages(&self) -> &Vec<(GlobalChatMessageId, Timestamp, UserId, String)> {
+    pub fn new_messages(&self) -> &Vec<(MessageId, Timestamp, UserId, String)> {
         &self.new_messages
     }
 }

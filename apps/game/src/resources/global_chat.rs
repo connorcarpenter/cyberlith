@@ -10,8 +10,8 @@ use game_engine::{
     asset::AssetManager,
     input::{InputEvent, Key},
     logging::{info, warn},
-    session::{channels, components::{GlobalChatMessage, PublicUserInfo}, messages, SessionClient},
-    social::GlobalChatMessageId,
+    session::{channels, components::{MessagePublic, UserPublic}, messages, SessionClient},
+    social::MessageId,
     ui::{
         extensions::{ListUiExt, ListUiExtItem},
         NodeActiveState, UiHandle, UiManager,
@@ -22,8 +22,8 @@ use crate::ui::{go_to_sub_ui, UiCatalog, UiKey, events::ResyncGlobalChatEvent};
 
 #[derive(Resource)]
 pub struct GlobalChat {
-    global_chats: BTreeMap<GlobalChatMessageId, Entity>,
-    list_ui_ext: ListUiExt<GlobalChatMessageId>,
+    global_chats: BTreeMap<MessageId, Entity>,
+    list_ui_ext: ListUiExt<MessageId>,
     message_item_ui: Option<UiHandle>,
     username_and_message_item_ui: Option<UiHandle>,
     day_divider_item_ui: Option<UiHandle>,
@@ -50,8 +50,8 @@ impl GlobalChat {
         session_server: &mut SessionClient,
         input_events: &mut EventReader<InputEvent>,
         resync_global_chat_events: &mut EventReader<ResyncGlobalChatEvent>,
-        user_q: &Query<&PublicUserInfo>,
-        message_q: &Query<&GlobalChatMessage>,
+        user_q: &Query<&UserPublic>,
+        message_q: &Query<&MessagePublic>,
         _should_rumble: &mut bool,
     ) {
         let ui_handle = ui_catalog.get_ui_handle(UiKey::GlobalChat);
@@ -202,7 +202,7 @@ impl GlobalChat {
     pub fn recv_message(
         &mut self,
         resync_global_chat_events: &mut EventWriter<ResyncGlobalChatEvent>,
-        message_id: GlobalChatMessageId,
+        message_id: MessageId,
         message_entity: Entity,
     ) {
         self.global_chats.insert(message_id, message_entity);
@@ -219,8 +219,8 @@ impl GlobalChat {
         session_client: &SessionClient,
         ui_manager: &mut UiManager,
         asset_manager: &AssetManager,
-        user_q: &Query<&PublicUserInfo>,
-        message_q: &Query<&GlobalChatMessage>,
+        user_q: &Query<&UserPublic>,
+        message_q: &Query<&MessagePublic>,
     ) {
         if self.message_item_ui.is_none()
             || self.day_divider_item_ui.is_none()
@@ -242,7 +242,7 @@ impl GlobalChat {
                 let message_entity = *(self.global_chats.get(&message_id).unwrap());
                 let message = message_q.get(message_entity).unwrap();
                 let message_timestamp = (*message.timestamp).clone();
-                let message_user_entity = message.user_entity.get(session_client).unwrap();
+                let message_user_entity = message.owner_user_entity.get(session_client).unwrap();
 
                 let (prev_timestamp_opt, prev_message_user_entity) = match prev_message_id_opt {
                     Some(prev_message_id) => {
@@ -250,7 +250,7 @@ impl GlobalChat {
                             *(self.global_chats.get(&prev_message_id).unwrap());
                         let prev_message = message_q.get(prev_message_entity).unwrap();
                         let prev_timestamp = (*prev_message.timestamp).clone();
-                        let prev_message_user_entity = prev_message.user_entity.get(session_client).unwrap();
+                        let prev_message_user_entity = prev_message.owner_user_entity.get(session_client).unwrap();
                         (Some(prev_timestamp), Some(prev_message_user_entity))
                     }
                     None => (None, None),
@@ -292,9 +292,9 @@ impl GlobalChat {
     }
 
     fn add_day_divider_item(
-        item_ctx: &mut ListUiExtItem<GlobalChatMessageId>,
+        item_ctx: &mut ListUiExtItem<MessageId>,
         ui: &UiHandle,
-        message: &GlobalChatMessage,
+        message: &MessagePublic,
     ) {
         item_ctx.add_copied_node(ui);
 
@@ -304,19 +304,19 @@ impl GlobalChat {
 
     fn add_username_and_message_item(
         session_client: &SessionClient,
-        user_q: &Query<&PublicUserInfo>,
-        item_ctx: &mut ListUiExtItem<GlobalChatMessageId>,
+        user_q: &Query<&UserPublic>,
+        item_ctx: &mut ListUiExtItem<MessageId>,
         ui: &UiHandle,
-        message: &GlobalChatMessage,
+        message: &MessagePublic,
     ) {
-        let Some(user_info_entity) = message.user_entity.get(session_client) else {
+        let Some(user_info_entity) = message.owner_user_entity.get(session_client) else {
             warn!("User info not found for Message: {:?}", *message.id);
             return;
         };
 
         let message_user_name = {
-            if let Ok(public_user_info) = user_q.get(user_info_entity) {
-                public_user_info.name.as_str().to_string()
+            if let Ok(user_public_info) = user_q.get(user_info_entity) {
+                user_public_info.name.as_str().to_string()
             } else {
                 "?".to_string()
             }
@@ -334,7 +334,7 @@ impl GlobalChat {
     }
 
     fn add_message_item(
-        item_ctx: &mut ListUiExtItem<GlobalChatMessageId>,
+        item_ctx: &mut ListUiExtItem<MessageId>,
         ui: &UiHandle,
         message_text: &str,
     ) {

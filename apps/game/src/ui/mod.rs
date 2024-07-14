@@ -16,7 +16,7 @@ use bevy_ecs::{
 use game_engine::{
     asset::{AssetId, AssetManager},
     input::{GamepadRumbleIntensity, Input, InputEvent, RumbleManager},
-    session::{SessionClient, components::{MatchLobby, GlobalChatMessage, PublicUserInfo}},
+    session::{SessionClient, components::{LobbyPublic, MessagePublic, UserPublic}},
     ui::{UiHandle, UiManager},
 };
 
@@ -57,7 +57,7 @@ pub(crate) fn on_ui_load(
     user_manager: &mut UserManager,
     global_chat_messages: &mut GlobalChat,
     match_lobbies: &mut MatchLobbies,
-    resync_public_user_info_events: &mut EventWriter<ResyncPublicUserInfoEvent>,
+    resync_user_public_info_events: &mut EventWriter<ResyncPublicUserInfoEvent>,
     resync_global_chat_events: &mut EventWriter<ResyncGlobalChatEvent>,
     resync_match_lobbies_events: &mut EventWriter<ResyncMatchLobbiesEvent>,
     asset_id: AssetId,
@@ -78,7 +78,7 @@ pub(crate) fn on_ui_load(
         ),
         UiKey::UserListItem => user_manager.on_load_user_list_item_ui(
             ui_catalog,
-            resync_public_user_info_events,
+            resync_user_public_info_events,
         ),
 
         UiKey::HostMatch => match_lobbies.on_load_host_match_ui(
@@ -185,15 +185,15 @@ pub(crate) fn handle_events(
     for _ in settings_btn_rdr.read() {}
 }
 
-pub(crate) fn handle_public_user_info_events(
+pub(crate) fn handle_user_public_info_events(
     mut user_manager: ResMut<UserManager>,
     mut ui_manager: ResMut<UiManager>,
     asset_manager: Res<AssetManager>,
-    user_q: Query<&PublicUserInfo>,
-    mut resync_public_user_info_events: EventReader<ResyncPublicUserInfoEvent>,
+    user_q: Query<&UserPublic>,
+    mut resync_user_public_info_events: EventReader<ResyncPublicUserInfoEvent>,
 ) {
     let mut resync = false;
-    for _ in resync_public_user_info_events.read() {
+    for _ in resync_user_public_info_events.read() {
         resync = true;
     }
     if resync {
@@ -209,8 +209,8 @@ pub(crate) fn handle_global_chat_events(
     mut rumble_manager: ResMut<RumbleManager>,
     mut session_client: SessionClient,
     mut global_chat: ResMut<GlobalChat>,
-    user_q: Query<&PublicUserInfo>,
-    message_q: Query<&GlobalChatMessage>,
+    user_q: Query<&UserPublic>,
+    message_q: Query<&MessagePublic>,
     mut input_events: EventReader<InputEvent>,
     mut resync_global_chat_events: EventReader<ResyncGlobalChatEvent>,
 ) {
@@ -261,8 +261,8 @@ pub(crate) fn handle_match_lobbies_events(
     mut rumble_manager: ResMut<RumbleManager>,
     mut session_client: SessionClient,
     mut match_lobbies: ResMut<MatchLobbies>,
-    user_q: Query<&PublicUserInfo>,
-    lobby_q: Query<&MatchLobby>,
+    user_q: Query<&UserPublic>,
+    lobby_q: Query<&LobbyPublic>,
     mut submit_btn_rdr: EventReader<SubmitButtonClickedEvent>,
     mut input_events: EventReader<InputEvent>,
     mut resync_match_lobbies_events: EventReader<ResyncMatchLobbiesEvent>,

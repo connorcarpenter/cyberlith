@@ -5,11 +5,11 @@ use naia_bevy_shared::sequence_greater_than;
 use naia_serde::{SerdeInternal as Serde, UnsignedInteger};
 
 #[derive(Serde, PartialEq, Clone, Eq, Copy, Hash, Debug)]
-pub struct GlobalChatMessageId {
+pub struct MessageId {
     id: UnsignedInteger<9>, // TODO: there should only ever be ... 100 message in chat at a time? in that case, u9 would be definitely be enough
 }
 
-impl GlobalChatMessageId {
+impl MessageId {
     pub fn new(id: u16) -> Self {
         Self {
             id: UnsignedInteger::new(id),
@@ -27,7 +27,7 @@ impl GlobalChatMessageId {
     }
 }
 
-impl PartialOrd for GlobalChatMessageId {
+impl PartialOrd for MessageId {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         if self.id == other.id {
             return Some(std::cmp::Ordering::Equal);
@@ -43,7 +43,7 @@ impl PartialOrd for GlobalChatMessageId {
     }
 }
 
-impl Ord for GlobalChatMessageId {
+impl Ord for MessageId {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         if self.id == other.id {
             return std::cmp::Ordering::Equal;

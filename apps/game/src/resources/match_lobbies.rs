@@ -10,7 +10,7 @@ use game_engine::{
     asset::AssetManager,
     input::{InputEvent, Key},
     logging::{info},
-    session::{channels, components::{MatchLobby, PublicUserInfo}, messages, SessionClient},
+    session::{channels, components::{LobbyPublic, UserPublic}, messages, SessionClient},
     social::{MatchLobbyId},
     ui::{
         extensions::{ListUiExt, ListUiExtItem},
@@ -83,8 +83,8 @@ impl MatchLobbies {
         ui_manager: &mut UiManager,
         asset_manager: &AssetManager,
         session_server: &mut SessionClient,
-        user_q: &Query<&PublicUserInfo>,
-        lobby_q: &Query<&MatchLobby>,
+        user_q: &Query<&UserPublic>,
+        lobby_q: &Query<&LobbyPublic>,
         input_events: &mut EventReader<InputEvent>,
         resync_match_lobbies_events: &mut EventReader<ResyncMatchLobbiesEvent>,
         _should_rumble: &mut bool,
@@ -204,8 +204,8 @@ impl MatchLobbies {
         session_client: &SessionClient,
         ui_manager: &mut UiManager,
         asset_manager: &AssetManager,
-        user_q: &Query<&PublicUserInfo>,
-        lobby_q: &Query<&MatchLobby>,
+        user_q: &Query<&UserPublic>,
+        lobby_q: &Query<&LobbyPublic>,
     ) {
         if self.lobby_item_ui.is_none() {
             return;

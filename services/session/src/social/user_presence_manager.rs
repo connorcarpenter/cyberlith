@@ -11,7 +11,7 @@ use logging::{info, warn};
 use auth_server_types::UserId;
 
 use session_server_http_proto::SocialUserPatch;
-use session_server_naia_proto::components::{PublicUserInfo};
+use session_server_naia_proto::components::{UserPublic};
 
 use social_server_http_proto::{UserDisconnectedRequest, UserDisconnectedResponse};
 
@@ -48,7 +48,7 @@ impl UserPresenceManager {
         user_manager: &mut UserManager,
         social_server_url: &Option<(String, u16)>,
         session_instance: &SessionInstance,
-        users_q: &mut Query<&mut PublicUserInfo>,
+        users_q: &mut Query<&mut UserPublic>,
     ) {
         self.process_in_flight_requests(http_client, user_manager, users_q);
         self.process_queued_requests(http_client, social_server_url, session_instance);
@@ -64,7 +64,7 @@ impl UserPresenceManager {
         naia_server: &mut Server,
         http_client: &mut HttpClient,
         user_manager: &mut UserManager,
-        users_q: &mut Query<&mut PublicUserInfo>,
+        users_q: &mut Query<&mut UserPublic>,
         user_patches: &Vec<SocialUserPatch>,
     ) {
         for user_patch in user_patches {
@@ -157,7 +157,7 @@ impl UserPresenceManager {
         &mut self,
         http_client: &mut HttpClient,
         user_manager: &mut UserManager,
-        users_q: &mut Query<&mut PublicUserInfo>,
+        users_q: &mut Query<&mut UserPublic>,
     ) {
         if self.in_flight_requests.is_empty() {
             // no in-flight requests

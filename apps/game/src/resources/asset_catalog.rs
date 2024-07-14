@@ -65,7 +65,7 @@ impl AssetCatalog {
 pub(crate) fn on_asset_load(
     ui_manager: &mut UiManager,
     asset_catalog: &mut AssetCatalog,
-    resync_public_user_info_events: &mut EventWriter<ResyncPublicUserInfoEvent>,
+    resync_user_public_info_events: &mut EventWriter<ResyncPublicUserInfoEvent>,
     resync_global_chat_events: &mut EventWriter<ResyncGlobalChatEvent>,
     resync_match_lobbies_events: &mut EventWriter<ResyncMatchLobbiesEvent>,
     asset_id: AssetId,
@@ -85,7 +85,7 @@ pub(crate) fn on_asset_load(
     match asset_key {
         AssetKey::FontIcon => {
             ui_manager.set_text_icon_handle(asset_id);
-            resync_public_user_info_events.send(ResyncPublicUserInfoEvent);
+            resync_user_public_info_events.send(ResyncPublicUserInfoEvent);
             resync_global_chat_events.send(ResyncGlobalChatEvent::new(true));
             resync_match_lobbies_events.send(ResyncMatchLobbiesEvent);
         }

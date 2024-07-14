@@ -1,7 +1,7 @@
 use auth_server_types::UserId;
 use http_common::{ApiRequest, ApiResponse, Method};
 use naia_serde::SerdeInternal as Serde;
-use social_server_types::{GlobalChatMessageId, Timestamp};
+use social_server_types::{MessageId, Timestamp};
 
 // Request
 #[derive(Serde, PartialEq, Clone)]
@@ -36,12 +36,12 @@ impl GlobalChatSendMessageRequest {
 // Response
 #[derive(Serde, PartialEq, Clone)]
 pub struct GlobalChatSendMessageResponse {
-    pub global_chat_message_id: GlobalChatMessageId,
+    pub global_chat_message_id: MessageId,
     pub timestamp: Timestamp,
 }
 
 impl GlobalChatSendMessageResponse {
-    pub fn new(global_chat_message_id: GlobalChatMessageId, timestamp: Timestamp) -> Self {
+    pub fn new(global_chat_message_id: MessageId, timestamp: Timestamp) -> Self {
         Self {
             global_chat_message_id,
             timestamp,
