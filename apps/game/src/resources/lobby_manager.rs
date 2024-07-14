@@ -94,7 +94,7 @@ impl LobbyManager {
         &mut self,
         ui_manager: &mut UiManager,
         asset_manager: &AssetManager,
-        session_server: &mut SessionClient,
+        session_client: &mut SessionClient,
         user_q: &Query<&User>,
         lobby_q: &Query<&Lobby>,
         input_events: &mut EventReader<InputEvent>,
@@ -131,7 +131,7 @@ impl LobbyManager {
         }
 
         if should_resync {
-            self.sync_with_collection(session_server, ui_manager, asset_manager, user_q, lobby_q);
+            self.sync_with_collection(session_client, ui_manager, asset_manager, user_q, lobby_q);
         }
     }
 
