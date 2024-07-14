@@ -12,7 +12,7 @@ use game_engine::{
     logging::{info, warn},
     session::{
         channels,
-        components::{MessagePublic, UserPublic},
+        components::{ChatMessage, User},
         messages, SessionClient,
     },
     social::{MessageId, LobbyId},
@@ -21,23 +21,28 @@ use game_engine::{
         NodeActiveState, UiHandle, UiManager,
     },
 };
-use crate::resources::lobby_manager::LobbyManager;
-use crate::ui::{events::ResyncLobbyGlobalEvent, go_to_sub_ui, UiCatalog, UiKey};
+
+use crate::{ui::{events::ResyncLobbyGlobalEvent, go_to_sub_ui, UiCatalog, UiKey}, resources::lobby_manager::LobbyManager};
 
 #[derive(Resource)]
-pub struct MessageManager {
+pub struct ChatMessageManager {
 
     messages: HashMap<Option<LobbyId>, BTreeMap<MessageId, Entity>>,
+
     list_ui_ext: ListUiExt<MessageId>,
     message_item_ui: Option<UiHandle>,
     username_and_message_item_ui: Option<UiHandle>,
     day_divider_item_ui: Option<UiHandle>,
 }
 
-impl Default for MessageManager {
+impl Default for ChatMessageManager {
     fn default() -> Self {
+
+        let mut messages = HashMap::new();
+        messages.insert(None, BTreeMap::new());
+
         Self {
-            messages: HashMap::new(),
+            messages,
             list_ui_ext: ListUiExt::new(false),
             message_item_ui: None,
             username_and_message_item_ui: None,
@@ -46,7 +51,7 @@ impl Default for MessageManager {
     }
 }
 
-impl MessageManager {
+impl ChatMessageManager {
     pub(crate) fn handle_events(
         &mut self,
         ui_manager: &mut UiManager,
@@ -56,8 +61,8 @@ impl MessageManager {
         session_server: &mut SessionClient,
         input_events: &mut EventReader<InputEvent>,
         resync_global_chat_events: &mut EventReader<ResyncLobbyGlobalEvent>,
-        user_q: &Query<&UserPublic>,
-        message_q: &Query<&MessagePublic>,
+        user_q: &Query<&User>,
+        message_q: &Query<&ChatMessage>,
         _should_rumble: &mut bool,
     ) {
         let ui_handle = ui_catalog.get_ui_handle(UiKey::GlobalChat);
@@ -237,8 +242,8 @@ impl MessageManager {
         ui_manager: &mut UiManager,
         asset_manager: &AssetManager,
         lobby_manager: &LobbyManager,
-        user_q: &Query<&UserPublic>,
-        message_q: &Query<&MessagePublic>,
+        user_q: &Query<&User>,
+        message_q: &Query<&ChatMessage>,
     ) {
         if self.message_item_ui.is_none()
             || self.day_divider_item_ui.is_none()
@@ -316,7 +321,7 @@ impl MessageManager {
     fn add_day_divider_item(
         item_ctx: &mut ListUiExtItem<MessageId>,
         ui: &UiHandle,
-        message: &MessagePublic,
+        message: &ChatMessage,
     ) {
         item_ctx.add_copied_node(ui);
 
@@ -326,10 +331,10 @@ impl MessageManager {
 
     fn add_username_and_message_item(
         session_client: &SessionClient,
-        user_q: &Query<&UserPublic>,
+        user_q: &Query<&User>,
         item_ctx: &mut ListUiExtItem<MessageId>,
         ui: &UiHandle,
-        message: &MessagePublic,
+        message: &ChatMessage,
     ) {
         let Some(user_info_entity) = message.owner_user_entity.get(session_client) else {
             warn!("User info not found for Message: {:?}", *message.id);

@@ -12,12 +12,12 @@ use game_engine::{
 
 use crate::{
     resources::{
-        message_manager::MessageManager, lobby_manager::LobbyManager, on_asset_load,
+        chat_message_manager::ChatMessageManager, lobby_manager::LobbyManager, on_asset_load,
         user_manager::UserManager, AssetCatalog,
     },
     states::AppState,
     ui::{
-        events::{ResyncLobbyGlobalEvent, ResyncMatchLobbiesEvent, ResyncPublicUserInfoEvent},
+        events::{ResyncLobbyGlobalEvent, ResyncLobbyUiEvent, ResyncUserUiEvent},
         on_ui_load, UiCatalog,
     },
 };
@@ -29,12 +29,12 @@ pub fn session_load_asset_events(
     mut ui_catalog: ResMut<UiCatalog>,
     mut user_manager: ResMut<UserManager>,
     mut asset_catalog: ResMut<AssetCatalog>,
-    mut message_manager: ResMut<MessageManager>,
+    mut message_manager: ResMut<ChatMessageManager>,
     mut lobby_manager: ResMut<LobbyManager>,
     mut asset_loaded_event_reader: EventReader<AssetLoadedEvent>,
-    mut resync_user_public_info_events: EventWriter<ResyncPublicUserInfoEvent>,
+    mut resync_user_public_info_events: EventWriter<ResyncUserUiEvent>,
     mut resync_global_chat_events: EventWriter<ResyncLobbyGlobalEvent>,
-    mut resync_match_lobbies_events: EventWriter<ResyncMatchLobbiesEvent>,
+    mut resync_match_lobbies_events: EventWriter<ResyncLobbyUiEvent>,
 ) {
     for event in asset_loaded_event_reader.read() {
         let asset_id = event.asset_id;

@@ -17,19 +17,19 @@ use game_engine::{
     asset::{AssetId, AssetManager},
     input::{GamepadRumbleIntensity, Input, InputEvent, RumbleManager},
     session::{
-        components::{LobbyLocal, MessagePublic, UserPublic},
+        components::{Lobby, ChatMessage, User},
         SessionClient,
     },
     ui::{UiHandle, UiManager},
 };
 
 use crate::{
-    resources::{message_manager::MessageManager, lobby_manager::LobbyManager, user_manager::UserManager},
+    resources::{chat_message_manager::ChatMessageManager, lobby_manager::LobbyManager, user_manager::UserManager},
     states::AppState,
     ui::events::{
         DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent,
-        JoinMatchButtonClickedEvent, ResyncLobbyGlobalEvent, ResyncMatchLobbiesEvent,
-        ResyncPublicUserInfoEvent, SettingsButtonClickedEvent, SubmitButtonClickedEvent,
+        JoinMatchButtonClickedEvent, ResyncLobbyGlobalEvent, ResyncLobbyUiEvent,
+        ResyncUserUiEvent, SettingsButtonClickedEvent, SubmitButtonClickedEvent,
     },
 };
 
@@ -59,11 +59,11 @@ pub(crate) fn on_ui_load(
     ui_manager: &mut UiManager,
     ui_catalog: &mut UiCatalog,
     user_manager: &mut UserManager,
-    global_chat_messages: &mut MessageManager,
+    global_chat_messages: &mut ChatMessageManager,
     match_lobbies: &mut LobbyManager,
-    resync_user_public_info_events: &mut EventWriter<ResyncPublicUserInfoEvent>,
+    resync_user_public_info_events: &mut EventWriter<ResyncUserUiEvent>,
     resync_global_chat_events: &mut EventWriter<ResyncLobbyGlobalEvent>,
-    resync_match_lobbies_events: &mut EventWriter<ResyncMatchLobbiesEvent>,
+    resync_match_lobbies_events: &mut EventWriter<ResyncLobbyUiEvent>,
     asset_id: AssetId,
 ) {
     let ui_handle = UiHandle::new(asset_id);
@@ -178,8 +178,8 @@ pub(crate) fn handle_user_public_info_events(
     mut user_manager: ResMut<UserManager>,
     mut ui_manager: ResMut<UiManager>,
     asset_manager: Res<AssetManager>,
-    user_q: Query<&UserPublic>,
-    mut resync_user_public_info_events: EventReader<ResyncPublicUserInfoEvent>,
+    user_q: Query<&User>,
+    mut resync_user_public_info_events: EventReader<ResyncUserUiEvent>,
 ) {
     let mut resync = false;
     for _ in resync_user_public_info_events.read() {
@@ -198,9 +198,9 @@ pub(crate) fn handle_global_chat_events(
     mut rumble_manager: ResMut<RumbleManager>,
     mut session_client: SessionClient,
     lobby_manager: Res<LobbyManager>,
-    mut message_manager: ResMut<MessageManager>,
-    user_q: Query<&UserPublic>,
-    message_q: Query<&MessagePublic>,
+    mut message_manager: ResMut<ChatMessageManager>,
+    user_q: Query<&User>,
+    message_q: Query<&ChatMessage>,
     mut input_events: EventReader<InputEvent>,
     mut resync_global_chat_events: EventReader<ResyncLobbyGlobalEvent>,
 ) {
@@ -252,11 +252,11 @@ pub(crate) fn handle_match_lobbies_events(
     mut rumble_manager: ResMut<RumbleManager>,
     mut session_client: SessionClient,
     mut lobby_manager: ResMut<LobbyManager>,
-    user_q: Query<&UserPublic>,
-    lobby_q: Query<&LobbyLocal>,
+    user_q: Query<&User>,
+    lobby_q: Query<&Lobby>,
     mut submit_btn_rdr: EventReader<SubmitButtonClickedEvent>,
     mut input_events: EventReader<InputEvent>,
-    mut resync_match_lobbies_events: EventReader<ResyncMatchLobbiesEvent>,
+    mut resync_match_lobbies_events: EventReader<ResyncLobbyUiEvent>,
 ) {
     let Some(active_ui_handle) = ui_manager.active_ui() else {
         return;
@@ -333,7 +333,7 @@ pub(crate) fn go_to_sub_ui(ui_manager: &mut UiManager, ui_catalog: &UiCatalog, s
             UiKey::JoinMatch => {
                 LobbyManager::reset_join_match_state(ui_manager, &current_ui_handle)
             }
-            UiKey::GlobalChat => MessageManager::reset_state(ui_manager, &current_ui_handle),
+            UiKey::GlobalChat => ChatMessageManager::reset_state(ui_manager, &current_ui_handle),
             _ => {
                 unimplemented!("ui not implemented");
             }

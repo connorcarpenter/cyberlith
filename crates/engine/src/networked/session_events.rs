@@ -8,7 +8,7 @@ use naia_bevy_client::NaiaClientError;
 
 use kernel::AppExitAction;
 use logging::{info, warn};
-use session_server_naia_proto::components::{LobbyLocal, MessagePublic, UserPublic};
+use session_server_naia_proto::components::{Lobby, ChatMessage, User};
 
 use crate::{
     networked::{
@@ -42,9 +42,9 @@ impl Plugin for SessionEventsPlugin {
             .add_event::<SessionDespawnEntityEvent>()
             .add_systems(Startup, component_events_startup::<Session>)
             .add_systems(Update, component_events_update)
-            .add_component_events::<Session, MessagePublic>()
-            .add_component_events::<Session, UserPublic>()
-            .add_component_events::<Session, LobbyLocal>();
+            .add_component_events::<Session, ChatMessage>()
+            .add_component_events::<Session, User>()
+            .add_component_events::<Session, Lobby>();
     }
 }
 
@@ -65,9 +65,9 @@ fn despawn_entity_events(mut event_reader: EventReader<SessionDespawnEntityEvent
 // used as a system
 pub fn component_events_update(world: &mut BevyWorld) {
     for events in get_component_events::<Session>(world) {
-        events.process::<MessagePublic>(world);
-        events.process::<UserPublic>(world);
-        events.process::<LobbyLocal>(world);
+        events.process::<ChatMessage>(world);
+        events.process::<User>(world);
+        events.process::<Lobby>(world);
     }
 }
 

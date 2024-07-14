@@ -15,6 +15,18 @@ impl TaskPoolBuilder {
         self
     }
 
+    /// Sets the priority of this service in relation to the others on the same host
+    pub fn set_priority(self, _: usize) -> Self {
+        // self.priority = Some(priority);
+        self
+    }
+
+    /// Sets the total priority of all services on the same host
+    pub fn set_total_priority(self, _total_priority: usize) -> Self {
+        // self.total_priority = Some(total_priority);
+        self
+    }
+
     /// Creates a new [`TaskPool`]
     pub fn build(self) -> TaskPool {
         TaskPool::new_internal()

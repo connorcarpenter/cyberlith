@@ -7,12 +7,12 @@ use naia_bevy_server::Server;
 
 use bevy_http_client::HttpClient;
 
-use session_server_naia_proto::components::UserPublic;
+use session_server_naia_proto::components::User;
 
 use crate::{
     session_instance::SessionInstance,
     social::{
-        global_chat_manager::GlobalChatManager, match_lobby_manager::MatchLobbyManager,
+        chat_message_manager::ChatMessageManager, lobby_manager::LobbyManager,
         user_presence_manager::UserPresenceManager,
     },
     user::UserManager,
@@ -22,8 +22,8 @@ use crate::{
 pub struct SocialManager {
     social_server_opt: Option<(String, u16)>,
 
-    pub(crate) global_chat_manager: GlobalChatManager,
-    pub(crate) match_lobby_manager: MatchLobbyManager,
+    pub(crate) chat_message_manager: ChatMessageManager,
+    pub(crate) lobby_manager: LobbyManager,
     pub(crate) user_presence_manager: UserPresenceManager,
 }
 
@@ -32,8 +32,8 @@ impl SocialManager {
         Self {
             social_server_opt: None,
 
-            global_chat_manager: GlobalChatManager::new(),
-            match_lobby_manager: MatchLobbyManager::new(),
+            chat_message_manager: ChatMessageManager::new(),
+            lobby_manager: LobbyManager::new(),
             user_presence_manager: UserPresenceManager::new(),
         }
     }
@@ -56,8 +56,8 @@ impl SocialManager {
 
     // used as a system
     pub fn startup(mut naia_server: Server, mut social_manager: ResMut<Self>) {
-        social_manager.global_chat_manager.startup(&mut naia_server);
-        social_manager.match_lobby_manager.startup(&mut naia_server);
+        social_manager.chat_message_manager.startup(&mut naia_server);
+        social_manager.lobby_manager.startup(&mut naia_server);
         social_manager
             .user_presence_manager
             .startup(&mut naia_server);
@@ -71,11 +71,11 @@ impl SocialManager {
         mut http_client: ResMut<HttpClient>,
         session_instance: Res<SessionInstance>,
         mut user_manager: ResMut<UserManager>,
-        mut users_q: Query<&mut UserPublic>,
+        mut users_q: Query<&mut User>,
     ) {
         let social_server_url = social_manager.get_social_server_url();
         let user_presence_room_key = social_manager.user_presence_manager.room_key();
-        social_manager.global_chat_manager.update(
+        social_manager.chat_message_manager.update(
             &mut commands,
             &mut naia_server,
             &mut http_client,
@@ -84,7 +84,7 @@ impl SocialManager {
             &session_instance,
             &user_presence_room_key,
         );
-        social_manager.match_lobby_manager.update(
+        social_manager.lobby_manager.update(
             &mut commands,
             &mut naia_server,
             &mut http_client,

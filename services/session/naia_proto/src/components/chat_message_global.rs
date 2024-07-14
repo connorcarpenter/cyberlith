@@ -3,9 +3,9 @@ use bevy_ecs::prelude::Component;
 use naia_bevy_shared::Replicate;
 
 #[derive(Component, Replicate)]
-pub struct MessageGlobal;
+pub struct ChatMessageGlobal;
 
-impl MessageGlobal {
+impl ChatMessageGlobal {
     pub fn new() -> Self {
         Self::new_complete()
     }

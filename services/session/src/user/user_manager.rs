@@ -19,7 +19,7 @@ use logging::{info, warn};
 use auth_server_http_proto::{UserGetRequest, UserGetResponse};
 use auth_server_types::UserId;
 
-use session_server_naia_proto::components::UserPublic;
+use session_server_naia_proto::components::User;
 
 use crate::user::private_user_info::PrivateUserInfo;
 
@@ -189,7 +189,7 @@ impl UserManager {
     pub(crate) fn user_set_online(
         &mut self,
         user_id: &UserId,
-        users_q: &mut Query<&mut UserPublic>,
+        users_q: &mut Query<&mut User>,
     ) {
         self.user_set_online_status(user_id, users_q, true);
     }
@@ -197,7 +197,7 @@ impl UserManager {
     pub(crate) fn user_set_offline(
         &mut self,
         user_id: &UserId,
-        users_q: &mut Query<&mut UserPublic>,
+        users_q: &mut Query<&mut User>,
     ) {
         self.user_set_online_status(user_id, users_q, false);
     }
@@ -205,7 +205,7 @@ impl UserManager {
     fn user_set_online_status(
         &mut self,
         user_id: &UserId,
-        users_q: &mut Query<&mut UserPublic>,
+        users_q: &mut Query<&mut User>,
         online: bool,
     ) {
         let user_data = self.user_data.get(user_id).unwrap();
@@ -276,7 +276,7 @@ impl UserManager {
             let user_name = received_response.name;
             commands
                 .entity(user_entity)
-                .insert(UserPublic::new(&user_name, user_is_online));
+                .insert(User::new(&user_name, user_is_online));
         }
     }
 

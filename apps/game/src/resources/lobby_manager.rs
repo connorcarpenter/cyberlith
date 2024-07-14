@@ -12,7 +12,7 @@ use game_engine::{
     logging::info,
     session::{
         channels,
-        components::{LobbyLocal, UserPublic},
+        components::{Lobby, User},
         messages, SessionClient,
     },
     social::LobbyId,
@@ -23,7 +23,7 @@ use game_engine::{
 };
 
 use crate::ui::{
-    events::{ResyncMatchLobbiesEvent, SubmitButtonClickedEvent},
+    events::{ResyncLobbyUiEvent, SubmitButtonClickedEvent},
     UiCatalog, UiKey,
 };
 
@@ -96,14 +96,14 @@ impl LobbyManager {
         ui_manager: &mut UiManager,
         asset_manager: &AssetManager,
         session_server: &mut SessionClient,
-        user_q: &Query<&UserPublic>,
-        lobby_q: &Query<&LobbyLocal>,
+        user_q: &Query<&User>,
+        lobby_q: &Query<&Lobby>,
         input_events: &mut EventReader<InputEvent>,
-        resync_match_lobbies_events: &mut EventReader<ResyncMatchLobbiesEvent>,
+        resync_lobby_ui_events: &mut EventReader<ResyncLobbyUiEvent>,
         _should_rumble: &mut bool,
     ) {
         let mut should_resync = false;
-        for _resync_event in resync_match_lobbies_events.read() {
+        for _resync_event in resync_lobby_ui_events.read() {
             should_resync = true;
         }
 
@@ -160,7 +160,7 @@ impl LobbyManager {
         &mut self,
         ui_catalog: &mut UiCatalog,
         ui_manager: &mut UiManager,
-        resync_match_lobbies_events: &mut EventWriter<ResyncMatchLobbiesEvent>,
+        resync_match_lobbies_events: &mut EventWriter<ResyncLobbyUiEvent>,
     ) {
         let ui_key = UiKey::JoinMatch;
         let ui_handle = ui_catalog.get_ui_handle(ui_key);
@@ -173,14 +173,14 @@ impl LobbyManager {
 
             self.list_ui_ext
                 .set_container_ui(ui_manager, &ui_handle, container_id_str);
-            resync_match_lobbies_events.send(ResyncMatchLobbiesEvent);
+            resync_match_lobbies_events.send(ResyncLobbyUiEvent);
         }
     }
 
     pub(crate) fn on_load_lobby_item_ui(
         &mut self,
         ui_catalog: &mut UiCatalog,
-        resync_match_lobbies_events: &mut EventWriter<ResyncMatchLobbiesEvent>,
+        resync_match_lobbies_events: &mut EventWriter<ResyncLobbyUiEvent>,
     ) {
         let item_ui_key = UiKey::JoinMatchLobbyItem;
         let item_ui_handle = ui_catalog.get_ui_handle(item_ui_key);
@@ -188,28 +188,28 @@ impl LobbyManager {
         ui_catalog.set_loaded(item_ui_key);
 
         self.lobby_item_ui = Some(item_ui_handle.clone());
-        resync_match_lobbies_events.send(ResyncMatchLobbiesEvent);
+        resync_match_lobbies_events.send(ResyncLobbyUiEvent);
     }
 
     pub fn recv_lobby(
         &mut self,
-        resync_match_lobbies_events: &mut EventWriter<ResyncMatchLobbiesEvent>,
         lobby_id: LobbyId,
         lobby_entity: Entity,
+        resync_lobby_ui_events: &mut EventWriter<ResyncLobbyUiEvent>,
     ) {
         self.lobby_entities.insert(lobby_id, lobby_entity);
 
-        resync_match_lobbies_events.send(ResyncMatchLobbiesEvent);
+        resync_lobby_ui_events.send(ResyncLobbyUiEvent);
     }
 
     pub fn remove_lobby(
         &mut self,
-        resync_match_lobbies_events: &mut EventWriter<ResyncMatchLobbiesEvent>,
         lobby_id: LobbyId,
+        resync_lobby_ui_events: &mut EventWriter<ResyncLobbyUiEvent>,
     ) {
         self.lobby_entities.remove(&lobby_id);
 
-        resync_match_lobbies_events.send(ResyncMatchLobbiesEvent);
+        resync_lobby_ui_events.send(ResyncLobbyUiEvent);
     }
 
     pub fn sync_with_collection(
@@ -217,8 +217,8 @@ impl LobbyManager {
         session_client: &SessionClient,
         ui_manager: &mut UiManager,
         asset_manager: &AssetManager,
-        user_q: &Query<&UserPublic>,
-        lobby_q: &Query<&LobbyLocal>,
+        user_q: &Query<&User>,
+        lobby_q: &Query<&Lobby>,
     ) {
         if self.lobby_item_ui.is_none() {
             return;

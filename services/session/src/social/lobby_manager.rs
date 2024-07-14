@@ -9,7 +9,7 @@ use logging::{info, warn};
 
 use auth_server_types::UserId;
 use session_server_http_proto::SocialLobbyPatch;
-use session_server_naia_proto::components::LobbyLocal;
+use session_server_naia_proto::components::Lobby;
 
 use social_server_http_proto::{MatchLobbyCreateRequest, MatchLobbyCreateResponse};
 use social_server_types::LobbyId;
@@ -19,28 +19,28 @@ use crate::{session_instance::SessionInstance, user::UserManager};
 struct MatchCreateReqQueued(UserKey, String);
 struct MatchCreateReqInFlight(UserId, String, ResponseKey<MatchLobbyCreateResponse>);
 
-pub struct MatchLobbyManager {
+pub struct LobbyManager {
     queued_requests: Vec<MatchCreateReqQueued>,
     in_flight_requests: Vec<MatchCreateReqInFlight>,
 
-    match_lobbies_room_key: Option<RoomKey>,
-    match_lobbies: HashMap<LobbyId, Entity>,
+    lobby_list_room_key: Option<RoomKey>,
+    lobbies: HashMap<LobbyId, Entity>,
 }
 
-impl MatchLobbyManager {
+impl LobbyManager {
     pub fn new() -> Self {
         Self {
             queued_requests: Vec::new(),
             in_flight_requests: Vec::new(),
 
-            match_lobbies_room_key: None,
-            match_lobbies: HashMap::new(),
+            lobby_list_room_key: None,
+            lobbies: HashMap::new(),
         }
     }
 
     pub(crate) fn startup(&mut self, naia_server: &mut Server) {
         let match_lobbies_room_key = naia_server.make_room().key();
-        self.match_lobbies_room_key = Some(match_lobbies_room_key);
+        self.lobby_list_room_key = Some(match_lobbies_room_key);
     }
 
     pub(crate) fn update(
@@ -69,7 +69,7 @@ impl MatchLobbyManager {
     }
 
     pub fn room_key(&self) -> RoomKey {
-        self.match_lobbies_room_key.unwrap()
+        self.lobby_list_room_key.unwrap()
     }
 
     fn process_queued_requests(
@@ -256,7 +256,7 @@ impl MatchLobbyManager {
     ) {
         // spawn lobby entity
         let match_lobby_entity = commands.spawn_empty().enable_replication(naia_server).id();
-        let mut match_lobby = LobbyLocal::new(*lobby_id, lobby_name);
+        let mut match_lobby = Lobby::new(*lobby_id, lobby_name);
 
         // add to lobbies room
         naia_server
@@ -264,7 +264,7 @@ impl MatchLobbyManager {
             .add_entity(&match_lobby_entity);
 
         // add to collection
-        self.match_lobbies.insert(*lobby_id, match_lobby_entity);
+        self.lobbies.insert(*lobby_id, match_lobby_entity);
 
         let owner_user_entity = {
             if let Some(user_entity) = user_manager.get_user_entity(owner_user_id) {
@@ -288,7 +288,7 @@ impl MatchLobbyManager {
     }
 
     fn remove_match_lobby(&mut self, commands: &mut Commands, lobby_id: &LobbyId) {
-        if let Some(removed_entity) = self.match_lobbies.remove(lobby_id) {
+        if let Some(removed_entity) = self.lobbies.remove(lobby_id) {
             commands.entity(removed_entity).despawn();
         } else {
             warn!(

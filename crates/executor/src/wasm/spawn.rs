@@ -1,7 +1,5 @@
 use std::future::Future;
 
-use once_cell::sync::Lazy;
-
 use crate::wasm::task_pool::{Task, TaskPool, TaskPoolBuilder};
 
 static mut THREAD_POOL: Option<TaskPool> = None;
@@ -18,7 +16,7 @@ pub fn setup(priority: usize, total_priority: usize) {
     }
 }
 
-pub fn spawn<T: Send + 'static>(future: impl Future<Output = T> + Send + 'static) -> Task<T> {
+pub fn spawn<T: Send + 'static>(future: impl Future<Output = T> + 'static) -> Task<T> {
     unsafe {
         let Some(thread_pool) = THREAD_POOL.as_ref() else {
             panic!("Thread pool not initialized");

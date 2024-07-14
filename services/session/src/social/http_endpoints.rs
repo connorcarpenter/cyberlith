@@ -12,7 +12,7 @@ use session_server_http_proto::{
     SocialPatchMatchLobbiesRequest, SocialPatchMatchLobbiesResponse, SocialPatchUsersRequest,
     SocialPatchUsersResponse,
 };
-use session_server_naia_proto::components::UserPublic;
+use session_server_naia_proto::components::User;
 
 use crate::{social::SocialManager, user::UserManager};
 
@@ -23,7 +23,7 @@ pub fn recv_patch_users_request(
     mut http_client: ResMut<HttpClient>,
     mut user_manager: ResMut<UserManager>,
     mut naia_server: Server,
-    mut users_q: Query<&mut UserPublic>,
+    mut users_q: Query<&mut User>,
 ) {
     while let Some((_addr, request, response_key)) =
         http_server.receive::<SocialPatchUsersRequest>()
@@ -71,7 +71,7 @@ pub fn recv_patch_global_chat_messages_request(
         let user_presence_room_key = social_manager.user_presence_manager.room_key();
 
         social_manager
-            .global_chat_manager
+            .chat_message_manager
             .patch_global_chat_messages(
                 &mut commands,
                 &mut naia_server,
@@ -106,7 +106,7 @@ pub fn recv_patch_match_lobby_request(
         info!("received patch match lobbies request");
 
         let user_presence_room_key = social_manager.user_presence_manager.room_key();
-        social_manager.match_lobby_manager.patch_match_lobbies(
+        social_manager.lobby_manager.patch_match_lobbies(
             &mut commands,
             &mut naia_server,
             &mut http_client,

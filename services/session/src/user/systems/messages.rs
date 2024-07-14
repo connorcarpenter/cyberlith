@@ -35,7 +35,7 @@ pub fn message_events(
 
         // Global Chat Send Message
         for (user_key, req) in events.read::<ClientActionsChannel, GlobalChatSendMessage>() {
-            social_manager.global_chat_manager.send_global_chat_message(
+            social_manager.chat_message_manager.send_global_chat_message(
                 &mut http_client,
                 &user_manager,
                 social_server_url.as_ref(),
@@ -47,7 +47,7 @@ pub fn message_events(
 
         // Create Match Lobby
         for (user_key, req) in events.read::<ClientActionsChannel, MatchLobbyCreate>() {
-            social_manager.match_lobby_manager.send_match_lobby_create(
+            social_manager.lobby_manager.send_match_lobby_create(
                 &mut http_client,
                 &user_manager,
                 social_server_url.as_ref(),

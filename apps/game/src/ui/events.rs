@@ -19,7 +19,7 @@ pub struct SettingsButtonClickedEvent;
 pub struct SubmitButtonClickedEvent;
 
 #[derive(Event, Default)]
-pub struct ResyncPublicUserInfoEvent;
+pub struct ResyncUserUiEvent;
 
 #[derive(Event, Default)]
 pub struct ResyncLobbyGlobalEvent {
@@ -36,4 +36,4 @@ impl ResyncLobbyGlobalEvent {
 }
 
 #[derive(Event, Default)]
-pub struct ResyncMatchLobbiesEvent;
+pub struct ResyncLobbyUiEvent;

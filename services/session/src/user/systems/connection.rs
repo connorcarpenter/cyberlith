@@ -73,11 +73,11 @@ pub fn connect_events(
         server.room_mut(&user_presence_room_key).add_user(user_key);
 
         // add to global chat room
-        let global_chat_room_key = social_manager.global_chat_manager.room_key();
+        let global_chat_room_key = social_manager.chat_message_manager.room_key();
         server.room_mut(&global_chat_room_key).add_user(user_key);
 
         // add to match lobbies room
-        let match_lobbies_room_key = social_manager.match_lobby_manager.room_key();
+        let match_lobbies_room_key = social_manager.lobby_manager.room_key();
         server.room_mut(&match_lobbies_room_key).add_user(user_key);
 
         // Assets
