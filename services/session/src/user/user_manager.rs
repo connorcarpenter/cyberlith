@@ -85,12 +85,12 @@ impl UserManager {
         );
 
         let user_data = self.user_data.get_mut(&user_id).unwrap();
-        user_data.set_user_key(commands, naia_server, &user_key);
+        user_data.connect(commands, naia_server, &user_key);
     }
 
-    pub fn remove_connected_user(&mut self, user_key: &UserKey) -> Option<UserId> {
+    pub fn remove_connected_user(&mut self, commands: &mut Commands, naia_server: &mut Server, user_key: &UserKey) -> Option<UserId> {
         let user_id = self.user_key_to_id.remove(user_key)?;
-        self.user_data.get_mut(&user_id).unwrap().clear_user_key();
+        self.user_data.get_mut(&user_id).unwrap().disconnect(commands, naia_server);
         Some(user_id)
     }
 

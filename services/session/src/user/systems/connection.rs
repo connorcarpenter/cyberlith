@@ -80,6 +80,8 @@ pub fn connect_events(
 }
 
 pub fn disconnect_events(
+    mut commands: Commands,
+    mut naia_server: Server,
     mut http_client: ResMut<HttpClient>,
     mut user_manager: ResMut<UserManager>,
     mut social_manager: ResMut<SocialManager>,
@@ -93,7 +95,7 @@ pub fn disconnect_events(
         // TODO: probably need to deregister user from global too?
 
         // remove from user manager
-        let user_id = user_manager.remove_connected_user(user_key).unwrap();
+        let user_id = user_manager.remove_connected_user(&mut commands, &mut naia_server, user_key).unwrap();
 
         // remove from asset manager
         asset_manager.deregister_user(user_key);

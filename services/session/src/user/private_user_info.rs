@@ -93,12 +93,15 @@ impl PrivateUserInfo {
         self.user_entity
     }
 
-    pub fn set_user_key(
+    pub fn connect(
         &mut self,
         commands: &mut Commands,
         naia_server: &mut Server,
         user_key: &UserKey
     ) {
+        if self.user_key.is_some() {
+            panic!("User key already set");
+        }
         self.user_key = Some(*user_key);
 
         // make user's private room key
@@ -114,6 +117,7 @@ impl PrivateUserInfo {
             .insert(Selfhood::new())
             .insert(selfhood_user)
             .id();
+        // add selfhood entity to user's room
         naia_server
             .room_mut(&user_room_key)
             .add_entity(&selfhood_entity);
@@ -125,7 +129,19 @@ impl PrivateUserInfo {
         naia_server.room_mut(&user_room_key).add_user(user_key);
     }
 
-    pub fn clear_user_key(&mut self) {
+    pub fn disconnect(&mut self, commands: &mut Commands, naia_server: &mut Server) {
+        if self.user_key.is_none() {
+            panic!("User key not set");
+        }
+
         self.user_key = None;
+
+        // destroy user's room
+        let user_room_key = self.room_key.take().unwrap();
+        naia_server.room_mut(&user_room_key).destroy();
+
+        // despawn selfhood
+        let selfhood_entity = self.selfhood_entity.take().unwrap();
+        commands.entity(selfhood_entity).despawn();
     }
 }
