@@ -21,6 +21,10 @@ impl Plugin for UserComponentEventsPlugin {
         app.add_systems(Update, recv_inserted_user_component)
             .add_systems(Update, recv_updated_user_component)
             .add_systems(Update, recv_removed_user_component);
+
+        // TODO: UserSelf component
+        // TODO: UserLobbyOwner component
+        // TODO: UserLobbyPeer component
     }
 }
 

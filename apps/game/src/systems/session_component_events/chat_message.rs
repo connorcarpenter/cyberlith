@@ -19,7 +19,15 @@ pub struct ChatMessageComponentEventsPlugin;
 
 impl Plugin for ChatMessageComponentEventsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, recv_inserted_chat_message_component);
+        app
+            .add_systems(Update, recv_inserted_chat_message_component)
+            // updated_chat_message_component?
+            // removed_chat_message_component?
+
+        // TODO: ChatMessageGlobal component?
+        // TODO: ChatMessageLocal component?
+        ;
+
     }
 }
 

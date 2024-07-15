@@ -3,10 +3,10 @@ use bevy_ecs::prelude::Component;
 use naia_bevy_shared::Replicate;
 
 #[derive(Component, Replicate)]
-pub struct UserLobbyPeer;
+pub struct Selfhood;
 
-impl UserLobbyPeer {
+impl Selfhood {
     pub fn new() -> Self {
-        Self
+        Self::new_complete()
     }
 }

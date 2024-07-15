@@ -1,24 +1,30 @@
+mod user;
+
 mod chat_message;
 mod chat_message_global;
 mod chat_message_local;
 
 mod lobby;
+mod lobby_member;
 
-mod user;
-mod user_lobby_owner;
-mod user_lobby_peer;
-mod user_self;
+mod selfhood;
+mod selfhood_user;
+
+//
+
+pub use user::User;
 
 pub use chat_message::ChatMessage;
 pub use chat_message_global::ChatMessageGlobal;
 pub use chat_message_local::ChatMessageLocal;
 
 pub use lobby::Lobby;
+pub use lobby_member::LobbyMember;
 
-pub use user::User;
-pub use user_lobby_owner::UserLobbyOwner;
-pub use user_lobby_peer::UserLobbyPeer;
-pub use user_self::UserSelf;
+pub use selfhood::Selfhood;
+pub use selfhood_user::SelfhoodUser;
+
+//
 
 use naia_bevy_shared::{Protocol, ProtocolPlugin};
 
@@ -28,13 +34,14 @@ pub struct ComponentsPlugin;
 impl ProtocolPlugin for ComponentsPlugin {
     fn build(&self, protocol: &mut Protocol) {
         protocol
+            .add_component::<User>()
             .add_component::<ChatMessage>()
             .add_component::<ChatMessageGlobal>()
             .add_component::<ChatMessageLocal>()
             .add_component::<Lobby>()
-            .add_component::<User>()
-            .add_component::<UserSelf>()
-            .add_component::<UserLobbyPeer>()
-            .add_component::<UserLobbyOwner>();
+            .add_component::<LobbyMember>()
+            .add_component::<Selfhood>()
+            .add_component::<SelfhoodUser>()
+            ;
     }
 }

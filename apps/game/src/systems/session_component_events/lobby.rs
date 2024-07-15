@@ -17,6 +17,7 @@ pub struct LobbyComponentEventsPlugin;
 impl Plugin for LobbyComponentEventsPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, recv_inserted_lobby_component)
+            // updated_lobby_component?
             .add_systems(Update, recv_removed_lobby_component);
     }
 }

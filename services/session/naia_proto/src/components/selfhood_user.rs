@@ -3,11 +3,11 @@ use bevy_ecs::prelude::Component;
 use naia_bevy_shared::{EntityProperty, Replicate};
 
 #[derive(Component, Replicate)]
-pub struct ChatMessageLocal {
-    pub lobby_entity: EntityProperty,
+pub struct SelfhoodUser {
+    pub user_entity: EntityProperty,
 }
 
-impl ChatMessageLocal {
+impl SelfhoodUser {
     pub fn new() -> Self {
         Self::new_complete()
     }
