@@ -3,7 +3,7 @@ use bevy_ecs::{
     system::{Commands, Query, Res, Resource},
 };
 
-use naia_bevy_server::Server;
+use naia_bevy_server::{RoomKey, Server};
 
 use bevy_http_client::HttpClient;
 
@@ -22,6 +22,8 @@ use crate::{
 pub struct SocialManager {
     social_server_opt: Option<(String, u16)>,
 
+    main_menu_room_key: Option<RoomKey>,
+
     pub(crate) chat_message_manager: ChatMessageManager,
     pub(crate) lobby_manager: LobbyManager,
     pub(crate) user_presence_manager: UserPresenceManager,
@@ -31,11 +33,16 @@ impl SocialManager {
     pub fn new() -> Self {
         Self {
             social_server_opt: None,
+            main_menu_room_key: None,
 
             chat_message_manager: ChatMessageManager::new(),
             lobby_manager: LobbyManager::new(),
             user_presence_manager: UserPresenceManager::new(),
         }
+    }
+
+    pub fn main_menu_room_key(&self) -> Option<RoomKey> {
+        self.main_menu_room_key
     }
 
     // Social Server
@@ -56,13 +63,9 @@ impl SocialManager {
 
     // used as a system
     pub fn startup(mut naia_server: Server, mut social_manager: ResMut<Self>) {
-        social_manager
-            .chat_message_manager
-            .startup(&mut naia_server);
-        social_manager.lobby_manager.startup(&mut naia_server);
-        social_manager
-            .user_presence_manager
-            .startup(&mut naia_server);
+
+        let main_menu_room_key = naia_server.make_room().key();
+        social_manager.main_menu_room_key = Some(main_menu_room_key);
     }
 
     // used as a system
@@ -76,7 +79,7 @@ impl SocialManager {
         mut users_q: Query<&mut User>,
     ) {
         let social_server_url = social_manager.get_social_server_url();
-        let user_presence_room_key = social_manager.user_presence_manager.room_key();
+        let main_menu_room_key = social_manager.main_menu_room_key().unwrap();
         social_manager.chat_message_manager.update(
             &mut commands,
             &mut naia_server,
@@ -84,7 +87,7 @@ impl SocialManager {
             &mut user_manager,
             &social_server_url,
             &session_instance,
-            &user_presence_room_key,
+            &main_menu_room_key,
         );
         social_manager.lobby_manager.update(
             &mut commands,
@@ -93,7 +96,7 @@ impl SocialManager {
             &mut user_manager,
             &social_server_url,
             &session_instance,
-            &user_presence_room_key,
+            &main_menu_room_key,
         );
         social_manager.user_presence_manager.update(
             &mut http_client,

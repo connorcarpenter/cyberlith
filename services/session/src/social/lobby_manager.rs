@@ -23,7 +23,6 @@ pub struct LobbyManager {
     queued_requests: Vec<MatchCreateReqQueued>,
     in_flight_requests: Vec<MatchCreateReqInFlight>,
 
-    lobby_list_room_key: Option<RoomKey>,
     lobbies: HashMap<LobbyId, Entity>,
 }
 
@@ -33,14 +32,8 @@ impl LobbyManager {
             queued_requests: Vec::new(),
             in_flight_requests: Vec::new(),
 
-            lobby_list_room_key: None,
             lobbies: HashMap::new(),
         }
-    }
-
-    pub(crate) fn startup(&mut self, naia_server: &mut Server) {
-        let match_lobbies_room_key = naia_server.make_room().key();
-        self.lobby_list_room_key = Some(match_lobbies_room_key);
     }
 
     pub(crate) fn update(
@@ -66,10 +59,6 @@ impl LobbyManager {
             session_instance,
             user_manager,
         );
-    }
-
-    pub fn room_key(&self) -> RoomKey {
-        self.lobby_list_room_key.unwrap()
     }
 
     fn process_queued_requests(
@@ -107,7 +96,7 @@ impl LobbyManager {
         naia_server: &mut Server,
         http_client: &mut HttpClient,
         user_manager: &mut UserManager,
-        user_presence_room_key: &RoomKey,
+        main_menu_room_key: &RoomKey,
     ) {
         if self.in_flight_requests.is_empty() {
             // no in-flight requests
@@ -139,7 +128,7 @@ impl LobbyManager {
                             naia_server,
                             http_client,
                             user_manager,
-                            user_presence_room_key,
+                            main_menu_room_key,
                             &lobby_id,
                             match_name,
                             owner_user_id,
@@ -212,7 +201,7 @@ impl LobbyManager {
         naia_server: &mut Server,
         http_client: &mut HttpClient,
         user_manager: &mut UserManager,
-        user_presence_room_key: &RoomKey,
+        main_menu_room_key: &RoomKey,
         patches: &Vec<SocialLobbyPatch>,
     ) {
         for patch in patches {
@@ -228,7 +217,7 @@ impl LobbyManager {
                         naia_server,
                         http_client,
                         user_manager,
-                        user_presence_room_key,
+                        main_menu_room_key,
                         lobby_id,
                         match_name,
                         owner_id,
@@ -249,7 +238,7 @@ impl LobbyManager {
         naia_server: &mut Server,
         http_client: &mut HttpClient,
         user_manager: &mut UserManager,
-        user_presence_room_key: &RoomKey,
+        main_menu_room_key: &RoomKey,
         lobby_id: &LobbyId,
         lobby_name: &str,
         owner_user_id: &UserId,
@@ -258,9 +247,9 @@ impl LobbyManager {
         let match_lobby_entity = commands.spawn_empty().enable_replication(naia_server).id();
         let mut match_lobby = Lobby::new(*lobby_id, lobby_name);
 
-        // add to lobbies room
+        // add to main menu room
         naia_server
-            .room_mut(&self.room_key())
+            .room_mut(main_menu_room_key)
             .add_entity(&match_lobby_entity);
 
         // add to collection
@@ -274,7 +263,7 @@ impl LobbyManager {
                     commands,
                     naia_server,
                     http_client,
-                    user_presence_room_key,
+                    main_menu_room_key,
                     owner_user_id,
                 );
 

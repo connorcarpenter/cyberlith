@@ -9,7 +9,7 @@ use logging::warn;
 
 use auth_server_types::UserId;
 
-use session_server_naia_proto::components::ChatMessage;
+use session_server_naia_proto::components::{ChatMessage, ChatMessageGlobal};
 
 use social_server_http_proto::{GlobalChatSendMessageRequest, GlobalChatSendMessageResponse};
 use social_server_types::{MessageId, Timestamp};
@@ -23,7 +23,6 @@ pub(crate) struct ChatMessageManager {
     queued_requests: Vec<GlobalChatReqQueued>,
     in_flight_requests: Vec<GlobalChatReqInFlight>,
 
-    chat_message_global_room_key: Option<RoomKey>,
     chat_message_global_entities: VecDeque<Entity>,
 }
 
@@ -33,14 +32,8 @@ impl ChatMessageManager {
             queued_requests: Vec::new(),
             in_flight_requests: Vec::new(),
 
-            chat_message_global_room_key: None,
             chat_message_global_entities: VecDeque::new(),
         }
-    }
-
-    pub(crate) fn startup(&mut self, naia_server: &mut Server) {
-        let global_chat_room_key = naia_server.make_room().key();
-        self.chat_message_global_room_key = Some(global_chat_room_key);
     }
 
     pub(crate) fn update(
@@ -51,14 +44,14 @@ impl ChatMessageManager {
         user_manager: &mut UserManager,
         social_server_url: &Option<(String, u16)>,
         session_instance: &SessionInstance,
-        user_presence_room_key: &RoomKey,
+        main_menu_room_key: &RoomKey,
     ) {
         self.process_in_flight_requests(
             commands,
             naia_server,
             http_client,
             user_manager,
-            user_presence_room_key,
+            main_menu_room_key,
         );
         self.process_queued_requests(
             http_client,
@@ -66,10 +59,6 @@ impl ChatMessageManager {
             session_instance,
             user_manager,
         );
-    }
-
-    pub(crate) fn room_key(&self) -> RoomKey {
-        self.chat_message_global_room_key.unwrap()
     }
 
     fn process_queued_requests(
@@ -107,7 +96,7 @@ impl ChatMessageManager {
         naia_server: &mut Server,
         http_client: &mut HttpClient,
         user_manager: &mut UserManager,
-        user_presence_room_key: &RoomKey,
+        main_menu_room_key: &RoomKey,
     ) {
         if self.in_flight_requests.is_empty() {
             // no in-flight requests
@@ -141,7 +130,7 @@ impl ChatMessageManager {
                             naia_server,
                             http_client,
                             user_manager,
-                            user_presence_room_key,
+                            main_menu_room_key,
                             &global_chat_id,
                             &timestamp,
                             sending_user_id,
@@ -210,7 +199,7 @@ impl ChatMessageManager {
         naia_server: &mut Server,
         http_client: &mut HttpClient,
         user_manager: &mut UserManager,
-        user_presence_room_key: &RoomKey,
+        main_menu_room_key: &RoomKey,
         global_chat_id: &MessageId,
         timestamp: &Timestamp,
         sending_user_id: &UserId,
@@ -222,9 +211,8 @@ impl ChatMessageManager {
         let mut global_chat_message = ChatMessage::new(*global_chat_id, *timestamp, message);
 
         // add to global chat room
-        let global_chat_room_key = self.room_key();
         naia_server
-            .room_mut(&global_chat_room_key)
+            .room_mut(&main_menu_room_key)
             .add_entity(&global_chat_message_entity);
 
         // add to local log
@@ -245,7 +233,7 @@ impl ChatMessageManager {
                     commands,
                     naia_server,
                     http_client,
-                    user_presence_room_key,
+                    main_menu_room_key,
                     sending_user_id,
                 );
 
@@ -259,7 +247,8 @@ impl ChatMessageManager {
             .set(naia_server, &user_entity);
         commands
             .entity(global_chat_message_entity)
-            .insert(global_chat_message);
+            .insert(global_chat_message)
+            .insert(ChatMessageGlobal);
     }
 
     pub(crate) fn patch_global_chat_messages(

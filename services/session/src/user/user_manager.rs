@@ -164,7 +164,7 @@ impl UserManager {
         commands: &mut Commands,
         naia_server: &mut Server,
         http_client: &mut HttpClient,
-        user_presence_room_key: &RoomKey,
+        main_menu_room_key: &RoomKey,
         user_id: &UserId,
     ) {
         if self.user_data.contains_key(user_id) {
@@ -176,7 +176,7 @@ impl UserManager {
         let user_public_entity = commands.spawn_empty().enable_replication(naia_server).id();
 
         naia_server
-            .room_mut(user_presence_room_key)
+            .room_mut(main_menu_room_key)
             .add_entity(&user_public_entity);
 
         let user_info_response_key = self.send_user_info_request(http_client, user_id);

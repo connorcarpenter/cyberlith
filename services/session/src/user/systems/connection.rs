@@ -30,14 +30,13 @@ pub fn auth_events(
             if let Some(user_id) = user_manager.take_login_token(&auth.token()) {
                 info!("Accepted connection. Token: {}", auth.token());
 
-                let user_presence_room_key = social_manager.user_presence_manager.room_key();
-
+                let main_menu_room_key = social_manager.main_menu_room_key().unwrap();
                 // add to users
                 user_manager.add_connected_user(
                     &mut commands,
                     &mut server,
                     &mut http_client,
-                    &user_presence_room_key,
+                    &main_menu_room_key,
                     user_key,
                     user_id,
                 );
@@ -67,20 +66,12 @@ pub fn connect_events(
 
         info!("Server connected to: {}", address);
 
-        // add to user presence room
-        let user_presence_room_key = social_manager.user_presence_manager.room_key();
-        server.room_mut(&user_presence_room_key).add_user(user_key);
+        let main_menu_room_key = social_manager.main_menu_room_key().unwrap();
 
-        // add to global chat room
-        let global_chat_room_key = social_manager.chat_message_manager.room_key();
-        server.room_mut(&global_chat_room_key).add_user(user_key);
-
-        // add to match lobbies room
-        let match_lobbies_room_key = social_manager.lobby_manager.room_key();
-        server.room_mut(&match_lobbies_room_key).add_user(user_key);
+        // add to main menu room
+        server.room_mut(&main_menu_room_key).add_user(user_key);
 
         // Assets
-
         asset_manager.register_user(user_key);
 
         // load "default" assets

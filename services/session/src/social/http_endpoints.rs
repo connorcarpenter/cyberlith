@@ -35,7 +35,7 @@ pub fn recv_patch_users_request(
         }
 
         info!("received patch users request");
-
+        let main_menu_room_key = social_manager.main_menu_room_key().unwrap();
         social_manager.user_presence_manager.patch_users(
             &mut commands,
             &mut naia_server,
@@ -43,6 +43,7 @@ pub fn recv_patch_users_request(
             &mut user_manager,
             &mut users_q,
             request.user_patches(),
+            &main_menu_room_key,
         );
 
         // responding
@@ -68,7 +69,7 @@ pub fn recv_patch_global_chat_messages_request(
         }
 
         info!("received patch global chat messages request");
-        let user_presence_room_key = social_manager.user_presence_manager.room_key();
+        let main_menu_room_key = social_manager.main_menu_room_key().unwrap();
 
         social_manager
             .chat_message_manager
@@ -77,7 +78,7 @@ pub fn recv_patch_global_chat_messages_request(
                 &mut naia_server,
                 &mut http_client,
                 &mut user_manager,
-                &user_presence_room_key,
+                &main_menu_room_key,
                 request.new_messages(),
             );
 
@@ -105,13 +106,13 @@ pub fn recv_patch_match_lobby_request(
 
         info!("received patch match lobbies request");
 
-        let user_presence_room_key = social_manager.user_presence_manager.room_key();
+        let main_menu_room_key = social_manager.main_menu_room_key().unwrap();
         social_manager.lobby_manager.patch_match_lobbies(
             &mut commands,
             &mut naia_server,
             &mut http_client,
             &mut user_manager,
-            &user_presence_room_key,
+            &main_menu_room_key,
             request.patches(),
         );
 

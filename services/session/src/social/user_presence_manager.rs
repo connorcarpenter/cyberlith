@@ -20,8 +20,6 @@ struct UserSendDisconnectInFlight(UserId, ResponseKey<UserDisconnectedResponse>)
 pub struct UserPresenceManager {
     queued_requests: Vec<UserSendDisconnectQueued>,
     in_flight_requests: Vec<UserSendDisconnectInFlight>,
-
-    user_presence_room_key: Option<RoomKey>,
 }
 
 impl UserPresenceManager {
@@ -29,14 +27,7 @@ impl UserPresenceManager {
         Self {
             queued_requests: Vec::new(),
             in_flight_requests: Vec::new(),
-
-            user_presence_room_key: None,
         }
-    }
-
-    pub(crate) fn startup(&mut self, naia_server: &mut Server) {
-        let user_presence_room_key = naia_server.make_room().key();
-        self.user_presence_room_key = Some(user_presence_room_key);
     }
 
     pub(crate) fn update(
@@ -51,10 +42,6 @@ impl UserPresenceManager {
         self.process_queued_requests(http_client, social_server_url, session_instance);
     }
 
-    pub fn room_key(&self) -> RoomKey {
-        self.user_presence_room_key.unwrap()
-    }
-
     pub(crate) fn patch_users(
         &mut self,
         commands: &mut Commands,
@@ -63,6 +50,7 @@ impl UserPresenceManager {
         user_manager: &mut UserManager,
         users_q: &mut Query<&mut User>,
         user_patches: &Vec<SocialUserPatch>,
+        main_menu_room_key: &RoomKey,
     ) {
         for user_patch in user_patches {
             match user_patch {
@@ -70,12 +58,12 @@ impl UserPresenceManager {
                     info!("adding user - [userid {:?}]", user_id);
 
                     if !user_manager.has_user_data(user_id) {
-                        let user_presence_room_key = self.room_key();
+
                         user_manager.add_user_data(
                             commands,
                             naia_server,
                             http_client,
-                            &user_presence_room_key,
+                            main_menu_room_key,
                             user_id,
                         );
                     }
