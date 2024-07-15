@@ -1,16 +1,18 @@
 use std::time::Instant;
 
-use bevy_ecs::entity::Entity;
-
-use naia_bevy_server::UserKey;
+use bevy_ecs::{system::Commands, entity::Entity};
+use naia_bevy_server::{CommandsExt, RoomKey, Server, UserKey};
 
 use bevy_http_client::ResponseKey;
 
 use auth_server_http_proto::UserGetResponse;
+use session_server_naia_proto::components::{Selfhood, SelfhoodUser};
 
 pub(crate) struct PrivateUserInfo {
     user_key: Option<UserKey>,
-    public_entity: Entity,
+    user_entity: Entity,
+    selfhood_entity: Option<Entity>,
+    room_key: Option<RoomKey>,
 
     world_connect_last_sent_to_region: Option<Instant>,
     ready_for_world_connect: bool,
@@ -24,12 +26,14 @@ pub(crate) struct PrivateUserInfo {
 
 impl PrivateUserInfo {
     pub fn new(
-        public_entity: Entity,
+        user_entity: Entity,
         user_info_response_key: ResponseKey<UserGetResponse>,
     ) -> Self {
         Self {
             user_key: None,
-            public_entity,
+            user_entity,
+            selfhood_entity: None,
+            room_key: None,
 
             world_connect_last_sent_to_region: None,
             ready_for_world_connect: false,
@@ -86,14 +90,42 @@ impl PrivateUserInfo {
     }
 
     pub fn user_entity(&self) -> Entity {
-        self.public_entity
+        self.user_entity
     }
 
-    pub fn add_user_key(&mut self, user_key: &UserKey) {
+    pub fn set_user_key(
+        &mut self,
+        commands: &mut Commands,
+        naia_server: &mut Server,
+        user_key: &UserKey
+    ) {
         self.user_key = Some(*user_key);
+
+        // make user's private room key
+        let user_room_key = naia_server.make_room().key();
+
+        // make selfhood entity + component
+        let mut selfhood_user = SelfhoodUser::new();
+        selfhood_user.user_entity.set(naia_server, &self.user_entity);
+
+        let selfhood_entity = commands
+            .spawn_empty()
+            .enable_replication(naia_server)
+            .insert(Selfhood::new())
+            .insert(selfhood_user)
+            .id();
+        naia_server
+            .room_mut(&user_room_key)
+            .add_entity(&selfhood_entity);
+
+        self.room_key = Some(user_room_key);
+        self.selfhood_entity = Some(selfhood_entity);
+
+        // add user to own room
+        naia_server.room_mut(&user_room_key).add_user(user_key);
     }
 
-    pub fn remove_user_key(&mut self) {
+    pub fn clear_user_key(&mut self) {
         self.user_key = None;
     }
 }

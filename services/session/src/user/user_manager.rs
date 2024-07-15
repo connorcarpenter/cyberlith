@@ -65,7 +65,7 @@ impl UserManager {
         commands: &mut Commands,
         naia_server: &mut Server,
         http_client: &mut HttpClient,
-        user_presence_room_key: &RoomKey,
+        main_menu_room_key: &RoomKey,
         user_key: UserKey,
         user_id: UserId,
     ) {
@@ -80,17 +80,17 @@ impl UserManager {
             commands,
             naia_server,
             http_client,
-            user_presence_room_key,
+            main_menu_room_key,
             &user_id,
         );
 
         let user_data = self.user_data.get_mut(&user_id).unwrap();
-        user_data.add_user_key(&user_key);
+        user_data.set_user_key(commands, naia_server, &user_key);
     }
 
     pub fn remove_connected_user(&mut self, user_key: &UserKey) -> Option<UserId> {
         let user_id = self.user_key_to_id.remove(user_key)?;
-        self.user_data.get_mut(&user_id).unwrap().remove_user_key();
+        self.user_data.get_mut(&user_id).unwrap().clear_user_key();
         Some(user_id)
     }
 
@@ -171,18 +171,22 @@ impl UserManager {
             panic!("user data already exists - [userid {:?}]", user_id);
         }
 
-        // info!("adding present user - [userid {:?}]:(`{:?}`)", user_id, user_name);
         // convert to entity + component
-        let user_public_entity = commands.spawn_empty().enable_replication(naia_server).id();
+        let user_entity = commands.spawn_empty().enable_replication(naia_server).id();
 
         naia_server
             .room_mut(main_menu_room_key)
-            .add_entity(&user_public_entity);
+            .add_entity(&user_entity);
 
+        // send user info req
         let user_info_response_key = self.send_user_info_request(http_client, user_id);
         self.inflight_user_info_requests.insert(*user_id);
 
-        let user_data = PrivateUserInfo::new(user_public_entity, user_info_response_key);
+        // add user data
+        let user_data = PrivateUserInfo::new(
+            user_entity,
+            user_info_response_key
+        );
         self.user_data.insert(*user_id, user_data);
     }
 

@@ -248,7 +248,7 @@ impl ChatMessageManager {
         commands
             .entity(global_chat_message_entity)
             .insert(global_chat_message)
-            .insert(ChatMessageGlobal);
+            .insert(ChatMessageGlobal::new());
     }
 
     pub(crate) fn patch_global_chat_messages(

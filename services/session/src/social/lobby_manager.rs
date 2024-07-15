@@ -8,6 +8,7 @@ use bevy_http_client::{ApiRequest, ApiResponse, HttpClient, ResponseKey};
 use logging::{info, warn};
 
 use auth_server_types::UserId;
+
 use session_server_http_proto::SocialLobbyPatch;
 use session_server_naia_proto::components::Lobby;
 
@@ -19,11 +20,26 @@ use crate::{session_instance::SessionInstance, user::UserManager};
 struct MatchCreateReqQueued(UserKey, String);
 struct MatchCreateReqInFlight(UserId, String, ResponseKey<MatchLobbyCreateResponse>);
 
+struct LobbyData {
+    lobby_entity: Entity,
+    room_key: RoomKey,
+}
+
+impl LobbyData {
+    fn new(lobby_entity: Entity, room_key: RoomKey) -> Self {
+        Self {
+            lobby_entity,
+            room_key,
+        }
+    }
+
+}
+
 pub struct LobbyManager {
     queued_requests: Vec<MatchCreateReqQueued>,
     in_flight_requests: Vec<MatchCreateReqInFlight>,
 
-    lobbies: HashMap<LobbyId, Entity>,
+    lobbies: HashMap<LobbyId, LobbyData>,
 }
 
 impl LobbyManager {
@@ -123,7 +139,7 @@ impl LobbyManager {
                         // info!("received create match lobby message response from social server");
                         let lobby_id = response.match_lobby_id();
 
-                        self.add_match_lobby(
+                        self.add_lobby(
                             commands,
                             naia_server,
                             http_client,
@@ -212,7 +228,7 @@ impl LobbyManager {
                         lobby_id, match_name, owner_id
                     );
 
-                    self.add_match_lobby(
+                    self.add_lobby(
                         commands,
                         naia_server,
                         http_client,
@@ -226,13 +242,13 @@ impl LobbyManager {
                 SocialLobbyPatch::Delete(lobby_id) => {
                     info!("removing match lobby - [lobbyid {:?}]", lobby_id);
 
-                    self.remove_match_lobby(commands, lobby_id);
+                    self.remove_lobby(commands, naia_server, lobby_id);
                 }
             }
         }
     }
 
-    fn add_match_lobby(
+    fn add_lobby(
         &mut self,
         commands: &mut Commands,
         naia_server: &mut Server,
@@ -244,16 +260,18 @@ impl LobbyManager {
         owner_user_id: &UserId,
     ) {
         // spawn lobby entity
-        let match_lobby_entity = commands.spawn_empty().enable_replication(naia_server).id();
-        let mut match_lobby = Lobby::new(*lobby_id, lobby_name);
+        let lobby_entity = commands.spawn_empty().enable_replication(naia_server).id();
+        let mut lobby = Lobby::new(*lobby_id, lobby_name);
 
         // add to main menu room
         naia_server
             .room_mut(main_menu_room_key)
-            .add_entity(&match_lobby_entity);
+            .add_entity(&lobby_entity);
+
+        let lobby_room_key = naia_server.make_room().key();
 
         // add to collection
-        self.lobbies.insert(*lobby_id, match_lobby_entity);
+        self.lobbies.insert(*lobby_id, LobbyData::new(lobby_entity, lobby_room_key));
 
         let owner_user_entity = {
             if let Some(user_entity) = user_manager.get_user_entity(owner_user_id) {
@@ -272,15 +290,19 @@ impl LobbyManager {
             }
         };
 
-        match_lobby
+        lobby
             .owner_user_entity
             .set(naia_server, &owner_user_entity);
-        commands.entity(match_lobby_entity).insert(match_lobby);
+        commands.entity(lobby_entity).insert(lobby);
     }
 
-    fn remove_match_lobby(&mut self, commands: &mut Commands, lobby_id: &LobbyId) {
-        if let Some(removed_entity) = self.lobbies.remove(lobby_id) {
-            commands.entity(removed_entity).despawn();
+    fn remove_lobby(&mut self, commands: &mut Commands, naia_server: &mut Server, lobby_id: &LobbyId) {
+        if let Some(lobby_data) = self.lobbies.remove(lobby_id) {
+            let LobbyData { lobby_entity, room_key } = lobby_data;
+            // despawn entity
+            commands.entity(lobby_entity).despawn();
+            // remove room
+            naia_server.room_mut(&room_key).destroy();
         } else {
             warn!(
                 "attempted to remove non-existent match lobby - [lobbyid {:?}]",
