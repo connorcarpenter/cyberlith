@@ -4,19 +4,20 @@ use bevy_ecs::{
     prelude::World as BevyWorld,
 };
 
-use naia_bevy_client::NaiaClientError;
+use naia_bevy_client::{NaiaClientError,
+    component_events::{component_events_startup, get_component_events, AppRegisterComponentEvents,
+    InsertComponentEvent, RemoveComponentEvent, UpdateComponentEvent},
+};
 
 use kernel::AppExitAction;
 use logging::{info, warn};
-use session_server_naia_proto::components::{ChatMessage, Lobby, User};
+
+use session_server_naia_proto::components::{ChatMessage, ChatMessageGlobal, ChatMessageLocal, Lobby, LobbyMember, Selfhood, SelfhoodUser, User};
 
 use crate::{
     networked::{
         client_markers::Session,
-        component_events::{
-            component_events_startup, get_component_events, AppRegisterComponentEvents,
-            InsertComponentEvent, RemoveComponentEvent, UpdateComponentEvent,
-        },
+
         connection_manager::ConnectionManager,
     },
     session::{SessionDespawnEntityEvent, SessionErrorEvent, SessionSpawnEntityEvent},
@@ -40,11 +41,32 @@ impl Plugin for SessionEventsPlugin {
             .add_event::<SessionSpawnEntityEvent>()
             .add_systems(Update, despawn_entity_events)
             .add_event::<SessionDespawnEntityEvent>()
+
+            // component events
             .add_systems(Startup, component_events_startup::<Session>)
             .add_systems(Update, component_events_update)
-            .add_component_events::<Session, ChatMessage>()
             .add_component_events::<Session, User>()
-            .add_component_events::<Session, Lobby>();
+            .add_component_events::<Session, ChatMessage>()
+            .add_component_events::<Session, ChatMessageGlobal>()
+            .add_component_events::<Session, ChatMessageLocal>()
+            .add_component_events::<Session, Lobby>()
+            .add_component_events::<Session, LobbyMember>()
+            .add_component_events::<Session, Selfhood>()
+            .add_component_events::<Session, SelfhoodUser>();
+    }
+}
+
+// used as a system
+fn component_events_update(world: &mut BevyWorld) {
+    for events in get_component_events::<Session>(world) {
+        events.process::<User>(world);
+        events.process::<ChatMessage>(world);
+        events.process::<ChatMessageGlobal>(world);
+        events.process::<ChatMessageLocal>(world);
+        events.process::<Lobby>(world);
+        events.process::<LobbyMember>(world);
+        events.process::<Selfhood>(world);
+        events.process::<SelfhoodUser>(world);
     }
 }
 
@@ -59,15 +81,6 @@ fn spawn_entity_events(mut event_reader: EventReader<SessionSpawnEntityEvent>) {
 fn despawn_entity_events(mut event_reader: EventReader<SessionDespawnEntityEvent>) {
     for _event in event_reader.read() {
         // info!("despawned entity");
-    }
-}
-
-// used as a system
-pub fn component_events_update(world: &mut BevyWorld) {
-    for events in get_component_events::<Session>(world) {
-        events.process::<ChatMessage>(world);
-        events.process::<User>(world);
-        events.process::<Lobby>(world);
     }
 }
 

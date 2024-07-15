@@ -29,7 +29,6 @@ use crate::ui::{
 
 #[derive(Resource)]
 pub struct LobbyManager {
-    current_lobby: Option<LobbyId>,
     lobby_entities: BTreeMap<LobbyId, Entity>,
     list_ui_ext: ListUiExt<LobbyId>,
     lobby_item_ui: Option<UiHandle>,
@@ -38,7 +37,6 @@ pub struct LobbyManager {
 impl Default for LobbyManager {
     fn default() -> Self {
         Self {
-            current_lobby: None,
             lobby_entities: BTreeMap::new(),
             list_ui_ext: ListUiExt::new(true),
             lobby_item_ui: None,
@@ -47,9 +45,6 @@ impl Default for LobbyManager {
 }
 
 impl LobbyManager {
-    pub(crate) fn get_current_lobby_id(&self) -> Option<LobbyId> {
-        self.current_lobby
-    }
 
     pub(crate) fn handle_host_match_events(
         &mut self,

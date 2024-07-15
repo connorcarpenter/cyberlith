@@ -34,7 +34,7 @@ impl Plugin for ChatMessageComponentEventsPlugin {
 fn recv_inserted_chat_message_component(
     lobby_manager: Res<LobbyManager>,
     mut message_manager: ResMut<ChatMessageManager>,
-    mut resync_global_chat_events: EventWriter<ResyncChatMessageUiEvent>,
+    mut resync_message_ui_events: EventWriter<ResyncChatMessageUiEvent>,
     mut message_event_reader: EventReader<SessionInsertComponentEvent<ChatMessage>>,
     message_q: Query<&ChatMessage>,
 ) {
@@ -47,14 +47,13 @@ fn recv_inserted_chat_message_component(
         let timestamp = *message.timestamp;
         let message = &*message.message;
         info!(
-            "incoming global message: [ {:?} | {:?} | {:?} ]",
+            "received Inserted ChatMessage from Session Server!  [ {:?} | {:?} | {:?} ]",
             timestamp, event.entity, message
         );
 
-        let lobby_id_opt = lobby_manager.get_current_lobby_id();
         message_manager.recv_message(
-            &lobby_id_opt,
-            &mut resync_global_chat_events,
+            &None,
+            &mut resync_message_ui_events,
             message_id,
             event.entity,
         );

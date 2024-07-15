@@ -264,8 +264,7 @@ impl ChatMessageManager {
         let username_and_message_ui_handle = self.username_and_message_item_ui.as_ref().unwrap();
         let message_ui_handle = self.message_item_ui.as_ref().unwrap();
 
-        let lobby_id_opt = lobby_manager.get_current_lobby_id();
-        let messages = self.messages.get_mut(&lobby_id_opt).unwrap();
+        let messages = self.messages.get_mut(&None).unwrap();
 
         self.list_ui_ext.sync_with_collection(
             ui_manager,

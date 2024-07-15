@@ -7,7 +7,10 @@ use bevy_ecs::{
     system::{Res, SystemState},
 };
 
-use naia_bevy_client::events::{DespawnEntityEvent, InsertComponentEvents, SpawnEntityEvent};
+use naia_bevy_client::{component_events::{
+    component_events_startup, get_component_events, AppRegisterComponentEvents,
+    InsertComponentEvent, RemoveComponentEvent, UpdateComponentEvent,
+}, events::{DespawnEntityEvent, InsertComponentEvents, SpawnEntityEvent}};
 
 use asset_id::{AssetId, AssetType};
 use asset_loader::AssetMetadataStore;
@@ -20,10 +23,6 @@ use crate::{
     networked::{
         asset_ref_processor::{AssetProcessor, AssetRefProcessor},
         client_markers::World,
-        component_events::{
-            component_events_startup, get_component_events, AppRegisterComponentEvents,
-            InsertComponentEvent, RemoveComponentEvent, UpdateComponentEvent,
-        },
         connection_manager::ConnectionManager,
     },
     world::{WorldClient, WorldDespawnEntityEvent, WorldSpawnEntityEvent},
@@ -42,13 +41,35 @@ impl Plugin for WorldEventsPlugin {
             .add_event::<WorldSpawnEntityEvent>()
             .add_systems(Update, despawn_entity_events)
             .add_event::<WorldDespawnEntityEvent>()
+
+            // component events
             .add_systems(Startup, component_events_startup::<World>)
             .add_systems(Update, component_events_update)
-            // component events
             .add_component_events::<World, Position>()
             // asset events
             .add_event::<InsertAssetRefEvent<Main>>()
             .add_event::<InsertAssetRefEvent<Alt1>>();
+    }
+}
+
+// used as a system
+fn component_events_update(world: &mut BevyWorld) {
+    // insert & asset events
+
+    for events in get_component_events::<World>(world) {
+        // info!("received world events: [");
+
+        if events.is_insert() {
+            // asset events
+            insert_asset_entry_event(world, events.as_insert());
+            insert_asset_ref_event::<Main>(world, events.as_insert());
+            insert_asset_ref_event::<Alt1>(world, events.as_insert());
+        }
+
+        // component events
+        events.process::<Position>(world);
+
+        // info!("]");
     }
 }
 
@@ -83,27 +104,6 @@ impl<T> InsertAssetRefEvent<T> {
             asset_type,
             phantom_t: std::marker::PhantomData,
         }
-    }
-}
-
-// used as a system
-pub fn component_events_update(world: &mut BevyWorld) {
-    // insert & asset events
-
-    for events in get_component_events::<World>(world) {
-        info!("received world events: [");
-
-        if events.is_insert() {
-            // asset events
-            insert_asset_entry_event(world, events.as_insert());
-            insert_asset_ref_event::<Main>(world, events.as_insert());
-            insert_asset_ref_event::<Alt1>(world, events.as_insert());
-        }
-
-        // component events
-        events.process::<Position>(world);
-
-        info!("]");
     }
 }
 

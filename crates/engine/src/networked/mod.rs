@@ -1,7 +1,6 @@
 mod asset_cache_checker;
 mod asset_ref_processor;
 mod client_markers;
-mod component_events;
 mod connection_manager;
 mod networked_plugin;
 mod session_events;
