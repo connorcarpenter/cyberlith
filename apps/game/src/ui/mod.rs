@@ -177,7 +177,7 @@ pub(crate) fn handle_events(
     for _ in settings_btn_rdr.read() {}
 }
 
-pub(crate) fn handle_user_public_info_events(
+pub(crate) fn handle_user_ui_events(
     mut user_manager: ResMut<UserManager>,
     mut ui_manager: ResMut<UiManager>,
     asset_manager: Res<AssetManager>,
@@ -193,14 +193,13 @@ pub(crate) fn handle_user_public_info_events(
     }
 }
 
-pub(crate) fn handle_global_chat_events(
+pub(crate) fn handle_chat_message_ui_events(
     ui_catalog: Res<UiCatalog>,
     input: Res<Input>,
     mut ui_manager: ResMut<UiManager>,
     asset_manager: Res<AssetManager>,
     mut rumble_manager: ResMut<RumbleManager>,
     mut session_client: SessionClient,
-    lobby_manager: Res<LobbyManager>,
     mut message_manager: ResMut<ChatMessageManager>,
     user_q: Query<&User>,
     message_q: Query<&ChatMessage>,
@@ -224,7 +223,6 @@ pub(crate) fn handle_global_chat_events(
                 &mut ui_manager,
                 &ui_catalog,
                 &asset_manager,
-                &lobby_manager,
                 &mut session_client,
                 &mut input_events,
                 &mut resync_global_chat_events,
@@ -247,7 +245,7 @@ pub(crate) fn handle_global_chat_events(
     }
 }
 
-pub(crate) fn handle_match_lobbies_events(
+pub(crate) fn handle_lobby_ui_events(
     ui_catalog: Res<UiCatalog>,
     input: Res<Input>,
     mut ui_manager: ResMut<UiManager>,

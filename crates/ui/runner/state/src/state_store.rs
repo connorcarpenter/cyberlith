@@ -102,11 +102,11 @@ impl UiStateStore {
     }
 
     fn insert_style(&mut self, style: StyleState) {
-        info!(
-            "state_store {:?} : inserting style: {:?}",
-            self.asset_id,
-            self.styles.len()
-        );
+        // info!(
+        //     "state_store {:?} : inserting style: {:?}",
+        //     self.asset_id,
+        //     self.styles.len()
+        // );
         if self.styles.len() >= 255 {
             panic!("1 UI can only hold up to 255 styles, too many styles!");
         }

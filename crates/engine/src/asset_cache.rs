@@ -113,10 +113,10 @@ impl AssetCache {
         self.data_store.insert(*asset_id, asset_data);
 
         if asset_type == &AssetType::Ui {
-            info!("loading ui asset into memory: {:?}", asset_id);
+            // info!("loading ui asset into memory: {:?}", asset_id);
             ui_manager.load(asset_manager, &self.data_store, asset_id);
         } else {
-            info!("loading {:?} asset into memory: {:?}", asset_type, asset_id);
+            // info!("loading {:?} asset into memory: {:?}", asset_type, asset_id);
             asset_manager.load(&self.data_store, asset_id, asset_type);
         }
 

@@ -22,10 +22,7 @@ use game_engine::{
     },
 };
 
-use crate::{
-    resources::lobby_manager::LobbyManager,
-    ui::{events::ResyncChatMessageUiEvent, go_to_sub_ui, UiCatalog, UiKey},
-};
+use crate::ui::{events::ResyncChatMessageUiEvent, go_to_sub_ui, UiCatalog, UiKey};
 
 #[derive(Resource)]
 pub struct ChatMessageManager {
@@ -58,7 +55,6 @@ impl ChatMessageManager {
         ui_manager: &mut UiManager,
         ui_catalog: &UiCatalog,
         asset_manager: &AssetManager,
-        lobby_manager: &LobbyManager,
         session_client: &mut SessionClient,
         input_events: &mut EventReader<InputEvent>,
         resync_chat_message_ui_events: &mut EventReader<ResyncChatMessageUiEvent>,
@@ -131,7 +127,6 @@ impl ChatMessageManager {
                 session_client,
                 ui_manager,
                 asset_manager,
-                lobby_manager,
                 user_q,
                 chat_message_q,
             );
@@ -142,7 +137,6 @@ impl ChatMessageManager {
                     session_client,
                     ui_manager,
                     asset_manager,
-                    lobby_manager,
                     user_q,
                     chat_message_q,
                 );
@@ -249,7 +243,6 @@ impl ChatMessageManager {
         session_client: &SessionClient,
         ui_manager: &mut UiManager,
         asset_manager: &AssetManager,
-        lobby_manager: &LobbyManager,
         user_q: &Query<&User>,
         message_q: &Query<&ChatMessage>,
     ) {

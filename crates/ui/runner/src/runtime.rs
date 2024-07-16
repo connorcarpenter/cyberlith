@@ -151,10 +151,10 @@ impl UiRuntime {
             new_style_id,
         );
 
-        info!(
-            "added copied (kind: {:?}) style: (ui: {:?}, styleid: {:?}) -> (styleid: {:?})",
-            kind, ui_handle, old_style_id, new_style_id
-        );
+        // info!(
+        //     "added copied (kind: {:?}) style: (ui: {:?}, styleid: {:?}) -> (styleid: {:?})",
+        //     kind, ui_handle, old_style_id, new_style_id
+        // );
     }
 
     pub(crate) fn translate_copied_style(

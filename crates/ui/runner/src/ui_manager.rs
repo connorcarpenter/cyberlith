@@ -810,10 +810,10 @@ impl UiManager {
 
         let new_node_id = dest_parent_mut.insert_node(index, &new_copied_node);
 
-        info!(
-            "[ui: {:?} . id: {:?}] -> [ui: {:?}, id: {:?}]",
-            src_ui, src_id, dest_ui, new_node_id
-        );
+        // info!(
+        //     "[ui: {:?} . id: {:?}] -> [ui: {:?}, id: {:?}]",
+        //     src_ui, src_id, dest_ui, new_node_id
+        // );
 
         if let Some(id_str) = new_copied_node.id_str_opt().as_ref() {
             id_str_map.insert(id_str.clone(), new_node_id);

@@ -13,7 +13,7 @@ use game_engine::{
 use crate::{
     resources::{
         chat_message_manager::ChatMessageManager, lobby_manager::LobbyManager,
-        user_manager::UserManager, AssetCatalog,
+        user_manager::UserManager, AssetCatalog, chat_message_events::ChatMessageEvents,
     },
     states::AppState,
     systems::{
@@ -58,6 +58,7 @@ impl Plugin for GameApp {
             })
             .init_resource::<UserManager>()
             .init_resource::<ChatMessageManager>()
+            .init_resource::<ChatMessageEvents>()
             .init_resource::<LobbyManager>()
             .insert_resource(UiCatalog::new())
             .insert_resource(AssetCatalog::new())
@@ -85,9 +86,9 @@ impl Plugin for GameApp {
             .add_plugins(SessionComponentEventsPlugin)
             // Ui
             .add_systems(Update, ui::handle_events)
-            .add_systems(Update, ui::handle_user_public_info_events)
-            .add_systems(Update, ui::handle_global_chat_events)
-            .add_systems(Update, ui::handle_match_lobbies_events)
+            .add_systems(Update, ui::handle_user_ui_events)
+            .add_systems(Update, ui::handle_chat_message_ui_events)
+            .add_systems(Update, ui::handle_lobby_ui_events)
             .add_event::<ResyncUserUiEvent>()
             .add_event::<ResyncChatMessageUiEvent>()
             .add_event::<ResyncLobbyUiEvent>()
