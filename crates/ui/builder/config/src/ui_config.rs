@@ -80,7 +80,7 @@ impl UiConfig {
         self.insert_node(&node_id, ui_node);
 
         if let Some(id_str) = id_str_opt {
-            info!("inserting id_str: {} for node_id: {:?}", id_str, node_id);
+            // info!("inserting id_str: {} for node_id: {:?}", id_str, node_id);
             self.id_str_to_node_id_map
                 .insert(id_str.to_string(), node_id);
         }

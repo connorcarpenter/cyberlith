@@ -82,10 +82,10 @@ impl Window {
     pub fn take_or_new(window_settings: WindowSettings) -> Window {
         unsafe {
             if WINDOW_CONTAINER.is_none() {
-                info!("creating new window");
+                // info!("creating new window");
                 return Self::new(window_settings).unwrap();
             }
-            info!("using existing window");
+            // info!("using existing window");
             return WINDOW_CONTAINER.take().unwrap();
         }
     }
@@ -335,7 +335,7 @@ impl Window {
                                 window.set_cursor_icon(cursor_icon);
                             }
                             OutgoingEvent::Exit => {
-                                info!("exit requested");
+                                // info!("exit requested");
                                 *control_flow = ControlFlow::Exit;
                             }
                         }
@@ -564,7 +564,7 @@ impl Window {
                 self.event_loop_opt = Some(event_loop);
 
                 // reset gl context
-                info!("clean up gl context");
+                // info!("clean up gl context");
                 let mut context = Context::get();
                 context.unload_programs();
 

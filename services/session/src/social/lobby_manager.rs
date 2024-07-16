@@ -295,7 +295,7 @@ impl LobbyManager {
         commands.entity(lobby_entity).insert(lobby);
 
         // join lobby room
-        self.join_lobby(naia_server, lobby_id, owner_user_id);
+        self.join_lobby(commands, naia_server, user_manager, lobby_id, owner_user_id);
     }
 
     fn remove_lobby(

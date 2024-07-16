@@ -8,7 +8,7 @@ use bevy_ecs::{
 
 use game_engine::{
     input::{GamepadRumbleIntensity, Input, RumbleManager},
-    logging::info,
+    logging::{, warn},
     render::components::RenderLayers,
     ui::UiManager,
 };
@@ -220,13 +220,13 @@ pub(crate) fn handle_resync_main_menu_ui_events(
         // make left side "lobby" button visible
         // make right side "leave lobby" button visible
         // make right side "start match" button visible (if host)
-        todo!();
+        warn!("TODODODODOD");
     } else {
         // not in a lobby
 
         // make left side "lobby" button invisible
         // make right side "leave lobby" button invisible
         // make right side "start match" button invisible
-        todo!();
+        warn!("TODODODODOD");
     }
 }

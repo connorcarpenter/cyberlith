@@ -102,6 +102,7 @@ impl ChatMessageManager {
         ui_manager: &mut UiManager,
         ui_catalog: &UiCatalog,
         session_client: &mut SessionClient,
+        lobby_manager: &LobbyManager,
         input_events: &mut EventReader<InputEvent>,
         resync_chat_message_ui_events: &mut EventWriter<ResyncMessageListUiEvent>,
     ) {
@@ -142,7 +143,7 @@ impl ChatMessageManager {
                             // later, add multi-line newline
                         } else {
                             // send message
-                            Self::send_message(ui_manager, &ui_handle, session_client)
+                            Self::send_message(ui_manager, lobby_manager, &ui_handle, session_client)
                         }
                     };
                 }
@@ -262,6 +263,9 @@ impl ChatMessageManager {
         let message_ui_handle = self.message_item_ui.as_ref().unwrap();
 
         let lobby_id_opt = lobby_manager.get_current_lobby();
+        if !self.messages.contains_key(&lobby_id_opt) {
+            self.messages.insert(lobby_id_opt.clone(), BTreeMap::new());
+        }
         let messages = self.messages.get_mut(&lobby_id_opt).unwrap();
 
         self.list_ui_ext.sync_with_collection(
@@ -376,6 +380,7 @@ impl ChatMessageManager {
 
     fn send_message(
         ui_manager: &mut UiManager,
+        lobby_manager: &LobbyManager,
         ui_handle: &UiHandle,
         session_server: &mut SessionClient,
     ) {
@@ -386,8 +391,12 @@ impl ChatMessageManager {
         ui_manager.set_textbox_text(ui_handle, "message_textbox", "");
 
         // info!("Sending message: {:?}", textbox_text);
-
-        let message = messages::GlobalChatSendMessage::new(&textbox_text);
-        session_server.send_message::<channels::ClientActionsChannel, _>(&message);
+        if lobby_manager.get_current_lobby().is_none() {
+            let message = messages::GlobalChatSendMessage::new(&textbox_text);
+            session_server.send_message::<channels::ClientActionsChannel, _>(&message);
+        } else {
+            let message = messages::MatchLobbySendMessage::new(&textbox_text);
+            session_server.send_message::<channels::ClientActionsChannel, _>(&message);
+        }
     }
 }

@@ -8,7 +8,7 @@ use logging::warn;
 
 use session_server_naia_proto::{
     channels::ClientActionsChannel,
-    messages::{GlobalChatSendMessage, MatchLobbyCreate, WorldConnectRequest},
+    messages::{GlobalChatSendMessage, MatchLobbySendMessage, MatchLobbyCreate, WorldConnectRequest},
 };
 
 use crate::{session_instance::SessionInstance, social::SocialManager, user::UserManager};
@@ -38,6 +38,20 @@ pub fn message_events(
             social_manager
                 .chat_message_manager
                 .send_global_chat_message(
+                    &mut http_client,
+                    &user_manager,
+                    social_server_url.as_ref(),
+                    &session_instance,
+                    &user_key,
+                    &req.message,
+                );
+        }
+
+        // Lobby Send Message
+        for (user_key, req) in events.read::<ClientActionsChannel, MatchLobbySendMessage>() {
+            social_manager
+                .chat_message_manager
+                .send_lobby_chat_message(
                     &mut http_client,
                     &user_manager,
                     social_server_url.as_ref(),
