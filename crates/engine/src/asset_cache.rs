@@ -11,7 +11,6 @@ use naia_serde::{BitWriter, Serde};
 use asset_id::{AssetId, AssetType, ETag};
 use asset_loader::{AssetManager, AssetMetadataSerde, AssetMetadataStore};
 use filesystem::{FileSystemManager, TaskKey, WriteResult};
-use logging::info;
 use ui_runner::UiManager;
 
 /// Stores asset data in RAM

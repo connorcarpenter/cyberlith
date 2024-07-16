@@ -25,6 +25,12 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
             .set_self_halign(Alignment::Start)
             .set_margin_left_pc(2.0);
     });
+    let username_style_self = ui_config.create_text_style(|s| {
+        s.set_id("self")
+            .set_background_alpha(0.)
+            .set_size_pc(100.0)
+            .set_text_color(Color::LIGHT_GREEN);
+    });
     let username_style_online = ui_config.create_text_style(|s| {
         s.set_id("online")
             .set_background_alpha(0.)

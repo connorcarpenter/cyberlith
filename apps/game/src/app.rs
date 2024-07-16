@@ -12,6 +12,7 @@ use game_engine::{
 
 use crate::{
     resources::{
+        selfhood_events::SelfhoodEvents,
         chat_message_manager::ChatMessageManager, lobby_manager::LobbyManager,
         user_manager::UserManager, AssetCatalog, chat_message_events::ChatMessageEvents,
     },
@@ -57,6 +58,7 @@ impl Plugin for GameApp {
                 ..Default::default()
             })
             .init_resource::<UserManager>()
+            .init_resource::<SelfhoodEvents>()
             .init_resource::<ChatMessageManager>()
             .init_resource::<ChatMessageEvents>()
             .init_resource::<LobbyManager>()

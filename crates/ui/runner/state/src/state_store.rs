@@ -1,7 +1,7 @@
-use asset_id::AssetId;
 use std::collections::{HashMap, HashSet};
 
-use logging::{info, warn};
+use asset_id::AssetId;
+use logging::warn;
 use ui_layout::NodeStateStore;
 use ui_runner_config::{NodeId, StyleId, UiNode, WidgetKind};
 

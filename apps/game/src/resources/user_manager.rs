@@ -16,6 +16,7 @@ use crate::ui::{events::ResyncUserUiEvent, UiCatalog, UiKey};
 #[derive(Resource)]
 pub struct UserManager {
     next_id: u32,
+    self_user_entity: Option<Entity>,
     users: BTreeMap<u32, Entity>,
     entity_to_user_id_map: HashMap<Entity, u32>,
     list_ui_ext: ListUiExt<u32>,
@@ -26,6 +27,7 @@ impl Default for UserManager {
     fn default() -> Self {
         Self {
             next_id: 0,
+            self_user_entity: None,
             users: BTreeMap::new(),
             entity_to_user_id_map: HashMap::new(),
             list_ui_ext: ListUiExt::new(true),
@@ -57,6 +59,15 @@ impl UserManager {
     ) {
         self.list_ui_ext
             .set_container_ui(ui_manager, main_menu_ui_handle, "user_list");
+    }
+
+    pub fn set_self_user_entity(&mut self, resync_ui_events: &mut EventWriter<ResyncUserUiEvent>, user_entity: Entity) {
+        if self.self_user_entity.is_some() {
+            panic!("self_user_entity already set");
+        }
+        self.self_user_entity = Some(user_entity);
+
+        resync_ui_events.send(ResyncUserUiEvent);
     }
 
     pub fn insert_user(
@@ -105,20 +116,31 @@ impl UserManager {
                 let user_entity = *user_entity;
                 if let Ok(user_public_info) = user_q.get(user_entity) {
                     let username = user_public_info.name.as_str();
-                    let online = *user_public_info.online;
-                    add_user_item(item_ctx, item_ui_handle, username, online);
+                    let is_online = *user_public_info.online;
+                    let is_self = {
+                        if let Some(self_user_entity) = self.self_user_entity {
+                            self_user_entity == user_entity
+                        } else {
+                            false
+                        }
+                    };
+                    add_user_item(item_ctx, item_ui_handle, username, is_self, is_online);
                 }
             },
         );
     }
 }
 
-fn add_user_item(item_ctx: &mut ListUiExtItem<u32>, ui: &UiHandle, username: &str, online: bool) {
+fn add_user_item(item_ctx: &mut ListUiExtItem<u32>, ui: &UiHandle, username: &str, is_self: bool, is_online: bool) {
     item_ctx.add_copied_node(ui);
     item_ctx.set_text_by_id("username", username);
-    if online {
-        item_ctx.set_style_by_id("username", "online");
+    if is_self {
+        item_ctx.set_style_by_id("username", "self");
     } else {
-        item_ctx.set_style_by_id("username", "offline");
+        if is_online {
+            item_ctx.set_style_by_id("username", "online");
+        } else {
+            item_ctx.set_style_by_id("username", "offline");
+        }
     }
 }

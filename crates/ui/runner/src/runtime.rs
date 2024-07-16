@@ -140,7 +140,7 @@ impl UiRuntime {
         old_style_id: StyleId,
         item_style: BaseNodeStyle,
     ) {
-        let kind = item_style.widget_style.kind();
+        // let kind = item_style.widget_style.kind();
 
         let new_style_id = self.add_style(item_style);
 

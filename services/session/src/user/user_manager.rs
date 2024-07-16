@@ -60,38 +60,41 @@ impl UserManager {
         self.login_tokens.remove(token)
     }
 
-    pub fn add_connected_user(
+    pub fn accept_user(
         &mut self,
-        commands: &mut Commands,
-        naia_server: &mut Server,
-        http_client: &mut HttpClient,
-        main_menu_room_key: &RoomKey,
         user_key: UserKey,
         user_id: UserId,
     ) {
         self.user_key_to_id.insert(user_key, user_id);
-
-        if self.has_user_data(&user_id) {
-            // warn!("user already exists - [userid {:?}]", user_id);
-            return;
-        }
-
-        self.add_user_data(
-            commands,
-            naia_server,
-            http_client,
-            main_menu_room_key,
-            &user_id,
-        );
-
-        let user_data = self.user_data.get_mut(&user_id).unwrap();
-        user_data.connect(commands, naia_server, &user_key);
     }
 
-    pub fn remove_connected_user(&mut self, commands: &mut Commands, naia_server: &mut Server, user_key: &UserKey) -> Option<UserId> {
+    pub fn disconnect_user(&mut self, commands: &mut Commands, naia_server: &mut Server, user_key: &UserKey) -> Option<UserId> {
         let user_id = self.user_key_to_id.remove(user_key)?;
         self.user_data.get_mut(&user_id).unwrap().disconnect(commands, naia_server);
         Some(user_id)
+    }
+
+    pub fn connect_user(
+        &mut self,
+        commands: &mut Commands,
+        naia_server: &mut Server,
+        http_client: &mut HttpClient,
+        user_key: &UserKey,
+        main_menu_room_key: &RoomKey
+    ) {
+        let user_id = self.user_key_to_id(user_key).unwrap();
+        if !self.has_user_data(&user_id) {
+            self.add_user_data(
+                commands,
+                naia_server,
+                http_client,
+                main_menu_room_key,
+                &user_id,
+            );
+        }
+
+        let user_data = self.user_data.get_mut(&user_id).unwrap();
+        user_data.connect(commands, naia_server, &user_key);
     }
 
     pub fn user_key_to_id(&self, user_key: &UserKey) -> Option<UserId> {

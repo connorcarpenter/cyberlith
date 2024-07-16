@@ -106,27 +106,28 @@ impl PrivateUserInfo {
 
         // make user's private room key
         let user_room_key = naia_server.make_room().key();
+        self.room_key = Some(user_room_key);
 
-        // make selfhood entity + component
-        let mut selfhood_user = SelfhoodUser::new();
-        selfhood_user.user_entity.set(naia_server, &self.user_entity);
-
+        // make selfhood entity
         let selfhood_entity = commands
             .spawn_empty()
             .enable_replication(naia_server)
-            .insert(Selfhood::new())
-            .insert(selfhood_user)
             .id();
-        // add selfhood entity to user's room
-        naia_server
-            .room_mut(&user_room_key)
-            .add_entity(&selfhood_entity);
-
-        self.room_key = Some(user_room_key);
         self.selfhood_entity = Some(selfhood_entity);
 
-        // add user to own room
-        naia_server.room_mut(&user_room_key).add_user(user_key);
+        naia_server
+            .room_mut(&user_room_key)
+            // add user to own room
+            .add_user(user_key)
+            // add selfhood entity to user's room
+            .add_entity(&selfhood_entity);
+
+        // add selfhood components
+        let mut selfhood_user = SelfhoodUser::new();
+        selfhood_user.user_entity.set(naia_server, &self.user_entity);
+        commands.entity(selfhood_entity)
+            .insert(Selfhood::new())
+            .insert(selfhood_user);
     }
 
     pub fn disconnect(&mut self, commands: &mut Commands, naia_server: &mut Server) {

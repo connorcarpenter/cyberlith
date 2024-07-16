@@ -18,10 +18,7 @@ use crate::{
 };
 
 pub fn auth_events(
-    mut commands: Commands,
     mut user_manager: ResMut<UserManager>,
-    social_manager: Res<SocialManager>,
-    mut http_client: ResMut<HttpClient>,
     mut server: Server,
     mut event_reader: EventReader<AuthEvents>,
 ) {
@@ -30,13 +27,7 @@ pub fn auth_events(
             if let Some(user_id) = user_manager.take_login_token(&auth.token()) {
                 info!("Accepted connection. Token: {}", auth.token());
 
-                let main_menu_room_key = social_manager.main_menu_room_key().unwrap();
-                // add to users
-                user_manager.add_connected_user(
-                    &mut commands,
-                    &mut server,
-                    &mut http_client,
-                    &main_menu_room_key,
+                user_manager.accept_user(
                     user_key,
                     user_id,
                 );
@@ -54,8 +45,10 @@ pub fn auth_events(
 }
 
 pub fn connect_events(
+    mut commands: Commands,
     mut server: Server,
     mut http_client: ResMut<HttpClient>,
+    mut user_manager: ResMut<UserManager>,
     social_manager: Res<SocialManager>,
     mut asset_manager: ResMut<AssetManager>,
 
@@ -67,6 +60,14 @@ pub fn connect_events(
         info!("Server connected to: {}", address);
 
         let main_menu_room_key = social_manager.main_menu_room_key().unwrap();
+
+        user_manager.connect_user(
+            &mut commands,
+            &mut server,
+            &mut http_client,
+            &user_key,
+            &main_menu_room_key,
+        );
 
         // add to main menu room
         server.room_mut(&main_menu_room_key).add_user(user_key);
@@ -95,7 +96,7 @@ pub fn disconnect_events(
         // TODO: probably need to deregister user from global too?
 
         // remove from user manager
-        let user_id = user_manager.remove_connected_user(&mut commands, &mut naia_server, user_key).unwrap();
+        let user_id = user_manager.disconnect_user(&mut commands, &mut naia_server, user_key).unwrap();
 
         // remove from asset manager
         asset_manager.deregister_user(user_key);
